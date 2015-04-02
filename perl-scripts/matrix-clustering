@@ -383,16 +383,16 @@ package main;
   &set_output_file_names();
 
   &OpenSynthesis() if ($main::param{progressive_synthesis}); ## Already open the HTML report summary, for the Web site
-  if($root_matrices_flag == 1){
+  if ($root_matrices_flag == 1) {
       $to_delete{'summary'} = $main::outfile{summary};
   }
 
   ################################################################
-  ## Check matrix number if required
+  ## Check matrix number (required for verbose + if max matrices specified)
+  @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
   local $matrix_nb_ok = 1;
   if ($max_matrices > 0) {
     &RSAT::message::TimeWarn("Checking the number of input matrices (max: ".$max_matrices.").") if ($main::verbose >= 2);
-    @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
     &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
 	if ($main::verbose >= 2);
     if (scalar(@matrices) > $max_matrices) {
@@ -419,27 +419,27 @@ package main;
     $convert_matrix_cmd .= " -to transfac";
     $convert_matrix_cmd .= " -top ".$max_matrices if ($max_matrices > 0);
     $convert_matrix_cmd .= " -o ".$outfile{input_matrices};
-    &doit($convert_matrix_cmd, 0, 1, $verbose);
+    &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
   }
 
   # ## According to the task selected by the user, execute or skip
   # ## some functions
-  if($selected_tasks{all}){
+  if ($selected_tasks{all}) {
 
-      if($quick_flag == 0){
+      if ($quick_flag == 0) {
 
   	  ################################################################
   	  ## Compare the matrices with compare-matrices
   	  &CompareMatrices();
 
-      } elsif ($quick_flag == 1){
+      } elsif ($quick_flag == 1) {
   	  ################################################################
   	  ## Compare the matrices with compare-matrices-quick
   	  &CompareMatricesQuick();
       }
   }
 
-  if($selected_tasks{all} || $selected_tasks{cluster}){
+  if ($selected_tasks{all} || $selected_tasks{cluster}) {
       
       #####################################################
       ## Create temporary files with the single matrices
@@ -455,7 +455,7 @@ package main;
       &ReadClusterComposition();
 
 
-      if($root_matrices_flag == 1){
+      if ($root_matrices_flag == 1) {
 	  
 	  ################################################################
 	  ## Create the merged matrices and consensuses for root matrices
@@ -507,7 +507,7 @@ package main;
 	  &ConvertTabToHTML(@tab_to_convert);
       }
 
-      if($root_matrices_flag == 0){
+      if ($root_matrices_flag == 0) {
 
 	  ################################################################
 	  ## Creates the website
@@ -688,7 +688,7 @@ Display consensus of merged matrices on the internal branches of the
 tree.
 
 =cut
-    } elsif ($arg eq "-heatmap"){
+    } elsif ($arg eq "-heatmap") {
       $draw_heatmap = 1;
 
   
@@ -873,7 +873,7 @@ Compute inter-cluster distances based on the closest nodes.
     
     } elsif ($arg eq "-hclust_method") {
       $hclust_method = shift(@arguments);
-      unless(exists($supported_hclust_methods{$hclust_method})){
+      unless(exists($supported_hclust_methods{$hclust_method})) {
 	&RSAT::error::FatalError($hclust_method, "Invalid hclust method. Supported:", $supported_hclust_methods);
       }
 
@@ -1101,12 +1101,12 @@ sub CompareMatricesQuick {
   ## Jaime: I (JvH) chaned this to treat it at the beginning of the
   ## script, irrespective of the algorithm (quick or slow) used for
   ## comparing matrices.
-  # if($args_to_pass =~ /(-top \d+)/){
+  # if ($args_to_pass =~ /(-top \d+)/) {
   #     $args_to_pass = $1;
   #     my $top = "convert-matrix ".$args_to_pass." -i ".$main::outfile{input_matrices}." -from ".$main::matrix_format." -to tf -o ".$main::outfile{prefix}."_matrices.tf"; 
   #     &RSAT::util::one_command($top, 1,"");
   #     $main::infile{matrices} = $main::outfile{prefix}."_matrices.tf";
-  # }else{
+  # } else {
   #     $args_to_pass = "";
   # }
 
@@ -1169,7 +1169,7 @@ sub Hclustering {
     ## It will be passed to R as command-line argument
     my @temp_consensus_fields = @cons_labels;
     unshift(@temp_consensus_fields, "consensus");
-    foreach (@temp_consensus_fields){
+    foreach (@temp_consensus_fields) {
 	$_ = "'".$_."'";
     }
     my $arg_labels = "c(";
@@ -1205,10 +1205,10 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
 
-    if($quick_flag == 1){
+    if ($quick_flag == 1) {
 	my %lth2 = ();
 	my @param = qw (Ncor cor);
-	foreach my $p (@param){
+	foreach my $p (@param) {
 	    my $val = $lth{$p};
 	    $lth2{$p} = $val;
 	}
@@ -1217,7 +1217,7 @@ sub Hclustering {
 
     ## Set the option to compute only the hclust and skip the
     ## tree and heatmap computation
-    if($root_matrices_flag == 1){
+    if ($root_matrices_flag == 1) {
 	$draw_heatmap = 0;
 	$cluster_motifs_cmd .= "; only.hclust = ".$root_matrices_flag;
     }
@@ -1228,7 +1228,7 @@ sub Hclustering {
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
 	my $lthsp = "";
-	foreach my $par (keys %lth){
+	foreach my $par (keys %lth) {
 	    $lthsp.= $par."_".$lth{$par}."_";
 	}
 	$cluster_motifs_cmd .= "; lthsp = '".$lthsp."'";
@@ -1237,7 +1237,7 @@ sub Hclustering {
       $cluster_motifs_cmd .= "; uth = '".$uth{$param{matrix_compa_score}}."'";
     }
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
-    if ($export_tree_format eq "newick"){
+    if ($export_tree_format eq "newick") {
       $cluster_motifs_cmd .= "; export = '".$export_tree_format."'";
       $cluster_motifs_cmd .= "; export_newick = '".$main::outfile{consensus_phylogram_newick}."'";
     }
@@ -1245,7 +1245,7 @@ sub Hclustering {
     $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog}; ## Fixed by JvH on 2015-03-27
 
     if ($r_path) {
-        &doit($cluster_motifs_cmd, 0, 1, $verbose);
+        &doit($cluster_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
         &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
     }
@@ -1278,7 +1278,7 @@ sub ReadClusterComposition {
   
   ## Index the number of nodes per cluster
   my %clusters_info = (); 
-  foreach my $cluster (@clusters_to_HTML){
+  foreach my $cluster (@clusters_to_HTML) {
     my @nodes = @{$cluster_nodes{$cluster}};
 
     $clusters_info{$cluster} = scalar(@nodes);
@@ -1372,7 +1372,7 @@ sub ClusterMotifs {
 ################################################################
 ## Add attributes to JSON file, like links to pictures and other
 ## attributes
-sub Add_attributes_to_JSON(){
+sub Add_attributes_to_JSON() {
   my (%matrix_info) = ();
 
 
@@ -1387,7 +1387,7 @@ sub Add_attributes_to_JSON(){
 
   ## Open the file with the picture's data
   open(DATA, $main::outfile{matrix_descriptions}) || &RSAT::error::FatalError( "Cannot open DATA file", $main::outfile{matrix_descriptions});
-  while(<DATA>){
+  while(<DATA>) {
       next unless (/\S/); ## Skip empty rows
       next if (/^;/); ## Skip comment rows
       next if (/^#/); ## Skip header rows
@@ -1405,10 +1405,10 @@ sub Add_attributes_to_JSON(){
       $matrix_info{$split_line[1]}{logo_file_rc} = $split_line[8];
 
       ## The path of the aligned logo (in D or R) that will be displayed 
-      if($aligned_logos_path{$split_line[1]}{strand} eq "D"){
+      if ($aligned_logos_path{$split_line[1]}{strand} eq "D") {
 	  $matrix_info{$split_line[1]}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo};
 	  $matrix_info{$split_line[1]}{logo_aligned_file_rc} = $aligned_logos_path{$split_line[1]}{logo_rc};
-      }else{
+      } else {
 	  $matrix_info{$split_line[1]}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo}; 
 	  $matrix_info{$split_line[1]}{logo_aligned_file_rc} = $aligned_logos_path{$split_line[1]}{logo_rc};
       }
@@ -1419,7 +1419,7 @@ sub Add_attributes_to_JSON(){
   ############################################################
   ## Read the JSON file and add the link data to each node
   &RSAT::message::TimeWarn("Linking data to nodes in JSON files") if ($main::verbose >= 2);
-  foreach my $cluster(@clusters_to_HTML){
+  foreach my $cluster(@clusters_to_HTML) {
       my $line = "";
       my $children = 0;
       my ($M1, $M2, $Add_this, $Flag);
@@ -1428,7 +1428,7 @@ sub Add_attributes_to_JSON(){
 
       my @levels_JSON = ();
       open(LVL_JSON, $file) || &RSAT::error::FatalError($file, "Cannot open the JSON Levels file");
-      while(<LVL_JSON>){
+      while(<LVL_JSON>) {
 	  chomp;
 	  next if /^;/;
 	  my @spl = split(/\t+/, $_);
@@ -1441,21 +1441,21 @@ sub Add_attributes_to_JSON(){
       my $JSON = $main::outfile{prefix}."_trees/tree_".$cluster.".json";
       &RSAT::message::TimeWarn("JSON file", $JSON, $cluster ) if ($main::verbose >= 2);
       open(JSON, $JSON) || &RSAT::error::FatalError($JSON, "Cannot open the JSON file");
-      while(<JSON>){
+      while(<JSON>) {
 	  
 	  chomp;
 	  $Flag = 0;
 	  $line = $_;
 	  
 	  # Add the consensus to the json file to be displayed in the tree
-#	  if ($line =~ /(\s*\"children\":\s*\[)/){
-	  if ($line =~ /\"children\":/){
+#	  if ($line =~ /(\s*\"children\":\s*\[)/) {
+	  if ($line =~ /\"children\":/) {
 	      $children++;
 	      $Add = "";
-	      if ($children > 1){
+	      if ($children > 1) {
 		  my $folder = $levels_JSON[$children-2];
 
-		  if(exists($merged_consensuses_files{$folder})){		
+		  if (exists($merged_consensuses_files{$folder})) {		
 		      my $branch = $folder;
 		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
@@ -1470,7 +1470,7 @@ sub Add_attributes_to_JSON(){
 	  }
 
 	  ### Search the pattern separating the matrices names
-	  if ($line =~ /\s*\"label\":\s*\"(.+)\",/){
+	  if ($line =~ /\s*\"label\":\s*\"(.+)\",/) {
 	      $Flag = 1;
 	      $Add_this = "";
 	      $M1 = $1;
@@ -1516,7 +1516,7 @@ sub Add_attributes_to_JSON(){
   }
 
   my $cmd = "rm -r ".$main::outfile{prefix}."_pairwise_compa_logos";
-  &doit($cmd, 0, $die_on_error, $verbose);
+  &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
   return();
 }
@@ -1525,7 +1525,7 @@ sub Add_attributes_to_JSON(){
 ###################################
 ## Create the html file to 
 ## display the tree
-sub create_html_tree_file(){
+sub create_html_tree_file() {
 
     ## Values to change in the D3 tree
     my $svg_width = 25;
@@ -1548,10 +1548,10 @@ sub create_html_tree_file(){
 
     my $new_label = 
 	"\tnode.append(\"text\")
-	\t\t.text(function(d){ return d.children ? \"\" : d.; })
-	\t\t.attr(\"x\", function(d){ return d.children ? 0 : 20; })
-	\t\t.attr(\"dy\", function(d){ return d.children ? 0 : #; })
-	\t\t.attr(\"text-anchor\", function(d){ return d.children ? \"end\" : \"start\"; });";
+	\t\t.text(function(d) { return d.children ? \"\" : d.; })
+	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
 
     my $display_consensus_d3 =
 	"		node.append(\"a\")
@@ -1566,22 +1566,22 @@ sub create_html_tree_file(){
     
     my $display_title_lab .= '
         node.append("text")
-	.text(function(d){ return d.children ? "" : "'.$main::param{title}.'"; })
-	.attr("x", function(d){ return d.children ? 0 : 20; })
-	.attr("dy", function(d){ return d.children ? 0 : 27; })
+	.text(function(d) { return d.children ? "" : "'.$main::param{title}.'"; })
+	.attr("x", function(d) { return d.children ? 0 : 20; })
+	.attr("dy", function(d) { return d.children ? 0 : 27; })
         .attr("fill", "blue")
 	.attr("font-size", "18px")
-	.attr("text-anchor", function(d){ return d.children ? "end" : "start"; })
+	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
         ';
 
 
     open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot open HTML file");
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
 
-    while(<TREE>){
+    while(<TREE>) {
 	chomp;	
 
-	if(/\(function\(\)\{/){
+	if (/\(function\(\)\{/) {
 	    $cluster_nb++;
 	}
 
@@ -1591,78 +1591,78 @@ sub create_html_tree_file(){
 	}
 	
 	### Fix the d3 library path
-	if(/--d3--/){;
+	if (/--d3--/) {;
 	    $_ =~ s/--d3--/$d3_base/g;
 	}
 
 	### Set the height 
-	if(/--height--/){
+	if (/--height--/) {
 	    my $clust = "cluster_".$cluster_nb;
 	    my $mat_number = $clusters_info{$clust} + 2;
 	    $_ =~ s/--height--/100 + 85 * $mat_number/;
 	}
 	
 	### Set the height 
-	if(/--widthtree--/){;
+	if (/--widthtree--/) {;
 	    $_ =~ s/--widthtree--/3500/;
 	}
 
 	### Set the tree size
-	if(/--size--/){;
+	if (/--size--/) {;
 	    $_ =~ s/--size--/1000/;
 	}
 
 	### Add the JSON file name
-	if(/--jsonfile--/){
+	if (/--jsonfile--/) {
 	    my $j_file = $main::outfile{prefix}."_trees/parsed_tree_cluster_".$cluster_nb.".json";
 	    $json_file_name = &RSAT::util::RelativePath($main::outfile{logo_cladogram_html}, $j_file);
 	    $_ =~ s/--jsonfile--/$json_file_name/;
 	}
 
-	if(/--cl_id--/){
+	if (/--cl_id--/) {
 	    my $c = "cluster_".$cluster_nb;
 	    $_ =~ s/--cl_id--/$c/;
 	}
 
 	## Add the color of the cluster
-	if(/--stroke--/){
+	if (/--stroke--/) {
 	    my $clust = "cluster_".$cluster_nb;
 	    $_ =~ s/--stroke--/$hexa_code{$clust}/;
 	}
 
-	if(/--radius--/){
+	if (/--radius--/) {
 	    $_ =~ s/--radius--/6/;
 	}
 
-	if(/--insert--/){
+	if (/--insert--/) {
 	    $_ =~ s/--insert--//;
 	}
 
-	if(/--svgwidth--/){
+	if (/--svgwidth--/) {
 	    $_ =~ s/--svgwidth--/$svg_width/g;
 	}
 
-	if(/--svgheight--/){
+	if (/--svgheight--/) {
 	    $_ =~ s/--svgheight--/$svg_height/g;
 	}
 
-	if(/--x1--/){
+	if (/--x1--/) {
 	    $_ =~ s/--x1--/$svg_x1/g;
 	}
 
-	if(/--y1--/){
+	if (/--y1--/) {
 	    $_ =~ s/--y1--/$svg_y1/g;
 	}
 
-	if(/--x2--/){
+	if (/--x2--/) {
 	    $_ =~ s/--x2--/$svg_x2/g;
 	}
 
-	if(/--lab--/){
+	if (/--lab--/) {
 	    $_ =~ s/--lab--//g;
 	}
 
-	if ($_ =~ /Insert labels/){
+	if ($_ =~ /Insert labels/) {
 	    $add_this = "";
 	    $labels_num = 0;
 	    ################################################################
@@ -1672,18 +1672,18 @@ sub create_html_tree_file(){
 		    $labels_num++;
 		    
 		    ### Add the first label with the the link to the logo
-		    if($labels_num == 1){
+		    if ($labels_num == 1) {
 			$add_this = $main_label;
 			$up = uc($field);
 			$add_this =~ s/d\.;/ d\.$field;/;
 		    }
 
-		    if($display_title_flag == 1){
+		    if ($display_title_flag == 1) {
 			$add_this .= "\n".$display_title_lab."\n";	
 		    }
 		    
 		    ### Add the new labels, set the distances among the labels in the tree
-		    if($labels_num > 1){
+		    if ($labels_num > 1) {
 			my $copy = $new_label;
 			$up = uc($field);
 			$copy =~ s/d\.;/ d\.$field;/;
@@ -1696,7 +1696,7 @@ sub create_html_tree_file(){
 	    print TEMP $add_this."\n";
 	}
 
-	if ($_ =~ /Insert consensus/){
+	if ($_ =~ /Insert consensus/) {
 	    $add_this = "";
 	    $add_this .= "\n\n".$display_consensus_d3."\n\n";
 	    print TEMP $add_this."\n";
@@ -1707,7 +1707,7 @@ sub create_html_tree_file(){
     close(TEMP);
     unlink($main::outfile{logo_cladogram_html});
     my $cmd = "mv -f ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
-    &doit($cmd, 0, $die_on_error, $verbose);
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
     return();
 }
 
@@ -1736,19 +1736,19 @@ sub ConvertTabToHTML {
     my $cmd = $SCRIPTS."/text-to-html ";
     $cmd .= " -i ".$tab;
     $cmd .= " -o ".$html;
-    &doit($cmd, 0, $die_on_error, $verbose);
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
   }
 }
 
 ################################################################
 ## Add the empty columns to the logos that will be displayed, in order
 ## to get multiple alignment on the logo cladogram.
-sub Add_empty_columns_to_logos(){
+sub Add_empty_columns_to_logos() {
 
   ## Open the alignment_table data
   open(ALIGNMENT_TABLE, $main::outfile{alignment_table}) || &RSAT::error::FatalError( "Cannot open ALIGNMENT_TABLE file", $main::outfile{alignment_table});
 
-  while(<ALIGNMENT_TABLE>){
+  while(<ALIGNMENT_TABLE>) {
     next unless (/\S/); ## Skip empty rows
     next if (/^;/); ## Skip comment rows
     next if (/^#/); ## Skip header rows
@@ -1767,7 +1767,7 @@ sub Add_empty_columns_to_logos(){
 
   ## Call the program 'convert-matrix' to add the empty columns
   ## to the aligned logos and retrieve the logos in RC
-  foreach my $id (keys %alignment_info){
+  foreach my $id (keys %alignment_info) {
 
     ## Reset the variables
     my $offset_left = $alignment_info{$id}{offset_left};
@@ -1776,7 +1776,7 @@ sub Add_empty_columns_to_logos(){
     my $strand = $alignment_info{$id}{strand};
 
     ## Run the convert-matrix command to add the empty columns to the logos
-    if($strand eq "D"){
+    if ($strand eq "D") {
 
       ## Add the empty columns
       my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
@@ -1784,16 +1784,16 @@ sub Add_empty_columns_to_logos(){
       $cmd .= " -insert_col_left ".$offset_left;
       $cmd .= " -insert_col_right ".$offset_right;
       $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos";
-      &doit($cmd, 0, $die_on_error, $verbose);
+      &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
-    }else{
+    } else {
 
       ## First convert the matrix to reverse complement 
       my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
       $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
       $cmd .= " -from tf -to tf -rc -return counts,consensus";
       $cmd .= " -o ".$temp_mat;
-      &doit($cmd, 0, $die_on_error, $verbose);
+      &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
       
       ## Then add the gaps
       $cmd = $SCRIPTS."/convert-matrix -i ".$temp_mat;
@@ -1801,7 +1801,7 @@ sub Add_empty_columns_to_logos(){
       $cmd .= " -insert_col_left ".$offset_left;
       $cmd .= " -insert_col_right ".$offset_right;
       $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos";
-      &doit($cmd, 0, $die_on_error, $verbose);
+      &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
       unlink($temp_mat);
     }
     unlink($file_name);
@@ -1819,11 +1819,11 @@ sub Add_empty_columns_to_logos(){
 ## will be used to add empty columns with 
 ## convert-matrices and to create the merged
 ## consensus
-sub create_single_matrix_files(){
+sub create_single_matrix_files() {
 
     my @ids = ();
     my ($desc) = &OpenInputFile($main::outfile{matrix_descriptions});
-    while(<$desc>){
+    while(<$desc>) {
 	chomp;
 	next if /^#/;
 	my @split = split(/\t/, $_);
@@ -1838,17 +1838,17 @@ sub create_single_matrix_files(){
     my %matrix_files = ();
     my $cmd = $SCRIPTS."/convert-matrix";
     $cmd .= " -i ".$outfile{input_matrices}." -from transfac -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
-    &doit($cmd, 0, $die_on_error, $verbose);
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
     
     $main::outfile{matrix_single_list} = $main::outfile{prefix}."_single_matrices_matrix_list.tab";
     my ($mat_file_list) = &OpenInputFile($main::outfile{matrix_single_list});
-    while(<$mat_file_list>){
+    while(<$mat_file_list>) {
 	chomp;
 	next if /^#/;
 	my @split = split(/\t/, $_);
 	my $id = $split[1];
 	$to_delete{$id} = $main::outfile{prefix}."_single_matrices_".$id.".tf";
-	if(grep( /^$id$/, @ids)){
+	if (grep( /^$id$/, @ids)) {
 	    my $id_file = $main::outfile{prefix}."_single_matrices_".$id.".tf";
 	    $matrix_files{$id}{file_name} = $id_file;
 	}
@@ -1862,10 +1862,10 @@ sub create_single_matrix_files(){
 #########################################################################
 ## Merge the matrices at each level of the hclust tree, and produce a
 ## branch-wise matrix + logo + consensus.
-sub Merge_matrices(){
+sub Merge_matrices() {
     
     ## Read the file with the information of the intermediate alignments
-    ## This info will be used to create the branch-motifs
+    ## This info will be used to create branch motifs
     my %int_align_files = ();
     my ($int_align_file) = &OpenInputFile($main::outfile{int_align});
     while (<$int_align_file>) {
@@ -1883,7 +1883,7 @@ sub Merge_matrices(){
     &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
     ## Get the cluster sizes
     
-    foreach my $cluster (@clusters_to_HTML){
+    foreach my $cluster (@clusters_to_HTML) {
 
 	my @nodes = @{$cluster_nodes{$cluster}};
 	&RSAT::message::Debug("Merging matrices for cluster", $cluster, "Nodes", join (";", @nodes)) if ($main::verbose >= 3);
@@ -1893,14 +1893,14 @@ sub Merge_matrices(){
 
 	## Folders with the aligned matrices
 	my @folder_merged_matrices = ();
-	if(-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses"){
+	if (-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses") {
 	    chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
-	}else{
+	} else {
 	    @folder_merged_matrices = ();
 	}
 	
 	my %int_align_info = ();
-	foreach my $folder (@folder_merged_matrices){
+	foreach my $folder (@folder_merged_matrices) {
 
 	    ## Read the table with the number of spaced for each matrix,
 	    ## for each level of each cluster
@@ -1926,7 +1926,7 @@ sub Merge_matrices(){
 	    unlink($main::outfile{int_align_offset});
 
 	    ## For each level add the gaps to the matrices
-	    foreach my $motif (@level_motifs){
+	    foreach my $motif (@level_motifs) {
 
 		## Reset the variables
 		my $offset_left = $int_align_info{$cluster}{$merge_level}{$motif}{offset_up};
@@ -1935,7 +1935,7 @@ sub Merge_matrices(){
 		my $file_name = $alignment_info{$motif}{file_name};
 
 		## Run the convert-matrix command to add the empty columns to the logos
-		if($strand eq "D"){
+		if ($strand eq "D") {
 
 		    ## Add the empty columns
 		    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
@@ -1943,16 +1943,16 @@ sub Merge_matrices(){
 		    $cmd .= " -insert_col_left ".$offset_left;
 		    $cmd .= " -insert_col_right ".$offset_right;
 		    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf";
-		    &doit($cmd, 0, $die_on_error, $verbose);
+		    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		    
-		}else{
+		} else {
 		    
 		    ## First convert the matrix to reverse complement 
 		    my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
 		    $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
 		    $cmd .= " -from tf -to tf -rc -return counts,consensus";
 		    $cmd .= " -o ".$temp_mat;
-		    &doit($cmd, 0, $die_on_error, $verbose);
+		    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		    
 		    ## Then add the gaps
 		    $cmd = $SCRIPTS."/convert-matrix -i ".$temp_mat;
@@ -1960,14 +1960,14 @@ sub Merge_matrices(){
 		    $cmd .= " -insert_col_left ".$offset_left;
 		    $cmd .= " -insert_col_right ".$offset_right;
 		    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf";
-		    &doit($cmd, 0, $die_on_error, $verbose);
+		    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		    unlink($temp_mat);
 		}
 	    }
 	    
 	    my @file_names = @level_motifs;
 	    ## Get the names of the files of each level
-	    foreach my $m (@file_names){
+	    foreach my $m (@file_names) {
 	    	$m = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$m.".tf";
 	    }
 	    my $files = join(" ", @file_names);
@@ -1981,10 +1981,10 @@ sub Merge_matrices(){
 	    $cmd .= " -in_format tf -out_format tf";
 	    $cmd .= " -id ".$cluster." -name ".$cluster;
 	    $cmd .= " -o ".$merged_mat_file;
-	    &doit($cmd, 0, $die_on_error, $verbose);
+	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 	    ## Delete files with single matrices
 	    unlink($cat_file);
-	    foreach my $file (@file_names){
+	    foreach my $file (@file_names) {
 	    	unlink($file);
 	    }    
 
@@ -1995,7 +1995,7 @@ sub Merge_matrices(){
 	    $cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_shaved;
 	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
 	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
-	    &doit($cmd, 0, $die_on_error, $verbose);
+	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 	    
 	    $merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo.png";
 	    $merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo_rc.png";
@@ -2016,7 +2016,7 @@ sub Merge_matrices(){
 #########################################################################
 ## Merge the matrices at each level of the hclust tree, and produce a
 ## branch-wise matrix + logo + consensus.
-sub Merge_root_matrices(){
+sub Merge_root_matrices() {
     
     ## Read the file with the information of the intermediate alignments
     ## This info will be used to create the branch-motifs
@@ -2035,7 +2035,7 @@ sub Merge_root_matrices(){
 
     &RSAT::message::TimeWarn("Calculating root matrices for ", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
     
-    foreach my $cluster (@clusters_to_HTML){
+    foreach my $cluster (@clusters_to_HTML) {
 
 	my @nodes = @{$cluster_nodes{$cluster}};
 	&RSAT::message::Debug("Merging matrices for cluster", $cluster, "Nodes", join (";", @nodes)) if ($main::verbose >= 3);
@@ -2045,13 +2045,13 @@ sub Merge_root_matrices(){
 	
         ## Folders with the aligned matrices
 	my @folder_merged_matrices = ();
-	if(-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses"){
+	if (-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses") {
 	    chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
-	}else{
+	} else {
 	    @folder_merged_matrices = ();
 	}
 	my %int_align_info = ();
-	foreach my $folder (@folder_merged_matrices){
+	foreach my $folder (@folder_merged_matrices) {
 
 	    ## Read the table with the number of spaced for each matrix,
 	    ## for each level of each cluster
@@ -2079,10 +2079,10 @@ sub Merge_root_matrices(){
 	    my $cluster_number = $folder;
 	    $cluster_number =~ s/\D+//;
 
-	    if(scalar(@level_motifs) == scalar(@folder_merged_matrices)+1){
+	    if (scalar(@level_motifs) == scalar(@folder_merged_matrices)+1) {
 
 		## For each level add the gaps to the matrices
-		foreach my $motif (@level_motifs){
+		foreach my $motif (@level_motifs) {
 		    
 		    ## Reset the variables
 		    my $offset_left = $int_align_info{$cluster}{$merge_level}{$motif}{offset_up};
@@ -2091,7 +2091,7 @@ sub Merge_root_matrices(){
 		    my $file_name = $alignment_info{$motif}{file_name};
 		    
 		    ## Run the convert-matrix command to add the empty columns to the logos
-		    if($strand eq "D"){
+		    if ($strand eq "D") {
 			
 			## Add the empty columns
 			my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
@@ -2099,16 +2099,16 @@ sub Merge_root_matrices(){
 			$cmd .= " -insert_col_left ".$offset_left;
 			$cmd .= " -insert_col_right ".$offset_right;
 			$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf";
-			&doit($cmd, 0, $die_on_error, $verbose);
+			&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 			
-		    }else{
+		    } else {
 			
 			## First convert the matrix to reverse complement 
 			my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
 			$cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
 			$cmd .= " -from tf -to tf -rc -return counts,consensus";
 			$cmd .= " -o ".$temp_mat;
-			&doit($cmd, 0, $die_on_error, $verbose);
+			&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 			
 			## Then add the gaps
 			$cmd = $SCRIPTS."/convert-matrix -i ".$temp_mat;
@@ -2116,14 +2116,14 @@ sub Merge_root_matrices(){
 			$cmd .= " -insert_col_left ".$offset_left;
 			$cmd .= " -insert_col_right ".$offset_right;
 			$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf";
-			&doit($cmd, 0, $die_on_error, $verbose);
+			&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 			unlink($temp_mat);
 		    }
 		}
 
 		my @file_names = @level_motifs;
 		## Get the names of the files of each level
-		foreach my $m (@file_names){
+		foreach my $m (@file_names) {
 		    $m = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$m.".tf";
 		}
 		my $files = join(" ", @file_names);
@@ -2137,10 +2137,10 @@ sub Merge_root_matrices(){
 		$cmd .= " -in_format tf -out_format tf";
 		$cmd .= " -id ".$cluster." -name ".$cluster;
 		$cmd .= " -o ".$merged_mat_file;
-		&doit($cmd, 0, $die_on_error, $verbose);
+		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		## Delete files with single matrices
 		unlink($cat_file);
-		foreach my $file (@file_names){
+		foreach my $file (@file_names) {
 		    unlink($file);
 		}  	
 
@@ -2151,7 +2151,7 @@ sub Merge_root_matrices(){
 		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_shaved;
 		$cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
 		$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
-		&doit($cmd, 0, $die_on_error, $verbose);
+		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		
 		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo.png";
 		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo_rc.png";
@@ -2165,7 +2165,7 @@ sub Merge_root_matrices(){
 		$cons =~ s/^DE\s+//;
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
 
-	    }else{
+	    } else {
 		next;
 	    }
 	}
@@ -2176,38 +2176,38 @@ sub Merge_root_matrices(){
 #############################################
 ## Collect the most external motif of each
 ## cluster and save them in a file
-sub Export_external_motifs(){
+sub Export_external_motifs() {
 
     my $cmd = "";
     my $mat_file = "";
     my $external_branch_motifs = "";
 
-    foreach my $cluster (@clusters_to_HTML){
+    foreach my $cluster (@clusters_to_HTML) {
 	
         ## Folders with the aligned matrices
 	my @folder_merged_matrices = ();
-	if(-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses"){
+	if (-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses") {
 	    chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
-	}else{
+	} else {
 	    @folder_merged_matrices = ();
 	}
 
-	if(scalar(@folder_merged_matrices) > 0){
+	if (scalar(@folder_merged_matrices) > 0) {
 	    
-	    foreach my $folder (@folder_merged_matrices){
+	    foreach my $folder (@folder_merged_matrices) {
 	   
 		## Get the name of the motif of the most external branch
 		my $cluster_number = $folder;
 		$cluster_number =~ s/\D+//;
-		if($cluster_number == scalar(@folder_merged_matrices)){
+		if ($cluster_number == scalar(@folder_merged_matrices)) {
 		    $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
 		    last;
-		}else{
-		    if($root_matrices_flag == 1){
+		} else {
+		    if ($root_matrices_flag == 1) {
 			my $delete_key = $cluster."_".$folder;
 			$to_delete_folder{$delete_key} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder;
 			# $cmd = "rm -r ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder;
-			# &doit($cmd, 0, $die_on_error, $verbose);
+			# &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		    }
 		}
 	    }
@@ -2219,7 +2219,7 @@ sub Export_external_motifs(){
     }
 
     $cmd = "cat ".$external_branch_motifs." >".$main::outfile{root_motifs};
-    &doit($cmd, 0, $die_on_error, $verbose);
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 }
 
 
@@ -2227,18 +2227,18 @@ sub Export_external_motifs(){
 ## Before modify the width and heigth
 ## of the alignments, creates the <div>
 ## in HTML script to visualize the clusters
-sub Add_div_to_HTML(){
+sub Add_div_to_HTML() {
     my $line = "";
     my $print = "";
     my $temp = &logo_tree();
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     
-    &doit($cmd, 0, $die_on_error, $verbose);
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
     my %clusters_info_sorted = ();
     my %clusters_info_cp = %clusters_info;
     my @sorted_keys = keys %clusters_info;
-    foreach my $k (@sorted_keys){
+    foreach my $k (@sorted_keys) {
 	$k =~ s/cluster_//;
 	$clusters_info_sorted{$k} = delete $clusters_info_cp{"cluster_".$k};
     }
@@ -2247,21 +2247,21 @@ sub Add_div_to_HTML(){
     open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
     open(TREE,$main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot found the HTML tree file");
 
-    while(<TREE>){
+    while(<TREE>) {
 	chomp;
 	$line = $_;
 	## Add one <div> for each cluster
-	if(/^\s*\/\/Divisions/){
+	if (/^\s*\/\/Divisions/) {
 	    $line = "";
-	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted){             
+	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted) {             
 		$line .= "<div id=\"cluster_".$cluster."\"><h2>cluster_".$cluster."</h2><\/div>\n";
 	    }
 	}
 
 	## 
-	if(/^\s*\/\/Body/){
+	if (/^\s*\/\/Body/) {
 	    $line = "";	
-	    foreach my $cluster (sort {$clusters_info_sorted{$a} <=> $clusters_info_sorted{$b}} keys %clusters_info_sorted){      
+	    foreach my $cluster (sort {$clusters_info_sorted{$a} <=> $clusters_info_sorted{$b}} keys %clusters_info_sorted) {      
 		$line .= $temp."\n";
 	    }
 	}
@@ -2273,7 +2273,7 @@ sub Add_div_to_HTML(){
     close(TEMP);
     unlink($main::outfile{logo_cladogram_html});
     $cmd = "mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
-    &doit($cmd, 0, $die_on_error, $verbose);    
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);    
 }
 
 
@@ -2320,12 +2320,12 @@ sub cluster_head_buttons{
   my $size = shift;
   my $jquery_toggle_buttons = "";
 
-  if($size > 1){
+  if ($size > 1) {
     $jquery_toggle_buttons = '
 
   // Slide the buttons to show the results
-  $(document).ready(function(){
-    $(\'.--Cluster_id_head--\', this).click(function(){
+  $(document).ready(function() {
+    $(\'.--Cluster_id_head--\', this).click(function() {
        $(\'#branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
        $(\'#cluster_--nb--\').slideToggle(\'fast\');
        $(this).toggleClass(\'selected_cluster\');
@@ -2339,8 +2339,8 @@ sub cluster_head_buttons{
     $jquery_toggle_buttons = '
 
   // Slide the buttons to show the results
-  $(document).ready(function(){
-    $(\'.--Cluster_id_head--\', this).click(function(){
+  $(document).ready(function() {
+    $(\'.--Cluster_id_head--\', this).click(function() {
        $(\'#cluster_--nb--\').slideToggle(\'fast\');
        $(this).toggleClass(\'selected_cluster\');
      }); 
@@ -2393,8 +2393,8 @@ sub toogle_branch_consensus_table{
     my $toogle_branch_consensus_tab  = 
 '
 // Slide the branch-motif table
-  $(document).ready(function(){
-    $(\'#button_branch_consensus_cluster_--nb--\').click(function(){
+  $(document).ready(function() {
+    $(\'#button_branch_consensus_cluster_--nb--\').click(function() {
        $(\'.branch_consensus_cluster_--nb--\').slideToggle(\'slow\');
      }); 
   $(\'.branch_consensus_cluster_--nb--\').css(\'display\', \'none\');
@@ -2410,8 +2410,8 @@ sub Display_Selected_Branch{
 
     my $selected_branch  = 
 '
-  $(document).ready(function(){
-    $("#--branch_tab_id--").click(function(){
+  $(document).ready(function() {
+    $("#--branch_tab_id--").click(function() {
        showOneRow("--branch_row_id--");
        showOneTable("branch_consensus_cluster_--nb--");
      }); 
@@ -2428,8 +2428,8 @@ sub hide_branch_motifs {
   my $hide_branch_motifs  = 
       '
 // Hide the logo tree
-  $(document).ready(function(){
-    $(\'#hide_branch_table_--nb--\').click(function(){
+  $(document).ready(function() {
+    $(\'#hide_branch_table_--nb--\').click(function() {
          $(\'#branch_consensus_cluster_--nb--\').hide();
      }); 
   });
@@ -2445,8 +2445,8 @@ sub hide_tree {
   my $hide_tree  = 
       '
 // Hide the logo tree
-  $(document).ready(function(){
-    $(\'#hide_tree_--nb--\').click(function(){
+  $(document).ready(function() {
+    $(\'#hide_tree_--nb--\').click(function() {
        $(\'#cluster_--nb--\').hide();
        $(\'#branch_consensus_cluster_--nb--\').hide();
        $(\'.head_cluster_--nb--\').removeClass(\'selected_cluster\');
@@ -2466,7 +2466,7 @@ sub logo_tree{
   my $logo_tree = 
       '
 
-	(function(){
+	(function() {
         var width = --widthtree--,
 	height = --height--;
 	;
@@ -2590,11 +2590,11 @@ sub branch_consensus_table{
 ## are not. This functions will delete those files
 sub Delete_temporal_files {
 
-  foreach my $f (keys %to_delete){
+  foreach my $f (keys %to_delete) {
     unlink($to_delete{$f});
   }
 
-  foreach my $fd (keys %to_delete_folder){
+  foreach my $fd (keys %to_delete_folder) {
     rmtree($to_delete_folder{$fd});
   }
 
@@ -2619,7 +2619,7 @@ sub Read_cluster_colors{
 
   open(HEXA, $main::outfile{hexa_colors}) || &RSAT::error::FatalError( "Cannot open Hexadecimal code for colors file", $main::outfile{hexa_colors});
 
-  while(<HEXA>){
+  while(<HEXA>) {
     chomp;
     my @string_split = split(/\s+/, $_);
     my $cl = $string_split[0];
@@ -2711,17 +2711,17 @@ sub set_output_file_names {
 
   local @output_folders = ();
 
-  if($root_matrices_flag == 0){
+  if ($root_matrices_flag == 0) {
       ## Create output directories
       @output_folders = qw( tables html figures pairwise_compa_logos aligned_logos);
-      foreach my $f (@output_folders){
+      foreach my $f (@output_folders) {
 	  my $new_f = $main::outfile{prefix}."_".$f;
 	  &RSAT::util::CheckOutDir($new_f);
       }
-  }elsif($root_matrices_flag == 1){
+  }elsif ($root_matrices_flag == 1) {
       ## Create output directories
       @output_folders = qw( tables html);
-      foreach my $f (@output_folders){
+      foreach my $f (@output_folders) {
 	  my $new_f = $main::outfile{prefix}."_".$f;
 	  &RSAT::util::CheckOutDir($new_f);
       }
@@ -2734,9 +2734,17 @@ sub set_output_file_names {
 
   ################################################################
   ## Specify output file names and open output stream
+
+  ## Log file should contain the trace of all commands
   $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
-  $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
   $main::out = &OpenOutputFile($main::outfile{log});
+
+  ## Error file should contain only errors
+  $main::outfile{err_log} = $main::outfile{prefix}."_errors.txt"; push @outfiles, "err_log";
+  $main::err = &OpenOutputFile($main::outfile{err_log});
+
+  ## Specific log file for R commands
+  $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
 
   ## Converted matrices (required for compare-matrices-quick, and to
   ## restrict the number of matrices with option -max_matrices).
@@ -2785,12 +2793,12 @@ sub set_output_file_names {
 
 
   ## Newick-formatted phylogram with motif consensuses
-  if ($export_tree_format eq "newick"){
+  if ($export_tree_format eq "newick") {
     $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";  
   }
 
   ## Clone input (only if the user selects this option)
-  if($clone_input_flag == 1){
+  if ($clone_input_flag == 1) {
       &RSAT::util::CheckOutDir($main::outfile{prefix}."_data");
       $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs.tf";
   }
@@ -2802,7 +2810,7 @@ sub set_output_file_names {
   $main::outfile{summary_temp} = $main::outfile{prefix}."_SUMMARY_TEMP.html";
   $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html"; push @outfiles, "summary";
 
-  if($root_matrices_flag == 0){
+  if ($root_matrices_flag == 0) {
 
       ## Define the base directories for the javascripts, which are
       ## required to display logo trees and
@@ -2813,7 +2821,7 @@ sub set_output_file_names {
 	  my $js_sync_cmd = "rsync -ruptl";
 	  $js_sync_cmd .= " ".$ENV{RSAT}."/perl-scripts/lib/js";
 	  $js_sync_cmd .= " ".$dir{output};
-	  &doit($js_sync_cmd, 0, 1, $verbose);
+	  &doit($js_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 	  $js_base = $dir{output}."/js";
 	  &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 3);
       }  elsif (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
@@ -2874,7 +2882,7 @@ sub OpenSynthesis {
   chomp($synthesis_path);
 
   my $html_lib = "";
-  if($root_matrices_flag == 0){
+  if ($root_matrices_flag == 0) {
       ## Add the JS libraries paths
       $html_lib .= '
    <script type="text/javascript" src="'.$d3_base.'"></script>
@@ -3322,7 +3330,7 @@ sub ParametersTable{
   my $hclust_method_link = "http://pedagogix-tagc.univ-mrs.fr/courses/statistics_bioinformatics/pdf_files/09.clustering.pdf";
 
   my $threshold_values_html = "";
-  foreach my $par (sort keys %lth){
+  foreach my $par (sort keys %lth) {
     $threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}."<br>";
   } 
 
@@ -3394,11 +3402,11 @@ sub ReadAlignmentTable {
 
 	## Calculate the max nb of characters and the width of the alignment 
 	## This numbers will be used to set the logos properly in the logo trees
-	if(length($split_line[1]) >= $nb_char){
+	if (length($split_line[1]) >= $nb_char) {
 	    $nb_char = length($split_line[1]);
 	    $alignment_size{$cluster_id}{nb_char} = $nb_char;
-	} if($display_title_flag == 1){
-	    if(length($main::param{title}) >= $nb_char){
+	} if ($display_title_flag == 1) {
+	    if (length($main::param{title}) >= $nb_char) {
 		$nb_char = length($main::param{title});
 	    }
 	}
@@ -3456,7 +3464,7 @@ sub InsertAlignmentTable{
     $alignment_table_columns = "";
     my $logo_width = 0;
     ## Fill the column's table 
-    foreach my $id (keys %ids_to_cluster){
+    foreach my $id (keys %ids_to_cluster) {
 
 	$logo_width = 10*$alignment_table_data{$ids_to_cluster{$id}}{$id}{width};
 
@@ -3538,20 +3546,20 @@ sub InsertSmallForest {
     <div id="display_clusters"><h2>Click here to display all the clusters</h2></div><hr>
     ';
 
-    foreach my $num (1..scalar(keys %alignment_table_data)){
-	#foreach my $num (1..2){
+    foreach my $num (1..scalar(keys %alignment_table_data)) {
+	#foreach my $num (1..2) {
 
 	$cl_id_s = "cluster_".$num."_s";
 	$cl_id = "cluster_".$num;
 	
 	my $cluster_size = scalar(keys %{$alignment_table_data{$cl_id}});
 	my $sum = $sum_motifs + $cluster_size;
-	if($sum < 20){
+	if ($sum < 20) {
 	    
 	    ## Draw the logo forest 
 	    $div .= '<div id="'.$cl_id_s.'"></div>';
 	    
-	    if($cluster_sum < 3){
+	    if ($cluster_sum < 3) {
 		$div .= '<hr>'."\n";
 	    }
 	    
@@ -3579,7 +3587,7 @@ sub InsertSmallForest {
 	    $sum_motifs += $cluster_size;
 	}
 	
-	if($cluster_sum == 4){
+	if ($cluster_sum == 4) {
 	    last; 
 	}
     }
@@ -3648,8 +3656,8 @@ $(document).ready( function () {
 });
 
 // Show all results button
-$(document).ready(function(){
-    $(\'#show_all_button\').click(function(){
+$(document).ready(function() {
+    $(\'#show_all_button\').click(function() {
 
        $(\'.branch_motifs\').show();
        $(\'.cons_tab\').show();
@@ -3659,8 +3667,8 @@ $(document).ready(function(){
 });
 
 // Hide all results button
-$(document).ready(function(){
-    $(\'#hide_all_button\').click(function(){
+$(document).ready(function() {
+    $(\'#hide_all_button\').click(function() {
         $(\'.hide_show\').hide();
         $(\'.cluster_division\').removeClass(\'selected_cluster\');
     }); 
@@ -3671,47 +3679,47 @@ $(document).ready(function() {
     
     ///////////////////
     // Hide/Show All
-    $(\'#show_all_button\').mouseenter(function(){
+    $(\'#show_all_button\').mouseenter(function() {
         $(this).fadeTo(\'fast\',1); 
     });
 
-    $(\'#show_all_button\').mouseleave(function(){
+    $(\'#show_all_button\').mouseleave(function() {
         $(this).fadeTo(\'fast\',0.5); 
     });
 
-    $(\'#hide_all_button\').mouseenter(function(){
+    $(\'#hide_all_button\').mouseenter(function() {
         $(this).fadeTo(\'fast\',1); 
     });
 
-    $(\'#hide_all_button\').mouseleave(function(){
+    $(\'#hide_all_button\').mouseleave(function() {
         $(this).fadeTo(\'fast\',0.5); 
     });
 
     /////////////////////
     // Cluster buttons
-    $(\'.cluster_division\').mouseenter(function(){
+    $(\'.cluster_division\').mouseenter(function() {
         $(this).fadeTo(\'fast\',1); 
     });
 
-    $(\'.cluster_division\').mouseleave(function(){
+    $(\'.cluster_division\').mouseleave(function() {
         $(this).fadeTo(\'fast\',0.5); 
     });
 
     /////////////////////////////
     // Additional files button
-    $(\'#File_list\').mouseenter(function(){
+    $(\'#File_list\').mouseenter(function() {
         $(this).fadeTo(\'fast\',1); 
     });
 
-    $(\'#File_list\').mouseleave(function(){
+    $(\'#File_list\').mouseleave(function() {
         $(this).fadeTo(\'fast\',0.5); 
     });
 
 });
 
 // Slide the alignment table
-$(document).ready(function(){
-    $(\'#File_list\').click(function(){
+$(document).ready(function() {
+    $(\'#File_list\').click(function() {
 	$(\'.tab_list\').slideToggle(\'fast\');
     }); 
 });
@@ -3747,21 +3755,21 @@ sub InsertTreesAndBranchMotifs {
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
     ';
 
-    if($display_title_flag == 1){
+    if ($display_title_flag == 1) {
 	$label_single_tree .= '
         node.append("text")
-	.text(function(d){ return d.children ? "" : "'.$main::param{title}.'"; })
-	.attr("x", function(d){ return d.children ? 0 : 20; })
-	.attr("dy", function(d){ return d.children ? 0 : 15; })
+	.text(function(d) { return d.children ? "" : "'.$main::param{title}.'"; })
+	.attr("x", function(d) { return d.children ? 0 : 20; })
+	.attr("dy", function(d) { return d.children ? 0 : 15; })
 	.attr("font-size", "8px")
         .attr("fill", "blue")
-	.attr("text-anchor", function(d){ return d.children ? "end" : "start"; })
+	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
         ';
     }
 
 
     ## The next procces is repeated for each cluster
-    foreach my $num (1..scalar(keys %alignment_table_data)){
+    foreach my $num (1..scalar(keys %alignment_table_data)) {
 	
 	## Insert the header of the cluster
 
@@ -3828,12 +3836,12 @@ sub InsertTreesAndBranchMotifs {
 	$script_jquery .= $hide_single_branch_table."\n\n";
 	
 	## Draw the branch-consensus table
-	if(scalar(keys %current_alignment_table_data) > 1){
+	if (scalar(keys %current_alignment_table_data) > 1) {
 
 	    $consensus_table = "";
 	    $consensus_table = &branch_consensus_table();
 	    my $consensus_table_columns = "";
-	    foreach my $level (1..scalar(keys %current_alignment_table_data)-1){
+	    foreach my $level (1..scalar(keys %current_alignment_table_data)-1) {
 		
 		my ($cons, $logo_D, $logo_R, $transfac_file, $transfac_file_2);
 		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/cluster_".$num."_logo.png");
@@ -3956,7 +3964,7 @@ sub InsertListOfFiles {
 		   </tr>
                          ';
 
-      if($number_of_motifs > 1){
+      if ($number_of_motifs > 1) {
 	  $add_files .='
                    <tr>
                    <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{internal_nodes_attributes_table}).'"><strong>Internal nodes attributes</strong></a></td>
@@ -3970,7 +3978,7 @@ sub InsertListOfFiles {
       }
 
       ## If it is specified, add the heatmap
-      if($draw_heatmap == 1 && $number_of_motifs > 1){
+      if ($draw_heatmap == 1 && $number_of_motifs > 1) {
 	$add_files .= 
 	    '
 
@@ -3982,7 +3990,7 @@ sub InsertListOfFiles {
       }
 
       ## If it is specified, add the heatmap
-      if($clone_input_flag == 1){
+      if ($clone_input_flag == 1) {
 	$add_files .= 
 	    '
 
@@ -4047,7 +4055,7 @@ sub Synthesis {
 
     &DisplaySingleCluster();
 
-    if($draw_heatmap == 1 && $number_of_motifs > 1){
+    if ($draw_heatmap == 1 && $number_of_motifs > 1) {
 	&InsertHeatMap();
     }
 
@@ -4076,7 +4084,7 @@ sub shave_matrix_low_IC_columns{
     my $shaved_matrix = shift;
     my $IC_threshold = shift;
     
-    my $temp_IC_file = "IC_test.txt";
+    my $temp_IC_file = &RSAT::util::make_temp_file("","IC_test", 1);
     my $IC_info = "";
     my @IC_info_array = ();
     my $shave_up = 0; 
@@ -4086,19 +4094,19 @@ sub shave_matrix_low_IC_columns{
     ## Calculate the IC of the matrix,
     ## save this info in a file
     my $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_shave." -from tf -return info,header,margins -o ".$temp_IC_file;
-    &doit($cmd, 0, $die_on_error, $verbose);
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
     ## Read the IC file
     ## Select the line with the sum of IC of each column
     my ($IC_file) = &OpenInputFile($temp_IC_file);
     while (<$IC_file>) {
 	chomp;
-	if($_ =~ /; i\.sum/){
+	if ($_ =~ /; i\.sum/) {
 	    $IC_info = $_;
 	    $IC_info =~ s/;\s+i.sum\s+//g;
 	    @IC_info_array = split(/\s+/, $IC_info);
 	    last;
-	}else{
+	} else {
 	    next;
 	}
     }
@@ -4107,10 +4115,10 @@ sub shave_matrix_low_IC_columns{
 
     ## Calculate the number of shaved columns 
     ## in the upstream side of the motif
-    foreach my $IC (@IC_info_array){
-	if($IC <= $IC_threshold){
+    foreach my $IC (@IC_info_array) {
+	if ($IC <= $IC_threshold) {
 	    $shave_up++;
-	}else{
+	} else {
 	    last;
 	}
     }
@@ -4118,17 +4126,17 @@ sub shave_matrix_low_IC_columns{
     ## Calculate the number of shaved columns 
     ## in the downstream side of the motif
     @IC_info_array = reverse(@IC_info_array);
-    foreach my $IC (@IC_info_array){
-	if($IC <= $IC_threshold){
+    foreach my $IC (@IC_info_array) {
+	if ($IC <= $IC_threshold) {
 	    $shave_dw++;
-	}else{
+	} else {
 	    last;
 	}
     }
 
     ## Trim the matrix
     $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_shave." -from tf -to tf -trim_col_left ".$shave_up." -trim_col_right ".$shave_dw." -return counts,consensus -o ".$shaved_matrix;
-    &doit($cmd, 0, $die_on_error, $verbose);
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
     return $shaved_matrix;
 }
 
