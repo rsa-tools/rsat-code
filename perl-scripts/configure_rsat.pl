@@ -82,8 +82,10 @@ package main;
   unless ($rsat_path) {
     my $pwd = `pwd`;
     chomp($pwd);
-    if ($pwd =~ /rsat\/*$/) {
+    if (($pwd =~ /rsat\/*$/) || $pwd =~(/rsa-tools/)) {
       $rsat_path = $pwd;
+    } elsif ($ENV{RSAT}) {
+	$rsat_path = $ENV{RSAT};
     }
   }
 
