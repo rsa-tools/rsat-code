@@ -398,8 +398,9 @@ package main;
     if (scalar(@matrices) > $max_matrices) {
       $matrix_nb_ok = 0;
       &RSAT::message::Warning("Input file contains ".scalar(@matrices)." matrices (".$infile{matrices}.").", 
-			      "The analysis will be limited to the ".$max_matrices." first matrices");
+			      "The analysis will however be limited to the ".$max_matrices." first matrices (option -max_matrices).");
     }
+    @matrices = @matrices[1..$max_matrices];
   }
 
   ## Check if matrix conversion is required.  Can be required for various reasons:
@@ -412,7 +413,7 @@ package main;
     $outfile{input_matrices} = $infile{matrices};
   } else {
     ## Convert input matrices in transfac format
-    &RSAT::message::TimeWarn("Converting input matrices");
+    &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
     my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
     $convert_matrix_cmd .= " -i ".$infile{matrices};
     $convert_matrix_cmd .= " -from ".$matrix_format;
@@ -525,7 +526,7 @@ package main;
 
   ################################################################
   ## Print verbose
-  &Verbose() if ($main::verbose);
+  &Verbose() if ($main::verbose >= 1);
   
   ################################################################
   ## Close output stream
@@ -1271,18 +1272,17 @@ sub ReadClusterComposition {
     next unless (/\S/); ## Skip empty lines
     my ($node, $name, $cluster) = split ("\t");
     push @{$cluster_nodes{$cluster}}, $node;
+    &RSAT::message::Debug("\tcluster=".$cluster, "name=".$name, "node=".$node, scalar(@{$cluster_nodes{$cluster}})) if ($main::verbose >= 5);
   }
   @clusters_to_HTML = sort keys %cluster_nodes;
 
   &RSAT::message::Debug("Cluster names", join ";", @clusters_to_HTML) if ($main::verbose >= 3);
   
   ## Index the number of nodes per cluster
-  my %clusters_info = (); 
+  %clusters_info = (); 
   foreach my $cluster (@clusters_to_HTML) {
-    my @nodes = @{$cluster_nodes{$cluster}};
-
-    $clusters_info{$cluster} = scalar(@nodes);
-    &RSAT::message::Debug("Cluster:", $cluster, 'nb of nodes:', $clusters_info{$cluster}) if ($main::verbose >= 4);
+    $clusters_info{$cluster} = scalar(@{$cluster_nodes{$cluster}});
+    &RSAT::message::Debug("Cluster:", $cluster, 'nb of nodes:', $clusters_info{$cluster}) if ($main::verbose >= 5);
   }
   close $cluster_handle;
 }
@@ -1527,6 +1527,11 @@ sub Add_attributes_to_JSON() {
 ## display the tree
 sub create_html_tree_file() {
 
+  &RSAT::message::TimeWarn("Generating HTML tree file", $main::outfile{logo_cladogram_html}) if ($main::verbose >= 2);
+
+    open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot open HTML file");
+    open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
+
     ## Values to change in the D3 tree
     my $svg_width = 25;
     my $svg_height = 80;
@@ -1575,14 +1580,11 @@ sub create_html_tree_file() {
         ';
 
 
-    open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot open HTML file");
-    open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
-
     while(<TREE>) {
 	chomp;	
 
-	if (/\(function\(\)\{/) {
-	    $cluster_nb++;
+	if (/\(function\(\)\s*\{/) {
+	  $cluster_nb++;
 	}
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
@@ -1597,9 +1599,10 @@ sub create_html_tree_file() {
 
 	### Set the height 
 	if (/--height--/) {
-	    my $clust = "cluster_".$cluster_nb;
-	    my $mat_number = $clusters_info{$clust} + 2;
-	    $_ =~ s/--height--/100 + 85 * $mat_number/;
+	  my $clust = "cluster_".$cluster_nb;
+	  my $mat_number = $clusters_info{$clust} + 2;
+	  $_ =~ s/--height--/100 + 85 * $mat_number/;
+#	  &RSAT::message::Debug("Setting cluster height", $cluster_nb, "clust=".$clust, "mat_number=".$mat_number) if ($main::verbose >= 10);
 	}
 	
 	### Set the height 
@@ -1706,7 +1709,7 @@ sub create_html_tree_file() {
     }
     close(TEMP);
     unlink($main::outfile{logo_cladogram_html});
-    my $cmd = "mv -f ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
+    my $cmd = "mv -f ".$main::outfile{temp_html}." ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
     return();
 }
@@ -2244,7 +2247,7 @@ sub Add_div_to_HTML() {
     }
     
 
-    open(TEMP, ">".$main::outfile{temp}) || &RSAT::error::FatalError($main::outfile{temp}, "Cannot create temporary file");
+    open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
     open(TREE,$main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot found the HTML tree file");
 
     while(<TREE>) {
@@ -2272,7 +2275,7 @@ sub Add_div_to_HTML() {
     close(TREE);
     close(TEMP);
     unlink($main::outfile{logo_cladogram_html});
-    $cmd = "mv ".$main::outfile{temp}." ".$main::outfile{logo_cladogram_html};
+    $cmd = "mv ".$main::outfile{temp_html}." ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);    
 }
 
@@ -2840,7 +2843,7 @@ sub set_output_file_names {
   }
 
   ## Some temporary files
-  $main::outfile{temp} = $main::outfile{prefix}."_temporary.html";
+  $main::outfile{temp_html} = $main::outfile{prefix}."_temporary.html";
   $main::outfile{int_align} = $main::outfile{prefix}."_tables/intermediate_alignments.tab";
 
   ## Archive to facilitate transfer of all the results
