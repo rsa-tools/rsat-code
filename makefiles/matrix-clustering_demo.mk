@@ -132,7 +132,7 @@ RDB_MATRICES=${RSAT}/public_html/motif_databases/REGULONDB/${RDB_PREFIX}.tf
 cluster_regulondb:
 	@echo
 	@echo "Clustering all matrices from RegulonDB"
-	${MAKE} _cluster MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} MIN_NCOR=0.4 \
+	${MAKE} _cluster MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} \
 		TITLE='RegulonDB database'
 
 ## Permutation test with RegulonDB
