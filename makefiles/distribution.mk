@@ -70,7 +70,8 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole distribution
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
-DISTRIB_FILES=rsat/perl-scripts			\
+DISTRIB_FILES= 00_README.txt 			\
+	rsat/perl-scripts			\
 	rsat/R-scripts 				\
 	rsat/makefiles				\
 	rsat/RSAT_config_default.props		\
