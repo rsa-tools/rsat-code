@@ -77,7 +77,6 @@ grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 ## Packages to be checked: to I really need this ?
 PACKAGES_OPT="
 ess
-curl
 yum
 php-elisp
 libgdbm-dev
@@ -96,7 +95,6 @@ lib64readline-gplv2-dev:i386
 libreadline-gplv2-dev
 libx11-dev
 libxt-dev
-libcurl4-openssl-dev
 libxml2-dev
 tcl8.5-dev
 tk8.5-dev
@@ -158,6 +156,8 @@ x11-apps
 firefox
 eog
 ntp
+curl
+libcurl4-openssl-dev
 "
 
 ################################################################
@@ -318,6 +318,7 @@ pip install speedtest-cli
 # pip3 install wsdl
 # pip3 install wstools
 pip3 install fisher
+pip3 install snakemake
 ## pip3 install pygraphviz ## This fails ! Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/pygraphviz
 
 ## PROBLEM: soappy seems to be discontnued for python3 !
@@ -525,7 +526,8 @@ rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 ## in order to configure and update it.
 cpan
 install YAML
-install CPAN ## I am not sure, but I think that this command is useful to properly install the subsequent packages.
+## I am not sure, but I think that this command is useful to properly install the subsequent packages.
+install CPAN 
 reload cpan
 ## then type "quit"
 
