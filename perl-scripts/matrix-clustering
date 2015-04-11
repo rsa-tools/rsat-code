@@ -412,19 +412,35 @@ package main;
       && (!$clone_input_flag) ) {
     $outfile{input_matrices} = $infile{matrices};
   } else {
-    ## Convert input matrices in transfac format
-    &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
-    my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
-    $convert_matrix_cmd .= " -i ".$infile{matrices};
-    $convert_matrix_cmd .= " -from ".$matrix_format;
-    $convert_matrix_cmd .= " -to transfac";
-    $convert_matrix_cmd .= " -top ".$max_matrices if ($max_matrices > 0);
-    $convert_matrix_cmd .= " -o ".$outfile{input_matrices};
-    &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+      ## Convert input matrices in transfac format
+      &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
+      my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+      $convert_matrix_cmd .= " -i ".$infile{matrices};
+      $convert_matrix_cmd .= " -from ".$matrix_format;
+      $convert_matrix_cmd .= " -to transfac";
+      $convert_matrix_cmd .= " -top ".$max_matrices if ($max_matrices > 0);
+      $convert_matrix_cmd .= " -o ".$outfile{input_matrices};
+      &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+      
+      &RSAT::util::CheckOutDir($main::outfile{prefix}."_data");
+      $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs.tf";
+      my $cp_input = "mv ".$main::outfile{prefix}."_input_motifs.tf ".$main::outfile{motif_file};
+      &doit($cp_input, 0, 1, $verbose, 0, "", $main::out, $main::err);
+      $outfile{input_matrices} = $main::outfile{motif_file};
+
+      ## Split matrices in separated files
+      &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
+      my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
+      $split_matrix_cmd .= " -i ".$outfile{input_matrices};
+      $split_matrix_cmd .= " -split";
+      $split_matrix_cmd .= " -from tf -to tf";
+      $split_matrix_cmd .= " -o ".$main::outfile{prefix}."_data/motif";
+      &doit($split_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
   }
 
-  # ## According to the task selected by the user, execute or skip
-  # ## some functions
+  ## According to the task selected by the user, execute or skip
+  ## some functions
   if ($selected_tasks{all}) {
 
       if ($quick_flag == 0) {
@@ -474,16 +490,9 @@ package main;
 
       } else {
 
-      # open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_1.txt") || die "Cannot create the test file 1: $!\n";
-      # print TEST "Dynamo\n";
-
 	  ################################################################
 	  ## Create the merged matrices and consensuses
 	  &Merge_matrices();
-
-      # open(TEST, ">".$main::outfile{prefix}."_TEST_FILE_2.txt") || die "Cannot create the test file 2: $!\n";
-      # print TEST "Bitterblossom\n";
-      # die "Bitterblossom\n";
 
 	  ##########################################
 	  ## Export the external motifs in a file
@@ -1099,18 +1108,6 @@ sub CompareMatricesQuick {
   $matrix_compa_verbose = &RSAT::stats::max(($main::verbose-1), 1);
   my $BIN=$ENV{RSAT}."/bin";
 
-  ## Jaime: I (JvH) chaned this to treat it at the beginning of the
-  ## script, irrespective of the algorithm (quick or slow) used for
-  ## comparing matrices.
-  # if ($args_to_pass =~ /(-top \d+)/) {
-  #     $args_to_pass = $1;
-  #     my $top = "convert-matrix ".$args_to_pass." -i ".$main::outfile{input_matrices}." -from ".$main::matrix_format." -to tf -o ".$main::outfile{prefix}."_matrices.tf"; 
-  #     &RSAT::util::one_command($top, 1,"");
-  #     $main::infile{matrices} = $main::outfile{prefix}."_matrices.tf";
-  # } else {
-  #     $args_to_pass = "";
-  # }
-
   ## Create the description table
   $cmd = $SCRIPTS."/compare-matrices -file ".$main::outfile{input_matrices}." -format transfac -return matrix_desc ".$args_to_pass." >".$main::outfile{prefix}."_desc.tab";
   &RSAT::util::one_command($cmd, 1, "");
@@ -1448,7 +1445,6 @@ sub Add_attributes_to_JSON() {
 	  $line = $_;
 	  
 	  # Add the consensus to the json file to be displayed in the tree
-#	  if ($line =~ /(\s*\"children\":\s*\[)/) {
 	  if ($line =~ /\"children\":/) {
 	      $children++;
 	      $Add = "";
@@ -1900,6 +1896,7 @@ sub Merge_matrices() {
 	    chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
 	} else {
 	    @folder_merged_matrices = ();
+	    die "Bitterblossom!!!\n";
 	}
 	
 	my %int_align_info = ();
@@ -2209,8 +2206,6 @@ sub Export_external_motifs() {
 		    if ($root_matrices_flag == 1) {
 			my $delete_key = $cluster."_".$folder;
 			$to_delete_folder{$delete_key} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder;
-			# $cmd = "rm -r ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder;
-			# &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		    }
 		}
 	    }
@@ -2751,7 +2746,7 @@ sub set_output_file_names {
 
   ## Converted matrices (required for compare-matrices-quick, and to
   ## restrict the number of matrices with option -max_matrices).
-  $main::outfile{input_matrices} = $main::outfile{prefix}."_input_matrices.tf"; push @outfiles, "input_matrices"; 
+  $main::outfile{input_matrices} = $main::outfile{prefix}."_input_motifs.tf"; push @outfiles, "input_matrices"; 
 
 
   ## Pairwise comparisons between matrices
@@ -2798,12 +2793,6 @@ sub set_output_file_names {
   ## Newick-formatted phylogram with motif consensuses
   if ($export_tree_format eq "newick") {
     $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";  
-  }
-
-  ## Clone input (only if the user selects this option)
-  if ($clone_input_flag == 1) {
-      &RSAT::util::CheckOutDir($main::outfile{prefix}."_data");
-      $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs.tf";
   }
 
   ## Root matrices file
