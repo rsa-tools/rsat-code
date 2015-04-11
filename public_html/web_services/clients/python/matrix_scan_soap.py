@@ -150,13 +150,8 @@ result = call_matrix_scan(rsat_service, arguments)
 
 ###########################################################'
 ## Display request results
-print '###############################################'
-print 'Command performed on server'
-print ''
-print result.command
-print ''
-print '###############################################'
-print 'Result'
-print ''
-print result.client
-
+print('\n; Command performed on server')
+print(result.command)
+print('\n; Printing the result')
+print(result.client)
+print("; Job done")
