@@ -31,17 +31,20 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 #MAMAZE=rsat@mamaze.ulb.ac.be:rsa-tools
 
 
-BIGRE=rsat@rsat.ulb.ac.Be:rsat/
+BIGRE=rsat@rsat.ulb.ac.be:rsat/
 WWWSUP=rsat@wwwsup.scmbb.ulb.ac.be:rsat/
 #MAMAZE=rsat@${MERLIN}:/rsat_servers/mamaze
 PEDAGOGIX=rsat@pedagogix-tagx.univ-mrs.fr:rsat/
+RSATIX=rsat@rsat-tagx.univ-mrs.fr:rsat/
+FLORESTA=rsat@floresta.eead.csic.es:rsat/
 
 #CCG=jvanheld@itzamna.ccg.unam.mx:rsa-tools
 CCG=rsat@itzamna.ccg.unam.mx:rsa-tools
 TAGC=jvanheld@pedagogix-tagc.univ-mrs.fr:rsa-tools
 UPPSALA=jvanheld@bongcam1.hgen.slu.se:rsa-tools
 PRETORIA=jvanheld@anjie.bi.up.ac.za:.
-LOG_SERVERS=${BIGRE}  ${WWWSUP}  ${CCG} ${UPPSALA} ${PRETORIA} ${PEDAGOGIX}
+LOG_SERVERS=${PEDAGOGIX} ${RSATIX} ${FLORESTA} ${BIGRE}  ${WWWSUP} 
+## ${CCG} ${UPPSALA} ${PRETORIA} 
 
 ################################################################
 ## OLD SERVERS, NOT MAINTAINED ANYMORE
