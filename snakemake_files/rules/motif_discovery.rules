@@ -11,6 +11,10 @@
 #INPUT_DIR="public_html/demo_files"
 #SEQ_PREFIX="MET_up800-noorf"
 
+import os
+
+workdir: os.getcwd()
+
 ## Path to input sequence
 #INPUT_SEQ = expand('{input_dir}/{seq_prefix}.fasta', input_dir=INPUT_DIR, seq_prefix=SEQ_PREFIX)
 OUTPUT_DIR="test/motif_disco"
