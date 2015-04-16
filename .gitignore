@@ -74,3 +74,4 @@ public_html/web_services/clients/perl_clients/RSATWS
 makefile
 public_html/data/ceas/
 data
+.snakemake
