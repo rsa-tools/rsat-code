@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-##!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 #===============================================================================
@@ -1274,8 +1273,8 @@ if __name__=='__main__':
 		filehandle = sys.stdout
 	
 	# writing the complete command with all arguments
-	
-	filehandle.write("; python3 crer_scan.py -i %s " % args.infile)
+	filehandle.write("; python%d.%d crer_scan.py" % sys.version_info[0:2])
+	filehandle.write("; -i %s " % args.infile)
 	filehandle.write("-in_format %s " % args.format)
 	if outfile:
 		filehandle.write("-o %s " % args.outfile)
