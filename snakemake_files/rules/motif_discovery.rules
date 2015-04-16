@@ -5,6 +5,10 @@
 ## programs and cluster the discovered motifs.
 
 
+## COMMAND TO RUN THIS ON A CLUSTER:
+## snakemake --forceall -s snakemake_files/rules/motif_discovery.rules all -c 'qsub -V' -j  --jobname 'myjobname_{rulename}.{jobid}.sh' --stats execution_stats.txt
+
+
 #V=2
 
 ## Specific parameters for this analysis
