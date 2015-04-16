@@ -1120,11 +1120,17 @@ _compile_samtools:
 ## Install  SRA toolkit
 SRA_OS=mac64
 SRA_BASE_DIR=${SRC_DIR}/sra
-SRA_VERSION=2.1.10
-SRA_ARCHIVE=sratoolkit.${RSA_VERSION}-${SRA_OS}.tar.gz
-SRA_URL=ftp-private.ncbi.nlm.nih.gov/sra/sdk/${RSA_VERSION}/${SRA_ARCHIVE}
+SRA_VERSION=2.4.5-2
+SRA_ARCHIVE=sratoolkit.${SRA_VERSION}-${SRA_OS}.tar.gz
+SRA_URL=ftp://ftp-private.ncbi.nlm.nih.gov/sra/sdk/${SRA_VERSION}/${SRA_ARCHIVE}
 SRA_DISTRIB_DIR=${SRA_BASE_DIR}/sra-${SRA_VERSION}
-install_sra: _download_sra _compile_sra 
+install_sra: _download_sra_${OS} _compile_sra 
+
+_download_sra_macosx:
+	${MAKE} _download_sra SRA_OS=mac64
+
+_download_sra_linux:
+	${MAKE} _download_sra SRA_OS=ubuntu64
 
 _download_sra:
 	@echo
