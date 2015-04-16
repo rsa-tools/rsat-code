@@ -1118,13 +1118,13 @@ _compile_samtools:
 
 ################################################################
 ## Install  SRA toolkit
-SRA_OS=mac64
+SRA_OS=ubuntu64
 SRA_BASE_DIR=${SRC_DIR}/sra
 SRA_VERSION=2.4.5-2
 SRA_ARCHIVE=sratoolkit.${SRA_VERSION}-${SRA_OS}.tar.gz
 SRA_URL=ftp://ftp-private.ncbi.nlm.nih.gov/sra/sdk/${SRA_VERSION}/${SRA_ARCHIVE}
-SRA_DISTRIB_DIR=${SRA_BASE_DIR}/sra-${SRA_VERSION}
-install_sra: _download_sra_${OS} _compile_sra 
+SRA_DISTRIB_DIR=${SRA_BASE_DIR}/sratoolkit.${SRA_VERSION}-${SRA_OS}
+install_sra: _download_sra_${OS} _install_sra_${OS}
 
 _download_sra_macosx:
 	${MAKE} _download_sra SRA_OS=mac64
@@ -1138,13 +1138,19 @@ _download_sra:
 	@mkdir -p ${SRA_BASE_DIR}
 	wget -nd  --directory-prefix ${SRA_BASE_DIR} -rNL ${SRA_URL}
 
-_compile_sra:
+_install_sra_macosx:
+	${MAKE} _install_sra SRA_OS=mac64
+
+_install_sra_linux:
+	${MAKE} _install_sra SRA_OS=ubuntu64
+
+_install_sra:
 	@echo
 	@echo "Installing SRA in dir	${SRA_DISTRIB_DIR}"
-	(cd ${SRA_BASE_DIR}; tar --bzip2 -xpf ${SRA_ARCHIVE})
+	(cd ${SRA_BASE_DIR}; tar -xpzf ${SRA_ARCHIVE})
 	@echo ${SRA_DISTRIB_DIR}
-	(cd ${SRA_DISTRIB_DIR}; make)
-	${SUDO} find  ${SRA_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
+	(cd ${RSAT}/bin; ln -s ${SRA_DISTRIB_DIR}/bin/* . )
+#	${SUDO} find  ${SRA_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
 
 ################################################################
 ## Install  SWEMBL
