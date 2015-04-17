@@ -882,6 +882,25 @@ __compile_peaksplitter:
 	(cd ${PEAKSPLITTER_DISTRIB_DIR}; ${SUDO} rsync -ruptvl -e ssh PeakSplitter_${OS}/PeakSplitter ${RSAT_BIN}/)
 
 ################################################################
+## sickle
+SICKLE_BASE_DIR=${SRC_DIR}/sickle
+SICKLE_URL=https://github.com/ucdavis-bioinformatics/sickle.git
+SICKLE_DISTRIB_DIR=${SICKLE_BASE_DIR}/SICKLE_V${SICKLE_VERSION}
+install_sickle: _clone_sickle _compile_sicle
+
+_clone_sickle:
+	@if [ -d ${SICKLE_BASE_DIR} ] ; \
+		then echo "Updating sickle"; \
+		(cd ${SICKLE_BASE_DIR}; git pull) \
+	else \
+		echo "Cloning sickle" ; \
+		(cd ${SRC_DIR}; git clone ${SICKLE_URL}) \
+	fi
+
+_compile_sickle:
+		(cd ${SICKLE_BASE_DIR}; make clean; make; rsync -ruptvl sickle ${RSAT_BIN})
+
+################################################################
 ## FindPeaks
 FINDPEAKS_VERSION=3-1-9-2
 FINDPEAKS_VERSION_DIR=3.1.9.2
