@@ -49,22 +49,20 @@ local $input_format=lc($query->param('matrix_format'));
 ## Get motif set or input file to scan variants
 
 ## MatrixDB selected 
-my ($mat_db_params, @selected_db) = &GetMatrixDBfromBox();
+my ($mat_db_params, @selected_db) = &GetMatrixDBchoice("mode"=>"radio");
 if (scalar(@selected_db) > 0) {
-    $mat_db_params=~s/-file2 //;
-    $mat_db_params=~s/-format2.+//;
-
+  $mat_db_params=~s/-file2 //;
+  $mat_db_params=~s/-format2.+//;  
   $parameters .= " -m ".$mat_db_params;
   $parameters .= " -m_format  transfac ";
-
-}else{
-## This should work but for some reason it does not AMR
-#elsif($query->param('custom_motif_db')) {
-    my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_manualinput.tf";
-    local $matrix_file =&GetMatrixFile($persomotif_file);
-    $parameters .= " -m $matrix_file";
-    $parameters .= " -m_format  $input_format ";
-
+  
+} else {
+  ## This should work but for some reason it does not AMR
+  #elsif($query->param('custom_motif_db')) {
+  my $persomotif_file = $tmp_file_path."variation-scan_sequence_custom_motif_manualinput.tf";
+  local $matrix_file =&GetMatrixFile($persomotif_file);
+  $parameters .= " -m $matrix_file";
+  $parameters .= " -m_format  $input_format ";
 }
 
 

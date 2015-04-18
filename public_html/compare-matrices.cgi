@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
-############################################ imports
-### redirect error log to a file
+############################################ 
+## Import lib pat
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
@@ -92,7 +92,7 @@ if (&IsReal($query->param('bg_pseudo'))) {
 }
 
 ################################################################
-## Reference motifs
+## Motif database
 if ($query->param('db_choice') eq "custom") {
   ## Upload custom reference motif file
   local $custom_motif_file = $output_dir."custom_motif_file.txt";
@@ -108,13 +108,13 @@ if ($query->param('db_choice') eq "custom") {
       print CUSTOM_MOTIF_FILE;
     }
     close CUSTOM_MOTIF_FILE;
-    $parameters .= " -file2 $custom_motif_file";
+    $parameters .= " -file2 ".$custom_motif_file;
     $parameters .= " -format2 transfac";
   } else {
     &RSAT::error::FatalError("You did not specify the custom matrix file (for this, you need to click on the Browse button)");
   }
 } else {
-  my ($mat_db_params, @selected_db) = &GetMatrixDBfromBox();
+  my ($mat_db_params, @selected_db) = &GetMatrixDBchoice("mode"=>"radio");
   if (scalar(@selected_db) > 0) {
     $parameters .= $mat_db_params;
   }
