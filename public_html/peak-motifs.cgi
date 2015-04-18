@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
-############################################ imports
-### redirect error log to a file
+############################################
+## Import lib pat
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
@@ -196,7 +196,7 @@ if ($query->param('origin')) {
 
 ################################################################
 ## Compare discovered motifs with motif databases
-my ($mat_db_params, @selected_db) = &GetMatrixDBfromBox();
+my ($mat_db_params, @selected_db) = &GetMatrixDBchoice("mode"=>"checkbox");
 if (scalar(@selected_db) > 0) {
   $parameters .= $mat_db_params;
   push(@tasks, "motifs_vs_db");
