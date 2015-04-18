@@ -510,8 +510,8 @@ sub Panel4 {
 #  print "<a href=''><b>Choose below the motif database(s):</b></a><br/>";
   print "<a href=''><b>Compare discovered motifs with known motifs from databases</b></a><br/>";
 
-  ## load the various databases that can be compared against
-  &MatrixDBcheckBox("choice_mode"=>"checkbox");
+  ## Display supported motif databases
+  &DisplayMatrixDBchoice("mode"=>"checkbox");
 
   print "<p/> ";
   print "<a href=''><b>Add your own motif database:</b></a><br/>";

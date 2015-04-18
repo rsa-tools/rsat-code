@@ -255,7 +255,7 @@ sub Panel1 {
   ## load the various databases that can be compared against
   print "<p/>";
   print "<b>Select one motif collection</b></p>";
-  &MatrixDBcheckBox("choice_mode"=>"radiobox");
+  &DisplayMatrixDBchoice("mode"=>"radio");
   print "<p/> ";
 
  
