@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-motif-databases,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
+# $Id: supported-motif-databases,v 1.00 2015/04/18 jvanheld Exp $
 #
 ############################################################
 
@@ -74,7 +74,7 @@ package main;
   ################################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  our $program_version = do { my @r = (q$Revision: 1.00 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   our %infile = ();
@@ -84,7 +84,7 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  our @supported_out_fields = qw(name format file descr version);
+  our @supported_out_fields = qw(name format file descr version url);
   our %supported_out_field = ();
   foreach my $field (@supported_out_fields) {
     $supported_out_field{$field} = 1;
@@ -245,7 +245,7 @@ allows to use the command within a pipe.
 Field to return. Several fields can specified, separated by commas.
 The option can also be used iteratively to specify multiple fields.
 
-Supported output fields: name, format, file, descr, version. 
+Supported output fields: name, format, file, descr, version, url.
 
 Examples: 
 
@@ -255,6 +255,7 @@ supported-motif-databases -return name,version
     } elsif ($arg eq "-return") {
       my @fields = split(",", shift(@arguments));
       foreach my $field (@fields) {
+	$field = lc($field);
 	&RSAT::error::FatalError($field, "Invalid output field. Supported: ".$supported_out_fields) unless ($supported_out_field{$field});
 	push @selected_out_fields, $field;
       }

@@ -90,7 +90,7 @@ print "<hr>";
 print "<hr>";
 
 ################################################################
-## Database comparison
+## Supported databases
 &DatabaseChoice();
 print "<hr>";
 
@@ -178,7 +178,7 @@ sub DatabaseChoice {
   print "<p/> ";
 
   ## load the various databases that can be compared against
-  &MatrixDBcheckBox("choice_mode"=>"radiobox");
+  &DisplayMatrixDBchoice("mode"=>"radio");
 
   print ("<INPUT TYPE='radio' NAME='db_choice' VALUE='custom'>");
   print "Custom motif collection (in TRANSFAC format *)\n";
