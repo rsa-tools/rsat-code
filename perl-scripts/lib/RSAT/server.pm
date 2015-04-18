@@ -759,6 +759,43 @@ sub MessageToAdmin {
 }
 
 
+=pod
+
+=item supported_motif_databases()
+
+Returns a hash table with the specification of motif databases on the
+current RSAT instance.
+
+Usage: 
+ my %matrix_db = &RSAT::server::supported_motif_databases();
+
+=cut
+sub supported_motif_databases {
+  our %matrix_db = ();
+  
+  ## Load the file containing the path to the databases
+  my $mat_db = $ENV{RSAT}."/public_html/motif_databases/db_matrix_files.tab" ;
+  unless (-e $mat_db) {
+    &RSAT::message::Warning( "Motif database description file not found ($mat_db)");
+    return;
+  }
+  open MAT_DB, "<$mat_db" or &RSAT::message::Warning( "Cannot read motif database description file file ($mat_db)");;
+  while (my $line = <MAT_DB>) {
+    chomp($line);
+    next if ($line =~ /^;/); ## Skip comment lines
+    next if ($line =~ /^#/); ## Skip header line
+    next unless ($line =~ /\S/); ## Skip empty lines
+    my ($db_name, $format, $file, $descr, $version, $url) = split (/\t/,$line);
+    $matrix_db{$db_name}->{'name'} = $db_name;
+    $matrix_db{$db_name}->{'format'} = $format || "";
+    $matrix_db{$db_name}->{'file'} = $file;
+    $matrix_db{$db_name}->{'descr'} = $descr || $db_name;
+    $matrix_db{$db_name}->{'version'} = $version || "";
+    $matrix_db{$db_name}->{'url'} = $url || "";
+  }
+
+  return %matrix_db;
+}
 
 ################################################################
 ## The initialization is performed in the main scope, because this si
