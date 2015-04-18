@@ -37,7 +37,7 @@ dpkg-reconfigure tzdata
 export INSTALLER=apt-get
 export INSTALLER_OPT="--quiet --assume-yes"
 ## alternative: INSTALLER=aptitude
-export INSTALL_ROOT_DIR=/RSAT/
+export INSTALL_ROOT_DIR=/bio
 export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 #export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
 #export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
