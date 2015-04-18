@@ -295,7 +295,7 @@ python2_modules_install:
 		${SUDO} pip install $${module}; \
 	done
 
-PYTHON3_MODULES=numpy scipy snakemake
+PYTHON3_MODULES=numpy scipy snakemake docutils
 PYTHON3_NONSUPPORTED= soappy
 python3_modules_list:
 	@echo "Modules to install for Python 3"
