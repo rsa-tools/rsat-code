@@ -4268,9 +4268,6 @@ sub pre_process_motif_files{
 	    && ($matrix_nb_ok)
 	    && (!$clone_input_flag) ) {
 	    $cmd = "cp ".$motif_set_attributes{$title}{matrix_file_input}." ".$motif_collection_name;
-
-	    print "\n\n--- ".$cmd." ---\n\n";
-
 	    &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 	} else {
 	    
@@ -4296,6 +4293,35 @@ sub pre_process_motif_files{
     }
     close $main::infile{matrices_info_tab};
 
+
+    ## Assign an unique ID to each motif in the input file
+    ## The ID is compossed by: the motif ID + title
+    foreach my $t (keys %motif_set_attributes){
+
+	@matrices = &RSAT::MatrixReader::readFromFile($motif_set_attributes{$t}{matrix_file_processed}, $motif_set_attributes{$t}{matrix_format});
+	
+	foreach my $matrix (@matrices) {
+	    
+	    ## Get accesion number
+	    my $AC = $matrix->get_attribute("accession");
+	    
+	    ## Create the unique AC
+	    my $AC_unique = join("_", $AC, $t);
+
+	    ## Change the parameters
+	    $matrix->force_attribute("accession", $AC_unique);
+	    $matrix->force_attribute("AC", $AC_unique);
+
+	    ## 
+	    print $matrix->toString(sep=>"\t",
+				type=>"counts",
+				format=>"transfac",
+			       );
+	    #print "\n".$matrix."\n";
+	}
+    }
+
+
     ## Concatenate all the processed input file in a single one
     ## Rename the motif files
     $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs.tf";
@@ -4313,20 +4339,6 @@ sub pre_process_motif_files{
     }
     $main::outfile{input_matrices} = $main::outfile{motif_file};
 
-    ## Assign an unique ID to each motif in the input file
-    ## The ID is compossed by: the motif ID + title
-    foreach my $t (keys %motif_set_attributes){
-	@matrices = &RSAT::MatrixReader::readFromFile($motif_set_attributes{$t}{matrix_file_processed}, $matrix_format);
-	
-	foreach my $matrix (@matrices) {
-	    
-	    ## Get accesion number
-	    my $AC = $matrix->get_attribute("accession");
-	    
-	    ## Create the unique AC
-	    my $AC_unique = join("_", $AC, "perm".$i);
-	    $matrix->force_attribute("AC", $AC_perm);
-	}
-    }
+
 }
 __END__
