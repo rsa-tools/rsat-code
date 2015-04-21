@@ -131,7 +131,7 @@ if(number.of.motifs > 1){
       write(newick.tree, file=newick.file)
       rm(newick.tree, newick.file)
     }
-    
+
     #######################################
     ### Creates and export the json file
     JSON.tree <- convert.hclust.to.JSON(tree)
@@ -174,7 +174,7 @@ if(number.of.motifs > 1){
   ######################
   ## Draw the heatmap
   if(only.hclust == 0){
-    
+
    if(draw.heatmap == 1){
 
       for (plot.format in c("pdf", "jpg")) {
@@ -192,8 +192,8 @@ if(number.of.motifs > 1){
         dev.off()
       }
     }
-   
-    
+
+
     ########################################
     ## Define the label color of the tree
     ## according to the cluster
@@ -217,7 +217,7 @@ if(number.of.motifs > 1){
       } else if (plot.format == "png") {
         png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
       }
-  
+
       par(mar=c(3,2,1,mar4),family="mono")
       plot(tree.dendro, horiz=TRUE, main=paste("Tree of aligned consensuses; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
       dev.off()
@@ -306,13 +306,13 @@ i <- sapply(1:length(clusters), function(nb){
                  json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
                  verbose(paste("JSON tree file", json.file), 2)
                  writeLines(JSON.single.node, con=json.file)
-                 
+
                  ## For consistency, print the empty file
                  ## It will be erased later
                  JSON.empty <- ";Empty_file\n"
                  JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
                  write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
-                 
+
                  ## For consistency, Create the folder with the merged consensuses
                  dir.create(paste(cluster.folder, "/merged_consensuses", sep = ""), recursive = TRUE, showWarnings = FALSE)
                  flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
@@ -356,7 +356,7 @@ i <- sapply(1:length(clusters), function(nb){
                tree <<- hclust.motifs(dist.matrix, hclust.method = hclust.method)
 
                if(only.hclust == 0){
-                 
+
                   ## Creates and export the json file
                   JSON.tree <- convert.hclust.to.JSON(tree)
                   json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
@@ -429,14 +429,9 @@ for(name in forest.names){
 }
 alignment.table$cluster <- forest.id
 
-## Produce the column Collection
-col.size <- dim(global.description.table)[1]
-title.col <- rep(title, times = col.size)
-alignment.table$collection <- title.col
-
 ##  Re-order the table and export it
-alignment.table <- alignment.table[,c(8, 7, 10, 11, 2:4, 9, 5:6)]
-colnames(alignment.table) <- c("#id", "name", "cluster", "collection", "strand", "offset_up", "offset_down", "width", "aligned_consensus", "aligned_consensus_rc")
+alignment.table <- alignment.table[,c(8, 7, 10, 2:4, 9, 5:6)]
+colnames(alignment.table) <- c("#id", "name", "cluster", "strand", "offset_up", "offset_down", "width", "aligned_consensus", "aligned_consensus_rc")
 
 alignment.file <- paste(sep = "", out.prefix, "_tables/alignment_table.tab")
 write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, row.names = FALSE)
