@@ -256,7 +256,6 @@ package main;
 
 
   ## Matrices
-  # local @matrices = ();
   local @matrices_total = ();
   local $draw_heatmap = 0;
 
@@ -314,6 +313,8 @@ package main;
 
   ## Hashes used in the pre-process of the motifs
   local %motif_set_attributes = ();
+  local %motifs_ID_unique = ();
+  local $longest_title = 0;
 
   ## A hash to save the name of the clusters and their corresponding hexa code
   local %hexa_code = ();
@@ -1244,7 +1245,6 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; description.file = '".$main::outfile{matrix_descriptions}."'";
     $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
-    $cluster_motifs_cmd .= "; title = '".$main::param{title}."'";
     $cluster_motifs_cmd .= "; labels = ".$arg_labels;
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
@@ -1539,6 +1539,7 @@ sub Add_attributes_to_JSON() {
 		  }
 	      }
 	      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
+	      $Add_this .= ",\n \"title\" : \"".$motifs_ID_unique{$M1}."\"";
 	      $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
 	  }
 	  push(@Parsed_JSON, $line."\n");
@@ -1609,11 +1610,10 @@ sub create_html_tree_file() {
 		.attr(\"dy\", function(d) { return d.children ? -6 : 0; })
 		.attr(\"fill\", function(d) { return d.children ? \"blue\" : \"\"; })
 		.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
-
-    
+ 
     my $display_title_lab .= '
         node.append("text")
-	.text(function(d) { return d.children ? "" : "'.$main::param{title}.'"; })
+	.text(function(d) { return d.children ? "" : d.title; })
 	.attr("x", function(d) { return d.children ? 0 : 20; })
 	.attr("dy", function(d) { return d.children ? 0 : 27; })
         .attr("fill", "blue")
@@ -1803,10 +1803,10 @@ sub Add_empty_columns_to_logos() {
     $split_line[0] =~ s/\s+//g;
     ## Store the ID, strand and offset of each aligned motif
     $alignment_info{$split_line[0]}{name} =  $split_line[1];
-    $alignment_info{$split_line[0]}{strand} =  $split_line[4];
-    $alignment_info{$split_line[0]}{offset_left} =  $split_line[5];
-    $alignment_info{$split_line[0]}{offset_right} =  $split_line[6];
-    $alignment_info{$split_line[0]}{width} = $split_line[7];    
+    $alignment_info{$split_line[0]}{strand} =  $split_line[3];
+    $alignment_info{$split_line[0]}{offset_left} =  $split_line[4];
+    $alignment_info{$split_line[0]}{offset_right} =  $split_line[5];
+    $alignment_info{$split_line[0]}{width} = $split_line[6];    
   }
   close(ALIGNMENT_TABLE);
 
@@ -3446,13 +3446,13 @@ sub ReadAlignmentTable {
 	$id = $split_line[0];
 	$cluster_id = $split_line[2];
 	$alignment_table_data{$cluster_id}{$id}{name} = $split_line[1];
-	$alignment_table_data{$cluster_id}{$id}{collection} = $split_line[3];
-	$alignment_table_data{$cluster_id}{$id}{strand} = $split_line[4];
-	$alignment_table_data{$cluster_id}{$id}{offset_up} = $split_line[5];
-	$alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[6];
-	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[7];
-	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[8];
-	$alignment_table_data{$cluster_id}{$id}{consensus_rc} = $split_line[9];
+	$alignment_table_data{$cluster_id}{$id}{collection} = $motifs_ID_unique{$id};	
+	$alignment_table_data{$cluster_id}{$id}{strand} = $split_line[3];
+	$alignment_table_data{$cluster_id}{$id}{offset_up} = $split_line[4];
+	$alignment_table_data{$cluster_id}{$id}{offset_down} = $split_line[5];
+	$alignment_table_data{$cluster_id}{$id}{width} = $split_line[6];
+	$alignment_table_data{$cluster_id}{$id}{consensus} = $split_line[7];
+	$alignment_table_data{$cluster_id}{$id}{consensus_rc} = $split_line[8];
 
 	my $link_logo_d = $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
 	my $link_logo_r = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
@@ -3465,8 +3465,8 @@ sub ReadAlignmentTable {
 	    $nb_char = length($split_line[1]);
 	    $alignment_size{$cluster_id}{nb_char} = $nb_char;
 	} if ($display_title_flag == 1) {
-	    if (length($main::param{title}) >= $nb_char) {
-		$nb_char = length($main::param{title});
+	    if ($longest_title >= $nb_char) {
+		$nb_char = $longest_title;
 	    }
 	}
 
@@ -3817,7 +3817,7 @@ sub InsertTreesAndBranchMotifs {
     if ($display_title_flag == 1) {
 	$label_single_tree .= '
         node.append("text")
-	.text(function(d) { return d.children ? "" : "'.$main::param{title}.'"; })
+	.text(function(d) { return d.children ? "" : d.title; })
 	.attr("x", function(d) { return d.children ? 0 : 20; })
 	.attr("dy", function(d) { return d.children ? 0 : 15; })
 	.attr("font-size", "8px")
@@ -4217,7 +4217,13 @@ sub pre_process_motif_files{
 	next if (/^;/); ## Skip comment lines
 	next unless (/\S/); ## Skip empty lines
 	chomp;
+
 	my ($matrix_file, $matrix_format, $title) = split ("\t");
+	$title =~ s/\s+/_/g;
+
+	if(length($title) > $longest_title){
+	    $longest_title = length($title);
+	}
 
 	## The titles must be uniques or the program ends
 	if(!exists($motif_set_attributes{$title}{title})){
@@ -4226,6 +4232,9 @@ sub pre_process_motif_files{
 	    $motif_set_attributes{$title}{title} = $title; 
 	    $motif_set_attributes{$title}{matrix_format} = $matrix_format; 
 	    $motif_set_attributes{$title}{matrix_file_input} = $matrix_file; 
+	    
+	    ## This variable (previously optional now mandatory to display the title in the trees)
+	    $display_title_flag = 1;
 	}else{
 	    &RSAT::error::FatalError($motif_set_attributes{$title}{title}, " repeated. The title of each motif file must be unique.");
 	}
@@ -4257,8 +4266,9 @@ sub pre_process_motif_files{
 
 	## Set the name of the input motif file
 	&RSAT::util::CheckOutDir($main::outfile{prefix}."_data");
-	$motif_collection_name = $main::outfile{prefix}."_data/".$title."_input_motifs.tf";
-	$motif_set_attributes{$title}{matrix_file_processed} = $motif_collection_name;
+	$motif_collection_name = $main::outfile{prefix}."_data/".$title."_input_motifs_halfway.tf";
+	$motif_set_attributes{$title}{matrix_file_halfway} = $motif_collection_name;
+	$motif_set_attributes{$title}{matrix_file_processed} = $main::outfile{prefix}."_data/input_motifs_processed.tf";;
 
 	## Check if matrix conversion is required.  Can be required for various reasons:
 	## 1) input format differs from transfac, 
@@ -4293,12 +4303,18 @@ sub pre_process_motif_files{
     }
     close $main::infile{matrices_info_tab};
 
-
+   
+    #########################################################
     ## Assign an unique ID to each motif in the input file
     ## The ID is compossed by: the motif ID + title
+    ## Create a new file with the new ID
+
     foreach my $t (keys %motif_set_attributes){
 
-	@matrices = &RSAT::MatrixReader::readFromFile($motif_set_attributes{$t}{matrix_file_processed}, $motif_set_attributes{$t}{matrix_format});
+	## Create the file with the processed matrices
+	my $processed_matrix_output = &OpenOutputFile($motif_set_attributes{$t}{matrix_file_processed});
+	
+	@matrices = &RSAT::MatrixReader::readFromFile($motif_set_attributes{$t}{matrix_file_halfway}, $motif_set_attributes{$t}{matrix_format});
 	
 	foreach my $matrix (@matrices) {
 	    
@@ -4308,23 +4324,27 @@ sub pre_process_motif_files{
 	    ## Create the unique AC
 	    my $AC_unique = join("_", $AC, $t);
 
+	    ## Save the unique ID in a hash table
+	    ## Key = ID unique
+	    ## Value = title (motif collection)
+	    $motifs_ID_unique{$AC_unique} = $t;
+	    
 	    ## Change the parameters
 	    $matrix->force_attribute("accession", $AC_unique);
 	    $matrix->force_attribute("AC", $AC_unique);
-
-	    ## 
-	    print $matrix->toString(sep=>"\t",
-				type=>"counts",
-				format=>"transfac",
+	    
+	    ## Print the processed matrix in the new file
+	    print $processed_matrix_output $matrix->toString(sep=>"\t",
+							     type=>"counts",
+							     format=>"transfac",
 			       );
-	    #print "\n".$matrix."\n";
 	}
+        close $processed_matrix_output;
     }
-
 
     ## Concatenate all the processed input file in a single one
     ## Rename the motif files
-    $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs.tf";
+    $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs_processed.tf";
     if(scalar(keys(%motif_set_attributes)) > 1){
 	my $concatenate_processed_files_cmd = "cat ";
 	foreach my $t (keys %motif_set_attributes){
@@ -4332,13 +4352,10 @@ sub pre_process_motif_files{
 	}
 	$concatenate_processed_files_cmd .= " >".$main::outfile{motif_file};
 	&doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-    }else{
-
-	$cmd = "mv ".$motif_collection_name." ".$main::outfile{motif_file};
-	&doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     }
     $main::outfile{input_matrices} = $main::outfile{motif_file};
-
-
 }
+
+## /home/jcastro/rsat/public_html/demo_files/peak-motifs_Sox2_matrices.tf
+
 __END__
