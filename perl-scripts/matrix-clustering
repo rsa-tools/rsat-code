@@ -4205,10 +4205,10 @@ sub shave_matrix_low_IC_columns{
 ## unique IDs and concatenate the input motifs from 
 ## different collections (file) in a single one. 
 sub pre_process_motif_files{
-
+    
     ## Count the number of motif sets
     my $motif_set_counter = 0;
-
+    
     ## Parse compare-matrix result file to read score columns
     my ($info_tab_matrices) = &OpenInputFile($main::infile{matrices_info_tab});
     while (<$info_tab_matrices>) { 
@@ -4217,17 +4217,17 @@ sub pre_process_motif_files{
 	next if (/^;/); ## Skip comment lines
 	next unless (/\S/); ## Skip empty lines
 	chomp;
-
+	
 	my ($matrix_file, $matrix_format, $title) = split ("\t");
 	$title =~ s/\s+/_/g;
-
+	
 	if(length($title) > $longest_title){
 	    $longest_title = length($title);
 	}
-
+	
 	## The titles must be uniques or the program ends
 	if(!exists($motif_set_attributes{$title}{title})){
-
+	    
 	    ## Set the values of the title, file and format in a hash table
 	    $motif_set_attributes{$title}{title} = $title; 
 	    $motif_set_attributes{$title}{matrix_format} = $matrix_format; 
@@ -4238,8 +4238,8 @@ sub pre_process_motif_files{
 	}else{
 	    &RSAT::error::FatalError($motif_set_attributes{$title}{title}, " repeated. The title of each motif file must be unique.");
 	}
-
-
+	
+	
 	## Check the matrix format on each line of the file
 	unless($supported_matrix_format{$matrix_format}){
 	    &RSAT::error::FatalError($motif_set_attributes{$title}{matrix_format}, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
@@ -4263,12 +4263,12 @@ sub pre_process_motif_files{
 	    }
 	    @matrices_total = @matrices_total[1..$max_matrices];
 	}
-
+	
 	## Set the name of the input motif file
 	&RSAT::util::CheckOutDir($main::outfile{prefix}."_data");
-	$motif_collection_name = $main::outfile{prefix}."_data/".$title."_input_motifs_halfway.tf";
-	$motif_set_attributes{$title}{matrix_file_halfway} = $motif_collection_name;
-	$motif_set_attributes{$title}{matrix_file_processed} = $main::outfile{prefix}."_data/input_motifs_processed.tf";;
+	$motif_set_attributes{$title}{matrix_file_halfway} = $main::outfile{prefix}."_data/".$title."_input_motifs_halfway.tf";
+	$motif_set_attributes{$title}{matrix_file_processed} = $main::outfile{prefix}."_data/".$title."_input_motifs_processed.tf";
+	$motif_collection_name = $motif_set_attributes{$title}{matrix_file_halfway};
 
 	## Check if matrix conversion is required.  Can be required for various reasons:
 	## 1) input format differs from transfac, 
@@ -4290,7 +4290,7 @@ sub pre_process_motif_files{
 	    $convert_matrix_cmd .= " -top ".$max_matrices if ($max_matrices > 0);
 	    $convert_matrix_cmd .= " -o ".$motif_collection_name;
 	    &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-
+	    
 	    ## Split matrices in separated files
 	    &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
 	    my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
@@ -4302,13 +4302,13 @@ sub pre_process_motif_files{
 	}	
     }
     close $main::infile{matrices_info_tab};
-
-   
+    
+    
     #########################################################
     ## Assign an unique ID to each motif in the input file
     ## The ID is compossed by: the motif ID + title
     ## Create a new file with the new ID
-
+    
     foreach my $t (keys %motif_set_attributes){
 
 	## Create the file with the processed matrices
@@ -4323,7 +4323,7 @@ sub pre_process_motif_files{
 	    
 	    ## Create the unique AC
 	    my $AC_unique = join("_", $AC, $t);
-
+	    
 	    ## Save the unique ID in a hash table
 	    ## Key = ID unique
 	    ## Value = title (motif collection)
@@ -4345,17 +4345,18 @@ sub pre_process_motif_files{
     ## Concatenate all the processed input file in a single one
     ## Rename the motif files
     $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs_processed.tf";
-    if(scalar(keys(%motif_set_attributes)) > 1){
-	my $concatenate_processed_files_cmd = "cat ";
-	foreach my $t (keys %motif_set_attributes){
-	    $concatenate_processed_files_cmd .=  $motif_set_attributes{$t}{matrix_file_processed}.",";
-	}
-	$concatenate_processed_files_cmd .= " >".$main::outfile{motif_file};
-	&doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    my $concatenate_processed_files_cmd = "cat ";
+    my $set_size = scalar(keys %motif_set_attributes);
+    my $set_counter = 0;
+    foreach my $t (keys %motif_set_attributes){
+       $set_counter++;
+       $concatenate_processed_files_cmd .=  $motif_set_attributes{$t}{matrix_file_processed}." ";
     }
+    $concatenate_processed_files_cmd .= " > ".$main::outfile{motif_file};
+
+print "\n\n Command: $concatenate_processed_files_cmd\n\n";
+
+    &doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err); 
     $main::outfile{input_matrices} = $main::outfile{motif_file};
 }
-
-## /home/jcastro/rsat/public_html/demo_files/peak-motifs_Sox2_matrices.tf
-
 __END__
