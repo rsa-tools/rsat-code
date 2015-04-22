@@ -74,7 +74,7 @@ command_queue_print_job:
 	chmod u+x ${JOB_DIR}/${JOB}.sh
 
 ## Send a jobs to a cluster using the torque quee management system
-QSUB_CMD_TORQUE=qsub -m a -q ${CLUSTER_QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}.sh
+QSUB_CMD_TORQUE=qsub -V -m a -q ${CLUSTER_QUEUE} -N $${job} -d ${PWD} -o ${JOB_DIR}/$${job}.log -e ${JOB_DIR}/$${job}.err ${QSUB_OPTIONS} ${JOB_DIR}/$${job}.sh
 command_queue_torque:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do	\
