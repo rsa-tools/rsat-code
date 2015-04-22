@@ -23,7 +23,7 @@ $main::create_index = 1; ## The index is now (from 2010/11/29) always created. S
 %main::infile = ();		## input files
 %main::outfile = ();		## output files
 %main::dir = ();		## output directories
-$dir{output_root} = "footprints"; ## Default root output directory. Can be changed with the optiojn -o
+$dir{output_root} = "footprints"; ## Default root output directory. Can be changed with the option -o
 
 
 ################################################################
