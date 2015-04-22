@@ -444,20 +444,20 @@ sub DefineAcceptedFeatureTypes {
 
 Read annotations for the current organism.
 
-Usage: &LoadFeatures($annotation_table, $feature_types)
+Usage: &LoadFeatures($annotation_table, $imp_pos, $check_type)
 
 @param $annotation_table  name of the file containing the annotations
 @param $feature_types
 @param $imp_pos accept to load imperfectly specified positions
+@param $check_type   check each feature type. Attention: this does not work with the new parsing results from EnsemblGenomes.
 
 The features are embedded in the organism object, and indexed by contig.
 
 =cut
 sub LoadFeatures {
-  my ($self,
-      $annotation_table,
-#      $feature_types,
-      $imp_pos)= @_;
+  my ($self, $annotation_table,
+      $imp_pos,
+      $check_type)= @_;
 
   ## Organism name
   my $organism_name = $self->get_attribute("name");
@@ -466,20 +466,20 @@ sub LoadFeatures {
 
   &RSAT::message::TimeWarn("Loading features for organism", $organism_name) if ($main::verbose >= 3);
 
-  ## Parse feature types
+  ## Define accepted feature types
   my @feature_types = $self->get_attribute("feature_types");
   if (scalar(@feature_types) < 1) {
     @feature_types = qw (cds trna rrna);
   }
 
   foreach my $feature_type (@feature_types) {
-    &RSAT::message::Debug("&RSAT::Organism::LoadFeatures()", "Accepting feature type", $feature_type) if ($main::verbose >= 10);
+    &RSAT::message::Debug("&RSAT::Organism::LoadFeatures()", "Accepting feature type", $feature_type) if ($main::verbose >= 5);
     $accepted_feature_types{$feature_type}++;
   }
   &RSAT::message::Info ("Accepted feature types", join( ",", keys %accepted_feature_types))
       if ($main::verbose >= 4);
 
-  ## Annotation table
+  ## Define the annotation table(s)
   if ($annotation_table) {
     $self->push_attribute("annotation_tables", $annotation_table);
   } else {
@@ -494,12 +494,13 @@ sub LoadFeatures {
     }
   }
 
+  ################################################################
+  ## Load each annotation table
   foreach my $annotation_table ($self->get_attribute("annotation_tables")) {
-
     &RSAT::message::Info(&RSAT::util::AlphaDate(),
 			 "Loading annotation table",
 			 $self->get_attribute("name"),
-			 $annotation_table) if ($main::verbose >= 4);
+			 $annotation_table) if ($main::verbose >= 0);
     
     ## Default column order for genomic features
     ## Note that this order can be redefined by the header of the
@@ -515,21 +516,22 @@ sub LoadFeatures {
     #     $col{'descr'} = 7;
     #     $col{'location'} = 8;
 
-    ### Read feature positions (genome annotations)
+    ## Read feature positions (genome annotations)
     my ($annot, $annot_dir) = &main::OpenInputFile($annotation_table);
     my %type = ();
-    my $linenb = 0;
+    my $line_nb = 0;
     while (my $line = <$annot>) {
-      $linenb++;
-
-      if (($main::verbose >= 4) && ($linenb % 1000 == 1)) {
-	&RSAT::message::psWarn("Loaded features", $linenb);
+      $line_nb++;
+      if (($main::verbose >= 4) && ($line_nb % 1000 == 1)) {
+	&RSAT::message::psWarn("Loaded features", $line_nb);
       }
 
-      chomp($line);
-      next unless ($line =~ /\S/);
+      chomp($line); ## Suppress newline character
+      next unless ($line =~ /\S/); ## Skip empty rows
+
+      ## Internal colunm specification in tables resulting from RSAT
+      ## parsers
       if ($line =~ /^\-\-/) {
-	## Internal colunm specification in tables resulting from RSAT parsers
 	if ($line =~ /^-- field (\d+)\t(\S+)/) {
 	  my $field_column = $1;
 	  my $field = lc($2);
@@ -544,7 +546,9 @@ sub LoadFeatures {
 	}
 	next;
       }
-      next if (($line =~ /^;/) || ($line =~ /^\#/));
+      next if ($line =~ /^;/);   ## Skip other comment lines
+      next if ($line =~ /^\#/);  ## Skip header line ### NOTE (JvH): I SHOULD EVALUATE IF IT WOULD BE GOOD TO READ COLUMN CONTENT FROM THE HEADER LINES
+
 
       ## Split the columns of the input row
       my @fields = split "\t", $line;
@@ -553,11 +557,16 @@ sub LoadFeatures {
 #	&RSAT::message::Debug("field",$f, $$f, "column", $col{$f}) if ($main::verbose >= 10);
       }
 
+
+#      &RSAT::message::Debug("&RSAT::organism::LoadFeatures()", $line_nb, $id, $type) if ($main::verbose >= 10);
+
       ## Check if the type of this feature is accepted
-      unless ($accepted_feature_types{lc($type)}) {
-	&RSAT::message::Info("skipping feature", $id, "Non-selected feature type",$type)
-	  if ($main::verbose >= 10);
-	next;
+      if ($check_type) {
+	unless ($accepted_feature_types{lc($type)}) {
+	  &RSAT::message::Info("skipping feature", $id, "Non-selected feature type",$type)
+	      if ($main::verbose >= 10);
+	  next;
+	}
       }
 
       ################################################################
@@ -565,19 +574,19 @@ sub LoadFeatures {
 
       ## Check ID
       unless ($id) {
-	&RSAT::message::Warning("invalid orf identifier specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
+	&RSAT::message::Warning("invalid orf identifier specification in the feature table line $line_nb\n;\t", @fields) if ($main::verbose >= 4);
 	next;
       }
 
       ## Check contig
       unless ($ctg) {
-	&RSAT::message::Warning("invalid contig specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
+	&RSAT::message::Warning("invalid contig specification in the feature table line $line_nb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	next;
       }
 
       ## Check left
       unless ($left) {
-	&RSAT::message::Warning("left position not specified in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
+	&RSAT::message::Warning("left position not specified in the feature table line $line_nb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	next;
       }
       unless (&RSAT::util::IsNatural($left) ) {
@@ -586,14 +595,14 @@ sub LoadFeatures {
 	  $left =~ s/\>//;
 	  $left =~ s/\<//;
 	} else {
-	  &RSAT::message::Warning("invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
+	  &RSAT::message::Warning("invalid left position specification in the feature table line $line_nb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	  next;
 	}
       }
 
       ## Check right
       unless ($right) {
-	&RSAT::message::Warning("Right position not specified in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
+	&RSAT::message::Warning("Right position not specified in the feature table line $line_nb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	next;
       }
       unless (&RSAT::util::IsNatural($right) ) {
@@ -602,20 +611,20 @@ sub LoadFeatures {
 	  $right =~ s/\>//;
 	  $right =~ s/\<//;
 	} else {
-	  &RSAT::message::Warning("invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
+	  &RSAT::message::Warning("invalid right position specification in the feature table line $line_nb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	  next;
 	}
       }
 
-      ## Except for circular chromosomes,
-      ## check if left position is lower than right position.
-      ## If this is not the case, swap the two values.
-      ## Left > right can occur if the genome has been exported with
-      ## start and end positions rather than left and right
-      ## or for a feature accross the replication origin on circular genomes.
+      ## Except for circular chromosomes, check if left position is
+      ## lower than right position.  If this is not the case, swap the
+      ## two values.  Left > right can occur if the genome has been
+      ## exported with start and end positions rather than left and
+      ## right or for a feature accross the replication origin on
+      ## circular genomes.
       if (defined($contig_seq{$ctg})) {
 	unless (($left < $right) || ($contig_seq{$ctg}->get_attribute("circular") == 1)) {
-	  &RSAT::message::Warning("Left should be smaller than right position specification in feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
+	  &RSAT::message::Warning("Left should be smaller than right position specification in feature table line $line_nb\n;\t",join "\t", @fields) if ($main::verbose >= 4);
 	  my $tmp = $left;
 	  $left = $right;
 	  $right = $tmp;
@@ -625,7 +634,7 @@ sub LoadFeatures {
 
       ## Check strand
       unless ($strand) {
-	&RSAT::message::Warning("invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	&RSAT::message::Warning("invalid strand specification in the feature table line $line_nb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
 	next;
       }
 
@@ -669,17 +678,17 @@ sub LoadFeatures {
       }
       $contig{$ctg}->add_gene($feature);
 
-#      &RSAT::message::Debug("Loaded feature",
-#		$contig{$ctg}->count_genes(),
-#		$id,$ctg,$strand,$left,$right,
-#		$feature->get_attribute("id"),
-#		$feature->get_attribute("ctg"),
-#		$feature->get_attribute("strand"),
-#		$feature->get_attribute("left"),
-#		$feature->get_attribute("right"),
-#		$feature->get_attribute("descr"),
-#		$descr{$id},
-#		) if ($main::verbose >= 10);
+     # &RSAT::message::Debug("Loaded feature",
+     # 		$contig{$ctg}->count_genes(),
+     # 		$id,$ctg,$strand,$left,$right,
+     # 		$feature->get_attribute("id"),
+     # 		$feature->get_attribute("ctg"),
+     # 		$feature->get_attribute("strand"),
+     # 		$feature->get_attribute("left"),
+     # 		$feature->get_attribute("right"),
+     # 		$feature->get_attribute("descr"),
+     # 		$descr{$id},
+     # 		) if ($main::verbose >= 10);
     }
     close $annot if ($annotation_table);
   }
@@ -687,7 +696,7 @@ sub LoadFeatures {
 
   ## Check the number of features
   if (scalar($self->get_attribute("features")) < 1) {
-    &RSAT::message::Warning("There is no annotated feature of type ".$feature_types." in the genome of ".$organism_name);
+    &RSAT::message::Warning("There is no annotated feature of type ".$feature_type." in the genome of ".$organism_name);
   } elsif ($main::verbose >= 3) {
     
     ## Print stats on the features
