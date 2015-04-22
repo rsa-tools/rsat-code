@@ -253,13 +253,17 @@ local $out = STDOUT;
 local @blast_columns = qw(query subject ident ali_len mismat gap_open q_start q_end s_start s_end e_value bit_sc);
 local @output_columns = qw(query subject ident ali_len mismat gap_open q_start q_end s_start s_end e_value bit_sc q_rank s_rank);
 
-local @query_organisms = ();
-local @db_organisms = ();
+local $query_organism = ();  ## Index of quey organisms
+local @query_organisms = (); ## List of query organisms
+local $db_organism = ();     ## Index of DB organisms
+local @db_organisms = ();    ## List of DB organisms
 
 local @query_taxons = ();
 local @db_taxons = ();
 
 local $reciprocal = 0;
+local $depth = 0;
+local $die_if_noorg = 0;
 
 ## Options for the command &doit()
 local $dry = 0;
@@ -309,28 +313,36 @@ if ($task{all}) {
 
 ## Query taxons
 foreach my $query_taxon (@query_taxons) {
-    foreach my $organism (sort keys %supported_organism) {
-	my $taxonomy = $supported_organism{$organism}->{'taxonomy'};
-	my @org_taxons = split /\s*;\s*/, $taxonomy;
-	foreach my $org_taxon (@org_taxons) {
-	    if (lc($org_taxon) eq lc($query_taxon)) {
-		push @query_organisms, $organism;
-	    }
-	}
-    }
+  foreach my $org (&RSAT::OrganismManager::GetOrganismsForTaxon($query_taxon, $depth, $die_if_noorg)) {
+    $query_organism{$org}++;
+  }
+#   foreach my $org (sort keys %supported_organism) {
+#     my $taxonomy = $supported_organism{$org}->{'taxonomy'};
+#     my @org_taxons = split /\s*;\s*/, $taxonomy;
+#     foreach my $org_taxon (@org_taxons) {
+#       if (lc($org_taxon) eq lc($query_taxon)) {
+# 	$query_organism{$org}++;
+# #		push @query_organisms, $org;
+#       }
+#     }
+#   }
 }
 
 ## Db taxons
 foreach my $db_taxon (@db_taxons) {
-    foreach my $organism (sort keys %supported_organism) {
-	my $taxonomy = $supported_organism{$organism}->{'taxonomy'};
-	my @org_taxons = split /\s*;\s*/, $taxonomy;
-	foreach my $org_taxon (@org_taxons) {
-	    if (lc($org_taxon) eq lc($db_taxon)) {
-		push @db_organisms, $organism;
-	    }
-	}
-    }
+  foreach my $org (&RSAT::OrganismManager::GetOrganismsForTaxon($db_taxon, $depth, $die_if_noorg)) {
+    $db_organism{$org}++;
+  }
+#   foreach my $org (sort keys %supported_organism) {
+#     my $taxonomy = $supported_organism{$org}->{'taxonomy'};
+#     my @org_taxons = split /\s*;\s*/, $taxonomy;
+#     foreach my $org_taxon (@org_taxons) {
+#       if (lc($org_taxon) eq lc($db_taxon)) {
+# 	$db_organism{$org}++;
+# #		push @db_organisms, $org;
+#       }
+#     }
+#   }
 }
 
 ## DB organism file
@@ -347,7 +359,8 @@ if ($main::db_org_file) {
       my ($org) = split /\s/;
       $org = &trim($org); ## Remove leading and trailing spaces
       &RSAT::OrganismManager::check_name($org);
-      push @main::db_organisms, $org;
+      $db_organism{$org}++;
+#      push @main::db_organisms, $org;
     }
 }
 
@@ -365,28 +378,35 @@ if ($main::query_org_file) {
     my ($org) = split /\s/;
     $org = &trim($org); ## Remove leading and trailing spaces
     &RSAT::OrganismManager::check_name($org);
-    push @main::query_organisms, $org;
+    $query_organism{$org}++;
+#    push @main::query_organisms, $org;
   }
 }
 
 ## Query organisms
-unless (scalar(@query_organisms) >= 1) {
-    &RSAT::error::FatalError("You should define at least one query organism");
+@query_organisms = sort keys %query_organism;
+if (scalar(@query_organisms) >= 1) {
+  &RSAT::message::Info(scalar (@query_organisms), "query organisms") if ($main::verbose >= 2);
+} else {
+  &RSAT::error::FatalError("You should define at least one query organism");
 }
-foreach $db_organism (@db_organisms) {
-    unless ($supported_organism{$db_organism}) {
-	&FatalError(join("\t", $db_organism, "is not a supported organism"));
-    }
+foreach $query_organism (@query_organisms) {
+  unless ($supported_organism{$query_organism}) {
+    &FatalError(join("\t", $query_organism, "is not a supported organism"));
+  }
 }
 
 ## DB organisms
-unless (scalar(@db_organisms) >= 1) {
-    &RSAT::error::FatalError("You should define at least one db organism");
+@db_organisms = sort keys %db_organism;
+if (scalar(@db_organisms) >= 1) {
+  &RSAT::message::Info(scalar (@db_organisms), "DB organisms") if ($main::verbose >= 2);
+} else {
+  &RSAT::error::FatalError("You should define at least one DB organism");
 }
-foreach $query_organism (@query_organisms) {
-    unless ($supported_organism{$query_organism}) {
-	&FatalError(join("\t", $query_organism, "is not a supported organism"));
-    }
+foreach $db_organism (@db_organisms) {
+  unless ($supported_organism{$db_organism}) {
+    &FatalError(join("\t", $db_organism, "is not a supported organism"));
+  }
 }
 
 
@@ -651,7 +671,8 @@ several query organisms.
 
 =cut
 	} elsif ($ARGV[$a] eq "-q") {
-	    push @query_organisms, $ARGV[$a+1];
+	  $query_organism{$ARGV[$a+1]}++;
+#	    push @query_organisms, $ARGV[$a+1];
 	    
 	    ## Db organism
 =pod
@@ -663,7 +684,8 @@ several db organisms.
 
 =cut
 	} elsif ($ARGV[$a] eq "-db") {
-	    push @db_organisms, $ARGV[$a+1];
+	  $db_organism{$ARGV[$a+1]}++;
+	  # push @db_organisms, $ARGV[$a+1];
 	    
 	    
 	    ## Query taxon
