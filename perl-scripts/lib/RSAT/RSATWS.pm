@@ -2767,6 +2767,28 @@ sub supported_organisms {
 
 
 ################################################################
+sub supported_motif_databases {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+
+  my $command = $SCRIPTS."/supported-motif-databases";
+
+  ## Output fields
+  if ($args{return}) {
+    $args{return} =~ s/\'//g;
+    $args{return} =~ s/\"//g;
+    $command .= " -return '".$args{return}."'";
+  }
+
+  &run_WS_command($command, $output_choice, "supported-motif-databases", "tab");
+}
+
+
+################################################################
 sub text_to_html {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
