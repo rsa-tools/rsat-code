@@ -886,7 +886,7 @@ __compile_peaksplitter:
 SICKLE_BASE_DIR=${SRC_DIR}/sickle
 SICKLE_URL=https://github.com/ucdavis-bioinformatics/sickle.git
 SICKLE_DISTRIB_DIR=${SICKLE_BASE_DIR}/SICKLE_V${SICKLE_VERSION}
-install_sickle: _clone_sickle _compile_sicle
+install_sickle: _clone_sickle _compile_sickle
 
 _clone_sickle:
 	@if [ -d ${SICKLE_BASE_DIR} ] ; \
@@ -898,7 +898,7 @@ _clone_sickle:
 	fi
 
 _compile_sickle:
-		(cd ${SICKLE_BASE_DIR}; make clean; make; rsync -ruptvl sickle ${RSAT_BIN})
+		(cd ${SICKLE_BASE_DIR}; make clean; make; ${SUDO} rsync -ruptvl sickle ${RSAT_BIN})
 
 ################################################################
 ## FindPeaks
@@ -1030,9 +1030,10 @@ _compile_bfast:
 ################################################################
 ## Install bowtie, read-mapping program
 BOWTIE_BASE_DIR=${SRC_DIR}/bowtie
-BOWTIE_VERSION=2.0.0-beta6
+BOWTIE_VERSION=2.2.5
 BOWTIE_ARCHIVE=bowtie2-${BOWTIE_VERSION}-${OS}.zip
 BOWTIE_URL=http://sourceforge.net/projects/bowtie-bio/files/bowtie2/${BOWTIE_VERSION}/${BOWTIE_ARCHIVE}
+#BOWTIE_URL=http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.5/bowtie2-2.2.5-linux-x86_64.zip/download
 BOWTIE_DISTRIB_DIR=${BOWTIE_BASE_DIR}/bowtie2-${BOWTIE_VERSION}
 install_bowtie: _download_bowtie _compile_bowtie 
 
@@ -1050,21 +1051,22 @@ _download_bowtie_os:
 	@mkdir -p ${BOWTIE_BASE_DIR}
 	wget -nd  --directory-prefix ${BOWTIE_BASE_DIR} -rNL ${BOWTIE_URL}
 
-_compile_bowtie: _compile_bowtie_${OS}
+_install_bowtie: _install_bowtie_${OS}
 
-_compile_bowtie_macosx:
-	${MAKE} _compile_bowtie_os OS=macos-x86_64
+_install_bowtie_macosx:
+	${MAKE} _install_bowtie_os OS=macos-x86_64
 
-_compile_bowtie_linux:
-	${MAKE} _compile_bowtie_os OS=linux-x86_64
+_install_bowtie_linux:
+	${MAKE} _install_bowtie_os OS=linux-x86_64
 
 
-_compile_bowtie_os:
+_install_bowtie_os:
 	@echo
 	@echo "Installing BOWTIE in dir	${BOWTIE_DISTRIB_DIR}"
 	(cd ${BOWTIE_BASE_DIR}; unzip ${BOWTIE_ARCHIVE})
 	@echo ${BOWTIE_DISTRIB_DIR}
-	${SUDO} find  ${BOWTIE_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
+	@chmod 755  ${BOWTIE_DISTRIB_DIR}/bowtie2*
+	${SUDO} rsync -ruptvl ${BOWTIE_DISTRIB_DIR}/bowtie2* ${RSAT_BIN}/
 
 ################################################################
 ## Install  Cis-regulatory Element Annotation System  (CEAS)
