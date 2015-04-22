@@ -1351,7 +1351,8 @@ sub CalcMAtrixTheorDistrib {
     }
 
     ## Check that the background model file exists
-    &RSAT::error::FatalError("File specified to calculate the score distribution in matrix-distrib does not exist")unless (-s  $main::bg_distrib ) ;
+    &RSAT::error::FatalError("File specified to calculate the score distribution in matrix-distrib does not exist") 
+	unless ((-e  $main::bg_distrib) || (-e  $main::bg_distrib.".gz") ) ;
 
     ## Compute the theoretical distribution for the current matrix
     &RSAT::message::TimeWarn ("Computing matrix score distribution with background file", $main::bg_distrib) if ($main::verbose >=2);
