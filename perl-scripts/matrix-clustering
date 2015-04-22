@@ -4354,8 +4354,6 @@ sub pre_process_motif_files{
     }
     $concatenate_processed_files_cmd .= " > ".$main::outfile{motif_file};
 
-print "\n\n Command: $concatenate_processed_files_cmd\n\n";
-
     &doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err); 
     $main::outfile{input_matrices} = $main::outfile{motif_file};
 }
