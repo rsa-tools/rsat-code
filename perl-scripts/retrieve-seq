@@ -900,14 +900,14 @@ sub ReadArguments {
 
 	    #### feature types
 	} elsif ($ARGV[$a] eq "-feattype") {
-	    my @feature_types = split ",", $ARGV[$a+1];
-	    foreach my $feature_type (@feature_types) {
-		if ($supported_feature_types{lc($feature_type)}) {
-		    $accepted_feature_types{lc($feature_type)}++;
-		} else {
-		    &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
-		}
+	  my @feature_types = split ",", $ARGV[$a+1];
+	  foreach my $feature_type (@feature_types) {
+	    if ($supported_feature_types{lc($feature_type)}) {
+	      $accepted_feature_types{lc($feature_type)}++;
+	    } else {
+	      &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
 	    }
+	  }
 
 	    #### sequence type
 	} elsif ($ARGV[$a] eq "-type") {
