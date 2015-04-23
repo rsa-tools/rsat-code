@@ -430,7 +430,7 @@ sub DefineAcceptedFeatureTypes {
   }
 
   foreach my $feature_type (@accepted_feature_types) {
-    &RSAT::message::Info("Accepting feature type", $feature_type) if ($main::verbose >= 4);
+    &RSAT::message::Info("Accepting feature type", $feature_type) if ($main::verbose >= 5);
     $self->push_attribute("feature_types", $feature_type);
   }
 }
@@ -476,7 +476,8 @@ sub LoadFeatures {
     &RSAT::message::Debug("&RSAT::Organism::LoadFeatures()", "Accepting feature type", $feature_type) if ($main::verbose >= 5);
     $accepted_feature_types{$feature_type}++;
   }
-  &RSAT::message::Info ("Accepted feature types", join( ",", keys %accepted_feature_types))
+  my $accepted_feature_types = join( ",", sort(keys(%accepted_feature_types)));
+  &RSAT::message::Info ("Accepted feature types", $accepted_feature_types)
       if ($main::verbose >= 4);
 
   ## Define the annotation table(s)
@@ -500,7 +501,7 @@ sub LoadFeatures {
     &RSAT::message::Info(&RSAT::util::AlphaDate(),
 			 "Loading annotation table",
 			 $self->get_attribute("name"),
-			 $annotation_table) if ($main::verbose >= 0);
+			 $annotation_table) if ($main::verbose >= 5);
     
     ## Default column order for genomic features
     ## Note that this order can be redefined by the header of the
@@ -696,9 +697,10 @@ sub LoadFeatures {
 
   ## Check the number of features
   if (scalar($self->get_attribute("features")) < 1) {
-    &RSAT::message::Warning("There is no annotated feature of type ".$feature_type." in the genome of ".$organism_name);
-  } elsif ($main::verbose >= 3) {
-    
+#    $feature_types= join("|", @feature_types)
+    &RSAT::message::Warning("There is no annotated feature of type ".$accepted_feature_types." in the genome of ".$organism_name);
+
+  } elsif ($main::verbose >= 3) {    
     ## Print stats on the features
     &RSAT::message::Info("Loaded",
 			 scalar($self->get_attribute("features")),
