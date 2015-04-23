@@ -1102,39 +1102,9 @@ sub peak_motifs_cmd {
     my $noov = $args{"noov"};
     my $str = $args{"str"};
     my $class_int = $args{"class_int"};
-
-    ## List of motif database files
-##    my $motif_db_ref = $args{"motif_db"};
-##    my $motif_db = "";
-##    if ($motif_db_ref =~ /ARRAY/) {
-##       my @motif_db = @{$motif_db_ref};
-##       foreach $db (@motif_db) {
-## 	$db =~s/\'//g;
-## 	$db =~s/\"//g;
-## 	@_db = split / /, $db;
-
-## 	#$tmp_motif_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
-##	$tmp_motif_infile = &RSAT::util::make_temp_file("","peak-motifs_tmp-motifs", 1,0);
-## 	open TMP_IN, ">".$tmp_motif_infile or die "cannot open temp file ".$tmp_motif_infile."\n";
-## 	print TMP_IN $_db[2];
-## 	close TMP_IN;
-
-## 	$motif_db .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".$tmp_motif_infile."'";
-##       }
-##     } elsif ($motif_db_ref) {
-## 	@_db = split / /, $motif_db_ref;
-
-## 	#$tmp_motif_infile = `mktemp $TMP/chip-motifs.XXXXXXXXXX`;
-##	$tmp_motif_infile = &RSAT::util::make_temp_file("","peak-motifs_tmp-motifs", 1,0);
-## 	open TMP_IN, ">".$tmp_motif_infile or die "cannot open temp file ".$tmp_motif_infile."\n";
-## 	print TMP_IN $_db[2];
-## 	close TMP_IN;
-
-## 	$motif_db .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".$tmp_motif_infile."'";
-##     }
-
-##    my $output_dir = $args{"output_dir"};
-##    my $output_prefix = $args{"output_prefix"};
+    my $motif_db = $args{"motif_db"};
+##  my $output_dir = $args{"output_dir"};
+##  my $output_prefix = $args{"output_prefix"};
     my $graph_title = $args{"graph_title"};
     my $image_format = $args{"image_format"};
     my $disco = $args{"disco"};
@@ -1173,9 +1143,19 @@ sub peak_motifs_cmd {
 	}
     }
 
-#    if ($motif_db) {
-#      $command .= $motif_db;
-#    }
+    if ($motif_db) {
+	$motif_db =~s/\'//g;
+	$motif_db =~s/\"//g;
+	my @_motif_db = split(',', $motif_db);
+	my %matrix_db = &RSAT::server::supported_motif_databases();
+	foreach my $db (@_motif_db) {
+	    unless ($db ~~ keys %matrix_db) {
+		die "$db is unknown";
+	    }
+	    @_db = split(/ /,$matrix_db{$db});
+	    $command .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".${RSAT}."/data/motif_databases/".$_db[2]."'";
+	}
+    }
 
     if ($graph_title) {
 	$graph_title =~ s/\'//g;
