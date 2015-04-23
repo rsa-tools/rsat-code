@@ -155,6 +155,8 @@ print <<EndText;
     </td>
 
     <td>
+    <p><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> in <b><a target='_blank' href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target="_blank"> NAR web software issue 2015</a>
+
 	<p><i class="fa fa-book fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsa-tools.github.io/tutorial_eccb14/index.html" target="tools">ECCB'14</a></b> and <a href="http://rsa-tools.github.io/teaching/index.html" target="tools"><b>all training material</b></a> 
 	
 	<p><i class="fa fa-book fa-lg"></i> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font>
@@ -250,7 +252,11 @@ print <<EndAddress;
    <span style="color: #cc6600;"><i class="fa fa-pencil fa-lg"></i> <b>Citing RSAT complete suite of tools:</b></span>
 	<div align="left">
       <ul>
-
+<li><font color="red"><b>New !</b></font>  Medina-Rivera A, Defrance M, Sand O, Herrmann C, Castro-Mondragon J, Delerce J, Jaeger S, Blanchet C, Vincens P, Caron C, Staines DM, Contreras-Moreira B, Artufel M, Charbonnier-Khamvongsa L, Hernandez C, Thieffry D, Thomas-Chollier M, van Helden J (2015)
+	  <b>RSAT 2015: Regulatory Sequence Analysis Tools </b>. Nucleic Acids Res. 2015 (Web Server issue) in press.
+	  <!--a href=http://www.ncbi.nlm.nih.gov/pubmed/21715389>[Pubmed 21715389]</a-->
+	  <a href='http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full'>[Full text]</a>
+	</li>
 	<li>Thomas-Chollier M, Defrance M, Medina-Rivera A, Sand O, Herrmann C, Thieffry D, van Helden J. (2011)
 	  <b>RSAT 2011: regulatory sequence analysis tools</b>. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W86-91.
 	  <a href=http://www.ncbi.nlm.nih.gov/pubmed/21715389>[Pubmed 21715389]</a>
