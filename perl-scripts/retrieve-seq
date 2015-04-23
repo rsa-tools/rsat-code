@@ -70,7 +70,7 @@ if (scalar(@label_fields) <= 0) {
 ## Instantiate organism
 $organism = new RSAT::organism();
 
-#### Check organism name
+## Check organism name
 if ($organism_name) {
   $organism->check_name($organism_name);
 } elsif ($input_sequence_file) {
@@ -80,10 +80,10 @@ if ($organism_name) {
 }
 $organism->set_attribute("name", $organism_name);
 
-#### accepted feature types
+## Accepted feature types
 $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
 
-#### Specify the file containing genome annotations
+## Specify the file containing genome annotations
 if ($annotation_table) {
   $organism->set_attribute("annotation_table", $annotation_table);
 }
@@ -204,13 +204,13 @@ if ($noorf) {
 # Query ORFs
 &RSAT::message::TimeWarn("Reading query genes") if ($main::verbose >= 2);
 
-#### retrieve all
+## Retrieve all sequences
 if ($return_all) {
   @queries = $organism->get_attribute("features");
   if (scalar(@queries < 1)) {
-    &RSAT::message::Warning(join("\t", "There is not a single feature of type",
-				 join(" or ", sort (keys(%accepted_feature_types))),
-				 "annotated in the genome of", $organism_name));
+    &RSAT::message::Warning("There is not a single feature of type",
+			    join(" or ", sort (keys(%accepted_feature_types))),
+			    "annotated in the genome of", $organism_name);
     exit();
   }
 }
@@ -418,6 +418,7 @@ foreach our $query (@queries) {
     }
     my $current_id = join $label_sep, @current_id;
 
+    ################################################################
     ## Comments to be added to the sequence
     ## Specific treatment of comments for the ft format
     my $location = join (":", $organism_name, $ctg, $reg_left.":".$reg_right, $orf_strand);
@@ -900,14 +901,14 @@ sub ReadArguments {
 
 	    #### feature types
 	} elsif ($ARGV[$a] eq "-feattype") {
-	    my @feature_types = split ",", $ARGV[$a+1];
-	    foreach my $feature_type (@feature_types) {
-		if ($supported_feature_types{lc($feature_type)}) {
-		    $accepted_feature_types{lc($feature_type)}++;
-		} else {
-		    &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
-		}
+	  my @feature_types = split ",", $ARGV[$a+1];
+	  foreach my $feature_type (@feature_types) {
+	    if ($supported_feature_types{lc($feature_type)}) {
+	      $accepted_feature_types{lc($feature_type)}++;
+	    } else {
+	      &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
 	    }
+	  }
 
 	    #### sequence type
 	} elsif ($ARGV[$a] eq "-type") {
