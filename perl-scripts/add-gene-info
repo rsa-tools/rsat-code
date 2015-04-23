@@ -94,7 +94,10 @@ $organism = new RSAT::organism();
 $organism->check_name($organism_name);
 $organism->set_attribute("name", $organism_name);
 $organism->OpenContigs($organism_name, $annotation_table);
-$organism->DefineAcceptedFeatureTypes(sort keys %supported_feature_types);
+
+## Accepted feature types
+#$organism->DefineAcceptedFeatureTypes(sort keys %supported_feature_types);
+$organism->DefineAcceptedFeatureTypes(sort(keys(%accepted_feature_types)));
 
 ### Load the organism
 my $imp_pos = 0;
@@ -241,6 +244,10 @@ OPTIONS
 	-before add the information before the input line (by default,
          	the info is added at the end of each input line).
 	
+	-feattype
+		Feature type.
+		Supported: $supported_feature_types
+
 INPUT FORMAT
 	Any text file containing ORF identifiers or gene names.
 
@@ -264,15 +271,16 @@ sub PrintOptions {
     print HELP <<End_short_help;
 add-gene-info options
 ---------------------
--h      (must be first argument) display full help message
--help   (must be first argument) display options
--i      input file
--o      output file
--v      verbose
--col #  ORF column (can be used recursively)
--org	organism
--info	information type (supported: $supported_info_types)
--before	add info before rather than afte the input line
+-h          display full help message
+-help       display options
+-i          input file
+-o          output file
+-v          verbose
+-col #      ORF column (can be used recursively)
+-org	    organism
+-info	    information type (supported: $supported_info_types)
+-before	    add info before rather than afte the input line
+-feattype   accepted feature types. Supported: $supported_feature_types
 End_short_help
   close HELP;
   exit;
@@ -326,6 +334,17 @@ sub ReadArguments() {
 	    #### add info before the input line
 	} elsif ($ARGV[$a] eq "-before") {
 	    $info_before = 1;
+
+	    #### feature types
+	} elsif ($ARGV[$a] eq "-feattype") {
+	  my @feature_types = split ",", $ARGV[$a+1];
+	  foreach my $feature_type (@feature_types) {
+	    if ($supported_feature_types{lc($feature_type)}) {
+	      $accepted_feature_types{lc($feature_type)}++;
+	    } else {
+	      &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
+	    }
+	  }
 	}
     }
 }
