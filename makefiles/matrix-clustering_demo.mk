@@ -22,6 +22,7 @@ V=2
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
 OCT4_PREFIX=peak-motifs_Oct4
+OCT4_VS_SOX2_PREFIX=Oct4_vs_Sox2
 
 ## Choose a particular demo set
 MATRIX_PREFIX=${PEAKMO_PREFIX}
@@ -29,6 +30,7 @@ MATRIX_PREFIX=${PEAKMO_PREFIX}
 ## Define file locations based on the chosen demo set
 MATRIX_DIR=${RSAT}/public_html/demo_files
 MATRIX_FILE=${MATRIX_DIR}/${MATRIX_PREFIX}_matrices.tf
+SET_LIST=${MATRIX_DIR}/${MATRIX_PREFIX}_motif_set.tab
 
 list_param:
 	@echo "MATRIX_PREFIX		${MATRIX_PREFIX}"
@@ -55,24 +57,46 @@ CLUSTER_PREFIX=${MATRIX_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN
 CLUSTER_DIR=results/matrix-clustering_results/${MATRIX_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
 CLUSTER_CMD=matrix-clustering -v ${V} \
-		-i ${MATRIX_FILE} -matrix_format tf \
+		-i ${MATRIX_FILE} -matrix_format tf -title '${TITLE}' \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
 		-lth w ${MIN_W} \
-		-heatmap\
+		-heatmap \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
-		-title '${TITLE}' \
-		-display_title \
+		-o ${CLUSTER_FILE_PREFIX}
+
+CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
+		-motif_set ${SET_LIST} \
+		-lth Ncor ${MIN_NCOR} \
+		-lth cor ${MIN_COR} \
+		-lth w ${MIN_W} \
+		-heatmap \
+		-hclust_method ${HCLUST_METHOD} \
+		-label name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}	
 
 _cluster:
 	@echo
 	@echo "Running matrix-clustering	${MATRIX_PREFIX}	${OPT}"
 	${MAKE} my_command MY_COMMAND="${CLUSTER_CMD}"
-#	${CLUSTER_CMD}
 	@echo "		${CLUSTER_CMD}"
 	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
+
+_cluster_multi:
+	@echo
+	@echo "Running matrix-clustering	${MATRIX_PREFIX}	${OPT}"
+	${MAKE} my_command MY_COMMAND="${CLUSTER_MULTI_SET_CMD}"
+	@echo "		${CLUSTER_MULTI_SET_CMD}"
+	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
+
+
+## Cluster motifs resulting from two independent analysis of peak-motifs (Chen data set) with Oct4 and Sox2 peaks. 
+cluster_peakmotifs_Oct4_vs_Sox2:
+	@echo
+	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct4 and Sox2 dataset from Chen 2008)"
+	${MAKE} _cluster_multi MATRIX_PREFIX=${OCT4_VS_SOX2_PREFIX} \
+		TITLE='Oct4 motifs peak motifs'
 
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
