@@ -315,6 +315,8 @@ package main;
   local %motif_set_attributes = ();
   local %motifs_ID_unique = ();
   local $longest_title = 0;
+  local $multi_input_flag = 0;
+  local $single_input_flag = 0;
 
   ## A hash to save the name of the clusters and their corresponding hexa code
   local %hexa_code = ();
@@ -343,11 +345,11 @@ package main;
   ## Read argument values
   &ReadArguments();
 
+
   ################################################################
   ## Check argument values
 
   &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
-
 
   ## Non-recognized parameters are passed to compare-matrices
   if (scalar(@args_to_pass)) {
@@ -355,16 +357,24 @@ package main;
     &RSAT::message::Info("Unrecognized arguments passed to compare-matrices", $args_to_pass) if ($main::verbose >= 2);
   }
 
-  ## Check that the  input file has been specified
-  unless ($main::infile{matrices_info_tab}) {
-    &RSAT::error::FatalError("You must define the input file (option -i).");
+  ## Check that the  input file (for two or more motif set) has been specified
+  if($multi_input_flag){
+      unless ($main::infile{matrices_info_tab}) {
+	  &RSAT::error::FatalError("You must define the motifs list (option -motif_set).");
+      }
   }
 
-  # ## Check that the  input format has been specified
-  # unless ($matrix_format) {
-  #   &RSAT::error::FatalError("You must define the input matrix format (option -matrix_format).");
-  # }
+  ## Check that the  input (single) file has been specified
+  if( $single_input_flag){
+      unless ($main::infile{matrices}) {
+	  &RSAT::error::FatalError("You must define the input file (option -i).");
+      }
 
+      ## Check that the  input format has been specified
+      unless ($matrix_format) {
+	  &RSAT::error::FatalError("You must define the input matrix format (option -matrix_format).");
+      }
+  }
 
   ## Check that the output prefix has been specified
   unless ($outfile{prefix}) {
@@ -382,67 +392,15 @@ package main;
   $label_fields_to_return = join ",", @label_fields_to_return;
   &RSAT::message::Info("Label fields", $label_fields_to_return) if ($main::verbose >= 5);
 
-
   ################################################################
   ## Check output directories and define file names
   &set_output_file_names();
 
+  ## Initialize HTML summary
   &OpenSynthesis() if ($main::param{progressive_synthesis}); ## Already open the HTML report summary, for the Web site
   if ($root_matrices_flag == 1) {
       $to_delete{'summary'} = $main::outfile{summary};
   }
-
-  # ################################################################
-  # ## Check matrix number (required for verbose + if max matrices specified)
-  # @matrices = &RSAT::MatrixReader::readFromFile($infile{matrices}, $matrix_format);
-  # local $matrix_nb_ok = 1;
-  # if ($max_matrices > 0) {
-  #   &RSAT::message::TimeWarn("Checking the number of input matrices (max: ".$max_matrices.").") if ($main::verbose >= 2);
-  #   &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $infile{matrices})
-  # 	if ($main::verbose >= 2);
-  #   if (scalar(@matrices) > $max_matrices) {
-  #     $matrix_nb_ok = 0;
-  #     &RSAT::message::Warning("Input file contains ".scalar(@matrices)." matrices (".$infile{matrices}.").", 
-  # 			      "The analysis will however be limited to the ".$max_matrices." first matrices (option -max_matrices).");
-  #   }
-  #   @matrices = @matrices[1..$max_matrices];
-  # }
-
-  # ## Check if matrix conversion is required.  Can be required for various reasons:
-  # ## 1) input format differs from transfac, 
-  # ## 2) if the number of input matrices exceeds the maximal allowed number (option -max_matrices).
-  # ## 3) If the $clone_input_flag is ON.
-  # if ((($matrix_format eq "transfac") || ($matrix_format eq "tf"))
-  #     && ($matrix_nb_ok)
-  #     && (!$clone_input_flag) ) {
-  #   $outfile{input_matrices} = $infile{matrices};
-  # } else {
-
-  #     ## Convert input matrices in transfac format
-  #     &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
-  #     my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
-  #     $convert_matrix_cmd .= " -i ".$infile{matrices};
-  #     $convert_matrix_cmd .= " -from ".$matrix_format;
-  #     $convert_matrix_cmd .= " -to transfac";
-  #     $convert_matrix_cmd .= " -top ".$max_matrices if ($max_matrices > 0);
-  #     $convert_matrix_cmd .= " -o ".$outfile{input_matrices};
-  #     &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-      
-  #     &RSAT::util::CheckOutDir($main::outfile{prefix}."_data");
-  #     $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs.tf";
-  #     my $cp_input = "mv ".$main::outfile{prefix}."_input_motifs.tf ".$main::outfile{motif_file};
-  #     &doit($cp_input, 0, 1, $verbose, 0, "", $main::out, $main::err);
-  #     $outfile{input_matrices} = $main::outfile{motif_file};
-
-  #     ## Split matrices in separated files
-  #     &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
-  #     my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
-  #     $split_matrix_cmd .= " -i ".$outfile{input_matrices};
-  #     $split_matrix_cmd .= " -split";
-  #     $split_matrix_cmd .= " -from tf -to tf";
-  #     $split_matrix_cmd .= " -o ".$main::outfile{prefix}."_data/motif";
-  #     &doit($split_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-  # }
 
   ################################################################
   ## Pre-process the input motif file(s):
@@ -622,7 +580,7 @@ Same as -h
       &PrintOptions();
 =pod
 
-=item B<-i input matrix file>
+=item B<-motif_set>
 
 The input file must be a tab-delimited table with three fieds each line:
 
@@ -645,68 +603,55 @@ The input file must contain at least one line as the next one:
 peak-motifs_Oct4_matrices.tf	transfac	Oct4_motifs
 
 =cut
-    } elsif ($arg eq "-i") {
+    } elsif ($arg eq "-motif_set") {
 	$main::infile{matrices_info_tab} = shift(@arguments);
-#      $main::infile{matrices} = shift(@arguments);
+	$multi_input_flag = 1;
+
+=pod
+
+=item B<-i input matrix file>
+
+The input file contains a set of position-specific scoring
+matrices.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{matrices} = shift(@arguments);
+      $single_input_flag = 1;
       
+=pod
 
-########################################
-########################################
+=item B<-matrix_format matrix_format>
 
-# =pod
-
-# =item B<-i input matrix file>
-
-# The input file contains a set of position-specific scoring
-# matrices.
-
-# =cut
-#     } elsif ($arg eq "-i") {
-#       $main::infile{matrices} = shift(@arguments);
-      
-# =pod
-
-# =item B<-matrix_format matrix_format>
-
-# Specify the input matrix format.
+Specify the input matrix format.
 
 
-# B<Supported matrix formats>
+B<Supported matrix formats>
 
-# Since the program takes several matrices as input, it only accepts
-# matrices in formats supporting several matrices per file (transfac,
-# tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
+Since the program takes several matrices as input, it only accepts
+matrices in formats supporting several matrices per file (transfac,
+tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
 
-# For a description of these formats, see the help of I<convert-matrix>.
+For a description of these formats, see the help of I<convert-matrix>.
 
-# =cut
-#     } elsif ($arg eq "-matrix_format") {
-#       $main::matrix_format = shift(@arguments);
-#       unless ($supported_matrix_format{$matrix_format}) {
-# 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
-#       }
+=cut
+    } elsif ($arg eq "-matrix_format") {
+      $main::matrix_format = shift(@arguments);
+      unless ($supported_matrix_format{$matrix_format}) {
+	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+      }
 
-# =pod
+=pod
 
-# =item	B<-title graph_title>
+=item	B<-title motif_set_title>
 
-# Title displayed on top of the report page.
+Title displayed on top of the report page.
 
-# =cut
-#      } elsif ($arg eq "-title") {
-#       $main::param{title} = shift(@arguments);
-#       $main::param{title} =~ s/\s+/_/g;
-
-# =pod
-
-# =item	B<-display_title>
-
-# If it is selected. The title is displayed in the trees and in the result table.
-# This is ideal when the user wants to compare motifs from different sources (files).
-
-# =cut
-#      } elsif ($arg eq "-display_title") {
-#       $display_title_flag = 1;
+=cut
+     } elsif ($arg eq "-title") {
+      $main::param{title} = shift(@arguments);
+      $main::param{title} =~ s/\s+/_/g;
+      $display_title_flag = 1;
 
 =pod
 
@@ -2801,6 +2746,7 @@ sub set_output_file_names {
   ## Specify output file names and open output stream
 
   ## Log file should contain the trace of all commands
+  
   $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
   $main::out = &OpenOutputFile($main::outfile{log});
 
@@ -2904,9 +2850,7 @@ sub set_output_file_names {
 
   ## Archive to facilitate transfer of all the results
   $main::outfile{archive} = $main::outfile{prefix}."_archive.".$main::param{archive_format};
-#  $main::outfile{archive} = &OutFileName("", ".".$main::param{archive_format}, "archive");
   &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
-#  die ("HELLO");
 
   ## Open the HTML index file and write header
   $main::outfile{html_index} = $main::outfile{prefix}."_html/index.html";
@@ -4209,6 +4153,16 @@ sub pre_process_motif_files{
     ## Count the number of motif sets
     my $motif_set_counter = 0;
     
+    if($single_input_flag){
+	
+	my ($single_input_motif_set) = &OpenOutputFile($main::outfile{prefix}."_info_tab_single_set.tab");
+	my $line = $main::infile{matrices}."\t".$matrix_format."\t".$main::param{title}."\n";
+	print $single_input_motif_set $line;
+	close($single_input_motif_set);
+	$main::infile{matrices_info_tab} = $main::outfile{prefix}."_info_tab_single_set.tab";
+	$to_delete{'matrices_info_tab'} = $main::infile{matrices_info_tab};
+    }
+    
     ## Parse compare-matrix result file to read score columns
     my ($info_tab_matrices) = &OpenInputFile($main::infile{matrices_info_tab});
     while (<$info_tab_matrices>) { 
@@ -4269,7 +4223,8 @@ sub pre_process_motif_files{
 	$motif_set_attributes{$title}{matrix_file_halfway} = $main::outfile{prefix}."_data/".$title."_input_motifs_halfway.tf";
 	$motif_set_attributes{$title}{matrix_file_processed} = $main::outfile{prefix}."_data/".$title."_input_motifs_processed.tf";
 	$motif_collection_name = $motif_set_attributes{$title}{matrix_file_halfway};
-
+	$to_delete{$title} = $main::outfile{prefix}."_data/".$title."_input_motifs_halfway.tf";
+	
 	## Check if matrix conversion is required.  Can be required for various reasons:
 	## 1) input format differs from transfac, 
 	## 2) if the number of input matrices exceeds the maximal allowed number (option -max_matrices).
@@ -4310,7 +4265,7 @@ sub pre_process_motif_files{
     ## Create a new file with the new ID
     
     foreach my $t (keys %motif_set_attributes){
-
+	
 	## Create the file with the processed matrices
 	my $processed_matrix_output = &OpenOutputFile($motif_set_attributes{$t}{matrix_file_processed});
 	
@@ -4356,5 +4311,17 @@ sub pre_process_motif_files{
 
     &doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err); 
     $main::outfile{input_matrices} = $main::outfile{motif_file};
+
+
+
+       $to_delete{'matrices_info_tab'} = $main::infile{matrices_info_tab};
+
+
 }
+
+		    # convert-matrix -from tab -to transfac \
+		    #     -i my_matrix.ta -o my_matrix.tf \
+		    # 	-attr AC MC0027 \
+		    # 	-attr id KNkB_278
+
 __END__
