@@ -1098,13 +1098,13 @@ sub doit {
       ## qsub command functionning using torque
       $qsub_command = "qsub";
       $qsub_command .= " ".$selected_nodes if ($selected_nodes);
-      $qsub_command .= " -d ".$wd;
-      $qsub_command .= " -m ".$batch_mail;
-      $qsub_command .= " -N ".$job_file;
-      #      $qsub_command .= " -j oe ";
-      $qsub_command .= " -e ".$job_file.".err";
-      $qsub_command .= " -o ".$job_file.".log";
-      $qsub_command .= " ".$job_file;
+      $qsub_command .= " -V";                     ## Pass environment variables to qsub !
+      $qsub_command .= " -d ".$wd;                ## Working directory used for the job
+      $qsub_command .= " -m ".$batch_mail;        ## Email options (error, completion)
+      $qsub_command .= " -N ".$job_file;          ## Job name
+      $qsub_command .= " -e ".$job_file.".err";   ## STDER log file
+      $qsub_command .= " -o ".$job_file.".log";   ## STDOUR log file
+      $qsub_command .= " ".$job_file;             ## Script
 
       &RSAT::message::Debug("qsub command for torque", $qsub_command) if ($main::verbose >= 2);
 

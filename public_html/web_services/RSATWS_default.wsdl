@@ -668,6 +668,12 @@ In some cases, we already dispose of a reference motif, for example the motif an
 Each discovered motif can be compared to the reference motif, in order to evaluate its correspondence with the binding motif of the factor of interest.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="motif_db" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of motif database.
+List of databases of transcription factor binding motifs (e.g. JASPAR, TRANSFAC, RegulonDB, ...) which will be compared to the discovered motifs (task motifs_vs_db). Use supported-motif-databases for availability</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="top_peaks" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Restrict the analysis to the N peaks at the top of the input sequence file. Some peak calling programs return the peaks sorted by
@@ -2104,6 +2110,27 @@ Default is 'both'.</xsd:documentation>
 	  <xsd:element name="depth" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Traversal depth for the taxononmic tree. If several organisms are supported in a max-dept taxon, only one is reported.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="SupportedMotifDatabasesRequest">
+        <xsd:annotation>
+	  <xsd:documentation>Parameters for the operation supported_organisms.</xsd:documentation>
+        </xsd:annotation>
+	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type.
+Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
+Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="return" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+	      <xsd:documentation>Return fields. Supported: name,format,file,descr,version,url.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
@@ -4519,6 +4546,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="SupportedMotifDatabasesResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="TextToHtmlResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -5434,6 +5481,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="supported_motif_databases">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:SupportedMotifDatabasesRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="supported_motif_databasesResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:SupportedMotifDatabasesResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
       <xsd:element name="text_to_html">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -6095,6 +6158,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="supported_organismsResponse">
     <part name="output" element="tns:supported_organismsResponse"/>
   </message>
+
+  <message name="supported_motif_databasesRequest">
+    <part name="parameters" element="tns:supported_motif_databases"/>
+  </message>
+
+  <message name="supported_motif_databasesResponse">
+    <part name="output" element="tns:supported_motif_databasesResponse"/>
+  </message>
   
   <message name="text_to_htmlRequest">
     <part name="parameters" element="tns:text_to_html"/>
@@ -6446,6 +6517,11 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <input name="SupportedOrganismsRequest" message="tns:supported_organismsRequest"/>
       <output name="SupportedOrganismsResponse" message="tns:supported_organismsResponse"/>
     </operation>
+    <operation name="supported_motif_databases">
+      <documentation>List RSAT suppported motif databases.</documentation>
+      <input name="SupportedMotifDatabasesRequest" message="tns:supported_motif_databasesRequest"/>
+      <output name="SupportedMotifDatabasesResponse" message="tns:supported_motif_databasesResponse"/>
+    </operation>
     <operation name="text_to_html">
       <documentation>Converts a tab-delimited file into a HTML table</documentation>
       <input name="TextToHtmlRequest" message="tns:text_to_htmlRequest"/>
@@ -6774,6 +6850,15 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <soap:body use="literal" />
       </input>
       <output name="SupportedOrganismsResponse">
+        <soap:body use="literal" />
+      </output>
+    </operation>
+    <operation name="supported_motif_databases">
+      <soap:operation soapAction=""/>
+      <input name="SupportedMotifDatabasesRequest">
+        <soap:body use="literal" />
+      </input>
+      <output name="SupportedMotifDatabasesResponse">
         <soap:body use="literal" />
       </output>
     </operation>
