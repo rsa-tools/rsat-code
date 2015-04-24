@@ -437,18 +437,25 @@ sub GetOrganismsForTaxon {
   my ($taxon, $depth, $die_if_noorg) = @_;
   &RSAT::message::Info("Collecting organisms for taxon", $taxon) if ($main::verbose >= 4);
   my @organisms = ();
+
+  ## Load the taxonomy of the organisms supported on this RSAT
+  ## instance.
   unless ($tree) {
       $tree = new RSAT::Tree();
   }
   $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism);
+
+  ## Identify the tree node corresponding to the query taxon
   my $node = $tree->get_node_by_id($taxon);
   if ($node){
-    @organisms = $node->get_leaves_names();
-
-    ## Cut the taxonomic tree by selecting only one organism for each
-    ## taxon at a given depth of the taxonomic tree.
     if (defined($depth) && ($depth != 0)) {
+      ## If depth argument has been specified, cut the taxonomic tree by
+      ## selecting only one organism for each taxon at a given depth of
+      ## the taxonomic tree.
       @organisms = &OneOrgPerTaxonomicDepth($depth, @organisms);
+    } else {
+      ## Get all organisms belonging to the query taxon
+      @organisms = $node->get_leaves_names();
     }
   } else {
     $message = join ("\t", "Taxon", $taxon, "is not supported on server", $ENV{rsat_site});
