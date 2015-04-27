@@ -256,7 +256,7 @@ package main;
 
 
   ## Matrices
-  local @matrices_total = ();
+  local @all_matrices = ();
   local $draw_heatmap = 0;
 
 
@@ -298,8 +298,8 @@ package main;
   ## Use compare-matrices-quick
   local $quick_flag = 0;
 
-  ## display title in trees and alignment table
-  local $display_title_flag = 0;
+  ## display collection label in trees and alignment table
+  local $display_collection_name_flag = 0;
 
   ## This option return only the root motifs saving time and memory. 
   ## The trees and heatmaps are not computed.
@@ -307,6 +307,8 @@ package main;
 
   ## Limit the number of input motifs
   local $max_matrices = 0;
+  local $top_matrices = 0;
+  local $skip_matrices = 0;
   
   ## To export in the results the input file
   local $clone_input_flag = 0;
@@ -317,6 +319,17 @@ package main;
   local $longest_title = 0;
   local $multi_input_flag = 0;
   local $single_input_flag = 0;
+
+  ## Supported positions to display the
+  ## hclust trees in heatmap.
+  ## This argument is passed to R
+  local @supported_tree_positions = qw (row, col, both, none);
+  local %supported_tree_positions = ();
+  foreach my $pos (@supported_tree_positions) {
+    $supported_tree_positions{$pos} = 1;
+  }
+  local $supported_tree_positions = join ",", @supported_hclust_methods;
+  local $heatmap_tree_pos = "column";
 
   ## A hash to save the name of the clusters and their corresponding hexa code
   local %hexa_code = ();
@@ -330,16 +343,13 @@ package main;
   local %param = ();
   $param{matrix_compa_min_w} = 5; ## min number of aligned columns
   $param{matrix_compa_min_Wr} = 0.3; ## min relative width
-  #$param{matrix_compa_min_cor} = 0.7; ## min correlation
-  #$param{matrix_compa_min_Ncor} = 0.4; ## min normalizd correlation
   $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
-  #$param{matrix_compa_metrics} = "Ncor";
   $param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NSW,match_rank";
   $param{matrix_compa_score} = "Ncor"; ## The score must be a similarity score for MCL
   $param{archive_format} = "zip";
   $param{progressive_synthesis} = 1;
-  $param{title} = "matrix-clustering";
-
+  $param{title} = "matrix-clustering results";
+  $param{motif_collection} = "matrix-clustering";
 
   ################################################################
   ## Read argument values
@@ -358,14 +368,14 @@ package main;
   }
 
   ## Check that the  input file (for two or more motif set) has been specified
-  if($multi_input_flag){
-      unless ($main::infile{matrices_info_tab}) {
-	  &RSAT::error::FatalError("You must define the motifs list (option -motif_set).");
-      }
+  if ($multi_input_flag){
+    unless ($main::infile{matrices_info_tab}) {
+      &RSAT::error::FatalError("You must define the motifs list (option -file_table).");
+    }
   }
 
   ## Check that the  input (single) file has been specified
-  if( $single_input_flag){
+  if ( $single_input_flag){
       unless ($main::infile{matrices}) {
 	  &RSAT::error::FatalError("You must define the input file (option -i).");
       }
@@ -522,23 +532,23 @@ package main;
 ################################################################
 ## Display full help message 
 sub PrintHelp {
-  system "pod2text -c $0";
-  exit()
+    system "pod2text -c $0";
+    exit()
 }
 
 ################################################################
 ## Display short help message
 sub PrintOptions {
-  &PrintHelp();
+    &PrintHelp();
 }
 
 ################################################################
 ## Read arguments 
 sub ReadArguments {
-  my $arg;
-  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-  while (scalar(@arguments) >= 1) {
-    $arg = shift (@arguments);
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+	$arg = shift (@arguments);
 
 =pod
 
@@ -580,15 +590,21 @@ Same as -h
       &PrintOptions();
 =pod
 
-=item B<-motif_set>
+=item B<-file_table>
 
-The input file must be a tab-delimited table with three fieds each line:
+The file table must be a tab-delimited table with three fieds each
+line:
 
 1) The path to one file containing a set of position-specific scoring matrices (PSSMs).
 
 2) The matix format of the set of PSSMs.
 
-3) The title of the collection. (Used to create an unique ID; Displayed in the results)
+3) The name of the motif collection (e.g. JASPAR_core_vertebrate,
+peak-motif_result, ...).
+
+The collection name name will be appended to each motif ID in order to
+ensure unique motif ID even though several motifs could have the same
+ID in the different input files.  Displayed in the results.
 
 B<Supported matrix formats>
 
@@ -603,7 +619,7 @@ The input file must contain at least one line as the next one:
 peak-motifs_Oct4_matrices.tf	transfac	Oct4_motifs
 
 =cut
-    } elsif ($arg eq "-motif_set") {
+    } elsif ($arg eq "-file_table") {
 	$main::infile{matrices_info_tab} = shift(@arguments);
 	$multi_input_flag = 1;
 
@@ -643,7 +659,7 @@ For a description of these formats, see the help of I<convert-matrix>.
 
 =pod
 
-=item	B<-title motif_set_title>
+=item	B<-title title>
 
 Title displayed on top of the report page.
 
@@ -651,15 +667,28 @@ Title displayed on top of the report page.
      } elsif ($arg eq "-title") {
       $main::param{title} = shift(@arguments);
       $main::param{title} =~ s/\s+/_/g;
-      $display_title_flag = 1;
+
+=pod
+
+=item	B<-motif_collection_name motif_collection_name>
+
+Label used to classify the motifs belonging to one collection.
+
+=cut
+     } elsif ($arg eq "-motif_collection_name") {
+      $main::param{motif_collection} = shift(@arguments);
+      $main::param{motif_collection} =~ s/\s+/_/g;
+      $main::param{motif_collection} =~ s/-/_/g;
+      $display_collection_name_flag = 1;
 
 =pod
 
 =item	B<-root_matrices_only>
 
-When this option is selected. matrix-clustering returns a file with the 
-motifs at the root of each cluster. This save time and memory consumption because
-the branch-motifs, heatmaps, and trees are not exported.
+When this option is selected. matrix-clustering returns a file with
+the motifs at the root of each cluster. This save time and memory
+consumption because the branch-motifs, heatmaps, and trees are not
+exported.
 
 =cut
 
@@ -692,6 +721,20 @@ tree.
 =cut
     } elsif ($arg eq "-heatmap") {
       $draw_heatmap = 1;
+
+=pod
+
+=item B<-heatmap_position_tree [row,col,both,none]>
+
+The position in the heatmap where the hierarchical tree will
+be displayed.
+
+=cut
+    } elsif ($arg eq "-heatmap_position_tree") {
+      $heatmap_tree_pos = shift(@arguments);
+      unless(exists($supported_tree_positions{$heatmap_tree_pos})) {
+	&RSAT::error::FatalError($heatmap_tree_pos, "Invalid position. Supported:", $supported_tree_positions);
+      }
 
   
 =pod
@@ -882,22 +925,41 @@ Compute inter-cluster distances based on the closest nodes.
 
 =pod
 
-=item B<-top X>
+=item B<-top_matrices X>
 
 Only analyze the first X motifs of the input file. This options is
 convenient for quick testing before starting the full analysis.
 
+If several motif files are specified, the selection of top motifs is
+performed independently for each motif collection (the max number of
+motifs will this be X * the number of input files).
+
 =cut
+    } elsif ($arg eq "-top_matrices") {
+      $top_matrices = shift(@arguments);
+
+      &RSAT::error::FatalError($top_matrices, "Invalid value for option -top_matrices: must be a natural number") 
+         unless (&IsNatural($top_matrices));
+
 
 =pod
 
-=item B<-skip X>
+=item B<-skip_matrices X>
 
 Skip the first X motifs of the input file. This options is convenient
 for testing the program on a subset of the motifs before starting the
 full analysis.
 
+If several motif files are specified, the option is applied to each
+file independently.
+
 =cut
+    } elsif ($arg eq "-skip_matrices") {
+      $skip_matrices = shift(@arguments);
+      &RSAT::error::FatalError($skip_matrices, "Invalid value for option -skip_matrices: must be a natural number") 
+         unless (&IsNatural($skip_matrices));
+    
+
 
 =pod
 
@@ -1028,11 +1090,18 @@ sub Verbose {
       printf $main::out ";\t%-28s\t%s\n", $key, $value;
     }
   }
-  printf $main::out  "; %-28s\t%s\n", "Number of matrices", scalar(@matrices_total);
+  printf $main::out  "; %-28s\t%s\n", "Number of matrices", scalar(@all_matrices);
 
   if (%main::outfile) {
     print $main::out "; Output files\n";
     while (my ($key,$value) = each %main::outfile) {
+      printf $main::out ";\t%-28s\t%s\n", $key, $value;
+    }
+  }
+
+  if (%main::dir) {
+    print $main::out "; Directories\n";
+    while (my ($key,$value) = each %main::dir) {
       printf $main::out ";\t%-28s\t%s\n", $key, $value;
     }
   }
@@ -1213,7 +1282,8 @@ sub Hclustering {
 
     ## Option to compute the heatmap
     $cluster_motifs_cmd .= "; draw.heatmap = ".$draw_heatmap;
-    
+    #$cluster_motifs_cmd .= "; pos.hclust.in.heatmap = ".$heatmap_tree_pos;
+
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
 	my $lthsp = "";
@@ -1561,8 +1631,9 @@ sub create_html_tree_file() {
 	.text(function(d) { return d.children ? "" : d.title; })
 	.attr("x", function(d) { return d.children ? 0 : 20; })
 	.attr("dy", function(d) { return d.children ? 0 : 27; })
-        .attr("fill", "blue")
+        .attr("fill", "black")
 	.attr("font-size", "18px")
+        .attr("font-weight", "bold")
 	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
         ';
 
@@ -1668,7 +1739,7 @@ sub create_html_tree_file() {
 			$add_this =~ s/d\.;/ d\.$field;/;
 		    }
 
-		    if ($display_title_flag == 1) {
+		    if ($display_collection_name_flag == 1) {
 			$add_this .= "\n".$display_title_lab."\n";	
 		    }
 		    
@@ -1884,7 +1955,7 @@ sub Merge_matrices() {
 	my $singleton_cluster = 0;
 	if (-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses") {
 	    chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
-	    if(scalar(@folder_merged_matrices) == 0){
+	    if (scalar(@folder_merged_matrices) == 0){
 	    	$singleton_cluster = 1;		
 	    }
 	} else {
@@ -1893,7 +1964,7 @@ sub Merge_matrices() {
 
 	my %int_align_info = ();
 
-	if($singleton_cluster == 0){
+	if ($singleton_cluster == 0){
 	    foreach my $folder (@folder_merged_matrices) {	    
 
 		## Read the table with the number of spaced for each matrix,
@@ -2003,7 +2074,7 @@ sub Merge_matrices() {
 		$cons =~ s/^DE\s+//;
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
 	    }
-	}else{
+	} else {
 	    my $singleton_motif_file = $main::outfile{prefix}."_single_matrices_"."@{$cluster_nodes{$cluster}}".".tf";
 	    my $new_singleton_motif_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/matrices.tf";
 	    $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file;
@@ -2051,7 +2122,7 @@ sub Merge_root_matrices() {
         ## Folders with the aligned matrices
 	my @folder_merged_matrices = ();
 	if (scalar(@nodes) > 1) {
-	    if(-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses"){
+	    if (-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses"){
 		chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
 	    }
 	} else {
@@ -2195,7 +2266,7 @@ sub Export_external_motifs() {
 	my @folder_merged_matrices = ();
 	my @nodes = @{$cluster_nodes{$cluster}};
 
-	if(scalar(@nodes) > 1){
+	if (scalar(@nodes) > 1){
 	    if (-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses") {
 		chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
 	    }
@@ -3408,7 +3479,7 @@ sub ReadAlignmentTable {
 	if (length($split_line[1]) >= $nb_char) {
 	    $nb_char = length($split_line[1]);
 	    $alignment_size{$cluster_id}{nb_char} = $nb_char;
-	} if ($display_title_flag == 1) {
+	} if ($display_collection_name_flag == 1) {
 	    if ($longest_title >= $nb_char) {
 		$nb_char = $longest_title;
 	    }
@@ -3758,7 +3829,7 @@ sub InsertTreesAndBranchMotifs {
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
     ';
 
-    if ($display_title_flag == 1) {
+    if ($display_collection_name_flag == 1) {
 	$label_single_tree .= '
         node.append("text")
 	.text(function(d) { return d.children ? "" : d.title; })
@@ -4149,179 +4220,165 @@ sub shave_matrix_low_IC_columns{
 ## unique IDs and concatenate the input motifs from 
 ## different collections (file) in a single one. 
 sub pre_process_motif_files{
+  
+  ## Count the number of motif sets
+  my $motif_set_counter = 0;
+  
+  ## This variable (previously optional now mandatory to display the title in the trees)
+  $display_collection_name_flag = 1;
+  
+  ## Create a directory to store the pre-processes motif files
+  ## Pre-processing includes 
+  ##   - conversion to transfac
+  ##   - concatenation of collection name and motif ID if several
+  ##     input files are specified
+  ##   - selection of top motifs if required
+  $main::dir{data} = $main::outfile{prefix}."_data";
+  &RSAT::util::CheckOutDir($dir{data});
+
+  ## Set the values of the title, file and format in a hash table
+  ## if the user has enter the option -i instead of -file_table.
+  if ($single_input_flag){
     
-    ## Count the number of motif sets
-    my $motif_set_counter = 0;
+    my $collection_name = $main::param{motif_collection};
+    $motif_set_attributes{$collection_name}{collection_label} = $main::param{motif_collection};
+    $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
+    $motif_set_attributes{$collection_name}{matrix_file_input} = $main::infile{matrices}; 
+
+  } else {
     
-    if($single_input_flag){
-	
-	my ($single_input_motif_set) = &OpenOutputFile($main::outfile{prefix}."_info_tab_single_set.tab");
-	my $line = $main::infile{matrices}."\t".$matrix_format."\t".$main::param{title}."\n";
-	print $single_input_motif_set $line;
-	close($single_input_motif_set);
-	$main::infile{matrices_info_tab} = $main::outfile{prefix}."_info_tab_single_set.tab";
-	$to_delete{'matrices_info_tab'} = $main::infile{matrices_info_tab};
-    }
-    
-    ## Parse compare-matrix result file to read score columns
+    ## Read the file tible and extract the information
     my ($info_tab_matrices) = &OpenInputFile($main::infile{matrices_info_tab});
-    while (<$info_tab_matrices>) { 
-	
-	next if (/^#/); ## Skip header line
-	next if (/^;/); ## Skip comment lines
-	next unless (/\S/); ## Skip empty lines
-	chomp;
-	
-	my ($matrix_file, $matrix_format, $title) = split ("\t");
-	$title =~ s/\s+/_/g;
-	
-	if(length($title) > $longest_title){
-	    $longest_title = length($title);
-	}
-	
-	## The titles must be uniques or the program ends
-	if(!exists($motif_set_attributes{$title}{title})){
-	    
-	    ## Set the values of the title, file and format in a hash table
-	    $motif_set_attributes{$title}{title} = $title; 
-	    $motif_set_attributes{$title}{matrix_format} = $matrix_format; 
-	    $motif_set_attributes{$title}{matrix_file_input} = $matrix_file; 
-	    
-	    ## This variable (previously optional now mandatory to display the title in the trees)
-	    $display_title_flag = 1;
-	}else{
-	    &RSAT::error::FatalError($motif_set_attributes{$title}{title}, " repeated. The title of each motif file must be unique.");
-	}
-	
-	
-	## Check the matrix format on each line of the file
-	unless($supported_matrix_format{$matrix_format}){
-	    &RSAT::error::FatalError($motif_set_attributes{$title}{matrix_format}, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
-	}else{
-	    $motif_set_counter++;
-	}
-	
-	################################################################
-	## Check matrix number (required for verbose + if max matrices specified)
-	my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
-	push(@matrices_total, @matrices);
-	local $matrix_nb_ok = 1;
-	if ($max_matrices > 0) {
-	    &RSAT::message::TimeWarn("Checking the number of input matrices (max: ".$max_matrices.").") if ($main::verbose >= 2);
-	    &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
-		if ($main::verbose >= 2);
-	    if (scalar(@matrices_toal) > $max_matrices) {
-		$matrix_nb_ok = 0;
-		&RSAT::message::Warning("Input files contains ".scalar(@matrices_toal)." matrices (".$matrix_file.").", 
-					"The analysis will however be limited to the ".$max_matrices." first matrices (option -max_matrices).");
-	    }
-	    @matrices_total = @matrices_total[1..$max_matrices];
-	}
-	
-	## Set the name of the input motif file
-	&RSAT::util::CheckOutDir($main::outfile{prefix}."_data");
-	$motif_set_attributes{$title}{matrix_file_halfway} = $main::outfile{prefix}."_data/".$title."_input_motifs_halfway.tf";
-	$motif_set_attributes{$title}{matrix_file_processed} = $main::outfile{prefix}."_data/".$title."_input_motifs_processed.tf";
-	$motif_collection_name = $motif_set_attributes{$title}{matrix_file_halfway};
-	$to_delete{$title} = $main::outfile{prefix}."_data/".$title."_input_motifs_halfway.tf";
-	
-	## Check if matrix conversion is required.  Can be required for various reasons:
-	## 1) input format differs from transfac, 
-	## 2) if the number of input matrices exceeds the maximal allowed number (option -max_matrices).
-	## 3) If the $clone_input_flag is ON.
-	if ((($matrix_format eq "transfac") || ($matrix_format eq "tf"))
-	    && ($matrix_nb_ok)
-	    && (!$clone_input_flag) ) {
-	    $cmd = "cp ".$motif_set_attributes{$title}{matrix_file_input}." ".$motif_collection_name;
-	    &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-	} else {
-	    
-	    ## Convert input matrices in transfac format
-	    &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
-	    my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
-	    $convert_matrix_cmd .= " -i ".$motif_set_attributes{$title}{matrix_file_input};
-	    $convert_matrix_cmd .= " -from ".$matrix_format;
-	    $convert_matrix_cmd .= " -to transfac";
-	    $convert_matrix_cmd .= " -top ".$max_matrices if ($max_matrices > 0);
-	    $convert_matrix_cmd .= " -o ".$motif_collection_name;
-	    &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-	    
-	    ## Split matrices in separated files
-	    &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
-	    my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
-	    $split_matrix_cmd .= " -i ".$motif_collection_name;
-	    $split_matrix_cmd .= " -split";
-	    $split_matrix_cmd .= " -from tf -to tf";
-	    $split_matrix_cmd .= " -o ".$main::outfile{prefix}."_data/motif";
-	    &doit($split_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-	}	
+    while (<$info_tab_matrices>) {     
+      next if (/^#/); ## Skip header line
+      next if (/^;/); ## Skip comment lines
+      next unless (/\S/); ## Skip empty lines
+      chomp();
+      
+      my ($matrix_file, $matrix_format, $collection_name) = split ("\t");
+      $collection_name =~ s/\s+/_/g;
+      
+      ## The collection labels must be unique or the program ends
+      if (exists($motif_set_attributes{$collection_name}{collection_label})){
+	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{collection_label}, " repeated. The collection label of each motif file must be unique.");	
+      } 
+      
+      ## Set the values of the collection label, file and format in a hash table
+      $motif_set_attributes{$collection_name}{collection_label} = $collection_name; 
+      $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
+      $motif_set_attributes{$collection_name}{matrix_file_input} = $matrix_file; 
+      
+      ## Check the matrix format on each line of the file
+      unless ($supported_matrix_format{$matrix_format}) {
+	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{matrix_format}, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+      } else {
+	$motif_set_counter++;
+      }
     }
     close $main::infile{matrices_info_tab};
+    &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
+			 "matrix files from file table", $main::infile{matrices_info_tab}) 
+	if ($main::verbose >= 2);
+  }
+
+
+  ## Pre-process each motif collection
+  foreach my $collection_name (keys(%motif_set_attributes)) {
     
+      ## Set the values of the title, file and format in a hash table
+      my $matrix_format = $motif_set_attributes{$collection_name}{matrix_format}; 
+      my $matrix_file = $motif_set_attributes{$collection_name}{matrix_file_input};
     
-    #########################################################
-    ## Assign an unique ID to each motif in the input file
-    ## The ID is compossed by: the motif ID + title
-    ## Create a new file with the new ID
-    
-    foreach my $t (keys %motif_set_attributes){
-	
-	## Create the file with the processed matrices
-	my $processed_matrix_output = &OpenOutputFile($motif_set_attributes{$t}{matrix_file_processed});
-	
-	@matrices = &RSAT::MatrixReader::readFromFile($motif_set_attributes{$t}{matrix_file_halfway}, $motif_set_attributes{$t}{matrix_format});
-	
-	foreach my $matrix (@matrices) {
-	    
-	    ## Get accesion number
-	    my $AC = $matrix->get_attribute("accession");
-	    
-	    ## Create the unique AC
-	    my $AC_unique = join("_", $AC, $t);
-	    
-	    ## Save the unique ID in a hash table
-	    ## Key = ID unique
-	    ## Value = title (motif collection)
-	    $motifs_ID_unique{$AC_unique} = $t;
-	    
-	    ## Change the parameters
-	    $matrix->force_attribute("accession", $AC_unique);
-	    $matrix->force_attribute("AC", $AC_unique);
-	    
-	    ## Print the processed matrix in the new file
-	    print $processed_matrix_output $matrix->toString(sep=>"\t",
-							     type=>"counts",
-							     format=>"transfac",
-			       );
-	}
-        close $processed_matrix_output;
-    }
+      ## Compute the longest collection name for display
+      if (length($collection_name) > $longest_title){
+	  $longest_title = length($collection_name);
+      }
+      
+      ################################################################
+      ## Collect all matrices
+      my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+      push(@all_matrices, @matrices);
+      local $matrix_nb_ok = 1;
+      &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
+	  if ($main::verbose >= 2);
+      
+      ################################################################
+      ## Check matrix number (required for verbose + if max matrices specified).
+      if ($max_matrices > 0) {
+	  &RSAT::message::TimeWarn("Checking max number of input matrices (".$max_matrices.")") if ($main::verbose >= 2);
+	  &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
+	      if ($main::verbose >= 2);
+	  &RSAT::message::TimeWarn(scalar(@all_matrices), "Matrices loaded in total")
+	      if ($main::verbose >= 2);
+	  
+	  if (scalar(@all_matrices) > $max_matrices) {
+	      $matrix_nb_ok = 0;
+	      &RSAT::message::Warning("Input files contain ".scalar(@all_matrices)." matrices.", 
+				      "The analysis will be limited to the ".$max_matrices." first matrices (option -max_matrices).");
+	      
+	      @all_matrices = @all_matrices[1..$max_matrices];
+	      
+	      ## Not sure
+	      # last; ## Not worth reading the remaining files since we reached max matrix number
+	  }
+      }    
+      
+      ## Create a single file combining all the matrices from all the current
+      ## input file, and append the motif collection name to each matrix ID.
+      $motif_set_attributes{$collection_name}{matrix_file_processed} = $main::dir{data}."/".$collection_name."_input_motifs_processed.tf";
+      
+      ## Convert input matrices in transfac format + append prefix if required
+      &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
+      my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+      $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_input};
+      $convert_matrix_cmd .= " -from ".$matrix_format;
+      $convert_matrix_cmd .= " -to transfac";
+      $convert_matrix_cmd .= " -top ".$top_matrices if ($top_matrices > 0);
+      $convert_matrix_cmd .= " -skip ".$skip_matrices if ($skip_matrices > 0);
+      $convert_matrix_cmd .= " -prefix ".$collection_name;
+      $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed};
+      &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+      
+      ################################################
+      ## Save the unique ID in a hash table
+      ## Key = ID unique
+      ## Value = title (motif collection)
+      my ($processed_matrix_file) = &OpenInputFile($motif_set_attributes{$collection_name}{matrix_file_processed});
+      while(<$processed_matrix_file>){
+	  next if (/^#/); ## Skip header line
+	  next if (/^;/); ## Skip comment lines
+	  next unless (/\S/); ## Skip empty lines
+	  next unless (/^AC\s+/);
+	  chomp();
+	  my($null, $AC_unique) = split(/\s+/, $_);
+	  $motifs_ID_unique{$AC_unique} = $collection_name;
+      }
+      close($processed_matrix_file);
+  }
 
-    ## Concatenate all the processed input file in a single one
-    ## Rename the motif files
-    $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs_processed.tf";
-    my $concatenate_processed_files_cmd = "cat ";
-    my $set_size = scalar(keys %motif_set_attributes);
-    my $set_counter = 0;
-    foreach my $t (keys %motif_set_attributes){
-       $set_counter++;
-       $concatenate_processed_files_cmd .=  $motif_set_attributes{$t}{matrix_file_processed}." ";
-    }
-    $concatenate_processed_files_cmd .= " > ".$main::outfile{motif_file};
 
-    &doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err); 
-    $main::outfile{input_matrices} = $main::outfile{motif_file};
+  ################################################################
+  ## Concatenate all the processed input files in a single one.
+  ## Rename the motif files.
+  $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs_processed.tf";
+  my $concatenate_processed_files_cmd = "cat ";
+  foreach my $t (keys %motif_set_attributes){
+      $concatenate_processed_files_cmd .=  $motif_set_attributes{$t}{matrix_file_processed}." ";
+  }
+  $concatenate_processed_files_cmd .= " > ".$main::outfile{motif_file};
+  
+  &doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err); 
+  $main::outfile{input_matrices} = $main::outfile{motif_file};
 
-
-
-       $to_delete{'matrices_info_tab'} = $main::infile{matrices_info_tab};
-
-
+  ################################################################
+  ## Split all the processed motifs into sinle file
+  ## each one containing a single motif
+  &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
+  my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
+  $split_matrix_cmd .= " -i ".$main::outfile{motif_file};
+  $split_matrix_cmd .= " -split";
+  $split_matrix_cmd .= " -from tf -to tf";
+  $split_matrix_cmd .= " -o ".$main::outfile{prefix}."_data/motif";
+  &doit($split_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 }
-
-		    # convert-matrix -from tab -to transfac \
-		    #     -i my_matrix.ta -o my_matrix.tf \
-		    # 	-attr AC MC0027 \
-		    # 	-attr id KNkB_278
-
 __END__
