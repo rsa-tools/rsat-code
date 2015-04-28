@@ -80,9 +80,11 @@ names(global.compare.matrices.table)[1] <- sub("^X.", "", names(global.compare.m
 ################################################################
 ## Read description table
 global.description.table <<- read.csv(description.file, sep="\t", comment.char=";")
-if(length(global.description.table$id) == 2*length(unique(global.description.table$id))){
-  global.description.table <- global.description.table[1:length(unique(global.description.table$id)),]
-}
+
+# if(length(global.description.table$id) == 2*length(unique(global.description.table$id))){
+#   global.description.table <- global.description.table[1:length(unique(global.description.table$id)),]
+# }
+
 ## In reference to the names, order alphabetically the description table
 global.description.table <- global.description.table[order(global.description.table$id),]
 global.description.table$n <- 1:length(global.description.table$id)
