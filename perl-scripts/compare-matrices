@@ -3548,21 +3548,18 @@ __END__
 
 =over
 
-=item B<logoDP>
-
-Dot product between the "sequence logo statisitcs", i.e. the
-column-wise information content multiplied by the residue frequency.
 
 =item B<Additional metrics>
 
 =over
 
-=item Mutual information
+=item I<Mutual information>
 
 We should check if this fixes the problems of 0 values that we have
 with the KL distance.
 
-=item The "natural covariance"
+
+=item I<"natural covariance">
 
 Pape, U. J., Rahmann, S. and Vingron, M. (2008). Natural similarity
 measures between position frequency matrices with an application to
@@ -3571,12 +3568,23 @@ clustering. Bioinformatics 24, 350-7.
 This metrics measures the covariance between hits of two matrices
 above a given threshold for each of them.
 
-=item chi2 P-value (for the sake of comparison).
+=item I<chi2 P-value>
+
 
 Note that a condition of applicability of the chi2 P-value is that the
 expected value should be >= 5 for each cell of the matrix. This
 condition is usually not fulfilled for the PSSM we use for motif
 scanning.
+
+The chi2 distance was proposed in 2 articles:
+
+1. Kielbasa,S.M., Gonze,D. and Herzel,H. (2005) Measuring similarities
+   between transcription factor binding sites. BMC Bioinformatics, 6,
+   237.
+
+2. Schones,D.E., Sumazin,P. and Zhang,M.Q. (2005) Similarity of
+   position frequency matrices for transcription factor binding
+   sites. Bioinformatics, 21, 307–313.
 
 =item Average Log Likelihood Ratio (ALLR)
 
