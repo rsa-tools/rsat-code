@@ -323,12 +323,12 @@ package main;
   ## Supported positions to display the
   ## hclust trees in heatmap.
   ## This argument is passed to R
-  local @supported_tree_positions = qw (row, column, both, none);
+  local @supported_tree_positions = qw (row column both none);
   local %supported_tree_positions = ();
   foreach my $pos (@supported_tree_positions) {
     $supported_tree_positions{$pos} = 1;
   }
-  local $supported_tree_positions = join ",", @supported_hclust_methods;
+  local $supported_tree_positions = join ",", @supported_tree_positions;
   local $heatmap_tree_pos = "column";
 
   ## A hash to save the name of the clusters and their corresponding hexa code
