@@ -323,7 +323,7 @@ package main;
   ## Supported positions to display the
   ## hclust trees in heatmap.
   ## This argument is passed to R
-  local @supported_tree_positions = qw (row, col, both, none);
+  local @supported_tree_positions = qw (row, column, both, none);
   local %supported_tree_positions = ();
   foreach my $pos (@supported_tree_positions) {
     $supported_tree_positions{$pos} = 1;
@@ -1282,7 +1282,7 @@ sub Hclustering {
 
     ## Option to compute the heatmap
     $cluster_motifs_cmd .= "; draw.heatmap = ".$draw_heatmap;
-    #$cluster_motifs_cmd .= "; pos.hclust.in.heatmap = ".$heatmap_tree_pos;
+    $cluster_motifs_cmd .= "; pos.hclust.in.heatmap = '".$heatmap_tree_pos."'";
 
     ## Pass the thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
@@ -1301,7 +1301,7 @@ sub Hclustering {
       $cluster_motifs_cmd .= "; export_newick = '".$main::outfile{consensus_phylogram_newick}."'";
     }
     $cluster_motifs_cmd .= "; \"";
-    $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog}; ## Fixed by JvH on 2015-03-27
+    $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog};
 
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
