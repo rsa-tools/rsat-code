@@ -533,7 +533,7 @@ _download_d3:
 ################################################################
 ## Install fastqc, a software tool to control the quality of read
 ## files (next generation sequencing).
-FASTQC_VER=0.10.1
+FASTQC_VER=0.11.3
 FASTQC_ZIP=fastqc_v${FASTQC_VER}.zip
 FASTQC_URL=http://www.bioinformatics.babraham.ac.uk/projects/fastqc/${FASTQC_ZIP}
 FASTQC_DOWNLOAD_DIR=${SRC_DIR}/fastqc
@@ -545,12 +545,14 @@ install_fastqc: _download_fastqc _install_fastqc
 _download_fastqc:
 	@mkdir -p ${FASTQC_DOWNLOAD_DIR}
 	@echo "Getting fastqc using wget"
-	(cd ${FASTQC_DOWNLOAD_DIR}; wget -nv -nd ${FASTQC_URL}; unzip ${FASTQC_ZIP})
+	(cd ${FASTQC_DOWNLOAD_DIR}; wget  --no-clobber -nv -nd ${FASTQC_URL}; unzip ${FASTQC_ZIP})
 	@echo "	fastqc download dir	${FASTQC_DOWNLOAD_DIR}"
 	@echo "	fastqc install dir	${FASTQC_INSTALL_DIR}"
 	@chmod 755 ${FASTQC}
 	@echo "	fastqc executable dir	${FASTQC_EXEC_DIR}"
 	@echo "	fastqc script    	${FASTQC}"
+
+_install_fastqc:
 	@echo
 	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
 	@echo "export PATH=$${PATH}:${FASTQC_EXEC_DIR}"
