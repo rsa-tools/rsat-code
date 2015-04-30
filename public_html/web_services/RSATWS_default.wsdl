@@ -6158,6 +6158,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="supported_organismsResponse">
     <part name="output" element="tns:supported_organismsResponse"/>
   </message>
+
+  <message name="supported_motif_databasesRequest">
+    <part name="parameters" element="tns:supported_motif_databases"/>
+  </message>
+
+  <message name="supported_motif_databasesResponse">
+    <part name="output" element="tns:supported_motif_databasesResponse"/>
+  </message>
   
   <message name="text_to_htmlRequest">
     <part name="parameters" element="tns:text_to_html"/>

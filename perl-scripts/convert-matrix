@@ -172,7 +172,7 @@ package main;
       my $matrix_file = $fields[0];
       push @matrix_files, $matrix_file;
       if($matrix_list_name==1){
-	  my $matrix_id = $fields[1];
+	  my $matrix_id = $fields[1];	  
 	  push @tf_name_in_file, $matrix_id ;
       }
 
@@ -512,6 +512,11 @@ package main;
 	|| $matrix->get_attribute("ID")
 	|| $id_nb;
     $matrix->force_attribute("ID", $ID);
+
+    ## Select user-specified IDs if the option -matrix_id_file has been specified
+    if ($infile{"matrix_id_file"}) {
+      next unless ($selected_matrix{lc($ID)});
+    }
 
     my $current_out;
     if ($split_out_files) {
