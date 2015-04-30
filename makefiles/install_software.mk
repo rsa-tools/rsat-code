@@ -438,7 +438,7 @@ _compile_rnsc:
 
 ################################################################
 ## Install BLAST
-install_blast: _list_blast_param _download_blast _install_blast
+install_blast: list_blast_param _download_blast _install_blast
 
 _download_blast: _download_blast_${OS}
 
@@ -459,8 +459,9 @@ _install_blast:
 	@echo "If your shell is csh or tcsh"
 	@echo "	setenv PATH $${RSAT_BIN}:$${PATH}"
 
-_list_blast_param:
+list_blast_param:
 	@echo "Downloading blast"
+	@echo "	Operating system	${OS}"
 	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
 	@echo "	BLAST_LINUX_ARCHIVE	${BLAST_LINUX_ARCHIVE}"
 	@echo "	BLAST_URL		${BLAST_URL}"

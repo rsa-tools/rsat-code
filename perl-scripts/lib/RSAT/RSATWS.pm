@@ -941,55 +941,33 @@ sub peak_motifs {
     my %args = %$args_ref;
     my $output_choice = $args{"output"};
 #    unless ($output_choice) {
-	$output_choice = 'server';
+    $output_choice = 'server';
 #    }
 
+#    my $command = $self->peak_motifs_cmd(%args);
     my $command = $self->peak_motifs_cmd(%args);
 
     my $date = &RSAT::util::AlphaDate();
     $date =~ s/\n//;
 
     my $output_directory = "peak-motifs_ws";
-#    my $output_path = $TMP."/".$output_directory;
     my $output_path = &RSAT::util::make_temp_file("", $output_directory, 1, 1); 
     my $output_prefix = "peak-motifs";
     $output_path =~ s|\/\/|\/|g;
-#    system("mkdir -p $output_path");
     system("mkdir -p $output_dir_full_path; chmod 755 $output_dir_full_path");
 
     $command .= " -outdir '".$output_path."'";
     $command .= " -prefix '".$output_prefix."'";
 
-
-    ################################################################
-    ## PROBLEM: THESE ABSOLUTE PATHS SHOULD NOT BE USED (JvH, 2013-08-09)
-
-#    my $tmp_synthesis = $output_path."/".$output_prefix."_synthesis.html";
-#    $tmp_synthesis =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
-#    my $tmp_outzip = $output_path."/".$output_prefix."_archive.zip";
-#    $tmp_outzip =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
-#    my $result_url = $output_path;
-#    $result_url =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
-#    my $error_file = $output_path.".err";
-#    my $error_url = $error_file;
-#    $error_url =~ s/\/data\/rsa-tools\/public_html/http\:\/\/mamaze\.ulb\.ac\.be\/rsat/g;
-
     my $tmp_synthesis = &RSAT::util::rsat_path_to_url($output_path."/".$output_prefix."_synthesis.html");
-#    $tmp_synthesis =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
     my $tmp_outzip = &RSAT::util::rsat_path_to_url($output_path."/".$output_prefix."_archive.zip");
-#    $tmp_outzip =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
 #    my $result_url = &RSAT::util::rsat_path_to_url($output_path);
-#    $result_url =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
     my $error_file = $output_path.".err";
     my $error_url = &RSAT::util::rsat_path_to_url($error_file);
-#    $error_url =~ s/\/data\/rsa-tools\/public_html/$ENV{rsat_www}/g;
-
 
     my $response = "The server is now processing your request.\n";
-  #  $response .= "You can follow its status while running at the following URL\n";
     $response .= "Once it will be finished, the result will become available at the following URL\n";
     $response .= "\t$tmp_synthesis\n";
- #   $response .= "\t$result_url\n";
     $response .= "A zipped archive will also be available at the following URL\n";
     $response .= "\t$tmp_outzip\n";
     $response .= "Otherwise, check the following page for error track\n";
@@ -999,28 +977,25 @@ sub peak_motifs {
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"peak-motifs",output_choice=>$output_choice);
 
-
-  if ($output_choice eq 'server') {
+    if ($output_choice eq 'server') {
       return SOAP::Data->name('response' => \SOAP::Data->value(
-				  SOAP::Data->name('server' => $response),
-				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
-			          SOAP::Data->name('client' => 'NA')))
+				SOAP::Data->name('server' => $response),
+				SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				SOAP::Data->name('client' => 'NA')))
 	  ->attr({'xmlns' => ''});
-  } elsif ($output_choice eq 'client') {
+    } elsif ($output_choice eq 'client') {
       return SOAP::Data->name('response' => \SOAP::Data->value(
-				  SOAP::Data->name('server' => 'NA'),
-				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
-				  SOAP::Data->name('client' => $response)))
+				SOAP::Data->name('server' => 'NA'),
+				SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				SOAP::Data->name('client' => $response)))
 	  ->attr({'xmlns' => ''});
-  } elsif ($output_choice eq 'both') {
+    } elsif ($output_choice eq 'both') {
       return SOAP::Data->name('response' => \SOAP::Data->value(
-				  SOAP::Data->name('server' =>  $response),
-				  SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
-				  SOAP::Data->name('client' => $response)))
+				SOAP::Data->name('server' =>  $response),
+				SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+				SOAP::Data->name('client' => $response)))
 	  ->attr({'xmlns' => ''});
-  }
-
-
+    }
 
      local(*HIS_IN, *HIS_OUT, *HIS_ERR);
      my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
@@ -1044,18 +1019,18 @@ sub peak_motifs {
      close HIS_OUT;
      close HIS_ERR;
 
-     if ($stderr) {
-     	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-     }
+    if ($stderr) {
+      die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
 }
 
 
 sub peak_motifs_cmd {
     my ($self, %args) =@_;
+
     if ($args{"test"}) {
 	my $test = $args{"test"};
 	chomp $test;
-#	$tmp_test_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
 	$tmp_test_infile = &RSAT::util::make_temp_file("","peak-motifs", 1,0);
 	open TMP_IN, ">".$tmp_test_infile or die "cannot open temp file ".$tmp_test_infile."\n";
 	print TMP_IN $test;
@@ -1068,7 +1043,6 @@ sub peak_motifs_cmd {
     if ($args{"control"}) {
 	my $control = $args{"control"};
 	chomp $control;
-#	$tmp_control_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
 	$tmp_control_infile = &RSAT::util::make_temp_file("","peak-motifs-ctrl", 1,0);
 	open TMP_IN, ">".$tmp_control_infile or die "cannot open temp file ".$tmp_control_infile."\n";
 	print TMP_IN $control;
@@ -1085,7 +1059,6 @@ sub peak_motifs_cmd {
     if ($args{"ref_motif"}) {
         my $ref_motif = $args{"ref_motif"};
         chomp $ref_motif;
-#        $tmp_ref_motif_infile = `mktemp $TMP/peak-motifs.XXXXXXXXXX`;
 	$tmp_ref_motif_infile = &RSAT::util::make_temp_file("","peak-motifs_ref-motifs", 1,0);
         open TMP_REF, ">".$tmp_ref_motif_infile or die "cannot open temp file ".$tmp_ref_motif_infile."\n";
         print TMP_REF $ref_motif;
@@ -1110,8 +1083,8 @@ sub peak_motifs_cmd {
     my $disco = $args{"disco"};
     my $source = $args{"source"};
     my $task = $args{"task"};
-
-    my $command = "$SCRIPTS/peak-motifs";
+ 
+   my $command = "$SCRIPTS/peak-motifs";
 
     if ($verbosity) {
       $verbosity =~ s/\'//g;
@@ -1149,11 +1122,10 @@ sub peak_motifs_cmd {
 	my @_motif_db = split(',', $motif_db);
 	my %matrix_db = &RSAT::server::supported_motif_databases();
 	foreach my $db (@_motif_db) {
-	    unless ($db ~~ keys %matrix_db) {
-		die "$db is unknown";
+	    unless (/$db/ ~~ %matrix_db) {
+	      die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("$db MOTIF DATABASE IS UNKNOWN !");
 	    }
-	    @_db = split(/ /,$matrix_db{$db});
-	    $command .= " -motif_db '".$_db[0]."' '".$_db[1]."' '".${RSAT}."/data/motif_databases/".$_db[2]."'";
+	    $command .= " -motif_db ".$matrix_db{$db}{'name'}." ".$matrix_db{$db}{'format'}." ".$ENV{RSAT}."/public_html/motif_databases/".$matrix_db{$db}{'file'};
 	}
     }
 
@@ -1245,7 +1217,7 @@ sub peak_motifs_cmd {
 	$command .= " -ref_motifs '".$tmp_ref_motif_infile."'";
     }
 
-    return $command;
+    return ($command);
 #    &run_WS_command($command, $output_choice, "peak-motifs", "tab");
 #    &run_WS_command($command, $output_choice, "peak-motifs");
 }

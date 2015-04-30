@@ -42,7 +42,19 @@ check.param <- function() {
   if (!exists("draw.heatmap")) {
     draw.heatmap <<- "1";
   }
-  
+
+  ## Option indicating if the heatmap must be computed
+  if (!exists("pos.hclust.in.heatmap")) {
+    pos.hclust.in.heatmap <<- "column";
+  }
+
+  ## Check that when the option -heatmap_position_tree is indicated in the
+  ## perl script, the option -heatmap should also indicated, conversely
+  ## the program ends
+  if (exists("pos.hclust.in.heatmap") & !exists("draw.heatmap")) {
+    stop("You must indicate the option -heatmap in order to select the option -heatmap_position_tree.")
+  }
+
   ## When this option is activated
   ## Only the hclust is done, skipping the
   ## trees and heatmap computation
