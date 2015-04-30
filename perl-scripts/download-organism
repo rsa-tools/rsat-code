@@ -374,7 +374,7 @@ package main;
       $cmd .= " --convert-links";
       $cmd .= " --exclude-directories=jobs";
       $cmd .= " --directory-prefix=".$local_genomes_dir;
-      $cmd .= " --no-host-directories --cut-dirs=3";
+      $cmd .= " --no-host-directories --cut-dirs=4";
       $cmd .= " ".${RSAT_SERVER}."/data/genomes/".$org."/";
 
     } elsif ($get_command eq "rsync") {
