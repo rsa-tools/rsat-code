@@ -513,6 +513,11 @@ package main;
 	|| $id_nb;
     $matrix->force_attribute("ID", $ID);
 
+    ## Select user-specified IDs if the option -matrix_id_file has been specified
+    if ($infile{"matrix_id_file"}) {
+      next unless ($selected_matrix{lc($ID)});
+    }
+
     my $current_out;
     if ($split_out_files) {
       my $output_prefix = $outfile{output};
