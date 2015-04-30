@@ -22,6 +22,7 @@ V=2
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
 OCT4_PREFIX=peak-motifs_Oct4
+OCT4_VS_SOX2_PREFIX=Oct4_vs_Sox2
 
 ## Choose a particular demo set
 MATRIX_PREFIX=${PEAKMO_PREFIX}
@@ -29,6 +30,7 @@ MATRIX_PREFIX=${PEAKMO_PREFIX}
 ## Define file locations based on the chosen demo set
 MATRIX_DIR=${RSAT}/public_html/demo_files
 MATRIX_FILE=${MATRIX_DIR}/${MATRIX_PREFIX}_matrices.tf
+FILE_TABLE=${MATRIX_DIR}/${MATRIX_PREFIX}_motif_set.tab
 
 list_param:
 	@echo "MATRIX_PREFIX		${MATRIX_PREFIX}"
@@ -55,24 +57,48 @@ CLUSTER_PREFIX=${MATRIX_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN
 CLUSTER_DIR=results/matrix-clustering_results/${MATRIX_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
 CLUSTER_CMD=matrix-clustering -v ${V} \
-		-i ${MATRIX_FILE} -matrix_format tf \
+		-i ${MATRIX_FILE} -matrix_format tf -motif_collection_name '${MATRIX_PREFIX}' \
+		-title '${TITLE}' \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
 		-lth w ${MIN_W} \
-		-heatmap\
+		-heatmap \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
+		-o ${CLUSTER_FILE_PREFIX}
+
+CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
+		-file_table ${FILE_TABLE} \
 		-title '${TITLE}' \
-		-display_title \
+		-lth Ncor ${MIN_NCOR} \
+		-lth cor ${MIN_COR} \
+		-lth w ${MIN_W} \
+		-heatmap \
+		-hclust_method ${HCLUST_METHOD} \
+		-label name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX}	
 
 _cluster:
 	@echo
 	@echo "Running matrix-clustering	${MATRIX_PREFIX}	${OPT}"
 	${MAKE} my_command MY_COMMAND="${CLUSTER_CMD}"
-#	${CLUSTER_CMD}
 	@echo "		${CLUSTER_CMD}"
 	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
+
+_cluster_multi:
+	@echo
+	@echo "Running matrix-clustering	${MATRIX_PREFIX}	${OPT}"
+	${MAKE} my_command MY_COMMAND="${CLUSTER_MULTI_SET_CMD}"
+	@echo "		${CLUSTER_MULTI_SET_CMD}"
+	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
+
+
+## Cluster motifs resulting from two independent analysis of peak-motifs (Chen data set) with Oct4 and Sox2 peaks. 
+cluster_peakmotifs_Oct4_vs_Sox2:
+	@echo
+	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct4 and Sox2 dataset from Chen 2008)"
+	${MAKE} _cluster_multi MATRIX_PREFIX=${OCT4_VS_SOX2_PREFIX} \
+		TITLE='Oct4 motifs peak motifs'
 
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
@@ -80,7 +106,8 @@ cluster_peakmotifs_Oct4:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
-		TITLE='Oct4 motifs peak motifs'
+		TITLE='Oct4 motifs peak motifs' \
+		COLLECTION=${OCT4_PREFIX}
 
 cluster_peakmotifs_Oct4_roots_only:
 	@${MAKE} cluster_peakmotifs_Oct4 OPT=-root_matrices_only
@@ -91,12 +118,14 @@ cluster_peakmotifs_Oct4_no_threshold:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	@${MAKE} _cluster MATRIX_PREFIX=${PEAKMO_PREFIX} MIN_NCOR=-1 MIN_COR=-1 \
-		TITLE='Peak-motifs results for Oct4 ChIP-seq peaks - no thresholds'
+		TITLE='Peak-motifs results for Oct4 ChIP-seq peaks - no thresholds' \
+		COLLECTION=${PEAKMO_PREFIX}
 
 ## Permutation test with peak-motifs (Chen Oct4 data set)
 cluster_peakmotifs_Oct4_permute:
 	@${MAKE} ${MATRIX_PREFIX}=${PEAKMO_PREFIX} permute_matrices cluster_permuted_matrices \
-		TITLE='Permuted matrices from peak-motifs results with Oct4 ChIP-seq peaks'
+		TITLE='Permuted matrices from peak-motifs results with Oct4 ChIP-seq peaks' \
+		COLLECTION=${PEAKMO_PREFIX}
 
 ## Rndomize input matrices by permuting their columns
 PERMUTED_PREFIX=${MATRIX_PREFIX}_permuted
@@ -121,7 +150,7 @@ cluster_permuted_matrices:
 cluster_footprints:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by footprint-discovery (query gene=LexA; taxon=Enterobacteriales)"
-	${MAKE} _cluster MATRIX_PREFIX=${FOOTPRINT_DISCO_PREFIX}
+	${MAKE} _cluster MATRIX_PREFIX=${FOOTPRINT_DISCO_PREFIX} COLLECTION=${FOOTPRINT_DISCO_PREFIX}
 
 
 ## Cluster all motifs from RegulonDB
@@ -133,7 +162,8 @@ cluster_regulondb:
 	@echo
 	@echo "Clustering all matrices from RegulonDB"
 	${MAKE} _cluster MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} \
-		TITLE='RegulonDB database'
+		TITLE='RegulonDB database' \
+		COLLECTION=${RDB_PREFIX}
 
 ## Permutation test with RegulonDB
 cluster_regulondb_permute:
@@ -159,7 +189,8 @@ cluster_jaspar_one_group:
 	${MAKE} _cluster MATRIX_PREFIX=${JASPAR_PREFIX} \
 		MATRIX_FILE=${JASPAR_MATRICES} \
 		MIN_COR=0.6 MIN_NCOR=0.4 \
-		TITLE='Jaspar core ${JASPAR_GROUP} database'
+		TITLE='Jaspar core ${JASPAR_GROUP} database' \
+		COLLECTION=${JASPAR_PREFIX}
 
 ## Permutation test with RegulonDB
 cluster_jaspar_one_group_permute:
@@ -179,7 +210,8 @@ cluster_cisbp_one_group:
 	${MAKE} _cluster MATRIX_PREFIX=${CISBP_PREFIX} \
 		MATRIX_FILE=${CISBP_MATRICES} \
 		MIN_COR=0.6 MIN_NCOR=0.4
-		TITLE='cisBP ${CISBP_GROUP} database'
+		TITLE='cisBP ${CISBP_GROUP} database' \
+		COLLECTION=${CISBP_PREFIX}
 
 ################################################################
 ## Send some jobs to the queue to check if it works

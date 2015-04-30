@@ -14,6 +14,7 @@ draw.heatmap.motifs(dist.table, method = "average", clusters.list, alignment.lis
   \item{clusters.list}{ An object of class \code{list} where the name of the elements are the cluster's name and the values are the motifs Ids belonging to each cluster. }
   \item{alignment.list}{ An object of class \code{list} containing one \code{list} for each motif analyzed. It must contain the next attributes: \code{name}, \code{consensus}, \code{strand}, \code{number}, \code{spacer.up} and \code{spacer.dw}. The \code{names()} of each list must be the motif \code{ID}.}
   \item{score}{ Column of the comparison matrix to be used as score. Default: Ncor. In this function the color of the heatmap is based on the score definition [correlation or distance]. }
+    \item{tree.pos}{ The position in the heatmap where the hclust tree will be displayed. Default: coulumn. Supported: both, column, none, row.}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
