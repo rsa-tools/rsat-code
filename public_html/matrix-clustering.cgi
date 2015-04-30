@@ -23,7 +23,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ################
 ## Restrict the number of input matrices treated on the Web server.
-local $max_matrices = 100;
+local $max_matrices = 300;
 
 ################################################################
 ## Result page header
@@ -87,7 +87,7 @@ if ($hclust_method) {
 local $title = lc($query->param('html_title'));
 if($title){
     $title =~ s/\s+/_/g;
-    $parameters .= " -title '".$title."' -display_title ";
+    $parameters .= " -title '".$title."'";
 }
 
 ################################################################

@@ -1,7 +1,7 @@
 ####################################################
 ## Draw a heatmap usig a particular allgomeration
 ## method.
-draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, alignment.list, score = "Ncor"){
+draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, alignment.list, score = "Ncor", tree.pos = "column"){
 
   ################################################################
   ## Blue -> White -> Red palette
@@ -150,7 +150,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
           Colv =as.dendrogram(tree),
 
           ## To show only the dendrogram in row
-          dendrogram = "column",
+          dendrogram = tree.pos,
 
           ## Set the col and row labels
           labRow = consensus,
