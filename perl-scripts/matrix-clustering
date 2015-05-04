@@ -4335,7 +4335,7 @@ sub pre_process_motif_files{
       $convert_matrix_cmd .= " -to transfac";
       $convert_matrix_cmd .= " -top ".$top_matrices if ($top_matrices > 0);
       $convert_matrix_cmd .= " -skip ".$skip_matrices if ($skip_matrices > 0);
-      $convert_matrix_cmd .= " -prefix ".$collection_name;
+      $convert_matrix_cmd .= " -prefix_id ".$collection_name;
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed};
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
       
