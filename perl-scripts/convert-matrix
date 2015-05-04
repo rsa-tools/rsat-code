@@ -1571,6 +1571,12 @@ sub ReadArguments {
 	    $main::args{prefix} = $ARGV[$a+1];
 	    $main::args{prefix} =~s/\s/_/g;
 
+	    ### prefix ID
+	} elsif ($ARGV[$a] eq "-prefix_id") {
+	    $main::args{prefix_id} = $ARGV[$a+1];
+	    $main::args{prefix_id} =~s/\s/_/g;
+
+
 	    ### attribute
 	} elsif ($ARGV[$a] eq "-attr") {
 	    my $key = $ARGV[$a+1];
