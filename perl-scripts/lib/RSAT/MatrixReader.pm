@@ -175,23 +175,23 @@ sub readFromFile {
       if ($args{prefix}) {
 	my $prefix = $args{prefix};
 
-	# if (scalar(@matrices) > 1) {
-	#   $m++;
-	#   $prefix .= "_m".$matrix_nb;
-	# }
+	if (scalar(@matrices) > 1) {
+	  $m++;
+	  $prefix .= "_m".$matrix_nb;
+	}
 
-	## JCastro: I did this change
-	## The -prefix option delete the AC of the matrix
-	## I think is more informative (and required in matrix-clustering)
-	## to save the old AC. So now the -prefix output is liske this:
-	## ${prefix}_${old_AC}
-	my $old_AC = $matrix->get_attribute("accession");
-	$prefix = $prefix."_".$old_AC;
+	# ## JCastro: I did this change
+	# ## The -prefix option delete the AC of the matrix
+	# ## I think is more informative (and required in matrix-clustering)
+	# ## to save the old AC. So now the -prefix output is liske this:
+	# ## ${prefix}_${old_AC}
+	# my $old_AC = $matrix->get_attribute("accession");
+	# $prefix = $prefix."_".$old_AC;
 
 	$matrix->force_attribute("accession", $prefix);
 	$matrix->force_attribute("AC", $prefix);
-	# $matrix->force_attribute("name", $prefix);
-	# $matrix->force_attribute("id", $prefix);
+	$matrix->force_attribute("name", $prefix);
+	$matrix->force_attribute("id", $prefix);
 
       }
 
