@@ -220,10 +220,12 @@ $descr_2 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
 $demo_html_title = "'Clustering column-permuted matrices discovered in Oct4 ChIP-seq'";
+$demo_html_collection_label_perm = "'Oct4_peak_motifs_permuted'";
 $demo_2_file = "demo_files/peak-motifs_result_Chen_Oct4_permuted_matrices.tf";
 $demo_2_matrices=`cat ${demo_2_file}`;
 print "<TD><b>";
 print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
+print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_label_perm);
 print $query->hidden(-name=>'demo_2_descr',-default=>$descr_2);
 print $query->hidden(-name=>'matrix',-default=>$demo_2_matrices);
 print $query->submit(-label=>"DEMO (negative control)");
