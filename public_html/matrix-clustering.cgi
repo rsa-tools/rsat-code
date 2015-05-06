@@ -90,6 +90,14 @@ if($title){
     $parameters .= " -title '".$title."'";
 }
 
+################################
+## Add motif collection label
+local $collection_label = lc($query->param('collection_label'));
+if($collection_label){
+    $collection_label =~ s/\s+/_/g;
+    $parameters .= " -motif_collection_name '".$collection_label."'";
+}
+
 ################################################################
 ## Specify the thresholds on all parameters for compare-matrices
 my @threshold_fields = qw(w
