@@ -44,7 +44,7 @@ $query = new CGI;
 ################################################################
 ## Output paths
 $command = $ENV{RSAT}."/perl-scripts/matrix-clustering";
-$return_fields = "json";
+$return_fields = "-return json";
 
 $output_prefix = "matrix-clustering";
 $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
