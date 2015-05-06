@@ -190,10 +190,12 @@ $descr_1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
 $demo_html_title = "'Oct4 motifs peak motifs'";
+$demo_html_collection_label = "'Oct4_peak_motifs'";
 $demo_1_file = "demo_files/peak-motifs_Oct4_matrices.tf";
 $demo_1_matrices=`cat ${demo_1_file}`;
 print "<TD><b>";
 print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
+print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_label);
 print $query->hidden(-name=>'demo_1_descr',-default=>$descr_1);
 print $query->hidden(-name=>'matrix',-default=>$demo_1_matrices);
 print $query->submit(-label=>"DEMO");
