@@ -97,7 +97,7 @@ print "<hr>";
 
 ################################################################
 #### Set Motif collection label
-print "<h2 style='margin-left: 35px;'> Motif Collection\nName";
+print "<h2 style='margin-left: 1px;'> Motif Collection\nName";
 
 print $query->textfield(-name=>'collection_label',
 			 -default=>$default{collection_label},
