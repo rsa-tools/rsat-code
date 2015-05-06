@@ -32,6 +32,7 @@ $default{quick} = "";
 $default{heatmap} = "CHECKED";
 $default{labels} = "name";
 $default{html_title} = "";
+$default{collection_label} = "";
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
 $default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "0.6";
 $default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "0.4";
@@ -78,7 +79,7 @@ print $query->start_multipart_form(-action=>"matrix-clustering.cgi");
 ################################################################
 #### Analysis title
 print "<hr>";
-print "<h2 style='margin-left: 50px;'> Title ";
+print "<h2 style='margin-left: 50px;'> Analysis Title ";
 
 print $query->textfield(-name=>'html_title',
 			 -default=>$default{html_title},
@@ -96,10 +97,10 @@ print "<hr>";
 
 ################################################################
 #### Set Motif collection label
-print "<h2 style='margin-left: 50px;'> Motif Collection Label ";
+print "<h2 style='margin-left: 50px;'> Motif Collection\nName";
 
-print $query->textfield(-name=>'html_title',
-			 -default=>$default{html_title},
+print $query->textfield(-name=>'collection_label',
+			 -default=>$default{collection_label},
 			 -size=>30) ."</h2>";
 print "<hr>";
 
