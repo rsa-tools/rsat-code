@@ -76,13 +76,15 @@ print $default{demo_2_descr};
 print $query->start_multipart_form(-action=>"matrix-clustering.cgi");
 
 ################################################################
-#### Matrix specification
+#### Analysis title
 print "<hr>";
 print "<h2 style='margin-left: 50px;'> Title ";
 
 print $query->textfield(-name=>'html_title',
 			 -default=>$default{html_title},
 			 -size=>30) ."</h2>";
+
+
 
 ################################################################
 #### Matrix specification
@@ -92,6 +94,15 @@ print "<hr>";
 ## Query matrices
 &GetMatrix('title'=>'Query matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
 print "<hr>";
+
+################################################################
+#### Motif collection label
+print "<hr>";
+print "<h2 style='margin-left: 50px;'> Motif Collection Label ";
+
+print $query->textfield(-name=>'html_title',
+			 -default=>$default{html_title},
+			 -size=>30) ."</h2>";
 
 ##############################################################
 ## Specific options for motif comparison
