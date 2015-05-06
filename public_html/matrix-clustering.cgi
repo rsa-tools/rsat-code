@@ -165,6 +165,9 @@ if ($quick) {
 ## Insert lables
 $parameters .= " -label name ";
 
+## Insert fields to return 
+$parameters .= " ".$return_fields." ";
+
 ################################################################
 ## Output file
 $parameters .= " -o ".$output_path."/".$output_prefix;
