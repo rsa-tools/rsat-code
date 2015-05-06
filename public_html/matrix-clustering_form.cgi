@@ -93,16 +93,15 @@ print "<hr>";
 ################################################################
 ## Query matrices
 &GetMatrix('title'=>'Query matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
-print "<hr>";
 
 ################################################################
-#### Motif collection label
-print "<hr>";
+#### Set Motif collection label
 print "<h2 style='margin-left: 50px;'> Motif Collection Label ";
 
 print $query->textfield(-name=>'html_title',
 			 -default=>$default{html_title},
 			 -size=>30) ."</h2>";
+print "<hr>";
 
 ##############################################################
 ## Specific options for motif comparison
