@@ -44,6 +44,7 @@ $query = new CGI;
 ################################################################
 ## Output paths
 $command = $ENV{RSAT}."/perl-scripts/matrix-clustering";
+$return_fields = "json";
 
 $output_prefix = "matrix-clustering";
 $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
@@ -146,13 +147,13 @@ $parameters .= $thresholds;
 ## Heatmap selection
 $heatmap = $query->param('heatmap');
 if ($heatmap) {
-    $parameters .= " -heatmap";
+    $return_fields .= ",heatmap";
 }
 
 ## Export newick selection
 $newick = $query->param('newick');
 if ($newick) {
-    $parameters .= " -export newick";
+    $return_fields .= ",newick";
 }
 
 ## Run compare-matrices-selection
