@@ -62,10 +62,10 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
 		-lth w ${MIN_W} \
-		-heatmap \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
-		-o ${CLUSTER_FILE_PREFIX}
+		-o ${CLUSTER_FILE_PREFIX} \
+		-return heatmap
 
 CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-file_table ${FILE_TABLE} \
@@ -73,10 +73,10 @@ CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
 		-lth w ${MIN_W} \
-		-heatmap \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
-		-o ${CLUSTER_FILE_PREFIX}	
+		-o ${CLUSTER_FILE_PREFIX} \
+		-return heatmap
 
 _cluster:
 	@echo
