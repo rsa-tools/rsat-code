@@ -43,6 +43,11 @@ check.param <- function() {
     draw.heatmap <<- "1";
   }
 
+  ## Option indicating if the tree with aligned consensuses must be computed
+  if (!exists("draw.consensus")) {
+    draw.consensus <<- "1";
+  }
+
   ## Option indicating if the heatmap must be computed
   if (!exists("pos.hclust.in.heatmap")) {
     pos.hclust.in.heatmap <<- "column";
