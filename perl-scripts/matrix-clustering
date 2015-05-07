@@ -259,6 +259,7 @@ package main;
   ## Matrices
   local @all_matrices = ();
   local $draw_heatmap = 0;
+  local $align_consensus = 0;
 
 
   ## Unrecognized arguments are passed to compare-matrices
@@ -337,7 +338,7 @@ package main;
 
   ## Supported fields to return
   local %return_fields = ();
-  local @supported_return_fields = qw (clone_input heatmap json newick root_matrices);
+  local @supported_return_fields = qw (align_consensus clone_input heatmap json newick root_matrices);
   local %supported_return_fields = ();
   foreach my $field (@supported_return_fields) {
     $supported_return_fields{$field} = 1;
@@ -1006,9 +1007,21 @@ List of fields to return.
 
 Supported fields:
 
- clone_input,heatmap,json,newick,root_matrices
+ clone_input,align_consensus,heatmap,json,newick,root_matrices
 
 =over
+
+=item B<align_consensus:> Tree with aligned consensuses.
+
+When this field is selected, exports a plot with
+a single hierarchcial tree with all input motifs
+showing the clusters by different colors and also
+showing the consensus alignment.
+
+The tree is exported in JPEG and PDF format.
+
+We recommend to use this option when the number of motifs is 
+lower than 300.
 
 =item B<clone_input:> Copy input file.
 
@@ -1065,7 +1078,10 @@ to avoid the cimputation of the visual elements.
 	  if($return_fields{clone_input}){
 	      $clone_input_flag = 1;
 
-	  } elsif($return_fields{heatmap}){
+	   } elsif($return_fields{align_consensus}){
+	      $align_consensus = 1;
+
+	  }  elsif($return_fields{heatmap}){
 	      $draw_heatmap = 1;
 
 	  }  elsif($return_fields{newick}){
@@ -1303,6 +1319,7 @@ sub Hclustering {
 
     ## Option to compute the heatmap
     $cluster_motifs_cmd .= "; draw.heatmap = ".$draw_heatmap;
+    $cluster_motifs_cmd .= "; draw.consensus = ".$align_consensus;
     $cluster_motifs_cmd .= "; pos.hclust.in.heatmap = '".$heatmap_tree_pos."'";
 
     ## Pass the thresholds on the score to R for clustering
@@ -4065,18 +4082,13 @@ sub InsertListOfFiles {
                    <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{internal_nodes_attributes_table}).'"><strong>Internal nodes attributes</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
 		   </tr>
-		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_figures/tree_of_consensus.pdf').'"><strong>Tree of consensus</strong></a></td>
-		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
-		   </tr>
-                ';
+                       ';
       }
 
       ## If it is specified, add the heatmap
       if ($draw_heatmap == 1 && $number_of_motifs > 1) {
 	$add_files .= 
 	    '
-
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'"><strong>Heatmap</strong></a></td>
 		      <td class="tab_spacer_2">The heatmap showing the hierarchical tree with the clusters and the alignments.</td>
@@ -4084,7 +4096,18 @@ sub InsertListOfFiles {
                      ';
       }
 
-      ## If it is specified, add the heatmap
+      ## If it is specified, add the tree of aligned consensuses
+      if ($align_consensus == 1 && $number_of_motifs > 1) {
+	$add_files .= 
+		  '<tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_figures/tree_of_consensus.pdf').'"><strong>Tree of consensus</strong></a></td>
+		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
+		   </tr>
+                ';
+      }
+
+
+      ## If it is specified, add the file with the input motifs
       if ($clone_input_flag == 1) {
 	$add_files .= 
 	    '
