@@ -163,6 +163,7 @@ package main;
   }
   local $supported_tree_formats = join ",", @supported_tree_formats;
   local $export_tree_format = "";
+  local $export_newick = "";
 
 
 
@@ -258,6 +259,7 @@ package main;
   ## Matrices
   local @all_matrices = ();
   local $draw_heatmap = 0;
+  local $align_consensus = 0;
 
 
   ## Unrecognized arguments are passed to compare-matrices
@@ -333,6 +335,15 @@ package main;
 
   ## A hash to save the name of the clusters and their corresponding hexa code
   local %hexa_code = ();
+
+  ## Supported fields to return
+  local %return_fields = ();
+  local @supported_return_fields = qw (align_consensus clone_input heatmap json newick root_matrices);
+  local %supported_return_fields = ();
+  foreach my $field (@supported_return_fields) {
+    $supported_return_fields{$field} = 1;
+  }
+  local $supported_return_fields = join ",", @supported_return_fields;
 
   ## List of files to delete
   %to_delete = ();
@@ -683,23 +694,6 @@ Label used to classify the motifs belonging to one collection.
 
 =pod
 
-=item	B<-root_matrices_only>
-
-When this option is selected. matrix-clustering returns a file with
-the motifs at the root of each cluster. This save time and memory
-consumption because the branch-motifs, heatmaps, and trees are not
-exported.
-
-=cut
-
-########################################
-########################################
-
-     } elsif ($arg eq "-root_matrices_only") {
-	 $root_matrices_flag = 1;
-
-=pod
-
 =item	B<-o output_prefix>
 
 Prefix for the output files.
@@ -713,63 +707,17 @@ list of output files (pairwise matrix comparisons, matrix clusters).
 
 =pod
 
-=item B<-heatmap>
-
-Display consensus of merged matrices on the internal branches of the
-tree.
-
-=cut
-    } elsif ($arg eq "-heatmap") {
-      $draw_heatmap = 1;
-
-=pod
-
 =item B<-heatmap_position_tree [row,col,both,none]>
 
 The position in the heatmap where the hierarchical tree will
 be displayed.
 
 =cut
+
     } elsif ($arg eq "-heatmap_position_tree") {
       $heatmap_tree_pos = shift(@arguments);
       unless(exists($supported_tree_positions{$heatmap_tree_pos})) {
 	&RSAT::error::FatalError($heatmap_tree_pos, "Invalid position. Supported:", $supported_tree_positions);
-      }
-
-  
-=pod
-
-=item B<-export format>
-
-Specify format for the output tree.
-
-The hierarchical tree in JSON format is always exported, since it is required to display
-the logo tree with the d3 library. Additional formats are proposed in
-option to enable visualization with classical phylogeny analysis
-tools.
-
-B<Supported trees formats>
-
-(JSON, newick)
-
-=over
-
-=item I<JSON> (default)
-
-File format used for D3 library to visualize the logo forest in HTML.
-
-=item I<newick> (optional)
-
-Widely used textual format to describe phylogenetic trees.
-
-=back
-
-=cut
-      
-    } elsif ($arg eq "-export") {
-      $export_tree_format = shift(@arguments);
-      unless($supported_tree_formats{$export_tree_format}) {
-	&RSAT::error::FatalError($export_tree_format, "Invalid format for input matrices\tSupported: ".$main::supported_tree_formats);
       }
 
 =pod
@@ -854,22 +802,9 @@ We suggest use this option for a big set of input motifs > 300 motifs.
 B<NOTE:> By the moment the only threshold used in quick version is Ncor. 
 
 =cut
+
     } elsif ($arg eq "-quick") {
     $quick_flag = 1;
-
-
-=pod
-
-=item	B<-clone_input>
-
-If this option is selected, the input motif database is exported
-in the results folder.
-
-NOTE: take into account the input file size. 
-
-=cut
-    } elsif ($arg eq "-clone_input") {
-    $clone_input_flag = 1;
 
 =pod
 
@@ -1060,6 +995,108 @@ Default: Ncor
       }
       $main::param{matrix_compa_score} = $metric;
       $main::param{matrix_compa_sort_field} = $metric;
+
+
+################################################################################################################################################################################################################################################################
+
+=pod
+
+=item B<-return return_fields>
+
+List of fields to return.
+
+Supported fields:
+
+ clone_input,align_consensus,heatmap,json,newick,root_matrices
+
+=over
+
+=item B<align_consensus:> Tree with aligned consensuses.
+
+When this field is selected, exports a plot with
+a single hierarchcial tree with all input motifs
+showing the clusters by different colors and also
+showing the consensus alignment.
+
+The tree is exported in JPEG and PDF format.
+
+We recommend to use this option when the number of motifs is 
+lower than 300.
+
+=item B<clone_input:> Copy input file.
+
+When this field is selected, the input motif database is copied 
+and exported in the results folder.
+
+NOTE: take into account the input file size.
+
+=item B<heatmap:> Heatmap with similarities.
+
+When this field is selected, exports a heatmap showing the 
+similarities, the clusters and the hierarchical tree of the 
+input motifs.
+
+The heatmap is exported in JPEG and PDF format. 
+
+We recommend to use this option when the number of motifs is 
+lower than 300. 
+
+=item B<json:> Hierarchical tree in JSON format.
+
+File format used for D3 library to visualize the logo forest in HTML.
+
+The hierarchical tree in JSON format is always exported, 
+since it is required to display the logo tree with the d3 library.
+
+=item B<newick:> Hierarchical tree in newick format.
+
+When this field is specified, the hierarchical tree is converted 
+and exported in Newick format, a widely used text format to represent 
+phylogenetic trees.
+
+=item B<root_matrices:> Return only the root motif of each cluster.
+
+When this field is specified, matrix-clustering runs the minimal 
+analysis and return a text file with the root motifs of each
+cluster.
+
+This option is useful when the user wants to explore the data and
+to avoid the cimputation of the visual elements.
+
+=back
+
+=cut
+    } elsif ($arg eq "-return") {
+      $arg = shift (@arguments);
+      chomp($arg);
+      my @fields_to_return = split ",", $arg;
+      foreach my $field (@fields_to_return) {
+	$field = lc($field);
+	if ($supported_return_fields{$field}) {
+	  $return_fields{$field} = 1;
+
+	  if($return_fields{clone_input}){
+	      $clone_input_flag = 1;
+
+	   } elsif($return_fields{align_consensus}){
+	      $align_consensus = 1;
+
+	  }  elsif($return_fields{heatmap}){
+	      $draw_heatmap = 1;
+
+	  }  elsif($return_fields{newick}){
+	      $export_newick = 1;
+
+	  } elsif($return_fields{root_matrices}){
+	      $root_matrices_flag = 1;
+	  }
+
+	} else {
+	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+	}
+      }
+
+################################################################################################################################################################################################################################################################
 
     ## Additional arguments are passed to compare-matrices
     }else {
@@ -1282,6 +1319,7 @@ sub Hclustering {
 
     ## Option to compute the heatmap
     $cluster_motifs_cmd .= "; draw.heatmap = ".$draw_heatmap;
+    $cluster_motifs_cmd .= "; draw.consensus = ".$align_consensus;
     $cluster_motifs_cmd .= "; pos.hclust.in.heatmap = '".$heatmap_tree_pos."'";
 
     ## Pass the thresholds on the score to R for clustering
@@ -4044,18 +4082,13 @@ sub InsertListOfFiles {
                    <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{internal_nodes_attributes_table}).'"><strong>Internal nodes attributes</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
 		   </tr>
-		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_figures/tree_of_consensus.pdf').'"><strong>Tree of consensus</strong></a></td>
-		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
-		   </tr>
-                ';
+                       ';
       }
 
       ## If it is specified, add the heatmap
       if ($draw_heatmap == 1 && $number_of_motifs > 1) {
 	$add_files .= 
 	    '
-
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'"><strong>Heatmap</strong></a></td>
 		      <td class="tab_spacer_2">The heatmap showing the hierarchical tree with the clusters and the alignments.</td>
@@ -4063,7 +4096,18 @@ sub InsertListOfFiles {
                      ';
       }
 
-      ## If it is specified, add the heatmap
+      ## If it is specified, add the tree of aligned consensuses
+      if ($align_consensus == 1 && $number_of_motifs > 1) {
+	$add_files .= 
+		  '<tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_figures/tree_of_consensus.pdf').'"><strong>Tree of consensus</strong></a></td>
+		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
+		   </tr>
+                ';
+      }
+
+
+      ## If it is specified, add the file with the input motifs
       if ($clone_input_flag == 1) {
 	$add_files .= 
 	    '

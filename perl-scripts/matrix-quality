@@ -2925,7 +2925,7 @@ sub Calculate_NWD {
 
 
 ################################################################
-## Calculate NWD
+## Calculate OCC
 ################################################################
 ## Read matrix quality file and calculate the NWD curve
 
@@ -2969,7 +2969,7 @@ sub Calculate_OCC {
     $matrix_scan_cmd .= " > ".  $outfile{'occ_proba_'.$seq_type};
 
     &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-    &RSAT::message::Info("Scanning to compute occurence probability", $matrix_scan_cmd) if ($main::verbose >= 2);
+    &RSAT::message::Info("Scanning to compute occurence probability for OCC plots", $matrix_scan_cmd) if ($main::verbose >= 2);
     return ($outfile{'occ_proba_'.$seq_type});
 }
 
@@ -3021,14 +3021,14 @@ sub Draw_NWD{
 }
 
 ################
-## Subroutine to draw occurrence significance plot comparing distribitions across files: byt motif or by sequence
+## Subroutine to draw occurrence significance plot comparing distribitions across files: by motif or by sequence
 sub Draw_OCC{
    my ($prefix,@occ_files)= @_;
 
 
    my $occ_input_files =" -i ". join (" -i " ,@occ_files)." ";
-   my $ic_column= 11;
-   my $sc_column= 7;
+   my $ic_column= 7;
+   my $sc_column= 11;
    my $occ_outfile_prefix= $prefix ;
    my $occ_compare_scores_file=$occ_outfile_prefix."_compare-scores.tab";
 
@@ -3058,12 +3058,13 @@ sub Draw_OCC{
        $XYgraph_occ_cmd .= " -format ". $image_format  ." " ;
        $XYgraph_occ_cmd .= " -xcol 1  -ycol ".$ycols;
        $XYgraph_occ_cmd .= " -lines -xlog 10 " ;
-       $XYgraph_occ_cmd .= " -yleg1 'Binomial significance of hit number (OCC)' -xleg1 'Score Pvalue' ";
+       $XYgraph_occ_cmd .= " -yleg1 'Binomial significance of hit number (OCC)' -xleg1 'log10(Score Pvalue)' ";
        $XYgraph_occ_cmd .= " -legend -pointsize 0 ";
        $XYgraph_occ_cmd .= " -hline red 100 -hline violet 0 -ysize 400 -force_lines "; ## Parammeters suggested by Morgane      
        $XYgraph_occ_cmd .= " -o ". $occ_xygrpah_file.$image_format." ";
        &doit($XYgraph_occ_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
        &RSAT::message::Info(" Drawing OCC  curves ",  $XYgraph_occ_cmd) if ($main::verbose >= 0);   
+       ##die "BOOM";
    }
    return($occ_compare_scores_file, $occ_xygrpah_file )
    
