@@ -30,8 +30,10 @@ $default{metric} = "Ncor";
 $default{newick} = "";
 $default{quick} = "";
 $default{heatmap} = "CHECKED";
+$default{consensus} = "CHECKED";
 $default{labels} = "name";
 $default{html_title} = "";
+$default{collection_label} = "";
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
 $default{'return_cor'} = "CHECKED"; $default{'lth_cor'} = "0.6";
 $default{'return_Ncor'} = "CHECKED"; $default{'lth_Ncor'} = "0.4";
@@ -76,13 +78,15 @@ print $default{demo_2_descr};
 print $query->start_multipart_form(-action=>"matrix-clustering.cgi");
 
 ################################################################
-#### Matrix specification
+#### Analysis title
 print "<hr>";
-print "<h2 style='margin-left: 50px;'> Title ";
+print "<h2 style='margin-left: 50px;'> Analysis Title ";
 
 print $query->textfield(-name=>'html_title',
 			 -default=>$default{html_title},
 			 -size=>30) ."</h2>";
+
+
 
 ################################################################
 #### Matrix specification
@@ -91,6 +95,14 @@ print "<hr>";
 ################################################################
 ## Query matrices
 &GetMatrix('title'=>'Query matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
+
+################################################################
+#### Set Motif collection label
+print "<h2 style='margin-left: 1px;'> Motif Collection\nName";
+
+print $query->textfield(-name=>'collection_label',
+			 -default=>$default{collection_label},
+			 -size=>30) ."</h2>";
 print "<hr>";
 
 ##############################################################
@@ -139,7 +151,14 @@ print $query->checkbox(-name=>'heatmap',
   		       -label=>'');
 print "&nbsp;<A'><B>Draw a heatmap showing the distances between the motifs.</B></A>";
 print "<br><br>\n";
-#print "<HR width=550 align=left>\n";
+
+
+## Draw the tree with aligned consensuses
+print $query->checkbox(-name=>'alignment_consensuses',
+  		       -checked=>$default{consensus},
+  		       -label=>'');
+print "&nbsp;<A'><B>Export a hierarchical tree with the consensuses aligment.</B></A>";
+print "<br><br>\n";
 
 ## Export the trees in Newick format
 ## By default trees are exported in JSON
@@ -179,10 +198,12 @@ $descr_1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
 $demo_html_title = "'Oct4 motifs peak motifs'";
+$demo_html_collection_label = "'Oct4_peak_motifs'";
 $demo_1_file = "demo_files/peak-motifs_Oct4_matrices.tf";
 $demo_1_matrices=`cat ${demo_1_file}`;
 print "<TD><b>";
 print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
+print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_label);
 print $query->hidden(-name=>'demo_1_descr',-default=>$descr_1);
 print $query->hidden(-name=>'matrix',-default=>$demo_1_matrices);
 print $query->submit(-label=>"DEMO");
@@ -207,10 +228,12 @@ $descr_2 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
 $demo_html_title = "'Clustering column-permuted matrices discovered in Oct4 ChIP-seq'";
+$demo_html_collection_label_perm = "'Oct4_peak_motifs_permuted'";
 $demo_2_file = "demo_files/peak-motifs_result_Chen_Oct4_permuted_matrices.tf";
 $demo_2_matrices=`cat ${demo_2_file}`;
 print "<TD><b>";
 print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
+print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_label_perm);
 print $query->hidden(-name=>'demo_2_descr',-default=>$descr_2);
 print $query->hidden(-name=>'matrix',-default=>$demo_2_matrices);
 print $query->submit(-label=>"DEMO (negative control)");
