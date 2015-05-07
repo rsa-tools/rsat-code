@@ -44,6 +44,7 @@ $query = new CGI;
 ################################################################
 ## Output paths
 $command = $ENV{RSAT}."/perl-scripts/matrix-clustering";
+$return_fields = "-return json";
 
 $output_prefix = "matrix-clustering";
 $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
@@ -88,6 +89,14 @@ local $title = lc($query->param('html_title'));
 if($title){
     $title =~ s/\s+/_/g;
     $parameters .= " -title '".$title."'";
+}
+
+################################
+## Add motif collection label
+local $collection_label = lc($query->param('collection_label'));
+if($collection_label){
+    $collection_label =~ s/\s+/_/g;
+    $parameters .= " -motif_collection_name '".$collection_label."'";
 }
 
 ################################################################
@@ -138,13 +147,19 @@ $parameters .= $thresholds;
 ## Heatmap selection
 $heatmap = $query->param('heatmap');
 if ($heatmap) {
-    $parameters .= " -heatmap";
+    $return_fields .= ",heatmap";
+}
+
+## Alignment of consensuses selection
+$heatmap = $query->param('alignment_consensuses');
+if ($heatmap) {
+    $return_fields .= ",align_consensus";
 }
 
 ## Export newick selection
 $newick = $query->param('newick');
 if ($newick) {
-    $parameters .= " -export newick";
+    $return_fields .= ",newick";
 }
 
 ## Run compare-matrices-selection
@@ -155,6 +170,9 @@ if ($quick) {
 
 ## Insert lables
 $parameters .= " -label name ";
+
+## Insert fields to return 
+$parameters .= " ".$return_fields." ";
 
 ################################################################
 ## Output file

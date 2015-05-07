@@ -682,6 +682,64 @@ exit(0);
 ####################################################################
 
 ################################################################
+## Generate the graph using R
+## R requires an .R file with the instructions to produce the graph.
+## XYgraph options will be translated to R commamnds 
+
+
+sub Rplot{
+
+    ## Check exitance of inputfile
+    ## Format will be assumed to be RSAT based with # as header and ; comment char
+    ($in, $input_dir) = &OpenInputFile($inputfile);
+    our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_infile", 1);
+    my ($out) = &OpenOutputFile($tmp_file);
+    while (<$in>) {
+	next if (/^;/); # skip comment lines
+	#      next if (/^#/); # We don't want to skip header line
+	if (/^#/) {
+	    s/^#//;
+	}
+	print $out $_;
+    }
+    
+    close $out;
+    close $in;
+    
+    ## Get header if exists
+
+    my $header=`grep \"\#\" $input_dir`;
+    chomp($header);
+    @header_list = split ('\t',$header);
+    
+    
+    die("No input data !!!") if ((!$inputfile)&&(!$tmp_file));
+
+    
+    ## will use this new file as input for R
+    my $input_data_file = $tmp_file;
+    
+    our $tmp_R_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_instructions", 1);
+    my ($out_R) = &OpenOutputFile($tmp_R_instructions_file);
+    
+    my $r_instructions="in.file <- \"$input_data_file\" \n";
+    $r_instruction.="input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=TRUE) \n";
+    
+    if ($colorexportfile){
+  	#output file
+  	($outcolor) = &OpenOutputFile($colorexportfile);
+	
+  	#get the column headers
+	$header = `head -n 1 $input_data_file`;
+	chomp($header);
+	@header_list = split ('\t',$header);
+    }
+    
+
+
+}
+
+################################################################
 ## Generate the graph with GnuPlot and export it in eps format
 sub GnuPlotEPS {
 
