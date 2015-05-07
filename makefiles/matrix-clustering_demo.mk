@@ -65,7 +65,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
-		-return heatmap
+		-return align_consensus,heatmap
 
 CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-file_table ${FILE_TABLE} \
@@ -76,7 +76,7 @@ CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
-		-return heatmap
+		-return align_consensus,heatmap
 
 _cluster:
 	@echo
