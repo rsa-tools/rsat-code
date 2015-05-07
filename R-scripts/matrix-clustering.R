@@ -195,34 +195,36 @@ if(number.of.motifs > 1){
       }
     }
 
+    if(draw.consensus == 1){
 
-    ########################################
-    ## Define the label color of the tree
-    ## according to the cluster
-    color.code <- color.code.clusters(clusters, tree, global.description.table)
+      ########################################
+      ## Define the label color of the tree
+      ## according to the cluster
+      color.code <- color.code.clusters(clusters, tree, global.description.table)
 
-    ## Convert the hclust object in a dendrogram
-    tree.dendro <- as.dendrogram(tree)
-    labels_colors(tree.dendro) <- color.code
+      ## Convert the hclust object in a dendrogram
+      tree.dendro <- as.dendrogram(tree)
+      labels_colors(tree.dendro) <- color.code
 
-    #######################################
-    ## Export the tree with the aligment
-    mar4 <- alignment.width - 10
-    for (plot.format in c("pdf", "png")) {
-      w.inches <- 14 ## width in inches
-      h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
-      resol <- 72 ## Screen resolution
-      tree.drawing.file <- paste(sep="", out.prefix, "_figures/tree_of_consensus.", plot.format)
-      verbose(paste("hclust tree drawing", tree.drawing.file), 2)
-      if (plot.format == "pdf") {
-        pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
-      } else if (plot.format == "png") {
-        png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
+      #######################################
+      ## Export the tree with the aligment
+      mar4 <- alignment.width - 10
+      for (plot.format in c("pdf", "png")) {
+        w.inches <- 14 ## width in inches
+        h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
+        resol <- 72 ## Screen resolution
+        tree.drawing.file <- paste(sep="", out.prefix, "_figures/tree_of_consensus.", plot.format)
+        verbose(paste("hclust tree drawing", tree.drawing.file), 2)
+        if (plot.format == "pdf") {
+          pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
+        } else if (plot.format == "png") {
+          png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
+        }
+
+        par(mar=c(3,2,1,mar4),family="mono")
+        plot(tree.dendro, horiz=TRUE, main=paste("Tree of aligned consensuses; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
+        dev.off()
       }
-
-      par(mar=c(3,2,1,mar4),family="mono")
-      plot(tree.dendro, horiz=TRUE, main=paste("Tree of aligned consensuses; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
-      dev.off()
     }
   }
 
