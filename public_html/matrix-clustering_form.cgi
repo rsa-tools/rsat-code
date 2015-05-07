@@ -30,6 +30,7 @@ $default{metric} = "Ncor";
 $default{newick} = "";
 $default{quick} = "";
 $default{heatmap} = "CHECKED";
+$default{consensus} = "CHECKED";
 $default{labels} = "name";
 $default{html_title} = "";
 $default{collection_label} = "";
@@ -150,7 +151,14 @@ print $query->checkbox(-name=>'heatmap',
   		       -label=>'');
 print "&nbsp;<A'><B>Draw a heatmap showing the distances between the motifs.</B></A>";
 print "<br><br>\n";
-#print "<HR width=550 align=left>\n";
+
+
+## Draw the tree with aligned consensuses
+print $query->checkbox(-name=>'alignment_consensuses',
+  		       -checked=>$default{consensus},
+  		       -label=>'');
+print "&nbsp;<A'><B>Export a hierarchical tree with the consensuses aligment.</B></A>";
+print "<br><br>\n";
 
 ## Export the trees in Newick format
 ## By default trees are exported in JSON
