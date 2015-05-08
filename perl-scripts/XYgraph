@@ -778,7 +778,7 @@ sub Rplot{
 	if ($title2){
 	    $title.="\n".$title2;
 	}
-	$r_plot_params.=", main=\"".$title."\"";
+	$r_plot_params.=", main=".$title." ";
     }
     
     ## Xlegend parammeters
@@ -806,37 +806,76 @@ sub Rplot{
 	}
 	$r_plot_params.=", ylab=".$y_legend;
     }
+
+    ## Logarithm
+    if ($xlog || $ylog){
+	if ($xlog && $ylog){
+	    #$r_plot_params .=", log=c(\"x\",\"y\")";
+	    $r_instruction.= " input.table[,".$xcol_r."] <- log ( input.table[,".$xcol_r."] , base=$x_log_base ) \n" ;
+	    $r_instruction.= " input.table[, c(".join(",",@y_col_list_r).")] <- log (input.table[, c(".join(",",@y_col_list_r).")] , base=$y_log_base ) \n" ;
+	    
+	    
+	    
+	}elsif ($xlog ){
+	    #$r_plot_params .=", log=c(\"x\")";
+	    $r_instruction.= " input.table[,".$xcol_r."] <- log ( input.table[,".$xcol_r."] , base=$x_log_base ) \n" ;
+	    
+	}elsif ($ylog ){
+	    #$r_plot_params .=", log=c(\"y\")";
+	    $r_instruction.= " input.table[, c(".join(",",@y_col_list_r).")] <- log (input.table[, c(".join(",",@y_col_list_r).")] , base=$y_log_base ) \n" ;
+	}
+	
+	$r_instruction.= " input.table <- do.call(data.frame,lapply(input.table, function(x) replace(x, is.infinite(x),NA))) \n";
+	$r_instruction.= " input.table<- na.omit(input.table) \n";
+	
+    }
+
     
     ## Axis limits
     
-    if ($x_axis_max ne "ND"|| $y_axis_max ne "ND" || $x_axis_min ne "ND"|| $y_axis_min ne "ND" ){
-	if($x_axis_max && ($x_axis_min eq "ND")){
-	    $r_instruction.="xlimits <- c(min(input.table[,$xcol_r]), ".$x_axis_max.") \n";
-	}elsif( ($x_axis_max eq "ND") && $x_axis_min){
-	    $r_instruction.="xlimits <- c( ".$x_axis_min.", max(as.vector(input.table[,c(".join(",",@y_col_list_r).")]))) \n";
-	}elsif($x_axis_max && $x_axis_min){
+    if ($x_axis_max ne "ND"||$x_axis_min ne "ND" ){
+
+	## MIN value for x is definied but not the max
+	if( ($x_axis_max eq "ND") && ($x_axis_min ne "ND")){
+	    ## Max will be defined using the maximun of all xcolumns
+	    $r_instruction.="xlimits <- c( ".$x_axis_min.", max(as.vector(input.table[,".$xcol_r."]))) \n";
+	    
+	    ## MAX value for x is defined but not the MIN 
+	}elsif( ($x_axis_max ne "ND") && ($x_axis_min eq "ND")){
+	    $r_instruction.="xlimits <- c(min(input.table[,".$xcol_r."]), ".$x_axis_max.") \n";
+	    
+	    ## MAX and MIN values for x axis are deffined 
+	}elsif( ($x_axis_max ne "ND") && ($x_axis_min ne "ND")){
 	    $r_instruction.="xlimits <- c( ".$x_axis_min.",".$x_axis_max .") \n";
 	}
+	$r_plot_params .=", xlim=xlimits ";
+	
+    }
 
-	if($y_axis_max && !$y_axis_min){
-	    $r_instruction.="ylimits <- c(min(input.table[, c(".join(",",@y_col_list_r)."]), ".$y_axis_max.") \n";
-	}elsif(!$y_axis_max && $y_axis_min){
+    if ( $y_axis_max ne "ND" ||  $y_axis_min ne "ND" ){
+	
+	## MIN value for y is defined but not the max
+	if( ($y_axis_max eq "ND") && ($y_axis_min ne "ND")){
+	    ## Max will be defined using the maximun of all ycolumns
 	    $r_instruction.="ylimits <- c( ".$y_axis_min.", max(as.vector(input.table[, c(".join(",",@y_col_list_r).")]))) \n";
-	}elsif($y_axis_max && $y_axis_min){
+	    
+       ## MAX value for y is defined but not the MIN
+	}elsif(($y_axis_max ne "ND") && $y_axis_min){
+	    $r_instruction.="ylimits <- c(min(input.table[, c(".join(",",@y_col_list_r).")]), ".$y_axis_max.") \n";
+
+	## MAX and MIN values for y axis are deffined
+	}elsif (  ($y_axis_max ne "ND") && ($y_axis_min ne "ND")){
+	   # print "min and max".$y_axis_min.",".$y_axis_max ;
+	   # die "BOOOM";
 	    $r_instruction.="ylimits <- c( ".$y_axis_min.",".$y_axis_max .") \n";
-	}	
+	}
+	$r_plot_params .=", ylim=ylimits ";
+
+	
+	
     }
 
-    ## Logarithm
-
-    if ($xlog && $ylog){
-	$r_plot_params .=", log=c(\"x\",\"y\")";
-    }elsif ($xlog ){
-	$r_plot_params .=", log=c(\"x\")";
-    }elsif ($ylog ){
-	$r_plot_params .=", log=c(\"y\")";
-    }
-
+   
 
 
     if (!$lines){
@@ -895,7 +934,7 @@ sub Rplot{
     print $out_R  $r_instruction;
     my $rscript_commnad="Rscript $tmp_R_instructions_file ";
     &doit($rscript_commnad, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    print $rscript_commnad;
+    print $rscript_commnad ."\n";
    
     
 
