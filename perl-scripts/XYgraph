@@ -47,6 +47,7 @@ $y_axis_max = "ND";
 $x_axis_min = "ND";
 $y_axis_min = "ND";
 $same_limits = 0;
+$r_plot=0;
 $x = 0;
 $y = 0;
 
@@ -73,8 +74,7 @@ if ($force_lines && (!$lines && scalar @lines == 0)) {
   &RSAT::message::Warning("-force_lines option used without any line to trace specification is useless.") ;
 }
 
-
-if (($img_format eq "eps")||($img_format eq "pdf")) {
+if ((($img_format eq "eps")||($img_format eq "pdf") )&& (!$r_plot)) {
 
   if (($xgstep1) || ($ygstep1) || ($xgstep2) || ($ygstep2)) {
     &RSAT::message::Warning("grid options -gstep are not yet compatible with eps format => no grid.") ;
@@ -138,9 +138,19 @@ if ($colorfile) {
   close $colorsfromfile;
 }
 
+
+################
+## If R selected as ploting method
+
+if ($r_plot){
+    &Rplot();
+    exit();
+}
+
+
 ################################################################
 ## use gnuplot if format is eps
-if (($img_format eq "eps")||($img_format eq "pdf")){
+if (($img_format eq "eps")||($img_format eq "pdf") ){
   &GnuPlotEPS();
   exit();
 }
@@ -689,16 +699,20 @@ exit(0);
 
 sub Rplot{
 
-    ## Check exitance of inputfile
+    ## Check existance of inputfile
     ## Format will be assumed to be RSAT based with # as header and ; comment char
     ($in, $input_dir) = &OpenInputFile($inputfile);
     our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_infile", 1);
     my ($out) = &OpenOutputFile($tmp_file);
+    my @header_list=();
     while (<$in>) {
 	next if (/^;/); # skip comment lines
 	#      next if (/^#/); # We don't want to skip header line
 	if (/^#/) {
 	    s/^#//;
+	    chomp;
+	    @header_list=split("\t+", $_);
+	    next;
 	}
 	print $out $_;
     }
@@ -706,34 +720,183 @@ sub Rplot{
     close $out;
     close $in;
     
-    ## Get header if exists
-
-    my $header=`grep \"\#\" $input_dir`;
-    chomp($header);
-    @header_list = split ('\t',$header);
+    ## Get header if exist
     
-    
+    $xcol_r=$x_col+1 ;
+    my  @y_col_list_r=();
+    foreach(@y_col_list){
+	$rcol=$_+1;
+	push(@y_col_list_r , $rcol);
+    }
     die("No input data !!!") if ((!$inputfile)&&(!$tmp_file));
 
     
     ## will use this new file as input for R
     my $input_data_file = $tmp_file;
     
-    our $tmp_R_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_instructions", 1);
+    our $tmp_R_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_instructions", 1).".R";
     my ($out_R) = &OpenOutputFile($tmp_R_instructions_file);
     
-    my $r_instructions="in.file <- \"$input_data_file\" \n";
-    $r_instruction.="input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=TRUE) \n";
+    my $r_instruction="in.file <- \"$input_data_file\" \n";
+    $r_instruction.="input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=TRUE, na.strings = \"<NULL>\") \n";
+
+    ## Save header as vector in R
+    $r_instruction.="header_vector <- c(\"".join("\",\"",@header_list)."\") \n";
+
+    $r_instruction.="colnames(input.table)<- header_vector \n";
+    $r_instruction.="input.table<- na.omit(input.table) \n";
+
+
     
-    if ($colorexportfile){
-  	#output file
-  	($outcolor) = &OpenOutputFile($colorexportfile);
-	
-  	#get the column headers
-	$header = `head -n 1 $input_data_file`;
-	chomp($header);
-	@header_list = split ('\t',$header);
+
+    
+    ## Start image environment in R according to the output format
+    $r_instruction.="outfile<-\"$outputfile\"\n";
+    if ($img_format eq "pdf") {
+	$r_instruction.="pdf( file= outfile)\n";
+    }elsif ($img_format eq "jpg") {
+	$r_instruction.="jpg(file= outfile)\n";
+    }elsif ($img_format eq "png") {
+	$r_instruction.="png(file= outfile)\n";
+    }elsif ($img_format eq "eps") {
+	$r_instruction.="eps(file= outfile)\n";
+    }elsif ($img_format eq "gif") {
+	&RSAT::error::FatalError("GIF format is not supported in R");
+
     }
+    
+    ## Put together all parammeters that have to be feed into maplot functions
+    my $r_plot_params="";
+    
+
+    ## Title parammeters
+    if($title1 || $title2){
+	my $title="";
+	if ($title1) {
+	    $title.="\"".$title1."\"";
+	}
+	if ($title2){
+	    $title.="\n".$title2;
+	}
+	$r_plot_params.=", main=\"".$title."\"";
+    }
+    
+    ## Xlegend parammeters
+    if($x_legend1 || $x_legend2){
+	my $x_legend="";
+	if ($x_legend1) {
+	    $x_legend.="\"".$x_legend1."\"";
+	}
+	
+	if ($x_legend2){
+	    $x_legend.="\n\"".$x_legend2."\"";
+	}
+	#die "BOOM $x_legend";
+	$r_plot_params.=", xlab=".$x_legend;
+    }    
+
+    ## Ylegend parammeters
+    if($y_legend1 || $y_legend2){
+	my $y_legend="";
+	if ($y_legend1) {
+	    $y_legend.="\"".$y_legend1."\"";
+	}	
+	if ($y_legend2){
+	    $y_legend.="\n\"".$y_legend2."\"";
+	}
+	$r_plot_params.=", ylab=".$y_legend;
+    }
+    
+    ## Axis limits
+    
+    if ($x_axis_max ne "ND"|| $y_axis_max ne "ND" || $x_axis_min ne "ND"|| $y_axis_min ne "ND" ){
+	if($x_axis_max && ($x_axis_min eq "ND")){
+	    $r_instruction.="xlimits <- c(min(input.table[,$xcol_r]), ".$x_axis_max.") \n";
+	}elsif( ($x_axis_max eq "ND") && $x_axis_min){
+	    $r_instruction.="xlimits <- c( ".$x_axis_min.", max(as.vector(input.table[,c(".join(",",@y_col_list_r).")]))) \n";
+	}elsif($x_axis_max && $x_axis_min){
+	    $r_instruction.="xlimits <- c( ".$x_axis_min.",".$x_axis_max .") \n";
+	}
+
+	if($y_axis_max && !$y_axis_min){
+	    $r_instruction.="ylimits <- c(min(input.table[, c(".join(",",@y_col_list_r)."]), ".$y_axis_max.") \n";
+	}elsif(!$y_axis_max && $y_axis_min){
+	    $r_instruction.="ylimits <- c( ".$y_axis_min.", max(as.vector(input.table[, c(".join(",",@y_col_list_r).")]))) \n";
+	}elsif($y_axis_max && $y_axis_min){
+	    $r_instruction.="ylimits <- c( ".$y_axis_min.",".$y_axis_max .") \n";
+	}	
+    }
+
+    ## Logarithm
+
+    if ($xlog && $ylog){
+	$r_plot_params .=", log=c(\"x\",\"y\")";
+    }elsif ($xlog ){
+	$r_plot_params .=", log=c(\"x\")";
+    }elsif ($ylog ){
+	$r_plot_params .=", log=c(\"y\")";
+    }
+
+
+
+    if (!$lines){
+	$r_plot_params.=", pch=0 ,type=\"p\"";
+    }else {
+	$r_plot_params.=", lwd=2 ,type=\"l\"";
+    }
+	
+    if ($bg ne "white"){
+	$r_plot_params.=", bg= \"$bg\"";
+    }
+
+    if ($colorfile){
+	$r_instruction.="colorfiles<-read.table(file=\"$colorfile\", sep=\"\t\", comment.char=\";\", stringsAsFactor=FALSE)\n";
+	$r_instruction.="colors <- colorfiles[which (colorfiles[,1]%in% header_vector ),2]\n";
+	$r_plot_params.=", col=colors ";
+
+    }else{
+	$r_instruction.="colors<- seq(1,".scalar(@y_col_list_r).",1)\n";
+	$r_plot_params.=", col=colors";
+	
+	if ($colorexportfile){
+	    $r_instruction.=" pal <- palette()\n";
+	    $r_instruction.=" color.tableexport <- cbind (colnames(input.table[,c(".join(",",@y_col_list_r).")]), pal[c(1,2,3,4)]) \n";
+	    $r_instruction.=" write.table(color.tableexport , file=\"".$colorexportfile."\", sep=\"\t\", quote=FALSE, row.names=FALSE, col.names=FALSE)\n";
+	}
+
+    }
+
+
+
+    $r_instruction.="matplot( x=input.table[,".$xcol_r."] , y=input.table[, c(".join(",",@y_col_list_r).")] ". $r_plot_params." ) \n";
+
+    ## Add legend 
+     if ($legend){
+	 $r_instruction.="legend( \"topright\",colnames(input.table[,c(".join(",",@y_col_list_r).")]), cex=.4,pt.cex=.6, pch=\"o\", col=colors)\n";
+    }
+
+    ## Add lines if required
+    if ($vline){
+	for my $i (0 .. $#vline_pos){
+	    $r_instruction.="abline(v=".$vline_pos[$i].", col=\"".$vline_colors[$i]."\")\n"
+
+	}
+    }
+    if ($hline){
+	for my $i (0 .. $#hline_pos){
+	    $r_instruction.="abline(h=".$hline_pos[$i].", col=\"".$hline_colors[$i]."\")\n"
+		
+	}
+    }
+
+
+    $r_instruction.="dev.off()\n";
+    
+    print $out_R  $r_instruction;
+    my $rscript_commnad="Rscript $tmp_R_instructions_file ";
+    &doit($rscript_commnad, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    print $rscript_commnad;
+   
     
 
 
@@ -776,7 +939,7 @@ sub GnuPlotEPS {
   }
 
   ## check if .pdf format
-  if ($img_format eq "pdf") {
+  if ($img_format eq "pdf" ) {
     ## will first write a temporary eps file and then use ps2pdf to convert it into a pdf file
     our $pdf_outputfile = $outputfile;
     $outputfile = "tmp_gnuplot_eps_for_pdf.eps";
@@ -1834,6 +1997,7 @@ XYgraph options
 -tbox #,#,#.#   Threshold box.
 -bg		background color (white, blue, black or gray).
 -mono		monochrome output.
+-r_plot		Use R as plotting method
 -symbols	represent points by symbols
 -htmap		HTML map
 -lc		label column
@@ -2164,6 +2328,10 @@ sub ReadArguments {
       ### monochrome output
     } elsif ($ARGV[$a] =~ /-symb/i) {
       $symbols = 1;
+  
+     ### R plot
+    } elsif ($ARGV[$a] =~ /-r_plot/i) {
+      $r_plot= 1;
 
       ### logarithmic representation
     } elsif ($ARGV[$a] eq "-log") {
