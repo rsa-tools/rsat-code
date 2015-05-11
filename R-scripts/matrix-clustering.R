@@ -126,7 +126,7 @@ if(number.of.motifs > 1){
 
     ################################################
     ## If it is indicated, export the newick tree
-    if (export == "newick") {
+    if (export.newick == 1) {
       newick.tree <- convert.hclust.to.newick(tree, decimals=3)
       newick.file <- file.path(dir.trees, "tree.newick")
       verbose(paste("Exporting newick file", newick.file), 2)
