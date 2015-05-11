@@ -25,30 +25,26 @@ matrices that belong to the same cluster.
 
 =head1 DEPENDENCIES
 
-The clustering step relies on I<MCL>, the graph-based clustering
-algorithm developed by Stijn Van Dongen. MCL must be installed and its
-path indicated in the RSAT configuration file
-($RSAT/RSAT_config.props). The installation of MCL can be done with a
-RSAT makefile:
+Some R packages are required in I<matrix-clustering> in order to convert the 
+hierarchical tree into different output formats, to manipulate the
+dendrogram which is exported, and to produce heatmaps.
 
-  cd $RSAT
-  make -f makefiles/install_software.mk install_mcl
+    RJSONIO : http://cran.r-project.org/web/packages/RJSONIO/index.html
+    ctc : http://www.bioconductor.org/packages/release/bioc/html/ctc.html
+    dendextend : http://cran.r-project.org/web/packages/dendextend/index.html
+    Rclusterpp: http://cran.r-project.org/web/packages/Rclusterpp/index.html
+    gplots : http://cran.r-project.org/web/packages/gplots/index.html
+    
+For visualize the logo forest it is required the JavaScript I<D3> (Data Driven Documents) library, 
+the user can select an option to connect directly with the server to load the functions of this library 
+(see option I<-d3_base>). 
 
+    D3 : http://d3js.org/
+    
+As many files are produced with I<matrix-clustering> we created a dynamic website showing 
+the complete list of results. We use the Javascript library I<JQuery> to create this dynamic website.
 
-Various R packages are required in I<matrix-clustering> to convert the 
-hierarchical tree into different output formats and to manipulate the
-dendrogram which is exported.
-
-  RJSONIO : http://cran.r-project.org/web/packages/RJSONIO/index.html
-  ctc : http://www.bioconductor.org/packages/release/bioc/html/ctc.html
-  dendextend : http://cran.r-project.org/web/packages/dendextend/index.html
-
-
-For visualize the logo forest it is required the JavaScript I<D3> 
-(Data Driven Documents) library, the user can select an option to connect
- directly with the server to load the functions of this library (see option I<-d3_base>). 
-
-   D3 : http://d3js.org/
+    JQuery: https://jquery.com/
 
 =head1 AUTHORS
 
@@ -155,20 +151,12 @@ package main;
   }
   local $supported_matrix_formats = join ",", @supported_matrix_formats;
 
-  ## Output formats for hclust
-  local @supported_tree_formats = qw (json newick);
-  local %supported_tree_formats = ();
-  foreach my $format (@supported_tree_formats) {
-    $supported_tree_formats{$format} = 1;
-  }
-  local $supported_tree_formats = join ",", @supported_tree_formats;
-  local $export_tree_format = "";
-  local $export_newick = "";
-
+  ## Flag to export the Newick tree
+  local $export_newick = 0;
 
 
   ################################################################
-  ## Ensure the access to the java libraries, whcih are required to
+  ## Ensure the access to the java libraries, which are required to
   ## display the results (logo trees, dynamic tables).
   ##
   ## If $include_js_lib is set to 1, the javascript libraries are
@@ -829,7 +817,7 @@ Compute inter-cluster distances based on the two most distant nodes.
 =item I<average>
 
 Compute inter-cluster distances as the average distance between nodes
-belonging to the relative clusters.
+belonging to the relative clusters. (UPGMA)
 
 =item I<single>
 
@@ -1241,6 +1229,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
+    $cluster_motifs_cmd .= "; export.newick = ".$export_newick;
 
     if ($quick_flag == 1) {
 	my %lth2 = ();
@@ -1283,10 +1272,6 @@ sub Hclustering {
     }
 
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
-    if ($export_tree_format eq "newick") {
-      $cluster_motifs_cmd .= "; export = '".$export_tree_format."'";
-      $cluster_motifs_cmd .= "; export_newick = '".$main::outfile{consensus_phylogram_newick}."'";
-    }
     $cluster_motifs_cmd .= "; \"";
     $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog};
 
@@ -2862,7 +2847,7 @@ sub set_output_file_names {
 
 
   ## Newick-formatted phylogram with motif consensuses
-  if ($export_tree_format eq "newick") {
+  if ($export_newick == 1) {
     $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";  
   }
 
@@ -4041,6 +4026,17 @@ sub InsertListOfFiles {
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'"><strong>Heatmap</strong></a></td>
 		      <td class="tab_spacer_2">The heatmap showing the hierarchical tree with the clusters and the alignments.</td>
+		   </tr>
+                     ';
+      }
+
+      ## If it is specified, add the heatmap
+      if ($export_newick == 1 && $number_of_motifs > 1) {
+	$add_files .= 
+	    '
+		   <tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{consensus_phylogram_newick}).'"><strong>Newick Tree</strong></a></td>
+		      <td class="tab_spacer_2">The hierarchical clustering tree in Newick format..</td>
 		   </tr>
                      ';
       }
