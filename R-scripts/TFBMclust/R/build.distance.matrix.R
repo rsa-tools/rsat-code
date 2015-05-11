@@ -36,8 +36,6 @@ build.distance.matrix <- function(comparison.table,
 
   } else if ((score == "dEucl")
              || (score == "NdEucl")
-             || (score == "NdEucl")
-             || (score == "NsEucl")
              || (score == "SSD")
              || (score == "SW")
              || (score == "NSW")
@@ -50,10 +48,6 @@ build.distance.matrix <- function(comparison.table,
     ## NSW 			Relative width-normalized Sandelin-Wasserman
 
     score.dist <- score.values
-
-  } else if (score == "match_rank") {
-    ## match_rank rank of current match among all sorted matches
-    stop("match_rank score is not supported yet")
 
   } else {
     stop(paste(score, "is not a valid score", sep="\t"))
