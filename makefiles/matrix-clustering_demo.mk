@@ -15,6 +15,7 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 MIN_NCOR=0.4
 MIN_COR=0.6
 HCLUST_METHOD=average
+RETURN_FIELDS=align_consensus,heatmap
 MIN_W=5
 V=2
 
@@ -65,7 +66,8 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
-		-return align_consensus,heatmap
+		-metric_build_tree ${METRIC_BUILD_TREE} \
+		-return ${RETURN_FIELDS}
 
 CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-file_table ${FILE_TABLE} \
@@ -76,7 +78,7 @@ CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
-		-return align_consensus,heatmap
+		-return ${RETURN_FIELDS}
 
 _cluster:
 	@echo
@@ -98,7 +100,9 @@ cluster_peakmotifs_Oct4_vs_Sox2:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct4 and Sox2 dataset from Chen 2008)"
 	${MAKE} _cluster_multi MATRIX_PREFIX=${OCT4_VS_SOX2_PREFIX} \
-		TITLE='Oct4 motifs peak motifs'
+		TITLE='Oct4 motifs peak motifs' \
+		METRIC_BUILD_TREE=Ncor \
+		RETURN_FIELDS=align_consensus,heatmap
 
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
@@ -107,10 +111,18 @@ cluster_peakmotifs_Oct4:
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
 		TITLE='Oct4 motifs peak motifs' \
-		COLLECTION=${OCT4_PREFIX}
+		COLLECTION=${OCT4_PREFIX} \
+		METRIC_BUILD_TREE=Ncor \
+		RETURN_FIELDS=align_consensus,heatmap
 
 cluster_peakmotifs_Oct4_roots_only:
-	@${MAKE} cluster_peakmotifs_Oct4 OPT=-root_matrices_only
+	@echo
+	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
+		TITLE='Oct4 motifs peak motifs' \
+		COLLECTION=${OCT4_PREFIX} \
+		METRIC_BUILD_TREE=Ncor \
+		RETURN_FIELDS=root_matrices
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set),
 ## without any threshold
@@ -150,7 +162,12 @@ cluster_permuted_matrices:
 cluster_footprints:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by footprint-discovery (query gene=LexA; taxon=Enterobacteriales)"
-	${MAKE} _cluster MATRIX_PREFIX=${FOOTPRINT_DISCO_PREFIX} COLLECTION=${FOOTPRINT_DISCO_PREFIX}
+	${MAKE} _cluster MATRIX_PREFIX=${FOOTPRINT_DISCO_PREFIX} \
+		COLLECTION=${FOOTPRINT_DISCO_PREFIX} \
+		TITLE='Matrices found in LexA orthologous promoters in Enterobacteriales' \
+		COLLECTION='LexA_motifs' \
+		METRIC_BUILD_TREE=Ncor \
+		RETURN_FIELDS=align_consensus,heatmap
 
 
 ## Cluster all motifs from RegulonDB
@@ -163,7 +180,9 @@ cluster_regulondb:
 	@echo "Clustering all matrices from RegulonDB"
 	${MAKE} _cluster MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} \
 		TITLE='RegulonDB database' \
-		COLLECTION=${RDB_PREFIX}
+		COLLECTION=${RDB_PREFIX} \
+		METRIC_BUILD_TREE=Ncor \
+		RETURN_FIELDS=align_consensus,heatmap
 
 ## Permutation test with RegulonDB
 cluster_regulondb_permute:
@@ -190,7 +209,8 @@ cluster_jaspar_one_group:
 		MATRIX_FILE=${JASPAR_MATRICES} \
 		MIN_COR=0.6 MIN_NCOR=0.4 \
 		TITLE='Jaspar core ${JASPAR_GROUP} database' \
-		COLLECTION=${JASPAR_PREFIX}
+		COLLECTION=${JASPAR_PREFIX} \
+		METRIC_BUILD_TREE=Ncor \
 
 ## Permutation test with RegulonDB
 cluster_jaspar_one_group_permute:
