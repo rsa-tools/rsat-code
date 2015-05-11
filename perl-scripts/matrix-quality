@@ -2510,8 +2510,7 @@ sub CompareDistrib {
     &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 2);
   }
   if ($task{graphs}) {
-    &RSAT::message::TimeWarn("Generating comparison graphs")
-      if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Generating comparison graphs") if ($main::verbose >= 2);
 
     ## Generate the graphs for each image format
     foreach my $image_format (@image_formats) {
@@ -2534,7 +2533,7 @@ sub CompareDistrib {
 
       ################################################################
       ## Draw a graph with all the decreasing cumulative distributions
-      my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+      my $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
 
       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
 
@@ -2557,7 +2556,7 @@ sub CompareDistrib {
       ################################################################
       ## Draw a graph with all the decreasing cumulative distributions
       ## and a logarithmic Y axis
-      $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+      $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
       $XYgraph_cmd .= " -ymax 1 -ylog 10";
@@ -2592,7 +2591,7 @@ sub CompareDistrib {
 
       $ycols = join ",", 2..(scalar(@distrib_files)+2);
 #      $large_graph_options =~ s/-xsize 800/-xsize 400/;
-      $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+      $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
       $XYgraph_cmd .= " -xcol ".$ref_column;
       $XYgraph_cmd .= " -ycol ".$ycols;
       $XYgraph_cmd .= " -ygstep1 0.1 -ygstep2 0.02";
@@ -2629,6 +2628,7 @@ sub CompareDistrib {
       ## visible on the non-log representations.
       $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
       $roc_file_opt =~ s/_roc/_roc_xlog/;
+     
       &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xlog.".$image_format) if ($main::verbose >= 2);
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
@@ -2658,6 +2658,7 @@ sub CompareDistrib {
 	}
       }
 
+    
       unless ($no_cv) {
 	if ($task{theor_cv}) {
 
@@ -2682,7 +2683,7 @@ sub CompareDistrib {
 
 	  ################################################################
 	  ## Draw a graph with all the decreasing cumulative distributions
-	  my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+	  my $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
 	  my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
@@ -2694,7 +2695,7 @@ sub CompareDistrib {
 	  ################################################################
 	  ## Draw a graph with all the decreasing cumulative distributions
 	  ## and a logarithmic Y axis
-	  $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+	  $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot".$all_graph_options;
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymax 1 -ylog 10";
 	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
@@ -3003,16 +3004,17 @@ sub Draw_NWD{
    my $nwd_xygrpah_file=$nwd_outfile_prefix."_compare-scores.";
    
    foreach my $image_format (@image_formats) {
-       my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph " ;
+       my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph -r_plot " ;
        $XYgraph_nwd_cmd .= " -i ".  $nwd_compare_scores_file ." ";
        $XYgraph_nwd_cmd .= " -format ". $image_format  ." " ;
        $XYgraph_nwd_cmd .= " -xcol 1  -ycol ".$ycols;
        $XYgraph_nwd_cmd .= " -lines -xlog " ;
-       $XYgraph_nwd_cmd .= " -yleg1 'NWD' -xleg1 'Pvalue' ";
+       $XYgraph_nwd_cmd .= " -yleg1 'NWD' -xleg1 'log10(Pvalue)' ";
        $XYgraph_nwd_cmd .= " -legend -pointsize 0 ";
        $XYgraph_nwd_cmd .= " -o ". $nwd_xygrpah_file.$image_format." ";
        &doit($XYgraph_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
        &RSAT::message::Info(" Drawing NWD  curves ",  $XYgraph_nwd_cmd) if ($main::verbose >= 0);   
+       
    }
    return($nwd_compare_scores_file, $nwd_xygrpah_file )
    
@@ -3053,7 +3055,7 @@ sub Draw_OCC{
    
    
    foreach my $image_format (@image_formats) {
-       my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph " ;
+       my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph -r_plot " ;
        $XYgraph_occ_cmd .= " -i ".  $occ_compare_scores_file ." ";
        $XYgraph_occ_cmd .= " -format ". $image_format  ." " ;
        $XYgraph_occ_cmd .= " -xcol 1  -ycol ".$ycols;
@@ -3174,6 +3176,11 @@ sub GenerateHTMLReport {
 	    print $synthesis_per_matrix "\n<h3>NWD curve</h3>\n";
 	    &index_one_image($synthesis_per_matrix,$outfile{matrix_nwd_plots}."png", 'height=120'); 
 	}
+	if ($main::plot_types{nwd}){
+	    print $synthesis_per_matrix "\n<h3>OCC curve</h3>\n";
+	    &index_one_image($synthesis_per_matrix,$outfile{matrix_occ_proba_plots}."png", 'height=120'); 
+	}
+
     }
 
 
