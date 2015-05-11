@@ -117,7 +117,7 @@ use RSAT::util;
 use RSAT::matrix;
 use RSAT::MatrixReader;
 use RSAT::SeqUtil;
-
+use List::MoreUtils qw(uniq);
 
 require "RSA.disco.lib";
 require "footprint.lib.pl";
@@ -218,6 +218,8 @@ package main;
   local @supported_thresholds = qw(
 				     cor
                                      Ncor
+                                     NdEucl
+                                     dEucl
                                      w
 				   );
   local $supported_thresholds = join ",", @supported_thresholds;
@@ -231,29 +233,14 @@ package main;
   local @supported_metrics = qw(
 			         cor
                                  Ncor
-                                 w
+                                 NdEucl
+                                 dEucl                                
 			     );
   local $supported_metrics = join ",", @supported_metrics;
   local %supported_metrics = ();
   foreach my $met (@supported_metrics) {
     $supported_metrics{lc($met)} = 1;
   }
-
-
-
-  ## Consensuses alignment labels
-  local @supported_consensuses_alignment_labels = qw(
-			         consensus
-                                 id
-                                 strand
-                                 number
-			     );
-  local $supported_consensuses_alignment_labels = join(",", @supported_consensuses_alignment_labels);
-  local %supported_consensuses_alignment_labels = ();
-  foreach my $lab (@supported_consensuses_alignment_labels) {
-    $supported_consensuses_alignment_labels{lc($lab)} = 1;
-  }
-  local @cons_labels = @supported_consensuses_alignment_labels;
 
 
   ## Matrices
@@ -352,11 +339,12 @@ package main;
   ################################################################
   ## Options used for motif comparison
   local %param = ();
+  local @matrix_compa_metrics = ();
   $param{matrix_compa_min_w} = 5; ## min number of aligned columns
   $param{matrix_compa_min_Wr} = 0.3; ## min relative width
-  $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
-  $param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NSW,match_rank";
-  $param{matrix_compa_score} = "Ncor"; ## The score must be a similarity score for MCL
+  $param{matrix_compa_sort_field} = ""; ## sorting field
+  $param{matrix_compa_metrics} = "";
+  $param{matrix_compa_score} = ""; ## The score must be a similarity score for MCL
   $param{archive_format} = "zip";
   $param{progressive_synthesis} = 1;
   $param{title} = "matrix-clustering results";
@@ -893,38 +881,7 @@ file independently.
       $skip_matrices = shift(@arguments);
       &RSAT::error::FatalError($skip_matrices, "Invalid value for option -skip_matrices: must be a natural number") 
          unless (&IsNatural($skip_matrices));
-    
-
-
-=pod
-
-=item	B<-consensus_labels>
-
-Option to select the labels displayed in the consensus
-alignment picture
-
-Default: consensus, id, strand
-
-B<Supported labels>
-    
- (consensus, id, strand, number)
-
-=cut
-
-    } elsif ($arg eq "-consensus_labels") {
-
-	$cons_labels = shift(@arguments);
-	my @new_cons_labels = split (",", $cons_labels);
-	foreach $field (@new_cons_labels) {
-	    if ($supported_consensuses_alignment_labels{$field}) {
-		$supported_consensuses_alignment_labels{$field} = 1;
-	    } else {
-		&RSAT::error::FatalError(join("\t", $field, "Invalid consensus alignment label. Supported:", $supported_consensuses_alignment_labels));
-	    }
-	}
-	@cons_labels =  @new_cons_labels;	
-
-	
+    	
 =pod
 
 =item	B<-lth param lower_threshold>
@@ -954,18 +911,19 @@ Suggested thresholds:
     } elsif ($arg eq "-lth") {
       my $thr_field = shift(@arguments);
       my $thr_value =  lc(shift(@arguments));
+      push(@matrix_compa_metrics, $thr_field);
       unless ($supported_threshold{lc($thr_field)}) {
 	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
       }
       &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ")
 	  unless (&RSAT::util::IsReal($thr_value));
       $lth{$thr_field} = $thr_value;
-
-      
+     
       ### Upper threshold
     } elsif ($arg eq "-uth") {
       my $thr_field = shift(@arguments);
       my $thr_value = shift(@arguments);
+      push(@matrix_compa_metrics, $thr_field);
       unless ($supported_threshold{lc($thr_field)}) {
 	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
       }
@@ -973,31 +931,25 @@ Suggested thresholds:
 	  unless (&RSAT::util::IsReal($thr_value));
       $uth{$thr_field} = $thr_value;
 
-      ## TEMPORARILY INACTIVATE PASSING THRESHOLDS TO compare-matrices
-#      push @args_to_pass, join(" ", "-uth", $thr_field, $thr_value);
-
 =pod
 
-=item	B<-score metric>
+=item	B<-metric_build_tree metric>
 
 Select the metric which will be used to cluster the motifs.
 
-Supported metrics : cor, Ncor
+Supported metrics : cor, Ncor, dEucl, NdEucl
 
 Default: Ncor 
 
 =cut
 
-    }elsif ($arg eq "-score") {
+    } elsif ($arg eq "-metric_build_tree") {
       my $metric = shift(@arguments);
       unless ($supported_metrics{lc($metric)}) {
 	&RSAT::error::FatalError("Invalid metric field $metric. Supported: $supported_metrics");	
       }
       $main::param{matrix_compa_score} = $metric;
       $main::param{matrix_compa_sort_field} = $metric;
-
-
-################################################################################################################################################################################################################################################################
 
 =pod
 
@@ -1096,8 +1048,6 @@ to avoid the cimputation of the visual elements.
 	}
       }
 
-################################################################################################################################################################################################################################################################
-
     ## Additional arguments are passed to compare-matrices
     }else {
         if ($arg =~ /\s/) {
@@ -1152,6 +1102,11 @@ sub CompareMatrices {
   ## in the output graph even if they are not related to any other
   ## motif.
   $matrix_compa_verbose = &RSAT::stats::max(($main::verbose-1), 1);
+
+  ## Select the motif (dis)similarity metrics that will be
+  ## computed in compare-matrices
+  @matrix_compa_metrics = uniq(@matrix_compa_metrics);
+  $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
 
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/compare-matrices -v ".$matrix_compa_verbose; 
@@ -1260,18 +1215,6 @@ sub Hclustering {
 
     my $cluster_motifs_script  = $ENV{RSAT}."/R-scripts/matrix-clustering.R";
     &RSAT::error::FatalError("Cannot read cluster motifs script", $cluster_motifs_script) unless (-r $cluster_motifs_script);
-    
-    ## Create the string with the labels
-    ## It will be passed to R as command-line argument
-    my @temp_consensus_fields = @cons_labels;
-    unshift(@temp_consensus_fields, "consensus");
-    foreach (@temp_consensus_fields) {
-	$_ = "'".$_."'";
-    }
-    my $arg_labels = "c(";
-    my $join_labels = join(",", @temp_consensus_fields);
-    $arg_labels .= $join_labels." )"; 
-
     $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
 
 
@@ -1296,7 +1239,6 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; description.file = '".$main::outfile{matrix_descriptions}."'";
     $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
-    $cluster_motifs_cmd .= "; labels = ".$arg_labels;
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
 
@@ -1322,7 +1264,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; draw.consensus = ".$align_consensus;
     $cluster_motifs_cmd .= "; pos.hclust.in.heatmap = '".$heatmap_tree_pos."'";
 
-    ## Pass the thresholds on the score to R for clustering
+    ## Pass the lower thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
 	my $lthsp = "";
 	foreach my $par (keys %lth) {
@@ -1330,9 +1272,16 @@ sub Hclustering {
 	}
 	$cluster_motifs_cmd .= "; lthsp = '".$lthsp."'";
     }
+
+    ## Pass the upper thresholds on the score to R for clustering
     if (defined($uth{$param{matrix_compa_score}})) {
-      $cluster_motifs_cmd .= "; uth = '".$uth{$param{matrix_compa_score}}."'";
+	my $uthsp = "";
+	foreach my $par (keys %uth) {
+	    $uthsp.= $par."_".$uth{$par}."_";
+	}
+	$cluster_motifs_cmd .= "; uthsp = '".$uthsp."'";
     }
+
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     if ($export_tree_format eq "newick") {
       $cluster_motifs_cmd .= "; export = '".$export_tree_format."'";
