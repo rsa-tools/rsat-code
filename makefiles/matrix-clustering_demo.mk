@@ -78,6 +78,7 @@ CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-hclust_method ${HCLUST_METHOD} \
 		-label name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
+		-metric_build_tree ${METRIC_BUILD_TREE} \
 		-return ${RETURN_FIELDS}
 
 _cluster:
@@ -101,8 +102,7 @@ cluster_peakmotifs_Oct4_vs_Sox2:
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct4 and Sox2 dataset from Chen 2008)"
 	${MAKE} _cluster_multi MATRIX_PREFIX=${OCT4_VS_SOX2_PREFIX} \
 		TITLE='Oct4 motifs peak motifs' \
-		METRIC_BUILD_TREE=Ncor \
-		RETURN_FIELDS=align_consensus,heatmap
+		METRIC_BUILD_TREE=Ncor
 
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
@@ -112,8 +112,7 @@ cluster_peakmotifs_Oct4:
 	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
 		TITLE='Oct4 motifs peak motifs' \
 		COLLECTION=${OCT4_PREFIX} \
-		METRIC_BUILD_TREE=Ncor \
-		RETURN_FIELDS=align_consensus,heatmap
+		METRIC_BUILD_TREE=Ncor
 
 cluster_peakmotifs_Oct4_roots_only:
 	@echo
