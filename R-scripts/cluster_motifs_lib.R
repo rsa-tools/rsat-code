@@ -69,7 +69,7 @@ check.param <- function() {
 
   ## Define the kind of metric used: scores or distances
   supported.scores <- c("cor", "Ncor")
-  supported.distances <- c(NULL)
+  supported.distances <- c("dEucl", "NdEucl")
 
   if(score %in% supported.scores){
     metric <<- "similarity"
@@ -84,23 +84,25 @@ check.param <- function() {
       lth.values <<- unlist(lth)
       lth.scores <<- names(lth.values)
     }
-    if (!exists("uth")) {
-      uth <<- list()
-      uth[["Ncor"]] <<- 1;
-      uth[["cor"]] <<- 1;
 
-      uth.values <<- unlist(uth)
-      uth.scores <<- names(uth.values)
-    }
 
   } else if(score %in% supported.distances){
     metric <<- "distances"
 
+    if (!exists("uth")) {
+      uth <<- list()
+      uth[["dEucl"]] <<- 1;
+      uth[["NdEucl"]] <<- 1;
+      uth[["w"]] <<- 0;
+
+      uth.values <<- unlist(uth)
+      uth.scores <<- names(uth.values)
+    }
   }
 
 
-  #####################
-  ##
+  ###############################
+  ## Read the lower thresholds
   if(exists("lthsp")){
     lthsp <- unlist(strsplit(lthsp, "_"))
     lth.scores <<- lthsp[seq(1,length(lthsp), by = 2)]
@@ -119,8 +121,26 @@ check.param <- function() {
     }
   }
 
-  ## Set the labels
-  labels <<- unique(labels)
+
+  ###############################
+  ## Read the upper thresholds
+  if(exists("uthsp")){
+    uthsp <- unlist(strsplit(uthsp, "_"))
+    uth.scores <<- uthsp[seq(1,length(uthsp), by = 2)]
+    uth.values <<- as.numeric(uthsp[seq(2,length(uthsp), by = 2)])
+
+    for(i in 1:length(uth.scores)){
+      thresholds[[uth.scores[i]]] <<- uth.values[i]
+    }
+
+    supported <- c("dEucl", "NdEucl")
+    if(length(setdiff(supported, uth.scores)) > 0){
+      for(add in setdiff(supported, uth.scores)){
+        uth.scores <<- append(uth.scores, add)
+        uth.values <<- append(uth.values, 0)
+      }
+    }
+  }
 }
 
 
