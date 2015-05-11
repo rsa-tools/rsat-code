@@ -807,29 +807,33 @@ sub Rplot{
 	$r_plot_params.=", ylab=".$y_legend;
     }
 
+    $r_instruction.= " xcolumn <- input.table[,".$xcol_r."]  \n" ;
+    $r_instruction.= " ycolumns <- input.table[, c(".join(",",@y_col_list_r).")]   \n" ;
+    
+
     ## Logarithm
     if ($xlog || $ylog){
 	if ($xlog && $ylog){
-	    #$r_plot_params .=", log=c(\"x\",\"y\")";
-	    $r_instruction.= " input.table[,".$xcol_r."] <- log ( input.table[,".$xcol_r."] , base=$x_log_base ) \n" ;
-	    $r_instruction.= " input.table[, c(".join(",",@y_col_list_r).")] <- log (input.table[, c(".join(",",@y_col_list_r).")] , base=$y_log_base ) \n" ;
+	  
+	    $r_instruction.= " xcolumn <-  log ( xcolumn , base=".$x_log_base." ) \n ";
+	    $r_instruction.= "  ycolumns <- log ( ycolumns, base=$y_log_base ) \n" ;
 	    
 	    
 	    
 	}elsif ($xlog ){
-	    #$r_plot_params .=", log=c(\"x\")";
-	    $r_instruction.= " input.table[,".$xcol_r."] <- log ( input.table[,".$xcol_r."] , base=$x_log_base ) \n" ;
-	    
+	    $r_instruction.= " xcolumn <-  log ( xcolumn , base=".$x_log_base." ) \n ";
+	   
+
 	}elsif ($ylog ){
 	    #$r_plot_params .=", log=c(\"y\")";
-	    $r_instruction.= " input.table[, c(".join(",",@y_col_list_r).")] <- log (input.table[, c(".join(",",@y_col_list_r).")] , base=$y_log_base ) \n" ;
+	    $r_instruction.= "  ycolumns <- log ( ycolumns, base=$y_log_base ) \n" ;
 	}
-	
+	$r_instruction.= " input.table <- cbind( xcolumn,  ycolumns ) \n";
 	$r_instruction.= " input.table <- do.call(data.frame,lapply(input.table, function(x) replace(x, is.infinite(x),NA))) \n";
 	$r_instruction.= " input.table<- na.omit(input.table) \n";
 	
     }
-
+ 
     
     ## Axis limits
     
@@ -838,11 +842,11 @@ sub Rplot{
 	## MIN value for x is definied but not the max
 	if( ($x_axis_max eq "ND") && ($x_axis_min ne "ND")){
 	    ## Max will be defined using the maximun of all xcolumns
-	    $r_instruction.="xlimits <- c( ".$x_axis_min.", max(as.vector(input.table[,".$xcol_r."]))) \n";
+	    $r_instruction.="xlimits <- c( ".$x_axis_min.", max(as.vector(input.table[,1]))) \n";
 	    
 	    ## MAX value for x is defined but not the MIN 
 	}elsif( ($x_axis_max ne "ND") && ($x_axis_min eq "ND")){
-	    $r_instruction.="xlimits <- c(min(input.table[,".$xcol_r."]), ".$x_axis_max.") \n";
+	    $r_instruction.="xlimits <- c(min(input.table[,1]), ".$x_axis_max.") \n";
 	    
 	    ## MAX and MIN values for x axis are deffined 
 	}elsif( ($x_axis_max ne "ND") && ($x_axis_min ne "ND")){
@@ -852,16 +856,17 @@ sub Rplot{
 	
     }
 
+  
     if ( $y_axis_max ne "ND" ||  $y_axis_min ne "ND" ){
 	
 	## MIN value for y is defined but not the max
 	if( ($y_axis_max eq "ND") && ($y_axis_min ne "ND")){
 	    ## Max will be defined using the maximun of all ycolumns
-	    $r_instruction.="ylimits <- c( ".$y_axis_min.", max(as.vector(input.table[, c(".join(",",@y_col_list_r).")]))) \n";
+	    $r_instruction.="ylimits <- c( ".$y_axis_min.", max(as.vector(input.table[, -1]))) \n";
 	    
        ## MAX value for y is defined but not the MIN
 	}elsif(($y_axis_max ne "ND") && $y_axis_min){
-	    $r_instruction.="ylimits <- c(min(input.table[, c(".join(",",@y_col_list_r).")]), ".$y_axis_max.") \n";
+	    $r_instruction.="ylimits <- c(min(input.table[, -1]), ".$y_axis_max.") \n";
 
 	## MAX and MIN values for y axis are deffined
 	}elsif (  ($y_axis_max ne "ND") && ($y_axis_min ne "ND")){
@@ -875,6 +880,7 @@ sub Rplot{
 	
     }
 
+   
    
 
 
@@ -905,13 +911,12 @@ sub Rplot{
 
     }
 
-
-
-    $r_instruction.="matplot( x=input.table[,".$xcol_r."] , y=input.table[, c(".join(",",@y_col_list_r).")] ". $r_plot_params." ) \n";
+   
+    $r_instruction.="matplot( x=input.table[,1] , y=input.table[, -1] ". $r_plot_params." ) \n";
 
     ## Add legend 
      if ($legend){
-	 $r_instruction.="legend( \"topright\",colnames(input.table[,c(".join(",",@y_col_list_r).")]), cex=.4,pt.cex=.6, pch=\"o\", col=colors)\n";
+	 $r_instruction.="legend( \"topright\",colnames(input.table[,-1]), cex=.4,pt.cex=.6, pch=\"o\", col=colors)\n";
     }
 
     ## Add lines if required
@@ -931,6 +936,9 @@ sub Rplot{
 
     $r_instruction.="dev.off()\n";
     
+    #print $r_instruction ;
+    #die "BOOM";
+
     print $out_R  $r_instruction;
     my $rscript_commnad="Rscript $tmp_R_instructions_file ";
     &doit($rscript_commnad, $dry, $die_on_error, $verbose, $batch, $job_prefix);
