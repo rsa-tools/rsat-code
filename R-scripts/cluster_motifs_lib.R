@@ -43,6 +43,12 @@ check.param <- function() {
     draw.heatmap <<- "1";
   }
 
+  ## Option indicating if the tree
+  ## in Newick format should be exported
+  if (!exists("export.newick")) {
+    export.newick <<- "0";
+  }
+
   ## Option indicating if the tree with aligned consensuses must be computed
   if (!exists("draw.consensus")) {
     draw.consensus <<- "1";
