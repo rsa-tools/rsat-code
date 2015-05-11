@@ -102,7 +102,7 @@ if($collection_label){
 ############################
 ## Add the metric used to 
 ## cluster the motifs
-local $metric_tree = lc($query->param('metric'));
+local $metric_tree = $query->param('metric');
 if($metric_tree){
     $parameters .= " -metric_build_tree '".$metric_tree."'";
 }
