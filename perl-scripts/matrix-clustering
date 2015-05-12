@@ -1586,6 +1586,7 @@ sub create_html_tree_file() {
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
+        \t\t.attr(\"font-size\", \"18px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
 
     my $display_consensus_d3 =
@@ -1602,7 +1603,7 @@ sub create_html_tree_file() {
         node.append("text")
 	.text(function(d) { return d.children ? "" : d.title; })
 	.attr("x", function(d) { return d.children ? 0 : 20; })
-	.attr("dy", function(d) { return d.children ? 0 : 27; })
+	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
         .attr("fill", "black")
 	.attr("font-size", "18px")
         .attr("font-weight", "bold")
@@ -1710,22 +1711,26 @@ sub create_html_tree_file() {
 			$up = uc($field);
 			$add_this =~ s/d\.;/ d\.$field;/;
 		    }
-
-		    if ($display_collection_name_flag == 1) {
-			$add_this .= "\n".$display_title_lab."\n";	
-		    }
 		    
 		    ### Add the new labels, set the distances among the labels in the tree
 		    if ($labels_num > 1) {
 			my $copy = $new_label;
 			$up = uc($field);
 			$copy =~ s/d\.;/ d\.$field;/;
-			my $y_displacement = 3 + (($labels_num -1) * 20);
+			my $y_displacement = 3 + (($labels_num -1) * 25);
 			$copy =~ s/#/$y_displacement/;
 			$add_this .= "\n\n".$copy."\n";
 		    }
 		}
 	    }
+
+	    ## Add the collection lable to the logo tree
+	    if ($display_collection_name_flag == 1) {
+		my $displacement = 3 + (scalar(@label_fields_to_return) * 25);
+		$display_title_lab =~ s/--dis--/$displacement/;
+		$add_this .= "\n".$display_title_lab."\n";	
+	    }
+	    
 	    print TEMP $add_this."\n";
 	}
 
@@ -3221,7 +3226,7 @@ sub ReportStyleCSS{
   
   #show_forest {
 	heigth: auto;
-	width: 900px;
+	width: 960px;
 	position: relative;
 	float: left;
 	clear: both;
@@ -3249,7 +3254,7 @@ sub ReportStyleCSS{
 
   .display{
 	height: auto;
-	width: 95%;
+	width: 96%;
 	border-radius: 5px;
 	background-color: #FFFFFF; 
 	margin: 10px;
@@ -3273,9 +3278,9 @@ sub ReportStyleCSS{
 	background-color: #B1D4F9; 
         position: relative;
         clear: both;
-    margin: 7px;
-    display: block;
-    float: left;
+        margin: 7px;
+        display: block;
+        float: left;
   } 
  
   .cluster_info_head {
@@ -3575,9 +3580,9 @@ sub InsertSmallForest {
     ## D3 values of the parameters of the small trees
     my $svg_width = 7;
     my $svg_height = 18;
-    my $svg_x1 = 7 * $nb_char;
+    my $svg_x1 = 5.5 * $nb_char;
     my $svg_y1 = -7;
-    my $svg_x2 = '6 + '.$svg_x1.' + 30';
+    my $svg_x2 = '6 + '.$svg_x1.' + 27';
     
     my $div = "";
     ## Open the <div> and the <a> where the small forest will be set
@@ -3611,7 +3616,7 @@ sub InsertSmallForest {
 	    
 	    my $tree = &logo_tree();
 	    $tree =~ s/--lab--/$label_single_tree_no_link/;
-	    $tree =~ s/--widthtree--/800/g;
+	    $tree =~ s/--widthtree--/940/g;
 	    $tree =~ s/--radius--/3/g;
 	    $tree =~ s/--size--/300/g;
 	    $tree =~ s/--insert--//g;
@@ -3779,9 +3784,9 @@ sub InsertTreesAndBranchMotifs {
 
     my  $svg_width = 8.5;
     my  $svg_height = 35;
-    my  $svg_x1 = 9.5 * $nb_char + 6;
+    my  $svg_x1 = 5 * $nb_char + 6;
     my  $svg_y1 = -15;
-    my  $svg_x2 = '7 + '.$svg_x1.' + 40';
+    my  $svg_x2 = '7 + '.$svg_x1.' + 42';
     my $label_single_tree = '
 	node.append("a")
 	        .attr("xlink:href", function(d) { return d.url; })
@@ -3852,10 +3857,10 @@ sub InsertTreesAndBranchMotifs {
 	$d3_logo_tree .= &logo_tree();
 	$d3_logo_tree =~ s/--lab--/$label_single_tree/;
 	$d3_logo_tree =~ s/--cl_id--/$cl_id/;
-	$d3_logo_tree =~ s/--widthtree--/1000/g;
+	$d3_logo_tree =~ s/--widthtree--/1150/g;
 	$d3_logo_tree =~ s/--nb--/$num/g;
 	$d3_logo_tree =~ s/--insert--/$insert_id/g;
-	$d3_logo_tree =~ s/--size--/400/g;
+	$d3_logo_tree =~ s/--size--/390/g;
 	$d3_logo_tree =~ s/--radius--/6/g;
 	$d3_logo_tree =~ s/--height--/100 + 30 * $motifs_nb/g;
 	$d3_logo_tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
