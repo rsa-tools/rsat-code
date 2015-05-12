@@ -2117,7 +2117,7 @@ package main;
 
     foreach my $metric (@zscore_metrics) {
 
-      &RSAT::message::TimeWarn("Computing z-scores for metric", $metric) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Computing z-scores for metric", $metric) if ($main::verbose >= 0);
 
       next unless ($return_field{$metric});
 #      next if ($metric eq "match_rank");
@@ -2132,8 +2132,8 @@ package main;
       for my $compa_id (@match_ids) {
 	$n++;
 	my $score = $match_score{$compa_id}{$metric};
-	my $score_sum += $score;
-	my $score_square_sum += $score^2;
+	$score_sum += $score;
+	$score_square_sum += $score^2;
       }
       
       if ($n > 0) {
@@ -2141,7 +2141,7 @@ package main;
 	$score_mean = $score_sum / $n;
 	
 	## Compute standard deviation of the score
-	$score_sd = sqrt($score_square_sum/$n - ($score_sum)^2);
+	$score_sd = sqrt($score_square_sum/$n - ($score_mean)^2);
       }
       
       ## Add zscore to the output line
