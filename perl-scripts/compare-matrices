@@ -485,6 +485,7 @@ package main;
 			      "match_rank", ## Matching ranks each selected metric
 			      "zscores", ## z-scores for each selected metric
 			     );
+  local @zscore_metrics = (); ## Metrics on which the z-score has to be computed (will be filled according to selected metrics)
 #  local @rank_metrics = ("SW", "dEucl"); ## Metrics on which a rank can be computed
 #  local @rank_metrics = @supported_metrics; ## Metrics on which a rank can be computed
   local @rank_metrics = (); ## Metrics on which the rank has to be computed (will be filled according to selected metrics)
@@ -677,6 +678,17 @@ package main;
     $return_field{$sort_field} = 1;
   }
 
+  ## Update the list of metrics to take into account for z-score computation
+  if ($return_field{zscores}) {
+    foreach my $metric (@supported_metrics) {
+      next if ($metric eq "all_metrics");
+      next if ($metric eq "match_rank");
+      next if ($metric eq "zscores");
+      push @zscore_metrics, $metric if ($return_field{$metric});
+#      &RSAT::message::Debug("Adding zscore metric", $metric) if ($main::verbose >= 10);
+    }
+  }
+
   ## Update the list of metrics to take into account for ranks and rank mean
   if ($return_field{match_rank}) {
     foreach my $metric (@supported_metrics) {
@@ -687,21 +699,14 @@ package main;
     }
   }
 
-  ## Update the list of metrics to take into account for z-score computations
-  if ($return_field{zscores}) {
-    foreach my $metric (@supported_metrics) {
-      next if ($metric eq "all_metrics");
-      next if ($metric eq "match_rank");
-      next if ($metric eq "zscores");
-      push @zscores_metrics, $metric if ($return_field{$metric});
-    }
-  }
-
   ## Specify the output format for the different metrics
   local %metric_format = ();
   $metric_format{"match_rank"} = "%d";
   $metric_format{"zscores"} = "%.4f";
   $metric_format{"rank_mean"} = "%.3f";
+  foreach my $metric (@zscore_metrics) {
+    $metric_format{"z".$metric} = "%.4f";
+  }
   foreach my $metric (@rank_metrics) {
     $metric_format{"r".$metric} = "%d";
   }
@@ -1320,6 +1325,15 @@ package main;
   ################################################################
   ## Matching ranks must coms as last columns, because it is computed only after all the rows have been formed
 
+  ## Z-scores on various metrics + zscore mean
+  if ($return_field{zscores}) {
+    foreach my $metric (@zscore_metrics) {
+      push (@header, "z".$metric);
+    }
+    push (@header, "mean_zscore");
+#    push (@header, "zscores_rank");
+  }
+
   ## Matching ranks on various metrics + rank mean
   if ($return_field{match_rank}) {
     foreach my $metric (@rank_metrics) {
@@ -1329,16 +1343,7 @@ package main;
     push (@header, "match_rank");
   }
 
-  ## Z-scores on various metrics + zscore mean
-  if ($return_field{zscores}) {
-    foreach my $metric (@zscores_metrics) {
-      push (@header, "z".$metric);
-    }
-    push (@header, "zscores_mean");
-    push (@header, "zscores_rank");
-  }
-
-  ## Rank on the sorting criterion
+  ## Rank on the offset
   push (@header, "offset_rank") if ($return_field{offset_rank});
 
   ################################################################
@@ -1395,6 +1400,13 @@ package main;
     $description{consensus1} = "IUPAC consensus of matrix 1 (dots represent non-aligned columns)";
     $description{consensus2} = "IUPAC consensus of matrix 2 (dots represent non-aligned columns)";
 
+    ## Description for zscores
+    foreach my $metric (@zscore_metrics) {
+      $description{"z".$metric} = "Z-score standardized ".$metric;
+    }
+    $description{mean_zscore} = "Mean of the z-scores on all selected metrics";
+#    $description{zscores_rank} = "Rank of the match (sorting by mean z-score)";
+
     ## Description for ranks
     foreach my $metric (@rank_metrics) {
       $description{"r".$metric} = "Matching rank for ".$metric;
@@ -1402,13 +1414,6 @@ package main;
     $description{rank_mean} = "Mean of the matching ranks on all selected metrics";
     $description{match_rank} = "Rank of the match (sorting by rank_mean)";
     $description{offset_rank} = "Rank according to the field used for selecting the \"best\" offset (".$sort_field.")";
-
-    ## Description for zscores
-    foreach my $metric (@zscores_metrics) {
-      $description{"z".$metric} = "Z-score converted ".$metric;
-    }
-    $description{zscores_mean} = "Mean of the z-scores on all selected metrics";
-    $description{zscores_rank} = "Rank of the match (sorting by mean z-score)";
 
     ## Print out the column content description
     print $out "; Column content\n";
@@ -2105,6 +2110,72 @@ package main;
   @match_ids = keys(%sort_score);
 
   ################################################################
+  ## Compute z-score for various metrics
+  my $selected_zscore_metrics = 0; ## Number of metrics to take into account for mean zscore computation
+  if ($return_field{zscores}) {
+    &RSAT::message::TimeWarn("Computing z-scores for", scalar(@zscore_metrics), "metrics") if ($main::verbose >= 2);
+
+    foreach my $metric (@zscore_metrics) {
+
+      &RSAT::message::TimeWarn("Computing z-scores for metric", $metric) if ($main::verbose >= 2);
+
+      next unless ($return_field{$metric});
+#      next if ($metric eq "match_rank");
+      $selected_zscore_metrics++;
+      
+      ## Compute zscores
+      my $score_sum = 0; ## Initialize score sum
+      my $score_square_sum = 0; ## Initialize sumn of squared scores
+      my $n = 0; ## Initialize counter
+      my $score_mean = 0;
+      my $score_sd = 0;
+      for my $compa_id (@match_ids) {
+	$n++;
+	my $score = $match_score{$compa_id}{$metric};
+	my $score_sum += $score;
+	my $score_square_sum += $score^2;
+      }
+      
+      if ($n > 0) {
+	## Compute the mean score
+	$score_mean = $score_sum / $n;
+	
+	## Compute standard deviation of the score
+	$score_sd = sqrt($score_square_sum/$n - ($score_sum)^2);
+      }
+      
+      ## Add zscore to the output line
+      for my $compa_id (@match_ids) {
+	my $score = $match_score{$compa_id}{$metric};
+	my $zscore = 0;
+	if ($score_sd > 0) {
+	  $zscore = ($score - $score_mean ) / $score_sd;
+	} else {
+	  ## If standard deviation is null, it means that all scores
+	  ## are equal, thus each score equals the mean, and its
+	  ## z-score is 0.
+	  $zscore = 0;
+	}
+	$match_score{$compa_id}{"z".$metric} = $zscore;
+	$match_out_line{$compa_id} .= "\t";
+	$match_out_line{$compa_id} .= sprintf($metric_format{"zscores"}, $zscore);
+	$zscore_sum{$compa_id} += $zscore;
+      }
+    }
+
+    ## Compute mean zscore
+    foreach my $compa_id (@match_ids) {
+      my $mean_zscore = "NA";
+      if ($selected_zscore_metrics > 0) {
+	$mean_zscore = sprintf($metric_format{"zscores"}, $zscore_sum{$compa_id} / $selected_zscore_metrics);
+      }
+#      $sort_score{$compa_id} = $rank_mean;
+#      $match_score{$compa_id}{rank_mean} = $rank_mean;
+      $match_out_line{$compa_id} .= "\t".$mean_zscore;
+    }
+  }
+
+  ################################################################
   ## Compute matching rank for various metrics
   my $selected_rank_metrics = 0; ## Number of metrics to take into account for mean rank computation
   if ($return_field{match_rank}) {
@@ -2179,6 +2250,7 @@ package main;
     $sort_field = "rank_mean";
     $sort_order = "asc";
   }
+
 
   ################################################################
   ## Sort all matches and print them out
@@ -2610,16 +2682,38 @@ sub PrintAlignedMatrices {
   foreach my $metric (@supported_metrics) {
     next if ($metric eq "all_metrics");
     next if ($metric eq "match_rank");
+    next if ($metric eq "zscores");
     if ($return_field{$metric}) {
       push @scores_to_print, $metric;
       $html_header .= "<th>".$metric."</th>\n";
     }
   }
 
+  ## Define a has table to know which metrics is a z-score for another
+  ## metric.  We don't need to compute the ranks on z-scores because
+  ## they are equal to the rank of the corresponding non-standardized
+  ## metric.
+  my %is_zscore = (); 
+
+  ## Add the list of z-scores to print if requested
+  if ($return_field{zscores}) {
+    my @zscores_to_print = ();
+    foreach my $metric (@scores_to_print) {
+      push @zscores_to_print, "z".$metric;
+      $is_zscore{"z".$metric} = 1;
+      $html_header .= "<th>"."z".$metric."</th>\n";
+    }
+    push @scores_to_print, @zscores_to_print, "mean_zscore"; #, "match_rank";
+    $html_header .= "<th>mean_zscore</th>\n";
+#    $html_header .= "<th>match_rank</th>\n";
+  }
+  &RSAT::message::Debug("scores to print", join(",", @scores_to_print)) if ($main::verbose >= 5);
+
   ## Add the list of score ranks if requested
   if ($return_field{match_rank}) {
     my @rank_scores_to_print = ();
     foreach my $metric (@scores_to_print) {
+      next if ($is_zscore{$metric});
       push @rank_scores_to_print, "r".$metric;
       $html_header .= "<th>"."r".$metric."</th>\n";
     }
@@ -2628,6 +2722,7 @@ sub PrintAlignedMatrices {
     $html_header .= "<th>match_rank</th>\n";
   }
   &RSAT::message::Debug("scores to print", join(",", @scores_to_print)) if ($main::verbose >= 5);
+
 
   ## Aligned matrices
   $html_header .= "<th>Aligned matrices</th>\n";
