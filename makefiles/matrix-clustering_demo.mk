@@ -15,7 +15,7 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 MIN_NCOR=0.4
 MIN_COR=0.6
 HCLUST_METHOD=average
-RETURN_FIELDS=align_consensus,heatmap
+RETURN_FIELDS=heatmap,align_consensus
 MIN_W=5
 V=2
 
@@ -67,7 +67,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-label name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
 		-metric_build_tree ${METRIC_BUILD_TREE} \
-		-return ${RETURN_FIELDS}
+		-return ${RETURN_FIELDS} 
 
 CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-file_table ${FILE_TABLE} \
@@ -79,7 +79,7 @@ CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-label name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
 		-metric_build_tree ${METRIC_BUILD_TREE} \
-		-return ${RETURN_FIELDS}
+		-return ${RETURN_FIELDS} 
 
 _cluster:
 	@echo
