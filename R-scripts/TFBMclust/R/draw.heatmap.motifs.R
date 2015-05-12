@@ -68,8 +68,8 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   ## If there are less than 25, set the font size to 25
   nb.motifs <- length(alignment.list)
   font.size <- nb.motifs
-  if(nb.motifs < 25){
-    font.size <- 25
+  if(nb.motifs < 35){
+    font.size <- 35
   }
 
   dist.table <- as.matrix(dist.table)
@@ -109,16 +109,14 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
 
 
   ## Calculate the bottom border
-  rigth <- round(170/font.size + (font.size/2 * 0.001), digits = 2)
-  bottom <- round(190/font.size + (font.size/2 * 0.001), digits = 2)
-#    rigth <- round(136, digits = 2)
-#    bottom <- round(136, digits = 2)
+  rigth <- round(200/font.size + (font.size/2 * 0.001), digits = 2)
+  bottom <- round(200/font.size + (font.size/2 * 0.001), digits = 2)
 
   par(oma=c(bottom,0.5,0.5,rigth), family="mono")
 
   # Get the aligned consensuses, which will be used as the Row names
   consensus <-sapply(colnames(dist.table), function(x){
-    as.vector(alignment.list[[x]][["consensus_d"]])
+    as.vector(alignment.list[[x]][["name"]])
   })
   consensus <- as.vector(consensus)
 
@@ -157,8 +155,8 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
           labCol = columns.heatmap,
 
           ## Set the margins
-          cexRow = 20/font.size + 0.1,
-          cexCol = 20/font.size + 0.02,
+          cexRow = 17/font.size + 0.03,
+          cexCol = 17/font.size + 0.03,
 
           ## Set the key with the values
           key = TRUE,
