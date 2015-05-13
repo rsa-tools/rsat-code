@@ -9,8 +9,8 @@ include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/matrix_distributions.mk
 
 DB=JASPAR
-MATRIX_DB_FILE=${RSAT}/public_html/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf 
-MATRIX_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
+MATRIX_DB_FILE=${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf 
+MATRIX_DIR=${RSAT}/public_html/motif_databases/JASPAR
 SPLIT_DIR=${MATRIX_DIR}/separate_matrices_${DB}
 SPLIT_PREFIX=${SPLIT_DIR}/${DB}
 MATRIX_LIST=${SPLIT_PREFIX}_matrix_list.tab
