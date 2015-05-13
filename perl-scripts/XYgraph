@@ -912,7 +912,8 @@ sub Rplot{
     }
 
    
-    $r_instruction.="matplot( x=input.table[,1] , y=input.table[, -1] ". $r_plot_params." ) \n";
+#    $r_instruction.="matplot( x=input.table[,1] , y=input.table[, -1] ". $r_plot_params." ) \n";
+    $r_instruction.="matplot( x=xcolumn , y=ycolumns ". $r_plot_params." ) \n";
 
     ## Add legend 
      if ($legend){
