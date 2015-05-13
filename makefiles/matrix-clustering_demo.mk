@@ -64,7 +64,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-lth cor ${MIN_COR} \
 		-lth w ${MIN_W} \
 		-hclust_method ${HCLUST_METHOD} \
-		-label name ${OPT} \
+		-label_in_tree name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
 		-metric_build_tree ${METRIC_BUILD_TREE} \
 		-return ${RETURN_FIELDS} 
@@ -76,7 +76,7 @@ CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-lth cor ${MIN_COR} \
 		-lth w ${MIN_W} \
 		-hclust_method ${HCLUST_METHOD} \
-		-label name ${OPT} \
+		-label_in_tree name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
 		-metric_build_tree ${METRIC_BUILD_TREE} \
 		-return ${RETURN_FIELDS} 
