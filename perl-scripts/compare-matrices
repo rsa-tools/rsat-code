@@ -737,6 +737,14 @@ package main;
     &RSAT::error::FatalError("The comparison mode 'profiles' is not compatible with the return field 'alignments' (output might reach unreasonable size).");
   }
 
+  ## z-score computations makes sense only if the motifs are not
+  ## filtered by the lower or upper thresholds. To ensure this, we
+  ## only make it possble for the mode "score".
+  if ($return_field{zscores}) {
+    &RSAT::error::FatalError("Z-scores are only compatible with the score mode (-return zscores -mode scores).") 
+	unless ($comparison_mode eq "scores");
+  }
+
 
   ## Check that the two input files have been specified
   unless ((($infile{file1}) || ($infile{mlist1})) &&
@@ -2815,7 +2823,7 @@ sub PrintAlignedMatrices {
 	#	if ($return_field{$metric}) {
 	my $value = $match_score{$compa_id}{$metric};
 	$value = sprintf($metric_format{$metric}, $value);
-	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 0);
+#	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
 	$match_scores .= "; ".$metric."=".$value;
 	$match_scores_html .= "<td style='background-color: #FFFFFF;'>".$value."</td>\n";
 	#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
