@@ -44,7 +44,7 @@ peakmo_vs_peakmo:
 	@XYgraph -i  results/peakmo_vs_peakmo/peak-motifs_result_Chen_Oct4__vs-itself_w5_wr0.3_cor0.75_Ncor0.4.tab \
 		-xcol 42 -xleg1 "match rank" \
 		-ycol 32 -yleg1 "mean z-score" \
-		-lines -hline 'red' 0 -r_plot \
+		-lines -hline 'red' 0 -r_plot -xgstep1 10 -legend\
 		-format ${PLOT_FORMAT} \
 		-o ${PEAKMO_VS_PEAKMO}_rank_vs_zscore.${PLOT_FORMAT}
 	@echo "	${PEAKMO_VS_PEAKMO}_rank_vs_zscore.${PLOT_FORMAT}"
