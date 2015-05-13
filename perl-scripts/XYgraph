@@ -807,28 +807,28 @@ sub Rplot{
 	$r_plot_params.=", ylab=".$y_legend;
     }
 
-    $r_instruction.= " xcolumn <- input.table[,".$xcol_r."]  \n" ;
-    $r_instruction.= " ycolumns <- input.table[, c(".join(",",@y_col_list_r).")]   \n" ;
+    $r_instruction.= " x.values <- input.table[,".$xcol_r."]  \n" ;
+    $r_instruction.= " y.values <- input.table[, c(".join(",",@y_col_list_r).")]   \n" ;
     
 
     ## Logarithm
     if ($xlog || $ylog){
 	if ($xlog && $ylog){
 	  
-	    $r_instruction.= " xcolumn <-  log ( xcolumn , base=".$x_log_base." ) \n ";
-	    $r_instruction.= "  ycolumns <- log ( ycolumns, base=$y_log_base ) \n" ;
+	    $r_instruction.= " x.values <-  log ( x.values , base=".$x_log_base." ) \n ";
+	    $r_instruction.= "  y.values <- log ( y.values, base=$y_log_base ) \n" ;
 	    
 	    
 	    
 	}elsif ($xlog ){
-	    $r_instruction.= " xcolumn <-  log ( xcolumn , base=".$x_log_base." ) \n ";
+	    $r_instruction.= " x.values <-  log ( x.values , base=".$x_log_base." ) \n ";
 	   
 
 	}elsif ($ylog ){
 	    #$r_plot_params .=", log=c(\"y\")";
-	    $r_instruction.= "  ycolumns <- log ( ycolumns, base=$y_log_base ) \n" ;
+	    $r_instruction.= "  y.values <- log ( y.values, base=$y_log_base ) \n" ;
 	}
-	$r_instruction.= " input.table <- cbind( xcolumn,  ycolumns ) \n";
+	$r_instruction.= " input.table <- cbind( x.values,  y.values ) \n";
 	$r_instruction.= " input.table <- do.call(data.frame,lapply(input.table, function(x) replace(x, is.infinite(x),NA))) \n";
 	$r_instruction.= " input.table<- na.omit(input.table) \n";
 	
@@ -841,7 +841,7 @@ sub Rplot{
 
 	## MIN value for x is definied but not the max
 	if( ($x_axis_max eq "ND") && ($x_axis_min ne "ND")){
-	    ## Max will be defined using the maximun of all xcolumns
+	    ## Max will be defined using the maximun of all x.valuess
 	    $r_instruction.="xlimits <- c( ".$x_axis_min.", max(as.vector(input.table[,1]))) \n";
 	    
 	    ## MAX value for x is defined but not the MIN 
@@ -861,7 +861,7 @@ sub Rplot{
 	
 	## MIN value for y is defined but not the max
 	if( ($y_axis_max eq "ND") && ($y_axis_min ne "ND")){
-	    ## Max will be defined using the maximun of all ycolumns
+	    ## Max will be defined using the maximun of all y.values
 	    $r_instruction.="ylimits <- c( ".$y_axis_min.", max(as.vector(input.table[, -1]))) \n";
 	    
        ## MAX value for y is defined but not the MIN
@@ -880,13 +880,10 @@ sub Rplot{
 	
     }
 
-   
-   
-
 
     if (!$lines){
 	$r_plot_params.=", pch=0 ,type=\"p\"";
-    }else {
+    } else {
 	$r_plot_params.=", lwd=2 ,type=\"l\"";
     }
 	
@@ -899,7 +896,7 @@ sub Rplot{
 	$r_instruction.="colors <- colorfiles[which (colorfiles[,1]%in% header_vector ),2]\n";
 	$r_plot_params.=", col=colors ";
 
-    }else{
+    } else {
 	$r_instruction.="colors<- seq(1,".scalar(@y_col_list_r).",1)\n";
 	$r_plot_params.=", col=colors";
 	
@@ -912,26 +909,37 @@ sub Rplot{
     }
 
    
-    $r_instruction.="matplot( x=input.table[,1] , y=input.table[, -1] ". $r_plot_params." ) \n";
+#    $r_instruction.="matplot( x=input.table[,1] , y=input.table[, -1] ". $r_plot_params." ) \n";
+    $r_instruction.="matplot( x=x.values , y=y.values ". $r_plot_params." ) \n";
+
+    ## Add grid if requested. Note that the grid size is currently
+    ## ignored, should be improved soon.
+    if ($xgstep1 || $xgstep2 || $ygstep2 || $ygstep1) {
+      $r_instruction.="grid()\n";
+#      $r_plot_params .= ", panel.first=grid()";
+    }
 
     ## Add legend 
      if ($legend){
-	 $r_instruction.="legend( \"topright\",colnames(input.table[,-1]), cex=.4,pt.cex=.6, pch=\"o\", col=colors)\n";
+       $r_y_columns.= "c(".join(",",@y_col_list_r).")" ;
+       $r_instruction .= "legend( \"topright\", legend = names(input.table)[".$r_y_columns."], cex=.8,pt.cex=.6, pch=\"o\", bg=\"white\", bty=\"o\", col=colors)\n";
+#       $r_instruction.="legend( \"topright\", legend = colnames(input.table[,".$r_y_columns."]), cex=.4,pt.cex=.6, pch=\"o\", col=colors)\n";
+#       die "HELLO\n", $r_instruction, "\n"
     }
 
     ## Add lines if required
     if ($vline){
 	for my $i (0 .. $#vline_pos){
 	    $r_instruction.="abline(v=".$vline_pos[$i].", col=\"".$vline_colors[$i]."\")\n"
-
 	}
     }
     if ($hline){
 	for my $i (0 .. $#hline_pos){
-	    $r_instruction.="abline(h=".$hline_pos[$i].", col=\"".$hline_colors[$i]."\")\n"
-		
+	    $r_instruction.="abline(h=".$hline_pos[$i].", col=\"".$hline_colors[$i]."\")\n"		
 	}
     }
+
+
 
 
     $r_instruction.="dev.off()\n";

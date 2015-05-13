@@ -22,8 +22,12 @@ COMPA_SUFFIX=w${MIN_W}_wr${MIN_WR}_cor${MIN_COR}_Ncor${MIN_NCOR}
 PEAKMO_VS_PEAKMO_DIR=results/peakmo_vs_peakmo
 PEAKMO_VS_PEAKMO=${PEAKMO_VS_PEAKMO_DIR}/${PEAKMO_PREFIX}__vs-itself_${COMPA_SUFFIX}
 #SCORES=cor,Ncor,NcorS,logoDP,NIcor,NsEucl,SSD,NSW,match_rank,zscores
+PLOT_FORMAT=pdf
+R_PLOT=-r_plot
 peakmo_vs_peakmo:
 	@mkdir -p ${PEAKMO_VS_PEAKMO_DIR}
+	@echo 
+	@echo "Comparing moti collection against itself, using z-scores"
 	compare-matrices -v ${V} \
 		-mode matches \
 		-format1 transfac -file1 ${PEAKMO_MATRICES} \
@@ -32,13 +36,32 @@ peakmo_vs_peakmo:
 		-DR \
 		-lth w ${MIN_W} \
 		-return matrix_name,matrix_id \
-		-return ${SCORES} \
+		-return ${SCORES},zscores \
 		-return width,strand,offset,consensus \
 		-sort Ncor ${OPT} \
 		-o ${PEAKMO_VS_PEAKMO}
-	@echo ${PEAKMO_VS_PEAKMO}
-
-
+	@echo "	${PEAKMO_VS_PEAKMO}"
+	@echo
+	@echo "Generating plot of match rank vs mean z-score"
+	@XYgraph -i  results/peakmo_vs_peakmo/peak-motifs_result_Chen_Oct4__vs-itself_w5_wr0.3_cor0.75_Ncor0.4.tab \
+		-xcol 42 -xleg1 "match rank" \
+		-ycol 32 -yleg1 "mean z-score" \
+		-lines -hline 'blue' 0 -xgstep1 10 -legend\
+		-format ${PLOT_FORMAT} ${R_PLOT}\
+		-o ${PEAKMO_VS_PEAKMO}_rank_vs_zscore.${PLOT_FORMAT}
+	@echo "	${PEAKMO_VS_PEAKMO}_rank_vs_zscore.${PLOT_FORMAT}"
+	@echo
+	@echo "Plotting z-score empirical distribution"
+	@classfreq -v 1 -i  results/peakmo_vs_peakmo/peak-motifs_result_Chen_Oct4__vs-itself_w5_wr0.3_cor0.75_Ncor0.4.tab \
+		-col 32 \
+		-ci 0.1 \
+		| XYgraph \
+		-xcol 3 -xleg1 "z-score" \
+		-ycol 4,5,6 -yleg1 "Matrix pairs" \
+		-lines -vline 'blue' 0 -xgstep1 0.5 -legend\
+		-format ${PLOT_FORMAT} ${R_PLOT} \
+		-o ${PEAKMO_VS_PEAKMO}_mean_zscore_distrib.${PLOT_FORMAT}
+	@echo "	${PEAKMO_VS_PEAKMO}_mean_zscore_distrib.${PLOT_FORMAT}"
 
 ################################################################
 ## Case 1: peak-motifs result versus JASPAR database
@@ -49,7 +72,7 @@ JASPAR_PREFIX=jaspar_core_vertebrates_${JASPAR_VERSION}
 JASPAR_MATRICES=${RSAT}/public_html/motif_databases/JASPAR/${JASPAR_PREFIX}.tf
 PEAKMO_VS_JASPAR_DIR=results/peakmo_vs_jaspar
 PEAKMO_VS_JASPAR=${PEAKMO_VS_JASPAR_DIR}/${PEAKMO_PREFIX}__vs__${JASPAR_PREFIX}_${COMPA_SUFFIX}
-SCORES=cor,Ncor,NcorS,logoDP,NIcor,NsEucl,SSD,NSW,match_rank,zscores
+SCORES=cor,Ncor,NcorS,logoDP,NIcor,NsEucl,SSD,NSW,match_rank
 peakmo_vs_jaspar:
 	@mkdir -p ${PEAKMO_VS_JASPAR_DIR}
 	compare-matrices -v ${V} \
@@ -65,7 +88,7 @@ peakmo_vs_jaspar:
 		-lth Ncor ${MIN_NCOR} \
 		-return matrix_name,matrix_id \
 		-return ${SCORES} \
-		-return width,strand,offset,consensus \
+		-return width,strand,offset,consensus,alignments_1ton \
 		-sort Ncor ${OPT} \
 		-o ${PEAKMO_VS_JASPAR}
 	@echo ${PEAKMO_VS_JASPAR}
