@@ -200,8 +200,8 @@ make -f makefiles/install_software.mk install_ext_apps
 \item Install two model organisms, required for some of the Web tools.
 
   \begin{lstlisting}
-download-organism -v 1 -org Saccharomyces_cerevisiae ; \
-download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
+download-organism -v 1 -org Saccharomyces_cerevisiae \
+   -org Escherichia_coli_K_12_substr__MG1655_uid57779
   \end{lstlisting}
   
   Optionally, you can download additional organisms with the same
@@ -658,9 +658,12 @@ source RSAT_config.bashrc
 \item If you dispose of admin rights, you can copy the content of this
   file in the main bash configuration file: 
   \begin {itemize}
-  \item in Lunix Centos, you can create a file
-    \file{/etc/profile.d/rsat.bashrc}; 
-  \item Mac OSX, copy it to the main bashrc file (\file{/etc/bashrc}).
+  \item in Lunix (Centos or Ubuntu), you can add a soft link
+    (\command{ln -s}) to
+    \file{[RSAT\_PARENT\_PATH]/RSAT\_config.bashrc} in the bas
+    completion directory: \file{/etc/bash_completion.d/};
+  \item Mac OSX, add a line to the (\file{/etc/bashrc}) to source the
+    file [RSAT\_PARENT\_PATH]/RSAT\_config.bashrc.
   \end{itemize}
   \RSAT environment variables will then be automatically loaded for
   each user of this computer.
