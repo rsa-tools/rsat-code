@@ -237,8 +237,8 @@ peakmo:
 		-min_markov ${MIN_MKV} -max_markov ${MAX_MKV} \
 		${STR} ${NOOV} \
 		-disco ${DISCO} \
-		-motif_db jaspar_core_vertebrates tf ${RSAT}/public_html/data/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf \
-		-motif_db jaspar_pbm_mouse tf ${RSAT}/public_html/data/motif_databases/JASPAR/jaspar_pbm_mouse_2009_10.tf \
+		-motif_db jaspar_core_vertebrates tf ${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2009_10.tf \
+		-motif_db jaspar_pbm_mouse tf ${RSAT}/public_html/motif_databases/JASPAR/jaspar_pbm_mouse_2009_10.tf \
 		${GALAXY} \
 		-task ${PM_TASK} -prefix ${MOTIF_PREFIX} \
 		-img_format png  \
