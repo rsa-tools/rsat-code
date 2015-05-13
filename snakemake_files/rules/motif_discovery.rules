@@ -41,11 +41,12 @@ rule all:
 #    input:expand('public_html/demo_files/{seq_prefix}.{seq_ext}', seq_prefix=SEQ_PREFIXES, seq_ext=["fasta"])
 
 
-################################################################
-## Purge sequences, i.e. mask redundant fragments (highly recommended
-## for motif discovery).
 rule purge:
+    '''Purge sequences, i.e. mask redundant fragments
+    (highly recommendedfor motif discovery).
+'''
 #    input: "public_html/demo_files/{seq_prefix}.fasta"
+#    input: "{output_dir}/{seq_prefix}.fasta"
     input: INPUT_DIR+"/{seq_prefix}.fasta"
     output: "{output_dir}/{seq_prefix}_purged.fasta"
     log: "{output_dir}/{seq_prefix}_purge_log.txt"
