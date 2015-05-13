@@ -221,7 +221,7 @@ cluster_jaspar_one_group_permute:
 CISBP_GROUPS=Homo_sapiens Mus_musculus
 CISBP_GROUP=Mus_musculus
 CISBP_PREFIX=cisBP_${CISBP_GROUP}_2014-10
-CISBP_DIR=${RSAT}/public_html/data/motif_databases/cisBP
+CISBP_DIR=${RSAT}/public_html/motif_databases/cisBP
 CISBP_MATRICES=${CISBP_DIR}/${CISBP_PREFIX}.tf
 cluster_cisbp_one_group:
 	@echo

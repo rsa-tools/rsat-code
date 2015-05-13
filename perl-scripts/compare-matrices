@@ -737,6 +737,14 @@ package main;
     &RSAT::error::FatalError("The comparison mode 'profiles' is not compatible with the return field 'alignments' (output might reach unreasonable size).");
   }
 
+  ## z-score computations makes sense only if the motifs are not
+  ## filtered by the lower or upper thresholds. To ensure this, we
+  ## only make it possble for the mode "score".
+  if ($return_field{zscores}) {
+    &RSAT::error::FatalError("Z-scores are only compatible with the score mode (-return zscores -mode scores).") 
+	unless ($comparison_mode eq "scores");
+  }
+
 
   ## Check that the two input files have been specified
   unless ((($infile{file1}) || ($infile{mlist1})) &&
@@ -1612,7 +1620,6 @@ package main;
 	  $compa++;
 	  my $compa_id = join (":", $id1, $id2, $offset, $strand);
 #	  &RSAT::message::Debug("Offset - strand", $id1, $id2, $compa_id) if ($main::verbose >= 10);
-
 	  next unless (&CheckThresholdValue("offset", $offset));
 
 	  ## Compute aligned matrix positions
@@ -1744,7 +1751,6 @@ package main;
 		$sum_i1i2 += $i1*$i2;
 	      }
 
-
 	      ## Update sums for logocor
 	      if (($calc_field{logocor}) || ($calc_field{logoDP})) {
 		my $l1 = $logo1[$col1-1][$r];
@@ -1800,16 +1806,21 @@ package main;
 	  ## Compute Euclidian distance
 	  if ($calc_field{dEucl}) {
 	    $dEucl = sqrt($SSD);
-	    next unless (&CheckThresholdValue("dEucl", $dEucl)); $score{dEucl}{$compa_id} = $dEucl;
+	    next unless (&CheckThresholdValue("dEucl", $dEucl)); 
+	    $score{dEucl}{$compa_id} = $dEucl;
 	    $NdEucl = $dEucl/$w if ($w > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
-	    next unless (&CheckThresholdValue("NdEucl", $NdEucl)); $score{NdEucl}{$compa_id} = $NdEucl;
+	    next unless (&CheckThresholdValue("NdEucl", $NdEucl)); 
+	    $score{NdEucl}{$compa_id} = $NdEucl;
 	  }
+	  
 
 	  ## Compute Sandelin-Wasserman similarity
 	  $SW = 2*$w - $SSD;
-	  next unless (&CheckThresholdValue("SW", $SW)); $score{SW}{$compa_id} = $SW;
+	  next unless (&CheckThresholdValue("SW", $SW));
+	  $score{SW}{$compa_id} = $SW;
 	  $NSW = $SW / (2*$w);
-	  next unless (&CheckThresholdValue("NSW", $NSW)); $score{NSW}{$compa_id} = $NSW;
+	  next unless (&CheckThresholdValue("NSW", $NSW));
+	  $score{NSW}{$compa_id} = $NSW;
 
 	  ## Compute Euclidian similarity
 	  if ($calc_field{NsEucl}) {
@@ -1822,7 +1833,8 @@ package main;
 	    unless ($dKL eq "Inf") {
 	      $dKL /= 2;
 	      $dKL /= $w if ($w > 0); ## Relativize KL distance with respect to the number of aligned columns
-	      next unless (&CheckThresholdValue("dKL", $dKL)); $score{dKL}{$compa_id} = $dKL;
+	      next unless (&CheckThresholdValue("dKL", $dKL));
+	      $score{dKL}{$compa_id} = $dKL;
 	      $dKL = sprintf("%.5f", $dKL);
 	    }
 	  }
@@ -1852,6 +1864,8 @@ package main;
 	  next unless (&CheckThresholdValue("Ncor2", $Ncor2));
 	  next unless (&CheckThresholdValue("NcorS", $NcorS));
 
+
+
 	  ## Index values for sorting
 	  $score{cov}{$compa_id} = $cov;
 	  $score{cor}{$compa_id} = $cor;
@@ -1876,6 +1890,7 @@ package main;
 	  ## Check thresholds on information correlation
 	  next unless (&CheckThresholdValue("Icor", $Icor));
 	  next unless (&CheckThresholdValue("NIcor", $NIcor));
+
 
 	  ## Index values for sorting
 	  $score{Icor}{$compa_id} = $Icor;
@@ -1908,6 +1923,7 @@ package main;
 	  next unless (&CheckThresholdValue("logocor", $logocor));
 	  next unless (&CheckThresholdValue("Nlogocor", $Nlogocor));
 
+
 	  ## Index values for sorting
 	  $score{logocor}{$compa_id} = $logocor;
 	  $score{Nlogocor}{$compa_id} = $Nlogocor;
@@ -1925,15 +1941,53 @@ package main;
 # 	    $NWcor = $Wcor *$norm_factor;
 # 	  }
 
-	  ## Check thresholds on weight correlation
-	  next unless (&CheckThresholdValue("Wcor", $Wcor));
-	  next unless (&CheckThresholdValue("NWcor", $NWcor));
+	  # ## Check thresholds on weight correlation
+	  # next unless (&CheckThresholdValue("Wcor", $Wcor));
+	  # next unless (&CheckThresholdValue("NWcor", $NWcor));
 
-	  ## Index values for sorting
-	  $score{Wcor}{$compa_id} = $Wcor;
-	  $score{NWcor}{$compa_id} = $NWcor;
+	  # ## Index values for sorting
+	  # $score{Wcor}{$compa_id} = $Wcor;
+	  # $score{NWcor}{$compa_id} = $NWcor;
 
 
+	  
+# 	  ################################################################
+# 	  ## Compute sum and square for the z-scores
+# 	  if ($return_field{zscores}) {
+# 	    foreach my $metric (keys(%score)) {
+# 	      next if ($metric eq "zscores");
+# 	      next if ($metric eq "match_rank");
+# #	      &RSAT::message::Debug("Computing sum and square sum", $metric , $compa_id, $score{$metric}{$compa_id}) if ($main::verbose >= 10);
+# 	      $score_n{$metric}++; ## Count the number of scores taken into account for score mean and sd
+# 	      $score_sum{$metric} += $score{$metric}{$compa_id}; ## Score sum for all the pairwise matrix comparisons
+# 	      $score_square_sum{$metric} += $score{$metric}{$compa_id}**2; ## Sum of squared scores for all the pairwise matrix comparisons
+# 	    }
+# 	    ## Check all thresholds (note: this needs to be done after
+# 	    ## the computation of the sum and sum of squares for the
+# 	    ## z-score)
+# 	    next unless (&CheckThresholdValue("logoDP", $logoDP));
+# 	    next unless (&CheckThresholdValue("dEucl", $dEucl));
+# 	    next unless (&CheckThresholdValue("NdEucl", $NdEucl));
+# 	    next unless (&CheckThresholdValue("SW", $SW));
+# 	    next unless (&CheckThresholdValue("NSW", $NSW));
+# 	    next unless (&CheckThresholdValue("dKL", $dKL));
+# 	    next unless (&CheckThresholdValue("cov", $cov));
+# 	    next unless (&CheckThresholdValue("cor", $cor));
+# 	    next unless (&CheckThresholdValue("Ncor", $Ncor));
+# 	    next unless (&CheckThresholdValue("Ncor1", $Ncor1));
+# 	    next unless (&CheckThresholdValue("Ncor2", $Ncor2));
+# 	    next unless (&CheckThresholdValue("NcorS", $NcorS));
+# 	    next unless (&CheckThresholdValue("Icor", $Icor));
+# 	    next unless (&CheckThresholdValue("NIcor", $NIcor));
+# 	    next unless (&CheckThresholdValue("logocor", $logocor));
+# 	    next unless (&CheckThresholdValue("Nlogocor", $Nlogocor));
+# #	    next unless (&CheckThresholdValue("Wcor", $Wcor));
+# #	    next unless (&CheckThresholdValue("NWcor", $NWcor));
+# 	  }
+
+
+
+	  ################################################################
 	  ## Generate the output line
 	  my @out_fields = ();
 	  push (@out_fields, $m1, $m2) if ($return_field{matrix_number});
@@ -2081,12 +2135,21 @@ package main;
 	  $sort_score{$compa_id} = $score{$sort_field}{$compa_id};
 
 	  ## Store all scores of the match in a separate hash table
-	  ## with a wider scope for furtehr printing in the alignments
-	  if (($return_field{alignments_pairwise}) ||
+	  ## with a wider scope for further printing in the alignments
+	  if (($return_field{zscores}) ||
+	      ($return_field{alignments_pairwise}) ||
 	      ($return_field{alignments_1ton})) {
 	    foreach my $metric (@supported_metrics) {
+	      next if ($metric eq "zscores");
+	      next if ($metric eq "match_rank");
 	      if ($return_field{$metric}) {
 		$match_score{$compa_id}{$metric} = $score{$metric}{$compa_id};
+		if ($return_field{zscores}) {
+		  ## Increment counters to compute sum and standard deviation (later)
+		  $match_score_n{$metric}++;
+		  $match_score_sum{$metric} +=  $score{$metric}{$compa_id};
+		  $match_score_square_sum{$metric} +=  $score{$metric}{$compa_id}**2;
+		}
 	      }
 	    }
 	  }
@@ -2117,32 +2180,36 @@ package main;
 
     foreach my $metric (@zscore_metrics) {
 
-      &RSAT::message::TimeWarn("Computing z-scores for metric", $metric) if ($main::verbose >= 0);
+#      &RSAT::message::TimeWarn("Computing z-scores for metric", $metric) if ($main::verbose >= 10);
 
       next unless ($return_field{$metric});
 #      next if ($metric eq "match_rank");
       $selected_zscore_metrics++;
       
       ## Compute zscores
-      my $score_sum = 0; ## Initialize score sum
-      my $score_square_sum = 0; ## Initialize sumn of squared scores
-      my $n = 0; ## Initialize counter
-      my $score_mean = 0;
-      my $score_sd = 0;
-      for my $compa_id (@match_ids) {
-	$n++;
-	my $score = $match_score{$compa_id}{$metric};
-	$score_sum += $score;
-	$score_square_sum += $score^2;
-      }
-      
+#      my $score_sum = 0; ## Initialize score sum
+#      my $score_square_sum = 0; ## Initialize sumn of squared scores
+#      my $n = 0; ## Initialize counter
+#      my $score_mean = 0;
+#      my $score_sd = 0;
+#      for my $compa_id (@match_ids) {
+#	$n++;
+#	my $score = $match_score{$compa_id}{$metric};
+#	$score_sum += $score;
+#	$score_square_sum += $score**2;
+#      }
+ 
+      my $n = $match_score_n{$metric};
+      my $score_sum = $match_score_sum{$metric};
+      my $score_square_sum = $match_score_square_sum{$metric};
       if ($n > 0) {
 	## Compute the mean score
 	$score_mean = $score_sum / $n;
 	
 	## Compute standard deviation of the score
-	$score_sd = sqrt($score_square_sum/$n - ($score_mean)^2);
+	$score_sd = sqrt($score_square_sum/$n - ($score_mean)**2);
       }
+#      &RSAT::message::Debug("Converting metric to zscore", $metric, "m=".$score_mean, "sd=".$score_sd) if ($main::verbose >= 10);
       
       ## Add zscore to the output line
       for my $compa_id (@match_ids) {
