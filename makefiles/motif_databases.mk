@@ -10,7 +10,7 @@ MAKEFILE=${RSAT}/makefiles/motif_databases.mk
 #UNIPROBE_PWMS=http://thebrain.bwh.harvard.edu/uniprobe/downloads/All/all_pwms.zip
 uniprobe_one_collection: uniprobe_get_pwms uniprobe_convert_pwms uniprobe_db_descr
 
-UNIPROBE_DIR=public_html/data/motif_databases/uniprobe
+UNIPROBE_DIR=public_html/motif_databases/uniprobe
 UNIPROBE_DOWNLOAD_DIR=${UNIPROBE_DIR}/downloads
 UNIPROBE_REF=Cell09
 UNIPROBE_DATE=2009
@@ -77,9 +77,9 @@ jaspar_matrices:
 	@echo "You can now check the content of DB matrix file"
 	@echo "	new_jaspar_db_matrix_files.tab"
 	@echo "and paste its content in the RSAT DB matrix file"
-	@echo "	public_html/data/motif_databases/db_matrix_files.tab"
+	@echo "	public_html/motif_databases/db_matrix_files.tab"
 
-JASPAR_MATRICES_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
+JASPAR_MATRICES_DIR=${RSAT}/public_html/motif_databases/JASPAR
 JASPAR_RELEASE=2013-11
 JASPAR_COLLECTION_TF=${JASPAR_MATRICES_DIR}/jaspar_core_${JASPAR_COLLECTION}_${JASPAR_RELEASE}.tf
 jaspar_matrices_one_collection:
