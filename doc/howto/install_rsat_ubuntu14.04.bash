@@ -144,12 +144,14 @@ python-numpy
 python-scipy
 python-matplotlib
 python-suds
+python-rpy2
 python3
 python3-pip
 python3-setuptools 
 python3-numpy
 python3-scipy
 python3-matplotlib
+python3-rpy2
 r-base
 emacs
 x11-apps
@@ -320,6 +322,7 @@ pip install speedtest-cli
 # pip3 install wstools
 pip3 install fisher
 pip3 install snakemake
+pip3 install rpy2
 ## pip3 install pygraphviz ## This fails ! Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/pygraphviz
 
 ## PROBLEM: soappy seems to be discontnued for python3 !
