@@ -17,7 +17,7 @@ alignment.test <- function(id1, id2, compa.table, thresholds = list(Ncor = 0.4, 
   ## Calculate the farthest motifs between all the pairs of motifs
   } else if(hclust.method == "complete"){
 
-    farthest.motifs <- closest.or.farthest.motifs.ids(id1, id2, compa.table, score = hclust.metric, closest = FALSE)
+    farthest.motifs <- closest.or.farthest.motifs.ids(id1, id2, compa.table, metric = hclust.metric, closest = FALSE)
     id1.far <- farthest.motifs[1]
     id2.far <- farthest.motifs[2]
 
@@ -29,7 +29,7 @@ alignment.test <- function(id1, id2, compa.table, thresholds = list(Ncor = 0.4, 
   ## Calculate the closest motifs between all the pairs of motifs
   } else if(hclust.method == "single"){
 
-    closest.motifs <- closest.or.farthest.motifs.ids(id1, id2, compa.table, score = hclust.metric, closest = TRUE)
+    closest.motifs <- closest.or.farthest.motifs.ids(id1, id2, compa.table, metric = hclust.metric, closest = TRUE)
     id1.close <- closest.motifs[1]
     id2.close <- closest.motifs[2]
 
