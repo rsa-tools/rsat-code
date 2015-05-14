@@ -72,18 +72,14 @@ if (length(args >= 1)) {
 ## Check parameters
 check.param()
 
-##################################
-## Read matrix comparison table
+##############################################
+## Read matrix comparison table + treatment
 global.compare.matrices.table <<- read.csv(infile, sep="\t", comment.char=";")
 names(global.compare.matrices.table)[1] <- sub("^X.", "", names(global.compare.matrices.table)[1])
 
-################################################################
-## Read description table
+#######################################
+## Read description table +treatment
 global.description.table <<- read.csv(description.file, sep="\t", comment.char=";")
-
-# if(length(global.description.table$id) == 2*length(unique(global.description.table$id))){
-#   global.description.table <- global.description.table[1:length(unique(global.description.table$id)),]
-# }
 
 ## In reference to the names, order alphabetically the description table
 global.description.table <- global.description.table[order(global.description.table$id),]
@@ -96,15 +92,18 @@ names(matrix.labels) <- as.vector(global.description.table$id)
 names(global.description.table) <- gsub("X.n", "n", names(global.description.table))
 names(global.description.table) <- gsub("_", ".", names(global.description.table))
 
-## Check that the compare-matrices table contains the required score column
-if (length(grep(pattern=score, names(global.compare.matrices.table))) < 1) {
-  stop(paste(sep="", "Input file (", infile, ") does not contain the score column (", score, ")."))
+## Check that the compare-matrices table contains the required metric column
+if (length(grep(pattern=metric, names(global.compare.matrices.table))) < 1) {
+  stop(paste(sep="", "Input file (", infile, ") does not contain the metric column (", metric, ")."))
 }
 
 ## Convert distance table into a distance matrix, required by hclust
-distances.objects <- build.distance.matrix(global.compare.matrices.table, score=score)
+distances.objects <- build.distance.matrix(global.compare.matrices.table, metric=metric)
 dist.table <- distances.objects$table
 dist.matrix <- distances.objects$matrix
+
+#######################################
+### Here
 
 ## Export the distance table
 write.table(dist.table, file=distance.table, quote=FALSE, row.names=TRUE, col.names=NA, sep="\t")
@@ -144,7 +143,7 @@ if(number.of.motifs > 1){
 
   #############################################################
   ## Bottom-up traversal of the tree to orientate the logos
-  alignment <- align.motifs(tree, global.description.table, global.compare.matrices.table, thresholds = thresholds, score = score, method = hclust.method, metric=score, nodes.attributes=TRUE, intermediate.alignments=FALSE)
+  alignment <- align.motifs(tree, global.description.table, global.compare.matrices.table, thresholds = thresholds, method = hclust.method, metric=metric, nodes.attributes=TRUE, intermediate.alignments=FALSE)
 
   alignment.list <- alignment$motifs.alignment
   alignment.attributes <- alignment$node.attributes
@@ -190,7 +189,7 @@ if(number.of.motifs > 1){
         } else if (plot.format == "jpg") {
             jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
         }
-        draw.heatmap.motifs(dist.table, method = hclust.method, clusters, alignment.list, score = score, tree.pos = pos.hclust.in.heatmap)
+        draw.heatmap.motifs(dist.table, method = hclust.method, clusters, alignment.list, metric = metric, tree.pos = pos.hclust.in.heatmap)
         dev.off()
       }
     }
@@ -352,7 +351,7 @@ i <- sapply(1:length(clusters), function(nb){
 
 
                ## Convert distance table into a distance matrix, required by hclust
-               distances.objects <- build.distance.matrix(compare.matrices.table, score = score)
+               distances.objects <- build.distance.matrix(compare.matrices.table, metric = metric)
                dist.matrix <- distances.objects$matrix
 
 
@@ -377,7 +376,7 @@ i <- sapply(1:length(clusters), function(nb){
                 }
 
                ## Align the motifs and retrieve the information of the intermediate alignments
-               alignment.cluster <<- align.motifs(tree, description.table, compare.matrices.table, thresholds = thresholds, score = score, method = hclust.method, metric = score, nodes.attributes = FALSE, intermediate.alignments = TRUE)
+               alignment.cluster <<- align.motifs(tree, description.table, compare.matrices.table, thresholds = thresholds, method = hclust.method, metric = metric, nodes.attributes = FALSE, intermediate.alignments = TRUE)
                intern.alignment <- alignment.cluster$intermediate.alignments
 
                ## Export the table with the intermediates alignment information
