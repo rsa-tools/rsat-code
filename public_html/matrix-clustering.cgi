@@ -178,7 +178,7 @@ if ($quick) {
 }
 
 ## Insert lables
-$parameters .= " -label name ";
+$parameters .= " -label_in_tree name ";
 
 ## Insert fields to return 
 $parameters .= " ".$return_fields." ";
