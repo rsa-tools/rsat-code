@@ -2,7 +2,7 @@
 ## Align two clusters: align the two cluster, in some cases is
 ## necessary invert the alignment; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
-align.two.clusters <- function(child1, child2, desc.table, compa.table, score = "Ncor", thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
+align.two.clusters <- function(child1, child2, desc.table, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
 
   ## Identify the merge level and the node numbers of each cluster
   merge.level <- which(hclust.tree$merge == child1)
@@ -43,7 +43,7 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
 
     ## Find the central motif of the cluster
     ## Get the id of each node on the description table
-    central.motifs <- closest.or.farthest.motifs.ids(ids1.hclust, ids2.hclust, compa.table, score = score, closest = TRUE)
+    central.motifs <- closest.or.farthest.motifs.ids(ids1.hclust, ids2.hclust, compa.table, metric = metric, closest = TRUE)
     id1 <- central.motifs[1]
     id2 <- central.motifs[2]
 
