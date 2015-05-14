@@ -196,9 +196,9 @@ package main;
   foreach my $method (@supported_hclust_methods) {
     $supported_hclust_methods{$method} = 1;
   }
+  
   local $supported_hclust_methods = join ",", @supported_hclust_methods;
   local $hclust_method = "complete";
-
 
   ## Threshold parameters
   local %lth = ();		# lower threshold values
@@ -216,7 +216,6 @@ package main;
     $supported_threshold{lc($thr)} = 1;
   }
 
-
   ## Metric parameters
   local @supported_metrics = qw(
 			         cor
@@ -229,7 +228,6 @@ package main;
   foreach my $met (@supported_metrics) {
     $supported_metrics{lc($met)} = 1;
   }
-
 
   ## Matrices
   local @all_matrices = ();
@@ -325,18 +323,15 @@ package main;
   %to_delete_folder = ();
 
   ################################################################
-  ## Options used for motif comparison
+  ## Set default options
   local %param = ();
-  local @matrix_compa_metrics = ();
-  $param{matrix_compa_min_w} = 5; ## min number of aligned columns
-  $param{matrix_compa_min_Wr} = 0.3; ## min relative width
-  $param{matrix_compa_sort_field} = ""; ## sorting field
-  $param{matrix_compa_metrics} = "";
-  $param{matrix_compa_score} = ""; ## The score must be a similarity score for MCL
+  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
+  $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
+  $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
   $param{archive_format} = "zip";
   $param{progressive_synthesis} = 1;
   $param{title} = "matrix-clustering results";
-  $param{motif_collection} = "matrix-clustering";
+  $param{motif_collection} = "matrix-clustering_results";
 
   ################################################################
   ## Read argument values
@@ -351,13 +346,16 @@ package main;
   ## Non-recognized parameters are passed to compare-matrices
   if (scalar(@args_to_pass)) {
     $args_to_pass = join (" ", @args_to_pass);
-    &RSAT::message::Info("Unrecognized arguments passed to compare-matrices", $args_to_pass) if ($main::verbose >= 2);
+    &RSAT::message::Info("Unrecognized arguments passed to matrix-clustering", $args_to_pass) if ($main::verbose >= 2);
   }
+
+  ################################################################
+  ## Check the input file has been specified
 
   ## Check that the  input file (for two or more motif set) has been specified
   if ($multi_input_flag){
     unless ($main::infile{matrices_info_tab}) {
-      &RSAT::error::FatalError("You must define the motifs list (option -file_table).");
+      &RSAT::error::FatalError("You must define the file table (option -file_table).");
     }
   }
 
@@ -373,13 +371,14 @@ package main;
       }
   }
 
+  ################################################################
   ## Check that the output prefix has been specified
   unless ($outfile{prefix}) {
     &RSAT::error::FatalError("You must define the output prefix (option -o).");
   }
 
-  ## Check that at least one field is selected for the option
-  ## "-label".
+  ################################################################
+  ## Labels displayed in the logo tree
   if (scalar(@label_fields_to_return) == 0) {
     @label_fields_to_return = qw(id name);
     for my $field (@label_fields_to_return) {
@@ -387,7 +386,7 @@ package main;
     }
   }
   $label_fields_to_return = join ",", @label_fields_to_return;
-  &RSAT::message::Info("Label fields", $label_fields_to_return) if ($main::verbose >= 5);
+  &RSAT::message::Info("Labels displayed in logo trees: ", $label_fields_to_return) if ($main::verbose >= 5);
 
   ################################################################
   ## Check output directories and define file names
@@ -426,7 +425,7 @@ package main;
       
       #####################################################
       ## Create temporary files with the single matrices
-      %alignment_info = &create_single_matrix_files();
+#      %alignment_info = &create_single_matrix_files();
 
       ################################################################
       ## Cluster the matrices
@@ -586,12 +585,14 @@ line:
 
 2) The matix format of the set of PSSMs.
 
-3) The name of the motif collection (e.g. JASPAR_core_vertebrate,
+3) The motif collection label (e.g. JASPAR_core_vertebrate,
 peak-motif_result, ...).
 
-The collection name name will be appended to each motif ID in order to
-ensure unique motif ID even though several motifs could have the same
-ID in the different input files.  Displayed in the results.
+The collection label will be concatenated to each motif ID in order to
+create unique motif IDs. The collection label is displayed in the results.
+
+This label is useful when two motifs for the same TF come from different
+files and the user wants to know to which collection does the motif come from.
 
 B<Supported matrix formats>
 
@@ -601,7 +602,7 @@ tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
 
 For a description of these formats, see the help of I<convert-matrix>.
 
-The input file must contain at least one line as the next one:
+The file table must contain at least one line (tab separated) as the next one:
 
 peak-motifs_Oct4_matrices.tf	transfac	Oct4_motifs
 
@@ -657,7 +658,7 @@ Title displayed on top of the report page.
 
 =pod
 
-=item	B<-motif_collection_name motif_collection_name>
+=item	B<-motif_collection_name motif_collection_label>
 
 Label used to classify the motifs belonging to one collection.
 
@@ -714,6 +715,12 @@ Supported tasks: (all, comparison, clustering)
 
 Execute all the parts of the program (default)
 
+=item B<comparison>
+
+Run the motif comparison step. The input set of motifs are compared
+against themselves. The output is the pairwise comparison between the input motifs 
+and a description table showing the main features of each motif (name, id, consensus, width). 
+
 =item B<clustering>
 
 Skip the matrix comparison step and only executes the clustering step.
@@ -743,16 +750,16 @@ This option is ideal to saving time once all comparison beteen the input motifs 
 
 =pod
 
-=item	B<-label>
+=item	B<-label_in_tree>
 
-Option to select the matrix label fields displayed in the html tree
+Option to select the labels displayed in the logo tree.
     
 B<Supported labels>
     
  (name, consensus, id)
  
 =cut
-    } elsif ($arg eq "-label") {
+    } elsif ($arg eq "-label_in_tree") {
       my $label_fields_to_return = shift(@arguments);
       my @new_label_fields_to_return = split (",", $label_fields_to_return);
       foreach $field (@new_label_fields_to_return) {
@@ -769,13 +776,13 @@ B<Supported labels>
 
 =item	B<-quick>
 
-With this option the motif comparison step is done with  the program I<compare-matrices-quick> 
-(implemented in C) rather than the classic version compare-matrices (implemented in Perl).
+With this option the motif comparison is done with  the program I<compare-matrices-quick> 
+(implemented in C) rather than the program compare-matrices (implemented in Perl).
 The quick version runs x100 times faster, but has not all implemented options as in the Perl version.
 
 We suggest use this option for a big set of input motifs > 300 motifs. 
 
-B<NOTE:> By the moment the only threshold used in quick version is Ncor. 
+B<NOTE:> By the moment the only a few thresholds can be used with this option. (cor, Ncor, w) 
 
 =cut
 
@@ -784,11 +791,11 @@ B<NOTE:> By the moment the only threshold used in quick version is Ncor.
 
 =pod
 
-=item	B<-max_matrices>
+=item	B<-max_matrices X>
 
 This option specify how many matrices can be clustered in the same
 analysis. If there are more matrices than the specified number, the
-program restrics the analyses to the top matrices, and issues a
+program restrics the analyses to the first X matrices, and issues a
 warning.
 
 This parameter can be useful to prevent submission of excessive
@@ -805,16 +812,15 @@ datasets to the Web server.
 
 Option to select the agglomeration rule for hierarchical clustering.
 
-
 Supported agglomeration rules:
  
 =over
 
-=item I<complete> (default)
+=item I<complete>
 
 Compute inter-cluster distances based on the two most distant nodes.
 
-=item I<average>
+=item I<average> (default)
 
 Compute inter-cluster distances as the average distance between nodes
 belonging to the relative clusters. (UPGMA)
@@ -832,7 +838,6 @@ Compute inter-cluster distances based on the closest nodes.
       unless(exists($supported_hclust_methods{$hclust_method})) {
 	&RSAT::error::FatalError($hclust_method, "Invalid hclust method. Supported:", $supported_hclust_methods);
       }
-
 
 =pod
 
@@ -852,7 +857,6 @@ motifs will this be X * the number of input files).
       &RSAT::error::FatalError($top_matrices, "Invalid value for option -top_matrices: must be a natural number") 
          unless (&IsNatural($top_matrices));
 
-
 =pod
 
 =item B<-skip_matrices X>
@@ -869,61 +873,14 @@ file independently.
       $skip_matrices = shift(@arguments);
       &RSAT::error::FatalError($skip_matrices, "Invalid value for option -skip_matrices: must be a natural number") 
          unless (&IsNatural($skip_matrices));
-    	
-=pod
-
-=item	B<-lth param lower_threshold>
-
-=item	B<-uth param upper_threshold>
-
-Threshold on some parameter (-lth: lower, -uth: upper threshold).
-
-Threshold parameters are passed to compare-classes. 
-
-In addition, if a threshold is defined in the (unique) metrics used as
-clustering score (option I<-score>), this threshold will be used to
-decide whether motifs should be aligned or not. If two motifs have a
-similarity score lower (or distance score higher) than the selected
-threshold, their aligment will be skipped. The status of each motif
- (Aligned or Non-aligned) is reported in the file
-prefix_matrix_alignment_table.tab
-
-Suggested thresholds:
-
-    cor >= 0.7
-
-    Ncor >= 0.4
-
-=cut
-
-    } elsif ($arg eq "-lth") {
-      my $thr_field = shift(@arguments);
-      my $thr_value =  lc(shift(@arguments));
-      push(@matrix_compa_metrics, $thr_field);
-      unless ($supported_threshold{lc($thr_field)}) {
-	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-      }
-      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ")
-	  unless (&RSAT::util::IsReal($thr_value));
-      $lth{$thr_field} = $thr_value;
-     
-      ### Upper threshold
-    } elsif ($arg eq "-uth") {
-      my $thr_field = shift(@arguments);
-      my $thr_value = shift(@arguments);
-      push(@matrix_compa_metrics, $thr_field);
-      unless ($supported_threshold{lc($thr_field)}) {
-	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-      }
-      &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ")
-	  unless (&RSAT::util::IsReal($thr_value));
-      $uth{$thr_field} = $thr_value;
 
 =pod
 
 =item	B<-metric_build_tree metric>
 
-Select the metric which will be used to cluster the motifs.
+Select the metric which will be used to cluster the motifs.based in one metric of to measure motif
+similarity. This metric can be a similarity or distance, in both cases the values are converted to 
+a distance table which is used as input for the hierarchical clustering.
 
 Supported metrics : cor, Ncor, dEucl, NdEucl
 
@@ -937,7 +894,58 @@ Default: Ncor
 	&RSAT::error::FatalError("Invalid metric field $metric. Supported: $supported_metrics");	
       }
       $main::param{matrix_compa_score} = $metric;
-      $main::param{matrix_compa_sort_field} = $metric;
+      $main::param{matrix_compa_sort_field} = $metric; 
+   	
+=pod
+
+=item	B<-lth param lower_threshold>
+
+=item	B<-uth param upper_threshold>
+
+Threshold on some parameters (-lth: lower, -uth: upper threshold).
+
+Once the hierarchical tree is built, this tree is traversed in a bottom-up way.
+On each branch the descendant motifs are evaluated in the same way the clustering method
+selected by the user (average, complete, single).
+
+In this algorithm, the threshold can be set combining values of different metrics.
+
+If the descendant motifs for a particular branch do not satisfy the threshold 
+a new cluster is created.
+
+For a complete description of the thresholds and the motif comparison metrics
+ see the help of I<compare-matrices>
+
+Suggested thresholds:
+
+    cor >= 0.7
+
+    Ncor >= 0.4
+
+    w >= 5
+
+=cut
+
+    } elsif ($arg eq "-lth") {
+      my $thr_field = shift(@arguments);
+      my $thr_value =  lc(shift(@arguments));
+      unless ($supported_threshold{lc($thr_field)}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ")
+	  unless (&RSAT::util::IsReal($thr_value));
+      $lth{$thr_field} = $thr_value;
+     
+      ### Upper threshold
+    } elsif ($arg eq "-uth") {
+      my $thr_field = shift(@arguments);
+      my $thr_value = shift(@arguments);
+      unless ($supported_threshold{lc($thr_field)}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ")
+	  unless (&RSAT::util::IsReal($thr_value));
+      $uth{$thr_field} = $thr_value;
 
 =pod
 
@@ -1056,7 +1064,7 @@ to avoid the cimputation of the visual elements.
 ################################################################
 ## Verbose message
 sub Verbose {
-  print $main::out "; cluster-matrices ";
+  print $main::out "; matrix-clustering ";
   &PrintArguments($main::out);
   printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
   if (%main::infile) {
@@ -1082,24 +1090,313 @@ sub Verbose {
   }
 }
 
+
+################################################################
+## Set output file names + check output directories
+sub set_output_file_names {
+  ## Create output dir if required
+  my $basename;
+  ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{prefix});
+  $dir{output} = "." if ($dir{output} eq "");
+  &RSAT::util::CheckOutDir($dir{output});
+  push @dirs, "output";
+
+  local @output_folders = ();
+
+  if ($root_matrices_flag == 0) {
+      ## Create output directories
+      @output_folders = qw( tables html figures pairwise_compa_logos aligned_logos);
+      foreach my $f (@output_folders) {
+	  my $new_f = $main::outfile{prefix}."_".$f;
+	  &RSAT::util::CheckOutDir($new_f);
+      }
+  }elsif ($root_matrices_flag == 1) {
+      ## Create output directories
+      @output_folders = qw( tables html);
+      foreach my $f (@output_folders) {
+	  my $new_f = $main::outfile{prefix}."_".$f;
+	  &RSAT::util::CheckOutDir($new_f);
+      }
+  }
+
+  ################################################################
+  ## Specify output file names and open output stream
+
+  ## Log file should contain the trace of all commands
+  
+  $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
+  $main::out = &OpenOutputFile($main::outfile{log});
+
+  ## Error file should contain only errors
+  $main::outfile{err_log} = $main::outfile{prefix}."_errors.txt"; push @outfiles, "err_log";
+  $main::err = &OpenOutputFile($main::outfile{err_log});
+
+  ## Specific log file for R commands
+  $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
+
+  ## Converted matrices (required for compare-matrices-quick, and to
+  ## restrict the number of matrices with option -max_matrices).
+  $main::outfile{input_matrices} = $main::outfile{prefix}."_input_motifs.tf"; push @outfiles, "input_matrices"; 
+
+
+  ## Pairwise comparisons between matrices
+  $main::outfile{pairwise_compa} = $main::outfile{prefix}."_tables/pairwise_compa.tab"; push @outfiles, "pairwise_compa"; 
+  $main::outfile{pairwise_compa_html} = $main::outfile{prefix}."_html/pairwise_compa.html";  push @outfiles, "pairwise_compa_html";
+
+  ## Individual matrix descriptions
+  $main::outfile{matrix_descriptions} = $main::outfile{prefix}."_tables/pairwise_compa_matrix_descriptions.tab"; push @outfiles, "matrix_descriptions"; &AddTabToConvert("matrix_descriptions");
+  $main::outfile{matrix_descriptions_html} = $main::outfile{prefix}."_html/pairwise_compa_matrix_descriptions.html";  push @outfiles, "matrix_descriptions_html";
+
+  ## Hexadecimal color for the clusters
+  $main::outfile{hexa_colors} = $main::outfile{prefix}."_hexa_colors.txt";
+
+  ## Output files for the hierarchical clustering trees
+  $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
+  $main::outfile{alignment_table} = $main::outfile{prefix}."_tables/alignment_table.tab"; push @outfiles, "alignment_table"; &AddTabToConvert("alignment_table");
+  $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_tables/internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
+
+  $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
+  $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
+  $main::outfile{heatmap_jpg} = $main::outfile{prefix}."_figures/heatmap.jpg";
+  $main::outfile{heatmap_pdf} = $main::outfile{prefix}."_figures/heatmap.pdf";
+
+
+  ## Newick-formatted phylogram with motif consensuses
+  if ($export_newick == 1) {
+    $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";  
+  }
+
+  ## Root matrices file
+  $main::outfile{root_motifs} = $main::outfile{prefix}."_cluster_root_motifs.tf";
+
+  ## Files required for the summary
+  $main::outfile{summary_temp} = $main::outfile{prefix}."_SUMMARY_TEMP.html";
+  $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html"; push @outfiles, "summary";
+
+  if ($root_matrices_flag == 0) {
+
+      ## Define the base directories for the javascripts, which are
+      ## required to display logo trees, animations and dynamic tables
+
+      if ($include_js_lib) {
+	  ## Note: we will need to redefine it after having parsed the
+	  ## arguments, since it will be relative to output directory.
+	  &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 3);
+	  my $js_sync_cmd = "rsync -ruptl";
+	  $js_sync_cmd .= " ".$ENV{RSAT}."/perl-scripts/lib/js";
+	  $js_sync_cmd .= " ".$dir{output};
+	  &doit($js_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	  $js_base = $dir{output}."/js";
+	  &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 3);
+      }  elsif (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+	  $js_base = $ENV{rsat_www}."/lib/js";
+      } else {
+	  ## NOTE from JvH to Jaime: This solution does not allow to see the
+	  ## result on another computer than the RSAT server on which
+	  ## matrix-clustering ran.
+	  $js_base = $ENV{RSAT}."/perl-scripts/lib/js";
+      }
+      $d3_base= &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/d3.v3.min.js");
+      $jquery_base = &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/js/jquery.js");
+      $datatable_base= &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
+      $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
+      
+  }
+
+  ## Some temporary files
+  $main::outfile{temp_html} = $main::outfile{prefix}."_temporary.html";
+  $main::outfile{int_align} = $main::outfile{prefix}."_tables/intermediate_alignments.tab";
+
+  ## Archive to facilitate transfer of all the results in a zip file
+  $main::outfile{archive} = $main::outfile{prefix}."_archive.".$main::param{archive_format};
+  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
+
+  ## Open the HTML index file and write header
+  $main::outfile{html_index} = $main::outfile{prefix}."_html/index.html";
+  push @outfiles, "html_index";
+  
+}
+
+
+######################################################
+## Pre-process the input motifs in order to create
+## unique IDs and concatenate the input motifs from 
+## different collections (file) in a single one. 
+sub pre_process_motif_files{
+  
+  ## Count the number of motif sets
+  my $motif_set_counter = 0;
+  
+  ## This variable (previously optional now mandatory to display the title in the trees)
+  $display_collection_name_flag = 1;
+  
+  ## Create a directory to store the pre-processes motif files
+  ## Pre-processing includes 
+  ##   - conversion to transfac
+  ##   - concatenation of collection name and motif ID if several
+  ##     input files are specified
+  ##   - selection of top X motifs if required
+  ##   - skip the top X motifs if required
+
+  $main::dir{data} = $main::outfile{prefix}."_data";
+  &RSAT::util::CheckOutDir($dir{data});
+
+  ## Set the values of the title, file and format in a hash table
+  ## if the user has enter the option -i instead of -file_table.
+  if ($single_input_flag){
+    
+    my $collection_name = $main::param{motif_collection};
+    $motif_set_attributes{$collection_name}{collection_label} = $main::param{motif_collection};
+    $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
+    $motif_set_attributes{$collection_name}{matrix_file_input} = $main::infile{matrices}; 
+
+  } else {
+    
+    ## Read the file tible and extract the information
+    my ($info_tab_matrices) = &OpenInputFile($main::infile{matrices_info_tab});
+    while (<$info_tab_matrices>) {     
+      next if (/^#/); ## Skip header line
+      next if (/^;/); ## Skip comment lines
+      next unless (/\S/); ## Skip empty lines
+      chomp();
+      
+      my ($matrix_file, $matrix_format, $collection_name) = split ("\t");
+      $collection_name =~ s/\s+/_/g;
+      
+      ## The collection labels must be unique or the program crashes
+      if (exists($motif_set_attributes{$collection_name}{collection_label})){
+	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{collection_label}, " repeated. The collection label of each file must be unique.");	
+      } 
+      
+      ## Set the values of the collection label, file and format in a hash table
+      $motif_set_attributes{$collection_name}{collection_label} = $collection_name; 
+      $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
+      $motif_set_attributes{$collection_name}{matrix_file_input} = $matrix_file; 
+      
+      ## Check the matrix format on each line of the file
+      if (!$supported_matrix_format{$matrix_format}) {
+	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{matrix_format}, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+      } else {
+	$motif_set_counter++;
+      }
+    }
+    close $main::infile{matrices_info_tab};
+    &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
+			 "matrix files from file table", $main::infile{matrices_info_tab}) 
+	if ($main::verbose >= 2);
+  }
+
+
+  ## Pre-process each motif collection
+  foreach my $collection_name (keys(%motif_set_attributes)) {
+    
+      ## Set the values of the title, file and format in a hash table
+      my $matrix_format = $motif_set_attributes{$collection_name}{matrix_format}; 
+      my $matrix_file = $motif_set_attributes{$collection_name}{matrix_file_input};
+    
+      ## Compute the longest collection name for display
+      if (length($collection_name) > $longest_title){
+	  $longest_title = length($collection_name);
+      }
+      
+      ################################################################
+      ## Collect all matrices
+      my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+      push(@all_matrices, @matrices);
+      &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
+	  if ($main::verbose >= 2);
+      
+      ################################################################
+      ## Check matrix number (required for verbose + if max matrices specified).
+      if ($max_matrices > 0) {
+	  &RSAT::message::TimeWarn("Checking max number of input matrices (".$max_matrices.")") if ($main::verbose >= 2);
+	  &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
+	      if ($main::verbose >= 2);
+	  &RSAT::message::TimeWarn(scalar(@all_matrices), "Matrices loaded in total")
+	      if ($main::verbose >= 2);
+	  
+	  if (scalar(@all_matrices) > $max_matrices) {
+	      &RSAT::message::Warning("Input files contain ".scalar(@all_matrices)." matrices.", 
+				      "The analysis will be limited to the ".$max_matrices." first matrices (option -max_matrices).");
+	      
+	      @all_matrices = @all_matrices[1..$max_matrices];
+	  }
+      }    
+      
+      ## Create a single file combining all the matrices from all the current
+      ## input file, and append the motif collection name to each matrix ID.
+      $motif_set_attributes{$collection_name}{matrix_file_processed} = $main::dir{data}."/".$collection_name."_input_motifs_processed.tf";
+      
+      ## Convert input matrices in transfac format + append prefix if required
+      &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
+      my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+      $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_input};
+      $convert_matrix_cmd .= " -from ".$matrix_format;
+      $convert_matrix_cmd .= " -to transfac";
+      $convert_matrix_cmd .= " -top ".$top_matrices if ($top_matrices > 0);
+      $convert_matrix_cmd .= " -skip ".$skip_matrices if ($skip_matrices > 0);
+      $convert_matrix_cmd .= " -prefix_id ".$collection_name;
+      $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed};
+      &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+      
+      ################################################
+      ## Save the unique ID in a hash table
+      ## Key = ID unique
+      ## Value = title (motif collection)
+      my ($processed_matrix_file) = &OpenInputFile($motif_set_attributes{$collection_name}{matrix_file_processed});
+      while(<$processed_matrix_file>){
+	  next if (/^#/); ## Skip header line
+	  next if (/^;/); ## Skip comment lines
+	  next unless (/\S/); ## Skip empty lines
+	  next unless (/^AC\s+/);
+	  chomp();
+	  my($null, $AC_unique) = split(/\s+/, $_);
+	  $motifs_ID_unique{$AC_unique} = $collection_name;
+	  $alignment_info{$AC_unique}{file_name} = $main::outfile{prefix}."_data/motif_".$AC_unique.".tf";
+      }
+      close($processed_matrix_file);
+  }
+
+  ################################################################
+  ## Concatenate all the processed input files in a single one.
+  ## Rename the motif files.
+  $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs_processed.tf";
+  my $concatenate_processed_files_cmd = "cat ";
+  foreach my $t (keys %motif_set_attributes){
+      $concatenate_processed_files_cmd .=  $motif_set_attributes{$t}{matrix_file_processed}." ";
+  }
+  $concatenate_processed_files_cmd .= " > ".$main::outfile{motif_file};
+  
+  &doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err); 
+  $main::outfile{input_matrices} = $main::outfile{motif_file};
+
+  ################################################################
+  ## Split all the processed motifs into sinle file
+  ## each one containing a single motif
+  &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
+  my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
+  $split_matrix_cmd .= " -i ".$main::outfile{motif_file};
+  $split_matrix_cmd .= " -split";
+  $split_matrix_cmd .= " -from tf -to tf";
+  $split_matrix_cmd .= " -o ".$main::outfile{prefix}."_data/motif";
+  &doit($split_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+}
+
+
 ################################################################
 ## Compare each discovered motifs to each other.
 sub CompareMatrices {
-  ## Pariwise comparisons between discovered matrices.  We don't
+
+  ## Pariwise comparisons between discovered matrices.  We don't use
   ## the option "distinct" in order to ensure that all the motifs are
   ## in the output graph even if they are not related to any other
   ## motif.
   $matrix_compa_verbose = &RSAT::stats::max(($main::verbose-1), 1);
 
-  ## Select the motif (dis)similarity metrics that will be
-  ## computed in compare-matrices
-  @matrix_compa_metrics = uniq(@matrix_compa_metrics);
-  $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
-
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
   my $cmd = $SCRIPTS."/compare-matrices -v ".$matrix_compa_verbose; 
   $cmd .= " -mode scores";
-  $cmd .= " -format transfac";
+  $cmd .= " -format tf";
   $cmd .=  " -file ".$main::outfile{input_matrices};
   $cmd .= " -DR";
   $cmd .= " -sort ".$main::param{matrix_compa_sort_field};
@@ -1216,8 +1513,8 @@ sub Hclustering {
     ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     my $pos_drawing_offset = 0;
     
-    my $cluster_motif_cmd;
-#    my $cluster_motif_cmd = "export RSAT=$ENV{RSAT}; ";  ## Added by JvH on 2015-03-27, to fix a bug on the Web server
+    ## Basic parameters
+    my $cluster_motif_cmd = "";
     $cluster_motifs_cmd .= " cat ".$cluster_motifs_script;
     $cluster_motifs_cmd .= " | ".$r_path;
     $cluster_motifs_cmd .= " --slave --no-save --no-restore --no-environ";
@@ -1231,6 +1528,18 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
     $cluster_motifs_cmd .= "; export.newick = ".$export_newick;
 
+    ## Set the option to compute only the hclust and skip the
+    ## tree and heatmap computation
+    $draw_heatmap = 0 if $root_matrices_flag == 1;
+    $cluster_motifs_cmd .= "; only.hclust = ".$root_matrices_flag if $root_matrices_flag == 1;
+
+    ## Option to compute the heatmap + consensus alignment
+    $cluster_motifs_cmd .= "; draw.heatmap = ".$draw_heatmap;
+    $cluster_motifs_cmd .= "; draw.consensus = ".$align_consensus;
+    $cluster_motifs_cmd .= "; pos.hclust.in.heatmap = '".$heatmap_tree_pos."'";
+
+    ## If the user select the quick option the thresholds are restricted
+    ## only to cor and Ncor
     if ($quick_flag == 1) {
 	my %lth2 = ();
 	my @param = qw (Ncor cor);
@@ -1240,18 +1549,6 @@ sub Hclustering {
 	}
 	%lth = %lth2;
     }
-
-    ## Set the option to compute only the hclust and skip the
-    ## tree and heatmap computation
-    if ($root_matrices_flag == 1) {
-	$draw_heatmap = 0;
-	$cluster_motifs_cmd .= "; only.hclust = ".$root_matrices_flag;
-    }
-
-    ## Option to compute the heatmap
-    $cluster_motifs_cmd .= "; draw.heatmap = ".$draw_heatmap;
-    $cluster_motifs_cmd .= "; draw.consensus = ".$align_consensus;
-    $cluster_motifs_cmd .= "; pos.hclust.in.heatmap = '".$heatmap_tree_pos."'";
 
     ## Pass the lower thresholds on the score to R for clustering
     if (defined($lth{$param{matrix_compa_score}})) {
@@ -1271,6 +1568,7 @@ sub Hclustering {
 	$cluster_motifs_cmd .= "; uthsp = '".$uthsp."'";
     }
 
+    ## Output parameters
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     $cluster_motifs_cmd .= "; \"";
     $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog};
@@ -1317,86 +1615,86 @@ sub ReadClusterComposition {
   close $cluster_handle;
 }
 
-################################################################
-## Identify clusters of similar motifs using MCL ("Markov clustering",
-## an algorithm partitioning a network into clusters), and build
-## consensus motifs.
-sub ClusterMotifs {
-  &RSAT::message::TimeWarn("Clustering matrices with MCL") if ($main::verbose >= 2);
+# ################################################################
+# ## Identify clusters of similar motifs using MCL ("Markov clustering",
+# ## an algorithm partitioning a network into clusters), and build
+# ## consensus motifs.
+# sub ClusterMotifs {
+#   &RSAT::message::TimeWarn("Clustering matrices with MCL") if ($main::verbose >= 2);
 
-  ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
-  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
-  $cmd .= " -ewidth -ecolors fire";
-  $cmd .= " -layout spring_new";
-  $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol ".$main::param{score_column};
-  $cmd .= " -o ".$main::outfile{matrix_network_gml};
-  &RSAT::util::one_command($cmd, 1);
+#   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
+#   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
+#   $cmd .= " -ewidth -ecolors fire";
+#   $cmd .= " -layout spring_new";
+#   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol ".$main::param{score_column};
+#   $cmd .= " -o ".$main::outfile{matrix_network_gml};
+#   &RSAT::util::one_command($cmd, 1);
 
-  ## Generate a figure of the motif comparison graph
-  $cmd = $SCRIPTS."/display-graph";
-  $cmd .= " -in_format gml -i ".$main::outfile{matrix_network_gml};
-  $cmd .= " -ewidth";
-  $cmd .= " -layout none";
-  $cmd .= " -out_format png -o ".$main::outfile{compa_png};
-  &RSAT::util::one_command($cmd, 1);
+#   ## Generate a figure of the motif comparison graph
+#   $cmd = $SCRIPTS."/display-graph";
+#   $cmd .= " -in_format gml -i ".$main::outfile{matrix_network_gml};
+#   $cmd .= " -ewidth";
+#   $cmd .= " -layout none";
+#   $cmd .= " -out_format png -o ".$main::outfile{compa_png};
+#   &RSAT::util::one_command($cmd, 1);
 
-  ## Use MCL to partition the motif graph into clusters
-  &RSAT::message::TimeWarn("Matrix clustering by running MCL on th matrix-to-matrix network.") if ($main::verbose >= 2);
-  my $mcl = &RSAT::server::GetProgramPath("mcl");  
-  # my $mcl_dir = $ENV{mcl_dir};
-  # unless ($mcl_dir) {
-  #   &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
-  # }
-  # my $mcl = $mcl_dir."/mcl";
-  $cmd = "grep -v '^;' ".$main::outfile{pairwise_compa}.">".$main::outfile{pairwise_compa}.".mcl";
-  $cmd .= "; ".$mcl."/mcl ".$main::outfile{pairwise_compa}.".mcl";
-  $cmd .= " -I 1.8 --abc -V all ";
-  $cmd .= " -o ".$main::outfile{clusters_mcl};
-  $cmd .= " >& /dev/null";
-  $cmd .= " ; ".${SCRIPTS}."/convert-classes -i ".$main::outfile{clusters_mcl};
-  $cmd .= " -from mcl -to tab ";
-  $cmd .= " -o ".$main::outfile{clusters_tab};
-  &RSAT::util::one_command($cmd, 1);
+#   ## Use MCL to partition the motif graph into clusters
+#   &RSAT::message::TimeWarn("Matrix clustering by running MCL on th matrix-to-matrix network.") if ($main::verbose >= 2);
+#   my $mcl = &RSAT::server::GetProgramPath("mcl");  
+#   # my $mcl_dir = $ENV{mcl_dir};
+#   # unless ($mcl_dir) {
+#   #   &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
+#   # }
+#   # my $mcl = $mcl_dir."/mcl";
+#   $cmd = "grep -v '^;' ".$main::outfile{pairwise_compa}.">".$main::outfile{pairwise_compa}.".mcl";
+#   $cmd .= "; ".$mcl."/mcl ".$main::outfile{pairwise_compa}.".mcl";
+#   $cmd .= " -I 1.8 --abc -V all ";
+#   $cmd .= " -o ".$main::outfile{clusters_mcl};
+#   $cmd .= " >& /dev/null";
+#   $cmd .= " ; ".${SCRIPTS}."/convert-classes -i ".$main::outfile{clusters_mcl};
+#   $cmd .= " -from mcl -to tab ";
+#   $cmd .= " -o ".$main::outfile{clusters_tab};
+#   &RSAT::util::one_command($cmd, 1);
 
-  ## Split the motif graph into clusters as defined by MCL, and
-  ## compute the intra-cluster degree (k) and weighted degree (wk) of
-  ## each node
-  $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{pairwise_compa};
-  $cmd .= " -in_format tab -scol 1 -tcol 2 -wcol ".$main::param{score_column};
-  $cmd .= " -return clusters ";
-  $cmd .= " -clusters ".$main::outfile{clusters_tab};
-  $cmd .= " -out_format tab -o ".$main::outfile{clusters_subgraph};
-  &RSAT::util::one_command($cmd, 1);
-
-
-  ## Identify graph components and count the intra-component degree of
-  ## each node. Most connected nodes will serve as seeds for motif
-  ## clustering.
-  $cmd = $SCRIPTS."/graph-connex-components -v 1";
-  $cmd .= " -i ".$main::outfile{clusters_subgraph};
-  $cmd .= " -wcol ".$main::param{score_column};
-  $cmd .= " -o ".$main::outfile{intra_cluster_degree};
-  &RSAT::util::one_command($cmd, 1);
-
-  ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
-  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{clusters_subgraph};
-  $cmd .= " -ewidth -ecolors fire";
-  $cmd .= " -layout spring_new";
-  $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
-  $cmd .= " -o ".$main::outfile{clusters_subgraph_gml};
-  &RSAT::util::one_command($cmd, 1);
-
-  ## Generate a figure of the motif comparison graph
-  $cmd = $SCRIPTS."/display-graph";
-  $cmd .= " -in_format gml -i ".$main::outfile{clusters_subgraph_gml};
-  $cmd .= " -ewidth";
-  $cmd .= " -layout none";
-  $cmd .= " -out_format png -o ".$main::outfile{clusters_subgraph_png};
-  &RSAT::util::one_command($cmd, 1);
+#   ## Split the motif graph into clusters as defined by MCL, and
+#   ## compute the intra-cluster degree (k) and weighted degree (wk) of
+#   ## each node
+#   $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{pairwise_compa};
+#   $cmd .= " -in_format tab -scol 1 -tcol 2 -wcol ".$main::param{score_column};
+#   $cmd .= " -return clusters ";
+#   $cmd .= " -clusters ".$main::outfile{clusters_tab};
+#   $cmd .= " -out_format tab -o ".$main::outfile{clusters_subgraph};
+#   &RSAT::util::one_command($cmd, 1);
 
 
-  return();
-}
+#   ## Identify graph components and count the intra-component degree of
+#   ## each node. Most connected nodes will serve as seeds for motif
+#   ## clustering.
+#   $cmd = $SCRIPTS."/graph-connex-components -v 1";
+#   $cmd .= " -i ".$main::outfile{clusters_subgraph};
+#   $cmd .= " -wcol ".$main::param{score_column};
+#   $cmd .= " -o ".$main::outfile{intra_cluster_degree};
+#   &RSAT::util::one_command($cmd, 1);
+
+#   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
+#   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{clusters_subgraph};
+#   $cmd .= " -ewidth -ecolors fire";
+#   $cmd .= " -layout spring_new";
+#   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
+#   $cmd .= " -o ".$main::outfile{clusters_subgraph_gml};
+#   &RSAT::util::one_command($cmd, 1);
+
+#   ## Generate a figure of the motif comparison graph
+#   $cmd = $SCRIPTS."/display-graph";
+#   $cmd .= " -in_format gml -i ".$main::outfile{clusters_subgraph_gml};
+#   $cmd .= " -ewidth";
+#   $cmd .= " -layout none";
+#   $cmd .= " -out_format png -o ".$main::outfile{clusters_subgraph_png};
+#   &RSAT::util::one_command($cmd, 1);
+
+
+#   return();
+# }
 
 
 ################################################################
@@ -1851,52 +2149,6 @@ sub Add_empty_columns_to_logos() {
   }    
 }
 
-
-#################################################
-## Print the matrices in separated files. They 
-## will be used to add empty columns with 
-## convert-matrices and to create the merged
-## consensus
-sub create_single_matrix_files() {
-
-    my @ids = ();
-    my ($desc) = &OpenInputFile($main::outfile{matrix_descriptions});
-    while(<$desc>) {
-	chomp;
-	next if /^#/;
-	my @split = split(/\t/, $_);
-	push(@ids, $split[1]);
-    }
-    close($desc);
-
-    &RSAT::message::TimeWarn("Creating single matrix files") if ($main::verbose >= 2);
-
-    ## Split the matrix file into single matrices file, 
-    ## in order to process individually each matrix
-    my %matrix_files = ();
-    my $cmd = $SCRIPTS."/convert-matrix";
-    $cmd .= " -i ".$outfile{input_matrices}." -from transfac -to tf -split -o ".$main::outfile{prefix}."_single_matrices";
-    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-    
-    $main::outfile{matrix_single_list} = $main::outfile{prefix}."_single_matrices_matrix_list.tab";
-    my ($mat_file_list) = &OpenInputFile($main::outfile{matrix_single_list});
-    while(<$mat_file_list>) {
-	chomp;
-	next if /^#/;
-	my @split = split(/\t/, $_);
-	my $id = $split[1];
-	$to_delete{$id} = $main::outfile{prefix}."_single_matrices_".$id.".tf";
-	if (grep( /^$id$/, @ids)) {
-	    my $id_file = $main::outfile{prefix}."_single_matrices_".$id.".tf";
-	    $matrix_files{$id}{file_name} = $id_file;
-	}
-    }
-    close($main::outfile{matrix_single_list});
-    unlink($main::outfile{matrix_single_list});
-    return(%matrix_files);
-}
-
-
 #########################################################################
 ## Merge the matrices at each level of the hclust tree, and produce a
 ## branch-wise matrix + logo + consensus.
@@ -2052,7 +2304,9 @@ sub Merge_matrices() {
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
 	    }
 	} else {
-	    my $singleton_motif_file = $main::outfile{prefix}."_single_matrices_"."@{$cluster_nodes{$cluster}}".".tf";
+
+	    my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{file_name};
+
 	    my $new_singleton_motif_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/matrices.tf";
 	    $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file;
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -2271,7 +2525,7 @@ sub Export_external_motifs() {
 	    }
 	} else{
 	    my $motif = "@{$cluster_nodes{$cluster}}";
-	    $mat_file = $main::outfile{prefix}."_single_matrices_".$motif.".tf";
+	    $mat_file = $alignment_info{$motif}{file_name};
 	}
 	$external_branch_motifs .= $mat_file." ";
     }
@@ -2756,155 +3010,6 @@ sub Archive {
   &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
 }
 
-
-################################################################
-## Set output file names + check output directories
-sub set_output_file_names {
-  ## Create output dir if required
-  my $basename;
-  ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{prefix});
-  $dir{output} = "." if ($dir{output} eq "");
-  &RSAT::util::CheckOutDir($dir{output});
-  push @dirs, "output";
-
-  local @output_folders = ();
-
-  if ($root_matrices_flag == 0) {
-      ## Create output directories
-      @output_folders = qw( tables html figures pairwise_compa_logos aligned_logos);
-      foreach my $f (@output_folders) {
-	  my $new_f = $main::outfile{prefix}."_".$f;
-	  &RSAT::util::CheckOutDir($new_f);
-      }
-  }elsif ($root_matrices_flag == 1) {
-      ## Create output directories
-      @output_folders = qw( tables html);
-      foreach my $f (@output_folders) {
-	  my $new_f = $main::outfile{prefix}."_".$f;
-	  &RSAT::util::CheckOutDir($new_f);
-      }
-  }
-  ## Directory containing the matrix logos (to be displayed in the HTML tree)
-  $dir{logos} = $main::outfile{prefix}."_pairwise_compa_logos"; push @dirs, "logos";
-
-  ## Directory to create the aligned logos
-  $dir{aligned_logos} = $main::outfile{prefix}."_aligned_logos";
-
-  ################################################################
-  ## Specify output file names and open output stream
-
-  ## Log file should contain the trace of all commands
-  
-  $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
-  $main::out = &OpenOutputFile($main::outfile{log});
-
-  ## Error file should contain only errors
-  $main::outfile{err_log} = $main::outfile{prefix}."_errors.txt"; push @outfiles, "err_log";
-  $main::err = &OpenOutputFile($main::outfile{err_log});
-
-  ## Specific log file for R commands
-  $main::outfile{Rlog} = $main::outfile{prefix}."_Rlog.txt"; push @outfiles, "Rlog";
-
-  ## Converted matrices (required for compare-matrices-quick, and to
-  ## restrict the number of matrices with option -max_matrices).
-  $main::outfile{input_matrices} = $main::outfile{prefix}."_input_motifs.tf"; push @outfiles, "input_matrices"; 
-
-
-  ## Pairwise comparisons between matrices
-  $main::outfile{pairwise_compa} = $main::outfile{prefix}."_tables/pairwise_compa.tab"; push @outfiles, "pairwise_compa"; 
-  $main::outfile{pairwise_compa_html} = $main::outfile{prefix}."_html/pairwise_compa.html";  push @outfiles, "pairwise_compa_html";
-
-  ## Individual matrix descriptions
-  $main::outfile{matrix_descriptions} = $main::outfile{prefix}."_tables/pairwise_compa_matrix_descriptions.tab"; push @outfiles, "matrix_descriptions"; &AddTabToConvert("matrix_descriptions");
-  $main::outfile{matrix_descriptions_html} = $main::outfile{prefix}."_html/pairwise_compa_matrix_descriptions.html";  push @outfiles, "matrix_descriptions_html";
-
-  ## List with the single matrix files paths
-  ## Filled in the method create_single_matrix_files()
-  $main::outfile{matrix_single_list} = "";
-
-  ## Hexadecimal color for the clusters
-  $main::outfile{hexa_colors} = $main::outfile{prefix}."_hexa_colors.txt";
-
-  ## Simliarity network between matrices
-  if ($main::return_field{network}) {
-    $main::outfile{matrix_network_gml} = $main::outfile{prefix}."_matrix_network.gml"; push @outfiles, "matrix_network_gml";
-    $main::outfile{matrix_network_png} = $main::outfile{prefix}."_matrix_network.png"; push @outfiles, "matrix_network_png";
-  }
-  ## MCL clustering (by segmentation of the matrix network)
-  if ($main::return_field{mcl_clusters}) {
-    $main::outfile{clusters_mcl} = $main::outfile{prefix}."_clusters.mcl"; push @outfiles, "clusters_mcl";
-    $main::outfile{clusters_tab} = $main::outfile{prefix}."_clusters.tab"; push @outfiles, "clusters_tab"; &AddTabToConvert("clusters_tab");
-    $main::outfile{clusters_subgraph} = $main::outfile{prefix}."_clusters_subgraph.tab"; push @outfiles, "clusters_subgraph";
-    $main::outfile{clusters_subgraph_gml} = $main::outfile{prefix}."_clusters_subgraph.gml"; push @outfiles, "clusters_subgraph_gml";
-    $main::outfile{clusters_subgraph_png} = $main::outfile{prefix}."_clusters_subgraph.png"; push @outfiles, "clusters_subgraph_png";
-    $main::outfile{intra_cluster_degree} = $main::outfile{prefix}."_intra_clusters_degree.tab"; push @outfiles, "intra_cluster_degree";
-  }
-
-  ## Output files for the hierarchical clustering trees
-  $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
-  $main::outfile{alignment_table} = $main::outfile{prefix}."_tables/alignment_table.tab"; push @outfiles, "alignment_table"; &AddTabToConvert("alignment_table");
-  $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_tables/internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
-
-  $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
-  $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
-  $main::outfile{heatmap_jpg} = $main::outfile{prefix}."_figures/heatmap.jpg";
-  $main::outfile{heatmap_pdf} = $main::outfile{prefix}."_figures/heatmap.pdf";
-
-
-  ## Newick-formatted phylogram with motif consensuses
-  if ($export_newick == 1) {
-    $main::outfile{consensus_phylogram_newick} = $main::outfile{prefix}."_trees/tree.newick"; push @outfiles, "consensus_phylogram_newick";  
-  }
-
-  ## Root matrices file
-  $main::outfile{root_motifs} = $main::outfile{prefix}."_cluster_root_motifs.tf";
-
-  ## Files required for the summary
-  $main::outfile{summary_temp} = $main::outfile{prefix}."_SUMMARY_TEMP.html";
-  $main::outfile{summary} = $main::outfile{prefix}."_SUMMARY.html"; push @outfiles, "summary";
-
-  if ($root_matrices_flag == 0) {
-
-      ## Define the base directories for the javascripts, which are
-      ## required to display logo trees and
-      if ($include_js_lib) {
-	  ## Note: we will need to redefine it after having parsed the
-	  ## arguments, since it will be relative to output directory.
-	  &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 3);
-	  my $js_sync_cmd = "rsync -ruptl";
-	  $js_sync_cmd .= " ".$ENV{RSAT}."/perl-scripts/lib/js";
-	  $js_sync_cmd .= " ".$dir{output};
-	  &doit($js_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-	  $js_base = $dir{output}."/js";
-	  &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 3);
-      }  elsif (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-	  $js_base = $ENV{rsat_www}."/lib/js";
-      } else {
-	  ## NOTE from JvH to Jaime: This solution does not allow to see the
-	  ## result on another computer than the RSAT server on which
-	  ## matrix-clustering ran.
-	  $js_base = $ENV{RSAT}."/perl-scripts/lib/js";
-      }
-      $d3_base= &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/d3.v3.min.js");
-      $jquery_base = &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/js/jquery.js");
-      $datatable_base= &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
-      $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
-      
-  }
-
-  ## Some temporary files
-  $main::outfile{temp_html} = $main::outfile{prefix}."_temporary.html";
-  $main::outfile{int_align} = $main::outfile{prefix}."_tables/intermediate_alignments.tab";
-
-  ## Archive to facilitate transfer of all the results
-  $main::outfile{archive} = $main::outfile{prefix}."_archive.".$main::param{archive_format};
-  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
-
-  ## Open the HTML index file and write header
-  $main::outfile{html_index} = $main::outfile{prefix}."_html/index.html";
-  push @outfiles, "html_index";
-  
-}
 
 ##########################################
 ## Open the HTML page for the synthesis
@@ -4208,171 +4313,4 @@ sub shave_matrix_low_IC_columns{
     return $shaved_matrix;
 }
 
-
-######################################################
-## Pre-process the input motifs in order to create
-## unique IDs and concatenate the input motifs from 
-## different collections (file) in a single one. 
-sub pre_process_motif_files{
-  
-  ## Count the number of motif sets
-  my $motif_set_counter = 0;
-  
-  ## This variable (previously optional now mandatory to display the title in the trees)
-  $display_collection_name_flag = 1;
-  
-  ## Create a directory to store the pre-processes motif files
-  ## Pre-processing includes 
-  ##   - conversion to transfac
-  ##   - concatenation of collection name and motif ID if several
-  ##     input files are specified
-  ##   - selection of top motifs if required
-  $main::dir{data} = $main::outfile{prefix}."_data";
-  &RSAT::util::CheckOutDir($dir{data});
-
-  ## Set the values of the title, file and format in a hash table
-  ## if the user has enter the option -i instead of -file_table.
-  if ($single_input_flag){
-    
-    my $collection_name = $main::param{motif_collection};
-    $motif_set_attributes{$collection_name}{collection_label} = $main::param{motif_collection};
-    $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
-    $motif_set_attributes{$collection_name}{matrix_file_input} = $main::infile{matrices}; 
-
-  } else {
-    
-    ## Read the file tible and extract the information
-    my ($info_tab_matrices) = &OpenInputFile($main::infile{matrices_info_tab});
-    while (<$info_tab_matrices>) {     
-      next if (/^#/); ## Skip header line
-      next if (/^;/); ## Skip comment lines
-      next unless (/\S/); ## Skip empty lines
-      chomp();
-      
-      my ($matrix_file, $matrix_format, $collection_name) = split ("\t");
-      $collection_name =~ s/\s+/_/g;
-      
-      ## The collection labels must be unique or the program ends
-      if (exists($motif_set_attributes{$collection_name}{collection_label})){
-	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{collection_label}, " repeated. The collection label of each motif file must be unique.");	
-      } 
-      
-      ## Set the values of the collection label, file and format in a hash table
-      $motif_set_attributes{$collection_name}{collection_label} = $collection_name; 
-      $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
-      $motif_set_attributes{$collection_name}{matrix_file_input} = $matrix_file; 
-      
-      ## Check the matrix format on each line of the file
-      unless ($supported_matrix_format{$matrix_format}) {
-	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{matrix_format}, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
-      } else {
-	$motif_set_counter++;
-      }
-    }
-    close $main::infile{matrices_info_tab};
-    &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
-			 "matrix files from file table", $main::infile{matrices_info_tab}) 
-	if ($main::verbose >= 2);
-  }
-
-
-  ## Pre-process each motif collection
-  foreach my $collection_name (keys(%motif_set_attributes)) {
-    
-      ## Set the values of the title, file and format in a hash table
-      my $matrix_format = $motif_set_attributes{$collection_name}{matrix_format}; 
-      my $matrix_file = $motif_set_attributes{$collection_name}{matrix_file_input};
-    
-      ## Compute the longest collection name for display
-      if (length($collection_name) > $longest_title){
-	  $longest_title = length($collection_name);
-      }
-      
-      ################################################################
-      ## Collect all matrices
-      my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
-      push(@all_matrices, @matrices);
-      local $matrix_nb_ok = 1;
-      &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
-	  if ($main::verbose >= 2);
-      
-      ################################################################
-      ## Check matrix number (required for verbose + if max matrices specified).
-      if ($max_matrices > 0) {
-	  &RSAT::message::TimeWarn("Checking max number of input matrices (".$max_matrices.")") if ($main::verbose >= 2);
-	  &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
-	      if ($main::verbose >= 2);
-	  &RSAT::message::TimeWarn(scalar(@all_matrices), "Matrices loaded in total")
-	      if ($main::verbose >= 2);
-	  
-	  if (scalar(@all_matrices) > $max_matrices) {
-	      $matrix_nb_ok = 0;
-	      &RSAT::message::Warning("Input files contain ".scalar(@all_matrices)." matrices.", 
-				      "The analysis will be limited to the ".$max_matrices." first matrices (option -max_matrices).");
-	      
-	      @all_matrices = @all_matrices[1..$max_matrices];
-	      
-	      ## Not sure
-	      # last; ## Not worth reading the remaining files since we reached max matrix number
-	  }
-      }    
-      
-      ## Create a single file combining all the matrices from all the current
-      ## input file, and append the motif collection name to each matrix ID.
-      $motif_set_attributes{$collection_name}{matrix_file_processed} = $main::dir{data}."/".$collection_name."_input_motifs_processed.tf";
-      
-      ## Convert input matrices in transfac format + append prefix if required
-      &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
-      my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
-      $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_input};
-      $convert_matrix_cmd .= " -from ".$matrix_format;
-      $convert_matrix_cmd .= " -to transfac";
-      $convert_matrix_cmd .= " -top ".$top_matrices if ($top_matrices > 0);
-      $convert_matrix_cmd .= " -skip ".$skip_matrices if ($skip_matrices > 0);
-      $convert_matrix_cmd .= " -prefix_id ".$collection_name;
-      $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed};
-      &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-      
-      ################################################
-      ## Save the unique ID in a hash table
-      ## Key = ID unique
-      ## Value = title (motif collection)
-      my ($processed_matrix_file) = &OpenInputFile($motif_set_attributes{$collection_name}{matrix_file_processed});
-      while(<$processed_matrix_file>){
-	  next if (/^#/); ## Skip header line
-	  next if (/^;/); ## Skip comment lines
-	  next unless (/\S/); ## Skip empty lines
-	  next unless (/^AC\s+/);
-	  chomp();
-	  my($null, $AC_unique) = split(/\s+/, $_);
-	  $motifs_ID_unique{$AC_unique} = $collection_name;
-      }
-      close($processed_matrix_file);
-  }
-
-
-  ################################################################
-  ## Concatenate all the processed input files in a single one.
-  ## Rename the motif files.
-  $main::outfile{motif_file} = $main::outfile{prefix}."_data/input_motifs_processed.tf";
-  my $concatenate_processed_files_cmd = "cat ";
-  foreach my $t (keys %motif_set_attributes){
-      $concatenate_processed_files_cmd .=  $motif_set_attributes{$t}{matrix_file_processed}." ";
-  }
-  $concatenate_processed_files_cmd .= " > ".$main::outfile{motif_file};
-  
-  &doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err); 
-  $main::outfile{input_matrices} = $main::outfile{motif_file};
-
-  ################################################################
-  ## Split all the processed motifs into sinle file
-  ## each one containing a single motif
-  &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
-  my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
-  $split_matrix_cmd .= " -i ".$main::outfile{motif_file};
-  $split_matrix_cmd .= " -split";
-  $split_matrix_cmd .= " -from tf -to tf";
-  $split_matrix_cmd .= " -o ".$main::outfile{prefix}."_data/motif";
-  &doit($split_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-}
 __END__
