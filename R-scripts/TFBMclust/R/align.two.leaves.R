@@ -1,7 +1,7 @@
 ##################################################
 ## Align two leaves: creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
-align.two.leaves <- function(child1, child2, desc.table, compa.table, score = "Ncor", thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
+align.two.leaves <- function(child1, child2, desc.table, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
 
   ## Identify the node number
   n1 <- min(-child1,-child2) ## row number of the first motif in the description table
@@ -64,7 +64,7 @@ align.two.leaves <- function(child1, child2, desc.table, compa.table, score = "N
   }else{
 
     ## Find the central motif of the cluster
-    central.motifs <- closest.or.farthest.motifs.ids(n1.id, n2.id, compa.table, score = score, closest = TRUE)
+    central.motifs <- closest.or.farthest.motifs.ids(n1.id, n2.id, compa.table, metric = metric, closest = TRUE)
     id1 <- central.motifs[1]
     id2 <- central.motifs[2]
 
