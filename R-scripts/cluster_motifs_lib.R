@@ -29,8 +29,8 @@ check.param <- function() {
   verbose(paste("Distance table", distance.table), 3)
 
   ## Default score is the normalized correlation
-  if (!exists("score")) {
-    score <<- "Ncor";
+  if (!exists("metric")) {
+    metric <<- "Ncor";
   }
 
   ## Default hclust method is the complete method
@@ -77,8 +77,7 @@ check.param <- function() {
   supported.scores <- c("cor", "Ncor")
   supported.distances <- c("dEucl", "NdEucl")
 
-  if(score %in% supported.scores){
-    metric <<- "similarity"
+  if(metric %in% supported.scores){
 
     ## Default lower and upper thresholds equals to zero
     if (!exists("lth")) {
@@ -93,7 +92,6 @@ check.param <- function() {
 
 
   } else if(score %in% supported.distances){
-    metric <<- "distances"
 
     if (!exists("uth")) {
       uth <<- list()
