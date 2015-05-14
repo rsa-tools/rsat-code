@@ -1525,7 +1525,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
     $cluster_motifs_cmd .= "; alignment.file = '".$main::outfile{alignment_table}."'";
     $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
-    $cluster_motifs_cmd .= "; score = '".$param{matrix_compa_score}."'";
+    $cluster_motifs_cmd .= "; metric = '".$main::param{matrix_compa_score}."'";
     $cluster_motifs_cmd .= "; export.newick = ".$export_newick;
 
     ## Set the option to compute only the hclust and skip the
