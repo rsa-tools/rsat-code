@@ -10,7 +10,7 @@
   \item{desc.table}{ A table with the motifs attributes with at least 4 columns: \code{id}, \code{name},     \code{consensus} and \code{rc.consensus}.
 
   The ID must be unique, the name can be the same as the ID. }
-  \item{compa.table}{ A comparison matrix containing at least 4 columns: \code{ID1}, \code{ID2}, \code{strand} and one or more comparison scores between each pair of motifs. }
+  \item{compa.table}{ A comparison matrix containing at least 4 columns: \code{ID1}, \code{ID2}, \code{strand} and one or more comparison metrics between each pair of motifs. }
   \item{thresholds}{ An object of class \code{list} containing as fields (\code{names()}) the metrics names and storing the values of the respective metrics. Default: Ncor <= 0.4; cor <= 0.5; w <= 5 . }
   \item{method}{ One agglomeration method used in the \code{hclust} function. Supported: average, complete, single. Default: average.
 
@@ -19,7 +19,7 @@
   \code{Complete}: using as reference the same metric used to build the hierarchical tree, select the farthest pair of motifs, if the values of all metrics selected in the threshold are satisfied, the cluster can be aligned.
 
   \code{Single}: using as reference the same metric used to build the hierarchical tree, select the closest pair of motifs, if the values of all metrics selected in the threshold are satisfied, the cluster can be aligned. }
-  \item{score}{ Column of the comparison matrix to be used as score. Default: Ncor. }
+  \item{metric}{ Column of the comparison matrix to be used to build the hierarchical tree. Default: Ncor. }
   \item{hclust.tree}{ One object of class \code{hclust} with the analyzis of the input motifs. }
   \item{nodes.attributes}{ logical. Should be returned the alignment status of each level tree?. Default: FALSE. }
 }
