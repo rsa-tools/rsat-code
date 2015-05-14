@@ -1,4 +1,4 @@
-align.motifs <- function(hclust.tree, desc.table, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), score = "Ncor", method = "average", metric = "Ncor", nodes.attributes = TRUE, intermediate.alignments = FALSE){
+align.motifs <- function(hclust.tree, desc.table, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", nodes.attributes = TRUE, intermediate.alignments = FALSE){
 
   motifs.info <<- list()
   motifs.info.levels <- list()
@@ -20,19 +20,19 @@ align.motifs <- function(hclust.tree, desc.table, compa.table, thresholds = list
     ##############################
     ## Case 1: align two leaves
     if ((child1 < 0) && (child2 < 0)) {
-      align.two.leaves(child1, child2, desc.table, compa.table, score, thresholds, method, metric, hclust.tree, nodes.attributes = nodes.attributes)
+      align.two.leaves(child1, child2, desc.table, compa.table, thresholds, method, metric, hclust.tree, nodes.attributes = nodes.attributes)
     }
 
     ###########################################################
     ## Case 2: align a leaf with a cluster (already aligned)
     if ((child1 < 0) && (child2 > 0)) {
-      align.leaf.and.cluster(child1, child2, desc.table, compa.table, score, thresholds, method, metric, hclust.tree, nodes.attributes = nodes.attributes)
+      align.leaf.and.cluster(child1, child2, desc.table, compa.table, thresholds, method, metric, hclust.tree, nodes.attributes = nodes.attributes)
     }
 
     ###########################################################
     ## Case 3: align two (already aligned) clusters
     if ((child1 > 0) && (child2 > 0)) {
-      align.two.clusters(child1, child2, desc.table, compa.table, score, thresholds, method, metric, hclust.tree, nodes.attributes = nodes.attributes)
+      align.two.clusters(child1, child2, desc.table, compa.table, thresholds, method, metric, hclust.tree, nodes.attributes = nodes.attributes)
     }
 
 
