@@ -2,34 +2,46 @@
 ## Align a leaf and one cluster: align the single motif relative
 ## to the already aligned cluster; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
-align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
+align.leaf.and.cluster <- function(child1,
+                                   child2,
+                                   desc.table,
+                                   compa.table,
+                                   thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
+                                   method = "average",
+                                   metric = "Ncor",
+                                   hclust.tree,
+                                   nodes.attributes = TRUE){
 
-  ## Identify the node numbers, the new.node leaf and the aligned leaves
+  ## Identify the node numbers: the new node leaf and the aligned leaves
   merge.level <- which(hclust.tree$merge == child1)
   n1 <- abs(min(child1, child2))
   n.aligned <- leaves.per.node(hclust.tree)[[merge.level]][which(leaves.per.node(hclust.tree)[[merge.level]] != n1)]
   n2 <- n.aligned
-  ids.aligned <- get.id(n.aligned, desc.table)
+  ids.aligned <- get.attribute(n.aligned, desc.table, attribute = "id")
 
+  ## Get the id of each node
+  id1.hclust <- get.attribute(n1, desc.table, attribute = "id")
+  id2.hclust <- get.attribute(n2, desc.table, attribute = "id")
 
-  motifs.info[[get.id(n1, desc.table)]][["name"]] <<- n1
-  motifs.info[[get.id(n1, desc.table)]][["spacer.up"]] <<- 0
-  motifs.info[[get.id(n1, desc.table)]][["spacer.dw"]] <<- 0
+  ## Initialize the information for the n1 (new) motif
+  motifs.info[[id1.hclust]][["name"]] <<- n1
+  motifs.info[[id1.hclust]][["spacer.up"]] <<- 0
+  motifs.info[[id1.hclust]][["spacer.dw"]] <<- 0
 
-
-  ## Get the id of each node on the description table
-  id1.hclust <- get.id(n1, desc.table)
-  id2.hclust <- get.id(n2, desc.table)
-
-  ## Check the if the node shall be aligned
+  ## According to the hierarchical clustering method selected,
+  ## Check if the motifs corresponding to the current level shall be aligned
   aligned.motif.flag <- 0
-  aligned.motif.flag <- alignment.test(id1.hclust, id2.hclust, compa.table, thresholds, hclust.method = method, hclust.metric = metric)
-
+  aligned.motif.flag <- check.alignment(id1.hclust,
+                                        id2.hclust,
+                                        compa.table,
+                                        thresholds,
+                                        hclust.method = method,
+                                        metric = metric)
 
   ## Fill the attributes table
   if(nodes.attributes == TRUE){
 
-    ## Save the merge clas: (1) two leaves, (2) one leaf and one cluster, (3) two clusters
+    ## Save the merge class: (class 1) two leaves, (class 2) one leaf and one cluster, (class 3) two clusters
     internal.nodes.attributes[[paste("level_", merge.level, sep = "")]][["merge_class"]] <<- 2
 
     ## Save the status of the alignment
@@ -49,11 +61,11 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, thre
   ## fill the motifs.info list with the default parameters
   if(aligned.motif.flag == 0){
 
-    n1.id <- get.id(n1, desc.table)
+    n1.id <- get.attribute(n1, desc.table, attribute = "id")
 
-    motifs.info[[n1.id]][["name"]] <<- get.name(n1.id,desc.table)
-    motifs.info[[n1.id]][["consensus_d"]] <<- get.consensus(n1.id, desc.table, RC = FALSE)
-    motifs.info[[n1.id]][["consensus_rc"]] <<- get.consensus(n1.id, desc.table, RC = TRUE)
+    motifs.info[[n1.id]][["name"]] <<- get.attribute(n1, desc.table, attribute = "name")
+    motifs.info[[n1.id]][["consensus_d"]] <<- get.attribute(n1, desc.table, attribute = "consensus_d")
+    motifs.info[[n1.id]][["consensus_rc"]] <<- get.attribute(n1, desc.table, attribute = "consensus_r")
     motifs.info[[n1.id]][["strand"]] <<- "D"
     motifs.info[[n1.id]][["number"]] <<- n1
     motifs.info[[n1.id]][["spacer.up"]] <<- 0
@@ -64,7 +76,7 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, thre
 
     ## Set the number of the motifs
     ## This is done here because the variable storing this number can be changed
-    motifs.info[[get.id(n1, desc.table)]][["number"]] <<- as.numeric(n1)
+    motifs.info[[get.attribute(n1, desc.table attribute = "id")]][["number"]] <<- as.numeric(n1)
 
     ## Find the central motif of the cluster
     ## Get the id of each node on the description table
@@ -80,14 +92,17 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, thre
     if(id1 != id1.hclust){
       aligned <- id1
       new.node <- id2
-      temporal <- NULL
       temporal <- n1
       n1 <- n2
       n2 <- temporal
+      new.node.number <- n2
+      aligned.number <- n1
       switch.ids <- 1
     } else{
       aligned <- id2
       new.node <- id1
+      new.node.number <- n1
+      aligned.number <- n2
     }
     rm(id1.hclust, id2.hclust)
 
@@ -146,7 +161,6 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, thre
       }
     }
 
-
     ## In some cases it is required to invert the alignment (change its orientation)
     ## in order to align the new.node leaf and store in the motifs.info variable
     if(case %in% c(2,4,6,7)){
@@ -156,20 +170,20 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, thre
 
     ## Choose the consensus for the new.node motif
     if(case %in% c(1,2,5,6,7,8)){
-      consensus.1.new.node <- get.consensus(new.node, desc.table, RC = FALSE)
-      consensus.2.new.node <- get.consensus(new.node, desc.table, RC = TRUE)
+      consensus.1.new.node <- get.attribute(new.node.number, desc.table, attribute = "consensus_d")
+      consensus.2.new.node <- get.attribute(new.node.number, desc.table, attribute = "consensus_r")
       motifs.info[[new.node]][["strand"]] <<- "D"
       motifs.info[[new.node]][["consensus_d"]] <<- consensus.1.new.node
       motifs.info[[new.node]][["consensus_rc"]] <<- consensus.2.new.node
 
     } else if(case %in% c(3,4)){
-      consensus.1.new.node <- get.consensus(new.node, desc.table, RC = TRUE)
-      consensus.2.new.node <- get.consensus(new.node, desc.table, RC = FALSE)
+      consensus.1.new.node <- get.attribute(new.node.number, desc.table, attribute = "consensus_r")
+      consensus.2.new.node <- get.attribute(new.node.number, desc.table, attribute = "consensus_d")
       motifs.info[[new.node]][["strand"]] <<- "R"
       motifs.info[[new.node]][["consensus_d"]] <<- consensus.1.new.node
       motifs.info[[new.node]][["consensus_rc"]] <<- consensus.2.new.node
     }
-    motifs.info[[new.node]][["name"]] <<- get.name(new.node, desc.table)
+    motifs.info[[new.node]][["name"]] <<- get.attribute(new.node.number, desc.table, attribute = "name")
 
     ## Reset the offset
     aligned.spacer.up <- as.numeric(motifs.info[[aligned]][["spacer.up"]])
@@ -186,9 +200,9 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, thre
     ## Add the gaps
     ids.mod <- NULL
     if(offset <= 0){
-        ids.mod <- get.id(n1, desc.table)
+        ids.mod <- get.attribute(n1, desc.table, attribute = "id")
     }else{
-        ids.mod <- get.id(n2, desc.table)
+        ids.mod <- get.attribute(n2, desc.table, attribute = "id")
     }
 
     temp.motifs.info <- motifs.info[ids.mod]
@@ -206,7 +220,7 @@ align.leaf.and.cluster <- function(child1, child2, desc.table, compa.table, thre
 
     ## Fill the downstream end
     motifs.info[names(temp.motifs.info)] <<- temp.motifs.info[names(temp.motifs.info)]
-    temp.motifs.info <- fill.downstream(get.id(leaves.per.node(tree)[[merge.level]], desc.table), motifs.info)
+    temp.motifs.info <- fill.downstream(get.attribute(leaves.per.node(tree)[[merge.level]], desc.table, attribute = "id"), motifs.info)
     motifs.info[names(temp.motifs.info)] <<- temp.motifs.info[names(temp.motifs.info)]
   }
 }
