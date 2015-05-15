@@ -17,7 +17,12 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, threshol
 
   ## Check the if the node shall be aligned
   aligned.motif.flag <- 0
-  aligned.motif.flag <- alignment.test(ids1.hclust, ids2.hclust, compa.table, thresholds, hclust.method = method, hclust.metric = metric)
+  aligned.motif.flag <- check.alignment(ids1.hclust,
+                                        ids2.hclust,
+                                        compa.table,
+                                        thresholds,
+                                        hclust.method = method,
+                                        metric = metric)
 
   ## Fill the attributes table
   if(nodes.attributes == TRUE){
