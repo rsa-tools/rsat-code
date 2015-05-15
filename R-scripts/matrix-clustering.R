@@ -72,6 +72,19 @@ if (length(args >= 1)) {
 ## Check parameters
 check.param()
 
+
+#####################################
+## Example ##########################
+
+infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.6/peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
+description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.6/peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
+metric <- "Ncor"
+hclust.method <- "average"
+thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
+
+######################################
+######################################
+
 ##############################################
 ## Read matrix comparison table + treatment
 global.compare.matrices.table <<- read.csv(infile, sep="\t", comment.char=";")
@@ -98,12 +111,9 @@ if (length(grep(pattern=metric, names(global.compare.matrices.table))) < 1) {
 }
 
 ## Convert distance table into a distance matrix, required by hclust
-distances.objects <- build.distance.matrix(global.compare.matrices.table, metric=metric)
+distances.objects <- build.distance.matrix(global.compare.matrices.table, metric = metric)
 dist.table <- distances.objects$table
 dist.matrix <- distances.objects$matrix
-
-#######################################
-### Here
 
 ## Export the distance table
 write.table(dist.table, file=distance.table, quote=FALSE, row.names=TRUE, col.names=NA, sep="\t")
