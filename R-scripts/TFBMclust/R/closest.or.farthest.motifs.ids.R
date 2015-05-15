@@ -1,6 +1,6 @@
-#################################################################
-## Identify the "central" leaf (motif) of a subtree (cluster),
-## i.e. the pair of motif with the smallest average distance to
+#########################################################################
+## Identify the "central"/"distal" leaf (motif) of a subtree (cluster)
+## i.e. the pair of motif with the smallest/largest distance to
 ## among all the other motifs of these clusters.
 closest.or.farthest.motifs.ids <- function(id1, id2, compa.table, metric = "Ncor", closest = TRUE){
 
