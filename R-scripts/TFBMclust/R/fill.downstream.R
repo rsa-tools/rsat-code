@@ -1,3 +1,7 @@
+######################################################
+## Given a list of IDs, the function fill up with
+## gaps all the consensuses of the aligned motifs
+## realtive to the largest aligned consensus + gaps
 fill.downstream <- function(ids.fill, motifs.list){
 
   motifs.temp <- motifs.list[ids.fill]
@@ -14,14 +18,12 @@ fill.downstream <- function(ids.fill, motifs.list){
   })
   max.width.r <- max(unlist(consensuses.r))
 
-
-
   ## Add the downstream spacer
   sapply(ids.fill, function(x){
 
     temp.list <- list()
 
-    ## Update the consensus
+    ## Update the D consensus
     cons.new.d <- NULL
     cons.new.d <- paste(motifs.temp[[x]][["consensus_d"]],
       paste(rep("-",
@@ -31,6 +33,7 @@ fill.downstream <- function(ids.fill, motifs.list){
       sep = ""
     )
 
+    ## Update the R consensus
     cons.new.r <- NULL
     sp <- paste(rep("-", times = max.width.r - nchar(motifs.temp[[x]][["consensus_rc"]])), collapse = "")
     cons.new.r <- paste(sp, motifs.temp[[x]][["consensus_rc"]], sep = "")
