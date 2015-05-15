@@ -4312,5 +4312,4 @@ sub shave_matrix_low_IC_columns{
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
     return $shaved_matrix;
 }
-
 __END__
