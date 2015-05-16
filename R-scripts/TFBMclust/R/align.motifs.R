@@ -49,8 +49,7 @@ align.motifs <- function(hclust.tree,
     if(intermediate.alignments == TRUE){
 
       ## Export the intermediate-alignment information in order to create the branch-motifs
-#      motifs.info.levels[[paste("merge_level_", level, sep = "")]] <<- motifs.info[get.id(leaves.per.node(tree)[[level]], desc.table)]
-      motifs.info.levels[[paste("merge_level_", level, sep = "")]] <<- motifs.info[get.attribute(leaves.per.node(tree)[[level]], desc.table, attribute = "id")]
+      motifs.info.levels[[paste("merge_level_", level, sep = "")]] <<- motifs.info[get.id(leaves.per.node(tree)[[level]], desc.table)]
       motifs.info.levels[[paste("merge_level_", level, sep = "")]] <<- sapply(motifs.info.levels[[paste("merge_level_", level, sep = "")]], function(x){
         return(x[c("name", "number", "strand", "consensus_d", "consensus_rc", "spacer.up", "spacer.dw")])
       })
