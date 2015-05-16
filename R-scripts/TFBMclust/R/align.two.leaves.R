@@ -32,8 +32,8 @@ align.two.leaves <- function(child1,
   merge.level <- which(hclust.tree$merge == child1)
 
   ## Saves the order of the IDs in the hclust$merge object
-  id1.hclust <- get.attribute(n1, desc.table, attribute = "id")
-  id2.hclust <- get.attribute(n2, desc.table, attribute = "id")
+  id1.hclust <- get.id(n1, desc.table)
+  id2.hclust <- get.id(n2, desc.table)
 
   ## According to the hierarchical clustering method selected,
   ## Check if the motifs corresponding to the current level shall be aligned
@@ -68,10 +68,10 @@ align.two.leaves <- function(child1,
   if(aligned.motif.flag == 0){
 
       for(n in c(n1,n2)){
-        n.id <- get.attribute(n, desc.table, attribute = "id")
-        motifs.info[[n.id]][["name"]] <<- get.attribute(n, desc.table, attribute = "name")
-        motifs.info[[n.id]][["consensus_d"]] <<- get.attribute(n, desc.table, attribute = "consensus_d")
-        motifs.info[[n.id]][["consensus_rc"]] <<- get.attribute(n, desc.table, attribute = "consensus_r")
+        n.id <- get.id(n, desc.table)
+        motifs.info[[n.id]][["name"]] <<- get.name(n.id, desc.table)
+        motifs.info[[n.id]][["consensus_d"]] <<- get.consensus(n, desc.table, RC = FALSE)
+        motifs.info[[n.id]][["consensus_rc"]] <<- get.consensus(n, desc.table, RC = TRUE)
         motifs.info[[n.id]][["strand"]] <<- "D"
         motifs.info[[n.id]][["number"]] <<- n
         motifs.info[[n.id]][["spacer.up"]] <<- 0
@@ -111,19 +111,19 @@ align.two.leaves <- function(child1,
     consensus2b <- NULL
 
     ## Consensus of the first motif
-    consensus1a <- get.attribute(n1, desc.table, attribute = "consensus_d")
-    consensus1b <- get.attribute(n1, desc.table, attribute = "consensus_r")
+    consensus1a <- get.consensus(id1, desc.table, RC = FALSE)
+    consensus1b <- get.consensus(id1, desc.table, RC = TRUE)
 
     id1.strand <- "D"
     if (strand == "R") {
       ## Consensuses of the second motif
-      consensus2a <- get.attribute(n2, desc.table, attribute = "consensus_r")
-      consensus2b <- get.attribute(n2, desc.table, attribute = "consensus_d")
+      consensus2a <- get.consensus(id2, desc.table, RC = TRUE)
+      consensus2b <- get.consensus(id2, desc.table, RC = FALSE)
       id2.strand <- "R"
     } else {
       ## Consensuses of the second motif
-      consensus2a <- get.attribute(n2, desc.table, attribute = "consensus_d")
-      consensus2b <- get.attribute(n2, desc.table, attribute = "consensus_r")
+      consensus2a <- get.consensus(id2, desc.table, RC = FALSE)
+      consensus2b <- get.consensus(id2, desc.table, RC = TRUE)
       id2.strand <- "D"
     }
 
@@ -140,7 +140,7 @@ align.two.leaves <- function(child1,
     }
 
     ## Update the motifs information
-    motifs.info[[id1]][["name"]] <<- get.attribute(n1, desc.table, attribute = "name")
+    motifs.info[[id1]][["name"]] <<- get.name(id1, desc.table)
     motifs.info[[id1]][["consensus_d"]] <<- consensus1a
     motifs.info[[id1]][["consensus_rc"]] <<- consensus1b
     motifs.info[[id1]][["strand"]] <<- id1.strand
@@ -148,7 +148,7 @@ align.two.leaves <- function(child1,
     motifs.info[[id1]][["spacer.up"]] <<- get.spacer.nb(motifs.info[[id1]][["consensus_d"]])$up.spacer
     motifs.info[[id1]][["spacer.dw"]] <<- get.spacer.nb(motifs.info[[id1]][["consensus_d"]])$dw.spacer
 
-    motifs.info[[id2]][["name"]] <<- get.attribute(n2, desc.table, attribute = "name")
+    motifs.info[[id2]][["name"]] <<- get.name(id2, desc.table)
     motifs.info[[id2]][["consensus_d"]] <<- consensus2a
     motifs.info[[id2]][["consensus_rc"]] <<- consensus2b
     motifs.info[[id2]][["strand"]] <<- id2.strand
@@ -156,7 +156,7 @@ align.two.leaves <- function(child1,
     motifs.info[[id2]][["spacer.up"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$up.spacer
     motifs.info[[id2]][["spacer.dw"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$dw.spacer
 
-    motifs.info.temp <- fill.downstream(get.attribute(leaves.per.node(hclust.tree)[[merge.level]], desc.table, attribute = "id"), motifs.info)
+    motifs.info.temp <- fill.downstream(get.id(leaves.per.node(hclust.tree)[[merge.level]], desc.table), motifs.info)
     motifs.info[names(motifs.info.temp)] <<- motifs.info.temp[names(motifs.info.temp)]
   }
 }
