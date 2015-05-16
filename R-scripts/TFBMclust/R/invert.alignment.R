@@ -27,14 +27,12 @@ inverted.alignment <- function(ids.inv, motifs.list, desc.table){
 
     ## Depending on the current orientation, get the consensus in the inverted orientation
     if(motifs.list.temp[[X]][["strand"]] == "D"){
-      n <- motifs.list.temp[[X]][["number"]]
-      inverted.consensus.1 <- get.attribute(n, desc.table, attribute = "consensus_r")
-      inverted.consensus.2 <- get.attribute(n, desc.table, attribute = "consensus_d")
+      inverted.consensus.1 <- get.consensus(X, desc.table, RC = TRUE)
+      inverted.consensus.2 <- get.consensus(X, desc.table, RC = FALSE)
       inverted.aligment.list[[X]][["strand"]] <- "R"
     } else{
-      n <- motifs.list.temp[[X]][["number"]]
-      inverted.consensus.1 <- get.attribute(n, desc.table, attribute = "consensus_d")
-      inverted.consensus.2 <- get.attribute(n, desc.table, attribute = "consensus_r")
+      inverted.consensus.1 <- get.consensus(X, desc.table, RC = FALSE)
+      inverted.consensus.2 <- get.consensus(X, desc.table, RC = TRUE)
       inverted.aligment.list[[X]][["strand"]] <- "D"
     }
 
