@@ -2,7 +2,7 @@
 \alias{align.leaf.and.cluster}
 \title{ Align one single node with a cluster of (already aligned) motifs. }
 \description{ This function take the information of the level of the tree and aligns the leaves corresponding to that level if one node is a single leaf and the other one is a cluster of previously aligned motifs. The alignment is stored in the variable \code{motifs.info} which is inherited from the function \code{align.motifs()} where this function is called. }
-\usage{ align.leaf.and.cluster(child1, child2, desc.table, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree) }
+\usage{ align.leaf.and.cluster(child1, child2, desc.table, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE, motif.at.tree.level = leaves.per.node(hclust.tree)) }
 \arguments{
 
   \item{child1}{ This number indicates the node 1 that is aligned, see the attribute \code{merge} for the code{hclust} object, where a negative number means a single leaf and a positive number means a group of leaves. }
@@ -22,6 +22,7 @@
   \item{metric}{ Column of the comparison matrix to be used to build the hierarchical tree. Default: Ncor. }
   \item{hclust.tree}{ One object of class \code{hclust} with the analyzis of the input motifs. }
   \item{nodes.attributes}{ logical. Should be returned the alignment status of each level tree?. Default: FALSE. }
+  \item{motif.at.tree.level}{ A \code{list} with the number of motifs at each level of the tree. This object correspond to the output of the function \code{levels.per.node} . }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
