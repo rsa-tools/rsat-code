@@ -10,14 +10,15 @@ align.two.clusters <- function(child1,
                                method = "average",
                                metric = "Ncor",
                                hclust.tree,
-                               nodes.attributes = TRUE){
+                               nodes.attributes = TRUE,
+                               motif.at.tree.level = motif.at.tree.level){
 
   ## Identify the merge level and the node numbers of each cluster
   merge.level <- which(hclust.tree$merge == child1)
   N1 <- abs(min(child1, child2))
   N2 <- abs(max(child1, child2))
-  n1 <- leaves.per.node(tree)[[N1]]
-  n2 <- leaves.per.node(tree)[[N2]]
+  n1 <- motif.at.tree.level[[N1]]
+  n2 <- motif.at.tree.level[[N2]]
 
   ## Get the id of each node on the description table
   ids1.hclust <- get.id(n1, desc.table)
@@ -180,7 +181,7 @@ align.two.clusters <- function(child1,
 
     ## Fill the downstream end
     motifs.info[names(temp.motifs.info)] <<- temp.motifs.info[names(temp.motifs.info)]
-    temp.motifs.info <- fill.downstream(get.id(leaves.per.node(tree)[[merge.level]], desc.table), motifs.info)
+    temp.motifs.info <- fill.downstream(get.id(motif.at.tree.level[[merge.level]], desc.table), motifs.info)
     motifs.info[names(temp.motifs.info)] <<- temp.motifs.info[names(temp.motifs.info)]
 
   }
