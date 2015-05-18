@@ -236,6 +236,7 @@ package main;
     }
   }
   $merged_matrix->setMatrix($alphabet_size, $matrix_width, @merged_counts);
+  $merged_matrix->calcConsensus();
   
   
   ################################################################
@@ -407,7 +408,6 @@ Output format. See I<convert-matrix> for a list of supportd output formats.
       unless ($supported_output_format{$output_format}) {
 	&RSAT::error::FatalError("$output_format\tInvalid output format for matrix\tSupported: $supported_output_formats");
       }
-
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
