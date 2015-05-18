@@ -10,7 +10,8 @@ align.leaf.and.cluster <- function(child1,
                                    method = "average",
                                    metric = "Ncor",
                                    hclust.tree,
-                                   nodes.attributes = TRUE){
+                                   nodes.attributes = TRUE,
+                                   motif.at.tree.level = motif.at.tree.level){
 
   ## Identify the node numbers: the new node leaf and the aligned leaves
   merge.level <- which(hclust.tree$merge == child1)
@@ -216,7 +217,7 @@ align.leaf.and.cluster <- function(child1,
 
     ## Fill the downstream end
     motifs.info[names(temp.motifs.info)] <<- temp.motifs.info[names(temp.motifs.info)]
-    temp.motifs.info <- fill.downstream(get.id(leaves.per.node(tree)[[merge.level]], desc.table), motifs.info)
+    temp.motifs.info <- fill.downstream(get.id(motif.at.tree.level[[merge.level]], desc.table), motifs.info)
     motifs.info[names(temp.motifs.info)] <<- temp.motifs.info[names(temp.motifs.info)]
   }
 }
