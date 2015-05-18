@@ -10,6 +10,7 @@ align.motifs <- function(hclust.tree,
   motifs.info <<- list()
   motifs.info.levels <- list()
   internal.nodes.attributes <<- list()
+  motif.at.tree.level <- leaves.per.node(tree)
 
   ## Iterate through the merge of the hierarchical tree
   apply(hclust.tree$merge, 1, function(x){
@@ -31,17 +32,44 @@ align.motifs <- function(hclust.tree,
     ##############################
     ## Case 1: align two leaves
     if ((child1 < 0) && (child2 < 0)) {
-      align.two.leaves(child1, child2, desc.table, compa.table, thresholds, method, metric, hclust.tree, nodes.attributes = nodes.attributes)
+      align.two.leaves(child1,
+                       child2,
+                       desc.table,
+                       compa.table,
+                       thresholds,
+                       method,
+                       metric,
+                       hclust.tree,
+                       nodes.attributes = nodes.attributes,
+                       motif.at.tree.level = motif.at.tree.level)
 
     ###########################################################
     ## Case 2: align a leaf with a cluster (already aligned)
     } else if ((child1 < 0) && (child2 > 0)) {
-      align.leaf.and.cluster(child1, child2, desc.table, compa.table, thresholds, method, metric, hclust.tree, nodes.attributes = nodes.attributes)
+      align.leaf.and.cluster(child1,
+                             child2,
+                             desc.table,
+                             compa.table,
+                             thresholds,
+                             method,
+                             metric,
+                             hclust.tree,
+                             nodes.attributes = nodes.attributes,
+                             motif.at.tree.level = motif.at.tree.level)
 
     ###########################################################
     ## Case 3: align two (already aligned) clusters
     } else if ((child1 > 0) && (child2 > 0)) {
-      align.two.clusters(child1, child2, desc.table, compa.table, thresholds, method, metric, hclust.tree, nodes.attributes = nodes.attributes)
+      align.two.clusters(child1,
+                         child2,
+                         desc.table,
+                         compa.table,
+                         thresholds,
+                         method,
+                         metric,
+                         hclust.tree,
+                         nodes.attributes = nodes.attributes,
+                         motif.at.tree.level = motif.at.tree.level)
     }
 
 
@@ -49,7 +77,7 @@ align.motifs <- function(hclust.tree,
     if(intermediate.alignments == TRUE){
 
       ## Export the intermediate-alignment information in order to create the branch-motifs
-      motifs.info.levels[[paste("merge_level_", level, sep = "")]] <<- motifs.info[get.id(leaves.per.node(tree)[[level]], desc.table)]
+      motifs.info.levels[[paste("merge_level_", level, sep = "")]] <<- motifs.info[get.id(motif.at.tree.level[[level]], desc.table)]
       motifs.info.levels[[paste("merge_level_", level, sep = "")]] <<- sapply(motifs.info.levels[[paste("merge_level_", level, sep = "")]], function(x){
         return(x[c("name", "number", "strand", "consensus_d", "consensus_rc", "spacer.up", "spacer.dw")])
       })
