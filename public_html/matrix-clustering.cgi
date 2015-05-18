@@ -99,6 +99,15 @@ if($collection_label){
     $parameters .= " -motif_collection_name '".$collection_label."'";
 }
 
+############################
+## Add the metric used to 
+## cluster the motifs
+local $metric_tree = $query->param('metric');
+if($metric_tree){
+    $parameters .= " -metric_build_tree '".$metric_tree."'";
+}
+
+
 ################################################################
 ## Specify the thresholds on all parameters for compare-matrices
 my @threshold_fields = qw(w
@@ -169,7 +178,7 @@ if ($quick) {
 }
 
 ## Insert lables
-$parameters .= " -label name ";
+$parameters .= " -label_in_tree name ";
 
 ## Insert fields to return 
 $parameters .= " ".$return_fields." ";

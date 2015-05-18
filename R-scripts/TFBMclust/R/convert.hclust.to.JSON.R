@@ -1,3 +1,6 @@
+#####################################################
+## Convert the hclust object to a character object
+## with the lines ready to print a JSON file
 convert.hclust.to.JSON <- function(tree){
 
   ## Require ctc if it is required

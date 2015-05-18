@@ -3,7 +3,7 @@
 \title{ Align two already aligned clusters of motifs. }
 \description{ This function take the information of the level of the tree and aligns the leaves corresponding to that level if both nodes are clusters of previously aligned motifs. The alignment is stored in the variable \code{motifs.info} which is inherited from the function \code{align.motifs()} where this function is called. }
 \usage{
-align.two.clusters(child1, child2, desc.table, compa.table, score = "Ncor", thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE)
+align.two.clusters(child1, child2, desc.table, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE, motif.at.tree.level = leaves.per.node(hclust.tree))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -12,8 +12,8 @@ align.two.clusters(child1, child2, desc.table, compa.table, score = "Ncor", thre
   \item{desc.table}{ A table with the motifs attributes with at least 4 columns: \code{id}, \code{name},     \code{consensus} and \code{rc.consensus}.
 
   The ID must be unique, the name can be the same as the ID. }
-  \item{compa.table}{ A comparison matrix containing at least 4 columns: \code{ID1}, \code{ID2}, \code{strand} and one or more comparison scores between each pair of motifs. }
-  \item{score}{ Column of the comparison matrix to be used as score to cluster the motifs. Default: Ncor. }
+  \item{compa.table}{ A comparison matrix containing at least 4 columns: \code{ID1}, \code{ID2}, \code{strand} and one or more comparison metrics between each pair of motifs. }
+  \item{metric}{ Column of the comparison matrix to be used to build the hierarchical tree. Default: Ncor. }
   \item{thresholds}{ An object of class \code{list} containing as fields (\code{names()}) the metrics names and storing the values of the respective metrics. Default: Ncor <= 0.4; cor <= 0.5; w <= 5 . }
   \item{method}{ One agglomeration method used in the \code{hclust} function. Supported: average, complete, single. Default: average.
 
@@ -25,6 +25,7 @@ align.two.clusters(child1, child2, desc.table, compa.table, score = "Ncor", thre
   \item{metric}{ Column of the comparison matrix to be used as base to build the hierarchical clustering tree. Default: Ncor. }
   \item{hclust.tree}{ One object of class \code{hclust} with the analyzis of the input motifs. }
   \item{nodes.attributes}{ logical. Should be returned the alignment status of each level tree?. Default: FALSE. }
+  \item{motif.at.tree.level}{ A \code{list} with the number of motifs at each level of the tree. This object correspond to the output of the function \code{levels.per.node} . }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
