@@ -1598,8 +1598,16 @@ sub ReadClusterComposition {
     next if (/^#/); ## Skip header line
     next if (/^;/); ## Skip comment lines
     next unless (/\S/); ## Skip empty lines
-    my ($node, $name, $cluster) = split ("\t");
-    push @{$cluster_nodes{$cluster}}, $node;
+    chomp();
+
+    my ($node, $name, $cluster, $strand, $offset_l, $offset_r, $width) = split ("\t");
+    push(@{$cluster_nodes{$cluster}}, $node);
+    ## Store the ID, strand and offset of each aligned motif
+    $alignment_info{$node}{name} = $name;
+    $alignment_info{$node}{strand} = $strand;
+    $alignment_info{$node}{offset_left} = $offset_l;
+    $alignment_info{$node}{offset_right} = $offset_r;
+    $alignment_info{$node}{width} = $width;
     &RSAT::message::Debug("\tcluster=".$cluster, "name=".$name, "node=".$node, scalar(@{$cluster_nodes{$cluster}})) if ($main::verbose >= 5);
   }
   @clusters_to_HTML = sort keys %cluster_nodes;
@@ -1691,7 +1699,6 @@ sub ReadClusterComposition {
 #   $cmd .= " -layout none";
 #   $cmd .= " -out_format png -o ".$main::outfile{clusters_subgraph_png};
 #   &RSAT::util::one_command($cmd, 1);
-
 
 #   return();
 # }
@@ -2081,26 +2088,6 @@ sub ConvertTabToHTML {
 ## to get multiple alignment on the logo cladogram.
 sub Add_empty_columns_to_logos() {
 
-  ## Open the alignment_table data
-  open(ALIGNMENT_TABLE, $main::outfile{alignment_table}) || &RSAT::error::FatalError( "Cannot open ALIGNMENT_TABLE file", $main::outfile{alignment_table});
-
-  while(<ALIGNMENT_TABLE>) {
-    next unless (/\S/); ## Skip empty rows
-    next if (/^;/); ## Skip comment rows
-    next if (/^#/); ## Skip header rows
-    chomp();
-    
-    my @split_line = split(/\s+/, $_);
-    $split_line[0] =~ s/\s+//g;
-    ## Store the ID, strand and offset of each aligned motif
-    $alignment_info{$split_line[0]}{name} =  $split_line[1];
-    $alignment_info{$split_line[0]}{strand} =  $split_line[3];
-    $alignment_info{$split_line[0]}{offset_left} =  $split_line[4];
-    $alignment_info{$split_line[0]}{offset_right} =  $split_line[5];
-    $alignment_info{$split_line[0]}{width} = $split_line[6];    
-  }
-  close(ALIGNMENT_TABLE);
-
   ## Call the program 'convert-matrix' to add the empty columns
   ## to the aligned logos and retrieve the logos in RC
   foreach my $id (keys %alignment_info) {
@@ -2115,29 +2102,15 @@ sub Add_empty_columns_to_logos() {
     if ($strand eq "D") {
 
       ## Add the empty columns
-      my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
-      $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
-      $cmd .= " -insert_col_left ".$offset_left;
-      $cmd .= " -insert_col_right ".$offset_right;
-      $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos";
-      &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-
+	&Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus,parameters,logo", $main::outfile{prefix}."_aligned_logos/aligned_logos");
     } else {
 
       ## First convert the matrix to reverse complement 
       my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
-      $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
-      $cmd .= " -from tf -to tf -rc -return counts,consensus";
-      $cmd .= " -o ".$temp_mat;
-      &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+      &Rev_Comp_Motif($file_name, $temp_mat);
       
       ## Then add the gaps
-      $cmd = $SCRIPTS."/convert-matrix -i ".$temp_mat;
-      $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,parameters,logo";
-      $cmd .= " -insert_col_left ".$offset_left;
-      $cmd .= " -insert_col_right ".$offset_right;
-      $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/aligned_logos";
-      &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+      &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus,parameters,logo", $main::outfile{prefix}."_aligned_logos/aligned_logos");
       unlink($temp_mat);
     }
     unlink($file_name);
@@ -2232,29 +2205,15 @@ sub Merge_matrices() {
 		    if ($strand eq "D") {
 			
 			## Add the empty columns
-			my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
-			$cmd .= " -from tf -to tf -return counts,consensus";
-			$cmd .= " -insert_col_left ".$offset_left;
-			$cmd .= " -insert_col_right ".$offset_right;
-			$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf";
-			&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-			
+			&Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");			
 		    } else {
 			
 			## First convert the matrix to reverse complement 
 			my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
-			$cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
-			$cmd .= " -from tf -to tf -rc -return counts,consensus";
-			$cmd .= " -o ".$temp_mat;
-			&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+			&Rev_Comp_Motif($file_name, $temp_mat);
 			
 			## Then add the gaps
-			$cmd = $SCRIPTS."/convert-matrix -i ".$temp_mat;
-			$cmd .= " -from tf -to tf -return counts,consensus";
-			$cmd .= " -insert_col_left ".$offset_left;
-			$cmd .= " -insert_col_right ".$offset_right;
-			$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf";
-			&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+			&Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");
 			unlink($temp_mat);
 		    }
 		}
@@ -2330,6 +2289,9 @@ sub Merge_root_matrices() {
     my %int_align_files = ();
     my ($int_align_file) = &OpenInputFile($main::outfile{int_align});
     while (<$int_align_file>) {
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines
 	chomp;
 	my $line = $_;
 	my @split_line = split("\t", $line);
@@ -2360,16 +2322,19 @@ sub Merge_root_matrices() {
 	    @folder_merged_matrices = ();
 	}
 	my %int_align_info = ();
-	foreach my $folder (@folder_merged_matrices) {
+	foreach my $merge_level (@folder_merged_matrices) {
 
-	    ## Read the table with the number of spaced for each matrix,
-	    ## for each level of each cluster
-	    my $merge_level = $folder;
+	    ## Read the table with the number of gaps for each matrix,
+	    ## at each level of each cluster
 	    $main::outfile{int_align_offset} = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_".$merge_level."_dataframe.tab";
 	    my @level_motifs = ();
 	    my ($int_align_dataframe) = &OpenInputFile($main::outfile{int_align_offset});
 	    while (<$int_align_dataframe>) {
-		chomp;
+
+		next if (/^#/); ## Skip header line
+		next if (/^;/); ## Skip comment lines
+		next unless (/\S/); ## Skip empty lines
+		chomp();
 		my $line = $_;
 		my @split_line = split("\t", $line);
 		my $motif_id = $split_line[0];
@@ -2377,6 +2342,7 @@ sub Merge_root_matrices() {
 		my $motif_strand = $split_line[3];
 		my $offset_up = $split_line[6];
 		my $offset_down = $split_line[7];
+
 		$int_align_info{$cluster}{$merge_level}{$motif_id}{offset_up} = $offset_up;
 		$int_align_info{$cluster}{$merge_level}{$motif_id}{offset_down} = $offset_down;	
 		$int_align_info{$cluster}{$merge_level}{$motif_id}{strand} = $motif_strand;	
@@ -2384,9 +2350,6 @@ sub Merge_root_matrices() {
 	    }
 	    close $int_align_dataframe;	    
 	    unlink($main::outfile{int_align_offset});
-
-	    my $cluster_number = $folder;
-	    $cluster_number =~ s/\D+//;
 
 	    if (scalar(@level_motifs) == scalar(@folder_merged_matrices)+1) {
 
@@ -2401,31 +2364,17 @@ sub Merge_root_matrices() {
 		    
 		    ## Run the convert-matrix command to add the empty columns to the logos
 		    if ($strand eq "D") {
-			
-			## Add the empty columns
-			my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
-			$cmd .= " -from tf -to tf -return counts,consensus";
-			$cmd .= " -insert_col_left ".$offset_left;
-			$cmd .= " -insert_col_right ".$offset_right;
-			$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf";
-			&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
+			&Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");
 			
 		    } else {
-			
+    
 			## First convert the matrix to reverse complement 
 			my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
-			$cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
-			$cmd .= " -from tf -to tf -rc -return counts,consensus";
-			$cmd .= " -o ".$temp_mat;
-			&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+			&Rev_Comp_Motif($file_name, $temp_mat);
 			
 			## Then add the gaps
-			$cmd = $SCRIPTS."/convert-matrix -i ".$temp_mat;
-			$cmd .= " -from tf -to tf -return counts,consensus";
-			$cmd .= " -insert_col_left ".$offset_left;
-			$cmd .= " -insert_col_right ".$offset_right;
-			$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf";
-			&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+			&Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");
 			unlink($temp_mat);
 		    }
 		}
@@ -2459,20 +2408,20 @@ sub Merge_root_matrices() {
 		## Create branch-wise logos
 		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_shaved;
 		$cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
-		$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
+		$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level; 
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		
-		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo.png";
-		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo_rc.png";
+		$merged_consensuses_files{$merge_level}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_logo.png";
+		$merged_consensuses_files{$merge_level}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_logo_rc.png";
 		
-		$merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
+		$merged_consensuses_files{$merge_level}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/merged_logo_rc.png";
 		
-		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
+		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
 		
 		my $cons = `more $mat_file | grep '^DE'`;
 		chomp($cons);
 		$cons =~ s/^DE\s+//;
-		$merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
+		$merged_consensuses_files{$merge_level}{$cluster}{consensus} = $cons;
 
 	    } else {
 		next;
@@ -4311,5 +4260,34 @@ sub shave_matrix_low_IC_columns{
     $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_shave." -from tf -to tf -trim_col_left ".$shave_up." -trim_col_right ".$shave_dw." -return counts,consensus -o ".$shaved_matrix;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
     return $shaved_matrix;
+}
+
+####################################################
+## This function calls the program convert-matrix
+## to add empty columns to the selected file.
+sub Add_Empty_Col() {
+
+    my ($file_name, $offset_left, $offset_right, $return_fields, $out_file) = @_;
+
+    ## Add the empty columns
+    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
+    $cmd .= " -from tf -to tf -return ".$return_fields;
+    $cmd .= " -insert_col_left ".$offset_left;
+    $cmd .= " -insert_col_right ".$offset_right;
+    $cmd .= " -o ".$out_file;
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+}
+
+#########################################################
+## This function calls the program convert-matrix
+## to get the reverse complement of the input motif(s)
+sub Rev_Comp_Motif(){
+
+    my ($file_name, $out_file) = @_;
+
+    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
+    $cmd .= " -from tf -to tf -rc -return counts,consensus";
+    $cmd .= " -o ".$out_file;
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 }
 __END__
