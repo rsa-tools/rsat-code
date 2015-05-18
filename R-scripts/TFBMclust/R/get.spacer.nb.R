@@ -1,4 +1,4 @@
-#####################
+##############################################################
 ## Given a consensus string, count the number of gaps ("-")
 ## in the upstream and downstream ends. Return a list with
 ## these values.
@@ -14,7 +14,7 @@ get.spacer.nb <- function(consensus){
         spacer.dw <- nchar(unlist(strsplit(consensus, "\\w+"))[2])
     }
 
-    ## If there are gaps in the upstream en, but not in the downstream end, the downstream offset is zero
+    ## If there are gaps in the upstream but not in the downstream end, the downstream offset is zero
     if( (grepl("^-", consensus, perl = TRUE)) & !(grepl("-$", consensus, perl = TRUE))){
       spacer.up <- nchar(unlist(strsplit(consensus, "\\w+"))[1])
       spacer.dw <-  0
