@@ -164,7 +164,7 @@ print "<br><br>\n";
 
 ## Export the trees in Newick format
 ## By default trees are exported in JSON
-print $query->checkbox(-name=>'Newick',
+print $query->checkbox(-name=>'newick',
   		       -checked=>$default{newick},
   		       -label=>'');
 print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
