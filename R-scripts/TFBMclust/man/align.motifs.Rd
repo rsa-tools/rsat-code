@@ -3,7 +3,7 @@
 \title{ Align all the motifs, using as base the merge order of one hierarchical tree. }
 \description{ This function does a progressive alignment of the motifs following the order of a hierarchical clustering tree. Identifies if the aligned motis are: two leaves, one leaf and one cluster or two clusters. Export a \code{list} with the alignment of each motifs, if it is indicated returns a \code{list} with the alignment status on each level of the tree. Also, if it is indicated, return the information of each intermediate alignment at each level of the tree. }
 \usage{
-align.motifs(hclust.tree, desc.table, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), score = "Ncor", method = "average", metric = "Ncor", nodes.attributes = TRUE, intermediate.alignments = FALSE)
+align.motifs(hclust.tree, desc.table, compa.table, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", nodes.attributes = TRUE, intermediate.alignments = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -11,9 +11,8 @@ align.motifs(hclust.tree, desc.table, compa.table, thresholds = list(Ncor = 0.4,
   \item{desc.table}{ A table with the motifs attributes with at least 4 columns: \code{id}, \code{name},     \code{consensus} and \code{rc.consensus}.
 
   The ID must be unique, the name can be the same as the ID. }
-  \item{compa.table}{ A comparison matrix containing at least 4 columns: \code{ID1}, \code{ID2}, \code{strand} and one or more comparison scores between each pair of motifs. }
+  \item{compa.table}{ A comparison matrix containing at least 4 columns: \code{ID1}, \code{ID2}, \code{strand} and one or more comparison metrics between each pair of motifs. }
   \item{thresholds}{ An object of class \code{list} containing as fields (\code{names()}) the metrics names and storing the values of the respective metrics. Default: Ncor <= 0.4; cor <= 0.5; w <= 5 . }
-  \item{score}{ Column of the comparison matrix to be used as score to cluster the motifs. Default: Ncor. }
   \item{method}{ One agglomeration method used in the \code{hclust} function. Supported: average, complete, single. Default: average.
 
   \code{Average}: all the pairs of motifs in the two clusters are considered, for each metric in the threshold, the mean of all its values is calculated, the threshold value is evaluated on each metric, if the values of all metrics selected in the threshold are satisfied, the cluster can be aligned.
@@ -54,7 +53,7 @@ An object of class \code{list} with three elements:
 data(oct4chipseq)
 
 ## Collect the motif distance matrix
-oct4.dist <- build.distance.matrix(oct4.tfbm.compa, score = "Ncor")
+oct4.dist <- build.distance.matrix(oct4.tfbm.compa, metric = "Ncor")
 
 ## Save the matrix
 oct4.dist.matrix <- oct4.dist$matrix
@@ -63,7 +62,7 @@ oct4.dist.matrix <- oct4.dist$matrix
 tree <- hclust.motifs(oct4.dist.matrix, hclust.method = "average")
 
 ## Align the motifs
-oct4.alignment <- align.motifs(tree, oct4.tfbm.desc, oct4.tfbm.compa, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), score = "Ncor", method = "average", metric = "Ncor", nodes.attributes = TRUE, intermediate.alignments = TRUE)
+oct4.alignment <- align.motifs(tree, oct4.tfbm.desc, oct4.tfbm.compa, thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", nodes.attributes = TRUE, intermediate.alignments = TRUE)
 
 ## Save the alignment of all the motifs
 oct4.alignment.motifs <- oct4.alignment$motifs.alignment
