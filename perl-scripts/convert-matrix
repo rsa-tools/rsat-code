@@ -416,6 +416,7 @@ package main;
     ## Trim columns 
     if (($trim_col_left > 0) || ($trim_col_right > 0)) {
       $matrix->trim_columns($trim_col_left, $trim_col_right);
+      $matrix->calcConsensus();
     }
 
     ## Add flanks
