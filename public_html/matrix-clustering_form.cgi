@@ -31,7 +31,9 @@ $default{newick} = "";
 $default{quick} = "";
 $default{heatmap} = "CHECKED";
 $default{consensus} = "CHECKED";
-$default{labels} = "name";
+$default{label_id} = "CHECKED";
+$default{label_name} = "";
+$default{label_consensus} = "";
 $default{html_title} = "";
 $default{collection_label} = "";
 $default{'return_w'} = "CHECKED"; $default{'lth_w'} = 5;
@@ -167,7 +169,32 @@ print $query->checkbox(-name=>'Newick',
   		       -label=>'');
 print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
 print "<br><br>\n";
-#print "<HR width=550 align=left>\n";
+print "<HR width=550 align=left>\n";
+
+####################################
+## Labels displayed in logo trees
+print "<h2>", "Labels displayed in the logo tree", ,"</h2>";
+
+## Label: id
+print $query->checkbox(-name=>'label_id',
+  		       -checked=>$default{label_id},
+  		       -label=>'');
+print "&nbsp;<A'><B>Display the motif ID at the branches of the logo tree.</B></A>";
+print "<br><br>\n";
+
+## Label: name
+print $query->checkbox(-name=>'label_name',
+  		       -checked=>$default{label_name},
+  		       -label=>'');
+print "&nbsp;<A'><B>Display the motif name at the branches of the logo tree.</B></A>";
+print "<br><br>\n";
+
+## Label: consensus
+print $query->checkbox(-name=>'label_consensus',
+  		       -checked=>$default{label_consensus},
+  		       -label=>'');
+print "&nbsp;<A'><B>Display the consensus of the motif at the branches of the logo tree.</B></A>";
+print "<br><br>\n";
 
 
 ################################################################
