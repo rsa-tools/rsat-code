@@ -177,8 +177,30 @@ if ($quick) {
     $parameters .= " -quick";
 }
 
-## Insert lables
-$parameters .= " -label_in_tree name ";
+## Insert labels
+my @labs = ();
+my $lab = "";
+$label_id = $query->param('label_id');
+$label_name = $query->param('label_name');
+$label_consensus = $query->param('label_consensus');
+
+
+if($label_name){
+    push(@labs, $label_name);
+}
+
+if($label_id){
+    push(@labs, $label_id);
+}
+
+if($label_consensus){
+    push(@labs, $label_consensus);
+}
+
+$lab = join(",", @labs);
+
+
+$parameters .= " -label_in_tree ".$lab;
 
 ## Insert fields to return 
 $parameters .= " ".$return_fields." ";
