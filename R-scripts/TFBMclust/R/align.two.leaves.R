@@ -9,7 +9,8 @@ align.two.leaves <- function(child1,
                              hclust.method = "average",
                              metric = "Ncor",
                              hclust.tree,
-                             nodes.attributes = TRUE){
+                             nodes.attributes = TRUE,
+                             motif.at.tree.level = motif.at.tree.level){
 
   ## Example
 #   child1 <- -1
@@ -156,7 +157,7 @@ align.two.leaves <- function(child1,
     motifs.info[[id2]][["spacer.up"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$up.spacer
     motifs.info[[id2]][["spacer.dw"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$dw.spacer
 
-    motifs.info.temp <- fill.downstream(get.id(leaves.per.node(hclust.tree)[[merge.level]], desc.table), motifs.info)
+    motifs.info.temp <- fill.downstream(get.id(motif.at.tree.level[[merge.level]], desc.table), motifs.info)
     motifs.info[names(motifs.info.temp)] <<- motifs.info.temp[names(motifs.info.temp)]
   }
 }
