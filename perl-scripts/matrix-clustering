@@ -328,6 +328,7 @@ package main;
   local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
   $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
   $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
+  $main::param{matrix_compa_score} = "Ncor";
   $param{archive_format} = "zip";
   $param{progressive_synthesis} = 1;
   $param{title} = "matrix-clustering results";
