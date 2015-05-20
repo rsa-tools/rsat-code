@@ -203,9 +203,6 @@ sub readFromFile {
 
 	$matrix->force_attribute("accession", $prefix_id);
 	$matrix->force_attribute("AC", $prefix_id);
-	$matrix->force_attribute("name", $prefix_id);
-	$matrix->force_attribute("id", $prefix_id);
-
       }
 
       ## Check that each matrix contains at least one row and one col
