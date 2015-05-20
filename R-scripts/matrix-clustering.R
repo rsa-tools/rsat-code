@@ -73,11 +73,11 @@ if (length(args >= 1)) {
 check.param()
 
 
-# #####################################
-# ## Example ##########################
-#
-# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.6/peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
-# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.6/peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
+#####################################
+## Example for Debugging ############
+
+# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/jaspar_core_insects_2015_03/average_linkage/Ncor0.4_cor0.6/jaspar_core_insects_2015_03_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
+# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/jaspar_core_insects_2015_03/average_linkage/Ncor0.4_cor0.6/jaspar_core_insects_2015_03_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
