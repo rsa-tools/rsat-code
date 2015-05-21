@@ -2,14 +2,23 @@
 ## Align two clusters: align the two cluster, in some cases is
 ## necessary invert the alignment; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
-align.two.clusters <- function(child1, child2, desc.table, compa.table, score = "Ncor", thresholds = list(Ncor = 0.4, cor = 0.6, w = 5), method = "average", metric = "Ncor", hclust.tree, nodes.attributes = TRUE){
+align.two.clusters <- function(child1,
+                               child2,
+                               desc.table,
+                               compa.table,
+                               thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
+                               method = "average",
+                               metric = "Ncor",
+                               hclust.tree,
+                               nodes.attributes = TRUE,
+                               motif.at.tree.level = motif.at.tree.level){
 
   ## Identify the merge level and the node numbers of each cluster
   merge.level <- which(hclust.tree$merge == child1)
   N1 <- abs(min(child1, child2))
   N2 <- abs(max(child1, child2))
-  n1 <- leaves.per.node(tree)[[N1]]
-  n2 <- leaves.per.node(tree)[[N2]]
+  n1 <- motif.at.tree.level[[N1]]
+  n2 <- motif.at.tree.level[[N2]]
 
   ## Get the id of each node on the description table
   ids1.hclust <- get.id(n1, desc.table)
@@ -17,7 +26,12 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
 
   ## Check the if the node shall be aligned
   aligned.motif.flag <- 0
-  aligned.motif.flag <- alignment.test(ids1.hclust, ids2.hclust, compa.table, thresholds, hclust.method = method, hclust.metric = metric)
+  aligned.motif.flag <- check.alignment(ids1.hclust,
+                                        ids2.hclust,
+                                        compa.table,
+                                        thresholds,
+                                        hclust.method = method,
+                                        metric = metric)
 
   ## Fill the attributes table
   if(nodes.attributes == TRUE){
@@ -43,7 +57,7 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
 
     ## Find the central motif of the cluster
     ## Get the id of each node on the description table
-    central.motifs <- closest.or.farthest.motifs.ids(ids1.hclust, ids2.hclust, compa.table, score = score, closest = TRUE)
+    central.motifs <- closest.or.farthest.motifs.ids(ids1.hclust, ids2.hclust, compa.table, metric = metric, closest = TRUE)
     id1 <- central.motifs[1]
     id2 <- central.motifs[2]
 
@@ -98,15 +112,15 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
       if(prev.strand.1 == "R" && prev.strand.2 == "R"){
         case <- 5
 
-      ## Case 6: current comparison strand = 'R', strand of motif 1 = 'R', strand of motif 2 = 'D'
+        ## Case 6: current comparison strand = 'R', strand of motif 1 = 'R', strand of motif 2 = 'D'
       } else if(prev.strand.1 == "R" && prev.strand.2 == "D"){
         case <- 6
 
-      ## Case 7: current comparison strand = 'R', strand of motif 1 = 'D', strand of motif 2 = 'R'
+        ## Case 7: current comparison strand = 'R', strand of motif 1 = 'D', strand of motif 2 = 'R'
       } else if(prev.strand.1 == "D" && prev.strand.2 == "R"){
         case <- 7
 
-      ## Case 8: current comparison strand = 'R', strand of motif 1 = 'D', strand of motif 2 = 'D'
+        ## Case 8: current comparison strand = 'R', strand of motif 1 = 'D', strand of motif 2 = 'D'
       } else if(prev.strand.1 == "D" && prev.strand.2 == "D"){
         case <- 8
       }
@@ -137,7 +151,7 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
     ## According to the cases, reset the offset
     if(case %in% c(1,6)){
       offset <- nchar(get.consensus(id1, desc.table, RC = FALSE)) - nchar(get.consensus(id2, desc.table, RC = FALSE)) - offset + (cluster.1.spacer - cluster.2.spacer)
-      } else if(case %in% c(2,3,4,5,7,8)){
+    } else if(case %in% c(2,3,4,5,7,8)){
       offset <- offset + (cluster.1.spacer - cluster.2.spacer)
     }
 
@@ -167,7 +181,7 @@ align.two.clusters <- function(child1, child2, desc.table, compa.table, score = 
 
     ## Fill the downstream end
     motifs.info[names(temp.motifs.info)] <<- temp.motifs.info[names(temp.motifs.info)]
-    temp.motifs.info <- fill.downstream(get.id(leaves.per.node(tree)[[merge.level]], desc.table), motifs.info)
+    temp.motifs.info <- fill.downstream(get.id(motif.at.tree.level[[merge.level]], desc.table), motifs.info)
     motifs.info[names(temp.motifs.info)] <<- temp.motifs.info[names(temp.motifs.info)]
 
   }

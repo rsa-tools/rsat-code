@@ -1,7 +1,7 @@
 ####################################################
 ## Draw a heatmap usig a particular allgomeration
 ## method.
-draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, alignment.list, score = "Ncor", tree.pos = "column"){
+draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, alignment.list, metric = "Ncor", tree.pos = "column"){
 
   ################################################################
   ## Blue -> White -> Red palette
@@ -16,12 +16,12 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   metric.definition <- NULL
   ## If required, convert similarities to distances
   ## Similarity sores bounded to 1
-  if ((score == "Ncor")
-      || (score=="cor")
-      || (score=="logocor")
-      || (score=="Nlocogor")
-      || (score=="Icor")
-      || (score=="NIcor")
+  if ((metric == "Ncor")
+      || (metric=="cor")
+      || (metric=="logocor")
+      || (metric=="Nlocogor")
+      || (metric=="Icor")
+      || (metric=="NIcor")
   ) {
     ## cor       Pearson correlation (computed on residue occurrences in aligned columns)
     ## Ncor   		Relative width-normalized Pearson correlation
@@ -31,20 +31,20 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
     ## NIcor 			Relative width-normalized Icor
     metric.definition <- "correlation"
 
-  } else if ((score == "logoDP")
-             || (score == "cov")) {
+  } else if ((metric == "logoDP")
+             || (metric == "cov")) {
     ## logoDP 			dot product of sequence logos
     ## cov 			covariance between residues in aligned columns
 
-    stop("logoDP and cov scores are not supported yet")
+    stop("logoDP and cov metrics are not supported yet")
 
-  } else if ((score == "dEucl")
-             || (score == "NdEucl")
-             || (score == "NdEucl")
-             || (score == "NsEucl")
-             || (score == "SSD")
-             || (score == "SW")
-             || (score == "NSW")
+  } else if ((metric == "dEucl")
+             || (metric == "NdEucl")
+             || (metric == "NdEucl")
+             || (metric == "NsEucl")
+             || (metric == "SSD")
+             || (metric == "SW")
+             || (metric == "NSW")
   ) {
     ## dEucl 			Euclidian distance between residue occurrences in aligned columns
     ## NdEucl 			Relative width-normalized dEucl
@@ -55,12 +55,12 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
 
     metric.definition <- "distance"
 
-  } else if (score == "match_rank") {
+  } else if (metric == "match_rank") {
     ## match_rank rank of current match among all sorted matches
-    stop("match_rank score is not supported yet")
+    stop("match_rank metric is not supported yet")
 
   } else {
-    stop(paste(score, "is not a valid score", sep="\t"))
+    stop(paste(metric, "is not a valid metric", sep="\t"))
   }
 
 
@@ -109,29 +109,14 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
 
 
   ## Calculate the bottom border
-  rigth <- round(170/font.size + (font.size/2 * 0.001), digits = 2)
-  bottom <- round(190/font.size + (font.size/2 * 0.001), digits = 2)
-#    rigth <- round(136, digits = 2)
-#    bottom <- round(136, digits = 2)
-
-  par(oma=c(bottom,0.5,0.5,rigth), family="mono")
+  par(oma=c(2,0.3,0.5,2), family="mono")
 
   # Get the aligned consensuses, which will be used as the Row names
   consensus <-sapply(colnames(dist.table), function(x){
-    as.vector(alignment.list[[x]][["consensus_d"]])
+    as.vector(alignment.list[[x]][["name"]])
   })
   consensus <- as.vector(consensus)
-
-  # Get the aligned consensuses, which will be used as the Row names
-  columns.heatmap <- sapply(colnames(dist.table), function(x){
-    if(x == alignment.list[[x]][["name"]]){
-      as.vector(x)
-    } else{
-      paste(x, alignment.list[[x]][["name"]], sep = "  ")
-    }
-  })
-  columns.heatmap <- as.vector(columns.heatmap)
-
+  columns.heatmap <- consensus
 
   ## Draw the heatmap
   heatmap.2(dist.table,
@@ -156,9 +141,9 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
           labRow = consensus,
           labCol = columns.heatmap,
 
-          ## Set the margins
-          cexRow = 20/font.size + 0.1,
-          cexCol = 20/font.size + 0.02,
+          ## Set the font size
+          cexRow = 11/font.size + 0.075,
+          cexCol = 11/font.size + 0.075,
 
           ## Set the key with the values
           key = TRUE,

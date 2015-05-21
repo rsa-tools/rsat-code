@@ -7,7 +7,9 @@
 ##
 ## Usage: generate a vector with the list of leaves (string-formatted)
 ## per internal node
-##   treenodes <- leaves.per.node(tree) ## The input tre must be an hclust result
+##   treenodes <- leaves.per.node(tree)
+#
+## The input tree must be an hclust result
 ##
 ## Then to get a vector with the leaves associated to a given internal
 ## node (e.g. node 4):
@@ -22,7 +24,7 @@ leaves.per.node <- function (tree) {
     branch2 <- merge.table[i, 2]
 
     ## Depending on whether the left branch points to a leave or an
-    ## iternal nodes, collect a single leave or the pre-defined list
+    ## internal nodes, collect a single leave or the pre-defined list
     ## of leaves from this internal node
     if (branch1 < 0) {
       nodes1 <- -branch1 ## branch one only contains one leave
@@ -31,10 +33,10 @@ leaves.per.node <- function (tree) {
     }
 
     ## Depending on whether the right branch points to a leave or an
-    ## iternal nodes, collect a single leave or the pre-defined list
+    ## internal nodes, collect a single leave or the pre-defined list
     ## of leaves from this internal node
     if (branch2 < 0) {
-      nodes2 <- -branch2 ## branch one only contains one leave
+      nodes2 <- -branch2 ## branch two only contains one leave
     } else {
       nodes2 <- leave.lists[branch2]
     }

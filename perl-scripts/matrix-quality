@@ -250,6 +250,7 @@ use RSAT::matrix;
 use RSAT::MatrixReader;
 use RSAT::MarkovModel;
 use Data::Dumper;
+use List::MoreUtils qw(uniq);
 
 ################################################################
 ## Main package
@@ -300,7 +301,7 @@ package main;
     $main::verbose = 0;
     $main::out = STDOUT;
     $main::html_title="";
-    @main::plot_seq_type=();
+    %main::plot_seq_type=();
 
     #additional plot types
     $main::plottypes="";
@@ -368,12 +369,21 @@ package main;
     ################################################################
     ## Additional plots
     $supported_task{plot} = 0 unless $task{plot};
-    my @add_plots= split (/,/,$main::plottypes);
+    my @aux_add_plots=values(%main::plot_seq_type);
+    my @aux2_add_plots=();
+    
+    foreach(@aux_add_plots){
+	push(@aux2_add_plots,split(/,/,$_));	
+    }
+    my @add_plots=uniq (@aux2_add_plots);
+    #my @add_plots= split (/,/,$main::plottypes);
+    
     foreach (@add_plots){
+	print "$_\n";
 	&RSAT::error::FatalError("The requested additional plot is not available", "$_") unless ($main::supported_plot_types{$_});
 	$main::plot_types{$_}=1;
     }
-
+    #die;
     ## Class interval for classfreq
     $class_interval = 1/(10**$decimals);
 
@@ -495,7 +505,7 @@ package main;
     &RSAT::message::Info("Image formats for logos: ".join (",", sort(@logo_formats))) if ($main::verbose >= 2);
 
      ## NWD
-    $task{plot}=1 if (scalar(@main::plot_seq_type));
+    $task{plot}=1 if (scalar(keys %main::plot_seq_type));
     # unless ( ((scalar(@main::plot_seq_type))&& !($task{plot})) || (!(scalar(@main::plot_seq_type))&& ($task{plot})) ){
     # 	&RSAT::error::FatalError("For drawing additional plots you have to specify al least one seq_type and plot_type");
     # }
@@ -581,7 +591,7 @@ package main;
       local @distrib_files=(); ## check something named  @main::distrib_files
       local @temporary_distrib_files=();
       local @local_seq_types= @main::seq_types; # seq_types are all the sequences where the proceadure is performed, for each matrix the matrix_sites are added.
-      local @local_plot_seq_type=@main::plot_seq_type;
+      local @local_plot_seq_type=uniq (keys (%main::plot_seq_type));
       ## Redefine the matrix name (in case it would have been modified above)
       $matrix->set_attribute("pseudo", $pseudo_counts);
       $matrix->set_attribute("decimals", $decimals);
@@ -887,8 +897,14 @@ package main;
       if ($task{plot}) {
 	  foreach (@local_plot_seq_type) {
 	      my $st= $_;
-	      my $nwd_st= &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab",$st) if ($main::plot_types{nwd}) ;	      
-	      my $occ_proba_st=&Calculate_OCC ($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options) if  ($main::plot_types{occ_proba})   ;
+	      #my $nwd_st= &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab",$st) if ($main::plot_types{nwd}) ;
+
+	      #die "sequence". $st. "+++" . $main::plot_seq_type{$st} ;
+	      #die "BOOM";
+		  
+	      my $nwd_st= &Calculate_NWD ($m_width,$outfile{distrib_compa}.".tab",$st) if ($main::plot_seq_type{$st} =~/nwd/) ;
+	      
+	      my $occ_proba_st=&Calculate_OCC ($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options) if  ($main::plot_seq_type{$st} =~/occ_proba/)   ;
 	      push ( @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }, $nwd_st);
 	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }, $occ_proba_st);
 	      push ( @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }, $nwd_st);
@@ -899,11 +915,17 @@ package main;
 	  #Draw NWD for matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 
 	  if ($main::plot_types{nwd}){
-	      ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
+	      ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
 	      push (@files_to_index,'matrix_nwd_table');
 	  }
 	  
 	 
+	  #Draw NWD for matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
+
+	  if ($main::plot_types{occ_proba}){
+	      ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) ;
+	      push (@files_to_index,'matrix_occ_proba_table');
+	  }
 
 
 
@@ -913,10 +935,11 @@ package main;
       ################
       #Calculate the occ_proba
       &RSAT::message::TimeWarn("Calculating occ probability distribution") if ($main::verbose >= 2);
-      foreach (@main::plot_seq_type) {
-	  my $st= $_;
+      ## This is not doing anything ALE:20150430
+      # foreach (@main::plot_seq_type) {
+      # 	  my $st= $_;
 	  
-      }
+      #}
       ################################################################
       ## Synthesis results in a HTML file
       if ($task{synthesis}) {
@@ -968,9 +991,11 @@ package main;
 	&RSAT::message::Info("Matrix-specific matrix synthesis file", $outfile{matrix_synthesis});
       }
     }
-     foreach (@main::plot_seq_type) {
+    foreach (uniq(keys(%main::plot_seq_type))) {
+	#die "BOOM";
 	 my $st= $_;
-	 ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) if ($main::plot_types{nwd}) ;
+	 ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/nwd/) ;
+	 ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/occ_proba_proba/) ;	 
     }
 
     ################################################################
@@ -1635,8 +1660,15 @@ Usage:
 
 =cut
 	} elsif ($arg eq "-plot") {
-	  push (@main::plot_seq_type, shift(@arguments));
-	  $main::plottypes= shift(@arguments);
+	  
+          $seqs=shift(@arguments);
+          $plot=shift(@arguments);
+          if($main::plot_seq_type{$seqs}){
+             $main::plot_seq_type{$seqs}.=",".$plot;
+          }else{
+            $main::plot_seq_type{$seqs}=$plot;
+          }
+	  #$main::plottypes.=shift(@arguments).",";
 
 
  ## Archive
@@ -2478,8 +2510,7 @@ sub CompareDistrib {
     &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 2);
   }
   if ($task{graphs}) {
-    &RSAT::message::TimeWarn("Generating comparison graphs")
-      if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Generating comparison graphs") if ($main::verbose >= 2);
 
     ## Generate the graphs for each image format
     foreach my $image_format (@image_formats) {
@@ -2502,7 +2533,7 @@ sub CompareDistrib {
 
       ################################################################
       ## Draw a graph with all the decreasing cumulative distributions
-      my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+      my $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
 
       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
 
@@ -2525,7 +2556,7 @@ sub CompareDistrib {
       ################################################################
       ## Draw a graph with all the decreasing cumulative distributions
       ## and a logarithmic Y axis
-      $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+      $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
       $XYgraph_cmd .= " -ymax 1 -ylog 10";
@@ -2560,7 +2591,7 @@ sub CompareDistrib {
 
       $ycols = join ",", 2..(scalar(@distrib_files)+2);
 #      $large_graph_options =~ s/-xsize 800/-xsize 400/;
-      $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+      $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
       $XYgraph_cmd .= " -xcol ".$ref_column;
       $XYgraph_cmd .= " -ycol ".$ycols;
       $XYgraph_cmd .= " -ygstep1 0.1 -ygstep2 0.02";
@@ -2597,6 +2628,7 @@ sub CompareDistrib {
       ## visible on the non-log representations.
       $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
       $roc_file_opt =~ s/_roc/_roc_xlog/;
+     
       &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xlog.".$image_format) if ($main::verbose >= 2);
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
@@ -2626,6 +2658,7 @@ sub CompareDistrib {
 	}
       }
 
+    
       unless ($no_cv) {
 	if ($task{theor_cv}) {
 
@@ -2650,7 +2683,7 @@ sub CompareDistrib {
 
 	  ################################################################
 	  ## Draw a graph with all the decreasing cumulative distributions
-	  my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+	  my $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
 	  my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
@@ -2662,7 +2695,7 @@ sub CompareDistrib {
 	  ################################################################
 	  ## Draw a graph with all the decreasing cumulative distributions
 	  ## and a logarithmic Y axis
-	  $XYgraph_cmd = $SCRIPTS."/XYgraph ".$all_graph_options;
+	  $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot".$all_graph_options;
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymax 1 -ylog 10";
 	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
@@ -2893,7 +2926,7 @@ sub Calculate_NWD {
 
 
 ################################################################
-## Calculate NWD
+## Calculate OCC
 ################################################################
 ## Read matrix quality file and calculate the NWD curve
 
@@ -2916,7 +2949,7 @@ sub Calculate_OCC {
     #-decimals 1 -bg_pseudo 0.01 -n score -lth score -5 \
     
     local $matrix_scan_cmd = "";
-    
+    local $decimals_occ=0;
     $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".$main::verbose;
     #    $matrix_scan_cmd .= " -quick"; ## Run in quick mode if possible
     #    $matrix_scan_cmd .= " -m ".$matrix_file;
@@ -2931,13 +2964,13 @@ sub Calculate_OCC {
     $matrix_scan_cmd .= " -pseudo ".$main::pseudo_counts; 
     $matrix_scan_cmd .= " -2str ";
     $matrix_scan_cmd .= "  -return distrib  -return occ_proba ";
-    $matrix_scan_cmd .= " -decimals ".$decimals;
+    $matrix_scan_cmd .= " -decimals ".$decimals_occ;
     $matrix_scan_cmd .= " -bgfile ".$outfile{bg_file_inclusive};
     
     $matrix_scan_cmd .= " > ".  $outfile{'occ_proba_'.$seq_type};
 
     &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-    &RSAT::message::Info("Scanning to compute occurence probability", $matrix_scan_cmd) if ($main::verbose >= 2);
+    &RSAT::message::Info("Scanning to compute occurence probability for OCC plots", $matrix_scan_cmd) if ($main::verbose >= 2);
     return ($outfile{'occ_proba_'.$seq_type});
 }
 
@@ -2971,18 +3004,71 @@ sub Draw_NWD{
    my $nwd_xygrpah_file=$nwd_outfile_prefix."_compare-scores.";
    
    foreach my $image_format (@image_formats) {
-       my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph " ;
+       my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph -r_plot " ;
        $XYgraph_nwd_cmd .= " -i ".  $nwd_compare_scores_file ." ";
        $XYgraph_nwd_cmd .= " -format ". $image_format  ." " ;
        $XYgraph_nwd_cmd .= " -xcol 1  -ycol ".$ycols;
        $XYgraph_nwd_cmd .= " -lines -xlog " ;
-       $XYgraph_nwd_cmd .= " -yleg1 'NWD' -xleg1 'Pvalue' ";
+       $XYgraph_nwd_cmd .= " -yleg1 'NWD' -xleg1 'log10(Pvalue)' ";
        $XYgraph_nwd_cmd .= " -legend -pointsize 0 ";
        $XYgraph_nwd_cmd .= " -o ". $nwd_xygrpah_file.$image_format." ";
        &doit($XYgraph_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
        &RSAT::message::Info(" Drawing NWD  curves ",  $XYgraph_nwd_cmd) if ($main::verbose >= 0);   
+       
    }
    return($nwd_compare_scores_file, $nwd_xygrpah_file )
+   
+
+
+}
+
+################
+## Subroutine to draw occurrence significance plot comparing distribitions across files: by motif or by sequence
+sub Draw_OCC{
+   my ($prefix,@occ_files)= @_;
+
+
+   my $occ_input_files =" -i ". join (" -i " ,@occ_files)." ";
+   my $ic_column= 7;
+   my $sc_column= 11;
+   my $occ_outfile_prefix= $prefix ;
+   my $occ_compare_scores_file=$occ_outfile_prefix."_compare-scores.tab";
+
+   my $compare_occ_cmd =  $SCRIPTS."/compare-scores " ;
+   $compare_occ_cmd .= " ". $occ_input_files ." " ;
+   $compare_occ_cmd .= " -ic ". $ic_column . " " ;
+   $compare_occ_cmd .= " -sc ". $sc_column . " ";
+   $compare_occ_cmd .= " -numeric  -basename ";
+   $compare_occ_cmd .= " -o ".  $occ_compare_scores_file . " ";
+   &doit($compare_occ_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+   &RSAT::message::Info("Merging OCC files with compare-scores ", $compare_occ_cmd ) if ($main::verbose >= 0);
+
+
+   my $occ_xygrpah_file=$occ_outfile_prefix."_compare-scores.";
+
+   my $ycols = "";
+   if ((scalar(@occ_files)>=2)){
+       $ycols = join ",", 2..(scalar(@occ_files)+1);
+   }else{
+       $ycols = 2;
+   }   
+   
+   
+   foreach my $image_format (@image_formats) {
+       my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph -r_plot " ;
+       $XYgraph_occ_cmd .= " -i ".  $occ_compare_scores_file ." ";
+       $XYgraph_occ_cmd .= " -format ". $image_format  ." " ;
+       $XYgraph_occ_cmd .= " -xcol 1  -ycol ".$ycols;
+       $XYgraph_occ_cmd .= " -lines -xlog 10 " ;
+       $XYgraph_occ_cmd .= " -yleg1 'Binomial significance of hit number (OCC)' -xleg1 'log10(Score Pvalue)' ";
+       $XYgraph_occ_cmd .= " -legend -pointsize 0 ";
+       $XYgraph_occ_cmd .= " -hline red 100 -hline violet 0 -ysize 400 -force_lines "; ## Parammeters suggested by Morgane      
+       $XYgraph_occ_cmd .= " -o ". $occ_xygrpah_file.$image_format." ";
+       &doit($XYgraph_occ_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+       &RSAT::message::Info(" Drawing OCC  curves ",  $XYgraph_occ_cmd) if ($main::verbose >= 0);   
+       ##die "BOOM";
+   }
+   return($occ_compare_scores_file, $occ_xygrpah_file )
    
 
 
@@ -3090,6 +3176,11 @@ sub GenerateHTMLReport {
 	    print $synthesis_per_matrix "\n<h3>NWD curve</h3>\n";
 	    &index_one_image($synthesis_per_matrix,$outfile{matrix_nwd_plots}."png", 'height=120'); 
 	}
+	if ($main::plot_types{nwd}){
+	    print $synthesis_per_matrix "\n<h3>OCC curve</h3>\n";
+	    &index_one_image($synthesis_per_matrix,$outfile{matrix_occ_proba_plots}."png", 'height=120'); 
+	}
+
     }
 
 
@@ -3222,7 +3313,7 @@ sub CloseGeneralHTMLReport{
 
     ## Draw NWD curve for al matrices for each required set of sequences
 
-    if ($task{plot}) {
+    if ($task{plot} && $task{synthesis}) {
 	if ($main::plot_types{nwd}){
 	    print $synthesis_general "\n<h3>NWD curves </h3>\n";
 	    print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
@@ -3230,7 +3321,7 @@ sub CloseGeneralHTMLReport{
 	    print  $synthesis_general "<th>Plot</th>" ;
 	    print  $synthesis_general "<th>Table</th>";
 	    print  $synthesis_general "</tr>";
-	    foreach (@main::plot_seq_type) {
+	    foreach (uniq(keys(%main::plot_seq_type))) {
 		my $st= $_;
 		print  $synthesis_general "<tr>";
 		my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_nwd_plot"}."png");
@@ -3242,6 +3333,26 @@ sub CloseGeneralHTMLReport{
 	    }
 	    print  $synthesis_general   "</table>"; 
 	}
+	if ($main::plot_types{occ_proba}){
+	    print $synthesis_general "\n<h3>OCC curves </h3>\n";
+	    print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
+	    print  $synthesis_general "<tr>";
+	    print  $synthesis_general "<th>Plot</th>" ;
+	    print  $synthesis_general "<th>Table</th>";
+	    print  $synthesis_general "</tr>";
+	    foreach (uniq(keys(%main::plot_seq_type))) {
+		my $st= $_;
+		print  $synthesis_general "<tr>";
+		my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_occ_proba_plot"}."png");
+		print $synthesis_general  "<td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n"."</td>";
+		my ($link2, $shared_path2)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_occ_proba_table"});
+		print $synthesis_general  "<td><a href='",$link2,"'>", "report","</a></td>\n";
+		print  $synthesis_general "</tr>";
+
+	    }
+	    print  $synthesis_general   "</table>"; 
+	}
+	
     }
     print $synthesis_general "</pre>";
     ## Close the index file

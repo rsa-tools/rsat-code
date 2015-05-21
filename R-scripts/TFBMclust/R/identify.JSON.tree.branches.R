@@ -5,7 +5,7 @@
 ## branch consensuses (in the perl code)
 identify.JSON.tree.branches <- function(tree, desc.table){
 
-  ## Change the labels for the numbers in the indescripton table
+  ## Change the labels for the numbers in the descripton table
   tree$labels <- NULL
   tree$labels <- as.vector(desc.table$n)
 
@@ -32,7 +32,7 @@ identify.JSON.tree.branches <- function(tree, desc.table){
 
 
   ## A dataframe will be created using this variables (col1 and col2)
-  ## They are created aoutside the loops and are treated as global variables
+  ## They are created outside the loops and are treated as global variables
   col1 <- NULL
   col2 <- NULL
   up.pos <- 1
@@ -40,15 +40,12 @@ identify.JSON.tree.branches <- function(tree, desc.table){
 
     ## Counter of condition (i == j)
     cond.counter <<- 0
-
-
     col1 <<- append(col1, j)
-
     up.count <- 0
     down.count <- 0
     sapply(symbol[j]:length(copy.Json.vector) ,function(i){
 
-      ## Here the code search for the [] to in order to identify the
+      ## Here the code search for the [] in order to identify the
       ## subgroups and then can re-name them similarly to the hclust object
       if(copy.Json.vector[i] == "["){
         up.count <<- up.count + 1
