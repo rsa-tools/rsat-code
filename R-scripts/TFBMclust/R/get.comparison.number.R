@@ -1,6 +1,6 @@
-##############################################################
-## Given two sets of Ids, return the comparison numbers for
-## all the pairs of the leaves belonging the two clusters
+############################################################################
+## Given two sets of IDs (clusters), return all the comparison numbers
+## between all the pairs of the leaves corresponding to the two clusters
 get.comparison.number <- function(id1, id2, compa.table){
 
   compa.numbers <- sapply(id2, function(X){

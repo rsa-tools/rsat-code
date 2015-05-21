@@ -1,9 +1,9 @@
-\name{alignment.test}
-\alias{alignment.test}
+\name{check.alignment}
+\alias{check.alignment}
 \title{ Using a given agglomeration method, checks if the clusters will be aligned. }
 \description{ Given a list with the metrics names and its threshold vakues,  evaluates if the clusters will be aligned according an agglomeration method (average, complete, single) selected by the user. The function considers if the threshold metrics are correlation or distances. }
 \usage{
-alignment.test.method.average(id1, id2, compa.table, thresholds, hclust.method, hclust.metric)
+check.alignment(id1, id2, compa.table, thresholds, hclust.method, hclust.metric)
 }
 
 \arguments{
@@ -63,13 +63,13 @@ IDs1 <- get.id(leaves.per.level[[10]], oct4.tfbm.desc)
 IDs2 <- get.id(leaves.per.level[[12]], oct4.tfbm.desc)
 
 ## Check if these clusters should be aligned with the average method
-alignment.test(IDs1, IDs2, compa.table, thresholds, hclust.method = "average", hclust.metric = "Ncor")
+check.alignment(IDs1, IDs2, compa.table, thresholds, hclust.method = "average", hclust.metric = "Ncor")
 
 ## Check if these clusters should be aligned with the complete method
-alignment.test(IDs1, IDs2, compa.table, thresholds, hclust.method = "complete", hclust.metric = "Ncor")
+check.alignment(IDs1, IDs2, compa.table, thresholds, hclust.method = "complete", hclust.metric = "Ncor")
 
 ## Check if these clusters should be aligned with the single method
-alignment.test(IDs1, IDs2, compa.table, thresholds, hclust.method = "single", hclust.metric = "Ncor")
+check.alignment(IDs1, IDs2, compa.table, thresholds, hclust.method = "single", hclust.metric = "Ncor")
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

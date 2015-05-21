@@ -1,22 +1,19 @@
-\name{define.clusters.bottom.up}
-\alias{define.clusters.bottom.up}
+\name{find.clusters}
+\alias{find.clusters}
 \title{ Traverse the tree in a bottom-up approach to separate the motifs clusters. }
 \description{ This function takes information from the status of the alignment (aligned or non-aligned) on each merge step of one object \code{tree$merge}, traverse the tree in a bottom-up approach to group the motfis in clusters. Return the IDs of the motifs on the defined cluster. }
 \usage{
-define.clusters.bottom.up(attributes.list, tree, desc.table)
+find.clusters(attributes.list, tree)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{attributes.list}{ An object of class \code{list} with the information of each agglomeration step of the hierarchcial tree. This object is the output of the function align.motifs() . }
   \item{tree}{ One object of class \code{hclust} with the analyzis of the input motifs. }
-  \item{desc.table}{ A table with the motifs attributes with at least 4 columns: \code{id}, \code{name}, \code{consensus} and \code{rc.consensus}.
-
-  The ID must be unique, the name can be the same as the ID. }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
-\value{ Returns an object of class \code{list} where each element correspond to the IDs of the cluster defined using the bottom-up approach. }
+\value{ Returns an object of class \code{list} where each element correspond to the number of the cluster defined using the bottom-up approach. }
 \references{
 %% ~put references to the literature/web site here ~
 }
@@ -52,7 +49,7 @@ oct4.alignment <- align.motifs(tree, oct4.tfbm.desc, oct4.tfbm.compa, thresholds
 oct4.alignment.attributes <- oct4.alignment$node.attributes
 
 ## Find the clusters
-clusters.oct4 <- define.clusters.bottom.up(oct4.alignment.attributes, tree, oct4.tfbm.desc)
+clusters.oct4 <- find.clusters(oct4.alignment.attributes, tree)
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

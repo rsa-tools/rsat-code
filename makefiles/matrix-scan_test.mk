@@ -46,17 +46,17 @@ scan_eve:
 	@echo "	${SITES}.ft"
 
 ## Select a subset of matrices specified by their name
-JASPAR=${RSAT}/public_html/data/motif_databases/JASPAR/jaspar_core_insects_2013-11.tf
+JASPAR=${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_insects_2013-11.tf
 scan_selected_names:
 	${MAKE} scan_eve OPT='-matrix_name hb,eve' SUFFIX=_selected_names_hb_eve
 
 ## Select a subset of JASPAR matrices specified by their accession
-JASPAR=${RSAT}/public_html/data/motif_databases/JASPAR/jaspar_core_insects_2013-11.tf
+JASPAR=${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_insects_2013-11.tf
 scan_jaspar_selected_acs:
 	${MAKE} scan_eve MATRIX_FILE=${JASPAR}  OPT='-matrix_ac MA0049.1,MA0221.1' SUFFIX=_jaspar_selected_ids_hb_eve
 
 ## Select a subset of JASPAR matrices specified by their name
-JASPAR=${RSAT}/public_html/data/motif_databases/JASPAR/jaspar_core_insects_2013-11.tf
+JASPAR=${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_insects_2013-11.tf
 scan_jaspar_selected_names:
 	${MAKE} scan_eve MATRIX_FILE=${JASPAR}  OPT='-matrix_name hb,eve' SUFFIX=_jaspar_selected_names_hb_eve
 
