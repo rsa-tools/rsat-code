@@ -34,7 +34,7 @@ peakmo_Chen_Oct4:
 		-nmotifs 5 -minol ${MIN_OL} -maxol ${MAX_OL} \
 		-no_merge_lengths -2str \
 		-origin center \
-		-motif_db jaspar_core_vertebrates tf ${RSAT}/public_html/data/motif_databases/JASPAR/jaspar_core_vertebrates_2013-11.tf \
+		-motif_db jaspar_core_vertebrates tf ${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2013-11.tf \
 		-scan_markov 1 -source galaxy \
 		-task ${PM_TASK} \
 		-prefix peak-motifs \

@@ -29,8 +29,8 @@ check.param <- function() {
   verbose(paste("Distance table", distance.table), 3)
 
   ## Default score is the normalized correlation
-  if (!exists("score")) {
-    score <<- "Ncor";
+  if (!exists("metric")) {
+    metric <<- "Ncor";
   }
 
   ## Default hclust method is the complete method
@@ -41,6 +41,17 @@ check.param <- function() {
   ## Option indicating if the heatmap must be computed
   if (!exists("draw.heatmap")) {
     draw.heatmap <<- "1";
+  }
+
+  ## Option indicating if the tree
+  ## in Newick format should be exported
+  if (!exists("export.newick")) {
+    export.newick <<- "0";
+  }
+
+  ## Option indicating if the tree with aligned consensuses must be computed
+  if (!exists("draw.consensus")) {
+    draw.consensus <<- "1";
   }
 
   ## Option indicating if the heatmap must be computed
@@ -64,10 +75,9 @@ check.param <- function() {
 
   ## Define the kind of metric used: scores or distances
   supported.scores <- c("cor", "Ncor")
-  supported.distances <- c(NULL)
+  supported.distances <- c("dEucl", "NdEucl")
 
-  if(score %in% supported.scores){
-    metric <<- "similarity"
+  if(metric %in% supported.scores){
 
     ## Default lower and upper thresholds equals to zero
     if (!exists("lth")) {
@@ -79,23 +89,24 @@ check.param <- function() {
       lth.values <<- unlist(lth)
       lth.scores <<- names(lth.values)
     }
+
+
+  } else if(score %in% supported.distances){
+
     if (!exists("uth")) {
       uth <<- list()
-      uth[["Ncor"]] <<- 1;
-      uth[["cor"]] <<- 1;
+      uth[["dEucl"]] <<- 1;
+      uth[["NdEucl"]] <<- 1;
+      uth[["w"]] <<- 0;
 
       uth.values <<- unlist(uth)
       uth.scores <<- names(uth.values)
     }
-
-  } else if(score %in% supported.distances){
-    metric <<- "distances"
-
   }
 
 
-  #####################
-  ##
+  ###############################
+  ## Read the lower thresholds
   if(exists("lthsp")){
     lthsp <- unlist(strsplit(lthsp, "_"))
     lth.scores <<- lthsp[seq(1,length(lthsp), by = 2)]
@@ -114,8 +125,26 @@ check.param <- function() {
     }
   }
 
-  ## Set the labels
-  labels <<- unique(labels)
+
+  ###############################
+  ## Read the upper thresholds
+  if(exists("uthsp")){
+    uthsp <- unlist(strsplit(uthsp, "_"))
+    uth.scores <<- uthsp[seq(1,length(uthsp), by = 2)]
+    uth.values <<- as.numeric(uthsp[seq(2,length(uthsp), by = 2)])
+
+    for(i in 1:length(uth.scores)){
+      thresholds[[uth.scores[i]]] <<- uth.values[i]
+    }
+
+    supported <- c("dEucl", "NdEucl")
+    if(length(setdiff(supported, uth.scores)) > 0){
+      for(add in setdiff(supported, uth.scores)){
+        uth.scores <<- append(uth.scores, add)
+        uth.values <<- append(uth.values, 0)
+      }
+    }
+  }
 }
 
 
