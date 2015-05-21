@@ -1,23 +1,23 @@
 ###########################################################
-## Build a distance matrix from the distance score list
+## Build a distance matrix from the distance metric list
 build.distance.matrix <- function(comparison.table,
-                                  score="Ncor"){
+                                  metric="Ncor"){
 
 
   dist.table <- NULL
   distances.objects <- list()
 
-  ## Extract score values
-  score.values <- comparison.table[,score]
+  ## Extract metric values
+  metric.values <- comparison.table[,metric]
 
   ## If required, convert similarities to distances
   ## Similarity sores bounded to 1
-  if ((score == "Ncor")
-      || (score=="cor")
-      || (score=="logocor")
-      || (score=="Nlocogor")
-      || (score=="Icor")
-      || (score=="NIcor")
+  if ((metric == "Ncor")
+      || (metric=="cor")
+      || (metric=="logocor")
+      || (metric=="Nlocogor")
+      || (metric=="Icor")
+      || (metric=="NIcor")
   ) {
     ## cor       Pearson correlation (computed on residue occurrences in aligned columns)
     ## Ncor 			Relative width-normalized Pearson correlation
@@ -25,22 +25,20 @@ build.distance.matrix <- function(comparison.table,
     ## Nlogocor 			Relative width-normalized logocor
     ## Icor 			Pearson correlation computed on Information content
     ## NIcor 			Relative width-normalized Icor
-    score.dist <- 1 - score.values
+    metric.dist <- 1 - metric.values
 
-  } else if ((score == "logoDP")
-             || (score == "cov")) {
+  } else if ((metric == "logoDP")
+             || (metric == "cov")) {
     ## logoDP 			dot product of sequence logos
     ## cov 			covariance between residues in aligned columns
 
-    stop("logoDP and cov scores are not supported yet")
+    stop("logoDP and cov metrics are not supported yet")
 
-  } else if ((score == "dEucl")
-             || (score == "NdEucl")
-             || (score == "NdEucl")
-             || (score == "NsEucl")
-             || (score == "SSD")
-             || (score == "SW")
-             || (score == "NSW")
+  } else if ((metric == "dEucl")
+             || (metric == "NdEucl")
+             || (metric == "SSD")
+             || (metric == "SW")
+             || (metric == "NSW")
   ) {
     ## dEucl 			Euclidian distance between residue occurrences in aligned columns
     ## NdEucl 			Relative width-normalized dEucl
@@ -49,23 +47,19 @@ build.distance.matrix <- function(comparison.table,
     ## SW 			Sandelin-Wasserman
     ## NSW 			Relative width-normalized Sandelin-Wasserman
 
-    score.dist <- score.values
-
-  } else if (score == "match_rank") {
-    ## match_rank rank of current match among all sorted matches
-    stop("match_rank score is not supported yet")
+    metric.dist <- metric.values
 
   } else {
-    stop(paste(score, "is not a valid score", sep="\t"))
+    stop(paste(metric, "is not a valid metric", sep="\t"))
   }
 
 
-  ## Add a column with score column to the compare matrices table, will
+  ## Add a column with metric column to the compare matrices table, will
   ## be used to generate a cross-table
-  comparison.table$score.dist <- score.dist
+  comparison.table$metric.dist <- metric.dist
 
-  ## Build the distance table from the column score
-  dist.table <- xtabs(score.dist ~ id1+id2, comparison.table)
+  ## Build the distance table from the column metric
+  dist.table <- xtabs(metric.dist ~ id1+id2, comparison.table)
 
 
   ## Ensure that symmetrical distances are defined

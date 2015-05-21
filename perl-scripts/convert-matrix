@@ -49,6 +49,8 @@ package main;
   $skip_matrices = 0;
   $multiply = 1;
 
+  local %selected_matrix = ();
+
   local %infile = ();
   local %outfile = ();
   local @matrix_files = ();
@@ -179,6 +181,22 @@ package main;
     }
     close $mlist;
     &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
+  }
+
+  ## ID list has been provided
+  if ($infile{matrix_id_file}) {
+    my ($id_list) = &OpenInputFile($infile{matrix_id_file});
+    while (<$id_list>) {
+      next if (/'^;'/);		# skip comment lines
+      next if (/'^#'/);		# skip header lines
+      next if (/'^--'/);	# skip mysql-type comment lines
+      next unless (/\S/);	# skip empty lines
+      my @fields = split /\s+/;
+      my $matrix_id = lc($fields[0]);
+      $selected_matrix{$matrix_id} = 1;
+    }
+    close $id_list;
+    &RSAT::message::Info("Read ID list from file", $infile{matrix_id_file}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
   }
 
   if (scalar(@matrix_files > 1)) {
@@ -398,6 +416,7 @@ package main;
     ## Trim columns 
     if (($trim_col_left > 0) || ($trim_col_right > 0)) {
       $matrix->trim_columns($trim_col_left, $trim_col_right);
+      $matrix->calcConsensus();
     }
 
     ## Add flanks
@@ -512,6 +531,11 @@ package main;
 	|| $matrix->get_attribute("ID")
 	|| $id_nb;
     $matrix->force_attribute("ID", $ID);
+
+    ## Select user-specified IDs if the option -matrix_id_file has been specified
+    if ($infile{"matrix_id_file"}) {
+      next unless ($selected_matrix{lc($ID)});
+    }
 
     my $current_out;
     if ($split_out_files) {
@@ -682,8 +706,12 @@ OPTIONS
 		name. Any further information on the same row is
 		ignored.
 
-	-mlist_name inout file in -mlist  with tf name in second column
+	-mlist_name input file in -mlist  with tf name in second column
 		File containing a list of matrices has in the second column the name of the TF or ID
+
+	-matrix_id_file
+	        Indicate a file containing a list of IDs which will be 
+		returned from the input file. 
 
 	-o outputfile
 		if not specified, the standard output is used.
@@ -1366,6 +1394,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-mlist") {
 	    $infile{matrix_list} = $ARGV[$a+1];;
 
+	    ## List with IDs to extract from input file 
+	} elsif ($ARGV[$a] eq "-matrix_id_file") {
+	    $infile{matrix_id_file} = $ARGV[$a+1];;
+
 	    ## List of input files contains also tf name	
 	} elsif ($ARGV[$a] eq "-mlist_name") {
 	    $matrix_list_name = 1;;
@@ -1539,6 +1571,12 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-prefix") {
 	    $main::args{prefix} = $ARGV[$a+1];
 	    $main::args{prefix} =~s/\s/_/g;
+
+	    ### prefix ID
+	} elsif ($ARGV[$a] eq "-prefix_id") {
+	    $main::args{prefix_id} = $ARGV[$a+1];
+	    $main::args{prefix_id} =~s/\s/_/g;
+
 
 	    ### attribute
 	} elsif ($ARGV[$a] eq "-attr") {

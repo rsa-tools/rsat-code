@@ -13,23 +13,72 @@ MIN_NCOR=0.4
 
 COMPA_SUFFIX=w${MIN_W}_wr${MIN_WR}_cor${MIN_COR}_Ncor${MIN_NCOR}
 
+
+################################################################
+## Compute cross-comparisons between a set of motifs discovered using
+## peak-motifs.
+#PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
+#PEAKMO_MATRICES=${RSAT}/public_html/demo_files/${PEAKMO_PREFIX}_matrices.tf
+PEAKMO_VS_PEAKMO_DIR=results/peakmo_vs_peakmo
+PEAKMO_VS_PEAKMO=${PEAKMO_VS_PEAKMO_DIR}/${PEAKMO_PREFIX}__vs-itself_${COMPA_SUFFIX}
+#SCORES=cor,Ncor,NcorS,logoDP,NIcor,NsEucl,SSD,NSW,match_rank,zscores
+PLOT_FORMAT=pdf
+R_PLOT=-r_plot
+peakmo_vs_peakmo:
+	@mkdir -p ${PEAKMO_VS_PEAKMO_DIR}
+	@echo 
+	@echo "Comparing moti collection against itself, using z-scores"
+	compare-matrices -v ${V} \
+		-mode matches \
+		-format1 transfac -file1 ${PEAKMO_MATRICES} \
+		-format2 transfac -file2 ${PEAKMO_MATRICES} \
+		-mode scores \
+		-DR \
+		-lth w ${MIN_W} \
+		-return matrix_name,matrix_id \
+		-return ${SCORES},zscores \
+		-return width,strand,offset,consensus \
+		-sort Ncor ${OPT} \
+		-o ${PEAKMO_VS_PEAKMO}
+	@echo "	${PEAKMO_VS_PEAKMO}"
+	@echo
+	@echo "Generating plot of match rank vs mean z-score"
+	@XYgraph -i  results/peakmo_vs_peakmo/peak-motifs_result_Chen_Oct4__vs-itself_w5_wr0.3_cor0.75_Ncor0.4.tab \
+		-xcol 42 -xleg1 "match rank" \
+		-ycol 32 -yleg1 "mean z-score" \
+		-lines -hline 'blue' 0 -xgstep1 10 -legend\
+		-format ${PLOT_FORMAT} ${R_PLOT}\
+		-o ${PEAKMO_VS_PEAKMO}_rank_vs_zscore.${PLOT_FORMAT}
+	@echo "	${PEAKMO_VS_PEAKMO}_rank_vs_zscore.${PLOT_FORMAT}"
+	@echo
+	@echo "Plotting z-score empirical distribution"
+	@classfreq -v 1 -i  results/peakmo_vs_peakmo/peak-motifs_result_Chen_Oct4__vs-itself_w5_wr0.3_cor0.75_Ncor0.4.tab \
+		-col 32 \
+		-ci 0.1 \
+		| XYgraph \
+		-xcol 3 -xleg1 "z-score" \
+		-ycol 4,5,6 -yleg1 "Matrix pairs" \
+		-lines -vline 'blue' 0 -xgstep1 0.5 -legend\
+		-format ${PLOT_FORMAT} ${R_PLOT} \
+		-o ${PEAKMO_VS_PEAKMO}_mean_zscore_distrib.${PLOT_FORMAT}
+	@echo "	${PEAKMO_VS_PEAKMO}_mean_zscore_distrib.${PLOT_FORMAT}"
+
 ################################################################
 ## Case 1: peak-motifs result versus JASPAR database
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 PEAKMO_MATRICES=${RSAT}/public_html/demo_files/${PEAKMO_PREFIX}_matrices.tf
 JASPAR_VERSION=2015_03
 JASPAR_PREFIX=jaspar_core_vertebrates_${JASPAR_VERSION}
-JASPAR_MATRICES=${RSAT}/public_html/data/motif_databases/JASPAR/${JASPAR_PREFIX}.tf
-
+JASPAR_MATRICES=${RSAT}/public_html/motif_databases/JASPAR/${JASPAR_PREFIX}.tf
 PEAKMO_VS_JASPAR_DIR=results/peakmo_vs_jaspar
 PEAKMO_VS_JASPAR=${PEAKMO_VS_JASPAR_DIR}/${PEAKMO_PREFIX}__vs__${JASPAR_PREFIX}_${COMPA_SUFFIX}
+SCORES=cor,Ncor,NcorS,logoDP,NIcor,NsEucl,SSD,NSW,match_rank
 peakmo_vs_jaspar:
 	@mkdir -p ${PEAKMO_VS_JASPAR_DIR}
 	compare-matrices -v ${V} \
 		-mode matches \
 		-format1 transfac -file1 ${PEAKMO_MATRICES} \
 		-format2 transfac -file2 ${JASPAR_MATRICES} \
-		-mode matches \
 		-DR \
 		-uth offset_rank 1 \
 		-lth w ${MIN_W} \
@@ -37,11 +86,12 @@ peakmo_vs_jaspar:
 		-lth cor ${MIN_COR} \
 		-lth Ncor ${MIN_NCOR} \
 		-return matrix_name,matrix_id \
-		-return cor,Ncor,logoDP,NIcor,NsEucl,SSD,NSW,match_rank \
+		-return ${SCORES} \
 		-return width,strand,offset,consensus,alignments_1ton \
 		-sort Ncor ${OPT} \
 		-o ${PEAKMO_VS_JASPAR}
 	@echo ${PEAKMO_VS_JASPAR}
+
 
 peakmo_vs_jaspar_param:
 	@echo "PEAKMO_MATRICES	${PEAKMO_MATRICES}"
@@ -170,7 +220,7 @@ permute_db:
 ################################################################
 ## RegulonDB
 REGULONDB_PREFIX=regulonDB_2014-04-11
-REGULONDB_DIR=${RSAT}/public_html/data/motif_databases/REGULONDB
+REGULONDB_DIR=${RSAT}/public_html/motif_databases/REGULONDB
 REGULONDB_MATRICES=${REGULONDB_DIR}/${REGULONDB_PREFIX}.tf
 regulondb_vs_itself:
 	@${MAKE} db_vs_itself DB_PREFIX=${REGULONDB_PREFIX} DB_DIR=${REGULONDB_DIR}
@@ -184,7 +234,7 @@ permuted_regulondb_vs_itself:
 ################################################################
 ## footprintDB (database compiled by Bruno Contreras)
 FOOTPRINTDB_PREFIX=footprintDB.plants.motif
-FOOTPRINTDB_DIR=${RSAT}/public_html/data/motif_databases/footprintDB
+FOOTPRINTDB_DIR=${RSAT}/public_html/motif_databases/footprintDB
 FOOTPRINTDB_MATRICES=${FOOTPRINTDB_DIR}/${FOOTPRINTDB_PREFIX}.tf
 footprintdb_vs_itself:
 	@${MAKE} db_vs_itself DB_PREFIX=${FOOTPRINTDB_PREFIX} DB_DIR=${FOOTPRINTDB_DIR}
@@ -200,7 +250,7 @@ permuted_footprintdb_vs_itself:
 JASPAR_GROUPS=all insects vertebrates nematodes fungi urochordates plants
 JASPAR_GROUP=vertebrates
 JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_${JASPAR_VERSION}
-JASPAR_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
+JASPAR_DIR=${RSAT}/public_html/motif_databases/JASPAR
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 jaspar_one_group_vs_itself:
 	${MAKE} db_vs_itself DB_PREFIX=${JASPAR_PREFIX} DB_DIR=${JASPAR_DIR}
@@ -209,17 +259,18 @@ permute_jaspar_one_group:
 	@${MAKE} permute_db DB_PREFIX=${JASPAR_PREFIX} DB_DIR=${JASPAR_DIR}
 
 permuted_jaspar_one_group_vs_itself:
-	@${MAKE} db_vs_itself DB_PREFIX=${JASPAR_PREFIX}_perm DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR
+	@${MAKE} db_vs_itself DB_PREFIX=${JASPAR_PREFIX}_perm DB_DIR=${RSAT}/public_html/motif_databases/JASPAR
 
 JASPAR_TASK=jaspar_one_group_vs_itself permute_jaspar_one_group permuted_jaspar_one_group_vs_itself
 iterate_jaspar:
 	@for g in ${JASPAR_GROUPS}; do \
-		${MAKE} DB_PREFIX=jaspar_core_$${g}_${JASPAR_VERSION} DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
+		${MAKE} DB_PREFIX=jaspar_core_$${g}_${JASPAR_VERSION} DB_DIR=${RSAT}/public_html/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
 	done
 
 iterate_jaspar_perm:
 	@for g in ${JASPAR_GROUPS}; do \
-		${MAKE} DB_PREFIX=jaspar_core_$${g}_${JASPAR_VERSION}_perm DB_DIR=${RSAT}/public_html/data/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
+		${MAKE} DB_PREFIX=jaspar_core_$${g}_${JASPAR_VERSION}_perm DB_DIR=${RSAT}/public_html/motif_databases/JASPAR JASPAR_GROUP=$$g ${JASPAR_TASK}; \
 	done
+
 
 

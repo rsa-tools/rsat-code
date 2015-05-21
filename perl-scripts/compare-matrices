@@ -301,7 +301,7 @@ respective matrices.
  v2 = 1/n * SUM{i=1->r} SUM{j=1->w} (f2{i,j} - f2m)^2
  cor = cov/ sqrt(v1*v2)
 
-=head2 Normalized correlation (Ncor, Ncor1, Ncor2)
+=head2 Normalized correlation (Ncor, Ncor1, Ncor2, NcorS)
 
 The normalized correlation prevents matches covering only a small
 fraction of the matrix (e.g. matches between the last column of the
@@ -334,14 +334,26 @@ alignment (w) relative to the length of the shorter motif.
 This however tends to favour matches between very short motifs (4-5
 residues) which cover only a fraction of the query motif.
 
-=head3 Ncor1, Ncor2
+=head3 Ncor1, Ncor2, NcorS
 
 In addition to Ncor, we define separate normalized correlations relative
 to w1 and w2 resp. 
 
-Ncor1 = cor * w / w1
+=over
 
-Ncor2 = cor * w / w2
+=item Ncor1 = cor * w / w1
+
+=item Ncor2 = cor * w / w2
+
+=item NcorS = cor * w / min(w1, w2)
+
+Normalize the correlation by the alignemnt width (w) relative to the
+width of the smallest of the two aligned matrices. This may return
+more suitable results when matrices of different sizes are aligned
+(e.g. small motif included in a composite motif), but sometimes the
+sub-motifs will score better than the full motifs.
+
+=back
 
 =head2 Correlation of the information content (Icor)
 
@@ -453,7 +465,7 @@ package main;
   ## Supported metrics for comparing matrices
   local @supported_metrics = (
 			      "cor", ## Coefficient of correlation
-			      "Ncor", "Ncor1", "Ncor2", ## Normalized coefficients of correlation
+			      "Ncor", "Ncor1", "Ncor2", "NcorS", ## Normalized coefficients of correlation
 			      "logoDP", ##  Dot product between sequence logo values (column info * frequency)
 			      "logocor", ## Correlation between sequence logo values (column info * frequency)
 			      "Nlogocor", ## Normalized correlation between sequence logo values (column info * frequency)
@@ -470,8 +482,10 @@ package main;
 			      "NSW", ## Normalized Sandelin-Wasserman similarity
 			      #			      "dKL", ## Kullback-Leibler distance
 			      "all_metrics", ## all supported metrics
-			      "match_rank", ## Matching ranks for all the selected metrics
+			      "match_rank", ## Matching ranks each selected metric
+			      "zscores", ## z-scores for each selected metric
 			     );
+  local @zscore_metrics = (); ## Metrics on which the z-score has to be computed (will be filled according to selected metrics)
 #  local @rank_metrics = ("SW", "dEucl"); ## Metrics on which a rank can be computed
 #  local @rank_metrics = @supported_metrics; ## Metrics on which a rank can be computed
   local @rank_metrics = (); ## Metrics on which the rank has to be computed (will be filled according to selected metrics)
@@ -513,6 +527,7 @@ package main;
 				 "Ncor"=>"desc",
 				 "Ncor1"=>"desc",
 				 "Ncor2"=>"desc",
+				 "NcorS"=>"desc",
 				 "logoDP"=>"desc",
 				 "logocor"=>"desc",
 				 "Nlogocor"=>"desc",
@@ -663,11 +678,23 @@ package main;
     $return_field{$sort_field} = 1;
   }
 
+  ## Update the list of metrics to take into account for z-score computation
+  if ($return_field{zscores}) {
+    foreach my $metric (@supported_metrics) {
+      next if ($metric eq "all_metrics");
+      next if ($metric eq "match_rank");
+      next if ($metric eq "zscores");
+      push @zscore_metrics, $metric if ($return_field{$metric});
+#      &RSAT::message::Debug("Adding zscore metric", $metric) if ($main::verbose >= 10);
+    }
+  }
+
   ## Update the list of metrics to take into account for ranks and rank mean
   if ($return_field{match_rank}) {
     foreach my $metric (@supported_metrics) {
       next if ($metric eq "all_metrics");
       next if ($metric eq "match_rank");
+      next if ($metric eq "zscores");
       push @rank_metrics, $metric if ($return_field{$metric});
     }
   }
@@ -675,7 +702,11 @@ package main;
   ## Specify the output format for the different metrics
   local %metric_format = ();
   $metric_format{"match_rank"} = "%d";
+  $metric_format{"zscores"} = "%.4f";
   $metric_format{"rank_mean"} = "%.3f";
+  foreach my $metric (@zscore_metrics) {
+    $metric_format{"z".$metric} = "%.4f";
+  }
   foreach my $metric (@rank_metrics) {
     $metric_format{"r".$metric} = "%d";
   }
@@ -704,6 +735,14 @@ package main;
   if ((($return_field{alignments_pairwise}) ||
       ($return_field{alignments_1ton})) && ($comparison_mode eq "profiles")) {
     &RSAT::error::FatalError("The comparison mode 'profiles' is not compatible with the return field 'alignments' (output might reach unreasonable size).");
+  }
+
+  ## z-score computations makes sense only if the motifs are not
+  ## filtered by the lower or upper thresholds. To ensure this, we
+  ## only make it possble for the mode "score".
+  if ($return_field{zscores}) {
+    &RSAT::error::FatalError("Z-scores are only compatible with the score mode (-return zscores -mode scores).") 
+	unless ($comparison_mode eq "scores");
   }
 
 
@@ -769,9 +808,15 @@ package main;
     
     ## Parameters specific to the mode "scores"
     if ($comparison_mode eq "scores") {
+      my %accepted_thresholds_for_score_mode = ("w"=>1);
       ## Check that the user did not specify any threshold
       if ((scalar(keys(%uth))) || (scalar(keys(%lth)))) {
-	&RSAT::error::FatalError("The mode 'scores' is incompatible with thresholds, since a score is required between all the matrix pairs");
+	foreach my $key (keys(%uth), keys(%lth)) {
+	  unless ($accepted_thresholds_for_score_mode{$key}) {
+	    &RSAT::error::FatalError("Threshold on", $key, 
+				     " is incompatible with mode 'score', since a score is required between all the matrix pairs");
+	  }
+	}
       }
     } else {
       ## Impose (somewhat arbitrary) minimal thresholds on alignment
@@ -814,6 +859,7 @@ package main;
   $calc_field{cor} = 1 if ($calc_field{Ncor});
   $calc_field{cor} = 1 if ($calc_field{Ncor1});
   $calc_field{cor} = 1 if ($calc_field{Ncor2});
+  $calc_field{cor} = 1 if ($calc_field{NcorS});
   $calc_field{cov} = 1 if ($calc_field{cor});
   $calc_field{NdEucl} = 1 if ($calc_field{NsEucl});
   $calc_field{dEucl} = 1 if ($calc_field{NdEucl});
@@ -1259,6 +1305,7 @@ package main;
   push (@header, "Ncor") if ($return_field{Ncor});
   push (@header, "Ncor1") if ($return_field{Ncor1});
   push (@header, "Ncor2") if ($return_field{Ncor2});
+  push (@header, "NcorS") if ($return_field{NcorS});
   push (@header, "logoDP") if ($return_field{logoDP});
   push (@header, "logocor") if ($return_field{logocor});
   push (@header, "Nlogocor") if ($return_field{Nlogocor});
@@ -1286,6 +1333,15 @@ package main;
   ################################################################
   ## Matching ranks must coms as last columns, because it is computed only after all the rows have been formed
 
+  ## Z-scores on various metrics + zscore mean
+  if ($return_field{zscores}) {
+    foreach my $metric (@zscore_metrics) {
+      push (@header, "z".$metric);
+    }
+    push (@header, "mean_zscore");
+#    push (@header, "zscores_rank");
+  }
+
   ## Matching ranks on various metrics + rank mean
   if ($return_field{match_rank}) {
     foreach my $metric (@rank_metrics) {
@@ -1295,7 +1351,7 @@ package main;
     push (@header, "match_rank");
   }
 
-  ## Rank on the sorting criterion
+  ## Rank on the offset
   push (@header, "offset_rank") if ($return_field{offset_rank});
 
   ################################################################
@@ -1339,8 +1395,9 @@ package main;
     $description{cov} = "Covariance";
     $description{cor} = "Pearson coefficient of correlation between frequency matrices";
     $description{Ncor} = "Normalized correlation. Ncor = cor * ".$norm_factor_descr;
-    $description{Ncor1} = "Normalized correlation. Ncor1 = cor * w / w1";
-    $description{Ncor2} = "Normalized correlation. Ncor2 = cor * w / w2";
+    $description{Ncor1} = "Normalized correlation relative to first matrix. Ncor1 = cor * w / w1";
+    $description{Ncor2} = "Normalized correlation relative to second matrix. Ncor2 = cor * w / w2";
+    $description{NcorS} = "Normalized correlation relative to smallest of the two aligned matrices. Ncor2 = cor * w / min(w1,w2)";
     $description{Icor} = "Pearson correlation between the information content matrices. ";
     $description{NIcor} = "Normalized Pearson correlation between the information content matrices. NIcor = Icor * ".$norm_factor_descr;
     $description{logoDP} = "Dot product between the logo matrices.";
@@ -1351,12 +1408,19 @@ package main;
     $description{consensus1} = "IUPAC consensus of matrix 1 (dots represent non-aligned columns)";
     $description{consensus2} = "IUPAC consensus of matrix 2 (dots represent non-aligned columns)";
 
+    ## Description for zscores
+    foreach my $metric (@zscore_metrics) {
+      $description{"z".$metric} = "Z-score standardized ".$metric;
+    }
+    $description{mean_zscore} = "Mean of the z-scores on all selected metrics";
+#    $description{zscores_rank} = "Rank of the match (sorting by mean z-score)";
+
+    ## Description for ranks
     foreach my $metric (@rank_metrics) {
       $description{"r".$metric} = "Matching rank for ".$metric;
     }
     $description{rank_mean} = "Mean of the matching ranks on all selected metrics";
     $description{match_rank} = "Rank of the match (sorting by rank_mean)";
-
     $description{offset_rank} = "Rank according to the field used for selecting the \"best\" offset (".$sort_field.")";
 
     ## Print out the column content description
@@ -1501,6 +1565,7 @@ package main;
       my %Ncor = ();		## Normalized correlations
       my %Ncor1 = ();		## Normalized correlations relative to w1
       my %Ncor2 = ();		## Normalized correlations relative to w2
+      my %NcorS = ();		## Normalized correlations relative to the smallest matrix
       my %Icor = (); ## Correlations between information content
       my %NIcor = (); ## Normalized correlations between information content
       my %logoDP = (); ## Dot product between logo matrices
@@ -1555,7 +1620,6 @@ package main;
 	  $compa++;
 	  my $compa_id = join (":", $id1, $id2, $offset, $strand);
 #	  &RSAT::message::Debug("Offset - strand", $id1, $id2, $compa_id) if ($main::verbose >= 10);
-
 	  next unless (&CheckThresholdValue("offset", $offset));
 
 	  ## Compute aligned matrix positions
@@ -1623,6 +1687,7 @@ package main;
 	  my $Ncor = 0;
 	  my $Ncor1 = 0;
 	  my $Ncor2 = 0;
+	  my $NcorS = 0;
 	  my $sum_f1 = 0;
 	  my $sum_f2 = 0;
 	  my $sum_f1f2 = 0;
@@ -1686,7 +1751,6 @@ package main;
 		$sum_i1i2 += $i1*$i2;
 	      }
 
-
 	      ## Update sums for logocor
 	      if (($calc_field{logocor}) || ($calc_field{logoDP})) {
 		my $l1 = $logo1[$col1-1][$r];
@@ -1742,16 +1806,21 @@ package main;
 	  ## Compute Euclidian distance
 	  if ($calc_field{dEucl}) {
 	    $dEucl = sqrt($SSD);
-	    next unless (&CheckThresholdValue("dEucl", $dEucl)); $score{dEucl}{$compa_id} = $dEucl;
+	    next unless (&CheckThresholdValue("dEucl", $dEucl)); 
+	    $score{dEucl}{$compa_id} = $dEucl;
 	    $NdEucl = $dEucl/$w if ($w > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
-	    next unless (&CheckThresholdValue("NdEucl", $NdEucl)); $score{NdEucl}{$compa_id} = $NdEucl;
+	    next unless (&CheckThresholdValue("NdEucl", $NdEucl)); 
+	    $score{NdEucl}{$compa_id} = $NdEucl;
 	  }
+	  
 
 	  ## Compute Sandelin-Wasserman similarity
 	  $SW = 2*$w - $SSD;
-	  next unless (&CheckThresholdValue("SW", $SW)); $score{SW}{$compa_id} = $SW;
+	  next unless (&CheckThresholdValue("SW", $SW));
+	  $score{SW}{$compa_id} = $SW;
 	  $NSW = $SW / (2*$w);
-	  next unless (&CheckThresholdValue("NSW", $NSW)); $score{NSW}{$compa_id} = $NSW;
+	  next unless (&CheckThresholdValue("NSW", $NSW));
+	  $score{NSW}{$compa_id} = $NSW;
 
 	  ## Compute Euclidian similarity
 	  if ($calc_field{NsEucl}) {
@@ -1764,7 +1833,8 @@ package main;
 	    unless ($dKL eq "Inf") {
 	      $dKL /= 2;
 	      $dKL /= $w if ($w > 0); ## Relativize KL distance with respect to the number of aligned columns
-	      next unless (&CheckThresholdValue("dKL", $dKL)); $score{dKL}{$compa_id} = $dKL;
+	      next unless (&CheckThresholdValue("dKL", $dKL));
+	      $score{dKL}{$compa_id} = $dKL;
 	      $dKL = sprintf("%.5f", $dKL);
 	    }
 	  }
@@ -1783,6 +1853,7 @@ package main;
 	    $Ncor = $cor * $norm_factor;
 	    $Ncor1 = $cor * $w / $w1 if($calc_field{Ncor1});
 	    $Ncor2 = $cor * $w / $w2 if($calc_field{Ncor2});
+	    $NcorS = $cor * $w / min($w1,$w2) if($calc_field{NcorS});
 	  }
 
 	  ## Check thresholds on covariance, correlation and normalized correlation
@@ -1791,6 +1862,9 @@ package main;
 	  next unless (&CheckThresholdValue("Ncor", $Ncor));
 	  next unless (&CheckThresholdValue("Ncor1", $Ncor1));
 	  next unless (&CheckThresholdValue("Ncor2", $Ncor2));
+	  next unless (&CheckThresholdValue("NcorS", $NcorS));
+
+
 
 	  ## Index values for sorting
 	  $score{cov}{$compa_id} = $cov;
@@ -1798,7 +1872,7 @@ package main;
 	  $score{Ncor}{$compa_id} = $Ncor;
 	  $score{Ncor1}{$compa_id} = $Ncor1;
 	  $score{Ncor2}{$compa_id} = $Ncor2;
-
+	  $score{NcorS}{$compa_id} = $NcorS;
 
 	  ## Compute information correlation
 	  if ($calc_field{Icor}) {
@@ -1816,6 +1890,7 @@ package main;
 	  ## Check thresholds on information correlation
 	  next unless (&CheckThresholdValue("Icor", $Icor));
 	  next unless (&CheckThresholdValue("NIcor", $NIcor));
+
 
 	  ## Index values for sorting
 	  $score{Icor}{$compa_id} = $Icor;
@@ -1848,6 +1923,7 @@ package main;
 	  next unless (&CheckThresholdValue("logocor", $logocor));
 	  next unless (&CheckThresholdValue("Nlogocor", $Nlogocor));
 
+
 	  ## Index values for sorting
 	  $score{logocor}{$compa_id} = $logocor;
 	  $score{Nlogocor}{$compa_id} = $Nlogocor;
@@ -1865,15 +1941,53 @@ package main;
 # 	    $NWcor = $Wcor *$norm_factor;
 # 	  }
 
-	  ## Check thresholds on weight correlation
-	  next unless (&CheckThresholdValue("Wcor", $Wcor));
-	  next unless (&CheckThresholdValue("NWcor", $NWcor));
+	  # ## Check thresholds on weight correlation
+	  # next unless (&CheckThresholdValue("Wcor", $Wcor));
+	  # next unless (&CheckThresholdValue("NWcor", $NWcor));
 
-	  ## Index values for sorting
-	  $score{Wcor}{$compa_id} = $Wcor;
-	  $score{NWcor}{$compa_id} = $NWcor;
+	  # ## Index values for sorting
+	  # $score{Wcor}{$compa_id} = $Wcor;
+	  # $score{NWcor}{$compa_id} = $NWcor;
 
 
+	  
+# 	  ################################################################
+# 	  ## Compute sum and square for the z-scores
+# 	  if ($return_field{zscores}) {
+# 	    foreach my $metric (keys(%score)) {
+# 	      next if ($metric eq "zscores");
+# 	      next if ($metric eq "match_rank");
+# #	      &RSAT::message::Debug("Computing sum and square sum", $metric , $compa_id, $score{$metric}{$compa_id}) if ($main::verbose >= 10);
+# 	      $score_n{$metric}++; ## Count the number of scores taken into account for score mean and sd
+# 	      $score_sum{$metric} += $score{$metric}{$compa_id}; ## Score sum for all the pairwise matrix comparisons
+# 	      $score_square_sum{$metric} += $score{$metric}{$compa_id}**2; ## Sum of squared scores for all the pairwise matrix comparisons
+# 	    }
+# 	    ## Check all thresholds (note: this needs to be done after
+# 	    ## the computation of the sum and sum of squares for the
+# 	    ## z-score)
+# 	    next unless (&CheckThresholdValue("logoDP", $logoDP));
+# 	    next unless (&CheckThresholdValue("dEucl", $dEucl));
+# 	    next unless (&CheckThresholdValue("NdEucl", $NdEucl));
+# 	    next unless (&CheckThresholdValue("SW", $SW));
+# 	    next unless (&CheckThresholdValue("NSW", $NSW));
+# 	    next unless (&CheckThresholdValue("dKL", $dKL));
+# 	    next unless (&CheckThresholdValue("cov", $cov));
+# 	    next unless (&CheckThresholdValue("cor", $cor));
+# 	    next unless (&CheckThresholdValue("Ncor", $Ncor));
+# 	    next unless (&CheckThresholdValue("Ncor1", $Ncor1));
+# 	    next unless (&CheckThresholdValue("Ncor2", $Ncor2));
+# 	    next unless (&CheckThresholdValue("NcorS", $NcorS));
+# 	    next unless (&CheckThresholdValue("Icor", $Icor));
+# 	    next unless (&CheckThresholdValue("NIcor", $NIcor));
+# 	    next unless (&CheckThresholdValue("logocor", $logocor));
+# 	    next unless (&CheckThresholdValue("Nlogocor", $Nlogocor));
+# #	    next unless (&CheckThresholdValue("Wcor", $Wcor));
+# #	    next unless (&CheckThresholdValue("NWcor", $NWcor));
+# 	  }
+
+
+
+	  ################################################################
 	  ## Generate the output line
 	  my @out_fields = ();
 	  push (@out_fields, $m1, $m2) if ($return_field{matrix_number});
@@ -1906,6 +2020,7 @@ package main;
 	  push (@out_fields, sprintf("%.3f", $Ncor)) if ($return_field{Ncor});
 	  push (@out_fields, sprintf("%.3f", $Ncor1)) if ($return_field{Ncor1});
 	  push (@out_fields, sprintf("%.3f", $Ncor2)) if ($return_field{Ncor2});
+	  push (@out_fields, sprintf("%.3f", $NcorS)) if ($return_field{NcorS});
 	  push (@out_fields, sprintf("%.3f", $logoDP)) if ($return_field{logoDP});
 	  push (@out_fields, sprintf("%.3f", $logocor)) if ($return_field{logocor});
 	  push (@out_fields, sprintf("%.3f", $Nlogocor)) if ($return_field{Nlogocor});
@@ -2020,12 +2135,21 @@ package main;
 	  $sort_score{$compa_id} = $score{$sort_field}{$compa_id};
 
 	  ## Store all scores of the match in a separate hash table
-	  ## with a wider scope for furtehr printing in the alignments
-	  if (($return_field{alignments_pairwise}) ||
+	  ## with a wider scope for further printing in the alignments
+	  if (($return_field{zscores}) ||
+	      ($return_field{alignments_pairwise}) ||
 	      ($return_field{alignments_1ton})) {
 	    foreach my $metric (@supported_metrics) {
+	      next if ($metric eq "zscores");
+	      next if ($metric eq "match_rank");
 	      if ($return_field{$metric}) {
 		$match_score{$compa_id}{$metric} = $score{$metric}{$compa_id};
+		if ($return_field{zscores}) {
+		  ## Increment counters to compute sum and standard deviation (later)
+		  $match_score_n{$metric}++;
+		  $match_score_sum{$metric} +=  $score{$metric}{$compa_id};
+		  $match_score_square_sum{$metric} +=  $score{$metric}{$compa_id}**2;
+		}
 	      }
 	    }
 	  }
@@ -2047,6 +2171,76 @@ package main;
   &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
 
   @match_ids = keys(%sort_score);
+
+  ################################################################
+  ## Compute z-score for various metrics
+  my $selected_zscore_metrics = 0; ## Number of metrics to take into account for mean zscore computation
+  if ($return_field{zscores}) {
+    &RSAT::message::TimeWarn("Computing z-scores for", scalar(@zscore_metrics), "metrics") if ($main::verbose >= 2);
+
+    foreach my $metric (@zscore_metrics) {
+
+#      &RSAT::message::TimeWarn("Computing z-scores for metric", $metric) if ($main::verbose >= 10);
+
+      next unless ($return_field{$metric});
+#      next if ($metric eq "match_rank");
+      $selected_zscore_metrics++;
+      
+      ## Compute zscores
+#      my $score_sum = 0; ## Initialize score sum
+#      my $score_square_sum = 0; ## Initialize sumn of squared scores
+#      my $n = 0; ## Initialize counter
+#      my $score_mean = 0;
+#      my $score_sd = 0;
+#      for my $compa_id (@match_ids) {
+#	$n++;
+#	my $score = $match_score{$compa_id}{$metric};
+#	$score_sum += $score;
+#	$score_square_sum += $score**2;
+#      }
+ 
+      my $n = $match_score_n{$metric};
+      my $score_sum = $match_score_sum{$metric};
+      my $score_square_sum = $match_score_square_sum{$metric};
+      if ($n > 0) {
+	## Compute the mean score
+	$score_mean = $score_sum / $n;
+	
+	## Compute standard deviation of the score
+	$score_sd = sqrt($score_square_sum/$n - ($score_mean)**2);
+      }
+#      &RSAT::message::Debug("Converting metric to zscore", $metric, "m=".$score_mean, "sd=".$score_sd) if ($main::verbose >= 10);
+      
+      ## Add zscore to the output line
+      for my $compa_id (@match_ids) {
+	my $score = $match_score{$compa_id}{$metric};
+	my $zscore = 0;
+	if ($score_sd > 0) {
+	  $zscore = ($score - $score_mean ) / $score_sd;
+	} else {
+	  ## If standard deviation is null, it means that all scores
+	  ## are equal, thus each score equals the mean, and its
+	  ## z-score is 0.
+	  $zscore = 0;
+	}
+	$match_score{$compa_id}{"z".$metric} = $zscore;
+	$match_out_line{$compa_id} .= "\t";
+	$match_out_line{$compa_id} .= sprintf($metric_format{"zscores"}, $zscore);
+	$zscore_sum{$compa_id} += $zscore;
+      }
+    }
+
+    ## Compute mean zscore
+    foreach my $compa_id (@match_ids) {
+      my $mean_zscore = "NA";
+      if ($selected_zscore_metrics > 0) {
+	$mean_zscore = sprintf($metric_format{"zscores"}, $zscore_sum{$compa_id} / $selected_zscore_metrics);
+      }
+#      $sort_score{$compa_id} = $rank_mean;
+#      $match_score{$compa_id}{rank_mean} = $rank_mean;
+      $match_out_line{$compa_id} .= "\t".$mean_zscore;
+    }
+  }
 
   ################################################################
   ## Compute matching rank for various metrics
@@ -2122,8 +2316,8 @@ package main;
     ## Redefine sort field and sort order (the criterion for sorting matches will be the rank_mean, whereas the criterion to sort offsets was defined differently)
     $sort_field = "rank_mean";
     $sort_order = "asc";
-
   }
+
 
   ################################################################
   ## Sort all matches and print them out
@@ -2555,16 +2749,38 @@ sub PrintAlignedMatrices {
   foreach my $metric (@supported_metrics) {
     next if ($metric eq "all_metrics");
     next if ($metric eq "match_rank");
+    next if ($metric eq "zscores");
     if ($return_field{$metric}) {
       push @scores_to_print, $metric;
       $html_header .= "<th>".$metric."</th>\n";
     }
   }
 
+  ## Define a has table to know which metrics is a z-score for another
+  ## metric.  We don't need to compute the ranks on z-scores because
+  ## they are equal to the rank of the corresponding non-standardized
+  ## metric.
+  my %is_zscore = (); 
+
+  ## Add the list of z-scores to print if requested
+  if ($return_field{zscores}) {
+    my @zscores_to_print = ();
+    foreach my $metric (@scores_to_print) {
+      push @zscores_to_print, "z".$metric;
+      $is_zscore{"z".$metric} = 1;
+      $html_header .= "<th>"."z".$metric."</th>\n";
+    }
+    push @scores_to_print, @zscores_to_print, "mean_zscore"; #, "match_rank";
+    $html_header .= "<th>mean_zscore</th>\n";
+#    $html_header .= "<th>match_rank</th>\n";
+  }
+  &RSAT::message::Debug("scores to print", join(",", @scores_to_print)) if ($main::verbose >= 5);
+
   ## Add the list of score ranks if requested
   if ($return_field{match_rank}) {
     my @rank_scores_to_print = ();
     foreach my $metric (@scores_to_print) {
+      next if ($is_zscore{$metric});
       push @rank_scores_to_print, "r".$metric;
       $html_header .= "<th>"."r".$metric."</th>\n";
     }
@@ -2573,6 +2789,7 @@ sub PrintAlignedMatrices {
     $html_header .= "<th>match_rank</th>\n";
   }
   &RSAT::message::Debug("scores to print", join(",", @scores_to_print)) if ($main::verbose >= 5);
+
 
   ## Aligned matrices
   $html_header .= "<th>Aligned matrices</th>\n";
@@ -3171,9 +3388,19 @@ mode).
 
 Normalized correlation relative to w1.
 
+  NcorS = cor * w / w1
+
 =item I<Ncor2>
 
 Normalized correlation relative to w2.
+
+  NcorS = cor * w / w2
+
+=item I<NcorS>
+
+Normalized correlation relative to the smallest of the two aligned matrices: 
+
+  NcorS = cor * w / min(w1, w2)
 
 =item I<cov>
 
@@ -3368,6 +3595,8 @@ Supported sort fields:
 
 =item I<Ncor2>, decreasing
 
+=item I<NcorS>, decreasing
+
 =item I<cor>, decreasing
 
 =item I<cov>, decreasing
@@ -3548,6 +3777,13 @@ __END__
 
 =over
 
+=item B<z-scores>
+
+All the metrics defined above can be converted into z-scores, by
+computing the mean and standard deviation of the score for all the
+matches.
+
+ z-score = (score - mean(score) ) / sd(score)
 
 =item B<Additional metrics>
 
@@ -3584,7 +3820,7 @@ The chi2 distance was proposed in 2 articles:
 
 2. Schones,D.E., Sumazin,P. and Zhang,M.Q. (2005) Similarity of
    position frequency matrices for transcription factor binding
-   sites. Bioinformatics, 21, 307–313.
+   sites. Bioinformatics, 21, 307-313.
 
 =item Average Log Likelihood Ratio (ALLR)
 

@@ -44,6 +44,7 @@ $query = new CGI;
 ################################################################
 ## Output paths
 $command = $ENV{RSAT}."/perl-scripts/matrix-clustering";
+$return_fields = "-return json";
 
 $output_prefix = "matrix-clustering";
 $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
@@ -89,6 +90,23 @@ if($title){
     $title =~ s/\s+/_/g;
     $parameters .= " -title '".$title."'";
 }
+
+################################
+## Add motif collection label
+local $collection_label = lc($query->param('collection_label'));
+if($collection_label){
+    $collection_label =~ s/\s+/_/g;
+    $parameters .= " -motif_collection_name '".$collection_label."'";
+}
+
+############################
+## Add the metric used to 
+## cluster the motifs
+local $metric_tree = $query->param('metric');
+if($metric_tree){
+    $parameters .= " -metric_build_tree '".$metric_tree."'";
+}
+
 
 ################################################################
 ## Specify the thresholds on all parameters for compare-matrices
@@ -138,13 +156,19 @@ $parameters .= $thresholds;
 ## Heatmap selection
 $heatmap = $query->param('heatmap');
 if ($heatmap) {
-    $parameters .= " -heatmap";
+    $return_fields .= ",heatmap";
+}
+
+## Alignment of consensuses selection
+$heatmap = $query->param('alignment_consensuses');
+if ($heatmap) {
+    $return_fields .= ",align_consensus";
 }
 
 ## Export newick selection
 $newick = $query->param('newick');
 if ($newick) {
-    $parameters .= " -export newick";
+    $return_fields .= ",newick";
 }
 
 ## Run compare-matrices-selection
@@ -153,8 +177,33 @@ if ($quick) {
     $parameters .= " -quick";
 }
 
-## Insert lables
-$parameters .= " -label name ";
+## Insert labels
+my @labs = ();
+my $lab = "";
+$label_id = $query->param('label_id');
+$label_name = $query->param('label_name');
+$label_consensus = $query->param('label_consensus');
+
+
+if($label_name){
+    push(@labs, "name");
+}
+
+if($label_id){
+    push(@labs, "id");
+}
+
+if($label_consensus){
+    push(@labs, "consensus");
+}
+
+$lab = join(",", @labs);
+
+
+$parameters .= " -label_in_tree ".$lab;
+
+## Insert fields to return 
+$parameters .= " ".$return_fields." ";
 
 ################################################################
 ## Output file
