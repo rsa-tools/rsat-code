@@ -79,7 +79,6 @@ peakmo_vs_jaspar:
 		-mode matches \
 		-format1 transfac -file1 ${PEAKMO_MATRICES} \
 		-format2 transfac -file2 ${JASPAR_MATRICES} \
-		-mode matches \
 		-DR \
 		-uth offset_rank 1 \
 		-lth w ${MIN_W} \
