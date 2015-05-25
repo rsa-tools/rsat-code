@@ -81,8 +81,7 @@ package main;
   $parse_options = "";
 
   $null = "<NULL>";		## NULL value
-##  $source = "NCBI";
-  $source = "refseq";
+  $source = "<NA>";
   $taxonomy = $null;
   @taxa = ();
   our %infile = ();
