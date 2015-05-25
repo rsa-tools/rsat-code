@@ -981,10 +981,10 @@ sub make_temp_file {
 ################################################################
 ## echo a command and send it to the system
 ## Usage:
-##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle);
+##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);
 ## 
 sub doit {
-  my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle) = @_;
+  my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue) = @_;
 
   if ($log_handle) {
     print $log_handle "\n\n", $command, "\n";
@@ -1076,11 +1076,14 @@ sub doit {
 
 
     ## Cluster queue
-    unless ($ENV{CLUSTER_QUEUE}) {
-      &RSAT::error::FatalError("In order to send jobs to a PC cluster, you need to define an environment variable CLUSTER_QUEUE.");
+    unless ($cluster_queue) {
+      if ($ENV{CLUSTER_QUEUE}) {
+	$cluster_queue = $ENV{CLUSTER_QUEUE};
+      } else {
+	&RSAT::error::FatalError("In order to send jobs to a PC cluster, you need to define an environment variable CLUSTER_QUEUE.");
+      }
     }
-    my $cluster_queue = $ENV{CLUSTER_QUEUE};
-
+      
     ## Treatment of the user feed-back
     my $batch_mail = $ENV{BATCH_MAIL} || "a";
 
@@ -1101,6 +1104,7 @@ sub doit {
       $qsub_command .= " -V";                     ## Pass environment variables to qsub !
       $qsub_command .= " -d ".$wd;                ## Working directory used for the job
       $qsub_command .= " -m ".$batch_mail;        ## Email options (error, completion)
+      $qsub_command .= " -q ".$cluster_queue;     ## Queue
       $qsub_command .= " -N ".$job_file;          ## Job name
       $qsub_command .= " -e ".$job_file.".err";   ## STDER log file
       $qsub_command .= " -o ".$job_file.".log";   ## STDOUR log file
