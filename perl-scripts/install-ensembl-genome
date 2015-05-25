@@ -200,7 +200,7 @@ package main;
       next if (/^;/);		## Skip comment lines
       next if (/^#/);		## Skip header line
       chomp();
-      my ($species_name) = split(/\s/);
+      my ($species_name) = split(/\s+/);
       if ($species_name) {
 	push (@species_names,$species_name);
       }
@@ -426,7 +426,7 @@ to get the species available at EnsemblGenomes (extended Ensembl).
 
 =item B<-species_file #>
 
-File containing the list of species to install.  The file mut be in
+File containing the list of species to install.  The file must be in
 text format. The first word of each row (everything that precedes a
 space or tab) is considered as a species name. Further information on
 the line is ignored.
