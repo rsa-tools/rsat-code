@@ -480,7 +480,7 @@ sub iterate_blast {
 	## Query organism(s)
 	my $q = 0;
 	foreach $query_organism (@query_organisms) {
-	    $q++;
+	    $q++; ## Increment query counter
 
 	    if (($main::skip_query_org > 0) && ($q <= $main::skip_query_org)) {
 		&RSAT::message::Warning("Skipping query organism", $q, $db_organism) if ($main::verbose >= 1);
@@ -495,6 +495,10 @@ sub iterate_blast {
 		$skipped_tasks++;
 		next;
 	    }
+
+	    ## Skip already treated tasks (e.g. self-comparison with option -reciprocal)
+	    next if ($already_treated{$query_organism}{$db_organism}); 
+	    $already_treated{$query_organism}{$db_organism} = 1; ## Index the query/db organism pair
 
 	    &RSAT::message::TimeWarn("DB", $d."/".scalar(@db_organisms), $db_organism, 
 				     "Query", $q."/".scalar(@query_organisms), $query_organism, 
@@ -580,7 +584,7 @@ sub iterate_blast {
 		    ## Send job with 1 or more tasks (depending on $batch number)
 		    $job_counter++;
 		    &RSAT::message::Debug($batch_command) if ($main::verbose >= 4);
-		    &doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+		    &doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix,"","",$cluster_queue);
 		    &RSAT::message::TimeWarn("Job number", $job_counter, "sent to cluster queue") if ($main::verbose >= 2);
 
 		    ## Reinitialize counter and batch command for next iterations
@@ -900,6 +904,21 @@ tasks).
         } else {
 	    $batch = 1;
         }
+
+=pod
+
+=item B<-queue>
+
+Cluster queue. By default, the cluster queue is specified in the
+configuration file ($RSAT/RSAT_config.props). However, since each
+BLAST task can take a more or less long time depending on the proteome
+sizes, it is recommended to use a queue that supports long time (e.g.
+1h per job or more).
+
+=cut
+      } elsif ($ARGV[$a] eq "-queue") {
+	$cluster_queue = $ARGV[$a+1];
+
       }
 
     }
