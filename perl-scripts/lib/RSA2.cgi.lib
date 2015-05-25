@@ -104,7 +104,6 @@ sub PrintOrthoSelectionSection {
 ##                               Ralstonia_metallidurans_CH34
 ##                               Yersinia_pestis_KIM
 
-#    my $organism = "Escherichia_coli_K_12_substr__MG1655_uid57779";
     my %supported_genome_blast = ();
     my @supported_orthologs = ();
     my %supported_orthologs = ();
@@ -116,8 +115,8 @@ sub PrintOrthoSelectionSection {
     ## all organisms.
     ## Read supported orthologs from file
     my $fp_org_file = $ENV{RSAT}."/public_html/data/supported_blast_tables.tab";
+    &RSAT::message::Debug("supported BLAST tables", $fp_org_file) if ($main::verbose >= 5);
     if (-e $fp_org_file) {
-	
 	my ($fp_org) = &OpenInputFile($fp_org_file);
 	while (<$fp_org>) {
 	    next unless (/\S/) ; # skip empty rows
@@ -139,32 +138,13 @@ sub PrintOrthoSelectionSection {
 	    }
 	}
       @supported_orthologs = sort keys %supported_orthologs;
+    } else {
+      &RSAT::error::FatalError("Missing file", $fp_org_file);
     }
-
-
-#    my $tree = new RSAT::Tree();
-#    my @descendants = $tree->get_node_descendents($supported_genome_blast{$org}{"Enterobacteriales"}, "DFS", "all");
-#    &RSAT::error::FatalError(" --- @descendants --- \n");
-    
-#Bacillus_subtilis
-#Brucella_melitensis
-#Escherichia_coli_K12
-#Escherichia_coli_ETEC_H10407
-#Klebsiella_pneumoniae_MGH_78578
-#Mycoplasma_pneumoniae
-#Pseudoalteromonas_haloplanktis_TAC125
-#Pseudomonas_putida_KT2440
-#Ralstonia_metallidurans_CH34
-#Rhizobium_etli_CFN_42
-#Salmonella_typhi
-#Salmonella_typhimurium_LT2
-#Streptococcus_mutans
-#Yersinia_pestis_KIM
 
   ## Choice of the organism
   print "<b>Query </b>";
   &OrganismPopUp(@supported_orthologs);
-  
 
   ################################################################
   ### gene queries
