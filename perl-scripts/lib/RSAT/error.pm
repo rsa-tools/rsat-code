@@ -58,7 +58,7 @@ sub cgiError {
   my $error_color = "#DD0000";
   my $hostname = `hostname`;
   chomp($hostname);
-  $error_message .= "<br>\nError occurred on host ".$hostname;
+  $error_message .= "<br>\nError occurred on RSAT site: ".$ENV{rsat_site}."; host server: ".$hostname."; admin: ".$ENV{rsat_server_admin};
   &RSAT::message::cgiMessage($error_message, "Error", $error_color);
   print "</body></html>\n";
   exit(1);

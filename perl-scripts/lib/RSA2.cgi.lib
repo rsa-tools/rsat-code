@@ -115,7 +115,7 @@ sub PrintOrthoSelectionSection {
     ## This is temporary, we need to find a way to provide orhtologs for
     ## all organisms.
     ## Read supported orthologs from file
-    my $fp_org_file = $ENV{RSAT}."/public_html/data/supported_genome_blasts.tab";
+    my $fp_org_file = $ENV{RSAT}."/public_html/data/supported_blast_tables.tab";
     if (-e $fp_org_file) {
 	
 	my ($fp_org) = &OpenInputFile($fp_org_file);

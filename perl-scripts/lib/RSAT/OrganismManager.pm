@@ -386,7 +386,11 @@ sub get_supported_organisms_web {
       $group_specificity = ucfirst(lc($group_specificity));
       push @selected_organisms , &RSAT::OrganismManager::GetOrganismsForGroup($group_specificity);
       if (scalar(@selected_organisms) < 1) {
-	&RSAT::error::FatalError("No organism supported on this server for group", $ENV{group_specificity});
+	if (lc($ENV{group_specificity}) eq "none") {
+	  &RSAT::error::FatalError("No organism supported on this server");
+	} else {
+	  &RSAT::error::FatalError("No organism supported on this server for group", $ENV{group_specificity});
+	}
       }
     }
   } else {
