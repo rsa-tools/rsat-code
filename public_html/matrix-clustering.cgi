@@ -178,8 +178,8 @@ if ($quick) {
 }
 
 ## Random permutation
-$quick = $query->param('random');
-if ($quick) {
+$rand = $query->param('random');
+if ($rand) {
     $parameters .= " -rand";
 }
 
