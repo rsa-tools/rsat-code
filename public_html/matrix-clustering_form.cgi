@@ -172,7 +172,7 @@ print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
 print "<br><br>\n";
 
 ## Negative control: Permute the columns of the input motifs
-print $query->checkbox(-name=>'Random',
+print $query->checkbox(-name=>'random',
   		       -checked=>$default{random},
   		       -label=>'');
 print "&nbsp;<A'><B>Negative control: the input motifs columns are randomly permuted.</B></A>";
