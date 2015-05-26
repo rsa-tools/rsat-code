@@ -273,6 +273,9 @@ package main;
   ## Use compare-matrices-quick
   local $quick_flag = 0;
 
+  ## Permute input matrices
+  local $random_flag = 0;
+
   ## display collection label in trees and alignment table
   local $display_collection_name_flag = 0;
 
@@ -789,6 +792,19 @@ B<NOTE:> By the moment the only a few thresholds can be used with this option. (
 
     } elsif ($arg eq "-quick") {
     $quick_flag = 1;
+
+
+=pod
+
+=item	B<-rand>
+
+When this option is selected, the columns of the input motifs are randomly permuted (conserving thus the Information Content), the new motifs are used as input for the pairwise-comparison and clustering.
+
+=cut
+
+    } elsif ($arg eq "-rand") {
+    $random_flag = 1;
+
 
 =pod
 
@@ -1327,6 +1343,20 @@ sub pre_process_motif_files{
       ## Create a single file combining all the matrices from all the current
       ## input file, and append the motif collection name to each matrix ID.
       $motif_set_attributes{$collection_name}{matrix_file_processed} = $main::dir{data}."/".$collection_name."_input_motifs_processed.tf";
+
+      ## If it is required, permute the input motifs
+      if($random_flag == 1){
+      
+	  ## Temporal file with random motifs
+	  my $rand_motif_file = $main::outfile{prefix}."_data/".$collection_name."_random_motifs.tf";
+	  my $randomize_motifs_cmd = $SCRIPTS."/convert-matrix";
+	  $randomize_motifs_cmd .= " -i ".$matrix_file;
+	  $randomize_motifs_cmd .= " -from tf -to tf";
+	  $randomize_motifs_cmd .= " -perm 1";
+	  $randomize_motifs_cmd .= " -o ".$rand_motif_file;
+	  &doit($randomize_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	  $motif_set_attributes{$collection_name}{matrix_file_input} = $rand_motif_file;
+      }
       
       ## Convert input matrices in transfac format + append prefix if required
       &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
@@ -1339,6 +1369,7 @@ sub pre_process_motif_files{
       $convert_matrix_cmd .= " -prefix_id ".$collection_name;
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed};
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
       
       ################################################
       ## Save the unique ID in a hash table
@@ -1367,8 +1398,9 @@ sub pre_process_motif_files{
       $concatenate_processed_files_cmd .=  $motif_set_attributes{$t}{matrix_file_processed}." ";
   }
   $concatenate_processed_files_cmd .= " > ".$main::outfile{motif_file};
-  
   &doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err); 
+
+
   $main::outfile{input_matrices} = $main::outfile{motif_file};
 
   ################################################################
