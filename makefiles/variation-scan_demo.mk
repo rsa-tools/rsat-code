@@ -247,3 +247,26 @@ compare_regvar:
 ## their format to varscan format.
 #		-file weinrauch_cisbp ${WEINRAUCH_CISBP}.tab \
 #		-file weinrauch_halporeg ${WEINRAUCH_HAPLOREG}.tab \
+
+
+################
+## Test convert-varScan
+
+isRSNP_FILE=${DEMO_DIR}/isRSNP_result.csv
+CONV_VARSCAN_RES=${RESULT_DIR}/convert_varScan_results
+
+
+CONVERT_VARSCAN_FROM_isRSNP_CMD=convert-varScan -i ${isRSNP_FILE} -from isRSNP -to varScan -o ${CONV_VARSCAN_RES}_from_isRSNP_to_varScan.tab
+
+CONVERT_VARSCAN_FROM_varScan_CMD=convert-varScan -i ${VARSCAN_RES}.tab -to isRSNP -from varScan -o ${CONV_VARSCAN_RES}_from_varScan_to_isRSNP.tab
+
+convert_varScan_from_isRSNP_to_varScan:
+	@echo ${CONVERT_VARSCAN_FROM_isRSNP_CMD}
+	@${CONVERT_VARSCAN_FROM_isRSNP_CMD}
+
+convert_var_Scan_from_varScan_to_isRSNP:
+	@echo ${CONVERT_VARSCAN_FROM_varScan_CMD}
+	@${CONVERT_VARSCAN_FROM_varScan_CMD}
+
+
+
