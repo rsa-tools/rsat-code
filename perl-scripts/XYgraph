@@ -942,9 +942,9 @@ sub Rplot{
     $r_instruction.="dev.off()\n";
 
     print $out_R  $r_instruction;
-    my $rscript_commnad="Rscript $tmp_R_instructions_file ";
-    &doit($rscript_commnad, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    print $rscript_commnad ."\n";
+    my $rscript_command = "Rscript $tmp_R_instructions_file ";
+    &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    print $rscript_command ."\n";
    
 }
 

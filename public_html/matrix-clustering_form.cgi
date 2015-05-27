@@ -28,6 +28,7 @@ $default{matrix_format} = "transfac";
 $default{hclust_method}= "average";
 $default{metric} = "Ncor";
 $default{newick} = "";
+$default{random} = "";
 $default{quick} = "";
 $default{heatmap} = "CHECKED";
 $default{consensus} = "CHECKED";
@@ -168,6 +169,13 @@ print $query->checkbox(-name=>'newick',
   		       -checked=>$default{newick},
   		       -label=>'');
 print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
+print "<br><br>\n";
+
+## Negative control: Permute the columns of the input motifs
+print $query->checkbox(-name=>'random',
+  		       -checked=>$default{random},
+  		       -label=>'');
+print "&nbsp;<A'><B>Negative control: the input motifs columns are randomly permuted.</B></A>";
 print "<br><br>\n";
 print "<HR width=550 align=left>\n";
 
