@@ -177,6 +177,12 @@ if ($quick) {
     $parameters .= " -quick";
 }
 
+## Random permutation
+$rand = $query->param('random');
+if ($rand) {
+    $parameters .= " -rand";
+}
+
 ## Insert labels
 my @labs = ();
 my $lab = "";

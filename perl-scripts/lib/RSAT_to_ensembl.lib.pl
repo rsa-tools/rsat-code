@@ -598,8 +598,8 @@ sub Get_assembly_version {
 	my (@fields) = split("\t");
 	foreach my $field  (@supported_header_fields) {
 	  ## Automatically fill attributes corresponding to the column header
-	    $var_name = "db_".$field;
-	    $$var_name = shift(@fields);
+	  $var_name = "db_".$field;
+	  $$var_name = shift(@fields);
 	}
 	
 	&RSAT::message::Debug("Get_assembly_version", "line=".$l, 

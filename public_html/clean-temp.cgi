@@ -44,6 +44,7 @@ $query = new CGI;
 ## Parameters
 my $clean_limit = 3;
 $clean_temp_command = "echo '<br>started'; date; \n";
+$clean_temp_command .= "find /var/tmp/ -type f -mtime +1 -name 'CGI*' -exec rm {} \\; ;\n"; ## Clean temporary files from CGI upload
 $clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp/ -mtime +".${clean_limit}." -type f -exec rm -f {} \\; ; \n";
 $clean_temp_command .= "find ".$ENV{RSAT}."/public_html/tmp/ -mtime +".${clean_limit}." -type d -exec rm -rf {} \\; ; \n";
 $clean_temp_command .= "rm -f ".$ENV{RSAT}."/public_html/tmp/serialized_genomes/*.serial ; \n";
