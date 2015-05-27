@@ -2275,7 +2275,7 @@ sub Merge_matrices() {
 		}    
 		
 		## Calculate the IC content and remove low IC columns
-		$merged_mat_file_shaved = &shave_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_shaved, 0.15);
+		$merged_mat_file_shaved = &shave_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_shaved, 0.3);
 		
 		## Create branch-wise logos
 		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_shaved;
@@ -2436,7 +2436,7 @@ sub Merge_root_matrices() {
 		}  	
 
 		## Calculate the IC content and remove low IC columns
-		$merged_mat_file_shaved = &shave_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_shaved, 0.15);
+		$merged_mat_file_shaved = &shave_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_shaved, 0.3);
 		
 		## Create branch-wise logos
 		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_shaved;
@@ -4281,6 +4281,8 @@ sub shave_matrix_low_IC_columns{
     ## Calculate the number of shaved columns 
     ## in the downstream side of the motif
     @IC_info_array = reverse(@IC_info_array);
+    ## Delete the last element which correspond to the sum of IC
+    shift @IC_info_array;
     foreach my $IC (@IC_info_array) {
 	if ($IC <= $IC_threshold) {
 	    $shave_dw++;
