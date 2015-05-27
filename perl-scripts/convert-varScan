@@ -1,0 +1,478 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: convert-varScan ,v 1.00 2015/05/26 17:24:24 amedina Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+template
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Template for writing new perl scripts.
+
+=head1 AUTHORS
+
+Jacques.van-Helden\@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+convert-varScan [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.00 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+  my  $rSNP_formats= {
+      'varScan' => 1,
+      'isRSNP' => 1
+  };
+  our $from="isRSNP";
+  our $to="varScan";
+
+  ## Hash to collect snp information, snp ids will be used as keys in the hash
+  my %variants=();
+  
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
+
+  if ($from eq "isRSNP") {
+      &RSAT::message::Info("Reading input file in format isRSNP" ) if ($main::verbose >= 0);
+
+      &Read_isRSNP();
+      
+  }elsif ($from eq "varScan") {
+      &RSAT::message::Info("Reading input file in format varScan" ) if ($main::verbose >= 0);
+
+      &Read_varScan();
+  }
+  
+  close $main::in if ($main::infile{input});
+
+
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  
+  ################################################################
+  ## Output printing
+
+  if ($to eq "isRSNP") {
+      &RSAT::message::Info("Writing output in format isRSNP" ) if ($main::verbose >= 0);
+      &Write_isRSNP;
+      
+  }elsif ($to eq "varScan") {
+      &RSAT::message::Info("Writing output in format varScan" ) if ($main::verbose >= 0);      
+      &Write_varScan();
+
+  }
+  
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item B<-from rSNP_format>
+
+rSNP current scanning tool result format.
+rSNP formats: varScan, isRSNP 
+
+=cut
+    } elsif ($arg eq "-from") {
+      $from = shift(@arguments);
+      &RSAT::error::FatalError("Format not available") if  ($rSNP_formats{$from});
+      
+
+
+=pod
+
+=item B<-to rSNP_format>
+
+rSNP outformat scanning tool result format.
+rSNP formats: varScan, isRSNP 
+
+=cut
+    } elsif ($arg eq "-to") {
+      $to = shift(@arguments);
+      &RSAT::error::FatalError("Format not available") if  ($rSNP_formats{$to});
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; template ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+sub Read_isRSNP{
+    my @header=();
+    my $one_scan=0;
+    while (<$main::in>) {
+	next unless (/\S/); ## Skip empty rows
+	next if (/^;/); ## Skip comment rows
+	next if (/^#/); ## Skip header rows
+	chomp();
+	if($_=~/^SNP_ID/){
+	    @header=split(",", $_);
+	    next;
+	}
+	## collect information for each SNP in one hash with SNP id as key
+	
+	## isRSNP file columns
+	#SNP_ID,DATABASE,MATRIX_ID,TF,Alleles,A1_score,A2_score,logodds,P-value,Adjusted_P-value
+
+	my @snp_info=split(",", $_);
+	
+	$one_scan++ ;
+	$variants{$one_scan}{"var_id"}=$snp_info[0];
+	$variants{$one_scan}{"motif_database"}=$snp_info[1];
+	$variants{$one_scan}{"ac_motif"}=$snp_info[2];
+	$variants{$one_scan}{"motif"}=$snp_info[3];
+	
+	#$variants{$one_scan}{"ac_motif"}=$snp_info[4];
+
+	my @alleles=split ("/",$snp_info[4]);
+	
+	my $a1_score=$snp_info[5];
+	my $a2_score=$snp_info[6];
+
+	if ($a1_score>=$a2_score){
+	    $variants{$one_scan}{"best_variant"}=$alleles[0];
+	    $variants{$one_scan}{"worst_variant"}=$alleles[1];
+	    $variants{$one_scan}{"best_w"}=$a1_score; 
+	    $variants{$one_scan}{"worst_w"}=$a2_score;
+	}elsif ($a1_score<$a2_score){
+	    $variants{$one_scan}{"best_variant"}=$alleles[1];
+	    $variants{$one_scan}{"worst_variant"}=$alleles[0];
+	    $variants{$one_scan}{"best_w"}=$a2_score; 
+	    $variants{$one_scan}{"worst_w"}=$a1_score;
+	}
+	
+	$variants{$one_scan}{"pval_ratio"}=$snp_info[7];
+	$variants{$one_scan}{"logodds_pval"}=$snp_info[8];
+	$variants{$one_scan}{"logodds_adj_pval"}=$snp_info[9];
+	
+	
+  }
+
+}
+
+sub Read_varScan{
+    my $one_scan=0;
+    while (<$main::in>) {
+	next unless (/\S/); ## Skip empty rows
+	next if (/^;/); ## Skip comment rows
+	next if (/^#/); ## Skip header rows
+	chomp();
+	my @snp_info=split("\t", $_);	
+
+        $one_scan++ ;
+	$variants{$one_scan}{"var_id"}=$snp_info[2];
+	
+	$variants{$one_scan}{"ac_motif"}=$snp_info[0];
+	$variants{$one_scan}{"motif"}=$snp_info[1];
+	$variants{$one_scan}{"var_class"}=$snp_info[3];
+	$variants{$one_scan}{"var_coord"}=$snp_info[4];
+	$variants{$one_scan}{"best_w"}=$snp_info[5];
+	$variants{$one_scan}{"worst_w"}=$snp_info[6];
+	$variants{$one_scan}{"w_diff"}=$snp_info[7];
+	$variants{$one_scan}{"best_pval"}=$snp_info[8];
+	$variants{$one_scan}{"worst_pval"}=$snp_info[9];
+	$variants{$one_scan}{"pval_ratio"}=$snp_info[10];
+	$variants{$one_scan}{"best_variant"}=$snp_info[11];
+	$variants{$one_scan}{"worst_variant"}=$snp_info[12];
+	$variants{$one_scan}{"best_offset"}=$snp_info[13];
+	$variants{$one_scan}{"worst_offset"}=$snp_info[14];
+	$variants{$one_scan}{"min_offset_diff"}=$snp_info[15];
+	$variants{$one_scan}{"best_strand"}=$snp_info[16];
+	$variants{$one_scan}{"worst_strand"}=$snp_info[17];
+	$variants{$one_scan}{"str_change"}=$snp_info[18];
+	$variants{$one_scan}{"best_seq"}=$snp_info[19];
+	$variants{$one_scan}{"worst_seq"}=$snp_info[20];
+	$variants{$one_scan}{"reference_allele"}=$snp_info[21];
+	$variants{$one_scan}{"is_ref_better"}=$snp_info[22];
+	$variants{$one_scan}{"minor_alle_freq"}=$snp_info[23];
+
+	
+  }
+
+}
+
+sub Write_isRSNP{
+    print $out "SNP_ID,DATABASE,MATRIX_ID,TF,Alleles,A1_score,A2_score,logodds,P-value,Adjusted_P-value\n" ;
+    
+    ## Print SNP information for each SNP id
+    foreach $one_scan (keys %variants) {
+	my $snp_info_line= join (
+	    ",",
+	    $variants{$one_scan}{"var_id"},
+	    ($variants{$one_scan}{"motif_database"}|| "NA"),
+	    $variants{$one_scan}{"ac_motif"},
+	    $variants{$one_scan}{"motif"},
+	    $variants{$one_scan}{"best_variant"}."/".$variants{$one_scan}{"worst_variant"},
+	    $variants{$one_scan}{"best_w"},
+	    $variants{$one_scan}{"worst_w"},
+	    $variants{$one_scan}{"pval_ratio"},
+	    ($variants{$one_scan}{"logodds_pval"} || "NA"),
+	    ($variants{$one_scan}{"logodds_adj_pval"} || "NA")
+	    );
+	print $out $snp_info_line."\n";
+	
+    }
+   
+
+}
+
+sub Write_varScan{
+    my $varScan_header=join("\t","ac_motif","motif","var_id","var_class","var_coord","best_w","worst_w","w_diff","best_pval","worst_pval","pval_ratio","best_variant","worst_variant","best_offset","worst_offset","min_offset_diff","best_strand","worst_strand","str_change","best_seq","worst_seq","reference_allele","is_ref_better","minor_allele_freq");
+    
+    print $out "#".$varScan_header."\n";
+    
+    foreach $one_scan (keys %variants) {
+	#print $one_scan;
+	#die "BOOM";
+	my $snp_info_line= join ("\t",
+				 $variants{$one_scan}{"ac_motif"},
+				 $variants{$one_scan}{"motif"},
+				 $variants{$one_scan}{"var_id"},
+				 ($variants{$one_scan}{"var_class"}|| "NA"),
+				 ($variants{$one_scan}{"var_coord"} || "NA"),
+				 $variants{$one_scan}{"best_w"},
+				 $variants{$one_scan}{"worst_w"},
+				 ($variants{$one_scan}{"w_diff"} || $variants{$one_scan}{"best_w"} - $variants{$one_scan}{"worst_w"}),
+				 ($variants{$one_scan}{"best_pval"}||"NA"),
+				 ($variants{$one_scan}{"worst_pval"} || "NA"),
+				 $variants{$one_scan}{"pval_ratio"},
+				 ($variants{$one_scan}{"best_variant"}||"NA"),
+				 ($variants{$one_scan}{"worst_variant"}||"NA"),
+				 ($variants{$one_scan}{"best_offset"} || "NA" ),
+				 ($variants{$one_scan}{"worst_offset"} || "NA" ),
+				 ($variants{$one_scan}{"min_offset_diff"} || "NA"),
+				 ($variants{$one_scan}{"best_strand"} || "NA" ),
+				 ($variants{$one_scan}{"worst_strand"} || "NA" ),
+				 ($variants{$one_scan}{"str_change"} || "NA" ),
+				 ($variants{$one_scan}{"best_seq"} || "NA" ),
+				 ($variants{$one_scan}{"worst_seq"} || "NA" ),
+				 ($variants{$one_scan}{"reference_allele"}||"NA"),
+				 ($variants{$one_scan}{"is_ref_better"} || "NA"),
+				 ($variants{$one_scan}{"minor_alle_freq"} || "NA")	
+	    );
+	    print $out $snp_info_line."\n";
+	
+    }
+}
+
+__END__
