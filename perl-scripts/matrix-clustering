@@ -1053,7 +1053,6 @@ to avoid the cimputation of the visual elements.
 	  }  
 	  
 	  if($return_fields{newick}){
-	      print " --- $field ---\n";
 	      $export_newick = 1;
 	  } 
 
@@ -1230,7 +1229,10 @@ sub set_output_file_names {
   $main::outfile{int_align} = $main::outfile{prefix}."_tables/intermediate_alignments.tab";
 
   ## Archive to facilitate transfer of all the results in a zip file
-  $main::outfile{archive} = $main::outfile{prefix}."_archive.".$main::param{archive_format};
+  $main::outfile{archive} = $main::outfile{prefix}."_archive.zip";
+
+  print "\n\n\n --- $main::outfile{archive} --- \n\n\n";
+
   &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
 
   ## Open the HTML index file and write header
@@ -2938,14 +2940,10 @@ sub Read_cluster_colors{
 sub Archive {
 
   my ($remove_first, $to_archive) = @_;
-
-
-
   &RSAT::message::TimeWarn("\n; Archiving data and results") if ($main::verbose >= 2);
 
   ## Delete previous version of the archive to avoid including the old archive in the new one
   $cmd .= "rm -f ".$main::outfile{archive}."; " if ($remove_first);
-
 
   ################################################################
   ## Define archiving parameters
@@ -2963,7 +2961,6 @@ sub Archive {
   ## TO CHECK (Jacques)
   if ($main::verbose >= 3) {
     &RSAT::message::Debug("folder to archive", $to_archive);
-#    die "HELLO";
   }
 
   ## Avoid crash of the program when run from the "$archive_dir_dir"
@@ -2986,12 +2983,10 @@ sub Archive {
     $cmd .= " -C ".$archive_dir_dir; ## Avoid including the whole path in the archive paths
     $cmd .= " --exclude ".$archive;
     $cmd .= " ".$to_archive_rel_path;
-    #$cmd .= " ".$to_archive;
   } else {
     &RSAT::error::FatalError($main::param{archive_format}, "Invalid archive format. Supported: zip, tar, tgz.");
   }
 
-#  $cmd .= "zip -q ".$archive." ".$to_archive;
   &one_command($cmd, 1);
 
   &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
@@ -3469,14 +3464,13 @@ sub ReportStyleCSS{
 ## taken from other parts of the code
 sub ParametersTable{
 
-#  my $hclust_method_link = "http://www.econ.upf.edu/~michael/stanford/maeb7.pdf";
   my $hclust_method_link = "http://pedagogix-tagc.univ-mrs.fr/courses/statistics_bioinformatics/pdf_files/09.clustering.pdf";
 
   my $threshold_values_html = "";
   foreach my $par (sort keys %lth) {
     $threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}."<br>";
   } 
-
+print "\n\n\n --- $main::outfile{archive} --- \n\n\n";
     my $par_table = '
   <!-- Div with the table of selected parameters-->
   <div class="tab">
@@ -3499,13 +3493,12 @@ sub ParametersTable{
 	  <td class="par_text">'.$number_of_clusters.'</td>
 	  <td class="par_text"><a target=\'_blank\' href="'.$hclust_method_link.'">'.$hclust_method.'</a></td>
 	  <td class="par_text">'.$threshold_values_html.'</td>
-	  <td class="par_text"><a href="'.$main::outfile{archive}.'">Download all results</a></td>
+	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
 	</tr>
       </tbody>
     </table>
   </div>
 '."\n\n";
-
   print $syn $par_table;
 }
 
@@ -4226,11 +4219,7 @@ sub Synthesis {
     
     ## End of the HTML file
     &CloseSynthesis();
-
-    
-    ## Add the HTML synthesis report to the archive
-    #&Archive(0, $main::outfile{synthesis}) if ($task{archive}); 
-    
+     
     &RSAT::message::TimeWarn("Report", $main::outfile{summary}) if ($main::verbose >= 2);
 }
 
