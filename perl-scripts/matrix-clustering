@@ -341,7 +341,6 @@ package main;
   ## Read argument values
   &ReadArguments();
 
-
   ################################################################
   ## Check argument values
 
@@ -1037,22 +1036,28 @@ to avoid the cimputation of the visual elements.
       my @fields_to_return = split ",", $arg;
       foreach my $field (@fields_to_return) {
 	$field = lc($field);
+
 	if ($supported_return_fields{$field}) {
 	  $return_fields{$field} = 1;
 
 	  if($return_fields{clone_input}){
 	      $clone_input_flag = 1;
+	  } 
 
-	   } elsif($return_fields{align_consensus}){
+	  if($return_fields{align_consensus}){
 	      $align_consensus = 1;
+	  }  
 
-	  }  elsif($return_fields{heatmap}){
+	  if($return_fields{heatmap}){
 	      $draw_heatmap = 1;
-
-	  }  elsif($return_fields{newick}){
+	  }  
+	  
+	  if($return_fields{newick}){
+	      print " --- $field ---\n";
 	      $export_newick = 1;
+	  } 
 
-	  } elsif($return_fields{root_matrices}){
+	  if($return_fields{root_matrices}){
 	      $root_matrices_flag = 1;
 	  }
 
