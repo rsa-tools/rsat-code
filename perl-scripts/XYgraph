@@ -736,8 +736,9 @@ sub Rplot{
     
     our $tmp_R_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_instructions", 1).".R";
     my ($out_R) = &OpenOutputFile($tmp_R_instructions_file);
-    
+   
     my $r_instruction="in.file <- \"$input_data_file\" \n";
+    $r_instruction.="options(bitmapType='cairo')\n";
     $r_instruction.="input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=TRUE, na.strings = \"<NULL>\") \n";
 
     ## Save header as vector in R
