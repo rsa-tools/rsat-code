@@ -490,7 +490,7 @@ package main;
 	  ################################################################
 	  ## Creates the website
 	  &Synthesis();
-	  
+
 	  ################################################################
 	  ## Create an archive with all result files
 	  &Archive(1);
@@ -1230,8 +1230,6 @@ sub set_output_file_names {
 
   ## Archive to facilitate transfer of all the results in a zip file
   $main::outfile{archive} = $main::outfile{prefix}."_archive.zip";
-
-  print "\n\n\n --- $main::outfile{archive} --- \n\n\n";
 
   &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
 
@@ -2306,13 +2304,18 @@ sub Merge_matrices() {
 
 	    my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{file_name};
 
-	    my $new_singleton_motif_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/matrices.tf";
-	    $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file;
+	    my $new_singleton_motif_file_temp = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$cluster."_matrices_temp.tf";
+	    my $new_singleton_motif_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$cluster."_matrices.tf";
+	    $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file_temp;
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-	    
+
+	    $cmd = "convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf -attr name ".$cluster." -attr accession ".$cluster." -o ".$new_singleton_motif_file;
+	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+	    unlink($new_singleton_motif_file_temp);
+
 	    $cmd = $SCRIPTS."/convert-matrix -i ".$new_singleton_motif_file;
 	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
-	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/matrices"; 
+	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$cluster."_matrices"; 
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 	}
     } 
@@ -2454,10 +2457,7 @@ sub Merge_root_matrices() {
 		$merged_consensuses_files{$merge_level}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_logo.png";
 		$merged_consensuses_files{$merge_level}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_logo_rc.png";
 		
-		$merged_consensuses_files{$merge_level}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/merged_logo_rc.png";
-		
-		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
-		
+		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";		
 		my $cons = `more $mat_file | grep '^DE'`;
 		chomp($cons);
 		$cons =~ s/^DE\s+//;
@@ -3470,8 +3470,7 @@ sub ParametersTable{
   foreach my $par (sort keys %lth) {
     $threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}."<br>";
   } 
-print "\n\n\n --- $main::outfile{archive} --- \n\n\n";
-    my $par_table = '
+  my $par_table = '
   <!-- Div with the table of selected parameters-->
   <div class="tab">
     <table id="parameters_table">
@@ -4013,6 +4012,44 @@ sub InsertTreesAndBranchMotifs {
 	    my $cons_tab = &toogle_branch_consensus_table();
 	    $cons_tab =~ s/--nb--/$num/g;
 	    $script_jquery .= $cons_tab."\n";
+
+	## Insert the matrices for singleton clusters here
+	} else {
+	    
+	    $consensus_table = "";
+	    $consensus_table = &branch_consensus_table();
+	    my $consensus_table_columns = "";
+	    
+	    ## Get the attributes for the consensus table
+	    my ($cons, $logo_D, $logo_R, $transfac_file);
+	    $logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/cluster_".$num."_logo.png");
+	    $logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/cluster_".$num."_logo_rc.png");
+	    $transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/cluster_".$num."_matrices.tf");
+	    $transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/cluster_".$num."_matrices.tf";
+	    $cons = `more $transfac_file_2 | grep DE`;
+	    $cons =~ s/DE\s+//gi;
+
+	    ## Fill the table
+	    $consensus_table_columns .= "\n".'<tr id="cluster_'.$num.'" class="branch_motifs">'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2">Level 0 (singleton) </th>'."\n";
+	    $consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">Motif (TRANSFAC format)</a></th>'."\n";
+	    $consensus_table_columns .= "</tr>\n";
+
+	    ## Add the code to hide/show the branch-consensus table
+	    my $selection_branch = &Display_Selected_Branch();
+	    my $branch_tab_id = "cluster_".$num;
+	    my $branch_row_id = "cluster_".$num;
+	    $selection_branch =~ s/--branch_tab_id--/$branch_tab_id/g;
+	    $selection_branch =~ s/--branch_row_id--/$branch_row_id/g;
+	    $selection_branch =~ s/--nb--/$num/g;
+	    $script_jquery .= $selection_branch."\n";
+
+	    $consensus_table =~ s/--nb--/$num/g;
+	    $consensus_table =~ s/--here--/$consensus_table_columns/g;
+	    $all_consensus_table .= "\n".$consensus_table."\n";
 	}
 	print $syn $insert_div;
     }
@@ -4207,7 +4244,7 @@ sub Synthesis {
     print $syn "\n".'</div>';
 
     &DisplaySingleCluster();
-
+    
     if ($draw_heatmap == 1 && $number_of_motifs > 1) {
 	&InsertHeatMap();
     }
