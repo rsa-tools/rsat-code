@@ -304,7 +304,7 @@ package main;
     %main::plot_seq_type=();
 
     #additional plot types
-    $main::plottypes="";
+    #$main::plottypes="";
     %main::supported_plot_types=();
     $main::supported_plot_types{nwd}=1;
     $main::supported_plot_types{occ_proba}=1;
