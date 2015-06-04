@@ -304,7 +304,7 @@ package main;
     %main::plot_seq_type=();
 
     #additional plot types
-    $main::plottypes="";
+    #$main::plottypes="";
     %main::supported_plot_types=();
     $main::supported_plot_types{nwd}=1;
     $main::supported_plot_types{occ_proba}=1;
@@ -328,6 +328,8 @@ package main;
     ## Reference distribution for the ROC curve
     $roc_ref = "theor";
     $task{plot}=0;
+
+    $r_plots=0 ; ## By defualt plots will be generated using gnuplot
 
     ## Tasks
     local @supported_tasks = ("all", ## Run all other tasks
@@ -510,7 +512,11 @@ package main;
     # 	&RSAT::error::FatalError("For drawing additional plots you have to specify al least one seq_type and plot_type");
     # }
 
-    
+    ## R plots
+    my $rplot_option="";
+    if ($r_plots==1){
+	$rplot_option=" -r_plot ";
+    }
 
     ################################################################
     ## Background file
@@ -1599,6 +1605,19 @@ Example:
 
 =pod
 
+=item	B<-r_plots>
+
+Generate plots using R plotting options.
+
+Example:
+   -r_plots
+
+=cut
+	} elsif ($arg eq "-r_plots") {
+	  $r_plots = 1;
+
+=pod
+
 =item	B<-logo_format>
 
 Image format for the sequence logos.
@@ -2533,7 +2552,7 @@ sub CompareDistrib {
 
       ################################################################
       ## Draw a graph with all the decreasing cumulative distributions
-      my $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
+      my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$rplot_option." ".$all_graph_options;
 
       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
 
@@ -2556,7 +2575,7 @@ sub CompareDistrib {
       ################################################################
       ## Draw a graph with all the decreasing cumulative distributions
       ## and a logarithmic Y axis
-      $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
+      $XYgraph_cmd = $SCRIPTS."/XYgraph ".$rplot_option." ".$all_graph_options;
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
       $XYgraph_cmd .= " -ymax 1 -ylog 10";
@@ -2591,7 +2610,7 @@ sub CompareDistrib {
 
       $ycols = join ",", 2..(scalar(@distrib_files)+2);
 #      $large_graph_options =~ s/-xsize 800/-xsize 400/;
-      $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
+      $XYgraph_cmd = $SCRIPTS."/XYgraph ".$rplot_option." ".$all_graph_options;
       $XYgraph_cmd .= " -xcol ".$ref_column;
       $XYgraph_cmd .= " -ycol ".$ycols;
       $XYgraph_cmd .= " -ygstep1 0.1 -ygstep2 0.02";
@@ -2683,7 +2702,7 @@ sub CompareDistrib {
 
 	  ################################################################
 	  ## Draw a graph with all the decreasing cumulative distributions
-	  my $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot ".$all_graph_options;
+	  my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$rplot_option." ".$all_graph_options;
 	  my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
@@ -2695,7 +2714,7 @@ sub CompareDistrib {
 	  ################################################################
 	  ## Draw a graph with all the decreasing cumulative distributions
 	  ## and a logarithmic Y axis
-	  $XYgraph_cmd = $SCRIPTS."/XYgraph -r_plot".$all_graph_options;
+	  $XYgraph_cmd = $SCRIPTS."/XYgraph ".$rplot_option." ".$all_graph_options;
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymax 1 -ylog 10";
 	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
@@ -3004,7 +3023,7 @@ sub Draw_NWD{
    my $nwd_xygrpah_file=$nwd_outfile_prefix."_compare-scores.";
    
    foreach my $image_format (@image_formats) {
-       my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph -r_plot " ;
+       my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph ".$rplot_option." " ;
        $XYgraph_nwd_cmd .= " -i ".  $nwd_compare_scores_file ." ";
        $XYgraph_nwd_cmd .= " -format ". $image_format  ." " ;
        $XYgraph_nwd_cmd .= " -xcol 1  -ycol ".$ycols;
@@ -3055,7 +3074,7 @@ sub Draw_OCC{
    
    
    foreach my $image_format (@image_formats) {
-       my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph -r_plot " ;
+       my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph ".$rplot_option." " ;
        $XYgraph_occ_cmd .= " -i ".  $occ_compare_scores_file ." ";
        $XYgraph_occ_cmd .= " -format ". $image_format  ." " ;
        $XYgraph_occ_cmd .= " -xcol 1  -ycol ".$ycols;
@@ -3176,7 +3195,7 @@ sub GenerateHTMLReport {
 	    print $synthesis_per_matrix "\n<h3>NWD curve</h3>\n";
 	    &index_one_image($synthesis_per_matrix,$outfile{matrix_nwd_plots}."png", 'height=120'); 
 	}
-	if ($main::plot_types{nwd}){
+	if ($main::plot_types{occ_proba}){
 	    print $synthesis_per_matrix "\n<h3>OCC curve</h3>\n";
 	    &index_one_image($synthesis_per_matrix,$outfile{matrix_occ_proba_plots}."png", 'height=120'); 
 	}
