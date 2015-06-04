@@ -71,7 +71,7 @@ local $input_format = lc($query->param('matrix_format'));
 $matrix_sites=$query->param('matrix_sites');
 
     ($input_format) = split (/\s+/, $input_format);
-    if ( ( ( $input_format eq "consensus" ) ||( $input_format eq "meme" ) ||( $input_format eq "infogibbs" ) ||( $input_format eq "transfac" )) && $matrix_sites ){
+    if ( ( ( $input_format eq "consensus" ) ||( $input_format eq "meme" ) ||( $input_format eq "infogibbs" ) ||( $input_format eq "meme_block" ) ||( $input_format eq "transfac" )) && $matrix_sites ){
 	$parameters .= " -ms $matrix_file";
     }
     else{
@@ -92,7 +92,9 @@ if ($query->param('pseudo_distribution') eq "equi_pseudo") {
 
 ################################################################
 ## k parameter for the k-fold validation
-if ((&IsInteger($query->param('kfold'))) && ($query->param('kfold') > 0)) {
+#if ((&IsInteger($query->param('kfold'))) && ($query->param('kfold') > 0)) {
+
+if ((&IsInteger($query->param('kfold'))) ) {
     $parameters .= " -kfold ".$query->param('kfold');
 }
 
