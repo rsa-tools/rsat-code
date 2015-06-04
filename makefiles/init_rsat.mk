@@ -59,9 +59,9 @@ init:
 	@chmod 444 public_html/tmp/index.html
 
 	@echo "	logs	${LOGS_DIR}"
-	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/logs/robots.txt
 	@mkdir -p ${LOGS_DIR}
 	@chmod 777 ${LOGS_DIR}
+	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/logs/robots.txt
 	@mkdir -p ${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
 #	echo "Options -Indexes" > ${LOGS_DIR}/.htaccess
 	@rm -f ${LOGS_DIR}/index.html
