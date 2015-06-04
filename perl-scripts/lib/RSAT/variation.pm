@@ -11,7 +11,7 @@ Read predicted rSNPs from a variation scan result file.
 =cut
 sub read_varscan_file {
   &RSAT::message::Warning("NOT IMPLEMENTED YET");
-
+  
 }
 
 
