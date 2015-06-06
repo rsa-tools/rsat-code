@@ -144,6 +144,40 @@ in the genomes of the reference taxon. Various statistics can be used
 to measure the level of co-occurrence (for a comparison of these
 statistics, see Ferrer et al., 2010).
 
+=head2 B<Sort organisms by taxonomy>
+
+Sort the columns of the output file by taxonomical group (as Nishant
+does).
+
+=head2 B<-taxon_list>
+
+The user can specify a tab-delimited text file containing a list of
+taxa of interest.
+
+The first word of each line must contain the name of a taxon supported
+in RSAT. If this option is specified, the program exports a summary
+table per taxa, with one row per gene, one column per taxon of
+interest, and each cell indicates the number of species where the gene
+has been found in the corresponding taxon.
+
+The second column can optionally contain the keywords "absent" or
+"present". This indicates a taxonomic filter which will be applied to
+each gene, in order to retain only the genes which are both - well
+represented in taxa labelled "present"; - more or less absent from
+genomes of the taxa labelled "absent".
+
+This enables to lead knowledge-oriented searches for groups of genes
+whose products are expected to be present in some taxa, and absent
+from some other taxa.
+
+=head2 B<-task heatmap>
+
+Export a heatmap indicating with contrasted colors (red vs blue) the
+genomes in which each gene is present/absent.
+
+Nishant will define the appropriate heatmap options with a small
+script in R, which can then be integrated in phylo-profiles.
+
 =cut
 
 
@@ -257,7 +291,7 @@ package main;
   $outfile{species}=$prefix{output}."_selected_species.tab"; push @outfiles, "species";
   $outfile{species_html}=$prefix{output}."_selected_species.html"; push @outfiles, "species_html";
   $outfile{species_names}=$prefix{output}."_selected_species_names.tab"; push @outfiles, "species_names";
-  $outfile{bbh} = $prefix{output}."_bbh_len".$lth{ali_len}."_id".$lth{ident}."_bits".$uth{bit_sc}."_e".$uth{expect}.".tab"; push @outfiles, "bbh";
+  $outfile{bbh} =  $prefix{output}."_bbh_len".$lth{ali_len}."_id".$lth{ident}."_bits".$lth{bit_sc}."_e".$uth{expect}.".tab"; push @outfiles, "bbh";
 
   ## Output file names for phylogenetic profiles
   $prefix{profiles} = $prefix{output}."_profiles_len".$lth{ali_len}."_id".$lth{ident}."_e".$uth{expect};
@@ -352,10 +386,12 @@ package main;
   }
 
   ## Report the number of BBH relationships (across all reference species)
-  &RSAT::message::Info("BBH file", $outfile{bbh}) if ($main::verbose >= 2);
-  $bbh_nb = `grep -v '^;' $outfile{bbh} | grep -v '^#' | wc -l`;
-  chomp $bbh_nb;
-  &RSAT::message::Info("Selected", $bbh_nb, "BBH across", $species_nb, "species") if ($main::verbose >= 1);
+  if (-e $outfile{bbh}) {
+    &RSAT::message::Info("BBH file", $outfile{bbh}) if ($main::verbose >= 2);
+    $bbh_nb = `grep -v '^;' $outfile{bbh} | grep -v '^#' | wc -l`;
+    chomp $bbh_nb;
+    &RSAT::message::Info("Selected", $bbh_nb, "BBH across", $species_nb, "species") if ($main::verbose >= 1);
+  }
 
   ################################################################
   ## Convert ortholog table into a profile table 
