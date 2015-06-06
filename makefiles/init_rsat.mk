@@ -197,7 +197,7 @@ ws_test_all_servers:
 ## distribution (since 2009).
 
 ## Compile all programs
-compile_all: compile_info_gibbs compile_count_words compile_matrix_scan_quick  compile_compare_matrices_quick compile_pathway_tools
+compile_all: compile_info_gibbs compile_count_words compile_matrix_scan_quick compile_compare_matrices_quick compile_pathway_tools
 
 PROGRAM=info-gibbs
 SRC_DIR=${RSAT}/contrib/${PROGRAM}
