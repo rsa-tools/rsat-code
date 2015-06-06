@@ -200,7 +200,7 @@ sub export_supported_organisms {
 
   ## Rename the updated table to make it effective
   system("mv ".$organism_table_tmp." ".$organism_table);
-  &RSAT::message::Info("Exported supported organisms", $organism_table) if ($main::verbose >= 1);
+  &RSAT::message::Info("Exported supported organisms", $organism_table) if ($main::verbose >= 2);
 }
 
 ################################################################
@@ -249,6 +249,7 @@ sub supported_organism_table {
   &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", 
 			"taxon: ".$taxon, 
 			"group: ".$group, 
+			"depth: ".$depth, 
 			"fields", join( ";", @fields)) 
     if ($main::verbose >= 3);
 
@@ -439,7 +440,7 @@ sub CheckOrganism {
 ## Collect all organisms belonging to a given taxon
 sub GetOrganismsForTaxon {
   my ($taxon, $depth, $die_if_noorg) = @_;
-  &RSAT::message::Info("Collecting organisms for taxon", $taxon) if ($main::verbose >= 4);
+  &RSAT::message::Info("Collecting organisms for taxon", $taxon, "depth: ".$depth) if ($main::verbose >= 4);
   my @organisms = ();
 
   ## Load the taxonomy of the organisms supported on this RSAT
@@ -452,14 +453,16 @@ sub GetOrganismsForTaxon {
   ## Identify the tree node corresponding to the query taxon
   my $node = $tree->get_node_by_id($taxon);
   if ($node){
+
+    ## Get all organisms belonging to the query taxon, i.e. the leaves
+    ## descending from the selected tree node.
+    @organisms = $node->get_leaves_names();
+
+    ## If depth argument has been specified, cut the taxonomic tree by
+    ## selecting only one organism for each taxon at a given depth of
+    ## the taxonomic tree.
     if (defined($depth) && ($depth != 0)) {
-      ## If depth argument has been specified, cut the taxonomic tree by
-      ## selecting only one organism for each taxon at a given depth of
-      ## the taxonomic tree.
       @organisms = &OneOrgPerTaxonomicDepth($depth, @organisms);
-    } else {
-      ## Get all organisms belonging to the query taxon
-      @organisms = $node->get_leaves_names();
     }
   } else {
     $message = join ("\t", "Taxon", $taxon, "is not supported on server", $ENV{rsat_site});
