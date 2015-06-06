@@ -23,29 +23,27 @@ sub date {
 ## Specification of the server(s)
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
 my @servers =  $ARGV[0] || 
-    qw(http://rsat-tagc.univ-mrs.fr/rsat/
-       http://embnet.ccg.unam.mx/rsa-tools/
-       http://rsat.sb-roscoff.fr/
-       http://rsat01.biologie.ens.fr/rsa-tools/
-       http://floresta.eead.csic.es/rsat/
-       http://pedagogix-tagc.univ-mrs.fr/rsat/
-       http://rsat-tagc.univ-mrs.fr/rsat-dev/
-       );
-
-my @not_working = qw(
-        http://rsat.ulb.ac.be/rsat/
-        http://dev.rsat.eu/
-        );
-
-my @more_servers = qw(
-    	http://prokaroyte.rsat.eu
-	http://fungi.rsat.eu
+     qw(http://fungi.rsat.eu
 	http://plants.rsat.eu
 	http://metazoa.rsat.eu
 	http://protists.rsat.eu
 	http://training.rsat.eu
-        http://www.rsat.eu
-        http://www.rsat.fr
+        http://dev.rsat.eu/
+       );
+
+
+my @not_working = qw(
+        http://rsat.ulb.ac.be/rsat/
+        );
+
+my @more_servers = qw(
+        http://rsat-tagc.univ-mrs.fr/rsat/
+        http://embnet.ccg.unam.mx/rsa-tools/
+        http://rsat.sb-roscoff.fr/
+        http://rsat01.biologie.ens.fr/rsa-tools/
+        http://floresta.eead.csic.es/rsat/
+        http://pedagogix-tagc.univ-mrs.fr/rsat/
+        http://rsat-tagc.univ-mrs.fr/rsat-dev/
         http://tagc.univ-mrs.fr/rsa-tools
         http://localhost/rsat
         );
