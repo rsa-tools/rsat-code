@@ -154,6 +154,10 @@ package main;
   ## Flag to export the Newick tree
   local $export_newick = 0;
 
+  ## operator
+  $operator = "mean";
+  local %supported_operator = ("mean"=>1, "sum"=>1);
+  local $supported_operators = join ",", sort keys %supported_operator;
 
   ################################################################
   ## Ensure the access to the java libraries, which are required to
@@ -309,8 +313,13 @@ package main;
   local $supported_tree_positions = join ",", @supported_tree_positions;
   local $heatmap_tree_pos = "column";
 
-  ## A hash to save the name of the clusters and their corresponding hexa code
+  ## A hash to save the name of the clusters and their corresponding
+  ## hexa code
   local %hexa_code = ();
+
+  ## Lower threshold on column-wise information content: left-most and
+  ## right-most columns having a lower IC are trimmed.
+  $trim_threshold = 0.15;
 
   ## Supported fields to return
   local %return_fields = ();
@@ -346,6 +355,13 @@ package main;
 
   &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
 
+  ################################################################
+  ## Input file is mandatory
+  unless (($main::infile{matrices}) || ($main::infile{matrices_info_tab})) {
+    &RSAT::error::FatalError("Input should be specified either as a matrix file (option -i), or as a file table (option -file_table).");
+  }
+
+  ################################################################
   ## Non-recognized parameters are passed to compare-matrices
   if (scalar(@args_to_pass)) {
     $args_to_pass = join (" ", @args_to_pass);
@@ -363,7 +379,7 @@ package main;
   }
 
   ## Check that the  input (single) file has been specified
-  if ( $single_input_flag){
+  if ($single_input_flag){
       unless ($main::infile{matrices}) {
 	  &RSAT::error::FatalError("You must define the input file (option -i).");
       }
@@ -577,6 +593,21 @@ Same as -h
 =cut
     } elsif ($arg eq "-help") {
       &PrintOptions();
+
+
+      
+=pod
+
+=item B<-i input matrix file>
+
+The input file contains a set of position-specific scoring
+matrices.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{matrices} = shift(@arguments);
+      $single_input_flag = 1;
+      
 =pod
 
 =item B<-file_table>
@@ -611,21 +642,10 @@ peak-motifs_Oct4_matrices.tf	transfac	Oct4_motifs
 
 =cut
     } elsif ($arg eq "-file_table") {
-	$main::infile{matrices_info_tab} = shift(@arguments);
+      $main::infile{matrices_info_tab} = shift(@arguments);
 	$multi_input_flag = 1;
 
-=pod
 
-=item B<-i input matrix file>
-
-The input file contains a set of position-specific scoring
-matrices.
-
-=cut
-    } elsif ($arg eq "-i") {
-      $main::infile{matrices} = shift(@arguments);
-      $single_input_flag = 1;
-      
 =pod
 
 =item B<-matrix_format matrix_format>
@@ -962,6 +982,61 @@ Suggested thresholds:
       &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ")
 	  unless (&RSAT::util::IsReal($thr_value));
       $uth{$thr_field} = $thr_value;
+
+=pod
+
+=item B<-calc merging_stat>
+
+Specify the operator used to merge matrices (argument passed to I<merge-matrices)>. 
+
+Supported: 
+
+=over
+
+=item I<mean> (default)
+
+Each cell of the output matrix contains the mean of the values found
+in the corresponding cell of the input matrices.
+
+=item I<sum>
+
+Each cell of the output matrix contains the sum of the values found
+in the corresponding cell of the input matrices.
+
+Note: the option I<diff>, supported by I<merge-matrices>, is not accepted
+for I<matrix-clustering>.
+
+=back
+
+=cut
+
+    } elsif ($arg eq "-calc") {
+      $operator = lc(shift(@arguments));
+      unless ($supported_operator{$operator}) {
+	&RSAT::error::FatalError($operator, "Invalid operator for option -calc. ", "Supported: ".$supported_operators);
+      }
+
+
+=pod
+
+=item B<-trim_threshold #>
+
+Trimming threshold.
+
+Left- and right-most columns whose information content are smaller
+than this threshold will be trimmed, to avoid exporting large matrices
+with non-informative flanks. 
+
+B<Beware:> in some cases the trimming can deteriorate the motifs, by
+cutting moderately informative positions.
+
+=cut
+    } elsif ($arg eq "-trim_threshold") {
+      $trim_threshold = shift(@arguments);
+      unless (&IsReal($trim_threshold)) {
+	&RSAT::error::FatalError($trim_threshold, "Invalid value for option -trim_threshold. Should be a Real number.");
+      }
+
 
 =pod
 
@@ -1609,7 +1684,7 @@ sub Hclustering {
     ## Output parameters
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     $cluster_motifs_cmd .= "; \"";
-    $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog};
+    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog};
 
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
@@ -2266,11 +2341,12 @@ sub Merge_matrices() {
 		## Merge the matrices and create a single matrix
 		my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_cat.tf";
 		my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
-		my $merged_mat_file_shaved = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_shaved_matrices.tf";
+		my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_trimmed_matrices.tf";
 		$cmd = "cat ".$files." >".$cat_file;
 		$cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
 		$cmd .= " -in_format tf -out_format tf";
 		$cmd .= " -id ".$cluster." -name ".$cluster;
+		$cmd .= " -calc ".$operator;
 		$cmd .= " -o ".$merged_mat_file;
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		## Delete files with single matrices
@@ -2280,10 +2356,10 @@ sub Merge_matrices() {
 		}    
 		
 		## Calculate the IC content and remove low IC columns
-		$merged_mat_file_shaved = &shave_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_shaved, 0.3);
+		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_trimmed, $trim_threshold);
 		
 		## Create branch-wise logos
-		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_shaved;
+		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_trimmed;
 		$cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
 		$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -2432,11 +2508,12 @@ sub Merge_root_matrices() {
 		## Merge the matrices and create a single matrix
 		my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_cat.tf";
 		my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
-		my $merged_mat_file_shaved = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_shaved_matrices.tf";
+		my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_trimmed_matrices.tf";
 		my $cmd = "cat ".$files." >".$cat_file;
 		$cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
 		$cmd .= " -in_format tf -out_format tf";
 		$cmd .= " -id ".$cluster." -name ".$cluster;
+		$cmd .= " -calc ".$operator;
 		$cmd .= " -o ".$merged_mat_file;
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		## Delete files with single matrices
@@ -2446,10 +2523,10 @@ sub Merge_root_matrices() {
 		}  	
 
 		## Calculate the IC content and remove low IC columns
-		$merged_mat_file_shaved = &shave_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_shaved, 0.3);
+		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_trimmed, 0.3);
 		
 		## Create branch-wise logos
-		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_shaved;
+		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_trimmed;
 		$cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
 		$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level; 
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -4261,25 +4338,25 @@ sub Synthesis {
 }
 
 #######################################
-## Shave the ends of the matrix with 
+## Trim the ends of the matrix with 
 ## very low IC
-sub shave_matrix_low_IC_columns{
+sub trim_matrix_low_IC_columns{
 
     ## Read the matrix file name
-    my $matrix_to_shave = shift;
-    my $shaved_matrix = shift;
+    my $matrix_to_trim = shift;
+    my $trimmed_matrix = shift;
     my $IC_threshold = shift;
     
     my $temp_IC_file = &RSAT::util::make_temp_file("","IC_test", 1);
     my $IC_info = "";
     my @IC_info_array = ();
-    my $shave_up = 0; 
-    my $shave_dw = 0;
+    my $trim_up = 0; 
+    my $trim_dw = 0;
   
 
     ## Calculate the IC of the matrix,
     ## save this info in a file
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_shave." -from tf -return info,header,margins -o ".$temp_IC_file;
+    my $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -return info,header,margins -o ".$temp_IC_file;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
     ## Read the IC file
@@ -4299,33 +4376,33 @@ sub shave_matrix_low_IC_columns{
     close($IC_file);
     unlink($IC_file);
 
-    ## Calculate the number of shaved columns 
+    ## Calculate the number of trimmed columns 
     ## in the upstream side of the motif
     foreach my $IC (@IC_info_array) {
 	if ($IC <= $IC_threshold) {
-	    $shave_up++;
+	    $trim_up++;
 	} else {
 	    last;
 	}
     }
 
-    ## Calculate the number of shaved columns 
+    ## Calculate the number of trimmed columns 
     ## in the downstream side of the motif
     @IC_info_array = reverse(@IC_info_array);
     ## Delete the last element which correspond to the sum of IC
     shift @IC_info_array;
     foreach my $IC (@IC_info_array) {
 	if ($IC <= $IC_threshold) {
-	    $shave_dw++;
+	    $trim_dw++;
 	} else {
 	    last;
 	}
     }
 
     ## Trim the matrix
-    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_shave." -from tf -to tf -trim_col_left ".$shave_up." -trim_col_right ".$shave_dw." -return counts,consensus -o ".$shaved_matrix;
+    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-    return $shaved_matrix;
+    return $trimmed_matrix;
 }
 
 ####################################################
