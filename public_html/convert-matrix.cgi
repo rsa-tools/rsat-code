@@ -137,11 +137,19 @@ if (&IsReal($query->param('bg_pseudo'))) {
 local @return_fields = ();
 foreach my $stat (qw (counts frequencies weights info consensus parameters profile header margins logo links)) {
   if ($query->param($stat)) {
-    push @return_fields, $stat;
-    if ($stat eq "logo"){
 
-      ## JvH TEMPORARILY DISACTIVATED pdf logos (201502-05) to
-      ## circumvent strange bug with ghostscript on rsat.ulb.ac.be
+    ## Counts are accepted for all formats
+    if ($stat eq "counts") {
+    	push @return_fields, $stat;  
+    }
+
+    ## Logos are only supported for tab-delimited format
+    if ($stat eq "logo") {
+      next unless ($output_format eq 'tab');
+
+      ## JvH TEMPORARILY DISACTIVATED pdf format for logos
+      ## (2015-02-05) to circumvent strange bug with ghostscript on
+      ## rsat.ulb.ac.be
       $parameters .= " -logo_format png "; 
 #      $parameters .= " -logo_format png,pdf ";
       $parameters .= " -logo_file ".$result_file."_logo";
@@ -158,20 +166,33 @@ foreach my $stat (qw (counts frequencies weights info consensus parameters profi
       }
 #      $parameters .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
     }
+
+    ## All output fields are compaitble with tab format
+    if ($output_format eq ('tab')) {
+	push @return_fields, $stat;
+    } elsif ((($stat eq "parameters") || ($stat eq "consensus")) && 
+	     (($output_format eq 'transfac') || ($output_format eq 'tf'))) {
+	push @return_fields, $stat;
+    }
+    
+
   }
 }
+$parameters .= " -return ";
+$parameters .= join ",", @return_fields;
 
+## Verbosity is only supported for my tab format
 if ($output_format eq 'tab') {
   ## verbosity
   if ($query->param("comments")) {
     $parameters .= " -v 1";
   }
-  $parameters .= " -return ";
-  $parameters .= join ",", @return_fields;
-}else {
-    $parameters .= " -to ".$output_format;
-    $parameters .= " -return counts";
 }
+
+## Output format   
+$parameters .= " -to ".$output_format;
+
+## Output file
 $parameters .= " -o ".$result_file;
 
 &ReportWebCommand($command." ".$parameters);
