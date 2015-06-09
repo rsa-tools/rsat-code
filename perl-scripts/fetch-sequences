@@ -164,6 +164,7 @@ BEGIN {
 require "RSA.lib";
 
 use Bio::Das; ## Required to access UCSC Genome Browser
+use POSIX;
 
 
 ################################################################
@@ -431,7 +432,7 @@ package main;
 	  $left = $right;
       }
     } elsif ($reference eq "center") {
-	$center = ($left + $right)/2;
+	$center = floor(($left + $right)/2);
 	$left = $center;
 	$right = $center;
     }
