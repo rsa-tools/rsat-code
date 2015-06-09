@@ -23,7 +23,7 @@ V=2
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
 OCT4_PREFIX=peak-motifs_Oct4
-OCT4_VS_SOX2_PREFIX=Oct4_vs_Sox2
+ES_CELLS_PREFIX=ES_CELL_ANALYSIS
 
 ## Choose a particular demo set
 MATRIX_PREFIX=${PEAKMO_PREFIX}
@@ -97,11 +97,11 @@ _cluster_multi:
 
 
 ## Cluster motifs resulting from two independent analysis of peak-motifs (Chen data set) with Oct4 and Sox2 peaks. 
-cluster_peakmotifs_Oct4_vs_Sox2:
+cluster_peakmotifs_ES_cells_analysis:
 	@echo
-	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct4 and Sox2 dataset from Chen 2008)"
-	${MAKE} _cluster_multi MATRIX_PREFIX=${OCT4_VS_SOX2_PREFIX} \
-		TITLE='Oct4 motifs peak motifs' \
+	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct4, Sox2 and Nanog dataset from Chen 2008)"
+	${MAKE} _cluster_multi MATRIX_PREFIX=${ES_CELLS_PREFIX} \
+		TITLE='Oct4-Sox2-Nanog motifs from peak motifs' \
 		METRIC_BUILD_TREE=Ncor
 
 
