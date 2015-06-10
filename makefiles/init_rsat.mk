@@ -59,9 +59,9 @@ init:
 	@chmod 444 public_html/tmp/index.html
 
 	@echo "	logs	${LOGS_DIR}"
-	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/logs/robots.txt
 	@mkdir -p ${LOGS_DIR}
 	@chmod 777 ${LOGS_DIR}
+	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/logs/robots.txt
 	@mkdir -p ${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
 #	echo "Options -Indexes" > ${LOGS_DIR}/.htaccess
 	@rm -f ${LOGS_DIR}/index.html
@@ -197,7 +197,7 @@ ws_test_all_servers:
 ## distribution (since 2009).
 
 ## Compile all programs
-compile_all: compile_info_gibbs compile_count_words compile_matrix_scan_quick  compile_compare_matrices_quick compile_pathway_tools
+compile_all: compile_info_gibbs compile_count_words compile_matrix_scan_quick compile_compare_matrices_quick compile_pathway_tools
 
 PROGRAM=info-gibbs
 SRC_DIR=${RSAT}/contrib/${PROGRAM}
@@ -261,7 +261,7 @@ compile_floydwarshall:
 ## during execution. Quick and dirty solution, will need to be revised
 compile_kwalks:
 	@echo "Compiling kwalks (software developed by Jerome Callut and Pierre Dupont, UCL, Belgium)"
-	@(cd ${RSAT}/contrib/kwalks/src; make ; \
+	@(cd ${RSAT}/contrib/kwalks/src; make clean; make; \
 		echo "Installing lkwalk executable in bin directory ${BIN}"; \
 		cd ../bin; rsync -ruptvl lkwalk ${BIN})
 	@echo "Setting read/write access to ${RSAT}/contrib/kwalks for temporary files"

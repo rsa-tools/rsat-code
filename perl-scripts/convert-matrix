@@ -798,14 +798,21 @@ OPTIONS
 		information content:
 			-sort desc MS.ic
 
-	-top
+	-top N
 	        Maximal number of matrices to return.
 
 		Some of the input formats can contain several matrices
 		in a single file (e.g. consensus, meme,
 		MotifSampler). By default, all the matrices are parsed
 		and exported. The option -top allows to restrict the
-		number of matrices to be exported.
+		number of matrices to be exported. 
+
+		This option can be useful for quick tests. It can also
+		be combined with the option -skip to split a large
+		matrix file in smaller subsets.
+
+	-skip N
+	        Skip the first N matrices. See -top for details.
 
 	-pseudo
 		pseudo-weight used for the calculation of the weight
@@ -1335,7 +1342,8 @@ convert-matrix options
 -to		output matrix format. Supported: $supported_output_formats
 -return		return type(s). Supported: $supported_return_fields
 -sort desc|asc|alpha key     Sort matrices according to the specified key.
--top		maximal number of matrices to return. 
+-top N		stop reading the input files after the N to matrices
+-skip N		skip the first N matrices
 -prior [deprecated, use -bgfile] 		background model (prior frequency file)
 -bgfile		background model (prior frequency file)
 -bg_format	background model format. Supported: $supported_bg_formats
