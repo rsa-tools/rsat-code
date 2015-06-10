@@ -47,14 +47,13 @@ for (pkg in required.packages) {
 }
 
 
-################################################################
-####### THIS DOES NOT WORK AT ENS, where we are not sudoers !!!
 ## Check requirement for bioconductor packages
 print("Installing BioConductor packages")
 print(required.packages.bioconductor)
 for (pkg in required.packages.bioconductor) {
   if (!suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE, lib=c(.libPaths(),dir.rsat.rlib)))
       ) {
+    .libPaths(c(dir.rsat.rlib, .libPaths())) ## this line fixes the problem at ENS (Morgane)
     source("http://bioconductor.org/biocLite.R")
 #    biocLite(ask=FALSE, lib=dir.rsat.rlib,  lib.loc=dir.rsat.rlib)
     biocLite(lib=dir.rsat.rlib, lib.loc=c(.libPaths(),dir.rsat.rlib))
