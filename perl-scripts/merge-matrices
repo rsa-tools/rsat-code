@@ -124,7 +124,11 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
+
+  ## operator
   $operator = "sum";
+  local %supported_operator = ("mean"=>1, "sum"=>1, "diff"=>1);
+  local $supported_operators = join ",", sort keys %supported_operator;
 
   ## input formats
   local %supported_input_format = %RSAT::MatrixReader::supported_input_format;
@@ -211,15 +215,18 @@ package main;
   }
 
   $merged_matrix->setAlphabet_lc(@alphabet);
+  
+  ## Set divider to 1 for matrix sums, and to the nb of matrices for
+  ## the mean.
+  my $divider = 1;
+  if ($operator eq "mean") {
+    $divider *= $nb_matrices;
+  }
 
   @merged_counts = ();
   if ($operator eq "diff") {
     &RSAT::error::FatalError("Matrix difference is not supported yet, please contact Jaime Castro to upgrade the program.");
   } else { 
-    my $divider = 1;
-    if ($operator eq "mean") {
-      $divider *= $nb_matrices;
-    }
 
     foreach my $matrix (@matrices) {
       ## count matrix
@@ -236,8 +243,7 @@ package main;
     }
   }
   $merged_matrix->setMatrix($alphabet_size, $matrix_width, @merged_counts);
-  $merged_matrix->calcConsensus();
-  
+  $merged_matrix->calcConsensus();  
   
   ################################################################
   ## Output
@@ -365,22 +371,58 @@ formats.
 
 =pod
 
-=item	B<-id ID>
+=item	B<-id matrix_ID>
 
-Set the matrix Id
+Specify the ID of the output matrix.
 
 =cut
     } elsif ($arg eq "-id") {
       $outfile{id} = shift(@arguments);
 
 
-=item	B<-id ID>
+=item	B<-name matrix_name>
 
-Set the matrix name
+Specify the name of the output matrix.
 
 =cut
     } elsif ($arg eq "-name") {
       $outfile{name} = shift(@arguments);
+
+=pod
+
+=item B<-calc merging_stat>
+
+Specify the operator used to merge matrices. 
+
+Supported: 
+
+=over
+
+=item I<mean> (default)
+
+Each cell of the output matrix contains the mean of the values found
+in the corresponding cell of the input matrices.
+
+=item I<sum>
+
+Each cell of the output matrix contains the sum of the values found
+in the corresponding cell of the input matrices.
+
+=item I<diff>
+
+Each cell of the output matrix contains the difference between the two
+input matrices. B<Beware>: this option ssumes that the input file
+contains only two matrices.
+
+=back
+
+=cut
+
+    } elsif ($arg eq "-calc") {
+      $operator = lc(shift(@arguments));
+      unless ($supported_operator{$operator}) {
+	&RSAT::error::FatalError($operator, "Invalid operator for option -calc. ", "Supported: ".$supported_operators);
+      }
 
 
 =pod
@@ -445,6 +487,7 @@ sub Verbose {
   }
   printf $out "%-22s\t%s\n", "; Output format", $output_format;
 
+  printf $out "; %-22s\t%s\n", "Merging operator", $main::operator;
   printf $out "; %-22s\t%s\n", "Input matrices", $main::nb_matrices;
   printf $out "; %-22s\t%s\n", "Matrix width", $main::matrix_width;
 }

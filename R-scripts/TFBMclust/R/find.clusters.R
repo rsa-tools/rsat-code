@@ -11,7 +11,7 @@ find.clusters <- function(attributes.list, tree){
   ## This means, search the chain of levels that were grouped together
   ## NOTE: this function is only called within the function find.clusters
   find.chained.levels <- function(x){
-
+    
     chained.levels <- NULL
     current.level <- NULL
     alignment.flag <- 1
@@ -21,7 +21,7 @@ find.clusters <- function(attributes.list, tree){
 
       ## Search the next chained level
       current.level <- find.next.levels.in.tree(x)
-
+      
       ## Get the alignment status at the level
       alignment.flag <- as.numeric(attributes.list[[paste("level_", current.level, sep = "")]][["alignment_flag"]])
 
@@ -43,14 +43,14 @@ find.clusters <- function(attributes.list, tree){
   ## the next level pointing the current level
   ## NOTE: this function is only called within the function find.clusters
   find.next.levels.in.tree <- function(x){
-
+    
     ## Get the level
     level <- which(tree$merge == x)
 
     if(level > length(tree$merge)/2){
       return(level - length(tree$merge)/2)
     } else if (level > length(tree$merge)/2){
-      stop("The level cannot be grater than the tree size.")
+      stop("The level cannot be greater than the tree size.")
     }else {
       return(level)
     }
@@ -65,22 +65,24 @@ find.clusters <- function(attributes.list, tree){
 
   ## Attribute treatment. If a particular node with an alignment flag == 0
   ## is pointing to a node that potentially could be aligned (flag == 1)
-  ## in a further stepm the last is set to 0, in order to avoid wrong alignments.
-  sapply(1:(length(attributes.list)-1), function(x){
-
-    ## Get the flag of the current level
-    flag <- as.numeric(attributes.list[[x]][["alignment_flag"]])
-
-    if(flag == 0){
-      next.level <- find.next.levels.in.tree(x)
-      next.level.flag <- as.numeric(attributes.list[[next.level]][["alignment_flag"]])
-      if(next.level.flag == 1){
-        attributes.list[[next.level]][["alignment_flag"]] <<- 0
+  ## in a further step the last is set to 0, in order to avoid wrong alignments.
+  if(length(attributes.list) > 2){
+    sapply(1:(length(attributes.list)-1), function(x){
+      
+      ## Get the flag of the current level
+      flag <- as.numeric(attributes.list[[x]][["alignment_flag"]])
+      
+      if(flag == 0){
+        next.level <- find.next.levels.in.tree(x)
+        next.level.flag <- as.numeric(attributes.list[[next.level]][["alignment_flag"]])
+        if(next.level.flag == 1){
+          attributes.list[[next.level]][["alignment_flag"]] <<- 0
+        }
       }
-    }
-  })
+    })
+  }
 
-
+  
   #################################################
   ## The three is traversed in a bottom-up way
   sapply(1:length(attributes.list), function(lvl){
