@@ -1684,6 +1684,7 @@ sub Hclustering {
     ## Output parameters
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     $cluster_motifs_cmd .= "; \"";
+#    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.")"; # Uncomment this line to check the R output in the terminal
     $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog};
 
     if ($r_path) {
@@ -2353,19 +2354,28 @@ sub Merge_matrices() {
 		unlink($cat_file);
 		foreach my $file (@file_names) {
 		    unlink($file);
-		}    
-		
+		}   
+
+		## Addig attributes (ID + AC: cluster + level + motif_nb)
+		my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_nb_motifs_".scalar(@file_names).".tf";
+		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
+		$cmd .= " -from tf -to tf -return counts,consensus";
+		$cmd .= " -attr name ".$cluster."__".$merge_level."_with_".scalar(@file_names)."_motifs";
+		$cmd .= " -attr accession ".$cluster."__".$merge_level."_with_".scalar(@file_names)."_motifs";
+		$cmd .= " -o ".$merged_mat_file_2; 
+		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
 		## Calculate the IC content and remove low IC columns
-		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_trimmed, $trim_threshold);
-		
+		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, $trim_threshold);
+
 		## Create branch-wise logos
 		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_trimmed;
-		$cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
+		$cmd .= " -from tf -logo_format png -return logo";
 		$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		
-		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo.png";
-		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_logo_rc.png";
+		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."__".$folder."_with_".scalar(@file_names)."_motifs_logo.png";
+		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."__".$folder."_with_".scalar(@file_names)."_motifs_logo_rc.png";
 		
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
 		
@@ -2522,23 +2532,23 @@ sub Merge_root_matrices() {
 		    unlink($file);
 		}  	
 
+		## Addig attributes (ID + AC: cluster + level + motif_nb)
+		my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
+		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
+		$cmd .= " -from tf -to tf -return counts,consensus";
+		$cmd .= " -attr name ".$cluster."_with_".scalar(@file_names)."_motifs";
+		$cmd .= " -attr accession ".$cluster."_with_".scalar(@file_names)."_motifs";
+		$cmd .= " -o ".$merged_mat_file_2; 
+		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
 		## Calculate the IC content and remove low IC columns
-		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file, $merged_mat_file_trimmed, 0.3);
+		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, $trim_threshold);
 		
 		## Create branch-wise logos
 		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_trimmed;
 		$cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
 		$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level; 
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-		
-		$merged_consensuses_files{$merge_level}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_logo.png";
-		$merged_consensuses_files{$merge_level}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_logo_rc.png";
-		
-		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";		
-		my $cons = `more $mat_file | grep '^DE'`;
-		chomp($cons);
-		$cons =~ s/^DE\s+//;
-		$merged_consensuses_files{$merge_level}{$cluster}{consensus} = $cons;
 
 	    } else {
 		next;
@@ -2580,7 +2590,14 @@ sub Export_external_motifs() {
 		$cluster_number =~ s/\D+//;
 	
 		if ($cluster_number == scalar(@folder_merged_matrices) && scalar(@folder_merged_matrices) > 0) {
-		    $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
+		    $mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_trimmed_matrices.tf";
+		    $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";		    
+		    $cmd = $SCRIPTS."/convert-matrix -i ".$mat_file_2;
+		    $cmd .= " -from tf -to tf -return counts,consensus";
+		    $cmd .= " -attr name ".$cluster."_with_".scalar(@nodes)."_motifs";
+		    $cmd .= " -attr accession ".$cluster."_with_".scalar(@nodes)."_motifs";
+		    $cmd .= " -o ".$mat_file; 
+		    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		    last;
 		} else {
 		    if ($root_matrices_flag == 1) {
@@ -4056,8 +4073,9 @@ sub InsertTreesAndBranchMotifs {
 	    foreach my $level (1..scalar(keys %current_alignment_table_data)-1) {
 		
 		my ($cons, $logo_D, $logo_R, $transfac_file, $transfac_file_2);
-		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/cluster_".$num."_logo.png");
-		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/cluster_".$num."_logo_rc.png");
+
+		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"merge_level_".$level}{"cluster_".$num}{logo});
+		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"merge_level_".$level}{"cluster_".$num}{logo_RC});
 		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merge_level_".$level."_matrices.tf");
 		$transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merge_level_".$level."_matrices.tf";
 		$cons = `more $transfac_file_2 | grep DE`;
