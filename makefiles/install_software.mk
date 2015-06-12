@@ -797,22 +797,32 @@ _download_ucsc_tools:
 ################################################################
 ################################################################
 
+
 ################################################################
 ## TopHat - discovery splice junctions with RNA-seq
 install_tophat: _download_tophat _compile_tophat
 
 TOPHAT_BASE_DIR=${SRC_DIR}/TopHat
-TOPHAT_VERSION=1.2.0
+#TOPHAT_VERSION=1.2.0
+#TOPHAT_ARCHIVE=tophat-${TOPHAT_VERSION}.tar.gz
+#TOPHAT_URL=http://tophat.cbcb.umd.edu/downloads/${TOPHAT_ARCHIVE}
+TOPHAT_VERSION=2.0.14
 TOPHAT_ARCHIVE=tophat-${TOPHAT_VERSION}.tar.gz
-TOPHAT_URL=http://tophat.cbcb.umd.edu/downloads/${TOPHAT_ARCHIVE}
+TOPHAT_URL=https://ccb.jhu.edu/software/tophat/downloads/${TOPHAT_ARCHIVE}
 TOPHAT_DISTRIB_DIR=${TOPHAT_BASE_DIR}/tophat-${TOPHAT_VERSION}
 _download_tophat:
 	@echo
 	@echo "Downloading TopHat"
 	@mkdir -p ${TOPHAT_BASE_DIR}
-	wget -nd  --directory-prefix ${TOPHAT_BASE_DIR} -rNL ${TOPHAT_URL}
+	@echo "TOPHAT_BASE_DIR	${TOPHAT_BASE_DIR}"
+	wget -nd -N  --directory-prefix ${TOPHAT_BASE_DIR} -rNL ${TOPHAT_URL}
 	(cd ${TOPHAT_BASE_DIR}; tar -xpzf ${TOPHAT_ARCHIVE})
 	@echo ${TOPHAT_DISTRIB_DIR}
+
+_clone_tophatgit:
+	@echo
+	@echo "cloning TopHat from git"
+	(cd ${TOPHAT_BASE_DIR}; git clone https://github.com/infphilo/tophat.git)
 
 
 ## COMPILATION DOES NOT WORK - TO CHECK
