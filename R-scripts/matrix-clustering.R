@@ -75,7 +75,7 @@ check.param()
 
 #####################################
 ## Example for Debugging ############
-
+#
 # infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/jaspar_core_insects_2015_03/average_linkage/Ncor0.4_cor0.6/jaspar_core_insects_2015_03_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
 # description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/jaspar_core_insects_2015_03/average_linkage/Ncor0.4_cor0.6/jaspar_core_insects_2015_03_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
@@ -174,10 +174,9 @@ if(number.of.motifs > 1){
   ## Define the clusters: Bottom-up approach
   ## and get their motif IDs
   clusters <<- find.clusters(alignment.attributes, tree)
-  clusters <<- sapply(clusters, function(x){
+  clusters <<- lapply(clusters, function(x){
     get.id(x, global.description.table)
   })
-
 
   ## Number of clusters
   forest.nb <- length(clusters)
@@ -301,6 +300,7 @@ if(only.hclust == 0){
 }
 
 i <- sapply(1:length(clusters), function(nb){
+
 
     alignment.cluster <<- list()
     description.table <<- NULL
