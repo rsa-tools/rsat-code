@@ -2356,12 +2356,20 @@ sub Merge_matrices() {
 		    unlink($file);
 		}   
 
+		## Assign the motif name
+		my @temp = split(/_/, $cluster);
+		my $cl = $temp[0].$temp[1];
+		@temp = split(/_/, $merge_level);
+		my $lvl = "lvl".$temp[2];
+		my $mt_nb = scalar(@file_names)."motifs";
+		my $motif_name = $cl."_".$lvl."_".$mt_nb;
+
 		## Addig attributes (ID + AC: cluster + level + motif_nb)
 		my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_nb_motifs_".scalar(@file_names).".tf";
 		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
 		$cmd .= " -from tf -to tf -return counts,consensus";
-		$cmd .= " -attr name ".$cluster."__".$merge_level."_with_".scalar(@file_names)."_motifs";
-		$cmd .= " -attr accession ".$cluster."__".$merge_level."_with_".scalar(@file_names)."_motifs";
+		$cmd .= " -attr name ".$motif_name;
+		$cmd .= " -attr accession ".$motif_name;
 		$cmd .= " -o ".$merged_mat_file_2; 
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
@@ -2374,8 +2382,8 @@ sub Merge_matrices() {
 		$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		
-		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."__".$folder."_with_".scalar(@file_names)."_motifs_logo.png";
-		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."__".$folder."_with_".scalar(@file_names)."_motifs_logo_rc.png";
+		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$motif_name."_logo.png";
+		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$motif_name."_logo_rc.png";
 		
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
 		
@@ -2532,12 +2540,21 @@ sub Merge_root_matrices() {
 		    unlink($file);
 		}  	
 
+		## Assign the motif name
+		my @temp = split(/_/, $cluster);
+		my $cl = $temp[0].$temp[1];
+		@temp = split(/_/, $merge_level);
+		my $lvl = "lvl".$temp[2];
+		my $mt_nb = scalar(@file_names)."motifs";
+		my $motif_name = $cl."_".$lvl."_".$mt_nb;
+
+
 		## Addig attributes (ID + AC: cluster + level + motif_nb)
 		my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
 		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
 		$cmd .= " -from tf -to tf -return counts,consensus";
-		$cmd .= " -attr name ".$cluster."_with_".scalar(@file_names)."_motifs";
-		$cmd .= " -attr accession ".$cluster."_with_".scalar(@file_names)."_motifs";
+		$cmd .= " -attr name ".$motif_name;
+		$cmd .= " -attr accession ".$motif_name;
 		$cmd .= " -o ".$merged_mat_file_2; 
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
