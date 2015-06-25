@@ -13,6 +13,7 @@ closest.or.farthest.motifs.ids <- function(id1, id2, compa.table, metric = "Ncor
   ## For correlations (Higher is better)
   if ((metric == "Ncor")
       || (metric=="cor")
+      || (metric=="NcorS")
       || (metric=="logocor")
       || (metric=="Nlocogor")
       || (metric=="Icor")
