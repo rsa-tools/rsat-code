@@ -74,7 +74,7 @@ check.param <- function() {
   }
 
   ## Define the kind of metric used: scores or distances
-  supported.scores <- c("cor", "Ncor")
+  supported.scores <- c("cor", "Ncor", "NcorS")
   supported.distances <- c("dEucl", "NdEucl")
 
   if(metric %in% supported.scores){
@@ -83,6 +83,7 @@ check.param <- function() {
     if (!exists("lth")) {
       lth <<- list()
       lth[["Ncor"]] <<- 0;
+      lth[["NcorS"]] <<- 0;
       lth[["cor"]] <<- 0;
       lth[["w"]] <<- 0;
 
@@ -116,7 +117,7 @@ check.param <- function() {
       thresholds[[lth.scores[i]]] <<- lth.values[i]
     }
 
-    supported <- c("cor", "Ncor", "w")
+    supported <- c("cor", "Ncor", "NcorS", "w")
     if(length(setdiff(supported, lth.scores)) > 0){
       for(add in setdiff(supported, lth.scores)){
         lth.scores <<- append(lth.scores, add)
