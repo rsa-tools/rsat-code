@@ -17,6 +17,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   ## If required, convert similarities to distances
   ## Similarity sores bounded to 1
   if ((metric == "Ncor")
+      || (metric=="NcorS")
       || (metric=="cor")
       || (metric=="logocor")
       || (metric=="Nlocogor")
