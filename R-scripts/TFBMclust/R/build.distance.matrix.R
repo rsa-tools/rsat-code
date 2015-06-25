@@ -13,6 +13,7 @@ build.distance.matrix <- function(comparison.table,
   ## If required, convert similarities to distances
   ## Similarity sores bounded to 1
   if ((metric == "Ncor")
+      || (metric=="NcorS")
       || (metric=="cor")
       || (metric=="logocor")
       || (metric=="Nlocogor")
