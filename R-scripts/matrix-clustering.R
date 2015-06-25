@@ -79,6 +79,8 @@ check.param()
 # infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.6/peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
 # description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.6/peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
+# metric <- "cor"
+# metric <- "NcorS"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
 
@@ -159,7 +161,7 @@ if(number.of.motifs > 1){
                             global.compare.matrices.table,
                             thresholds = thresholds,
                             method = hclust.method,
-                            metric=metric,
+                            metric = metric,
                             nodes.attributes=TRUE,
                             intermediate.alignments=FALSE)
   alignment.list <- alignment$motifs.alignment
