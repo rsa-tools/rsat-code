@@ -210,8 +210,7 @@ package main;
   local @supported_thresholds = qw(
 				     cor
                                      Ncor
-                                     NdEucl
-                                     dEucl
+                                     NcorS
                                      w
 				   );
   local $supported_thresholds = join ",", @supported_thresholds;
@@ -224,8 +223,7 @@ package main;
   local @supported_metrics = qw(
 			         cor
                                  Ncor
-                                 NdEucl
-                                 dEucl                                
+                                 NcorS
 			     );
   local $supported_metrics = join ",", @supported_metrics;
   local %supported_metrics = ();
@@ -1249,7 +1247,7 @@ sub set_output_file_names {
   ## Output files for the hierarchical clustering trees
   $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
   $main::outfile{alignment_table} = $main::outfile{prefix}."_tables/alignment_table.tab"; push @outfiles, "alignment_table"; &AddTabToConvert("alignment_table");
-  $main::outfile{clusters_table} = $main::outfile{prefix}."_tables/clusters.tab"; push @outfiles, "clusters"; &AddTabToConvert("cluster");
+  $main::outfile{clusters_table} = $main::outfile{prefix}."_tables/clusters.tab"; push @outfiles, "clusters"; &AddTabToConvert("clusters_table");
   $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_tables/internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
@@ -1513,7 +1511,7 @@ sub CompareMatrices {
   $cmd .= " -format tf";
   $cmd .=  " -file ".$main::outfile{input_matrices};
   $cmd .= " -DR";
-  $cmd .= " -sort ".$main::param{matrix_compa_sort_field};
+  $cmd .= " -sort Ncor";
   $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,width,matrix_desc";
   $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
