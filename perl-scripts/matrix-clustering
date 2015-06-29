@@ -317,7 +317,7 @@ package main;
 
   ## Lower threshold on column-wise information content: left-most and
   ## right-most columns having a lower IC are trimmed.
-  $trim_threshold = 0.15;
+  $trim_threshold = 0;
 
   ## Supported fields to return
   local %return_fields = ();
@@ -452,7 +452,6 @@ package main;
       ## Read the motif to cluster assignation, which will be required for
       ## several functions below.
       &ReadClusterComposition();
-
 
       if ($root_matrices_flag == 1) {
 	  
@@ -1910,7 +1909,9 @@ sub Add_attributes_to_JSON() {
 		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
-		      $Add .= " \"url\" : \"".$consensus_link."\",\n";
+		      $Add .= " \"size\" : ".$merged_consensuses_files{$folder}{$cluster}{width}.",\n";
+		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
+		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
 		  }
 		  push(@Parsed_JSON, $Add."\n");
 	      }
@@ -1990,7 +1991,7 @@ sub create_html_tree_file() {
     my $labels_num = 0;
     my $cluster_nb = 0;
     my $main_label = 	        
-	"\tnode.append(\"a\")
+	"\tnodeEnter.append(\"a\")
 	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
 	\t\t.append(\"text\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
@@ -2000,7 +2001,7 @@ sub create_html_tree_file() {
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
 
     my $new_label = 
-	"\tnode.append(\"text\")
+	"\tnodeEnter.append(\"text\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
@@ -2008,7 +2009,7 @@ sub create_html_tree_file() {
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
 
     my $display_consensus_d3 =
-	"		node.append(\"a\")
+	"nodeEnter.append(\"a\")
 		.attr(\"xlink:href\", function(d) { return d.children ? d.url : \"\"; })
 		.append(\"text\")
 		.text(function(d) { return d.children ? d.name : \"\"; })
@@ -2018,7 +2019,7 @@ sub create_html_tree_file() {
 		.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
  
     my $display_title_lab .= '
-        node.append("text")
+        nodeEnter.append("text")
 	.text(function(d) { return d.children ? "" : d.title; })
 	.attr("x", function(d) { return d.children ? 0 : 20; })
 	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
@@ -2255,6 +2256,7 @@ sub Merge_matrices() {
     }
     close $int_align_file;
 
+    my %width_internal_alignments = ();
     &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
     foreach my $cluster (@clusters_to_HTML) {
 
@@ -2295,8 +2297,11 @@ sub Merge_matrices() {
 		    my $motif_id = $split_line[0];
 		    #$motif_id =~ s/\./-/;
 		    my $motif_strand = $split_line[3];
+		    my $motif_aligned_cons = $split_line[4];
 		    my $offset_up = $split_line[6];
 		    my $offset_down = $split_line[7];
+
+		    $width_internal_alignments{$cluster}{$merge_level} = length($motif_aligned_cons);
 		    $int_align_info{$cluster}{$merge_level}{$motif_id}{offset_up} = $offset_up;
 		    $int_align_info{$cluster}{$merge_level}{$motif_id}{offset_down} = $offset_down;	
 		    $int_align_info{$cluster}{$merge_level}{$motif_id}{strand} = $motif_strand;	
@@ -2383,7 +2388,8 @@ sub Merge_matrices() {
 		
 		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$motif_name."_logo.png";
 		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$motif_name."_logo_rc.png";
-		
+		$merged_consensuses_files{$folder}{$cluster}{width} = 	$width_internal_alignments{$cluster}{$folder};
+
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
 		
 		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
@@ -2641,7 +2647,7 @@ sub Export_external_motifs() {
 sub Add_div_to_HTML() {
     my $line = "";
     my $print = "";
-    my $temp = &logo_tree();
+    my $temp = &logo_tree_dynamic();
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -2867,6 +2873,166 @@ sub hide_tree {
   return($hide_tree);
 }
 
+
+################################################################
+## Insert D3 dynamic logo tree: This is the body of d3 script, 
+## each time a new cluster is added to the file the next code 
+## is pasted and modified           
+sub logo_tree_dynamic{
+  my $logo_tree = 
+      '
+
+	(function() {
+        var width = --widthtree--,
+	height = --height--;
+	;
+
+        var i = 0,
+        duration = 750,
+        root;
+
+	var cluster = d3.layout.cluster()
+		.size([height, --size--])
+	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
+
+	var diagonal = function elbow(d, i) {
+		
+		return "M" + d.source.y + "," + d.source.x
+		+ "V" + d.target.x + "H" + d.target.y;
+	}
+
+
+	var svg = d3.select("#--cl_id--").append("svg")
+		.attr("width", width)
+		.attr("height", height)
+		.append("g")
+		.attr("class","drawarea")
+		.attr("transform", "translate(40,0)");
+		
+
+
+d3.json("--jsonfile--", function(json) {
+
+	root = json;
+	root.x0 = height / 2;
+	root.y0 = 0;
+	
+	update(root);
+});
+
+function update(source) {
+
+  // Compute the new tree layout.
+  var nodes = cluster.nodes(root).reverse(),
+      links = cluster.links(nodes);
+
+  // Update the nodes…
+  var node = svg.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+  // Enter any new nodes at the parent"s previous position.
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .on("click", click);
+
+  nodeEnter.append("circle")
+	.attr("r", 6)
+        .attr("fill", "--stroke--")
+	.attr("stroke", function(d) { return d.children ? "blue" : "none"; });
+
+       /*Insert labels*/
+       --lab--
+
+       /Insert consensus/
+
+	nodeEnter.append("svg:image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
+		.attr("height", --svgheight--)
+		.attr("x", --x1--)    
+		.attr("y", --y1--) 
+		.attr("preserveAspectRatio", "none");	
+		
+	nodeEnter.append("svg:image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
+		.attr("height", --svgheight--)
+  		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
+		.attr("y", --y1--) 
+		.attr("preserveAspectRatio", "none");
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," +
+  d.x + ")"; });
+
+  // Transition exiting nodes to the parent"s new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+  nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+  // Update the links…
+  var link = svg.selectAll("path.link")
+      .data(links, function(d) { return d.target.id; });
+
+  // Enter any new links at the parent"s previous position.
+  link.enter().insert("path", "g")
+      .attr("class", "link")
+      .attr("stroke", "--stroke--")
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      });
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent"s new position.
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+
+// Toggle children on click.
+function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update(d);
+}
+}
+
+
+})();
+	
+';
+
+  return($logo_tree);
+}
 
 ##############################################################
 ## Insert D3 logo tree: This is the body of d3 script, each 
