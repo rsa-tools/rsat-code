@@ -3096,7 +3096,7 @@ d3.json("--jsonfile--", function(json) {
 
 		
 	node.append("svg:image")
-		.attr("xlink:href", function(d) { return d.image; })  
+                .attr("xlink:href", function(d) { return d.children ? "" : d.image; })
 		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
 		.attr("height", --svgheight--)
 		.attr("x", --x1--)    
@@ -3104,7 +3104,7 @@ d3.json("--jsonfile--", function(json) {
 		.attr("preserveAspectRatio", "none");	
 		
 	node.append("svg:image")
-		.attr("xlink:href", function(d) { return d.image_rc; })  
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })
 		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
 		.attr("height", --svgheight--)
   		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
