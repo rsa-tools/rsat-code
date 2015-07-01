@@ -1906,10 +1906,11 @@ sub Add_attributes_to_JSON() {
 		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      my $id_json = $cluster."_".$folder;
-		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
+#		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
 		      $Add .= " \"size\" : ".$merged_consensuses_files{$folder}{$cluster}{width}.",\n";
+		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
 		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
 		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
 		  }
@@ -2012,10 +2013,10 @@ sub create_html_tree_file() {
 	"nodeEnter.append(\"a\")
 		.attr(\"xlink:href\", function(d) { return d.children ? d.url : \"\"; })
 		.append(\"text\")
-		.text(function(d) { return d.children ? d.name : \"\"; })
+		.text(function(d) { return d.children ? \"\" : \"\"; })
 		.attr(\"dx\", function(d) { return d.children ? -20 : 0; })
 		.attr(\"dy\", function(d) { return d.children ? -6 : 0; })
-		.attr(\"fill\", function(d) { return d.children ? \"blue\" : \"\"; })
+		.attr(\"fill\", function(d) { return d.children ? \"\" : \"\"; })
 		.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
  
     my $display_title_lab .= '
@@ -2389,8 +2390,9 @@ sub Merge_matrices() {
 		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$motif_name."_logo.png";
 		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$motif_name."_logo_rc.png";
 		$merged_consensuses_files{$folder}{$cluster}{width} = 	$width_internal_alignments{$cluster}{$folder};
-
+		$merged_consensuses_files{$folder}{$cluster}{motif_name} = $motif_name;
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
+		
 		
 		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
 		
@@ -2938,15 +2940,14 @@ function update(source) {
 
   nodeEnter.append("circle")
 	.attr("r", 6)
-        .attr("fill", "--stroke--")
-	.attr("stroke", function(d) { return d.children ? "blue" : "none"; });
+        .attr("fill", "--stroke--");
 
        /*Insert labels*/
        --lab--
 
        /Insert consensus/
 
-	nodeEnter.append("svg:image")
+	nodeEnter.append("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
 		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
 		.attr("height", --svgheight--)
@@ -2954,7 +2955,7 @@ function update(source) {
 		.attr("y", --y1--) 
 		.attr("preserveAspectRatio", "none");	
 		
-	nodeEnter.append("svg:image")
+	nodeEnter.append("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
 		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
 		.attr("height", --svgheight--)
@@ -2967,6 +2968,38 @@ function update(source) {
       .duration(duration)
       .attr("transform", function(d) { return "translate(" + d.y + "," +
   d.x + ")"; });
+
+
+  nodeUpdate.select("circle")
+	.attr("r", 6)
+        .attr("fill", function(d) { return d._children ? "black" : "--stroke--"; });
+
+
+  nodeUpdate.select("text")
+      .text(function(d) { return d.children ? "" :  d.name; })
+      .attr("dx", function(d) { return d.children ? 0 : 20; })
+      .attr("dy", function(d) { return d.children ? 0 : 3; })
+      .attr("font-size", "18px")
+      .attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+
+	nodeUpdate.select("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+		.attr("width", function(d) { return (d.size + 2)  * 25; })
+		.attr("height", 80)
+		.attr("x", 296)    
+		.attr("y", -33) 
+		.attr("preserveAspectRatio", "none");
+
+/*
+	node.select("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
+		.attr("width", function(d) { return (d.size + 2)  * 25; })
+		.attr("height", 80)
+ 		.attr("x", function(d) { return (d.size + 2)  * 25 + 296 + 25; })  
+		.attr("y", -33)
+		.attr("preserveAspectRatio", "none");
+*/
+
 
   // Transition exiting nodes to the parent"s new position.
   var nodeExit = node.exit().transition()
