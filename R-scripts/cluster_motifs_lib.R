@@ -92,13 +92,12 @@ check.param <- function() {
     }
 
 
-  } else if(score %in% supported.distances){
+  } else if(metric %in% supported.distances){
 
     if (!exists("uth")) {
       uth <<- list()
       uth[["dEucl"]] <<- 1;
       uth[["NdEucl"]] <<- 1;
-      uth[["w"]] <<- 0;
 
       uth.values <<- unlist(uth)
       uth.scores <<- names(uth.values)
