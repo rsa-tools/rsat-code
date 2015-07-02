@@ -132,7 +132,7 @@ print "<h2>", "Clustering options", ,"</h2>";
 ## print "<b>Metric to build the tree.</b>";
 print "<B><A HREF='help.matrix-clustering.html#hclust_method'> Metric to build the trees </A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'metric',
- 			 -Values=>["cor", "Ncor"],
+ 			 -Values=>["cor", "Ncor", "dEucl", "NdEucl"],
  			 -default=>$default{metric});
 print "<br><br>\n";
 
