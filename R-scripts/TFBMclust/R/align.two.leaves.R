@@ -46,6 +46,9 @@ align.two.leaves <- function(child1,
                                         hclust.method = hclust.method,
                                         metric = metric)
 
+#   print(paste(" - Flag - ", aligned.motif.flag))
+#   print(paste(" - After Metric: ", metric))
+
   ## Fill the attributes table
   if(nodes.attributes == TRUE){
 

@@ -76,8 +76,8 @@ check.param()
 #####################################
 ## Example for Debugging ############
 #
-# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/jaspar_core_insects_2015_03/average_linkage/Ncor0.4_cor0.6/jaspar_core_insects_2015_03_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
-# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/jaspar_core_insects_2015_03/average_linkage/Ncor0.4_cor0.6/jaspar_core_insects_2015_03_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
+# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.6/peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
+# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.6/peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
@@ -159,7 +159,7 @@ if(number.of.motifs > 1){
                             global.compare.matrices.table,
                             thresholds = thresholds,
                             method = hclust.method,
-                            metric=metric,
+                            metric = metric,
                             nodes.attributes=TRUE,
                             intermediate.alignments=FALSE)
   alignment.list <- alignment$motifs.alignment
@@ -177,6 +177,17 @@ if(number.of.motifs > 1){
   clusters <<- lapply(clusters, function(x){
     get.id(x, global.description.table)
   })
+
+
+  ## Export a table with the cluster names and its elements
+  clusters.table <- NULL
+  clusters.table <-  lapply(clusters, function(x){
+    paste(x, collapse = ",")
+  })
+  clusters.table <- t(data.frame(clusters.table ))
+  clusters.composition.file <- paste(sep="", out.prefix, "_tables/clusters.tab")
+  write.table(clusters.table, file = clusters.composition.file, sep="\t", quote=FALSE, row.names = TRUE, col.names = FALSE)
+  verbose(paste("Exporting cluster table", clusters.composition.file), 3)
 
   ## Number of clusters
   forest.nb <- length(clusters)
