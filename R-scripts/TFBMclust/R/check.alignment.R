@@ -61,6 +61,7 @@ check.alignment <- function(id1,
   th <- sapply(names(thresholds), function(names.th){
 
     if ((names.th == "Ncor")
+        || (names.th =="NcorS")
         || (names.th =="cor")
         || (names.th =="logocor")
         || (names.th =="Nlocogor")
