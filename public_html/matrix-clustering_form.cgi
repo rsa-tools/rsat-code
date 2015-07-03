@@ -300,39 +300,31 @@ sub PrintMatrixClusteringMatchingScores {
   my @matching_scores = qw(w
 			 cor
 			 Ncor
+                         NcorS
                          logoDP
 			 logocor
 			 Nlogocor
 			 Icor
 			 NIcor
-			 cov
 			 dEucl
 			 NdEucl
 			 NsEucl
 			 SSD
-			 SW
-			 NSW
-			 match_rank
-			 offset
 			);
 
   my %score_descriptions = ('w'=>'Width = number of aligned columns',
 			    'cor'=>'Pearson correlation (computed on residue occurrences in aligned columns)',
 			    'Ncor'=>'Relative width-normalized Pearson correlation',
+			    'NcorS'=>'Relative width-normalized Pearson correlation of the smallest alignment',
 			    'logoDP'=>'dot product of sequence logos',
 			    'logocor'=>'correlation computed on sequence logos',
 			    'Nlogocor'=>'Relative width-normalized logocor',
 			    'Icor'=>'Pearson correlation computed on Information content',
 			    'NIcor'=>'Relative width-normalized Icor',
-			    'cov'=>'covariance between residues in aligned columns',
 			    'dEucl'=>'Euclidian distance between residue occurrences in aligned columns',
 			    'NdEucl'=>'Relative width-normalized dEucl',
 			    'NsEucl'=>'similarity derived from Relative width-normalized Euclidian distance',
 			    'SSD'=>'Sum of square deviations',
-			    'SW'=>'Sandelin-Wasserman',
-			    'NSW'=>'Relative width-normalized Sandelin-Wasserman',
-			    'match_rank'=>'rank of current match among all sorted matches',
-			    'offset'=>'offset between first and second matrices',
       );
 
   &ThresholdsDiv(" Thresholds to define the clusters",
