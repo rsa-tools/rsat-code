@@ -214,6 +214,11 @@ package main;
                                      w
                                      dEucl
                                      NdEucl
+                                     logocor
+                                     Nlogocor
+                                     Icor
+                                     NIcor
+                                     SSD
 				   );
   local $supported_thresholds = join ",", @supported_thresholds;
   local %supported_threshold = ();
@@ -228,6 +233,11 @@ package main;
                                  NcorS
                                  dEucl
                                  NdEucl
+                                 logocor
+                                 Nlogocor
+                                 Icor
+                                 NIcor
+                                 SSD
 			     );
   local $supported_metrics = join ",", @supported_metrics;
   local %supported_metrics = ();
@@ -339,7 +349,7 @@ package main;
   ################################################################
   ## Set default options
   local %param = ();
-  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
+  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank);# zscores);
   $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
   $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
   $main::param{matrix_compa_score} = "Ncor";
@@ -443,10 +453,6 @@ package main;
   }
 
   if ($selected_tasks{all} || $selected_tasks{cluster}) {
-      
-      #####################################################
-      ## Create temporary files with the single matrices
-#      %alignment_info = &create_single_matrix_files();
 
       ################################################################
       ## Cluster the matrices
