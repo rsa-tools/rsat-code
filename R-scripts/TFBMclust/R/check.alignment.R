@@ -65,7 +65,7 @@ check.alignment <- function(id1,
         || (names.th =="NcorS")
         || (names.th =="cor")
         || (names.th =="logocor")
-        || (names.th =="Nlocogor")
+        || (names.th =="Nlogocor")
         || (names.th =="Icor")
         || (names.th =="NIcor")
         || (names.th =="w")
