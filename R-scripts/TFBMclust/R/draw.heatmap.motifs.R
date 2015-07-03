@@ -20,7 +20,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
       || (metric=="NcorS")
       || (metric=="cor")
       || (metric=="logocor")
-      || (metric=="Nlocogor")
+      || (metric=="Nlogocor")
       || (metric=="Icor")
       || (metric=="NIcor")
   ) {
