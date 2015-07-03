@@ -74,8 +74,8 @@ check.param <- function() {
   }
 
   ## Define the kind of metric used: scores or distances
-  supported.scores <- c("cor", "Ncor", "NcorS")
-  supported.distances <- c("dEucl", "NdEucl")
+  supported.scores <- c("cor", "Ncor", "NcorS", "logocor", "Nlogocor", "Icor", "NIcor", "w")
+  supported.distances <- c("dEucl", "NdEucl", "SSD")
 
   if(metric %in% supported.scores){
 
@@ -116,9 +116,8 @@ check.param <- function() {
       thresholds[[lth.scores[i]]] <<- lth.values[i]
     }
 
-    supported <- c("cor", "Ncor", "NcorS", "w")
-    if(length(setdiff(supported, lth.scores)) > 0){
-      for(add in setdiff(supported, lth.scores)){
+    if(length(setdiff(supported.scores, lth.scores)) > 0){
+      for(add in setdiff(supported.scores, lth.scores)){
         lth.scores <<- append(lth.scores, add)
         lth.values <<- append(lth.values, 0)
       }
@@ -137,9 +136,8 @@ check.param <- function() {
       thresholds[[uth.scores[i]]] <<- uth.values[i]
     }
 
-    supported <- c("dEucl", "NdEucl")
-    if(length(setdiff(supported, uth.scores)) > 0){
-      for(add in setdiff(supported, uth.scores)){
+    if(length(setdiff(supported.distances, uth.scores)) > 0){
+      for(add in setdiff(supported.distances, uth.scores)){
         uth.scores <<- append(uth.scores, add)
         uth.values <<- append(uth.values, 0)
       }
