@@ -32,7 +32,14 @@ ARCHITECTURE=x64
 ##   PACKAGE_MANAGER=aptitude
 PACKAGE_MANAGER=apt-get
 
-#UCSC_OS=macOSX.i386
+
+################################################################
+## Operating system to download UCSC userApps from
+## http://hgdownload.cse.ucsc.edu/admin/exe/
+##
+## Supported 
+##  UCSC_OS=macOSX.i386
+##  UCSC_OS=linux.x86_64
 UCSC_OS=linux.x86_64
 
 ## Directory to store the downloaded software (sources, before
