@@ -16,7 +16,7 @@ build.distance.matrix <- function(comparison.table,
       || (metric=="NcorS")
       || (metric=="cor")
       || (metric=="logocor")
-      || (metric=="Nlocogor")
+      || (metric=="Nlogocor")
       || (metric=="Icor")
       || (metric=="NIcor")
   ) {

@@ -31,7 +31,7 @@ $default{newick} = "";
 $default{random} = "";
 $default{quick} = "";
 $default{heatmap} = "CHECKED";
-$default{consensus} = "CHECKED";
+$default{consensus} = "";
 $default{label_id} = "";
 $default{label_name} = "CHECKED";
 $default{label_consensus} = "";
@@ -132,7 +132,7 @@ print "<h2>", "Clustering options", ,"</h2>";
 ## print "<b>Metric to build the tree.</b>";
 print "<B><A HREF='help.matrix-clustering.html#hclust_method'> Metric to build the trees </A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'metric',
- 			 -Values=>["cor", "Ncor"],
+ 			 -Values=>["cor", "Ncor", "dEucl", "NdEucl", "logocor", "Nlogocor", "Icor", "NIcor", "SSD"],
  			 -default=>$default{metric});
 print "<br><br>\n";
 
@@ -300,39 +300,31 @@ sub PrintMatrixClusteringMatchingScores {
   my @matching_scores = qw(w
 			 cor
 			 Ncor
+                         NcorS
                          logoDP
 			 logocor
 			 Nlogocor
 			 Icor
 			 NIcor
-			 cov
 			 dEucl
 			 NdEucl
 			 NsEucl
 			 SSD
-			 SW
-			 NSW
-			 match_rank
-			 offset
 			);
 
   my %score_descriptions = ('w'=>'Width = number of aligned columns',
 			    'cor'=>'Pearson correlation (computed on residue occurrences in aligned columns)',
 			    'Ncor'=>'Relative width-normalized Pearson correlation',
+			    'NcorS'=>'Relative width-normalized Pearson correlation of the smallest alignment',
 			    'logoDP'=>'dot product of sequence logos',
 			    'logocor'=>'correlation computed on sequence logos',
 			    'Nlogocor'=>'Relative width-normalized logocor',
 			    'Icor'=>'Pearson correlation computed on Information content',
 			    'NIcor'=>'Relative width-normalized Icor',
-			    'cov'=>'covariance between residues in aligned columns',
 			    'dEucl'=>'Euclidian distance between residue occurrences in aligned columns',
 			    'NdEucl'=>'Relative width-normalized dEucl',
 			    'NsEucl'=>'similarity derived from Relative width-normalized Euclidian distance',
 			    'SSD'=>'Sum of square deviations',
-			    'SW'=>'Sandelin-Wasserman',
-			    'NSW'=>'Relative width-normalized Sandelin-Wasserman',
-			    'match_rank'=>'rank of current match among all sorted matches',
-			    'offset'=>'offset between first and second matrices',
       );
 
   &ThresholdsDiv(" Thresholds to define the clusters",
