@@ -212,6 +212,13 @@ package main;
                                      Ncor
                                      NcorS
                                      w
+                                     dEucl
+                                     NdEucl
+                                     logocor
+                                     Nlogocor
+                                     Icor
+                                     NIcor
+                                     SSD
 				   );
   local $supported_thresholds = join ",", @supported_thresholds;
   local %supported_threshold = ();
@@ -224,6 +231,13 @@ package main;
 			         cor
                                  Ncor
                                  NcorS
+                                 dEucl
+                                 NdEucl
+                                 logocor
+                                 Nlogocor
+                                 Icor
+                                 NIcor
+                                 SSD
 			     );
   local $supported_metrics = join ",", @supported_metrics;
   local %supported_metrics = ();
@@ -335,7 +349,7 @@ package main;
   ################################################################
   ## Set default options
   local %param = ();
-  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
+  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank);# zscores);
   $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
   $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
   $main::param{matrix_compa_score} = "Ncor";
@@ -439,10 +453,6 @@ package main;
   }
 
   if ($selected_tasks{all} || $selected_tasks{cluster}) {
-      
-      #####################################################
-      ## Create temporary files with the single matrices
-#      %alignment_info = &create_single_matrix_files();
 
       ################################################################
       ## Cluster the matrices
@@ -1661,8 +1671,8 @@ sub Hclustering {
 	%lth = %lth2;
     }
 
-    ## Pass the lower thresholds on the score to R for clustering
-    if (defined($lth{$param{matrix_compa_score}})) {
+    ## Pass the lower thresholds
+    if(scalar keys %lth > 0){
 	my $lthsp = "";
 	foreach my $par (keys %lth) {
 	    $lthsp.= $par."_".$lth{$par}."_";
@@ -1670,8 +1680,8 @@ sub Hclustering {
 	$cluster_motifs_cmd .= "; lthsp = '".$lthsp."'";
     }
 
-    ## Pass the upper thresholds on the score to R for clustering
-    if (defined($uth{$param{matrix_compa_score}})) {
+    ## Pass the upper thresholds
+    if(scalar keys %uth > 0){
 	my $uthsp = "";
 	foreach my $par (keys %uth) {
 	    $uthsp.= $par."_".$uth{$par}."_";
@@ -3010,6 +3020,9 @@ function update(source) {
   nodeExit.select("circle")
       .attr("r", 1e-6);
 
+  nodeExit.selectAll("image")
+      .remove();
+
   nodeExit.select("text")
       .style("fill-opacity", 1e-6);
 
@@ -3776,9 +3789,15 @@ sub ParametersTable{
   my $hclust_method_link = "http://pedagogix-tagc.univ-mrs.fr/courses/statistics_bioinformatics/pdf_files/09.clustering.pdf";
 
   my $threshold_values_html = "";
+
+  ## Print the thresholds and their values
   foreach my $par (sort keys %lth) {
     $threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}."<br>";
   } 
+  foreach my $par (sort keys %uth) {
+    $threshold_values_html .= "<strong>".$par."</strong> = ".$uth{$par}."<br>";
+  } 
+
   my $par_table = '
   <!-- Div with the table of selected parameters-->
   <div class="tab">

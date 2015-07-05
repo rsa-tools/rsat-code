@@ -15,7 +15,7 @@ closest.or.farthest.motifs.ids <- function(id1, id2, compa.table, metric = "Ncor
       || (metric=="cor")
       || (metric=="NcorS")
       || (metric=="logocor")
-      || (metric=="Nlocogor")
+      || (metric=="Nlogocor")
       || (metric=="Icor")
       || (metric=="NIcor")
   ) {
@@ -28,7 +28,7 @@ closest.or.farthest.motifs.ids <- function(id1, id2, compa.table, metric = "Ncor
   #################################
   ## For distances (Lower is better)
   }else if ((metric == "dEucl")
-            || (metric == "NsEucl")
+            || (metric == "NdEucl")
             || (metric == "SSD")
             || (metric == "SW")
             || (metric == "NSW")
