@@ -210,9 +210,15 @@ package main;
   local @supported_thresholds = qw(
 				     cor
                                      Ncor
-                                     NdEucl
-                                     dEucl
+                                     NcorS
                                      w
+                                     dEucl
+                                     NdEucl
+                                     logocor
+                                     Nlogocor
+                                     Icor
+                                     NIcor
+                                     SSD
 				   );
   local $supported_thresholds = join ",", @supported_thresholds;
   local %supported_threshold = ();
@@ -224,8 +230,14 @@ package main;
   local @supported_metrics = qw(
 			         cor
                                  Ncor
+                                 NcorS
+                                 dEucl
                                  NdEucl
-                                 dEucl                                
+                                 logocor
+                                 Nlogocor
+                                 Icor
+                                 NIcor
+                                 SSD
 			     );
   local $supported_metrics = join ",", @supported_metrics;
   local %supported_metrics = ();
@@ -319,7 +331,7 @@ package main;
 
   ## Lower threshold on column-wise information content: left-most and
   ## right-most columns having a lower IC are trimmed.
-  $trim_threshold = 0.15;
+  $trim_threshold = 0;
 
   ## Supported fields to return
   local %return_fields = ();
@@ -337,7 +349,7 @@ package main;
   ################################################################
   ## Set default options
   local %param = ();
-  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
+  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank);# zscores);
   $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
   $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
   $main::param{matrix_compa_score} = "Ncor";
@@ -441,10 +453,6 @@ package main;
   }
 
   if ($selected_tasks{all} || $selected_tasks{cluster}) {
-      
-      #####################################################
-      ## Create temporary files with the single matrices
-#      %alignment_info = &create_single_matrix_files();
 
       ################################################################
       ## Cluster the matrices
@@ -454,7 +462,6 @@ package main;
       ## Read the motif to cluster assignation, which will be required for
       ## several functions below.
       &ReadClusterComposition();
-
 
       if ($root_matrices_flag == 1) {
 	  
@@ -1249,6 +1256,7 @@ sub set_output_file_names {
   ## Output files for the hierarchical clustering trees
   $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
   $main::outfile{alignment_table} = $main::outfile{prefix}."_tables/alignment_table.tab"; push @outfiles, "alignment_table"; &AddTabToConvert("alignment_table");
+  $main::outfile{clusters_table} = $main::outfile{prefix}."_tables/clusters.tab"; push @outfiles, "clusters"; &AddTabToConvert("clusters_table");
   $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_tables/internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
@@ -1512,7 +1520,7 @@ sub CompareMatrices {
   $cmd .= " -format tf";
   $cmd .=  " -file ".$main::outfile{input_matrices};
   $cmd .= " -DR";
-  $cmd .= " -sort ".$main::param{matrix_compa_sort_field};
+  $cmd .= " -sort Ncor";
   $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,width,matrix_desc";
   $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
@@ -1663,8 +1671,8 @@ sub Hclustering {
 	%lth = %lth2;
     }
 
-    ## Pass the lower thresholds on the score to R for clustering
-    if (defined($lth{$param{matrix_compa_score}})) {
+    ## Pass the lower thresholds
+    if(scalar keys %lth > 0){
 	my $lthsp = "";
 	foreach my $par (keys %lth) {
 	    $lthsp.= $par."_".$lth{$par}."_";
@@ -1672,8 +1680,8 @@ sub Hclustering {
 	$cluster_motifs_cmd .= "; lthsp = '".$lthsp."'";
     }
 
-    ## Pass the upper thresholds on the score to R for clustering
-    if (defined($uth{$param{matrix_compa_score}})) {
+    ## Pass the upper thresholds
+    if(scalar keys %uth > 0){
 	my $uthsp = "";
 	foreach my $par (keys %uth) {
 	    $uthsp.= $par."_".$uth{$par}."_";
@@ -1908,10 +1916,13 @@ sub Add_attributes_to_JSON() {
 		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      my $id_json = $cluster."_".$folder;
-		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
+#		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
-		      $Add .= " \"url\" : \"".$consensus_link."\",\n";
+		      $Add .= " \"size\" : ".$merged_consensuses_files{$folder}{$cluster}{width}.",\n";
+		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
+		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
+		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
 		  }
 		  push(@Parsed_JSON, $Add."\n");
 	      }
@@ -1991,7 +2002,7 @@ sub create_html_tree_file() {
     my $labels_num = 0;
     my $cluster_nb = 0;
     my $main_label = 	        
-	"\tnode.append(\"a\")
+	"\tnodeEnter.append(\"a\")
 	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
 	\t\t.append(\"text\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
@@ -2001,7 +2012,7 @@ sub create_html_tree_file() {
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
 
     my $new_label = 
-	"\tnode.append(\"text\")
+	"\tnodeEnter.append(\"text\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
@@ -2009,17 +2020,17 @@ sub create_html_tree_file() {
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
 
     my $display_consensus_d3 =
-	"		node.append(\"a\")
+	"nodeEnter.append(\"a\")
 		.attr(\"xlink:href\", function(d) { return d.children ? d.url : \"\"; })
 		.append(\"text\")
-		.text(function(d) { return d.children ? d.name : \"\"; })
+		.text(function(d) { return d.children ? \"\" : \"\"; })
 		.attr(\"dx\", function(d) { return d.children ? -20 : 0; })
 		.attr(\"dy\", function(d) { return d.children ? -6 : 0; })
-		.attr(\"fill\", function(d) { return d.children ? \"blue\" : \"\"; })
+		.attr(\"fill\", function(d) { return d.children ? \"\" : \"\"; })
 		.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
  
     my $display_title_lab .= '
-        node.append("text")
+        nodeEnter.append("text")
 	.text(function(d) { return d.children ? "" : d.title; })
 	.attr("x", function(d) { return d.children ? 0 : 20; })
 	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
@@ -2256,6 +2267,7 @@ sub Merge_matrices() {
     }
     close $int_align_file;
 
+    my %width_internal_alignments = ();
     &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
     foreach my $cluster (@clusters_to_HTML) {
 
@@ -2296,8 +2308,11 @@ sub Merge_matrices() {
 		    my $motif_id = $split_line[0];
 		    #$motif_id =~ s/\./-/;
 		    my $motif_strand = $split_line[3];
+		    my $motif_aligned_cons = $split_line[4];
 		    my $offset_up = $split_line[6];
 		    my $offset_down = $split_line[7];
+
+		    $width_internal_alignments{$cluster}{$merge_level} = length($motif_aligned_cons);
 		    $int_align_info{$cluster}{$merge_level}{$motif_id}{offset_up} = $offset_up;
 		    $int_align_info{$cluster}{$merge_level}{$motif_id}{offset_down} = $offset_down;	
 		    $int_align_info{$cluster}{$merge_level}{$motif_id}{strand} = $motif_strand;	
@@ -2384,8 +2399,10 @@ sub Merge_matrices() {
 		
 		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$motif_name."_logo.png";
 		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$motif_name."_logo_rc.png";
-		
+		$merged_consensuses_files{$folder}{$cluster}{width} = 	$width_internal_alignments{$cluster}{$folder};
+		$merged_consensuses_files{$folder}{$cluster}{motif_name} = $motif_name;
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
+		
 		
 		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
 		
@@ -2642,7 +2659,7 @@ sub Export_external_motifs() {
 sub Add_div_to_HTML() {
     my $line = "";
     my $print = "";
-    my $temp = &logo_tree();
+    my $temp = &logo_tree_dynamic();
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -2869,6 +2886,200 @@ sub hide_tree {
 }
 
 
+################################################################
+## Insert D3 dynamic logo tree: This is the body of d3 script, 
+## each time a new cluster is added to the file the next code 
+## is pasted and modified           
+sub logo_tree_dynamic{
+  my $logo_tree = 
+      '
+
+	(function() {
+        var width = --widthtree--,
+	height = --height--;
+	;
+
+        var i = 0,
+        duration = 750,
+        root;
+
+	var cluster = d3.layout.cluster()
+		.size([height, --size--])
+	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
+
+	var diagonal = function elbow(d, i) {
+		
+		return "M" + d.source.y + "," + d.source.x
+		+ "V" + d.target.x + "H" + d.target.y;
+	}
+
+
+	var svg = d3.select("#--cl_id--").append("svg")
+		.attr("width", width)
+		.attr("height", height)
+		.append("g")
+		.attr("class","drawarea")
+		.attr("transform", "translate(40,0)");
+		
+
+
+d3.json("--jsonfile--", function(json) {
+
+	root = json;
+	root.x0 = height / 2;
+	root.y0 = 0;
+	
+	update(root);
+});
+
+function update(source) {
+
+  // Compute the new tree layout.
+  var nodes = cluster.nodes(root).reverse(),
+      links = cluster.links(nodes);
+
+  // Update the nodes…
+  var node = svg.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+  // Enter any new nodes at the parent"s previous position.
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .on("click", click);
+
+  nodeEnter.append("circle")
+	.attr("r", 6)
+        .attr("fill", "--stroke--");
+
+       /*Insert labels*/
+       --lab--
+
+       /Insert consensus/
+
+	nodeEnter.append("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
+		.attr("height", --svgheight--)
+		.attr("x", --x1--)    
+		.attr("y", --y1--) 
+		.attr("preserveAspectRatio", "none");	
+		
+	nodeEnter.append("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
+		.attr("height", --svgheight--)
+  		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
+		.attr("y", --y1--) 
+		.attr("preserveAspectRatio", "none");
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," +
+  d.x + ")"; });
+
+
+  nodeUpdate.select("circle")
+	.attr("r", 6)
+        .attr("fill", function(d) { return d._children ? "black" : "--stroke--"; });
+
+
+  nodeUpdate.select("text")
+      .text(function(d) { return d.children ? "" :  d.name; })
+      .attr("dx", function(d) { return d.children ? 0 : 20; })
+      .attr("dy", function(d) { return d.children ? 0 : 3; })
+      .attr("font-size", "18px")
+      .attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+
+	nodeUpdate.select("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+		.attr("width", function(d) { return (d.size + 2)  * 25; })
+		.attr("height", 80)
+		.attr("x", 296)    
+		.attr("y", -33) 
+		.attr("preserveAspectRatio", "none");
+
+/*
+	node.select("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
+		.attr("width", function(d) { return (d.size + 2)  * 25; })
+		.attr("height", 80)
+ 		.attr("x", function(d) { return (d.size + 2)  * 25 + 296 + 25; })  
+		.attr("y", -33)
+		.attr("preserveAspectRatio", "none");
+*/
+
+
+  // Transition exiting nodes to the parent"s new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+  nodeExit.selectAll("image")
+      .remove();
+
+  nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+  // Update the links…
+  var link = svg.selectAll("path.link")
+      .data(links, function(d) { return d.target.id; });
+
+  // Enter any new links at the parent"s previous position.
+  link.enter().insert("path", "g")
+      .attr("class", "link")
+      .attr("stroke", "--stroke--")
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      });
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent"s new position.
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+
+// Toggle children on click.
+function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update(d);
+}
+}
+
+
+})();
+	
+';
+
+  return($logo_tree);
+}
+
 ##############################################################
 ## Insert D3 logo tree: This is the body of d3 script, each 
 ## time a new cluster is added to the file the next code is 
@@ -2931,7 +3142,7 @@ d3.json("--jsonfile--", function(json) {
 
 		
 	node.append("svg:image")
-		.attr("xlink:href", function(d) { return d.image; })  
+                .attr("xlink:href", function(d) { return d.children ? "" : d.image; })
 		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
 		.attr("height", --svgheight--)
 		.attr("x", --x1--)    
@@ -2939,7 +3150,7 @@ d3.json("--jsonfile--", function(json) {
 		.attr("preserveAspectRatio", "none");	
 		
 	node.append("svg:image")
-		.attr("xlink:href", function(d) { return d.image_rc; })  
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })
 		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
 		.attr("height", --svgheight--)
   		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
@@ -3578,9 +3789,15 @@ sub ParametersTable{
   my $hclust_method_link = "http://pedagogix-tagc.univ-mrs.fr/courses/statistics_bioinformatics/pdf_files/09.clustering.pdf";
 
   my $threshold_values_html = "";
+
+  ## Print the thresholds and their values
   foreach my $par (sort keys %lth) {
     $threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}."<br>";
   } 
+  foreach my $par (sort keys %uth) {
+    $threshold_values_html .= "<strong>".$par."</strong> = ".$uth{$par}."<br>";
+  } 
+
   my $par_table = '
   <!-- Div with the table of selected parameters-->
   <div class="tab">
@@ -4244,8 +4461,13 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{matrix_descriptions}).'"><strong>Matrix description</strong></a></td>
 		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
 		   </tr>
+                   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{root_motifs}).'"><strong>Root motifs</strong></a></td>
 		      <td class="tab_spacer_2">A file with the root matrix of each cluster.</td>
+                   </tr>
+                   <tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{clusters_table}).'"><strong>Clusters</strong></a></td>
+		      <td class="tab_spacer_2">A tab separated file containing the clusters and their correspondng motifs.</td>
 		   </tr>
                          ';
 
@@ -4269,7 +4491,7 @@ sub InsertListOfFiles {
                      ';
       }
 
-      ## If it is specified, add the heatmap
+      ## If it is specified, add the newick tree
       if ($export_newick == 1 && $number_of_motifs > 1) {
 	$add_files .= 
 	    '

@@ -17,7 +17,8 @@ check.alignment <- function(id1,
     scores <- compa.table[compa.numbers, names(thresholds)]
 
     ## Calculate the median of the data
-    mean.scores <- apply(scores, 2, mean)
+    mean.scores <- sapply(scores, mean)
+    names(mean.scores) <- names(thresholds)
 
   ## Hclust method = complete
   ## Calculate the farthest couple of motifs between all the pairs of motifs
@@ -58,12 +59,13 @@ check.alignment <- function(id1,
 
   ## According to the kind of metric selected
   ## evaluates if the clusters will be aligned
-  th <- sapply(names(thresholds), function(names.th){
+  th <- lapply(names(thresholds), function(names.th){
 
     if ((names.th == "Ncor")
+        || (names.th =="NcorS")
         || (names.th =="cor")
         || (names.th =="logocor")
-        || (names.th =="Nlocogor")
+        || (names.th =="Nlogocor")
         || (names.th =="Icor")
         || (names.th =="NIcor")
         || (names.th =="w")
@@ -76,7 +78,7 @@ check.alignment <- function(id1,
         closest.scores[names.th] >= thresholds[names.th]
       }
     } else if ((names.th == "dEucl")
-              || (names.th == "NsEucl")
+              || (names.th == "NdEucl")
               || (names.th == "SSD")
               || (names.th == "SW")
               || (names.th == "NSW")
