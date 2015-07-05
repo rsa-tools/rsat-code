@@ -784,12 +784,14 @@ _compile_consensus:
 
 ################################################################
 ## UCSC tools (developed by Jim Kent)
-## APPARENTLY THIS DOES NOT WORK YET
-install_ucsc_tools: _download_ucsc_tools
+install_ucsc_userapps: _download_ucsc_userapps
 UCSC_URL=http://hgdownload.cse.ucsc.edu/admin/exe/${UCSC_OS}/
-UCSC_SRC_DIR=${SRC_DIR}/UCSC
-_download_ucsc_tools:
-	(mkdir -p ${UCSC_SRC_DIR}; cd ${SRC_DIR}/ucsc/;  wget  -nv -nd -rNL ${UCSC_URL})
+UCSC_SRC_DIR=${SRC_DIR}/UCSC_userApps
+_download_ucsc_userapps:
+	(mkdir -p ${UCSC_SRC_DIR}; cd ${UCSC_SRC_DIR};  wget -rNL --no-directories --page-requisites --execute robots=off ${UCSC_URL})
+#	(mkdir -p ${UCSC_SRC_DIR}; cd ${SRC_DIR}/ucsc/;  wget  -nv -nd -rNL ${UCSC_URL})
+
+
 
 ################################################################
 ################################################################
