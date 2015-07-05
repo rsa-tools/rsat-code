@@ -15,10 +15,10 @@ align.two.leaves <- function(child1,
   ## Example
 #   child1 <- -1
 #   child2 <- -2
-#   desc.table <- global.description.table
-#   compa.table <- global.compare.matrices.table
-#   hclust.tree <- tree
-#   hclust.method <- "average"
+#    desc.table <- global.description.table
+#    compa.table <- global.compare.matrices.table
+#    hclust.tree <- tree
+#    hclust.method <- "average"
 #   id1 <- get.id(n1, desc.table)
 #   id2 <- get.id(n2, desc.table)
 #   metric <- "Ncor"
