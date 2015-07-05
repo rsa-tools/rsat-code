@@ -20,7 +20,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
       || (metric=="NcorS")
       || (metric=="cor")
       || (metric=="logocor")
-      || (metric=="Nlocogor")
+      || (metric=="Nlogocor")
       || (metric=="Icor")
       || (metric=="NIcor")
   ) {
@@ -40,7 +40,6 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
     stop("logoDP and cov metrics are not supported yet")
 
   } else if ((metric == "dEucl")
-             || (metric == "NdEucl")
              || (metric == "NdEucl")
              || (metric == "NsEucl")
              || (metric == "SSD")
@@ -102,10 +101,11 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
 
   ## Color gradient for the heatmap
 #  grad <- colorRampPalette(c("blue", "black"))(n = 299)
-  if(metric.definition == "correlation"){
+  if(metric.definition == "distance"){
     grad <- blue.white.red()
   }else if(metric.definition == "correlation"){
-    grad <- colorRampPalette(c("red", "white"))(n = 256)
+    grad <- blue.white.red()
+#    grad <- colorRampPalette(c("red", "white"))(n = 256)
   }
 
 

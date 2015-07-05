@@ -76,11 +76,12 @@ check.param()
 #####################################
 ## Example for Debugging ############
 #
-# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.6/peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
-# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.6/peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
-# metric <- "Ncor"
+# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4_testing_metrics/average_linkage/cor_0.5/peak-motifs_Oct4_hclust-average_cor_0.5_tables/pairwise_compa.tab"
+# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4_testing_metrics/average_linkage/cor_0.5/peak-motifs_Oct4_hclust-average_cor_0.5_tables/pairwise_compa_matrix_descriptions.tab"
+# metric <- "NdEucl"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
+# thresholds <- list(NdEucl = 0.2)
 
 ######################################
 ######################################
@@ -518,3 +519,4 @@ write.table(intermediate.levels, file = paste(out.prefix, "_tables/intermediate_
 ##   plot(as.dendrogram(tree), horiz=TRUE, main = paste("Aligned consensus tree cluster", cluster.nb, ";labels:" ,paste(labels, collapse = ","), sep = " "))
 ##   dev.off()
 ## }
+## Pass the upper thresholds
