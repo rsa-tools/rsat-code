@@ -1140,7 +1140,7 @@ SAMTOOLS_VERSION=0.1.18
 SAMTOOLS_ARCHIVE=samtools-${SAMTOOLS_VERSION}.tar.bz2
 SAMTOOLS_URL=http://sourceforge.net/projects/samtools/files/samtools/${SAMTOOLS_VERSION}/${SAMTOOLS_ARCHIVE}
 SAMTOOLS_DISTRIB_DIR=${SAMTOOLS_BASE_DIR}/samtools-${SAMTOOLS_VERSION}
-install_samtools: _download_samtools _compile_samtools 
+install_samtools: _download_samtools _compile_samtools _install_pysam
 
 _download_samtools:
 	@echo
@@ -1155,6 +1155,13 @@ _compile_samtools:
 	@echo ${SAMTOOLS_DISTRIB_DIR}
 	(cd ${SAMTOOLS_DISTRIB_DIR}; make)
 	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
+
+## Install a python library required for some samtool functionalities
+_install_pysam:
+	@echo 
+	@echo "Installing pysam library for python"
+	sudo pip install pysam
+
 
 ################################################################
 ## Install  SRA toolkit

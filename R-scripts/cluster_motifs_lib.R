@@ -38,6 +38,15 @@ check.param <- function() {
     hclust.method <<- "average";
   }
 
+  if (!exists("range.table")) {
+    range.table <<- NULL;
+  }
+
+  ## Default hclust method is the complete method
+  if (!exists("nb_clusters.table")) {
+    nb_clusters.table <<- NULL;
+  }
+
   ## Option indicating if the heatmap must be computed
   if (!exists("draw.heatmap")) {
     draw.heatmap <<- "1";
