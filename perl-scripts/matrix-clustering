@@ -312,6 +312,7 @@ package main;
   local %motifs_ID_unique = ();
   local $longest_title = 0;
   local $multi_input_flag = 0;
+  local $nb_cluster_taks_flag = 0;
   local $single_input_flag = 0;
 
   ## Supported positions to display the
@@ -335,7 +336,7 @@ package main;
 
   ## Supported fields to return
   local %return_fields = ();
-  local @supported_return_fields = qw (align_consensus clone_input heatmap json newick root_matrices);
+  local @supported_return_fields = qw (align_consensus clone_input heatmap json newick root_matrices nb_clusters);
   local %supported_return_fields = ();
   foreach my $field (@supported_return_fields) {
     $supported_return_fields{$field} = 1;
@@ -369,8 +370,8 @@ package main;
 
   ################################################################
   ## Input file is mandatory
-  unless (($main::infile{matrices}) || ($main::infile{matrices_info_tab})) {
-    &RSAT::error::FatalError("Input should be specified either as a matrix file (option -i), or as a file table (option -file_table).");
+  unless (($main::infile{matrices}) || ($main::infile{matrices_info_tab}) || $main::infile{range_th_tab}) {
+    &RSAT::error::FatalError("Input should be specified either as a matrix file (option -i), as a file table (option -file_table) or a table with the ranges of the metrics (-range_th_table).");
   }
 
   ################################################################
@@ -455,79 +456,91 @@ package main;
   if ($selected_tasks{all} || $selected_tasks{cluster}) {
 
       ################################################################
-      ## Cluster the matrices
-      &Hclustering();
+      ## Count the number of clusters when the values of the
+      ## threshold vary between a range of values.
+      if($nb_cluster_taks_flag == 1){
 
-      ################################################################
-      ## Read the motif to cluster assignation, which will be required for
-      ## several functions below.
-      &ReadClusterComposition();
+	  &Hclustering_nb_clusters();
 
-      if ($root_matrices_flag == 1) {
+	  &RSAT::message::TimeWarn("Heatmap with number of clusters", $main::outfile{prefix}."_figures/heatmap_nb_clusters.pdf") if ($main::verbose >= 2);
+
+      } elsif ($nb_cluster_taks_flag == 0){
+
+
+	  ################################################################
+	  ## Cluster the matrices
+	  &Hclustering();
 	  
 	  ################################################################
-	  ## Create the merged matrices and consensuses for root matrices
-	  &Merge_root_matrices();
-
-	  ##########################################
-	  ## Export the external motifs in a file
-	  &Export_external_motifs();
-
-	  ## Some files and directories that must be deleted
-	  $to_delete_folder{'clusters_information'} = $main::outfile{prefix}."_clusters_information";
-	  $to_delete_folder{'html'} = $main::outfile{prefix}."_html";
-	  $to_delete_folder{'tables'} = $main::outfile{prefix}."_tables";
-	  $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
-
-      } else {
-
-	  ################################################################
-	  ## Create the merged matrices and consensuses
-	  &Merge_matrices();
-
-	  ##########################################
-	  ## Export the external motifs in a file
-	  &Export_external_motifs();
-
-	  ################################################################
-	  ## Read the table with the hexadecimal code 
-	  ## for the colors assigned to each cluster
-	  %hexa_code = &Read_cluster_colors();
+	  ## Read the motif to cluster assignation, which will be required for
+	  ## several functions below.
+	  &ReadClusterComposition();
 	  
-	  ################################################################
-	  ## Parse the JSON file
-	  &Add_attributes_to_JSON();
-	  
-	  ################################################################
+	  if ($root_matrices_flag == 1) {
+	      
+	      ################################################################
+	      ## Create the merged matrices and consensuses for root matrices
+	      &Merge_root_matrices();
+	      
+	      ##########################################
+	      ## Export the external motifs in a file
+	      &Export_external_motifs();
+	      
+	      ## Some files and directories that must be deleted
+	      $to_delete_folder{'clusters_information'} = $main::outfile{prefix}."_clusters_information";
+	      $to_delete_folder{'html'} = $main::outfile{prefix}."_html";
+	      $to_delete_folder{'tables'} = $main::outfile{prefix}."_tables";
+	      $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
+	      
+	  } else {
+	      
+	      ################################################################
+	      ## Create the merged matrices and consensuses
+	      &Merge_matrices();
+	      
+	      ##########################################
+	      ## Export the external motifs in a file
+	      &Export_external_motifs();
+	      
+	      ################################################################
+	      ## Read the table with the hexadecimal code 
+	      ## for the colors assigned to each cluster
+	      %hexa_code = &Read_cluster_colors();
+	      
+	      ################################################################
+	      ## Parse the JSON file
+	      &Add_attributes_to_JSON();
+	      
+	      ################################################################
 	  ## Creates the body of html to display
 	  ## each cluster separately
 	  &Add_div_to_HTML();
 	  
 	  ################################################################
-	  ## Convert tab files to HTML files
-	  &ConvertTabToHTML(@tab_to_convert);
+	      ## Convert tab files to HTML files
+	      &ConvertTabToHTML(@tab_to_convert);
+	  }
+	  
+	  if ($root_matrices_flag == 0) {
+	      
+	      ################################################################
+	      ## Creates the website
+	      &Synthesis();
+	      
+	      ################################################################
+	      ## Create an archive with all result files
+	      &Archive(1);
+	  } 
       }
+      
+      #######################################
+      ## Delete temporal files and folders
+      &Delete_temporal_files();
+    }  
+      ################################################################
+      ## Print verbose
+      &Verbose() if ($main::verbose >= 1);
 
-      if ($root_matrices_flag == 0) {
-
-	  ################################################################
-	  ## Creates the website
-	  &Synthesis();
-
-	  ################################################################
-	  ## Create an archive with all result files
-	  &Archive(1);
-      } 
-  }
-
-  #######################################
-  ## Delete temporal files and folders
-  &Delete_temporal_files();
-
-  ################################################################
-  ## Print verbose
-  &Verbose() if ($main::verbose >= 1);
-  
   ################################################################
   ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); print $main::out $exec_time if ($main::verbose >= 1);
@@ -619,7 +632,7 @@ matrices.
 
 =item B<-file_table>
 
-The file table must be a tab-delimited table with three fieds each
+The file table must be a tab-delimited table with three fields each
 line:
 
 1) The path to one file containing a set of position-specific scoring matrices (PSSMs).
@@ -652,6 +665,40 @@ peak-motifs_Oct4_matrices.tf	transfac	Oct4_motifs
       $main::infile{matrices_info_tab} = shift(@arguments);
 	$multi_input_flag = 1;
 
+
+################################################################
+
+=pod
+
+=item B<-range_th_table>
+
+The range thresholds table must be a tab-delimited table with four fields each
+line:
+
+1) The metric name as is used in RSAT. See help.
+
+2) The starting value.
+
+3) The ending value.
+
+4) Increment of the sequence
+
+A sequence of values from:start to:end step:increment
+is generated. Each combination is evaluated in the hierarchical tree to count the number of clusters.
+
+The file table must contain at least one line (tab separated) as the next one:
+
+#metric	start	end	step
+Ncor	0	1	0.1
+cor	0	1	0.1
+
+=cut
+    } elsif ($arg eq "-range_th_table") {
+      $main::infile{range_th_tab} = shift(@arguments);
+	$nb_cluster_taks_flag = 1;
+
+
+################################################################
 
 =pod
 
@@ -1053,7 +1100,7 @@ List of fields to return.
 
 Supported fields:
 
- clone_input,align_consensus,heatmap,json,newick,root_matrices
+ clone_input,align_consensus,heatmap,json,newick,root_matrices,nb_clusters
 
 =over
 
@@ -1108,6 +1155,34 @@ cluster.
 
 This option is useful when the user wants to explore the data and
 to avoid the cimputation of the visual elements.
+
+=item B<nb_clusters:> Advanced Option! Calculates the number of clusters in the input motif collection given a range of values that will be used as threshold.
+
+Requires the values of the metrics that will be used as threshold.
+A sequence of values with each combination of values is evaluated in the hierarchical tree to count the number of clusters.
+ 
+Example: 
+
+Varying the threshold of Ncor and cor
+from 0.5 -> 0.7 with a step of 0.1
+
+             Ncor 
+                 0.5       0.6       0.7
+    cor
+        0.5       6         6         6
+        0.6       6         7         7     <-- Number of clusters
+        0.7       7         8         8
+
+
+NOTE: this option requires a lot of computation time to calculate the
+number of clusters.
+
+NOTE: the output is a heatmap showing the number of clusters found in the collection
+of motifs at different threshold values. This option is ideal as a general exploration
+of the data.
+
+NOTE: When this option is selected, the analysis is exclusively focused in count the number of clusters.
+The motif alignment is skipped. 
 
 =back
 
@@ -1252,6 +1327,10 @@ sub set_output_file_names {
 
   ## Hexadecimal color for the clusters
   $main::outfile{hexa_colors} = $main::outfile{prefix}."_hexa_colors.txt";
+
+  ## Table with the number of clusters
+  $main::outfile{nb_clusters_table} = $main::outfile{prefix}."_tables/number_of_clusters.tab";
+
 
   ## Output files for the hierarchical clustering trees
   $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
@@ -1702,6 +1781,71 @@ sub Hclustering {
     }
     return();
 }
+
+
+###############################################################
+## Run the R script "matrix-clustering_nb_clusters.R" 
+##
+## This script takes as input a matrix comparison file
+## (generated by compare-matrices), performs hierarchical
+## clustering and count the number of clusters using 
+## different thresholds.
+##
+## It returns a heatmap with the number of clusters
+## 
+sub Hclustering_nb_clusters {
+    
+    &RSAT::message::TimeWarn("Counting clusters ") if ($main::verbose >= 2);
+
+
+    ##################################
+    ### Identify the path of the R executable
+    my $r_path = &RSAT::server::GetProgramPath("R");
+
+    my $cluster_motifs_script  = $ENV{RSAT}."/R-scripts/matrix-clustering_nb_clusters.R";
+    &RSAT::error::FatalError("Cannot read cluster motifs script", $cluster_motifs_script) unless (-r $cluster_motifs_script);
+    $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
+
+
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ## FROM JVH TO JAIME: 
+    ##
+    ## I think we should better write all parameters in a file, and
+    ## call this file with Rscript (or R). This would avoid to create
+    ## a very long command line with all parameters, and it would
+    ## leave a persistent trace of the complete analysis.
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    my $pos_drawing_offset = 0;
+    
+    ## Basic parameters
+    my $cluster_motif_cmd = "";
+    $cluster_motifs_cmd .= " cat ".$cluster_motifs_script;
+    $cluster_motifs_cmd .= " | ".$r_path;
+    $cluster_motifs_cmd .= " --slave --no-save --no-restore --no-environ";
+    $cluster_motifs_cmd .= " --args \"";
+    $cluster_motifs_cmd .= " infile = '".$main::outfile{pairwise_compa}."'";
+    $cluster_motifs_cmd .= "; hclust.method = '".$hclust_method."'";
+    $cluster_motifs_cmd .= "; description.file = '".$main::outfile{matrix_descriptions}."'";
+    $cluster_motifs_cmd .= "; distance.table = '".$main::outfile{distance_table}."'";
+    $cluster_motifs_cmd .= "; verbosity = ".$r_verbosity;
+    $cluster_motifs_cmd .= "; metric = '".$main::param{matrix_compa_score}."'";
+    $cluster_motifs_cmd .= "; range.table = '".$main::infile{range_th_tab}."'";
+    $cluster_motifs_cmd .= "; nb_clusters.table = '".$main::outfile{nb_clusters_table}."'";
+
+    ## Output parameters
+    $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
+    $cluster_motifs_cmd .= "; \"";
+#    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.")"; # Uncomment this line to check the R output in the terminal
+    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2&> ".$main::outfile{Rlog};
+
+    if ($r_path) {
+        &doit($cluster_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    } else {
+        &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
+    }
+    return();
+}
+
 
 
 ################################################################

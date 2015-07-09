@@ -32,6 +32,7 @@ MATRIX_PREFIX=${PEAKMO_PREFIX}
 MATRIX_DIR=${RSAT}/public_html/demo_files
 MATRIX_FILE=${MATRIX_DIR}/${MATRIX_PREFIX}_matrices.tf
 FILE_TABLE=${MATRIX_DIR}/${MATRIX_PREFIX}_motif_set.tab
+RANGE_TABLE=${MATRIX_DIR}/${MATRIX_PREFIX}_metric_ranges.txt
 
 list_param:
 	@echo "MATRIX_PREFIX		${MATRIX_PREFIX}"
@@ -81,6 +82,16 @@ CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-metric_build_tree ${METRIC_BUILD_TREE} \
 		-return ${RETURN_FIELDS} 
 
+NB_CLUSTER_CMD=matrix-clustering -v ${V} \
+	        -i ${MATRIX_FILE} -matrix_format tf -motif_collection_name '${MATRIX_PREFIX}' \
+		-range_th_table ${RANGE_TABLE} \
+		-title '${TITLE}' \
+		-hclust_method ${HCLUST_METHOD} \
+		-label_in_tree name ${OPT} \
+		-o ${CLUSTER_FILE_PREFIX} \
+		-metric_build_tree ${METRIC_BUILD_TREE} \
+		-return ${RETURN_FIELDS} 
+
 _cluster:
 	@echo
 	@echo "Running matrix-clustering	${MATRIX_PREFIX}	${OPT}"
@@ -95,6 +106,11 @@ _cluster_multi:
 	@echo "		${CLUSTER_MULTI_SET_CMD}"
 	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
 
+_nb_cluster:
+	@echo
+	@echo "Running matrix-clustering	${MATRIX_PREFIX}	${OPT}"
+	${MAKE} my_command MY_COMMAND="${NB_CLUSTER_CMD}"
+	@echo "\n${NB_CLUSTER_CMD}"
 
 ## Cluster motifs resulting from two independent analysis of peak-motifs (Chen data set) with Oct4 and Sox2 peaks. 
 cluster_peakmotifs_ES_cells_analysis:
@@ -113,6 +129,18 @@ cluster_peakmotifs_Oct4:
 		TITLE='Oct4 motifs peak motifs' \
 		COLLECTION=${OCT4_PREFIX} \
 		METRIC_BUILD_TREE=Ncor
+
+
+## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
+cluster_peakmotifs_Oct4_nb_clusters:
+	@echo
+	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+	${MAKE} _nb_cluster MATRIX_PREFIX=${OCT4_PREFIX} \
+		TITLE='Oct4 motifs peak motifs' \
+		COLLECTION=${OCT4_PREFIX} \
+		METRIC_BUILD_TREE=Ncor \
+                RETURN_FIELDS=nb_clusters
+
 
 cluster_peakmotifs_Oct4_roots_only:
 	@echo
