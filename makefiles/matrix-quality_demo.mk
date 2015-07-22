@@ -35,14 +35,14 @@ TASKS=
 
 TITLE_ZOO='Compare enrichment in reported TF singleton binding sites'
 MTX_FORMAT=transfac
-
+RPLOT=-r_plots 
 V=2
 PSEUDO=1
 BG_PSEUDO=0.01
 
-MTXQ_ZOO_CMD=matrix-quality -v ${V} -html_title ${TITLE_ZOO}  -m ${MOTIFS_FILE} -matrix_format ${MTX_FORMAT} \
+MTXQ_ZOO_CMD=matrix-quality -v ${V} -html_title ${TITLE_ZOO}  -ms ${MOTIFS_FILE} -matrix_format ${MTX_FORMAT} \
 	-pseudo ${PSEUDO}  -seq_format fasta ${ZOO_CHIP_SEQ_SETS}  -bgfile ${BACKGROUND_MODEL} \
-	-bg_format oligo-analysis -bg_pseudo ${BG_PSEUDO}  ${ZOO_CHIP_SEQ_PLOTS} -o ${MTXQ_ZOO_OUT} ${TASKS}
+	-bg_format oligo-analysis -bg_pseudo ${BG_PSEUDO}  ${ZOO_CHIP_SEQ_PLOTS} -o ${MTXQ_ZOO_OUT} ${TASKS} ${RPLOT}
 
 MTXQ_ZOO_OUT=./results/matrix_quality/${DATE}/zoo_chip_enrichment
 
