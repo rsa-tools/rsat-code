@@ -216,6 +216,23 @@ cluster_regulondb_permute:
 	${MAKE} MATRIX_PREFIX=${RDB_PREFIX} MATRIX_FILE=${RDB_MATRICES} permute_matrices
 	${MAKE} MATRIX_PREFIX=${RDB_PREFIX} cluster_permuted_matrices
 
+
+################################################################
+## Cluster all motifs from HOCOMOCO
+HOCOMOCO_CLUSTER_DIR=results/matrix-clustering_results/HOCOMOCO_clusters
+HOCOMOCO_CLUSTERS=${HOCOMOCO_CLUSTER_DIR}/HOCOMOCO_clusters
+HOCOMOCO_PREFIX=HOCOMOCO_2015-08-07
+HOCOMOCO_MATRICES=${RSAT}/public_html/motif_databases/HOCOMOCO/${HOCOMOCO_PREFIX}.tf
+cluster_hocomoco:
+	@echo
+	@echo "Clustering all matrices from HOCOMOCO"
+	${MAKE} _cluster MATRIX_PREFIX=${HOCOMOCO_PREFIX} MATRIX_FILE=${HOCOMOCO_MATRICES} \
+		TITLE='HOCOMOCO motifs' \
+		COLLECTION=${RDB_PREFIX} \
+		METRIC_BUILD_TREE=Ncor \
+		RETURN_FIELDS=align_consensus,heatmap
+
+
 ################################################################
 ## Cluster one jaspar group
 JASPAR_GROUPS=nematodes fungi urochordates plants vertebrates insects all 
