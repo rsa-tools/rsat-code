@@ -83,8 +83,8 @@ check.param <- function() {
   }
 
   ## Define the kind of metric used: scores or distances
-  supported.scores <- c("cor", "Ncor", "NcorS", "logocor", "Nlogocor", "Icor", "NIcor", "w")
-  supported.distances <- c("dEucl", "NdEucl", "SSD")
+  supported.scores <- c("cor", "Ncor", "NcorS", "logocor", "Nlogocor", "Icor", "NIcor", "zscores", "w")
+  supported.distances <- c("dEucl", "NdEucl", "SSD", "rank_mean")
 
   if(metric %in% supported.scores){
 
