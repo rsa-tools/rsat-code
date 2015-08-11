@@ -514,7 +514,7 @@ package main;
 	      ################################################################
 	  ## Creates the body of html to display
 	  ## each cluster separately
-	  &Add_div_to_HTML();
+	  &Create_dynamic_tree();
 	  
 	  ################################################################
 	      ## Convert tab files to HTML files
@@ -2131,11 +2131,13 @@ sub Add_attributes_to_JSON() {
 ## display the tree
 sub create_html_tree_file() {
 
-  &RSAT::message::TimeWarn("Generating HTML tree file", $main::outfile{logo_cladogram_html}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Generating HTML tree file", $main::outfile{logo_cladogram_html}) if ($main::verbose >= 2);
 
     open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot open HTML file");
     open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
 
+
+    my $Dyn_tree_counter = 0;
     ## Values to change in the D3 tree
     my $svg_width = 25;
     my $svg_height = 80;
@@ -2144,7 +2146,9 @@ sub create_html_tree_file() {
     my $svg_x2 = '25 + '.$svg_x1.' + 25';;
     my $add_this = "";
     my $labels_num = 0;
+    my $tree_counter = 0;
     my $cluster_nb = 0;
+    my $JQuery_dynamic = "";
     my $main_label = 	        
 	"\tnodeEnter.append(\"a\")
 	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
@@ -2188,8 +2192,19 @@ sub create_html_tree_file() {
     while(<TREE>) {
 	chomp;	
 
-	if (/\(function\(\)\s*\{/) {
-	  $cluster_nb++;
+	if (/\(function\(\)\s*\{/) { 
+	    $Dyn_tree_counter = 0;
+	    if($tree_counter % 2 == 0){
+		$cluster_nb++;
+
+		## Get the Jquery code
+		$JQuery_dynamic .= &Hide_and_show_logo_trees();
+		$JQuery_dynamic =~ s/--cl--/$cluster_nb/g;
+
+	    } elsif ($tree_counter % 2 == 1){
+		$Dyn_tree_counter = 1;
+	    }
+	    $tree_counter++;
 	}
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
@@ -2200,6 +2215,16 @@ sub create_html_tree_file() {
 	### Fix the d3 library path
 	if (/--d3--/) {;
 	    $_ =~ s/--d3--/$d3_base/g;
+	}
+
+	### Fix the jquery library path
+	if (/--jquery--/) {
+	    $_ =~ s/--jquery--/$jquery_base/g;
+	}
+
+	## Insert the JQuery code
+	if(/--jquerycode--/){
+	    $_ =~ s/--jquerycode--/$JQuery_dynamic/g;
 	}
 
 	### Set the height 
@@ -2229,6 +2254,9 @@ sub create_html_tree_file() {
 
 	if (/--cl_id--/) {
 	    my $c = "cluster_".$cluster_nb;
+	    if($Dyn_tree_counter == 1){
+		$c = "cluster_".$cluster_nb."_RC";
+	    } 
 	    $_ =~ s/--cl_id--/$c/;
 	}
 
@@ -2254,6 +2282,14 @@ sub create_html_tree_file() {
 	    $_ =~ s/--svgheight--/$svg_height/g;
 	}
 
+	if(/--insert_image--/){
+	    if($Dyn_tree_counter == 1){
+		$_ =~ s/--insert_image--/d.image_rc/g;
+	    } else{
+		$_ =~ s/--insert_image--/d.image/g;
+	    }
+	}
+
 	if (/--x1--/) {
 	    $_ =~ s/--x1--/$svg_x1/g;
 	}
@@ -2269,6 +2305,8 @@ sub create_html_tree_file() {
 	if (/--lab--/) {
 	    $_ =~ s/--lab--//g;
 	}
+
+
 
 	if ($_ =~ /Insert labels/) {
 	    $add_this = "";
@@ -2299,7 +2337,7 @@ sub create_html_tree_file() {
 	    }
 
 	    ## Add the collection lable to the logo tree
-	    if ($display_collection_name_flag == 1) {
+	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
 		my $displacement = 3 + (scalar(@label_fields_to_return) * 25);
 		$display_title_lab =~ s/--dis--/$displacement/;
 		$add_this .= "\n".$display_title_lab."\n";	
@@ -2800,10 +2838,11 @@ sub Export_external_motifs() {
 ## Before modify the width and heigth
 ## of the alignments, creates the <div>
 ## in HTML script to visualize the clusters
-sub Add_div_to_HTML() {
+sub Create_dynamic_tree() {
     my $line = "";
     my $print = "";
-    my $temp = &logo_tree_dynamic();
+    my $temp_dyn_tree_Forward = &logo_tree_dynamic();
+    my $temp_dyn_tree_Reverse = &logo_tree_dynamic();
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -2828,6 +2867,9 @@ sub Add_div_to_HTML() {
 	    $line = "";
 	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted) {             
 		$line .= "<div id=\"cluster_".$cluster."\"><h2>cluster_".$cluster."</h2><\/div>\n";
+		$line .= "<div id=\"cluster_".$cluster."_RC\"><h2>cluster_".$cluster."_Reverse_Complement</h2><\/div>\n";
+		$line .= "<div class=\"hide_show_button\" id=\"Change_Orientation_cluster_".$cluster."\">Change Orientation<\/div>\n";
+		$line .= "<br><br><br><br><br>";
 	    }
 	}
 
@@ -2835,7 +2877,8 @@ sub Add_div_to_HTML() {
 	if (/^\s*\/\/Body/) {
 	    $line = "";	
 	    foreach my $cluster (sort {$clusters_info_sorted{$a} <=> $clusters_info_sorted{$b}} keys %clusters_info_sorted) {      
-		$line .= $temp."\n";
+		$line .= $temp_dyn_tree_Forward."\n\n\n";
+		$line .= $temp_dyn_tree_Reverse."\n\n\n";
 	    }
 	}
 
@@ -3102,13 +3145,14 @@ function update(source) {
        /Insert consensus/
 
 	nodeEnter.append("image")
-		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
 		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
 		.attr("height", --svgheight--)
 		.attr("x", --x1--)    
 		.attr("y", --y1--) 
 		.attr("preserveAspectRatio", "none");	
-		
+
+/*		
 	nodeEnter.append("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
 		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
@@ -3116,6 +3160,7 @@ function update(source) {
   		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
 		.attr("y", --y1--) 
 		.attr("preserveAspectRatio", "none");
+*/
 
   // Transition nodes to their new position.
   var nodeUpdate = node.transition()
@@ -3137,7 +3182,7 @@ function update(source) {
       .attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
 
 	nodeUpdate.select("image")
-		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
 		.attr("width", function(d) { return (d.size + 2)  * 25; })
 		.attr("height", 80)
 		.attr("x", 296)    
@@ -3349,6 +3394,29 @@ sub branch_consensus_table{
   return($branch_consensus_table);
 }
 
+
+################################################################
+## Jquery code to Hide/Show the logo trees
+sub Hide_and_show_logo_trees {
+
+    my $JQuery_code = '
+
+// Hide/Show the logo trees
+  $(document).ready(function() {
+    $(\'#Change_Orientation_cluster_--cl--\').click(function() {
+         $(\'#cluster_--cl--\').toggle();
+         $(\'#cluster_--cl--_RC\').toggle();
+     }); 
+  });
+
+// By default Hide the RC logo tree
+  $(document).ready(function() {
+    $(\'#cluster_--cl--_RC\').hide();
+  });
+
+'."\n\n";
+    return($JQuery_code);
+}
 
 ##############################################################
 ## When the option -top is used the analysis is restricted 
