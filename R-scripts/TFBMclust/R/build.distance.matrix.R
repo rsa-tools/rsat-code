@@ -40,6 +40,7 @@ build.distance.matrix <- function(comparison.table,
              || (metric == "SSD")
              || (metric == "SW")
              || (metric == "NSW")
+             || (metric == "rank_mean")
   ) {
     ## dEucl 			Euclidian distance between residue occurrences in aligned columns
     ## NdEucl 			Relative width-normalized dEucl
@@ -50,7 +51,11 @@ build.distance.matrix <- function(comparison.table,
 
     metric.dist <- metric.values
 
-  } else {
+  } else if (metric == "mean_zscore"){
+
+    metric.dist <- max(metric.values) - metric.values
+
+  }else {
     stop(paste(metric, "is not a valid metric", sep="\t"))
   }
 
