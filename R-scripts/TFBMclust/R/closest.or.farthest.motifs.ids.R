@@ -18,6 +18,7 @@ closest.or.farthest.motifs.ids <- function(id1, id2, compa.table, metric = "Ncor
       || (metric=="Nlogocor")
       || (metric=="Icor")
       || (metric=="NIcor")
+      || (metric == "mean_zscore")
   ) {
     if(closest == TRUE){
       compa.info <- compa.table[compa.numbers,][which(compa.table[compa.numbers, metric] == max(compa.table[compa.numbers, metric])),c("id1","id2")][1,]
@@ -32,6 +33,7 @@ closest.or.farthest.motifs.ids <- function(id1, id2, compa.table, metric = "Ncor
             || (metric == "SSD")
             || (metric == "SW")
             || (metric == "NSW")
+            || (metric == "rank_mean")
   ){
     if(closest == TRUE){
       compa.info <- compa.table[compa.numbers,][which(compa.table[compa.numbers, metric] == min(compa.table[compa.numbers, metric])),c("id1","id2")][1,]
