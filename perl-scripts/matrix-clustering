@@ -238,6 +238,8 @@ package main;
                                  Icor
                                  NIcor
                                  SSD
+                                 rank_mean
+                                 mean_zscore
 			     );
   local $supported_metrics = join ",", @supported_metrics;
   local %supported_metrics = ();
@@ -350,7 +352,7 @@ package main;
   ################################################################
   ## Set default options
   local %param = ();
-  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank);# zscores);
+  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
   $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
   $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
   $main::param{matrix_compa_score} = "Ncor";
@@ -1607,6 +1609,7 @@ sub CompareMatrices {
   $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
   $cmd .= " -o ".$main::outfile{pairwise_compa_html};
   &RSAT::util::one_command($cmd, 1,"");
+
 
   &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 2);
 
