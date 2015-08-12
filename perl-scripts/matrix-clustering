@@ -2063,7 +2063,7 @@ sub Add_attributes_to_JSON() {
 		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      my $id_json = $cluster."_".$folder;
-#		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
+		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
 		      $Add .= " \"size\" : ".$merged_consensuses_files{$folder}{$cluster}{width}.",\n";
@@ -2170,15 +2170,6 @@ sub create_html_tree_file() {
         \t\t.attr(\"font-size\", \"18px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
 
-    my $display_consensus_d3 =
-	"nodeEnter.append(\"a\")
-		.attr(\"xlink:href\", function(d) { return d.children ? d.url : \"\"; })
-		.append(\"text\")
-		.text(function(d) { return d.children ? \"\" : \"\"; })
-		.attr(\"dx\", function(d) { return d.children ? -20 : 0; })
-		.attr(\"dy\", function(d) { return d.children ? -6 : 0; })
-		.attr(\"fill\", function(d) { return d.children ? \"\" : \"\"; })
-		.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
  
     my $display_title_lab .= '
         nodeEnter.append("text")
@@ -2346,12 +2337,6 @@ sub create_html_tree_file() {
 		$add_this .= "\n".$display_title_lab."\n";	
 	    }
 	    
-	    print TEMP $add_this."\n";
-	}
-
-	if ($_ =~ /Insert consensus/) {
-	    $add_this = "";
-	    $add_this .= "\n\n".$display_consensus_d3."\n\n";
 	    print TEMP $add_this."\n";
 	}
 
@@ -3145,7 +3130,7 @@ function update(source) {
        /*Insert labels*/
        --lab--
 
-       /Insert consensus/
+       /*Insert consensus*/
 
 	nodeEnter.append("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
@@ -3168,8 +3153,7 @@ function update(source) {
   // Transition nodes to their new position.
   var nodeUpdate = node.transition()
       .duration(duration)
-      .attr("transform", function(d) { return "translate(" + d.y + "," +
-  d.x + ")"; });
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
 
 
   nodeUpdate.select("circle")
@@ -3178,10 +3162,11 @@ function update(source) {
 
 
   nodeUpdate.select("text")
-      .text(function(d) { return d.children ? "" :  d.name; })
-      .attr("dx", function(d) { return d.children ? 0 : 20; })
-      .attr("dy", function(d) { return d.children ? 0 : 3; })
+      .text(function(d) { return d.children ? d.consensus :  d.name; })
+      .attr("dx", function(d) { return d.children ? -20 : 20; })
+      .attr("dy", function(d) { return d.children ? -6 : 3; })
       .attr("font-size", "18px")
+      .attr("fill", function(d) { return d.children ? "blue" : "black"; })
       .attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
 
 	nodeUpdate.select("image")
@@ -4083,7 +4068,8 @@ sub ReadAlignmentTable {
 	if (length($split_line[1]) >= $nb_char) {
 	    $nb_char = length($split_line[1]);
 	    $alignment_size{$cluster_id}{nb_char} = $nb_char;
-	} if ($display_collection_name_flag == 1) {
+	}
+	if ($display_collection_name_flag == 1) {
 	    if ($longest_title >= $nb_char) {
 		$nb_char = $longest_title;
 	    }
