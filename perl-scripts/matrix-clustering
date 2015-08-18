@@ -472,6 +472,12 @@ package main;
 	  ################################################################
 	  ## Cluster the matrices
 	  &Hclustering();
+
+
+	  ################################################################
+	  ## Separate the input motif file into separated files (one file for each cluster)
+	  ## with the motifs in TRANSFAC format
+	  &Clustered_PSSMS_TRANSFAC_format();
 	  
 	  ################################################################
 	  ## Read the motif to cluster assignation, which will be required for
@@ -2545,7 +2551,7 @@ sub Merge_matrices() {
 		my @temp = split(/_/, $cluster);
 		my $cl = $temp[0].$temp[1];
 		@temp = split(/_/, $merge_level);
-		my $lvl = "lvl".$temp[2];
+		my $lvl = "node".$temp[2];
 		my $mt_nb = scalar(@file_names)."motifs";
 		my $motif_name = $cl."_".$lvl."_".$mt_nb;
 
@@ -2731,7 +2737,7 @@ sub Merge_root_matrices() {
 		my @temp = split(/_/, $cluster);
 		my $cl = $temp[0].$temp[1];
 		@temp = split(/_/, $merge_level);
-		my $lvl = "lvl".$temp[2];
+		my $lvl = "node".$temp[2];
 		my $mt_nb = scalar(@file_names)."motifs";
 		my $motif_name = $cl."_".$lvl."_".$mt_nb;
 
@@ -2854,8 +2860,8 @@ sub Create_dynamic_tree() {
 	if (/^\s*\/\/Divisions/) {
 	    $line = "";
 	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted) {             
-		$line .= "<div id=\"cluster_".$cluster."\"><h2>cluster_".$cluster."</h2><\/div>\n";
-		$line .= "<div id=\"cluster_".$cluster."_RC\"><h2>cluster_".$cluster."_Reverse_Complement</h2><\/div>\n";
+		$line .= "<div id=\"cluster_".$cluster."\" style=\"clear:both;\"><h2>cluster_".$cluster."</h2><\/div>\n";
+		$line .= "<div id=\"cluster_".$cluster."_RC\" style=\"clear:both;\"><h2>cluster_".$cluster."_Reverse_Complement</h2><\/div>\n";
 		$line .= "<div class=\"hide_show_button\" id=\"Change_Orientation_cluster_".$cluster."\">Change Orientation<\/div>\n";
 		$line .= "<br><br><br><br><br>";
 	    }
@@ -3278,6 +3284,7 @@ sub logo_tree{
 
 
 	var svg = d3.select("#--cl_id--").append("svg")
+                //BG_color
 		.attr("width", width)
 		.attr("height", height)
 		.append("g")
@@ -3602,6 +3609,7 @@ sub ReportStyleCSS{
   }
   
   .alignment_tab_head{
+	clear: both;
 	background-color: #DCE4EC;
 	float: left;
 	margin-top: 1px;
@@ -3613,7 +3621,6 @@ sub ReportStyleCSS{
 	color: #34373B;
 	font-size: 15px;
 	padding: 6px;
-	clear: both;
 	border-radius:5px;  
   }
   
@@ -3835,12 +3842,12 @@ sub ReportStyleCSS{
   
   #show_forest {
 	heigth: auto;
-	width: 960px;
+	width: 970px;
 	position: relative;
 	float: left;
 	clear: both;
 	border-radius:5px;
-	border: 2px solid blue;
+//	border: 1px solid black;
   }
 
   #display_clusters{
@@ -3998,28 +4005,32 @@ sub ParametersTable{
     $threshold_values_html .= "<strong>".$par."</strong> = ".$uth{$par}."<br>";
   } 
 
+
+
   my $par_table = '
   <!-- Div with the table of selected parameters-->
   <div class="tab">
-    <table id="parameters_table">
+    <table id="parameters_table" style="width:950px;>
       <thead>
 	<tr>
-	  <th colspan="5"><strong>Summary</strong></th>
+	  <th colspan="6"><strong><h2>Summary</h2></strong></th>
 	</tr>
 	<tr>
-	  <th class="tab_col">Input motifs</th>
-	  <th class="tab_col">Nb Clusters</th>
-	  <th class="tab_col">Clustering method</th>
-	  <th class="tab_col">Parameters</th>
-	  <th class="tab_col">Download</th>
+	  <th class="tab_col">Nb Input motifs</th>
+	  <th class="tab_col">Nb Clusters Found</th>
+	  <th class="tab_col">Linkage method</th>
+	  <th class="tab_col">Thresholds to cut the tree</th>
+	  <th class="tab_col">Download Link</th>
+	  <th class="tab_col">Clusters in TRANSFAC format</th>
 	</tr>
       </thead>
       <tbody>
 	<tr>
 	  <td class="par_text">'.$number_of_motifs.'</td>
 	  <td class="par_text">'.$number_of_clusters.'</td>
-	  <td class="par_text"><a target=\'_blank\' href="'.$hclust_method_link.'">'.$hclust_method.'</a></td>
-	  <td class="par_text">'.$threshold_values_html.'</td>
+	  <td class="par_text">'.$hclust_method.'<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:18px;height:18px;position:relative;float:right;"></a></td>
+	  <td class="par_text">'.$threshold_values_html.'<a target=\'_blank\' href="'.$hclust_method_link.'"> <img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:18px;height:18px;position:relative;display:inline-block;clear:both;"></a></td>
+	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
 	</tr>
       </tbody>
@@ -4093,19 +4104,19 @@ sub InsertAlignmentTable{
 
     ## Alignment table skeleton (it is filled in the next lines)
     my $tab = '
+
   <!-- Div with the aligment table with all the motifs-->
 	<div class="tab">
 	  <table id="alignment_dyn_table">
-		  
-		   	<!--Div: search in alignment table-->
-			<div class="alignment_tab_head">
-				<strong>Click on the column names to change the order of the data.</strong><br>
-				<strong>Write the name of one cluster, collection or a pattern in the <i>Search</i> window.<br>
-				<p></p>
-			</div>
+
+			<ul class="alignment_tab_head">
+				<li type="square">Click on the column names to change the order of the data.</li>
+				<li type="square">Write the name of one cluster, collection or a pattern in the <i>Search</i> window.</li>
+			</ul>
+
 	    <thead>
 	      <tr>
-		<th colspan="8"><strong>Alignment</strong></th>
+		<th colspan="8"><h2>Individual Motif View</h2><br><br></th>
 	      </tr>
 	      <tr>
 		<th class="tab_col">Motif id</th>
@@ -4124,6 +4135,9 @@ sub InsertAlignmentTable{
 	  </table>
 	</div>
 ';
+
+                # <p>Click on the column names to change the order of the data.</p>
+                # <p>Write the name of one cluster, collection or a pattern in the <i>Search</i> window.</p>
 
     $alignment_table_columns = "";
     my $logo_width = 0;
@@ -4204,10 +4218,13 @@ sub InsertSmallForest {
     my $sum_motifs = 0;
     my $sum = 0;
     my $cluster_sum = 0;
+    my $BG_color = ".style(\"background\", \"#E6E6E6\")";
 
     ## Insert link to the logo forest
     $small_forest .= '
-    <div id="display_clusters"><h2>Click here to display all the clusters</h2></div><hr>
+    <div id="display_clusters"><h2>Clusters found</h2>
+       <h3 id="display_clusters">3 clusters displayed below. Click here to display all the clusters</h3>
+    </div>
     ';
 
     foreach my $num (1..scalar(keys %alignment_table_data)) {
@@ -4221,13 +4238,10 @@ sub InsertSmallForest {
 	if ($sum < 20) {
 	    
 	    ## Draw the logo forest 
-	    $div .= '<div id="'.$cl_id_s.'"></div>';
-	    
-	    if ($cluster_sum < 3) {
-		$div .= '<hr>'."\n";
-	    }
+	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;"></div>';
 	    
 	    my $tree = &logo_tree();
+	    $tree =~ s/\/\/BG_color/$BG_color/g;
 	    $tree =~ s/--lab--/$label_single_tree_no_link/;
 	    $tree =~ s/--widthtree--/940/g;
 	    $tree =~ s/--radius--/3/g;
@@ -4293,7 +4307,7 @@ $(document).ready( function () {
         "ordering": false,
         "info":     false,
         "columnDefs": [
-	    { "width": "15%", "targets": [0,1,2,3,4] }
+	    { "width": "15%", "targets": [0,1,2,3,4,5] }
 	]		
     });
 });
@@ -4891,4 +4905,47 @@ sub Rev_Comp_Motif(){
     $cmd .= " -o ".$out_file;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 }
+
+
+#########################################################
+## For each cluster creates a file incluiding all the
+## original (input) motifs corresponding to that cluster
+sub Clustered_PSSMS_TRANSFAC_format(){
+
+    my $file_names = "";
+
+    my ($clusters_table) = &OpenInputFile($main::outfile{clusters_table});
+    while (<$clusters_table>) {
+	chomp;
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines	
+	my $line = $_;
+	my @split_line = split("\t", $line);
+
+	## Get the cluster name and motif IDs
+	my $cluster = $split_line[0];
+	my $cluster_motif_ids = $split_line[1];
+
+	## Create a temporary file
+	$main::outfile{clusters_id_temp} = $main::outfile{prefix}."_tables/".$cluster."_motif_IDs.tab";
+	$main::outfile{clusters_transfac} = $main::outfile{prefix}."_data/".$cluster."_transfac_motifs.tf";
+	my ($motifs_id_handle) = &OpenOutputFile($main::outfile{clusters_id_temp});
+	print $motifs_id_handle $cluster_motif_ids."\n";
+	close($motifs_id_handle);
+
+	## Separate the files (calling convert-matrix)
+	my $separate_motifs_cmd = $SCRIPTS."/convert-matrix";
+	$separate_motifs_cmd .= " -i ".$main::outfile{input_matrices};
+	$separate_motifs_cmd .= " -from tf -to tf";
+	$separate_motifs_cmd .= " -matrix_id_file ".$main::outfile{clusters_id_temp};
+	$separate_motifs_cmd .= " -o ".$main::outfile{clusters_transfac};
+	&doit($separate_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+	## Delete the temporal files
+	unlink($main::outfile{clusters_id_temp});
+    }
+    close $int_align_file;
+}
+
+
 __END__
