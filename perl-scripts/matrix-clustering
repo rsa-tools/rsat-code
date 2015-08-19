@@ -3603,9 +3603,6 @@ sub OpenSynthesis {
 
 ##########################################
 sub CloseSynthesis {
-    print $syn '<div><hr style="float:left;display:block;clear:both"></div>';
-    print $syn '<div><hr style="float:left;display:block;clear:both"></div>';
-    print $syn '<div><hr style="float:left;display:block;clear:both"></div>';
     print $syn "</body>\n";
     print $syn "</html>\n";
     close $syn;
@@ -4959,6 +4956,5 @@ sub Clustered_PSSMS_TRANSFAC_format(){
     }
     close $int_align_file;
 }
-
 
 __END__
