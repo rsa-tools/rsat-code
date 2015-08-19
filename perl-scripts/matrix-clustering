@@ -2337,7 +2337,8 @@ sub create_html_tree_file() {
 	    }
 
 	    ## Add the collection lable to the logo tree
-	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
+	    # if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
+	    if ($display_collection_name_flag == 1) {
 		my $displacement = 3 + (scalar(@label_fields_to_return) * 25);
 		$display_title_lab =~ s/--dis--/$displacement/;
 		$add_this .= "\n".$display_title_lab."\n";	
@@ -2902,13 +2903,48 @@ sub cluster_delim {
   return($cluster_delim);
 }
 
+
+###############################
+## Export the cluster header
+sub Text_end_report {
+
+    my $end_report = '
+	<div id="end_report">
+	  <ul style="list-style: none;">
+	    <li>
+	      <strong>References</strong>
+              <ol>
+                 <li><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full">Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
+              </ol>
+	    </li>
+	    <li>
+	      <strong>Additional Information</strong>
+              <ul>
+                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/courses/SBBCU16L_cisreg/">Jacques van Helden course.</a></li>
+              </ul>
+	    </li>
+	    <li>
+	      <strong>Contact</strong>
+              <ul>
+                 <li type="square">Jaime Castro-Mondragon - <strong>castro@tagc.univ-mrs.fr</strong></li>
+                 <li type="square">Morgane Thomas-Chollier - <strong>mthomas@biologie.ens.fr</strong></li>
+                 <li type="square">Jacques van Helden - <strong>Jacques.van-Helden@univ-amu.fr</strong></li>
+              </ul>
+            </li>
+          </ul>
+	</div>';
+
+    print $syn $end_report."\n";
+}
+
+
 ##########################################
 ## Store in a string the cluster header
 sub hide_show_buttons {
 
   my $HS_buttons = 
       '	
-      <div style="clear:both; display:block; margin: 2px 5px 1px 5px;">
+      <div style="clear:both; display:block; margin: 2px 5px 1px 0px;">
         <!--Div with cluster 1 delimitation and buttons to display results-->
 	<div class="hide_show_button button_click" id="show_all_button">
 		<strong>Show All</strong>
@@ -3332,7 +3368,8 @@ d3.json("--jsonfile--", function(json) {
 		.attr("x", --x1--)    
 		.attr("y", --y1--) 
 		.attr("preserveAspectRatio", "none");	
-		
+
+/*		
 	node.append("svg:image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })
 		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
@@ -3340,7 +3377,7 @@ d3.json("--jsonfile--", function(json) {
   		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
 		.attr("y", --y1--) 
 		.attr("preserveAspectRatio", "none");
-			
+*/			
 	});
 	
 
@@ -3429,16 +3466,6 @@ sub Delete_temporal_files {
   }
 
 }
-
-# ##############################################
-# ## When the option -clone_input is selected
-# ## the input file is exported in the result 
-# ## folder
-# sub Clone_input{
-#   my $cmd = "cp ".$infile{matrices}." ".$main::outfile{motif_file};
-#   &RSAT::util::one_command($cmd, 1,"");
-#   &RSAT::message::TimeWarn("Input motif file", $main::outfile{motif_file}) if ($main::verbose >= 2);
-# }
 
 
 ##################################
@@ -3596,6 +3623,7 @@ sub ReportCommand {
   print $syn &close_menu_heading();
 }
 
+
 #################################################
 ## CSS style for the matrix-clustering summary 
 ## (dynamic tables + D3 trees)
@@ -3608,23 +3636,7 @@ sub ReportStyleCSS{
 	text-decoration: none;
   }
   
-  .alignment_tab_head{
-	clear: both;
-	background-color: #DCE4EC;
-	float: left;
-	margin-top: 1px;
-	margin-bottom: 3px;
-	height: 35px;
-	position: relative;
-	display: block;
-	text-align: left;
-	color: #34373B;
-	font-size: 15px;
-	padding: 6px;
-	border-radius:5px;  
-  }
-  
-  
+
   .cluster_division {
 	background-color: #97C0F9;
 	float: left;
@@ -3647,8 +3659,7 @@ sub ReportStyleCSS{
   position:relative;
   top:1px;
   }
-  
-  
+
   .tab{
     font-size: 15px;
     margin-top: 15px;
@@ -3666,8 +3677,7 @@ sub ReportStyleCSS{
     border-radius:5px;
     padding: 5px 12px 5px 12px;
   }
-  
-  
+   
   .sep {
   background-color: #B1D4F9;
   height: 17px;
@@ -3675,6 +3685,7 @@ sub ReportStyleCSS{
   
   
   .tab_list{
+  width: 937px;
   margin-top: 20px;
   text-align: left;
   color: #000000;
@@ -3698,8 +3709,8 @@ sub ReportStyleCSS{
   }
 
   .tab_col {
-  padding: 7px 30px 7px 30px;
-  background-color: #B1D4F9;
+    padding: 7px 30px 7px 30px;
+    background-color: #B1D4F9 !important;
   }
 
   .seq {
@@ -3732,7 +3743,7 @@ sub ReportStyleCSS{
   }
 
   #File_list {
-  background-color: #DCE4EC;
+  background-color: #76F076;
   float: left;
   margin-top: 10px;
   width: 200px;
@@ -3836,22 +3847,22 @@ sub ReportStyleCSS{
   }
 
   #heatmap {
-	heigth: 700px;
-	width: 875px;
+	heigth: 400px;
+	width: 450px;
   }
   
   #show_forest {
 	heigth: auto;
-	width: 970px;
+	width: 97%;
 	position: relative;
 	float: left;
 	clear: both;
 	border-radius:5px;
-//	border: 1px solid black;
   }
 
   #display_clusters{
-    background-color: #B1D4F9;
+    width: 970px;
+    background-color: #E6E6E6;
     text-align: center;
     padding-top: 3px 1px 1px 1px; 
   }
@@ -3865,12 +3876,11 @@ sub ReportStyleCSS{
     clear: both;
     float: left;
     display: block;
-    margin: 1px 5px 2px 5px;
   }
 
   .display{
 	height: auto;
-	width: 96%;
+	width: auto;
 	border-radius: 5px;
 	background-color: #FFFFFF; 
 	margin: 10px;
@@ -3891,10 +3901,10 @@ sub ReportStyleCSS{
 	width: auto;
 	height: auto;
 	border-radius: 10px; 
-	background-color: #B1D4F9; 
+	background-color: #E6E6E6; 
         position: relative;
         clear: both;
-        margin: 7px;
+        margin: 7px 7px 7px 0px;
         display: block;
         float: left;
   } 
@@ -3943,6 +3953,21 @@ sub ReportStyleCSS{
   .selected_cluster {
     background-color: #76F076;
     border: 1px solid green;
+  }
+
+  #end_report {
+  width: 977px;
+  heigth: 400px;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  display: inline-block;
+  position: relative;
+  padding: 3px;
+  background-color: #E6E6E6;
+  float: left;
+  border-radius:5px;
+  font-size: 12px;
+  clear: both;
   }
 
   /****************/
@@ -4018,8 +4043,8 @@ sub ParametersTable{
 	<tr>
 	  <th class="tab_col">Nb Input motifs</th>
 	  <th class="tab_col">Nb Clusters Found</th>
-	  <th class="tab_col">Linkage method</th>
-	  <th class="tab_col">Thresholds to cut the tree</th>
+	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
+	  <th class="tab_col">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></th>
 	  <th class="tab_col">Download Link</th>
 	  <th class="tab_col">Clusters in TRANSFAC format</th>
 	</tr>
@@ -4028,8 +4053,8 @@ sub ParametersTable{
 	<tr>
 	  <td class="par_text">'.$number_of_motifs.'</td>
 	  <td class="par_text">'.$number_of_clusters.'</td>
-	  <td class="par_text">'.$hclust_method.'<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:18px;height:18px;position:relative;float:right;"></a></td>
-	  <td class="par_text">'.$threshold_values_html.'<a target=\'_blank\' href="'.$hclust_method_link.'"> <img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:18px;height:18px;position:relative;display:inline-block;clear:both;"></a></td>
+	  <td class="par_text">'.$hclust_method.'</td>
+	  <td class="par_text">'.$threshold_values_html.'</td>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
 	</tr>
@@ -4108,17 +4133,11 @@ sub InsertAlignmentTable{
   <!-- Div with the aligment table with all the motifs-->
 	<div class="tab">
 	  <table id="alignment_dyn_table">
-
-			<ul class="alignment_tab_head">
-				<li type="square">Click on the column names to change the order of the data.</li>
-				<li type="square">Write the name of one cluster, collection or a pattern in the <i>Search</i> window.</li>
-			</ul>
-
 	    <thead>
 	      <tr>
 		<th colspan="8"><h2>Individual Motif View</h2><br><br></th>
 	      </tr>
-	      <tr>
+	      <tr class="dyn_head">
 		<th class="tab_col">Motif id</th>
 		<th class="tab_col">Motif name</th>
 		<th class="tab_col">Cluster</th>
@@ -4133,11 +4152,13 @@ sub InsertAlignmentTable{
 	      --insert_col_here--
 	    </tbody>
 	  </table>
+	  <ul style="text-align:left;">
+	     <li type="square"><h3>Click on the column names to change the order of the data.</h3></li>
+	     <li type="square"><h3>Write the name of one cluster, collection or a pattern in the <i>Search</i> window.</h3></li>
+	  </ul>          
 	</div>
 ';
 
-                # <p>Click on the column names to change the order of the data.</p>
-                # <p>Write the name of one cluster, collection or a pattern in the <i>Search</i> window.</p>
 
     $alignment_table_columns = "";
     my $logo_width = 0;
@@ -4166,28 +4187,6 @@ sub InsertAlignmentTable{
     print $syn $tab;
 }
 
-#######################################################
-## Insert the separation of the alignment table with
-## the single-cluster buttons. This div contains the
-## description of the Branch-motifs and logo trees
-sub InsertInfoDiv{
-    my $info = '
-	<div id="hclust_tree_head">
-	  <ul type="square">
-	    <li>
-	      <strong>Logo tree and alignment. </strong>This results shows the hierarchical tree with all the motifs of the corresponding cluster and the logo alignment in F (left logo) and R (rigth logo) orientation.
-            </li>
-            <li>
-	      <strong>Branch-motifs. </strong>On the logo trees are displayed the branch number in which the motifs were grouped. The Branch-Motifs table shows the details of each consensus corresponding to each branch: the logo in both orientations and a file in TRANSFAC format corresponding to the branch-motif.
-            </li>
-          </ul>
-	</div>
-';
-
-    ## Print the HTML to the summary file
-    print $syn $info
-}
-
 
 ########################################
 ## Insert the logo tree in small size
@@ -4205,15 +4204,15 @@ sub InsertSmallForest {
     ';
 
     ## D3 values of the parameters of the small trees
-    my $svg_width = 7;
-    my $svg_height = 18;
-    my $svg_x1 = 5.5 * $nb_char;
-    my $svg_y1 = -7;
+    my $svg_width = 9;
+    my $svg_height = 20;
+    my $svg_x1 = 7 * $nb_char;
+    my $svg_y1 = -10;
     my $svg_x2 = '6 + '.$svg_x1.' + 27';
     
     my $div = "";
     ## Open the <div> and the <a> where the small forest will be set
-    my $small_forest = '<div id="show_forest"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'">'."\n";  
+    my $small_forest = '<div id="show_forest">'."\n";  
     my $small_tree = '' ;
     my $sum_motifs = 0;
     my $sum = 0;
@@ -4223,7 +4222,7 @@ sub InsertSmallForest {
     ## Insert link to the logo forest
     $small_forest .= '
     <div id="display_clusters"><h2>Clusters found</h2>
-       <h3 id="display_clusters">3 clusters displayed below. Click here to display all the clusters</h3>
+       <h3 id="display_clusters">3 clusters displayed below.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></h3>
     </div>
     ';
 
@@ -4238,14 +4237,14 @@ sub InsertSmallForest {
 	if ($sum < 20) {
 	    
 	    ## Draw the logo forest 
-	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;"></div>';
+	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:970px;"></div>';
 	    
 	    my $tree = &logo_tree();
 	    $tree =~ s/\/\/BG_color/$BG_color/g;
 	    $tree =~ s/--lab--/$label_single_tree_no_link/;
-	    $tree =~ s/--widthtree--/940/g;
+	    $tree =~ s/--widthtree--/900/g;
 	    $tree =~ s/--radius--/3/g;
-	    $tree =~ s/--size--/300/g;
+	    $tree =~ s/--size--/450/g;
 	    $tree =~ s/--insert--//g;
 	    $tree =~ s/--nb--/$num/g;
 	    $tree =~ s/--height--/70 + 13 * $cluster_size/g;
@@ -4285,8 +4284,8 @@ sub InsertSmallForest {
 sub InsertHeatMap {
 
     my $heat_map = ' 
-	<div class="tab">
-		<p><strong>Heatmap with consensus alignment</strong>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a></p>
+	<div class="tab" style="width:913px;padding:35px;">
+		<p><h2>Heatmap with consensus alignment</h2><br><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a><br><br></p>
 		<img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'">
 	</div>
     ';
@@ -4329,6 +4328,7 @@ $(document).ready( function () {
             "targets": -1,
             "data": null,
             "width": "3%", "targets": [0,1,2,3,4,5,6,7]
+
         } ]	
     });
 });
@@ -4409,6 +4409,7 @@ $(document).ready(function() {
 ## Display single trees
 sub InsertTreesAndBranchMotifs {
 
+    my $a_test = "";
     my  $svg_width = 8.5;
     my  $svg_height = 35;
     my  $svg_x1 = 5 * $nb_char + 6;
@@ -4595,7 +4596,9 @@ sub InsertTreesAndBranchMotifs {
 	    $consensus_table =~ s/--here--/$consensus_table_columns/g;
 	    $all_consensus_table .= "\n".$consensus_table."\n";
 	}
-	print $syn $insert_div;
+	# print $syn $insert_div;
+	
+	$a_test .= $insert_div."\n";
     }
 
     $script_jquery .= "\n".'
@@ -4609,6 +4612,8 @@ sub InsertTreesAndBranchMotifs {
        $(".cons_tab").not("#" + id).hide();
      };
     </script>'."\n";
+
+    return($a_test);
 }
 
 
@@ -4626,19 +4631,32 @@ sub DisplaySingleCluster{
     my $div_display = '
     <div class="sep_clusters_div" id="individual_results">
 	<!--Div with the header of the buttons-->
-	<div class="cluster_info_head">
-          <ul type="square" style="margin:2px 0px 2px 5px; position:relative">
-           <li><strong>Click on the upper buttons to display separately the information of each cluster.</strong></li>
-           <li><strong>Click on the circles at each tree to display its corresponding merged motifs.</strong></li>
-         </ul>
-	 </div>
-	<div class="display"><strong style="display:block">Display Logo Trees</strong>'."\n\n".$all_d3_trees.'</div> 
-	<br>
+	<p style="text-align:center;width:932px;"><h2 style="display:block">Individual Cluster View</h2></p>'.
+        &hide_show_buttons
+        .'<div class="sep_clusters_div">'.
+&InsertTreesAndBranchMotifs()
+        .'</div>
+	<div class="display"><strong style="display:block">Display Logo Trees   </strong>'."\n\n".$all_d3_trees.'</div> 
+
 	<div class="display"><strong style="display:block">Display Branch-Motifs</strong>'."\n\n".$all_consensus_table."\n\n".'</div>
+
+	  <ul style="text-align:left;clear:both;display:block;">
+	     <li type="square"><strong>Click on the upper buttons to display separately the information of each cluster.</strong></li>
+	     <li type="square"><strong>Click on the circles at each tree to display its corresponding merged motifs.</strong></li>
+	  </ul>  
+   <ul>
+   <p><h3 style="text-align:left;">Definitions</h3>
+      <ul>
+         <li type="square" style="text-align:left;"><strong>Logo tree. </strong><br>This results shows the hierarchical tree with its logo alignment of one cluster.<br>The logos are shown in Forward (left logo) and Reverse (right logo) orientation.</li>
+         <li type="square" style="text-align:left;"><strong>Branch-motifs. </strong><br>On the trees are displayed the branch number that is the number in which the motifs were incorporated in the tree.<br>The Branch-Motifs table shows the logo in both orientations and the link to the file in TRANSFAC format with the branch-motif.</li>
+      </ul>
+   </p>
+   </ul>
     </div> 
     ';
     print $syn $div_display;
 }
+
 
 #######################################
 ## Insert the list of files exported
@@ -4648,15 +4666,15 @@ sub InsertListOfFiles {
 	  '
 
 	<div id="File_list" class="button_click"><strong>List of files</strong></div>
-	<div class="tab_list">
+	<div class="tab_list" style="width:960px">
 	  <table>
 	    <thead>
 	      <tr>
-		<th colspan="2"><strong>Exported files</strong></th>
+		<th colspan="2"><h2 style="text-align:center;">Exported files</h2><br></th>
 	      </tr>
 	      <tr>
-		<th class="tab_col">File</th>
-		<th class="tab_col">Description</th>
+		<th class="tab_col" style="width:200px">File</th>
+		<th class="tab_col" style="width:700px">Description</th>
 	      </tr>
 	    </thead>
 	    <tbody>
@@ -4785,13 +4803,6 @@ sub Synthesis {
 
     &InsertAlignmentTable();
 
-    &InsertInfoDiv();
-
-    print $syn &hide_show_buttons."\n";
-    print $syn '<div class="sep_clusters_div">'."\n";
-    &InsertTreesAndBranchMotifs();
-    print $syn "\n".'</div>';
-
     &DisplaySingleCluster();
     
     if ($draw_heatmap == 1 && $number_of_motifs > 1) {
@@ -4802,6 +4813,8 @@ sub Synthesis {
 
     $script_jquery =~ s/--display--/$number_of_motifs/g;
     &InsertJquery();
+
+    &Text_end_report();
     
     ## End of the HTML file
     &CloseSynthesis();
