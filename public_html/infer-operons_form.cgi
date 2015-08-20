@@ -77,7 +77,8 @@ my $group_specificity = ucfirst(lc($ENV{group_specificity}));
 if ($group_specificity) {
   unless (($group_specificity eq "Bacteria") ||
 	  ($group_specificity eq "Archaea") ||
-	  ($group_specificity eq "Prokaryotes")) {
+	  ($group_specificity eq "Prokaryotes") ||
+	  ($group_specificity eq "Teaching")) {
     &RSAT::message::Warning("This instance of RSAT is dedicated to <b>".$group_specificity."</b>.",
 			    "Operon inference is only valid for Prokaryotes</br>");
     print "<font size=+1>For operon inference, please use the Prokaryote-dedicated instance (<a target='_top' href='http://prokaryotes.rsat.eu/'>http://prokaryotes.rsat.eu/</a>).</font>";
