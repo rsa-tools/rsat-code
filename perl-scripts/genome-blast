@@ -362,6 +362,7 @@ if ($main::db_org_file) {
       $db_organism{$org}++;
 #      push @main::db_organisms, $org;
     }
+    close $orglist;
 }
 
 ## Query organism file
@@ -381,6 +382,7 @@ if ($main::query_org_file) {
     $query_organism{$org}++;
 #    push @main::query_organisms, $org;
   }
+  close $orglist;
 }
 
 ## Query organisms
