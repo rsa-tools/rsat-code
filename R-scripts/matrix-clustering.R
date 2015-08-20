@@ -351,10 +351,10 @@ if(number.of.motifs > 1){
   ##################################################
   ##  Produce the internal nodes attributes table
   internal.nodes.attributes.table <- lapply(alignment.attributes, function(X){
-    return(c(X[["level"]], X[["method"]], X[["alignment_status"]], X[["cluster_1"]], X[["cluster_2"]]))
+    return(c(X[["node"]], X[["method"]], X[["alignment_status"]], X[["cluster_1"]], X[["cluster_2"]]))
   })
   internal.nodes.attributes.table <- t(data.frame(internal.nodes.attributes.table))
-  colnames(internal.nodes.attributes.table) <- c("#level", "method", "alignment_status", "node_1", "node_2")
+  colnames(internal.nodes.attributes.table) <- c("#node", "method", "alignment_status", "node_1", "node_2")
   attributes.file <- paste(sep="", out.prefix, "_tables/internal_nodes_attributes.tab")
   write.table(internal.nodes.attributes.table, file=attributes.file, sep="\t", quote=FALSE, row.names=FALSE)
   verbose(paste("merge attributes table", attributes.file), 3)
@@ -510,10 +510,12 @@ i <- sapply(1:length(clusters), function(nb){
 
                ## Export the table with the intermediates alignment information
                sapply(names(intern.alignment), function(lev){
-                   level.info <- t(data.frame(intern.alignment[[lev]]))
-                   f <- paste(cluster.folder, "/levels_JSON_cluster_", nb, "_", lev, "_dataframe.tab", sep = "")
+
+                  node.name <- gsub("merge_level", "node", lev, perl = TRUE)
+                  level.info <- t(data.frame(intern.alignment[[node.name]]))
+                  f <- paste(cluster.folder, "/levels_JSON_cluster_", nb, "_", node.name, "_dataframe.tab", sep = "")
                    write.table(level.info, file = f, sep = "\t", quote = FALSE, row.names = TRUE, col.names = FALSE)
-                   create.dir.merge(lev)
+                   create.dir.merge(node.name)
                })
                forest.list[[paste("cluster", nb, sep = "_")]] <<- alignment.cluster$motifs.alignment
            }
