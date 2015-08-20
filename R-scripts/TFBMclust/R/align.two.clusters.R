@@ -37,19 +37,19 @@ align.two.clusters <- function(child1,
   if(nodes.attributes == TRUE){
 
     ## Save the merge clas: (1) two leaves, (2) one leaf and one cluster, (3) two clusters
-    internal.nodes.attributes[[paste("level_", merge.level, sep = "")]][["merge_class"]] <<- 3
+    internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["merge_class"]] <<- 3
 
     ## Save the status of the alignment
     if(aligned.motif.flag == 0){
-      internal.nodes.attributes[[paste("level_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
+      internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
     } else{
-      internal.nodes.attributes[[paste("level_", merge.level, sep = "")]][["alignment_status"]] <<- "Aligned"
+      internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["alignment_status"]] <<- "Aligned"
     }
-    internal.nodes.attributes[[paste("level_", merge.level, sep = "")]][["alignment_flag"]] <<- aligned.motif.flag
+    internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["alignment_flag"]] <<- aligned.motif.flag
 
     ## Save the number of the motifs on each cluster, for each merge level
-    internal.nodes.attributes[[paste("level_", merge.level, sep = "")]][["cluster_1"]] <<- paste(n1, collapse = " ")
-    internal.nodes.attributes[[paste("level_", merge.level, sep = "")]][["cluster_2"]] <<- paste(n2, collapse = " ")
+    internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["cluster_1"]] <<- paste(n1, collapse = " ")
+    internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["cluster_2"]] <<- paste(n2, collapse = " ")
   }
 
   ## Align the motifs
