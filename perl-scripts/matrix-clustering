@@ -2438,7 +2438,7 @@ sub Merge_matrices() {
 	my $line = $_;
 	my @split_line = split("\t", $line);
 	my $cluster_number = "cluster_".$split_line[1];
-	my $level_number = "merge_level_".$split_line[2];
+	my $level_number = "node_".$split_line[2];
 	my $file_path = $split_line[3];
 	$int_align_files{$cluster_number}{$level_number} = $file_path;
     }
@@ -2470,7 +2470,9 @@ sub Merge_matrices() {
 	my %int_align_info = ();
 
 	if ($singleton_cluster == 0){
-	    foreach my $folder (@folder_merged_matrices) {	    
+	    foreach my $folder (@folder_merged_matrices) {
+
+		if($folder eq 'node'){next;}
 
 		## Read the table with the number of spaced for each matrix,
 		## for each level of each cluster
@@ -2534,6 +2536,9 @@ sub Merge_matrices() {
 		## Merge the matrices and create a single matrix
 		my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_cat.tf";
 		my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
+
+		# die " \n\n\n ---> ".$merged_mat_file."\n";
+
 		my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_trimmed_matrices.tf";
 		$cmd = "cat ".$files." >".$cat_file;
 		$cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
@@ -2551,10 +2556,8 @@ sub Merge_matrices() {
 		## Assign the motif name
 		my @temp = split(/_/, $cluster);
 		my $cl = $temp[0].$temp[1];
-		@temp = split(/_/, $merge_level);
-		my $lvl = "node".$temp[2];
 		my $mt_nb = scalar(@file_names)."motifs";
-		my $motif_name = $cl."_".$lvl."_".$mt_nb;
+		my $motif_name = $cl."_".$merge_level."_".$mt_nb;
 
 		## Addig attributes (ID + AC: cluster + level + motif_nb)
 		my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_nb_motifs_".scalar(@file_names).".tf";
@@ -2627,7 +2630,7 @@ sub Merge_root_matrices() {
 	my $line = $_;
 	my @split_line = split("\t", $line);
 	my $cluster_number = "cluster_".$split_line[1];
-	my $level_number = "merge_level_".$split_line[2];
+	my $level_number = "node_".$split_line[2];
 	my $file_path = $split_line[3];
 	$int_align_files{$cluster_number}{$level_number} = $file_path;
     }
@@ -2797,6 +2800,7 @@ sub Export_external_motifs() {
 	    foreach my $folder (@folder_merged_matrices) {
 	   
 		## Get the name of the motif of the most external branch
+		if($folder eq 'node'){next;}
 		my $cluster_number = $folder;
 		$cluster_number =~ s/\D+//;
 	
@@ -3410,9 +3414,9 @@ sub branch_consensus_table{
 				<tr>
 					<th class="tab_col">Consensus id</th>
 					<th class="tab_col">Consensus</th>
-					<th class="tab_col">Logo Direct (link)</th>
-                                        <th class="tab_col">Logo Reverse (link)</th>
-					<th class="tab_col">Matrix (Transfac format; link)</th>
+					<th class="tab_col">Logo Direct</th>
+                                        <th class="tab_col">Logo Reverse</th>
+					<th class="tab_col">Matrix (Transfac format)</th>
 				</tr>
 			</thead>
                         <tbody>
@@ -3635,7 +3639,7 @@ sub ReportStyleCSS{
   
 
   .cluster_division {
-	background-color: #97C0F9;
+	background-color: #FCA0A0;
 	float: left;
 	margin: 5px 3px 3px 3px;
 	width: 75px;
@@ -3648,7 +3652,7 @@ sub ReportStyleCSS{
 	padding: 4px;
 	cursor: pointer;
 	border-radius:5px;
-	border: 1px solid blue;
+	border: 1px solid red;
   }
   
   
@@ -3658,12 +3662,9 @@ sub ReportStyleCSS{
   }
 
   .tab{
-    font-size: 15px;
-    margin-top: 15px;
-    margin-bottom: 20px;
+    font-size: 10px;
+    margin-top: 3px;
     text-align: center;
-    color: #000000;
-    font-family: Arial;
     text-decoration: none;
     display: block;
     background-color: #E6E6E6;
@@ -3672,7 +3673,7 @@ sub ReportStyleCSS{
     float: left;
     position: relative;
     border-radius:5px;
-    padding: 5px 12px 5px 12px;
+    padding: 0px 10px 10px 10px;
   }
    
   .sep {
@@ -3740,7 +3741,7 @@ sub ReportStyleCSS{
   }
 
   #File_list {
-  background-color: #76F076;
+  background-color: #FCA0A0;
   float: left;
   margin-top: 10px;
   width: 200px;
@@ -3893,8 +3894,7 @@ sub ReportStyleCSS{
 
   #individual_results{
 	text-align:center; 
-	padding: 1px 20px 20px 20px; 
-	border: solid 3px #004F72; 
+	padding: 0px 10px 0px 20px; 
 	width: auto;
 	height: auto;
 	border-radius: 10px; 
@@ -3949,6 +3949,11 @@ sub ReportStyleCSS{
 
   .selected_cluster {
     background-color: #76F076;
+    border: 1px solid green;
+  }
+
+  .selected_header_section {
+    background-color: #76F076 !important;
     border: 1px solid green;
   }
 
@@ -4032,15 +4037,14 @@ sub ParametersTable{
   my $par_table = '
   <!-- Div with the table of selected parameters-->
   <div class="tab">
-    <table id="parameters_table" style="width:950px;>
+    <h2 style="margin-top: 0px;margin-bottom: 5px;">Summary</h2>
+    <table id="parameters_table" style="width:1000px;">
       <thead>
-	<tr>
-	  <th colspan="6"><strong><h2>Summary</h2></strong></th>
-	</tr>
 	<tr>
 	  <th class="tab_col">Nb Input motifs</th>
 	  <th class="tab_col">Nb Clusters Found</th>
 	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
+	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
 	  <th class="tab_col">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></th>
 	  <th class="tab_col">Download Link</th>
 	  <th class="tab_col">Clusters in TRANSFAC format</th>
@@ -4051,6 +4055,7 @@ sub ParametersTable{
 	  <td class="par_text">'.$number_of_motifs.'</td>
 	  <td class="par_text">'.$number_of_clusters.'</td>
 	  <td class="par_text">'.$hclust_method.'</td>
+	  <td class="par_text">'.$main::param{matrix_compa_score}.'</td>
 	  <td class="par_text">'.$threshold_values_html.'</td>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
@@ -4128,21 +4133,19 @@ sub InsertAlignmentTable{
     my $tab = '
 
   <!-- Div with the aligment table with all the motifs-->
-	<div class="tab">
-	  <table id="alignment_dyn_table">
+	<div class="tab" style="padding:7px 7px 0px 7px">
+	  <h2>Individual Motif View</h2>
+	  <table id="alignment_dyn_table" class="hover compact">
 	    <thead>
 	      <tr>
-		<th colspan="8"><h2>Individual Motif View</h2><br><br></th>
-	      </tr>
-	      <tr class="dyn_head">
 		<th class="tab_col">Motif id</th>
 		<th class="tab_col">Motif name</th>
 		<th class="tab_col">Cluster</th>
 		<th class="tab_col">Collection</th>
-		<th class="tab_col">Aligned consensus</th>
-		<th class="tab_col">Aligned consensus (Reversed)</th>
-		<th class="tab_col">Aligned Logo (Forward)</th>
-		<th class="tab_col">Aligned Logo (Reverse)</th>
+		<th class="tab_col">Consensus</th>
+		<th class="tab_col">Consensus (Reverse)</th>
+		<th class="tab_col">Logo</th>
+		<th class="tab_col">Logo (Reverse)</th>
 	      </tr>
 	    </thead>
 	    <tbody>
@@ -4282,7 +4285,7 @@ sub InsertHeatMap {
 
     my $heat_map = ' 
 	<div class="tab" style="width:913px;padding:35px;">
-		<p><h2>Heatmap with consensus alignment</h2><br><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a><br><br></p>
+		<p><h2>Heatmap View</h2><br><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a><br><br></p>
 		<img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'">
 	</div>
     ';
@@ -4303,7 +4306,7 @@ $(document).ready( function () {
         "ordering": false,
         "info":     false,
         "columnDefs": [
-	    { "width": "15%", "targets": [0,1,2,3,4,5] }
+	    { "width": "10%", "targets": [0,1,2,3,4,5,6] }
 	]		
     });
 });
@@ -4355,47 +4358,48 @@ $(document).ready(function() {
     ///////////////////
     // Hide/Show All
     $(\'#show_all_button\').mouseenter(function() {
-        $(this).fadeTo(\'fast\',1); 
+        $(this).fadeTo(\'fast\', 0.6); 
     });
 
     $(\'#show_all_button\').mouseleave(function() {
-        $(this).fadeTo(\'fast\',0.5); 
-    });
-
-    $(\'#hide_all_button\').mouseenter(function() {
         $(this).fadeTo(\'fast\',1); 
     });
 
+    $(\'#hide_all_button\').mouseenter(function() {
+        $(this).fadeTo(\'fast\', 0.6); 
+    });
+
     $(\'#hide_all_button\').mouseleave(function() {
-        $(this).fadeTo(\'fast\',0.5); 
+        $(this).fadeTo(\'fast\',1); 
     });
 
     /////////////////////
     // Cluster buttons
     $(\'.cluster_division\').mouseenter(function() {
-        $(this).fadeTo(\'fast\',1); 
+        $(this).fadeTo(\'fast\', 0.6); 
     });
 
     $(\'.cluster_division\').mouseleave(function() {
-        $(this).fadeTo(\'fast\',0.5); 
+        $(this).fadeTo(\'fast\',1); 
     });
 
     /////////////////////////////
     // Additional files button
     $(\'#File_list\').mouseenter(function() {
-        $(this).fadeTo(\'fast\',1); 
+        $(this).fadeTo(\'fast\', 0.6); 
     });
 
     $(\'#File_list\').mouseleave(function() {
-        $(this).fadeTo(\'fast\',0.5); 
+        $(this).fadeTo(\'fast\',1); 
     });
 
 });
 
-// Slide the alignment table
+// Slide the File list
 $(document).ready(function() {
     $(\'#File_list\').click(function() {
 	$(\'.tab_list\').slideToggle(\'fast\');
+        $(\'#File_list\').toggleClass(\'selected_header_section\');
     }); 
 });
 ';
@@ -4521,15 +4525,15 @@ sub InsertTreesAndBranchMotifs {
 		
 		my ($cons, $logo_D, $logo_R, $transfac_file, $transfac_file_2);
 
-		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"merge_level_".$level}{"cluster_".$num}{logo});
-		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"merge_level_".$level}{"cluster_".$num}{logo_RC});
-		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merge_level_".$level."_matrices.tf");
-		$transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/merge_level_".$level."/merge_level_".$level."_matrices.tf";
+		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{"cluster_".$num}{logo});
+		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{"cluster_".$num}{logo_RC});
+		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/node_".$level."/node_".$level."_matrices.tf");
+		$transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/node_".$level."/node_".$level."_matrices.tf";
 		$cons = `more $transfac_file_2 | grep DE`;
 		$cons =~ s/DE\s+//gi;
 		
 		$consensus_table_columns .= "\n".'<tr id="cluster_'.$num.'_level_'.$level.'" class="branch_motifs">'."\n";
-		$consensus_table_columns .= '   <th class="tab_spacer_2">Merge level '.$level.'</th>'."\n";
+		$consensus_table_columns .= '   <th class="tab_spacer_2">Node '.$level.'</th>'."\n";
 		$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
@@ -4538,8 +4542,8 @@ sub InsertTreesAndBranchMotifs {
 
 		## Add the code to hide/show the branch-consensus table
 		my $selection_branch = &Display_Selected_Branch();
-		my $branch_tab_id = "cluster_".$num."_merge_level_".$level;
-		my $branch_row_id = "cluster_".$num."_level_".$level;
+		my $branch_tab_id = "cluster_".$num."_node_".$level;
+		my $branch_row_id = "cluster_".$num."_node_".$level;
 		$selection_branch =~ s/--branch_tab_id--/$branch_tab_id/g;
 		$selection_branch =~ s/--branch_row_id--/$branch_row_id/g;
 		$selection_branch =~ s/--nb--/$num/g;
@@ -4628,7 +4632,8 @@ sub DisplaySingleCluster{
     my $div_display = '
     <div class="sep_clusters_div" id="individual_results">
 	<!--Div with the header of the buttons-->
-	<p style="text-align:center;width:932px;"><h2 style="display:block">Individual Cluster View</h2></p>'.
+        <h2 style="display:block;padding:4px;width:943px;">Individual Cluster View</h2>
+<!--	<p style="text-align:center;width:936px;"><h2 style="display:block"></h2></p> -->'.
         &hide_show_buttons
         .'<div class="sep_clusters_div">'.
 &InsertTreesAndBranchMotifs()
@@ -4954,7 +4959,6 @@ sub Clustered_PSSMS_TRANSFAC_format(){
 	## Delete the temporal files
 	unlink($main::outfile{clusters_id_temp});
     }
-    close $int_align_file;
 }
 
 __END__
