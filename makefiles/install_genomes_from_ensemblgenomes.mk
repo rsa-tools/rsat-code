@@ -69,12 +69,25 @@ install_one_group:
 install_one_group_shuffled:
 	@${MAKE} install_one_group AVAILABLE_GROUP=${AVAILABLE_GROUP_SHUFFLED}
 
+select_fungi:
+	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Fungi
+
 install_fungi:
 	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Fungi
 	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Fungi
 
+select_plants:
+	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Plants
+
+install_plants:
+	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Plants
+	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Plants
+
+select_metazoa:
+	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Metazoa
+
 install_metazoa:
-#	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Metazoa
+	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Metazoa
 	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Metazoa
 
 
