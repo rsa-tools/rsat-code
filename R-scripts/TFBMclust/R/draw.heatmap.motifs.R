@@ -23,6 +23,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
       || (metric=="Nlogocor")
       || (metric=="Icor")
       || (metric=="NIcor")
+      || (metric=="mean_zscore")
   ) {
     ## cor       Pearson correlation (computed on residue occurrences in aligned columns)
     ## Ncor   		Relative width-normalized Pearson correlation
@@ -45,6 +46,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
              || (metric == "SSD")
              || (metric == "SW")
              || (metric == "NSW")
+             || (metric == "rank_mean")
   ) {
     ## dEucl 			Euclidian distance between residue occurrences in aligned columns
     ## NdEucl 			Relative width-normalized dEucl
