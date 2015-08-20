@@ -271,22 +271,48 @@ package main;
     &RSAT::error::FatalError("You must define a query organism (option I<-orf>)");
   }
 
-  unless ($taxon) {
+  unless (($taxon) || ($ref_org_file)) {
     &RSAT::error::FatalError("You must define a reference taxon (option I<-taxon>)");
   }
-
-  unless ($dir{output}) {
-    $dir{output} = "results/phylo_profiles/".${organism}."_vs_".${taxon};
-    if ($taxonomic_depth != 0) {
-	$dir{output} .= "_depth".${taxonomic_depth};
+  
+  ## DB organism file
+  if ($ref_org_file) {
+    ($orglist) = &OpenInputFile($main::ref_org_file);
+    &RSAT::message::Info ("Reading list of db organisms form file", $main::ref_org_file ) if ($main::verbose > 1);
+    while (<$orglist>) {
+      chomp();
+      s/\r/\n/g;	  ## Suppress Windows-specific carriage return
+      next if /^;/;		## Comment line
+      next if /^\#/;		## Header line
+      next if /^\--/;		## SQL comment line
+      next unless /\S/;		## Empty line
+      my ($org) = split /\s/;
+      $org = &trim($org); ## Remove leading and trailing spaces
+      &RSAT::OrganismManager::check_name($org);
+      push @main::ref_organisms, $org;
     }
-#    &RSAT::error::FatalError("You must define an output directory (option I<-o>)");
+    close $orglist;
+  }
+
+
+  ## Automatic definition of output directory if not specified by user
+  $ref_suffix = "";
+  unless ($dir{output}) {
+    if ($ref_org_file) {
+      $dir{output} .= scalar(@ref_organisms)."_selected_organisms";
+    } else {
+      $ref_suffix = ${taxon};
+    }
+    if ($taxonomic_depth != 0) {
+	$ref_suffix .= "_depth".${taxonomic_depth};
+    }
+    $dir{output} = "results/phylo_profiles/".${organism}."_vs_".$ref_suffix;
   }
 
   &RSAT::util::CheckOutDir($dir{output});
 
   ## Specify output files
-  $prefix{output} = $dir{output}."/".$organism."_".$taxon."_depth".$taxonomic_depth;
+  $prefix{output} = $dir{output}."/".$organism."_".$ref_suffix;
   $outfile{html_index} = $prefix{output}."_index.html"; push @outfiles, "html_index";
   $outfile{species}=$prefix{output}."_selected_species.tab"; push @outfiles, "species";
   $outfile{species_html}=$prefix{output}."_selected_species.html"; push @outfiles, "species_html";
@@ -340,18 +366,26 @@ package main;
   ## tree at a given depth (e.g. 5) and select a single species of each
   ## taxon at this depth.
   if ($task{species}) {
-    &RSAT::message::TimeWarn("Selecting species",	$taxon,	"depth=".$taxonomic_depth) if ($main::verbose >= 2);
-    my $species_cmd = $SCRIPTS."/supported-organisms -v 1";
-    $species_cmd .= " -return ID,nb,selected_taxon,taxon_depth,org_per_taxon,taxonomy";
-    $species_cmd .= " -taxon ".$taxon;
-    $species_cmd .= " -depth ".$taxonomic_depth;
-    $species_cmd .= " -o ".$outfile{species};
-    $species_cmd .= " ; ".$SCRIPTS."/text-to-html";
-    $species_cmd .= " -i ".$outfile{species};
-    $species_cmd .= " -o ".$outfile{species_html};
-    $species_cmd .= " ; grep -v '^#' ".$outfile{species};
-    $species_cmd .= " | cut -f 1";
-    $species_cmd .= " > ".$outfile{species_names};
+    if ($taxon) {
+      &RSAT::message::TimeWarn("Selecting species",	$taxon,	"depth=".$taxonomic_depth) if ($main::verbose >= 2);
+      my $species_cmd = $SCRIPTS."/supported-organisms -v 1";
+      $species_cmd .= " -return ID,nb,selected_taxon,taxon_depth,org_per_taxon,taxonomy";
+      $species_cmd .= " -taxon ".$taxon;
+      $species_cmd .= " -depth ".$taxonomic_depth;
+      $species_cmd .= " -o ".$outfile{species};
+      $species_cmd .= " ; ".$SCRIPTS."/text-to-html";
+      $species_cmd .= " -i ".$outfile{species};
+      $species_cmd .= " -o ".$outfile{species_html};
+      $species_cmd .= " ; grep -v '^#' ".$outfile{species};
+      $species_cmd .= " | cut -f 1";
+      $species_cmd .= " > ".$outfile{species_names};
+    } elsif ($ref_org_file) {
+      if ($ref_org_file ne $outfile{species_names}) {
+	$species_cmd = "cp ".$ref_org_file." ".$outfile{species_names};
+      } else {
+	$species_cmd = "echo";
+      }
+    }
     &one_command($species_cmd, 1, 0, task=>"species");
     &RSAT::message::Info("species file (tab)", $outfile{species}) if ($main::verbose >= 2);
     &RSAT::message::Info("species file (html)", $outfile{species_html}) if ($main::verbose >= 2);
@@ -647,6 +681,18 @@ belonging to the reference taxon.
 
 	} elsif ($arg eq "-taxon") {
 	    $main::taxon = shift (@arguments);
+
+=pod
+
+=item B<-ref_org_file ref_org_file>
+
+User-provided list of reference species. Orthologs are returned for
+each supported organism belonging to this list.
+
+=cut
+
+	} elsif ($arg eq "-ref_org_file") {
+	    $main::ref_org_file = shift (@arguments);
 
 
 =pod

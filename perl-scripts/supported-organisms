@@ -52,7 +52,7 @@ package main;
     our $taxon = "";
     our $group = "";
     our $depth = 0;
-    our $source = "";
+    our @sources = ();
 
     ## Read arguments
     &ReadArguments();
@@ -107,7 +107,15 @@ package main;
 	  &RSAT::error::FatalError($out_format, "Invalid output format");
 	}
       } else {
-	print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $source, $taxon, $group, $depth, @return_fields); ## Export the table with header and absolute paths
+
+	if (scalar(@sources) == 0) {
+	  push @sources, "";
+	}
+	my $result = "";
+	for my $source (@sources) {
+	  $result .= &RSAT::OrganismManager::supported_organism_table($verbose, 0, $source, $taxon, $group, $depth, @return_fields); ## Export the table with header and absolute paths;
+	}
+	print $out $result;
       }
     }
 
@@ -210,9 +218,14 @@ OPTIONS
 	           supported-organisms -taxon Prokaryotes
 
 	-source selected_source
-	       Only return organisms from a user-selected source.
+	       Only return organisms from a user-selected source(s).
+	       This argument can be used iteratively to accept
+	       multiple sources.
+
 	       Example: 
 	           supported-organisms -source ensembl
+	           supported-organisms -source ensemblgenomes
+	           supported-organisms -source ensembl -source ensemblgenomes
 
 	-depth #
 	       Depth for exploring the taxonomic tree. When the value
@@ -357,8 +370,7 @@ sub ReadArguments {
 
       ### Select source
     } elsif ($ARGV[$a] eq "-source") {
-      $source = $ARGV[$a+1];
-
+      push @sources, $ARGV[$a+1];;
 
       ### output file
     } elsif ($ARGV[$a] eq "-o") {
