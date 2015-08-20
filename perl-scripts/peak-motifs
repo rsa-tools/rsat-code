@@ -1479,7 +1479,8 @@ sub PositionAnalysis {
     $cmd .= " -i ".$main::outfile{"test_purged"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
-    $cmd .= " -return html,chi,sig,distrib,exp_occ,graphs,rank,index";
+#    $cmd .= " -return html,chi,sig,distrib,exp_occ,graphs,rank,index";
+    $cmd .= " -return chi,sig,rank,distrib,index";
     $cmd .= " -max_graphs ".$main::param{patterns_max_rank};
     $cmd .= " ".$main::param{strand};
     $cmd .= " ".$main::param{disco_noov};
