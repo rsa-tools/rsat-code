@@ -15,18 +15,18 @@ align.motifs <- function(hclust.tree,
   ## Iterate through the merge of the hierarchical tree
   apply(hclust.tree$merge, 1, function(x){
 
-    ## Store the nodes
+    ## Store the levels
     child1 <- x[1]
     child2 <- x[2]
     ## Store the level of the tree
     level <- which(tree$merge == child1)
 
-    ## If it is indicated, save the nodes attributes.
+    ## If it is indicated, save the levels attributes.
     if(nodes.attributes == TRUE){
-      internal.nodes.attributes[[paste("level_", level, sep = "")]][["level"]] <<- level
-      internal.nodes.attributes[[paste("level_", level, sep = "")]][["method"]] <<- method
-      internal.nodes.attributes[[paste("level_", level, sep = "")]][["node_1"]] <<- child1
-      internal.nodes.attributes[[paste("level_", level, sep = "")]][["node_2"]] <<- child2
+      internal.nodes.attributes[[paste("node_", level, sep = "")]][["node"]] <<- level
+      internal.nodes.attributes[[paste("node_", level, sep = "")]][["method"]] <<- method
+      internal.nodes.attributes[[paste("node_", level, sep = "")]][["node_1"]] <<- child1
+      internal.nodes.attributes[[paste("node_", level, sep = "")]][["node_2"]] <<- child2
     }
 
     ##############################
@@ -77,8 +77,8 @@ align.motifs <- function(hclust.tree,
     if(intermediate.alignments == TRUE){
 
       ## Export the intermediate-alignment information in order to create the branch-motifs
-      motifs.info.levels[[paste("merge_level_", level, sep = "")]] <<- motifs.info[get.id(motif.at.tree.level[[level]], desc.table)]
-      motifs.info.levels[[paste("merge_level_", level, sep = "")]] <<- sapply(motifs.info.levels[[paste("merge_level_", level, sep = "")]], function(x){
+      motifs.info.levels[[paste("node_", level, sep = "")]] <<- motifs.info[get.id(motif.at.tree.level[[level]], desc.table)]
+      motifs.info.levels[[paste("node_", level, sep = "")]] <<- sapply(motifs.info.levels[[paste("node_", level, sep = "")]], function(x){
         return(x[c("name", "number", "strand", "consensus_d", "consensus_rc", "spacer.up", "spacer.dw")])
       })
     }
