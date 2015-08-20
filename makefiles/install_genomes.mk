@@ -35,7 +35,7 @@ ORG=Saccharomyces_cerevisiae
 MASKING=''
 ORG_DIR=${NCBI_DIR}/${ORG}
 PARSE_TASK=config,parse
-CALIBRATE_TASK=allup,seq_len_distrib,dyads,oligos,start_stop,upstream_freq,genome_segments,protein_freq
+CALIBRATE_TASK=allup,seq_len_distrib,dyads,oligos,start_stop,upstream_freq,genome_segments,protein_freq,protein_len
 INSTALL_TASK=${PARSE_TASK},${CALIBRATE_TASK}
 INSTALL_CMD=install-organism -v ${V}            \
 	-genbank ${NCBI_DIR}            \
