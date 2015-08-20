@@ -76,8 +76,8 @@ check.param()
 #####################################
 ## Example for Debugging ############
 #
-# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4_testing_metrics/average_linkage/cor_0.5/peak-motifs_Oct4_hclust-average_cor_0.5_tables/pairwise_compa.tab"
-# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4_testing_metrics/average_linkage/cor_0.5/peak-motifs_Oct4_hclust-average_cor_0.5_tables/pairwise_compa_matrix_descriptions.tab"
+# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/rank_mean/peak-motifs_Oct4_hclust-average_Ncor0.5_cor0.7_tables/pairwise_compa.tab"
+# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/rank_mean/peak-motifs_Oct4_hclust-average_Ncor0.5_cor0.7_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
