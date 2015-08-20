@@ -28,7 +28,7 @@ find.clusters <- function(attributes.list, tree){
       }
 
       ## Get the alignment status at the level
-      alignment.flag <- as.numeric(attributes.list[[paste("level_", current.level, sep = "")]][["alignment_flag"]])
+      alignment.flag <- as.numeric(attributes.list[[paste("node_", current.level, sep = "")]][["alignment_flag"]])
 
       ## If the status at the current lavel is 0 then return the chained levels
       if(alignment.flag == 0){
@@ -100,7 +100,7 @@ find.clusters <- function(attributes.list, tree){
     if(checked.levels[lvl] == 0){
 
       ## Get the alignment status of the current level
-      level.align.flag <- attributes.list[[paste("level_", lvl, sep = "")]][["alignment_flag"]]
+      level.align.flag <- attributes.list[[paste("node_", lvl, sep = "")]][["alignment_flag"]]
 
       ## Skip to next level if the alignment flag is 0
       if(level.align.flag == 0){
