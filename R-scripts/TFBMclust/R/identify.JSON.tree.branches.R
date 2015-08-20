@@ -102,7 +102,7 @@ identify.JSON.tree.branches <- function(tree, desc.table){
           cond.counter <<- cond.counter + 1
 
           if(cond.counter == 1){
-            cluster <<- append(cluster, paste("merge_level_", y, sep = ""))
+            cluster <<- append(cluster, paste("node_", y, sep = ""))
           }
         }
       }
@@ -110,6 +110,6 @@ identify.JSON.tree.branches <- function(tree, desc.table){
   })
 
 
-  JSON.clusters.table$merge_level <- cluster
+  JSON.clusters.table$node <- cluster
   return(JSON.clusters.table)
 }
