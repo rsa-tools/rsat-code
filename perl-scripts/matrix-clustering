@@ -3376,7 +3376,7 @@ d3.json("--jsonfile--", function(json) {
 		.attr("y", --y1--) 
 		.attr("preserveAspectRatio", "none");	
 
-/*		
+/*--RC_picture_start--		
 	node.append("svg:image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })
 		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
@@ -3384,7 +3384,7 @@ d3.json("--jsonfile--", function(json) {
   		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
 		.attr("y", --y1--) 
 		.attr("preserveAspectRatio", "none");
-*/			
+*/--RC_picture_end--				
 	});
 	
 
@@ -3809,6 +3809,7 @@ sub ReportStyleCSS{
   float: left;
   display: none;
   clear: both;
+  padding: 0px;
   }
 
   .branch_motifs_head {
@@ -4136,8 +4137,7 @@ sub InsertAlignmentTable{
     my $tab = '
 
   <!-- Div with the aligment table with all the motifs-->
-
-	<div class="tab" style="padding:7px 7px 0px 7px; margin:0px 0px 20px 0px;width:1007px">	
+	<div class="tab" style="padding:7px 7px 0px 7px; margin:0px 0px 20px 0px;width:autopx">	
           <h2 style="margin:0px 0px 10px 0px;">Individual Motif View</h2>
 	  <table id="alignment_dyn_table" class="hover compact">
 	    <thead>
@@ -4244,6 +4244,8 @@ sub InsertSmallForest {
 	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:1000px;"></div>';
 	    
 	    my $tree = &logo_tree();
+	    $tree =~ s/--RC_picture_start--//g;
+	    $tree =~ s/--RC_picture_end--//g;
 	    $tree =~ s/\/\/BG_color/$BG_color/g;
 	    $tree =~ s/--lab--/$label_single_tree_no_link/;
 	    $tree =~ s/--widthtree--/1020/g;
@@ -4419,7 +4421,7 @@ sub InsertTreesAndBranchMotifs {
     my  $svg_height = 35;
     my  $svg_x1 = 6.5 * $nb_char + 6.5;
     my  $svg_y1 = -15;
-    my  $svg_x2 = '7 + '.$svg_x1.' + 42';
+    my  $svg_x2 = '7.5 + '.$svg_x1.' + 42';
     my $label_single_tree = '
 	node.append("a")
 	        .attr("xlink:href", function(d) { return d.url; })
@@ -4488,13 +4490,16 @@ sub InsertTreesAndBranchMotifs {
                 ';
 
 	$d3_logo_tree .= &logo_tree();
+
+	$d3_logo_tree =~ s/\/\*--RC_picture_start--//g;
+	$d3_logo_tree =~ s/\*\/--RC_picture_end--//g;
 	$d3_logo_tree =~ s/--lab--/$label_single_tree/;
 	$d3_logo_tree =~ s/--cl_id--/$cl_id/;
-	$d3_logo_tree =~ s/--widthtree--/900/g;
+	$d3_logo_tree =~ s/--widthtree--/1200/g;
 	$d3_logo_tree =~ s/--nb--/$num/g;
 	$d3_logo_tree =~ s/--insert--/$insert_id/g;
-	$d3_logo_tree =~ s/--size--/400/g;
-	$d3_logo_tree =~ s/--radius--/6/g;
+	$d3_logo_tree =~ s/--size--/375/g;
+	$d3_logo_tree =~ s/--radius--/4/g;
 	$d3_logo_tree =~ s/--height--/100 + 30 * $motifs_nb/g;
 	$d3_logo_tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
 	my $jname = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_cluster_".$num.".json");
