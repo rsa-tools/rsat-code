@@ -3859,10 +3859,10 @@ sub ReportStyleCSS{
   }
 
   #display_clusters{
-    width: 970px;
+    width: 1000px;
     background-color: #E6E6E6;
     text-align: center;
-    padding-top: 3px 1px 1px 1px; 
+    padding: 0px 10px 10px 10px; 
   }
 
   .par_text {
@@ -4036,7 +4036,7 @@ sub ParametersTable{
 
   my $par_table = '
   <!-- Div with the table of selected parameters-->
-  <div class="tab">
+  <div class="tab" style="margin-bottom: 15px;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Summary</h2>
     <table id="parameters_table" style="width:1000px;">
       <thead>
@@ -4133,28 +4133,29 @@ sub InsertAlignmentTable{
     my $tab = '
 
   <!-- Div with the aligment table with all the motifs-->
-	<div class="tab" style="padding:7px 7px 0px 7px">
-	  <h2>Individual Motif View</h2>
+
+	<div class="tab" style="padding:7px 7px 0px 7px; margin:0px 0px 20px 0px;width:1007px">	
+          <h2 style="margin:0px 0px 10px 0px;">Individual Motif View</h2>
 	  <table id="alignment_dyn_table" class="hover compact">
 	    <thead>
-	      <tr>
+	      <tr style="padding:70px">
 		<th class="tab_col">Motif id</th>
 		<th class="tab_col">Motif name</th>
 		<th class="tab_col">Cluster</th>
 		<th class="tab_col">Collection</th>
 		<th class="tab_col">Consensus</th>
-		<th class="tab_col">Consensus (Reverse)</th>
+		<th class="tab_col">Consensus (Rev)</th>
 		<th class="tab_col">Logo</th>
-		<th class="tab_col">Logo (Reverse)</th>
+		<th class="tab_col">Logo (Rev)</th>
 	      </tr>
 	    </thead>
 	    <tbody>
 	      --insert_col_here--
 	    </tbody>
 	  </table>
-	  <ul style="text-align:left;">
-	     <li type="square"><h3>Click on the column names to change the order of the data.</h3></li>
-	     <li type="square"><h3>Write the name of one cluster, collection or a pattern in the <i>Search</i> window.</h3></li>
+	  <ul style="text-align:left;margin:0px 0px 5px 0px;">
+	     <li type="square">Click on the column names to change the order of the data.</li>
+	     <li type="square">Write the name of one cluster, collection or a pattern in the <i>Search</i> window.</li>
 	  </ul>          
 	</div>
 ';
@@ -4204,15 +4205,15 @@ sub InsertSmallForest {
     ';
 
     ## D3 values of the parameters of the small trees
-    my $svg_width = 9;
-    my $svg_height = 20;
+    my $svg_width = 8;
+    my $svg_height = 16;
     my $svg_x1 = 7 * $nb_char;
-    my $svg_y1 = -10;
+    my $svg_y1 = -7;
     my $svg_x2 = '6 + '.$svg_x1.' + 27';
     
     my $div = "";
     ## Open the <div> and the <a> where the small forest will be set
-    my $small_forest = '<div id="show_forest">'."\n";  
+    my $small_forest = '<div id="show_forest" style="margin-bottom:25px;">'."\n";  
     my $small_tree = '' ;
     my $sum_motifs = 0;
     my $sum = 0;
@@ -4222,7 +4223,7 @@ sub InsertSmallForest {
     ## Insert link to the logo forest
     $small_forest .= '
     <div id="display_clusters"><h2>Clusters found</h2>
-       <h3 id="display_clusters">3 clusters displayed below.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></h3>
+       <h3>Few clusters displayed below.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></h3>
     </div>
     ';
 
@@ -4237,14 +4238,14 @@ sub InsertSmallForest {
 	if ($sum < 20) {
 	    
 	    ## Draw the logo forest 
-	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:970px;"></div>';
+	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:1000px;"></div>';
 	    
 	    my $tree = &logo_tree();
 	    $tree =~ s/\/\/BG_color/$BG_color/g;
 	    $tree =~ s/--lab--/$label_single_tree_no_link/;
-	    $tree =~ s/--widthtree--/900/g;
+	    $tree =~ s/--widthtree--/1020/g;
 	    $tree =~ s/--radius--/3/g;
-	    $tree =~ s/--size--/450/g;
+	    $tree =~ s/--size--/500/g;
 	    $tree =~ s/--insert--//g;
 	    $tree =~ s/--nb--/$num/g;
 	    $tree =~ s/--height--/70 + 13 * $cluster_size/g;
@@ -4264,7 +4265,7 @@ sub InsertSmallForest {
 	    $sum_motifs += $cluster_size;
 	}
 	
-	if ($cluster_sum == 4) {
+	if ($cluster_sum == 3) {
 	    last; 
 	}
     }
@@ -4486,7 +4487,7 @@ sub InsertTreesAndBranchMotifs {
 	$d3_logo_tree .= &logo_tree();
 	$d3_logo_tree =~ s/--lab--/$label_single_tree/;
 	$d3_logo_tree =~ s/--cl_id--/$cl_id/;
-	$d3_logo_tree =~ s/--widthtree--/1150/g;
+	$d3_logo_tree =~ s/--widthtree--/1000/g;
 	$d3_logo_tree =~ s/--nb--/$num/g;
 	$d3_logo_tree =~ s/--insert--/$insert_id/g;
 	$d3_logo_tree =~ s/--size--/390/g;
@@ -4632,8 +4633,8 @@ sub DisplaySingleCluster{
     my $div_display = '
     <div class="sep_clusters_div" id="individual_results">
 	<!--Div with the header of the buttons-->
-        <h2 style="display:block;padding:4px;width:943px;">Individual Cluster View</h2>
-<!--	<p style="text-align:center;width:936px;"><h2 style="display:block"></h2></p> -->'.
+        <h2 style="display:block;padding:4px;width:986px;">Individual Cluster View</h2>
+<!--	<p style="text-align:center;"><h2 style="display:block"></h2></p> -->'.
         &hide_show_buttons
         .'<div class="sep_clusters_div">'.
 &InsertTreesAndBranchMotifs()
