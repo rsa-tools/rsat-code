@@ -4462,7 +4462,7 @@ sub InsertTreesAndBranchMotifs {
 	$head_insert =~ s/--Cluster_id--/$cl_id/g;
 	$head_insert =~ s/--Cluster_id_head--/head_$cl_id/g;
 	$head_insert =~ s/--nb--/$num/g;
-	my $insert_div = "\n".$head_insert."\n\n";
+	my $insert_div = "\n".$head_insert."\n";
 
 	## Insert Id + Pointer
 	my $insert_id = '
