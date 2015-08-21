@@ -317,6 +317,9 @@ package main;
   local $nb_cluster_taks_flag = 0;
   local $single_input_flag = 0;
 
+  ## Saves the width of the largest alignment
+  local $motif_width_by_cluster_width = 0;
+
   ## Supported positions to display the
   ## hclust trees in heatmap.
   ## This argument is passed to R
@@ -4169,6 +4172,10 @@ sub InsertAlignmentTable{
     ## Fill the column's table 
     foreach my $id (keys %ids_to_cluster) {
 
+	if(length($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus}) > $motif_width_by_cluster_width){
+	    $motif_width_by_cluster_width = length($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus});
+	}
+
 	$logo_width = 10*$alignment_table_data{$ids_to_cluster{$id}}{$id}{width};
 
 	$alignment_table_columns .= '
@@ -4422,6 +4429,11 @@ sub InsertTreesAndBranchMotifs {
     my  $svg_x1 = 6.5 * $nb_char + 6.5;
     my  $svg_y1 = -15;
     my  $svg_x2 = '7.5 + '.$svg_x1.' + 42';
+
+    my $test_width = 400 + ($motif_width_by_cluster_width * (6 + $svg_x1 + 20.5 - $svg_x1)); 
+
+    #die "\n\n\n --> Width: ".$test_width."\n";
+
     my $label_single_tree = '
 	node.append("a")
 	        .attr("xlink:href", function(d) { return d.url; })
@@ -4495,7 +4507,8 @@ sub InsertTreesAndBranchMotifs {
 	$d3_logo_tree =~ s/\*\/--RC_picture_end--//g;
 	$d3_logo_tree =~ s/--lab--/$label_single_tree/;
 	$d3_logo_tree =~ s/--cl_id--/$cl_id/;
-	$d3_logo_tree =~ s/--widthtree--/1200/g;
+#	$d3_logo_tree =~ s/--widthtree--/1200/g;
+	$d3_logo_tree =~ s/--widthtree--/$test_width/g;
 	$d3_logo_tree =~ s/--nb--/$num/g;
 	$d3_logo_tree =~ s/--insert--/$insert_id/g;
 	$d3_logo_tree =~ s/--size--/375/g;
