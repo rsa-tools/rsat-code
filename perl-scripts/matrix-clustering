@@ -4487,7 +4487,7 @@ sub InsertTreesAndBranchMotifs {
 	$d3_logo_tree .= &logo_tree();
 	$d3_logo_tree =~ s/--lab--/$label_single_tree/;
 	$d3_logo_tree =~ s/--cl_id--/$cl_id/;
-	$d3_logo_tree =~ s/--widthtree--/1000/g;
+	$d3_logo_tree =~ s/--widthtree--/700/g;
 	$d3_logo_tree =~ s/--nb--/$num/g;
 	$d3_logo_tree =~ s/--insert--/$insert_id/g;
 	$d3_logo_tree =~ s/--size--/390/g;
