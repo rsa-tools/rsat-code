@@ -2979,8 +2979,9 @@ sub cluster_head_buttons{
        $(\'#branch_consensus_cluster_--nb--\').slideToggle(\'fast\');
        $(\'#cluster_--nb--\').slideToggle(\'fast\');
        $(this).toggleClass(\'selected_cluster\');
+       $(\'#hide_tree_--nb--\').show();
      }); 
-       $(\'#hide_tree_--nb--\').css(\'display\', \'block\');
+      // $(\'#hide_tree_--nb--\').css(\'display\', \'block\');
     
   });
     ';
@@ -2993,8 +2994,9 @@ sub cluster_head_buttons{
     $(\'.--Cluster_id_head--\', this).click(function() {
        $(\'#cluster_--nb--\').slideToggle(\'fast\');
        $(this).toggleClass(\'selected_cluster\');
+       $(\'#hide_tree_--nb--\').show();
      }); 
-       $(\'#hide_tree_--nb--\').css(\'display\', \'block\');
+       // $(\'#hide_tree_--nb--\').css(\'display\', \'block\');
   });
     ';
   }
@@ -3100,6 +3102,7 @@ sub hide_tree {
        $(\'#cluster_--nb--\').hide();
        $(\'#branch_consensus_cluster_--nb--\').hide();
        $(\'.head_cluster_--nb--\').removeClass(\'selected_cluster\');
+       $(\'#hide_tree_--nb--\').hide();
      }); 
   });
 ';
@@ -4479,8 +4482,8 @@ sub InsertTreesAndBranchMotifs {
 	## Draw the logo tree
 	my $d3_logo_tree .= '       
 	              <!--Div containing D3 logo tree-->
+                      <div id="hide_tree_--nb--" class="Cluster_results buttons_click hide_show" ><strong>cluster_--nb--</strong></div>
                       <div id="cluster_--nb--" class="logo_tree hide_show">
-                      <div id="hide_tree_--nb--" class="Cluster_results buttons_click" style="clear:both; position:relative; float:left" ><strong>cluster_--nb--</strong></div>
 		      <script type="text/javascript">
                 ';
 
