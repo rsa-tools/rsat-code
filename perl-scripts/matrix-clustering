@@ -4633,8 +4633,7 @@ sub DisplaySingleCluster{
     my $div_display = '
     <div class="sep_clusters_div" id="individual_results">
 	<!--Div with the header of the buttons-->
-        <h2 style="display:block;padding:4px;width:986px;">Individual Cluster View</h2>
-<!--	<p style="text-align:center;"><h2 style="display:block"></h2></p> -->'.
+        <h2 style="display:block;padding:4px;width:986px;">Individual Cluster View</h2>'.
         &hide_show_buttons
         .'<div class="sep_clusters_div">'.
 &InsertTreesAndBranchMotifs()
