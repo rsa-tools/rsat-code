@@ -4316,7 +4316,7 @@ $(document).ready( function () {
 $(document).ready( function () {
     $(\'#alignment_dyn_table\').DataTable({
         "info":     false,
-        "iDisplayLength": --display--,
+        "iDisplayLength": 10,
         "order": [[ 2, "asc" ]],
 	"search": {
 	    "regex": true,
@@ -4414,7 +4414,7 @@ sub InsertTreesAndBranchMotifs {
     my $a_test = "";
     my  $svg_width = 8.5;
     my  $svg_height = 35;
-    my  $svg_x1 = 5 * $nb_char + 6;
+    my  $svg_x1 = 6.5 * $nb_char + 6.5;
     my  $svg_y1 = -15;
     my  $svg_x2 = '7 + '.$svg_x1.' + 42';
     my $label_single_tree = '
@@ -4487,10 +4487,10 @@ sub InsertTreesAndBranchMotifs {
 	$d3_logo_tree .= &logo_tree();
 	$d3_logo_tree =~ s/--lab--/$label_single_tree/;
 	$d3_logo_tree =~ s/--cl_id--/$cl_id/;
-	$d3_logo_tree =~ s/--widthtree--/700/g;
+	$d3_logo_tree =~ s/--widthtree--/900/g;
 	$d3_logo_tree =~ s/--nb--/$num/g;
 	$d3_logo_tree =~ s/--insert--/$insert_id/g;
-	$d3_logo_tree =~ s/--size--/390/g;
+	$d3_logo_tree =~ s/--size--/400/g;
 	$d3_logo_tree =~ s/--radius--/6/g;
 	$d3_logo_tree =~ s/--height--/100 + 30 * $motifs_nb/g;
 	$d3_logo_tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
@@ -4814,7 +4814,6 @@ sub Synthesis {
 
     &InsertListOfFiles();
 
-    $script_jquery =~ s/--display--/$number_of_motifs/g;
     &InsertJquery();
 
     &Text_end_report();
