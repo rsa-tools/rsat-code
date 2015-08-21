@@ -3415,13 +3415,13 @@ sub branch_consensus_table{
 		<table style="display:block; clear:both;">
 			<thead>
 				<tr>
-					<th colspan="5">Branch-consensus and branch-motifs</th>
+					<th colspan="5"><h2>Branch Motifs</h2></th>
 				</tr>
 				<tr>
-					<th class="tab_col">Consensus id</th>
+					<th class="tab_col">Node</th>
 					<th class="tab_col">Consensus</th>
-					<th class="tab_col">Logo Direct</th>
-                                        <th class="tab_col">Logo Reverse</th>
+					<th class="tab_col">Logo</th>
+                                        <th class="tab_col">Logo (Reverse)</th>
 					<th class="tab_col">Matrix (Transfac format)</th>
 				</tr>
 			</thead>
@@ -4430,9 +4430,7 @@ sub InsertTreesAndBranchMotifs {
     my  $svg_y1 = -15;
     my  $svg_x2 = '7.5 + '.$svg_x1.' + 42';
 
-    my $test_width = 400 + ($motif_width_by_cluster_width * (6 + $svg_x1 + 20.5 - $svg_x1)); 
-
-    #die "\n\n\n --> Width: ".$test_width."\n";
+    my $test_width = 485 + ($motif_width_by_cluster_width * 26); 
 
     my $label_single_tree = '
 	node.append("a")
@@ -4554,7 +4552,7 @@ sub InsertTreesAndBranchMotifs {
 		$cons = `more $transfac_file_2 | grep DE`;
 		$cons =~ s/DE\s+//gi;
 		
-		$consensus_table_columns .= "\n".'<tr id="cluster_'.$num.'_level_'.$level.'" class="branch_motifs">'."\n";
+		$consensus_table_columns .= "\n".'<tr id="cluster_'.$num.'_node_'.$level.'" class="branch_motifs">'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2">Node '.$level.'</th>'."\n";
 		$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
