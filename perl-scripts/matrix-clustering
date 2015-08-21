@@ -3410,7 +3410,7 @@ sub branch_consensus_table{
 
   my $branch_consensus_table = 
       '
-    <div class="hide_show tab cons_tab" id="branch_consensus_cluster_--nb--" style="display:none">
+    <div class="hide_show tab cons_tab" id="branch_consensus_cluster_--nb--" style="display:none;margin:0px;background-color:white;">
     <div id="hide_branch_table_--nb--" class="Cluster_results buttons_click" style="display:block; clear:both"><strong>cluster_--nb--</strong></div>
 		<table style="display:block; clear:both;">
 			<thead>
@@ -4297,8 +4297,9 @@ sub InsertSmallForest {
 sub InsertHeatMap {
 
     my $heat_map = ' 
-	<div class="tab" style="width:913px;padding:35px;">
-		<p><h2>Heatmap View</h2><br><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a><br><br></p>
+	<div class="tab" style="width:1000px;padding:0px;">
+		<h2 style="margin:0px">Heatmap View</h2>
+                <p><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a></p>
 		<img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'">
 	</div>
     ';
