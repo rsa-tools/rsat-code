@@ -2916,7 +2916,7 @@ sub cluster_delim {
 sub Text_end_report {
 
     my $end_report = '
-	<div id="end_report">
+	<div id="end_report" style="margin-bottom:20px;">
 	  <ul style="list-style: none;">
 	    <li>
 	      <strong>References</strong>
@@ -4297,7 +4297,7 @@ sub InsertSmallForest {
 sub InsertHeatMap {
 
     my $heat_map = ' 
-	<div class="tab" style="width:1000px;padding:0px;">
+	<div class="tab" style="width:1025px;padding:0px 0px 20px 0px;margin-top:20px;">
 		<h2 style="margin:0px">Heatmap View</h2>
                 <p><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a></p>
 		<img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'">
