@@ -3690,7 +3690,6 @@ sub ReportStyleCSS{
   
   .tab_list{
   width: 937px;
-  margin-top: 20px;
   text-align: left;
   color: #000000;
   font-family: Arial;
@@ -3702,7 +3701,7 @@ sub ReportStyleCSS{
   clear: both;
   position: relative;
   border-radius:5px;
-  padding: 5px 12px 5px 12px;
+  padding: 0px 0px 0px 5px;
   }
 
 
@@ -3746,10 +3745,11 @@ sub ReportStyleCSS{
   top:1px;
   }
 
-  #File_list {
+  .Section_button {
   background-color: #FCA0A0;
   float: left;
   margin-top: 10px;
+  margin-bottom: 10px;
   width: 200px;
   height: 20px;
   position: relative;
@@ -4043,7 +4043,8 @@ sub ParametersTable{
 
   my $par_table = '
   <!-- Div with the table of selected parameters-->
-  <div class="tab" style="margin-bottom: 15px;">
+  <div id="Par_tab_button" class="button_click Section_button"><strong>Parameters Table</strong></div>
+  <div id="Par_tab" class="tab" style="margin-bottom: 15px;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Summary</h2>
     <table id="parameters_table" style="width:1000px;">
       <thead>
@@ -4399,21 +4400,30 @@ $(document).ready(function() {
 
     /////////////////////////////
     // Additional files button
-    $(\'#File_list\').mouseenter(function() {
+    $(\'#List_File_Button\').mouseenter(function() {
         $(this).fadeTo(\'fast\', 0.6); 
     });
 
-    $(\'#File_list\').mouseleave(function() {
+    $(\'#List_File_Button\').mouseleave(function() {
         $(this).fadeTo(\'fast\',1); 
     });
 
 });
 
+
+// Slide the Parameters Table
+$(document).ready(function() {
+    $(\'#Par_tab_button\').click(function() {
+	$(\'#Par_tab\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
 // Slide the File list
 $(document).ready(function() {
-    $(\'#File_list\').click(function() {
-	$(\'.tab_list\').slideToggle(\'fast\');
-        $(\'#File_list\').toggleClass(\'selected_header_section\');
+    $(\'#List_Files_Button\').click(function() {
+	$(\'#File_list\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
     }); 
 });
 ';
@@ -4687,13 +4697,14 @@ sub InsertListOfFiles {
       my $add_files = 
 	  '
 
-	<div id="File_list" class="button_click"><strong>List of files</strong></div>
-	<div class="tab_list" style="width:960px">
+	<div id="List_Files_Button" class="button_click Section_button"><strong>List of files</strong></div>
+	<div id="File_list" class="tab_list" style="width:960px">
+	<h2 style="text-align:center;margin-top:0px;">Exported files</h2>
 	  <table>
 	    <thead>
-	      <tr>
-		<th colspan="2"><h2 style="text-align:center;">Exported files</h2><br></th>
-	      </tr>
+
+
+
 	      <tr>
 		<th class="tab_col" style="width:200px">File</th>
 		<th class="tab_col" style="width:700px">Description</th>
