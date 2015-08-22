@@ -737,7 +737,8 @@ sub Rplot{
     our $tmp_R_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_instructions", 1).".R";
     my ($out_R) = &OpenOutputFile($tmp_R_instructions_file);
    
-    my $r_instruction="in.file <- \"$input_data_file\" \n";
+    my $r_instruction="library(RColorBrewer) \n ";
+    $r_instruction.= " in.file <- \"$input_data_file\" \n";
     $r_instruction.="options(bitmapType='cairo')\n";
     $r_instruction.="input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=TRUE, na.strings = \"<NULL>\") \n";
 
@@ -745,7 +746,7 @@ sub Rplot{
     $r_instruction.="header_vector <- c(\"".join("\",\"",@header_list)."\") \n";
 
     $r_instruction.="colnames(input.table)<- header_vector \n";
-    $r_instruction.="input.table<- na.omit(input.table) \n";
+    #$r_instruction.="input.table<- na.omit(input.table) \n";
 
 
     
@@ -765,7 +766,8 @@ sub Rplot{
 	&RSAT::error::FatalError("GIF format is not supported in R");
 
     }
-    
+    $r_instruction.=" par(mar=c(5.1, 4.1, 5.1, 5.1), xpd=TRUE) \n";
+
     ## Put together all parammeters that have to be feed into maplot functions
     my $r_plot_params="";
     
@@ -831,7 +833,7 @@ sub Rplot{
 	}
 	$r_instruction.= " input.table <- cbind( x.values,  y.values ) \n";
 	$r_instruction.= " input.table <- do.call(data.frame,lapply(input.table, function(x) replace(x, is.infinite(x),NA))) \n";
-	$r_instruction.= " input.table<- na.omit(input.table) \n";
+	#$r_instruction.= " input.table<- na.omit(input.table) \n";
 	
     }
  
@@ -853,11 +855,14 @@ sub Rplot{
 	}elsif( ($x_axis_max ne "ND") && ($x_axis_min ne "ND")){
 	    $r_instruction.="xlimits <- c( ".$x_axis_min.",".$x_axis_max .") \n";
 	}
-	$r_plot_params .=", xlim=xlimits ";
 	
+	
+    }else{
+	$r_instruction.="xlimits <- range( x.values) \n";
     }
 
-  
+    $r_plot_params .=", xlim=xlimits ";
+
     if ( $y_axis_max ne "ND" ||  $y_axis_min ne "ND" ){
 	
 	## MIN value for y is defined but not the max
@@ -875,17 +880,19 @@ sub Rplot{
 	   # die "BOOOM";
 	    $r_instruction.="ylimits <- c( ".$y_axis_min.",".$y_axis_max .") \n";
 	}
-	$r_plot_params .=", ylim=ylimits ";
+	
 
 	
 	
+    }else{
+	$r_instruction.="ylimits <-range(sort(as.vector(as.matrix(y.values)))) \n";
     }
-
+    $r_plot_params .=", ylim=ylimits ";
 
     if (!$lines){
-	$r_plot_params.=", pch=0 ,type=\"p\"";
+	$draw_plot_params.=", pch=0 ,type=\"p\"";
     } else {
-	$r_plot_params.=", lwd=2 ,type=\"l\"";
+	$draw_plot_params.=", lwd=2 ,type=\"l\"";
     }
 	
     if ($bg ne "white"){
@@ -898,20 +905,27 @@ sub Rplot{
 	$r_plot_params.=", col=colors ";
 
     } else {
-	$r_instruction.="colors<- seq(1,".scalar(@y_col_list_r).",1)\n";
-	$r_plot_params.=", col=colors";
+	$r_instruction.="colors<- colorRampPalette(brewer.pal(12,\"Paired\"))(dim(y.values)[2]) \n";
+	#$r_instruction.="colors<- seq(1,".scalar(@y_col_list_r).",1)\n";
+	#$r_plot_params.=", col=colors";
 	
 	if ($colorexportfile){
-	    $r_instruction.=" pal <- palette()\n";
-	    $r_instruction.=" color.tableexport <- cbind (colnames(input.table[,c(".join(",",@y_col_list_r).")]), pal[c(1,2,3,4)]) \n";
+	    #$r_instruction.=" pal <- palette()\n";
+	    $r_instruction.=" color.tableexport <- cbind (colnames(input.table[,c(".join(",",@y_col_list_r).")]), colors) \n";
 	    $r_instruction.=" write.table(color.tableexport , file=\"".$colorexportfile."\", sep=\"\t\", quote=FALSE, row.names=FALSE, col.names=FALSE)\n";
 	}
 
     }
 
-   
+
+    $r_instruction.= " plot(x=NULL, y=NULL, $r_plot_params) \n ";
+# xlab=\"log10(Score Pvalue)\", ylab=\"Binomial significance of hit number (OCC)\")
+    $r_instruction.= " for(l in c(1:dim(y.values)[2]) ){
+    input.table2 <- na.omit(cbind( x.values,  y.values[,l] ))
+    lines(input.table2, col=colors[l], $draw_plot_params  ) } \n ";
+    
 #    $r_instruction.="matplot( x=input.table[,1] , y=input.table[, -1] ". $r_plot_params." ) \n";
-    $r_instruction.="matplot( x=x.values , y=y.values ". $r_plot_params." ) \n";
+    #$r_instruction.="matplot( x=x.values , y=y.values ". $r_plot_params." ) \n";
 
     ## Add grid if requested. Note that the grid size is currently
     ## ignored, should be improved soon.
@@ -923,7 +937,7 @@ sub Rplot{
     ## Add legend 
      if ($legend){
        $r_y_columns.= "c(".join(",",@y_col_list_r).")" ;
-       $r_instruction .= "legend( \"topright\", legend = names(input.table)[".$r_y_columns."], cex=.8,pt.cex=.6, pch=\"o\", bg=\"white\", bty=\"o\", col=colors)\n";
+       $r_instruction .= "legend( \"top\",inset=c(0,-0.15) ,legend = names(input.table)[".$r_y_columns."], cex=.6,pt.cex=.6, pch=\"o\", bg=\"white\", bty=\"o\", col=colors)\n";
 #       $r_instruction.="legend( \"topright\", legend = colnames(input.table[,".$r_y_columns."]), cex=.4,pt.cex=.6, pch=\"o\", col=colors)\n";
 #       die "HELLO\n", $r_instruction, "\n"
     }
