@@ -926,7 +926,7 @@ package main;
 	  }
 	  
 	 
-	  #Draw NWD for matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
+	  #Draw NWD per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 
 	  if ($main::plot_types{occ_proba}){
 	      ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) ;
@@ -1001,7 +1001,12 @@ package main;
 	#die "BOOM";
 	 my $st= $_;
 	 ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/nwd/) ;
-	 ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/occ_proba_proba/) ;	 
+	 print (join ("++",@{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }))."\n";
+	 ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/occ_proba/) ;
+	 #print $outfile{$st."all_matrices_occ_proba_table"}."\n";
+	 #print $outfile{$st."all_matrices_occ_proba_plot"}."\n";
+	 #die ("BOOM");
+	 
     }
 
     ################################################################
