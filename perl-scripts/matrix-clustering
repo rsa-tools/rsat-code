@@ -3865,7 +3865,7 @@ sub ReportStyleCSS{
 	border-radius:5px;
   }
 
-  #display_clusters{
+  .display_clusters{
     width: 1000px;
     background-color: #E6E6E6;
     text-align: center;
@@ -4044,7 +4044,7 @@ sub ParametersTable{
   my $par_table = '
   <!-- Div with the table of selected parameters-->
   <div id="Par_tab_button" class="button_click Section_button"><strong>Parameters Table</strong></div>
-  <div id="Par_tab" class="tab" style="margin-bottom: 15px;">
+  <div id="Par_tab" class="tab" style="margin-bottom:15px;display:none">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Summary</h2>
     <table id="parameters_table" style="width:1000px;">
       <thead>
@@ -4224,7 +4224,9 @@ sub InsertSmallForest {
     
     my $div = "";
     ## Open the <div> and the <a> where the small forest will be set
-    my $small_forest = '<div id="show_forest" style="margin-bottom:25px;">'."\n";  
+    my $small_forest = '
+    <div id="Logo_Forest_button" class="button_click Section_button"><strong>Logo Forest</strong></div>
+<div id="show_forest" style="margin-bottom:25px;display:none;">'."\n";  
     my $small_tree = '' ;
     my $sum_motifs = 0;
     my $sum = 0;
@@ -4233,7 +4235,8 @@ sub InsertSmallForest {
 
     ## Insert link to the logo forest
     $small_forest .= '
-    <div id="display_clusters"><h2>Clusters found</h2>
+
+    <div class="display_clusters"><h2>Clusters found</h2>
        <h3>Few clusters displayed below.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></h3>
     </div>
     ';
@@ -4414,6 +4417,38 @@ $(document).ready(function() {
 // Slide the Parameters Table
 $(document).ready(function() {
     $(\'#Par_tab_button\').click(function() {
+	$(\'#Par_tab\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Logo Forest Link
+$(document).ready(function() {
+    $(\'#Logo_Forest_button\').click(function() {
+	$(\'#show_forest\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Individual Motif View
+$(document).ready(function() {
+    $(\'#Motif_Tab_button\').click(function() {
+	$(\'#Motif_Tab\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Individual Cluster View
+$(document).ready(function() {
+    $(\'#Cluster_Tab_button\').click(function() {
+	$(\'#Cluster_Tab\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Heatmap View
+$(document).ready(function() {
+    $(\'#Heatmap_button\').click(function() {
 	$(\'#Par_tab\').slideToggle(\'fast\');
         $(this).toggleClass(\'selected_header_section\');
     }); 
