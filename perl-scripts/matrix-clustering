@@ -2916,6 +2916,7 @@ sub cluster_delim {
 sub Text_end_report {
 
     my $end_report = '
+        <div id="References_Button" class="button_click Section_button selected_header_section"><strong>References</strong></div>
 	<div id="end_report" style="margin-bottom:20px;">
 	  <ul style="list-style: none;">
 	    <li>
@@ -3748,8 +3749,8 @@ sub ReportStyleCSS{
   .Section_button {
   background-color: #FCA0A0;
   float: left;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin-top: 2px;
+  margin-bottom: 2px;
   width: 200px;
   height: 20px;
   position: relative;
@@ -3899,7 +3900,7 @@ sub ReportStyleCSS{
 	display: block;
   }
 
-  #individual_results{
+  .individual_results{
 	text-align:center; 
 	padding: 0px 10px 0px 20px; 
 	width: auto;
@@ -4141,7 +4142,8 @@ sub InsertAlignmentTable{
     my $tab = '
 
   <!-- Div with the aligment table with all the motifs-->
-	<div class="tab" style="padding:7px 7px 0px 7px; margin:0px 0px 20px 0px;width:autopx">	
+<div id="Motif_Tab_button" class="button_click Section_button"><strong>Individual Motif View</strong></div>	
+<div id="Motif_Tab" class="tab" style="padding:7px 7px 0px 7px; margin:0px 0px 20px 0px;width:autopx;display:none">	
           <h2 style="margin:0px 0px 10px 0px;">Individual Motif View</h2>
 	  <table id="alignment_dyn_table" class="hover compact">
 	    <thead>
@@ -4301,7 +4303,8 @@ sub InsertSmallForest {
 sub InsertHeatMap {
 
     my $heat_map = ' 
-	<div class="tab" style="width:1025px;padding:0px 0px 20px 0px;margin-top:20px;">
+        <div id="Heatmap_button" class="button_click Section_button"><strong>Heatmap View</strong></div>
+	<div id="Heatmap_view" class="tab" style="width:1025px;padding:0px 0px 20px 0px;margin-top:20px;display:none;">
 		<h2 style="margin:0px">Heatmap View</h2>
                 <p><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a></p>
 		<img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'">
@@ -4449,7 +4452,7 @@ $(document).ready(function() {
 // Slide the Heatmap View
 $(document).ready(function() {
     $(\'#Heatmap_button\').click(function() {
-	$(\'#Par_tab\').slideToggle(\'fast\');
+	$(\'#Heatmap_view\').slideToggle(\'fast\');
         $(this).toggleClass(\'selected_header_section\');
     }); 
 });
@@ -4458,6 +4461,14 @@ $(document).ready(function() {
 $(document).ready(function() {
     $(\'#List_Files_Button\').click(function() {
 	$(\'#File_list\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the References
+$(document).ready(function() {
+    $(\'#References_Button\').click(function() {
+	$(\'#end_report\').slideToggle(\'fast\');
         $(this).toggleClass(\'selected_header_section\');
     }); 
 });
@@ -4696,7 +4707,8 @@ sub InsertJquery {
 ## will be displayed
 sub DisplaySingleCluster{
     my $div_display = '
-    <div class="sep_clusters_div" id="individual_results">
+    <div id="Cluster_Tab_button" class="button_click Section_button"><strong>Individual Cluster View</strong></div>
+    <div class="sep_clusters_div individual_results" id="Cluster_Tab" style="display:none">
 	<!--Div with the header of the buttons-->
         <h2 style="display:block;padding:4px;width:986px;">Individual Cluster View</h2>'.
         &hide_show_buttons
