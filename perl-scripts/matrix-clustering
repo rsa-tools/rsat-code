@@ -2916,7 +2916,8 @@ sub cluster_delim {
 sub Text_end_report {
 
     my $end_report = '
-	<div id="end_report">
+        <div id="References_Button" class="button_click Section_button selected_header_section"><strong>References</strong></div>
+	<div id="end_report" style="margin-bottom:20px;">
 	  <ul style="list-style: none;">
 	    <li>
 	      <strong>References</strong>
@@ -3690,7 +3691,6 @@ sub ReportStyleCSS{
   
   .tab_list{
   width: 937px;
-  margin-top: 20px;
   text-align: left;
   color: #000000;
   font-family: Arial;
@@ -3702,7 +3702,7 @@ sub ReportStyleCSS{
   clear: both;
   position: relative;
   border-radius:5px;
-  padding: 5px 12px 5px 12px;
+  padding: 0px 0px 0px 5px;
   }
 
 
@@ -3746,10 +3746,11 @@ sub ReportStyleCSS{
   top:1px;
   }
 
-  #File_list {
+  .Section_button {
   background-color: #FCA0A0;
   float: left;
-  margin-top: 10px;
+  margin-top: 2px;
+  margin-bottom: 2px;
   width: 200px;
   height: 20px;
   position: relative;
@@ -3865,11 +3866,11 @@ sub ReportStyleCSS{
 	border-radius:5px;
   }
 
-  #display_clusters{
+  .display_clusters{
     width: 1000px;
     background-color: #E6E6E6;
     text-align: center;
-    padding: 0px 10px 10px 10px; 
+    padding: 0px 10px 10px 10px;
   }
 
   .par_text {
@@ -3899,7 +3900,7 @@ sub ReportStyleCSS{
 	display: block;
   }
 
-  #individual_results{
+  .individual_results{
 	text-align:center; 
 	padding: 0px 10px 0px 20px; 
 	width: auto;
@@ -3908,7 +3909,7 @@ sub ReportStyleCSS{
 	background-color: #E6E6E6; 
         position: relative;
         clear: both;
-        margin: 7px 7px 7px 0px;
+        margin: 0px 7px 7px 0px;
         display: block;
         float: left;
   } 
@@ -4043,7 +4044,8 @@ sub ParametersTable{
 
   my $par_table = '
   <!-- Div with the table of selected parameters-->
-  <div class="tab" style="margin-bottom: 15px;">
+  <div id="Par_tab_button" class="button_click Section_button"><strong>Parameters Table</strong></div>
+  <div id="Par_tab" class="tab" style="margin-bottom:15px;display:none">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Summary</h2>
     <table id="parameters_table" style="width:1000px;">
       <thead>
@@ -4140,7 +4142,8 @@ sub InsertAlignmentTable{
     my $tab = '
 
   <!-- Div with the aligment table with all the motifs-->
-	<div class="tab" style="padding:7px 7px 0px 7px; margin:0px 0px 20px 0px;width:autopx">	
+<div id="Motif_Tab_button" class="button_click Section_button"><strong>Individual Motif View</strong></div>	
+<div id="Motif_Tab" class="tab" style="padding:7px 7px 0px 7px; margin:0px 0px 20px 0px;width:autopx;display:none">	
           <h2 style="margin:0px 0px 10px 0px;">Individual Motif View</h2>
 	  <table id="alignment_dyn_table" class="hover compact">
 	    <thead>
@@ -4223,7 +4226,9 @@ sub InsertSmallForest {
     
     my $div = "";
     ## Open the <div> and the <a> where the small forest will be set
-    my $small_forest = '<div id="show_forest" style="margin-bottom:25px;">'."\n";  
+    my $small_forest = '
+    <div id="Logo_Forest_button" class="button_click Section_button"><strong>Logo Forest</strong></div>
+<div id="show_forest" style="margin:0px 0px 15px 0px;display:none;">'."\n";  
     my $small_tree = '' ;
     my $sum_motifs = 0;
     my $sum = 0;
@@ -4232,7 +4237,8 @@ sub InsertSmallForest {
 
     ## Insert link to the logo forest
     $small_forest .= '
-    <div id="display_clusters"><h2>Clusters found</h2>
+
+    <div class="display_clusters"><h2>Clusters found</h2>
        <h3>Few clusters displayed below.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></h3>
     </div>
     ';
@@ -4297,7 +4303,8 @@ sub InsertSmallForest {
 sub InsertHeatMap {
 
     my $heat_map = ' 
-	<div class="tab" style="width:1000px;padding:0px;">
+        <div id="Heatmap_button" class="button_click Section_button"><strong>Heatmap View</strong></div>
+	<div id="Heatmap_view" class="tab" style="width:1025px;padding:0px 0px 20px 0px;margin-top:0px;display:none;">
 		<h2 style="margin:0px">Heatmap View</h2>
                 <p><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a></p>
 		<img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'">
@@ -4320,7 +4327,7 @@ $(document).ready( function () {
         "ordering": false,
         "info":     false,
         "columnDefs": [
-	    { "width": "10%", "targets": [0,1,2,3,4,5,6] }
+	    { "width": "11%", "targets": [0,1,2,3,4,5,6] }
 	]		
     });
 });
@@ -4399,21 +4406,70 @@ $(document).ready(function() {
 
     /////////////////////////////
     // Additional files button
-    $(\'#File_list\').mouseenter(function() {
+    $(\'#List_File_Button\').mouseenter(function() {
         $(this).fadeTo(\'fast\', 0.6); 
     });
 
-    $(\'#File_list\').mouseleave(function() {
+    $(\'#List_File_Button\').mouseleave(function() {
         $(this).fadeTo(\'fast\',1); 
     });
 
 });
 
+
+// Slide the Parameters Table
+$(document).ready(function() {
+    $(\'#Par_tab_button\').click(function() {
+	$(\'#Par_tab\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Logo Forest Link
+$(document).ready(function() {
+    $(\'#Logo_Forest_button\').click(function() {
+	$(\'#show_forest\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Individual Motif View
+$(document).ready(function() {
+    $(\'#Motif_Tab_button\').click(function() {
+	$(\'#Motif_Tab\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Individual Cluster View
+$(document).ready(function() {
+    $(\'#Cluster_Tab_button\').click(function() {
+	$(\'#Cluster_Tab\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Heatmap View
+$(document).ready(function() {
+    $(\'#Heatmap_button\').click(function() {
+	$(\'#Heatmap_view\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
 // Slide the File list
 $(document).ready(function() {
-    $(\'#File_list\').click(function() {
-	$(\'.tab_list\').slideToggle(\'fast\');
-        $(\'#File_list\').toggleClass(\'selected_header_section\');
+    $(\'#List_Files_Button\').click(function() {
+	$(\'#File_list\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the References
+$(document).ready(function() {
+    $(\'#References_Button\').click(function() {
+	$(\'#end_report\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
     }); 
 });
 ';
@@ -4651,7 +4707,8 @@ sub InsertJquery {
 ## will be displayed
 sub DisplaySingleCluster{
     my $div_display = '
-    <div class="sep_clusters_div" id="individual_results">
+    <div id="Cluster_Tab_button" class="button_click Section_button"><strong>Individual Cluster View</strong></div>
+    <div class="sep_clusters_div individual_results" id="Cluster_Tab" style="display:none">
 	<!--Div with the header of the buttons-->
         <h2 style="display:block;padding:4px;width:986px;">Individual Cluster View</h2>'.
         &hide_show_buttons
@@ -4687,27 +4744,31 @@ sub InsertListOfFiles {
       my $add_files = 
 	  '
 
-	<div id="File_list" class="button_click"><strong>List of files</strong></div>
-	<div class="tab_list" style="width:960px">
+	<div id="List_Files_Button" class="button_click Section_button"><strong>Additional Files</strong></div>
+	<div id="File_list" class="tab_list" style="width:960px">
+	<h2 style="text-align:center;margin-top:0px;">Exported files</h2>
 	  <table>
 	    <thead>
-	      <tr>
-		<th colspan="2"><h2 style="text-align:center;">Exported files</h2><br></th>
-	      </tr>
+
+
+
 	      <tr>
 		<th class="tab_col" style="width:200px">File</th>
 		<th class="tab_col" style="width:700px">Description</th>
 	      </tr>
 	    </thead>
 	    <tbody>
-		   <tr>
+<!--		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'"><strong>Distance table</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
 		   </tr>
+-->
+<!--
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"><strong>Logo Forest</strong></a></td>
 		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
 		   </tr>
+-->
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{pairwise_compa}).'"><strong>Pairwise comparison</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the pairwise comparison between all the input motifs using different metrics. This is the <em>compare-matrices</em> result.</td>
@@ -4739,10 +4800,12 @@ sub InsertListOfFiles {
       if ($draw_heatmap == 1 && $number_of_motifs > 1) {
 	$add_files .= 
 	    '
+<!--
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'"><strong>Heatmap</strong></a></td>
 		      <td class="tab_spacer_2">The heatmap showing the hierarchical tree with the clusters and the alignments.</td>
 		   </tr>
+-->
                      ';
       }
 
