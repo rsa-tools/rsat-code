@@ -143,7 +143,7 @@ package main;
     $main::verbose = 0;
     #$main::in = STDIN;
     $img_format="png";
-    
+    $main::cluster=0;
     $main::out = STDOUT;
 
     ################################
@@ -248,7 +248,22 @@ package main;
     } 
     close $quality_list;
 
+    ################
+    ## If cluster option was selected call the R-script matrix_quality_compare.R
 
+    if ($main::cluster==1){
+	my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
+	&RSAT::message::Info ("Analyzing matrix quality clustering, program", $r_mtxq_sc) if ($main::verbose>=0);
+	
+	my $R_command="Rscript ". $r_mtxq_sc." ".$main::infile{'quality_list'};
+	&RSAT::message::Info ("R command", $R_command) if ($main::verbose>=0);
+	die "BOOM";
+	&doit($R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	
+	
+    }
+
+    
     ################################################################
     ## Open output stream
     chomp($main::outfile{outdir});
@@ -445,20 +460,17 @@ Scores comparison, inverse cumulative distribution
 	   $main::infile{'quality_list'} = shift (@arguments);
 
 
-# =pod
+=pod
 
-# =item B<-case column_name>
+=item B<-cluster>
 
-# Name of the column to be analyzed. The column contains the invesrse cumulative
-# distribution of scores obtained with matrix-quality over a set of sequences.
+Cluster matrix-quality results
 
-#  -case 'allup-noorf'
-
-# =cut
+=cut
 
 
-#        }elsif($arg eq "-case"){
-# 	   $main::case_dist= shift(@arguments);
+       }elsif($arg eq "-cluster"){
+	   $main::cluster=1;
 	   
 # =pod
 
