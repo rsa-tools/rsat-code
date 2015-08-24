@@ -44,10 +44,17 @@ MTXQ_ZOO_CMD=matrix-quality -v ${V} -html_title ${TITLE_ZOO}  -ms ${MOTIFS_FILE}
 	-pseudo ${PSEUDO}  -seq_format fasta ${ZOO_CHIP_SEQ_SETS}  -bgfile ${BACKGROUND_MODEL} \
 	-bg_format oligo-analysis -bg_pseudo ${BG_PSEUDO}  ${ZOO_CHIP_SEQ_PLOTS} -o ${MTXQ_ZOO_OUT} ${TASKS} ${RPLOT}
 
-MTXQ_ZOO_OUT=./results/matrix_quality/${DATE}/zoo_chip_enrichment
+
+MTXQ_OUT=./results/matrix_quality/${DATE}
+MTXQ_ZOO_OUT=${MTXQ_OUT}/zoo_chip_enrichment
 
 zoo_chip_quality:
 	@echo ${MTXQ_ZOO_CMD}
 	@${MTXQ_ZOO_CMD}
 
 
+QUALITY_LIST=${MTXQ_ZOO_OUT}_quality_prefix_files.txt
+COMPARE_QUALITY=${MTXQ_OUT}/zoo_chip_enrichment/compare_quality
+compare_zoo_chip_quality:
+	@ls -1 ${MTXQ_OUT}/*/*_synthesis.html | perl -pe 's/_synthesis.+//'> ${QUALITY_LIST}
+	compare-qualities -quality_list ${QUALITY_LIST} -cluster -o ${COMPARE_QUALITY}
