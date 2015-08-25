@@ -32,6 +32,7 @@ Synopsis: compmat -o <ouput_file> -file1 <ref_matrices_file> -file2 <query_matri
 
 // --------------- User-specified parameters: ---------------------
 int lth_w = 5;				// lower trheshold on the number of aligned columns 
+double lth_cor = 0.7;		// lower threshold on correlation
 double lth_ncor = 0.4;		// lower threshold on normalized correlation
 double lth_ncor1 = 0.;		// lower threshold normalized on reference matrices
 double lth_ncor2 = 0.;		// lower threshold normalized on query matrices
@@ -173,7 +174,11 @@ int main(int argc, char *argv[]){
 				cor_tab[0][i][j] = calc_corr(k,Rmatab[i],Qmatab[j]);
 				cor_tab[1][i][j] = calc_corr(k,Rmatab[i],Qrevtab[j]);
 				(cor_tab[0][i][j].cor >= cor_tab[1][i][j].cor) ? (best_correl = 0) : (best_correl = 1);
-				if ((cor_tab[best_correl][i][j].Ncor >= lth_ncor) && (cor_tab[best_correl][i][j].Ncor1 >= lth_ncor1) && (cor_tab[best_correl][i][j].Ncor2 >= lth_ncor2)) {	// best strand cases
+				printf("bestcorrel %d\t",best_correl);
+				printf("cor %f\t", cor_tab[best_correl][i][j].cor);
+				printf("Ncor %f\t", cor_tab[best_correl][i][j].Ncor);
+				printf("k %d\n", k);
+				if ((cor_tab[best_correl][i][j].cor >= lth_cor) && (cor_tab[best_correl][i][j].Ncor >= lth_ncor) && (cor_tab[best_correl][i][j].Ncor1 >= lth_ncor1) && (cor_tab[best_correl][i][j].Ncor2 >= lth_ncor2)) {	// best strand cases
                     if (strcmp(mode,"scan") == 0) {
                         if ((last_match[j] >= 0) && (Rmatab[i].ID == res_tab[last_match[j]].id1) && ((k-res_tab[last_match[j]].offset)<res_tab[last_match[j]].w2)) {
                             if (cor_tab[best_correl][i][j].Ncor > res_tab[last_match[j]].Ncor) {
@@ -185,7 +190,7 @@ int main(int argc, char *argv[]){
                                 res_tab[last_match[j]].offset=k;
                                 (best_correl == 0) ? (res_tab[last_match[j]].strand='D') : (res_tab[last_match[j]].strand='R');
                             }
-                            if ((cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >= lth_ncor2)) {	// if other strand also matches...
+                            if ((cor_tab[flipflap(best_correl)][i][j].cor >= lth_cor) && (cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >= lth_ncor2)) {	// if other strand also matches...
                                 res_tab[last_match[j]].fake_matches_count++;
                             }
                             res_tab[last_match[j]].fake_matches_count++;
@@ -207,7 +212,7 @@ int main(int argc, char *argv[]){
                             res_tab[res_count].offset=k;
                             (best_correl == 0) ? (res_tab[res_count].strand='D') : (res_tab[res_count].strand='R');
                             last_match[j]=res_count;
-                            if ((cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >=  lth_ncor2)) {	// if other strand also matches...
+                            if ((cor_tab[flipflap(best_correl)][i][j].cor >= lth_cor) && (cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >=  lth_ncor2)) {	// if other strand also matches...
 							res_tab[res_count].fake_matches_count++;
                             }
                             res_count++;
@@ -224,7 +229,7 @@ int main(int argc, char *argv[]){
                                 res_tab[last_match[j]].offset=k;
                                 (best_correl == 0) ? (res_tab[last_match[j]].strand='D') : (res_tab[last_match[j]].strand='R');
                             }
-                            if ((cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >= lth_ncor2)) {	// if other strand also matches...
+                            if ((cor_tab[flipflap(best_correl)][i][j].cor >= lth_cor) && (cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >= lth_ncor2)) {	// if other strand also matches...
                                 res_tab[last_match[j]].fake_matches_count++;
                             }
                             res_tab[last_match[j]].fake_matches_count++;
@@ -246,7 +251,7 @@ int main(int argc, char *argv[]){
                             res_tab[res_count].offset=k;
                             (best_correl == 0) ? (res_tab[res_count].strand='D') : (res_tab[res_count].strand='R');
                             last_match[j]=res_count;
-                            if ((cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >= lth_ncor2)) {	// if other strand also matches...
+                            if ((cor_tab[flipflap(best_correl)][i][j].cor >= lth_cor) && (cor_tab[flipflap(best_correl)][i][j].Ncor >= lth_ncor) && (cor_tab[flipflap(best_correl)][i][j].Ncor1 >= lth_ncor1) && (cor_tab[flipflap(best_correl)][i][j].Ncor2 >= lth_ncor2)) {	// if other strand also matches...
                                 res_tab[res_count].fake_matches_count++;
                             }
                             res_count++;
@@ -260,6 +265,7 @@ int main(int argc, char *argv[]){
 	}
 	
 	fp = fopen(outfile,"w");						// output printing... 
+	fprintf(fp,";mode: %s\tthresholds:\tcor=%f\tncor=%f\tw=%d\tncor1=%f\tncor2=%f\n",mode,lth_cor,lth_ncor,lth_w,lth_ncor1,lth_ncor2);
 	fprintf(fp,"#id1\tid2\tname1\tname2\tcor\tNcor\tNcor1\tNcor2\tw1\tw2\toffset\tstrand\tuncounted\n");
 	for (i=0; i<res_count; i++) {
 		fprintf(fp,"%s\t%s\t%s\t%s\t%lf\t%lf\t%lf\t%lf\t%d\t%d\t%d\t%c\t%d\n",res_tab[i].id1,res_tab[i].id2,res_tab[i].name1,res_tab[i].name2,res_tab[i].cor,res_tab[i].Ncor,res_tab[i].Ncor1,res_tab[i].Ncor2,res_tab[i].w1,res_tab[i].w2,res_tab[i].offset,res_tab[i].strand,res_tab[i].fake_matches_count);
@@ -298,6 +304,7 @@ void read_arg(int argc, char *argv[]){
 			  if(strcmp(argv[i],"-file1") == 0)  Rfile  = argv[++i];
 			  if(strcmp(argv[i],"-file2") == 0)  Qfile  = argv[++i];
 			  if(strcmp(argv[i],"-lth_w") == 0)  lth_w  = atoi(argv[++i]);
+			  if(strcmp(argv[i],"-lth_cor") == 0)  lth_cor  = atof(argv[++i]);
 			  if(strcmp(argv[i],"-lth_ncor") == 0)  lth_ncor  = atof(argv[++i]);
 			  if(strcmp(argv[i],"-lth_ncor1") == 0)  lth_ncor1  = atof(argv[++i]);
 			  if(strcmp(argv[i],"-lth_ncor2") == 0)  lth_ncor2  = atof(argv[++i]);
@@ -417,11 +424,11 @@ correls calc_corr(int offset, pssm M1, pssm M2) {
 	m2.mat = M2.mat + start2; 
 	m2.width = w;
 	
-    if (strcmp(mode,"scan")==0) {
+    if (strcmp(mode,"scan")==0) { // scan mode :  strcmp function: if Return value = 0 then it indicates str1 is equal to str2
         norm_factor = (double)w / (M1.width+M2.width-w);
     }
-    else if (strcmp(mode,"matches")==0) {
-        norm_factor = (double)w / M2.width;
+    else if (strcmp(mode,"matches")==0) { // matches mode 
+         norm_factor = (double)w / (M1.width+M2.width-w);
     }
 	
 	for (pos=0; pos<w; pos++) {					// Compute correlations for each pos 

@@ -823,7 +823,7 @@ package main;
       ## width, correlation and normalized correlations
       $lth{w}=5 unless (defined($lth{w}));
       $lth{cor}=0.7 unless (defined($lth{cor}));
-      $lth{Ncor}=0.4 unless (defined($lth{Ncor}));
+      $lth{ncor}=0.4 unless (defined($lth{ncor}));
     }
     
     ## In both modes "matches" and "scores", only return the best
@@ -1585,6 +1585,48 @@ package main;
       #	my $strand = $matrix2->get_attribute("strand") || "D";
 
 
+#### TRY delegating to QUICK version
+ local $quick_flag = 1;
+ if ($quick_flag == 1) {
+ 
+  ## compare-matrices-quick location
+   my $quick_cmd_path =  &RSAT::server::GetProgramPath("compare-matrices-quick", 0, $ENV{RSAT_BIN}) || "";
+  $quick_cmd_path = &RSAT::util::trim($quick_cmd_path);
+  unless (-e $quick_cmd_path) {
+    &RSAT::message::Warning("Cannot generate sequence logos because",
+			    "compare-matrices-quick is not found in the expected path",
+			    $quick_cmd_path);
+  }
+  
+  ## output file for quick mode
+  $main::outfile{quick_results} = $main::outfile{prefix}."_quick.tab";
+  
+  print Dumper(\%lth);
+  
+  	&RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
+  my $cmd = $quick_cmd_path." -v 10"; 
+  $cmd .= " -file1 ".$infile{file1};
+  $cmd .= " -file2 ".$infile{file2};
+  $cmd .= " -lth_ncor1 -1";
+  $cmd .= " -lth_ncor2 -1";
+  $cmd .= " -lth_ncor ".$lth{ncor};
+  $cmd .= " -lth_cor ".$lth{cor};
+  $cmd .= " -lth_w ".$lth{w};
+  $cmd .= " -lth_w1 0";
+  $cmd .= " -lth_w2 0";
+  $cmd .= " -mode matches";
+  $cmd .= " -o ".$main::outfile{quick_results}; 
+  $cmd .= "; "."text-to-html -i ".$main::outfile{quick_results};
+  $cmd .= " -o ".$main::outfile{quick_results}.".html";
+  #$cmd .= " > /dev/null";
+  &RSAT::util::one_command($cmd, 1,"");
+  &RSAT::message::TimeWarn("Matrix comparison table with quick", $main::outfile{quick_results}) if ($main::verbose >= 2);
+
+}
+
+
+   
+
       ## Test one or both strands
       foreach my $strand (@strands) {
 	## Get the crude frequencies (the metrics rely on crude
@@ -1670,6 +1712,7 @@ package main;
 	    my $consensus_len2 = length($consensus2);
 	    $max_aligned_consensus_len2 = $consensus_len2 if ($consensus_len2 > $max_aligned_consensus_len2);
 	  }
+
 
 	  ################################################################
 	  ## Compute the (dis)similarity scores between matrices
@@ -2121,6 +2164,8 @@ package main;
 	}
 
 #	&RSAT::message::Debug("Treating output for offset/strand", $compa_id, $offset, $strand) if ($main::verbose >= 10);
+
+#### we need to populate $score{$sort_field}{$compa_id} for the rest to work well
 
 	if (($comparison_mode eq "matches") ||
 	    ($comparison_mode eq "scores")) {
