@@ -63,11 +63,13 @@ align.two.clusters <- function(child1,
 
     ## NOTE: the order of the ids (ID1 or ID2) should be the same as in the comparison table
     ## If the order in the hclust tree is the opposite, then the order of the numbers is inverted
+    switch.ids <- 0
     if(id1 %in% ids2.hclust){
       temporal <- NULL
       temporal <- ids1.hclust
       ids1.hclust <- ids2.hclust
       ids2.hclust <- temporal
+      switch.ids <- 1
     }
 
     ## Get the comparison number in the compare-matrices table
@@ -83,6 +85,13 @@ align.two.clusters <- function(child1,
     ## base to align the two cluster
     prev.strand.1 <- motifs.info[[id1]][["strand"]]
     prev.strand.2 <- motifs.info[[id2]][["strand"]]
+
+    ## Complete the attributes table
+    if(nodes.attributes == TRUE){
+      ## Save the swtich flag and the strand of the alignment (taken from compare-matrices)
+      internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["Switch_Flag"]] <<- switch.ids
+      internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["Strand"]] <<- strand
+    }
 
     ## Assign values for the cases (1-8)
     ## Each case depends if the strand of the comparison between the closest motifs
@@ -126,6 +135,10 @@ align.two.clusters <- function(child1,
       }
     }
 
+#     print ("Case 3")
+#     print (paste("ID1:", id1, "ID2:", id2))
+#     print (paste("Strand:", strand, " -- Prev Strand 1:", prev.strand.1, " -- Prev Strand 2:", prev.strand.2))
+#     print ("------------------------------------------------------------------------------------------")
 
     ## In some cases it is required to invert the alignment (change its orientation)
     ## in order to align properly the two clusters.
