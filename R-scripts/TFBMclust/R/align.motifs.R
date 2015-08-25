@@ -27,6 +27,8 @@ align.motifs <- function(hclust.tree,
       internal.nodes.attributes[[paste("node_", level, sep = "")]][["method"]] <<- method
       internal.nodes.attributes[[paste("node_", level, sep = "")]][["node_1"]] <<- child1
       internal.nodes.attributes[[paste("node_", level, sep = "")]][["node_2"]] <<- child2
+      internal.nodes.attributes[[paste("node_", level, sep = "")]][["Switch_Flag"]] <<- 0
+      internal.nodes.attributes[[paste("node_", level, sep = "")]][["Strand"]] <<- 0
     }
 
     ##############################
