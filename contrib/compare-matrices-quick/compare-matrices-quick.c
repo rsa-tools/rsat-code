@@ -71,6 +71,10 @@ typedef struct				// Correlations structure
 	double Ncor1;
 	double Ncor2;
     int w;
+    int W;
+    double wr;
+    double wr1;
+    double wr2;
 } correls;
 
 typedef struct				// alignment structure (corresponds to output line format)
@@ -86,6 +90,10 @@ typedef struct				// alignment structure (corresponds to output line format)
 	int w1;
 	int w2;
     int w;
+    int W;
+    double wr;
+    double wr1;
+    double wr2;
 	int offset;
 	char strand;
 	int fake_matches_count;
@@ -174,10 +182,6 @@ int main(int argc, char *argv[]){
 				cor_tab[0][i][j] = calc_corr(k,Rmatab[i],Qmatab[j]);
 				cor_tab[1][i][j] = calc_corr(k,Rmatab[i],Qrevtab[j]);
 				(cor_tab[0][i][j].cor >= cor_tab[1][i][j].cor) ? (best_correl = 0) : (best_correl = 1);
-				printf("bestcorrel %d\t",best_correl);
-				printf("cor %f\t", cor_tab[best_correl][i][j].cor);
-				printf("Ncor %f\t", cor_tab[best_correl][i][j].Ncor);
-				printf("k %d\n", k);
 				if ((cor_tab[best_correl][i][j].cor >= lth_cor) && (cor_tab[best_correl][i][j].Ncor >= lth_ncor) && (cor_tab[best_correl][i][j].Ncor1 >= lth_ncor1) && (cor_tab[best_correl][i][j].Ncor2 >= lth_ncor2)) {	// best strand cases
                     if (strcmp(mode,"scan") == 0) {
                         if ((last_match[j] >= 0) && (Rmatab[i].ID == res_tab[last_match[j]].id1) && ((k-res_tab[last_match[j]].offset)<res_tab[last_match[j]].w2)) {
@@ -218,7 +222,7 @@ int main(int argc, char *argv[]){
                             res_count++;
                         }
                     }
-                    else if (strcmp(mode,"matches") == 0) {
+                    else if (strcmp(mode,"matches") == 0) { // mode modified by Morgane in August 2015
                         if ((last_match[j] >= 0) && (Rmatab[i].ID == res_tab[last_match[j]].id1)) {
                             if ((cor_tab[best_correl][i][j].Ncor > res_tab[last_match[j]].Ncor) || (cor_tab[best_correl][i][j].Ncor == res_tab[last_match[j]].Ncor && cor_tab[best_correl][i][j].w > res_tab[last_match[j]].w)) {
                                 res_tab[last_match[j]].cor=cor_tab[best_correl][i][j].cor;
@@ -226,6 +230,10 @@ int main(int argc, char *argv[]){
                                 res_tab[last_match[j]].Ncor1=cor_tab[best_correl][i][j].Ncor1;
                                 res_tab[last_match[j]].Ncor2=cor_tab[best_correl][i][j].Ncor2;
                                 res_tab[last_match[j]].w=cor_tab[best_correl][i][j].w;
+                                res_tab[last_match[j]].W=cor_tab[best_correl][i][j].W;
+                            	res_tab[last_match[j]].wr=cor_tab[best_correl][i][j].wr;
+                            	res_tab[last_match[j]].wr1=cor_tab[best_correl][i][j].wr1;
+                            	res_tab[last_match[j]].wr2=cor_tab[best_correl][i][j].wr2;
                                 res_tab[last_match[j]].offset=k;
                                 (best_correl == 0) ? (res_tab[last_match[j]].strand='D') : (res_tab[last_match[j]].strand='R');
                             }
@@ -248,6 +256,10 @@ int main(int argc, char *argv[]){
                             res_tab[res_count].w1=Rmatab[i].width;
                             res_tab[res_count].w2=Qmatab[j].width;
                             res_tab[res_count].w=cor_tab[best_correl][i][j].w;
+                            res_tab[res_count].W=cor_tab[best_correl][i][j].W;
+                            res_tab[res_count].wr=cor_tab[best_correl][i][j].wr;
+                            res_tab[res_count].wr1=cor_tab[best_correl][i][j].wr1;
+                            res_tab[res_count].wr2=cor_tab[best_correl][i][j].wr2;
                             res_tab[res_count].offset=k;
                             (best_correl == 0) ? (res_tab[res_count].strand='D') : (res_tab[res_count].strand='R');
                             last_match[j]=res_count;
@@ -266,9 +278,14 @@ int main(int argc, char *argv[]){
 	
 	fp = fopen(outfile,"w");						// output printing... 
 	fprintf(fp,";mode: %s\tthresholds:\tcor=%f\tncor=%f\tw=%d\tncor1=%f\tncor2=%f\n",mode,lth_cor,lth_ncor,lth_w,lth_ncor1,lth_ncor2);
-	fprintf(fp,"#id1\tid2\tname1\tname2\tcor\tNcor\tNcor1\tNcor2\tw1\tw2\toffset\tstrand\tuncounted\n");
+	fprintf(fp,"#id1\tid2\tname1\tname2\tcor\tNcor\tNcor1\tNcor2\tw1\tw2\tw\tW\tWr\twr1\twr2\tstrand\toffset\tuncounted\n");
 	for (i=0; i<res_count; i++) {
-		fprintf(fp,"%s\t%s\t%s\t%s\t%lf\t%lf\t%lf\t%lf\t%d\t%d\t%d\t%c\t%d\n",res_tab[i].id1,res_tab[i].id2,res_tab[i].name1,res_tab[i].name2,res_tab[i].cor,res_tab[i].Ncor,res_tab[i].Ncor1,res_tab[i].Ncor2,res_tab[i].w1,res_tab[i].w2,res_tab[i].offset,res_tab[i].strand,res_tab[i].fake_matches_count);
+		fprintf(fp,"%s\t%s\t%s\t%s\t%lf\t%lf\t%lf\t%lf\t%d\t%d\t%d\t%d\t%lf\t%lf\t%lf\t%c\t%d\t%d\n",
+		res_tab[i].id1,res_tab[i].id2,res_tab[i].name1,res_tab[i].name2,
+		res_tab[i].cor,res_tab[i].Ncor,res_tab[i].Ncor1,res_tab[i].Ncor2,
+		res_tab[i].w1,res_tab[i].w2,res_tab[i].w,
+		res_tab[i].W,res_tab[i].wr,res_tab[i].wr1,res_tab[i].wr2,
+		res_tab[i].strand,res_tab[i].offset,res_tab[i].fake_matches_count);
 	}
 	
 	free(Rmatab);									// memory desallocations...
@@ -455,11 +472,15 @@ correls calc_corr(int offset, pssm M1, pssm M2) {
 	else {
 		Cor.cor = cov/sqrt(v1*v2);
 	}
-	Cor.Ncor = Cor.cor * norm_factor;
+	Cor.Ncor = Cor.cor * norm_factor; 
 	Cor.Ncor1 = Cor.cor * (double)w / M1.width;
 	Cor.Ncor2 = Cor.cor * (double)w / M2.width;
     Cor.w = w;
-			
+    Cor.W = M1.width+M2.width-w;
+    Cor.wr = norm_factor; 
+    Cor.wr1 = (double)w / M1.width ; // in Perl:  my $wr1 = $w / $w1; $Ncor1 = $cor * $w / $w1 ;
+	Cor.wr2 = (double)w / M2.width ;		
+	
 	return Cor;
 }
 
@@ -496,9 +517,10 @@ void print_help(void){
 
 	printf("Synopsis: compmat -o <ouput_file> -file1 <ref_matrices_file> -file2 <query_matrices_file> \\\n");
 	printf("\t\t[-lth_w <min_aligned_columns>]\t\tmin treshold on matrices overlap (default 5)\n");
+	printf("\t\t[-lth_cor <min_aligned_columns>]\t\tmin threshold on correlation (default 0.7)\n\n");
 	printf("\t\t[-lth_ncor <min_ncor>]\t\t\tmin threshold on normalized correlation (default 0.4)\n");
-	printf("\t\t[-lth_ncor1 <min_ncor1>]\t\tmin threshold on correlation normalized on ref. matrices (default 0.7)\n");
-	printf("\t\t[-lth_ncor2 <min_ncor2>]\t\tmin threshold on correlation normalized on query matrices (default 0.7)\n");
+	printf("\t\t[-lth_ncor1 <min_ncor1>]\t\tmin threshold on correlation normalized on ref. matrices (default 0)\n");
+	printf("\t\t[-lth_ncor2 <min_ncor2>]\t\tmin threshold on correlation normalized on query matrices (default 0)\n");
 	printf("\t\t[-h]\t\t\t\t\tprint this help\n");
 	printf("\t\t[-v]\t\t\t\t\tVerbose mode (debuging...)\n");
     printf("\t\t[-mode <mode>]\t\t\t\t\twhere <mode> can be either \"scan\" or \"matches\" (default = scan)\n\n");
@@ -506,7 +528,7 @@ void print_help(void){
     printf("\t\"matches\" mode: For each pair of matrices (one from file1 and one from file2), the program tests all possible offsets, and reports only\n\t\t the best Ncor matching position (if passing the Ncor threshold)\n\n");
 
 	
-	printf("Exucution example: ./compmat -o result.tab -file1 DemoCompMat.txt -file2 JasparCore_Transfac.txt -lth_ncor2 0.7 -lth_w 5 -mode matches\n");
+	printf("Exucution example: ./compare-matrices-quick -o result.tab -file1 DemoCompMat.txt -file2 JasparCore_Transfac.txt -lth_ncor2 0.7 -lth_w 5 -mode matches\n");
 }
 	
 
