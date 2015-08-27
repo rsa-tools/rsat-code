@@ -4106,7 +4106,7 @@ sub ParametersTable{
   <div id="Par_tab_button" class="button_click Section_button"><strong>Results Summary</strong></div>
   <div id="Par_tab" class="tab" style="margin-bottom:15px;display:none">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Results Summary</h2>
-    <table  style="width:300px;">
+    <table  style="width:200px;">
 
       <tbody>
         <tr>
