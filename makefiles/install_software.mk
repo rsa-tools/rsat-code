@@ -1258,11 +1258,42 @@ _compile_igv:
 	@echo "Please add IGVTools folder to your path"
 	@echo 'export PATH=$${PATH}:${IGV_DISTRIB_DIR}'
 
+################################################################
+## BLAT
+## 
+## Fast sequence similarity search program developed by Jim Kent to
+## identify homogous segments of genomes. BLAT is required for Homer,
+## which uses it to purge sequences from redundant fragments before
+## motif discovery.  
+##
+## Info on BLAT:https://genome.ucsc.edu/FAQ/FAQblat.html
+BLAT_VERSION=35
+BLAT_ARCHIVE=blatSrc${BLAT_VERSION}.zip
+BLAT_URL=https://users.soe.ucsc.edu/~kent/src/${BLAT_ARCHIVE}
+BLAT_DOWNLOAD_DIR=${SRC_DIR}/BLAT
+install_blat: _download_blat
+
+_download_blat:
+	@echo
+	@echo "Downloading BLAT sources from	${BLAT_URL}"
+	mkdir -p ${BLAT_DOWNLOAD_DIR}
+	wget --no-clobber --no-directories --directory-prefix ${BLAT_DOWNLOAD_DIR} ${BLAT_URL}
+	(cd ${BLAT_DOWNLOAD_DIR}; unzip -o  ${BLAT_ARCHIVE})
+	@echo "BLAT sources downloaded in ${BLAT_DOWNLOAD_DIR}"
+
+BLAT_SRC_DIR=${BLAT_DOWNLOAD_DIR}/blatSrc
+_compile_blat:
+	@echo
+	@echo "Compiling BLAT sources in ${BLAT_SRC_DIR}"
+	(cd ${BLAT_SRC_DIR}; make)
+	@echo "BLAT executables are in ${BLAT_DOWNLOAD_DIR}"
+
 
 
 ################################################################
 ## HOMER
-HOMER_CONFIG_URL=http://biowhat.ucsd.edu/homer/configureHomer.pl
+HOMER_CONFIG_URL=http://homer.salk.edu/homer/configureHomer.pl
+#HOMER_CONFIG_URL=http://biowhat.ucsd.edu/homer/configureHomer.pl
 HOMER_BASE_DIR=${SRC_DIR}/HOMER
 install_homer: _download_homer _install_homer
 
