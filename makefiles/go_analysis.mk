@@ -58,7 +58,7 @@ GO_DESC=${GO_DIR}/GO_description.tab
 parse_go:
 	@echo
 	@echo "Parsing obo file	${GO_DIR}/${GOBO}"
-	${PYTHON} ${SCRIPT} parse_go -f ${GO_DIR}/${GOOBO}
+	${PYTHON} ${SCRIPT} parse_go -f ${GO_DIR}/${GOOBO} --output_dir ${GO_DIR}
 	@echo "GO term descriptions	${GO_DESC}"
 	@echo "GO term relations	${GO_REL}"
 
