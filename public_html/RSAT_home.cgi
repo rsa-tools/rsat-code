@@ -156,16 +156,18 @@ print <<EndText;
 
     <td>
     <p><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> in <b><a target='_blank' href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target="_blank"> NAR web software issue 2015</a>
-
-	<p><i class="fa fa-book fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsa-tools.github.io/tutorial_eccb14/index.html" target="tools">ECCB'14</a></b> and <a href="http://rsa-tools.github.io/teaching/index.html" target="tools"><b>all training material</b></a> 
+<pre>
+	 </pre>
+	<p><i class="fa fa-graduation-cap fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsa-tools.github.io/tutorial_eccb14/index.html" target="tools">ECCB'14</a></b> and <a href="http://rsa-tools.github.io/teaching/index.html" target="tools"><b>all training material</b></a> 
 	
-	<p><i class="fa fa-book fa-lg"></i> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font>
+	<p><i class="fa fa-graduation-cap fa-lg"></i> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font>
 		  
 	<!--p><li> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <br/> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li-->
 	
-	<p><i class="fa fa-rss-square fa-lg"></i> Stay Tuned !! <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><b>RSS feed</b></a> to all RSAT news.
+	<!--p><i class="fa fa-rss-square fa-lg"></i> Stay Tuned !! <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><b>RSS feed</b></a> to all RSAT news. -->
 	  
-	 <p><i class="fa fa-star fa-lg"></i> Also try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms">
+	 <p><pre>
+	 </pre><i class="fa fa-star fa-lg"></i> Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms">
     </td>
   </tr>
 
