@@ -112,13 +112,6 @@ align.leaf.and.cluster <- function(child1,
     ## Get the offset
     offset <- as.vector(compa.table[compa.nb, "offset"])
 
-    ## Complete the attributes table
-    if(nodes.attributes == TRUE){
-      ## Save the swtich flag and the strand of the alignment (taken from compare-matrices)
-      internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["Switch_Flag"]] <<- switch.ids
-      internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["Strand"]] <<- strand
-    }
-
     ## Assign values for the cases (1-8)
     ## Each case depends if the Ids were inverted, if the strand of the comparison between the closest motifs
     ## is R or D, and in the orientation of the previously aligned motif.
@@ -164,11 +157,6 @@ align.leaf.and.cluster <- function(child1,
         }
       }
     }
-
-#     print ("Case 2")
-#     print (paste("ID1 (aligned):", aligned, "ID2 (new):", new.node))
-#     print (paste("Strand:", strand, " -- Already Aligned:", motifs.info[[aligned]][["strand"]]))
-#     print ("------------------------------------------------------------------------------------------")
 
     ## In some cases it is required to invert the alignment (change its orientation)
     ## in order to align the new.node leaf and store in the motifs.info variable
