@@ -4109,7 +4109,7 @@ sub ParametersTable{
     <table id="parameters_table" style="width:1000px;">
       <thead>
 	<tr>
-	  <th class="tab_col">Nb Input motifs</th>
+
 	  <th class="tab_col">Nb Clusters Found</th>
 	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
 	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
@@ -4119,8 +4119,13 @@ sub ParametersTable{
 	</tr>
       </thead>
       <tbody>
+        <tr>
+	  <th class="tab_col">Nb Input motifs</th>
+        </tr>
 	<tr>
 	  <td class="par_text">'.$number_of_motifs.'</td>
+        </tr>
+        <tr>
 	  <td class="par_text">'.$number_of_clusters.'</td>
 	  <td class="par_text">'.$hclust_method.'</td>
 	  <td class="par_text">'.$main::param{matrix_compa_score}.'</td>
@@ -4298,7 +4303,7 @@ sub InsertSmallForest {
     $small_forest .= '
 
     <div class="display_clusters"><h2>Clusters found</h2>
-       <h3>Few clusters displayed below.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></h3>
+       <h3 style="color:red">Sketch picture restricted to the --x-- first clusters.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></h3>
     </div>
     ';
 
@@ -4346,6 +4351,8 @@ sub InsertSmallForest {
 	    last; 
 	}
     }
+    $small_forest =~ s/--x--/$cluster_sum/;
+
 
     ## Insert one <div> </div> + <script> </script> for each cluster depicted  
     $small_forest .= $div."\n".'<script type="text/javascript">'."\n".$small_tree."\n".'</script>'."\n";
@@ -4366,7 +4373,7 @@ sub InsertHeatMap {
 	<div id="Heatmap_view" class="tab" style="width:1025px;padding:0px 0px 20px 0px;margin-top:0px;display:none;">
 		<h2 style="margin:0px">Heatmap View</h2>
                 <p><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a></p>
-		<img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'">
+		<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'"><img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'"></a>
 	</div>
     ';
 
