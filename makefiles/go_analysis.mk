@@ -2,39 +2,92 @@
 ## Run GO enrichment analysis
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=${RSAT}/makefiles/go_analysis.mk
+MAKEFILE=makefiles/go_analysis.mk
 PYTHON=python2.7
-SCRIPT=${RSAT}/python-scripts/go_analysis
+#PYTHON=python -m cProfile -o profiling_result.txt
+SCRIPT=${RSAT}/python-scripts/go_analysis.py
 
+
+ORG=mycoplasma_genitalium_g37
+ORGANISMS=
 
 ################################################################
-## Download reference data sets from RegulonDB
+## Help messages
 
-download_regulondb: download_regulondb_tf2gene download_regulondb_operons
+## Generic help about GO functions
+help:
+	${PYTHON} ${SCRIPT} --help
 
-## Download gene-factor relationships from RegulonDB
-RDB_TF_GENE=network_tf_gene.txt
-RDB_TF_GENE_URL=http://regulondb.ccg.unam.mx/menu/download/datasets/files/${RDB_TF_GENE}
-RDB_DIR=results/regulonDB
-download_regulondb_tf2gene:
+
+## Get help about one particular task
+TASK=download_go
+help_task:
+	${PYTHON} ${SCRIPT} ${TASK} --help
+
+################################################################
+## Get GO annotations for each gene
+##
+
+# ## Note: to get go annotation we first need to call the mgen target in
+# ## order to retrieve protein to GO relations.
+
+
+# install_goatools:
+# 	git clone https://github.com/tanghaibao/goatools.git 
+# go_all: getGOOboFile gene2GOAnnotation 
+## For each GO term associated with a gene g
+## We now need to declare also the relations between ancestor(t) and
+## g.
+
+################################################################
+## First we need the full GO ontology (in obo format). 
+GOOBO=gene_ontology_ext.obo
+GOOBO_URL=http://www.geneontology.org/ontology/obo_format_1_2/${GOOBO}
+GOSLIM=goslim_generic.obo
+GOSLIM_URL=http://www.geneontology.org/GO_slims/${GOSLIM}
+GO_DIR=results/GO
+download_go:
 	@echo
-	@echo "Downloading RegulonDB TF-gene network"
-	@mkdir -p ${RDB_DIR}
-	@wget --no-clobber --no-host-directories --directory-prefix ${RDB_DIR} ${OPT} ${RDB_TF_GENE_URL}
-	@echo "	${RDB_DIR}/${RDB_TF_GENE}"
+	@echo "Creating GO Directory	${GO_DIR}"
+	@mkdir -p ${GO_DIR}
+	${PYTHON} ${SCRIPT} download_go -o ${GO_DIR}/${GOOBO}
 
-## Download operons from RegulonDB
-RDB_OPERONS=OperonSet.txt
-RDB_OPERONS_URL=http://regulondb.ccg.unam.mx/menu/download/datasets/files/${RDB_OPERONS}
-download_regulondb_operons:
+## Parse the content of the obo-formatted file
+GO_REL=${GO_DIR}/GO_relations.tab
+GO_DESC=${GO_DIR}/GO_description.tab
+parse_go:
 	@echo
-	@echo "Downloading RegulonDB operons"
-	@mkdir -p ${RDB_DIR}
-	@wget --no-clobber --no-host-directories --directory-prefix ${RDB_DIR} ${OPT} ${RDB_OPERONS_URL}
-	@echo "	${RDB_DIR}/${RDB_OPERONS}"
+	@echo "Parsing obo file	${GO_DIR}/${GOBO}"
+	${PYTHON} ${SCRIPT} parse_go -f ${GO_DIR}/${GOOBO}
+	@echo "GO term descriptions	${GO_DESC}"
+	@echo "GO term relations	${GO_REL}"
 
-## Generate a TF-regulon network from RegulonDB
-regulondb_tf_gene_network:
+## Parse the content of the obo-formatted file
+get_annotations:
 	@echo
-	@echo "Preparing gene - TF relationships"
-	@add-gene-info -org ${ORG} -i ${RDB_DIR}/${RDB_TF_GENE} -col 
+	@echo "Getting gene annotations from Ensembl REST Web services"
+	${PYTHON} ${SCRIPT} get_annotations -org ${ORG}
+
+## Expand GO annotations, i.e. the gene-GO associations are
+## transmitted from each class to all its ancestral classes
+GO_ANNOT=annotations_table_${ORG}.tab
+expand_annot:
+	@echo
+	@echo "Expading gene annotations from each class to its ancestor classes"
+	${PYTHON} ${SCRIPT} expand -a ${GO_ANNOT} -d ${GO_DESC} -r ${GO_REL}
+
+expand_org:
+	@echo
+	@echo "Expading gene annotations for organism ${ORG}"
+	${PYTHON} ${SCRIPT} expand -org ${ORG}
+
+ORG_DIR=results/ensembl_genomes/${ORG}
+gene2go_one_species:
+	@echo "Collecting gene-GO relationships for organism	${ORG}"
+	@grep -w GO ${ORG_DIR}/proteins_xrefs.tab   | cut -f1,4 > ${ORG_DIR}/gene2GO.tab
+	@echo "	${ORG_DIR}/gene2GO.tab"
+	@echo
+	@echo "Expanding GO annotations to ancestor classes for	${ORG}"
+	@${PYTHON} ${SCRIPT} ancestor -i ${ORG_DIR}/gene2GO.tab -g ${GO_DIR}/gene_ontology_ext.obo -o ${ORG_DIR}/gene2GO_full.tab
+	@echo "	${ORG_DIR}/gene2GO_full.tab"
+
