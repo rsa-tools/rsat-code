@@ -12,14 +12,14 @@ def go_parser():
 
     #Task 1 : download_go
     parser_dl_go = subparsers.add_parser("download_go",
-                                         description="Download the GO term definitions from the geneontoloy web site "
+                                         description="Download the GO term definitions from the gene ontoloy web site "
                                               "http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology_ext.obo")
     parser_dl_go.add_argument('-o', '--outputFile',
                               metavar='<file>',
                               type=str,
                               help='Output file.',
                               dest='outFile',
-                              default='GO_hierarchy')
+                              default='GO_hierarchy.obo')
     
     #Task 2 : parse_go
     parser_parse_go = subparsers.add_parser("parse_go",

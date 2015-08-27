@@ -419,7 +419,7 @@ package main;
       $matrix->calcConsensus();
     }
 
-    ## Add flanks
+    ## Add empty columns at the flanks of the input marices
     if ($flanks) {
       my @empty_col = ();
       my $empty_value = 0;
@@ -432,6 +432,7 @@ package main;
 	$matrix->add_column("left",@empty_col);
       }
     }
+
     ## Compute reverse complement
     $matrix->reverse_complement() if ($rc);
     $matrix->force_attribute("pseudo", $pseudo_weight);

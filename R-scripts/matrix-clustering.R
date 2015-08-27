@@ -420,8 +420,8 @@ i <- sapply(1:length(clusters), function(nb){
                                                   thresholds = thresholds,
                                                   method = hclust.method,
                                                   metric = metric,
-                                                  nodes.attributes = TRUE,
-                                                  intermediate.alignments = FALSE)
+                                                  nodes.attributes = FALSE,
+                                                  intermediate.alignments = TRUE)
                intern.alignment <- alignment.cluster$intermediate.alignments
 
                ## Export the table with the intermediates alignment information
