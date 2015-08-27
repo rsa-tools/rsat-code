@@ -260,6 +260,7 @@ package main;
   ## Hash with the path to tha aligned logos
   local %aligned_logos_path = ();
   local %alignment_info = ();
+  local %cluster_info_width = ();
 
   ## Hash with the cluster information
   ## required to the HTML tree
@@ -1881,6 +1882,7 @@ sub ReadClusterComposition {
     my ($node, $name, $cluster, $strand, $offset_l, $offset_r, $width) = split ("\t");
     push(@{$cluster_nodes{$cluster}}, $node);
     ## Store the ID, strand and offset of each aligned motif
+    $cluster_info_width{$cluster} = $width;
     $alignment_info{$node}{name} = $name;
     $alignment_info{$node}{strand} = $strand;
     $alignment_info{$node}{offset_left} = $offset_l;
@@ -2050,7 +2052,8 @@ sub Add_attributes_to_JSON() {
       }
       close(LVL_JSON);
 
-      ## Open the JSON file produced by R   
+      ## Open the JSON file produced by R  
+      my $cluster_width = 0;
       my $JSON = $main::outfile{prefix}."_trees/tree_".$cluster.".json";
       &RSAT::message::TimeWarn("JSON file", $JSON, $cluster ) if ($main::verbose >= 2);
       open(JSON, $JSON) || &RSAT::error::FatalError($JSON, "Cannot open the JSON file");
@@ -2059,32 +2062,9 @@ sub Add_attributes_to_JSON() {
 	  chomp;
 	  $Flag = 0;
 	  $line = $_;
-	  
-	  # Add the consensus to the json file to be displayed in the tree
-	  if ($line =~ /\"children\":/) {
-	      $children++;
-	      $Add = "";
-	      if ($children > 1) {
-		  my $folder = $levels_JSON[$children-2];
 
-		  if (exists($merged_consensuses_files{$folder})) {		
-		      my $branch = $folder;
-		      $branch =~ s/\D+//g;
-		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
-		      my $id_json = $cluster."_".$folder;
-		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
-		      $Add .= " \"branch\" : ".$branch.",\n";
-		      $Add .= " \"id\" : \"".$id_json."\",\n";
-		      $Add .= " \"size\" : ".$merged_consensuses_files{$folder}{$cluster}{width}.",\n";
-		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
-		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
-		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
-		  }
-		  push(@Parsed_JSON, $Add."\n");
-	      }
-	  }
-
-	  ### Search the pattern separating the matrices names
+	  ################################################################
+	  ## Search the pattern separating the matrices names (tree leafs)
 	  if ($line =~ /\s*\"label\":\s*\"(.+)\",/) {
 	      $Flag = 1;
 	      $Add_this = "";
@@ -2114,7 +2094,37 @@ sub Add_attributes_to_JSON() {
 	      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
 	      $Add_this .= ",\n \"title\" : \"".$motifs_ID_unique{$M1}."\"";
 	      $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
+
+
 	  }
+	  
+	  ################################################################
+	  ## Add the consensus to the json file to be displayed in the tree (tree nodes)
+	  if ($line =~ /\"children\":/) {
+	      $children++;
+	      $Add = "";
+	      if ($children > 1) {
+		  my $folder = $levels_JSON[$children-2];
+
+		  if (exists($merged_consensuses_files{$folder})) {		
+		      my $branch = $folder;
+		      $branch =~ s/\D+//g;
+		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
+		      my $id_json = $cluster."_".$folder;
+		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
+		      $Add .= " \"branch\" : ".$branch.",\n";
+		      $Add .= " \"id\" : \"".$id_json."\",\n";
+		      # $Add .= " \"size\" : ".$merged_consensuses_files{$folder}{$cluster}{width}.",\n";
+		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
+		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
+		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
+		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
+		  }
+		  push(@Parsed_JSON, $Add."\n");
+	      }
+	  }
+
+
 	  push(@Parsed_JSON, $line."\n");
 	  
 	  ### Add the new line
@@ -2482,8 +2492,11 @@ sub Merge_matrices() {
 		my $merge_level = $folder;
 		$main::outfile{int_align_offset} = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_".$merge_level."_dataframe.tab";
 		my @level_motifs = ();
+		my $node_counter = 0;
+		my $inverted_motif_counter = 0;
 		my ($int_align_dataframe) = &OpenInputFile($main::outfile{int_align_offset});
 		while (<$int_align_dataframe>) {
+		    $node_counter++;
 		    chomp;
 		    my $line = $_;
 		    my @split_line = split("\t", $line);
@@ -2491,44 +2504,90 @@ sub Merge_matrices() {
 		    #$motif_id =~ s/\./-/;
 		    my $motif_strand = $split_line[3];
 		    my $motif_aligned_cons = $split_line[4];
+		    $motif_width = length($motif_aligned_cons);
 		    my $offset_up = $split_line[6];
 		    my $offset_down = $split_line[7];
+		    my $inverted_flag = 0;		  
+		 
+		    
+		    ## Inverted alignment test
+		    if($alignment_info{$motif_id}{strand} eq $motif_strand){ 
+			$inverted_flag = 0; 
+		    }else{
+			$inverted_motif_counter++;
+		    }
 
 		    $width_internal_alignments{$cluster}{$merge_level} = length($motif_aligned_cons);
 		    $int_align_info{$cluster}{$merge_level}{$motif_id}{offset_up} = $offset_up;
 		    $int_align_info{$cluster}{$merge_level}{$motif_id}{offset_down} = $offset_down;	
 		    $int_align_info{$cluster}{$merge_level}{$motif_id}{strand} = $motif_strand;	
+		    $int_align_info{$cluster}{$merge_level}{$motif_id}{width} = $motif_width;	
 		    push(@level_motifs, $motif_id);
 		}
-		close $int_align_dataframe;	    
+		close $int_align_dataframe;
 		unlink($main::outfile{int_align_offset});
-		
+
+		## Detect the nodes that should be inverted
+		$invert_node_motifs_flag = 0;
+		if ($inverted_motif_counter == $node_counter){
+		    $invert_node_motifs_flag = 1;
+		}
+	       
+
 		## For each level add the gaps to the matrices
 		foreach my $motif (@level_motifs) {
 		    
 		    ## Reset the variables
-		    my $offset_left = $int_align_info{$cluster}{$merge_level}{$motif}{offset_up};
-		    my $offset_right = $int_align_info{$cluster}{$merge_level}{$motif}{offset_down};
+		    my $offset_left = $alignment_info{$motif}{offset_left};
+		    my $offset_right = $alignment_info{$motif}{offset_right};
 		    my $strand = $int_align_info{$cluster}{$merge_level}{$motif}{strand};
 		    my $file_name = $alignment_info{$motif}{file_name};
-		    
+		    my $width = $int_align_info{$cluster}{$merge_level}{$motif}{width};
+
+
+		    ################################################################
+		    ################################################################
 		    ## Run the convert-matrix command to add the empty columns to the logos
-		    if ($strand eq "D") {
-			
-			## Add the empty columns
-			&Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");			
-		    } else {
-			
-			## First convert the matrix to reverse complement 
-			my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
-			&Rev_Comp_Motif($file_name, $temp_mat);
-			
-			## Then add the gaps
-			&Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");
-			unlink($temp_mat);
+		    ## Case 1: The motifs in the current node have initially the correct orientation
+		    if($invert_node_motifs_flag == 0){
+			if ($strand eq "D") {
+
+			    ## Add the empty columns
+			    &Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");	
+		
+			} else {
+			    
+			    ## First convert the matrix to reverse complement 
+			    my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
+			    &Rev_Comp_Motif($file_name, $temp_mat);
+			    
+			    ## Then add the gaps
+			    &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");
+			    unlink($temp_mat);
+
+			}
+
+		    ## Case 2: The motifs in the current node have initially the wrong orientation
+		    } else{
+			if ($strand eq "D") {
+
+			    ## First convert the matrix to reverse complement 
+			    my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
+			    &Rev_Comp_Motif($file_name, $temp_mat);
+			    
+			    ## Then add the gaps
+			    &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");
+			    unlink($temp_mat);
+					
+			} else {
+
+			    ## Add the empty columns
+			    &Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");				    
+
+			}
 		    }
 		}
-		
+
 		my @file_names = @level_motifs;
 		## Get the names of the files of each level
 		foreach my $m (@file_names) {
@@ -2539,8 +2598,6 @@ sub Merge_matrices() {
 		## Merge the matrices and create a single matrix
 		my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_cat.tf";
 		my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
-
-		# die " \n\n\n ---> ".$merged_mat_file."\n";
 
 		my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_trimmed_matrices.tf";
 		$cmd = "cat ".$files." >".$cat_file;
@@ -2554,7 +2611,8 @@ sub Merge_matrices() {
 		unlink($cat_file);
 		foreach my $file (@file_names) {
 		    unlink($file);
-		}   
+		}  
+		
 
 		## Assign the motif name
 		my @temp = split(/_/, $cluster);
@@ -2572,7 +2630,7 @@ sub Merge_matrices() {
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
 		## Calculate the IC content and remove low IC columns
-		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, $trim_threshold);
+		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, -2);
 
 		## Create branch-wise logos
 		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_trimmed;
@@ -2586,13 +2644,14 @@ sub Merge_matrices() {
 		$merged_consensuses_files{$folder}{$cluster}{motif_name} = $motif_name;
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
 		
-		
+       	
 		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
-		
 		my $cons = `more $mat_file | grep '^DE'`;
 		chomp($cons);
 		$cons =~ s/^DE\s+//;
+		$cons =~ s/-//g;
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
+
 	    }
 	} else {
 
@@ -2612,7 +2671,7 @@ sub Merge_matrices() {
 	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$cluster."_matrices"; 
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 	}
-    } 
+    }
 }
 
 
@@ -2686,7 +2745,7 @@ sub Merge_root_matrices() {
 		push(@level_motifs, $motif_id);
 	    }
 	    close $int_align_dataframe;	    
-	    unlink($main::outfile{int_align_offset});
+	    #unlink($main::outfile{int_align_offset});
 
 	    if (scalar(@level_motifs) == scalar(@folder_merged_matrices)+1) {
 
@@ -2712,7 +2771,7 @@ sub Merge_root_matrices() {
 			
 			## Then add the gaps
 			&Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");
-			unlink($temp_mat);
+			#unlink($temp_mat);
 		    }
 		}
 
@@ -3646,7 +3705,7 @@ sub ReportStyleCSS{
   
 
   .cluster_division {
-	background-color: #FCA0A0;
+	background-color: #819FF7;
 	float: left;
 	margin: 5px 3px 3px 3px;
 	width: 75px;
@@ -3659,7 +3718,7 @@ sub ReportStyleCSS{
 	padding: 4px;
 	cursor: pointer;
 	border-radius:5px;
-	border: 1px solid red;
+	border: 1px solid blue;
   }
   
   
@@ -3747,7 +3806,7 @@ sub ReportStyleCSS{
   }
 
   .Section_button {
-  background-color: #FCA0A0;
+  background-color: #819FF7;
   float: left;
   margin-top: 2px;
   margin-bottom: 2px;
@@ -3951,8 +4010,8 @@ sub ReportStyleCSS{
   }
 
   #hide_all_button{
-    background-color: #FCA0A0;
-    border: 1px solid red;
+    background-color: #819FF7;
+    border: 1px solid blue;
   }
 
   .selected_cluster {
@@ -4041,32 +4100,55 @@ sub ParametersTable{
   } 
 
 
-
+#id="parameters_table"
   my $par_table = '
   <!-- Div with the table of selected parameters-->
-  <div id="Par_tab_button" class="button_click Section_button"><strong>Parameters Table</strong></div>
+  <div id="Par_tab_button" class="button_click Section_button"><strong>Results Summary</strong></div>
   <div id="Par_tab" class="tab" style="margin-bottom:15px;display:none">
-    <h2 style="margin-top: 0px;margin-bottom: 5px;">Summary</h2>
-    <table id="parameters_table" style="width:1000px;">
-      <thead>
-	<tr>
-	  <th class="tab_col">Nb Input motifs</th>
-	  <th class="tab_col">Nb Clusters Found</th>
-	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
-	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
-	  <th class="tab_col">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></th>
-	  <th class="tab_col">Download Link</th>
-	  <th class="tab_col">Clusters in TRANSFAC format</th>
-	</tr>
-      </thead>
+    <h2 style="margin-top: 0px;margin-bottom: 5px;">Results Summary</h2>
+    <table  style="width:200px;">
+
       <tbody>
+        <tr>
+	  <th class="tab_col">Nb Input motifs</th>
+        </tr>
 	<tr>
 	  <td class="par_text">'.$number_of_motifs.'</td>
+        </tr>
+	<tr>
+	  <th class="tab_col">Nb Clusters Found</th>
+	</tr>
+        <tr>
 	  <td class="par_text">'.$number_of_clusters.'</td>
+	</tr>
+        <tr>
+ 	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
+        </tr>
+	<tr>
 	  <td class="par_text">'.$hclust_method.'</td>
+        </tr>
+	<tr>
+ 	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
+	</tr>
+        <tr>
 	  <td class="par_text">'.$main::param{matrix_compa_score}.'</td>
+	</tr>
+	<tr>
+ 	  <th class="tab_col">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></th>
+	</tr>
+	<tr>
 	  <td class="par_text">'.$threshold_values_html.'</td>
+	</tr>
+	<tr>
+ 	  <th class="tab_col">Download Link</th>
+	</tr>
+	<tr>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
+	</tr>
+	<tr>
+ 	  <th class="tab_col">Clusters in TRANSFAC format</th>
+	</tr>
+	<tr>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
 	</tr>
       </tbody>
@@ -4239,7 +4321,7 @@ sub InsertSmallForest {
     $small_forest .= '
 
     <div class="display_clusters"><h2>Clusters found</h2>
-       <h3>Few clusters displayed below.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></h3>
+       <h3 style="color:red">Sketch picture restricted to the --x-- first clusters.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></h3>
     </div>
     ';
 
@@ -4287,6 +4369,8 @@ sub InsertSmallForest {
 	    last; 
 	}
     }
+    $small_forest =~ s/--x--/$cluster_sum/;
+
 
     ## Insert one <div> </div> + <script> </script> for each cluster depicted  
     $small_forest .= $div."\n".'<script type="text/javascript">'."\n".$small_tree."\n".'</script>'."\n";
@@ -4307,7 +4391,7 @@ sub InsertHeatMap {
 	<div id="Heatmap_view" class="tab" style="width:1025px;padding:0px 0px 20px 0px;margin-top:0px;display:none;">
 		<h2 style="margin:0px">Heatmap View</h2>
                 <p><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'">Distance table</a>  |  <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'">PDF</a></p>
-		<img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'">
+		<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_pdf}).'"><img id="heatmap" src="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_jpg}).'"></a>
 	</div>
     ';
 
@@ -4319,18 +4403,6 @@ sub InsertHeatMap {
 ## Open the <scrip> tag for JQuery code
 sub OpenScriptJQuery {
   $script_jquery = '<script>
-// Dynamic parameter table
-$(document).ready( function () {
-    $(\'#parameters_table\').DataTable({
-        "paging":   false,
-        "searching": false,
-        "ordering": false,
-        "info":     false,
-        "columnDefs": [
-	    { "width": "11%", "targets": [0,1,2,3,4,5,6] }
-	]		
-    });
-});
 
 // Dynamic alignment table
 $(document).ready( function () {
