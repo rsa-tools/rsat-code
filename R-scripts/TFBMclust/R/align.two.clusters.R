@@ -86,13 +86,6 @@ align.two.clusters <- function(child1,
     prev.strand.1 <- motifs.info[[id1]][["strand"]]
     prev.strand.2 <- motifs.info[[id2]][["strand"]]
 
-    ## Complete the attributes table
-    if(nodes.attributes == TRUE){
-      ## Save the swtich flag and the strand of the alignment (taken from compare-matrices)
-      internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["Switch_Flag"]] <<- switch.ids
-      internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["Strand"]] <<- strand
-    }
-
     ## Assign values for the cases (1-8)
     ## Each case depends if the strand of the comparison between the closest motifs
     ## is R or D, and if the strand of the closest motifs is in D or D orientation.
@@ -134,11 +127,6 @@ align.two.clusters <- function(child1,
         case <- 8
       }
     }
-
-#     print ("Case 3")
-#     print (paste("ID1:", id1, "ID2:", id2))
-#     print (paste("Strand:", strand, " -- Prev Strand 1:", prev.strand.1, " -- Prev Strand 2:", prev.strand.2))
-#     print ("------------------------------------------------------------------------------------------")
 
     ## In some cases it is required to invert the alignment (change its orientation)
     ## in order to align properly the two clusters.
