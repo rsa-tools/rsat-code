@@ -38,5 +38,5 @@ if args.task == 'enrichment':
     print('\n' + time.strftime('%Y-%m-%d %H:%M:%S') + '\t' + "Start")
     go_func.enrichment()
 
-print('\n' + time.strftime('%Y-%m-%d %H:%M:%S') + '\t' + "Finish")
+print('\n' + time.strftime('%Y-%m-%d %H:%M:%S') + '\t' + "Job done")
 print("\n--- %.*f seconds ---" % (3, (time.time() - start_time)))
