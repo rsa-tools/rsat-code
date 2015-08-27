@@ -75,13 +75,12 @@ check.param()
 
 #####################################
 ## Example for Debugging ############
-#
+
 # infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/rank_mean/peak-motifs_Oct4_hclust-average_Ncor0.5_cor0.7_tables/pairwise_compa.tab"
 # description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/rank_mean/peak-motifs_Oct4_hclust-average_Ncor0.5_cor0.7_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
-
 
 ######################################
 ######################################
@@ -178,89 +177,6 @@ if(number.of.motifs > 1){
   clusters <<- lapply(clusters, function(x){
     get.id(x, global.description.table)
   })
-
-
-  #######################################################################################
-  #######################################################################################
-
-#   tree <<- hclust.motifs(dist.matrix, hclust.method=hclust.method)
-#
-#   Ncor.values <- seq(0, 1, by = 0.1)
-#   cor.values <- seq(0, 1, by = 0.1)
-#
-# a <-  lapply(Ncor.values, function(m1){
-#     sapply(cor.values, function(m2){
-#       th <- list(Ncor =  m1, cor = m2)
-#
-#       ###########################################################
-#       ## Initially align all the motifs and search the cluster
-#       ## After each cluster will be aligned separately
-#       alignment <- align.motifs(tree,
-#                                 global.description.table,
-#                                 global.compare.matrices.table,
-#                                 thresholds = th,
-#                                 method = hclust.method,
-#                                 metric = metric,
-#                                 nodes.attributes=TRUE,
-#                                 intermediate.alignments=FALSE)
-#       alignment.list <- alignment$motifs.alignment
-#       alignment.attributes <- alignment$node.attributes
-#
-#       ## Reset the labels
-#       tree$labels <- sapply(tree$labels, function(x){
-#         paste(alignment.list[[x]][["consensus_d"]], alignment.list[[x]][["name"]], sep="   " )
-#       })
-#
-#       #############################################
-#       ## Define the clusters: Bottom-up approach
-#       ## and get their motif IDs
-#       clusters <<- find.clusters(alignment.attributes, tree)
-#
-#       print(length(clusters))
-#     })
-#   })
-#
-#
-# a <- t(as.data.frame(a))
-# rownames(a) <- as.character(Ncor.values)
-# colnames(a) <- as.character(cor.values)
-#
-# blue.white.red <- function() {
-#   blue.levels <- c(rep(127,127), 126:0)/128
-#   red.levels <- c(0:127,rep(127,127))/128
-#   green.levels <- c(0:127, 126:0)/128
-#   palette <- rgb(red.levels, green.levels, blue.levels)
-#   return(palette)
-# }
-#
-#
-# grad <- colorRampPalette(c("#66CCFF","blue"))(100)
-#
-#
-# heatmap.2(a,
-#           dendrogram = "none",
-#           Rowv = FALSE,
-#           Colv = FALSE,
-#           trace = "none",
-#           symm=TRUE,
-#           col = grad,
-#
-#           cellnote=a,
-#           notecol="black",
-#
-#           key = TRUE,
-#           keysize = 2,
-#           key.xlab = "Nb clusters",
-#           key.ylab = "",
-#           key.title = "Color key",
-#           density.info = "none"
-#           )
-#
-
-
-  #######################################################################################
-  #######################################################################################
-
 
 
   ## Export a table with the cluster names and its elements
@@ -504,8 +420,8 @@ i <- sapply(1:length(clusters), function(nb){
                                                   thresholds = thresholds,
                                                   method = hclust.method,
                                                   metric = metric,
-                                                  nodes.attributes = FALSE,
-                                                  intermediate.alignments = TRUE)
+                                                  nodes.attributes = TRUE,
+                                                  intermediate.alignments = FALSE)
                intern.alignment <- alignment.cluster$intermediate.alignments
 
                ## Export the table with the intermediates alignment information
