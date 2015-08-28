@@ -489,6 +489,27 @@ package main;
 #  local @rank_metrics = ("SW", "dEucl"); ## Metrics on which a rank can be computed
 #  local @rank_metrics = @supported_metrics; ## Metrics on which a rank can be computed
   local @rank_metrics = (); ## Metrics on which the rank has to be computed (will be filled according to selected metrics)
+    
+    ## Metrics not supported by the quick scan mode
+    local %quick_forbidden_metrics = (
+    "NcorS" => 1,
+    "logoDP" => 1,
+    "logocor" => 1,
+    "Nlogocor" => 1,
+    "Icor" => 1,
+    "NIcor" => 1,
+    "cov" => 1,
+    "dEucl" => 1,
+    "NdEucl" => 1,
+    "NsEucl" => 1,
+    "SSD" => 1,
+    "SW" => 1,
+    "NSW" => 1,
+    "all_metrics" => 1,
+    "match_rank" => 1,
+    "zscores" => 1
+    );
+    $quick_forbidden_metrics = join(",", sort(keys(%quick_forbidden_metrics)));
 
   ## Return fields
   local @supported_return_fields = (@supported_metrics, ## Any supported metrics is a valid return field
@@ -520,6 +541,21 @@ package main;
   local $supported_return_fields = (join ",", @supported_return_fields);
   local %return_field = ();
 
+    ## Return field not supported by the quick scan mode
+    local %quick_forbidden_field = (
+    %quick_forbidden_metrics,## forbidden metrics can be asked as return field
+    'matrix_name'=>1,
+    'matrix_ac'=>1,
+    'pos' => 1,
+    'consensus'=>1,
+    'graph'=>1,
+    'alignments_pairwise'=>1,
+    'alignments_1ton'=>1,
+    'alignments'=>1,
+    'logos'=>1,
+    'all'=>1
+    );
+    $quick_forbidden_fields = join(",", sort(keys(%quick_forbidden_fields)));
 
   ## Supported fields for sorting the matches
   local %supported_sort_field = ("offset"=>"asc",
@@ -551,6 +587,7 @@ package main;
 #  $sort_field = "Icor";
 #  local $sort_field = "SW";
   local $sort_field;
+    
 
   ## Matches
   local %match_score = (); ## key = match ID, value = match score (sorting score)
@@ -608,6 +645,9 @@ package main;
 #  local $triangle = 0;
   local $merging_stat = "mean";
 
+    ## delegate to quick version
+  local $quick_scan = 0;
+  local $quick_scan_if_possible = 0;
 
   ## Fields for the matrix description table
   ##
@@ -653,6 +693,11 @@ package main;
     delete($return_field{all});
     delete($return_field{direction});
   }
+    
+    ## Check if quick counting mode is possible
+    if ($quick_scan_if_possible) {
+        $quick_scan = &CheckQuickScan();
+    }
 
   ## Check that at least one field is selected for the option
   ## "-labels".
@@ -1487,6 +1532,92 @@ package main;
     }
     close $main::matrix_desc;
   }
+  
+  #### TRY delegating to QUICK version
+ if ($quick_scan) {
+ 
+  ## compare-matrices-quick location
+   my $quick_cmd_path =  &RSAT::server::GetProgramPath("compare-matrices-quick", 0, $ENV{RSAT_BIN}) || "";
+  $quick_cmd_path = &RSAT::util::trim($quick_cmd_path);
+  unless (-e $quick_cmd_path) {
+    &RSAT::message::Warning("Cannot compare-matrices-quick because",
+			    "compare-matrices-quick is not found in the expected path",
+			    $quick_cmd_path);
+  }
+  
+  ## output file for quick mode
+  $main::outfile{quick_results} = $main::outfile{prefix}."_quick.tab";
+    
+  &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
+  my $cmd = $quick_cmd_path." -v 10"; 
+  $cmd .= " -file1 ".$infile{file1};
+  $cmd .= " -file2 ".$infile{file2};
+  $cmd .= " -lth_ncor1 -1";
+  $cmd .= " -lth_ncor2 -1";
+  $cmd .= " -lth_ncor ".$lth{ncor};
+  $cmd .= " -lth_cor ".$lth{cor};
+  $cmd .= " -lth_w ".$lth{w};
+  $cmd .= " -mode matches";
+  $cmd .= " -o ".$main::outfile{quick_results};
+  $cmd .= " > /dev/null";
+  #$cmd .= "; "."text-to-html -i ".$main::outfile{quick_results};
+  #$cmd .= " -o ".$main::outfile{quick_results}.".html";
+  &RSAT::util::one_command($cmd, 1,"");
+  &RSAT::message::TimeWarn("Matrix comparison table with quick", $main::outfile{quick_results}) if ($main::verbose >= 2);
+  
+  ## read the file and load it into memory
+  ## quick version is by default -uth offset_rank 1 (only the best matching pair is returned)
+  my $comments_quick ="";
+  my %score =();
+  my $l = 0;
+  open QUICK, "$main::outfile{quick_results}"; 
+  while (<QUICK>) {
+      @out_fields = ();
+      if (/^#/) {
+		$comments_quick.=$_;
+		next;
+      }
+      next unless (/\S/);		## Skip empty lines
+      if (/^;/) {
+		$comments_quick.=$_;
+		next;
+      }
+      	$l++;
+      	my @line = split (/\t/,$_);
+      	#"#id1\tid2\tname1\tname2\tcor\tNcor\tNcor1\tNcor2\tw1\tw2\tw\tW\tWr\twr1\twr2\tstrand\toffset\tuncounted\n");
+      	## Load data as the slow version output line
+      	push (@out_fields, $line[0],$line[1]);
+      	push (@out_fields, $line[2],$line[3]) if ($return_field{matrix_name});
+      	push (@out_fields, sprintf("%.3f", $line[4])) if ($return_field{cor});
+	  	push (@out_fields, sprintf("%.3f", $line[5])) if ($return_field{Ncor});
+	  	push (@out_fields, sprintf("%.3f", $line[6])) if ($return_field{Ncor1});
+	  	push (@out_fields, sprintf("%.3f", $line[7])) if ($return_field{Ncor2});
+	  	push (@out_fields, $line[8], $line[9], $line[10], $line[11], 
+		sprintf("%.4f", $line[12]),
+		sprintf("%.4f", $line[13]),
+		sprintf("%.4f", $line[14])
+	       )if ($return_field{width});
+	    push (@out_fields, $line[15]) if ($return_field{strand});
+	    push (@out_fields, $line[16]) if ($return_field{offset});
+	    
+	    my $compa_id = join (":", $line[0], $line[1], $line[16], $line[15]);
+	    
+	    ## Index values for sorting
+        $score{cor}{$compa_id} = $line[4];
+        $score{Ncor}{$compa_id} = $line[5];
+        $score{Ncor1}{$compa_id} = $line[6];
+        $score{Ncor2}{$compa_id} = $line[7];
+	  
+        $sort_score{$compa_id} = $score{$sort_field}{$compa_id};
+	    
+	    $match_out_line{$compa_id} =  join("\t", @out_fields);
+	    
+        }
+      close (QUICK)
+
+} ## end quick
+
+else { ## slow mode
 
   ################################################################
   ## Compare the matrices and print the result
@@ -1585,44 +1716,6 @@ package main;
       #	my $strand = $matrix2->get_attribute("strand") || "D";
 
 
-#### TRY delegating to QUICK version
- local $quick_flag = 0;
- if ($quick_flag == 1) {
- 
-  ## compare-matrices-quick location
-   my $quick_cmd_path =  &RSAT::server::GetProgramPath("compare-matrices-quick", 0, $ENV{RSAT_BIN}) || "";
-  $quick_cmd_path = &RSAT::util::trim($quick_cmd_path);
-  unless (-e $quick_cmd_path) {
-    &RSAT::message::Warning("Cannot generate sequence logos because",
-			    "compare-matrices-quick is not found in the expected path",
-			    $quick_cmd_path);
-  }
-  
-  ## output file for quick mode
-  $main::outfile{quick_results} = $main::outfile{prefix}."_quick.tab";
-  
-  print Dumper(\%lth);
-  
-  	&RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
-  my $cmd = $quick_cmd_path." -v 10"; 
-  $cmd .= " -file1 ".$infile{file1};
-  $cmd .= " -file2 ".$infile{file2};
-  $cmd .= " -lth_ncor1 -1";
-  $cmd .= " -lth_ncor2 -1";
-  $cmd .= " -lth_ncor ".$lth{ncor};
-  $cmd .= " -lth_cor ".$lth{cor};
-  $cmd .= " -lth_w ".$lth{w};
-  $cmd .= " -lth_w1 0";
-  $cmd .= " -lth_w2 0";
-  $cmd .= " -mode matches";
-  $cmd .= " -o ".$main::outfile{quick_results}; 
-  $cmd .= "; "."text-to-html -i ".$main::outfile{quick_results};
-  $cmd .= " -o ".$main::outfile{quick_results}.".html";
-  #$cmd .= " > /dev/null";
-  &RSAT::util::one_command($cmd, 1,"");
-  &RSAT::message::TimeWarn("Matrix comparison table with quick", $main::outfile{quick_results}) if ($main::verbose >= 2);
-
-}
 
 
    
@@ -2106,6 +2199,7 @@ package main;
       ## at least one offset/strand has passed the thresholds
       next if (scalar(@output_offset_strand) == 0);
 
+
       ## Sort the results
       my @sorted_offset_strand;
 
@@ -2213,7 +2307,14 @@ package main;
       #      } ## strands
     }				## matrix 2
   }				## matrix 1
+  
+ } ## slow mode end
+  
   &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
+
+
+
+
 
   @match_ids = keys(%sort_score);
 
@@ -2912,6 +3013,44 @@ sub PrintAlignedMatrices {
 }
 
 ################################################################
+### Check if the options are compatible with quick mode
+##
+sub CheckQuickScan {
+    
+    ## Check that the output fields requested with the option -return are compatible with compare-matrices-quick
+    foreach my $field (keys %return_field) {
+        if ($quick_forbidden_field{$field}) {
+            &RSAT::message::Warning("Quick scan mode is incompatible with the output field", $field) if (($main::verbose >= 1) || ($quick_scan));
+            return(0);
+        }
+    }
+    
+    ## only compatible with "matches" mode => actually only TESTED, maybe it would work
+    if ($comparison_mode ne "matches") {
+        &RSAT::message::Warning("compare-matrices-quick is only working in mode 'matches'.");
+        return(0);
+    }
+    
+    ## check the matrix-scan-quick executable is present
+    my $quick_cmd_test = &RSAT::server::GetProgramPath("compare-matrices-quick");
+    
+    ## In addition, we want to check if the command actually works
+    if ($quick_cmd_test) {
+        `$quick_cmd_test -h`;
+        if ($?) {
+            &RSAT::message::Warning("mcompare-matrices-quick is installed but not working. Will use the slower version instead.");
+            return(0);
+        }
+    } else {
+        &RSAT::message::Warning("compare-matrices-quick is not installed. Will use the slower version instead.");
+        return(0);
+    }
+    
+    ## If all checks are OK, return 1
+    return(1);
+}
+
+################################################################
 ## Display full help message
 sub PrintHelp {
   system "pod2text -c $0";
@@ -2971,6 +3110,21 @@ Same as -h
       &PrintOptions();
 
 =pod
+         
+=item B<-quick>
+         
+Delegates comparison to the C program compare-matrices-quick
+Evaluate if the quick mode is compatible with the selected output parameters, otherwise, run in  the slower mode.
+ 
+Supported metrics: cor,Ncor,Ncor1,Ncor2
+         
+=cut
+        
+    } elsif ($arg eq "-quick") {
+        $main::quick_scan_if_possible = 1;
+        
+=pod
+
 
 =item B<-file1 matrix_file1>
 
@@ -3722,6 +3876,11 @@ sub Verbose {
   print $main::out "; compare-matrices ";
   &PrintArguments($main::out, 1);
   printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if ($main::quick_scan){
+        print $main::out "; Quick mode \n";
+    } else {
+        print $main::out "; Slow mode \n";
+    }
   if (%main::infile) {
     print $main::out "; Input files\n";
     while (my ($key,$value) = each %main::infile) {
