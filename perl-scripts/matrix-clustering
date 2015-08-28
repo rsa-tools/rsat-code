@@ -257,8 +257,7 @@ package main;
   local @args_to_pass = ();
   local $args_to_pass = "";
   
-  ## Hash with the path to tha aligned logos
-  local %aligned_logos_path = ();
+  ## Hash with the final alignment information
   local %alignment_info = ();
   local %cluster_info_width = ();
 
@@ -505,6 +504,13 @@ package main;
 	      $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
 	      
 	  } else {
+
+	      ################################################################
+	      ## Create the logos with the empty columns, which will be 
+	      ## displayed in the dynamic tree.
+	      ## Produce the TRANSFAC files with the aligned motifs in both
+	      ## orientations. 
+	      &Add_gaps_to_motifs();
 	      
 	      ################################################################
 	      ## Create the merged matrices and consensuses
@@ -1907,40 +1913,63 @@ sub ReadClusterComposition {
 ################################################################
 ## Add the empty columns to the logos that will be displayed, in order
 ## to get multiple alignment on the logo cladogram.
-sub Add_empty_columns_to_logos() {
+sub Add_gaps_to_motifs() {
 
-  ## Call the program 'convert-matrix' to add the empty columns
-  ## to the aligned logos and retrieve the logos in RC
-  foreach my $id (keys %alignment_info) {
+    &RSAT::message::TimeWarn("Adding gaps to the matrices") if ($main::verbose >= 2);
 
-    ## Reset the variables
-    my $offset_left = $alignment_info{$id}{offset_left};
-    my $offset_right = $alignment_info{$id}{offset_right};
-    my $file_name = $alignment_info{$id}{file_name};
-    my $strand = $alignment_info{$id}{strand};
+    ## Call the program 'convert-matrix' to add the empty columns
+    ## to the aligned logos and retrieve the logos in RC
+    foreach my $id (keys %alignment_info) {
 
-    ## Run the convert-matrix command to add the empty columns to the logos
-    if ($strand eq "D") {
+	## Reset the variables
+	my $aligned_motif = "";
+	my $aligned_motif_rc = "";
+	my $offset_left = $alignment_info{$id}{offset_left};
+	my $offset_right = $alignment_info{$id}{offset_right};
+	my $file_name = $alignment_info{$id}{file_name};
+	my $strand = $alignment_info{$id}{strand};
+	
+	## Run the convert-matrix command to add the empty columns to the logos
+	if ($strand eq "D") {
 
-      ## Add the empty columns
-	&Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus,parameters,logo", $main::outfile{prefix}."_aligned_logos/aligned_logos");
-    } else {
+	    $aligned_motif = $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf";
+	    ## Add the empty columns + Produce Transfac File
+	    &Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus", $aligned_motif);
 
-      ## First convert the matrix to reverse complement 
-      my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
-      &Rev_Comp_Motif($file_name, $temp_mat);
-      
-      ## Then add the gaps
-      &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus,parameters,logo", $main::outfile{prefix}."_aligned_logos/aligned_logos");
-      unlink($temp_mat);
-    }
-    unlink($file_name);
+	    ## Compute the logos (both orientations)
+	    &Produce_logo($aligned_motif, $main::outfile{prefix}."_aligned_logos/aligned_logos");
 
-    ## Store the path of the logos
-    $aligned_logos_path{$id}{strand} = $strand;
-    $aligned_logos_path{$id}{logo} = $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
-    $aligned_logos_path{$id}{logo_rc} = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
-  }    
+	    ## Convert the aligned matrix to reverse complement 
+	    $aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
+	    &Rev_Comp_Motif($file_name, $aligned_motif_rc);
+
+	} else {
+	    
+	    ## First convert the matrix to reverse complement 
+	    my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
+	    &Rev_Comp_Motif($file_name, $temp_mat);
+
+	    ## Add the empty columns + Produce Transfac File
+	    $aligned_motif = $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf";
+	    &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf");
+
+	    ## Compute the logos (both orientations)
+	    &Produce_logo($aligned_motif, $main::outfile{prefix}."_aligned_logos/aligned_logos");
+
+	    ## Convert the aligned matrix to reverse complement 
+	    $aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
+	    &Rev_Comp_Motif($aligned_motif, $aligned_motif_rc);
+
+	    unlink($temp_mat);
+	}
+	unlink($file_name);
+	
+	## Store the path of the logos
+	$alignment_info{$id}{aligned_tf} = $aligned_motif;
+	$alignment_info{$id}{aligned_rc_tf} = $aligned_motif_rc;
+	$alignment_info{$id}{logo} =  $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
+	$alignment_info{$id}{logo_rc} = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
+    }  
 }
 
 # ################################################################
@@ -2028,12 +2057,8 @@ sub Add_empty_columns_to_logos() {
 ## Add attributes to JSON file, like links to pictures and other
 ## attributes
 sub Add_attributes_to_JSON() {
+
   my (%matrix_info) = ();
-
-
-  ## Create the logos with the empty columns, which will be displayed
-  ## in the HTML5 file
-  &Add_empty_columns_to_logos();
 
   #############################################
   ## Create a hash with the attribute data:
@@ -2049,24 +2074,13 @@ sub Add_attributes_to_JSON() {
       chomp();
       @split_line = split(/\s+/, $_);
       my $matrix_label = $split_line[6];
+      my $id = $split_line[1];
 
-      $matrix_info{$split_line[1]}{id} = $split_line[1];
-      $matrix_info{$split_line[1]}{name} = $split_line[2];
-      $matrix_info{$split_line[1]}{width} = $alignment_info{$matrix_info{$split_line[1]}{id}}{width};
-      $matrix_info{$split_line[1]}{consensus} = $split_line[4];
-      $matrix_info{$split_line[1]}{consensus_rc} = $split_line[5];
-      $matrix_info{$split_line[1]}{label} = $split_line[6];
-      $matrix_info{$split_line[1]}{logo_file} = $split_line[7];
-      $matrix_info{$split_line[1]}{logo_file_rc} = $split_line[8];
-
-      ## The path of the aligned logo (in D or R) that will be displayed 
-      if ($aligned_logos_path{$split_line[1]}{strand} eq "D") {
-	  $matrix_info{$split_line[1]}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo};
-	  $matrix_info{$split_line[1]}{logo_aligned_file_rc} = $aligned_logos_path{$split_line[1]}{logo_rc};
-      } else {
-	  $matrix_info{$split_line[1]}{logo_aligned_file} = $aligned_logos_path{$split_line[1]}{logo}; 
-	  $matrix_info{$split_line[1]}{logo_aligned_file_rc} = $aligned_logos_path{$split_line[1]}{logo_rc};
-      }
+      $matrix_info{$id}{id} = $id;
+      $matrix_info{$id}{name} = $split_line[2];
+      $matrix_info{$id}{width} = $alignment_info{$matrix_info{$id}{id}}{width};
+      $matrix_info{$id}{consensus} = $split_line[4];
+      $matrix_info{$id}{consensus_rc} = $split_line[5];
   }
   close(DATA);
 
@@ -2087,8 +2101,7 @@ sub Add_attributes_to_JSON() {
 	  chomp;
 	  next if /^;/;
 	  my @spl = split(/\t+/, $_);
-	  push(@levels_JSON, $spl[2]);
-	  
+	  push(@levels_JSON, $spl[2]);  
       }
       close(LVL_JSON);
 
@@ -2111,13 +2124,13 @@ sub Add_attributes_to_JSON() {
 	      $M1 = $1;
 	      
 	      ## Define te URL of the logo file, relative to the location of the json file
-	      my $aligned_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $matrix_info{$M1}{logo_aligned_file});
+	      my $aligned_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $alignment_info{$M1}{logo});
 	      $aligned_logo_link =~ s/^\.\.\///g;
 
 	      my $aligned_logo_url = $aligned_logo_link.".png";
 
 	      ## Define te URL of the logo file, relative to the location of the json file
-	      my $aligned_rc_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $matrix_info{$M1}{logo_aligned_file_rc});
+	      my $aligned_rc_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $alignment_info{$M1}{logo_rc});
 	      $aligned_rc_logo_link =~ s/^\.\.\///g;
 	      my $aligned_rc_logo_url = $aligned_logo_link.".png";
 	      
@@ -2154,7 +2167,6 @@ sub Add_attributes_to_JSON() {
 		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
-		      # $Add .= " \"size\" : ".$merged_consensuses_files{$folder}{$cluster}{width}.",\n";
 		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
 		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
 		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
@@ -2163,8 +2175,6 @@ sub Add_attributes_to_JSON() {
 		  push(@Parsed_JSON, $Add."\n");
 	      }
 	  }
-
-
 	  push(@Parsed_JSON, $line."\n");
 	  
 	  ### Add the new line
@@ -2473,21 +2483,17 @@ sub Merge_matrices() {
 	## Folders with the aligned matrices
 	my @folder_merged_matrices = ();
 	my $singleton_cluster = 0;
-	if (-d "$main::outfile{prefix}_clusters_information/$cluster/merged_consensuses") {
-	    chomp(@folder_merged_matrices = `ls $main::outfile{prefix}_clusters_information/$cluster/merged_consensuses`);
-	    if (scalar(@folder_merged_matrices) == 0){
-	    	$singleton_cluster = 1;		
+	if(scalar(@nodes) == 1){
+	    $singleton_cluster = 1;	
+	}else{
+	    for my $n (1..scalar(@nodes)-1){
+		push(@folder_merged_matrices, "node_".$n);			
 	    }
-	} else {
-	    @folder_merged_matrices = ();
 	}
 
 	my %int_align_info = ();
-
 	if ($singleton_cluster == 0){
 	    foreach my $folder (@folder_merged_matrices) {
-
-		if($folder eq 'node'){next;}
 
 		## Read the table with the number of spaced for each matrix,
 		## for each level of each cluster
@@ -2504,99 +2510,20 @@ sub Merge_matrices() {
 		    my @split_line = split("\t", $line);
 		    my $motif_id = $split_line[0];
 		    #$motif_id =~ s/\./-/;
-		    my $motif_strand = $split_line[3];
-		    my $motif_aligned_cons = $split_line[4];
-		    $motif_width = length($motif_aligned_cons);
-		    my $offset_up = $split_line[6];
-		    my $offset_down = $split_line[7];
-		    my $inverted_flag = 0;		  
-		 
 		    
-		    ## Inverted alignment test
-		    if($alignment_info{$motif_id}{strand} eq $motif_strand){ 
-			$inverted_flag = 0; 
-		    }else{
-			$inverted_motif_counter++;
-		    }
-
-		    $width_internal_alignments{$cluster}{$merge_level} = length($motif_aligned_cons);
-		    $int_align_info{$cluster}{$merge_level}{$motif_id}{offset_up} = $offset_up;
-		    $int_align_info{$cluster}{$merge_level}{$motif_id}{offset_down} = $offset_down;	
-		    $int_align_info{$cluster}{$merge_level}{$motif_id}{strand} = $motif_strand;	
-		    $int_align_info{$cluster}{$merge_level}{$motif_id}{width} = $motif_width;	
 		    push(@level_motifs, $motif_id);
 		}
 		close $int_align_dataframe;
 		unlink($main::outfile{int_align_offset});
 
-		## Detect the nodes that should be inverted
-		$invert_node_motifs_flag = 0;
-		if ($inverted_motif_counter == $node_counter){
-		    $invert_node_motifs_flag = 1;
-		}
-	       
-
-		## For each level add the gaps to the matrices
-		foreach my $motif (@level_motifs) {
-		    
-		    ## Reset the variables
-		    my $offset_left = $alignment_info{$motif}{offset_left};
-		    my $offset_right = $alignment_info{$motif}{offset_right};
-		    my $strand = $int_align_info{$cluster}{$merge_level}{$motif}{strand};
-		    my $file_name = $alignment_info{$motif}{file_name};
-		    my $width = $int_align_info{$cluster}{$merge_level}{$motif}{width};
-
-
-		    ################################################################
-		    ################################################################
-		    ## Run the convert-matrix command to add the empty columns to the logos
-		    ## Case 1: The motifs in the current node have initially the correct orientation
-		    if($invert_node_motifs_flag == 0){
-			if ($strand eq "D") {
-
-			    ## Add the empty columns
-			    &Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");	
-		
-			} else {
-			    
-			    ## First convert the matrix to reverse complement 
-			    my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
-			    &Rev_Comp_Motif($file_name, $temp_mat);
-			    
-			    ## Then add the gaps
-			    &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");
-			    unlink($temp_mat);
-
-			}
-
-		    ## Case 2: The motifs in the current node have initially the wrong orientation
-		    } else{
-			if ($strand eq "D") {
-
-			    ## First convert the matrix to reverse complement 
-			    my $temp_mat = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/temp.tf";
-			    &Rev_Comp_Motif($file_name, $temp_mat);
-			    
-			    ## Then add the gaps
-			    &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");
-			    unlink($temp_mat);
-					
-			} else {
-
-			    ## Add the empty columns
-			    &Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$motif.".tf");				    
-
-			}
-		    }
-		}
-
-		my @file_names = @level_motifs;
+		my @file_names = ();
 		## Get the names of the files of each level
-		foreach my $m (@file_names) {
-		    $m = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$m.".tf";
+		foreach my $m (@level_motifs) {
+		    push(@file_names, $alignment_info{$m}{aligned_tf});
 		}
 		my $files = join(" ", @file_names);
 		
+		################################################################
 		## Merge the matrices and create a single matrix
 		my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_cat.tf";
 		my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
@@ -2610,11 +2537,7 @@ sub Merge_matrices() {
 		$cmd .= " -o ".$merged_mat_file;
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		## Delete files with single matrices
-		unlink($cat_file);
-		foreach my $file (@file_names) {
-		    unlink($file);
-		}  
-		
+		unlink($cat_file);		
 
 		## Assign the motif name
 		my @temp = split(/_/, $cluster);
@@ -2657,7 +2580,7 @@ sub Merge_matrices() {
 	    }
 	} else {
 
-	    my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{file_name};
+	    my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{aligned_tf};
 
 	    my $new_singleton_motif_file_temp = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$cluster."_matrices_temp.tf";
 	    my $new_singleton_motif_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$cluster."_matrices.tf";
@@ -5060,6 +4983,21 @@ sub Add_Empty_Col() {
     $cmd .= " -from tf -to tf -return ".$return_fields;
     $cmd .= " -insert_col_left ".$offset_left;
     $cmd .= " -insert_col_right ".$offset_right;
+    $cmd .= " -o ".$out_file;
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+}
+
+
+####################################################
+## This function calls the program convert-matrix
+## to add empty columns to the selected file.
+sub Produce_logo() {
+
+    my ($file_name, $out_file) = @_;
+
+    ## Add the empty columns
+    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
+    $cmd .= " -from tf -to tf -return logo";
     $cmd .= " -o ".$out_file;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 }
