@@ -1903,6 +1903,46 @@ sub ReadClusterComposition {
   close $cluster_handle;
 }
 
+
+################################################################
+## Add the empty columns to the logos that will be displayed, in order
+## to get multiple alignment on the logo cladogram.
+sub Add_empty_columns_to_logos() {
+
+  ## Call the program 'convert-matrix' to add the empty columns
+  ## to the aligned logos and retrieve the logos in RC
+  foreach my $id (keys %alignment_info) {
+
+    ## Reset the variables
+    my $offset_left = $alignment_info{$id}{offset_left};
+    my $offset_right = $alignment_info{$id}{offset_right};
+    my $file_name = $alignment_info{$id}{file_name};
+    my $strand = $alignment_info{$id}{strand};
+
+    ## Run the convert-matrix command to add the empty columns to the logos
+    if ($strand eq "D") {
+
+      ## Add the empty columns
+	&Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus,parameters,logo", $main::outfile{prefix}."_aligned_logos/aligned_logos");
+    } else {
+
+      ## First convert the matrix to reverse complement 
+      my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
+      &Rev_Comp_Motif($file_name, $temp_mat);
+      
+      ## Then add the gaps
+      &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus,parameters,logo", $main::outfile{prefix}."_aligned_logos/aligned_logos");
+      unlink($temp_mat);
+    }
+    unlink($file_name);
+
+    ## Store the path of the logos
+    $aligned_logos_path{$id}{strand} = $strand;
+    $aligned_logos_path{$id}{logo} = $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
+    $aligned_logos_path{$id}{logo_rc} = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
+  }    
+}
+
 # ################################################################
 # ## Identify clusters of similar motifs using MCL ("Markov clustering",
 # ## an algorithm partitioning a network into clusters), and build
@@ -2398,44 +2438,6 @@ sub ConvertTabToHTML {
   }
 }
 
-################################################################
-## Add the empty columns to the logos that will be displayed, in order
-## to get multiple alignment on the logo cladogram.
-sub Add_empty_columns_to_logos() {
-
-  ## Call the program 'convert-matrix' to add the empty columns
-  ## to the aligned logos and retrieve the logos in RC
-  foreach my $id (keys %alignment_info) {
-
-    ## Reset the variables
-    my $offset_left = $alignment_info{$id}{offset_left};
-    my $offset_right = $alignment_info{$id}{offset_right};
-    my $file_name = $alignment_info{$id}{file_name};
-    my $strand = $alignment_info{$id}{strand};
-
-    ## Run the convert-matrix command to add the empty columns to the logos
-    if ($strand eq "D") {
-
-      ## Add the empty columns
-	&Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus,parameters,logo", $main::outfile{prefix}."_aligned_logos/aligned_logos");
-    } else {
-
-      ## First convert the matrix to reverse complement 
-      my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
-      &Rev_Comp_Motif($file_name, $temp_mat);
-      
-      ## Then add the gaps
-      &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus,parameters,logo", $main::outfile{prefix}."_aligned_logos/aligned_logos");
-      unlink($temp_mat);
-    }
-    unlink($file_name);
-
-    ## Store the path of the logos
-    $aligned_logos_path{$id}{strand} = $strand;
-    $aligned_logos_path{$id}{logo} = $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
-    $aligned_logos_path{$id}{logo_rc} = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
-  }    
-}
 
 #########################################################################
 ## Merge the matrices at each level of the hclust tree, and produce a
