@@ -3817,55 +3817,31 @@ sub ParametersTable{
   } 
 
 
-#id="parameters_table"
   my $par_table = '
   <!-- Div with the table of selected parameters-->
-  <div id="Par_tab_button" class="button_click Section_button"><strong>Results Summary</strong></div>
-  <div id="Par_tab" class="tab" style="margin-bottom:15px;display:none">
+  <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Parameters Table</strong></div>
+  <div id="Par_tab" class="tab" style="margin-bottom:15px;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Results Summary</h2>
-    <table  style="width:200px;">
-
-      <tbody>
-        <tr>
+    <table id="parameters_table" style="width:960px;">
+      <thead>
+	<tr>
 	  <th class="tab_col">Nb Input motifs</th>
-        </tr>
+	  <th class="tab_col">Nb Clusters Found</th>
+	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
+	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
+	  <th class="tab_col">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></th>
+	  <th class="tab_col">Download Link</th>
+	  <th class="tab_col">Clusters in TRANSFAC format</th>
+	</tr>
+      </thead>
+      <tbody>
 	<tr>
 	  <td class="par_text">'.$number_of_motifs.'</td>
-        </tr>
-	<tr>
-	  <th class="tab_col">Nb Clusters Found</th>
-	</tr>
-        <tr>
 	  <td class="par_text">'.$number_of_clusters.'</td>
-	</tr>
-        <tr>
- 	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
-        </tr>
-	<tr>
 	  <td class="par_text">'.$hclust_method.'</td>
-        </tr>
-	<tr>
- 	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
-	</tr>
-        <tr>
 	  <td class="par_text">'.$main::param{matrix_compa_score}.'</td>
-	</tr>
-	<tr>
- 	  <th class="tab_col">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></th>
-	</tr>
-	<tr>
 	  <td class="par_text">'.$threshold_values_html.'</td>
-	</tr>
-	<tr>
- 	  <th class="tab_col">Download Link</th>
-	</tr>
-	<tr>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
-	</tr>
-	<tr>
- 	  <th class="tab_col">Clusters in TRANSFAC format</th>
-	</tr>
-	<tr>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
 	</tr>
       </tbody>
@@ -4120,6 +4096,19 @@ sub InsertHeatMap {
 ## Open the <scrip> tag for JQuery code
 sub OpenScriptJQuery {
   $script_jquery = '<script>
+
+// Dynamic parameter table
+$(document).ready( function () {
+    $(\'#parameters_table\').DataTable({
+        "paging":   false,
+        "searching": false,
+        "ordering": false,
+        "info":     false,
+        "columnDefs": [
+	    { "width": "5%", "targets": [0,1,2,3,4,5,6] }
+	]		
+    });
+});
 
 // Dynamic alignment table
 $(document).ready( function () {
