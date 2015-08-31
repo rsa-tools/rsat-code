@@ -355,7 +355,8 @@ package main;
   ################################################################
   ## Set default options
   local %param = ();
-  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
+#  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
+local @matrix_compa_metrics = qw(cor Ncor);
   $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
   $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
   $main::param{matrix_compa_score} = "Ncor";
@@ -2201,8 +2202,6 @@ sub create_html_tree_file() {
     open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot open HTML file");
     open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
 
-
-    my $Dyn_tree_counter = 0;
     ## Values to change in the D3 tree
     my $svg_width = 25;
     my $svg_height = 80;
@@ -2249,18 +2248,8 @@ sub create_html_tree_file() {
 	chomp;	
 
 	if (/\(function\(\)\s*\{/) { 
-	    $Dyn_tree_counter = 0;
-	    if($tree_counter % 2 == 0){
-		$cluster_nb++;
-
-		## Get the Jquery code
-		$JQuery_dynamic .= &Hide_and_show_logo_trees();
 		$JQuery_dynamic =~ s/--cl--/$cluster_nb/g;
-
-	    } elsif ($tree_counter % 2 == 1){
-		$Dyn_tree_counter = 1;
-	    }
-	    $tree_counter++;
+		$cluster_nb++;
 	}
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
@@ -2310,9 +2299,6 @@ sub create_html_tree_file() {
 
 	if (/--cl_id--/) {
 	    my $c = "cluster_".$cluster_nb;
-	    if($Dyn_tree_counter == 1){
-		$c = "cluster_".$cluster_nb."_RC";
-	    } 
 	    $_ =~ s/--cl_id--/$c/;
 	}
 
@@ -2339,11 +2325,7 @@ sub create_html_tree_file() {
 	}
 
 	if(/--insert_image--/){
-	    if($Dyn_tree_counter == 1){
-		$_ =~ s/--insert_image--/d.image_rc/g;
-	    } else{
-		$_ =~ s/--insert_image--/d.image/g;
-	    }
+	    $_ =~ s/--insert_image--/d.image/g;
 	}
 
 	if (/--x1--/) {
@@ -2620,7 +2602,6 @@ sub Create_dynamic_tree() {
     my $line = "";
     my $print = "";
     my $temp_dyn_tree_Forward = &logo_tree_dynamic();
-    my $temp_dyn_tree_Reverse = &logo_tree_dynamic();
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -2645,8 +2626,6 @@ sub Create_dynamic_tree() {
 	    $line = "";
 	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted) {             
 		$line .= "<div id=\"cluster_".$cluster."\" style=\"clear:both;\"><h2>cluster_".$cluster."</h2><\/div>\n";
-		$line .= "<div id=\"cluster_".$cluster."_RC\" style=\"clear:both;\"><h2>cluster_".$cluster."_Reverse_Complement</h2><\/div>\n";
-		$line .= "<div class=\"hide_show_button\" id=\"Change_Orientation_cluster_".$cluster."\">Change Orientation<\/div>\n";
 		$line .= "<br><br><br><br><br>";
 	    }
 	}
@@ -2656,7 +2635,6 @@ sub Create_dynamic_tree() {
 	    $line = "";	
 	    foreach my $cluster (sort {$clusters_info_sorted{$a} <=> $clusters_info_sorted{$b}} keys %clusters_info_sorted) {      
 		$line .= $temp_dyn_tree_Forward."\n\n\n";
-		$line .= $temp_dyn_tree_Reverse."\n\n\n";
 	    }
 	}
 
@@ -3006,6 +2984,8 @@ function update(source) {
 		.attr("y", -33) 
 		.attr("preserveAspectRatio", "none");
 
+
+
 /*
 	node.select("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
@@ -3080,6 +3060,31 @@ function click(d) {
 
 
 })();
+
+// Add the buttons to change the orientation
+d3.select("#--cl_id--").append("text")
+	.attr("x", 700)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+	})
+	.text("Direct")  
+;
+
+d3.select("#--cl_id--").append("text")
+	.attr("x", 1000)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; }) 
+	})
+	.text("Reverse")  
+;
 	
 ';
 
@@ -3214,28 +3219,28 @@ sub branch_consensus_table{
 }
 
 
-################################################################
-## Jquery code to Hide/Show the logo trees
-sub Hide_and_show_logo_trees {
+# ################################################################
+# ## Jquery code to Hide/Show the logo trees
+# sub Hide_and_show_logo_trees {
 
-    my $JQuery_code = '
+#     my $JQuery_code = '
 
-// Hide/Show the logo trees
-  $(document).ready(function() {
-    $(\'#Change_Orientation_cluster_--cl--\').click(function() {
-         $(\'#cluster_--cl--\').toggle();
-         $(\'#cluster_--cl--_RC\').toggle();
-     }); 
-  });
+# // Hide/Show the logo trees
+#   $(document).ready(function() {
+#     $(\'#Change_Orientation_cluster_--cl--\').click(function() {
+#          $(\'#cluster_--cl--\').toggle();
+#          $(\'#cluster_--cl--_RC\').toggle();
+#      }); 
+#   });
 
-// By default Hide the RC logo tree
-  $(document).ready(function() {
-    $(\'#cluster_--cl--_RC\').hide();
-  });
+# // By default Hide the RC logo tree
+#   $(document).ready(function() {
+#     $(\'#cluster_--cl--_RC\').hide();
+#   });
 
-'."\n\n";
-    return($JQuery_code);
-}
+# '."\n\n";
+#     return($JQuery_code);
+# }
 
 ##############################################################
 ## When the option -top is used the analysis is restricted 
