@@ -2276,18 +2276,18 @@ sub create_html_tree_file() {
 	if (/--height--/) {
 	  my $clust = "cluster_".$cluster_nb;
 	  my $mat_number = $clusters_info{$clust} + 2;
-	  $_ =~ s/--height--/100 + 85 * $mat_number/;
+	  $_ =~ s/--height--/100 + 81 * $mat_number/;
 #	  &RSAT::message::Debug("Setting cluster height", $cluster_nb, "clust=".$clust, "mat_number=".$mat_number) if ($main::verbose >= 10);
 	}
 	
 	### Set the height 
 	if (/--widthtree--/) {;
-	    $_ =~ s/--widthtree--/3500/;
+	    $_ =~ s/--widthtree--/3000/;
 	}
 
 	### Set the tree size
 	if (/--size--/) {;
-	    $_ =~ s/--size--/1000/;
+	    $_ =~ s/--size--/900/;
 	}
 
 	### Add the JSON file name
@@ -2876,6 +2876,31 @@ sub logo_tree_dynamic{
   my $logo_tree = 
       '
 
+// Add the buttons to change the orientation
+d3.select("#--cl_id--").append("text")
+	.attr("x", 700)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+	})
+	.text("Direct")  
+;
+
+d3.select("#--cl_id--").append("text")
+	.attr("x", 1000)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; }) 
+	})
+	.text("Reverse")  
+;
+
 	(function() {
         var width = --widthtree--,
 	height = --height--;
@@ -2887,7 +2912,8 @@ sub logo_tree_dynamic{
 
 	var cluster = d3.layout.cluster()
 		.size([height, --size--])
-	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
+	        .separation(function(a, b) { return (a.parent == b.parent ? 1 : 1); });
+
 
 	var diagonal = function elbow(d, i) {
 		
@@ -2901,9 +2927,8 @@ sub logo_tree_dynamic{
 		.attr("height", height)
 		.append("g")
 		.attr("class","drawarea")
-		.attr("transform", "translate(40,0)");
+		.attr("transform", "translate(90,0)");
 		
-
 
 d3.json("--jsonfile--", function(json) {
 
@@ -2915,6 +2940,27 @@ d3.json("--jsonfile--", function(json) {
 });
 
 function update(source) {
+
+// compute the new height
+var levelWidth = [1];
+var childCount = function(level, n) {
+
+  if(n.children && n.children.length > 0) {
+    if(levelWidth.length <= level + 1) levelWidth.push(0);
+
+    levelWidth[level+1] += n.children.length;
+    n.children.forEach(function(d) {
+      childCount(level + 1, d);
+    });
+  }
+};
+childCount(0, root);  
+var newHeight = d3.max(levelWidth) * 200; // 20 pixels per line  
+cluster= cluster.size([newHeight, --size--]);
+svg = d3.select("#--cl_id--").select("svg")
+		.attr("width", width)
+		.attr("height", newHeight)
+		.attr("transform", "translate(90,0)");
 
   // Compute the new tree layout.
   var nodes = cluster.nodes(root).reverse(),
@@ -2984,8 +3030,6 @@ function update(source) {
 		.attr("y", -33) 
 		.attr("preserveAspectRatio", "none");
 
-
-
 /*
 	node.select("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
@@ -3045,6 +3089,7 @@ function update(source) {
     d.y0 = d.y;
   });
 
+
 // Toggle children on click.
 function click(d) {
   if (d.children) {
@@ -3060,36 +3105,13 @@ function click(d) {
 
 
 })();
-
-// Add the buttons to change the orientation
-d3.select("#--cl_id--").append("text")
-	.attr("x", 700)             
-	.attr("y", 0)    
-	.attr("class", "legend")     
-	.on("click", function(){
-		// change the orientation
-		d3.select("#--cl_id--").selectAll("image")
-		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
-	})
-	.text("Direct")  
-;
-
-d3.select("#--cl_id--").append("text")
-	.attr("x", 1000)             
-	.attr("y", 0)    
-	.attr("class", "legend")     
-	.on("click", function(){
-		// change the orientation
-		d3.select("#--cl_id--").selectAll("image")
-		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; }) 
-	})
-	.text("Reverse")  
-;
 	
 ';
 
   return($logo_tree);
 }
+
+
 
 ##############################################################
 ## Insert D3 logo tree: This is the body of d3 script, each 
