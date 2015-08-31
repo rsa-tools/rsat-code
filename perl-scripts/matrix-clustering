@@ -3827,7 +3827,7 @@ sub ParametersTable{
   <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Parameters Table</strong></div>
   <div id="Par_tab" class="tab" style="margin-bottom:15px;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Results Summary</h2>
-    <table id="parameters_table" style="width:960px;">
+    <table id="parameters_table" style="width:980px;">
       <thead>
 	<tr>
 	  <th class="tab_col">Nb Input motifs</th>
@@ -4034,19 +4034,19 @@ sub InsertSmallForest {
 	if ($sum < 20) {
 	    
 	    ## Draw the logo forest 
-	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:1000px;"></div>';
+	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:800px;padding:0px 0px 0px 200px;"></div>';
 	    
 	    my $tree = &logo_tree();
 	    $tree =~ s/--RC_picture_start--//g;
 	    $tree =~ s/--RC_picture_end--//g;
 	    $tree =~ s/\/\/BG_color/$BG_color/g;
 	    $tree =~ s/--lab--/$label_single_tree_no_link/;
-	    $tree =~ s/--widthtree--/1020/g;
+	    $tree =~ s/--widthtree--/820/g;
 	    $tree =~ s/--radius--/3/g;
-	    $tree =~ s/--size--/500/g;
+	    $tree =~ s/--size--/300/g;
 	    $tree =~ s/--insert--//g;
 	    $tree =~ s/--nb--/$num/g;
-	    $tree =~ s/--height--/70 + 13 * $cluster_size/g;
+	    $tree =~ s/--height--/70 + 9 * $cluster_size/g;
 	    $tree =~ s/--cl_id--/$cl_id_s/g;
 	    $tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
 	    my $json_name = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_cluster_".$num.".json");
