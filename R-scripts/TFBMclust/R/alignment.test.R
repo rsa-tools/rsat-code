@@ -52,6 +52,7 @@ alignment.test <- function(id1, id2, compa.table, thresholds = list(Ncor = 0.4, 
         || (names.th =="Icor")
         || (names.th =="NIcor")
         || (names.th =="w")
+        || (names.th == "logoDP")
     ) {
       if(hclust.method == "average"){
         mean.scores[names.th] >= thresholds[names.th]
