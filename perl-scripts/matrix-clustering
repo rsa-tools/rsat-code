@@ -334,6 +334,10 @@ package main;
   ## A hash to save the name of the clusters and their corresponding
   ## hexa code
   local %hexa_code = ();
+  local $blue_color = '#0D73A7';
+  local $orange_color = '#CC6600';
+#  local $font_color = '#D6EEFA';##FAFAFAFAFAFA
+  local $font_color = '#FAFAFA';
 
   ## Lower threshold on column-wise information content: left-most and
   ## right-most columns having a lower IC are trimmed.
@@ -355,8 +359,7 @@ package main;
   ################################################################
   ## Set default options
   local %param = ();
-#  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
-local @matrix_compa_metrics = qw(cor Ncor);
+  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
   $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
   $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
   $main::param{matrix_compa_score} = "Ncor";
@@ -2955,7 +2958,7 @@ var childCount = function(level, n) {
   }
 };
 childCount(0, root);  
-var newHeight = d3.max(levelWidth) * 200; // 20 pixels per line  
+var newHeight = d3.max(levelWidth) * 250; // 20 pixels per line  
 cluster= cluster.size([newHeight, --size--]);
 svg = d3.select("#--cl_id--").select("svg")
 		.attr("width", width)
@@ -3449,7 +3452,7 @@ sub ReportStyleCSS{
   
 
   .cluster_division {
-	background-color: #819FF7;
+	background-color: '.$blue_color.';
 	float: left;
 	margin: 5px 3px 3px 3px;
 	width: 75px;
@@ -3457,12 +3460,12 @@ sub ReportStyleCSS{
 	position: relative;
 	display: inline-block;
 	text-align: center;
-	color: #34373B;
+	color: '.$font_color.';
 	font-size: 12px;
 	padding: 4px;
 	cursor: pointer;
 	border-radius:5px;
-	border: 1px solid blue;
+	border: 1px solid #819FF7;
   }
   
   
@@ -3550,7 +3553,10 @@ sub ReportStyleCSS{
   }
 
   .Section_button {
-  background-color: #819FF7;
+/*  background-color: #819FF7; */
+/*  background-color: #CC6600; */
+/*  background-color: #D6EEFA; */
+  background-color: '.$blue_color.';
   float: left;
   margin-top: 2px;
   margin-bottom: 2px;
@@ -3559,7 +3565,7 @@ sub ReportStyleCSS{
   position: relative;
   display: block;
   text-align: center;
-  color: #34373B;
+  color: #D6EEFA;
   font-size: 15px;
   padding: 4px;
   clear: both;
@@ -3749,23 +3755,25 @@ sub ReportStyleCSS{
   }
 
   #show_all_button{
-     background-color: #76F076;
-     border: 1px solid green;
+     background-color: '.$orange_color.';
+     border: 1px solid '.$orange_color.';
+     color: '.$font_color.';
   }
 
   #hide_all_button{
-    background-color: #819FF7;
-    border: 1px solid blue;
+    background-color: #0D73A7;
+    border: 1px solid #0D73A7;
+     color: '.$font_color.';
   }
 
   .selected_cluster {
-    background-color: #76F076;
-    border: 1px solid green;
+    background-color: '.$orange_color.';
+    border: 1px solid '.$orange_color.';
   }
 
   .selected_header_section {
-    background-color: #76F076 !important;
-    border: 1px solid green;
+    background-color: '.$orange_color.' !important;
+    border: 1px solid '.$orange_color.';
   }
 
   #end_report {
@@ -3846,7 +3854,7 @@ sub ParametersTable{
 
   my $par_table = '
   <!-- Div with the table of selected parameters-->
-  <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Parameters Table</strong></div>
+  <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Results Summary</strong></div>
   <div id="Par_tab" class="tab" style="margin-bottom:15px;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Results Summary</h2>
     <table id="parameters_table" style="width:980px;">
@@ -4040,8 +4048,8 @@ sub InsertSmallForest {
     ## Insert link to the logo forest
     $small_forest .= '
 
-    <div class="display_clusters"><h2>Clusters found</h2>
-       <h3 style="color:red">Sketch picture restricted to the --x-- first clusters.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></h3>
+    <div class="display_clusters"><h2>'.$number_of_clusters.' Clusters found</h2>
+       <p style="color:red">Sketch picture restricted to the --x-- first clusters.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></p>
     </div>
     ';
 
