@@ -18,6 +18,7 @@ closest.or.farthest.motifs.ids <- function(id1, id2, compa.table, metric = "Ncor
       || (metric=="Nlogocor")
       || (metric=="Icor")
       || (metric=="NIcor")
+      || (metric=="logoDP")
       || (metric == "mean_zscore")
   ) {
     if(closest == TRUE){
