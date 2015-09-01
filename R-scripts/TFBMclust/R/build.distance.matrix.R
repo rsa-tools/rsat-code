@@ -28,12 +28,11 @@ build.distance.matrix <- function(comparison.table,
     ## NIcor 			Relative width-normalized Icor
     metric.dist <- 1 - metric.values
 
-  } else if ((metric == "logoDP")
-             || (metric == "cov")) {
-    ## logoDP 			dot product of sequence logos
+  } else if (metric == "cov") {
+
     ## cov 			covariance between residues in aligned columns
 
-    stop("logoDP and cov metrics are not supported yet")
+    stop("cov metric is not supported yet")
 
   } else if ((metric == "dEucl")
              || (metric == "NdEucl")
@@ -48,10 +47,12 @@ build.distance.matrix <- function(comparison.table,
     ## SSD 			Sum of square deviations
     ## SW 			Sandelin-Wasserman
     ## NSW 			Relative width-normalized Sandelin-Wasserman
+    ## logoDP   		dot product of sequence logos
 
     metric.dist <- metric.values
 
-  } else if (metric == "mean_zscore"){
+  } else if ( (metric == "mean_zscore")
+              || (metric == "logoDP")){
 
     metric.dist <- max(metric.values) - metric.values
 
