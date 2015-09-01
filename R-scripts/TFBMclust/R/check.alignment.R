@@ -68,6 +68,7 @@ check.alignment <- function(id1,
         || (names.th =="Nlogocor")
         || (names.th =="Icor")
         || (names.th =="NIcor")
+        || (names.th == "logoDP")
         || (names.th =="w")
     ) {
       if(hclust.method == "average"){
