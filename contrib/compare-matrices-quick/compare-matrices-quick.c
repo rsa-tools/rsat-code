@@ -501,7 +501,7 @@ double crude_freq(pssm m,int r,int c) {
 //====================== Print the help/manual  =========================
 //=======================================================================
 void print_help(void){
-	printf("Compmat is a simplified C translation of compare_matrices developed by Jacques Van Helden. ");
+	printf("compare-matrices-quick is a simplified C translation of compare_matrices developed by Jacques Van Helden. ");
 	printf("It takes as input a reference matrices file and a query matrices file (both transfac formated) and computes correlations for each possible couple of matrices.\n");
 	printf("The output consists in a tab-delimited file containing one line per match (i.e. alignments with correlations scores above user-defined thresholds) following the format:\n\n");
 
