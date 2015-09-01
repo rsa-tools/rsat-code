@@ -355,7 +355,8 @@ package main;
   ################################################################
   ## Set default options
   local %param = ();
-  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
+#  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
+local @matrix_compa_metrics = qw(cor Ncor);
   $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
   $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
   $main::param{matrix_compa_score} = "Ncor";
@@ -2201,8 +2202,6 @@ sub create_html_tree_file() {
     open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot open HTML file");
     open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
 
-
-    my $Dyn_tree_counter = 0;
     ## Values to change in the D3 tree
     my $svg_width = 25;
     my $svg_height = 80;
@@ -2249,18 +2248,8 @@ sub create_html_tree_file() {
 	chomp;	
 
 	if (/\(function\(\)\s*\{/) { 
-	    $Dyn_tree_counter = 0;
-	    if($tree_counter % 2 == 0){
-		$cluster_nb++;
-
-		## Get the Jquery code
-		$JQuery_dynamic .= &Hide_and_show_logo_trees();
 		$JQuery_dynamic =~ s/--cl--/$cluster_nb/g;
-
-	    } elsif ($tree_counter % 2 == 1){
-		$Dyn_tree_counter = 1;
-	    }
-	    $tree_counter++;
+		$cluster_nb++;
 	}
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
@@ -2287,18 +2276,18 @@ sub create_html_tree_file() {
 	if (/--height--/) {
 	  my $clust = "cluster_".$cluster_nb;
 	  my $mat_number = $clusters_info{$clust} + 2;
-	  $_ =~ s/--height--/100 + 85 * $mat_number/;
+	  $_ =~ s/--height--/100 + 81 * $mat_number/;
 #	  &RSAT::message::Debug("Setting cluster height", $cluster_nb, "clust=".$clust, "mat_number=".$mat_number) if ($main::verbose >= 10);
 	}
 	
 	### Set the height 
 	if (/--widthtree--/) {;
-	    $_ =~ s/--widthtree--/3500/;
+	    $_ =~ s/--widthtree--/3000/;
 	}
 
 	### Set the tree size
 	if (/--size--/) {;
-	    $_ =~ s/--size--/1000/;
+	    $_ =~ s/--size--/900/;
 	}
 
 	### Add the JSON file name
@@ -2310,9 +2299,6 @@ sub create_html_tree_file() {
 
 	if (/--cl_id--/) {
 	    my $c = "cluster_".$cluster_nb;
-	    if($Dyn_tree_counter == 1){
-		$c = "cluster_".$cluster_nb."_RC";
-	    } 
 	    $_ =~ s/--cl_id--/$c/;
 	}
 
@@ -2339,11 +2325,7 @@ sub create_html_tree_file() {
 	}
 
 	if(/--insert_image--/){
-	    if($Dyn_tree_counter == 1){
-		$_ =~ s/--insert_image--/d.image_rc/g;
-	    } else{
-		$_ =~ s/--insert_image--/d.image/g;
-	    }
+	    $_ =~ s/--insert_image--/d.image/g;
 	}
 
 	if (/--x1--/) {
@@ -2620,7 +2602,6 @@ sub Create_dynamic_tree() {
     my $line = "";
     my $print = "";
     my $temp_dyn_tree_Forward = &logo_tree_dynamic();
-    my $temp_dyn_tree_Reverse = &logo_tree_dynamic();
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
     
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -2645,8 +2626,6 @@ sub Create_dynamic_tree() {
 	    $line = "";
 	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted) {             
 		$line .= "<div id=\"cluster_".$cluster."\" style=\"clear:both;\"><h2>cluster_".$cluster."</h2><\/div>\n";
-		$line .= "<div id=\"cluster_".$cluster."_RC\" style=\"clear:both;\"><h2>cluster_".$cluster."_Reverse_Complement</h2><\/div>\n";
-		$line .= "<div class=\"hide_show_button\" id=\"Change_Orientation_cluster_".$cluster."\">Change Orientation<\/div>\n";
 		$line .= "<br><br><br><br><br>";
 	    }
 	}
@@ -2656,7 +2635,6 @@ sub Create_dynamic_tree() {
 	    $line = "";	
 	    foreach my $cluster (sort {$clusters_info_sorted{$a} <=> $clusters_info_sorted{$b}} keys %clusters_info_sorted) {      
 		$line .= $temp_dyn_tree_Forward."\n\n\n";
-		$line .= $temp_dyn_tree_Reverse."\n\n\n";
 	    }
 	}
 
@@ -2898,6 +2876,31 @@ sub logo_tree_dynamic{
   my $logo_tree = 
       '
 
+// Add the buttons to change the orientation
+d3.select("#--cl_id--").append("text")
+	.attr("x", 700)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+	})
+	.text("Direct")  
+;
+
+d3.select("#--cl_id--").append("text")
+	.attr("x", 1000)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; }) 
+	})
+	.text("Reverse")  
+;
+
 	(function() {
         var width = --widthtree--,
 	height = --height--;
@@ -2909,7 +2912,8 @@ sub logo_tree_dynamic{
 
 	var cluster = d3.layout.cluster()
 		.size([height, --size--])
-	        .separation(function(a, b) { return (a.parent == b.parent ? 1: 1); });
+	        .separation(function(a, b) { return (a.parent == b.parent ? 1 : 1); });
+
 
 	var diagonal = function elbow(d, i) {
 		
@@ -2923,9 +2927,8 @@ sub logo_tree_dynamic{
 		.attr("height", height)
 		.append("g")
 		.attr("class","drawarea")
-		.attr("transform", "translate(40,0)");
+		.attr("transform", "translate(90,0)");
 		
-
 
 d3.json("--jsonfile--", function(json) {
 
@@ -2937,6 +2940,27 @@ d3.json("--jsonfile--", function(json) {
 });
 
 function update(source) {
+
+// compute the new height
+var levelWidth = [1];
+var childCount = function(level, n) {
+
+  if(n.children && n.children.length > 0) {
+    if(levelWidth.length <= level + 1) levelWidth.push(0);
+
+    levelWidth[level+1] += n.children.length;
+    n.children.forEach(function(d) {
+      childCount(level + 1, d);
+    });
+  }
+};
+childCount(0, root);  
+var newHeight = d3.max(levelWidth) * 200; // 20 pixels per line  
+cluster= cluster.size([newHeight, --size--]);
+svg = d3.select("#--cl_id--").select("svg")
+		.attr("width", width)
+		.attr("height", newHeight)
+		.attr("transform", "translate(90,0)");
 
   // Compute the new tree layout.
   var nodes = cluster.nodes(root).reverse(),
@@ -3065,6 +3089,7 @@ function update(source) {
     d.y0 = d.y;
   });
 
+
 // Toggle children on click.
 function click(d) {
   if (d.children) {
@@ -3085,6 +3110,8 @@ function click(d) {
 
   return($logo_tree);
 }
+
+
 
 ##############################################################
 ## Insert D3 logo tree: This is the body of d3 script, each 
@@ -3214,28 +3241,28 @@ sub branch_consensus_table{
 }
 
 
-################################################################
-## Jquery code to Hide/Show the logo trees
-sub Hide_and_show_logo_trees {
+# ################################################################
+# ## Jquery code to Hide/Show the logo trees
+# sub Hide_and_show_logo_trees {
 
-    my $JQuery_code = '
+#     my $JQuery_code = '
 
-// Hide/Show the logo trees
-  $(document).ready(function() {
-    $(\'#Change_Orientation_cluster_--cl--\').click(function() {
-         $(\'#cluster_--cl--\').toggle();
-         $(\'#cluster_--cl--_RC\').toggle();
-     }); 
-  });
+# // Hide/Show the logo trees
+#   $(document).ready(function() {
+#     $(\'#Change_Orientation_cluster_--cl--\').click(function() {
+#          $(\'#cluster_--cl--\').toggle();
+#          $(\'#cluster_--cl--_RC\').toggle();
+#      }); 
+#   });
 
-// By default Hide the RC logo tree
-  $(document).ready(function() {
-    $(\'#cluster_--cl--_RC\').hide();
-  });
+# // By default Hide the RC logo tree
+#   $(document).ready(function() {
+#     $(\'#cluster_--cl--_RC\').hide();
+#   });
 
-'."\n\n";
-    return($JQuery_code);
-}
+# '."\n\n";
+#     return($JQuery_code);
+# }
 
 ##############################################################
 ## When the option -top is used the analysis is restricted 
@@ -3822,7 +3849,7 @@ sub ParametersTable{
   <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Parameters Table</strong></div>
   <div id="Par_tab" class="tab" style="margin-bottom:15px;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Results Summary</h2>
-    <table id="parameters_table" style="width:960px;">
+    <table id="parameters_table" style="width:980px;">
       <thead>
 	<tr>
 	  <th class="tab_col">Nb Input motifs</th>
@@ -4029,19 +4056,19 @@ sub InsertSmallForest {
 	if ($sum < 20) {
 	    
 	    ## Draw the logo forest 
-	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:1000px;"></div>';
+	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:800px;padding:0px 0px 0px 200px;"></div>';
 	    
 	    my $tree = &logo_tree();
 	    $tree =~ s/--RC_picture_start--//g;
 	    $tree =~ s/--RC_picture_end--//g;
 	    $tree =~ s/\/\/BG_color/$BG_color/g;
 	    $tree =~ s/--lab--/$label_single_tree_no_link/;
-	    $tree =~ s/--widthtree--/1020/g;
+	    $tree =~ s/--widthtree--/820/g;
 	    $tree =~ s/--radius--/3/g;
-	    $tree =~ s/--size--/500/g;
+	    $tree =~ s/--size--/300/g;
 	    $tree =~ s/--insert--//g;
 	    $tree =~ s/--nb--/$num/g;
-	    $tree =~ s/--height--/70 + 13 * $cluster_size/g;
+	    $tree =~ s/--height--/70 + 9 * $cluster_size/g;
 	    $tree =~ s/--cl_id--/$cl_id_s/g;
 	    $tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
 	    my $json_name = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_cluster_".$num.".json");
