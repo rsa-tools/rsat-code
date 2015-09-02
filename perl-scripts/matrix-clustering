@@ -215,6 +215,7 @@ package main;
                                      dEucl
                                      NdEucl
                                      logocor
+                                     logoDP
                                      Nlogocor
                                      Icor
                                      NIcor
@@ -234,6 +235,7 @@ package main;
                                  dEucl
                                  NdEucl
                                  logocor
+                                 logoDP
                                  Nlogocor
                                  Icor
                                  NIcor
@@ -334,10 +336,10 @@ package main;
   ## A hash to save the name of the clusters and their corresponding
   ## hexa code
   local %hexa_code = ();
-  local $blue_color = '#0D73A7';
-  local $orange_color = '#CC6600';
-#  local $font_color = '#D6EEFA';##FAFAFAFAFAFA
-  local $font_color = '#FAFAFA';
+  local $blue_color = '#D6EEFA ';
+  local $orange_color = '#F6E6CA'; 
+  local $font_color = '#CC6600';
+#  Morgane: #F6E6CA  | Blue: #0D73A7 #D6EEFA  | Orange: #CC6600 | Font: #FAFAFA
 
   ## Lower threshold on column-wise information content: left-most and
   ## right-most columns having a lower IC are trimmed.
@@ -982,7 +984,7 @@ Select the metric which will be used to cluster the motifs.based in one metric o
 similarity. This metric can be a similarity or distance, in both cases the values are converted to 
 a distance table which is used as input for the hierarchical clustering.
 
-Supported metrics : cor, Ncor, dEucl, NdEucl
+Supported metrics : cor, Ncor, NcorS, dEucl, NdEucl, logocor, logoDP, Nlogocor, Icor, NIcor, SSD, rank_mean, mean_zscore
 
 Default: Ncor 
 
@@ -2958,7 +2960,7 @@ var childCount = function(level, n) {
   }
 };
 childCount(0, root);  
-var newHeight = d3.max(levelWidth) * 250; // 20 pixels per line  
+var newHeight = d3.max(levelWidth) * 225; // 20 pixels per line  
 cluster= cluster.size([newHeight, --size--]);
 svg = d3.select("#--cl_id--").select("svg")
 		.attr("width", width)
@@ -3553,9 +3555,6 @@ sub ReportStyleCSS{
   }
 
   .Section_button {
-/*  background-color: #819FF7; */
-/*  background-color: #CC6600; */
-/*  background-color: #D6EEFA; */
   background-color: '.$blue_color.';
   float: left;
   margin-top: 2px;
@@ -3565,7 +3564,7 @@ sub ReportStyleCSS{
   position: relative;
   display: block;
   text-align: center;
-  color: #D6EEFA;
+  color: '.$font_color.';
   font-size: 15px;
   padding: 4px;
   clear: both;
@@ -3756,19 +3755,19 @@ sub ReportStyleCSS{
 
   #show_all_button{
      background-color: '.$orange_color.';
-     border: 1px solid '.$orange_color.';
+     border: 1px solid orange;
      color: '.$font_color.';
   }
 
   #hide_all_button{
-    background-color: #0D73A7;
-    border: 1px solid #0D73A7;
+    background-color: '.$blue_color.';
+    border: 1px solid #819FF7;
      color: '.$font_color.';
   }
 
   .selected_cluster {
     background-color: '.$orange_color.';
-    border: 1px solid '.$orange_color.';
+    border: 1px solid orange;
   }
 
   .selected_header_section {
