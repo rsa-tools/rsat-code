@@ -42,6 +42,7 @@ formats.
 			   'infogibbs'=>1,
 			   'info-gibbs'=>1,
 			   'jaspar'=>1,
+			   'homer'=>1,
 			   'mscan'=>1,
 			   'meme'=>1,
 			   'meme_block'=>1,
@@ -124,6 +125,8 @@ sub readFromFile {
 	@matrices = _readFromEncodeFile($file, %args);
     } elsif (($format eq "jaspar") || ($format eq "mscan")) {
 	@matrices = _readFromJasparFile($file, %args);
+    } elsif ($format eq "homer") {
+	@matrices = _readFromHomerFile($file, %args);
     } elsif ($format eq "uniprobe") {
 	@matrices = _readFromUniprobeFile($file, %args);
     } elsif ($format eq "motifsampler") {
@@ -2062,23 +2065,6 @@ sub _readFromClusterBusterFile {
 
     ## Initialize prior as equiprobable alphabet
     &InitializeEquiPriors(@matrices);
-#     foreach my $matrix (@matrices) {
-#       my @alphabet = qw(a c g t);
-#       $matrix->setAlphabet_lc(@alphabet);
-###       $matrix->force_attribute("nrow", 4);
-#       my %tmp_prior = ();
-#       my $prior = 1/scalar(@alphabet);
-#       foreach my $residue (@alphabet) {
-# 	$tmp_prior{$residue} = $prior;
-# 	#	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
-#       }
-#       $matrix->setPrior(%tmp_prior);
-#       if ($main::verbose >= 5) {
-# 	&RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
-# 	&RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
-# 	&RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
-#       }
-#     }
 
     return (@matrices);
 }
@@ -2408,7 +2394,7 @@ sub _readFromJasparFile {
 
     &InitializeEquiPriors(@matrices);
     return (@matrices);
-}
+} ## END readFromJasparFile
 
 =pod
 
@@ -2436,6 +2422,107 @@ sub NewJasparMatrix {
 
   return ($matrix);
 }
+
+=pod
+
+=item _readFromHomerFile($file)
+
+Read a matrix from a file in HOMER format (files with extension
+.homer). HOMER is a software suite for Software for motif discovery
+and next-gen sequencing analysis (http://homer.salk.edu/homer/motif/).
+
+This method is called by the method C<readFromFile($file, "homer")>.
+
+=cut
+sub _readFromHomerFile {
+    my ($file, %args) = @_;
+    &RSAT::message::Info(join("\t", "Reading matrix from HOMER file\t",$file)) if ($main::verbose >= 3);
+
+
+    ## open input stream
+    my ($in, $dir) = &main::OpenInputFile($file);
+
+    ## Special treatment for the alphabet: sometimes indicated in the first column, sometimes not.
+    my @temp_alphabet = qw(a c g t);
+
+    ## Initialize the matrix LIST
+    local @matrices = (); ## updated in subroutine
+    local $matrix; ## updated in subroutine
+    local $current_matrix_nb = 1; ## updated in subroutine
+    local $description = "Homer matrix"; 
+    my $l = 0;
+    my $ncol = 0;
+    while ($line = <$in>) {
+      $l++;
+      next unless ($line =~ /\S/); ## Skip empty lines
+      chomp($line); ## Suppress newline
+      $line =~ s/\r//; ## Suppress carriage return
+      $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
+      next if ($line =~ /^;/) ; # skip comment lines
+      #	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
+      ## Create a new matrix if required
+      if  ($line =~ /^\>(\S+)/) {
+
+	## Parse ID and name from HOMER header line
+	my $name = &clean_id($1); ## In Homer format, first word is matrix name
+	my $matrix_nb = scalar(@matrices) + 1; ## Matrix number is used in case automatic ID assignement would be needed
+	my $id = "homer_".$matrix_nb.".".$name; ## If no ID is found in the header line, use name as default id
+	my $postmatch = $'; #'
+
+	## Instantiate new matrix
+	$matrix = new RSAT::matrix();
+	$matrix->set_parameter("program", "Homer");
+	$ncol = 0;
+	$matrix->force_attribute("id", $id);
+	$matrix->set_attribute("AC", $id);
+	$matrix->set_attribute("accession", $id);
+	$matrix->set_attribute("name", $name);
+
+	## Parse matrix description
+	if ($postmatch =~ /(\S+)/) {
+#	  $matrix->force_attribute("description", $postmatch);
+	  while ($postmatch =~ /(\S+):(\S+)/) {
+	    my @tuples = split(",", $postmatch);
+	    foreach my $tuple (@tuples) {
+	      if ($tuple =~/(\S+):(\S+)/) {
+		my $key = $1;
+		my $value = $2;
+		&RSAT::message::Debug("&RSAT::MatrixReader::_readFromHomerFile()", $key, $value) if ($main::verbose >= 5);
+		$matrix->set_parameter($key, $value);
+	      }
+	    }
+	    $postmatch = $'; #'
+	  }
+	}
+
+	my @alphabet = qw(a c g t);
+	$matrix->setAlphabet_lc(@alphabet);
+#	$matrix->force_attribute("nrow", 4);
+	push @matrices, $matrix;
+	$current_matrix_nb++;
+	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
+	next;
+
+      } elsif ($line =~ /^\s*(\S+)\s+/) {
+	$line = &main::trim($line);
+	$line =~ s/\s+/\t/;
+	my @fields = split /\t/, $line;
+#	&RSAT::message::Info("line", $l, "adding column", join(";", @fields)) if ($main::verbose >= 10);
+	$matrix->addColumn(@fields);
+	$ncol++;
+	$matrix->force_attribute("ncol", $ncol);
+      }
+    }
+    close $in if ($file);
+
+    foreach my $matrix (@matrices) {
+      $matrix->setAlphabet_lc(@temp_alphabet);
+    }
+
+    &InitializeEquiPriors(@matrices);
+    return (@matrices);
+} ## End readFromHomerFile Homer
+
 
 
 =pod
