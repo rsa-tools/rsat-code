@@ -23,6 +23,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
       || (metric=="Nlogocor")
       || (metric=="Icor")
       || (metric=="NIcor")
+      || (metric=="logoDP")
       || (metric=="mean_zscore")
   ) {
     ## cor       Pearson correlation (computed on residue occurrences in aligned columns)
