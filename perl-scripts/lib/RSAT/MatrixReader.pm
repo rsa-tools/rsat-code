@@ -2480,9 +2480,10 @@ sub _readFromHomerFile {
 
 	## Parse matrix description
 	if ($postmatch =~ /(\S+)/) {
-#	  $matrix->force_attribute("description", $postmatch);
-	  while ($postmatch =~ /(\S+):(\S+)/) {
-	    my @tuples = split(",", $postmatch);
+	  $matrix->force_attribute("description", $postmatch);
+#	  while ($postmatch =~ /^([^:]+):(\S+)/) {
+#	    $postmatch = $'; #'
+	    my @tuples = split(/\,/, $postmatch);
 	    foreach my $tuple (@tuples) {
 	      if ($tuple =~/(\S+):(\S+)/) {
 		my $key = $1;
@@ -2490,8 +2491,7 @@ sub _readFromHomerFile {
 		&RSAT::message::Debug("&RSAT::MatrixReader::_readFromHomerFile()", $key, $value) if ($main::verbose >= 5);
 		$matrix->set_parameter($key, $value);
 	      }
-	    }
-	    $postmatch = $'; #'
+#	    }
 	  }
 	}
 
@@ -2508,11 +2508,20 @@ sub _readFromHomerFile {
 	$line =~ s/\s+/\t/;
 	my @fields = split /\t/, $line;
 #	&RSAT::message::Info("line", $l, "adding column", join(";", @fields)) if ($main::verbose >= 10);
-	$matrix->addColumn(@fields);
+	my $first_value = $fields[0];
+	next unless (&RSAT::util::IsReal($first_value));
+	my @values = ();
+	foreach my $field (@fields) {
+	  if (&RSAT::util::IsReal($field)) {
+	    push(@values, $field*100); ## Multiply by an arbitrary number to convert frequencies to counts
+	  }
+	}
+	$matrix->addColumn(@values);
 	$ncol++;
 	$matrix->force_attribute("ncol", $ncol);
       }
     }
+
     close $in if ($file);
 
     foreach my $matrix (@matrices) {
