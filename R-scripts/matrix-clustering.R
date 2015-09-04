@@ -75,9 +75,15 @@ check.param()
 
 #####################################
 ## Example for Debugging ############
-
+#
 # infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/rank_mean/peak-motifs_Oct4_hclust-average_Ncor0.5_cor0.7_tables/pairwise_compa.tab"
 # description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/rank_mean/peak-motifs_Oct4_hclust-average_Ncor0.5_cor0.7_tables/pairwise_compa_matrix_descriptions.tab"
+# metric <- "Ncor"
+# hclust.method <- "average"
+# thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
+
+# infile <- "/home/jcastro/rsat/results/matrix-clustering_results/jaspar_core_vertebrates_2015_03/average_linkage/Ncor0.4_cor0.6/jaspar_core_vertebrates_2015_03_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
+# description.file <- "/home/jcastro/rsat/results/matrix-clustering_results/jaspar_core_vertebrates_2015_03/average_linkage/Ncor0.4_cor0.6/jaspar_core_vertebrates_2015_03_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
@@ -210,23 +216,42 @@ if(number.of.motifs > 1){
 
    if(draw.heatmap == 1){
 
+
       for (plot.format in c("pdf", "jpg")) {
         heatmap.file <- paste(sep="", out.prefix, "_figures/heatmap.", plot.format)
-          w <- 6
+          w <- 7
           h <- w + 0.75
           resol <- 72 ## Screen resolution
         verbose(paste("drawing heatmap", heatmap.file), 2)
         if (plot.format == "pdf") {
-          pdf(file=heatmap.file, width=w, height=h)
+
+
+          pdf(file=heatmap.file, width=w, height=h, paper="executive")
         } else if (plot.format == "jpg") {
             jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
         }
+
+
+#         par(mar=c(0, 0, 0, 0))
+plot.new()
+legend("center",      # location of the legend on the heatmap plot
+  legend = names(clusters), # category labels
+  col = rainbow(length(clusters)),  # color key
+  lty= 1,             # line style
+  lwd = 0.5,            # line width
+  pch= 1,
+  cex= 0.75,
+  ncol = 3,
+  x.intersp= 0.5,
+)
+
         draw.heatmap.motifs(dist.table,
                             method = hclust.method,
                             clusters,
                             alignment.list,
                             metric = metric,
-                            tree.pos = pos.hclust.in.heatmap)
+                            tree.pos = "column")
+
         dev.off()
       }
     }
