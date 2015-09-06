@@ -102,6 +102,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
     color.order <<- append(color.order, cluster.to.color[[current.cluster]])
   })
 
+
   ## Color gradient for the heatmap
 #  grad <- colorRampPalette(c("blue", "black"))(n = 299)
   if(metric.definition == "distance"){
@@ -112,8 +113,9 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   }
 
 
-  ## Calculate the bottom border
-  par(oma=c(2,0.3,0.5,2), family="mono")
+
+## Calculate the bottom border
+par(oma=c(2,0.3,0.5,2), family="mono")
 
   # Get the aligned consensuses, which will be used as the Row names
   consensus <-sapply(colnames(dist.table), function(x){
@@ -121,6 +123,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   })
   consensus <- as.vector(consensus)
   columns.heatmap <- consensus
+
 
   ## Draw the heatmap
   heatmap.2(dist.table,
@@ -158,6 +161,5 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
           density.info = "none"
   )
 }
-
 
 
