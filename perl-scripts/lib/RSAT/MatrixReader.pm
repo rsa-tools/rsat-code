@@ -194,8 +194,6 @@ sub readFromFile {
 
       }
 
-
-      ## JCastro: I did this change
       ## The -prefix option delete the AC of the matrix
       ## I think is more informative (and required in matrix-clustering)
       ## to save the old AC. So now the -prefix output is like this:
@@ -205,11 +203,15 @@ sub readFromFile {
       if ($args{prefix_id}) {
 	my $prefix_id = $args{prefix_id};
 
-	my $old_AC = $matrix->get_attribute("accession");
+	# my $old_AC = $matrix->get_attribute("accession");
+	$old_AC = $matrix->get_attribute("accession");
+
 	$prefix_id = $prefix_id."_".$old_AC;
 
 	$matrix->force_attribute("accession", $prefix_id);
 	$matrix->force_attribute("AC", $prefix_id);
+	# $matrix->force_attribute("id", $prefix_id);
+	# $matrix->force_attribute("name", $prefix_id);
       }
 
       ## Check that each matrix contains at least one row and one col
