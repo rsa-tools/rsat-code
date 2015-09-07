@@ -161,5 +161,3 @@ par(oma=c(2,0.3,0.5,2), family="mono")
           density.info = "none"
   )
 }
-
-
