@@ -2330,6 +2330,28 @@ sub MotifsVersusDatabase {
     &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
 #    my $motif_nb = scalar(@motif_ids);
 
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ##
+    ## TO IMPROVE (2015-09): instead of running one compare-matrices
+    ## for each motif against each selected database, run only one
+    ## process withb all motifs against each databases, or, even
+    ## better, each motif against all databases together.
+    ## 
+    ## Merge all the selected databases in a single file, adapt the
+    ## motif ID to include the DB identifier, run a single comparison
+    ## of all discovered motifs aainst the merge DB, and
+    ## then. Actually we could then display all the matches sorted by
+    ## score, rather than each DB separately. This would simplify the
+    ## output report. In addition it would be consistent with the
+    ## future usage of FootprintDB, which is a compilation of other
+    ## public databases.
+    ##
+    ## In convert-matrix, I should add a possibilty to take a list of
+    ## input files in input and produce a single output file with the
+    ## motifs + an adapted ID, for example:
+    ## M00001@jaspar-core-vertebrate_2015-09
+    ## 
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     &RSAT::message::TimeWarn("Comparing ".$motif_nb." discovered motifs with database", $db_name) if ($main::verbose >= 2);
     foreach my $i (0..$#motif_ids) {
       my $m = $i+1;
@@ -2348,12 +2370,13 @@ sub MotifsVersusDatabase {
       &one_command($cmd, 1);
     }
 
-    ################################################################
-    ## JvH: TO DO: the comparison of all motifs against db is
-    ## redundant (comparisons are performed twice), but the result is
-    ## used for drawing the db versus discovered graph. The comparison
-    ## table and graph should be recollected from the individual motif
-    ## comparisons.
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ## JvH: TO IMPROVE (2015-09): the comparison of all motifs against
+    ## db is redundant (comparisons are performed twice), but the
+    ## result is used for drawing the db versus discovered graph. The
+    ## comparison table and graph should be recollected from the
+    ## individual motif comparisons.
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ################################################################
     ## Comparison between all discovered matrices and the database
