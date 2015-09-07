@@ -2489,7 +2489,20 @@ sub _readFromHomerFile {
 		my $key = $1;
 		my $value = $2;
 		&RSAT::message::Debug("&RSAT::MatrixReader::_readFromHomerFile()", $key, $value) if ($main::verbose >= 5);
-		$matrix->set_parameter($key, $value);
+
+		## Parse specific fields
+		if (($key eq "T") && ($value =~ /(\d+\.\d+)\((\d+\.\d+)\%\)/)) {
+		  $matrix->set_parameter("matching_sequences", &RSAT::util::round($1));
+		  $matrix->set_parameter("sequence_coverage", $2);
+		} elsif (($key eq "Multiplicity") && ($value =~ /(\d+\.\d+)/)) {
+		  $matrix->set_parameter("multiplicity", $1);
+		  if (&RSAT::util::IsReal($matrix->get_attribute("matching_sequences"))) {
+		    my $nb_sites = &RSAT::util::round($matrix->get_attribute("matching_sequences") * $matrix->get_attribute("multiplicity"));
+		    $matrix->set_parameter("nb_sites", $nb_sites);
+		  }
+		} else {
+		  $matrix->set_parameter($key, $value);
+		}
 	      }
 #	    }
 	  }
@@ -2504,6 +2517,10 @@ sub _readFromHomerFile {
 	next;
 
       } elsif ($line =~ /^\s*(\S+)\s+/) {
+	my $nb_sites = 100;
+	if (&RSAT::util::IsNatural($matrix->get_attribute("nb_sites"))) {
+	  $nb_sites = $matrix->get_attribute("nb_sites");
+	}
 	$line = &main::trim($line);
 	$line =~ s/\s+/\t/;
 	my @fields = split /\t/, $line;
@@ -2513,7 +2530,8 @@ sub _readFromHomerFile {
 	my @values = ();
 	foreach my $field (@fields) {
 	  if (&RSAT::util::IsReal($field)) {
-	    push(@values, $field*100); ## Multiply by an arbitrary number to convert frequencies to counts
+	    my $occurrences = sprintf("%.2f", $field*$nb_sites);
+	    push(@values, $occurrences); ## Multiply by an arbitrary number to convert frequencies to counts
 	  }
 	}
 	$matrix->addColumn(@values);
