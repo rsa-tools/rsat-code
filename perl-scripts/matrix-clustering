@@ -1521,6 +1521,7 @@ sub pre_process_motif_files{
       
       ## Create a single file combining all the matrices from all the current
       ## input file, and append the motif collection name to each matrix ID.
+      $motif_set_attributes{$collection_name}{matrix_file_processed_1} = $main::dir{data}."/".$collection_name."_input_motifs_processed_1.tf";
       $motif_set_attributes{$collection_name}{matrix_file_processed} = $main::dir{data}."/".$collection_name."_input_motifs_processed.tf";
 
       ## If it is required, permute the input motifs
@@ -1545,11 +1546,20 @@ sub pre_process_motif_files{
       $convert_matrix_cmd .= " -to transfac";
       $convert_matrix_cmd .= " -top ".$top_matrices if ($top_matrices > 0);
       $convert_matrix_cmd .= " -skip ".$skip_matrices if ($skip_matrices > 0);
+      $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
+      &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+      ## Append prefix if required
+      &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
+      $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+      $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
+      $convert_matrix_cmd .= " -from tf";
+      $convert_matrix_cmd .= " -to transfac";
       $convert_matrix_cmd .= " -prefix_id ".$collection_name unless ($single_input_flag);
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed};
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+      unlink($motif_set_attributes{$collection_name}{matrix_file_processed_1});
 
-      
       ################################################
       ## Save the unique ID in a hash table
       ## Key = ID unique
@@ -2235,7 +2245,6 @@ sub create_html_tree_file() {
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
         \t\t.attr(\"font-size\", \"18px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
-
  
     my $display_title_lab .= '
         nodeEnter.append("text")
@@ -2248,13 +2257,37 @@ sub create_html_tree_file() {
 	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
         ';
 
+    my $hide_show_consensus = '
+
+d3.select("#--cl_id--").append("text")
+	.attr("x", 1000)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.attr("id", "cons_button_--cl_id--") 
+	.text("Consensus")  
+;
+
+// Slide the Heatmap View
+$(document).ready(function() {
+    $(\'#cons_button_--cl_id--\').click(function() {
+        $(\'.show_con_--cl_id--\').toggle();
+    }); 
+});'."\n\n";
+
 
     while(<TREE>) {
 	chomp;	
 
 	if (/\(function\(\)\s*\{/) { 
-		$JQuery_dynamic =~ s/--cl--/$cluster_nb/g;
 		$cluster_nb++;
+
+		## Add the Hide/Show consensus button only to those clusters with 2 or more motifs
+		if($clusters_info{"cluster_".$cluster_nb} > 1){
+		    my $c = "cluster_".$cluster_nb;
+		    my $new_cons_button = $hide_show_consensus;
+		    $new_cons_button =~ s/--cl_id--/$c/g;
+		    $JQuery_dynamic .= $new_cons_button;
+		}
 	}
 
 	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
@@ -2287,12 +2320,12 @@ sub create_html_tree_file() {
 	
 	### Set the height 
 	if (/--widthtree--/) {;
-	    $_ =~ s/--widthtree--/3000/;
+	    $_ =~ s/--widthtree--/2500/;
 	}
 
 	### Set the tree size
 	if (/--size--/) {;
-	    $_ =~ s/--size--/900/;
+	    $_ =~ s/--size--/770/;
 	}
 
 	### Add the JSON file name
@@ -2304,7 +2337,7 @@ sub create_html_tree_file() {
 
 	if (/--cl_id--/) {
 	    my $c = "cluster_".$cluster_nb;
-	    $_ =~ s/--cl_id--/$c/;
+	    $_ =~ s/--cl_id--/$c/g;
 	}
 
 	## Add the color of the cluster
@@ -2509,6 +2542,7 @@ sub Merge_matrices() {
 		    push(@file_names, $alignment_info{$m}{aligned_tf});
 		}
 		my $files = join(" ", @file_names);
+
 		
 		################################################################
 		## Merge the matrices and create a single matrix
@@ -2631,7 +2665,7 @@ sub Create_dynamic_tree() {
 	    $line = "";
 	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted) {             
 		$line .= "<div id=\"cluster_".$cluster."\" style=\"clear:both;\"><h2>cluster_".$cluster."</h2><\/div>\n";
-		$line .= "<br><br><br><br><br>";
+		$line .= "<br><br><br>\n";
 	    }
 	}
 
@@ -2880,32 +2914,6 @@ sub hide_tree {
 sub logo_tree_dynamic{
   my $logo_tree = 
       '
-
-// Add the buttons to change the orientation
-d3.select("#--cl_id--").append("text")
-	.attr("x", 700)             
-	.attr("y", 0)    
-	.attr("class", "legend")     
-	.on("click", function(){
-		// change the orientation
-		d3.select("#--cl_id--").selectAll("image")
-		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
-	})
-	.text("Direct")  
-;
-
-d3.select("#--cl_id--").append("text")
-	.attr("x", 1000)             
-	.attr("y", 0)    
-	.attr("class", "legend")     
-	.on("click", function(){
-		// change the orientation
-		d3.select("#--cl_id--").selectAll("image")
-		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; }) 
-	})
-	.text("Reverse")  
-;
-
 	(function() {
         var width = --widthtree--,
 	height = --height--;
@@ -2962,6 +2970,8 @@ var childCount = function(level, n) {
 childCount(0, root);  
 var newHeight = d3.max(levelWidth) * 225; // 20 pixels per line  
 cluster= cluster.size([newHeight, --size--]);
+
+// Re-draw the tree
 svg = d3.select("#--cl_id--").select("svg")
 		.attr("width", width)
 		.attr("height", newHeight)
@@ -2996,6 +3006,7 @@ svg = d3.select("#--cl_id--").select("svg")
 		.attr("height", --svgheight--)
 		.attr("x", --x1--)    
 		.attr("y", --y1--) 
+		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");	
 
 /*		
@@ -3005,6 +3016,7 @@ svg = d3.select("#--cl_id--").select("svg")
 		.attr("height", --svgheight--)
   		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
 		.attr("y", --y1--) 
+		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");
 */
 
@@ -3024,6 +3036,7 @@ svg = d3.select("#--cl_id--").select("svg")
       .attr("dx", function(d) { return d.children ? -20 : 20; })
       .attr("dy", function(d) { return d.children ? -6 : 3; })
       .attr("font-size", "18px")
+      .attr("class", function(d) { return d.children ? "show_con_--cl_id--" : ""; })
       .attr("fill", function(d) { return d.children ? "blue" : "black"; })
       .attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
 
@@ -3033,6 +3046,7 @@ svg = d3.select("#--cl_id--").select("svg")
 		.attr("height", 80)
 		.attr("x", 296)    
 		.attr("y", -33) 
+		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");
 
 /*
@@ -3042,6 +3056,7 @@ svg = d3.select("#--cl_id--").select("svg")
 		.attr("height", 80)
  		.attr("x", function(d) { return (d.size + 2)  * 25 + 296 + 25; })  
 		.attr("y", -33)
+		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");
 */
 
@@ -3110,6 +3125,31 @@ function click(d) {
 
 
 })();
+
+// Add the buttons to change the orientation
+d3.select("#--cl_id--").append("text")
+	.attr("x", 700)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+	})
+	.text("Direct")  
+;
+
+d3.select("#--cl_id--").append("text")
+	.attr("x", 1000)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; }) 
+	})
+	.text("Reverse")  
+;
 	
 ';
 
@@ -3126,7 +3166,6 @@ sub logo_tree{
 
   my $logo_tree = 
       '
-
 	(function() {
         var width = --widthtree--,
 	height = --height--;
@@ -3205,6 +3244,7 @@ d3.json("--jsonfile--", function(json) {
 		return "M" + d.source.y + "," + d.source.x
 		+ "V" + d.target.x + "H" + d.target.y;
 	}
+
 })();
 	
 ';
