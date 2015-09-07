@@ -2270,7 +2270,7 @@ d3.select("#--cl_id--").append("text")
 // Slide the Heatmap View
 $(document).ready(function() {
     $(\'#cons_button_--cl_id--\').click(function() {
-        $(\'.show_con\').toggle(\'.show_con\');
+        $(\'.show_con_--cl_id--\').toggle();
     }); 
 });'."\n\n";
 
@@ -2337,7 +2337,7 @@ $(document).ready(function() {
 
 	if (/--cl_id--/) {
 	    my $c = "cluster_".$cluster_nb;
-	    $_ =~ s/--cl_id--/$c/;
+	    $_ =~ s/--cl_id--/$c/g;
 	}
 
 	## Add the color of the cluster
@@ -3032,7 +3032,7 @@ svg = d3.select("#--cl_id--").select("svg")
       .attr("dx", function(d) { return d.children ? -20 : 20; })
       .attr("dy", function(d) { return d.children ? -6 : 3; })
       .attr("font-size", "18px")
-      .attr("class", function(d) { return d.children ? "show_con" : ""; })
+      .attr("class", function(d) { return d.children ? "show_con_--cl_id--" : ""; })
       .attr("fill", function(d) { return d.children ? "blue" : "black"; })
       .attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
 
