@@ -2264,7 +2264,7 @@ d3.select("#--cl_id--").append("text")
 	.attr("y", 0)    
 	.attr("class", "legend")     
 	.attr("id", "cons_button_--cl_id--") 
-	.text("Hide/Show Consensus")  
+	.text("Consensus")  
 ;
 
 // Slide the Heatmap View
@@ -2970,6 +2970,8 @@ var childCount = function(level, n) {
 childCount(0, root);  
 var newHeight = d3.max(levelWidth) * 225; // 20 pixels per line  
 cluster= cluster.size([newHeight, --size--]);
+
+// Re-draw the tree
 svg = d3.select("#--cl_id--").select("svg")
 		.attr("width", width)
 		.attr("height", newHeight)
@@ -3004,6 +3006,7 @@ svg = d3.select("#--cl_id--").select("svg")
 		.attr("height", --svgheight--)
 		.attr("x", --x1--)    
 		.attr("y", --y1--) 
+		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");	
 
 /*		
@@ -3013,6 +3016,7 @@ svg = d3.select("#--cl_id--").select("svg")
 		.attr("height", --svgheight--)
   		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
 		.attr("y", --y1--) 
+		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");
 */
 
@@ -3042,6 +3046,7 @@ svg = d3.select("#--cl_id--").select("svg")
 		.attr("height", 80)
 		.attr("x", 296)    
 		.attr("y", -33) 
+		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");
 
 /*
@@ -3051,6 +3056,7 @@ svg = d3.select("#--cl_id--").select("svg")
 		.attr("height", 80)
  		.attr("x", function(d) { return (d.size + 2)  * 25 + 296 + 25; })  
 		.attr("y", -33)
+		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");
 */
 
