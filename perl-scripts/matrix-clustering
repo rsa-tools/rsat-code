@@ -2320,7 +2320,7 @@ $(document).ready(function() {
 	
 	### Set the height 
 	if (/--widthtree--/) {;
-	    $_ =~ s/--widthtree--/2000/;
+	    $_ =~ s/--widthtree--/2500/;
 	}
 
 	### Set the tree size
@@ -2665,7 +2665,7 @@ sub Create_dynamic_tree() {
 	    $line = "";
 	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted) {             
 		$line .= "<div id=\"cluster_".$cluster."\" style=\"clear:both;\"><h2>cluster_".$cluster."</h2><\/div>\n";
-		$line .= "<br><br><br><br><br>";
+		$line .= "<br><br><br>\n";
 	    }
 	}
 
