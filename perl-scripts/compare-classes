@@ -386,6 +386,7 @@ if ($infile{rnames}) {
     my @fields = split '\t';
     my $id = $fields[0];
     my $name = $fields[1];
+    #    &RSAT::message::Debug("Reference class name", $id, $name) if ($main::verbose > 10);
     if (defined($ref_classes{$id})) {
       $ref_classes{$id}->force_attribute("name",$name);
     }
@@ -573,7 +574,7 @@ OPTIONS
         if not specified, the standard output is used.
         This allows to place the command within a pipe.
 
-    -rnames class_name_file
+    -rnames ref_class_name_file
         File containing names for the reference classes.
         Associate a name to each class, when the classes are
         specified by an ID (ex Gene Ontology term IDs).  
@@ -583,7 +584,7 @@ OPTIONS
             2) class name
 
 
-    -qnames class_name_file
+    -qnames query_class_name_file
         File containing names for the query classes.
         Same format as for -rnames.
 
@@ -597,9 +598,9 @@ OPTIONS
         should thus be used for quick testing only, and no conclusion
         should be drawn from the results.
 
-    -max_lines_q # 
+    -max_lines_r # 
         Max number of lines to read for the reference file.
-        See -max_lines_r for details.
+        See -max_lines_q for details.
 
     -max_lines #
         Max number of lines to read for both query and reference
@@ -921,7 +922,7 @@ compare-classes options
 -o              output file
 -v              verbose
 -max_lines_q	max number of lines to read for the query file
--max_lines_q	max number of lines to read for the reference file
+-max_lines_r	max number of lines to read for the reference file
 -max_lines	max number of lines to read for both query and reference files
 -return         return fields (supported $supported_return_fields)
 -lth            lower threshold on a given field
