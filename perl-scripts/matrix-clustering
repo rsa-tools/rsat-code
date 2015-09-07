@@ -2320,12 +2320,12 @@ $(document).ready(function() {
 	
 	### Set the height 
 	if (/--widthtree--/) {;
-	    $_ =~ s/--widthtree--/3000/;
+	    $_ =~ s/--widthtree--/2000/;
 	}
 
 	### Set the tree size
 	if (/--size--/) {;
-	    $_ =~ s/--size--/800/;
+	    $_ =~ s/--size--/770/;
 	}
 
 	### Add the JSON file name
