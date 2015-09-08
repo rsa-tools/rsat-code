@@ -303,6 +303,9 @@ package main;
   ## The trees and heatmaps are not computed.
   local $root_matrices_flag = 0;
 
+  ## Saves the features of the root motifs
+  local %root_motifs_features = ();
+
   ## Limit the number of input motifs
   local $max_matrices = 0;
   local $top_matrices = 0;
@@ -2536,12 +2539,16 @@ sub Merge_matrices() {
 		close $int_align_dataframe;
 		unlink($main::outfile{int_align_offset});
 
+		## Concatenate the motif's file names
 		my @file_names = ();
+		my @ID_names = ();
 		## Get the names of the files of each level
 		foreach my $m (@level_motifs) {
+		    push(@ID_names, $alignment_info{$m}{name});
 		    push(@file_names, $alignment_info{$m}{aligned_tf});
 		}
 		my $files = join(" ", @file_names);
+		my $ID_cluster = join("<br>", @ID_names);
 
 		
 		################################################################
@@ -2598,8 +2605,15 @@ sub Merge_matrices() {
 		$cons =~ s/-//g;
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
 
-		## Add the singleton cluster to the list of root motifs
+		## Add the most external motif in the tree as a root motif
+		## Add the info to the Root Motifs Features hash
 		if(scalar(@folder_merged_matrices) == $node_counter){
+
+		    $root_motifs_features{$cluster}{logo} = $merged_consensuses_files{$folder}{$cluster}{logo};
+		    $root_motifs_features{$cluster}{logo_RC} = $merged_consensuses_files{$folder}{$cluster}{logo_RC};
+		    $root_motifs_features{$cluster}{size} = $node_counter;
+		    $root_motifs_features{$cluster}{members} = $ID_cluster;
+		    $root_motifs_features{$cluster}{file} = $mat_file;
 		    $external_branch_motifs .= $mat_file." ";
 		}
 	    }
@@ -2622,8 +2636,15 @@ sub Merge_matrices() {
 	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/".$cluster."_matrices"; 
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
+	    ## Add the info to the Root Motifs Features hash
+	    $root_motifs_features{$cluster}{logo} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo};
+	    $root_motifs_features{$cluster}{logo_RC} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo_rc};
+	    $root_motifs_features{$cluster}{size} = 1;
+	    $root_motifs_features{$cluster}{members} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{name};
+	    $root_motifs_features{$cluster}{file} = $new_singleton_motif_file;
+
 	    ## Add the singleton cluster to the list of root motifs
-	    $external_branch_motifs .= $main::outfile{prefix}."_clusters_information/".$cluster."/".$cluster."_matrices"." ";
+	    $external_branch_motifs .= $new_singleton_motif_file." ";
 	}
     }
     
@@ -3523,7 +3544,6 @@ sub ReportStyleCSS{
     text-decoration: none;
     display: block;
     background-color: #E6E6E6;
-    font-size: 10px;
     clear: both;
     float: left;
     position: relative;
@@ -3696,7 +3716,7 @@ sub ReportStyleCSS{
 
 
   .tab_spacer_2 {
-    padding: 3px 2px 3px 2px;
+    padding: 3px;
     font-size: 12px;
   }
 
@@ -3924,6 +3944,68 @@ sub ParametersTable{
 '."\n\n";
   print $syn $par_table;
 }
+
+
+###########################################
+## Clusters summary table of matrix-clustering.
+sub ClustersSummaryTable{
+
+  my $clust_table = '
+  <!-- Div with the table of selected parameters-->
+  <div id="Clus_tab_button" class="button_click Section_button"><strong>Clusters Summary</strong></div>
+  <div id="Clus_tab" class="tab" style="margin-bottom:15px;display:none;">
+    <h2 style="margin-top: 0px;margin-bottom: 5px;">Clusters Summary Table</h2>
+    <table id="cluster_summary_table" class="hover ">
+      <thead>
+	<tr>
+	  <th class="tab_col">FBP</th>
+	  <th class="tab_col">FBP (Reverse)</th>
+	  <th class="tab_col">Cluster ID</th>
+	  <th class="tab_col">Motifs</th>
+	  <th class="tab_col"># Motifs</th>
+	  <th class="tab_col">PSSM File</th>
+	</tr>
+      </thead>
+      <tbody>
+
+--clus_tab--
+
+      </tbody>
+    </table>
+       <ul style="text-align:left;margin:0px 0px 5px 0px;">
+          <li type="square" style="color:red">Note: by default the table displays the first 5 cluster. Click on the <i>Show X entries</i> button to display more clusters.</li>
+          <li type="square">Click on the column names to change the order of the data.</li>
+          <li type="square">Use the <i>Search</i> window to find your motif(s) of interest.</li>
+       </ul>   
+  </div>
+'."\n\n";
+
+
+  ## Insert and fille the rows 
+  my $row_cluster_tab = "";
+  foreach my $c (1 .. scalar keys %root_motifs_features){
+      $cluster = "cluster_".$c;
+      $row_cluster_tab .= "
+         <tr>
+            <th class='tab_spacer_2'><img  width='--width--' src='".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo})."'/></td>
+            <th class='tab_spacer_2'><img  width='--width--' src='".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC})."'/></td>
+            <td class='tab_spacer_1'>".$cluster."</td>
+            <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{members}."</td>
+            <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{size}."</td>
+            <td class='tab_spacer_1'><a target=\"_blank\" href=\"".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{file})."\">FBP File</a></td>
+         </tr>"."\n";
+
+      ## The image size depends of the motif width
+      my $w = 13 * $cluster_info_width{$cluster}; 
+      $row_cluster_tab =~ s/--width--/$w/g;
+  }
+
+  $clust_table =~ s/--clus_tab--/$row_cluster_tab/g;
+
+  print $syn $clust_table;
+}
+
+
 
 
 #######################################################################
@@ -4184,6 +4266,28 @@ $(document).ready( function () {
     });
 });
 
+// Dynamic cluster summary table
+$(document).ready( function () {
+    $(\'#cluster_summary_table\').DataTable({
+        "info":     true,
+        "iDisplayLength": 5,
+        "order": [[ 1, "asc" ]],
+	"search": {
+	    "regex": true,
+	    "smart": true
+	},
+	"aoColumnDefs": [
+            { "bSortable": true, "aTargets": [ 0,1,2,3,4,5 ] }
+	],
+        "columnDefs": [ {
+            "targets": [2,3,4,5],
+            "data": null,
+            "width": "15%"
+
+        } ]	
+    });
+});
+
 // Dynamic alignment table
 $(document).ready( function () {
     $(\'#alignment_dyn_table\').DataTable({
@@ -4273,6 +4377,14 @@ $(document).ready(function() {
 $(document).ready(function() {
     $(\'#Par_tab_button\').click(function() {
 	$(\'#Par_tab\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Parameters Table
+$(document).ready(function() {
+    $(\'#Clus_tab_button\').click(function() {
+	$(\'#Clus_tab\').slideToggle(\'fast\');
         $(this).toggleClass(\'selected_header_section\');
     }); 
 });
@@ -4466,7 +4578,7 @@ sub InsertTreesAndBranchMotifs {
 		$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
-		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">Branch motif (TRANSFAC format)</a></th>'."\n";
+		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 		$consensus_table_columns .= "</tr>\n";
 
 		## Add the code to hide/show the branch-consensus table
@@ -4735,6 +4847,8 @@ sub Synthesis {
     &ReportStyleCSS();
 
     &ParametersTable();
+
+    &ClustersSummaryTable();
 
     &InsertSmallForest();
 
