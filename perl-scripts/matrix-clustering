@@ -339,9 +339,10 @@ package main;
   ## A hash to save the name of the clusters and their corresponding
   ## hexa code
   local %hexa_code = ();
-  local $blue_color = '#D6EEFA ';
+  local $blue_color = '#D6EEFA';
   local $orange_color = '#F6E6CA'; 
   local $font_color = '#CC6600';
+  local $blue_font_color = '#0D73A7';
 #  Morgane: #F6E6CA  | Blue: #0D73A7 #D6EEFA  | Orange: #CC6600 | Font: #FAFAFA
 
   ## Lower threshold on column-wise information content: left-most and
@@ -3624,7 +3625,7 @@ sub ReportStyleCSS{
   position: relative;
   display: block;
   text-align: center;
-  color: '.$font_color.';
+  color: '.$blue_font_color.';
   font-size: 15px;
   padding: 4px;
   clear: both;
@@ -3831,6 +3832,7 @@ sub ReportStyleCSS{
   }
 
   .selected_header_section {
+    color : '.$font_color.';
     background-color: '.$orange_color.' !important;
     border: 1px solid '.$orange_color.';
   }
@@ -3958,12 +3960,12 @@ sub ClustersSummaryTable{
     <table id="cluster_summary_table" class="hover ">
       <thead>
 	<tr>
-	  <th class="tab_col">FBP</th>
-	  <th class="tab_col">FBP (Reverse)</th>
+	  <th class="tab_col">Root Motif</th>
+	  <th class="tab_col">Root Motif (Reverse)</th>
 	  <th class="tab_col">Cluster ID</th>
-	  <th class="tab_col">Motifs</th>
+	  <th class="tab_col">Name of Descendant Motifs</th>
 	  <th class="tab_col"># Motifs</th>
-	  <th class="tab_col">PSSM File</th>
+	  <th class="tab_col">Motifs in TRANSFAC Format</th>
 	</tr>
       </thead>
       <tbody>
@@ -3992,7 +3994,7 @@ sub ClustersSummaryTable{
             <td class='tab_spacer_1'>".$cluster."</td>
             <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{members}."</td>
             <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{size}."</td>
-            <td class='tab_spacer_1'><a target=\"_blank\" href=\"".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{file})."\">FBP File</a></td>
+            <td class='tab_spacer_1'><a target=\"_blank\" href=\"".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{file})."\">Download</a></td>
          </tr>"."\n";
 
       ## The image size depends of the motif width
