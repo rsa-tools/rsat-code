@@ -1462,6 +1462,14 @@ sub pre_process_motif_files{
       
       my ($matrix_file, $matrix_format, $collection_name) = split ("\t");
       $collection_name =~ s/\s+/_/g;
+
+      ## Replace environment variables in file names by their actual value
+      while ($matrix_file =~ /\$ENV{([^}]+)}/) {
+	$matrix_file = $ENV{$1}.$'; #'
+      }
+      while ($matrix_file =~ /\${([^}]+)}/) {
+	$matrix_file = $ENV{$1}.$'; #'
+      }
       
       ## The collection labels must be unique or the program crashes
       if (exists($motif_set_attributes{$collection_name}{collection_label})){
@@ -1475,10 +1483,14 @@ sub pre_process_motif_files{
       
       ## Check the matrix format on each line of the file
       if (!$supported_matrix_format{$matrix_format}) {
-	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{matrix_format}, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{matrix_format}, 
+				 "Invalid format for input matrices. ", 
+				 "Supported: ".$main::supported_matrix_formats);
       } else {
 	$motif_set_counter++;
       }
+
+      &RSAT::message::Info("Matrix file", $matrix_format, $collection_name, $matrix_file) if ($main::verbose >= 0);
     }
     close $main::infile{matrices_info_tab};
     &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
