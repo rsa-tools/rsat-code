@@ -49,13 +49,18 @@ $search_method = "regexp";
 $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 %return_fields = ();
 
+## Stop after N top sequences
+$top_seq = 0;
+
 if ($HelpRequested) {
     &Help;
     exit;
 }
 
 
+
 &ReadArguments();
+
 
 ################################################################
 #
@@ -122,9 +127,12 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 #### check patterns
 if ($main::verbose >= 3) {
   &RSAT::message::TimeWarn("Patterns");
+  my $p = 0;
   foreach my $pattern (@patterns) {
+    $p++;
     warn join ("\t",
 	       ";",
+	       $p,
 	       $pattern->get_attribute("sequence"),
 	       $pattern->get_attribute("id"),
 	       $pattern->get_attribute("score"),
@@ -196,6 +204,7 @@ $out = &OpenOutputFile($outputfile);
 
 ## Scan input sequences
 &RSAT::message::TimeWarn("Scanning sequences") if ($verbose >= 2);
+$s = 0; ## Initialize sequence counter
 while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
        (($current_seq) || ($sequence_id))) {
     push @sequence_ids, $sequence_id;
@@ -206,8 +215,9 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 
     $sequence_length = length($current_seq);
 
+
     ## Top sequences
-    if (($top_seq > 0) && ($sequence_number > $top_seq)) {
+    if (($top_seq > 0) && ($s > $top_seq)) {
       &RSAT::message::Info("Stopped after", $top_seq, "sequences") if ($main::verbose >= 2);
       last;
     }
@@ -829,6 +839,10 @@ sub ReadArguments {
 	    # read input format (sequence format)
 	    $in_format = lc(shift(@arguments));
 
+	} elsif ($arg eq "-last") {
+	    # Stop after the N top sequences
+	  $main::top_seq = shift(@arguments);
+	  &RSAT::error::FatalError($main::top_seq, "Invalid option for -top_seq, sould be a Natural number.") unless (&IsNatural($main::top_seq));
 
 	    ################################################################
 	    #### output file
@@ -967,6 +981,7 @@ sub ReadArguments {
 	    #### top score
 	} elsif ($arg eq "-top") {
 	    $return_fields{top} = 1;
+
 	    #### sort
 	} elsif ($arg eq "-sort") {
 	    $sort = 1;
