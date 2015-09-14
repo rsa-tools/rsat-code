@@ -184,6 +184,21 @@ package main;
   local $datatable_base;
   local $datatable_css_base;
 
+  ## Motif Collection names counter
+  local %motif_collection_count = ();
+
+  ## Supported label motif fields
+  local @supported_label_motif_fields = qw (id name collection);
+  local %supported_label_motif_fields = ();
+  foreach my $field (@supported_label_motif_fields) {
+    $supported_label_motif_fields{$field} = 1;
+  }
+  local $supported_label_motif_fields = join ",", @supported_label_motif_fields;
+  local %label_motif_fields_to_return = ();
+  ## Default name::collection
+  local @label_motif_fields_to_return = qw (name collection);
+
+
   ## Supported label fields
   local @supported_label_fields = qw (id name consensus);
   local %supported_label_fields = ();
@@ -852,10 +867,11 @@ B<Supported labels>
  (name, consensus, id)
  
 =cut
+
     } elsif ($arg eq "-label_in_tree") {
       my $label_fields_to_return = shift(@arguments);
       my @new_label_fields_to_return = split (",", $label_fields_to_return);
-      foreach $field (@new_label_fields_to_return) {
+      foreach my $field (@new_label_fields_to_return) {
 	if ($supported_label_fields{$field}) {
 	  $label_fields_to_return{$field} = 1;
 	  push @label_fields_to_return, $field;
@@ -863,6 +879,33 @@ B<Supported labels>
 	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_label_fields));
 	}
       }
+
+=pod
+
+=item	B<-label_motif>
+
+Option to select the labels displayed in the cluster summary.
+
+B<Supported labels>
+    
+ (name, consensus, collection)
+
+Default: name::collection
+ 
+=cut
+    } elsif ($arg eq "-label_motif") {
+	%label_motif_fields_to_return = ();
+	@label_motif_fields_to_return = ();
+	my $supported_label_motif_fields = shift(@arguments);
+	my @new_label_motif_fields_to_return = split (",", $supported_label_motif_fields);
+	foreach my $field (@new_label_motif_fields_to_return) {
+	    if ($supported_label_motif_fields{$field}) {
+		$label_motif_fields_to_return{$field} = 1;
+		push @label_motif_fields_to_return, $field;
+	    } else {
+		&RSAT::error::FatalError(join("\t", $field, "Invalid motif label field. Supported:", $supported_label_motif_fields));
+	    }
+	}
 
 
 =pod
@@ -1450,6 +1493,8 @@ sub pre_process_motif_files{
     $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
     $motif_set_attributes{$collection_name}{matrix_file_input} = $main::infile{matrices}; 
 
+    $motif_collection_count{$collection_name} = 0;
+
   } else {
     
     ## Read the file tible and extract the information
@@ -1501,6 +1546,8 @@ sub pre_process_motif_files{
 
   ## Pre-process each motif collection
   foreach my $collection_name (keys(%motif_set_attributes)) {
+
+      $motif_collection_count{$collection_name} = 0;
     
       ## Set the values of the title, file and format in a hash table
       my $matrix_format = $motif_set_attributes{$collection_name}{matrix_format}; 
@@ -1909,13 +1956,17 @@ sub ReadClusterComposition {
     push(@{$cluster_nodes{$cluster}}, $node);
     ## Store the ID, strand and offset of each aligned motif
     $cluster_info_width{$cluster} = $width;
+    $alignment_info{$node}{id} = $node;
+    $alignment_info{$node}{collection} = $motifs_ID_unique{$node};
     $alignment_info{$node}{name} = $name;
     $alignment_info{$node}{strand} = $strand;
     $alignment_info{$node}{offset_left} = $offset_l;
     $alignment_info{$node}{offset_right} = $offset_r;
     $alignment_info{$node}{width} = $width;
+
     &RSAT::message::Debug("\tcluster=".$cluster, "name=".$name, "node=".$node, scalar(@{$cluster_nodes{$cluster}})) if ($main::verbose >= 5);
   }
+
   @clusters_to_HTML = sort keys %cluster_nodes;
 
   &RSAT::message::Debug("Cluster names", join ";", @clusters_to_HTML) if ($main::verbose >= 3);
@@ -2190,6 +2241,7 @@ sub Add_attributes_to_JSON() {
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      my $id_json = $cluster."_".$folder;
 		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
+		      # $Add .= " \"collection_count\" : \"".$merged_consensuses_files{$folder}{$cluster}{collection_counts}."\",\n"; -------
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
 		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
@@ -2394,10 +2446,17 @@ $(document).ready(function() {
 	    $_ =~ s/--x2--/$svg_x2/g;
 	}
 
-	if (/--lab--/) {
-	    $_ =~ s/--lab--//g;
-	}
 
+################################################################	
+	my $l = $new_label;
+	$l =~ s/d\.;/ d\.collection_count;/;
+	my $y_displacement = 3 + ((1 -1) * 25);
+	$l =~ s/#/$y_displacement/;
+	## ----------------------------------
+	if (/--lab--/) {
+	    $_ =~ s/--lab--/$l/g;
+	}
+################################################################
 
 
 	if ($_ =~ /Insert labels/) {
@@ -2552,17 +2611,41 @@ sub Merge_matrices() {
 		close $int_align_dataframe;
 		unlink($main::outfile{int_align_offset});
 
+		## Count the number of motif of each collection
+		%collection_count = %motif_collection_count;
+
 		## Concatenate the motif's file names
 		my @file_names = ();
 		my @ID_names = ();
+
 		## Get the names of the files of each level
 		foreach my $m (@level_motifs) {
-		    push(@ID_names, $alignment_info{$m}{name});
+		    
+		    ## Count the number of motifs belonging to a specific collection
+		    $collection_count{$alignment_info{$m}{collection}}++;
+
+		    ## Set the label motifs according to the user selection
+		    my @motif_labels = ();
+		    foreach my $field (@label_motif_fields_to_return) {
+			push(@motif_labels, $alignment_info{$m}{$field});
+		    }
+		    my $motif_labels_separated = join("::", @motif_labels);
+		    push(@ID_names, $motif_labels_separated);
 		    push(@file_names, $alignment_info{$m}{aligned_tf});
 		}
+
+
+		## Count the number of motifs belonging to each collection of motifs
+		## at each node of each cluster
+		$merged_consensuses_files{$folder}{$cluster}{collection_counts} = "";
+		foreach my $c (keys %collection_count){
+		    if($collection_count{$c} > 0){
+			$merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c." : ".$collection_count{$c}." motifs<br>";
+		    }
+		}
+
 		my $files = join(" ", @file_names);
 		my $ID_cluster = join("<br>", @ID_names);
-
 		
 		################################################################
 		## Merge the matrices and create a single matrix
@@ -2624,9 +2707,10 @@ sub Merge_matrices() {
 
 		    $root_motifs_features{$cluster}{logo} = $merged_consensuses_files{$folder}{$cluster}{logo};
 		    $root_motifs_features{$cluster}{logo_RC} = $merged_consensuses_files{$folder}{$cluster}{logo_RC};
-		    $root_motifs_features{$cluster}{size} = $node_counter;
-		    $root_motifs_features{$cluster}{members} = $ID_cluster;
+		    $root_motifs_features{$cluster}{size} = $node_counter + 1; ## Because we count the number of branches
+		    $root_motifs_features{$cluster}{members} = "";
 		    $root_motifs_features{$cluster}{file} = $mat_file;
+		    $root_motifs_features{$cluster}{members} = $ID_cluster;
 		    $external_branch_motifs .= $mat_file." ";
 		}
 	    }
@@ -3305,6 +3389,7 @@ sub branch_consensus_table{
 					<th class="tab_col">Consensus</th>
 					<th class="tab_col">Logo</th>
                                         <th class="tab_col">Logo (Reverse)</th>
+                                        <th class="tab_col">Collections</th>
 					<th class="tab_col">Matrix (Transfac format)</th>
 				</tr>
 			</thead>
@@ -3315,7 +3400,6 @@ sub branch_consensus_table{
                 </table>
      </div>
 ';
-
   return($branch_consensus_table);
 }
 
@@ -3938,8 +4022,7 @@ sub ParametersTable{
 	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
 	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
 	  <th class="tab_col">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></th>
-	  <th class="tab_col">Download Link</th>
-	  <th class="tab_col">Clusters in TRANSFAC format</th>
+	  <th class="tab_col">Complete results [zip]</th>
 	</tr>
       </thead>
       <tbody>
@@ -3949,8 +4032,7 @@ sub ParametersTable{
 	  <td class="par_text">'.$hclust_method.'</td>
 	  <td class="par_text">'.$main::param{matrix_compa_score}.'</td>
 	  <td class="par_text">'.$threshold_values_html.'</td>
-	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
-	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download all results</a></td>
+	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download</a></td>
 	</tr>
       </tbody>
     </table>
@@ -3975,7 +4057,7 @@ sub ClustersSummaryTable{
 	  <th class="tab_col">Root Motif</th>
 	  <th class="tab_col">Root Motif (Reverse)</th>
 	  <th class="tab_col">Cluster ID</th>
-	  <th class="tab_col">Name of Descendant Motifs</th>
+	  <th class="tab_col">Name::Collection of Descendant Motifs</th>
 	  <th class="tab_col"># Motifs</th>
 	  <th class="tab_col">Motifs in TRANSFAC Format</th>
 	</tr>
@@ -3987,7 +4069,7 @@ sub ClustersSummaryTable{
       </tbody>
     </table>
        <ul style="text-align:left;margin:0px 0px 5px 0px;">
-          <li type="square" style="color:red">Note: by default the table displays the first 5 cluster. Click on the <i>Show X entries</i> button to display more clusters.</li>
+          <li type="square" style="color:red">Note: by default the table displays the first 50 clusters. Click on the <i>Show X entries</i> button to display more (or less) clusters.</li>
           <li type="square">Click on the column names to change the order of the data.</li>
           <li type="square">Use the <i>Search</i> window to find your motif(s) of interest.</li>
        </ul>   
@@ -4275,7 +4357,7 @@ $(document).ready( function () {
         "ordering": false,
         "info":     false,
         "columnDefs": [
-	    { "width": "5%", "targets": [0,1,2,3,4,5,6] }
+	    { "width": "5%", "targets": [0,1,2,3,4,5] }
 	]		
     });
 });
@@ -4284,7 +4366,7 @@ $(document).ready( function () {
 $(document).ready( function () {
     $(\'#cluster_summary_table\').DataTable({
         "info":     true,
-        "iDisplayLength": 5,
+        "iDisplayLength": 50,
         "order": [[ 1, "asc" ]],
 	"search": {
 	    "regex": true,
@@ -4592,6 +4674,7 @@ sub InsertTreesAndBranchMotifs {
 		$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
+		$consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{"cluster_".$num}{collection_counts}.'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 		$consensus_table_columns .= "</tr>\n";
 
@@ -4632,11 +4715,12 @@ sub InsertTreesAndBranchMotifs {
 
 	    ## Fill the table
 	    $consensus_table_columns .= "\n".'<tr id="cluster_'.$num.'" class="branch_motifs">'."\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2">Level 0 (singleton) </th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2">Singleton</th>'."\n";
 	    $consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">Motif (TRANSFAC format)</a></th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{"cluster_".$num}{collection_counts}.'</th>'."\n"; ## Ajustar para singleton!! ----------------------
+	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 	    $consensus_table_columns .= "</tr>\n";
 
 	    ## Add the code to hide/show the branch-consensus table
@@ -4740,8 +4824,6 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{distance_table}).'"><strong>Distance table</strong></a></td>
 		      <td class="tab_spacer_2">This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
 		   </tr>
--->
-<!--
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"><strong>Logo Forest</strong></a></td>
 		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
@@ -4754,6 +4836,10 @@ sub InsertListOfFiles {
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{matrix_descriptions}).'"><strong>Matrix description</strong></a></td>
 		      <td class="tab_spacer_2">This table shows information of each input motif.</td>
+		   </tr>
+		   <tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{matrix_descriptions}).'"><strong>Cluster-wise Motif Files [zip]</strong></a></td>
+		      <td class="tab_spacer_2">One TRANSFAC file is generated for each cluster including all the input motifs grouped in the corresponding cluster.</td>
 		   </tr>
                    <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{root_motifs}).'"><strong>Root motifs</strong></a></td>
