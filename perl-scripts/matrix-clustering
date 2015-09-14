@@ -184,6 +184,9 @@ package main;
   local $datatable_base;
   local $datatable_css_base;
 
+  ## Motif Collection names counter
+  local %motif_collection_count = ();
+
   ## Supported label motif fields
   local @supported_label_motif_fields = qw (id name collection);
   local %supported_label_motif_fields = ();
@@ -864,6 +867,7 @@ B<Supported labels>
  (name, consensus, id)
  
 =cut
+
     } elsif ($arg eq "-label_in_tree") {
       my $label_fields_to_return = shift(@arguments);
       my @new_label_fields_to_return = split (",", $label_fields_to_return);
@@ -875,7 +879,6 @@ B<Supported labels>
 	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_label_fields));
 	}
       }
-
 
 =pod
 
@@ -1490,6 +1493,8 @@ sub pre_process_motif_files{
     $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
     $motif_set_attributes{$collection_name}{matrix_file_input} = $main::infile{matrices}; 
 
+    $motif_collection_count{$collection_name} = 0;
+
   } else {
     
     ## Read the file tible and extract the information
@@ -1501,7 +1506,7 @@ sub pre_process_motif_files{
       chomp();
       
       my ($matrix_file, $matrix_format, $collection_name) = split ("\t");
-      $collection_name =~ s/\s+/_/g;
+      $collection_name =~ s/\s+/_/g;    
       
       ## The collection labels must be unique or the program crashes
       if (exists($motif_set_attributes{$collection_name}{collection_label})){
@@ -1529,6 +1534,8 @@ sub pre_process_motif_files{
 
   ## Pre-process each motif collection
   foreach my $collection_name (keys(%motif_set_attributes)) {
+
+      $motif_collection_count{$collection_name} = 0;
     
       ## Set the values of the title, file and format in a hash table
       my $matrix_format = $motif_set_attributes{$collection_name}{matrix_format}; 
@@ -2222,6 +2229,7 @@ sub Add_attributes_to_JSON() {
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      my $id_json = $cluster."_".$folder;
 		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
+		      # $Add .= " \"collection_count\" : \"".$merged_consensuses_files{$folder}{$cluster}{collection_counts}."\",\n"; -------
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
 		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
@@ -2426,10 +2434,17 @@ $(document).ready(function() {
 	    $_ =~ s/--x2--/$svg_x2/g;
 	}
 
-	if (/--lab--/) {
-	    $_ =~ s/--lab--//g;
-	}
 
+################################################################	
+	my $l = $new_label;
+	$l =~ s/d\.;/ d\.collection_count;/;
+	my $y_displacement = 3 + ((1 -1) * 25);
+	$l =~ s/#/$y_displacement/;
+	## ----------------------------------
+	if (/--lab--/) {
+	    $_ =~ s/--lab--/$l/g;
+	}
+################################################################
 
 
 	if ($_ =~ /Insert labels/) {
@@ -2584,11 +2599,18 @@ sub Merge_matrices() {
 		close $int_align_dataframe;
 		unlink($main::outfile{int_align_offset});
 
+		## Count the number of motif of each collection
+		%collection_count = %motif_collection_count;
+
 		## Concatenate the motif's file names
 		my @file_names = ();
 		my @ID_names = ();
+
 		## Get the names of the files of each level
 		foreach my $m (@level_motifs) {
+		    
+		    ## Count the number of motifs belonging to a specific collection
+		    $collection_count{$alignment_info{$m}{collection}}++;
 
 		    ## Set the label motifs according to the user selection
 		    my @motif_labels = ();
@@ -2599,9 +2621,19 @@ sub Merge_matrices() {
 		    push(@ID_names, $motif_labels_separated);
 		    push(@file_names, $alignment_info{$m}{aligned_tf});
 		}
+
+
+		## Count the number of motifs belonging to each collection of motifs
+		## at each node of each cluster
+		$merged_consensuses_files{$folder}{$cluster}{collection_counts} = "";
+		foreach my $c (keys %collection_count){
+		    if($collection_count{$c} > 0){
+			$merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c." : ".$collection_count{$c}." motifs<br>";
+		    }
+		}
+
 		my $files = join(" ", @file_names);
 		my $ID_cluster = join("<br>", @ID_names);
-
 		
 		################################################################
 		## Merge the matrices and create a single matrix
@@ -3345,6 +3377,7 @@ sub branch_consensus_table{
 					<th class="tab_col">Consensus</th>
 					<th class="tab_col">Logo</th>
                                         <th class="tab_col">Logo (Reverse)</th>
+                                        <th class="tab_col">Collections</th>
 					<th class="tab_col">Matrix (Transfac format)</th>
 				</tr>
 			</thead>
@@ -3355,7 +3388,6 @@ sub branch_consensus_table{
                 </table>
      </div>
 ';
-
   return($branch_consensus_table);
 }
 
@@ -4630,6 +4662,7 @@ sub InsertTreesAndBranchMotifs {
 		$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
+		$consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{"cluster_".$num}{collection_counts}.'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 		$consensus_table_columns .= "</tr>\n";
 
@@ -4670,11 +4703,12 @@ sub InsertTreesAndBranchMotifs {
 
 	    ## Fill the table
 	    $consensus_table_columns .= "\n".'<tr id="cluster_'.$num.'" class="branch_motifs">'."\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2">Level 0 (singleton) </th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2">Singleton</th>'."\n";
 	    $consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">Motif (TRANSFAC format)</a></th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{"cluster_".$num}{collection_counts}.'</th>'."\n"; ## Ajustar para singleton!! ----------------------
+	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 	    $consensus_table_columns .= "</tr>\n";
 
 	    ## Add the code to hide/show the branch-consensus table
