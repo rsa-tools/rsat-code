@@ -2,7 +2,7 @@
 ## Run GO enrichment analysis
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=makefiles/go_analysis.mk
+MAKEFILE=${RSAT}/makefiles/go_analysis.mk
 PYTHON=python2.7
 #PYTHON=python -m cProfile -o profiling_result.txt
 SCRIPT=${RSAT}/python-scripts/go_analysis.py
