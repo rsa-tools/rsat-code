@@ -2229,7 +2229,6 @@ sub Add_attributes_to_JSON() {
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      my $id_json = $cluster."_".$folder;
 		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
-		      # $Add .= " \"collection_count\" : \"".$merged_consensuses_files{$folder}{$cluster}{collection_counts}."\",\n"; -------
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
 		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
@@ -2433,18 +2432,6 @@ $(document).ready(function() {
 	if (/--x2--/) {
 	    $_ =~ s/--x2--/$svg_x2/g;
 	}
-
-
-################################################################	
-	my $l = $new_label;
-	$l =~ s/d\.;/ d\.collection_count;/;
-	my $y_displacement = 3 + ((1 -1) * 25);
-	$l =~ s/#/$y_displacement/;
-	## ----------------------------------
-	if (/--lab--/) {
-	    $_ =~ s/--lab--/$l/g;
-	}
-################################################################
 
 
 	if ($_ =~ /Insert labels/) {
@@ -2703,6 +2690,8 @@ sub Merge_matrices() {
 		}
 	    }
 	} else {
+
+	    $merged_consensuses_files{node_1}{$cluster}{collection_counts} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{collection}." : 1 motif";
 
 	    my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{aligned_tf};
 
@@ -4528,7 +4517,7 @@ $(document).ready(function() {
 ## Display single trees
 sub InsertTreesAndBranchMotifs {
 
-    my $a_test = "";
+    my $trees_and_tables = "";
     my  $svg_width = 8.5;
     my  $svg_height = 35;
     my  $svg_x1 = 6.5 * $nb_char + 6.5;
@@ -4688,6 +4677,7 @@ sub InsertTreesAndBranchMotifs {
 	## Insert the matrices for singleton clusters here
 	} else {
 	    
+	    $level = 1;
 	    $consensus_table = "";
 	    $consensus_table = &branch_consensus_table();
 	    my $consensus_table_columns = "";
@@ -4707,7 +4697,7 @@ sub InsertTreesAndBranchMotifs {
 	    $consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{"cluster_".$num}{collection_counts}.'</th>'."\n"; ## Ajustar para singleton!! ----------------------
+	    $consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{"cluster_".$num}{collection_counts}.'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 	    $consensus_table_columns .= "</tr>\n";
 
@@ -4723,10 +4713,8 @@ sub InsertTreesAndBranchMotifs {
 	    $consensus_table =~ s/--nb--/$num/g;
 	    $consensus_table =~ s/--here--/$consensus_table_columns/g;
 	    $all_consensus_table .= "\n".$consensus_table."\n";
-	}
-	# print $syn $insert_div;
-	
-	$a_test .= $insert_div."\n";
+	}	
+	$trees_and_tables .= $insert_div."\n";
     }
 
     $script_jquery .= "\n".'
@@ -4741,7 +4729,7 @@ sub InsertTreesAndBranchMotifs {
      };
     </script>'."\n";
 
-    return($a_test);
+    return($trees_and_tables);
 }
 
 
