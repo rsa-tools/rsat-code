@@ -1390,6 +1390,8 @@ sub set_output_file_names {
   ## Table with the number of clusters
   $main::outfile{nb_clusters_table} = $main::outfile{prefix}."_tables/number_of_clusters.tab";
 
+  ## Table with the summary of clusters
+  $main::outfile{cluster_summary_table} = $main::outfile{prefix}."_tables/clusters_summary_table.tab";
 
   ## Output files for the hierarchical clustering trees
   $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
@@ -4026,6 +4028,15 @@ sub ParametersTable{
 ## Clusters summary table of matrix-clustering.
 sub ClustersSummaryTable{
 
+    ## Open the cluster summary table 
+    ## Print the header
+    my ($cluster_summary_handle) = &RSAT::util::OpenOutputFile($outfile{cluster_summary_table});
+    my $header = ";Cluster_ID\tNumber_of_Motifs";
+    foreach my $c (keys %motif_collection_count){
+	$header .=  "\t$c";
+    }
+    print $cluster_summary_handle $header;
+
   my $clust_table = '
   <!-- Div with the table of selected parameters-->
   <div id="Clus_tab_button" class="button_click Section_button"><strong>Clusters Summary</strong></div>
@@ -4064,7 +4075,6 @@ sub ClustersSummaryTable{
       $cluster = "cluster_".$c;
 
       my $count = $root_motifs_features{$cluster}{collection_count};
- #     $count =~ s/\s+//g;-----------
 
       $row_cluster_tab .= "
          <tr>
@@ -4080,6 +4090,9 @@ sub ClustersSummaryTable{
       ## The image size depends of the motif width
       my $w = 12 * $cluster_info_width{$cluster}; 
       $row_cluster_tab =~ s/--width--/$w/g;
+
+      ## Print the cluster summary table in a separated file -----------------------------------
+      
   }
 
   $clust_table =~ s/--clus_tab--/$row_cluster_tab/g;
