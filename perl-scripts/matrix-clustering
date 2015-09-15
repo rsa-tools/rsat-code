@@ -1952,8 +1952,6 @@ sub ReadClusterComposition {
     $alignment_info{$node}{offset_right} = $offset_r;
     $alignment_info{$node}{width} = $width;
 
-    print " --->>> $node --- $alignment_info{$node}{collection}\n";
-
     &RSAT::message::Debug("\tcluster=".$cluster, "name=".$name, "node=".$node, scalar(@{$cluster_nodes{$cluster}})) if ($main::verbose >= 5);
   }
 
@@ -2587,7 +2585,7 @@ sub Merge_matrices() {
 		    push(@level_motifs, $motif_id);
 		}
 		close $int_align_dataframe;
-		#unlink($main::outfile{int_align_offset}); ----------------------
+		unlink($main::outfile{int_align_offset});
 
 		## Count the number of motif of each collection
 		%collection_count = %motif_collection_count;
@@ -2598,8 +2596,6 @@ sub Merge_matrices() {
 
 		## Get the names of the files of each level
 		foreach my $m (@level_motifs) {
-
-		    print "-------Node: $m -- $alignment_info{$m}{collection}\n";
 		    
 		    ## Count the number of motifs belonging to a specific collection
 		    $collection_count{$alignment_info{$m}{collection}}++;
