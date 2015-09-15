@@ -2579,9 +2579,6 @@ sub Merge_matrices() {
 		    my @split_line = split("\t+", $line);
 		    my $motif_id = $split_line[0];
 		    #$motif_id =~ s/\./-/;
-
-		    print " - $motif_id - \n";
-
 		    push(@level_motifs, $motif_id);
 		}
 		close $int_align_dataframe;
@@ -2603,7 +2600,6 @@ sub Merge_matrices() {
 		    ## Set the label motifs according to the user selection
 		    my @motif_labels = ();
 		    foreach my $field (@label_motif_fields_to_return) {
-			print " -- ".$alignment_info{$m}{$field}." --\n";
 			push(@motif_labels, $alignment_info{$m}{$field});
 		    }
 		    my $motif_labels_separated = join("::", @motif_labels);
@@ -2617,7 +2613,11 @@ sub Merge_matrices() {
 		$merged_consensuses_files{$folder}{$cluster}{collection_counts} = "";
 		foreach my $c (keys %collection_count){
 		    if($collection_count{$c} > 0){
-			$merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c." : ".$collection_count{$c}." motifs<br>";
+			if($collection_count{$c} == 1){
+			    $merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c."::".$collection_count{$c}."_motif<br>";
+			} else {
+			    $merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c."::".$collection_count{$c}."_motifs<br>";
+			}
 		    }
 		}
 
@@ -2688,6 +2688,7 @@ sub Merge_matrices() {
 		    $root_motifs_features{$cluster}{members} = "";
 		    $root_motifs_features{$cluster}{file} = $mat_file;
 		    $root_motifs_features{$cluster}{members} = $ID_cluster;
+		    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{$folder}{$cluster}{collection_counts};
 		    $external_branch_motifs .= $mat_file." ";
 		}
 	    }
@@ -2718,7 +2719,7 @@ sub Merge_matrices() {
 	    $root_motifs_features{$cluster}{size} = 1;
 	    $root_motifs_features{$cluster}{members} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{name};
 	    $root_motifs_features{$cluster}{file} = $new_singleton_motif_file;
-
+	    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{node_1}{$cluster}{collection_counts};
 	    ## Add the singleton cluster to the list of root motifs
 	    $external_branch_motifs .= $new_singleton_motif_file." ";
 	}
@@ -4028,15 +4029,16 @@ sub ClustersSummaryTable{
   my $clust_table = '
   <!-- Div with the table of selected parameters-->
   <div id="Clus_tab_button" class="button_click Section_button"><strong>Clusters Summary</strong></div>
-  <div id="Clus_tab" class="tab" style="margin-bottom:15px;display:none;">
+  <div id="Clus_tab" class="tab" style="margin-bottom:15px;display:none;width:auto;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Clusters Summary Table</h2>
-    <table id="cluster_summary_table" class="hover ">
+    <table id="cluster_summary_table" style="width:auto;">
       <thead>
 	<tr>
 	  <th class="tab_col">Root Motif</th>
 	  <th class="tab_col">Root Motif (Reverse)</th>
 	  <th class="tab_col">Cluster ID</th>
 	  <th class="tab_col">Name::Collection of Descendant Motifs</th>
+	  <th class="tab_col">Number of Motifs by Collection</th>
 	  <th class="tab_col"># Motifs</th>
 	  <th class="tab_col">Motifs in TRANSFAC Format</th>
 	</tr>
@@ -4056,22 +4058,27 @@ sub ClustersSummaryTable{
 '."\n\n";
 
 
-  ## Insert and fille the rows 
+  ## Insert and fill the rows
   my $row_cluster_tab = "";
   foreach my $c (1 .. scalar keys %root_motifs_features){
       $cluster = "cluster_".$c;
+
+      my $count = $root_motifs_features{$cluster}{collection_count};
+ #     $count =~ s/\s+//g;-----------
+
       $row_cluster_tab .= "
          <tr>
             <th class='tab_spacer_2'><img  width='--width--' src='".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo})."'/></td>
             <th class='tab_spacer_2'><img  width='--width--' src='".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC})."'/></td>
             <td class='tab_spacer_1'>".$cluster."</td>
             <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{members}."</td>
+            <td class='tab_spacer_2'>".$count."</td> 
             <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{size}."</td>
             <td class='tab_spacer_1'><a target=\"_blank\" href=\"".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{file})."\">Download</a></td>
          </tr>"."\n";
 
       ## The image size depends of the motif width
-      my $w = 13 * $cluster_info_width{$cluster}; 
+      my $w = 12 * $cluster_info_width{$cluster}; 
       $row_cluster_tab =~ s/--width--/$w/g;
   }
 
@@ -4352,14 +4359,8 @@ $(document).ready( function () {
 	    "smart": true
 	},
 	"aoColumnDefs": [
-            { "bSortable": true, "aTargets": [ 0,1,2,3,4,5 ] }
-	],
-        "columnDefs": [ {
-            "targets": [2,3,4,5],
-            "data": null,
-            "width": "15%"
-
-        } ]	
+            { "bSortable": true, "aTargets": [ 0,1,2,3,4,5,6 ] }
+	]	
     });
 });
 
