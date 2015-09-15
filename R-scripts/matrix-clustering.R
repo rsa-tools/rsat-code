@@ -82,11 +82,11 @@ check.param()
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
 
-infile <- "/home/jcastro/Documents/JaimeCastro/PhD/Manuscripts/matrix-clustering/results/matrix-clustering_results/footprintDB_motif/average_linkage/Ncor0.4_cor0.6/footprintDB_motif_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
-description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/Manuscripts/matrix-clustering/results/matrix-clustering_results/footprintDB_motif/average_linkage/Ncor0.4_cor0.6/footprintDB_motif_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
-metric <- "Ncor"
-hclust.method <- "average"
-thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
+# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/Manuscripts/matrix-clustering/results/matrix-clustering_results/footprintDB_motif/average_linkage/Ncor0.4_cor0.6/footprintDB_motif_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
+# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/Manuscripts/matrix-clustering/results/matrix-clustering_results/footprintDB_motif/average_linkage/Ncor0.4_cor0.6/footprintDB_motif_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
+# metric <- "Ncor"
+# hclust.method <- "average"
+# thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
 
 ######################################
 ######################################
@@ -448,8 +448,6 @@ i <- sapply(1:length(clusters), function(nb){
                                                   nodes.attributes = FALSE,
                                                   intermediate.alignments = TRUE)
                intern.alignment <- alignment.cluster$intermediate.alignments
-
-               print(intern.alignment)
 
                ## Export the table with the intermediates alignment information
                sapply(names(intern.alignment), function(lev){
