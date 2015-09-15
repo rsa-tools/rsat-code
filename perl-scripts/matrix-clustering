@@ -1952,6 +1952,8 @@ sub ReadClusterComposition {
     $alignment_info{$node}{offset_right} = $offset_r;
     $alignment_info{$node}{width} = $width;
 
+    print " --->>> $node --- $alignment_info{$node}{collection}\n";
+
     &RSAT::message::Debug("\tcluster=".$cluster, "name=".$name, "node=".$node, scalar(@{$cluster_nodes{$cluster}})) if ($main::verbose >= 5);
   }
 
@@ -2370,7 +2372,6 @@ $(document).ready(function() {
 	  my $clust = "cluster_".$cluster_nb;
 	  my $mat_number = $clusters_info{$clust} + 2;
 	  $_ =~ s/--height--/100 + 81 * $mat_number/;
-#	  &RSAT::message::Debug("Setting cluster height", $cluster_nb, "clust=".$clust, "mat_number=".$mat_number) if ($main::verbose >= 10);
 	}
 	
 	### Set the height 
@@ -2577,14 +2578,16 @@ sub Merge_matrices() {
 		while (<$int_align_dataframe>) {
 		    chomp;
 		    my $line = $_;
-		    my @split_line = split("\t", $line);
+		    my @split_line = split("\t+", $line);
 		    my $motif_id = $split_line[0];
 		    #$motif_id =~ s/\./-/;
-		    
+
+		    print " - $motif_id - \n";
+
 		    push(@level_motifs, $motif_id);
 		}
 		close $int_align_dataframe;
-		unlink($main::outfile{int_align_offset});
+		#unlink($main::outfile{int_align_offset}); ----------------------
 
 		## Count the number of motif of each collection
 		%collection_count = %motif_collection_count;
@@ -2595,6 +2598,8 @@ sub Merge_matrices() {
 
 		## Get the names of the files of each level
 		foreach my $m (@level_motifs) {
+
+		    print "-------Node: $m -- $alignment_info{$m}{collection}\n";
 		    
 		    ## Count the number of motifs belonging to a specific collection
 		    $collection_count{$alignment_info{$m}{collection}}++;
@@ -2602,6 +2607,7 @@ sub Merge_matrices() {
 		    ## Set the label motifs according to the user selection
 		    my @motif_labels = ();
 		    foreach my $field (@label_motif_fields_to_return) {
+			print " -- ".$alignment_info{$m}{$field}." --\n";
 			push(@motif_labels, $alignment_info{$m}{$field});
 		    }
 		    my $motif_labels_separated = join("::", @motif_labels);
