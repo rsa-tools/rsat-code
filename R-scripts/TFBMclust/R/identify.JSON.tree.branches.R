@@ -9,7 +9,7 @@ identify.JSON.tree.branches <- function(tree, desc.table){
   tree$labels <- NULL
   tree$labels <- as.vector(desc.table$n)
 
-  ## Erase the comas (',')
+  ## Erase the (',')
   jsonTree <- convert.hclust.to.JSON(tree)
   jsonTree <- gsub("\\],", "\\]", jsonTree, perl = TRUE)
   jsonTree <- gsub("\n\"order\":\\s+\\d+", "", jsonTree, perl = TRUE)
@@ -108,7 +108,6 @@ identify.JSON.tree.branches <- function(tree, desc.table){
       }
     })
   })
-
 
   JSON.clusters.table$node <- cluster
   return(JSON.clusters.table)
