@@ -2478,11 +2478,12 @@ sub _readFromHomerFile {
 	$matrix->force_attribute("id", $id);
 	$matrix->set_attribute("AC", $id);
 	$matrix->set_attribute("accession", $id);
-	$matrix->set_attribute("name", $name);
+	$matrix->set_attribute("name", $id);
 
 	## Parse matrix description
 	if ($postmatch =~ /(\S+)/) {
-	  $matrix->force_attribute("description", $postmatch);
+#	  $matrix->set_attribute("info", $postmatch);
+	  $matrix->force_attribute("description", $name);
 #	  while ($postmatch =~ /^([^:]+):(\S+)/) {
 #	    $postmatch = $'; #'
 	    my @tuples = split(/\,/, $postmatch);
