@@ -199,6 +199,22 @@ package main;
     &RSAT::message::Info("Read ID list from file", $infile{matrix_id_file}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
   }
 
+  ## ID list has been provided
+  if ($infile{matrix_ac_file}) {
+    my ($ac_list) = &OpenInputFile($infile{matrix_ac_file});
+    while (<$ac_list>) {
+      next if (/'^;'/);		# skip comment lines
+      next if (/'^#'/);		# skip header lines
+      next if (/'^--'/);	# skip mysql-type comment lines
+      next unless (/\S/);	# skip empty lines
+      my @fields = split /\s+/;
+      my $matrix_ac = lc($fields[0]);
+      $selected_matrix{$matrix_ac} = 1;
+    }
+    close $ac_list;
+    &RSAT::message::Info("Read ac list from file", $infile{matrix_ac_file}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
+  }
+
   if (scalar(@matrix_files > 1)) {
     # &RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
     &RSAT::message::Info(scalar(@matrix_files)." input matrix files") if ($main::verbose >= 2);
@@ -531,11 +547,24 @@ package main;
 	|| $matrix->get_attribute("name")
 	|| $matrix->get_attribute("ID")
 	|| $id_nb;
+
+    my $AC = $matrix->get_attribute("accession")
+	|| $matrix->get_attribute("name")
+	|| $matrix->get_attribute("identifier")
+	|| $matrix->get_attribute("ID")
+	|| $id_nb;
+
+
     $matrix->force_attribute("ID", $ID);
 
     ## Select user-specified IDs if the option -matrix_id_file has been specified
     if ($infile{"matrix_id_file"}) {
       next unless ($selected_matrix{lc($ID)});
+    }
+
+    ## Select user-specified ACs if the option -matrix_ac_file has been specified
+    if ($infile{"matrix_ac_file"}) {
+      next unless ($selected_matrix{lc($AC)});
     }
 
     my $current_out;
@@ -1406,6 +1435,10 @@ sub ReadArguments {
 	    ## List with IDs to extract from input file 
 	} elsif ($ARGV[$a] eq "-matrix_id_file") {
 	    $infile{matrix_id_file} = $ARGV[$a+1];;
+
+	    ## List with ACs to extract from input file 
+	} elsif ($ARGV[$a] eq "-matrix_ac_file") {
+	    $infile{matrix_ac_file} = $ARGV[$a+1];;
 
 	    ## List of input files contains also tf name	
 	} elsif ($ARGV[$a] eq "-mlist_name") {
