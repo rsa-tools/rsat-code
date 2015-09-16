@@ -2434,6 +2434,10 @@ $(document).ready(function() {
 	    $_ =~ s/--x2--/$svg_x2/g;
 	}
 
+	if (/--lab--/) {
+	    $_ =~ s/--lab--//g;
+	}
+
 
 	if ($_ =~ /Insert labels/) {
 	    $add_this = "";
@@ -2614,6 +2618,11 @@ sub Merge_matrices() {
 		## at each node of each cluster
 		$merged_consensuses_files{$folder}{$cluster}{collection_counts} = "";
 		foreach my $c (keys %collection_count){
+
+		    ## Store the number of motif for each collection (incluiding 0)
+		    $merged_consensuses_files{$cluster}{counter_collection}{$c} = $collection_count{$c};
+
+		    ## Print the HTML string to print the collection counts
 		    if($collection_count{$c} > 0){
 			if($collection_count{$c} == 1){
 			    $merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c."::".$collection_count{$c}."_motif<br>";
@@ -2696,7 +2705,15 @@ sub Merge_matrices() {
 	    }
 	} else {
 
-	    $merged_consensuses_files{node_1}{$cluster}{collection_counts} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{collection}." : 1 motif";
+	    ## Store the number of motif for each collection (incluiding 0)
+	    foreach my $c (keys %collection_count){
+		if($c eq $alignment_info{"@{$cluster_nodes{$cluster}}"}{collection}){
+		    $merged_consensuses_files{node_1}{$cluster}{collection_counts} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{collection}." : 1 motif";
+		    $merged_consensuses_files{$cluster}{counter_collection}{$c} = 1;
+		} else{
+		    $merged_consensuses_files{$cluster}{counter_collection}{$c} = 0;
+		}
+	    }
 
 	    my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{aligned_tf};
 
@@ -4035,7 +4052,7 @@ sub ClustersSummaryTable{
     foreach my $c (keys %motif_collection_count){
 	$header .=  "\t$c";
     }
-    print $cluster_summary_handle $header;
+    print $cluster_summary_handle $header."\n";
 
   my $clust_table = '
   <!-- Div with the table of selected parameters-->
@@ -4074,7 +4091,7 @@ sub ClustersSummaryTable{
   foreach my $c (1 .. scalar keys %root_motifs_features){
       $cluster = "cluster_".$c;
 
-      my $count = $root_motifs_features{$cluster}{collection_count};
+      my $count = $root_motifs_features{$cluster}{collection_count};      
 
       $row_cluster_tab .= "
          <tr>
@@ -4091,8 +4108,12 @@ sub ClustersSummaryTable{
       my $w = 12 * $cluster_info_width{$cluster}; 
       $row_cluster_tab =~ s/--width--/$w/g;
 
-      ## Print the cluster summary table in a separated file -----------------------------------
-      
+      ## Print the cluster summary table in a separated file
+      my $line_cluster_summary_table = $cluster."\t".$root_motifs_features{$cluster}{size};
+      foreach my $c (keys %motif_collection_count){
+      	  $line_cluster_summary_table .= "\t".$merged_consensuses_files{$cluster}{counter_collection}{$c};
+      }
+      print $cluster_summary_handle $line_cluster_summary_table."\n";
   }
 
   $clust_table =~ s/--clus_tab--/$row_cluster_tab/g;
