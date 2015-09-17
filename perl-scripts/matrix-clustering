@@ -4871,6 +4871,10 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2">A file with the root matrix of each cluster.</td>
                    </tr>
                    <tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{cluster_summary_table}).'"><strong>Motif collections per cluster</strong></a></td>
+		      <td class="tab_spacer_2">A tab separated file containing the counts of motif of each collection on each cluster.</td>
+		   </tr>
+                   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{clusters_table}).'"><strong>Clusters</strong></a></td>
 		      <td class="tab_spacer_2">A tab separated file containing the clusters and their correspondng motifs.</td>
 		   </tr>
