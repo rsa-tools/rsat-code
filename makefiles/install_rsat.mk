@@ -179,8 +179,15 @@ PERL_MODULES= \
 	SOAP::Transport::HTTP \
 	SOAP::WSDL \
 	Bio::Perl \
-	Bio::Das
-
+	Bio::Das \
+	XML::DOM \
+	Spreadsheet::WriteExcel::Big \
+	Spreadsheet::WriteExcel \
+	Log::Log4perl \
+	Number::Format \
+	OLE::Storage_Lite \
+	Template::Plugin::Number::Format \
+	Readonly
 
 #t/013_complexType.t ................................... 1/? Can't locate object method "new" via package "MyElement" (perhaps you forgot to load "MyElement"?) at lib/SOAP/WSDL/XSD/Typelib/ComplexType.pm line 213.
 
