@@ -238,10 +238,25 @@ cluster_hocomoco:
 	@echo "Clustering all matrices from HOCOMOCO"
 	${MAKE} _cluster MATRIX_PREFIX=${HOCOMOCO_PREFIX} MATRIX_FILE=${HOCOMOCO_MATRICES} \
 		TITLE='HOCOMOCO motifs' \
-		COLLECTION=${RDB_PREFIX} \
+		COLLECTION=${HOCOMOCO_PREFIX} \
 		METRIC_BUILD_TREE=Ncor \
 		RETURN_FIELDS=align_consensus,heatmap
 
+
+################################################################
+## Cluster all motifs from FootprintDB (>4000 Motifs)
+FPDB_CLUSTER_DIR=results/matrix-clustering_results/Footprint_DB_clusters
+FPDB_CLUSTERS=${FPDB_CLUSTER_DIR}/Footprint_DB_clusters
+FPDB_PREFIX=footprintDB_motif
+FPDB_MATRICES=${RSAT}/public_html/motif_databases/footprintDB/${FPDB_PREFIX}.tf
+cluster_footprintdb:
+	@echo
+	@echo "Clustering all matrices from FootprintDB"
+	${MAKE} _cluster MATRIX_PREFIX=${FPDB_PREFIX} MATRIX_FILE=${FPDB_MATRICES} \
+		TITLE='FootprintDB clustering' \
+		COLLECTION='FootprintDB' \
+		METRIC_BUILD_TREE=Ncor \
+		RETURN_FIELDS=align_consensus,heatmap
 
 ################################################################
 ## Cluster one jaspar group
