@@ -1390,6 +1390,8 @@ sub set_output_file_names {
   ## Table with the number of clusters
   $main::outfile{nb_clusters_table} = $main::outfile{prefix}."_tables/number_of_clusters.tab";
 
+  ## Table with the summary of clusters
+  $main::outfile{cluster_summary_table} = $main::outfile{prefix}."_tables/clusters_summary_table.tab";
 
   ## Output files for the hierarchical clustering trees
   $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
@@ -2241,7 +2243,6 @@ sub Add_attributes_to_JSON() {
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
 		      my $id_json = $cluster."_".$folder;
 		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
-		      # $Add .= " \"collection_count\" : \"".$merged_consensuses_files{$folder}{$cluster}{collection_counts}."\",\n"; -------
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
 		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
@@ -2383,7 +2384,6 @@ $(document).ready(function() {
 	  my $clust = "cluster_".$cluster_nb;
 	  my $mat_number = $clusters_info{$clust} + 2;
 	  $_ =~ s/--height--/100 + 81 * $mat_number/;
-#	  &RSAT::message::Debug("Setting cluster height", $cluster_nb, "clust=".$clust, "mat_number=".$mat_number) if ($main::verbose >= 10);
 	}
 	
 	### Set the height 
@@ -2446,17 +2446,9 @@ $(document).ready(function() {
 	    $_ =~ s/--x2--/$svg_x2/g;
 	}
 
-
-################################################################	
-	my $l = $new_label;
-	$l =~ s/d\.;/ d\.collection_count;/;
-	my $y_displacement = 3 + ((1 -1) * 25);
-	$l =~ s/#/$y_displacement/;
-	## ----------------------------------
 	if (/--lab--/) {
-	    $_ =~ s/--lab--/$l/g;
+	    $_ =~ s/--lab--//g;
 	}
-################################################################
 
 
 	if ($_ =~ /Insert labels/) {
@@ -2602,10 +2594,9 @@ sub Merge_matrices() {
 		while (<$int_align_dataframe>) {
 		    chomp;
 		    my $line = $_;
-		    my @split_line = split("\t", $line);
+		    my @split_line = split("\t+", $line);
 		    my $motif_id = $split_line[0];
 		    #$motif_id =~ s/\./-/;
-		    
 		    push(@level_motifs, $motif_id);
 		}
 		close $int_align_dataframe;
@@ -2639,8 +2630,17 @@ sub Merge_matrices() {
 		## at each node of each cluster
 		$merged_consensuses_files{$folder}{$cluster}{collection_counts} = "";
 		foreach my $c (keys %collection_count){
+
+		    ## Store the number of motif for each collection (incluiding 0)
+		    $merged_consensuses_files{$cluster}{counter_collection}{$c} = $collection_count{$c};
+
+		    ## Print the HTML string to print the collection counts
 		    if($collection_count{$c} > 0){
-			$merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c." : ".$collection_count{$c}." motifs<br>";
+			if($collection_count{$c} == 1){
+			    $merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c."::".$collection_count{$c}."_motif<br>";
+			} else {
+			    $merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c."::".$collection_count{$c}."_motifs<br>";
+			}
 		    }
 		}
 
@@ -2711,10 +2711,21 @@ sub Merge_matrices() {
 		    $root_motifs_features{$cluster}{members} = "";
 		    $root_motifs_features{$cluster}{file} = $mat_file;
 		    $root_motifs_features{$cluster}{members} = $ID_cluster;
+		    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{$folder}{$cluster}{collection_counts};
 		    $external_branch_motifs .= $mat_file." ";
 		}
 	    }
 	} else {
+
+	    ## Store the number of motif for each collection (incluiding 0)
+	    foreach my $c (keys %collection_count){
+		if($c eq $alignment_info{"@{$cluster_nodes{$cluster}}"}{collection}){
+		    $merged_consensuses_files{node_1}{$cluster}{collection_counts} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{collection}." : 1 motif";
+		    $merged_consensuses_files{$cluster}{counter_collection}{$c} = 1;
+		} else{
+		    $merged_consensuses_files{$cluster}{counter_collection}{$c} = 0;
+		}
+	    }
 
 	    my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{aligned_tf};
 
@@ -2739,7 +2750,7 @@ sub Merge_matrices() {
 	    $root_motifs_features{$cluster}{size} = 1;
 	    $root_motifs_features{$cluster}{members} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{name};
 	    $root_motifs_features{$cluster}{file} = $new_singleton_motif_file;
-
+	    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{node_1}{$cluster}{collection_counts};
 	    ## Add the singleton cluster to the list of root motifs
 	    $external_branch_motifs .= $new_singleton_motif_file." ";
 	}
@@ -4046,18 +4057,28 @@ sub ParametersTable{
 ## Clusters summary table of matrix-clustering.
 sub ClustersSummaryTable{
 
+    ## Open the cluster summary table 
+    ## Print the header
+    my ($cluster_summary_handle) = &RSAT::util::OpenOutputFile($outfile{cluster_summary_table});
+    my $header = ";Cluster_ID\tNumber_of_Motifs";
+    foreach my $c (keys %motif_collection_count){
+	$header .=  "\t$c";
+    }
+    print $cluster_summary_handle $header."\n";
+
   my $clust_table = '
   <!-- Div with the table of selected parameters-->
   <div id="Clus_tab_button" class="button_click Section_button"><strong>Clusters Summary</strong></div>
-  <div id="Clus_tab" class="tab" style="margin-bottom:15px;display:none;">
+  <div id="Clus_tab" class="tab" style="margin-bottom:15px;display:none;width:auto;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Clusters Summary Table</h2>
-    <table id="cluster_summary_table" class="hover ">
+    <table id="cluster_summary_table" style="width:auto;">
       <thead>
 	<tr>
 	  <th class="tab_col">Root Motif</th>
 	  <th class="tab_col">Root Motif (Reverse)</th>
 	  <th class="tab_col">Cluster ID</th>
 	  <th class="tab_col">Name::Collection of Descendant Motifs</th>
+	  <th class="tab_col">Number of Motifs by Collection</th>
 	  <th class="tab_col"># Motifs</th>
 	  <th class="tab_col">Motifs in TRANSFAC Format</th>
 	</tr>
@@ -4077,23 +4098,34 @@ sub ClustersSummaryTable{
 '."\n\n";
 
 
-  ## Insert and fille the rows 
+  ## Insert and fill the rows
   my $row_cluster_tab = "";
   foreach my $c (1 .. scalar keys %root_motifs_features){
       $cluster = "cluster_".$c;
+
+      my $count = $root_motifs_features{$cluster}{collection_count};      
+
       $row_cluster_tab .= "
          <tr>
             <th class='tab_spacer_2'><img  width='--width--' src='".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo})."'/></td>
             <th class='tab_spacer_2'><img  width='--width--' src='".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC})."'/></td>
             <td class='tab_spacer_1'>".$cluster."</td>
             <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{members}."</td>
+            <td class='tab_spacer_2'>".$count."</td> 
             <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{size}."</td>
             <td class='tab_spacer_1'><a target=\"_blank\" href=\"".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{file})."\">Download</a></td>
          </tr>"."\n";
 
       ## The image size depends of the motif width
-      my $w = 13 * $cluster_info_width{$cluster}; 
+      my $w = 12 * $cluster_info_width{$cluster}; 
       $row_cluster_tab =~ s/--width--/$w/g;
+
+      ## Print the cluster summary table in a separated file
+      my $line_cluster_summary_table = $cluster."\t".$root_motifs_features{$cluster}{size};
+      foreach my $c (keys %motif_collection_count){
+      	  $line_cluster_summary_table .= "\t".$merged_consensuses_files{$cluster}{counter_collection}{$c};
+      }
+      print $cluster_summary_handle $line_cluster_summary_table."\n";
   }
 
   $clust_table =~ s/--clus_tab--/$row_cluster_tab/g;
@@ -4373,14 +4405,8 @@ $(document).ready( function () {
 	    "smart": true
 	},
 	"aoColumnDefs": [
-            { "bSortable": true, "aTargets": [ 0,1,2,3,4,5 ] }
-	],
-        "columnDefs": [ {
-            "targets": [2,3,4,5],
-            "data": null,
-            "width": "15%"
-
-        } ]	
+            { "bSortable": true, "aTargets": [ 0,1,2,3,4,5,6 ] }
+	]	
     });
 });
 
@@ -4540,7 +4566,7 @@ $(document).ready(function() {
 ## Display single trees
 sub InsertTreesAndBranchMotifs {
 
-    my $a_test = "";
+    my $trees_and_tables = "";
     my  $svg_width = 8.5;
     my  $svg_height = 35;
     my  $svg_x1 = 6.5 * $nb_char + 6.5;
@@ -4700,6 +4726,7 @@ sub InsertTreesAndBranchMotifs {
 	## Insert the matrices for singleton clusters here
 	} else {
 	    
+	    $level = 1;
 	    $consensus_table = "";
 	    $consensus_table = &branch_consensus_table();
 	    my $consensus_table_columns = "";
@@ -4719,7 +4746,7 @@ sub InsertTreesAndBranchMotifs {
 	    $consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{"cluster_".$num}{collection_counts}.'</th>'."\n"; ## Ajustar para singleton!! ----------------------
+	    $consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{"cluster_".$num}{collection_counts}.'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 	    $consensus_table_columns .= "</tr>\n";
 
@@ -4735,10 +4762,8 @@ sub InsertTreesAndBranchMotifs {
 	    $consensus_table =~ s/--nb--/$num/g;
 	    $consensus_table =~ s/--here--/$consensus_table_columns/g;
 	    $all_consensus_table .= "\n".$consensus_table."\n";
-	}
-	# print $syn $insert_div;
-	
-	$a_test .= $insert_div."\n";
+	}	
+	$trees_and_tables .= $insert_div."\n";
     }
 
     $script_jquery .= "\n".'
@@ -4753,7 +4778,7 @@ sub InsertTreesAndBranchMotifs {
      };
     </script>'."\n";
 
-    return($a_test);
+    return($trees_and_tables);
 }
 
 
