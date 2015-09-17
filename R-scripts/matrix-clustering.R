@@ -82,8 +82,8 @@ check.param()
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
 
-# infile <- "/home/jcastro/rsat/results/matrix-clustering_results/jaspar_core_vertebrates_2015_03/average_linkage/Ncor0.4_cor0.6/jaspar_core_vertebrates_2015_03_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
-# description.file <- "/home/jcastro/rsat/results/matrix-clustering_results/jaspar_core_vertebrates_2015_03/average_linkage/Ncor0.4_cor0.6/jaspar_core_vertebrates_2015_03_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
+# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/Manuscripts/matrix-clustering/results/matrix-clustering_results/footprintDB_motif/average_linkage/Ncor0.4_cor0.6/footprintDB_motif_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
+# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/Manuscripts/matrix-clustering/results/matrix-clustering_results/footprintDB_motif/average_linkage/Ncor0.4_cor0.6/footprintDB_motif_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
@@ -453,7 +453,7 @@ i <- sapply(1:length(clusters), function(nb){
                sapply(names(intern.alignment), function(lev){
 
                   node.name <- gsub("merge_level", "node", lev, perl = TRUE)
-                  level.info <- t(data.frame(intern.alignment[[node.name]]))
+                  level.info <- data.frame(t(intern.alignment[[node.name]]))
                   f <- paste(cluster.folder, "/levels_JSON_cluster_", nb, "_", node.name, "_dataframe.tab", sep = "")
                    write.table(level.info, file = f, sep = "\t", quote = FALSE, row.names = TRUE, col.names = FALSE)
                    create.dir.merge(node.name)
