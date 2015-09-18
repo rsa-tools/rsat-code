@@ -176,7 +176,7 @@ package main;
       my $gene = $all_genes_rdm[$i];
       my $leader = $gene;
       if ($bacteria) {
-        $leader = `infer-operon -return leader -q $gene -org $organism | add-gene-info -info ID -org $organism | cut -f 2 | tail -n 1`;
+        $leader = `infer-operons -return leader -q $gene -org $organism | add-gene-info -info ID -org $organism | cut -f 2 | tail -n 1`;
         chomp $leader;
         &RSAT::message::TimeWarn ("Determining the operon leader of gene $gene ($i/$orthogroups_nb) : $leader") if ($main::verbose >= 3);
 
