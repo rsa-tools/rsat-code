@@ -60,7 +60,7 @@ tab-delimited text files, associated with HTML formatted reports.
 
 =over
 
-=item I<infer-operon>
+=item I<infer-operons>
 
 used to infer operons and directons.
 
@@ -790,8 +790,8 @@ the MicroCyc Web services.
 
 =item I<operons>
 
-Infer operons from intergenic distances (tool I<infer-operon>), using
-a simple distance-based method (I<infer-operon>). This method assigns
+Infer operons from intergenic distances (tool I<infer-operons>), using
+a simple distance-based method (I<infer-operons>). This method assigns
 each intergenic region with a status, either intra-operon or
 inter-operons. The accuracy is estimated to ~80% (Rekin's Janky, PhD
 thesis), with a balanced rate between false positives (intra-operons
@@ -804,7 +804,7 @@ maximal (non-extendable) sets of contiguous genes transcribed in the
 same direction. A directon can contain one or several successive
 operons.
 
-Note: in practice, we detect by running I<infer-operon> with a
+Note: in practice, we detect by running I<infer-operons> with a
 virtually infinite threshold on intergenic distance. Since all genes
 of an operon are (by definition) transcribed in the same direction,
 directons contain all the full operons (they can be considered as a
@@ -1013,7 +1013,7 @@ sub InferOperonsOrDirectons {
   #  if ($task{$operons_or_directons}) {
   &RSAT::message::TimeWarn("\tInferring ".$operons_or_directons, "dist=".$dist, "min_genes=".$param{operon_min_genes}) if ($main::verbose >= 1);
   &RSAT::util::CheckOutDir($dir{$operons_or_directons}, "", 755);
-  my $cmd = $SCRIPTS."/infer-operon -v 1 ";
+  my $cmd = $SCRIPTS."/infer-operons -v 1 ";
   $cmd .= " -sep '-' -return q_info,operon,leader,gene_nb";
   $cmd .= " -org ".$organism_name;
   $cmd .= " -all ";
