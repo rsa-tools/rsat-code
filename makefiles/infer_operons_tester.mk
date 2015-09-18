@@ -15,7 +15,7 @@ infer_operons:
 	@echo
 	@echo "Inferring operons	${ORG}"
 	@mkdir -p ${OPERON_DIR}
-	infer-operon -v 1 -dist ${DIST} -min_gene_nb ${MIN_GN} -return ${FIELDS} -org ${ORG} -all -o ${OPERONS}.tab
+	infer-operons -v 1 -dist ${DIST} -min_gene_nb ${MIN_GN} -return ${FIELDS} -org ${ORG} -all -o ${OPERONS}.tab
 	@echo "	${OPERONS}.tab"
 	@text-to-html -i ${OPERONS}.tab -o ${OPERONS}.html
 	@echo "	${OPERONS}.html"
