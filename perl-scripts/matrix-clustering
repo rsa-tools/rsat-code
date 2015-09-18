@@ -466,6 +466,11 @@ package main;
   ## 2) Assign unique IDs to each motif
   &pre_process_motif_files();
 
+
+  ################################################################
+  ## Generate the matrix description table
+  &Generate_matrix_description_table();
+
   ## According to the task selected by the user, execute or skip
   ## some functions
   if ($selected_tasks{all}) {
@@ -1562,7 +1567,7 @@ sub pre_process_motif_files{
       
       ################################################################
       ## Collect all matrices
-      my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+      @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
       push(@all_matrices, @matrices);
       &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
 	  if ($main::verbose >= 2);
@@ -1687,7 +1692,7 @@ sub CompareMatrices {
   $cmd .=  " -file ".$main::outfile{input_matrices};
   $cmd .= " -DR";
   $cmd .= " -sort Ncor";
-  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,width,matrix_desc";
+  $cmd .= " -return matrix_id,matrix_label,strand,offset,".$main::param{matrix_compa_metrics}.",consensus,width";
   $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
@@ -1733,19 +1738,6 @@ sub CompareMatricesQuick {
 
   $matrix_compa_verbose = &RSAT::stats::max(($main::verbose-1), 1);
   my $BIN=$ENV{RSAT}."/bin";
-
-  ## Create the description table
-  $cmd = $SCRIPTS."/compare-matrices -file ".$main::outfile{input_matrices}." -format transfac -return matrix_desc ".$args_to_pass." >".$main::outfile{prefix}."_desc.tab";
-  &RSAT::util::one_command($cmd, 1, "");
-  
-  $cmd = "cat ".$main::outfile{prefix}."_desc.tab | grep -v '^#name1' > ".$main::outfile{matrix_descriptions};
-  &RSAT::util::one_command($cmd, 1, "");
-  unlink($main::outfile{prefix}."_desc.tab");
-
-  &RSAT::message::TimeWarn("Matrix description table", $main::outfile{matrix_descriptions}) if ($main::verbose >= 2);
-  $cmd = $SCRIPTS."/text-to-html -i ".$main::outfile{matrix_descriptions};
-  $cmd .= " -o ".$main::outfile{matrix_descriptions_html};
-  &RSAT::util::one_command($cmd, 1,"");
 
   ## Run the pairwise matrix comparison
   &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
@@ -5153,4 +5145,47 @@ sub Clustered_PSSMS_TRANSFAC_format(){
     }
 }
 
+
+sub Generate_matrix_description_table() {
+
+    ################################################################
+    ## Export a description of the matrices
+    @matrices = &RSAT::MatrixReader::readFromFile($main::outfile{input_matrices}, "tf");
+    &RSAT::message::TimeWarn("Generating description table for the input matrices") if ($main::verbose >= 2);
+    my $desc = &OpenOutputFile($main::outfile{matrix_descriptions});
+    
+    ## Print header
+    print $desc join ("\t", 
+			     "#n",
+			     "id",
+			     "name",
+			     "width",
+			     "consensus",
+			     "rc_consensus",
+			     "label"
+	), "\n";
+    
+    my $m=0;
+
+    foreach my $matrix (@matrices) {
+	my $c = "";
+	my $c_rc = "";
+	$m ++;
+
+	$matrix->calcConsensus();
+	$c = $matrix->get_attribute("consensus.IUPAC");
+	$c_rc = $matrix->get_attribute("consensus.IUPAC.rc");
+
+	my $matrix_desc_string = join ("\t", 
+				       $m,
+				       $matrix->get_attribute("id"),
+				       $matrix->get_attribute("name"),
+				       $matrix->get_attribute("ncol"),
+				       $c,
+				       $c_rc
+	    );
+	print $desc $matrix_desc_string."\n";
+    }
+    close $desc;
+}
 __END__
