@@ -97,7 +97,8 @@ $organism->OpenContigs($organism_name, $annotation_table);
 
 ## Accepted feature types
 #$organism->DefineAcceptedFeatureTypes(sort keys %supported_feature_types);
-$organism->DefineAcceptedFeatureTypes(sort(keys(%accepted_feature_types)));
+@accepted_feature_types = sort(keys(%accepted_feature_types));
+$organism->DefineAcceptedFeatureTypes(@accepted_feature_types);
 
 ### Load the organism
 my $imp_pos = 0;
@@ -118,12 +119,14 @@ $organism->CalcNeighbourLimits() if ($calc_neighbours);
 if ($verbose) {
   print $out "; add-gene-info ";
   &PrintArguments($out);
-  print $out "; Input file	$inputfile\n" if ($inputfile);
-  print $out "; Output file	$outputfile\n" if ($outputfile);
+  print $out ("; Feature type(s)	", join(",", @accepted_feature_types),"\n") if (scalar(@accepted_feature_types) > 0);
+  print $out ("; Input file	$inputfile\n") if ($inputfile);
+  print $out ("; Output file	$outputfile\n") if ($outputfile);
 }
 
 #### input file ####
 ($in) = &OpenInputFile($inputfile);
+
 
 ###### execute the command #########
 my $l = 0;
@@ -166,6 +169,7 @@ while ($current_line = <$in>) {
       &RSAT::message::Debug("identified feature", $query, $feature) if ($main::verbose >= 3);
       if ($feature) {
 	foreach my $type (@info_types) {
+#	  $type = "description" if ($type eq "descr");
 	  my $info = join( ";", $feature->get_attribute($type));
 	  &RSAT::message::Warning(join("\t", "Info for query",$query, $info)) if ($main::verbose >= 6);
 	  push @info, $info;
