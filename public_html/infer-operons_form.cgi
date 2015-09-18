@@ -61,7 +61,7 @@ $field_description{down_info} = "Detailed info on the gene located downstream th
 $field_description{gene_nb} = "Number of genes in the predicted operon";
 
 ### print the form ###
-&RSA_header("infer operon", 'form');
+&RSA_header("infer operons", 'form');
 
 ### head
 print "<CENTER>";
