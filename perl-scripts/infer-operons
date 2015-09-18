@@ -8,7 +8,7 @@
 
 ############################################################
 #
-# $Id: infer-operon,v 1.21 2013/09/29 04:57:36 jvanheld Exp $
+# $Id: infer-operons,v 1.21 2013/09/29 04:57:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -21,7 +21,7 @@
 
 =head1 NAME
 
-infer-operon
+infer-operons
 
 =head1 DESCRIPTION
 
@@ -91,7 +91,7 @@ operon.
 
 =head1 USAGE
 
-infer-operon [-i inputfile] [-o outputfile] [-v] [options]
+infer-operons [-i inputfile] [-o outputfile] [-v] [options]
 
 =over
 
@@ -100,21 +100,21 @@ infer-operon [-i inputfile] [-o outputfile] [-v] [options]
 With the following command, we infer the operon for a set of input
 genes.
 
-infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR -q mhpA -q mhpD
+infer-operons -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR -q mhpA -q mhpD
 
 
 =item B<Example 2>
 
 We now specify different return fields
 
-infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q lacI \
+infer-operons -v 1 -org Escherichia_coli_K12 -q hisD -q lacI \
   -return leader,trailer,up_info,down_info,operon
 
 =item B<Example 3>
 
 Infer operons for all the genes of an organism.
 
-infer-operon -v 1 -org Escherichia_coli_K12 -all -return up_info,leader,operon
+infer-operons -v 1 -org Escherichia_coli_K12 -all -return up_info,leader,operon
 
 =item B<Example 4>
 
@@ -123,7 +123,7 @@ sequence of the inferred leader gene. Note that two of the input genes
 (lacZ, lacY) belong to the same operon. to avoid including twice their
 leader, we use the unix command sort -u (unique).
 
-infer-operon -org Escherichia_coli_K12 -return leader,operon \
+infer-operons -org Escherichia_coli_K12 -return leader,operon \
   -q lacI -q lacZ -q lacY  | sort -u \
   | retrieve-seq -org Escherichia_coli_K12 -noorf
 
@@ -133,7 +133,7 @@ Note that operons can contain non-coding genes. For example, the metT
 operon contains a series of tRNA genes for methionine, leucine and
 glutamina, respectively.
 
-infer-operon -org Escherichia_coli_K12 -q glnV -q metU -q ileV \
+infer-operons -org Escherichia_coli_K12 -q glnV -q metU -q ileV \
   -return q_info,up_info,operon
 
 =back
@@ -579,7 +579,7 @@ Infer operons for all the genes of the query organism.
 Query gene. This option can be used iteratively on the same command
 line to specify several query genes. Example: 
 
-infer-operon -org Escherischia_coli_K12 -q LACZ -q hisA
+infer-operons -org Escherischia_coli_K12 -q LACZ -q hisA
 
 =cut
 	} elsif ($arg eq "-q") {
@@ -734,7 +734,7 @@ Number of genes in the predicted operon.
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; infer-operon ";
+    print $main::out "; infer-operons ";
     &PrintArguments($main::out);
     if (%main::infile) {
 	print $main::out "; Input files\n";
