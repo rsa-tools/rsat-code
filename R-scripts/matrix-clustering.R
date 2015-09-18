@@ -104,9 +104,6 @@ global.description.table <<- read.csv(description.file, sep="\t", comment.char="
 global.description.table <- global.description.table[order(global.description.table$id),]
 global.description.table$n <- 1:length(global.description.table$id)
 
-matrix.labels <-  as.vector(global.description.table$label)
-names(matrix.labels) <- as.vector(global.description.table$id)
-
 ## Substitute the "_" for "." in the column names
 names(global.description.table) <- gsub("X.n", "n", names(global.description.table))
 names(global.description.table) <- gsub("_", ".", names(global.description.table))
@@ -412,8 +409,6 @@ i <- sapply(1:length(clusters), function(nb){
                ## In reference to the ids, order alphabetically the description table
                description.table <- description.table[order(as.vector(description.table$id)),]
                description.table$n <- 1:length(description.table$n)
-               matrix.labels <-  as.vector(description.table$label)
-               names(matrix.labels) <- as.vector(description.table$id)
 
                ## Convert distance table into a distance matrix, required by hclust
                distances.objects <- build.distance.matrix(compare.matrices.table, metric = metric)
