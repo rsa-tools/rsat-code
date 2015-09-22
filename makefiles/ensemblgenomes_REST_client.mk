@@ -17,12 +17,12 @@ TAXON=83333
 SPECIES=escherichia_coli_str_k_12_substr_mg1655
 
 
-################################################################
-## List of targets
-usage:
-	@echo "usage: make [-OPT='options'] target"
-	@echo "implemented targets"
-	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
+# ################################################################
+# ## List of targets
+# usage:
+# 	@echo "usage: make [-OPT='options'] target"
+# 	@echo "implemented targets"
+# 	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
 
 
 ################################################################
@@ -63,21 +63,41 @@ organisms_primates:
 ## interface of Ensembl does not support the method LookupGenome.
 
 ## Basic request: only return gene-protein-EC (GPE) file for one organism
-OUTDIR=results
-SPECIES_DIR=${OUTDIR}/${SPECIES}
+GENOME_DIR=public_html/data/genomes
+SPECIES_DIR=${GENOME_DIR}/${SPECIES}
 one_org_gpe:
 	@echo
-	@echo "Getting genes-proteins-ECs (GPE) for species ${SPECIES}"
-	@${PYTHON} python-scripts/ensemblgenomes_REST_client/ensemblgenomes_get_annotations.py -v ${V} \
-		--outdir ${OUTDIR} \
+	@echo "Getting genome annotations for species ${SPECIES}"
+	@${PYTHON} python-scripts/ensemblgenomes_REST_client/ensemblgenomes_get_annotations.py \
+		-v ${V} \
+		--outdir ${GENOME_DIR} \
 		--species ${SPECIES} ${RETURN} ${OPT}
-	@echo "	${OUTDIR}/${SPECIES}"
+	@echo "	${GENOME_DIR}/${SPECIES}"
 
 
 
 ## Full request: export all the available information
 one_org_annotations:
-	${MAKE} one_org_gpe RETURN=--export_all
+	${MAKE} one_org_gpe RETURN='--export_genes --export_names'
+
+################################################################
+## Targets for genome management on http://bacteria.rsat.eu
+organisms_bact:
+	${MAKE} organisms_for_taxon  DATABASE=ensemblgenomes TAXON=Bacteria
+
+## Collect gene annotations for Escherichia coli
+annotations_coli:
+	${MAKE} DATABASE=ensemblgenomes SPECIES=escherichia_coli_str_k_12_substr_mg1655 one_org_annotations
+
+
+################################################################
+## Targets for genome management on http://fungi.rsat.eu
+organisms_fungi:
+	${MAKE} organisms_for_taxon  DATABASE=ensemblgenomes TAXON=Fungi
+
+## Collect gene annotations for Brachypodium distachyon
+annotations_yeast:
+	${MAKE} DATABASE=ensemblgenomes SPECIES=saccharomyces_cerevisiae one_org_annotations
 
 
 ################################################################
@@ -85,9 +105,13 @@ one_org_annotations:
 organisms_plants:
 	${MAKE} organisms_for_taxon  DATABASE=ensemblgenomes TAXON=Viridiplantae
 
-## Install one illustrative plant genome
-get_brachypodium:
-	${MAKE} SPECIES=brachypodium_distachyon
+## Collect gene annotations for Arabidopsis thaliana
+annotations_ara:
+	${MAKE} DATABASE=ensemblgenomes SPECIES=arabidopsis_thaliana one_org_annotations
+
+## Collect gene annotations for Brachypodium distachyon
+annotations_brachy:
+	${MAKE} DATABASE=ensemblgenomes SPECIES=brachypodium_distachyon one_org_annotations
 
 
 ################################################################
@@ -96,7 +120,7 @@ consecutively_test:
 	@echo
 	${MAKE} organisms_for_taxon  
 	@${PYTHON} python-scripts/ensemblgenomes_REST_client/ensemblgenomes_get_annotations.py -v ${V} \
-		--outdir ${OUTDIR} \
+		--outdir ${GENOME_DIR} \
 		--species_file ${ORGANISMS_TAXON} ${OPT}
 	@echo "	Consecutively test successful "
 
@@ -108,8 +132,8 @@ consecutively_test:
 index_html:
 	@echo
 	@echo "Generating HTML index of organisms"
-	${MAKE} ${OUTDIR}/index.html
-	@echo "Index file	${OUTDIR}/index.html"
+	${MAKE} ${GENOME_DIR}/index.html
+	@echo "Index file	${GENOME_DIR}/index.html"
 
 
 ## Define a rule to convert markdown into html
