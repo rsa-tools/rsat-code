@@ -3,9 +3,9 @@
 ## number (1-4) corresponding to one color (black,red,blue,green)
 ## All the members of one cluster will be colored with the same
 ## color in the tree.
-color.code.clusters <- function(clusters.ids, tree, desc.table){
+color.code.clusters <- function(clusters.ids, tree){
 
-  tree.order <- get.id(tree$order, desc.table)
+  tree.order <- get.id(tree$order)
 
   ## Following the order on the tree object, identify to which
   ## cluster corresponds each branch
