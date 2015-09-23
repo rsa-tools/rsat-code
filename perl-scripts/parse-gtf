@@ -1,0 +1,390 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: parse-gtf,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+parse-gtf
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Parse  GTF
+
+=head1 AUTHORS
+
+Jacques.van-Helden\@univ-amu.fr & Bruno Contreras
+
+=head1 CATEGORY
+
+=over
+
+=item genome management
+
+=back
+
+=head1 USAGE
+
+parse-gtf [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+A single file in GTF (General Transfer Format) format. 
+
+Format specification
+  http://www.ensembl.org/info/website/upload/gff.html
+
+If the input file name terminates with .gz, it is uncompressed on the
+flight.
+
+=head1 OUTPUT FORMAT
+
+The file is parsed and exported to a set of tab-delimited files
+separated by biological feature type (CDS, transcript, gene), and
+normalized according to the SQL rules : for each feature type, one
+table contains all unique attributes, with one attribute per column
+(e.g. cds.tab), and each multi-valued attribute is exported in a
+separate table (e.g. cds_names.tab)
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+
+
+## Select attributes that should be exported for genes
+my @gene_fields = qw( 
+ gene_version
+ gene_source
+ gene_biotype
+);
+
+## Select attributes that should be exported for transcripts
+my @transcript_fields = qw(
+ gene_id
+ gene_version
+ transcript_id
+ transcript_version
+ gene_source
+ gene_biotype
+ transcript_name
+ transcript_source
+ transcript_biotype
+);
+
+my @cds_fields = qw(
+ gene_id
+ gene_version
+ transcript_id
+ transcript_version
+ exon_number
+ gene_source
+ gene_biotype
+ transcript_source
+ transcript_biotype
+ protein_id
+ protein_version
+);
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  &RSAT::error::FatalError("The output directory must be specified.") unless ($dir{output});
+
+  &RSAT::util::CheckOutDir($main::dir{output}, "", 775);
+
+  ################################################################
+  ## Open output streams
+  $outfile{log} = $dir{output}."/log.txt"; $out = &OpenOutputFile($outfile{log});
+  $outfile{gene} = $dir{output}."/gene.tab"; $gene_hdl = &OpenOutputFile($outfile{gene});
+  $outfile{transcript} = $dir{output}."/transcript.tab"; $transcript_hdl = &OpenOutputFile($outfile{transcript});
+  $outfile{cds} = $dir{output}."/cds.tab"; $cds_hdl = &OpenOutputFile($outfile{cds});
+    
+
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
+  my $l = 0; ## Line counter
+  while (<$main::in>) {
+    next unless (/\S/); ## Skip empty rows
+#    next if (/^;/); ## Skip comment rows
+    next if (/^#!/); ## Skip header rows
+    chomp();
+
+    $l++;
+
+    my ($seqname, $source, $feature, $start, $end, $score, $strand, $frame, $attribute) = split("\t");
+    
+#    &RSAT::message::Debug($attribute) if ($main::verbose >= 0);
+
+    ## Define the handle according to feature type
+    my $handle;
+    if (lc($feature) eq "gene") {
+      $handle = $gene_hdl;
+      @out_fields = @gene_fields;
+    } elsif (lc($feature) eq "transcript") {
+      $handle = $transcript_hdl;
+      @out_fields = @transcript_fields;
+    } elsif (lc($feature) eq "cds") {
+      $handle = $cds_hdl;
+      @out_fields = @cds_fields;      
+    } else {
+      next;
+    } 
+
+    ## Parse the "attribute" field
+    my @attributes = split /;\s*+/, $attribute;
+    my %attributes = ();
+    foreach my $attr (@attributes) {
+      if ($attr =~ /(\S+)\s+\"(\S+)\"/) {
+	$attributes{$1} = $2;
+      }
+    }
+
+    ## Define feature ID
+    my $feature_id = "feature".$l;
+    if ($feature eq "gene") {
+      $feature_id = $attributes{gene_id};
+      $gene_id =  $attributes{gene_id};
+
+    } elsif ($feature eq "cds") {
+      $feature_id = $attributes{protein_id};
+      $gene_id =  $attributes{gene_id};
+    }
+
+
+    ## parse feature type-specific fields
+    my @other_fields = ();
+    foreach my $field (@out_fields) {
+      my $value = "<NA>";
+      if ($attributes{$field}) {
+	$value = $attributes{$field};
+      }
+      push @other_fields, $value;
+    }
+    
+
+    ## Format some specific attribtues according to RSAT requirements
+    $strand =~ s/\+/D/;
+    $strand =~ s/\-/R/;
+    
+    
+    print $handle join("\t", $feature_id, $feature, $seqname, $start, $end, $strand, $gene_id, @other_fields), "\n";
+
+  }
+  close $main::in if ($main::infile{input});
+  
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($dir{output}) {
+    close $main::out;
+    close $main::gene_hdl;
+    close $main::transcript_hdl;
+    close $main::cds_hdl;
+    &RSAT::message::TimeWarn("Output file", $dir{output}) if ($main::verbose >= 2);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o output directory>
+
+Directory where the parsing result will be stored.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $dir{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; parse-gtf ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
