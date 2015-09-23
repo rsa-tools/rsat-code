@@ -2,7 +2,7 @@
 ## Given a vector with IDs, return a list with the
 ## information (consensus, number, id, strand, spacer)
 ## of the inverted alignment
-inverted.alignment <- function(ids.inv, motifs.list, desc.table){
+inverted.alignment <- function(ids.inv, motifs.list){
 
   motifs.list.temp <- motifs.list[ids.inv]
   ## Create the new consensuses with the inverted orientation
@@ -27,12 +27,12 @@ inverted.alignment <- function(ids.inv, motifs.list, desc.table){
 
     ## Depending on the current orientation, get the consensus in the inverted orientation
     if(motifs.list.temp[[X]][["strand"]] == "D"){
-      inverted.consensus.1 <- get.consensus(X, desc.table, RC = TRUE)
-      inverted.consensus.2 <- get.consensus(X, desc.table, RC = FALSE)
+      inverted.consensus.1 <- get.consensus(X, RC = TRUE)
+      inverted.consensus.2 <- get.consensus(X, RC = FALSE)
       inverted.aligment.list[[X]][["strand"]] <- "R"
     } else{
-      inverted.consensus.1 <- get.consensus(X, desc.table, RC = FALSE)
-      inverted.consensus.2 <- get.consensus(X, desc.table, RC = TRUE)
+      inverted.consensus.1 <- get.consensus(X, RC = FALSE)
+      inverted.consensus.2 <- get.consensus(X, RC = TRUE)
       inverted.aligment.list[[X]][["strand"]] <- "D"
     }
 

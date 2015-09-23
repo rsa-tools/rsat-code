@@ -3,45 +3,26 @@
 ## (strand, consensus, offset) of the aligned motifs
 align.two.leaves <- function(child1,
                              child2,
-                             desc.table,
-                             compa.table,
                              thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
                              hclust.method = "average",
                              metric = "Ncor",
-                             hclust.tree,
                              nodes.attributes = TRUE,
                              motif.at.tree.level = motif.at.tree.level){
-
-  ## Example
-#   child1 <- -1
-#   child2 <- -2
-#    desc.table <- global.description.table
-#    compa.table <- global.compare.matrices.table
-#    hclust.tree <- tree
-#    hclust.method <- "average"
-#   id1 <- get.id(n1, desc.table)
-#   id2 <- get.id(n2, desc.table)
-#   metric <- "Ncor"
-#   id1.hclust <- get.id(n1, desc.table)
-#   id2.hclust <- get.id(n2, desc.table)
-#   n1.id <- get.id(n1, desc.table)
-#   n2.id <- get.id(n2, desc.table)
 
   ## Identify the node numbers and merge level
   n1 <- min(-child1,-child2)
   n2 <- max(-child1,-child2)
-  merge.level <- which(hclust.tree$merge == child1)
+  merge.level <- which(tree$merge == child1)
 
   ## Saves the order of the IDs in the hclust$merge object
-  id1.hclust <- get.id(n1, desc.table)
-  id2.hclust <- get.id(n2, desc.table)
+  id1.hclust <- get.id(n1)
+  id2.hclust <- get.id(n2)
 
   ## According to the hierarchical clustering method selected,
   ## Check if the motifs corresponding to the current level shall be aligned
   aligned.motif.flag <- 0
   aligned.motif.flag <- check.alignment(id1.hclust,
                                         id2.hclust,
-                                        compa.table,
                                         thresholds,
                                         hclust.method = hclust.method,
                                         metric = metric)
@@ -69,10 +50,10 @@ align.two.leaves <- function(child1,
   if(aligned.motif.flag == 0){
 
       for(n in c(n1,n2)){
-        n.id <- get.id(n, desc.table)
-        motifs.info[[n.id]][["name"]] <<- get.name(n.id, desc.table)
-        motifs.info[[n.id]][["consensus_d"]] <<- get.consensus(n, desc.table, RC = FALSE)
-        motifs.info[[n.id]][["consensus_rc"]] <<- get.consensus(n, desc.table, RC = TRUE)
+        n.id <- get.id(n)
+        motifs.info[[n.id]][["name"]] <<- get.name(n.id)
+        motifs.info[[n.id]][["consensus_d"]] <<- get.consensus(n, RC = FALSE)
+        motifs.info[[n.id]][["consensus_rc"]] <<- get.consensus(n, RC = TRUE)
         motifs.info[[n.id]][["strand"]] <<- "D"
         motifs.info[[n.id]][["number"]] <<- n
         motifs.info[[n.id]][["spacer.up"]] <<- 0
@@ -85,7 +66,6 @@ align.two.leaves <- function(child1,
     ## Find the central pair of motifs of the cluster
     central.motifs <- closest.or.farthest.motifs.ids(id1.hclust,
                                                      id2.hclust,
-                                                     compa.table,
                                                      metric = metric,
                                                      closest = TRUE)
     id1 <- central.motifs[1]
@@ -101,10 +81,10 @@ align.two.leaves <- function(child1,
     rm(id1.hclust, id2.hclust)
 
     ## Comparison number in the compare-matrices table
-    compa.nb <- get.comparison.number(id1, id2, compa.table)[1]
+    compa.nb <- get.comparison.number(id1, id2)[1]
 
     ## Choose the relative orientation of the two motifs
-    strand <- as.vector(compa.table[compa.nb, "strand"])
+    strand <- as.vector(global.compare.matrices.table[compa.nb, "strand"])
 
     consensus1a <- NULL
     consensus1b <- NULL
@@ -112,24 +92,24 @@ align.two.leaves <- function(child1,
     consensus2b <- NULL
 
     ## Consensus of the first motif
-    consensus1a <- get.consensus(id1, desc.table, RC = FALSE)
-    consensus1b <- get.consensus(id1, desc.table, RC = TRUE)
+    consensus1a <- get.consensus(id1, RC = FALSE)
+    consensus1b <- get.consensus(id1, RC = TRUE)
 
     id1.strand <- "D"
     if (strand == "R") {
       ## Consensuses of the second motif
-      consensus2a <- get.consensus(id2, desc.table, RC = TRUE)
-      consensus2b <- get.consensus(id2, desc.table, RC = FALSE)
+      consensus2a <- get.consensus(id2, RC = TRUE)
+      consensus2b <- get.consensus(id2, RC = FALSE)
       id2.strand <- "R"
     } else {
       ## Consensuses of the second motif
-      consensus2a <- get.consensus(id2, desc.table, RC = FALSE)
-      consensus2b <- get.consensus(id2, desc.table, RC = TRUE)
+      consensus2a <- get.consensus(id2, RC = FALSE)
+      consensus2b <- get.consensus(id2, RC = TRUE)
       id2.strand <- "D"
     }
 
     ## Add the offset to the consensuses
-    offset <- as.vector(compa.table[compa.nb, "offset"])
+    offset <- as.vector(global.compare.matrices.table[compa.nb, "offset"])
     spacer <- paste(collapse="",rep(x="-",times=abs(offset)))
 
     if (offset < 0) {
@@ -141,7 +121,7 @@ align.two.leaves <- function(child1,
     }
 
     ## Update the motifs information
-    motifs.info[[id1]][["name"]] <<- get.name(id1, desc.table)
+    motifs.info[[id1]][["name"]] <<- get.name(id1)
     motifs.info[[id1]][["consensus_d"]] <<- consensus1a
     motifs.info[[id1]][["consensus_rc"]] <<- consensus1b
     motifs.info[[id1]][["strand"]] <<- id1.strand
@@ -149,7 +129,7 @@ align.two.leaves <- function(child1,
     motifs.info[[id1]][["spacer.up"]] <<- get.spacer.nb(motifs.info[[id1]][["consensus_d"]])$up.spacer
     motifs.info[[id1]][["spacer.dw"]] <<- get.spacer.nb(motifs.info[[id1]][["consensus_d"]])$dw.spacer
 
-    motifs.info[[id2]][["name"]] <<- get.name(id2, desc.table)
+    motifs.info[[id2]][["name"]] <<- get.name(id2)
     motifs.info[[id2]][["consensus_d"]] <<- consensus2a
     motifs.info[[id2]][["consensus_rc"]] <<- consensus2b
     motifs.info[[id2]][["strand"]] <<- id2.strand
@@ -157,7 +137,7 @@ align.two.leaves <- function(child1,
     motifs.info[[id2]][["spacer.up"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$up.spacer
     motifs.info[[id2]][["spacer.dw"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$dw.spacer
 
-    motifs.info.temp <- fill.downstream(get.id(motif.at.tree.level[[merge.level]], desc.table), motifs.info)
+    motifs.info.temp <- fill.downstream(get.id(motif.at.tree.level[[merge.level]]), motifs.info)
     motifs.info[names(motifs.info.temp)] <<- motifs.info.temp[names(motifs.info.temp)]
   }
 }
