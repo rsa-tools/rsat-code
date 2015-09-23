@@ -1,7 +1,7 @@
 ########################################################
 ## Given the id of a motif, return its name
-get.name <- function(id, desc.table){
+get.name <- function(id){
   return(as.vector(sapply(id, function(X){
-    desc.table[which(desc.table$id == X),][,"name"]
+    global.description.table[which(global.description.table$id == X),][,"name"]
   })))
 }
