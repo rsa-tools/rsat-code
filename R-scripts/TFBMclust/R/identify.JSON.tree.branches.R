@@ -3,11 +3,11 @@
 ## the JSON tree must be explored in order to rename the branches
 ## and thus can assign a name which will be used to add the
 ## branch consensuses (in the perl code)
-identify.JSON.tree.branches <- function(tree, desc.table){
+identify.JSON.tree.branches <- function(tree){
 
   ## Change the labels for the numbers in the descripton table
-  tree$labels <- NULL
-  tree$labels <- as.vector(desc.table$n)
+  tree$labels <<- NULL
+  tree$labels <<- as.vector(global.description.table$n)
 
   ## Erase the (',')
   jsonTree <- convert.hclust.to.JSON(tree)
@@ -71,7 +71,7 @@ identify.JSON.tree.branches <- function(tree, desc.table){
           numb <- NULL
           numb <- as.integer(unlist((strsplit(paste(temp, collapse = ""), "\\|"))))
           numb <- numb[which(numb != "NA")]
-          col2 <<- append(col2, paste(get.id(numb,desc.table), collapse = ","))
+          col2 <<- append(col2, paste(get.id(numb), collapse = ","))
         }
       }
     })
@@ -97,7 +97,7 @@ identify.JSON.tree.branches <- function(tree, desc.table){
 
       if(length(leaves.JSON) == length(leaves.merge)){
 
-        if(sort(get.id(leaves.merge, desc.table))[1] == sort(leaves.JSON)[1]){
+        if(sort(get.id(leaves.merge))[1] == sort(leaves.JSON)[1]){
 
           cond.counter <<- cond.counter + 1
 

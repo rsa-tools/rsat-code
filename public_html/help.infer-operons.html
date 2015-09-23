@@ -36,7 +36,7 @@
 </p>
 <hr />
 <h1><a name="name">NAME</a></h1>
-<p>infer-operon</p>
+<p>infer-operons</p>
 <p>
 </p>
 <hr />
@@ -113,7 +113,7 @@ operon.</p>
 <h1><a name="usage">USAGE</a></h1>
 <pre>
 
-infer-operon [-i inputfile] [-o outputfile] [-v] [options]</pre>
+infer-operons [-i inputfile] [-o outputfile] [-v] [options]</pre>
 <dl>
 <dt><strong><a name="example_1" class="item"><strong>Example 1</strong></a></strong>
 
@@ -122,7 +122,7 @@ infer-operon [-i inputfile] [-o outputfile] [-v] [options]</pre>
 genes.</p>
 </dd>
 <dd>
-<p>infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR -q mhpA -q mhpD</p>
+<p>infer-operons -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR -q mhpA -q mhpD</p>
 </dd>
 </li>
 <dt><strong><a name="example_2" class="item"><strong>Example 2</strong></a></strong>
@@ -131,7 +131,7 @@ genes.</p>
 <p>We now specify different return fields</p>
 </dd>
 <dd>
-<p>infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q lacI \
+<p>infer-operons -v 1 -org Escherichia_coli_K12 -q hisD -q lacI \
   -return leader,trailer,up_info,down_info,operon</p>
 </dd>
 </li>
@@ -141,7 +141,7 @@ genes.</p>
 <p>Infer operons for all the genes of an organism.</p>
 </dd>
 <dd>
-<p>infer-operon -v 1 -org Escherichia_coli_K12 -all -return up_info,leader,operon</p>
+<p>infer-operons -v 1 -org Escherichia_coli_K12 -all -return up_info,leader,operon</p>
 </dd>
 </li>
 <dt><strong><a name="example_4" class="item"><strong>Example 4</strong></a></strong>
@@ -153,7 +153,7 @@ sequence of the inferred leader gene. Note that two of the input genes
 leader, we use the unix command sort -u (unique).</p>
 </dd>
 <dd>
-<p>infer-operon -org Escherichia_coli_K12 -return leader,operon \
+<p>infer-operons -org Escherichia_coli_K12 -return leader,operon \
   -q lacI -q lacZ -q lacY  | sort -u \
   | retrieve-seq -org Escherichia_coli_K12 -noorf</p>
 </dd>
@@ -166,7 +166,7 @@ operon contains a series of tRNA genes for methionine, leucine and
 glutamina, respectively.</p>
 </dd>
 <dd>
-<p>infer-operon -org Escherichia_coli_K12 -q glnV -q metU -q ileV \
+<p>infer-operons -org Escherichia_coli_K12 -q glnV -q metU -q ileV \
   -return q_info,up_info,operon</p>
 </dd>
 </li>
@@ -230,7 +230,7 @@ allows to use the command within a pipe.</p>
 line to specify several query genes. Example:</p>
 </dd>
 <dd>
-<p>infer-operon -org Escherischia_coli_K12 -q LACZ -q hisA</p>
+<p>infer-operons -org Escherischia_coli_K12 -q LACZ -q hisA</p>
 </dd>
 </li>
 <dt><strong><a name="o_outputfile" class="item"><strong>-o outputfile</strong></a></strong>
