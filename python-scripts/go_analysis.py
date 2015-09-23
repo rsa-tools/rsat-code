@@ -28,7 +28,9 @@ if args.task == 'parse_go':
 if args.task == 'get_annotations':
     print("\t\t\t=== Annotations task ===")
     print('\n' + time.strftime('%Y-%m-%d %H:%M:%S') + '\t' + "Start")
-    go_func.get_annotations(args.org_name, args.outdir)
+    go_func.treat_one_request("ensemblgenomes",args.org_name, args.outdir)
+
+#    go_func.get_annotations(args.org_name, args.outdir)
 if args.task == 'expand':
     print("\t\t\t=== Expansion task ===")
     print('\n' + time.strftime('%Y-%m-%d %H:%M:%S') + '\t' + "Start")

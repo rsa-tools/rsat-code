@@ -439,7 +439,7 @@ located inside operons. For these, the putative regulatory elements
 should be searched in the promoter of the operon leader gene, rather
 than in the upstream sequence of the gene itself.
 
-The program \program{infer-operon} allows to infer the operons and
+The program \program{infer-operons} allows to infer the operons and
 return the corresponding leader genes for a set of input genes.  The
 approach is inspired by the Salgado-Hagelsieb method, which consists
 in predicting, for each upstream region, if it is within an operon
@@ -481,7 +481,7 @@ With the following command, we infer the operon for a set of input
 genes.
 
 \begin{lstlisting}
-infer-operon -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q hisD -q mhpR \
+infer-operons -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q hisD -q mhpR \
   -q mhpA -q mhpD
 \end{lstlisting}
 
@@ -495,7 +495,7 @@ One option would be to increase the distance threshold to 150bp.
 
 
 \begin{lstlisting}
-infer-operon -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q hisD -q mhpR \
+infer-operons -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q hisD -q mhpR \
   -q mhpA -q mhpD -dist 150
 \end{lstlisting}
 
@@ -510,7 +510,7 @@ we will undully consider these promoters as WO.
 The option \option{-return} allows to specify custom return fields.
 
 \begin{lstlisting}
-infer-operon -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q hisD -q lacI -q lacZ \
+infer-operons -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q hisD -q lacI -q lacZ \
   -return q_info,up_info,leader,trailer,operon
 \end{lstlisting}
 
@@ -521,7 +521,7 @@ and \gene{lacA} is 65bp. This can be checked with the return field
 \option{down\_info}.
 
 \begin{lstlisting}
-infer-operon -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q lacZ -q lacY \
+infer-operons -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q lacZ -q lacY \
   -return q_info,up_info,down_info,operon
 \end{lstlisting}
 
@@ -532,7 +532,7 @@ metT operon contains a series of tRNA genes for methionine, leucine
 and glutamina, respectively.
 
 \begin{lstlisting}
-infer-operon -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q glnV -q metU -q ileV \
+infer-operons -org Escherichia_coli_K_12_substr__MG1655_uid57779 -q glnV -q metU -q ileV \
 -return q_info,up_info,operon
 \end{lstlisting}
 
@@ -542,7 +542,7 @@ The option \option{-all} allows to infer operons for all the genes of
 an organism.
 
 \begin{lstlisting}
-infer-operon -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -all \
+infer-operons -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779 -all \
   -return q_info,up_info,leader,operon
 \end{lstlisting}
 
@@ -556,7 +556,7 @@ the corresponding promoter sequences. For this, we will use the option
 result table. 
 
 \begin{lstlisting}
-infer-operon -org Escherichia_coli_K_12_substr__MG1655_uid57779 -return leader,q_info,up_info,operon \
+infer-operons -org Escherichia_coli_K_12_substr__MG1655_uid57779 -return leader,q_info,up_info,operon \
    -q lacI -q lacZ -q lacY -q mhpD -q mhpF
 \end{lstlisting}
 
@@ -571,7 +571,7 @@ To avoid including twice their leader, we use the unix command sort -u
 
 
 \begin{lstlisting}
-infer-operon -org Escherichia_coli_K_12_substr__MG1655_uid57779 -return leader,q_info,up_info,operon \
+infer-operons -org Escherichia_coli_K_12_substr__MG1655_uid57779 -return leader,q_info,up_info,operon \
    -q lacI -q lacZ -q lacY -q mhpD -q mhpF \
    | cut -f 1 \
    | sort -u 
@@ -581,7 +581,7 @@ We can now use the resulting non-redundant list of operon leaders as
 input for retrieve-seq.
 
 \begin{lstlisting}
-infer-operon -org Escherichia_coli_K_12_substr__MG1655_uid57779 -return leader,q_info,up_info,operon \
+infer-operons -org Escherichia_coli_K_12_substr__MG1655_uid57779 -return leader,q_info,up_info,operon \
    -q lacI -q lacZ -q lacY -q mhpD -q mhpF \
    | cut -f 1 \
    | sort -u \

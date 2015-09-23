@@ -21,7 +21,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### print the header
-&RSA_header("infer-operon result", 'results');
+&RSA_header("infer-operons result", 'results');
 
 ## Check security issues
 &CheckWebInput($query);
@@ -43,13 +43,13 @@ $parameters = "";
 ################################################################
 ## Single or multi-genome query
 # if ($query->param('single_multi_org') eq 'multi') {
-#     $command = "$SCRIPTS/infer-operon-multigenome";
+#     $command = "$SCRIPTS/infer-operons-multigenome";
 
 #     &cgiMessage(join("<P>",
 # 		     "The computation can take a more or less important time depending on the taxon size.",
 # 		     "If the answer does not appear in due time, use the option <i>output email</i>"));
 # } else {
-     $command = "$SCRIPTS/infer-operon";
+     $command = "$SCRIPTS/infer-operons";
 
 # }
 
