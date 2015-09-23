@@ -32,7 +32,7 @@ Graph tool
 create_pathway_extractor_index -h -of operonfile -fd footprintdirectory [-o outputdirectory] [-v verbosity] -a gene2ec2reactions [-b gene2reaction] 
 
 =head1 infer operon file format
-; infer-operon  -v 1 -sep - -return q_info,operon,gene_nb -org Escherichia_coli_K_12_substr__MG1655_uid57779 -min_gene_nb 2 -all -dist 55
+; infer-operons  -v 1 -sep - -return q_info,operon,gene_nb -org Escherichia_coli_K_12_substr__MG1655_uid57779 -min_gene_nb 2 -all -dist 55
 ; Organism      Escherichia_coli_K_12_substr__MG1655_uid57779
 ; Queries       4430
 ; Column descriptions
@@ -287,7 +287,7 @@ package main;
       $outdir = "$operondir$rsatorganismid/index.tab";
   open OUTFILE, ">$outdir";
       
-  print OUTFILE "; infer-operon  -v 1 -sep - -return q_info,operon,gene_nb -org Escherichia_coli_K_12_substr__MG1655_uid57779 -min_gene_nb 2 -all -dist 55\n";
+  print OUTFILE "; infer-operons  -v 1 -sep - -return q_info,operon,gene_nb -org Escherichia_coli_K_12_substr__MG1655_uid57779 -min_gene_nb 2 -all -dist 55\n";
   print OUTFILE "; Organism\t$organismid\n";
   print OUTFILE "; Column descriptions\n";
   print OUTFILE ";\t1\t[Gene_ID]\tquery gene identifier.\n";

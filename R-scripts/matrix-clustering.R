@@ -114,7 +114,7 @@ if (length(grep(pattern=metric, names(global.compare.matrices.table))) < 1) {
 }
 
 ## Convert distance table into a distance matrix, required by hclust
-distances.objects <- build.distance.matrix(global.compare.matrices.table, metric = metric)
+distances.objects <- build.distance.matrix(metric = metric)
 dist.table <- distances.objects$table
 dist.matrix <- distances.objects$matrix
 
@@ -157,10 +157,7 @@ if(number.of.motifs > 1){
   ###########################################################
   ## Initially align all the motifs and search the cluster
   ## After each cluster will be aligned separately
-  alignment <- align.motifs(tree,
-                            global.description.table,
-                            global.compare.matrices.table,
-                            thresholds = thresholds,
+  alignment <- align.motifs(thresholds = thresholds,
                             method = hclust.method,
                             metric = metric,
                             nodes.attributes=TRUE,
@@ -178,7 +175,7 @@ if(number.of.motifs > 1){
   ## and get their motif IDs
   clusters <<- find.clusters(alignment.attributes, tree)
   clusters <<- lapply(clusters, function(x){
-    get.id(x, global.description.table)
+    get.id(x)
   })
 
 
@@ -258,7 +255,7 @@ legend("center",      # location of the legend on the heatmap plot
       ########################################
       ## Define the label color of the tree
       ## according to the cluster
-      color.code <- color.code.clusters(clusters, tree, global.description.table)
+      color.code <- color.code.clusters(clusters, tree)
 
       ## Convert the hclust object in a dendrogram
       tree.dendro <- as.dendrogram(tree)
@@ -324,6 +321,10 @@ forest.list <<- list()
 intermediate.levels.counter <- 0
 intermediate.levels <- vector()
 
+## Copy the global tables
+compa.table <- global.compare.matrices.table
+desc.tab <- global.description.table
+
 ## Print a file with the Hexadecimals code for the colors of the clusters
 ## The color of the clusters showed in the heatmap will be the same
 ## colors in the D3 trees.
@@ -333,7 +334,6 @@ if(only.hclust == 0){
 }
 
 i <- sapply(1:length(clusters), function(nb){
-
 
     alignment.cluster <<- list()
     description.table <<- NULL
@@ -357,22 +357,23 @@ i <- sapply(1:length(clusters), function(nb){
            ## hierarchical clustering step
            case.1 = {
 
-               ## Fill the cluster list with the data of the non-aligned motifs (singleton)
-               forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- global.motifs.info[[ids]]
-               forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_d"]] <<- get.consensus(ids, global.description.table, RC = FALSE)
-               forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_rc"]] <<- get.consensus(ids, global.description.table, RC = TRUE)
-               forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["number"]] <<- as.numeric(1)
-               forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["spacer.up"]] <<- as.numeric(0)
-               forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["spacer.dw"]] <<- as.numeric(0)
+              ## Fill the cluster list with the data of the non-aligned motifs (singleton)
+              global.description.table <<- desc.tab
+              forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- global.motifs.info[[ids]]
+              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_d"]] <<- get.consensus(ids, RC = FALSE)
+              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_rc"]] <<- get.consensus(ids, RC = TRUE)
+              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["number"]] <<- as.numeric(1)
+              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["spacer.up"]] <<- as.numeric(0)
+              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["spacer.dw"]] <<- as.numeric(0)
 
-               if(only.hclust == 0){
+              if(only.hclust == 0){
 
-                 ## Create a JSON file for trees with a single node
-                 ## In this situation this step is required because it is not possible to use the hclustToJson function
-                 JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", ids, "\",\n}\n]\n}", sep = "")
-                 json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
-                 verbose(paste("JSON tree file", json.file), 2)
-                 writeLines(JSON.single.node, con=json.file)
+                ## Create a JSON file for trees with a single node
+                ## In this situation this step is required because it is not possible to use the hclustToJson function
+                JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", ids, "\",\n}\n]\n}", sep = "")
+                json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
+                verbose(paste("JSON tree file", json.file), 2)
+                writeLines(JSON.single.node, con=json.file)
 
                  ## For consistency, print the empty file
                  ## It will be erased later
@@ -400,18 +401,18 @@ i <- sapply(1:length(clusters), function(nb){
            case.2 = {
 
                 ## New comparison table (with the ids of the current cluster)
-               compare.matrices.table <<- global.compare.matrices.table[which((global.compare.matrices.table[,"id1"] %in% ids & global.compare.matrices.table[,"id2"] %in% ids)),]
-               compare.matrices.table$id1 <- as.vector(compare.matrices.table$id1)
-               compare.matrices.table$id2 <- as.vector(compare.matrices.table$id2)
+               global.compare.matrices.table <<- compa.table[which( (compa.table[,"id1"] %in% ids) & (compa.table[,"id2"] %in% ids) ),]
+               global.compare.matrices.table$id1 <<- as.vector(global.compare.matrices.table$id1)
+               global.compare.matrices.table$id2 <<- as.vector(global.compare.matrices.table$id2)
 
                ## New description table (with the ids of the current cluster)
-               description.table <<- global.description.table[global.description.table[,"id"] %in% ids, ]
+               global.description.table <<- desc.tab[desc.tab[,"id"] %in% ids, ]
                ## In reference to the ids, order alphabetically the description table
-               description.table <- description.table[order(as.vector(description.table$id)),]
-               description.table$n <- 1:length(description.table$n)
+               global.description.table <<- global.description.table[order(as.vector(global.description.table$id)),]
+               global.description.table$n <<- 1:length(global.description.table$n)
 
                ## Convert distance table into a distance matrix, required by hclust
-               distances.objects <- build.distance.matrix(compare.matrices.table, metric = metric)
+               distances.objects <- build.distance.matrix(metric = metric)
                dist.matrix <- distances.objects$matrix
 
                ## Build the tree by hierarchical clustering,
@@ -428,16 +429,13 @@ i <- sapply(1:length(clusters), function(nb){
                   ## Creates a file indicating to which levels of the JSON tree correspond to the levels on the hclust tree
                   ## This step is required to assign a name to the branches in the JSON tree in order to create
                   ## the branch-motifs
-                  JSON.clusters.table <- identify.JSON.tree.branches(tree, description.table)
+                  JSON.clusters.table <- identify.JSON.tree.branches(tree)
                   JSON.clusters.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
                   write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
                 }
 
                ## Align the motifs and retrieve the information of the intermediate alignments
-               alignment.cluster <<- align.motifs(tree,
-                                                  description.table,
-                                                  compare.matrices.table,
-                                                  thresholds = thresholds,
+               alignment.cluster <<- align.motifs(thresholds = thresholds,
                                                   method = hclust.method,
                                                   metric = metric,
                                                   nodes.attributes = FALSE,
