@@ -4,7 +4,6 @@
 ## if so, then the two clusters should be aligned
 check.alignment <- function(id1,
                             id2,
-                            compa.table,
                             thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
                             hclust.method = "average",
                             metric = "Ncor"){
@@ -12,9 +11,9 @@ check.alignment <- function(id1,
   ## Hclust method = average
   ## Calculate the mean of the scores for all the pairs of motifs
   if(hclust.method == "average"){
-    compa.numbers <- get.comparison.number(id1, id2, compa.table)
+    compa.numbers <- get.comparison.number(id1, id2)
 
-    scores <- compa.table[compa.numbers, names(thresholds)]
+    scores <- global.compare.matrices.table[compa.numbers, names(thresholds)]
 
     ## Calculate the median of the data
     mean.scores <- sapply(scores, mean)
@@ -26,16 +25,15 @@ check.alignment <- function(id1,
 
     farthest.motifs <- closest.or.farthest.motifs.ids(id1,
                                                       id2,
-                                                      compa.table,
                                                       metric = metric,
                                                       closest = FALSE)
     id1.far <- farthest.motifs[1]
     id2.far <- farthest.motifs[2]
 
-    compa.numbers <- get.comparison.number(id1.far, id2.far, compa.table)
+    compa.numbers <- get.comparison.number(id1.far, id2.far)
 
     ## Get the scores of the comparisons
-    farthest.scores <- compa.table[compa.numbers, names(thresholds)]
+    farthest.scores <- global.compare.matrices.table[compa.numbers, names(thresholds)]
 
   ## Hclust method = single
   ## Calculate the closest pair of motifs between all the pairs of motifs
@@ -43,16 +41,15 @@ check.alignment <- function(id1,
 
     closest.motifs <- closest.or.farthest.motifs.ids(id1,
                                                      id2,
-                                                     compa.table,
                                                      metric = metric,
                                                      closest = TRUE)
     id1.close <- closest.motifs[1]
     id2.close <- closest.motifs[2]
 
-    compa.numbers <- get.comparison.number(id1.close, id2.close, compa.table)
+    compa.numbers <- get.comparison.number(id1.close, id2.close)
 
     ## Get the scores of the comparisons
-    closest.scores <- compa.table[compa.numbers, names(thresholds)]
+    closest.scores <- global.compare.matrices.table[compa.numbers, names(thresholds)]
   }
 
   th <- list()

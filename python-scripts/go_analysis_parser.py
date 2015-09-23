@@ -23,7 +23,7 @@ def go_parser():
     
     #Task 2 : parse_go
     parser_parse_go = subparsers.add_parser("parse_go",
-                                            description="Parse the obo-formatted file from GO and export its content in tab-delimited files.")
+                                            description="Parse the obo-formatted file from GO and exportits content in tab-delimited files.")
     parser_parse_go.add_argument('-f', '--file',
                                  metavar='<file>',
                                  type=str,
