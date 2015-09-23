@@ -146,3 +146,25 @@ index_html:
 
 
 
+################################################################
+## Download GTF files from ensemblgenomes
+GTF_GROUP=plants
+GTF_SPECIES=chlamydomonas_reinhardtii
+GTF_URL=ftp.ensemblgenomes.org/pub/${GTF_GROUP}/release-28/gtf/${GTF_SPECIES}/
+GTF_PATH=${RSAT}/downloads/${GTF_URL}
+download_gtf:
+	@echo
+	@echo "Downloading GTF file from	ftp://${GTF_URL}"
+	cd ${RSAT}/downloads; \
+	wget  -rNL ftp://${GTF_URL}
+	@echo "	${GTF_PATH}"
+
+GTF_GZ=`ls -1 ${GTF_PATH}/*.gtf.gz`
+ORG_ID=${GTF_SPECIES}
+PARSE_DIR=${RSAT}/data/genomes/${ORG_ID}/genome/
+parse_gtf:
+	@echo
+	@echo "Parsing GTF file	${GTF_GZ}"
+	@echo "ORG_ID	${ORG_ID}"
+	parse-gtf -v ${V} -i ${GTF_GZ} -o ${PARSE_DIR}
+	@echo "	${PARSE_DIR}"
