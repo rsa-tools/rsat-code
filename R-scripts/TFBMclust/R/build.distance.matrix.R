@@ -1,14 +1,13 @@
 ###########################################################
 ## Build a distance matrix from the distance metric list
-build.distance.matrix <- function(comparison.table,
-                                  metric="Ncor"){
+build.distance.matrix <- function(metric="Ncor"){
 
 
   dist.table <- NULL
   distances.objects <- list()
 
   ## Extract metric values
-  metric.values <- comparison.table[,metric]
+  metric.values <- global.compare.matrices.table[,metric]
 
   ## If required, convert similarities to distances
   ## Similarity sores bounded to 1
@@ -63,10 +62,10 @@ build.distance.matrix <- function(comparison.table,
 
   ## Add a column with metric column to the compare matrices table, will
   ## be used to generate a cross-table
-  comparison.table$metric.dist <- metric.dist
+  global.compare.matrices.table$metric.dist <- metric.dist
 
   ## Build the distance table from the column metric
-  dist.table <- xtabs(metric.dist ~ id1+id2, comparison.table)
+  dist.table <- xtabs(metric.dist ~ id1+id2, global.compare.matrices.table)
 
 
   ## Ensure that symmetrical distances are defined
