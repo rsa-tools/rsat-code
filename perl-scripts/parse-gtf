@@ -62,9 +62,24 @@ separate table (e.g. cds_names.tab)
 
 =over
 
-=item B<wish 1>
+=item B<-download_gtf>
 
-=item B<wish 2>
+Download the gtf file from user-specified URL.
+
+=item B<-download_fasta>
+
+Download fasta file with genomic sequences from user-specified URL.
+
+=item B<-download_fasta_rm>
+
+Download fasta file with repeat-masked genomic sequences from user-specified URL.
+
+=item B<-install>
+
+Install the organism in RSAT. This option will call the script
+I<install-organisms> with the appropriate options to configure the
+RSAT genome table (option -config) and run the basic installation
+tasks (computing of oligo and dyad frequencies, ...).
 
 =back
 
@@ -136,9 +151,12 @@ my @out_fields = ();
  gene_id
  transcript_id
  exon_number
- transcript_biotype
  protein_id
 ));
+
+@{$out_fields{organism}} = qw(id taxonomy source);
+
+@{$out_fields{seqfile}} = qw(id length raw_file description);
 
 ################################################################
 ## Main package
@@ -158,6 +176,7 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
+  our $last = 0; ## Stop  parsing after a user-specified number of rows
   our $null = "<NA>"; ## Non-allocated values
 
   ################################################################
@@ -195,7 +214,7 @@ package main;
     print $handle '#', join ("\t", @header_fields), "\n";
   }
   
-
+  
   ################################################################
   ## Read input
   ($main::in) = &OpenInputFile($main::infile{input});
@@ -207,6 +226,11 @@ package main;
 
     $l++;
 
+    if (($main::last > 0) && ($l > $main::last)) {
+      &RSAT::message::Warning("Stopping the parsing after", $last, "rows (option -last).");
+      last;
+    }
+
     my %attributes = (); ## initialize attributes hash table
 
     chomp();
@@ -217,17 +241,17 @@ package main;
       $field = $gtf_fields[$f];
       $attributes{$field} = $fields[$f];
     }
+
+    ## Increment counter per feature type
     my $feature = lc($attributes{feature});
-    
+    $feature_count{$feature}++;
+    $contig_count{$attributes{seqname}}++;
+    $feature_per_contig_count{$attributes{seqname}}{$feature}++;
 
     ## Format some specific attribtues according to RSAT requirements
     $attributes{strand} =~ s/\+/D/;
     $attributes{strand} =~ s/\-/R/;
 
-    ## Use gene ID as gene name if not defined
-    unless ($attributes{gene_name}) {
-      $attributes{gene_name} = $attributes{gene_id} || $null;
-    }
 
     #    &RSAT::message::Debug($attribute) if ($main::verbose >= 0);
 
@@ -241,8 +265,15 @@ package main;
       }
     }
 
+    ## Use gene ID as gene name if not defined
+    unless ($attributes{gene_name}) {
+#      &RSAT::message::Debug($l, $attributes{feature}, $attributes{);
+      $attributes{gene_name} = $attributes{gene_id} || $null;
+    }
+
+
     ## Define feature-specific fields
-    $attributes{feature_id} = $feature."_".$l;
+    $attributes{feature_id} = $feature."_".$feature_count{$feature};
     if ($feature eq "gene") {
       $attributes{feature_id} = $attributes{gene_id};
       $attributes{gene_id} =  $attributes{gene_id};
@@ -271,6 +302,57 @@ package main;
 
   }
   close $main::in if ($main::infile{input});
+
+  ################################################################
+  ## Create a file with organism attribute, required for RSAT
+  my %organism = ();
+  $organism_name = &ShortFileName($infile{input});
+  $organism_name =~ s/\.gz$//;
+  $organism_name =~ s/\.gtf$//;
+  $organism{id} = $organism_name;
+  $organism{source} = "ensemblgenomes";
+  $organism{taxonomy} = $null;
+
+  my @organism_fields = ();
+  foreach my $field (@{$out_fields{organism}}) {
+    push @organism_fields, $organism{$field};
+  }
+  my $handle = $handle{organism};
+  print $handle join("\t", @organism_fields), "\n";
+
+  ################################################################
+  ## Parse the fasta file
+  if ($infile{fasta}) {
+    &RSAT::message::TimeWarn("Parsing fasta file", $infile{fasta});
+    my ($in, $input_dir) = &OpenInputFile($infile{fasta});
+    my $seq_nb = 0;
+    my %args = ();
+    my $mask = "";
+    my $in_format = "fasta";
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask, %args)) &&
+	   (($current_seq ne "") || ($current_id ne ""))) {
+      $seq_nb++;
+      $seqfile{id} = $current_id;
+      $seqfile{length} = length($current_seq);
+      $seqfile{raw_file} = $dir{output}."/".$current_id.".raw";
+      $seqfile{description} = join("; ", @comments);
+      &RSAT::message::Info("Fasta sequence", $seq_nb, $current_id);
+
+      ## Print sequence in raw file
+      my $raw = &OpenOutputFile($seqfile{raw_file});
+      &PrintNextSequence($raw, "raw", 0, $current_seq, $current_id);
+      close $raw;
+
+      my @seqfile_fields = ();
+      foreach my $field (@{$out_fields{seqfile}}) {
+	push @seqfile_fields, $seqfile{$field};
+      }
+      my $handle = $handle{seqfile};
+      print $handle join("\t", @seqfile_fields), "\n";      
+    }
+    close($in);
+  }
+
   
   ################################################################
   ## Print verbose
@@ -306,7 +388,7 @@ sub close_and_quit {
     foreach my $feature (keys(%handle)) {
       close $handle{$feature};
     }
-    &RSAT::message::TimeWarn("Output file", $dir{output}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Output directory", $dir{output}) if ($main::verbose >= 2);
   }
 
   ## CLOSE OTHER FILES HERE IF REQUIRED
@@ -389,6 +471,35 @@ allows to use the command within a pipe.
     } elsif ($arg eq "-i") {
       $main::infile{input} = shift(@arguments);
 
+=pod
+
+=item B<-fasta genome_seq_file>
+
+Path to a file containing the genome sequences. This file must be in
+fasta format, and the sequence IDs must correspond to the seqname
+field of the parsed GTF file.
+
+The file will be parsed to generate the raw sequence files required
+for RSAT, and the script will export a contigs.txt file to indicate
+wich raw sequence file corresponds to which contig.
+
+=cut
+
+    } elsif ($arg eq "-fasta") {
+      $main::infile{fasta} = shift(@arguments);
+
+=pod
+
+=item B<-last N>
+
+Stop parsing after N rows (for debugging and testing).
+
+=cut 
+
+    } elsif ($arg eq "-last") {
+      $main::last = shift(@arguments);
+      &RSAT::error::FatalError($main::last, "Invalid value for option -last. Must be Natural number.")
+	  unless (&RSAT::util::IsNatural($main::last));
 
 =pod
 
@@ -432,6 +543,25 @@ sub Verbose {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
+
+
+  my @feature_types = sort(keys(%feature_count));
+  print $out "; Parsed rows per feature type\n";
+  foreach my $feature (@feature_types) {
+    printf $out ";\t%-13s\t%s\n", $feature, $feature_count{$feature};
+  }
+
+  print $out "; Parsed rows per contig\n";
+  printf $out ";\t%-13s\t%s\n", "Contig", join("\t", @feature_types);
+  foreach my $contig (sort (keys( %contig_count))) {
+    my @contig_counts = $contig_count{$contig};
+    foreach my $feature (@feature_types) {
+      push @contig_counts, $feature_per_contig_count{$contig}{$feature};
+    }
+    printf $out ";\t%-13s\t%s\n", $contig, join("\t", @contig_counts);
+  }
+
+
 }
 
 
