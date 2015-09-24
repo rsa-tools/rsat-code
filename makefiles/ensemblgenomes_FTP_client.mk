@@ -94,14 +94,14 @@ download_compara:
 ##################################################################
 ## Parse GTF file to extract gene, transcripts a
 GTF_GZ=`ls -1 ${ORGANISMS_DIR}/${SPECIES}/*.gtf.gz`
-PARSE_DIR=${RSAT}/data/genomes/${SPECIES}/genome/
+#PARSE_DIR=${RSAT}/data/genomes/${SPECIES}/genome/
+PARSE_DIR=${ORGANISMS_DIR}/${SPECIES}/genome
 parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_GZ}"
 	@echo "SPECIES	${SPECIES}"
 	parse-gtf -v ${V} -i ${GTF_GZ} -o ${PARSE_DIR}
 	@echo "	${PARSE_DIR}"
-
 
 ##################################################################
 
