@@ -3089,7 +3089,7 @@ var childCount = function(level, n) {
   }
 };
 childCount(0, root);  
-var newHeight = d3.max(levelWidth) * 225; // 20 pixels per line  
+var newHeight = d3.max(levelWidth) * 350; // 20 pixels per line  
 cluster= cluster.size([newHeight, --size--]);
 
 // Re-draw the tree
