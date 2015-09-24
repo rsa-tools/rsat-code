@@ -22,7 +22,7 @@ V=2
 ## Define a set of demo files
 PEAKMO_PREFIX=peak-motifs_result_Chen_Oct4
 FOOTPRINT_DISCO_PREFIX=footprint-discovery_LexA
-OCT4_PREFIX=peak-motifs_Oct4
+OCT4_PREFIX=RSAT_peak-motifs_Oct4
 ES_CELLS_PREFIX=ES_CELL_ANALYSIS
 MULTI_ALGO_PREFIX=Multi_algorithms_analysis
 
@@ -138,7 +138,8 @@ cluster_peakmotifs_Oct4:
 	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
 		TITLE='Oct4 motifs peak motifs' \
 		COLLECTION=${OCT4_PREFIX} \
-		METRIC_BUILD_TREE=Ncor
+		METRIC_BUILD_TREE=Ncor \
+		MIN_COR=0.5 MIN_NCOR=0.4
 
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
