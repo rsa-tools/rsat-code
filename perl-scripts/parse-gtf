@@ -78,41 +78,67 @@ BEGIN {
 }
 require "RSA.lib";
 
+@gtf_fields = qw( 
+  seqname 
+  source
+  feature
+  start
+  end
+  score
+  strand
+  frame
+  attribute);
 
+## Rename GTF fields according to RSAT nomenclature
+%gtf_to_rsat_fields = (
+  "seqname"=>"ctg",
+  "gene_biotype"=>"type",
+  "gene_name"=>"name",
+  "start"=>"left",
+  "end"=>"right",
+  "strand"=>"strand",
+  "attribute"=>"description");
+
+my @common_fields = qw(
+  feature_id
+  gene_biotype
+  gene_name
+  seqname
+  start
+  end 
+  strand
+  );
+
+## Fields required for RSAT
+#     $col{'id'} = 0;
+#     $col{'type'} = 1;
+#     $col{'name'} = 2;
+#     $col{'ctg'} = 3;
+#     $col{'left'} = 4;
+#     $col{'right'} = 5;
+#     $col{'strand'} = 6;
+#     $col{'descr'} = 7;
+#     $col{'location'} = 8;
 
 ## Select attributes that should be exported for genes
-my @gene_fields = qw( 
- gene_version
- gene_source
- gene_biotype
-);
+my @out_fields = ();
+@{$out_fields{gene}} = @common_fields;
 
 ## Select attributes that should be exported for transcripts
-my @transcript_fields = qw(
+@{$out_fields{transcript}} = (@common_fields, qw(
  gene_id
- gene_version
  transcript_id
- transcript_version
- gene_source
- gene_biotype
  transcript_name
- transcript_source
  transcript_biotype
-);
+));
 
-my @cds_fields = qw(
+@{$out_fields{cds}} = (@common_fields, qw(
  gene_id
- gene_version
  transcript_id
- transcript_version
  exon_number
- gene_source
- gene_biotype
- transcript_source
  transcript_biotype
  protein_id
- protein_version
-);
+));
 
 ################################################################
 ## Main package
@@ -132,6 +158,8 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
+  our $null = "<NA>"; ## Non-allocated values
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -146,10 +174,27 @@ package main;
   ################################################################
   ## Open output streams
   $outfile{log} = $dir{output}."/log.txt"; $out = &OpenOutputFile($outfile{log});
-  $outfile{gene} = $dir{output}."/gene.tab"; $gene_hdl = &OpenOutputFile($outfile{gene});
-  $outfile{transcript} = $dir{output}."/transcript.tab"; $transcript_hdl = &OpenOutputFile($outfile{transcript});
-  $outfile{cds} = $dir{output}."/cds.tab"; $cds_hdl = &OpenOutputFile($outfile{cds});
-    
+
+  ## Open tab-delimited files for each feature type
+  foreach my $feature (keys %out_fields) {
+    $outfile{$feature} = $dir{output}."/".$feature.".tab";
+    $handle{$feature} = &OpenOutputFile($outfile{$feature});
+    my $handle = $handle{$feature};
+    my @out_fields = @{$out_fields{$feature}};
+    print $handle "; GTF file: ", $infile{input}, "\n";
+    print $handle "; Feature type: ", $feature, "\n";
+    print $handle "; Column content:\n";
+    foreach my $f (1..scalar(@out_fields)) {
+      my $field = $out_fields[$f-1];
+      if (defined($gtf_to_rsat_fields{$field})) {
+	$field = $gtf_to_rsat_fields{$field};
+      }
+      print $handle join("\t", ";", $f, $field), "\n";
+      push @header_fields, $field;
+    }
+    print $handle '#', join ("\t", @header_fields), "\n";
+  }
+  
 
   ################################################################
   ## Read input
@@ -159,67 +204,70 @@ package main;
     next unless (/\S/); ## Skip empty rows
 #    next if (/^;/); ## Skip comment rows
     next if (/^#!/); ## Skip header rows
-    chomp();
 
     $l++;
 
-    my ($seqname, $source, $feature, $start, $end, $score, $strand, $frame, $attribute) = split("\t");
+    my %attributes = (); ## initialize attributes hash table
+
+    chomp();
+#    my ($seqname, $source, $feature, $start, $end, $score, $strand, $frame, $attribute) = split("\t");
+    my @fields = split("\t");
+
+    foreach my $f (0..$#gtf_fields) {
+      $field = $gtf_fields[$f];
+      $attributes{$field} = $fields[$f];
+    }
+    my $feature = lc($attributes{feature});
     
-#    &RSAT::message::Debug($attribute) if ($main::verbose >= 0);
 
-    ## Define the handle according to feature type
-    my $handle;
-    if (lc($feature) eq "gene") {
-      $handle = $gene_hdl;
-      @out_fields = @gene_fields;
-    } elsif (lc($feature) eq "transcript") {
-      $handle = $transcript_hdl;
-      @out_fields = @transcript_fields;
-    } elsif (lc($feature) eq "cds") {
-      $handle = $cds_hdl;
-      @out_fields = @cds_fields;      
-    } else {
-      next;
-    } 
+    ## Format some specific attribtues according to RSAT requirements
+    $attributes{strand} =~ s/\+/D/;
+    $attributes{strand} =~ s/\-/R/;
 
-    ## Parse the "attribute" field
-    my @attributes = split /;\s*+/, $attribute;
-    my %attributes = ();
+    ## Use gene ID as gene name if not defined
+    unless ($attributes{gene_name}) {
+      $attributes{gene_name} = $attributes{gene_id} || $null;
+    }
+
+    #    &RSAT::message::Debug($attribute) if ($main::verbose >= 0);
+
+    next unless (defined($handle{$feature})); ## Skip feature types not defined in export list
+
+    ## Parse the "attribute" field of the gtf, which contains several attributes
+    my @attributes = split /;\s*+/, $attributes{attribute};
     foreach my $attr (@attributes) {
       if ($attr =~ /(\S+)\s+\"(\S+)\"/) {
 	$attributes{$1} = $2;
       }
     }
 
-    ## Define feature ID
-    my $feature_id = "feature".$l;
+    ## Define feature-specific fields
+    $attributes{feature_id} = $feature."_".$l;
     if ($feature eq "gene") {
-      $feature_id = $attributes{gene_id};
-      $gene_id =  $attributes{gene_id};
+      $attributes{feature_id} = $attributes{gene_id};
+      $attributes{gene_id} =  $attributes{gene_id};
 
     } elsif ($feature eq "cds") {
-      $feature_id = $attributes{protein_id};
-      $gene_id =  $attributes{gene_id};
+      $attributes{feature_id} = $attributes{protein_id};
+      $attributes{gene_id} =  $attributes{gene_id};
     }
 
 
     ## parse feature type-specific fields
-    my @other_fields = ();
-    foreach my $field (@out_fields) {
-      my $value = "<NA>";
-      if ($attributes{$field}) {
-	$value = $attributes{$field};
+    my @values = ();
+    foreach my $field (@{$out_fields{$feature}}) {
+#      
+#      &RSAT::message::Debug($feature, $attributes{feature_id}, $field, $attributes{$field});
+      my $value = $null;
+      if (defined($attributes{$field})) {
+	$value =  $attributes{$field};
       }
-      push @other_fields, $value;
+      push @values, $value;
     }
     
 
-    ## Format some specific attribtues according to RSAT requirements
-    $strand =~ s/\+/D/;
-    $strand =~ s/\-/R/;
-    
-    
-    print $handle join("\t", $feature_id, $feature, $seqname, $start, $end, $strand, $gene_id, @other_fields), "\n";
+    my $handle = $handle{$feature};
+    print $handle join("\t", @values), "\n";
 
   }
   close $main::in if ($main::infile{input});
@@ -255,9 +303,9 @@ sub close_and_quit {
   ## Close output file
   if ($dir{output}) {
     close $main::out;
-    close $main::gene_hdl;
-    close $main::transcript_hdl;
-    close $main::cds_hdl;
+    foreach my $feature (keys(%handle)) {
+      close $handle{$feature};
+    }
     &RSAT::message::TimeWarn("Output file", $dir{output}) if ($main::verbose >= 2);
   }
 
