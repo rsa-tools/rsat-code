@@ -13,18 +13,19 @@ V=2
 SERVERURL=ftp://ftp.ensemblgenomes.org
 
 #should be set in env var {ORG_GROUP} ?
-GROUP=plants
-
-#GROUP_LC=`echo $(GROUP) | tr A-Z a-z`
+#currently does not work for Bacteria, as these are further grouped in bacteria_NN_collection subfolders
+GROUP=Plants
+GROUP_LC=$(shell echo $(GROUP) | tr A-Z a-z)
 RELEASE=${ENSEMBLGENOMES_BRANCH}
-DATABASE=${SERVERURL}/pub/${GROUP}/release-${RELEASE}
+DATABASE=${SERVERURL}/pub/${GROUP_LC}/release-${RELEASE}
 
 #name preffix hard-coded, might change in future
 SERVERLIST=${DATABASE}/species_Ensembl${GROUP}.txt
 
-ORGANISMS_DIR=${RSAT}/data/ensemblgenomes/${GROUP}/release-${RELEASE}
+ORGANISMS_DIR=${RSAT}/data/ensemblgenomes/${GROUP_LC}/release-${RELEASE}
 ORGANISMS_LIST=${ORGANISMS_DIR}/organisms.tab
 SPECIES=chlamydomonas_reinhardtii
+SPECIES_DIR=${ORGANISMS_DIR}/${SPECIES}
 
 ###############################################################
 ## Get all supported organisms in an eg release and store them in a file
@@ -39,9 +40,9 @@ organisms:
 list_param:
 	@echo
 	@echo "Parameters"
-	@echo "	GROUP		${GROUP}"
-	@echo "	SPECIES		${SPECIES}"
-	@echo "	RELEASE		${RELEASE}"
+	@echo "	GROUP   ${GROUP} (${GROUP_LC})"
+	@echo "	SPECIES	${SPECIES}"
+	@echo "	RELEASE ${RELEASE}"
 
 ################################################################
 ## Download GTF files from ensemblgenomes
@@ -49,11 +50,11 @@ SERVER_GTF_FILE=${DATABASE}/gtf/${SPECIES}/*${RELEASE}.gtf.gz
 
 download_gtf:
 	@echo
-	@mkdir -p ${ORGANISMS_DIR}/${SPECIES}	
+	@mkdir -p ${SPECIES_DIR}	
 	@echo "Downloading GTF file of ${SPECIES}"	
-	@wget -Ncnv ${SERVER_GTF_FILE} -P ${ORGANISMS_DIR}/${SPECIES}
+	@wget -Ncnv ${SERVER_GTF_FILE} -P ${SPECIES_DIR}
 	@echo
-	@ls -1 ${ORGANISMS_DIR}/${SPECIES}/*.gtf.gz
+	@ls -1 ${SPECIES_DIR}/*.gtf.gz
 
 ################################################################
 ## Download genome FASTA files (raw and masked) from eg 
@@ -61,13 +62,13 @@ SERVER_RAW_FILE=${DATABASE}/fasta/${SPECIES}/dna/*${RELEASE}.dna.genome.fa.gz
 SERVER_MSK_FILE=${DATABASE}/fasta/${SPECIES}/dna/*${RELEASE}.dna_rm.genome.fa.gz
 download_fasta:
 	@echo
-	@mkdir -p ${ORGANISMS_DIR}/${SPECIES}
+	@mkdir -p ${SPECIES_DIR}
 	@echo "Downloading FASTA genome files of ${SPECIES}"
-	@wget -Ncnv ${SERVER_RAW_FILE} -P ${ORGANISMS_DIR}/${SPECIES}
+	@wget -Ncnv ${SERVER_RAW_FILE} -P ${SPECIES_DIR}
 	@echo
-	@wget -Ncnv ${SERVER_MSK_FILE} -P ${ORGANISMS_DIR}/${SPECIES}
+	@wget -Ncnv ${SERVER_MSK_FILE} -P ${SPECIES_DIR}
 	@echo
-	@ls -1 ${ORGANISMS_DIR}/${SPECIES}/*.fa.gz
+	@ls -1 ${SPECIES_DIR}/*.genome.fa.gz
 
 ################################################################
 ## Download sequences of some eg genomic features to be used as control
@@ -75,11 +76,11 @@ download_fasta:
 SERVER_CDS_FILE=${DATABASE}/fasta/${SPECIES}/cds/*${RELEASE}.cds.all.fa.gz
 download_feature_sequences:
 	@echo
-	@mkdir -p ${ORGANISMS_DIR}/${SPECIES}
+	@mkdir -p ${SPECIES_DIR}
 	@echo "Downloading FASTA feature files of ${SPECIES}"
-	@wget -Ncnv ${SERVER_CDS_FILE} -P ${ORGANISMS_DIR}/${SPECIES}
+	@wget -Ncnv ${SERVER_CDS_FILE} -P ${SPECIES_DIR}
 	@echo
-	@ls -1 ${ORGANISMS_DIR}/${SPECIES}/*.cds.all.fa.gz
+	@ls -1 ${SPECIES_DIR}/*.cds.all.fa.gz
 
 #################################################################
 ## Download group COMPARA files from eg
@@ -90,22 +91,34 @@ download_compara:
 	@echo "Downloading COMPARA file of ${GROUP}"
 	@wget -Ncnv ${SERVER_COMPARA_FILE} -P ${ORGANISMS_DIR}
 	@echo
+	@ls -1 ${ORGANISMS_DIR}/Compara.homologies*gz
 
 ##################################################################
-## Parse GTF file to extract gene, transcripts a
-GTF_GZ=`ls -1 ${ORGANISMS_DIR}/${SPECIES}/*.gtf.gz`
-#PARSE_DIR=${RSAT}/data/genomes/${SPECIES}/genome/
-PARSE_DIR=${ORGANISMS_DIR}/${SPECIES}/genome
+## Parse GTF file to extract gene, transcripts and cds coords
+GTF_GZ=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
+# Note that only the first file is considered
 parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_GZ}"
-	@echo "SPECIES	${SPECIES}"
-	parse-gtf -v ${V} -i ${GTF_GZ} -o ${PARSE_DIR}
-	@echo "	${PARSE_DIR}"
+	parse-gtf -v ${V} -i ${GTF_GZ} -o ${SPECIES_DIR}
+	@echo
+	@ls -1 ${SPECIES_DIR}/gene* ${SPECIES_DIR}/transcript* ${SPECIES_DIR}/cds* 
+
+##################################################################
+## Parse Compara.homologies 
+CMP_GZ=$(shell ls -1 ${ORGANISMS_DIR}/Compara.homologies*.gz)
+parse_compara:
+	@echo
+	@echo "Parsing Compara file ${CMP_GZ}"
+	@echo
+#@ls -1 ${SPECIES_DIR}/*.tab
+
 
 ##################################################################
 
-all: download_fasta download_feature_sequences download_gtf download_compara
+all: download_fasta download_feature_sequences download_gtf download_compara \
+	parse_gtf parse_compara
+	
 
 clean_all:
 	@echo
@@ -116,6 +129,6 @@ clean_all:
 clean:
 	@echo
 	@echo "Deleting ensemblgenomes species ${SPECIES} (release ${RELEASE})"
-	@[[ -d ${ORGANISMS_DIR}/${SPECIES} ]] && rm -rf ${ORGANISMS_DIR}/${SPECIES}
+	@[[ -d ${SPECIES_DIR} ]] && rm -rf ${SPECIESS_DIR}
 	@echo	
 
