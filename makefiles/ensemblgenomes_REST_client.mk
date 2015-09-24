@@ -99,6 +99,15 @@ organisms_fungi:
 annotations_yeast:
 	${MAKE} DATABASE=ensemblgenomes SPECIES=saccharomyces_cerevisiae one_org_annotations
 
+################################################################
+## Targets for genome management on http://metazoa.rsat.eu
+organisms_metazoa:
+	${MAKE} organisms_for_taxon  DATABASE=ensemblgenomes TAXON=Metazoa
+	${MAKE} organisms_for_taxon  DATABASE=ensembl TAXON=Metazoa
+
+## Collect gene annotations for Brachypodium distachyon
+annotations_elegans:
+	${MAKE} DATABASE=ensemblgenomes SPECIES=caenorhabditis_elegans one_org_annotations
 
 ################################################################
 ## Targets for genome management on http://plants.rsat.eu
@@ -168,3 +177,15 @@ parse_gtf:
 	@echo "ORG_ID	${ORG_ID}"
 	parse-gtf -v ${V} -i ${GTF_GZ} -o ${PARSE_DIR}
 	@echo "	${PARSE_DIR}"
+
+gtf_worm:
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=caenorhabditis_elegans GTF_GROUP=metazoa download_gtf parse_gtf
+
+gtf_fly:
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=drosophila_melanogaster GTF_GROUP=metazoa download_gtf parse_gtf
+
+gtf_yeast:
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=saccharomyces_cerevisiae GTF_GROUP=fungi download_gtf parse_gtf
+
+gtf_ecoli:
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=escherichia_coli_str_k_12_substr_mg1655_gca_000801205_1 GTF_GROUP=bacteria download_gtf parse_gtf
