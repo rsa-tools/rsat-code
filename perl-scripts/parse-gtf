@@ -244,39 +244,44 @@ package main;
     %task = %supported_task;
   }
 
-  ################################################################
-  ## Open output streams
-  $outfile{log} = $dir{output}."/log.txt"; $out = &OpenOutputFile($outfile{log});
-
-  ## Open tab-delimited files for each feature type
-  foreach my $feature (keys %out_fields) {
-    $outfile{$feature} = $dir{output}."/".$feature.".tab";
-    $handle{$feature} = &OpenOutputFile($outfile{$feature});
-    my $handle = $handle{$feature};
-    my @out_fields = @{$out_fields{$feature}};
-    my @header_fields = ();
-    print $handle "; GTF file: ", $infile{gtf}, "\n";
-    print $handle "; Feature type: ", $feature, "\n";
-    print $handle "; Column content:\n";
-    foreach my $f (1..scalar(@out_fields)) {
-      my $field = $out_fields[$f-1];
-      if (defined($gtf_to_rsat_fields{$field})) {
-	$field = $gtf_to_rsat_fields{$field};
-      }
-      print $handle join("\t", ";", $f, $field), "\n";
-      push @header_fields, $field;
-    }
-    print $handle '#', join ("\t", @header_fields), "\n";
-  }
 
   ## Open a specific handle for the file contigs.txt
   $outfile{contigs_txt} = $dir{output}."/contigs.txt";
   $handle{contigs_txt} = &RSAT::util::OpenOutputFile($outfile{contigs_txt});
   
   
-  ################################################################
-  ## Parse GTF file
   if ($task{parse_gtf}) {
+    &RSAT::message::TimeWarn("Parsing GTF file", $main::infile{gtf}) if ($main::verbose >= 0);
+
+    ################################################################
+    ## Open output streams
+    &RSAT::message::TimeWarn("Opening output stream") if ($main::verbose >= 0);
+    $outfile{log} = $dir{output}."/log.txt"; $out = &OpenOutputFile($outfile{log});
+
+    ## Open tab-delimited files for each feature type
+    foreach my $feature (keys %out_fields) {
+      $outfile{$feature} = $dir{output}."/".$feature.".tab";
+      $handle{$feature} = &OpenOutputFile($outfile{$feature});
+      my $handle = $handle{$feature};
+      my @out_fields = @{$out_fields{$feature}};
+      my @header_fields = ();
+      print $handle "; GTF file: ", $infile{gtf}, "\n";
+      print $handle "; Feature type: ", $feature, "\n";
+      print $handle "; Column content:\n";
+      foreach my $f (1..scalar(@out_fields)) {
+	my $field = $out_fields[$f-1];
+	if (defined($gtf_to_rsat_fields{$field})) {
+	  $field = $gtf_to_rsat_fields{$field};
+	}
+	print $handle join("\t", ";", $f, $field), "\n";
+	push @header_fields, $field;
+      }
+      print $handle '#', join ("\t", @header_fields), "\n";
+    }
+
+
+    ################################################################
+    ## Parse GTF file
     ($main::in) = &OpenInputFile($main::infile{gtf});
     my $l = 0; ## Line counter
     while (<$main::in>) {
@@ -424,8 +429,18 @@ package main;
   ################################################################
   ## Update RSAT config
   if ($task{config})  {
+    &RSAT::message::TimeWarn("Configuring RSAT for organism", $organism_name) if ($main::verbose >= 0);
     my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -org ".$organism_name;
     $cmd .= " -task config";
+    &RSAT::util::doit($cmd);
+  }
+
+  ################################################################
+  ## Install the organism in RSAT
+  if ($task{install})  {
+    &RSAT::message::TimeWarn("Installing organism in RSAT", $organism_name) if ($main::verbose >= 0);
+    my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -org ".$organism_name;
+    $cmd .= " -task default";
     &RSAT::util::doit($cmd);
   }
 
