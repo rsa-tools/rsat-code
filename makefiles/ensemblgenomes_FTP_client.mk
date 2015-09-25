@@ -33,7 +33,7 @@ organisms:
 	@echo
 	@mkdir -p ${ORGANISMS_DIR}
 	@echo "Getting list if organisms from ${DATABASE}"
-	@wget -Ncnv ${SERVERLIST} -O ${ORGANISMS_LIST} 
+	@wget -cnv ${SERVERLIST} -O ${ORGANISMS_LIST} 
 	@echo
 	@echo "	${ORGANISMS_LIST}"
 
