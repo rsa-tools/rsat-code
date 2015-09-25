@@ -489,7 +489,7 @@ sub LoadFeatures {
     #	$annotation_table = $main::supported_organism{$organism_name}->{'features'};
     foreach my $type (@feature_types) {
       $annotation_table = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", $type, ".tab");
-      &RSAT::message::Debug("Annotation table", $annotation_table) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Annotation table", $annotation_table) if ($main::verbose >= 5);
       if (-e $annotation_table) {
 	$self->push_attribute("annotation_tables", $annotation_table);
       } else {
@@ -498,7 +498,7 @@ sub LoadFeatures {
     }
   }
   my @annotation_tables = $self->get_attribute("annotation_tables");
-  &RSAT::message::Debug(join("\n;\t\t", "Annotation tables", @annotation_tables)) if ($main::verbose >= 0);
+  &RSAT::message::Debug(join("\n;\t\t", "Annotation tables", @annotation_tables)) if ($main::verbose >= 3);
 
   ################################################################
   ## Load each annotation table
@@ -549,19 +549,19 @@ sub LoadFeatures {
 	  $field =~ s/description/descr/;
 	  $field =~ s/chrom_position/location/;
 	  $col{$field} = $field_column - 1;
-	  &RSAT::message::Info("Column specification", $field_column, $field) if ($main::verbose >= 0);
+	  #&RSAT::message::Info("Column specification", $field_column, $field) if ($main::verbose >= 10);
 	}
 	next;
       } elsif ($line =~ /^\#/) {
 	## Field content can be parsed from the header line
-	&RSAT::message::Debug("Parsing column content from header line") if ($main::verbose >= 0);
+	#&RSAT::message::Debug("Parsing column content from header line") if ($main::verbose >= 10);
 	$line =~ s/^#//;
 	chomp($line);
 	my @fields = split("\t", $line);
 	foreach my $f (0..$#fields) {
 	  my $field = $fields[$f];
 	  $col{$field} = $f;
-	  &RSAT::message::Info("Column specification", $f+1, $field) if ($main::verbose >= 0);
+	  #&RSAT::message::Info("Column specification", $f+1, $field) if ($main::verbose >= 10);
 	}
       }
 
@@ -569,7 +569,7 @@ sub LoadFeatures {
       my @fields = split "\t", $line;
       foreach $f (keys %col) {
 	$$f = $fields[$col{$f}];
-	&RSAT::message::Debug("field",$f, $$f, "column", $col{$f}) if ($main::verbose >= 0);
+#	&RSAT::message::Debug("field",$f, $$f, "column", $col{$f}) if ($main::verbose >= 10);
       }
 
 
@@ -631,6 +631,7 @@ sub LoadFeatures {
 	}
       }
 
+
       ## Except for circular chromosomes, check if left position is
       ## lower than right position.  If this is not the case, swap the
       ## two values.  Left > right can occur if the genome has been
@@ -675,6 +676,7 @@ sub LoadFeatures {
 	$feature->push_attribute("names", $name);
       }
       $type{$id} = $type;	## For the loading statistics
+      #&RSAT::message::Debug("Create feature", $id, $type) if ($main::verbose >= 10);
 
       ################################################################
       ## Index genome features by names and ID
