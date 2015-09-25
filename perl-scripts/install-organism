@@ -46,7 +46,6 @@ package main;
   $supported_for_installation{"raw"} = 1;
   $supported_for_installation{"filelist"} = 1;
   @default_tasks = qw(
-			parse
 			config
 			phylogeny
 			start_stop
@@ -62,6 +61,7 @@ package main;
 		       );
 
   @extra_tasks = qw(
+			parse
                         uninstall
                         erase
 			distrib
@@ -725,7 +725,7 @@ sub AllUpstream {
       ## retrieve-seq-multigenome
       foreach $format (@seq_formats) {
 	my $command = "retrieve-seq -all";
-	$command .= " -type upstream -org ".$organism_short_name;
+	$command .= " -type upstream -feattype gene -org ".$organism_short_name;
 	$command .= " ".${noorf};
 	$command .= " ".${masking};
 	$command .= " -label ID";
@@ -1605,7 +1605,7 @@ sub StartAndStopCodons {
   my $prefix = $dir{genome}."/".${organism_short_name};
   my $job_prefix = ${organism_short_name}."_start_codons";
   my $command = $SCRIPTS."/retrieve-seq -v -org ${organism_short_name} -all  \ ";
-  $command .= "-type upstream -feattype CDS -from 0 -to 2  \ ";
+  $command .= "-type upstream -feattype start_codon -from 0 -to 2  \ ";
   $command .= "-format wc -nocomment -label $label \ ";
   $command .= " -o ".$prefix."_start_codons.wc";
   $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
@@ -1616,7 +1616,7 @@ sub StartAndStopCodons {
 
   $job_prefix = ${organism_short_name}."_stop_codons";
   $command = $SCRIPTS."/retrieve-seq -v -org ${organism_short_name} -all  \ ";
-  $command .= "-type downstream  -feattype CDS -from 0 -to -2  \ ";
+  $command .= "-type downstream  -feattype stop_codon -from -2 -to 0  \ ";
   $command .= "-format wc -nocomment -label $label \ ";
   $command .= " -o ".$prefix."_stop_codons.wc";
   $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
