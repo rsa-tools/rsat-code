@@ -9,7 +9,7 @@ use BioMart::QueryRunner;
 my $dataset = "bdistachyon_eg_gene";
 
 #my $confFile = "PATH TO YOUR REGISTRY FILE UNDER biomart-perl/conf/. For Biomart Central Registry navigate to http://www.biomart.org/biomart/martservice?type=registry";
-my $confFile = $ENV{RSAT}."/martURLLocation.xml";
+my $confFile = $ENV{biomart_urlconfig};
 
 #
 # NB: change action to 'clean' if you wish to start a fresh
@@ -17,7 +17,8 @@ my $confFile = $ENV{RSAT}."/martURLLocation.xml";
 # on subsequent runs from the same registry.
 #
 
-my $action='cached';
+my $action='clean';
+warn("Initializing Biomart\n");
 my $initializer = BioMart::Initializer->new('registryFile'=>$confFile, 'action'=>$action);
 my $registry = $initializer->getRegistry;
 

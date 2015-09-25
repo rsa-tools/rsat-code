@@ -170,7 +170,7 @@ download_gtf:
 
 GTF_GZ=`ls -1 ${GTF_PATH}/*.gtf.gz`
 ORG_ID=${GTF_SPECIES}
-PARSE_DIR=${RSAT}/data/genomes/${ORG_ID}/genome/
+PARSE_DIR=${RSAT}/data/ensemblgenomes/${ORG_ID}/genome/
 parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_GZ}"
@@ -178,14 +178,19 @@ parse_gtf:
 	parse-gtf -v ${V} -i ${GTF_GZ} -o ${PARSE_DIR}
 	@echo "	${PARSE_DIR}"
 
+
+GTF_TASK=download_gtf parse_gtf
+gtf_ara:
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=arabidopsis_thaliana GTF_GROUP=plants ${GTF_TASK}
+
 gtf_worm:
-	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=caenorhabditis_elegans GTF_GROUP=metazoa download_gtf parse_gtf
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=caenorhabditis_elegans GTF_GROUP=metazoa ${GTF_TASK}
 
 gtf_fly:
-	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=drosophila_melanogaster GTF_GROUP=metazoa download_gtf parse_gtf
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=drosophila_melanogaster GTF_GROUP=metazoa ${GTF_TASK}
 
 gtf_yeast:
-	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=saccharomyces_cerevisiae GTF_GROUP=fungi download_gtf parse_gtf
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=saccharomyces_cerevisiae GTF_GROUP=fungi ${GTF_TASK}
 
 gtf_ecoli:
-	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=escherichia_coli_str_k_12_substr_mg1655_gca_000801205_1 GTF_GROUP=bacteria download_gtf parse_gtf
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=escherichia_coli_str_k_12_substr_mg1655_gca_000801205_1 GTF_GROUP=bacteria ${GTF_TASK}
