@@ -462,7 +462,7 @@ sub DelayedRemoval {
 ############################################################
 
 #@supported_feature_types = qw (CDS mRNA tRNA rRNA scRNA misc_RNA gene);
-@supported_feature_types = qw (gene transcript CDS start stop exon);
+@supported_feature_types = qw (gene transcript start_codon stop_codon exon);
 %supported_feature_types = ();
 foreach my $type (@supported_feature_types) {
     $supported_feature_types{lc($type)} = 1;
