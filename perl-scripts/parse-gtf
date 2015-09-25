@@ -359,7 +359,7 @@ package main;
       $contig{raw_file} = $current_id.".raw";
       $contig{raw_file_path} = $dir{output}."/".$contig{raw_file};
       $contig{description} = join("; ", @comments);
-      &RSAT::message::Info("Fasta sequence", $seq_nb, $current_id);
+      &RSAT::message::Info("Fasta sequence", $seq_nb, $current_id, $contig{raw_file}) if ($main::verbose >= 4);
 
       ## Print sequence in raw file
       my $raw = &OpenOutputFile($contig{raw_file_path});
@@ -581,9 +581,14 @@ sub Verbose {
   print $out "; Parsed rows per contig\n";
   printf $out ";\t%-13s\t%s\n", "Contig", join("\t", "Total",  @feature_type_headers);
   foreach my $contig (sort (keys( %contig_count))) {
-    my @contig_counts = $contig_count{$contig};
+    my @contig_counts = map {$_ =~ s/^$/0/g; $_} $contig_count{$contig};
+    
     foreach my $feature (@feature_types) {
-      push @contig_counts, $feature_per_contig_count{$contig}{$feature};
+      if (defined($feature_per_contig_count{$contig}{$feature})) {
+	push @contig_counts, $feature_per_contig_count{$contig}{$feature} ;
+      } else {
+	push @contig_counts, 0;
+      }
     }
     printf $out ";\t%-13s\t%s\n", $contig, join("\t", @contig_counts);
   }

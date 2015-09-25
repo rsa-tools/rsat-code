@@ -105,7 +105,7 @@ parse_gtf:
 	@echo "Parsing GTF file	${GTF_GZ}"
 	parse-gtf -v ${V} -i ${GTF_GZ} -fasta ${FASTA_RAW} -o ${SPECIES_DIR} 
 	@echo
-	@ls -1 ${SPECIES_DIR}/gene* ${SPECIES_DIR}/transcript* ${SPECIES_DIR}/cds* 
+	@ls -1 ${SPECIES_DIR}/*.tab
 
 ##################################################################
 ## Parse Compara.homologies 
