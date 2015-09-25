@@ -106,8 +106,9 @@ require "RSA.lib";
 
 ## Rename GTF fields according to RSAT nomenclature
 %gtf_to_rsat_fields = (
+  "feature_id"=>"id",
   "seqname"=>"ctg",
-  "gene_biotype"=>"type",
+  "feature"=>"type",
   "gene_name"=>"name",
   "start"=>"left",
   "end"=>"right",
@@ -116,15 +117,16 @@ require "RSA.lib";
 
 my @common_fields = qw(
   feature_id
-  gene_biotype
+  feature
   gene_name
   seqname
   start
   end 
   strand
+  gene_biotype
   );
 
-## Fields required for RSAT
+## Field order for RSAT
 #     $col{'id'} = 0;
 #     $col{'type'} = 1;
 #     $col{'name'} = 2;
@@ -137,7 +139,7 @@ my @common_fields = qw(
 
 ## Select attributes that should be exported for genes
 my @out_fields = ();
-@{$out_fields{gene}} = @common_fields;
+@{$out_fields{gene}} = (@common_fields, "attribute");
 
 ## Select attributes that should be exported for transcripts
 @{$out_fields{transcript}} = (@common_fields, qw(
@@ -147,11 +149,23 @@ my @out_fields = ();
  transcript_biotype
 ));
 
+@{$out_fields{exon}} = (@common_fields, qw(
+ attribute
+));
+
 @{$out_fields{cds}} = (@common_fields, qw(
  gene_id
  transcript_id
  exon_number
  protein_id
+));
+
+@{$out_fields{start_codon}} = (@common_fields, qw(
+ attribute
+));
+
+@{$out_fields{stop_codon}} = (@common_fields, qw(
+ attribute
 ));
 
 @{$out_fields{organism}} = qw(id taxonomy source);
@@ -217,7 +231,7 @@ package main;
   }
 
   ## Open a specific handle for the file contigs.txt
-  $outfile{contigs_txt} = $dir{output}."/contigs_txt";
+  $outfile{contigs_txt} = $dir{output}."/contigs.txt";
   $handle{contigs_txt} = &RSAT::util::OpenOutputFile($outfile{contigs_txt});
   
   
@@ -273,8 +287,10 @@ package main;
 
     ## Use gene ID as gene name if not defined
     unless ($attributes{gene_name}) {
-#      &RSAT::message::Debug($l, $attributes{feature}, $attributes{);
       $attributes{gene_name} = $attributes{gene_id} || $null;
+    }
+    unless ($attributes{transcript_name}) {
+      $attributes{transcript_name} = $attributes{transcript_id} || $null;
     }
 
 
