@@ -187,6 +187,10 @@ package main;
   ## Motif Collection names counter
   local %motif_collection_count = ();
 
+  ## Concatenate all the files which a logo will be produced
+  ## This is done to call the system once
+  local $concat_motif_files = "";
+
   ## Supported label motif fields
   local @supported_label_motif_fields = qw (id name collection);
   local %supported_label_motif_fields = ();
@@ -510,7 +514,7 @@ package main;
 	  ## Separate the input motif file into separated files (one file for each cluster)
 	  ## with the motifs in TRANSFAC format
 	  &Clustered_PSSMS_TRANSFAC_format();
-	  
+
 	  ################################################################
 	  ## Read the motif to cluster assignation, which will be required for
 	  ## several functions below.
@@ -526,6 +530,11 @@ package main;
 	  ################################################################
 	  ## Create the merged matrices and consensuses
 	  &Merge_matrices();
+
+	  ################################################################
+	  ## Produce all the logos 
+	  ## Aligned + Branch-wise motifs
+	  &Produce_logos();
 	  
 	  if ($root_matrices_flag == 1) {
 	      	      
@@ -1409,6 +1418,7 @@ sub set_output_file_names {
   $main::outfile{heatmap_jpg} = $main::outfile{prefix}."_figures/heatmap.jpg";
   $main::outfile{heatmap_pdf} = $main::outfile{prefix}."_figures/heatmap.pdf";
 
+  $main::outfile{all_concatenated_motifs} = $main::outfile{prefix}."_aligned_logos/All_concatenated_motifs.tf";
 
   ## Newick-formatted phylogram with motif consensuses
   if ($export_newick == 1) {
@@ -2004,7 +2014,9 @@ sub Add_gaps_to_motifs() {
 	    ## The Logos + RC are not computed when only the root motifs are required
 	    if($root_matrices_flag == 0){ 
 		## Compute the logos (both orientations)
-		&Produce_logo($aligned_motif, $main::outfile{prefix}."_aligned_logos/aligned_logos");
+
+		$concat_motif_files .= $aligned_motif." ";
+		# &Produce_logo($aligned_motif, $main::outfile{prefix}."_aligned_logos/aligned_logos");
 		
 		## Convert the aligned matrix to reverse complement 
 		$aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
@@ -2020,11 +2032,13 @@ sub Add_gaps_to_motifs() {
 	    ## Add the empty columns + Produce Transfac File
 	    $aligned_motif = $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf";
 	    &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf");
+	    $concat_motif_files .= $aligned_motif." ";
 
 	    ## The Logos + RC are not computed when only the root motifs are required
 	    if($root_matrices_flag == 0){ 
 		## Compute the logos (both orientations)
-		&Produce_logo($aligned_motif, $main::outfile{prefix}."_aligned_logos/aligned_logos");
+		$concat_motif_files .= $aligned_motif." ";
+#		&Produce_logo($aligned_motif, $main::outfile{prefix}."_aligned_logos/aligned_logos");
 		
 		## Convert the aligned matrix to reverse complement 
 		$aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
@@ -2641,10 +2655,10 @@ sub Merge_matrices() {
 		
 		################################################################
 		## Merge the matrices and create a single matrix
-		my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_cat.tf";
-		my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_matrices.tf";
+		my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_cat.tf";
+		my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_matrices.tf";
 
-		my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$merge_level."_trimmed_matrices.tf";
+		my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_trimmed_matrices.tf";
 		$cmd = "cat ".$files." >".$cat_file;
 		$cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
 		$cmd .= " -in_format tf -out_format tf";
@@ -2674,19 +2688,16 @@ sub Merge_matrices() {
 		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, -2);
 
 		## Create branch-wise logos
-		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file_trimmed;
-		$cmd .= " -from tf -logo_format png -return logo";
-		$cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder; 
-		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-		
-		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$motif_name."_logo.png";
-		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$motif_name."_logo_rc.png";
+		$concat_motif_files .= $merged_mat_file_trimmed." ";
+
+		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_aligned_logos/".$motif_name."_logo.png";
+		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_aligned_logos/".$motif_name."_logo_rc.png";
 		$merged_consensuses_files{$folder}{$cluster}{width} = 	$width_internal_alignments{$cluster}{$folder};
 		$merged_consensuses_files{$folder}{$cluster}{motif_name} = $motif_name;
-		$merged_consensuses_files{$folder}{$cluster}{consensus} = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/merged_logo_rc.png";
+		$merged_consensuses_files{$folder}{$cluster}{consensus} = "";
 		
        	
-		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$folder."_matrices.tf";
+		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_".$folder."_matrices.tf";
 		my $cons = `more $mat_file | grep '^DE'`;
 		chomp($cons);
 		$cons =~ s/^DE\s+//;
@@ -2731,10 +2742,7 @@ sub Merge_matrices() {
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 	    unlink($new_singleton_motif_file_temp);
 
-	    $cmd = $SCRIPTS."/convert-matrix -i ".$new_singleton_motif_file;
-	    $cmd .= " -from tf -to tf -logo_format png -return counts,consensus,logo";
-	    $cmd .= " -o ".$main::outfile{prefix}."_clusters_information/".$cluster."/".$cluster."_matrices"; 
-	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+	    $concat_motif_files .= $new_singleton_motif_file." ";
 
 	    ## Add the info to the Root Motifs Features hash
 	    $root_motifs_features{$cluster}{logo} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo};
@@ -4682,8 +4690,8 @@ sub InsertTreesAndBranchMotifs {
 
 		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{"cluster_".$num}{logo});
 		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{"cluster_".$num}{logo_RC});
-		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/node_".$level."/node_".$level."_matrices.tf");
-		$transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/node_".$level."/node_".$level."_matrices.tf";
+		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/node_".$level."/cluster_".$num."_node_".$level."_matrices.tf");
+		$transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/node_".$level."/cluster_".$num."_node_".$level."_matrices.tf";
 		$cons = `more $transfac_file_2 | grep DE`;
 		$cons =~ s/DE\s+//gi;
 		
@@ -4725,8 +4733,8 @@ sub InsertTreesAndBranchMotifs {
 	    
 	    ## Get the attributes for the consensus table
 	    my ($cons, $logo_D, $logo_R, $transfac_file);
-	    $logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/cluster_".$num."_logo.png");
-	    $logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/cluster_".$num."_logo_rc.png");
+	    $logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_aligned_logos/cluster_".$num."_logo.png");
+	    $logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_aligned_logos/cluster_".$num."_logo_rc.png");
 	    $transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/cluster_".$num."_matrices.tf");
 	    $transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/cluster_".$num."_matrices.tf";
 	    $cons = `more $transfac_file_2 | grep DE`;
@@ -4845,6 +4853,10 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"><strong>Logo Forest</strong></a></td>
 		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
 		   </tr>
+                   <tr>
+                   <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{internal_nodes_attributes_table}).'"><strong>Internal nodes attributes</strong></a></td>
+		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
+		   </tr>
 -->
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{pairwise_compa}).'"><strong>Pairwise comparison</strong></a></td>
@@ -4871,15 +4883,7 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2">A tab separated file containing the clusters and their correspondng motifs.</td>
 		   </tr>
                          ';
-
-      if ($number_of_motifs > 1) {
-	  $add_files .='
-                   <tr>
-                   <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{internal_nodes_attributes_table}).'"><strong>Internal nodes attributes</strong></a></td>
-		      <td class="tab_spacer_2">This table shows the grouping steps of the hierarchical tree.</td>
-		   </tr>
-                       ';
-      }
+      
 
       ## If it is specified, add the heatmap
       if ($draw_heatmap == 1 && $number_of_motifs > 1) {
@@ -5081,15 +5085,18 @@ sub Add_Empty_Col() {
 ####################################################
 ## This function calls the program convert-matrix
 ## to add empty columns to the selected file.
-sub Produce_logo() {
+sub Produce_logos() {
 
-    my ($file_name, $out_file) = @_;
+    my $concat_files_cmd = "cat ".$concat_motif_files." > ".$main::outfile{all_concatenated_motifs};
+    &doit($concat_files_cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
     ## Add the empty columns
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
-    $cmd .= " -from tf -to tf -return logo";
-    $cmd .= " -o ".$out_file;
+    my $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{all_concatenated_motifs};
+    $cmd .= " -from tf -to tf -return logo ";
+    $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/test";
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
+    unlink($main::outfile{all_concatenated_motifs});
 }
 
 #########################################################
@@ -5124,6 +5131,7 @@ sub Clustered_PSSMS_TRANSFAC_format(){
 	## Get the cluster name and motif IDs
 	my $cluster = $split_line[0];
 	my $cluster_motif_ids = $split_line[1];
+	$cluster_motif_ids =~ s/,/\n/g;
 
 	## Create a temporary file
 	$main::outfile{clusters_id_temp} = $main::outfile{prefix}."_tables/".$cluster."_motif_IDs.tab";
