@@ -33,7 +33,7 @@ organisms:
 	@echo
 	@mkdir -p ${ORGANISMS_DIR}
 	@echo "Getting list if organisms from ${DATABASE}"
-	@wget -Ncnv ${SERVERLIST} -O ${ORGANISMS_LIST} 
+	@wget -cnv ${SERVERLIST} -O ${ORGANISMS_LIST} 
 	@echo
 	@echo "	${ORGANISMS_LIST}"
 
@@ -140,7 +140,7 @@ parse_compara:
 
 ##################################################################
 
-all: download_fasta download_pep download_gtf download_compara \
+all: organisms download_fasta download_pep download_gtf download_compara \
 	parse_gtf parse_compara
 
 clean_all:
