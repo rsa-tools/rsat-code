@@ -569,7 +569,7 @@ sub LoadFeatures {
       my @fields = split "\t", $line;
       foreach $f (keys %col) {
 	$$f = $fields[$col{$f}];
-#	&RSAT::message::Debug("field",$f, $$f, "column", $col{$f}) if ($main::verbose >= 10);
+	&RSAT::message::Debug("field",$f, $$f, "column", $col{$f}) if ($main::verbose >= 0);
       }
 
 
