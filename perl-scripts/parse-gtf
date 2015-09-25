@@ -62,9 +62,24 @@ separate table (e.g. cds_names.tab)
 
 =over
 
-=item B<wish 1>
+=item B<-download_gtf>
 
-=item B<wish 2>
+Download the gtf file from user-specified URL.
+
+=item B<-download_fasta>
+
+Download fasta file with genomic sequences from user-specified URL.
+
+=item B<-download_fasta_rm>
+
+Download fasta file with repeat-masked genomic sequences from user-specified URL.
+
+=item B<-install>
+
+Install the organism in RSAT. This option will call the script
+I<install-organisms> with the appropriate options to configure the
+RSAT genome table (option -config) and run the basic installation
+tasks (computing of oligo and dyad frequencies, ...).
 
 =back
 
@@ -78,41 +93,70 @@ BEGIN {
 }
 require "RSA.lib";
 
+@gtf_fields = qw( 
+  seqname 
+  source
+  feature
+  start
+  end
+  score
+  strand
+  frame
+  attribute);
 
+## Rename GTF fields according to RSAT nomenclature
+%gtf_to_rsat_fields = (
+  "seqname"=>"ctg",
+  "gene_biotype"=>"type",
+  "gene_name"=>"name",
+  "start"=>"left",
+  "end"=>"right",
+  "strand"=>"strand",
+  "attribute"=>"description");
+
+my @common_fields = qw(
+  feature_id
+  gene_biotype
+  gene_name
+  seqname
+  start
+  end 
+  strand
+  );
+
+## Fields required for RSAT
+#     $col{'id'} = 0;
+#     $col{'type'} = 1;
+#     $col{'name'} = 2;
+#     $col{'ctg'} = 3;
+#     $col{'left'} = 4;
+#     $col{'right'} = 5;
+#     $col{'strand'} = 6;
+#     $col{'descr'} = 7;
+#     $col{'location'} = 8;
 
 ## Select attributes that should be exported for genes
-my @gene_fields = qw( 
- gene_version
- gene_source
- gene_biotype
-);
+my @out_fields = ();
+@{$out_fields{gene}} = @common_fields;
 
 ## Select attributes that should be exported for transcripts
-my @transcript_fields = qw(
+@{$out_fields{transcript}} = (@common_fields, qw(
  gene_id
- gene_version
  transcript_id
- transcript_version
- gene_source
- gene_biotype
  transcript_name
- transcript_source
  transcript_biotype
-);
+));
 
-my @cds_fields = qw(
+@{$out_fields{cds}} = (@common_fields, qw(
  gene_id
- gene_version
  transcript_id
- transcript_version
  exon_number
- gene_source
- gene_biotype
- transcript_source
- transcript_biotype
  protein_id
- protein_version
-);
+));
+
+@{$out_fields{organism}} = qw(id taxonomy source);
+
+@{$out_fields{seqfile}} = qw(id length raw_file description);
 
 ################################################################
 ## Main package
@@ -132,6 +176,9 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
+  our $last = 0; ## Stop  parsing after a user-specified number of rows
+  our $null = "<NA>"; ## Non-allocated values
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -146,11 +193,28 @@ package main;
   ################################################################
   ## Open output streams
   $outfile{log} = $dir{output}."/log.txt"; $out = &OpenOutputFile($outfile{log});
-  $outfile{gene} = $dir{output}."/gene.tab"; $gene_hdl = &OpenOutputFile($outfile{gene});
-  $outfile{transcript} = $dir{output}."/transcript.tab"; $transcript_hdl = &OpenOutputFile($outfile{transcript});
-  $outfile{cds} = $dir{output}."/cds.tab"; $cds_hdl = &OpenOutputFile($outfile{cds});
-    
 
+  ## Open tab-delimited files for each feature type
+  foreach my $feature (keys %out_fields) {
+    $outfile{$feature} = $dir{output}."/".$feature.".tab";
+    $handle{$feature} = &OpenOutputFile($outfile{$feature});
+    my $handle = $handle{$feature};
+    my @out_fields = @{$out_fields{$feature}};
+    print $handle "; GTF file: ", $infile{input}, "\n";
+    print $handle "; Feature type: ", $feature, "\n";
+    print $handle "; Column content:\n";
+    foreach my $f (1..scalar(@out_fields)) {
+      my $field = $out_fields[$f-1];
+      if (defined($gtf_to_rsat_fields{$field})) {
+	$field = $gtf_to_rsat_fields{$field};
+      }
+      print $handle join("\t", ";", $f, $field), "\n";
+      push @header_fields, $field;
+    }
+    print $handle '#', join ("\t", @header_fields), "\n";
+  }
+  
+  
   ################################################################
   ## Read input
   ($main::in) = &OpenInputFile($main::infile{input});
@@ -159,70 +223,136 @@ package main;
     next unless (/\S/); ## Skip empty rows
 #    next if (/^;/); ## Skip comment rows
     next if (/^#!/); ## Skip header rows
-    chomp();
 
     $l++;
 
-    my ($seqname, $source, $feature, $start, $end, $score, $strand, $frame, $attribute) = split("\t");
-    
-#    &RSAT::message::Debug($attribute) if ($main::verbose >= 0);
+    if (($main::last > 0) && ($l > $main::last)) {
+      &RSAT::message::Warning("Stopping the parsing after", $last, "rows (option -last).");
+      last;
+    }
 
-    ## Define the handle according to feature type
-    my $handle;
-    if (lc($feature) eq "gene") {
-      $handle = $gene_hdl;
-      @out_fields = @gene_fields;
-    } elsif (lc($feature) eq "transcript") {
-      $handle = $transcript_hdl;
-      @out_fields = @transcript_fields;
-    } elsif (lc($feature) eq "cds") {
-      $handle = $cds_hdl;
-      @out_fields = @cds_fields;      
-    } else {
-      next;
-    } 
+    my %attributes = (); ## initialize attributes hash table
 
-    ## Parse the "attribute" field
-    my @attributes = split /;\s*+/, $attribute;
-    my %attributes = ();
+    chomp();
+#    my ($seqname, $source, $feature, $start, $end, $score, $strand, $frame, $attribute) = split("\t");
+    my @fields = split("\t");
+
+    foreach my $f (0..$#gtf_fields) {
+      $field = $gtf_fields[$f];
+      $attributes{$field} = $fields[$f];
+    }
+
+    ## Increment counter per feature type
+    my $feature = lc($attributes{feature});
+    $feature_count{$feature}++;
+    $contig_count{$attributes{seqname}}++;
+    $feature_per_contig_count{$attributes{seqname}}{$feature}++;
+
+    ## Format some specific attribtues according to RSAT requirements
+    $attributes{strand} =~ s/\+/D/;
+    $attributes{strand} =~ s/\-/R/;
+
+
+    #    &RSAT::message::Debug($attribute) if ($main::verbose >= 0);
+
+    next unless (defined($handle{$feature})); ## Skip feature types not defined in export list
+
+    ## Parse the "attribute" field of the gtf, which contains several attributes
+    my @attributes = split /;\s*+/, $attributes{attribute};
     foreach my $attr (@attributes) {
       if ($attr =~ /(\S+)\s+\"(\S+)\"/) {
 	$attributes{$1} = $2;
       }
     }
 
-    ## Define feature ID
-    my $feature_id = "feature".$l;
+    ## Use gene ID as gene name if not defined
+    unless ($attributes{gene_name}) {
+#      &RSAT::message::Debug($l, $attributes{feature}, $attributes{);
+      $attributes{gene_name} = $attributes{gene_id} || $null;
+    }
+
+
+    ## Define feature-specific fields
+    $attributes{feature_id} = $feature."_".$feature_count{$feature};
     if ($feature eq "gene") {
-      $feature_id = $attributes{gene_id};
-      $gene_id =  $attributes{gene_id};
+      $attributes{feature_id} = $attributes{gene_id};
+      $attributes{gene_id} =  $attributes{gene_id};
 
     } elsif ($feature eq "cds") {
-      $feature_id = $attributes{protein_id};
-      $gene_id =  $attributes{gene_id};
+      $attributes{feature_id} = $attributes{protein_id};
+      $attributes{gene_id} =  $attributes{gene_id};
     }
 
 
     ## parse feature type-specific fields
-    my @other_fields = ();
-    foreach my $field (@out_fields) {
-      my $value = "<NA>";
-      if ($attributes{$field}) {
-	$value = $attributes{$field};
+    my @values = ();
+    foreach my $field (@{$out_fields{$feature}}) {
+#      
+#      &RSAT::message::Debug($feature, $attributes{feature_id}, $field, $attributes{$field});
+      my $value = $null;
+      if (defined($attributes{$field})) {
+	$value =  $attributes{$field};
       }
-      push @other_fields, $value;
+      push @values, $value;
     }
     
 
-    ## Format some specific attribtues according to RSAT requirements
-    $strand =~ s/\+/D/;
-    $strand =~ s/\-/R/;
-    
-    
-    print $handle join("\t", $feature_id, $feature, $seqname, $start, $end, $strand, $gene_id, @other_fields), "\n";
+    my $handle = $handle{$feature};
+    print $handle join("\t", @values), "\n";
 
   }
   close $main::in if ($main::infile{input});
+
+  ################################################################
+  ## Create a file with organism attribute, required for RSAT
+  my %organism = ();
+  $organism_name = &ShortFileName($infile{input});
+  $organism_name =~ s/\.gz$//;
+  $organism_name =~ s/\.gtf$//;
+  $organism{id} = $organism_name;
+  $organism{source} = "ensemblgenomes";
+  $organism{taxonomy} = $null;
+
+  my @organism_fields = ();
+  foreach my $field (@{$out_fields{organism}}) {
+    push @organism_fields, $organism{$field};
+  }
+  my $handle = $handle{organism};
+  print $handle join("\t", @organism_fields), "\n";
+
+  ################################################################
+  ## Parse the fasta file
+  if ($infile{fasta}) {
+    &RSAT::message::TimeWarn("Parsing fasta file", $infile{fasta});
+    my ($in, $input_dir) = &OpenInputFile($infile{fasta});
+    my $seq_nb = 0;
+    my %args = ();
+    my $mask = "";
+    my $in_format = "fasta";
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask, %args)) &&
+	   (($current_seq ne "") || ($current_id ne ""))) {
+      $seq_nb++;
+      $seqfile{id} = $current_id;
+      $seqfile{length} = length($current_seq);
+      $seqfile{raw_file} = $dir{output}."/".$current_id.".raw";
+      $seqfile{description} = join("; ", @comments);
+      &RSAT::message::Info("Fasta sequence", $seq_nb, $current_id);
+
+      ## Print sequence in raw file
+      my $raw = &OpenOutputFile($seqfile{raw_file});
+      &PrintNextSequence($raw, "raw", 0, $current_seq, $current_id);
+      close $raw;
+
+      my @seqfile_fields = ();
+      foreach my $field (@{$out_fields{seqfile}}) {
+	push @seqfile_fields, $seqfile{$field};
+      }
+      my $handle = $handle{seqfile};
+      print $handle join("\t", @seqfile_fields), "\n";      
+    }
+    close($in);
+  }
+
   
   ################################################################
   ## Print verbose
@@ -255,10 +385,10 @@ sub close_and_quit {
   ## Close output file
   if ($dir{output}) {
     close $main::out;
-    close $main::gene_hdl;
-    close $main::transcript_hdl;
-    close $main::cds_hdl;
-    &RSAT::message::TimeWarn("Output file", $dir{output}) if ($main::verbose >= 2);
+    foreach my $feature (keys(%handle)) {
+      close $handle{$feature};
+    }
+    &RSAT::message::TimeWarn("Output directory", $dir{output}) if ($main::verbose >= 2);
   }
 
   ## CLOSE OTHER FILES HERE IF REQUIRED
@@ -341,6 +471,35 @@ allows to use the command within a pipe.
     } elsif ($arg eq "-i") {
       $main::infile{input} = shift(@arguments);
 
+=pod
+
+=item B<-fasta genome_seq_file>
+
+Path to a file containing the genome sequences. This file must be in
+fasta format, and the sequence IDs must correspond to the seqname
+field of the parsed GTF file.
+
+The file will be parsed to generate the raw sequence files required
+for RSAT, and the script will export a contigs.txt file to indicate
+wich raw sequence file corresponds to which contig.
+
+=cut
+
+    } elsif ($arg eq "-fasta") {
+      $main::infile{fasta} = shift(@arguments);
+
+=pod
+
+=item B<-last N>
+
+Stop parsing after N rows (for debugging and testing).
+
+=cut 
+
+    } elsif ($arg eq "-last") {
+      $main::last = shift(@arguments);
+      &RSAT::error::FatalError($main::last, "Invalid value for option -last. Must be Natural number.")
+	  unless (&RSAT::util::IsNatural($main::last));
 
 =pod
 
@@ -384,6 +543,25 @@ sub Verbose {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
+
+
+  my @feature_types = sort(keys(%feature_count));
+  print $out "; Parsed rows per feature type\n";
+  foreach my $feature (@feature_types) {
+    printf $out ";\t%-13s\t%s\n", $feature, $feature_count{$feature};
+  }
+
+  print $out "; Parsed rows per contig\n";
+  printf $out ";\t%-13s\t%s\n", "Contig", join("\t", @feature_types);
+  foreach my $contig (sort (keys( %contig_count))) {
+    my @contig_counts = $contig_count{$contig};
+    foreach my $feature (@feature_types) {
+      push @contig_counts, $feature_per_contig_count{$contig}{$feature};
+    }
+    printf $out ";\t%-13s\t%s\n", $contig, join("\t", @contig_counts);
+  }
+
+
 }
 
 
