@@ -58,15 +58,17 @@ download_gtf:
 
 ################################################################
 ## Download genome FASTA files (raw and masked) from eg 
-SERVER_RAW_FILE=${DATABASE}/fasta/${SPECIES}/dna/*${RELEASE}.dna.genome.fa.gz
-SERVER_MSK_FILE=${DATABASE}/fasta/${SPECIES}/dna/*${RELEASE}.dna_rm.genome.fa.gz
+FASTA_RAW_SUFFIX=*${RELEASE}.dna.genome.fa.gz
+FASTA_RM_SUFFIX=*${RELEASE}.dna_rm.genome.fa.gz
+FASTA_RAW_FTP_URL=${DATABASE}/fasta/${SPECIES}/dna/${FASTA_RAW_SUFFIX}
+FASTA_MSK_FTP_URL=${DATABASE}/fasta/${SPECIES}/dna/${FASTA_RM_SUFFIX}
 download_fasta:
 	@echo
 	@mkdir -p ${SPECIES_DIR}
 	@echo "Downloading FASTA genome files of ${SPECIES}"
-	@wget -Ncnv ${SERVER_RAW_FILE} -P ${SPECIES_DIR}
+	@wget -Ncnv ${FASTA_RAW_FTP_URL} -P ${SPECIES_DIR}
 	@echo
-	@wget -Ncnv ${SERVER_MSK_FILE} -P ${SPECIES_DIR}
+	@wget -Ncnv ${FASTA_MSK_FTP_URL} -P ${SPECIES_DIR}
 	@echo
 	@ls -1 ${SPECIES_DIR}/*.genome.fa.gz
 
@@ -95,12 +97,13 @@ download_compara:
 
 ##################################################################
 ## Parse GTF file to extract gene, transcripts and cds coords
+FASTA_RAW=`ls -1 ${SPECIES_DIR}/${FASTA_RAW_SUFFIX} | head -1`
 GTF_GZ=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
 # Note that only the first file is considered
 parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_GZ}"
-	parse-gtf -v ${V} -i ${GTF_GZ} -o ${SPECIES_DIR}
+	parse-gtf -v ${V} -i ${GTF_GZ} -fasta ${FASTA_RAW} -o ${SPECIES_DIR} 
 	@echo
 	@ls -1 ${SPECIES_DIR}/gene* ${SPECIES_DIR}/transcript* ${SPECIES_DIR}/cds* 
 
@@ -118,7 +121,6 @@ parse_compara:
 
 all: download_fasta download_feature_sequences download_gtf download_compara \
 	parse_gtf parse_compara
-	
 
 clean_all:
 	@echo
@@ -131,4 +133,6 @@ clean:
 	@echo "Deleting ensemblgenomes species ${SPECIES} (release ${RELEASE})"
 	@[[ -d ${SPECIES_DIR} ]] && rm -rf ${SPECIESS_DIR}
 	@echo	
+
+
 
