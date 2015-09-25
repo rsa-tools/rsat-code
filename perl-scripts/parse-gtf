@@ -106,8 +106,9 @@ require "RSA.lib";
 
 ## Rename GTF fields according to RSAT nomenclature
 %gtf_to_rsat_fields = (
+  "feature_id"=>"id",
   "seqname"=>"ctg",
-  "gene_biotype"=>"type",
+  "feature"=>"type",
   "gene_name"=>"name",
   "start"=>"left",
   "end"=>"right",
@@ -116,15 +117,16 @@ require "RSA.lib";
 
 my @common_fields = qw(
   feature_id
-  gene_biotype
+  feature
   gene_name
   seqname
   start
   end 
   strand
+  gene_biotype
   );
 
-## Fields required for RSAT
+## Field order for RSAT
 #     $col{'id'} = 0;
 #     $col{'type'} = 1;
 #     $col{'name'} = 2;
@@ -137,7 +139,7 @@ my @common_fields = qw(
 
 ## Select attributes that should be exported for genes
 my @out_fields = ();
-@{$out_fields{gene}} = @common_fields;
+@{$out_fields{gene}} = (@common_fields, "attribute");
 
 ## Select attributes that should be exported for transcripts
 @{$out_fields{transcript}} = (@common_fields, qw(
@@ -147,6 +149,10 @@ my @out_fields = ();
  transcript_biotype
 ));
 
+@{$out_fields{exon}} = (@common_fields, qw(
+ attribute
+));
+
 @{$out_fields{cds}} = (@common_fields, qw(
  gene_id
  transcript_id
@@ -154,9 +160,18 @@ my @out_fields = ();
  protein_id
 ));
 
+@{$out_fields{start_codon}} = (@common_fields, qw(
+ attribute
+));
+
+@{$out_fields{stop_codon}} = (@common_fields, qw(
+ attribute
+));
+
 @{$out_fields{organism}} = qw(id taxonomy source);
 
-@{$out_fields{seqfile}} = qw(id length raw_file description);
+@{$out_fields{contig}} = qw(id length raw_file description);
+
 
 ################################################################
 ## Main package
@@ -200,6 +215,7 @@ package main;
     $handle{$feature} = &OpenOutputFile($outfile{$feature});
     my $handle = $handle{$feature};
     my @out_fields = @{$out_fields{$feature}};
+    my @header_fields = ();
     print $handle "; GTF file: ", $infile{input}, "\n";
     print $handle "; Feature type: ", $feature, "\n";
     print $handle "; Column content:\n";
@@ -213,6 +229,10 @@ package main;
     }
     print $handle '#', join ("\t", @header_fields), "\n";
   }
+
+  ## Open a specific handle for the file contigs.txt
+  $outfile{contigs_txt} = $dir{output}."/contigs.txt";
+  $handle{contigs_txt} = &RSAT::util::OpenOutputFile($outfile{contigs_txt});
   
   
   ################################################################
@@ -267,8 +287,10 @@ package main;
 
     ## Use gene ID as gene name if not defined
     unless ($attributes{gene_name}) {
-#      &RSAT::message::Debug($l, $attributes{feature}, $attributes{);
       $attributes{gene_name} = $attributes{gene_id} || $null;
+    }
+    unless ($attributes{transcript_name}) {
+      $attributes{transcript_name} = $attributes{transcript_id} || $null;
     }
 
 
@@ -323,7 +345,7 @@ package main;
   ################################################################
   ## Parse the fasta file
   if ($infile{fasta}) {
-    &RSAT::message::TimeWarn("Parsing fasta file", $infile{fasta});
+    &RSAT::message::TimeWarn("Parsing fasta file", $infile{fasta}) if ($main::verbose >= 2);
     my ($in, $input_dir) = &OpenInputFile($infile{fasta});
     my $seq_nb = 0;
     my %args = ();
@@ -332,37 +354,38 @@ package main;
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask, %args)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
       $seq_nb++;
-      $seqfile{id} = $current_id;
-      $seqfile{length} = length($current_seq);
-      $seqfile{raw_file} = $dir{output}."/".$current_id.".raw";
-      $seqfile{description} = join("; ", @comments);
+      $contig{id} = $current_id;
+      $contig{length} = length($current_seq);
+      $contig{raw_file} = $current_id.".raw";
+      $contig{raw_file_path} = $dir{output}."/".$contig{raw_file};
+      $contig{description} = join("; ", @comments);
       &RSAT::message::Info("Fasta sequence", $seq_nb, $current_id);
 
       ## Print sequence in raw file
-      my $raw = &OpenOutputFile($seqfile{raw_file});
+      my $raw = &OpenOutputFile($contig{raw_file_path});
       &PrintNextSequence($raw, "raw", 0, $current_seq, $current_id);
       close $raw;
 
-      my @seqfile_fields = ();
-      foreach my $field (@{$out_fields{seqfile}}) {
-	push @seqfile_fields, $seqfile{$field};
+      ## Print contig table
+      my @contig_fields = ();
+      foreach my $field (@{$out_fields{contig}}) {
+	push @contig_fields, $contig{$field};
       }
-      my $handle = $handle{seqfile};
-      print $handle join("\t", @seqfile_fields), "\n";      
+      my $handle = $handle{contig};
+      print $handle join("\t", @contig_fields), "\n";      
+
+      ## Print contigs.txt file, required for retrieve-seq
+      $handle = $handle{contigs_txt};
+      print  $handle join ("\t", $contig{raw_file}, $contig{id}, "NA"), "\n";
     }
     close($in);
   }
+
 
   
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose >= 1);
-
-  ################################################################
-  ## Execute the command
-
-  ################################################################
-  ## Insert here output printing
 
   ################################################################
   ## Report execution time and close output stream
@@ -392,6 +415,9 @@ sub close_and_quit {
   }
 
   ## CLOSE OTHER FILES HERE IF REQUIRED
+  foreach my $key (keys(%handle)) {
+    close($handle{$key});
+  }
 
   exit(0);
 }
@@ -545,14 +571,15 @@ sub Verbose {
   }
 
 
-  my @feature_types = sort(keys(%feature_count));
+  my @feature_types =  sort(keys(%feature_count));
+  @feature_type_headers = map {$_ =~ s/_codon//g; $_} sort(keys(%feature_count));
   print $out "; Parsed rows per feature type\n";
   foreach my $feature (@feature_types) {
     printf $out ";\t%-13s\t%s\n", $feature, $feature_count{$feature};
   }
 
   print $out "; Parsed rows per contig\n";
-  printf $out ";\t%-13s\t%s\n", "Contig", join("\t", @feature_types);
+  printf $out ";\t%-13s\t%s\n", "Contig", join("\t", "Total",  @feature_type_headers);
   foreach my $contig (sort (keys( %contig_count))) {
     my @contig_counts = $contig_count{$contig};
     foreach my $feature (@feature_types) {
