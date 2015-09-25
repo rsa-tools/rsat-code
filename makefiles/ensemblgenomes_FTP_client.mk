@@ -73,6 +73,18 @@ download_fasta:
 	@ls -1 ${SPECIES_DIR}/*.genome.fa.gz
 
 ################################################################
+## Download protein FASTA files from eg
+FASTA_SUFFIX=*${RELEASE}.pep.all.fa.gz
+FASTA_PEP_FTP_URL=${DATABASE}/fasta/${SPECIES}/pep/${FASTA_SUFFIX}
+download_pep:
+	@echo
+	@mkdir -p ${SPECIES_DIR}
+	@echo "Downloading FASTA protein file of ${SPECIES}"
+	@wget -Ncnv ${FASTA_PEP_FTP_URL} -P ${SPECIES_DIR}
+	@echo
+	@ls -1 ${SPECIES_DIR}/*.pep.all.fa.gz
+ 
+################################################################
 ## Download sequences of some eg genomic features to be used as control
 ## of RSAT scripts that slice sequences based on coordinates
 SERVER_CDS_FILE=${DATABASE}/fasta/${SPECIES}/cds/*${RELEASE}.cds.all.fa.gz
@@ -119,7 +131,7 @@ parse_compara:
 
 ##################################################################
 
-all: download_fasta download_feature_sequences download_gtf download_compara \
+all: download_fasta download_pep download_gtf download_compara \
 	parse_gtf parse_compara
 
 clean_all:
