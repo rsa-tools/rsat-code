@@ -9,7 +9,6 @@ find.clusters <- function(attributes.list, tree){
   ## Given a level of one hierarchical tree and the alignment status
   ## at each level of the tree, search the levels thar are chained.
   ## This means, search the chain of levels that were grouped together
-  ## NOTE: this function is only called within the function find.clusters
   find.chained.levels <- function(x){
 
     chained.levels <- NULL
@@ -30,7 +29,7 @@ find.clusters <- function(attributes.list, tree){
       ## Get the alignment status at the level
       alignment.flag <- as.numeric(attributes.list[[paste("node_", current.level, sep = "")]][["alignment_flag"]])
 
-      ## If the status at the current lavel is 0 then return the chained levels
+      ## If the status at the current level is 0 then return the chained levels
       if(alignment.flag == 0){
         return(chained.levels)
 
