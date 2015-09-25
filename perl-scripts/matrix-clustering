@@ -510,7 +510,7 @@ package main;
 	  ## Separate the input motif file into separated files (one file for each cluster)
 	  ## with the motifs in TRANSFAC format
 	  &Clustered_PSSMS_TRANSFAC_format();
-	  
+
 	  ################################################################
 	  ## Read the motif to cluster assignation, which will be required for
 	  ## several functions below.
@@ -5087,7 +5087,7 @@ sub Produce_logo() {
 
     ## Add the empty columns
     my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
-    $cmd .= " -from tf -to tf -return logo";
+    $cmd .= " -from tf -to tf -return logo ";
     $cmd .= " -o ".$out_file;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 }
@@ -5124,6 +5124,7 @@ sub Clustered_PSSMS_TRANSFAC_format(){
 	## Get the cluster name and motif IDs
 	my $cluster = $split_line[0];
 	my $cluster_motif_ids = $split_line[1];
+	$cluster_motif_ids =~ s/,/\n/g;
 
 	## Create a temporary file
 	$main::outfile{clusters_id_temp} = $main::outfile{prefix}."_tables/".$cluster."_motif_IDs.tab";
