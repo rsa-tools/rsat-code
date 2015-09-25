@@ -83,7 +83,7 @@ download_pep:
 	@wget -Ncnv ${FASTA_PEP_FTP_URL} -P ${SPECIES_DIR}
 	@echo
 	@ls -1 ${SPECIES_DIR}/*.pep.all.fa.gz
- 
+
 ################################################################
 ## Download sequences of some eg genomic features to be used as control
 ## of RSAT scripts that slice sequences based on coordinates
@@ -111,13 +111,22 @@ download_compara:
 ## Parse GTF file to extract gene, transcripts and cds coords
 FASTA_RAW=`ls -1 ${SPECIES_DIR}/${FASTA_RAW_SUFFIX} | head -1`
 GTF_GZ=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
+PARSE_DIR=${SPECIES_DIR}
 # Note that only the first file is considered
 parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_GZ}"
-	parse-gtf -v ${V} -i ${GTF_GZ} -fasta ${FASTA_RAW} -o ${SPECIES_DIR} 
-	@echo
-	@ls -1 ${SPECIES_DIR}/*.tab
+	parse-gtf -v ${V} -i ${GTF_GZ} -fasta ${FASTA_RAW} ${OPT} -org_name ${SPECIES} -o ${PARSE_DIR} 
+	@echo "	${PARSE_DIR}"
+#	@ls -1 ${PARSE_DIR}/*.tab
+
+install_from_gtf:
+	@echo "	NOT IMPLEMENTED YET"
+	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES}
+
+## Run some test for the GTF parsing result
+parse_gtf_test:
+	retrieve-seq -org ${SPECIES} -from 0 -to 3 -feattype gene | oligo-analysis -v 1 -l 3 -return occ,freq -sort 
 
 ##################################################################
 ## Parse Compara.homologies 
@@ -126,7 +135,7 @@ parse_compara:
 	@echo
 	@echo "Parsing Compara file ${CMP_GZ}"
 	@echo
-#@ls -1 ${SPECIES_DIR}/*.tab
+#@ls -1 ${PARSE_DIR}/*.tab
 
 
 ##################################################################
