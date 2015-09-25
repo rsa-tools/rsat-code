@@ -166,9 +166,9 @@ if(number.of.motifs > 1){
   alignment.attributes <- alignment$node.attributes
 
   ## Reset the labels
-  tree$labels <- sapply(tree$labels, function(x){
-    paste(alignment.list[[x]][["consensus_d"]], alignment.list[[x]][["name"]], sep="   " )
-  })
+#   tree$labels <- sapply(tree$labels, function(x){
+#     paste(alignment.list[[x]][["consensus_d"]], alignment.list[[x]][["name"]], sep="   " )
+#   })
 
   #############################################
   ## Define the clusters: Bottom-up approach
@@ -227,17 +227,16 @@ if(number.of.motifs > 1){
 
 
 #         par(mar=c(0, 0, 0, 0))
-plot.new()
-legend("center",      # location of the legend on the heatmap plot
-  legend = names(clusters), # category labels
-  col = rainbow(length(clusters)),  # color key
-  lty= 1,             # line style
-  lwd = 0.5,            # line width
-  pch= 1,
-  cex= 0.75,
-  ncol = 3,
-  x.intersp= 0.5,
-)
+        plot.new()
+        legend("center",      # location of the legend on the heatmap plot
+        legend = names(clusters), # category labels
+        col = rainbow(length(clusters)),  # color key
+        lty= 1,             # line style
+        lwd = 0.5,            # line width
+        pch= 1,
+        cex= 0.75,
+        ncol = 3,
+        x.intersp= 0.5)
 
         draw.heatmap.motifs(dist.table,
                             method = hclust.method,
@@ -250,49 +249,51 @@ legend("center",      # location of the legend on the heatmap plot
       }
     }
 
-    if(draw.consensus == 1){
+#     if(draw.consensus == 1){
+#
+#       ########################################
+#       ## Define the label color of the tree
+#       ## according to the cluster
+#       color.code <- color.code.clusters(clusters, tree)
+#
+#       ## Convert the hclust object in a dendrogram
+#       tree.dendro <- as.dendrogram(tree)
+#       labels_colors(tree.dendro) <- color.code
+#
+#       #######################################
+#       ## Export the tree with the aligment
+#       mar4 <- alignment.width - 10
+#       for (plot.format in c("pdf", "png")) {
+#         w.inches <- 14 ## width in inches
+#         h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
+#         resol <- 72 ## Screen resolution
+#         tree.drawing.file <- paste(sep="", out.prefix, "_figures/tree_of_consensus.", plot.format)
+#         verbose(paste("hclust tree drawing", tree.drawing.file), 2)
+#         if (plot.format == "pdf") {
+#           pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
+#         } else if (plot.format == "png") {
+#           png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
+#         }
+#
+#         par(mar=c(3,2,1,mar4),family="mono")
+#         plot(tree.dendro, horiz=TRUE, main=paste("Tree of aligned consensuses; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
+#         dev.off()
+#       }
+#     }
 
-      ########################################
-      ## Define the label color of the tree
-      ## according to the cluster
-      color.code <- color.code.clusters(clusters, tree)
-
-      ## Convert the hclust object in a dendrogram
-      tree.dendro <- as.dendrogram(tree)
-      labels_colors(tree.dendro) <- color.code
-
-      #######################################
-      ## Export the tree with the aligment
-      mar4 <- alignment.width - 10
-      for (plot.format in c("pdf", "png")) {
-        w.inches <- 14 ## width in inches
-        h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
-        resol <- 72 ## Screen resolution
-        tree.drawing.file <- paste(sep="", out.prefix, "_figures/tree_of_consensus.", plot.format)
-        verbose(paste("hclust tree drawing", tree.drawing.file), 2)
-        if (plot.format == "pdf") {
-          pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
-        } else if (plot.format == "png") {
-          png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
-        }
-
-        par(mar=c(3,2,1,mar4),family="mono")
-        plot(tree.dendro, horiz=TRUE, main=paste("Tree of aligned consensuses; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
-        dev.off()
-      }
-    }
   }
 
-  ##################################################
-  ##  Produce the internal nodes attributes table
-  internal.nodes.attributes.table <- lapply(alignment.attributes, function(X){
-    return(c(X[["node"]], X[["method"]], X[["alignment_status"]], X[["cluster_1"]], X[["cluster_2"]]))
-  })
-  internal.nodes.attributes.table <- t(data.frame(internal.nodes.attributes.table))
-  colnames(internal.nodes.attributes.table) <- c("#node", "method", "alignment_status", "node_1", "node_2")
-  attributes.file <- paste(sep="", out.prefix, "_tables/internal_nodes_attributes.tab")
-  write.table(internal.nodes.attributes.table, file=attributes.file, sep="\t", quote=FALSE, row.names=FALSE)
-  verbose(paste("merge attributes table", attributes.file), 3)
+#   ##################################################
+#   ##  Produce the internal nodes attributes table
+#   internal.nodes.attributes.table <- lapply(alignment.attributes, function(X){
+#     return(c(X[["node"]], X[["method"]], X[["alignment_status"]], X[["cluster_1"]], X[["cluster_2"]]))
+#   })
+#   internal.nodes.attributes.table <- t(data.frame(internal.nodes.attributes.table))
+#   colnames(internal.nodes.attributes.table) <- c("#node", "method", "alignment_status", "node_1", "node_2")
+#   attributes.file <- paste(sep="", out.prefix, "_tables/internal_nodes_attributes.tab")
+#   write.table(internal.nodes.attributes.table, file=attributes.file, sep="\t", quote=FALSE, row.names=FALSE)
+#   verbose(paste("merge attributes table", attributes.file), 3)
+
 } else{
 
   motifs.info <- list()
@@ -306,7 +307,7 @@ legend("center",      # location of the legend on the heatmap plot
                                                                 spacer.dw = 0)
   global.motifs.info <- motifs.info
   forest.nb <- length(clusters)
-}
+  }
 
 #########################
 ## Produce the forests ##
@@ -352,6 +353,7 @@ i <- sapply(1:length(clusters), function(nb){
     }
 
     switch(case,
+
 
            ## If the cluster has only one element, create its JSON file and skip the
            ## hierarchical clustering step
@@ -438,7 +440,7 @@ i <- sapply(1:length(clusters), function(nb){
                alignment.cluster <<- align.motifs(thresholds = thresholds,
                                                   method = hclust.method,
                                                   metric = metric,
-                                                  nodes.attributes = FALSE,
+                                                  nodes.attributes = TRUE,
                                                   intermediate.alignments = TRUE)
                intern.alignment <- alignment.cluster$intermediate.alignments
 
