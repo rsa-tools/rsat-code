@@ -33,12 +33,7 @@ align.two.leaves <- function(child1,
     ## Save the merge class: (class 1) two leaves, (class 2) one leaf and one cluster, (class 3) two clusters
     internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["merge_class"]] <<- 1
 
-    ## Save the status of the alignment
-    if(aligned.motif.flag == 0){
-      internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["alignment_status"]] <<- "Non-aligned"
-    } else{
-      internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["alignment_status"]] <<- "Aligned"
-    }
+    ## Save the status of the alignment 0 = Non-Aligned , 1 = Aligned
     internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["alignment_flag"]] <<- aligned.motif.flag
 
     ## Save the number of the motifs on each cluster, for each merge level

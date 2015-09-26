@@ -99,6 +99,15 @@ organisms_fungi:
 annotations_yeast:
 	${MAKE} DATABASE=ensemblgenomes SPECIES=saccharomyces_cerevisiae one_org_annotations
 
+################################################################
+## Targets for genome management on http://metazoa.rsat.eu
+organisms_metazoa:
+	${MAKE} organisms_for_taxon  DATABASE=ensemblgenomes TAXON=Metazoa
+	${MAKE} organisms_for_taxon  DATABASE=ensembl TAXON=Metazoa
+
+## Collect gene annotations for Brachypodium distachyon
+annotations_elegans:
+	${MAKE} DATABASE=ensemblgenomes SPECIES=caenorhabditis_elegans one_org_annotations
 
 ################################################################
 ## Targets for genome management on http://plants.rsat.eu
@@ -146,3 +155,42 @@ index_html:
 
 
 
+################################################################
+## Download GTF files from ensemblgenomes
+GTF_GROUP=plants
+GTF_SPECIES=chlamydomonas_reinhardtii
+GTF_URL=ftp.ensemblgenomes.org/pub/${GTF_GROUP}/release-28/gtf/${GTF_SPECIES}/
+GTF_PATH=${RSAT}/downloads/${GTF_URL}
+download_gtf:
+	@echo
+	@echo "Downloading GTF file from	ftp://${GTF_URL}"
+	cd ${RSAT}/downloads; \
+	wget  -rNL ftp://${GTF_URL}
+	@echo "	${GTF_PATH}"
+
+GTF_GZ=`ls -1 ${GTF_PATH}/*.gtf.gz`
+ORG_ID=${GTF_SPECIES}
+PARSE_DIR=${RSAT}/data/ensemblgenomes/${ORG_ID}/genome/
+parse_gtf:
+	@echo
+	@echo "Parsing GTF file	${GTF_GZ}"
+	@echo "ORG_ID	${ORG_ID}"
+	parse-gtf -v ${V} -i ${GTF_GZ} -o ${PARSE_DIR}
+	@echo "	${PARSE_DIR}"
+
+
+GTF_TASK=download_gtf parse_gtf
+gtf_ara:
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=arabidopsis_thaliana GTF_GROUP=plants ${GTF_TASK}
+
+gtf_worm:
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=caenorhabditis_elegans GTF_GROUP=metazoa ${GTF_TASK}
+
+gtf_fly:
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=drosophila_melanogaster GTF_GROUP=metazoa ${GTF_TASK}
+
+gtf_yeast:
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=saccharomyces_cerevisiae GTF_GROUP=fungi ${GTF_TASK}
+
+gtf_ecoli:
+	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=escherichia_coli_str_k_12_substr_mg1655_gca_000801205_1 GTF_GROUP=bacteria ${GTF_TASK}
