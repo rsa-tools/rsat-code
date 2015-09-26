@@ -271,6 +271,12 @@ compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-28-81/ensembl-compara/modules
 variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-28-81/ensembl-variation/modules
 
 ################################################################
+## Parameters for biomart
+##
+## Config file for Biomart, indicating the URL of the source databases.
+biomart_urlconfig=[RSAT_PARENT_PATH]/rsat/perl-scripts/biomart/martDBLocation.xml
+
+################################################################
 ## Parameters for Network Analysis Tools (NeAT)
 neat_supported=1
 
