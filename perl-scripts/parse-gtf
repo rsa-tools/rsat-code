@@ -74,12 +74,6 @@ Download fasta file with genomic sequences from user-specified URL.
 
 Download fasta file with repeat-masked genomic sequences from user-specified URL.
 
-=item B<-install>
-
-Install the organism in RSAT. This option will call the script
-I<install-organisms> with the appropriate options to configure the
-RSAT genome table (option -config) and run the basic installation
-tasks (computing of oligo and dyad frequencies, ...).
 
 =back
 
@@ -142,35 +136,37 @@ my @out_fields = ();
 @{$out_fields{gene}} = (@common_fields, "attribute");
 
 ## Select attributes that should be exported for transcripts
-@{$out_fields{transcript}} = (@common_fields, qw(
+@{$out_fields{"transcript"}} = (@common_fields, qw(
  gene_id
  transcript_id
  transcript_name
  transcript_biotype
 ));
 
-@{$out_fields{exon}} = (@common_fields, qw(
+@{$out_fields{"exon"}} = (@common_fields, qw(
  attribute
 ));
 
-@{$out_fields{cds}} = (@common_fields, qw(
+@{$out_fields{"cds"}} = (@common_fields, qw(
  gene_id
  transcript_id
  exon_number
  protein_id
 ));
 
-@{$out_fields{start_codon}} = (@common_fields, qw(
+@{$out_fields{"start_codon"}} = (@common_fields, qw(
  attribute
 ));
 
-@{$out_fields{stop_codon}} = (@common_fields, qw(
+@{$out_fields{"stop_codon"}} = (@common_fields, qw(
  attribute
 ));
 
-@{$out_fields{organism}} = qw(id taxonomy source);
+@{$out_fields{"organism"}} = qw(id taxonomy source);
 
-@{$out_fields{contig}} = qw(id length raw_file description);
+@{$out_fields{"contig"}} = qw(id length raw_file description);
+
+@{$out_fields{"contig_rm"}} = qw(id length raw_file description);
 
 
 ################################################################
@@ -244,10 +240,34 @@ package main;
     %task = %supported_task;
   }
 
+  ## Open tab-delimited files for each feature type
+  foreach my $feature (keys %out_fields) {
+    $outfile{$feature} = $dir{output}."/".$feature.".tab";
+    $handle{$feature} = &OpenOutputFile($outfile{$feature});
+    my $handle = $handle{$feature};
+    my @out_fields = @{$out_fields{$feature}};
+    my @header_fields = ();
+    print $handle "; GTF file: ", $infile{gtf}, "\n";
+    print $handle "; Feature type: ", $feature, "\n";
+    print $handle "; Column content:\n";
+    foreach my $f (1..scalar(@out_fields)) {
+      my $field = $out_fields[$f-1];
+      if (defined($gtf_to_rsat_fields{$field})) {
+	$field = $gtf_to_rsat_fields{$field};
+      }
+      print $handle join("\t", ";", $f, $field), "\n";
+      push @header_fields, $field;
+    }
+    print $handle '#', join ("\t", @header_fields), "\n";
+  }
+
 
   ## Open a specific handle for the file contigs.txt
-  $outfile{contigs_txt} = $dir{output}."/contigs.txt";
-  $handle{contigs_txt} = &RSAT::util::OpenOutputFile($outfile{contigs_txt});
+  $outfile{"contigs_txt"} = $dir{output}."/contigs.txt";
+  $handle{"contigs_txt"} = &RSAT::util::OpenOutputFile($outfile{contigs_txt});
+  
+  $outfile{"contigs_txt_rm"} = $dir{output}."/contigs_rm.txt";
+  $handle{"contigs_txt_rm"} = &RSAT::util::OpenOutputFile($outfile{contigs_txt_rm});
   
   
   if ($task{parse_gtf}) {
@@ -257,27 +277,6 @@ package main;
     ## Open output streams
     &RSAT::message::TimeWarn("Opening output stream") if ($main::verbose >= 0);
     $outfile{log} = $dir{output}."/log.txt"; $out = &OpenOutputFile($outfile{log});
-
-    ## Open tab-delimited files for each feature type
-    foreach my $feature (keys %out_fields) {
-      $outfile{$feature} = $dir{output}."/".$feature.".tab";
-      $handle{$feature} = &OpenOutputFile($outfile{$feature});
-      my $handle = $handle{$feature};
-      my @out_fields = @{$out_fields{$feature}};
-      my @header_fields = ();
-      print $handle "; GTF file: ", $infile{gtf}, "\n";
-      print $handle "; Feature type: ", $feature, "\n";
-      print $handle "; Column content:\n";
-      foreach my $f (1..scalar(@out_fields)) {
-	my $field = $out_fields[$f-1];
-	if (defined($gtf_to_rsat_fields{$field})) {
-	  $field = $gtf_to_rsat_fields{$field};
-	}
-	print $handle join("\t", ";", $f, $field), "\n";
-	push @header_fields, $field;
-      }
-      print $handle '#', join ("\t", @header_fields), "\n";
-    }
 
 
     ################################################################
@@ -381,48 +380,61 @@ package main;
     foreach my $field (@{$out_fields{organism}}) {
       push @organism_fields, $organism{$field};
     }
-    my $handle = $handle{organism};
+    my $handle = $handle{"organism"};
     print $handle join("\t", @organism_fields), "\n";
   }
 
   ################################################################
   ## Parse the fasta file
   if ($task{parse_fasta}) {
-    if ($infile{fasta}) {
-      &RSAT::message::TimeWarn("Parsing fasta file", $infile{fasta}) if ($main::verbose >= 2);
-      my ($in, $input_dir) = &OpenInputFile($infile{fasta});
-      my $seq_nb = 0;
-      my %args = ();
-      my $mask = "";
-      my $in_format = "fasta";
-      while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask, %args)) &&
-	     (($current_seq ne "") || ($current_id ne ""))) {
-	$seq_nb++;
-	$contig{id} = $current_id;
-	$contig{length} = length($current_seq);
-	$contig{raw_file} = $current_id.".raw";
-	$contig{raw_file_path} = $dir{output}."/".$contig{raw_file};
-	$contig{description} = join("; ", @comments);
-	&RSAT::message::Info("Fasta sequence", $seq_nb, $current_id, $contig{raw_file}) if ($main::verbose >= 4);
+    foreach my $fasta_type ("fasta", "fasta_rm") {
 
-	## Print sequence in raw file
-	my $raw = &OpenOutputFile($contig{raw_file_path});
-	&PrintNextSequence($raw, "raw", 0, $current_seq, $current_id);
-	close $raw;
+      my $fasta_file = $infile{$fasta_type};
 
-	## Print contig table
-	my @contig_fields = ();
-	foreach my $field (@{$out_fields{contig}}) {
-	  push @contig_fields, $contig{$field};
+	
+      if ($fasta_file) {
+	&RSAT::message::TimeWarn("Parsing file", $fasta_type, $fasta_file) if ($main::verbose >= 2);
+	my ($in, $input_dir) = &OpenInputFile($fasta_file);
+	my $seq_nb = 0;
+	my %args = ();
+	my $mask = "";
+	my $in_format = "fasta";
+	## Define a suffix for the raw files
+	my $seq_suffix = "";
+	if ($fasta_type eq "fasta_rm") {
+	  $seq_suffix = "_rm";
 	}
-	my $handle = $handle{contig};
-	print $handle join("\t", @contig_fields), "\n";      
 
-	## Print contigs.txt file, required for retrieve-seq
-	$handle = $handle{contigs_txt};
-	print  $handle join ("\t", $contig{raw_file}, $contig{id}, "NA"), "\n";
+	while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask, %args)) &&
+	       (($current_seq ne "") || ($current_id ne ""))) {
+	  $seq_nb++;
+	  $contig{id} = $current_id;
+	  $contig{length} = length($current_seq);
+	  $contig{raw_file} = $current_id.$seq_suffix.".raw";
+	  $contig{raw_file_path} = $dir{output}."/".$contig{raw_file};
+	  $contig{description} = join("; ", @comments);
+	  &RSAT::message::Info("Fasta sequence", $seq_nb, $current_id, $contig{raw_file}) if ($main::verbose >= 4);
+	  
+	  ## Print sequence in raw file
+	  my $raw = &OpenOutputFile($contig{raw_file_path});
+	  &PrintNextSequence($raw, "raw", 0, $current_seq, $current_id);
+	  close $raw;
+	  
+	  ## Print contig table
+	  my @contig_fields = ();
+	  foreach my $field (@{$out_fields{"contig".$seq_suffix}}) {
+	    push @contig_fields, $contig{$field};
+	  }
+	  my $handle = $handle{"contig".$seq_suffix};
+	  &RSAT::message::Debug("HELLO", "seq_suffix=".$seq_suffix, "contig".$seq_suffix, "\t", "handle=".$handle, join (";", keys(%handle))) if ($main::verbose >= 0);
+	  print $handle join("\t", @contig_fields), "\n";
+	  
+	  ## Print contigs.txt file, required for retrieve-seq
+	  $handle = $handle{"contigs_txt".$seq_suffix};
+	  print  $handle join ("\t", $contig{raw_file}, $contig{id}, "NA"), "\n";
+	}
+	close($in);
       }
-      close($in);
     }
   }
 
@@ -571,8 +583,28 @@ fasta format, and the sequence IDs must correspond to the seqname
 field of the parsed GTF file.
 
 The file will be parsed to generate the raw sequence files required
-for RSAT, and the script will export a contigs.txt file to indicate
-wich raw sequence file corresponds to which contig.
+for RSAT (named [seq_id].raw) , and the script will export a
+file contigs.txt indicating wich raw sequence file contains the
+sequence of contig.
+
+=cut
+
+    } elsif ($arg eq "-fasta_rm") {
+      $main::infile{fasta_rm} = shift(@arguments);
+
+=pod
+
+=item B<-fasta_rm repeat_maskedgenome_seq_file>
+
+Path to a file containing the repeat-masked genome sequences. This
+file must be in fasta format, and the sequence IDs must correspond to
+the seqname field of the parsed GTF file.
+
+The file will be parsed to generate the raw sequence files required
+for RSAT (named [seq_id]_rm.raw) , and the script will export a file
+contigs_rm.txt indicating wich raw sequence file contains the
+repeat-masked sequence of each contig.
+
 
 =cut
 
