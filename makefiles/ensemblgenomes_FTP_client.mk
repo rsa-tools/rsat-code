@@ -110,21 +110,28 @@ download_compara:
 ##################################################################
 ## Parse GTF file to extract gene, transcripts and cds coords
 FASTA_RAW=`ls -1 ${SPECIES_DIR}/${FASTA_RAW_SUFFIX} | head -1`
+FASTA_RM=`ls -1 ${SPECIES_DIR}/${FASTA_RM_SUFFIX} | head -1`
 GTF_GZ=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
 PARSE_DIR=${SPECIES_DIR}
-PARSE_TASK=
+PARSE_TASK=all
 # Note that only the first file is considered
 parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_GZ}"
-	parse-gtf -v ${V} -i ${GTF_GZ} -fasta ${FASTA_RAW} ${OPT} -org_name ${SPECIES} ${PARSE_TASK} ${OPT} -o ${PARSE_DIR} 
+	parse-gtf -v ${V} -i ${GTF_GZ} \
+		-fasta ${FASTA_RAW} \
+		-fasta_rm ${FASTA_RM} \
+		-org_name ${SPECIES} \
+		-task ${PARSE_TASK} ${OPT} \
+		-o ${PARSE_DIR} 
 	@echo "	${PARSE_DIR}"
 #	@ls -1 ${PARSE_DIR}/*.tab
+
 
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
-	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES}/genome PARSE_TASK='-task all'
+	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES}/genome
 
 ## Run some test for the GTF parsing result
 parse_gtf_test:
