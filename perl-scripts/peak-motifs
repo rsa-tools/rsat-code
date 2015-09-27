@@ -161,13 +161,10 @@ package main;
 		    "split_motifs",
 		    "collect_motifs",
 		    "motifs_vs_motifs",
-#		      "cluster_motifs",
 		    "motifs_vs_ref",
 		    "motifs_vs_db",
 #		      "motif_compa",
-
 		    "scan",
-
 		    "timelog",
 		    "synthesis",
 		    "archive",
@@ -177,6 +174,7 @@ package main;
   ## Extra tasks are only executed on explicit demand of the user
   @extra_tasks = ("all",
 		  "clean_seq",
+		  "cluster_motifs",
 		  "meme_bg",
 		  "meme",
 		  "dreme",
@@ -389,7 +387,7 @@ package main;
 
   &MotifsVersusMotifs() if ($task{motifs_vs_motifs});
 
-#  &ClusterMotifs() if ($task{cluster_motifs});
+  &ClusterMotifs() if ($task{cluster_motifs});
 
   ## HTML synthesis by algorithm
   &SynthesisMotifsByAlgo() if ($progressive_synthesis);
@@ -1008,12 +1006,19 @@ sub SetOutFileNames {
     push @timetable_keys, "chipmunk";
   }
 
+  ################################################################
   ## Clustering of the discovered motifs + comparison with reference motif(s)
+
   ## Merged motifs
-  $main::outfile{motifs_discovered} = &OutFileName("results/discovered_motifs", ".tf", "motifs_discovered");
+  $main::outfile{"motifs_discovered"} = &OutFileName("results/discovered_motifs", ".tf", "motifs_discovered");
 
   ## Table with the list of separated motifs
-  $main::outfile{motifs_discovered_table} = &OutFileName("results/discovered_motifs", ".tab", "motifs_discovered_table");
+  $main::outfile{"motifs_discovered_table"} = &OutFileName("results/discovered_motifs", ".tab", "motifs_discovered_table");
+
+  ## Clustered motifs
+  $main::outfile{"motifs_disco_clusters"} = &OutFileName("results/discovered_motifs", "", "motifs_discovered_clusters");
+  $main::outfile{"motifs_disco_clusters_html"} = &OutFileName("results/discovered_motifs", ".html", "motifs_discovered_clusters_SUMMARY");
+
 
   ## Comparisons between discovered motifs
   $main::outfile{"motifs_disco_compa"} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_compa");
@@ -1025,7 +1030,9 @@ sub SetOutFileNames {
   $main::outfile{"motifs_disco_compa_alignments_1ton_html"} = &OutFileName("results/discovered_motifs", ".html", "motifs_disco_compa_alignments_1ton");
 
   ## Motif clustering
-  if ($task{cluster_motifs}) { ## THIS IS TEMPORARILY INACTIVATED UNTIL I FINALIZE MOTIF CLUSTERING
+  if ($task{cluster_motifs}) { 
+
+    ## THIS IS TEMPORARILY INACTIVATED UNTIL I FINALIZE MOTIF CLUSTERING
     $main::outfile{motifs_disco_clusters_mcl} = &OutFileName("results/discovered_motifs", ".mcl", "motifs_disco_clusters");
     $main::outfile{motifs_disco_clusters_tab} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_clusters");
     $main::outfile{motifs_disco_clusters_graph} = &OutFileName("results/discovered_motifs", ".tab", "motifs_disco_clusters_graph");
@@ -1107,7 +1114,7 @@ sub PurgeSeq {
     $cmd .= " -to ".$to;
   }
   $cmd .= " -o ".$main::outfile{$seq_type."_converted"};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Purge sequences (mask redundant fragments)
   &RSAT::message::TimeWarn("Purging sequences", $seq_type, $main::outfile{$seq_type."_converted"}) if ($main::verbose >= 2);
@@ -1116,7 +1123,7 @@ sub PurgeSeq {
   $cmd .= " -ml ".$main::param{purge_match_length};
   $cmd .= " -mis ".$main::param{purge_mismatches};
   $cmd .= " -o ".$main::outfile{$seq_type."_purged"};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 }
 
 
@@ -1134,7 +1141,7 @@ sub SequenceLengths {
   $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen'};
   $cmd .= " -ci ".$main::param{profiles_ci};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib'};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   $cmd = $SCRIPTS."/XYgraph -lines -pointsize 0 -legend";
   $cmd .= " -format ".$main::param{img_format};
@@ -1148,7 +1155,7 @@ sub SequenceLengths {
   #  $cmd .= " -xgstep2 ".$main::param{profiles_ci};
   $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen_distrib'};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib_graph'};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ################################################################
   ## Convert the genomic coordinates
@@ -1178,7 +1185,7 @@ sub SequenceLengths {
     $cmd .= " > ".$main::outfile{$seq_type."_seq_coord"};
 #    print $cmd, "\n";
 #    die "HELLO";
-    &one_command($cmd,1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 }
 
@@ -1203,7 +1210,7 @@ sub CompositionProfiles {
     $cmd .= " ".$main::param{profiles_noov} if ($main::param{profiles_noov} eq "-noov"); ## The option -ovlp is not supported by count-words
     $cmd .= " > ".$main::outfile{$ol."nt_".$seq_type."_freq"};
 
-    &one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_freq"}."_time.txt");
+    &RSAT::util::one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_freq"}."_time.txt", log=>$main::out);
 
     ## Convert background model in INCLUSIVE format for matrix-scan-quick
     $cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
@@ -1217,7 +1224,7 @@ sub CompositionProfiles {
     $cmd .= " ; cut -f 1-5,7 ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
     $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_heatmap"};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 
   ################################################################
@@ -1242,7 +1249,7 @@ sub CompositionProfiles {
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin ".$main::param{origin};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles"};
-    &one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_profiles"}."_time.txt");
+    &RSAT::util::one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_profiles"}."_time.txt", log=>$main::out);
 
     ## Draw a XY graph with composition profiles
     my $color_file = $ENV{RSAT}."/perl-scripts/lib/color_palettes/".$ol."nt".$main::param{profiles_strand}."_colors.tab";
@@ -1277,7 +1284,7 @@ sub CompositionProfiles {
     $cmd .= " -xleg1 'Position' -xsize 800";
     $cmd .= " -yleg1 'Occurrences' -ysize 300  -ymin 0";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles_graph"};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 }
 
@@ -1312,7 +1319,7 @@ sub ComputeBgModels {
       $cmd .= " -seqtype dna";
       $cmd .= " -l ".$len;
       $cmd .= " -o ".$main::outfile{$pattern_type."_bg_file"};
-      &one_command($cmd, 1);
+      &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
     }
   }
 
@@ -1332,7 +1339,7 @@ sub ComputeBgModels {
     $cmd .= " -seqtype dna";
     $cmd .= " -l 3 -sp 0-20 ";
     $cmd .= " -o ".$main::outfile{$pattern_type."_bg_file"};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 }
 
@@ -1387,7 +1394,7 @@ sub OligoAnalysis {
       }
       $cmd .= " -pseudo ".$main::param{disco_pseudo};
       $cmd .= " -o ".$main::outfile{$pattern_type};
-      &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+      &RSAT::util::one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt", log=>$main::out);
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0) unless ($main::param{merge_lengths});
     }
   }
@@ -1421,7 +1428,7 @@ sub OligoDiff {
     #    $cmd .= " -seqtype dna";
     #    $cmd .= " -pseudo ".$main::param{disco_pseudo};
     $cmd .= " -o ".$main::outfile{$pattern_type};
-    &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+    &RSAT::util::one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt", log=>$main::out);
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0);
   }
 }
@@ -1462,7 +1469,7 @@ sub DyadAnalysis {
   $cmd .= " -pseudo ".$main::param{disco_pseudo};
   $cmd .= " | perl -pe 's/n\\{0\\}//g'"; ## Suppress zero spacings for merging with oligos
   $cmd .= " >".$main::outfile{$pattern_type};
-  &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+  &RSAT::util::one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt", log=>$main::out);
   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0);
 }
 
@@ -1495,7 +1502,7 @@ sub PositionAnalysis {
     $cmd .= " -origin ".$main::param{origin};
     $cmd .= " -max_graphs ".$main::param{positions_max_graphs} if ($main::param{positions_max_graphs}  > 0);
     $cmd .= " -o ".$main::outfile{$pattern_type};
-    &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+    &RSAT::util::one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt", log=>$main::out);
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0) 
 	unless ($main::param{merge_lengths});
   }
@@ -1511,7 +1518,7 @@ sub PositionAnalysis {
   #   my $cmd = "cat ";
   #   $cmd .= join " ", @position_files;
   #   $cmd .= "> ".$main::outfile{$pattern_type};
-  #   &one_command($cmd, 1);
+  #   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   #   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0);
   # }
 }
@@ -1549,7 +1556,7 @@ sub LocalDyads {
 #      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
   # $cmd .= " -pseudo ".$main::param{disco_pseudo};
   $cmd .= " > ".$main::outfile{$pattern_type};
-  &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+  &RSAT::util::one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt", log=>$main::out);
 
   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0);
 }
@@ -1591,7 +1598,7 @@ sub LocalWords {
 #      $cmd .= " --markov ".$markov; ## Option --markov crashes the program. Seems incompatible with the windowgroup mode
       #   $cmd .= " -pseudo ".$main::param{disco_pseudo};
       $cmd .= " > ".$main::outfile{$pattern_type};
-      &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
+      &RSAT::util::one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt", log=>$main::out);
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0) unless ($main::param{merge_lengths});
 #    }
   }
@@ -1606,7 +1613,7 @@ sub MergeAndBuildMatrix {
   my $cmd = "cat ";
   $cmd .= join " ", @pattern_files;
   $cmd .= "> ".$main::outfile{$pattern_type};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0);
 }
 
@@ -1674,7 +1681,7 @@ sub CalcMemeBackground {
   $cmd .= &RSAT::server::GetProgramPath("fasta-get-markov", $die_on_error);
   $cmd .= " -m ".$main::param{bg_meme_markov};
   $cmd .= " > ".$main::outfile{meme_bg_file};
-  &one_command($cmd, 1, $main::outfile{meme_bg_file}."_time.txt");
+  &RSAT::util::one_command($cmd, 1, $main::outfile{meme_bg_file}."_time.txt", log=>$main::out);
 }
 
 
@@ -1701,7 +1708,7 @@ sub RunMEME {
   $cmd .= $meme_cmd;
   $cmd .= " ".$meme_options;
   $cmd .= " > ".$main::outfile{meme};
-  &one_command($cmd, 1, $main::outfile{meme}."_time.txt");
+  &RSAT::util::one_command($cmd, 1, $main::outfile{meme}."_time.txt", log=>$main::out);
 
   ## Convert the matrix
   $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{meme};
@@ -1710,7 +1717,7 @@ sub RunMEME {
   $cmd .= " -return counts,parameters,logo";
   $cmd .= " -logo_file ".$main::outfile{meme_logos};
   $cmd .= " -o ".$main::outfile{meme_tf};
-  &one_command($cmd);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 }
 
 ################################################################
@@ -1733,7 +1740,7 @@ sub RunDREME {
   $cmd .= $dreme_cmd;
   $cmd .= " ".$dreme_options;
   $cmd .= " > ".$main::outfile{dreme};
-  &one_command($cmd, 1, $main::outfile{dreme}."_time.txt");
+  &RSAT::util::one_command($cmd, 1, $main::outfile{dreme}."_time.txt", log=>$main::out);
 
   ## Convert the matrix
 #  $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{dreme};
@@ -1742,7 +1749,7 @@ sub RunDREME {
 #  $cmd .= " -return counts,parameters,logo";
 #  $cmd .= " -logo_file ".$main::outfile{dreme_logos};
 #  $cmd .= " -o ".$main::outfile{dreme_tf};
-#  &one_command($cmd);
+#  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 }
 
 ################################################################
@@ -1768,7 +1775,7 @@ sub RunChIPMunk {
   ## Run the CHIPMUNK command
   $cmd .= " ".$chipmunk_options;
   $cmd .= " > ".$main::outfile{chipmunk};
-  &one_command($cmd, 1, $main::outfile{chipmunk}."_time.txt");
+  &RSAT::util::one_command($cmd, 1, $main::outfile{chipmunk}."_time.txt", log=>$main::out);
 
 #   ## Convert the matrix
 #   $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{chipmunk};
@@ -1777,7 +1784,7 @@ sub RunChIPMunk {
 #   $cmd .= " -return counts,parameters,logo";
 #   $cmd .= " -logo_file ".$main::outfile{chipmunk_logos};
 #   $cmd .= " -o ".$main::outfile{chipmunk_tf};
-#  &one_command($cmd);
+#  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
 }
 
@@ -1791,7 +1798,7 @@ sub RefMotifs {
   $cmd .= " ".$main::infile{ref_motifs};
   $cmd .= " ".$main::outfile{ref_motifs};
   $cmd .= " >& /dev/null";
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Convert the reference motif to TRANSFAC format, because this
   ## format holds information about the motif name, ID etc.
@@ -1814,7 +1821,7 @@ sub RefMotifs {
   $cmd .= " -return counts,consensus,parameters";
   $cmd .= " -o ".$main::outfile{ref_motifs_transfac};
 #  }
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Also export the matrices in tab-delimited format and export sequence logos
   $cmd = $SCRIPTS."/convert-matrix -v 0";
@@ -1825,7 +1832,7 @@ sub RefMotifs {
   $cmd .= "  -bg_format motifsampler -bgfile ".$main::param{scan_bg_file};
   $cmd .= " -logo_file ".$main::prefix{"ref_motifs_logo"};
   $cmd .= " -o ".$main::outfile{ref_motifs_tab};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 }
 
 
@@ -1872,13 +1879,13 @@ sub MergeWords {
   $cmd .= " -suppress '\.tab'";
   $cmd .= " | ".$SCRIPTS."/row-stats -after 1 -sort ";
   $cmd .= " -o ".$main::outfile{merged_words};
-  &one_command($cmd, 1, $main::outfile{merged_words}."_time.txt");
+  &RSAT::util::one_command($cmd, 1, $main::outfile{merged_words}."_time.txt", log=>$main::out);
 
   ## Generate a HTML format of the table (convenient for sorting the
   ## words according to different columns)
   $cmd = $SCRIPTS."/text-to-html -i ".$main::outfile{merged_words};
   $cmd .= " -o ".$main::outfile{merged_words_html};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Draw a heat map of the word significance table
   $cmd = $SCRIPTS."/draw-heatmap -min 0 -max 10  -out_format png";
@@ -1886,7 +1893,7 @@ sub MergeWords {
   $cmd .= " -row_height 16";
   $cmd .= " -i ".$main::outfile{merged_words};
   $cmd .= " -o ".$main::outfile{merged_words_heatmap};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   &RSAT::message::TimeWarn("Word comparison table", $main::outfile{merged_words}) if ($main::verbose >= 2);
 
@@ -1927,7 +1934,7 @@ sub MergeMotifs {
       &RSAT::message::Warning("Missing matrix file", $pattern_type, $matrix_file) if ($main::verbose >= 2);
     }
   }
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   &RSAT::message::TimeWarn("Merged discovered motifs", $main::outfile{motifs_discovered}) if ($main::verbose >= 2);
 }
@@ -2110,7 +2117,7 @@ sub SplitMotifs {
       $cmd .= " -from transfac -to tab";
       $cmd .= " -return counts";
       $cmd .= " -o ".$main::outfile{$motif_id."_tab"};
-      &one_command($cmd, 1);
+      &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
       #    &RSAT::message::Debug("&SplitMotifs()", "motif", $m, $motif_id, $main::outfile{$motif_id.'_tf'}) if ($main::verbose >= 10);
     }
   }
@@ -2139,7 +2146,7 @@ sub MotifsVersusMotifs {
   $cmd .= " -o ".$main::outfile{"motifs_disco_compa"};
   $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_disco_compa"};
   $cmd .= " -o ".$main::outfile{"motifs_disco_compa_html"};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{"motifs_disco_compa"};
@@ -2147,7 +2154,7 @@ sub MotifsVersusMotifs {
   $cmd .= " -layout spring";
   $cmd .= " -from tab -to gml -scol 3 -tcol 4 -wcol 5";
   $cmd .= " -o ".$main::outfile{"motifs_disco_compa_gml"};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## We desactivate the graph display becayse the layout is really too
   ## ugly. Users will be suggested to open the graph with Cytoscape
@@ -2160,7 +2167,7 @@ sub MotifsVersusMotifs {
     $cmd .= " -ewidth";
     $cmd .= " -layout none";
     $cmd .= " -out_format png -o ".$main::outfile{"motifs_disco_compa_png"};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 }
 
@@ -2168,6 +2175,23 @@ sub MotifsVersusMotifs {
 ## Identify clusters of similar motifs, and build
 ## consensus motifs.
 sub ClusterMotifs {
+  my $cmd = $SCRIPTS."/matrix-clustering -v 0";
+  $cmd .= " -i ".$main::outfile{motifs_discovered};
+  $cmd .= " -matrix_format tf ";
+  $cmd .= " -motif_collection_name '".$main::param{prefix}."'";
+  $cmd .= " -title '".$main::param{title}."'";
+  $cmd .= " -lth Ncor 0.4 -lth cor 0.5 -lth w 5 ";
+  $cmd .= " -hclust_method average -label_in_tree name ";
+  $cmd .= " -metric_build_tree Ncor -return heatmap,align_consensus"; 
+  $cmd .= " -o ".$main::outfile{motifs_disco_clusters};
+
+  &RSAT::util::one_command($cmd, 1, $main::outfile{"motifs_disco_clusters"}."_time.txt", log=>$main::out);
+}
+
+################################################################
+## Identify clusters of similar motifs, and build
+## consensus motifs.
+sub ClusterMotifs_old {
 
   ## Use MCL to partition the motif graph into clusters
   my $mcl = &RSAT::server::GetProgramPath("mcl");
@@ -2178,7 +2202,7 @@ sub ClusterMotifs {
   $cmd .= " ; ${SCRIPTS}/convert-classes -i ".$main::outfile{motifs_disco_clusters_mcl};
   $cmd .= " -from mcl -to tab ";
   $cmd .= " -o ".$main::outfile{motifs_disco_clusters_tab};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Split the motif graph into clusters as defined by MCL, and
   ## compute the intra-cluster degree (k) and weighted degree (wk) of
@@ -2195,7 +2219,7 @@ sub ClusterMotifs {
   $cmd .= " -i ".$main::outfile{motifs_disco_clusters_graph};
   $cmd .= " -wcol 5";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa_cluster_intra_degree};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{motifs_disco_clusters_graph};
@@ -2203,7 +2227,7 @@ sub ClusterMotifs {
   $cmd .= " -layout spring";
   $cmd .= " -from tab -to gml -scol 3 -tcol 4 -wcol 5";
   $cmd .= " -o ".$main::outfile{motifs_disco_clusters_graph_gml};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## We desactivate the graph display becayse the layout is really too
   ## ugly. Users will be suggested to open the graph with Cytoscape
@@ -2216,7 +2240,7 @@ sub ClusterMotifs {
     $cmd .= " -ewidth";
     $cmd .= " -layout none";
     $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_clusters_graph_png};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 }
 
@@ -2276,7 +2300,7 @@ sub MotifsVersusReference {
     $cmd .= " -o ".$main::prefix{$motif_id."_vs_ref_prefix"};
 #    $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{$motif_id."_vs_ref"};
 #    $cmd .= " -o ".$main::outfile{$motif_id."_vs_ref_html"};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 
   ################################################################
@@ -2295,7 +2319,7 @@ sub MotifsVersusReference {
 ## Not necessary here anymore, it is automatically done in the script compare-matrices
 #  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_ref"};
 #  $cmd .= " -o ".$main::outfile{"motifs_vs_ref_html"};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   &RSAT::message::TimeWarn("Discovered versus reference motif", $main::outfile{motifs_vs_ref}) if ($main::verbose >= 2);
 
@@ -2305,7 +2329,7 @@ sub MotifsVersusReference {
   $cmd .= " -layout spring";
   $cmd .= " -from tab -to gml -scol 3 -tcol 4 -wcol 5";
   $cmd .= " -o ".$main::outfile{"motifs_vs_ref_gml"};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## We desactivate the graph display becayse the layout is really too
   ## ugly. Users will be suggested to open the graph with Cytoscape
@@ -2318,7 +2342,7 @@ sub MotifsVersusReference {
     $cmd .= " -ewidth";
     $cmd .= " -layout none";
     $cmd .= " -out_format png -o ".$main::outfile{"motifs_vs_ref_png"};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 }
 
@@ -2368,7 +2392,7 @@ sub MotifsVersusDatabase {
       $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};
       $cmd .= $main::param{motif_compa_options};
       $cmd .= " -o ".$main::prefix{$motif_id.'_vs_db_'.$db_name."_prefix"};
-      &one_command($cmd, 1);
+      &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
     }
 
     ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2387,7 +2411,7 @@ sub MotifsVersusDatabase {
     $cmd .= " -file2 ".$main::infile{"motif_db_".$db_name};
     $cmd .= $main::param{motif_compa_options};
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name};
-    &one_command($cmd, 1, $main::outfile{"motifs_vs_db_".$db_name}."_time.txt");
+    &RSAT::util::one_command($cmd, 1, $main::outfile{"motifs_vs_db_".$db_name}."_time.txt", log=>$main::out);
 
     &RSAT::message::TimeWarn("Discovered versus DB", $db_name, $main::outfile{"motifs_vs_db_".$db_name}) if ($main::verbose >= 2);
 
@@ -2397,7 +2421,7 @@ sub MotifsVersusDatabase {
     $cmd .= " -layout spring";
     $cmd .= " -from tab -to gml -scol 3 -tcol 4 -wcol 5";
     $cmd .= " -o ".$main::outfile{"motifs_vs_db_".$db_name."_gml"};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
     ## We desactivate the graph display becayse the layout is really too
     ## ugly. Users will be suggested to open the graph with Cytoscape
@@ -2410,7 +2434,7 @@ sub MotifsVersusDatabase {
       $cmd .= " -ewidth";
       $cmd .= " -layout none";
       $cmd .= " -out_format png -o ".$main::outfile{"motifs_vs_db_".$db_name."_png"};
-      &one_command($cmd, 1);
+      &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
     }
   }
 }
@@ -2446,7 +2470,7 @@ sub MatrixFromPatterns {
   $cmd .= " -collect_method matrix-scan-quick";
   $cmd .= " -logo";
   $cmd .= " -o ".$pssm_file;
-  &one_command($cmd, 1, $pssm_file."_time.txt");
+  &RSAT::util::one_command($cmd, 1, $pssm_file."_time.txt", log=>$main::out);
 }
 
 
@@ -2467,8 +2491,8 @@ sub MotifEnrichment {
   $cmd .= " -return distrib -return occ_proba";
   #    $cmd .= " -lth occ_sig 0  -uth occ_sig_rank 1";
   $cmd .= " -o ".$out_file;
-  #    &one_command($cmd, 1);
-  &one_command($cmd, 1, $out_file."_time.txt");
+  #    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
+  &RSAT::util::one_command($cmd, 1, $out_file."_time.txt", log=>$main::out);
 
   ## Draw a XY plot of enrichment in matrix hits
   $cmd = $SCRIPTS."/XYgraph ";
@@ -2483,7 +2507,7 @@ sub MotifEnrichment {
   $cmd .= " -ysize 400";
   $cmd .= " -lines";
   $cmd .= " -o ".$graph_file;
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 }
 
 ################################################################
@@ -2517,7 +2541,7 @@ sub ScanSequences {
     $cmd .= " ".$main::param{scan_options};
     $cmd .= " ".$main::param{scan_sites_options};
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites'};
-    &one_command($cmd, 1, $main::outfile{$motif_id.'_pssm_sites'}."_time.txt");
+    &RSAT::util::one_command($cmd, 1, $main::outfile{$motif_id.'_pssm_sites'}."_time.txt", log=>$main::out);
 
     ## Compute the genomic coordinates
     if (($main::infile{coord})||($main::param{seq_source})) {
@@ -2532,7 +2556,7 @@ sub ScanSequences {
       my $bed_header= "track name=\"".$motif_id."\" description=\"RSAT peak-motifs ".$bed_prefix.": ".$motif_id."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
       $cmd .= " | sed '1s/^.*/".$bed_header."/' ";## change first line
       $cmd .= " > ".$main::outfile{$motif_id.'_pssm_sites_genomic'};
-      &one_command($cmd,1);
+      &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
     }
 
     ################################################################
@@ -2545,7 +2569,7 @@ sub ScanSequences {
     $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
     $cmd .= " -ci ".$main::param{profiles_ci};
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib'};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
     ## Draw the graph of predicted site positions (occurrences per window)
     &RSAT::message::Debug("Drawing positional distribution of motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
@@ -2557,7 +2581,7 @@ sub ScanSequences {
     $cmd .= " -xsize 800 -xcol 3 -xleg1 'Sequence position relative to peak ".$main::param{origin}."'";
     $cmd .= " -title1 'Predicted sites : $motif_id'";
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib_graph'};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
     ################################################################
     ## Distribution of sites per peak and %peaks with motifs
@@ -2567,7 +2591,7 @@ sub ScanSequences {
     $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
     $cmd .= " -ci 1";
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites_per_peak'};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
     ## Draw the graph of predicted site positions (occurrences per window)
     &RSAT::message::Debug("Drawing sites per peak distribution of motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
@@ -2579,7 +2603,7 @@ sub ScanSequences {
     $cmd .= " -xsize 400 -xcol 1 -xleg1 'Number of sites' -xgstep1 5 -xgstep2 1";
     $cmd .= " -title1 'Nb Predicted sites : $motif_id'";
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites_per_peak_graph'};
-    &one_command($cmd, 1);
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
     ################################################################
     ## Analyze enrichment of test sequences for the discovered motif
@@ -2607,7 +2631,7 @@ sub ScanSequences {
       my $merge_sites_cmd = "cat ";
       $merge_sites_cmd .= join " ", @checked_site_files;
       $merge_sites_cmd .= " > ".$main::outfile{merged_sites};
-      &one_command($merge_sites_cmd, 1);
+      &RSAT::util::one_command($merge_sites_cmd, 1, "", log=>$main::out);
     }
   }
 
@@ -2628,7 +2652,7 @@ sub ScanSequences {
 	my $merge_beds_cmd = "cat ";
 	$merge_beds_cmd .= join " ", @checked_bed_files;
 	$merge_beds_cmd .= " > ".$main::outfile{merged_sites_bed};
-	&one_command($merge_beds_cmd, 1);
+	&RSAT::util::one_command($merge_beds_cmd, 1, "", log=>$main::out);
       }
     }
 
@@ -2737,7 +2761,7 @@ sub TimeLog {
   $cmd .= " -font variable";
   $cmd .= " -i ".$main::outfile{timelog};
   $cmd .= " -o ".$main::outfile{timelog_html};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   &RSAT::message::TimeWarn("Time log html", $main::outfile{timelog_html}) if ($main::verbose >= 2);
 }
 
@@ -3176,7 +3200,7 @@ sub OpenSynthesis {
   $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/arrow*.gif ";
   $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/UCSC_icon.jpg ";
   $cmd .= " ".$main::dir{images_html};
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Open the HTML file
   $syn = &OpenOutputFile($main::outfile{synthesis});
@@ -3342,7 +3366,7 @@ sub Archive {
   }
 
 #  $cmd .= "zip -q ".$archive." ".$to_archive;
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
 }
@@ -3411,7 +3435,7 @@ sub SyntheticTableAddRow {
   print $syn "</tr>\n";
 }
 ################################################################
-## Add a row to the syhnthetic table
+## Add a row to the synthetic table
 sub SyntheticTableAddRow_New {
   my ($type, $summary, @files) = @_;
   print $syn "<tr>\n";
@@ -3971,12 +3995,18 @@ sub SynthesisMotifsVsMotifs {
   &SyntheticTableAddRow_New("Discovered motifs versus discovered motifs",
 			    $txt,
 			    "Discovered motif(s)",["tf",$main::outfile{motifs_discovered}],
+
 			    "table", ["html",$main::outfile{"motifs_disco_compa_html"},
 				      "txt",$main::outfile{"motifs_disco_compa"}
-				     ],
+			    ],
+
 			    "alignments (logo)", [ "html",$main::outfile{"motifs_disco_compa_alignments_1ton_html"},
 						   "text",$main::outfile{"motifs_disco_compa_alignments_1ton"}
-						 ],
+			    ],
+
+			    "clustering", [ "html",$main::outfile{"motifs_disco_clusters_html"},
+#					    "text",$main::outfile{"motifs_disco_compa_alignmeants_1ton"}
+			    ],
 
 			    "graph", [ "gml (for CytoScape)",$main::outfile{"motifs_disco_compa_gml"},
 #				       "png (low resolution)",$main::outfile{"motifs_disco_compa_png"}
@@ -4050,7 +4080,7 @@ sub SmallSummary {
   $cmd .= " -no_sort ";
   $cmd .= " -o ".$main::outfile{small_summary};
   
-  &one_command($cmd, 1);
+  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   
   ## Add the small summary to the archive
   &Archive(0, $main::outfile{small_summary}) if ($task{archive});
@@ -4063,7 +4093,7 @@ sub SmallSummary {
 sub CleanSequences {
   foreach my $seq_type (@seq_types) {
     &RSAT::message::TimeWarn("Cleaning sequences", $seq_type) if ($main::verbose >= 2);
-    &one_command("rm -f ".$main::outfile{$seq_type."_purged"}, 1);
+    &RSAT::util::one_command("rm -f ".$main::outfile{$seq_type."_purged"}, 1, "", log=>$main::out);
   }
 }
 
