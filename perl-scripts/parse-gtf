@@ -240,6 +240,13 @@ package main;
     %task = %supported_task;
   }
 
+  ################################################################
+  ## Open output streams
+  &RSAT::message::TimeWarn("Opening output streams") if ($main::verbose >= 0);
+
+  ## Log file
+  $outfile{log} = $dir{output}."/log.txt"; $out = &OpenOutputFile($outfile{log});
+
   ## Open tab-delimited files for each feature type
   foreach my $feature (keys %out_fields) {
     $outfile{$feature} = $dir{output}."/".$feature.".tab";
@@ -268,14 +275,25 @@ package main;
   
   $outfile{"contigs_txt_rm"} = $dir{output}."/contigs_rm.txt";
   $handle{"contigs_txt_rm"} = &RSAT::util::OpenOutputFile($outfile{contigs_txt_rm});
-  
-  
+ 
   if ($task{"parse_gtf"}) {
-    ################################################################
-    ## Open output streams
-    &RSAT::message::TimeWarn("Opening output streams") if ($main::verbose >= 0);
-    $outfile{log} = $dir{output}."/log.txt"; $out = &OpenOutputFile($outfile{log});
 
+    ################################################################
+    ## Create a file with organism attribute, required for RSAT
+    my %organism = ();
+    $organism{id} = $organism_name;
+    $organism{source} = "ensemblgenomes";
+    $organism{taxonomy} = $null;
+
+    my @organism_fields = ();
+    foreach my $field (@{$out_fields{organism}}) {
+      push @organism_fields, $organism{$field};
+    }
+    my $handle = $handle{"organism"};
+    print $handle join("\t", @organism_fields), "\n";
+
+#    die "HELLO\t", $outfile{"organism"};
+    
 
     ################################################################
     ## Parse GTF file
@@ -368,19 +386,6 @@ package main;
     }
     close $main::in if ($main::infile{"gtf"});
 
-    ################################################################
-    ## Create a file with organism attribute, required for RSAT
-    my %organism = ();
-    $organism{id} = $organism_name;
-    $organism{source} = "ensemblgenomes";
-    $organism{taxonomy} = $null;
-
-    my @organism_fields = ();
-    foreach my $field (@{$out_fields{organism}}) {
-      push @organism_fields, $organism{$field};
-    }
-    my $handle = $handle{"organism"};
-    print $handle join("\t", @organism_fields), "\n";
   }
 
   ################################################################
