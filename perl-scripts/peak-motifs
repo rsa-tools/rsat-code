@@ -384,7 +384,7 @@ package main;
   ## Merge all discovered motifs
   &MergeMotifs() if ($task{merge_motifs});
 
-  ## Motif-wise analysis
+  ## Split motifs from the merged file for some motif-wise tasks
   &SplitMotifs() if ($task{split_motifs});
 
   &MotifsVersusMotifs() if ($task{motifs_vs_motifs});
@@ -1496,7 +1496,8 @@ sub PositionAnalysis {
     $cmd .= " -max_graphs ".$main::param{positions_max_graphs} if ($main::param{positions_max_graphs}  > 0);
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt");
-    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0) unless ($main::param{merge_lengths});
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0) 
+	unless ($main::param{merge_lengths});
   }
 
   ## Merge oligo-analysis result files
