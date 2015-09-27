@@ -39,7 +39,7 @@ PM_CMD=peak-motifs -v ${V} \
 		-no_merge_lengths -2str \
 		-origin center \
 		-source galaxy \
-		-motif_db jaspar_core_vertebrates tf ${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2013-11.tf \
+		-motif_db jaspar_core_vertebrates tf ${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2015_03.tf \
 		-scan_markov 1 -source galaxy \
 		-task ${PM_TASK} \
 		-prefix peak-motifs \
