@@ -28,7 +28,7 @@ list_params:
 MIN_OL=6
 MAX_OL=7
 DISCO=oligos,dyads,positions
-PM_TASK=purge,seqlen,composition,disco,collect_motifs,motifs_vs_motifs,timelog,archive,synthesis,small_summary,motifs_vs_db,scan
+PM_TASK=purge,seqlen,composition,disco,merge_motifs,split_motifs,motifs_vs_motifs,timelog,archive,motifs_vs_db,scan,small_summary,synthesis
 MOTIF_PREFIX=Oct4_Chen2008_sites_from_Jaspar
 PM_CMD=peak-motifs -v ${V} \
 		-title ${MOTIF_PREFIX} \
