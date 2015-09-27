@@ -163,7 +163,7 @@ parse_compara:
 
 ##################################################################
 
-all: organisms download_fasta download_pep download_gtf download_compara \
+all: organisms download_fasta download_gtf download_compara \
 	parse_gtf parse_compara
 
 clean_all:
