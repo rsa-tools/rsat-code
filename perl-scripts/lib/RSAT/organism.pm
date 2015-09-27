@@ -535,7 +535,7 @@ sub LoadFeatures {
       chomp($line); ## Suppress newline character
       next unless ($line =~ /\S/); ## Skip empty rows
 
-      ## Internal colunm specification in tables resulting from RSAT
+      ## Internal column specification in tables resulting from RSAT
       ## parsers
       if (($line =~ /^\-\-/) || ($line =~ /^;/)) {
 	if (($line =~ /^-- field (\d+)\t(\S+)/) ||
@@ -567,7 +567,7 @@ sub LoadFeatures {
 
       ## Split the columns of the input row
       my @fields = split "\t", $line;
-      foreach $f (keys %col) {
+      foreach my $f (keys %col) {
 	$$f = $fields[$col{$f}];
 #	&RSAT::message::Debug("field",$f, $$f, "column", $col{$f}) if ($main::verbose >= 10);
       }
