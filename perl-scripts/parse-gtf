@@ -219,11 +219,11 @@ package main;
   
 
   ## GTF file must be specified
-  &RSAT::error::FatalError("The GTF file must be specified (option -i).") unless ($infile{gtf});
+  &RSAT::error::FatalError("The GTF file must be specified (option -i).") unless ($infile{"gtf"});
   
   ## Define organism name from the file name if not specified by the user
   unless ($organism_name) {
-    $organism_name = &ShortFileName($infile{gtf});
+    $organism_name = &ShortFileName($infile{"gtf"});
     $organism_name =~ s/\.gz$//;
     $organism_name =~ s/\.gtf$//;
   }
@@ -231,12 +231,12 @@ package main;
   ## Check that at least one task has been defined. If not just parse
   ## the GTF file.
   if (scalar(keys(%task)) == 0) {
-    $task{parse_gtf} = 1;
-    if (($infile{fasta}) || ($infile{fasta_rm})) {
-      $task{parse_fasta} = 1;
+    $task{"parse_gtf"} = 1;
+    if (($infile{"fasta"}) || ($infile{fasta_rm})) {
+      $task{"parse_fasta"} = 1;
     }
   }
-  if ($task{all}) {
+  if ($task{"all"}) {
     %task = %supported_task;
   }
 
@@ -247,7 +247,7 @@ package main;
     my $handle = $handle{$feature};
     my @out_fields = @{$out_fields{$feature}};
     my @header_fields = ();
-    print $handle "; GTF file: ", $infile{gtf}, "\n";
+    print $handle "; GTF file: ", $infile{"gtf"}, "\n";
     print $handle "; Feature type: ", $feature, "\n";
     print $handle "; Column content:\n";
     foreach my $f (1..scalar(@out_fields)) {
@@ -270,18 +270,17 @@ package main;
   $handle{"contigs_txt_rm"} = &RSAT::util::OpenOutputFile($outfile{contigs_txt_rm});
   
   
-  if ($task{parse_gtf}) {
-    &RSAT::message::TimeWarn("Parsing GTF file", $main::infile{gtf}) if ($main::verbose >= 0);
-
+  if ($task{"parse_gtf"}) {
     ################################################################
     ## Open output streams
-    &RSAT::message::TimeWarn("Opening output stream") if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("Opening output streams") if ($main::verbose >= 0);
     $outfile{log} = $dir{output}."/log.txt"; $out = &OpenOutputFile($outfile{log});
 
 
     ################################################################
     ## Parse GTF file
-    ($main::in) = &OpenInputFile($main::infile{gtf});
+    &RSAT::message::TimeWarn("Parsing file", "GTF", $main::infile{"gtf"}) if ($main::verbose >= 2);
+    ($main::in) = &OpenInputFile($main::infile{"gtf"});
     my $l = 0; ## Line counter
     while (<$main::in>) {
       next unless (/\S/); ## Skip empty rows
@@ -367,7 +366,7 @@ package main;
       print $handle join("\t", @values), "\n";
 
     }
-    close $main::in if ($main::infile{gtf});
+    close $main::in if ($main::infile{"gtf"});
 
     ################################################################
     ## Create a file with organism attribute, required for RSAT
@@ -386,26 +385,24 @@ package main;
 
   ################################################################
   ## Parse the fasta file
-  if ($task{parse_fasta}) {
+  if ($task{"parse_fasta"}) {
+
+    ## Parse genomic sequences
     foreach my $fasta_type ("fasta", "fasta_rm") {
 
       my $fasta_file = $infile{$fasta_type};
-
-	
       if ($fasta_file) {
 	&RSAT::message::TimeWarn("Parsing file", $fasta_type, $fasta_file) if ($main::verbose >= 2);
 	my ($in, $input_dir) = &OpenInputFile($fasta_file);
 	my $seq_nb = 0;
 	my %args = ();
-	my $mask = "";
-	my $in_format = "fasta";
 	## Define a suffix for the raw files
 	my $seq_suffix = "";
 	if ($fasta_type eq "fasta_rm") {
 	  $seq_suffix = "_rm";
 	}
 
-	while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask, %args)) &&
+	while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, "fasta", $input_dir, "", "", %args)) &&
 	       (($current_seq ne "") || ($current_id ne ""))) {
 	  $seq_nb++;
 	  $contig{id} = $current_id;
@@ -426,7 +423,7 @@ package main;
 	    push @contig_fields, $contig{$field};
 	  }
 	  my $handle = $handle{"contig".$seq_suffix};
-	  &RSAT::message::Debug("HELLO", "seq_suffix=".$seq_suffix, "contig".$seq_suffix, "\t", "handle=".$handle, join (";", keys(%handle))) if ($main::verbose >= 0);
+#	  &RSAT::message::Debug("HELLO", "seq_suffix=".$seq_suffix, "contig".$seq_suffix, "\t", "handle=".$handle, join (";", keys(%handle))) if ($main::verbose >= 10);
 	  print $handle join("\t", @contig_fields), "\n";
 	  
 	  ## Print contigs.txt file, required for retrieve-seq
@@ -436,11 +433,42 @@ package main;
 	close($in);
       }
     }
+
+    ################################################################
+    ## Install peptidic sequences if required.
+    ##
+    ## Currently we just read the file and write it in the right place
+    ## of the genome directory.
+    ##
+    ## TO DO: adapt the header to indicate the link between gene ID,
+    ## transcript ID and protein ID. This willl be useful for
+    ## genome-blast.
+    ##
+    ## For this reason, I already read the content of the file, since
+    ## I will need to modify sequence headers.
+    $pep_fasta_file = $infile{"fasta_pep"};
+    if ($pep_fasta_file) {
+      ## Open a specific handle for peptidic sequences
+      $outfile{"peptidic_sequences"} = $dir{output}."/peptidic_sequences.fasta";
+      $handle{"peptidic_sequences"} = &RSAT::util::OpenOutputFile($outfile{"peptidic_sequences"});
+      my $handle = $handle{"peptidic_sequences"};
+
+      &RSAT::message::TimeWarn("Parsing file", "fasta_pep", $pep_fasta_file) if ($main::verbose >= 2);
+      my ($in, $input_dir) = &OpenInputFile($pep_fasta_file);
+      my $seq_nb = 0;  ## Sequence counter
+      my %args = (); 
+      while  ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, "fasta", $input_dir, "", "", %args)) &&
+	      (($current_seq ne "") || ($current_id ne ""))) {
+	$seq_nb++;
+	&RSAT::message::Debug("Peptidic sequence", $seq_nb, $current_id) if ($main::verbose >= 0);
+	&PrintNextSequence($handle, "fasta", 0, $current_seq, $current_id, @comments);
+      }
+    }
   }
 
   ################################################################
   ## Update RSAT config
-  if ($task{config})  {
+  if ($task{"config"})  {
     &RSAT::message::TimeWarn("Configuring RSAT for organism", $organism_name) if ($main::verbose >= 0);
     my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -org ".$organism_name;
     $cmd .= " -task config";
@@ -449,7 +477,7 @@ package main;
 
   ################################################################
   ## Install the organism in RSAT
-  if ($task{install})  {
+  if ($task{"install"})  {
     &RSAT::message::TimeWarn("Installing organism in RSAT", $organism_name) if ($main::verbose >= 0);
     my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -org ".$organism_name;
     $cmd .= " -task default";
@@ -572,7 +600,7 @@ allows to use the command within a pipe.
 
 =cut
     } elsif ($arg eq "-i") {
-      $main::infile{gtf} = shift(@arguments);
+      $main::infile{"gtf"} = shift(@arguments);
 
 =pod
 
@@ -589,8 +617,8 @@ sequence of contig.
 
 =cut
 
-    } elsif ($arg eq "-fasta_rm") {
-      $main::infile{fasta_rm} = shift(@arguments);
+    } elsif ($arg eq "-fasta") {
+      $main::infile{"fasta"} = shift(@arguments);
 
 =pod
 
@@ -608,8 +636,24 @@ repeat-masked sequence of each contig.
 
 =cut
 
-    } elsif ($arg eq "-fasta") {
-      $main::infile{fasta} = shift(@arguments);
+    } elsif ($arg eq "-fasta_rm") {
+      $main::infile{"fasta_rm"} = shift(@arguments);
+
+=pod
+
+=item B<-fasta_pep peptidic_sequence_file>
+
+Install the peptidic sequence file, which will be required for RSAT
+installation, in order to compute oligopeptide frequencies, and to run
+genome-blast.
+
+B<Warning>: we still need to fix the link between gene IDs and product
+IDs.
+
+=cut
+
+    } elsif ($arg eq "-fasta_pep") {
+      $main::infile{"fasta_pep"} = shift(@arguments);
 
 =pod
 
