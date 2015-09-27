@@ -43,46 +43,50 @@ list_param:
 	@echo "	GROUP   ${GROUP} (${GROUP_LC})"
 	@echo "	SPECIES	${SPECIES}"
 	@echo "	RELEASE ${RELEASE}"
+	@echo "Files to download"
+	@echo "	GTF_FTP_URL		${GTF_FTP_URL}"
+	@echo "	FASTA_RAW_FTP_URL	${FASTA_RAW_FTP_URL}"
+	@echo "	FASTA_MSK_FTP_URL	${FASTA_MSK_FTP_URL}"
+	@echo "	FASTA_PEP_FTP_URL	${FASTA_PEP_FTP_URL}"
+
+################################################################
+## Download all required files
+download_all: download_gtf download_fasta
 
 ################################################################
 ## Download GTF files from ensemblgenomes
-SERVER_GTF_FILE=${DATABASE}/gtf/${SPECIES}/*${RELEASE}.gtf.gz
-
+GTF_FTP_URL=${DATABASE}/gtf/${SPECIES}/*${RELEASE}.gtf.gz
 download_gtf:
 	@echo
 	@mkdir -p ${SPECIES_DIR}	
 	@echo "Downloading GTF file of ${SPECIES}"	
-	@wget -Ncnv ${SERVER_GTF_FILE} -P ${SPECIES_DIR}
+	@wget -Ncnv ${GTF_FTP_URL} -P ${SPECIES_DIR}
 	@echo
 	@ls -1 ${SPECIES_DIR}/*.gtf.gz
 
 ################################################################
-## Download genome FASTA files (raw and masked) from eg 
+## Download FASTA files with genomic sequences (raw and masked)
+## and peptidic sequences
 FASTA_RAW_SUFFIX=*${RELEASE}.dna.genome.fa.gz
-FASTA_RM_SUFFIX=*${RELEASE}.dna_rm.genome.fa.gz
 FASTA_RAW_FTP_URL=${DATABASE}/fasta/${SPECIES}/dna/${FASTA_RAW_SUFFIX}
-FASTA_MSK_FTP_URL=${DATABASE}/fasta/${SPECIES}/dna/${FASTA_RM_SUFFIX}
+FASTA_MSK_SUFFIX=*${RELEASE}.dna_rm.genome.fa.gz
+FASTA_MSK_FTP_URL=${DATABASE}/fasta/${SPECIES}/dna/${FASTA_MSK_SUFFIX}
+FASTA_PEP_SUFFIX=*${RELEASE}.pep.all.fa.gz
+FASTA_PEP_FTP_URL=${DATABASE}/fasta/${SPECIES}/pep/${FASTA_PEP_SUFFIX}
 download_fasta:
 	@echo
 	@mkdir -p ${SPECIES_DIR}
-	@echo "Downloading FASTA genome files of ${SPECIES}"
+	@echo "Downloading raw FASTA genome for species ${SPECIES}"
 	@wget -Ncnv ${FASTA_RAW_FTP_URL} -P ${SPECIES_DIR}
 	@echo
+	@echo "Downloading repeat-masked FASTA genome for species ${SPECIES}"
 	@wget -Ncnv ${FASTA_MSK_FTP_URL} -P ${SPECIES_DIR}
 	@echo
-	@ls -1 ${SPECIES_DIR}/*.genome.fa.gz
-
-################################################################
-## Download protein FASTA files from eg
-FASTA_SUFFIX=*${RELEASE}.pep.all.fa.gz
-FASTA_PEP_FTP_URL=${DATABASE}/fasta/${SPECIES}/pep/${FASTA_SUFFIX}
-download_pep:
 	@echo
-	@mkdir -p ${SPECIES_DIR}
-	@echo "Downloading FASTA protein file of ${SPECIES}"
+	@echo "Downloading FASTA peptidic sequences for species ${SPECIES}"
 	@wget -Ncnv ${FASTA_PEP_FTP_URL} -P ${SPECIES_DIR}
 	@echo
-	@ls -1 ${SPECIES_DIR}/*.pep.all.fa.gz
+	@ls -1 ${SPECIES_DIR}/*.fa.gz
 
 ################################################################
 ## Download sequences of some eg genomic features to be used as control
@@ -110,7 +114,7 @@ download_compara:
 ##################################################################
 ## Parse GTF file to extract gene, transcripts and cds coords
 FASTA_RAW=`ls -1 ${SPECIES_DIR}/${FASTA_RAW_SUFFIX} | head -1`
-FASTA_RM=`ls -1 ${SPECIES_DIR}/${FASTA_RM_SUFFIX} | head -1`
+FASTA_MSK=`ls -1 ${SPECIES_DIR}/${FASTA_MSK_SUFFIX} | head -1`
 GTF_GZ=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
 PARSE_DIR=${SPECIES_DIR}
 PARSE_TASK=all
@@ -120,7 +124,7 @@ parse_gtf:
 	@echo "Parsing GTF file	${GTF_GZ}"
 	parse-gtf -v ${V} -i ${GTF_GZ} \
 		-fasta ${FASTA_RAW} \
-		-fasta_rm ${FASTA_RM} \
+		-fasta_rm ${FASTA_MSK} \
 		-org_name ${SPECIES} \
 		-task ${PARSE_TASK} ${OPT} \
 		-o ${PARSE_DIR} 
