@@ -123,7 +123,7 @@ FASTA_MSK_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_MSK_SUFFIX} | head -1`
 FASTA_PEP_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_PEP_SUFFIX} | head -1`
 GTF_LOCAL=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
 PARSE_DIR=${SPECIES_DIR}
-PARSE_TASK=all
+PARSE_TASK="parse_gtf,parse_fasta"
 # Note that only the first file is considered
 parse_gtf:
 	@echo
@@ -142,7 +142,7 @@ parse_gtf:
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
-	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES}/genome
+	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES}/genome PARSE_TASK="all"
 
 ## Run some test for the GTF parsing result
 parse_gtf_test:
@@ -177,6 +177,4 @@ clean:
 	@echo "Deleting ensemblgenomes species ${SPECIES} (release ${RELEASE})"
 	@[[ -d ${SPECIES_DIR} ]] && rm -rf ${SPECIESS_DIR}
 	@echo	
-
-
 
