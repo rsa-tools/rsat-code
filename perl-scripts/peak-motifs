@@ -492,8 +492,8 @@ sub DefaultParameters {
   $main::param{ref_motifs_format} = "transfac"; push(@main::param_list, "ref_motifs_format");
 
   ## Purge-seq
-  $main::param{purge_match_length} = 30; push(@main::param_list, "purge_match_length");
-  $main::param{purge_mismatches} = 0; push(@main::param_list, "purge_mismatches");
+  $main::param{purge_match_length} = 40; push(@main::param_list, "purge_match_length");
+  $main::param{purge_mismatches} = 3; push(@main::param_list, "purge_mismatches");
 
   ################################################################
   ## Residue  profiles (position-analysis)
@@ -1176,7 +1176,7 @@ sub SequenceLengths {
     my $bed_header= "track name=\"".$seq_type."_peaks\" description=\"RSAT peak-motifs ".$bed_prefix.": peaks\" visibility=2 use_score=1 color=".$bed_color;
     $cmd .= " | sed '1s/^.*/".$bed_header."/' "; ## change first line
     $cmd .= " > ".$main::outfile{$seq_type."_seq_coord"};
-    print $cmd, "\n";
+#    print $cmd, "\n";
 #    die "HELLO";
     &one_command($cmd,1);
   }
