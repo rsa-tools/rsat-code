@@ -460,7 +460,7 @@ package main;
       while  ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, "fasta", $input_dir, "", "", %args)) &&
 	      (($current_seq ne "") || ($current_id ne ""))) {
 	$seq_nb++;
-	&RSAT::message::Debug("Peptidic sequence", $seq_nb, $current_id) if ($main::verbose >= 0);
+	#&RSAT::message::Debug("Peptidic sequence", $seq_nb, $current_id) if ($main::verbose >= 10);
 	&PrintNextSequence($handle, "fasta", 0, $current_seq, $current_id, @comments);
       }
     }
