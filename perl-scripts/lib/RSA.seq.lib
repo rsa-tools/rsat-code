@@ -1249,11 +1249,12 @@ sub ReadNextSequence {
       next if ((/^;/) || (/^\#/)); ## Skip comment lines (note that those comment lines are not part of the canonical fasta format)
 
       ## Fasta header.
-      ## Slight difficulty: we have to return the
-      ## previous sequence after having read the fasta header of the
-      ## next sequence -> we have to keep the the previous and next ID
-      ## and comment fields, and treat in a special way the first and
-      ## last sequence of a file.
+      ##
+      ## Slight difficulty: we have to return the previous sequence
+      ## after having read the fasta header of the next sequence -> we
+      ## have to keep the the previous and next ID and comment fields,
+      ## and treat in a special way the first and last sequence of a
+      ## file.
       if (/^\s*>\s*(\S*)\s*(.*)/) {
 	my $next_id = $1; ## new sequence identifier
 	@next_comments = ($2); 	## new sequence comments/description
