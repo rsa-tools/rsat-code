@@ -123,7 +123,7 @@ FASTA_MSK_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_MSK_SUFFIX} | head -1`
 FASTA_PEP_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_PEP_SUFFIX} | head -1`
 GTF_LOCAL=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
 PARSE_DIR=${SPECIES_DIR}
-PARSE_TASK="parse_gtf parse_fasta"
+PARSE_TASK="parse_gtf,parse_fasta"
 # Note that only the first file is considered
 parse_gtf:
 	@echo
