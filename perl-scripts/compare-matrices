@@ -1562,7 +1562,8 @@ package main;
   $cmd .= " > /dev/null";
   #$cmd .= "; "."text-to-html -i ".$main::outfile{quick_results};
   #$cmd .= " -o ".$main::outfile{quick_results}.".html";
-  &RSAT::util::one_command($cmd, 1,"");
+
+  &RSAT::util::one_command($cmd, 0, "");
   &RSAT::message::TimeWarn("Matrix comparison table with quick", $main::outfile{quick_results}) if ($main::verbose >= 2);
   
   ## read the file and load it into memory
