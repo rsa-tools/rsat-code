@@ -48,6 +48,11 @@ list_param:
 	@echo "	FASTA_RAW_FTP_URL	${FASTA_RAW_FTP_URL}"
 	@echo "	FASTA_MSK_FTP_URL	${FASTA_MSK_FTP_URL}"
 	@echo "	FASTA_PEP_FTP_URL	${FASTA_PEP_FTP_URL}"
+	@echo "LOCAL_FILES"
+	@echo "	GTF_LOCAL		${GTF_LOCAL}"
+	@echo "	FASTA_RAW_LOCAL		${FASTA_RAW_LOCAL}"
+	@echo "	FASTA_MSK_LOCAL		${FASTA_MSK_LOCAL}"
+	@echo "	FASTA_PEP_LOCAL		${FASTA_PEP_LOCAL}"
 
 ################################################################
 ## Download all required files
@@ -113,18 +118,20 @@ download_compara:
 
 ##################################################################
 ## Parse GTF file to extract gene, transcripts and cds coords
-FASTA_RAW=`ls -1 ${SPECIES_DIR}/${FASTA_RAW_SUFFIX} | head -1`
-FASTA_MSK=`ls -1 ${SPECIES_DIR}/${FASTA_MSK_SUFFIX} | head -1`
-GTF_GZ=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
+FASTA_RAW_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_RAW_SUFFIX} | head -1`
+FASTA_MSK_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_MSK_SUFFIX} | head -1`
+FASTA_PEP_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_PEP_SUFFIX} | head -1`
+GTF_LOCAL=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
 PARSE_DIR=${SPECIES_DIR}
 PARSE_TASK=all
 # Note that only the first file is considered
 parse_gtf:
 	@echo
-	@echo "Parsing GTF file	${GTF_GZ}"
-	parse-gtf -v ${V} -i ${GTF_GZ} \
-		-fasta ${FASTA_RAW} \
-		-fasta_rm ${FASTA_MSK} \
+	@echo "Parsing GTF file	${GTF_LOCAL}"
+	parse-gtf -v ${V} -i ${GTF_LOCAL} \
+		-fasta ${FASTA_RAW_LOCAL} \
+		-fasta_rm ${FASTA_MSK_LOCAL} \
+		-fasta_pep ${FASTA_PEP_LOCAL} \
 		-org_name ${SPECIES} \
 		-task ${PARSE_TASK} ${OPT} \
 		-o ${PARSE_DIR} 
