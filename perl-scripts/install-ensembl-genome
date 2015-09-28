@@ -181,15 +181,13 @@ package main;
     @tasks= @default_tasks;
   }
 
-  ## Check that all requested tasks are supported
+  ## Index tasks
   &RSAT::message::Info("Requested tasks:", join(",", @tasks)) if ($main::verbose >= 2);
   foreach my $task (@tasks) {
     next unless ($task);
-    unless ($supported_task{$task}) {
-      &RSAT::error::FatalError($task, "is not a valid task. Supported tasks: ".$supported_tasks);
-    }
     $task{$task} = 1;
   }
+#  die("HELLO");
 
   ## Read list of species from a file
   if ($infile{species_list}) {
@@ -234,7 +232,7 @@ package main;
     ## Collect all arguments except the organism list
     my $arg;
     my $passed_arguments = "";
-    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    my @arguments = @ARGV; ## we use a copy of the list of arguments for this shift, because we need ARGV to report command line in &Verbose()
     while (scalar(@arguments) >= 1) {
       $arg = shift (@arguments);
       if (($arg eq "-species") 
@@ -545,8 +543,10 @@ This task is executed by running I<install-organism>.
 
 =cut
     } elsif ($arg eq "-task") {
-	 my $task = shift(@arguments);
-	 push (@main::tasks, split(",",$task));
+      my $task = shift(@arguments);
+      &RSAT::error::FatalError($task, "Invalid task for install-ensembl-genomes. Supported:", $supported_tasks)
+	  unless ($supported_task{$task});
+      push (@main::tasks, split(",",$task));
 
 
 # =pod 
