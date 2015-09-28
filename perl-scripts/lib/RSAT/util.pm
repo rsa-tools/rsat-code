@@ -985,7 +985,8 @@ sub make_temp_file {
 ## 
 sub doit {
   my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue) = @_;
-
+  
+  ## Print the command to the log file
   if ($log_handle) {
     print $log_handle "\n\n", $command, "\n";
   }
@@ -1364,7 +1365,7 @@ sub one_command {
 	print $local_out ("\n", "; ", &AlphaDate(), "\n", &hide_RSAT_path($cmd), "\n\n");
       }
     }
-    &doit($cmd, $local_dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
+    &doit($cmd, $local_dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix, $log_handle);
   }
 }
 
