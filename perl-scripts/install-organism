@@ -333,7 +333,14 @@ package main;
       
       &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
       
-      &SeqLengthDistribution($organism_short_name."_aa.fasta", "fasta", "protein", 50, 2000) if ($task{protein_len});
+      # New name for peptidic sequence file (Sept 2015). I suppress
+      # organism name from sequence file name.
+      my $peptidic_seq_file = "peptidic_sequences.fasta";
+      unless (-e $dir{genome}."/".$peptidic_seq_file) {
+	## Previous name for the peptidic sequence file
+	$peptidic_seq_file = ${organism_short_name}."_aa.fasta";
+      }
+      &SeqLengthDistribution($peptidic_seq_file, "fasta", "protein", 50, 2000) if ($task{protein_len});
 
       &CleanUp if ($task{clean});
       
@@ -926,9 +933,21 @@ sub CalcFrequencies {
   # Calculate oligopeptide frequencies in all protein sequences
   if ($task{protein_freq}) {
     $seq_type = "protein";
-    $seq_file = "${organism_short_name}_aa.fasta";
-    $seq_format = "fasta";
-    &CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+
+    # New name for peptidic sequence file (Sept 2015). I suppress
+    # organism name from sequence file name.
+    my $seq_file = $dir{genome}."/peptidic_sequences.fasta";
+    unless (-e $seq_file) {
+      ## Previous name for the peptidic sequence file
+      $seq_file = $dir{genome}."/".${organism_short_name}."_aa.fasta";
+    }
+
+    if (-e $seq_file) {
+      $seq_format = "fasta";
+      &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
+    } else {
+      &RSAT::message::Warning("Skipping oligopeptide frequencies because peptidic sequence file is missing", $seq_file);
+    }
   }
 
   chdir $dir{main};

@@ -551,7 +551,6 @@ sub Get_full_species_ID {
       &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 5);
   }
 
-
   ## Full ID convention (2014-10, JvH  AMR)
   ## [Species]_[assembly_version]_[db][ensembl_version]
   my $full_species_id = ucfirst($species);
@@ -622,7 +621,7 @@ sub Get_assembly_version {
 			  "from", $main::db.$ensembl_version, "in the organism table\n", $supported_file);
   &RSAT::error::FatalError($species, "genome does not seem to be installed in version ".$ensembl_version." of ".$main::db, 
 			   "\nTry the following command:\n\t", 
-			   "install-ensembl-genome -v 2 -species ".$species);
+			   "install-ensembl-genome -v 2 -db ".$main::db." -species ".$species);
 }
 
 =pod
