@@ -50,7 +50,7 @@ if (($out_format eq "wc")
     $line_width = 0;
 }
 
-### open input file
+## Open input file
 ($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
