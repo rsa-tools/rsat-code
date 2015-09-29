@@ -33,7 +33,7 @@ $default{ids_only} = "";
 
 ## TEMPORARY (2015-09): RESTRICT SUPPORTED FEATURE TYPES until the switch from NCBI
 ## to EnsemblGenomes as genome source is completely checked.
-@supported_feature_types = qw(gene mrna cds);
+@supported_feature_types = qw(gene mRNA CDS);
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
