@@ -43,6 +43,8 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
     ## Store the level of the tree
     level <- which(tree$merge == child1)
 
+    print(paste("Aligning Level: ", level, " - Checked: ", checked.levels[level]))
+
     ## If it is indicated, save the levels attributes.
     if(nodes.attributes == TRUE){
       internal.nodes.attributes[[paste("node_", level, sep = "")]][["alignment_flag"]] <<- 0
