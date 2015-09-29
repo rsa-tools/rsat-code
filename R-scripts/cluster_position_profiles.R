@@ -89,7 +89,7 @@ if(length(args)==0){
   stop("No arguments supplied. Mandatory: file.pos=[position_analysis_output_file] ")
 }else{
 #  print("Parsing command-line arguments")
-  print(args)
+#  print(args)
   for(i in 1:length(args)){
     eval(parse(text=args[[i]]))
   }
@@ -102,25 +102,25 @@ draw.plots <- export.plots || display.plots
 if (!exists("file.pos")) {
   stop("Missing mandatory argument: file.pos=[position_analysis_output_file] ")
 }
-verbose(paste("Input file", file.pos), 1)
+verbose(paste("Input file", file.pos), 2)
 
 ## Define path of directories and files relative to the main directory
 dir.pos <- dirname(file.pos)
-verbose(paste("Input directory", dir.pos), 1)
+verbose(paste("Input directory", dir.pos), 2)
 
 ## Define prefix for output files
 if (!exists("prefix")) {
   prefix <- basename(file.pos)
   prefix <- sub(".tab$", "", basename(file.pos), ignore.case = TRUE, perl = TRUE)
 }
-verbose(paste("Prefix for output files", prefix), 1)
+verbose(paste("Prefix for output files", prefix), 2)
 
 ## Output directory for cluster files (xwe export them to a separate directory because there may be many files)
 if (!exists("dir.clusters")) {
   dir.clusters <- file.path(dir.pos, paste(sep='_', prefix, clust.suffix))
 }
 dir.create(dir.clusters, showWarnings=FALSE, recursive=TRUE)
-verbose(paste("Output directory for clusters", dir.clusters), 1)
+verbose(paste("Output directory for clusters", dir.clusters), 2)
 
 ################################################################
 ## Read position-analysis result file
@@ -171,7 +171,7 @@ colnames(pos.data)[profile.col] <- sub("X", "+", colnames(pos.data)[profile.col]
 ## Define the selected patterns
 selected.patterns <- (pos.data$sig >= sig.threshold) & (pos.data$rank <= rank.threshold)
 nb.patterns <- sum(selected.patterns)
-verbose(paste(nb.patterns , "selected patterns"), 1)
+verbose(paste(nb.patterns , "selected patterns"), 2)
 
 if (nb.patterns < 2) {
   stop("Clustering is irrelevant with less than two selected patterns")
@@ -263,7 +263,7 @@ cluster.file <- file.path(dir.pos, paste(sep='', prefix, '_',clust.suffix,'.tab'
 write.table(cluster.table, file=cluster.file, row.names=FALSE, col.names=TRUE, quote=FALSE, sep='\t')
 
 ## Report the number of elements per cluster
-verbose(paste("Cluster file:", cluster.file), 1)
+verbose(paste("Cluster file:", cluster.file), 2)
 cluster.sizes <- table(clusters)
 cluster.sizes <- as.data.frame(cluster.sizes)
 names(cluster.sizes) <- c("cluster", "n")
@@ -532,5 +532,5 @@ if (draw.plots) {
 }
 
 
-verbose ("job done")
-verbose(dir.clusters)
+verbose ("job done", 2)
+verbose(dir.clusters, 2)
