@@ -1,0 +1,442 @@
+#!/usr/bin/perl -w
+
+use DB_File;
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+parse-compara
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Parse  GTF
+
+=head1 AUTHORS
+
+Bruno Contreras & Jacques.van-Helden\@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item management of homology database COMPARA
+
+=back
+
+=head1 USAGE
+
+parse-gtf [-i inputfile] [-list listfile] [-o outputfile] [-log logfile] [-v #] [...]
+
+=head1 INPUT FORMATS
+
+A single Compara.homologies TSV file in the Ensembl Genomes format, as documented
+in  ftp://ftp.ensemblgenomes.org/pub/plants/current/tsv/ensembl-compara/readme.tsv
+
+If the input file name terminates with .gz, it is uncompressed on the
+fly.
+
+
+In addition, a TSV list of supported organisms in the same version of Ensemblgeneomes 
+is required.
+
+=head1 OUTPUT FORMAT
+
+The file is parsed and exported to a BerkeleyDB Hash db using core Perl module DB_FIle.
+Entries have keys such as 'BRADI4G31367_2', were the first term is the ensembl gene_stable_id
+of a gene and the second ('2') is the integer-encoded organism in which homologues were reported.
+Each key is thus linked to one or more homology relationships in the same targe organism, separated 
+by newlines ("\n"), each them containing the following CSVs:
+
+  homology_gene_stable_id,homology_species,homology_type,identity,homology_identity
+
+A list of supported organisms, with their encodings, is stored in entry 'supported_organisms':
+
+  'arabidopsis_thaliana',1, 
+  'brachypodium_distachyon',1,
+  ...
+
+as well as entry 'homology_types' lists the current classification of homology types, with values such
+as:
+
+  'homoeolog_one2one',4,
+  'ortholog_many2many',5,
+  ...
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+my $INSERTS2COMMIT = 1000_000;
+
+my %hom_type = (
+    'gene_split',1,
+    'homoeolog_many2many',2,
+    'homoeolog_one2many',3,
+    'homoeolog_one2one',4,
+    'ortholog_many2many',5,
+    'ortholog_one2many',6,
+    'ortholog_one2one',7,
+    'other_paralog',8,
+    'within_species_paralog',9
+);
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.00 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+  our %stats = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+  my  $dir = '';
+  our $last = 0; ## Stop  parsing after a user-specified number of rows
+ 
+  ################################################################
+  ## Read arguments and check their values
+  &ReadArguments();
+
+  ## Output filename is required
+  &RSAT::error::FatalError("The output BerkeleyDB file name must be specified (option -o)") 
+    unless ($outfile{"bdb"});
+
+  ## Logfile name is required
+  &RSAT::error::FatalError("A logfile name must be specified (option -log)")
+    unless ($outfile{"log"});
+
+  ## input Compara TSV file must be specified
+  &RSAT::error::FatalError("The Compara.homologies file must be specified (option -i)") 
+    unless ($infile{"i"});
+  
+  ## input list file must be specified
+  &RSAT::error::FatalError("The organisms list file must be specified (option -list)") 
+    unless ($infile{"list"});
+
+  ## Open Log file
+  $out = &OpenOutputFile($outfile{"log"});
+
+  ## Open Compara TSV infile
+  ($in,$dir) = &OpenInputFile($infile{"i"});
+
+  ################################################################
+  ## Start processing
+
+  my ($n_of_inserts,$n_of_species,$row,$org2int,$type2int,@rawdata,%db,%eg_group_species) = (0,0);
+  my ($key,$record,$gene_stable_id,$protein_stable_id,$species,$homology_type,$identity);
+  my ($homology_gene_stable_id,$homology_protein_stable_id,$homology_species,$homology_identity);
+
+  # 1) read organisms file to get list of species in ensembl-flavour  
+  &RSAT::message::TimeWarn("Parsing list ",$main::infile{"list"}) if ($main::verbose >= 0);
+
+  my ($LIST) = &OpenInputFile($infile{"list"});
+  while(<$LIST>)
+  {
+    next if(/^#/);
+    @rawdata = split(/\t/);
+    $eg_group_species{$rawdata[1]} = ++$n_of_species;
+  }
+  close($LIST);
+  
+  &RSAT::message::TimeWarn("EnsemblGenomes group species = ",$n_of_species);
+  printf($out "EnsemblGenomes group species = %d\n",$n_of_species);  
+  
+  # 2) create BerkeleyDB database and store orgs and homology types
+  if(-s $outfile{'bdb'})
+  {
+    &RSAT::message::Info("Saving previous database as ".$outfile{'bdb'}.'.old'); 
+    rename($outfile{'bdb'},$outfile{'bdb'}.'.old'); 
+  }
+  tie(%db,"DB_File",$outfile{'bdb'}, O_WRONLY|O_CREAT, 0666, $DB_HASH)
+    || die "# $0 : cannot tie $outfile{'bdb'}:$!\n";
+ 
+  # store encoding of supported organisms in bdb 
+  foreach $species (keys(%eg_group_species))
+  {
+    $org2int .= "$eg_group_species{$species},$species,";
+  }
+  $db{'supported_organisms'} = $org2int;
+
+  # store homology types encoding
+  foreach $homology_type (keys(%hom_type))
+  {
+    $type2int .= "$hom_type{$homology_type},$homology_type,";
+  }
+  $db{'homology_types'} = $type2int;
+
+  # 3) parse COMPARA TSV file and keep adding entries to database
+  &RSAT::message::TimeWarn("Parsing Compara file",$main::infile{"i"}) if ($main::verbose >= 0);
+ 
+  while(<$main::in>)
+  {
+    next if(/^gene/);
+    chomp;
+
+    ($gene_stable_id,$protein_stable_id,$species,$homology_type,$identity,
+        $homology_gene_stable_id,$homology_protein_stable_id,$homology_species,
+        $homology_identity) = split(/\t\s*/);
+
+    next if(!$eg_group_species{$species} || !$eg_group_species{$homology_species});
+
+    $stats{$species}++;
+
+    $species = $eg_group_species{$species};
+    $homology_species = $eg_group_species{$homology_species};
+    $homology_type = $hom_type{$homology_type};
+
+    $key = $gene_stable_id.'_'.$homology_species;
+    $record = "$homology_gene_stable_id,$homology_species,$homology_type,$identity,$homology_identity";
+
+    $db{$key} .= "$record\n";
+
+    $n_of_inserts++;
+
+    if (($main::last > 0) && ($n_of_inserts == $main::last)) 
+    {
+      &RSAT::message::Warning("Stopping the parsing after", $last, "rows (option -last).");
+      last;
+    }
+
+    if(!($n_of_inserts%$INSERTS2COMMIT))
+    {
+      &RSAT::message::TimeWarn("loading compara records:",commify($n_of_inserts)) 
+        if ($main::verbose >= 2);
+    }
+  } 
+  close($main::in);
+
+  # 4) close BerkeleyDB database
+  untie(%db);
+
+  &RSAT::message::Info("loaded ",commify($n_of_inserts)," records in database");
+  printf($out "loaded %s records in database\n",commify($n_of_inserts)); 
+  print $out "\n; last record: $key : $record\n\n";
+
+
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ## Report execution time and close output stream (log)
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Add commas to long integers
+sub commify
+{
+    my $text = reverse $_[0];
+    $text =~ s/(\d\d\d)(?=\d)(?!\d*\.)/$1,/g;
+    return scalar reverse $text
+}
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); 
+  print $main::out $exec_time if ($main::verbose >= 1); 
+
+  &RSAT::message::TimeWarn("Output file:", $main::outfile{"bdb"}) if ($main::verbose >= 0);
+
+  close($main::out);
+  
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; 
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i inputfile>
+
+Compara.homologies TSV file. If the file bears the .gz extension, it will be
+automatically uncompressed during the parsing.
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{"i"} = shift(@arguments);
+
+=pod
+
+=item B<-list organisms_file>
+
+Path to the FTP-downloaded file.tab which lists organisms names of a release of eg. 
+Only organisms listed in this file will be output to the BerkelyDB file.
+
+=cut
+
+    } elsif ($arg eq "-list") {
+      $main::infile{"list"} = shift(@arguments);
+
+=pod
+
+=item B<-last N>
+
+Stop parsing after N rows (for debugging and testing).
+
+=cut 
+
+    } elsif ($arg eq "-last") {
+      $main::last = shift(@arguments);
+      &RSAT::error::FatalError($main::last, "Invalid value for option -last. Must be Natural number.")
+	  unless (&RSAT::util::IsNatural($main::last));
+
+=pod
+
+=item	B<-o output BerkeleyDB file>
+
+Filename of produced BerkeleyDB database.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{"bdb"} = shift(@arguments);
+
+=pod
+
+=item   B<-log filename>
+
+Filename to store log of this script.
+
+=cut
+    } elsif ($arg eq "-log") {
+      $main::outfile{"log"} = shift(@arguments);
+
+=pod
+
+=back
+
+=cut
+    }
+  }
+}
+
+################################################################
+## Verbose message, uses %main::stats
+sub Verbose {
+  print $out "; parse-compara ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+ 
+  print $out "; records / organism:\n";
+  foreach my $species (sort {$main::stats{$b}<=>$main::stats{$a}} keys(%main::stats))
+  {
+    print $out "$species\t".commify($main::stats{$species})."\n";
+  }
+}
+
+
+__END__
