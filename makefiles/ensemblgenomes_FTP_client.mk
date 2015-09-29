@@ -154,17 +154,36 @@ install_yeast:
 ##################################################################
 ## Parse Compara.homologies 
 CMP_GZ=$(shell ls -1 ${ORGANISMS_DIR}/Compara.homologies*.gz)
+BDB_FILE=${ORGANISMS_DIR}/compara.bdb
+BDB_LOG=${ORGANISMS_DIR}/compara.log
 parse_compara:
 	@echo
 	@echo "Parsing Compara file ${CMP_GZ}"
 	@echo
-#@ls -1 ${PARSE_DIR}/*.tab
-
+	@parse-compara -i ${CMP_GZ} -list ${ORGANISMS_LIST} -o ${BDB_FILE} -log ${BDB_LOG} -v ${V}
+	
+#################################################################
+## Install Compara db
+PARSE_DIR=${RSAT}/public_html/data/genomes/
+install_compara:
+	@echo
+	@echo "Installing Compara db ${BDB_FILE}"
+	@echo
+	@mv ${BDB_FILE} ${PARSE_DIR}
+	@echo
+	@ls -1 ${PARSE_DIR}/compara.bdb
 
 ##################################################################
 
 all: organisms download_fasta download_gtf download_compara \
 	parse_gtf parse_compara
+
+clean_compara:
+	@echo
+	@echo "Deleting ensemblgenomes Compara release ${RELEASE}
+	@[[ -d ${CMP_GZ} ]] && rm -f ${CMP_GZ}
+	@echo
+
 
 clean_all:
 	@echo
