@@ -89,7 +89,7 @@ if(length(args)==0){
   stop("No arguments supplied. Mandatory: file.pos=[position_analysis_output_file] ")
 }else{
 #  print("Parsing command-line arguments")
-  print(args)
+#  print(args)
   for(i in 1:length(args)){
     eval(parse(text=args[[i]]))
   }
