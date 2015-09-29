@@ -2767,6 +2767,9 @@ sub Merge_matrices() {
 ## of the alignments, creates the <div>
 ## in HTML script to visualize the clusters
 sub Create_dynamic_tree() {
+
+    &RSAT::message::TimeWarn("\n; Creating dynamic tree") if ($main::verbose >= 2);
+
     my $line = "";
     my $print = "";
     my $temp_dyn_tree_Forward = &logo_tree_dynamic();
@@ -4946,7 +4949,7 @@ sub InsertListOfFiles {
 ## links to the iriginal result files.
 sub Synthesis {
 
-    &RSAT::message::TimeWarn("\n; Generating HTML summary") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("\n; Generating HTML Report") if ($main::verbose >= 2);
 
     &OpenSynthesis() unless ($main::param{progressive_synthesis});
 
@@ -5086,6 +5089,8 @@ sub Add_Empty_Col() {
 ## This function calls the program convert-matrix
 ## to add empty columns to the selected file.
 sub Produce_logos() {
+
+    &RSAT::message::TimeWarn("Generating Logos") if ($main::verbose >= 2);
 
     my $concat_files_cmd = "cat ".$concat_motif_files." > ".$main::outfile{all_concatenated_motifs};
     &doit($concat_files_cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
