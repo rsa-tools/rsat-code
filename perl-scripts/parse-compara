@@ -116,6 +116,7 @@ package main;
 
   our %infile = ();
   our %outfile = ();
+  our %params = ();
   our %stats = ();
 
   our $verbose = 0;
@@ -175,8 +176,20 @@ package main;
   # 2) create BerkeleyDB database and store orgs and homology types
   if(-s $outfile{'bdb'})
   {
-    &RSAT::message::Info("Saving previous database as ".$outfile{'bdb'}.'.old'); 
-    rename($outfile{'bdb'},$outfile{'bdb'}.'.old'); 
+    if($main::params{'force'})
+    {
+      &RSAT::message::Info("Saving previous database as ".$outfile{'bdb'}.'.old'); 
+        rename($outfile{'bdb'},$outfile{'bdb'}.'.old'); 
+    }
+    else
+    {
+      &RSAT::message::Info("Found a previous database (".$outfile{'bdb'}.
+        "), cannot proceed without -force");
+
+      
+      &Verbose() if ($main::verbose >= 1);
+      &close_and_quit();
+    }
   }
   tie(%db,"DB_File",$outfile{'bdb'}, O_WRONLY|O_CREAT, 0666, $DB_HASH)
     || die "# $0 : cannot tie $outfile{'bdb'}:$!\n";
@@ -405,6 +418,16 @@ Filename to store log of this script.
 
 =pod
 
+=item   B<-force>
+
+Force parsing of Compara.homologies file even if -o file existst.
+
+=cut
+    } elsif ($arg eq "-force") {
+      $main::params{"force"} = 1;
+
+=pod
+
 =back
 
 =cut
@@ -424,17 +447,28 @@ sub Verbose {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
+
   if (%main::outfile) {
     print $out "; Output files\n";
     while (my ($key,$value) = each %main::outfile) {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
+
+  if (%main::params) {
+    print $out "; Parameters\n";
+    while (my ($key,$value) = each %main::params) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
  
-  print $out "; records / organism:\n";
-  foreach my $species (sort {$main::stats{$b}<=>$main::stats{$a}} keys(%main::stats))
+  if(%stats)
   {
-    print $out "$species\t".commify($main::stats{$species})."\n";
+    print $out "; records / organism:\n";
+    foreach my $species (sort {$main::stats{$b}<=>$main::stats{$a}} keys(%main::stats))
+    {
+      print $out "$species\t".commify($main::stats{$species})."\n";
+    }
   }
 }
 
