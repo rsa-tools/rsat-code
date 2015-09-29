@@ -145,9 +145,6 @@ package main;
   &RSAT::error::FatalError("The organisms list file must be specified (option -list)") 
     unless ($infile{"list"});
 
-  ## Open Log file
-  $out = &OpenOutputFile($outfile{"log"});
-
   ## Open Compara TSV infile
   ($in,$dir) = &OpenInputFile($infile{"i"});
 
@@ -171,7 +168,6 @@ package main;
   close($LIST);
   
   &RSAT::message::TimeWarn("EnsemblGenomes group species = ",$n_of_species);
-  printf($out "EnsemblGenomes group species = %d\n",$n_of_species);  
   
   # 2) create BerkeleyDB database and store orgs and homology types
   if(-s $outfile{'bdb'})
@@ -191,6 +187,12 @@ package main;
       &close_and_quit();
     }
   }
+
+  # Open Log file
+  $out = &OpenOutputFile($outfile{"log"});
+  printf($out "EnsemblGenomes group species = %d\n",$n_of_species);
+
+  # actually open and tie the db
   tie(%db,"DB_File",$outfile{'bdb'}, O_WRONLY|O_CREAT, 0666, $DB_HASH)
     || die "# $0 : cannot tie $outfile{'bdb'}:$!\n";
  
