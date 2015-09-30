@@ -1,6 +1,7 @@
 align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
                          method = "average",
                          metric = "Ncor",
+                         align = TRUE,
                          nodes.attributes = TRUE,
                          intermediate.alignments = FALSE){
 
@@ -66,6 +67,7 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
                          thresholds,
                          method,
                          metric = metric,
+                         align = align,
                          nodes.attributes = nodes.attributes,
                          motif.at.tree.level = motif.at.tree.level)
 
@@ -78,6 +80,7 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
                                thresholds,
                                method,
                                metric = metric,
+                               align = align,
                                nodes.attributes = nodes.attributes,
                                motif.at.tree.level = motif.at.tree.level)
 
@@ -90,6 +93,7 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
                            thresholds,
                            method,
                            metric = metric,
+                           align = align,
                            nodes.attributes = nodes.attributes,
                            motif.at.tree.level = motif.at.tree.level)
       }
@@ -114,15 +118,17 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
       next.level <- find.next.levels.in.tree(level)
       checked.levels[next.level] <<- 1
 
-      if((child1 < 0) && (child2 > 0)){
-        n1.id <- get.id(-child1)
-        motifs.info[[n1.id]][["name"]] <<- get.name(n1.id)
-        motifs.info[[n1.id]][["consensus_d"]] <<- get.consensus(n1.id, RC = FALSE)
-        motifs.info[[n1.id]][["consensus_rc"]] <<- get.consensus(n1.id, RC = TRUE)
-        motifs.info[[n1.id]][["strand"]] <<- "D"
-        motifs.info[[n1.id]][["number"]] <<- -child1
-        motifs.info[[n1.id]][["spacer.up"]] <<- 0
-        motifs.info[[n1.id]][["spacer.dw"]] <<- 0
+      if(align == TRUE){
+        if((child1 < 0) && (child2 > 0)){
+          n1.id <- get.id(-child1)
+          motifs.info[[n1.id]][["name"]] <<- get.name(n1.id)
+          motifs.info[[n1.id]][["consensus_d"]] <<- get.consensus(n1.id, RC = FALSE)
+          motifs.info[[n1.id]][["consensus_rc"]] <<- get.consensus(n1.id, RC = TRUE)
+          motifs.info[[n1.id]][["strand"]] <<- "D"
+          motifs.info[[n1.id]][["number"]] <<- -child1
+          motifs.info[[n1.id]][["spacer.up"]] <<- 0
+          motifs.info[[n1.id]][["spacer.dw"]] <<- 0
+        }
       }
     }
   })
