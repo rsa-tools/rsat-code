@@ -160,15 +160,10 @@ if(number.of.motifs > 1){
   alignment <- align.motifs(thresholds = thresholds,
                             method = hclust.method,
                             metric = metric,
+                            align = FALSE,
                             nodes.attributes=TRUE,
                             intermediate.alignments=FALSE)
-  alignment.list <- alignment$motifs.alignment
   alignment.attributes <- alignment$node.attributes
-
-  ## Reset the labels
-#   tree$labels <- sapply(tree$labels, function(x){
-#     paste(alignment.list[[x]][["consensus_d"]], alignment.list[[x]][["name"]], sep="   " )
-#   })
 
   #############################################
   ## Define the clusters: Bottom-up approach
@@ -201,7 +196,8 @@ if(number.of.motifs > 1){
       })
     )
   )
-  alignment.width <- max(alignment.width)
+
+  alignment.width <- max(as.character(tree$labels))
   mar4 <- alignment.width
 
   ######################
@@ -241,7 +237,6 @@ if(number.of.motifs > 1){
         draw.heatmap.motifs(dist.table,
                             method = hclust.method,
                             clusters,
-                            alignment.list,
                             metric = metric,
                             tree.pos = "column")
 
@@ -324,7 +319,7 @@ intermediate.levels <- vector()
 
 ## Copy the global tables
 compa.table <- global.compare.matrices.table
-desc.tab <- global.description.table
+desc.tab <<- global.description.table
 
 ## Print a file with the Hexadecimals code for the colors of the clusters
 ## The color of the clusters showed in the heatmap will be the same
@@ -360,13 +355,18 @@ i <- sapply(1:length(clusters), function(nb){
            case.1 = {
 
               ## Fill the cluster list with the data of the non-aligned motifs (singleton)
+              global.description.table <<- NULL
               global.description.table <<- desc.tab
-              forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- global.motifs.info[[ids]]
-              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_d"]] <<- get.consensus(ids, RC = FALSE)
-              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_rc"]] <<- get.consensus(ids, RC = TRUE)
-              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["number"]] <<- as.numeric(1)
-              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["spacer.up"]] <<- as.numeric(0)
-              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["spacer.dw"]] <<- as.numeric(0)
+              forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- forest.list[[paste("cluster", (nb-1), sep = "_")]][[1]]
+
+             ids <- as.character(ids)
+             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["strand"]] <<- "D"
+             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["name"]] <<- get.name(ids)
+             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_d"]] <<- get.consensus(ids, RC = FALSE)
+             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_rc"]] <<- get.consensus(ids, RC = TRUE)
+             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["number"]] <<- as.numeric(1)
+             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["spacer.up"]] <<- as.numeric(0)
+             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["spacer.dw"]] <<- as.numeric(0)
 
               if(only.hclust == 0){
 
@@ -440,6 +440,7 @@ i <- sapply(1:length(clusters), function(nb){
                alignment.cluster <<- align.motifs(thresholds = thresholds,
                                                   method = hclust.method,
                                                   metric = metric,
+                                                  align = TRUE,
                                                   nodes.attributes = TRUE,
                                                   intermediate.alignments = TRUE)
                intern.alignment <- alignment.cluster$intermediate.alignments

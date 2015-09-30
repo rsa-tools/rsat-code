@@ -1,7 +1,7 @@
 ####################################################
 ## Draw a heatmap usig a particular allgomeration
 ## method.
-draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, alignment.list, metric = "Ncor", tree.pos = "column"){
+draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, metric = "Ncor", tree.pos = "column"){
 
   ################################################################
   ## Blue -> White -> Red palette
@@ -69,7 +69,7 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
 
   ## The font size is adapted relative to the number of input motifs
   ## If there are less than 25, set the font size to 25
-  nb.motifs <- length(alignment.list)
+  nb.motifs <- length(dim(dist.table)[1])
   font.size <- nb.motifs
   if(nb.motifs < 25){
     font.size <- 25
@@ -113,16 +113,14 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, a
   }
 
 
-
 ## Calculate the bottom border
 par(oma=c(2,0.3,0.5,2), family="mono")
 
   # Get the aligned consensuses, which will be used as the Row names
-  consensus <-sapply(colnames(dist.table), function(x){
-    as.vector(alignment.list[[x]][["name"]])
+  col.names <-sapply(colnames(dist.table), function(x){
+    as.vector(get.name(x))
   })
-  consensus <- as.vector(consensus)
-  columns.heatmap <- consensus
+  col.names <- as.vector(col.names)
 
 
   ## Draw the heatmap
@@ -145,8 +143,8 @@ par(oma=c(2,0.3,0.5,2), family="mono")
           dendrogram = tree.pos,
 
           ## Set the col and row labels
-          labRow = consensus,
-          labCol = columns.heatmap,
+          labRow = col.names,
+          labCol = col.names,
 
           ## Set the font size
           cexRow = 11/font.size + 0.075,
