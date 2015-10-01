@@ -60,11 +60,12 @@ download_all: download_gtf download_fasta
 
 ################################################################
 ## Download GTF files from ensemblgenomes
-GTF_FTP_URL=${DATABASE}/gtf/${SPECIES}/*${RELEASE}.gtf.gz
+GTF_FTP_URL=${DATABASE}/gtf/${COLLECTION}/${SPECIES}/*${RELEASE}.gtf.gz
 download_gtf:
 	@echo
 	@mkdir -p ${SPECIES_DIR}	
-	@echo "Downloading GTF file of ${SPECIES}"	
+	@echo "Downloading GTF file of ${SPECIES}"
+	@echo "GTF_FTP_URL	${GTF_FTP_URL}"
 	@wget -Ncnv ${GTF_FTP_URL} -P ${SPECIES_DIR}
 	@echo
 	@ls -1 ${SPECIES_DIR}/*.gtf.gz
@@ -73,11 +74,11 @@ download_gtf:
 ## Download FASTA files with genomic sequences (raw and masked)
 ## and peptidic sequences
 FASTA_RAW_SUFFIX=*${RELEASE}.dna.genome.fa.gz
-FASTA_RAW_FTP_URL=${DATABASE}/fasta/${SPECIES}/dna/${FASTA_RAW_SUFFIX}
+FASTA_RAW_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_RAW_SUFFIX}
 FASTA_MSK_SUFFIX=*${RELEASE}.dna_rm.genome.fa.gz
-FASTA_MSK_FTP_URL=${DATABASE}/fasta/${SPECIES}/dna/${FASTA_MSK_SUFFIX}
+FASTA_MSK_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_MSK_SUFFIX}
 FASTA_PEP_SUFFIX=*${RELEASE}.pep.all.fa.gz
-FASTA_PEP_FTP_URL=${DATABASE}/fasta/${SPECIES}/pep/${FASTA_PEP_SUFFIX}
+FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUFFIX}
 download_fasta:
 	@echo
 	@mkdir -p ${SPECIES_DIR}
@@ -151,6 +152,11 @@ parse_gtf_test:
 install_yeast:
 	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae download_gtf download_fasta install_from_gtf
 
+
+COLLECTION=bacteria_44_collection
+install_pao1:
+	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 download_gtf download_fasta install_from_gtf
+
 ##################################################################
 ## Parse Compara.homologies 
 CMP_GZ=$(shell ls -1 ${ORGANISMS_DIR}/Compara.homologies*.gz)
@@ -161,7 +167,7 @@ parse_compara:
 	@echo "Parsing Compara file ${CMP_GZ}"
 	@echo
 	@parse-compara -i ${CMP_GZ} -list ${ORGANISMS_LIST} -o ${BDB_FILE} -log ${BDB_LOG} -v ${V}
-	
+
 #################################################################
 ## Install Compara db
 PARSE_DIR=${RSAT}/public_html/data/genomes/
