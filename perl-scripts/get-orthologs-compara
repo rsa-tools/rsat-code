@@ -332,8 +332,14 @@ sub close_and_quit {
   {
     print $main::out "; Total homologues reported\t", $main::stats{'all'}{'total'}, "\n";
     foreach my $query (@main::query_genes) {
-      print $main::out "; Total homologues for ",$query,"\t",$main::stats{$query}{'total'},"\n";
+      if($stats{$query}{'bad_gene_id'}) {
+        print $main::out "; Bad query id ",$query,"\t","\n"; 
+      }
+      else {
+        print $main::out "; Total homologues for ",$query,"\t",$main::stats{$query}{'total'},"\n";
+      }
     }
+    
 
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
     print $main::out $exec_time;
