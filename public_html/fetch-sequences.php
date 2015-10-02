@@ -166,11 +166,11 @@ if (!$errors) {
     fclose($file);
     
     if ($warnings != "") {
-      warning("Not bed line :<br/>\n".$warnings);
+      warning("Wrongly formatted line for bed format:<br/>\n".$warnings);
     }
     
     if ($no_bed_line) {
-      error("All your line are not bed format");
+      error("Problem with pasted coordinates: not a single line is in bed format.");
       $errors = true;
     } else {
       $argument .= " -i $bed_file";
