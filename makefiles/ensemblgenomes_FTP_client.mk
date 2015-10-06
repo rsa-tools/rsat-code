@@ -149,13 +149,29 @@ install_from_gtf:
 parse_gtf_test:
 	retrieve-seq -org ${SPECIES} -from 0 -to 3 -feattype gene | oligo-analysis -v 1 -l 3 -return occ,freq -sort 
 
+
+################################################################
+## Install some pet genomes
+
+COLLECTION=
+INSTALL_TASKS=download_gtf download_fasta install_from_gtf
+## Arabidopsis thaliana (Plant)
+install_thaliana:
+	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana ${INSTALL_TASKS}
+
+## Saccharomyces cerevisiae (Fungus)
 install_yeast:
-	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae download_gtf download_fasta install_from_gtf
+	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae ${INSTALL_TASKS}
 
+## Note: for bacteria we need to define a collection
 
-COLLECTION=bacteria_44_collection
+## Escherichia coli (Bacteria)
+install_ecoli:
+	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655 ${INSTALL_TASKS}
+
+## Pseudomonas aeruginosa (Bacteria)
 install_pao1:
-	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 download_gtf download_fasta install_from_gtf
+	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 COLLECTION=bacteria_44_collection ${INSTALL_TASKS}
 
 ##################################################################
 ## Parse Compara.homologies 
