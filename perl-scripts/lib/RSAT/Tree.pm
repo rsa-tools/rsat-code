@@ -105,7 +105,7 @@ sub set_all_levels{
 =head2 get all nodes
 
  Title   : get_all_nodes()
- Usage   : my @descendants = $tree->get_all_nodes()
+ Usage   : my @descendents = $tree->get_all_nodes()
  Function: Get all nodes of the tree from the root by DFS algorithm
  Returns : Array of nodes
 
@@ -114,8 +114,8 @@ sub set_all_levels{
 sub get_all_nodes{
     my ($self) = @_;
     my $root_node=$self->get_root_node();
-    my ($descendants) = $root_node->get_all_nodes();
-    return ($root_node,@{$descendants});
+    my ($descendents) = $root_node->get_all_nodes();
+    return ($root_node,@{$descendents});
 }
 
 =pod
@@ -123,13 +123,13 @@ sub get_all_nodes{
 =head2 get all descendents
 
  Title   : get_all_descendents()
- Usage   : my @descendants = $tree->get_all_descendents()
+ Usage   : my @descendents = $tree->get_all_descendents()
  Function: Get all descendents of the tree from the root by DFS algorithm
  Returns : Array of nodes
 
 =cut
 
-sub get_all_descendents{
+sub get_all_descendents {
     my ($self, $order, $type, $max_depth, $max_leaves) = @_;
 #     my $self = =shift;
 #     my $order=shift;
@@ -146,8 +146,8 @@ sub get_all_descendents{
 =head2 get node descendents
 
  Title   : get_node_descendents()
- Usage   : my @descendants = $tree->get_node_descendents($taxon, $order, $type, $max_depth, $max_leaves);
- Example : my @descendants = $tree->get_node_descendents("Gammaproteobacteria", "DFS", "all");
+ Usage   : my @descendents = $tree->get_node_descendents($taxon, $order, $type, $max_depth, $max_leaves);
+ Example : my @descendents = $tree->get_node_descendents("Gammaproteobacteria", "DFS", "all");
  Function: Get node descendents of the tree from the root by DFS algorithm
  Returns : Array of nodes
 
@@ -157,12 +157,16 @@ sub get_node_descendents{
   my ($self, $node_id, $order, $type, $max_depth, $max_leaves) = @_;
 #  &RSAT::message::Info("RSAT::Tree", $self, "Getting node descendents", $node_id, $order, $type) if ($main::verbose >= 10);
   if ($node_id){
-    my $node = $self->get_node_by_id($node_id);
-#    &RSAT::message::Debug("RSAT::Tree", $node_id, "node", $node) if ($main::verbose >= 10);
-    my (@descendents) = $node->get_all_descendents($order,$type,$max_depth,$max_leaves);
-    return ($node,@descendents);
-  }else{
-    &RSAT::error::FatalError("&RSAT::Tree::get_node_descendents() was called without specifying \$node_id");
+      my $node = $self->get_node_by_id($node_id);
+      if ($node) {
+	  &RSAT::message::Debug("RSAT::Tree", $node_id, "node", $node) if ($main::verbose >= 0);
+	  my (@descendents) = $node->get_all_descendents($order,$type,$max_depth,$max_leaves);
+	  return ($node,@descendents);
+      } else {
+	  &RSAT::message::Warning("&RSAT::Tree::get_node_descendents()", "No node with ID", $node_id) if ($main::verbose >= 2);
+      }
+  } else {
+      &RSAT::error::FatalError("&RSAT::Tree::get_node_descendents() was called without specifying \$node_id");
   }
 }
 
@@ -171,7 +175,7 @@ sub get_node_descendents{
 =head2 get node descendents names
 
  Title   : get_node_descendents()
- Usage   : my @descendants = $tree->get_node_descendents(@args)
+ Usage   : my @descendents = $tree->get_node_descendents(@args)
  Arguments: all arguments are passed to RSAT::Tree::get_node_descendents
  Function: Get node descendents of the tree from the root by DFS algorithm
  Returns : Array of nodes
@@ -189,8 +193,11 @@ sub get_node_descendents_names {
 #  my (@descendents) = $self->get_node_descendents($node_id,$order,$type,$max_depth,$max_leaves);
   my (@descendents) = $self->get_node_descendents(@args);
   my @node_names=();
-  foreach my $n (@descendents){
-    push @node_names, $n->getid();
+  foreach my $n (@descendents) {
+      if ($n) {
+	  my $id = $n->getid();
+	  push @node_names, $id;
+      }
   }
   return (@node_names);
 }
@@ -218,16 +225,17 @@ sub get_node_by_id {
   if ( ($rootnode->getid) && ($rootnode->getid eq $id) ) {
     return $rootnode;
   }
-  foreach my $node ($rootnode->get_all_descendents(undef,"all") ) { ## SB: The type was set to "node" but I changed it to all which seemes more logical to me!
-    
+
+  my @descendents = $rootnode->get_all_descendents(undef,"all");
+
+  foreach my $node (@descendents) { ## SB: The type was set to "node" but I changed it to all which seemes more logical to me!    
     my $current_id = $node->get_id();
     if ($current_id eq $id) {
-      
       return $node;
     }
 #    &RSAT::message::Debug("&RSAT::Tree::get_node_by_id()",$current_id, "differs from", $node_id) if ($main::verbose >= 10);
   }
-  &RSAT::message::Warning("&RSAT::Tree::get_node_by_id()", "no node with ID", $id);
+  &RSAT::message::Warning("&RSAT::Tree::get_node_by_id()", "no node with ID", $id) if ($main::verbose >= 2);
   return(undef);
 }
 
@@ -236,7 +244,7 @@ sub get_node_by_id {
 # =head2 get all descendents
 
 #  Title   : get_all_descendents()
-#  Usage   : my @descendants = $tree->get_all_descendents()
+#  Usage   : my @descendents = $tree->get_all_descendents()
 #  Function: Get all descendents of the tree from the root by DFS algorithm
 #  Returns : Array of nodes
 
@@ -258,7 +266,7 @@ sub get_node_by_id {
 # =head2 get node descendents
 
 #  Title   : get_node_descendents()
-#  Usage   : my @descendants = $tree->get_node_descendents("Gammaproteobacteria")
+#  Usage   : my @descendents = $tree->get_node_descendents("Gammaproteobacteria")
 #  Function: Get node descendents of the tree from the root by DFS algorithm
 #  Returns : Array of nodes
 
@@ -612,15 +620,18 @@ sub as_indented_text{
   }
   my $initlevel = $start_node->get_level();
 
-  foreach my $n ($start_node,$start_node->get_all_descendents("DFS",$node_type,$max_depth,undef)){
-    if (($n->is_leaf())&&($format =~ /^HTML/i)){
-      $output .= join(" ",$indent_string x ($n->get_level() - $initlevel),"<i>",$n->getid())."</i>\n";
-    }elsif($format =~ /^HTML/i){
-      $output .= "<b>".join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."</b>\n";
-    }else{
-      $output .= join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
-
-    }
+  my @descendents = $start_node->get_all_descendents("DFS",$node_type,$max_depth,undef);
+  if (scalar(@descendents) > 0) {
+      foreach my $n ($start_node, @descendents){
+	  if (($n->is_leaf())&&($format =~ /^HTML/i)){
+	      $output .= join(" ",$indent_string x ($n->get_level() - $initlevel),"<i>",$n->getid())."</i>\n";
+	  }elsif($format =~ /^HTML/i){
+	      $output .= "<b>".join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."</b>\n";
+	  }else{
+	      $output .= join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
+	      
+	  }
+      }
   }
   $output.= "</PRE></BODY></HTML>\n"  if ($format =~ /^HTML/i);
   return ($output);
@@ -661,10 +672,10 @@ sub as_newick  {
 
 sub create_newick {
   my ($self, $taxonid, $depth) = @_;
-  my ($what, @descendants) = $self->get_node_descendents($taxonid, "DFS", "all", 1, undef);
-  my $descendants_nb = scalar @descendants;
-  if ($descendants_nb > 0) {
-    foreach my $child (@descendants) {
+  my ($what, @descendents) = $self->get_node_descendents($taxonid, "DFS", "all", 1, undef);
+  my $descendents_nb = scalar @descendents;
+  if ($descendents_nb > 0) {
+    foreach my $child (@descendents) {
       my $childid = $child->getid;
       $parents{$childid} = $taxonid;
       &create_newick($self,$childid, 1);
@@ -704,7 +715,7 @@ sub create_newick {
 
 =cut
 
-sub as_indented_hash{
+sub as_indented_hash {
   my ($self, $indent_string, $start_node_id) = @_;
   unless (defined($indent_string)) {
     $indent_string = $default_indent_string;;
@@ -717,11 +728,14 @@ sub as_indented_hash{
       die("No node with this id in the tree : \"$start_node_id\" !");
   }
   my $initlevel = $start_node->get_level();
-  foreach my $n ($start_node,$start_node->get_all_descendents("DFS","node",undef,undef)){
-      if ($n->is_leaf()){
-	  die("This node must not be a leaf ! ".$n->getid());
-      }else{
-	  $taxa{$n->getid()} = join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
+  my @all_descendents = $start_node->get_all_descendents("DFS","node",undef,undef);
+  if (scalar(@all_descendents) > 0) {
+      foreach my $n ($start_node,@all_descendents) {
+	  if ($n->is_leaf()){
+	      die("This node must not be a leaf ! ".$n->getid());
+	  }else{
+	      $taxa{$n->getid()} = join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
+	  }
       }
   }
   return (%taxa);
