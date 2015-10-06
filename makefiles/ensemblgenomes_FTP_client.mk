@@ -1,6 +1,6 @@
 ################################################################
 ## This makefile contains some targets to download genome seqs and
-## annotations from ensemblgenome FTP site
+## annotations from ensemblgenome FTP site, parseand install them
 ## Jacques Van Helden, Bruno Contreras Moreira
 
 include ${RSAT}/makefiles/util.mk
@@ -23,7 +23,7 @@ DATABASE=${SERVERURL}/pub/${GROUP_LC}/release-${RELEASE}
 SERVERLIST=${DATABASE}/species_Ensembl${GROUP}.txt
 
 ORGANISMS_DIR=${RSAT}/data/ensemblgenomes/${GROUP_LC}/release-${RELEASE}
-ORGANISMS_LIST=${ORGANISMS_DIR}/organisms.tab
+ORGANISMS_LIST=${ORGANISMS_DIR}/species_Ensembl${GROUP}.txt
 SPECIES=chlamydomonas_reinhardtii
 SPECIES_DIR=${ORGANISMS_DIR}/${SPECIES}
 
@@ -33,7 +33,7 @@ organisms:
 	@echo
 	@mkdir -p ${ORGANISMS_DIR}
 	@echo "Getting list if organisms from ${DATABASE}"
-	@wget -cnv ${SERVERLIST} -O ${ORGANISMS_LIST} 
+	@wget -Ncnv ${SERVERLIST} -P ${ORGANISMS_DIR}
 	@echo
 	@echo "	${ORGANISMS_LIST}"
 
@@ -56,7 +56,7 @@ list_param:
 
 ################################################################
 ## Download all required files
-download_all: download_gtf download_fasta
+download_all: organisms download_gtf download_fasta
 
 ################################################################
 ## Download GTF files from ensemblgenomes
@@ -122,19 +122,22 @@ download_compara:
 FASTA_RAW_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_RAW_SUFFIX} | head -1`
 FASTA_MSK_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_MSK_SUFFIX} | head -1`
 FASTA_PEP_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_PEP_SUFFIX} | head -1`
+# Note that only the first gtf file is considered
 GTF_LOCAL=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
+TAXON_ID=$(shell grep ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
 PARSE_DIR=${SPECIES_DIR}
 PARSE_TASK="parse_gtf,parse_fasta"
-# Note that only the first file is considered
 parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_LOCAL}"
+	@echo "TaxonID = ${TAXON_ID}"
 	parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-fasta ${FASTA_RAW_LOCAL} \
 		-fasta_rm ${FASTA_MSK_LOCAL} \
 		-fasta_pep ${FASTA_PEP_LOCAL} \
 		-org_name ${SPECIES} \
 		-task ${PARSE_TASK} ${OPT} \
+		-taxid ${TAXON_ID} \
 		-o ${PARSE_DIR} 
 	@echo "	${PARSE_DIR}"
 #	@ls -1 ${PARSE_DIR}/*.tab
