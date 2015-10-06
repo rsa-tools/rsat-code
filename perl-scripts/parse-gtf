@@ -180,7 +180,9 @@ package main;
   our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
-  our $organism_name = "";
+  our $organism_name = ""; ## Organism name
+  our $taxid = ""; ## Taxonomic ID of the organism
+  our $taxonomy; ## Taxonomic description (required for some programs)
 
   our %infile = ();
   our %outfile = ();
@@ -692,6 +694,17 @@ Organism name for the installation on RSAT.
 =cut
     } elsif ($arg eq "-org_name") {
       $organism_name = shift(@arguments);
+
+=pod
+
+=item	B<-taxid taxonomic ID>
+
+If specified, the program will collect the corresponding taxonomy from
+EnsemblGenome REST server.
+
+=cut
+    } elsif ($arg eq "-taxid") {
+      $taxid = shift(@arguments);
 
 
 =pod
