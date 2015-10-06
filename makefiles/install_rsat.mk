@@ -166,6 +166,7 @@ PERL_MODULES= \
 	LWP::Simple \
 	REST::Client \
 	JSON \
+	HTTP::Tiny \
 	XML::LibXML \
 	XML::LibXML::Simple \
 	XML::Parser::Expat \
