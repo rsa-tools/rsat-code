@@ -24,7 +24,7 @@ SERVERLIST=${DATABASE}/species_Ensembl${GROUP}.txt
 
 ORGANISMS_DIR=${RSAT}/data/ensemblgenomes/${GROUP_LC}/release-${RELEASE}
 ORGANISMS_LIST=${ORGANISMS_DIR}/species_Ensembl${GROUP}.txt
-SPECIES=chlamydomonas_reinhardtii
+SPECIES=arabidopsis_thaliana
 SPECIES_DIR=${ORGANISMS_DIR}/${SPECIES}
 
 ###############################################################
@@ -48,11 +48,13 @@ list_param:
 	@echo "	FASTA_RAW_FTP_URL	${FASTA_RAW_FTP_URL}"
 	@echo "	FASTA_MSK_FTP_URL	${FASTA_MSK_FTP_URL}"
 	@echo "	FASTA_PEP_FTP_URL	${FASTA_PEP_FTP_URL}"
+	@echo "	SERVER_COMPARA_FILE		${SERVER_COMPARA_FILE}"
 	@echo "LOCAL_FILES"
 	@echo "	GTF_LOCAL		${GTF_LOCAL}"
 	@echo "	FASTA_RAW_LOCAL		${FASTA_RAW_LOCAL}"
 	@echo "	FASTA_MSK_LOCAL		${FASTA_MSK_LOCAL}"
 	@echo "	FASTA_PEP_LOCAL		${FASTA_PEP_LOCAL}"
+	@echo "	CMP_GZ		${CMP_GZ}"
 
 ################################################################
 ## Download all required files
@@ -131,7 +133,7 @@ parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_LOCAL}"
 	@echo "TaxonID = ${TAXON_ID}"
-	parse-gtf -v ${V} -i ${GTF_LOCAL} \
+	@parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-fasta ${FASTA_RAW_LOCAL} \
 		-fasta_rm ${FASTA_MSK_LOCAL} \
 		-fasta_pep ${FASTA_PEP_LOCAL} \
@@ -142,7 +144,8 @@ parse_gtf:
 	@echo "	${PARSE_DIR}"
 #	@ls -1 ${PARSE_DIR}/*.tab
 
-
+###############################################################
+## parse gtf and then install organism
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
@@ -157,7 +160,7 @@ parse_gtf_test:
 ## Install some pet genomes
 
 COLLECTION=
-INSTALL_TASKS=download_gtf download_fasta install_from_gtf
+INSTALL_TASKS=organisms download_gtf download_fasta install_from_gtf
 ## Arabidopsis thaliana (Plant)
 install_thaliana:
 	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana ${INSTALL_TASKS}
@@ -189,14 +192,14 @@ parse_compara:
 
 #################################################################
 ## Install Compara db
-PARSE_DIR=${RSAT}/public_html/data/genomes/
+COMP_INSTALL_DIR=${RSAT}/public_html/data/genomes/
 install_compara:
 	@echo
 	@echo "Installing Compara db ${BDB_FILE}"
 	@echo
-	@mv ${BDB_FILE} ${PARSE_DIR}
+	@mv ${BDB_FILE} ${CMP_INSTALL_DIR}
 	@echo
-	@ls -1 ${PARSE_DIR}/compara.bdb
+	@ls -1 ${CMP_INSTALL_DIR}/compara.bdb
 
 ##################################################################
 
