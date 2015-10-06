@@ -8,8 +8,16 @@ PYTHON=python2.7
 SCRIPT=${RSAT}/python-scripts/go_analysis.py
 
 
-ORG=mycoplasma_genitalium_g37
-ORGANISMS=
+#ORG=mycoplasma_genitalium_g37
+ORG=pseudomonas_aeruginosa_pao1_ve13
+ORGANISMS=escherichia_coli_str_k_12_substr_mg1655 \
+	mycoplasma_genitalium_g37 \
+	pseudomonas_aeruginosa_pao1_ve13 \
+	bacillus_subtilis_subsp_subtilis_str_168 \
+	saccharomyces_cerevisiae \
+	drosophila_melanogaster \
+	caenorhabditis_elegans \
+	arabidopsis_thaliana
 
 ################################################################
 ## Help messages
@@ -65,7 +73,7 @@ parse_go:
 ## Parse the content of the obo-formatted file
 get_annotations:
 	@echo
-	@echo "Getting gene annotations from Ensembl REST Web services"
+	@echo "Getting gene annotations fpr ${ORG}"
 	${PYTHON} ${SCRIPT} get_annotations -org ${ORG}
 
 ## Expand GO annotations, i.e. the gene-GO associations are
@@ -81,6 +89,15 @@ expand_org:
 	@echo "Expading gene annotations for organism ${ORG}"
 	${PYTHON} ${SCRIPT} expand -org ${ORG}
 
+ANNOT_DIR=${RSAT}/data/genomes/${ORG}/go_annotations
+install_annot:
+	@echo
+	@echo "ANNOT_DIR	${ANNOT_DIR}"
+	@mkdir -p ${ANNOT_DIR}
+	${MAKE} OPT=--output_dir ${ANNOT_DIR} get_annotations expand_annot
+
+################################################################
+## Collect info from cross-reference files (obsolete method)
 ORG_DIR=results/ensembl_genomes/${ORG}
 gene2go_one_species:
 	@echo "Collecting gene-GO relationships for organism	${ORG}"
@@ -90,4 +107,15 @@ gene2go_one_species:
 	@echo "Expanding GO annotations to ancestor classes for	${ORG}"
 	@${PYTHON} ${SCRIPT} ancestor -i ${ORG_DIR}/gene2GO.tab -g ${GO_DIR}/gene_ontology_ext.obo -o ${ORG_DIR}/gene2GO_full.tab
 	@echo "	${ORG_DIR}/gene2GO_full.tab"
+
+################################################################
+## Iterate task over all selected organisms
+ORG_TASK=get_annotations expand_annot
+all_organisms:
+	@echo
+	@echo "Iterating task over selected organisms"
+	@echo "	${ORGANISMS}" 
+	@for org in ${ORGANISMS}; do \
+		${MAKE} ORG=$${org} ${ORG_TASK}; \
+	done
 
