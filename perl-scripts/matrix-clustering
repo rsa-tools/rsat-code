@@ -299,6 +299,7 @@ package main;
   local @supported_tasks = qw(
 			all
 		        cluster
+                        report
                      );
   local @task = qw (all);
   local $supported_tasks = join ",", @supported_tasks;
@@ -509,88 +510,93 @@ package main;
 	  ################################################################
 	  ## Cluster the matrices
 	  &Hclustering();
-
-	  ################################################################
-	  ## Separate the input motif file into separated files (one file for each cluster)
-	  ## with the motifs in TRANSFAC format
-	  &Clustered_PSSMS_TRANSFAC_format();
-
-	  ################################################################
-	  ## Read the motif to cluster assignation, which will be required for
-	  ## several functions below.
-	  &ReadClusterComposition();
-
-	  ################################################################
-	  ## Create the logos with the empty columns, which will be 
-	  ## displayed in the dynamic tree.
-	  ## Produce the TRANSFAC files with the aligned motifs in both
-	  ## orientations. 
-	  &Add_gaps_to_motifs();
-
-	  ################################################################
-	  ## Create the merged matrices and consensuses
-	  &Merge_matrices();
-
-	  ################################################################
-	  ## Produce all the logos 
-	  ## Aligned + Branch-wise motifs
-	  &Produce_logos();
-	  
-	  if ($root_matrices_flag == 1) {
-	      	      
-	      ## Some files and directories that must be deleted
-	      $to_delete_folder{'clusters_information'} = $main::outfile{prefix}."_clusters_information";
-	      $to_delete_folder{'html'} = $main::outfile{prefix}."_html";
-	      $to_delete_folder{'tables'} = $main::outfile{prefix}."_tables";
-	      $to_delete_folder{'aligned_logos'} = $main::outfile{prefix}."_aligned_logos";
-	      $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
-	      
-	  } else {
-	      
-	      ################################################################
-	      ## Read the table with the hexadecimal code 
-	      ## for the colors assigned to each cluster
-	      %hexa_code = &Read_cluster_colors();
-	      
-	      ################################################################
-	      ## Parse the JSON file
-	      &Add_attributes_to_JSON();
-	      
-	      ################################################################
-	      ## Creates the body of html to display
-	      ## each cluster separately
-	      &Create_dynamic_tree();
-	      
-	      ################################################################
-	      ## Convert tab files to HTML files
-	      &ConvertTabToHTML(@tab_to_convert);
-	  }
-	  
-	  if ($root_matrices_flag == 0) {
-	      
-	      ################################################################
-	      ## Creates the website
-	      &Synthesis();
-	      
-	      ################################################################
-	      ## Create an archive with all result files
-	      &Archive(1);
-	  } 
       }
+  }
+
+  if ($selected_tasks{all} || $selected_tasks{cluster} || $selected_tasks{report}) {
+
+      ################################################################
+      ## Separate the input motif file into separated files (one file for each cluster)
+      ## with the motifs in TRANSFAC format
+      &Clustered_PSSMS_TRANSFAC_format();
+      
+      ################################################################
+      ## Read the motif to cluster assignation, which will be required for
+      ## several functions below.
+      &ReadClusterComposition();
+      
+      ################################################################
+      ## Create the logos with the empty columns, which will be 
+      ## displayed in the dynamic tree.
+      ## Produce the TRANSFAC files with the aligned motifs in both
+      ## orientations. 
+      &Add_gaps_to_motifs();
+      
+      ################################################################
+      ## Create the merged matrices and consensuses
+      &Merge_matrices();
+      
+      ################################################################
+      ## Produce all the logos 
+      ## Aligned + Branch-wise motifs
+      &Produce_logos();
+      
+      if ($root_matrices_flag == 1) {
+	  
+	  ## Some files and directories that must be deleted
+	  $to_delete_folder{'clusters_information'} = $main::outfile{prefix}."_clusters_information";
+	  $to_delete_folder{'html'} = $main::outfile{prefix}."_html";
+	  $to_delete_folder{'tables'} = $main::outfile{prefix}."_tables";
+	  $to_delete_folder{'aligned_logos'} = $main::outfile{prefix}."_aligned_logos";
+	  $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
+	  
+      } else {
+	  
+	  ################################################################
+	  ## Read the table with the hexadecimal code 
+	  ## for the colors assigned to each cluster
+	  %hexa_code = &Read_cluster_colors();
+	  
+	  ################################################################
+	  ## Parse the JSON file
+	  &Add_attributes_to_JSON();
+	  
+	  ################################################################
+	  ## Creates the body of html to display
+	  ## each cluster separately
+	  &Create_dynamic_tree();
+	  
+	  ################################################################
+	  ## Convert tab files to HTML files
+	  &ConvertTabToHTML(@tab_to_convert);
+      }
+  }
+	  
+  if ($root_matrices_flag == 0) {
+	      
+      ################################################################
+      ## Creates the website
+      &Synthesis();
+      
+      ################################################################
+      ## Create an archive with all result files
+      &Archive(1);
+      
       
       #######################################
       ## Delete temporal files and folders
       &Delete_temporal_files();
-    }  
-      ################################################################
-      ## Print verbose
-      &Verbose() if ($main::verbose >= 1);
+  }  
 
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+  
   ################################################################
   ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); print $main::out $exec_time if ($main::verbose >= 1);
   close $main::out if ($main::outfile{prefix});
-
+  
   exit(0);
 }
 
@@ -826,10 +832,10 @@ be displayed.
 Specify one or several tasks to be run. If this option is not
 specified, all the tasks are run.
 
-Note that some tasks depend on other ones. This option should thus be
-used with caution, by experimented users only.
+Note that some tasks depend on others. This option should thus be
+used with caution, by advanced users only.
 
-Supported tasks: (all, comparison, clustering)
+Supported tasks: (all, comparison, clustering, report)
 
 =over
 
@@ -1419,6 +1425,8 @@ sub set_output_file_names {
   $main::outfile{heatmap_pdf} = $main::outfile{prefix}."_figures/heatmap.pdf";
 
   $main::outfile{all_concatenated_motifs} = $main::outfile{prefix}."_aligned_logos/All_concatenated_motifs.tf";
+  &OpenOutputFile($main::outfile{all_concatenated_motifs});
+  
 
   ## Newick-formatted phylogram with motif consensuses
   if ($export_newick == 1) {
@@ -2015,9 +2023,9 @@ sub Add_gaps_to_motifs() {
 	    if($root_matrices_flag == 0){ 
 		## Compute the logos (both orientations)
 
-		$concat_motif_files .= $aligned_motif." ";
-		# &Produce_logo($aligned_motif, $main::outfile{prefix}."_aligned_logos/aligned_logos");
-		
+		my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
+		&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);		
+
 		## Convert the aligned matrix to reverse complement 
 		$aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
 		&Rev_Comp_Motif($file_name, $aligned_motif_rc);
@@ -2032,13 +2040,16 @@ sub Add_gaps_to_motifs() {
 	    ## Add the empty columns + Produce Transfac File
 	    $aligned_motif = $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf";
 	    &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf");
-	    $concat_motif_files .= $aligned_motif." ";
+
+	    my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
+	    &doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
 	    ## The Logos + RC are not computed when only the root motifs are required
 	    if($root_matrices_flag == 0){ 
+
 		## Compute the logos (both orientations)
-		$concat_motif_files .= $aligned_motif." ";
-#		&Produce_logo($aligned_motif, $main::outfile{prefix}."_aligned_logos/aligned_logos");
+		my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
+		&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 		
 		## Convert the aligned matrix to reverse complement 
 		$aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
@@ -2295,7 +2306,7 @@ sub create_html_tree_file() {
     ## Values to change in the D3 tree
     my $svg_width = 25;
     my $svg_height = 80;
-    my $svg_x1 = 16 * $nb_char + 8;
+    my $svg_x1 = 15 * $nb_char + 7;
     my $svg_y1 = -33;
     my $svg_x2 = '25 + '.$svg_x1.' + 25';;
     my $add_this = "";
@@ -2399,7 +2410,7 @@ $(document).ready(function() {
 
 	### Set the tree size
 	if (/--size--/) {;
-	    $_ =~ s/--size--/770/;
+	    $_ =~ s/--size--/600/;
 	}
 
 	### Add the JSON file name
@@ -2606,7 +2617,7 @@ sub Merge_matrices() {
 		    push(@level_motifs, $motif_id);
 		}
 		close $int_align_dataframe;
-		unlink($main::outfile{int_align_offset});
+		#unlink($main::outfile{int_align_offset});
 
 		## Count the number of motif of each collection
 		%collection_count = %motif_collection_count;
@@ -2689,6 +2700,8 @@ sub Merge_matrices() {
 
 		## Create branch-wise logos
 		$concat_motif_files .= $merged_mat_file_trimmed." ";
+	    my $c = "cat ".$merged_mat_file_trimmed." >> ".$main::outfile{all_concatenated_motifs};
+		&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
 		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_aligned_logos/".$motif_name."_logo.png";
 		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_aligned_logos/".$motif_name."_logo_rc.png";
@@ -2743,6 +2756,8 @@ sub Merge_matrices() {
 	    unlink($new_singleton_motif_file_temp);
 
 	    $concat_motif_files .= $new_singleton_motif_file." ";
+	    my $c = "cat ".$new_singleton_motif_file." >> ".$main::outfile{all_concatenated_motifs};
+	    &doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
 	    ## Add the info to the Root Motifs Features hash
 	    $root_motifs_features{$cluster}{logo} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo};
@@ -3100,7 +3115,7 @@ var childCount = function(level, n) {
   }
 };
 childCount(0, root);  
-var newHeight = d3.max(levelWidth) * 350; // 20 pixels per line  
+var newHeight = d3.max(levelWidth) * 300; // 20 pixels per line  // 250 ----------> This number must be calculated 
 cluster= cluster.size([newHeight, --size--]);
 
 // Re-draw the tree
@@ -3476,7 +3491,7 @@ sub Read_cluster_colors{
     $hexa_hash{$cl} = $hexa;
   }
   close(HEXA);
-  unlink($main::outfile{hexa_colors});
+  #unlink($main::outfile{hexa_colors}); -----------
 
   return(%hexa_hash);
 }
@@ -5091,9 +5106,6 @@ sub Add_Empty_Col() {
 sub Produce_logos() {
 
     &RSAT::message::TimeWarn("Generating Logos") if ($main::verbose >= 2);
-
-    my $concat_files_cmd = "cat ".$concat_motif_files." > ".$main::outfile{all_concatenated_motifs};
-    &doit($concat_files_cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
     ## Add the empty columns
     my $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{all_concatenated_motifs};
