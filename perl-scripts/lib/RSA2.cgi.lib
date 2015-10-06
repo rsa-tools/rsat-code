@@ -888,6 +888,11 @@ sub TaxonPopUpString {
   $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
 
   my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
+
+  if (scalar(@taxa) == 0) {
+    return ("");
+#    return ("No available taxonomic information.");
+  }
   push @taxa, $tree->get_node_descendents_names("Fungi",undef,$node_type);
   @taxa = sort @taxa;
 
@@ -2280,16 +2285,19 @@ sub PrintGenomeSubsetBgOptions {
   #### Calibrated on genome subsets
   print( "<br><input type='radio' NAME='bg_method' VALUE='background' $checked{background}>");
   print ("<b>Genome subset</b>");
-#  print "<ul>";
 
   print ( "&nbsp;&nbsp;<a href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;",$query->popup_menu(-name=>'background',-Values=>["upstream","upstream-noorf","protein"],-default=>$default{background}));
 
 
   print ("<ul>");
   print( "<input type='radio' NAME='bg_level' VALUE='organism' $checked{organism}>", &OrganismPopUpString());
-  print( "<br><input type='radio' NAME='bg_level' VALUE='taxon' $checked{taxon}>", &TaxonPopUpString("node"));
+
+  
+  my $taxon_popup = &TaxonPopUpString("node");
+  if ($taxon_popup) {
+    print( "<br><input type='radio' NAME='bg_level' VALUE='taxon' $checked{taxon}>", $taxon_popup);
+  }
   print ("</ul>");
-#  print "</ul>";
 
 
   print "<p>";
