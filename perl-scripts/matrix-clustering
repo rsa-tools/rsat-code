@@ -1413,6 +1413,11 @@ sub set_output_file_names {
   ## Table with the summary of clusters
   $main::outfile{cluster_summary_table} = $main::outfile{prefix}."_tables/clusters_summary_table.tab";
 
+  ## Table with summary of clusters parsed.
+  ## This is the format required for D3 heatmap!
+  $mainoutfile{heatmap_collections_d3} = $main::outfile{prefix}."_tables/collection_heatmap_tab.tsv";
+    $mainoutfile{heatmap_collections_attributes} = $main::outfile{prefix}."_tables/collection_heatmap_order.tab";
+
   ## Output files for the hierarchical clustering trees
   $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
   $main::outfile{alignment_table} = $main::outfile{prefix}."_tables/alignment_table.tab"; push @outfiles, "alignment_table"; &AddTabToConvert("alignment_table");
@@ -1421,6 +1426,7 @@ sub set_output_file_names {
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
+  $main::outfile{dynamic_heatmap_html} = $main::outfile{prefix}."_dynamic_heatmap.html"; push @outfiles, "dynamic_heatmap_html";
   $main::outfile{heatmap_jpg} = $main::outfile{prefix}."_figures/heatmap.jpg";
   $main::outfile{heatmap_pdf} = $main::outfile{prefix}."_figures/heatmap.pdf";
 
@@ -4088,7 +4094,13 @@ sub ClustersSummaryTable{
   <!-- Div with the table of selected parameters-->
   <div id="Clus_tab_button" class="button_click Section_button"><strong>Clusters Summary</strong></div>
   <div id="Clus_tab" class="tab" style="margin-bottom:15px;display:none;width:auto;">
-    <h2 style="margin-top: 0px;margin-bottom: 5px;">Clusters Summary Table</h2>
+    <h2 style="margin-top: 0px;margin-bottom: 5px;">Clusters Summary Table</h2> '."\n";
+
+    if($single_input_flag == 0){
+	$clust_table .= "\n".' <h3 style="margin-top: 0px;margin-bottom: 5px;"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'">Contribution of each collecion to the clusters</a></h3> ';
+    }
+
+$clust_table .= "\n".'
     <table id="cluster_summary_table" style="width:auto;">
       <thead>
 	<tr>
@@ -4149,9 +4161,111 @@ sub ClustersSummaryTable{
   $clust_table =~ s/--clus_tab--/$row_cluster_tab/g;
 
   print $syn $clust_table;
+
+    close $clust_table;
 }
 
 
+################################################################
+## Create the dynamic geatmap showing the complementarity
+## between the input motifs. This function is run only when
+## two or more Motif collections are clusteres
+sub Dynamic_Heatmap_Complementarity {
+
+    my %attributes_heatmap = ();
+
+    ## Create the attributes table
+    &Create_Attributes_for_Heatmap_D3();
+
+    ## Read attributes table
+    my ($attributes_handle) = &RSAT::util::OpenInputFile($mainoutfile{heatmap_collections_attributes});
+    while (<$attributes_handle>) {
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines
+	chomp;
+	my $line = $_;
+	my @split_line = split("\t", $line);
+	my $att_name = $split_line[0];
+	my $att_content = $split_line[1];
+	$attributes_heatmap{$att_name} = $att_content;
+    }
+    my $tsv_file = &RSAT::util::RelativePath($main::outfile{summary}, $mainoutfile{heatmap_collections_d3});
+
+    ## Create a copy of the D3 heatmap template
+    my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/dynamic_heatmap_d3.html ".$main::outfile{dynamic_heatmap_html};
+    &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+    ## Read the D3 heatmap file and change the attributes
+    open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
+    my ($dyn_heatmap) = &RSAT::util::OpenInputFile($main::outfile{dynamic_heatmap_html});
+    while (<$dyn_heatmap>) {
+	chomp;
+	my $line = $_;
+
+	$line =~ s/--d3--/$d3_base/;
+	$line =~ s/--left--/$attributes_heatmap{Left_space}/;
+	$line =~ s/--bottom--/$attributes_heatmap{Bottom_space}/;
+	$line =~ s/--file--/$tsv_file/;
+	$line =~ s/--cell_size--/$attributes_heatmap{Cell_size}/;
+	$line =~ s/--c_numb--/$attributes_heatmap{Col_number}/;
+	$line =~ s/--r_numb--/$attributes_heatmap{Row_number}/;
+	$line =~ s/--gradient--/$attributes_heatmap{Gradient}/;
+	$line =~ s/--cluster_number--/$attributes_heatmap{Cluster_number}/;
+	$line =~ s/--average_number--/$attributes_heatmap{Average_number}/;
+	$line =~ s/--complete_number--/$attributes_heatmap{Complete_number}/;
+	$line =~ s/--single_number--/$attributes_heatmap{Single_number}/;
+	$line =~ s/--row_order_default--/$attributes_heatmap{Row_order_default}/;
+	$line =~ s/--label_order--/$attributes_heatmap{Cluster_names}/;
+	$line =~ s/--collections--/$attributes_heatmap{Collections}/;
+	$line =~ s/--domain--/$attributes_heatmap{Domain}/;
+	$line =~ s/--data_legend--/$attributes_heatmap{Legend}/;
+	$line =~ s/--legend_header--/$attributes_heatmap{Legend_Head}/;
+
+	print TEMP $line."\n";
+    }
+
+    ## Rename the temporary file
+    &RSAT::message::TimeWarn("Exporting Dynamic Heatmap") if ($main::verbose >= 2);
+    unlink($main::outfile{dynamic_heatmap_html});
+    $cmd = "mv ".$main::outfile{temp_html}." ".$main::outfile{dynamic_heatmap_html};
+    &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+}
+
+################################################################
+## Create the attributes (values+ colors + size) that will be 
+## inserted in the D3 Heatmap
+sub Create_Attributes_for_Heatmap_D3 {   
+
+    &RSAT::message::TimeWarn("Preparing Dynamic Heatmap") if ($main::verbose >= 2);
+
+    ##################################
+    ### Identify the path of the R executable
+    my $r_path = &RSAT::server::GetProgramPath("R");
+
+    my $cluster_collection_script  = $ENV{RSAT}."/R-scripts/heatmap_clusters_by_collection.r";
+    &RSAT::error::FatalError("Cannot read cluster collection script", $cluster_collection_script) unless (-r $cluster_collection_script);
+    $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
+    
+    ## Basic parameters
+    my $cluster_collection_cmd = "";
+    $cluster_collection_cmd .= " cat ".$cluster_collection_script;
+    $cluster_collection_cmd .= " | ".$r_path;
+    $cluster_collection_cmd .= " --slave --no-save --no-restore --no-environ";
+    $cluster_collection_cmd .= " --args \"";
+    $cluster_collection_cmd .= " cluster.counts.file = '".$main::outfile{cluster_summary_table}."'";
+    $cluster_collection_cmd .= "; heatmap.table.d3 = '".$mainoutfile{heatmap_collections_d3}."'";
+    $cluster_collection_cmd .= "; attributes.list.file = '".$mainoutfile{heatmap_collections_attributes}."'";
+    $cluster_collection_cmd .= "; \"";
+#    $cluster_collection_cmd = "(".$cluster_collection_cmd.") 2> ".$main::outfile{Rlog};
+
+    if ($r_path) {
+        &doit($cluster_collection_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    } else {
+        &RSAT::message::Warning("Could not run collection clustering because the program R is not available") if ($main::verbose >= 1);
+    }
+    return();
+}
 
 
 #######################################################################
@@ -4927,15 +5041,26 @@ sub InsertListOfFiles {
                      ';
       }
 
-      ## If it is specified, add the tree of aligned consensuses
-      if ($align_consensus == 1 && $number_of_motifs > 1) {
-	$add_files .= 
-		  '<tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_figures/tree_of_consensus.pdf').'"><strong>Tree of consensus</strong></a></td>
-		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
+      ## If there are two or more collection of motifs
+      if ($single_input_flag == 0) {
+	  $add_files .= 
+	      '
+		   <tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'"><strong>Collections Complementarity</strong></a></td>
+		      <td class="tab_spacer_2">A dynamic heatmap showing how many motifs contribute each collection to each cluster..</td>
 		   </tr>
-                ';
+             ';
       }
+
+      # ## If it is specified, add the tree of aligned consensuses
+      # if ($align_consensus == 1 && $number_of_motifs > 1) {
+      # 	$add_files .= 
+      # 		  '<tr>
+      # 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_figures/tree_of_consensus.pdf').'"><strong>Tree of consensus</strong></a></td>
+      # 		      <td class="tab_spacer_2">A PDF file showing the alignment of the consensus. Each cluster is represented with a different color.</td>
+      # 		   </tr>
+      #           ';
+      # }
 
 
       ## If it is specified, add the file with the input motifs
@@ -4992,6 +5117,12 @@ sub Synthesis {
     &ParametersTable();
 
     &ClustersSummaryTable();
+
+    ## The heatmap will be created only when two or more collections of
+    ## motifs are provided to matrix-clustering
+    if($single_input_flag == 0){
+	&Dynamic_Heatmap_Complementarity();
+    }
 
     &InsertSmallForest();
 
