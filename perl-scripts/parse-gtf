@@ -23,7 +23,7 @@ Parse  GTF
 
 =head1 AUTHORS
 
-Jacques.van-Helden\@univ-amu.fr & Bruno Contreras
+Jacques.van-Helden\@univ-amu.fr & Bruno Contreras-Moreira
 
 =head1 CATEGORY
 
@@ -86,6 +86,9 @@ BEGIN {
   }
 }
 require "RSA.lib";
+
+use HTTP::Tiny;
+use JSON;
 
 @gtf_fields = qw( 
   seqname 
@@ -180,7 +183,9 @@ package main;
   our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
-  our $organism_name = "";
+  our $organism_name = ""; ## Organism name
+  our $taxid = ""; ## Taxonomic ID of the organism
+  our $taxonomy; ## Taxonomic description (required for some programs)
 
   our %infile = ();
   our %outfile = ();
@@ -285,6 +290,43 @@ package main;
     $organism{source} = "ensemblgenomes";
     $organism{taxonomy} = $null;
 
+    # try to get taxonomy from eg REST interface
+    if(defined($taxid))
+    {
+        my ($taxonomy,$sp_name) = ('','');
+        my $server = 'http://rest.ensemblgenomes.org'; # should be in %ENV
+        my $ext = '/taxonomy/classification/'.$taxid.'?';
+        my $http = HTTP::Tiny->new();
+        my $response = $http->get($server.$ext,{ headers => { 'Content-type' => 'application/json' } });
+        
+        RSAT::message::Warning("failed connecting to $server$ext") unless $response->{success};
+
+        if(length ($response->{content}))
+        {
+            my $json = decode_json($response->{content});
+            
+            # check whether first taxon is actually a species name
+            my $last_taxon = $json->[0];
+            if($last_taxon->{'children'}){
+                my $last_children = $last_taxon->{'children'}->[0];
+                if($last_children->{'scientific_name'} && 
+                    $last_children->{'scientific_name'} =~ m/^[A-Z]\w+ \w+/){
+                    $sp_name = $last_children->{'scientific_name'};
+                }
+            }
+
+            # print taxonomy in reverse order
+            foreach my $taxon (reverse(@$json)){
+                $taxonomy .= $taxon->{'scientific_name'}.';';
+            }
+            $taxonomy .= $sp_name;
+
+            $organism{taxonomy} = $taxonomy;
+            
+            RSAT::message::TimeWarn("REST taxonomy:", $taxonomy) if ($main::verbose >= 2);
+        }
+    }
+
     my @organism_fields = ();
     foreach my $field (@{$out_fields{organism}}) {
       push @organism_fields, $organism{$field};
@@ -292,7 +334,7 @@ package main;
     my $handle = $handle{"organism"};
     print $handle join("\t", @organism_fields), "\n";
 
-#    die "HELLO\t", $outfile{"organism"};
+    #die "HELLO\t", $outfile{"organism"};
     
 
     ################################################################
@@ -692,6 +734,17 @@ Organism name for the installation on RSAT.
 =cut
     } elsif ($arg eq "-org_name") {
       $organism_name = shift(@arguments);
+
+=pod
+
+=item	B<-taxid taxonomic ID>
+
+If specified, the program will collect the corresponding taxonomy from
+EnsemblGenome REST server.
+
+=cut
+    } elsif ($arg eq "-taxid") {
+      $taxid = shift(@arguments);
 
 
 =pod

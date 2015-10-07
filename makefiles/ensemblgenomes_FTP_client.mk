@@ -1,6 +1,6 @@
 ################################################################
 ## This makefile contains some targets to download genome seqs and
-## annotations from ensemblgenome FTP site
+## annotations from ensemblgenome FTP site, parseand install them
 ## Jacques Van Helden, Bruno Contreras Moreira
 
 include ${RSAT}/makefiles/util.mk
@@ -23,8 +23,8 @@ DATABASE=${SERVERURL}/pub/${GROUP_LC}/release-${RELEASE}
 SERVERLIST=${DATABASE}/species_Ensembl${GROUP}.txt
 
 ORGANISMS_DIR=${RSAT}/data/ensemblgenomes/${GROUP_LC}/release-${RELEASE}
-ORGANISMS_LIST=${ORGANISMS_DIR}/organisms.tab
-SPECIES=chlamydomonas_reinhardtii
+ORGANISMS_LIST=${ORGANISMS_DIR}/species_Ensembl${GROUP}.txt
+SPECIES=arabidopsis_thaliana
 SPECIES_DIR=${ORGANISMS_DIR}/${SPECIES}
 
 ###############################################################
@@ -33,7 +33,7 @@ organisms:
 	@echo
 	@mkdir -p ${ORGANISMS_DIR}
 	@echo "Getting list if organisms from ${DATABASE}"
-	@wget -cnv ${SERVERLIST} -O ${ORGANISMS_LIST} 
+	@wget -Ncnv ${SERVERLIST} -P ${ORGANISMS_DIR}
 	@echo
 	@echo "	${ORGANISMS_LIST}"
 
@@ -48,15 +48,17 @@ list_param:
 	@echo "	FASTA_RAW_FTP_URL	${FASTA_RAW_FTP_URL}"
 	@echo "	FASTA_MSK_FTP_URL	${FASTA_MSK_FTP_URL}"
 	@echo "	FASTA_PEP_FTP_URL	${FASTA_PEP_FTP_URL}"
+	@echo "	SERVER_COMPARA_FILE		${SERVER_COMPARA_FILE}"
 	@echo "LOCAL_FILES"
 	@echo "	GTF_LOCAL		${GTF_LOCAL}"
 	@echo "	FASTA_RAW_LOCAL		${FASTA_RAW_LOCAL}"
 	@echo "	FASTA_MSK_LOCAL		${FASTA_MSK_LOCAL}"
 	@echo "	FASTA_PEP_LOCAL		${FASTA_PEP_LOCAL}"
+	@echo "	CMP_GZ		${CMP_GZ}"
 
 ################################################################
 ## Download all required files
-download_all: download_gtf download_fasta
+download_all: organisms download_gtf download_fasta
 
 ################################################################
 ## Download GTF files from ensemblgenomes
@@ -122,24 +124,28 @@ download_compara:
 FASTA_RAW_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_RAW_SUFFIX} | head -1`
 FASTA_MSK_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_MSK_SUFFIX} | head -1`
 FASTA_PEP_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_PEP_SUFFIX} | head -1`
+# Note that only the first gtf file is considered
 GTF_LOCAL=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
+TAXON_ID=$(shell grep ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
 PARSE_DIR=${SPECIES_DIR}
 PARSE_TASK="parse_gtf,parse_fasta"
-# Note that only the first file is considered
 parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_LOCAL}"
-	parse-gtf -v ${V} -i ${GTF_LOCAL} \
+	@echo "TaxonID = ${TAXON_ID}"
+	@parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-fasta ${FASTA_RAW_LOCAL} \
 		-fasta_rm ${FASTA_MSK_LOCAL} \
 		-fasta_pep ${FASTA_PEP_LOCAL} \
 		-org_name ${SPECIES} \
 		-task ${PARSE_TASK} ${OPT} \
+		-taxid ${TAXON_ID} \
 		-o ${PARSE_DIR} 
 	@echo "	${PARSE_DIR}"
 #	@ls -1 ${PARSE_DIR}/*.tab
 
-
+###############################################################
+## parse gtf and then install organism
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
@@ -149,13 +155,29 @@ install_from_gtf:
 parse_gtf_test:
 	retrieve-seq -org ${SPECIES} -from 0 -to 3 -feattype gene | oligo-analysis -v 1 -l 3 -return occ,freq -sort 
 
+
+################################################################
+## Install some pet genomes
+
+COLLECTION=
+INSTALL_TASKS=organisms download_gtf download_fasta install_from_gtf
+## Arabidopsis thaliana (Plant)
+install_thaliana:
+	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana ${INSTALL_TASKS}
+
+## Saccharomyces cerevisiae (Fungus)
 install_yeast:
-	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae download_gtf download_fasta install_from_gtf
+	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae ${INSTALL_TASKS}
 
+## Note: for bacteria we need to define a collection
 
-COLLECTION=bacteria_44_collection
+## Escherichia coli (Bacteria)
+install_ecoli:
+	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655 ${INSTALL_TASKS}
+
+## Pseudomonas aeruginosa (Bacteria)
 install_pao1:
-	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 download_gtf download_fasta install_from_gtf
+	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 COLLECTION=bacteria_44_collection ${INSTALL_TASKS}
 
 ##################################################################
 ## Parse Compara.homologies 
@@ -170,14 +192,14 @@ parse_compara:
 
 #################################################################
 ## Install Compara db
-PARSE_DIR=${RSAT}/public_html/data/genomes/
+COMP_INSTALL_DIR=${RSAT}/public_html/data/genomes/
 install_compara:
 	@echo
 	@echo "Installing Compara db ${BDB_FILE}"
 	@echo
-	@mv ${BDB_FILE} ${PARSE_DIR}
+	@mv ${BDB_FILE} ${CMP_INSTALL_DIR}
 	@echo
-	@ls -1 ${PARSE_DIR}/compara.bdb
+	@ls -1 ${CMP_INSTALL_DIR}/compara.bdb
 
 ##################################################################
 
