@@ -26,6 +26,7 @@ ORGANISMS_DIR=${RSAT}/data/ensemblgenomes/${GROUP_LC}/release-${RELEASE}
 ORGANISMS_LIST=${ORGANISMS_DIR}/species_Ensembl${GROUP}.txt
 SPECIES=arabidopsis_thaliana
 SPECIES_DIR=${ORGANISMS_DIR}/${SPECIES}
+SPECIES_UCFIRST=$(shell perl -e 'print ucfirst ${SPECIES}')
 
 ###############################################################
 ## Get all supported organisms in an eg release and store them in a file
@@ -41,7 +42,7 @@ list_param:
 	@echo
 	@echo "Parameters"
 	@echo "	GROUP   ${GROUP} (${GROUP_LC})"
-	@echo "	SPECIES	${SPECIES}"
+	@echo "	SPECIES	${SPECIES} (${SPECIES_UCFIRST})"
 	@echo "	RELEASE ${RELEASE}"
 	@echo "Files to download"
 	@echo "	GTF_FTP_URL		${GTF_FTP_URL}"
@@ -118,16 +119,12 @@ download_fasta:
 	@ls -1 ${SPECIES_DIR}/*.fa.gz
 
 ################################################################
-## Download sequences of some eg genomic features to be used as control
-## of RSAT scripts that slice sequences based on coordinates
-#SERVER_CDS_FILE=${DATABASE}/fasta/${SPECIES}/cds/*${RELEASE}.cds.all.fa.gz
-#download_feature_sequences:
-#	@echo
-#	@mkdir -p ${SPECIES_DIR}
-#	@echo "Downloading FASTA feature files of ${SPECIES}"
-#	@wget -Ncnv ${SERVER_CDS_FILE} -P ${SPECIES_DIR}
-#	@echo
-#	@ls -1 ${SPECIES_DIR}/*.cds.all.fa.gz
+## Download a sample of eg upstream sequences to check installed sequences
+check_sequences:
+	@echo
+	@mkdir -p ${SPECIES_DIR}
+	@check-retrieve-seq-rest -v ${V} \
+        -org ${SPECIES} \
 
 #################################################################
 ## Download group COMPARA files from eg
@@ -171,6 +168,7 @@ install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
 	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES}/genome PARSE_TASK="all"
+	@${MAKE} check_sequences 
 
 ## Run some test for the GTF parsing result
 parse_gtf_test:
