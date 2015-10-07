@@ -147,7 +147,7 @@ FASTA_MSK_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_MSK_SUFFIX} | head -1`
 FASTA_PEP_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_PEP_SUFFIX} | head -1`
 # Note that only the first gtf file is considered
 GTF_LOCAL=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
-TAXON_ID=$(shell grep ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
+TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
 PARSE_DIR=${SPECIES_DIR}
 PARSE_TASK="parse_gtf,parse_fasta"
 parse_gtf:
@@ -194,11 +194,13 @@ install_yeast:
 
 ## Escherichia coli (Bacteria)
 install_ecoli:
-	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655 ${INSTALL_TASKS}
+	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655_gca_000801205_1 \
+		COLLECTION=bacteria_88_collection ${INSTALL_TASKS}
 
 ## Pseudomonas aeruginosa (Bacteria)
-install_pao1:
-	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 COLLECTION=bacteria_44_collection ${INSTALL_TASKS}
+#install_pao1:
+#	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 \
+#		COLLECTION=bacteria_44_collection ${INSTALL_TASKS}
 
 ##################################################################
 ## Parse Compara.homologies 
