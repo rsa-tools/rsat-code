@@ -57,8 +57,29 @@ list_param:
 	@echo "	CMP_GZ		${CMP_GZ}"
 
 ################################################################
-## Download all required files
-download_all: organisms download_gtf download_fasta
+## Download required files for all organisms
+ALL_SPECIES=$(shell cut -f 2 ${ORGANISMS_LIST} | grep -v species)
+download_all:
+	@echo WARNING: Make sure you run organisms before download_all
+	@echo
+	@echo Downloading all species in GROUP=${GROUP} RELEASE=${RELEASE}
+	for org in $(ALL_SPECIES); do \
+		$(MAKE) download_fasta SPECIES=$$org; \
+		$(MAKE) download_gtf SPECIES=$$org; \
+	done
+	@${MAKE} download_compara
+
+################################################################
+## Install files required for all organisms
+install_all:
+	@echo WARNING: Make sure you run organisms before download_all
+	@echo
+	@echo Installing all species in GROUP=${GROUP} RELEASE=${RELEASE}
+	for org in $(ALL_SPECIES); do \
+		$(MAKE) install_from_gtf SPECIES=$$org; \
+	done
+	@${MAKE} parse_compara
+	@${MAKE} install_compara
 
 ################################################################
 ## Download GTF files from ensemblgenomes
@@ -99,14 +120,14 @@ download_fasta:
 ################################################################
 ## Download sequences of some eg genomic features to be used as control
 ## of RSAT scripts that slice sequences based on coordinates
-SERVER_CDS_FILE=${DATABASE}/fasta/${SPECIES}/cds/*${RELEASE}.cds.all.fa.gz
-download_feature_sequences:
-	@echo
-	@mkdir -p ${SPECIES_DIR}
-	@echo "Downloading FASTA feature files of ${SPECIES}"
-	@wget -Ncnv ${SERVER_CDS_FILE} -P ${SPECIES_DIR}
-	@echo
-	@ls -1 ${SPECIES_DIR}/*.cds.all.fa.gz
+#SERVER_CDS_FILE=${DATABASE}/fasta/${SPECIES}/cds/*${RELEASE}.cds.all.fa.gz
+#download_feature_sequences:
+#	@echo
+#	@mkdir -p ${SPECIES_DIR}
+#	@echo "Downloading FASTA feature files of ${SPECIES}"
+#	@wget -Ncnv ${SERVER_CDS_FILE} -P ${SPECIES_DIR}
+#	@echo
+#	@ls -1 ${SPECIES_DIR}/*.cds.all.fa.gz
 
 #################################################################
 ## Download group COMPARA files from eg
