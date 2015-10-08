@@ -79,10 +79,12 @@ install_all:
 	@echo Installing all species in GROUP=${GROUP} RELEASE=${RELEASE}
 	for org in $(ALL_SPECIES); do \
 		$(MAKE) install_from_gtf SPECIES=$$org; \
-		$(MAKE) install_go_annotations SPECIES=$$org; \
 	done
 	@${MAKE} parse_compara
 	@${MAKE} install_compara
+
+
+#        $(MAKE) install_go_annotations SPECIES=$$org; \
 
 ################################################################
 ## Download GTF files from ensemblgenomes
@@ -150,13 +152,24 @@ download_go:
 
 #################################################################
 ## Get & install GO annotations for a given species
-GO_ANNOT_DIR=${RSAT}/data/genomes/${SPECIES}/genome/
+ANNOT_DIR=${RSAT}/data/genomes/${SPECIES}/go_annotations
 install_go_annotations:
 	@echo
-	@mkdir -p ${GO_ANNOT_DIR}
-	@echo "Downloading GO annotations of ${SPECIES}"
-	@make -f ${RSAT}/makefiles/go_analysis.mk \
-		ANNOT_DIR=${GO_ANNOT_DIR} ORG=${SPECIES} install_annot
+	@mkdir -p ${ANNOT_DIR}
+	@echo "Downloadingi and expanding GO annotations of ${SPECIES}"
+	@make -f ${RSAT}/makefiles/go_analysis.mk GO_DIR=${GO_DIR} \
+		ANNOT_DIR=${ANNOT_DIR} ORG=${SPECIES} install_annot
+
+#ANNOT_DIR=${RSAT}/data/genomes/${ORG}/go_annotations
+#install_annot:
+#    @echo
+#    @echo "ANNOT_DIR    ${ANNOT_DIR}"
+#    @mkdir -p ${ANNOT_DIR}
+#    ${MAKE} OPT=--output_dir ${ANNOT_DIR} get_annotations expand_annot
+
+
+
+
 
 ##################################################################
 ## Parse GTF file to extract gene, transcripts and cds coords
