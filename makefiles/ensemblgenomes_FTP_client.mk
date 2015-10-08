@@ -69,6 +69,7 @@ download_all:
 		$(MAKE) download_gtf SPECIES=$$org; \
 	done
 	@${MAKE} download_compara
+	@${MAKE} download_go
 
 ################################################################
 ## Install files required for all organisms
@@ -78,6 +79,7 @@ install_all:
 	@echo Installing all species in GROUP=${GROUP} RELEASE=${RELEASE}
 	for org in $(ALL_SPECIES); do \
 		$(MAKE) install_from_gtf SPECIES=$$org; \
+		$(MAKE) install_go_annotations SPECIES=$$org; \
 	done
 	@${MAKE} parse_compara
 	@${MAKE} install_compara
@@ -136,6 +138,26 @@ download_compara:
 	@wget -Ncnv ${SERVER_COMPARA_FILE} -P ${ORGANISMS_DIR}
 	@echo
 	@ls -1 ${ORGANISMS_DIR}/Compara.homologies*gz
+
+##################################################################
+## Download GO ontology file and parse it for server use
+GO_DIR=${RSAT}/data/genomes/GO
+download_go:
+	@echo
+	@mkdir -p ${GO_DIR}
+	@echo "Downloading and parsing Gene Ontology"
+	@make -f ${RSAT}/makefiles/go_analysis.mk GO_DIR=${GO_DIR} download_go parse_go
+
+#################################################################
+## Get & install GO annotations for a given species
+GO_ANNOT_DIR=${RSAT}/data/genomes/${SPECIES}/genome/
+install_go_annotations:
+	@echo
+	@mkdir -p ${GO_ANNOT_DIR}
+	@echo "Downloading GO annotations of ${SPECIES}"
+	@make -f ${RSAT}/makefiles/go_analysis.mk \
+		ANNOT_DIR=${GO_ANNOT_DIR}/data/genomes/${SPECIES}/genome/ \
+		ORG=${SPECIES} install_annot
 
 ##################################################################
 ## Parse GTF file to extract gene, transcripts and cds coords
