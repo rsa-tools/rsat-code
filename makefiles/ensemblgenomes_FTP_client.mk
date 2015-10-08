@@ -156,8 +156,7 @@ install_go_annotations:
 	@mkdir -p ${GO_ANNOT_DIR}
 	@echo "Downloading GO annotations of ${SPECIES}"
 	@make -f ${RSAT}/makefiles/go_analysis.mk \
-		ANNOT_DIR=${GO_ANNOT_DIR}/data/genomes/${SPECIES}/genome/ \
-		ORG=${SPECIES} install_annot
+		ANNOT_DIR=${GO_ANNOT_DIR} ORG=${SPECIES} install_annot
 
 ##################################################################
 ## Parse GTF file to extract gene, transcripts and cds coords
