@@ -26,6 +26,7 @@ ORGANISMS_DIR=${RSAT}/data/ensemblgenomes/${GROUP_LC}/release-${RELEASE}
 ORGANISMS_LIST=${ORGANISMS_DIR}/species_Ensembl${GROUP}.txt
 SPECIES=arabidopsis_thaliana
 SPECIES_DIR=${ORGANISMS_DIR}/${SPECIES}
+SPECIES_UCFIRST=$(shell perl -e 'print ucfirst ${SPECIES}')
 
 ###############################################################
 ## Get all supported organisms in an eg release and store them in a file
@@ -41,7 +42,7 @@ list_param:
 	@echo
 	@echo "Parameters"
 	@echo "	GROUP   ${GROUP} (${GROUP_LC})"
-	@echo "	SPECIES	${SPECIES}"
+	@echo "	SPECIES	${SPECIES} (${SPECIES_UCFIRST})"
 	@echo "	RELEASE ${RELEASE}"
 	@echo "Files to download"
 	@echo "	GTF_FTP_URL		${GTF_FTP_URL}"
@@ -57,8 +58,33 @@ list_param:
 	@echo "	CMP_GZ		${CMP_GZ}"
 
 ################################################################
-## Download all required files
-download_all: organisms download_gtf download_fasta
+## Download required files for all organisms
+ALL_SPECIES=$(shell cut -f 2 ${ORGANISMS_LIST} | grep -v species)
+download_all:
+	@echo WARNING: Make sure you run organisms before download_all
+	@echo
+	@echo Downloading all species in GROUP=${GROUP} RELEASE=${RELEASE}
+	for org in $(ALL_SPECIES); do \
+		$(MAKE) download_fasta SPECIES=$$org; \
+		$(MAKE) download_gtf SPECIES=$$org; \
+	done
+	@${MAKE} download_compara
+	@${MAKE} download_go
+
+################################################################
+## Install files required for all organisms
+install_all:
+	@echo WARNING: Make sure you run organisms before download_all
+	@echo
+	@echo Installing all species in GROUP=${GROUP} RELEASE=${RELEASE}
+	for org in $(ALL_SPECIES); do \
+		$(MAKE) install_from_gtf SPECIES=$$org; \
+	done
+	@${MAKE} parse_compara
+	@${MAKE} install_compara
+
+
+#        $(MAKE) install_go_annotations SPECIES=$$org; \
 
 ################################################################
 ## Download GTF files from ensemblgenomes
@@ -97,16 +123,12 @@ download_fasta:
 	@ls -1 ${SPECIES_DIR}/*.fa.gz
 
 ################################################################
-## Download sequences of some eg genomic features to be used as control
-## of RSAT scripts that slice sequences based on coordinates
-SERVER_CDS_FILE=${DATABASE}/fasta/${SPECIES}/cds/*${RELEASE}.cds.all.fa.gz
-download_feature_sequences:
+## Download a sample of eg upstream sequences to check installed sequences
+check_sequences:
 	@echo
 	@mkdir -p ${SPECIES_DIR}
-	@echo "Downloading FASTA feature files of ${SPECIES}"
-	@wget -Ncnv ${SERVER_CDS_FILE} -P ${SPECIES_DIR}
-	@echo
-	@ls -1 ${SPECIES_DIR}/*.cds.all.fa.gz
+	@check-retrieve-seq-rest -v ${V} \
+        -org ${SPECIES} \
 
 #################################################################
 ## Download group COMPARA files from eg
@@ -120,13 +142,43 @@ download_compara:
 	@ls -1 ${ORGANISMS_DIR}/Compara.homologies*gz
 
 ##################################################################
+## Download GO ontology file and parse it for server use
+GO_DIR=${RSAT}/data/genomes/GO
+download_go:
+	@echo
+	@mkdir -p ${GO_DIR}
+	@echo "Downloading and parsing Gene Ontology"
+	@make -f ${RSAT}/makefiles/go_analysis.mk GO_DIR=${GO_DIR} download_go parse_go
+
+#################################################################
+## Get & install GO annotations for a given species
+ANNOT_DIR=${RSAT}/data/genomes/${SPECIES}/go_annotations
+install_go_annotations:
+	@echo
+	@mkdir -p ${ANNOT_DIR}
+	@echo "Downloadingi and expanding GO annotations of ${SPECIES}"
+	@make -f ${RSAT}/makefiles/go_analysis.mk GO_DIR=${GO_DIR} \
+		ANNOT_DIR=${ANNOT_DIR} ORG=${SPECIES} install_annot
+
+#ANNOT_DIR=${RSAT}/data/genomes/${ORG}/go_annotations
+#install_annot:
+#    @echo
+#    @echo "ANNOT_DIR    ${ANNOT_DIR}"
+#    @mkdir -p ${ANNOT_DIR}
+#    ${MAKE} OPT=--output_dir ${ANNOT_DIR} get_annotations expand_annot
+
+
+
+
+
+##################################################################
 ## Parse GTF file to extract gene, transcripts and cds coords
 FASTA_RAW_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_RAW_SUFFIX} | head -1`
 FASTA_MSK_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_MSK_SUFFIX} | head -1`
 FASTA_PEP_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_PEP_SUFFIX} | head -1`
 # Note that only the first gtf file is considered
 GTF_LOCAL=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
-TAXON_ID=$(shell grep ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
+TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
 PARSE_DIR=${SPECIES_DIR}
 PARSE_TASK="parse_gtf,parse_fasta"
 parse_gtf:
@@ -150,6 +202,7 @@ install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
 	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES}/genome PARSE_TASK="all"
+	@${MAKE} check_sequences 
 
 ## Run some test for the GTF parsing result
 parse_gtf_test:
@@ -173,11 +226,13 @@ install_yeast:
 
 ## Escherichia coli (Bacteria)
 install_ecoli:
-	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655 ${INSTALL_TASKS}
+	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655_gca_000801205_1 \
+		COLLECTION=bacteria_88_collection ${INSTALL_TASKS}
 
 ## Pseudomonas aeruginosa (Bacteria)
-install_pao1:
-	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 COLLECTION=bacteria_44_collection ${INSTALL_TASKS}
+#install_pao1:
+#	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 \
+#		COLLECTION=bacteria_44_collection ${INSTALL_TASKS}
 
 install_bsub:
 	${MAKE} GROUP=Bacteria SPECIES=bacillus_subtilis_subsp_subtilis_str_168 COLLECTION=bacteria_0_collection ${INSTALL_TASKS}
