@@ -140,7 +140,7 @@ print "<br><br>\n";
 ## print "<b>Agglomeration rule</b>";
 print "<B><A HREF='help.matrix-clustering.html#hclust_method'> Aglomeration rule </A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'hclust_method',
- 			 -Values=>["complete", "average", "single"],
+ 			 -Values=>["complete", "average", "single", "median", "centroid"],
  			 -default=>$default{hclust_method});
 print "<br><br>\n";
 
