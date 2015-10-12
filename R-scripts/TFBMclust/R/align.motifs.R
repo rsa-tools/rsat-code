@@ -1,7 +1,7 @@
 align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
                          method = "average",
                          metric = "Ncor",
-                         align = TRUE,
+                         align = FALSE,
                          nodes.attributes = TRUE,
                          intermediate.alignments = FALSE){
 
