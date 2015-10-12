@@ -347,8 +347,9 @@ i <- sapply(1:length(clusters), function(nb){
         case <- "case.1"
     }
 
-    switch(case,
+    singleton.list <<- list()
 
+    switch(case,
 
            ## If the cluster has only one element, create its JSON file and skip the
            ## hierarchical clustering step
@@ -357,7 +358,7 @@ i <- sapply(1:length(clusters), function(nb){
               ## Fill the cluster list with the data of the non-aligned motifs (singleton)
               global.description.table <<- NULL
               global.description.table <<- desc.tab
-              forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- forest.list[[paste("cluster", (nb-1), sep = "_")]][[1]]
+              forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- singleton.list
 
              ids <- as.character(ids)
 
