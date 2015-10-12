@@ -3,15 +3,21 @@
 ## method.
 draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, metric = "Ncor", tree.pos = "column"){
 
-  ################################################################
-  ## Blue -> White -> Red palette
-  blue.white.red <- function() {
-    blue.levels <- c(rep(127,127), 126:0)/128
-    red.levels <- c(0:127,rep(127,127))/128
-    green.levels <- c(0:127, 126:0)/128
-    palette <- rgb(red.levels, green.levels, blue.levels)
-    return(palette)
-  }
+#   ################################################################
+#   ## Blue -> White -> Red palette
+#   blue.white.red <- function() {
+#     blue.levels <- c(rep(127,127), 126:0)/128
+#     red.levels <- c(0:127,rep(127,127))/128
+#     green.levels <- c(0:127, 126:0)/128
+#     palette <- rgb(red.levels, green.levels, blue.levels)
+#     return(palette)
+#   }
+#
+# palette <- colorRampPalette(c("#FFE991", "#FF8000", "#930047"), space = "rgb")
+# white <- "#FFFFFF"
+# palette <- append(white, palette(300))
+library("RColorBrewer")
+palette <- colorRampPalette(brewer.pal(11, "Spectral"), space="Lab")
 
   metric.definition <- NULL
   ## If required, convert similarities to distances
@@ -106,9 +112,9 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, m
   ## Color gradient for the heatmap
 #  grad <- colorRampPalette(c("blue", "black"))(n = 299)
   if(metric.definition == "distance"){
-    grad <- blue.white.red()
+    grad <- palette
   }else if(metric.definition == "correlation"){
-    grad <- blue.white.red()
+    grad <- palette
 #    grad <- colorRampPalette(c("red", "white"))(n = 256)
   }
 
