@@ -10,7 +10,7 @@ check.alignment <- function(id1,
 
   ## Hclust method = average
   ## Calculate the mean of the scores for all the pairs of motifs
-  if(hclust.method == "average"){
+  if(hclust.method == "average" | hclust.method == "centroid"){
     compa.numbers <- get.comparison.number(id1, id2)
 
     scores <- global.compare.matrices.table[compa.numbers, names(thresholds)]
@@ -19,8 +19,16 @@ check.alignment <- function(id1,
     mean.scores <- sapply(scores, mean)
     names(mean.scores) <- names(thresholds)
 
-  ## Hclust method = complete
-  ## Calculate the farthest couple of motifs between all the pairs of motifs
+  ## Calculate the median between all the pairs of motifs
+  } else if(hclust.method == "median"){
+
+    compa.numbers <- get.comparison.number(id1, id2)
+
+    scores <- global.compare.matrices.table[compa.numbers, names(thresholds)]
+
+    median.scores <- apply(scores, 2, median)
+    names(median.scores) <- names(thresholds)
+
   } else if(hclust.method == "complete"){
 
     farthest.motifs <- closest.or.farthest.motifs.ids(id1,
@@ -68,10 +76,12 @@ check.alignment <- function(id1,
         || (names.th == "logoDP")
         || (names.th =="w")
     ) {
-      if(hclust.method == "average"){
+      if(hclust.method == "average" | hclust.method == "centroid"){
         mean.scores[names.th] >= thresholds[names.th]
       } else if(hclust.method == "complete"){
         farthest.scores[names.th] >= thresholds[names.th]
+      } else if(hclust.method == "median"){
+        median.scores[names.th] >= thresholds[names.th]
       } else if(hclust.method == "single"){
         closest.scores[names.th] >= thresholds[names.th]
       }
@@ -81,8 +91,10 @@ check.alignment <- function(id1,
               || (names.th == "SW")
               || (names.th == "NSW")
     ){
-      if(hclust.method == "average"){
+      if(hclust.method == "average" | hclust.method == "centroid"){
         mean.scores[names.th] <= thresholds[names.th]
+      } else if(hclust.method == "median"){
+        median.scores[names.th] <= thresholds[names.th]
       } else if(hclust.method == "complete"){
         farthest.scores[names.th] <= thresholds[names.th]
       } else if(hclust.method == "single"){
