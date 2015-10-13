@@ -252,9 +252,9 @@ install_compara:
 	@echo
 	@echo "Installing Compara db ${BDB_FILE}"
 	@echo
-	@mv ${BDB_FILE} ${CMP_INSTALL_DIR}
+	@mv ${BDB_FILE} ${COMP_INSTALL_DIR}
 	@echo
-	@ls -1 ${CMP_INSTALL_DIR}/compara.bdb
+	@ls -1 ${COMP_INSTALL_DIR}/compara.bdb
 
 ##################################################################
 
