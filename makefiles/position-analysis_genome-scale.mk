@@ -6,7 +6,7 @@
 ################################################################
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=makefiles/position-analsysis_genome-scale.mk
+MAKEFILE=makefiles/position-analysis_genome-scale.mk
 
 ORG=chlamydomonas_reinhardtii
 FEATTYPE=gene
