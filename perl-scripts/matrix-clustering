@@ -214,7 +214,7 @@ package main;
   local @label_fields_to_return = ();
 
   ## Supported hclust methods
-  local @supported_hclust_methods = qw (average complete single);
+  local @supported_hclust_methods = qw (average centroid complete median single);
   local %supported_hclust_methods = ();
   foreach my $method (@supported_hclust_methods) {
     $supported_hclust_methods{$method} = 1;
@@ -1797,7 +1797,6 @@ sub Hclustering {
     
     &RSAT::message::TimeWarn("Clustering matrices with R hclust function") if ($main::verbose >= 2);
 
-
     ##################################
     ### Identify the path of the R executable
     my $r_path = &RSAT::server::GetProgramPath("R");
@@ -1901,7 +1900,6 @@ sub Hclustering_nb_clusters {
     
     &RSAT::message::TimeWarn("Counting clusters ") if ($main::verbose >= 2);
 
-
     ##################################
     ### Identify the path of the R executable
     my $r_path = &RSAT::server::GetProgramPath("R");
@@ -1910,15 +1908,6 @@ sub Hclustering_nb_clusters {
     &RSAT::error::FatalError("Cannot read cluster motifs script", $cluster_motifs_script) unless (-r $cluster_motifs_script);
     $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
 
-
-    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ## FROM JVH TO JAIME: 
-    ##
-    ## I think we should better write all parameters in a file, and
-    ## call this file with Rscript (or R). This would avoid to create
-    ## a very long command line with all parameters, and it would
-    ## leave a persistent trace of the complete analysis.
-    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     my $pos_drawing_offset = 0;
     
     ## Basic parameters
