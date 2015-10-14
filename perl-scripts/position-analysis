@@ -1764,7 +1764,7 @@ sub ReadArguments {
 	    ### offset
 	} elsif ($ARGV[$a] eq "-offset") {
 	    $offset = $ARGV[$a+1];
-	    &RSAT::message::Warning("Offset", $offset);
+	    &RSAT::message::Warning("Offset", $offset) if ($main::verbose >= 3);
 	    &RSAT::error::FatalError($offset, "is not a valid value for offset. Should be an Integer number.")
 		unless (&IsInteger($offset));
 
@@ -1807,14 +1807,19 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-clust_suffix") {
 	    $clust_suffix = $ARGV[$a+1];
 
+	} elsif ($ARGV[$a] eq "-toppat") {
+	  $main::top_pattern_nb = $ARGV[$a+1];
+	  &RSAT::error::FatalError($top_pattern_nb, "is not a valid value for option -toppat (should be Natural number).")
+	      unless (&IsNatural($top_pattern_nb));
+
 	} elsif ($ARGV[$a] eq "-max_asmb_nb") {
 	    $max_asmb_nb = $ARGV[$a+1];
-	    &RSAT::error::FatalError($max_asmb_nb, "invalid number of matrices, must be a Natural number >= 1")
+	    &RSAT::error::FatalError($max_asmb_nb, "invalid number of matrices for option -max_asmb_nb, must be a Natural number >= 1")
 	      unless ((&IsNatural($max_asmb_nb) && ($max_asmb_nb >= 1)));
 
 	} elsif ($ARGV[$a] eq "-max_asmb_per_cluster") {
 	    $max_asmb_per_cluster = $ARGV[$a+1];
-	    &RSAT::error::FatalError($max_asmb_per_cluster, "invalid number of matrices, must be a Natural number >= 1")
+	    &RSAT::error::FatalError($max_asmb_per_cluster, "invalid number of matrices for option -max_asmb_nb_per_cluster, must be a Natural number >= 1")
 	      unless ((&IsNatural($max_asmb_per_cluster) && ($max_asmb_per_cluster >= 1)));
 
 
@@ -2238,6 +2243,9 @@ sub ClustersToMatrices {
     } else {
 	$cmd .= " -pl ".$outfile{output};
 	$cmd .= " -max_asmb_nb ".$max_asmb_nb;
+    }
+    if ($main::top_pattern_nb > 0) {
+      $cmd .= " -toppat ".$main::top_pattern_nb;
     }
     $cmd .= " -flanks 2 -logo";
     $cmd .= " -o ".$prefix{pssm};
