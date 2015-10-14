@@ -563,7 +563,7 @@ sub ReadSequences {
 			      "length_sum=".$sum_seq_length,
 			      "last_pos=".$last_pos,
 			      "ref_pos=".$ref_pos,
-			     ) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==1)));
+			     ) if (($main::verbose >= 4) || (($main::verbose >= 2) && ($sequence_number%500==1)));
 
 
     ## Count oligonucleotides
@@ -1507,7 +1507,7 @@ position-analysis options
 -nogrouprc		do not group reverse complement pairs
 -noov			no overlap
 -sort			sort oligonucleotides according to the chi2 statistics
--return			fields to return. Supported: html,chi,distrib,exp_occ,graph,rank,clusters
+-return			fields to return. Supported: ${supported_return_fields}
 -task			run specific tasks. Supported: pos, clusters, matrices, graphs, index, all
 -markov			markov order for computing background k-mer frequencies
 -lth_chi		lower threshold on chi2
@@ -2213,6 +2213,7 @@ sub ProfileClustering {
     $pos_cluster_cmd .= ";clust.suffix='".$clust_suffix_k."'";
     $pos_cluster_cmd .= ";round.positions=TRUE";
     $pos_cluster_cmd .= "\"";
+    die "HELLO\n", $pos_cluster_cmd, "\n";
     if ($r_path) {
 	&doit($pos_cluster_cmd, $dry_run, $die_on_error, 0); ## JvH (09/2015): I cut verbosity to avoid sisplaying R output in the peak)-motifs form
     } else {
