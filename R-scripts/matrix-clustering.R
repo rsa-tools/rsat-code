@@ -22,9 +22,9 @@ dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 ## List of packages to install
 required.packages = c("RJSONIO",
                       "dendextend",
-                      "Rcpp",
-                      "RcppEigen",
-                      "Rclusterpp",
+#                       "Rcpp",
+#                       "RcppEigen",
+#                       "Rclusterpp",
                       "gplots",
                       "devtools")
 
@@ -75,13 +75,13 @@ check.param()
 
 #####################################
 ## Example for Debugging ############
-#
-# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/rank_mean/peak-motifs_Oct4_hclust-average_Ncor0.5_cor0.7_tables/pairwise_compa.tab"
-# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/matrix_clustering/results/matrix-clustering_results/peak-motifs_Oct4/average_linkage/rank_mean/peak-motifs_Oct4_hclust-average_Ncor0.5_cor0.7_tables/pairwise_compa_matrix_descriptions.tab"
+# #
+# infile <- "/home/jcastro/sdfsd/results/matrix-clustering_results/RSAT_peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.5/RSAT_peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.5_tables/pairwise_compa.tab"
+# description.file <- "/home/jcastro/sdfsd/results/matrix-clustering_results/RSAT_peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.5/RSAT_peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.5_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
-
+#
 # infile <- "/home/jcastro/Documents/JaimeCastro/PhD/Manuscripts/matrix-clustering/results/matrix-clustering_results/footprintDB_motif/average_linkage/Ncor0.4_cor0.6/footprintDB_motif_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
 # description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/Manuscripts/matrix-clustering/results/matrix-clustering_results/footprintDB_motif/average_linkage/Ncor0.4_cor0.6/footprintDB_motif_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
@@ -347,8 +347,9 @@ i <- sapply(1:length(clusters), function(nb){
         case <- "case.1"
     }
 
-    switch(case,
+    singleton.list <<- list()
 
+    switch(case,
 
            ## If the cluster has only one element, create its JSON file and skip the
            ## hierarchical clustering step
@@ -357,9 +358,10 @@ i <- sapply(1:length(clusters), function(nb){
               ## Fill the cluster list with the data of the non-aligned motifs (singleton)
               global.description.table <<- NULL
               global.description.table <<- desc.tab
-              forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- forest.list[[paste("cluster", (nb-1), sep = "_")]][[1]]
+              forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- singleton.list
 
              ids <- as.character(ids)
+
              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["strand"]] <<- "D"
              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["name"]] <<- get.name(ids)
              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_d"]] <<- get.consensus(ids, RC = FALSE)
