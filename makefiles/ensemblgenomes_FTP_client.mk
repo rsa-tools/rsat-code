@@ -60,7 +60,7 @@ list_param:
 ################################################################
 ## Download required files for all organisms
 ALL_SPECIES=$(shell cut -f 2 ${ORGANISMS_LIST} | grep -v species)
-download_all:
+download_all_species:
 	@echo WARNING: Make sure you run organisms before download_all
 	@echo
 	@echo Downloading all species in GROUP=${GROUP} RELEASE=${RELEASE}
@@ -73,7 +73,7 @@ download_all:
 
 ################################################################
 ## Install files required for all organisms
-install_all:
+install_all_species:
 	@echo WARNING: Make sure you run organisms before download_all
 	@echo
 	@echo Installing all species in GROUP=${GROUP} RELEASE=${RELEASE}
