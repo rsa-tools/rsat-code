@@ -19,7 +19,7 @@
 ##    clust.nb (default: 8)
 ##    clust.method (default: "complete")
 ##    sig.threshold (default: 1)
-##    rank.threshold (default: 100)
+##    rank.threshold (default: 0, meaning "no threshold")
 ## Example:
 ##    [...] --args "clust.nb=4; rank.threshold=100; file.pos=position_result.tab"
 
@@ -44,7 +44,7 @@ source(file.path(dir.util, 'util_chip_analysis.R'))
 
 ## Threshold for selecting patterns
 sig.threshold <- 1 ## Min level of chi2 significance
-rank.threshold <- 100 ## Max number of patterns for the clustering
+rank.threshold <- 0 ## Max number of patterns for the clustering. 0 is interpreted as "no threshold"
 clust.nb <- 8 ## Number of clusters
 clust.method <- "complete"
 clust.suffix <- 'clusters'
@@ -78,6 +78,7 @@ heatmap.palette <- blue.to.yellow()
 ## file.pos <- '/Users/jvanheld/test/positions/results/positions/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.05_nof_5nt_ci20-2str-ovlp_top1000.tab'
 ## file.pos <- '/Users/jvanheld/test/positions/results/positions/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.05_nof_5nt_ci20-2str-ovlp_top0.tab'
 ## file.pos <- '/Users/jvanheld/test/positions/results/positions/SWEMBL_mmus_CEBPA_vs_mmus_Input_peaks_R0.05_nof_skip0_last0_4nt_ci20-2str-ovlp_sig1_mkv-2.tab'
+## file.pos <- ''
 
 ################################################################
 ## Read arguments from the command line.
@@ -169,7 +170,12 @@ colnames(pos.data)[profile.col] <- sub("X\\.", "-", colnames(pos.data)[profile.c
 colnames(pos.data)[profile.col] <- sub("X", "+", colnames(pos.data)[profile.col], perl="TRUE")
 
 ## Define the selected patterns
-selected.patterns <- (pos.data$sig >= sig.threshold) & (pos.data$rank <= rank.threshold)
+selected.patterns <- (pos.data$sig >= sig.threshold) 
+
+## Apply rank threshold if specified
+if (rank.threshold > 0) {
+  selected.patterns <- selected.patterns & (pos.data$rank <= rank.threshold)
+}
 nb.patterns <- sum(selected.patterns)
 verbose(paste(nb.patterns , "selected patterns"), 2)
 
