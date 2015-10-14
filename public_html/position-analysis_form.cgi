@@ -45,7 +45,7 @@ $default{lth_occ} = "1";
 $default{lth_chi} = "none";
 $default{lth_sig} = "0";
 $default{clust_nb} = "5";
-$default{max_asmb_nb} = "5";
+$default{max_asmb_per_cluster} = "5";
 
 ## Print the form
 &RSA_header("position-analysis", "form");
@@ -233,8 +233,8 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 						       -checked=>$default{return_matrices},
 						       -label=>' Position-specific scoring matrices'),
 				      "&nbsp",
-				      $query->textfield(-name=>'max_asmb_nb',
-							-default=>$default{max_asmb_nb},
+				      $query->textfield(-name=>'max_asmb_per_cluster',
+							-default=>$default{max_asmb_per_cluster},
 							-size=>5)]),
 #				      '']),
 
@@ -316,7 +316,7 @@ print $query->hidden(-name=>'lth_sig',-default=>'5');
 print $query->hidden(-name=>'return_clusters',-default=>'on');
 print $query->hidden(-name=>'clust_nb',-default=>'2');
 print $query->hidden(-name=>'return_matrices',-default=>'on');
-print $query->hidden(-name=>'max_asmb_nb',-default=>'2');
+print $query->hidden(-name=>'max_asmb_per_cluster',-default=>'2');
 print $query->hidden(-name=>'return_graphs',-default=>'on');
 print $query->hidden(-name=>'strand',-default=>'both strands');
 print $query->hidden(-name=>'output',-default=>'email');
