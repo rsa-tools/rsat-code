@@ -2213,7 +2213,7 @@ sub ProfileClustering {
     $pos_cluster_cmd .= ";clust.suffix='".$clust_suffix_k."'";
     $pos_cluster_cmd .= ";round.positions=TRUE";
     $pos_cluster_cmd .= "\"";
-    die "HELLO\n", $pos_cluster_cmd, "\n";
+#    die "HELLO\n", $pos_cluster_cmd, "\n";
     if ($r_path) {
 	&doit($pos_cluster_cmd, $dry_run, $die_on_error, 0); ## JvH (09/2015): I cut verbosity to avoid sisplaying R output in the peak)-motifs form
     } else {
