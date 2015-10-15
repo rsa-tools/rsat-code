@@ -159,7 +159,7 @@ sub get_node_descendents{
   if ($node_id){
       my $node = $self->get_node_by_id($node_id);
       if ($node) {
-	  &RSAT::message::Debug("RSAT::Tree", $node_id, "node", $node) if ($main::verbose >= 0);
+#	  &RSAT::message::Debug("RSAT::Tree", $node_id, "node", $node) if ($main::verbose >= 10);
 	  my (@descendents) = $node->get_all_descendents($order,$type,$max_depth,$max_leaves);
 	  return ($node,@descendents);
       } else {
