@@ -152,13 +152,13 @@ download_go:
 
 #################################################################
 ## Get & install GO annotations for a given species
-ANNOT_DIR=${RSAT}/data/genomes/${SPECIES}/go_annotations
+GO_ANNOT_DIR=${RSAT}/data/genomes/${SPECIES}/
+GO_ANNOT_FILE=${GO_ANNOT_DIR}/go_annotations.tsv
 install_go_annotations:
 	@echo
-	@mkdir -p ${ANNOT_DIR}
-	@echo "Downloadingi and expanding GO annotations of ${SPECIES}"
-	@make -f ${RSAT}/makefiles/go_analysis.mk GO_DIR=${GO_DIR} \
-		ANNOT_DIR=${ANNOT_DIR} ORG=${SPECIES} install_annot
+	@mkdir -p ${GO_ANNOT_DIR}
+	@echo "Downloading GO annotations of ${SPECIES}"
+	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES}
 
 #ANNOT_DIR=${RSAT}/data/genomes/${ORG}/go_annotations
 #install_annot:
