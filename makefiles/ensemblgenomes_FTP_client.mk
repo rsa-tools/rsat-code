@@ -60,7 +60,7 @@ list_param:
 ################################################################
 ## Download required files for all organisms
 ALL_SPECIES=$(shell cut -f 2 ${ORGANISMS_LIST} | grep -v species)
-download_all:
+download_all_species:
 	@echo WARNING: Make sure you run organisms before download_all
 	@echo
 	@echo Downloading all species in GROUP=${GROUP} RELEASE=${RELEASE}
@@ -73,7 +73,7 @@ download_all:
 
 ################################################################
 ## Install files required for all organisms
-install_all:
+install_all_species:
 	@echo WARNING: Make sure you run organisms before download_all
 	@echo
 	@echo Installing all species in GROUP=${GROUP} RELEASE=${RELEASE}
@@ -152,13 +152,13 @@ download_go:
 
 #################################################################
 ## Get & install GO annotations for a given species
-ANNOT_DIR=${RSAT}/data/genomes/${SPECIES}/go_annotations
+GO_ANNOT_DIR=${RSAT}/data/genomes/${SPECIES}/
+GO_ANNOT_FILE=${GO_ANNOT_DIR}/go_annotations.tsv
 install_go_annotations:
 	@echo
-	@mkdir -p ${ANNOT_DIR}
-	@echo "Downloadingi and expanding GO annotations of ${SPECIES}"
-	@make -f ${RSAT}/makefiles/go_analysis.mk GO_DIR=${GO_DIR} \
-		ANNOT_DIR=${ANNOT_DIR} ORG=${SPECIES} install_annot
+	@mkdir -p ${GO_ANNOT_DIR}
+	@echo "Downloading GO annotations of ${SPECIES}"
+	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES}
 
 #ANNOT_DIR=${RSAT}/data/genomes/${ORG}/go_annotations
 #install_annot:
@@ -237,6 +237,10 @@ install_ecoli:
 #install_pao1:
 #	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 \
 #		COLLECTION=bacteria_44_collection ${INSTALL_TASKS}
+
+install_bsub:
+	${MAKE} GROUP=Bacteria SPECIES=bacillus_subtilis_subsp_subtilis_str_168 COLLECTION=bacteria_0_collection ${INSTALL_TASKS}
+
 
 ##################################################################
 ## Parse Compara.homologies 

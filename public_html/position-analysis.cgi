@@ -132,12 +132,12 @@ if ($query->param('return_matrices')) {
   push @output_fields, "matrices";
 
 
-  ## Number of matrices
-  my $max_asmb_nb = $query->param('max_asmb_nb');
-  if (&IsNatural($max_asmb_nb)) {
-    $parameters .= " -max_asmb_nb ".$max_asmb_nb;
+  ## Number of matrices per cluster
+  my $max_asmb_per_cluster = $query->param('max_asmb_per_cluster');
+  if (&IsNatural($max_asmb_per_cluster)) {
+    $parameters .= " -max_asmb_per_cluster ".$max_asmb_per_cluster;
   } else {
-    &FatalError($max_asmb_nb, "Invalid number of matrices: must be a Natural number.");
+    &FatalError($max_asmb_per_cluster, "Invalid number of assemblies per cluster: must be a Natural number.");
   }
 }
 
