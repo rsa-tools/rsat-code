@@ -4156,7 +4156,7 @@ $clust_table .= "\n".'
 
 
 ################################################################
-## Create the dynamic geatmap showing the complementarity
+## Create the dynamic heatmap showing the complementarity
 ## between the input motifs. This function is run only when
 ## two or more Motif collections are clusteres
 sub Dynamic_Heatmap_Complementarity {
@@ -5110,7 +5110,7 @@ sub Synthesis {
     ## The heatmap will be created only when two or more collections of
     ## motifs are provided to matrix-clustering
     if($single_input_flag == 0){
-	&Dynamic_Heatmap_Complementarity();
+    	&Dynamic_Heatmap_Complementarity();
     }
 
     &InsertSmallForest();
