@@ -9,15 +9,19 @@ SCRIPT=${RSAT}/python-scripts/go_analysis.py
 
 
 #ORG=mycoplasma_genitalium_g37
-ORG=pseudomonas_aeruginosa_pao1_ve13
+ORG=bacillus_subtilis_subsp_subtilis_str_168
 ORGANISMS=escherichia_coli_str_k_12_substr_mg1655 \
-	mycoplasma_genitalium_g37 \
-	pseudomonas_aeruginosa_pao1_ve13 \
-	bacillus_subtilis_subsp_subtilis_str_168 \
 	saccharomyces_cerevisiae \
 	drosophila_melanogaster \
 	caenorhabditis_elegans \
-	arabidopsis_thaliana
+	arabidopsis_thaliana \
+	bacillus_subtilis_subsp_subtilis_str_168 \
+	mycoplasma_genitalium_g37 \
+	pseudomonas_aeruginosa_pao1_ve13
+
+ORG_UCFIRST= `perl -e 'print ucfirst(${ORG});'`
+ORG_DIR=${RSAT}/public_html/data/genomes/${ORG_UCFIRST}
+GO_INSTALL_DIR=${ORG_DIR}/go_annotations
 
 ################################################################
 ## Help messages
@@ -27,6 +31,13 @@ help:
 	${PYTHON} ${SCRIPT} --help
 
 
+list_param:
+	@echo
+	@echo "go_analysis.mk"
+	@echo "	ORGANISMS		${ORGANISMS}"
+	@echo "	ORG			${ORG}"
+	@echo "	ORG_UCFIRST		${ORG_UCFIRST}"
+	@echo "	GO_INSTALL_DIR		${GO_INSTALL_DIR}"
 ## Get help about one particular task
 TASK=download_go
 help_task:
@@ -70,31 +81,43 @@ parse_go:
 	@echo "GO term descriptions	${GO_DESC}"
 	@echo "GO term relations	${GO_REL}"
 
-## Parse the content of the obo-formatted file
+################################################################
+## Collect organism-specific annotations
+
+## Get GO annotations fo one specific organism and export the result
+## in a tab-delimited file.
+GO_DIR=results/GO_annotations/${ORG_UCFIRST}
 get_annotations:
 	@echo
-	@echo "Getting gene annotations fpr ${ORG}"
-	${PYTHON} ${SCRIPT} get_annotations -org ${ORG}
+	@echo "Getting GO annotations"
+	@echo "	ORG	${ORG}"
+	@echo "	GO_DIR	${GO_DIR}"
+	@mkdir -p ${GO_DIR}
+	${PYTHON} ${SCRIPT} get_annotations -org ${ORG} --output_dir ${GO_DIR}
 
 ## Expand GO annotations, i.e. the gene-GO associations are
 ## transmitted from each class to all its ancestral classes
-GO_ANNOT=annotations_table_${ORG}.tab
+GO_ANNOT=GO_annotations_${ORG}.tab
 expand_annot:
 	@echo
+	@echo "Go annotation directory	${GO_DIR}"
+	@mkdir -p ${GO_DIR}
 	@echo "Expading gene annotations from each class to its ancestor classes"
-	${PYTHON} ${SCRIPT} expand -a ${GO_ANNOT} -d ${GO_DESC} -r ${GO_REL}
+	${PYTHON} ${SCRIPT} expand -a ${GO_DIR}/${GO_ANNOT} -d ${GO_DESC} -r ${GO_REL} --output_dir ${GO_DIR}
 
 expand_org:
 	@echo
 	@echo "Expading gene annotations for organism ${ORG}"
-	${PYTHON} ${SCRIPT} expand -org ${ORG}
+	${PYTHON} ${SCRIPT} expand -org ${ORG}  --output_dir ${GO_DIR}
 
-ANNOT_DIR=${RSAT}/data/genomes/${ORG}/go_annotations
 install_annot:
 	@echo
-	@echo "ANNOT_DIR	${ANNOT_DIR}"
-	@mkdir -p ${ANNOT_DIR}
-	${MAKE} OPT=--output_dir ${ANNOT_DIR} get_annotations expand_annot
+	@echo "GO_INSTALL_DIR	${GO_INSTALL_DIR}"
+	@mkdir -p ${GO_INSTALL_DIR}
+	${MAKE} OPT='--output_dir ${GO_INSTALL_DIR}' get_annotations expand_annot
+
+install_yeast:
+	${MAKE} install_annot ORG=saccharomyces_cerevisiae
 
 ################################################################
 ## Collect info from cross-reference files (obsolete method)
