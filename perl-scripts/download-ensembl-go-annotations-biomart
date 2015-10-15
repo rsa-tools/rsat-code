@@ -1,0 +1,245 @@
+#!/usr/bin/perl -w
+
+use BioMart::Initializer;
+use BioMart::Query;
+use BioMart::QueryRunner;
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+download-ensembl-go-annotations-biomart
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Download GO annotations for a selected species from EG biomart server
+
+=head1 AUTHORS
+
+Bruno Contreras-Moreira & Jacques.van-Helden\@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item management of Ensembl Genomes GO annotations
+
+=back
+
+=head1 USAGE
+
+download-ensembl-go-annotations-biomart [-org organisms] [-o outputfile] 
+
+=head1 INPUT FORMATS
+
+A single organism name in the Ensembl genus_species format is required.
+
+=head1 OUTPUT FORMAT
+
+A TSV file is created with two columns: stable gene ID & GO term.
+
+=head1 WISH LIST
+
+=over
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+my $confFile = $ENV{RSAT}."/lib/biomart-perl/conf/martURLLocation.xml";
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.00 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+  our %outfile = ();
+  our %params = ( 'action'=>'cache' );
+
+  our $out = STDOUT;
+ 
+  ################################################################
+  ## Read arguments and check their values
+  &ReadArguments();
+
+  ## Output TSV filename is required
+  &RSAT::error::FatalError("A valid output filename must be specified (option -o)") 
+    unless ($outfile{"tsv"});
+
+  ## input organisms must be specified
+  &RSAT::error::FatalError("An organism name must be specified (option -org)") 
+    unless ($params{"org"});
+
+  ################################################################
+  ## Start processing
+
+  # 1) connect to biomart
+  my $action=$params{'action'}; #IMPORTANT: set to 'clean' when confFile is updated!
+  my $initializer = BioMart::Initializer->new('registryFile'=>$confFile, 'action'=>$action);
+  my $registry = $initializer->getRegistry;
+
+  # 2) find out biomart name for user's species (dataset)
+  my ($shortspecies,$dataset);
+  if($params{'org'} =~ /^([a-z])\w+_([a-z]+)/) {
+    $shortspecies = $1.$2;
+  }
+
+  my @dnames = $registry->getAllDatasetNames('default',1);
+  foreach my $dset (@dnames) {
+    if($dset =~ m/$shortspecies\_eg_gene/)
+    {
+        $dataset = $dset;
+        last;
+    }
+  }
+
+  if(!$dataset) {
+    RSAT::error::FatalError("cannot find a biomart dataset for", $params{'org'});
+  }
+  else {
+    &RSAT::message::Info("biomart dataset:", $dataset);
+  }
+
+  # 3) actually do GO query
+  my $query = BioMart::Query->new('registry'=>$registry,'virtualSchemaName'=>'default');
+  $query->setDataset($dataset);    ## Select the species (dataset)
+
+  $query->addAttribute("ensembl_gene_id");
+  $query->addAttribute("go_accession");
+  $query->formatter("TSV");
+
+  open(OUT,">",$outfile{'tsv'});
+
+  my $query_runner = BioMart::QueryRunner->new(); 
+  $query_runner->uniqueRowsOnly(1);
+  $query_runner->execute($query);
+  $query_runner->printResults(\*OUT);
+
+  ## Report execution time and close output stream (log)
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); 
+  print $main::out $exec_time; 
+  &RSAT::message::TimeWarn("Organism",$main::params{'org'},"Output file:", $main::outfile{"tsv"});
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; 
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-h>
+
+Display full help message
+
+=cut
+   if ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+# action -> 'clean' costs ~1 minute. Should only be done when the
+#   # martURLLocation file has been modified. We should check the
+#     # modification date of the xml file, and automatically run clean only
+#       # when required.
+
+=pod
+
+=item B<-action [clean|cache]>
+
+'clean' should be used when config file martURLlocation has ben updated; 
+otherwise 'cache' is more efficient,
+
+=cut
+
+    } elsif ($arg eq "-action") {
+      $main::params{"action"} = shift(@arguments);
+
+
+=pod
+
+=item B<-org organism>
+
+Organism name in genus_species format.
+
+=cut
+
+    } elsif ($arg eq "-org") {
+      $main::params{"org"} = shift(@arguments);
+
+=pod
+
+=item	B<-o output TSV file>
+
+Filename of produced TSV file.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{"tsv"} = shift(@arguments);
+    }
+  }
+}
+
+__END__
