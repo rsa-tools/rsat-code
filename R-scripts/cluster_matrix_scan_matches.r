@@ -8,6 +8,7 @@ dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path
 source(file.path(dir.rsat, 'R-scripts/config.R'))
 library("RColorBrewer")
+library("gplots")
 
 ###########################################
 ## Read arguments from the command line.
@@ -23,10 +24,14 @@ if (length(args >= 1)) {
   verbose(args, 3)
 }
 
+
+# matrix.scan.results <- "/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/heatmap_matrix_matches/test/matrix_scan_output_test.tab"
+# matrix.scan.results <- "/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/heatmap_matrix_matches/test/CapStarrseq_Active_Prom_K562_merge_IP_matrix_scan_pval_1e-4_HOCOMOCO_bg_mkv_2.tab"
+
 ##############################
 ## Read matrix-scan table
 # matrix.scan.results <- "" ## Read from command-line arguments
-scan.results <- read.table(file = matrix.scan.results, sep = "\t", header = TRUE, comment.char = ";")
+scan.results <- read.csv(file = matrix.scan.results, sep = "\t", header = TRUE, comment.char = ";")
 names(scan.results) <- gsub("X.seq_id", "seq_id", names(scan.results))
 
 #################
@@ -49,11 +54,79 @@ matrix.names <- unique(as.vector(scan.results$ft_name))
 ## Create the matches table
 count.matches.tab <- NULL
 count.matches.tab <- sapply(seq.id, function(seq){
-     table(scan.results[scan.results$seq_id == seq & scan.results$Pval <= 1e-3,]$ft_name)
+     table(scan.results[scan.results$seq_id == seq & scan.results$Pval <= p.val,]$ft_name)
 })
 count.matches.tab <- t(count.matches.tab)
 count.matches.tab <- count.matches.tab[,1:(dim(count.matches.tab)[2] - 1)]
 
+
+#################
+
+# ## Set the suported colors
+# nb.clusters <- 25
+# clusters.names <- paste("cluster_", 1:nb.clusters, sep = "")
+# color <- rainbow(nb.clusters)
+# cluster.to.color <- list()
+# color.counter <- 0
+# clusters <- cutree(tree, k = nb.clusters)
+# 
+# 
+# ## Fill a list where each element correspond to a cluster name
+# ## and the value its corresponding color
+# sapply(1:nb.clusters, function(x){
+#   color.counter <<- color.counter + 1
+#   cluster.to.color[[x]] <<- color[color.counter]
+# })
+# 
+# ## Create a vector with the the corresponding color of each motif
+# current.cluster <- sapply(1:length(names(clusters)), function(y){
+#    as.vector(clusters[names(clusters) == as.character(y)])
+# })
+# 
+# color.order <- sapply(current.cluster, function(c){
+#   cluster.to.color[[c]]
+# })
+
+
+
+########################
+
+pdf(heatmap.pdf.file)
+palette <- colorRampPalette(c("#FFE991", "#FF8000", "#930047"), space = "rgb")
+white <- "#FFFFFF"
+palette <- append(white, palette(300))
+# palette <- colorRampPalette(brewer.pal(11, "Spectral"), space="Lab")
+
+a <- (count.matches.tab)
+# rownames(a) <- 1:length(rownames(a))
+# colnames(a) <- 1:length(colnames(a))
+plot(hclust(dist(a), method = "complete"))
+tree <- hclust(dist(a), method = "complete")
+#cutree(tree, k = 7)
+heatmap.2(a,
+          
+          ## Display the tree symetrically
+          trace = "none",
+          
+          ## Set the colors of columns, rows and cells
+#           ColSideColors = color.order,
+#           RowSideColors = color.order,
+          col = palette,
+          
+          ## Set the font size
+          cexRow = 0.065,
+          cexCol = 0.065,
+          
+          ## Set the key with the values
+          key = TRUE,
+          keysize = 1.5,
+          key.xlab = "Number of matches",
+          key.ylab = "",
+          density.info = "none"
+          )
+dev.off()
+
+###################################################
 
 ###############################################################
 ## Run the hierarchical clustering with the three methods
@@ -85,14 +158,21 @@ single.number.row <- order.list[["single"]][["row"]]
 ###############################################
 ## Convert the table to the format required
 ## for the D3 heatmap
-x <- count.matches.tab
-matches.tsv <- NULL
-for(j in 1:dim(x)[1]){
-  for(i in 1:dim(x)[2]){
-    matches.tsv <<- rbind(matches.tsv, matrix(c(j,i, as.numeric(x[j,i])), nrow = 1))
-  }
-}
+matches.tsv <<- NULL
+
+x <- sapply(1:dim(count.matches.tab)[1], function(j){
+  sapply(1:dim(count.matches.tab)[2], function(i){
+    matches.tsv <<- rbind(matches.tsv, matrix(c(j,i, as.numeric(count.matches.tab[j,i])), nrow = 1))
+  })
+})
 colnames(matches.tsv) <- c("Row", "Col", "Value")
+
+
+# for(j in 1:dim(x)[1]){
+#   for(i in 1:dim(x)[2]){
+#     matches.tsv <<- rbind(matches.tsv, matrix(c(j,i, as.numeric(x[j,i])), nrow = 1))
+#   }
+# }
 
 ######################################################
 ## Export the table that will be read by D3 heatmap
