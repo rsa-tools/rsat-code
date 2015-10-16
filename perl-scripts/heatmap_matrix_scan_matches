@@ -124,6 +124,7 @@ package main;
   $main::outfile{heatmap_d3_attributes} = $main::outfile{prefix}."_heatmap_attributes.tab";
   $main::outfile{dynamic_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_heatmap_d3_matrix_scan_matches.html";
   $main::outfile{dynamic_heatmap_html} = $main::outfile{prefix}."_dynamic_heatmap_d3_matches.html";
+  $main::outfile{R_heatmap} = $main::outfile{prefix}."_R_heatmap_matches.pdf";
   $main::outfile{temp_html} = $main::outfile{prefix}."_temporal_file.html";
 
   ################################################################
@@ -312,6 +313,7 @@ sub Cluster_matrix_scan_matches {
     $cluster_matches_cmd .= "; matches.tsv.file = '".$main::outfile{matches_tsv}."'";
     $cluster_matches_cmd .= "; matches.tab.file = '".$main::outfile{matches_tab}."'";
     $cluster_matches_cmd .= "; attributes.list.file = '".$main::outfile{heatmap_d3_attributes}."'";
+    $cluster_matches_cmd .= "; heatmap.pdf.file = '".$main::outfile{R_heatmap}."'";
     $cluster_matches_cmd .= "; p.val = '".$p_value."'";
     $cluster_matches_cmd .= "; \"";
 #    $cluster_matches_cmd = "(".$cluster_matches_cmd.") 2> ".$main::outfile{Rlog};
@@ -330,6 +332,8 @@ sub Cluster_matrix_scan_matches {
 ## of each matrix in the sequences.
 
 sub Create_dynamic_d3_heatmap_matches {
+
+    &RSAT::message::TimeWarn("Creating Dynamic D3 Heamap") if ($main::verbose >= 2);
 
     ## Read attributes table
     my ($attributes_handle) = &RSAT::util::OpenInputFile($main::outfile{heatmap_d3_attributes});
