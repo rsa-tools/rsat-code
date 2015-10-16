@@ -55,11 +55,9 @@ BEGIN {
     push (@INC, "$`lib/");
   }
 }
-
 require "RSA.lib";
 require "RSA2.cgi.lib";
 use RSAT::util;
-use List::MoreUtils qw(uniq);
 use Data::Dumper;
 use File::Basename;
 use File::Path;
@@ -82,6 +80,30 @@ package main;
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
+
+  ################################################################
+  ## Set output file names + global variables
+
+  local %attributes_heatmap = ();
+  local $p_value = 1e-4;
+
+  ## Supported count modes
+  local @supported_count_modes = qw (ocurrence presence);
+  local %supported_count_modes = ();
+  foreach my $mode (@supported_count_modes) {
+    $supported_count_modes{$mode} = 1;
+  }
+  local $supported_count_modes = join ",", @supported_count_modes;
+  local $count_mode = "ocurrence";
+
+  ## Output file names
+  $main::outfile{matches_tsv} = $main::outfile{prefix}."_matrix_scan_matches.tsv";
+  $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_matches_per_sequence.tab";
+  $main::outfile{heatmap_d3_attributes} = $main::outfile{prefix}."_heatmap_attributes.tab";
+  $main::outfile{dynamic_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_heatmap_d3_matrix_scan_matches.html";
+  $main::outfile{dynamic_heatmap_html} = $main::outfile{prefix}."_dynamic_heatmap_d3_matches.html";
+  $main::outfile{R_heatmap} = $main::outfile{prefix}."_R_heatmap_matches.pdf";
+  $main::outfile{temp_html} = $main::outfile{prefix}."_temporal_file.html";
 
   ################################################################
   ## Read argument values
@@ -110,22 +132,6 @@ package main;
     $args_to_pass = join (" ", @args_to_pass);
     &RSAT::message::Info("Unrecognized arguments are ignored", $args_to_pass) if ($main::verbose >= 2);
   }
-
-
-  ################################################################
-  ## Set output file names + global variables
-
-  local %attributes_heatmap = ();
-  local $p_value = 1e-4;
-
-  ## Output file names
-  $main::outfile{matches_tsv} = $main::outfile{prefix}."_matrix_scan_matches.tsv";
-  $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_matches_per_sequence.tab";
-  $main::outfile{heatmap_d3_attributes} = $main::outfile{prefix}."_heatmap_attributes.tab";
-  $main::outfile{dynamic_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_heatmap_d3_matrix_scan_matches.html";
-  $main::outfile{dynamic_heatmap_html} = $main::outfile{prefix}."_dynamic_heatmap_d3_matches.html";
-  $main::outfile{R_heatmap} = $main::outfile{prefix}."_R_heatmap_matches.pdf";
-  $main::outfile{temp_html} = $main::outfile{prefix}."_temporal_file.html";
 
   ################################################################
   ## Print verbose
@@ -245,6 +251,35 @@ Default: 1e-4
     } elsif ($arg eq "-pval") {
       $p_value = shift(@arguments);
 
+=pod
+
+=item B<-count_mode mode>
+
+Option to specify how the matches will be counted.
+
+Supported count modes:
+ 
+=over
+
+=item I<ocurrence> (default)
+
+Count the real number of matches.
+
+=item I<presence>
+
+Count the presence/absence of matches on each sequence.
+0 (absence)  = no matches.
+1 (presence) = at leat 1 match.
+
+=back
+
+=cut
+
+    } elsif ($arg eq "-count_mode") {
+      $count_mode = shift(@arguments);
+      unless(exists($supported_count_modes{$count_mode})) {
+	&RSAT::error::FatalError($count_mode, "Invalid count mode. Supported:", $supported_count_modes);
+      }
 
 =pod
 
@@ -315,6 +350,7 @@ sub Cluster_matrix_scan_matches {
     $cluster_matches_cmd .= "; attributes.list.file = '".$main::outfile{heatmap_d3_attributes}."'";
     $cluster_matches_cmd .= "; heatmap.pdf.file = '".$main::outfile{R_heatmap}."'";
     $cluster_matches_cmd .= "; p.val = '".$p_value."'";
+    $cluster_matches_cmd .= "; count.mode = '".$count_mode."'";
     $cluster_matches_cmd .= "; \"";
 #    $cluster_matches_cmd = "(".$cluster_matches_cmd.") 2> ".$main::outfile{Rlog};
 
@@ -333,7 +369,7 @@ sub Cluster_matrix_scan_matches {
 
 sub Create_dynamic_d3_heatmap_matches {
 
-    &RSAT::message::TimeWarn("Creating Dynamic D3 Heamap") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Creating Dynamic D3 Heatmap") if ($main::verbose >= 2);
 
     ## Read attributes table
     my ($attributes_handle) = &RSAT::util::OpenInputFile($main::outfile{heatmap_d3_attributes});
@@ -371,12 +407,23 @@ sub Create_dynamic_d3_heatmap_matches {
 	$line =~ s/--r_numb--/$attributes_heatmap{Row_number}/;
 	$line =~ s/--gradient--/$attributes_heatmap{Gradient}/;
 	$line =~ s/--matrix_name--/$attributes_heatmap{Matrix_name}/;
+
 	$line =~ s/--average_col--/$attributes_heatmap{Average_col}/;
 	$line =~ s/--complete_col--/$attributes_heatmap{Complete_col}/;
 	$line =~ s/--single_col--/$attributes_heatmap{Single_col}/;
+	$line =~ s/--centroid_col--/$attributes_heatmap{Centroid_col}/;
+	$line =~ s/--median_col--/$attributes_heatmap{Median_col}/;
+	$line =~ s/--mcquitty_col--/$attributes_heatmap{Mcquitty_col}/;
+	$line =~ s/--ward_col--/$attributes_heatmap{Ward_col}/;
+
 	$line =~ s/--average_row--/$attributes_heatmap{Average_row}/;
 	$line =~ s/--complete_row--/$attributes_heatmap{Complete_row}/;
 	$line =~ s/--single_row--/$attributes_heatmap{Single_row}/;
+	$line =~ s/--centroid_row--/$attributes_heatmap{Centroid_row}/;
+	$line =~ s/--median_row--/$attributes_heatmap{Median_row}/;
+	$line =~ s/--mcquitty_row--/$attributes_heatmap{Mcquitty_row}/;
+	$line =~ s/--ward_row--/$attributes_heatmap{Ward_row}/;
+
 	$line =~ s/--row_order_default--/$attributes_heatmap{Row_order_default}/;
 	$line =~ s/--matrix_number--/$attributes_heatmap{Matrix_number}/;
 	$line =~ s/--seq_id--/$attributes_heatmap{Seq_IDs}/;
