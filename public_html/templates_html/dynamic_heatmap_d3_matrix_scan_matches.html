@@ -126,8 +126,12 @@ Order:
   <select id="order">
   <option value="matrix">Matrix ID</option>
   <option value="average">Average linkage</option>
+  <option value="centroid">Centroid linkage</option>
   <option value="complete">Complete linkage</option>
+  <option value="mcquitty">McQuitty linkage</option>
+  <option value="median">Median linkage</option>
   <option value="single">Single linkage</option>
+  <option value="ward">Ward linkage</option>
   </select>
 <div id="chart" style='overflow:auto; width:1500px; height:1500px;'></div>
 
@@ -155,6 +159,15 @@ colors = --gradient--
 
   hccol_single = [--single_col--],
 
+  hccol_average = [--centroid_col--],
+
+  hccol_complete = [--median_col--],
+
+  hccol_single = [--mcquitty_col--],
+
+  hccol_average = [--ward_col--],
+
+
   // Order of the Sequences
   hcrow = [--row_order_default-- ], // change to gene name or probe id
 
@@ -163,6 +176,14 @@ colors = --gradient--
   hcrow_complete = [--complete_row--],
 
   hcrow_single = [--single_row--],
+
+  hcrow_average = [--centroid_row--],
+
+  hcrow_complete = [--median_row--],
+
+  hcrow_single = [--mcquitty_row--],
+
+  hccol_average = [--ward_col--],
 
   // Labels
   colLabel = [--matrix_name--],
@@ -385,13 +406,78 @@ function(error, data) {
       ;
 
     t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hcrow_single.indexOf(i+1) * cellSize; })
       ;
 
     t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_average.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hccol_single.indexOf(i+1) * cellSize; })
       ;
-   }  
+
+   } else if(value=="centroid"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_centroid.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_centroid.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_centroid.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_centroid.indexOf(i+1) * cellSize; })
+      ;
+
+   } else if(value=="median"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_median.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_median.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_median.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_median.indexOf(i+1) * cellSize; })
+      ;
+
+   } else if(value=="mcquitty"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_mcquitty.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_mcquitty.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_mcquitty.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_mcquitty.indexOf(i+1) * cellSize; })
+      ;
+
+   } else if(value=="ward"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_ward.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_ward.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_ward.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_ward.indexOf(i+1) * cellSize; })
+      ;
+   }
+
   }
 
   //
