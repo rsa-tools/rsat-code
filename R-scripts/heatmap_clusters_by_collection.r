@@ -95,6 +95,43 @@ if (length(args >= 1)) {
 clusters <- read.table(file = cluster.counts.file, sep = "\t", header = TRUE)
 names(clusters) <- gsub("X.Cluster_ID", "Cluster_ID", names(clusters))
 
+#################################
+## Create the percentage table
+
+## Count the number of motif per collection
+nb.db <- dim(clusters)[2] - 2
+motif.DB.counts <- apply(clusters[,3:(nb.db+2)], 2, sum)
+
+percent.table <- NULL
+x <- sapply(names(motif.DB.counts), function(DB){
+  
+  ## Select those cluster with at least one motif corresponding 
+  ## to the current motifDB
+  DB.motifs <- clusters[clusters[,DB] > 0,]
+  
+  ## Count the number of motifs that correspond exclusively to a collection of motifs
+  DB.motifs.exclusive <- apply(DB.motifs[,3:(nb.db+2)],1, sum)
+  DB.motifs.exclusive <- length(DB.motifs.exclusive[DB.motifs.exclusive == 1])
+  
+  ## Calculate the percentage of the collection which is unique
+  DB.percent <- round(DB.motifs.exclusive / motif.DB.counts[DB], digits = 4)
+  
+  ## Calculate the percentage of the total collection corresponding to the 
+  ## unique motifs of the analyzed motifDB
+  Total.percent <- round(DB.motifs.exclusive / sum(motif.DB.counts), digits = 4)
+  
+  #   print(paste("Nb Unique motifs: ", DB.motifs.exclusive, " -  %(internal) :", DB.percent, " -  %(total): ", Total.percent))
+  percent.table <<- cbind(percent.table, matrix(c(motif.DB.counts[DB], DB.motifs.exclusive, DB.percent, Total.percent), ncol = 1))
+})
+
+## Add a new column and re-order the matrix
+percent.table <- cbind(percent.table, c("DB_nb_motifs", "Nb_exclusive_motifs", "DB_percent", "Total_percent")) 
+percent.table <- percent.table[,c(dim(percent.table)[2],1:(dim(percent.table)[2]-1))]
+colnames(percent.table) <- c("Collection", names(clusters[,3:(nb.db+2)]))
+
+## Export the percentage table
+write.table(percent.table, file = percent.table.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+
 ## Get the values + names
 clusters.names <- as.vector(clusters[,1])
 collection.names <- names(clusters[3:(dim(clusters)[2])])
