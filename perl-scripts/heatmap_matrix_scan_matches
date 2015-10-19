@@ -96,18 +96,19 @@ package main;
   local $supported_count_modes = join ",", @supported_count_modes;
   local $count_mode = "ocurrence";
 
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+  
   ## Output file names
   $main::outfile{matches_tsv} = $main::outfile{prefix}."_matrix_scan_matches.tsv";
   $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_matches_per_sequence.tab";
   $main::outfile{heatmap_d3_attributes} = $main::outfile{prefix}."_heatmap_attributes.tab";
   $main::outfile{dynamic_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_heatmap_d3_matrix_scan_matches.html";
   $main::outfile{dynamic_heatmap_html} = $main::outfile{prefix}."_dynamic_heatmap_d3_matches.html";
-  $main::outfile{R_heatmap} = $main::outfile{prefix}."_R_heatmap_matches.pdf";
+  $main::outfile{R_heatmaps} = $main::outfile{prefix}."_R_heatmap_matches.pdf";
   $main::outfile{temp_html} = $main::outfile{prefix}."_temporal_file.html";
-
-  ################################################################
-  ## Read argument values
-  &ReadArguments();
 
   ################################################################
   ## Check argument values
@@ -305,7 +306,7 @@ Prefix for the output files.
 
 =cut
     } elsif ($arg eq "-o") {
-      $outfile{prefix} = shift(@arguments);
+      $main::outfile{prefix} = shift(@arguments);
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
@@ -348,7 +349,7 @@ sub Cluster_matrix_scan_matches {
     $cluster_matches_cmd .= "; matches.tsv.file = '".$main::outfile{matches_tsv}."'";
     $cluster_matches_cmd .= "; matches.tab.file = '".$main::outfile{matches_tab}."'";
     $cluster_matches_cmd .= "; attributes.list.file = '".$main::outfile{heatmap_d3_attributes}."'";
-    $cluster_matches_cmd .= "; heatmap.pdf.file = '".$main::outfile{R_heatmap}."'";
+    $cluster_matches_cmd .= "; heatmap.pdf.file = '".$main::outfile{R_heatmaps}."'";
     $cluster_matches_cmd .= "; p.val = '".$p_value."'";
     $cluster_matches_cmd .= "; count.mode = '".$count_mode."'";
     $cluster_matches_cmd .= "; \"";
