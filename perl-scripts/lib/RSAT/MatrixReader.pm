@@ -38,6 +38,7 @@ formats.
 			   'consensus'=>1,
 			   'sequences'=>1,
 			   'feature'=>1,
+			   'footprintDB'=>1,
 			   'gibbs'=> 1,
 			   'infogibbs'=>1,
 			   'info-gibbs'=>1,
@@ -107,7 +108,9 @@ sub readFromFile {
 #    } elsif ($format eq "stamp-previous") {
     } elsif ($format eq "stamp") { ## This is the format of STAMP demo matrices
 	@matrices = _readFromSTAMPFile($file);
-    } elsif ($format eq "stamp-transfac") { ## STAMP exports files in a pseudo-transfac format
+    } elsif ($format eq "stamp-transfac") { ## STAMP exports files in a transfac-like format
+	@matrices = _readFromTRANSFACFile($file, "stamp"); 
+    } elsif ($format eq "footprintdb") { ## footprintDB exports files in a transfac-like format
 	@matrices = _readFromTRANSFACFile($file, "stamp"); 
     } elsif ($format eq "infogibbs") {
 	@matrices = _readFromInfoGibbsFile($file);
@@ -545,6 +548,7 @@ sub _readFromTRANSFACFile {
       $matrix->set_parameter("version", $version);
       $ncol = 0;
 #      next;
+
     } elsif ((/^NA\s*(.*)/) && ($format eq "yeastract") ) {
       my $accession = &clean_id($1);
       $current_matrix_nb++;
@@ -660,6 +664,7 @@ sub _readFromTRANSFACFile {
 	## TRANSFAC identifier corresponds to our name
       } elsif ((/^ID\s+(\S+)/)
 	       || ((/^NA\s+(\S+)/) && ($format eq "stamp")) ## For TRANSFAC-like format exported by STAMP
+	       || ((/^NA\s+(\S+)/) && ($format eq "footprintdb")) ## For TRANSFAC-like format exported by footprintDB
 	      ) {
 
 	## TRANSFAC identifier corresponds to our matrix name

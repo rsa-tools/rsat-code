@@ -1003,6 +1003,7 @@ sub GetMatrix {
 				'cluster-buster'=>1,
 				'consensus'=>1,
 				'feature'=>1,
+				'footprintDB'=>1,
 				'gibbs'=> 1,
 				'infogibbs'=>1,
 				'jaspar'=>1,
