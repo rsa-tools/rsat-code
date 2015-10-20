@@ -1410,13 +1410,19 @@ sub set_output_file_names {
   ## Table with the number of clusters
   $main::outfile{nb_clusters_table} = $main::outfile{prefix}."_tables/number_of_clusters.tab";
 
-  ## Table with the summary of clusters
+  ## Table with the summary of clusters + percentage
   $main::outfile{cluster_summary_table} = $main::outfile{prefix}."_tables/clusters_summary_table.tab";
+  $main::outfile{percent_table} = $main::outfile{prefix}."_tables/clusters_summary_percent_table.tab";
+  $main::outfile{coverage_table} = $main::outfile{prefix}."_tables/clusters_summary_coverage_contingency_table.tab";
+
 
   ## Table with summary of clusters parsed.
   ## This is the format required for D3 heatmap!
-  $mainoutfile{heatmap_collections_d3} = $main::outfile{prefix}."_tables/collection_heatmap_tab.tsv";
-    $mainoutfile{heatmap_collections_attributes} = $main::outfile{prefix}."_tables/collection_heatmap_order.tab";
+  $main::outfile{heatmap_coverage_d3} = $main::outfile{prefix}."_tables/convergency_heatmap_tab.tsv";
+    $main::outfile{heatmap_coverage_attributes} = $main::outfile{prefix}."_tables/convergency_heatmap_attributes.tab";
+
+  $main::outfile{heatmap_collections_d3} = $main::outfile{prefix}."_tables/collection_heatmap_tab.tsv";
+    $main::outfile{heatmap_collections_attributes} = $main::outfile{prefix}."_tables/collection_heatmap_order.tab";
 
   ## Output files for the hierarchical clustering trees
   $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
@@ -1427,6 +1433,7 @@ sub set_output_file_names {
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
   $main::outfile{dynamic_heatmap_html} = $main::outfile{prefix}."_dynamic_heatmap.html"; push @outfiles, "dynamic_heatmap_html";
+  $main::outfile{dynamic_coverage_heatmap_html} = $main::outfile{prefix}."_dynamic_coverage_heatmap.html"; push @outfiles, "coverage_heatmap_html";
   $main::outfile{heatmap_jpg} = $main::outfile{prefix}."_figures/heatmap.jpg";
   $main::outfile{heatmap_pdf} = $main::outfile{prefix}."_figures/heatmap.pdf";
 
@@ -4156,7 +4163,7 @@ $clust_table .= "\n".'
 
 
 ################################################################
-## Create the dynamic geatmap showing the complementarity
+## Create the dynamic heatmap showing the complementarity
 ## between the input motifs. This function is run only when
 ## two or more Motif collections are clusteres
 sub Dynamic_Heatmap_Complementarity {
@@ -4166,8 +4173,12 @@ sub Dynamic_Heatmap_Complementarity {
     ## Create the attributes table
     &Create_Attributes_for_Heatmap_D3();
 
+    ################################################################
+    ## Create the D3 heatmap with the clusters and the motif
+    ## collections where they come from
+
     ## Read attributes table
-    my ($attributes_handle) = &RSAT::util::OpenInputFile($mainoutfile{heatmap_collections_attributes});
+    my ($attributes_handle) = &RSAT::util::OpenInputFile($main::outfile{heatmap_collections_attributes});
     while (<$attributes_handle>) {
 	next if (/^#/); ## Skip header line
 	next if (/^;/); ## Skip comment lines
@@ -4179,7 +4190,7 @@ sub Dynamic_Heatmap_Complementarity {
 	my $att_content = $split_line[1];
 	$attributes_heatmap{$att_name} = $att_content;
     }
-    my $tsv_file = &RSAT::util::RelativePath($main::outfile{summary}, $mainoutfile{heatmap_collections_d3});
+    my $tsv_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_collections_d3});
 
     ## Create a copy of the D3 heatmap template
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/dynamic_heatmap_d3.html ".$main::outfile{dynamic_heatmap_html};
@@ -4219,6 +4230,71 @@ sub Dynamic_Heatmap_Complementarity {
     unlink($main::outfile{dynamic_heatmap_html});
     $cmd = "mv ".$main::outfile{temp_html}." ".$main::outfile{dynamic_heatmap_html};
     &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+
+    ################################################################
+    ## Create the D3 heatmap representing the contingency table
+    ## between the collections showing their coverage among themselves
+
+    ## Read attributes table
+    my ($exclusive_motif_handle) = &RSAT::util::OpenInputFile($main::outfile{percent_table});
+    while (<$coverage_attributes_handle>) {
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines
+	chomp;
+	my $line = $_;
+	my @split_line = split("\t", $line);
+	my $att_name = $split_line[0];
+	my $att_content = $split_line[1];
+	$attributes_heatmap{$att_name} = $att_content;
+    }
+
+    ## Read attributes table
+    my ($coverage_attributes_handle) = &RSAT::util::OpenInputFile($main::outfile{heatmap_coverage_attributes});
+    while (<$coverage_attributes_handle>) {
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines
+	chomp;
+	my $line = $_;
+	my @split_line = split("\t", $line);
+	my $att_name = $split_line[0];
+	my $att_content = $split_line[1];
+	$attributes_heatmap{$att_name} = $att_content;
+    }
+    my $tsv_coverage_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_coverage_d3});
+
+    ## Create a copy of the D3 heatmap template
+    $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/dynamic_heatmap_d3_and_tables_motif_collection_coverage.html ".$main::outfile{dynamic_coverage_heatmap_html};
+    &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+    ## Read the D3 heatmap file and change the attributes
+    open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
+    my ($dyn_cov_heatmap) = &RSAT::util::OpenInputFile($main::outfile{dynamic_coverage_heatmap_html});
+    while (<$dyn_cov_heatmap>) {
+	chomp;
+	my $line = $_;
+
+	$line =~ s/--d3--/$d3_base/;
+	$line =~ s/--left--/$attributes_heatmap{Left_space}/g;
+	$line =~ s/--bottom--/$attributes_heatmap{Bottom_space}/;
+	$line =~ s/--file--/$tsv_coverage_file/;
+	$line =~ s/--c_numb--/$attributes_heatmap{Col_number}/;
+	$line =~ s/--r_numb--/$attributes_heatmap{Row_number}/;
+	$line =~ s/--collection_nb--/$attributes_heatmap{Collection_number}/;
+	$line =~ s/--collection_labels--/$attributes_heatmap{Collection_labels}/;
+	$line =~ s/--legend_header--/$attributes_heatmap{Legend_Head}/;
+	$line =~ s/--tbody--//;
+
+	print TEMP $line."\n";
+    }
+
+    ## Rename the temporary file
+    &RSAT::message::TimeWarn("Exporting Dynamic Heatmap") if ($main::verbose >= 2);
+    unlink($main::outfile{heatmap_coverage_attributes});
+    $cmd = "mv ".$main::outfile{temp_html}." ".$main::outfile{dynamic_coverage_heatmap_html};
+    &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 }
 
 ################################################################
@@ -4243,8 +4319,12 @@ sub Create_Attributes_for_Heatmap_D3 {
     $cluster_collection_cmd .= " --slave --no-save --no-restore --no-environ";
     $cluster_collection_cmd .= " --args \"";
     $cluster_collection_cmd .= " cluster.counts.file = '".$main::outfile{cluster_summary_table}."'";
-    $cluster_collection_cmd .= "; heatmap.table.d3 = '".$mainoutfile{heatmap_collections_d3}."'";
-    $cluster_collection_cmd .= "; attributes.list.file = '".$mainoutfile{heatmap_collections_attributes}."'";
+    $cluster_collection_cmd .= "; heatmap.table.d3 = '".$main::outfile{heatmap_collections_d3}."'";
+    $cluster_collection_cmd .= "; attributes.list.file = '".$main::outfile{heatmap_collections_attributes}."'";
+    $cluster_collection_cmd .= "; percent.table.file = '".$main::outfile{percent_table}."'";
+    $cluster_collection_cmd .= "; coverage.table.file = '".$main::outfile{coverage_table}."'";
+    $cluster_collection_cmd .= "; coverage.table.d3 = '".$main::outfile{heatmap_coverage_d3}."'";
+    $cluster_collection_cmd .= "; coverage.heatmap.attributes.file = '".$main::outfile{heatmap_coverage_attributes}."'";
     $cluster_collection_cmd .= "; \"";
 #    $cluster_collection_cmd = "(".$cluster_collection_cmd.") 2> ".$main::outfile{Rlog};
 
@@ -5110,7 +5190,7 @@ sub Synthesis {
     ## The heatmap will be created only when two or more collections of
     ## motifs are provided to matrix-clustering
     if($single_input_flag == 0){
-	&Dynamic_Heatmap_Complementarity();
+    	&Dynamic_Heatmap_Complementarity();
     }
 
     &InsertSmallForest();
