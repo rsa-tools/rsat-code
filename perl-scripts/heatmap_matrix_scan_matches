@@ -1,0 +1,472 @@
+#!/usr/bin/perl -w
+
+=pod
+
+=head1 NAME
+
+heatmap_matrix_scan_matches
+
+=head1 VERSION
+
+1
+
+=head1 DESCRIPTION
+
+Receives as in put a matrix-scan table results and compute 
+a dynamic heatmap showing the number of matches per sequence. 
+
+=head1 AUTHORS
+
+castro\@tagc.univ-mrs.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+heatmap_matrix_scan_matches [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require "RSA2.cgi.lib";
+use RSAT::util;
+use Data::Dumper;
+use File::Basename;
+use File::Path;
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  ################################################################
+  ## Set output file names + global variables
+
+  local %attributes_heatmap = ();
+  local $p_value = 1e-4;
+
+  ## Supported count modes
+  local @supported_count_modes = qw (ocurrence presence);
+  local %supported_count_modes = ();
+  foreach my $mode (@supported_count_modes) {
+    $supported_count_modes{$mode} = 1;
+  }
+  local $supported_count_modes = join ",", @supported_count_modes;
+  local $count_mode = "ocurrence";
+
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+  
+  ## Output file names
+  $main::outfile{matches_tsv} = $main::outfile{prefix}."_matrix_scan_matches.tsv";
+  $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_matches_per_sequence.tab";
+  $main::outfile{heatmap_d3_attributes} = $main::outfile{prefix}."_heatmap_attributes.tab";
+  $main::outfile{dynamic_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_heatmap_d3_matrix_scan_matches.html";
+  $main::outfile{dynamic_heatmap_html} = $main::outfile{prefix}."_dynamic_heatmap_d3_matches.html";
+  $main::outfile{R_heatmaps} = $main::outfile{prefix}."_R_heatmap_matches.pdf";
+  $main::outfile{temp_html} = $main::outfile{prefix}."_temporal_file.html";
+
+  ################################################################
+  ## Check argument values
+
+  &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
+
+  ################################################################
+  ## Input file is mandatory
+  unless ($main::infile{matrix_scan_results_table}) {
+      &RSAT::error::FatalError("The input file (matrix-scan result table) is mandatory.");
+  }
+
+  ################################################################
+  ## Check that the output prefix has been specified
+  unless ($main::outfile{prefix}) {
+    &RSAT::error::FatalError("You must define the output prefix (option -o).");
+  }
+
+  ################################################################
+  ## Non-recognized parameters are ignored
+  if (scalar(@args_to_pass)) {
+    $args_to_pass = join (" ", @args_to_pass);
+    &RSAT::message::Info("Unrecognized arguments are ignored", $args_to_pass) if ($main::verbose >= 2);
+  }
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Cluster matrix_scan matches by different linkage methods
+  ## and produce the attributes table
+  &Cluster_matrix_scan_matches();
+
+  ################################################################
+  ## Create the dynamic D# heatmap
+  &Create_dynamic_d3_heatmap_matches();
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+=pod
+
+=item B<-pval p_value>
+
+Select only those matches with a p-value equal or lower than the
+specified.
+
+Default: 1e-4
+
+=cut
+    } elsif ($arg eq "-pval") {
+      $p_value = shift(@arguments);
+
+=pod
+
+=item B<-count_mode mode>
+
+Option to specify how the matches will be counted.
+
+Supported count modes:
+ 
+=over
+
+=item I<ocurrence> (default)
+
+Count the real number of matches.
+
+=item I<presence>
+
+Count the presence/absence of matches on each sequence.
+0 (absence)  = no matches.
+1 (presence) = at leat 1 match.
+
+=back
+
+=cut
+
+    } elsif ($arg eq "-count_mode") {
+      $count_mode = shift(@arguments);
+      unless(exists($supported_count_modes{$count_mode})) {
+	&RSAT::error::FatalError($count_mode, "Invalid count mode. Supported:", $supported_count_modes);
+      }
+
+=pod
+
+=item B<-i inputfile>
+
+A matrix-scan result table. 
+Sequences matched by a collection of PSSMs.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{matrix_scan_results_table} = shift(@arguments);
+
+
+=pod
+
+=item	B<-o output_prefix>
+
+Prefix for the output files.
+
+1.- Dynamic D3 Heatmap
+2.- SVT table read by D3
+3.- Table showing the number of matches per sequence for each PSSM
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{prefix} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+
+################################################################
+## Create the attributes (values+ colors + size) that will be 
+## inserted in the D3 Heatmap
+sub Cluster_matrix_scan_matches {   
+
+    &RSAT::message::TimeWarn("Clustering matrix-scan Matches") if ($main::verbose >= 2);
+
+    ##################################
+    ### Identify the path of the R executable
+    my $r_path = &RSAT::server::GetProgramPath("R");
+
+    my $cluster_matches_script  = $ENV{RSAT}."/R-scripts/cluster_matrix_scan_matches.r";
+
+    &RSAT::error::FatalError("Cannot read cluster collection script", $cluster_matches_script) unless (-r $cluster_matches_script);
+    
+    ## Basic parameters
+    my $cluster_matches_cmd = "";
+    $cluster_matches_cmd .= " cat ".$cluster_matches_script;
+    $cluster_matches_cmd .= " | ".$r_path;
+    $cluster_matches_cmd .= " --slave --no-save --no-restore --no-environ";
+    $cluster_matches_cmd .= " --args \"";
+
+    $cluster_matches_cmd .= " matrix.scan.results = '".$main::infile{matrix_scan_results_table}."'";
+    $cluster_matches_cmd .= "; matches.tsv.file = '".$main::outfile{matches_tsv}."'";
+    $cluster_matches_cmd .= "; matches.tab.file = '".$main::outfile{matches_tab}."'";
+    $cluster_matches_cmd .= "; attributes.list.file = '".$main::outfile{heatmap_d3_attributes}."'";
+    $cluster_matches_cmd .= "; heatmap.pdf.file = '".$main::outfile{R_heatmaps}."'";
+    $cluster_matches_cmd .= "; p.val = '".$p_value."'";
+    $cluster_matches_cmd .= "; count.mode = '".$count_mode."'";
+    $cluster_matches_cmd .= "; \"";
+#    $cluster_matches_cmd = "(".$cluster_matches_cmd.") 2> ".$main::outfile{Rlog};
+
+    if ($r_path) {
+        &doit($cluster_matches_cmd, 0, 1, $verbose, 0, "", "", $main::err);
+    } else {
+        &RSAT::message::Warning("Could not create the TSV matrix because the program R is not available") if ($main::verbose >= 1);
+    }
+    return();
+}
+
+
+################################################################
+## Create the dynamic heatmap showing the number of matches 
+## of each matrix in the sequences.
+
+sub Create_dynamic_d3_heatmap_matches {
+
+    &RSAT::message::TimeWarn("Creating Dynamic D3 Heatmap") if ($main::verbose >= 2);
+
+    ## Read attributes table
+    my ($attributes_handle) = &RSAT::util::OpenInputFile($main::outfile{heatmap_d3_attributes});
+    while (<$attributes_handle>) {
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines
+	chomp;
+	my $line = $_;
+	my @split_line = split("\t", $line);
+	my $att_name = $split_line[0];
+	my $att_content = $split_line[1];
+	$attributes_heatmap{$att_name} = $att_content;
+    }
+    
+    my $tsv_file = &RSAT::util::RelativePath($main::outfile{dynamic_heatmap_html}, $main::outfile{matches_tsv});
+    
+## Create a copy of the D3 heatmap template
+    my $cmd = "cp ".$main::outfile{dynamic_heatmap_template}." ".$main::outfile{dynamic_heatmap_html};
+    &doit($cmd, 0, 1, $verbose, 0, "", "", $main::err);
+    
+## Read the D3 heatmap file and change the attributes
+    open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
+    my ($dyn_heatmap) = &RSAT::util::OpenInputFile($main::outfile{dynamic_heatmap_html});
+    while (<$dyn_heatmap>) {
+	chomp;
+	my $line = $_;
+	
+#    $line =~ s/--d3--/$d3_base/;
+	$line =~ s/--left--/$attributes_heatmap{Left_space}/;
+	$line =~ s/--bottom--/$attributes_heatmap{Bottom_space}/;
+	$line =~ s/--file--/$tsv_file/;
+	$line =~ s/--cell_size--/$attributes_heatmap{Cell_size}/;
+	$line =~ s/--c_numb--/$attributes_heatmap{Col_number}/;
+	$line =~ s/--r_numb--/$attributes_heatmap{Row_number}/;
+	$line =~ s/--gradient--/$attributes_heatmap{Gradient}/;
+	$line =~ s/--matrix_name--/$attributes_heatmap{Matrix_name}/;
+
+	$line =~ s/--average_col--/$attributes_heatmap{Average_col}/;
+	$line =~ s/--complete_col--/$attributes_heatmap{Complete_col}/;
+	$line =~ s/--single_col--/$attributes_heatmap{Single_col}/;
+	$line =~ s/--centroid_col--/$attributes_heatmap{Centroid_col}/;
+	$line =~ s/--median_col--/$attributes_heatmap{Median_col}/;
+	$line =~ s/--mcquitty_col--/$attributes_heatmap{Mcquitty_col}/;
+	$line =~ s/--ward_col--/$attributes_heatmap{Ward_col}/;
+
+	$line =~ s/--average_row--/$attributes_heatmap{Average_row}/;
+	$line =~ s/--complete_row--/$attributes_heatmap{Complete_row}/;
+	$line =~ s/--single_row--/$attributes_heatmap{Single_row}/;
+	$line =~ s/--centroid_row--/$attributes_heatmap{Centroid_row}/;
+	$line =~ s/--median_row--/$attributes_heatmap{Median_row}/;
+	$line =~ s/--mcquitty_row--/$attributes_heatmap{Mcquitty_row}/;
+	$line =~ s/--ward_row--/$attributes_heatmap{Ward_row}/;
+
+	$line =~ s/--row_order_default--/$attributes_heatmap{Row_order_default}/;
+	$line =~ s/--matrix_number--/$attributes_heatmap{Matrix_number}/;
+	$line =~ s/--seq_id--/$attributes_heatmap{Seq_IDs}/;
+	$line =~ s/--domain--/$attributes_heatmap{Domain}/;
+	$line =~ s/--data_legend--/$attributes_heatmap{Legend}/;
+	$line =~ s/--legend_header--/$attributes_heatmap{Legend_Head}/;
+	
+	print TEMP $line."\n";
+    }
+    
+## Rename the temporary file
+    &RSAT::message::TimeWarn("Exporting Dynamic Heatmap") if ($main::verbose >= 2);
+    unlink($main::outfile{dynamic_heatmap_html});
+    $cmd = "mv ".$main::outfile{temp_html}." ".$main::outfile{dynamic_heatmap_html};
+    &doit($cmd, 0, 1, $verbose, 0, "", "", $main::err);
+    
+    ## Delete temporal files
+    unlink($main::outfile{temp_html});
+    unlink($main::outfile{matches_tab});
+    unlink($main::outfile{heatmap_d3_attributes});
+}
+
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; template ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
