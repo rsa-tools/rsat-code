@@ -103,11 +103,24 @@ nb.db <- dim(clusters)[2] - 2
 motif.DB.counts <- apply(clusters[,3:(nb.db+2)], 2, sum)
 
 percent.table <- NULL
+coverage.contingency.table <- NULL
 x <- sapply(names(motif.DB.counts), function(DB){
   
   ## Select those cluster with at least one motif corresponding 
   ## to the current motifDB
   DB.motifs <- clusters[clusters[,DB] > 0,]
+  
+  #################################################################################
+  ## Calculate the overlap between the databases
+  
+  ## Select those cluster with at least one motif corresponding 
+  ## to the current motifDB
+  coverage <- apply(DB.motifs[3:dim(DB.motifs)[2]], 2, sum) / motif.DB.counts
+  
+  coverage.contingency.table <<- cbind(coverage.contingency.table, matrix(coverage, ncol = 1))
+  
+  #################################################################################
+  ## Count the number of exclusive motifs of each database 
   
   ## Count the number of motifs that correspond exclusively to a collection of motifs
   DB.motifs.exclusive <- apply(DB.motifs[,3:(nb.db+2)],1, sum)
@@ -124,13 +137,72 @@ x <- sapply(names(motif.DB.counts), function(DB){
   percent.table <<- cbind(percent.table, matrix(c(motif.DB.counts[DB], DB.motifs.exclusive, DB.percent, Total.percent), ncol = 1))
 })
 
-## Add a new column and re-order the matrix
+#########################################################
+## Add a new column and re-order the percentage matrix
 percent.table <- cbind(percent.table, c("DB_nb_motifs", "Nb_exclusive_motifs", "DB_percent", "Total_percent")) 
 percent.table <- percent.table[,c(dim(percent.table)[2],1:(dim(percent.table)[2]-1))]
 colnames(percent.table) <- c("Collection", names(clusters[,3:(nb.db+2)]))
+percent.table <- t(percent.table)
+write.table(percent.table, file = percent.table.file, sep = "\t", quote = FALSE, row.names = TRUE, col.names = FALSE)
 
-## Export the percentage table
-write.table(percent.table, file = percent.table.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+#########################################################
+## Round and export the coverage contingency table
+coverage.contingency.table <- round(coverage.contingency.table, digits = 3)
+colnames(coverage.contingency.table) <- names(motif.DB.counts)
+rownames(coverage.contingency.table) <- names(motif.DB.counts)
+write.table(coverage.contingency.table, file = coverage.table.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+
+## Convert the coverage table to the format required in D3 heatmap
+y <- NULL
+for(j in 1:dim(coverage.contingency.table)[1]){
+  for(i in 1:dim(coverage.contingency.table)[2]){
+    y <<- rbind(y, matrix(c(j,i, as.numeric(coverage.contingency.table[j,i])), nrow = 1))
+  }
+}
+colnames(y) <- c("Row", "Col", "Value")
+verbose(paste("Exporting data with collection coverage for D3", coverage.table.d3), 2)
+write.table(y, file = coverage.table.d3, sep = "\t", quote = FALSE, row.names = FALSE)
+
+###########################################################
+## Create attributes table to fill the D3 coverage fields
+row.nb <- dim(coverage.contingency.table)[1]
+col.nb <- dim(coverage.contingency.table)[2]
+default.labels <- paste(paste("'", names(motif.DB.counts), "'", sep = ""), collapse = ",")
+default.number <- paste(1:length(motif.DB.counts), collapse = ",")
+left <- (max(as.vector(sapply(names(motif.DB.counts), nchar))) + 2) * 10
+cell.size <- 20
+bottom <- 120
+legend.header <- bottom - 35
+if(row.nb < 5){
+  bottom <- 120
+  legend.header <- bottom - 35
+} else if(row.nb < 8){
+  bottom <- 170
+  legend.header <- bottom - 35
+} else if(row.nb < 13){
+  bottom <- 220
+  cell.size <- 15
+  legend.header <- bottom - 27
+} else if(row.nb < 18){
+  bottom <- 270
+  cell.size <- 15
+  legend.header <- bottom - 27
+}
+coverage.info <- matrix(c("Collection_labels", default.labels,
+                       "Collection_number", default.number,
+                       "Left_space", left,
+                       "Bottom_space", bottom,
+                       "Col_number", col.nb,
+                       "Row_number", row.nb,
+                       "Legend_Head", legend.header
+), nrow = 2)
+coverage.info.df <- t(data.frame(coverage.info))
+write.table(coverage.info.df, file = coverage.heatmap.attributes.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+
+
+##################################################
+## Create the collection's contribution heatmap
 
 ## Get the values + names
 clusters.names <- as.vector(clusters[,1])
@@ -186,7 +258,7 @@ for(j in 1:dim(x)[1]){
   }
 }
 colnames(y) <- c("Row", "Col", "Value")
-verbose(paste("Exporting heatmap table for D3", heatmap.table.d3), 2)
+verbose(paste("Exporting heatmap with cluster by collection table for D3", heatmap.table.d3), 2)
 write.table(y, file = heatmap.table.d3, sep = "\t", quote = FALSE, row.names = FALSE)
 
 
