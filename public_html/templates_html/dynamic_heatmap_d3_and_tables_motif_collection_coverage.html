@@ -98,7 +98,6 @@
   .tab{
     font-size: 10px;
     margin-top: 3px;
-    text-align: center;
     text-decoration: none;
     display: block;
     background-color: #E6E6E6;
@@ -107,12 +106,13 @@
     position: relative;
     border-radius:5px;
     padding: 0px 10px 10px 10px;
+    font-size: 10px;
   }
 
   .tab_col {
     padding: 7px 10px 7px 10px;
     background-color: #B1D4F9 !important;
-  font-size: 15px;
+    font-size: 12px;
   }
 
   .tab_spacer_1 {
@@ -150,7 +150,12 @@
 <div id="tooltip" class="hidden">
         <p><span id="value"></p>
 </div>
-<script src="--d3--"></script>
+
+<script type="text/javascript" src="--d3--"></script>
+<script type="text/javascript" src="--jq--"></script>
+<script type="text/javascript" src="--datatable--"></script>
+<link rel="stylesheet" type="text/css" src="--datatablecss--">
+
 Order_heatmap_cells:
   <select id="order">
   <option value="contingency">Contingency_table</option>
@@ -468,9 +473,9 @@ function(error, data) {
 </script>
 
   <!-- Div with the aligment table with all the motifs-->	
-<div id="Exclusive_Motif_Tab"  style="padding:7px 7px 0px 7px; margin:35px 0px 20px 0px;width:autopx;">	
-          <h4 style="margin:0px 0px 10px 0px;">Exclusive Motifs by Collection</h4>
-	  <table id="alignment_dyn_table" class="hover compact">
+<div  class="tab" style="padding:7px 7px 0px 7px; margin:35px 0px 20px 0px;width:870px;">	
+          <h4 style="margin:0px 0px 10px 0px;text-align:center;font-size:18px">Exclusive Motifs by Collection</h4>
+	  <table id="exclusive_motifs" class="hover compact" style="text-align:center;">
 	    <thead>
 	      <tr style="padding:70px">
 		<th class="tab_col">Collection</th>
@@ -499,7 +504,7 @@ function(error, data) {
 <script>
 // Dynamic alignment table
 $(document).ready( function () {
-    $('#exclusive_motif_dyn_table').DataTable({
+    $('#exclusive_motifs').DataTable({
 
         "info":     false,
         "paging":   false,
@@ -510,9 +515,11 @@ $(document).ready( function () {
 	    "smart": true
 	},
 	"aoColumnDefs": [
-            { "bSortable": true, "aTargets": [ 0,1,2,3,4 ] }
-	]	
-
+            { "bSortable": true, 
+              "aTargets": [ 0,1,2,3,4 ],
+              "width": "2%"
+            }
+	]		
     });
 });
 </script>
