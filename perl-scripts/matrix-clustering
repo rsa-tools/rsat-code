@@ -4093,7 +4093,7 @@ sub ClustersSummaryTable{
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Clusters Summary Table</h2> '."\n";
 
     if($single_input_flag == 0){
-	$clust_table .= "\n".' <h3 style="margin-top: 0px;margin-bottom: 5px;"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'">Contribution of each collecion to the clusters</a></h3> ';
+	$clust_table .= "\n".' <h3 style="margin-top: 0px;margin-bottom: 5px;"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'">Contribution of each collecion to the clusters </a> | <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'">Complementarity between input motif collections. </a></h3> ';
     }
 
 $clust_table .= "\n".'
@@ -5147,7 +5147,7 @@ sub InsertListOfFiles {
 	      '
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'"><strong>Collections Complementarity</strong></a></td>
-		      <td class="tab_spacer_2">A dynamic heatmap showing how many motifs contribute each collection to each cluster..</td>
+		      <td class="tab_spacer_2">A dynamic heatmap showing how many motifs contribute each collection to each cluster.</td>
 		   </tr>
              ';
       }
