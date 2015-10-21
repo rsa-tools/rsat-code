@@ -61,7 +61,7 @@ list_param:
 ## Download required files for all organisms
 ALL_SPECIES=$(shell cut -f 2 ${ORGANISMS_LIST} | grep -v species)
 download_all_species:
-	@echo WARNING: Make sure you run organisms before download_all
+	@echo WARNING: Make sure you run organisms before download_all_species
 	@echo
 	@echo Downloading all species in GROUP=${GROUP} RELEASE=${RELEASE}
 	for org in $(ALL_SPECIES); do \
@@ -74,17 +74,25 @@ download_all_species:
 ################################################################
 ## Install files required for all organisms
 install_all_species:
-	@echo WARNING: Make sure you run organisms before download_all
+	@echo WARNING: Make sure you run organisms before install_all_species
 	@echo
 	@echo Installing all species in GROUP=${GROUP} RELEASE=${RELEASE}
 	for org in $(ALL_SPECIES); do \
 		$(MAKE) install_from_gtf SPECIES=$$org; \
+		$(MAKE) install_go_annotations SPECIES=$$org; \
 	done
 	@${MAKE} parse_compara
 	@${MAKE} install_compara
 
-
-#        $(MAKE) install_go_annotations SPECIES=$$org; \
+################################################################
+## Check upstrean sequences of all installed species
+check_all_species:
+	@echo WARNING: Make sure you install_all_species before check_all_species
+	@echo
+	@echo Checking upstraem sequences of all species in GROUP=${GROUP} RELEASE=${RELEASE}
+	for org in $(ALL_SPECIES); do \
+		$(MAKE) check_sequences SPECIES=$$org; \
+	done
 
 ################################################################
 ## Download GTF files from ensemblgenomes
@@ -202,7 +210,6 @@ install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
 	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES}/genome PARSE_TASK="all"
-	@${MAKE} check_sequences 
 
 ## Run some test for the GTF parsing result
 parse_gtf_test:
