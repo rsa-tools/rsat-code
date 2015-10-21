@@ -1,13 +1,13 @@
 <html>
 <head>
-<title>Heatmap Matches</title>
+<title>Contingency and motif exclusive table</title>
 </head>
 <meta charset="utf-8">
 <style>
         #header{
 	   margin: 7px 5px 5px 5px;
 	   width: 1250px;
-	   height: 190px;
+	   height: 220px;
 	   position: relative;
 	   display: block;
 	   text-align: left;
@@ -95,24 +95,53 @@
         line-height: 20px;
       }
 
+  .tab{
+    font-size: 10px;
+    margin-top: 3px;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    background-color: #E6E6E6;
+    clear: both;
+    float: left;
+    position: relative;
+    border-radius:5px;
+    padding: 0px 10px 10px 10px;
+  }
+
+  .tab_col {
+    padding: 7px 10px 7px 10px;
+    background-color: #B1D4F9 !important;
+  font-size: 15px;
+  }
+
+  .tab_spacer_1 {
+  padding: 2px 10px 2px 10px;
+  font-size: 12px;
+  }
+
 </style>
 
 
 <div id="header">
-   <div><h3 style="text-align:center">Heatmap matrix-scan matches</h3></div>
-   <ul>
-      <li type="square">The rows of this heatmap represent the <strong>Scanned Sequences</strong> with matrix-scan, whereas the columns represent the <strong>PSSMs</strong> IDs.</li>
-      <li type="square">Each cell indicates the number of matches of  each PSSMs in a particular sequence.</li>
+   <div><h3 style="text-align:center">Motif collection coverage and exclusive motifs</h3></div>
+   <ol>
+      <p> Here is displayed the information corresponding to the complementarity between the input collection of motifs.</p>
+      <p> Note: remind that these values are dependent of the threshold  used to separate the clusters.</p>
       <p>
-   <h3>Dynamic Features</h3>
-      <ol>
-         <li type="square">Click on the 'Order' button to clusterize the results (by name or by a hierarchical clustering method).</li>
-         <li type="square">Click on each column label to sort its values (increasing/decreasing).</li>
-         <li type="square">Click on each row label to sort its values (increasing/decreasing).</li>
-         <li type="square">Pointing one cell will display its corresponding number of matches.</li>
-      </ol>
+      <li> The heatmap represents a <a target="_blank" href="--contingency_table--">Contingency table</a> showing the intersection between the input motif sets.
+	<ul>
+	  <li> Each cell represent the percentage of coverage between two motif sets after clustering.</li>
+	  <li> Note that is not a symmetrical matrix. </li>
+	  <li> The values in diagonal represent the coverage of one collection versus itself (always = 1.000) .</li>
+	</ul>
+      </li>
       </p>
-   </ul>
+      <p>
+      <li> The table show the number of exclusive motifs (those found exclusively in one collection and not in the others) after the
+      clustering. </li>
+      </p>
+   </ol>
 </div>
 
 </html>
@@ -121,74 +150,41 @@
 <div id="tooltip" class="hidden">
         <p><span id="value"></p>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
-Order:
+<script src="--d3--"></script>
+Order_heatmap_cells:
   <select id="order">
-  <option value="matrix">Matrix ID</option>
-  <option value="average">Average linkage</option>
-  <option value="centroid">Centroid linkage</option>
-  <option value="complete">Complete linkage</option>
-  <option value="mcquitty">McQuitty linkage</option>
-  <option value="median">Median linkage</option>
-  <option value="single">Single linkage</option>
-  <option value="ward">Ward linkage</option>
+  <option value="contingency">Contingency_table</option>
   </select>
-<div id="chart" style='overflow:auto; width:1500px; height:1500px;'></div>
+<div id="chart" style='overflow:auto; width:1500px; height:auto;'></div>
 
 <script type="text/javascript">
 
 
-var margin = { top: 120, right: 700, bottom: --bottom--, left: --left-- },
-  cellSize= --cell_size--;
+var margin = { top: --left--, right: 700, bottom: --bottom--, left: --left-- },
+  cellSize= 25;
   col_number= --c_numb--;
   row_number= --r_numb--;
   width = cellSize*col_number, // - margin.left - margin.right,
   height = cellSize*row_number , // - margin.top - margin.bottom,
   //gridSize = Math.floor(width / 24),
-  legendElementWidth = cellSize*2,
+  legendElementWidth = cellSize*1.25,
   colorBuckets = 21,
 
-colors = --gradient--
+colors = ['#FFFFFF','#FFE991','#FFDE82','#FFD374','#FFC965','#FFBF57','#FFB448','#FFAA39','#FF9F2B','#FF941C','#FF8A0E','#FF8000','#F47307','#E9660E','#DE5915','#D34C1C','#C94023','#BE332A','#B32631','#A81938','#9D0C3F','#930047'],
 
   // Order of the PSSMs
-  hccol = [--matrix_number--],
+  hccol = [--collection_nb--],
 
-  hccol_average = [--average_col--],
-
-  hccol_complete = [--complete_col--],
-
-  hccol_single = [--single_col--],
-
-  hccol_centroid = [--centroid_col--],
-
-  hccol_median = [--median_col--],
-
-  hccol_mcquitty = [--mcquitty_col--],
-
-  hccol_ward = [--ward_col--],
 
 
   // Order of the Sequences
-  hcrow = [--row_order_default-- ], // change to gene name or probe id
+  hcrow = [--collection_nb-- ], // change to gene name or probe id
 
-  hcrow_average = [--average_row--],
-
-  hcrow_complete = [--complete_row--],
-
-  hcrow_single = [--single_row--],
-
-  hcrow_centroid = [--centroid_row--],
-
-  hcrow_median = [--median_row--],
-
-  hcrow_mcquitty = [--mcquitty_row--],
-
-  hccol_ward = [--ward_col--],
 
   // Labels
-  colLabel = [--matrix_name--],
+  colLabel = [--collection_labels--],
 
-  rowLabel = [--seq_id--]; // Rownames -> Motif DataBases
+  rowLabel = [--collection_labels--]; // Rownames -> Motif DataBases
 
 d3.tsv("--file--",
 function(d) {
@@ -200,7 +196,7 @@ function(d) {
 },
 function(error, data) {
   var colorScale = d3.scale.threshold()
-      .domain([--domain--])
+      .domain([0.01,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1])
       .range(colors);
 
   var svg = d3.select("#chart").append("svg")
@@ -273,7 +269,7 @@ function(error, data) {
                  .style("left", (d3.event.pageX+10) + "px")
                  .style("top", (d3.event.pageY-10) + "px")
                  .select("#value")
-                 .text("Sequence: " + rowLabel[d.row-1] + " Matrix: " + colLabel[d.col-1] + " Nb Matches: " + d.value)
+                 .text(rowLabel[d.row-1] + " vs " + colLabel[d.col-1] + " Coverage: " + d.value)
                ;
                //Show the tooltip
                d3.select("#tooltip").classed("hidden", false);
@@ -287,7 +283,7 @@ function(error, data) {
         ;
 
   var legend = svg.selectAll(".legend")
-      .data([--data_legend--])
+      .data([0,1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100])
       .enter().append("g")
       .attr("class", "legend");
 
@@ -299,8 +295,9 @@ function(error, data) {
     .style("fill", function(d, i) { return colors[i]; });
 
   legend.append("text")
-    .attr("class", "mono")
+   .attr("class", "mono")
     .text(function(d) { return d; })
+    .attr("font-size", 8)
     .attr("width", legendElementWidth)
     .attr("x", function(d, i) { return legendElementWidth * i; })
     .attr("y", height + (cellSize*4))
@@ -311,7 +308,7 @@ function(error, data) {
 	'x': 150,
 	'y': height + margin.bottom - --legend_header--
     })
-    .text("Number of Matches per Sequence");
+    .text("Coverage (%) after clustering");
 
 
 // Change ordering of cells
@@ -350,7 +347,7 @@ function(error, data) {
 
   function order(value){
 
-   if(value=="matrix"){
+   if(value=="contingency"){
     var t = svg.transition().duration(1500);
     t.selectAll(".cell")
       .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
@@ -365,119 +362,7 @@ function(error, data) {
       .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
       ;
 
-   } else if(value=="average"){
-
-    var t = svg.transition().duration(1500);
-    t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_average.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow_average.indexOf(d.row) * cellSize; })
-      ;
-
-    t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow_average.indexOf(i+1) * cellSize; })
-      ;
-
-    t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_average.indexOf(i+1) * cellSize; })
-      ;
-
-   } else if(value=="complete"){
-
-    var t = svg.transition().duration(1500);
-    t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_complete.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow_complete.indexOf(d.row) * cellSize; })
-      ;
-
-    t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow_complete.indexOf(i+1) * cellSize; })
-      ;
-
-    t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_complete.indexOf(i+1) * cellSize; })
-      ;
-
-   } else if(value=="single"){
-
-    var t = svg.transition().duration(1500);
-    t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_single.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow_single.indexOf(d.row) * cellSize; })
-      ;
-
-    t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow_single.indexOf(i+1) * cellSize; })
-      ;
-
-    t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_single.indexOf(i+1) * cellSize; })
-      ;
-
-   } else if(value=="centroid"){
-
-    var t = svg.transition().duration(1500);
-    t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_centroid.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow_centroid.indexOf(d.row) * cellSize; })
-      ;
-
-    t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow_centroid.indexOf(i+1) * cellSize; })
-      ;
-
-    t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_centroid.indexOf(i+1) * cellSize; })
-      ;
-
-   } else if(value=="median"){
-
-    var t = svg.transition().duration(1500);
-    t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_median.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow_median.indexOf(d.row) * cellSize; })
-      ;
-
-    t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow_median.indexOf(i+1) * cellSize; })
-      ;
-
-    t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_median.indexOf(i+1) * cellSize; })
-      ;
-
-   } else if(value=="mcquitty"){
-
-    var t = svg.transition().duration(1500);
-    t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_mcquitty.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow_mcquitty.indexOf(d.row) * cellSize; })
-      ;
-
-    t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow_mcquitty.indexOf(i+1) * cellSize; })
-      ;
-
-    t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_mcquitty.indexOf(i+1) * cellSize; })
-      ;
-
-   } else if(value=="ward"){
-
-    var t = svg.transition().duration(1500);
-    t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_ward.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow_ward.indexOf(d.row) * cellSize; })
-      ;
-
-    t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow_ward.indexOf(i+1) * cellSize; })
-      ;
-
-    t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_ward.indexOf(i+1) * cellSize; })
-      ;
-   }
-
+   } 
   }
 
   //
@@ -580,4 +465,54 @@ function(error, data) {
       ;
 });
 
+</script>
+
+  <!-- Div with the aligment table with all the motifs-->	
+<div id="Exclusive_Motif_Tab"  style="padding:7px 7px 0px 7px; margin:35px 0px 20px 0px;width:autopx;">	
+          <h4 style="margin:0px 0px 10px 0px;">Exclusive Motifs by Collection</h4>
+	  <table id="alignment_dyn_table" class="hover compact">
+	    <thead>
+	      <tr style="padding:70px">
+		<th class="tab_col">Collection</th>
+		<th class="tab_col">Nb Total Motifs</th>
+		<th class="tab_col">Nb Exclusive Motifs</th>
+		<th class="tab_col">Collection percent</th>
+		<th class="tab_col">Total percent</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+
+--tbody_exclusive_motifs--
+
+        </tbody>
+    </table>
+    <div>
+      <ul style="font-size:10px;list-style-type:square">
+	<li style="font-size:10px;list-style-type:square">This <a target="_blank" href="--exclusive_motif_table--">table</a> shows the number of exclusive motifs corresponding to a particular collection after the clustering.</li>
+	<li style="font-size:10px:list-style-type:square"><strong>Collection percent</strong> column indicates the percentage of this motif collection covered by its exclusive motifs.</li>
+	<li style="font-size:10px;list-style-type:square"><strong>Total percent</strong> column indicates the percentage of <strong>ALL</strong> the input motifs collection covered by the exclusive motifs of this collection.</li>
+      </ul>
+    </div>
+</div>
+
+
+<script>
+// Dynamic alignment table
+$(document).ready( function () {
+    $('#exclusive_motif_dyn_table').DataTable({
+
+        "info":     false,
+        "paging":   false,
+        "iDisplayLength": 15,
+        "order": [[ 3, "des" ]],
+	"search": {
+	    "regex": true,
+	    "smart": true
+	},
+	"aoColumnDefs": [
+            { "bSortable": true, "aTargets": [ 0,1,2,3,4 ] }
+	]	
+
+    });
+});
 </script>
