@@ -4168,6 +4168,17 @@ $clust_table .= "\n".'
 ## two or more Motif collections are clusteres
 sub Dynamic_Heatmap_Complementarity {
 
+    my $tbody_exclusive_motifs = "";
+    my $tbody_exclusive_motifs_row = '
+			<tr>					
+					<td class="tab_spacer_1">--collection--</td>
+                                        <td class="tab_spacer_1">--collection_size--</td>
+					<td class="tab_spacer_1">--exc_motif_nb--</td>
+                                        <td class="tab_spacer_1">--DB_percent--</td>
+                                        <td class="tab_spacer_1">--Total_percent--</td>					
+			</tr>';
+
+
     my %attributes_heatmap = ();
 
     ## Create the attributes table
@@ -4191,6 +4202,8 @@ sub Dynamic_Heatmap_Complementarity {
 	$attributes_heatmap{$att_name} = $att_content;
     }
     my $tsv_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{heatmap_collections_d3});
+    my $coverage_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{coverage_table});
+    my $exclusive_motif_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{percent_table});
 
     ## Create a copy of the D3 heatmap template
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/dynamic_heatmap_d3.html ".$main::outfile{dynamic_heatmap_html};
@@ -4238,16 +4251,29 @@ sub Dynamic_Heatmap_Complementarity {
 
     ## Read attributes table
     my ($exclusive_motif_handle) = &RSAT::util::OpenInputFile($main::outfile{percent_table});
-    while (<$coverage_attributes_handle>) {
+    while (<$exclusive_motif_handle>) {
 	next if (/^#/); ## Skip header line
 	next if (/^;/); ## Skip comment lines
 	next unless (/\S/); ## Skip empty lines
 	chomp;
 	my $line = $_;
 	my @split_line = split("\t", $line);
-	my $att_name = $split_line[0];
-	my $att_content = $split_line[1];
-	$attributes_heatmap{$att_name} = $att_content;
+	my $collection_name = $split_line[0];
+	my $collection_size = $split_line[1];
+	my $exc_motif_nb = $split_line[2];
+	my $DB_percent = $split_line[3];
+	my $Total_percent = $split_line[4];
+
+	my $new_row = $tbody_exclusive_motifs_row."\n";
+
+	## Add the values to the row string
+	$new_row =~ s/--collection--/$collection_name/g;
+	$new_row =~ s/--collection_size--/$collection_size/g;
+	$new_row =~ s/--exc_motif_nb--/$exc_motif_nb/g;
+	$new_row =~ s/--DB_percent--/$DB_percent/g;
+	$new_row =~ s/--Total_percent--/$Total_percent/g;
+
+	$tbody_exclusive_motifs .= $new_row;
     }
 
     ## Read attributes table
@@ -4285,7 +4311,9 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--collection_nb--/$attributes_heatmap{Collection_number}/;
 	$line =~ s/--collection_labels--/$attributes_heatmap{Collection_labels}/;
 	$line =~ s/--legend_header--/$attributes_heatmap{Legend_Head}/;
-	$line =~ s/--tbody--//;
+	$line =~ s/--tbody_exclusive_motifs--/$tbody_exclusive_motifs/;
+	$line =~ s/--contingency_table--/$coverage_file/;
+	$line =~ s/--exclusive_motif_table--/$exclusive_motif_file/;
 
 	print TEMP $line."\n";
     }
