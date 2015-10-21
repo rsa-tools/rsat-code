@@ -141,7 +141,7 @@ x <- sapply(names(motif.DB.counts), function(DB){
 ## Add a new column and re-order the percentage matrix
 percent.table <- cbind(percent.table, c("DB_nb_motifs", "Nb_exclusive_motifs", "DB_percent", "Total_percent")) 
 percent.table <- percent.table[,c(dim(percent.table)[2],1:(dim(percent.table)[2]-1))]
-colnames(percent.table) <- c("Collection", names(clusters[,3:(nb.db+2)]))
+colnames(percent.table) <- c("#Collection", names(clusters[,3:(nb.db+2)]))
 percent.table <- t(percent.table)
 write.table(percent.table, file = percent.table.file, sep = "\t", quote = FALSE, row.names = TRUE, col.names = FALSE)
 
