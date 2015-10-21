@@ -311,13 +311,21 @@ sub OpenContigs {
       if ($args{rm}) {
 	my $masked_seq_file = $seq_file;
 	$masked_seq_file =~ s/\.raw/_repeat_masked.raw/;
+    my $masked_seq_short_file = $seq_file;
+    $masked_seq_short_file =~ s/\.raw/_rm.raw/;
 	if (-e $seq_dir."/".$masked_seq_file) {
 	  $seq_file = $masked_seq_file;
 
 	  &RSAT::message::Warning("Using masked repeat version of contig",
 				  $contig_id,
 				  $seq_dir."/".$seq_file) if ($main::verbose >= 3);
-	} else {
+	} elsif(-e $seq_dir."/".$masked_seq_short_file) {
+      $seq_file = $masked_seq_short_file;
+
+      &RSAT::message::Warning("Using masked repeat version of contig",
+                  $contig_id,
+                  $seq_dir."/".$seq_file) if ($main::verbose >= 3);
+    } else {
 	  &RSAT::message::Warning("There is no masked repeat version of contig",
 				  $contig_id,
 				  "missing file", $seq_dir."/".$masked_seq_file) if ($main::verbose >= 3);

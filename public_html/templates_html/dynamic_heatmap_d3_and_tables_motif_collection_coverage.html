@@ -1,0 +1,518 @@
+<html>
+<head>
+<title>Contingency and motif exclusive table</title>
+</head>
+<meta charset="utf-8">
+<style>
+        #header{
+	   margin: 7px 5px 5px 5px;
+	   width: 1250px;
+	   height: 220px;
+	   position: relative;
+	   display: block;
+	   text-align: left;
+	   clear : both;
+	   color: black;
+	   font-size: 12px;
+	   border-radius:5px;
+           background: #B1D4F9;
+	   float: left;
+        }
+
+      /* disable text selection */
+      svg *::selection {
+         background : transparent;
+      }
+
+      svg *::-moz-selection {
+         background:transparent;
+      }
+
+      svg *::-webkit-selection {
+         background:transparent;
+      }
+      rect.selection {
+        stroke          : #333;
+        stroke-dasharray: 4px;
+        stroke-opacity  : 0.5;
+        fill            : transparent;
+      }
+
+      rect.cell-border {
+        stroke: #eee;
+        stroke-width:0.3px;
+      }
+
+      rect.cell-selected {
+        stroke: rgb(51,102,153);
+        stroke-width:0.5px;
+      }
+
+      rect.cell-hover {
+        stroke: #F00;
+        stroke-width:0.3px;
+      }
+
+      text.mono {
+        font-size: 12pt;
+        font-family: Consolas, courier;
+        fill: #686666;
+      }
+
+      text.text-selected {
+        fill: #000;
+      }
+
+      text.text-highlight {
+        fill: #c00;
+      }
+      text.text-hover {
+        fill: #00C;
+      }
+      #tooltip {
+        position: absolute;
+        width: 200px;
+        height: auto;
+        padding: 10px;
+        background-color: white;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+      }
+
+      #tooltip.hidden {
+        display: none;
+      }
+
+      #tooltip p {
+        margin: 0;
+        font-family: sans-serif;
+        font-size: 12px;
+        line-height: 20px;
+      }
+
+  .tab{
+    font-size: 10px;
+    margin-top: 3px;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    background-color: #E6E6E6;
+    clear: both;
+    float: left;
+    position: relative;
+    border-radius:5px;
+    padding: 0px 10px 10px 10px;
+  }
+
+  .tab_col {
+    padding: 7px 10px 7px 10px;
+    background-color: #B1D4F9 !important;
+  font-size: 15px;
+  }
+
+  .tab_spacer_1 {
+  padding: 2px 10px 2px 10px;
+  font-size: 12px;
+  }
+
+</style>
+
+
+<div id="header">
+   <div><h3 style="text-align:center">Motif collection coverage and exclusive motifs</h3></div>
+   <ol>
+      <p> Here is displayed the information corresponding to the complementarity between the input collection of motifs.</p>
+      <p> Note: remind that these values are dependent of the threshold  used to separate the clusters.</p>
+      <p>
+      <li> The heatmap represents a <a target="_blank" href="--contingency_table--">Contingency table</a> showing the intersection between the input motif sets.
+	<ul>
+	  <li> Each cell represent the percentage of coverage between two motif sets after clustering.</li>
+	  <li> Note that is not a symmetrical matrix. </li>
+	  <li> The values in diagonal represent the coverage of one collection versus itself (always = 1.000) .</li>
+	</ul>
+      </li>
+      </p>
+      <p>
+      <li> The table show the number of exclusive motifs (those found exclusively in one collection and not in the others) after the
+      clustering. </li>
+      </p>
+   </ol>
+</div>
+
+</html>
+
+</head>
+<div id="tooltip" class="hidden">
+        <p><span id="value"></p>
+</div>
+<script src="--d3--"></script>
+Order_heatmap_cells:
+  <select id="order">
+  <option value="contingency">Contingency_table</option>
+  </select>
+<div id="chart" style='overflow:auto; width:1500px; height:auto;'></div>
+
+<script type="text/javascript">
+
+
+var margin = { top: --left--, right: 700, bottom: --bottom--, left: --left-- },
+  cellSize= 25;
+  col_number= --c_numb--;
+  row_number= --r_numb--;
+  width = cellSize*col_number, // - margin.left - margin.right,
+  height = cellSize*row_number , // - margin.top - margin.bottom,
+  //gridSize = Math.floor(width / 24),
+  legendElementWidth = cellSize*1.25,
+  colorBuckets = 21,
+
+colors = ['#FFFFFF','#FFE991','#FFDE82','#FFD374','#FFC965','#FFBF57','#FFB448','#FFAA39','#FF9F2B','#FF941C','#FF8A0E','#FF8000','#F47307','#E9660E','#DE5915','#D34C1C','#C94023','#BE332A','#B32631','#A81938','#9D0C3F','#930047'],
+
+  // Order of the PSSMs
+  hccol = [--collection_nb--],
+
+
+
+  // Order of the Sequences
+  hcrow = [--collection_nb-- ], // change to gene name or probe id
+
+
+  // Labels
+  colLabel = [--collection_labels--],
+
+  rowLabel = [--collection_labels--]; // Rownames -> Motif DataBases
+
+d3.tsv("--file--",
+function(d) {
+  return {
+    row:   +d.Row, 
+    col:   +d.Col, 
+    value: +d.Value
+  };
+},
+function(error, data) {
+  var colorScale = d3.scale.threshold()
+      .domain([0.01,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1])
+      .range(colors);
+
+  var svg = d3.select("#chart").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+      ;
+  var rowSortOrder=false;
+  var colSortOrder=false;
+  var rowLabels = svg.append("g")
+      .selectAll(".rowLabelg")
+      .data(rowLabel)
+      .enter()
+      .append("text")
+      .text(function (d) { return d; })
+      .attr("x", 0)
+      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      .style("text-anchor", "end")
+      .attr("transform", "translate(-6," + cellSize / 1.5 + ")")
+      .attr("class", function (d,i) { return "rowLabel mono r"+i;} )
+      .on("mouseover", function(d) {d3.select(this).classed("text-hover",true);})
+      .on("mouseout" , function(d) {d3.select(this).classed("text-hover",false);})
+      .on("click", function(d,i) {rowSortOrder=!rowSortOrder; sortbylabel("r",i,rowSortOrder);d3.select("#order").property("selectedIndex", 4).node().focus();;})
+      ;
+
+  var colLabels = svg.append("g")
+      .selectAll(".colLabelg")
+      .data(colLabel)
+      .enter()
+      .append("text")
+      .text(function (d) { return d; })
+      .attr("x", 0)
+      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
+      .style("text-anchor", "left")
+      .attr("transform", "translate("+cellSize/2 + ",-6) rotate (-90)")
+      .attr("class",  function (d,i) { return "colLabel mono c"+i;} )
+      .on("mouseover", function(d) {d3.select(this).classed("text-hover",true);})
+      .on("mouseout" , function(d) {d3.select(this).classed("text-hover",false);})
+      .on("click", function(d,i) {colSortOrder=!colSortOrder;  sortbylabel("c",i,colSortOrder);d3.select("#order").property("selectedIndex", 4).node().focus();;})
+      ;
+
+  var heatMap = svg.append("g").attr("class","g3")
+        .selectAll(".cellg")
+        .data(data,function(d){return d.row+":"+d.col;})
+        .enter()
+        .append("rect")
+        .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+        .attr("y", function(d) { return hcrow.indexOf(d.row) * cellSize; })
+        .attr("class", function(d){return "cell cell-border cr"+(d.row-1)+" cc"+(d.col-1);})
+        .attr("width", cellSize)
+        .attr("height", cellSize)
+        .style("fill", function(d) { return colorScale(d.value); })
+        /* .on("click", function(d) {
+               var rowtext=d3.select(".r"+(d.row-1));
+               if(rowtext.classed("text-selected")==false){
+                   rowtext.classed("text-selected",true);
+               }else{
+                   rowtext.classed("text-selected",false);
+               }
+        })*/
+        .on("mouseover", function(d){
+               //highlight text
+               d3.select(this).classed("cell-hover",true);
+               d3.selectAll(".rowLabel").classed("text-highlight",function(r,ri){ return ri==(d.row-1);});
+               d3.selectAll(".colLabel").classed("text-highlight",function(c,ci){ return ci==(d.col-1);});
+
+               //Update the tooltip position and value
+               d3.select("#tooltip")
+                 .style("left", (d3.event.pageX+10) + "px")
+                 .style("top", (d3.event.pageY-10) + "px")
+                 .select("#value")
+                 .text(rowLabel[d.row-1] + " vs " + colLabel[d.col-1] + " Coverage: " + d.value)
+               ;
+               //Show the tooltip
+               d3.select("#tooltip").classed("hidden", false);
+        })
+        .on("mouseout", function(){
+               d3.select(this).classed("cell-hover",false);
+               d3.selectAll(".rowLabel").classed("text-highlight",false);
+               d3.selectAll(".colLabel").classed("text-highlight",false);
+               d3.select("#tooltip").classed("hidden", true);
+        })
+        ;
+
+  var legend = svg.selectAll(".legend")
+      .data([0,1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100])
+      .enter().append("g")
+      .attr("class", "legend");
+
+  legend.append("rect")
+    .attr("x", function(d, i) { return legendElementWidth * i; })
+    .attr("y", height+(cellSize*2))
+    .attr("width", legendElementWidth)
+    .attr("height", cellSize)
+    .style("fill", function(d, i) { return colors[i]; });
+
+  legend.append("text")
+   .attr("class", "mono")
+    .text(function(d) { return d; })
+    .attr("font-size", 8)
+    .attr("width", legendElementWidth)
+    .attr("x", function(d, i) { return legendElementWidth * i; })
+    .attr("y", height + (cellSize*4))
+
+  svg.append("text")
+    .attr({
+	'font-size': 12,
+	'x': 150,
+	'y': height + margin.bottom - --legend_header--
+    })
+    .text("Coverage (%) after clustering");
+
+
+// Change ordering of cells
+
+  function sortbylabel(rORc,i,sortOrder){
+       var t = svg.transition().duration(1500);
+       var log2r=[];
+       var sorted; // sorted is zero-based index
+       d3.selectAll(".c"+rORc+i)
+         .filter(function(ce){
+            log2r.push(ce.value);
+          })
+       ;
+       if(rORc=="r"){ // sort log2ratio of a gene
+         sorted=d3.range(col_number).sort(function(a,b){ if(sortOrder){ return log2r[b]-log2r[a];}else{ return log2r[a]-log2r[b];}});
+         t.selectAll(".cell")
+           .attr("x", function(d) { return sorted.indexOf(d.col-1) * cellSize; })
+           ;
+         t.selectAll(".colLabel")
+          .attr("y", function (d, i) { return sorted.indexOf(i) * cellSize; })
+         ;
+       }else{ // sort log2ratio of a contrast
+         sorted=d3.range(row_number).sort(function(a,b){if(sortOrder){ return log2r[b]-log2r[a];}else{ return log2r[a]-log2r[b];}});
+         t.selectAll(".cell")
+           .attr("y", function(d) { return sorted.indexOf(d.row-1) * cellSize; })
+           ;
+         t.selectAll(".rowLabel")
+          .attr("y", function (d, i) { return sorted.indexOf(i) * cellSize; })
+         ;
+       }
+  }
+
+  d3.select("#order").on("change",function(){
+    order(this.value);
+  });
+
+  function order(value){
+
+   if(value=="contingency"){
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
+      ;
+
+   } 
+  }
+
+  //
+  var sa=d3.select(".g3")
+      .on("mousedown", function() {
+          if( !d3.event.altKey) {
+             d3.selectAll(".cell-selected").classed("cell-selected",false);
+             d3.selectAll(".rowLabel").classed("text-selected",false);
+             d3.selectAll(".colLabel").classed("text-selected",false);
+          }
+         var p = d3.mouse(this);
+         sa.append("rect")
+         .attr({
+             rx      : 0,
+             ry      : 0,
+             class   : "selection",
+             x       : p[0],
+             y       : p[1],
+             width   : 1,
+             height  : 1
+         })
+      })
+      .on("mousemove", function() {
+         var s = sa.select("rect.selection");
+
+         if(!s.empty()) {
+             var p = d3.mouse(this),
+                 d = {
+                     x       : parseInt(s.attr("x"), 10),
+                     y       : parseInt(s.attr("y"), 10),
+                     width   : parseInt(s.attr("width"), 10),
+                     height  : parseInt(s.attr("height"), 10)
+                 },
+                 move = {
+                     x : p[0] - d.x,
+                     y : p[1] - d.y
+                 }
+             ;
+
+             if(move.x < 1 || (move.x*2<d.width)) {
+                 d.x = p[0];
+                 d.width -= move.x;
+             } else {
+                 d.width = move.x;
+             }
+
+             if(move.y < 1 || (move.y*2<d.height)) {
+                 d.y = p[1];
+                 d.height -= move.y;
+             } else {
+                 d.height = move.y;
+             }
+             s.attr(d);
+
+                 // deselect all temporary selected state objects
+             d3.selectAll('.cell-selection.cell-selected').classed("cell-selected", false);
+             d3.selectAll(".text-selection.text-selected").classed("text-selected",false);
+
+             d3.selectAll('.cell').filter(function(cell_d, i) {
+                 if(
+                     !d3.select(this).classed("cell-selected") &&
+                         // inner circle inside selection frame
+                     (this.x.baseVal.value)+cellSize >= d.x && (this.x.baseVal.value)<=d.x+d.width &&
+                     (this.y.baseVal.value)+cellSize >= d.y && (this.y.baseVal.value)<=d.y+d.height
+                 ) {
+
+                     d3.select(this)
+                     .classed("cell-selection", true)
+                     .classed("cell-selected", true);
+
+                     d3.select(".r"+(cell_d.row-1))
+                     .classed("text-selection",true)
+                     .classed("text-selected",true);
+
+                     d3.select(".c"+(cell_d.col-1))
+                     .classed("text-selection",true)
+                     .classed("text-selected",true);
+                 }
+             });
+         }
+      })
+      .on("mouseup", function() {
+            // remove selection frame
+         sa.selectAll("rect.selection").remove();
+
+             // remove temporary selection marker class
+         d3.selectAll('.cell-selection').classed("cell-selection", false);
+         d3.selectAll(".text-selection").classed("text-selection",false);
+      })
+      .on("mouseout", function() {
+         if(d3.event.relatedTarget.tagName=='html') {
+                 // remove selection frame
+             sa.selectAll("rect.selection").remove();
+                 // remove temporary selection marker class
+             d3.selectAll('.cell-selection').classed("cell-selection", false);
+             d3.selectAll(".rowLabel").classed("text-selected",false);
+             d3.selectAll(".colLabel").classed("text-selected",false);
+         }
+      })
+      ;
+});
+
+</script>
+
+  <!-- Div with the aligment table with all the motifs-->	
+<div id="Exclusive_Motif_Tab"  style="padding:7px 7px 0px 7px; margin:35px 0px 20px 0px;width:autopx;">	
+          <h4 style="margin:0px 0px 10px 0px;">Exclusive Motifs by Collection</h4>
+	  <table id="alignment_dyn_table" class="hover compact">
+	    <thead>
+	      <tr style="padding:70px">
+		<th class="tab_col">Collection</th>
+		<th class="tab_col">Nb Total Motifs</th>
+		<th class="tab_col">Nb Exclusive Motifs</th>
+		<th class="tab_col">Collection percent</th>
+		<th class="tab_col">Total percent</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+
+--tbody_exclusive_motifs--
+
+        </tbody>
+    </table>
+    <div>
+      <ul style="font-size:10px;list-style-type:square">
+	<li style="font-size:10px;list-style-type:square">This <a target="_blank" href="--exclusive_motif_table--">table</a> shows the number of exclusive motifs corresponding to a particular collection after the clustering.</li>
+	<li style="font-size:10px:list-style-type:square"><strong>Collection percent</strong> column indicates the percentage of this motif collection covered by its exclusive motifs.</li>
+	<li style="font-size:10px;list-style-type:square"><strong>Total percent</strong> column indicates the percentage of <strong>ALL</strong> the input motifs collection covered by the exclusive motifs of this collection.</li>
+      </ul>
+    </div>
+</div>
+
+
+<script>
+// Dynamic alignment table
+$(document).ready( function () {
+    $('#exclusive_motif_dyn_table').DataTable({
+
+        "info":     false,
+        "paging":   false,
+        "iDisplayLength": 15,
+        "order": [[ 3, "des" ]],
+	"search": {
+	    "regex": true,
+	    "smart": true
+	},
+	"aoColumnDefs": [
+            { "bSortable": true, "aTargets": [ 0,1,2,3,4 ] }
+	]	
+
+    });
+});
+</script>
