@@ -1477,9 +1477,9 @@ sub set_output_file_names {
 	  $js_base = $ENV{RSAT}."/perl-scripts/lib/js";
       }
       $d3_base= &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/d3.v3.min.js");
-      $jquery_base = &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/js/jquery.js");
-      $datatable_base= &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
-      $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
+      $jquery_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.js");
+      $datatable_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
+      $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
       
   }
 
@@ -4303,6 +4303,9 @@ sub Dynamic_Heatmap_Complementarity {
 	my $line = $_;
 
 	$line =~ s/--d3--/$d3_base/;
+	$line =~ s/--jq--/$jquery_base/;
+	$line =~ s/--datatable--/$datatable_base/;
+	$line =~ s/--datatablecss--/$datatable_css_base/;
 	$line =~ s/--left--/$attributes_heatmap{Left_space}/g;
 	$line =~ s/--bottom--/$attributes_heatmap{Bottom_space}/;
 	$line =~ s/--file--/$tsv_coverage_file/;
