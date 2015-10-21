@@ -1477,9 +1477,9 @@ sub set_output_file_names {
 	  $js_base = $ENV{RSAT}."/perl-scripts/lib/js";
       }
       $d3_base= &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/d3.v3.min.js");
-      $jquery_base = &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/js/jquery.js");
-      $datatable_base= &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
-      $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary},$js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
+      $jquery_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.js");
+      $datatable_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
+      $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
       
   }
 
@@ -4093,7 +4093,7 @@ sub ClustersSummaryTable{
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Clusters Summary Table</h2> '."\n";
 
     if($single_input_flag == 0){
-	$clust_table .= "\n".' <h3 style="margin-top: 0px;margin-bottom: 5px;"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'">Contribution of each collecion to the clusters</a></h3> ';
+	$clust_table .= "\n".' <h3 style="margin-top: 0px;margin-bottom: 5px;"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'">Contribution of each collecion to the clusters </a> | <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'">Complementarity between input motif collections. </a></h3> ';
     }
 
 $clust_table .= "\n".'
@@ -4303,6 +4303,9 @@ sub Dynamic_Heatmap_Complementarity {
 	my $line = $_;
 
 	$line =~ s/--d3--/$d3_base/;
+	$line =~ s/--jq--/$jquery_base/;
+	$line =~ s/--datatable--/$datatable_base/;
+	$line =~ s/--datatablecss--/$datatable_css_base/;
 	$line =~ s/--left--/$attributes_heatmap{Left_space}/g;
 	$line =~ s/--bottom--/$attributes_heatmap{Bottom_space}/;
 	$line =~ s/--file--/$tsv_coverage_file/;
@@ -5144,7 +5147,7 @@ sub InsertListOfFiles {
 	      '
 		   <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'"><strong>Collections Complementarity</strong></a></td>
-		      <td class="tab_spacer_2">A dynamic heatmap showing how many motifs contribute each collection to each cluster..</td>
+		      <td class="tab_spacer_2">A dynamic heatmap showing how many motifs contribute each collection to each cluster.</td>
 		   </tr>
              ';
       }
