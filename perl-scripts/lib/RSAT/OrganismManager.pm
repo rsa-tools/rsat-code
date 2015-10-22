@@ -289,6 +289,23 @@ sub supported_organism_table {
     }
   }
 
+  if (($main::unique_species) || ($main::unique_genus)) {
+    &RSAT::message::Info("Filtering organisms per species/genus") if ($main::verbose >= 1);
+    my @filtered_organisms = ();
+    my %orgs_per_genus = ();
+    my %orgs_per_species = ();
+    foreach my $org (@selected_organisms) {
+      my ($genus, $species) = split("_", $org);
+      $species = $genus."_".$species;
+      $orgs_per_genus{$genus}++;
+      $orgs_per_species{$species}++;
+      next if (($main::unique_genus) && ($orgs_per_genus{$genus} > 1));
+      next if (($main::unique_species) && ($orgs_per_species{$species} > 1));
+#      &RSAT::message::Debug($org, $genus, $species, $orgs_per_species{$species}, $orgs_per_genus{$genus}) if ($main::verbose >= 10);
+      push @filtered_organisms, $org;
+    }
+    @selected_organisms = @filtered_organisms;
+  }
 
   ## Add fields for each organism
   my $n = 0;
