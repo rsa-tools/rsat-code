@@ -13,11 +13,13 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, m
 #     return(palette)
 #   }
 #
-# palette <- colorRampPalette(c("#FFE991", "#FF8000", "#930047"), space = "rgb")
-# white <- "#FFFFFF"
-# palette <- append(white, palette(300))
-library("RColorBrewer")
-palette <- colorRampPalette(brewer.pal(11, "Spectral"), space="Lab")
+
+  library("RColorBrewer")
+# palette <- colorRampPalette(rev(brewer.pal(6, "Reds")), space="Lab")
+
+palette <- colorRampPalette(rev(brewer.pal(9, "YlOrRd")), space="Lab")
+#   palette <- colorRampPalette(rev(c("#FFF88E", "#FBE255", "#F6894E", "#990038")), space = "rgb")
+#   palette <- palette(300)
 
   metric.definition <- NULL
   ## If required, convert similarities to distances
