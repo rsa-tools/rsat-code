@@ -229,6 +229,10 @@ install_thaliana:
 install_yeast:
 	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae ${INSTALL_TASKS}
 
+## Drosophila melanogaster (Metazoa)
+install_droso:
+	${MAKE} GROUP=Metazoa SPECIES=drosophila_melanogaster ${INSTALL_TASKS}
+
 ## Note: for bacteria we need to define a collection
 
 ## Escherichia coli (Bacteria)
