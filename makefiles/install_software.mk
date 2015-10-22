@@ -642,11 +642,12 @@ _download_biotoolbox:
 ################################################################
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${SRC_DIR}/MEME
-MEME_VERSION=4.10.0
-MEME_PATCH=_1
+MEME_VERSION=4.10.2
+#MEME_PATCH=_1 #Oct2015
 #http://ebi.edu.au/ftp/software/MEME/4.9.1/meme_4.9.1_2.tar.gz
-MEME_ARCHIVE=meme_${MEME_VERSION}${MEME_PATCH}.tar.gz
-MEME_URL=ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
+#http://meme-suite.org/meme-software/4.10.2/meme_4.10.2.tar.gz en Oct2015
+MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
+MEME_URL=meme-suite.org/meme-software/${MEME_VERSION}/${MEME_ARCHIVE}
 MEME_INSTALL_SUBDIR=${SRC_DIR}/MEME
 MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
 MEME_LOCAL_URL=http://localhost/meme
