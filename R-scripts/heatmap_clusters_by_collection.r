@@ -105,41 +105,41 @@ motif.DB.counts <- apply(clusters[,3:(nb.db+2)], 2, sum)
 percent.table <- NULL
 coverage.contingency.table <- NULL
 x <- sapply(names(motif.DB.counts), function(DB){
-  
-  ## Select those cluster with at least one motif corresponding 
+
+  ## Select those cluster with at least one motif corresponding
   ## to the current motifDB
   DB.motifs <- clusters[clusters[,DB] > 0,]
-  
+
   #################################################################################
   ## Calculate the overlap between the databases
-  
-  ## Select those cluster with at least one motif corresponding 
+
+  ## Select those cluster with at least one motif corresponding
   ## to the current motifDB
   coverage <- apply(DB.motifs[3:dim(DB.motifs)[2]], 2, sum) / motif.DB.counts
-  
+
   coverage.contingency.table <<- cbind(coverage.contingency.table, matrix(coverage, ncol = 1))
-  
+
   #################################################################################
-  ## Count the number of exclusive motifs of each database 
-  
+  ## Count the number of exclusive motifs of each database
+
   ## Count the number of motifs that correspond exclusively to a collection of motifs
   DB.motifs.exclusive <- apply(DB.motifs[,3:(nb.db+2)],1, sum)
   DB.motifs.exclusive <- length(DB.motifs.exclusive[DB.motifs.exclusive == 1])
-  
+
   ## Calculate the percentage of the collection which is unique
   DB.percent <- round(DB.motifs.exclusive / motif.DB.counts[DB], digits = 4)
-  
-  ## Calculate the percentage of the total collection corresponding to the 
+
+  ## Calculate the percentage of the total collection corresponding to the
   ## unique motifs of the analyzed motifDB
   Total.percent <- round(DB.motifs.exclusive / sum(motif.DB.counts), digits = 4)
-  
+
   #   print(paste("Nb Unique motifs: ", DB.motifs.exclusive, " -  %(internal) :", DB.percent, " -  %(total): ", Total.percent))
   percent.table <<- cbind(percent.table, matrix(c(motif.DB.counts[DB], DB.motifs.exclusive, DB.percent, Total.percent), ncol = 1))
 })
 
 #########################################################
 ## Add a new column and re-order the percentage matrix
-percent.table <- cbind(percent.table, c("DB_nb_motifs", "Nb_exclusive_motifs", "DB_percent", "Total_percent")) 
+percent.table <- cbind(percent.table, c("DB_nb_motifs", "Nb_exclusive_motifs", "DB_percent", "Total_percent"))
 percent.table <- percent.table[,c(dim(percent.table)[2],1:(dim(percent.table)[2]-1))]
 colnames(percent.table) <- c("#Collection", names(clusters[,3:(nb.db+2)]))
 percent.table <- t(percent.table)
@@ -231,7 +231,8 @@ if(max(clusters) < 10){
 ## in the D3 heatmap code.
 # rgb.palette <- colorRampPalette(c("#75FD3A", "#1F6800"), space = "rgb")
 # rgb.palette <- colorRampPalette(c("#FFE991", "#FEAD23", "#930047"), space = "rgb")
-rgb.palette <- colorRampPalette(c("#FFE991", "#930047"), space = "rgb")
+# rgb.palette <- colorRampPalette(c("#FFE991", "#930047"), space = "rgb")
+rgb.palette <- colorRampPalette(brewer.pal(9, "YlOrRd"), space="Lab")
 white <- "#FFFFFF"
 white <- append(white,rgb.palette(ceiling((max(clusters)/step+1))))
 
