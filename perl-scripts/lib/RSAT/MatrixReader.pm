@@ -38,7 +38,7 @@ formats.
 			   'consensus'=>1,
 			   'sequences'=>1,
 			   'feature'=>1,
-			   'footprintDB'=>1,
+			   'footprintdb'=>1,
 			   'gibbs'=> 1,
 			   'infogibbs'=>1,
 			   'info-gibbs'=>1,
