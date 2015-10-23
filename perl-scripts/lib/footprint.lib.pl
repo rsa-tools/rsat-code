@@ -522,6 +522,32 @@ This option is incompatible with the option "-taxon".
     $main::orglist_file = shift(@arguments);
     &RSAT::error::FatalError("Options -taxon, -org_list and -orthologs_list are mutually incompatible") if ($main::taxon || $main::orthologs_list_file);
 
+=pod 
+
+=item B<-unique_species>
+
+Retain at most one organism per species. This enables to filter out
+the numerous strains sequences for some species of particular interest.
+(e.g. Escherichia coli, Bacillus subtilis, ...).
+
+=item B<-unique_genus>
+
+Retain at most one organism per genus. Same filter as for
+-unique_species, but at the level of the genus. At this level we don't
+expect to have much redundancy, but this option can be useful to
+select a reasonable number of organisms, e.g. to draw phylogenetic
+profile heatmaps.
+
+=cut
+      
+    } elsif ($arg eq "-unique_species") {
+      $unique_species = 1;
+    } elsif ($arg eq "-unique_genus") {
+      $unique_genus = 1;
+      
+
+
+
 ## No Purge
 =pod
 
@@ -1172,6 +1198,8 @@ sub GetOrthologs {
     } else {
       $cmd .= " -taxon ".$taxon ;
     }
+    $cmd .= " -unique_species" if ($main::unique_species);
+    $cmd .= " -unique_genus" if ($main::unique_genus);
     $cmd .= " -return query_name,query_organism -return ident";
     $cmd .= " -uth rank 1";	## BBH criterion
     $cmd .= " -lth ali_len 50";

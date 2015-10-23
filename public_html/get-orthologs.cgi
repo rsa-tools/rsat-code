@@ -73,12 +73,19 @@ unless ($taxon = $query->param('taxon')) {
 }
 $parameters .= " -taxon $taxon";
 
-## Taxonomic depth (NOT WORKING YET)
-# if ($depth = $query->param('depth')) {
-#     if ((&IsNatural($depth) && ($depth > 0))) {
-# 	$parameters .= " -depth ".$depth;
-#     }
-# }
+## Unique species per taxon (filter)
+if ($query->param("unique_taxon") eq "species") {
+  $parameters .= " -unique_species";
+} elsif ($query->param("unique_taxon") eq "genus") {
+  $parameters .= " -unique_genus";
+}
+
+## Taxonomic depth (TO BE CHECKED)
+if ($depth = $query->param('depth')) {
+    if ((&IsNatural($depth) && ($depth > 0))) {
+	$parameters .= " -depth ".$depth;
+    }
+}
 
 
 ## ##############################################################
