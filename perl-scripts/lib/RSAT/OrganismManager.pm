@@ -203,7 +203,56 @@ sub export_supported_organisms {
   &RSAT::message::Info("Exported supported organisms", $organism_table) if ($main::verbose >= 2);
 }
 
-################################################################
+=pod
+
+=item B<UniquePerTaxon>
+
+Select a single organism per species or per genus (the other
+taxonomical levels are not supported because we do not dispose of the
+information about taxonomic depth). 
+
+Usage:
+
+  @organisms_filtered = &RSAT::OrganismManager::UniquePerTaxon($taxon, @organisms);
+
+Arguments:
+
+=over
+
+=item taxon
+
+Taxonomical level at which the filtering must be done. Supported:
+genus, species.
+
+=item organisms
+
+List of organisms
+
+=back
+
+=cut
+
+sub UniquePerTaxon {
+  my ($taxon, @organisms) = @_;
+  unless (($taxon eq "species") || ($taxon eq "genus")) {
+    &RSAT::error::FatalError("&RSAT::OrganismManager::UniquePerTaxon()", $taxon, "is not a valid taxon. Supported: genus, species");
+  }
+  &RSAT::message::Info("Filtering organisms per", $taxon) if ($main::verbose >= 4);
+  my @filtered_organisms = ();
+  my %orgs_per_genus = ();
+  my %orgs_per_species = ();
+  foreach my $org (@organisms) {
+    my ($genus, $species) = split("_", $org);
+    $species = $genus."_".$species;
+    $orgs_per_genus{$genus}++;
+    $orgs_per_species{$species}++;
+    next if (($taxon eq "genus") && ($orgs_per_genus{$genus} > 1));
+    next if (($taxon eq "species") && ($orgs_per_species{$species} > 1));
+#      &RSAT::message::Debug($org, $genus, $species, $orgs_per_species{$species}, $orgs_per_genus{$genus}) if ($main::verbose >= 10);
+    push @filtered_organisms, $org;
+  }
+  return(@filtered_organisms);
+}
 
 =pod
 
@@ -289,23 +338,9 @@ sub supported_organism_table {
     }
   }
 
-  if (($main::unique_species) || ($main::unique_genus)) {
-    &RSAT::message::Info("Filtering organisms per species/genus") if ($main::verbose >= 1);
-    my @filtered_organisms = ();
-    my %orgs_per_genus = ();
-    my %orgs_per_species = ();
-    foreach my $org (@selected_organisms) {
-      my ($genus, $species) = split("_", $org);
-      $species = $genus."_".$species;
-      $orgs_per_genus{$genus}++;
-      $orgs_per_species{$species}++;
-      next if (($main::unique_genus) && ($orgs_per_genus{$genus} > 1));
-      next if (($main::unique_species) && ($orgs_per_species{$species} > 1));
-#      &RSAT::message::Debug($org, $genus, $species, $orgs_per_species{$species}, $orgs_per_genus{$genus}) if ($main::verbose >= 10);
-      push @filtered_organisms, $org;
-    }
-    @selected_organisms = @filtered_organisms;
-  }
+  ## Select unique organisms per genus or species if required
+  @organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @organisms) if ($main::unique_species);
+  @organisms = &RSAT::OrganismManager::UniquePerTaxon("genus", @organisms) if ($main::unique_genus);
 
   ## Add fields for each organism
   my $n = 0;
@@ -489,6 +524,10 @@ sub GetOrganismsForTaxon {
       &RSAT::message::TimeWarn($message);
     }
   }
+  
+  ## Select unique organisms per genus or species if required
+  @organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @organisms) if (($main::unique_species) || ($main::unique_genus));
+
   @organisms = &RSAT::util::sort_unique(@organisms);
   &RSAT::message::Info("Collected",scalar(@organisms),"organisms for taxon", $taxon) if ($main::verbose >= 3);
   return(@organisms);
