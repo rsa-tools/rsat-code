@@ -88,7 +88,7 @@ package main;
 
   my $server = 'http://rest.ensemblgenomes.org'; # could be in %ENV
   
-  our %params = ( 'n' => 10 );
+  our %params = ( 'n' => 10, 'rm' => 0 );
 
   our $verbose = 0;
   our $in = STDIN;
@@ -125,8 +125,9 @@ package main;
   close(RND);
 
   # get the corresponding DNA sequences and parse the coords from the header
-  open(SEQ,"retrieve-seq -org $params{'org'} $random_gene_ids |")
-    || die "# failed running retrieve-seq -org $params{'org'} $random_gene_ids\n";
+  my $ret_command = "retrieve-seq -org $params{'org'} $random_gene_ids ";
+  if($params{'rm'}){ $ret_command .= '-rm ' }
+  open(SEQ,"$ret_command |")|| die "# failed running $ret_command\n";
   while(<SEQ>)
   {
     #>AT5G36350  ... location: arabidopsis_thaliana:5:14333830:14335829:R
@@ -161,6 +162,7 @@ package main;
   foreach $coords (keys(%rsat_seqs))
   {
     $ext = "/sequence/region/$params{'org'}/".$coords.'?';
+    if($params{'rm'}){ $ext .= 'mask=hard' }
     $response = $http->get($server.$ext,{ headers => { 'Content-type' => 'application/json' } });
     RSAT::error::FatalError("Failed connecting to",$server.$ext) unless $response->{success};
 
@@ -278,9 +280,21 @@ Total number of sequences to be checked. Default: 10 .
       $main::params{'n'} = shift(@arguments);
 =pod
 
+=item B<-rm use repeat-masked sequences>
+
+Request repeast-masked sequences (hard-masked, with Ns) instead of default raw sequences.
+
+=cut
+
+    } elsif ($arg eq '-rm') {
+      $main::params{'rm'} = 1;
+=pod
+
 =back
 
 =cut
+
+
     }
   }
 }
