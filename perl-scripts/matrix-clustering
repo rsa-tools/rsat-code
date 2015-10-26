@@ -2285,7 +2285,7 @@ sub Add_attributes_to_JSON() {
       open(PARSED_JSON, ">".$main::outfile{prefix}."_trees/parsed_tree_".$cluster.".json") || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{prefix}."_trees/parsed_tree_".$cluster.".json");
       print PARSED_JSON @Parsed_JSON;
       close(PARSED_JSON);
-      unlink($JSON);
+      #unlink($JSON);
   }
 
   my $cmd = "rm -r ".$main::outfile{prefix}."_pairwise_compa_logos";
