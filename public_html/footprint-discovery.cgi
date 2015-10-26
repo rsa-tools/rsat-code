@@ -142,6 +142,13 @@ if ($query->param('queries') =~ /\S/) {
 }
 
 
+## Unique species per taxon (filter)
+if ($query->param("unique_taxon") eq "species") {
+  $parameters .= " -unique_species";
+} elsif ($query->param("unique_taxon") eq "genus") {
+  $parameters .= " -unique_genus";
+}
+
 ## Anlayze genes separately
 if ($query->param("multi_genes") eq "separately") {
   $parameters .= " -sep_genes";
