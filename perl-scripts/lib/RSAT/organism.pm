@@ -478,7 +478,11 @@ sub LoadFeatures {
   my @feature_types = $self->get_attribute("feature_types");
   if (scalar(@feature_types) < 1) {
 #    @feature_types = qw (cds trna rrna);
-    @feature_types = @main::supported_feature_types;
+    @feature_types = ();
+    foreach my $feature_type (@main::supported_feature_types) {
+      push @feature_types, lc($feature_type);
+    }
+#    @feature_types = @main::supported_feature_types;
   }
 
   
