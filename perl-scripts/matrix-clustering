@@ -3600,7 +3600,7 @@ sub OpenSynthesis {
   my $css_matrix_clustering = &ReportStyleCSS();
   $html_lib .= $css_matrix_clustering."\n";
   
-  my $head = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title}, "result_toc"=>0);
+  my $head = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>$refresh_time);
   $head =~ s|</head>|$html_lib|;
   
   print $syn $head;
