@@ -4070,7 +4070,7 @@ sub ParametersTable{
   </div>
 '."\n\n";
 
-  my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title}, "result_toc"=>0);
+  my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title}, "result_toc"=>1);
   #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
   print $syn $header;
   print $syn $par_table;
