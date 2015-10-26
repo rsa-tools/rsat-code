@@ -165,8 +165,8 @@ write.table(y, file = coverage.table.d3, sep = "\t", quote = FALSE, row.names = 
 
 ###########################################################
 ## Create attributes table to fill the D3 coverage fields
-row.nb <- dim(coverage.contingency.table)[1]
-col.nb <- dim(coverage.contingency.table)[2]
+col.nb <- dim(coverage.contingency.table)[1]
+row.nb <- dim(coverage.contingency.table)[2]
 default.labels <- paste(paste("'", names(motif.DB.counts), "'", sep = ""), collapse = ",")
 default.number <- paste(1:length(motif.DB.counts), collapse = ",")
 left <- (max(as.vector(sapply(names(motif.DB.counts), nchar))) + 2) * 10
@@ -234,7 +234,7 @@ if(max(clusters) < 10){
 # rgb.palette <- colorRampPalette(c("#FFE991", "#930047"), space = "rgb")
 rgb.palette <- colorRampPalette(brewer.pal(9, "YlOrRd"), space="Lab")
 white <- "#FFFFFF"
-white <- append(white,rgb.palette(ceiling((max(clusters)/step+1))))
+white <- append(white,rgb.palette(ceiling((max(clusters)/step))))
 
 ###############################################################
 ## Run the hierarchical clustering with the three methods
@@ -297,16 +297,20 @@ heatmap.rows.name <- paste(paste("'", collection.names, "'", sep = ""), collapse
 collections <- paste(paste("'", collection.names, "'", sep = ""), collapse = ",")
 
 ## Range to color the values
-domain.nb <- seq(from = 0, to = max(clusters), by = step)
-domain.nb[1] <- 1
+domain.nb <- seq(from = 1, to = max(clusters), by = step)
+
 domain <- paste(domain.nb, collapse=",")
 
 ## Legend
-legend <- c(0,domain.nb)
+# legend <- c(0,domain.nb)
+legend <- 0
+legend <- append(legend, seq(from = 1, to = max(clusters), by = step))
 legend <- paste(legend, collapse=",")
 
 ## Right space
-left <- (max(as.vector(sapply(collection.names, nchar))) + 2) * 10
+left <- (max(as.vector(sapply(collection.names, nchar))) + 2.5) * 10
+
+
 
 ## Div bottom + Cell size
 cell.size <- 20
@@ -328,6 +332,8 @@ if(row.nb < 5){
   legend.header <- bottom - 27
 }
 
+html.body.size <- 200 + left + (col.nb*cell.size) + 30
+
 order.info <- matrix(c("Gradient", gradient,
                        "Cluster_names", cluster.names,
                        "Cluster_number", cluster.number,
@@ -342,7 +348,8 @@ order.info <- matrix(c("Gradient", gradient,
                        "Legend", legend,
                        "Legend_Head", legend.header,
                        "Left_space", left,
-                       "Bottom_space", bottom,
+                       "Bottom_space", left,
+                       "Body", html.body.size,
                        "Collections", collections
                        ), nrow = 2)
 order.info.df <- t(data.frame(order.info))
