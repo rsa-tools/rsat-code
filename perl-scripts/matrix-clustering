@@ -3611,6 +3611,11 @@ sub OpenSynthesis {
 
 ##########################################
 sub CloseSynthesis {
+
+    my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title}, "result_toc"=>0);
+    #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
+    print $syn $header;
+
     print $syn "</body>\n";
     print $syn "</html>\n";
     close $syn;
