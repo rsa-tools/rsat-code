@@ -3568,15 +3568,15 @@ sub OpenSynthesis {
      $refresh_time = 0;
   }
 
-  $main::html_index = &OpenOutputFile($main::outfile{html_index});
-  # my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>$refresh_time);
-  #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
-  print $main::html_index $header;
+  # $main::html_index = &OpenOutputFile($main::outfile{html_index});
+  # # my $header = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>$refresh_time);
+  # #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
+  # print $main::html_index $header;
   
-  ## Report command
-  print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
-  &PrintArguments($main::html_index, 1);
-  print $html_index "</tt></p>\n";
+  # ## Report command
+  # print $html_index "<p><tt><b>Command:</b> matrix-clustering ";
+  # &PrintArguments($main::html_index, 1);
+  # print $html_index "</tt></p>\n";
 
   ## Open the summary HTML file
   $syn = &OpenOutputFile($main::outfile{summary});
@@ -4217,8 +4217,8 @@ sub Dynamic_Heatmap_Complementarity {
 	my $line = $_;
 
 	$line =~ s/--d3--/$d3_base/;
-	$line =~ s/--left--/$attributes_heatmap{Left_space}/;
-	$line =~ s/--bottom--/$attributes_heatmap{Bottom_space}/;
+	$line =~ s/--left--/$attributes_heatmap{Left_space}/g;
+	$line =~ s/--bottom--/$attributes_heatmap{Left_space}/g;
 	$line =~ s/--file--/$tsv_file/;
 	$line =~ s/--cell_size--/$attributes_heatmap{Cell_size}/;
 	$line =~ s/--c_numb--/$attributes_heatmap{Col_number}/;
@@ -4234,6 +4234,7 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--domain--/$attributes_heatmap{Domain}/;
 	$line =~ s/--data_legend--/$attributes_heatmap{Legend}/;
 	$line =~ s/--legend_header--/$attributes_heatmap{Legend_Head}/;
+	$line =~ s/--body--/$attributes_heatmap{Body}/;
 
 	print TEMP $line."\n";
     }
