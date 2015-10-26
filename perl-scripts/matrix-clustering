@@ -3565,7 +3565,7 @@ sub OpenSynthesis {
   if ($main::param{progressive_synthesis}) {
     $refresh_time = 120;
   } else {
-     $refresh_time = 0;
+     $refresh_time = 120;
   }
 
   $main::html_index = &OpenOutputFile($main::outfile{html_index});
