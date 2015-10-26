@@ -223,16 +223,16 @@ if(number.of.motifs > 1){
 
 
 #         par(mar=c(0, 0, 0, 0))
-        plot.new()
-        legend("center",      # location of the legend on the heatmap plot
-        legend = names(clusters), # category labels
-        col = rainbow(length(clusters)),  # color key
-        lty= 1,             # line style
-        lwd = 0.5,            # line width
-        pch= 1,
-        cex= 0.75,
-        ncol = 3,
-        x.intersp= 0.5)
+#         plot.new()
+#         legend("center",      # location of the legend on the heatmap plot
+#         legend = names(clusters), # category labels
+#         col = rainbow(length(clusters)),  # color key
+#         lty= 1,             # line style
+#         lwd = 0.5,            # line width
+#         pch= 1,
+#         cex= 0.75,
+#         ncol = 3,
+#         x.intersp= 0.5)
 
         draw.heatmap.motifs(dist.table,
                             method = hclust.method,
