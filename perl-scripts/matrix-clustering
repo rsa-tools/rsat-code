@@ -3563,7 +3563,7 @@ sub OpenSynthesis {
 
   my $refresh_time;
   if ($main::param{progressive_synthesis}) {
-    $refresh_time = 60;
+    $refresh_time = 30;
   } else {
      $refresh_time = 0;
   }
