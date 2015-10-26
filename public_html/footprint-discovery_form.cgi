@@ -85,7 +85,7 @@ print "<BLOCKQUOTE>\n";
 &ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
 
 ################################################################
-## Display the form only if it is relveant for the organisms supported
+## Display the form only if it is relevant for the organisms supported
 ## on this RSAT instance.
 &check_phylo_tools();
 
@@ -111,8 +111,8 @@ print "</B></A>\n";
 print "<br>";
 print "<b><a href='help.footprint-discovery.html#multi_genes'>Treat genes</A>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'multi_genes',
-			 -Values=>['separately', ## taxon-wise background model (taxfreq)
-				   'as a cluster'], ## background model estimated from the input sequence set
+			 -Values=>['separately',
+				   'as a cluster'],
 			 -default=>$default{multi_genes});
 
 ################################################################
