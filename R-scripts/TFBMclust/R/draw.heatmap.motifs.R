@@ -122,7 +122,7 @@ palette <- colorRampPalette(rev(brewer.pal(9, "YlOrRd")), space="Lab")
 
 
 ## Calculate the bottom border
-par(oma=c(2,0.3,0.5,2), family="mono")
+par(oma=c(2,0.5,0.5,2), family="mono")
 
   # Get the aligned consensuses, which will be used as the Row names
   col.names <-sapply(colnames(dist.table), function(x){
@@ -155,8 +155,8 @@ par(oma=c(2,0.3,0.5,2), family="mono")
           labCol = col.names,
 
           ## Set the font size
-          cexRow = 11/font.size + 0.075,
-          cexCol = 11/font.size + 0.075,
+          cexRow = 11/font.size + 0.08,
+          cexCol = 11/font.size + 0.08,
 
           ## Set the key with the values
           key = TRUE,
