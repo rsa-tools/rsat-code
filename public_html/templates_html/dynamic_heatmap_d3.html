@@ -129,41 +129,41 @@ Order:
   <option value="complete">complete linkage</option>
   <option value="single">single linkage</option>
   </select>
-<div id="chart" style='overflow:auto; width:1000px; height:750px;'></div>
+<div id="chart" style='overflow:auto; width:1000px; height:--body--px;'></div>
 
 <script type="text/javascript">
 
 
-var margin = { top: 120, right: 150, bottom: --bottom--, left: --left-- },
+var margin = { top: --left--, right: 500, bottom: --left--, left: --left-- },
   cellSize= --cell_size--;
-  col_number= --c_numb--;
-  row_number= --r_numb--;
+  col_number= --r_numb--;
+  row_number= --c_numb--;
   width = cellSize*col_number, // - margin.left - margin.right,
   height = cellSize*row_number , // - margin.top - margin.bottom,
   //gridSize = Math.floor(width / 24),
-  legendElementWidth = cellSize*2,
+  legendElementWidth = cellSize*1,
   colorBuckets = 21,
 
 colors = --gradient--
 
   // Order of the clusters
-  hccol = [--cluster_number--],
-  hccol_average = [--average_number--],
-  hccol_complete = [--complete_number--],
-  hccol_single = [--single_number--],
+  hcrow = [--cluster_number--],
+  hcrow_average = [--average_number--],
+  hcrow_complete = [--complete_number--],
+  hcrow_single = [--single_number--],
 
-  // Order of the collections
-  hcrow = [--row_order_default-- ], // change to gene name or probe id
+ // Order of the collections
+  hccol = [--row_order_default-- ], // change to gene name or probe id
 
-  colLabel = [--label_order--],
+  rowLabel = [--label_order--],
 
-  rowLabel = [--collections--]; // Rownames -> Motif DataBases
+  colLabel = [--collections--]; // Rownames -> Motif DataBases
 
 d3.tsv("--file--",
 function(d) {
   return {
-    row:   +d.Row, 
-    col:   +d.Col, 
+    row:   +d.Col, 
+    col:   +d.Row, 
     value: +d.Value
   };
 },
@@ -242,7 +242,7 @@ function(error, data) {
                  .style("left", (d3.event.pageX+10) + "px")
                  .style("top", (d3.event.pageY-10) + "px")
                  .select("#value")
-                 .text("Collection: " + rowLabel[d.row-1] + "          " + colLabel[d.col-1] + "           Number of Motifs: " + d.value)
+                 .text("Collection: " + colLabel[d.col-1] + "                   " + rowLabel[d.row-1] + "                  Number of Motifs: " + d.value)
                ;
                //Show the tooltip
                d3.select("#tooltip").classed("hidden", false);
@@ -261,24 +261,24 @@ function(error, data) {
       .attr("class", "legend");
 
   legend.append("rect")
-    .attr("x", function(d, i) { return legendElementWidth * i; })
-    .attr("y", height+(cellSize*2))
-    .attr("width", legendElementWidth)
-    .attr("height", cellSize)
+    .attr("x", width + (cellSize*1) + 30)
+    .attr("y", function(d, i) { return legendElementWidth * i - cellSize; })
+    .attr("width", cellSize)
+    .attr("height", legendElementWidth)
     .style("fill", function(d, i) { return colors[i]; });
 
   legend.append("text")
     .attr("class", "mono")
     .text(function(d) { return d; })
     .attr("width", legendElementWidth)
-    .attr("x", function(d, i) { return legendElementWidth * i; })
-    .attr("y", height + (cellSize*4))
+    .attr("x", width + (cellSize*4))
+    .attr("y", function(d, i) { return legendElementWidth * i; })
 
   svg.append("text")
     .attr({
 	'font-size': 12,
-	'x': 150,
-	'y': height + margin.bottom - --legend_header--
+	'x': width + (cellSize*1) + 30,
+	'y': -15
     })
     .text("Number of Motifs");
 
@@ -339,16 +339,16 @@ function(error, data) {
 
     var t = svg.transition().duration(1500);
     t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_single.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow.indexOf(d.row) * cellSize; })
+      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_single.indexOf(d.row) * cellSize; })
       ;
 
     t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hcrow_single.indexOf(i+1) * cellSize; })
       ;
 
     t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_single.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
       ;
 
    // Complete Linkage
@@ -356,16 +356,16 @@ function(error, data) {
 
     var t = svg.transition().duration(1500);
     t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_complete.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow.indexOf(d.row) * cellSize; })
+      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_complete.indexOf(d.row) * cellSize; })
       ;
 
     t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hcrow_complete.indexOf(i+1) * cellSize; })
       ;
 
     t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_complete.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
       ;
 
    // Average Linkage
@@ -373,16 +373,16 @@ function(error, data) {
 
     var t = svg.transition().duration(1500);
     t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_average.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow.indexOf(d.row) * cellSize; })
+      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_average.indexOf(d.row) * cellSize; })
       ;
 
     t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hcrow_average.indexOf(i+1) * cellSize; })
       ;
 
     t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_average.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
       ;
    }
   }
