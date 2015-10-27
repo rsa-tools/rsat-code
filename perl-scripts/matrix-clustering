@@ -187,6 +187,9 @@ package main;
   ## Motif Collection names counter
   local %motif_collection_count = ();
 
+  ## Parsed JSON files content
+  local %json_files_content = ();
+
   ## Concatenate all the files which a logo will be produced
   ## This is done to call the system once
   local $concat_motif_files = "";
@@ -1407,6 +1410,9 @@ sub set_output_file_names {
   ## Hexadecimal color for the clusters
   $main::outfile{hexa_colors} = $main::outfile{prefix}."_hexa_colors.txt";
 
+  ## Export small d3 forest
+  $main::outfile{small_forest_export} = $main::outfile{prefix}."_small_forest.html";
+
   ## Table with the number of clusters
   $main::outfile{nb_clusters_table} = $main::outfile{prefix}."_tables/number_of_clusters.tab";
 
@@ -1432,6 +1438,7 @@ sub set_output_file_names {
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
+  $main::outfile{small_logo_cladogram_html} = $main::outfile{prefix}."_portable_logo_tree.html"; push @outfiles, "small_logo_cladogram_html";
   $main::outfile{dynamic_heatmap_html} = $main::outfile{prefix}."_dynamic_heatmap.html"; push @outfiles, "dynamic_heatmap_html";
   $main::outfile{dynamic_coverage_heatmap_html} = $main::outfile{prefix}."_dynamic_coverage_heatmap.html"; push @outfiles, "coverage_heatmap_html";
   $main::outfile{heatmap_jpg} = $main::outfile{prefix}."_figures/heatmap.jpg";
@@ -1485,6 +1492,7 @@ sub set_output_file_names {
 
   ## Some temporary files
   $main::outfile{temp_html} = $main::outfile{prefix}."_temporary.html";
+  $main::outfile{temp_html_2} = $main::outfile{prefix}."_temporary_2.html";
   $main::outfile{int_align} = $main::outfile{prefix}."_tables/intermediate_alignments.tab";
 
   ## Archive to facilitate transfer of all the results in a zip file
@@ -2202,13 +2210,13 @@ sub Add_attributes_to_JSON() {
       }
       close(LVL_JSON);
 
-      ## Open the JSON file produced by R  
+      ## Open the JSON file produced by R
+      my $parsed_json;
       my $cluster_width = 0;
       my $JSON = $main::outfile{prefix}."_trees/tree_".$cluster.".json";
       &RSAT::message::TimeWarn("JSON file", $JSON, $cluster ) if ($main::verbose >= 2);
       open(JSON, $JSON) || &RSAT::error::FatalError($JSON, "Cannot open the JSON file");
       while(<JSON>) {
-	  
 	  chomp;
 	  $Flag = 0;
 	  $line = $_;
@@ -2278,6 +2286,7 @@ sub Add_attributes_to_JSON() {
 	  if ($Flag) {
 	      push(@Parsed_JSON, $Add_this."\n");
 	  }
+	  
       }
       close(JSON);
   
@@ -2285,6 +2294,7 @@ sub Add_attributes_to_JSON() {
       open(PARSED_JSON, ">".$main::outfile{prefix}."_trees/parsed_tree_".$cluster.".json") || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{prefix}."_trees/parsed_tree_".$cluster.".json");
       print PARSED_JSON @Parsed_JSON;
       close(PARSED_JSON);
+      $json_files_content{$cluster} = "@Parsed_JSON";
       #unlink($JSON);
   }
 
@@ -2305,7 +2315,7 @@ sub create_html_tree_file() {
     open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot open HTML file");
     open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
 
-    ## Values to change in the D3 tree
+    ## Values to change in the D3 (small) tree
     my $svg_width = 25;
     my $svg_height = 80;
     my $svg_x1 = 15 * $nb_char + 7;
@@ -2316,6 +2326,8 @@ sub create_html_tree_file() {
     my $tree_counter = 0;
     my $cluster_nb = 0;
     my $JQuery_dynamic = "";
+
+
     my $main_label = 	        
 	"\tnodeEnter.append(\"a\")
 	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
@@ -2323,7 +2335,7 @@ sub create_html_tree_file() {
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
-	\t\t.attr(\"font-size\", \"18px\")
+	\t\t.attr(\"font-size\", \"--font--px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
 
     my $new_label = 
@@ -2331,7 +2343,7 @@ sub create_html_tree_file() {
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
-        \t\t.attr(\"font-size\", \"18px\")
+        \t\t.attr(\"font-size\", \"--18--px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
  
     my $display_title_lab .= '
@@ -2340,7 +2352,7 @@ sub create_html_tree_file() {
 	.attr("x", function(d) { return d.children ? 0 : 20; })
 	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
         .attr("fill", "black")
-	.attr("font-size", "18px")
+	.attr("font-size", "--font--px")
         .attr("font-weight", "bold")
 	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
         ';
@@ -2437,8 +2449,33 @@ $(document).ready(function() {
 	    $_ =~ s/--radius--/6/;
 	}
 
+	if (/--sep_motifs--/) {
+	    my $sep_motifs = 0;
+
+	    if($clusters_info{$clust} <= 5){
+		$sep_motifs = 150;
+	    } elsif ($clusters_info{$clust} <= 9){
+		$sep_motifs = 200;
+	    } elsif($clusters_info{$clust} <= 20){
+		$sep_motifs = 250;
+	    } elsif($clusters_info{$clust} <= 50 ){
+		$sep_motifs = 300;
+	    } elsif($clusters_info{$clust} > 50 ){
+		$sep_motifs = 420;
+	    }
+	    $_ =~ s/--sep_motifs--/$sep_motifs/;
+	}
+
+	if (/--image_spacer--/) {
+	    $_ =~ s/--image_spacer--/250/g;
+	}
+
 	if (/--insert--/) {
 	    $_ =~ s/--insert--//;
+	}
+
+	if (/--font--/) {
+	    $_ =~ s/--font--/16/;
 	}
 
 	if (/--svgwidth--/) {
@@ -2511,11 +2548,262 @@ $(document).ready(function() {
 
 	print TEMP $_."\n";
     }
+    close(TREE);
     close(TEMP);
     unlink($main::outfile{logo_cladogram_html});
     my $cmd = "mv -f ".$main::outfile{temp_html}." ".$main::outfile{logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-    return();
+    #return();
+}
+
+
+###################################
+## Create the html file to 
+## display the tree
+sub create_html_small_tree_file() {
+
+    &RSAT::message::TimeWarn("Generating HTML tree file", $main::outfile{small_logo_cladogram_html}) if ($main::verbose >= 2);
+
+    open(SMALL_TREE, $main::outfile{small_logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{small_logo_cladogram_html}, "Cannot open HTML file");
+    open(TEMP_2, ">".$main::outfile{temp_html_2}) || &RSAT::error::FatalError($main::outfile{temp_html_2}, "Cannot create temporary file");
+
+    ## Values to change in the D3 tree
+    my $svg_width = 4;
+    my $svg_height = 8;
+    my $svg_x1 = 4 * $nb_char;
+    my $svg_y1 = -7;
+    my $svg_x2 = '2 + '.$svg_x1.' + 7';
+    my $add_this = "";
+    my $labels_num = 0;
+    my $tree_counter = 0;
+    my $cluster_nb = 0;
+    my $JQuery_dynamic = "";
+
+    my $main_label = 	        
+	"\tnodeEnter.append(\"a\")
+	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
+	\t\t.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.; })
+	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
+	\t\t.attr(\"font-size\", \"--font--px\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
+
+    my $new_label = 
+	"\tnodeEnter.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.; })
+	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
+        \t\t.attr(\"font-size\", \"--font--px\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
+ 
+    my $display_title_lab .= '
+        nodeEnter.append("text")
+	.text(function(d) { return d.children ? "" : d.title; })
+	.attr("x", function(d) { return d.children ? 0 : 20; })
+	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
+        .attr("fill", "black")
+	.attr("font-size", "--font--px")
+        .attr("font-weight", "bold")
+	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+        ';
+
+    my $hide_show_consensus = '
+
+d3.select("#--cl_id--").append("text")
+	.attr("x", 1000)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.attr("id", "cons_button_--cl_id--") 
+	.text("Consensus")  
+;
+
+// Slide the Heatmap View
+$(document).ready(function() {
+    $(\'#cons_button_--cl_id--\').click(function() {
+        $(\'.show_con_--cl_id--\').toggle();
+    }); 
+});'."\n\n";
+
+
+    while(<SMALL_TREE>) {
+	chomp;	
+
+	if (/\(function\(\)\s*\{/) { 
+		$cluster_nb++;
+
+		## Add the Hide/Show consensus button only to those clusters with 2 or more motifs
+		if($clusters_info{"cluster_".$cluster_nb} > 1){
+		    my $c = "cluster_".$cluster_nb;
+		    my $new_cons_button = $hide_show_consensus;
+		    $new_cons_button =~ s/--cl_id--/$c/g;
+		    $JQuery_dynamic .= $new_cons_button;
+		}
+	}
+
+	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	    (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
+	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+	}
+	
+	### Fix the d3 library path
+	if (/--d3--/) {;
+	    $_ =~ s/--d3--/$d3_base/g;
+	}
+
+	### Fix the jquery library path
+	if (/--jquery--/) {
+	    $_ =~ s/--jquery--/$jquery_base/g;
+	}
+
+	## Insert the JQuery code
+	if(/--jquerycode--/){
+	    $_ =~ s/--jquerycode--/$JQuery_dynamic/g;
+	}
+
+	### Set the height 
+	if (/--height--/) {
+	  my $clust = "cluster_".$cluster_nb;
+	  my $mat_number = $clusters_info{$clust} + 2;
+	  $_ =~ s/--height--/50 + 81 * $mat_number/;
+	}
+	
+	### Set the height 
+	if (/--widthtree--/) {;
+	    $_ =~ s/--widthtree--/2500/;
+	}
+
+	### Set the tree size
+	if (/--size--/) {;
+	    $_ =~ s/--size--/300/;
+	}
+
+	### Add the JSON file name
+	if (/--json_file--/) {
+	    $clust = "cluster_".$cluster_nb;
+	    $_ =~ s/--json_file--/$json_files_content{$clust}/;
+
+	    # my $j_file = $main::outfile{prefix}."_trees/parsed_tree_cluster_".$cluster_nb.".json";
+	    # $json_file_name = &RSAT::util::RelativePath($main::outfile{logo_cladogram_html}, $j_file);
+	    # $_ =~ s/--jsonfile--/$json_file_name/;
+	}
+
+	if (/--cl_id--/) {
+	    my $c = "cluster_".$cluster_nb;
+	    $_ =~ s/--cl_id--/$c/g;
+	}
+
+	## Add the color of the cluster
+	if (/--stroke--/) {
+	    my $clust = "cluster_".$cluster_nb;
+	    $_ =~ s/--stroke--/$hexa_code{$clust}/;
+	}
+
+	if (/--font--/) {
+	    $_ =~ s/--font--/12/g;
+	}
+
+	if (/--sep_motifs--/) {
+	    my $sep_motifs = 0;
+	    $clust = "cluster_".$cluster_nb;
+	    if($clusters_info{$clust} <= 5){
+		$sep_motifs = 150;
+	    } elsif ($clusters_info{$clust} <= 9){
+		$sep_motifs = 200;
+	    } elsif($clusters_info{$clust} <= 20){
+		$sep_motifs = 250;
+	    } elsif($clusters_info{$clust} <= 50 ){
+		$sep_motifs = 300;
+	    } elsif($clusters_info{$clust} > 50 ){
+		$sep_motifs = 420;
+	    }
+	    $_ =~ s/--sep_motifs--/$sep_motifs/;
+	}
+
+	if (/--insert--/) {
+	    $_ =~ s/--insert--//;
+	}
+
+	if (/--image_spacer--/) {
+	    $_ =~ s/--image_spacer--/170/g;
+	}
+
+	if (/--svgwidth--/) {
+	    $_ =~ s/--svgwidth--/$svg_width/g;
+	}
+
+	if (/--svgheight--/) {
+	    $_ =~ s/--svgheight--/$svg_height/g;
+	}
+
+	if(/--insert_image--/){
+	    $_ =~ s/--insert_image--/d.image/g;
+	}
+
+	if (/--x1--/) {
+	    $_ =~ s/--x1--/$svg_x1/g;
+	}
+
+	if (/--y1--/) {
+	    $_ =~ s/--y1--/$svg_y1/g;
+	}
+
+	if (/--x2--/) {
+	    $_ =~ s/--x2--/$svg_x2/g;
+	}
+
+	if (/--lab--/) {
+	    $_ =~ s/--lab--//g;
+	}
+
+
+	if ($_ =~ /Insert labels/) {
+	    $add_this = "";
+	    $labels_num = 0;
+	    ################################################################
+	    ## Insert in the html script the labels selected by the user
+	    foreach my $field (@label_fields_to_return) {
+		if ($label_fields_to_return{$field}) {
+		    $labels_num++;
+		    
+		    ### Add the first label with the the link to the logo
+		    if ($labels_num == 1) {
+			$add_this = $main_label;
+			$up = uc($field);
+			$add_this =~ s/d\.;/ d\.$field;/;
+		    }
+		    
+		    ### Add the new labels, set the distances among the labels in the tree
+		    if ($labels_num > 1) {
+			my $copy = $new_label;
+			$up = uc($field);
+			$copy =~ s/d\.;/ d\.$field;/;
+			my $y_displacement = 3 + (($labels_num -1) * 25);
+			$copy =~ s/#/$y_displacement/;
+			$add_this .= "\n\n".$copy."\n";
+		    }
+		}
+	    }
+
+	    ## Add the collection lable to the logo tree
+	    # if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
+	    if ($display_collection_name_flag == 1) {
+		my $displacement = 3 + (scalar(@label_fields_to_return) * 25);
+		$display_title_lab =~ s/--dis--/$displacement/;
+		$add_this .= "\n".$display_title_lab."\n";	
+	    }
+	    
+	    print TEMP_2 $add_this."\n";
+	}
+
+	print TEMP_2 $_."\n";
+    }
+    close(TEMP_2);
+    unlink($main::outfile{small_logo_cladogram_html});
+
+    my $cmd = "mv -f ".$main::outfile{temp_html_2}." ".$main::outfile{small_logo_cladogram_html};
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+    #return();
 }
 
 ################################################################
@@ -2789,9 +3077,14 @@ sub Create_dynamic_tree() {
 
     my $line = "";
     my $print = "";
+    my $print_small = "";
     my $temp_dyn_tree_Forward = &logo_tree_dynamic();
+    my $temp_dyn_tree_portable = &logo_tree_dynamic_portable();
+
     my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
-    
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
+    $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_small_d3_tree.html ".$main::outfile{small_logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
     my %clusters_info_sorted = ();
@@ -2804,7 +3097,10 @@ sub Create_dynamic_tree() {
     
 
     open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
-    open(TREE,$main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot found the HTML tree file");
+    open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot found the HTML tree file");
+
+    open(TEMP_2, ">".$main::outfile{temp_html_2}) || &RSAT::error::FatalError($main::outfile{temp_html_2}, "Cannot create temporary file");
+    open(SMALL_TREE, $main::outfile{small_logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{small_logo_cladogram_html}, "Cannot found the HTML small tree file");
 
     while(<TREE>) {
 	chomp;
@@ -2828,11 +3124,46 @@ sub Create_dynamic_tree() {
 
 	$print .= $line."\n";
     }
-    print TEMP $print;
     close(TREE);
+    $line = "";
+
+    while(<SMALL_TREE>) {
+	chomp;
+	$line = $_;
+	## Add one <div> for each cluster
+	if (/^\s*\/\/Divisions/) {
+	    $line = "";
+	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted) {             
+		$line .= "<div id=\"cluster_".$cluster."\" style=\"clear:both;\"><h2>cluster_".$cluster."</h2><\/div>\n";
+		$line .= "<br><br><br>\n";
+	    }
+	}
+
+	## 
+	if (/^\s*\/\/Body/) {
+	    $line = "";	
+	    foreach my $cluster (sort {$clusters_info_sorted{$a} <=> $clusters_info_sorted{$b}} keys %clusters_info_sorted) {      
+		$line .= $temp_dyn_tree_portable."\n\n\n";
+	    }
+	}
+
+	$print_small .= $line."\n";
+    }
+    close(SMALL_TREE);
+
+    print TEMP $print;
+    print TEMP_2 $print_small;
+
     close(TEMP);
+    close(TEMP_2);
+
     unlink($main::outfile{logo_cladogram_html});
+    unlink($main::outfile{small_logo_cladogram_html});
+
     $cmd = "mv ".$main::outfile{temp_html}." ".$main::outfile{logo_cladogram_html};
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err); 
+
+    $cmd = "mv ".$main::outfile{temp_html_2}." ".$main::outfile{small_logo_cladogram_html};
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);    
 }
 
@@ -3117,7 +3448,7 @@ var childCount = function(level, n) {
   }
 };
 childCount(0, root);  
-var newHeight = d3.max(levelWidth) * 300; // 20 pixels per line  // 250 ----------> This number must be calculated 
+var newHeight = d3.max(levelWidth) * --sep_motifs--; // 20 pixels per line  // 250 ----------> This number must be calculated 
 cluster= cluster.size([newHeight, --size--]);
 
 // Re-draw the tree
@@ -3177,23 +3508,24 @@ svg = d3.select("#--cl_id--").select("svg")
 
   nodeUpdate.select("circle")
 	.attr("r", 6)
-        .attr("fill", function(d) { return d._children ? "black" : "--stroke--"; });
+        .attr("fill", function(d) { return d._children ? "black" : "--stroke--"; })
+      .attr("font-size", "--font--px");
 
 
   nodeUpdate.select("text")
       .text(function(d) { return d.children ? d.consensus :  d.name; })
       .attr("dx", function(d) { return d.children ? -20 : 20; })
       .attr("dy", function(d) { return d.children ? -6 : 3; })
-      .attr("font-size", "18px")
       .attr("class", function(d) { return d.children ? "show_con_--cl_id--" : ""; })
       .attr("fill", function(d) { return d.children ? "blue" : "black"; })
-      .attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
+      .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+      .attr("font-size", "--font--px");
 
 	nodeUpdate.select("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
 		.attr("width", function(d) { return (d.size + 2)  * 25; })
 		.attr("height", 80)
-		.attr("x", 296)    
+		.attr("x", --image_spacer--)    
 		.attr("y", -33) 
 		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");
@@ -3217,7 +3549,258 @@ svg = d3.select("#--cl_id--").select("svg")
       .remove();
 
   nodeExit.select("circle")
-      .attr("r", 1e-6);
+      .attr("r", 1e-6)
+      .attr("font-size", "--font--px");
+
+  nodeExit.selectAll("image")
+      .remove();
+
+  nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+  // Update the links…
+  var link = svg.selectAll("path.link")
+      .data(links, function(d) { return d.target.id; });
+
+  // Enter any new links at the parent"s previous position.
+  link.enter().insert("path", "g")
+      .attr("class", "link")
+      .attr("stroke", "--stroke--")
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      });
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent"s new position.
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+
+
+// Toggle children on click.
+function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update(d);
+}
+}
+
+
+})();
+
+// Add the buttons to change the orientation
+d3.select("#--cl_id--").append("text")
+	.attr("x", 700)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+	})
+	.text("Direct")  
+;
+
+d3.select("#--cl_id--").append("text")
+	.attr("x", 1000)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; }) 
+	})
+	.text("Reverse")  
+;
+	
+';
+
+  return($logo_tree);
+}
+
+
+################################################################
+## Insert D3 dynamic logo tree: This is the body of d3 script, 
+## each time a new cluster is added to the file the next code 
+## is pasted and modified           
+sub logo_tree_dynamic_portable{
+  my $logo_tree = 
+      '
+	(function() {
+        var width = --widthtree--,
+	height = --height--;
+	;
+
+        var i = 0,
+        duration = 750,
+        root;
+
+	var cluster = d3.layout.cluster()
+		.size([height, --size--])
+	        .separation(function(a, b) { return (a.parent == b.parent ? 1 : 1); });
+
+
+	var diagonal = function elbow(d, i) {
+		
+		return "M" + d.source.y + "," + d.source.x
+		+ "V" + d.target.x + "H" + d.target.y;
+	}
+
+
+	var svg = d3.select("#--cl_id--").append("svg")
+		.attr("width", width)
+		.attr("height", height)
+		.append("g")
+		.attr("class","drawarea")
+		.attr("transform", "translate(90,0)");
+		
+
+       var jsontree = --json_file--;
+
+	root = jsontree;
+	root.x0 = height / 2;
+	root.y0 = 0;	
+	update(root);
+
+function update(source) {
+
+// compute the new height
+var levelWidth = [1];
+var childCount = function(level, n) {
+
+  if(n.children && n.children.length > 0) {
+    if(levelWidth.length <= level + 1) levelWidth.push(0);
+
+    levelWidth[level+1] += n.children.length;
+    n.children.forEach(function(d) {
+      childCount(level + 1, d);
+    });
+  }
+};
+childCount(0, root);  
+var newHeight = d3.max(levelWidth) * --sep_motifs--; // 20 pixels per line  // 250 ----------> This number must be calculated 
+cluster= cluster.size([newHeight, --size--]);
+
+// Re-draw the tree
+svg = d3.select("#--cl_id--").select("svg")
+		.attr("width", width)
+		.attr("height", newHeight)
+		.attr("transform", "translate(90,0)");
+
+  // Compute the new tree layout.
+  var nodes = cluster.nodes(root).reverse(),
+      links = cluster.links(nodes);
+
+  // Update the nodes…
+  var node = svg.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+  // Enter any new nodes at the parent"s previous position.
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .on("click", click);
+
+  nodeEnter.append("circle")
+	.attr("r", 6)
+        .attr("fill", "--stroke--");
+
+       /*Insert labels*/
+       --lab--
+
+       /*Insert consensus*/
+
+	nodeEnter.append("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
+		.attr("height", --svgheight--)
+		.attr("x", --x1--)    
+		.attr("y", --y1--) 
+		.attr("cursor", "default") 
+		.attr("preserveAspectRatio", "none");	
+
+/*		
+	nodeEnter.append("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
+		.attr("height", --svgheight--)
+  		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
+		.attr("y", --y1--) 
+		.attr("cursor", "default") 
+		.attr("preserveAspectRatio", "none");
+*/
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+
+  nodeUpdate.select("circle")
+	.attr("r", 6)
+        .attr("fill", function(d) { return d._children ? "black" : "--stroke--"; })
+      .attr("font-size", "--font--px");
+
+
+  nodeUpdate.select("text")
+      .text(function(d) { return d.children ? d.consensus :  d.name; })
+      .attr("dx", function(d) { return d.children ? -20 : 20; })
+      .attr("dy", function(d) { return d.children ? -6 : 3; })
+      .attr("class", function(d) { return d.children ? "show_con_--cl_id--" : ""; })
+      .attr("fill", function(d) { return d.children ? "blue" : "black"; })
+      .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+      .attr("font-size", "--font--px");
+
+	nodeUpdate.select("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
+		.attr("width", function(d) { return (d.size + 2)  * 25; })
+		.attr("height", 80)
+		.attr("x", --image_spacer--)    
+		.attr("y", -33) 
+		.attr("cursor", "default") 
+		.attr("preserveAspectRatio", "none");
+
+/*
+	node.select("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
+		.attr("width", function(d) { return (d.size + 2)  * 25; })
+		.attr("height", 80)
+ 		.attr("x", function(d) { return (d.size + 2)  * 25 + 296 + 25; })  
+		.attr("y", -33)
+		.attr("cursor", "default") 
+		.attr("preserveAspectRatio", "none");
+*/
+
+
+  // Transition exiting nodes to the parent"s new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6)
+      .attr("font-size", "--font--px");
 
   nodeExit.selectAll("image")
       .remove();
@@ -4588,7 +5171,7 @@ sub InsertSmallForest {
     ## Close the <a> and <div>
     $small_forest .= '</a></div>';
 
-    print $syn $small_forest
+    print $syn $small_forest;
 }
 
 
@@ -5207,9 +5790,11 @@ sub Synthesis {
     $menu_nb = 200; ## Numbering of the IDs for collapsible elements
 
     &ReadAlignmentTable();
-    $number_of_clusters = scalar(keys %alignment_table_data);      
 
+    $number_of_clusters = scalar(keys %alignment_table_data);      
+    &create_html_small_tree_file();
     &create_html_tree_file();
+
 
     &OpenScriptJQuery();
     
