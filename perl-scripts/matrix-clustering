@@ -2615,8 +2615,9 @@ d3.select("#--cl_id--").append("text")
 	.attr("y", 0)    
 	.attr("class", "legend")     
 	.attr("id", "cons_button_--cl_id--") 
-	.text("Consensus")  
-;
+      .attr("font-size", "--font--px")
+	.text("Consensus") ; 
+
 
 // Slide the Heatmap View
 $(document).ready(function() {
@@ -3861,27 +3862,29 @@ function click(d) {
 // Add the buttons to change the orientation
 d3.select("#--cl_id--").append("text")
 	.attr("x", 700)             
-	.attr("y", 0)    
+	.attr("y", 0)   
+      .attr("font-size", "--font--px") 
 	.attr("class", "legend")     
 	.on("click", function(){
 		// change the orientation
 		d3.select("#--cl_id--").selectAll("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
 	})
-	.text("Direct")  
-;
+	.text("Direct");  
+
 
 d3.select("#--cl_id--").append("text")
 	.attr("x", 1000)             
-	.attr("y", 0)    
+	.attr("y", 0)   
+      .attr("font-size", "--font--px") 
 	.attr("class", "legend")     
 	.on("click", function(){
 		// change the orientation
 		d3.select("#--cl_id--").selectAll("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; }) 
 	})
-	.text("Reverse")  
-;
+	.text("Reverse") ; 
+
 	
 ';
 
