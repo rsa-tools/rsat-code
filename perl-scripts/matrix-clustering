@@ -2568,7 +2568,7 @@ sub create_html_small_tree_file() {
     open(TEMP_2, ">".$main::outfile{temp_html_2}) || &RSAT::error::FatalError($main::outfile{temp_html_2}, "Cannot create temporary file");
 
     ## Values to change in the D3 tree
-    my $svg_width = 4;
+    my $svg_width = 15;
     my $svg_height = 8;
     my $svg_x1 = 4 * $nb_char;
     my $svg_y1 = -7;
@@ -2675,7 +2675,7 @@ $(document).ready(function() {
 
 	### Set the tree size
 	if (/--size--/) {;
-	    $_ =~ s/--size--/300/;
+	    $_ =~ s/--size--/200/;
 	}
 
 	### Add the JSON file name
@@ -2700,7 +2700,7 @@ $(document).ready(function() {
 	}
 
 	if (/--font--/) {
-	    $_ =~ s/--font--/12/g;
+	    $_ =~ s/--font--/10/g;
 	}
 
 	if (/--sep_motifs--/) {
@@ -2725,7 +2725,7 @@ $(document).ready(function() {
 	}
 
 	if (/--image_spacer--/) {
-	    $_ =~ s/--image_spacer--/170/g;
+	    $_ =~ s/--image_spacer--/150/g;
 	}
 
 	if (/--svgwidth--/) {
@@ -3773,7 +3773,7 @@ svg = d3.select("#--cl_id--").select("svg")
 
 	nodeUpdate.select("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
-		.attr("width", function(d) { return (d.size + 2)  * 25; })
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
 		.attr("height", 80)
 		.attr("x", --image_spacer--)    
 		.attr("y", -33) 
