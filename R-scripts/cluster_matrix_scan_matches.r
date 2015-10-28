@@ -7,8 +7,8 @@ if (dir.rsat == "") {
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path
 source(file.path(dir.rsat, 'R-scripts/config.R'))
-library("RColorBrewer")
-library("gplots")
+suppressPackageStartupMessages(library("RColorBrewer", warn.conflicts=FALSE, character.only = TRUE))
+suppressPackageStartupMessages(library("gplots", warn.conflicts=FALSE, character.only = TRUE))
 
 ###########################################
 ## Read arguments from the command line.
@@ -26,7 +26,7 @@ if (length(args >= 1)) {
 
 
 # matrix.scan.results <- "/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/heatmap_matrix_matches/test/matrix_scan_output_test.tab"
-matrix.scan.results <- "/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/heatmap_matrix_matches/test/CapStarrseq_Active_Prom_K562_merge_IP_matrix_scan_pval_1e-4_HOCOMOCO_bg_mkv_2.tab"
+# matrix.scan.results <- "/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/heatmap_matrix_matches/test/CapStarrseq_Active_Prom_K562_merge_IP_matrix_scan_pval_1e-4_HOCOMOCO_bg_mkv_2.tab"
 
 ##############################
 ## Read matrix-scan table
@@ -38,17 +38,18 @@ names(scan.results) <- gsub("X.seq_id", "seq_id", names(scan.results))
 ## Set p-value
 p.val <- as.numeric(p.val)
 
-############################
-## Get the sequences ID's
-seq.id <- unique(as.vector(scan.results[scan.results$ft_type == "limit",1]))
-
 #########################
 ## Remove the 'limits'
 scan.results <- scan.results[scan.results$ft_type != "limit",]
 
 #############################
-## Get tha matrices name's
+## Get the matrices name's
 matrix.names <- unique(as.vector(scan.results$ft_name))
+
+############################
+## Get the sequences ID's
+seq.id <- unique(as.vector(scan.results$seq_id))
+# seq.id <- unique(as.vector(scan.results[scan.results$ft_type == "limit",1]))
 
 ##############################
 ## Create the matches table
@@ -61,9 +62,14 @@ count.matches.tab <- count.matches.tab[,1:(dim(count.matches.tab)[2] - 1)]
 
 ###########################
 ## Set heatmap key color
-palette <- colorRampPalette(c("#FFE991", "#FF8000", "#930047"), space = "rgb")
-white <- "#FFFFFF"
-palette <- append(white, palette(300))
+
+# palette <- colorRampPalette(c("#FFE991", "#F7D358", "#930047"), space = "rgb")
+# white <- "#FFFFFF"
+# palette <- append(white, palette(300))
+
+rgb.palette <- colorRampPalette(brewer.pal(9, "YlOrRd"), space="Lab")
+palette <- "#FFFFFF"
+palette <- append(palette, rgb.palette(300))
 
 
 ########################################################
@@ -82,8 +88,8 @@ if(count.mode == "presence"){
   rownames(count.matches.tab) <- r.names
   colnames(count.matches.tab) <- c.names
   
-#   colors <- colorRampPalette(c("#FFFFFF", "#930047"))
-#   palette <- colors(2)
+  colors <- colorRampPalette(c("#FFFFFF", "#800026"))
+  palette <- colors(2)
 }
 
 
@@ -114,22 +120,23 @@ if(count.mode == "presence"){
 #   cluster.to.color[[c]]
 # })
 
-heatmap.pdf.file <- paste("/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/heatmap_matrix_matches/test/testing_methods_R_heatmap_matches.pdf", sep = "")
+heatmap.pdf.file <- paste(prefix, "_R_heatmap_matches.pdf", sep = "")
 pdf(heatmap.pdf.file)
 ########################
-for (m in c("ward", "single", "complete", "average", "mcquitty", "median", "centroid")){
-  for(d in c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski")){
+for (m in c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid")){
+  for(d in c("euclidean", "maximum", "manhattan", "canberra", "binary")){
 
 # for (m in c("ward")){
 #   for(d in c("manhattan", "canberra")){
     
-    a <- (count.matches.tab)
+    # a <- (count.matches.tab)
     # rownames(a) <- 1:length(rownames(a))
     # colnames(a) <- 1:length(colnames(a))
     # plot(hclust(dist(a), method = "complete"))
     # tree <- hclust(dist(a), method = "complete")
     #cutree(tree, k = 7)
-    heatmap.2(a,
+    
+    heatmap.2(count.matches.tab,
               
               # plot labels
               main = paste("Link: ", m , " - Dist: ", d, sep = ""),
@@ -152,7 +159,7 @@ for (m in c("ward", "single", "complete", "average", "mcquitty", "median", "cent
               
               ## Set the font size
               cexRow = 0.06,
-              cexCol = 0.07,
+              cexCol = 0.06,
               
               ## Set the key with the values
               key = TRUE,
@@ -183,7 +190,7 @@ for(ft in c("col", "row")){
   }
   
   
-  for(m in c("average", "centroid", "complete", "median", "mcquitty", "single", "ward")){
+  for(m in c("average", "centroid", "complete", "median", "single", "ward.D", "ward.D2", "mcquitty")){
     tree <- hclust(dist(clusters.matches), method = m)
     order.list[[m]][[ft]] <- paste(tree$order, collapse = ",")
     order.list.names[[m]][[ft]] <- paste(paste("'cluster_", tree$order, "'", sep = ""), collapse = ",")
@@ -195,7 +202,8 @@ complete.number.col <- order.list[["complete"]][["col"]]
 median.number.col <- order.list[["median"]][["col"]]
 mcquitty.number.col <- order.list[["mcquitty"]][["col"]]
 single.number.col <- order.list[["single"]][["col"]]
-ward.number.col <- order.list[["ward"]][["col"]]
+wardd.number.col <- order.list[["ward.D"]][["col"]]
+wardd2.number.col <- order.list[["ward.D2"]][["col"]]
 
 average.number.row <- order.list[["average"]][["row"]]
 centroid.number.row <- order.list[["centroid"]][["row"]]
@@ -203,7 +211,8 @@ complete.number.row <- order.list[["complete"]][["row"]]
 median.number.row <- order.list[["median"]][["row"]]
 mcquitty.number.row <- order.list[["mcquitty"]][["row"]]
 single.number.row <- order.list[["single"]][["row"]]
-ward.number.row <- order.list[["ward"]][["row"]]
+wardd.number.row <- order.list[["ward.D"]][["row"]]
+wardd2.number.row <- order.list[["ward.D2"]][["row"]]
 
 ###############################################
 ## Convert the table to the format required
@@ -248,9 +257,18 @@ if(max(count.matches.tab) < 10){
   step <- 5
 }
 
-rgb.palette <- colorRampPalette(c("#FFE991", "#930047"), space = "rgb")
+rgb.palette <- colorRampPalette(brewer.pal(9, "YlOrRd"), space="Lab")
 white <- "#FFFFFF"
 white <- append(white,rgb.palette(ceiling((max(count.matches.tab)/step+1))))
+
+if(count.mode == "presence"){
+  colors <- colorRampPalette(c("#FFFFCC", "#800026"))
+  white <- colors(2)
+}
+
+# rgb.palette <- colorRampPalette(c("#FFE991", "#930047"), space = "rgb")
+# white <- "#FFFFFF"
+# white <- append(white,rgb.palette(ceiling((max(count.matches.tab)/step+1))))
 
 ################################
 ## Color palette in Hexa code
@@ -278,7 +296,7 @@ legend <- paste(legend, collapse=",")
 
 ############
 ## Borders + Cell size
-left <- (max(as.vector(sapply(seq.id, nchar))) + 2) * 10
+left <- (max(as.vector(sapply(c(seq.id, matrix.names), nchar))) + 2) * 10
 cell.size <- 20
 bottom <- 120
 legend.header <- bottom - 35
@@ -298,13 +316,21 @@ if(row.nb < 5){
   legend.header <- bottom - 27
 }
 
-average.number.col <- order.list[["average"]][["col"]]
-centroid.number.col <- order.list[["centroid"]][["col"]]
-complete.number.col <- order.list[["complete"]][["col"]]
-median.number.col <- order.list[["median"]][["col"]]
-mcquitty.number.col <- order.list[["mcquitty"]][["col"]]
-single.number.col <- order.list[["single"]][["col"]]
-ward.number.col <- order.list[["ward"]][["col"]]
+# average.number.col <- order.list[["average"]][["col"]]
+# centroid.number.col <- order.list[["centroid"]][["col"]]
+# complete.number.col <- order.list[["complete"]][["col"]]
+# median.number.col <- order.list[["median"]][["col"]]
+# mcquitty.number.col <- order.list[["mcquitty"]][["col"]]
+# single.number.col <- order.list[["single"]][["col"]]
+# ward.number.col <- order.list[["ward"]][["col"]]
+# 
+# average.number.row <- order.list[["average"]][["row"]]
+# centroid.number.row <- order.list[["centroid"]][["row"]]
+# complete.number.row <- order.list[["complete"]][["row"]]
+# median.number.row <- order.list[["median"]][["row"]]
+# mcquitty.number.row <- order.list[["mcquitty"]][["row"]]
+# single.number.row <- order.list[["single"]][["row"]]
+# ward.number.row <- order.list[["ward"]][["row"]]
 
 order.info <- matrix(c("Gradient", gradient,
                        "Matrix_name", column.heatmap,
@@ -318,7 +344,8 @@ order.info <- matrix(c("Gradient", gradient,
                        "Median_col", median.number.col,
                        "Mcquitty_col", mcquitty.number.col,
                        "Single_col", single.number.col,
-                       "Ward_col", ward.number.col,
+                       "Ward_d_col", wardd.number.col,
+                       "Ward_d2_col", wardd2.number.col,
                        
                        "Average_row", average.number.row,
                        "Complete_row", complete.number.row,
@@ -327,7 +354,8 @@ order.info <- matrix(c("Gradient", gradient,
                        "Median_row", median.number.row,
                        "Mcquitty_row", mcquitty.number.row,
                        "Single_row", single.number.row,
-                       "Ward_row", ward.number.row,
+                       "Ward_d_row", wardd.number.row,
+                       "Ward_d2_row", wardd2.number.row,
                             
                        "Cell_size", cell.size,
                        "Col_number", col.nb,
