@@ -25,7 +25,7 @@ if (length(args >= 1)) {
 }
 
 
-# matrix.scan.results <- "/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/heatmap_matrix_matches/test/matrix_scan_output_test.tab"
+#  matrix.scan.results <- "/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/heatmap_matrix_matches/test/matrix_scan_output_test.tab"
 # matrix.scan.results <- "/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/heatmap_matrix_matches/test/CapStarrseq_Active_Prom_K562_merge_IP_matrix_scan_pval_1e-4_HOCOMOCO_bg_mkv_2.tab"
 
 ##############################
@@ -37,6 +37,8 @@ names(scan.results) <- gsub("X.seq_id", "seq_id", names(scan.results))
 #################
 ## Set p-value
 p.val <- as.numeric(p.val)
+
+scan.results <- scan.results[scan.results$Pval <= p.val,]
 
 #########################
 ## Remove the 'limits'
@@ -55,7 +57,7 @@ seq.id <- unique(as.vector(scan.results$seq_id))
 ## Create the matches table
 count.matches.tab <- NULL
 count.matches.tab <- sapply(seq.id, function(seq){
-     table(scan.results[scan.results$seq_id == seq & scan.results$Pval <= p.val,]$ft_name)
+     table(scan.results[scan.results$seq_id == seq,]$ft_name)
 })
 count.matches.tab <- t(count.matches.tab)
 count.matches.tab <- count.matches.tab[,1:(dim(count.matches.tab)[2] - 1)]
@@ -227,12 +229,6 @@ x <- sapply(1:dim(count.matches.tab)[1], function(j){
 colnames(matches.tsv) <- c("Row", "Col", "Value")
 
 
-# for(j in 1:dim(x)[1]){
-#   for(i in 1:dim(x)[2]){
-#     matches.tsv <<- rbind(matches.tsv, matrix(c(j,i, as.numeric(x[j,i])), nrow = 1))
-#   }
-# }
-
 ######################################################
 ## Export the table that will be read by D3 heatmap
 # heatmap.table.d3 <- "" ## Read from command-line arguments
@@ -265,10 +261,6 @@ if(count.mode == "presence"){
   colors <- colorRampPalette(c("#FFFFCC", "#800026"))
   white <- colors(2)
 }
-
-# rgb.palette <- colorRampPalette(c("#FFE991", "#930047"), space = "rgb")
-# white <- "#FFFFFF"
-# white <- append(white,rgb.palette(ceiling((max(count.matches.tab)/step+1))))
 
 ################################
 ## Color palette in Hexa code
@@ -315,22 +307,6 @@ if(row.nb < 5){
   cell.size <- 15
   legend.header <- bottom - 27
 }
-
-# average.number.col <- order.list[["average"]][["col"]]
-# centroid.number.col <- order.list[["centroid"]][["col"]]
-# complete.number.col <- order.list[["complete"]][["col"]]
-# median.number.col <- order.list[["median"]][["col"]]
-# mcquitty.number.col <- order.list[["mcquitty"]][["col"]]
-# single.number.col <- order.list[["single"]][["col"]]
-# ward.number.col <- order.list[["ward"]][["col"]]
-# 
-# average.number.row <- order.list[["average"]][["row"]]
-# centroid.number.row <- order.list[["centroid"]][["row"]]
-# complete.number.row <- order.list[["complete"]][["row"]]
-# median.number.row <- order.list[["median"]][["row"]]
-# mcquitty.number.row <- order.list[["mcquitty"]][["row"]]
-# single.number.row <- order.list[["single"]][["row"]]
-# ward.number.row <- order.list[["ward"]][["row"]]
 
 order.info <- matrix(c("Gradient", gradient,
                        "Matrix_name", column.heatmap,
