@@ -1073,7 +1073,7 @@ sub IndexOneFile {
 sub InferQueryOperons {
   &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($main::verbose >= 4);
   &CheckDependency("operons", "genes");
-  my $cmd = $SCRIPTS."/get-leader-multigenome ";
+  my $cmd = $SCRIPTS."/infer-operon-leader-multigenome ";
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -uth interg_dist ".$dist_thr;
   $cmd .= " -o ".$outfile{leader_qgenes};
@@ -1254,7 +1254,7 @@ sub InferOrthoOperons {
   if  ($task{operons}) {
     &RSAT::message::TimeWarn("Get leaders of orthologous genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 2);
     &CheckDependency("operons", "orthologs");
-    my $cmd = $SCRIPTS."/get-leader-multigenome ";
+    my $cmd = $SCRIPTS."/infer-operon-leader-multigenome ";
     $cmd .= " -i ".$outfile{orthologs};
     $cmd .= " -o ".$outfile{bbh};
     $cmd .= " -uth interg_dist ".$dist_thr;
@@ -1274,7 +1274,7 @@ sub RetrieveOrthoSeq {
     my $cmd = $SCRIPTS."/retrieve-seq-multigenome -v 1 -ids_only -quick";
     $cmd .= " -i ".$outfile{bbh};
     $cmd .= " -noorf";
-    $cmd .= " -feattype CDS,mRNA,tRNA,scRNA,misc_RNA" ;
+    $cmd .= " -feattype cds,mrna,trna,scrna,misc_rna" ;
     $cmd .= " -o ". $outfile{seq_notclean} ;
     &one_command($cmd); ## JvH restored one_command on 2015-03-09
     ## print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
@@ -1299,7 +1299,7 @@ sub RetrieveOrthoSeq {
     chomp($ortho_seq_len);
     if ($ortho_seq_len < 1) {
       ## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
-      $main::status = "Orthologous sequences have length 0.";
+      $main::status = "Orthologous sequences have length 0 (file ".$outfile{seq}.")";
     }
   } else {
     $main::status = "Missing file:  $outfile{seq}";
