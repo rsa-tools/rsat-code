@@ -6,12 +6,14 @@
 ## Samuel Collombet <samuel.collombet@ens.fr>
 ## Morgane Thomas-Chollier <mthomas@biologie.ens.fr>
 ## Alejandra Medina-Rivera <amedina@lcg.unam.mx>
+## Jaime Castro-Mondragon <>
 
 library(RColorBrewer)
 library(gplots)
 library(ggplot2)
 library(reshape2)
 library(flux)
+library(clusterSim)
 
 args <- commandArgs(TRUE)
 
@@ -24,9 +26,10 @@ print (formats)
 
 ## For debugging:
 
-##mtx.quality.nwds.file <-"./results/matrix_quality/20150428/zoo_chip_enrichment/all_nwd_files.txt"
-##plot.folder <- "./results/matrix_quality/20150428/zoo_chip_enrichment/"
-##formats <-c("pdf","png")
+mtx.quality.nwds.file <-"./results/matrix_quality/20150428/zoo_chip_enrichment/all_nwd_files.txt"
+plot.folder <- "./results/matrix_quality/20150428/zoo_chip_enrichment/"
+formats <-c("pdf","png")
+
 dir.create(plot.folder, showWarnings = FALSE, recursive = TRUE)
 ################
 ## Read in table with nwd files
@@ -61,6 +64,8 @@ lapply(names(nwd.files) ,function(matrix.name){
         print (matrix.name2)
         print (seq)
         local.table <- nwd.files[[matrix.name2]][[seq]][["table"]]
+        #local.table$NWD <- scale(local.table$NWD)
+        #local.table$NWD <- data.Normalization( local.table$NWD,type="n1",normalization="column")
         ## max.nwd
         max.nwd <- max(local.table$NWD)
         print(max.nwd )
@@ -114,7 +119,7 @@ draw.heatmap <- function (ListAll,metric="max.nwd",heatmap.file, formats=c("pdf"
         } else {
             stop ("Format not available")
         }
-        
+        metric.table <- scale(metric.table)
         heatmap.2(as.matrix(metric.table), col=colorRampPalette(brewer.pal(9,"Blues"))(100) 
                 , trace="none"
                 , margins=c(6,10)
