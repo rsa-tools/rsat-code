@@ -181,10 +181,10 @@ sub DatabaseChoice {
   &DisplayMatrixDBchoice("mode"=>"radio");
 
   print ("<INPUT TYPE='radio' NAME='db_choice' VALUE='custom'>");
-  print "Custom motif collection (in TRANSFAC format *)\n";
+  print "Custom motif(s) in TRANSFAC format *\n";
 #  print "<ul>\n";
   print $query->filefield(-name=>'upload_custom_motif_file',
-			-size=>10);
+			  -size=>10);
 #  print "&nbsp;"x6, "Matrices should be in <b>Transfac format</b>";
   print "<br>", "&nbsp;"x6, "* Other formats can be converted with <a href='convert-matrix_form.cgi'><i>convert-matrix</i></a>.";
 #  print"</ul>\n";
