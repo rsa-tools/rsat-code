@@ -386,6 +386,7 @@ sub Create_dynamic_d3_heatmap_matches {
 	my $att_content = $split_line[1];
 	$attributes_heatmap{$att_name} = $att_content;
     }
+    close($attributes_handle);
     
     my $tsv_file = &RSAT::util::RelativePath($main::outfile{dynamic_heatmap_html}, $main::outfile{matches_tsv});
     
