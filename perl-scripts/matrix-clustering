@@ -2977,6 +2977,8 @@ sub Merge_matrices() {
 		my $mt_nb = scalar(@file_names)."motifs";
 		my $motif_name = $cl."_".$merge_level."_".$mt_nb;
 
+		my $lev_motifs = join(",", @level_motifs);
+
 		## Addig attributes (ID + AC: cluster + level + motif_nb)
 		my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_nb_motifs_".scalar(@file_names).".tf";
 		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
@@ -2986,12 +2988,13 @@ sub Merge_matrices() {
 		$cmd .= " -o ".$merged_mat_file_2; 
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
+
 		## Calculate the IC content and remove low IC columns
-		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, -2);
+		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, -2, $lev_motifs);
 
 		## Create branch-wise logos
 		$concat_motif_files .= $merged_mat_file_trimmed." ";
-	    my $c = "cat ".$merged_mat_file_trimmed." >> ".$main::outfile{all_concatenated_motifs};
+		my $c = "cat ".$merged_mat_file_trimmed." >> ".$main::outfile{all_concatenated_motifs};
 		&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
 		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_aligned_logos/".$motif_name."_logo.png";
@@ -2999,9 +3002,13 @@ sub Merge_matrices() {
 		$merged_consensuses_files{$folder}{$cluster}{width} = 	$width_internal_alignments{$cluster}{$folder};
 		$merged_consensuses_files{$folder}{$cluster}{motif_name} = $motif_name;
 		$merged_consensuses_files{$folder}{$cluster}{consensus} = "";
+		$merged_consensuses_files{$folder}{$cluster}{tf_file} = $merged_mat_file_trimmed;
 		
        	
-		my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_".$folder."_matrices.tf";
+		#my $mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$folder."/".$cluster."_".$folder."_matrices.tf";
+
+		my $mat_file = $merged_mat_file_trimmed;
+
 		my $cons = `more $mat_file | grep '^DE'`;
 		chomp($cons);
 		$cons =~ s/^DE\s+//;
@@ -3042,7 +3049,7 @@ sub Merge_matrices() {
 	    $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file_temp;
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
-	    $cmd = "convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf -attr name ".$cluster." -attr accession ".$cluster." -o ".$new_singleton_motif_file;
+	    $cmd = "convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf -attr name ".$cluster." -attr accession ".$cluster." -attr version @{$cluster_nodes{$cluster}} -o ".$new_singleton_motif_file;
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 	    unlink($new_singleton_motif_file_temp);
 
@@ -5509,7 +5516,8 @@ sub InsertTreesAndBranchMotifs {
 
 		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{"cluster_".$num}{logo});
 		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{"cluster_".$num}{logo_RC});
-		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/node_".$level."/cluster_".$num."_node_".$level."_matrices.tf");
+		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{"cluster_".$num}{tf_file});
+
 		$transfac_file_2 = $main::outfile{prefix}."_clusters_information/cluster_".$num."/merged_consensuses/node_".$level."/cluster_".$num."_node_".$level."_matrices.tf";
 		$cons = `more $transfac_file_2 | grep DE`;
 		$cons =~ s/DE\s+//gi;
@@ -5844,6 +5852,7 @@ sub trim_matrix_low_IC_columns{
     my $matrix_to_trim = shift;
     my $trimmed_matrix = shift;
     my $IC_threshold = shift;
+    my $motif_version = shift;
     
     my $temp_IC_file = &RSAT::util::make_temp_file("","IC_test", 1);
     my $IC_info = "";
@@ -5898,7 +5907,10 @@ sub trim_matrix_low_IC_columns{
     }
 
     ## Trim the matrix
-    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
+    # $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
+
+    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix." -attr version ".$motif_version;
+
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
     return $trimmed_matrix;
 }
