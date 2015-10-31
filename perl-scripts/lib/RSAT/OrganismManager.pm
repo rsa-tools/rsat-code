@@ -339,8 +339,8 @@ sub supported_organism_table {
   }
 
   ## Select unique organisms per genus or species if required
-  @organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @organisms) if ($main::unique_species);
-  @organisms = &RSAT::OrganismManager::UniquePerTaxon("genus", @organisms) if ($main::unique_genus);
+  @selected_organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @selected_organisms) if ($main::unique_species);
+  @selected_organisms = &RSAT::OrganismManager::UniquePerTaxon("genus", @selected_organisms) if ($main::unique_genus);
 
   ## Add fields for each organism
   my $n = 0;
@@ -526,7 +526,9 @@ sub GetOrganismsForTaxon {
   }
   
   ## Select unique organisms per genus or species if required
-  @organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @organisms) if (($main::unique_species) || ($main::unique_genus));
+#  @organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @organisms) if (($main::unique_species) || ($main::unique_genus));
+  @organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @organisms) if ($main::unique_species);
+  @organisms = &RSAT::OrganismManager::UniquePerTaxon("genus", @organisms) if ($main::unique_genus);
 
   @organisms = &RSAT::util::sort_unique(@organisms);
   &RSAT::message::Info("Collected",scalar(@organisms),"organisms for taxon", $taxon) if ($main::verbose >= 3);
