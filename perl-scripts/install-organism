@@ -1069,7 +1069,9 @@ sub CalcDyadFreq {
   @monad_lengths = (3,2,1);
   @strands = ("-1str", "-2str");
   my $quick = "";
-  unless ($seq_type eq "protein") {
+
+  ## Quick option only works with DNA sequences in fasta format
+  unless (($seq_type eq "protein") || ($seq_format ne "fasta")) {
     $quick = "-quick";
   }
 
