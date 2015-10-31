@@ -392,11 +392,11 @@ sub ReadArguments {
 
       ## At most one organism per species
     } elsif ($ARGV[$a] eq "-unique_species") {
-      $unique_species = 1;
+      $main::unique_species = 1;
       
       ## At most one organism per genus
     } elsif ($ARGV[$a] eq "-unique_genus") {
-      $unique_genus = 1;
+      $main::unique_genus = 1;
       
 
       ### Select source
