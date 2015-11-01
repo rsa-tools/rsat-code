@@ -44,8 +44,8 @@ export CVS_RSH=ssh
 
 ################################################################
 ## Default path for the Ensembl Perl modules and sofwtare tools
-export ENSEMBL_RELEASE=81
-export ENSEMBLGENOMES_BRANCH=28
+export ENSEMBL_RELEASE=82
+export ENSEMBLGENOMES_BRANCH=29
 export PATH=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl-git-tools/bin:${PATH}
 export PERL5LIB=${RSAT}/lib/bioperl-release-${BIOPERL_VERSION}/bioperl-live::${PERL5LIB}
 export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl/modules::${PERL5LIB}
