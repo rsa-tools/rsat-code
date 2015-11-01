@@ -957,7 +957,7 @@ sub SeqBoxMQ {
   print "<br>";
   print "<b><a href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
   print $query->popup_menu(-name=>'permutation'.$seq_num,
-			   -Values=>[0,1,2],
+			   -Values=>[0..5],
 			   -default=>$default{perm});
   print "<BR>\n";
   print"</td>";
