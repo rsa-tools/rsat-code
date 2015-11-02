@@ -534,7 +534,7 @@ package main;
       ## Produce the TRANSFAC files with the aligned motifs in both
       ## orientations. 
       &Add_gaps_to_motifs();
-      
+
       ################################################################
       ## Create the merged matrices and consensuses
       &Merge_matrices();
@@ -2916,9 +2916,12 @@ sub Merge_matrices() {
 		## Concatenate the motif's file names
 		my @file_names = ();
 		my @ID_names = ();
+		my @ID_motifs = ();
 
 		## Get the names of the files of each level
 		foreach my $m (@level_motifs) {
+
+		    push(@ID_motifs, $alignment_info{$m}{name});
 		    
 		    ## Count the number of motifs belonging to a specific collection
 		    $collection_count{$alignment_info{$m}{collection}}++;
@@ -2977,7 +2980,12 @@ sub Merge_matrices() {
 		my $mt_nb = scalar(@file_names)."motifs";
 		my $motif_name = $cl."_".$merge_level."_".$mt_nb;
 
-		my $lev_motifs = join(",", @level_motifs);
+		my $lev_motif_ac = join(",", @level_motifs);
+		my $lev_motif_id = join(",", @ID_motifs);
+		my $matrix_type = "merge";
+		my $mer_type = $operator;
+		my $mer_number = scalar(@file_names);
+
 
 		## Addig attributes (ID + AC: cluster + level + motif_nb)
 		my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_nb_motifs_".scalar(@file_names).".tf";
@@ -2988,9 +2996,12 @@ sub Merge_matrices() {
 		$cmd .= " -o ".$merged_mat_file_2; 
 		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
+		
 
 		## Calculate the IC content and remove low IC columns
-		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, -2, $lev_motifs);
+		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, -2, $lev_motif_ac, $lev_motif_id, $matrix_type, $mer_type, $mer_number);
+
+
 
 		## Create branch-wise logos
 		$concat_motif_files .= $merged_mat_file_trimmed." ";
@@ -4156,7 +4167,7 @@ sub OpenSynthesis {
 
   my $refresh_time;
   if ($main::param{progressive_synthesis}) {
-    $refresh_time = 30;
+    $refresh_time = 90;
   } else {
      $refresh_time = 0;
   }
@@ -5846,13 +5857,17 @@ sub Synthesis {
 #######################################
 ## Trim the ends of the matrix with 
 ## very low IC
-sub trim_matrix_low_IC_columns{
+sub trim_matrix_low_IC_columns {
 
     ## Read the matrix file name
     my $matrix_to_trim = shift;
     my $trimmed_matrix = shift;
     my $IC_threshold = shift;
-    my $motif_version = shift;
+    my $motif_ac = shift;
+    my $motif_id = shift;
+    my $motif_type = shift;
+    my $merge_type = shift;
+    my $merge_nb = shift;
     
     my $temp_IC_file = &RSAT::util::make_temp_file("","IC_test", 1);
     my $IC_info = "";
@@ -5907,9 +5922,13 @@ sub trim_matrix_low_IC_columns{
     }
 
     ## Trim the matrix
-    # $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
-
-    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix." -attr version ".$motif_version;
+    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf";
+    $cmd .= " -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
+    $cmd .= " -set_attr type ".$motif_type;
+    $cmd .= " -set_attr merge_type ".$merge_type;
+    $cmd .= " -set_attr merge_nb ".$merge_nb;
+    $cmd .= " -set_attr merged_AC ".$motif_ac;
+    $cmd .= " -set_attr merged_ID ".$motif_id;
 
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
     return $trimmed_matrix;
