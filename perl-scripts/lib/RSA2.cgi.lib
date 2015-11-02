@@ -961,7 +961,7 @@ sub SeqBoxMQ {
 			   -default=>$default{perm});
   print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num,
 				      -checked=>$default{sep_perm1},
-				      -label=>'');
+				      -label=>''), "&nbsp;separate permutations";
   print "<br>\n";
   print"</td>";
   print "<td>";
