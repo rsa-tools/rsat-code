@@ -959,7 +959,10 @@ sub SeqBoxMQ {
   print $query->popup_menu(-name=>'permutation'.$seq_num,
 			   -Values=>[0..5],
 			   -default=>$default{perm});
-  print "<BR>\n";
+  print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num,
+				      -checked=>$default{sep_perm1},
+				      -label=>'');
+  print "<br>\n";
   print"</td>";
   print "<td>";
   print "<BR>\n";
