@@ -3060,7 +3060,7 @@ sub Merge_matrices() {
 	    $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file_temp;
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
-	    $cmd = "convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf -attr name ".$cluster." -attr accession ".$cluster." -attr version @{$cluster_nodes{$cluster}} -o ".$new_singleton_motif_file;
+	    $cmd = "convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf -attr name ".$cluster." -attr accession ".$cluster." -set_attr merged_AC @{$cluster_nodes{$cluster}} -set_attr merged_ID ".$alignment_info{"@{$cluster_nodes{$cluster}}"}{name}." -o ".$new_singleton_motif_file;
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 	    unlink($new_singleton_motif_file_temp);
 
