@@ -86,6 +86,7 @@ package main;
 
   local %attributes_heatmap = ();
   local $p_value = 1e-4;
+  local $draw_heatmap = 0;
 
   ## Supported count modes
   local @supported_count_modes = qw (ocurrence presence);
@@ -144,8 +145,10 @@ package main;
   &Cluster_matrix_scan_matches();
 
   ################################################################
-  ## Create the dynamic D# heatmap
-  &Create_dynamic_d3_heatmap_matches();
+  ## Create the dynamic D3 heatmap (if it is required)
+  if($draw_heatmap == 1){
+      &Create_dynamic_d3_heatmap_matches();
+  }
 
   ################################################################
   ## Report execution time and close output stream
@@ -280,8 +283,23 @@ Count the presence/absence of matches on each sequence.
       $count_mode = shift(@arguments);
       unless(exists($supported_count_modes{$count_mode})) {
 	&RSAT::error::FatalError($count_mode, "Invalid count mode. Supported:", $supported_count_modes);
-      }
+      } 
 
+=pod
+
+=item B<-draw_heatmap>
+
+If this option is indicated draw compute a collection of heatmaps
+combining different distance + linkage methods.
+
+
+=back
+
+=cut
+
+    } elsif ($arg eq "-draw_heatmap") {
+      $draw_heatmap = 1;
+     
 =pod
 
 =item B<-i inputfile>
@@ -351,6 +369,7 @@ sub Cluster_matrix_scan_matches {
     $cluster_matches_cmd .= "; attributes.list.file = '".$main::outfile{heatmap_d3_attributes}."'";
     $cluster_matches_cmd .= "; heatmap.pdf.file = '".$main::outfile{R_heatmaps}."'";
     $cluster_matches_cmd .= "; p.val = '".$p_value."'";
+    $cluster_matches_cmd .= "; draw.heatmap = '".$draw_heatmap."'";
     $cluster_matches_cmd .= "; count.mode = '".$count_mode."'";
     $cluster_matches_cmd .= "; prefix = '".$main::outfile{prefix}."'";
     $cluster_matches_cmd .= "; \"";
