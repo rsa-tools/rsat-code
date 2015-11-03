@@ -466,7 +466,7 @@ sub Create_dynamic_d3_heatmap_matches {
     
     ## Delete temporal files
     unlink($main::outfile{temp_html});
-    unlink($main::outfile{matches_tab});
+    #unlink($main::outfile{matches_tab});
     $main::outfile{heatmap_d3_attributes};
 }
 
