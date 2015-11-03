@@ -759,10 +759,12 @@ _compile_patser:
 ################################################################
 ## Install consensus (J.Hertz)
 #CONSENSUS_VERSION=consensus-v6c.1 ## Not distributed anymore ?
-CONSENSUS_VERSION=consensus-v6c
+CONSENSUS_VERSION=consensus-v6d.2
 CONSENSUS_TAR=${CONSENSUS_VERSION}.tar.gz
 #CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
 CONSENSUS_URL=http://stormo.wustl.edu/src/
+#CONSENSUS_URL=http://gzhertz.home.comcast.net/~gzhertz/
+#does not compile in baobab Oct2015!
 CONSENSUS_DIR=${SRC_DIR}/consensus/${CONSENSUS_VERSION}
 install_consensus: _download_consensus _compile_consensus
 
