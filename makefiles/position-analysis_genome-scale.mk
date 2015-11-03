@@ -14,7 +14,8 @@ FROM=-500
 TO=100
 SEQTYPE=upstream
 NOORF=-noorf
-SEQ_PREFIX=${ORG}_${SEQTYPE}_${FEATTYPE}_${FROM}_${TO}${NOORF}
+REPEATMASK_OPT=-rm
+SEQ_PREFIX=${ORG}_${SEQTYPE}_${FEATTYPE}_${FROM}_${TO}${NOORF}${REPEATMASK_OPT}
 #RESULT_DIR=${RSAT}/public_html/tmp/allseq_position-analysis/
 RESULT_DIR=results/allseq_position-analysis/${SEQ_PREFIX}
 SEQ_DIR=${RESULT_DIR}/${SEQ_PREFIX}_sequences
@@ -29,6 +30,7 @@ param:
 	@echo "	ORG		${ORG}"
 	@echo "	FEATTYPE	${FEATTYPE}"
 	@echo "	SEQTYPE		${SEQTYPE}"
+	@echo "	REPEATMASK_OPT	${REPEATMASK_OPT}"
 	@echo "	FROM		${FROM}"
 	@echo "	TO		${TO}"
 	@echo "	NOORF		${NOORF}"
@@ -63,7 +65,7 @@ allseq:
 	@echo "	SEQ_DIR	${SEQ_DIR}"
 	@mkdir -p ${SEQ_DIR}
 	retrieve-seq -org ${ORG} -all -feattype ${FEATTYPE} -type ${SEQTYPE} \
-		-from ${FROM} -to ${TO} -format fasta ${NOORF} \
+		-from ${FROM} -to ${TO} -format fasta ${NOORF} ${REPEATMASK_OPT} \
 		-o ${ALLSEQ}.fasta
 	@echo "	${ALL_SEQ}.fasta"
 	${MAKE} _allseq_len_distrib
