@@ -67,7 +67,7 @@ if (%{$supported_organism{$organism}}) {
 }
 
 ### feature type
-my ($feattype) = split " ", $query->param('feattype'); ### take the first word
+($feattype) = split " ", $query->param('feattype'); ### take the first word
 if ($feattype) {
     $parameters .= " -feattype ".$feattype;
 }
