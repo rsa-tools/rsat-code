@@ -143,6 +143,7 @@ package main;
 
   $outfile{id} = "merged";
   $outfile{name} = "merged";
+  $outfile{version} = "none";
 
   ################################################################
   ## Read argument values
@@ -150,6 +151,7 @@ package main;
 
   $merged_attributes{"id"} = $outfile{id};
   $merged_attributes{"AC"} = $outfile{name};
+  $merged_attributes{"version"} = $outfile{name};
 
   ################################################################
   ## Check argument values
@@ -215,6 +217,7 @@ package main;
   }
 
   $merged_matrix->setAlphabet_lc(@alphabet);
+
   
   ## Set divider to 1 for matrix sums, and to the nb of matrices for
   ## the mean.
@@ -242,8 +245,15 @@ package main;
       }
     }
   }
+
   $merged_matrix->setMatrix($alphabet_size, $matrix_width, @merged_counts);
   $merged_matrix->calcConsensus();  
+  my $consensus = $merged_matrix->get_attribute("consensus.IUPAC");
+  $merged_matrix->force_attribute("description", $consensus);
+  $merged_matrix->force_attribute("ac", "Nunca las cosas se parecen tanto");
+  #$merged_matrix->set_attribute("version", "Nunca las cosas se parecen tanto");
+
+
   
   ################################################################
   ## Output

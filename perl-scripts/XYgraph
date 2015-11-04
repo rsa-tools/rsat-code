@@ -845,11 +845,11 @@ sub Rplot{
 	## MIN value for x is definied but not the max
 	if( ($x_axis_max eq "ND") && ($x_axis_min ne "ND")){
 	    ## Max will be defined using the maximun of all x.valuess
-	    $r_instruction.="xlimits <- c( ".$x_axis_min.", max(as.vector(input.table[,1]))) \n";
+	    $r_instruction.="xlimits <- c( ".$x_axis_min.", max(na.omit(as.vector(input.table[,1])))) \n";
 	    
 	    ## MAX value for x is defined but not the MIN 
 	}elsif( ($x_axis_max ne "ND") && ($x_axis_min eq "ND")){
-	    $r_instruction.="xlimits <- c(min(input.table[,1]), ".$x_axis_max.") \n";
+	    $r_instruction.="xlimits <- c(min(na.omit(input.table[,1])), ".$x_axis_max.") \n";
 	    
 	    ## MAX and MIN values for x axis are deffined 
 	}elsif( ($x_axis_max ne "ND") && ($x_axis_min ne "ND")){
@@ -858,7 +858,7 @@ sub Rplot{
 	
 	
     }else{
-	$r_instruction.="xlimits <- range( x.values) \n";
+	$r_instruction.="xlimits <- range( na.omit(x.values)) \n";
     }
 
     $r_plot_params .=", xlim=xlimits ";
@@ -868,11 +868,11 @@ sub Rplot{
 	## MIN value for y is defined but not the max
 	if( ($y_axis_max eq "ND") && ($y_axis_min ne "ND")){
 	    ## Max will be defined using the maximun of all y.values
-	    $r_instruction.="ylimits <- c( ".$y_axis_min.", max(as.vector(input.table[, -1]))) \n";
+	    $r_instruction.="ylimits <- c( ".$y_axis_min.", max(na.omit(as.vector(input.table[, -1])))) \n";
 	    
        ## MAX value for y is defined but not the MIN
 	}elsif(($y_axis_max ne "ND") && $y_axis_min){
-	    $r_instruction.="ylimits <- c(min(input.table[, -1]), ".$y_axis_max.") \n";
+	    $r_instruction.="ylimits <- c(min(na.omit(input.table[, -1])), ".$y_axis_max.") \n";
 
 	## MAX and MIN values for y axis are deffined
 	}elsif (  ($y_axis_max ne "ND") && ($y_axis_min ne "ND")){
@@ -922,7 +922,7 @@ sub Rplot{
 # xlab=\"log10(Score Pvalue)\", ylab=\"Binomial significance of hit number (OCC)\")
     $r_instruction.= " for(l in c(1:dim(y.values)[2]) ){
     input.table2 <- na.omit(cbind( x.values,  y.values[,l] ))
-    lines(input.table2, col=colors[l], $draw_plot_params  ) } \n ";
+    lines(na.omit(input.table2), col=colors[l], $draw_plot_params  ) } \n ";
     
 #    $r_instruction.="matplot( x=input.table[,1] , y=input.table[, -1] ". $r_plot_params." ) \n";
     #$r_instruction.="matplot( x=x.values , y=y.values ". $r_plot_params." ) \n";
