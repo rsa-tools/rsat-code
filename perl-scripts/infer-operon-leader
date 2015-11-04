@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# get-leader
+# infer-operon-leader
 #
 ############################################################
 
@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-get-leader
+infer-operon-leader
 
 =head1 DESCRIPTION
 
@@ -31,7 +31,7 @@ comparative genomics
 
 =head1 USAGE
 
-get-leader -org query_organism -q GENE1 -q GENE2 ...
+infer-operon-leader -org query_organism -q GENE1 -q GENE2 ...
     [other options]
 
 =head1 INPUT FORMAT
@@ -246,6 +246,7 @@ sub getLeaderGeneFromIntergDistance{
   $organism->check_name($query_organism);
   $organism->set_attribute("name", $query_organism);
   $organism->OpenContigs($query_organism);
+  $organism->DefineAcceptedFeatureTypes("cds", "trna", "rrna");
   $organism->LoadFeatures();
   $organism->LoadSynonyms();
 
@@ -586,7 +587,7 @@ Examples:
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; get-leader ";
+    print $main::out "; infer-operon-leader ";
     &PrintArguments($main::out);
     if (%main::infile) {
 	print $main::out "; Input files\n";
@@ -623,7 +624,7 @@ __END__
 =pod
 
 =head1 EXAMPLES
-    get-leader -q lexA -org Escherichia_coli_K12 -uth interg_dist 50
+    infer-operon-leader -q lexA -org Escherichia_coli_K12 -uth interg_dist 50
 
 =head1 SEE ALSO
 

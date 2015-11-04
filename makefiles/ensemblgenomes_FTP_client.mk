@@ -162,20 +162,21 @@ download_go:
 ## Get & install GO annotations for a given species
 GO_ANNOT_DIR=${RSAT}/data/genomes/${SPECIES}/
 GO_ANNOT_FILE=${GO_ANNOT_DIR}/go_annotations.tsv
+GO_ANNOT_LINK=go_annotations.tsv
+GO_DESC=${GO_DIR}/GO_description.tab
+GO_REL=${GO_DIR}/GO_relations.tab
+GO_EXPANDED_FILE=expanded_${GO_ANNOT_LINK}
 install_go_annotations:
 	@echo
 	@mkdir -p ${GO_ANNOT_DIR}
-	@echo "Downloading GO annotations of ${SPECIES}"
+	@echo "Downloading GO annotations of ${SPECIES}" 
 	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES}
-
-#ANNOT_DIR=${RSAT}/data/genomes/${ORG}/go_annotations
-#install_annot:
-#    @echo
-#    @echo "ANNOT_DIR    ${ANNOT_DIR}"
-#    @mkdir -p ${ANNOT_DIR}
-#    ${MAKE} OPT=--output_dir ${ANNOT_DIR} get_annotations expand_annot
-
-
+	@echo "Expanding GO annotations of ${SPECIES}" 
+	@rm ${GO_ANNOT_LINK}
+	@ln -s ${GO_ANNOT_FILE} ${GO_ANNOT_LINK}
+	@python2.7 ${RSAT}/python-scripts/go_analysis.py expand -a ${GO_ANNOT_LINK} -d ${GO_DESC} -r ${GO_REL} 
+	@mv ${GO_EXPANDED_FILE} ${GO_ANNOT_DIR}
+	@rm ${GO_ANNOT_LINK}
 
 
 
@@ -228,6 +229,10 @@ install_thaliana:
 ## Saccharomyces cerevisiae (Fungus)
 install_yeast:
 	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae ${INSTALL_TASKS}
+
+## Drosophila melanogaster (Metazoa)
+install_droso:
+	${MAKE} GROUP=Metazoa SPECIES=drosophila_melanogaster ${INSTALL_TASKS}
 
 ## Note: for bacteria we need to define a collection
 

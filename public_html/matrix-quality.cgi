@@ -140,10 +140,16 @@ if ($sequence_file2) {
 ## Permutations
 if (&IsInteger($query->param('permutation1'))) {
     $parameters .= " -perm ".$tag1." ".$query->param('permutation1');
+    if ($query->param('sep_perm1')) {
+      $parameters .= " -perm_sep";
+    }
 }
 
 if (&IsInteger($query->param('permutation2'))) {
     $parameters .= " -perm ".$tag2." ".$query->param('permutation2')  if  $sequence_file2 ;
+    if ($query->param('sep_perm2')) {
+      $parameters .= " -perm_sep";
+    }
 }
 
 ################################################################
