@@ -18,7 +18,15 @@ $default{organism} = "Saccharomyces cerevisiae";
 $default{queries} = '';
 $default{full} = '';
 $default{match_description} = '';
-$default{feattype} = "CDS";
+$default{feattype} = "gene";
+
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## TEMPORARY (2015-09): RESTRICT SUPPORTED FEATURE TYPES until the switch from NCBI
+## to EnsemblGenomes as genome source is completely checked.
+@supported_feature_types = qw(gene mRNA CDS);
+##
+## END TEMPORARY
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 ### replace defaults by parameters from the cgi call, if defined

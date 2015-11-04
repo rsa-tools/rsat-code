@@ -10,10 +10,8 @@
 
 library(RColorBrewer)
 library(gplots)
-library(ggplot2)
-library(reshape2)
 library(flux)
-library(clusterSim)
+#library(clusterSim)
 
 args <- commandArgs(TRUE)
 
@@ -26,11 +24,15 @@ print (formats)
 
 ## For debugging:
 
-mtx.quality.nwds.file <-"./results/matrix_quality/20150428/zoo_chip_enrichment/all_nwd_files.txt"
-plot.folder <- "./results/matrix_quality/20150428/zoo_chip_enrichment/"
-formats <-c("pdf","png")
+#mtx.quality.nwds.file <-"./results/matrix_quality/20150428/zoo_chip_enrichment/all_nwd_files.txt"
+#plot.folder <- "./results/matrix_quality/20150428/zoo_chip_enrichment/"
+#formats <-c("pdf","png")
+#print (plot.folder)
+#stop()
 
-dir.create(plot.folder, showWarnings = FALSE, recursive = TRUE)
+
+dir.create(plot.folder, showWarnings = TRUE, recursive = TRUE)
+
 ################
 ## Read in table with nwd files
 mtx.quality.nwds <- read.table(file=mtx.quality.nwds.file, header=FALSE, stringsAsFactors=FALSE)
@@ -57,18 +59,19 @@ for (i in 1:dim(mtx.quality.nwds)[1]){
 ################
 ## Get max.nwd, max.sig.nwd, auc.all, auc.sig for each sequence matrix set
 
+print ("Reading in files with nwd data")
 lapply(names(nwd.files) ,function(matrix.name){
     print (matrix.name)
     print (names(nwd.files[[matrix.name]]))
     lapply( names(nwd.files[[matrix.name]]), function(seq=x, matrix.name2=matrix.name){
-        print (matrix.name2)
-        print (seq)
+        #print (matrix.name2)
+        #print (seq)
         local.table <- nwd.files[[matrix.name2]][[seq]][["table"]]
         #local.table$NWD <- scale(local.table$NWD)
         #local.table$NWD <- data.Normalization( local.table$NWD,type="n1",normalization="column")
         ## max.nwd
         max.nwd <- max(local.table$NWD)
-        print(max.nwd )
+        #print(max.nwd )
         nwd.files[[matrix.name2]][[seq]][["max.nwd"]] <<- max.nwd 
         
         ## ##############

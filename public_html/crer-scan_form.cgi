@@ -17,7 +17,7 @@ $query = new CGI;
 $default{sites} = '';
 $default{in_format} = "ft";
 $default{limits} = "None";
-@supported_feature_types = qw(bed ft);
+@supported_feature_formats = qw(bed ft);
 
 ## Threshold fields
 @threshold_fields = qw(site_score site_pval crer_size crer_sites crer_sites_distance crer_sig overlap);
@@ -83,7 +83,7 @@ print "<b><a href='help.crer-scan.html#sites'>Sites</a></b>&nbsp;";
 ## Site format
 print "&nbsp;"x10, "<B><A HREF='help.crer-scan.html#in_format'>Format</A></B>&nbsp;";
 print $query->radio_group(-name=>'in_format',
-			  -values=>[@supported_feature_types],
+			  -values=>[@supported_feature_formats],
 			  -default=>$default{in_format});
 
 ## Enter sites in a text area
