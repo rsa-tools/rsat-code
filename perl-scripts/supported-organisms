@@ -251,6 +251,26 @@ OPTIONS
 	       vary along branches, so that positive values will give
 	       different results from negative values.
 
+	-unique_species
+
+	        Select at most one organism per species. This option
+	        aims at avoiding to be submerged by hundreds of
+	        strains sequenced for the same species
+	        (e.g. Escherichia coli).
+		
+
+		Since the current annotations do not contain any
+		explicit mention of the taxonomic depth in the
+		taxonomic classification, we use a somewhat pedestrial
+		criterion to identify species, by considering the
+		first word of the organism name as the genus, and the
+		second name as the species.
+
+	-unique_genus
+
+	        Select at most one organism per genus. See option
+	        -unique_species for the details.
+
 	-server Return the list of organisms supported on a remote
 		RSAT server, via the Web services interface
 		(http://www.rsat.eu/web_services/RSATWS.wsdl).
@@ -291,6 +311,8 @@ template options
 -group  select a "taxonomic" group
 -source selected_source
 -depth	traversal depth for the taxonomic tree
+-unique_species select at most one organism per species
+-unique_genus select at most one organism per genus
 -server return organisms supported on the remote RSAT server.
 End_short_help
   close HELP;
@@ -367,6 +389,15 @@ sub ReadArguments {
       $depth = $ARGV[$a+1];
       &RSAT::error::FatalError($depth, "Invalid value for depth, must be an Integer number") 
 	unless &IsInteger($depth);
+
+      ## At most one organism per species
+    } elsif ($ARGV[$a] eq "-unique_species") {
+      $main::unique_species = 1;
+      
+      ## At most one organism per genus
+    } elsif ($ARGV[$a] eq "-unique_genus") {
+      $main::unique_genus = 1;
+      
 
       ### Select source
     } elsif ($ARGV[$a] eq "-source") {

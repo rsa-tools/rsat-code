@@ -383,6 +383,22 @@ install_ensembl_api_env:
 	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-variation/modules::$${PERL5LIB}'
 
 ################################################################
+## Install biomart Perl libraries
+# from: http://www.ensembl.org/info/data/biomart/biomart_perl_api.html#downloadbiomartperlapi
+# cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/biomart login                                                                                
+# # passwd: CVSUSER                                                                                                                             
+# cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/biomart co -r release-0_7 biomart-perl                                                    
+
+# # Paste the text obtained on
+# # [http://plants.ensembl.org/biomart/martservice?type=registry] into
+# # the biomart-perl/conf/martURLLocation.xml file
+# # PERL5LIB=${PERL5LIB}:${RSAT}/lib/biomart-perl/lib                                                                                         # export PERL5LIB                                                                                                                                
+# # check missing dependencies
+# perl bin/configure.pl -r conf/registryURLPointer.xml                                                                                        
+# #install the required modules
+
+
+################################################################
 ## Install the graph-based clustering algorithm MCL
 MCL_BASE_DIR=${SRC_DIR}/mcl
 #MCL_VERSION=12-135

@@ -131,14 +131,15 @@ Order:
   <option value="mcquitty">McQuitty linkage</option>
   <option value="median">Median linkage</option>
   <option value="single">Single linkage</option>
-  <option value="ward">Ward linkage</option>
+  <option value="ward_d">Ward linkage</option>
+  <option value="ward_d2">Ward.D2 linkage</option>
   </select>
 <div id="chart" style='overflow:auto; width:1500px; height:1500px;'></div>
 
 <script type="text/javascript">
 
 
-var margin = { top: 120, right: 700, bottom: --bottom--, left: --left-- },
+var margin = { top: --left--, right: 700, bottom: --bottom--, left: --left-- },
   cellSize= --cell_size--;
   col_number= --c_numb--;
   row_number= --r_numb--;
@@ -165,7 +166,9 @@ colors = --gradient--
 
   hccol_mcquitty = [--mcquitty_col--],
 
-  hccol_ward = [--ward_col--],
+  hccol_ward_d = [--ward_d_col--],
+
+  hccol_ward_d2 = [--ward_d_col--],
 
 
   // Order of the Sequences
@@ -183,7 +186,9 @@ colors = --gradient--
 
   hcrow_mcquitty = [--mcquitty_row--],
 
-  hccol_ward = [--ward_col--],
+  hcrow_ward_d = [--ward_d_row--],
+
+  hcrow_ward_d2 = [--ward_d2_row--],
 
   // Labels
   colLabel = [--matrix_name--],
@@ -461,20 +466,36 @@ function(error, data) {
       .attr("y", function (d, i) { return hccol_mcquitty.indexOf(i+1) * cellSize; })
       ;
 
-   } else if(value=="ward"){
+   } else if(value=="ward_d"){
 
     var t = svg.transition().duration(1500);
     t.selectAll(".cell")
-      .attr("x", function(d) { return hccol_ward.indexOf(d.col) * cellSize; })
-      .attr("y", function(d) { return hcrow_ward.indexOf(d.row) * cellSize; })
+      .attr("x", function(d) { return hccol_ward_d.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_ward_d.indexOf(d.row) * cellSize; })
       ;
 
     t.selectAll(".rowLabel")
-      .attr("y", function (d, i) { return hcrow_ward.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hcrow_ward_d.indexOf(i+1) * cellSize; })
       ;
 
     t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol_ward.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hccol_ward_d.indexOf(i+1) * cellSize; })
+      ;
+
+   } else if(value=="ward_d2"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_ward_d2.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_ward_d2.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_ward_d2.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_ward_d2.indexOf(i+1) * cellSize; })
       ;
    }
 
