@@ -352,6 +352,7 @@ sub Cluster_matrix_scan_matches {
     $cluster_matches_cmd .= "; heatmap.pdf.file = '".$main::outfile{R_heatmaps}."'";
     $cluster_matches_cmd .= "; p.val = '".$p_value."'";
     $cluster_matches_cmd .= "; count.mode = '".$count_mode."'";
+    $cluster_matches_cmd .= "; prefix = '".$main::outfile{prefix}."'";
     $cluster_matches_cmd .= "; \"";
 #    $cluster_matches_cmd = "(".$cluster_matches_cmd.") 2> ".$main::outfile{Rlog};
 
@@ -385,6 +386,7 @@ sub Create_dynamic_d3_heatmap_matches {
 	my $att_content = $split_line[1];
 	$attributes_heatmap{$att_name} = $att_content;
     }
+    close($attributes_handle);
     
     my $tsv_file = &RSAT::util::RelativePath($main::outfile{dynamic_heatmap_html}, $main::outfile{matches_tsv});
     
@@ -400,7 +402,7 @@ sub Create_dynamic_d3_heatmap_matches {
 	my $line = $_;
 	
 #    $line =~ s/--d3--/$d3_base/;
-	$line =~ s/--left--/$attributes_heatmap{Left_space}/;
+	$line =~ s/--left--/$attributes_heatmap{Left_space}/g;
 	$line =~ s/--bottom--/$attributes_heatmap{Bottom_space}/;
 	$line =~ s/--file--/$tsv_file/;
 	$line =~ s/--cell_size--/$attributes_heatmap{Cell_size}/;
@@ -415,7 +417,8 @@ sub Create_dynamic_d3_heatmap_matches {
 	$line =~ s/--centroid_col--/$attributes_heatmap{Centroid_col}/;
 	$line =~ s/--median_col--/$attributes_heatmap{Median_col}/;
 	$line =~ s/--mcquitty_col--/$attributes_heatmap{Mcquitty_col}/;
-	$line =~ s/--ward_col--/$attributes_heatmap{Ward_col}/;
+	$line =~ s/--ward_d_col--/$attributes_heatmap{Ward_d_col}/;
+	$line =~ s/--ward_d2_col--/$attributes_heatmap{Ward_d2_col}/;
 
 	$line =~ s/--average_row--/$attributes_heatmap{Average_row}/;
 	$line =~ s/--complete_row--/$attributes_heatmap{Complete_row}/;
@@ -423,7 +426,8 @@ sub Create_dynamic_d3_heatmap_matches {
 	$line =~ s/--centroid_row--/$attributes_heatmap{Centroid_row}/;
 	$line =~ s/--median_row--/$attributes_heatmap{Median_row}/;
 	$line =~ s/--mcquitty_row--/$attributes_heatmap{Mcquitty_row}/;
-	$line =~ s/--ward_row--/$attributes_heatmap{Ward_row}/;
+	$line =~ s/--ward_d_row--/$attributes_heatmap{Ward_d_row}/;
+	$line =~ s/--ward_d2_row--/$attributes_heatmap{Ward_d2_row}/;
 
 	$line =~ s/--row_order_default--/$attributes_heatmap{Row_order_default}/;
 	$line =~ s/--matrix_number--/$attributes_heatmap{Matrix_number}/;
@@ -444,7 +448,7 @@ sub Create_dynamic_d3_heatmap_matches {
     ## Delete temporal files
     unlink($main::outfile{temp_html});
     unlink($main::outfile{matches_tab});
-    unlink($main::outfile{heatmap_d3_attributes});
+    $main::outfile{heatmap_d3_attributes};
 }
 
 

@@ -965,9 +965,6 @@ sub CalcOligoFreq {
   my $oligo_seq_type = "dna";
   my $residue_type = "nt";
   my $quick = "";
-  unless ($seq_type eq "protein") {
-    $quick = "-quick";
-  }
 
   my @strands = ("-1str", "-2str");
   if ($seq_type eq "protein") {
@@ -977,6 +974,11 @@ sub CalcOligoFreq {
     @strands = ("");
   }
 
+  ## Quick option only works with DNA sequences in fasta format
+  unless (($seq_type eq "protein") || ($seq_format ne "fasta")) {
+    $quick = "-quick";
+  }
+  
   ## Uncompress sequence file if required because the option -quick
   ## currently does not support compressed files
   my $uncompressed = 0;
@@ -993,6 +995,7 @@ sub CalcOligoFreq {
     foreach my $strands (@strands) {
       foreach my $oligo_length (@current_oligo_lengths) {
 	&RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type, "l=".$oligo_length, $noov, $strands) if ($main::verbose >= 1);
+
 	my $job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 	my $out_file = $dir{oligos}."/".${oligo_length}.${residue_type}."_".${seq_type}."_".${organism_short_name}.${noov}.${strands}.".freq";
 	my $command = $SCRIPTS."/oligo-analysis  ".$quick."  -v 1 ${strands} -i $seq_file -format $seq_format ";
@@ -1066,7 +1069,9 @@ sub CalcDyadFreq {
   @monad_lengths = (3,2,1);
   @strands = ("-1str", "-2str");
   my $quick = "";
-  unless ($seq_type eq "protein") {
+
+  ## Quick option only works with DNA sequences in fasta format
+  unless (($seq_type eq "protein") || ($seq_format ne "fasta")) {
     $quick = "-quick";
   }
 

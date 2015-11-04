@@ -45,6 +45,7 @@ package main;
   $perm = 0;
   %args = (); ## Arguments for matrix reading
   %force_attribute = ();
+  %set_parameters = ();
   $top_matrices = "none";
   $skip_matrices = 0;
   $multiply = 1;
@@ -542,11 +543,13 @@ package main;
     $id_nb =~ s/ /0/g;
     $id .= $id_nb;
 
-    my $ID = $matrix->get_attribute("accession")
-	||  $matrix->get_attribute("identifier")
+
+    my $ID =   $matrix->get_attribute("accession") 
+	|| $matrix->get_attribute("identifier")
 	|| $matrix->get_attribute("name")
 	|| $matrix->get_attribute("ID")
 	|| $id_nb;
+
 
     my $AC = $matrix->get_attribute("accession")
 	|| $matrix->get_attribute("name")
@@ -1626,6 +1629,12 @@ sub ReadArguments {
 	    my $value = $ARGV[$a+2];
 	    $main::force_attribute{$key} = ${value};
 
+       	    ### attribute
+	} elsif ($ARGV[$a] eq "-set_attr") {
+	    my $key = $ARGV[$a+1];
+	    my $value = $ARGV[$a+2];
+	    $main::set_parameters{$key} = ${value};
+
 	    ### permutations
 	} elsif ($ARGV[$a] eq "-perm") {
 	    $perm = $ARGV[$a+1];
@@ -1786,6 +1795,11 @@ sub ExportMatrix {
   foreach my $key (keys(%force_attribute)) {
     my $value = $force_attribute{$key};
     $matrix->force_attribute($key, $value);
+  }
+
+  foreach my $key (keys(%set_parameters)) {
+    my $value = $set_parameters{$key};
+    $matrix->set_parameter($key, $value);
   }
 
 

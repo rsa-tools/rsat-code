@@ -3,6 +3,7 @@
 use BioMart::Initializer;
 use BioMart::Query;
 use BioMart::QueryRunner;
+use File::Temp qw/ :POSIX /;
 
 ## use strict;
 
@@ -133,12 +134,26 @@ package main;
   $query->addAttribute("go_accession");
   $query->formatter("TSV");
 
-  open(OUT,">",$outfile{'tsv'});
+  my ($tmpfh, $tmpfile) = tmpnam();
 
   my $query_runner = BioMart::QueryRunner->new(); 
   $query_runner->uniqueRowsOnly(1);
   $query_runner->execute($query);
-  $query_runner->printResults(\*OUT);
+  $query_runner->printResults(\*$tmpfh);
+
+  close($tmpfh);
+
+
+  open(OUT,">",$outfile{'tsv'});
+  open(TMP,$tmpfile);
+  while(<TMP>)
+  {
+    #gene   go
+    next if(/\t\n/);
+    print OUT;
+  }
+  close(TMP);
+  close(OUT);
 
   ## Report execution time and close output stream (log)
   &close_and_quit();
