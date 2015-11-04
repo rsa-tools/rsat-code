@@ -17,8 +17,15 @@ $default{organism} = "Saccharomyces cerevisiae";
 $default{gene_nb} = 20;
 $default{group_nb} = 1;
 $default{replacement} = "";
-$default{feattype} = "CDS";
+$default{feattype} = "gene";
 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## TEMPORARY (2015-09): RESTRICT SUPPORTED FEATURE TYPES until the switch from NCBI
+## to EnsemblGenomes as genome source is completely checked.
+@supported_feature_types = qw(gene mRNA CDS);
+##
+## END TEMPORARY
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
