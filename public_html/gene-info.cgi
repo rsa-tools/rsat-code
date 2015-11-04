@@ -50,8 +50,9 @@ if ($query->param('queries') =~ /\S/) {
 
 ################################################################
 ### feature type
-if ($query->param('feattype')) {
-    my ($feattype) = split " ", $query->param('feattype'); ### take the first word
+$feattype = $query->param('feattype');
+if ($feattype) {
+    my ($feattype) = split " ", $feattype; ### take the first word
     $parameters .= " -feattype ".$feattype;
 }
 
@@ -128,12 +129,14 @@ sub PipingForm {
 <input type="hidden" name="organism" VALUE="$organism">
 <input type="hidden" name="genes" VALUE="selection">
 <input type="hidden" name="gene_selection" VALUE="$genes">
+<INPUT type="hidden" NAME="feattype" VALUE="$feattype">
 <INPUT type="submit" value="retrieve sequences">
 </form></td>
 
 <td><form method="post" action="get-orthologs_form.cgi">
 <input type="hidden" name="organism" VALUE="$organism">
 <input type="hidden" name="queries" VALUE="$genes">
+<INPUT type="hidden" NAME="feattype" VALUE="$feattype">
 <INPUT type="submit" value="get orthologs">
 </form></td>
 
