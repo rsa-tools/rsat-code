@@ -154,6 +154,8 @@ package main;
   }
   close(TMP);
   close(OUT);
+  
+  unlink($tmpfile);
 
   ## Report execution time and close output stream (log)
   &close_and_quit();
