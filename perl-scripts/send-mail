@@ -24,7 +24,7 @@ I<smtp_sender>).
 
 =head1 AUTHORS
 
-Jacques.van-Helden\@univ-amu.fr
+Jacques.van-Helden\@univ-amu.fr, Bruno Contreras
 
 =head1 CATEGORY
 
@@ -82,8 +82,10 @@ package main;
 
   our %infile = ();
   our %outfile = ();
-  our %args = (); ## Arguments passd to &RSAT::server::send_mail()
-
+  our %args = (); ## Arguments passed to &RSAT::server::send_mail()
+  our $STARTTLS = 0;
+  our @starttlsparams = (); ## passed to &RSAT::server::send_mail_STARTTLS()
+ 
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
@@ -113,7 +115,12 @@ package main;
 
   ################################################################
   ## Execute the command
-  &RSAT::server::send_mail($message, $recipient, $subject, %args);
+  if($STARTTLS == 1){
+    &RSAT::server::send_mail_STARTTLS($message, $recipient, $subject, @starttlsparams);
+  }
+  else {
+    &RSAT::server::send_mail($message, $recipient, $subject, %args);
+  }
 
   ################################################################
   ## Report execution time and close output stream
@@ -222,6 +229,7 @@ allows to use the command within a pipe.
       $main::infile{input} = shift(@arguments);
 
 
+
 =pod
 
 =item	B<-to user@mail.server>
@@ -236,23 +244,40 @@ Mandatory argument
 
 =pod
 
-=item   B<-subject 'email subject'>                                                                                                                                                                                  
+=item   B<-subject 'email subject'>
+
 Subject of the message.
 
 =cut
     } elsif ($arg eq "-subject") {
       $subject = shift(@arguments);
 
+=pod
 
-# =pod
+=item	B<-starttls host::user::pass::sender@address>
 
-# =item	B<-password your_password_for_smtp>
+Optional details for SMTP::STARTTLS servers, by default taken from ENV.
 
-# Some SMTP servers require an authentification
+=cut
+    } elsif ($arg eq "-starttls") {
+      $STARTTLS = 1;
+      my @params = split(/::/,shift(@arguments));
+      if(scalar(@params) == 4) { # assumes host:user:pass order
+        @starttlsparams = @params;
+      }
 
-# =cut
 #     } elsif ($arg eq "-password") {
-#       $args{sasl_password} = shift(@arguments);
+#     #       $args{sasl_password} = shift(@arguments);
+#
+# =pod
+#
+# # =item B<-password your_password_for_smtp>
+#
+# # Some SMTP servers require an authentification
+#
+# # =cut
+#
+
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
@@ -271,7 +296,7 @@ Subject of the message.
 ################################################################
 ## Verbose message
 sub Verbose {
-  print $out "; send-mail ";
+  print $out "; send-mail STARTTLS=$STARTTLS";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
   if (%main::infile) {
