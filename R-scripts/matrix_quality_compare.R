@@ -8,9 +8,9 @@
 ## Alejandra Medina-Rivera <amedina@lcg.unam.mx>
 ## Jaime Castro-Mondragon <>
 
-library(RColorBrewer)
-library(gplots)
-library(flux)
+library("RColorBrewer")
+library("gplots")
+library("flux")
 #library(clusterSim)
 
 args <- commandArgs(TRUE)
