@@ -131,8 +131,7 @@ draw.heatmap <- function (ListAll,metric="max.nwd",heatmap.file, formats=c("pdf"
                 , trace="none"
                 , margins=c(6,10)
                 , cexRow = 0.75 
-                , cexCol = 0.75
-                
+                , cexCol = 0.75    
 #                                         , Colv=FALSE
 #                                         , breaks=breaks.hm
 #                                         , dendrogram= "none"
@@ -147,43 +146,8 @@ draw.heatmap <- function (ListAll,metric="max.nwd",heatmap.file, formats=c("pdf"
                   )
 
         dev.off()
-
     }
 }
-
-
-heatmap.2(count.matches.tab,
-          
-          # plot labels
-          main = paste("Link: ", m , " - Dist: ", d, sep = ""),
-          ylab = "Sequence ID",
-          xlab = "Motif ID",
-          
-          ## Set distance calculation method
-          distfun = function(x){ dist(x, method = d) },
-          
-          ## Set hclust method
-          hclustfun = function(x){ hclust(x, method = m) },
-          
-          ## Remove the trace
-          trace = "none",
-          
-          ## Set the colors of columns, rows and cells
-          #           ColSideColors = color.order,
-          #           RowSideColors = color.order,
-          col = palette,
-          
-          ## Set the font size
-          cexRow = 0.06,
-          cexCol = 0.06,
-          
-          ## Set the key with the values
-          key = TRUE,
-          keysize = 1,
-          key.xlab = "Ocurrences",
-          key.ylab = "",
-          density.info = "none"
-) 
 
 #####
 # Draw heatmap using max.nwd
