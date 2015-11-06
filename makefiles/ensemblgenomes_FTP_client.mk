@@ -25,15 +25,22 @@ SERVERLIST=${DATABASE}/species_Ensembl${GROUP}.txt
 ORGANISMS_DIR=${RSAT}/data/ensemblgenomes/${GROUP_LC}/release-${RELEASE}
 ORGANISMS_LIST=${ORGANISMS_DIR}/species_Ensembl${GROUP}.txt
 SPECIES=arabidopsis_thaliana
-SPECIES_DIR=${ORGANISMS_DIR}/${SPECIES}
+
+## Note (JvH 2015-11-06) I change SPECIES DIR to directly download
+## fasta and gtf in the genome dir, since we will use it for vairous
+## purposes.
+SPECIES_RSAT_ID=${SPECIES}_${ASSEMBLY_ID}_${RELEASE}
+# SPECIES_DIR=${ORGANISMS_DIR}/${SPECIES}
+SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID}
 SPECIES_UCFIRST=$(shell perl -e 'print ucfirst ${SPECIES}')
 
 ###############################################################
-## Get all supported organisms in an eg release and store them in a file
+## Get all supported organisms in an ensemblgenome release and store them in a file
 organisms:
 	@echo
 	@mkdir -p ${ORGANISMS_DIR}
 	@echo "Getting list if organisms from ${DATABASE}"
+	@echo "	${ORGANISMS_DIR}"
 	@wget -Ncnv ${SERVERLIST} -P ${ORGANISMS_DIR}
 	@echo
 	@echo "	${ORGANISMS_LIST}"
@@ -41,21 +48,28 @@ organisms:
 list_param:
 	@echo
 	@echo "Parameters"
-	@echo "	GROUP   ${GROUP} (${GROUP_LC})"
-	@echo "	SPECIES	${SPECIES} (${SPECIES_UCFIRST})"
-	@echo "	RELEASE ${RELEASE}"
+	@echo "	GROUP   		${GROUP} (${GROUP_LC})"
+	@echo "	SPECIES			${SPECIES} (${SPECIES_UCFIRST})"
+	@echo "	TAXON_ID 		${TAXON_ID}"
+	@echo "	ASSEMBLY_ID 		${ASSEMBLY_ID}"
+	@echo "	RELEASE 		${RELEASE}"
+	@echo "	SPECIES_RSAT_ID		${SPECIES_RSAT_ID}"
 	@echo "Files to download"
 	@echo "	GTF_FTP_URL		${GTF_FTP_URL}"
 	@echo "	FASTA_RAW_FTP_URL	${FASTA_RAW_FTP_URL}"
 	@echo "	FASTA_MSK_FTP_URL	${FASTA_MSK_FTP_URL}"
 	@echo "	FASTA_PEP_FTP_URL	${FASTA_PEP_FTP_URL}"
-	@echo "	SERVER_COMPARA_FILE		${SERVER_COMPARA_FILE}"
+	@echo "	SERVER_COMPARA_FILE	${SERVER_COMPARA_FILE}"
 	@echo "LOCAL_FILES"
+	@echo "	ORGANISMS_DIR		${ORGANISMS_DIR}"
+	@echo "	SPECIES_DIR		${SPECIES_DIR}"
+	@echo "	PARSE_DIR		${PARSE_DIR}"
+	@echo "	GO_DIR			${GO_DIR}"
 	@echo "	GTF_LOCAL		${GTF_LOCAL}"
 	@echo "	FASTA_RAW_LOCAL		${FASTA_RAW_LOCAL}"
 	@echo "	FASTA_MSK_LOCAL		${FASTA_MSK_LOCAL}"
 	@echo "	FASTA_PEP_LOCAL		${FASTA_PEP_LOCAL}"
-	@echo "	CMP_GZ		${CMP_GZ}"
+	@echo "	CMP_GZ			${CMP_GZ}"
 
 ################################################################
 ## Download required files for all organisms
@@ -101,7 +115,8 @@ download_gtf:
 	@echo
 	@mkdir -p ${SPECIES_DIR}	
 	@echo "Downloading GTF file of ${SPECIES}"
-	@echo "GTF_FTP_URL	${GTF_FTP_URL}"
+	@echo "	SPECIES_DIR	${SPECIES_DIR}"
+	@echo "	GTF_FTP_URL	${GTF_FTP_URL}"
 	@wget -Ncnv ${GTF_FTP_URL} -P ${SPECIES_DIR}
 	@echo
 	@ls -1 ${SPECIES_DIR}/*.gtf.gz
@@ -119,6 +134,7 @@ download_fasta:
 	@echo
 	@mkdir -p ${SPECIES_DIR}
 	@echo "Downloading raw FASTA genome for species ${SPECIES}"
+	@echo "	SPECIES_DIR	${SPECIES_DIR}"
 	@wget -Ncnv ${FASTA_RAW_FTP_URL} -P ${SPECIES_DIR}
 	@echo
 	@echo "Downloading repeat-masked FASTA genome for species ${SPECIES}"
@@ -160,7 +176,7 @@ download_go:
 
 #################################################################
 ## Get & install GO annotations for a given species
-GO_ANNOT_DIR=${RSAT}/data/genomes/${SPECIES}/
+GO_ANNOT_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID}/
 GO_ANNOT_FILE=${GO_ANNOT_DIR}/go_annotations.tsv
 GO_ANNOT_LINK=go_annotations.tsv
 GO_DESC=${GO_DIR}/GO_description.tab
@@ -172,11 +188,11 @@ install_go_annotations:
 	@echo "Downloading GO annotations of ${SPECIES}" 
 	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES}
 	@echo "Expanding GO annotations of ${SPECIES}" 
-	@rm ${GO_ANNOT_LINK}
+	@rm -f ${GO_ANNOT_LINK}
 	@ln -s ${GO_ANNOT_FILE} ${GO_ANNOT_LINK}
 	@python2.7 ${RSAT}/python-scripts/go_analysis.py expand -a ${GO_ANNOT_LINK} -d ${GO_DESC} -r ${GO_REL} 
 	@mv ${GO_EXPANDED_FILE} ${GO_ANNOT_DIR}
-	@rm ${GO_ANNOT_LINK}
+	@rm -f ${GO_ANNOT_LINK}
 
 
 
@@ -188,6 +204,7 @@ FASTA_PEP_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_PEP_SUFFIX} | head -1`
 # Note that only the first gtf file is considered
 GTF_LOCAL=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
 TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
+ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 5)
 PARSE_DIR=${SPECIES_DIR}
 PARSE_TASK="parse_gtf,parse_fasta"
 parse_gtf:
@@ -198,7 +215,7 @@ parse_gtf:
 		-fasta ${FASTA_RAW_LOCAL} \
 		-fasta_rm ${FASTA_MSK_LOCAL} \
 		-fasta_pep ${FASTA_PEP_LOCAL} \
-		-org_name ${SPECIES} \
+		-org_name ${SPECIES_RSAT_ID} \
 		-task ${PARSE_TASK} ${OPT} \
 		-taxid ${TAXON_ID} \
 		-o ${PARSE_DIR} 
@@ -210,7 +227,7 @@ parse_gtf:
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
-	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES}/genome PARSE_TASK="all"
+	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome PARSE_TASK="all"
 
 ## Run some test for the GTF parsing result
 parse_gtf_test:
