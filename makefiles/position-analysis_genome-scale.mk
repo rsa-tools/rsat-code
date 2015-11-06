@@ -6,13 +6,14 @@
 ################################################################
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=makefiles/position-analysis_genome-scale.mk
+MAKEFILE=${RSAT}/makefiles/position-analysis_genome-scale.mk
 
 ORG=chlamydomonas_reinhardtii
 FEATTYPE=gene
 WINDOW_SIZE=50
-FROM=-500
-TO=110
+FROM=-1000
+TO=-1
+POS_OFFSET=-1
 MIN_POS=${FROM}
 MAX_POS=-1
 REPEAT_MASK=-rm
@@ -20,8 +21,9 @@ SEQTYPE=upstream
 NOORF=-noorf
 SEQ_PREFIX=${ORG}_${SEQTYPE}_${FEATTYPE}_${FROM}_${TO}${NOORF}${REPEAT_MASK}
 #RESULT_DIR=${RSAT}/public_html/tmp/allseq_position-analysis/
-RESULT_DIR=results/allseq_position-analysis/${SEQ_PREFIX}
-SEQ_DIR=${RESULT_DIR}/${SEQ_PREFIX}_sequences
+#POS_DIR=${RESULT_DIR}/allseq_position-analysis/${SEQ_PREFIX}
+RESULT_DIR=results/${ORG}
+SEQ_DIR=${RESULT_DIR}/sequences
 
 
 ## Print the parameters
@@ -93,7 +95,6 @@ STRAND=-1str
 KMER_OVERLAP=-noov
 POS_ORIGIN=end
 NB_CLUSTERS=12
-POS_OFFSET=-${TO}
 POS_PREFIX=${SEQ_PREFIX}_${KMER_SIZE}nt_win${WINDOW_SIZE}${STRAND}${KMER_OVERLAP}_sig${POS_SIG}
 POS_DIR=${RESULT_DIR}/${POS_PREFIX}
 POS_MAX_GRAPHS=50
