@@ -16,6 +16,8 @@ if (Sys.getenv("CRAN_REPOS") == "") {
 required.packages = c("devtools",
 		                  "RJSONIO",
                       "dendextend",
+                      "flux",
+		                  "RColorBrewer",
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
