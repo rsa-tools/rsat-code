@@ -123,18 +123,29 @@ draw.heatmap <- function (ListAll,metric="max.nwd",heatmap.file, formats=c("pdf"
             stop ("Format not available")
         }
         metric.table <- scale(metric.table)
-        heatmap.2(as.matrix(metric.table), col=colorRampPalette(brewer.pal(9,"Blues"))(100) 
+        
+        ## JaimeCastro: Given the values can be negative I change the color scale to visualize identify the negative values
+#         heatmap.2(as.matrix(metric.table), col=colorRampPalette(brewer.pal(9,"Blues"))(100) 
+#         heatmap.2(as.matrix(metric.table), col=colorRampPalette(brewer.pal(9, "YlOrRd"), space="Lab")(100) 
+        heatmap.2(as.matrix(metric.table), col=colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(100) 
                 , trace="none"
                 , margins=c(6,10)
                 , cexRow = 0.75 
-                , cexCol = 0.75
-                                        #, Colv=FALSE
-                                        #, breaks=breaks.hm
-                                        # , dendrogram= "none"
+                , cexCol = 0.75    
+#                                         , Colv=FALSE
+#                                         , breaks=breaks.hm
+#                                         , dendrogram= "none"
+                , main = metric
+                , xlab = "Sequences"
+                , ylab = "Motifs"
+                , key = TRUE
+                , keysize = 1
+                , key.xlab = "Value"
+                , key.ylab = ""
+                , density.info = "none"
                   )
 
         dev.off()
-
     }
 }
 
