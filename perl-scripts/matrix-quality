@@ -325,7 +325,7 @@ package main;
     $graph_options = " ";
     $roc_options = " ";
     $distrib_options = " ";
-
+    $main::num_mtx=0;
     ## Reference distribution for the ROC curve
     $roc_ref = "theor";
     $task{plot}=0;
@@ -570,6 +570,8 @@ package main;
       @matrices = @matrices[0..($top_matrices-1)];
       &RSAT::message::Debug("Remaining matrices", scalar(@matrices)) if ($main::verbose >= 5);
     }
+
+    $main::num_mtx= scalar(@matrices);
 
     ## Multiple matrices are incompatible with the option -seq matrix_sites
     if ((scalar(@matrices) > 1) && ($main::seqfile{matrix_sites})) {
@@ -1016,11 +1018,10 @@ package main;
 	 #print $outfile{$st."all_matrices_occ_proba_table"}."\n";
 	 #print $outfile{$st."all_matrices_occ_proba_plot"}."\n";
 	 #die ("BOOM");
-	# &RSAT::message::Info("PFFFF ", scalar(@matrices), $main::nwd_seqs ) if ($main::verbose >= 0);
 
 	 ################
 	 ## Heatmaps can only be produced when at least two matrices and two sequence sets are used for NWD calculation
-	  if  ( ($main::plot_types{nwd}) && (scalar(@matrices)>=2) && ($main::nwd_seqs>=2) ){
+	  if  ( ($main::plot_types{nwd}) && ($main::num_mtx>=2) && ($main::nwd_seqs>=2) ){
 	      my $nwd_all_file = $prefix{main}."_"."all_nwd_files.txt";
 	      my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
 	      
@@ -1706,6 +1707,9 @@ The WD can be visualized as the horizontal distance between the
 distribution curves. As larger matrices allow higher scores, we
 divided the difference by the matrix width to obtain the normalized
 weight difference.
+
+NWD Heatmap comparison: When at least two matrices and two sequences are used to calculate NWD curves
+the program will generate a heatmap to facilitate the analysis.
 
 Usage:
    -plot seq_type nwd
@@ -3397,8 +3401,10 @@ sub CloseGeneralHTMLReport{
 
 	    }
 	    print  $synthesis_general   "</table>";
-
-	    if  ( ($main::plot_types{nwd}) && (scalar(@matrices)>=2) && ($main::nwd_seqs>=2) ){
+	    
+	    #print join("+++",$main::plot_types{nwd}, $main::num_mtx ,$main::nwd_seqs ."BOOM\n");
+	    if  ( ($main::plot_types{nwd}) && ($main::num_mtx>=2) && ($main::nwd_seqs>=2) ){
+		#die "BOOM";
 		print $synthesis_general "\n<h3>NWD comparison heatmaps </h3>\n";
 		print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
 		print  $synthesis_general "<tr>";
