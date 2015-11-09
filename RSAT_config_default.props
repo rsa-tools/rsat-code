@@ -142,6 +142,15 @@ smtp=
 #smtp_sender=rsat@localhost
 smtp_sender=
 
+## STARTTLS options
+## 
+## If specified, these parameters will activate the starttls protocol
+## for sending email. This requires to install the Perl module
+## Email::Sender::Transport::SMTPS.
+starttls=
+starttls_user=
+starttls_pass=
+
 ################################################################
 ## URL of the web server (important for the links).
 ## This is necessary only if you want to install a local Web server
