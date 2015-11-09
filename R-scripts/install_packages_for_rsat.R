@@ -17,11 +17,12 @@ required.packages = c("devtools",
 		                  "RJSONIO",
                       "dendextend",
                       "flux",
-		                  "RColorBrewer",
+		                  "gplots",
+		                  "RColorBrewer"
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
-                      "gplots")
+)
 
 ## List of required packages from Bioconductor
 required.packages.bioconductor <- c("ctc")
