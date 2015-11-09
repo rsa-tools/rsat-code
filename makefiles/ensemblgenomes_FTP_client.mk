@@ -29,10 +29,11 @@ SPECIES=arabidopsis_thaliana
 ## Note (JvH 2015-11-06) I change SPECIES DIR to directly download
 ## fasta and gtf in the genome dir, since we will use it for vairous
 ## purposes.
-SPECIES_RSAT_ID=${SPECIES}_${ASSEMBLY_ID}_${RELEASE}
+SPECIES_UCFIRST=$(shell perl -e 'print ucfirst ${SPECIES}')
+SPECIES_RSAT_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}.${RELEASE}
 # SPECIES_DIR=${ORGANISMS_DIR}/${SPECIES}
 SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID}
-SPECIES_UCFIRST=$(shell perl -e 'print ucfirst ${SPECIES}')
+GENOME_DIR=${SPECIES_DIR}/genome
 
 ###############################################################
 ## Get all supported organisms in an ensemblgenome release and store them in a file
@@ -63,6 +64,7 @@ list_param:
 	@echo "LOCAL_FILES"
 	@echo "	ORGANISMS_DIR		${ORGANISMS_DIR}"
 	@echo "	SPECIES_DIR		${SPECIES_DIR}"
+	@echo "	GENOME_DIR		${GENOME_DIR}"
 	@echo "	PARSE_DIR		${PARSE_DIR}"
 	@echo "	GO_DIR			${GO_DIR}"
 	@echo "	GTF_LOCAL		${GTF_LOCAL}"
@@ -113,13 +115,13 @@ check_all_species:
 GTF_FTP_URL=${DATABASE}/gtf/${COLLECTION}/${SPECIES}/*${RELEASE}.gtf.gz
 download_gtf:
 	@echo
-	@mkdir -p ${SPECIES_DIR}	
+	@mkdir -p ${GENOME_DIR}	
 	@echo "Downloading GTF file of ${SPECIES}"
-	@echo "	SPECIES_DIR	${SPECIES_DIR}"
+	@echo "	GENOME_DIR	${GENOME_DIR}"
 	@echo "	GTF_FTP_URL	${GTF_FTP_URL}"
-	@wget -Ncnv ${GTF_FTP_URL} -P ${SPECIES_DIR}
+	@wget -Ncnv ${GTF_FTP_URL} -P ${GENOME_DIR}
 	@echo
-	@ls -1 ${SPECIES_DIR}/*.gtf.gz
+	@ls -1 ${GENOME_DIR}/*.gtf.gz
 
 ################################################################
 ## Download FASTA files with genomic sequences (raw and masked)
@@ -132,25 +134,25 @@ FASTA_PEP_SUFFIX=*${RELEASE}.pep.all.fa.gz
 FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUFFIX}
 download_fasta:
 	@echo
-	@mkdir -p ${SPECIES_DIR}
+	@mkdir -p ${GENOME_DIR}
 	@echo "Downloading raw FASTA genome for species ${SPECIES}"
-	@echo "	SPECIES_DIR	${SPECIES_DIR}"
-	@wget -Ncnv ${FASTA_RAW_FTP_URL} -P ${SPECIES_DIR}
+	@echo "	GENOME_DIR	${GENOME_DIR}"
+	@wget -Ncnv ${FASTA_RAW_FTP_URL} -P ${GENOME_DIR}
 	@echo
 	@echo "Downloading repeat-masked FASTA genome for species ${SPECIES}"
-	@wget -Ncnv ${FASTA_MSK_FTP_URL} -P ${SPECIES_DIR}
+	@wget -Ncnv ${FASTA_MSK_FTP_URL} -P ${GENOME_DIR}
 	@echo
 	@echo
 	@echo "Downloading FASTA peptidic sequences for species ${SPECIES}"
-	@wget -Ncnv ${FASTA_PEP_FTP_URL} -P ${SPECIES_DIR}
+	@wget -Ncnv ${FASTA_PEP_FTP_URL} -P ${GENOME_DIR}
 	@echo
-	@ls -1 ${SPECIES_DIR}/*.fa.gz
+	@ls -1 ${GENOME_DIR}/*.fa.gz
+
 
 ################################################################
 ## Download a sample of eg upstream sequences to check installed sequences
 check_sequences:
 	@echo
-	@mkdir -p ${SPECIES_DIR}
 	@check-retrieve-seq-rest -v ${V} \
         -org ${SPECIES} \
 
@@ -198,14 +200,14 @@ install_go_annotations:
 
 ##################################################################
 ## Parse GTF file to extract gene, transcripts and cds coords
-FASTA_RAW_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_RAW_SUFFIX} | head -1`
-FASTA_MSK_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_MSK_SUFFIX} | head -1`
-FASTA_PEP_LOCAL=`ls -1 ${SPECIES_DIR}/${FASTA_PEP_SUFFIX} | head -1`
+FASTA_RAW_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX} | head -1`
+FASTA_MSK_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_MSK_SUFFIX} | head -1`
+FASTA_PEP_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_PEP_SUFFIX} | head -1`
 # Note that only the first gtf file is considered
-GTF_LOCAL=$(shell ls -1 ${SPECIES_DIR}/*.gtf.gz)
+GTF_LOCAL=$(shell ls -1 ${GENOME_DIR}/*.gtf.gz)
 TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
 ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 5)
-PARSE_DIR=${SPECIES_DIR}
+PARSE_DIR=${GENOME_DIR}
 PARSE_TASK="parse_gtf,parse_fasta"
 parse_gtf:
 	@echo
@@ -218,6 +220,7 @@ parse_gtf:
 		-org_name ${SPECIES_RSAT_ID} \
 		-task ${PARSE_TASK} ${OPT} \
 		-taxid ${TAXON_ID} \
+		-gtf_source ensemblgenomes \
 		-o ${PARSE_DIR} 
 	@echo "	${PARSE_DIR}"
 #	@ls -1 ${PARSE_DIR}/*.tab
@@ -232,13 +235,21 @@ install_from_gtf:
 ## Run some test for the GTF parsing result
 parse_gtf_test:
 	retrieve-seq -org ${SPECIES} -from 0 -to 3 -feattype gene | oligo-analysis -v 1 -l 3 -return occ,freq -sort 
-
+###############################################################
+## Uncompress genomic fasta files for beedtools
+gunzip_fasta:
+	@echo ${FASTA_RAW_LOCAL}
+	@gunzip	${FASTA_RAW_LOCAL}
+	@echo ${FASTA_MSK_LOCAL}
+	@gunzip	${FASTA_MSK_LOCAL}
+	@echo ${FASTA_PEP_LOCAL}
+	@gunzip	${FASTA_PEP_LOCAL}
 
 ################################################################
 ## Install some pet genomes
 
 COLLECTION=
-INSTALL_TASKS=organisms download_gtf download_fasta install_from_gtf
+INSTALL_TASKS=organisms download_gtf download_fasta install_from_gtf gunzip_fasta
 ## Arabidopsis thaliana (Plant)
 install_thaliana:
 	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana ${INSTALL_TASKS}
@@ -276,7 +287,8 @@ parse_compara:
 	@echo
 	@echo "Parsing Compara file ${CMP_GZ}"
 	@echo
-	@parse-compara -i ${CMP_GZ} -list ${ORGANISMS_LIST} -o ${BDB_FILE} -log ${BDB_LOG} -v ${V}
+	@parse-compara -i ${CMP_GZ} -list ${ORGANISMS_LIST} -release ${RELEASE} \
+		-o ${BDB_FILE} -log ${BDB_LOG} -v ${V}
 
 #################################################################
 ## Install Compara db
