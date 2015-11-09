@@ -658,6 +658,68 @@ sub CheckEmailAddress {
 
 =pod
 
+=item B<Send an email from a TLS server
+
+=cut
+
+sub send_mail_STARTTLS {
+    my ($message, $recipient, $subject, $smtp_server, $user, $pass, $from ) = @_;
+
+    if ($ENV{mail_supported} eq "no") {
+    &RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
+    } else {
+    
+    ## Check if recipient argument contains a valid email address
+    &CheckEmailAddress($recipient);
+    
+    ## Set a subject if not specificed in arguents
+    unless ($subject) {
+        $script_name = $0;
+        $subject = join " ", "[RSAT]", $script_name, &RSAT::util::AlphaDate();
+    }
+    
+    ## Set the STARTTLS connection
+    if(!$smtp_server){ $smtp_server = $ENV{starttls} }
+    if(!$user){ $user = $ENV{starttls_user} }
+    if(!$pass){ $pass = $ENV{starttls_pass} }  
+    if(!$from){ $from = $ENV{smtp_sender} }
+
+    ## Issue a warning to indicate that mail will be sent
+    if (($ENV{rsat_echo} >= 1) || ($main::verbose >= 2)) {
+    my $mail_warn = "Sending mail";
+    $mail_warn .= " to \"".$recipient."\"" if ($recipient);
+    $mail_warn .= " ; Subject: \"".$subject."\"";
+    $mail_warn .= " SMTP STARTTLS server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
+    &RSAT::message::TimeWarn($mail_warn);
+    }
+ 
+    ## Compose message
+    my $email = Email::Simple->create(
+    header => [
+        To      => $recipient,
+        From    => $from,
+        Subject => $subject,
+    ],
+    body => $message,
+    );
+
+    ## Try to send the email
+    use Email::Sender::Transport::SMTPS;
+    my $transport = Email::Sender::Transport::SMTPS->new(
+            host => $smtp_server,
+            ssl  => 'starttls',
+            sasl_username => $user,
+            sasl_password => $pass,
+        debug => 0, # or 1
+   );
+
+   eval{ Email::Sender::Simple->send($email, {transport => $transport}) };
+   &RSAT::error::FatalError ("Error sending email ", $@) if $@;
+   }
+}
+
+=pod
+
 =item B<Send an email message>
 
 =cut
@@ -731,6 +793,7 @@ sub send_mail {
 	Email::Sender::Simple->send($email, {transport => $transport});
     }
 }
+
 
 
 =pod
