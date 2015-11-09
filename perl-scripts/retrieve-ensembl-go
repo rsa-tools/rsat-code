@@ -1,0 +1,387 @@
+#!/usr/bin/perl -w
+
+=pod
+
+=head1 NAME
+
+retrieve-ensembl-go
+
+=head1 DESCRIPTION
+
+Returns gene ontology (GO) terms associated to a set of genes from a selected organims. 
+Relies on primary data from Ensembl Genomes, obtained with download-ensembl-go-annotations-biomart.
+
+=head1 AUTHORS
+
+=over
+
+=item Bruno Contreras-Moreira <bcontreras\@eead.csic.es>
+
+=item Jacques van Helden <Jacques.van-Helden\@univ-amu.fr>
+
+=back
+
+=head1 CATEGORY
+
+comparative genomics
+
+=head1 USAGE
+
+retrieve-ensembl-go -q GENE1 -q GENE2 -ref_org organism_name [...]
+
+=head1 INPUT FORMAT
+
+Query genes can be directly entered on the command line (option -q) or in an
+input file (option -i). The first word of each row of such a file is handled
+as a gene. Any additional information on the same row is ignored.
+
+A reference organism must be entered on the command line (option -org).
+
+=head1 OUTPUT FORMAT
+
+A tab-separated file with two columns, where each row annotates a gene with a 
+GO term. A gene can be found in several, consecutive lines, and similarly a GO 
+term can appear associated to several genes. Output contains the following columns:
+
+=over
+
+=item 1. ID of a gene (Ensembl gene_stable_id).
+
+=item 2. Associated GO term.
+
+=back
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+
+require "RSA.lib";
+
+################################################################
+## Main package
+package main;
+{
+  
+  ################################################################
+  #### initialise parameters and vars
+  our $start_time = &RSAT::util::StartScript();
+  our $pathToGOannot = "$ENV{RSAT}/data/genomes/";
+  
+  our %infile = ();
+  our %outfile = ();
+  our %params = ( 'supported_organisms' => 0, 'demo' => 0 );
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+  our %genes;
+  our @query_genes;
+
+  my ($header,$id,%stats);
+ 
+  # parse arguments
+  &ReadArguments();
+
+  # check arguments
+  if($params{'demo'})
+  {
+    @query_genes = qw( BRADI1G00210 );
+    $genes{'BRADI1G00210'}=1;
+    $params{'org'} = 'brachypodium_distachyon';
+  }
+  elsif($params{'supported_organisms'})
+  {
+    &RSAT::message::Info("Supported organisms:");
+    if(!opendir(GENDIR,$pathToGOannot)){ 
+        &RSAT::error::FatalError("Cannot find directory ",$pathToGOannot);
+    }
+
+    my $orgs;
+    my @species_dir = grep { !/^\./ } readdir(GENDIR);
+    closedir(GENDIR);  
+    foreach my $spdir (@species_dir){
+        next if(! -d $pathToGOannot.'/'.$spdir);
+        if(-s $pathToGOannot.'/'.$spdir.'/expanded_go_annotations.tsv'){
+            $orgs .= "$spdir,";
+        }
+    }
+    
+    &RSAT::message::Info($orgs);
+    close_and_quit();    
+  }
+  else
+  {
+    # query genes
+    if($main::infile{'input'})
+    {
+      RSAT::message::Info("Reading genes from file",$main::infile{'input'}) if($verbose >= 2);
+
+      my ($genefile,$listdir) = OpenInputFile($main::infile{'input'});
+      while(<$genefile>)
+      {
+        next if(/^[#;]/);
+        s/\r/\n/g;
+        $id = (split)[0];
+        $trimmed_id = strip_gene_id($id); 
+        push(@query_genes,$id);
+        $genes{$id}=1;
+        $genes{$trimmed_id}=$id; 
+      }
+      close($genefile);
+    }
+
+    &RSAT::error::FatalError("You should indicate at least a query gene")
+      unless(scalar(@query_genes) > 0);
+
+    # reference organism
+    &RSAT::error::FatalError("Please select a single reference organism")
+      unless ($params{'org'});
+
+    if(!-s $pathToGOannot.'/'.$params{'org'}.'/expanded_go_annotations.tsv'){
+        &RSAT::error::FatalError("Organism not supported, check with -supported_organisms");
+    }
+  }
+
+  # open output stream
+  $main::out = &OpenOutputFile($main::outfile{'output'});
+
+  &Verbose() if ($main::verbose >= 1);
+
+  # add header line to output  
+  $header =  join("\t",
+      'gene_id',
+      'go_term'
+  );
+  print $out "; $header\n";
+
+  open(GOANNOT,'<',$pathToGOannot.'/'.$params{'org'}.'/expanded_go_annotations.tsv');
+  while(<GOANNOT>){
+    next if(/^#/ || /^;/);
+    if(/(\S+)\t\S+/){
+        if($genes{$1}){
+            print $out $_;
+            $stats{$1}++;
+            $stats{$genes{$1}}++; # also stripped id
+        }
+    }
+  }
+
+  foreach $id (@query_genes){
+    next if($stats{$id});
+    RSAT::message::Info("Cannot find query",$id,",skip it") if($verbose >=2);
+    }
+
+  close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+### Close output file and quit
+sub close_and_quit {
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time;
+
+  if($main::outfile{'output'})
+  {
+    &RSAT::message::TimeWarn("Output file:", $main::outfile{'output'}) if ($main::verbose >= 0);
+    close($main::out);
+  }
+  exit(0);
+}
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+  my $arg = "";
+  
+  my @arguments = @ARGV; 
+ 
+  while ($arg = shift(@arguments)) {
+
+=pod
+    
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])){ $main::verbose = shift(@arguments) } 
+    
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+	  &PrintHelp();
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	  &PrintOptions();
+	
+=pod
+
+=item B<-demo>
+
+Run demo, ignores all other options.
+
+=cut
+    } elsif ($arg eq "-demo") {
+      $main::params{'demo'} = 1;
+    
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	  &RSAT::error::FatalError("option -i is incompatible with option -q")
+	    if (scalar(@main::query_genes) > 0);
+	  $main::infile{'input'} = shift(@arguments);    
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	  $main::outfile{'output'} = shift(@arguments);
+	    
+=pod
+
+=item B<-org organism>
+
+Reports (expanded) GO annotations of this reference organism.
+
+=cut
+
+	} elsif ($arg eq "-org") {
+	  $main::params{'org'} = shift (@arguments);
+
+=pod
+
+=item B<-supported_organisms>
+
+Lists supported organisms in current release.
+
+=cut
+
+    } elsif ($arg eq "-supported_organisms") {
+      $main::params{'supported_organisms'} = 1;
+
+=pod
+
+=item B<-q query_gene>
+
+Query gene ID. 
+This option can be used iteratively on the same command to specify multiple
+query genes.
+
+=cut
+    } elsif ($arg eq "-q") {
+      &RSAT::error::FatalError("Option -q is incompatible with option -i")
+        if ($main::infile{input});
+      my $id = shift(@arguments);
+      push(@main::query_genes, $id);
+      my $trimmed_id = strip_gene_id($id);
+      $genes{$id}=1;
+      $genes{$trimmed_id}=$id;
+=pod
+
+=back
+
+=cut
+    }
+  }    
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+  print $main::out "; retrieve-ensembl-go ";
+  &PrintArguments($main::out);
+   
+  if (%main::infile) {
+    print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	print $main::out ";\t$key\t$value\n";
+    }
+  }
+  
+  if (%main::outfile) {
+    print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  print $main::out ";\t$key\t$value\n";
+    }
+  }
+
+  printf $main::out "; %-21s\t%s\n", "org", $main::params{'org'};
+
+  print $main::out ("; Query genes\t",scalar(@main::query_genes),"\n");
+  if (scalar(@main::query_genes) <= 100) {
+    foreach my $query (@main::query_genes) {
+	  print $main::out "; $query\n";
+    }
+  }
+
+}
+
+#######################################################
+## strips an ID of transcript number
+sub strip_gene_id
+{
+  my ($id) = @_;
+
+  my $trimmed_id = $id;
+  $trimmed_id =~ s/\.\d+$//;
+
+  return $trimmed_id;
+}
+
+__END__
+
+=pod
+
+=head1 DEMO
+
+    retrieve-ensembl-go -q BRADI1G00210 -ref_org brachypodium_distachyon
+
+=cut
