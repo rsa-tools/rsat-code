@@ -145,13 +145,18 @@ package main;
   &RSAT::error::FatalError("The organisms list file must be specified (option -list)") 
     unless ($infile{"list"});
 
+  ## release number must be specified
+  &RSAT::error::FatalError("EnsemblGenomes release must be specified (option -release)")
+    unless ($params{"release"});
+
   ## Open Compara TSV infile
   ($in,$dir) = &OpenInputFile($infile{"i"});
 
   ################################################################
   ## Start processing
 
-  my ($n_of_inserts,$n_of_species,$row,$org2int,$type2int,@rawdata,%db,%eg_group_species) = (0,0);
+  my ($n_of_inserts,$n_of_species,$row,$org2int,$type2int,@rawdata) = (0,0);
+  my (%eg_group_species,%eg_group_species_fullname,%db,$fullname2int);
   my ($key,$record,$gene_stable_id,$protein_stable_id,$species,$homology_type,$identity);
   my ($homology_gene_stable_id,$homology_protein_stable_id,$homology_species,$homology_identity);
 
@@ -164,6 +169,8 @@ package main;
     next if(/^#/);
     @rawdata = split(/\t/);
     $eg_group_species{$rawdata[1]} = ++$n_of_species;
+    $eg_group_species_fullname{$rawdata[1]} = 
+        uc(substr($rawdata[1],0,1)).substr($rawdata[1],1).'.'.$rawdata[4].'.'.$params{"release"};
   }
   close($LIST);
   
@@ -200,8 +207,10 @@ package main;
   foreach $species (keys(%eg_group_species))
   {
     $org2int .= "$eg_group_species{$species},$species,";
+    $fullname2int .= "$eg_group_species{$species},$eg_group_species_fullname{$species},";
   }
   $db{'supported_organisms'} = $org2int;
+  $db{'supported_organisms_fullname'} = $fullname2int;
 
   # store homology types encoding
   foreach $homology_type (keys(%hom_type))
@@ -378,12 +387,22 @@ allows to use the command within a pipe.
 =item B<-list organisms_file>
 
 Path to the FTP-downloaded file.tab which lists organisms names of a release of eg. 
-Only organisms listed in this file will be output to the BerkelyDB file.
+Only organisms listed in this file will be output to the BerkeleyDB file.
 
 =cut
 
     } elsif ($arg eq "-list") {
       $main::infile{"list"} = shift(@arguments);
+=pod
+
+=item B<-release #>
+
+EnsemblGenomes release, should match -list.
+
+=cut
+
+    } elsif ($arg eq "-release") {
+      $main::params{"release"} = shift(@arguments);
 
 =pod
 
