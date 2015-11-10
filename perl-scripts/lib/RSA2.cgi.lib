@@ -58,8 +58,8 @@ sub LoadGetOrthoComparaDefault {
   $default{organism} = "arabidopsis_thaliana";
   $default{queries} = '';
   $default{type} = "orth";
-  $default{ident_target} = 75;
-  $default{ident_query} = 75;
+  $default{ident_target} = 70;
+  $default{ident_query} = 70;
 }
 
 
@@ -115,7 +115,7 @@ sub PrintOrthoComparaSelectionSection {
 
     ################################################################
     ### gene queries
-    print "<B><A HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
+    print "<B><A HREF='help.get-orthologs-compara.html#genes'>Query genes</A></B>&nbsp;";
     print "<BR>\n";
     print $query->textarea(-name=>'queries',
              -default=>$default{queries},
@@ -478,7 +478,7 @@ sub MultiGetInputFile {
     ### Fetch input from an URL
   } elsif ($query->param('input_url'.$in_num) =~ /\S/) {
     my $url = $query->param('input_url'.$in_num);
-    &RSAT::message::Info("Fetching inputs from URL ".$url) if ($ENV{rsat_echo} >= 0);
+    &RSAT::message::Info("Fetching input file from URL ".$url) if ($ENV{rsat_echo} >= 0);
     my $in = "";
     if (open IN, ">$input_file") {
       $in = get($url);
@@ -618,8 +618,9 @@ sub MultiSequenceChoice {
   #$sequenceChoiceString .=  "<UL>\n";
   my $sequence_file = "";
 
-  if ($sequence_file = $query->param("sequence_file")) {
-
+  if (($sequence_file = $query->param("sequence_file".$seq_num)) || 
+      ($sequence_file = $query->param("sequence_file"))) {
+      
     ## Sequence file is already on the server machine
     ## (piped from a previous script)
     $sequence_url = $sequence_file;
@@ -883,7 +884,7 @@ sub MultiGetSequenceFile {
 
   } else {
     if ($required_opt) { ## only returns return if this is a required option
-      &cgiError("The sequence box should not be empty.");
+      &cgiError("The sequence box $seq_num should not be empty.");
     } else {
       $sequence_file = '';
       $sequence_format = '';
@@ -2227,7 +2228,27 @@ sub SelectFormat {
 # Pipe the result to another command
 #
 sub PipingFormForSequence {
+    my ($seq_file, $seq_format) = @_;
 
+    ## A bit tricky: the previous version used the global variable
+    ##  $sequence_file.  2015-11-10: JvH adds an argument $seq_file,
+    ##  and, if not specified, use the global variable.  Later on I
+    ##  should suppress the use of this (and other) global variables).
+    if ($seq_file) {
+	$sequence_file = $seq_file;
+    }
+#    my $sequence_url =  &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $sequence_file);
+    $sequence_url = $sequence_file;
+    $sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+
+    
+    if ($seq_format) {
+	$out_format = $seq_format;
+    } elsif ($out_format eq "") {
+	$out_format = "fasta";
+    }
+    
+    
   $oligo_background_model = "<INPUT type=\"hidden\" NAME=\"bg_method\" VALUE=\"background\">";
   $dyad_background_model = "<INPUT type=\"hidden\" NAME=\"bg_method\" VALUE=\"background\">";
 
@@ -2267,12 +2288,8 @@ sub PipingFormForSequence {
 
 <tr valign="top" align="center">
 
-    <th align=center>
-      	<font size=-1>
-	String-based<br>
-	Pattern Discovery<br>
-	(unknown patterns)
-	</font>
+    <th rowspan=2 align=center>
+      	<font size=-1>Motif  Discovery<br>(<i>ab initio</i>)</font>
     </th>
 
     <td align=center>
@@ -2333,13 +2350,6 @@ sub PipingFormForSequence {
 
 <tr valign="top" align="center">
 
-    <th align=center>
-      	<font size=-1>
-	<B>Matrix-based<br>
-	 Pattern Discovery</B><BR>
-	(unknown patterns)
-	</font>
-    </th>
 
 
     <td align=center>
@@ -2365,6 +2375,16 @@ sub PipingFormForSequence {
     </td-->
 
     <td align=center>
+	<FORM METHOD="POST" ACTION="peak-motifs_form.cgi">
+	<INPUT type="hidden" NAME="sequence_url1" VALUE="$sequence_url">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="submit" value="peak-motifs">
+	</FORM>
+	<b>Full work flow</b><br>for chip-seq peaks</br>and other seq types
+    </td-->
+
+<!--
+    <td align=center>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
@@ -2374,6 +2394,7 @@ sub PipingFormForSequence {
 	</FORM>
 	Greedy algorithm <br>(Hertz, 1990)
     </td>
+-->
 </tr>
 
 <tr valign="top" align="center">
@@ -3228,6 +3249,24 @@ sub IndexFiles {
 
   &RSAT::message::TimeWarn("HTML index", $outfile{html_index}) if ($main::verbose >= 2);
 }
+
+###############################################################
+## Check whether compara is supported on this server
+sub check_compara_tools() {
+    if ($ENV{compara_tools} == 0) {
+    print "<font size=+1>\n";
+    print "<p><font color='red'>Compara is not supported on this instance of RSAT.</font></p>\n";
+    print "<p>It is currently supported on the following RSAT servers: </p>\n";
+    print "<ol>\n";
+    print "<li>Plants: <a target='_top' href='http://plants.rsat.eu/'>http://plants.rsat.eu/</a></li>";
+    print "</ol>\n";
+    print "</font>\n";
+    print "</hr>";
+    print $query->end_html;
+    exit(0);
+    }
+}
+
 
 ################################################################
 ## &CheckPhyloSupported()
