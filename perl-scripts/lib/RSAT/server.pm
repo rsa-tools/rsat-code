@@ -726,6 +726,17 @@ sub send_mail_STARTTLS {
 sub send_mail {
     my ($message, $recipient, $subject) = @_;
 
+    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	(($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
+	if (($ENV{starttls} ne "") &&
+	    ($ENV{starttls_user} ne "") &&
+	    ($ENV{starttls_pass} ne "")) {
+	    &send_mail_STARTTLS($message, 
+				$recipient, 
+				$subject);
+	}
+    }
+
     if ($ENV{mail_supported} eq "no") {
 	&RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
     } else {
