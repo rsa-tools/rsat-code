@@ -1,0 +1,175 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+#require "cgi-lib.pl";
+use CGI;
+use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+#BEGIN {
+#    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = &RSAT::util::get_pub_temp()."/RSA_ERROR_LOG.txt";
+#    use CGI::Carp qw(carpout);
+#    open (LOG, ">> $ERR_LOG")
+#	|| die "Unable to redirect log\n";
+#    carpout(*LOG);
+#}
+require "RSA.lib";
+require "RSA2.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+
+$command = "$SCRIPTS/retrieve-seq-bed";
+$prefix="retrieve-seq-bed";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+
+@result_files = ();
+
+
+### Read the CGI query
+$query = new CGI;
+
+### print the header
+&RSA_header("retrieve-seq-bed result", "results");
+
+
+## Check security issues
+&CheckWebInput($query);
+
+## update log file
+&UpdateLogFile();
+
+&ListParameters() if ($ENV{rsat_echo} >= 2);
+
+############################################################
+#### read parameters ####
+$parameters = " -v 1";
+
+################################################################
+## Organism
+my $organism = $query->param("organism");
+&RSAT::error::FatalError("No organism was specified") unless ($organism);
+$parameters .= " -org ".$organism;
+
+############################################################
+## Genomic fragments
+
+## Coordinate file
+my $coordinate_format = "bed"; ## Later I will add an option to the form
+my $coordinate_file = &MultiGetInputFile(1, $tmp_file_path."_coordinates.txt", 1);
+$parameters .= " -i ".$coordinate_file;
+&RSAT::message::Info("coordinate file", $coordinate_file) if ($main::echo >= 2);
+
+## Check that a coordinate file has been given
+unless ($coordinate_file) {
+    &RSAT::error::FatalError("Input coordinates must be specified");
+}
+
+push @result_files, ("Coordinate file ($coordinate_format)",$coordinate_file);
+
+## Compute genome fragment lengths from the coordinates
+my $length_file = $tmp_file_path."_lengths.tab";
+push @result_files, ("Genome fragment lengths",$length_file);
+my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$coordinate_file;
+$seqlength_cmd .= " -in_format ".$coordinate_format;
+$seqlength_cmd .= " -o ".$length_file;
+system($seqlength_cmd);
+
+## repeats
+if ($query->param('rm') =~ /on/) {
+  $parameters .= " -rm ";
+}
+
+
+############################################################
+## Output
+$output_format = "fasta";
+
+## Output file
+$result_file = $tmp_file_path.".".$output_format;
+$log_file = $tmp_file_path."_log.txt";
+$parameters .= " -o ".$result_file;
+&RSAT::message::Info("result_file", $result_file) if ($echo >= 0);
+push @result_files, ("Result sequences (".$output_format.")", $result_file);
+push @result_files, ("Command log (text)", $log_file);
+
+############################################################
+## Report the command
+&ReportWebCommand($command." ".$parameters);
+
+################################################################
+## Run the command
+$err_file = $tmp_file_path."_error_log.txt";
+push @result_files, ("Error log (text)",$err_file);
+system($command." ".$parameters." 2>".$err_file);
+
+if (($query->param('output') =~ /display/i) ||
+    ($query->param('output') =~ /server/i)) {
+  &PipingWarning();
+
+  ## Print the result
+  print '<H4>Result</H4>';
+
+  # ## Open the sequence file on the server
+  # if (open MIRROR, ">$result_file") {
+  #   $mirror = 1;
+  #   &DelayedRemoval($result_file);
+  # }
+
+  print "<PRE>";
+  open RESULT, $result_file;
+  while (<RESULT>) {
+    print "$_" unless ($query->param('output') =~ /server/i);
+#    print MIRROR $_ if ($mirror);
+  }
+  print "</PRE>";
+  close RESULT;
+#  close MIRROR if ($mirror);
+
+  ## Print table with links to the result files
+  &PrintURLTable(@result_files);
+
+  ## Prepare data for piping
+  if ($query->param('outputformat') eq "outputseq"){
+    $out_format = "fasta"; ## Fasta is the only supported format, but it is necessary to specify it for the piping form
+    &PipingFormForSequence();
+  } elsif ($query->param('coord_format') eq "bed") {
+    &PipingForm();
+  }
+
+  print "<HR SIZE = 3>";
+
+} else {
+  &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
+}
+
+print $query->end_html;
+
+exit(0);
+
+############################################
+sub PipingForm {
+	my $assembly = `grep Ensembl ${tmp_file_path}.res `;
+	$assembly =~ s/.*assembly:(.*)$/$1/;
+    ### prepare data for piping
+    print <<End_of_form;
+    <hr>
+<table class = "nextstep">
+<tr><td colspan = 5><h3>next step</h3></td></tr>
+
+
+<tr valign="top" align="center">
+ <td align=center>
+        <FORM METHOD="POST" ACTION="fetch-sequences_form.php">
+	<INPUT type="hidden" NAME="bedfile" VALUE="$result_file">
+	<INPUT type="submit" value="fetch sequences from UCSC">
+	</FORM>
+	Fetch sequences corresponding to the coordinates
+    </td>
+</TD>
+</TR>
+</TABLE>
+End_of_form
+}
+
+
+
