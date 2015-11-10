@@ -7,6 +7,14 @@ $default{to} = "default";
 $default{feattype} = "CDS";
 $default{sequence_type} = "upstream";
 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## TEMPORARY (2015-09): RESTRICT SUPPORTED FEATURE TYPES until the switch from NCBI
+## to EnsemblGenomes as genome source is completely checked.
+@supported_feature_types = qw(gene mRNA CDS);
+##
+## END TEMPORARY
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
 ################################################################
 #
