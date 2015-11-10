@@ -19,8 +19,8 @@ $program_version
 
 =head1 DESCRIPTION
 
-Retrieve sequences for a set of genomic coordinates provided in bed
-format.
+Retrieve sequences for a set of genomic coordinates provided in bed,
+gff or vcf format.
 
 This script is a wrapper around I<bedtools getfasta>, an efficient
 tool to retrieve sequences from a fasta-formatted sequence file
@@ -69,6 +69,19 @@ A sequence file in fasta format (produced by I<bedtools getfasta>.
 Send the request to a remote RSAT server via the Web services. This
 option enables to get fasta sequences from any RSAT server without
 having to install them locally.
+
+=item B<-extend length>
+=item B<-extend_up up_length>
+=item B<-extend_down down_length>
+
+Extend the peaks by a given length on the upstream (I<-exetend_up>),
+downstream (I<-extend_down>) or both sides (I<-extend>). The side is
+adapted according to the strand.
+
+Flank extension is done via I<bedtools flank>. 
+
+The extended coordinates are exported with the same name as the output
+file, supplemented with the suffix _flanks.bed.
 
 =back
 
@@ -163,8 +176,10 @@ package main;
 
   ################################################################
   ## Generate the bedtools command
-  my $cmd = "bedtools getfasta -fi ".$infile{fasta_genome};
+  my $bedtools = &RSAT::server::GetProgramPath("bedtools", $die_on_error);
+  my $cmd = $bedtools." getfasta -fi ".$infile{fasta_genome};
   $cmd .= " -bed ".$infile{coordinates};
+  $cmd .= " -s"; ## Take strand in consideration (this is inactive by default in bedtools getfasta)
   $cmd .= " -fo ".$outfile{sequences} if ($outfile{sequences});
   &RSAT::util::doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $out);
 
