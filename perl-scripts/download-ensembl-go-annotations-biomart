@@ -45,8 +45,6 @@ A single organism name in the Ensembl genus_species format is required.
 
 A TSV file is created with two columns: stable gene ID & GO term.
 
-=head1 WISH LIST
-
 =over
 
 =back
@@ -73,6 +71,7 @@ package main;
   our $start_time = &RSAT::util::StartScript();
   our $program_version = do { my @r = (q$Revision: 1.00 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
+  our %infile = ();
   our %outfile = ();
   our %params = ( 'action'=>'cache', reg=>0 );
 
@@ -91,6 +90,41 @@ package main;
     ## input organisms must be specified
     &RSAT::error::FatalError("An organism name must be specified (option -org)") 
       unless ($params{"org"});
+    
+    if($infile{"list"})
+    {
+        # release number must be specified with -list
+        &RSAT::error::FatalError("EnsemblGenomes release must be specified (option -release)")
+            unless ($params{"release"});
+
+        my $nameOK = 0;
+        my ($LIST) = &OpenInputFile($infile{"list"});
+        while(<$LIST>)
+        {
+            next if(/^#/);
+            my @rawdata = split(/\t/);
+            if($params{'org'} eq $rawdata[1])
+            {
+                $params{'short_name'} = $params{'org'};
+                $nameOK=1;
+                last;
+            }
+            elsif($params{'org'} eq 
+                uc(substr($rawdata[1],0,1)).substr($rawdata[1],1).'.'.$rawdata[4].'.'.$params{"release"})
+            {
+                $params{'short_name'} = $rawdata[1];
+                $nameOK=1;
+                last;
+            }
+        }
+        close($LIST);
+
+        &RSAT::error::FatalError("Please supply a valid organism name (option -org)")
+            unless ($nameOK);
+    }
+    else{
+        $params{'short_name'} = $params{'org'};
+    }    
   }
 
   ################################################################
@@ -106,7 +140,7 @@ package main;
 
   # 2) find out biomart name for user's species (dataset)
   my ($shortspecies,$dataset);
-  if($params{'org'} =~ /^([a-z])\w+_([a-z]+)/) {
+  if($params{'short_name'} =~ /^([a-z])\w+_([a-z]+)/) {
     $shortspecies = $1.$2;
   }
 
@@ -243,12 +277,33 @@ otherwise 'cache' is more efficient,
 
 =item B<-org organism>
 
-Organism name in genus_species format.
+Organism name in genus_species or Genus_species.assembly.release format.
 
 =cut
 
     } elsif ($arg eq "-org") {
       $main::params{"org"} = shift(@arguments);
+=pod
+
+=item B<-list organisms_file>
+
+Optional path to species_EnsemblXXXX.txt file listing organisms of a release of eg.
+Allows using full organism names.
+
+=cut
+
+    } elsif ($arg eq "-list") {
+      $main::infile{"list"} = shift(@arguments);
+=pod
+
+=item B<-release #>
+
+EnsemblGenomes release, should match -list.
+
+=cut
+
+    } elsif ($arg eq "-release") {
+      $main::params{"release"} = shift(@arguments);
 
 =pod
 
