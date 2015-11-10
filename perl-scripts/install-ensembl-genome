@@ -543,10 +543,12 @@ This task is executed by running I<install-organism>.
 
 =cut
     } elsif ($arg eq "-task") {
-      my $task = shift(@arguments);
-      &RSAT::error::FatalError($task, "Invalid task for install-ensembl-genomes. Supported:", $supported_tasks)
-	  unless ($supported_task{$task});
-      push (@main::tasks, split(",",$task));
+      my @new_tasks = split(",", shift(@arguments));
+      foreach my $task (@new_tasks) {
+	  &RSAT::error::FatalError($task, "Invalid task for install-ensembl-genomes. Supported:", $supported_tasks)
+	      unless ($supported_task{$task});
+	  push (@main::tasks, split(",",$task));
+      }
 
 
 # =pod 

@@ -186,6 +186,7 @@ package main;
   our $organism_name = ""; ## Organism name
   our $taxid = ""; ## Taxonomic ID of the organism
   our $taxonomy; ## Taxonomic description (required for some programs)
+  our $gtf_source = "parse_gtf"; ## Should be set to the reals ource, e.g. ensembl or ensemblgenomes, with the option -gtf_source
 
   our %infile = ();
   our %outfile = ();
@@ -517,7 +518,7 @@ package main;
   ## Update RSAT config
   if ($task{"config"})  {
     &RSAT::message::TimeWarn("Configuring RSAT for organism", $organism_name) if ($main::verbose >= 0);
-    my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -org ".$organism_name;
+    my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -source ".$gtf_source." -org ".$organism_name;
     $cmd .= " -task config";
     &RSAT::util::doit($cmd);
   }
@@ -526,7 +527,7 @@ package main;
   ## Install the organism in RSAT
   if ($task{"install"})  {
     &RSAT::message::TimeWarn("Installing organism in RSAT", $organism_name) if ($main::verbose >= 0);
-    my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -org ".$organism_name;
+    my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -source ".$gtf_source." -org ".$organism_name;
     $cmd .= " -task default";
     &RSAT::util::doit($cmd);
   }
@@ -734,6 +735,16 @@ Organism name for the installation on RSAT.
 =cut
     } elsif ($arg eq "-org_name") {
       $organism_name = shift(@arguments);
+
+=pod
+
+=item	B<-gtf_source source>
+
+Source of the GTF file. 
+
+=cut
+    } elsif ($arg eq "-gtf_source") {
+      $gtf_source = shift(@arguments);
 
 =pod
 
