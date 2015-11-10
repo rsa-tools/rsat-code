@@ -70,6 +70,16 @@ group_specificity=None
 phylo_tools=0
 
 ################################################################
+### Support for Ensembl Compara orthologs and related tools.
+###
+### get-orthologs-compara_form.cgi
+###
+### This feature is only supported if actively specified by the RSAT administrator.
+
+compara_tools=0
+
+
+################################################################
 ## Support for inter-individual variation analysis tools (regulatory
 ## SNPs and other types of variations).
 ##
