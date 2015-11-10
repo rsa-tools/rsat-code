@@ -52,6 +52,16 @@ document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.
 EndGATag
 }
 
+################################################################
+## Load the default parameters for get-orthologs`
+sub LoadGetOrthoComparaDefault {
+  $default{organism} = "arabidopsis_thaliana";
+  $default{queries} = '';
+  $default{type} = "orth";
+  $default{ident_target} = 75;
+  $default{ident_query} = 75;
+}
+
 
 ################################################################
 ## Load the default parameters for get-orthologs`
@@ -75,6 +85,50 @@ sub LoadGetOrthoDefault {
   $default{return_rank} = "checked";
   $default{return_s_rank} = "checked";
   $default{unique_taxon} = "species";
+}
+
+###############################################################
+## Print the options fro get-orthologs-compara:
+## -ref_org, -i,  
+sub PrintOrthoComparaSelectionSection {
+
+    # populate list of supported organisms
+    my @supported_organisms_fullnames;
+    open(GETORTHSCOMP,"get-orthologs-compara -supported_organisms |");
+    while(<GETORTHSCOMP>){
+        next if(/^^; INFO  Supported organisms/);
+        if(/^; INFO  (\S+)/)
+        {
+            my $orgs = $1;
+            while($orgs =~ /(\S+)?;/g)
+            {
+                my $org = $1;
+                push(@supported_organisms_fullnames,$org); # if($org =~ /\.\d/);#release number;
+            }
+        }
+    }
+    close(GETORTHSCOMP);
+    
+    ## Choice of the organism
+    print "<b>Query </b>";
+    &OrganismPopUp(@supported_organisms_fullnames);
+
+    ################################################################
+    ### gene queries
+    print "<B><A HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
+    print "<BR>\n";
+    print $query->textarea(-name=>'queries',
+             -default=>$default{queries},
+             -rows=>3,
+             -columns=>40);
+    ### option to upload a file with the gene list from the client machine
+    print "<BR>Upload gene list from file<BR>\n";
+    print $query->filefield(-name=>'uploaded_file',
+              -default=>'',
+              -size=>45,
+              -maxlength=>200);
+    print "<p>\n";
+
 }
 
 ################################################################
@@ -373,9 +427,9 @@ sub MultiInputChoice {
     $inputChoiceString .=  "&nbsp;"x5;
     $inputChoiceString .=  "Paste your ".$in_type." (".$in_format." format)<BR>\n";
     $inputChoiceString .=  $query->textarea(-name=>'input'.$in_num,
-					       -default=>$default{input},
-					       -rows=>4,
-					       -columns=>55);
+					    -default=>$default{input.$in_num},
+					    -rows=>4,
+					    -columns=>55);
     $inputChoiceString .=  "<BR>\n";
 
     ## Option to upload the input file from the client machine
@@ -394,18 +448,85 @@ sub MultiInputChoice {
 						-size=>62);
     $inputChoiceString .= "<br>\n";
 
-    #### Mask option
-    $inputChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
-    $inputChoiceString .=  $query->popup_menu(-name=>'mask'.$in_num,
-						 -Values=>['none',
-							   'upper',
-							   'lower',
-							   'non-dna'],
-						 -default=>"none");
-    $inputChoiceString .=  "<BR>\n";
 
   }
   print($inputChoiceString);
+}
+
+########################
+## MultiGetInputFile
+sub MultiGetInputFile {
+  my ($in_num, $input_file, $required_opt) = @_ ;
+
+
+
+  ################################################################
+  ## Upload input file from the client
+  my $upload_file = $query->param('uploaded_file'.$in_num);
+  if ($upload_file) {
+    if ($upload_file =~ /\.gz$/) {
+      $input_file .= ".gz";
+    }
+    $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+    open IN, ">$input_file" ||
+      &cgiError("Cannot store input file in temp dir.");
+    while (<$upload_file>) {
+      print IN;
+    }
+    close IN;
+
+    ### Fetch input from an URL
+  } elsif ($query->param('input_url'.$in_num) =~ /\S/) {
+    my $url = $query->param('input_url'.$in_num);
+    &RSAT::message::Info("Fetching inputs from URL ".$url) if ($ENV{rsat_echo} >= 0);
+    my $in = "";
+    if (open IN, ">$input_file") {
+      $in = get($url);
+      if ($in =~ /\S/) {
+	print IN $in;
+	close IN;
+      } else {
+	&RSAT::error::FatalError("No input could be downloaded from the URL ".$url);
+      }
+    }
+
+    ## Check input file
+    my $file_type = `file $input_file`;
+    if ($file_type =~ "gzip") {
+      &RSAT::message::TimeWarn("Uncompressing input file", $input_file);
+      my $cmd = "mv ".$input_file." ".$input_file.".gz";
+      $cmd .= " ; gunzip ".$input_file.".gz";
+      &doit($cmd);
+    }
+
+
+    &RSAT::message::Debug("Input file=", &RSAT::util::hide_RSAT_path($input_file), 
+			  "<p>File type=", &RSAT::util::hide_RSAT_path($file_type),
+	) if ($main::verbose >= 5);
+
+#    my $in_kb = sprintf("%d", length($in)/1000);
+
+    ### Read input from the textarea "input"
+  } elsif ($query->param('input'.$in_num) =~ /\S/) {
+    if (open IN, ">$input_file") {
+      print IN $query->param('input'.$in_num);
+      close IN;
+    }
+
+
+  } else {
+    if ($required_opt) { ## only returns return if this is a required option
+      &cgiError("The input box should not be empty.");
+    } else {
+      $input_file = '';
+    }
+  }
+
+
+  ## input file will be deleted
+  &DelayedRemoval($input_file);
+
+  return($input_file);
 }
 
 
@@ -519,7 +640,7 @@ sub MultiSequenceChoice {
     $sequenceChoiceString .=  "&nbsp;"x5;
     $sequenceChoiceString .=  "Paste your sequence (fasta format)<BR>\n";
     $sequenceChoiceString .=  $query->textarea(-name=>'sequence'.$seq_num,
-					       -default=>$default{sequence},
+					       -default=>$default{sequence.$seq_num},
 					       -rows=>4,
 					       -columns=>55);
     $sequenceChoiceString .=  "<BR>\n";
@@ -559,7 +680,7 @@ sub MultiSequenceChoice {
 ## Print the commande on the Web interface (for debugging)
 sub ReportWebCommand {
   my ($command) = @_;
-  print "<PRE>", &RSAT::util::hide_RSAT_path($command), "\n</PRE>\n" if ($ENV{rsat_echo} >= 1);
+  print "<b>Server command</b><pre>", &RSAT::util::hide_RSAT_path($command), "\n</pre>\n";
 }
 
 
