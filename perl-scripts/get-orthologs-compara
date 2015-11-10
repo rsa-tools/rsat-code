@@ -107,7 +107,7 @@ package main;
   our @ref_organisms = ();
   our %organisms = ();
   our %homology_types = ();
-  our (%db,%stats,%int2organisms);
+  our (%db,%stats,%int2organisms,%int2organisms_fullname);
 
   our %homology_subtypes = (
     'orth', { 'ortholog_many2many',1,'ortholog_one2many',1,'ortholog_one2one',1 },
@@ -126,6 +126,11 @@ package main;
   # get supported organisms and homology types, encoded as integers
   %int2organisms = split(/,/,$db{'supported_organisms'});
   %organisms = reverse(%int2organisms);
+  %int2organisms_fullname = reverse(split(/,/,$db{'supported_organisms_fullname'}));
+  foreach $sp (keys(%int2organisms_fullname))
+  {
+    $organisms{$sp} = $int2organisms_fullname{$sp};
+  }
 
   %homology_types = split(/,/,$db{'homology_types'});
 
