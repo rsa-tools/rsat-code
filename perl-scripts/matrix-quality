@@ -430,7 +430,7 @@ package main;
       }
     }
 
- #   die  join ("\t", "HELLO", sort keys %task), "\n";
+   # die  join ("\t", "HELLO", sort keys %task), "\n";
 
     ## Matrix+sites file is also matrix
     if ($infile{matrix_sites}) {
@@ -3417,6 +3417,8 @@ sub CloseGeneralHTMLReport{
 		print $synthesis_general  "<td>Max NWD</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
 		$link=~s/\.png/\.pdf/;
 		print $synthesis_general "<a href='",$link,"'>PDF</a> ";
+		$link=~s/\.pdf/\.txt/;
+		print $synthesis_general "<a href='",$link,"'> Table</a> ";
 		print $synthesis_general "</td>";
 		print  $synthesis_general "</tr>";
 		
@@ -3425,6 +3427,8 @@ sub CloseGeneralHTMLReport{
 		print $synthesis_general  "<td>Max NWD for Positve Scores</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
 		$link=~s/\.png/\.pdf/;
 		print $synthesis_general "<a href='",$link,"'>PDF</a> ";
+		$link=~s/\.pdf/\.txt/;
+		print $synthesis_general "<a href='",$link,"'> Table</a> ";
 		print $synthesis_general "</td>";
 		print  $synthesis_general "</tr>";
 		
@@ -3433,6 +3437,8 @@ sub CloseGeneralHTMLReport{
 		print $synthesis_general  "<td>AUC on NWD</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
 		$link=~s/\.png/\.pdf/;
 		print $synthesis_general "<a href='",$link,"'>PDF</a> ";
+		$link=~s/\.pdf/\.txt/;
+		print $synthesis_general "<a href='",$link,"'> Table</a> ";
 		print $synthesis_general "</td>";
 		print  $synthesis_general "</tr>";
 		
@@ -3441,6 +3447,8 @@ sub CloseGeneralHTMLReport{
 		print $synthesis_general  "<td>AUC on NWD for Positive Scores</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
 		$link=~s/\.png/\.pdf/;
 		print $synthesis_general "<a href='",$link,"'>PDF</a> ";
+		$link=~s/\.pdf/\.txt/;
+		print $synthesis_general "<a href='",$link,"'> Table</a> ";
 		print $synthesis_general "</td>";
 		print  $synthesis_general "</tr>";
 		
