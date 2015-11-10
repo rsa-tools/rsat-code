@@ -188,7 +188,8 @@ install_go_annotations:
 	@echo
 	@mkdir -p ${GO_ANNOT_DIR}
 	@echo "Downloading GO annotations of ${SPECIES}" 
-	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES}
+	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
+		-release ${RELEASE}	-list ${ORGANISMS_LIST-}
 	@echo "Expanding GO annotations of ${SPECIES}" 
 	@rm -f ${GO_ANNOT_LINK}
 	@ln -s ${GO_ANNOT_FILE} ${GO_ANNOT_LINK}
@@ -253,6 +254,10 @@ INSTALL_TASKS=organisms download_gtf download_fasta install_from_gtf gunzip_fast
 ## Arabidopsis thaliana (Plant)
 install_thaliana:
 	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana ${INSTALL_TASKS}
+
+## Zea mais (Plant)
+install_zea:
+	${MAKE} GROUP=Plants SPECIES=zea_mays ${INSTALL_TASKS}
 
 ## Saccharomyces cerevisiae (Fungus)
 install_yeast:
