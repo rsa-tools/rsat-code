@@ -44,7 +44,7 @@ $default{top_sequences}="";
 $default{nmotifs} = 5;
 
 $default{visualize}="none";
-$checked{$default{visualize}} = "CHECKED";
+$checked{$default{visualize}} = "checked";
 
 
 ## motif database
