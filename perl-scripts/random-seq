@@ -73,7 +73,7 @@ package main;
     ################################################################
     ## Check argument values
 
-    ## Output formaat
+    ## Output format
     &CheckOutputSeqFormat($out_format);
 
 
@@ -696,45 +696,45 @@ End_short_help
 ################################################################
 ## Verbosity
 sub Verbose {
-  print $out "; random-seq ";
-  &PrintArguments($out);
+  print STDERR "; random-seq ";
+  &PrintArguments(STDERR);
   if ($main::infile{length_file}) {
-      print $out "; Sequence length file	        $main::infile{length_file}\n";
-      print $out "; Repetitions          	        $repetitions\n";
+      print STDERR "; Sequence length file	        $main::infile{length_file}\n";
+      print STDERR "; Repetitions          	        $repetitions\n";
   } else {
-      print $out "; sequence length                     $seq_length\n";
+      print STDERR "; sequence length                     $seq_length\n";
   }
-  print $out "; Number of sequences     $seq_nb\n";
-  print $out "; Sequence format         $out_format\n";
+  print STDERR "; Number of sequences     $seq_nb\n";
+  print STDERR "; Sequence format         $out_format\n";
   if ($outputfile) {
-    print $out "; Output file	$outputfile\n";
+    print STDERR "; Output file	$outputfile\n";
   }
-  print $out "; residue frequencies: $method\n";
+  print STDERR "; residue frequencies: $method\n";
   if ($exp_freq_file) {
-    print $out "; Calibrated oligomer frequencies\n";
-    print $out "; 	oligomer length:         $oligo_length\n";
-    print $out "; 	Makov order:             $markov\n";
-    print $out "; 	expected frequency file: $exp_freq_file\n";
+    print STDERR "; Calibrated oligomer frequencies\n";
+    print STDERR "; 	oligomer length:         $oligo_length\n";
+    print STDERR "; 	Makov order:             $markov\n";
+    print STDERR "; 	expected frequency file: $exp_freq_file\n";
 
     if ($main::verbose >= 3) {
-      print $out "; oligomer frequencies\n";
-      print $out "; subword frequencies\n";
+      print STDERR "; oligomer frequencies\n";
+      print STDERR "; subword frequencies\n";
       foreach $subword (sort keys %subword_freq) {
-	printf $out ";\t%s\t%f\t", $subword, $subword_freq{$subword};
+	printf STDERR ";\t%s\t%f\t", $subword, $subword_freq{$subword};
 	for $l (0..$#letters) {
-	  printf $out (" %s:%g",
+	  printf STDERR (" %s:%g",
 				 $letters[$l],
 				 $cum_letter_freq{$subword}[$l] - ($l>0)*$cum_letter_freq{$subword}[$l-1]
 				);
 		}
-		print $out "\n";
+		print STDERR "\n";
 	    }
 	}
     } else {
 	for $l (0..$#letters) {
-	    print $out "; \t";
-	    print $out "; $letters[$l]\t";
-	    print $out "; $freq{$letters[$l]}\n";    
+	    print STDERR "; \t";
+	    print STDERR "; $letters[$l]\t";
+	    print STDERR "; $freq{$letters[$l]}\n";    
 	}
     }
 }
