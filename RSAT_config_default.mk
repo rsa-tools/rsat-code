@@ -8,6 +8,12 @@
 ## Name of the site (which will appear in the log file)
 RSAT_SITE=your_server_name
 
+## Group specificity of this server
+GROUP=Fungi
+
+## Default species for genome installation, which should be adapted to the group specificity
+SPECIES=saccharomyces_cerevisiae
+
 ## Web server URL
 # RSAT_WWW=http://localhost/rsat/
 
