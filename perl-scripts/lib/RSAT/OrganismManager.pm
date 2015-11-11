@@ -623,13 +623,15 @@ sub GetOrganismsForGroup {
     } elsif ($group_specificity eq "Teaching") {
 
       ## Define a list of model organisms
-      my @model_organisms = qw(Escherichia_coli_K_12_substr__MG1655_uid57779
+      my @model_organisms = qw(
+                             Arabidopsis_thaliana.TAIR10.29
                              Bacillus_subtilis_168_uid57675
-                             Saccharomyces_cerevisiae
+                             Drosophila_melanogaster
+                             Escherichia_coli_K_12_substr__MG1655_uid57779
                              Homo_sapiens_GRCh37
                              Homo_sapiens_GRCh38
                              Mus_musculus_GRCm38
-                             Drosophila_melanogaster
+                             Saccharomyces_cerevisiae
                             );
 
       ## Check that each organism is properly instaled.

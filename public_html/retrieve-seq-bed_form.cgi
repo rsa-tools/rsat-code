@@ -15,12 +15,12 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### Read the CGI query
-$default{demo_descr1} = "";
+$default{demo_descr} = "";
 
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
 $default{'bed_url'.1} = "";
-$default{rm} = "";
+$default{'rm'} = "on";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -46,8 +46,7 @@ print "</CENTER>";
 
 
 ## demo description
-print $default{demo_descr1};
-print $default{demo_descr2};
+print $default{demo_descr};
 
 print $query->start_multipart_form(-action=>"retrieve-seq-bed.cgi");
 
@@ -77,7 +76,7 @@ print "<legend><b><a href='help.retrieve-seq-bed.html'>Options</a></b></legend>"
 
 ### Repeat masking
 print "<p>", $query->checkbox(-name=>'rm',
-			      -checked=>$default{rm},
+			      -checked=>$default{'rm'},
 			      -label=>'');
 print "&nbsp;<A HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
 print "</p>\n";
@@ -99,26 +98,51 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 ################################################################
-## data for the demo
-my $demo_url= $ENV{rsat_www}."/demo_files/Arabidopsis_thaliana_GSM1482283_MYB3R3-GFP_ChIP_peaks.bed";
-my $descr1="<h4>Comment on the demonstration example</h4><blockquote class ='demo'>";
-$descr1 .= "The demo retrieves peak sequences from Arabidopsis thaliana, based on the coordinates of the peaks from {REF}. ";
-$descr1 .= "Input coordinates are provided as the <a href='${demo_url}'>URL to a demo bed file</a>. </blockquote>";
-# my $demo_file = $ENV{RSAT}."/public_html/demo_files/Arabidopsis_thaliana_GSM1482283_MYB3R3-GFP_ChIP_peaks.bed";
-# my $demo_bed=`cat $demo_file`;
+## data for the demos
 
-print $query->start_multipart_form(-action=>"retrieve-seq-bed_form.cgi");
-print "<TD><B>";
-$query->delete_all();
-print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
-# print $query->hidden(-name=>'input1',-default=>$demo_bed);
-print $query->hidden(-name=>'input_url1',-default=>$demo_url);
-print $query->hidden(-name=>'organism',-default=>'Arabidopsis_thaliana.TAIR10.29');
-print $query->hidden(-name=>'rm',-default=>'on');
-print $query->submit(-label=>"DEMO");
-print "</B></TD>\n";
-print $query->end_form;
+my @demos = ();
 
+## Demo for Plants
+push @demos, {
+    "label"=>"DEMO: Arabidopsis MYB3R3",
+    "organism"=>"Arabidopsis_thaliana.TAIR10.29",
+    "url"=>$ENV{rsat_www}."/demo_files/Arabidopsis_thaliana_GSM1482283_MYB3R3-GFP_ChIP_peaks.bed",
+    "description"=>join("\n", 
+			"<h4>Comment on the demonstration example</h4>",
+			"<blockquote class ='demo'>",
+			"The demo retrieves peak sequences from Arabidopsis thaliana, based on the coordinates of the peaks from {REF}.",
+			"Input coordinates are provided as the <a href='${demo_url}'>URL to a demo bed file</a>.",
+			"</blockquote>")};
+
+## Demo for Metazoa
+# push @demos, {
+#     "label"=>"DEMO: Mus musculus ICN1",
+#     "organism"=>"Mus_musculus_GRCm38",
+#     "url"=>$ENV{rsat_www}."/demo_files/Nakamura_GSM1368207_gamma8_mm10_ICN1_peaks.bed",
+#     "description"=>join("\n", 
+# 			"<h4>Comment on the demonstration example</h4>",
+# 			"<blockquote class ='demo'>",
+# 			"ICN1 binding sites in mmouse gamma delta T cells (Nakamura et al., J Immunol, 2015, GEO GSE56756).",
+# 			"Input coordinates are provided as the <a href='${demo_url}'>URL to a demo bed file</a>.",
+# 			"</blockquote>")};
+
+
+
+foreach my $demo (@demos) {
+    %demo = %{$demo};
+    if (&RSAT::OrganismManager::is_supported($demo{"organism"})) {
+	print $query->start_multipart_form(-action=>"retrieve-seq-bed_form.cgi");
+	print "<TD><B>";
+	$query->delete_all();
+	print $query->hidden(-name=>'organism',-default=>$demo{"organism"});
+	print $query->hidden(-name=>'input_url1',-default=>$demo{"url"});
+	print $query->hidden(-name=>'demo',-default=>$demo{"description"});
+	print $query->hidden(-name=>'rm',-default=>'on');
+	print $query->submit(-label=>$demo{"label"});
+	print "</B></TD>\n";
+	print $query->end_form;
+    }
+}
 
 print "<TD><B><A HREF='help.retrieve-seq-bed.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:morgane\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
