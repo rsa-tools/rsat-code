@@ -20,7 +20,7 @@ $default{demo_descr} = "";
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
 $default{'bed_url'.1} = "";
-$default{rm} = "";
+$default{'rm'} = "on";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -76,7 +76,7 @@ print "<legend><b><a href='help.retrieve-seq-bed.html'>Options</a></b></legend>"
 
 ### Repeat masking
 print "<p>", $query->checkbox(-name=>'rm',
-			      -checked=>$default{rm},
+			      -checked=>$default{'rm'},
 			      -label=>'');
 print "&nbsp;<A HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
 print "</p>\n";
