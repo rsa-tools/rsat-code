@@ -427,7 +427,7 @@ sub MultiInputChoice {
     $inputChoiceString .=  "&nbsp;"x5;
     $inputChoiceString .=  "Paste your ".$in_type." (".$in_format." format)<BR>\n";
     $inputChoiceString .=  $query->textarea(-name=>'input'.$in_num,
-					    -default=>$default{input.$in_num},
+					    -default=>$default{"input".$in_num},
 					    -rows=>4,
 					    -columns=>55);
     $inputChoiceString .=  "<BR>\n";
@@ -641,7 +641,7 @@ sub MultiSequenceChoice {
     $sequenceChoiceString .=  "&nbsp;"x5;
     $sequenceChoiceString .=  "Paste your sequence (fasta format)<BR>\n";
     $sequenceChoiceString .=  $query->textarea(-name=>'sequence'.$seq_num,
-					       -default=>$default{sequence.$seq_num},
+					       -default=>$default{"sequence".$seq_num},
 					       -rows=>4,
 					       -columns=>55);
     $sequenceChoiceString .=  "<BR>\n";
