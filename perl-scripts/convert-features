@@ -35,6 +35,7 @@ local $output_format = "gff3";
 
 local $add_chr_bed = 0;
 local $remove_chr_gff = 0;
+local $yeast_to_roman = 0;
 
 local $set_feature_name = ""; ## User-defined name for the features (track)
 
@@ -193,9 +194,11 @@ while (<$in>) {
   }
 
   ## Remove "chr" prefix from the chromomome names if requested
-  if (($output_format eq "gff") || ($output_format eq "gff3")) {
-    &remove_chr($feature)  if ($remove_chr_gff);
-  }
+#  if (($output_format eq "gff") || ($output_format eq "gff3")) {
+  &remove_chr($feature)  if ($remove_chr_gff);
+#  }
+
+  &yeast_feature_to_roman($feature) if ($yeast_to_roman);
 
   ## convert the coordinates if necessary
   if ($infile{coord}){
@@ -244,16 +247,81 @@ sub add_chr {
    }
 
 ################################################################
-## Remove "chr" + change chrM into MT for compatibility with Ensembl (GFF format)
+## Remove "chr" + change chrM into MT for compatibility with Ensembl
+## (GFF format).
 sub remove_chr {
   my ($feature) = @_;
-   my $seq_name = $feature->get_attribute("seq_name");
-   $seq_name =~ s/^chr(\S+)/$1/;
-   ## also change the chrM into MT
-   $seq_name =~ s/^chrM$/MT/;
-   $feature->force_attribute("seq_name",$seq_name); ## only the fist base is shifted
-   &RSAT::message::Debug("removed chr to seq_name: ", $seq_name) if ($main::verbose >= 10);
-   }
+  my $seq_name = $feature->get_attribute("seq_name");
+  $seq_name =~ s/^chr(\S+)/$1/;
+  ## also change the chrM into MT
+  $seq_name =~ s/^chrM$/MT/;
+  $feature->force_attribute("seq_name",$seq_name); ## only the fist base is shifted
+  &RSAT::message::Debug("removed chr to seq_name: ", $seq_name) if ($main::verbose >= 10);
+}
+
+################################################################
+## Convert latin to roman numbers for yeast chromosome names
+sub yeast_feature_to_roman {
+  my ($feature) = @_;
+  my $seq_name = $feature->get_attribute("seq_name");
+  ($seq_name) = &yeast_chrom_to_roman($seq_name);
+  $feature->force_attribute("seq_name",$seq_name); ## only the fist base is shifted
+  &RSAT::message::Debug("removed chr to seq_name: ", $seq_name) if ($main::verbose >= 10);
+}
+
+
+################################################################
+##
+## yeast_chrom_to_roman
+##
+## For the yeast Saccharomyces cerevisiae, there is often a confusion
+## between official chromosome names (in roman charcters) and latin
+## numbering. This function converts chromosome names to roman
+## numbers.
+##
+## I don't use the Roman module to avoid dependencies, since the
+## problem is relatively restricted: convert 01:16 or 1:16 to I:XVI.
+##
+## Usage (list of chromosome names)
+##   my @converted_chrom = &yeast_chrom_to_roman(@in_chrom);
+## or (single chromosome name)
+##   (my $converted_chrom) = &yeast_chrom_to_roman($in_chrom);
+##
+sub yeast_chrom_to_roman {
+  my @in_chrom = @_;
+  my @out_chrom = ();
+  foreach my $in_chrom (@in_chrom) {
+    if ($in_chrom =~ /(\d{1,2})(.*)/) {
+      my $prefix = $` | "";
+      my $chrom_num = $1;
+      my $suffix = $' | ""; #'
+      if ($chrom_num == 1) { $chrom_num = "I";
+      } elsif ($chrom_num == 2) { $chrom_num = "II";
+      } elsif ($chrom_num == 3) { $chrom_num = "III";
+      } elsif ($chrom_num == 4) { $chrom_num = "IV";
+      } elsif ($chrom_num == 5) { $chrom_num = "V";
+      } elsif ($chrom_num == 6) { $chrom_num = "VI";
+      } elsif ($chrom_num == 7) { $chrom_num = "VII";
+      } elsif ($chrom_num == 8) { $chrom_num = "VIII";
+      } elsif ($chrom_num == 9) { $chrom_num = "IX";
+      } elsif ($chrom_num == 10) { $chrom_num = "X";
+      } elsif ($chrom_num == 11) { $chrom_num = "XI";
+      } elsif ($chrom_num == 12) { $chrom_num = "XII";
+      } elsif ($chrom_num == 13) { $chrom_num = "XIII";
+      } elsif ($chrom_num == 14) { $chrom_num = "XIV";
+      } elsif ($chrom_num == 15) { $chrom_num = "XV";
+      } elsif ($chrom_num == 16) { $chrom_num = "XVI";
+      }
+      my $out_chrom = $prefix.$chrom_num.$suffix;
+#      &RSAT::message::Debug("&yeast_chrom_to_roman()", $in_chrom, $out_chrom) if ($main::verbose >= 10);
+      push @out_chrom, $out_chrom;
+    } else {
+      push @out_chrom, $in_chrom;
+    }
+  }
+  return(@out_chrom);
+}
+
 
 #################################################################
 ### Convert relative coordinates to genomic coordinate (option -from_ganalxy_seq)
@@ -492,13 +560,18 @@ OPTIONS
 
 	-add_chr only for BED output: add "chr" in front of the chromosome name and change MT into chrM
 
+	-remove_chr
+                 Remove the "chr" in front of the chromosone and
+                 change chrM into MT
+
+	-yeast_to_roman
+	        Convert arabic to roman numbers to denote chromosome
+	        numbers according to S.cerevisiae specifications. Only
+	        works for chromosomes I to XVI.
+
 	-featname
 		Set a name for all features of the file. This option
 		can be convenient for conversions to bed files.
-
-	-remove_chr
-                 only valid for GFF output: remove the "chr" in front of the
-                 chromosone and change chrM into MT
 
         -summits
                  only valid for SWEMBL input: replace start and end
@@ -864,8 +937,9 @@ convert-features options
 -from		input format (Supported: $RSAT::feature::supported_input_formats)
 -to		output format (Supported: $RSAT::feature::supported_output_formats)
 -add_chr        only valid for BED output: add "chr" in front of the chromosome name and change MT into chrM
--featname	Set a name for all features of the file. 
 -remove_chr     only valid for GFF output: remove the "chr" in front of the chromosone and change chrM into MT
+-yeast_to_roman convert arabic to roman numbers in chromosome names, for compatibility with S.cerevisiae convention
+-featname	Set a name for all features of the file. 
 -summits        only valid for SWEMBL input: replace start and end coordinates by peak summit position
 -extend         extend peak coordinates on both sides
 -extend_start   extend start coordinate leftwise
@@ -927,6 +1001,10 @@ sub ReadArguments {
       ### remove "chr" in front of chromosome names for GFF output
     } elsif ($ARGV[$a] eq "-remove_chr") {
       $remove_chr_gff = 1;
+
+      ## Convert arabic to roman numbers for yeast chromosomes
+    } elsif ($ARGV[$a] eq "-yeast_to_roman") {
+      $yeast_to_roman = 1;
 
 
       ### coordinate file for conversion of coordinates into absolute genomic coord
