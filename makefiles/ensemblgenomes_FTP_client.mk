@@ -126,11 +126,11 @@ download_gtf:
 ################################################################
 ## Download FASTA files with genomic sequences (raw and masked)
 ## and peptidic sequences
-FASTA_RAW_SUFFIX=*${RELEASE}.dna.genome.fa.gz
+FASTA_RAW_SUFFIX=*${RELEASE}.dna.genome.fa*
 FASTA_RAW_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_RAW_SUFFIX}
-FASTA_MSK_SUFFIX=*${RELEASE}.dna_rm.genome.fa.gz
+FASTA_MSK_SUFFIX=*${RELEASE}.dna_rm.genome.fa*
 FASTA_MSK_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_MSK_SUFFIX}
-FASTA_PEP_SUFFIX=*${RELEASE}.pep.all.fa.gz
+FASTA_PEP_SUFFIX=*${RELEASE}.pep.all.fa*
 FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUFFIX}
 download_fasta:
 	@echo
@@ -205,7 +205,7 @@ FASTA_RAW_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX} | head -1`
 FASTA_MSK_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_MSK_SUFFIX} | head -1`
 FASTA_PEP_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_PEP_SUFFIX} | head -1`
 # Note that only the first gtf file is considered
-GTF_LOCAL=$(shell ls -1 ${GENOME_DIR}/*.gtf.gz)
+GTF_LOCAL=$(shell ls -1 ${GENOME_DIR}/*.gtf.gz ${GENOME_DIR}/*.gtf | head -1)
 TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
 ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 5)
 PARSE_DIR=${GENOME_DIR}
@@ -239,6 +239,8 @@ parse_gtf_test:
 ###############################################################
 ## Uncompress genomic fasta files for beedtools
 gunzip_fasta:
+	@echo
+	@echo "Uncompressing the downloaded fasta files."
 	@echo ${FASTA_RAW_LOCAL}
 	@gunzip	${FASTA_RAW_LOCAL}
 	@echo ${FASTA_MSK_LOCAL}
@@ -251,6 +253,7 @@ gunzip_fasta:
 RSAT_GTF=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome/${SPECIES_RSAT_ID}.gtf.gz
 START_CODONS=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome/${SPECIES_RSAT_ID}_start_codons
 init_getfasta:
+	@echo
 	@echo "Initializing genomic fasta index	${SPECIES_RSAT_ID}"
 	@zgrep start_codon ${RSAT_GTF} > ${START_CODONS}.gtf
 	@echo "	Start codon coordinates	${START_CODONS}.gtf"
@@ -267,7 +270,7 @@ init_getfasta:
 ## Install some pet genomes
 
 COLLECTION=
-INSTALL_TASKS=organisms download_gtf download_fasta install_from_gtf gunzip_fasta init_getfasta
+INSTALL_TASKS=organisms download_gtf download_fasta  gunzip_fasta install_from_gtf init_getfasta 
 install_one_org: ${INSTALL_TASKS}
 
 ## Arabidopsis thaliana (Plant)
