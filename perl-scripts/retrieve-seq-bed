@@ -162,7 +162,7 @@ package main;
   $infile{fasta_genome} .= ".genome.fa";
   &RSAT::error::FatalError("Missing fasta file with genome sequence", $infile{fasta_genome}) 
       unless (-e $infile{fasta_genome}) ;
-  &RSAT::message::Info("Genome sequence", $infile{fasta_genome}) if ($main::verbose >= 0);
+  &RSAT::message::Info("Genome sequence", $infile{fasta_genome}) if ($main::verbose >= 2);
 
   ################################################################
   ## Open log stream
