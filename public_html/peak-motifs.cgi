@@ -27,7 +27,7 @@ $query = new CGI;
 ### print the result page
 &RSA_header("peak-motifs result", "results");
 
-&ListParameters() if ($ENV{rsat_echo} >=2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ## Check security issues
 &CheckWebInput($query);
@@ -87,14 +87,14 @@ if ($query->param('title')){
 ## Peak sequences file
 
 ## Test sequences
-($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $output_dir_full_path."/".$output_prefix."peak_seq", 1);
-$parameters .= "-i $sequence_file ";
+($peak_seq_file, $sequence_format) = &MultiGetSequenceFile(1, $output_dir_full_path."/".$output_prefix."peak_seq", 1);
+$parameters .= " -i ".$peak_seq_file;
 
 ### control sequences file
 ($control_file, $sequence_format) = &MultiGetSequenceFile(2, $output_dir_full_path."/".$output_prefix."control_seq", 0);
 
 if ($control_file) {
-  $parameters .= "-ctrl $control_file ";
+  $parameters .= " -ctrl ".$control_file;
 }
 
 
