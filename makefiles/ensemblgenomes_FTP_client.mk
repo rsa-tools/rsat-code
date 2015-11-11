@@ -9,15 +9,15 @@ MAKEFILE=${RSAT}/makefiles/ensemblgenomes_FTP_client.mk
 ## Define parameters
 V=2
 
-# should be set in RSAT_config.props
-SERVERURL=ftp://ftp.ensemblgenomes.org
 
 #should be set in env var {ORG_GROUP} ?
 #currently does not work for Bacteria, as these are further grouped in bacteria_NN_collection subfolders
 GROUP=Plants
 GROUP_LC=$(shell echo $(GROUP) | tr A-Z a-z)
 RELEASE=${ENSEMBLGENOMES_BRANCH}
-DATABASE=${SERVERURL}/pub/${GROUP_LC}/release-${RELEASE}
+# should be set in RSAT_config.props
+SERVER_URL=ftp://ftp.ensemblgenomes.org/pub/${GROUP_LC}
+DATABASE=${SERVER_URL}/release-${RELEASE}
 
 #name preffix hard-coded, might change in future
 SERVERLIST=${DATABASE}/species_Ensembl${GROUP}.txt
@@ -262,6 +262,15 @@ install_zea:
 ## Saccharomyces cerevisiae (Fungus)
 install_yeast:
 	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae ${INSTALL_TASKS}
+
+## Mus musculus (Metazoa)
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## NOT YET WORKING, because of inconsistencies between ensembl and ensemblgenomes FTP servers:
+## - ensembl FTP site has not the species table which we use to get assembly name
+## - ensembl FTP site does not contain the single file per genome for DNA sequences. We should write a specific target to concatenate all the chromosome files.
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+install_mouse:
+	${MAKE} GROUP=Metazoa SPECIES=mus_musculus SERVER_URL=ftp://ftp.ensembl.org/pub RELEASE=82 ${INSTALL_TASKS}
 
 ## Drosophila melanogaster (Metazoa)
 install_droso:
