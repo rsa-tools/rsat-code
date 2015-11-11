@@ -12,7 +12,7 @@ V=2
 
 #should be set in env var {ORG_GROUP} ?
 #currently does not work for Bacteria, as these are further grouped in bacteria_NN_collection subfolders
-GROUP=Plants
+## GROUP=Plants I moved this variable to RSAT_config.mk, since it depends on the server;
 GROUP_LC=$(shell echo $(GROUP) | tr A-Z a-z)
 RELEASE=${ENSEMBLGENOMES_BRANCH}
 # should be set in RSAT_config.props
@@ -24,7 +24,7 @@ SERVERLIST=${DATABASE}/species_Ensembl${GROUP}.txt
 
 ORGANISMS_DIR=${RSAT}/data/ensemblgenomes/${GROUP_LC}/release-${RELEASE}
 ORGANISMS_LIST=${ORGANISMS_DIR}/species_Ensembl${GROUP}.txt
-SPECIES=arabidopsis_thaliana
+## SPECIES=arabidopsis_thaliana ## The default species is coupled to the group specificity of the server -> I (JvH) move it to RSAT_config.mk
 
 ## Note (JvH 2015-11-06) I change SPECIES DIR to directly download
 ## fasta and gtf in the genome dir, since we will use it for vairous
@@ -40,7 +40,7 @@ GENOME_DIR=${SPECIES_DIR}/genome
 organisms:
 	@echo
 	@mkdir -p ${ORGANISMS_DIR}
-	@echo "Getting list if organisms from ${DATABASE}"
+	@echo "Getting list of organisms from ${DATABASE}"
 	@echo "	${ORGANISMS_DIR}"
 	@wget -Ncnv ${SERVERLIST} -P ${ORGANISMS_DIR}
 	@echo
@@ -75,17 +75,33 @@ list_param:
 
 ################################################################
 ## Download required files for all organisms
-ALL_SPECIES=$(shell cut -f 2 ${ORGANISMS_LIST} | grep -v species)
-download_all_species:
+ALL_SPECIES=$(shell cut -f 2 ${ORGANISMS_LIST} | grep -v '^species')
+list_all_species:
+	@echo 
+	@echo "All species from ${ORGANISMS_LIST}"
+	@echo ${ALL_SPECIES} | perl -pe 's/\s+/\n/g' |add-linenb -before
+
+
+COLLECTION=
+ORG_TASKS=organisms
+DOWNLOAD_TASKS=download_gtf download_fasta  gunzip_fasta 
+INSTALL_TASKS=install_from_gtf init_getfasta install_go_annotations
+COMPARA_TASKS=parse_compara install_compara
+ALL_TASKS=${ORG_TASKS} ${DOWNLOAD_TASKS} ${INSTALL_TASKS} ${COMPARA_TASKS}
+
+download_one_species: ${DOWNLOAD_TASKS}
+
+install_one_species: ${INSTALL_TASKS}
+
+download_all_species: organisms
 	@echo WARNING: Make sure you run organisms before download_all_species
 	@echo
 	@echo Downloading all species in GROUP=${GROUP} RELEASE=${RELEASE}
-	for org in $(ALL_SPECIES); do \
-		$(MAKE) download_fasta SPECIES=$$org; \
-		$(MAKE) download_gtf SPECIES=$$org; \
+	@for org in $(ALL_SPECIES); do \
+		$(MAKE) download_one_species SPECIES=$$org; \
 	done
-	@${MAKE} download_compara
 	@${MAKE} download_go
+
 
 ################################################################
 ## Install files required for all organisms
@@ -94,9 +110,14 @@ install_all_species:
 	@echo
 	@echo Installing all species in GROUP=${GROUP} RELEASE=${RELEASE}
 	for org in $(ALL_SPECIES); do \
-		$(MAKE) install_from_gtf SPECIES=$$org; \
-		$(MAKE) install_go_annotations SPECIES=$$org; \
+		$(MAKE) install_one_species SPECIES=$$org; \
 	done
+
+################################################################
+## Download and install compara. This should be done once (concerns
+## all species). In addition, it is not supported for all the groups
+## -> should remain a separate task.
+download_and_install_compara:
 	@${MAKE} parse_compara
 	@${MAKE} install_compara
 
@@ -163,6 +184,7 @@ download_compara:
 	@echo
 	@mkdir -p ${ORGANISMS_DIR}
 	@echo "Downloading COMPARA file of ${GROUP}"
+	@echo "	${SERVER_COMPARA_FILE}"
 	@wget -Ncnv ${SERVER_COMPARA_FILE} -P ${ORGANISMS_DIR}
 	@echo
 	@ls -1 ${ORGANISMS_DIR}/Compara.homologies*gz
@@ -200,7 +222,19 @@ install_go_annotations:
 
 
 ##################################################################
-## Parse GTF file to extract gene, transcripts and cds coords
+## Parse GTF file to extract gene, transcripts and cds coordinates.
+##
+## Beware: this task can be sent to the job queue (qsub) by adding the
+## options WHEN=queue to the make command. This is convenient for the
+## installation of all genomes.
+##
+## Examples
+##   make -f ${RSAT}/makefiles/ensemblgenomes_FTP_client.mk \
+##      install_all_species WHEN=queue
+##
+## Each species installation will be executed as a job for the
+## cluster.
+
 FASTA_RAW_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX} | head -1`
 FASTA_MSK_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_MSK_SUFFIX} | head -1`
 FASTA_PEP_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_PEP_SUFFIX} | head -1`
@@ -210,11 +244,7 @@ TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
 ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 5)
 PARSE_DIR=${GENOME_DIR}
 PARSE_TASK="parse_gtf,parse_fasta"
-parse_gtf:
-	@echo
-	@echo "Parsing GTF file	${GTF_LOCAL}"
-	@echo "TaxonID = ${TAXON_ID}"
-	@parse-gtf -v ${V} -i ${GTF_LOCAL} \
+PARSE_GTF_CMD=parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-fasta ${FASTA_RAW_LOCAL} \
 		-fasta_rm ${FASTA_MSK_LOCAL} \
 		-fasta_pep ${FASTA_PEP_LOCAL} \
@@ -223,6 +253,11 @@ parse_gtf:
 		-taxid ${TAXON_ID} \
 		-gtf_source ensemblgenomes \
 		-o ${PARSE_DIR} 
+parse_gtf:
+	@echo
+	@echo "Parsing GTF file	${GTF_LOCAL}"
+	@echo "TaxonID = ${TAXON_ID}"
+	@${MAKE} my_command MY_COMMAND="${PARSE_GTF_CMD}"
 	@echo "	${PARSE_DIR}"
 #	@ls -1 ${PARSE_DIR}/*.tab
 
@@ -268,10 +303,6 @@ init_getfasta:
 
 ################################################################
 ## Install some pet genomes
-
-COLLECTION=
-INSTALL_TASKS=organisms download_gtf download_fasta  gunzip_fasta install_from_gtf init_getfasta 
-install_one_org: ${INSTALL_TASKS}
 
 ## Arabidopsis thaliana (Plant)
 install_thaliana:
@@ -339,8 +370,10 @@ install_compara:
 
 ##################################################################
 
-all: organisms download_fasta download_gtf download_compara \
-	parse_gtf parse_compara
+all: organisms \
+	${DOWNLOAD_TASKS} \
+	${INSTALL_TASKS} \
+	parse_compara install_compara
 
 clean_compara:
 	@echo
