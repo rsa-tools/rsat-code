@@ -458,8 +458,6 @@ sub MultiInputChoice {
 sub MultiGetInputFile {
   my ($in_num, $input_file, $required_opt) = @_ ;
 
-
-
   ################################################################
   ## Upload input file from the client
   my $upload_file = $query->param('uploaded_file'.$in_num);
@@ -522,6 +520,12 @@ sub MultiGetInputFile {
     }
   }
 
+
+  ## Uncompress gzipped files, because some programs cannot uncompress on the flight
+  if ($input_file =~ /.gz$/) {
+    &doit("gunzip -f ".$input_file);
+    $input_file =~ s/.gz$//;
+  }
 
   ## input file will be deleted
   &DelayedRemoval($input_file);
