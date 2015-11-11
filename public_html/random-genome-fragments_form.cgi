@@ -85,8 +85,8 @@ print "</fieldset><p/>";
 
 
 #### Organisms
-print "<fieldset>
-<legend><b><a href='help.random-genome-fragments.html#organism'>Organism </a></b></legend>";
+print "<fieldset>";
+print "<legend><b><a href='help.random-genome-fragments.html#organism'>Organism </a></b></legend>";
 
 
 print "<P/>\n";
