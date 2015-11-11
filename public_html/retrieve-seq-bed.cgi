@@ -129,12 +129,7 @@ if (($query->param('output') =~ /display/i) ||
   &PrintURLTable(@result_files);
 
   ## Prepare data for piping
-  if ($query->param('outputformat') eq "outputseq"){
-    $out_format = "fasta"; ## Fasta is the only supported format, but it is necessary to specify it for the piping form
-    &PipingFormForSequence();
-  } elsif ($query->param('coord_format') eq "bed") {
-    &PipingForm();
-  }
+  &PipingFormForSequence($result_file, "fasta");
 
   print "<HR SIZE = 3>";
 
@@ -145,31 +140,3 @@ if (($query->param('output') =~ /display/i) ||
 print $query->end_html;
 
 exit(0);
-
-############################################
-sub PipingForm {
-	my $assembly = `grep Ensembl ${tmp_file_path}.res `;
-	$assembly =~ s/.*assembly:(.*)$/$1/;
-    ### prepare data for piping
-    print <<End_of_form;
-    <hr>
-<table class = "nextstep">
-<tr><td colspan = 5><h3>next step</h3></td></tr>
-
-
-<tr valign="top" align="center">
- <td align=center>
-        <FORM METHOD="POST" ACTION="fetch-sequences_form.php">
-	<INPUT type="hidden" NAME="bedfile" VALUE="$result_file">
-	<INPUT type="submit" value="fetch sequences from UCSC">
-	</FORM>
-	Fetch sequences corresponding to the coordinates
-    </td>
-</TD>
-</TR>
-</TABLE>
-End_of_form
-}
-
-
-
