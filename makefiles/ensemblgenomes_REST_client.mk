@@ -14,8 +14,17 @@ ORGANISMS_DIR=public_html/data/genomes/ensemblgenome_organisms/
 ORGANISMS_ALL=${ORGANISMS_DIR}/organisms_${DATABASE}.tab
 ORGANISMS_TAXON=${ORGANISMS_DIR}/organisms_${DATABASE}_${TAXON}.tab
 TAXON=83333
-SPECIES=escherichia_coli_str_k_12_substr_mg1655
+ORG=escherichia_coli_str_k_12_substr_mg1655
 
+ORGANISMS=escherichia_coli_str_k_12_substr_mg1655 \
+	bacillus_subtilis_subsp_subtilis_str_168 \
+	mycoplasma_genitalium_g37 \
+	pseudomonas_aeruginosa_pao1_ve13 \
+	bacillus_subtilis_subsp_subtilis_str_168 \
+	saccharomyces_cerevisiae \
+	drosophila_melanogaster \
+	caenorhabditis_elegans \
+	arabidopsis_thaliana
 
 # ################################################################
 # ## List of targets
@@ -64,21 +73,22 @@ organisms_primates:
 
 ## Basic request: only return gene-protein-EC (GPE) file for one organism
 GENOME_DIR=public_html/data/genomes
-SPECIES_DIR=${GENOME_DIR}/${SPECIES}
+ORG_DIR=${GENOME_DIR}/${ORG}
 one_org_gpe:
 	@echo
-	@echo "Getting genome annotations for species ${SPECIES}"
+	@echo "Getting genome annotations for species ${ORG}"
 	@${PYTHON} python-scripts/ensemblgenomes_REST_client/ensemblgenomes_get_annotations.py \
 		-v ${V} \
 		--outdir ${GENOME_DIR} \
-		--species ${SPECIES} ${RETURN} ${OPT}
-	@echo "	${GENOME_DIR}/${SPECIES}"
+		--species ${ORG} ${RETURN} ${OPT}
+	@echo "	${GENOME_DIR}/${ORG}"
 
 
 
 ## Full request: export all the available information
 one_org_annotations:
 	${MAKE} one_org_gpe RETURN='--export_genes --export_names'
+
 
 ################################################################
 ## Targets for genome management on http://bacteria.rsat.eu
@@ -87,7 +97,11 @@ organisms_bact:
 
 ## Collect gene annotations for Escherichia coli
 annotations_coli:
-	${MAKE} DATABASE=ensemblgenomes SPECIES=escherichia_coli_str_k_12_substr_mg1655 one_org_annotations
+	${MAKE} DATABASE=ensemblgenomes ORG=escherichia_coli_str_k_12_substr_mg1655 one_org_annotations
+
+## Collect gene annotations for Pseudomonas aeruginosa PAO1 ve13
+annotations_pao1:
+	${MAKE} DATABASE=ensemblgenomes ORG=pseudomonas_aeruginosa_pao1_ve13 one_org_annotations
 
 
 ################################################################
@@ -97,7 +111,7 @@ organisms_fungi:
 
 ## Collect gene annotations for Brachypodium distachyon
 annotations_yeast:
-	${MAKE} DATABASE=ensemblgenomes SPECIES=saccharomyces_cerevisiae one_org_annotations
+	${MAKE} DATABASE=ensemblgenomes ORG=saccharomyces_cerevisiae one_org_annotations
 
 ################################################################
 ## Targets for genome management on http://metazoa.rsat.eu
@@ -107,7 +121,7 @@ organisms_metazoa:
 
 ## Collect gene annotations for Brachypodium distachyon
 annotations_elegans:
-	${MAKE} DATABASE=ensemblgenomes SPECIES=caenorhabditis_elegans one_org_annotations
+	${MAKE} DATABASE=ensemblgenomes ORG=caenorhabditis_elegans one_org_annotations
 
 ################################################################
 ## Targets for genome management on http://plants.rsat.eu
@@ -116,11 +130,11 @@ organisms_plants:
 
 ## Collect gene annotations for Arabidopsis thaliana
 annotations_ara:
-	${MAKE} DATABASE=ensemblgenomes SPECIES=arabidopsis_thaliana one_org_annotations
+	${MAKE} DATABASE=ensemblgenomes ORG=arabidopsis_thaliana one_org_annotations
 
 ## Collect gene annotations for Brachypodium distachyon
 annotations_brachy:
-	${MAKE} DATABASE=ensemblgenomes SPECIES=brachypodium_distachyon one_org_annotations
+	${MAKE} DATABASE=ensemblgenomes ORG=brachypodium_distachyon one_org_annotations
 
 
 ################################################################
@@ -155,42 +169,42 @@ index_html:
 
 
 
-################################################################
-## Download GTF files from ensemblgenomes
-GTF_GROUP=plants
-GTF_SPECIES=chlamydomonas_reinhardtii
-GTF_URL=ftp.ensemblgenomes.org/pub/${GTF_GROUP}/release-28/gtf/${GTF_SPECIES}/
-GTF_PATH=${RSAT}/downloads/${GTF_URL}
-download_gtf:
-	@echo
-	@echo "Downloading GTF file from	ftp://${GTF_URL}"
-	cd ${RSAT}/downloads; \
-	wget  -rNL ftp://${GTF_URL}
-	@echo "	${GTF_PATH}"
+# ################################################################
+# ## Download GTF files from ensemblgenomes
+# GTF_GROUP=plants
+# GTF_ORG=chlamydomonas_reinhardtii
+# GTF_URL=ftp.ensemblgenomes.org/pub/${GTF_GROUP}/release-28/gtf/${GTF_ORG}/
+# GTF_PATH=${RSAT}/downloads/${GTF_URL}
+# download_gtf:
+# 	@echo
+# 	@echo "Downloading GTF file from	ftp://${GTF_URL}"
+# 	cd ${RSAT}/downloads; \
+# 	wget  -rNL ftp://${GTF_URL}
+# 	@echo "	${GTF_PATH}"
 
-GTF_GZ=`ls -1 ${GTF_PATH}/*.gtf.gz`
-ORG_ID=${GTF_SPECIES}
-PARSE_DIR=${RSAT}/data/ensemblgenomes/${ORG_ID}/genome/
-parse_gtf:
-	@echo
-	@echo "Parsing GTF file	${GTF_GZ}"
-	@echo "ORG_ID	${ORG_ID}"
-	parse-gtf -v ${V} -i ${GTF_GZ} -o ${PARSE_DIR}
-	@echo "	${PARSE_DIR}"
+# GTF_GZ=`ls -1 ${GTF_PATH}/*.gtf.gz`
+# ORG_ID=${GTF_ORG}
+# PARSE_DIR=${RSAT}/data/ensemblgenomes/${ORG_ID}/genome/
+# parse_gtf:
+# 	@echo
+# 	@echo "Parsing GTF file	${GTF_GZ}"
+# 	@echo "ORG_ID	${ORG_ID}"
+# 	parse-gtf -v ${V} -i ${GTF_GZ} -o ${PARSE_DIR}
+# 	@echo "	${PARSE_DIR}"
 
 
-GTF_TASK=download_gtf parse_gtf
-gtf_ara:
-	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=arabidopsis_thaliana GTF_GROUP=plants ${GTF_TASK}
+# GTF_TASK=download_gtf parse_gtf
+# gtf_ara:
+# 	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_ORG=arabidopsis_thaliana GTF_GROUP=plants ${GTF_TASK}
 
-gtf_worm:
-	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=caenorhabditis_elegans GTF_GROUP=metazoa ${GTF_TASK}
+# gtf_worm:
+# 	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_ORG=caenorhabditis_elegans GTF_GROUP=metazoa ${GTF_TASK}
 
-gtf_fly:
-	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=drosophila_melanogaster GTF_GROUP=metazoa ${GTF_TASK}
+# gtf_fly:
+# 	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_ORG=drosophila_melanogaster GTF_GROUP=metazoa ${GTF_TASK}
 
-gtf_yeast:
-	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=saccharomyces_cerevisiae GTF_GROUP=fungi ${GTF_TASK}
+# gtf_yeast:
+# 	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_ORG=saccharomyces_cerevisiae GTF_GROUP=fungi ${GTF_TASK}
 
-gtf_ecoli:
-	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_SPECIES=escherichia_coli_str_k_12_substr_mg1655_gca_000801205_1 GTF_GROUP=bacteria ${GTF_TASK}
+# gtf_ecoli:
+# 	make -f makefiles/ensemblgenomes_REST_client.mk   GTF_ORG=escherichia_coli_str_k_12_substr_mg1655_gca_000801205_1 GTF_GROUP=bacteria ${GTF_TASK}
