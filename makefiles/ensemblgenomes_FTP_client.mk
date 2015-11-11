@@ -271,8 +271,8 @@ install_droso:
 
 ## Escherichia coli (Bacteria)
 install_ecoli:
-	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655_gca_000801205_1 \
-		COLLECTION=bacteria_88_collection ${INSTALL_TASKS}
+	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655 \
+		COLLECTION=bacteria_0_collection ${INSTALL_TASKS}
 
 ## Pseudomonas aeruginosa (Bacteria)
 #install_pao1:
@@ -313,10 +313,9 @@ all: organisms download_fasta download_gtf download_compara \
 
 clean_compara:
 	@echo
-	@echo "Deleting ensemblgenomes Compara release ${RELEASE}
-	@[[ -d ${CMP_GZ} ]] && rm -f ${CMP_GZ}
+	@echo "Deleting ensemblgenomes Compara release ${RELEASE}"
+	@[[ -e ${CMP_GZ} ]] && rm -f ${CMP_GZ}
 	@echo
-
 
 clean_all:
 	@echo
