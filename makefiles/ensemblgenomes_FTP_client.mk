@@ -247,10 +247,29 @@ gunzip_fasta:
 	@gunzip	${FASTA_PEP_LOCAL}
 
 ################################################################
+## Initialize the fasta indexes for bedtools getfasta.
+RSAT_GTF=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome/${SPECIES_RSAT_ID}.gtf.gz
+START_CODONS=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome/${SPECIES_RSAT_ID}_start_codons
+init_getfasta:
+	@echo "Initializing genomic fasta index	${SPECIES_RSAT_ID}"
+	@zgrep start_codon ${RSAT_GTF} > ${START_CODONS}.gtf
+	@echo "	Start codon coordinates	${START_CODONS}.gtf"
+	@retrieve-seq-bed -i ${START_CODONS}.gtf -o ${START_CODONS}.fasta -org ${SPECIES_RSAT_ID}
+	@echo "	Start codon sequences	${START_CODONS}.fasta"
+	@oligo-analysis -v 1 -i ${START_CODONS}.fasta -l 3 -1str -return occ,freq -o ${START_CODONS}_3nt_freq.tab
+	@echo "	Start codon frequencies	${START_CODONS}_3nt_freq.tab"
+	@retrieve-seq-bed -i ${START_CODONS}.gtf -o ${START_CODONS}-rm.fasta -org ${SPECIES_RSAT_ID} -rm
+	@echo "	Repeat-masked start codon sequences	${START_CODONS}-rm.fasta"
+	@oligo-analysis -v 1 -i ${START_CODONS}-rm.fasta -l 3 -1str -return occ,freq -o ${START_CODONS}-rm_3nt_freq.tab
+	@echo "	Repeat-masked start codon frequencies	${START_CODONS}-rm_3nt_freq.tab"
+
+################################################################
 ## Install some pet genomes
 
 COLLECTION=
-INSTALL_TASKS=organisms download_gtf download_fasta install_from_gtf gunzip_fasta
+INSTALL_TASKS=organisms download_gtf download_fasta install_from_gtf gunzip_fasta init_getfasta
+install_one_org: ${INSTALL_TASKS}
+
 ## Arabidopsis thaliana (Plant)
 install_thaliana:
 	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana ${INSTALL_TASKS}
