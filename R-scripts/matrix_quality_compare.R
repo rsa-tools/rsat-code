@@ -113,6 +113,8 @@ draw.heatmap <- function (ListAll,metric="max.nwd",heatmap.file, formats=c("pdf"
             metric.table[mtx,seq] <-  ListAll[[mtx]][[seq]][[metric]]
         }
     }
+
+    write.table(file=paste(heatmap.file, "txt", sep="" ),metric.table,quote = FALSE, sep = "\t", na = "NA"  )
     
     for (format in formats){
         if (format=="pdf"){
