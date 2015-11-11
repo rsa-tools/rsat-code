@@ -203,7 +203,7 @@ if (($query->param('output') =~ /display/i) ||
 
     &PrintURLTable(@result_files);
 
-    ### prepare data for piping
+    ## prepare data for piping
     &PipingFormForSequence();
 
     print "<HR SIZE = 3>";
