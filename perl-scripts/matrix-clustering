@@ -551,7 +551,9 @@ package main;
 	  $to_delete_folder{'html'} = $main::outfile{prefix}."_html";
 	  $to_delete_folder{'tables'} = $main::outfile{prefix}."_tables";
 	  $to_delete_folder{'aligned_logos'} = $main::outfile{prefix}."_aligned_logos";
+	  $to_delete_folder{'data_folder'} = $main::outfile{prefix}."_data";
 	  $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
+	  $to_delete{'errors'} = $main::outfile{prefix}."_errors.txt";
 	  
       } else {
 	  
@@ -584,12 +586,11 @@ package main;
       ################################################################
       ## Create an archive with all result files
       &Archive(1);
-      
-      
-      #######################################
-      ## Delete temporal files and folders
-      &Delete_temporal_files();
   }  
+
+  #######################################
+  ## Delete temporal files and folders
+  &Delete_temporal_files();
 
   ################################################################
   ## Print verbose
