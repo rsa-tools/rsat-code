@@ -903,11 +903,29 @@ sub CalcFrequencies {
   # calculate oligo-frequencies in full genome
   if ($task{genome_freq}) {
     $seq_type = "genomic";
-    $seq_format = "filelist";
-    $seq_file = $outfile{'genome'};
-    &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
+
+    ## First check if a fasta file exists for the current genome
+    ## (since 2015-11, fasta genomes are downloaded from
+    ## ensemblgenomes). If yes, use it in priority because it allows
+    ## to use the optiojn -quick for oligo-analysis and dyad-analysis.
+    my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name."/genome";
+    my $fasta_genome = $genome_dir."/".$organism_short_name.".dna.genome.fa";
+    if (-e $fasta_genome) {
+	$seq_file = $fasta_genome;
+	$seq_format = "fasta";
+	&CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
+	#	&CalcOligoDistrib($seq_file, $seq_format, $seq_type) if ($task{distrib});
+	&CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($task{dyads});
+    } else {
+	&RSAT::message::Warning("Missing fasta genom file", $fasta_genome);
+	&RSAT::message::Warning("Fasta genome file not found -> skipping whole genome oligo/dyad frequencies.");
+	$seq_format = "filelist";
+	$seq_file = $outfile{'genome'};
+    }
+    #&CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
     #	&CalcOligoDistrib($seq_file, $seq_format, $seq_type) if ($task{distrib});
-    &CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($task{dyads});
+    #&CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($task{dyads});
+    
   }
 
   ################################################################
