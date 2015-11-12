@@ -25,8 +25,7 @@ required.packages = c("RJSONIO",
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
-                      "gplots",
-                      "devtools")
+                      "gplots")
 
 ## List of required packages from Bioconductor
 required.packages.bioconductor <- c("ctc")
