@@ -900,6 +900,17 @@ transcription termination site, i.e. the 3' end of each transcript
 Parse the fasta file(s) specified with the options -fasta and/or
 -fasta_rm, and export the sequences in raw format (required for RSAT).
 
+B<Note>: in the near future I (JvH) intend to avoid this, because it
+duplicates all the sequences -> occupies twice more space than
+needed. I first need to adapt retrieve-seq in order to get sequences
+directly from the indexed fasta genomes, via bedtools getfasta.
+
+=item I<seq_len>
+
+Compute the length of the sequences (chromosomes, masked chromosomes
+and peptides). Chromosome lengths are useful for some bedtools
+commands (e.g. shuffle).
+
 =item I<config>
 
 Update the RSAT genome table to enable using the parsed genome with
