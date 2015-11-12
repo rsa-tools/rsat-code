@@ -97,7 +97,7 @@ list_all_species:
 
 COLLECTION=
 ORG_TASKS=organisms
-DOWNLOAD_TASKS=download_gtf download_fasta  gunzip_fasta 
+DOWNLOAD_TASKS=download_gtf download_fasta  gunzip_downloads 
 INSTALL_TASKS=install_from_gtf init_getfasta install_go_annotations
 COMPARA_TASKS=parse_compara install_compara
 ALL_TASKS=${ORG_TASKS} ${DOWNLOAD_TASKS} ${INSTALL_TASKS} ${COMPARA_TASKS}
@@ -184,13 +184,15 @@ download_fasta:
 	@echo "Downloading raw FASTA genome for species ${SPECIES}"
 	@echo "	GENOME_DIR	${GENOME_DIR}"
 	@wget -Ncnv ${FASTA_RAW_FTP_URL} -P ${GENOME_DIR}
+	@echo "	FASTA_RAW_LOCAL_GZ	${FASTA_RAW_LOCAL_GZ}"
 	@echo
 	@echo "Downloading repeat-masked FASTA genome for species ${SPECIES}"
 	@wget -Ncnv ${FASTA_MSK_FTP_URL} -P ${GENOME_DIR}
-	@echo
+	@echo "	FASTA_MSK_LOCAL_GZ	${FASTA_MSK_LOCAL_GZ}"
 	@echo
 	@echo "Downloading FASTA peptidic sequences for species ${SPECIES}"
 	@wget -Ncnv ${FASTA_PEP_FTP_URL} -P ${GENOME_DIR}
+	@echo "	FASTA_PEP_LOCAL_GZ	${FASTA_PEP_LOCAL_GZ}"
 	@echo
 	@ls -1 ${GENOME_DIR}/*.fa.gz
 
@@ -292,24 +294,24 @@ parse_gtf_test:
 	retrieve-seq -org ${SPECIES_RSAT_ID} -from 0 -to 3 -feattype gene | oligo-analysis -v 1 -l 3 -return occ,freq -sort 
 
 ###############################################################
-## Uncompress genomic fasta files for beedtools
-gunzip_fasta:
+## Uncompress GFT and genomic fasta files for beedtools
+gunzip_downloads:
 	@echo
-	@echo "Uncompressing the downloaded fasta files."
+	@echo "Uncompressing the downloaded GFT and fasta files."
+	@if [ ${GTF_LOCAL_GZ} ]; then echo "	${GTF_LOCAL_GZ}"; gunzip -f ${GTF_LOCAL_GZ}; else echo "missing GTF_LOCAL_GZ ${GTF_LOCAL_GZ}"; fi;
 	@if [ ${FASTA_RAW_LOCAL_GZ} ]; then echo "	${FASTA_RAW_LOCAL_GZ}"; gunzip -f ${FASTA_RAW_LOCAL_GZ}; else echo "missing FASTA_RAW_LOCAL_GZ ${FASTA_RAW_LOCAL_GZ}"; fi;
 	@if [ ${FASTA_MSK_LOCAL_GZ} ]; then echo "	${FASTA_MSK_LOCAL_GZ}"; gunzip -f ${FASTA_MSK_LOCAL_GZ}; else echo "missing FASTA_MSK_LOCAL_GZ ${FASTA_MSK_LOCAL_GZ}"; fi;
 	@if [ ${FASTA_PEP_LOCAL_GZ} ]; then echo "	${FASTA_PEP_LOCAL_GZ}"; gunzip -f ${FASTA_PEP_LOCAL_GZ}; else echo "missing FASTA_PEP_LOCAL_GZ ${FASTA_PEP_LOCAL_GZ}"; fi;
-	@if [ ${GTF_LOCAL_GZ} ]; then echo "	${GTF_LOCAL_GZ}"; gunzip -f ${GTF_LOCAL_GZ}; else echo "missing GTF_LOCAL_GZ ${GTF_LOCAL_GZ}"; fi;
 
 ###############################################################
-## (Re)compress genomic fasta files for beedtools
-gzip_fasta:
+## (Re)compress GFT and genomic fasta files for beedtools
+gzip_downloads:
 	@echo
-	@echo "(Re)compressing the downloaded fasta files."
+	@echo "(Re)compressing the downloaded GFT and fasta files."
+	@if [ ${GTF_LOCAL} ]; then echo "	${GTF_LOCAL}"; gzip -f ${GTF_LOCAL}; else echo "missing GTF_LOCAL ${GTF_LOCAL}"; fi;
 	@if [ ${FASTA_RAW_LOCAL} ]; then echo "	${FASTA_RAW_LOCAL}"; gzip -f ${FASTA_RAW_LOCAL}; else echo "missing FASTA_RAW_LOCAL ${FASTA_RAW_LOCAL}"; fi;
 	@if [ ${FASTA_MSK_LOCAL} ]; then echo "	${FASTA_MSK_LOCAL}"; gzip -f ${FASTA_MSK_LOCAL}; else echo "missing FASTA_MSK_LOCAL ${FASTA_MSK_LOCAL}"; fi;
 	@if [ ${FASTA_PEP_LOCAL} ]; then echo "	${FASTA_PEP_LOCAL}"; gzip -f ${FASTA_PEP_LOCAL}; else echo "missing FASTA_PEP_LOCAL ${FASTA_PEP_LOCAL}"; fi;
-	@if [ ${GTF_LOCAL} ]; then echo "	${GTF_LOCAL}"; gzip -f ${GTF_LOCAL}; else echo "missing GTF_LOCAL ${GTF_LOCAL}"; fi;
 
 ################################################################
 ## Initialize the fasta indexes for bedtools getfasta.
