@@ -4,9 +4,11 @@
 ## Jacques Van Helden, Bruno Contreras Moreira
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## Currently does not work for Bacteria, as these are further grouped
-## by collections, stored in bacteria_NN_collection subfolders.
-##
+## Currently does not work for Bacteria besides Ecoli K12, as these 
+## are further grouped by collections, and hence stored in 
+## bacteria_NN_collection subfolders. However, the species_EnsemblBacteria.txt
+## lists all available genomes and the collection they belong to. (BCM)
+## 
 ## Does not work for the main ensembl ftp site, because there is no
 ## organism table as in ensemblgenomes. I (JvH) need to contact Stain
 ## to see how we can manage this.
@@ -45,7 +47,7 @@ SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID}
 GENOME_DIR=${SPECIES_DIR}/genome
 
 ###############################################################
-## Get all supported organisms in an ensemblgenome release and store them in a file
+## Get all supported organisms in an ensemblgenome release and store them 
 organisms:
 	@echo
 	@mkdir -p ${ORGANISMS_DIR}
@@ -95,19 +97,19 @@ list_all_species:
 	@echo ${ALL_SPECIES} | perl -pe 's/\s+/\n/g' |add-linenb -before
 
 
-COLLECTION=
+cOLLECTION=
 ORG_TASKS=organisms
-DOWNLOAD_TASKS=download_gtf download_fasta  gunzip_downloads 
+DOWNLOAD_TASKS=download_gtf download_fasta gunzip_downloads 
 INSTALL_TASKS=install_from_gtf init_getfasta install_go_annotations
-COMPARA_TASKS=parse_compara install_compara
-ALL_TASKS=${ORG_TASKS} ${DOWNLOAD_TASKS} ${INSTALL_TASKS} ${COMPARA_TASKS}
+COMPARA_TASKS=download_compara parse_compara install_compara
+# not used
+#ALL_TASKS=${ORG_TASKS} ${DOWNLOAD_TASKS} ${INSTALL_TASKS} ${COMPARA_TASKS}
 
 download_one_species: ${DOWNLOAD_TASKS}
 
 install_one_species: ${INSTALL_TASKS}
 
 download_all_species: organisms
-	@echo WARNING: Make sure you run organisms before download_all_species
 	@echo
 	@echo Downloading all species in GROUP=${GROUP} RELEASE=${RELEASE}
 	@for org in $(ALL_SPECIES); do \
@@ -131,8 +133,7 @@ install_all_species:
 ## all species). In addition, it is not supported for all the groups
 ## -> should remain a separate task.
 download_and_install_compara:
-	@${MAKE} parse_compara
-	@${MAKE} install_compara
+	@${MAKE} ${COMPARA_TASKS}
 
 ################################################################
 ## Check upstrean sequences of all installed species
@@ -153,7 +154,8 @@ download_gtf:
 	@echo "Downloading GTF file of ${SPECIES}"
 	@echo "	GENOME_DIR	${GENOME_DIR}"
 	@echo "	GTF_FTP_URL	${GTF_FTP_URL}"
-	@wget -Ncnv ${GTF_FTP_URL} -P ${GENOME_DIR}
+#	@wget -Ncnv ${GTF_FTP_URL} -P ${GENOME_DIR}
+	@wget -cnv ${GTF_FTP_URL} -O ${GTF_LOCAL_GZ}
 	@echo
 	@ls -1 ${GENOME_DIR}/*.gtf.gz
 
@@ -169,29 +171,36 @@ FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUF
 
 ## Define local files corresponding to the FTP-downloaded files.
 ## Note that only the first gtf file is considered
-FASTA_RAW_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX}.gz | head -1`
-FASTA_RAW_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX} | grep -v '.gz$$'| head -1`
-FASTA_MSK_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_MSK_SUFFIX}.gz | head -1`
-FASTA_MSK_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_MSK_SUFFIX} | grep -v '.gz$$' | head -1`
-FASTA_PEP_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_PEP_SUFFIX}.gz | head -1`
-FASTA_PEP_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_PEP_SUFFIX} | grep -v '.gz$$' | head -1`
-GTF_LOCAL_GZ=$(shell ls -1 ${GENOME_DIR}/*.gtf.gz | head -1)
-GTF_LOCAL=$(shell ls -1 ${GENOME_DIR}/*.gtf | head -1)
+#FASTA_RAW_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX} | grep -v '.gz$$'| head -1`
+#FASTA_RAW_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX}.gz | head -1`
+FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.genome.fa
+FASTA_RAW_LOCAL_GZ=${FASTA_RAW_LOCAL}.gz
+FASTA_MSK_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna_rm.genome.fa
+FASTA_MSK_LOCAL_GZ=${FASTA_MSK_LOCAL}.gz
+FASTA_PEP_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.pep.all.fa
+FASTA_PEP_LOCAL_GZ=${FASTA_PEP_LOCAL}.gz
+GTF_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.gtf
+GTF_LOCAL_GZ=${GTF_LOCAL}.gz
+#FASTA_MSK_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_MSK_SUFFIX} | grep -v '.gz$$' | head -1`
+#FASTA_PEP_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_PEP_SUFFIX}.gz | head -1`
+#FASTA_PEP_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_PEP_SUFFIX} | grep -v '.gz$$' | head -1`
+#GTF_LOCAL_GZ=$(shell ls -1 ${GENOME_DIR}/*${RELEASE}.gtf.gz | head -1)
+#GTF_LOCAL=$(shell ls -1 ${GENOME_DIR}/*${RELEASE}.gtf | head -1)
 
 download_fasta:
 	@echo
 	@mkdir -p ${GENOME_DIR}
 	@echo "Downloading raw FASTA genome for species ${SPECIES}"
 	@echo "	GENOME_DIR	${GENOME_DIR}"
-	@wget -Ncnv ${FASTA_RAW_FTP_URL} -P ${GENOME_DIR}
+	@wget -cnv ${FASTA_RAW_FTP_URL} -O ${FASTA_RAW_LOCAL_GZ}
 	@echo "	FASTA_RAW_LOCAL_GZ	${FASTA_RAW_LOCAL_GZ}"
 	@echo
 	@echo "Downloading repeat-masked FASTA genome for species ${SPECIES}"
-	@wget -Ncnv ${FASTA_MSK_FTP_URL} -P ${GENOME_DIR}
+	@wget -cnv ${FASTA_MSK_FTP_URL} -O ${FASTA_MSK_LOCAL_GZ}
 	@echo "	FASTA_MSK_LOCAL_GZ	${FASTA_MSK_LOCAL_GZ}"
 	@echo
 	@echo "Downloading FASTA peptidic sequences for species ${SPECIES}"
-	@wget -Ncnv ${FASTA_PEP_FTP_URL} -P ${GENOME_DIR}
+	@wget -cnv ${FASTA_PEP_FTP_URL} -O ${FASTA_PEP_LOCAL_GZ}
 	@echo "	FASTA_PEP_LOCAL_GZ	${FASTA_PEP_LOCAL_GZ}"
 	@echo
 	@ls -1 ${GENOME_DIR}/*.fa.gz
@@ -264,7 +273,7 @@ install_go_annotations:
 TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
 ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 5)
 PARSE_DIR=${GENOME_DIR}
-PARSE_TASK="parse_gtf,parse_fasta"
+PARSE_TASK=all
 PARSE_GTF_CMD=parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-fasta ${FASTA_RAW_LOCAL} \
 		-fasta_rm ${FASTA_MSK_LOCAL} \
@@ -287,7 +296,7 @@ parse_gtf:
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
-	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome PARSE_TASK="all"
+	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome
 
 ## Run some test for the GTF parsing result
 parse_gtf_test:
@@ -315,12 +324,12 @@ gzip_downloads:
 
 ################################################################
 ## Initialize the fasta indexes for bedtools getfasta.
-RSAT_GTF=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome/${SPECIES_RSAT_ID}.gtf.gz
+RSAT_GTF=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome/${SPECIES_RSAT_ID}.gtf
 START_CODONS=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome/${SPECIES_RSAT_ID}_start_codons
 init_getfasta:
 	@echo
 	@echo "Initializing genomic fasta index	${SPECIES_RSAT_ID}"
-	@zgrep start_codon ${RSAT_GTF} > ${START_CODONS}.gtf
+	@grep start_codon ${RSAT_GTF} > ${START_CODONS}.gtf
 	@echo "	Start codon coordinates	${START_CODONS}.gtf"
 	@retrieve-seq-bed -i ${START_CODONS}.gtf -o ${START_CODONS}.fasta -org ${SPECIES_RSAT_ID}
 	@echo "	Start codon sequences	${START_CODONS}.fasta"
@@ -336,15 +345,11 @@ init_getfasta:
 
 ## Arabidopsis thaliana (Plant)
 install_thaliana:
-	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana ${INSTALL_TASKS}
-
-## Zea mais (Plant)
-install_zea:
-	${MAKE} GROUP=Plants SPECIES=zea_mays ${INSTALL_TASKS}
+	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Saccharomyces cerevisiae (Fungus)
 install_yeast:
-	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae ${INSTALL_TASKS}
+	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Mus musculus (Metazoa)
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -353,18 +358,19 @@ install_yeast:
 ## - ensembl FTP site does not contain the single file per genome for DNA sequences. We should write a specific target to concatenate all the chromosome files.
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 install_mouse:
-	${MAKE} GROUP=Metazoa SPECIES=mus_musculus SERVER_URL=ftp://ftp.ensembl.org/pub RELEASE=82 ${INSTALL_TASKS}
+	${MAKE} GROUP=Metazoa SPECIES=mus_musculus SERVER_URL=ftp://ftp.ensembl.org/pub \
+		RELEASE=82 ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Drosophila melanogaster (Metazoa)
 install_droso:
-	${MAKE} GROUP=Metazoa SPECIES=drosophila_melanogaster ${INSTALL_TASKS}
+	${MAKE} GROUP=Metazoa SPECIES=drosophila_melanogaster ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Note: for bacteria we need to define a collection
 
 ## Escherichia coli (Bacteria)
 install_ecoli:
 	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655 \
-		COLLECTION=bacteria_0_collection ${INSTALL_TASKS}
+		COLLECTION=bacteria_0_collection ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Pseudomonas aeruginosa (Bacteria)
 #install_pao1:
@@ -372,7 +378,8 @@ install_ecoli:
 #		COLLECTION=bacteria_44_collection ${INSTALL_TASKS}
 
 install_bsub:
-	${MAKE} GROUP=Bacteria SPECIES=bacillus_subtilis_subsp_subtilis_str_168 COLLECTION=bacteria_0_collection ${INSTALL_TASKS}
+	${MAKE} GROUP=Bacteria SPECIES=bacillus_subtilis_subsp_subtilis_str_168 \
+		COLLECTION=bacteria_0_collection ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 
 ##################################################################
@@ -400,10 +407,11 @@ install_compara:
 
 ##################################################################
 
-all: organisms \
+# not used like that, requires previous download_go
+#all: organisms \
 	${DOWNLOAD_TASKS} \
 	${INSTALL_TASKS} \
-	parse_compara install_compara
+	${COMPARA_TASKS}
 
 clean_compara:
 	@echo
