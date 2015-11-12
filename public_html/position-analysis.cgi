@@ -27,7 +27,7 @@ $query = new CGI;
 
 ## print the result page
 &RSA_header("position-analysis result", "results");
-&ListParameters() if ($ENV{rsat_echo} >=2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ## Check security issues
 &CheckWebInput($query);
@@ -72,8 +72,19 @@ if ($purge) {
     $command= $position_analysis_command." -i ".$sequence_file;
 }
 
+################################################################
+## Background model
+if ($query->param('bg_method') =~ /markov/i) {
+    my $markov_order = $query->param('markov_order');
+    if (&IsNatural($markov_order)) {
+	$parameters .= " -markov ".$markov_order;
+    } else {
+	&RSAT::error::FatalError($markov_order, "Invalid value for the Markov order, should be a Natural number");
+    }
+}
 
-## fields to return
+################################################################
+## Output fields
 @output_fields = ();
 
 ## threshold on occurrences
