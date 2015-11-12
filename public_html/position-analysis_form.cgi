@@ -28,6 +28,10 @@ $default{offset} = "0";
 $default{center} = "";
 $default{demo_descr} = "";
 
+## Background model
+$default{bg_method} = "Homogeneity";
+$default{markov_order} = "1";
+
 ## Output fields
 $default{return_chi} = 'checked';
 $default{return_rank} = 'checked';
@@ -140,8 +144,6 @@ print "&nbsp;<A HREF='help.position-analysis.html#grouprc'><B>return reverse com
 print "<BR>";
 
 
-print "<HR width=550 align=left>\n";
-
 print "<B><A HREF='help.position-analysis.html#class_grouping'>Positions</A>&nbsp;</B>\n";
 
 ## Class interval
@@ -150,7 +152,7 @@ print $query->textfield(-name=>'class_interval',
 			-default=>$default{class_interval},
 			-size=>3);
 
-## origin for calculating positions
+## Origin for calculating positions
 print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
 print $query->popup_menu(-name=>'origin',
 			 -Values=>['start',
@@ -164,7 +166,28 @@ print $query->textfield(-name=>'offset',
 			-default=>$default{offset},
 			-size=>8);
 
+################################################################
+## Background model
+
+print "<hr>";
+print "<p><b>Background model</b></p>\n";
+print "<blockquote>\n";
+
+## Homogeneous distribution of the k-mers across the windows
+print ("<br><input type='radio' NAME='bg_method' VALUE='Homogeneous' checked>", "Homogeneous distribution across windows.");
+
+## Markov model
+print ("<br><input type='radio' NAME='bg_method' VALUE='Markov model'>", "Window-specific background model");
+
+print "&nbsp;"x10,"Markov order:&nbsp;";
+print $query->popup_menu(-name=>'markov_order',
+			 -Values=>[0..2],
+			 -default=>$default{markov_order});
+print "</blockquote>";
+
+################################################################
 ## Output fields and thresholds
+print "<hr>";
 print "<p><b>Output fields</b></p>\n";
 print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
