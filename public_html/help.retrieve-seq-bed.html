@@ -1,0 +1,147 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#VERSION">VERSION</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#AUTHORS">AUTHORS</a></li>
+  <li><a href="#CATEGORY">CATEGORY</a></li>
+  <li><a href="#USAGE">USAGE</a></li>
+  <li><a href="#INPUT-FORMAT">INPUT FORMAT</a></li>
+  <li><a href="#OUTPUT-FORMAT">OUTPUT FORMAT</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+  <li><a href="#WISH-LIST">WISH LIST</a></li>
+  <li><a href="#OPTIONS">OPTIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>retrieve-seq-bed</p>
+
+<h1 id="VERSION">VERSION</h1>
+
+<p>$program_version</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Retrieve sequences for a set of genomic coordinates provided in bed, gff or vcf format.</p>
+
+<p>This script is a wrapper around <i>bedtools getfasta</i>, an efficient tool to retrieve sequences from a fasta-formatted sequence file (e.g. all genome sequences) and a file of coordinates defined on the sequences of the fasta file.</p>
+
+<p>The wrapper generates the <i>bedtools getfasta</i> command in order to retrieve genomic coordinates from one of the locally supported genomes.</p>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<p>Bruno Contreras Moreira &lt;bcontreras\@eead.csic.es&gt; Jacques.van-Helden\@univ-amu.fr</p>
+
+<h1 id="CATEGORY">CATEGORY</h1>
+
+<dl>
+
+<dt id="genome">genome</dt>
+<dd>
+
+</dd>
+</dl>
+
+<h1 id="USAGE">USAGE</h1>
+
+<p>retrieve-seq-bed -org organism_name -i inputfile [-o outputfile] [-v #] [...]</p>
+
+<h1 id="INPUT-FORMAT">INPUT FORMAT</h1>
+
+<p>The genomic coordinate file will be used as input by <i>bedtools getfasta</i>, and must be compliant with the supported formats: BED/GFF/VCF.</p>
+
+<h1 id="OUTPUT-FORMAT">OUTPUT FORMAT</h1>
+
+<p>A sequence file in fasta format (produced by <i>bedtools getfasta</i>.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<h1 id="WISH-LIST">WISH LIST</h1>
+
+<dl>
+
+<dt id="server-http:-some.rsat.server-rsat"><b>-server http://some.rsat.server/rsat/</b></dt>
+<dd>
+
+<p>Send the request to a remote RSAT server via the Web services. This option enables to get fasta sequences from any RSAT server without having to install them locally.</p>
+
+</dd>
+<dt id="extend-length-item--extend_up-up_length-item--extend_down-down_length"><b>-extend length</b> =item <b>-extend_up up_length</b> =item <b>-extend_down down_length</b></dt>
+<dd>
+
+<p>Extend the peaks by a given length on the upstream (<i>-exetend_up</i>), downstream (<i>-extend_down</i>) or both sides (<i>-extend</i>). The side is adapted according to the strand.</p>
+
+<p>Flank extension is done via <i>bedtools flank</i>.</p>
+
+<p>The extended coordinates are exported with the same name as the output file, supplemented with the suffix _flanks.bed.</p>
+
+</dd>
+</dl>
+
+<h1 id="OPTIONS">OPTIONS</h1>
+
+<dl>
+
+<dt id="v"><b>-v #</b></dt>
+<dd>
+
+<p>Level of verbosity (detail in the warning messages during execution)</p>
+
+</dd>
+<dt id="h"><b>-h</b></dt>
+<dd>
+
+<p>Display full help message</p>
+
+</dd>
+<dt id="help"><b>-help</b></dt>
+<dd>
+
+<p>Same as -h</p>
+
+</dd>
+<dt id="i-coordinate_file"><b>-i coordinate_file</b></dt>
+<dd>
+
+<p>Genomic coordinates, in one of the formats supported by <i>bedtools getfasta</i>: BED, GFF, VCF.</p>
+
+</dd>
+<dt id="o-outputfile"><b>-o outputfile</b></dt>
+<dd>
+
+<p>Output file (in fasta format), where the sequences will be saved. This argument is mandatory, since it is required by <i>bedtools getfasta</i>.</p>
+
+</dd>
+<dt id="org-organism_name"><b>-org organism_name</b></dt>
+<dd>
+
+<p>Organism name, which must correspond to one organism supported on the local RSAT instance.</p>
+
+</dd>
+<dt id="rm"><b>-rm</b></dt>
+<dd>
+
+<p>Use repeat-masked version of the genome.</p>
+
+</dd>
+</dl>
+
+
+</body>
+
+</html>
+
+
