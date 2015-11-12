@@ -461,8 +461,9 @@ sub DelayedRemoval {
 ###############  Genome data ###############################
 ############################################################
 
-@supported_feature_types = qw (CDS mRNA tRNA rRNA scRNA misc_RNA gene start_codon stop_codon exon);
-#@supported_feature_types = qw (gene transcript start_codon cds mRNA stop_codon exon);
+@supported_feature_types = qw (gene mRNA tRNA rRNA scRNA misc_RNA CDS start_codon stop_codon exon);
+#@supported_feature_types = qw (gene gene_start gene_end transcript five_prime_utr three_prime_utr tss tts exon intron cds start_codon stop_codon);
+#@supported_feature_types = qw (gene transcript exon cds start_codon stop_codon);
 ## TEMPORARY (2015-09): the list of supported feature type is a mix
 ## between ensemblgenomes and NCBI feature types. I should switch to
 ## ensemblgenomes as soon as genome installation has been checked for
