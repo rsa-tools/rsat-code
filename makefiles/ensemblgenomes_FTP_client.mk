@@ -97,7 +97,7 @@ list_all_species:
 	@echo ${ALL_SPECIES} | perl -pe 's/\s+/\n/g' |add-linenb -before
 
 
-cOLLECTION=
+COLLECTION=
 ORG_TASKS=organisms
 DOWNLOAD_TASKS=download_gtf download_fasta gunzip_downloads 
 INSTALL_TASKS=install_from_gtf init_getfasta install_go_annotations
@@ -277,6 +277,7 @@ TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
 ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 5)
 PARSE_DIR=${GENOME_DIR}
 PARSE_TASK=all
+GTF_SOURCE=ensemblgenomes
 PARSE_GTF_CMD=parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-fasta ${FASTA_RAW_LOCAL} \
 		-fasta_rm ${FASTA_MSK_LOCAL} \
@@ -284,7 +285,7 @@ PARSE_GTF_CMD=parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-org_name ${SPECIES_RSAT_ID} \
 		-task ${PARSE_TASK} ${OPT} \
 		-taxid ${TAXON_ID} \
-		-gtf_source ensemblgenomes \
+		-gtf_source ${GTF_SOURCE} \
 		-o ${PARSE_DIR} 
 parse_gtf:
 	@echo
