@@ -3,6 +3,7 @@
 ## Class to handle organisms supported in this instance of RSAT.
 ##
 
+
 package RSAT::OrganismManager;
 
 use RSAT::util;
@@ -331,6 +332,8 @@ sub supported_organism_table {
     @selected_organisms = &GetOrganismsForTaxon($taxon, $depth);
   } elsif ($group) {
     @selected_organisms = &GetOrganismsForGroup($group, $depth);
+    push @selected_organisms, &get_demo_organisms(@group_specificity);
+
   } else {
     @selected_organisms = sort keys %main::supported_organism;
     if ($depth != 0) {
@@ -431,8 +434,6 @@ sub get_supported_organisms_web {
   ## Multiple groups can be specified
   my @group_specificity = split(/,/, $ENV{group_specificity});
 
-  
-
   if (scalar(@group_specificity) >= 1) {
     ## Collect organisms for each group specificity
     foreach my $group_specificity (@group_specificity) {
@@ -446,22 +447,48 @@ sub get_supported_organisms_web {
 	}
       }
     }
+    push @selected_organisms, &get_demo_organisms(@group_specificity);
+
   } else {
     @selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
   }
 
-  ## Add organisms required for the demos
-  if ($group_specificity ne "Fungi") {
-    push @selected_organisms, "Saccharomyces_cerevisiae";
-  }
-  if ($group_specificity ne "Metazoa") {
-      push @selected_organisms, "Drosophila_melanogaster"; ## Required for matrix-scan demo. SHOULD WE IMPOSE THIS GENOME JUST FOR THAT, OR HAVE GROUP-SPEFICIC DEMOS ?
-  }
-  unless (($group_specificity eq "Bacteria") || ($group_specificity eq "Prokaryotes")) {
-      push @selected_organisms, "Escherichia_coli_K_12_substr__MG1655_uid57779";
-  }
+
   @selected_organisms = &RSAT::util::sort_unique(@selected_organisms);
   return (@selected_organisms);
+}
+
+
+################################################################
+## Return the list of organisms required for Web demos
+sub get_demo_organisms {
+    my (@group_specificity) = @_;
+    foreach my $group (@group_specificity) {
+	$group_specificity{$group} = 1;
+    }
+    my @selected_organisms = ();
+    unless ($group_specificity{"Fungi"}) {
+	if (&is_supported("Saccharomyces_cerevisiae")) {
+	    ## old nomenclature, probably outdated, I should define an alias for the model yeast strain
+	    push @selected_organisms, "Saccharomyces_cerevisiae";
+	} else {
+	    push @selected_organisms, &GetOrganismsForTaxon("Saccharomyces");
+	}
+    }
+    unless ($group_specificity{"Metazoa"}) {
+	if (&is_supported("Drosophila_melanogaster")) {
+	    push @selected_organisms, "Drosophila_melanogaster"; ## Required for matrix-scan demo. SHOULD WE IMPOSE THIS GENOME JUST FOR THAT, OR HAVE GROUP-SPEFICIC DEMOS ?
+	}
+    }
+    unless (($group_specificity{"Bacteria"}) || ($group_specificity{"Prokaryotes"})) {
+	if (&is_supported("Escherichia_coli_K_12_substr__MG1655_uid57779")) {
+	    push @selected_organisms, "Escherichia_coli_K_12_substr__MG1655_uid57779";
+	} else {
+	    push @selected_organisms, &GetOrganismsForTaxon("Escherichia");
+	}
+	
+    }
+    return (@selected_organisms);
 }
 
 ################################################################
