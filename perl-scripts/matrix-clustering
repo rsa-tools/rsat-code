@@ -1891,10 +1891,10 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     $cluster_motifs_cmd .= "; \"";
 #    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.")"; # Uncomment this line to check the R output in the terminal
-    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.")  > ".$main::outfile{Rlog};
+    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.") > ".$main::outfile{Rlog};
 
     if ($r_path) {
-        &doit($cluster_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+        &doit($cluster_motifs_cmd, 1, 1, $verbose, 1, "", $main::out, $main::err);
     } else {
         &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
     }
