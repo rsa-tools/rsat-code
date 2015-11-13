@@ -203,6 +203,9 @@ download_fasta:
 	@wget -cnv ${FASTA_PEP_FTP_URL} -O ${FASTA_PEP_LOCAL_GZ}
 	@echo "	FASTA_PEP_LOCAL_GZ	${FASTA_PEP_LOCAL_GZ}"
 	@echo
+	@echo "Removing previous bedtools index files"
+	@rm -f ${FASTA_RAW_LOCAL}.fai
+	@rm -f ${FASTA_MSK_LOCAL}.fai
 	@ls -1 ${GENOME_DIR}/*.fa.gz
 
 
