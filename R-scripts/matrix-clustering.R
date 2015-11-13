@@ -384,12 +384,12 @@ i <- sapply(1:length(clusters), function(nb){
                  JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
                  write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
 
-                 ## For consistency, Create the folder with the merged consensuses
-                 dir.create(paste(cluster.folder, "/merged_consensuses", sep = ""), recursive = TRUE, showWarnings = FALSE)
-                 flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
-                 if(flag >= 1){
-                   system(paste("rm -r ", cluster.folder, "/merged_consensuses", "/*", sep = ""))
-                 }
+#                  ## For consistency, Create the folder with the merged consensuses
+#                  dir.create(paste(cluster.folder, "/merged_consensuses", sep = ""), recursive = TRUE, showWarnings = FALSE)
+#                  flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
+#                  if(flag >= 1){
+#                    system(paste("rm -r ", cluster.folder, "/merged_consensuses", "/*", sep = ""))
+#                  }
                }
 
                intermediate.levels.counter <<- intermediate.levels.counter + 1
