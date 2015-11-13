@@ -1776,7 +1776,7 @@ sub CompareMatricesQuick {
   ## motif.
   ## This is the faster C implemented version of compare-matrices
 
-  $matrix_compa_verbose = &RSAT::stats::max(($main::verbose-1), 1);
+  $matrix_compa_verbose = 0;
   my $BIN=$ENV{RSAT}."/bin";
 
   ## Run the pairwise matrix comparison
@@ -5136,7 +5136,7 @@ sub InsertSmallForest {
     $small_forest .= '
 
     <div class="display_clusters"><h2>'.$number_of_clusters.' Clusters found</h2>
-       <p style="color:red">Sketch picture restricted to the --x-- first clusters.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></p>
+       <p style="color:red">Sketch picture restricted to the --x-- first clusters.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{small_logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></p>
     </div>
     ';
 
@@ -5689,7 +5689,7 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2">This table shows the distances between the motifs based in the selected metric to measure the similarity.</td>
 		   </tr>
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{logo_cladogram_html}).'"><strong>Logo Forest</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{small_logo_cladogram_html}).'"><strong>Logo Forest</strong></a></td>
 		      <td class="tab_spacer_2">This file shows the forest with all the logo trees resulting after partition the original tree using the user-selected thresholds.</td>
 		   </tr>
                    <tr>
