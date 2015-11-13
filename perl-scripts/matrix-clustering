@@ -4214,6 +4214,42 @@ sub OpenSynthesis {
 }
 
 
+sub ReOpenSynthesis {
+
+  unlink($main::outfile{summary});
+  close($syn);
+
+  ## Open the summary HTML file
+  $syn = &OpenOutputFile($main::outfile{summary});
+  $synthesis_path = `dirname $main::outfile{summary}`;
+  chomp($synthesis_path);
+
+  my $html_lib = "";
+  if ($root_matrices_flag == 0) {
+      ## Add the JS libraries paths
+      $html_lib .= '
+   <script type="text/javascript" src="'.$d3_base.'"></script>
+   <script type="text/javascript" src="'.$jquery_base.'"></script>
+   <script type="text/javascript" src="'.$datatable_base.'"></script>
+   <link rel="stylesheet" type="text/css" href="'.$datatable_css_base.'">
+</head>
+     ';
+  } 
+
+  ## Add the CSS style for matrix-clustering summary and 
+  ## concatenate it to header the CSS sytles
+  my $css_matrix_clustering = &ReportStyleCSS();
+  $html_lib .= $css_matrix_clustering."\n";
+  
+  my $head = &PrintHtmlResultHeader(program=>"matrix-clustering", "title"=>$main::param{title});
+  $head =~ s|</head>|$html_lib|;
+  
+  print $syn $head;
+
+  &ReportCommand();
+}
+
+
 ##########################################
 sub CloseSynthesis {
     print $syn "</body>\n";
@@ -5798,7 +5834,7 @@ sub Synthesis {
 
     &RSAT::message::TimeWarn("\n; Generating HTML Report") if ($main::verbose >= 2);
 
-    &OpenSynthesis() unless ($main::param{progressive_synthesis});
+    &ReOpenSynthesis();
 
     ## Initialize the variables
     %ids_to_cluster = ();
@@ -5811,7 +5847,7 @@ sub Synthesis {
     $nb_char = 0;
 
     $menu_nb = 200; ## Numbering of the IDs for collapsible elements
-
+    
     &ReadAlignmentTable();
 
     $number_of_clusters = scalar(keys %alignment_table_data);      
