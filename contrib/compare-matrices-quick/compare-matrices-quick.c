@@ -39,7 +39,7 @@ double lth_ncor2 = 0.;		// lower threshold normalized on query matrices
 char *Qfile;				// Query matrices file 
 char *Rfile;				// Reference conserved matrices file 
 char *outfile="compmat_out.tab";	// Output file
-char verbose = 0;
+int verbose = 0;
 char detect_palindromes = 0;
 char *mode="scan";
 
@@ -139,18 +139,18 @@ int main(int argc, char *argv[]){
 		
 	fp = fopen(Rfile,"r");							// loading of the input files
 	Rmatab=readmat(fp,&Rnum);
-	printf("-> %d reference matrices retrieved from '%s'\n",Rnum,Rfile);
+	if (verbose > 0) {  printf("-> %d reference matrices retrieved from '%s'\n",Rnum,Rfile); }
 	fclose(fp);
 	fp = fopen(Qfile,"r");
 	Qmatab=readmat(fp,&Qnum);
-	printf("-> %d query matrices retrieved from '%s'\n",Qnum,Qfile);
+	if (verbose > 0) { printf("-> %d query matrices retrieved from '%s'\n",Qnum,Qfile); }
 	fclose(fp);
 	last_match=(long *)malloc(Qnum*sizeof(long));
 	for (i=0; i<Qnum; i++) {
 		last_match[i]=-1;
 	}
 	
-	if (verbose) {
+	if (verbose > 0) {
 		printf("Reference matrices file:\n");
 		for (i=0; i<Rnum; i++) {
 			printf("\tID: %s\tname: %s\t%dbp\n",Rmatab[i].ID,Rmatab[i].name,Rmatab[i].width);
@@ -295,12 +295,12 @@ int main(int argc, char *argv[]){
 	free(cor_tab[1]);
 	free(res_tab);
 	
-	printf("%ld matches found -> '%s'\n",res_count,outfile);
+	if (verbose > 0) { printf("%ld matches found -> '%s'\n",res_count,outfile); }
 	
 	t2 = clock();
 	exec_time = (float)(t2-t1)/CLOCKS_PER_SEC;
 	fprintf(fp,";Analysis performed in %fs\n",exec_time);
-	printf("Analysis performed in %fs\n",exec_time);
+	if (verbose > 0) { printf("Analysis performed in %fs\n",exec_time); }
 	
 	fclose(fp);
 	
@@ -316,7 +316,7 @@ void read_arg(int argc, char *argv[]){
 	  for (i = 1; i < argc; i++){
 		  if (argv[i][0] == '-'){
 			  if(strcmp(argv[i],"-o") == 0)  outfile  = argv[++i];
-			  if(strcmp(argv[i],"-v") == 0)  verbose=1;
+			  if(strcmp(argv[i],"-v") == 0)  verbose=0;
 			  if(strcmp(argv[i],"-h") == 0)  {print_help(); exit(0);}
 			  if(strcmp(argv[i],"-file1") == 0)  Rfile  = argv[++i];
 			  if(strcmp(argv[i],"-file2") == 0)  Qfile  = argv[++i];
