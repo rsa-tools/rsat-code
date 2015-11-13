@@ -140,6 +140,7 @@ package main;
     local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
     local $top_seq = 0;
+    local $cluster_matrices = 0;
 
     ## Collect method
 #    local $collect_method = "info-gibbs";
@@ -329,7 +330,7 @@ package main;
     ## returns different assemblies with mutually overlapping sets of
     ## patterns.
     my $sig_matrices = ""; ## Sig matrices will depend on the option -cluster_matrices
-    if ($main::cluster_matrices) {
+    if ($cluster_matrices) {
 	&RSAT::message::TimeWarn("Clustering significance matrices to get non-redundant set") if ($main::verbose >= 2);
 
 	## Define prefix and name for the non-redundant matrices produced by matrix-clustering ("root matrices")
@@ -753,13 +754,19 @@ output basename, followed by an extension.
 
 =pod
 
-=item B<cluster_matrices>
+=item B<-clustering>
+=item B<-no_clustering>
 
-Apply matrix-clustering to filter out redundant matrices.
+Apply (-clustering) or not (-no_clustering) a matrix-clustering step
+to filter out redundant matrices. This filtering is performed at the
+level of significance matrices, which also reduces the time spend at
+scanning sequences to collect sites.
 
 =cut
-	} elsif ($arg eq "-cluster_matrices") {
+	} elsif ($arg eq "-clustering") {
 	    $cluster_matrices = 1;
+	} elsif ($arg eq "-no_clustering") {
+	    $cluster_matrices = 0;
 
 
 =pod
