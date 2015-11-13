@@ -509,37 +509,3 @@ write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, r
 
 ## Print the table with the intermediate alignment (it wll be used in the perl code to create the branch-motifs)
 write.table(intermediate.levels, file = paste(out.prefix, "_tables/intermediate_alignments.tab", sep = ""), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE )
-
-
-################################################
-## Print the tree of each cluster, separately ##
-################################################
-## ## Get the aligment width, to calculate the limits of the plot
-## alignment.width <- sapply(tree$labels, function(X){
-##   nchar(X)
-## })
-## alignment.width <- max(alignment.width)
-## mar4 <- alignment.width - 20
-
-## ## Export the tree with the aligment
-## plot.format <- "pdf" ## Default for testing inside the loop
-## for (plot.format in c("pdf", "png")) {
-##   ## w.inches <- 10 ## width in inches
-##   ## h.inches <- 7 ## height in inches
-##   w.inches <- 15 ## width in inches
-##   h.inches <- 7 ## height in inches
-##   h.inches <- 2 + round(0.25* length(motifs.info)) ## height in inches
-##   resol <- 72 ## Screen resolution
-##   tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree_forest_", cluster.nb, ".", plot.format)
-##   if (plot.format == "pdf") {
-##     pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
-##   } else if (plot.format == "png") {
-##     png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
-##   }
-
-##   ## dev.new(width=10, height=7)
-##   par(mar=c(3,2,2,mar4),family="mono")
-##   plot(as.dendrogram(tree), horiz=TRUE, main = paste("Aligned consensus tree cluster", cluster.nb, ";labels:" ,paste(labels, collapse = ","), sep = " "))
-##   dev.off()
-## }
-## Pass the upper thresholds
