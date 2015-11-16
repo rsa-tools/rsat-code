@@ -140,7 +140,7 @@ package main;
     local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
     local $top_seq = 0;
-    local $cluster_matrices = 0;
+    local $cluster_matrices = 1;
 
     ## Collect method
 #    local $collect_method = "info-gibbs";
@@ -202,6 +202,7 @@ package main;
     ################################################################
     ## Specify output files
     $outfile{log} = $outfile{output}."_log.txt";
+    $outfile{err} = $outfile{output}."_err.txt";
     if ($infile{assembly}) {
       $outfile{assembly} = $infile{assembly};
     } else {
@@ -220,6 +221,7 @@ package main;
     ################################################################
     ## Open output stream
     local $log = &OpenOutputFile($outfile{log});
+    local $err = &OpenOutputFile($outfile{err});
 
     ################################################################
     ## Print verbose
@@ -237,7 +239,7 @@ package main;
       $top_seq_cmd .= " -from ".$seq_format." -to ".$seq_format;
       $top_seq_cmd .= " -top ".$top_seq;
       $top_seq_cmd .= " -o ".$seq_to_scan;
-      &doit($top_seq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($top_seq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
     } else {
       $seq_to_scan = $infile{sequence};
     }
@@ -281,7 +283,7 @@ package main;
       }
       $assembly_cmd .= " -o ".$outfile{assembly};
       print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
-      &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
     }
 
     ################################################################
@@ -321,7 +323,7 @@ package main;
     $convert_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
     $convert_cmd .= " -o ".$outfile{sig_matrices};
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
-    &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
 
     ################################################################
@@ -350,7 +352,7 @@ package main;
 	$cluster_cmd .= " -quick";
 	$cluster_cmd .= " -o ".$prefix{sig_matrices_nr}; ## BEware, the output file name has a suffix appended
 	print $log "; significance matrices -> non-redundant matrices\n", $cluster_cmd, "\n";
-	&doit($cluster_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&doit($cluster_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 	$sig_matrices = $outfile{sig_matrices_nr};
     } else {
 	$sig_matrices = $outfile{sig_matrices};
@@ -391,7 +393,7 @@ package main;
       }
       $logo_link_cmd .= " -o ".$outfile{links};
       print $log "; sites -> count matrices\n", $logo_link_cmd, "\n";
-      &doit($logo_link_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($logo_link_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
 
     }
@@ -999,7 +1001,7 @@ sub QuickScanForSites {
   $cmd .= " -to tab -split  -o ".$prefix{sig_matrices_split};
   $cmd .= "; rm -f ".$outfile{'count_matrices'};
   &RSAT::message::Debug("Splitting sig matrix file", $outfile{sig_matrices_split}) if ($main::verbose >= 3);
-  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
   ## Get the list of files containing the individual matrices
   my @split_files = ();
@@ -1062,7 +1064,7 @@ sub QuickScanForSites {
 #      $scan_cmd .= " > ".$outfile{"sig_sites_m".$m};
       $scan_cmd .= " >> ".$outfile{sig_sites};
       print $log "\n; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
-      &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
     }
   }
 
@@ -1097,7 +1099,7 @@ sub ScanForSites {
   $scan_cmd .= $scan_parameters;
   $scan_cmd .= " -o ".$outfile{sig_sites};
   print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
-  &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
   &sites_to_matrix($outfile{sig_sites});
 }
 
@@ -1128,7 +1130,7 @@ sub sites_to_matrix {
 #  $convert2_cmd .= " -return links" if ($return_fields{links});
   $convert2_cmd .= " -o ".$outfile{count_matrices_tf};
   print $log "; sites -> transfac matrices\n", $convert2_cmd, "\n";
-  &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
   ################################################################
   ## The TRANSFAC matrices are then converted to tab format
@@ -1139,7 +1141,7 @@ sub sites_to_matrix {
   $convert3_cmd .= " -return sites" if ($return_fields{sites});
   $convert3_cmd .= " -o ".$outfile{count_matrices};
   print $log "; transfac-formatted -> tab-formatted matrices\n", $convert3_cmd, "\n";
-  &doit($convert3_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &doit($convert3_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
 }
 
@@ -1172,7 +1174,7 @@ sub InfoGibbs {
     $gibbs_cmd .= " --finalcycle" if ($gibbs_final);
     $gibbs_cmd .= " > ".$outfile{gibbs_matrices};
     print $log "; significance matrices + sequences -> count matrices\n", $gibbs_cmd, "\n";
-    &doit($gibbs_cmd, $dry, 0, $verbose, $batch, $job_prefix);
+    &doit($gibbs_cmd, $dry, 0, $verbose, $batch, $job_prefix, $log, $err);
 
     ################################################################
     ## Convert matrix from info-gibbs and generate logos if required
@@ -1190,7 +1192,7 @@ sub InfoGibbs {
     $convert2_cmd .= " -return links" if ($return_fields{links});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
-    &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 }
 
 
@@ -1201,13 +1203,16 @@ sub terminate {
   ## Clean the sites (can be huge files for peak-motif results)
   if (-e $outfile{sig_sites}) {
     my $clean_cmd = "rm -f ".$outfile{sig_sites};
-    &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
   }
 
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $log if ($outfile{output});
   &RSAT::message::Info("matrix-from-pattern log file", $outfile{log})
+    if ($main::verbose >= 2);
+
+  &RSAT::message::Info("matrix-from-pattern error log file", $outfile{err})
     if ($main::verbose >= 2);
 
 
