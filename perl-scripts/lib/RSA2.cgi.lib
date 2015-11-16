@@ -684,8 +684,11 @@ sub MultiSequenceChoice {
 ################################################################
 ## Print the commande on the Web interface (for debugging)
 sub ReportWebCommand {
-  my ($command) = @_;
+  my ($command, $err_file) = @_;
   print "<b>Server command</b><pre>", &RSAT::util::hide_RSAT_path($command), "\n</pre>\n";
+  if ($err_file) {
+      print "<pre><b>Error log</b>: ", &RSAT::util::hide_RSAT_path($err_file), "</pre>\n";
+  }
 }
 
 
