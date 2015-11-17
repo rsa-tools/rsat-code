@@ -140,7 +140,8 @@ package main;
     local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
     local $top_seq = 0;
-    local $cluster_matrices = 1;
+    local $cluster_matrices = 0;
+    local $column_rescaling = 10;
 
     ## Collect method
 #    local $collect_method = "info-gibbs";
@@ -169,7 +170,7 @@ package main;
 
     ## Parameters for matrix-scan-quick
     local %lth;
-    $lth{weight} = 6.5;
+    $lth{weight} = 5;
 
     ## Parameters for the &doit() command
     $dry = 0;
@@ -325,6 +326,19 @@ package main;
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
     &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
+    ################################################################
+    ## Rescale the significance matrices to get count-like matrices
+    ## (with a somewhat arbitrary scale, and including real rather
+    ## than Natural numbers).
+    $outfile{sig_matrices_rescaled} = $outfile{output}."_sig_matrices_rescaled.tf";
+    my $rescale_cmd = $SCRIPTS."/convert-matrix -v 1 -i ".$outfile{sig_matrices};
+    $rescale_cmd .= " -from tf -to tf";
+    $rescale_cmd .= " -return counts";
+    $rescale_cmd .= " -rescale ".$column_rescaling;
+    $rescale_cmd .= " -o ".$outfile{sig_matrices_rescaled};
+    print $log "; Rescaling significance matrices\n", $rescale_cmd, "\n";
+    &doit($rescale_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
 
     ################################################################
     ## Extract non-redundant matrices by clustering significance
@@ -341,7 +355,7 @@ package main;
 
 	## Build the matrix-clustering command
 	my $cluster_cmd = $SCRIPTS."/matrix-clustering -v 0";
-	$cluster_cmd .= " -i ".$outfile{sig_matrices};
+	$cluster_cmd .= " -i ".$outfile{sig_matrices_rescaled};
 	$cluster_cmd .= " -matrix_format tf";
 	$cluster_cmd .= " -motif_collection_name sig_matrices";
 #    $cluster_cmd .= " -title 'Oct4 motifs peak motifs'";
@@ -355,7 +369,7 @@ package main;
 	&doit($cluster_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 	$sig_matrices = $outfile{sig_matrices_nr};
     } else {
-	$sig_matrices = $outfile{sig_matrices};
+	$sig_matrices = $outfile{sig_matrices_rescaled};
     }
 
 
@@ -1081,9 +1095,11 @@ sub ScanForSites {
     my ($matrix_file) = @_;
 
   &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan)") if ($main::verbose >= 2);
+
   ## matrix-scan parameters
   ## The upper threshold on Pval MUST be defined (if not, all
-  ## sites can be taken, resulting in a meaningless matrix)
+    ## sites can be taken, resulting in a meaningless matrix).
+  &RSAT::error::FatalError("Upper threshold on p-value must be defined for the ScanForSites() step") unless (defined($uth{Pval}));
   unless ($scan_parameters =~ /-uth Pval/) {
     $scan_parameters = " -uth Pval ".$uth{Pval}." ".$scan_parameters;
   }
