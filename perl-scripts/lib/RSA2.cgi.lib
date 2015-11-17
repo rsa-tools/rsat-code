@@ -2790,11 +2790,8 @@ sub PrintDyadReturnFields {
 sub MatrixFromPatterns_defaults {
   $default{to_matrix} = 1;
   $default{flanks} = 2;
-  $default{max_asmb_nb} = 5;
-  $default{min_weight} = 7.5;
-#  $default{gibbs_msps} = 1;
-#  $default{gibbs_iter} = 3;
-#  $default{gibbs_final} = '';
+  $default{max_asmb_nb} = 10;
+  $default{min_weight} = 5;
 }
 
 ################################################################
