@@ -49,6 +49,7 @@ package main;
   $top_matrices = "none";
   $skip_matrices = 0;
   $multiply = 1;
+  $column_rescaling = "none";
 
   local %selected_matrix = ();
 
@@ -423,6 +424,11 @@ package main;
     ## Multiply
     if ($multiply != 1) {
       $matrix->multiply($multiply);
+    }
+    
+    ## Scale factor
+    if (&IsReal($column_rescaling)) {
+      $matrix->rescale_columns($column_rescaling);
     }
     
     ## Insert columns 
@@ -864,6 +870,12 @@ OPTIONS
 		but can be useful for converting matrices for which
 		the actual counts are not provided but which only
 		provide relative frequencies.
+
+	-rescale #
+		Scale the matrix to a fixed value for the sums per
+		columns. If columns have unequal counts, the scaling
+		factor is adapted to the maximal count of residues per
+		column.
 
 	-insert_col_left #
 	-insert_col_right #
@@ -1384,6 +1396,7 @@ convert-matrix options
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -equi_pseudo	equiprobable distribution of pseudo-weights between residues
 -multiply #	multiply all values of the input matrices by #
+-rescale #	rescale values so that column sums reach the specified scale
 -insert_col_left #  Insert columns on the left flank of the count matrix.
 -insert_col_right # Insert columns on the right flank of the count matrix.
 -insert_col #	    Insert columns on both flanks of the count matrix.
@@ -1564,6 +1577,12 @@ sub ReadArguments {
 	    $multiply = $ARGV[$a+1];
 	    &RSAT::error::FatalError($multiply, "Invalid multiplicative factor. Must be a Real number")
 		unless &RSAT::util::IsReal($multiply);
+
+	    ## Column rescaling
+	} elsif ($ARGV[$a] eq "-rescale") {
+	    $column_rescaling = $ARGV[$a+1];
+	    &RSAT::error::FatalError($column_rescaling, "Invalid column rescaling number. Must be a strictly positive Real number.")
+		unless ((&RSAT::util::IsReal($column_rescaling)) && ($column_rescaling > 0));
 
 	    ## Insert columns on the left or right side
 	} elsif ($ARGV[$a] eq "-insert_col_left") {
