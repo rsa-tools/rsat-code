@@ -2843,6 +2843,8 @@ sub MatrixFromPatterns_print_form {
 sub MatrixFromPatterns_run {
   my $pssm_prefix = $tmp_file_path."_pssm";
   my $sig_matrix_file = $pssm_prefix."_sig_matrices.tf";
+  my $rescaled_sig_matrix_file = $pssm_prefix."_sig_matrices_rescaled.tf";
+#  my $sig_matrix_file_nr = $pssm_prefix."_sig_matrices_nr_cluster_root_motifs.tf";
 #  $gibbs_matrix_file = $pssm_prefix."_gibbs_matrices.txt";
   $pssm_file_tab = $pssm_prefix."_count_matrices.txt"; ## has to be global for the piping form
   $pssm_file_tf = $pssm_prefix."_count_matrices.tf"; ## has to be global for the piping form
@@ -2867,10 +2869,12 @@ sub MatrixFromPatterns_run {
   ## Run the command
   print "<hr><PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >= 0);
   system("$pssm_command");
-  push @result_files, ('significance matrices', $sig_matrix_file);
+  push @result_files, ('Significance matrices', $sig_matrix_file);
+  push @result_files, ('Rescaled significance matrices', $rescaled_sig_matrix_file);
+#  push @result_files, ('Non-redundant matrices', $sig_matrix_file_nr);
   #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
-  push @result_files, ('final matrices (transfac format)', $pssm_file_tf);
-  push @result_files, ('final matrices (tab format)', $pssm_file_tab);
+  push @result_files, ('Final matrices (transfac format)', $pssm_file_tf);
+  push @result_files, ('Final matrices (tab format)', $pssm_file_tab);
 
   my ($out_matrix_file) = &display_matrices_web($pssm_file_tab, "tab", 0);
   return ($out_matrix_file);
