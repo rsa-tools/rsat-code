@@ -44,7 +44,7 @@ package main;
     ## Verbose
     &Verbose if ($verbose);
 
-    print $out "#seq", "\t", "length", "\n" unless ($sum_only);
+    print $out "#seq", "\t", "length", "\n" unless (($sum_only) || ($main::verbose <= 0));
     $sum = 0;
 
     ## Compute sequence lengths from coordinates in bed format

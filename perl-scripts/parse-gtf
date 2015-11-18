@@ -186,6 +186,7 @@ package main;
   our $organism_name = ""; ## Organism name
   our $taxid = ""; ## Taxonomic ID of the organism
   our $taxonomy; ## Taxonomic description (required for some programs)
+  our $gtf_source = "parse_gtf"; ## Should be set to the reals ource, e.g. ensembl or ensemblgenomes, with the option -gtf_source
 
   our %infile = ();
   our %outfile = ();
@@ -199,6 +200,8 @@ package main;
 
   ## Supported tasks
   our @supported_tasks = qw(parse_gtf
+                            split_features
+                            seq_len
                             parse_fasta
                             config
                             install
@@ -247,9 +250,9 @@ package main;
 
   ################################################################
   ## Open output streams
-  &RSAT::message::TimeWarn("Opening output streams") if ($main::verbose >= 0);
 
   ## Log file
+  &RSAT::message::TimeWarn("Opening log stream") if ($main::verbose >= 2);
   $outfile{log} = $dir{output}."/log.txt"; $out = &OpenOutputFile($outfile{log});
 
   ## Open tab-delimited files for each feature type
@@ -281,10 +284,63 @@ package main;
   $outfile{"contigs_txt_rm"} = $dir{output}."/contigs_rm.txt";
   $handle{"contigs_txt_rm"} = &RSAT::util::OpenOutputFile($outfile{contigs_txt_rm});
  
+
+  ################################################################
+  ## Extract one GTF file per subtye of features
+  if ($task{split_features}) {
+    &RSAT::message::TimeWarn("Splitting features by type") if ($main::verbose >= 2);
+
+    my @feature_types = qw(exon
+                           five_prime_utr
+                           gene
+                           start_codon
+                           stop_codon
+                           three_prime_utr
+                           transcript);
+    foreach my $type (@feature_types) {
+	$outfile{$type.'_gtf'} =  $infile{"gtf"};
+	$outfile{$type.'_gtf'} =~ s/.gtf$/_${type}.gtf/;
+	&RSAT::message::TimeWarn("\t".$type, $outfile{$type.'_gtf'}) if ($main::verbose >= 2);
+	my $cmd = "awk '\$3 == \"${type}\"' $infile{gtf} > $outfile{$type.'_gtf'}";
+	&RSAT::util::doit($cmd);
+    }
+
+
+    ################################################################
+    ## Compute introns
+    &RSAT::message::Warning("I STILL NEED TO COMPUTE INTRONS");
+
+    ################################################################
+    ## Derive other feature types from the ones found in the GTF file
+    sub derive_feature {
+	my ($derived_type, $source_type, $plus_column, $minus_column) = @_;
+	($outfile{$derived_type.'_gtf'} = $infile{'gtf'}) =~ s/.gtf$/_${derived_type}.gtf/;
+	my $cmd = "awk -F'\t' '\$7==\"+\" {print \$1\"\t\"\$2\"\t".${derived_type}."\t\"\$".${plus_column}."\"\t\"\$".${plus_column}."\"\t\"\$6\"\t\"\$7\"\t\"\$8\"\t\"\$9}' ".$outfile{$source_type.'_gtf'}." > ".$outfile{$derived_type.'_gtf'}.'_tmp';
+	$cmd .= "; awk -F'\t' '\$7==\"-\" {print \$1\"\t\"\$2\"\t".${derived_type}."\t\"\$".${minus_column}."\"\t\"\$".${minus_column}."\"\t\"\$6\"\t\"\$7\"\t\"\$8\"\t\"\$9}' ".$outfile{$source_type.'_gtf'}." >> ".$outfile{$derived_type.'_gtf'}.'_tmp';
+	$cmd .= "; sort -k1,1 -k4,4n ".$outfile{$derived_type.'_gtf'}.'_tmp'." > ".$outfile{$derived_type.'_gtf'};
+	$cmd .= "; rm -f ".$outfile{$derived_type.'_gtf'}.'_tmp';
+	&RSAT::message::TimeWarn("Computing ".$derived_type." coordinates from ".$source_type, $outfile{$derived_type.'_gtf'}) if ($main::verbose >= 2);
+	&RSAT::util::doit($cmd);
+    }
+    &derive_feature("tss", "transcript", 4, 5);
+    &derive_feature("tts", "transcript", 5, 4);
+    &derive_feature("gene_start", "gene", 5, 4);
+    &derive_feature("gene_end", "gene", 5, 4);
+
+  }
+
+
+  ################################################################
+  ## Generate all the tables required by RSAT.
+  ##
+  ## This combines the parsing of the GTF fiel + some REST query to
+  ## collect organism properties.
+
   if ($task{"parse_gtf"}) {
 
     ################################################################
     ## Create a file with organism attribute, required for RSAT
+    &RSAT::message::TimeWarn("Getting organism attributes from REST web services") if ($main::verbose >= 2);
     my %organism = ();
     $organism{id} = $organism_name;
     $organism{source} = "ensemblgenomes";
@@ -376,7 +432,7 @@ package main;
       $attributes{strand} =~ s/\-/R/;
 
 
-      #    &RSAT::message::Debug($attribute) if ($main::verbose >= 0);
+      #    &RSAT::message::Debug($attribute) if ($main::verbose >= 2);
 
       next unless (defined($handle{$feature})); ## Skip feature types not defined in export list
 
@@ -428,6 +484,21 @@ package main;
     }
     close $main::in if ($main::infile{"gtf"});
 
+  }
+
+
+  ## Compute sequence lengths, which will be required for example
+  ## for some bedtools operation (option -g)
+  if ($task{"seq_len"}) {
+    foreach my $fasta_type ("fasta", "fasta_rm", "fasta_pep") {
+	$outfile{$fasta_type."_lengths"} = $infile{$fasta_type};
+	$outfile{$fasta_type."_lengths"} =~ s/\.fa$//;
+	$outfile{$fasta_type."_lengths"} .= "_lengths.tab";
+	my $cmd = "sequence-lengths -v 0 -i $infile{$fasta_type} -o $outfile{$fasta_type.'_lengths'}";
+	&RSAT::message::TimeWarn("Computing sequence lengths",$fasta_type, $outfile{$fasta_type."_lengths"}) if ($main::verbose >= 2);
+	&RSAT::util::doit($cmd);
+
+    }      
   }
 
   ################################################################
@@ -516,8 +587,8 @@ package main;
   ################################################################
   ## Update RSAT config
   if ($task{"config"})  {
-    &RSAT::message::TimeWarn("Configuring RSAT for organism", $organism_name) if ($main::verbose >= 0);
-    my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -org ".$organism_name;
+    &RSAT::message::TimeWarn("Configuring RSAT for organism", $organism_name) if ($main::verbose >= 2);
+    my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -source ".$gtf_source." -org ".$organism_name;
     $cmd .= " -task config";
     &RSAT::util::doit($cmd);
   }
@@ -525,8 +596,8 @@ package main;
   ################################################################
   ## Install the organism in RSAT
   if ($task{"install"})  {
-    &RSAT::message::TimeWarn("Installing organism in RSAT", $organism_name) if ($main::verbose >= 0);
-    my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -org ".$organism_name;
+    &RSAT::message::TimeWarn("Installing organism in RSAT", $organism_name) if ($main::verbose >= 2);
+    my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -source ".$gtf_source." -org ".$organism_name;
     $cmd .= " -task default";
     &RSAT::util::doit($cmd);
   }
@@ -737,6 +808,16 @@ Organism name for the installation on RSAT.
 
 =pod
 
+=item	B<-gtf_source source>
+
+Source of the GTF file. 
+
+=cut
+    } elsif ($arg eq "-gtf_source") {
+      $gtf_source = shift(@arguments);
+
+=pod
+
 =item	B<-taxid taxonomic ID>
 
 If specified, the program will collect the corresponding taxonomy from
@@ -761,10 +842,74 @@ Supported tasks:
 Parse the GTF file to extract genomic features (genes, transcripts,
 ...).
 
+=item I<split_features>
+
+Split the GTF file into one separate GTF file per feature type,
+according to the EnsembLGenomes typology.
+
+=over
+
+=item CDS
+
+=item exon
+
+=item five_prime_utr
+
+=item gene
+
+=item start_codon
+
+=item stop_codon
+
+=item three_prime_utr
+
+=item transcript
+
+=back
+
+In addition, from the above features we derive the coordinates of the
+following feature types.
+
+=over
+
+=item intron
+
+Introns are computed as the difference between genes and exons ("gene
+minus exon").
+
+=item gene_start
+
+5' end of each gene (taking into account its strand)
+
+=item gene_end
+
+3' end of each gene (taking into account its strand)
+
+=item TSS
+
+transcription start site, i.e. the 5' end of each transcript
+
+=item TTS
+
+transcription termination site, i.e. the 3' end of each transcript
+
+=back
+
 =item I<parse_fasta>
 
 Parse the fasta file(s) specified with the options -fasta and/or
 -fasta_rm, and export the sequences in raw format (required for RSAT).
+
+B<Note>: in the near future I (JvH) intend to avoid this, because it
+duplicates all the sequences -> occupies twice more space than
+needed. I first need to adapt retrieve-seq in order to get sequences
+directly from the indexed fasta genomes, via bedtools getfasta.
+
+=item I<seq_len>
+
+Compute the length of the sequences (chromosomes, masked chromosomes
+and peptides). Chromosome lengths are useful for some bedtools
+commands (e.g. shuffle).
 
 =item I<config>
 

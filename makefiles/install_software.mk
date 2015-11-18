@@ -383,6 +383,22 @@ install_ensembl_api_env:
 	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-variation/modules::$${PERL5LIB}'
 
 ################################################################
+## Install biomart Perl libraries
+# from: http://www.ensembl.org/info/data/biomart/biomart_perl_api.html#downloadbiomartperlapi
+# cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/biomart login                                                                                
+# # passwd: CVSUSER                                                                                                                             
+# cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/biomart co -r release-0_7 biomart-perl                                                    
+
+# # Paste the text obtained on
+# # [http://plants.ensembl.org/biomart/martservice?type=registry] into
+# # the biomart-perl/conf/martURLLocation.xml file
+# # PERL5LIB=${PERL5LIB}:${RSAT}/lib/biomart-perl/lib                                                                                         # export PERL5LIB                                                                                                                                
+# # check missing dependencies
+# perl bin/configure.pl -r conf/registryURLPointer.xml                                                                                        
+# #install the required modules
+
+
+################################################################
 ## Install the graph-based clustering algorithm MCL
 MCL_BASE_DIR=${SRC_DIR}/mcl
 #MCL_VERSION=12-135
@@ -569,20 +585,20 @@ install_bedtools: _download_bedtools _compile_bedtools _install_bedtools
 
 #http://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 #BED_VERSION=2.13.3
-BED_VERSION=2.17.0
-BED_ARCHIVE=BEDTools.v${BED_VERSION}.tar.gz
-BED_URL=http://bedtools.googlecode.com/files/${BED_ARCHIVE}
-BEDTOOL_MANUAL=http://bedtools.googlecode.com/files/BEDTools-User-Manual.v4.pdf
-BED_BASE_DIR=${SRC_DIR}/BEDTools
-BED_DOWNLOAD_DIR=${BED_BASE_DIR}/bedtools-${BED_VERSION}
+#BED_VERSION=2.17.0
+BED_VERSION=2.25.0
+BED_RELEASE=2
+BED_ARCHIVE=bedtools-${BED_VERSION}.tar.gz
+BED_URL=https://github.com/arq5x/bedtools2/releases/download/v${BED_VERSION}/${BED_ARCHIVE}
+BED_BASE_DIR=${SRC_DIR}/bedtools
+#BED_URL=http://bedtools.googlecode.com/files/${BED_ARCHIVE} #deprecated
+#BEDTOOL_MANUAL=http://bedtools.googlecode.com/files/BEDTools-User-Manual.v4.pdf
 _download_bedtools:
 	@echo
-	@echo "Downloading BEDTools ${BED_VERSION}"
+	@echo "Downloading bedtools ${BED_VERSION}"
 	@echo
 	@mkdir -p ${BED_BASE_DIR}
-	(cd ${BED_BASE_DIR}; wget -nv -nd ${BED_URL} ; tar -xpzf ${BED_ARCHIVE}; \
-		wget ${BEDTOOL_MANUAL})
-	@echo ${BED_DOWNLOAD_DIR}
+	(cd ${BED_BASE_DIR}; wget -nv -nd ${BED_URL} ; tar xpfz ${BED_ARCHIVE})
 
 BED_GIT_DIR=${SRC_DIR}/bedtools
 _git_bedtools:
@@ -590,14 +606,14 @@ _git_bedtools:
 	(cd ${SRC_DIR}; git clone git://github.com/arq5x/bedtools.git)
 
 #BED_SRC_DIR=${BED_GIT_DIR}
-BED_SRC_DIR=${BED_DOWNLOAD_DIR}
+BED_SRC_DIR=${BED_BASE_DIR}/bedtools${BED_RELEASE}
 BED_BIN_DIR=${BED_SRC_DIR}/bin
 _compile_bedtools:
 	@echo
 	@echo "Compiling bedtools from ${BED_SRC_DIR}"
 	@echo
 	@mkdir -p ${BED_SRC_DIR}
-	(cd ${BED_SRC_DIR}; make clean; make)
+	(cd ${BED_SRC_DIR}; make all)
 
 _install_bedtools:
 	@echo
@@ -626,11 +642,12 @@ _download_biotoolbox:
 ################################################################
 ## Install MEME (Tim Bailey)
 MEME_BASE_DIR=${SRC_DIR}/MEME
-MEME_VERSION=4.10.0
-MEME_PATCH=_1
+MEME_VERSION=4.10.2
+#MEME_PATCH=_1 #Oct2015
 #http://ebi.edu.au/ftp/software/MEME/4.9.1/meme_4.9.1_2.tar.gz
-MEME_ARCHIVE=meme_${MEME_VERSION}${MEME_PATCH}.tar.gz
-MEME_URL=ebi.edu.au/ftp/software/MEME/${MEME_VERSION}/${MEME_ARCHIVE}
+#http://meme-suite.org/meme-software/4.10.2/meme_4.10.2.tar.gz en Oct2015
+MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
+MEME_URL=meme-suite.org/meme-software/${MEME_VERSION}/${MEME_ARCHIVE}
 MEME_INSTALL_SUBDIR=${SRC_DIR}/MEME
 MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
 MEME_LOCAL_URL=http://localhost/meme
@@ -758,10 +775,12 @@ _compile_patser:
 ################################################################
 ## Install consensus (J.Hertz)
 #CONSENSUS_VERSION=consensus-v6c.1 ## Not distributed anymore ?
-CONSENSUS_VERSION=consensus-v6c
+CONSENSUS_VERSION=consensus-v6d.2
 CONSENSUS_TAR=${CONSENSUS_VERSION}.tar.gz
 #CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
 CONSENSUS_URL=http://stormo.wustl.edu/src/
+#CONSENSUS_URL=http://gzhertz.home.comcast.net/~gzhertz/
+#does not compile in baobab Oct2015!
 CONSENSUS_DIR=${SRC_DIR}/consensus/${CONSENSUS_VERSION}
 install_consensus: _download_consensus _compile_consensus
 

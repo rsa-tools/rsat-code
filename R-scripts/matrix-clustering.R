@@ -25,8 +25,7 @@ required.packages = c("RJSONIO",
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
-                      "gplots",
-                      "devtools")
+                      "gplots")
 
 ## List of required packages from Bioconductor
 required.packages.bioconductor <- c("ctc")
@@ -223,16 +222,16 @@ if(number.of.motifs > 1){
 
 
 #         par(mar=c(0, 0, 0, 0))
-        plot.new()
-        legend("center",      # location of the legend on the heatmap plot
-        legend = names(clusters), # category labels
-        col = rainbow(length(clusters)),  # color key
-        lty= 1,             # line style
-        lwd = 0.5,            # line width
-        pch= 1,
-        cex= 0.75,
-        ncol = 3,
-        x.intersp= 0.5)
+#         plot.new()
+#         legend("center",      # location of the legend on the heatmap plot
+#         legend = names(clusters), # category labels
+#         col = rainbow(length(clusters)),  # color key
+#         lty= 1,             # line style
+#         lwd = 0.5,            # line width
+#         pch= 1,
+#         cex= 0.75,
+#         ncol = 3,
+#         x.intersp= 0.5)
 
         draw.heatmap.motifs(dist.table,
                             method = hclust.method,
@@ -385,12 +384,12 @@ i <- sapply(1:length(clusters), function(nb){
                  JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
                  write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
 
-                 ## For consistency, Create the folder with the merged consensuses
-                 dir.create(paste(cluster.folder, "/merged_consensuses", sep = ""), recursive = TRUE, showWarnings = FALSE)
-                 flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
-                 if(flag >= 1){
-                   system(paste("rm -r ", cluster.folder, "/merged_consensuses", "/*", sep = ""))
-                 }
+#                  ## For consistency, Create the folder with the merged consensuses
+#                  dir.create(paste(cluster.folder, "/merged_consensuses", sep = ""), recursive = TRUE, showWarnings = FALSE)
+#                  flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
+#                  if(flag >= 1){
+#                    system(paste("rm -r ", cluster.folder, "/merged_consensuses", "/*", sep = ""))
+#                  }
                }
 
                intermediate.levels.counter <<- intermediate.levels.counter + 1
@@ -510,37 +509,3 @@ write.table(alignment.table, file = alignment.file, sep = "\t", quote = FALSE, r
 
 ## Print the table with the intermediate alignment (it wll be used in the perl code to create the branch-motifs)
 write.table(intermediate.levels, file = paste(out.prefix, "_tables/intermediate_alignments.tab", sep = ""), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE )
-
-
-################################################
-## Print the tree of each cluster, separately ##
-################################################
-## ## Get the aligment width, to calculate the limits of the plot
-## alignment.width <- sapply(tree$labels, function(X){
-##   nchar(X)
-## })
-## alignment.width <- max(alignment.width)
-## mar4 <- alignment.width - 20
-
-## ## Export the tree with the aligment
-## plot.format <- "pdf" ## Default for testing inside the loop
-## for (plot.format in c("pdf", "png")) {
-##   ## w.inches <- 10 ## width in inches
-##   ## h.inches <- 7 ## height in inches
-##   w.inches <- 15 ## width in inches
-##   h.inches <- 7 ## height in inches
-##   h.inches <- 2 + round(0.25* length(motifs.info)) ## height in inches
-##   resol <- 72 ## Screen resolution
-##   tree.drawing.file <- paste(sep="", out.prefix, "_consensus_tree_forest_", cluster.nb, ".", plot.format)
-##   if (plot.format == "pdf") {
-##     pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
-##   } else if (plot.format == "png") {
-##     png(filename=tree.drawing.file, width=w.inches*resol, height=h.inches*resol)
-##   }
-
-##   ## dev.new(width=10, height=7)
-##   par(mar=c(3,2,2,mar4),family="mono")
-##   plot(as.dendrogram(tree), horiz=TRUE, main = paste("Aligned consensus tree cluster", cluster.nb, ";labels:" ,paste(labels, collapse = ","), sep = " "))
-##   dev.off()
-## }
-## Pass the upper thresholds

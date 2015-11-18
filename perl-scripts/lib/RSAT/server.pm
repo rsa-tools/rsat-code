@@ -662,69 +662,60 @@ sub CheckEmailAddress {
 
 =cut
 
-sub send_mail_TLS {
-    my ($message, $recipient, $subject, $smtp_server, $hello, $port, $user, $pass ) = @_;
+sub send_mail_STARTTLS {
+    my ($message, $recipient, $subject, $smtp_server, $user, $pass, $from ) = @_;
 
-    #if ($ENV{mail_supported} eq "no") {
-    #&RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
-    #} else {
-    if(1){
+    if ($ENV{mail_supported} eq "no") {
+    &RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
+    } else {
+    
     ## Check if recipient argument contains a valid email address
     &CheckEmailAddress($recipient);
     
-    # Set a subject if not specificed in arguents
+    ## Set a subject if not specificed in arguents
     unless ($subject) {
         $script_name = $0;
         $subject = join " ", "[RSAT]", $script_name, &RSAT::util::AlphaDate();
     }
-
-    # Set the TLS connection
-    if(!$smtp_server){ $smtp_server = $ENV{smtptls} }
-    if(!$port){ 
-        if($ENV{smtptls_port}){ $port = $ENV{smtptls_port} }
-        else{ $port = 587 }
-    }
-    if(!$hello){ $hello = $ENV{smtptls_hello} }
-    if(!$user){ $user = $ENV{smtptls_user} }
-    if(!$pass){ $pass = $ENV{smtptls_pass} }  
+    
+    ## Set the STARTTLS connection
+    if(!$smtp_server){ $smtp_server = $ENV{starttls} }
+    if(!$user){ $user = $ENV{starttls_user} }
+    if(!$pass){ $pass = $ENV{starttls_pass} }  
+    if(!$from){ $from = $ENV{smtp_sender} }
 
     ## Issue a warning to indicate that mail will be sent
     if (($ENV{rsat_echo} >= 1) || ($main::verbose >= 2)) {
     my $mail_warn = "Sending mail";
     $mail_warn .= " to \"".$recipient."\"" if ($recipient);
     $mail_warn .= " ; Subject: \"".$subject."\"";
-    $mail_warn .= " SMTP server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
+    $mail_warn .= " SMTP STARTTLS server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
     &RSAT::message::TimeWarn($mail_warn);
     }
  
     ## Compose message
-    use Email::Send;
     my $email = Email::Simple->create(
     header => [
         To      => $recipient,
-        From    => 'compbio@eead.csic.es',
+        From    => $from,
         Subject => $subject,
     ],
     body => $message,
     );
-    &RSAT::message::Debug( "email", $email) if ($main::verbose >= 3);
 
-    ## Try to send the email 
-    my $mailer = Email::Send->new( {
-        mailer => 'SMTP::TLS',
-        mailer_args => [
-            Host => $smtp_server,
-            Port => $port,
-            User => $user,
-            Password => $pass,
-            Hello => $hello,
-        ]
-    } );
-    
-    eval { $mailer->send($email) };
+    ## Try to send the email
+    use Email::Sender::Transport::SMTPS;
+    my $transport = Email::Sender::Transport::SMTPS->new(
+            host => $smtp_server,
+            ssl  => 'starttls',
+            sasl_username => $user,
+            sasl_password => $pass,
+        debug => 0, # or 1
+   );
 
-    &RSAT::error::FatalError ("Error sending email ", $@) if $@;
-    }
+   eval{ Email::Sender::Simple->send($email, {transport => $transport}) };
+   &RSAT::error::FatalError ("Error sending email ", $@) if $@;
+   }
 }
 
 =pod
@@ -734,6 +725,17 @@ sub send_mail_TLS {
 =cut
 sub send_mail {
     my ($message, $recipient, $subject) = @_;
+
+    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	(($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
+	if (($ENV{starttls} ne "") &&
+	    ($ENV{starttls_user} ne "") &&
+	    ($ENV{starttls_pass} ne "")) {
+	    &send_mail_STARTTLS($message, 
+				$recipient, 
+				$subject);
+	}
+    }
 
     if ($ENV{mail_supported} eq "no") {
 	&RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
