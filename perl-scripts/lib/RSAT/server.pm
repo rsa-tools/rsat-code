@@ -658,6 +658,77 @@ sub CheckEmailAddress {
 
 =pod
 
+=item B<Send an email from a TLS server
+
+=cut
+
+sub send_mail_TLS {
+    my ($message, $recipient, $subject, $smtp_server, $hello, $port, $user, $pass ) = @_;
+
+    #if ($ENV{mail_supported} eq "no") {
+    #&RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
+    #} else {
+    if(1){
+    ## Check if recipient argument contains a valid email address
+    &CheckEmailAddress($recipient);
+    
+    # Set a subject if not specificed in arguents
+    unless ($subject) {
+        $script_name = $0;
+        $subject = join " ", "[RSAT]", $script_name, &RSAT::util::AlphaDate();
+    }
+
+    # Set the TLS connection
+    if(!$smtp_server){ $smtp_server = $ENV{smtptls} }
+    if(!$port){ 
+        if($ENV{smtptls_port}){ $port = $ENV{smtptls_port} }
+        else{ $port = 587 }
+    }
+    if(!$hello){ $hello = $ENV{smtptls_hello} }
+    if(!$user){ $user = $ENV{smtptls_user} }
+    if(!$pass){ $pass = $ENV{smtptls_pass} }  
+
+    ## Issue a warning to indicate that mail will be sent
+    if (($ENV{rsat_echo} >= 1) || ($main::verbose >= 2)) {
+    my $mail_warn = "Sending mail";
+    $mail_warn .= " to \"".$recipient."\"" if ($recipient);
+    $mail_warn .= " ; Subject: \"".$subject."\"";
+    $mail_warn .= " SMTP server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
+    &RSAT::message::TimeWarn($mail_warn);
+    }
+ 
+    ## Compose message
+    use Email::Send;
+    my $email = Email::Simple->create(
+    header => [
+        To      => $recipient,
+        From    => 'compbio@eead.csic.es',
+        Subject => $subject,
+    ],
+    body => $message,
+    );
+    &RSAT::message::Debug( "email", $email) if ($main::verbose >= 3);
+
+    ## Try to send the email 
+    my $mailer = Email::Send->new( {
+        mailer => 'SMTP::TLS',
+        mailer_args => [
+            Host => $smtp_server,
+            Port => $port,
+            User => $user,
+            Password => $pass,
+            Hello => $hello,
+        ]
+    } );
+    
+    eval { $mailer->send($email) };
+
+    &RSAT::error::FatalError ("Error sending email ", $@) if $@;
+    }
+}
+
+=pod
+
 =item B<Send an email message>
 
 =cut
@@ -731,6 +802,7 @@ sub send_mail {
 	Email::Sender::Simple->send($email, {transport => $transport});
     }
 }
+
 
 
 =pod
