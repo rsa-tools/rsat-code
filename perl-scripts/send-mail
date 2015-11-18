@@ -83,8 +83,8 @@ package main;
   our %infile = ();
   our %outfile = ();
   our %args = (); ## Arguments passed to &RSAT::server::send_mail()
-  our $TLS = 0;
-  our @tlsparams = (); ## passed to &RSAT::server::send_mail_TLS()
+  our $STARTTLS = 0;
+  our @starttlsparams = (); ## passed to &RSAT::server::send_mail_STARTTLS()
  
   our $verbose = 0;
   our $in = STDIN;
@@ -115,8 +115,8 @@ package main;
 
   ################################################################
   ## Execute the command
-  if($TLS == 1){
-    &RSAT::server::send_mail_TLS($message, $recipient, $subject, @tlsparams);
+  if($STARTTLS == 1){
+    &RSAT::server::send_mail_STARTTLS($message, $recipient, $subject, @starttlsparams);
   }
   else {
     &RSAT::server::send_mail($message, $recipient, $subject, %args);
@@ -254,16 +254,16 @@ Subject of the message.
 
 =pod
 
-=item	B<-tls host:hello:port:user:pass>
+=item	B<-starttls host::user::pass::sender@address>
 
-Optional details for SMTP::TLS mail servers which require authentification, by default taken from ENV.
+Optional details for SMTP::STARTTLS servers, by default taken from ENV.
 
 =cut
-    } elsif ($arg eq "-tls") {
-      $TLS = 1;
-      my @params = split(/:/,shift(@arguments));
-      if(scalar(@params) == 5) { # assumes host:hello:port:user:pass order
-        @tlsparams = @params;
+    } elsif ($arg eq "-starttls") {
+      $STARTTLS = 1;
+      my @params = split(/::/,shift(@arguments));
+      if(scalar(@params) == 4) { # assumes host:user:pass order
+        @starttlsparams = @params;
       }
 
 #     } elsif ($arg eq "-password") {
@@ -296,7 +296,7 @@ Optional details for SMTP::TLS mail servers which require authentification, by d
 ################################################################
 ## Verbose message
 sub Verbose {
-  print $out "; send-mail TLS=$TLS";
+  print $out "; send-mail STARTTLS=$STARTTLS";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
   if (%main::infile) {

@@ -33,7 +33,10 @@ $default{matrix_file}="";
 $default{matrix_format} = "transfac";
 $default{kfold}="none";
 $default{permutation1} = "1";
+$default{sep_perm1} = "";
 $default{permutation2} = "1";
+$default{sep_perm2} = "";
+$checked{$default{nwd}} ="";
 $default{tag1} = "sequence_set1";
 $default{tag2} = "sequence_set2";
 $default{pseudo_prior} = "pseudo_prior";
@@ -46,7 +49,6 @@ $checked{$default{bg_method}} = "CHECKED";
 $default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
 #$default{html_title}="";
 $default{markov_order} = "0";
-$default{nwd}="";
 $default{m_sites}="1";
 
 
@@ -169,306 +171,408 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 print $query->start_multipart_form(-action=>"matrix-quality_form.cgi");
-$demo_html_title=" LexA matrix from RegulonDB";
-$demo_matrix="********************************************************************************
-MEME - Motif discovery tool
-********************************************************************************
-MEME version 3.5.4 (Release date: 3.5.4)
-
-For further information on how to interpret these results or to get
-a copy of the MEME software please access http://meme.nbcr.net.
-
-This file may be used as input to the MAST algorithm for searching
-sequence databases for matches to groups of motifs.  MAST is available
-for interactive use and downloading at http://meme.nbcr.net.
-********************************************************************************
-
-
-********************************************************************************
-REFERENCE
-********************************************************************************
-If you use this program in your research, please cite:
-
-Timothy L. Bailey and Charles Elkan,
-\"Fitting a mixture model by expectation maximization to discover
-motifs in biopolymers\", Proceedings of the Second International
-Conference on Intelligent Systems for Molecular Biology, pp. 28-36,
-AAAI Press, Menlo Park, California, 1994.
-********************************************************************************
-
-
-********************************************************************************
-TRAINING SET
-********************************************************************************
-DATAFILE= /bio/jvanheld2/matrix_eval/data/Sites_FNA_NR/LexA.fna
-ALPHABET= ACGT
-Sequence name            Weight Length  Sequence name            Weight Length  
--------------            ------ ------  -------------            ------ ------  
-LexA|65834-65853         1.0000     40  LexA|738568-738587       1.0000     40  
-LexA|738659-738678       1.0000     40  LexA|812655-812674       1.0000     40  
-LexA|832259-832278       1.0000     40  LexA|932351-932370       1.0000     40  
-LexA|1020162-1020181     1.0000     40  LexA|1229931-1229950     1.0000     40  
-LexA|1229951-1229970     1.0000     40  LexA|1944050-1944069     1.0000     40  
-LexA|1944102-1944121     1.0000     40  LexA|2749749-2749768     1.0000     40  
-LexA|2749771-2749790     1.0000     40  LexA|2821851-2821870     1.0000     40  
-LexA|3208751-3208770     1.0000     40  LexA|3851322-3851341     1.0000     40  
-LexA|3995930-3995949     1.0000     40  LexA|4255050-4255069     1.0000     40  
-LexA|4255091-4255110     1.0000     40  LexA|4255112-4255131     1.0000     40  
-LexA|4271978-4271997     1.0000     40  
-********************************************************************************
-
-********************************************************************************
-COMMAND LINE SUMMARY
-********************************************************************************
-This information can also be useful in the event you wish to report a
-problem with the MEME software.
-
-command: meme /bio/jvanheld2/matrix_eval/data/Sites_FNA_NR/LexA.fna -dna -mod oops -revcomp -nostatus -minw 22 -maxw 22 -bfile /bio/jvanheld2/matrix_eval/data/bg_freqs/2nt_upstream-noorf_Escherichia_coli_K12-ovlp-2str.meme_bg -dir /home/scmbb/installations 
-
-model:  mod=          oops    nmotifs=         1    evt=           inf
-object function=  E-value of product of p-values
-width:  minw=           22    maxw=           22    minic=        0.00
-width:  wg=             11    ws=              1    endgaps=       yes
-nsites: minsites=       21    maxsites=       21    wnsites=       0.8
-theta:  prob=            1    spmap=         uni    spfuzz=        0.5
-em:     prior=   dirichlet    b=            0.01    maxiter=        50
-        distance=    1e-05
-data:   n=             840    N=              21
-strands: + -
-sample: seed=            0    seqfrac=         1
-Letter frequencies in dataset:
-A 0.310 C 0.190 G 0.190 T 0.310 
-Background letter frequencies (from /bio/jvanheld2/matrix_eval/data/bg_freqs/2nt_upstream-noorf_Escherichia_coli_K12-ovlp-2str.meme_bg):
-A 0.294 C 0.206 G 0.206 T 0.294 
-********************************************************************************
-
-
-********************************************************************************
-MOTIF  1	width =   22   sites =  21   llr = 280   E-value = 2.6e-046
-********************************************************************************
---------------------------------------------------------------------------------
-	Motif 1 Description
---------------------------------------------------------------------------------
-Simplified        A  4627::::8:7374644:a:14
-pos.-specific     C  ::::a::113:1:3124a::31
-probability       G  ::12::a1:1111::11::a22
-matrix            T  5361:a:8:61522221:::43
-
-         bits    2.3     * *          *    
-                 2.0     * *          * *  
-                 1.8     ***          ***  
-                 1.6     ***          ***  
-Information      1.4     ***          ***  
-content          1.1     ***          ***  
-(19.2 bits)      0.9     ****         ***  
-                 0.7 *  *******       ***  
-                 0.5 *********** ***  ***  
-                 0.2 *************** ***** 
-                 0.0 ----------------------
-
-Multilevel           TATACTGTATATAAAAACAGTA
-consensus            ATAG     C A CTCC   CT
-sequence                          T T      
-                                           
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-	Motif 1 sites sorted by position p-value
---------------------------------------------------------------------------------
-Sequence name            Strand  Start   P-value                     Site       
--------------            ------  ----- ---------            ----------------------
-LexA|2749749-2749768         +      9  5.40e-11   CCAGCCTC TTTACTGTATATAAAACCAGTT TATACTGTAC
-LexA|3851322-3851341         -     11  8.07e-10   TATAGAAG TTTACTGTATAAATAAACAGTA ATATTTGGAC
-LexA|812655-812674           -     11  2.09e-09   CAACAAAT TATACTGGATAAAAAAACAGTT CATCACCATA
-LexA|4255112-4255131         +      9  3.54e-09   CTCACAGC ATAACTGTATATACACCCAGGG GGCGGAATGA
-LexA|1229951-1229970         +      9  3.54e-09   AAGAACAG ACTACTGTATATAAAAACAGTA TAACTTCAGG
-LexA|4255091-4255110         +      9  4.19e-09   AATCGCCT TTTGCTGTATATACTCACAGCA TAACTGTATA
-LexA|2749771-2749790         +      9  5.80e-09   AACCAGTT TATACTGTACACAATAACAGTA ATGGTTTTTC
-LexA|3995930-3995949         +      9  4.18e-08   TAATCAGC AAATCTGTATATATACCCAGCT TTTTGGCGGA
-LexA|4271978-4271997         -     11  5.35e-08   TGCATTCC AATACTGTATATTCATTCAGGT CAATTTGTGT
-LexA|1944050-1944069         +      9  6.79e-08   GATAAAAA AATGCTGGATAGATATCCAGCG AAGGATGAAG
-LexA|832259-832278           -     11  6.79e-08   AAACCTGA AATACTGTATAAACAGCCAATA TTGTGGCATT
-LexA|2821851-2821870         +      9  9.59e-08   GAAGCAAT TATACTGTATGCTCATACAGTA TCAAGTGTTT
-LexA|65834-65853             -     11  1.83e-07   GGGCAGTA ATGACTGTATAAAACCACAGCC AATCAAACGA
-LexA|1020162-1020181         -     14  2.24e-07      CTGGA TGTACTGTACATCCATACAGTA ACTCACAGGG
-LexA|4255050-4255069         -     11  6.76e-07   TGGAACCA TAAACTGCACAATAAACCAGAG ATTTATCGAA
-LexA|932351-932370           -     11  2.13e-06   CCAGTACT GTTGCTGTATGGATTAACAGGA GTGTAATCAA
-LexA|738568-738587           -     11  4.05e-06   CCACGGCG ATAACTGTCGATAAGCGCAGCC AGCTGCTGGC
-LexA|738659-738678           -     11  1.16e-05   TTCGAAAT AACGCTGCCCTGAAAGCCAGGC GTCAGGATAA
-LexA|3208751-3208770         +     10  1.26e-05  ATTTTGAAA TAAGCTGGCGTTGATGCCAGCG GCAAACCGA 
-LexA|1944102-1944121         -     12  1.26e-05    AATAAAT TATACTGTGCCATTTTTCAGTT CATCGAGACA
-LexA|1229931-1229950         -     11  4.68e-05   ATATACAG TAGTCTGTTCTTGCCAGCAGAT CAATACTGAT
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-	Motif 1 block diagrams
---------------------------------------------------------------------------------
-SEQUENCE NAME            POSITION P-VALUE  MOTIF DIAGRAM
--------------            ----------------  -------------
-LexA|2749749-2749768              5.4e-11  8_[+1]_10
-LexA|3851322-3851341              8.1e-10  10_[-1]_8
-LexA|812655-812674                2.1e-09  10_[-1]_8
-LexA|4255112-4255131              3.5e-09  8_[+1]_10
-LexA|1229951-1229970              3.5e-09  8_[+1]_10
-LexA|4255091-4255110              4.2e-09  8_[+1]_10
-LexA|2749771-2749790              5.8e-09  8_[+1]_10
-LexA|3995930-3995949              4.2e-08  8_[+1]_10
-LexA|4271978-4271997              5.3e-08  10_[-1]_8
-LexA|1944050-1944069              6.8e-08  8_[+1]_10
-LexA|832259-832278                6.8e-08  10_[-1]_8
-LexA|2821851-2821870              9.6e-08  8_[+1]_10
-LexA|65834-65853                  1.8e-07  10_[-1]_8
-LexA|1020162-1020181              2.2e-07  13_[-1]_5
-LexA|4255050-4255069              6.8e-07  10_[-1]_8
-LexA|932351-932370                2.1e-06  10_[-1]_8
-LexA|738568-738587                4.1e-06  10_[-1]_8
-LexA|738659-738678                1.2e-05  10_[-1]_8
-LexA|3208751-3208770              1.3e-05  9_[+1]_9
-LexA|1944102-1944121              1.3e-05  11_[-1]_7
-LexA|1229931-1229950              4.7e-05  10_[-1]_8
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-	Motif 1 in BLOCKS format
---------------------------------------------------------------------------------
-BL   MOTIF 1 width=22 seqs=21
-LexA|2749749-2749768     (    9) TTTACTGTATATAAAACCAGTT  1 
-LexA|3851322-3851341     (   11) TTTACTGTATAAATAAACAGTA  1 
-LexA|812655-812674       (   11) TATACTGGATAAAAAAACAGTT  1 
-LexA|4255112-4255131     (    9) ATAACTGTATATACACCCAGGG  1 
-LexA|1229951-1229970     (    9) ACTACTGTATATAAAAACAGTA  1 
-LexA|4255091-4255110     (    9) TTTGCTGTATATACTCACAGCA  1 
-LexA|2749771-2749790     (    9) TATACTGTACACAATAACAGTA  1 
-LexA|3995930-3995949     (    9) AAATCTGTATATATACCCAGCT  1 
-LexA|4271978-4271997     (   11) AATACTGTATATTCATTCAGGT  1 
-LexA|1944050-1944069     (    9) AATGCTGGATAGATATCCAGCG  1 
-LexA|832259-832278       (   11) AATACTGTATAAACAGCCAATA  1 
-LexA|2821851-2821870     (    9) TATACTGTATGCTCATACAGTA  1 
-LexA|65834-65853         (   11) ATGACTGTATAAAACCACAGCC  1 
-LexA|1020162-1020181     (   14) TGTACTGTACATCCATACAGTA  1 
-LexA|4255050-4255069     (   11) TAAACTGCACAATAAACCAGAG  1 
-LexA|932351-932370       (   11) GTTGCTGTATGGATTAACAGGA  1 
-LexA|738568-738587       (   11) ATAACTGTCGATAAGCGCAGCC  1 
-LexA|738659-738678       (   11) AACGCTGCCCTGAAAGCCAGGC  1 
-LexA|3208751-3208770     (   10) TAAGCTGGCGTTGATGCCAGCG  1 
-LexA|1944102-1944121     (   12) TATACTGTGCCATTTTTCAGTT  1 
-LexA|1229931-1229950     (   11) TAGTCTGTTCTTGCCAGCAGAT  1 
+$demo_html_title=" LexA and CTCF matrices from RegulonDB 2015";
+$demo_matrix="AC  LexA.1nt_upstream-noorf-ovlp-2str.20.cons1
+XX
+ID  LexA.1nt_upstream-noorf-ovlp-2str.20.cons1
+XX
+DE  waCTGtatawAwahmCAGya
+P0       A     C     G     T
+1       16     6     1    17
+2       26     4     7     3
+3        1    39     0     0
+4        2     1     0    37
+5        0     1    39     0
+6        6     3     8    23
+7       30     5     0     5
+8        1     3     5    31
+9       31     1     6     2
+10      16     4     6    14
+11      33     0     2     5
+12      18     7     1    14
+13      25     1     5     9
+14      16     9     3    12
+15      23    16     1     0
+16       1    38     1     0
+17      37     1     0     2
+18       4     0    35     1
+19       2    12     7    19
+20      21     4     7     8
+XX
+BA  40 sequences
+XX
+BS  GACTGTATAAAACCACAGCC; site_0; 1; 20; 0; p
+BS  TCCTCTCTGCAATACGCAGA; site_1; 1; 20; 0; p
+BS  AGCTGAATAAATATACAGCA; site_2; 1; 20; 0; p
+BS  CACTGTATACTTTACCAGTG; site_3; 1; 20; 0; p
+BS  ACCAGAATATACATAATAGT; site_4; 1; 20; 0; p
+BS  CACTGTATAAATAAACAGCT; site_5; 1; 20; 0; p
+BS  AACTGATTAAAAACCCAGCG; site_6; 1; 20; 0; p
+BS  AACTGTCGATAAGCGCAGCC; site_7; 1; 20; 0; p
+BS  CGCTGCCCTGAAAGCCAGGC; site_8; 1; 20; 0; p
+BS  TACTGGATAAAAAAACAGTT; site_9; 1; 20; 0; p
+BS  TACTGTATAAACAGCCAATA; site_10; 1; 20; 0; p
+BS  TGCTGTATGGATTAACAGGA; site_11; 1; 20; 0; p
+BS  TACTGTATGGATGTACAGTA; site_12; 1; 20; 0; p
+BS  ACCTGTATAAATAACCAGTA; site_13; 1; 20; 0; p
+BS  ATCTGCTGGCAAGAACAGAC; site_14; 1; 20; 0; p
+BS  TACTGTATATAAAAACAGTA; site_15; 1; 20; 0; p
+BS  CACTGTATAAAAATCCTATA; site_16; 1; 20; 0; p
+BS  AACTGTCGATACGTACAGTA; site_17; 1; 20; 0; p
+BS  CACTGGATAGATAACCAGCA; site_18; 1; 20; 0; p
+BS  TACTGTATAAAATCACAGTT; site_19; 1; 20; 0; p
+BS  TGCTGGATAGATATCCAGCG; site_20; 1; 20; 0; p
+BS  AACTGAAAAATGGCACAGTA; site_21; 1; 20; 0; p
+BS  TACCGGATCGTTTCACAGTA; site_22; 1; 20; 0; p
+BS  TACTGTATATAAAAACAGTA; site_23; 1; 20; 0; p
+BS  AACTGGATAAAATTACAGGG; site_24; 1; 20; 0; p
+BS  TACTGTATATAAAACCAGTT; site_25; 1; 20; 0; p
+BS  TACTGTACACAATAACAGTA; site_26; 1; 20; 0; p
+BS  TACTGTATGAGCATACAGTA; site_27; 1; 20; 0; p
+BS  CTATGTTTATATAACCATCA; site_28; 1; 20; 0; p
+BS  AGCTGGCGTTGATGCCAGCG; site_29; 1; 20; 0; p
+BS  AACTGGATAATCATACAGTA; site_30; 1; 20; 0; p
+BS  TGCAGGTTATAAAACCAGCA; site_31; 1; 20; 0; p
+BS  AACTGTATATAAATACAGTT; site_32; 1; 20; 0; p
+BS  TACTGTATAAATAAACAGTA; site_33; 1; 20; 0; p
+BS  ATCTGTATATATACCCAGCT; site_34; 1; 20; 0; p
+BS  AACTGCACAATAAACCAGAG; site_35; 1; 20; 0; p
+BS  TGCTGTATATACTCACAGCA; site_36; 1; 20; 0; p
+BS  AACTGTATATACACCCAGGG; site_37; 1; 20; 0; p
+BS  ACCTGAATGAATATACAGTA; site_38; 1; 20; 0; p
+BS  TACTGATGATATATACAGGT; site_39; 1; 20; 0; p
+CC  program: consensus
+CC  id: LexA.1nt_upstream-noorf-ovlp-2str.20.cons1
+CC  matrix.nb: 1
+CC  command: consensus -a /state/partition1/space14/PGC/RegulonDB/local/data/Matrices/data/bg_freqs/1nt_upstream-noorf_Escherichia_coli_K12-ovlp-2str.cons_bg -L 20 -d -pt 0 -pf 1 -c2
+CC  sites: 40
+CC  cons.unadjusted.information: 11.7602
+CC  cons.adjusted.information: 10.9922
+CC  cons.ln.Pval: -367.453
+CC  cons.Pval: 2.6136E-160
+CC  cons.ln.exp: -244.504
+CC  cons.exp: 6.50303E-107
+CC  matrix.nb: 1
+CC  sites: 40
+CC  consensus.strict: taCTGtataaAaaaaCAGta
+CC  consensus.strict.rc: TACTGTTTTTTTATACAGTA
+CC  consensus.IUPAC: waCTGtatawAwahmCAGya
+CC  consensus.IUPAC.rc: TRCTGKDTWTWTATACAGTW
+CC  consensus.regexp: [at]aCTGtata[at]A[at]a[act][ac]CAG[ct]a
+CC  consensus.regexp.rc: T[AG]CTG[GT][AGT]T[AT]T[AT]TATACAGT[AT]
+XX
 //
-
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-	Motif 1 position-specific scoring matrix
---------------------------------------------------------------------------------
-log-odds matrix: alength= 4 w= 22 n= 399 bayes= 4.16993 E= 2.6e-046 
-    55  -1104   -211     83 
-    96   -211   -211     18 
-   -30   -211   -111    108 
-   118  -1104     21   -162 
- -1104    228  -1104  -1104 
- -1104  -1104  -1104    177 
- -1104  -1104    228  -1104 
- -1104   -111    -53    137 
-   137    -53   -211   -262 
- -1104     47   -111    108 
-   128   -211   -111   -104 
-    -4   -111    -53     70 
-   118   -211   -111    -62 
-    55     69  -1104    -30 
-   108   -111   -211    -30 
-    38     21    -53    -30 
-    55     88   -111   -162 
- -1104    228  -1104  -1104 
-   177  -1104  -1104  -1104 
-  -262  -1104    221  -1104 
-  -162     47    -12     55 
-    38    -53    -12     -4 
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-	Motif 1 position-specific probability matrix
---------------------------------------------------------------------------------
-letter-probability matrix: alength= 4 w= 22 nsites= 21 E= 2.6e-046 
- 0.428571  0.000000  0.047619  0.523810 
- 0.571429  0.047619  0.047619  0.333333 
- 0.238095  0.047619  0.095238  0.619048 
- 0.666667  0.000000  0.238095  0.095238 
- 0.000000  1.000000  0.000000  0.000000 
- 0.000000  0.000000  0.000000  1.000000 
- 0.000000  0.000000  1.000000  0.000000 
- 0.000000  0.095238  0.142857  0.761905 
- 0.761905  0.142857  0.047619  0.047619 
- 0.000000  0.285714  0.095238  0.619048 
- 0.714286  0.047619  0.095238  0.142857 
- 0.285714  0.095238  0.142857  0.476190 
- 0.666667  0.047619  0.095238  0.190476 
- 0.428571  0.333333  0.000000  0.238095 
- 0.619048  0.095238  0.047619  0.238095 
- 0.380952  0.238095  0.142857  0.238095 
- 0.428571  0.380952  0.095238  0.095238 
- 0.000000  1.000000  0.000000  0.000000 
- 1.000000  0.000000  0.000000  0.000000 
- 0.047619  0.000000  0.952381  0.000000 
- 0.095238  0.285714  0.190476  0.428571 
- 0.380952  0.142857  0.190476  0.285714 
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-	Motif 1 regular expression
---------------------------------------------------------------------------------
-[TA][AT][TA][AG]CTGTA[TC]A[TA]A[ACT][AT][ACT][AC]CAG[TC][AT]
---------------------------------------------------------------------------------
-
-
-
-
-Time  0.06 secs.
-
-********************************************************************************
-
-
-********************************************************************************
-SUMMARY OF MOTIFS
-********************************************************************************
-
---------------------------------------------------------------------------------
-	Combined block diagrams: non-overlapping sites with p-value < 0.0001
---------------------------------------------------------------------------------
-SEQUENCE NAME            COMBINED P-VALUE  MOTIF DIAGRAM
--------------            ----------------  -------------
-LexA|65834-65853                 6.95e-06  10_[-1(1.83e-07)]_8
-LexA|738568-738587               1.54e-04  10_[-1(4.05e-06)]_8
-LexA|738659-738678               4.39e-04  10_[-1(1.16e-05)]_8
-LexA|812655-812674               7.96e-08  10_[-1(2.09e-09)]_8
-LexA|832259-832278               2.58e-06  10_[-1(6.79e-08)]_8
-LexA|932351-932370               8.09e-05  10_[-1(2.13e-06)]_8
-LexA|1020162-1020181             8.51e-06  13_[-1(2.24e-07)]_5
-LexA|1229931-1229950             1.78e-03  10_[-1(4.68e-05)]_8
-LexA|1229951-1229970             1.35e-07  8_[+1(3.54e-09)]_10
-LexA|1944050-1944069             2.58e-06  8_[+1(6.79e-08)]_10
-LexA|1944102-1944121             4.80e-04  11_[-1(1.26e-05)]_7
-LexA|2749749-2749768             2.05e-09  8_[+1(5.40e-11)]_10
-LexA|2749771-2749790             2.21e-07  8_[+1(5.80e-09)]_10
-LexA|2821851-2821870             3.64e-06  8_[+1(9.59e-08)]_10
-LexA|3208751-3208770             4.80e-04  9_[+1(1.26e-05)]_9
-LexA|3851322-3851341             3.07e-08  10_[-1(8.07e-10)]_8
-LexA|3995930-3995949             1.59e-06  8_[+1(4.18e-08)]_10
-LexA|4255050-4255069             2.57e-05  10_[-1(6.76e-07)]_8
-LexA|4255091-4255110             1.59e-07  8_[+1(4.19e-09)]_10
-LexA|4255112-4255131             1.35e-07  8_[+1(3.54e-09)]_10
-LexA|4271978-4271997             2.03e-06  10_[-1(5.35e-08)]_8
---------------------------------------------------------------------------------
-
-********************************************************************************
-
-
-********************************************************************************
-Stopped because nmotifs = 1 reached.
-********************************************************************************
-
-CPU: genomix
-
-********************************************************************************
+AC  CRP.2nt_upstream-noorf-ovlp-2str.22.meme_m1
+XX
+ID  CRP.2nt_upstream-noorf-ovlp-2str.22.meme_m1
+XX
+DE  wtGtGatcyrsaTCACahwttt
+P0       A     C     G     T
+1      110    43    27    80
+2       37    39    23   161
+3       37    16   146    61
+4       26    48    18   168
+5       34     5   195    26
+6      192    32    18    18
+7       63    47    45   105
+8       67    83    41    69
+9       52    71    47    90
+10     112    32    57    59
+11      50    77    79    54
+12     129    37    41    53
+13      18    15    15   212
+14      25   221    12     2
+15     231     2    15    12
+16      22   224     6     8
+17     190    13    41    16
+18      86    60    20    94
+19      90    19     0   151
+20      71    22    20   147
+21      51    34    16   159
+22      57    41    50   112
+XX
+BA  260 sequences
+XX
+BS  ATGTGATTCATATCACATATTT; site_0; 1; 22; 0; p
+BS  CTGTGATTGGTATCACATTTTT; site_1; 1; 22; 0; p
+BS  ATGTGATCCAGATCACATCTAT; site_2; 1; 22; 0; p
+BS  ATCTGACTCACATCACACTTTT; site_3; 1; 22; 0; p
+BS  ATGTTATCCACATCACAATTTC; site_4; 1; 22; 0; p
+BS  ATTTGATACCCATCACACTTTC; site_5; 1; 22; 0; p
+BS  ATGTGATTTTCATCACGATTTA; site_6; 1; 22; 0; p
+BS  ATGTGATTAACAGCACATTTTT; site_7; 1; 22; 0; p
+BS  ATGTGAGTAGTGTCACATTTTT; site_8; 1; 22; 0; p
+BS  ATGTGATTTGCTTCACATCTTT; site_9; 1; 22; 0; p
+BS  GTGTGAAGTTGATCACAAATTT; site_10; 1; 22; 0; p
+BS  ATGTGATACAAATCACATAAAT; site_11; 1; 22; 0; p
+BS  GTGTGATCGTCATCACAATTCG; site_12; 1; 22; 0; p
+BS  ATGAGATTTTCATCACACATTT; site_13; 1; 22; 0; p
+BS  AAGTGATTTAGATCACATAATA; site_14; 1; 22; 0; p
+BS  GTGTGATCTGCATCACGCATTA; site_15; 1; 22; 0; p
+BS  ATGTGTACGAAATCACATTTTT; site_16; 1; 22; 0; p
+BS  TTTTGACATGTATCACAAATTT; site_17; 1; 22; 0; p
+BS  TTGTGATTCAGATCACAAAGAT; site_18; 1; 22; 0; p
+BS  ACGTGATCTTCATCACAAATAA; site_19; 1; 22; 0; p
+BS  TCGTGATCAAGATCACATTCTC; site_20; 1; 22; 0; p
+BS  ACGTGATGATGTTCACAATTTG; site_21; 1; 22; 0; p
+BS  ATTTGAAGTAGCTCACACTTAT; site_22; 1; 22; 0; p
+BS  ATTTGATTTAGATCGCAATTTG; site_23; 1; 22; 0; p
+BS  TTGTGATTCGATTCACATTTAA; site_24; 1; 22; 0; p
+BS  ATGTGATTGATATCACACAAAA; site_25; 1; 22; 0; p
+BS  ATGCGATTCCACTCACAATATT; site_26; 1; 22; 0; p
+BS  AAGTGACCGAAATCACACTTAA; site_27; 1; 22; 0; p
+BS  ATGAGATTCAGATCACATATAA; site_28; 1; 22; 0; p
+BS  GAGTGACGTAGATCACACTTAT; site_29; 1; 22; 0; p
+BS  CTTCGATACACATCACAATTAA; site_30; 1; 22; 0; p
+BS  ATTTGAAGTTCATCACACTTCA; site_31; 1; 22; 0; p
+BS  CGGTGATCTATTTCACAAATTA; site_32; 1; 22; 0; p
+BS  ATGCGATCTATATCACGCTGTG; site_33; 1; 22; 0; p
+BS  ATTTGTTCCTCTTCACATTTTT; site_34; 1; 22; 0; p
+BS  ATTTGCACGGCGTCACACTTTG; site_35; 1; 22; 0; p
+BS  ATGTGAAATAAATCAAAATTTC; site_36; 1; 22; 0; p
+BS  TAGTGATCCACGCCACATTTTG; site_37; 1; 22; 0; p
+BS  TTGCGATCAAAATAACACTTTT; site_38; 1; 22; 0; p
+BS  TTGTGAATCTTTTCACAGTTTA; site_39; 1; 22; 0; p
+BS  ATTCAATATTCATCACACTTTT; site_40; 1; 22; 0; p
+BS  AAGTGATGCAAATCACATAAAT; site_41; 1; 22; 0; p
+BS  TCGTGAACTACGGCACACTTTG; site_42; 1; 22; 0; p
+BS  TTATGACCCTCTTCACATTTCG; site_43; 1; 22; 0; p
+BS  GTGTGATGCAAGCCACATTTTT; site_44; 1; 22; 0; p
+BS  ATGTGAGCGAGATCAAATTCTA; site_45; 1; 22; 0; p
+BS  ACGTGACGTTCATCACAAAACG; site_46; 1; 22; 0; p
+BS  ATGTGAATTGCCGCACACATTA; site_47; 1; 22; 0; p
+BS  ATGTGAGTTAGCTCACTCATTA; site_48; 1; 22; 0; p
+BS  AGGTGAGATGCATCACGCTTCG; site_49; 1; 22; 0; p
+BS  AGGTGACCGGTTTCACAAATAT; site_50; 1; 22; 0; p
+BS  CTGTGAGTGATTTCACAGTATC; site_51; 1; 22; 0; p
+BS  TTGTTATTAGTCTCACACTTTT; site_52; 1; 22; 0; p
+BS  GTGCGAGCCAGCTCAAACTTTT; site_53; 1; 22; 0; p
+BS  ATATGACGGCGGTCACACTTAT; site_54; 1; 22; 0; p
+BS  ATGCGATCTGGTTCAAATAATT; site_55; 1; 22; 0; p
+BS  TTTCGAGGTTGATCACATTTCC; site_56; 1; 22; 0; p
+BS  ATGTGCGACCACTCACAAATTA; site_57; 1; 22; 0; p
+BS  AGGTGAGAGCCATCACAAATGT; site_58; 1; 22; 0; p
+BS  ATGTGAGCCAGCTCACCATAAA; site_59; 1; 22; 0; p
+BS  ATGAGATCGAGCACACATTTTA; site_60; 1; 22; 0; p
+BS  ATGTGAAGCAAATCACCCACTT; site_61; 1; 22; 0; p
+BS  ATTTGAGTAAGTTCTCAATTTT; site_62; 1; 22; 0; p
+BS  TTGTGAGCTTGCTCGCACTTCG; site_63; 1; 22; 0; p
+BS  TTATGACGCTCTTCACACTCTG; site_64; 1; 22; 0; p
+BS  ATGCGCGACGCATCGCAAATTT; site_65; 1; 22; 0; p
+BS  ATATGACAACCATCACAAAAAT; site_66; 1; 22; 0; p
+BS  CTGTAACAGAGATCACACAAAG; site_67; 1; 22; 0; p
+BS  TAGTGAAGCAGATCGCATTATA; site_68; 1; 22; 0; p
+BS  TATTGTCCCCGATCACACTTTT; site_69; 1; 22; 0; p
+BS  CCATGATCCGCGCCACACTTTT; site_70; 1; 22; 0; p
+BS  CAGTGATCCAGGTCACGATAAC; site_71; 1; 22; 0; p
+BS  GTTAAATATAGATCACAATTTT; site_72; 1; 22; 0; p
+BS  TATAGATCTCCGTCACATTTTT; site_73; 1; 22; 0; p
+BS  ATGTGACTACCATCACTTTAAT; site_74; 1; 22; 0; p
+BS  TTGCGAAGCGCGTCACTATTTA; site_75; 1; 22; 0; p
+BS  ATATGACGGTGTTCACAAAGTT; site_76; 1; 22; 0; p
+BS  ATTTGCACTGTGTCACAATTCC; site_77; 1; 22; 0; p
+BS  TTGTGATCGTTATCTCGATATT; site_78; 1; 22; 0; p
+BS  TTGCAAGCAACATCACGAAATT; site_79; 1; 22; 0; p
+BS  GTGTTAAATTGATCACGTTTTA; site_80; 1; 22; 0; p
+BS  TTGCGAGCGAGCGCACACTTGT; site_81; 1; 22; 0; p
+BS  ATTTATTCCATGTCACACTTTT; site_82; 1; 22; 0; p
+BS  TAGAGATCTACTTCACAAATCA; site_83; 1; 22; 0; p
+BS  TTTTGCGCGAGGTCACTATTTT; site_84; 1; 22; 0; p
+BS  TTGCGGGTCGCGTCACATTTAA; site_85; 1; 22; 0; p
+BS  AGGTGATTTTGATCACGGAATA; site_86; 1; 22; 0; p
+BS  TTTTGAATCCCATCACAAACCC; site_87; 1; 22; 0; p
+BS  CTGTGGTTGCCATCACAGATAT; site_88; 1; 22; 0; p
+BS  TTGTGGCCTGCTTCAAACTTTC; site_89; 1; 22; 0; p
+BS  AAGTGAACCATATCTCAATTCA; site_90; 1; 22; 0; p
+BS  TTATGAAGCCCTTCACAGAATT; site_91; 1; 22; 0; p
+BS  GTGCGGGCGTGATCACAATTAC; site_92; 1; 22; 0; p
+BS  CTGTGACTCGATTCACGAAGTC; site_93; 1; 22; 0; p
+BS  ACGCGACTTTTATCACTTTTTA; site_94; 1; 22; 0; p
+BS  CGGTGACGGAGTTCACCCTTTA; site_95; 1; 22; 0; p
+BS  TTGCAATTCGTGTCACAAAATA; site_96; 1; 22; 0; p
+BS  TTACGACAGCTATCACGAATTT; site_97; 1; 22; 0; p
+BS  ATTTGAAGCAGTTAACGCTATT; site_98; 1; 22; 0; p
+BS  ACATGAGCAACCGCACATATTT; site_99; 1; 22; 0; p
+BS  CTGCGAGTGGGAGCACGGTTTT; site_100; 1; 22; 0; p
+BS  TTTTGCGCTAAAGCACATTTCT; site_101; 1; 22; 0; p
+BS  GTGCGAAATCCGTCACAGTTCA; site_102; 1; 22; 0; p
+BS  TTGTGATGTGGTTAACCAATTT; site_103; 1; 22; 0; p
+BS  TCGTGAACGATCCCACGAATTT; site_104; 1; 22; 0; p
+BS  CTGCGAGCATGGTCATATTTTT; site_105; 1; 22; 0; p
+BS  GAGTGATATGTATAACATTATG; site_106; 1; 22; 0; p
+BS  ATATGACCAACCTCTCATAATT; site_107; 1; 22; 0; p
+BS  ATGCAAAGGACGTCACATTACC; site_108; 1; 22; 0; p
+BS  GAGTGATCGAGTTAACATTGTT; site_109; 1; 22; 0; p
+BS  TGGTGAGGAACTTAACAATATT; site_110; 1; 22; 0; p
+BS  TTGAGATTCAACTCTCAAATTT; site_111; 1; 22; 0; p
+BS  TTGTGAATCAGATCAGAAAACC; site_112; 1; 22; 0; p
+BS  ATGTATGACAGATCACTATTTT; site_113; 1; 22; 0; p
+BS  ATATGATAAATATCAAACAATG; site_114; 1; 22; 0; p
+BS  ATGTAAGCTGTGCCACGTTTTT; site_115; 1; 22; 0; p
+BS  TTGTGAGTTTTGTCACCAAATA; site_116; 1; 22; 0; p
+BS  TTGCGATGAATGTCACATCCTC; site_117; 1; 22; 0; p
+BS  TTATGACGAGGCACACACATTT; site_118; 1; 22; 0; p
+BS  TTGAGGGGTTGATCACGTTTTG; site_119; 1; 22; 0; p
+BS  TGTTGCTTTTGATCACAATAAG; site_120; 1; 22; 0; p
+BS  TCGTGACAGGAATCACGGAGTT; site_121; 1; 22; 0; p
+BS  GCTTGAGCCGCAGCACAATGTG; site_122; 1; 22; 0; p
+BS  GTTTGACGGCTATCACGTTTCA; site_123; 1; 22; 0; p
+BS  ATTTAATTCGTATCGCAAATTA; site_124; 1; 22; 0; p
+BS  TGGTGATCCATAAAACAATATT; site_125; 1; 22; 0; p
+BS  CCGTGAAAGCGATCACAAAGGG; site_126; 1; 22; 0; p
+BS  TCGTGATACTCATCACCATGAC; site_127; 1; 22; 0; p
+BS  ATGTGATCTACAGCATGTTATG; site_128; 1; 22; 0; p
+BS  GCGTGCCAGTTTTCACATTCTT; site_129; 1; 22; 0; p
+BS  TCTTGCTTACCGTCACATTCTT; site_130; 1; 22; 0; p
+BS  CAGTGACAGATTTCACGAAAAT; site_131; 1; 22; 0; p
+BS  GGTTGCACTCTCTCACATTTTT; site_132; 1; 22; 0; p
+BS  GCCTGACGGAGTTCACACTTGT; site_133; 1; 22; 0; p
+BS  TCATGAAACTGTGCACATTTTA; site_134; 1; 22; 0; p
+BS  GCAGGATTTAGCTCACACTTAT; site_135; 1; 22; 0; p
+BS  ACGCAGCGAAGATCACAATTTA; site_136; 1; 22; 0; p
+BS  CATTTAAACAGATCACAAAATC; site_137; 1; 22; 0; p
+BS  TATTGATCTAACTCACGAAAAT; site_138; 1; 22; 0; p
+BS  TTACAAGGCACATCACGTTATG; site_139; 1; 22; 0; p
+BS  CTGTGACCGTGGTCGCAGTTGG; site_140; 1; 22; 0; p
+BS  TTGGAATATCCATCACATAACG; site_141; 1; 22; 0; p
+BS  ATATGCGCGAAATCAAACAATT; site_142; 1; 22; 0; p
+BS  GTGCGAGTCTGCTCGCATAATC; site_143; 1; 22; 0; p
+BS  ATGTGACAGATAAAACGTTTTA; site_144; 1; 22; 0; p
+BS  AATTGACCGATGCCACGTTTTG; site_145; 1; 22; 0; p
+BS  ATATGTTTCGTTTCACAGTTCT; site_146; 1; 22; 0; p
+BS  ATGTGCGCATCTCCACATTACC; site_147; 1; 22; 0; p
+BS  ATGTTAATTTCCTCACATCGTG; site_148; 1; 22; 0; p
+BS  ATGCGGTGAGCATCACATCACC; site_149; 1; 22; 0; p
+BS  ACGAGATCTGACACACACTATA; site_150; 1; 22; 0; p
+BS  CAGCGACATCTGTCACATTCCT; site_151; 1; 22; 0; p
+BS  TTGGGCGACAGATCACGCAAAA; site_152; 1; 22; 0; p
+BS  TTTTGAATCGTGTCTCATTCTG; site_153; 1; 22; 0; p
+BS  GTGAGGCATAAATCACATTACG; site_154; 1; 22; 0; p
+BS  TCGTGATATTGCTCACGCCAAA; site_155; 1; 22; 0; p
+BS  TTCTAATAGCCATCACAAAACG; site_156; 1; 22; 0; p
+BS  TTGTGGATAAAATCACGGTCTG; site_157; 1; 22; 0; p
+BS  CTCTGAGATGGATCAAAGAATT; site_158; 1; 22; 0; p
+BS  CTTAGAAACCGATCACATACAG; site_159; 1; 22; 0; p
+BS  AATCGATTGCGTTCACGTTTAC; site_160; 1; 22; 0; p
+BS  TATTGATTTAAATCAAAGATTC; site_161; 1; 22; 0; p
+BS  AATTGAACCAAATCATAAAATC; site_162; 1; 22; 0; p
+BS  ATTGAACCCCGATCACACCATA; site_163; 1; 22; 0; p
+BS  TAATGAAAAGGATGACATATTC; site_164; 1; 22; 0; p
+BS  ACTTGCGTGACTACACATTCTT; site_165; 1; 22; 0; p
+BS  AGCAGATACAACTCACACAATG; site_166; 1; 22; 0; p
+BS  CTGTGCTGCGCATAATACTTTG; site_167; 1; 22; 0; p
+BS  CCATGCTCAATCTCACAAAGTG; site_168; 1; 22; 0; p
+BS  ATTCGACAAAGCGCACAATCCG; site_169; 1; 22; 0; p
+BS  ACAGGAAGCACATCACAAAGAC; site_170; 1; 22; 0; p
+BS  ATTTGCCACAGGTAACAAAAAA; site_171; 1; 22; 0; p
+BS  TACGGATCTTCATCACATAAAA; site_172; 1; 22; 0; p
+BS  CTGTGACAAGCTCCGCAAATCG; site_173; 1; 22; 0; p
+BS  CAACGCTTTGGCTCACAGTTTA; site_174; 1; 22; 0; p
+BS  ACAAAACATATGTCACAATATT; site_175; 1; 22; 0; p
+BS  ATATGATCTATATCAATTTCTC; site_176; 1; 22; 0; p
+BS  CTGTTGATATGATCACGTTATA; site_177; 1; 22; 0; p
+BS  TTTAGATGTAAATCACTCCATT; site_178; 1; 22; 0; p
+BS  ATGTGAAATAAAACAATTATTT; site_179; 1; 22; 0; p
+BS  ACCTGTCACAAATCACAAAAAG; site_180; 1; 22; 0; p
+BS  TAGTGCTCAGCGACACTATTTT; site_181; 1; 22; 0; p
+BS  TTCTTATCTACCTCACAAAGGT; site_182; 1; 22; 0; p
+BS  CTGTGCGCGCAACGACATTTTG; site_183; 1; 22; 0; p
+BS  TTACAAAATTGTTAACAATTTT; site_184; 1; 22; 0; p
+BS  ATTTTAACAACTTGACATATAT; site_185; 1; 22; 0; p
+BS  CTTCGTAACGCCTCGCAAATTT; site_186; 1; 22; 0; p
+BS  AACCTCTTTGCGTCACATTTTT; site_187; 1; 22; 0; p
+BS  TTTTGTAACAATTCAAACTTCT; site_188; 1; 22; 0; p
+BS  TCAGGCGTTAAATCACGTTTTC; site_189; 1; 22; 0; p
+BS  TTCATCTCTATGTCACATTTTG; site_190; 1; 22; 0; p
+BS  TTGTTACCTGCCTCTAACTTTG; site_191; 1; 22; 0; p
+BS  ATGTGATATTGCTCTCCTATGG; site_192; 1; 22; 0; p
+BS  ACGTTAACTGAAACGCATATTT; site_193; 1; 22; 0; p
+BS  TATTGATGTAAATCAAATTCAC; site_194; 1; 22; 0; p
+BS  CCATGAAACGGAACACGAAAAT; site_195; 1; 22; 0; p
+BS  ATAATAATCTAATCACATCTTG; site_196; 1; 22; 0; p
+BS  TGGTGCGCATGATAACGCCTTT; site_197; 1; 22; 0; p
+BS  GTGCAGGCTTGATCACAACTCC; site_198; 1; 22; 0; p
+BS  AGGTAATTCGAATGACATTGCT; site_199; 1; 22; 0; p
+BS  CTGGGATGAAAGTGACATTTGA; site_200; 1; 22; 0; p
+BS  CCGACGAATAGATCACAATTTA; site_201; 1; 22; 0; p
+BS  ATTAGTAAGTTATCACCATTTG; site_202; 1; 22; 0; p
+BS  CTGTGATAGTGTCATCATTTTC; site_203; 1; 22; 0; p
+BS  GCTTAATTTAAATAACAAAATC; site_204; 1; 22; 0; p
+BS  ATGTGATGAGAAAGTCAATTTG; site_205; 1; 22; 0; p
+BS  TGACGCATGAAATCACGTTTCA; site_206; 1; 22; 0; p
+BS  ATGCAAAATCAAAAACAATTTC; site_207; 1; 22; 0; p
+BS  AATCGATTTAACACACCATTTA; site_208; 1; 22; 0; p
+BS  TTGTAAACAGATTAACACCTCG; site_209; 1; 22; 0; p
+BS  CAGTTATTTTTAACAAATTTTT; site_210; 1; 22; 0; p
+BS  TGTTGCTGACCTTCAAAAATTA; site_211; 1; 22; 0; p
+BS  TTGTCATCTTTCTGACACCTTA; site_212; 1; 22; 0; p
+BS  AAGTTCGATATTTCTCGTTTTT; site_213; 1; 22; 0; p
+BS  CTGGAACGCTTTTCGCATTCTG; site_214; 1; 22; 0; p
+BS  ACCCGCTTTAAAACACGCTATC; site_215; 1; 22; 0; p
+BS  GTTTGACATTGTTCTCTCACTT; site_216; 1; 22; 0; p
+BS  CCTCGGTTTAGTTCACAGAAGC; site_217; 1; 22; 0; p
+BS  TAGTTACATGTTTAACACTTGA; site_218; 1; 22; 0; p
+BS  ATCTGGGTAGCATCACAGCAGA; site_219; 1; 22; 0; p
+BS  AGGCGACCTGGGTCATGCTGAA; site_220; 1; 22; 0; p
+BS  ATCTTGAAATAATCACATTGAT; site_221; 1; 22; 0; p
+BS  ATTGTTATCCGCTCACAATTCC; site_222; 1; 22; 0; p
+BS  TGTGGAAATTAATCCCACTATT; site_223; 1; 22; 0; p
+BS  CTGCATATTAATTGACATTTCT; site_224; 1; 22; 0; p
+BS  CGGGTATTAGCACCACATATAA; site_225; 1; 22; 0; p
+BS  ATGTAATAAAATTCATGGTAAT; site_226; 1; 22; 0; p
+BS  TTTTACTTTTGGTTACATATTT; site_227; 1; 22; 0; p
+BS  TCTTTATCTTTGTAGCACTTTC; site_228; 1; 22; 0; p
+BS  ACGCGCACTATGTCAACTCTTG; site_229; 1; 22; 0; p
+BS  CAATGAAAAATTGCACAGTAAA; site_230; 1; 22; 0; p
+BS  GTTAAATTGATGTAACATAATC; site_231; 1; 22; 0; p
+BS  TTGAGTCATAAATAACCTTTAG; site_232; 1; 22; 0; p
+BS  AGGTGAATCGCGCCAGCAAATT; site_233; 1; 22; 0; p
+BS  CTGAGACTAGTACGACTTTTTG; site_234; 1; 22; 0; p
+BS  AGTTGTAACTATGCACAAATGT; site_235; 1; 22; 0; p
+BS  CCCCATGGCAGATGACATTTTT; site_236; 1; 22; 0; p
+BS  AAAATATCCTTGTCACATTCGT; site_237; 1; 22; 0; p
+BS  ATGTAAATTGGTCAACCATTGT; site_238; 1; 22; 0; p
+BS  ACACTATGAGCAAAACACATTT; site_239; 1; 22; 0; p
+BS  ATTTAATCATGTTTACAGTAAT; site_240; 1; 22; 0; p
+BS  CTGGGAGCAGGCTCGATTTATG; site_241; 1; 22; 0; p
+BS  ACATGATAAATTTGACGAAGAA; site_242; 1; 22; 0; p
+BS  CAGTGAACCCCTTCCCAACCAC; site_243; 1; 22; 0; p
+BS  GAATGCTAATCATCAGAAATGT; site_244; 1; 22; 0; p
+BS  TTTGGGTTGTTATCAAATCGTT; site_245; 1; 22; 0; p
+BS  TGTAAATCTGCATCGGAATTTG; site_246; 1; 22; 0; p
+BS  TTCATACCACCATCACAACCAC; site_247; 1; 22; 0; p
+BS  TATTTAACGCCGTCAGAAATGT; site_248; 1; 22; 0; p
+BS  AAGGTGACTATACCACACTCAT; site_249; 1; 22; 0; p
+BS  TTAGCAAATACCTCACAGTGAA; site_250; 1; 22; 0; p
+BS  CTGCAACCATCTACAAATAACC; site_251; 1; 22; 0; p
+BS  CGGGTAATAACAACACTCATAT; site_252; 1; 22; 0; p
+BS  TTTCCTGAAAATTCACGCTGTA; site_253; 1; 22; 0; p
+BS  ATTTAATGAAGAGAATTTTTTT; site_254; 1; 22; 0; p
+BS  CTGCGTGAAGCAGCAGTAAATC; site_255; 1; 22; 0; p
+BS  ACAGGCACCTGATAAAGCCATT; site_256; 1; 22; 0; p
+BS  GGCAAGTGGTATTCGCACTTTT; site_257; 1; 22; 0; p
+BS  GTACGTTTGCAGTGAAATAACT; site_258; 1; 22; 0; p
+BS  ATAACAAAATCCTAATGTTATT; site_259; 1; 22; 0; p
+CC  program: meme
+CC  matrix.nb: 1
+CC  id: CRP.2nt_upstream-noorf-ovlp-2str.22.meme_m1
+CC  id: CRP.2nt_upstream-noorf-ovlp-2str.22.meme_m1
+CC  ac: 
+CC  name: CRP.2nt_upstream-noorf-ovlp-2str.22.meme_m1
+CC  command: meme data/Sites_FNA_NR//CRP.21.fna -dna -mod oops -revcomp -text -nostatus -minw 22 -maxw 22 -bfile /state/partition1/space14/PGC/RegulonDB/local/data/Matrices/data/bg_freqs/2nt_upstream-noorf_Escherichia_coli_K12-ovlp-2str.meme_bg
+CC  sites: 260
+CC  meme.llr: 1864
+CC  meme.E-value: 3.9e-382
+CC  matrix.nb: 1
+CC  sites: 260
+CC  consensus.strict: atGtGatccagaTCACattttt
+CC  consensus.strict.rc: AAAAATGTGATCTGGATCACAT
+CC  consensus.IUPAC: wtGtGatcyrsaTCACahwttt
+CC  consensus.IUPAC.rc: AAAWDTGTGATSYRGATCACAW
+CC  consensus.regexp: [at]tGtGatc[ct][ag][cg]aTCACa[act][at]ttt
+CC  consensus.regexp.rc: AAA[AT][AGT]TGTGAT[CG][CT][AG]GATCACA[AT]
+XX
+//
 ";
 
 $demo_seq1=">sulA|2.75|1020250|I|-74|17.3
@@ -827,7 +931,7 @@ print "<td><b>";
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr."</blockquote>");
 print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'matrix_format',-default=>'meme_block');
+print $query->hidden(-name=>'matrix_format',-default=>'transfac');
 print $query->hidden(-name=>'kfold',-default=>$default{kfold});
 
 print $query->hidden(-name=>'tag1',-default=>'positive_set');
@@ -839,6 +943,7 @@ print $query->hidden(-name=>'tag2',-default=>'negative_set');
 print $query->hidden(-name=>'sequence2',-default=>$demo_seq2);
 print $query->hidden(-name=>'markov_order',-default=>$demo_markov);
 print $query->hidden(-name=>'scanopt2',-default=>'');
+print $query->hidden(-name=>'nwd',-default=>'CHECKED');
 
 print $query->submit(-label=>"DEMO");
 print "</b></td>\n";

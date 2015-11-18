@@ -1159,14 +1159,14 @@ sub doit {
 	  $error_message = join("\t", $0, "Error", $error , "occurred during execution of the command:", "\n", $command);
 	}
 
-	## Print error in log file if provided
+	## Print error message in the error log file if specified
 	if ($error) {
 	  if ($err_handle) {
 	    print $err_handle "\n\n", $error_message, "\n";
 	  }
 	}
 
-	## Report error in log file
+	## Die if requested
 	if ($die_on_error) {
 	  &RSAT::error::FatalError($error_message);
 	} else {

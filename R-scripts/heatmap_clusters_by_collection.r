@@ -105,41 +105,41 @@ motif.DB.counts <- apply(clusters[,3:(nb.db+2)], 2, sum)
 percent.table <- NULL
 coverage.contingency.table <- NULL
 x <- sapply(names(motif.DB.counts), function(DB){
-  
-  ## Select those cluster with at least one motif corresponding 
+
+  ## Select those cluster with at least one motif corresponding
   ## to the current motifDB
   DB.motifs <- clusters[clusters[,DB] > 0,]
-  
+
   #################################################################################
   ## Calculate the overlap between the databases
-  
-  ## Select those cluster with at least one motif corresponding 
+
+  ## Select those cluster with at least one motif corresponding
   ## to the current motifDB
   coverage <- apply(DB.motifs[3:dim(DB.motifs)[2]], 2, sum) / motif.DB.counts
-  
+
   coverage.contingency.table <<- cbind(coverage.contingency.table, matrix(coverage, ncol = 1))
-  
+
   #################################################################################
-  ## Count the number of exclusive motifs of each database 
-  
+  ## Count the number of exclusive motifs of each database
+
   ## Count the number of motifs that correspond exclusively to a collection of motifs
   DB.motifs.exclusive <- apply(DB.motifs[,3:(nb.db+2)],1, sum)
   DB.motifs.exclusive <- length(DB.motifs.exclusive[DB.motifs.exclusive == 1])
-  
+
   ## Calculate the percentage of the collection which is unique
   DB.percent <- round(DB.motifs.exclusive / motif.DB.counts[DB], digits = 4)
-  
-  ## Calculate the percentage of the total collection corresponding to the 
+
+  ## Calculate the percentage of the total collection corresponding to the
   ## unique motifs of the analyzed motifDB
   Total.percent <- round(DB.motifs.exclusive / sum(motif.DB.counts), digits = 4)
-  
+
   #   print(paste("Nb Unique motifs: ", DB.motifs.exclusive, " -  %(internal) :", DB.percent, " -  %(total): ", Total.percent))
   percent.table <<- cbind(percent.table, matrix(c(motif.DB.counts[DB], DB.motifs.exclusive, DB.percent, Total.percent), ncol = 1))
 })
 
 #########################################################
 ## Add a new column and re-order the percentage matrix
-percent.table <- cbind(percent.table, c("DB_nb_motifs", "Nb_exclusive_motifs", "DB_percent", "Total_percent")) 
+percent.table <- cbind(percent.table, c("DB_nb_motifs", "Nb_exclusive_motifs", "DB_percent", "Total_percent"))
 percent.table <- percent.table[,c(dim(percent.table)[2],1:(dim(percent.table)[2]-1))]
 colnames(percent.table) <- c("#Collection", names(clusters[,3:(nb.db+2)]))
 percent.table <- t(percent.table)
@@ -165,8 +165,8 @@ write.table(y, file = coverage.table.d3, sep = "\t", quote = FALSE, row.names = 
 
 ###########################################################
 ## Create attributes table to fill the D3 coverage fields
-row.nb <- dim(coverage.contingency.table)[1]
-col.nb <- dim(coverage.contingency.table)[2]
+col.nb <- dim(coverage.contingency.table)[1]
+row.nb <- dim(coverage.contingency.table)[2]
 default.labels <- paste(paste("'", names(motif.DB.counts), "'", sep = ""), collapse = ",")
 default.number <- paste(1:length(motif.DB.counts), collapse = ",")
 left <- (max(as.vector(sapply(names(motif.DB.counts), nchar))) + 2) * 10
@@ -231,9 +231,10 @@ if(max(clusters) < 10){
 ## in the D3 heatmap code.
 # rgb.palette <- colorRampPalette(c("#75FD3A", "#1F6800"), space = "rgb")
 # rgb.palette <- colorRampPalette(c("#FFE991", "#FEAD23", "#930047"), space = "rgb")
-rgb.palette <- colorRampPalette(c("#FFE991", "#930047"), space = "rgb")
+# rgb.palette <- colorRampPalette(c("#FFE991", "#930047"), space = "rgb")
+rgb.palette <- colorRampPalette(brewer.pal(9, "YlOrRd"), space="Lab")
 white <- "#FFFFFF"
-white <- append(white,rgb.palette(ceiling((max(clusters)/step+1))))
+white <- append(white,rgb.palette(ceiling((max(clusters)/step))))
 
 ###############################################################
 ## Run the hierarchical clustering with the three methods
@@ -296,16 +297,20 @@ heatmap.rows.name <- paste(paste("'", collection.names, "'", sep = ""), collapse
 collections <- paste(paste("'", collection.names, "'", sep = ""), collapse = ",")
 
 ## Range to color the values
-domain.nb <- seq(from = 0, to = max(clusters), by = step)
-domain.nb[1] <- 1
+domain.nb <- seq(from = 1, to = max(clusters), by = step)
+
 domain <- paste(domain.nb, collapse=",")
 
 ## Legend
-legend <- c(0,domain.nb)
+# legend <- c(0,domain.nb)
+legend <- 0
+legend <- append(legend, seq(from = 1, to = max(clusters), by = step))
 legend <- paste(legend, collapse=",")
 
 ## Right space
-left <- (max(as.vector(sapply(collection.names, nchar))) + 2) * 10
+left <- (max(as.vector(sapply(collection.names, nchar))) + 2.5) * 10
+
+
 
 ## Div bottom + Cell size
 cell.size <- 20
@@ -327,6 +332,8 @@ if(row.nb < 5){
   legend.header <- bottom - 27
 }
 
+html.body.size <- 200 + left + (col.nb*cell.size) + 30
+
 order.info <- matrix(c("Gradient", gradient,
                        "Cluster_names", cluster.names,
                        "Cluster_number", cluster.number,
@@ -341,7 +348,8 @@ order.info <- matrix(c("Gradient", gradient,
                        "Legend", legend,
                        "Legend_Head", legend.header,
                        "Left_space", left,
-                       "Bottom_space", bottom,
+                       "Bottom_space", left,
+                       "Body", html.body.size,
                        "Collections", collections
                        ), nrow = 2)
 order.info.df <- t(data.frame(order.info))

@@ -3,6 +3,7 @@
 ## Class to handle organisms supported in this instance of RSAT.
 ##
 
+
 package RSAT::OrganismManager;
 
 use RSAT::util;
@@ -203,7 +204,56 @@ sub export_supported_organisms {
   &RSAT::message::Info("Exported supported organisms", $organism_table) if ($main::verbose >= 2);
 }
 
-################################################################
+=pod
+
+=item B<UniquePerTaxon>
+
+Select a single organism per species or per genus (the other
+taxonomical levels are not supported because we do not dispose of the
+information about taxonomic depth). 
+
+Usage:
+
+  @organisms_filtered = &RSAT::OrganismManager::UniquePerTaxon($taxon, @organisms);
+
+Arguments:
+
+=over
+
+=item taxon
+
+Taxonomical level at which the filtering must be done. Supported:
+genus, species.
+
+=item organisms
+
+List of organisms
+
+=back
+
+=cut
+
+sub UniquePerTaxon {
+  my ($taxon, @organisms) = @_;
+  unless (($taxon eq "species") || ($taxon eq "genus")) {
+    &RSAT::error::FatalError("&RSAT::OrganismManager::UniquePerTaxon()", $taxon, "is not a valid taxon. Supported: genus, species");
+  }
+  &RSAT::message::Info("Filtering organisms per", $taxon) if ($main::verbose >= 4);
+  my @filtered_organisms = ();
+  my %orgs_per_genus = ();
+  my %orgs_per_species = ();
+  foreach my $org (@organisms) {
+    my ($genus, $species) = split("_", $org);
+    $species = $genus."_".$species;
+    $orgs_per_genus{$genus}++;
+    $orgs_per_species{$species}++;
+    next if (($taxon eq "genus") && ($orgs_per_genus{$genus} > 1));
+    next if (($taxon eq "species") && ($orgs_per_species{$species} > 1));
+#      &RSAT::message::Debug($org, $genus, $species, $orgs_per_species{$species}, $orgs_per_genus{$genus}) if ($main::verbose >= 10);
+    push @filtered_organisms, $org;
+  }
+  return(@filtered_organisms);
+}
 
 =pod
 
@@ -282,6 +332,8 @@ sub supported_organism_table {
     @selected_organisms = &GetOrganismsForTaxon($taxon, $depth);
   } elsif ($group) {
     @selected_organisms = &GetOrganismsForGroup($group, $depth);
+    push @selected_organisms, &get_demo_organisms(@group_specificity);
+
   } else {
     @selected_organisms = sort keys %main::supported_organism;
     if ($depth != 0) {
@@ -289,6 +341,9 @@ sub supported_organism_table {
     }
   }
 
+  ## Select unique organisms per genus or species if required
+  @selected_organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @selected_organisms) if ($main::unique_species);
+  @selected_organisms = &RSAT::OrganismManager::UniquePerTaxon("genus", @selected_organisms) if ($main::unique_genus);
 
   ## Add fields for each organism
   my $n = 0;
@@ -379,8 +434,6 @@ sub get_supported_organisms_web {
   ## Multiple groups can be specified
   my @group_specificity = split(/,/, $ENV{group_specificity});
 
-  
-
   if (scalar(@group_specificity) >= 1) {
     ## Collect organisms for each group specificity
     foreach my $group_specificity (@group_specificity) {
@@ -394,22 +447,48 @@ sub get_supported_organisms_web {
 	}
       }
     }
+    push @selected_organisms, &get_demo_organisms(@group_specificity);
+
   } else {
     @selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
   }
 
-  ## Add organisms required for the demos
-  if ($group_specificity ne "Fungi") {
-    push @selected_organisms, "Saccharomyces_cerevisiae";
-  }
-  if ($group_specificity ne "Metazoa") {
-      push @selected_organisms, "Drosophila_melanogaster"; ## Required for matrix-scan demo. SHOULD WE IMPOSE THIS GENOME JUST FOR THAT, OR HAVE GROUP-SPEFICIC DEMOS ?
-  }
-  unless (($group_specificity eq "Bacteria") || ($group_specificity eq "Prokaryotes")) {
-      push @selected_organisms, "Escherichia_coli_K_12_substr__MG1655_uid57779";
-  }
+
   @selected_organisms = &RSAT::util::sort_unique(@selected_organisms);
   return (@selected_organisms);
+}
+
+
+################################################################
+## Return the list of organisms required for Web demos
+sub get_demo_organisms {
+    my (@group_specificity) = @_;
+    foreach my $group (@group_specificity) {
+	$group_specificity{$group} = 1;
+    }
+    my @selected_organisms = ();
+    unless ($group_specificity{"Fungi"}) {
+	if (&is_supported("Saccharomyces_cerevisiae")) {
+	    ## old nomenclature, probably outdated, I should define an alias for the model yeast strain
+	    push @selected_organisms, "Saccharomyces_cerevisiae";
+	} else {
+	    push @selected_organisms, &GetOrganismsForTaxon("Saccharomyces");
+	}
+    }
+    unless ($group_specificity{"Metazoa"}) {
+	if (&is_supported("Drosophila_melanogaster")) {
+	    push @selected_organisms, "Drosophila_melanogaster"; ## Required for matrix-scan demo. SHOULD WE IMPOSE THIS GENOME JUST FOR THAT, OR HAVE GROUP-SPEFICIC DEMOS ?
+	}
+    }
+    unless (($group_specificity{"Bacteria"}) || ($group_specificity{"Prokaryotes"})) {
+	if (&is_supported("Escherichia_coli_K_12_substr__MG1655_uid57779")) {
+	    push @selected_organisms, "Escherichia_coli_K_12_substr__MG1655_uid57779";
+	} else {
+	    push @selected_organisms, &GetOrganismsForTaxon("Escherichia");
+	}
+	
+    }
+    return (@selected_organisms);
 }
 
 ################################################################
@@ -472,6 +551,12 @@ sub GetOrganismsForTaxon {
       &RSAT::message::TimeWarn($message);
     }
   }
+  
+  ## Select unique organisms per genus or species if required
+#  @organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @organisms) if (($main::unique_species) || ($main::unique_genus));
+  @organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @organisms) if ($main::unique_species);
+  @organisms = &RSAT::OrganismManager::UniquePerTaxon("genus", @organisms) if ($main::unique_genus);
+
   @organisms = &RSAT::util::sort_unique(@organisms);
   &RSAT::message::Info("Collected",scalar(@organisms),"organisms for taxon", $taxon) if ($main::verbose >= 3);
   return(@organisms);
@@ -565,13 +650,15 @@ sub GetOrganismsForGroup {
     } elsif ($group_specificity eq "Teaching") {
 
       ## Define a list of model organisms
-      my @model_organisms = qw(Escherichia_coli_K_12_substr__MG1655_uid57779
+      my @model_organisms = qw(
+                             Arabidopsis_thaliana.TAIR10.29
                              Bacillus_subtilis_168_uid57675
-                             Saccharomyces_cerevisiae
+                             Drosophila_melanogaster
+                             Escherichia_coli_K_12_substr__MG1655_uid57779
                              Homo_sapiens_GRCh37
                              Homo_sapiens_GRCh38
                              Mus_musculus_GRCm38
-                             Drosophila_melanogaster
+                             Saccharomyces_cerevisiae
                             );
 
       ## Check that each organism is properly instaled.

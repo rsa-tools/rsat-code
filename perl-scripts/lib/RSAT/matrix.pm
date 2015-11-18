@@ -1988,6 +1988,42 @@ sub multiply {
   $self->setMatrix($nrow, $ncol, @matrix);
 }
 
+=pod
+
+=item rescale_columns()
+
+Scale the matrix to a fixed value for the sums per columns. If columns
+have unequal counts, the scaling factor is adapted to the maximal
+count of residues per column.
+
+Usage: $matrix->rescale_columns($n);
+
+=cut
+sub rescale_columns {
+  my ($self, $n) = @_;
+
+  ## count matrix
+  my @matrix = $self->getMatrix();
+  my $ncol = $self->ncol();
+  my $nrow = $self->nrow();
+
+  ## Get the maximal count sum per column
+  my @col_sum = col_sum($nrow,$ncol,@matrix);
+  my $max_col_sum = &RSAT::stats::max(@col_sum);
+  if ($max_col_sum <= 0) {
+      &RSAT::error::FatalError("Cannot scale matrix with only null values");
+  }
+  my $scaling_factor = $n/$max_col_sum;
+  
+  for my $c (0..($ncol-1)) {
+    my $col_sum = 0;
+    for my $r (0..($nrow-1)) {
+      $matrix[$c][$r] *= $scaling_factor;
+    }
+  }
+  $self->setMatrix($nrow, $ncol, @matrix);
+}
+
 
 =pod
 

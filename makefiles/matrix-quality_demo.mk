@@ -58,3 +58,8 @@ COMPARE_QUALITY=${MTXQ_OUT}/zoo_chip_enrichment/compare_quality
 compare_zoo_chip_quality:
 	@ls -1 ${MTXQ_OUT}/*/*_synthesis.html | perl -pe 's/_synthesis.+//'> ${QUALITY_LIST}
 	compare-qualities -quality_list ${QUALITY_LIST} -cluster -o ${COMPARE_QUALITY}
+
+NWD_PLOTS=-plot hnf6_sing nwd -plot hnf4a_sing nwd -plot foxa1_sing nwd -plot cebpa_sing nwd
+MTXQ_NWD_ZOO_OUT=${MTXQ_OUT}/zoo_chip_enrichment_nwd_compare
+compare_nwd_zoo_chip:
+	${MAKE} zoo_chip_quality ZOO_CHIP_SEQ_PLOTS="${NWD_PLOTS}" MTXQ_ZOO_OUT=${MTXQ_NWD_ZOO_OUT}

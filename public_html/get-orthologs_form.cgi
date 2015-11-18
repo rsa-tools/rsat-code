@@ -53,7 +53,7 @@ $field_description{s_rank} = "Reciprocal rank";
 %default = ();
 &LoadGetOrthoDefault(\%default);
 
-### replace defaults by parameters from the cgi call, if defined
+### Replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
@@ -114,7 +114,7 @@ foreach my $field (@output_fields) {
     print "</th>\n";
     if (($field eq "ref_name")||($field eq "query_name")||($field eq "query_organism")){
 	print "<td></td>";
-    }else{
+    } else {
 	foreach my $th ("ortho_lth", "ortho_uth") {
 	    my $param = $th."_".$field;
 	    my $default_param = "none";
