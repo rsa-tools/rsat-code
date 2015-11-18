@@ -8,6 +8,12 @@
 ## Name of the site (which will appear in the log file)
 RSAT_SITE=your_server_name
 
+## Group specificity of this server
+GROUP=Fungi
+
+## Default species for genome installation, which should be adapted to the group specificity
+SPECIES=saccharomyces_cerevisiae
+
 ## Web server URL
 # RSAT_WWW=http://localhost/rsat/
 
@@ -121,5 +127,5 @@ CLUSTER_QUEUE=
 ##
 ##  Ensembl: http://www.ensembl.org/
 ##  EnsemblGenomes: http://ensemblgenomes.org/
-ENSEMBL_RELEASE=81
-ENSEMBLGENOMES_BRANCH=28
+ENSEMBL_RELEASE=82
+ENSEMBLGENOMES_BRANCH=29

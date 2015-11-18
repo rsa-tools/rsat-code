@@ -1,0 +1,383 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: retrieve-seq-bed,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+retrieve-seq-bed
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Retrieve sequences for a set of genomic coordinates provided in bed,
+gff or vcf format.
+
+This script is a wrapper around I<bedtools getfasta>, an efficient
+tool to retrieve sequences from a fasta-formatted sequence file
+(e.g. all genome sequences) and a file of coordinates defined on the
+sequences of the fasta file.
+
+The wrapper generates the I<bedtools getfasta> command in order to
+retrieve genomic coordinates from one of the locally supported
+genomes.
+
+=head1 AUTHORS
+
+Bruno Contreras Moreira <bcontreras\@eead.csic.es>
+Jacques.van-Helden\@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item genome
+
+=back
+
+=head1 USAGE
+
+retrieve-seq-bed -org organism_name -i inputfile [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The genomic coordinate file will be used as input by I<bedtools
+getfasta>, and must be compliant with the supported formats:
+BED/GFF/VCF.
+
+=head1 OUTPUT FORMAT
+
+A sequence file in fasta format (produced by I<bedtools getfasta>. 
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<-server http://some.rsat.server/rsat/>
+
+Send the request to a remote RSAT server via the Web services. This
+option enables to get fasta sequences from any RSAT server without
+having to install them locally.
+
+=item B<-extend length>
+=item B<-extend_up up_length>
+=item B<-extend_down down_length>
+
+Extend the peaks by a given length on the upstream (I<-exetend_up>),
+downstream (I<-extend_down>) or both sides (I<-extend>). The side is
+adapted according to the strand.
+
+Flank extension is done via I<bedtools flank>. 
+
+The extended coordinates are exported with the same name as the output
+file, supplemented with the suffix _flanks.bed.
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our $organism;
+  our $organism_name = "";
+  our $repeat_masked = 0; ## If set ot 1, use repeat-masked version of the genome
+  $infile{coordinates} = ""; ## Mandatory argument
+
+  ## Arguments for &RSAT::util::doit();
+  our $dry = "";
+  our $die_on_error = "";
+  our $batch = "";
+  our $job_prefix = "";
+
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ## Check that input coordinates file has been specified
+  unless ($infile{coordinates}) {
+      &RSAT::error::FatalError("You must specify the input file containing genomic coordinates (option -i).");
+  }
+
+  ## Check that output sequence file has been specified
+  unless ($outfile{sequences}) {
+      &RSAT::error::FatalError("You must specify the output sequence file (option -o).");
+  }
+
+  ## Check that organism_name has been defined
+  unless ($organism_name) {
+      &RSAT::error::FatalError("You must define an organism name (option -org).");
+  }
+
+  ## Check that the organism is supported locally
+  $organism = new RSAT::organism();
+  $organism->check_name($organism_name);
+  
+  ################################################################
+  ## Identify the genome sequence file (must be in fasta format)
+  my $genome_dir = $ENV{RSAT}."/data/genomes/".$organism_name."/genome/";
+  $infile{fasta_genome} = $genome_dir."/".$organism_name;
+  $infile{fasta_genome} .= ".dna";
+  $infile{fasta_genome} .= "_rm" if ($repeat_masked);
+  $infile{fasta_genome} .= ".genome.fa";
+  &RSAT::error::FatalError("Missing fasta file with genome sequence", $infile{fasta_genome}) 
+      unless (-e $infile{fasta_genome}) ;
+  &RSAT::message::Info("Genome sequence", $infile{fasta_genome}) if ($main::verbose >= 2);
+
+  ################################################################
+  ## Open log stream
+  if ($main::verbose >= 1) {
+      $outfile{log} = $outfile{sequences};
+      $outfile{log} =~ s/.fasta$//;
+      $outfile{log} =~ s/.fna$//;
+      $outfile{log} .= "_log.txt";
+      $out = &OpenOutputFile($outfile{log});
+  }
+
+  ################################################################
+  ## Generate the bedtools command
+  my $bedtools = &RSAT::server::GetProgramPath("bedtools", $die_on_error);
+  my $cmd = $bedtools." getfasta -fi ".$infile{fasta_genome};
+  $cmd .= " -bed ".$infile{coordinates};
+  $cmd .= " -s"; ## Take strand in consideration (this is inactive by default in bedtools getfasta)
+  $cmd .= " -fo ".$outfile{sequences} if ($outfile{sequences});
+  &RSAT::util::doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $out);
+
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{sequences}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{sequences}) if ($main::verbose >= 2);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-i coordinate_file>
+
+Genomic coordinates, in one of the formats supported by I<bedtools
+getfasta>: BED, GFF, VCF.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{coordinates} = shift(@arguments);
+
+# =pod
+
+# =item B<-in_format format>
+
+# Format of the genomic coordinate file.  Supported (same as I<bedtools
+# getfasta>): BED, GFF, VCF.
+
+# =cut
+#     } elsif ($arg eq "-in_format") {
+#       $main::in_format= lc(shift(@arguments));
+
+
+=pod
+
+=item	B<-o outputfile>
+
+Output file (in fasta format), where the sequences will be saved.
+This argument is mandatory, since it is required by I<bedtools
+getfasta>.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{sequences} = shift(@arguments);
+
+=pod
+
+=item	B<-org organism_name>
+
+Organism name, which must correspond to one organism supported on the
+local RSAT instance.
+
+=cut
+    } elsif ($arg eq "-org") {
+      $main::organism_name = shift(@arguments);
+
+=pod
+
+=item B<-rm> 
+
+Use repeat-masked version of the genome.
+
+=cut
+
+    } elsif ($arg eq "-rm") {
+      $main::repeat_masked = 1;
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; retrieve-seq-bed ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__

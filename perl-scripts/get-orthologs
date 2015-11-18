@@ -326,6 +326,12 @@ package main;
   } else {
     &RSAT::error::FatalError("You must either specify a reference taxon (option -taxon) or a list of reference organisms (option -org_list)");
   }
+
+  ## Select unique organisms per genus or species if required
+  @ref_organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @ref_organisms) if ($main::unique_species);
+  @ref_organisms = &RSAT::OrganismManager::UniquePerTaxon("genus", @ref_organisms) if ($main::unique_genus);
+
+
   &RSAT::message::Info(scalar(@ref_organisms), "reference organisms") if ($main::verbose >= 2);
 
 
@@ -1080,6 +1086,30 @@ negative values.
           &RSAT::error::FatalError($depth, "Invalid value for depth, must be an Integer number") 
    	      unless &IsInteger($depth);
 
+
+=pod 
+
+=item B<-unique_species>
+
+Retain at most one organism per species. This enables to filter out
+the numerous strains sequences for some species of particular interest.
+(e.g. Escherichia coli, Bacillus subtilis, ...).
+
+=item B<-unique_genus>
+
+Retain at most one organism per genus. Same filter as for
+-unique_species, but at the level of the genus. At this level we don't
+expect to have much redundancy, but this option can be useful to
+select a reasonable number of organisms, e.g. to draw phylogenetic
+profile heatmaps.
+
+=cut
+      
+    } elsif ($arg eq "-unique_species") {
+      $unique_species = 1;
+    } elsif ($arg eq "-unique_genus") {
+      $unique_genus = 1;
+      
 
 
 =pod

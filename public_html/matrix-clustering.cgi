@@ -217,10 +217,10 @@ $parameters .= " -o ".$output_path."/".$output_prefix;
 
 ## Add an error-log file for matrix-clustering
 $err_file = $output_path."/".$output_prefix."_err.txt";
-#$parameters .= " >& ".$err_file;
+$parameters .= " 2> ".$err_file;
 
 ## Report the full command before executing
-&ReportWebCommand($command." ".$parameters);
+&ReportWebCommand($command." ".$parameters, $err_file);
 
 ################################################################
 ## Display or send result by email

@@ -34,9 +34,14 @@ help:
 list_param:
 	@echo
 	@echo "go_analysis.mk"
+	@echo "	GO_DIR			${GO_DIR}"
+	@echo "	GO_REL			${GO_REL}"
+	@echo "	GO_DESC			${GO_DESC}"
 	@echo "	ORGANISMS		${ORGANISMS}"
 	@echo "	ORG			${ORG}"
 	@echo "	ORG_UCFIRST		${ORG_UCFIRST}"
+	@echo "	ORG_DIR			${ORG_DIR}"
+	@echo "	ANNOT_DIR		${ANNOT_DIR}"
 	@echo "	GO_INSTALL_DIR		${GO_INSTALL_DIR}"
 ## Get help about one particular task
 TASK=download_go
@@ -86,7 +91,6 @@ parse_go:
 
 ## Get GO annotations fo one specific organism and export the result
 ## in a tab-delimited file.
-GO_DIR=results/GO_annotations/${ORG_UCFIRST}
 get_annotations:
 	@echo
 	@echo "Getting GO annotations"
@@ -97,18 +101,23 @@ get_annotations:
 
 ## Expand GO annotations, i.e. the gene-GO associations are
 ## transmitted from each class to all its ancestral classes
+ANNOT_DIR=${GO_DIR}/${ORG_UCFIRST}
 GO_ANNOT=GO_annotations_${ORG}.tab
+#GO_ANNOT=GO_annotations_${ORG}.tab
+GO_ANNOT=annotations_table_${ORG}.tab
 expand_annot:
 	@echo
 	@echo "Go annotation directory	${GO_DIR}"
-	@mkdir -p ${GO_DIR}
+	@mkdir -p ${ANNOT_DIR}
 	@echo "Expading gene annotations from each class to its ancestor classes"
-	${PYTHON} ${SCRIPT} expand -a ${GO_DIR}/${GO_ANNOT} -d ${GO_DESC} -r ${GO_REL} --output_dir ${GO_DIR}
+	${PYTHON} ${SCRIPT} expand -a ${GO_DIR}/${GO_ANNOT} -d ${GO_DESC} -r ${GO_REL}
+# --output_dir ${GO_DIR}
 
 expand_org:
 	@echo
 	@echo "Expading gene annotations for organism ${ORG}"
-	${PYTHON} ${SCRIPT} expand -org ${ORG}  --output_dir ${GO_DIR}
+	${PYTHON} ${SCRIPT} expand -org ${ORG}
+#  --output_dir ${GO_DIR}
 
 install_annot:
 	@echo
@@ -142,3 +151,6 @@ all_organisms:
 		${MAKE} ORG=$${org} ${ORG_TASK}; \
 	done
 
+ALL_OPERONS=${ANNOT_DIR}/operons_${ORG_UCFIRST}.tab
+operons_vs_GO:
+	infer-operons -org ${ORG_UCFIRST} -all -o ${ALL_OPERONS}

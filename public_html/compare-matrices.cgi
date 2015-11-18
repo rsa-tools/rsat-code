@@ -39,10 +39,11 @@ $query = new CGI;
 
 ################################################################
 ## Output paths
-$command = "$ENV{RSAT}/perl-scripts/compare-matrices";
+local $command = "$ENV{RSAT}/perl-scripts/compare-matrices";
 
-$output_prefix = "compare-matrices";
-$output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
+local $output_prefix = "compare-matrices";
+local $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); 
+local $output_dir = &ShortFileName($output_path);
 
 ## We need to create the output directory before starting
 ## compare-matrices, since it will generate multiple output files.
@@ -95,7 +96,7 @@ if (&IsReal($query->param('bg_pseudo'))) {
 ## Motif database
 if ($query->param('db_choice') eq "custom") {
   ## Upload custom reference motif file
-  local $custom_motif_file = $output_dir."custom_motif_file.txt";
+  local $custom_motif_file = $output_path."/custom_motif_file.tf";
   local $upload_custom_motif_file = $query->param('upload_custom_motif_file');
   if ($upload_custom_motif_file) {
     if ($upload_custom_motif_file =~ /\.gz$/) {

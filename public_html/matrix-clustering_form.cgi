@@ -152,16 +152,16 @@ print "<h2>", "Output file options", ,"</h2>";
 print $query->checkbox(-name=>'heatmap',
   		       -checked=>$default{heatmap},
   		       -label=>'');
-print "&nbsp;<A'><B>Draw a heatmap showing the distances between the motifs.</B></A>";
+print "&nbsp;<A'><B>Heatmap</B></A>";
 print "<br><br>\n";
 
 
 ## Draw the tree with aligned consensuses
-print $query->checkbox(-name=>'alignment_consensuses',
-  		       -checked=>$default{consensus},
-  		       -label=>'');
-print "&nbsp;<A'><B>Export a hierarchical tree with the consensuses aligment.</B></A>";
-print "<br><br>\n";
+# print $query->checkbox(-name=>'alignment_consensuses',
+#   		       -checked=>$default{consensus},
+#   		       -label=>'');
+# print "&nbsp;<A'><B>Export a hierarchical tree with the consensuses aligment.</B></A>";
+# print "<br><br>\n";
 
 ## Export the trees in Newick format
 ## By default trees are exported in JSON
@@ -187,21 +187,21 @@ print "<h2>", "Labels displayed in the logo tree", ,"</h2>";
 print $query->checkbox(-name=>'label_id',
   		       -checked=>$default{label_id},
   		       -label=>'');
-print "&nbsp;<A'><B>Display the motif ID at the branches of the logo tree.</B></A>";
+print "&nbsp;<A'><B>Motif ID</B></A>";
 print "<br><br>\n";
 
 ## Label: name
 print $query->checkbox(-name=>'label_name',
   		       -checked=>$default{label_name},
   		       -label=>'');
-print "&nbsp;<A'><B>Display the motif name at the branches of the logo tree.</B></A>";
+print "&nbsp;<A'><B>Motif name</B></A>";
 print "<br><br>\n";
 
 ## Label: consensus
 print $query->checkbox(-name=>'label_consensus',
   		       -checked=>$default{label_consensus},
   		       -label=>'');
-print "&nbsp;<A'><B>Display the consensus of the motif at the branches of the logo tree.</B></A>";
+print "&nbsp;<A'><B>Consensus</B></A>";
 print "<br><br>\n";
 
 

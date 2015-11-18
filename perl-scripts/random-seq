@@ -10,8 +10,9 @@ require "RSA.lib";
 package main;
 {
     ## Start time
-    $start_time = &RSAT::util::StartScript();
-
+    our $start_time = &RSAT::util::StartScript();
+    our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    
     ## Initialise parameters ####
     $out_format = "fasta";
     $seq_nb = 1;
@@ -72,7 +73,7 @@ package main;
     ################################################################
     ## Check argument values
 
-    ## Output formaat
+    ## Output format
     &CheckOutputSeqFormat($out_format);
 
 
@@ -150,23 +151,25 @@ package main;
     ################################################################
     ## Calculate residue probabilities (Markov or Bernoulli model)
     if ($exp_freq_file) {
-
-	## Load Markov model from an oligonucleotide frequency file
-	&CalcConditionalProbabilities($exp_freq_file);
-
+      &RSAT::message::TimeWarn("Computing background model from expected frequency file", $exp_freq_file) if ($main::verbose >= 2);
+      ## Load Markov model from an oligonucleotide frequency file
+      &CalcConditionalProbabilities($exp_freq_file);
+      
     } else {
 
-	## Calculate cumulated frequencies for individual residues
-	$cum_letter_freq[0] = $freq{$letters[0]};
-	for $l (1..$#letters) {
-	    $cum_letter_freq[$l] = $cum_letter_freq[$l-1]+$freq{$letters[$l]};
-	}
-	unless ($cum_letter_freq[$#letters] > 0) {
-	    &RSAT::error::FatalError( "Invalid alphabet specification.");
-	}
-	for $l (0..$#letters) {
-	    $freq{$letters[$l]} /= $cum_letter_freq[$#letters];
-	    $cum_letter_freq[$l] /= $cum_letter_freq[$#letters];
+      &RSAT::message::TimeWarn("Computing background model from residue frequencies") if ($main::verbose >= 2);
+      
+      ## Calculate cumulated frequencies for individual residues
+      $cum_letter_freq[0] = $freq{$letters[0]};
+      for $l (1..$#letters) {
+	$cum_letter_freq[$l] = $cum_letter_freq[$l-1]+$freq{$letters[$l]};
+      }
+      unless ($cum_letter_freq[$#letters] > 0) {
+	&RSAT::error::FatalError( "Invalid alphabet specification.");
+      }
+      for $l (0..$#letters) {
+	$freq{$letters[$l]} /= $cum_letter_freq[$#letters];
+	$cum_letter_freq[$l] /= $cum_letter_freq[$#letters];
 	}
     }
 
@@ -181,20 +184,27 @@ package main;
     &Verbose() if ($verbose);
 
     ## Initialize the random seed
+    &RSAT::message::TimeWarn("Seeding the random number generator") if ($main::verbose >= 2);
     if (defined($seed)) {
 	srand($seed);
     } else {
-	srand (time);
+	$seed = srand (time);
     }
+    
+    &RSAT::message::TimeWarn("Random seed", $seed) if ($main::verbose >= 1);
 
 
     ################################################################
     ## Generate the random sequence
+    &RSAT::message::TimeWarn("Generating", $r, "random sequences") if ($main::verbose >= 2);
     for $r (1..$seq_nb) {
 	### initialization
 	my $current_seq_length = $lengths[$r-1] || $seq_length;
 	$sequence = "";
 	$seq_id = $seq_prefix."_".$r;
+
+	&RSAT::message::TimeWarn("Generating random sequence", $r."/".$seq_nb, "length=".$current_seq_length) if ($main::verbose >= 3);
+
 	my @comments = ();
 	my $comment = join ("; ", "random sequence ".$r."/".$seq_nb,
 			    "type: ".$sequence_type,
@@ -254,10 +264,17 @@ package main;
 	&PrintNextSequence($out, $out_format, $line_width, $sequence, $seq_id, @comments);
     }
 
+
+    ## Report execution time
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print STDERR $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+
     ## Close output file
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-    print $main::out $exec_time if ($main::verbose >= 1);
-    close $out if ($outputfile);
+    if ($outfile{output}) {
+      close $main::out;
+      &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+    }
 
     foreach my $file (@tmp_to_delete) { unlink($file) };
     exit(0);
@@ -679,45 +696,45 @@ End_short_help
 ################################################################
 ## Verbosity
 sub Verbose {
-  print $out "; random-seq ";
-  &PrintArguments($out);
+  print STDERR "; random-seq ";
+  &PrintArguments(STDERR);
   if ($main::infile{length_file}) {
-      print $out "; Sequence length file	        $main::infile{length_file}\n";
-      print $out "; Repetitions          	        $repetitions\n";
+      print STDERR "; Sequence length file	        $main::infile{length_file}\n";
+      print STDERR "; Repetitions          	        $repetitions\n";
   } else {
-      print $out "; sequence length                     $seq_length\n";
+      print STDERR "; sequence length                     $seq_length\n";
   }
-  print $out "; Number of sequences     $seq_nb\n";
-  print $out "; Sequence format         $out_format\n";
+  print STDERR "; Number of sequences     $seq_nb\n";
+  print STDERR "; Sequence format         $out_format\n";
   if ($outputfile) {
-    print $out "; Output file	$outputfile\n";
+    print STDERR "; Output file	$outputfile\n";
   }
-  print $out "; residue frequencies: $method\n";
+  print STDERR "; residue frequencies: $method\n";
   if ($exp_freq_file) {
-    print $out "; Calibrated oligomer frequencies\n";
-    print $out "; 	oligomer length:         $oligo_length\n";
-    print $out "; 	Makov order:             $markov\n";
-    print $out "; 	expected frequency file: $exp_freq_file\n";
+    print STDERR "; Calibrated oligomer frequencies\n";
+    print STDERR "; 	oligomer length:         $oligo_length\n";
+    print STDERR "; 	Makov order:             $markov\n";
+    print STDERR "; 	expected frequency file: $exp_freq_file\n";
 
     if ($main::verbose >= 3) {
-      print $out "; oligomer frequencies\n";
-      print $out "; subword frequencies\n";
+      print STDERR "; oligomer frequencies\n";
+      print STDERR "; subword frequencies\n";
       foreach $subword (sort keys %subword_freq) {
-	printf $out ";\t%s\t%f\t", $subword, $subword_freq{$subword};
+	printf STDERR ";\t%s\t%f\t", $subword, $subword_freq{$subword};
 	for $l (0..$#letters) {
-	  printf $out (" %s:%g",
+	  printf STDERR (" %s:%g",
 				 $letters[$l],
 				 $cum_letter_freq{$subword}[$l] - ($l>0)*$cum_letter_freq{$subword}[$l-1]
 				);
 		}
-		print $out "\n";
+		print STDERR "\n";
 	    }
 	}
     } else {
 	for $l (0..$#letters) {
-	    print $out "; \t";
-	    print $out "; $letters[$l]\t";
-	    print $out "; $freq{$letters[$l]}\n";    
+	    print STDERR "; \t";
+	    print STDERR "; $letters[$l]\t";
+	    print STDERR "; $freq{$letters[$l]}\n";    
 	}
     }
 }

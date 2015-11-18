@@ -16,13 +16,16 @@ if (Sys.getenv("CRAN_REPOS") == "") {
 required.packages = c("devtools",
 		                  "RJSONIO",
                       "dendextend",
+                      "flux",
+		                  "gplots",
+		                  "RColorBrewer"
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
-                      "gplots")
+)
 
 ## List of required packages from Bioconductor
-required.packages.bioconductor <- c("ctc")
+required.packages.bioconductor <- c("ctc", "amap")
 
 ## List of RSAT-specific packages to be compiled on the server
 required.packages.rsat <- c("TFBMclust")
