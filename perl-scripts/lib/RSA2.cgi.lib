@@ -52,6 +52,16 @@ document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.
 EndGATag
 }
 
+################################################################
+## Load the default parameters for get-orthologs`
+sub LoadGetOrthoComparaDefault {
+  $default{organism} = "arabidopsis_thaliana";
+  $default{queries} = '';
+  $default{type} = "orth";
+  $default{ident_target} = 70;
+  $default{ident_query} = 70;
+}
+
 
 ################################################################
 ## Load the default parameters for get-orthologs`
@@ -74,6 +84,51 @@ sub LoadGetOrthoDefault {
   $default{return_bit_sc} = "";
   $default{return_rank} = "checked";
   $default{return_s_rank} = "checked";
+  $default{unique_taxon} = "species";
+}
+
+###############################################################
+## Print the options fro get-orthologs-compara:
+## -ref_org, -i,  
+sub PrintOrthoComparaSelectionSection {
+
+    # populate list of supported organisms
+    my @supported_organisms_fullnames;
+    open(GETORTHSCOMP,"get-orthologs-compara -supported_organisms |");
+    while(<GETORTHSCOMP>){
+        next if(/^^; INFO  Supported organisms/);
+        if(/^; INFO  (\S+)/)
+        {
+            my $orgs = $1;
+            while($orgs =~ /(\S+)?;/g)
+            {
+                my $org = $1;
+                push(@supported_organisms_fullnames,$org); # if($org =~ /\.\d/);#release number;
+            }
+        }
+    }
+    close(GETORTHSCOMP);
+    
+    ## Choice of the organism
+    print "<b>Query </b>";
+    &OrganismPopUp(@supported_organisms_fullnames);
+
+    ################################################################
+    ### gene queries
+    print "<B><A HREF='help.get-orthologs-compara.html#genes'>Query genes</A></B>&nbsp;";
+    print "<BR>\n";
+    print $query->textarea(-name=>'queries',
+             -default=>$default{queries},
+             -rows=>3,
+             -columns=>40);
+    ### option to upload a file with the gene list from the client machine
+    print "<BR>Upload gene list from file<BR>\n";
+    print $query->filefield(-name=>'uploaded_file',
+              -default=>'',
+              -size=>45,
+              -maxlength=>200);
+    print "<p>\n";
+
 }
 
 ################################################################
@@ -104,43 +159,45 @@ sub PrintOrthoSelectionSection {
 ##                               Ralstonia_metallidurans_CH34
 ##                               Yersinia_pestis_KIM
 
-    my %supported_genome_blast = ();
-    my @supported_orthologs = ();
-    my %supported_orthologs = ();
+  my %supported_genome_blast = ();
+  my @supported_orthologs = ();
+  my %supported_orthologs = ();
   
-    ################################################################
-    ## List of organisms for which ortholog search is supported.
-    ##
-    ## This is temporary, we need to find a way to provide orhtologs for
-    ## all organisms.
-    ## Read supported orthologs from file
-    my $fp_org_file = $ENV{RSAT}."/public_html/data/supported_blast_tables.tab";
-    &RSAT::message::Debug("supported BLAST tables", $fp_org_file) if ($main::verbose >= 5);
-    if (-e $fp_org_file) {
-	my ($fp_org) = &OpenInputFile($fp_org_file);
-	while (<$fp_org>) {
-	    next unless (/\S/) ; # skip empty rows
-	    next if (/^;/); # skip comment lines
-	    next if (/^\#/); # Skip header line
-	    
-	    my @split_line = split(/\t/, $_);
-	    my $org = $split_line[0];
-	    my $taxa = $split_line[1];	  
-
-	    if ($org) {
-		
+  ################################################################
+  ## List of organisms for which ortholog search is supported.
+  ##
+  ## This is temporary, we need to find a way to provide orhtologs for
+  ## all organisms.
+  ## Read supported orthologs from file
+  my $fp_org_file = $ENV{RSAT}."/public_html/data/supported_blast_tables.tab";
+  &RSAT::message::Debug("supported BLAST tables", $fp_org_file) if ($main::verbose >= 5);
+  if (-e $fp_org_file) {
+    my ($fp_org) = &OpenInputFile($fp_org_file);
+    while (<$fp_org>) {
+      next unless (/\S/) ; # skip empty rows
+      next if (/^;/); # skip comment lines
+      next if (/^\#/); # Skip header line
+      
+      my @split_line = split(/\t/, $_);
+      my $org = $split_line[0];
+      my $taxa = $split_line[1];	  
+      
+      if ($org) {
+	
 #	      if (defined($supported_organism{$org})) {## This control seems
 #	      not to work, probably because the library is read before the
 #	      list of supported organisms.
 		$supported_orthologs{$org} = 1;
 		$supported_genome_blast{$org}{$taxa} = 1;
 #	      }
-	    }
-	}
-      @supported_orthologs = sort keys %supported_orthologs;
-    } else {
-      &RSAT::error::FatalError("Missing file", $fp_org_file);
+      }
     }
+    @supported_orthologs = sort keys %supported_orthologs;
+  } else {
+    &RSAT::error::FatalError("Missing file", $fp_org_file);
+  }
+  
+  
 
   ## Choice of the organism
   print "<b>Query </b>";
@@ -165,6 +222,16 @@ sub PrintOrthoSelectionSection {
   ## Taxon of interest
 #  &TaxonPopUp("node");
   &TaxonPopUp("all");
+
+  ## Select a single organism per taxon
+  print "<br>";
+  print "<b><a href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
+  print $query->popup_menu(-name=>'unique_taxon',
+			   -Values=>['species',
+				     'genus',
+				     'no filter'],
+			   -default=>$default{unique_taxon});
+
 }
 
 
@@ -324,13 +391,156 @@ sub SelectOutput {
 }
 
 
+
+
+#################################
+## Input choice. 
+## Print a section enabling to enter some input in various ways:
+## - copy/paste in a text area
+## - file on the server, transferred from previous application
+## - upload a local file from the client computer
+## - URL of a file (will be downloaded)
+sub MultiInputChoice {
+  my ($in_title, $in_num, $in_type, $in_format) = @_;
+
+  my $inputChoiceString = "<B>$in_title</B>";
+  my $input_file = "";
+  $in_type = $in_type || "input";
+  $in_firmat = $in_format || "text";
+
+  if ($input_file = $query->param("input_file")) {
+
+    ## Input file is already on the server machine
+    ## (piped from a previous script)
+    $input_url = $input_file;
+    $input_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+    $inputChoiceString .=  "<a href=$input_url>";
+    $inputChoiceString .=  " transferred from previous query<BR>\n";
+    $inputChoiceString .=  "</a>";
+    $input_format = $query->param(input_format);
+    $inputChoiceString .=  "<INPUT type='hidden' NAME='input_format' VALUE='$input_format'>\n";
+    $inputChoiceString .=  "<INPUT type='hidden' NAME='input_file' VALUE='$input_file'>\n";
+
+  } else {
+
+    ## Text area to copy-paste the input
+    $inputChoiceString .=  "&nbsp;"x5;
+    $inputChoiceString .=  "Paste your ".$in_type." (".$in_format." format)<BR>\n";
+    $inputChoiceString .=  $query->textarea(-name=>'input'.$in_num,
+					    -default=>$default{"input".$in_num},
+					    -rows=>4,
+					    -columns=>55);
+    $inputChoiceString .=  "<BR>\n";
+
+    ## Option to upload the input file from the client machine
+    $inputChoiceString .=  "Or select a file to upload (.gz compressed files supported) <BR>\n";
+    $inputChoiceString .=  $query->filefield(-name=>'uploaded_file'.$in_num,
+						-default=>'',
+						-size=>45,
+						-maxlength=>200);
+    $inputChoiceString .=  "<BR>\n";
+
+    ## Option to fetch input file from an URL
+    $inputChoiceString .=  "&nbsp;"x3;
+    $inputChoiceString .=  "URL of a ".$in_type." file available on a Web server.<br>\n";
+    $inputChoiceString .=  $query->textfield(-name=>'input_url'.$in_num,
+						-default=>$default{'input_url'.$in_num},
+						-size=>62);
+    $inputChoiceString .= "<br>\n";
+
+
+  }
+  print($inputChoiceString);
+}
+
+########################
+## MultiGetInputFile
+sub MultiGetInputFile {
+  my ($in_num, $input_file, $required_opt) = @_ ;
+
+  ################################################################
+  ## Upload input file from the client
+  my $upload_file = $query->param('uploaded_file'.$in_num);
+  if ($upload_file) {
+    if ($upload_file =~ /\.gz$/) {
+      $input_file .= ".gz";
+    }
+    $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+    open IN, ">$input_file" ||
+      &cgiError("Cannot store input file in temp dir.");
+    while (<$upload_file>) {
+      print IN;
+    }
+    close IN;
+
+    ### Fetch input from an URL
+  } elsif ($query->param('input_url'.$in_num) =~ /\S/) {
+    my $url = $query->param('input_url'.$in_num);
+    &RSAT::message::Info("Fetching input file from URL ".$url) if ($ENV{rsat_echo} >= 0);
+    my $in = "";
+    if (open IN, ">$input_file") {
+      $in = get($url);
+      if ($in =~ /\S/) {
+	print IN $in;
+	close IN;
+      } else {
+	&RSAT::error::FatalError("No input could be downloaded from the URL ".$url);
+      }
+    }
+
+    ## Check input file
+    my $file_type = `file $input_file`;
+    if ($file_type =~ "gzip") {
+      &RSAT::message::TimeWarn("Uncompressing input file", $input_file);
+      my $cmd = "mv ".$input_file." ".$input_file.".gz";
+      $cmd .= " ; gunzip ".$input_file.".gz";
+      &doit($cmd);
+    }
+
+
+    &RSAT::message::Debug("Input file=", &RSAT::util::hide_RSAT_path($input_file), 
+			  "<p>File type=", &RSAT::util::hide_RSAT_path($file_type),
+	) if ($main::verbose >= 5);
+
+#    my $in_kb = sprintf("%d", length($in)/1000);
+
+    ### Read input from the textarea "input"
+  } elsif ($query->param('input'.$in_num) =~ /\S/) {
+    if (open IN, ">$input_file") {
+      print IN $query->param('input'.$in_num);
+      close IN;
+    }
+
+
+  } else {
+    if ($required_opt) { ## only returns return if this is a required option
+      &cgiError("The input box should not be empty.");
+    } else {
+      $input_file = '';
+    }
+  }
+
+
+  ## Uncompress gzipped files, because some programs cannot uncompress on the flight
+  if ($input_file =~ /.gz$/) {
+    &doit("gunzip -f ".$input_file);
+    $input_file =~ s/.gz$//;
+  }
+
+  ## input file will be deleted
+  &DelayedRemoval($input_file);
+
+  return($input_file);
+}
+
+
 ################################################################
-## Print a selection between diferent modes of sequence entry
-### in a HTML form
-### - sequences copy-pasted in a textarea
-### - sequences uploaded from a file on the client side
-### - sequences piped from a previous script, and stored on the server
-###   (typically  in a temporary dir)
+## Print a selection between different modes of sequence entry
+## in a HTML form
+## - sequences copy-pasted in a textarea
+## - sequences uploaded from a file on the client side
+## - sequences piped from a previous script, and stored on the server
+##   (typically  in a temporary dir)
 sub DisplaySequenceChoice {
     print &SequenceChoice();
 }
@@ -412,8 +622,9 @@ sub MultiSequenceChoice {
   #$sequenceChoiceString .=  "<UL>\n";
   my $sequence_file = "";
 
-  if ($sequence_file = $query->param("sequence_file")) {
-
+  if (($sequence_file = $query->param("sequence_file".$seq_num)) || 
+      ($sequence_file = $query->param("sequence_file"))) {
+      
     ## Sequence file is already on the server machine
     ## (piped from a previous script)
     $sequence_url = $sequence_file;
@@ -434,7 +645,7 @@ sub MultiSequenceChoice {
     $sequenceChoiceString .=  "&nbsp;"x5;
     $sequenceChoiceString .=  "Paste your sequence (fasta format)<BR>\n";
     $sequenceChoiceString .=  $query->textarea(-name=>'sequence'.$seq_num,
-					       -default=>$default{sequence},
+					       -default=>$default{"sequence".$seq_num},
 					       -rows=>4,
 					       -columns=>55);
     $sequenceChoiceString .=  "<BR>\n";
@@ -466,8 +677,6 @@ sub MultiSequenceChoice {
     $sequenceChoiceString .=  "<BR>\n";
 
   }
-
-
   print($sequenceChoiceString);
 }
 
@@ -475,8 +684,11 @@ sub MultiSequenceChoice {
 ################################################################
 ## Print the commande on the Web interface (for debugging)
 sub ReportWebCommand {
-  my ($command) = @_;
-  print "<PRE>", &RSAT::util::hide_RSAT_path($command), "\n</PRE>\n" if ($ENV{rsat_echo} >= 1);
+  my ($command, $err_file) = @_;
+  print "<b>Server command</b><pre>", &RSAT::util::hide_RSAT_path($command), "\n</pre>\n";
+  if ($err_file) {
+      print "<pre><b>Error log</b>: ", &RSAT::util::hide_RSAT_path($err_file), "</pre>\n";
+  }
 }
 
 
@@ -679,7 +891,7 @@ sub MultiGetSequenceFile {
 
   } else {
     if ($required_opt) { ## only returns return if this is a required option
-      &cgiError("The sequence box should not be empty.");
+      &cgiError("The sequence box $seq_num should not be empty.");
     } else {
       $sequence_file = '';
       $sequence_format = '';
@@ -944,9 +1156,12 @@ sub SeqBoxMQ {
   print "<br>";
   print "<b><a href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
   print $query->popup_menu(-name=>'permutation'.$seq_num,
-			   -Values=>[0,1,2],
+			   -Values=>[0..5],
 			   -default=>$default{perm});
-  print "<BR>\n";
+  print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num,
+				      -checked=>$default{sep_perm1},
+				      -label=>''), "&nbsp;separate permutations";
+  print "<br>\n";
   print"</td>";
   print "<td>";
   print "<BR>\n";
@@ -954,14 +1169,14 @@ sub SeqBoxMQ {
   print $query->textfield(-name=>'tag'.$seq_num,
 			  -default=>$default{'tag'.$seq_num},
 			  -size=>15);
-  if ($seq_num == 1){
+  #if ($seq_num == 1){
       print "<p></p>";
       print $query->checkbox(-name=>'nwd',
   		       -checked=>$default{nwd},
 			     -label=>'');
       print "&nbsp;Calculate NWD";
       #print ("<INPUT TYPE='radio' NAME='nwd' VALUE='nwd' $checked{'nwd'}>","Calculate NWD");
-  }
+  #}
   print"</td>";
   print "</tr></table>";
 
@@ -1003,6 +1218,7 @@ sub GetMatrix {
 				'cluster-buster'=>1,
 				'consensus'=>1,
 				'feature'=>1,
+				'footprintDB'=>1,
 				'gibbs'=> 1,
 				'infogibbs'=>1,
 				'jaspar'=>1,
@@ -2019,7 +2235,27 @@ sub SelectFormat {
 # Pipe the result to another command
 #
 sub PipingFormForSequence {
+    my ($seq_file, $seq_format) = @_;
 
+    ## A bit tricky: the previous version used the global variable
+    ##  $sequence_file.  2015-11-10: JvH adds an argument $seq_file,
+    ##  and, if not specified, use the global variable.  Later on I
+    ##  should suppress the use of this (and other) global variables).
+    if ($seq_file) {
+	$sequence_file = $seq_file;
+    }
+#    my $sequence_url =  &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $sequence_file);
+    $sequence_url = $sequence_file;
+    $sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+
+    
+    if ($seq_format) {
+	$out_format = $seq_format;
+    } elsif ($out_format eq "") {
+	$out_format = "fasta";
+    }
+    
+    
   $oligo_background_model = "<INPUT type=\"hidden\" NAME=\"bg_method\" VALUE=\"background\">";
   $dyad_background_model = "<INPUT type=\"hidden\" NAME=\"bg_method\" VALUE=\"background\">";
 
@@ -2059,12 +2295,8 @@ sub PipingFormForSequence {
 
 <tr valign="top" align="center">
 
-    <th align=center>
-      	<font size=-1>
-	String-based<br>
-	Pattern Discovery<br>
-	(unknown patterns)
-	</font>
+    <th rowspan=2 align=center>
+      	<font size=-1>Motif  Discovery<br>(<i>ab initio</i>)</font>
     </th>
 
     <td align=center>
@@ -2125,13 +2357,6 @@ sub PipingFormForSequence {
 
 <tr valign="top" align="center">
 
-    <th align=center>
-      	<font size=-1>
-	<B>Matrix-based<br>
-	 Pattern Discovery</B><BR>
-	(unknown patterns)
-	</font>
-    </th>
 
 
     <td align=center>
@@ -2157,6 +2382,16 @@ sub PipingFormForSequence {
     </td-->
 
     <td align=center>
+	<FORM METHOD="POST" ACTION="peak-motifs_form.cgi">
+	<INPUT type="hidden" NAME="sequence_url1" VALUE="$sequence_url">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="submit" value="peak-motifs">
+	</FORM>
+	<b>Full work flow</b><br>for chip-seq peaks</br>and other seq types
+    </td-->
+
+<!--
+    <td align=center>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
@@ -2166,6 +2401,7 @@ sub PipingFormForSequence {
 	</FORM>
 	Greedy algorithm <br>(Hertz, 1990)
     </td>
+-->
 </tr>
 
 <tr valign="top" align="center">
@@ -2554,11 +2790,8 @@ sub PrintDyadReturnFields {
 sub MatrixFromPatterns_defaults {
   $default{to_matrix} = 1;
   $default{flanks} = 2;
-  $default{max_asmb_nb} = 5;
-  $default{min_weight} = 7.5;
-#  $default{gibbs_msps} = 1;
-#  $default{gibbs_iter} = 3;
-#  $default{gibbs_final} = '';
+  $default{max_asmb_nb} = 10;
+  $default{min_weight} = 5;
 }
 
 ################################################################
@@ -2607,6 +2840,8 @@ sub MatrixFromPatterns_print_form {
 sub MatrixFromPatterns_run {
   my $pssm_prefix = $tmp_file_path."_pssm";
   my $sig_matrix_file = $pssm_prefix."_sig_matrices.tf";
+  my $rescaled_sig_matrix_file = $pssm_prefix."_sig_matrices_rescaled.tf";
+#  my $sig_matrix_file_nr = $pssm_prefix."_sig_matrices_nr_cluster_root_motifs.tf";
 #  $gibbs_matrix_file = $pssm_prefix."_gibbs_matrices.txt";
   $pssm_file_tab = $pssm_prefix."_count_matrices.txt"; ## has to be global for the piping form
   $pssm_file_tf = $pssm_prefix."_count_matrices.tf"; ## has to be global for the piping form
@@ -2631,10 +2866,12 @@ sub MatrixFromPatterns_run {
   ## Run the command
   print "<hr><PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >= 0);
   system("$pssm_command");
-  push @result_files, ('significance matrices', $sig_matrix_file);
+  push @result_files, ('Significance matrices', $sig_matrix_file);
+  push @result_files, ('Rescaled significance matrices', $rescaled_sig_matrix_file);
+#  push @result_files, ('Non-redundant matrices', $sig_matrix_file_nr);
   #  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
-  push @result_files, ('final matrices (transfac format)', $pssm_file_tf);
-  push @result_files, ('final matrices (tab format)', $pssm_file_tab);
+  push @result_files, ('Final matrices (transfac format)', $pssm_file_tf);
+  push @result_files, ('Final matrices (tab format)', $pssm_file_tab);
 
   my ($out_matrix_file) = &display_matrices_web($pssm_file_tab, "tab", 0);
   return ($out_matrix_file);
@@ -3020,6 +3257,24 @@ sub IndexFiles {
 
   &RSAT::message::TimeWarn("HTML index", $outfile{html_index}) if ($main::verbose >= 2);
 }
+
+###############################################################
+## Check whether compara is supported on this server
+sub check_compara_tools() {
+    if ($ENV{compara_tools} == 0) {
+    print "<font size=+1>\n";
+    print "<p><font color='red'>Compara is not supported on this instance of RSAT.</font></p>\n";
+    print "<p>It is currently supported on the following RSAT servers: </p>\n";
+    print "<ol>\n";
+    print "<li>Plants: <a target='_top' href='http://plants.rsat.eu/'>http://plants.rsat.eu/</a></li>";
+    print "</ol>\n";
+    print "</font>\n";
+    print "</hr>";
+    print $query->end_html;
+    exit(0);
+    }
+}
+
 
 ################################################################
 ## &CheckPhyloSupported()

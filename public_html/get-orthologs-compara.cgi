@@ -15,7 +15,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### Print the header
-&RSA_header("get-orthologs result", "results");
+&RSA_header("get-orthologs-compara result", "results");
 
 ## Check security issues
 &CheckWebInput($query);
@@ -25,11 +25,11 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$command = "$SCRIPTS/get-orthologs";
-$prefix = "get-orthologs";
-$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
+$command = "$SCRIPTS/get-orthologs-compara";
+$prefix = "get-orthologs-compara";
+$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); 
+$tmp_file_name = &ShortFileName($tmp_file_path);
 @result_files = ();
-
 
 &RSAT::message::Warning("The computation can take a more or less important time depending on the taxon size.",
 			"If the answer does not appear in due time, use the option <i>output email</i>");
@@ -62,53 +62,32 @@ unless ($organism = $query->param('organism')) {
 unless (%{$supported_organism{$organism}}) {
     &cgiError("Organism $org is not supported on this site");
 }
-$parameters .= " -org $organism";
+$parameters .= " -ref_org $organism";
 
-
-################################################################
-#### Taxon
-my $taxon = "";
-unless ($taxon = $query->param('taxon')) {
-    &cgiError("You should specify a taxon");
-}
-$parameters .= " -taxon $taxon";
-
-## Unique species per taxon (filter)
-if ($query->param("unique_taxon") eq "species") {
-  $parameters .= " -unique_species";
-} elsif ($query->param("unique_taxon") eq "genus") {
-  $parameters .= " -unique_genus";
-}
-
-## Taxonomic depth (TO BE CHECKED)
-if ($depth = $query->param('depth')) {
-    if ((&IsNatural($depth) && ($depth > 0))) {
-	$parameters .= " -depth ".$depth;
-    }
-}
 
 
 ## ##############################################################
-## Thresholds
-my @parameters = $query->param();
-foreach my $param (@parameters) {
-    if ($param =~ /^return_(.+)/) {
-	my $field = $1;
-	$parameters .= " -return ".$field;
-    } elsif ($param =~ /^ortho_lth_(.+)/) {
-	my $field = $1 ;
-	my $value = $query->param($param);
-	next unless (&IsReal($value));
-	$parameters .= " -lth ".$field." ".$value;
-    } elsif ($param =~ /^ortho_uth_(.+)/) {
-	my $field = $1 ;
-	my $value = $query->param($param);
-	next unless (&IsReal($value));
-	$parameters .= " -uth ".$field." ".$value;
-    }
+## Thresholds and type
+my $type = "";
+unless ($type = $query->param('type')) {
+    &cgiError("You should select an homology type");
 }
-## Show only resulst for organisms for which we have a blast file
-$parameters .= " -nowarn";
+$parameters .= " -type $type";
+
+my $ident_target = "";
+unless ($ident_target = $query->param('ident_target')) {
+    &cgiError("Please set ident_target");
+}
+&cgiError("Please choose a [0,100] %value for ident_target") if($ident_target <0 || $ident_target > 100);
+$parameters .= " -ident_target $ident_target";
+
+my $ident_query = "";
+unless ($ident_query = $query->param('ident_query')) {
+    &cgiError("Please set ident_query");
+}
+&cgiError("Please choose a [0,100] %value for ident_query") if($ident_query <0 || $ident_query > 100);
+$parameters .= " -ident_query $ident_query";
+
 
 ## Output file
 $result_file = $tmp_file_path.".tab";
@@ -164,8 +143,6 @@ sub PipingForm {
 <TD>
 <FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
 <INPUT type="hidden" NAME="organism" VALUE="$organism">
-<INPUT type="hidden" NAME="taxon" VALUE="$taxon">
-<INPUT type="hidden" NAME="single_multi_org" VALUE="multi">
 <INPUT type="hidden" NAME="seq_label" VALUE="gene identifier + organism + gene name">
 <INPUT type="hidden" NAME="genes" VALUE="selection">
 <INPUT type="hidden" NAME="gene_selection" VALUE="$genes">

@@ -70,6 +70,16 @@ group_specificity=None
 phylo_tools=0
 
 ################################################################
+### Support for Ensembl Compara orthologs and related tools.
+###
+### get-orthologs-compara_form.cgi
+###
+### This feature is only supported if actively specified by the RSAT administrator.
+
+compara_tools=0
+
+
+################################################################
 ## Support for inter-individual variation analysis tools (regulatory
 ## SNPs and other types of variations).
 ##
@@ -141,6 +151,15 @@ smtp=
 ## should be an authorized mail sender for the smtp server.
 #smtp_sender=rsat@localhost
 smtp_sender=
+
+## STARTTLS options
+## 
+## If specified, these parameters will activate the starttls protocol
+## for sending email. This requires to install the Perl module
+## Email::Sender::Transport::SMTPS.
+starttls=
+starttls_user=
+starttls_pass=
 
 ################################################################
 ## URL of the web server (important for the links).
@@ -258,8 +277,8 @@ ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 ##
 ## These parameters are used by the tools to install genomes from
 ## these two sources.
-ensembl_version=81
-ensemblgenomes_version=28
+ensembl_version=82
+ensemblgenomes_version=29
 
 ## Safe version of the ensembl database (for download-ensembl-genome,
 ## download-ensembl-variations, ...). The database structures and API
@@ -269,9 +288,9 @@ ensembl_version_safe=70
 
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools developed by Olivier Sand
 ##   (retrieve-ensembl-seq, get-ensembl-genome)
-ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-28-81/ensembl/modules
-compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-28-81/ensembl-compara/modules
-variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-28-81/ensembl-variation/modules
+ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-29-82/ensembl/modules
+compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-29-82/ensembl-compara/modules
+variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-29-82/ensembl-variation/modules
 
 ################################################################
 ## Parameters for biomart

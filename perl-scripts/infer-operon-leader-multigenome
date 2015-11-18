@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# get-leader-multiplegenome
+# infer-operon-leader-multiplegenome
 #
 ############################################################
 
@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-get-leader-multigenome
+infer-operon-leader-multigenome
 
 =head1 DESCRIPTION
 
@@ -29,7 +29,7 @@ comparative genomics
 
 =head1 USAGE
 
-get-leader-multigenome  [-i inputfile] [-o outputfile] [-v]
+infer-operon-leader-multigenome  [-i inputfile] [-o outputfile] [-v]
 
 =head1 INPUT FORMAT
 
@@ -45,7 +45,7 @@ Identifier oor synonyms are supported.
 =item 2. Organism name
 
 For the organism name, spaces must be replaced by underscore character
-(exactly as for get-leader).
+(exactly as for infer-operon-leader).
 
 =back
 
@@ -76,16 +76,16 @@ require RSAT::Family;
 ################################################################
 #### initialise parameters
 if (defined($SCRIPTS)) {
-  $get_leader_cmd = "$SCRIPTS/get-leader"; ## for the web browser, the full path is necessary
+  $get_leader_cmd = "$SCRIPTS/infer-operon-leader"; ## for the web browser, the full path is necessary
 } else {
-  $get_leader_cmd = "get-leader";
+  $get_leader_cmd = "infer-operon-leader";
 }
 
 local $start_time = &RSAT::util::StartScript();
 
 local $label_specified = 0;	## indicates whether the label is specified in the option lines
 local $default_label = "id,organism_name,name";
-local @to_pass;			## parameters pased to get-leader
+local @to_pass;			## parameters pased to infer-operon-leader
 local %infile = ();
 local %outfile = ();
 
@@ -274,9 +274,9 @@ Number of the column containing the organisms (default: 2)
 
 =item B<other parameters>
 
-All other parameters are passed to the command get-leader.
+All other parameters are passed to the command infer-operon-leader.
 
-See the manual of get-leader for a description of supported parameters.
+See the manual of infer-operon-leader for a description of supported parameters.
 
 =cut
 
@@ -298,7 +298,7 @@ See the manual of get-leader for a description of supported parameters.
 ################################################################
 #### verbose message
   sub Verbose {
-    warn "; get-leader-multigenome ";
+    warn "; infer-operon-leader-multigenome ";
     &PrintArguments($out);
     if (%main::infile) {
       warn "; Input files\n";
@@ -331,7 +331,7 @@ See the manual of get-leader for a description of supported parameters.
 
 =over
 
-=item get-leader
+=item infer-operon-leader
 
 =item supported-organisms
 

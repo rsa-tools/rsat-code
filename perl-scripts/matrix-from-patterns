@@ -140,6 +140,8 @@ package main;
     local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
     local $top_seq = 0;
+    local $cluster_matrices = 0;
+    local $column_rescaling = 10;
 
     ## Collect method
 #    local $collect_method = "info-gibbs";
@@ -168,7 +170,7 @@ package main;
 
     ## Parameters for matrix-scan-quick
     local %lth;
-    $lth{weight} = 7;
+    $lth{weight} = 5;
 
     ## Parameters for the &doit() command
     $dry = 0;
@@ -201,6 +203,7 @@ package main;
     ################################################################
     ## Specify output files
     $outfile{log} = $outfile{output}."_log.txt";
+    $outfile{err} = $outfile{output}."_err.txt";
     if ($infile{assembly}) {
       $outfile{assembly} = $infile{assembly};
     } else {
@@ -219,6 +222,7 @@ package main;
     ################################################################
     ## Open output stream
     local $log = &OpenOutputFile($outfile{log});
+    local $err = &OpenOutputFile($outfile{err});
 
     ################################################################
     ## Print verbose
@@ -236,7 +240,7 @@ package main;
       $top_seq_cmd .= " -from ".$seq_format." -to ".$seq_format;
       $top_seq_cmd .= " -top ".$top_seq;
       $top_seq_cmd .= " -o ".$seq_to_scan;
-      &doit($top_seq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($top_seq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
     } else {
       $seq_to_scan = $infile{sequence};
     }
@@ -280,7 +284,7 @@ package main;
       }
       $assembly_cmd .= " -o ".$outfile{assembly};
       print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
-      &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
     }
 
     ################################################################
@@ -320,18 +324,65 @@ package main;
     $convert_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
     $convert_cmd .= " -o ".$outfile{sig_matrices};
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
-    &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
+    ################################################################
+    ## Rescale the significance matrices to get count-like matrices
+    ## (with a somewhat arbitrary scale, and including real rather
+    ## than Natural numbers).
+    $outfile{sig_matrices_rescaled} = $outfile{output}."_sig_matrices_rescaled.tf";
+    my $rescale_cmd = $SCRIPTS."/convert-matrix -v 1 -i ".$outfile{sig_matrices};
+    $rescale_cmd .= " -from tf -to tf";
+    $rescale_cmd .= " -return counts";
+    $rescale_cmd .= " -rescale ".$column_rescaling;
+    $rescale_cmd .= " -o ".$outfile{sig_matrices_rescaled};
+    print $log "; Rescaling significance matrices\n", $rescale_cmd, "\n";
+    &doit($rescale_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
+
+    ################################################################
+    ## Extract non-redundant matrices by clustering significance
+    ## matrices. This solves a problem with pattern assembly, which
+    ## returns different assemblies with mutually overlapping sets of
+    ## patterns.
+    my $sig_matrices = ""; ## Sig matrices will depend on the option -cluster_matrices
+    if ($cluster_matrices) {
+	&RSAT::message::TimeWarn("Clustering significance matrices to get non-redundant set") if ($main::verbose >= 2);
+
+	## Define prefix and name for the non-redundant matrices produced by matrix-clustering ("root matrices")
+	$prefix{sig_matrices_nr} = $outfile{output}."_sig_matrices_nr"; ## Non-redundant significance matrices
+	$outfile{sig_matrices_nr} = $prefix{sig_matrices_nr}."_cluster_root_motifs.tf"; ## Non-redundant significance matrices
+
+	## Build the matrix-clustering command
+	my $cluster_cmd = $SCRIPTS."/matrix-clustering -v 0";
+	$cluster_cmd .= " -i ".$outfile{sig_matrices_rescaled};
+	$cluster_cmd .= " -matrix_format tf";
+	$cluster_cmd .= " -motif_collection_name sig_matrices";
+#    $cluster_cmd .= " -title 'Oct4 motifs peak motifs'";
+	$cluster_cmd .= " -lth Ncor 0.4 -lth cor 0.6 -lth w 5 -hclust_method average";
+#    $cluster_cmd .= " -label_in_tree name";
+	$cluster_cmd .= " -metric_build_tree Ncor";
+	$cluster_cmd .= " -return root_matrices";
+	$cluster_cmd .= " -quick";
+	$cluster_cmd .= " -o ".$prefix{sig_matrices_nr}; ## BEware, the output file name has a suffix appended
+	print $log "; significance matrices -> non-redundant matrices\n", $cluster_cmd, "\n";
+	&doit($cluster_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+	$sig_matrices = $outfile{sig_matrices_nr};
+    } else {
+	$sig_matrices = $outfile{sig_matrices_rescaled};
+    }
+
 
 
     ################################################################
     ## Convert significance matrices into count matrices
     &RSAT::message::TimeWarn("Converting sig matrices to count matrices") if ($main::verbose >= 2);
     if ($collect_method eq "matrix-scan") {
-      &ScanForSites();
+      &ScanForSites($sig_matrices);
     } elsif ($collect_method eq "matrix-scan-quick") {
-      &QuickScanForSites();
+      &QuickScanForSites($sig_matrices);
     } else {
-      &InfoGibbs();
+      &InfoGibbs($sig_matrices);
     }
 
     ################################################################
@@ -356,7 +407,7 @@ package main;
       }
       $logo_link_cmd .= " -o ".$outfile{links};
       print $log "; sites -> count matrices\n", $logo_link_cmd, "\n";
-      &doit($logo_link_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($logo_link_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
 
     }
@@ -483,7 +534,7 @@ dyad-analysis.
 
 =item B<-toppat #>
 
-Max number of patterns to assemble. This argument is pased to
+Max number of patterns to assemble. This argument is passed to
 I<pattern-assembly>.
 
 =cut
@@ -532,7 +583,7 @@ Max number of sequences to scan for building final matrices.
 =item B<-sc #>
 
 Column containing the pattern scores in the input pattern file. This
-argument is pased to I<pattern-assembly>.
+argument is passed to I<pattern-assembly>.
 
 =cut
 
@@ -543,10 +594,10 @@ argument is pased to I<pattern-assembly>.
 
 =pod
 
-=item B<-sc #>
+=item B<-cc #>
 
-Column indicating the pattern clusters in the input pattern file. This
-argument is pased to I<pattern-assembly>.
+Column indicating the pattern clusters in the input pattern file
+(default 1). This argument is passed to I<pattern-assembly>.
 
 =cut
 
@@ -715,6 +766,23 @@ output basename, followed by an extension.
 =cut
 	} elsif ($arg eq "-prefix") {
 	  $main::matrix_prefix = shift(@arguments);
+
+
+=pod
+
+=item B<-clustering>
+=item B<-no_clustering>
+
+Apply (-clustering) or not (-no_clustering) a matrix-clustering step
+to filter out redundant matrices. This filtering is performed at the
+level of significance matrices, which also reduces the time spend at
+scanning sequences to collect sites.
+
+=cut
+	} elsif ($arg eq "-clustering") {
+	    $cluster_matrices = 1;
+	} elsif ($arg eq "-no_clustering") {
+	    $cluster_matrices = 0;
 
 
 =pod
@@ -938,15 +1006,16 @@ sub Verbose {
 ################################################################
 ## Scan sequences to collect sites
 sub QuickScanForSites {
+    my ($matrix_file) = @_;
   &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan-quick)") if ($main::verbose >= 2);
 
   ## Split the sig matrix file into separated tab-delimited files (one per matrix, required for matrix-scan-quick)
   my $cmd = $SCRIPTS."/convert-matrix ";
-  $cmd .= " -from tf -i ".$outfile{sig_matrices};
+  $cmd .= " -from tf -i ".$matrix_file;
   $cmd .= " -to tab -split  -o ".$prefix{sig_matrices_split};
   $cmd .= "; rm -f ".$outfile{'count_matrices'};
   &RSAT::message::Debug("Splitting sig matrix file", $outfile{sig_matrices_split}) if ($main::verbose >= 3);
-  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
   ## Get the list of files containing the individual matrices
   my @split_files = ();
@@ -1009,7 +1078,7 @@ sub QuickScanForSites {
 #      $scan_cmd .= " > ".$outfile{"sig_sites_m".$m};
       $scan_cmd .= " >> ".$outfile{sig_sites};
       print $log "\n; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
-      &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
     }
   }
 
@@ -1023,10 +1092,14 @@ sub QuickScanForSites {
 ################################################################
 ## Scan sequences to collect sites
 sub ScanForSites {
+    my ($matrix_file) = @_;
+
   &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan)") if ($main::verbose >= 2);
+
   ## matrix-scan parameters
   ## The upper threshold on Pval MUST be defined (if not, all
-  ## sites can be taken, resulting in a meaningless matrix)
+    ## sites can be taken, resulting in a meaningless matrix).
+  &RSAT::error::FatalError("Upper threshold on p-value must be defined for the ScanForSites() step") unless (defined($uth{Pval}));
   unless ($scan_parameters =~ /-uth Pval/) {
     $scan_parameters = " -uth Pval ".$uth{Pval}." ".$scan_parameters;
   }
@@ -1037,12 +1110,12 @@ sub ScanForSites {
 
   my $scan_cmd = $matrix_scan_cmd." -v 1";
   $scan_cmd .= " -i ".$seq_to_scan;
-  $scan_cmd .= " -m ".$outfile{sig_matrices};
+  $scan_cmd .= " -m ".$matrix_file;
   $scan_cmd .= " ".$strands;
   $scan_cmd .= $scan_parameters;
   $scan_cmd .= " -o ".$outfile{sig_sites};
   print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
-  &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
   &sites_to_matrix($outfile{sig_sites});
 }
 
@@ -1073,7 +1146,7 @@ sub sites_to_matrix {
 #  $convert2_cmd .= " -return links" if ($return_fields{links});
   $convert2_cmd .= " -o ".$outfile{count_matrices_tf};
   print $log "; sites -> transfac matrices\n", $convert2_cmd, "\n";
-  &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
   ################################################################
   ## The TRANSFAC matrices are then converted to tab format
@@ -1084,13 +1157,15 @@ sub sites_to_matrix {
   $convert3_cmd .= " -return sites" if ($return_fields{sites});
   $convert3_cmd .= " -o ".$outfile{count_matrices};
   print $log "; transfac-formatted -> tab-formatted matrices\n", $convert3_cmd, "\n";
-  &doit($convert3_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &doit($convert3_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
 }
 
 ################################################################
 ## Run infogibbs to convert the significance matrices into count matrices
 sub InfoGibbs {
+    my ($matrix_file) = @_;
+
     &RSAT::message::TimeWarn("Running info-gibbs with significance matrices as seeds") if ($main::verbose >= 2);
 ##    my $gibbs_cmd = $BIN."/info-gibbs";
 #    unless (-e $gibbs_cmd) {
@@ -1102,7 +1177,7 @@ sub InfoGibbs {
 
     $gibbs_cmd .= " -v 1";
     $gibbs_cmd .= " -i ".$seq_to_scan;
-    $gibbs_cmd .= " --seedmatrix=".$outfile{sig_matrices};
+    $gibbs_cmd .= " --seedmatrix=".$matrix_file;
     $gibbs_cmd .= " --mean_sps=".$gibbs_msps;
     if ($strands eq "-2str") {
       $gibbs_cmd .= " --strand=+-";
@@ -1115,7 +1190,7 @@ sub InfoGibbs {
     $gibbs_cmd .= " --finalcycle" if ($gibbs_final);
     $gibbs_cmd .= " > ".$outfile{gibbs_matrices};
     print $log "; significance matrices + sequences -> count matrices\n", $gibbs_cmd, "\n";
-    &doit($gibbs_cmd, $dry, 0, $verbose, $batch, $job_prefix);
+    &doit($gibbs_cmd, $dry, 0, $verbose, $batch, $job_prefix, $log, $err);
 
     ################################################################
     ## Convert matrix from info-gibbs and generate logos if required
@@ -1133,7 +1208,7 @@ sub InfoGibbs {
     $convert2_cmd .= " -return links" if ($return_fields{links});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
-    &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 }
 
 
@@ -1144,13 +1219,16 @@ sub terminate {
   ## Clean the sites (can be huge files for peak-motif results)
   if (-e $outfile{sig_sites}) {
     my $clean_cmd = "rm -f ".$outfile{sig_sites};
-    &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
   }
 
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $log $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
   close $log if ($outfile{output});
   &RSAT::message::Info("matrix-from-pattern log file", $outfile{log})
+    if ($main::verbose >= 2);
+
+  &RSAT::message::Info("matrix-from-pattern error log file", $outfile{err})
     if ($main::verbose >= 2);
 
 

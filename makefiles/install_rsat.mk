@@ -147,6 +147,7 @@ PERL_MODULES= \
 	Email::Sender \
 	Email::Simple \
 	Email::Simple::Creator \
+	Email::Sender::Transport::SMTPS \
 	PostScript::Simple	 \
 	Statistics::Distributions \
 	Math::CDF \
