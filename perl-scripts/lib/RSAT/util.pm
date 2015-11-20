@@ -1247,7 +1247,15 @@ sub EmailTheResult {
     $html_submission_message =~ s|\\\$|\$|gm;
     &RSAT::message::Info($html_submission_message);
 
-    &RSAT::server::send_mail($submission_message, $recipient, $subject.' ; Job submitted') unless ($no_email);
+    ## actually send email
+    unless($no_email)
+    {
+        if($ENV{starttls}){
+            &RSAT::server::send_mail_STARTTLS($submission_message, $recipient, $subject.' ; Job submitted');
+        } else {
+            &RSAT::server::send_mail($submission_message, $recipient, $subject.' ; Job submitted');
+        }
+    }
 
     ## Concatenate the command with the email notification
     my $completion_message;
