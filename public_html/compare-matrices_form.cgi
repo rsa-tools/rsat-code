@@ -152,7 +152,7 @@ print $query->end_form;
 
 print "<td><b><a href='help.compare-matrices.html'>[MANUAL]</a></B></TD>\n";
 ##print "<td><b><a href='tutorials/tut_compare-matrices.html'>[TUTORIAL]</a></B></TD>\n";
-print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
+##print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</tr></table></ul></ul>\n";
 
 print "</FONT>\n";
