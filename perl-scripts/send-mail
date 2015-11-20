@@ -261,9 +261,10 @@ Optional details for SMTP::STARTTLS servers, by default taken from ENV.
 =cut
     } elsif ($arg eq "-starttls") {
       $STARTTLS = 1;
-      my @params = split(/::/,shift(@arguments));
-      if(scalar(@params) == 4) { # assumes host:user:pass order
+      my @params = split(/::/,$arguments[0]);
+      if(scalar(@params) == 4) { # assumes host:user:pass::sender order
         @starttlsparams = @params;
+        shift(@arguments);
       }
 
 #     } elsif ($arg eq "-password") {
