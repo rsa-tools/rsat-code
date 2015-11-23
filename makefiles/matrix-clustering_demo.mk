@@ -230,13 +230,21 @@ cluster_regulondb_permute:
 
 ################################################################
 ## Cluster all motifs from HOCOMOCO
+HOCOMOCO_GROUPS=Human Mouse
+HOCOMOCO_GROUP=Human
 HOCOMOCO_CLUSTER_DIR=results/matrix-clustering_results/HOCOMOCO_clusters
 HOCOMOCO_CLUSTERS=${HOCOMOCO_CLUSTER_DIR}/HOCOMOCO_clusters
-HOCOMOCO_PREFIX=HOCOMOCO_2015-08-07
+HOCOMOCO_PREFIX=HOCOMOCO_2015-11-23_${HOCOMOCO_GROUP}
 HOCOMOCO_MATRICES=${RSAT}/public_html/motif_databases/HOCOMOCO/${HOCOMOCO_PREFIX}.tf
-cluster_hocomoco:
+
+cluster_hocomoco_all_groups:
+	@for g in ${HOCOMOCO_GROUPS}; do \
+		${MAKE} cluster_hocomoco_one_group HOCOMOCO_GROUP=$${g} ; \
+	done
+
+cluster_hocomoco_one_group:
 	@echo
-	@echo "Clustering all matrices from HOCOMOCO"
+	@echo "Clustering all matrices from HOCOMOCO ${HOCOMOCO_GROUP}"
 	${MAKE} _cluster MATRIX_PREFIX=${HOCOMOCO_PREFIX} MATRIX_FILE=${HOCOMOCO_MATRICES} \
 		TITLE='HOCOMOCO motifs' \
 		COLLECTION=${HOCOMOCO_PREFIX} \
