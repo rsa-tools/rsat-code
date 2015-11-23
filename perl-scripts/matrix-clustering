@@ -3062,7 +3062,16 @@ sub Merge_matrices() {
 	    $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file_temp;
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
-	    $cmd = "convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf -attr name ".$cluster." -attr accession ".$cluster." -set_attr merged_AC @{$cluster_nodes{$cluster}} -set_attr merged_ID ".$alignment_info{"@{$cluster_nodes{$cluster}}"}{name}." -o ".$new_singleton_motif_file;
+
+	    $cmd = "convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf ";
+	    $cmd .= " -attr name ".$cluster." -attr accession ".$cluster;
+	    $cmd .= " -set_attr merged_AC @{$cluster_nodes{$cluster}} -set_attr merged_ID ".$alignment_info{"@{$cluster_nodes{$cluster}}"}{name};
+	    $cmd .= " -set_attr type merge";
+	    $cmd .= " -set_attr merge_type ".$operator;
+	    $cmd .= " -set_attr merge_nb 1";
+	    $cmd .= " -o ".$new_singleton_motif_file;
+
+
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 	    unlink($new_singleton_motif_file_temp);
 
