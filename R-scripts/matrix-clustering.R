@@ -171,9 +171,14 @@ if(number.of.motifs > 1){
   clusters <<- lapply(clusters, function(x){
     get.id(x)
   })
+  
+  clusters.names <<- lapply(clusters, function(x){
+    get.name(x)
+  })
+  
 
 
-  ## Export a table with the cluster names and its elements
+  ## Export a table with the cluster names and its elements (IDs)
   clusters.table <- NULL
   clusters.table <-  lapply(clusters, function(x){
     paste(x, collapse = ",")
@@ -181,7 +186,17 @@ if(number.of.motifs > 1){
   clusters.table <- t(data.frame(clusters.table ))
   clusters.composition.file <- paste(sep="", out.prefix, "_tables/clusters.tab")
   write.table(clusters.table, file = clusters.composition.file, sep="\t", quote=FALSE, row.names = TRUE, col.names = FALSE)
-  verbose(paste("Exporting cluster table", clusters.composition.file), 3)
+  verbose(paste("Exporting cluster table with motif IDs", clusters.composition.file), 3)
+  
+  ## Export a table with the cluster names and its elements (TF || Motif names)
+  clusters.names.table <- NULL
+  clusters.names.table <-  lapply(clusters.names, function(x){
+    paste(x, collapse = ",")
+  })
+  clusters.names.table <- t(data.frame(clusters.names.table ))
+  clusters.names.composition.file <- paste(sep="", out.prefix, "_tables/clusters_motif_names.tab")
+  write.table(clusters.names.table, file = clusters.names.composition.file, sep="\t", quote=FALSE, row.names = TRUE, col.names = FALSE)
+  verbose(paste("Exporting cluster table with motifs names", clusters.names.composition.file), 3)
 
   ## Number of clusters
   forest.nb <- length(clusters)
