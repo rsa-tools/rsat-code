@@ -283,10 +283,15 @@ EOR
   # plot upstream region size
   $file = $params{'outfolder'}.'/_upstream_size.tab';
   $outfile = $params{'outfolder'}.'/upstream_size.png';
+
+  # simply plot the mean values
   ($idx,$reference_idx) = (0,-1);
   open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
+  print TAB "organism\tupstream\n";
   foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
     print TAB "$org\t";
+    print TAB calc_mean($stats{$org}{'upstream_L'});
+    print TAB "\n";
     if($params{'reference'} && $org =~ m/$params{'reference'}/){
         $reference_idx = $idx;
     }
@@ -295,30 +300,44 @@ EOR
 
   $colors = get_Rplot_colors($reference_idx,$n_of_orgs);
 
-  print TAB "\n";
-  for(my $u=0;$u<$max_ups;$u++){
-    foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
-        $L = $stats{$org}{'upstream_L'}->[$u] || 'NA';
-        print TAB "$L\t";
-    }
-    print TAB "\n";
-  }
-  close(TAB);
-
-  open(RSHELL,"|R --no-save $Rparams ") || die "# $0 : cannot call R: $!\n";
+  open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
   png("$outfile",width=800);
-  par(mai=c(1,4,1,1)) # make room for long horizontal labels
-  colors = c($colors);
-  data = read.table(file="$file",header=T,check.names=F); 
-  boxplot( data, xlab='upstream-noorf size', horizontal=T, las=1,
-            varwidth=F, show.names=T, col=colors, outline=F, cex.axis=0.8 );
+  colors = c($colors)
+  data = read.table(file="$file",header=T,check.names=F);
+  par(mai=c(1,4,1,1))
+  barplot( data\$upstream, names.arg=data\$organism, col=colors, 
+    xlab="average upstream length", horiz=T, las=1, cex.names=0.8 )
   dev.off()
   q()
 EOR
   close RSHELL;
 
-  print REP "Length of upstream regions\t".
+  # boxplots look ugly as most have medians of 2000!
+  #print TAB "\n";
+  #for(my $u=0;$u<$max_ups;$u++){
+  #  foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
+  #      $L = $stats{$org}{'upstream_L'}->[$u] || 'NA';
+  #      print TAB "$L\t";
+  #  }
+  #  print TAB "\n";
+  #}
+  #close(TAB);
+
+  #open(RSHELL,"|R --no-save $Rparams ") || die "# $0 : cannot call R: $!\n";
+  #print RSHELL<<EOR;
+  #png("$outfile",width=800);
+  #par(mai=c(1,4,1,1)) # make room for long horizontal labels
+  #colors = c($colors);
+  #data = read.table(file="$file",header=T,check.names=F); 
+  #boxplot( data, xlab='upstream-noorf size', horizontal=T, las=1,
+  #          varwidth=F, show.names=T, col=colors, outline=F, cex.axis=0.8 );
+  #dev.off()
+  #q()
+#EOR
+  #close RSHELL;
+
+  print REP "Average length of upstream regions\t".
     "<img width='800' src='./upstream_size.png'>\n";
 
   # add summary to report
