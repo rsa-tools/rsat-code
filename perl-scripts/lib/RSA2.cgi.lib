@@ -93,16 +93,17 @@ sub LoadGetOrthoDefault {
 sub PrintOrthoComparaSelectionSection {
 
     # populate list of supported organisms
-    my @supported_organisms_fullnames;
-    open(GETORTHSCOMP,"get-orthologs-compara -supported_organisms |");
+    my @supported_organisms_fullnames = ();
+    open(GETORTHSCOMP,"$ENV{RSAT}/perl-scripts/get-orthologs-compara -supported_organisms |") ||
+        warn "# cannot run get-orthologs-compara -supported_organisms\n";
     while(<GETORTHSCOMP>){
-        next if(/^^; INFO  Supported organisms/);
-        if(/^; INFO  (\S+)/)
+        next if(/Supported/);
+        if(/Information:\s+(\S+)/)
         {
-            my $orgs = $1;
-            while($orgs =~ /(\S+)?;/g)
+            my $orgs = $1; 
+            while($orgs =~ m/(\S+?),/g)
             {
-                my $org = $1;
+                my $org = $1; #print "|$org|\n";
                 push(@supported_organisms_fullnames,$org); # if($org =~ /\.\d/);#release number;
             }
         }
@@ -111,7 +112,7 @@ sub PrintOrthoComparaSelectionSection {
     
     ## Choice of the organism
     print "<b>Query </b>";
-    &OrganismPopUp(@supported_organisms_fullnames);
+    print OrganismPopUpCompara(@supported_organisms_fullnames);
 
     ################################################################
     ### gene queries
@@ -971,6 +972,47 @@ sub OrganismPopUpSelectable {
   return $popup;
 }
 
+## Generate pop-up menu to be displayed for organism selection in Compara
+sub OrganismPopUpCompara{
+    my (@selected_organisms) = @_;
+    if (scalar(@selected_organisms) == 0) {
+        @selected_organisms =
+            &RSAT::OrganismManager::get_supported_organisms_web();
+    }
+    my $organismPopup = "";
+    $organismPopup .=  "<B>Organism</B>&nbsp;";
+    print '<script type="text/javascript"> ' ;
+    print `cat $ENV{RSAT}/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js`;
+    print ' </script>';
+    print '<script type="text/javascript"> ' ;
+    print `cat $ENV{RSAT}/perl-scripts/lib/js/chosen/chosen.jquery.min.js`;
+    print ' </script>';
+    print '<script type="text/javascript">    
+     jQuery(document).ready(function(){
+     $(".chosen-select").chosen(); 
+     $(".chosen-container").css({"font-size": "11px"});
+    });
+
+    </script>';
+
+    $organismPopup .=  "<select name='organism' class='chosen-select' tabindex='2'>\n";
+    foreach my $org (@selected_organisms) {
+      my $name = $org;
+      $name =~ s/\_/ /g;
+      if ((lc($org) eq lc($default{organism})) ||
+      (lc($name) eq lc($default{organism}))) {
+        $organismPopup .=  "<option selected VALUE='$org'>$name\n";
+      } else {
+        $organismPopup .=  "<option value='$org'>$name\n";
+      }
+    }
+
+    $organismPopup .=  "</select>";
+    $organismPopup .= " <i>not seeing your favorite organism in the list? Contact us to have it installed </i>";
+    $organismPopup .=  "<br>\n";
+    return($organismPopup);
+}
+
 ################################################################
 ## Generate the content of the pop-up menu to be displayed for organism selection
 sub OrganismPopUpString {
@@ -1018,6 +1060,7 @@ sub OrganismPopUpString {
   $organismPopup .=  "<br>\n";
   return($organismPopup);
 }
+
 
 ################################################################
 ## Display a pop-up menu with the list of organisms supported at
@@ -2854,7 +2897,7 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -format $sequence_format";
   $pssm_command .= " -asmb ".$assembly_file;
   #  $pssm_command .= " -gibbs_msps ".$query->param('gibbs_msps');
-  #  $pssm_command .= " -gibbs_iter ".$query->param('gibbs_iter');
+  #  $pssm_command .= " -g<ibbs_iter ".$query->param('gibbs_iter');
   $pssm_command .= " -min_weight ".$query->param('min_weight');
   $pssm_command .= " -flanks ".$query->param('flanks');
   $pssm_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
