@@ -59,9 +59,10 @@ my $organism = "";
 unless ($organism = $query->param('organism')) {
     &cgiError("You should specify a query organism");
 }
-unless (%{$supported_organism{$organism}}) {
-    &cgiError("Organism $org is not supported on this site");
-}
+#generic organism names are not listed in organisms.tab
+#unless (%{$supported_organism{$organism}}) {
+#    &cgiError("Organism $org is not supported on this site");
+#}
 $parameters .= " -ref_org $organism";
 
 
