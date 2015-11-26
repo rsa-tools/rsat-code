@@ -135,12 +135,21 @@ install_all_species:
 download_and_install_compara:
 	@${MAKE} ${COMPARA_TASKS}
 
+
+################################################################
+## Calculate descriptive stats of installed genomes
+STATSDIR=${RSAT}/data/stats/
+calc_stats:
+	@echo Calculating stats of installed organisms
+	@mkdir -p ${STATSDIR}
+	@supported-organisms-plots -o data/stats/ -ref thaliana
+
 ################################################################
 ## Check upstrean sequences of all installed species
 check_all_species:
 	@echo WARNING: Make sure you install_all_species before check_all_species
 	@echo
-	@echo Checking upstraem sequences of all species in GROUP=${GROUP} RELEASE=${RELEASE}
+	@echo Checking upstream sequences of all species in GROUP=${GROUP} RELEASE=${RELEASE}
 	for org in $(ALL_SPECIES); do \
 		$(MAKE) check_sequences SPECIES=$$org; \
 	done
