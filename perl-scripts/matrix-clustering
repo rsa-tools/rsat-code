@@ -539,11 +539,6 @@ package main;
       ## Create the merged matrices and consensuses
       &Merge_matrices();
       
-      ################################################################
-      ## Produce all the logos 
-      ## Aligned + Branch-wise motifs
-      &Produce_logos();
-      
       if ($root_matrices_flag == 1) {
 	  
 	  ## Some files and directories that must be deleted
@@ -556,6 +551,11 @@ package main;
 	  $to_delete{'errors'} = $main::outfile{prefix}."_errors.txt";
 	  
       } else {
+	  
+	  ################################################################
+	  ## Produce all the logos 
+	  ## Aligned + Branch-wise motifs
+	  &Produce_logos();
 	  
 	  ################################################################
 	  ## Read the table with the hexadecimal code 
@@ -5876,7 +5876,7 @@ sub Synthesis {
     ## The heatmap will be created only when two or more collections of
     ## motifs are provided to matrix-clustering
     if($single_input_flag == 0){
-    	&Dynamic_Heatmap_Complementarity();
+    	&Dynamic_Heatmap_Complementarity(); 
     }
 
     &InsertSmallForest();
