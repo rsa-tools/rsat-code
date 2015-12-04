@@ -443,11 +443,11 @@ package main;
 
     ## Output prefix is mandatory
     &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
-      unless ($prefix{main});
+      unless ($main::prefix{main});
 
-
+    
     ## Output prefix cannot end with a "/" (must be a file prefix, not a directory)
-    &RSAT::error::FatalError("Output prefix cannot end with a '/' (must be a file name, not a directory)") if  ($prefix{main} =~ /\/$/);
+    &RSAT::error::FatalError("Output prefix cannot end with a '/' (must be a file name, not a directory)") if  ($main::prefix{main} =~ /\/$/);
 
     ## Open main log and synthesis file handles
     $outfile{log} = $main::prefix{main}."_log.txt";
@@ -457,8 +457,8 @@ package main;
 
 
     ## Create main output directory if required
-    ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($prefix{main});
-#    $dir{output} = `dirname $prefix{main}`;
+    ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($main::prefix{main});
+#    $dir{output} = `dirname $main::prefix{main}`;
 #    chomp($dir{output});
     &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 2);
     &RSAT::util::CheckOutDir($dir{output});
@@ -473,7 +473,7 @@ package main;
 
     ## Define name of the converted bg file
     #$outfile{bg_file_inclusive} = $dir{output};
-    $outfile{bg_file_inclusive} = $prefix{main};
+    $outfile{bg_file_inclusive} = $main::prefix{main};
     $outfile{bg_file_inclusive} .= &ShortFileName($infile{bg_file});
     $outfile{bg_file_inclusive} =~ s|\.\w$||;
     $outfile{bg_file_inclusive} .= "_inclusive.tab";
@@ -638,13 +638,14 @@ package main;
       }
       $matrix->force_attribute("name", $matrix_name);
       &RSAT::message::TimeWarn("Analyzing matrix", $m, $matrix_name) if ($main::verbose >= 2);
-
       ################################################################
       ## Define matrix-specific output directory (subfolder)
       $dir{matrix_output} = $dir{output}."/".$matrix_name;
+
       ## Create matrix-specific output directory if required
       &RSAT::message::TimeWarn("Checking matrix output directory", $dir{matrix_output}) if ($main::verbose >= 2);
       &RSAT::util::CheckOutDir($dir{matrix_output});
+
       ## Define matrix-specific prefix
       $matrix_prefix{$matrix_name} = $dir{matrix_output}."/".$short_prefix;
 
@@ -1022,10 +1023,10 @@ package main;
 	 ################
 	 ## Heatmaps can only be produced when at least two matrices and two sequence sets are used for NWD calculation
 	  if  ( ($main::plot_types{nwd}) && ($main::num_mtx>=2) && ($main::nwd_seqs>=2) ){
-	      my $nwd_all_file = $prefix{main}."_"."all_nwd_files.txt";
+	      my $nwd_all_file = $main::prefix{main}."_"."all_nwd_files.txt";
 	      my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
 	      
-	      my $nwd_all_plot = $prefix{main}."_"."all_nwd_plot";
+	      my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
 	      
 	      $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
 
@@ -1539,6 +1540,7 @@ Scores of the positive sequence set.
 =cut
 	} elsif ($arg eq "-o") {
 	    $main::prefix{main} = shift(@arguments);
+
 
 	    ## Options for the graphs
 
