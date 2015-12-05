@@ -31,8 +31,8 @@ formats <-c("pdf","png")
 #print (plot.folder)
 #stop()
 
-mtx.quality.nwds.file <-"/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_files.txt"
-plot.folder <- "/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_plot"
+# mtx.quality.nwds.file <-"/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_files.txt"
+# plot.folder <- "/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_plot"
 
 dir.create(plot.folder, showWarnings = TRUE, recursive = TRUE)
 
