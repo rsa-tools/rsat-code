@@ -24,12 +24,12 @@ if not "rm" in config["retrieve_seq"].keys():
     config["retrieve_seq"]["rm"] = ""
 
 if not "suffix" in config["retrieve_seq"].keys():
-    config["retrieve_seq"]["suffix"] = \
-    + "_" + config["retrieve_seq"]["type"] \
-    + "_" + config["retrieve_seq"]["feattype"] \
-    + "_from" + config["retrieve_seq"]["from"] \
-    + "_to" + config["retrieve_seq"]["to"] \
-    + config["retrieve_seq"]["rm"] 
+     config["retrieve_seq"]["suffix"] = \
+         "_" + config["retrieve_seq"]["type"] \
+         + "_" + config["retrieve_seq"]["feattype"] \
+         + "_from" + str(config["retrieve_seq"]["from"]) \
+         + "_to" + str(config["retrieve_seq"]["to"])  \
+         + config["retrieve_seq"]["rm"] 
 
 rule retrieve_seq:
     """Retrieve regulatory sequences for a set of genes (gene cluster)
@@ -41,11 +41,16 @@ rule retrieve_seq:
     output: "{genes}" + config["retrieve_seq"]["suffix"] + ".fna"
     message: "Retrieving sequences of {gene_cluster}"
     params: \
+            organism = config["organism"], \ 
+            region_type = config["retrieve_seq"]["type"], \ 
+            feattype = config["retrieve_seq"]["feattype"], \ 
+            seq_from = str(config["retrieve_seq"]["from"]), \ 
+            seq_to = str(config["retrieve_seq"]["to"]), \ 
             qsub=config["qsub"] \
             + " -e " + config["retrieve_seq"]["suffix"] + "_qsub.err" \
             + " -o " + config["retrieve_seq"]["suffix"] + "_qsub.out"
     shell: "retrieve-seq" \
-           + " -org {organism} -type {params.type}  -type {params.region_type} -feattype {params.feattype}" \
+           + " -org {params.organism} -type {params.region_type} -feattype {params.feattype}" \
            + " -from {params.seq_from} -to {params.seq_to} -noorf " \
            + " -label id,name,organism_name " \
            + " -i  {input} -o {output}"
