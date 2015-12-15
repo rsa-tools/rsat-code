@@ -84,13 +84,13 @@ push @result_files, ("Result file",$result_file);
 
 ################################################################
 ## Background model method
-&SetBackgroundModel();
+#&SetBackgroundModel();
 
 ################################################################
 ## bg_pseudo
-if (&IsReal($query->param('bg_pseudo'))) {
-  $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
-}
+#if (&IsReal($query->param('bg_pseudo'))) {
+#  $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
+#}
 
 ################################################################
 ## Motif database

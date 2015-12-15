@@ -92,11 +92,16 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
        (($current_seq ne "") || ($current_id ne ""))) {
     $seq_nb++;
     my $seq_len = length($current_seq);
+
+    ## Stop if sequence number exceeds the -last argument
     if (($last_seq > 0) && ($seq_nb > $last_seq)) {
-      &RSAT::message::Info("Exported the $last_seq top sequences only (option -top). Remaining sequences are ignored.") if ($main::verbose >= 1);
+      &RSAT::message::Info("Exported the $last_seq top sequences only (option -top). Remaining sequences are ignored.") if ($main::verbose >= 2);
       last;
     }
+
+    ## Skip the first  sequences if requested
     if (($skip) && ($seq_nb <= $skip)) {
+      &RSAT::message::Info("Skipping sequence", $seq_nb, $current_id, $seq_len."bp", $comments[0]) if ($main::verbose >= 4);
       next;
     }
 
@@ -305,12 +310,15 @@ OPTIONS
 
 	-last N
 	        Stop after the Nth sequence.
+
 	-top N
 		Same as -last N
 		 (maintained for backward compatibility)
+
 	-first N
 		Start at the Nth sequence (skip the N-1 first
 		sequences).
+
 	-skip N
 		Skip the N first sequences (start at sequence N+1).
 
@@ -562,7 +570,7 @@ sub ReadArguments {
 	unless (&IsNatural($skip));
 
       ## Start at the Nth sequence
-    } elsif ($ARGV[$a] eq "-start") {
+    } elsif (($ARGV[$a] eq "-first") || ($ARGV[$a] eq "-start")) {
       $skip = $ARGV[$a+1]-1;
       &RSAT::error::FatalError($skip,
 			       "Invalid value for number of skip sequences. ".

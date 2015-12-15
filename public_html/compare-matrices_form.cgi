@@ -96,13 +96,13 @@ print "<hr>";
 
 ################################################################
 ## Background model
-my %bg_params =("from_matrix" => 1,
-		"bg_input"=>0,
-		"simple"=>1,
-		"no_bg_pseudo"=>1,
-	       );
-&GetBackgroundModel(%bg_params);
-print "<hr>";
+#my %bg_params =("from_matrix" => 1,
+#		"bg_input"=>0,
+#		"simple"=>1,
+#		"no_bg_pseudo"=>1,
+#	       );
+#&GetBackgroundModel(%bg_params);
+#print "<hr>";
 
 ################################################################
 ## Selection of output fields and thresholds
