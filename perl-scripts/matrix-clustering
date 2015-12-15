@@ -539,11 +539,6 @@ package main;
       ## Create the merged matrices and consensuses
       &Merge_matrices();
       
-      ################################################################
-      ## Produce all the logos 
-      ## Aligned + Branch-wise motifs
-      &Produce_logos();
-      
       if ($root_matrices_flag == 1) {
 	  
 	  ## Some files and directories that must be deleted
@@ -556,6 +551,11 @@ package main;
 	  $to_delete{'errors'} = $main::outfile{prefix}."_errors.txt";
 	  
       } else {
+	  
+	  ################################################################
+	  ## Produce all the logos 
+	  ## Aligned + Branch-wise motifs
+	  &Produce_logos();
 	  
 	  ################################################################
 	  ## Read the table with the hexadecimal code 
@@ -3225,13 +3225,13 @@ sub Text_end_report {
 	    <li>
 	      <strong>References</strong>
               <ol>
-                 <li><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full">Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
+                 <li><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
               </ol>
 	    </li>
 	    <li>
 	      <strong>Additional Information</strong>
               <ul>
-                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/courses/SBBCU16L_cisreg/">Jacques van Helden course.</a></li>
+                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/courses/SBBCU16L_cisreg/" target=\'_blank\'>Jacques van Helden course.</a></li>
               </ul>
 	    </li>
 	    <li>
@@ -3241,6 +3241,8 @@ sub Text_end_report {
                  <li type="square">Morgane Thomas-Chollier - <strong>mthomas@biologie.ens.fr</strong></li>
                  <li type="square">Jacques van Helden - <strong>Jacques.van-Helden@univ-amu.fr</strong></li>
               </ul>
+              <strong>Software used</strong>
+                 <li type="square"><a href="http://d3js.org/" target=\'_blank\'>Data-Driven Documents D3</a></li>
             </li>
           </ul>
 	</div>';
@@ -5876,7 +5878,7 @@ sub Synthesis {
     ## The heatmap will be created only when two or more collections of
     ## motifs are provided to matrix-clustering
     if($single_input_flag == 0){
-    	&Dynamic_Heatmap_Complementarity();
+    	&Dynamic_Heatmap_Complementarity(); 
     }
 
     &InsertSmallForest();
