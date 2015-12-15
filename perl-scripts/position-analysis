@@ -91,11 +91,19 @@ package main;
 				      chi
 				      sig
 				      rank
+				      occ_per_seq
 				      graphs
 				      clusters
 				      matrices
 				      html
 				     );
+
+    ## Define some tasks that should run only if the corresponding
+    ## return fields have been selected
+    our %conditional_task = (
+      "clusters"=>"clusters",
+      "matrices"=>"matrices",
+	);
 
     our %supported_return_field = ();
     foreach my $field (@supported_return_fields) {
@@ -119,6 +127,9 @@ package main;
     our %outfile = (); our @outfiles = ();
     our %graphfile = (); our @graphfiles = (); ## graph files to index + display
 
+    our %selected_kmer = ();
+    our $occ_per_seq_handle = "";
+
     our $html_index;
 
     &ReadArguments();
@@ -127,12 +138,14 @@ package main;
     ## Check parameter values
 
     ## Tasks
-    if (($task{all}) ||
-	(scalar(keys(%task)) == 0)) {
-	foreach my $task (@supported_tasks) {
-	    $task{$task} = 1;
+    if (($task{all}) || (scalar(keys(%task)) == 0)) {
+      foreach my $task (@supported_tasks) {
+	unless ((defined($conditional_task{$task})) && (!$return{$conditional_task{$task}})) {
+	  $task{$task} = 1;
 	}
+      }
     }
+    
 
     &RSAT::message::Info("Running tasks", join(",",sort(keys(%task)))) if ($main::verbose >= 2);
 
@@ -186,9 +199,13 @@ package main;
 	$output_prefix = $outfile{output};
 	$output_prefix =~ s/\.tab$//;
 	chomp $dir{output};
+
+	## Check output directory
+	&RSAT::util::CheckOutDir($dir{output});
+
     } else {
 	## Output profile is required for some return types
-	for my $return_type (qw(graphs exp_occ freq_per_window freq_per_pos clusters index html)) {
+	for my $return_type (qw(graphs exp_occ freq_per_window freq_per_pos occ_per_seq clusters index html)) {
 	    if ($return{$return_type}) {
 		&RSAT::error::FatalError("The option '-return $return_type' requires to specify an output file (-o)");
 	    }
@@ -257,14 +274,54 @@ package main;
 	}
     }
 
-
-    ## Check output directory
-    &RSAT::util::CheckOutDir($dir{output});
+    ## Occurrences per sequence *requires* to specify a list of
+    ## k-mers (which can be for a selection of significant k-mers
+    ## returned by position-analysis or any other file containing
+    ## 1 kmer as the first workd of each line).
+    if ($return{occ_per_seq}) {
+      unless ($infile{selected_kmers}) {
+	&RSAT::error::FatalError("The option -return occ_per_seq requires to specify a file containing selected k-mers with the option -selected_kmers.");
+      }
+      &RSAT::message::TimeWarn("Reading selected k-mers from file", $infile{selected_kmers}) if ($main::verbose >= 0);
+      my ($kmer_handle) = &OpenInputFile($infile{selected_kmers});
+      while (<$kmer_handle>) {
+	next unless (/\S/); ## Skip empty rows
+	next if (/^;/); ## Skip comment rows
+	next if (/^#/); ## Skip header rows
+	chomp();
+	my ($kmer) = split(/\s+/);
+	push @selected_kmers, $kmer; ## List of selected k-mers
+	$selected_kmer{$kmer}++; ## index selected k-mers
+	&RSAT::message::Debug("Selected k-mer", $kmer) if ($main::verbose >= 5);
+      }
+      if (scalar(@selected_kmers) < 1) {
+	&RSAT::messages::Warning("Not a single k-mer was found in the file", $infile{selected_kmers});
+      } else {
+	&RSAT::message::Info("Selected k-mers", scalar(@selected_kmers)) if ($main::verbose >= 2);
+      }
+    }
 
     ## Analyze oligonucleotide positional occurrence profiles
     if ($task{pos}) {
       ## Open output stream
       our $out = &OpenOutputFile($outfile{output});
+
+      &Verbose();
+
+      ## Print a specific header for occurrences per sequence
+      if ($return{occ_per_seq}) {
+	## Print specific comment lines
+	if ($main::verbose >= 1) {
+	  my $k  = 0;
+	  foreach my $mker (@selected_kmers) {
+	    $k++;
+	    print $out join("\t", ";", $k , $kmer), "\n";
+	  }
+	}
+
+	## Print the header
+	print $out join ("\t", "#seq_id", @selected_kmers), "\n";
+      }
 
       ### open sequence file
       &CheckInputSeqFormat($in_format);
@@ -325,7 +382,7 @@ package main;
 
       &RSAT::message::Info("Chi and sig computed", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
 
-      &Verbose() if ($main::verbose >= 1);
+      &PostVerbose() if ($main::verbose >= 1);
 
       ## Print the main result file
       &PrintResult();
@@ -557,7 +614,7 @@ sub ReadSequences {
     #	}
 
     &RSAT::message::TimeWarn ("",
-			      "Reading sequence",
+			      "Analyzing sequence",
 			      $sequence_number,
 			      "id=".$current_id,
 			      "length_sum=".$sum_seq_length,
@@ -603,7 +660,12 @@ sub ReadSequences {
 	$pattern{$oligo_seq}->{occ}++;
 	$window_occ{$oligo_seq}{$window}++;
 	$last_pos{$oligo_seq} = $current_pos;
-
+## HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	if ($return{occ_per_pos}) {
+	  if (($selected_kmer{$oligo_seq}) || ($strands eq "2str" && $selected_kmer{$rc})) {
+	    $occ_per_pos{$oligo_seq}{$window}
+	  }
+	}
 	## Count number of matching sequences
 	if ($return{coverage}) {
 	    $window_mseq{$oligo_seq}{$window}++ unless ($window_mseq_already_counted{$oligo_seq}{$window});
@@ -1557,6 +1619,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-i") {
 	    $infile{sequences} = $ARGV[$a+1]; push @infiles, "sequences";
 
+	    ### selected k-mers for the option -return occ_per_seq
+	} elsif ($ARGV[$a] eq "-selected_kmers") {
+	    $infile{selected_kmers} = $ARGV[$a+1]; push @infiles, "selected_mkers";
+
 	    ## mask
 	} elsif ($ARGV[$a] eq "-mask") {
 	    $mask = $ARGV[$a+1];
@@ -1834,30 +1900,36 @@ sub Verbose {
     &PrintArguments($out);
 
     printf $out "; %s\n", "Citation: van Helden, et al. (2000).  Nucleic Acids Res 28, 1000-1010.";
-
     printf $out "; %-29s\t%s\n", "Sequence file", $infile{sequences} if ($infile{sequences});
     printf $out "; %-29s\t%s\n", "Sequence format", $in_format;
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
     printf $out "; %-29s\t%s\n", "Output file", $outfile{output} if ($outfile{output});
     printf $out "; %-29s\t%d\n", "Oligo length", $oligo_length;
-    printf $out "; %-29s\t%f\n", "Lower threshold on chi", $lth{chi} if (&IsReal($lth{chi}));
-    printf $out "; %-29s\t%d\n", "Lower threshold on occurrences", $lth{'occ'} if (&IsNatural($lth{'occ'}));
     if ($strands eq "2str") {
-	printf $out "; %s\n", "Occurrences counted  on both strands";
-	if ($group_rc) {
-	    printf $out "; %s\n", "Grouping reverse complements";
-	}
+      printf $out "; %s\n", "Occurrences counted  on both strands";
+      if ($group_rc) {
+	printf $out "; %s\n", "Grouping reverse complements";
+      }
     } else {
 	printf $out "; %-29s\n", "Occurrences counted  on a single  strands";
     }
-    print $out "; Conditions of applicability not checked !\n" if ($no_check);
-    print $out "; WARNING ! chi2 is shown between curly braces when the applicability conditions are not satisfied.\n" if ($no_filter);
-
-    print $out "; Background model estimation: $bg_method\n";
-    if ($bg_method eq "markov") {
-      printf $out ";\t%-29s\t%d\n", "Markov order", $markov;
+    if ($return{occ_per_seq}) {
+      printf $out "; %-29s\t%s\n", "Output type", "Occurrences per sequence";
+      printf $out "; %-29s\t%s\n", "Selected k-mers", $infile{selected_kmers};
+    } else {
+      printf $out "; %-29s\t%f\n", "Lower threshold on chi", $lth{chi} if (&IsReal($lth{chi}));
+      printf $out "; %-29s\t%d\n", "Lower threshold on occurrences", $lth{'occ'} if (&IsNatural($lth{'occ'}));
+      print $out "; Conditions of applicability not checked !\n" if ($no_check);
+      print $out "; WARNING ! chi2 is shown between curly braces when the applicability conditions are not satisfied.\n" if ($no_filter);
+      
+      print $out "; Background model estimation: $bg_method\n";
+      if ($bg_method eq "markov") {
+	printf $out ";\t%-29s\t%d\n", "Markov order", $markov;
+      }
     }
+}
 
+sub PostVerbose {
     print $out "; Sequence statistics:\n";
     printf $out ";\t%-29s\t%d\n", "Skipped sequence", $skip_seq if ($skip_seq > 0);
     printf $out ";\t%-29s\t%d\n", "First sequence", $skip_seq + 1 if ($skip_seq > 0);
@@ -2087,6 +2159,7 @@ sub PrintProfiles {
 		      "exp_occ"=>"expected occurrences",
 		      "freq_per_window"=>"frequency per window (\"vertical\" frequency)",
 		      "freq_per_word"=>"frequency per word (\"longitudinal\" frequency)",
+#		      "occ_per_seq"=>"occurrences per sequence (row) and position (column)",
 		     );
 
   &RSAT::message::TimeWarn("Printing", $profile_type,"profiles") if ($main::verbose >= 2);
