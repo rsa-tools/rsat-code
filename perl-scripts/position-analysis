@@ -1633,12 +1633,16 @@ sub ReadArguments {
 	    $outfile{output} = $ARGV[$a+1];
 
 	    ### oligomer length
-	} elsif (($ARGV[$a] eq "-l") && (&IsNatural($ARGV[$a+1]))) {
+	} elsif ($ARGV[$a] eq "-l") {
 	    $oligo_length = $ARGV[$a+1];
+	    &RSAT::error::FatalError($oligo_length, "invalid oligo length: should be a strictly positive Natural number")
+		unless (&IsNatural($oligo_length));
 
 	    ### window interval
-	} elsif (($ARGV[$a] eq "-ci") && (&IsNatural($ARGV[$a+1]))) {
+	} elsif ($ARGV[$a] eq "-ci") {
 	    $pos_interval = $ARGV[$a+1];
+	    &RSAT::error::FatalError($pos_interval, "invalid position interval: should be a strictly positive Natural number")
+		unless (&IsNatural($pos_interval));
 
 	    ### sequence format
 	} elsif ($ARGV[$a] eq "-format") {
@@ -2406,8 +2410,8 @@ sub GenerateGraphs {
 	}
 
 	## Compute the title for the XY plot
-	my $title2 = $pattern{$oligo_seq}->{in_bound_occ}." occurrences";
-	$title2 .= ", position interval=$pos_interval";
+	my $title2 = "N=".$pattern{$oligo_seq}->{in_bound_occ};
+	$title2 .= ", winsize=$pos_interval";
 	if ($score_column > 0) {
 	    $title2 .= "; score = ".$score;
 	}
