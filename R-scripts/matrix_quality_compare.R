@@ -17,6 +17,7 @@ args <- commandArgs(TRUE)
 
 ## Get the prefix list of files to be analyzed, this list is passed by compare-qualities
 mtx.quality.nwds.file <- args[1]
+print (mtx.quality.nwds.file)
 plot.folder <- args[2]
 formats <- args[3]
 formats <- unlist(strsplit (formats,split=","))
@@ -26,10 +27,12 @@ print (formats)
 
 #mtx.quality.nwds.file <-"./results/matrix_quality/20150428/zoo_chip_enrichment/all_nwd_files.txt"
 #plot.folder <- "./results/matrix_quality/20150428/zoo_chip_enrichment/"
-#formats <-c("pdf","png")
+formats <-c("pdf","png")
 #print (plot.folder)
 #stop()
 
+# mtx.quality.nwds.file <-"/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_files.txt"
+# plot.folder <- "/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_plot"
 
 dir.create(plot.folder, showWarnings = TRUE, recursive = TRUE)
 
@@ -64,14 +67,14 @@ lapply(names(nwd.files) ,function(matrix.name){
     print (matrix.name)
     print (names(nwd.files[[matrix.name]]))
     lapply( names(nwd.files[[matrix.name]]), function(seq=x, matrix.name2=matrix.name){
-        #print (matrix.name2)
-        #print (seq)
+        print (matrix.name2)
+        print (seq)
         local.table <- nwd.files[[matrix.name2]][[seq]][["table"]]
         #local.table$NWD <- scale(local.table$NWD)
         #local.table$NWD <- data.Normalization( local.table$NWD,type="n1",normalization="column")
         ## max.nwd
         max.nwd <- max(local.table$NWD)
-        #print(max.nwd )
+        print(max.nwd )
         nwd.files[[matrix.name2]][[seq]][["max.nwd"]] <<- max.nwd 
         
         ## ##############
@@ -80,9 +83,13 @@ lapply(names(nwd.files) ,function(matrix.name){
         local.sig.table <- local.table[local.table$score_theor>=0,]
         
         ## max.nwd.sig maximun taken from significant scores 0
-        max.sig.nwd <- max(local.sig.table[,"NWD"])
-        nwd.files[[matrix.name2]][[seq]][["max.sig.nwd"]] <<- max.sig.nwd
-        
+        if ( dim( local.sig.table )[1]<=1){
+            nwd.files[[matrix.name2]][[seq]][["max.sig.nwd"]] <<-"NA"
+        }
+        else{
+            max.sig.nwd <- max(local.sig.table[,"NWD"])
+            nwd.files[[matrix.name2]][[seq]][["max.sig.nwd"]] <<- max.sig.nwd
+        }
         ## ##############
         ## AUC
         #if (min(local.table[,"NWD"])<0){
@@ -92,8 +99,12 @@ lapply(names(nwd.files) ,function(matrix.name){
 
         ## ##############
         ## AUC in significant values
-        nwd.files[[matrix.name2]][[seq]][["auc.sig"]] <<- auc(x=local.sig.table [,"Pvalue"],y=local.sig.table[,"NWD"])
-        
+        if ( dim( local.sig.table )[1]<=1){
+            nwd.files[[matrix.name2]][[seq]][["auc.sig"]] <<-"NA"
+        }
+        else{
+            nwd.files[[matrix.name2]][[seq]][["auc.sig"]] <<- auc(x=local.sig.table [,"Pvalue"],y=local.sig.table[,"NWD"])
+        }
         ##stop()
         
     })

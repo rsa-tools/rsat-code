@@ -15,12 +15,17 @@ Tested with some maize clusters from
 Usage: 
     snakemake -p  -c "qsub {params.qsub}" -j 12 \
         -s ${RSAT}/snakefiles/workflows/gene-cluster-motifs.py \
+        --configfile configfile \
         [targets]
 
 Flowcharts:
     snakemake -p \
         -s ${RSAT}/snakefiles/workflows/gene-cluster-motifs.py \
+        --configfile configfile \
         --force flowcharts
+
+The configuration file must be specified with the snakemake opeion
+--configfile. This requires a snakemake version >= 3.2.
 
 """
 
@@ -31,90 +36,101 @@ Flowcharts:
 from snakemake.utils import R
 import os
 import sys
-import time#rm?
+import time
 import datetime
-#import pandas as pd
+import pandas as pd
+import numpy as np
 
-RSAT = os.environ["RSAT"]
-
-## Config
-#configfile: os.path.join(RSAT, "snakefiles/workflows/gene-cluster-motifs.yml")
-#configfile: "/var/www/html/rsat/snakefiles/workflows/gene-cluster-motifs.yml"
-#workdir: config["dir"]["base"]
-
-#verbosity = int(config["verbosity"])
+## Define verbosity
+if not "verbosity" in config.keys():
+    verbosity = 1
 
 #================================================================#
 #                         Includes                               #
 #================================================================#
 
-# FG_LIB = os.path.abspath(config["dir"]["fg_lib"])
-# RULES = os.path.join(FG_LIB, "scripts/snakefiles/rules")
-# PYTHON = os.path.join(FG_LIB, "scripts/snakefiles/python_lib")
-
+## Define the path to RSAT snakemake libraries
+RSAT = os.environ["RSAT"]
 RULES = os.path.join(RSAT, "snakefiles/rules")
-include:  os.path.join(RULES, "retrieve_seq.rules")
 
+## Inclute the rules to be used for this workflow
+include: os.path.join(RULES, "retrieve_seq.rules")
+include: os.path.join(RULES, "util.py")
 
 #================================================================#
-#                      Data & wildcards                             #
+#                      Data & wildcards                          #
 #================================================================#
 
-# # Raw data
-# READS = config["dir"]["reads_source"]
+#================================================================#
+#           Check input and output files and directories         #
+#================================================================#
 
-# # Samples
-# SAMPLES = read_table(config["files"]["samples"], verbosity=verbosity)
-# SAMPLE_IDS = SAMPLES.iloc[:,0] ## First column MUST contain the sample ID
 
-# ## Design
-# DESIGN = read_table(config["files"]["design"], verbosity=verbosity)
-# TREATMENT = DESIGN.iloc[:,0]
-# CONTROL = DESIGN.iloc[:,1]
+################################################################
+## Output directory
+if not "outdir" in config.keys():
+    sys.exit("Output directory must be defined in config file (option outdir).")
+OUTDIR = config["outdir"]
+if not os.path.exists(OUTDIR):
+    time_warn("Creating output directory\t" + OUTDIR)
+    os.makedirs(OUTDIR)
 
-## Ref genome
-GENOME = config["genome"]["version"]
+################################################################
+## Input file describing the gene cluster composition. 
+## This must be a tab-delimited file containing at least two columns:
+##   - gene name / ID
+##   - cluster name
+## Additional columns are ignored.
+if not "cluster_file" in config.keys():
+    sys.exit("Output directory must be defined in config file (option cluster_file).")
+## Read the count table for the current sample
+cluster_desc = pd.read_csv(config["cluster_file"], sep="\t", header=None, index_col=False, names=["gene", "cluster"])
 
-## Results dir
-RESULTS_DIR = config["dir"]["results"]
-if not os.path.exists(RESULTS_DIR):
-    os.makedirs(RESULTS_DIR)
+## Extract cluster names
+cluster_names = np.unique(cluster_desc["cluster"])
+time_warn("Cluster names: " + "; ".join(cluster_names))
+for cluster in cluster_names:
+    cluster_dir = os.path.join(OUTDIR,cluster)
+    if not os.path.exists(cluster_dir):
+        time_warn("Cluster directory\t" + cluster_dir)
+        os.makedirs(cluster_dir)
 
-## Programs
 
-# ALIGNER="bowtie2".split()# bwa
-# ALIGNMENT=expand("{samples}/{samples}_{aligner}", samples=SAMPLE_IDS, aligner=ALIGNER)
+## Extract the list of cluster names from the second column of the
+## cluster table.
 
-# PEAKCALLER="homer_peaks macs2-qval" + config["macs2"]["qval"] + "_peaks swembl-R" + config["swembl"]["R"]# + " bPeaks_allGenome"#"macs14-pval" + config["macs14"]["pval"] + "_peaks"spp-fdr" + config["spp"]["fdr"] + "
-# PEAKCALLER=PEAKCALLER.split()
-# PEAKCALLING=expand(expand("{treat}_vs_{control}/{{peakcaller}}/{treat}_vs_{control}_{{aligner}}_{{peakcaller}}", zip, treat=TREATMENT, control=CONTROL), peakcaller=PEAKCALLER, aligner=ALIGNER)
-
-# MOTIFS=expand(expand("{treat}_vs_{control}/{{peakcaller}}/peak-motifs/{treat}_vs_{control}_{{aligner}}_{{peakcaller}}_purged", zip, treat=TREATMENT, control=CONTROL), peakcaller=PEAKCALLER, aligner=ALIGNER)
 
 #================================================================#
 #                         Workflow                               #
 #================================================================#
 
-## TEMPORARY: should be moved to a cluster file, whose path will be
-## indicated in the config file.
-GENE_CLUSTERS = config["gene_clusters"].split()
+
 #SPECIES=zea_mays
 #ORTH_SPECIES=sorghum_bicolor
 
-#RESULTS_DIR="results/sequences"
+#OUTDIR="results/sequences"
 #ORTH_SPECIES_FULL="Sorghum_bicolor.Sorbi1.29"
 #ORTHIDENT=70
 #RNDSAMPLES=50 # how many random replicates to be generated per input gene cluster
 #MEMEMKORD=2   # for MEME bg
 
 
-# SEQ=expand(os.path.join(RESULTS_DIR, "{gene_cluster}", "{gene_cluster}.raw.rm.fna") ,gene_cluster = GENE_CLUSTERS )
+# SEQ=expand(os.path.join(OUTDIR, "{gene_cluster}", "{gene_cluster}.raw.rm.fna") ,gene_cluster = GENE_CLUSTERS )
 
 
 ## TEMPORARY
 ONE_CLUSTER_PATH="~/marseille/protocolos/regulons/Zea_mays/E2F/regulonE2F"
+ONE_CLUSTER_PATH="/home/rsat/test/gene-cluster-motifs_test/regulons/Zea_mays/E2F/regulonE2F"
+SEQ=ONE_CLUSTER_PATH + config["retrieve_seq"]["suffix"] + ".fna"
 rule all:
-    input: ONE_CLUSTER_PATH + config["retrieve_seq"]["suffix"] + ".fna"
+    input: SEQ
+
+rule list_param:
+    run:
+        print("RSAT\t" + RSAT)
+        print("RULES\t" + RULES)
+        print("OUTDIR\t" + OUTDIR)
+        print("SEQ\t" + SEQ)
 
 
 ################################################################
@@ -162,53 +178,53 @@ rule all:
 
 # ## Data import & merging.
 
-# IMPORT = expand(RESULTS_DIR + "{samples}/{samples}.fastq", samples=SAMPLE_IDS) 
+# IMPORT = expand(OUTDIR + "{samples}/{samples}.fastq", samples=SAMPLE_IDS) 
 
 # ## Graphics & reports
-# GRAPHICS = expand(RESULTS_DIR + "dag.pdf")
-# REPORT = expand(RESULTS_DIR + "report.html")
+# GRAPHICS = expand(OUTDIR + "dag.pdf")
+# REPORT = expand(OUTDIR + "report.html")
 
 # #----------------------------------------------------------------#
 # # Quality control
 # #----------------------------------------------------------------#
 
-# RAW_QC = expand(RESULTS_DIR + "{samples}/{samples}_fastqc/", samples=SAMPLE_IDS)
-# RAW_READNB = expand(RESULTS_DIR + "{samples}/{samples}_fastq_readnb.txt", samples=SAMPLE_IDS)
+# RAW_QC = expand(OUTDIR + "{samples}/{samples}_fastqc/", samples=SAMPLE_IDS)
+# RAW_READNB = expand(OUTDIR + "{samples}/{samples}_fastq_readnb.txt", samples=SAMPLE_IDS)
 
 # #----------------------------------------------------------------#
-# # Alignment
+# # Alignment<
 # #----------------------------------------------------------------#
 
 # ## to avoid duplicates, fasta sequence should be moved to {genome} directly...
 # BWA_INDEX = expand(config["dir"]["genomes"] + "{genome}/BWAIndex/{genome}.fa.bwt", genome=GENOME)
 # BOWTIE2_INDEX = expand(config["dir"]["genomes"] + "{genome}/Bowtie2Index/{genome}.fa.1.bt2", genome=GENOME)
 
-# MAPPING = expand(RESULTS_DIR + "{alignment}.sam", alignment=ALIGNMENT)
+# MAPPING = expand(OUTDIR + "{alignment}.sam", alignment=ALIGNMENT)
 
 # # Sorted and converted reads (bam, bed)
-# SORTED_MAPPED_READS_BWA = expand(RESULTS_DIR + "{alignment}_sorted_pos.bam", alignment=ALIGNMENT)
-# BAM_READNB = expand(RESULTS_DIR + "{alignment}_sorted_pos_bam_readnb.txt", alignment=ALIGNMENT)
-# SORTED_READS_BED = expand(RESULTS_DIR + "{alignment}_sorted_pos.bed", alignment=ALIGNMENT)
-# BED_FEAT_COUNT = expand(RESULTS_DIR + "{alignment}_sorted_pos_bed_nb.txt", alignment=ALIGNMENT)
+# SORTED_MAPPED_READS_BWA = expand(OUTDIR + "{alignment}_sorted_pos.bam", alignment=ALIGNMENT)
+# BAM_READNB = expand(OUTDIR + "{alignment}_sorted_pos_bam_readnb.txt", alignment=ALIGNMENT)
+# SORTED_READS_BED = expand(OUTDIR + "{alignment}_sorted_pos.bed", alignment=ALIGNMENT)
+# BED_FEAT_COUNT = expand(OUTDIR + "{alignment}_sorted_pos_bed_nb.txt", alignment=ALIGNMENT)
 
 # # ----------------------------------------------------------------
 # # Peak-calling
 # # ----------------------------------------------------------------
 
-# PEAKS = expand(RESULTS_DIR + "{peakcalling}.bed", peakcalling=PEAKCALLING)
+# PEAKS = expand(OUTDIR + "{peakcalling}.bed", peakcalling=PEAKCALLING)
 
 # # ----------------------------------------------------------------
 # # Peak analysis
 # # ----------------------------------------------------------------
 
-# GET_FASTA = expand(RESULTS_DIR + "{peakcalling}.fasta", peakcalling=PEAKCALLING)
-# PURGE_PEAKS = expand(RESULTS_DIR + "{peakcalling}_purged.fasta", peakcalling=PEAKCALLING)
-# PEAKS_LENGTH = expand(RESULTS_DIR + "{peakcalling}_purged_length.png", peakcalling=PEAKCALLING)
-# PEAK_MOTIFS = expand(RESULTS_DIR + "{motifs}_peak-motifs_synthesis.html", motifs=MOTIFS)
+# GET_FASTA = expand(OUTDIR + "{peakcalling}.fasta", peakcalling=PEAKCALLING)
+# PURGE_PEAKS = expand(OUTDIR + "{peakcalling}_purged.fasta", peakcalling=PEAKCALLING)
+# PEAKS_LENGTH = expand(OUTDIR + "{peakcalling}_purged_length.png", peakcalling=PEAKCALLING)
+# PEAK_MOTIFS = expand(OUTDIR + "{motifs}_peak-motifs_synthesis.html", motifs=MOTIFS)
 
 # ## Oligo analysis # ! missing f* input exception
 # OLIGO = config['oligo_analysis']['count_oligo'].split()
-# OLIGO_ANALYSIS = expand(RESULTS_DIR + "{peakcalling}_purged_oligo{oligo}.txt", peakcalling=PEAKCALLING, oligo=OLIGO)
+# OLIGO_ANALYSIS = expand(OUTDIR + "{peakcalling}_purged_oligo{oligo}.txt", peakcalling=PEAKCALLING, oligo=OLIGO)
 
 # #================================================================#
 # #                        Rule all                                #

@@ -230,7 +230,7 @@ allows to use the command within a pipe.
 =item B<-in_format matrix_format>
 
 Format of the input matrices. Any input format supported by
-I<convert-matrix> is also supported by i<permute-matrix>.
+I<convert-matrix> is also supported by I<permute-matrix>.
 
 =cut
     } elsif ($arg eq "-in_format") {
@@ -257,7 +257,7 @@ allows to use the command within a pipe.
 =item B<-out_format matrix_format>
 
 Format of the output matrices. Any output format supported by
-I<convert-matrix> is also supported by i<permute-matrix>.
+I<convert-matrix> is also supported by I<permute-matrix>.
 
 =cut
     } elsif ($arg eq "-out_format") {

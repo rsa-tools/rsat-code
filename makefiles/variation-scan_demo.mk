@@ -26,6 +26,20 @@ DEMO_DIR=${RSAT}/public_html/demo_files/
 VARIANTS=variation_demo_set
 
 ################################################################
+## List parameters
+list_param:
+	@echo
+	@echo "variation-scan demo"
+	@echo "	SPECIES		${SPECIES}"	
+	@echo "	ASSEMBLY	${ASSEMBLY}"
+	@echo "	ORG		${ORG}"	
+	@echo "	VARIATION_DIR	${VARIATION_DIR}"
+	@echo "	VARIANTS	${VARIANTS}"
+	@echo "	DEMO_VARIANTS	${DEMO_VARIANTS}"
+	@echo "	BED_VARIANTS	${BED_VARIANTS}"
+	@echo "	VARIANT_IDS	${VARIANT_IDS}"
+
+################################################################
 ## Count the number of variations per chromosome/contig for the selected organism
 ORG=${SPECIES}_${ASSEMBLY}
 VARIATION_DIR=${RSAT}/public_html/data/genomes/${ORG}/variations
@@ -36,16 +50,17 @@ variation_stats:
 	@echo "	ORG		${ORG}"	
 	@echo "	VARIATION_DIR	${VARIATION_DIR}"
 	@echo "Computing number of lines per contig (this can take time)"
-	@(cd ${VARIATION_DIR}; wc -l *.varBed | sort -n)
+	@wc -l ${VARIATION_DIR}/*.varBed | sort -n
 
 ################################################################
 ## Convert variations from VCF (variation X file) format into the
 ## format supported as input by RSAT retrieve-var.
 RESULT_DIR=results/variation_scan_demo
 VARIANT_FORMAT_IN=vcf
+DEMO_VARIANTS=${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}
 VARIANT_FORMAT_OUT=varBed
 CONVERT_VAR_CMD=convert-variations \
-	-i ${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}  \
+	-i ${DEMO_VARIANTS}  \
 	-e_version ${ENSEMBL_VERSION} \
 	-v ${V} -from ${VARIANT_FORMAT_IN} -to ${VARIANT_FORMAT_OUT} \
 	-o ${RESULT_DIR}/${VARIANTS}.${VARIANT_FORMAT_OUT}
@@ -59,7 +74,7 @@ convert_var:
 	@echo "	${RESULT_DIR}/${VARIANTS}.${VARIANT_FORMAT_OUT}"
 
 ################################################################
-## get variation information from IDs or from a bed file region
+## get variation information from either variant IDs or bed file region.
 
 ## Bed file from the demo directory
 BED_VARIANTS=${DEMO_DIR}/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.bed
@@ -83,6 +98,10 @@ VAR_INFO_ID_CMD=${VAR_INFO_CMD} \
 	-format id \
 	-o ${VAR_FROM_ID_OUT}.varBed
 
+
+## Get the variations that overlap a set of genomic regions specificed
+## in a BED file. In this example we use a set of peaks from Ballester
+## et al., 2010.
 varinfo_from_bed_regions:
 	@echo ""
 	@echo "Getting variation information from genomic region (input bed file)."
@@ -93,6 +112,8 @@ varinfo_from_bed_regions:
 	@echo "Output file: "
 	@wc -l ${VAR_FROM_BED_OUT}.varBed
 
+
+## Get variations from a list of user-specified IDs.
 varinfo_from_ids:
 	@echo ""
 	@echo "Getting variation information from variant IDs"
@@ -107,6 +128,23 @@ varinfo_from_ids:
 
 ################################################################
 ## Retrieve the sequences surrounding a set of input variations
+
+## The retrieve-var command can be used in various modalities:
+##
+## (1) provide a varBed file, which contains a description of one
+## variation per row.
+##
+## (2) specifying genomic regions in a bed file. The program starts by
+## identifying the variations that overlap the regions of the bed
+## file, and then retrieve their sequences. 
+##
+## (3) a list of variant identifiers provided in a text file (with one
+## ID per row). The program then extracts the information about each
+## specified variation (varBed info) and then their sequences.
+##
+## RETRIEVE_VAR_CMD is the common part of the command, we then
+## specified the modality-specific parameters: 
+## RETRIEVE_VAR_CMD_VARBED and 
 RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-v ${V} \
 	-species ${SPECIES} \
@@ -127,7 +165,9 @@ retrieve_varseq_from_varbed:
 	@echo "Out file"
 	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq"
 
-## Still valid ? To check
+
+## Retrieve sequences of the variations that overlap a set of genomic
+## coordinates specified in a bed file. 
 RETRIEVE_VAR_CMD_BED=${RETRIEVE_VAR_CMD} \
 	-i  ${BED_VARIANTS}\
 	-mml 30 -format bed \
@@ -137,8 +177,14 @@ retrieve_var_bed:
 	@${RETRIEVE_VAR_CMD_BED}
 	@echo "Out file"
 	@echo "${VAR_FROM_BED_OUT}.varSeq"
+	@echo "Counting number of alleles per variation"
+	@grep -v '^;' ${VAR_FROM_BED_OUT}.varSeq | grep -v '^\#' \
+		| cut -f 5 | sort | uniq -c | sort -k 1 -n \
+		| classfreq -v 1 -ci 1 -col 1 \
+		>  ${VAR_FROM_BED_OUT}_alleles_per_variant.tab
+	@echo ${VAR_FROM_BED_OUT}_alleles_per_variant.tab
 
-## Still valid ? To check
+## Retrieve sequences of the variations specified by a list of IDs.
 RETRIEVE_VAR_CMD_ID=${RETRIEVE_VAR_CMD} \
 	-i  ${VARIANT_IDS} \
 	-mml 30 -format id \
