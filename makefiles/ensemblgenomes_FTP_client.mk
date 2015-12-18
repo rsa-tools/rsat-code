@@ -342,7 +342,7 @@ START_CODONS=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome/${SPECIE
 init_getfasta:
 	@echo
 	@echo "Initializing genomic fasta index	${SPECIES_RSAT_ID}"
-	@grep start_codon ${RSAT_GTF} > ${START_CODONS}.gtf
+	@grep start_codon ${RSAT_GTF} > ${START_CODONS}.gtf || true
 	@echo "	Start codon coordinates	${START_CODONS}.gtf"
 	@retrieve-seq-bed -i ${START_CODONS}.gtf -o ${START_CODONS}.fasta -org ${SPECIES_RSAT_ID}
 	@echo "	Start codon sequences	${START_CODONS}.fasta"
