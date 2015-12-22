@@ -187,10 +187,13 @@ package main;
   png("$outfile",width=800);
   par(mai=c(1,4,1,1)) # make room for long horizontal labels
   data = read.table(file="$file",header=T);
+  data[,2] = as.numeric(data[,2])/1e6 ## Convert genome sizes to Mb
+  data[,3] = as.numeric(data[,3])/1e6
+  data[,4] = as.numeric(data[,4])/1e6
   mdata = t(data[,2:4]) # 2 unmasked, 3 Ns, 4 masked
   colors = c('white','grey50','grey20')
   barplot( mdata, names.arg=data\$organism, #log="x", #does not show fraction of repeats proportionally!
-    xlab="genome size", horiz=T, las=1, col=colors, cex.names=0.8 )
+    xlab="genome size (Mb)", horiz=T, las=1, col=colors, cex.names=0.8 )
   legend("topright", inset=.05, c("Ns","repeat-masked"), 
     fill=c('grey50','grey20'), horiz=F, cex=1.0 )
   dev.off()
