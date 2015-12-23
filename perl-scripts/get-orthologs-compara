@@ -83,12 +83,11 @@ Output contains the following columns:
 =head1 EXAMPLES
 
 =head2 Quick demo
-get-orthologs-compara -v 1 -demo                                                                                                                                                            
 
-The demo searches orthologs for a single query gene in a single
-reference genome.
+The option I<-demo> selects orthologs for a single gene in a single
+genome.
 
- get-orthologs-compara -v 1 -demo
+ get-orthologs-compara -v 1 -demo                                                                                                                                                            
 
 =head2 Getting the list of suppported organisms
 
@@ -173,8 +172,10 @@ package main;
   # check arguments
   if($params{'demo'})
   {
-    @query_genes = qw( BRADI4G31367.1 );
-    @ref_organisms = qw( triticum_aestivum );
+#    @query_genes = qw( BRADI4G31367.1 );
+#    @ref_organisms = qw( triticum_aestivum );
+      &doit("get-orthologs-compara -v ".$main::verbose." -q BRADI4G31367.1 -ref_org triticum_aestivum");
+      exit(0);
   }
   elsif($params{'supported_organisms'})
   {
@@ -508,6 +509,22 @@ to specify a file containing the list of reference organisms.
 
 =pod
 
+=item B<-org_list>
+
+This option gives the posibility to specify a set of reference
+organisms instead of a single one. Homologous genes will only be searched in 
+listed organisms.
+
+File format: each row should contain the identifier of one
+organism. Lines starting with # or ; are ignored.
+
+=cut
+
+	} elsif ($arg eq "-org_list") {
+	  $main::infile{'org_list'} = shift(@arguments);
+
+=pod
+
 =item B<-supported_organisms>
 
 Lists supported organisms in local Compara database.
@@ -593,21 +610,6 @@ Homologues with lower ident_query values are skipped. Default: 0 .
     } elsif ($arg eq "-ident_query") {
       $main::params{'ident_query'} = shift(@arguments);
 
-=pod
-
-=item B<-org_list>
-
-This option gives the posibility to specify a set of reference
-organisms instead of a single one. Homologous genes will only be searched in 
-listed organisms.
-
-File format: each row should contain the identifier of one
-organism. Lines starting with # or ; are ignored.
-
-=cut
-
-	} elsif ($arg eq "-org_list") {
-	  $main::infile{'org_list'} = shift(@arguments);
 =pod
 
 =back
