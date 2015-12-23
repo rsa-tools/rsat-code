@@ -80,6 +80,29 @@ Output contains the following columns:
 
 =back
 
+=head1 EXAMPLES
+
+=head2 Quick demo
+get-orthologs-compara -v 1 -demo                                                                                                                                                            
+
+The demo searches orthologs for a single query gene in a single
+reference genome.
+
+ get-orthologs-compara -v 1 -demo
+
+=head2 Getting the list of suppported organisms
+
+Beware, the list of organisms supported for compara is a subset of
+those installed in the RSAT server. For this reason,
+get-orthologs-compara has a specific option I<-supported-organisms> to
+get the relevant list of organisms.
+
+ get-orthologs-compara -v 1 -supported_organisms \
+      -o compara_organisms.tab
+
+=head2 Getting orthologs from 1 query gene in a list of reference genomes
+
+ get-orthologs-compara -v 1 -org_list compara_organisms.tab -q 
 =cut
 
 BEGIN {
@@ -147,8 +170,6 @@ package main;
   # open output stream
   $main::out = &OpenOutputFile($main::outfile{'output'});
 
-  &Verbose() if ($main::verbose >= 1);
-
   # check arguments
   if($params{'demo'})
   {
@@ -159,11 +180,13 @@ package main;
   {
 #    &RSAT::message::Info("Supported organisms:");
 #    &RSAT::message::Info(join(',',sort(keys(%organisms))));
-    print $main::out "; Supported organisms\n";
-    foreach my $organism (sort(keys(%organisms))) {
-	print $main::out $organism, "\n";
-    }
-    close_and_quit();    
+      &Verbose() if ($main::verbose >= 1);
+      
+      print $main::out "; Supported organisms\n";
+      foreach my $organism (sort(keys(%organisms))) {
+	  print $main::out $organism, "\n";
+      }
+      close_and_quit();    
   }
   else
   {
@@ -258,6 +281,9 @@ package main;
       }
     }
   }
+
+  ## Print verbosity
+  &Verbose() if ($main::verbose >= 1);
 
 
   # add header line to output  
@@ -467,6 +493,10 @@ allows to use the command within a pipe.
 
 Reports homologues of this reference organism.
 
+This option can be used iteratively to specify multiple reference
+organisms. An alternative is to use the option I<-org_list> in order
+to specify a file containing the list of reference organisms.
+
 =cut
 
 	} elsif ($arg eq "-ref_org") {
@@ -482,6 +512,11 @@ Reports homologues of this reference organism.
 
 Lists supported organisms in local Compara database.
 
+This option is incompatible with the option I<ref_org>.
+
+To obtain a list of supported organisms, use the option
+I<-supported_organisms>.
+
 =cut
 
     } elsif ($arg eq "-supported_organisms") {
@@ -492,14 +527,19 @@ Lists supported organisms in local Compara database.
 =item B<-q query_gene>
 
 Query gene ID. 
-This option can be used iteratively on the same command to specify multiple
-query genes.
+
+This option can be used iteratively on the same command to specify
+multiple query genes.
+
+Alternatively, a list of query genes can be provided in a text file,
+specified with the option I<-i>.
 
 =cut
     } elsif ($arg eq "-q") {
       &RSAT::error::FatalError("Option -q is incompatible with option -i")
         if ($main::infile{input});
       push(@main::query_genes, shift(@arguments));
+
 =pod
 
 =item B<-type homology_type>
@@ -520,7 +560,8 @@ Returns only orthologous genes, including many2many, one2many & one2one
 
 =item I<para>
 
-Returns only paralogues, including within_species_paralog, other_paralog & gene_split
+Returns only paralogues, including within_species_paralog,
+other_paralog & gene_split
 
 =item I<hom>
 
