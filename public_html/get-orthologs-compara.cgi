@@ -31,9 +31,6 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1);
 $tmp_file_name = &ShortFileName($tmp_file_path);
 @result_files = ();
 
-&RSAT::message::Warning("The computation can take a more or less important time depending on the taxon size.",
-			"If the answer does not appear in due time, use the option <i>output email</i>");
-
 
 #### read parameters ####
 $parameters = " -v 1";
