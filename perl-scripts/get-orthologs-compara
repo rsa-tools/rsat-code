@@ -125,8 +125,11 @@ package main;
   
   our %infile = ();
   our %outfile = ();
-  our %params = ( 'ident_target' => 0, 'ident_query' => 0, 'type' => 'orth',  
-                    'supported_organisms' => 0, 'demo' => 0 );
+  our %params = ( 'ident_target' => 0, 
+		  'ident_query' => 0, 
+		  'type' => 'orth',  
+		  'supported_organisms' => 0, 
+		  'demo' => 0 );
 
   our $verbose = 0;
   our $in = STDIN;
