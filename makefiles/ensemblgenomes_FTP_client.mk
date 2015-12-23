@@ -101,7 +101,7 @@ COLLECTION=
 ORG_TASKS=organisms
 DOWNLOAD_TASKS=download_gtf download_fasta gunzip_downloads 
 INSTALL_TASKS=install_from_gtf init_getfasta install_go_annotations
-COMPARA_TASKS=download_compara parse_compara install_compara
+COMPARA_TASKS=organisms download_compara parse_compara install_compara
 # not used
 #ALL_TASKS=${ORG_TASKS} ${DOWNLOAD_TASKS} ${INSTALL_TASKS} ${COMPARA_TASKS}
 
