@@ -98,15 +98,8 @@ sub PrintOrthoComparaSelectionSection {
         warn "# cannot run get-orthologs-compara -supported_organisms\n";
     while(<GETORTHSCOMP>){
         next if(/Supported/);
-        if(/Information:\s+(\S+)/)
-        {
-            my $orgs = $1; 
-            while($orgs =~ m/(\S+?),/g)
-            {
-                my $org = $1; #print "|$org|\n";
-                push(@supported_organisms_fullnames,$org); # if($org =~ /\.\d/);#release number;
-            }
-        }
+        chomp;
+        push(@supported_organisms_fullnames,$_); # if($org =~ /\.\d/);#release number;
     }
     close(GETORTHSCOMP);
     
