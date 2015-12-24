@@ -21,7 +21,7 @@ $query = new CGI;
 ################################################################
 ## Initialize parameters
 
-my @homology_types = qw( orth para hom all );
+my @homology_types = qw( ortholog paralog homeolog all );
 
 ## Output fields
 my @output_fields = qw(
