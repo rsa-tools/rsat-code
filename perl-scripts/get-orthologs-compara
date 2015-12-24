@@ -127,7 +127,7 @@ package main;
   our %outfile = ();
   our %params = ( 'ident_target' => 0, 
 		  'ident_query' => 0, 
-		  'type' => 'orth',  
+		  'type' => 'ortholog',  
 		  'supported_organisms' => 0, 
 		  'demo' => 0 );
 
@@ -142,11 +142,11 @@ package main;
   our (%db,%stats,%int2organisms,%int2organisms_fullname);
 
   our %homology_subtypes = (
-    'orth', { 'ortholog_many2many',1,'ortholog_one2many',1,'ortholog_one2one',1 },
-    'para', { 'within_species_paralog',1,'other_paralog',1,'gene_split',1 },
-    'hom',  { 'homoeolog_many2many',1,'homoeolog_one2many',1,'homoeolog_one2one',1 } );
+    'ortholog', { 'ortholog_many2many',1,'ortholog_one2many',1,'ortholog_one2one',1 },
+    'paralog', { 'within_species_paralog',1,'other_paralog',1,'gene_split',1 },
+    'homeolog',  { 'homoeolog_many2many',1,'homoeolog_one2many',1,'homoeolog_one2one',1 } );
   $homology_subtypes{'all'} = { 
-    %{$homology_subtypes{'orth'}}, %{$homology_subtypes{'para'}}, %{$homology_subtypes{'hom'}}  };
+    %{$homology_subtypes{'ortholog'}}, %{$homology_subtypes{'paralog'}}, %{$homology_subtypes{'homeolog'}}  };
 
   my ($n_of_results,$count,$idOK,$rows,$sp,$header,$orig_query) = (0);
   my ($ref_org,$query,$real_query,$id,$type,$subtype,$identity1,$identity2);
@@ -564,7 +564,7 @@ specified with the option I<-i>.
 
 =item B<-type homology_type>
 
-Supported homology types: orth, para, hom, all
+Supported homology types: ortholog, paralog, homeolog, all
 
 Default: orth
 
@@ -574,18 +574,18 @@ Default: orth
 
 Returns all types of homologues annotated in Compara.
 
-=item I<orth> 
+=item I<ortholog> 
 
 Returns only orthologous genes, including many2many, one2many & one2one
 
-=item I<para>
+=item I<paralog>
 
 Returns only paralogues, including within_species_paralog,
 other_paralog & gene_split
 
-=item I<hom>
+=item I<homeolog>
 
-Returns only homoeologues, including many2many, one2many & one2one
+Returns only homeologues, including many2many, one2many & one2one
 
 =back
 
