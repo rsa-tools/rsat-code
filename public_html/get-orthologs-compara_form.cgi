@@ -54,8 +54,8 @@ foreach $key (keys %default) {
 }
 
 ################################################################
-## print the form ###
-
+## Print the form
+################################################################
 
 ################################################################
 ## header
@@ -69,7 +69,7 @@ print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
-&ListParameters() if ($ENV{rsat_echo} >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2); ## For debugging
 
 ################################################################
 ## Display the form only if it is relveant for the organisms supported

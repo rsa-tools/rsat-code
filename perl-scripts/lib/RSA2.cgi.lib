@@ -55,11 +55,20 @@ EndGATag
 ################################################################
 ## Load the default parameters for get-orthologs`
 sub LoadGetOrthoComparaDefault {
+    ## TO DO (JVH): ADAPT THIS FOR THE NON-PLANT SERVERS
   $default{organism} = "arabidopsis_thaliana";
   $default{queries} = '';
-  $default{type} = "orth";
+  $default{type} = "ortholog";
   $default{ident_target} = 70;
   $default{ident_query} = 70;
+  $default{demo_descr} = "";
+
+  ## Replace defaults by parameters from the CGI call, if defined
+  foreach $key (keys %default) {
+      if ($query->param($key)) {
+	  $default{$key} = $query->param($key);
+      }
+  }  
 }
 
 
@@ -88,7 +97,7 @@ sub LoadGetOrthoDefault {
 }
 
 ###############################################################
-## Print the options fro get-orthologs-compara:
+## Print the options for get-orthologs-compara:
 ## -ref_org, -i,  
 sub PrintOrthoComparaSelectionSection {
 
@@ -105,22 +114,25 @@ sub PrintOrthoComparaSelectionSection {
     
     ## Choice of the organism
     print "<b>Query </b>";
-    print OrganismPopUpCompara(@supported_organisms_fullnames);
+    ## print &OrganismPopUpCompara(@supported_organisms_fullnames);
+    ## NOT YET TREATED: CHOOSE MULTIPLE ORGANISMS
+    print &OrganismScrollingListCompara(@supported_organisms_fullnames), "\n";
 
     ################################################################
     ### gene queries
-    print "<B><A HREF='help.get-orthologs-compara.html#genes'>Query genes</A></B>&nbsp;";
-    print "<BR>\n";
+    print "<p><B><A HREF='help.get-orthologs-compara.html#genes'>Query genes</A></B>&nbsp;";
+    print "<p>Paste query genes (one query per row)<br>\n";
     print $query->textarea(-name=>'queries',
-             -default=>$default{queries},
-             -rows=>3,
-             -columns=>40);
+			   -default=>$default{queries},
+			   -rows=>3,
+			   -columns=>40);
+
     ### option to upload a file with the gene list from the client machine
-    print "<BR>Upload gene list from file<BR>\n";
+    print "<p><b>or</b> upload gene list from file<BR>\n";
     print $query->filefield(-name=>'uploaded_file',
-              -default=>'',
-              -size=>45,
-              -maxlength=>200);
+			    -default=>'',
+			    -size=>45,
+			    -maxlength=>200);
     print "<p>\n";
 
 }
@@ -131,7 +143,6 @@ sub PrintOrthoComparaSelectionSection {
 ## - query genes
 ## - reference taxon
 sub PrintOrthoSelectionSection {
-
 
 #### Not supported anymore
 ##			       Escherichia_coli_K12
@@ -248,6 +259,7 @@ sub ListParameters {
   }
   print "</table></ul>\n";
 }
+
 
 ################################################################
 ## List the default parameter values for a CGI script
@@ -965,13 +977,41 @@ sub OrganismPopUpSelectable {
   return $popup;
 }
 
-## Generate pop-up menu to be displayed for organism selection in Compara
+
+################################################################
+## Generate a scrolling list allowing users to select multiple
+## organisms for get-orthologs-compara.
+sub OrganismScrollingListCompara {
+    my (@selected_organisms) = @_;
+    if (scalar(@selected_organisms) == 0) {
+        @selected_organisms =
+            &RSAT::OrganismManager::get_supported_organisms_web();
+    }
+    
+    $organismList =  "<B>Organism</B>&nbsp;";
+    $organismList .=  
+	$query->scrolling_list(-name=>'organism',
+			       -values=>\@selected_organisms,
+#			 -default=>['eenie','moe'],
+			       -size=>10,
+			       -multiple=>'true',
+			       -labels=>\%labels,
+			       -attributes=>\%attributes);
+    return($organismList);
+}
+
+################################################################
+## Generate pop-up menu to be displayed for organism selection in
+## Compara.
 sub OrganismPopUpCompara{
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) == 0) {
         @selected_organisms =
             &RSAT::OrganismManager::get_supported_organisms_web();
     }
+
+
+
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
     print '<script type="text/javascript"> ' ;
