@@ -72,19 +72,26 @@ unless ($type = $query->param('type')) {
 }
 $parameters .= " -type $type";
 
-my $ident_target = "";
-unless ($ident_target = $query->param('ident_target')) {
-    &cgiError("Please set ident_target");
+my $ident_target =  $query->param('ident_target');
+$ident_target = 0 if (lc($ident_target) eq "none");
+unless (&IsReal($ident_target) && ($ident_target >= 0) && ($ident_target <= 100)) {
+    &cgiError("Invalid value for target identity: should be a Real number between 0 and 100.");
 }
-&cgiError("Please choose a [0,100] %value for ident_target") if($ident_target <0 || $ident_target > 100);
 $parameters .= " -ident_target $ident_target";
 
-my $ident_query = "";
-unless ($ident_query = $query->param('ident_query')) {
-    &cgiError("Please set ident_query");
+my $ident_query =  $query->param('ident_query');
+$ident_query = 0 if (lc($ident_query) eq "none");
+unless (&IsReal($ident_query) && ($ident_query >= 0) && ($ident_query <= 100)) {
+    &cgiError("Invalid value for query identity: should be a Real number between 0 and 100.");
 }
-&cgiError("Please choose a [0,100] %value for ident_query") if($ident_query <0 || $ident_query > 100);
 $parameters .= " -ident_query $ident_query";
+
+# my $ident_query = "";
+# unless ($ident_query = $query->param('ident_query')) {
+#     &cgiError("Please set ident_query");
+# }
+# &cgiError("Please choose a [0,100] %value for ident_query") if($ident_query <0 || $ident_query > 100);
+# $parameters .= " -ident_query $ident_query";
 
 
 ## Output file
