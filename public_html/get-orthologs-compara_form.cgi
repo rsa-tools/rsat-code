@@ -15,7 +15,7 @@ use RSAT::Tree;
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-### Read the CGI query
+## Read the CGI query
 $query = new CGI;
 
 ################################################################
@@ -42,11 +42,11 @@ $field_description{ident_target} = "%identity with respect to target length";
 $field_description{ident_query} = "%identity with respect to query length";
 
 ################################################################
-### default values for get-orthologs
+## default values for get-orthologs
 %default = ();
 &LoadGetOrthoComparaDefault(\%default);
 
-### Replace defaults by parameters from the cgi call, if defined
+## Replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
@@ -54,11 +54,11 @@ foreach $key (keys %default) {
 }
 
 ################################################################
-### print the form ###
+## print the form ###
 
 
 ################################################################
-### header
+## header
 &RSA_header("get-orthologs-compara", "form");
 print "<CENTER>";
 print "Returns orthologues, plus optionally paralogues and homoeologues, for a
@@ -69,10 +69,21 @@ print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
+&ListParameters() if ($ENV{rsat_echo} >= 2);
+
 ################################################################
 ## Display the form only if it is relveant for the organisms supported
 ## on this RSAT instance.
 &check_compara_tools();
+
+################################################################
+## Print the demo description if specified
+if ($default{demo_descr}) {
+    print "<font color='darkgreen'>\n";
+    print "<p><b>Demo:</b> ", $default{demo_descr}, "</p>\n";
+    print "</font>\n";
+}
+
 
 ################################################################
 ## Form header
@@ -87,10 +98,10 @@ print "<hr/>\n";
 &PrintOrthoComparaSelectionSection();
 
 ## homology type
-print "<B><A HREF='help.get-orthologs-compara.html#feattype'>Homology type</A></B>&nbsp;<br>";
+print "<B><A HREF='help.get-orthologs-compara.html#type'>Homology type</A></B>&nbsp;<br>";
 print $query->radio_group(-name=>'type',
              -values=>[@homology_types],
-             -default=>$default{feattype});
+             -default=>$default{type});
 print "<BR>\n";
 
 
@@ -146,12 +157,12 @@ print "</ul>\n";
 
 
 ################################################################
-### send results by email or display on the browser
+## Send results by email or display on the browser
 print "<hr/>\n"; 
 &SelectOutput();
 
 ################################################################
-### action buttons
+## Action buttons
 print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
@@ -159,13 +170,29 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 ################################################################
-### data for the demo 
+## Data for the demo on ortholog searches
 print $query->start_multipart_form(-action=>"get-orthologs-compara_form.cgi");
-$demo_queries = "BRADI4G31367.1\n";
+$demo_descr = "Search orthologs for a gene from <i>Brachypodium diastychon</i> in <i>Triticum aestivum</i> genome. Note that the option many2many allows to detect multiple orthologs.";
 print "<TD><B>";
-print $query->hidden(-name=>'queries',-default=>$demo_queries);
+print $query->hidden(-name=>'queries',-default=>"BRADI4G31367.1\n");
+print $query->hidden(-name=>'demo_descr',-default=>$demo_descr);
 print $query->hidden(-name=>'organism',-default=>"triticum_aestivum");
-print $query->submit(-label=>"DEMO");
+print $query->submit(-label=>"DEMO 1 (orthologs)");
+print "</B></TD>\n";
+print $query->end_form;
+
+################################################################
+## Data for the demo on ortholog searches
+print $query->start_multipart_form(-action=>"get-orthologs-compara_form.cgi");
+$demo_descr = "Search paralogs for a gene from <i>Arabidopsis thaliana</i> in its own genome.";
+print "<TD><B>";
+print $query->hidden(-name=>'queries',-default=>"AT5G45730.1");
+print $query->hidden(-name=>'type',-default=>"paralog");
+print $query->hidden(-name=>'ident_target',-default=>"0");
+print $query->hidden(-name=>'ident_query',-default=>"0");
+print $query->hidden(-name=>'demo_descr',-default=>$demo_descr);
+print $query->hidden(-name=>'organism',-default=>"arabidopsis_thaliana");
+print $query->submit(-label=>"DEMO 2 (paralogs)");
 print "</B></TD>\n";
 print $query->end_form;
 
