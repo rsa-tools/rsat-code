@@ -52,7 +52,7 @@ $default{compare_motif_database}="jaspar_core_vertebrates";
 $default{custom_motif_db_name}="custom_motif_collection";
 
 
-### replace defaults by parameters from the cgi call, if defined
+### Replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
@@ -143,9 +143,6 @@ reference is the summit (or <b>center</b>) of each sequence.
 
 </div></p>
 end_part_1
-
-
-
 
 
 &ListParameters() if ($ENV{rsat_echo} >=2);
