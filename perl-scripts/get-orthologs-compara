@@ -587,6 +587,12 @@ other_paralog & gene_split
 
 Returns only homeologues, including many2many, one2many & one2one
 
+I<Definition>: the term homoeologous, also spelled homeologous, is
+used to describe the relationship of similar chromosomes or parts of
+chromosomes brought together following inter-species hybridization and
+allopolyploidization, and whose relationship was completely homologous
+in an ancestral species (https://en.m.wikipedia.org/wiki/Polyploid).
+
 =back
 
 =cut
