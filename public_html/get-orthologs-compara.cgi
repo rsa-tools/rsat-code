@@ -23,7 +23,7 @@ $query = new CGI;
 ## update log file
 &UpdateLogFile();
 
-&ListParameters() if ($ENV{rsat_echo} >= 0);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 $command = $SCRIPTS."/get-orthologs-compara";
 $prefix = "get-orthologs-compara";
@@ -177,9 +177,13 @@ exit(0);
 sub PipingForm {
     my $genes = `cat $result_file`;
     my $single_multi_org = "single";
-    my $organism = $organism[0];
+#    my $organism = $organism[0];
     if (scalar(@organism) > 1) {
-	$single_multi_org = "multi";
+      $single_multi_org = "multi";
+      &RSAT::message::Debug("Organisms for piping form: ", join("; ", @organism));
+    } else {
+      $organism = $organism[0];
+      &RSAT::message::Debug("Organism for piping form: ", $organism);
     }
     ### prepare data for piping
     print <<End_of_form;
