@@ -8,7 +8,7 @@ get-orthologs-compara
 
 =head1 DESCRIPTION
 
-Returns orthologues, plus optionally paralogues and homoeologues, for
+Returns orthologues, plus optionally paralogues and homeologues, for
 a set of genes in one or more organisms. Relies on primary data from
 Ensembl Compara.
 
@@ -60,7 +60,7 @@ I<-org_list>).
 
 =head1 OUTPUT FORMAT
 
-A tab-separated file with six columns. Each row of the output file
+A tab-separated file with seven columns. Each row of the output file
 describes a homology relation between a query gene and a target gene.
 Output contains the following columns:
 
@@ -74,9 +74,11 @@ Output contains the following columns:
 
 =item 4. ID of the query gene.
 
-=item 5. % protein sequence identity with respect to target length.
+=item 5. Name of the query organism.
 
-=item 6. % protein sequence identity with respect to query length.
+=item 6. % protein sequence identity with respect to target length.
+
+=item 7. % protein sequence identity with respect to query length.
 
 =back
 
@@ -93,7 +95,7 @@ genome.
 
 Beware, the list of organisms supported for compara is a subset of
 those installed in the RSAT server. For this reason,
-get-orthologs-compara has a specific option I<-supported-organisms> to
+get-orthologs-compara has a specific option I<-supported_organisms> to
 get the relevant list of organisms.
 
  get-orthologs-compara -v 1 -supported_organisms \
@@ -137,6 +139,7 @@ package main;
   #### initialise parameters and vars
   our $start_time = &RSAT::util::StartScript();
   our $comparabdb = "$ENV{RSAT}/data/genomes/compara.bdb";
+  #$comparabdb = "$ENV{RSAT}/data/ensemblgenomes/plants/release-29/compara.bdb"; # debug
   
   our %infile = ();
   our %outfile = ();
@@ -154,7 +157,7 @@ package main;
   our @ref_organisms = ();
   our %organisms = ();
   our %homology_types = ();
-  our (%db,%stats,%int2organisms,%int2organisms_fullname);
+  our (%db,%stats,%int2organisms,%int2organisms_fullname,%org2int_fullname);
 
   our %homology_subtypes = (
     'ortholog', { 'ortholog_many2many',1,'ortholog_one2many',1,'ortholog_one2one',1 },
@@ -164,7 +167,7 @@ package main;
       %{$homology_subtypes{'ortholog'}}, %{$homology_subtypes{'paralog'}}, %{$homology_subtypes{'homeolog'}}  };
   our $homology_subtypes = join ",", sort(keys(%homology_subtypes)); ## For the error message
 
-  my ($n_of_results,$count,$idOK,$rows,$sp,$header,$orig_query) = (0);
+  my ($n_of_results,$count,$idOK,$rows,$sp,$query_sp,$header,$orig_query) = (0);
   my ($ref_org,$query,$real_query,$id,$type,$subtype,$identity1,$identity2);
 
   # open BerkeleyDB database
@@ -174,12 +177,13 @@ package main;
   # get supported organisms and homology types, encoded as integers
   %int2organisms = split(/,/,$db{'supported_organisms'});
   %organisms = reverse(%int2organisms);
-  %int2organisms_fullname = reverse(split(/,/,$db{'supported_organisms_fullname'}));
-  foreach $sp (keys(%int2organisms_fullname))
+  %int2organisms_fullname = split(/,/,$db{'supported_organisms_fullname'});
+  %org2int_fullname = reverse(%int2organisms_fullname);
+  foreach $sp (keys(%org2int_fullname))
   {
-    $organisms{$sp} = $int2organisms_fullname{$sp};
+    $organisms{$sp} = $org2int_fullname{$sp};
   }
-
+    
   %homology_types = split(/,/,$db{'homology_types'});
 
   # parse arguments
@@ -310,6 +314,7 @@ package main;
       'ref_organism',
       'subtype',
       'query_id',
+      'query_organism',
       'ident_target',
       'ident_query'
   );
@@ -325,7 +330,6 @@ package main;
     $idOK = id_exists_in_db($query);
     if(!$idOK)
     {
-      RSAT::message::Info("Cannot find query",$query,",stripping it") if($verbose >=2);
       my $trimmed_id = strip_gene_id($query);
       if($trimmed_id ne $query)
       { 
@@ -334,8 +338,9 @@ package main;
         {
           # TO BE DONE: here is where synonyms should be retrieved ...
 
-          # In THE MEANTIME THESE ARE JUST BAD IDs
-          RSAT::message::Info("Cannot find stripped query=",$trimmed_id,", skip it") if($verbose >=2);
+          # Bad IDs
+          print $out "_cannot\tfind\tquery:\t$query/$trimmed_id\tNA\tNA\tNA\n";
+          
           $stats{$query}{'bad_gene_id'} = 1;
           next;
         }
@@ -345,6 +350,7 @@ package main;
           $real_query = $trimmed_id;
         }
       }
+      else{ print $out "_cannot\tfind\tquery:\t$query\tNA\tNA\tNA\n"; }
     }
 
     # query Compara for all requested organisms
@@ -355,8 +361,8 @@ package main;
 
       foreach my $row (split(/\n/,$rows))
       {
-        #Traes_5BL_8B50EC68A,36,6,76,74
-        ($id,$species,$subtype,$identity1,$identity2) = split(/,/,$row);
+        #Traes_5BL_8B50EC68A,36,6,76,74,5
+        ($id,$species,$subtype,$identity1,$identity2,$query_sp) = split(/,/,$row);
 
         next if($identity1 < $params{'ident_query'} || 
           $identity2 < $params{'ident_target'});
@@ -364,9 +370,12 @@ package main;
         $subtype = $homology_types{$subtype};
         next if(!$homology_subtypes{$params{'type'}}{$subtype});
 
-        $species = $int2organisms{$species};
+        #$species = $int2organisms{$species};
+        #$query_sp = $int2organisms{$query_sp};
+        $species = $int2organisms_fullname{$species};
+        $query_sp = $int2organisms_fullname{$query_sp};
 
-        print $out "$id\t$species\t$subtype\t$orig_query\t$identity2\t$identity1\n";
+        print $out "$id\t$species\t$subtype\t$orig_query\t$query_sp\t$identity2\t$identity1\n"; 
 
         $count++;
         $n_of_results++;
@@ -580,7 +589,7 @@ specified with the option I<-i>.
 
 Supported homology types: ortholog, paralog, homeolog, all
 
-Default: orth
+Default: ortholog
 
 =over
 
@@ -605,7 +614,7 @@ I<Definition>: the term homoeologous, also spelled homeologous, is
 used to describe the relationship of similar chromosomes or parts of
 chromosomes brought together following inter-species hybridization and
 allopolyploidization, and whose relationship was completely homologous
-in an ancestral species (https://en.m.wikipedia.org/wiki/Polyploid).
+in an ancestral species [https://en.m.wikipedia.org/wiki/Polyploid].
 
 =back
 
