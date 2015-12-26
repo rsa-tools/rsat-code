@@ -26,17 +26,19 @@ my @homology_types = qw( ortholog paralog homeolog all );
 ## Output fields
 my @output_fields = qw(
     target_id
-    ref_org
+    ref_organism
     subtype
     query_id
+    query_organism
     ident_target
     ident_query
     );
 
 my %field_description = ();
 $field_description{target_id} = "Target gene identifier";
-$field_description{query_id} = "Query gene identifier";
 $field_description{ref_org} = "Reference organism";
+$field_description{subtype} = "Compara homology subtype";
+$field_description{query_id} = "Query gene identifier";
 $field_description{subtype} = "Compara homology subtype";
 $field_description{ident_target} = "%identity with respect to target length";
 $field_description{ident_query} = "%identity with respect to query length";
@@ -172,7 +174,7 @@ print $query->end_form;
 ################################################################
 ## Data for the demo on ortholog searches
 print $query->start_multipart_form(-action=>"get-orthologs-compara_form.cgi");
-$demo_descr = "Search orthologs for a gene from <i>Brachypodium diastychon</i> in <i>Triticum aestivum</i> genome. Note that the option many2many allows to detect multiple orthologs.";
+my $demo_descr = "Search orthologs for a gene from <i>Brachypodium diastychon</i> in <i>Triticum aestivum</i> genome. Note that the option many2many allows to detect multiple orthologs.";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>"BRADI4G31367.1\n");
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr);
@@ -184,13 +186,13 @@ print $query->end_form;
 ################################################################
 ## Data for the demo on ortholog searches
 print $query->start_multipart_form(-action=>"get-orthologs-compara_form.cgi");
-$demo_descr = "Search paralogs for a gene from <i>Arabidopsis thaliana</i> in its own genome.";
+my $demo_descr2 = "Search paralogs for a gene from <i>Arabidopsis thaliana</i> in its own genome.";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>"AT5G45730.1");
 print $query->hidden(-name=>'type',-default=>"paralog");
 print $query->hidden(-name=>'ident_target',-default=>"0");
 print $query->hidden(-name=>'ident_query',-default=>"0");
-print $query->hidden(-name=>'demo_descr',-default=>$demo_descr);
+print $query->hidden(-name=>'demo_descr',-default=>$demo_descr2);
 print $query->hidden(-name=>'organism',-default=>"arabidopsis_thaliana");
 print $query->submit(-label=>"DEMO 2 (paralogs)");
 print "</B></TD>\n";
