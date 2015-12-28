@@ -175,15 +175,15 @@ exit(0);
 # Pipe the result to other commands
 #
 sub PipingForm {
-    my $genes = `cat $result_file`;
+    my $genes = `cat $result_file | grep -v _cannot`;
     my $single_multi_org = "single";
 #    my $organism = $organism[0];
     if (scalar(@organism) > 1) {
       $single_multi_org = "multi";
-      &RSAT::message::Debug("Organisms for piping form: ", join("; ", @organism));
+#      &RSAT::message::Debug("Organisms for piping form: ", join("; ", @organism));
     } else {
       $organism = $organism[0];
-      &RSAT::message::Debug("Organism for piping form: ", $organism);
+#      &RSAT::message::Debug("Organism for piping form: ", $organism);
     }
     ### prepare data for piping
     print <<End_of_form;
