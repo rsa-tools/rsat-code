@@ -36,9 +36,10 @@ my @output_fields = qw(
 
 my %field_description = ();
 $field_description{target_id} = "Target gene identifier";
-$field_description{ref_org} = "Reference organism";
+$field_description{ref_organism} = "Reference organism";
 $field_description{subtype} = "Compara homology subtype";
 $field_description{query_id} = "Query gene identifier";
+$field_description{query_organism} = "Query organism";
 $field_description{subtype} = "Compara homology subtype";
 $field_description{ident_target} = "%identity with respect to target length";
 $field_description{ident_query} = "%identity with respect to query length";
@@ -63,7 +64,7 @@ foreach $key (keys %default) {
 ## header
 &RSA_header("get-orthologs-compara", "form");
 print "<CENTER>";
-print "Returns orthologues, plus optionally paralogues and homoeologues, for a
+print "Returns orthologues, plus optionally paralogues and homeologues, for a
     set of genes in one or more organisms. <br>Relies on primary data from
     Ensembl Compara.<br><br>\n";
 print "Program developed by <A HREF='bcontreras\@eead.csic.es'>Bruno Contreras-Moreira</A>\n";
@@ -176,7 +177,8 @@ print $query->end_form;
 print $query->start_multipart_form(-action=>"get-orthologs-compara_form.cgi");
 my $demo_descr = "Search orthologs for a gene from <i>Brachypodium diastychon</i> in <i>Triticum aestivum</i> genome. Note that the option many2many allows to detect multiple orthologs.";
 print "<TD><B>";
-print $query->hidden(-name=>'queries',-default=>"BRADI4G31367.1\n");
+print $query->hidden(-name=>'queries',-default=>"BRADI4G31367.1");
+print $query->hidden(-name=>'type',-default=>"ortholog");
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr);
 print $query->hidden(-name=>'organism',-default=>"triticum_aestivum");
 print $query->submit(-label=>"DEMO 1 (orthologs)");
