@@ -113,7 +113,7 @@ sub PrintOrthoComparaSelectionSection {
     close(GETORTHSCOMP);
     
     ## Choice of the organism
-    print "<b>Query </b>";
+    print "<b>Reference </b>";
     ## print &OrganismPopUpCompara(@supported_organisms_fullnames);
     ## NOT YET TREATED: CHOOSE MULTIPLE ORGANISMS
     print &OrganismScrollingListCompara(@supported_organisms_fullnames), "\n";
