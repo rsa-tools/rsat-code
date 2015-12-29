@@ -156,7 +156,7 @@ package main;
   ## Start processing
 
   my ($n_of_inserts,$n_of_species,$row,$org2int,$type2int,@rawdata) = (0,0);
-  my (%eg_group_species,%eg_group_species_fullname,%db,$fullname2int);
+  my (%eg_group_species,%eg_group_species_fullname,%db,$fullname2int,%species_ids);
   my ($key,$record,$gene_stable_id,$protein_stable_id,$species,$homology_type,$identity);
   my ($homology_gene_stable_id,$homology_protein_stable_id,$homology_species,$homology_identity);
 
@@ -240,9 +240,12 @@ package main;
     $homology_type = $hom_type{$homology_type};
 
     $key = $gene_stable_id.'_'.$homology_species;
-    $record = "$homology_gene_stable_id,$homology_species,$homology_type,$identity,$homology_identity";
+    $record = "$homology_gene_stable_id,$homology_species,$homology_type,$identity,$homology_identity,$species";
 
     $db{$key} .= "$record\n";
+
+    # save full list of ids (with defined homologues) of a species
+    $species_ids{$species}{$gene_stable_id}++;  
 
     $n_of_inserts++;
 
@@ -259,6 +262,11 @@ package main;
     }
   } 
   close($main::in);
+
+  # add string of gene IDs of all parsed species (key is int)
+  foreach $species (keys(%species_ids)){
+    $db{'gene_ids_'.$species} = join(',',sort(keys(%{$species_ids{$species}})));
+  }
 
   # 4) close BerkeleyDB database
   untie(%db);
