@@ -8,7 +8,7 @@ get-orthologs-compara
 
 =head1 DESCRIPTION
 
-Returns orthologues, plus optionally paralogues and homoeologues, for
+Returns orthologues, plus optionally paralogues and homeologues, for
 a set of genes in one or more organisms. Relies on primary data from
 Ensembl Compara.
 
@@ -35,11 +35,22 @@ get-orthologs-compara -q GENE1 -q GENE2 -ref_org organism_name [...]
 Ensembl Compara gene orthology and paralogy predictions are generated
 by a pipeline where maximum likelihood phylogenetic gene trees play a
 central role. They attempt to represent the evolutionary history of
-gene families, i.e. genes that diverged from a common ancestor.  These
+gene families, i.e. genes that diverged from a common ancestor. These
 gene trees reconciled with their species tree have their internal
 nodes annotated to distinguish duplication or speciation events, and
 thus support the annotation of orthologous and paralagous genes, which
 can be part of complex one-to-many and many-to-many relations.
+
+Pairs of homologous sequences are scored in terms of % amino acid identity,
+which is calculated with respect to query and target in order to capture 
+length and possibly domain content differentes. For example, if the 
+species selected is Arabidopsis thaliana, and the homologue is in maize, 
+the query sequence is the A.thaliana protein and the target is the maize 
+protein. I<ident_query> in this case is the % of the query identical 
+to the maize protein, and I<ident_target> is the % of the maize protein 
+identical to the A.thaliana protein. These % identities will only be the 
+same if the length (number of amino acids) of both sequences are the same. 
+
 [Adapted from:
 L<http://www.ensembl.org/info/genome/compara/homology_method.html>].
 
@@ -60,7 +71,7 @@ I<-org_list>).
 
 =head1 OUTPUT FORMAT
 
-A tab-separated file with six columns. Each row of the output file
+A tab-separated file with seven columns. Each row of the output file
 describes a homology relation between a query gene and a target gene.
 Output contains the following columns:
 
@@ -68,15 +79,17 @@ Output contains the following columns:
 
 =item 1. ID of target homologous gene (Ensembl gene_stable_id).
 
-=item 2. Name of the reference organism.
+=item 2. Name of reference organism (of target gene).
 
 =item 3. type of homology relationship.
 
 =item 4. ID of the query gene.
 
-=item 5. % protein sequence identity with respect to target length.
+=item 5. Name of query organism (of query gene).
 
-=item 6. % protein sequence identity with respect to query length.
+=item 6. % protein sequence identity with respect to target length.
+
+=item 7. % protein sequence identity with respect to query length.
 
 =back
 
@@ -93,31 +106,53 @@ genome.
 
 Beware, the list of organisms supported for compara is a subset of
 those installed in the RSAT server. For this reason,
-get-orthologs-compara has a specific option I<-supported-organisms> to
+get-orthologs-compara has a specific option I<-supported_organisms> to
 get the relevant list of organisms.
 
  get-orthologs-compara -v 1 -supported_organisms \
       -o compara_organisms.tab
 
-=head2 Get orthologs from 1 query gene in a list of reference genomes
+=head2 Get orthologs from a query gene in a list of reference genomes
 
  get-orthologs-compara -v 1 -org_list compara_organisms.tab \
    -type ortholog -q BRADI4G31367.1 
 
-=head2 Get paralogs for all genes of Arabidopsis thaliana in its own genome
+=head2 Get all orthologs from a query genome, shortening genome names 
 
- get-orthologs-compara -v 1 \
-   -i $RSAT/public_html/data/genomes/Arabidopsis_thaliana.TAIR10.29/genome/genes.tab \
-   -type paralog -ref_org Arabidopsis_thaliana.TAIR10.29 \
-   -o Arabidopsis_thaliana.TAIR10.29_all_paralogs.tab
+ get-orthologs-compara -query_org brachypodium_distachyon \
+   -ref_org arabidopsis_thaliana -short -o brachy.thaliana.tab
 
-You can then count the number of paralogs per gene.
+=head2 Get paralogs for all genes of Arabidopsis thaliana in its own genome (inparalogues)
 
- grep -v '^;' Arabidopsis_thaliana.TAIR10.29_all_paralogs.tab \
-   | cut -f 1 | sort | uniq -c  | sort -nr \
-   > Arabidopsis_thaliana.TAIR10.29_all_paralogs_nb_per_gene.tab
+ get-orthologs-compara -query_org arabidopsis_thaliana \
+   -ref_org arabidopsis_thaliana -type paralog
+
+=head2 Get homeologs within the wheat genome with stringent identity cut-off values
+
+ get-orthologs-compara -query_org triticum_aestivum \
+   -ref_org triticum_aestivum -type homeolog \
+   -ident_query 70 -ident_target 70
 
 =cut
+
+# get-orthologs-compara -v 1 \
+#    -i $RSAT/public_html/data/genomes/Arabidopsis_thaliana.TAIR10.29/genome/genes.tab \
+#       -type paralog -ref_org Arabidopsis_thaliana.TAIR10.29 \
+#          -o Arabidopsis_thaliana.TAIR10.29_all_paralogs.tab
+#
+# get-orthologs-compara -v 1 \
+#    -i $RSAT/public_html/data/genomes/Arabidopsis_thaliana.TAIR10.29/genome/genes.tab \
+#       -type paralog -ref_org Arabidopsis_thaliana.TAIR10.29 \
+#          -o Arabidopsis_thaliana.TAIR10.29_all_paralogs.tab
+#
+#          You can then count the number of paralogs per gene.
+#
+#           grep -v '^;' Arabidopsis_thaliana.TAIR10.29_all_paralogs.tab \
+#              | cut -f 1 | sort | uniq -c  | sort -nr \
+#                 > Arabidopsis_thaliana.TAIR10.29_all_paralogs_nb_per_gene.tab
+#
+
+
 
 BEGIN {
   if ($0 =~ /([^(\/)]+)$/) {
@@ -137,6 +172,7 @@ package main;
   #### initialise parameters and vars
   our $start_time = &RSAT::util::StartScript();
   our $comparabdb = "$ENV{RSAT}/data/genomes/compara.bdb";
+  #$comparabdb = "$ENV{RSAT}/data/ensemblgenomes/plants/release-29/compara.bdb"; # debug
   
   our %infile = ();
   our %outfile = ();
@@ -154,7 +190,7 @@ package main;
   our @ref_organisms = ();
   our %organisms = ();
   our %homology_types = ();
-  our (%db,%stats,%int2organisms,%int2organisms_fullname);
+  our (%db,%stats,%int2organisms,%int2organisms_fullname,%org2int_fullname);
 
   our %homology_subtypes = (
     'ortholog', { 'ortholog_many2many',1,'ortholog_one2many',1,'ortholog_one2one',1 },
@@ -164,7 +200,7 @@ package main;
       %{$homology_subtypes{'ortholog'}}, %{$homology_subtypes{'paralog'}}, %{$homology_subtypes{'homeolog'}}  };
   our $homology_subtypes = join ",", sort(keys(%homology_subtypes)); ## For the error message
 
-  my ($n_of_results,$count,$idOK,$rows,$sp,$header,$orig_query) = (0);
+  my ($n_of_results,$count,$idOK,$rows,$sp,$query_sp,$header,$orig_query) = (0);
   my ($ref_org,$query,$real_query,$id,$type,$subtype,$identity1,$identity2);
 
   # open BerkeleyDB database
@@ -174,12 +210,13 @@ package main;
   # get supported organisms and homology types, encoded as integers
   %int2organisms = split(/,/,$db{'supported_organisms'});
   %organisms = reverse(%int2organisms);
-  %int2organisms_fullname = reverse(split(/,/,$db{'supported_organisms_fullname'}));
-  foreach $sp (keys(%int2organisms_fullname))
+  %int2organisms_fullname = split(/,/,$db{'supported_organisms_fullname'});
+  %org2int_fullname = reverse(%int2organisms_fullname);
+  foreach $sp (keys(%org2int_fullname))
   {
-    $organisms{$sp} = $int2organisms_fullname{$sp};
+    $organisms{$sp} = $org2int_fullname{$sp};
   }
-
+    
   %homology_types = split(/,/,$db{'homology_types'});
 
   # parse arguments
@@ -225,6 +262,21 @@ package main;
       }
       close($genefile);
     }
+    elsif($params{'query_org'})
+    {
+      $query_sp = 'gene_ids_'. $organisms{$params{'query_org'}};
+
+      if($db{ $query_sp }){
+        foreach $id (split(',', $db{ $query_sp })){
+          push(@query_genes,$id); #print "$id\n";
+        }
+        RSAT::message::Info("Querying all genes in ",$params{'query_org'}, scalar(@query_genes)) if($verbose >= 2);
+      }
+      else{
+        RSAT::error::FatalError("Cannot find gene IDs of organism:",$params{'query_org'})
+      }
+    }
+
 
     &RSAT::error::FatalError("You should indicate at least a query gene")
       unless(scalar(@query_genes) > 0);
@@ -310,6 +362,7 @@ package main;
       'ref_organism',
       'subtype',
       'query_id',
+      'query_organism',
       'ident_target',
       'ident_query'
   );
@@ -325,7 +378,6 @@ package main;
     $idOK = id_exists_in_db($query);
     if(!$idOK)
     {
-      RSAT::message::Info("Cannot find query",$query,",stripping it") if($verbose >=2);
       my $trimmed_id = strip_gene_id($query);
       if($trimmed_id ne $query)
       { 
@@ -334,8 +386,9 @@ package main;
         {
           # TO BE DONE: here is where synonyms should be retrieved ...
 
-          # In THE MEANTIME THESE ARE JUST BAD IDs
-          RSAT::message::Info("Cannot find stripped query=",$trimmed_id,", skip it") if($verbose >=2);
+          # Bad IDs
+          print $out "_cannot\tfind\tquery\t$query/$trimmed_id\tNA\tNA\tNA\n";
+          
           $stats{$query}{'bad_gene_id'} = 1;
           next;
         }
@@ -345,6 +398,7 @@ package main;
           $real_query = $trimmed_id;
         }
       }
+      else{ print $out "_cannot\tfind\tquery\t$query\tNA\tNA\tNA\n"; }
     }
 
     # query Compara for all requested organisms
@@ -355,8 +409,8 @@ package main;
 
       foreach my $row (split(/\n/,$rows))
       {
-        #Traes_5BL_8B50EC68A,36,6,76,74
-        ($id,$species,$subtype,$identity1,$identity2) = split(/,/,$row);
+        #Traes_5BL_8B50EC68A,36,6,76,74,5
+        ($id,$species,$subtype,$identity1,$identity2,$query_sp) = split(/,/,$row);
 
         next if($identity1 < $params{'ident_query'} || 
           $identity2 < $params{'ident_target'});
@@ -364,9 +418,16 @@ package main;
         $subtype = $homology_types{$subtype};
         next if(!$homology_subtypes{$params{'type'}}{$subtype});
 
-        $species = $int2organisms{$species};
+        if($params{'short'}){
+          $species = $int2organisms{$species};
+          $query_sp = $int2organisms{$query_sp};
+        }
+        else{ 
+          $species = $int2organisms_fullname{$species};
+          $query_sp = $int2organisms_fullname{$query_sp};
+        }
 
-        print $out "$id\t$species\t$subtype\t$orig_query\t$identity2\t$identity1\n";
+        print $out "$id\t$species\t$subtype\t$orig_query\t$query_sp\t$identity2\t$identity1\n"; 
 
         $count++;
         $n_of_results++;
@@ -555,7 +616,16 @@ I<-supported_organisms>.
 
     } elsif ($arg eq "-supported_organisms") {
       $main::params{'supported_organisms'} = 1;
+=pod
 
+=item B<-short>
+
+Print short organism names on output.
+
+=cut
+
+    } elsif ($arg eq "-short") {
+      $main::params{'short'} = 1;
 =pod
 
 =item B<-q query_gene>
@@ -576,11 +646,35 @@ specified with the option I<-i>.
 
 =pod
 
+=item B<-query_org organism>
+
+Name of query organism.
+
+This option allows to search homologues for all genes in a query organism.
+Genes with no homologues are not listed in output.
+
+=cut
+    } elsif ($arg eq "-query_org") {
+      $main::params{'query_org'} = shift (@arguments);
+
+      unless (defined($main::organisms{$main::params{'query_org'}})) {
+        &RSAT::error::FatalError(join("\t", "Organism", $main::params{'query_org'},
+          "is not supported.","Use option -supported_organisms to get a list. "));
+      }
+
+      &RSAT::error::FatalError("Option -query_org is incompatible with option -q")
+        if (@main::query_genes);
+
+      &RSAT::error::FatalError("Option -query_org is incompatible with option -i")
+        if ($main::infile{input});
+
+=pod
+
 =item B<-type homology_type>
 
 Supported homology types: ortholog, paralog, homeolog, all
 
-Default: orth
+Default: ortholog
 
 =over
 
@@ -605,7 +699,7 @@ I<Definition>: the term homoeologous, also spelled homeologous, is
 used to describe the relationship of similar chromosomes or parts of
 chromosomes brought together following inter-species hybridization and
 allopolyploidization, and whose relationship was completely homologous
-in an ancestral species (https://en.m.wikipedia.org/wiki/Polyploid).
+in an ancestral species [L<https://en.m.wikipedia.org/wiki/Polyploid>].
 
 =back
 
@@ -615,7 +709,7 @@ in an ancestral species (https://en.m.wikipedia.org/wiki/Polyploid).
 
 =pod
 
-=item B<-ident_target % identity with respect to target length>
+=item B<-ident_target % amino acid identity over target length>
 
 Homologues with lower ident_target values are skipped. Default: 0 .
 
@@ -626,7 +720,7 @@ Homologues with lower ident_target values are skipped. Default: 0 .
 
 =pod
 
-=item B<-ident_query % identity with respect to query length>
+=item B<-ident_query % amino acid identity over query length>
 
 Homologues with lower ident_query values are skipped. Default: 0 .
 
