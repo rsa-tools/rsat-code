@@ -991,14 +991,14 @@ sub ReadArguments {
       &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: ", $RSAT::feature::supported_output_formats)
 	unless ($RSAT::feature::supported_output_format{$output_format});
 
-      ### add "chr" in front of chromosome names for BED output
-    } elsif ($ARGV[$a] eq "-add_chr") {
-      $add_chr_bed = 1;
-
     } elsif ($ARGV[$a] eq "-featname") {
       $set_feature_name = $ARGV[$a+1];
 
-      ### remove "chr" in front of chromosome names for GFF output
+      ## Add "chr" in front of chromosome names for BED output
+    } elsif ($ARGV[$a] eq "-add_chr") {
+      $add_chr_bed = 1;
+
+      ## Remove "chr" in front of chromosome names for GFF output
     } elsif ($ARGV[$a] eq "-remove_chr") {
       $remove_chr_gff = 1;
 
