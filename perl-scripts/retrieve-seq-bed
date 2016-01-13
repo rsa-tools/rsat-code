@@ -251,12 +251,11 @@ package main;
       }
       if (($bed_chr_prefixes == 0) && ($fasta_chr_prefixes > 0)) {
 	  $add_chr = 1;
-	  &RSAT::message::Info("Adding chr prefixes to ensure compatiblity between bed and fasta file") if ($main::verbose >= 2);
+	  &RSAT::message::Info("Adding chr prefixes to ensure compatiblity between bed and fasta file") if ($main::verbose >= 1);
       } elsif (($bed_chr_prefixes > 0) && ($fasta_chr_prefixes == 0)) {
 	  $remove_chr = 1;
-	  &RSAT::message::Info("Removing chr prefixes to ensure compatiblity between bed and fasta file") if ($main::verbose >= 2);
+	  &RSAT::message::Info("Removing chr prefixes to ensure compatiblity between bed and fasta file") if ($main::verbose >= 1);
       }
-
   }
 
   ## Suppress chr prefix from chromosome names if requested
