@@ -25,10 +25,10 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &S
 @result_files = ();
 
 
-### Read the CGI query
+## Read the CGI query
 $query = new CGI;
 
-### print the header
+## Print the header
 &RSA_header("retrieve-seq-bed result", "results");
 
 
@@ -41,8 +41,8 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ############################################################
-#### read parameters ####
-$parameters = " -v 1";
+## Read parameters
+$parameters = " -v 1 -check_chr ";
 
 ################################################################
 ## Organism
