@@ -692,6 +692,12 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       (defined($uth{rank_pm})) || (defined($lth{rank_pm}))) {
     $return_fields{rank} = 1;
   }
+  ## set a default threshold on score =0 for window where pval is used as threshold
+	if (($bg_method eq "window") && (defined($uth{pval})) && (!defined($lth{score})) ) {
+		$lth{score} = 0;
+	}
+  	
+
 
   ## Check consistency between crer thresholds and request for crer in the output
   unless (($return_fields{crer}) || ($return_fields{crer0})) {
@@ -2714,7 +2720,6 @@ This option is incompatible with the option -bgfile.
 =cut
     } elsif ($arg eq "-markov") {
       $main::markov = shift(@arguments);
-      $main::bg_method = "input";
       &RSAT::error::FatalError("Markov order must be a natural number.")
 	unless &RSAT::util::IsNatural($main::markov);
       &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.")
@@ -3238,6 +3243,9 @@ Threshold on some parameter (-lth: lower, -uth: upper threshold).
 Supported threshold fields for the matches : score pval sig normw proba_M proba_B rank crer_sig crer_pval crer_sites crer_size crer_site_distance
 
 Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank
+
+In -window mode, if a threshold is set on pval (e.g. -uth pval 0.001), a default threshold on the score (-lth score 0) will be 
+automatically added to limit the calculation time.
 
 =cut
 
@@ -4169,6 +4177,7 @@ sub score_segment {
   my $calc_window_pval = 1;
 
   ## Perform the threshold filtering only after having added the score to the disribution
+   unless ($bg_method eq "window") { ## for bg_window, theoretical distrib is not calculated yet, only for hits (default -lth score 0)
   unless (&check_matrix_thresholds("proba_m", $proba_M,$matrix_name)) {
     return(0) ; $calc_window_pval = 0;
   }
@@ -4186,6 +4195,7 @@ sub score_segment {
   }
   unless (&check_matrix_thresholds("sig", $sig,$matrix_name)) {
     return(0) ; $calc_window_pval = 0; $is_hit = 0;
+  }
   }
   unless (&check_matrix_thresholds("score", $score,$matrix_name)) {
     return(0) ; $calc_window_pval = 0;
@@ -4244,7 +4254,10 @@ sub score_segment {
 	      }
 	  }
       }
-
+      
+      unless (&check_matrix_thresholds("pval", $pval,$matrix_name)) {
+    	return(0) ; 
+  }
   }
 
 
