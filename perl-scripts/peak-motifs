@@ -2990,12 +2990,14 @@ sub SynthesisByMotif {
       print $small_sum_txt ("<img border='", $main::param{img_border}, 
 			    "' height='", $main::param{logo_table_height}, 
 			    "' src='",$logo_link,"'>"."\t" ) if ($task{small_summary});
+
     } else {
       print $syn "<td><font color='red'>No logo</font>","</td>\n";
       print $small_sum_txt "\t" if ($task{small_summary});
     }
     
-
+    ## HERE JvH SHOULD ADD THE SIGNIFICANCE OF THE MOTIFS
+    print "<b>sig=</b>";
 
     ## Sequence logo, reverse complementary
     $file = $main::outfile{$motif_id."_logo_rc"};
@@ -3016,6 +3018,7 @@ sub SynthesisByMotif {
 		       );
     print $syn "</tr>\n";
 
+    ################################################################
     ## Motif comparison results
     my @compa_names = ();
     my @compa_files = ();
@@ -3026,11 +3029,13 @@ sub SynthesisByMotif {
       push @compa_files, $main::outfile{$motif_id.'_vs_ref'};
       push @compa_prefixes, $main::prefix{$motif_id.'_vs_ref_prefix'};
     }
+
     foreach my $db_name (@motif_databases) {
       push @compa_names, $db_name;
       push @compa_files, $main::outfile{$motif_id.'_vs_db_'.$db_name};
       push @compa_prefixes, $main::prefix{$motif_id.'_vs_db_'.$db_name.'_prefix'};
     }
+
     for my $f (0..$#compa_names) {
       my $db_name = $compa_names[$f];
       my $file = $compa_files[$f];
@@ -3072,6 +3077,7 @@ sub SynthesisByMotif {
     print $syn "</td></tr>\n";
     print $small_sum_txt "\n" if ($task{small_summary});
 
+    ################################################################
     ## Scan results
     my $scan_file = $main::outfile{$motif_id.'_pssm_sites'};
     if (-e $scan_file) {
