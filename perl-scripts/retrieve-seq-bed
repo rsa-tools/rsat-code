@@ -197,7 +197,6 @@ package main;
   if (($add_chr + $remove_chr + $check_chr) >= 1) {
       $out = &OpenOutputFile($outfile{log});
       $outfile{coordinates} = $prefix{outfile}."_converted.bed";
-      $coordinate_file = $outfile{coordinates};      
   }
 
 
@@ -251,9 +250,11 @@ package main;
       }
       if (($bed_chr_prefixes == 0) && ($fasta_chr_prefixes > 0)) {
 	  $add_chr = 1;
+	  $coordinate_file = $outfile{coordinates};      
 	  &RSAT::message::Info("Adding chr prefixes to ensure compatiblity between bed and fasta file") if ($main::verbose >= 1);
       } elsif (($bed_chr_prefixes > 0) && ($fasta_chr_prefixes == 0)) {
 	  $remove_chr = 1;
+	  $coordinate_file = $outfile{coordinates};      
 	  &RSAT::message::Info("Removing chr prefixes to ensure compatiblity between bed and fasta file") if ($main::verbose >= 1);
       }
   }
