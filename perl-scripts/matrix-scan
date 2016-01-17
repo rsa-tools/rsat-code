@@ -440,7 +440,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
   ## Treatment of N characters
   local %supported_n_treatment = (skip=>1, score=>1);
   local $supported_n_treatment = join ",", keys %supported_n_treatment;
-  local $n_treatment = "skip";
+  local $n_treatment = "skip"; ## default, warning, skip will crash with bg_window
 
   ## Return fields
   local %supported_return_fields = (
@@ -4055,7 +4055,6 @@ sub score_segment {
   my $Wmin =$null;
   my $Wmax =$null;
 
-
 #  my $proba_M = $matrix->segment_proba($segment);
 #  my $proba_B = $bg_model->segment_proba($segment);
 
@@ -4175,6 +4174,8 @@ sub score_segment {
 
   ## switch to allow the calculation of pval for window bg model. Requires a lot of computing time !!!
   my $calc_window_pval = 1;
+  
+  #unless ($segment =~ /^[acgt]+/i) {
 
   ## Perform the threshold filtering only after having added the score to the disribution
    unless ($bg_method eq "window") { ## for bg_window, theoretical distrib is not calculated yet, only for hits (default -lth score 0)
@@ -4204,6 +4205,7 @@ sub score_segment {
     return(0) ; $calc_window_pval = 0;
   }
 
+#}
 
 
   # &RSAT::message::Debug("match", $seq_id, $score, $pval, $ln_pval, $sig_base, $sig) if ($main::verbose >= 10);
