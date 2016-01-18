@@ -1463,7 +1463,7 @@ sub PrintMatrixMatchingScores {
 			    'SW'=>'Sandelin-Wasserman',
 			    'NSW'=>'Relative width-normalized Sandelin-Wasserman',
 			    'match_rank'=>'rank of current match among all sorted matches',
-			    'offset'=>'offset between first and second matrices',
+			    'offset'=>'offset between first and second matrices'
       );
 
 
@@ -1500,16 +1500,33 @@ sub ScoresAndThresholdsDiv {
   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
 
   print "<p class=\"clear\"></p>\n";
-  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+#  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b></div>\n";
   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
-  print "<p/><fieldset>\n";
+  print "<p><fieldset>\n";
 
   &FieldsThresholdsTable($help_file, $field_ref, $field_descr_ref);
 
-  print "</fieldset><p/>";
-  print '</div></div><p class="clear"></p>';
-  print "<hr>";
+  print "</fieldset></p>";
+  print '</div><p class=\"clear\"></p>';
 }
+
+# ################################################################
+# ## Display a collapsable div with selectable scores and thresholds
+# sub ScoresAndThresholdsDiv {
+#   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
+
+#   print "<p class=\"clear\"></p>\n";
+# #  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+#   print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+#   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
+#   print "<p><fieldset>\n";
+
+#   &FieldsThresholdsTable($help_file, $field_ref, $field_descr_ref);
+
+#   print "</fieldset></p>";
+#   print '</div></div><p class=\"clear\"></p>';
+# }
 
 ################################################################
 ## Display a table with checkboxes and thresholds for a set of
@@ -1520,8 +1537,8 @@ sub FieldsThresholdsTable {
   my %field_descr = %{$field_descr_ref};
   print "<table align='center'>\n";
   print $query->th([" <A HREF='".$help_file."'>Output<br>fields</A> ",
-		    " <A HREF='".$help_file."'>Lower<BR>Threshold</A> ",
-		    " <A HREF='".$help_file."'>Upper<BR>Threshold</A> "]);
+		    " <A HREF='".$help_file."'>Lower<br>Threshold</A> ",
+		    " <A HREF='".$help_file."'>Upper<br>Threshold</A> "]);
   foreach my $field (@fields) {
     my $lth = $default{'lth_'.$field} || "none";
     my $uth = $default{'uth_'.$field} || "none";
