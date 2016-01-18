@@ -849,9 +849,9 @@ sub normalize_transition_frequencies {
       }
       if ($oligo_freq == 0) {
 	$missing_transitions++;
-	#		&RSAT::message::Warning(join(" ",
-	#					     "No transition between prefix",$prefix, 
-	#					     "and suffix", $suffix)) if ($main::verbose >= 4);
+			&RSAT::message::Warning(join(" ",
+						     "No transition between prefix",$prefix, 
+						     "and suffix", $suffix)) if ($main::verbose >= 4);
       }
 
       ## I prefer to call the corrected transition frequencies
@@ -870,12 +870,17 @@ sub normalize_transition_frequencies {
     }
   }
   $self->force_attribute("missing_transitions", $missing_transitions);
+  
+  ## replace $freq_sum by a tiny value if equal 0, to prevent crashing of the program
+  ## (case when many NNNN affect too much the background calculation)
+  if ($freq_sum == 0) {$freq_sum = 0.000001;}
+  if ($freq_sum_pseudo == 0) {$freq_sum_pseudo = 0.000001;}
 
   ## Calculate relative frequencies
   foreach my $prefix ($self->get_prefixes()) {
     foreach my $suffix ($self->get_suffixes()) {
       my $oligo_freq = $self->{oligo_freq}->{$prefix}->{$suffix} || 0;
-      $self->{oligo_freq_rel}->{$prefix}->{$suffix} = $oligo_freq/$freq_sum;
+      $self->{oligo_freq_rel}->{$prefix}->{$suffix} = $oligo_freq/$freq_sum; 
 
       my $oligo_freq_pseudo = $self->{oligo_freq_pseudo}->{$prefix}->{$suffix} || 0;
       $self->{oligo_freq_rel_pseudo}->{$prefix}->{$suffix} = $oligo_freq_pseudo/$freq_sum;
