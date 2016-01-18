@@ -107,10 +107,11 @@ print "<hr>";
 ################################################################
 ## Selection of output fields and thresholds
 &PrintMatrixMatchingScores();
+print "<hr>";
 
 ################################################################
 ### send results by email only
-print "<p>\n";
+#print "<p>\n";
 #&SelectOutput('email', email_only=>1);
 &SelectOutput();
 #print "<i>Note: email output is preferred for comparisons with motifs collections</i>\n";
@@ -175,7 +176,7 @@ sub DatabaseChoice {
 
   ## Tasks
   print "<fieldset><legend><b><a href='help.compare-matrices.html#tasks'>Reference matrices (database or custom motif collection)</a></b></legend>";
-  print "<p/> ";
+  print "<p> ";
 
   ## load the various databases that can be compared against
   &DisplayMatrixDBchoice("mode"=>"radio");
@@ -190,7 +191,7 @@ sub DatabaseChoice {
 #  print"</ul>\n";
   print "</p>\n";
 
-  print "</fieldset><p/>";
+  print "</fieldset>";
 
   print '<p class="clear"></p>';
 }
