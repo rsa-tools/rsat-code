@@ -532,6 +532,7 @@ sub DefaultParameters {
   ## oligo-analysis
   $main::param{oligo_min_mkv} = -2; push(@main::param_list, "oligo_min_mkv");
   $main::param{oligo_max_mkv} = -2; push(@main::param_list, "oligo_max_mkv");
+  $main::param{under_represented} = 0; push(@main::param_list, "under_represented"); ## search for under-represented words
 
   ## dyad-analysis
 
@@ -1392,6 +1393,9 @@ sub OligoAnalysis {
       } else {
 	$cmd .= " -markov ".$markov;
       }
+     if ($main::param{under_represented} == 1) {
+       $cmd .= " -under ";
+       }
       $cmd .= " -pseudo ".$main::param{disco_pseudo};
       $cmd .= " -o ".$main::outfile{$pattern_type};
       &RSAT::util::one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt", log=>$main::out);
@@ -4928,6 +4932,16 @@ repeat-containing words (e.g. AAAAAA, AAAGGG, ...).
       $main::param{disco_noov} = "-noov";
     } elsif ($arg eq "-ovlp") {
       $main::param{disco_noov} = "-ovlp";
+
+=pod
+
+=item B<-under>
+
+Allows to search for under-represented motifs instead of over-represented. Only compatible with oligo-analysis.
+
+=cut
+    } elsif ($arg eq "-under") {
+      $main::param{under_represented} = 1;
 
 =pod
 
