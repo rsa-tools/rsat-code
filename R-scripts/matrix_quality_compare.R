@@ -135,7 +135,7 @@ draw.heatmap <- function (ListAll,metric="max.nwd",heatmap.file, formats=c("pdf"
         } else {
             stop ("Format not available")
         }
-        metric.table <- scale(metric.table)
+       # metric.table <- scale(metric.table)
         
         heatmap.2(as.matrix(metric.table), col=colorRampPalette(brewer.pal(11,"RdBu"))(100) 
                 , trace="none"
