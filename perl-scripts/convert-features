@@ -996,6 +996,9 @@ sub ReadArguments {
       ### input format
     } elsif ($ARGV[$a] eq "-from") {
       $input_format = $ARGV[$a+1];
+      $input_format =~s/^ucsc$/ucsc_seq/;
+      $input_format =~s/^galaxy$/galaxy_seq/;
+      $input_format =~s/^getfasta$/getfasta_seq/;
       &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: ", $RSAT::feature::supported_input_formats)
 	unless ($RSAT::feature::supported_input_format{$input_format});
 
