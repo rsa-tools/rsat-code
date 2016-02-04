@@ -945,9 +945,13 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     $cmd .= " > ".$quick_coord_file;
     &one_command($cmd,1);
     &RSAT::message::TimeWarn("Genomic coordinates of input sequences", $quick_coord_file) if ($main::verbose >= 2);
-#    print $cmd;
-#    die "\n\nBOUM\tDEBUGGING\n\n";
   }
+  ## COMMENT by JvH, 2016-02-04: I don't understand how the
+  ## conversion to genomic coordinates is supposed to be done in quick
+  ## mode. The genomic coordinates of input sequences are parsed just
+  ## here, but the result file $quick_coord_file is never used
+  ## afterwards.
+
 
   ## Arguments to select a subset of matrices will be passed to
   ## MatrixReader
@@ -1384,11 +1388,18 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     } elsif ($origin eq "start") {
       $orig_pos = $main::offset;
     } elsif ($origin eq "genomic") {
+
+	## Parse the genomic coordinates of current sequence from its
+	## fasta header (identifier + comments) in order to convert
+	## relative to chromosomal coordinates. This is not called in
+	## quick mode.
       ($ref_org, $ref_chrom, $ref_start, $ref_end, $ref_strand, $genome_format, $browser_url) = &parse_genomic_coordinates($seq_id, @seq_comments);
+
+      #&RSAT::message::Debug("genomic coordinates", join("; ", ($ref_org, $ref_chrom, $ref_start, $ref_end, $ref_strand, $genome_format, $browser_url))) if ($main::verbose >= 10);
 
       unless ($ref_strand) {
 	$ref_strand = "D";
-	&RSAT::message::Warning("Genomic coordinates did not contain the reference strands");
+	&RSAT::message::Warning("Genomic coordinates did not contain the reference strands") if ($main::verbose >= 2);
       }
 
       if ($ref_strand eq "R") {
@@ -2157,7 +2168,13 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       $m++;
       &RSAT::message::TimeWarn("Scanning sequences with matrix-scan-quick, matrix", $m."/".$matrix_nb, $matrix->get_attribute("id"))
 	  if ($main::verbose >= 2);
-      &QuickScan($matrix,"sites",$total_scored);
+      &QuickScan($matrix, "sites", $total_scored);
+
+      ## COMMENT BY JvH, 2016-02-04 I don't understand how the
+      ## conversion to genomic coordinates is supposed to occur in
+      ## quick mode. The genomic coordinates of input sequences are
+      ## computed above and stored in $quick_coord_file, but this file
+      ## is never used anywhere in the program.
     }
   }
 
