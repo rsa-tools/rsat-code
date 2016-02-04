@@ -576,11 +576,16 @@ sub Panel5  {
   print "<fieldset><legend><b><a href='help.peak-motifs.html#tasks'>Visualize peaks and sites in genome browser </a></b></legend>";
 
   print ("<INPUT TYPE='radio' NAME='visualize' value='none' $checked{'none'}>","<b>No</b>");
-  print "<br/>";
 
+  print "<br/>";
   print ("<INPUT TYPE='radio' NAME='visualize' value='galaxy' $checked{'galaxy'}>",
-	 "Peak coordinates specified in <b>fasta headers</b> of the test sequence file (<a href=''>Galaxy</a> format)",
-	 "<br>","&nbsp;"x7,"(fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
+	 "Peak coordinates specified in <b>fasta headers</b> of the test sequence file (<a target='_blank' href='https://usegalaxy.org/'>Galaxy</a> format)",
+	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+</tt>");
+
+  print "<br/>";
+  print ("<INPUT TYPE='radio' NAME='visualize' value='getfasta'>",
+	 "Peak coordinates specified in <b>fasta headers</b> of the test sequence file (<a target='_blank' href='http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html'>bedtools getfasta</a> format)",
+	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>3:81458-81806(.)</tt>");
 
   print "<br/>";
   print ("<INPUT TYPE='radio' NAME='visualize' value='bed_coord' $checked{'bed_coord'}>","Peak coordinates provided as a <b>custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
