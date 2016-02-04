@@ -2551,9 +2551,14 @@ sub ScanSequences {
     if (($main::infile{coord})||($main::param{seq_source})) {
       &RSAT::message::TimeWarn("Computing genomic coordinates of predicted sites") if ($main::verbose >= 2);
       $cmd = $SCRIPTS."/convert-features";
-      $cmd .= " -from ft -i ".$main::outfile{$motif_id.'_pssm_sites'};
+      $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites'};
       $cmd .= " -coord ".$main::infile{coord} if ($main::infile{coord});
-      $cmd .= " -coord ".$main::outfile{"test_seq_coord"} if ($main::param{seq_source});
+      if ($main::param{seq_source}) {
+	  $cmd .= " -coord ".$main::outfile{"test_seq_coord"};
+	  $cmd .= " -from ".$main::param{seq_source};
+      } else {
+	  $cmd .= " -from ft";
+      }
       $cmd .= " -origin ".$main::param{origin};
       $cmd .= " -to bed ";
       my $bed_prefix = $main::param{title};
