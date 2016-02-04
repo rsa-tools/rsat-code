@@ -365,6 +365,10 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
   local $origin = "start";
   local %supported_origin = ('start'=>1, 'center'=>1, 'end'=>1, 'genomic'=>1);
   local $supported_origins = join (",", keys (%supported_origin));
+
+  local $seq_source = "ucsc2";
+  local %supported_seq_source = ('getfasta'=>1, 'galaxy'=>1, 'ucsc'=>1, 'ucsc2'=>1);
+  local $supported_seq_sources = join (",", keys (%supported_seq_source));
   local $offset = 0;
   local $pseudo_counts = 1;
   local $equi_pseudo = 0;
@@ -929,11 +933,10 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
   ## coordinates.
   $quick_coord_file  = &RSAT::util::make_temp_file("", "seq_coordinates");
   if (($quick_scan) && ($origin eq "genomic")) {
-    my $seq_source = "ucsc2";
     &RSAT::message::TimeWarn("Extracting genomic coordinates (BED) from sequence headers (fasta)") if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/convert-features";
     $cmd .= " -i ".$main::infile{input};
-    $cmd .= " -from ".$seq_source."_seq"; ## e.g. galaxy_seq
+    $cmd .= " -from ".$seq_source."_seq"; ## e.g. galaxy_seq, getfasta_seq, ucsc_seq, ucsc2_seq
     $cmd .= " -to bed ";
     my $bed_prefix = "matrix-scan-quick";
     $bed_color = "13,115,67";
@@ -2564,6 +2567,7 @@ matrix-scan options
 		score: sites that contain N characters are scored
 -mask [upper|lower|non-dna] Mask specific types of characters (lower, uppercases or non-dna), i.e replace them  by N characters.
 -origin [start|center|end|chrom]	Define pos as the origin for the calculatin of positions
+-seq_source     sequence source for genomic coordinates. Supported: galaxy, getfasta, ucsc, ucsc
 -offset #	add a given number to site positions (change the reference point).
 -o		outputfile
 -m		matrix file
@@ -3145,20 +3149,17 @@ Site coordinates are negative and indicate the distance from the site
 to the end of the sequence. The last residue of the input sequence has
 a coordinate value of -1.
 
-=item B<chrom>
+=item B<genomic>
 
 Site coordinates indicate their distance from the start of the
 chromosome. The program automatically adds an offset corresponding to
 the chromosomal position of the input sequence. This requires a
 properly formatted fasta sequence, where the chromosomal coordinates
 of the input sequences are included in their header line (lines
-starting with '>')..
+starting with '>').
 
-=back
 
-Note: in previous versions, -origin was used to specify both the
-reference point and the offset. Since 11/2009, the offset is specified
-with the option -offset.
+=over
 
 =cut
 
@@ -3166,6 +3167,24 @@ with the option -offset.
       $main::origin = shift(@arguments);
       &RSAT::error::FatalError(${main::origin}." is not a valid origin. Supported values: $supported_origins.")
 	unless ($supported_origin{$main::origin});
+
+=pod
+
+=item B<-seq_source>
+
+The option I<-seq_source> can be used to specify the source of the
+fasta sequence, which determines its format for the conversion to
+genomic coordinates (option I<-origin genomic>. Supported sources:
+I<getfasta>, I<galaxy>, I<ucsc>, I<usc2>. See the help of
+I<convert-features> for a description of the corresponding fasta
+headers.
+
+=cut
+
+    } elsif ($arg eq "-seq_source") {
+      $main::seq_source = shift(@arguments);
+      &RSAT::error::FatalError(${main::seq_source}." is not a valid sequence source. Supported values: $supported_seq_sources.")
+	unless ($supported_seq_source{$main::seq_source});
 
 =pod
 
