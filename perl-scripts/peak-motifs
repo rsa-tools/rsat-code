@@ -222,7 +222,7 @@ package main;
 
   ################################################################
   ## Supported sequence sources
-  local %supported_seq_source = ("galaxy"=>1, "ucsc"=>1);
+  local %supported_seq_source = ("galaxy"=>1, "ucsc"=>1, "getfasta"=>1);
   local @supported_seq_sources = sort (keys (%supported_seq_source));
   local $supported_seq_sources = join( ",", @supported_seq_sources);
   local @bed_files = (); ## List of bed files to upload on UCSC

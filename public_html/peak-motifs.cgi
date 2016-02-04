@@ -280,6 +280,9 @@ if ($query->param('matrix-scan-quick') =~ /on/) {
 if ($query->param('visualize') eq "galaxy") {
   $parameters .= " -source galaxy ";
 }
+if ($query->param('visualize') eq "getfasta") {
+  $parameters .= " -source getfasta ";
+}
 if ($query->param('visualize') eq "bed_coord") {
   ## upload the coord file
   $upload_coord_file = $query->param('bed_file');
