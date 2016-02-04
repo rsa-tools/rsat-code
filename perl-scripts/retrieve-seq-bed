@@ -197,7 +197,7 @@ package main;
   if (($add_chr + $remove_chr + $check_chr) >= 1) {
       $out = &OpenOutputFile($outfile{log});
       $outfile{coordinates} = $prefix{outfile}."_converted.bed";
-      $coordinate_file = $outfile{coordinates};      
+      $coordinate_file = $outfile{coordinates};
   }
 
 
