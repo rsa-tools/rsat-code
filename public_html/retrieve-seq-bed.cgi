@@ -31,7 +31,6 @@ $query = new CGI;
 ## Print the header
 &RSA_header("retrieve-seq-bed result", "results");
 
-
 ## Check security issues
 &CheckWebInput($query);
 
@@ -74,7 +73,7 @@ $seqlength_cmd .= " -in_format ".$coordinate_format;
 $seqlength_cmd .= " -o ".$length_file;
 system($seqlength_cmd);
 
-## repeats
+## Repeats
 if ($query->param('rm') =~ /on/) {
   $parameters .= " -rm ";
 }
@@ -129,7 +128,7 @@ if (($query->param('output') =~ /display/i) ||
   &PrintURLTable(@result_files);
 
   ## Prepare data for piping
-  &PipingFormForSequence($result_file, "fasta");
+  &PipingFormForSequence($result_file, "fasta", "getfasta");
 
   print "<HR SIZE = 3>";
 
