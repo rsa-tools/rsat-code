@@ -820,7 +820,7 @@ sub parse_from_row {
   } elsif ($in_format eq "getfasta_seq") {
       &RSAT::message::Debug("fasta header", $row) if ($main::verbose >= 10);
       $row =~ s/^\s*>/>/;
-      if ($row =~ /^>(\S+):(\S+)\-(\S+)\((\S*)\)/) {
+      if ($row =~ /^>(\S+):(\d+)\-(\d+)\((\S*)\)/) {
 	  @fields = ($1, $2, $3, $4);
 	  &RSAT::message::Debug("fasta header fields", join (":", @fields)) if ($main::verbose >= 10);
 	  
