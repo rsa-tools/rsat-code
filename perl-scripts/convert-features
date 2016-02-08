@@ -590,6 +590,7 @@ OPTIONS
 	-coord   bedfile with absolute coordinate of the sequence fragment
 
 	-origin [start|end|center] 
+
 	        Origin of coordinates relative to sequence fragment.
 		This option is only valid when combined with the
 		option -coord.
