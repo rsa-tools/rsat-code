@@ -12,6 +12,7 @@ package RSAT::feature;
 			  bed=>1,
 			  bed3col=>1,
 			  galaxy_seq=>1,
+			  getfasta_seq=>1,
 			  ucsc2_seq=>1,
 			  swembl=>1,
 			 );
@@ -199,6 +200,19 @@ $header_char{swembl} = "#";
 @{$strands{galaxy_seq}} = ("+", "-");
 $comment_char{galaxy_seq} = "#";
 $header_char{galaxy_seq} = "#";
+
+## bedtools getfasta sequences
+##    Doc:     http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html
+##    Example: >3:81458-81806(.)
+## warning: the coordinates are zero-based
+@{$columns{getfasta_seq}} = qw (seq_name
+			      start
+			      end
+			      strand
+			     );
+@{$strands{getfasta_seq}} = ("+", "-", ".", "");
+$comment_char{getfasta_seq} = "#";
+$header_char{getfasta_seq} = "#";
 
 
 ## UCSC sequences
@@ -709,6 +723,22 @@ CACCAAAACCCTCATCAAGACAATTGTCACCAGGATCAATGACATTTCAC
 ACACG
 
 
+=head2 bedtools getfasta
+
+Fasta sequences retrieved from getfasta, or from retrieve-seq-bed,
+which is a wrapper around getfasta.
+
+Doc: http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html
+
+Warning: this format assumes that features are described with
+chromosomal positions, and should be zero-based (meaning that the
+first position is 0, not 1).
+
+Example:
+
+>3:81458-81806(.)
+
+
 =head2 ucsc_seq
 
 Fasta sequences retrieved from the UCSC server.  Warning: this format
@@ -762,7 +792,7 @@ sub new {
 
 =pod
 
-=item parse_one_row($row, $in_format)
+=item parse_from_row($row, $in_format)
 
 Parse the feature from a text row.
 
@@ -776,16 +806,28 @@ sub parse_from_row {
   ## Split the row into fields (tab-delimited columns)
   my @fields = ();
   if ($in_format eq "galaxy_seq"){
-    $row =~ s/^\s*>//;
+      
+      ## PROBLEM HERE: DOES NOT WORK IF THE ID CONTAINS "_" characters
+      #    @fields = split("_", $row);
+      $row =~ s/^\s*>/>/;
+      if ($row =~ /^>(\S+)*_(\S+)_(\d+)_(\d+)_([+-])$/) {
+	  @fields = ($1, $2, $3, $4, $5);
+      } else {
+	  &RSAT::message::Warning("Invalid galaxy fasta header for feature extraction", $row) if ($main::verbose >= 0);
+	  return();
+      }
 
-    ## PROBLEM HERE: DOES NOT WORK IF THE ID CONTAINS "_" characters
-    #    @fields = split("_", $row);
-    if ($row =~ /(\S+)*_(\S+)_(\d+)_(\d+)_([+-])$/) {
-      @fields = ($1, $2, $3, $4, $5);
-    } else {
-      &RSAT::message::Warning("Invalid galaxy fasta header for feature extraction", $row) if ($main::verbose >= 0);
-      return();
-    }
+  } elsif ($in_format eq "getfasta_seq") {
+      &RSAT::message::Debug("fasta header", $row) if ($main::verbose >= 10);
+      $row =~ s/^\s*>/>/;
+      if ($row =~ /^>(\S+):(\d+)\-(\d+)\((\S*)\)/) {
+	  @fields = ($1, $2, $3, $4);
+	  &RSAT::message::Debug("fasta header fields", join (":", @fields)) if ($main::verbose >= 10);
+	  
+      } else {
+	  &RSAT::message::Warning("Invalid sequence header for feature extraction in bedtools getfasta format.", $row) if ($main::verbose >= 0);
+	  return();
+      }
 
   } elsif ($in_format eq "ucsc_seq") {
     if ($row =~ /^>(\S+):(\S+)\.\.(\S+)\:(\S+)/) {
@@ -1125,7 +1167,7 @@ sub to_text {
 
     ## Check attribute formats
     if (defined($format{$attr})) {
-#      &RSAT::message::Warning("Formatting attriubte", $attr, $format{$attr}, $field_value);
+      &RSAT::message::Debug("Formatting attribute", $attr, $format{$attr}, $field_value) if ($main::verbose >= 10);
       $field_value = sprintf $format{$attr}, $field_value;
     }
     $fields[$c] =  $field_value;

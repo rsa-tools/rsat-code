@@ -222,7 +222,7 @@ package main;
 
   ################################################################
   ## Supported sequence sources
-  local %supported_seq_source = ("galaxy"=>1, "ucsc"=>1);
+  local %supported_seq_source = ("galaxy"=>1, "ucsc"=>1, "getfasta"=>1);
   local @supported_seq_sources = sort (keys (%supported_seq_source));
   local $supported_seq_sources = join( ",", @supported_seq_sources);
   local @bed_files = (); ## List of bed files to upload on UCSC
@@ -496,6 +496,7 @@ sub DefaultParameters {
   ################################################################
   ## Residue  profiles (position-analysis)
   $main::param{origin} = "center"; push(@main::param_list, "origin");
+  $main::param{offset} = 0; push(@main::param_list, "offset");
   $main::param{profiles_ci} = 20; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_max_graphs");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
@@ -532,6 +533,7 @@ sub DefaultParameters {
   ## oligo-analysis
   $main::param{oligo_min_mkv} = -2; push(@main::param_list, "oligo_min_mkv");
   $main::param{oligo_max_mkv} = -2; push(@main::param_list, "oligo_max_mkv");
+  $main::param{under_represented} = 0; push(@main::param_list, "under_represented"); ## search for under-represented words
 
   ## dyad-analysis
 
@@ -1110,6 +1112,7 @@ sub PurgeSeq {
     $cmd .= "| ".$SCRIPTS."/sub-sequence";
     #    $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
     $cmd .= " -origin ".$main::param{origin};
+#    $cmd .= " -offset ".$main::param{offset}; ## NOTE JvH 2016-02-07: I should add an option -offset to sub-sequence
     $cmd .= " -from ".$from;
     $cmd .= " -to ".$to;
   }
@@ -1248,6 +1251,7 @@ sub CompositionProfiles {
     $cmd .= " -img_format ".$main::param{img_format};
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin ".$main::param{origin};
+    $cmd .= " -offset ".$main::param{offset};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles"};
     &RSAT::util::one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_profiles"}."_time.txt", log=>$main::out);
 
@@ -1392,6 +1396,9 @@ sub OligoAnalysis {
       } else {
 	$cmd .= " -markov ".$markov;
       }
+     if ($main::param{under_represented} == 1) {
+       $cmd .= " -under ";
+       }
       $cmd .= " -pseudo ".$main::param{disco_pseudo};
       $cmd .= " -o ".$main::outfile{$pattern_type};
       &RSAT::util::one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt", log=>$main::out);
@@ -1500,6 +1507,7 @@ sub PositionAnalysis {
     $cmd .= " -img_format ".$main::param{img_format};
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin ".$main::param{origin};
+    $cmd .= " -offset ".$main::param{offset};
     $cmd .= " -max_graphs ".$main::param{positions_max_graphs} if ($main::param{positions_max_graphs}  > 0);
     $cmd .= " -o ".$main::outfile{$pattern_type};
     &RSAT::util::one_command($cmd, 1, $main::outfile{$pattern_type}."_time.txt", log=>$main::out);
@@ -2547,10 +2555,16 @@ sub ScanSequences {
     if (($main::infile{coord})||($main::param{seq_source})) {
       &RSAT::message::TimeWarn("Computing genomic coordinates of predicted sites") if ($main::verbose >= 2);
       $cmd = $SCRIPTS."/convert-features";
-      $cmd .= " -from ft -i ".$main::outfile{$motif_id.'_pssm_sites'};
+      $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites'};
       $cmd .= " -coord ".$main::infile{coord} if ($main::infile{coord});
-      $cmd .= " -coord ".$main::outfile{"test_seq_coord"} if ($main::param{seq_source});
+      if ($main::param{seq_source}) {
+	  $cmd .= " -coord ".$main::outfile{"test_seq_coord"};
+	  $cmd .= " -from ".$main::param{seq_source};
+      } else {
+	  $cmd .= " -from ft";
+      }
       $cmd .= " -origin ".$main::param{origin};
+#      $cmd .= " -offset ".$main::param{offset};
       $cmd .= " -to bed ";
       my $bed_prefix = $main::param{title};
       my $bed_header= "track name=\"".$motif_id."\" description=\"RSAT peak-motifs ".$bed_prefix.": ".$motif_id."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
@@ -2578,7 +2592,7 @@ sub ScanSequences {
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     $cmd .= " -lines -xcol 3 -ycol 4";
     $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of sites'";
-    $cmd .= " -xsize 800 -xcol 3 -xleg1 'Sequence position relative to peak ".$main::param{origin}."'";
+    $cmd .= " -xsize 800 -xcol 3 -xleg1 'Position relative to sequence ".$main::param{origin}."'";
     $cmd .= " -title1 'Predicted sites : $motif_id'";
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib_graph'};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
@@ -4931,6 +4945,16 @@ repeat-containing words (e.g. AAAAAA, AAAGGG, ...).
 
 =pod
 
+=item B<-under>
+
+Allows to search for under-represented motifs instead of over-represented. Only compatible with oligo-analysis.
+
+=cut
+    } elsif ($arg eq "-under") {
+      $main::param{under_represented} = 1;
+
+=pod
+
 =item B<-ci class_interval>
 
 Class interval for I<position-analysis>.
@@ -4948,18 +4972,34 @@ Class interval for I<position-analysis>.
 
 Default: center
 
-Reference point for position-analysis. By default, peak-motifs aims at
-analyzing peaks from ChIP-seq and related experiments. The peak center
-is thus the default origin (position 0). However, for some particular
-purposes it might be relevant to take the left or the end of the
-sequences as position 0.
+Reference point for position-analysis and sequence scanning. By
+default, peak-motifs aims at analyzing peaks from ChIP-seq and related
+experiments. The peak center is thus the default origin (position
+0). However, for some particular purposes it might be relevant to take
+the start or the end of the sequences as position 0. For example, to
+analyze promoters the end of the sequence generally serves as
+reference position and coordinates are displayed as negative numbers.
 
 =cut
 
     } elsif ($arg eq "-origin") {
       $main::param{origin} = shift(@arguments);
 
-      ## Other parameters are not accepted
+=pod
+
+=item B<-offset offset_value>
+
+Add an offset to site positions. The offset value must be an Integer
+number (positive, null or negative). This option allows to select an
+arbitrary position as origin.
+
+=cut
+
+    } elsif ($arg eq "-offset") {
+       $main::param{offset} = shift(@arguments);
+        &RSAT::error::FatalError($main::param{offset}, "Invalid value for the offset. Should be an Integer number") unless (&RSAT::util::IsInteger($main::param{offset}));
+
+## Other parameters are not accepted
     } else {
       &RSAT::error::FatalError("Invalid option", $arg);
 
@@ -5106,6 +5146,7 @@ sub CheckArguments {
   ## Options used for site scanning but not for enrichment analysis
   $main::param{scan_sites_options} = " -lth score ".$main::param{scan_min_score};
   $main::param{scan_sites_options} .= " -origin ".$main::param{origin};
+  $main::param{scan_sites_options} .= " -offset ".$main::param{offset};
   $main::param{scan_sites_options} .= " -return sites";
 
   ## Options used for enrichment in matrix hits but not for site detection
