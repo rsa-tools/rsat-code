@@ -320,6 +320,16 @@ python3_modules_install:
 		${SUDO} pip3 install $${module}; \
 	done
 
+# en baobab falla al compilar porque enlaza con librerias 2.7; los instalo manualmente:
+# pypm-3.4 install numpy
+# pypm-3.4 install scipy
+# pypm-3.4 install snakemake
+# pypm-3.4 install docutils
+# mkdir -p lib/python3.4/site-packages/
+# mv ~/.local/lib/python2.7/site-packages/* lib/python2.7/site-packages/
+# mv /home/rsat/.local/bin/* lib/python3.4/
+
+
 ################################################################
 ## Install R modules required for some RSAT scripts
 install_r_packages:
