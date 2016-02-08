@@ -18,7 +18,7 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$command = "$SCRIPTS/random-genome-fragments";
+$command = $SCRIPTS."/random-genome-fragments";
 $prefix="random-genome-fragments";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 
@@ -152,6 +152,9 @@ push @result_files, ("Genome fragments ($output_format)",$result_file);
 ## Run the command
 open RESULT, "$command $parameters |";
 
+## open RESULT, "perl /export/space7/rsa-tools/perl-scripts/random-genome-fragments -org Saccharomyces_cerevisiae -n 10 -l 10 |";
+
+
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
   &PipingWarning();
@@ -180,7 +183,8 @@ if (($query->param('output') =~ /display/i) ||
   ## Prepare data for piping
   if ($query->param('outputformat') eq "outputseq"){
     $out_format = "fasta"; ## Fasta is the only supported format, but it is necessary to specify it for the piping form
-    &PipingFormForSequence();
+    &PipingFormForSequence($result_file, "fasta");
+
   } elsif ($query->param('coord_format') eq "bed") {
     &PipingForm();
   }
