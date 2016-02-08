@@ -4999,7 +4999,7 @@ arbitrary position as origin.
        $main::param{offset} = shift(@arguments);
         &RSAT::error::FatalError($main::param{offset}, "Invalid value for the offset. Should be an Integer number") unless (&RSAT::util::IsInteger($main::param{offset}));
 
-## Other parameters are not accepted
+    ## Other parameters are not accepted
     } else {
       &RSAT::error::FatalError("Invalid option", $arg);
 
