@@ -55,11 +55,20 @@ EndGATag
 ################################################################
 ## Load the default parameters for get-orthologs`
 sub LoadGetOrthoComparaDefault {
+    ## TO DO (JVH): ADAPT THIS FOR THE NON-PLANT SERVERS
   $default{organism} = "arabidopsis_thaliana";
   $default{queries} = '';
-  $default{type} = "orth";
+  $default{type} = "ortholog";
   $default{ident_target} = 70;
   $default{ident_query} = 70;
+  $default{demo_descr} = "";
+
+  ## Replace defaults by parameters from the CGI call, if defined
+  foreach $key (keys %default) {
+      if ($query->param($key)) {
+	  $default{$key} = $query->param($key);
+      }
+  }  
 }
 
 
@@ -88,7 +97,7 @@ sub LoadGetOrthoDefault {
 }
 
 ###############################################################
-## Print the options fro get-orthologs-compara:
+## Print the options for get-orthologs-compara:
 ## -ref_org, -i,  
 sub PrintOrthoComparaSelectionSection {
 
@@ -98,36 +107,32 @@ sub PrintOrthoComparaSelectionSection {
         warn "# cannot run get-orthologs-compara -supported_organisms\n";
     while(<GETORTHSCOMP>){
         next if(/Supported/);
-        if(/Information:\s+(\S+)/)
-        {
-            my $orgs = $1; 
-            while($orgs =~ m/(\S+?),/g)
-            {
-                my $org = $1; #print "|$org|\n";
-                push(@supported_organisms_fullnames,$org); # if($org =~ /\.\d/);#release number;
-            }
-        }
+        chomp;
+        push(@supported_organisms_fullnames,$_); # if($org =~ /\.\d/);#release number;
     }
     close(GETORTHSCOMP);
     
     ## Choice of the organism
-    print "<b>Query </b>";
-    print OrganismPopUpCompara(@supported_organisms_fullnames);
+    print "<b>Reference </b>";
+    ## print &OrganismPopUpCompara(@supported_organisms_fullnames);
+    ## NOT YET TREATED: CHOOSE MULTIPLE ORGANISMS
+    print &OrganismScrollingListCompara(@supported_organisms_fullnames), "\n";
 
     ################################################################
     ### gene queries
-    print "<B><A HREF='help.get-orthologs-compara.html#genes'>Query genes</A></B>&nbsp;";
-    print "<BR>\n";
+    print "<p><B><A HREF='help.get-orthologs-compara.html#genes'>Query genes</A></B>&nbsp;";
+    print "<p>Paste query genes (one query per row)<br>\n";
     print $query->textarea(-name=>'queries',
-             -default=>$default{queries},
-             -rows=>3,
-             -columns=>40);
+			   -default=>$default{queries},
+			   -rows=>3,
+			   -columns=>40);
+
     ### option to upload a file with the gene list from the client machine
-    print "<BR>Upload gene list from file<BR>\n";
+    print "<p><b>or</b> upload gene list from file<BR>\n";
     print $query->filefield(-name=>'uploaded_file',
-              -default=>'',
-              -size=>45,
-              -maxlength=>200);
+			    -default=>'',
+			    -size=>45,
+			    -maxlength=>200);
     print "<p>\n";
 
 }
@@ -138,7 +143,6 @@ sub PrintOrthoComparaSelectionSection {
 ## - query genes
 ## - reference taxon
 sub PrintOrthoSelectionSection {
-
 
 #### Not supported anymore
 ##			       Escherichia_coli_K12
@@ -255,6 +259,7 @@ sub ListParameters {
   }
   print "</table></ul>\n";
 }
+
 
 ################################################################
 ## List the default parameter values for a CGI script
@@ -972,13 +977,41 @@ sub OrganismPopUpSelectable {
   return $popup;
 }
 
-## Generate pop-up menu to be displayed for organism selection in Compara
+
+################################################################
+## Generate a scrolling list allowing users to select multiple
+## organisms for get-orthologs-compara.
+sub OrganismScrollingListCompara {
+    my (@selected_organisms) = @_;
+    if (scalar(@selected_organisms) == 0) {
+        @selected_organisms =
+            &RSAT::OrganismManager::get_supported_organisms_web();
+    }
+    
+    $organismList =  "<B>Organism</B>&nbsp;";
+    $organismList .=  
+	$query->scrolling_list(-name=>'organism',
+			       -values=>\@selected_organisms,
+#			 -default=>['eenie','moe'],
+			       -size=>10,
+			       -multiple=>'true',
+			       -labels=>\%labels,
+			       -attributes=>\%attributes);
+    return($organismList);
+}
+
+################################################################
+## Generate pop-up menu to be displayed for organism selection in
+## Compara.
 sub OrganismPopUpCompara{
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) == 0) {
         @selected_organisms =
             &RSAT::OrganismManager::get_supported_organisms_web();
     }
+
+
+
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
     print '<script type="text/javascript"> ' ;
@@ -1430,7 +1463,7 @@ sub PrintMatrixMatchingScores {
 			    'SW'=>'Sandelin-Wasserman',
 			    'NSW'=>'Relative width-normalized Sandelin-Wasserman',
 			    'match_rank'=>'rank of current match among all sorted matches',
-			    'offset'=>'offset between first and second matrices',
+			    'offset'=>'offset between first and second matrices'
       );
 
 
@@ -1467,16 +1500,33 @@ sub ScoresAndThresholdsDiv {
   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
 
   print "<p class=\"clear\"></p>\n";
-  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+#  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b></div>\n";
   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
-  print "<p/><fieldset>\n";
+  print "<p><fieldset>\n";
 
   &FieldsThresholdsTable($help_file, $field_ref, $field_descr_ref);
 
-  print "</fieldset><p/>";
-  print '</div></div><p class="clear"></p>';
-  print "<hr>";
+  print "</fieldset></p>";
+  print '</div><p class=\"clear\"></p>';
 }
+
+# ################################################################
+# ## Display a collapsable div with selectable scores and thresholds
+# sub ScoresAndThresholdsDiv {
+#   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
+
+#   print "<p class=\"clear\"></p>\n";
+# #  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+#   print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
+#   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
+#   print "<p><fieldset>\n";
+
+#   &FieldsThresholdsTable($help_file, $field_ref, $field_descr_ref);
+
+#   print "</fieldset></p>";
+#   print '</div></div><p class=\"clear\"></p>';
+# }
 
 ################################################################
 ## Display a table with checkboxes and thresholds for a set of
@@ -1487,8 +1537,8 @@ sub FieldsThresholdsTable {
   my %field_descr = %{$field_descr_ref};
   print "<table align='center'>\n";
   print $query->th([" <A HREF='".$help_file."'>Output<br>fields</A> ",
-		    " <A HREF='".$help_file."'>Lower<BR>Threshold</A> ",
-		    " <A HREF='".$help_file."'>Upper<BR>Threshold</A> "]);
+		    " <A HREF='".$help_file."'>Lower<br>Threshold</A> ",
+		    " <A HREF='".$help_file."'>Upper<br>Threshold</A> "]);
   foreach my $field (@fields) {
     my $lth = $default{'lth_'.$field} || "none";
     my $uth = $default{'uth_'.$field} || "none";
@@ -2275,10 +2325,10 @@ sub SelectFormat {
 
 ################################################################
 #
-# Pipe the result to another command
+# Pipe the result as input for a program requiring sequences
 #
 sub PipingFormForSequence {
-    my ($seq_file, $seq_format) = @_;
+    my ($seq_file, $seq_format, $seq_source) = @_;
 
     ## A bit tricky: the previous version used the global variable
     ##  $sequence_file.  2015-11-10: JvH adds an argument $seq_file,
@@ -2292,10 +2342,22 @@ sub PipingFormForSequence {
     $sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
 
     
+    ## Sequence format: can be specified as argument (seq_format) or
+    ## as global variable (out_format) for some oldish scripts.
     if ($seq_format) {
-	$out_format = $seq_format;
-    } elsif ($out_format eq "") {
-	$out_format = "fasta";
+	$sequence_format = $seq_format;
+    } elsif ($out_format) {
+	$sequence_format = $out_format;
+    } else {
+	$sequence_format = "fasta";
+    }
+
+    ## Sequence source is used only for the "visualize" option of
+    ## peak-motifs. Options: "none", "galaxy", "getfasta", "bed_coord"
+    ## (note: this requires a second file with bed coordinates, which
+    ## is not treated by the PipingFormForSequence function).
+    unless ($seq_source) {
+	$seq_source = "none";
     }
     
     
@@ -2349,7 +2411,7 @@ sub PipingFormForSequence {
         <INPUT type="hidden" NAME="sequence_type" VALUE="$seq_type">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="background" VALUE="$background">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	$oligo_background_model
 	<INPUT type="submit" value="oligo-analysis">
 	</FORM>
@@ -2365,7 +2427,7 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	$dyad_background_model
 	<INPUT type="submit" value="dyad analysis">
 	</FORM>
@@ -2377,7 +2439,7 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	<INPUT type="hidden" NAME="background" VALUE="$background">
 	<INPUT type="submit" value="position analysis">
 	</FORM>
@@ -2389,7 +2451,7 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	$oligo_background_model
 	<INPUT type="submit" value="local-word-analysis">
 	</FORM>
@@ -2407,7 +2469,7 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	<INPUT type="submit" value="info-gibbs">
 	</FORM>
 	Gibbs sampling <br>(Defrance, 2009)
@@ -2418,7 +2480,7 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	<INPUT type="submit" value="gibbs">
 	</FORM>
 	Gibbs sampling <br>(Neuwald, 1995)
@@ -2427,7 +2489,8 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="peak-motifs_form.cgi">
 	<INPUT type="hidden" NAME="sequence_url1" VALUE="$sequence_url">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
+	<INPUT type="hidden" NAME="visualize" VALUE="$seq_source">
 	<INPUT type="submit" value="peak-motifs">
 	</FORM>
 	<b>Full work flow</b><br>for chip-seq peaks</br>and other seq types
@@ -2439,7 +2502,7 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	<INPUT type="submit" value="consensus">
 	</FORM>
 	Greedy algorithm <br>(Hertz, 1990)
@@ -2462,7 +2525,7 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	<INPUT type="submit" value="dna-pattern">
 	</FORM>
 	Regular expressions and IUPAC search.
@@ -2473,7 +2536,7 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	<INPUT type="submit" value="matrix-scan-quick (matrices)">
 	</FORM>
 	Position-specific scoring matrices
@@ -2484,7 +2547,7 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	<INPUT type="submit" value="matrix-scan (full options)">
 	</FORM>
 	Position-specific scoring matrices
@@ -2495,7 +2558,7 @@ sub PipingFormForSequence {
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	<INPUT type="submit" value="patser (matrices)">
 	</FORM>
 	Position-specific scoring matrices
@@ -2524,7 +2587,7 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="convert-seq_form.cgi">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	<INPUT type="submit" value="convert sequence">
 	</FORM>
 	Format inter-conversions + mask short fragments.
@@ -2533,7 +2596,7 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 	<INPUT type="submit" value="purge sequence">
 	</FORM>
 	Mask redundant fragments.

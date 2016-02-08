@@ -8,7 +8,7 @@ retrieve-ensembl-go
 
 =head1 DESCRIPTION
 
-Returns gene ontology (GO) terms associated to a set of genes from a selected organims. 
+Returns gene ontology (GO) terms associated to a set of genes from a selected organism. 
 Relies on primary data from Ensembl Genomes, obtained with download-ensembl-go-annotations-biomart.
 
 =head1 AUTHORS
@@ -87,13 +87,7 @@ package main;
   &ReadArguments();
 
   # check arguments
-  if($params{'demo'})
-  {
-    @query_genes = qw( BRADI1G00210 );
-    $genes{'BRADI1G00210'}=1;
-    $params{'org'} = 'brachypodium_distachyon';
-  }
-  elsif($params{'supported_organisms'})
+  if($params{'supported_organisms'})
   {
     &RSAT::message::Info("Supported organisms:");
     if(!opendir(GENDIR,$pathToGOannot)){ 
@@ -112,6 +106,26 @@ package main;
     
     &RSAT::message::Info($orgs);
     close_and_quit();    
+  }
+  elsif($params{'demo'})
+  {
+    # demo gene ID
+    @query_genes = qw( BRADI1G00210 );
+    $genes{'BRADI1G00210'}=1;
+
+    # find out demo ref organism
+    if(!opendir(GENDIR,$pathToGOannot)){
+        &RSAT::error::FatalError("Cannot find directory ",$pathToGOannot);
+    }
+    my @species_dir = grep { !/^\./ } readdir(GENDIR);
+    closedir(GENDIR);
+    foreach my $spdir (@species_dir){
+        if(-s $pathToGOannot.'/'.$spdir.'/expanded_go_annotations.tsv' &&
+            $spdir =~ m/distachyon/){
+            $params{'org'} = $spdir;
+            last;
+        }
+    }
   }
   else
   {
@@ -378,10 +392,3 @@ sub strip_gene_id
 
 __END__
 
-=pod
-
-=head1 DEMO
-
-    retrieve-ensembl-go -q BRADI1G00210 -ref_org brachypodium_distachyon
-
-=cut
