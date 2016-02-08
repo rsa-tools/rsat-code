@@ -1015,6 +1015,7 @@ sub QuickScanForSites {
   $cmd .= " -to tab -split  -o ".$prefix{sig_matrices_split};
   $cmd .= "; rm -f ".$outfile{'count_matrices'};
   &RSAT::message::Debug("Splitting sig matrix file", $outfile{sig_matrices_split}) if ($main::verbose >= 3);
+## DEBUGGING 2015-12    warn("HELLO\t", $cmd);
   &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
   ## Get the list of files containing the individual matrices
