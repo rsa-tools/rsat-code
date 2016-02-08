@@ -183,7 +183,8 @@ if (($query->param('output') =~ /display/i) ||
   ## Prepare data for piping
   if ($query->param('outputformat') eq "outputseq"){
     $out_format = "fasta"; ## Fasta is the only supported format, but it is necessary to specify it for the piping form
-    &PipingFormForSequence();
+    &PipingFormForSequence($result_file, "fasta");
+
   } elsif ($query->param('coord_format') eq "bed") {
     &PipingForm();
   }

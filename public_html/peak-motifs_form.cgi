@@ -42,17 +42,17 @@ $default{title}="";
 $default{max_seq_len}="500";
 $default{top_sequences}="";
 $default{nmotifs} = 5;
+$default{origin} = "center";
+$default{offset} = "0";
 
 $default{visualize}="none";
-$checked{$default{visualize}} = "checked";
-
 
 ## motif database
 $default{compare_motif_database}="jaspar_core_vertebrates";
 $default{custom_motif_db_name}="custom_motif_collection";
 
 
-### replace defaults by parameters from the cgi call, if defined
+### Replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
@@ -65,6 +65,8 @@ foreach $key (keys %default) {
   }
 }
 
+$checked{$default{visualize}} = "checked";
+
 
 
 ################################################################
@@ -73,6 +75,9 @@ foreach $key (keys %default) {
 ################################################################
 ### header
 &RSA_header("peak-motifs", "form");
+
+#print "<pre>default{visualize} ",$default{visualize}, "</pre>";
+#print "<pre>checked{default{visualize}} ",$checked{$default{visualize}}, "</pre>";
 
 print <<end_part_1;
 <center>
@@ -143,9 +148,6 @@ reference is the summit (or <b>center</b>) of each sequence.
 
 </div></p>
 end_part_1
-
-
-
 
 
 &ListParameters() if ($ENV{rsat_echo} >=2);
@@ -343,8 +345,28 @@ print "<p/><fieldset>
 
 
 ################################################################
+## Reference location for position-analysis
+print "<br> <b>Reference position for position-analysis and sequence scanning</b>";
+
+## Origin for calculating positions and scanning sequences
+print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
+print $query->popup_menu(-name=>'origin',
+			 -Values=>['start',
+				   'center',
+				   'end'],
+			 -default=>$default{origin});
+
+## Offset for calculating positions
+print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
+print $query->textfield(-name=>'offset',
+			-default=>$default{offset},
+			-size=>8);
+
+
+
+################################################################
 ## Single words
-print "<br> <b>Continuous words</b>";
+print "<p> <b>Oligonucleotides (k-mers)</b>";
 
 print "<ul>\n";
 
@@ -362,15 +384,6 @@ print $query->checkbox(-name=>'position-analysis',
 		       -checked=>$default{"position-analysis"},
 		       -label=>'');
 print "&nbsp;<b>Discover words with a positional bias</b> <a href='help.position-analysis.html'>[position-analysis]</a>\n";
-
-## Origin
-print "&nbsp;"x6, "<b>Origin </b>", "&nbsp;"x2;
-my $originPopup =  "<select NAME='origin'>\n";
-$originPopup .=  "<option value='start'>start</option>\n";
-$originPopup .=  "<option selected value='center'>center</option>\n";
-$originPopup .=  "<option value='end'>end</option>\n";
-$originPopup .=  "</select>";
-print $originPopup;
 
 
 
@@ -579,11 +592,16 @@ sub Panel5  {
   print "<fieldset><legend><b><a href='help.peak-motifs.html#tasks'>Visualize peaks and sites in genome browser </a></b></legend>";
 
   print ("<INPUT TYPE='radio' NAME='visualize' value='none' $checked{'none'}>","<b>No</b>");
-  print "<br/>";
 
+  print "<br/>";
+  print ("<INPUT TYPE='radio' NAME='visualize' value='getfasta' $checked{'getfasta'}>",
+	 "Peak coordinates specified in fasta headers of the sequence file <a target='_blank' href='http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html'><b>bedtools getfasta</b></a> format (also for <b>retrieve-seq-bed</b> output).",
+	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>3:81458-81806(.)</tt>");
+
+  print "<br/>";
   print ("<INPUT TYPE='radio' NAME='visualize' value='galaxy' $checked{'galaxy'}>",
-	 "Peak coordinates specified in <b>fasta headers</b> of the test sequence file (<a href=''>Galaxy</a> format)",
-	 "<br>","&nbsp;"x7,"(fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+ </tt>)");
+	 "Peak coordinates specified in fasta headers of the test sequence file (<a target='_blank' href='https://usegalaxy.org/'><b>Galaxy</b></a> format)",
+	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+</tt>");
 
   print "<br/>";
   print ("<INPUT TYPE='radio' NAME='visualize' value='bed_coord' $checked{'bed_coord'}>","Peak coordinates provided as a <b>custom <a href='help.peak-motifs.html'>BED file</a>.</b>");

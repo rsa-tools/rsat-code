@@ -130,6 +130,7 @@ while (<$in>) {
    next if (/^Region/);
   }
   if (($input_format eq "galaxy_seq") 
+      ||  ($input_format eq "getfasta_seq")
       ||  ($input_format eq "ucsc_seq")
       ||  ($input_format eq "ucsc2_seq")
       ){
@@ -589,6 +590,7 @@ OPTIONS
 	-coord   bedfile with absolute coordinate of the sequence fragment
 
 	-origin [start|end|center] 
+
 	        Origin of coordinates relative to sequence fragment.
 		This option is only valid when combined with the
 		option -coord.
@@ -636,7 +638,13 @@ INPUT FORMATS
        		useful to read non-conventional bed files.
 
        galaxy_seq: Fasta sequences fetched from the Galaxy website
-       		http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1
+       	      Doc:     http://main.g2.bx.psu.edu/tool_runner?tool_id=Extract+genomic+DNA+1
+	      Example: >mm9_chr1_3473041_3473370_+
+
+       getfasta_seq: Fasta sequences obtained from betdools getfasta
+              or from RSAT retrieve-seq-bed.
+              Doc:     http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html
+	      Example: >3:81458-81806(.)
 
 OUTPUT FORMATS
        ft
@@ -910,6 +918,13 @@ FORMAT DESCRIPTIONS
 		CAAAAAGTCCAAGATGACACCAAAACCCTCATCAAGACAATTGTCACCAG
 		GATCAATGACATTTCACACACG
 
+	getfasta_seq
+
+		Fasta sequences retrieved with bedtools getfasta (or
+		by retrieve-seq-bed).
+
+              Doc:     http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html
+	      Example: >3:81458-81806(.)
 
 WISH LIST
 
@@ -982,6 +997,9 @@ sub ReadArguments {
       ### input format
     } elsif ($ARGV[$a] eq "-from") {
       $input_format = $ARGV[$a+1];
+      $input_format =~s/^ucsc$/ucsc_seq/;
+      $input_format =~s/^galaxy$/galaxy_seq/;
+      $input_format =~s/^getfasta$/getfasta_seq/;
       &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: ", $RSAT::feature::supported_input_formats)
 	unless ($RSAT::feature::supported_input_format{$input_format});
 
@@ -991,14 +1009,14 @@ sub ReadArguments {
       &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: ", $RSAT::feature::supported_output_formats)
 	unless ($RSAT::feature::supported_output_format{$output_format});
 
-      ### add "chr" in front of chromosome names for BED output
-    } elsif ($ARGV[$a] eq "-add_chr") {
-      $add_chr_bed = 1;
-
     } elsif ($ARGV[$a] eq "-featname") {
       $set_feature_name = $ARGV[$a+1];
 
-      ### remove "chr" in front of chromosome names for GFF output
+      ## Add "chr" in front of chromosome names for BED output
+    } elsif ($ARGV[$a] eq "-add_chr") {
+      $add_chr_bed = 1;
+
+      ## Remove "chr" in front of chromosome names for GFF output
     } elsif ($ARGV[$a] eq "-remove_chr") {
       $remove_chr_gff = 1;
 
