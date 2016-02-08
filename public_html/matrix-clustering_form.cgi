@@ -340,14 +340,14 @@ sub ThresholdsDiv {
   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
 
   print "<p class=\"clear\"></p>\n";
-  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'102\')\" id=\"heading102\"><b>",$title,"</b>\n";
-  print "<div id=\"menu102\" class=\"menu_collapsible\">\n";
-  print "<p/><fieldset>\n";
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b></div>\n";
+  print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
+  print "<p><fieldset>\n";
 
   &FieldsThresholdsTableMC($help_file, $field_ref, $field_descr_ref);
 
   print "</fieldset><p/>";
-  print '</div></div><p class="clear"></p>';
+  print '</div><p class="clear"></p>';
   print "<hr>";
 }
 
@@ -359,9 +359,9 @@ sub FieldsThresholdsTableMC {
   my @fields = @{$field_ref};
   my %field_descr = %{$field_descr_ref};
   print "<table align='center'>\n";
-  print $query->th([" <A HREF='".$help_file."'>Metrics</A> ",
-		    " <A HREF='".$help_file."'>Lower<BR>Threshold</A> ",
-		    " <A HREF='".$help_file."'>Upper<BR>Threshold</A> "]);
+  print $query->th([" <A HREF='".$help_file."'>Metrics<br></A> ",
+		    " <A HREF='".$help_file."'>Lower<br>Threshold</A> ",
+		    " <A HREF='".$help_file."'>Upper<br>Threshold</A> "]);
   foreach my $field (@fields) {
     my $lth = $default{'lth_'.$field} || "none";
     my $uth = $default{'uth_'.$field} || "none";

@@ -25,12 +25,11 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &S
 @result_files = ();
 
 
-### Read the CGI query
+## Read the CGI query
 $query = new CGI;
 
-### print the header
+## Print the header
 &RSA_header("retrieve-seq-bed result", "results");
-
 
 ## Check security issues
 &CheckWebInput($query);
@@ -41,8 +40,8 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ############################################################
-#### read parameters ####
-$parameters = " -v 1";
+## Read parameters
+$parameters = " -v 1 -check_chr ";
 
 ################################################################
 ## Organism
@@ -74,7 +73,7 @@ $seqlength_cmd .= " -in_format ".$coordinate_format;
 $seqlength_cmd .= " -o ".$length_file;
 system($seqlength_cmd);
 
-## repeats
+## Repeats
 if ($query->param('rm') =~ /on/) {
   $parameters .= " -rm ";
 }
@@ -129,7 +128,7 @@ if (($query->param('output') =~ /display/i) ||
   &PrintURLTable(@result_files);
 
   ## Prepare data for piping
-  &PipingFormForSequence($result_file, "fasta");
+  &PipingFormForSequence($result_file, "fasta", "getfasta");
 
   print "<HR SIZE = 3>";
 

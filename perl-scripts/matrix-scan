@@ -365,6 +365,10 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
   local $origin = "start";
   local %supported_origin = ('start'=>1, 'center'=>1, 'end'=>1, 'genomic'=>1);
   local $supported_origins = join (",", keys (%supported_origin));
+
+  local $seq_source = "ucsc2";
+  local %supported_seq_source = ('getfasta'=>1, 'galaxy'=>1, 'ucsc'=>1, 'ucsc2'=>1);
+  local $supported_seq_sources = join (",", keys (%supported_seq_source));
   local $offset = 0;
   local $pseudo_counts = 1;
   local $equi_pseudo = 0;
@@ -440,7 +444,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
   ## Treatment of N characters
   local %supported_n_treatment = (skip=>1, score=>1);
   local $supported_n_treatment = join ",", keys %supported_n_treatment;
-  local $n_treatment = "skip";
+  local $n_treatment = "skip"; ## default, warning, skip will crash with bg_window
 
   ## Return fields
   local %supported_return_fields = (
@@ -692,6 +696,12 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       (defined($uth{rank_pm})) || (defined($lth{rank_pm}))) {
     $return_fields{rank} = 1;
   }
+  ## set a default threshold on score =0 for window where pval is used as threshold
+	if (($bg_method eq "window") && (defined($uth{pval})) && (!defined($lth{score})) ) {
+		$lth{score} = 0;
+	}
+  	
+
 
   ## Check consistency between crer thresholds and request for crer in the output
   unless (($return_fields{crer}) || ($return_fields{crer0})) {
@@ -923,11 +933,10 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
   ## coordinates.
   $quick_coord_file  = &RSAT::util::make_temp_file("", "seq_coordinates");
   if (($quick_scan) && ($origin eq "genomic")) {
-    my $seq_source = "ucsc2";
     &RSAT::message::TimeWarn("Extracting genomic coordinates (BED) from sequence headers (fasta)") if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/convert-features";
     $cmd .= " -i ".$main::infile{input};
-    $cmd .= " -from ".$seq_source."_seq"; ## e.g. galaxy_seq
+    $cmd .= " -from ".$seq_source."_seq"; ## e.g. galaxy_seq, getfasta_seq, ucsc_seq, ucsc2_seq
     $cmd .= " -to bed ";
     my $bed_prefix = "matrix-scan-quick";
     $bed_color = "13,115,67";
@@ -936,9 +945,13 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     $cmd .= " > ".$quick_coord_file;
     &one_command($cmd,1);
     &RSAT::message::TimeWarn("Genomic coordinates of input sequences", $quick_coord_file) if ($main::verbose >= 2);
-#    print $cmd;
-#    die "\n\nBOUM\tDEBUGGING\n\n";
   }
+  ## COMMENT by JvH, 2016-02-04: I don't understand how the
+  ## conversion to genomic coordinates is supposed to be done in quick
+  ## mode. The genomic coordinates of input sequences are parsed just
+  ## here, but the result file $quick_coord_file is never used
+  ## afterwards.
+
 
   ## Arguments to select a subset of matrices will be passed to
   ## MatrixReader
@@ -1375,11 +1388,18 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     } elsif ($origin eq "start") {
       $orig_pos = $main::offset;
     } elsif ($origin eq "genomic") {
+
+	## Parse the genomic coordinates of current sequence from its
+	## fasta header (identifier + comments) in order to convert
+	## relative to chromosomal coordinates. This is not called in
+	## quick mode.
       ($ref_org, $ref_chrom, $ref_start, $ref_end, $ref_strand, $genome_format, $browser_url) = &parse_genomic_coordinates($seq_id, @seq_comments);
+
+      #&RSAT::message::Debug("genomic coordinates", join("; ", ($ref_org, $ref_chrom, $ref_start, $ref_end, $ref_strand, $genome_format, $browser_url))) if ($main::verbose >= 10);
 
       unless ($ref_strand) {
 	$ref_strand = "D";
-	&RSAT::message::Warning("Genomic coordinates did not contain the reference strands");
+	&RSAT::message::Warning("Genomic coordinates did not contain the reference strands") if ($main::verbose >= 2);
       }
 
       if ($ref_strand eq "R") {
@@ -2148,7 +2168,13 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       $m++;
       &RSAT::message::TimeWarn("Scanning sequences with matrix-scan-quick, matrix", $m."/".$matrix_nb, $matrix->get_attribute("id"))
 	  if ($main::verbose >= 2);
-      &QuickScan($matrix,"sites",$total_scored);
+      &QuickScan($matrix, "sites", $total_scored);
+
+      ## COMMENT BY JvH, 2016-02-04 I don't understand how the
+      ## conversion to genomic coordinates is supposed to occur in
+      ## quick mode. The genomic coordinates of input sequences are
+      ## computed above and stored in $quick_coord_file, but this file
+      ## is never used anywhere in the program.
     }
   }
 
@@ -2558,6 +2584,7 @@ matrix-scan options
 		score: sites that contain N characters are scored
 -mask [upper|lower|non-dna] Mask specific types of characters (lower, uppercases or non-dna), i.e replace them  by N characters.
 -origin [start|center|end|chrom]	Define pos as the origin for the calculatin of positions
+-seq_source     sequence source for genomic coordinates. Supported: galaxy, getfasta, ucsc, ucsc
 -offset #	add a given number to site positions (change the reference point).
 -o		outputfile
 -m		matrix file
@@ -2714,7 +2741,6 @@ This option is incompatible with the option -bgfile.
 =cut
     } elsif ($arg eq "-markov") {
       $main::markov = shift(@arguments);
-      $main::bg_method = "input";
       &RSAT::error::FatalError("Markov order must be a natural number.")
 	unless &RSAT::util::IsNatural($main::markov);
       &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.")
@@ -3140,20 +3166,17 @@ Site coordinates are negative and indicate the distance from the site
 to the end of the sequence. The last residue of the input sequence has
 a coordinate value of -1.
 
-=item B<chrom>
+=item B<genomic>
 
 Site coordinates indicate their distance from the start of the
 chromosome. The program automatically adds an offset corresponding to
 the chromosomal position of the input sequence. This requires a
 properly formatted fasta sequence, where the chromosomal coordinates
 of the input sequences are included in their header line (lines
-starting with '>')..
+starting with '>').
 
-=back
 
-Note: in previous versions, -origin was used to specify both the
-reference point and the offset. Since 11/2009, the offset is specified
-with the option -offset.
+=over
 
 =cut
 
@@ -3161,6 +3184,24 @@ with the option -offset.
       $main::origin = shift(@arguments);
       &RSAT::error::FatalError(${main::origin}." is not a valid origin. Supported values: $supported_origins.")
 	unless ($supported_origin{$main::origin});
+
+=pod
+
+=item B<-seq_source>
+
+The option I<-seq_source> can be used to specify the source of the
+fasta sequence, which determines its format for the conversion to
+genomic coordinates (option I<-origin genomic>. Supported sources:
+I<getfasta>, I<galaxy>, I<ucsc>, I<usc2>. See the help of
+I<convert-features> for a description of the corresponding fasta
+headers.
+
+=cut
+
+    } elsif ($arg eq "-seq_source") {
+      $main::seq_source = shift(@arguments);
+      &RSAT::error::FatalError(${main::seq_source}." is not a valid sequence source. Supported values: $supported_seq_sources.")
+	unless ($supported_seq_source{$main::seq_source});
 
 =pod
 
@@ -3238,6 +3279,9 @@ Threshold on some parameter (-lth: lower, -uth: upper threshold).
 Supported threshold fields for the matches : score pval sig normw proba_M proba_B rank crer_sig crer_pval crer_sites crer_size crer_site_distance
 
 Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank
+
+In -window mode, if a threshold is set on pval (e.g. -uth pval 0.001), a default threshold on the score (-lth score 0) will be 
+automatically added to limit the calculation time.
 
 =cut
 
@@ -4047,7 +4091,6 @@ sub score_segment {
   my $Wmin =$null;
   my $Wmax =$null;
 
-
 #  my $proba_M = $matrix->segment_proba($segment);
 #  my $proba_B = $bg_model->segment_proba($segment);
 
@@ -4167,8 +4210,11 @@ sub score_segment {
 
   ## switch to allow the calculation of pval for window bg model. Requires a lot of computing time !!!
   my $calc_window_pval = 1;
+  
+  #unless ($segment =~ /^[acgt]+/i) {
 
   ## Perform the threshold filtering only after having added the score to the disribution
+   unless ($bg_method eq "window") { ## for bg_window, theoretical distrib is not calculated yet, only for hits (default -lth score 0)
   unless (&check_matrix_thresholds("proba_m", $proba_M,$matrix_name)) {
     return(0) ; $calc_window_pval = 0;
   }
@@ -4187,6 +4233,7 @@ sub score_segment {
   unless (&check_matrix_thresholds("sig", $sig,$matrix_name)) {
     return(0) ; $calc_window_pval = 0; $is_hit = 0;
   }
+  }
   unless (&check_matrix_thresholds("score", $score,$matrix_name)) {
     return(0) ; $calc_window_pval = 0;
   }
@@ -4194,6 +4241,7 @@ sub score_segment {
     return(0) ; $calc_window_pval = 0;
   }
 
+#}
 
 
   # &RSAT::message::Debug("match", $seq_id, $score, $pval, $ln_pval, $sig_base, $sig) if ($main::verbose >= 10);
@@ -4244,7 +4292,10 @@ sub score_segment {
 	      }
 	  }
       }
-
+      
+      unless (&check_matrix_thresholds("pval", $pval,$matrix_name)) {
+    	return(0) ; 
+  }
   }
 
 

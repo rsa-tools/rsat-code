@@ -32,7 +32,7 @@ required.packages = c("RJSONIO",
 
 ## List of RSAT-specific packages to be compiled on the server
 required.packages.rsat <- c("TFBMclust")
-for (pkg in c(required.packages, required.packages.bioconductor, required.packages.rsat)) {
+for (pkg in c(required.packages, required.packages.rsat)) { #required.packages.bioconductor
   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
 }
 

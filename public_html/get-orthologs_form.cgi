@@ -121,6 +121,7 @@ foreach my $field (@output_fields) {
 	    if (defined($default{$param})) {
 		$default_param = $default{$param};
 	    }
+
 	    print "<td align=center>";
 	    print $query->textfield(-name=>$param,
 				    -default=>$default_param,

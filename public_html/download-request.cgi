@@ -67,10 +67,10 @@ print "<pre>";
 print $message;
 print "</pre>";
 my $recipient = 'Jacques.van-Helden@univ-amu.fr'; ## All download requests should be sent to JvH
-my $subject = join(" ", 
+my $subject = join("_", 
 		   $query->param("first_name"), 
 		   $query->param("last_name"), 
-		   "RSAT download request from",
+		   "RSAT-download-request",
     );
 &RSAT::server::send_mail($message, $recipient, $subject);
 

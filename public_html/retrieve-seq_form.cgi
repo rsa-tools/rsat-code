@@ -49,6 +49,7 @@ foreach $key (keys %default) {
 ### print the form ###
 &RSA_header("retrieve sequence", 'form');
 
+
 ### head
 print "<CENTER>";
 print "Returns upstream, downstream or ORF sequences for a list of genes<P>\n";
@@ -57,6 +58,8 @@ print "<b>Remark: If you want to retrieve sequences from an organism that is in 
 
 print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
 
+
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #print "<FONT FACE='Helvetica'>";
 
