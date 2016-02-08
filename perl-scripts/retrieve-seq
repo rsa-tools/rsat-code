@@ -828,11 +828,13 @@ sub ReadArguments {
 	    ### limits of the region to retrieve
 	} elsif ($ARGV[$a] eq "-from") {
 	    $from = $ARGV[$a+1];
-	    &RSAT::error::FatalError($from, "Invalid value for the option -from, should  be a Integer number.") unless (&IsInteger($from));
+	    &RSAT::error::FatalError($from, "Invalid value for the option -from, should  be a Integer number.") 
+		unless ((&IsInteger($from)) || (lc($from) eq "default"));
 
 	} elsif ($ARGV[$a] eq "-to") {
 	    $to = $ARGV[$a+1];
-	    &RSAT::error::FatalError($to, "Invalid value for the option -to, should  be a Integer number.") unless (&IsInteger($to));
+	    &RSAT::error::FatalError($to, "Invalid value for the option -to, should  be a Integer number.") 
+		unless ((&IsInteger($to)) || (lc($to) eq "default"));
 
 	    ### verbose
 	} elsif ($ARGV[$a] eq "-v") {
