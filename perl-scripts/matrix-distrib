@@ -540,7 +540,7 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 Pseudo frequency for the background models. Value must be a real
 between 0 and 1 (default: 0) If the training sequence length (L) is
 known, the value can be set to square-root of L divided by
-L+squareroot of L
+L+squareroot of L.
 
 =cut
 	} elsif ($arg eq "-bg_pseudo") {
