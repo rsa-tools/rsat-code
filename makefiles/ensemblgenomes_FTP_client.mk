@@ -47,7 +47,8 @@ ifeq ($(GROUP),Fungi)
 else ifeq ($(GROUP),Bacteria)
   ## For Fungal genomes, we have to extract the collection (sub-folder
   ## of the ftp site) from the organism table.
-  COLLECTION=`awk -F'\t' '$$2 =="${SPECIES}" {print $$13}' ${ORGANISM_TABLE} | perl -pe 's|_core_${RELEASE}_.*||'`
+  COLLECTION_FROM_TABLE=`awk -F'\t' '$$2 =="${SPECIES}" {print $$13}' ${ORGANISM_TABLE} | perl -pe 's|_core_${RELEASE}_.*||'`
+  COLLECTION=${COLLECTION_FROM_TABLE}
 else
   COLLECTION=
 endif
