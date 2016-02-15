@@ -38,12 +38,11 @@ ifeq ($(GROUP),Fungi)
   ## collection sub-folder.  These species however have a collection
   ## field in the species table, but its value equals the species
   ## name.
-#   ifeq (${COLLECTION_FROM_TABLE}, ${SPECIES})
-# #  ifeq (${COLLECTION_FROM_TABLE},${SPECIES})
-#     COLLECTION=TRICK
-#   else 
-#     COLLECTION=${COLLECTION_FROM_TABLE}
-#   endif
+  ifeq (${COLLECTION_FROM_TABLE}, ${SPECIES})
+    COLLECTION=TRICK
+  else 
+    COLLECTION=${COLLECTION_FROM_TABLE}
+  endif
 
 else ifeq ($(GROUP),Bacteria)
   ## For Fungal genomes, we have to extract the collection (sub-folder
