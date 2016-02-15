@@ -26,7 +26,7 @@ using namespace std;
 #include "dist.h"
 #include "pval.h"
 
-int VERSION = 20140326;
+int VERSION = 20160208;
 char *COMMAND_LINE;
 
 /*
@@ -47,13 +47,13 @@ void help()
 "        matrix-scan-quick\n"
 "\n"
 "VERSION\n"
-"        20140213\n"
+"        20160208\n"
 "\n"
 "AUTHOR\n"
-"        Matthieu Defrance <defrance@bigre.ulb.ac.be>\n"
+"        Matthieu Defrance <matthieu.dc.defrance@ulb.ac.be>\n"
 "\n"
 "DESCRIPTION\n"
-"        Faster and limited version of matrix-scan.\n"
+"        Faster but limited version of matrix-scan.\n"
 "\n"
 "CATEGORY\n"
 "        sequences\n"
@@ -118,8 +118,10 @@ void help()
 "    -first_hit_per_seq    only report the first hit per sequence.\n"
 "\n"
 "    -origin [start|end|center]\n"
-"                           Specify the origin for the calculation of positions\n"
+"                          specify the origin for the calculation of positions\n"
 "                           (see matrix-scan manual for details).\n"
+"\n"
+"    -offset #             add an offset to the origin (0 by default)\n"
 "\n"
    );
 }
@@ -133,20 +135,21 @@ int main(int argc, char *argv[])
 {
     VERBOSITY = 0;
 
-    char *outfile = NULL;
-    char *seqfile = NULL;
-    char *bgfile  = NULL;
-    char *matfile = NULL;
+    char *outfile     = NULL;
+    char *seqfile     = NULL;
+    char *bgfile      = NULL;
+    char *matfile     = NULL;
     char *distribfile = NULL;
-    int distrib = 0;
-    int rc = TRUE;
+    int distrib       = 0;
+    int rc            = TRUE;
     char *matrix_name = (char *) "matrix";
-    double precision = 0.1;
-    double theshold = -1000.0;
-    double pseudo = 1.0;
-    int    origin = -1;
-    int    first_hit = FALSE;
-    FILE *fout;
+    double precision  = 0.1;
+    double theshold   = -1000.0;
+    double pseudo     = 1.0;
+    int    origin     = -1;
+    int    offset     = 0;
+    int    first_hit  = FALSE;
+    FILE *fout        = NULL;
     pvalues_t *pvalues = NULL;
 
     // construct command line string
@@ -262,6 +265,11 @@ int main(int argc, char *argv[])
             ASSERT(argc > i + 1, "-pseudo requires a number");
             pseudo = atof(argv[++i]);
         }
+        else if (strcmp(argv[i], "-offset") == 0) 
+        {
+            ASSERT(argc > i + 1, "-oofset requires a number");
+            offset = atoi(argv[++i]);
+        }
         else
         {
             WARNING("invalid option %s", argv[i]);
@@ -351,7 +359,7 @@ int main(int argc, char *argv[])
         seq_t *seq = fasta_reader_next(reader);
         if (seq == NULL)
             break;
-        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin, matrix_name, &scanned_pos, first_hit);
+        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin, offset, matrix_name, &scanned_pos, first_hit);
         free_seq(seq);
     }
     

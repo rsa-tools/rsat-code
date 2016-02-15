@@ -87,6 +87,7 @@ if ($template_file) {
 
 ############################################################
 ## Organim
+local $organism;
 if ($query->param('org_select')) {
   ## RSAT organism
   if ($query->param('org_select') eq "rsat_org"){
@@ -205,24 +206,36 @@ sub PipingForm {
 	$assembly =~ s/.*assembly:(.*)$/$1/;
     ### prepare data for piping
     print <<End_of_form;
-    <hr>
-<table class = "nextstep">
-<tr><td colspan = 5><h3>next step</h3></td></tr>
+	<hr>
+	    <table class = "nextstep">
+	    <tr><td colspan = 5><h3>next step</h3></td></tr>
 
 
-<tr valign="top" align="center">
+	    <tr valign="top" align="center">
 
 
- <td align=center>
-        <FORM METHOD="POST" ACTION="fetch-sequences_form.php">
-	<INPUT type="hidden" NAME="bedfile" VALUE="$result_file">
-	<INPUT type="submit" value="fetch sequences from UCSC">
-	</FORM>
-	Fetch sequences corresponding to the coordinates
-    </td>
-</TD>
-</TR>
-</TABLE>
+	    <td align=center>
+	    <form method="POST" action="retrieve-seq-bed_form.cgi">
+	    <input type="hidden" name="input_file" value="$result_file">
+	    <input type="hidden" name="organism" value="$organism">
+	    <input type="submit" value="retrieve-seq-bed">
+	    </form>
+	    Get sequences (fasta) from genomic coordinates (bed).
+	    </td>
+	    </td>
+	    </tr>
+
+	    <td align=center>
+	    <form method="POST" action="fetch-sequences_form.php">
+	    <input type="hidden" name="bedfile" value="$result_file">
+	    <input type="submit" value="fetch sequences from UCSC">
+	    </form>
+	    Fetch sequences corresponding to the coordinates
+	    </td>
+	    </td>
+	    </tr>
+
+	    </table>
 End_of_form
 }
 
