@@ -3904,7 +3904,6 @@ sub QuickScan {
     $quick_cmd .= " -1str";
   }
 
-
   ## Run matrix-scan-quick and parse the result
   ## Different for each scan mode
   if ($scan_mode eq "distrib") {
@@ -3947,6 +3946,7 @@ sub QuickScan {
   } elsif ($scan_mode eq "sites") {
     $quick_cmd .= " -return sites";
     $quick_cmd .= " -origin ".$main::origin unless ($main::origin eq "genomic");
+    $quick_cmd .= " -offset ".$main::offset if ($offset != 0);
     $quick_cmd .= " -v ".$quick_verbose if ($main::verbose >= 1);
     if (defined($lth_matrix->{$matrix_name}->{score})) {
       $quick_cmd .= " -t ".$lth_matrix->{$matrix_name}->{score};
