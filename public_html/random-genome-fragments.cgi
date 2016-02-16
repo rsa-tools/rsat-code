@@ -150,10 +150,10 @@ $parameters .= " -o ".$result_file;
 #&RSAT::message::Info("result_file", $result_file) if ($echo >= 0);
 push @result_files, ("Genome fragments ($output_format)",$result_file);
 
-## Log file
-$log_file = $tmp_file_path."_fragments_log.txt";
-push @result_files, ("Error log (text)",$log_file);
-$parameters .= " 2> ".$log_file;
+## Error log
+$err_file = $tmp_file_path."_error_log.txt";
+$parameters .= " 2> ".$err_file;
+push @result_files, ("Error log (text)",$err_file);
 
 ############################################################
 ## Report the command
