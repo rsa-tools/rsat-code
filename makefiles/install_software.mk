@@ -51,6 +51,7 @@ EXT_APP_TARGETS=\
 	install_seqlogo \
 	install_weblogo3 \
 	install_d3 \
+	install_bedtools \
 	install_mcl \
 	install_rnsc \
 	install_blast \
