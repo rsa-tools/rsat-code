@@ -63,7 +63,7 @@ print "<p>";
 print "</p>";
 
 ## Genomic coordinates
-&MultiInputChoice("Genomic coordinates",1, "coordinates", "bed/gff/vcf");
+&MultiInputChoice("Genomic coordinates", 1, "coordinates", "bed/gff/vcf");
 print "</div>";
 
 print "</fieldset><p/>";

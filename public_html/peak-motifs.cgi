@@ -190,10 +190,17 @@ if ($query->param('strand')) {
 }
 
 ################################################################
-## Origin
+## Origin and offset for position-analysis and matrix-scan
 if ($query->param('origin')) {
     $parameters .= " -origin ".$query->param('origin')." ";
 }
+
+## Offset
+my $offset = $query->param('offset');
+if ((&IsInteger($offset)) && ($offset != 0)) {
+  $parameters .= " -offset ".$offset;
+}
+
 
 ################################################################
 ## Compare discovered motifs with motif databases
