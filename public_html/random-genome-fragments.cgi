@@ -51,17 +51,19 @@ $parameters = "";
 ($template_file, $template_format) = &MultiGetSequenceFile(1, $tmp_file_path."_template.fa", 0);
 
 ## a template file has been given
+my $length_file = "";
 if ($template_file) {
   push @result_files, ("Template file ($template_format)",$template_file);
 
   ## Compute sequence lengths from the template sequence file
-  my $length_file = $tmp_file_path.".lengths";
+  $length_file = $tmp_file_path.".lengths";
   push @result_files, ("Sequence lengths",$length_file);
 
   my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$template_file;
   $seqlength_cmd .= " -in_format ".$template_format;
   $seqlength_cmd .= " -o ".$length_file;
   system($seqlength_cmd);
+
 
   ## Add the sequence length file as template for random-genome-fragments
   $parameters .= " -template_format len -i ".$length_file;
@@ -109,6 +111,7 @@ if ($query->param('org_select')) {
   }
 }
 
+
 ############################################################
 ## Output
 if ($query->param('outputformat')) {
@@ -134,16 +137,23 @@ if ($query->param('outputformat')) {
   }
 }
 
-## repeats
+## Mask repeated sequences
 if ($query->param('rm') =~ /on/) {
   $parameters .= " -rm ";
 }
 
+
+
 ## Output file
 $result_file = $tmp_file_path."_fragments.".$output_format;
-#$parameters .= " -o ".$result_file;
+$parameters .= " -o ".$result_file;
 #&RSAT::message::Info("result_file", $result_file) if ($echo >= 0);
 push @result_files, ("Genome fragments ($output_format)",$result_file);
+
+## Log file
+$log_file = $tmp_file_path."_fragments_log.txt";
+push @result_files, ("Error log (text)",$log_file);
+$parameters .= " 2> ".$log_file;
 
 ############################################################
 ## Report the command
@@ -151,32 +161,49 @@ push @result_files, ("Genome fragments ($output_format)",$result_file);
 
 ################################################################
 ## Run the command
-open RESULT, "$command $parameters |";
+# open RESULT, "$command $parameters |";
 
 ## open RESULT, "perl /export/space7/rsa-tools/perl-scripts/random-genome-fragments -org Saccharomyces_cerevisiae -n 10 -l 10 |";
-
 
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
   &PipingWarning();
 
-  ## Print the result
-  print '<H4>Result</H4>';
+  ## Run the command
+  &doit("$command $parameters"); 
 
-  ## Open the sequence file on the server
-  if (open MIRROR, ">$result_file") {
-    $mirror = 1;
-    &DelayedRemoval($result_file);
-  }
 
-  print "<PRE>";
-  while (<RESULT>) {
-    print "$_" unless ($query->param('output') =~ /server/i);
-    print MIRROR $_ if ($mirror);
+  if ($query->param('output') =~ /display/i) {
+      open RESULT, "$result_file"; 
+
+      ## Print the output on the screen
+      print '<h4>Result</h4>';
+      print '<pre>';
+      while (<RESULT>) {
+	  print $_;
+      }
+      print '</pre>';
+      close(RESULT);
   }
-  print "</PRE>";
-  close RESULT;
-  close MIRROR if ($mirror);
+  # ## Print the result
+  # print # '<H4>Result</H4>';
+  # 
+  # ## Open the sequence file on the server
+  # if (open MIRROR, ">$result_file") {
+  #   $mirror = 1;
+  #   &DelayedRemoval($result_file);
+  # }
+  # print "<PRE>";
+  # while (<RESULT>) {
+  #     print $_;
+  #   print "$_" unless ($query->param('output') =~ /server/i);
+  #   print MIRROR $_ if ($mirror);
+  # }
+  # print "</PRE>";
+  # close RESULT;
+  # close MIRROR if ($mirror);
+
+#die(join ("\n", "HELLO\t", $template_file, $length_file, $command." ".$parameters, "\n"));
 
   ## Print table with links to the result files
   &PrintURLTable(@result_files);
