@@ -91,15 +91,18 @@ $parameters .= " -o ".$result_file;
 push @result_files, ("Result sequences (".$output_format.")", $result_file);
 push @result_files, ("Command log (text)", $log_file);
 
+## Error log
+$err_file = $tmp_file_path."_error_log.txt";
+$parameters .= " 2> ".$err_file;
+push @result_files, ("Error log (text)",$err_file);
+
 ############################################################
 ## Report the command
 &ReportWebCommand($command." ".$parameters);
 
 ################################################################
 ## Run the command
-$err_file = $tmp_file_path."_error_log.txt";
-push @result_files, ("Error log (text)",$err_file);
-system($command." ".$parameters." 2>".$err_file);
+system($command." ".$parameters);
 
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
