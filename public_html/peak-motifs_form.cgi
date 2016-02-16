@@ -42,6 +42,8 @@ $default{title}="";
 $default{max_seq_len}="500";
 $default{top_sequences}="";
 $default{nmotifs} = 5;
+$default{origin} = "center";
+$default{offset} = "0";
 
 $default{visualize}="none";
 
@@ -343,8 +345,28 @@ print "<p/><fieldset>
 
 
 ################################################################
+## Reference location for position-analysis
+print "<br> <b>Reference position for position-analysis and sequence scanning</b>";
+
+## Origin for calculating positions and scanning sequences
+print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
+print $query->popup_menu(-name=>'origin',
+			 -Values=>['start',
+				   'center',
+				   'end'],
+			 -default=>$default{origin});
+
+## Offset for calculating positions
+print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
+print $query->textfield(-name=>'offset',
+			-default=>$default{offset},
+			-size=>8);
+
+
+
+################################################################
 ## Single words
-print "<br> <b>Continuous words</b>";
+print "<p> <b>Oligonucleotides (k-mers)</b>";
 
 print "<ul>\n";
 
@@ -362,15 +384,6 @@ print $query->checkbox(-name=>'position-analysis',
 		       -checked=>$default{"position-analysis"},
 		       -label=>'');
 print "&nbsp;<b>Discover words with a positional bias</b> <a href='help.position-analysis.html'>[position-analysis]</a>\n";
-
-## Origin
-print "&nbsp;"x6, "<b>Origin </b>", "&nbsp;"x2;
-my $originPopup =  "<select NAME='origin'>\n";
-$originPopup .=  "<option value='start'>start</option>\n";
-$originPopup .=  "<option selected value='center'>center</option>\n";
-$originPopup .=  "<option value='end'>end</option>\n";
-$originPopup .=  "</select>";
-print $originPopup;
 
 
 

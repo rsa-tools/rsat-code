@@ -1138,11 +1138,14 @@ sub ReadNextSequence {
     if ((-e $next_file) && (open NEXT_SEQ, $next_file)) {
       warn "; Reading file $next_file\n" if ($verbose >= 4);
       ## extract the sequence file name without path ####
-      if ($next_file =~ /([\S]*\/)*([\S^\/]+)$/ ) {
-	$seq_id = $2;
-      } else {
-	$seq_id = $next_file;
-      }
+      my ($next_dir, $next_base) = &RSAT::util::SplitFileName($next_file);
+      $seq_id = $next_base;
+      $seq_id =~ s/\.raw$//;
+#      if ($next_file =~ /([\S]*\/)*([\S^\/]+)$/ ) {
+#	$seq_id = $2;
+#      } else {
+#	$seq_id = $next_file;
+#      }
       $sequence = "";
       while (<NEXT_SEQ>) {
 	$sequence .= $_;
