@@ -97,6 +97,7 @@ list_param:
 	@echo "	RELEASE 		${RELEASE}"
 	@echo "	SPECIES_RSAT_ID		${SPECIES_RSAT_ID}"
 	@echo "Files to download"
+	@echo "	DOWNLOAD_TASKS		${DOWNLOAD_TASKS}"
 	@echo "	COLLECTION_FROM_TABLE	${COLLECTION_FROM_TABLE}"
 	@echo "	COLLECTION		${COLLECTION}"
 	@echo "	GTF_FTP_URL		${GTF_FTP_URL}"
