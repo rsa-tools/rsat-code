@@ -1,103 +1,105 @@
 #! /usr/bin/python
 # -*- coding: utf8 -*-
-"""#Peak Motifs - developed by Jocelyn Brayet <jocelyn.brayet@curie.fr>
-#Copyright (C) 2015  Institut Curie
-#
-#This program is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
-#
-#This program is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
-#
-#You should have received a copy of the GNU General Public License
-#along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-###########################################################'
-# 
-#Client to download peak-motifs results from RSAT server.
-#
-#
-#usage: peak-motifs_soap.py [-h] -test <TEST_FILE> [-control <CONTROL_FILE>]
-#				[-max_seq_length <MAX_SEQ_LENGTH>]
-#				[-max_motif_number <MAX_MOTIF_NUMBER>]
-#				[-top_peaks <TOP_PEAKS>] [-min_length <MIN_LENGTH>]
-#				[-max_length <MAX_LENGTH>] [-markov <MARKOV_MODEL>]
-#				[-min_markov <MIN_MARKOV>]
-#				[-max_markov <MAX_MARKOV>] [-noov <NOOV_DETECTION>]
-#				[-class_int <CLASS_INT>] [-str <STR_SUMMED>]
-#				[-graph_title <GRAPH_TITLE>]
-#				[-image_format <IMAGE_FORMAT>]
-#				[-disco [<DISCO_ALGORITHM> [<DISCO_ALGORITHM> ...]]]
-#				[-source <SOURCE_FILE>] [-verb <VERBOSITY>]
-#				[-ref_motif <REF_MOTIF>] -server <SERVEUR>
-#
-#optional arguments:
-#  -h, --help		show this help message and exit
-#  -test <TEST_FILE>, --test_file <TEST_FILE>
-#			Input test peak sequence in fasta format.
-#  -control <CONTROL_FILE>, --control_file <CONTROL_FILE>
-#			Input control peak sequence in fasta format.
-#  -max_seq_length <MAX_SEQ_LENGTH>, --maxSeqLength <MAX_SEQ_LENGTH>
-#			Maximal sequence length.
-#  -max_motif_number <MAX_MOTIF_NUMBER>, --maxMotifNumber <MAX_MOTIF_NUMBER>
-#			Maximal number of motifs (matrices) to return for
-#			pattern discovery algorithms.
-#  -top_peaks <TOP_PEAKS>, --topPeaks <TOP_PEAKS>
-#			Restrict the analysis to the N peaks at the top of the
-#			input sequence file.
-#  -min_length <MIN_LENGTH>, --minLength <MIN_LENGTH>
-#			Minimal oligonucleotide length.
-#  -max_length <MAX_LENGTH>, --maxLength <MAX_LENGTH>
-#			Maximal oligonucleotide length.
-#  -markov <MARKOV_MODEL>, --markovModel <MARKOV_MODEL>
-#			Order of the Markov model used to estimatd expected
-#			oligonucleotide frequencies for oligo-analysis and
-#			local-word-analysis.
-#  -min_markov <MIN_MARKOV>, --minMarkov <MIN_MARKOV>
-#			Minimal value for markov order. Use in combination
-#			with the next option (max_markov).
-#  -max_markov <MAX_MARKOV>, --maxMarkov <MAX_MARKOV>
-#			Maximal value for markov order. Use in combination
-#			with the previous option (min_markov).
-#  -noov <NOOV_DETECTION>, --noovDetection <NOOV_DETECTION>
-#			No overlapping of oligos allowed if value = 1.
-#  -class_int <CLASS_INT>, --classInt <CLASS_INT>
-#			Class interval for position-analysis. The width of the
-#			position classes, in number of bases (default: 20).
-#  -str <STR_SUMMED>, --strSummed <STR_SUMMED>
-#			Oligonucleotide occurrences found on both stands are
-#			summed (2) or not (1). Default is 2.
-#  -graph_title <GRAPH_TITLE>, --graphTitle <GRAPH_TITLE>
-#			Title displayed on top of the graphs.
-#  -image_format <IMAGE_FORMAT>, --imageFormat <IMAGE_FORMAT>
-#			Image format. All the formats supported by XYgraph can
-#			be used.
-#  -disco [<DISCO_ALGORITHM> [<DISCO_ALGORITHM> ...]], --discoAlgorithm [<DISCO_ALGORITHM> [<DISCO_ALGORITHM> ...]]
-#			Specify the software tool(s) that will be used for
-#			motif discovery
-#			(oligos|dyads|positions|local_words|merged_words).
-#			Several algorithms can be specified either by using a
-#			comma-separated list of algorithms: -disco
-#			oligos,dyads
-#  -source <SOURCE_FILE>, --sourceFile <SOURCE_FILE>
-#			Enter the source of the fasta sequence file. Supported
-#			source: galaxy
-#  -verb <VERBOSITY>, --verbosity <VERBOSITY>
-#			Verbosity.
-#  -ref_motif <REF_MOTIF>, --ref_motif <REF_MOTIF>
-#			Motif annotated in some transcription factor database
-#			(e.g. RegulonDB, Jaspar, TRANSFAC) for the
-#			transcription factor of interest.
-#  -server <SERVEUR>, --server <SERVEUR>
-#			RSAT server
-#
-#Version 0.1 - 30/01/2015 - Adapted from Jocelyn Brayet, France Genomique team
-#
-###########################################################"""
+"""
+Peak Motifs - developed by Jocelyn Brayet <jocelyn.brayet@curie.fr>
+Copyright (C) 2015  Institut Curie.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+##########################################################'
+ 
+Client to download peak-motifs results from RSAT server.
+
+
+usage: peak-motifs_soap.py [-h] -test <TEST_FILE> [-control <CONTROL_FILE>]
+				[-max_seq_length <MAX_SEQ_LENGTH>]
+				[-max_motif_number <MAX_MOTIF_NUMBER>]
+				[-top_peaks <TOP_PEAKS>] [-min_length <MIN_LENGTH>]
+				[-max_length <MAX_LENGTH>] [-markov <MARKOV_MODEL>]
+				[-min_markov <MIN_MARKOV>]
+				[-max_markov <MAX_MARKOV>] [-noov <NOOV_DETECTION>]
+				[-class_int <CLASS_INT>] [-str <STR_SUMMED>]
+				[-graph_title <GRAPH_TITLE>]
+				[-image_format <IMAGE_FORMAT>]
+				[-disco [<DISCO_ALGORITHM> [<DISCO_ALGORITHM> ...]]]
+				[-source <SOURCE_FILE>] [-verb <VERBOSITY>]
+				[-ref_motif <REF_MOTIF>] -server <SERVEUR>
+
+optional arguments:
+  -h, --help		show this help message and exit
+  -test <TEST_FILE>, --test_file <TEST_FILE>
+			Input test peak sequence in fasta format.
+  -control <CONTROL_FILE>, --control_file <CONTROL_FILE>
+			Input control peak sequence in fasta format.
+  -max_seq_length <MAX_SEQ_LENGTH>, --maxSeqLength <MAX_SEQ_LENGTH>
+			Maximal sequence length.
+  -max_motif_number <MAX_MOTIF_NUMBER>, --maxMotifNumber <MAX_MOTIF_NUMBER>
+			Maximal number of motifs (matrices) to return for
+			pattern discovery algorithms.
+  -top_peaks <TOP_PEAKS>, --topPeaks <TOP_PEAKS>
+			Restrict the analysis to the N peaks at the top of the
+			input sequence file.
+  -min_length <MIN_LENGTH>, --minLength <MIN_LENGTH>
+			Minimal oligonucleotide length.
+  -max_length <MAX_LENGTH>, --maxLength <MAX_LENGTH>
+			Maximal oligonucleotide length.
+  -markov <MARKOV_MODEL>, --markovModel <MARKOV_MODEL>
+			Order of the Markov model used to estimatd expected
+			oligonucleotide frequencies for oligo-analysis and
+			local-word-analysis.
+  -min_markov <MIN_MARKOV>, --minMarkov <MIN_MARKOV>
+			Minimal value for markov order. Use in combination
+			with the next option (max_markov).
+  -max_markov <MAX_MARKOV>, --maxMarkov <MAX_MARKOV>
+			Maximal value for markov order. Use in combination
+			with the previous option (min_markov).
+  -noov <NOOV_DETECTION>, --noovDetection <NOOV_DETECTION>
+			No overlapping of oligos allowed if value = 1.
+  -class_int <CLASS_INT>, --classInt <CLASS_INT>
+			Class interval for position-analysis. The width of the
+			position classes, in number of bases (default: 20).
+  -str <STR_SUMMED>, --strSummed <STR_SUMMED>
+			Oligonucleotide occurrences found on both stands are
+			summed (2) or not (1). Default is 2.
+  -graph_title <GRAPH_TITLE>, --graphTitle <GRAPH_TITLE>
+			Title displayed on top of the graphs.
+  -image_format <IMAGE_FORMAT>, --imageFormat <IMAGE_FORMAT>
+			Image format. All the formats supported by XYgraph can
+			be used.
+  -disco [<DISCO_ALGORITHM> [<DISCO_ALGORITHM> ...]], --discoAlgorithm [<DISCO_ALGORITHM> [<DISCO_ALGORITHM> ...]]
+			Specify the software tool(s) that will be used for
+			motif discovery
+			(oligos|dyads|positions|local_words|merged_words).
+			Several algorithms can be specified either by using a
+			comma-separated list of algorithms: -disco
+			oligos,dyads
+  -source <SOURCE_FILE>, --sourceFile <SOURCE_FILE>
+			Enter the source of the fasta sequence file. Supported
+			source: galaxy
+  -verb <VERBOSITY>, --verbosity <VERBOSITY>
+			Verbosity.
+  -ref_motif <REF_MOTIF>, --ref_motif <REF_MOTIF>
+			Motif annotated in some transcription factor database
+			(e.g. RegulonDB, Jaspar, TRANSFAC) for the
+			transcription factor of interest.
+  -server <SERVEUR>, --server <SERVEUR>
+			RSAT server
+
+Version 0.1 - 30/01/2015 - Adapted from Jocelyn Brayet, France Genomique team
+
+##########################################################
+"""
 __author__ =  'Jocelyn Brayet'
 
 ###########################################################'
