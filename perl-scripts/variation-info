@@ -455,7 +455,6 @@ package main;
       $file_name = &RSAT::util::hide_RSAT_path($file_name);
       &RSAT::message::TimeWarn("\t$i variation(s) found in file", $file_name, "Remaining", scalar(keys(%variation_id) )) if ($main::verbose >= 2);
     }
-    close $out;
 
     ## Report not found variations
     my @not_found = sort(@variation_ids);
@@ -471,6 +470,7 @@ package main;
     }
 
     $main::infile{'input_variation'} = $main::outfile{'variation_rsat'};
+    close $out;
   }
 
   ################################################################
