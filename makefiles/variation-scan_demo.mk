@@ -50,7 +50,7 @@ variation_stats:
 	@echo "	ORG		${ORG}"	
 	@echo "	VARIATION_DIR	${VARIATION_DIR}"
 	@echo "Computing number of lines per contig (this can take time)"
-	@wc -l ${VARIATION_DIR}/*.varBed | sort -n
+	@wc -l ${VARIATION_DIR}/*.varbed | sort -n
 
 
 ## Create result directory
@@ -63,7 +63,7 @@ mk_result_dir:
 RESULT_DIR=results/variation_scan_demo
 VARIANT_FORMAT_IN=vcf
 DEMO_VARIANTS=${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}
-VARIANT_FORMAT_OUT=varBed
+VARIANT_FORMAT_OUT=varbed
 CONVERT_VAR_CMD=convert-variations \
 	-i ${DEMO_VARIANTS}  \
 	-e_version ${ENSEMBL_VERSION} \
@@ -95,12 +95,12 @@ VAR_INFO_CMD=variation-info -v ${V}\
 VAR_INFO_BED_CMD=${VAR_INFO_CMD} \
 	-i ${BED_VARIANTS} \
 	-format bed \
-	-o ${VAR_FROM_BED_OUT}.varBed
+	-o ${VAR_FROM_BED_OUT}.varbed
 
 VAR_INFO_ID_CMD=${VAR_INFO_CMD} \
 	-i ${VARIANT_IDS} \
 	-format id \
-	-o ${VAR_FROM_ID_OUT}.varBed
+	-o ${VAR_FROM_ID_OUT}.varbed
 
 
 ## Get the variations that overlap a set of genomic regions specificed
@@ -114,7 +114,7 @@ varinfo_from_bed_regions: mk_result_dir
 	@${VAR_INFO_BED_CMD}
 	@echo "${DATE}	Collected variations from bed file";
 	@echo "Output file: "
-	@wc -l ${VAR_FROM_BED_OUT}.varBed
+	@wc -l ${VAR_FROM_BED_OUT}.varbed
 
 
 ## Get variations from a list of user-specified IDs.
@@ -126,7 +126,7 @@ varinfo_from_ids: mk_result_dir
 	@${VAR_INFO_ID_CMD}
 	@echo "${DATE}	Collected variations from ID file";
 	@echo "Output file: "
-	@wc -l ${VAR_FROM_ID_OUT}.varBed
+	@wc -l ${VAR_FROM_ID_OUT}.varbed
 
 
 
@@ -135,7 +135,7 @@ varinfo_from_ids: mk_result_dir
 
 ## The retrieve-var command can be used in various modalities:
 ##
-## (1) provide a varBed file, which contains a description of one
+## (1) provide a varbed file, which contains a description of one
 ## variation per row.
 ##
 ## (2) specifying genomic regions in a bed file. The program starts by
@@ -144,7 +144,7 @@ varinfo_from_ids: mk_result_dir
 ##
 ## (3) a list of variant identifiers provided in a text file (with one
 ## ID per row). The program then extracts the information about each
-## specified variation (varBed info) and then their sequences.
+## specified variation (varbed info) and then their sequences.
 ##
 ## RETRIEVE_VAR_CMD is the common part of the command, we then
 ## specified the modality-specific parameters: 
@@ -157,17 +157,17 @@ RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	${SPECIES_SUFFIX_OPT} 
 
 RETRIEVE_VAR_CMD_VARBED=${RETRIEVE_VAR_CMD} \
-	-i ${RESULT_DIR}/${VARIANTS}.varBed \
-	-mml 30 -format varBed \
-	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq
+	-i ${RESULT_DIR}/${VARIANTS}.varbed \
+	-mml 30 -format varbed \
+	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq
 retrieve_varseq_from_varbed: mk_result_dir
 	@echo ""
 	@echo "Retrieving variation sequences from variation info file"
-	@echo "Input file	${RESULT_DIR}/${VARIANTS}.varBed"
+	@echo "Input file	${RESULT_DIR}/${VARIANTS}.varbed"
 	@echo "${RETRIEVE_VAR_CMD_VARBED}"
 	@${RETRIEVE_VAR_CMD_VARBED}
 	@echo "Out file"
-	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq"
+	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.varseq"
 
 
 ## Retrieve sequences of the variations that overlap a set of genomic
@@ -175,14 +175,14 @@ retrieve_varseq_from_varbed: mk_result_dir
 RETRIEVE_VAR_CMD_BED=${RETRIEVE_VAR_CMD} \
 	-i  ${BED_VARIANTS}\
 	-mml 30 -format bed \
-	-o ${VAR_FROM_BED_OUT}.varSeq
+	-o ${VAR_FROM_BED_OUT}.varseq
 retrieve_var_bed: mk_result_dir
 	@echo "${RETRIEVE_VAR_CMD_BED}"
 	@${RETRIEVE_VAR_CMD_BED}
 	@echo "Out file"
-	@echo "${VAR_FROM_BED_OUT}.varSeq"
+	@echo "${VAR_FROM_BED_OUT}.varseq"
 	@echo "Counting number of alleles per variation"
-	@grep -v '^;' ${VAR_FROM_BED_OUT}.varSeq | grep -v '^\#' \
+	@grep -v '^;' ${VAR_FROM_BED_OUT}.varseq | grep -v '^\#' \
 		| cut -f 5 | sort | uniq -c | sort -k 1 -n \
 		| classfreq -v 1 -ci 1 -col 1 \
 		>  ${VAR_FROM_BED_OUT}_alleles_per_variant.tab
@@ -192,12 +192,12 @@ retrieve_var_bed: mk_result_dir
 RETRIEVE_VAR_CMD_ID=${RETRIEVE_VAR_CMD} \
 	-i  ${VARIANT_IDS} \
 	-mml 30 -format id \
-	-o ${VAR_FROM_ID_OUT}.varSeq
+	-o ${VAR_FROM_ID_OUT}.varseq
 retrieve_var_id: mk_result_dir
 	@echo "${RETRIEVE_VAR_CMD_ID}"
 	@${RETRIEVE_VAR_CMD_ID}
 	@echo "Out file"
-	@echo "	${VAR_FROM_ID_OUT}.varSeq"
+	@echo "	${VAR_FROM_ID_OUT}.varseq"
 
 
 ################################################################
@@ -207,7 +207,7 @@ PVAL_RATIO=10
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
 VARSCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
 VARSCAN_CMD=variation-scan -v ${V} \
-	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq \
+	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq \
 	-m ${MATRIX} -bg ${BG_MODEL} \
 	-uth pval ${PVAL} \
 	-lth pval_ratio ${PVAL_RATIO} \
