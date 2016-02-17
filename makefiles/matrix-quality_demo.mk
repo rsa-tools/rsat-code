@@ -40,9 +40,16 @@ V=2
 PSEUDO=1
 BG_PSEUDO=0.01
 
-MTXQ_ZOO_CMD=matrix-quality -v ${V} -html_title ${TITLE_ZOO}  -ms ${MOTIFS_FILE} -matrix_format ${MTX_FORMAT} \
-	-pseudo ${PSEUDO}  -seq_format fasta ${ZOO_CHIP_SEQ_SETS}  -bgfile ${BACKGROUND_MODEL} \
-	-bg_format oligo-analysis -bg_pseudo ${BG_PSEUDO}  ${ZOO_CHIP_SEQ_PLOTS} -o ${MTXQ_ZOO_OUT} ${TASKS} ${RPLOT}
+MTXQ_ZOO_CMD=matrix-quality -v ${V} \
+	-html_title ${TITLE_ZOO}  \
+	-ms ${MOTIFS_FILE} -matrix_format ${MTX_FORMAT} \
+	-pseudo ${PSEUDO}  \
+	-seq_format fasta ${ZOO_CHIP_SEQ_SETS} \
+	-bgfile ${BACKGROUND_MODEL} \
+	-bg_format oligo-analysis \
+	-bg_pseudo ${BG_PSEUDO}  ${ZOO_CHIP_SEQ_PLOTS} \
+	${TASKS} ${OPT}  ${RPLOT} \
+	-o ${MTXQ_ZOO_OUT}
 
 
 MTXQ_OUT=./results/matrix_quality/${DATE}
@@ -52,6 +59,8 @@ zoo_chip_quality:
 	@echo ${MTXQ_ZOO_CMD}
 	@${MTXQ_ZOO_CMD}
 
+zoo_chip_quality_quick_test:
+	${MAKE} zoo_chip_quality ZOO_CHIP_SEQ_SETS='${HNF6_SET} ${HNF4A_SET}' OPT='-top 2'
 
 QUALITY_LIST=${MTXQ_ZOO_OUT}_quality_prefix_files.txt
 COMPARE_QUALITY=${MTXQ_OUT}/zoo_chip_enrichment/compare_quality
