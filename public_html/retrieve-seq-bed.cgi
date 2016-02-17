@@ -111,21 +111,13 @@ if (($query->param('output') =~ /display/i) ||
   ## Print the result
   print '<H4>Result</H4>';
 
-  # ## Open the sequence file on the server
-  # if (open MIRROR, ">$result_file") {
-  #   $mirror = 1;
-  #   &DelayedRemoval($result_file);
-  # }
-
   print "<PRE>";
   open RESULT, $result_file;
   while (<RESULT>) {
     print "$_" unless ($query->param('output') =~ /server/i);
-#    print MIRROR $_ if ($mirror);
   }
   print "</PRE>";
   close RESULT;
-#  close MIRROR if ($mirror);
 
   ## Print table with links to the result files
   &PrintURLTable(@result_files);
