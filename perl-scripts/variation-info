@@ -145,49 +145,18 @@ information. The file includes the following columns:
 
 =over
 
-=item 1) chr
-
-Chromosome number (without "chr")
-
-=item 2) start
-
- Possition of the variations
-
-=item 3) end
-
-Possition of the variation
-
-=item 4) strand
-
-strand were the variation was annotates
-
-=item 5) id
-
-variant ID, rs number
-
-=item 6) ref
-
-Reference allele
-
-=item 7) alt
-
-Alternative allele
-
-=item 8) so_term validate
-
-validation of the variant, 1 if it had evidence
-
-=item 9) minor_allele_freq
-
-Frequency of the alternative allele
-
-=item 10) is_supvar
-
-1 if this variant was constructed using overlaped variants
-
-=item 11) in_supvar
-
-1 if this this variant is overlaping with other anntotated variants
+=item 1. B<chr>: Chromosome name.
+=item 2. B<start>: start position of the variant.
+=item 3. B<end>: end position of the variant.
+=item 4. B<strand>: strand of the variation.
+=item 5. B<ID>: variant identifier (rs number).
+=item 6. B<ref>: sequence of the reference allele.
+=item 7. B<alt>: sequence of the alternative allele.
+=item 8. B<so_term>: “SNP ontology” (so) term, indicating the type of variation (SNP, insertion, deletion).
+=item 9. B<validated>: Boolean value indicating whether the variation has been validated (1) or not (0).
+=item 10. B<minor_allele_freq>: frequency of the minor allele.
+=item 11. B<is_supvar>: 1 if this variant is a “super-variation”, i.e. was build by merging overlapping variants.
+=item 12. B<in_supvar>: a value of 1 indicates that this variant overlaps with other annotated variants.
 
 =back
 
@@ -268,7 +237,7 @@ package main;
   our $assembly_version = "";
 
   our $col = 1;
-  our $validate = 0 ;
+  our $validated = 0 ;
 
   ## Define supported output formats
   our @supported_input_formats = qw (varBed id bed);
@@ -337,7 +306,7 @@ package main;
 		  "ref",
 		  "alt",
 		  "so_term",
-		  "validate",
+		  "validated",
 		  "minor_allele_freq",
 		  "is_supvar",
 		  "in_supvar\n");
