@@ -109,10 +109,10 @@ sub load_supported_organisms {
   }
   my ($table_handle) = &RSAT::util::OpenInputFile($organism_table);
   my @fields = ();
-  my @values = ();
   my $l = 0;
 
   while (my $line = <$table_handle>) {
+    my @values = ();
     $l++;
     next if $line =~ /^;/;
     chomp $line;
