@@ -44,13 +44,13 @@ library(knitr)
 rsat <- Sys.getenv("RSAT")
 
 
-crms.bp.prefix <- file.path(rsat, "public_html/demo_files/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19")
+weirauch.prefix <- file.path(rsat, "public_html/demo_files/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19")
 
 ## Genomic coordinates of the conserved CRMs (bed file)
-crms.bp.bed <- paste(sep="", crms.bp.prefix, ".bed")
-crms.bp <- read.delim(crms.bp.bed, header=FALSE)
-names(crms.bp) <- c("chr", "start", "end")
-kable(head(crms.bp), caption = "**Table 1.** Top rows of the bed file describing the genomic coordinates of the conserved CMRs, which is used as input to select variations of interest.")
+weirauch.bed <- paste(sep="", weirauch.prefix, ".bed")
+weirauch <- read.delim(weirauch.bed, header=FALSE)
+names(weirauch) <- c("chr", "start", "end")
+kable(head(weirauch), caption = "**Table 1.** Top rows of the bed file describing the genomic coordinates of the conserved CMRs, which is used as input to select variations of interest.")
 
 ```
 
@@ -81,19 +81,72 @@ variation-info -v 2 -species Homo_sapiens \
    -a_version GRCh37   \
    -i ${RSAT}/public_html/demo_files/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.bed \
    -format bed \
-   -o results/variation_scan_demo/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.varBed
+   -o results/variation_scan_demo/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.varbed
 
 ```
 
 ### Expected results
 
+
+The output of *variation-info* is a tab-delimited text file with one row per column and one column per information. The 4 first columns indicate the location of the variation, in a similar way to the bed format (see [bed format description](https://genome.ucsc.edu/FAQ/FAQformat.html#format1)) and the subsequent columns provide details about the variation. We therefore all this format varbed. 
+
+#### varbed column content
+
+
+1. **chr**: Chromosome name.
+2. **start**: start position of the variant.
+3. **end**: end position of the variant.
+4. **strand**: strand of the variation.
+5. **ID**: variant identifier (rs number).
+6. **ref**: sequence of the reference allele.
+7. **alt**: sequence of the alternative allele.
+8. **so_term**: "SNP ontology" (so) term, indicating the type of variation (SNP, insertion, deletion).
+9. **validate**: Boolean value indicating whether the variation has been validated (1) or not (0). 
+10. **minor_allele_freq**: frequency of the minor allele.
+11. **is_supvar**: 1 if this variant is a "super-variation", i.e. was build by merging overlapping variants.
+12. **in_supvar**: a value of 1 indicates that this variant overlaps with other annotated variants.
+
+
 ```{r}
+weirauch.varbed <- paste(sep="", weirauch.prefix, ".varbed")
+weirauch.var <- read.delim(weirauch.varbed, header=1)
+names(weirauch.var)[1] <- "chr"
 
-crms.bp.varBed <- paste(sep="", crms.bp.prefix, ".varBed")
-crms.bp.var <- read.delim(crms.bp.varBed, header=1)
-names(crms.bp.var)[1] <- "chr"
-kable(head(crms.bp.var), caption = "**Table 2.** Variations overlapping with the conserved CMRs. ")
+## Select the 10 first variation IDs + some deletion and insertions
+selected.var.IDs <- c(as.vector(weirauch.var[1:5, "id"]), "rs372843020", "rs145604727")
+kable(weirauch.var[weirauch.var$id %in% selected.var.IDs,], caption = "**Table 2.** Variations overlapping with the conserved CMRs. ", row.names = FALSE)
 
+```
+
+
+## Getting variations for selected IDs
+
+...
+
+```{r}
+weirauch.prefix <- weirauch.prefix <- file.path(rsat, "public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs")
+```
+
+
+```
+make -f makefiles/variation-scan_demo.mk varinfo_from_ids
+
+```
+
+## Getting sequences surrounding the variations
+
+The varbed format described above only indicates the sequences at the precise positions of the variants. Thus, for SNPs, the reference and alternative sequences are restricted to a single nucleotide. In order to detect putative effect of the variations on the binding of transcription factors, we need to scan the variations in the context of their surrounding sequences. This can be achieved with the tool **retrieve-variation-seq**, which uses the coordinates of the variations (provided as a varbed file) and exports a tab-delimited file with the variants together with their flanking sequences on both sides. 
+
+In contrast with the varbed file, the **varseq** file returned by retrieve-variation-seq contains one line per variant allele. Indeed, each variation corresponds to two or more alleles. 
+
+
+```{r}
+weirauch.varseq.file <- paste(sep="", weirauch.prefix, ".varseq")
+weirauch.varseq <- read.delim(weirauch.varseq.file, header=1)
+names(weirauch.varseq)[1] <- "chr"
+
+## Select the 10 first variation IDs + some deletion and insertions
+kable(weirauch.varseq, caption = "**Table 5.** Sequences of the selected variants with their flanking sequences over 30bp. ", row.names = FALSE)
 ```
 
 * * * * * * *
