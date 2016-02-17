@@ -25,8 +25,6 @@ MAKEFILE=${RSAT}/makefiles/ensemblgenomes_FTP_client.mk
 V=2
 
 ################################################################
-## Should be set in env var {ORG_GROUP} ?
-
 ## GROUP=Plants I moved this variable to RSAT_config.mk, since it depends on the server;
 GROUP_LC=$(shell echo $(GROUP) | tr A-Z a-z)
 ifeq ($(GROUP),Fungi)
@@ -133,7 +131,8 @@ list_all_species:
 
 ORG_TASKS=organisms
 DOWNLOAD_TASKS=download_gtf download_fasta gunzip_downloads 
-INSTALL_TASKS=install_from_gtf init_getfasta install_go_annotations
+#INSTALL_TASKS=install_from_gtf index_fasta_downloads install_go_annotations
+INSTALL_TASKS=install_from_gtf index_fasta_downloads
 COMPARA_TASKS=organisms download_compara parse_compara install_compara
 # not used
 #ALL_TASKS=${ORG_TASKS} ${DOWNLOAD_TASKS} ${INSTALL_TASKS} ${COMPARA_TASKS}
@@ -199,7 +198,7 @@ download_gtf:
 #	@wget -Ncnv ${GTF_FTP_URL} -P ${GENOME_DIR}
 #	@wget -cnv ${GTF_FTP_URL} -O ${GTF_LOCAL_GZ}
 	@if test -s ${GTF_LOCAL}; then \
-		echo "Uncompressed file exists; skipping	${GTF_LOCAL}"; \
+		echo "	Uncompressed file exists; skipping	${GTF_LOCAL}"; \
 	else \
 		wget -cnv ${GTF_FTP_URL} -O ${GTF_LOCAL_GZ} ; \
 		echo; \
@@ -237,40 +236,40 @@ GTF_LOCAL_GZ=${GTF_LOCAL}.gz
 download_fasta:
 	@echo
 	@mkdir -p ${GENOME_DIR}
-	@echo "Downloading raw FASTA genome for species ${SPECIES}"
 	@echo "	GENOME_DIR	${GENOME_DIR}"
+	@echo
+	@echo "Downloading raw FASTA genome for species ${SPECIES}"
 	@if test -s ${FASTA_RAW_LOCAL}; then \
 		echo "	Uncompressed file exists; skipping	${FASTA_RAW_LOCAL}"; \
 	else \
 		wget -cnv ${FASTA_RAW_FTP_URL} -O ${FASTA_RAW_LOCAL_GZ}; \
 		echo "	FASTA_RAW_LOCAL_GZ	${FASTA_RAW_LOCAL_GZ}"; \
+		echo "Removing previous fasta index file (.fai)"; \
+		echo "	${FASTA_RAW_LOCAL}.fai"; \
+		rm -f ${FASTA_RAW_LOCAL}.fai; \
 	fi
 	@echo
+	@echo "Downloading repeat-masked FASTA genome for species ${SPECIES}"
 	@if test -s ${FASTA_MSK_LOCAL}; then \
 		echo "	Uncompressed file exists; skipping	${FASTA_MSK_LOCAL}"; \
 	else \
 		wget -cnv ${FASTA_MSK_FTP_URL} -O ${FASTA_MSK_LOCAL_GZ}; \
 		echo "	FASTA_MSK_LOCAL_GZ	${FASTA_MSK_LOCAL_GZ}"; \
+		echo "Removing previous fasta index file (.fai)"; \
+		echo "	${FASTA_MSK_LOCAL}.fai"; \
+		rm -f ${FASTA_MSK_LOCAL}.fai; \
 	fi
-#	@echo "Downloading repeat-masked FASTA genome for species ${SPECIES}"
-#	@wget -cnv ${FASTA_MSK_FTP_URL} -O ${FASTA_MSK_LOCAL_GZ}
-#	@echo "	FASTA_MSK_LOCAL_GZ	${FASTA_MSK_LOCAL_GZ}"
 	@echo
 	@echo "Downloading FASTA peptidic sequences for species ${SPECIES}"
-	@echo
 	@if test -s ${FASTA_PEP_LOCAL}; then \
 		echo "	Uncompressed file exists; skipping	${FASTA_PEP_LOCAL}"; \
 	else \
 		wget -cnv ${FASTA_PEP_FTP_URL} -O ${FASTA_PEP_LOCAL_GZ}; \
 		echo "	FASTA_PEP_LOCAL_GZ	${FASTA_PEP_LOCAL_GZ}"; \
+		echo "Removing previous fasta index file (.fai)"; \
+		echo "	${FASTA_PEP_LOCAL}.fai"; \
+		rm -f ${FASTA_PEP_LOCAL}.fai; \
 	fi
-#	@wget -cnv ${FASTA_PEP_FTP_URL} -O ${FASTA_PEP_LOCAL_GZ}
-#	@echo "	FASTA_PEP_LOCAL_GZ	${FASTA_PEP_LOCAL_GZ}"
-	@echo
-	@echo "Removing previous bedtools index files"
-	@rm -f ${FASTA_RAW_LOCAL}.fai
-	@rm -f ${FASTA_MSK_LOCAL}.fai
-	@ls -1 ${GENOME_DIR}/*.fa*
 
 
 ################################################################
@@ -379,6 +378,15 @@ gunzip_downloads:
 	@if test -s ${FASTA_RAW_LOCAL_GZ}; then echo "	${FASTA_RAW_LOCAL_GZ}"; gunzip -qf ${FASTA_RAW_LOCAL_GZ}; else echo "	skipping FASTA_RAW_LOCAL_GZ ${FASTA_RAW_LOCAL_GZ}"; fi;
 	@if test -s ${FASTA_MSK_LOCAL_GZ}; then echo "	${FASTA_MSK_LOCAL_GZ}"; gunzip -qf ${FASTA_MSK_LOCAL_GZ}; else echo "	skipping FASTA_MSK_LOCAL_GZ ${FASTA_MSK_LOCAL_GZ}"; fi;
 	@if test -s ${FASTA_PEP_LOCAL_GZ}; then echo "	${FASTA_PEP_LOCAL_GZ}"; gunzip -qf ${FASTA_PEP_LOCAL_GZ}; else echo "	skipping FASTA_PEP_LOCAL_GZ ${FASTA_PEP_LOCAL_GZ}"; fi;
+
+###############################################################
+## Index fasta files for beedtools
+index_fasta_downloads:
+	@echo
+	@echo "Indexing the downloaded fasta files."
+	@if test -s ${FASTA_RAW_LOCAL}; then echo "	${FASTA_RAW_LOCAL}.fai"; samtools faidx ${FASTA_RAW_LOCAL}; else echo "	missing FASTA_RAW_LOCAL ${FASTA_RAW_LOCAL}"; fi;
+	@if test -s ${FASTA_MSK_LOCAL}; then echo "	${FASTA_MSK_LOCAL}.fai"; samtools faidx ${FASTA_MSK_LOCAL}; else echo "	missing FASTA_MSK_LOCAL ${FASTA_MSK_LOCAL}"; fi;
+	@if test -s ${FASTA_PEP_LOCAL}; then echo "	${FASTA_PEP_LOCAL}.fai"; samtools faidx ${FASTA_PEP_LOCAL}; else echo "	missing FASTA_PEP_LOCAL ${FASTA_PEP_LOCAL}"; fi;
 
 ###############################################################
 ## (Re)compress GTF and genomic fasta files for beedtools
