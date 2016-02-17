@@ -2606,7 +2606,6 @@ sub CompareDistrib {
       my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
 
       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
-
       
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
@@ -2862,7 +2861,9 @@ sub Calculate_NWD {
 	    }
 	    @head2=@head;
 	    shift(@head2);
-	    &RSAT::error::FatalError("Please specify an adecuate distribution to calculate the NWD"."\n"."Select one of the following distributions: ".join("\t",@head2)) unless $case_col ;
+	    &RSAT::error::FatalError("Please specify an adequate distribution to calculate the NWD\n",
+				     "Select one of the following distributions: ", 
+				     join("\t",@head2)) unless $case_col;
 
 	    &RSAT::message::Debug("Case column",$case_dist,"#",$case_col) if ($main::verbose >= 10);
 	    &RSAT::message::Debug("Base column",$base_dist,"#",$base_col) if ($main::verbose >=10);
