@@ -118,6 +118,8 @@ package main;
   our $assembly_version = "";
 
   our $keep_names = 0; ## Keep same names for output fragments as in template file
+  our $add_chr = 0;      ## Prepend chr prefix to chromosome column in bed file
+  our $remove_chr = 0;   ## Remove chr prefix from chromosome column in bed file
 
   ## Return fields
   our %supported_return_fields = (
@@ -147,6 +149,11 @@ package main;
 #    $main::verbose = 0;
 #  }
 
+
+  ## Treatment of the "chr" prefix
+  &RSAT::error::FatalError("The options -add_chr and -remove_chr are mutually exclusive") 
+      if ($remove_chr + $add_chr > 1);
+
   ## The option -keep_names requires to specify a template file
   if ($keep_names) {
       unless ($main::infile{template_file}) {
@@ -165,7 +172,7 @@ package main;
       my $job_prefix = "random-genome-fragments";
       my $tmp_file_path = &RSAT::util::make_temp_file("","random-genome-fragments", 1); 
       $main::outfile{length_file} = $tmp_file_path."_lengths.tab";
-      my $seqlength_cmd = "sequence-lengths -v 1";
+      my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1";
       $seqlength_cmd .= " -i ".$main::infile{template_file};
       $seqlength_cmd .= " -in_format ".$template_format;
       $seqlength_cmd .= " -o ".$main::outfile{length_file};
@@ -250,6 +257,7 @@ package main;
       unless ($contig_name =~ /:MT:/) {	#Do not take into account mitochondrial genome.
 	## store contig name
 	push (@main::contig_names, $contig_name);
+	&RSAT::message::Debug("Contig name", $contig_name) if ($main::verbose >= 4);
       }
     }
   }
@@ -302,6 +310,7 @@ package main;
     } elsif ($main::organism_ens) {
       $contig_len = $main::ens_chroms{$contig_name}->length();
     }
+    &RSAT::message::Debug("Contig length", $contig_name, $contig_len) if ($main::verbose >= 4);
 
     ## Index contig lengths
     $contig_len{$contig_name} = $contig_len;
@@ -338,7 +347,7 @@ package main;
 			 "fragments=".$contig_fragments{$contig_name},
 			 "fragments_cum=".$contig_fragments_cum{$contig_name},
 			 )
-      if ($main::verbose >= 2);
+      if ($main::verbose >= 5);
   }
 
   ################################################################
@@ -456,7 +465,11 @@ package main;
 				# adapt the chromosome name for UCSC ChrXXX
 	$rand_contig_name =~ s/chromosome:[\w\.]*?://;
 	$rand_contig_name =~ s/:.*//;
-	$rand_contig_name = "chr".$rand_contig_name ;
+	if ($add_chr) {
+	  $rand_contig_name = "chr".$rand_contig_name ;
+	} elsif ($remove_chr) {
+	  $rand_contig_name =~ s/^chr//;
+	}
       }
       $feature->set_attribute("start",$rand_start);
       $feature->set_attribute("end",$rand_end);
@@ -851,6 +864,34 @@ is incompatible with options -l and -n.
 =cut
       } elsif ($arg eq "-rep") {
 	$main::repetitions = shift(@arguments);
+
+
+=pod
+
+=item B<-add_chr>
+=item B<-remove_chr>
+
+These options allow to ensure consistency between chromosome naming in
+the output bed file and various genome databases and tools. Indeed,
+the chromosome naming varies depending on the genome reference center,
+so that a bed file obtained with the RSAT convention may have
+chromosome names incompatible with the convention used in some
+databases and tools.
+
+
+I<-add_chr> adds a prefix "chr" to chromosome names of the query bed
+file before running the analysis.
+
+I<-remove_chr> removes the prefix "chr" from chromosome names.
+
+=cut
+
+    } elsif ($arg eq "-add_chr") {
+      $add_chr = 1;
+
+    } elsif ($arg eq "-remove_chr") {
+      $remove_chr = 1;
+
 
       } else {
 	&FatalError(join("\t", "Invalid option", $arg));

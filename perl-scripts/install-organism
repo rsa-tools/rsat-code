@@ -61,16 +61,18 @@ package main;
 		       );
 
   @extra_tasks = qw(
-			parse
-                        uninstall
-                        erase
-			distrib
-			ncf
-			intergenic_freq
-			ensembl_freq
-                        clean
-                        default
-			all
+		    parse
+                    fasta_genome
+                    index_bedtools
+                    uninstall
+                    erase
+		    distrib
+		    ncf
+		    intergenic_freq
+		    ensembl_freq
+                    clean
+                    default
+		    all
       );
   @supported_tasks = (@default_tasks, @extra_tasks);
   %supported_task = ();
@@ -299,6 +301,9 @@ package main;
 	$outfile{features} = $dir{genome}."/feature.tab";
 	$outfile{synonyms} = $dir{genome}."/feature_names.tab";
 	$outfile{genome} = $dir{genome}."/contigs.txt";
+	$outfile{fasta_genome} = $dir{genome}."/".$organism_short_name.".dna.genome.fa";
+	$outfile{fasta_genome_rm} = $dir{genome}."/".$organism_short_name.".dna_rm.genome.fa";
+
 	## Create output directoryies if required
 	&RSAT::util::CheckOutDir($dir{install});
 	&RSAT::util::CheckOutDir($dir{genome});
@@ -330,7 +335,11 @@ package main;
       &IntergenicSegments() if ($task{genome_segments});
       
       &AllUpstream() if ($task{allup});
-      
+
+      &FastaGenome() if ($task{fasta_genome}); ## Convert genome sequence to fasta, required for bedtools
+
+      &GenerateBedtoolsIndex() if ($task{index_bedtools});
+
       &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
       
       # New name for peptidic sequence file (Sept 2015). I suppress
@@ -755,6 +764,45 @@ sub AllUpstream {
   }
   chdir $dir{main};
 }
+
+
+################################################################
+## Convert genome sequence to fasta, required for retrieve-seq-bed and
+## bedtools.
+sub FastaGenome {
+    $command = "convert-seq";
+    $command .= " -i ".$outfile{genome};
+    $command .= " -from filelist -to fasta";
+    $command .= " -o ".$outfile{fasta_genome};
+    &doit($command, $dry_run, $die_on_error, $verbose);
+
+    $command = "cd ".$dir{genome}. "; ln -f -s ".$organism_short_name.".dna.genome.fa ".$organism_short_name.".dna_rm.genome.fa";
+    &doit($command, $dry_run, $die_on_error, $verbose);
+}
+
+
+################################################################
+## Generate bedtool indexes. This must be done as RSAT user in order
+## to enable retrieve-seq-bed, which relies on bedtools getfasta.
+sub GenerateBedtoolsIndex {
+    my $rand_fragment_coord = &RSAT::util::make_temp_file("","random-genome-fragments_coord", 1);
+    my $rand_fragment_seq = &RSAT::util::make_temp_file("","random-genome-fragments_seq", 1);
+    $command = $SCRIPTS."/random-genome-fragments -n 1 -l 100";
+    $command .= " -org ".$organism_short_name;
+    $command .= " -o ".$rand_fragment_coord;
+    $command .= " ; ".$SCRIPTS."/retrieve-seq-bed";
+    $command .= " -i ".$rand_fragment_coord;
+    $command .= " -org ".$organism_short_name;
+    $command .= " -o ".$rand_fragment_seq;
+    $command .= " ; ".$SCRIPTS."/retrieve-seq-bed -rm";
+    $command .= " -i ".$rand_fragment_coord;
+    $command .= " -org ".$organism_short_name;
+    $command .= " -o ".$rand_fragment_seq;
+    $command .= " ; rm -f ".$rand_fragment_seq; 
+    $command .= " ; rm -f ".$rand_fragment_coord; 
+    &doit($command, $dry_run, $die_on_error, $verbose);
+}
+
 
 ################################################################
 ## Draw an histogram of sequence lengths

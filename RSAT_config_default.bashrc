@@ -19,7 +19,7 @@ export PATH=${RSAT}/python-scripts:${PATH}
 #if  [ ${R_LIBS_USER} ]; then
 #  export R_LIBS_USER=${R_LIBS_USER}:${RSAT}/R-scripts/Rpackages/
 #else
-export R_LIBS_USER=${RSAT}/R-scripts/Rpackages/
+export R_LIBS_USER=${R_LIBS_USER}:${RSAT}/R-scripts/Rpackages/
 #fi
 
 ################################################################
