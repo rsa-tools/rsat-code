@@ -1156,9 +1156,10 @@ download_ceas_data:
 ################################################################
 ## Install  SAMTOOLS
 SAMTOOLS_BASE_DIR=${SRC_DIR}/samtools
-SAMTOOLS_VERSION=0.1.18
+SAMTOOLS_VERSION=1.3
 SAMTOOLS_ARCHIVE=samtools-${SAMTOOLS_VERSION}.tar.bz2
-SAMTOOLS_URL=http://sourceforge.net/projects/samtools/files/samtools/${SAMTOOLS_VERSION}/${SAMTOOLS_ARCHIVE}
+SAMTOOLS_URL=https://sourceforge.net/projects/samtools/files/samtools/${SAMTOOLS_VERSION}/${SAMTOOLS_ARCHIVE}/download
+#SAMTOOLS_URL=https://sourceforge.net/projects/samtools/files/samtools/1.3/samtools-1.3.tar.bz2/download
 SAMTOOLS_DISTRIB_DIR=${SAMTOOLS_BASE_DIR}/samtools-${SAMTOOLS_VERSION}
 install_samtools: _download_samtools _compile_samtools _install_pysam
 
@@ -1166,7 +1167,7 @@ _download_samtools:
 	@echo
 	@echo "Downloading SAMTOOLS"
 	@mkdir -p ${SAMTOOLS_BASE_DIR}
-	wget -nd  --directory-prefix ${SAMTOOLS_BASE_DIR} -rNL ${SAMTOOLS_URL}
+	wget -nd --no-check-certificate --directory-prefix ${SAMTOOLS_BASE_DIR} -rNL ${SAMTOOLS_URL}
 
 _compile_samtools:
 	@echo
