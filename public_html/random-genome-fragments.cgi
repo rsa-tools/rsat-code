@@ -51,17 +51,19 @@ $parameters = "";
 ($template_file, $template_format) = &MultiGetSequenceFile(1, $tmp_file_path."_template.fa", 0);
 
 ## a template file has been given
+my $length_file = "";
 if ($template_file) {
   push @result_files, ("Template file ($template_format)",$template_file);
 
   ## Compute sequence lengths from the template sequence file
-  my $length_file = $tmp_file_path.".lengths";
+  $length_file = $tmp_file_path.".lengths";
   push @result_files, ("Sequence lengths",$length_file);
 
   my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$template_file;
   $seqlength_cmd .= " -in_format ".$template_format;
   $seqlength_cmd .= " -o ".$length_file;
   system($seqlength_cmd);
+
 
   ## Add the sequence length file as template for random-genome-fragments
   $parameters .= " -template_format len -i ".$length_file;
@@ -87,6 +89,7 @@ if ($template_file) {
 
 ############################################################
 ## Organim
+local $organism;
 if ($query->param('org_select')) {
   ## RSAT organism
   if ($query->param('org_select') eq "rsat_org"){
@@ -107,6 +110,7 @@ if ($query->param('org_select')) {
     $parameters .= " -org_ens $organism_ens ";
   }
 }
+
 
 ############################################################
 ## Output
@@ -133,16 +137,23 @@ if ($query->param('outputformat')) {
   }
 }
 
-## repeats
+## Mask repeated sequences
 if ($query->param('rm') =~ /on/) {
   $parameters .= " -rm ";
 }
 
+
+
 ## Output file
 $result_file = $tmp_file_path."_fragments.".$output_format;
-#$parameters .= " -o ".$result_file;
+$parameters .= " -o ".$result_file;
 #&RSAT::message::Info("result_file", $result_file) if ($echo >= 0);
 push @result_files, ("Genome fragments ($output_format)",$result_file);
+
+## Error log
+$err_file = $tmp_file_path."_error_log.txt";
+$parameters .= " 2> ".$err_file;
+push @result_files, ("Error log (text)",$err_file);
 
 ############################################################
 ## Report the command
@@ -150,32 +161,49 @@ push @result_files, ("Genome fragments ($output_format)",$result_file);
 
 ################################################################
 ## Run the command
-open RESULT, "$command $parameters |";
+# open RESULT, "$command $parameters |";
 
 ## open RESULT, "perl /export/space7/rsa-tools/perl-scripts/random-genome-fragments -org Saccharomyces_cerevisiae -n 10 -l 10 |";
-
 
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
   &PipingWarning();
 
-  ## Print the result
-  print '<H4>Result</H4>';
+  ## Run the command
+  &doit("$command $parameters"); 
 
-  ## Open the sequence file on the server
-  if (open MIRROR, ">$result_file") {
-    $mirror = 1;
-    &DelayedRemoval($result_file);
-  }
 
-  print "<PRE>";
-  while (<RESULT>) {
-    print "$_" unless ($query->param('output') =~ /server/i);
-    print MIRROR $_ if ($mirror);
+  if ($query->param('output') =~ /display/i) {
+      open RESULT, "$result_file"; 
+
+      ## Print the output on the screen
+      print '<h4>Result</h4>';
+      print '<pre>';
+      while (<RESULT>) {
+	  print $_;
+      }
+      print '</pre>';
+      close(RESULT);
   }
-  print "</PRE>";
-  close RESULT;
-  close MIRROR if ($mirror);
+  # ## Print the result
+  # print # '<H4>Result</H4>';
+  # 
+  # ## Open the sequence file on the server
+  # if (open MIRROR, ">$result_file") {
+  #   $mirror = 1;
+  #   &DelayedRemoval($result_file);
+  # }
+  # print "<PRE>";
+  # while (<RESULT>) {
+  #     print $_;
+  #   print "$_" unless ($query->param('output') =~ /server/i);
+  #   print MIRROR $_ if ($mirror);
+  # }
+  # print "</PRE>";
+  # close RESULT;
+  # close MIRROR if ($mirror);
+
+#die(join ("\n", "HELLO\t", $template_file, $length_file, $command." ".$parameters, "\n"));
 
   ## Print table with links to the result files
   &PrintURLTable(@result_files);
@@ -205,24 +233,36 @@ sub PipingForm {
 	$assembly =~ s/.*assembly:(.*)$/$1/;
     ### prepare data for piping
     print <<End_of_form;
-    <hr>
-<table class = "nextstep">
-<tr><td colspan = 5><h3>next step</h3></td></tr>
+	<hr>
+	    <table class = "nextstep">
+	    <tr><td colspan = 5><h3>next step</h3></td></tr>
 
 
-<tr valign="top" align="center">
+	    <tr valign="top" align="center">
 
 
- <td align=center>
-        <FORM METHOD="POST" ACTION="fetch-sequences_form.php">
-	<INPUT type="hidden" NAME="bedfile" VALUE="$result_file">
-	<INPUT type="submit" value="fetch sequences from UCSC">
-	</FORM>
-	Fetch sequences corresponding to the coordinates
-    </td>
-</TD>
-</TR>
-</TABLE>
+	    <td align=center>
+	    <form method="POST" action="retrieve-seq-bed_form.cgi">
+	    <input type="hidden" name="input_file" value="$result_file">
+	    <input type="hidden" name="organism" value="$organism">
+	    <input type="submit" value="retrieve-seq-bed">
+	    </form>
+	    Get sequences (fasta) from genomic coordinates (bed).
+	    </td>
+	    </td>
+	    </tr>
+
+	    <td align=center>
+	    <form method="POST" action="fetch-sequences_form.php">
+	    <input type="hidden" name="bedfile" value="$result_file">
+	    <input type="submit" value="fetch sequences from UCSC">
+	    </form>
+	    Fetch sequences corresponding to the coordinates
+	    </td>
+	    </td>
+	    </tr>
+
+	    </table>
 End_of_form
 }
 
