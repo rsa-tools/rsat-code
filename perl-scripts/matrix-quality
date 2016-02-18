@@ -301,19 +301,19 @@ package main;
     $main::verbose = 0;
     $main::out = STDOUT;
     $main::html_title="";
-    %main::plot_seq_type=();
+    %main::plot_seq_type = ();
 
     #additional plot types
     #$main::plottypes="";
-    %main::supported_plot_types=();
+    %main::supported_plot_types = ();
     $main::supported_plot_types{nwd}=1;
     $main::supported_plot_types{occ_proba}=1;
-    %main::plot_types=();
-    %tab_files_for_aux_plots_nwd_per_matrix=();
-    %tab_files_for_aux_plots_occ_proba_per_matrix=();
-    %tab_files_for_aux_plots_nwd_per_seq=();
-    %tab_files_for_aux_plots_occ_proba_per_seq=();
-    %nwd_all_files;
+    %main::plot_types = ();
+    %tab_files_for_aux_plots_nwd_per_matrix = ();
+    %tab_files_for_aux_plots_occ_proba_per_matrix = ();
+    %tab_files_for_aux_plots_nwd_per_seq = ();
+    %tab_files_for_aux_plots_occ_proba_per_seq = ();
+    %nwd_all_files = ();
     $main::nwd_seqs=0;
     ## Parameters for the &doit() command
     $dry = 0;
@@ -373,7 +373,7 @@ package main;
     ## Additional plots
     $supported_task{plot} = 0 unless $task{plot};
     my @aux_add_plots=values(%main::plot_seq_type);
-    my @aux2_add_plots=();
+    my @aux2_add_plots = ();
     
     foreach(@aux_add_plots){
 	push(@aux2_add_plots,split(/,/,$_));	
@@ -1014,7 +1014,7 @@ package main;
 	#die "BOOM";
 	 my $st= $_;
 	 ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/nwd/) ;
-	 print (join ("++",@{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }))."\n";
+	 print ((join("++", @{$tab_files_for_aux_plots_occ_proba_per_seq{$st}})), "\n");
 	 ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/occ_proba/) ;
 	 #print $outfile{$st."all_matrices_occ_proba_table"}."\n";
 	 #print $outfile{$st."all_matrices_occ_proba_plot"}."\n";
@@ -2606,7 +2606,6 @@ sub CompareDistrib {
       my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
 
       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
-
       
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
@@ -2862,7 +2861,9 @@ sub Calculate_NWD {
 	    }
 	    @head2=@head;
 	    shift(@head2);
-	    &RSAT::error::FatalError("Please specify an adecuate distribution to calculate the NWD"."\n"."Select one of the following distributions: ".join("\t",@head2)) unless $case_col ;
+	    &RSAT::error::FatalError("Please specify an adequate distribution to calculate the NWD\n",
+				     "Select one of the following distributions: ", 
+				     join("\t",@head2)) unless $case_col;
 
 	    &RSAT::message::Debug("Case column",$case_dist,"#",$case_col) if ($main::verbose >= 10);
 	    &RSAT::message::Debug("Base column",$base_dist,"#",$base_col) if ($main::verbose >=10);
@@ -3395,9 +3396,9 @@ sub CloseGeneralHTMLReport{
 	    foreach (uniq(keys(%main::plot_seq_type))) {
 		my $st= $_;
 		print  $synthesis_general "<tr>";
-		my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_nwd_plot"}."png");
+		my ($link) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_nwd_plot"}."png");
 		print $synthesis_general  "<td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n"."</td>";
-		my ($link2, $shared_path2)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_nwd_table"});
+		my ($link2) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_nwd_table"});
 		print $synthesis_general  "<td><a href='",$link2,"'>", "report","</a></td>\n";
 		print  $synthesis_general "</tr>";
 
@@ -3415,7 +3416,7 @@ sub CloseGeneralHTMLReport{
 		print  $synthesis_general "</tr>";
 		
 		print  $synthesis_general "<tr>";
-		my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_max_nwd"}.".png");
+		my ($link) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_max_nwd"}.".png");
 		print $synthesis_general  "<td>Max NWD</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
 		$link=~s/\.png/\.pdf/;
 		print $synthesis_general "<a href='",$link,"'>PDF</a> ";
@@ -3425,7 +3426,7 @@ sub CloseGeneralHTMLReport{
 		print  $synthesis_general "</tr>";
 		
 		print  $synthesis_general "<tr>";
-		my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_nwdsig"}.".png");
+		($link) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_nwdsig"}.".png");
 		print $synthesis_general  "<td>Max NWD for Positve Scores</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
 		$link=~s/\.png/\.pdf/;
 		print $synthesis_general "<a href='",$link,"'>PDF</a> ";
@@ -3435,7 +3436,7 @@ sub CloseGeneralHTMLReport{
 		print  $synthesis_general "</tr>";
 		
 		print  $synthesis_general "<tr>";
-		my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_aucall"}.".png");
+		($link) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_aucall"}.".png");
 		print $synthesis_general  "<td>AUC on NWD</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
 		$link=~s/\.png/\.pdf/;
 		print $synthesis_general "<a href='",$link,"'>PDF</a> ";
@@ -3445,7 +3446,7 @@ sub CloseGeneralHTMLReport{
 		print  $synthesis_general "</tr>";
 		
 		print  $synthesis_general "<tr>";
-		my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_aucsig"}.".png");
+		($link) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_aucsig"}.".png");
 		print $synthesis_general  "<td>AUC on NWD for Positive Scores</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
 		$link=~s/\.png/\.pdf/;
 		print $synthesis_general "<a href='",$link,"'>PDF</a> ";
@@ -3467,9 +3468,9 @@ sub CloseGeneralHTMLReport{
 	    foreach (uniq(keys(%main::plot_seq_type))) {
 		my $st= $_;
 		print  $synthesis_general "<tr>";
-		my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_occ_proba_plot"}."png");
+		($link) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_occ_proba_plot"}."png");
 		print $synthesis_general  "<td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n"."</td>";
-		my ($link2, $shared_path2)=&RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_occ_proba_table"});
+		my ($link2) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{$st."all_matrices_occ_proba_table"});
 		print $synthesis_general  "<td><a href='",$link2,"'>", "report","</a></td>\n";
 		print  $synthesis_general "</tr>";
 
@@ -3491,7 +3492,7 @@ sub Add_info_to_GeneralHTML_Report{
     ################
     #index logo
     if (-e $outfile{matrix_logo_png}){
-	my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis}, $outfile{matrix_logo_png});
+	my ($link, $shared_path) = &RSAT::util::RelativePath($outfile{synthesis}, $outfile{matrix_logo_png});
 	print $synthesis_general  "<td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n"."</td>";
 	&RSAT::message::Debug("Indexing one file to general report",$matrix_name,"Logo",   $outfile{matrix_logo_png}, $link, $shared_path) if ($main::verbose >= 5);
     } else {
@@ -3501,7 +3502,7 @@ sub Add_info_to_GeneralHTML_Report{
     ################
     #index report html link
     if (-e $outfile{matrix_synthesis}){
-	my ($link, $shared_path)=&RSAT::util::RelativePath($outfile{synthesis}, $outfile{matrix_synthesis});
+	my ($link, $shared_path) = &RSAT::util::RelativePath($outfile{synthesis}, $outfile{matrix_synthesis});
 	print $synthesis_general  "<td><a href='",$link,"'>", "report","</a></td>\n";
 	&RSAT::message::Debug("Indexing one file to general report",$matrix_name,"report",  $outfile{matrix_synthesis}, $link, $shared_path) if ($main::verbose >= 5);
     } else {

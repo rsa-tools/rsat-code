@@ -1,13 +1,17 @@
 ################################################################
 ## This makefile contains some targets to download genome seqs and
-## annotations from ensemblgenome FTP site, parseand install them
-## Jacques Van Helden, Bruno Contreras Moreira
+## annotations from ensemblgenome FTP site, parse and install them
+##
+## Authors:
+##   Bruno Contreras Moreira <bcontreras@eead.csic.es>
+##   Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## Currently does not work for Bacteria besides Ecoli K12, as these 
-## are further grouped by collections, and hence stored in 
-## bacteria_NN_collection subfolders. However, the species_EnsemblBacteria.txt
-## lists all available genomes and the collection they belong to. (BCM)
+## Currently does not work for Bacteria besides Ecoli K12 and for most
+## Fungi, as these are further grouped by collections, and hence
+## stored in bacteria_NN_collection subfolders. However, the
+## species_EnsemblBacteria.txt lists all available genomes and the
+## collection they belong to. (BCM)
 ## 
 ## Does not work for the main ensembl ftp site, because there is no
 ## organism table as in ensemblgenomes. I (JvH) need to contact Stain
@@ -21,10 +25,33 @@ MAKEFILE=${RSAT}/makefiles/ensemblgenomes_FTP_client.mk
 V=2
 
 ################################################################
-## Should be set in env var {ORG_GROUP} ?
-
 ## GROUP=Plants I moved this variable to RSAT_config.mk, since it depends on the server;
 GROUP_LC=$(shell echo $(GROUP) | tr A-Z a-z)
+ifeq ($(GROUP),Fungi)
+  ## For Fungal genomes, we have to extract the collection (sub-folder
+  ## of the ftp site) from the organism table.
+  COLLECTION_FROM_TABLE=`awk -F'\t' '$$2 =="${SPECIES}" {print $$13}' ${ORGANISM_TABLE} | perl -pe 's|_core_${RELEASE}_.*||'`
+
+  ## Trick: some Fungi are in the root folder rather than in a
+  ## collection sub-folder.  These species however have a collection
+  ## field in the species table, but its value equals the species
+  ## name.
+  ifeq (${COLLECTION_FROM_TABLE}, ${SPECIES})
+    COLLECTION=TRICK
+  else 
+    COLLECTION=${COLLECTION_FROM_TABLE}
+  endif
+
+else ifeq ($(GROUP),Bacteria)
+  ## For Fungal genomes, we have to extract the collection (sub-folder
+  ## of the ftp site) from the organism table.
+  COLLECTION_FROM_TABLE=`awk -F'\t' '$$2 =="${SPECIES}" {print $$13}' ${ORGANISM_TABLE} | perl -pe 's|_core_${RELEASE}_.*||'`
+  COLLECTION=${COLLECTION_FROM_TABLE}
+else
+  COLLECTION=
+endif
+
+
 RELEASE=${ENSEMBLGENOMES_BRANCH}
 # should be set in RSAT_config.props
 SERVER_URL=ftp://ftp.ensemblgenomes.org/pub/${GROUP_LC}
@@ -33,8 +60,8 @@ DATABASE=${SERVER_URL}/release-${RELEASE}
 #name preffix hard-coded, might change in future
 SERVERLIST=${DATABASE}/species_Ensembl${GROUP}.txt
 
-ORGANISMS_DIR=${RSAT}/data/ensemblgenomes/${GROUP_LC}/release-${RELEASE}
-ORGANISMS_LIST=${ORGANISMS_DIR}/species_Ensembl${GROUP}.txt
+ORGANISM_DIR=${RSAT}/data/ensemblgenomes/${GROUP_LC}/release-${RELEASE}
+ORGANISM_TABLE=${ORGANISM_DIR}/species_Ensembl${GROUP}.txt
 ## SPECIES=arabidopsis_thaliana ## The default species is coupled to the group specificity of the server -> I (JvH) move it to RSAT_config.mk
 
 ## Note (JvH 2015-11-06) I change SPECIES DIR to directly download
@@ -42,7 +69,7 @@ ORGANISMS_LIST=${ORGANISMS_DIR}/species_Ensembl${GROUP}.txt
 ## purposes.
 SPECIES_UCFIRST=$(shell perl -e 'print ucfirst ${SPECIES}')
 SPECIES_RSAT_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}.${RELEASE}
-# SPECIES_DIR=${ORGANISMS_DIR}/${SPECIES}
+# SPECIES_DIR=${ORGANISM_DIR}/${SPECIES}
 SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID}
 GENOME_DIR=${SPECIES_DIR}/genome
 
@@ -50,30 +77,35 @@ GENOME_DIR=${SPECIES_DIR}/genome
 ## Get all supported organisms in an ensemblgenome release and store them 
 organisms:
 	@echo
-	@mkdir -p ${ORGANISMS_DIR}
+	@mkdir -p ${ORGANISM_DIR}
 	@echo "Getting list of organisms from ${DATABASE}"
-	@echo "	${ORGANISMS_DIR}"
-	@wget -Ncnv ${SERVERLIST} -P ${ORGANISMS_DIR}
+	@echo "	${ORGANISM_DIR}"
+	@wget -Ncnv ${SERVERLIST} -P ${ORGANISM_DIR}
 	@echo
-	@echo "	${ORGANISMS_LIST}"
+	@echo "	${ORGANISM_TABLE}"
 
 list_param:
 	@echo
 	@echo "Parameters"
 	@echo "	GROUP   		${GROUP} (${GROUP_LC})"
-	@echo "	SPECIES			${SPECIES} (${SPECIES_UCFIRST})"
+	@echo "	SPECIES			${SPECIES}"
+	@echo "	SPECIES_UCFIRST		${SPECIES_UCFIRST}"
 	@echo "	TAXON_ID 		${TAXON_ID}"
 	@echo "	ASSEMBLY_ID 		${ASSEMBLY_ID}"
 	@echo "	RELEASE 		${RELEASE}"
 	@echo "	SPECIES_RSAT_ID		${SPECIES_RSAT_ID}"
 	@echo "Files to download"
+	@echo "	DOWNLOAD_TASKS		${DOWNLOAD_TASKS}"
+	@echo "	COLLECTION_FROM_TABLE	${COLLECTION_FROM_TABLE}"
+	@echo "	COLLECTION		${COLLECTION}"
 	@echo "	GTF_FTP_URL		${GTF_FTP_URL}"
 	@echo "	FASTA_RAW_FTP_URL	${FASTA_RAW_FTP_URL}"
 	@echo "	FASTA_MSK_FTP_URL	${FASTA_MSK_FTP_URL}"
 	@echo "	FASTA_PEP_FTP_URL	${FASTA_PEP_FTP_URL}"
 	@echo "	SERVER_COMPARA_FILE	${SERVER_COMPARA_FILE}"
 	@echo "LOCAL_FILES"
-	@echo "	ORGANISMS_DIR		${ORGANISMS_DIR}"
+	@echo "	ORGANISM_DIR		${ORGANISM_DIR}"
+	@echo "	ORGANISM_TABLE		${ORGANISM_TABLE}"
 	@echo "	SPECIES_DIR		${SPECIES_DIR}"
 	@echo "	GENOME_DIR		${GENOME_DIR}"
 	@echo "	PARSE_DIR		${PARSE_DIR}"
@@ -90,17 +122,17 @@ list_param:
 
 ################################################################
 ## Download required files for all organisms
-ALL_SPECIES=$(shell cut -f 2 ${ORGANISMS_LIST} | grep -v '^species')
+ALL_SPECIES=$(shell cut -f 2 ${ORGANISM_TABLE} | grep -v '^species')
 list_all_species:
 	@echo 
-	@echo "All species from ${ORGANISMS_LIST}"
+	@echo "All species from ${ORGANISM_TABLE}"
 	@echo ${ALL_SPECIES} | perl -pe 's/\s+/\n/g' |add-linenb -before
 
 
-COLLECTION=
 ORG_TASKS=organisms
 DOWNLOAD_TASKS=download_gtf download_fasta gunzip_downloads 
-INSTALL_TASKS=install_from_gtf init_getfasta install_go_annotations
+#INSTALL_TASKS=install_from_gtf index_fasta_downloads install_go_annotations
+INSTALL_TASKS=install_from_gtf index_fasta_downloads
 COMPARA_TASKS=organisms download_compara parse_compara install_compara
 # not used
 #ALL_TASKS=${ORG_TASKS} ${DOWNLOAD_TASKS} ${INSTALL_TASKS} ${COMPARA_TASKS}
@@ -164,9 +196,14 @@ download_gtf:
 	@echo "	GENOME_DIR	${GENOME_DIR}"
 	@echo "	GTF_FTP_URL	${GTF_FTP_URL}"
 #	@wget -Ncnv ${GTF_FTP_URL} -P ${GENOME_DIR}
-	@wget -cnv ${GTF_FTP_URL} -O ${GTF_LOCAL_GZ}
-	@echo
-	@ls -1 ${GENOME_DIR}/*.gtf.gz
+#	@wget -cnv ${GTF_FTP_URL} -O ${GTF_LOCAL_GZ}
+	@if test -s ${GTF_LOCAL}; then \
+		echo "	Uncompressed file exists; skipping	${GTF_LOCAL}"; \
+	else \
+		wget -cnv ${GTF_FTP_URL} -O ${GTF_LOCAL_GZ} ; \
+		echo; \
+		ls -1 ${GENOME_DIR}/*.gtf.gz; \
+	fi
 
 ################################################################
 ## Download FASTA files with genomic sequences (raw and masked)
@@ -199,23 +236,40 @@ GTF_LOCAL_GZ=${GTF_LOCAL}.gz
 download_fasta:
 	@echo
 	@mkdir -p ${GENOME_DIR}
-	@echo "Downloading raw FASTA genome for species ${SPECIES}"
 	@echo "	GENOME_DIR	${GENOME_DIR}"
-	@wget -cnv ${FASTA_RAW_FTP_URL} -O ${FASTA_RAW_LOCAL_GZ}
-	@echo "	FASTA_RAW_LOCAL_GZ	${FASTA_RAW_LOCAL_GZ}"
+	@echo
+	@echo "Downloading raw FASTA genome for species ${SPECIES}"
+	@if test -s ${FASTA_RAW_LOCAL}; then \
+		echo "	Uncompressed file exists; skipping	${FASTA_RAW_LOCAL}"; \
+	else \
+		wget -cnv ${FASTA_RAW_FTP_URL} -O ${FASTA_RAW_LOCAL_GZ}; \
+		echo "	FASTA_RAW_LOCAL_GZ	${FASTA_RAW_LOCAL_GZ}"; \
+		echo "Removing previous fasta index file (.fai)"; \
+		echo "	${FASTA_RAW_LOCAL}.fai"; \
+		rm -f ${FASTA_RAW_LOCAL}.fai; \
+	fi
 	@echo
 	@echo "Downloading repeat-masked FASTA genome for species ${SPECIES}"
-	@wget -cnv ${FASTA_MSK_FTP_URL} -O ${FASTA_MSK_LOCAL_GZ}
-	@echo "	FASTA_MSK_LOCAL_GZ	${FASTA_MSK_LOCAL_GZ}"
+	@if test -s ${FASTA_MSK_LOCAL}; then \
+		echo "	Uncompressed file exists; skipping	${FASTA_MSK_LOCAL}"; \
+	else \
+		wget -cnv ${FASTA_MSK_FTP_URL} -O ${FASTA_MSK_LOCAL_GZ}; \
+		echo "	FASTA_MSK_LOCAL_GZ	${FASTA_MSK_LOCAL_GZ}"; \
+		echo "Removing previous fasta index file (.fai)"; \
+		echo "	${FASTA_MSK_LOCAL}.fai"; \
+		rm -f ${FASTA_MSK_LOCAL}.fai; \
+	fi
 	@echo
 	@echo "Downloading FASTA peptidic sequences for species ${SPECIES}"
-	@wget -cnv ${FASTA_PEP_FTP_URL} -O ${FASTA_PEP_LOCAL_GZ}
-	@echo "	FASTA_PEP_LOCAL_GZ	${FASTA_PEP_LOCAL_GZ}"
-	@echo
-	@echo "Removing previous bedtools index files"
-	@rm -f ${FASTA_RAW_LOCAL}.fai
-	@rm -f ${FASTA_MSK_LOCAL}.fai
-	@ls -1 ${GENOME_DIR}/*.fa.gz
+	@if test -s ${FASTA_PEP_LOCAL}; then \
+		echo "	Uncompressed file exists; skipping	${FASTA_PEP_LOCAL}"; \
+	else \
+		wget -cnv ${FASTA_PEP_FTP_URL} -O ${FASTA_PEP_LOCAL_GZ}; \
+		echo "	FASTA_PEP_LOCAL_GZ	${FASTA_PEP_LOCAL_GZ}"; \
+		echo "Removing previous fasta index file (.fai)"; \
+		echo "	${FASTA_PEP_LOCAL}.fai"; \
+		rm -f ${FASTA_PEP_LOCAL}.fai; \
+	fi
 
 
 ################################################################
@@ -230,12 +284,12 @@ check_sequences:
 SERVER_COMPARA_FILE=${DATABASE}/tsv/ensembl-compara/Compara.homologies.${RELEASE}.tsv.gz
 download_compara:
 	@echo
-	@mkdir -p ${ORGANISMS_DIR}
+	@mkdir -p ${ORGANISM_DIR}
 	@echo "Downloading COMPARA file of ${GROUP}"
 	@echo "	${SERVER_COMPARA_FILE}"
-	@wget -Ncnv ${SERVER_COMPARA_FILE} -P ${ORGANISMS_DIR}
+	@wget -Ncnv ${SERVER_COMPARA_FILE} -P ${ORGANISM_DIR}
 	@echo
-	@ls -1 ${ORGANISMS_DIR}/Compara.homologies*gz
+	@ls -1 ${ORGANISM_DIR}/Compara.homologies*gz
 
 ##################################################################
 ## Download GO ontology file and parse it for server use
@@ -259,7 +313,7 @@ install_go_annotations:
 	@mkdir -p ${GO_ANNOT_DIR}
 	@echo "Downloading GO annotations of ${SPECIES}" 
 	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
-		-release ${RELEASE}	-list ${ORGANISMS_LIST-}
+		-release ${RELEASE}	-list ${ORGANISM_TABLE-}
 	@echo "Expanding GO annotations of ${SPECIES}" 
 	@rm -f ${GO_ANNOT_LINK}
 	@ln -s ${GO_ANNOT_FILE} ${GO_ANNOT_LINK}
@@ -282,8 +336,8 @@ install_go_annotations:
 ##
 ## Each species installation will be executed as a job for the
 ## cluster.
-TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 4)
-ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISMS_LIST} | cut -f 5)
+TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 4)
+ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 5)
 PARSE_DIR=${GENOME_DIR}
 PARSE_TASK=all
 GTF_SOURCE=ensemblgenomes
@@ -316,24 +370,33 @@ parse_gtf_test:
 	retrieve-seq -org ${SPECIES_RSAT_ID} -from 0 -to 3 -feattype gene | oligo-analysis -v 1 -l 3 -return occ,freq -sort 
 
 ###############################################################
-## Uncompress GFT and genomic fasta files for beedtools
+## Uncompress GTF and genomic fasta files for beedtools
 gunzip_downloads:
 	@echo
-	@echo "Uncompressing the downloaded GFT and fasta files."
-	@if [ ${GTF_LOCAL_GZ} ]; then echo "	${GTF_LOCAL_GZ}"; gunzip -f ${GTF_LOCAL_GZ}; else echo "missing GTF_LOCAL_GZ ${GTF_LOCAL_GZ}"; fi;
-	@if [ ${FASTA_RAW_LOCAL_GZ} ]; then echo "	${FASTA_RAW_LOCAL_GZ}"; gunzip -f ${FASTA_RAW_LOCAL_GZ}; else echo "missing FASTA_RAW_LOCAL_GZ ${FASTA_RAW_LOCAL_GZ}"; fi;
-	@if [ ${FASTA_MSK_LOCAL_GZ} ]; then echo "	${FASTA_MSK_LOCAL_GZ}"; gunzip -f ${FASTA_MSK_LOCAL_GZ}; else echo "missing FASTA_MSK_LOCAL_GZ ${FASTA_MSK_LOCAL_GZ}"; fi;
-	@if [ ${FASTA_PEP_LOCAL_GZ} ]; then echo "	${FASTA_PEP_LOCAL_GZ}"; gunzip -f ${FASTA_PEP_LOCAL_GZ}; else echo "missing FASTA_PEP_LOCAL_GZ ${FASTA_PEP_LOCAL_GZ}"; fi;
+	@echo "Uncompressing the downloaded GTF and fasta files."
+	@if test -s ${GTF_LOCAL_GZ}; then echo "	${GTF_LOCAL_GZ}"; gunzip -qf ${GTF_LOCAL_GZ}; else echo "	skipping GTF_LOCAL_GZ ${GTF_LOCAL_GZ}"; fi;
+	@if test -s ${FASTA_RAW_LOCAL_GZ}; then echo "	${FASTA_RAW_LOCAL_GZ}"; gunzip -qf ${FASTA_RAW_LOCAL_GZ}; else echo "	skipping FASTA_RAW_LOCAL_GZ ${FASTA_RAW_LOCAL_GZ}"; fi;
+	@if test -s ${FASTA_MSK_LOCAL_GZ}; then echo "	${FASTA_MSK_LOCAL_GZ}"; gunzip -qf ${FASTA_MSK_LOCAL_GZ}; else echo "	skipping FASTA_MSK_LOCAL_GZ ${FASTA_MSK_LOCAL_GZ}"; fi;
+	@if test -s ${FASTA_PEP_LOCAL_GZ}; then echo "	${FASTA_PEP_LOCAL_GZ}"; gunzip -qf ${FASTA_PEP_LOCAL_GZ}; else echo "	skipping FASTA_PEP_LOCAL_GZ ${FASTA_PEP_LOCAL_GZ}"; fi;
 
 ###############################################################
-## (Re)compress GFT and genomic fasta files for beedtools
+## Index fasta files for beedtools
+index_fasta_downloads:
+	@echo
+	@echo "Indexing the downloaded fasta files."
+	@if test -s ${FASTA_RAW_LOCAL}; then echo "	${FASTA_RAW_LOCAL}.fai"; samtools faidx ${FASTA_RAW_LOCAL}; else echo "	missing FASTA_RAW_LOCAL ${FASTA_RAW_LOCAL}"; fi;
+	@if test -s ${FASTA_MSK_LOCAL}; then echo "	${FASTA_MSK_LOCAL}.fai"; samtools faidx ${FASTA_MSK_LOCAL}; else echo "	missing FASTA_MSK_LOCAL ${FASTA_MSK_LOCAL}"; fi;
+	@if test -s ${FASTA_PEP_LOCAL}; then echo "	${FASTA_PEP_LOCAL}.fai"; samtools faidx ${FASTA_PEP_LOCAL}; else echo "	missing FASTA_PEP_LOCAL ${FASTA_PEP_LOCAL}"; fi;
+
+###############################################################
+## (Re)compress GTF and genomic fasta files for beedtools
 gzip_downloads:
 	@echo
-	@echo "(Re)compressing the downloaded GFT and fasta files."
-	@if [ ${GTF_LOCAL} ]; then echo "	${GTF_LOCAL}"; gzip -f ${GTF_LOCAL}; else echo "missing GTF_LOCAL ${GTF_LOCAL}"; fi;
-	@if [ ${FASTA_RAW_LOCAL} ]; then echo "	${FASTA_RAW_LOCAL}"; gzip -f ${FASTA_RAW_LOCAL}; else echo "missing FASTA_RAW_LOCAL ${FASTA_RAW_LOCAL}"; fi;
-	@if [ ${FASTA_MSK_LOCAL} ]; then echo "	${FASTA_MSK_LOCAL}"; gzip -f ${FASTA_MSK_LOCAL}; else echo "missing FASTA_MSK_LOCAL ${FASTA_MSK_LOCAL}"; fi;
-	@if [ ${FASTA_PEP_LOCAL} ]; then echo "	${FASTA_PEP_LOCAL}"; gzip -f ${FASTA_PEP_LOCAL}; else echo "missing FASTA_PEP_LOCAL ${FASTA_PEP_LOCAL}"; fi;
+	@echo "(Re)compressing the downloaded GTF and fasta files."
+	@if test -s ${GTF_LOCAL}; then echo "	${GTF_LOCAL}"; gzip -f ${GTF_LOCAL}; else echo "	skipping GTF_LOCAL ${GTF_LOCAL}"; fi;
+	@if test -s ${FASTA_RAW_LOCAL}; then echo "	${FASTA_RAW_LOCAL}"; gzip -f ${FASTA_RAW_LOCAL}; else echo "	skipping FASTA_RAW_LOCAL ${FASTA_RAW_LOCAL}"; fi;
+	@if test -s ${FASTA_MSK_LOCAL}; then echo "	${FASTA_MSK_LOCAL}"; gzip -f ${FASTA_MSK_LOCAL}; else echo "	skipping FASTA_MSK_LOCAL ${FASTA_MSK_LOCAL}"; fi;
+	@if test -s ${FASTA_PEP_LOCAL}; then echo "	${FASTA_PEP_LOCAL}"; gzip -f ${FASTA_PEP_LOCAL}; else echo "	skipping FASTA_PEP_LOCAL ${FASTA_PEP_LOCAL}"; fi;
 
 ################################################################
 ## Initialize the fasta indexes for bedtools getfasta.
@@ -362,7 +425,8 @@ install_thaliana:
 
 ## Saccharomyces cerevisiae (Fungus)
 install_yeast:
-	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae COLLECTION= ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+
 
 ## Mus musculus (Metazoa)
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -385,6 +449,7 @@ install_ecoli:
 	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655 \
 		COLLECTION=bacteria_0_collection ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
+
 ## Pseudomonas aeruginosa (Bacteria)
 #install_pao1:
 #	${MAKE} GROUP=Bacteria SPECIES=pseudomonas_aeruginosa_pao1_ve13 \
@@ -397,14 +462,14 @@ install_bsub:
 
 ##################################################################
 ## Parse Compara.homologies 
-CMP_GZ=$(shell ls -1 ${ORGANISMS_DIR}/Compara.homologies*.gz)
-BDB_FILE=${ORGANISMS_DIR}/compara.bdb
-BDB_LOG=${ORGANISMS_DIR}/compara.log
+CMP_GZ=$(shell ls -1 ${ORGANISM_DIR}/Compara.homologies*.gz)
+BDB_FILE=${ORGANISM_DIR}/compara.bdb
+BDB_LOG=${ORGANISM_DIR}/compara.log
 parse_compara:
 	@echo
 	@echo "Parsing Compara file ${CMP_GZ}"
 	@echo
-	@parse-compara -i ${CMP_GZ} -list ${ORGANISMS_LIST} -release ${RELEASE} \
+	@parse-compara -i ${CMP_GZ} -list ${ORGANISM_TABLE} -release ${RELEASE} \
 		-o ${BDB_FILE} -log ${BDB_LOG} -v ${V}
 
 #################################################################
@@ -435,7 +500,7 @@ clean_compara:
 clean_all:
 	@echo
 	@echo "Deleting ensemblgenomes release ${RELEASE}" 
-	@[[ -d ${ORGANISMS_DIR} ]] && rm -rf ${ORGANISMS_DIR}
+	@[[ -d ${ORGANISM_DIR} ]] && rm -rf ${ORGANISM_DIR}
 	@echo	
 
 clean:

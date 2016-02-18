@@ -510,6 +510,9 @@ sub MultiGetInputFile {
 
 #    my $in_kb = sprintf("%d", length($in)/1000);
 
+  } elsif ($query->param('input_file')) {
+    $input_file = $query->param('input_file');
+
     ### Read input from the textarea "input"
   } elsif ($query->param('input'.$in_num) =~ /\S/) {
     if (open IN, ">$input_file") {
