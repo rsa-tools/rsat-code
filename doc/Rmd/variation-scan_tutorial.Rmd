@@ -1,0 +1,101 @@
+---
+title: "Detecting regulatory variations"
+author: "Alejandra Medina-Rivera & Jacques van Helden"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    fig_caption: yes
+    highlight: zenburn
+    theme: cerulean
+    toc: yes
+    toc_depth: 3
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+    toc: yes
+    toc_depth: 3
+  word_document: default
+---
+
+
+
+```{r knitr setup, include=FALSE,  eval=TRUE, echo=FALSE, warning=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo=FALSE, eval=TRUE, cache=FALSE, message=FALSE, warning=FALSE, comment = "")
+```
+
+
+## Study case
+
+As study case, we will look for putative regulatory variants in a restricted region of the genome, consisting of cis-regulatory modules conserved in 5 Mammalian species (Human, macaque, rat, mouse, dog), detected by ChIP-seq experiments with 4 different transcription  factors: HFN4$\alpha$, HNF6, CBP$\alpha$, FOXA1. 
+
+We will successively use the following tools. 
+
+
+1. ***variation-info***: collect all variations overlapping a set of genomic regions (in our case, the bed file describing the coordinates of the conserved enhancers).
+
+2. 
+
+## Query file: bed coordinates
+
+
+```{r echo=FALSE}
+library(knitr)
+rsat <- Sys.getenv("RSAT")
+
+
+crms.bp.prefix <- file.path(rsat, "public_html/demo_files/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19")
+
+## Genomic coordinates of the conserved CRMs (bed file)
+crms.bp.bed <- paste(sep="", crms.bp.prefix, ".bed")
+crms.bp <- read.delim(crms.bp.bed, header=FALSE)
+names(crms.bp) <- c("chr", "start", "end")
+kable(head(crms.bp), caption = "**Table 1.** Top rows of the bed file describing the genomic coordinates of the conserved CMRs, which is used as input to select variations of interest.")
+
+```
+
+
+
+
+## ***variation-info***: getting variations for a set of genomic regions
+
+
+### Web site
+
+1. Open a connection to <http://metazoa.rsat.eu/>.
+2. In the toolset **Genetic variations**, click **Variation information**. 
+3. Click on the button "DEMO2: by regions"^[Beware, this demo takes some times because it collects information for 1600 genomic region].
+4. Click **GO**.
+
+### Command-line
+
+If you dispose of a login on an RSAT server, the same demo can be run on the command line. 
+
+```
+## Run the command-line demo
+make -f makefiles/variation-scan_demo.mk  varinfo_from_bed_regions
+
+## Detailed command executed by the demo
+variation-info -v 2 -species Homo_sapiens \
+   -e_version 75 \
+   -a_version GRCh37   \
+   -i ${RSAT}/public_html/demo_files/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.bed \
+   -format bed \
+   -o results/variation_scan_demo/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.varBed
+
+```
+
+### Expected results
+
+```{r}
+
+crms.bp.varBed <- paste(sep="", crms.bp.prefix, ".varBed")
+crms.bp.var <- read.delim(crms.bp.varBed, header=1)
+names(crms.bp.var)[1] <- "chr"
+kable(head(crms.bp.var), caption = "**Table 2.** Variations overlapping with the conserved CMRs. ")
+
+```
+
+* * * * * * *
+
+## Notes

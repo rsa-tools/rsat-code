@@ -50,7 +50,12 @@ variation_stats:
 	@echo "	ORG		${ORG}"	
 	@echo "	VARIATION_DIR	${VARIATION_DIR}"
 	@echo "Computing number of lines per contig (this can take time)"
-	@wc -l ${VARIATION_DIR}/*.varBed | sort -n
+	@wc -l ${VARIATION_DIR}/*.varbed | sort -n
+
+
+## Create result directory
+mk_result_dir:
+	@mkdir -p ${RESULT_DIR}
 
 ################################################################
 ## Convert variations from VCF (variation X file) format into the
@@ -58,16 +63,15 @@ variation_stats:
 RESULT_DIR=results/variation_scan_demo
 VARIANT_FORMAT_IN=vcf
 DEMO_VARIANTS=${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}
-VARIANT_FORMAT_OUT=varBed
+VARIANT_FORMAT_OUT=varbed
 CONVERT_VAR_CMD=convert-variations \
 	-i ${DEMO_VARIANTS}  \
 	-e_version ${ENSEMBL_VERSION} \
 	-v ${V} -from ${VARIANT_FORMAT_IN} -to ${VARIANT_FORMAT_OUT} \
 	-o ${RESULT_DIR}/${VARIANTS}.${VARIANT_FORMAT_OUT}
-convert_var:
+convert_var: mk_result_dir
 	@echo ""
 	@echo "Converting variations from ${VARIANT_FORMAT_IN} to ${VARIANT_FORMAT_OUT}"
-	@mkdir -p ${RESULT_DIR}
 	@echo "${CONVERT_VAR_CMD}"
 	@${CONVERT_VAR_CMD}
 	@echo "Converted variation file"
@@ -91,18 +95,18 @@ VAR_INFO_CMD=variation-info -v ${V}\
 VAR_INFO_BED_CMD=${VAR_INFO_CMD} \
 	-i ${BED_VARIANTS} \
 	-format bed \
-	-o ${VAR_FROM_BED_OUT}.varBed
+	-o ${VAR_FROM_BED_OUT}.varbed
 
 VAR_INFO_ID_CMD=${VAR_INFO_CMD} \
 	-i ${VARIANT_IDS} \
 	-format id \
-	-o ${VAR_FROM_ID_OUT}.varBed
+	-o ${VAR_FROM_ID_OUT}.varbed
 
 
 ## Get the variations that overlap a set of genomic regions specificed
 ## in a BED file. In this example we use a set of peaks from Ballester
 ## et al., 2010.
-varinfo_from_bed_regions:
+varinfo_from_bed_regions: mk_result_dir
 	@echo ""
 	@echo "Getting variation information from genomic region (input bed file)."
 	@echo "BED_VARIANTS	${BED_VARIANTS}"
@@ -110,11 +114,11 @@ varinfo_from_bed_regions:
 	@${VAR_INFO_BED_CMD}
 	@echo "${DATE}	Collected variations from bed file";
 	@echo "Output file: "
-	@wc -l ${VAR_FROM_BED_OUT}.varBed
+	@wc -l ${VAR_FROM_BED_OUT}.varbed
 
 
 ## Get variations from a list of user-specified IDs.
-varinfo_from_ids:
+varinfo_from_ids: mk_result_dir
 	@echo ""
 	@echo "Getting variation information from variant IDs"
 	@echo "VARIANT_IDS	${VARIANT_IDS}"
@@ -122,7 +126,7 @@ varinfo_from_ids:
 	@${VAR_INFO_ID_CMD}
 	@echo "${DATE}	Collected variations from ID file";
 	@echo "Output file: "
-	@wc -l ${VAR_FROM_ID_OUT}.varBed
+	@wc -l ${VAR_FROM_ID_OUT}.varbed
 
 
 
@@ -131,7 +135,7 @@ varinfo_from_ids:
 
 ## The retrieve-var command can be used in various modalities:
 ##
-## (1) provide a varBed file, which contains a description of one
+## (1) provide a varbed file, which contains a description of one
 ## variation per row.
 ##
 ## (2) specifying genomic regions in a bed file. The program starts by
@@ -140,7 +144,7 @@ varinfo_from_ids:
 ##
 ## (3) a list of variant identifiers provided in a text file (with one
 ## ID per row). The program then extracts the information about each
-## specified variation (varBed info) and then their sequences.
+## specified variation (varbed info) and then their sequences.
 ##
 ## RETRIEVE_VAR_CMD is the common part of the command, we then
 ## specified the modality-specific parameters: 
@@ -153,17 +157,17 @@ RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	${SPECIES_SUFFIX_OPT} 
 
 RETRIEVE_VAR_CMD_VARBED=${RETRIEVE_VAR_CMD} \
-	-i ${RESULT_DIR}/${VARIANTS}.varBed \
-	-mml 30 -format varBed \
-	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq
-retrieve_varseq_from_varbed:
+	-i ${RESULT_DIR}/${VARIANTS}.varbed \
+	-mml 30 -format varbed \
+	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq
+retrieve_varseq_from_varbed: mk_result_dir
 	@echo ""
 	@echo "Retrieving variation sequences from variation info file"
-	@echo "Input file	${RESULT_DIR}/${VARIANTS}.varBed"
+	@echo "Input file	${RESULT_DIR}/${VARIANTS}.varbed"
 	@echo "${RETRIEVE_VAR_CMD_VARBED}"
 	@${RETRIEVE_VAR_CMD_VARBED}
 	@echo "Out file"
-	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq"
+	@echo "	${RESULT_DIR}/${VARIANTS}_rsat_var.varseq"
 
 
 ## Retrieve sequences of the variations that overlap a set of genomic
@@ -171,14 +175,14 @@ retrieve_varseq_from_varbed:
 RETRIEVE_VAR_CMD_BED=${RETRIEVE_VAR_CMD} \
 	-i  ${BED_VARIANTS}\
 	-mml 30 -format bed \
-	-o ${VAR_FROM_BED_OUT}.varSeq
-retrieve_var_bed:
+	-o ${VAR_FROM_BED_OUT}.varseq
+retrieve_var_bed: mk_result_dir
 	@echo "${RETRIEVE_VAR_CMD_BED}"
 	@${RETRIEVE_VAR_CMD_BED}
 	@echo "Out file"
-	@echo "${VAR_FROM_BED_OUT}.varSeq"
+	@echo "${VAR_FROM_BED_OUT}.varseq"
 	@echo "Counting number of alleles per variation"
-	@grep -v '^;' ${VAR_FROM_BED_OUT}.varSeq | grep -v '^\#' \
+	@grep -v '^;' ${VAR_FROM_BED_OUT}.varseq | grep -v '^\#' \
 		| cut -f 5 | sort | uniq -c | sort -k 1 -n \
 		| classfreq -v 1 -ci 1 -col 1 \
 		>  ${VAR_FROM_BED_OUT}_alleles_per_variant.tab
@@ -188,12 +192,12 @@ retrieve_var_bed:
 RETRIEVE_VAR_CMD_ID=${RETRIEVE_VAR_CMD} \
 	-i  ${VARIANT_IDS} \
 	-mml 30 -format id \
-	-o ${VAR_FROM_ID_OUT}.varSeq
-retrieve_var_id:
+	-o ${VAR_FROM_ID_OUT}.varseq
+retrieve_var_id: mk_result_dir
 	@echo "${RETRIEVE_VAR_CMD_ID}"
 	@${RETRIEVE_VAR_CMD_ID}
 	@echo "Out file"
-	@echo "	${VAR_FROM_ID_OUT}.varSeq"
+	@echo "	${VAR_FROM_ID_OUT}.varseq"
 
 
 ################################################################
@@ -203,12 +207,12 @@ PVAL_RATIO=10
 BG_MODEL=public_html/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol
 VARSCAN_RES=${RESULT_DIR}/${VARIANTS}_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
 VARSCAN_CMD=variation-scan -v ${V} \
-	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.varSeq \
+	-i ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq \
 	-m ${MATRIX} -bg ${BG_MODEL} \
 	-uth pval ${PVAL} \
 	-lth pval_ratio ${PVAL_RATIO} \
 	-o ${VARSCAN_RES}.tab
-variation_scan:
+variation_scan: mk_result_dir
 	@echo "${VARSCAN_CMD}"
 	@${VARSCAN_CMD}
 	@echo "Output file"
@@ -218,7 +222,7 @@ variation_scan:
 ## Scan variation with all motifs in JASPAR core vertebrate database
 ## (~200 motifs)
 VARSCAN_RES_JASPAR=${RESULT_DIR}/${VARIANTS}_vs_JASPAR_rsat_var_scan_pval${PVAL}_pvalratio${PVAL_RATIO}
-scan_variations_with_jaspar:
+scan_variations_with_jaspar: mk_result_dir
 	@echo ""
 	@echo "Scanning variations with all motifs from JASPAR core vertebrate"
 	@${MAKE} variation_scan \
@@ -229,7 +233,7 @@ scan_variations_with_jaspar:
 ## Scan variations from Weireauch et al. (Cell., 2014) with Jaspar core Vertebrates
 WEIRAUCH_VARSEQ=public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.var-seq
 WEIRAUCH_JASPAR=${RESULT_DIR}/varscan_weirauch-snps_vs_JASPAR_pval${PVAL}_pvalratio${PVAL_RATIO}
-varscan_weireauch_with_jaspar:
+varscan_weireauch_with_jaspar: mk_result_dir
 	@echo ""
 	@echo "Scanning variations with all motifs from JASPAR core vertebrate"
 	@variation-scan  -v ${V} \
@@ -250,7 +254,7 @@ varscan_weireauch_with_jaspar:
 
 ## Scan variations from Weireauch et al. (Cell., 2014) with Cisbp core Vertebrates
 WEIRAUCH_CISBP=${RESULT_DIR}/varscan_weirauch-snps_vs_cisBP_pval${PVAL}_pvalratio${PVAL_RATIO}
-varscan_weireauch_with_cisbp:
+varscan_weireauch_with_cisbp: mk_result_dir
 	@echo ""
 	@echo "Scanning variations with all motifs from CISBP core vertebrate"
 	@variation-scan  -v ${V} \
@@ -278,7 +282,7 @@ varscan_weireauch_with_cisbp:
 COMPA=${RESULT_DIR}/regvar_comparisons_weinrauch
 WEINRAUCH_CISBP=${RESULT_DIR}/weirauch-snps_cisbp
 WEINRAUCH_HAPLOREG=${RESULT_DIR}/weirauch-snps_haploreg
-compare_regvar:
+compare_regvar: mk_result_dir
 	compare-reg-var -v ${V} \
 		-file weinrauch_jaspar ${WEIRAUCH_JASPAR}.tab \
 		-file weinrauch_jaspar2 ${WEIRAUCH_JASPAR}.tab \
@@ -306,11 +310,11 @@ CONVERT_VARSCAN_FROM_isRSNP_CMD=convert-varScan -i ${isRSNP_FILE} -from isRSNP -
 
 CONVERT_VARSCAN_FROM_varScan_CMD=convert-varScan -i ${VARSCAN_RES}.tab -to isRSNP -from varScan -o ${CONV_VARSCAN_RES}_from_varScan_to_isRSNP.tab
 
-convert_varScan_from_isRSNP_to_varScan:
+convert_varScan_from_isRSNP_to_varScan: mk_result_dir
 	@echo ${CONVERT_VARSCAN_FROM_isRSNP_CMD}
 	@${CONVERT_VARSCAN_FROM_isRSNP_CMD}
 
-convert_var_Scan_from_varScan_to_isRSNP:
+convert_var_Scan_from_varScan_to_isRSNP: mk_result_dir
 	@echo ${CONVERT_VARSCAN_FROM_varScan_CMD}
 	@${CONVERT_VARSCAN_FROM_varScan_CMD}
 

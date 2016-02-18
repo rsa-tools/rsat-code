@@ -25,7 +25,7 @@ void set_buffer(char *buffer, char *seq, int i, int l)
 }
 
 int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t *values, 
-            double threshold, int rc, pvalues_t *pvalues, int origin, char *matrix_name, int *scanned_pos, int first_hit)
+            double threshold, int rc, pvalues_t *pvalues, int origin, int offset, char *matrix_name, int *scanned_pos, int first_hit)
 {
     char buffer[256];
     int l = matrix.J;
@@ -55,6 +55,8 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
             a = i - seq->size / 2;
         else // end
             a = i - seq->size;
+
+        a = a - offset;
         b = a + l - 1;
 
         (*scanned_pos) += 1;
