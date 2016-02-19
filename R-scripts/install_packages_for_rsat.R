@@ -18,14 +18,15 @@ required.packages = c("devtools",
                       "dendextend",
                       "flux",
 		                  "gplots",
-		                  "RColorBrewer"
+		                  "RColorBrewer",
+                      "jpeg"
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
 )
 
 ## List of required packages from Bioconductor
-required.packages.bioconductor <- c("ctc", "amap")
+required.packages.bioconductor <- c("ctc", "amap", "qvalue")
 
 ## List of RSAT-specific packages to be compiled on the server
 required.packages.rsat <- c("TFBMclust")
