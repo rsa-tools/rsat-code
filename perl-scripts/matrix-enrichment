@@ -1,0 +1,859 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: template,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+template
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Template for writing new perl scripts.
+
+=head1 AUTHORS
+
+Jaime Castro <castro\@univ-amu.fr>
+
+Samuel Collombet <samuel.collombet\@ens.fr>
+
+Alejandra Medina-Rivera <amedina\@liigh.unam.mx>
+
+Morgane Thomas-Chollier <mthomas\@biologie.ens.fr>
+
+Jacques van Helden <Jacques.van-Helden\@univ-amu.fr>
+
+=head1 CATEGORY
+
+=over
+
+=item motif anlysis
+
+=back
+
+=head1 USAGE
+
+matrix-enrichment [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=over
+
+=item motifs
+
+See I<convert-matrix> for input format descriptions.
+
+=item Sequences
+
+See I<convert-seq> for input format descriptions.
+
+=item Background model
+
+The background model can be given as an input or can be calculated from input sequences.
+
+For background model file formats see I<convert-background-model>
+
+=back
+
+=head1 OUTPUTS
+
+=over
+
+=item maxNWD heatmap
+
+Maximal values from the NWD curves. NWD curves represent the difference between an empirical  and the theoretical score distributions.
+
+=item Binomial occurence significance curves
+
+A bonimial occurence significance curve represents the over-representation of predicted binding sites of all posible p-values of a given motif and sequence set.
+
+=back
+
+=head1 SEE ALSO
+
+matrix-quality
+
+matrix-distrib
+
+matrix-scan
+
+=head1 WISH LIST
+
+=over
+
+=item B<-bg_input>
+
+Calculate background model from input sequence sets.
+
+All given sequence sets will be merged to calculate this background model to keep distributions comparable.
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+use RSAT::MatrixReader;
+use Data::Dumper;
+use List::MoreUtils qw(uniq);
+
+
+
+################################################################
+## Main package
+package main;
+{
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  ## 
+  %main::supported_matrix_formats=&RSAT::MatrixReader::ListMatrixFormats();
+  $main::supported_matrix_formats=join (",", keys(%supported_matrix_formats));
+
+  ## Formats
+  $seq_format = "fasta";
+  $matrix_format="transfac";
+
+  ## R plots
+  my $r_plots=1;
+  $rplot_option="";
+  if ($r_plots==1) {
+      $main::rplot_option=" -r_plot ";
+  }
+  ## bginput
+  $main::bg_input="";
+  my @bg_input_options= ("by_seq", "all");
+
+  $main::infile{bg_file}="";
+  my %bg_files= (); ## Store processed bg_files
+
+  ## Markov order
+  $main::markov = 1;
+  $bg_model = new RSAT::MarkovModel();
+
+  ## Tasks
+  local @supported_tasks = ("all", ## Run all other tasks
+			    "export_matrix", ## Export the matrix and sites in various formats (tab, info, logos)
+			    "permute", ## Scan sequences with permuted matrices
+			    "theor", ## Calculate the theoretical distribution
+			    "scan", ## Scan sequences with matrix-scan
+			    "compare", ## Compare distributions between the various input files
+			    "graphs", ## Draw the graphs with distrib comparisons, pass to R
+			    "synthesis", ## Generate a HTML file with a synthetic report + links to all result files
+			    "clean", ## Clean temporary files
+      );
+  $supported_tasks = join (",", @supported_tasks);
+  local %supported_task = ();
+  foreach my $task (@supported_tasks) {
+      $supported_task{$task} = 1;
+  }
+  %task = (); ## Difine hash to contain user given tasks
+
+  %to_delete=();
+
+  $main::pseudo_counts=1;
+  
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+  
+  ################################################################
+  ## Check argument values
+
+  
+  ## If no tasks has been specified, execute them all
+  if (($task{all}) || (scalar(keys(%task))==0)) {
+      %task = %supported_task;
+      $task{all} = 0;
+  }
+  
+  ## Matrix file is mandatory
+  &RSAT::error::FatalError("You must define a matrix file, with the option -matrix")
+      unless ($main::infile{motifs});
+  
+  ## Output prefix is mandatory
+  &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
+      unless ($main::prefix{main});
+  
+  
+  ## Output prefix cannot end with a "/" (must be a file prefix, not a directory)
+  &RSAT::error::FatalError("Output prefix cannot end with a '/' (must be a file name, not a directory)") if  ($main::prefix{main} =~ /\/$/);
+  
+  ################################################################
+  ## Open main log 
+  $outfile{log} = $main::prefix{main}."_log.txt";
+
+  
+  ## Create main output directory if required
+  ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($main::prefix{main});
+  &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 2);
+  &RSAT::util::CheckOutDir($dir{output});
+
+
+   
+  ## ##############
+  ## Process background model options
+
+  &RSAT::error::FatalError("Specigy one Background model source") unless ($main::infile{bg_file} || $main::bg_input );
+  &RSAT::error::FatalError("Please select only one background model source") if ($main::infile{bg_file} && $main::bg_input );
+
+
+  ## Create/convert the specified background models
+  
+  ## Creat directory to store processed background model files
+  my $bg_dir = $dir{output}."/"."bg_files";
+  &RSAT::util::CheckOutDir($bg_dir);
+
+  
+  ## background by sequence
+  if ($main::bg_input eq "by_seq") {
+      &RSAT::message::TimeWarn("Calculating background model by sequence set", $bg_dir) if ($main::verbose >= 3);
+
+      foreach $seq (@main::seq_types){
+
+	  my $new_bg_file=$bg_dir."/" . $seq . "_bg_" . $main::markov . "_2str.inclusive";
+	  
+	  my $bg_comand=" $SCRIPTS/oligo-analysis -v 1 -quick -2str " ;
+	  $bg_comand.=" -i ".$main::seqfile{$seq}." -l ".$main::markov." -noov ";
+	  $bg_comand.=" | convert-background-model -from oligos -to inclusive ";
+	  $bg_comand.=" -o ".$new_bg_file;
+
+	  $bg_files{$seq} = $new_bg_file ;
+
+	  &doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	  &RSAT::message::TimeWarn("Background for sequence set", $seq, $new_bg_file) if ($main::verbose >= 3);
+	  
+      }
+      
+  } elsif ($main::bg_input eq "all") {
+      
+      ## Create one bg model from all input sequences
+      my $new_bg_file=$bg_dir."/all_sequences_bg_".$main::markov."_2str.inclusive";
+      my @seq_files=value( $main::seqfile );
+      
+      my $bg_comand = " cat ".join( " " , @seq_files ) . " | "; 
+      $bg_comand.= "$SCRIPTS/oligo-analysis -v 1 -quick -2str " ;
+      $bg_comand.= " -i ".$main::seqfile{$seq}." -l ".$main::markov." -noov ";
+      $bg_comand.= " | convert-background-model -from oligos -to inclusive ";
+      $bg_comand.= " -o ".$new_bg_file;
+
+      &doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
+
+      ## Define same bg file for all sequences
+      foreach $seq ( @main::seq_types ) {
+
+	  $bg_files{$seq} = $new_bg_file ;
+ 
+      }
+  }elsif ($main::infile{bg_file} ){
+  
+      
+      ## Define name of the converted bg file
+      #$outfile{bg_file_inclusive} = $dir{output};
+      $outfile{bg_file_inclusive} = $bg_dir ."/";
+      $outfile{bg_file_inclusive} .= &ShortFileName($infile{bg_file});
+      $outfile{bg_file_inclusive} =~ s|\.\w$||;
+      $outfile{bg_file_inclusive} .= "_inclusive.tab";
+      
+      
+      ## Convert BG file in inclusive format for matrix-scan-quick
+      my $bg_convert_cmd = $SCRIPTS."/convert-background-model";
+      $bg_convert_cmd .= " -i ".$infile{bg_file};
+      $bg_convert_cmd .= " -from ".$bg_format;
+      $bg_convert_cmd .= " -to inclusive";
+      $bg_convert_cmd .= " -o ".$outfile{bg_file_inclusive};
+      &doit($bg_convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::TimeWarn("Converted background model to inclusive format", $outfile{bg_file_inclusive}) if ($main::verbose >= 3);
+
+      ## Define same bg file for all sequences
+      foreach $seq ( @main::seq_types ) {
+	  
+	  $bg_files{$seq} = $new_bg_file ;
+ 
+      }
+      
+      #push @files_to_index, "bg_file_inclusive";
+      #&RSAT::message::Debug("Adding file to index ",  "bg_file_inclusive",   $outfile{bg_file_inclusive}) if ($main::verbose >= 10);
+      
+      ## From matrix-quality
+      ## Read background model to use for theoretical distribution
+      #    if ($main::infile{bg_file}){
+      ##$bg_model->load_from_file($main::outfile{bg_file_inclusive},"inclusive");
+      #    }
+      ##if (defined($main::bg_pseudo)) {
+      ##  $bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+      ##}
+  }
+
+  ## Export matrix realted files and matrix information into one table
+
+  
+  ## ##############################################################
+  ## Evaluate the enrichment of each matrix of the input file
+  my $m = 0; ## Matrix counter
+  my %matrix_index = (); ## %matrix_index indexes matrix numbers (value) as a function of matrix names (keys)
+
+  
+  ## If it is required, convert the input motif file in Transfac format
+  
+  if( $matrix_format eq "transfac" || $matrix_format eq "tf") {
+      
+      $main::outfile{motifs_transfac} = $main::infile{motifs} ;
+
+      } else {
+	  
+	  &RSAT::message::TimeWarn("Converting input matrices to Tansfac format") if ($main::verbose >= 3);
+	  $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+	  $convert_matrix_cmd .= " -i ".$main::infile{motifs};
+	  $convert_matrix_cmd .= " -from tf";
+	  $convert_matrix_cmd .= " -to transfac";
+	  $convert_matrix_cmd .= " -o ".$main::outfile{motifs_transfac};
+
+	  &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	  $to_delete{'motifs_transfac'} = $main::outfile{motifs_transfac};
+	  $matrix_format="trasnfac";
+	  $main::infile{motifs}=$main::outfile{motifs_transfac};
+      }
+  
+  ## Read matrix file
+  local $matrix_file = $main::infile{motifs};
+
+  &RSAT::message::TimeWarn("Reading matrix", $matrix_file) if ($main::verbose >= 2);
+
+  my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+
+  ## Open the ID to Motif name reference table
+  my ($ID_to_Motif_name_file) = &RSAT::util::OpenOutputFile($main::outfile{motif_ID_to_name});
+
+  
+  ## Analyse one matrix at a time
+  foreach my $matrix (@matrices) {
+      $m++;
+      
+      ################
+      #Initialize storing arrays
+      local @files_to_index=();
+      local @partial_matrix_files=();
+      local @th_distrib_files=();
+      local @perm_distrib_files=();
+      local @distrib_files=(); ## check something named  @main::distrib_files
+      local @temporary_distrib_files=();
+      local @local_seq_types= @main::seq_types; # seq_types are all the sequences where the proceadure is performed, for each matrix the matrix_sites are added.
+      ## Redefine the matrix name (in case it would have been modified above)
+      $matrix->set_attribute("pseudo", $pseudo_counts);
+      $matrix->set_attribute("decimals", $decimals);
+      $matrix->set_attribute("file", $matrix_file);
+      $matrix->force_attribute("matrix.nb", $m);
+      $matrix->setMarkovModel($bg_model) if ($main::outfile{bg_file_inclusive}) ;
+      my $m_width = $matrix->get_attribute("ncol");
+      
+      ################################################################
+      ## Define matrix name.
+      ##
+      ## We need a name that is
+      ## - unambiguous (two matrices cannot have the same name)
+      ## - without system-problematic characters (/, $).
+      ##
+
+      local $matrix_id = $matrix->get_attribute("id");
+      local $matrix_name = $matrix->get_attribute("name") ;
+      
+      $matrix_name=~s/\+/plus/;
+      $matrix_id=~s/\+/plus/;
+      
+      unless ($matrix_name =~ /\S/) {
+	  $matrix_name = "matrix_".$m;
+      }
+
+      unless ($matrix_id =~ /\S/) {
+	  $matrix_id = "matrix_".$m;
+      }
+      
+      $matrix_name =~ s/\//_/; ## Avoid slashes in matrix names because this would make problem for subfolder definitions
+      $matrix_name =~ s/\$/_/; ## Avoid $ in matrix names because the following word would be interpreted as a variable in Unix system
+      
+      $matrix_id =~ s/\//_/; ## Avoid slashes in matrix names because this would make problem for subfolder definitions
+      $matrix_id =~ s/\$/_/; ## Avoid $ in matrix names because the following word would be interpreted as a variable in Unix system
+      
+      ## Check if another matrix with the same name has already been indexed)
+      if (defined($matrix_index{$matrix_name})) {
+	  &RSAT::message::Warning("Matrix file contains sevral matrices with name",
+				  $matrix_name, ". Adding suffix m_".$m);
+	  $matrix_name .= "_m".$m;
+      } else {
+	  $matrix_index{$matrix_name} = $m;
+      }
+      $matrix->force_attribute("name", $matrix_name);
+      &RSAT::message::TimeWarn("Analyzing matrix", $m, $matrix_name) if ($main::verbose >= 2);
+      
+      ## Print the ID -> Name in the File
+      &RSAT::message::Debug("Adding matrix information to registry table ", $matrix_name , $matrix_id ) if ($main::verbose >= 0);
+      print $ID_to_Motif_name_file  $matrix_name."\t".$matrix_id."\n";
+
+      
+      ################################################################
+      ## Compute min and max weight values for score distributions
+      local ($Wmin, $Wmax)  = $matrix->weight_range();
+      &RSAT::message::Info($matrix_name, "Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
+      local $local_html_title="";
+      if ($main::html_title){
+	  $local_html_title=$main::html_title."\t $matrix_name ";
+      }else {
+	  $local_html_title=" $matrix_name ";
+      }
+
+
+      
+
+      
+  } ## per matrix analysis
+  
+  
+  ################################################################
+  ## Read input
+  # ($main::in) = &OpenInputFile($main::infile{input});
+  # while (<$main::in>) {
+  #   next unless (/\S/); ## Skip empty rows
+  #   next if (/^;/); ## Skip comment rows
+  #   next if (/^#/); ## Skip header rows
+  #   chomp();
+  # }
+  # close $main::in if ($main::infile{input});
+
+  ################################################################
+  ## Print verbose
+  $main::out = &OpenOutputFile($outfile{log});
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item	B<-title title>
+
+Title displayed on top of the report page.
+
+=cut
+     } elsif ($arg eq "-title") {
+      $main::title = shift(@arguments);
+      $main::title =~ s/\s+/_/g;
+
+=pod
+
+=item B<-matrix input_motif_file>
+
+The input file contains a set of position-specific scoring
+matrices.
+
+=cut
+    } elsif ($arg eq "-matrix") {
+      $main::infile{motifs} = shift(@arguments);
+
+
+=pod
+
+=item B<-matrix_format matrix_format>
+
+Specify the input matrix format.
+
+
+B<Supported matrix formats>
+
+Since the program takes several matrices as input, it only accepts
+matrices in formats supporting several matrices per file (transfac,
+tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
+
+For a description of these formats, see the help of I<convert-matrix>.
+
+=cut
+    } elsif ($arg eq "-matrix_format") {
+      $matrix_format = shift(@arguments);
+      unless ($main::supported_matrix_formats{$matrix_format}){
+	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+      }
+  ## Pseudo weight
+
+=pod
+
+=item B<-pseudo pseudo_counts>
+
+Pseudo-counts.
+The pseudo-count reflects the possibility that residues that were
+not (yet) observed in the model might however be valid for future
+observations. The pseudo-count is used to compute the corrected
+residue frequencies.
+
+
+=cut
+	} elsif ($arg eq "-pseudo") {
+	    $main::pseudo_counts = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::pseudo_counts,
+					  "Invalid value for pseudo-counts. Must be a positive real number."))
+		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
+			&& ($main::pseudo_counts >= 0));
+
+
+=pod
+
+=item B<-top_matrices X>
+
+Only analyze the first X motifs of the input file. This options is
+convenient for quick testing before starting the full analysis.
+
+=cut
+    } elsif ($arg eq "-top_matrices") {
+      $top_matrices = shift(@arguments);
+      $top_matrix_flag = 1;
+
+      &RSAT::error::FatalError($top_matrices, "Invalid value for option -top_matrices: must be a natural number") 
+         unless (&IsNatural($top_matrices));
+
+=pod
+
+=item B<-skip_matrices X>
+
+Skip the first X motifs of the input file. This options is convenient
+for testing the program on a subset of the motifs before starting the
+full analysis.
+
+=cut
+    } elsif ($arg eq "-skip_matrices") {
+      $skip_matrices = shift(@arguments);
+      $skip_matrix_flag = 1;
+      &RSAT::error::FatalError($skip_matrices, "Invalid value for option -skip_matrices: must be a natural number") 
+         unless (&IsNatural($skip_matrices));
+
+=pod
+
+=item B<-seq seq_type input_sequences_file>
+
+A file containing the sequences in fasta format.
+
+=cut
+    } elsif ($arg eq "-seq") {
+	 my $seq_type = shift(@arguments);
+	 ## Substitue special characters which cannot be used inside a file name
+	 $seq_type =~ s|\s|_|g;
+	 $seq_type =~ s|/|_|g;
+	 $seq_type =~ s|:|_|g;
+	 $main::seqfile{$seq_type} =
+	   shift(@arguments);
+         push @main::seq_types, $seq_type;
+
+=pod
+
+=item B<-seq_format sequence_format>
+
+Sequence format.
+
+=cut
+	} elsif ($arg eq "-seq_format") {
+	    $main::seq_format = shift(@arguments);
+
+=pod
+
+=pod
+
+=item B<-bgfile background_file>
+
+Background model to be used to calculate the matrix theoretical
+distribution.  The matrix theoretical distribution is calculated with
+I<matrix-distrib>.
+
+=cut
+	} elsif ($arg eq "-bgfile") {
+		$main::infile{bg_file} = shift(@arguments);
+
+	    ## Format of Background model for theoretical score distribution
+# If the option -th_prior and -bg_file are used at the same time
+# the background format must be the same in both cases.
+
+
+=pod
+
+=item B<-bg_format background_file>
+
+Format for the background model file.
+
+        Supported formats: all the input formats supported by
+        convert-background-model.
+
+
+=cut
+	} elsif ($arg eq "-bg_format") {
+		$main::bg_format = shift(@arguments);
+
+=pod
+
+=item B<-bg_input>
+
+        Calculate the background distrinution from input set
+
+        Supported options: by_seq and all 
+   
+        by_seq=Calculate a background model per sequence.
+  
+        all=Calculate one unique background model for all sequences.
+
+
+=cut
+	} elsif ($arg eq "-bg_input") {
+		$main::bg_input = shift(@arguments) ;
+
+		## Number of decimals for computing scores
+
+=pod
+
+=item B<-markov>
+
+        Markov order to calculate bg_input
+
+
+=cut
+	} elsif ($arg eq "-markov") {
+		$main::markov = shift(@arguments) ;
+
+		## Number of decimals for computing scores
+
+=pod
+
+=item B<-task tasks>
+
+Specify one or several tasks to be run. If this option is not
+specified all the tasks are run.
+
+Note that some tasks depend on other ones. This option should thus be
+used with caution, by experimented users only.
+
+Supported tasks:
+
+=over
+
+=item B<export_matrix>
+
+Export the matrix and sites in various formats (tab, info, logos)
+
+=item B<permute>
+
+Scan sequences with permuted matrices
+
+=item B<theor>
+
+Calculate the theoretical distribution
+
+=item B<theor_cv>
+
+Calculate the theoretical distribution of loo partial matrices
+
+=item B<scan>
+
+Scan sequences with I<matrix-scan>
+
+=item B<compare>
+
+Compare distributions between the various input files
+
+=item B<graphs>
+
+Draw the graphs with distrib comparisons
+
+=item B<synthesis>
+
+Generate a HTML file with a synthetic report, which displays the main
+graphs (distribution curves and ROC curve) and provides links to the
+result files.
+
+In order to be correctly indexed, the graphs have to be generated in
+png format.
+
+=item B<clean>
+
+Clean temporary files.
+
+=back
+
+=cut
+       } elsif ($arg eq "-task") {
+	 $arg = shift (@arguments);
+	 chomp($arg);
+	 my @tasks = split ",", $arg;
+	 foreach my $task (@tasks) {
+	   $task = lc($task);
+	   if ($supported_task{$task}) {
+	     $task{$task} = 1;
+	   } else {
+	     &RSAT::error::FatalError($task, "Invalid tasks. Supported:", $supported_tasks);
+	   }
+	 }
+
+	    
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+     $main::prefix{main} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; template ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
