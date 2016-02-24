@@ -481,6 +481,7 @@ sub DefaultParameters {
   $main::param{seq_format} = "fasta"; push(@main::param_list, "seq_format");
 #  $main::param{img_format} = "pdf"; push(@main::param_list, "img_format");
   $main::param{img_format} = "png"; push(@main::param_list, "img_format");
+  $main::param{r_plots} = 0; ## Use R to plot XY graph
   $main::param{img_border} = 1; ## Border for the images in the synthetic table (generally blue because linked to the image file)
   $main::param{logo_table_height} = 50; ## Height for displaying logos in the synthetic tables
   $main::param{iupac_coloring} = 0; ## Color IUPAC degenerate letters in the consensus of HTML reports
@@ -497,11 +498,12 @@ sub DefaultParameters {
   ## Residue  profiles (position-analysis)
   $main::param{origin} = "center"; push(@main::param_list, "origin");
   $main::param{offset} = 0; push(@main::param_list, "offset");
-  $main::param{profiles_ci} = 20; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_ci} = 50; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_max_graphs");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
   @main::composition_oligo_lengths = (1,2);
   $main::param{composition_oligo_lengths} = join(',',@composition_oligo_lengths); push(@main::param_list, "composition_oligo_lengths");
+
 
   ################################################################
   ## Beware: computational profiles are always computed with the
@@ -1154,9 +1156,10 @@ sub SequenceLengths {
   $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of peaks'";
   $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
   $cmd .= " -xmin 0 -ymin 0";
-  #  $cmd .= " -xgstep1 ".($main::param{profiles_ci});
-  #  $cmd .= " -xgstep2 ".$main::param{profiles_ci};
+#  $cmd .= " -xgstep1 ".($main::param{profiles_ci});
+  $cmd .= " -xgstep2 ".$main::param{profiles_ci};
   $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen_distrib'};
+  $cmd .= " -r_plots" if ($main::param{r_plots});
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib_graph'};
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
@@ -1263,6 +1266,7 @@ sub CompositionProfiles {
     $cmd .= ' | '.$SCRIPTS.'/transpose-table';
 #    $cmd .= ' | grep -P \'(^id)|(^\-?\d+)\'';
     $cmd .= " | ".$SCRIPTS."/XYgraph -xcol 1 -ycol 2-".$col_nb;
+    $cmd .= " -r_plots" if ($main::param{r_plots});
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -legend -lines -pointsize 0 -legend -header";
     if (-e $color_file) {
@@ -2513,6 +2517,7 @@ sub MotifEnrichment {
   $cmd .= " -ycol 11 -yleg1 'Binomial significance of hit number'";
   $cmd .= " -ysize 400";
   $cmd .= " -lines";
+  $cmd .= " -r_plots" if ($main::param{r_plots});
   $cmd .= " -o ".$graph_file;
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 }
@@ -2593,6 +2598,7 @@ sub ScanSequences {
     $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of sites'";
     $cmd .= " -xsize 800 -xcol 3 -xleg1 'Position relative to sequence ".$main::param{origin}."'";
     $cmd .= " -title1 'Predicted sites : $motif_id'";
+    $cmd .= " -r_plots" if ($main::param{r_plots});
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib_graph'};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
@@ -2615,6 +2621,7 @@ sub ScanSequences {
     $cmd .= " -ysize 200 -ycol 4,6 -yleg1 'Number of peaks' -legend";
     $cmd .= " -xsize 400 -xcol 1 -xleg1 'Number of sites' -xgstep1 5 -xgstep2 1";
     $cmd .= " -title1 'Nb Predicted sites : $motif_id'";
+    $cmd .= " -r_plots" if ($main::param{r_plots});
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites_per_peak_graph'};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
@@ -4435,6 +4442,16 @@ All the formats supported by XYgraph can be used.
     } elsif ($arg eq "-img_format") {
       $main::param{img_format} = shift(@arguments);
 
+=pod
+
+=item	B<-r_plots>
+
+Use R rather than the Perl GD library to generate plots.  This gives
+much nicer plots, but requires to have R installed on the RSAT server.
+
+=cut
+    } elsif ($arg eq "-r_plots") {
+      $main::param{r_plots} = 1;
 
 =pod
 
