@@ -271,9 +271,9 @@ cluster_footprintdb:
 ## Cluster one jaspar group
 JASPAR_GROUPS=nematodes fungi urochordates plants vertebrates insects all 
 JASPAR_GROUP=vertebrates
-JASPAR_VERSION=2015_03
+JASPAR_VERSION=2016
 JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_${JASPAR_VERSION}
-JASPAR_DIR=${RSAT}/public_html/motif_databases/JASPAR
+JASPAR_DIR=${RSAT}/public_html/motif_databases/JASPAR/Jaspar_2016
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 cluster_jaspar_all_groups:
 	@for g in ${JASPAR_GROUPS}; do \
