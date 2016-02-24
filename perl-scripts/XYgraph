@@ -752,14 +752,22 @@ sub Rplot {
   
   ## Start image environment in R according to the output format
   $r_instruction.="outfile<-\"$outputfile\"\n";
+  if (($img_format eq "pdf") || ($img_format eq "eps")) {
+    $r_width = &RSAT::stats::min($x_axis_size/72, 5);
+    $r_height = &RSAT::stats::min(($y_axis_size+100)/72, 5);
+  } else {
+    $r_width = $x_axis_size;
+    $r_height = $y_axis_size+100;
+  }
+  $r_dim = ", width=".($r_width).", height=".($r_height);
   if ($img_format eq "pdf") {
-    $r_instruction.="pdf( file= outfile)\n";
+    $r_instruction.="pdf( file= outfile".$r_dim.")\n";
   }elsif ($img_format eq "jpg") {
-    $r_instruction.="jpg(file= outfile)\n";
+    $r_instruction.="jpg(file= outfile".$r_dim.")\n";
   }elsif ($img_format eq "png") {
-    $r_instruction.="png(file= outfile)\n";
+    $r_instruction .= "png(file= outfile".$r_dim.")\n";
   }elsif ($img_format eq "eps") {
-    $r_instruction.="eps(file= outfile)\n";
+    $r_instruction.="eps(file= outfile".$r_dim.")\n";
   }elsif ($img_format eq "gif") {
     &RSAT::error::FatalError("GIF format is not supported in R");
 
@@ -808,8 +816,8 @@ sub Rplot {
     $r_plot_params.=", ylab=".$y_legend;
   }
 
-  $r_instruction.= " x.values <- input.table[,".$xcol_r."]  \n" ;
-  $r_instruction.= " y.values <- input.table[, c(".join(",",@y_col_list_r).")]   \n" ;
+  $r_instruction.= " x.values <- input.table[,".$xcol_r."] \n" ;
+  $r_instruction.= " y.values <- as.data.frame(input.table[, c(".join(",",@y_col_list_r).")]) \n" ;
   
 
   ## Logarithm
@@ -890,7 +898,7 @@ sub Rplot {
   if (!$lines) {
     $draw_plot_params.=", pch=0 ,type=\"p\"";
   } else {
-    $draw_plot_params.=", lwd=2 ,type=\"l\"";
+    $draw_plot_params.=", lwd=3 ,type=\"l\"";
   }
   
   if ($bg ne "white") {
@@ -925,10 +933,9 @@ sub Rplot {
 #    $r_instruction.="matplot( x=input.table[,1] , y=input.table[, -1] ". $r_plot_params." ) \n";
   #$r_instruction.="matplot( x=x.values , y=y.values ". $r_plot_params." ) \n";
 
-  ## Add grid if requested. Note that the grid size is currently
-  ## ignored, should be improved soon.
-  if ($xgstep1 || $xgstep2 || $ygstep2 || $ygstep1) {
-    $r_instruction.="grid()\n";
+  ## Add grid if requested. 
+  if (($xgstep1) || ($xgstep2) || ($ygstep2) || ($ygstep1)) {
+    $r_instruction .= "grid()\n";
 #      $r_plot_params .= ", panel.first=grid()";
   }
 
@@ -2335,19 +2342,19 @@ sub ReadArguments {
       $y_legend2 = $ARGV[$a+1];
 
       ### grid steps ###
-    } elsif (($ARGV[$a] eq "-gstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+) {0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-gstep1") && (&IsNatural($ARGV[$a+1]))) {
       $ygstep1 = $ARGV[$a+1];
       $xgstep1 = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-xgstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+) {0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-xgstep1") && (&IsNatural($ARGV[$a+1]))) {
       $xgstep1 = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-ygstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+) {0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-ygstep1") && (&IsNatural($ARGV[$a+1]))) {
       $ygstep1 = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-gstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+) {0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-gstep2") && (&IsNatural($ARGV[$a+1]))) {
       $ygstep2 = $ARGV[$a+1];
       $xgstep2 = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-xgstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+) {0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-xgstep2") && (&IsNatural($ARGV[$a+1]))) {
       $xgstep2 = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-ygstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+) {0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-ygstep2") && (&IsNatural($ARGV[$a+1]))) {
       $ygstep2 = $ARGV[$a+1];
 
       ### min and max values to represent ###
