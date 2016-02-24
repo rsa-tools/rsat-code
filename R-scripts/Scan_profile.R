@@ -6,6 +6,8 @@ if (dir.rsat == "") {
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 
+## Load some libraries
+source(file.path(dir.rsat, 'R-scripts/config.R'))
 
 ## Load required libraries
 required.packages = c("IRanges",
@@ -64,7 +66,7 @@ create.html.tab <- function(tab, img = 0){
 ## Arguments passed on the command line
 ## will over-write the default arguments
 ## specified above.
-message("Reading arguments from command-line")
+# message("Reading arguments from command-line")
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args >= 1)) {
   for(i in 1:length(args)){
@@ -72,7 +74,7 @@ if (length(args >= 1)) {
   }
 }
 
-message("Checking mandatory arguments")
+# message("Checking mandatory arguments")
 if (!exists("matrix.scan.file")) {
   stop("Missing mandatory argument (matrix-scan results table): matrix.scan.file ")
 } else if (!exists("prefix")) {
@@ -118,7 +120,7 @@ if (!exists("individual.plots")) {
 
 #############################################
 ## Read matrix-scan table Active Promoters
-message("Reading matrix-scan table")
+verbose(paste("Reading matrix-scan results table"), 2)
 matrix.scan.results <- read.csv(file = matrix.scan.file, sep = "\t", header = TRUE, comment.char = ";")
 colnames(matrix.scan.results) <- c("seq_id", "ft_name", "bspos", "Pval")
 
@@ -144,7 +146,7 @@ limits <- seq.length/2
 ###################################
 ## Divide the sequences in bins 
 # bin <- 25
-message(paste("Setting bins of size", bin))
+verbose(paste("Setting bins of size", bin), 2)
 bin <- as.numeric(bin)
 windows <- IRanges(start = seq(from = -limits, to = limits - bin + 1, by = bin), width = bin)
 
@@ -166,7 +168,7 @@ setwd(results.folder)
 input.count.table <- 0
 if(input.count.table == 0){
 
-message("Creating counts and frequencies tables")
+  verbose(paste("Creating counts and frequencies tables"), 2)
 counts.per.bin <-  sapply(1:length(matrix.names), function(m){
   
     ## Select the matches of the query motif
@@ -215,7 +217,7 @@ write.table(counts.per.bin.table, file = counts.tab.file, quote = FALSE, col.nam
 ####################################################################################
 ## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
 ####################################################################################
-message("Drawing Heatmap profiles")
+verbose(paste("Drawing Heatmap profiles", 2))
 
 ## Color palette
 rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
@@ -281,7 +283,7 @@ feature.attributes <- vector("list", dim(counts.per.bin.table)[1])
 
 #####################################################
 ## Calculate X2, p-value, e-value and significance
-message("Calculating P-value. Null Hypothesis: homogenous distribution of the TFBSs")
+verbose(paste("Calculating P-value. Null Hypothesis: homogenous distribution of the TFBSs"), 2)
 thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
 
 #   print(m)
@@ -402,7 +404,7 @@ rm(additional.data)
 # individual.plots <- 0
 if(individual.plots == 1){
   
-  message("Print all the profiles in a PDF file")
+  verbose(paste("Printing all the profiles, separately, in a PDF file"), 2)
   pdf.file.name <- paste(basename, "_positional_profiles.pdf", sep = "")
   pdf(pdf.file.name)
   
@@ -465,6 +467,8 @@ if(individual.plots == 1){
 ## the dataframe frequency.per.bin.table complemented with the ##
 ## statistics calculated in the dataframe feature.attributes   ##
 #################################################################
+
+verbose(paste("Creating HTML dynamic report"), 2)
 
 ## Ordert the TF.names (and other variables) according the Significance (-log10(E-value))
 order.by.eval <- order(as.numeric(as.vector(feature.attributes$E_val)))
