@@ -801,7 +801,7 @@ sub SetOutFileNames {
 
 	## Convert negative markov orders relative to the current oligo length
 	unless (($main::param{oligo_min_mkv} eq "auto") ||
-		($main::param{oligo_min_mkv} eq "auto")) {
+		($main::param{oligo_max_mkv} eq "auto")) {
 	  $min_mkv = $main::param{oligo_min_mkv}; $min_mkv += $len if ($min_mkv < 0);
 	  $max_mkv = $main::param{oligo_max_mkv}; $max_mkv += $len if ($max_mkv < 0);
 	  $main::param{oligo_bg_suffix} = "mvk".$main::param{oligo_min_mkv}."_".$main::param{oligo_max_mkv};
@@ -1515,20 +1515,11 @@ sub PositionAnalysis {
 	unless ($main::param{merge_lengths});
   }
 
-  ## Merge oligo-analysis result files
+  ## Merge position-analysis result files
   if ($main::param{merge_lengths}) {
     &MergeAndBuildMatrix("positions_".$main::param{oligo_range}, @position_files);
   }
 
-  # ## Merge position-analysis result files
-  # if ($main::param{merge_lengths}) {
-  #   my $pattern_type = "positions_".$main::param{oligo_range};
-  #   my $cmd = "cat ";
-  #   $cmd .= join " ", @position_files;
-  #   $cmd .= "> ".$main::outfile{$pattern_type};
-  #   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
-  #   &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type."_pssm"}, $pattern_type, 0);
-  # }
 }
 
 
@@ -1574,6 +1565,7 @@ sub LocalDyads {
 ## Run local-word-analysis on the test set
 sub LocalWords {
 #  my $center_pos = &RSAT::util::round($main::param{local_words_window}/2);
+  my @local_word_files = ();
   my $center_pos = 0;
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     ## I suppress the loop on Markov orders since --markov is incompatible with --windowgroup
@@ -1582,6 +1574,7 @@ sub LocalWords {
 #      $markov += $len if ($markov < 0);
 #      my $pattern_type = 'local_words_'.$len.'nt'.'_mkv'.$markov;
       my $pattern_type = 'local_words_'.$len.'nt';
+      push @local_word_files, $main::outfile{$pattern_type};
       &RSAT::message::TimeWarn("Running local-word-analysis", $len."nt") if ($main::verbose >= 2);
       my $cmd = $PYTHON."/local-word-analysis -v 3";
       $cmd .= " -i ".$main::outfile{"test_purged"};
@@ -1610,6 +1603,12 @@ sub LocalWords {
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::prefix{$pattern_type.'_pssm'}, $pattern_type, 0) unless ($main::param{merge_lengths});
 #    }
   }
+
+  ## Merge local-word-analysis result files
+  if ($main::param{merge_lengths}) {
+    &MergeAndBuildMatrix("local_words_".$main::param{oligo_range}, @local_word_files);
+  }
+
 }
 
 
@@ -4928,7 +4927,7 @@ successive occurrences underlying the binomial significance test
 B<Beware>: the options -noov and -ovlp only apply to motif discovery,
 and not to compositional profiles. Dinucleotide frequencies are always
 computed with the option -ovlp (count all occurrences), to avoid weird
-effect. Since those compositin profiles further serve to estimate the
+effect. Since those composition profiles further serve to estimate the
 probability of larger words, which may include repeated residues, we
 need to count all dinucleotide occurrences. Indeed with the -noov mode
 (renewing occurrences only), the transition tables of the first order

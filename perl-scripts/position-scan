@@ -58,6 +58,9 @@ BEGIN {
   }
 }
 require "RSA.lib";
+<<<<<<< HEAD
+
+=======
 require "RSA2.cgi.lib";
 use RSAT::util;
 use RSAT::matrix;
@@ -67,6 +70,7 @@ use List::MoreUtils qw(uniq);
 use Data::Dumper;
 use File::Basename;
 use File::Path;
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
 
 ################################################################
@@ -87,6 +91,12 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
+<<<<<<< HEAD
+  local $motif_format = "";
+  local $bin_size = 50;
+  local $p_value = 1e-4;
+  local $title = "position-scan";
+=======
   ## Default parameters
 
   local $seq_length = 100;
@@ -115,6 +125,7 @@ package main;
   %to_delete_folder = ();
 
 
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
   ## Input formats: only accept formats supporting multiple matrices
   local @supported_matrix_formats = qw(transfac tf tab clusterbuster cb infogibbs meme stamp uniprobe);
@@ -128,6 +139,13 @@ package main;
   ## Read argument values
   &ReadArguments();
 
+<<<<<<< HEAD
+  ## Output file names
+  $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_results.tab";
+  $main::outfile{bg_model_file} = $main::outfile{prefix}."_bg_model.oligos";
+  # $main::outfile{sequences} = $main::outfile{prefix}."_sequences.fasta";
+  # $main::outfile{motifs} = $main::outfile{prefix}."_motifs.tf";
+=======
   ################################################################
   ## Check argument values
 
@@ -183,6 +201,7 @@ package main;
   $main::outfile{motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac.tf";
   $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_results.tab";
   $main::outfile{matches_tab_PARSED} = $main::outfile{prefix}."_matrix_scan_results_PARSED.tab";
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
   $main::outfile{motif_ID_to_name} = $main::outfile{prefix}."_TF_ID_name_correspondence.tab";
 
   $main::outfile{all_profiles} = $main::outfile{prefix}."_positional_profiles.pdf";
@@ -190,6 +209,56 @@ package main;
   $main::outfile{profiles_counts} = $main::outfile{prefix}."_counts_per_bin_profiles.tab";
   $main::outfile{profiles_heatmap} = $main::outfile{prefix}."_profiles_heatmap.pdf";
   $main::outfile{report} = $main::outfile{prefix}."_scan_profile_report.html";
+<<<<<<< HEAD
+
+
+  ################################################################
+  ## Check argument values
+
+  # &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
+
+  # ################################################################
+  # ## Input file is mandatory
+  # unless ($main::infile{matrix_scan_results_table}) {
+  #     &RSAT::error::FatalError("The input motif file is mandatory.");
+  # }
+
+  # ################################################################
+  # ## Check that the output prefix has been specified
+  # unless ($main::outfile{prefix}) {
+  #   &RSAT::error::FatalError("You must define the output prefix (option -o).");
+  # }
+
+  # ################################################################
+  # ## Non-recognized parameters are ignored
+  # if (scalar(@args_to_pass)) {
+  #   $args_to_pass = join (" ", @args_to_pass);
+  #   &RSAT::message::Info("Unrecognized arguments are ignored", $args_to_pass) if ($main::verbose >= 2);
+  # }
+
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
+  while (<$main::in>) {
+    next unless (/\S/); ## Skip empty rows
+    next if (/^;/); ## Skip comment rows
+    next if (/^#/); ## Skip header rows
+    chomp();
+  }
+  close $main::in if ($main::infile{input});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+=======
   $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_positional_profiles.html";
 
   $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
@@ -290,6 +359,7 @@ package main;
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose >= 1);
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
   ################################################################
   ## Insert here output printing
@@ -395,8 +465,13 @@ Title displayed on top of the report page.
 
 =cut
      } elsif ($arg eq "-title") {
+<<<<<<< HEAD
+      $main::param{title} = shift(@arguments);
+      $main::param{title} =~ s/\s+/_/g;
+=======
       $main::title = shift(@arguments);
       $main::title =~ s/\s+/_/g;
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
 =pod
 
@@ -412,7 +487,11 @@ matrices.
 
 =pod
 
+<<<<<<< HEAD
+=item B<-matrix_format motif_format>
+=======
 =item B<-matrix_format matrix_format>
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
 Specify the input matrix format.
 
@@ -427,12 +506,18 @@ For a description of these formats, see the help of I<convert-matrix>.
 
 =cut
     } elsif ($arg eq "-matrix_format") {
+<<<<<<< HEAD
+      $motif_format = shift(@arguments);
+=======
       $matrix_format = shift(@arguments);
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
       unless ($supported_matrix_format{$matrix_format}) {
 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
       }
 
+<<<<<<< HEAD
+=======
 
 =pod
 
@@ -464,6 +549,7 @@ full analysis.
       &RSAT::error::FatalError($skip_matrices, "Invalid value for option -skip_matrices: must be a natural number") 
          unless (&IsNatural($skip_matrices));
 
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 =pod
 
 =item B<-seq input_sequences_file>
@@ -477,6 +563,8 @@ A file containing the sequences in fasta format.
 
 =pod
 
+<<<<<<< HEAD
+=======
 =item B<-seq_format sequence_format>
 
 Sequence format.
@@ -488,6 +576,7 @@ Sequence format.
 
 =pod
 
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 =item B<-bin bin_length>
 
 The length of the bin (in bp).
@@ -506,7 +595,11 @@ Default: 50
 Select only those matches with a p-value equal or lower than the
 specified.
 
+<<<<<<< HEAD
+Default: 1e-4
+=======
 Default: 1e-3
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
 =cut
     } elsif ($arg eq "-pval") {
@@ -515,6 +608,8 @@ Default: 1e-3
 
 =pod
 
+<<<<<<< HEAD
+=======
 =item B<-bgfile background_file>
 
 A file containing the background model used to scan the sequences.
@@ -568,6 +663,7 @@ This option is incompatible with the option -bgfile.
 
 =pod
 
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 =item	B<-o output_prefix>
 
 Prefix for the output files and folders.
@@ -580,7 +676,11 @@ Prefix for the output files and folders.
       &FatalError(join("\t", "Invalid option", $arg));
 
     }
+<<<<<<< HEAD
+  }
+=======
  }
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
 =pod
 
@@ -610,6 +710,10 @@ sub Verbose {
   }
 }
 
+<<<<<<< HEAD
+
+__END__
+=======
 ################################################################
 ## Scan the input sequences with the input matrices using
 ## RSAT matrix-scan
@@ -866,3 +970,4 @@ __END__
 
 
 
+>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3

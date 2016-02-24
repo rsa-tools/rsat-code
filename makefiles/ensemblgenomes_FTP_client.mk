@@ -106,6 +106,7 @@ list_param:
 	@echo "LOCAL_FILES"
 	@echo "	ORGANISM_DIR		${ORGANISM_DIR}"
 	@echo "	ORGANISM_TABLE		${ORGANISM_TABLE}"
+	@echo "	ALL_SPECIES_NB		${ALL_SPECIES_NB}"
 	@echo "	SPECIES_DIR		${SPECIES_DIR}"
 	@echo "	GENOME_DIR		${GENOME_DIR}"
 	@echo "	PARSE_DIR		${PARSE_DIR}"
@@ -123,6 +124,7 @@ list_param:
 ################################################################
 ## Download required files for all organisms
 ALL_SPECIES=$(shell cut -f 2 ${ORGANISM_TABLE} | grep -v '^species')
+ALL_SPECIES_NB=$(shell cut -f 2 ${ORGANISM_TABLE} | grep -v '^species' | wc -l)
 list_all_species:
 	@echo 
 	@echo "All species from ${ORGANISM_TABLE}"
@@ -400,6 +402,9 @@ gzip_downloads:
 
 ################################################################
 ## Initialize the fasta indexes for bedtools getfasta.
+##
+## THIS TARGET IS NOT REQUIRED ANYMORE: replaced by samtools faidx in the script parse-gtf.
+## It can be used as a test
 RSAT_GTF=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome/${SPECIES_RSAT_ID}.gtf
 START_CODONS=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome/${SPECIES_RSAT_ID}_start_codons
 init_getfasta:
