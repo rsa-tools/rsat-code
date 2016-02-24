@@ -340,11 +340,19 @@ package main;
   my $random_skipped = 0;
   while (<$main::in>) {
     $l++;
+    $_ =~ s/\r/\n/g; ## Replace windows-based carriage return by unix newline characters
+    chomp();
     next if (/^#/); ## Skip comment lines
     next if (/^;/); ## Skip RSAT-like comment lines
     next unless (/\S/); ## Skip empty lines
+
+    next if (/^browser/i); ## Skip browser instruction lines at the top of bed files
+    next if (/^visibility/i); ## Skip browser instruction lines at the top of bed files
+    next if (/^itemRgb/i); ## Skip browser instruction lines at the top of bed files
+    next if (/^track/i); ## Skip track declaration lines
+
+    $_ =~ s/\s+/\t/g; ## Replace spaces by tabulations
     next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
-    chomp();
 
     if (($top > 0) && ($i >= $top)) {
       &RSAT::message::Info("Stopped after $top top queries. Further lines are ignored.");
