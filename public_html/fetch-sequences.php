@@ -155,11 +155,12 @@ if (!$errors) {
     $no_bed_line = true;
     $warnings = "";
     
+    // Check input lines
     foreach($array_line as $line) {
       if (preg_match("/^[\w\-\+\s,\.\#; \/]+$/",$line)) {
 	$no_bed_line = false;
 	fwrite($file, $line."\n");
-      } else {
+      } else if ($line != "") {
 	$warnings .= htmlspecialchars($line)."<br/>\n";
       }
     }
