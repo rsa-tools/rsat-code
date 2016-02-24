@@ -1,0 +1,385 @@
+#!/usr/bin/perl -w
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+position-scan
+
+=head1 VERSION
+
+1
+
+=head1 DESCRIPTION
+
+This program computes the positional binding profile of a set of PSSMs in a set of sequences of the same length.
+
+
+=head1 AUTHORS
+
+castro@tagc.univ-mrs.fr
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+position-scan [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  local $motif_format = "";
+  local $bin_size = 50;
+  local $p_value = 1e-4;
+  local $title = "position-scan";
+
+  ## Input formats: only accept formats supporting multiple matrices
+  local @supported_matrix_formats = qw(transfac tf tab clusterbuster cb infogibbs meme stamp uniprobe);
+  local %supported_matrix_format = ();
+  foreach my $format (@supported_matrix_formats) {
+    $supported_matrix_format{$format} = 1;
+  }
+  local $supported_matrix_formats = join ",", @supported_matrix_formats;
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ## Output file names
+  $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_results.tab";
+  $main::outfile{bg_model_file} = $main::outfile{prefix}."_bg_model.oligos";
+  # $main::outfile{sequences} = $main::outfile{prefix}."_sequences.fasta";
+  # $main::outfile{motifs} = $main::outfile{prefix}."_motifs.tf";
+  $main::outfile{motif_ID_to_name} = $main::outfile{prefix}."_TF_ID_name_correspondence.tab";
+
+  $main::outfile{all_profiles} = $main::outfile{prefix}."_positional_profiles.pdf";
+  $main::outfile{profiles_tab} = $main::outfile{prefix}."_profiles.tab";
+  $main::outfile{profiles_counts} = $main::outfile{prefix}."_counts_per_bin_profiles.tab";
+  $main::outfile{profiles_heatmap} = $main::outfile{prefix}."_profiles_heatmap.pdf";
+  $main::outfile{report} = $main::outfile{prefix}."_scan_profile_report.html";
+
+
+  ################################################################
+  ## Check argument values
+
+  # &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
+
+  # ################################################################
+  # ## Input file is mandatory
+  # unless ($main::infile{matrix_scan_results_table}) {
+  #     &RSAT::error::FatalError("The input motif file is mandatory.");
+  # }
+
+  # ################################################################
+  # ## Check that the output prefix has been specified
+  # unless ($main::outfile{prefix}) {
+  #   &RSAT::error::FatalError("You must define the output prefix (option -o).");
+  # }
+
+  # ################################################################
+  # ## Non-recognized parameters are ignored
+  # if (scalar(@args_to_pass)) {
+  #   $args_to_pass = join (" ", @args_to_pass);
+  #   &RSAT::message::Info("Unrecognized arguments are ignored", $args_to_pass) if ($main::verbose >= 2);
+  # }
+
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{input});
+  while (<$main::in>) {
+    next unless (/\S/); ## Skip empty rows
+    next if (/^;/); ## Skip comment rows
+    next if (/^#/); ## Skip header rows
+    chomp();
+  }
+  close $main::in if ($main::infile{input});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item	B<-title title>
+
+Title displayed on top of the report page.
+
+=cut
+     } elsif ($arg eq "-title") {
+      $main::param{title} = shift(@arguments);
+      $main::param{title} =~ s/\s+/_/g;
+
+=pod
+
+=item B<-matrix input_motif_file>
+
+The input file contains a set of position-specific scoring
+matrices.
+
+=cut
+    } elsif ($arg eq "-matrix") {
+      $main::infile{motifs} = shift(@arguments);
+
+
+=pod
+
+=item B<-matrix_format motif_format>
+
+Specify the input matrix format.
+
+
+B<Supported matrix formats>
+
+Since the program takes several matrices as input, it only accepts
+matrices in formats supporting several matrices per file (transfac,
+tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
+
+For a description of these formats, see the help of I<convert-matrix>.
+
+=cut
+    } elsif ($arg eq "-matrix_format") {
+      $motif_format = shift(@arguments);
+
+      unless ($supported_matrix_format{$matrix_format}) {
+	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+      }
+
+=pod
+
+=item B<-seq input_sequences_file>
+
+A file containing the sequences in fasta format.
+
+=cut
+    } elsif ($arg eq "-seq") {
+      $main::infile{sequences} = shift(@arguments);
+
+
+=pod
+
+=item B<-bin bin_length>
+
+The length of the bin (in bp).
+
+Default: 50
+
+=cut
+    } elsif ($arg eq "-bin") {
+      $bin_size = shift(@arguments);
+
+
+=pod
+
+=item B<-pval p_value>
+
+Select only those matches with a p-value equal or lower than the
+specified.
+
+Default: 1e-4
+
+=cut
+    } elsif ($arg eq "-pval") {
+      $p_value = shift(@arguments);
+
+
+=pod
+
+=item	B<-o output_prefix>
+
+Prefix for the output files and folders.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{prefix} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; template ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
