@@ -204,12 +204,13 @@ sub readFromFile {
       ## If a prefix is specified, use it in the name, ID and accession number
       ## The new ID is the prefix indictated + the current motif id
       if ($args{prefix_id}) {
+
 	my $prefix_id = $args{prefix_id};
 
 	# my $old_AC = $matrix->get_attribute("accession");
 	$old_AC = $matrix->get_attribute("accession");
 
-	$prefix_id = $prefix_id."_".$old_AC;
+	$prefix_id = $prefix_id."_m".$matrix_nb."_".$old_AC;
 
 	$matrix->force_attribute("accession", $prefix_id);
 	$matrix->force_attribute("AC", $prefix_id);

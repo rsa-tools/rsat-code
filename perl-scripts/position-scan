@@ -103,6 +103,11 @@ package main;
   local $top_matrix_flag = 0;
   local $skip_matrix_flag = 0;
 
+  ## BG model input
+  local $bg_file_flag = 0;
+  local $bg_input_flag = 0;
+  local $markov = 1;
+
   $SCRIPTS = $ENV{RSAT}."/perl-scripts/";
 
   ## List of files to delete
@@ -142,8 +147,8 @@ package main;
 
   ################################################################
   ## Input BG file is mandatory
-  unless ($main::infile{bg_file}) {
-      &RSAT::error::FatalError("The input Background Model file is mandatory. (-bgfile)");
+  unless ($main::infile{bg_file} || $bg_input_flag) {
+      &RSAT::error::FatalError("The input Background Model file is mandatory. (-bgfile | -bginput)");
   }
 
   ################################################################
@@ -163,6 +168,16 @@ package main;
   ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{prefix});
   $dir{output} = "." if ($dir{output} eq "");
   &RSAT::util::CheckOutDir($dir{output});
+
+  ## Create a BG model folder and assign a file name
+  ## when the '-bginput' option is specified
+  if($bg_input_flag == 1){
+
+    local $bg_dir = $main::outfile{prefix}."_bg_model";
+    &RSAT::util::CheckOutDir($bg_dir);
+
+    $main::infile{bg_file} = $bg_dir."/mkv_" . $markov . "_2str.oligos"; 
+  }
 
   ## Output file names
   $main::outfile{motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac.tf";
@@ -233,8 +248,15 @@ package main;
       
 
   ################################################################
+  ## Calculate background of the input sequences
+  if ($bg_input_flag == 1) {
+      &CalculateBGModel();
+  }
+
+  ################################################################
   ## Run matrix-scan quick
-  &ScanSequences();
+  #&ScanSequences();
+
 
   ################################################################
   ## Parse the matrix-scan results table
@@ -248,7 +270,6 @@ package main;
   ## Produce the logos
   &GenerateLogos();
 
-    
   ################################################################
   ## Calculate the sequence length
   ## For the moment the input are sequences of same length
@@ -500,7 +521,8 @@ A file containing the background model used to scan the sequences.
 
 =cut
 	} elsif ($arg eq "-bgfile") {
-		$main::infile{bg_file} = shift(@arguments);
+	    $bg_file_flag = 1;
+	    $main::infile{bg_file} = shift(@arguments);
 
 
 =pod
@@ -515,6 +537,34 @@ Format for the background model file.
 =cut
 	} elsif ($arg eq "-bg_format") {
 		$main::bg_format = shift(@arguments);
+
+=pod
+
+=item B<-bginput>
+
+Calculate background model from the input sequence set.
+
+=cut
+
+    } elsif ($arg eq "-bginput") {
+$bg_input_flag = 1;
+      &RSAT::error::FatalError("Options -bgfile and -bginput are mutually exclusive") if (($bg_file_flag) && ($bg_input_flag));
+
+=pod
+
+=item B<-markov>
+
+Order of the markov chain for the background model.
+
+This option is incompatible with the option -bgfile.
+
+=cut
+    } elsif ($arg eq "-markov") {
+      $markov = shift(@arguments);
+      &RSAT::error::FatalError("Markov order must be a natural number.")
+	unless &RSAT::util::IsNatural($markov);
+      &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.")
+	if (($bg_file_flag) && ($bg_input_flag));
 
 =pod
 
@@ -792,4 +842,27 @@ sub Delete_temporal_files {
 
 }
 
+
+##############################################################
+## When the option -top is used the analysis is restricted 
+## to the first X motifs, however the input motif file is 
+## splitted on individual files, although not all of them 
+## are not. This functions will delete those files
+sub CalculateBGModel {
+
+    &RSAT::message::TimeWarn("Calculating background model by sequence set", $bg_dir) if ($main::verbose >= 3);
+    
+    my $bg_comand = $SCRIPTS."/oligo-analysis -v 1 -quick -2str " ;
+    $bg_comand .= " -i ".$main::infile{sequences}." -l ".$markov." -noov ";
+    $bg_comand .= " -o ".$main::infile{bg_file};
+    
+    &doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
+    &RSAT::message::TimeWarn("Background for sequence set", $main::infile{sequences}, $main::infile{bg_file}) if ($main::verbose >= 3);
+
+    $bg_format = "oligos";
+}
+        
 __END__
+
+
+
