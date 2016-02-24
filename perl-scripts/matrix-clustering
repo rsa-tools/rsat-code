@@ -966,13 +966,14 @@ When this option is selected, the columns of the input motifs are randomly permu
 
 =item	B<-max_matrices X>
 
-This option specify how many matrices can be clustered in the same
+This option specifies how many matrices can be clustered in the same
 analysis. If there are more matrices than the specified number, the
 program restrics the analyses to the first X matrices, and issues a
 warning.
 
 This parameter can be useful to prevent submission of excessive
-datasets to the Web server.
+datasets to the Web server, or for running quick tests before starting
+the analysis of a large matrix collection.
 
 =cut
     } elsif ($arg eq "-max_matrices") {
@@ -3315,7 +3316,7 @@ sub cluster_head_buttons{
 
 ############################################
 ## Stores in a string the Alignment table
-sub alignment_table{
+sub alignment_table {
 
   my $align_table = '
     <div class="tab alignment_tab" id="alignment_table_--nb--">
