@@ -147,9 +147,12 @@ if(draw.heatmap == 1){
   heatmap.pdf.file <- paste(prefix, "_R_heatmap_matches.pdf", sep = "")
   pdf(heatmap.pdf.file)
   ########################
-  for (m in c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid")){
-    for(d in c("euclidean", "maximum", "manhattan", "binary")){
-  
+#   for (m in c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid")){
+#     for(d in c("euclidean", "maximum", "manhattan", "binary")){
+
+  for (m in c("ward.D", "single", "complete", "average", "centroid")){
+    for(d in c("euclidean", "manhattan")){
+
   # for (m in c("ward")){
   #   for(d in c("manhattan", "canberra")){
       

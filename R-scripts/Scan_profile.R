@@ -1,3 +1,12 @@
+## Note for Jaime: it seems that the HEAD is an older version than the one in git (0d337d244ecf26227769c46bf360fa45266248d3)
+## I thus systematically comment the HEAD, but if this is wrong you can recover it.
+## <<<<<<< HEAD
+## ## Required libraries
+## suppressPackageStartupMessages(library("IRanges", warn.conflicts=FALSE, character.only = TRUE))
+## suppressPackageStartupMessages(library("RColorBrewer", warn.conflicts=FALSE, character.only = TRUE))
+## suppressPackageStartupMessages(library("gplots", warn.conflicts=FALSE, character.only = TRUE))
+## suppressPackageStartupMessages(library("jpeg", warn.conflicts=FALSE, character.only = TRUE))
+## =======
 ## Define the local directory for R librairies
 dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
@@ -21,6 +30,7 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
 }
 
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
 #################################################################################################
 ## Functions
@@ -28,7 +38,11 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 create.html.tab <- function(tab, img = 0){
   
   full.tab <- NULL
+## <<<<<<< HEAD
+##   head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:15px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Logo </th></tr></thead><tbody>"
+## =======
   head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:15px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Logo </th></tr></thead><tbody>"
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
   
   content.tab <- apply(tab, 1, function(row){
     
@@ -53,12 +67,25 @@ create.html.tab <- function(tab, img = 0){
     }
   })
   
+## <<<<<<< HEAD
+  
+##   tail.tab <- "</tbody></table></div>"
+  
+##   full.tab <- c(head.tab, content.tab , tail.tab)
+##   return(full.tab)
+  
+## }
+
+## ########################################################################################
+
+## =======
   tail.tab <- "</tbody></table></div>"
   
   full.tab <- c(head.tab, content.tab , tail.tab)
   return(full.tab) 
 }
 
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
 ###########################################
 ## Read arguments from the command line.
@@ -66,15 +93,24 @@ create.html.tab <- function(tab, img = 0){
 ## Arguments passed on the command line
 ## will over-write the default arguments
 ## specified above.
+## <<<<<<< HEAD
+## message("Reading arguments from command-line")
+## args <- commandArgs(trailingOnly=TRUE);
+## =======
 # message("Reading arguments from command-line")
 args <- commandArgs(trailingOnly=TRUE)
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 if (length(args >= 1)) {
   for(i in 1:length(args)){
     eval(parse(text=args[[i]]))
   }
 }
 
+## <<<<<<< HEAD
+## message("Checking mandatory arguments")
+## =======
 # message("Checking mandatory arguments")
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 if (!exists("matrix.scan.file")) {
   stop("Missing mandatory argument (matrix-scan results table): matrix.scan.file ")
 } else if (!exists("prefix")) {
@@ -85,6 +121,15 @@ if (!exists("matrix.scan.file")) {
   
   ## For the moment we assume all the input sequences have the same size
   stop("Missing mandatory argument (Sequence length): seq.length ")
+## <<<<<<< HEAD
+## }
+
+## if (!exists("p.val")) {
+##   p.val <- 1e-3
+## } 
+## if (!exists("bin")) {
+##   bin <- 50
+## =======
 } else if (!exists("html.template.file")){
   stop("Missing mandatory argument (HTML template to draw the profiles): html.template.file ")
 } else if (!exists("results.folder")){
@@ -98,6 +143,7 @@ if (!exists("p.val")) {
 } 
 if (!exists("bin")) {
   bin <- 25
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 }
 if (!exists("draw.area")) {
   draw.area <- 0
@@ -105,6 +151,16 @@ if (!exists("draw.area")) {
 if (!exists("individual.plots")) {
   individual.plots <- 0
 }
+## <<<<<<< HEAD
+
+## # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/")
+## # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_GAF_OnTheFly_bg_mkv_2_PARSED.tab"
+## # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_G_mkv_2_PARSED.tab"
+
+## #############################################
+## ## Read matrix-scan table Active Promoters
+## message("Reading matrix-scan table")
+## =======
 if (!exists("logo.folder")) {
   logo.folder <- paste(basename, "_logos", sep = "")
 }
@@ -121,6 +177,7 @@ if (!exists("individual.plots")) {
 #############################################
 ## Read matrix-scan table Active Promoters
 verbose(paste("Reading matrix-scan results table"), 2)
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 matrix.scan.results <- read.csv(file = matrix.scan.file, sep = "\t", header = TRUE, comment.char = ";")
 colnames(matrix.scan.results) <- c("seq_id", "ft_name", "bspos", "Pval")
 
@@ -139,18 +196,96 @@ matrix.names <- unique(as.vector(matrix.scan.results$ft_name))
 
 ###################################
 ## Calculate the sequence limits
+## <<<<<<< HEAD
+## =======
 # seq.length <- 600
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 seq.length <- as.numeric(seq.length)
 limits <- seq.length/2
 
 ###################################
+## <<<<<<< HEAD
+## ## Dive the sequences in bins 
+## # bin <- 50
+## message(paste("Setting bins of size", bin))
+## =======
 ## Divide the sequences in bins 
 # bin <- 25
 verbose(paste("Setting bins of size", bin), 2)
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 bin <- as.numeric(bin)
 windows <- IRanges(start = seq(from = -limits, to = limits - bin + 1, by = bin), width = bin)
 
 
+## <<<<<<< HEAD
+## profiles <- NULL
+## all.pvalues <- NULL
+## all.evalues <- NULL
+## windows.labels <- NULL
+## all.nb.seq <- NULL
+## all.nb.hits <- NULL
+## all.max.pval.hits <- NULL
+## all.min.pval.hits <- NULL
+## all.chisq <- NULL
+## all.df <- NULL
+
+## ID.to.names.correspondence.tab <- "ID_names.txt"
+## ID.names.tab <- ID.to.names.correspondence.tab
+## ID.names <- read.table(ID.names.tab, sep = "\t")
+
+## # prefix <- paste("Jaspar_insects", "_pval_", p.val, sep = "")
+## message("Calculating P-value. Null Hypothesis: homogenous distribution of the TFBSs")
+## if(individual.plots == 1){
+##   message("Print the profiles in a PDF file")
+## }
+
+
+## pdf.file.name <- paste(prefix, "_positional_profiles.pdf", sep = "")
+## pdf(pdf.file.name)
+
+## ##################################################
+## ## Normalize the number of hits before plotting ##
+## ##################################################
+## sapply(1:length(matrix.names), function(m){
+
+## #   print(m)
+  
+##   ## Select the matches of the query motif
+##   matrix.query <- matrix.names[m]
+##   matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
+  
+##   ## Get the number of sequences with at least one hit
+##   nb.seq.with.hits <- length(unique(as.vector(matrix.query.selection$seq_id)))
+##   all.nb.seq <<- append(all.nb.seq, nb.seq.with.hits)
+  
+##   ## Get the total number of hits for each motif
+##   total.hits <- dim(matrix.query.selection)[1]
+##   all.nb.hits <<- append(all.nb.hits, total.hits)
+  
+##   ## Get the max p-value among the p-values of the matches
+##   max.pval.hit <- max(matrix.query.selection$Pval)
+##   all.max.pval.hits <<- append(all.max.pval.hits, max.pval.hit)
+  
+##   ## Get the min p-value among the p-values of the matches
+##   min.pval.hit <- min(matrix.query.selection$Pval)
+##   all.min.pval.hits <<- append(all.min.pval.hits, min.pval.hit)
+  
+##   ## As the reference point in matrix-scan was the end of the sequence and as we are working with peaks
+##   ## we add 300 to the position to have -/+ position around the summit
+##   matrix.query.selection$bspos <- matrix.query.selection$bspos + 300
+  
+##   ## Convert the BSs in Ranges
+##   selection.IR <- IRanges(start = matrix.query.selection$bspos, end = matrix.query.selection$bspos)
+  
+##   ## Count the overlap of BS in the bins
+##   counts.per.bin <- countOverlaps(windows, selection.IR)
+  
+##   ## Chi-square test to calculate a p-value
+##   ## H0 = the number of hits (TFBSs) follow an homogeneous distribution
+##   count.per.bin.HO <- round(sum(counts.per.bin)/length(counts.per.bin))
+##   HO.expected.counts <- rep(count.per.bin.HO, times = length(counts.per.bin))
+  
+## =======
 # ID.to.names.correspondence.tab <- "ID_names.txt"
 ID.names.tab <- ID.to.names.correspondence.tab
 ID.names <- read.table(ID.names.tab, sep = "\t")
@@ -293,22 +428,59 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   feature.query <- rownames(counts.per.bin.table)[m]
   feature.attributes[[m]][["feature_id"]] <<- feature.query
     
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
   ## Goodnes-of-fit X2 test
   ## We don't require a probability vector because we assume the TFBSs (counts) 
   ## are distributed homogenously along the sequences
   chi <- chisq.test(counts.per.bin, correct = TRUE)
   
   ## Chi-squared
+## <<<<<<< HEAD
+##   cs.val <- chi[[1]]
+##   all.chisq <<- append(all.chisq, cs.val)
+  
+##   ## Degrees of freedom
+##   df <- chi[[2]]
+##   all.df <<- append(all.df, df)
+## =======
   cs.val <- round(chi[[1]], digits = 3)
   feature.attributes[[m]][["chi_squared"]] <<- cs.val
   
   ## Degrees of freedom
   df <- chi[[2]]
   feature.attributes[[m]][["degrees"]] <<- df
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
   
   ## Get p-value
   chi.pval <- round(as.numeric(chi[[3]]), digits = 100000)
   
+## <<<<<<< HEAD
+##   ## Caclculate e-value
+##   chi.eval <- chi.pval * length(matrix.names)
+  
+##   chi.pval <- prettyNum(chi.pval, scientific=TRUE, digits = 2)
+##   chi.eval <- prettyNum(chi.eval, scientific=TRUE, digits = 2)
+
+##   windows.df <- data.frame(windows)
+
+##   names(counts.per.bin) <- windows.df$start
+  
+##   profiles <<- cbind(profiles,(counts.per.bin/sum(counts.per.bin)))
+##   y.val <- counts.per.bin/sum(counts.per.bin)
+##   x.val <- as.numeric(names(counts.per.bin))
+
+##   all.pvalues <<- append(all.pvalues, chi.pval)
+##   all.evalues <<- append(all.evalues, chi.eval)
+  
+##   windows.labels <<- names(counts.per.bin)
+  
+##   if(individual.plots == 1){
+##     plot(x = c(-300,-300,50,50),
+##          y = c(-0.1,-0.4,-0.4,-0.1),
+##          type = "l",
+##   #        ylim = c(0, max(c(counts.per.range.inactive, counts.per.range.inactive))+50),
+##           ylim = c(0, 0.20),
+## =======
   ## Calculate e-value
   chi.eval <- chi.pval * length(matrix.names)
   
@@ -419,27 +591,98 @@ if(individual.plots == 1){
          y = c(-0.1,-0.4,-0.4,-0.1),
          type = "l",
          ylim = c(0, 0.20),
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
          xlim = c(-300, 300),
          col = "#ffeda0",
          lwd = 1,
          ## Labels
+## <<<<<<< HEAD
+##          main = paste("Motif:", matrix.query),
+## =======
          main = paste("Motif:", feature.query),
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
          xlab = "Distance to peak summit",
          ylab = "Normalized Nb Hits",
          ## Hide x-axis
          xaxt='n', 
     )  
+## <<<<<<< HEAD
+  
+##   # polygon(x = c(-250,-250, 50, 50), y = c(0, 1, 1, 0), col="#ffeda0", border = NA, lty = 0, )
+      
+##     ## Draw the grid
+##     abline(v=(x.val), col="lightgray", lty="dotted")
+##     abline(h=(seq(from = 0, to = 1, by = 0.01)), col="lightgray", lty="dotted")
+  
+## =======
     # polygon(x = c(-250,-250, 50, 50), y = c(0, 1, 1, 0), col="#ffeda0", border = NA, lty = 0, )
     
     ## Draw the grid
     abline(v=(x.val), col="lightgray", lty="dotted")
     abline(h=(seq(from = 0, to = 1, by = 0.01)), col="lightgray", lty="dotted")
     
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
     ## Draw the TSS (+1) position
     abline(v = 0, col="#045a8d", lwd = 2, lty = 2)
     
     ## Set x-axis values 
     axis(side = c(1,2,3,4), at = as.character(x.val), labels = as.character(x.val))
+## <<<<<<< HEAD
+  
+##     ## Draw the lines for the active promoters 
+##     lines(x = x.val, y = y.val, type = "l", col = "#00BFC4", lty = 1, lwd = 3)
+  
+  
+##     ## Draw the legend
+##      legend("topleft", legend = c(paste(matrix.query, "profile"), "Peak summit"), fill = c("#00BFC4", "#045a8d"), bty="o", bg="white")
+##   #   legend("topright", legend = paste("E-value:", TFBSs.enrichment.eval), bty="o", bg="white")
+  
+##     matrix.ID <- as.vector(ID.names[which(ID.names[,2] == matrix.query),1])
+##     logo.file <- paste("logos/", matrix.ID, "_logo.jpeg", sep = "")
+##     logo <- readJPEG(logo.file)
+##     rasterImage(logo, 
+##               xleft = 60,
+##               xright = 275, 
+##               ybottom = 0.14,
+##               ytop = 0.195)
+##   }
+## })
+## if(individual.plots == 1){
+##   dev.off()
+## }
+
+
+## # profiles <- data.frame(t(profiles))
+## rownames(profiles) <- as.character(data.frame(windows)$start)
+## colnames(profiles) <- matrix.names
+## profiles <- as.matrix(profiles)
+## profiles <- round(profiles, digits = 3)
+
+
+## #######################################
+## ## Create the dynamic report in HTML ##
+## #######################################
+
+## # aa <- profiles
+## #  profiles <- aa
+
+## ## Set the motif names and IDs
+## TF.names <- colnames(profiles)
+
+## ## Ordert the TF.names (and other variables) according the Significance (-log10(E-value))
+## order.by.eval <- rev(order(-log(as.numeric(all.evalues))))
+## TF.names <- TF.names[order.by.eval]
+## profiles <- profiles[,order.by.eval]
+## evalues.vector <- sort(as.numeric(all.evalues))
+## pvalues.vector <- sort(as.numeric(all.pvalues))
+## all.nb.seq <- all.nb.seq[order.by.eval]
+## all.nb.hits <- all.nb.hits[order.by.eval]
+## all.pval.match <- rep(p.val, times = length(TF.names))
+## all.max.pval.hits <- all.max.pval.hits[order.by.eval]
+## all.min.pval.hits <- all.min.pval.hits[order.by.eval]
+## all.chisq <- all.chisq[order.by.eval]
+## all.df <- all.df[order.by.eval]
+## =======
     
     ## Draw the lines for the active promoters 
     lines(x = x.val, y = y.val, type = "l", col = "#00BFC4", lty = 1, lwd = 3)
@@ -476,12 +719,16 @@ feature.attributes <- feature.attributes[order.by.eval,]
 
 ## Set the motif names and IDs
 TF.names <- as.vector(feature.attributes[,1])
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
 ## Get the IDs of the TF
 TF.IDs <- as.vector(sapply(TF.names, function(x){
   as.vector(ID.names[which(ID.names[,2] == x),1])
 }))
+## <<<<<<< HEAD
+## =======
 
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 ## As each motif ID is unique, we used it also in the html file,
 ## However as some IDs include a period ('.') in their text, we change it by
 ## an underscore ('_')
@@ -489,6 +736,10 @@ TF.IDs.cp <- gsub("\\.", "", TF.IDs)
 
 ## Set colors
 set.colors <- colorRampPalette(brewer.pal(10,"Paired"))(length(TF.IDs))
+## <<<<<<< HEAD
+## # set.colors <- colorRampPalette(brewer.pal(9,"YlOrRd"))(length(TF.IDs))
+## =======
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
 counter <- 0
 x.correspondence <- NULL
@@ -498,13 +749,22 @@ area <- NULL
 all.motifs <- NULL
 all.motif.names <- NULL
 
+## <<<<<<< HEAD
+## ## Each column of the variable profiles correspond to the counts per bin of each motif
+## thrash <- apply(profiles, 2, function(values){
+## =======
 
 ## Each column of the variable profiles correspond to the counts per bin of each motif
 thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
+##>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
   
   counter <<- counter + 1
   
   ## Here we create a unique ID without CSS speacial characters
+## <<<<<<< HEAD
+## #   motif <- paste(TF.IDs[counter], "_", TF.names[counter], sep ="")
+## =======
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
   motif <- paste(TF.IDs.cp[counter], counter, sep = "")  
   all.motifs <<- append(all.motifs, motif)
   all.motif.names <<- append(all.motif.names, TF.names[counter])
@@ -534,8 +794,15 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
 
 ## Set the line width according the significance -log10(E-value)
 ## Higher significance means a wider line
+## <<<<<<< HEAD
+## significance <- rev(sort(-log(as.numeric(all.evalues))))
+## significance <- round(significance, digits = 2)
+## q <- quantile(significance)
+
+## =======
 significance <- as.numeric(as.vector(feature.attributes$Sig))
 q <- quantile(significance)
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 line.w <- sapply(significance, function(s){
   if(s <= q[2]){
     w <- 1
@@ -551,16 +818,99 @@ line.w <- sapply(significance, function(s){
 
 ## Write the logo's path
 logos.F <- sapply(TF.IDs, function(i){
+## <<<<<<< HEAD
+##   paste("logos/",i, "_logo.jpeg", sep = "")
+## =======
   paste(logo.folder, i, "_logo.jpeg", sep = "")
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 })
 
 ## Temporary not available
 logos.R <- sapply(TF.IDs, function(i){
+## <<<<<<< HEAD
+##   paste("logos/",i, "_logo_rc.jpeg", sep = "")
+## =======
   paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 })
 
 ## Create a Dataframe containing the information of all motifs
 ## This table will be exported and displayed as a dynamic table in the report
+## <<<<<<< HEAD
+## profile.data.tab <- data.frame(all.motif.names, TF.IDs, pvalues.vector, evalues.vector, significance, logos.F, all.nb.seq, all.nb.hits, all.pval.match, all.max.pval.hits, all.min.pval.hits, all.chisq, all.df)
+## colnames(profile.data.tab) <- c("Motif_name", "Motif_ID", "P-val", "E-val", "Significance", "Logo", "Nb_seq_with_hits", "Total_nb_hits", "P_val_threshold", "Max_pval", "Min_pval", "Chi-squared", "Degrees_Freedom")
+## rownames(profile.data.tab) <- NULL
+## profile.data.tab.file <- paste(prefix, "_profiles.tab", sep = "")
+## write.table(profile.data.tab, file = profile.data.tab.file, sep = "\t", col.names = TRUE, row.names = FALSE, quote = FALSE)
+
+
+## ##########################
+## ## Draw Profiles heatmap
+## message("Drawing Heatmap profiles")
+## profiles.tab.file <- paste(prefix, "_counts_per_bin_profiles.tab", sep = "") 
+## write.table(t(profiles), file = profiles.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE)
+
+## ## Color palette
+## rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
+
+## ## Heatmap
+## out.format <- c("pdf", "jpg")
+## for (format in out.format){
+
+##   profiles.heatmap.file <- paste(prefix, "_profiles_heatmap.", format, sep = "") 
+  
+##   if(format == "pdf"){
+##     pdf(profiles.heatmap.file)
+##   } else if (format == "jpg"){
+##     jpeg(profiles.heatmap.file)
+##   }
+  
+##   heatmap.2(t(profiles),
+            
+##             ## Dendrogram control
+##             dendrogram = c("none"),
+##             Rowv = TRUE,
+##             Colv = FALSE,
+            
+##             main = "Profile Heatmap",
+##             xlab = "Position (bp)",
+##             ylab = "Motifs",
+            
+##             #            hclustfun = function(d){hclust(d, method="ward")},
+            
+##             ## Color
+##             col = rgb.palette,
+            
+##             ## Trace
+##             trace = "none",
+            
+##             ## Key control
+##             key = TRUE,
+##             keysize = 1,
+##             density.info = "none",
+##             key.xlab = "Density",
+##             key.ylab = "",
+##             key.title = "",
+##             offsetCol = 0.25,
+##             cexRow = 0.25,
+##   )
+##   dev.off()
+  
+## }
+
+
+
+## ## Fill the HTML template
+## ## Substitute the words marked in the tamplate by the data
+## html.template.file <- "Template/index.html"
+## html.report <- readLines(html.template.file)
+
+## profile.data.tab.html <- create.html.tab(profile.data.tab[,c(1:8)], img = 6)
+## profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
+## html.report <- gsub("--tab--", profile.data.tab.html, html.report)
+
+## x.y <<- rbind(x.y, paste("['x',", paste(rownames(profiles), collapse = ","), "],", sep = ""))
+## =======
 all.pval.match <- rep(p.val, times = length(TF.names))
 datatable.info.tab <- feature.attributes
 datatable.info.tab$P_val_threshold <- all.pval.match
@@ -579,6 +929,7 @@ profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
 html.report <- gsub("--tab--", profile.data.tab.html, html.report)
 
 x.y <<- rbind(x.y, paste("['x',", paste(colnames(frequency.per.bin.table),collapse = ","), "],", sep = ""))
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 
 ## CSS section to set the line width
 ## Note: the width is proportional to the significance
@@ -588,12 +939,22 @@ html.report <- gsub("--lines_w--", line.w, html.report)
 
 ## Add the e-values data
 ## They are inserted in the JS section
+## <<<<<<< HEAD
+## evalues <- paste("evalues['", all.motifs, "'] = '", evalues.vector, "';", sep = "")
+## =======
 evalues <- paste("evalues['", all.motifs, "'] = '", as.vector(datatable.info.tab$E_val), "';", sep = "")
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 evalues <- paste(evalues, collapse = "\n")
 html.report <- gsub("--evalues--", evalues, html.report)
 
 ## Add the p-values (to display in the tooltip)
 ## They are inserted in the JS section
+## <<<<<<< HEAD
+## pvalues <- paste("pvalues['", all.motifs, "'] = '", pvalues.vector, "';", sep = "")
+## pvalues <- paste(pvalues, collapse = "\n")
+## html.report <- gsub("--pvalues--", pvalues, html.report)
+
+## =======
 pvalues <- paste("pvalues['", all.motifs, "'] = '", as.vector(datatable.info.tab$P_val), "';", sep = "")
 pvalues <- paste(pvalues, collapse = "\n")
 html.report <- gsub("--pvalues--", pvalues, html.report)
@@ -604,6 +965,7 @@ qvalues <- paste("qvalues['", all.motifs, "'] = '", as.vector(datatable.info.tab
 qvalues <- paste(qvalues, collapse = "\n")
 html.report <- gsub("--qvalues--", qvalues, html.report)
 
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 ## Add the real motif IDs (to display in the tooltip)
 ## They are inserted in the JS section
 ## I called them 'real' because are those found on the original motif file
@@ -614,15 +976,25 @@ html.report <- gsub("--IDs--", IDs, html.report)
 ## Add the real motif logo path (to display in the tooltip)
 ## They are inserted in the JS section
 logos <- sapply(TF.IDs, function(i){
+## <<<<<<< HEAD
+##   paste("logos/",i, "_logo.jpeg", sep = "")
+## })
+## logos <- paste("pics['", all.motifs, "'] = '", logos, "';", sep = "")
+## =======
   paste(logo.folder, i, "_logo.jpeg", sep = "")
 })
 logos <- paste("pics['", all.motifs, "'] = '", as.vector(datatable.info.tab$Logo), "';", sep = "")
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 logos <- paste(logos, collapse = "\n")
 html.report <- gsub("--pics--", logos, html.report)
 
 ## Add the signficance (to display in the tooltip)
 ## They are inserted in the JS section
+## <<<<<<< HEAD
+## sig <- paste("significances['", all.motifs, "'] = '", significance, "';", sep = "")
+## =======
 sig <- paste("significances['", all.motifs, "'] = ", as.vector(datatable.info.tab$Sig), ";", sep = "")
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 sig <- paste(sig, collapse = "\n")
 html.report <- gsub("--significances--", sig, html.report)
 
@@ -658,17 +1030,35 @@ html.report <- gsub("--all--", all.motifs, html.report)
 
 ## Insert the Y axis limits
 ## They are inserted in the C3section
+## <<<<<<< HEAD
+## max.y <- max(profiles) + 0.02
+## =======
 max.y <- max(frequency.per.bin.table) + 0.02
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 html.report <- gsub("--y_axis--", max.y, html.report)
 
 ## Fill the parameters table
 html.report <- gsub("--bin_l--", bin, html.report)
+## <<<<<<< HEAD
+## html.report <- gsub("--bin_nb--", length(windows.labels), html.report)
+## =======
 html.report <- gsub("--bin_nb--", ncol(counts.per.bin.table), html.report)
+## >>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 html.report <- gsub("--seq_nb--", length(seq.id), html.report)
 html.report <- gsub("--motif_nb--", length(matrix.names), html.report)
 html.report <- gsub("--p--", prettyNum(p.val), html.report)
 
 ## Fill the heatmap section
+## <<<<<<< HEAD
+## html.report <- gsub("--heatmap_png--", paste(prefix, "_profiles_heatmap.jpg", sep = ""), html.report)
+## html.report <- gsub("--heatmap_pdf--", paste(prefix, "_profiles_heatmap.pdf", sep = ""), html.report)
+
+## ## Export the report
+## html.report.file <- paste(prefix, "_scan_profile_report.html", sep = "")
+## write(html.report, file = html.report.file)
+
+
+## =======
 html.report <- gsub("--heatmap_png--", paste(basename, "_profiles_heatmap.jpg", sep = ""), html.report)
 html.report <- gsub("--heatmap_pdf--", paste(basename, "_profiles_heatmap.pdf", sep = ""), html.report)
 
@@ -700,5 +1090,6 @@ html.report <- gsub("--datatable_css--", datatable.css.base, html.report)
 html.report.file <- paste(basename, "_scan_profile_report.html", sep = "")
 write(html.report, file = html.report.file)
 
+##>>>>>>> 0d337d244ecf26227769c46bf360fa45266248d3
 # grep -v '^;' matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments.tab | awk -F '\t'  ' $2!="limit" && ($11 >= 4) {print $1"\t"$3"\t"($6+$5)/2"\t"$9} ' > matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments_PARSED.tab
 # cat /home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/enrichment_by_scan/Plot_matches_extended_promoters.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " matrix.scan.active = '/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/test_metrics_with_yeast_data/CapStarrseq_Active_Prom_K562_merge_IP_extended_matrix_scan_pval_1e-3_HOCOMOCO_bg_mkv_2.tab'; matrix.scan.inactive = '/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/test_metrics_with_yeast_data/CapStarrseq_Active_Prom_K562_merge_IP_extended_matrix_scan_pval_1e-3_HOCOMOCO_bg_mkv_2.tab'; p.val = '1e-4'; bin = '50'; pdf.file = './test.pdf'"
