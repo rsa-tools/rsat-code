@@ -2396,9 +2396,14 @@ sub ReadArguments {
     } elsif ($ARGV[$a] =~ /-symb/i) {
       $symbols = 1;
   
-     ### R plot
+     ### Delegate XY plots to R rather than Perl GD library
     } elsif ($ARGV[$a] =~ /-r_plot/i) {
-      $r_plot= 1;
+      $R_path = &RSAT::server::GetProgramPath("R", 0);
+      unless ($R_path) {
+	&RSAT::message::Warning("R program is not found in the path. Ignoring option -r_plot.");	
+      } else {
+	$r_plot= 1;
+      }
 
       ### logarithmic representation
     } elsif ($ARGV[$a] eq "-log") {
