@@ -6,6 +6,8 @@ if (dir.rsat == "") {
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 
+## Load some libraries
+source(file.path(dir.rsat, 'R-scripts/config.R'))
 
 ## Load required libraries
 required.packages = c("IRanges",
@@ -22,11 +24,10 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 
 #################################################################################################
 ## Functions
-
 create.html.tab <- function(tab, img = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:15px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Logo </th></tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:15px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Logo </th></tr></thead><tbody>"
   
   content.tab <- apply(tab, 1, function(row){
     
@@ -64,7 +65,7 @@ create.html.tab <- function(tab, img = 0){
 ## Arguments passed on the command line
 ## will over-write the default arguments
 ## specified above.
-message("Reading arguments from command-line")
+# message("Reading arguments from command-line")
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args >= 1)) {
   for(i in 1:length(args)){
@@ -72,7 +73,7 @@ if (length(args >= 1)) {
   }
 }
 
-message("Checking mandatory arguments")
+# message("Checking mandatory arguments")
 if (!exists("matrix.scan.file")) {
   stop("Missing mandatory argument (matrix-scan results table): matrix.scan.file ")
 } else if (!exists("prefix")) {
@@ -118,7 +119,7 @@ if (!exists("individual.plots")) {
 
 #############################################
 ## Read matrix-scan table Active Promoters
-message("Reading matrix-scan table")
+verbose(paste("Reading matrix-scan results table"), 1)
 matrix.scan.results <- read.csv(file = matrix.scan.file, sep = "\t", header = TRUE, comment.char = ";")
 colnames(matrix.scan.results) <- c("seq_id", "ft_name", "bspos", "Pval")
 
@@ -144,7 +145,7 @@ limits <- seq.length/2
 ###################################
 ## Divide the sequences in bins 
 # bin <- 25
-message(paste("Setting bins of size", bin))
+verbose(paste("Setting bins of size", bin), 1)
 bin <- as.numeric(bin)
 windows <- IRanges(start = seq(from = -limits, to = limits - bin + 1, by = bin), width = bin)
 
@@ -166,7 +167,7 @@ setwd(results.folder)
 input.count.table <- 0
 if(input.count.table == 0){
 
-message("Creating counts and frequencies tables")
+  verbose(paste("Creating counts and frequencies tables"), 1)
 counts.per.bin <-  sapply(1:length(matrix.names), function(m){
   
     ## Select the matches of the query motif
@@ -188,7 +189,7 @@ counts.per.bin <-  sapply(1:length(matrix.names), function(m){
   
 }
 counts.per.bin.table <- t(counts.per.bin)
-counts.per.bin.table <- round(counts.per.bin.table, digits = 3)
+#counts.per.bin.table <- round(counts.per.bin.table, digits = 3)
 rm(counts.per.bin)
 rownames(counts.per.bin.table) <- matrix.names
 colnames(counts.per.bin.table) <- as.character(data.frame(windows)$start)
@@ -215,7 +216,7 @@ write.table(counts.per.bin.table, file = counts.tab.file, quote = FALSE, col.nam
 ####################################################################################
 ## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
 ####################################################################################
-message("Drawing Heatmap profiles")
+verbose(paste("Drawing Heatmap profiles", 1))
 
 ## Color palette
 rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
@@ -281,7 +282,7 @@ feature.attributes <- vector("list", dim(counts.per.bin.table)[1])
 
 #####################################################
 ## Calculate X2, p-value, e-value and significance
-message("Calculating P-value. Null Hypothesis: homogenous distribution of the TFBSs")
+verbose(paste("Calculating P-value. Null Hypothesis: homogenous distribution of the TFBSs"), 1)
 thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
 
 #   print(m)
@@ -305,7 +306,7 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   feature.attributes[[m]][["degrees"]] <<- df
   
   ## Get p-value
-  chi.pval <- round(as.numeric(chi[[3]]), digits = 100000)
+  chi.pval <- round(as.numeric(chi[[3]]), digits = 100000000000000000)
   
   ## Calculate e-value
   chi.eval <- chi.pval * length(matrix.names)
@@ -402,7 +403,7 @@ rm(additional.data)
 # individual.plots <- 0
 if(individual.plots == 1){
   
-  message("Print all the profiles in a PDF file")
+  verbose(paste("Printing all the profiles, separately, in a PDF file"), 1)
   pdf.file.name <- paste(basename, "_positional_profiles.pdf", sep = "")
   pdf(pdf.file.name)
   
@@ -465,6 +466,8 @@ if(individual.plots == 1){
 ## the dataframe frequency.per.bin.table complemented with the ##
 ## statistics calculated in the dataframe feature.attributes   ##
 #################################################################
+
+verbose(paste("Creating HTML dynamic report"), 1)
 
 ## Ordert the TF.names (and other variables) according the Significance (-log10(E-value))
 order.by.eval <- order(as.numeric(as.vector(feature.attributes$E_val)))
@@ -531,15 +534,16 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
 ## Set the line width according the significance -log10(E-value)
 ## Higher significance means a wider line
 significance <- as.numeric(as.vector(feature.attributes$Sig))
-q <- quantile(significance)
 line.w <- sapply(significance, function(s){
-  if(s <= q[2]){
+  if(s <= 0){
     w <- 1
-  } else if (s >= q[2] & s <= q[3]){
-    w <- 2
-  } else if (s >= q[3] & s <= q[4]){
-    w <- 3
-  } else if (s >= q[4]){
+  } else if (s > 0 & s <= 10){
+      w <- 2
+  } else if (s > 10 & s <= 50){
+      w <- 3
+  }  else if (s > 50 & s <= 100){
+      w <- 4
+  } else if (s > 100){
     w <- 5
   }
 })
@@ -570,7 +574,7 @@ all.motifs <- all.motifs
 # html.template.file <- "Template/index.html"
 html.report <- readLines(html.template.file)
 
-profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12,2:6,13)], img = 8)
+profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12,2:6,9,13)], img = 9)
 profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
 html.report <- gsub("--tab--", profile.data.tab.html, html.report)
 
