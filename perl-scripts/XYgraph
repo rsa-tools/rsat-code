@@ -784,10 +784,10 @@ sub Rplot {
     $r_instructions .= "legend.width <- 0\n";
   }
   $r_instructions .= "par(mar=c(5.1, 4.1, 5.1, 1.1 + legend.width))\n";
+  $r_instructions .= "par(font.lab=2)\n";
 
   ## Put together all parammeters that have to be feed into maplot functions
-  my $r_plot_params="type='n'"; ## We first open the plot with no content, and then add the lines one by one
-  
+  my $r_plot_params = "type='n'"; ## We first open the plot with no content, and then add the lines one by one
 
   ## Title parammeters
   if ($title1 || $title2) {
@@ -856,61 +856,40 @@ sub Rplot {
   }
   
   
-  ## Axis limits
-  
-  if ($x_axis_max ne "ND"||$x_axis_min ne "ND" ) {
-
-    ## MIN value for x is definied but not the max
-    if (($x_axis_max eq "ND") && ($x_axis_min ne "ND")) {
-      ## Max will be defined using the maximun of all x.valuess
-      $r_instructions .= "xlimits <- c( ".$x_axis_min.", max(na.omit(as.vector(input.table[,1]))))\n";
-      
-      ## MAX value for x is defined but not the MIN 
-    } elsif (($x_axis_max ne "ND") && ($x_axis_min eq "ND")) {
-      $r_instructions .= "xlimits <- c(min(na.omit(input.table[,1])), ".$x_axis_max.")\n";
-      
-      ## MAX and MIN values for x axis are deffined 
-    } elsif (($x_axis_max ne "ND") && ($x_axis_min ne "ND")) {
-      $r_instructions .= "xlimits <- c( ".$x_axis_min.",".$x_axis_max .")\n";
-    }
-    
-    
+  ## X axis limits for R plot
+  if ($x_axis_min eq "ND") {
+    die("HELLO");
+    $r_instructions .= "xmin <- min(na.omit(x.values))\n";
   } else {
-    $r_instructions .= "xlimits <- range( na.omit(x.values))\n";
+    $r_instructions .= "xmin <- ".$x_axis_min."\n";
   }
-
+  if ($x_axis_max eq "ND") {
+    $r_instructions .= "xmax <- max(na.omit(x.values))\n";
+  } else {
+    $r_instructions .= "xmax <- ".$x_axis_max."\n";
+  }
+  $r_instructions .= "xlimits <- c(xmin, xmax)\n";
   $r_plot_params .= ", xlim=xlimits ";
 
-  if ( $y_axis_max ne "ND" ||  $y_axis_min ne "ND" ) {
-    
-    ## MIN value for y is defined but not the max
-    if (($y_axis_max eq "ND") && ($y_axis_min ne "ND")) {
-      ## Max will be defined using the maximun of all y.values
-      $r_instructions .= "ylimits <- c( ".$y_axis_min.", max(na.omit(as.vector(input.table[, -1]))))\n";
-      
-      ## MAX value for y is defined but not the MIN
-    } elsif (($y_axis_max ne "ND") && $y_axis_min) {
-      $r_instructions .= "ylimits <- c(min(na.omit(input.table[, -1])), ".$y_axis_max.")\n";
-
-      ## MAX and MIN values for y axis are deffined
-    } elsif (  ($y_axis_max ne "ND") && ($y_axis_min ne "ND")) {
-      # print "min and max".$y_axis_min.",".$y_axis_max;
-      # die "BOOOM";
-      $r_instructions .= "ylimits <- c( ".$y_axis_min.",".$y_axis_max .")\n";
-    }
-    
-
-    
-    
+  ## Y axis limits for R plot
+  if ($y_axis_min eq "ND") {
+    $r_instructions .= "ymin <- min(na.omit(as.vector(as.matrix(y.values))))\n";
   } else {
-    $r_instructions .= "ylimits <-range(sort(as.vector(as.matrix(y.values))))\n";
+    $r_instructions .= "ymin <- ".$y_axis_min."\n";
   }
+  if ($y_axis_max eq "ND") {
+    $r_instructions .= "ymax <- max(na.omit(as.vector(as.matrix(y.values))))\n";
+  } else {
+    $r_instructions .= "ymax <- ".$y_axis_max."\n";
+  }
+  $r_instructions .= "ylimits <- c(ymin, ymax)\n";
   $r_plot_params .= ", ylim=ylimits ";
 
-  if (!$lines) {
-    $draw_plot_params .= ", pch=0 ,type=\"p\"";
-  } else {
+  ## Point or line specifications
+  if ($lines) {
     $draw_plot_params .= ", lwd=3 ,type=\"l\"";
+  } else {
+    $draw_plot_params .= ", pch=0 ,type=\"p\"";
   }
   
   if ($bg ne "white") {
@@ -2381,29 +2360,29 @@ sub ReadArguments {
       $ygstep2 = $ARGV[$a+1];
 
       ### min and max values to represent ###
-    } elsif (($ARGV[$a] eq "-max") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+) {0,1}(E[+-]{0,1}\d+) {0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-max") && (&IsReal($ARGV[$a+1]))) {
       $x_axis_max = $ARGV[$a+1];
       $y_axis_max = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-xmax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+) {0,1}(E[+-]{0,1}\d+) {0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-xmax") && (&IsReal($ARGV[$a+1]))) {
       $x_axis_max = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-ymax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+) {0,1}(E[+-]{0,1}\d+) {0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-ymax") && (&IsReal($ARGV[$a+1]))) {
       $y_axis_max = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-min") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+) {0,1}(E[+-]{0,1}\d+) {0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-min") && (&IsReal($ARGV[$a+1]))) {
       $x_axis_min = $ARGV[$a+1];
       $y_axis_min = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-xmin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+) {0,1}(E[+-]{0,1}\d+) {0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-xmin") && (&IsReal($ARGV[$a+1]))) {
       $x_axis_min = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-ymin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+) {0,1}(E[+-]{0,1}\d+) {0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-ymin") && (&IsReal($ARGV[$a+1]))) {
       $y_axis_min = $ARGV[$a+1];
     } elsif ($ARGV[$a] eq "-same_limits") {
       $same_limits = 1;
 
       ### axis size (in pixels) ###
-    } elsif (($ARGV[$a] eq "-xsize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+    } elsif (($ARGV[$a] eq "-xsize") && (&IsNatural($ARGV[$a+1]))) {
       $x_axis_size = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-ysize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+    } elsif (($ARGV[$a] eq "-ysize") && (&IsNatural($ARGV[$a+1]))) {
       $y_axis_size = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-size") && ($ARGV[$a+1] =~ /^\d+$/)) {
+    } elsif (($ARGV[$a] eq "-size") && (&IsNatural($ARGV[$a+1]))) {
       $x_axis_size = $ARGV[$a+1];
       $y_axis_size = $ARGV[$a+1];
 
@@ -2482,7 +2461,7 @@ sub ReadArguments {
       $legend = 1;
 
       ### point size ###
-    } elsif (($ARGV[$a] eq "-pointsize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+    } elsif (($ARGV[$a] eq "-pointsize") && (&IsNatural($ARGV[$a+1]))) {
       $point_size = $ARGV[$a+1];
 
       ### data columns ###
