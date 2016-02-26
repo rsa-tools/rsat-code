@@ -1266,6 +1266,8 @@ sub CompositionProfiles {
     $cmd .= ' | '.$SCRIPTS.'/transpose-table';
 #    $cmd .= ' | grep -P \'(^id)|(^\-?\d+)\'';
     $cmd .= " | ".$SCRIPTS."/XYgraph -xcol 1 -ycol 2-".$col_nb;
+#   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
+    $cmd .= " -xgstep2 ".$main::param{profiles_ci};
     $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -legend -lines -pointsize 0 -legend -header";
