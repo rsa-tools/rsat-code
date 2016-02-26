@@ -4453,7 +4453,7 @@ much nicer plots, but requires to have R installed on the RSAT server.
 
 =cut
     } elsif ($arg eq "-r_plot") {
-      $R_path = &RSAT::server::GetProgramPath("MLKMZE", 0);
+      $R_path = &RSAT::server::GetProgramPath("R", 0);
       unless ($R_path) {
 	&RSAT::message::Warning("R program is not found in the path. Ignoring option -r_plot.");	
      } else {
