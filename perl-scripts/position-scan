@@ -103,6 +103,10 @@ package main;
   local $top_matrix_flag = 0;
   local $skip_matrix_flag = 0;
 
+  ## convert-seq top/last matrices
+  local $top_seq_flag = 0;
+  local $skip_seq_flag = 0;
+
   ## BG model input
   local $bg_file_flag = 0;
   local $bg_input_flag = 0;
@@ -180,6 +184,7 @@ package main;
   }
 
   ## Output file names
+  $main::outfile{filtered_sequences} = $main::outfile{prefix}."_filtered_sequences.fasta";
   $main::outfile{motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac.tf";
   $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_results.tab";
   $main::outfile{matches_tab_PARSED} = $main::outfile{prefix}."_matrix_scan_results_PARSED.tab";
@@ -245,7 +250,13 @@ package main;
   $jquery_base = &RSAT::util::RelativePath($main::outfile{report}, $js_base."/DataTables-1.10.4/media/js/jquery.js");
   $datatable_base = &RSAT::util::RelativePath($main::outfile{report}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
   $datatable_css_base = &RSAT::util::RelativePath($main::outfile{report}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
-      
+
+  ################################################################
+  ## Calculate the sequence length
+  ## For the moment the input are sequences of same length
+  ## TO DO: It will take the first sequence as template and the other sequences will be adapted to
+  ## that sequence length
+  &ProcessSeq();      
 
   ################################################################
   ## Calculate background of the input sequences
@@ -255,8 +266,7 @@ package main;
 
   ################################################################
   ## Run matrix-scan quick
-  #&ScanSequences();
-
+  &ScanSequences();
 
   ################################################################
   ## Parse the matrix-scan results table
@@ -271,13 +281,6 @@ package main;
   &GenerateLogos();
 
   ################################################################
-  ## Calculate the sequence length
-  ## For the moment the input are sequences of same length
-  ## TO DO: It will take the first sequence as template and the other sequences will be adapted to
-  ## that sequence length
-  &CalcSeqLength();
-
-  ################################################################
   ## Compute statistics (X2 pval, eval, qval) 
   ## Draw the dynamic profiles
   ## These steps are executed in R
@@ -285,14 +288,11 @@ package main;
 
   #######################################
   ## Delete temporal files and folders
-#  &Delete_temporal_files();
+  #&Delete_temporal_files();
 
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose >= 1);
-
-  ################################################################
-  ## Insert here output printing
 
   ################################################################
   ## Report execution time and close output stream
@@ -484,6 +484,34 @@ Sequence format.
 =cut
 	} elsif ($arg eq "-seq_format") {
 	    $main::seq_format = shift(@arguments);
+
+
+=pod
+
+=item B<-top_sequences X>
+
+Only analyze the first X sequences of the input sequence file.
+=cut
+    } elsif ($arg eq "-top_sequences") {
+      $top_sequences = shift(@arguments);
+      $top_seq_flag = 1;
+
+      &RSAT::error::FatalError($top_sequences, "Invalid value for option -top_sequences: must be a natural number") 
+         unless (&IsNatural($top_sequences));
+
+=pod
+
+=item B<-skip_sequences X>
+
+Skip the first X sequences of the input sequence file. 
+
+=cut
+    } elsif ($arg eq "-skip_sequences") {
+      $skip_sequences = shift(@arguments);
+      $skip_seq_flag = 1;
+      &RSAT::error::FatalError($skip_sequences, "Invalid value for option -skip_matrices: must be a natural number") 
+         unless (&IsNatural($skip_sequences));
+
 
 
 =pod
@@ -808,19 +836,39 @@ sub DynamicProfilesR {
 
 ################################################################
 ## Calculate sequence length
-sub CalcSeqLength {
+sub ProcessSeq {
 
     &RSAT::message::TimeWarn("Calculating Sequence length") if ($main::verbose >= 2);
 
-    $seq_lengt_cmd = $SCRIPTS."/sequence-lengths";
-    $seq_lengt_cmd .= " -i ".$main::infile{sequences};
-    $seq_lengt_cmd .= " -unit bp -in_format ".$main::seq_format;
-    $seq_lengt_cmd .= " | cut -f2 | uniq | head -n 1";
+    $seq_length_cmd = $SCRIPTS."/sequence-lengths";
+    $seq_length_cmd .= " -i ".$main::infile{sequences};
+    $seq_length_cmd .= " -unit bp -in_format ".$main::seq_format;
+    $seq_length_cmd .= " | cut -f2 | uniq | head -n 1";
 
-    chomp($seq_length = `$seq_lengt_cmd`);
+    chomp($seq_length = `$seq_length_cmd`);
+
+    my $seq_length_up = $seq_length + 1;
+    my $seq_length_dw = $seq_length - 1;
     
     &RSAT::message::TimeWarn("Sequence length: ", $seq_length, "bp") if ($main::verbose >= 2);
-	
+
+    &RSAT::message::TimeWarn("Filtering sequences shorter or longer than", $seq_length) if ($main::verbose >= 2);
+
+    $convert_seq_cmd = $SCRIPTS."/convert-seq";
+#    $convert_seq_cmd .= " -v 1 ";
+    $convert_seq_cmd .= " -i ".$main::infile{sequences};
+    $convert_seq_cmd .= " -from ".$main::seq_format." -to ".$main::seq_format;
+    $convert_seq_cmd .= " -skip_long ".$seq_length_up;
+    $convert_seq_cmd .= " -skip_short ".$seq_length_dw;
+    $convert_seq_cmd .= " -top ".$top_sequences if($top_seq_flag == 1);
+    $convert_seq_cmd .= " -skip ".$skip_sequences if($skip_seq_flag == 1);
+    $convert_seq_cmd .= " -o ".$main::outfile{filtered_sequences};
+    &doit($convert_seq_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);    
+
+    $main::infile{sequences} = $main::outfile{filtered_sequences};
+
+    $to_delete{'filtered_sequences'} = $main::outfile{filtered_sequences};
+
     return($seq_length);
 }
 
