@@ -481,6 +481,7 @@ sub DefaultParameters {
   $main::param{seq_format} = "fasta"; push(@main::param_list, "seq_format");
 #  $main::param{img_format} = "pdf"; push(@main::param_list, "img_format");
   $main::param{img_format} = "png"; push(@main::param_list, "img_format");
+  $main::param{r_plot} = 0; ## Use R to plot XY graph
   $main::param{img_border} = 1; ## Border for the images in the synthetic table (generally blue because linked to the image file)
   $main::param{logo_table_height} = 50; ## Height for displaying logos in the synthetic tables
   $main::param{iupac_coloring} = 0; ## Color IUPAC degenerate letters in the consensus of HTML reports
@@ -497,11 +498,12 @@ sub DefaultParameters {
   ## Residue  profiles (position-analysis)
   $main::param{origin} = "center"; push(@main::param_list, "origin");
   $main::param{offset} = 0; push(@main::param_list, "offset");
-  $main::param{profiles_ci} = 20; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_ci} = 25; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_max_graphs");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
   @main::composition_oligo_lengths = (1,2);
   $main::param{composition_oligo_lengths} = join(',',@composition_oligo_lengths); push(@main::param_list, "composition_oligo_lengths");
+
 
   ################################################################
   ## Beware: computational profiles are always computed with the
@@ -1146,17 +1148,19 @@ sub SequenceLengths {
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib'};
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
-  $cmd = $SCRIPTS."/XYgraph -lines -pointsize 0 -legend";
+  ## Plot the distribution of sequence lengths
+  $cmd = $SCRIPTS."/XYgraph -lines -pointsize 0";
   $cmd .= " -format ".$main::param{img_format};
-  my $title = "Sequence lengths";
+  my $title = "Peak lengths";
   $title .= "; ".$main::param{title} if ($main::param{title});
   $cmd .= " -title '".$title."'";
-  $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of peaks'";
   $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
+  $cmd .= " -ysize 250 -ycol 4 -yleg1 'Number of peaks'";
   $cmd .= " -xmin 0 -ymin 0";
-  #  $cmd .= " -xgstep1 ".($main::param{profiles_ci});
-  #  $cmd .= " -xgstep2 ".$main::param{profiles_ci};
+#  $cmd .= " -xgstep1 ".($main::param{profiles_ci});
+  $cmd .= " -xgstep2 ".$main::param{profiles_ci};
   $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen_distrib'};
+  $cmd .= " -r_plot" if ($main::param{r_plot});
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib_graph'};
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
@@ -1263,6 +1267,11 @@ sub CompositionProfiles {
     $cmd .= ' | '.$SCRIPTS.'/transpose-table';
 #    $cmd .= ' | grep -P \'(^id)|(^\-?\d+)\'';
     $cmd .= " | ".$SCRIPTS."/XYgraph -xcol 1 -ycol 2-".$col_nb;
+#   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
+    $cmd .= " -xgstep2 ".$main::param{profiles_ci};
+    $cmd .= " -vline '#666666' 0";
+    $cmd .= " -xsize 800 -ysize 250";
+    $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -legend -lines -pointsize 0 -legend -header";
     if (-e $color_file) {
@@ -1280,13 +1289,13 @@ sub CompositionProfiles {
     } else {
       $title = $ol."nucleotide";
     }
-    $title .= " composition profiles : ";
+    $title .= " composition profiles";
 
     $title .= "; ".$seq_type." sequence";
     $title .= "; ".$main::param{title} if ($main::param{title});
     $cmd .= " -title '".$title."'";
     $cmd .= " -xleg1 'Position' -xsize 800";
-    $cmd .= " -yleg1 'Occurrences' -ysize 300  -ymin 0";
+    $cmd .= " -yleg1 'Occurrences' -ysize 250  -ymin 0";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles_graph"};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
@@ -2506,13 +2515,15 @@ sub MotifEnrichment {
   $cmd .= " -i ".$out_file;
   $cmd .= " -xcol 2 -xleg1 'Weight score'";
   $cmd .= " -xmin ".$main::param{scan_enrich_min_score};
-  $cmd .= " -xsize 800 -xgstep1 5 -xgstep2 1";
+  $cmd .= " -xsize 600 -ysize 250";
+  $cmd .= " -xgstep1 5 -xgstep2 1";
   $cmd .= " -hline red 100";
   $cmd .= " -hline violet 0";
   $cmd .= " -vline violet 5";
   $cmd .= " -ycol 11 -yleg1 'Binomial significance of hit number'";
   $cmd .= " -ysize 400";
   $cmd .= " -lines";
+  $cmd .= " -r_plot" if ($main::param{r_plot});
   $cmd .= " -o ".$graph_file;
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 }
@@ -2590,9 +2601,13 @@ sub ScanSequences {
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     $cmd .= " -lines -xcol 3 -ycol 4";
-    $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of sites'";
+    $cmd .= " -ysize 250 -ycol 4 -yleg1 'Number of sites'";
     $cmd .= " -xsize 800 -xcol 3 -xleg1 'Position relative to sequence ".$main::param{origin}."'";
+#   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
+    $cmd .= " -xgstep2 ".$main::param{profiles_ci};
+    $cmd .= " -vline '#666666' 0";
     $cmd .= " -title1 'Predicted sites : $motif_id'";
+    $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib_graph'};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
@@ -2612,9 +2627,11 @@ sub ScanSequences {
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites_per_peak'};
     $cmd .= " -lines -xcol 1 -ycol 4 ";
-    $cmd .= " -ysize 200 -ycol 4,6 -yleg1 'Number of peaks' -legend";
-    $cmd .= " -xsize 400 -xcol 1 -xleg1 'Number of sites' -xgstep1 5 -xgstep2 1";
-    $cmd .= " -title1 'Nb Predicted sites : $motif_id'";
+    $cmd .= " -xsize 500 -xcol 1 -xleg1 'Number of sites'";
+    $cmd .= " -ysize 250 -ycol 4,6 -yleg1 'Number of peaks' -legend";
+    $cmd .= " -xgstep1 5 -xgstep2 1";
+    $cmd .= " -title1 'Nb predicted sites : $motif_id'";
+    $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites_per_peak_graph'};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
@@ -3010,7 +3027,7 @@ sub SynthesisByMotif {
     }
     
     ## HERE JvH SHOULD ADD THE SIGNIFICANCE OF THE MOTIFS
-    print "<b>sig=</b>";
+    ## print $syn "<b>sig=</b>\n";
 
     ## Sequence logo, reverse complementary
     $file = $main::outfile{$motif_id."_logo_rc"};
@@ -3121,9 +3138,9 @@ sub SynthesisByMotif {
 
       my $table = "<table><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_sites_per_peak_graph'});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peak<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peak<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
       $table .= join("", "<td style='border-bottom-style:none;border-right-style:none;'>",
 		     "<u>Nb peaks with at least one predicted site:</u> ",
 		     $nb_peak_matching_motif,
@@ -3131,7 +3148,7 @@ sub SynthesisByMotif {
 		     "<u>Max nb of predicted sites per peak:</u> ".$max_nb_sites."<br/>",
 		     "<u>Mean nb of predicted sites per peak:</u> ".$mean_peak_matching_motif."</td>");
       # $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
-      #      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
+      #      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
       $table .= "</tr></table>";
 
       ################################################################
@@ -3613,7 +3630,7 @@ sub SynthesisSequenceComposition {
       $BED = $main::infile{coord} if ($main::infile{coord});
       $BED = $main::outfile{"test_seq_coord"} if ($main::outfile{"test_seq_coord"});
       &SyntheticTableAddRow_New($seq_stats,
-				"<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
+				"<a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a>",
 				"view peaks in genome browser ", [$browser_url,,
 								 ],
 				"coordinates", ["UCSC BED track",$BED,
@@ -3645,9 +3662,9 @@ sub SynthesisSequenceComposition {
       # my $table = "<table class='whitebg'><tr>";
       my $table = "<table><tr>";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_heatmap"});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Transition frequencies<br><a  href='".$img."'><img border='".$param{img_border}."' width=200 src='".$img."'></a></td>";
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Transition frequencies<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Position profiles<br><a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a></td>";
+      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Position profiles<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
       $table .= "</tr></table>";
       my $title;
       if ($ol == 1) {
@@ -4435,6 +4452,21 @@ All the formats supported by XYgraph can be used.
     } elsif ($arg eq "-img_format") {
       $main::param{img_format} = shift(@arguments);
 
+=pod
+
+=item	B<-r_plot>
+
+Use R rather than the Perl GD library to generate plots.  This gives
+much nicer plots, but requires to have R installed on the RSAT server.
+
+=cut
+    } elsif ($arg eq "-r_plot") {
+      $Rscript_path = &RSAT::server::GetProgramPath("Rscript", 0);
+      unless ($Rscript_path) {
+	&RSAT::message::Warning("Rscript program is not found in the path. Ignoring option -r_plot.");	
+     } else {
+      $main::param{r_plot} = 1;
+     }
 
 =pod
 
