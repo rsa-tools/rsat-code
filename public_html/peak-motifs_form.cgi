@@ -44,6 +44,7 @@ $default{top_sequences}="";
 $default{nmotifs} = 5;
 $default{origin} = "center";
 $default{offset} = "0";
+$default{r_plot} = ""; ## Plot XY graph with R rather than GD
 
 $default{visualize}="none";
 
@@ -172,6 +173,9 @@ print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 
 ################# sites and visualization
  &Panel5();
+
+################# general parameters
+ &Panel6();
 
 ################################################################
 ## Send results by email only
@@ -342,25 +346,6 @@ print '
 
 print "<p/><fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Discover motifs </a></b></legend>";
-
-
-################################################################
-## Reference location for position-analysis
-print "<br> <b>Reference position for position-analysis and sequence scanning</b>";
-
-## Origin for calculating positions and scanning sequences
-print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
-print $query->popup_menu(-name=>'origin',
-			 -Values=>['start',
-				   'center',
-				   'end'],
-			 -default=>$default{origin});
-
-## Offset for calculating positions
-print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
-print $query->textfield(-name=>'offset',
-			-default=>$default{offset},
-			-size=>8);
 
 
 
@@ -617,6 +602,56 @@ sub Panel5  {
 							      -size=>10);
 
   print "<br/></fieldset><p/>";
+
+  ## Close divisions
+  print "</div>\n";
+  print "</div>\n";
+  print "<p class='clear'></p>\n";
+
+ }
+
+##########################################
+
+sub Panel6  {
+  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu('106')\" id=\"heading106\">";
+  print "<span title=\"Reporting options.\n";
+  print "Display preferences and plotting options\">\n";
+  print "<b>Reporting options</b></span>";
+
+  print "</div>";
+  print "<div id=\"menu106\" class=\"menu_collapsible\">";
+
+  ### Plotting options
+  print "<fieldset><legend><b>Plotting options</b></legend>";
+
+  ################################################################
+  ## Reference location for position-analysis and to scan sequences
+  print "<br> <b>Reference position for position-analysis and sequence scanning</b>";
+
+  ## Origin for calculating positions and scanning sequences
+  print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
+  print $query->popup_menu(-name=>'origin',
+			   -Values=>['start',
+				     'center',
+				     'end'],
+			   -default=>$default{origin});
+  
+  ## Offset for calculating positions
+  print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
+  print $query->textfield(-name=>'offset',
+			  -default=>$default{offset},
+			  -size=>8);
+
+
+  ## Use R to generate XY plots
+  print "<br>";
+  print $query->checkbox(-name=>'r_plot',
+			 -checked=>$default{"r_plot"},
+			 -label=>'');
+  print "&nbsp;<b>Use R to generate plots</b> (only works for servers with R installed).\n";
+  
+  print "</fieldset><p/>";
+
 
   ## Close divisions
   print "</div>\n";
