@@ -3027,7 +3027,7 @@ sub SynthesisByMotif {
     }
     
     ## HERE JvH SHOULD ADD THE SIGNIFICANCE OF THE MOTIFS
-    print "<b>sig=</b>";
+    ## print $syn "<b>sig=</b>\n";
 
     ## Sequence logo, reverse complementary
     $file = $main::outfile{$motif_id."_logo_rc"};
