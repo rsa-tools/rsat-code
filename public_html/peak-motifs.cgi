@@ -53,6 +53,7 @@ system("mkdir -p $output_dir_full_path; chmod 755 $output_dir_full_path");
 ## command line paramters
 ### read parameters
 $parameters = " -v 1";
+$parameters .= " -r_plot";
 
 ### title
 if ($query->param('title')){
