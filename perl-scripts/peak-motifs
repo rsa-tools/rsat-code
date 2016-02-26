@@ -1154,7 +1154,7 @@ sub SequenceLengths {
   my $title = "Sequence lengths";
   $title .= "; ".$main::param{title} if ($main::param{title});
   $cmd .= " -title '".$title."'";
-  $cmd .= " -xsize 600 -xcol 3 -xleg1 'Peak length'";
+  $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
   $cmd .= " -ysize 250 -ycol 4 -yleg1 'Number of peaks'";
   $cmd .= " -xmin 0 -ymin 0";
 #  $cmd .= " -xgstep1 ".($main::param{profiles_ci});
@@ -1270,7 +1270,7 @@ sub CompositionProfiles {
 #   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
     $cmd .= " -xgstep2 ".$main::param{profiles_ci};
     $cmd .= " -vline '#666666' 0";
-    $cmd .= " -xsize 600 -ysize 250";
+    $cmd .= " -xsize 800 -ysize 250";
     $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -legend -lines -pointsize 0 -legend -header";
@@ -1294,7 +1294,7 @@ sub CompositionProfiles {
     $title .= "; ".$seq_type." sequence";
     $title .= "; ".$main::param{title} if ($main::param{title});
     $cmd .= " -title '".$title."'";
-    $cmd .= " -xleg1 'Position' -xsize 600";
+    $cmd .= " -xleg1 'Position' -xsize 800";
     $cmd .= " -yleg1 'Occurrences' -ysize 250  -ymin 0";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles_graph"};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
@@ -2602,7 +2602,7 @@ sub ScanSequences {
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     $cmd .= " -lines -xcol 3 -ycol 4";
     $cmd .= " -ysize 250 -ycol 4 -yleg1 'Number of sites'";
-    $cmd .= " -xsize 600 -xcol 3 -xleg1 'Position relative to sequence ".$main::param{origin}."'";
+    $cmd .= " -xsize 800 -xcol 3 -xleg1 'Position relative to sequence ".$main::param{origin}."'";
 #   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
     $cmd .= " -xgstep2 ".$main::param{profiles_ci};
     $cmd .= " -vline '#666666' 0";
@@ -2627,7 +2627,7 @@ sub ScanSequences {
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites_per_peak'};
     $cmd .= " -lines -xcol 1 -ycol 4 ";
-    $cmd .= " -xsize 600 -xcol 1 -xleg1 'Number of sites'";
+    $cmd .= " -xsize 500 -xcol 1 -xleg1 'Number of sites'";
     $cmd .= " -ysize 250 -ycol 4,6 -yleg1 'Number of peaks' -legend";
     $cmd .= " -xgstep1 5 -xgstep2 1";
     $cmd .= " -title1 'Nb predicted sites : $motif_id'";
