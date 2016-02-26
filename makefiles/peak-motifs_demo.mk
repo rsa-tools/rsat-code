@@ -16,7 +16,7 @@ info:
 
 ################################################################
 ##  List default parameters
-list_params:
+list_param:
 	@echo "Peak-motifs demo parameters"
 	@echo "	MOTIF_PREFIX	${MOTIF_PREFIX}"
 	@echo "	DIR_DATA	${DIR_DATA}"
@@ -25,7 +25,9 @@ list_params:
 	@echo "	MIN_OL		${MIN_OL}"
 	@echo "	MAX_OL		${MAX_OL}"
 	@echo "	TASK		${PM_TASK}"
+	@echo "	PLOT_OPT	${PLOT_OPT}"
 	@echo "	OPT		${OPT}"
+	@echo "	OPT_QUICK	${OPT_QUICK}"
 	@echo "	PM_CMD		${PM_CMD}"
 
 ################################################################
@@ -37,6 +39,7 @@ TASK=purge,seqlen,composition,disco,merge_motifs,split_motifs,motifs_vs_motifs,c
 MOTIF_PREFIX=Oct4_Chen2008_sites_from_Jaspar
 MERGE_LEN_OPT=-no_merge_lengths
 NMOTIFS=5
+PLOT_OPT=-r_plot
 PM_CMD=peak-motifs -v ${V} \
 		-title ${MOTIF_PREFIX} \
 		-i ${RSAT}/public_html/demo_files/peak-motifs_demo.fa \
@@ -50,7 +53,7 @@ PM_CMD=peak-motifs -v ${V} \
 		-scan_markov 1 -source galaxy \
 		-task ${TASK} \
 		-prefix peak-motifs \
-		-noov -img_format png \
+		-noov -img_format png ${PLOT_OPT} \
 		${OPT} ${OPT2} \
 		-outdir ${DIR_PEAKMO}
 peakmo_demo:
@@ -61,7 +64,8 @@ peakmo_demo:
 	@echo "	${DIR_PEAKMO}"
 
 
+OPT_QUICK=-top_peaks 500 -max_seq_len 300
 quick_test:
 	@echo
 	@echo "Running peak-motifs demo with time-minimizing options for quick testing (results may be less relevant)."
-	@${MAKE} peakmo_demo OPT="-top_peaks 500 -max_seq_len 300" DIR_PEAKMO=results/peak-motifs_demo/Oct4_Chen2008_sites_from_Jaspar_quick_test DISCO=oligos MAX_OL=6 MIN_OL=6 NMOTIFS=2
+	@${MAKE} peakmo_demo OPT2="${OPT_QUICK}" DIR_PEAKMO=results/peak-motifs_demo/Oct4_Chen2008_sites_from_Jaspar_quick_test DISCO=oligos MAX_OL=6 MIN_OL=6 NMOTIFS=2
