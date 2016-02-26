@@ -498,7 +498,7 @@ sub DefaultParameters {
   ## Residue  profiles (position-analysis)
   $main::param{origin} = "center"; push(@main::param_list, "origin");
   $main::param{offset} = 0; push(@main::param_list, "offset");
-  $main::param{profiles_ci} = 50; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_ci} = 25; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_max_graphs");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
   @main::composition_oligo_lengths = (1,2);
@@ -1151,7 +1151,7 @@ sub SequenceLengths {
   ## Plot the distribution of sequence lengths
   $cmd = $SCRIPTS."/XYgraph -lines -pointsize 0";
   $cmd .= " -format ".$main::param{img_format};
-  my $title = "Sequence lengths";
+  my $title = "Peak lengths";
   $title .= "; ".$main::param{title} if ($main::param{title});
   $cmd .= " -title '".$title."'";
   $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
