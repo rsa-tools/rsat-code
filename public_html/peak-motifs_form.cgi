@@ -595,7 +595,7 @@ sub Panel5  {
 
   print "<br/>";
   print ("<INPUT TYPE='radio' NAME='visualize' value='getfasta' $checked{'getfasta'}>",
-	 "Peak coordinates specified in fasta headers of the sequence file <a target='_blank' href='http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html'><b>bedtools getfasta</b></a> format (also for <b>retrieve-seq-bed</b> output).",
+	 "Peak coordinates specified in fasta headers in <a target='_blank' href='http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html'><b>bedtools getfasta</b></a> format (also for <b>retrieve-seq-bed</b> output).",
 	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>3:81458-81806(.)</tt>");
 
   print "<br/>";
