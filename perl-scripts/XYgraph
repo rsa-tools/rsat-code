@@ -967,8 +967,7 @@ sub Rplot {
   close ($out_R );
   my $rscript_command = $Rscript_path." ".$tmp_r_instructions_file;
   &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  print $rscript_command ."\n";
-  
+  &RSAT::message::Info($rscript_command) if ($main::verbose >= 2);
 }
 
 ################################################################
