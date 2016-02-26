@@ -1268,6 +1268,7 @@ sub CompositionProfiles {
     $cmd .= " | ".$SCRIPTS."/XYgraph -xcol 1 -ycol 2-".$col_nb;
 #   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
     $cmd .= " -xgstep2 ".$main::param{profiles_ci};
+    $cmd .= " -vline '#666666' 0";
     $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -legend -lines -pointsize 0 -legend -header";
@@ -1286,7 +1287,7 @@ sub CompositionProfiles {
     } else {
       $title = $ol."nucleotide";
     }
-    $title .= " composition profiles : ";
+    $title .= " composition profiles";
 
     $title .= "; ".$seq_type." sequence";
     $title .= "; ".$main::param{title} if ($main::param{title});
@@ -2599,6 +2600,9 @@ sub ScanSequences {
     $cmd .= " -lines -xcol 3 -ycol 4";
     $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of sites'";
     $cmd .= " -xsize 800 -xcol 3 -xleg1 'Position relative to sequence ".$main::param{origin}."'";
+#   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
+    $cmd .= " -xgstep2 ".$main::param{profiles_ci};
+    $cmd .= " -vline '#666666' 0";
     $cmd .= " -title1 'Predicted sites : $motif_id'";
     $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib_graph'};
@@ -2621,7 +2625,8 @@ sub ScanSequences {
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites_per_peak'};
     $cmd .= " -lines -xcol 1 -ycol 4 ";
     $cmd .= " -ysize 200 -ycol 4,6 -yleg1 'Number of peaks' -legend";
-    $cmd .= " -xsize 400 -xcol 1 -xleg1 'Number of sites' -xgstep1 5 -xgstep2 1";
+    $cmd .= " -xsize 400 -xcol 1 -xleg1 'Number of sites'";
+    $cmd .= " -xgstep1 5 -xgstep2 1";
     $cmd .= " -title1 'Nb Predicted sites : $motif_id'";
     $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites_per_peak_graph'};
