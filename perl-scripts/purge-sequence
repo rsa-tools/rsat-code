@@ -20,7 +20,7 @@ my $vmatch_dir = "$ENV{RSAT_BIN}";
 $vmatch_installed = 1;
 unless ((-e $vmatch_dir."/vmatch") && (-e $vmatch_dir."/mkvtree")) {
   $vmatch_installed = 0;
-  &RSAT::message::Warning("Skipping sequence purging because vmatch and mkvtree are not installed on server (see http://www.vmatch.de/).");
+  &RSAT::message::Warning("Skipping sequence purging because vmatch and mkvtree are not installed in RSAT bin dir ", $vmatch_dir, "\nSee http://www.vmatch.de/");
 }
 
 ################################################################
