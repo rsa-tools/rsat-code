@@ -858,7 +858,6 @@ sub Rplot {
   
   ## X axis limits for R plot
   if ($x_axis_min eq "ND") {
-    die("HELLO");
     $r_instructions .= "xmin <- min(na.omit(x.values))\n";
   } else {
     $r_instructions .= "xmin <- ".$x_axis_min."\n";
