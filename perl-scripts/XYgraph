@@ -779,11 +779,11 @@ sub Rplot {
   if ($legend) {
     $r_y_columns .= "c(".join(",",@y_col_list_r).")";
     $r_instructions .= "legend.text <- names(input.table)[".$r_y_columns."]\n";
-    $r_instructions .= "legend.width <- max(nchar(legend.text))*3.5\n";
+    $r_instructions .= "legend.width <- max(5, max(nchar(legend.text)))\n";
   } else {
     $r_instructions .= "legend.width <- 0\n";
   }
-  $r_instructions .= "par(mar=c(5.1, 4.1, 5.1, 2 + legend.width))\n";
+  $r_instructions .= "par(mar=c(5.1, 4.1, 5.1, 1.1 + legend.width))\n";
 
   ## Put together all parammeters that have to be feed into maplot functions
   my $r_plot_params="type='n'"; ## We first open the plot with no content, and then add the lines one by one
@@ -962,7 +962,8 @@ sub Rplot {
     $r_y_columns .= "c(".join(",",@y_col_list_r).")";
     $r_instructions .= "\n## Adding legend\n";
     $r_instructions .= "par(xpd=TRUE)\n";
-    $r_instructions .= 'legend("topright", inset=c(-0.2,0), legend = legend.text, pch="o", bg="white", bty="o", col=colors)'."\n";
+    $r_instructions .= "legend.strwidth <- max(strwidth(legend.text))\n";
+    $r_instructions .= 'legend("topleft", inset=c(1.05,0), legend = legend.text, pch="o", bg="white", bty="o", col=colors)'."\n";
     $r_instructions .= "par(xpd=FALSE)\n";
 #       $r_instructions .= "legend( \"topright\", legend = colnames(input.table[,".$r_y_columns."]), cex=.4,pt.cex=.6, pch=\"o\", col=colors)\n";
 #       die "HELLO\n", $r_instructions, "\n"
