@@ -2987,6 +2987,7 @@ sub SynthesisByMotif {
   for my $m (1..$motif_nb) {
     my $matrix = $motifs[$m-1];
     my $matrix_id = $matrix->get_attribute("id");
+    my $pattern_type = $matrix_info{$matrix_id}->{pattern_type};
     &RSAT::message::TimeWarn("Synthesis for discovered motif", $m."/".$motif_nb, $matrix_id) if ($main::verbose >= 3);
     #    $matrix->setMarkovModel($bg_model);
 
@@ -3054,11 +3055,12 @@ sub SynthesisByMotif {
       print $syn "<font color='red'>No logo</font>","</td>\n";
     }
     print $syn "</tr></table></td>\n";
-    &PrintFileLinks_New(
-			"matrix", ["tab format",$main::outfile{$matrix_id."_tab"},
-				   "transfac format",$main::outfile{$matrix_id."_tf"}
-				  ]
-		       );
+
+    &PrintFileLinks_New("k-mers", ["statistics",$main::outfile{$pattern_type}, 
+				   "assemblies",$main::outfile{$pattern_type."_asmb"}],
+			"matrix", ["tab_format",$main::outfile{$matrix_id."_tab"},
+				   "transfac_format",$main::outfile{$matrix_id."_tf"}
+			]);
     print $syn "</tr>\n";
 
     ################################################################
@@ -3879,6 +3881,7 @@ sub SynthesisPatternDisco {
 
       ## Build matrix ID
       my $matrix_id = $pattern_type."_m".$logo_nb;
+      $matrix_info{$matrix_id}->{pattern_type} = $pattern_type; ## Store matrix info for later use
 
       $pattern_table .= "<tr>\n";
 #      my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
@@ -3981,24 +3984,24 @@ sub SynthesisPatternDisco {
 ##			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
 ##			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
 #			 );
-	   &SyntheticTableAddRow_New($pattern_type,
-			  $pattern_table,
-			  "discovered words",["text",$main::outfile{$pattern_type},
-			  			],
-			  "assembly",['text', $main::outfile{$pattern_type.'_asmb'},
-    					'sig matrices',$main::outfile{$pattern_type.'_pssm_sig'},
-			 			 ],
-			 "matrices",['tab format', $main::outfile{$pattern_type.'_pssm_counts'},
-    					'transfac format',$main::outfile{$pattern_type.'_pssm_tf'},
-			 			 ],
-			 );
-
+    &SyntheticTableAddRow_New($pattern_type,
+			      $pattern_table,
+			      "discovered words",["text",$main::outfile{$pattern_type},
+			      ],
+			      "assembly",['text', $main::outfile{$pattern_type.'_asmb'},
+					  'sig matrices',$main::outfile{$pattern_type.'_pssm_sig'},
+			      ],
+			      "matrices",['tab format', $main::outfile{$pattern_type.'_pssm_counts'},
+					  'transfac format',$main::outfile{$pattern_type.'_pssm_tf'},
+			      ],
+	);
+    
   } else {
     if (-e $main::outfile{$pattern_type}) {
       &SyntheticTableAddRow($pattern_type,
 			    "<font color='red'red>Not a single significant pattern</font>",
 			    $pattern_type,$main::outfile{$pattern_type},
-			   );
+	  );
     } else {
       &SyntheticTableAddRow($pattern_type,
 			    "<font color='red'red>Missing files</font>",
