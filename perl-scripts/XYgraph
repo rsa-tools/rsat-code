@@ -761,10 +761,10 @@ sub Rplot {
   $r_instructions .= "outfile<-'$outputfile'\n";
   if (($img_format eq "pdf") || ($img_format eq "eps")) {
     $r_width = &RSAT::stats::min(($x_axis_size + 80)/72, 5);
-    $r_height = &RSAT::stats::min(($y_axis_size + 120)/72, 5);
+    $r_height = &RSAT::stats::min(($y_axis_size + 140)/72, 5);
   } else {
     $r_width = $x_axis_size + 80;
-    $r_height = $y_axis_size + 120;
+    $r_height = $y_axis_size + 140;
   }
   $r_dim = ", width=".($r_width).", height=".($r_height);
   if ($img_format eq "pdf") {
