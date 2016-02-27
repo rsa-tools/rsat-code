@@ -3038,9 +3038,14 @@ sub SynthesisByMotif {
     }
     
     ## HERE JvH SHOULD ADD THE SIGNIFICANCE OF THE MOTIFS
-    print $syn join("", "k-mer sig=",
+    print $syn join("", 
+		    "k-mer sig=",
 		    $matrix_info{$matrix_id}->{start_format},
 		    $matrix_info{$matrix_id}->{score},
+		    $matrix_info{$matrix_id}->{end_format},
+		    "; evalue=",
+		    $matrix_info{$matrix_id}->{start_format},
+		    $matrix_info{$matrix_id}->{evalue},
 		    $matrix_info{$matrix_id}->{end_format},
 		    "\n");
 
@@ -3897,6 +3902,7 @@ sub SynthesisPatternDisco {
       ## Store the info assocuated to this motif in order to display
       ## it in the other part of the report (Discovered motifs with motif comparisons).
       $matrix_info{$matrix_id}->{score} = $pattern_info[$logo_nb]->{score};
+      $matrix_info{$matrix_id}->{evalue} = sprintf("%.2g", 10**(-$pattern_info[$logo_nb]->{score}));
       $matrix_info{$matrix_id}->{logo_file} = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
       $matrix_info{$matrix_id}->{logo_file_rc} = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
 #      $matrix_info{$matrix_id}->{logo_file} = $pattern_info[$logo_nb]->{logo_file};
@@ -3949,7 +3955,7 @@ sub SynthesisPatternDisco {
       ## Print the colored consensus + sig + draw logo
       $pattern_table .= $colored_consensus;
       $pattern_table .= $matrix_info{$matrix_id}->{start_format};
-      $pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
+      $pattern_table .= " (sig=".$matrix_info{$matrix_id}->{score}."; e-value=".$matrix_info{$matrix_id}->{evalue}.")";
       $pattern_table .= $matrix_info{$matrix_id}->{end_format};
       if (-e $matrix_info{$matrix_id}->{logo_file}) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $matrix_info{$matrix_id}->{logo_file});
