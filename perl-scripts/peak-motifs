@@ -2992,20 +2992,22 @@ sub SynthesisByMotif {
     #    $matrix->setMarkovModel($bg_model);
 
     ## We compute the consensus and logos here with the same background model as used for sequence scanning
-    #    $matrix->calcConsensus();
-    # my $consensus = $matrix->get_attribute("consensus.IUPAC");
-    # my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
-    # my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
-    # my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc,bold=>1, iupac=>$main::param{iupac_coloring});
+    ## We need to recompute them because in the section "Discovered motifs by algorithm" we used the consensus of the assembly rather than matrix.
+    $matrix->calcConsensus();
+    my $consensus = $matrix->get_attribute("consensus.IUPAC");
+    my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
+    my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
+    my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc,bold=>1, iupac=>$main::param{iupac_coloring});
 
     ## Get consensus as defined in the previous report section
-    my $consensus = $matrix_info{$matrix_id}->{consensus};
-    my $colored_consensus = $matrix_info{$matrix_id}->{colored_consensus};
-    my $consensus_rc = $matrix_info{$matrix_id}->{consensus_rc};
-    my $colored_consensus_rc = $matrix_info{$matrix_id}->{colored_consensus_rc};
+    ## THIS DOES NOT WORK BECAUSE WHAT WE STORED BEFORE WERE CONSENSUS FROM ASSEMBLIES RATHER THAN MATRICES
+    # my $consensus = $matrix_info{$matrix_id}->{consensus};
+    # my $colored_consensus = $matrix_info{$matrix_id}->{colored_consensus};
+    # my $consensus_rc = $matrix_info{$matrix_id}->{consensus_rc};
+    # my $colored_consensus_rc = $matrix_info{$matrix_id}->{colored_consensus_rc};
 
-    ## JVH: WHY SHOULD I COMPUTE LOGOS HERE ? I ALREADY HAVE THEM ABOVE IN THE REPORT. TO BE CHECKED (2016-02-28)
-    ## Compute matrix logos
+    ## JVH: WHY SHOULD I COMPUTE LOGOS HERE ? I SHOULD ALREADY HAVE THEM ABOVE. TO BE CHECKED (2016-02-28)
+    ## Compute matrix logos. 
 #    $matrix->makeLogo($main::prefix{$matrix_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
 #    $matrix->makeLogo($main::prefix{$matrix_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the reverse complementary logo image
 
