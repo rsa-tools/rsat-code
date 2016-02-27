@@ -2992,15 +2992,21 @@ sub SynthesisByMotif {
 
     ## We compute the consensus and logos here with the same background model as used for sequence scanning
     #    $matrix->calcConsensus();
-    my $consensus = $matrix->get_attribute("consensus.IUPAC");
-    my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
-    my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
-    my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc,bold=>1, iupac=>$main::param{iupac_coloring});
+    # my $consensus = $matrix->get_attribute("consensus.IUPAC");
+    # my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
+    # my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
+    # my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc,bold=>1, iupac=>$main::param{iupac_coloring});
+
+    ## Get consensus as defined in the previous report section
+    my $consensus = $matrix_info{$matrix_id}->{consensus};
+    my $colored_consensus = $matrix_info{$matrix_id}->{colored_consensus};
+    my $consensus_rc = $matrix_info{$matrix_id}->{consensus_rc};
+    my $colored_consensus_rc = $matrix_info{$matrix_id}->{colored_consensus_rc};
 
     ## JVH: WHY SHOULD I COMPUTE LOGOS HERE ? I ALREADY HAVE THEM ABOVE IN THE REPORT. TO BE CHECKED (2016-02-28)
     ## Compute matrix logos
-    $matrix->makeLogo($main::prefix{$matrix_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
-    $matrix->makeLogo($main::prefix{$matrix_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the reverse complementary logo image
+#    $matrix->makeLogo($main::prefix{$matrix_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
+#    $matrix->makeLogo($main::prefix{$matrix_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the reverse complementary logo image
 
     print $syn "<tr>\n";
     print $syn "<td><a name='discovered_motifs_".$m."'></a><b> Motif ", $m,"</b> \n";
@@ -3010,7 +3016,8 @@ sub SynthesisByMotif {
     print $small_sum_txt $matrix->get_attribute("name"), "\t" if ($task{small_summary});
     
     ## Sequence logo
-    my $file = $main::outfile{$matrix_id."_logo"};
+#    my $file = $main::outfile{$matrix_id."_logo"};
+    my $file = $matrix_info{$matrix_id}->{logo_file};
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn ("<td align='center' style='border-bottom-style:none;' >", $colored_consensus, "<br>\n",
@@ -3035,7 +3042,8 @@ sub SynthesisByMotif {
 		    "\n");
 
     ## Sequence logo, reverse complementary
-    $file = $main::outfile{$matrix_id."_logo_rc"};
+#    $file = $main::outfile{$matrix_id."_logo_rc"};
+    my $file = $matrix_info{$matrix_id}->{logo_file_rc};
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn ("<td align='center' style='border-bottom-style:none;border-right-style:none;' >", $colored_consensus_rc, "<br>\n",
@@ -3873,8 +3881,8 @@ sub SynthesisPatternDisco {
       my $matrix_id = $pattern_type."_m".$logo_nb;
 
       $pattern_table .= "<tr>\n";
-      my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
-      my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
+#      my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
+#      my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
 #      my $start_format = "";
 #      my $end_format = "";
       my $score = $pattern_info[$logo_nb]->{score};
@@ -3884,8 +3892,10 @@ sub SynthesisPatternDisco {
       ## Store the info assocuated to this motif in order to display
       ## it in the other part of the report (Discovered motifs with motif comparisons).
       $matrix_info{$matrix_id}->{score} = $pattern_info[$logo_nb]->{score};
-      $matrix_info{$matrix_id}->{logo_file} = $pattern_info[$logo_nb]->{logo_file};
-      $matrix_info{$matrix_id}->{logo_file_rc} = $pattern_info[$logo_nb]->{logo_file_rc};
+      $matrix_info{$matrix_id}->{logo_file} = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
+      $matrix_info{$matrix_id}->{logo_file_rc} = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
+#      $matrix_info{$matrix_id}->{logo_file} = $pattern_info[$logo_nb]->{logo_file};
+#      $matrix_info{$matrix_id}->{logo_file_rc} = $pattern_info[$logo_nb]->{logo_file_rc};
       
       ## Highlight in bold the patterns with score > 10
       if (&IsReal($score)) {
@@ -3899,7 +3909,7 @@ sub SynthesisPatternDisco {
 	}
       }
 
-      &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
+      &RSAT::message::Debug("Logo", $logo_nb, $matrix_info{$matrix_id}->{logo_file}) if ($main::verbose >= 5);
 
 
       ## Get the consensus from the assembly 
@@ -3936,11 +3946,11 @@ sub SynthesisPatternDisco {
       $pattern_table .= $matrix_info{$matrix_id}->{start_format};
       $pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
       $pattern_table .= $matrix_info{$matrix_id}->{end_format};
-      if (-e $logo_file) {
-	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
+      if (-e $matrix_info{$matrix_id}->{logo_file}) {
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $matrix_info{$matrix_id}->{logo_file});
 	$pattern_table .= "<br><a  href='".$img."'><img  border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
       } elsif ($main::verbose >= 2) {
-	&RSAT::message::Warning("Cannot find logo", $logo_file) if ($main::verbose >= 3);
+	&RSAT::message::Warning("Cannot find logo", $matrix_info{$matrix_id}->{logo_file}) if ($main::verbose >= 3);
       }
       $pattern_table .= "</td>\n";
 
@@ -3948,11 +3958,11 @@ sub SynthesisPatternDisco {
       $pattern_table .= "<td align='left' style='border-right-style:none;'>";
       $pattern_table .= "RC: ";
       $pattern_table .= $colored_consensus_rc;
-      if (-e $logo_file_rc) {
-	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
+      if (-e $matrix_info{$matrix_id}->{logo_file_rc}) {
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $matrix_info{$matrix_id}->{logo_file_rc});
 	$pattern_table .= "<br><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
       } elsif ($main::verbose >= 2) {
-	&RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc) if ($main::verbose >= 3);
+	&RSAT::message::Warning("Cannot find reverse complementary logo", $matrix_info{$matrix_id}->{logo_file_rc}) if ($main::verbose >= 3);
       }
 
       #    $pattern_table .= "<td align='right'>".$pattern_info[$logo_nb]->{score}."</td>";
