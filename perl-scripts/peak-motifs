@@ -2844,8 +2844,8 @@ sub ResultTOC {
 	$result_toc .=  "<a href='#discovered_motifs_".$mot."'>".($motif_nb-$mot)." more motifs</a>";
       }
       last;
-       }
- }
+    }
+  }
   $result_toc .=  " </td> ";
   $result_toc .=  " </tr></table> ";
 
@@ -2986,8 +2986,8 @@ sub SynthesisByMotif {
   ## Treat each motif
   for my $m (1..$motif_nb) {
     my $matrix = $motifs[$m-1];
-    my $motif_id = $matrix->get_attribute("id");
-    &RSAT::message::TimeWarn("Synthesis for discovered motif", $m."/".$motif_nb, $motif_id) if ($main::verbose >= 3);
+    my $matrix_id = $matrix->get_attribute("id");
+    &RSAT::message::TimeWarn("Synthesis for discovered motif", $m."/".$motif_nb, $matrix_id) if ($main::verbose >= 3);
     #    $matrix->setMarkovModel($bg_model);
 
     ## We compute the consensus and logos here with the same background model as used for sequence scanning
@@ -2997,9 +2997,10 @@ sub SynthesisByMotif {
     my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
     my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc,bold=>1, iupac=>$main::param{iupac_coloring});
 
+    ## JVH: WHY SHOULD I COMPUTE LOGOS HERE ? I ALREADY HAVE THEM ABOVE IN THE REPORT. TO BE CHECKED (2016-02-28)
     ## Compute matrix logos
-    $matrix->makeLogo($main::prefix{$motif_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
-    $matrix->makeLogo($main::prefix{$motif_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the logo image
+    $matrix->makeLogo($main::prefix{$matrix_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
+    $matrix->makeLogo($main::prefix{$matrix_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the reverse complementary logo image
 
     print $syn "<tr>\n";
     print $syn "<td><a name='discovered_motifs_".$m."'></a><b> Motif ", $m,"</b> \n";
@@ -3009,7 +3010,7 @@ sub SynthesisByMotif {
     print $small_sum_txt $matrix->get_attribute("name"), "\t" if ($task{small_summary});
     
     ## Sequence logo
-    my $file = $main::outfile{$motif_id."_logo"};
+    my $file = $main::outfile{$matrix_id."_logo"};
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn ("<td align='center' style='border-bottom-style:none;' >", $colored_consensus, "<br>\n",
@@ -3027,10 +3028,14 @@ sub SynthesisByMotif {
     }
     
     ## HERE JvH SHOULD ADD THE SIGNIFICANCE OF THE MOTIFS
-    ## print $syn "<b>sig=</b>\n";
+    print $syn join("", "k-mer sig=",
+		    $matrix_info{$matrix_id}->{start_format},
+		    $matrix_info{$matrix_id}->{score},
+		    $matrix_info{$matrix_id}->{end_format},
+		    "\n");
 
     ## Sequence logo, reverse complementary
-    $file = $main::outfile{$motif_id."_logo_rc"};
+    $file = $main::outfile{$matrix_id."_logo_rc"};
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn ("<td align='center' style='border-bottom-style:none;border-right-style:none;' >", $colored_consensus_rc, "<br>\n",
@@ -3042,8 +3047,8 @@ sub SynthesisByMotif {
     }
     print $syn "</tr></table></td>\n";
     &PrintFileLinks_New(
-			"matrix", ["tab format",$main::outfile{$motif_id."_tab"},
-				   "transfac format",$main::outfile{$motif_id."_tf"}
+			"matrix", ["tab format",$main::outfile{$matrix_id."_tab"},
+				   "transfac format",$main::outfile{$matrix_id."_tf"}
 				  ]
 		       );
     print $syn "</tr>\n";
@@ -3056,14 +3061,14 @@ sub SynthesisByMotif {
 
     if (defined($main::infile{ref_motifs})) {
       push @compa_names, "Reference motifs";
-      push @compa_files, $main::outfile{$motif_id.'_vs_ref'};
-      push @compa_prefixes, $main::prefix{$motif_id.'_vs_ref_prefix'};
+      push @compa_files, $main::outfile{$matrix_id.'_vs_ref'};
+      push @compa_prefixes, $main::prefix{$matrix_id.'_vs_ref_prefix'};
     }
 
     foreach my $db_name (@motif_databases) {
       push @compa_names, $db_name;
-      push @compa_files, $main::outfile{$motif_id.'_vs_db_'.$db_name};
-      push @compa_prefixes, $main::prefix{$motif_id.'_vs_db_'.$db_name.'_prefix'};
+      push @compa_files, $main::outfile{$matrix_id.'_vs_db_'.$db_name};
+      push @compa_prefixes, $main::prefix{$matrix_id.'_vs_db_'.$db_name.'_prefix'};
     }
 
     for my $f (0..$#compa_names) {
@@ -3109,15 +3114,15 @@ sub SynthesisByMotif {
 
     ################################################################
     ## Scan results
-    my $scan_file = $main::outfile{$motif_id.'_pssm_sites'};
+    my $scan_file = $main::outfile{$matrix_id.'_pssm_sites'};
     if (-e $scan_file) {
       ## get information on % peaks with a motif and max number sites/peaks
       #my $nb_peak_matching_motif = `cat $scan_file | grep -v '^;' | grep -v '^#' | cut -f 1  | uniq | wc -l`;
-      my $nb_peak_matching_motif = `grep '; count' $main::outfile{$motif_id.'_pssm_sites_per_peak'}`;
+      my $nb_peak_matching_motif = `grep '; count' $main::outfile{$matrix_id.'_pssm_sites_per_peak'}`;
       chomp($nb_peak_matching_motif);
       $nb_peak_matching_motif =~ s/.*count\s*//;
       ## Get mean number of predicted sites per peak
-      my $mean_peak_matching_motif = `grep '; mean' $main::outfile{$motif_id.'_pssm_sites_per_peak'}`;
+      my $mean_peak_matching_motif = `grep '; mean' $main::outfile{$matrix_id.'_pssm_sites_per_peak'}`;
       chomp($mean_peak_matching_motif);
       $mean_peak_matching_motif =~ s/.*mean\s*//;
       $mean_peak_matching_motif = sprintf("%.2f", $mean_peak_matching_motif);
@@ -3137,9 +3142,9 @@ sub SynthesisByMotif {
       $site_peak_percent = sprintf("%.2f", $site_peak_percent);
 
       my $table = "<table><tr>";
-      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
+      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$matrix_id.'_pssm_site_distrib_graph'});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
-      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_sites_per_peak_graph'});
+      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$matrix_id.'_pssm_sites_per_peak_graph'});
       $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peak<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
       $table .= join("", "<td style='border-bottom-style:none;border-right-style:none;'>",
 		     "<u>Nb peaks with at least one predicted site:</u> ",
@@ -3147,7 +3152,7 @@ sub SynthesisByMotif {
 		     " (".$site_peak_percent."%) <br>",
 		     "<u>Max nb of predicted sites per peak:</u> ".$max_nb_sites."<br/>",
 		     "<u>Mean nb of predicted sites per peak:</u> ".$mean_peak_matching_motif."</td>");
-      # $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
+      # $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$matrix_id.'_pssm_enrichment_png'});
       #      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
       $table .= "</tr></table>";
 
@@ -3168,9 +3173,9 @@ sub SynthesisByMotif {
 	$genome_assembly = $main::param{coord_assembly};
       }
 
-      if ((defined($main::outfile{$motif_id.'_pssm_sites_genomic'})) && (-e $main::outfile{$motif_id.'_pssm_sites_genomic'})) {
+      if ((defined($main::outfile{$matrix_id.'_pssm_sites_genomic'})) && (-e $main::outfile{$matrix_id.'_pssm_sites_genomic'})) {
 	## UCSC link to genomic location of predicted sites
-	my $BED_URL =$ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::outfile{$motif_id.'_pssm_sites_genomic'});
+	my $BED_URL =$ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::outfile{$matrix_id.'_pssm_sites_genomic'});
 	my $browser_url = "<a target='_blank' href='";
 	$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
 	$browser_url .= "db=".$genome_assembly;
@@ -3181,29 +3186,29 @@ sub SynthesisByMotif {
 				  $table,
 				  "view in genome browser ", [$browser_url,,
 							     ],
-				  "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
-					    "BED (UCSC track)",$main::outfile{$motif_id.'_pssm_sites_genomic'}
+				  "sites", ["text",$main::outfile{$matrix_id.'_pssm_sites'},
+					    "BED (UCSC track)",$main::outfile{$matrix_id.'_pssm_sites_genomic'}
 					   ],
-				  "distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
+				  "distribution", ["text",$main::outfile{$matrix_id.'_pssm_site_distrib'},
 						  ],
-				  "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_sites_per_peak'},
+				  "sites per peak", ["text",$main::outfile{$matrix_id.'_pssm_sites_per_peak'},
 						    ],
 
-				  "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
-						  "graph", $main::outfile{$motif_id.'_pssm_enrichment_png'}
+				  "enrichment", [ "text",$main::outfile{$matrix_id.'_pssm_enrichment'},
+						  "graph", $main::outfile{$matrix_id.'_pssm_enrichment_png'}
 						]
 				 );
       } else {			## without UCSC track
 	&SyntheticTableAddRow_New("Predicted sites on test peaks",
 				  $table,
-				  "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
+				  "sites", ["text",$main::outfile{$matrix_id.'_pssm_sites'},
 					   ],
-				  "distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
+				  "distribution", ["text",$main::outfile{$matrix_id.'_pssm_site_distrib'},
 						  ],
-				  "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_sites_per_peak'},
+				  "sites per peak", ["text",$main::outfile{$matrix_id.'_pssm_sites_per_peak'},
 						    ],
-				  "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
-						  "graph", $main::outfile{$motif_id.'_pssm_enrichment_png'}
+				  "enrichment", [ "text",$main::outfile{$matrix_id.'_pssm_enrichment'},
+						  "graph", $main::outfile{$matrix_id.'_pssm_enrichment_png'}
 						]
 				 );
       }
@@ -3829,17 +3834,17 @@ sub SynthesisPatternDisco {
       if (/assembly\s+\#\s+(\d+)/i) {
 	## Assembly number
 	$pattern_nb = $1;
-	$asmb_or_isol = "asmb";
+	$asmb_or_isol = "assembly";
 	next;
 
       } elsif (/Isolated patterns/) {
 	## Isolated patterns at the end of the assembly file
-	$asmb_or_isol = "isol";
+	$asmb_or_isol = "singleton";
 	next;
       }
 
       next if (/^;/); ## Skip comments that do not indicate assembly number or start of isolated patterns
-      if ($asmb_or_isol eq "isol") {
+      if ($asmb_or_isol eq "singleton") {
 	$pattern_nb++;
       } elsif (!/consensus/) {
 	next;
@@ -3852,6 +3857,7 @@ sub SynthesisPatternDisco {
     }
     close $asmb;
 
+
     ## Synthesize matrix logos
     my $pattern_table = "<table class='whitebg' align='center' style='border-style:none;'>";
 
@@ -3862,33 +3868,45 @@ sub SynthesisPatternDisco {
 #    foreach my $logo_nb (0..$#pattern_info) {
 #    foreach my $logo_nb (1..$#pattern_info) {
     foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
+
+      ## Build matrix ID
+      my $matrix_id = $pattern_type."_m".$logo_nb;
+
       $pattern_table .= "<tr>\n";
       my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
       my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
-      my $start_format="";
-      my $end_format="";
+#      my $start_format = "";
+#      my $end_format = "";
       my $score = $pattern_info[$logo_nb]->{score};
 
-
+      
+      ################################################################
+      ## Store the info assocuated to this motif in order to display
+      ## it in the other part of the report (Discovered motifs with motif comparisons).
+      $matrix_info{$matrix_id}->{score} = $pattern_info[$logo_nb]->{score};
+      $matrix_info{$matrix_id}->{logo_file} = $pattern_info[$logo_nb]->{logo_file};
+      $matrix_info{$matrix_id}->{logo_file_rc} = $pattern_info[$logo_nb]->{logo_file_rc};
+      
       ## Highlight in bold the patterns with score > 10
       if (&IsReal($score)) {
 	if ($score >10) {
-	  $start_format .= '<b>';
-	  $end_format .= '</b>';
+	  $matrix_info{$matrix_id}->{start_format} .= '<b>';
+	  $matrix_info{$matrix_id}->{end_format} .= '</b>';
 	  if ($score >= 75) {
-	    $start_format .= "<font color='red'>";
-	    $end_format = "</font>".$end_format;
+	    $matrix_info{$matrix_id}->{start_format} .= "<font color='red'>";
+	    $matrix_info{$matrix_id}->{end_format} = "</font>".$matrix_info{$matrix_id}->{end_format};
 	  }
 	}
       }
 
       &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
 
-      my $matrix_id = $pattern_type."_m".$logo_nb;
 
       ## Get the consensus from the assembly 
       my $consensus = $pattern_info[$logo_nb]->{word};
       my $consensus_rc = $pattern_info[$logo_nb]->{rc_word};
+      $matrix_info{$matrix_id}->{consensus} = $consensus;
+      $matrix_info{$matrix_id}->{consensus_rc} = $consensus_rc;
 
 #       ## Get the consensus from the matix rather than from the assembly
 #       ## THIS IS NOT WORKING, I ONLY GET THE MATRICES FROM THE FIRST MOTIF DISCOVERY PROGRAM
@@ -3901,6 +3919,9 @@ sub SynthesisPatternDisco {
 
       my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
       my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc, bold=>1, iupac=>$main::param{iupac_coloring});
+      $matrix_info{$matrix_id}->{colored_consensus} = $colored_consensus;
+      $matrix_info{$matrix_id}->{colored_consensus_rc} = $colored_consensus_rc;
+
 
       $pattern_table .= "<td style='border-right-style:none;'>".$matrix_id."</td>";
       $pattern_table .= "<td align='right'>";
@@ -3908,10 +3929,13 @@ sub SynthesisPatternDisco {
       $pattern_table .= ": ";
       #	my $seed = $pattern_info[$logo_nb]->{word};
       #	$pattern_table .= &RSAT::SeqUtil::ColorConsensus($pattern_info[$logo_nb]->{word}, bold=>1, iupac=>0);
+
+
+      ## Print the colored consensus + sig + draw logo
       $pattern_table .= $colored_consensus;
-      $pattern_table .= $start_format;
+      $pattern_table .= $matrix_info{$matrix_id}->{start_format};
       $pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
-      $pattern_table .= $end_format;
+      $pattern_table .= $matrix_info{$matrix_id}->{end_format};
       if (-e $logo_file) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
 	$pattern_table .= "<br><a  href='".$img."'><img  border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
@@ -3920,6 +3944,7 @@ sub SynthesisPatternDisco {
       }
       $pattern_table .= "</td>\n";
 
+      ## Print reverse complement of the colored consensus + draw logo
       $pattern_table .= "<td align='left' style='border-right-style:none;'>";
       $pattern_table .= "RC: ";
       $pattern_table .= $colored_consensus_rc;
