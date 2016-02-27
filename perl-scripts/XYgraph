@@ -709,7 +709,8 @@ sub Rplot {
     if (/^#/) {
       s/^#//;
       chomp;
-      @header_list=split("\t+", $_);
+      @header_list = split("\t+", $_);
+#      shift(@header_list);
       next;
     }
     print $out $_;
@@ -722,11 +723,11 @@ sub Rplot {
   
   $xcol_r=$x_col+1;
   my  @y_col_list_r=();
-  foreach(@y_col_list) {
-    $rcol=$_+1;
+  foreach my $c (@y_col_list) {
+    $rcol = $c + 1;
     push(@y_col_list_r , $rcol);
   }
-  die("No input data !!!") if ((!$inputfile)&&(!$tmp_file));
+  die("No input data !!!") if ((!$inputfile) && (!$tmp_file));
 
   
   ## will use this new file as input for R
@@ -741,13 +742,16 @@ sub Rplot {
   ## Open input table
   $r_instructions .= "\n## Loading input table\n";
   $r_instructions .= "in.file <- \"$input_data_file\"\n";
-  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=TRUE, na.strings = \"<NULL>\")\n";
+  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=FALSE, na.strings = \"<NULL>\")\n";
 
   ## Save header as vector in R
-  $r_instructions .= "header_vector <- c(\"".join("\",\"",@header_list)."\")\n";
-  $r_instructions .= "colnames(input.table)<- header_vector\n";
+  $r_instructions .= "header.vector <- c(\"".join("\",\"",@header_list)."\")\n";
+  $r_instructions .= "colnames(input.table) <- header.vector\n";
   #$r_instructions .= "input.table<- na.omit(input.table)\n";
 
+  ## build a vector with the selected Y columns and find their name
+  $r_y_columns .= "c(".join(",",@y_col_list_r).")";
+  $r_instructions .= "header.ycol <- header.vector[".$r_y_columns."]\n";
 
   
 
@@ -777,7 +781,6 @@ sub Rplot {
 
   ## Compute legend width to take it into account for par(mar)
   if ($legend) {
-    $r_y_columns .= "c(".join(",",@y_col_list_r).")";
     $r_instructions .= "legend.text <- names(input.table)[".$r_y_columns."]\n";
     $r_instructions .= "legend.width <- max(5, max(nchar(legend.text)))\n";
   } else {
@@ -785,6 +788,7 @@ sub Rplot {
   }
   $r_instructions .= "par(mar=c(5.1, 4.1, 5.1, 1.1 + legend.width))\n";
   $r_instructions .= "par(font.lab=2)\n";
+
 
   ## Put together all parammeters that have to be feed into maplot functions
   my $r_plot_params = "type='n'"; ## We first open the plot with no content, and then add the lines one by one
@@ -829,7 +833,7 @@ sub Rplot {
 
   $r_instructions .= "\n## Reading Y and Y values\n";
   $r_instructions .= "x.values <- input.table[,".$xcol_r."]\n";
-  $r_instructions .= "y.values <- as.data.frame(input.table[, c(".join(",",@y_col_list_r).")])\n";
+  $r_instructions .= "y.values <- as.data.frame(input.table[,  c(".join(",",@y_col_list_r).")])\n";
   
 
   ## Logarithm
@@ -897,9 +901,12 @@ sub Rplot {
 
   if ($colorfile) {
     $r_instructions .= "\n## Loading color table from file\n";
-    $r_instructions .= "color.table <- read.table(file=\"$colorfile\", sep=\"\t\", comment.char=\";\", stringsAsFactor=FALSE)\n";
-    $r_instructions .= "colors <- color.table[which (color.table[,1]%in% header_vector ),2]\n";
-    $r_plot_params .= ", col=colors ";
+    $r_instructions .= "color.table <- read.table(file=\"$colorfile\", sep=\"\t\", comment.char=\";\", stringsAsFactor=FALSE, row.names=1)\n";
+    $r_instructions .= "colors <- color.table[header.ycol,1]\n";
+    $r_instructions .= "colors[is.na(colors)] <- rep(1:6,length.out=sum(is.na(colors)))\n";
+    $r_instructions .= "names(colors) <- header.ycol\n";
+#    $r_instructions .= "colors <- color.table[which (color.table[,1]%in% header.vector ),2]\n";
+    $r_plot_params .= ", col=colors";
 
   } else {
     $r_instructions .= "\n## Loading color palette\n";
@@ -963,7 +970,7 @@ sub Rplot {
   $r_instructions .= "silence <- dev.off()\n";
 
   print $out_R  $r_instructions;
-  close ($out_R );
+  close ($out_R);
   my $rscript_command = $Rscript_path." ".$tmp_r_instructions_file;
   &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &RSAT::message::Info($rscript_command) if ($main::verbose >= 2);
@@ -2325,7 +2332,11 @@ sub ReadArguments {
 
       ### verbose ###
     } elsif ($ARGV[$a] eq "-v") {
-      $verbose = 1;
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else { 
+	$verbose = 1;
+      }
 
       ### legends and titles ###
     } elsif (($ARGV[$a] eq "-title") || ($ARGV[$a] eq "-title1")) {
