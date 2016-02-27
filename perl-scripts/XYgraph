@@ -760,11 +760,11 @@ sub Rplot {
   $r_instructions .= "\n## Opening plot file\n";
   $r_instructions .= "outfile<-'$outputfile'\n";
   if (($img_format eq "pdf") || ($img_format eq "eps")) {
-    $r_width = &RSAT::stats::min(($x_axis_size+100)/72, 5);
-    $r_height = &RSAT::stats::min(($y_axis_size+100)/72, 5);
+    $r_width = &RSAT::stats::min(($x_axis_size + 80)/72, 5);
+    $r_height = &RSAT::stats::min(($y_axis_size + 120)/72, 5);
   } else {
-    $r_width = $x_axis_size+100;
-    $r_height = $y_axis_size+100;
+    $r_width = $x_axis_size + 80;
+    $r_height = $y_axis_size + 120;
   }
   $r_dim = ", width=".($r_width).", height=".($r_height);
   if ($img_format eq "pdf") {
@@ -786,7 +786,7 @@ sub Rplot {
   } else {
     $r_instructions .= "legend.width <- 0\n";
   }
-  $r_instructions .= "par(mar=c(5.1, 4.1, 5.1, 1.1 + legend.width))\n";
+  $r_instructions .= "par(mar=c(4.6, 4.6, 4.6, 1.6 + legend.width))\n";
   $r_instructions .= "par(font.lab=2)\n";
 
 
@@ -938,7 +938,7 @@ sub Rplot {
 
   ## Add grid if requested. 
   if (($xgstep1) || ($xgstep2) || ($ygstep2) || ($ygstep1)) {
-    $r_instructions .= "grid()\n";
+    $r_instructions .= "grid(lty='solid', col='#BBBBBB')\n";
 #      $r_plot_params .= ", panel.first=grid()";
   }
 
