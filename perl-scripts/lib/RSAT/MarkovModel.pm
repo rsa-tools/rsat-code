@@ -1370,6 +1370,7 @@ sub to_string {
     $format =~ s/^ms$/motifsampler/;
     $format =~ s/^inclusive$/motifsampler/;
 
+
     if ($format eq ("tab")) {
       &RSAT::message::Warning("Output format tab is deprecated, please use format transitions instead.");
       $self->to_prefix_suffix_table(%args, type=>"transitions");
@@ -1480,7 +1481,11 @@ sub to_prefix_suffix_table {
 	if (defined($args{comment_string})) {
 	    $string .= $args{comment_string};
 	}
-	$string .= $prefix;
+	if ($prefix eq "") {
+	  $string .= ".";
+	} else {
+	  $string .= $prefix;
+	}
 
 	my $prefix_sum = 0;
 	foreach my $suffix (@suffix) {
