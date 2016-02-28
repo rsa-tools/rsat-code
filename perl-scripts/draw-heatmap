@@ -28,6 +28,8 @@ Sylvain Brohee <sbrohee\@ulb.ac.be>
 With the help of Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be> for
 Chaos representation
 
+Jacques van Helden <Jacques.van-Helden@univ-amu.fr> for the optio
+-r_plot (2016-02-29).
 
 =head1 CATEGORY
 
@@ -80,17 +82,22 @@ package main;
   %main::outfile = ();
 
   $main::verbose = 0;
-  $main::in = STDIN;
-  $main::out = STDOUT;
+#  $main::in = STDIN;
+#  $main::out = STDOUT;
+
+  $r_plot = 0; ## Use R rather than GD library to generate the plot
+
   ## Output formats
-  local $output_format = "png";
-  %supported_output_format =(
-			     #			       ps=>1, ## NOT SUPPORTED YET
-			     png=>1,
-			     jpg=>1,
-			     jpeg=>1
-			    );
-  $supported_output_formats = join (",", keys %supported_output_format);
+  local $img_format = "png";
+  %supported_img_format =(
+    #			       ps=>1, ## NOT SUPPORTED YET
+    png=>1,
+    jpg=>1,
+    jpeg=>1,
+    pdf=>1, ## Only with option -r_plot
+    eps=>1, ## Only with option -r_plot
+      );
+  $supported_img_formats = join (",", keys %supported_img_format);
 
   ## Color gradients
   local $gradient = "grey";
@@ -103,11 +110,11 @@ package main;
   $supported_gradients = join (",", keys %supported_gradients);    
   $rownames = 0;
 
-  $output_format = "png";
+  $img_format = "png";
 
   # Maximal and minimal values
-  $main::min_val = undef;
-  $main::max_val = undef;
+  $min_val = "NA";
+  $max_val = "NA";
 
   # Col width and row height
   $main::col_width = 50;
@@ -117,6 +124,8 @@ package main;
   $main::lines = 0;
   #chaos
   $main::chaos = 0;
+
+  $main::digits = "NA"; ## Digits to be displayed 
 
   ################################################################
   ## Read argument values
@@ -139,11 +148,26 @@ package main;
   if (!$main::outfile{output}) {
     &RSAT::error::FatalError("You must specify an output file with the -o option");
   }
-  #    if (!$main::infile{input}) {
-  #      &RSAT::error::FatalError("You must specify an input file with the -i option");
-  #    }
 
-  ## chaos table: no text, no lines, square cells
+  ################################################################
+  ## Check -r_plot option.
+  if ($r_plot) {
+    if ($chaos) {
+      &RSAT::error::FatalError("Chaos mode is incompatble with option -r_plot");
+    }
+    if ($outfile{htmlmap}) {
+      &RSAT::error::FatalError("HTML output is incompatble with option -r_plot");
+    }
+    &Rplot();
+    exit();
+  } else {
+    if (($img_format eq "pdf") || ($img_format eq "eps")) {
+      &RSAT::error::FatalError("Output formats pdf and eps are supported only with the option -r_plot");      
+    }
+  }
+  
+  ################################################################
+  ## Chaos table: no text, no lines, square cells
   if ($chaos) {
     $main::no_text = 1;
     $main::lines = 0;
@@ -247,14 +271,14 @@ package main;
 
   &RSAT::message::Info("max_val=".$max_val, "table_max=".$max) if ($main::verbose >= 4);
 
-  ## attribution of the minimal and maximal value if specified as arguments
-  if (defined($min_val)) {
+  ## Attribution of the minimal and maximal value if specified as arguments
+  if (&IsReal($min_val)) {
     $display_min = $min_val;
 #    $display_min = &RSAT::stats::min($min_val, $min);
   } else {
     $display_min = $min;
   }
-  if (defined($max_val)) {	#&& ($max_val >= $max)) {
+  if (&IsReal($max_val)) {	#&& ($max_val >= $max)) {
     $display_max = $max_val;
 #    $display_max = &RSAT::stats::max($max_val, $max);
   } else {
@@ -267,7 +291,7 @@ package main;
 
   ################################################################
   ## Execute the command
-  if ($output_format eq "ps") {
+  if ($img_format eq "ps") {
 
     ## Comment by JvH: apparently there has been some intention to
     ## support the ps format, but the code has not been implemented
@@ -309,7 +333,7 @@ package main;
       }
     }
       
-    # display header if any
+    ## Display header if any
     if ((scalar @header) > 0) {
       for (my $i = 0; $i < scalar @header; $i++) {
 	my $xpos = $row_name_width+($col_width*$i);
@@ -319,16 +343,25 @@ package main;
       }
     }
       
-    # display table
+    ## Display table
     my $initj = 0;
     $initj = 1 if ($rownames);
     for (my $i = 0; $i < scalar @table; $i ++) {
       my @row = @{$table[$i]};
       for (my $j = $initj; $j < scalar @row; $j ++) {
 	my $val = $row[$j];
+
+	## Round the value if required
+	if ((&IsReal($val)) && (&IsReal($main::digits))) {
+	  $val = sprintf("%.${main::digits}f", $val);
+	}
+
+	## Specify colors
 	my $current_col = $null_color;
 	my $color = $null_color;
 	my $textcol = $black;
+
+	## Print rownames
 	if ($rownames) {
 	  my $row_name_xpos = 5;
 	  my $row_name_ypos = 5+$header_name_height+($row_height*$i);
@@ -364,7 +397,12 @@ package main;
 	my $ypos1 = 5+$header_name_height+($row_height*$i);
 	my $ypos2 = 5+$header_name_height+($row_height*$i)+$row_height;
 	$p->filledRectangle($xpos1, $ypos1, $xpos2, $ypos2, $current_col);
-	$p->string(gdSmallFont, ($xpos1+5),($ypos1+5), "$val", $textcol) if ($col_width >= 30 && !$no_text);
+
+	## Print values if requested
+	if ($col_width >= 30 && (!$no_text)) {
+	  $p->string(gdSmallFont, ($xpos1+5), ($ypos1+5), $val, $textcol);
+	}
+
 	# put the lines only when computing the last row
 	if ($lines && $i == (scalar(@table)-1)) {
 	  $p->setThickness(2);
@@ -406,9 +444,9 @@ package main;
     }
     binmode STDOUT;
     my $output_fhandle = &OpenOutputFile($main::outfile{output});
-    if ($output_format eq "jpg" || $output_format eq "jpeg") {
+    if ($img_format eq "jpg" || $img_format eq "jpeg") {
       print $output_fhandle $p->jpeg();
-    } elsif ($output_format eq "png") {
+    } elsif ($img_format eq "png") {
       print $output_fhandle $p->png();
     } 
     close $output_fhandle;
@@ -558,15 +596,15 @@ Using this option, the values are not written in the cells of the heatmap.
 
 =pod
 
-=item B<-out_format output_format>
+=item B<-out_format img_format>
 
 Output format. Supported: png,jpeg
 
 =cut 
 	} elsif ($arg eq "-out_format") {
-	    $output_format = shift(@arguments);
-	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
-		unless ($supported_output_format{$output_format});
+	    $img_format = shift(@arguments);
+	    &RSAT::error::FatalError("$img_format\tInvalid output format. Supported: $supported_img_formats")
+		unless ($supported_img_format{$img_format});
 
 =pod
 
@@ -593,7 +631,7 @@ If the row height is to small, the label of the heatmap will not be indicated. (
 	} elsif ($arg eq "-col_width") {
 	    $col_width = shift (@arguments);
 	    unless (&IsNatural($col_width) && ($col_width > 0)) {
-		&RSAT::error::FatalError(join("\t", $col_width, "Invalid value for the column width. Must be a strictly positive natural number. If the column width is to small, the label of the heatmap will not be indicated."));
+		&RSAT::error::FatalError($col_width, "Invalid value for the column width. Must be a strictly positive natural number. If the column width is to small, the label of the heatmap will not be indicated.");
 	    }
 
 =pod
@@ -609,7 +647,7 @@ indicated. (Default : 30 px)
 	} elsif ($arg eq "-row_height") {
 	    $row_height = shift (@arguments);
 	    unless (&IsNatural($row_height) && ($row_height > 0)) {
-		&RSAT::error::FatalError(join("\t", $row_height, "Invalid value for the row height. Must be a strictly positive natural number. If the row height is to small, the label of the heatmap will not be indicated."));
+		&RSAT::error::FatalError($row_height, "Invalid value for the row height. Must be a strictly positive natural number. If the row height is to small, the label of the heatmap will not be indicated.");
 	    }
 
 =pod
@@ -625,7 +663,7 @@ will be used as minimal value.
 	  } elsif ($arg eq "-min") {
 	    $min_val = shift (@arguments);
 	    unless (&RSAT::util::IsReal($min_val)) {
-	      &RSAT::error::FatalError(join("\t", $min_val, "Invalid value for the minimal value. Must be a real number."));
+	      &RSAT::error::FatalError($min_val, "Invalid value for the minimal value. Must be a Real number.");
 	    }
 
 
@@ -642,7 +680,20 @@ will be used as maximal value.
 	} elsif ($arg eq "-max") {
 	    $max_val = shift (@arguments);
 	    unless (&RSAT::util::IsReal($max_val)) {
-		&RSAT::error::FatalError(join("\t", $max_val, "Invalid value for the maximal value. Must be a real number."));
+		&RSAT::error::FatalError($max_val, "Invalid value for the maximal value. Must be a Real number.");
+	    }
+
+=pod
+
+=item B<-digits #>
+
+Round the values to the specified number of digit.
+
+=cut
+	  } elsif ($arg eq "-digits") {
+	    $digits = shift (@arguments);
+	    unless (&RSAT::util::IsNatural($digits)) {
+	      &RSAT::error::FatalError($digits, "Invalid value for the minimal value. Must be a Natural number.");
 	    }
 
 =pod
@@ -668,9 +719,25 @@ I<chaos-table> for details on CHAOS Game Representation.
 =cut
 	} elsif ($arg eq "-chaos") {
 	    $chaos = 1;
+
+
+=pod
+
+=item B<-r_plot>
+
+Use R to generate the heatmap, rather than using the Perl GD module.
+
+=cut
+	} elsif ($arg eq "-r_plot") {
+	  $Rscript_path = &RSAT::server::GetProgramPath("Rscript",0);
+	  unless ($Rscript_path) {
+	    &RSAT::message::Warning("Rscript program is not found in the path. Ignoring option -r_plot.");	
+	  } else {
+	    $r_plot= 1;
+	  }
 	    
 	} else {
-	    &FatalError(join("\t", "Invalid option", $arg));
+	    &FatalError("Invalid option", $arg);
 
 	}
     }
@@ -736,6 +803,134 @@ sub generate_words {
 }
 
 
+
+################################################################
+## Generate the heatmap using R
+## R requires an .R file with the instructions to produce the graph.
+## draw-heatmap options will be translated to R commands.
+sub Rplot {
+
+  ## Copy or generate inputfile.  Format will be assumed to be RSAT
+  ## based with # as header and; comment char.
+  my ($in) = &OpenInputFile($infile{input});
+  our $tmp_infile = &RSAT::util::make_temp_file("", "draw-heatmap_Rplot_infile", 1);
+  my ($in_copy) = &OpenOutputFile($tmp_infile);
+  my @header_list=();
+  my $in_lines = 0;
+  my $in_columns = 0;
+  while (<$in>) {
+    next if (/^;/); # skip comment lines
+    #      next if (/^#/); # We don't want to skip header line
+    if (/^#/) {
+      ## Get header if exists
+      s/^#//;
+      chomp();
+      @header_list = split("\t+", $_);
+      $header = "TRUE";
+      print $in_copy $_, "\n";
+      next;
+    }
+    print $in_copy $_;
+
+    ## Count lines (used to compute heatmap height)
+    $in_lines++;
+
+    ## Count columns (used to compute heatmap width)
+    my @fields = split("\t", $_);
+    $in_columns = &RSAT::stats::max($in_columns, scalar(@fields));
+  }  
+  close $in_copy;
+  close $in;
+  if ($in_lines == 0) {
+    &RSAT::message::FatalError("Input file contains not a single valid line.", $tmp_infile);
+  }
+  if ($main::verbose >= 0) {
+    &RSAT::message::Info("Input table contains", $in_lines, "lines and", $in_columns, "columns.");
+  }
+  my $input_data_file = $tmp_infile;  ## Use input copy as input for R
+  
+  ## Open a file to write R instructions
+  our $tmp_r_instructions_file = &RSAT::util::make_temp_file("", "draw-heatmap_Rplot_instructions", 1).".R";
+  my ($out_R) = &OpenOutputFile($tmp_r_instructions_file);
+
+  ## Color library
+  my $r_instructions = ""; 
+  $r_instructions .= "## Loading heatmap.simple() function\n";
+  $r_instructions .= "source(file.path('".$ENV{RSAT}."', 'R-scripts', 'heatmap.simple.R'))\n";
+
+  ## Read input file
+  $r_instructions .= "\n## Loading input table\n";
+  $r_instructions .= "in.file <- \"$input_data_file\"\n";
+  my $rownames_arg = "NULL";
+  if ($rownames) {
+    $rownames_arg = "1";
+  }
+  $r_instructions .= "input.table <-  read.table(file=in.file, sep='\\t', comment.char=';', row.names=".$rownames_arg.", header=".$header.", na.strings='<NULL>')\n";
+
+  ## Compute min and max value for the heatmap colors
+  if (&IsReal($min_val)) {
+    $r_instructions .= "zmin <- ".$min_val."\n";
+  } else {
+    $r_instructions .= "zmin <- min(input.table)\n";
+  }
+  if (&IsReal($max_val)) {
+    $r_instructions .= "zmax <- ".$max_val."\n";
+  } else {
+    $r_instructions .= "zmax <- max(input.table)\n";
+  }
+
+  ## Start image environment in R according to the output format
+  $r_instructions .= "\n## Opening plot file\n";
+  $r_instructions .= "outfile<-'".$outfile{output}."'\n";
+  $r_width = $in_columns*$col_width + 80;
+  $r_height = $in_lines*$row_height + 140;
+  if (($img_format eq "pdf") || ($img_format eq "eps")) {
+    $r_width = &RSAT::stats::max($r_width/72, 5);
+    $r_height = &RSAT::stats::max($r_height/72, 5);
+  }
+  $r_dim = ", width=".($r_width).", height=".($r_height);
+  if ($img_format eq "pdf") {
+    $r_instructions .= "pdf( file= outfile".$r_dim.")\n";
+  } elsif (($img_format eq "jpg") || ($img_format eq "jpeg")) {
+    $r_instructions .= "jpg(file= outfile".$r_dim.")\n";
+  } elsif ($img_format eq "png") {
+    $r_instructions .= "png(file= outfile".$r_dim.")\n";
+  } elsif ($img_format eq "eps") {
+    $r_instructions .= "eps(file= outfile".$r_dim.")\n";
+  } elsif ($img_format eq "gif") {
+    &RSAT::error::FatalError("GIF format is not supported in R");
+  }
+
+  ## Compute the heatmap options
+  my @heatmap_options = ();
+  push @heatmap_options, "zlim=c(zmin, zmax)";
+  if ($main::no_text) {
+    push @heatmap_options, "display.values='FALSE'";
+  } else {
+    push @heatmap_options, "display.values='TRUE'";
+  }
+  push @heatmap_options, "round.digits=".$main::digits;
+  my $heatmap_options = join", ", @heatmap_options;
+
+#  $r_instructions .= "print(heatmap.simple)\n";
+
+  ## Generate the heatmap
+  $r_instructions .= "\n## Generating the heatmap\n";
+  $r_instructions .= "heatmap.simple(input.table,".$heatmap_options.")\n";
+
+  ## Close output file
+  $r_instructions .= "slience <- dev.off()\n";
+
+  ## Print the R instructions
+  print $out_R $r_instructions;
+  close ($out_R);
+
+  ## Run the R script to generate the graph
+  my $rscript_command = $Rscript_path." ".$tmp_r_instructions_file;
+  &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &RSAT::message::Info($rscript_command) if ($main::verbose >= 2);
+}
+
 __END__
 
 =pod
@@ -763,7 +958,7 @@ Add support for ps and pdf formats>
 
 =item B<-title 'My title text'>
 
-Display a title on the top side of the image.
+Display a title on the top of the image.
 
 =item B<-xlab 'X label'>
 
