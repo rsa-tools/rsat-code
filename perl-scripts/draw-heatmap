@@ -886,7 +886,7 @@ sub Rplot {
   $r_height = $in_lines*$row_height + 140;
   if (($img_format eq "pdf") || ($img_format eq "eps")) {
     $r_width = &RSAT::stats::max($r_width/72, 5);
-    $r_height = &RSAT::stats::max($r_height/72, 5);
+    $r_height = &RSAT::stats::max($r_height/72, 2.5);
   }
   $r_dim = ", width=".($r_width).", height=".($r_height);
   if ($img_format eq "pdf") {
@@ -903,6 +903,7 @@ sub Rplot {
 
   ## Compute the heatmap options
   my @heatmap_options = ();
+  push @heatmap_options, "text.color='auto'";
   push @heatmap_options, "zlim=c(zmin, zmax)";
   if ($main::no_text) {
     push @heatmap_options, "display.values='FALSE'";
@@ -919,7 +920,7 @@ sub Rplot {
   $r_instructions .= "heatmap.simple(input.table,".$heatmap_options.")\n";
 
   ## Close output file
-  $r_instructions .= "slience <- dev.off()\n";
+  $r_instructions .= "silence <- dev.off()\n";
 
   ## Print the R instructions
   print $out_R $r_instructions;
