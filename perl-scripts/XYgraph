@@ -47,7 +47,7 @@ $y_axis_max = "ND";
 $x_axis_min = "ND";
 $y_axis_min = "ND";
 $same_limits = 0;
-$r_plot=0;
+$r_plot = 0;
 $x = 0;
 $y = 0;
 
@@ -139,9 +139,8 @@ if ($colorfile) {
 }
 
 
-################
-## If R selected as ploting method
-
+################################################################
+## Check -r_plot option.
 if ($r_plot) {
     &Rplot();
     exit();
@@ -697,71 +696,69 @@ exit(0);
 ## XYgraph options will be translated to R commamnds 
 sub Rplot {
 
-  ## Check existance of inputfile
-  ## Format will be assumed to be RSAT based with # as header and; comment char
+  ## Copy or generate inputfile.  Format will be assumed to be RSAT
+  ## based with # as header and; comment char.
   ($in, $input_dir) = &OpenInputFile($inputfile);
-  our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_infile", 1);
-  my ($out) = &OpenOutputFile($tmp_file);
+  our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_Rplot_infile", 1);
+  my ($in_copy) = &OpenOutputFile($tmp_file);
   my @header_list=();
+  my $in_lines = 0;
   while (<$in>) {
     next if (/^;/); # skip comment lines
     #      next if (/^#/); # We don't want to skip header line
     if (/^#/) {
       s/^#//;
-      chomp;
+      chomp();
       @header_list = split("\t+", $_);
-#      shift(@header_list);
+      $header = "TRUE";
+      print $in_copy $_, "\n";      
       next;
     }
-    print $out $_;
+    $in_lines++;
+    print $in_copy $_;
   }
-  
-  close $out;
+  close $in_copy;
   close $in;
+  &RSAT::message::FatalError("No input data !!!") if ((!$inputfile) && ($in_lines == 0));
+  my $input_data_file = $tmp_file;  ## Use input copy as input for R
   
-  ## Get header if exist
-  
-  $xcol_r=$x_col+1;
-  my  @y_col_list_r=();
-  foreach my $c (@y_col_list) {
-    $rcol = $c + 1;
-    push(@y_col_list_r , $rcol);
-  }
-  die("No input data !!!") if ((!$inputfile) && (!$tmp_file));
-
-  
-  ## will use this new file as input for R
-  my $input_data_file = $tmp_file;
-  
-  our $tmp_r_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_instructions", 1).".R";
+  ## Open a file to write R instructions
+  our $tmp_r_instructions_file = &RSAT::util::make_temp_file("", "draw-heatmap_Rplot_instructions", 1).".R";
   my ($out_R) = &OpenOutputFile($tmp_r_instructions_file);
   
+
+  ## Color library
   my $r_instructions = "library(RColorBrewer)\n";
   $r_instructions .= "options(bitmapType='cairo')\n";
 
   ## Open input table
   $r_instructions .= "\n## Loading input table\n";
   $r_instructions .= "in.file <- \"$input_data_file\"\n";
-  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=FALSE, na.strings = \"<NULL>\")\n";
+  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.", na.strings = \"<NULL>\")\n";
 
   ## Save header as vector in R
   $r_instructions .= "header.vector <- c(\"".join("\",\"",@header_list)."\")\n";
   $r_instructions .= "colnames(input.table) <- header.vector\n";
   #$r_instructions .= "input.table<- na.omit(input.table)\n";
 
+  ## Get X and Y columns
+  $xcol_r=$x_col+1;
+  my  @y_col_list_r=();
+  foreach my $c (@y_col_list) {
+    $rcol = $c + 1;
+    push(@y_col_list_r , $rcol);
+  }
+
   ## build a vector with the selected Y columns and find their name
   $r_y_columns .= "c(".join(",",@y_col_list_r).")";
   $r_instructions .= "header.ycol <- header.vector[".$r_y_columns."]\n";
 
-  
-
-  
   ## Start image environment in R according to the output format
   $r_instructions .= "\n## Opening plot file\n";
   $r_instructions .= "outfile<-'$outputfile'\n";
   if (($img_format eq "pdf") || ($img_format eq "eps")) {
-    $r_width = &RSAT::stats::min(($x_axis_size + 80)/72, 5);
-    $r_height = &RSAT::stats::min(($y_axis_size + 140)/72, 5);
+    $r_width = &RSAT::stats::max(($x_axis_size + 80)/72, 5);
+    $r_height = &RSAT::stats::max(($y_axis_size + 140)/72, 5);
   } else {
     $r_width = $x_axis_size + 80;
     $r_height = $y_axis_size + 140;
@@ -923,8 +920,6 @@ sub Rplot {
 
   }
 
-
-  
   $r_instructions .= "\n## Generating the plot\n";
   $r_instructions .= "plot(x=NULL, y=NULL, $r_plot_params)\n";
 # xlab=\"log10(Score Pvalue)\", ylab=\"Binomial significance of hit number (OCC)\")
@@ -980,27 +975,37 @@ sub Rplot {
 ## Generate the graph with GnuPlot and export it in eps format
 sub GnuPlotEPS {
 
-  ## remove lines starting by ; and adapt the comment line
-    ($in, $input_dir) = &OpenInputFile($inputfile);
-    our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_for_gnuplot", 1);
-    my ($out) = &OpenOutputFile($tmp_file);
-    while (<$in>) {
-      next if (/^;/); # skip comment lines
-#      next if (/^#/); # We don't want to skip header line
-      if (/^#/) {
-	s/^#//;
-      }
-      print $out $_;
+  ## Copy or generate inputfile.  Format will be assumed to be RSAT
+  ## based with # as header and; comment char.
+  my ($in) = &OpenInputFile($infile{input});
+  our $tmp_file = &RSAT::util::make_temp_file("", "draw-heatmap_Rplot_infile", 1);
+  my ($in_copy) = &OpenOutputFile($tmp_file);
+  my @header_list=();
+  my $in_lines = 0;
+  while (<$in>) {
+    next if (/^;/); # skip comment lines
+    #      next if (/^#/); # We don't want to skip header line
+    if (/^#/) {
+      ## Get header if exists
+      s/^#//;
+      chomp();
+      @header_list = split("\t+", $_);
+      $header = "TRUE";
+      print $in_copy $_, "\n";
+      next;
     }
-    close $out;
-    close $in;
-
-    ## do not process if no data
-  die("No input data !!!") if ((!$inputfile)&&(!$tmp_file));
-
- ## will use this new file as input for gnuplot
-  my $input_data_file = $tmp_file;
-
+    $in_lines++;
+    print $in_copy $_;
+  }  
+  close $in_copy;
+  close $in;
+  &RSAT::message::FatalError("No input data !!!") if ($in_lines == 0);
+  my $input_data_file = $tmp_file;  ## Use input copy as input for R
+  
+  ## Open a file to write R instructions
+  our $tmp_r_instructions_file = &RSAT::util::make_temp_file("", "draw-heatmap_Rplot_instructions", 1).".R";
+  my ($out_R) = &OpenOutputFile($tmp_r_instructions_file);
+  
   #export color file
   if ($colorexportfile) {
   	#output file
