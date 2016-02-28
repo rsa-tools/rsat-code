@@ -1154,7 +1154,7 @@ sub SequenceLengths {
   my $title = "Peak lengths";
   $title .= "; ".$main::param{title} if ($main::param{title});
   $cmd .= " -title '".$title."'";
-  $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
+  $cmd .= " -xsize 700 -xcol 3 -xleg1 'Peak length'";
   $cmd .= " -ysize 250 -ycol 4 -yleg1 'Number of peaks'";
   $cmd .= " -xmin 0 -ymin 0";
 #  $cmd .= " -xgstep1 ".($main::param{profiles_ci});
@@ -1229,7 +1229,8 @@ sub CompositionProfiles {
     $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
     $cmd .= " ; cut -f 1-5,7 ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
-    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1 -rownames -digits 3 -out_format png -col_width 50";
+    $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_heatmap"};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
@@ -1270,7 +1271,7 @@ sub CompositionProfiles {
 #   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
     $cmd .= " -xgstep2 ".$main::param{profiles_ci};
     $cmd .= " -vline '#666666' 0";
-    $cmd .= " -xsize 800 -ysize 250";
+    $cmd .= " -xsize 700 -ysize 250";
     $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -legend -lines -pointsize 0 -legend -header";
@@ -1294,7 +1295,7 @@ sub CompositionProfiles {
     $title .= "; ".$seq_type." sequence";
     $title .= "; ".$main::param{title} if ($main::param{title});
     $cmd .= " -title '".$title."'";
-    $cmd .= " -xleg1 'Position' -xsize 800";
+    $cmd .= " -xleg1 'Position' -xsize 700";
     $cmd .= " -yleg1 'Occurrences' -ysize 250  -ymin 0";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles_graph"};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
@@ -1904,7 +1905,8 @@ sub MergeWords {
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Draw a heat map of the word significance table
-  $cmd = $SCRIPTS."/draw-heatmap -min 0 -max 10  -out_format png";
+  $cmd = $SCRIPTS."/draw-heatmap -min 0 -max 10 -rownames -digits 2 -out_format png";
+  $cmd .= " -r_plot" if ($main::param{r_plot});
   $cmd .= " -col_width 40 -rownames -gradient fire";
   $cmd .= " -row_height 16";
   $cmd .= " -i ".$main::outfile{merged_words};
@@ -2595,14 +2597,14 @@ sub ScanSequences {
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
-    ## Draw the graph of predicted site positions (occurrences per window)
+    ## Draw the graph of predicted site position profiles (occurrences per non-overlapping window)
     &RSAT::message::Debug("Drawing positional distribution of motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/XYgraph";
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     $cmd .= " -lines -xcol 3 -ycol 4";
     $cmd .= " -ysize 250 -ycol 4 -yleg1 'Number of sites'";
-    $cmd .= " -xsize 800 -xcol 3 -xleg1 'Position relative to sequence ".$main::param{origin}."'";
+    $cmd .= " -xsize 600 -xcol 3 -xleg1 'Position relative to sequence ".$main::param{origin}."'";
 #   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
     $cmd .= " -xgstep2 ".$main::param{profiles_ci};
     $cmd .= " -vline '#666666' 0";
@@ -2964,6 +2966,7 @@ sub SynthesisOneMotifComparison {
 ## Generate a HTML table summarizing the results for each discovered
 ## motif. this table is inserted in the synthetic report.
 sub SynthesisByMotif {
+  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'></a><h3>Discovered motifs (with motif comparison)</h3>\n", 0);
   print $syn "<table class='whitebg'>\n";
 
@@ -3011,6 +3014,11 @@ sub SynthesisByMotif {
 #    $matrix->makeLogo($main::prefix{$matrix_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
 #    $matrix->makeLogo($main::prefix{$matrix_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the reverse complementary logo image
 
+    ## Insert page break between motifs for printing
+    if ($m > 1) {
+      print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
+    }
+
     print $syn "<tr>\n";
     print $syn "<td><a name='discovered_motifs_".$m."'></a><b> Motif ", $m,"</b> \n";
     print $syn "&nbsp;"x2, $matrix->get_attribute("name"),"</td>\n";
@@ -3051,7 +3059,7 @@ sub SynthesisByMotif {
 
     ## Sequence logo, reverse complementary
 #    $file = $main::outfile{$matrix_id."_logo_rc"};
-    my $file = $matrix_info{$matrix_id}->{logo_file_rc};
+    $file = $matrix_info{$matrix_id}->{logo_file_rc};
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
       print $syn ("<td align='center' style='border-bottom-style:none;border-right-style:none;' >", $colored_consensus_rc, "<br>\n",
@@ -3273,6 +3281,7 @@ sub OpenSynthesis {
 ################################################################
 ## Report results of motif comparisons
 sub SynthesisMotifCompa {
+  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='motif_compa'></a><h3>Motif comparisons</h3>", 0);
   print $syn "<table class='whitebg'>\n";
 
@@ -3312,6 +3321,7 @@ sub SynthesisMergedSites {
     }
 
     ## Print the link table
+    print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
     print $syn &open_menu_heading($menu_nb++, "<a name='merged_sites'></a><h3>Motif locations (sites)</h3>", 0);
     print $syn "<table class='whitebg'>\n";
     &SyntheticTableAddRow("Predicted sites on test peaks (all motifs)",
@@ -3349,6 +3359,7 @@ sub SynthesisParamsAndFiles {
   &ReportParamsAndFiles();
 
   ## Log files
+  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Logs and parameter files</h3>", 1);
   print $syn "<table class='whitebg'>\n";
   &SyntheticTableAddHeaderRow("Log files");
@@ -3549,6 +3560,8 @@ sub SyntheticTableAddHeaderRow {
 ################################################################
 ## Add sequence composition on the synthetic report
 sub SynthesisSequenceComposition {
+
+  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='seq_composition'></a><h3>Sequence composition</h3>", 0);
   print $syn "<p><table class='whitebg'>\n";
 
@@ -3813,6 +3826,7 @@ sub SynthesisRefMotifs {
 ## Report discovered motifs by algorithms
 sub SynthesisMotifsByAlgo {
   &RSAT::message::TimeWarn("Synthesis per motif discovery algorithm") if ($main::verbose >= 2);
+  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='motifs_by_algo'></a><h3>Discovered motifs (by algorithm)</h3>", 1);
   print $syn "<table class='whitebg'>\n";
   &SyntheticTableAddHeaderRow("motif discovery");
