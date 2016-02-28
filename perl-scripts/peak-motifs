@@ -1228,8 +1228,14 @@ sub CompositionProfiles {
     $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
     $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
-    $cmd .= " ; cut -f 1-5,7 ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
-    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1 -rownames -digits 3 -out_format png -col_width 50";
+#    if ($ol==1) {
+#      $cmd .= " ; cut -f 1-5";
+#    } else {
+      $cmd .= " ; cut -f 1-5,7";
+#    }
+    $cmd .= " ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
+    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1 -digits 3 -out_format png -col_width 50";
+    $cmd .= " -rownames";
     $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_heatmap"};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
