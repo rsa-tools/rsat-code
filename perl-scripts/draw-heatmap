@@ -127,6 +127,11 @@ package main;
 
   $main::digits = "NA"; ## Digits to be displayed 
 
+  local $display_min;
+  local $display_max;
+  local $display_mean;
+
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -284,6 +289,14 @@ package main;
   } else {
     $display_max = $max;
   }
+  $display_mean = ($display_min + $display_max)/2;
+  &RSAT::message::Debug(
+    "Display min=".$display_min,
+    "Display mean=".$display_mean,
+    "Display max=".$display_max,
+    "min=".$min,
+    "max=".$max,
+      ) if ($main::verbose >= 3);
 
   ################################################################
   ## Print verbose
@@ -309,6 +322,7 @@ package main;
     $colors{"000000000"} = $black;
     $p->interlaced('false');
       
+    ################################################################
     ## CHAOS
     if ($chaos) {
       # print chaos ATGC angles
@@ -368,7 +382,7 @@ package main;
 	  $p->string(gdSmallFont, $row_name_xpos,$row_name_ypos, $rownames_list[$i], $textcol);
 	}
 
-	## Associate a color from the gradient  to the real values
+	## Associate a color from the gradient to the value of the current cell
 	if (&RSAT::util::IsReal($val)) {
 	  my $display_val = &RSAT::stats::max($val,$display_min);
 	  if ($val > $display_max) {
@@ -376,13 +390,14 @@ package main;
 	  } else {
 	    $color = &RSAT::util::getBgColorFromOneScore($display_val, $display_min, $display_max, 0, $gradient);
 	  }
-	  my $mean = ($display_min + $display_max)/2;
-	  if ($val > $mean) {
+	  if ($val > $display_mean) {
 	    if (($gradient ne "green") || ($val > $max_val)) {
 	      $textcol = $white;
 	    }
 	  }
 	}
+
+	## Get red,green,blue channel intensities corresponding to the color
 	my $r = hex(substr($color, 1,2));
 	my $g = hex(substr($color, 3,2));
 	my $b = hex(substr($color, 5,2));
@@ -402,6 +417,16 @@ package main;
 	if ($col_width >= 30 && (!$no_text)) {
 	  $p->string(gdSmallFont, ($xpos1+5), ($ypos1+5), $val, $textcol);
 	}
+
+	&RSAT::message::Debug("i=".$i, 
+			      "j=".$j,
+			      "val=".$val,
+			      "current_col=".$current_col,
+			      "textcol=".$textcol,
+			      "r=".$r,
+			      "g=".$g,
+			      "b=".$b,
+	    ) if ($main::verbose >= 0);
 
 	# put the lines only when computing the last row
 	if ($lines && $i == (scalar(@table)-1)) {
@@ -459,12 +484,12 @@ package main;
     $html_source .= "</HTML>\n";
     print $main::outhtml $html_source;
   }
+  close $main::out if ($main::outfile{output});
 
   ################################################################
   ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $main::out $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
-  close $main::out if ($main::outfile{output});
+  warn $exec_time if ($main::verbose >= 1);	## only report exec time if verbosity is specified
   exit(0);
 }
 
@@ -752,21 +777,21 @@ Use R to generate the heatmap, rather than using the Perl GD module.
 }
 
 ################################################################
-## Verbose message
+## Verbose message is sent to STDOUT rather than output file  because incompatible wih image files.
 sub Verbose {
-    print $main::out "; draw-heatmap ";
-    &PrintArguments($main::out);
-    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    print "; draw-heatmap ";
+    &PrintArguments();
+    printf "; %-22s\t%s\n", "Program version", $program_version;
     if (%main::infile) {
-	print $main::out "; Input files\n";
+	print "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
-	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	  printf ";\t%-13s\t%s\n", $key, $value;
 	}
     }
     if (%main::outfile) {
-	print $main::out "; Output files\n";
+	print "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
-	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	  printf ";\t%-13s\t%s\n", $key, $value;
 	}
     }
 }
@@ -775,31 +800,31 @@ sub Verbose {
 ################################################################
 ## Generate all possible words of a given length
 sub generate_words {
-	our $w_length = shift;	
-	my @alphabet = qw(A C G T);
-	
-	foreach my $previous_word (keys(%main::oligo_freq)){
-		delete $main::oligo_freq{$previous_word};
-		foreach my $residue (@alphabet){
-			my $new_word = $previous_word.$residue;
-			$main::oligo_freq{$new_word} = 1;
-		}
-	}
-	
-	my @all_words = (keys(%main::oligo_freq));
-	unless (@all_words){
-		foreach my $residue (@alphabet){
-			$main::oligo_freq{$residue} = 1;
-		}
-		@all_words = (keys(%main::oligo_freq));
-	}
-	
-	my $curr_length = length($all_words[0]);
+  our $w_length = shift;	
+  my @alphabet = qw(A C G T);
+  
+  foreach my $previous_word (keys(%main::oligo_freq)){
+    delete $main::oligo_freq{$previous_word};
+    foreach my $residue (@alphabet){
+      my $new_word = $previous_word.$residue;
+      $main::oligo_freq{$new_word} = 1;
+    }
+  }
+  
+  my @all_words = (keys(%main::oligo_freq));
+  unless (@all_words){
+    foreach my $residue (@alphabet){
+      $main::oligo_freq{$residue} = 1;
+    }
+    @all_words = (keys(%main::oligo_freq));
+  }
+  
+  my $curr_length = length($all_words[0]);
 
-	## stop condition
-	unless ($curr_length eq $w_length) {
-			&generate_words($w_length);	
-		}
+  ## stop condition
+  unless ($curr_length eq $w_length) {
+    &generate_words($w_length);	
+  }
 }
 
 
