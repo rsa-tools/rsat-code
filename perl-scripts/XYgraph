@@ -792,41 +792,27 @@ sub Rplot {
 
   ## Title parammeters
   if ($title1 || $title2) {
-    my $title="";
-    if ($title1) {
-      $title .= "\"".$title1."\"";
-    }
-    if ($title2) {
-      $title .= "\n".$title2;
-    }
-    $r_plot_params .= ", main=".$title." ";
+    my $title = join(" ; ", $title1, $title2);
+    $title =~ s/\"//g;
+    $title =~ s/\'//g;
+    $r_plot_params .= ", main='".$title."'";
   }
   
   ## X label (xlab) parammeters
   if ($x_legend1 || $x_legend2) {
-    my $x_legend="";
-    if ($x_legend1) {
-      $x_legend .= "\"".$x_legend1."\"";
-    }
-    
-    if ($x_legend2) {
-      $x_legend .= "\n\"".$x_legend2."\"";
-    }
-    #die "BOOM $x_legend";
-    $r_plot_params .= ", xlab=".$x_legend;
+    my $x_legend = join(" ; ", $x_legend1, $x_legend2);
+    $x_legend =~ s/\"//g;
+    $x_legend =~ s/\'//g;
+    $r_plot_params .= ", xlab='".$x_legend."'";
   }    
 
   ## Y label (ylab) parammeters
   if ($y_legend1 || $y_legend2) {
-    my $y_legend="";
-    if ($y_legend1) {
-      $y_legend .= "\"".$y_legend1."\"";
-    }	
-    if ($y_legend2) {
-      $y_legend .= "\n\"".$y_legend2."\"";
-    }
-    $r_plot_params .= ", ylab=".$y_legend;
-  }
+    my $y_legend = join(" ; ", $y_legend1, $y_legend2);
+    $y_legend =~ s/\"//g;
+    $y_legend =~ s/\'//g;
+    $r_plot_params .= ", ylab='".$y_legend."'";
+  }    
 
   $r_instructions .= "\n## Reading Y and Y values\n";
   $r_instructions .= "x.values <- input.table[,".$xcol_r."]\n";
@@ -906,11 +892,39 @@ sub Rplot {
     $r_plot_params .= ", col=colors";
 
   } else {
+
     $r_instructions .= "\n## Loading color palette\n";
-    $r_instructions .= "colors <- colorRampPalette(brewer.pal(12,\"Paired\"))(dim(y.values)[2])\n";
-    #$r_instructions .= "colors<- seq(1,".scalar(@y_col_list_r).",1)\n";
-    #$r_plot_params .= ", col=colors";
-    
+#    $r_instructions .= "colors <- colorRampPalette(brewer.pal(12,\"Paired\"))(dim(y.values)[2])\n";
+#    $r_instructions .= "colors <- rep(c(4,3,2,1,6,5), length.out=".scalar(@y_col_list_r).")\n"; ## I skip colors 7 and 8 because too pale
+
+    ## Custom color palette, for the sake of consistency with previous version of XYgraph
+    @color_list = ();
+    push @color_list, "'#0000FF'"; ## Blue
+    push @color_list, "'#00BB00'"; ## Dark green 
+    push @color_list, "'#FF6600'"; ## orange
+    push @color_list, "'#008888'"; ## cyan_128
+    push @color_list, "'#888888'"; ## grey_128
+    push @color_list, "'#660066'"; ## violet
+    push @color_list, "'#662222'"; ## brown
+    push @color_list, "'#000000'"; ## black
+    push @color_list, "'#FF0000'"; ## red
+    push @color_list, "'#DDDD00'"; # yellow_225
+    push @color_list, "'#008888'"; # cyan_128
+    push @color_list, "'#66FFBB'"; # pistache
+    push @color_list, "'#FF00FF'"; # magenta
+    push @color_list, "'#00DD00'"; # green (slightly dark)
+    push @color_list, "'#888888'"; # dark green
+    push @color_list, "'#CC0000'"; # red_191
+    push @color_list, "'#BBBBBB'"; # gray_150
+    push @color_list, "'#000088'"; # $blue_128;
+    push @color_list, "'#006666'"; #$cyan_096;
+    push @color_list, "'#000066'"; #$blue_096;
+    push @color_list, "'#660000'"; # $red_096;
+    push @color_list, "'#000044'"; # $blue_064;
+    push @color_list, "'#444444'"; # $gray_064;
+    push @color_list, "'#FFDDBB'"; ## Champagne
+    $r_instructions .= "colors <- rep(c(".join(",", @color_list)."), length.out=".scalar(@y_col_list_r).")\n"; ## I skip colors 7 and 8 because too pale
+
     if ($colorexportfile) {
       #$r_instructions .= " pal <- palette()\n";
       $r_instructions .= "\n## Exporting color palette\n";
