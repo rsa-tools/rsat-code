@@ -46,8 +46,8 @@ heatmap.simple <- function(x,
                            xlab=NA,
                            ylab=NA,
                            display.values=TRUE,
-                           text.color="black",
-                           col=gray.colors(256, start=1, end=0),
+                           text.color="auto",
+                           col=gray.colors(256, start=1, end=0, gamma=1),
                            zlim=range(x, na.rm=TRUE),
                            round.digits=NA,
                            signif.digits=NA,
@@ -88,7 +88,7 @@ heatmap.simple <- function(x,
           text(i, j, x[j,i], col=text.color[j,i])
         } else if (text.color == "auto") {
           ## Automatic selection of a color contrasting with the heatmap color
-          if (x[j,i] <= zlim[2]*0.75) {
+          if (x[j,i] <= zlim[2]*0.5) {
             text(i, j, x[j,i], col=col[length(col)])
           } else {
             text(i, j, x[j,i], col=col[1])
