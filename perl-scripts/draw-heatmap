@@ -130,7 +130,7 @@ package main;
   local $display_min;
   local $display_max;
   local $display_mean;
-
+  local $title = ""; ## Title for the heatmap
 
   ################################################################
   ## Read argument values
@@ -633,6 +633,16 @@ Output format. Supported: png,jpeg
 
 =pod
 
+=item B<-title>
+
+Title for the graph (only works with option -r_plot so far).
+
+=cut
+	} elsif ($arg eq "-title") {
+	    $title = shift(@arguments);
+
+=pod
+
 =item B<-gradient>
 
 Color of the intensity gradient of the heatmap. Default is grey.
@@ -936,6 +946,9 @@ sub Rplot {
     push @heatmap_options, "display.values='TRUE'";
   }
   push @heatmap_options, "round.digits=".$main::digits;
+  if ($main::title) {
+    push @heatmap_options, "main='".$main::title."'";    
+  }
   my $heatmap_options = join", ", @heatmap_options;
 
 #  $r_instructions .= "print(heatmap.simple)\n";
