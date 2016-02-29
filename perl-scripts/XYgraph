@@ -132,7 +132,7 @@ if ($colorfile) {
       $series_name = &trim($series_name);
       my $color = $2;
       $header_colors{$series_name}= $color;
-      &RSAT::message::Debug("Series", $series_name, "color", $header_colors{$series_name}) if ($main::verbose >= 3);
+      &RSAT::message::Debug("Series", $series_name, "color", $header_colors{$series_name}) if ($main::verbose >= 4);
     }
   }
   close $colorsfromfile;
@@ -723,7 +723,7 @@ sub Rplot {
   my $input_data_file = $tmp_file;  ## Use input copy as input for R
   
   ## Open a file to write R instructions
-  our $tmp_r_instructions_file = &RSAT::util::make_temp_file("", "draw-heatmap_Rplot_instructions", 1).".R";
+  our $tmp_r_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_Rplot_instructions", 1).".R";
   my ($out_R) = &OpenOutputFile($tmp_r_instructions_file);
   
 
@@ -992,7 +992,7 @@ sub GnuPlotEPS {
   ## Copy or generate inputfile.  Format will be assumed to be RSAT
   ## based with # as header and; comment char.
   my ($in) = &OpenInputFile($infile{input});
-  our $tmp_file = &RSAT::util::make_temp_file("", "draw-heatmap_Rplot_infile", 1);
+  our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_Rplot_infile", 1);
   my ($in_copy) = &OpenOutputFile($tmp_file);
   my @header_list=();
   my $in_lines = 0;
@@ -1017,7 +1017,7 @@ sub GnuPlotEPS {
   my $input_data_file = $tmp_file;  ## Use input copy as input for R
   
   ## Open a file to write R instructions
-  our $tmp_r_instructions_file = &RSAT::util::make_temp_file("", "draw-heatmap_Rplot_instructions", 1).".R";
+  our $tmp_r_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_Rplot_instructions", 1).".R";
   my ($out_R) = &OpenOutputFile($tmp_r_instructions_file);
   
   #export color file
