@@ -498,7 +498,7 @@ sub DefaultParameters {
   ## Residue  profiles (position-analysis)
   $main::param{origin} = "center"; push(@main::param_list, "origin");
   $main::param{offset} = 0; push(@main::param_list, "offset");
-  $main::param{profiles_ci} = 25; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_ci} = 20; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_max_graphs");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
   @main::composition_oligo_lengths = (1,2);
