@@ -3020,12 +3020,7 @@ sub SynthesisByMotif {
 #    $matrix->makeLogo($main::prefix{$matrix_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
 #    $matrix->makeLogo($main::prefix{$matrix_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the reverse complementary logo image
 
-    ## Insert page break between motifs for printing
-    if ($m > 1) {
-      print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
-    }
-
-    print $syn "<tr>\n";
+    print $syn "\n\n<tr>\n";
     print $syn "<td><a name='discovered_motifs_".$m."'></a><b> Motif ", $m,"</b> \n";
     print $syn "&nbsp;"x2, $matrix->get_attribute("name"),"</td>\n";
     print $syn "<td><table align='center' ><tr>";
@@ -3210,8 +3205,9 @@ sub SynthesisByMotif {
 	my $browser_url = "<a target='_blank' href='";
 	$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
 	$browser_url .= "db=".$genome_assembly;
-	$browser_url .= "&hgt.customText=".$BED_URL;
-	$browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+	$browser_url .= "&hgt.customText=".$BED_URL.">";
+
+	$browser_url .= "'<img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
 
 	&SyntheticTableAddRow_New("Predicted sites on test peaks",
 				  $table,
@@ -3245,8 +3241,12 @@ sub SynthesisByMotif {
       }
     }
 
-    ## add a black line
-    print $syn "<tr><td colspan=5 style='border-top-style:none;border-bottom-color:black;border-bottom-width:3px;'><pre/></td></tr>";
+    ## Add a black line + a page break for printing (except for the last motif)
+    print $syn "\n<tr><td colspan=5 style='border-top-style:none;border-bottom-color:black;border-bottom-width:3px;'><pre/>";
+    if ($m < $motif_nb) {
+      print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
+    }
+    print $syn "</td></tr>\n";
   }
   print $syn "</table>\n";
   print $syn "</table><p>\n";
@@ -3672,8 +3672,7 @@ sub SynthesisSequenceComposition {
       $BED = $main::outfile{"test_seq_coord"} if ($main::outfile{"test_seq_coord"});
       &SyntheticTableAddRow_New($seq_stats,
 				"<a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a>",
-				"view peaks in genome browser ", [$browser_url,,
-								 ],
+				"view peaks in genome browser ", [$browser_url,,],
 				"coordinates", ["UCSC BED track",$BED,
 					       ],
 				"seq",["converted",$main::outfile{$seq_type."_converted"},
