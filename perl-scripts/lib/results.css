@@ -221,7 +221,7 @@ table.simple td,table.list th {
 	font-size: 70%;
 	padding: 2px 10px;
 	background-color: #FFFFFF;
-	page-break-inside: avoid;
+	page-break-inside: auto;
 }
 
 table.simple th {
@@ -246,7 +246,7 @@ table.whitebg td,table.whitebg th {
 	border-bottom: 1px solid #cbcbb4;
 	padding: 2px 10px;
 	background-color: #FFFFFF;
-	page-break-inside: avoid;
+	page-break-inside: auto;
 }
 
 
@@ -267,7 +267,7 @@ table.bluebg td,table.bluebg th {
 	border-right: 1px solid #cbcbb4;
 	border-bottom: 1px solid #cbcbb4;
 	background-color: #D6EEFA;
-	page-break-inside: avoid;
+	page-break-inside: auto;
 }
 
 table.bluebg th {
@@ -294,7 +294,7 @@ table.sortable td,table.sortable th {
 	border-bottom: 1px solid #cbcbb4;
 	padding: 2px 10px;
 	background-color: #FFFFFF;
-	page-break-inside: avoid;
+	page-break-inside: auto;
 }
 
 table.sortable th {
@@ -318,7 +318,7 @@ table.resultlink td, table.resultlink th {
 	padding-left:5px;
 	padding-right:3px;
 	text-align :left;
-	page-break-inside: avoid;
+	page-break-inside: auto;
 }
 
 /* COLLAPSIBLE MENUS */
