@@ -2835,6 +2835,7 @@ sub ResultTOC {
   $result_toc .=  " \n\n\n<table> ";
   $result_toc .=  " \n\n<tr>\n ";
   $result_toc .=  " \n\n<td> ";
+
   ## Display the motifs
   for my $mot (1..$motif_nb) {
     my $matrix = $motifs[$mot-1];
@@ -4022,6 +4023,8 @@ sub SynthesisPatternDisco {
 					  'transfac format',$main::outfile{$pattern_type.'_pssm_tf'},
 			      ],
 	);
+  print $syn '\n\n<tr><td><p style="page-break-after:always;"></p></td></tr>\n\n'; ## Page break for printing
+
     
   } else {
     if (-e $main::outfile{$pattern_type}) {
