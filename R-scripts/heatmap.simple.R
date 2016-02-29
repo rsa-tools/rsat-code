@@ -66,6 +66,11 @@ heatmap.simple <- function(x,
     x <- round(digits=round.digits, x)
   }
   
+  ## Compute margins
+  max.label.len <- max(nchar(rownames(x)))
+  par(mar=c(max.label.len + 0.1, max.label.len+0.1,4.1,1.1))
+  par(las=2)
+  
   ## Generate the heat map
   image(1:ncol(x), 1:nrow(x), t(x), 
         main=main,
