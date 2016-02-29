@@ -296,7 +296,7 @@ package main;
     "Display max=".$display_max,
     "min=".$min,
     "max=".$max,
-      ) if ($main::verbose >= 3);
+      ) if ($main::verbose >= 5);
 
   ################################################################
   ## Print verbose
@@ -426,7 +426,7 @@ package main;
 			      "r=".$r,
 			      "g=".$g,
 			      "b=".$b,
-	    ) if ($main::verbose >= 0);
+	    ) if ($main::verbose >= 5);
 
 	# put the lines only when computing the last row
 	if ($lines && $i == (scalar(@table)-1)) {
@@ -869,7 +869,7 @@ sub Rplot {
   if ($in_lines == 0) {
     &RSAT::message::FatalError("Input file contains not a single valid line.", $tmp_infile);
   }
-  if ($main::verbose >= 0) {
+  if ($main::verbose >= 3) {
     &RSAT::message::Info("Input table contains", $in_lines, "lines and", $in_columns, "columns.");
   }
   my $input_data_file = $tmp_infile;  ## Use input copy as input for R
