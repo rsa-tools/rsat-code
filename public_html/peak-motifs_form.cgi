@@ -44,7 +44,7 @@ $default{top_sequences}="";
 $default{nmotifs} = 5;
 $default{origin} = "center";
 $default{offset} = "0";
-$default{r_plot} = ""; ## Plot XY graph with R rather than GD
+$default{r_plot} = "checked"; ## Plot XY graph with R rather than GD
 
 $default{visualize}="none";
 

@@ -463,6 +463,7 @@ table.simple td,table.list th
   font-size: 70%;
   padding: 2px 10px;
   background-color: #FFFFFF;
+  page-break-inside: avoid;
   }
 
 table.simple th 
@@ -489,6 +490,7 @@ table.list td,table.list th
   border-bottom: 1px solid #cbcbb4;
   padding: 2px 10px;
   background-color: #F6E6CA;
+  page-break-inside: avoid;
   }
 
 table.list th 
@@ -523,6 +525,7 @@ table.sortable td,table.sortable th
   border-bottom: 1px solid #cbcbb4;
   padding: 2px 10px;
   background-color: #D6EEFA;
+  page-break-inside: avoid;
   }
 
 table.sortable th 
@@ -549,6 +552,7 @@ table.formbutton td,table.formbutton tr,table.formbutton th
   /* 	font-size: 90%; */
   padding-right: 5px;
   border: 0px solid #FFFFFF;
+  page-break-inside: avoid;
   }
 
 /* NEXT STEP TABLE ON RESULTS PAGES */
@@ -569,7 +573,7 @@ table.nextstep td, table.nextstep th
   padding-left:3px;
   padding-right:3px;
   text-align :center;
-  
+  page-break-inside: avoid;
   }
 
 table.nextstep th 
@@ -596,6 +600,7 @@ table.resultlink td,table.resultlink th
   border-bottom: 1px solid #cbcbb4;
   padding: 2px 10px;
   background-color: #D6EEFA;
+  page-break-inside: avoid;
   }
 
 table.resultlink th 
@@ -626,9 +631,8 @@ table.title td, table.title th
   font-size: 80%;
   padding-left:5px;
   padding-right:5px;
-
-  
-  }
+  page-break-inside: avoid;
+}
 
 table.title th 
 {
@@ -651,8 +655,7 @@ table.serverlist td, table.serverlist tr, table.serverlist th
   padding: 0px;
   font-size: 80%;
   padding-right: 5px;
-  
-
+  page-break-inside: avoid;
   }
 
 /* DIV FOR THE LIST OF SERVER */
@@ -680,12 +683,14 @@ table.simpleform td,table.simpleform th
   #	border-bottom: 1px solid #cbcbb4;
   padding: 2px 10px;
   #background-color: #F6E6CA;
+  page-break-inside: avoid;
   }
 
 table.simpleform td.left 
 {
   border-right: 2px solid #cbcbb4;
   padding: 2px 10px;
+  page-break-inside: avoid;
   }
 
 /* EXPANDABLE BOXES (not from the menu, for the ones in forms)   */
