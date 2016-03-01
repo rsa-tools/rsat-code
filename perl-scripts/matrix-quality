@@ -516,7 +516,7 @@ package main;
     ## R plots
     $main::rplot_option="";
     if ($r_plots==1){
-	$main::rplot_option=" -r_plot ";
+	$main::rplot_option=" -r_plot -clean_r_legend ";
     }
 
     ################################################################
