@@ -29,7 +29,7 @@ formats.
 
 ################################################################
 ## Class variables
-%supported_input_formats = (
+%supported_input_format = (
 			   'alignace'=> 1,
 			   'assembly'=>1,
 			   'cb'=>1,
@@ -58,7 +58,7 @@ formats.
                            'yeastract'=>1,
 			   'encode'=>1,
 			  );
-$supported_input_formats = join ",", sort(keys %supported_input_formats);
+$supported_input_formats = join ",", sort(keys %supported_input_format);
 
 =pod
 
@@ -67,10 +67,11 @@ $supported_input_formats = join ",", sort(keys %supported_input_formats);
 List available input formats.
 
 =cut
-sub ListMatrixFormats {
-    
-    return(%supported_input_formats)
-    
+sub ListInputMatrixFormats {
+  return(%supported_input_format);
+}
+sub ListMatrixFormats { ## FOR BACKWARD COMPATIBILITY
+  return(%supported_input_format);
 }
 
 =pod
