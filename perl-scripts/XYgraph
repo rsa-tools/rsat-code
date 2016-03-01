@@ -48,6 +48,8 @@ $x_axis_min = "ND";
 $y_axis_min = "ND";
 $same_limits = 0;
 $r_plot = 0;
+$clean_r_legend=0;
+
 $x = 0;
 $y = 0;
 
@@ -141,6 +143,10 @@ if ($colorfile) {
 
 ################################################################
 ## Check -r_plot option.
+
+&RSAT::error::FatalError("Error: clean_r_legend is only available when using -r_plot \n") if ($clean_r_legend && !$r_plot);
+
+
 if ($r_plot) {
     &Rplot();
     exit();
@@ -778,8 +784,36 @@ sub Rplot {
 
   ## Compute legend width to take it into account for par(mar)
   if ($legend) {
-    $r_instructions .= "legend.text <- names(input.table)[".$r_y_columns."]\n";
-    $r_instructions .= "legend.width <- max(5, max(nchar(legend.text)))\n";
+      $r_instructions .= "legend.text <- names(input.table)[".$r_y_columns."]\n";
+      ## Clean legend, users might want to use this option when legends are to big
+      ## This option removes repeated words across all data sets to avoid including redundant
+      ## information in the legend
+      if ($clean_r_legend){
+	  ## substream legend
+	  $r_instructions .= ' words <- as.matrix(table( unlist(list(strsplit(legend.text,"_"), strsplit(legend.text," ") )) ))
+	    important.words <- names(which(words[,1]>=length(legend.text)))
+	    
+	    remove.words <- c()
+	    for ( word in important.words){
+		word.match <- as.numeric( grepl(word, legend.text))
+		    if(sum(word.match)==length(legend.text)){
+			remove.words <- c(remove.words, word)
+		}
+	}
+	
+	aux.legend.text <- legend.text 
+	    for (word in remove.words){
+		aux.legend.text <- sub(word,"",aux.legend.text )
+	}
+	aux.legend.text <- gsub("_+","_",aux.legend.text )
+	    aux.legend.text <- gsub("^_","",aux.legend.text )
+	    aux.legend.text <- gsub("_$","",aux.legend.text )
+
+        legend.text <- aux.legend.text '."\n";
+    }
+      $r_instructions .= "legend.width <- max(5, max(nchar(legend.text)))\n";
+      
+
   } else {
     $r_instructions .= "legend.width <- 0\n";
   }
@@ -2091,6 +2125,7 @@ XYgraph options
 -bg		background color (white, blue, black or gray).
 -mono		monochrome output.
 -r_plot		Use R as plotting method
+-clean_r_legend Remove repeated words across data set names to avoid including redundant information in the legend
 -symbols	represent points by symbols
 -htmap		HTML map
 -lc		label column
@@ -2434,7 +2469,12 @@ sub ReadArguments {
       } else {
 	$r_plot= 1;
       }
-
+      
+      ### Clean R legend
+    } elsif ($ARGV[$a] =~ /-clean_r_legend/i) {
+	$clean_r_legend= 1;
+	&RSAT::message::Warning("Legend for Rplot will be edited to remove redundancy");	
+      
       ### logarithmic representation
     } elsif ($ARGV[$a] eq "-log") {
       $xlog= 1;
