@@ -49,6 +49,7 @@ $y_axis_min = "ND";
 $same_limits = 0;
 $r_plot = 0;
 $clean_r_legend=0;
+
 $x = 0;
 $y = 0;
 
@@ -811,8 +812,7 @@ sub Rplot {
     }
       $r_instructions .= "legend.width <- max(5, max(nchar(legend.text)))\n";
       
-      
-      
+   
   } else {
     $r_instructions .= "legend.width <- 0\n";
   }
