@@ -49,7 +49,7 @@ $default{r_plot} = "checked"; ## Plot XY graph with R rather than GD
 $default{visualize}="none";
 
 ## motif database
-$default{compare_motif_database}="jaspar_core_vertebrates";
+$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
 $default{custom_motif_db_name}="custom_motif_collection";
 
 
