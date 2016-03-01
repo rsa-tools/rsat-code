@@ -31,8 +31,8 @@ $default{pseudo_distribution} = "pseudo_prior";
 $checked{$default{pseudo_distribution}} = "CHECKED";
 $default{mml}=30;
 
-#$default{compare_motif_database}="jaspar_core_vertebrates";
-#$default{db_choice_set}="jaspar_core_vertebrates";
+#$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
+#$default{db_choice_set}="jaspar_core_nonredundant_vertebrates";
 #$default{custom_motif_db_name}="custom_motif_collection";
 
 ## Threshold values for site detection
