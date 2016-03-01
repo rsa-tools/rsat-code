@@ -146,6 +146,7 @@ if ($colorfile) {
 
 &RSAT::error::FatalError("Error: clean_r_legend is only available when using -r_plot \n") if ($clean_r_legend && !$r_plot);
 
+
 if ($r_plot) {
     &Rplot();
     exit();
@@ -812,7 +813,7 @@ sub Rplot {
     }
       $r_instructions .= "legend.width <- max(5, max(nchar(legend.text)))\n";
       
-   
+
   } else {
     $r_instructions .= "legend.width <- 0\n";
   }
