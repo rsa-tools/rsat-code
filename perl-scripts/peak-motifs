@@ -498,7 +498,7 @@ sub DefaultParameters {
   ## Residue  profiles (position-analysis)
   $main::param{origin} = "center"; push(@main::param_list, "origin");
   $main::param{offset} = 0; push(@main::param_list, "offset");
-  $main::param{profiles_ci} = 25; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_ci} = 20; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_max_graphs");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
   @main::composition_oligo_lengths = (1,2);
@@ -1154,7 +1154,7 @@ sub SequenceLengths {
   my $title = "Peak lengths";
   $title .= "; ".$main::param{title} if ($main::param{title});
   $cmd .= " -title '".$title."'";
-  $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
+  $cmd .= " -xsize 700 -xcol 3 -xleg1 'Peak length'";
   $cmd .= " -ysize 250 -ycol 4 -yleg1 'Number of peaks'";
   $cmd .= " -xmin 0 -ymin 0";
 #  $cmd .= " -xgstep1 ".($main::param{profiles_ci});
@@ -1228,8 +1228,15 @@ sub CompositionProfiles {
     $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
     $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
-    $cmd .= " ; cut -f 1-5,7 ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
-    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+#    if ($ol==1) {
+#      $cmd .= " ; cut -f 1-5";
+#    } else {
+      $cmd .= " ; cut -f 1-5,7";
+#    }
+    $cmd .= " ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
+    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1 -digits 3 -out_format png -col_width 50";
+    $cmd .= " -rownames";
+    $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_heatmap"};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
@@ -1270,7 +1277,7 @@ sub CompositionProfiles {
 #   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
     $cmd .= " -xgstep2 ".$main::param{profiles_ci};
     $cmd .= " -vline '#666666' 0";
-    $cmd .= " -xsize 800 -ysize 250";
+    $cmd .= " -xsize 700 -ysize 250";
     $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -legend -lines -pointsize 0 -legend -header";
@@ -1294,7 +1301,7 @@ sub CompositionProfiles {
     $title .= "; ".$seq_type." sequence";
     $title .= "; ".$main::param{title} if ($main::param{title});
     $cmd .= " -title '".$title."'";
-    $cmd .= " -xleg1 'Position' -xsize 800";
+    $cmd .= " -xleg1 'Position' -xsize 700";
     $cmd .= " -yleg1 'Occurrences' -ysize 250  -ymin 0";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles_graph"};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
@@ -1904,7 +1911,8 @@ sub MergeWords {
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Draw a heat map of the word significance table
-  $cmd = $SCRIPTS."/draw-heatmap -min 0 -max 10  -out_format png";
+  $cmd = $SCRIPTS."/draw-heatmap -min 0 -max 10 -rownames -digits 2 -out_format png";
+  $cmd .= " -r_plot" if ($main::param{r_plot});
   $cmd .= " -col_width 40 -rownames -gradient fire";
   $cmd .= " -row_height 16";
   $cmd .= " -i ".$main::outfile{merged_words};
@@ -2595,14 +2603,14 @@ sub ScanSequences {
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
-    ## Draw the graph of predicted site positions (occurrences per window)
+    ## Draw the graph of predicted site position profiles (occurrences per non-overlapping window)
     &RSAT::message::Debug("Drawing positional distribution of motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
     $cmd = $SCRIPTS."/XYgraph";
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     $cmd .= " -lines -xcol 3 -ycol 4";
     $cmd .= " -ysize 250 -ycol 4 -yleg1 'Number of sites'";
-    $cmd .= " -xsize 800 -xcol 3 -xleg1 'Position relative to sequence ".$main::param{origin}."'";
+    $cmd .= " -xsize 600 -xcol 3 -xleg1 'Position relative to sequence ".$main::param{origin}."'";
 #   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
     $cmd .= " -xgstep2 ".$main::param{profiles_ci};
     $cmd .= " -vline '#666666' 0";
@@ -2824,9 +2832,9 @@ sub ResultTOC {
   $result_toc .=  "<a href='#motifs_by_algo'>Discovered motifs (by algorithm) - </a>".$motif_nb."<br/>";
   $result_toc .=  "<a href='#discovered_motifs'>Discovered motifs (with motif comparison) - </a>".$motif_nb."<br/>";
 
-  $result_toc .=  " <table> ";
-  $result_toc .=  " <tr> ";
-  $result_toc .=  " <td> ";
+  $result_toc .=  " \n\n\n<table> ";
+  $result_toc .=  " \n\n<tr>\n ";
+  $result_toc .=  " \n\n<td> ";
   ## Display the motifs
   for my $mot (1..$motif_nb) {
     my $matrix = $motifs[$mot-1];
@@ -2836,18 +2844,18 @@ sub ResultTOC {
     my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
     $result_toc .=  "<span class='menulink'><a href='#discovered_motifs_".$mot."'>Motif ".$mot."</a></span>: <a href='".$link."'>[matrix]</a> ".$colored_consensus."<br/> ";
     if ($mot == 5) {
-    	$result_toc .=  " </td> ";
-    	$result_toc .=  " <td> ";
+    	$result_toc .=  " </td>\n ";
+    	$result_toc .=  " \n<td> ";
     }
     if ($mot == 10) {
       if (($motif_nb-$mot) > 0) {
 	$result_toc .=  "<a href='#discovered_motifs_".$mot."'>".($motif_nb-$mot)." more motifs</a>";
       }
       last;
-       }
- }
-  $result_toc .=  " </td> ";
-  $result_toc .=  " </tr></table> ";
+    }
+  }
+  $result_toc .=  " </td>\n ";
+  $result_toc .=  " </tr>\n</table>\n\n\n ";
 
   $result_toc .=  "<a href='#merged_sites'>Motif locations (sites)</a><br/>";
   $result_toc .=  "<a href='#motif_compa'>Motif comparisons</a><br/>";
@@ -2876,21 +2884,21 @@ sub SynthesisOneMotifComparison {
 
   ################################################################
   ## Print the header of the DB match table
-  my $db_match_table ="<table class='whitebg'>\n";
+  my $db_match_table ="\n\n\n<table class='whitebg'>\n";
   $db_match_table .= "<tr style='font-size:90%;'>\n";
   foreach my $field (@match_fields_names) {
     $db_match_table .= "<th style='border-bottom-style:none;'>".$field."</th>\n";
   }
   $db_match_table .= "<th style='border-bottom-style:none;'>aligned col. motif</th>\n";
   $db_match_table .= "<th style='border-bottom-style:none;'>aligned col. match</th>\n";
-  $db_match_table .= "</tr>\n";
+  $db_match_table .= "</tr>\n\n";
     $db_match_table .= "<tr style='font-size:90%;'>\n";
   foreach my $field (@match_fields_names2) {
     $db_match_table .= "<th>".$field."</th>\n";
   }
   $db_match_table .= "<th>".$colored_consensus."</th>\n";
   $db_match_table .= "<th></th>\n";
-  $db_match_table .= "</tr>\n";
+  $db_match_table .= "</tr>\n\n";
 
   my $match_nb = 0;
   my $max_match_nb = 3;	## Max number of matches to display in the synthetic table.
@@ -2917,7 +2925,7 @@ sub SynthesisOneMotifComparison {
     $match_nb++;
     next if ($match_nb > $max_match_nb);
     ## Add a row to the DB match table
-    $db_match_table .= "<tr>\n";
+    $db_match_table .= "\n\n<tr>\n";
     my @fields = split("\t");
     #&RSAT::message::Debug("DB matches", join ("; ", @fields)) if ($main::verbose >= 10);
     
@@ -2934,10 +2942,10 @@ sub SynthesisOneMotifComparison {
 	  $value = &RSAT::SeqUtil::ColorConsensus($value, bold=>1, iupac=>$main::param{iupac_coloring});
 	}
       }
-      $db_match_table .= "<td>".$value."</td>\n";
+      $db_match_table .= "\n<td>".$value."</td>\n\n";
       #&RSAT::message::Debug("DB matches", $db_name, $match_nb, $field, "col=".$column, "value=".$value, $file) if ($main::verbose >= 10);
     }
-    $db_match_table .= "</tr>\n";
+    $db_match_table .= "</tr>\n\n";
   }
 
   if ($task{small_summary}) {
@@ -2947,15 +2955,15 @@ sub SynthesisOneMotifComparison {
 
   ## Report number of matches
   my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
-  $db_match_table .= "<tr>\n";
-  $db_match_table .= "<td colspan=9><a href='".$link."'>Total maches= ".$match_nb."</a>";
+  $db_match_table .= "\n\n<tr>\n";
+  $db_match_table .= "\n<td colspan=9><a href='".$link."'>Total maches= ".$match_nb."</a>";
   if ($match_nb > $max_match_nb) {
     my $more_matches = $match_nb -$max_match_nb;
     $db_match_table .= " (".$more_matches." more)";
   }
-  $db_match_table .= "</td>\n";
-  $db_match_table .= "</tr>\n";
-  $db_match_table .="</table>\n";
+  $db_match_table .= "</td>\n\n";
+  $db_match_table .= "</tr>\n\n";
+  $db_match_table .="</table>\n\n\n";
   return ($db_match_table, $match_nb);
 }
 
@@ -2964,8 +2972,9 @@ sub SynthesisOneMotifComparison {
 ## Generate a HTML table summarizing the results for each discovered
 ## motif. this table is inserted in the synthetic report.
 sub SynthesisByMotif {
+  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='discovered_motifs'></a><h3>Discovered motifs (with motif comparison)</h3>\n", 0);
-  print $syn "<table class='whitebg'>\n";
+  print $syn "\n\n\n<table class='whitebg'>\n";
 
   ## Header line
   &SyntheticTableAddHeaderRow("Motif discovery");
@@ -2986,67 +2995,89 @@ sub SynthesisByMotif {
   ## Treat each motif
   for my $m (1..$motif_nb) {
     my $matrix = $motifs[$m-1];
-    my $motif_id = $matrix->get_attribute("id");
-    &RSAT::message::TimeWarn("Synthesis for discovered motif", $m."/".$motif_nb, $motif_id) if ($main::verbose >= 3);
+    my $matrix_id = $matrix->get_attribute("id");
+    my $pattern_type = $matrix_info{$matrix_id}->{pattern_type};
+    &RSAT::message::TimeWarn("Synthesis for discovered motif", $m."/".$motif_nb, $matrix_id) if ($main::verbose >= 3);
     #    $matrix->setMarkovModel($bg_model);
 
     ## We compute the consensus and logos here with the same background model as used for sequence scanning
-    #    $matrix->calcConsensus();
+    ## We need to recompute them because in the section "Discovered motifs by algorithm" we used the consensus of the assembly rather than matrix.
+    $matrix->calcConsensus();
     my $consensus = $matrix->get_attribute("consensus.IUPAC");
     my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
     my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
     my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc,bold=>1, iupac=>$main::param{iupac_coloring});
 
-    ## Compute matrix logos
-    $matrix->makeLogo($main::prefix{$motif_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
-    $matrix->makeLogo($main::prefix{$motif_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the logo image
+    ## Get consensus as defined in the previous report section
+    ## THIS DOES NOT WORK BECAUSE WHAT WE STORED BEFORE WERE CONSENSUS FROM ASSEMBLIES RATHER THAN MATRICES
+    # my $consensus = $matrix_info{$matrix_id}->{consensus};
+    # my $colored_consensus = $matrix_info{$matrix_id}->{colored_consensus};
+    # my $consensus_rc = $matrix_info{$matrix_id}->{consensus_rc};
+    # my $colored_consensus_rc = $matrix_info{$matrix_id}->{colored_consensus_rc};
 
-    print $syn "<tr>\n";
-    print $syn "<td><a name='discovered_motifs_".$m."'></a><b> Motif ", $m,"</b> \n";
-    print $syn "&nbsp;"x2, $matrix->get_attribute("name"),"</td>\n";
-    print $syn "<td><table align='center' ><tr>";
+    ## JVH: WHY SHOULD I COMPUTE LOGOS HERE ? I SHOULD ALREADY HAVE THEM ABOVE. TO BE CHECKED (2016-02-28)
+    ## Compute matrix logos. 
+#    $matrix->makeLogo($main::prefix{$matrix_id."_logo"},$main::param{img_format},$logo_opt, 0); ## Generate the logo image
+#    $matrix->makeLogo($main::prefix{$matrix_id."_logo_rc"},$main::param{img_format},$logo_opt, 1); ## Generate the reverse complementary logo image
+
+    print $syn "\n\n<tr>\n";
+    print $syn "\n<td><a name='discovered_motifs_".$m."'></a><b> Motif ", $m,"</b> \n";
+    print $syn "&nbsp;"x2, $matrix->get_attribute("name"),"</td>\n\n";
+    print $syn "\n<td>\n\n\n<table align='center' >\n\n<tr>\n";
     
     print $small_sum_txt $matrix->get_attribute("name"), "\t" if ($task{small_summary});
     
     ## Sequence logo
-    my $file = $main::outfile{$motif_id."_logo"};
+#    my $file = $main::outfile{$matrix_id."_logo"};
+    my $file = $matrix_info{$matrix_id}->{logo_file};
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
-      print $syn ("<td align='center' style='border-bottom-style:none;' >", $colored_consensus, "<br>\n",
+      print $syn ("\n<td align='center' style='border-bottom-style:none;' >", $colored_consensus, "<br>\n",
 		  "<a href='", $logo_link, "'>",
 		  "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
-		  "' src='",$logo_link,"'>","</a>","</td>\n");
+		  "' src='",$logo_link,"'>","</a>","</td>\n\n");
 	  
       print $small_sum_txt ("<img border='", $main::param{img_border}, 
 			    "' height='", $main::param{logo_table_height}, 
 			    "' src='",$logo_link,"'>"."\t" ) if ($task{small_summary});
 
     } else {
-      print $syn "<td><font color='red'>No logo</font>","</td>\n";
+      print $syn "\n<td><font color='red'>No logo</font>","</td>\n\n";
       print $small_sum_txt "\t" if ($task{small_summary});
     }
     
     ## HERE JvH SHOULD ADD THE SIGNIFICANCE OF THE MOTIFS
-    ## print $syn "<b>sig=</b>\n";
+    print $syn join("", 
+		    "k-mer sig=",
+		    $matrix_info{$matrix_id}->{start_format},
+		    $matrix_info{$matrix_id}->{score},
+		    $matrix_info{$matrix_id}->{end_format},
+		    "; evalue=",
+		    $matrix_info{$matrix_id}->{start_format},
+		    $matrix_info{$matrix_id}->{evalue},
+		    $matrix_info{$matrix_id}->{end_format},
+		    "\n");
 
     ## Sequence logo, reverse complementary
-    $file = $main::outfile{$motif_id."_logo_rc"};
+#    $file = $main::outfile{$matrix_id."_logo_rc"};
+    $file = $matrix_info{$matrix_id}->{logo_file_rc};
     if (-e $file) {
       my $logo_link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
-      print $syn ("<td align='center' style='border-bottom-style:none;border-right-style:none;' >", $colored_consensus_rc, "<br>\n",
+      print $syn ("\n<td align='center' style='border-bottom-style:none;border-right-style:none;' >", $colored_consensus_rc, "<br>\n",
 		  "<a href='", $logo_link, "'>",
 		  "<img border='".$main::param{img_border}."' height='",$main::param{logo_table_height},
-		  "' src='",$logo_link,"'>","</a>","</td>\n");
+		  "' src='",$logo_link,"'>","</a>","</td>\n\n");
     } else {
-      print $syn "<font color='red'>No logo</font>","</td>\n";
+      print $syn "<font color='red'>No logo</font>","</td>\n\n";
     }
-    print $syn "</tr></table></td>\n";
-    &PrintFileLinks_New(
-			"matrix", ["tab format",$main::outfile{$motif_id."_tab"},
-				   "transfac format",$main::outfile{$motif_id."_tf"}
-				  ]
-		       );
-    print $syn "</tr>\n";
+    print $syn "</tr>\n</table>\n\n\n</td>\n\n";
+
+    &PrintFileLinks_New("k-mers", ["statistics",$main::outfile{$pattern_type}, 
+				   "assemblies",$main::outfile{$pattern_type."_asmb"}],
+			"matrix", ["tab_format",$main::outfile{$matrix_id."_tab"},
+				   "transfac_format",$main::outfile{$matrix_id."_tf"}
+			]);
+    print $syn "</tr>\n\n";
 
     ################################################################
     ## Motif comparison results
@@ -3056,14 +3087,14 @@ sub SynthesisByMotif {
 
     if (defined($main::infile{ref_motifs})) {
       push @compa_names, "Reference motifs";
-      push @compa_files, $main::outfile{$motif_id.'_vs_ref'};
-      push @compa_prefixes, $main::prefix{$motif_id.'_vs_ref_prefix'};
+      push @compa_files, $main::outfile{$matrix_id.'_vs_ref'};
+      push @compa_prefixes, $main::prefix{$matrix_id.'_vs_ref_prefix'};
     }
 
     foreach my $db_name (@motif_databases) {
       push @compa_names, $db_name;
-      push @compa_files, $main::outfile{$motif_id.'_vs_db_'.$db_name};
-      push @compa_prefixes, $main::prefix{$motif_id.'_vs_db_'.$db_name.'_prefix'};
+      push @compa_files, $main::outfile{$matrix_id.'_vs_db_'.$db_name};
+      push @compa_prefixes, $main::prefix{$matrix_id.'_vs_db_'.$db_name.'_prefix'};
     }
 
     for my $f (0..$#compa_names) {
@@ -3077,11 +3108,11 @@ sub SynthesisByMotif {
 	my ($db_match_table, $match_nb) = &SynthesisOneMotifComparison($db_name, $file,$colored_consensus);
 
 	## Print the top matches + link to the complete file
-	print $syn "<tr><td colspan='2' style='border-bottom-style:none;'>\n";
+	print $syn "\n\n<tr>\n\n<td colspan='2' style='border-bottom-style:none;'>\n";
 	print $syn "<h2 class='motif'>",$db_name,"\n";
-	#print $syn "<tr>\n";
-	#print $syn "<td valign='top'>", $db_name, "</td>\n";
-	#print $syn "<td valign='top'>", $db_match_table, "</td>\n";
+	#print $syn "\n\n<tr>\n";
+	#print $syn "\n<td valign='top'>", $db_name, "</td>\n\n";
+	#print $syn "\n<td valign='top'>", $db_match_table, "</td>\n\n";
 	print $syn $db_match_table, "\n";
 	if ($match_nb > 0) {
 	  &PrintFileLinks_New(
@@ -3093,31 +3124,31 @@ sub SynthesisByMotif {
 						    ],
 			     );
 	} else {
-	  print $syn "<td>No match</td>\n";
+	  print $syn "\n<td>No match</td>\n\n";
 	}
-	print $syn "</tr>\n";
+	print $syn "</tr>\n\n";
       } else {
-	print $syn "<tr>\n";
-	print $syn "<td>", $db_name, "</td>\n";
-	print $syn "<td>", "<font color='red'>File not found</font>", "</td>\n";
-	print $syn "</tr>\n";
+	print $syn "\n\n<tr>\n";
+	print $syn "\n<td>", $db_name, "</td>\n\n";
+	print $syn "\n<td>", "<font color='red'>File not found</font>", "</td>\n\n";
+	print $syn "</tr>\n\n";
       }
 
     }
-    print $syn "</td></tr>\n";
+    print $syn "</td>\n</tr>\n\n";
     print $small_sum_txt "\n" if ($task{small_summary});
 
     ################################################################
     ## Scan results
-    my $scan_file = $main::outfile{$motif_id.'_pssm_sites'};
+    my $scan_file = $main::outfile{$matrix_id.'_pssm_sites'};
     if (-e $scan_file) {
       ## get information on % peaks with a motif and max number sites/peaks
       #my $nb_peak_matching_motif = `cat $scan_file | grep -v '^;' | grep -v '^#' | cut -f 1  | uniq | wc -l`;
-      my $nb_peak_matching_motif = `grep '; count' $main::outfile{$motif_id.'_pssm_sites_per_peak'}`;
+      my $nb_peak_matching_motif = `grep '; count' $main::outfile{$matrix_id.'_pssm_sites_per_peak'}`;
       chomp($nb_peak_matching_motif);
       $nb_peak_matching_motif =~ s/.*count\s*//;
       ## Get mean number of predicted sites per peak
-      my $mean_peak_matching_motif = `grep '; mean' $main::outfile{$motif_id.'_pssm_sites_per_peak'}`;
+      my $mean_peak_matching_motif = `grep '; mean' $main::outfile{$matrix_id.'_pssm_sites_per_peak'}`;
       chomp($mean_peak_matching_motif);
       $mean_peak_matching_motif =~ s/.*mean\s*//;
       $mean_peak_matching_motif = sprintf("%.2f", $mean_peak_matching_motif);
@@ -3136,20 +3167,20 @@ sub SynthesisByMotif {
       my $site_peak_percent = $nb_peak_matching_motif*100/$peak_nb;
       $site_peak_percent = sprintf("%.2f", $site_peak_percent);
 
-      my $table = "<table><tr>";
-      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_site_distrib_graph'});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
-      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_sites_per_peak_graph'});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peak<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
-      $table .= join("", "<td style='border-bottom-style:none;border-right-style:none;'>",
+      my $table = "\n\n\n<table>\n\n<tr>\n";
+      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$matrix_id.'_pssm_site_distrib_graph'});
+      $table .= "\n<td style='border-bottom-style:none;border-right-style:none;'>Distribution of sites<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>\n";
+      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$matrix_id.'_pssm_sites_per_peak_graph'});
+      $table .= "\n<td style='border-bottom-style:none;border-right-style:none;'>Nb of predicted sites per peak<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>\n";
+      $table .= join("", "\n<td style='border-bottom-style:none;border-right-style:none;'>",
 		     "<u>Nb peaks with at least one predicted site:</u> ",
 		     $nb_peak_matching_motif,
 		     " (".$site_peak_percent."%) <br>",
 		     "<u>Max nb of predicted sites per peak:</u> ".$max_nb_sites."<br/>",
-		     "<u>Mean nb of predicted sites per peak:</u> ".$mean_peak_matching_motif."</td>");
-      # $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$motif_id.'_pssm_enrichment_png'});
-      #      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
-      $table .= "</tr></table>";
+		     "<u>Mean nb of predicted sites per peak:</u> ".$mean_peak_matching_motif."</td>\n");
+      # $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$matrix_id.'_pssm_enrichment_png'});
+      #      $table .= "\n<td style='border-bottom-style:none;border-right-style:none;'>Enrichment in binding sites<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>\n";
+      $table .= "</tr>\n</table>\n\n\n";
 
       ################################################################
       ## Display UCSC track
@@ -3168,52 +3199,57 @@ sub SynthesisByMotif {
 	$genome_assembly = $main::param{coord_assembly};
       }
 
-      if ((defined($main::outfile{$motif_id.'_pssm_sites_genomic'})) && (-e $main::outfile{$motif_id.'_pssm_sites_genomic'})) {
+      if ((defined($main::outfile{$matrix_id.'_pssm_sites_genomic'})) && (-e $main::outfile{$matrix_id.'_pssm_sites_genomic'})) {
 	## UCSC link to genomic location of predicted sites
-	my $BED_URL =$ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::outfile{$motif_id.'_pssm_sites_genomic'});
+	my $BED_URL =$ENV{rsat_www}."/tmp/".&RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::outfile{$matrix_id.'_pssm_sites_genomic'});
 	my $browser_url = "<a target='_blank' href='";
 	$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
 	$browser_url .= "db=".$genome_assembly;
-	$browser_url .= "&hgt.customText=".$BED_URL;
-	$browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+	$browser_url .= "&hgt.customText=".$BED_URL.">";
+
+	$browser_url .= "'<img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
 
 	&SyntheticTableAddRow_New("Predicted sites on test peaks",
 				  $table,
 				  "view in genome browser ", [$browser_url,,
 							     ],
-				  "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
-					    "BED (UCSC track)",$main::outfile{$motif_id.'_pssm_sites_genomic'}
+				  "sites", ["text",$main::outfile{$matrix_id.'_pssm_sites'},
+					    "BED (UCSC track)",$main::outfile{$matrix_id.'_pssm_sites_genomic'}
 					   ],
-				  "distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
+				  "distribution", ["text",$main::outfile{$matrix_id.'_pssm_site_distrib'},
 						  ],
-				  "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_sites_per_peak'},
+				  "sites per peak", ["text",$main::outfile{$matrix_id.'_pssm_sites_per_peak'},
 						    ],
 
-				  "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
-						  "graph", $main::outfile{$motif_id.'_pssm_enrichment_png'}
+				  "enrichment", [ "text",$main::outfile{$matrix_id.'_pssm_enrichment'},
+						  "graph", $main::outfile{$matrix_id.'_pssm_enrichment_png'}
 						]
 				 );
       } else {			## without UCSC track
 	&SyntheticTableAddRow_New("Predicted sites on test peaks",
 				  $table,
-				  "sites", ["text",$main::outfile{$motif_id.'_pssm_sites'},
+				  "sites", ["text",$main::outfile{$matrix_id.'_pssm_sites'},
 					   ],
-				  "distribution", ["text",$main::outfile{$motif_id.'_pssm_site_distrib'},
+				  "distribution", ["text",$main::outfile{$matrix_id.'_pssm_site_distrib'},
 						  ],
-				  "sites per peak", ["text",$main::outfile{$motif_id.'_pssm_sites_per_peak'},
+				  "sites per peak", ["text",$main::outfile{$matrix_id.'_pssm_sites_per_peak'},
 						    ],
-				  "enrichment", [ "text",$main::outfile{$motif_id.'_pssm_enrichment'},
-						  "graph", $main::outfile{$motif_id.'_pssm_enrichment_png'}
+				  "enrichment", [ "text",$main::outfile{$matrix_id.'_pssm_enrichment'},
+						  "graph", $main::outfile{$matrix_id.'_pssm_enrichment_png'}
 						]
 				 );
       }
     }
 
-    ## add a black line
-    print $syn "<tr><td colspan=5 style='border-top-style:none;border-bottom-color:black;border-bottom-width:3px;'><pre/></td></tr>";
+    ## Add a black line + a page break for printing (except for the last motif)
+    print $syn "\n\n\n<tr>\n\n<td colspan=5 style='border-top-style:none;border-bottom-color:black;border-bottom-width:3px;'><pre/>";
+    if ($m < $motif_nb) {
+      print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
+    }
+    print $syn "</td>\n</tr>\n\n";
   }
-  print $syn "</table>\n";
-  print $syn "</table><p>\n";
+  print $syn "</table>\n\n\n";
+  print $syn "</table>\n\n\n<p>\n";
   print $syn &close_menu_heading();
 }
 
@@ -3251,8 +3287,9 @@ sub OpenSynthesis {
 ################################################################
 ## Report results of motif comparisons
 sub SynthesisMotifCompa {
+  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='motif_compa'></a><h3>Motif comparisons</h3>", 0);
-  print $syn "<table class='whitebg'>\n";
+  print $syn "\n\n\n<table class='whitebg'>\n";
 
 
   ## Word comparisons
@@ -3267,7 +3304,7 @@ sub SynthesisMotifCompa {
 
   ## Comparison between discovered motifs and database(s)
   &SynthesisMotifsVersusDatabase() if (scalar(@motif_databases) > 0);
-  print $syn "</table><p>\n";
+  print $syn "</table>\n\n\n<p>\n";
   print $syn &close_menu_heading();
 }
 
@@ -3290,15 +3327,16 @@ sub SynthesisMergedSites {
     }
 
     ## Print the link table
+    print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
     print $syn &open_menu_heading($menu_nb++, "<a name='merged_sites'></a><h3>Motif locations (sites)</h3>", 0);
-    print $syn "<table class='whitebg'>\n";
+    print $syn "\n\n\n<table class='whitebg'>\n";
     &SyntheticTableAddRow("Predicted sites on test peaks (all motifs)",
 			  $browser_url,
 			  "tab",$main::outfile{merged_sites},
 			  "bed",$main::outfile{merged_sites_bed},
 			 );
 
-    print $syn "</table><p>\n";
+    print $syn "</table>\n\n\n<p>\n";
     print $syn &close_menu_heading();
   }
 }
@@ -3327,8 +3365,9 @@ sub SynthesisParamsAndFiles {
   &ReportParamsAndFiles();
 
   ## Log files
+  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Logs and parameter files</h3>", 1);
-  print $syn "<table class='whitebg'>\n";
+  print $syn "\n\n\n<table class='whitebg'>\n";
   &SyntheticTableAddHeaderRow("Log files");
   &SyntheticTableAddRow("Parameters and files",
 			"",
@@ -3342,7 +3381,7 @@ sub SynthesisParamsAndFiles {
  			"html"=>$main::outfile{timelog_html},
  		       );
   ## Close the synthetic table
-  print $syn "</table></p>\n";
+  print $syn "</table>\n\n\n</p>\n";
   print $syn &close_menu_heading();
 }
 
@@ -3464,21 +3503,21 @@ sub CloseSynthesis {
 ## Add a row to the syhnthetic table
 sub SyntheticTableAddRow {
   my ($type, $summary, @files) = @_;
-  print $syn "<tr>\n";
-  print $syn "<td>$type</td>\n";
-  print $syn "<td>$summary</td>\n";
+  print $syn "\n\n<tr>\n";
+  print $syn "\n<td>$type</td>\n\n";
+  print $syn "\n<td>$summary</td>\n\n";
   &PrintFileLinks(@files);
-  print $syn "</tr>\n";
+  print $syn "</tr>\n\n";
 }
 ################################################################
 ## Add a row to the synthetic table
 sub SyntheticTableAddRow_New {
   my ($type, $summary, @files) = @_;
-  print $syn "<tr>\n";
-  print $syn "<td style='border-top: 1px solid #cbcbb4;'>$type</td>\n";
-  print $syn "<td style='border-top: 1px solid #cbcbb4;'>$summary</td>\n";
+  print $syn "\n\n<tr>\n";
+  print $syn "\n<td style='border-top: 1px solid #cbcbb4;'>$type</td>\n\n";
+  print $syn "\n<td style='border-top: 1px solid #cbcbb4;'>$summary</td>\n\n";
   &PrintFileLinks_New(@files);
-  print $syn "</tr>\n";
+  print $syn "</tr>\n\n";
 }
 
 ################################################################
@@ -3486,7 +3525,7 @@ sub SyntheticTableAddRow_New {
 ## list of links to the files
 sub PrintFileLinks_New {
   my (@files) = @_;
-  print $syn "<td >\n";
+  print $syn "\n<td >\n";
   my $title;
   my $key;
   my $file;
@@ -3510,25 +3549,27 @@ sub PrintFileLinks_New {
   }
   print $syn " ]<br/>";
 }
-  print $syn "</td>\n";
+  print $syn "</td>\n\n";
 }
 
 ################################################################
 ## Add a header row to the synthetic table
 sub SyntheticTableAddHeaderRow {
   my ($header) = @_;
-  print $syn "<tr>\n";
+  print $syn "\n\n<tr>\n";
   print $syn "<th colspan=3>\n";
   print $syn $header;
   print $syn "</th>\n";
-  print $syn "</tr>\n";
+  print $syn "</tr>\n\n";
 }
 
 ################################################################
 ## Add sequence composition on the synthetic report
 sub SynthesisSequenceComposition {
+
+  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='seq_composition'></a><h3>Sequence composition</h3>", 0);
-  print $syn "<p><table class='whitebg'>\n";
+  print $syn "<p>\n\n\n<table class='whitebg'>\n";
 
   foreach my $seq_type (@seq_types) {
 
@@ -3631,8 +3672,7 @@ sub SynthesisSequenceComposition {
       $BED = $main::outfile{"test_seq_coord"} if ($main::outfile{"test_seq_coord"});
       &SyntheticTableAddRow_New($seq_stats,
 				"<a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a>",
-				"view peaks in genome browser ", [$browser_url,,
-								 ],
+				"view peaks in genome browser ", [$browser_url,,],
 				"coordinates", ["UCSC BED track",$BED,
 					       ],
 				"seq",["converted",$main::outfile{$seq_type."_converted"},
@@ -3659,13 +3699,13 @@ sub SynthesisSequenceComposition {
 
     ## Residue composition
     for my $ol (@composition_oligo_lengths) {
-      # my $table = "<table class='whitebg'><tr>";
-      my $table = "<table><tr>";
+      # my $table = "\n\n\n<table class='whitebg'>\n\n<tr>\n";
+      my $table = "\n\n\n<table>\n\n<tr>\n";
       my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_heatmap"});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Transition frequencies<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>";
+      $table .= "\n<td style='border-bottom-style:none;border-right-style:none;'>Transition frequencies<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>\n";
       $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
-      $table .= "<td style='border-bottom-style:none;border-right-style:none;'>Position profiles<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>";
-      $table .= "</tr></table>";
+      $table .= "\n<td style='border-bottom-style:none;border-right-style:none;'>Position profiles<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>\n";
+      $table .= "</tr>\n</table>\n\n\n";
       my $title;
       if ($ol == 1) {
 	$title = "Nucleotide";
@@ -3692,7 +3732,7 @@ sub SynthesisSequenceComposition {
 			       );
     }
   }
-  print $syn "</table><p>\n";
+  print $syn "</table>\n\n\n<p>\n";
   print $syn &close_menu_heading();
 }
 
@@ -3721,10 +3761,10 @@ sub SynthesisRefMotifs {
 
     ## Print a HTML table with reference motifs (loos and consensus)
     print $syn &open_menu_heading($menu_nb++, "<a name='ref_motifs'></a><h3>Reference motifs</h3>", 0);
-    print $syn "<p><table class='whitebg'>\n";
+    print $syn "<p>\n\n\n<table class='whitebg'>\n";
     &SyntheticTableAddHeaderRow("Reference motif(s)");
 
-    my $logo_table = "<table class='whitebg' align='center' style='border-style:none;'>";
+    my $logo_table = "\n\n\n<table class='whitebg' align='center' style='border-style:none;'>";
 
     ## get the names of all reference logo files
     my @logo_files = glob($main::prefix{"ref_motifs_logo"}."_m*.".$main::param{img_format});
@@ -3738,13 +3778,13 @@ sub SynthesisRefMotifs {
       $matrix->setMarkovModel($bg_model);
       $matrix->calcConsensus();
 
-      $logo_table .= "<tr>\n";
+      $logo_table .= "\n\n<tr>\n";
       my $name = $matrix->get_attribute("name");
       my $id = $matrix->get_attribute('id');
-      $logo_table .= "<td style='border-right-style:none;'>".$name."<br/>".$id."</td>\n";
+      $logo_table .= "\n<td style='border-right-style:none;'>".$name."<br/>".$id."</td>\n\n";
 
       ## Print consensus and logo
-      $logo_table .= "<td align='right'>";
+      $logo_table .= "\n<td align='right'>";
       my $consensus = $matrix->get_attribute("consensus.IUPAC");
       my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
       $logo_table .= $colored_consensus."<br/>";
@@ -3752,13 +3792,13 @@ sub SynthesisRefMotifs {
       my $logo_file = $main::prefix{"ref_motifs_logo"}."_m".$i.".".$main::param{img_format};
       if (-e $logo_file) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
-	$logo_table .= "<a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
+	$logo_table .= "<a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n\n";
       } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find reference logo", $logo_file);
       }
 
       ## Print consensus and logo for reverse complement of the motif
-      $logo_table .= "<td align='left' style='border-right-style:none;'>";
+      $logo_table .= "\n<td align='left' style='border-right-style:none;'>";
       my $consensus_rc = $matrix->get_attribute("consensus.IUPAC.rc");
       my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc, bold=>1, iupac=>$main::param{iupac_coloring});
       $logo_table .= $colored_consensus_rc."<br/>";
@@ -3766,14 +3806,14 @@ sub SynthesisRefMotifs {
       my $logo_file_rc = $main::prefix{"ref_motifs_logo"}."_m".$i."_rc.".$main::param{img_format};
       if (-e $logo_file_rc) {
 	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
-	$logo_table .= "<a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n";
+	$logo_table .= "<a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a></td>\n\n";
       } elsif ($main::verbose >= 2) {
 	&RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
       }
 
-      $logo_table .= "</tr>\n";
+      $logo_table .= "</tr>\n\n";
     }
-    $logo_table .= "</table>\n";
+    $logo_table .= "</table>\n\n\n";
 
     &SyntheticTableAddRow("Reference motif(s)",
 			  $logo_table,
@@ -3782,7 +3822,7 @@ sub SynthesisRefMotifs {
 			  "tab format",$main::outfile{ref_motifs_tab},
 			 );
   }
-  print $syn "</table><p>\n";
+  print $syn "</table>\n\n\n<p>\n";
   print $syn &close_menu_heading();
 }
 
@@ -3791,13 +3831,14 @@ sub SynthesisRefMotifs {
 ## Report discovered motifs by algorithms
 sub SynthesisMotifsByAlgo {
   &RSAT::message::TimeWarn("Synthesis per motif discovery algorithm") if ($main::verbose >= 2);
+  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='motifs_by_algo'></a><h3>Discovered motifs (by algorithm)</h3>", 1);
-  print $syn "<table class='whitebg'>\n";
+  print $syn "\n\n\n<table class='whitebg'>\n";
   &SyntheticTableAddHeaderRow("motif discovery");
   foreach my $pattern_type (@pattern_types) {
     &SynthesisPatternDisco($pattern_type);
   }
-  print $syn "</table><p>\n";
+  print $syn "</table>\n\n\n<p>\n";
   print $syn &close_menu_heading();
 }
 
@@ -3829,17 +3870,17 @@ sub SynthesisPatternDisco {
       if (/assembly\s+\#\s+(\d+)/i) {
 	## Assembly number
 	$pattern_nb = $1;
-	$asmb_or_isol = "asmb";
+	$asmb_or_isol = "assembly";
 	next;
 
       } elsif (/Isolated patterns/) {
 	## Isolated patterns at the end of the assembly file
-	$asmb_or_isol = "isol";
+	$asmb_or_isol = "singleton";
 	next;
       }
 
       next if (/^;/); ## Skip comments that do not indicate assembly number or start of isolated patterns
-      if ($asmb_or_isol eq "isol") {
+      if ($asmb_or_isol eq "singleton") {
 	$pattern_nb++;
       } elsif (!/consensus/) {
 	next;
@@ -3852,8 +3893,9 @@ sub SynthesisPatternDisco {
     }
     close $asmb;
 
+
     ## Synthesize matrix logos
-    my $pattern_table = "<table class='whitebg' align='center' style='border-style:none;'>";
+    my $pattern_table = "\n\n\n<table class='whitebg' align='center' style='border-style:none;'>";
 
     ## Read the discovered motifs (matrices) in ordert to get their
     ## consensus for the report.
@@ -3862,33 +3904,49 @@ sub SynthesisPatternDisco {
 #    foreach my $logo_nb (0..$#pattern_info) {
 #    foreach my $logo_nb (1..$#pattern_info) {
     foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
-      $pattern_table .= "<tr>\n";
-      my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
-      my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
-      my $start_format="";
-      my $end_format="";
+
+      ## Build matrix ID
+      my $matrix_id = $pattern_type."_m".$logo_nb;
+      $matrix_info{$matrix_id}->{pattern_type} = $pattern_type; ## Store matrix info for later use
+
+      $pattern_table .= "\n\n<tr>\n";
+#      my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
+#      my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
+#      my $start_format = "";
+#      my $end_format = "";
       my $score = $pattern_info[$logo_nb]->{score};
 
-
+      
+      ################################################################
+      ## Store the info assocuated to this motif in order to display
+      ## it in the other part of the report (Discovered motifs with motif comparisons).
+      $matrix_info{$matrix_id}->{score} = $pattern_info[$logo_nb]->{score};
+      $matrix_info{$matrix_id}->{evalue} = sprintf("%.2g", 10**(-$pattern_info[$logo_nb]->{score}));
+      $matrix_info{$matrix_id}->{logo_file} = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
+      $matrix_info{$matrix_id}->{logo_file_rc} = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
+#      $matrix_info{$matrix_id}->{logo_file} = $pattern_info[$logo_nb]->{logo_file};
+#      $matrix_info{$matrix_id}->{logo_file_rc} = $pattern_info[$logo_nb]->{logo_file_rc};
+      
       ## Highlight in bold the patterns with score > 10
       if (&IsReal($score)) {
 	if ($score >10) {
-	  $start_format .= '<b>';
-	  $end_format .= '</b>';
+	  $matrix_info{$matrix_id}->{start_format} .= '<b>';
+	  $matrix_info{$matrix_id}->{end_format} .= '</b>';
 	  if ($score >= 75) {
-	    $start_format .= "<font color='red'>";
-	    $end_format = "</font>".$end_format;
+	    $matrix_info{$matrix_id}->{start_format} .= "<font color='red'>";
+	    $matrix_info{$matrix_id}->{end_format} = "</font>".$matrix_info{$matrix_id}->{end_format};
 	  }
 	}
       }
 
-      &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
+      &RSAT::message::Debug("Logo", $logo_nb, $matrix_info{$matrix_id}->{logo_file}) if ($main::verbose >= 5);
 
-      my $matrix_id = $pattern_type."_m".$logo_nb;
 
       ## Get the consensus from the assembly 
       my $consensus = $pattern_info[$logo_nb]->{word};
       my $consensus_rc = $pattern_info[$logo_nb]->{rc_word};
+      $matrix_info{$matrix_id}->{consensus} = $consensus;
+      $matrix_info{$matrix_id}->{consensus_rc} = $consensus_rc;
 
 #       ## Get the consensus from the matix rather than from the assembly
 #       ## THIS IS NOT WORKING, I ONLY GET THE MATRICES FROM THE FIRST MOTIF DISCOVERY PROGRAM
@@ -3901,39 +3959,46 @@ sub SynthesisPatternDisco {
 
       my $colored_consensus = &RSAT::SeqUtil::ColorConsensus($consensus, bold=>1, iupac=>$main::param{iupac_coloring});
       my $colored_consensus_rc = &RSAT::SeqUtil::ColorConsensus($consensus_rc, bold=>1, iupac=>$main::param{iupac_coloring});
+      $matrix_info{$matrix_id}->{colored_consensus} = $colored_consensus;
+      $matrix_info{$matrix_id}->{colored_consensus_rc} = $colored_consensus_rc;
 
-      $pattern_table .= "<td style='border-right-style:none;'>".$matrix_id."</td>";
-      $pattern_table .= "<td align='right'>";
+
+      $pattern_table .= "\n<td style='border-right-style:none;'>".$matrix_id."</td>\n";
+      $pattern_table .= "\n<td align='right'>";
       $pattern_table .= $pattern_info[$logo_nb]->{type};
       $pattern_table .= ": ";
       #	my $seed = $pattern_info[$logo_nb]->{word};
       #	$pattern_table .= &RSAT::SeqUtil::ColorConsensus($pattern_info[$logo_nb]->{word}, bold=>1, iupac=>0);
+
+
+      ## Print the colored consensus + sig + draw logo
       $pattern_table .= $colored_consensus;
-      $pattern_table .= $start_format;
-      $pattern_table .= " (sig=".$pattern_info[$logo_nb]->{score}.")";
-      $pattern_table .= $end_format;
-      if (-e $logo_file) {
-	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file);
+      $pattern_table .= $matrix_info{$matrix_id}->{start_format};
+      $pattern_table .= " (sig=".$matrix_info{$matrix_id}->{score}."; e-value=".$matrix_info{$matrix_id}->{evalue}.")";
+      $pattern_table .= $matrix_info{$matrix_id}->{end_format};
+      if (-e $matrix_info{$matrix_id}->{logo_file}) {
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $matrix_info{$matrix_id}->{logo_file});
 	$pattern_table .= "<br><a  href='".$img."'><img  border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
       } elsif ($main::verbose >= 2) {
-	&RSAT::message::Warning("Cannot find logo", $logo_file) if ($main::verbose >= 3);
+	&RSAT::message::Warning("Cannot find logo", $matrix_info{$matrix_id}->{logo_file}) if ($main::verbose >= 3);
       }
-      $pattern_table .= "</td>\n";
+      $pattern_table .= "</td>\n\n";
 
-      $pattern_table .= "<td align='left' style='border-right-style:none;'>";
+      ## Print reverse complement of the colored consensus + draw logo
+      $pattern_table .= "\n<td align='left' style='border-right-style:none;'>";
       $pattern_table .= "RC: ";
       $pattern_table .= $colored_consensus_rc;
-      if (-e $logo_file_rc) {
-	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $logo_file_rc);
+      if (-e $matrix_info{$matrix_id}->{logo_file_rc}) {
+	my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $matrix_info{$matrix_id}->{logo_file_rc});
 	$pattern_table .= "<br><a  href='".$img."'><img border='".$param{img_border}."' height='".$main::param{logo_table_height}."' src='".$img."'></a>";
       } elsif ($main::verbose >= 2) {
-	&RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc) if ($main::verbose >= 3);
+	&RSAT::message::Warning("Cannot find reverse complementary logo", $matrix_info{$matrix_id}->{logo_file_rc}) if ($main::verbose >= 3);
       }
 
-      #    $pattern_table .= "<td align='right'>".$pattern_info[$logo_nb]->{score}."</td>";
-      $pattern_table .= "</tr>\n";
+      #    $pattern_table .= "\n<td align='right'>".$pattern_info[$logo_nb]->{score}."</td>\n";
+      $pattern_table .= "</tr>\n\n";
     }
-    $pattern_table .= "</table>\n";
+    $pattern_table .= "</table>\n\n\n";
 
 #    &SyntheticTableAddRow($pattern_type,
 #			  $pattern_table,
@@ -3946,24 +4011,24 @@ sub SynthesisPatternDisco {
 ##			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
 ##			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
 #			 );
-	   &SyntheticTableAddRow_New($pattern_type,
-			  $pattern_table,
-			  "discovered words",["text",$main::outfile{$pattern_type},
-			  			],
-			  "assembly",['text', $main::outfile{$pattern_type.'_asmb'},
-    					'sig matrices',$main::outfile{$pattern_type.'_pssm_sig'},
-			 			 ],
-			 "matrices",['tab format', $main::outfile{$pattern_type.'_pssm_counts'},
-    					'transfac format',$main::outfile{$pattern_type.'_pssm_tf'},
-			 			 ],
-			 );
-
+    &SyntheticTableAddRow_New($pattern_type,
+			      $pattern_table,
+			      "discovered words",["text",$main::outfile{$pattern_type},
+			      ],
+			      "assembly",['text', $main::outfile{$pattern_type.'_asmb'},
+					  'sig matrices',$main::outfile{$pattern_type.'_pssm_sig'},
+			      ],
+			      "matrices",['tab format', $main::outfile{$pattern_type.'_pssm_counts'},
+					  'transfac format',$main::outfile{$pattern_type.'_pssm_tf'},
+			      ],
+	);
+    
   } else {
     if (-e $main::outfile{$pattern_type}) {
       &SyntheticTableAddRow($pattern_type,
 			    "<font color='red'red>Not a single significant pattern</font>",
 			    $pattern_type,$main::outfile{$pattern_type},
-			   );
+	  );
     } else {
       &SyntheticTableAddRow($pattern_type,
 			    "<font color='red'red>Missing files</font>",
@@ -5301,7 +5366,7 @@ sub ReportParamsAndFiles {
   ## Read the list of directories and files for the discovered motifs
   &ReadMotifTable();
 
-  print $links "<p><table class='sortable'>\n";
+  print $links "<p>\n\n\n<table class='sortable'>\n";
 
   print $main::out "; peak-motifs ";
   &PrintArguments($main::out, 1);
@@ -5318,7 +5383,7 @@ sub ReportParamsAndFiles {
   ## Input file(s)
   if (%main::infile) {
     print $main::out "; Input files\n";
-    print $links "<tr><th colspan=2>","Input files","</th></tr>";
+    print $links "\n\n<tr>\n<th colspan=2>","Input files","</th></tr>\n";
 
 #    while (my ($key,$file) = each %main::infile) {
     foreach my $key (sort keys  %main::infile) {
@@ -5331,7 +5396,7 @@ sub ReportParamsAndFiles {
   ## Directories
   if (scalar(@outdir) > 0) {
     print $main::out "; Directories\n";
-    print $links "<tr><th colspan=2>","Directories","</th></tr>";
+    print $links "\n\n<tr>\n<th colspan=2>","Directories","</th></tr>\n";
     foreach my $key (@outdir) {
       my $dir = $main::dir{$key};
       $dir .= "/";
@@ -5344,7 +5409,7 @@ sub ReportParamsAndFiles {
   ## Output files
   if (%main::outfile) {
     print $main::out "; Output files\n";
-    print $links "<tr><th colspan=2>","Output files","</th></tr>";
+    print $links "\n\n<tr>\n<th colspan=2>","Output files","</th></tr>\n";
     foreach my $key (sort keys  %main::outfile) {
       my $file = $main::outfile{$key};
       printf $main::out ";\t%-30s\t%s\n", $key, $file; ## Text output
@@ -5353,9 +5418,9 @@ sub ReportParamsAndFiles {
   }
 
   ## Close the links file
-  print $links "</table>\n";
-  print $links "</body>";
-  print $links "</html>";
+  print $links "</table>\n\n\n";
+  print $links "</body>\n\n";
+  print $links "</html>\n";
   close $links;
 }
 
