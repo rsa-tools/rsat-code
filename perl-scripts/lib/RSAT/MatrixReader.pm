@@ -29,7 +29,7 @@ formats.
 
 ################################################################
 ## Class variables
-%supported_input_format = (
+%supported_input_formats = (
 			   'alignace'=> 1,
 			   'assembly'=>1,
 			   'cb'=>1,
@@ -60,6 +60,18 @@ formats.
 			  );
 $supported_input_formats = join ",", sort(keys %supported_input_formats);
 
+=pod
+
+=item List supported input formats
+
+List available input formats.
+
+=cut
+sub ListMatrixFormats {
+    
+    return(%supported_input_formats)
+    
+}
 
 =pod
 
