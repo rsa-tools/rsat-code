@@ -630,7 +630,8 @@ package main;
   local %sort_score = (); ## Hash table with the association between match IDs and matching scores used for sorting them
 
   ## Input formats
-  %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+#  %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+  %supported_input_format = &RSAT::MatrixReader::ListInputMatrixFormats();
   $supported_input_formats = join ",", sort keys %supported_input_format;
   local $input_format1 = "";
   local $input_format2 = "";
