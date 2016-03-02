@@ -2968,11 +2968,8 @@ sub PrintAlignedMatrices {
     #  die;
     if ($m > 1) {
       foreach my $metric (@scores_to_print) {
-	#      foreach my $metric (@supported_metrics) {
-	#	next if ($metric eq "all_metrics");
-	#	if ($return_field{$metric}) {
 	if (defined($match_score{$compa_id}{$metric})) {
-	  $value = sprintf($metric_format{$metric}, $value);
+	  $value = sprintf($metric_format{$metric}, $match_score{$compa_id}{$metric});
 	} else {
 	  $value = $null;
 	}
