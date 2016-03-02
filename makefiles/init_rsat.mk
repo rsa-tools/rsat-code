@@ -34,23 +34,23 @@ init:
 	@echo ""
 	@echo "Creating directories"
 	@echo "	data	${RSAT}/public_html/data"
-	@mkdir -p public_html/data
+	@mkdir -p ${RSAT}/public_html/data
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/data/robots.txt
 	@echo "Options +Indexes" > public_html/data/.htaccess
 	@echo "	genomes	${RSAT}/public_html/data/genomes"
 	@mkdir -p public_html/data/genomes
-#	mkdir -p public_html/data/KEGG
-#	mkdir -p public_html/data/metabolic_networks
-#	mkdir -p public_html/data/metabolic_networks/GER_files
+#	mkdir -p ${RSAT}/public_html/data/KEGG
+#	mkdir -p ${RSAT}/public_html/data/metabolic_networks
+#	mkdir -p ${RSAT}/public_html/data/metabolic_networks/GER_files
 	@echo "	bin	${RSAT}/bin"
-	@mkdir -p bin
+	@mkdir -p ${RSAT}/bin
 	@echo "	lib	${RSAT}/lib"
-	@mkdir -p lib
+	@mkdir -p ${RSAT}/lib
 	@${MAKE} _create_download_dir
 
 	@echo "	tmp	${RSAT}/public_html/tmp"
-	@mkdir -p public_html/tmp
-	@mkdir -p public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
+	@mkdir -p ${RSAT}/public_html/tmp
+	@mkdir -p ${RSAT}/public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
 	@chmod 777 public_html/tmp
 #	echo "Options -Indexes" > public_html/tmp/.htaccess
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/tmp/robots.txt
@@ -59,10 +59,10 @@ init:
 	@chmod 444 public_html/tmp/index.html
 
 	@echo "	logs	${LOGS_DIR}"
-	@mkdir -p ${LOGS_DIR}
+	@mkdir -p ${RSAT}/${LOGS_DIR}
 	@chmod 777 ${LOGS_DIR}
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/logs/robots.txt
-	@mkdir -p ${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
+	@mkdir -p ${RSAT}/${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
 #	echo "Options -Indexes" > ${LOGS_DIR}/.htaccess
 	@rm -f ${LOGS_DIR}/index.html
 	@echo "<html><body></b<Forbidden</b></body></html>" > ${LOGS_DIR}/index.html
@@ -72,7 +72,6 @@ init:
 	@echo "Setting exec rights to executable files"
 	@for f in ${EXEC_FILES} ; do \
 		echo "	$${f}"; \
-		mkdir -p $${f}; \
 		chmod 755 $${f}; \
 	done ; \
 
@@ -126,7 +125,7 @@ init:
 ## Create a directory for downloading genomes
 _create_download_dir:
 	cd ${RSAT}
-	mkdir -p downloads
+	mkdir -p ${RSAT}/downloads
 	(cd downloads; ln -fs ${RSAT}/makefiles/downloads.mk ./makefile)
 
 ################################################################
