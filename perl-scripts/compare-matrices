@@ -2973,7 +2973,7 @@ sub PrintAlignedMatrices {
 	} else {
 	  $value = $null;
 	}
-	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 0);
+	#	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
 	$match_scores .= "; ".$metric."=".$value;
 	$match_scores_html .= "<td style='background-color: #FFFFFF;'>".$value."</td>\n";
 	#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
