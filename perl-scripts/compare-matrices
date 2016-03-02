@@ -663,6 +663,8 @@ package main;
   local %label_fields_to_return = ();
   local @label_fields_to_return = ();
 
+  local $null = "<NA>";
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -2969,9 +2971,12 @@ sub PrintAlignedMatrices {
 	#      foreach my $metric (@supported_metrics) {
 	#	next if ($metric eq "all_metrics");
 	#	if ($return_field{$metric}) {
-	my $value = $match_score{$compa_id}{$metric};
-	$value = sprintf($metric_format{$metric}, $value);
-#	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
+	if (defined($match_score{$compa_id}{$metric})) {
+	  $value = sprintf($metric_format{$metric}, $value);
+	} else {
+	  $value = $null;
+	}
+	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 0);
 	$match_scores .= "; ".$metric."=".$value;
 	$match_scores_html .= "<td style='background-color: #FFFFFF;'>".$value."</td>\n";
 	#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
