@@ -68,7 +68,7 @@ heatmap.simple <- function(x,
   
   ## Compute margins
   max.label.len <- max(nchar(rownames(x)))
-  par(mar=c(max.label.len + 0.1, max.label.len+0.1,4.1,1.1))
+  par(mar=c(max.label.len*0.5 + 1.1, max.label.len*0.5+1.1,4.1,1.1))
   par(las=2)
   
   ## Generate the heat map
@@ -93,7 +93,7 @@ heatmap.simple <- function(x,
           text(i, j, x[j,i], col=text.color[j,i])
         } else if (text.color == "auto") {
           ## Automatic selection of a color contrasting with the heatmap color
-          if (x[j,i] <= zlim[2]*0.5) {
+          if ((x[j,i] <= zlim[2]*0.5) || (x[j,i] > zlim[2])) {
             text(i, j, x[j,i], col=col[length(col)])
           } else {
             text(i, j, x[j,i], col=col[1])
