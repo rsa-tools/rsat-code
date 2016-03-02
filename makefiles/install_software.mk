@@ -224,15 +224,25 @@ GNUPLOT_VERSION=5.0.0
 GNUPLOT_TAR=gnuplot-${GNUPLOT_VERSION}.tar.gz
 GNUPLOT_URL=http://sourceforge.net/projects/gnuplot/files/gnuplot/${GNUPLOT_VERSION}/${GNUPLOT_TAR}
 GNUPLOT_DIR=${SRC_DIR}/gnuplot
-install_gnuplot: _download_gnuplot _compile_gnuplot
+install_gnuplot:
+	@echo
+	@echo "Installing gnuplot for operating system ${OS}"
+	${MAKE}  install_gnuplot_${OS}
 
-_download_gnuplot:
+install_gnuplot_macosx:
+	brew install gnuplot
+
+install_gnuplot_linux: _download_gnuplot_linux _compile_gnuplot_linux
+
+install_gnuplot_linux: _download_gnuplot_linux _compile_gnuplot_linux
+
+_download_gnuplot_linux:
 	@mkdir -p ${GNUPLOT_DIR}
 	@echo "Getting gnuplot using wget"
 	(cd ${GNUPLOT_DIR}; wget -nv -nd ${GNUPLOT_URL}; tar -xpzf ${GNUPLOT_TAR})
 	@echo "gnuplot dir	${GNUPLOT_DIR}"
 
-_compile_gnuplot:
+_compile_gnuplot_linux:
 	@echo "Compiling and installing gnuplot"
 	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VERSION}; \
 	./configure --prefix ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VERSION} --bindir ${RSAT_BIN}  && make; ${SUDO} make install)
