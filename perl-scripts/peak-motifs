@@ -3288,7 +3288,7 @@ sub OpenSynthesis {
 ################################################################
 ## Report results of motif comparisons
 sub SynthesisMotifCompa {
-  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
+#  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='motif_compa'></a><h3>Motif comparisons</h3>", 0);
   print $syn "\n\n\n<table class='whitebg'>\n";
 
@@ -3366,7 +3366,7 @@ sub SynthesisParamsAndFiles {
   &ReportParamsAndFiles();
 
   ## Log files
-  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
+#  print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
   print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Logs and parameter files</h3>", 1);
   print $syn "\n\n\n<table class='whitebg'>\n";
   &SyntheticTableAddHeaderRow("Log files");
