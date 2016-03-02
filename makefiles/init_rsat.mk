@@ -72,6 +72,7 @@ init:
 	@echo "Setting exec rights to executable files"
 	@for f in ${EXEC_FILES} ; do \
 		echo "	$${f}"; \
+		mkdir -p $${f}; \
 		chmod 755 $${f}; \
 	done ; \
 
