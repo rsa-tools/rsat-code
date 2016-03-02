@@ -26,6 +26,7 @@ $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "transfac";
 $default{hclust_method}= "average";
+$default{merge_stat}= "sum";
 $default{metric} = "Ncor";
 $default{newick} = "";
 $default{random} = "";
@@ -144,6 +145,13 @@ print $query->popup_menu(-name=>'hclust_method',
  			 -default=>$default{hclust_method});
 print "<br><br>\n";
 
+## Merge matrix operator
+print "<B><A HREF='help.matrix-clustering.html#merge_operator'> Merge matrices </A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'merge_stat',
+ 			 -Values=>["sum", "mean"],
+ 			 -default=>$default{merge_stat});
+print "<br><br>\n";
+
 ################################################################
 ## Specific options for output files
 print "<h2>", "Output file options", ,"</h2>";
@@ -165,11 +173,11 @@ print "<br><br>\n";
 
 ## Export the trees in Newick format
 ## By default trees are exported in JSON
-print $query->checkbox(-name=>'newick',
-  		       -checked=>$default{newick},
-  		       -label=>'');
-print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
-print "<br><br>\n";
+# print $query->checkbox(-name=>'newick',
+#   		       -checked=>$default{newick},
+#   		       -label=>'');
+# print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
+# print "<br><br>\n";
 
 ## Negative control: Permute the columns of the input motifs
 print $query->checkbox(-name=>'random',
