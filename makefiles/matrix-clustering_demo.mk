@@ -12,6 +12,7 @@ MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 
 ################################################################
 ## Parameters for the analysis
+OPERATOR=sum
 MIN_NCOR=0.4
 MIN_COR=0.6
 HCLUST_METHOD=average
@@ -65,6 +66,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
 		-lth w ${MIN_W} \
+                -calc ${OPERATOR} \
 		-hclust_method ${HCLUST_METHOD} \
 		-label_in_tree name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
@@ -77,6 +79,7 @@ CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
 		-lth w ${MIN_W} \
+                -calc ${OPERATOR} \
 		-hclust_method ${HCLUST_METHOD} \
 		-label_in_tree name ${OPT} \
 		-o ${CLUSTER_FILE_PREFIX} \
@@ -139,7 +142,7 @@ cluster_peakmotifs_Oct4:
 		TITLE='Oct4 motifs peak motifs' \
 		COLLECTION=${OCT4_PREFIX} \
 		METRIC_BUILD_TREE=Ncor \
-		MIN_COR=0.5 MIN_NCOR=0.4
+		MIN_COR=0.6 MIN_NCOR=0.4
 
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
