@@ -4023,7 +4023,7 @@ sub SynthesisPatternDisco {
 					  'transfac format',$main::outfile{$pattern_type.'_pssm_tf'},
 			      ],
 	);
-  print $syn '\n\n<tr><td><p style="page-break-after:always;"></p></td></tr>\n\n'; ## Page break for printing
+    print $syn "\n\n", '<tr><td><p style="page-break-after:always;"></p></td></tr>', "\n\n"; ## Page break for printing
 
     
   } else {
