@@ -255,7 +255,7 @@ VMATCH_VERSION=2.2.4
 install_ghostscript:
 	@echo
 	@echo "Installing ghostscript (gs) for operating system ${OS}"
-	${MAKE} _install_ghostscript_${OS}
+	${MAKE} install_ghostscript_${OS}
 
 install_ghostscript_macosx:
 	brew install ghostscript
