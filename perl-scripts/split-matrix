@@ -139,8 +139,9 @@ package main;
 	);
     $supported_split_options = join ",", sort keys %supported_return_type;
 
-## input formats
-    %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+    ## input formats
+#    %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+    %supported_input_format = &RSAT::MatrixReader::ListInputMatrixFormats();
     $supported_input_formats = join ",", sort keys %supported_input_format;
    # local $strands="DR";
     

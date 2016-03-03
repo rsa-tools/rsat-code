@@ -197,10 +197,12 @@ package main;
 	&RSAT::error::FatalError("You should define the input format");
     }
 
+    ## Check output format
     unless ($output_format) {
 	&RSAT::error::FatalError("You should define the output format");
     }
 
+    ## Check decimals
     unless ($decimals) {
       if ($output_format eq "oligos") {
 	$decimals = $default_oligo_decimals;
@@ -209,6 +211,7 @@ package main;
       }
     }
 
+    ## Pseudo-frequencies for the background model
     if (defined ($bg_pseudo)) {
     	$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
       }

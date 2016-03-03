@@ -83,6 +83,14 @@ if ($hclust_method) {
 }
 
 
+################################################################
+## Merge operator
+local $merge_stat  = lc($query->param('merge_stat'));
+if ($merge_stat) {
+  $parameters .= " -calc ".$merge_stat;
+}
+
+
 ###############
 ## Add title
 local $title = lc($query->param('html_title'));

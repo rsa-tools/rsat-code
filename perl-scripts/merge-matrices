@@ -131,7 +131,8 @@ package main;
   local $supported_operators = join ",", sort keys %supported_operator;
 
   ## input formats
-  local %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+#  local %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+  local %supported_input_format = &RSAT::MatrixReader::ListInputMatrixFormats();
   local $supported_input_formats = join ",", sort keys %supported_input_format;
 
   ## output formats

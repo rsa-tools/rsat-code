@@ -51,6 +51,7 @@ EXT_APP_TARGETS=\
 	install_seqlogo \
 	install_weblogo3 \
 	install_d3 \
+	install_bedtools \
 	install_mcl \
 	install_rnsc \
 	install_blast \
@@ -223,15 +224,25 @@ GNUPLOT_VERSION=5.0.0
 GNUPLOT_TAR=gnuplot-${GNUPLOT_VERSION}.tar.gz
 GNUPLOT_URL=http://sourceforge.net/projects/gnuplot/files/gnuplot/${GNUPLOT_VERSION}/${GNUPLOT_TAR}
 GNUPLOT_DIR=${SRC_DIR}/gnuplot
-install_gnuplot: _download_gnuplot _compile_gnuplot
+install_gnuplot:
+	@echo
+	@echo "Installing gnuplot for operating system ${OS}"
+	${MAKE}  install_gnuplot_${OS}
 
-_download_gnuplot:
+install_gnuplot_macosx:
+	brew install gnuplot
+
+install_gnuplot_linux: _download_gnuplot_linux _compile_gnuplot_linux
+
+install_gnuplot_linux: _download_gnuplot_linux _compile_gnuplot_linux
+
+_download_gnuplot_linux:
 	@mkdir -p ${GNUPLOT_DIR}
 	@echo "Getting gnuplot using wget"
 	(cd ${GNUPLOT_DIR}; wget -nv -nd ${GNUPLOT_URL}; tar -xpzf ${GNUPLOT_TAR})
 	@echo "gnuplot dir	${GNUPLOT_DIR}"
 
-_compile_gnuplot:
+_compile_gnuplot_linux:
 	@echo "Compiling and installing gnuplot"
 	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VERSION}; \
 	./configure --prefix ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VERSION} --bindir ${RSAT_BIN}  && make; ${SUDO} make install)
@@ -254,7 +265,7 @@ VMATCH_VERSION=2.2.4
 install_ghostscript:
 	@echo
 	@echo "Installing ghostscript (gs) for operating system ${OS}"
-	${MAKE} _install_ghostscript_${OS}
+	${MAKE} install_ghostscript_${OS}
 
 install_ghostscript_macosx:
 	brew install ghostscript
@@ -356,7 +367,12 @@ install_ensembl_bioperl:
 	@echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"
 	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
 	@mkdir -p "${BIOPERL_DIR}"
-	@(cd ${BIOPERL_DIR}; git clone git://github.com/bioperl/bioperl-live.git)
+	@if [ -d ${BIOPERL_DIR}/bioperl-live ] ; then \
+		echo "Bioperl already installed"; \
+	else \
+		echo "Cloning bioperl" ; \
+		(cd ${BIOPERL_DIR}; git clone git://github.com/bioperl/bioperl-live.git); \
+	fi
 	@(cd ${BIOPERL_DIR}/bioperl-live; git checkout bioperl-release-${BIOPERL_VERSION})
 	@echo "bioperl-release-${BIOPERL_VERSION} installed in ${BIOPERL_DIR}"
 
@@ -1155,9 +1171,10 @@ download_ceas_data:
 ################################################################
 ## Install  SAMTOOLS
 SAMTOOLS_BASE_DIR=${SRC_DIR}/samtools
-SAMTOOLS_VERSION=0.1.18
+SAMTOOLS_VERSION=1.3
 SAMTOOLS_ARCHIVE=samtools-${SAMTOOLS_VERSION}.tar.bz2
-SAMTOOLS_URL=http://sourceforge.net/projects/samtools/files/samtools/${SAMTOOLS_VERSION}/${SAMTOOLS_ARCHIVE}
+SAMTOOLS_URL=https://sourceforge.net/projects/samtools/files/samtools/${SAMTOOLS_VERSION}/${SAMTOOLS_ARCHIVE}/download
+#SAMTOOLS_URL=https://sourceforge.net/projects/samtools/files/samtools/1.3/samtools-1.3.tar.bz2/download
 SAMTOOLS_DISTRIB_DIR=${SAMTOOLS_BASE_DIR}/samtools-${SAMTOOLS_VERSION}
 install_samtools: _download_samtools _compile_samtools _install_pysam
 
@@ -1165,7 +1182,7 @@ _download_samtools:
 	@echo
 	@echo "Downloading SAMTOOLS"
 	@mkdir -p ${SAMTOOLS_BASE_DIR}
-	wget -nd  --directory-prefix ${SAMTOOLS_BASE_DIR} -rNL ${SAMTOOLS_URL}
+	wget -nd --no-check-certificate --directory-prefix ${SAMTOOLS_BASE_DIR} -rNL ${SAMTOOLS_URL}
 
 _compile_samtools:
 	@echo

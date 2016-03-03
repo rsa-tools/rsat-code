@@ -630,7 +630,8 @@ package main;
   local %sort_score = (); ## Hash table with the association between match IDs and matching scores used for sorting them
 
   ## Input formats
-  %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+#  %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+  %supported_input_format = &RSAT::MatrixReader::ListInputMatrixFormats();
   $supported_input_formats = join ",", sort keys %supported_input_format;
   local $input_format1 = "";
   local $input_format2 = "";
@@ -661,6 +662,8 @@ package main;
 #    local $label_fields_to_return = "";
   local %label_fields_to_return = ();
   local @label_fields_to_return = ();
+
+  local $null = "<NA>";
 
   ################################################################
   ## Read argument values
@@ -2965,12 +2968,12 @@ sub PrintAlignedMatrices {
     #  die;
     if ($m > 1) {
       foreach my $metric (@scores_to_print) {
-	#      foreach my $metric (@supported_metrics) {
-	#	next if ($metric eq "all_metrics");
-	#	if ($return_field{$metric}) {
-	my $value = $match_score{$compa_id}{$metric};
-	$value = sprintf($metric_format{$metric}, $value);
-#	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
+	if (defined($match_score{$compa_id}{$metric})) {
+	  $value = sprintf($metric_format{$metric}, $match_score{$compa_id}{$metric});
+	} else {
+	  $value = $null;
+	}
+	#	&RSAT::message::Debug("compa_id=".$compa_id, "metric=".$metric, "value=".$value) if ($main::verbose >= 10);
 	$match_scores .= "; ".$metric."=".$value;
 	$match_scores_html .= "<td style='background-color: #FFFFFF;'>".$value."</td>\n";
 	#	&RSAT::message::Debug("score", $compa_id, $metric, $value) if ($main::verbose >= 10);
