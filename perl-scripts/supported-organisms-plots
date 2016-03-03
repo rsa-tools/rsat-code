@@ -9,6 +9,7 @@ supported-organisms-plots
 =head1 DESCRIPTION
 
 Makes plots of some general features of installed genomes.
+Creates a HTML report displaying PNG figures, but also produces PDF figures.
 
 =head1 AUTHORS
 
@@ -56,7 +57,7 @@ package main;
 
   my (%stats,$Ns,$org,$idx,$L,$colors);
   my ($max_contigs,$max_ups,$n_of_orgs,$reference_idx) = (0,0,0,0);
-  my ($index_file,$report_file,$summary_file,$file,$outfile,$contigfile);
+  my ($index_file,$report_file,$summary_file,$file,$outfile,$PDFfile,$contigfile);
 
   ## parse and check arguments
   &ReadArguments();
@@ -171,6 +172,7 @@ package main;
   # plot genome sizes, including fractions of Ns and repeats
   $file = $params{'outfolder'}.'/_genome_size.tab';
   $outfile = $params{'outfolder'}.'/genome_size.png';
+  $PDFfile = $params{'outfolder'}.'/genome_size.pdf';
   open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
   print TAB "organism\tunmasked\tNs\tmasked\n";
   foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats))
@@ -184,7 +186,21 @@ package main;
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
-  png("$outfile",width=800);
+  png("$outfile",width=800,height=600);
+  par(mai=c(1,4,1,1)) # make room for long horizontal labels
+  data = read.table(file="$file",header=T);
+  data[,2] = as.numeric(data[,2])/1e6 ## Convert genome sizes to Mb
+  data[,3] = as.numeric(data[,3])/1e6
+  data[,4] = as.numeric(data[,4])/1e6
+  mdata = t(data[,2:4]) # 2 unmasked, 3 Ns, 4 masked
+  colors = c('white','grey50','grey20')
+  barplot( mdata, names.arg=data\$organism, #log="x", #does not show fraction of repeats proportionally!
+    xlab="genome size (Mb)", horiz=T, las=1, col=colors, cex.names=0.8 )
+  legend("topright", inset=.05, c("Ns","repeat-masked"), 
+    fill=c('grey50','grey20'), horiz=F, cex=1.0 )
+  dev.off()
+
+  pdf("$PDFfile",width=8,height=7);
   par(mai=c(1,4,1,1)) # make room for long horizontal labels
   data = read.table(file="$file",header=T);
   data[,2] = as.numeric(data[,2])/1e6 ## Convert genome sizes to Mb
@@ -201,12 +217,14 @@ package main;
 EOR
   close RSHELL;
 
-  print REP "Genome size\t".
+
+  print REP "Genome size <br/><a href=\"./genome_size.pdf\">PDF</a>\t".
     "<img width='800' src='./genome_size.png'>\n";
 
   # plot gene number
   $file = $params{'outfolder'}.'/_gene_number.tab';
   $outfile = $params{'outfolder'}.'/gene_number.png';
+  $PDFfile = $params{'outfolder'}.'/gene_number.pdf';
   ($idx,$reference_idx) = (0,-1);
   open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
   print TAB "organism\tgenes\n";
@@ -227,7 +245,15 @@ EOR
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
-  png("$outfile",width=800);
+  png("$outfile",width=800,height=600);
+  colors = c($colors)
+  data = read.table(file="$file",header=T,check.names=F);
+  par(mai=c(1,4,1,1))
+  barplot( data\$genes, names.arg=data\$organism, col=colors, 
+    xlab="annotated genes", horiz=T, las=1, cex.names=0.8 )
+  dev.off()
+
+  pdf("$PDFfile",width=8,height=7);
   colors = c($colors)
   data = read.table(file="$file",header=T,check.names=F);
   par(mai=c(1,4,1,1))
@@ -238,12 +264,13 @@ EOR
 EOR
   close RSHELL;
 
-  print REP "Annotated genes\t".
+  print REP "Annotated genes <br/><a href=\"./gene_number.pdf\">PDF</a>\t".
     "<img width='800' src='./gene_number.png'>\n";
 
   # plot contig size
   $file = $params{'outfolder'}.'/_contig_size.tab';
   $outfile = $params{'outfolder'}.'/contig_size.png';
+  $PDFfile = $params{'outfolder'}.'/contig_size.pdf';
   ($idx,$reference_idx) = (0,-1);
   open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
   foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
@@ -269,7 +296,15 @@ EOR
 
   open(RSHELL,"|R --no-save $Rparams ") || die "# $0 : cannot call R: $!\n";
   print RSHELL<<EOR;
-  png("$outfile",width=800);
+  png("$outfile",width=800,height=600);
+  par(mai=c(1,4,1,1)) # make room for long horizontal labels
+  colors = c($colors);
+  data = read.table(file="$file",header=T,check.names=F); 
+  boxplot( data, xlab='contig / scaffold / chromosome size', horizontal=T, las=1,
+            varwidth=F, show.names=T, log="x", col=colors, cex.axis=0.8 );
+  dev.off()
+
+  pdf("$PDFfile",width=8,height=7);
   par(mai=c(1,4,1,1)) # make room for long horizontal labels
   colors = c($colors);
   data = read.table(file="$file",header=T,check.names=F); 
@@ -280,12 +315,13 @@ EOR
 EOR
   close RSHELL;
 
-  print REP "Contig size\t".
+  print REP "Contig size <br/><a href=\"./contig_size.pdf\">PDF</a>\t".
     "<img width='800' src='./contig_size.png'>\n";
 
   # plot upstream region size
   $file = $params{'outfolder'}.'/_upstream_size.tab';
   $outfile = $params{'outfolder'}.'/upstream_size.png';
+  $PDFfile = $params{'outfolder'}.'/upstream_size.pdf';
 
   # simply plot the mean values
   ($idx,$reference_idx) = (0,-1);
@@ -305,7 +341,15 @@ EOR
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
-  png("$outfile",width=800);
+  png("$outfile",width=800,height=600);
+  colors = c($colors)
+  data = read.table(file="$file",header=T,check.names=F);
+  par(mai=c(1,4,1,1))
+  barplot( data\$upstream, names.arg=data\$organism, col=colors, xlim=c(0,2000), 
+    xlab="average upstream length", horiz=T, las=1, cex.names=0.8 )
+  dev.off()
+
+  pdf("$PDFfile",width=8,height=7);
   colors = c($colors)
   data = read.table(file="$file",header=T,check.names=F);
   par(mai=c(1,4,1,1))
@@ -340,7 +384,7 @@ EOR
 #EOR
   #close RSHELL;
 
-  print REP "Upstream regions\t".
+  print REP "Upstream regions<br/><a href=\"./upstream_size.pdf\">PDF</a>\t".
     "<img width='800' src='./upstream_size.png'>\n";
 
   # add summary to report
