@@ -966,13 +966,14 @@ When this option is selected, the columns of the input motifs are randomly permu
 
 =item	B<-max_matrices X>
 
-This option specify how many matrices can be clustered in the same
+This option specifies how many matrices can be clustered in the same
 analysis. If there are more matrices than the specified number, the
 program restrics the analyses to the first X matrices, and issues a
 warning.
 
 This parameter can be useful to prevent submission of excessive
-datasets to the Web server.
+datasets to the Web server, or for running quick tests before starting
+the analysis of a large matrix collection.
 
 =cut
     } elsif ($arg eq "-max_matrices") {
@@ -1666,7 +1667,7 @@ sub pre_process_motif_files{
       $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
       $convert_matrix_cmd .= " -from tf";
       $convert_matrix_cmd .= " -to transfac";
-      $convert_matrix_cmd .= " -prefix_id ".$collection_name unless ($single_input_flag);
+      $convert_matrix_cmd .= " -prefix_id ".$collection_name;
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed};
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
       unlink($motif_set_attributes{$collection_name}{matrix_file_processed_1});
@@ -2678,7 +2679,7 @@ $(document).ready(function() {
 
 	### Set the tree size
 	if (/--size--/) {;
-	    $_ =~ s/--size--/200/;
+	    $_ =~ s/--size--/350/;
 	}
 
 	### Add the JSON file name
@@ -3054,6 +3055,8 @@ sub Merge_matrices() {
 		}
 	    }
 
+
+################################################################################################################################################################################################################################################################ Debug_here_jaime
 	    my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{aligned_tf};
 
 	    my $new_singleton_motif_file_temp = $main::outfile{prefix}."_clusters_information/".$cluster."/".$cluster."_matrices_temp.tf";
@@ -3062,16 +3065,13 @@ sub Merge_matrices() {
 	    $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file_temp;
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
-
-	    $cmd = "convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf ";
+	    $cmd = $SCRIPTS."/convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf ";
 	    $cmd .= " -attr name ".$cluster." -attr accession ".$cluster;
 	    $cmd .= " -set_attr merged_AC @{$cluster_nodes{$cluster}} -set_attr merged_ID ".$alignment_info{"@{$cluster_nodes{$cluster}}"}{name};
 	    $cmd .= " -set_attr type merge";
 	    $cmd .= " -set_attr merge_type ".$operator;
 	    $cmd .= " -set_attr merge_nb 1";
 	    $cmd .= " -o ".$new_singleton_motif_file;
-
-
 	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 	    unlink($new_singleton_motif_file_temp);
 
@@ -3139,7 +3139,7 @@ sub Create_dynamic_tree() {
 	if (/^\s*\/\/Divisions/) {
 	    $line = "";
 	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted) {             
-		$line .= "<div id=\"cluster_".$cluster."\" style=\"clear:both;\"><h2>cluster_".$cluster."</h2><\/div>\n";
+		$line .= "<div id=\"cluster_".$cluster."\" style=\"clear:both;border-left:100px;float:left;\"><h2>cluster_".$cluster."</h2><\/div>\n";
 		$line .= "<br><br><br>\n";
 	    }
 	}
@@ -3164,7 +3164,7 @@ sub Create_dynamic_tree() {
 	if (/^\s*\/\/Divisions/) {
 	    $line = "";
 	    foreach my $cluster (sort {$a <=> $b} keys %clusters_info_sorted) {             
-		$line .= "<div id=\"cluster_".$cluster."\" style=\"clear:both;\"><h2>cluster_".$cluster."</h2><\/div>\n";
+		$line .= "<div id=\"cluster_".$cluster."\" style=\"clear:both;border-left:100px;float:left;\"><h2>cluster_".$cluster."</h2><\/div>\n";
 		$line .= "<br><br><br>\n";
 	    }
 	}
@@ -3315,7 +3315,7 @@ sub cluster_head_buttons{
 
 ############################################
 ## Stores in a string the Alignment table
-sub alignment_table{
+sub alignment_table {
 
   my $align_table = '
     <div class="tab alignment_tab" id="alignment_table_--nb--">
@@ -3504,7 +3504,7 @@ svg = d3.select("#--cl_id--").select("svg")
       .on("click", click);
 
   nodeEnter.append("circle")
-	.attr("r", 6)
+	.attr("r", 5)
         .attr("fill", "--stroke--");
 
        /*Insert labels*/
@@ -3539,19 +3539,19 @@ svg = d3.select("#--cl_id--").select("svg")
 
 
   nodeUpdate.select("circle")
-	.attr("r", 6)
+	.attr("r", 5)
         .attr("fill", function(d) { return d._children ? "black" : "--stroke--"; })
-      .attr("font-size", "--font--px");
+      .attr("font-size", "8px");
 
 
   nodeUpdate.select("text")
       .text(function(d) { return d.children ? d.consensus :  d.name; })
-      .attr("dx", function(d) { return d.children ? -20 : 20; })
+      .attr("dx", function(d) { return d.children ? -3 : 20; })
       .attr("dy", function(d) { return d.children ? -6 : 3; })
       .attr("class", function(d) { return d.children ? "show_con_--cl_id--" : ""; })
       .attr("fill", function(d) { return d.children ? "blue" : "black"; })
       .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
-      .attr("font-size", "--font--px");
+      .attr("font-size", function(d) { return d.children ? "8px" : "10px"; });
 
 	nodeUpdate.select("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
@@ -3754,7 +3754,7 @@ svg = d3.select("#--cl_id--").select("svg")
       .on("click", click);
 
   nodeEnter.append("circle")
-	.attr("r", 6)
+	.attr("r", 5)
         .attr("fill", "--stroke--");
 
        /*Insert labels*/
@@ -3789,19 +3789,19 @@ svg = d3.select("#--cl_id--").select("svg")
 
 
   nodeUpdate.select("circle")
-	.attr("r", 6)
+	.attr("r", 5)
         .attr("fill", function(d) { return d._children ? "black" : "--stroke--"; })
-      .attr("font-size", "--font--px");
+      .attr("font-size", "8px");
 
 
   nodeUpdate.select("text")
       .text(function(d) { return d.children ? d.consensus :  d.name; })
-      .attr("dx", function(d) { return d.children ? -20 : 20; })
+      .attr("dx", function(d) { return d.children ? -3 : 20; })
       .attr("dy", function(d) { return d.children ? -6 : 3; })
       .attr("class", function(d) { return d.children ? "show_con_--cl_id--" : ""; })
       .attr("fill", function(d) { return d.children ? "blue" : "black"; })
       .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
-      .attr("font-size", "--font--px");
+      .attr("font-size", "8px");
 
 	nodeUpdate.select("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
@@ -4756,10 +4756,10 @@ $clust_table .= "\n".'
 	  <th class="tab_col">Root Motif</th>
 	  <th class="tab_col">Root Motif (Reverse)</th>
 	  <th class="tab_col">Cluster ID</th>
-	  <th class="tab_col">Name::Collection of Descendant Motifs</th>
-	  <th class="tab_col">Number of Motifs by Collection</th>
 	  <th class="tab_col"># Motifs</th>
-	  <th class="tab_col">Motifs in TRANSFAC Format</th>
+	  <th class="tab_col">Motif_Name::Collection</th>
+	  <th class="tab_col">Number of Motifs by Collection</th>
+	  <th class="tab_col">Root Motif (transfac Format)</th>
 	</tr>
       </thead>
       <tbody>
@@ -4789,10 +4789,10 @@ $clust_table .= "\n".'
             <th class='tab_spacer_2'><img  width='--width--' src='".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo})."'/></td>
             <th class='tab_spacer_2'><img  width='--width--' src='".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC})."'/></td>
             <td class='tab_spacer_1'>".$cluster."</td>
+            <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{size}."</td>
             <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{members}."</td>
             <td class='tab_spacer_2'>".$count."</td> 
-            <td class='tab_spacer_1'>".$root_motifs_features{$cluster}{size}."</td>
-            <td class='tab_spacer_1'><a target=\"_blank\" href=\"".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{file})."\">Download</a></td>
+            <td class='tab_spacer_1'><a target=\"_blank\" href=\"".&RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{file})."\">Show matrix</a></td>
          </tr>"."\n";
 
       ## The image size depends of the motif width
@@ -5158,7 +5158,7 @@ sub InsertSmallForest {
 	        .text(function(d) { return d.children ? "" :  d.name; })
 		.attr("dx", function(d) { return d.children ? 0 : 20; })
 		.attr("dy", function(d) { return d.children ? 0 : 3; })
-		.attr("font-size", "8px")
+		.attr("font-size", "10px")
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
     ';
 
@@ -5208,7 +5208,7 @@ sub InsertSmallForest {
 	    $tree =~ s/--lab--/$label_single_tree_no_link/;
 	    $tree =~ s/--widthtree--/820/g;
 	    $tree =~ s/--radius--/3/g;
-	    $tree =~ s/--size--/300/g;
+	    $tree =~ s/--size--/350/g;
 	    $tree =~ s/--insert--//g;
 	    $tree =~ s/--nb--/$num/g;
 	    $tree =~ s/--height--/70 + 9 * $cluster_size/g;
@@ -5468,7 +5468,7 @@ sub InsertTreesAndBranchMotifs {
 	        .text(function(d) { return d.children ? "" :  d.name; })
 		.attr("dx", function(d) { return d.children ? 0 : 20; })
 		.attr("dy", function(d) { return d.children ? 0 : 3; })
-		.attr("font-size", "8px")
+		.attr("font-size", "10px")
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
 
 		node.append("text")

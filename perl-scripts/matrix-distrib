@@ -148,7 +148,8 @@ package main;
 
   ## matrix formats
   $matrix_format = "tab";
-  %supported_matrix_format = %RSAT::MatrixReader::supported_input_format;
+#  %supported_matrix_format = %RSAT::MatrixReader::supported_input_format;
+  %supported_matrix_format = &RSAT::MatrixReader::ListInputMatrixFormats();
   $supported_matrix_formats = join ",", sort keys %supported_matrix_format;
 
   %main::infile = ();

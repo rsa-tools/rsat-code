@@ -1251,6 +1251,7 @@ sub DyadAnalysis {
     $cmd = $SCRIPTS."/matrix-from-patterns -v 1";
     $cmd .= " -seq ".$outfile{seq};
     $cmd .= " -asmb ".$outfile{asmb};
+    $cmd .= " -prefix ".$current_gene_name;
     $cmd .= " -format fasta " ;
     $cmd .= " -sites" ;
     $cmd .= " -uth Pval 0.00025";

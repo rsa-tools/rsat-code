@@ -216,7 +216,7 @@ sub PrintOrthoSelectionSection {
 			 -default=>$default{queries},
 			 -rows=>3,
 			 -columns=>40);
-  ### option to upload a file with the gene list from the client machine
+  ## Option to upload a file with the gene list from the client machine
   print "<BR>Upload gene list from file<BR>\n";
   print $query->filefield(-name=>'uploaded_file',
 			  -default=>'',

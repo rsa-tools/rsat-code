@@ -172,7 +172,7 @@ package main;
       my $job_prefix = "random-genome-fragments";
       my $tmp_file_path = &RSAT::util::make_temp_file("","random-genome-fragments", 1); 
       $main::outfile{length_file} = $tmp_file_path."_lengths.tab";
-      my $seqlength_cmd = "sequence-lengths -v 1";
+      my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1";
       $seqlength_cmd .= " -i ".$main::infile{template_file};
       $seqlength_cmd .= " -in_format ".$template_format;
       $seqlength_cmd .= " -o ".$main::outfile{length_file};
