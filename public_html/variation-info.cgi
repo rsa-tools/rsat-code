@@ -55,15 +55,21 @@ if (defined($supported_organism{$organism})) {
     $species=join("_", $org_name_split[0], $org_name_split[1]);
     $assembly =$org_name_split[2];
     
+    &RSAT::message::Debug("organism: ".$organism, 
+			  "organism_name: ".$organism_name,
+			  "species: ".$species,
+			  "assembly: ".$assembly,
+	);
+
     $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
     $parameters .= " -a_version ".$assembly; ## Assembly is the third part of species ID
     if (scalar (@org_name_split)>=4){
-	if (scalar (@org_name_split)>4){
-	    $species_suffix=join("_",@org_name_split[3..$#org_name_split]);
-	}else {
-	    $species_suffix=$org_name_split[3];
-	}
-	$parameters .= " -species_suffix ".$species_suffix; ## 
+    	if (scalar (@org_name_split)>4){
+    	    $species_suffix=join("_",@org_name_split[3..$#org_name_split]);
+    	}else {
+    	    $species_suffix=$org_name_split[3];
+    	}
+    	$parameters .= " -species_suffix ".$species_suffix; ## 
     }
 } else {
     &cgiError("Organism '",
@@ -87,8 +93,8 @@ if ($query->param('uploaded_file')) {
 	print INPUT_FILE;
     }
     close INPUT_FILE;
-}elsif ($query->param('variants_url') =~ /\S/) {
-    my $url = $query->param('variants_url');
+} elsif ($query->param('input_url') =~ /\S/) {
+    my $url = $query->param('input_url');
     &RSAT::message::Info("Fetching variants from URL ".$url) if ($ENV{rsat_echo} >= 1);
     my $var = "";
     if (open SEQ, ">$input_set_file") {
@@ -136,43 +142,61 @@ if ($query->param('uploaded_file')) {
 $parameters .= " -i ".$input_set_file;
 &DelayedRemoval($input_set_file);
 
-
 ### Input format
 if ($query->param('input_type')) {
     ($input_type) = split " ", $query->param('input_type'); ### take the first word
     $parameters .= " -format ".$input_type;
 }
 
-
-
-
-&ReportWebCommand($command." ".$parameters);
+## Output file
 $var_file = "$tmp_file_path.varBed";
 push @result_files, ("Variations in varBed format", $var_file);
+$parameters .= " -o ".$var_file;
+
+## Error log
+$err_file = $tmp_file_path."_error_log.txt";
+$parameters .= " 2> ".$err_file;
+push @result_files, ("Error log (text)",$err_file);
+
+&ReportWebCommand($command." ".$parameters);
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
 
-    open RESULT, "$command $parameters |";
+  ################################################################
+  ## Run the command
+  system($command." ".$parameters);
+    
+  ## Print the result
+  print '<H4>Result</H4>';
 
-    ### print the result
-    &PipingWarning();
+  print "<PRE>";
+  open RESULT, $result_file;
+  while (<RESULT>) {
+    print "$_" unless ($query->param('output') =~ /server/i);
+  }
+  print "</PRE>";
+  close RESULT;
+    # open RESULT, "$command $parameters |";
 
-    ### open the sequence file on the server
-    if (open MIRROR, ">$var_file") {
-	$mirror = 1;
-	&DelayedRemoval($var_file);
-    }
+    # ### print the result
+    # &PipingWarning();
 
-    print "<PRE>";
-    while (<RESULT>) {
-	print "$_" unless ($query->param('output') =~ /server/i);
-	print MIRROR $_ if ($mirror);
-    }
-    print "</PRE>";
-    close RESULT;
-    close MIRROR if ($mirror);
+    # ### open the sequence file on the server
+    # if (open MIRROR, ">$var_file") {
+    # 	$mirror = 1;
+    # 	&DelayedRemoval($var_file);
+    # }
+
+    # print "<PRE>";
+    # while (<RESULT>) {
+    # 	print "$_" unless ($query->param('output') =~ /server/i);
+    # 	print MIRROR $_ if ($mirror);
+    # }
+    # print "</PRE>";
+    # close RESULT;
+    # close MIRROR if ($mirror);
 
     &PrintURLTable(@result_files);
 

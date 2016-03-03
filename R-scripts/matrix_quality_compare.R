@@ -114,7 +114,12 @@ lapply(names(nwd.files) ,function(matrix.name){
 ## Function draw.heatmap
 ## Takes as input the original list file with all data, the metric to be used in the heatmap
 ## the output heatmap file 
-draw.heatmap <- function (ListAll,metric="max.nwd",heatmap.file, formats=c("pdf"), mtx.quality.nwds){
+draw.heatmap <- function (ListAll,
+                          metric="max.nwd",
+                          heatmap.file, 
+                          formats=c("pdf"), 
+                          mtx.quality.nwds,
+                          ...) {
     metric.table <- matrix(ncol = length(unique(mtx.quality.nwds$sequence)), nrow =length(unique(mtx.quality.nwds$matrix))) 
     colnames(metric.table) <- unique(mtx.quality.nwds$sequence)
     rownames(metric.table) <- unique(mtx.quality.nwds$matrix)
@@ -137,22 +142,23 @@ draw.heatmap <- function (ListAll,metric="max.nwd",heatmap.file, formats=c("pdf"
         }
        # metric.table <- scale(metric.table)
         
-        heatmap.2(as.matrix(metric.table), col=colorRampPalette(brewer.pal(11,"RdBu"))(100) 
-                , trace="none"
-                , margins=c(6,10)
-                , cexRow = 0.75 
-                , cexCol = 0.75    
+        heatmap.2(as.matrix(metric.table), col=colorRampPalette(brewer.pal(11,"RdBu"))(100),
+                  trace="none", 
+                  margins=c(6,10), 
+                  cexRow = 0.75, 
+                  cexCol = 0.75,
 #                                         , Colv=FALSE
 #                                         , breaks=breaks.hm
 #                                         , dendrogram= "none"
-                , main = metric
-                , xlab = "Sequences"
-                , ylab = "Motifs"
-                , key = TRUE
-                , key.title = ""
-                , key.xlab = paste(metric, "value")
-                , key.ylab = ""
-                , density.info = "none"
+                  main = metric,
+                  xlab = "Sequences",
+                  ylab = "Motifs",
+                  key = TRUE, 
+                  key.title = "",
+                  key.xlab = paste(metric, "value"), 
+                  key.ylab = "",
+                  scale="none",
+                   density.info = "none", ...
                   )
 
         dev.off()
@@ -172,7 +178,10 @@ draw.heatmap(ListAll=nwd.files,metric="max.sig.nwd",heatmap.file=max.sig.nwd.hea
 #####
 # Draw heatmap using auc.all
 auc.all.heatmap.file <- paste(plot.folder,"AUC_NWD_heatmap_compare.", sep="/")
-draw.heatmap(ListAll=nwd.files,metric="auc.all",heatmap.file=auc.all.heatmap.file  , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
+draw.heatmap(ListAll=nwd.files,
+             metric="auc.all",heatmap.file=auc.all.heatmap.file, 
+             formats=formats, mtx.quality.nwds=mtx.quality.nwds,
+             zlim=c(0,1))
 
 #####
 # Draw heatmap using auc.all

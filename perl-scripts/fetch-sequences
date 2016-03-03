@@ -217,12 +217,22 @@ package main;
   our $timeout = 60; ## seconds for the timeout at UCSC
   our $max_trials = 20; ## Number of trials in case of timeout
 
+  ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ## DOES NOT WORK YET (JvH)
+  # our $add_chr = 0;      ## Prepend chr prefix to chromosome column in bed file
+  # our $remove_chr = 0;   ## Remove chr prefix from chromosome column in bed file
+
+
   ################################################################
   ## Read argument values
   &ReadArguments();
 
   ################################################################
   ## Check argument values
+
+  # ## Treatment of the "chr" prefix
+  # &RSAT::error::FatalError("The options -add_chr and -remove_chr  are mutually exclusive") 
+  #     if ($remove_chr + $add_chr  > 1);
 
   unless ($genome) {
     &RSAT::error::FatalError("Genome version must be specified with option -genome (e.g. mm9, hg19)");
@@ -340,11 +350,19 @@ package main;
   my $random_skipped = 0;
   while (<$main::in>) {
     $l++;
+    $_ =~ s/\r/\n/g; ## Replace windows-based carriage return by unix newline characters
+    chomp();
     next if (/^#/); ## Skip comment lines
     next if (/^;/); ## Skip RSAT-like comment lines
     next unless (/\S/); ## Skip empty lines
+
+    next if (/^browser/i); ## Skip browser instruction lines at the top of bed files
+    next if (/^visibility/i); ## Skip browser instruction lines at the top of bed files
+    next if (/^itemRgb/i); ## Skip browser instruction lines at the top of bed files
+    next if (/^track/i); ## Skip track declaration lines
+
+    $_ =~ s/\s+/\t/g; ## Replace spaces by tabulations
     next unless (/\t/); ## Skip lines containing no tab (likely to be starting comment lines)
-    chomp();
 
     if (($top > 0) && ($i >= $top)) {
       &RSAT::message::Info("Stopped after $top top queries. Further lines are ignored.");
@@ -387,12 +405,25 @@ package main;
 	if (defined($chr_end{"chr".$chrom})) {
 	    $chrom = "chr".$chrom;
 	    &RSAT::message::Warning($chrom, "chromosome name: missing 'chr' prefix, added.", $l) if ($main::verbose >= 2);
+
 	} else {
 	    &RSAT::message::Warning($chrom, "Invalid chromosome name", "skipping line", $l) if ($main::verbose >= 2);
 	    push @skipped_rows, "line ".$l."\t".$_."\tInvalid chromosome name";
 	    next;
 	}
     }
+
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ## DOES NOT WORK YET (JvH)
+    # die ("HELLO")
+    #
+    # if ($add_chr) {
+    #   $chrom = "chr".$chrom;
+    #
+    # } elsif ($remove_chr) {
+    #   &RSAT::message::Debug("Suppressing chr prefix from chromosome name\t", $chrom) if ($main::verbose >= 0);
+    #   $chrom =~ s/^chr//;
+    # }
 
     ## Check validity of left and right positions
     unless (&RSAT::util::IsNatural($left)) {
@@ -841,6 +872,36 @@ many queries are sent to UCSC in one shot.
     } elsif ($arg eq "-chunk") {
       $main::chunk = shift(@arguments);
       &RSAT::error::FatalError($main::chunk, "Invalid value for chunk; should be a Natural number") unless (&RSAT::util::IsNatural($top));
+
+
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ## DOES NOT WORK YET (JvH)
+# =pod
+#
+# =item B<-add_chr>
+#
+# =item B<-remove_chr>
+#
+# These two options allow to ensure consistency between chromosome
+# naming in the query bed file and in the genome annotations. Indeed,
+# the chromosome naming varies depending on the genome reference center,
+# so that a bed file obtained with one convention may have chromosome
+# names incompatible with the convention used in the database that
+# served as source to install the genome in RSAT.
+#
+# I<-add_chr> adds a prefix "chr" to chromosome names of the query bed
+# file before running the analysis.
+#
+# I<-remove_chr> removes the prefix "chr" from chromosome names.
+
+
+# =cut
+
+#     } elsif ($arg eq "-add_chr") {
+#       $add_chr = 1;
+
+#     } elsif ($arg eq "-remove_chr") {
+#       $remove_chr = 1;
 
 
 =pod

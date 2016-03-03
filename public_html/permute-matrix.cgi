@@ -81,20 +81,18 @@ $parameters .= " -o ".$result_file;
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
-#    &PipingWarning();
 
- ## prepare figures
-    ### prepare data for piping
- #   open RESULT, "$command $parameters |";
-  &doit("$command $parameters"); ## DEBUG test
-  open RESULT, "$result_file";  ## DEBUG
+  ## Run the command
+  &doit("$command $parameters"); 
+  open RESULT, "$result_file"; 
 
-  print '<H4>Result</H4>';
-  print '<PRE>';
+  ## Print the output on the screen
+  print '<h4>Result</h4>';
+  print '<pre>';
   while (<RESULT>) {
       print $_;
   }
-  print '</PRE>';
+  print '</pre>';
   close(RESULT);
 
   ################################################################
