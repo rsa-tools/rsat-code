@@ -202,6 +202,7 @@ package main;
   our @supported_tasks = qw(parse_gtf
                             split_features
                             seq_len
+                            index_fasta
                             parse_fasta
                             config
                             install
@@ -487,6 +488,7 @@ package main;
   }
 
 
+  ################################################################
   ## Compute sequence lengths, which will be required for example
   ## for some bedtools operation (option -g)
   if ($task{"seq_len"}) {
@@ -498,6 +500,17 @@ package main;
 	&RSAT::message::TimeWarn("Computing sequence lengths",$fasta_type, $outfile{$fasta_type."_lengths"}) if ($main::verbose >= 2);
 	&RSAT::util::doit($cmd);
 
+    }      
+  }
+
+  ################################################################
+  ## Index the fasta file (required for bedtools getfasta, which is
+  ## called by retrieve-seq-bed);
+  if ($task{"index_fasta"}) {
+    foreach my $fasta_type ("fasta", "fasta_rm", "fasta_pep") {
+      my $cmd = "samtools faidx ".$infile{$fasta_type};
+      &RSAT::message::TimeWarn("Indexing fasta file",$fasta_type, $infile{$fasta_type}) if ($main::verbose >= 2);
+      &RSAT::util::doit($cmd);
     }      
   }
 

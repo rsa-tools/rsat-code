@@ -47,7 +47,9 @@ $y_axis_max = "ND";
 $x_axis_min = "ND";
 $y_axis_min = "ND";
 $same_limits = 0;
-$r_plot=0;
+$r_plot = 0;
+$clean_r_legend=0;
+
 $x = 0;
 $y = 0;
 
@@ -71,49 +73,49 @@ $viline=0;
 
 ## check arguments compatibility
 if ($force_lines && (!$lines && scalar @lines == 0)) {
-  &RSAT::message::Warning("-force_lines option used without any line to trace specification is useless.") ;
+  &RSAT::message::Warning("-force_lines option used without any line to trace specification is useless.");
 }
 
 if ((($img_format eq "eps")||($img_format eq "pdf") )&& (!$r_plot)) {
 
   if (($xgstep1) || ($ygstep1) || ($xgstep2) || ($ygstep2)) {
-    &RSAT::message::Warning("grid options -gstep are not yet compatible with eps format => no grid.") ;
-    #     &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.") ;
+    &RSAT::message::Warning("grid options -gstep are not yet compatible with eps format => no grid.");
+    #     &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.");
     #     $img_format = "png";
     #     $outputfile .=".png";
   }
   if ($force_lines) {
-    &RSAT::message::Warning("-force_lines option is not compatible with the vectorial format") ;
+    &RSAT::message::Warning("-force_lines option is not compatible with the vectorial format");
   }
   if ($bg ne "white") {
-    &RSAT::message::Warning("changing background color is not yet compatible with eps format => ignored.") ;
-    # 	&RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => png format is used.") ;
+    &RSAT::message::Warning("changing background color is not yet compatible with eps format => ignored.");
+    # 	&RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => png format is used.");
     # 	 $img_format = "png";
     # 	 $outputfile .=".png";
   }
 
   if (($histogram)||($filled_histogram)) {
-    &RSAT::message::Warning("histogram plot  is not yet compatible with eps format => this option will be ignored.") ;
-    # 	 &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => png format is used.") ;
+    &RSAT::message::Warning("histogram plot  is not yet compatible with eps format => this option will be ignored.");
+    # 	 &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => png format is used.");
     # 	  $img_format = "png";
     # 	  $outputfile .=".png";
   }
 
   if ($HTML_map) {
-    &RSAT::message::Warning("-htmap is not compatible with eps format..") ;
-    # 	 &RSAT::message::TimeWarn("-htmap is not compatible with eps format => png format is used.") ;
+    &RSAT::message::Warning("-htmap is not compatible with eps format..");
+    # 	 &RSAT::message::TimeWarn("-htmap is not compatible with eps format => png format is used.");
     # 	  $img_format = "png";
   }
 
   if (($hbox_bottom)||($tbox_low_x)) {
-    &RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format.") ;
-    # 	&RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format => png format is used.") ;
+    &RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format.");
+    # 	&RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format => png format is used.");
     # 	 $img_format = "png";
     # 	 $outputfile .=".png";
   }
 
   if ($data_fields != "columns") {
-    &RSAT::message::TimeWarn("-rows is not yet compatible with eps format => png format is used.") ;
+    &RSAT::message::TimeWarn("-rows is not yet compatible with eps format => png format is used.");
     $img_format = "png";
     $outputfile .=".png";
   }
@@ -127,22 +129,25 @@ if ($colorfile) {
 	&RSAT::message::TimeWarn("Reading colors from file", $colorfile) if ($main::verbose >= 2);
    my ($colorsfromfile) = &OpenInputFile($colorfile);
   while (<$colorsfromfile>) {
-    if ($_=~/(.+)\t(.+)/){
+    if ($_=~/(.+)\t(.+)/) {
       my $series_name = $1;
       $series_name = &trim($series_name);
       my $color = $2;
       $header_colors{$series_name}= $color;
-      &RSAT::message::Debug("Series", $series_name, "color", $header_colors{$series_name}) if ($main::verbose >= 3);
+      &RSAT::message::Debug("Series", $series_name, "color", $header_colors{$series_name}) if ($main::verbose >= 4);
     }
   }
   close $colorsfromfile;
 }
 
 
-################
-## If R selected as ploting method
+################################################################
+## Check -r_plot option.
 
-if ($r_plot){
+&RSAT::error::FatalError("Error: clean_r_legend is only available when using -r_plot \n") if ($clean_r_legend && !$r_plot);
+
+
+if ($r_plot) {
     &Rplot();
     exit();
 }
@@ -150,7 +155,7 @@ if ($r_plot){
 
 ################################################################
 ## use gnuplot if format is eps
-if (($img_format eq "eps")||($img_format eq "pdf") ){
+if (($img_format eq "eps")||($img_format eq "pdf")) {
   &GnuPlotEPS();
   exit();
 }
@@ -401,7 +406,7 @@ $image->line($left, $bottom, $right, $bottom, $axis_color);
 
 
 #### draw highlight box ####
-unless ($hbox_left eq ""){
+unless ($hbox_left eq "") {
   $image->filledRectangle($hbox_left, $hbox_top, $hbox_right, $hbox_bottom, $highlight_box_color);
 }
 
@@ -520,7 +525,7 @@ for $series (0..$#y_col_list) {
 	    #### area over the point
 	    print "\t<area ";
 	    print "href=\"$href\" ";
-	    print "onMouseOver=\"window.status=\'$map_message\' ;return true\" ";
+	    print "onMouseOver=\"window.status=\'$map_message\';return true\" ";
 	    print "shape=rect ";
 	    print "coords=\"",int($x-$point_size/2) , ",", int($y-$point_size/2), ",",int($x+$point_size/2), ",",int($y+$point_size/2), "\">\n";
 	  }
@@ -551,7 +556,7 @@ for $series (0..$#y_col_list) {
 }				# for series
 
 ### draw hlines
-if ($hline){
+if ($hline) {
   for $h (0..$#hline_pos) {
     $hline_color = $hline_colors[$h];
     $hline_pos = $hline_pos[$h];
@@ -695,302 +700,362 @@ exit(0);
 ## Generate the graph using R
 ## R requires an .R file with the instructions to produce the graph.
 ## XYgraph options will be translated to R commamnds 
+sub Rplot {
 
-
-sub Rplot{
-
-    ## Check existance of inputfile
-    ## Format will be assumed to be RSAT based with # as header and ; comment char
-    ($in, $input_dir) = &OpenInputFile($inputfile);
-    our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_infile", 1);
-    my ($out) = &OpenOutputFile($tmp_file);
-    my @header_list=();
-    while (<$in>) {
-	next if (/^;/); # skip comment lines
-	#      next if (/^#/); # We don't want to skip header line
-	if (/^#/) {
-	    s/^#//;
-	    chomp;
-	    @header_list=split("\t+", $_);
-	    next;
-	}
-	print $out $_;
+  ## Copy or generate inputfile.  Format will be assumed to be RSAT
+  ## based with # as header and; comment char.
+  ($in, $input_dir) = &OpenInputFile($inputfile);
+  our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_Rplot_infile", 1);
+  my ($in_copy) = &OpenOutputFile($tmp_file);
+  my @header_list=();
+  my $in_lines = 0;
+  while (<$in>) {
+    next if (/^;/); # skip comment lines
+    #      next if (/^#/); # We don't want to skip header line
+    if (/^#/) {
+      s/^#//;
+      chomp();
+      @header_list = split("\t+", $_);
+      $header = "TRUE";
+      print $in_copy $_, "\n";      
+      next;
     }
-    
-    close $out;
-    close $in;
-    
-    ## Get header if exist
-    
-    $xcol_r=$x_col+1 ;
-    my  @y_col_list_r=();
-    foreach(@y_col_list){
-	$rcol=$_+1;
-	push(@y_col_list_r , $rcol);
-    }
-    die("No input data !!!") if ((!$inputfile)&&(!$tmp_file));
+    $in_lines++;
+    print $in_copy $_;
+  }
+  close $in_copy;
+  close $in;
+  &RSAT::message::FatalError("No input data !!!") if ((!$inputfile) && ($in_lines == 0));
+  my $input_data_file = $tmp_file;  ## Use input copy as input for R
+  
+  ## Open a file to write R instructions
+  our $tmp_r_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_Rplot_instructions", 1).".R";
+  my ($out_R) = &OpenOutputFile($tmp_r_instructions_file);
+  
 
-    
-    ## will use this new file as input for R
-    my $input_data_file = $tmp_file;
-    
-    our $tmp_R_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_for_Rplot_instructions", 1).".R";
-    my ($out_R) = &OpenOutputFile($tmp_R_instructions_file);
-   
-    my $r_instruction="library(RColorBrewer) \n ";
-    $r_instruction.= " in.file <- \"$input_data_file\" \n";
-    $r_instruction.="options(bitmapType='cairo')\n";
-    $r_instruction.="input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=TRUE, na.strings = \"<NULL>\") \n";
+  ## Color library
+  my $r_instructions = "library(RColorBrewer)\n";
+  $r_instructions .= "options(bitmapType='cairo')\n";
 
-    ## Save header as vector in R
-    $r_instruction.="header_vector <- c(\"".join("\",\"",@header_list)."\") \n";
+  ## Open input table
+  $r_instructions .= "\n## Loading input table\n";
+  $r_instructions .= "in.file <- \"$input_data_file\"\n";
+  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.", na.strings = \"<NULL>\")\n";
 
-    $r_instruction.="colnames(input.table)<- header_vector \n";
-    #$r_instruction.="input.table<- na.omit(input.table) \n";
+  ## Save header as vector in R
+  $r_instructions .= "header.vector <- c(\"".join("\",\"",@header_list)."\")\n";
+  $r_instructions .= "colnames(input.table) <- header.vector\n";
+  #$r_instructions .= "input.table<- na.omit(input.table)\n";
 
+  ## Get X and Y columns
+  $xcol_r=$x_col+1;
+  my  @y_col_list_r=();
+  foreach my $c (@y_col_list) {
+    $rcol = $c + 1;
+    push(@y_col_list_r , $rcol);
+  }
 
-    
+  ## build a vector with the selected Y columns and find their name
+  $r_y_columns .= "c(".join(",",@y_col_list_r).")";
+  $r_instructions .= "header.ycol <- header.vector[".$r_y_columns."]\n";
 
-    
-    ## Start image environment in R according to the output format
-    $r_instruction.="outfile<-\"$outputfile\"\n";
-    if ($img_format eq "pdf") {
-	$r_instruction.="pdf( file= outfile)\n";
-    }elsif ($img_format eq "jpg") {
-	$r_instruction.="jpg(file= outfile)\n";
-    }elsif ($img_format eq "png") {
-	$r_instruction.="png(file= outfile)\n";
-    }elsif ($img_format eq "eps") {
-	$r_instruction.="eps(file= outfile)\n";
-    }elsif ($img_format eq "gif") {
-	&RSAT::error::FatalError("GIF format is not supported in R");
+  ## Start image environment in R according to the output format
+  $r_instructions .= "\n## Opening plot file\n";
+  $r_instructions .= "outfile<-'$outputfile'\n";
+  if (($img_format eq "pdf") || ($img_format eq "eps")) {
+    $r_width = &RSAT::stats::max(($x_axis_size + 80)/72, 5);
+    $r_height = &RSAT::stats::max(($y_axis_size + 140)/72, 5);
+  } else {
+    $r_width = $x_axis_size + 80;
+    $r_height = $y_axis_size + 140;
+  }
+  $r_dim = ", width=".($r_width).", height=".($r_height);
+  if ($img_format eq "pdf") {
+    $r_instructions .= "pdf( file= outfile".$r_dim.")\n";
+  } elsif ($img_format eq "jpg") {
+    $r_instructions .= "jpg(file= outfile".$r_dim.")\n";
+  } elsif ($img_format eq "png") {
+    $r_instructions .= "png(file= outfile".$r_dim.")\n";
+  } elsif ($img_format eq "eps") {
+    $r_instructions .= "eps(file= outfile".$r_dim.")\n";
+  } elsif ($img_format eq "gif") {
+    &RSAT::error::FatalError("GIF format is not supported in R");
+  }
 
-    }
-    $r_instruction.=" par(mar=c(5.1, 4.1, 5.1, 5.1), xpd=TRUE) \n";
-
-    ## Put together all parammeters that have to be feed into maplot functions
-    my $r_plot_params="";
-    
-
-    ## Title parammeters
-    if($title1 || $title2){
-	my $title="";
-	if ($title1) {
-	    $title.="\"".$title1."\"";
-	}
-	if ($title2){
-	    $title.="\n".$title2;
-	}
-	$r_plot_params.=", main=".$title." ";
-    }
-    
-    ## Xlegend parammeters
-    if($x_legend1 || $x_legend2){
-	my $x_legend="";
-	if ($x_legend1) {
-	    $x_legend.="\"".$x_legend1."\"";
-	}
-	
-	if ($x_legend2){
-	    $x_legend.="\n\"".$x_legend2."\"";
-	}
-	#die "BOOM $x_legend";
-	$r_plot_params.=", xlab=".$x_legend;
-    }    
-
-    ## Ylegend parammeters
-    if($y_legend1 || $y_legend2){
-	my $y_legend="";
-	if ($y_legend1) {
-	    $y_legend.="\"".$y_legend1."\"";
-	}	
-	if ($y_legend2){
-	    $y_legend.="\n\"".$y_legend2."\"";
-	}
-	$r_plot_params.=", ylab=".$y_legend;
-    }
-
-    $r_instruction.= " x.values <- input.table[,".$xcol_r."]  \n" ;
-    $r_instruction.= " y.values <- input.table[, c(".join(",",@y_col_list_r).")]   \n" ;
-    
-
-    ## Logarithm
-    if ($xlog || $ylog){
-	if ($xlog && $ylog){
-	  
-	    $r_instruction.= " x.values <-  log ( x.values , base=".$x_log_base." ) \n ";
-	    $r_instruction.= "  y.values <- log ( y.values, base=$y_log_base ) \n" ;
+  ## Compute legend width to take it into account for par(mar)
+  if ($legend) {
+      $r_instructions .= "legend.text <- names(input.table)[".$r_y_columns."]\n";
+      ## Clean legend, users might want to use this option when legends are to big
+      ## This option removes repeated words across all data sets to avoid including redundant
+      ## information in the legend
+      if ($clean_r_legend){
+	  ## substream legend
+	  $r_instructions .= ' words <- as.matrix(table( unlist(list(strsplit(legend.text,"_"), strsplit(legend.text," ") )) ))
+	    important.words <- names(which(words[,1]>=length(legend.text)))
 	    
-	    
-	    
-	}elsif ($xlog ){
-	    $r_instruction.= " x.values <-  log ( x.values , base=".$x_log_base." ) \n ";
-	   
-
-	}elsif ($ylog ){
-	    #$r_plot_params .=", log=c(\"y\")";
-	    $r_instruction.= "  y.values <- log ( y.values, base=$y_log_base ) \n" ;
+	    remove.words <- c()
+	    for ( word in important.words){
+		word.match <- as.numeric( grepl(word, legend.text))
+		    if(sum(word.match)==length(legend.text)){
+			remove.words <- c(remove.words, word)
+		}
 	}
-	$r_instruction.= " input.table <- cbind( x.values,  y.values ) \n";
-	$r_instruction.= " input.table <- do.call(data.frame,lapply(input.table, function(x) replace(x, is.infinite(x),NA))) \n";
-	#$r_instruction.= " input.table<- na.omit(input.table) \n";
 	
+	aux.legend.text <- legend.text 
+	    for (word in remove.words){
+		aux.legend.text <- sub(word,"",aux.legend.text )
+	}
+	aux.legend.text <- gsub("_+","_",aux.legend.text )
+	    aux.legend.text <- gsub("^_","",aux.legend.text )
+	    aux.legend.text <- gsub("_$","",aux.legend.text )
+
+        legend.text <- aux.legend.text '."\n";
     }
- 
+      $r_instructions .= "legend.width <- max(5, max(nchar(legend.text)))\n";
+      
+
+  } else {
+    $r_instructions .= "legend.width <- 0\n";
+  }
+  $r_instructions .= "par(mar=c(4.6, 4.6, 4.6, 1.6 + legend.width))\n";
+  $r_instructions .= "par(font.lab=2)\n";
+
+
+  ## Put together all parammeters that have to be feed into maplot functions
+  my $r_plot_params = "type='n'"; ## We first open the plot with no content, and then add the lines one by one
+
+  ## Title parammeters
+  if ($title1 || $title2) {
+    my $title = join(" ; ", $title1, $title2);
+    $title =~ s/\"//g;
+    $title =~ s/\'//g;
+    $r_plot_params .= ", main='".$title."'";
+  }
+  
+  ## X label (xlab) parammeters
+  if ($x_legend1 || $x_legend2) {
+    my $x_legend = join(" ; ", $x_legend1, $x_legend2);
+    $x_legend =~ s/\"//g;
+    $x_legend =~ s/\'//g;
+    $r_plot_params .= ", xlab='".$x_legend."'";
+  }    
+
+  ## Y label (ylab) parammeters
+  if ($y_legend1 || $y_legend2) {
+    my $y_legend = join(" ; ", $y_legend1, $y_legend2);
+    $y_legend =~ s/\"//g;
+    $y_legend =~ s/\'//g;
+    $r_plot_params .= ", ylab='".$y_legend."'";
+  }    
+
+  $r_instructions .= "\n## Reading Y and Y values\n";
+  $r_instructions .= "x.values <- input.table[,".$xcol_r."]\n";
+  $r_instructions .= "y.values <- as.data.frame(input.table[,  c(".join(",",@y_col_list_r).")])\n";
+  
+
+  ## Logarithm
+  if ($xlog || $ylog) {
+    if ($xlog && $ylog) {
+      
+      $r_instructions .= "x.values <-  log ( x.values , base=".$x_log_base." )\n";
+      $r_instructions .= "y.values <- log ( y.values, base=$y_log_base )\n";
+      
+      
+      
+    } elsif ($xlog ) {
+      $r_instructions .= " x.values <-  log ( x.values , base=".$x_log_base." )\n";
+      
+
+    } elsif ($ylog ) {
+      #$r_plot_params .= ", log=c(\"y\")";
+      $r_instructions .= "  y.values <- log ( y.values, base=$y_log_base )\n";
+    }
+    $r_instructions .= " input.table <- cbind( x.values,  y.values )\n";
+    $r_instructions .= " input.table <- do.call(data.frame,lapply(input.table, function(x) replace(x, is.infinite(x),NA)))\n";
+    #$r_instructions .= " input.table<- na.omit(input.table)\n";
     
-    ## Axis limits
-    
-    if ($x_axis_max ne "ND"||$x_axis_min ne "ND" ){
+  }
+  
+  
+  ## X axis limits for R plot
+  if ($x_axis_min eq "ND") {
+    $r_instructions .= "xmin <- min(na.omit(x.values))\n";
+  } else {
+    $r_instructions .= "xmin <- ".$x_axis_min."\n";
+  }
+  if ($x_axis_max eq "ND") {
+    $r_instructions .= "xmax <- max(na.omit(x.values))\n";
+  } else {
+    $r_instructions .= "xmax <- ".$x_axis_max."\n";
+  }
+  $r_instructions .= "xlimits <- c(xmin, xmax)\n";
+  $r_plot_params .= ", xlim=xlimits ";
 
-	## MIN value for x is definied but not the max
-	if( ($x_axis_max eq "ND") && ($x_axis_min ne "ND")){
-	    ## Max will be defined using the maximun of all x.valuess
-	    $r_instruction.="xlimits <- c( ".$x_axis_min.", max(na.omit(as.vector(input.table[,1])))) \n";
-	    
-	    ## MAX value for x is defined but not the MIN 
-	}elsif( ($x_axis_max ne "ND") && ($x_axis_min eq "ND")){
-	    $r_instruction.="xlimits <- c(min(na.omit(input.table[,1])), ".$x_axis_max.") \n";
-	    
-	    ## MAX and MIN values for x axis are deffined 
-	}elsif( ($x_axis_max ne "ND") && ($x_axis_min ne "ND")){
-	    $r_instruction.="xlimits <- c( ".$x_axis_min.",".$x_axis_max .") \n";
-	}
-	
-	
-    }else{
-	$r_instruction.="xlimits <- range( na.omit(x.values)) \n";
+  ## Y axis limits for R plot
+  if ($y_axis_min eq "ND") {
+    $r_instructions .= "ymin <- min(na.omit(as.vector(as.matrix(y.values))))\n";
+  } else {
+    $r_instructions .= "ymin <- ".$y_axis_min."\n";
+  }
+  if ($y_axis_max eq "ND") {
+    $r_instructions .= "ymax <- max(na.omit(as.vector(as.matrix(y.values))))\n";
+  } else {
+    $r_instructions .= "ymax <- ".$y_axis_max."\n";
+  }
+  $r_instructions .= "ylimits <- c(ymin, ymax)\n";
+  $r_plot_params .= ", ylim=ylimits ";
+
+  ## Point or line specifications
+  if ($lines) {
+    $draw_plot_params .= ", lwd=3 ,type=\"l\"";
+  } else {
+    $draw_plot_params .= ", pch=0 ,type=\"p\"";
+  }
+  
+  if ($bg ne "white") {
+    $r_plot_params .= ", bg= \"$bg\"";
+  }
+
+  if ($colorfile) {
+    $r_instructions .= "\n## Loading color table from file\n";
+    $r_instructions .= "color.table <- read.table(file=\"$colorfile\", sep=\"\t\", comment.char=\";\", stringsAsFactor=FALSE, row.names=1)\n";
+    $r_instructions .= "colors <- color.table[header.ycol,1]\n";
+    $r_instructions .= "colors[is.na(colors)] <- rep(1:6,length.out=sum(is.na(colors)))\n";
+    $r_instructions .= "names(colors) <- header.ycol\n";
+#    $r_instructions .= "colors <- color.table[which (color.table[,1]%in% header.vector ),2]\n";
+    $r_plot_params .= ", col=colors";
+
+  } else {
+
+    $r_instructions .= "\n## Loading color palette\n";
+#    $r_instructions .= "colors <- colorRampPalette(brewer.pal(12,\"Paired\"))(dim(y.values)[2])\n";
+#    $r_instructions .= "colors <- rep(c(4,3,2,1,6,5), length.out=".scalar(@y_col_list_r).")\n"; ## I skip colors 7 and 8 because too pale
+
+    ## Custom color palette, for the sake of consistency with previous version of XYgraph
+    @color_list = ();
+    push @color_list, "'#0000FF'"; ## Blue
+    push @color_list, "'#00BB00'"; ## Dark green 
+    push @color_list, "'#FF6600'"; ## orange
+    push @color_list, "'#008888'"; ## cyan_128
+    push @color_list, "'#888888'"; ## grey_128
+    push @color_list, "'#660066'"; ## violet
+    push @color_list, "'#662222'"; ## brown
+    push @color_list, "'#000000'"; ## black
+    push @color_list, "'#FF0000'"; ## red
+    push @color_list, "'#DDDD00'"; # yellow_225
+    push @color_list, "'#008888'"; # cyan_128
+    push @color_list, "'#66FFBB'"; # pistache
+    push @color_list, "'#FF00FF'"; # magenta
+    push @color_list, "'#00DD00'"; # green (slightly dark)
+    push @color_list, "'#888888'"; # dark green
+    push @color_list, "'#CC0000'"; # red_191
+    push @color_list, "'#BBBBBB'"; # gray_150
+    push @color_list, "'#000088'"; # $blue_128;
+    push @color_list, "'#006666'"; #$cyan_096;
+    push @color_list, "'#000066'"; #$blue_096;
+    push @color_list, "'#660000'"; # $red_096;
+    push @color_list, "'#000044'"; # $blue_064;
+    push @color_list, "'#444444'"; # $gray_064;
+    push @color_list, "'#FFDDBB'"; ## Champagne
+    $r_instructions .= "colors <- rep(c(".join(",", @color_list)."), length.out=".scalar(@y_col_list_r).")\n"; ## I skip colors 7 and 8 because too pale
+
+    if ($colorexportfile) {
+      #$r_instructions .= " pal <- palette()\n";
+      $r_instructions .= "\n## Exporting color palette\n";
+      $r_instructions .= " color.tableexport <- cbind (colnames(input.table[,c(".join(",",@y_col_list_r).")]), colors)\n";
+      $r_instructions .= " write.table(color.tableexport , file=\"".$colorexportfile."\", sep=\"\t\", quote=FALSE, row.names=FALSE, col.names=FALSE)\n";
     }
 
-    $r_plot_params .=", xlim=xlimits ";
+  }
 
-    if ( $y_axis_max ne "ND" ||  $y_axis_min ne "ND" ){
-	
-	## MIN value for y is defined but not the max
-	if( ($y_axis_max eq "ND") && ($y_axis_min ne "ND")){
-	    ## Max will be defined using the maximun of all y.values
-	    $r_instruction.="ylimits <- c( ".$y_axis_min.", max(na.omit(as.vector(input.table[, -1])))) \n";
-	    
-       ## MAX value for y is defined but not the MIN
-	}elsif(($y_axis_max ne "ND") && $y_axis_min){
-	    $r_instruction.="ylimits <- c(min(na.omit(input.table[, -1])), ".$y_axis_max.") \n";
-
-	## MAX and MIN values for y axis are deffined
-	}elsif (  ($y_axis_max ne "ND") && ($y_axis_min ne "ND")){
-	   # print "min and max".$y_axis_min.",".$y_axis_max ;
-	   # die "BOOOM";
-	    $r_instruction.="ylimits <- c( ".$y_axis_min.",".$y_axis_max .") \n";
-	}
-	
-
-	
-	
-    }else{
-	$r_instruction.="ylimits <-range(sort(as.vector(as.matrix(y.values)))) \n";
-    }
-    $r_plot_params .=", ylim=ylimits ";
-
-    if (!$lines){
-	$draw_plot_params.=", pch=0 ,type=\"p\"";
-    } else {
-	$draw_plot_params.=", lwd=2 ,type=\"l\"";
-    }
-	
-    if ($bg ne "white"){
-	$r_plot_params.=", bg= \"$bg\"";
-    }
-
-    if ($colorfile){
-	$r_instruction.="colorfiles<-read.table(file=\"$colorfile\", sep=\"\t\", comment.char=\";\", stringsAsFactor=FALSE)\n";
-	$r_instruction.="colors <- colorfiles[which (colorfiles[,1]%in% header_vector ),2]\n";
-	$r_plot_params.=", col=colors ";
-
-    } else {
-	$r_instruction.="colors<- colorRampPalette(brewer.pal(12,\"Paired\"))(dim(y.values)[2]) \n";
-	#$r_instruction.="colors<- seq(1,".scalar(@y_col_list_r).",1)\n";
-	#$r_plot_params.=", col=colors";
-	
-	if ($colorexportfile){
-	    #$r_instruction.=" pal <- palette()\n";
-	    $r_instruction.=" color.tableexport <- cbind (colnames(input.table[,c(".join(",",@y_col_list_r).")]), colors) \n";
-	    $r_instruction.=" write.table(color.tableexport , file=\"".$colorexportfile."\", sep=\"\t\", quote=FALSE, row.names=FALSE, col.names=FALSE)\n";
-	}
-
-    }
-
-
-    $r_instruction.= " plot(x=NULL, y=NULL, $r_plot_params) \n ";
+  $r_instructions .= "\n## Generating the plot\n";
+  $r_instructions .= "plot(x=NULL, y=NULL, $r_plot_params)\n";
 # xlab=\"log10(Score Pvalue)\", ylab=\"Binomial significance of hit number (OCC)\")
-    $r_instruction.= " for(l in c(1:dim(y.values)[2]) ){
-    input.table2 <- na.omit(cbind( x.values,  y.values[,l] ))
-    lines(na.omit(input.table2), col=colors[l], $draw_plot_params  ) } \n ";
-    
-#    $r_instruction.="matplot( x=input.table[,1] , y=input.table[, -1] ". $r_plot_params." ) \n";
-    #$r_instruction.="matplot( x=x.values , y=y.values ". $r_plot_params." ) \n";
+  $r_instructions .= "for(l in c(1:dim(y.values)[2])) {\n";
+  $r_instructions .= "  input.table2 <- na.omit(cbind( x.values,  y.values[,l] ))\n";
+  $r_instructions .= "  lines(na.omit(input.table2), col=colors[l], $draw_plot_params  )\n";
+  $r_instructions .= "}\n";
+  
+#    $r_instructions .= "matplot( x=input.table[,1] , y=input.table[, -1] ". $r_plot_params." )\n";
+  #$r_instructions .= "matplot( x=x.values , y=y.values ". $r_plot_params." )\n";
 
-    ## Add grid if requested. Note that the grid size is currently
-    ## ignored, should be improved soon.
-    if ($xgstep1 || $xgstep2 || $ygstep2 || $ygstep1) {
-      $r_instruction.="grid()\n";
+  ## Add grid if requested. 
+  if (($xgstep1) || ($xgstep2) || ($ygstep2) || ($ygstep1)) {
+    $r_instructions .= "grid(lty='solid', col='#BBBBBB')\n";
 #      $r_plot_params .= ", panel.first=grid()";
-    }
+  }
 
-    ## Add legend 
-     if ($legend){
-       $r_y_columns.= "c(".join(",",@y_col_list_r).")" ;
-       $r_instruction .= "legend( \"top\",inset=c(0,-0.15) ,legend = names(input.table)[".$r_y_columns."], cex=.6,pt.cex=.6, pch=\"o\", bg=\"white\", bty=\"o\", col=colors)\n";
-#       $r_instruction.="legend( \"topright\", legend = colnames(input.table[,".$r_y_columns."]), cex=.4,pt.cex=.6, pch=\"o\", col=colors)\n";
-#       die "HELLO\n", $r_instruction, "\n"
-    }
+  ## Add legend 
+  if ($legend) {
+    $r_y_columns .= "c(".join(",",@y_col_list_r).")";
+    $r_instructions .= "\n## Adding legend\n";
+    $r_instructions .= "par(xpd=TRUE)\n";
+    $r_instructions .= "legend.strwidth <- max(strwidth(legend.text))\n";
+    $r_instructions .= 'legend("topleft", inset=c(1.05,0), legend = legend.text, pch="o", bg="white", bty="o", col=colors)'."\n";
+    $r_instructions .= "par(xpd=FALSE)\n";
+#       $r_instructions .= "legend( \"topright\", legend = colnames(input.table[,".$r_y_columns."]), cex=.4,pt.cex=.6, pch=\"o\", col=colors)\n";
+#       die "HELLO\n", $r_instructions, "\n"
+  }
 
-    ## Add lines if required
-    if ($vline){
-	for my $i (0 .. $#vline_pos){
-	    $r_instruction.="abline(v=".$vline_pos[$i].", col=\"".$vline_colors[$i]."\")\n"
-	}
+  ## Add lines if required
+  if ($vline) {
+    for my $i (0 .. $#vline_pos) {
+      $r_instructions .= "abline(v=".$vline_pos[$i].", col=\"".$vline_colors[$i]."\")\n"
     }
-    if ($hline){
-	for my $i (0 .. $#hline_pos){
-	    $r_instruction.="abline(h=".$hline_pos[$i].", col=\"".$hline_colors[$i]."\")\n"		
-	}
+  }
+  if ($hline) {
+    for my $i (0 .. $#hline_pos) {
+      $r_instructions .= "abline(h=".$hline_pos[$i].", col=\"".$hline_colors[$i]."\")\n"		
     }
+  }
 
-    $r_instruction.="dev.off()\n";
+  $r_instructions .= "\n## Closing plot file\n";
+  $r_instructions .= "silence <- dev.off()\n";
 
-    print $out_R  $r_instruction;
-    close ($out_R ) ;
-    my $rscript_command = "Rscript $tmp_R_instructions_file ";
-    &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    print $rscript_command ."\n";
-   
+  print $out_R  $r_instructions;
+  close ($out_R);
+  my $rscript_command = $Rscript_path." ".$tmp_r_instructions_file;
+  &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &RSAT::message::Info($rscript_command) if ($main::verbose >= 2);
 }
 
 ################################################################
 ## Generate the graph with GnuPlot and export it in eps format
 sub GnuPlotEPS {
 
-  ## remove lines starting by ; and adapt the comment line
-    ($in, $input_dir) = &OpenInputFile($inputfile);
-    our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_for_gnuplot", 1);
-    my ($out) = &OpenOutputFile($tmp_file);
-    while (<$in>) {
-      next if (/^;/); # skip comment lines
-#      next if (/^#/); # We don't want to skip header line
-      if (/^#/) {
-	s/^#//;
-      }
-      print $out $_;
+  ## Copy or generate inputfile.  Format will be assumed to be RSAT
+  ## based with # as header and; comment char.
+  my ($in) = &OpenInputFile($infile{input});
+  our $tmp_file = &RSAT::util::make_temp_file("", "XYgraph_Rplot_infile", 1);
+  my ($in_copy) = &OpenOutputFile($tmp_file);
+  my @header_list=();
+  my $in_lines = 0;
+  while (<$in>) {
+    next if (/^;/); # skip comment lines
+    #      next if (/^#/); # We don't want to skip header line
+    if (/^#/) {
+      ## Get header if exists
+      s/^#//;
+      chomp();
+      @header_list = split("\t+", $_);
+      $header = "TRUE";
+      print $in_copy $_, "\n";
+      next;
     }
-    close $out;
-    close $in;
-
-    ## do not process if no data
-  die("No input data !!!") if ((!$inputfile)&&(!$tmp_file));
-
- ## will use this new file as input for gnuplot
-  my $input_data_file = $tmp_file;
-
+    $in_lines++;
+    print $in_copy $_;
+  }  
+  close $in_copy;
+  close $in;
+  &RSAT::message::FatalError("No input data !!!") if ($in_lines == 0);
+  my $input_data_file = $tmp_file;  ## Use input copy as input for R
+  
+  ## Open a file to write R instructions
+  our $tmp_r_instructions_file = &RSAT::util::make_temp_file("", "XYgraph_Rplot_instructions", 1).".R";
+  my ($out_R) = &OpenOutputFile($tmp_r_instructions_file);
+  
   #export color file
-  if ($colorexportfile){
+  if ($colorexportfile) {
   	#output file
   	($outcolor) = &OpenOutputFile($colorexportfile);
 
@@ -1156,7 +1221,7 @@ sub GnuPlotEPS {
   }
 
   ## colors
-  if ($colorfile){
+  if ($colorfile) {
     @color_list = ();
 
     #get the column headers (no more lines starting by ; above the header)
@@ -1164,8 +1229,8 @@ sub GnuPlotEPS {
     chomp($header);
     my @header_list = split ('\t',$header);
     &RSAT::message::Debug("File", $input_data_file, "Header", $header, "\n", join(";", @header_list)) if ($main::verbose >= 5);
-    foreach my $series_name (@header_list){
-      if ($header_colors{$series_name}){
+    foreach my $series_name (@header_list) {
+      if ($header_colors{$series_name}) {
 	push @color_list, $header_colors{$series_name};
       }
       &RSAT::message::Debug("Color for gnuplot", $series_name, $header_colors{$series_name}) if ($main::verbose >= 4);
@@ -1222,14 +1287,14 @@ sub GnuPlotEPS {
   $gnuplot_cmd .= "set style increment user;\n";
 
   ## hlines and vlines
-  if ($hline){
+  if ($hline) {
     for $h (0..$#hline_pos) {
       $hline_color = $hline_colors[$h];
       $hline_pos = $hline_pos[$h];
       $gnuplot_cmd .= "set arrow from graph 0, first ".$hline_pos." to graph 1, first ".$hline_pos." nohead lt -1 lw 1.2 lc rgb '".$hline_color."';\n";
     }
   }
-  if ($vline){
+  if ($vline) {
     for $v (0..$#vline_pos) {
       $vline_color = $vline_colors[$v];
       $vline_pos = $vline_pos[$v];
@@ -1253,7 +1318,7 @@ sub GnuPlotEPS {
 
     ## draw lines
     if (($lines eq "1") || ($lines[$y_col_list[$k]])) {
-    	if ($point_size == 0 ){
+    	if ($point_size == 0 ) {
       		$gnuplot_cmd .= "lines";
       	} else {
       		 $gnuplot_cmd .= "linespoints";
@@ -1270,7 +1335,7 @@ sub GnuPlotEPS {
     }
 
     ##export color file
-    if ($colorexportfile){
+    if ($colorexportfile) {
       print $outcolor $header_list[$y_col_list[$k]]."\t".$color_list[$k]."\n";
     }
   }
@@ -2060,6 +2125,7 @@ XYgraph options
 -bg		background color (white, blue, black or gray).
 -mono		monochrome output.
 -r_plot		Use R as plotting method
+-clean_r_legend Remove repeated words across data set names to avoid including redundant information in the legend
 -symbols	represent points by symbols
 -htmap		HTML map
 -lc		label column
@@ -2320,7 +2386,11 @@ sub ReadArguments {
 
       ### verbose ###
     } elsif ($ARGV[$a] eq "-v") {
-      $verbose = 1;
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else { 
+	$verbose = 1;
+      }
 
       ### legends and titles ###
     } elsif (($ARGV[$a] eq "-title") || ($ARGV[$a] eq "-title1")) {
@@ -2337,45 +2407,45 @@ sub ReadArguments {
       $y_legend2 = $ARGV[$a+1];
 
       ### grid steps ###
-    } elsif (($ARGV[$a] eq "-gstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-gstep1") && (&IsNatural($ARGV[$a+1]))) {
       $ygstep1 = $ARGV[$a+1];
       $xgstep1 = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-xgstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-xgstep1") && (&IsNatural($ARGV[$a+1]))) {
       $xgstep1 = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-ygstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-ygstep1") && (&IsNatural($ARGV[$a+1]))) {
       $ygstep1 = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-gstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-gstep2") && (&IsNatural($ARGV[$a+1]))) {
       $ygstep2 = $ARGV[$a+1];
       $xgstep2 = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-xgstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-xgstep2") && (&IsNatural($ARGV[$a+1]))) {
       $xgstep2 = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-ygstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+    } elsif (($ARGV[$a] eq "-ygstep2") && (&IsNatural($ARGV[$a+1]))) {
       $ygstep2 = $ARGV[$a+1];
 
       ### min and max values to represent ###
-    } elsif (($ARGV[$a] eq "-max") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-max") && (&IsReal($ARGV[$a+1]))) {
       $x_axis_max = $ARGV[$a+1];
       $y_axis_max = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-xmax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-xmax") && (&IsReal($ARGV[$a+1]))) {
       $x_axis_max = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-ymax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-ymax") && (&IsReal($ARGV[$a+1]))) {
       $y_axis_max = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-min") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-min") && (&IsReal($ARGV[$a+1]))) {
       $x_axis_min = $ARGV[$a+1];
       $y_axis_min = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-xmin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-xmin") && (&IsReal($ARGV[$a+1]))) {
       $x_axis_min = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-ymin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+    } elsif (($ARGV[$a] eq "-ymin") && (&IsReal($ARGV[$a+1]))) {
       $y_axis_min = $ARGV[$a+1];
     } elsif ($ARGV[$a] eq "-same_limits") {
       $same_limits = 1;
 
       ### axis size (in pixels) ###
-    } elsif (($ARGV[$a] eq "-xsize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+    } elsif (($ARGV[$a] eq "-xsize") && (&IsNatural($ARGV[$a+1]))) {
       $x_axis_size = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-ysize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+    } elsif (($ARGV[$a] eq "-ysize") && (&IsNatural($ARGV[$a+1]))) {
       $y_axis_size = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-size") && ($ARGV[$a+1] =~ /^\d+$/)) {
+    } elsif (($ARGV[$a] eq "-size") && (&IsNatural($ARGV[$a+1]))) {
       $x_axis_size = $ARGV[$a+1];
       $y_axis_size = $ARGV[$a+1];
 
@@ -2391,10 +2461,20 @@ sub ReadArguments {
     } elsif ($ARGV[$a] =~ /-symb/i) {
       $symbols = 1;
   
-     ### R plot
+     ### Delegate XY plots to R rather than Perl GD library
     } elsif ($ARGV[$a] =~ /-r_plot/i) {
-      $r_plot= 1;
-
+      $Rscript_path = &RSAT::server::GetProgramPath("Rscript",0);
+      unless ($Rscript_path) {
+	&RSAT::message::Warning("Rscript program is not found in the path. Ignoring option -r_plot.");	
+      } else {
+	$r_plot= 1;
+      }
+      
+      ### Clean R legend
+    } elsif ($ARGV[$a] =~ /-clean_r_legend/i) {
+	$clean_r_legend= 1;
+	&RSAT::message::Warning("Legend for Rplot will be edited to remove redundancy");	
+      
       ### logarithmic representation
     } elsif ($ARGV[$a] eq "-log") {
       $xlog= 1;
@@ -2449,7 +2529,7 @@ sub ReadArguments {
       $legend = 1;
 
       ### point size ###
-    } elsif (($ARGV[$a] eq "-pointsize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+    } elsif (($ARGV[$a] eq "-pointsize") && (&IsNatural($ARGV[$a+1]))) {
       $point_size = $ARGV[$a+1];
 
       ### data columns ###

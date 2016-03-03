@@ -240,7 +240,8 @@ package	main;
   ################
   ## Matrix format
 
-  %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+#  %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+  %supported_input_format = &RSAT::MatrixReader::ListInputMatrixFormats();
   $supported_input_formats = join ",", sort keys %supported_input_format;
 
   $main::matrix_format="transfac";
