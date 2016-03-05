@@ -2473,7 +2473,7 @@ sub ReadArguments {
       ### Clean R legend
     } elsif ($ARGV[$a] =~ /-clean_r_legend/i) {
 	$clean_r_legend= 1;
-	&RSAT::message::Warning("Legend for Rplot will be edited to remove redundancy");	
+#	&RSAT::message::Warning("Legend for Rplot will be edited to remove redundancy");
       
       ### logarithmic representation
     } elsif ($ARGV[$a] eq "-log") {
