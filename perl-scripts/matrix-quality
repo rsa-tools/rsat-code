@@ -330,7 +330,7 @@ package main;
     $roc_ref = "theor";
     $task{plot}=0;
 
-    $r_plots=0 ; ## By defualt plots will be generated using gnuplot
+    $r_plot=0 ; ## By defualt plots will be generated using gnuplot
 
     ## Tasks
     local @supported_tasks = ("all", ## Run all other tasks
@@ -515,7 +515,7 @@ package main;
 
     ## R plots
     $main::rplot_option="";
-    if ($r_plots==1){
+    if ($r_plot==1){
 	$main::rplot_option=" -r_plot -clean_r_legend ";
     }
 
@@ -1653,16 +1653,17 @@ Example:
 
 =pod
 
-=item	B<-r_plots>
+=item	B<-r_plot>
 
-Generate plots using R plotting options.
+Generate plots using R instead of the Perl GD module. The resulting
+graphs are of higher quality, but this requires to have R installed on
+the server.
 
-Example:
-   -r_plots
+The option is actually passed to the XYgraph commands.
 
 =cut
-	} elsif ($arg eq "-r_plots") {
-	  $r_plots = 1;
+	} elsif ($arg eq "-r_plot") {
+	  $r_plot = 1;
 
 =pod
 
