@@ -197,6 +197,11 @@ package main;
   $main::outfile{report} = $main::outfile{prefix}."_scan_profile_report.html";
   $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_positional_profiles.html";
 
+  ## Archive to facilitate transfer of all the results in a zip file
+  $main::outfile{archive} = $main::outfile{prefix}."_archive.zip";
+  $param{archive_format} = "zip";
+  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
+
   $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
   $main::out = &OpenOutputFile($main::outfile{log});
 
@@ -252,6 +257,12 @@ package main;
   $datatable_css_base = &RSAT::util::RelativePath($main::outfile{report}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
 
   ################################################################
+  ## Calculate background of the input sequences
+  if ($bg_input_flag == 1) {
+      &CalculateBGModel();
+  }
+
+  ################################################################
   ## Calculate the sequence length
   ## For the moment the input are sequences of same length
   ## TO DO: It will take the first sequence as template and the other sequences will be adapted to
@@ -259,18 +270,11 @@ package main;
   &ProcessSeq();      
 
   ################################################################
-  ## Calculate background of the input sequences
-  if ($bg_input_flag == 1) {
-      &CalculateBGModel();
-  }
-
-  ################################################################
   ## Run matrix-scan quick
   &ScanSequences();
-
-  ################################################################
-  ## Parse the matrix-scan results table
-  &ParseScanResults();
+  
+ ## Parse the matrix-scan results table
+ &ParseScanResults();
 
   ################################################################
   ## Produce the ID to Motif name reference table
@@ -285,6 +289,10 @@ package main;
   ## Draw the dynamic profiles
   ## These steps are executed in R
   &DynamicProfilesR();
+
+  ################################################################
+  ## Create an archive with all result files
+  &Archive(1);
 
   #######################################
   ## Delete temporal files and folders
@@ -525,6 +533,8 @@ Default: 50
 =cut
     } elsif ($arg eq "-bin") {
       $bin_size = shift(@arguments);
+      &RSAT::error::FatalError($bin_size, "Invalid value for option -bin_size: must be a natural number") 
+         unless (&IsNatural($bin_size));
 
 
 =pod
@@ -692,7 +702,6 @@ sub ParseScanResults {
     $to_delete{'matched_tab_PARSED'} = $main::outfile{matches_tab_PARSED};
 }
 
-
 ################################################################
 ## Create an associative list of the motif ID -> name
 ## This is done because sometimes we have redundancy in the motif set and hence
@@ -847,6 +856,9 @@ sub ProcessSeq {
 
     chomp($seq_length = `$seq_length_cmd`);
 
+    &RSAT::error::FatalError($seq_length, "Invalid value for sequence length: must be a natural number") 
+         unless (&IsNatural($seq_length));
+
     my $seq_length_up = $seq_length + 1;
     my $seq_length_dw = $seq_length - 1;
     
@@ -908,6 +920,64 @@ sub CalculateBGModel {
 
     $bg_format = "oligos";
 }
+
+################################################################
+## Generate a compressed archive with all the results
+sub Archive {
+
+  my ($remove_first, $to_archive) = @_;
+  &RSAT::message::TimeWarn("\n; Archiving data and results") if ($main::verbose >= 2);
+
+  ## Delete previous version of the archive to avoid including the old archive in the new one
+  $cmd .= "rm -f ".$main::outfile{archive}."; " if ($remove_first);
+
+  ################################################################
+  ## Define archiving parameters
+
+  ## By default, archive the whole output directory
+  $to_archive = $main::dir{output} unless $to_archive;
+
+  ## Archive all data and results
+  my ($archive_dir, $archive) = &SplitFileName($main::outfile{archive});
+  my ($archive_dir_dir, $archive_dir_base) = &SplitFileName($archive_dir);
+#  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
+  my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
+  my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
+
+  ## TO CHECK (Jacques)
+  if ($main::verbose >= 3) {
+    &RSAT::message::Debug("folder to archive", $to_archive);
+  }
+
+  ## Avoid crash of the program when run from the "$archive_dir_dir"
+  if ($archive_dir_dir eq "") {
+    $archive_dir_dir = ".";
+    $to_archive_rel_path = $to_archive;
+    $archive_rel_path = $main::outfile{archive};	 
+  }
+
+  my $cmd = "";
+  if ($main::param{archive_format} eq "zip") {
+    $cmd .= "(cd ".$archive_dir_dir." ; ";
+    $cmd .= " zip -ryq ".$archive_rel_path." ".$to_archive_rel_path;
+    $cmd .= " -x ".$archive;
+    $cmd .= ")";
+  } elsif (($main::param{archive_format} eq "tar") ||
+	   ($main::param{archive_format} eq "tgz")) {
+    $cmd .= "tar -cpf ".$main::outfile{archive};
+    $cmd .= " -z" if ($main::param{archive_format} eq "tgz");
+    $cmd .= " -C ".$archive_dir_dir; ## Avoid including the whole path in the archive paths
+    $cmd .= " --exclude ".$archive;
+    $cmd .= " ".$to_archive_rel_path;
+  } else {
+    &RSAT::error::FatalError($main::param{archive_format}, "Invalid archive format. Supported: zip, tar, tgz.");
+  }
+
+  &one_command($cmd, 1);
+
+  &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
+}
+
         
 __END__
 
