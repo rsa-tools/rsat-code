@@ -20,10 +20,10 @@ MARKOV_ORDER=1
 OPT=
 
 ## Define a set of demo files
-INSECTS_PREFIX=profiles_Insect_motifs
+JUND_PREFIX=Jun_Chip_seq
 
 ## Choose a particular demo set
-PROFILE_PREFIX=${INSECTS_PREFIX}
+PROFILE_PREFIX=${JUND_PREFIX}
 
 ## Define file locations based on the chosen demo set
 INPUT_FILES_DIR=${RSAT}/public_html/demo_files
@@ -55,6 +55,7 @@ PROFILE_CMD=position-scan -v ${V} \
                 -seq_format ${SEQ_FORMAT} \
                 -bginput \
                 -markov ${MARKOV_ORDER} \
+                -bin ${BIN} \
 		-pval ${PVAL} ${OPT}\
 		-o ${POSITION_PROFILE_FILE_PREFIX}
 
@@ -67,8 +68,9 @@ _profiles:
 
 
 ## Cluster motifs resulting from 12 independent analysis of peak-motifs (Chen data set). 
-profile_Insect_ChIPseq_peaks:
+HOCOMOCO_MATRICES=${RSAT}/public_html/motif_databases/HOCOMOCO/HOCOMOCO_NonRedundant_2015-11-23_Human_Ncor0.8_cor0.85.tf
+profile_Jun_ChIPseq_peaks:
 	@echo
-	@echo "Running position-scan with JASPAR insects non-redundant motifs on ChIP-seq peaks of X TF"
-	${MAKE} _profiles PROFILE_PREFIX=${INSECTS_PREFIX} \
-		TITLE='JASPAR insect non-redundant'
+	@echo "Running position-scan with Hocomoco Human motifs on ChIP-seq peaks of JUND"
+	${MAKE} _profiles PROFILE_PREFIX=${JUND_PREFIX}  MATRIX_FILE=${HOCOMOCO_MATRICES}\
+		TITLE='Hocomoco motifs in JunD peaks'
