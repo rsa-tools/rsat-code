@@ -216,7 +216,7 @@ print <<EndText;
 	  <td>
 	    <a href="http://plants.rsat.eu/" target="_top">
 	      <img src="images/logo_plants.jpg" height='100' border='0' alt="plants"></a><br>
-	    maintained by <a target='_blank' href="http://www.eead.csic.es/compbio/staff.html">Bruno Contreras Moreira, Spain</a>
+	    maintained by <a target='_blank' href="http://www.eead.csic.es/compbio">Bruno Contreras Moreira, EEAD-CSIC, Spain</a>
 	  </td>
 	  
           <td>
