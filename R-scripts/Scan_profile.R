@@ -101,6 +101,12 @@ if (!exists("bin")) {
 if (!exists("draw.area")) {
   draw.area <- 0
 }
+if (!exists("off.set")) {
+  off.set <- as.numeric(0)
+}
+if (!exists("off.set.type")) {
+  off.set.type <- as.character("")
+}
 if (!exists("individual.plots")) {
   individual.plots <- 0
 }
@@ -110,6 +116,12 @@ if (!exists("logo.folder")) {
 if (!exists("individual.plots")) {
   individual.plots <- 0
 }
+
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Zebra_Fish_matrix_scan_results_PARSED.tab"
+# prefix <- "Zebra_Fish"
+
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_results_PARSED.tab"
+# prefix <- "Jun_Chip_seq"
 
 # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_GAF_OnTheFly_bg_mkv_2_PARSED.tab"
 # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_G_mkv_2_PARSED.tab"
@@ -138,16 +150,51 @@ matrix.names <- unique(as.vector(matrix.scan.results$ft_name))
 
 ###################################
 ## Calculate the sequence limits
-# seq.length <- 600
 seq.length <- as.numeric(seq.length)
-limits <- seq.length/2
 
 ###################################
 ## Divide the sequences in bins 
 # bin <- 25
 verbose(paste("Setting bins of size", bin), 1)
 bin <- as.numeric(bin)
-windows <- IRanges(start = seq(from = -limits, to = limits - bin + 1, by = bin), width = bin)
+
+## If the sequences are centered in the peak summit
+if(off.set == 0){
+ 
+  print("Solo ven por mi")
+  
+  limits <- seq.length/2
+  limit.dw <- limits
+  limit.up <- -limits
+  
+  print(paste(limit.dw, limit.up, bin))
+  
+  windows <- IRanges(start = seq(from = limit.up, to = limit.dw - bin + 1, by = bin), width = bin)
+  
+  ## Calculate the shift in order to set the ranges relative to the center of the sequence
+  ## or to the user specified position
+  windows.min.value <- min(abs(min(windows)))
+  windows <- shift(windows, windows.min.value)
+
+} else {
+    
+  if (off.set.type == "start"){
+    
+    windows <- IRanges(start = seq(from = seq.length, to = 0 - bin + 1, by = bin), width = bin)
+    windows <- shift(windos, seq.length - off.set)
+    
+    limit.dw <- seq.length - off.set
+    limit.up <- -off.set
+    
+  } else if (off.set.type == "end"){
+    
+    windows <- IRanges(start = seq(from = seq.length, to = 0 - bin + 1, by = bin), width = bin)
+    windows <- shift(windos, off.set)
+    
+    limit.dw <- seq.length - off.set
+    limit.up <- off.set
+  }
+}
 
 
 # ID.to.names.correspondence.tab <- "ID_names.txt"
@@ -168,15 +215,25 @@ input.count.table <- 0
 if(input.count.table == 0){
 
   verbose(paste("Creating counts and frequencies tables"), 1)
-counts.per.bin <-  sapply(1:length(matrix.names), function(m){
+  counts.per.bin <-  sapply(1:length(matrix.names), function(m){
   
     ## Select the matches of the query motif
     matrix.query <- matrix.names[m]
     matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
     
     ## As the reference point in matrix-scan was the end of the sequence and as we are working with peaks
-    ## we add 300 to the position to have -/+ position around the summit
-    matrix.query.selection$bspos <- matrix.query.selection$bspos + 300
+    ## we add 300 to the position to have -/+ position around the summit    
+    if(off.set != 0){
+      
+      if (off.set.type == "start"){
+        matrix.query.selection$bspos <- matrix.query.selection$bspos + seq.lengt - off.set
+      } else if (off.set.type == "end"){  
+        matrix.query.selection$bspos <- matrix.query.selection$bspos + off.set
+      }
+      
+    } else {
+      matrix.query.selection$bspos <- matrix.query.selection$bspos + limit.dw
+    }
     
     ## Convert the BSs in Ranges
     selection.IR <- IRanges(start = matrix.query.selection$bspos, end = matrix.query.selection$bspos)
@@ -503,8 +560,19 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   
   counter <<- counter + 1
   
-  ## Here we create a unique ID without CSS speacial characters
-  motif <- paste(TF.IDs.cp[counter], counter, sep = "")  
+  ## Here we create a unique ID without CSS special characters
+  ## Only to manipulate the objects in the HTML form
+  motif <- paste(counter, "_", TF.IDs.cp[counter], "_", counter, sep = "")  
+  
+  ########################################################################################################
+  ## To test 
+  motif <- gsub("_", "", motif)
+  motif <- gsub("-", "", motif)
+  motif <- gsub("\\.", "", motif)
+  motif <- gsub(":", "", motif)
+  motif <- gsub("\\s+", "", motif, perl = TRUE)
+
+  
   all.motifs <<- append(all.motifs, motif)
   all.motif.names <<- append(all.motif.names, TF.names[counter])
   
