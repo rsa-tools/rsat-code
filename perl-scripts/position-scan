@@ -88,15 +88,14 @@ package main;
   our $out = STDOUT;
 
   ## Default parameters
-
   local $seq_length = 100;
   local $bin_size = 50;
   local $p_value = 1e-3;
-  local $title = "position-scan";
   local $bg_format = "oligos";
   local $seq_format = "fasta";
   local $matrix_format = "tf";
   local $individual_plots = 1;
+  local $legend_pos = "bottom";
 
   ## Optional parameters
   ## matrix-scan top/last matrices
@@ -119,7 +118,6 @@ package main;
   %to_delete_folder = ();
 
 
-
   ## Input formats: only accept formats supporting multiple matrices
   local @supported_matrix_formats = qw(transfac tf tab clusterbuster cb infogibbs meme stamp uniprobe);
   local %supported_matrix_format = ();
@@ -127,6 +125,14 @@ package main;
     $supported_matrix_format{$format} = 1;
   }
   local $supported_matrix_formats = join ",", @supported_matrix_formats;
+
+  ## Profile plot legend position option
+  local @supported_legend_pos = qw(side bottom);
+  local %supported_legend_pos = ();
+  foreach my $pos (@supported_legend_pos) {
+    $supported_legend_pos{$pos} = 1;
+  }
+  local $supported_legend_pos = join ",", @supported_legend_pos;
 
   ################################################################
   ## Read argument values
@@ -172,6 +178,7 @@ package main;
   ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{prefix});
   $dir{output} = "." if ($dir{output} eq "");
   &RSAT::util::CheckOutDir($dir{output});
+  local $title = $basename;
 
   ## Create a BG model folder and assign a file name
   ## when the '-bginput' option is specified
@@ -271,18 +278,18 @@ package main;
 
   ################################################################
   ## Run matrix-scan quick
-#  &ScanSequences();
+  &ScanSequences();
   
  ## Parse the matrix-scan results table
-# &ParseScanResults();
+ &ParseScanResults();
 
   ################################################################
   ## Produce the ID to Motif name reference table
-#  &ID_NameRefTable();
+  &ID_NameRefTable();
 
   ################################################################
   ## Produce the logos
-#  &GenerateLogos();
+  &GenerateLogos();
 
   ################################################################
   ## Compute statistics (X2 pval, eval, qval) 
@@ -536,7 +543,6 @@ Default: 50
       &RSAT::error::FatalError($bin_size, "Invalid value for option -bin_size: must be a natural number") 
          unless (&IsNatural($bin_size));
 
-
 =pod
 
 =item B<-pval p_value>
@@ -549,6 +555,23 @@ Default: 1e-3
 =cut
     } elsif ($arg eq "-pval") {
       $p_value = shift(@arguments);
+
+=pod
+
+=item B<-legend_pos legend_position>
+
+The place where the legend will be inserted in the profile plot.
+
+Default: bottom
+
+Supported: bottom,side
+
+=cut
+    } elsif ($arg eq "-legend_pos") {
+      $legend_pos = shift(@arguments);
+      unless(exists($supported_legend_pos{$legend_pos})) {
+	&RSAT::error::FatalError($legend_pos, "Invalid position. Supported:", $supported_legend_pos);
+      }
 
 
 =pod
@@ -837,7 +860,7 @@ sub DynamicProfilesR {
     if ($r_path) {
         &doit($profile_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
-        &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
+        &RSAT::message::Warning("Could not run position scan because the program R is not available") if ($main::verbose >= 1);
     }
     return();
 }
