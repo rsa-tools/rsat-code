@@ -160,14 +160,10 @@ bin <- as.numeric(bin)
 
 ## If the sequences are centered in the peak summit
 if(off.set == 0){
- 
-  print("Solo ven por mi")
   
   limits <- seq.length/2
   limit.dw <- limits
   limit.up <- -limits
-  
-  print(paste(limit.dw, limit.up, bin))
   
   windows <- IRanges(start = seq(from = limit.up, to = limit.dw - bin + 1, by = bin), width = bin)
   
@@ -250,6 +246,8 @@ counts.per.bin.table <- t(counts.per.bin)
 rm(counts.per.bin)
 rownames(counts.per.bin.table) <- matrix.names
 colnames(counts.per.bin.table) <- as.character(data.frame(windows)$start)
+
+#colnames(counts.per.bin.table) <- c(as.character(data.frame(windows)$start), as.character(data.frame(windows)$end)[dim(data.frame(windows))[1]])
 
 ####################################
 ## Calculate the Frecuencie table
