@@ -299,8 +299,12 @@ package main;
 
   ################################################################
   ## Create an archive with all result files
-  &Archive(1);
-
+  if (-e $main::outfile{report}) {
+      &Archive(1);
+  } else {
+      &RSAT::error::FatalError($main::outfile{report}, "was not generated.");
+  }
+ 
   #######################################
   ## Delete temporal files and folders
   #&Delete_temporal_files();
@@ -680,7 +684,7 @@ sub ScanSequences {
 
     &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
     
-    $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v 1 -quick ";
+    $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v 2 -quick ";
     $matrix_scan_cmd .= " -m ".$main::infile{motifs};
     $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
     $matrix_scan_cmd .= " -origin end -n score";
