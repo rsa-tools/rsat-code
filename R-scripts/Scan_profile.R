@@ -129,6 +129,11 @@ if (!exists("individual.plots")) {
 # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments_PARSED.tab"
 # prefix <- paste("Random_Genome_Fragmentes_Jaspar_insects", "_pval_", p.val, sep = "")
 
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/small_test_temp/Jaspar_Insects/position_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_1_matrix_scan_results_PARSED.tab"
+# prefix <- paste("Debug", "_pval_", p.val, sep = "")
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/small_test_temp/Jaspar_Insects/position_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_1_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/small_test_temp/Jaspar_Insects/")
+
 #############################################
 ## Read matrix-scan table Active Promoters
 verbose(paste("Reading matrix-scan results table"), 1)
@@ -192,8 +197,6 @@ if(off.set == 0){
   }
 }
 
-
-# ID.to.names.correspondence.tab <- "ID_names.txt"
 ID.names.tab <- ID.to.names.correspondence.tab
 ID.names <- read.table(ID.names.tab, sep = "\t")
 
@@ -212,9 +215,12 @@ if(input.count.table == 0){
 
   verbose(paste("Creating counts and frequencies tables"), 1)
   counts.per.bin <-  sapply(1:length(matrix.names), function(m){
+    
+    
   
     ## Select the matches of the query motif
     matrix.query <- matrix.names[m]
+    
     matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
     
     ## As the reference point in matrix-scan was the end of the sequence and as we are working with peaks
@@ -229,6 +235,8 @@ if(input.count.table == 0){
       
     } else {
       matrix.query.selection$bspos <- matrix.query.selection$bspos + limit.dw
+      
+      print("Gere")
     }
     
     ## Convert the BSs in Ranges
@@ -442,6 +450,8 @@ colnames(additional.data) <- c("Nb_sequences", "Max_pval", "Min_pval")
 #################################################################
 ## Merge the dataframes (additional data + feature attributes) ##
 #################################################################
+
+stop(colnames(feature.attributes))
 
 feature.attributes <- cbind(feature.attributes, additional.data)
 feature.attributes  <- feature.attributes[,c(1,5,6,4,7,8,2,3,9,10)]
