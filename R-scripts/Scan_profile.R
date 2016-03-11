@@ -339,7 +339,7 @@ colnames(feature.log2.ratio) <- as.character(data.frame(windows)$start)
 verbose(paste("Drawing Heatmap profiles", 1))
 
 ## Color palette
-rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(500))
+rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(1000))
 # rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
 
 ## Heatmap
