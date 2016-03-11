@@ -203,8 +203,6 @@ if(input.count.table == 0){
 
   verbose(paste("Creating counts and frequencies tables"), 1)
   counts.per.bin <-  sapply(1:length(matrix.names), function(m){
-    
-    
   
     ## Select the matches of the query motif
     matrix.query <- matrix.names[m]
@@ -243,8 +241,8 @@ colnames(counts.per.bin.table) <- as.character(data.frame(windows)$start)
 
 #colnames(counts.per.bin.table) <- c(as.character(data.frame(windows)$start), as.character(data.frame(windows)$end)[dim(data.frame(windows))[1]])
 
-####################################
-## Calculate the Frecuencie table
+###################################
+## Calculate the Frecuency table
 frequency.per.bin.table <- apply(counts.per.bin.table, 1, function(r){
   
   r.sum <- sum(r)
@@ -261,60 +259,6 @@ write.table(frequency.per.bin.table, file = density.tab.file, quote = FALSE, col
 counts.tab.file <- paste(basename, "_counts_per_bin_profiles.tab", sep = "") 
 write.table(counts.per.bin.table, file = counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
 
-
-####################################################################################
-## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
-####################################################################################
-verbose(paste("Drawing Heatmap profiles", 1))
-
-## Color palette
-rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
-
-## Heatmap
-out.format <- c("pdf", "jpg")
-for (format in out.format){
-  
-  profiles.heatmap.file <- paste(basename, "_profiles_heatmap.", format, sep = "") 
-  
-  if(format == "pdf"){
-    pdf(profiles.heatmap.file)
-  } else if (format == "jpg"){
-    jpeg(profiles.heatmap.file)
-  }
-  
-  heatmap.2(frequency.per.bin.table,
-            
-            ## Dendrogram control
-            dendrogram = c("none"),
-            Rowv = TRUE,
-            Colv = FALSE,
-            
-            main = "Profile Heatmap",
-            xlab = "Position (bp)",
-            ylab = "Motifs",
-            
-            #            hclustfun = function(d){hclust(d, method="ward")},
-            
-            ## Color
-            col = rgb.palette,
-            
-            ## Trace
-            trace = "none",
-            
-            ## Key control
-            key = TRUE,
-            keysize = 1,
-            density.info = "none",
-            key.xlab = "Density",
-            key.ylab = "",
-            key.title = "",
-            offsetCol = 0.25,
-            cexRow = 0.25,
-  )
-  dev.off()
-}
-
-
 ###############################################################
 ## Chi-squared calculation section                           ##
 ## If an input table with precalculated counts is not given, ##
@@ -328,6 +272,7 @@ for (format in out.format){
 #####################################
 ## Initialize (pre-allocated) list
 feature.attributes <- vector("list", dim(counts.per.bin.table)[1])
+feature.log2.ratio <- vector("list", dim(counts.per.bin.table)[1])
 
 #####################################################
 ## Calculate X2, p-value, e-value and significance
@@ -345,6 +290,8 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   ## We don't require a probability vector because we assume the TFBSs (counts) 
   ## are distributed homogenously along the sequences
   chi <- chisq.test(counts.per.bin, correct = TRUE)
+  
+  feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/chi[[7]]))
   
   ## Chi-squared
   cs.val <- round(chi[[1]], digits = 3)
@@ -372,12 +319,72 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
 
 })
 names(feature.attributes) <- matrix.names
+names(feature.log2.ratio) <- matrix.names
 
 ## Convert the list in a data frame
 feature.attributes <- data.frame(t(
                           matrix(as.vector(unlist(feature.attributes)), 
                           ncol = length(feature.attributes))))
 colnames(feature.attributes) <- c("Feature", "Chi_squared", "Degrees", "Sig", "P_val", "E_val")
+
+feature.log2.ratio <- data.frame(t(
+  matrix(as.vector(unlist(feature.log2.ratio)), 
+         ncol = length(feature.log2.ratio))))
+rownames(feature.log2.ratio) <- matrix.names
+colnames(feature.log2.ratio) <- as.character(data.frame(windows)$start)
+
+####################################################################################
+## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
+####################################################################################
+verbose(paste("Drawing Heatmap profiles", 1))
+
+## Color palette
+rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
+
+## Heatmap
+out.format <- c("pdf", "jpg")
+for (format in out.format){
+  
+  profiles.heatmap.file <- paste(basename, "_profiles_heatmap.", format, sep = "") 
+  
+  if(format == "pdf"){
+    pdf(profiles.heatmap.file)
+  } else if (format == "jpg"){
+    jpeg(profiles.heatmap.file)
+  }
+  
+  feature.log2.ratio.dist <- as.matrix(dist(feature.log2.ratio, method = "canberra"))
+  heatmap.2(feature.log2.ratio.dist,
+            
+            ## Dendrogram control
+            dendrogram = c("none"),
+            Rowv = TRUE,
+            Colv = FALSE,
+            
+            main = "Profile Heatmap",
+            xlab = "Position (bp)",
+            ylab = "Motifs",
+            
+#             hclustfun = function(d){hclust(d, method="ward")},
+            
+            ## Color
+            col = rgb.palette,
+            
+            ## Trace
+            trace = "none",
+            
+            ## Key control
+            key = TRUE,
+            keysize = 1,
+            density.info = "none",
+            key.xlab = "Density",
+            key.ylab = "",
+            key.title = "",
+            offsetCol = 0.25,
+            cexRow = 0.25,
+  )
+  dev.off()
+}
 
 
 ## Calculate q-values
@@ -451,7 +458,7 @@ rm(additional.data)
 # individual.plots <- 0
 if(individual.plots == 1){
   
-  verbose(paste("Printing all the profiles, separately, in a PDF file"), 1)
+  verbose(paste("Printing all the profiles in a PDF file"), 1)
   pdf.file.name <- paste(basename, "_positional_profiles.pdf", sep = "")
   pdf(pdf.file.name)
   
