@@ -127,6 +127,8 @@ if (heatmap.dendo == "show"){
   heatmap.dendo <- "none"
 }
 
+print(heatmap.dendo)
+
 
 
 # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/DSP1/position_scan_pval_1e-3_DSP1_Jaspar_Insects_bg_mkv_1_matrix_scan_results_PARSED.tab"
