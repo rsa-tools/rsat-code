@@ -353,8 +353,8 @@ for (format in out.format){
     jpeg(profiles.heatmap.file)
   }
   
-  feature.log2.ratio.dist <- as.matrix(dist(feature.log2.ratio, method = "canberra"))
-  heatmap.2(feature.log2.ratio.dist,
+#   feature.log2.ratio.dist <- as.matrix(dist(feature.log2.ratio, method = "canberra"))
+  heatmap.2(as.matrix(feature.log2.ratio),
             
             ## Dendrogram control
             dendrogram = c("none"),
