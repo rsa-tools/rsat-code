@@ -339,7 +339,8 @@ colnames(feature.log2.ratio) <- as.character(data.frame(windows)$start)
 verbose(paste("Drawing Heatmap profiles", 1))
 
 ## Color palette
-rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
+rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(500))
+# rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
 
 ## Heatmap
 out.format <- c("pdf", "jpg")
@@ -357,7 +358,7 @@ for (format in out.format){
   heatmap.2(as.matrix(feature.log2.ratio),
             
             ## Dendrogram control
-            dendrogram = c("none"),
+            dendrogram = c("row"),
             Rowv = TRUE,
             Colv = FALSE,
             
