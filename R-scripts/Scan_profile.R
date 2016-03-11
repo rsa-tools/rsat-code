@@ -117,22 +117,11 @@ if (!exists("individual.plots")) {
   individual.plots <- 0
 }
 
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Zebra_Fish_matrix_scan_results_PARSED.tab"
-# prefix <- "Zebra_Fish"
 
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_results_PARSED.tab"
-# prefix <- "Jun_Chip_seq"
-
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_GAF_OnTheFly_bg_mkv_2_PARSED.tab"
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_G_mkv_2_PARSED.tab"
-# prefix <- paste("Jaspar_insects", "_pval_", p.val, sep = "")
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments_PARSED.tab"
-# prefix <- paste("Random_Genome_Fragmentes_Jaspar_insects", "_pval_", p.val, sep = "")
-
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/small_test_temp/Jaspar_Insects/position_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_1_matrix_scan_results_PARSED.tab"
-# prefix <- paste("Debug", "_pval_", p.val, sep = "")
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/small_test_temp/Jaspar_Insects/position_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_1_TF_ID_name_correspondence.tab"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/small_test_temp/Jaspar_Insects/")
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/DSP1/position_scan_pval_1e-3_DSP1_Jaspar_Insects_bg_mkv_1_matrix_scan_results_PARSED.tab"
+# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/DSP1/position_scan_pval_1e-3_DSP1_Jaspar_Insects_bg_mkv_1"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/DSP1/position_scan_pval_1e-3_DSP1_Jaspar_Insects_bg_mkv_1_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/DSP1/")
 
 #############################################
 ## Read matrix-scan table Active Promoters
@@ -235,8 +224,6 @@ if(input.count.table == 0){
       
     } else {
       matrix.query.selection$bspos <- matrix.query.selection$bspos + limit.dw
-      
-      print("Gere")
     }
     
     ## Convert the BSs in Ranges
@@ -341,7 +328,7 @@ for (format in out.format){
 
 #####################################
 ## Initialize (pre-allocated) list
-feature.attributes <- vector("list", dim(counts.per.bin.table)[1]) 
+feature.attributes <- vector("list", dim(counts.per.bin.table)[1])
 
 #####################################################
 ## Calculate X2, p-value, e-value and significance
@@ -450,9 +437,6 @@ colnames(additional.data) <- c("Nb_sequences", "Max_pval", "Min_pval")
 #################################################################
 ## Merge the dataframes (additional data + feature attributes) ##
 #################################################################
-
-stop(colnames(feature.attributes))
-
 feature.attributes <- cbind(feature.attributes, additional.data)
 feature.attributes  <- feature.attributes[,c(1,5,6,4,7,8,2,3,9,10)]
 
@@ -650,7 +634,7 @@ all.motifs <- all.motifs
 # html.template.file <- "Template/index.html"
 html.report <- readLines(html.template.file)
 
-profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12,2:6,9,13)], img = 9)
+profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12,2:6,9:10,13)], img = 10)
 profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
 html.report <- gsub("--tab--", profile.data.tab.html, html.report)
 
