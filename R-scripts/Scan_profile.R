@@ -633,6 +633,9 @@ all.motifs <- all.motifs
 # html.template.file <- "Template/index.html"
 html.report <- readLines(html.template.file)
 profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12,2:6,9,7,13)], img = 10)
+
+profile.data.tab.html <- gsub("Inf", "Infinity", profile.data.tab.html)
+
 profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
 html.report <- gsub("--tab--", profile.data.tab.html, html.report)
 
