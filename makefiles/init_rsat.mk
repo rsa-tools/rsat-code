@@ -50,7 +50,8 @@ init:
 
 	@echo "	tmp	${RSAT}/public_html/tmp"
 	@mkdir -p ${RSAT}/public_html/tmp
-	@mkdir -p ${RSAT}/public_html/tmp/peak-footprints_output; chmod 777 public_html/tmp/peak-footprints_output
+	@echo "	peak-footprints_output	${}"
+	@mkdir -p ${RSAT}/public_html/tmp/peak-footprints_output; chmod 777 ${RSAT}/public_html/tmp/peak-footprints_output
 	@chmod 777 public_html/tmp
 #	echo "Options -Indexes" > public_html/tmp/.htaccess
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/tmp/robots.txt
@@ -62,7 +63,8 @@ init:
 	@mkdir -p ${RSAT}/${LOGS_DIR}
 	@chmod 777 ${LOGS_DIR}
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/logs/robots.txt
-	@mkdir -p ${RSAT}/${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
+	@echo "	peak-footprints_logs	${RSAT}/${LOGS_DIR}/peak-footprints_logs"
+	@mkdir -p ${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
 #	echo "Options -Indexes" > ${LOGS_DIR}/.htaccess
 	@rm -f ${LOGS_DIR}/index.html
 	@echo "<html><body></b<Forbidden</b></body></html>" > ${LOGS_DIR}/index.html

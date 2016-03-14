@@ -88,15 +88,16 @@ package main;
   our $out = STDOUT;
 
   ## Default parameters
-
   local $seq_length = 100;
   local $bin_size = 50;
   local $p_value = 1e-3;
-  local $title = "position-scan";
   local $bg_format = "oligos";
   local $seq_format = "fasta";
   local $matrix_format = "tf";
   local $individual_plots = 1;
+  local $legend_pos = "bottom";
+  local $heatmap_dendo = "show";
+  local $heatmap_dendo_flag = 1;
 
   ## Optional parameters
   ## matrix-scan top/last matrices
@@ -119,7 +120,6 @@ package main;
   %to_delete_folder = ();
 
 
-
   ## Input formats: only accept formats supporting multiple matrices
   local @supported_matrix_formats = qw(transfac tf tab clusterbuster cb infogibbs meme stamp uniprobe);
   local %supported_matrix_format = ();
@@ -127,6 +127,23 @@ package main;
     $supported_matrix_format{$format} = 1;
   }
   local $supported_matrix_formats = join ",", @supported_matrix_formats;
+
+  ## Profile plot legend position option
+  local @supported_legend_pos = qw(side bottom);
+  local %supported_legend_pos = ();
+  foreach my $pos (@supported_legend_pos) {
+    $supported_legend_pos{$pos} = 1;
+  }
+  local $supported_legend_pos = join ",", @supported_legend_pos;
+
+
+  ## Profile heatmap deondrogram position option
+  local @supported_heatmap_dendo_pos = qw(hide show);
+  local %supported_heatmap_dendo_pos = ();
+  foreach my $pos (@supported_heatmap_dendo_pos) {
+    $supported_heatmap_dendo_pos{$pos} = 1;
+  }
+  local $supported_heatmap_dendo_pos = join ",", @supported_heatmap_dendo_pos;
 
   ################################################################
   ## Read argument values
@@ -172,6 +189,7 @@ package main;
   ($dir{output}, $basename) = &RSAT::util::SplitFileName($main::outfile{prefix});
   $dir{output} = "." if ($dir{output} eq "");
   &RSAT::util::CheckOutDir($dir{output});
+  local $title = $basename;
 
   ## Create a BG model folder and assign a file name
   ## when the '-bginput' option is specified
@@ -292,8 +310,12 @@ package main;
 
   ################################################################
   ## Create an archive with all result files
-  &Archive(1);
-
+  if (-e $main::outfile{report}) {
+      &Archive(1);
+  } else {
+      &RSAT::error::FatalError($main::outfile{report}, "was not generated.");
+  }
+ 
   #######################################
   ## Delete temporal files and folders
   #&Delete_temporal_files();
@@ -536,7 +558,6 @@ Default: 50
       &RSAT::error::FatalError($bin_size, "Invalid value for option -bin_size: must be a natural number") 
          unless (&IsNatural($bin_size));
 
-
 =pod
 
 =item B<-pval p_value>
@@ -547,9 +568,46 @@ specified.
 Default: 1e-3
 
 =cut
+
     } elsif ($arg eq "-pval") {
       $p_value = shift(@arguments);
 
+=pod
+
+=item B<-legend_pos legend_position>
+
+The place where the legend will be inserted in the profile plot.
+
+Default: bottom
+
+Supported: bottom,side
+
+=cut
+
+    } elsif ($arg eq "-legend_pos") {
+      $legend_pos = shift(@arguments);
+      unless(exists($supported_legend_pos{$legend_pos})) {
+	&RSAT::error::FatalError($legend_pos, "Invalid position. Supported:", $supported_legend_pos);
+      }
+
+=pod
+
+=item B<-heatmap_dendogram>
+
+Indicate if the dendogram in the profiles heatmap should be visible or not.
+
+Default: show
+
+Supported: show,hide
+
+=cut
+
+    } elsif ($arg eq "-heatmap_dendogram") {
+      $heatmap_dendo = shift(@arguments);
+
+      unless(exists($supported_heatmap_dendo_pos{$heatmap_dendo})) {
+	&RSAT::error::FatalError($heatmap_dendo, "Invalid option. Supported:", $supported_heatmap_dendo_pos);
+      }
 
 =pod
 
@@ -657,7 +715,7 @@ sub ScanSequences {
 
     &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
     
-    $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v 1 -quick ";
+    $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v 2 -quick ";
     $matrix_scan_cmd .= " -m ".$main::infile{motifs};
     $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
     $matrix_scan_cmd .= " -origin end -n score";
@@ -837,7 +895,7 @@ sub DynamicProfilesR {
     if ($r_path) {
         &doit($profile_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
-        &RSAT::message::Warning("Could not run motif clustering because the program R is not available") if ($main::verbose >= 1);
+        &RSAT::message::Warning("Could not run position scan because the program R is not available") if ($main::verbose >= 1);
     }
     return();
 }
