@@ -27,7 +27,7 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 create.html.tab <- function(tab, img = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:15px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Logo </th></tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:15px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Logo </th></tr></thead><tbody>"
   
   content.tab <- apply(tab, 1, function(row){
     
@@ -116,18 +116,25 @@ if (!exists("logo.folder")) {
 if (!exists("individual.plots")) {
   individual.plots <- 0
 }
+if (!exists("heatmap.dendo")) {
+  heatmap.dendo <- "show"
+}
 
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Zebra_Fish_matrix_scan_results_PARSED.tab"
-# prefix <- "Zebra_Fish"
+## Heatmap dendogram position
+if (heatmap.dendo == "show"){
+  heatmap.dendo <- "row"
+} else if(heatmap.dendo == "hide"){
+  heatmap.dendo <- "none"
+}
 
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_results_PARSED.tab"
-# prefix <- "Jun_Chip_seq"
+print(heatmap.dendo)
 
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_GAF_OnTheFly_bg_mkv_2_PARSED.tab"
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_G_mkv_2_PARSED.tab"
-# prefix <- paste("Jaspar_insects", "_pval_", p.val, sep = "")
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments_PARSED.tab"
-# prefix <- paste("Random_Genome_Fragmentes_Jaspar_insects", "_pval_", p.val, sep = "")
+
+
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/DSP1/position_scan_pval_1e-3_DSP1_Jaspar_Insects_bg_mkv_1_matrix_scan_results_PARSED.tab"
+# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/DSP1/position_scan_pval_1e-3_DSP1_Jaspar_Insects_bg_mkv_1"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/DSP1/position_scan_pval_1e-3_DSP1_Jaspar_Insects_bg_mkv_1_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/DSP1/")
 
 #############################################
 ## Read matrix-scan table Active Promoters
@@ -192,8 +199,6 @@ if(off.set == 0){
   }
 }
 
-
-# ID.to.names.correspondence.tab <- "ID_names.txt"
 ID.names.tab <- ID.to.names.correspondence.tab
 ID.names <- read.table(ID.names.tab, sep = "\t")
 
@@ -215,6 +220,7 @@ if(input.count.table == 0){
   
     ## Select the matches of the query motif
     matrix.query <- matrix.names[m]
+    
     matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
     
     ## As the reference point in matrix-scan was the end of the sequence and as we are working with peaks
@@ -249,8 +255,8 @@ colnames(counts.per.bin.table) <- as.character(data.frame(windows)$start)
 
 #colnames(counts.per.bin.table) <- c(as.character(data.frame(windows)$start), as.character(data.frame(windows)$end)[dim(data.frame(windows))[1]])
 
-####################################
-## Calculate the Frecuencie table
+###################################
+## Calculate the Frecuency table
 frequency.per.bin.table <- apply(counts.per.bin.table, 1, function(r){
   
   r.sum <- sum(r)
@@ -267,60 +273,6 @@ write.table(frequency.per.bin.table, file = density.tab.file, quote = FALSE, col
 counts.tab.file <- paste(basename, "_counts_per_bin_profiles.tab", sep = "") 
 write.table(counts.per.bin.table, file = counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
 
-
-####################################################################################
-## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
-####################################################################################
-verbose(paste("Drawing Heatmap profiles", 1))
-
-## Color palette
-rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
-
-## Heatmap
-out.format <- c("pdf", "jpg")
-for (format in out.format){
-  
-  profiles.heatmap.file <- paste(basename, "_profiles_heatmap.", format, sep = "") 
-  
-  if(format == "pdf"){
-    pdf(profiles.heatmap.file)
-  } else if (format == "jpg"){
-    jpeg(profiles.heatmap.file)
-  }
-  
-  heatmap.2(frequency.per.bin.table,
-            
-            ## Dendrogram control
-            dendrogram = c("none"),
-            Rowv = TRUE,
-            Colv = FALSE,
-            
-            main = "Profile Heatmap",
-            xlab = "Position (bp)",
-            ylab = "Motifs",
-            
-            #            hclustfun = function(d){hclust(d, method="ward")},
-            
-            ## Color
-            col = rgb.palette,
-            
-            ## Trace
-            trace = "none",
-            
-            ## Key control
-            key = TRUE,
-            keysize = 1,
-            density.info = "none",
-            key.xlab = "Density",
-            key.ylab = "",
-            key.title = "",
-            offsetCol = 0.25,
-            cexRow = 0.25,
-  )
-  dev.off()
-}
-
-
 ###############################################################
 ## Chi-squared calculation section                           ##
 ## If an input table with precalculated counts is not given, ##
@@ -333,7 +285,8 @@ for (format in out.format){
 
 #####################################
 ## Initialize (pre-allocated) list
-feature.attributes <- vector("list", dim(counts.per.bin.table)[1]) 
+feature.attributes <- vector("list", dim(counts.per.bin.table)[1])
+feature.log2.ratio <- vector("list", dim(counts.per.bin.table)[1])
 
 #####################################################
 ## Calculate X2, p-value, e-value and significance
@@ -351,6 +304,8 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   ## We don't require a probability vector because we assume the TFBSs (counts) 
   ## are distributed homogenously along the sequences
   chi <- chisq.test(counts.per.bin, correct = TRUE)
+  
+  feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/chi[[7]]))
   
   ## Chi-squared
   cs.val <- round(chi[[1]], digits = 3)
@@ -378,12 +333,73 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
 
 })
 names(feature.attributes) <- matrix.names
+names(feature.log2.ratio) <- matrix.names
 
 ## Convert the list in a data frame
 feature.attributes <- data.frame(t(
                           matrix(as.vector(unlist(feature.attributes)), 
                           ncol = length(feature.attributes))))
 colnames(feature.attributes) <- c("Feature", "Chi_squared", "Degrees", "Sig", "P_val", "E_val")
+
+feature.log2.ratio <- data.frame(t(
+  matrix(as.vector(unlist(feature.log2.ratio)), 
+         ncol = length(feature.log2.ratio))))
+rownames(feature.log2.ratio) <- matrix.names
+colnames(feature.log2.ratio) <- as.character(data.frame(windows)$start)
+
+####################################################################################
+## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
+####################################################################################
+verbose(paste("Drawing Heatmap profiles", 1))
+
+## Color palette
+rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(1000))
+# rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
+
+## Heatmap
+out.format <- c("pdf", "jpg")
+for (format in out.format){
+  
+  profiles.heatmap.file <- paste(basename, "_profiles_heatmap.", format, sep = "") 
+  
+  if(format == "pdf"){
+    pdf(profiles.heatmap.file)
+  } else if (format == "jpg"){
+    jpeg(profiles.heatmap.file)
+  }
+  
+#   feature.log2.ratio.dist <- as.matrix(dist(feature.log2.ratio, method = "canberra"))
+  heatmap.2(as.matrix(feature.log2.ratio),
+            
+            ## Dendrogram control
+            dendrogram = c(heatmap.dendo),
+            Rowv = TRUE,
+            Colv = FALSE,
+            
+            main = "Profile Heatmap",
+            xlab = "Position (bp)",
+            ylab = "Motifs",
+            
+#             hclustfun = function(d){hclust(d, method="ward")},
+            
+            ## Color
+            col = rgb.palette,
+            
+            ## Trace
+            trace = "none",
+            
+            ## Key control
+            key = TRUE,
+            keysize = 1,
+            density.info = "none",
+            key.xlab = "Density",
+            key.ylab = "",
+            key.title = "",
+            offsetCol = 0.25,
+            cexRow = 0.25,
+  )
+  dev.off()
+}
 
 
 ## Calculate q-values
@@ -442,7 +458,6 @@ colnames(additional.data) <- c("Nb_sequences", "Max_pval", "Min_pval")
 #################################################################
 ## Merge the dataframes (additional data + feature attributes) ##
 #################################################################
-
 feature.attributes <- cbind(feature.attributes, additional.data)
 feature.attributes  <- feature.attributes[,c(1,5,6,4,7,8,2,3,9,10)]
 
@@ -458,7 +473,7 @@ rm(additional.data)
 # individual.plots <- 0
 if(individual.plots == 1){
   
-  verbose(paste("Printing all the profiles, separately, in a PDF file"), 1)
+  verbose(paste("Printing all the profiles in a PDF file"), 1)
   pdf.file.name <- paste(basename, "_positional_profiles.pdf", sep = "")
   pdf(pdf.file.name)
   
@@ -639,8 +654,10 @@ all.motifs <- all.motifs
 ## Substitute the words marked in the tamplate by the data
 # html.template.file <- "Template/index.html"
 html.report <- readLines(html.template.file)
+profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12,2:6,9,7,13)], img = 10)
 
-profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12,2:6,9,13)], img = 9)
+profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
+
 profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
 html.report <- gsub("--tab--", profile.data.tab.html, html.report)
 
