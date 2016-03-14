@@ -873,6 +873,14 @@ sudo apachectl restart
 ###########   BEFORE DELIVERY for VirtualBox         ###########
 ################################################################
 
+## Clean temporary directory
+sudo rm -rf public_html/tmp/www-data
+
+## Clean serialized organisms
+sudo rm -rf public_html/tmp/serialized_genomes 
+
+
+
 ## Last step before delivery: reset the passowrd of the RSAT
 ## administrator user (rsat), and define a user (vmuser).
 
@@ -915,4 +923,5 @@ sudo emacs -nw /etc/sudoers
 ##     rsat    ALL=(ALL:ALL) ALL
 ##     vmuser  ALL=(ALL:ALL) ALL
 
-exit
+## Stop the machine (NOW)
+halt
