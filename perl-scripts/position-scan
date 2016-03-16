@@ -97,7 +97,6 @@ package main;
   local $individual_plots = 1;
   local $legend_pos = "bottom";
   local $heatmap_dendo = "show";
-  local $heatmap_dendo_flag = 1;
 
   ## Optional parameters
   ## matrix-scan top/last matrices
@@ -289,18 +288,18 @@ package main;
 
   ################################################################
   ## Run matrix-scan quick
-#  &ScanSequences();
+  &ScanSequences();
   
- ## Parse the matrix-scan results table
-# &ParseScanResults();
+  ## Parse the matrix-scan results table
+  &ParseScanResults();
 
   ################################################################
   ## Produce the ID to Motif name reference table
-#  &ID_NameRefTable();
+  &ID_NameRefTable();
 
   ################################################################
   ## Produce the logos
-#  &GenerateLogos();
+  &GenerateLogos();
 
   ################################################################
   ## Compute statistics (X2 pval, eval, qval) 
@@ -881,6 +880,7 @@ sub DynamicProfilesR {
     $profile_cmd .= "; ID.to.names.correspondence.tab = '".$main::outfile{motif_ID_to_name}."'";
     $profile_cmd .= "; seq.length = '".$seq_length."'";
     $profile_cmd .= "; individual.plots = '".$individual_plots."'";
+    $profile_cmd .= "; heatmap.dendo = '".$heatmap_dendo."'";
     $profile_cmd .= "; html.template.file = '".$main::outfile{report_template}."'";
     $profile_cmd .= "; c3.css.base = '".$c3_css_base."'";
     $profile_cmd .= "; c3.base = '".$c3_base."'";
