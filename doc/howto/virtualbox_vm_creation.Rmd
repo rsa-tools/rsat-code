@@ -542,16 +542,16 @@ appliance.
 ## Appliance Settings
 
 
-| Parameter   | value |
-|-------------|-------|
+| Parameter    |    Value                                        |
+|:-------------|:------------------------------------------------|
 |  Name  		  | rsat-vm-2016-03 |
-|	Product		  |Regulatory Sequences Analysis Tools |
+|	Product		  | Regulatory Sequences Analysis Tools |
 |	Product-URL	| http://rsat.eu/ |
 |	Vendor		  | Jacques van Helden |
 |	Vendor URL	| http://jacques.van-helden.perso.luminy.univ-amu.fr/ |
 |	Version		  | 2016-03 |
 |	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 Virtual Machine. |
-|	License	    |	Free of use for academic users, non-commercial and non-military usage.|
+|	License	    |	Free of use for academic users, non-commercial and non-military usage. |
 | | |
 
 
