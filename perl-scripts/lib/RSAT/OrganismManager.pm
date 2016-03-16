@@ -133,9 +133,7 @@ sub load_supported_organisms {
 	my $field = $fields[$i];
 	my $value = $values[$i];
 	$value =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|;
-#	if ($value =~ /^\$ENV\{RSAT\}/) {
-#	  $value = $ENV{RSAT}; #"/".$'; ## '
-#	}
+#	my $value = &RSAT::util::hide_RSAT_path($values[$i]);
        $main::supported_organism{$values[0]}->{$field} = $value;
       }
     }
@@ -531,11 +529,14 @@ sub GetOrganismsForTaxon {
 
   ## Identify the tree node corresponding to the query taxon
   my $node = $tree->get_node_by_id($taxon);
+
   if ($node){
 
     ## Get all organisms belonging to the query taxon, i.e. the leaves
     ## descending from the selected tree node.
     @organisms = $node->get_leaves_names();
+    &RSAT::message::Debug("GetOrganismsForTaxon()", $taxon, scalar(@organisms)) if ($main::verbose >= 5);
+
 
     ## If depth argument has been specified, cut the taxonomic tree by
     ## selecting only one organism for each taxon at a given depth of
@@ -553,7 +554,6 @@ sub GetOrganismsForTaxon {
   }
   
   ## Select unique organisms per genus or species if required
-#  @organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @organisms) if (($main::unique_species) || ($main::unique_genus));
   @organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @organisms) if ($main::unique_species);
   @organisms = &RSAT::OrganismManager::UniquePerTaxon("genus", @organisms) if ($main::unique_genus);
 
@@ -695,7 +695,9 @@ sub OneOrgPerTaxonomicDepth {
   my @selected_organisms = ();
   foreach my $org (@organisms) {
     my $taxonomy = $main::supported_organism{$org}->{'taxonomy'};
-    my @taxonomy = split (/;\s*/, $taxonomy);
+    my @taxonomy = split (/\s*;\s*/, $taxonomy);
+#    die "HELLO";
+#    &RSAT::message::Debug("&RSAT::OrganismManager::OneOrgPerTaxonomicDepth", $org, "taxonomy", join("::", @taxonomy)) if ($main::verbose >= 2);
     my $max_depth = scalar(@taxonomy);
     my $selected_depth;
     if ($depth < 0) {
@@ -959,7 +961,7 @@ sub is_serialized {
       foreach my $maskcod(@maskcoding) {
 	  foreach my $maskrep(@maskrepeats) {
 	      my $bg_type = $sequence_type.$maskcod.$maskrep;
-		  $supported_bg{$bg_type} = 1; 
+		  $supported_bg{$bg_type} = 1;
 	  }
       }
   }
