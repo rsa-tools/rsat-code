@@ -2398,7 +2398,7 @@ sub PipingFormForSequence {
   print qq|
 <HR SIZE = 3>
 <table class = "nextstep">
-<tr><td colspan = 5><h3>next step</h3></td></tr>
+<tr><td colspan = 5><h3>Next step</h3></td></tr>
 
 
 <tr valign="top" align="center">
