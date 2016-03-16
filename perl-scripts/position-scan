@@ -309,11 +309,11 @@ package main;
 
   ################################################################
   ## Create an archive with all result files
-  if (-e $main::outfile{report}) {
+  # if (-e $main::outfile{report}) {
       &Archive(1);
-  } else {
-      &RSAT::error::FatalError($main::outfile{report}, "was not generated.");
-  }
+  # } else {
+  #     &RSAT::error::FatalError($main::outfile{report}, "was not generated.");
+  # }
  
   #######################################
   ## Delete temporal files and folders
