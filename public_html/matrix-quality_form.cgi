@@ -172,9 +172,9 @@ print $query->end_form;
 ### data for the demo 
 print $query->start_multipart_form(-action=>"matrix-quality_form.cgi");
 $demo_html_title=" LexA and CTCF matrices from RegulonDB 2015";
-$demo_matrix="AC  LexA.1nt_upstream-noorf-ovlp-2str.20.cons1
+$demo_matrix="AC  LexA.RegulonDB2012
 XX
-ID  LexA.1nt_upstream-noorf-ovlp-2str.20.cons1
+ID  LexA.RegulonDB2012
 XX
 DE  waCTGtatawAwahmCAGya
 P0       A     C     G     T
@@ -262,9 +262,9 @@ CC  consensus.regexp: [at]aCTGtata[at]A[at]a[act][ac]CAG[ct]a
 CC  consensus.regexp.rc: T[AG]CTG[GT][AGT]T[AT]T[AT]TATACAGT[AT]
 XX
 //
-AC  CRP.2nt_upstream-noorf-ovlp-2str.22.meme_m1
+AC  CRP.RegulonDB2012
 XX
-ID  CRP.2nt_upstream-noorf-ovlp-2str.22.meme_m1
+ID  CRP.RegulonDB2012
 XX
 DE  wtGtGatcyrsaTCACahwttt
 P0       A     C     G     T
