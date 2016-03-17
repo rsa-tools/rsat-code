@@ -643,6 +643,7 @@ sub _readFromTRANSFACFile {
 	$matrix->setPrior(%prior);
       }
 
+	
       ## Other matrix parameters
 
     } elsif ($matrix) {
