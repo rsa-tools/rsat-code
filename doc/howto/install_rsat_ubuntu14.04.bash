@@ -56,9 +56,9 @@ df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 
 
 ## Check the installation device 
-DEVICE=`df -h / | grep '/dev'| awk '{print $1}' | perl -pe 's/\/dev\///'`
+DEVICE=`df -h | grep '\/$' | perl -pe 's/\/dev\///' | awk '{print $1}'`
 echo ${DEVICE}
-## This should give sda1
+## This should give sda1. Of not check rthe device with 
 
 ## We can then check the increase of disk usage during the different
 ## steps of the installation
@@ -79,7 +79,6 @@ PACKAGES_OPT="
 ess
 yum
 php-elisp
-libgdbm-dev
 libgd2-xpm-dev
 libxml2-dev
 links
@@ -130,6 +129,7 @@ g++
 apache2
 php5
 libapache2-mod-php5
+libgdbm-dev
 libgd-tools
 libgd-gd2-perl
 ghostscript
@@ -284,7 +284,7 @@ emacs -nw /etc/apache2/mods-available/mime.conf
 emacs -nw /etc/php5/apache2/php.ini
 ## Modify the following parameters
 ##      post_max_size = 100M
-##      upload_max_filesize=100M
+##      upload_max_filesize=200M
 
 
 ## The following lines are required to activate cgi scripts.  Found at
@@ -355,12 +355,14 @@ grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 # ## Ensure that the following line is set to "universe"
 # deb http://us.archive.ubuntu.com/ubuntu trusty main universe
 # ## You can now quit emacs
-#
-# apt-get update
-#
-# apt-get --quiet --assume-yes install libmodule-build-perl
-# apt-get --quiet --assume-yes install libsoap-wsdl-perl
-#
+
+
+apt-get update
+
+apt-get --quiet --assume-yes install libmodule-build-perl
+
+apt-get --quiet --assume-yes install libsoap-wsdl-perl
+
 # ## Note: this is still not sufficient to get SOAP::WSDL to run the two
 # ## following targets
 # ##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb
@@ -376,7 +378,7 @@ grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 # ## on rsat-tagc.univ-mrs.fr.  I have no idea how we did to install
 # ## SOAP::WSDL there. In any case, the 
 # ##
-# ## Solution proposed here: http://stackoverflow.com/questions/3489642/dependency-problem-of-perl-cpan-modules
+# ## Solution proposed here: http://stackoverflow.com/questions/3489642/dependency-problem-of-perl-cpan -modules
 # ## Not sure it works by its own, but cannot harm.
 # cpan
 # ## At the cpan prompt, type the following
@@ -419,9 +421,11 @@ visudo
 su - rsat
 cd ${HOME}
 git clone git@depot.biologie.ens.fr:rsat
-git config --global user.mail rsat@rsat-vm-2015-02
+git config --global user.mail rsat@rsat-vm-2016-03
 git config --global user.name "RSAT admin on RSAT-VM"
-
+git config --global core.editor emacs
+git config --global merge.tools meld
+git config --list
 
 ## Define an environment variable with the RSAT_HOME directory
 ## (will be used later to configure RSAT)
@@ -459,8 +463,9 @@ cd ${RSAT_HOME}
 perl perl-scripts/configure_rsat.pl
 
 ## Parameters to change
-##   rsat_site   rsat-vm
+##   rsat_site   rsat-vm-2016-03
 ##   rsat_server_admin    I don't specify it, because I don't want to receive notifications from all the VMs
+## I activate the optional tools ucsc_tools and ensembl_tools, but not the other ones because they require many genomes (phylo tools) or big genomes (compara_tools, variation_tools).
 
 ## Load the (updated) RSAT environment variables
 source RSAT_config.bashrc
@@ -511,8 +516,8 @@ rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 ## Notes
 ##
 ## 1) limxml2-dev is required to compile the Perl module XML::LibXML
-##        sudo apt-get install limxml2-dev 
-##
+sudo apt-get install limxml2-dev 
+
 ## 2) For some modules, installation failed until I used "force"
 ##	 force install SOAP::WSDL
 ##	 force install SOAP::Lite
@@ -822,11 +827,11 @@ grep MemTotal /proc/meminfo
 ## manually tjhe file /etc/hosts
 emacs -nw /etc/hosts
 ## Initial config (problematic) 
-##    127.0.0.1       localhost       rsat-vm-2015-02
-##    127.0.1.1      rsat-vm-2015-02
+##    127.0.0.1       localhost       rsat-vm-2016-03
+##    127.0.1.1      rsat-vm-2016-03
 ## Config to obtain: 
-##    127.0.0.1       localhost       rsat-vm-2015-02
-##    #127.0.1.1      rsat-vm-2015-02
+##    127.0.0.1       localhost       rsat-vm-2016-03
+##    #127.0.1.1      rsat-vm-2016-03
 apt-get install --quiet --assume-yes gridengine-client
 apt-get install --quiet --assume-yes gridengine-exec
 apt-get install --quiet --assume-yes gridengine-master
@@ -841,7 +846,8 @@ qconf -as localhost ## aggregate the localhost tho the list of submitters
 ## Take all default parameters BUT For the SGE master parameter, type
 ## localhost (it must be the hostname)
 
-## Test that jobs canbe sent to the job scheduler
+## Test that jobs can be sent to the job scheduler
+
 
 
 ################################################################
@@ -861,3 +867,61 @@ sudo cp /etc/ganglia-webfrontend/apache.conf /etc/apache2/sites-enabled/ganglia.
 sudo apachectl restart
 
 
+
+
+################################################################
+###########   BEFORE DELIVERY for VirtualBox         ###########
+################################################################
+
+## Clean temporary directory
+sudo rm -rf public_html/tmp/www-data
+
+## Clean serialized organisms
+sudo rm -rf public_html/tmp/serialized_genomes 
+
+
+
+## Last step before delivery: reset the passowrd of the RSAT
+## administrator user (rsat), and define a user (vmuser).
+
+################################################################
+## Create a user for the virtual machine
+##
+## This VM user is separate from the rsat user, which only serves to
+## manage the RSAT software suite and related packages.
+##
+## For the sake of security, we force this user to change password at
+## first login
+
+## First delete this user (in case it was previously defined)
+##  sudo userdel --remove vmuser
+
+## Then create vmuser
+sudo useradd --password `openssl passwd -1 -salt xyz tochng`\
+    --home /home/vmuser \
+    --create-home \
+    --shell /bin/bash \
+    --comment "VM user" \
+    vmuser
+
+## Force vmuser to change password at first login
+sudo chage -d 0 vmuser
+
+## Force rsat user to change password at first login
+passwd rsat 
+## Set it to 'tochng'
+sudo chage -d 0 rsat
+
+
+## Add sudoer rights to vmuser and rsat users
+sudo chmod 644 /etc/sudoers
+sudo emacs -nw /etc/sudoers
+## Find the following line
+##     # User privilege specification
+##     root    ALL=(ALL:ALL) ALL
+## Below it, add the following line:
+##     rsat    ALL=(ALL:ALL) ALL
+##     vmuser  ALL=(ALL:ALL) ALL
+
+## Stop the machine (NOW)
+halt
