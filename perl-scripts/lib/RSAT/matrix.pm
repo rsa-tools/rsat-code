@@ -3244,7 +3244,6 @@ sub weight_range {
   my $Wmin = 0;
   my $Wmax = 0;
 
-
   my @weights = $self->getWeights();
 
   #    my %score_proba = $self->getTheorScoreDistrib("weights");
