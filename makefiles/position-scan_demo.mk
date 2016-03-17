@@ -68,7 +68,7 @@ _profiles:
 
 
 ## Cluster motifs resulting from 12 independent analysis of peak-motifs (Chen data set). 
-HOCOMOCO_MATRICES=${RSAT}/public_html/motif_databases/HOCOMOCO/HOCOMOCO_NonRedundant_2015-11-23_Human_Ncor0.8_cor0.85.tf
+HOCOMOCO_MATRICES=${RSAT}/public_html/demo_files/HOCOMOCO_Human_Ncor0.8_cor0.85_JUND_Demo.tf
 profile_Jun_ChIPseq_peaks:
 	@echo
 	@echo "Running position-scan with Hocomoco Human motifs on ChIP-seq peaks of JUND"
