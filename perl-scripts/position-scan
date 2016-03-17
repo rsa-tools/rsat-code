@@ -284,22 +284,22 @@ package main;
   ## For the moment the input are sequences of same length
   ## TO DO: It will take the first sequence as template and the other sequences will be adapted to
   ## that sequence length
-#  &ProcessSeq();      
+  &ProcessSeq();      
 
   ################################################################
   ## Run matrix-scan quick
-#  &ScanSequences();
+  &ScanSequences();
   
   ## Parse the matrix-scan results table
-#  &ParseScanResults();
+  &ParseScanResults();
 
   ################################################################
   ## Produce the ID to Motif name reference table
-#  &ID_NameRefTable();
+  &ID_NameRefTable();
 
   ################################################################
   ## Produce the logos
-#  &GenerateLogos();
+  &GenerateLogos();
 
   ################################################################
   ## Compute statistics (X2 pval, eval, qval) 
