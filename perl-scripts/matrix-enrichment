@@ -344,7 +344,7 @@ package main;
       ## Define same bg file for all sequences
       foreach $seq ( @main::seq_types ) {
 	  
-	  $bg_files{$seq} = $new_bg_file ;
+	  $bg_files{$seq} = $outfile{bg_file_inclusive} ;
  
       }
       
@@ -777,6 +777,30 @@ package main;
       # }
       
   }
+  
+  my $nwd_all_file = $main::prefix{main}."_"."all_nwd_files.txt";
+  my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
+  
+  my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
+  
+  $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
+  
+  foreach my $mtx (keys %nwd_all_files) {
+      while (my ($seq, $nwd_file) = each %{ $nwd_all_files{$mtx} } ) {
+	  print $nwd_all_file_out join("\t",$mtx,$seq,$nwd_file)."\n";
+      }
+  }
+  
+  &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
+  my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
+  
+  &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
+  
+  &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
+  $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
+  $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
+  $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
   
   ## Give the warning about the output prefix
   if ($main::verbose >= 2) {
@@ -1288,8 +1312,8 @@ sub ProcessTopSeq {
     $convert_seq_cmd = $SCRIPTS."/convert-seq";
     $convert_seq_cmd .= " -i ".$seq_file ;
     $convert_seq_cmd .= " -from ".$main::seq_format." -to ".$main::seq_format;
-    $convert_seq_cmd .= " -top ".$top_sequences if($top_seq_flag == 1);
-    $convert_seq_cmd .= " -skip ".$skip_sequences if($skip_seq_flag == 1);
+    $convert_seq_cmd .= " -top ".$top_sequences if($top_sequences_flag == 1);
+    $convert_seq_cmd .= " -skip ".$skip_sequences if($skip_sequences_flag == 1);
     $convert_seq_cmd .= " -o ". $aux_var_top_seq ;
     &doit($convert_seq_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);    
 
