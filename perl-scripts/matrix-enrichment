@@ -210,6 +210,53 @@ package main;
 
   $main::nwd_seqs=0;
 
+  ########################################
+  ## Outfiles of Dynamic heatmap script
+  $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
+  $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
+  $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
+
+  ################################################################
+  ## Ensure the access to the java libraries, which are required to
+  ## display the results (heatmap, dynamic tables).
+  ##
+  ## If $include_js_lib is set to 1, the javascript libraries are
+  ## included in the output directory, in order to avoid problems with
+  ## the links. This solution enables to move the result
+  ## (e.g. download a self-contained archive), but costs 500kb of disk
+  ## space for each result, we should evaluate alternative solutions.
+  ## 
+  ## the alternative is to point to the libraries on the RSAT server,
+  ## but we faced problems on some servers, due to the the path
+  ## public_html/lib, which inludes a soft link (lib ->
+  ## ../perl-scripts/lib).
+
+  local $include_js_lib = 1; 
+  
+  ## Define the base directories for the javascripts, which are
+  ## required to display logo trees, animations and dynamic tables
+  if ($include_js_lib) {
+      
+      &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 3);
+      my $js_sync_cmd = "rsync -ruptl";
+      $js_sync_cmd .= " ".$ENV{RSAT}."/perl-scripts/lib/js";
+      $js_sync_cmd .= " ".$dir{output};
+      &doit($js_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+      $js_base = $dir{output}."/js";
+      &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 3);
+      
+  }  elsif (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+      $js_base = $ENV{rsat_www}."/lib/js";
+  } else {
+      
+      ## NOTE from JvH to Jaime: This solution does not allow to see the
+      ## result on another computer than the RSAT server on which
+      ## matrix-clustering ran.
+      $js_base = $ENV{RSAT}."/perl-scripts/lib/js";
+  }
+  $d3_base = &RSAT::util::RelativePath($main::outfile{maxNWD_heatmap_html}, $js_base."/d3.v3.min.js");
+  $d3_array_base = &RSAT::util::RelativePath($main::outfile{maxNWD_heatmap_html}, $js_base."/d3-array.v0.6.min.js");
+  
   
   ################################################################
   ## Read argument values
@@ -218,7 +265,6 @@ package main;
   ################################################################
   ## Check argument values
 
-  
   ## If no tasks has been specified, execute them all
   if (($task{all}) || (scalar(keys(%task))==0)) {
       %task = %supported_task;
@@ -446,13 +492,7 @@ package main;
       local @temporary_distrib_files=();
       local @local_seq_types= @main::seq_types; # seq_types are all the sequences where the proceadure is performed, for each matrix the matrix_sites are added.
       ## Redefine the matrix name (in case it would have been modified above)
-
-      
       $matrix->set_attribute("pseudo", $pseudo_counts);
-
-      
-     
-      
       $matrix->set_attribute("decimals", $decimals);
       $matrix->set_attribute("file", $matrix_file);
       $matrix->force_attribute("matrix.nb", $m);
@@ -532,8 +572,6 @@ package main;
       $main::out = &OpenOutputFile($outfile{matrix_log});
       &RSAT::message::Debug("Adding file to index ",   "matrix_log", $main::matrix_prefix{$matrix_name}."_log.txt" ) if ($main::verbose >= 10);
 
-
-
       ################################################################
       ## Export matrix in various formats
       
@@ -586,10 +624,6 @@ package main;
       &RSAT::message::Debug("Adding file to index ",  "matrix_theoretical_distrib", $outfile{'matrix_theoretical_distrib'}  ) if ($main::verbose >= 10);
 
       &CalcTheorScoreDistribution( $outfile{matrix_tab}, $outfile{'matrix_theoretical_distrib'} ) if ($task{theor});
-
-      ################################################################
-      ## Calculate empirical score distributions in the different sequence sets
-
       
       ################################################################
       ## Compute empirical distribution in the input sequence files
@@ -600,8 +634,7 @@ package main;
 	  if (($seqfile{$seq_type}) &&
 	      (defined($perm_nb{$seq_type})) &&
 	      ($perm_nb{$seq_type} > 0)) {
-	      
-	      
+	          
 	      ## Calculate the separate distributions for each permuted matrix
 	      ## (this highlights the variability but the graph is noisy)
 	      for my $i (1..$perm_nb{$seq_type}) {
@@ -726,26 +759,19 @@ package main;
 	  &RSAT::message::Info("Matrix-specific matrix log file", $outfile{matrix_log});
 	 # &RSAT::message::Info("Matrix-specific matrix synthesis file", $outfile{matrix_synthesis}); # this file has not been declared
       }
-      
-     
-
-      
-      
   } ## per matrix analysis
-
 
 
   ################
   ## Draw NWD and OCC graphs per sequence set
   foreach ( @main::seq_types ) {
-      #die "BOOM";
+
       my $st= $_;
       ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) ;
       print ((join("++", @{$tab_files_for_aux_plots_occ_proba_per_seq{$st}})), "\n");
       ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} })  ;
       #print $outfile{$st."all_matrices_occ_proba_table"}."\n";
       #print $outfile{$st."all_matrices_occ_proba_plot"}."\n";
-      #die ("BOOM");
       
       ################
       ## Heatmaps can only be produced when at least two matrices and two sequence sets are used for NWD calculation
@@ -794,7 +820,7 @@ package main;
   &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
   my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
   
-  &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
+  &RSAT::message::Info("R-command for NWD cluster",  $R_command) if ($main::verbose >= 2);
   
   &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
@@ -808,18 +834,15 @@ package main;
       &RSAT::message::Info("Main log file", $outfile{log});
      # &RSAT::message::Info("Main synthesis file", $outfile{synthesis}); ## File to be specified
   }
-  
-  
+
+  ################################################################
+  ## Draw the dynamic heatmap with the clustering of the maxNWD
+  &DynamicHeatmapEnrichment();
+    
   ################################################################
   ## Print verbose
   $main::out = &OpenOutputFile($outfile{log});
   &Verbose() if ($main::verbose >= 1);
-  
-  ################################################################
-  ## Execute the command
-  
-  ################################################################
-  ## Insert here output printing
   
   ################################################################
   ## Report execution time and close output stream
@@ -1343,5 +1366,52 @@ sub Verbose {
   }
 }
 
+
+################################################################
+## Draw the Dynamic Heatmap using the matrix
+## of maxNWD positive values
+sub DynamicHeatmapEnrichment {
+
+    &RSAT::message::TimeWarn("Drawing heatmap of maxNWD") if ($main::verbose >= 2);
+
+    ##################################
+    ### Identify the path of the R executable
+    my $r_path = &RSAT::server::GetProgramPath("R");
+
+    my $dynamic_heatmap_script  = $ENV{RSAT}."/R-scripts/matrix-enrichment_heatmap.R";
+
+    print $dynamic_heatmap_script."\n\n";
+
+    &RSAT::error::FatalError("Cannot read matrix-enrichment_heatmap.R script", $dynamic_heatmap_script) unless (-r $dynamic_heatmap_script);
+
+    # $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
+
+    ## Command
+    my $dynamic_heatmap_cmd = "";
+    $dynamic_heatmap_cmd .= " cat ".$dynamic_heatmap_script;
+    $dynamic_heatmap_cmd .= " | ".$r_path;
+    $dynamic_heatmap_cmd .= " --slave --no-save --no-restore --no-environ";
+    $dynamic_heatmap_cmd .= " --args \"";
+    $dynamic_heatmap_cmd .= " prefix = '".$main::prefix{main}."'";
+    $dynamic_heatmap_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
+    $dynamic_heatmap_cmd .= "; html.template.file = '".$main::outfile{maxNWD_heatmap_template}."'";
+    $dynamic_heatmap_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
+    $dynamic_heatmap_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
+    $dynamic_heatmap_cmd .= "; d3.base = '".$d3_base."'";
+    $dynamic_heatmap_cmd .= "; d3.array.base = '".$d3_array_base."'";
+    $dynamic_heatmap_cmd .= " \"";
+#    $Cluster_motifs_cmd = "(".$dynamic_heatmap_cmd.")"; # Uncomment this line to check the R output in the terminal
+#    $dynamic_heatmap_cmd = "(".$dynamic_heatmap_cmd.") 2 > ".$main::outfile{Rlog}; 
+
+
+    print $dynamic_heatmap_cmd."\n\n\n";
+
+    if ($r_path) {
+        &doit($dynamic_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    } else {
+        &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
+    }
+    return();
+}
 
 __END__
