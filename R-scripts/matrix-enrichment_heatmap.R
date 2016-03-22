@@ -113,7 +113,7 @@ html.report <- gsub("--col_names--", sequences.names.cat, html.report)
 html.report <- gsub("--row_names--", motifs.names.cat, html.report)
 
 ## Insert the TSV file
-html.report <- gsub("--file--", maxNWD.tsv, html.report)
+html.report <- gsub("--file--", shortpath.maxNWD.tsv, html.report)
 
 ## Div bottom + Cell size
 cell.size <- 30
