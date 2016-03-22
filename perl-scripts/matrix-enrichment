@@ -209,12 +209,41 @@ package main;
   $distrib_score_col = 5; ## Column containing the dCDF (decreasing cumulative density function) in the output of the command matrix-distrib-quick -distrib
 
   $main::nwd_seqs=0;
+  
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+  
+  ################################################################
+  ## Check argument values
 
-  ########################################
-  ## Outfiles of Dynamic heatmap script
-  $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
-  $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
-  $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
+  ## If no tasks has been specified, execute them all
+  if (($task{all}) || (scalar(keys(%task))==0)) {
+      %task = %supported_task;
+      $task{all} = 0;
+  }
+  
+  ## Matrix file is mandatory
+  &RSAT::error::FatalError("You must define a matrix file, with the option -matrix")
+      unless ($main::infile{motifs});
+  
+  ## Output prefix is mandatory
+  &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
+      unless ($main::prefix{main});
+  
+  
+  ## Output prefix cannot end with a "/" (must be a file prefix, not a directory)
+  &RSAT::error::FatalError("Output prefix cannot end with a '/' (must be a file name, not a directory)") if  ($main::prefix{main} =~ /\/$/);
+  
+  ################################################################
+  ## Open main log 
+  $outfile{log} = $main::prefix{main}."_log.txt";
+
+  
+  ## Create main output directory if required
+  ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($main::prefix{main});
+  &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 2);
+  &RSAT::util::CheckOutDir($dir{output});
 
   ################################################################
   ## Ensure the access to the java libraries, which are required to
@@ -254,44 +283,8 @@ package main;
       ## matrix-clustering ran.
       $js_base = $ENV{RSAT}."/perl-scripts/lib/js";
   }
-  $d3_base = &RSAT::util::RelativePath($main::outfile{maxNWD_heatmap_html}, $js_base."/d3.v3.min.js");
-  $d3_array_base = &RSAT::util::RelativePath($main::outfile{maxNWD_heatmap_html}, $js_base."/d3-array.v0.6.min.js");
-  
-  
-  ################################################################
-  ## Read argument values
-  &ReadArguments();
-  
-  ################################################################
-  ## Check argument values
-
-  ## If no tasks has been specified, execute them all
-  if (($task{all}) || (scalar(keys(%task))==0)) {
-      %task = %supported_task;
-      $task{all} = 0;
-  }
-  
-  ## Matrix file is mandatory
-  &RSAT::error::FatalError("You must define a matrix file, with the option -matrix")
-      unless ($main::infile{motifs});
-  
-  ## Output prefix is mandatory
-  &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
-      unless ($main::prefix{main});
-  
-  
-  ## Output prefix cannot end with a "/" (must be a file prefix, not a directory)
-  &RSAT::error::FatalError("Output prefix cannot end with a '/' (must be a file name, not a directory)") if  ($main::prefix{main} =~ /\/$/);
-  
-  ################################################################
-  ## Open main log 
-  $outfile{log} = $main::prefix{main}."_log.txt";
-
-  
-  ## Create main output directory if required
-  ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($main::prefix{main});
-  &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 2);
-  &RSAT::util::CheckOutDir($dir{output});
+  $d3_base = &RSAT::util::RelativePath($dir{output}, $js_base."/d3.v3.min.js");
+  $d3_array_base = &RSAT::util::RelativePath($dir{output}, $js_base."/d3-array.v0.6.min.js");
 
   ## ################
   ## Process sequence file if there was a top or skip selection
@@ -580,14 +573,12 @@ package main;
       $outfile{matrix_info} = $matrix_prefix{$matrix_name}."_matrix_info.txt";  push @files_to_index, "matrix_info" ;
       &RSAT::message::Debug("Adding file to index ",  "matrix_info",  $matrix_prefix{$matrix_name}."_matrix_info.txt" ) if ($main::verbose >= 10);
       
-
       ## Transfac outfile
       $outfile{matrix_transfac}=  $matrix_prefix{$matrix_name}."_matrix_transfac.tf";  push @files_to_index, "matrix_transfac";
 
       ## Tab outfile
       $outfile{matrix_tab}=  $matrix_prefix{$matrix_name}."_matrix_tab.txt";  push @files_to_index, "matrix_tab";
 
-      
       ## logo file
       $outfile{matrix_logo}= $matrix_prefix{$matrix_name}."_logo" ;
       $matrix_info_general_index{$matrix_name}{logo}=$outfile{matrix_logo};
@@ -613,10 +604,8 @@ package main;
 	  &ExportMatrixInfo($matrix);
       }
 
-      
       ## Shuffle the columns of the matrix (permutation test)
       &PermuteMatrixColumns();
-
       
       ################################################################
       ## Calculate theoretical distribution of probabilities
@@ -701,16 +690,14 @@ package main;
 		      ), "\n";
 	      }
 	      close $merged_distrib;
-	      &RSAT::message::TimeWarn("Exported merged distribution", $outfile{$perm_suffix}) if ($main::verbose >= 2);
-	      
-	      
+	      &RSAT::message::TimeWarn("Exported merged distribution", $outfile{$perm_suffix}) if ($main::verbose >= 2);    
 	  }
       }
       
       ## Compare the (single) theoretical and (multiple) empirical distributions
       &CompareDistrib($distrib_score_col, @distrib_files); # the column of interest is rel_ic (inv_cum_freq)
 
-       ################################################################
+      ################################################################
       ##Calculate NWD adn OCC
       &RSAT::message::TimeWarn("Calculating NWD file")  if ($main::verbose >= 2);
       
@@ -728,29 +715,22 @@ package main;
 	      push ( @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }, $nwd_st);
 	      push ( @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }, $nwd_st);
 	      
-	      
-	      
 	      ## Check if NWD graph is requiered for the given sequence set
 	      my $occ_proba_st=&Calculate_OCC ($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options)   ;
 	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }, $occ_proba_st);
 	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }, $occ_proba_st);	 
-	      
 	  }
-	  
 	  
 	  #Draw NWD per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 	  
 	  ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
 	  push (@files_to_index,'matrix_nwd_table');
 	  
-	  
-	  
 	  #Draw NWD per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 	  
 	  ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) ;
 	  push (@files_to_index,'matrix_occ_proba_table');
 	  
-	  	  	  
       }
       
       ## Give the warning about the output prefix
@@ -1372,6 +1352,13 @@ sub Verbose {
 ## of maxNWD positive values
 sub DynamicHeatmapEnrichment {
 
+    ########################################
+    ## Outfiles of Dynamic heatmap script
+    $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
+    $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
+    $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
+    $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
+    
     &RSAT::message::TimeWarn("Drawing heatmap of maxNWD") if ($main::verbose >= 2);
 
     ##################################
@@ -1396,6 +1383,7 @@ sub DynamicHeatmapEnrichment {
     $dynamic_heatmap_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
     $dynamic_heatmap_cmd .= "; html.template.file = '".$main::outfile{maxNWD_heatmap_template}."'";
     $dynamic_heatmap_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
+    $dynamic_heatmap_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
     $dynamic_heatmap_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
     $dynamic_heatmap_cmd .= "; d3.base = '".$d3_base."'";
     $dynamic_heatmap_cmd .= "; d3.array.base = '".$d3_array_base."'";
