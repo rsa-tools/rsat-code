@@ -35,7 +35,7 @@ TASKS=
 
 TITLE_ZOO='Compare enrichment in reported TF singleton binding sites'
 MTX_FORMAT=transfac
-RPLOT=-r_plots 
+RPLOT=-r_plot 
 V=2
 PSEUDO=1
 BG_PSEUDO=0.01

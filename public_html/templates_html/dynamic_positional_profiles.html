@@ -101,7 +101,7 @@
 
   .button_chart {
 	position: relative;
-
+        cursor:pointer;
 	float: left;
         margin-top:10px;
   }
@@ -149,6 +149,10 @@
   text-decoration: underline;
   }
 
+.c3-legend-item {
+  font-size: 10px;
+}
+
 </style>
 
 <div id="summary_table_button" class="button_click Section_button selected_header_section"><strong>Parameters Table</strong></div>
@@ -195,7 +199,7 @@
       <button class='small button_chart' onclick='show_all();'>Show All Profiles</button>
       <button class='small button_chart' onclick='hide_all();'>Hide All Profiles</button>
 
-<button class='small button_chart' onclick='sig_upper_threshold();'><b>Significance</b>: Lower threshold<div><input type="number" value='' id="sig_up" /></div></button>
+<button class='small button_chart' onclick='sig_upper_threshold();'><b>Significance</b>: Lower threshold<div><input style="height:20px;margin:5px;" type="number" value='' id="sig_up" /></div></button>
 
 <!-- <button class='small button_chart' onclick='sig_lower_threshold();'>Hide TEST<div id="ccc"><input type="number" id="sig_low" /></div></button> -->
 
@@ -256,21 +260,28 @@ var chart = c3.generate({
 
 
     size: {
-        height: 600,
-        width: 1250
+        height: 500,
+        width: 1275
     },
 
     grid: {
         x: {
-            show: true
+            show: false
         },
         y: {
-            show: true
+            show: false
         }
     },
 
     legend: {
-        position: 'right'
+        position: 'bottom'
+    },
+
+    padding: {
+        top: 0,
+        right: 100,
+        bottom: 15,
+        left: 100,
     },
 
     tooltip: {
@@ -302,6 +313,9 @@ var chart = c3.generate({
                     text: 'Distance (bp)',
                     position: 'outer-center',
             },
+            tick: {
+                    culling: false
+            }
         },
     },
 

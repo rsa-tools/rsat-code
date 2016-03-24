@@ -49,14 +49,15 @@ my $tmp_file_name = $result_dir."/".$file_prefix;
 #		     "<br>Result subdir: ", $result_subdir, 
 		     "<br>File prefix: ", $file_prefix) if ($ENV{rsat_echo} >= 1);
 
-#### read parameters ####
-local $parameters = " -v 0";
+
 ################################################################
-## File prefix
+## Set parameters
+local $parameters = " -v 0";
 
+#local $parameters .= " -r_plot";
 
-#####################
-#Title specification
+################################################################
+## Title specification
 if ($query->param('html_title')) {
     $html_title=$query->param('html_title');
     $parameters .= " -html_title ' ".$html_title." ' ";
