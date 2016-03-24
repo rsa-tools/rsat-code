@@ -223,16 +223,19 @@ if(number.of.motifs > 1){
 
       for (plot.format in c("pdf", "jpg")) {
         heatmap.file <- paste(sep="", out.prefix, "_figures/heatmap.", plot.format)
-          w <- 7
+          w <- 15
           h <- w + 0.75
           resol <- 72 ## Screen resolution
         verbose(paste("drawing heatmap", heatmap.file), 2)
         if (plot.format == "pdf") {
 
 
-          pdf(file=heatmap.file, width=w, height=h, paper="executive")
+           pdf(file=heatmap.file, width=w, height=h, paper="executive")
+#           pdf(file=heatmap.file, )
+          
         } else if (plot.format == "jpg") {
-            jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
+          jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
+#           jpeg(filename=heatmap.file)
         }
 
 
