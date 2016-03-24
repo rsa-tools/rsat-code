@@ -280,7 +280,7 @@ sub OpenContigs {
 
     ## Check the existence of genome file
     unless (-e $genome_file) {
-      &RSAT::error::FatalError("Genome file $genome_file does not exist.");
+      &RSAT::error::FatalError("Genome file does not exist", $genome_file, '$ENV{RSAT}='.$ENV{RSAT});
     }
 
     ## Separate the genome directory and file name
