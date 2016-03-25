@@ -6,7 +6,7 @@
 
 digraph {
 	## General properties of the graph (font, color, ...)
-	graph [fontname="ArialBlack",fontsize="14", label="Tool map - Regulatory Sequence Analysis Tools (RSAT)" labelloc="t", fontcolor="#0066BB", nodesep="0.05", ranksep="0.1", URL="http://teaching.rsat.eu/", fontcolor="#0D73A7"];
+	graph [fontname="ArialBlack",fontsize="14", label="Tool map - Regulatory variant analysis with RSAT" labelloc="t", fontcolor="#0066BB", nodesep="0.05", ranksep="0.1", URL="http://teaching.rsat.eu/", fontcolor="#0D73A7"];
 	edge [fontname="ArialMT",fontsize="10",labelfontname="ArialMT",labelfontsize="10", arrowsize="0.5", color="#666666"];
 	node [fontname="ArialMT",fontsize="10",shape=record,height="0.2", color="#666666"];
 
