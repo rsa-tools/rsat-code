@@ -1,13 +1,13 @@
-# ## Define the local directory for R librairies
-# dir.rsat <- Sys.getenv("RSAT")
-# if (dir.rsat == "") {
-#   stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
-# }
-# dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
-# dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
-# 
-# ## Load some libraries
-# source(file.path(dir.rsat, 'R-scripts/config.R'))
+## Define the local directory for R librairies
+dir.rsat <- Sys.getenv("RSAT")
+if (dir.rsat == "") {
+  stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
+}
+dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
+dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
+
+## Load some libraries
+source(file.path(dir.rsat, 'R-scripts/config.R'))
 
 ## Load required libraries
 required.packages = c("RColorBrewer",
@@ -45,10 +45,16 @@ if (!exists("prefix")) {
   stop("Missing mandatory argument (The path to the D3 source code):d3.base  ")
 } else if (!exists("d3.array.base")) {
   stop("Missing mandatory argument (The path to the D3 Array library source code):d3.array.base  ")
+} else if (!exists("maxNWD.tsv")) {
+  stop("Missing mandatory argument (The path to the tsv file used as input for the dynamic heatmap): maxNWD_tsv ")
+} else if (!exists("maxNWD.heatmap.html")) {
+  stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): maxNWD.heatmap.html  ")
 } 
 
 
-# cat /home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/matrix-enrichment_heatmap.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " prefix = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/test_auto'; maxNWD.table.file = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt'; html.template.file = 'motif_enrichment_dynamic_heatmap_d3.html'; d3.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3.v3.min.js'; d3.array.base = 'https://d3js.org/d3-array.v0.6.min.js'" 
+
+
+# cat /home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/matrix-enrichment_heatmap.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " prefix = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto'; maxNWD.table.file = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt'; html.template.file = 'motif_enrichment_dynamic_heatmap_d3.html'; maxNWD.tsv = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_matrix_heatmap.tsv'; maxNWD.heatmap.html = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_motif_enrichment_maxNWD_heatmap.html'; d3.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3.v3.min.js'; d3.array.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3-array.v0.6.min.js'" 
 
 # prefix <- "test_motif_enrichment"
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap")
@@ -71,9 +77,8 @@ for(j in 1:dim(max.NWD.table)[1]){
   }
 }
 colnames(tsv.tab) <- c("Row", "Col", "Value")
-tsv.tab.file <- paste(prefix, "_matrix_heatmap.tsv", sep = "")
-write.table(tsv.tab, file = tsv.tab.file, sep = "\t", quote = FALSE, row.names = FALSE)
-
+# maxNWD.tsv <- paste(prefix, "_matrix_heatmap.tsv", sep = "")
+write.table(tsv.tab, file = maxNWD.tsv, sep = "\t", quote = FALSE, row.names = FALSE)
 
 ###############################################################
 ## Open and modify the Heatmap D3 template with the new data
@@ -108,7 +113,7 @@ html.report <- gsub("--col_names--", sequences.names.cat, html.report)
 html.report <- gsub("--row_names--", motifs.names.cat, html.report)
 
 ## Insert the TSV file
-html.report <- gsub("--file--", tsv.tab.file, html.report)
+html.report <- gsub("--file--", shortpath.maxNWD.tsv, html.report)
 
 ## Div bottom + Cell size
 cell.size <- 30
@@ -177,5 +182,5 @@ domain <- paste(domain, collapse = ",")
 html.report <- gsub("--domain--", domain, html.report)
 
 ## Export the report
-html.report.file <- paste(prefix, "_motif_enrichment_maxNWD_heatmap.html", sep = "")
-write(html.report, file = html.report.file)
+# maxNWD.heatmap.html <- paste(prefix, "_motif_enrichment_maxNWD_heatmap.html", sep = "")
+write(html.report, file = maxNWD.heatmap.html)

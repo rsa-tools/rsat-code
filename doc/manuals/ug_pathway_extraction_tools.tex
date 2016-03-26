@@ -149,7 +149,7 @@ We can also merge the KGML files of several organisms into one network and apply
 some filtering as follows (in one line):
 
 \begin{lstlisting}
-java -Xmx800m graphtools.util.MetabolicGraphProvider -i ecv/eco -o
+java -Xmx800m graphtools.util.MetabolicGraphProvider -i ecv/eco -o \
 eco_ecv_Network.tab -c C00001/C000002/C00003/C00004/C00005/C00006/C00007/C00008
 \end{lstlisting}
 
@@ -206,7 +206,7 @@ aspartate (KEGG identifier: C00049) and lysine (KEGG identifier: C00047) with
 the command below (in one line):
 
 \begin{lstlisting}
-java -Xmx800m graphtools.algorithms.Pathfinder -g KEGG_RPAIR_undirected.txt 
+java -Xmx800m graphtools.algorithms.Pathfinder -g KEGG_RPAIR_undirected.txt  \
 -s C00049 -t C00047 -y con -b -r 3 -f tab
 \end{lstlisting}
 

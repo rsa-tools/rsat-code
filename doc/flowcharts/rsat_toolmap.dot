@@ -27,10 +27,10 @@ digraph {
 		color="#0066BB";
 		bgcolor="#FBEEE0";
 		label = "Motif discovery";
-    oligo_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{oligo-analysis}", URL="http://rsat.eu/oligo-analysis_form.cgi", fontcolor="#0D73A7"];
-    position_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{position-analysis}", URL="http://rsat.eu/position-analysis_form.cgi", fontcolor="#0D73A7"];
-    dyad_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{dyad-analysis}", URL="http://rsat.eu/dyad-analysis_form.cgi", fontcolor="#0D73A7"];
-    local_word_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{local-word-analysis}", URL="http://rsat.eu/local-word-analysis_form.cgi", fontcolor="#0D73A7"];
+    oligo_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{oligo-analysis}", URL="http://teaching.rsat.eu/oligo-analysis_form.cgi", fontcolor="#0D73A7"];
+    position_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{position-analysis}", URL="http://teaching.rsat.eu/position-analysis_form.cgi", fontcolor="#0D73A7"];
+    dyad_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{dyad-analysis}", URL="http://teaching.rsat.eu/dyad-analysis_form.cgi", fontcolor="#0D73A7"];
+    local_word_analysis  [shape="record", style="rounded, filled", fillcolor="#D6EEFA", label="{local-word-analysis}", URL="http://teaching.rsat.eu/local-word-analysis_form.cgi", fontcolor="#0D73A7"];
     	}
 
           sequence -> oligo_analysis [style="tapered"]
