@@ -95,9 +95,9 @@ our $max_seq_verbose = 99;
 ### default residue probabilities
 our $seq_type = "DNA";
 our @dna_alphabet = qw (a c g t);
-foreach my $residue (@dna_alphabet) {
-  $residue_proba{$residue} = 0.25;
-}
+# foreach my $residue (@dna_alphabet) {
+#   $residue_proba{$residue} = 0.25;
+# }
 
 ## Alphabet for protein sequences
 our @protein_alphabet = qw(a c d e f g h i k l m n p q r s t v w y);
@@ -112,6 +112,27 @@ our %accepted_patterns = ();
 ################################################################
 ## CHECK PARAMETER VALUES
 ################################################################
+
+if ($return{'table'}) {
+
+  ## Mutually incompatible output types
+  if ($return{'distrib'}) {
+    &RSAT::error::FatalError("The options -table and -distrib are mutually incompatible");
+  }
+
+  ## The table format requires to specify in advance the list of
+  ## accepted patterns (in order to enable aligning them in the same
+  ## columns).
+  if ($seq_type eq "other") {
+    &RSAT::error::FatalError("The option -table requires to specify the sequence type as either DNA or protein.");
+  }
+}
+
+## The zeroocc option requires to specify in advance the list of
+## accepted patterns.
+if (($zeroocc) && ($seq_type eq "other") ){
+  &RSAT::error::FatalError("The option -table requires to specify the sequence type as either DNA or protein.");
+}
 
 ################################################################
 ## Sequence type
@@ -212,6 +233,64 @@ if ($infile{accepted_patterns}) {
 ## Open output stream
 our $out = &OpenOutputFile($outfile{output});
 
+
+################################################################
+## Alphabet and accepted residues
+our @alphabet = ();
+if (($seq_type eq "DNA") || ($seq_type eq "protein")) {
+
+  ## Select appropriate alphabet
+  if ($seq_type eq "DNA") {
+    @alphabet = @dna_alphabet;
+  } elsif ($seq_type eq "protein") {
+    @alphabet = @protein_alphabet;
+  }
+
+  ## Define accepted residues
+  our %accepted_residue = ();
+  foreach my $residue (@alphabet) {
+    $accepted_residue{$residue} = 1;
+  }
+
+  ## Define the list of all possible oligonucleotides
+  our @possible_oligos = ();
+  if ($seq_type eq "DNA") {
+    @possible_oligos = &all_oligos($oligo_length, @dna_alphabet);
+    &RSAT::message::Info("Reporting all oligonucleotides", scalar(@possible_oligos)) if ($main::verbose >= 2);
+  } elsif ($seq_type eq "protein") {
+    @possible_oligos = &all_oligos($oligo_length, @protein_alphabet);
+    &RSAT::message::Info("Reporting all oligopeptides", "alphabet size", scalar(@protein_alphabet), "oligos", scalar(@possible_oligos)) if ($main::verbose >= 2);
+  }
+
+  ## Define the accepted oligonucleotides
+  ## Define accepted residues
+  our %accepted_oligo = ();
+  foreach my $pattern_seq (@possible_oligos) {
+    $accepted_oligo{$pattern_seq} = 1;
+  }
+
+}
+
+# ## Calculate all possible oligomers of size k
+# if (($return{'table'}) ||
+#     ($return{'distrib'}) ||
+#     ($zeroocc)
+#     ) {
+  
+#   if ($seq_type eq "DNA") {
+#     @possible_oligos = &all_oligos($oligo_length, @dna_alphabet);
+#     &RSAT::message::Info("Reporting all oligonucleotides", scalar(@possible_oligos)) if ($main::verbose >= 2);
+#   } elsif ($seq_type eq "protein") {
+#     @possible_oligos = &all_oligos($oligo_length, @protein_alphabet);
+#     &RSAT::message::Info("Reporting all oligopeptides", "alphabet size", scalar(@protein_alphabet), "oligos", scalar(@possible_oligos)) if ($main::verbose >= 2);
+#   }
+# }
+
+## Already print verbose and header for the occurrence or frequency tables.
+if ($return{'table'}) {
+  &Verbose() if ($verbose >= 1);
+}
+
 ################################################################
 ## Count oligo occurrences
 &CountOligos();
@@ -231,7 +310,6 @@ if ($background_model eq "equi") {
   foreach my $residue (@alphabet) {
     $residue_proba{$residue} = $residue_proba;
   }
-  ;
 
 } elsif ($background_model eq "Markov") {
 
@@ -418,29 +496,6 @@ sub CountOligos {
     &RSAT::message::TimeWarn("Counting oligo frequencies");
   }
 
-  ## Calculate all possible oligomers of size k
-  if (($return{'table'}) ||
-      ($return{'distrib'}) ||
-      ($zeroocc)
-     ) {
-
-    if ($seq_type eq "DNA") {
-	@possible_oligos = &all_oligos($oligo_length, @dna_alphabet);
-	&RSAT::message::Info("Reporting all oligonucleotides", scalar(@possible_oligos)) if ($main::verbose >= 2);
-    } elsif ($seq_type eq "protein") {
-	@possible_oligos = &all_oligos($oligo_length, @protein_alphabet);
-	&RSAT::message::Info("Reporting all oligopeptides", "alphabet size", scalar(@protein_alphabet), "oligos", scalar(@possible_oligos)) if ($main::verbose >= 2);
-    } else {
-	## TO DO : CHECK WHETHER THIS WORKS WITH ANY TEXT
-	@possible_oligos = sort keys %patterns;
-    }
-
-
-    ## print verbose now for the tables
-    if ($return{'table'}) {
-      &Verbose() if ($verbose >= 1);
-    }
-  }
 
   if ($quick_count) {
     %patterns = &CountWords();
@@ -492,7 +547,7 @@ sub CountOligos {
       $sum_seq_length += $seq_length[$sequence_number];
 
       &RSAT::message::TimeWarn($sequence_number,  $seq_length[$sequence_number], $sum_seq_length, $current_id)
-	if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==0)));
+	  if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==0)));
 
 
       if ($seq_length[$sequence_number] < $oligo_length) {
@@ -606,6 +661,7 @@ sub CountOligos {
       ################################################################
       ## Specific treatment for occurrence table
       if ($return{'table'}) {
+
 	## Make sure that all patterns are considered
 	foreach my $pattern_seq (@possible_oligos) {
 	  ## Assign 0 values
@@ -623,13 +679,29 @@ sub CountOligos {
 	  &CalcFrequencies();
 	}
 
-	## select patterns to be printed (depend on whether RC have been grouped)
-	@output_patterns = sort keys %patterns;
+	# ## Select patterns to be printed (depend on whether RC have been grouped)
+	# my @found_patterns = sort keys %patterns;
+	# my @output_patterns = ();
+	# foreach my $pattern_seq (@found_patterns) {
+	#   if (($seq_type eq "DNA") && ($pattern_seq =~ /[^atcg]/i)) {
+	#     next;
+
+	#   } elsif ((lc($seq_type) eq "protein")
+	# 	   && ($pattern_seq !~ /^[acdefghiklmnpqrstvwxy]+$/i)) {
+	#     next;
+
+	#   } else {
+	#     push @output_patterns, $pattern_seq;
+	#   }
+	# }
+
+	my @output_patterns = @possible_oligos;
+
 
 	## Print table header before the first pattern counts
 	unless ($header_printed) {
 	  print $out "; Number of output patterns\t", scalar(@output_patterns), "\n"
-	    if ($main::verbose >= 1);
+	      if ($main::verbose >= 1);
 	  &PrintTableHeader(@output_patterns);
 	  $header_printed = 1;
 	}
@@ -637,18 +709,18 @@ sub CountOligos {
 	## Print pattern counts for the current sequence
 	print $out $current_id;
 	foreach my $pattern_seq (@output_patterns) {
-	  if (($seq_type eq "DNA") && ($pattern_seq !~ /^[acgt\|]+$/i)) {
-	    &RSAT::message::Warning(join("\t", "Skipping pattern with non-DNA letters", $pattern_seq))
-	      unless (($verbose == 0) || ($return{'table'}));
-	    next;
-	  } elsif ((lc($seq_type) eq "protein")
-		   && ($pattern_seq !~ /^[acdefghiklmnpqrstvwxy]+$/i)) {
-	    &RSAT::message::Warning(join("\t",
-					 "Skipping pattern with invalid characters for protein sequence",
-					 $pattern_seq))
-	      unless (($verbose == 0) || ($return{'table'}));
-	    next;
-	  }
+	  # if (($seq_type eq "DNA") && ($pattern_seq !~ /^[acgt\|]+$/i)) {
+	  #   &RSAT::message::Warning(join("\t", "Skipping pattern with non-DNA letters", $pattern_seq))
+	  # 	unless (($verbose == 0) || ($return{'table'}));
+	  #   next;
+	  # } elsif ((lc($seq_type) eq "protein")
+	  # 	   && ($pattern_seq !~ /^[acdefghiklmnpqrstvwxy]+$/i)) {
+	  #   &RSAT::message::Warning(join("\t",
+	  # 				 "Skipping pattern with invalid characters for protein sequence",
+	  # 				 $pattern_seq))
+	  # 	unless (($verbose == 0) || ($return{'table'}));
+	  #   next;
+	  # }
 	  if ($return{freq}) {
 	    print $out "\t", $patterns{$pattern_seq}->{obs_freq};
 	  } else {
@@ -680,11 +752,13 @@ sub CountOligos {
     }
   }
 
-  ## filter out undefined residues for DNA or protein sequences
+  ## Filter out undefined residues for DNA or protein sequences
   if (($seq_type eq "DNA") || ($seq_type eq "protein")) {
     foreach $pattern_seq (keys %patterns) {
-      if ((($seq_type eq "DNA") && ($pattern_seq =~ /[^atcg]/i)) ||
-	  (($seq_type eq "protein") && ($pattern_seq =~ /[^acdefghiklmnpqrstvwxy]/i))) {
+#      if ((($seq_type eq "DNA") && ($pattern_seq =~ /[^atcg]/i)) ||
+#	  (($seq_type eq "protein") && ($pattern_seq =~ /[^acdefghiklmnpqrstvwxy]/i))) {
+      if ((($seq_type eq "DNA") && (!$accepted_oligo{$pattern_seq})) ||
+	  (($seq_type eq "protein") && (!$accepted_oligo{$pattern_seq}))) {
 	$discarded_occurrences += $patterns{$pattern_seq}->{occ};
 	$discarded_occurrences += $patterns{$pattern_seq}->{overlaps};
 	&RSAT::message::Warning(join("\t", "Discarded occurrences for pattern", $pattern_seq,
@@ -697,9 +771,10 @@ sub CountOligos {
     $nb_possible_pos -= $discarded_occurrences if (&IsNatural($nb_possible_pos));
 
     foreach $letter (keys %residue_occ) {
-      if ((($seq_type eq "DNA") && ($letter =~ /[^atcg]/i)) ||
-	  (($seq_type eq "protein") && ($letter =~ /[^acdefghiklmnpqrstvwxy]/i))) {
-	#	    if ($letter =~ /[^atcg]/i) {
+#      if ((($seq_type eq "DNA") && ($letter =~ /[^atcg]/i)) ||
+#	  (($seq_type eq "protein") && ($letter =~ /[^acdefghiklmnpqrstvwxy]/i))) {
+      if ((($seq_type eq "DNA") && (!$accepted_residue{$letter})) ||
+	  (($seq_type eq "protein") && (!$accepted_residue{$letter}))) {
 	$discarded_residues += $residue_occ{$letter};
 	&RSAT::message::Warning(join("\t", "Discarded residue", $letter,
 				     "occ", $residue_occ{$letter},
@@ -737,76 +812,78 @@ sub CountOligos {
 ################################################################
 ## Print header for oligo count table
 sub PrintTableHeader {
-    my @output_patterns = @_;
-    print $out "# seq";
-    foreach my $pattern_seq (@output_patterns) {
-	print $out "\t", &PatternID($pattern_seq, $sum_rc);
-    }
-    print $out "\n";
+  my @output_patterns = @_;
+  print $out "# seq";
+  foreach my $pattern_seq (@output_patterns) {
+    print $out "\t", &PatternID($pattern_seq, $sum_rc);
+  }
+  print $out "\n";
 }
 
 
 ################################################################
 ## sum occurrences of reverse complement patterns
 sub SumReverseComplements {
-    &RSAT::message::TimeWarn("Summing occurrences for pairs of reverse complements") if ($verbose >= 2);
+  &RSAT::message::TimeWarn("Summing occurrences for pairs of reverse complements") if ($verbose >= 2);
 
-    foreach my $pattern_seq (keys %patterns) {
-	my $rc_pattern_seq = &SmartRC($pattern_seq);
+  foreach my $pattern_seq (keys %patterns) {
+    my $rc_pattern_seq = &SmartRC($pattern_seq);
 
-	warn ("; Summing occurrences\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
+    &RSAT::message::Debug("Summing reverse complementary occurrences", $pattern_seq, $rc_pattern_seq) if ($verbose >= 4);
+
+    if ($rc_pattern_seq eq $pattern_seq) {
+      ## don't count twice the reverse palindroms !!!!!!!
+      $patterns{$pattern_seq}->{'remark'} = "palindrom";
+      $occ_2strands{$pattern_seq} = $patterns{$pattern_seq}->{occ};
+      $overlaps_2strands{$pattern_seq} = $patterns{$pattern_seq}->{overlaps};
+    } else {
+      ## sum occurrences of each pattern with its reverse complement
+      $occ_2strands{$rc_pattern_seq} = $occ_2strands{$pattern_seq} =
+	  $patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern_seq}->{occ};
+      $overlaps_2strands{$rc_pattern_seq} = $overlaps_2strands{$pattern_seq} =
+	  $patterns{$pattern_seq}->{overlaps} + $patterns{$rc_pattern_seq}->{overlaps};
+    }
+  }
+  foreach my $pattern_seq (keys %occ_2strands) {
+    $patterns{$pattern_seq}->{occ} = $occ_2strands{$pattern_seq};
+    $patterns{$pattern_seq}->{overlaps} = $overlaps_2strands{$pattern_seq};
+  }
+  undef %occ_2strands;
+  undef %overlaps_2strands;
+
+  ## Residue occurrences
+  warn ("; Summing residue occurrences", "\n") if ($verbose >= 2);
+  foreach my $residue (keys %residue_occ) {
+    my $rc_residue =&SmartRC($residue);
+    $occ_2str{$rc_residue} = $occ_2str{$residue} = $residue_occ{$residue} + $residue_occ{$rc_residue};
+  }
+  foreach my $residue (keys %occ_2str) {
+    $residue_occ{$residue} = $occ_2str{$residue};
+  }
+  undef %occ_2str;
+
+  ## Positions
+  if ($return{'pos'}) {
+    warn ("; Summing positions for reverse complementary pairs", "\n") if ($verbose >= 2);
+    for $seq (1..$sequence_number) {
+      foreach $pattern_seq (sort keys %patterns) {
+	warn ("; Summing position\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
+	$rc_pattern_seq = &SmartRC($pattern_seq);
 	if ($rc_pattern_seq eq $pattern_seq) {
-	    ## don't count twice the reverse palindroms !!!!!!!
-	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
-	    $occ_2strands{$pattern_seq} = $patterns{$pattern_seq}->{occ};
-	    $overlaps_2strands{$pattern_seq} = $patterns{$pattern_seq}->{overlaps};
+	  @{$m_pos_bothstrands{$pattern_seq}[$seq]} = @{$match_pos{$pattern_seq}[$seq]};
 	} else {
-	    ## sum occurrences of each pattern with its reverse complement
-	    $occ_2strands{$rc_pattern_seq} = $occ_2strands{$pattern_seq} =
-		$patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern_seq}->{occ};
-	    $overlaps_2strands{$rc_pattern_seq} = $overlaps_2strands{$pattern_seq} =
-		$patterns{$pattern_seq}->{overlaps} + $patterns{$rc_pattern_seq}->{overlaps};
+	  @{$m_pos_bothstrands{$pattern_seq}[$seq]} = (@{$match_pos{$pattern_seq}[$seq]},@{$match_pos{$rc_pattern_seq}[$seq]});
 	}
+      }
+      foreach $pattern_seq (sort keys %patterns) {
+	@{$match_pos{$pattern_seq}[$seq]} = @{$m_pos_bothstrands{$pattern_seq}[$seq]};
+	@{$match_pos{$pattern_seq}[$seq]}= sort {$a <=> $b} @{$match_pos{$pattern_seq}[$seq]};
+	undef @{$m_pos_bothstrands{$pattern_seq}[$seq]};
+      }
     }
-    foreach my $pattern_seq (keys %occ_2strands) {
-	$patterns{$pattern_seq}->{occ} = $occ_2strands{$pattern_seq};
-	$patterns{$pattern_seq}->{overlaps} = $overlaps_2strands{$pattern_seq};
-    }
-    undef %occ_2strands;
-    undef %overlaps_2strands;
+  }
+  &GroupRC(); ## remove the duplicate pattern (only retain the first by alphabetical order)
 
-    ### residue occurrences
-    warn ("; Summing residue occurrences", "\n") if ($verbose >= 2);
-    foreach my $residue (keys %residue_occ) {
-	my $rc_residue =&SmartRC($residue);
-	$occ_2str{$rc_residue} = $occ_2str{$residue} = $residue_occ{$residue} + $residue_occ{$rc_residue};
-    }
-    foreach my $residue (keys %occ_2str) {
-	$residue_occ{$residue} = $occ_2str{$residue};
-    }
-    undef %occ_2str;
-
-    ### positions ###
-    if ($return{'pos'}) {
-	warn ("; Summing positions for reverse complementary pairs", "\n") if ($verbose >= 2);
-	for $seq (1..$sequence_number) {
-	    foreach $pattern_seq (sort keys %patterns) {
-		warn ("; Summing position\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
-		$rc_pattern_seq = &SmartRC($pattern_seq);
-		if ($rc_pattern_seq eq $pattern_seq) {
-		    @{$m_pos_bothstrands{$pattern_seq}[$seq]} = @{$match_pos{$pattern_seq}[$seq]};
-		} else {
-		    @{$m_pos_bothstrands{$pattern_seq}[$seq]} = (@{$match_pos{$pattern_seq}[$seq]},@{$match_pos{$rc_pattern_seq}[$seq]});
-		}
-	    }
-	    foreach $pattern_seq (sort keys %patterns) {
-		@{$match_pos{$pattern_seq}[$seq]} = @{$m_pos_bothstrands{$pattern_seq}[$seq]};
-		@{$match_pos{$pattern_seq}[$seq]}= sort {$a <=> $b} @{$match_pos{$pattern_seq}[$seq]};
-		undef @{$m_pos_bothstrands{$pattern_seq}[$seq]};
-	    }
-	}
-    }
-    &GroupRC(); ## remove the duplicate pattern (only retain the first by alphabetical order)
 }
 
 ################################################################
@@ -2015,13 +2092,13 @@ sub ReadArguments {
 		$seq_type = "DNA";
 
 		## any other sequence type
-	    } elsif ($arg =~ /^other/) {
+	    } elsif ($seq_type =~ /^other/) {
 		$sum_rc = 0;
 		$group_rc = 0;
 		$seq_type = "other";
 
 	    } else {
-		&RSAT::error::FatalError($seq_typeis, "is not a valid sequence type.");
+		&RSAT::error::FatalError($seq_type, "is not a valid sequence type.");
 	    }
 
 	    ## output file
@@ -2373,9 +2450,6 @@ sub ReadArguments {
 	    ################################################################
 	    ## Return a table with one row per sequence and one column per pattern
 	} elsif ($arg eq "-table") {
-	  if ($return{'distrib'}) {
-	    &RSAT::error::FatalError("The options -table and -distrib are mutually incompatible");
-	  }
 	  $return{'table'} = 1;
 	  push(@output_fields, "occ");
 
