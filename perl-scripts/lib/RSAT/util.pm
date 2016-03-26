@@ -655,9 +655,8 @@ returns a file handle
 
 =cut
 sub OpenInputFile {
-    my ($filename) = @_;
-    &RSAT::message::Debug("Opening input stream", $filename) if ($main::verbose >= 10);
-
+  my ($filename) = @_;
+  &RSAT::message::Debug("Opening input stream", $filename) if ($main::verbose >= 10);
     my $input_stream;
     my $input_dir = "";
     my $short_file_name = "";
@@ -708,24 +707,24 @@ returns a file handle
 
 =cut
 sub OpenOutputFile {
-    ### usage $output_stream = &OpenOutputFile($filename);
-    my ($filename) = @_;
-    my $to_open = "";
-    my $fh;
+  ### usage $output_stream = &OpenOutputFile($filename);
+  my ($filename) = @_;
+  my $to_open = "";
+  my $fh;
 
-    if ($filename) {
-	if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
-	    $to_open = "| gzip -c > $filename";
-	} else {
-	    $to_open = ">$filename";
-	}
-	open (my $fh, "$to_open") || 
-	    &RSAT::error::FatalError ("Cannot write output file ".$filename);
-	return ($fh)
+  if ($filename) {
+    if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
+      $to_open = "| gzip -c > $filename";
     } else {
-	$fh = *STDOUT;
-	return $fh;
+      $to_open = ">$filename";
     }
+#    warn("HELLO\t", $to_open, "\n");
+    open($fh, $to_open) || 
+	&RSAT::error::FatalError ("Cannot write output file ".$to_open);
+  } else {
+    $fh = *STDOUT;
+  }
+  return ($fh);
 }
 
 

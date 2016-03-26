@@ -23,6 +23,8 @@ formats <- args[3]
 formats <- unlist(strsplit (formats,split=","))
 print (formats)
 
+print.heatmap <- args[4]
+
 ## For debugging:
 
 #mtx.quality.nwds.file <-"./results/matrix_quality/20150428/zoo_chip_enrichment/all_nwd_files.txt"
@@ -131,60 +133,65 @@ draw.heatmap <- function (ListAll,
     }
 
     write.table(file=paste(heatmap.file, "txt", sep="" ),metric.table,quote = FALSE, sep = "\t", na = "NA"  )
-    
-    for (format in formats){
-        if (format=="pdf"){
-            pdf(file=paste(heatmap.file, format, sep="" ))
-        } else if (format =="png"){
-            png(file=paste(heatmap.file, format, sep="" ))
-        } else {
-            stop ("Format not available")
-        }
-       # metric.table <- scale(metric.table)
+    if (print.heatmap==1){
         
-        heatmap.2(as.matrix(metric.table), col=colorRampPalette(brewer.pal(11,"RdBu"))(100),
-                  trace="none", 
-                  margins=c(6,10), 
-                  cexRow = 0.75, 
-                  cexCol = 0.75,
-#                                         , Colv=FALSE
-#                                         , breaks=breaks.hm
-#                                         , dendrogram= "none"
-                  main = metric,
-                  xlab = "Sequences",
-                  ylab = "Motifs",
-                  key = TRUE, 
-                  key.title = "",
-                  key.xlab = paste(metric, "value"), 
-                  key.ylab = "",
-                  scale="none",
+        for (format in formats){
+            if (format=="pdf"){
+                pdf(file=paste(heatmap.file, format, sep="" ))
+            } else if (format =="png"){
+                png(file=paste(heatmap.file, format, sep="" ))
+            } else {
+                stop ("Format not available")
+            }
+                                        # metric.table <- scale(metric.table)
+            
+            heatmap.2(as.matrix(metric.table), col=colorRampPalette(brewer.pal(11,"RdBu"))(100),
+                      trace="none", 
+                      margins=c(6,10), 
+                      cexRow = 0.75, 
+                      cexCol = 0.75,
+                                        #                                         , Colv=FALSE
+                                        #                                         , breaks=breaks.hm
+                                        #                                         , dendrogram= "none"
+                      main = metric,
+                      xlab = "Sequences",
+                      ylab = "Motifs",
+                      key = TRUE, 
+                      key.title = "",
+                      key.xlab = paste(metric, "value"), 
+                      key.ylab = "",
+                      scale="none",
                    density.info = "none", ...
-                  )
-
-        dev.off()
+                      )
+            
+            dev.off()
+        }
     }
 }
 
 #####
-# Draw heatmap using max.nwd
+## Draw heatmap using max.nwd
+
+## If required draw heatmap
+
 max.nwd.heatmap.file <- paste(plot.folder,"maxNWD_heatmap_compare.", sep="/")
 draw.heatmap(ListAll=nwd.files,metric="max.nwd",heatmap.file=max.nwd.heatmap.file , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
 
-#####
-# Draw heatmap using max.nwd
+## ###
+## Draw heatmap using max.nwd
 max.sig.nwd.heatmap.file <- paste(plot.folder,"maxNWDsignificantScore_heatmap_compare.", sep="/")
 draw.heatmap(ListAll=nwd.files,metric="max.sig.nwd",heatmap.file=max.sig.nwd.heatmap.file  , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
 
-#####
-# Draw heatmap using auc.all
+## ###
+## Draw heatmap using auc.all
 auc.all.heatmap.file <- paste(plot.folder,"AUC_NWD_heatmap_compare.", sep="/")
 draw.heatmap(ListAll=nwd.files,
              metric="auc.all",heatmap.file=auc.all.heatmap.file, 
              formats=formats, mtx.quality.nwds=mtx.quality.nwds,
              zlim=c(0,1))
 
-#####
-# Draw heatmap using auc.all
+## ###
+## Draw heatmap using auc.all
 auc.sig.heatmap.file <- paste(plot.folder,"AUC_NWDsignificantScore_heatmap_compare.", sep="/")
 draw.heatmap(ListAll=nwd.files,metric="auc.sig",heatmap.file=auc.sig.heatmap.file  , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
 

@@ -34,7 +34,7 @@ usage: peak-motifs_soap.py [-h] -test <TEST_FILE> [-control <CONTROL_FILE>]
 				[-image_format <IMAGE_FORMAT>]
 				[-disco [<DISCO_ALGORITHM> [<DISCO_ALGORITHM> ...]]]
 				[-source <SOURCE_FILE>] [-verb <VERBOSITY>]
-				[-ref_motif <REF_MOTIF>] -server <SERVEUR>
+				[-ref_motif <REF_MOTIF>] -server <SERVER>
 
 optional arguments:
   -h, --help		show this help message and exit
@@ -93,7 +93,7 @@ optional arguments:
 			Motif annotated in some transcription factor database
 			(e.g. RegulonDB, Jaspar, TRANSFAC) for the
 			transcription factor of interest.
-  -server <SERVEUR>, --server <SERVEUR>
+  -server <SERVER>, --server <SERVER>
 			RSAT server
 
 Version 0.1 - 30/01/2015 - Adapted from Jocelyn Brayet, France Genomique team
@@ -221,7 +221,7 @@ peakMotifsVersion = '0.1 - 30/01/2015'
 serverDict = {
 
 	"fr_ens":"http://rsat01.biologie.ens.fr/rsat/web_services/RSATWS.wsdl",
-	"fr_mrs":"http://rsat-tagc.univ-mrs.fr/rsat/web_services/RSATWS.wsdl",
+	"fungi":"http://rsat-tagc.univ-mrs.fr/rsat/web_services/RSATWS.wsdl",
 	"fr_ro":"http://rsat.sb-roscoff.fr/web_services/RSATWS.wsdl",
 	"fr_mrs_2":"http://pedagogix-tagc.univ-mrs.fr/rsat/web_services/RSATWS.wsdl",
 	"es":"http://floresta.eead.csic.es/rsat/web_services/RSATWS.wsdl",
@@ -233,6 +233,7 @@ serverDict = {
 serverDict = {
 
 	"fr_ens":"http://protists.rsat.eu/rsat/web_services/RSATWS.wsdl",
+	"fungi":"http://fungi.rsat.eu/rsat/web_services/RSATWS.wsdl",
 	"fr_mrs":"http://fungi.rsat.eu/rsat/web_services/RSATWS.wsdl",
 	"fr_ro":"http://metazoa.rsat.eu/web_services/RSATWS.wsdl",
 	"fr_mrs_2":"http://teaching.rsat.eu/rsat/web_services/RSATWS.wsdl",
