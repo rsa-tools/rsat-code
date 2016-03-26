@@ -12,9 +12,9 @@ digraph {
 
 	subgraph cluster_0 {
 		color="#0066BB";
-		label = "Alignment";
+		label = "Read mapping";
 
-		read_alignment [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Alignment}"];
+		read_alignment [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Read mapping}"];
 		read_alignment -> aligned_reads;
 		aligned_reads [shape="record", style="filled", fillcolor="#FFEEDD", label="{Aligned reads\n(bam)}"];
 
@@ -56,9 +56,9 @@ digraph {
 		raw_read_quality [shape="record", style="filled", fillcolor="#FFEEDD", label="{Raw read quality report\n(Text + figures)}"];
 
 		aligned_reads -> ali_quality_analysis
-		ali_quality_analysis [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Alignment quality}", color="#DD0066"]
+		ali_quality_analysis [shape="record", style="rounded,filled", fillcolor="#EEFFDD", label="{Read quality}", color="#DD0066"]
 		ali_quality_analysis -> ali_read_quality
-		ali_read_quality [shape="record", style="filled", fillcolor="#FFEEDD", label="{Alignment quality report\n(Text + figures)}"];
+		ali_read_quality [shape="record", style="filled", fillcolor="#FFEEDD", label="{Read quality report\n(Text + figures)}"];
 	}
 
 

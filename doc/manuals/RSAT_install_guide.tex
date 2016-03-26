@@ -150,23 +150,27 @@ more check_perl_modules_eval.txt
 ## Failed, for some reason the check fails but the module does work.
 
 
-################################################################
-## IN CASE SOME MODULES ARE MISSING, they can be installed with the
-following commands, but this requires admin rights.
+################################################################ IN
+## CASE SOME MODULES ARE MISSING, they can be installed with the
+## following commands, but this requires admin rights, because only
+## the system administrator has the right to install Perl modules with
+## cpan.
 
-sudo bash
+cd $RSAT
+sudo bash ## Become admin of your machine
+
+## Load the RSAT configuration
+source RSAT_config.bashrc
 
 ## Check that RSAT path has been defined
 echo $RSAT
 
-## If RSAT is not specified, 
-## try this and check again
-##     source /etc/profile.d/rsat.sh
-## Alternatively: 
-##     source [RSAT_FULL_PATH]/RSAT_config.bashrc
-
 ## Install missing modules (this requires admin rights)
 make -f makefiles/install_rsat.mk perl_modules_install
+
+
+## Important: exit from the admin status, because the next steps have to be done as RSAT user
+exit
   \end{lstlisting}
 
 
@@ -279,7 +283,7 @@ discovery tools (\program{oligo-analysis}, \program{dyad-analysis},
 It requires a freeware license (\url{http://www.vmatch.de/}).
 
 After having obtained the license, you will receive a file named
-vmatch.lic, which should be copied in the directory $RSAT/bin.
+vmatch.lic, which should be copied in the directory \$RSAT/bin.
 
 \begin{lstlisting}
 ## Quick test with a random sequence
@@ -671,7 +675,7 @@ source RSAT_config.bashrc
   \item in Lunix (Centos or Ubuntu), you can add a soft link
     (\command{ln -s}) to
     \file{[RSAT\_PARENT\_PATH]/RSAT\_config.bashrc} in the bas
-    completion directory: \file{/etc/bash_completion.d/};
+    completion directory: \file{/etc/bash\_completion.d/};
   \item Mac OSX, add a line to the (\file{/etc/bashrc}) to source the
     file [RSAT\_PARENT\_PATH]/RSAT\_config.bashrc.
   \end{itemize}
