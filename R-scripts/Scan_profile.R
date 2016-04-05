@@ -546,17 +546,27 @@ shape <- apply(feature.log2.ratio, 1, function(y){
   get.profile.shape(profile.slope)
   
 })
-
 feature.attributes$Shape <- shape
 
+## Separate the motifs names by profile shape
+enriched.motifs <- names(which(shape == "Enriched"))
+avoided.motifs <- names(which(shape == "Avoided"))
+multi.motifs <- names(which(shape == "Multi"))
+flat.motifs <- names(which(shape == "Flat"))
+
+## Multi represents those profiles having one peak and one valley 
+## in the same profile. Thay are joined to the avoided and enriched set
+enriched.motifs <- union(enriched.motifs, multi.motifs)
+avoided.motifs <- union(avoided.motifs, multi.motifs)
+rm(shape, multi.motifs)
+
 ## Test get.profile.shape 
-profile.i <- c(1, -1, 0, 1, 1, -1, -1, -1, 0,  1, -1)
+# profile.ee <- c(1, -1, 0, 1, 1, -1, -1, -1, 0,  1, -1)
 # profile.e <- c(0, 0, 1, 1, 1, 1, -1, -1, -1, 0, 0)
 # profile.a <- c(0, 0, -1, -1, -1, 1, 1, 1, 1, 0, 0)
 # profile.f <- c(1, -1, -1, 1, 0, 0, -1, 0, 1, 1, 0)
 # profile.m <- c(0, 0, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1,0, 0)
 # profile.s <- c(1, -1, -1,  1,  1,  1, -1,  1, -1,  1,  0)
-
 
 ####################################################################################
 ## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
@@ -777,6 +787,7 @@ plot.names <- NULL
 area <- NULL
 all.motifs <- NULL
 all.motif.names <- NULL
+hash.motif.IDs <- list()
 
 
 ## Each column of the variable profiles correspond to the counts per bin of each motif
@@ -796,6 +807,7 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   motif <- gsub(":", "", motif)
   motif <- gsub("\\s+", "", motif, perl = TRUE)
   
+  hash.motif.IDs[[TF.IDs.cp[counter]]] <<- motif
   
   all.motifs <<- append(all.motifs, motif)
   all.motif.names <<- append(all.motif.names, TF.names[counter])
@@ -822,6 +834,15 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   x.y <<- rbind(x.y, y) 
 })
 
+## Get the ID (required for the HTML document) of the select motif names
+flat.selection <- as.vector(sapply(flat.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
+flat.motifs <- as.vector(unlist(hash.motif.IDs[flat.selection]))
+
+enriched.selection <- as.vector(sapply(enriched.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
+enriched.motifs <- as.vector(unlist(hash.motif.IDs[enriched.selection]))
+
+avoided.selection <- as.vector(sapply(avoided.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
+avoided.motifs <- as.vector(unlist(hash.motif.IDs[avoided.selection]))
 
 ## Set the line width according the significance -log10(E-value)
 ## Higher significance means a wider line
@@ -949,6 +970,15 @@ if(draw.area == 1){
 ## They are inserted in the JQuery section
 all.motifs <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
 html.report <- gsub("--all--", all.motifs, html.report)
+
+enriched.motifs <- paste(paste("'", enriched.motifs, "'", sep = ""), collapse = ",")
+html.report <- gsub("--enriched--", enriched.motifs, html.report)
+
+avoided.motifs <- paste(paste("'", avoided.motifs, "'", sep = ""), collapse = ",")
+html.report <- gsub("--avoided--", avoided.motifs, html.report)
+
+flat.motifs <- paste(paste("'", flat.motifs, "'", sep = ""), collapse = ",")
+html.report <- gsub("--flat--", flat.motifs, html.report)
 
 ## Insert the Y axis limits
 ## They are inserted in the C3section
