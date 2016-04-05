@@ -104,7 +104,23 @@
         cursor:pointer;
 	float: left;
         margin-top:10px;
+        margin-left:3px;
+        background-color: #D6EEFA;
+        color: #0D73A7;
+        border-radius:5px;
+        font-size: 15px;
+        text-align: center;
+//        font-weight: bold;
+//        border-style:none;
   }
+
+ #show_all_button {
+        background-color: #C1FFC7;
+ }
+
+ #hide_all_button {
+        background-color: #FCACAC;
+ }
 
   .button_click:active {
         position:relative;
@@ -196,9 +212,11 @@
 
 </div> 
    <div  style="display:block; clear:both;position:relative;float:left;">
-      <button class='small button_chart' onclick='show_all();'>Show All Profiles</button>
-      <button class='small button_chart' onclick='hide_all();'>Hide All Profiles</button>
-
+      <button class='small button_chart' id='show_all_button' onclick='show_all();'>Show All Profiles</button>
+      <button class='small button_chart' id='hide_all_button' onclick='hide_all();'>Hide All Profiles</button>
+      <button class='small button_chart' onclick='enriched();'>Enriched Profiles</button>
+      <button class='small button_chart' onclick='avoided();'>Avoided Profiles</button>
+      <button class='small button_chart' onclick='flat();'>Flat Profiles</button>
 <button class='small button_chart' onclick='sig_upper_threshold();'><b>Significance</b>: Lower threshold<div><input style="height:20px;margin:5px;" type="number" value='' id="sig_up" /></div></button>
 
 <!-- <button class='small button_chart' onclick='sig_lower_threshold();'>Hide TEST<div id="ccc"><input type="number" id="sig_low" /></div></button> -->
@@ -344,6 +362,22 @@ function show_all() {
 
 function hide_all() {
     chart.hide([--all--]);
+}
+
+// Show all the enriched/avoided/flat motifs
+function enriched() {
+    chart.hide([--all--]);
+    chart.show([--enriched--]);
+}
+
+function avoided() {
+    chart.hide([--all--]);
+    chart.show([--avoided--]);
+}
+
+function flat() {
+    chart.hide([--all--]);
+    chart.show([--flat--]);
 }
 
 Array.prototype.difference = function (x) {
