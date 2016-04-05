@@ -558,7 +558,29 @@ flat.motifs <- names(which(shape == "Flat"))
 ## in the same profile. Thay are joined to the avoided and enriched set
 enriched.motifs <- union(enriched.motifs, multi.motifs)
 avoided.motifs <- union(avoided.motifs, multi.motifs)
-rm(shape, multi.motifs)
+
+flat.motifs <- as.vector(ID.names[which(ID.names[,2] == flat.motifs),1])
+avoided.motifs <- as.vector(ID.names[which(ID.names[,2] == avoided.motifs),1])
+enriched.motifs <- as.vector(ID.names[which(ID.names[,2] == enriched.motifs),1])
+
+flat.motifs <- gsub("_", "", flat.motifs)
+flat.motifs <- gsub("-", "", flat.motifs)
+flat.motifs <- gsub("\\.", "", flat.motifs)
+flat.motifs <- gsub(":", "", flat.motifs)
+flat.motifs <- gsub("\\s+", "", flat.motifs, perl = TRUE)
+
+enriched.motifs <- gsub("_", "", enriched.motifs)
+enriched.motifs <- gsub("-", "", enriched.motifs)
+enriched.motifs <- gsub("\\.", "", enriched.motifs)
+enriched.motifs <- gsub(":", "", enriched.motifs)
+enriched.motifs <- gsub("\\s+", "", enriched.motifs, perl = TRUE)
+
+avoided.motifs <- gsub("_", "", avoided.motifs)
+avoided.motifs <- gsub("-", "", avoided.motifs)
+avoided.motifs <- gsub("\\.", "", avoided.motifs)
+avoided.motifs <- gsub(":", "", avoided.motifs)
+avoided.motifs <- gsub("\\s+", "", avoided.motifs, perl = TRUE)
+
 
 ## Test get.profile.shape 
 # profile.ee <- c(1, -1, 0, 1, 1, -1, -1, -1, 0,  1, -1)
@@ -834,16 +856,22 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   x.y <<- rbind(x.y, y) 
 })
 
-## Get the ID (required for the HTML document) of the select motif names
-flat.selection <- as.vector(sapply(flat.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
-flat.motifs <- as.vector(unlist(hash.motif.IDs[flat.selection]))
+if(length(flat.motifs) > 0){
+  ## Get the ID (required for the HTML document) of the select motif names
+  flat.selection <- as.vector(sapply(flat.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
+  flat.motifs <- as.vector(unlist(hash.motif.IDs[flat.selection]))
+}
 
-enriched.selection <- as.vector(sapply(enriched.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
-enriched.motifs <- as.vector(unlist(hash.motif.IDs[enriched.selection]))
+if(length(enriched.motifs) > 0){
+  enriched.selection <- as.vector(sapply(enriched.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
+  enriched.motifs <- as.vector(unlist(hash.motif.IDs[enriched.selection]))
+}
 
-avoided.selection <- as.vector(sapply(avoided.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
-avoided.motifs <- as.vector(unlist(hash.motif.IDs[avoided.selection]))
-
+if(length(avoided.motifs) > 0){
+  avoided.selection <- as.vector(sapply(avoided.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
+  avoided.motifs <- as.vector(unlist(hash.motif.IDs[avoided.selection]))
+}
+  
 ## Set the line width according the significance -log10(E-value)
 ## Higher significance means a wider line
 significance <- as.numeric(as.vector(feature.attributes$Sig))
@@ -971,14 +999,40 @@ if(draw.area == 1){
 all.motifs <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
 html.report <- gsub("--all--", all.motifs, html.report)
 
-enriched.motifs <- paste(paste("'", enriched.motifs, "'", sep = ""), collapse = ",")
-html.report <- gsub("--enriched--", enriched.motifs, html.report)
+if(length(flat.motifs) == 0){
+  html.report <- gsub("--start_f--", "<!--", html.report)
+  html.report <- gsub("--end_f--", "-->", html.report)
+  html.report <- gsub("--flat--", all.motifs, html.report)
+} else {
+  flat.motifs <- paste(paste("'", flat.motifs, "'", sep = ""), collapse = ",")
+  html.report <- gsub("--flat--", flat.motifs, html.report)
+  html.report <- gsub("--start_f--", "", html.report)
+  html.report <- gsub("--end_f--", "", html.report)
+}
 
-avoided.motifs <- paste(paste("'", avoided.motifs, "'", sep = ""), collapse = ",")
-html.report <- gsub("--avoided--", avoided.motifs, html.report)
 
-flat.motifs <- paste(paste("'", flat.motifs, "'", sep = ""), collapse = ",")
-html.report <- gsub("--flat--", flat.motifs, html.report)
+if(length(enriched.motifs) == 0){
+  html.report <- gsub("--start_e--", "<!--", html.report)
+  html.report <- gsub("--end_e--", "-->", html.report)
+  html.report <- gsub("--enriched--", all.motifs, html.report)
+} else {
+  enriched.motifs <- paste(paste("'", enriched.motifs, "'", sep = ""), collapse = ",")
+  html.report <- gsub("--enriched--", enriched.motifs, html.report)
+  html.report <- gsub("--start_e--", "", html.report)
+  html.report <- gsub("--end_e--", "", html.report)
+}
+
+
+if(length(avoided.motifs) == 0){
+  html.report <- gsub("--start_a--", "<!--", html.report)
+  html.report <- gsub("--end_a--", "-->", html.report)
+  html.report <- gsub("--avoided--", all.motifs, html.report)
+} else {
+  avoided.motifs <- paste(paste("'", avoided.motifs, "'", sep = ""), collapse = ",")
+  html.report <- gsub("--avoided--", avoided.motifs, html.report)
+  html.report <- gsub("--start_a--", "", html.report)
+  html.report <- gsub("--end_a--", "", html.report)
+}
 
 ## Insert the Y axis limits
 ## They are inserted in the C3section
