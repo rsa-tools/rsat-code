@@ -288,18 +288,18 @@ package main;
 
   ################################################################
   ## Run matrix-scan quick
-  &ScanSequences();
+  # &ScanSequences();
   
-  ## Parse the matrix-scan results table
-  &ParseScanResults();
+  # ## Parse the matrix-scan results table
+  # &ParseScanResults();
 
   ################################################################
   ## Produce the ID to Motif name reference table
-  &ID_NameRefTable();
+  # &ID_NameRefTable();
 
-  ################################################################
-  ## Produce the logos
-  &GenerateLogos();
+  # ################################################################
+  # ## Produce the logos
+  # &GenerateLogos();
 
   ################################################################
   ## Compute statistics (X2 pval, eval, qval) 
