@@ -559,23 +559,23 @@ flat.motifs <- names(which(shape == "Flat"))
 enriched.motifs <- union(enriched.motifs, multi.motifs)
 avoided.motifs <- union(avoided.motifs, multi.motifs)
 
-flat.motifs <- as.vector(ID.names[which(ID.names[,2] == flat.motifs),1])
-avoided.motifs <- as.vector(ID.names[which(ID.names[,2] == avoided.motifs),1])
-enriched.motifs <- as.vector(ID.names[which(ID.names[,2] == enriched.motifs),1])
+flat.motifs <- as.vector(sapply(flat.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
+avoided.motifs <- as.vector(sapply(avoided.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
+enriched.motifs <- as.vector(sapply(enriched.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
 
-flat.motifs <- gsub("_", "", flat.motifs)
+# flat.motifs <- gsub("_", "", flat.motifs)
 flat.motifs <- gsub("-", "", flat.motifs)
 flat.motifs <- gsub("\\.", "", flat.motifs)
 flat.motifs <- gsub(":", "", flat.motifs)
 flat.motifs <- gsub("\\s+", "", flat.motifs, perl = TRUE)
 
-enriched.motifs <- gsub("_", "", enriched.motifs)
+# enriched.motifs <- gsub("_", "", enriched.motifs)
 enriched.motifs <- gsub("-", "", enriched.motifs)
 enriched.motifs <- gsub("\\.", "", enriched.motifs)
 enriched.motifs <- gsub(":", "", enriched.motifs)
 enriched.motifs <- gsub("\\s+", "", enriched.motifs, perl = TRUE)
 
-avoided.motifs <- gsub("_", "", avoided.motifs)
+# avoided.motifs <- gsub("_", "", avoided.motifs)
 avoided.motifs <- gsub("-", "", avoided.motifs)
 avoided.motifs <- gsub("\\.", "", avoided.motifs)
 avoided.motifs <- gsub(":", "", avoided.motifs)
@@ -856,6 +856,7 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   x.y <<- rbind(x.y, y) 
 })
 
+
 if(length(flat.motifs) > 0){
   ## Get the ID (required for the HTML document) of the select motif names
   flat.selection <- as.vector(sapply(flat.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
@@ -1010,7 +1011,6 @@ if(length(flat.motifs) == 0){
   html.report <- gsub("--end_f--", "", html.report)
 }
 
-
 if(length(enriched.motifs) == 0){
   html.report <- gsub("--start_e--", "<!--", html.report)
   html.report <- gsub("--end_e--", "-->", html.report)
@@ -1021,7 +1021,6 @@ if(length(enriched.motifs) == 0){
   html.report <- gsub("--start_e--", "", html.report)
   html.report <- gsub("--end_e--", "", html.report)
 }
-
 
 if(length(avoided.motifs) == 0){
   html.report <- gsub("--start_a--", "<!--", html.report)
