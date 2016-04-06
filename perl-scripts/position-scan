@@ -298,7 +298,7 @@ package main;
 
   ################################################################
   ## Run matrix-scan quick
-  &ScanSequences();
+  #&ScanSequences();
   
   # ## Parse the matrix-scan results table
   &ParseScanResults();
@@ -309,7 +309,7 @@ package main;
 
   ################################################################
   ## Produce the logos
-  &GenerateLogos();
+  #&GenerateLogos();
 
   ################################################################
   ## Compute statistics (X2 pval, eval, qval) 
