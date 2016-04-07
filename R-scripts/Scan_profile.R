@@ -15,7 +15,6 @@ required.packages = c("IRanges",
                       "gplots",
                       "jpeg",
                       "qvalue")
-
 ## List of RSAT-specific packages to be compiled on the server
 for (pkg in c(required.packages)) { #required.packages.bioconductor
   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
@@ -58,179 +57,146 @@ create.html.tab <- function(tab, img = 0){
   return(full.tab) 
 }
 
-
+#########################################################
+## Calculate the Profile shape:
+## First calculate the slope of the succesives points
+## Calculate the overalall sign of the curve
+## sign = max(cum(curve))  + min(cum(curve))
 get.profile.shape <- function(profile){
+
+  bin.nb <- length(profile)
+  x <- 1:bin.nb
+  y <- as.numeric(profile)
   
-  ## Initialize variables
-  previous <- 0
-  current <- 0
-  consecutive.down <- 0
-  consecutive.up <- 0
-  consecutive.flat <- 0
-  slope.vector <- NULL
-  up.flag <- 0
-  down.flag <- 0
-  peak.counter <- 0
-  valley.counter <- 0
-  complete.peak.flag <- 0
+  ## Calculate the slope
+  slope <- diff(y) / diff(x)
+
+  slope <- round(slope, digits = 2)
   
-  for(x in 1:length(profile)){
-    
-    ## First position of the profile
-    if(x == 1){
-      previous <- profile[x]
-      current <- previous
+  print(y)
+  print(slope)
+  
+#   ## Convert the slope values into -1,0,+1
+#   ## In order to indentify easily the changes in sign
+#   profile.slope <- sapply(slope, function(x){
+#     if(x > 0.01){
+#       x <- 1
+#     } else if (x < -0.01){
+#       x <- -1
+#     } else {
+#       x <- 0
+#     }
+#   })
+
+  ## Convert the slope values into -1,0,+1
+  ## In order to indentify easily the changes in sign
+  profile.slope <- sapply(slope, function(x){
+    if(x > 0){
+      x <- 1
+    } else if (x < 0){
+      x <- -1
     } else {
-      current <- profile[x]
-      previous <- profile[x - 1]
+      x <- 0
     }
+  })
+
+  ## Executes a cumulative sum of the profile
+  ## Calculate the max/min and calculate the sign
+  max.cum.sum <- max(cumsum(slope))
+  min.cum.sum <- min(cumsum(slope))
+  sign <- max.cum.sum + min.cum.sum
+
+print(sign)
+print(profile.slope)
+
+  sign <- round(sign, digits = 2)
+
+  ## End of the profile vector
+  if(sign > 1.5){
+    return("Hill")
+  } else if(sign < -1.5){
+    return("Valley")
+  
+  ## In these cases the shape is calculated based on succesive points
+  } else {
     
-    ## When there are slopes with same sign
-    ## consecutively
-    if(current == previous){
-      
-      if(current == -1){
-        consecutive.down <- consecutive.down + 1 
+    consecutive.down <- 0 
+    consecutive.up <- 0
+    consecutive.flat <- 0
+    consecutive.flat <- 0
+    slope.vector <- NULL
+    profile.shape <- NULL
+    up.flag <- 0
+    down.flag <- 0
+    
+    for(x in 1:length(profile.slope)){
         
-      } else if(current == 1){
-        consecutive.up <- consecutive.up + 1 
-      } else if(current == 0){
-        consecutive.flat <- consecutive.flat + 1
+      ## First position of the profile
+      if(x == 1){
+        previous <- profile.slope[x]
+        current <- previous
+      } else {
+        current <- profile.slope[x]
+        previous <- profile.slope[x - 1]
       }
-      
-      ## Otherwise reset the counters
-    } else {
-      
-      if(current == 0){
         
-        consecutive.flat <- consecutive.flat + 1
+      ## When there are slopes with same sign
+      ## consecutively
+      if(current == previous){
         
-        if(previous == -1){
+        ## Succesive slope counter
+        if(current == -1){
           consecutive.down <- consecutive.down + 1 
-        } else if(previous == 1){
+        } else if(current == 1){
           consecutive.up <- consecutive.up + 1 
-        }
-        
-      } else if(previous == 0){
-        
-#         if(x < length(profile)-1){
-#           if(profile[x+1] == 0){
-#             consecutive.down <- 0
-#             consecutive.up <- 0
-#             consecutive.flat <- 0
-#           }
-#         } 
-        
-        if(current == 1){
-          consecutive.up <- consecutive.up + 1 
-        } else if (current == -1){
-          consecutive.down <- consecutive.down + 1 
+        } else if(current == 0){
+          consecutive.flat <- consecutive.flat + 1
         }
       } else {
-        
-        if(up.flag == 1){
-          
-          if(x < length(profile)-1){
-            if(profile[x+1] != current){
-              peak.counter <- peak.counter + 1
-              up.flag <- 0
-            }
-          }
-          
-        } else if(down.flag == 1){
-          
-          if(x < length(profile)-1){
-            if(profile[x+1] != current){
-              valley.counter <- valley.counter + 1
-              down.flag <- 0
-            }
-          }
-        }
-        
-        consecutive.down <- 0
+        consecutive.down <- 0 
         consecutive.up <- 0
         consecutive.flat <- 0
       }
-    }
-    
-    ## Indicate the shape of the curve
-    ## up -> increasing
-    ## down -> decreasing
-    if(consecutive.up == 2){
-      slope.vector <- append(slope.vector, "up")
-      up.flag <- 1
-    } else if(consecutive.down == 2){
-      slope.vector <- append(slope.vector, "down")
-      down.flag <- 1
-    } else if(consecutive.flat == 2){
-      consecutive.flat <- 0
-      consecutive.up <- 0
-      consecutive.down <- 0
-    }
-    
-    ## Complete peaks: both sides have the same length
-    if( (up.flag == 1) & (down.flag == 1) ){
-      complete.peak.flag <- 1
-    }
-    
-    ## Count the peaks/valleys
-    if(complete.peak.flag == 1){
       
-      if(slope.vector[1] == "up"){
-        peak.counter <- peak.counter + 1
-        up.flag <- 0
+      if(x == 1){
+        consecutive.down <- 0 
         consecutive.up <- 0
-        slope.vector <- NULL
+        consecutive.flat <- 0
+      }
+      
+      if(consecutive.down == 2){
         slope.vector <- append(slope.vector, "down")
-        
-      } else if(slope.vector[1] == "down"){
-        valley.counter <- valley.counter + 1
-        down.flag <- 0
-        consecutive.down <- 0
-        slope.vector <- NULL
+        down.flag <- 1    
+      } 
+      
+      if(consecutive.up == 2){
         slope.vector <- append(slope.vector, "up")
+        up.flag <- 1 
       }
-      consecutive.flat <- 0
-      complete.peak.flag <- 0
       
-    }
-    
-#     print(paste("Number:", x))
-#     print(paste("Valleys:", valley.counter))
-#     print(paste("Valley Flag:", down.flag))
-#     print(paste("Peaks:", peak.counter))
-#     print(paste("Peak Flag:", up.flag))
-#     print(paste("Consecutive Up:", consecutive.up))
-#     print(paste("Consecutive Dw:", consecutive.down))
-#     print(paste("Consecutive Flat:", consecutive.flat))
-#     print(" --------------------------- ")
-
-    ## The sequences are not considered in the first position
-    if(x == 1){
-      consecutive.flat <- 0
-      consecutive.up <- 0
-      consecutive.down <- 0
-    }
-    
-    ## End of the profile vector
-    ## Return the profile shape either:
-    ## Enrichment, avoided, flat or multi (peaks and valleys)
-    if(x == length(profile)){
-      
-      if( (peak.counter == 1) & (valley.counter == 0)){
-        return("Enriched")
-      } else if( (valley.counter == 1) & (peak.counter == 0) ){
-        return("Avoided")
-      } else if( (valley.counter == 0) & (peak.counter == 0) ){
-        return("Flat")
-      } else if( (valley.counter >= 1) & (peak.counter >= 1) ){
-        return("Multi")
+      if (consecutive.flat == 2){
+        consecutive.flat <- 1
       }
-    } 
-  }
+       
+      ## Last position of the array
+      if(length(profile.slope) == x){
+        
+        if(down.flag | up.flag){
+          if(slope.vector[1] == "up"){
+            profile.shape <- "Hill"
+          } else if(slope.vector[1] == "down"){
+            profile.shape <- "Valley"
+          }
+        } else if(consecutive.flat == 1){
+          profile.shape <- "Flat"
+        } else {
+          profile.shape <- "Flat"
+        }
+      } 
+    }
+    return(profile.shape)
+  } 
 }
-########################################################################################
-
 
 ###########################################
 ## Read arguments from the command line.
@@ -476,7 +442,11 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   ## are distributed homogenously along the sequences
   chi <- chisq.test(counts.per.bin, correct = TRUE)
   
-  feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/chi[[7]]))
+  y <- as.vector(log2(chi[[6]]/chi[[7]]))
+  y[which(y == -Inf)] <- 0
+  y[which(y == Inf)] <- 0
+  
+  feature.log2.ratio[[m]][["feature_id"]] <<- y
   
   ## Chi-squared
   cs.val <- round(chi[[1]], digits = 3)
@@ -503,6 +473,7 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   feature.attributes[[m]][["eval"]] <<- chi.eval
   
 })
+rm(thrash)
 names(feature.attributes) <- matrix.names
 names(feature.log2.ratio) <- matrix.names
 
@@ -521,43 +492,26 @@ colnames(feature.log2.ratio) <- as.character(data.frame(windows)$start)
 
 ###############################################
 ## Calculate the profile shape of each motif
-bin.nb <- dim(feature.log2.ratio)[2]
-x <- 1:bin.nb
-shape <- apply(feature.log2.ratio, 1, function(y){
-  
-  y <- as.numeric(y)
-  
-  ## Calculate the slope
-  slope <- diff(y) / diff(x)
-  
-  ## Convert the slope values into -1,0,+1
-  ## In order to indentify easily the changes in sign
-  profile.slope <- sapply(slope, function(x){
-    if(x > 0.01){
-      x <- 1
-    } else if (x < -0.01){
-      x <- -1
-    } else {
-      x <- 0
-    }
-  })
-  
-  ## Calculate the shape
-  get.profile.shape(profile.slope)
-  
-})
+shape <- apply(feature.log2.ratio, 1, get.profile.shape)
 feature.attributes$Shape <- shape
+
+# c <- c(2,8,9,12,14,15,16,18,22,23,24,26,29,34,37,40)
+# # for(i in 1:dim(feature.log2.ratio)[1]){
+# 
+#   n <- rownames(feature.log2.ratio[i,])
+#   p <- feature.log2.ratio[i,]
+#   
+#   print(" - - - - - - - - - - - - -")
+#   print(n)
+#   
+#   a <- get.profile.shape(p)
+#   print(a)
+# }
 
 ## Separate the motifs names by profile shape
 enriched.motifs <- names(which(shape == "Enriched"))
 avoided.motifs <- names(which(shape == "Avoided"))
-multi.motifs <- names(which(shape == "Multi"))
 flat.motifs <- names(which(shape == "Flat"))
-
-## Multi represents those profiles having one peak and one valley 
-## in the same profile. Thay are joined to the avoided and enriched set
-enriched.motifs <- union(enriched.motifs, multi.motifs)
-avoided.motifs <- union(avoided.motifs, multi.motifs)
 
 flat.motifs <- as.vector(sapply(flat.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
 avoided.motifs <- as.vector(sapply(avoided.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
@@ -582,7 +536,7 @@ avoided.motifs <- gsub(":", "", avoided.motifs)
 avoided.motifs <- gsub("\\s+", "", avoided.motifs, perl = TRUE)
 
 
-## Test get.profile.shape 
+# ## Test get.profile.shape 
 # profile.ee <- c(1, -1, 0, 1, 1, -1, -1, -1, 0,  1, -1)
 # profile.e <- c(0, 0, 1, 1, 1, 1, -1, -1, -1, 0, 0)
 # profile.a <- c(0, 0, -1, -1, -1, 1, 1, 1, 1, 0, 0)
@@ -593,57 +547,61 @@ avoided.motifs <- gsub("\\s+", "", avoided.motifs, perl = TRUE)
 ####################################################################################
 ## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
 ####################################################################################
-verbose(paste("Drawing Heatmap profiles", 1))
 
-## Color palette
-rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(1000))
-# rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
-
-## Heatmap
-out.format <- c("pdf", "jpg")
-for (format in out.format){
+heatmap.flag <- 1
+if(heatmap.flag){
   
-  profiles.heatmap.file <- paste(basename, "_profiles_heatmap.", format, sep = "") 
+  verbose(paste("Drawing Heatmap profiles", 1))
   
-  if(format == "pdf"){
-    pdf(profiles.heatmap.file)
-  } else if (format == "jpg"){
-    jpeg(profiles.heatmap.file)
+  ## Color palette
+  rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(1000))
+  # rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
+  
+  ## Heatmap
+  out.format <- c("pdf", "jpg")
+  for (format in out.format){
+    
+    profiles.heatmap.file <- paste(basename, "_profiles_heatmap.", format, sep = "") 
+    
+    if(format == "pdf"){
+      pdf(profiles.heatmap.file)
+    } else if (format == "jpg"){
+      jpeg(profiles.heatmap.file)
+    }
+    
+    #   feature.log2.ratio.dist <- as.matrix(dist(feature.log2.ratio, method = "canberra"))
+    heatmap.2(as.matrix(feature.log2.ratio),
+              
+              ## Dendrogram control
+              dendrogram = c(heatmap.dendo),
+              Rowv = TRUE,
+              Colv = FALSE,
+              
+              main = "Profile Heatmap",
+              xlab = "Position (bp)",
+              ylab = "Motifs",
+              
+              #             hclustfun = function(d){hclust(d, method="ward")},
+              
+              ## Color
+              col = rgb.palette,
+              
+              ## Trace
+              trace = "none",
+              
+              ## Key control
+              key = TRUE,
+              keysize = 1,
+              density.info = "none",
+              key.xlab = "Density",
+              key.ylab = "",
+              key.title = "",
+              offsetCol = 0.25,
+              cexRow = 0.25,
+    )
+    dev.off()
   }
-  
-  #   feature.log2.ratio.dist <- as.matrix(dist(feature.log2.ratio, method = "canberra"))
-  heatmap.2(as.matrix(feature.log2.ratio),
-            
-            ## Dendrogram control
-            dendrogram = c(heatmap.dendo),
-            Rowv = TRUE,
-            Colv = FALSE,
-            
-            main = "Profile Heatmap",
-            xlab = "Position (bp)",
-            ylab = "Motifs",
-            
-            #             hclustfun = function(d){hclust(d, method="ward")},
-            
-            ## Color
-            col = rgb.palette,
-            
-            ## Trace
-            trace = "none",
-            
-            ## Key control
-            key = TRUE,
-            keysize = 1,
-            density.info = "none",
-            key.xlab = "Density",
-            key.ylab = "",
-            key.title = "",
-            offsetCol = 0.25,
-            cexRow = 0.25,
-  )
-  dev.off()
 }
-
 
 ## Calculate q-values
 ## This step is executed once all the p-values were calculated
