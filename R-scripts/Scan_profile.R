@@ -57,6 +57,34 @@ create.html.tab <- function(tab, img = 0){
   return(full.tab) 
 }
 
+# for(i in c){
+#   
+#   n <- rownames(feature.log2.ratio[i,])
+#   p <- feature.log2.ratio[i,]
+#   
+#   x <- 1:length(p)
+#   y <- as.numeric(p)
+#   lo <- loess(y~x, span = 0.21)
+#   
+#   print(" - - - - - - - - - - - - -")
+#   print(n)
+#   points <- lo[[2]]
+#   print(get.profile.shape(points))
+#   
+# #   a <- get.profile.shape(p)
+# #   print(a)
+# }
+# 
+# 
+# x <- 1:length(p)
+# y <- as.numeric(p)
+# lo <- loess(y~x, span = 0.25)
+# plot(x,y)
+# lines(predict(lo), col='red', lwd=2)
+# points <- lo[[2]]
+# get.profile.shape(points)
+
+
 #########################################################
 ## Calculate the Profile shape:
 ## First calculate the slope of the succesives points
@@ -73,32 +101,32 @@ get.profile.shape <- function(profile){
 
   slope <- round(slope, digits = 2)
   
-  print(y)
-  print(slope)
+#   print(paste(y))
+#   print(paste(slope))
   
-#   ## Convert the slope values into -1,0,+1
-#   ## In order to indentify easily the changes in sign
-#   profile.slope <- sapply(slope, function(x){
-#     if(x > 0.01){
-#       x <- 1
-#     } else if (x < -0.01){
-#       x <- -1
-#     } else {
-#       x <- 0
-#     }
-#   })
-
   ## Convert the slope values into -1,0,+1
   ## In order to indentify easily the changes in sign
   profile.slope <- sapply(slope, function(x){
-    if(x > 0){
+    if(x > 0.01){
       x <- 1
-    } else if (x < 0){
+    } else if (x < -0.01){
       x <- -1
     } else {
       x <- 0
     }
   })
+
+#   ## Convert the slope values into -1,0,+1
+#   ## In order to indentify easily the changes in sign
+#   profile.slope <- sapply(slope, function(x){
+#     if(x > 0){
+#       x <- 1
+#     } else if (x < 0){
+#       x <- -1
+#     } else {
+#       x <- 0
+#     }
+#   })
 
   ## Executes a cumulative sum of the profile
   ## Calculate the max/min and calculate the sign
@@ -106,8 +134,8 @@ get.profile.shape <- function(profile){
   min.cum.sum <- min(cumsum(slope))
   sign <- max.cum.sum + min.cum.sum
 
-print(sign)
-print(profile.slope)
+print(paste("Sign: ", sign))
+print(paste(profile.slope))
 
   sign <- round(sign, digits = 2)
 
@@ -272,6 +300,12 @@ print(heatmap.dendo)
 # prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/BK/t/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1"
 # ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/BK/t/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_TF_ID_name_correspondence.tab"
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/BK/t/mkv_1/")
+
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/HELA_bin_size_25_pval1e-3_matrix_scan_results_PARSED.tab"
+# prefix <- "/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/HELA_bin_size_25_pval1e-3"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/HELA_bin_size_25_pval1e-3_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/")
+
 
 #############################################
 ## Read matrix-scan table Active Promoters
@@ -494,19 +528,6 @@ colnames(feature.log2.ratio) <- as.character(data.frame(windows)$start)
 ## Calculate the profile shape of each motif
 shape <- apply(feature.log2.ratio, 1, get.profile.shape)
 feature.attributes$Shape <- shape
-
-# c <- c(2,8,9,12,14,15,16,18,22,23,24,26,29,34,37,40)
-# # for(i in 1:dim(feature.log2.ratio)[1]){
-# 
-#   n <- rownames(feature.log2.ratio[i,])
-#   p <- feature.log2.ratio[i,]
-#   
-#   print(" - - - - - - - - - - - - -")
-#   print(n)
-#   
-#   a <- get.profile.shape(p)
-#   print(a)
-# }
 
 ## Separate the motifs names by profile shape
 enriched.motifs <- names(which(shape == "Enriched"))
@@ -868,10 +889,11 @@ datatable.info.tab$IDs <- TF.IDs
 datatable.info.tab$Logo <- logos.F
 all.motifs <- all.motifs
 
+print(all.motif.names)
+
 ############################
 ## Fill the HTML template
-## Substitute the words marked in the tamplate by the data
-# html.template.file <- "Template/index.html"
+## Substitute the words marked in the t3mplate by the data
 html.report <- readLines(html.template.file)
 profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12, 2:6,9:10,7,13)], img = 11)
 
@@ -887,6 +909,15 @@ x.y <<- rbind(x.y, paste("['x',", paste(colnames(frequency.per.bin.table),collap
 line.w <- paste("#chart .c3-line-", all.motifs, "{ stroke-width: ", line.w, "px; }", sep = "")
 line.w <- paste(line.w, collapse = "\n")
 html.report <- gsub("--lines_w--", line.w, html.report)
+
+## Add the TF_names data
+TF.names <- paste("TF_names['", all.motif.names, "'] = '", all.motifs, "';", sep = "")
+TF.names <- paste(TF.names, collapse = "\n")
+html.report <- gsub("--TF_names--", TF.names, html.report)
+
+## Add the TF_names data
+tfs <- paste(paste("'", all.motif.names, "'", sep = ""), collapse = ",")
+html.report <- gsub("--tfs--", tfs, html.report)
 
 ## Add the e-values data
 ## They are inserted in the JS section
@@ -952,11 +983,24 @@ if(draw.area == 1){
   html.report <- gsub("--area--", area, html.report)
 }
 
+## The plot heigth depends in the number of motifs
+motif.total <- length(all.motifs)
+chart.heigth <- 500
+if(motif.total >= 300){
+  chart.heigth <- 600
+} else if(motif.total >= 400){
+  chart.heigth <- 700
+}
+html.report <- gsub("--chart_h--", chart.heigth, html.report)
+
 
 ## Insert the motif names (to hide/show all)
 ## They are inserted in the JQuery section
 all.motifs <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
 html.report <- gsub("--all--", all.motifs, html.report)
+
+## The plot heigth depends in the number of motifs
+html.report <- gsub("--chart_h--", density.tab.file, html.report)
 
 if(length(flat.motifs) == 0){
   html.report <- gsub("--start_f--", "<!--", html.report)
