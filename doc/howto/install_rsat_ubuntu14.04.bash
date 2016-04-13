@@ -322,7 +322,7 @@ pip install speedtest-cli
 # pip3 install wstools
 pip3 install fisher
 pip3 install snakemake
-pip3 install rpy2
+pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
 ## pip3 install pygraphviz ## This fails ! Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/pygraphviz
 
 ## PROBLEM: soappy seems to be discontnued for python3 !
@@ -355,7 +355,6 @@ grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
 # ## Ensure that the following line is set to "universe"
 # deb http://us.archive.ubuntu.com/ubuntu trusty main universe
 # ## You can now quit emacs
-
 
 apt-get update
 
@@ -395,15 +394,17 @@ apt-get --quiet --assume-yes install libsoap-wsdl-perl
 ################       RSAT installation        ################
 ################################################################
 
-## Create a specific user for RSAT. The user is named rsat
-sudo adduser rsat
-## Full Name: Regulatory Sequence Analysis Tools admin
 
-## Grant sudoer privileges to the rsat user (will be more convenient for
-## installing Perl modules, software tools, etc)
-visudo
-## then add the following line below "User privilege specification"
-# rsat    ALL=(ALL:ALL) ALL
+## New (2016-03-25)
+# ## Create a specific user for RSAT. The user is named rsat
+# sudo adduser rsat
+# ## Full Name: Regulatory Sequence Analysis Tools admin
+
+# ## Grant sudoer privileges to the rsat user (will be more convenient for
+# ## installing Perl modules, software tools, etc)
+# visudo
+# ## then add the following line below "User privilege specification"
+# # rsat    ALL=(ALL:ALL) ALL
 
 ################################################################
 ## Download RSAT distribution
@@ -413,24 +414,26 @@ visudo
 ## In the near future, we may use git also for the end-user
 ## distribution.
 
+## Define an environment variable with the RSAT_HOME directory
+## (will be used later to configure RSAT)
+export INSTALL_ROOT_DIR=/bio
+export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
+
 ## RSAT installation is done under the rsat login.
 ##
 ## We retrieve it in the home folder of the RSAT user, because RSAT
 ## user has no write authorization on /bio. In a second time we do a
 ## sudo mv to place the rsat folder in /bio.
-su - rsat
-cd ${HOME}
-git clone git@depot.biologie.ens.fr:rsat
+#su - rsat
+#cd ${HOME}
+cd ${INSTALL_ROOT_DIR}
 git config --global user.mail rsat@rsat-vm-2016-03
-git config --global user.name "RSAT admin on RSAT-VM"
+git config --global user.name "rsat"
 git config --global core.editor emacs
 git config --global merge.tools meld
 git config --list
+git clone git@depot.biologie.ens.fr:rsat
 
-## Define an environment variable with the RSAT_HOME directory
-## (will be used later to configure RSAT)
-export INSTALL_ROOT_DIR=/bio
-export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 
 ## Move the rsat distribution to the RSAT_HOME directory
 sudo mv ${HOME}/rsat ${RSAT_HOME}
