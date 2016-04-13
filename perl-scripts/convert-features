@@ -40,6 +40,7 @@ local $yeast_to_roman = 0;
 local $set_feature_name = ""; ## User-defined name for the features (track)
 
 local $origin = "start";
+local $offset = 0;
 local %supported_origin = ('start'=>1, 'end'=>1, 'center' => 1);
 local $supported_origins = join (",", keys (%supported_origin));
 
@@ -204,6 +205,14 @@ while (<$in>) {
   ## convert the coordinates if necessary
   if ($infile{coord}){
     &convert_coords($feature);
+  }
+
+  ## Apply offset if required
+  if ($offset != 0) {
+    my $new_start = $feature->get_attribute("start") + $offset;
+    $feature->force_attribute("start", $new_start);
+    my $new_end = $feature->get_attribute("end") + $offset;
+    $feature->force_attribute("end", $new_end);
   }
 
   print $out $feature->to_text($output_format, $null);
@@ -441,7 +450,7 @@ sub calc_absolute {
     }
 
   } else {
-    ### START origine
+    ### START origin
     if ($origin eq "start") {
 
       ## length
@@ -479,6 +488,7 @@ sub calc_absolute {
     }
 
   }
+
 
   ## strand
   #&RSAT::message::Debug("absolute strand", $chr_strand);
@@ -587,7 +597,11 @@ OPTIONS
         -extend_end #
                  extend end coordinate rightwise
 
-	-coord   bedfile with absolute coordinate of the sequence fragment
+	-coord 
+	         bedfile with absolute coordinate of the sequence
+		 relative to which the features were defined
+		 (e.g. features from promoter-wise to genome-wise
+		 coordinates).
 
 	-origin [start|end|center] 
 
@@ -598,8 +612,7 @@ OPTIONS
 CONVERSION TO GENOMIC COORDINATES
 
 	The option -coord option enables to transform the relative
-	coordinates of the file to convert into absolute
-	coordinates.
+	coordinates of the file to convert into absolute coordinates.
 
         This is particularly useful when working on genomic projects,
 	to display the results on genome browsers (eg. UCSC).
@@ -629,6 +642,11 @@ INPUT FORMATS
        gff3: Generic feature format version 3
        	     An adaptation of GFF by Lincoln Stein
        	     http://flybase.net/annot/gff3.html
+
+       gtf: Generic feature format version 3
+       	     An adaptation of GFF3 by Ensembl, to ensure that each feature has a gene_id in the description field.
+	     The GTF (General Transfer Format) is identical to GFF version 2.
+       	     http://www.ensembl.org/info/website/upload/gff.html
 
        bed:	Genomic features in the UCSC format.
        		http://genome.ucsc.edu/goldenPath/help/hgTracksHelp.html#BED
@@ -1034,6 +1052,13 @@ sub ReadArguments {
       $origin = $ARGV[$a+1];
       &RSAT::error::FatalError($origin." is not a valid origin. Supported values: $supported_origins.")
 	unless ($supported_origin{$origin});
+
+      ## Offset for the conversion of positions (e.g. promoter-wise
+      ## coordinates to genome-wise coordinates)
+    } elsif ($ARGV[$a] eq "-offset") {
+      $offset = $ARGV[$a+1];
+      &RSAT::error::FatalError($offset." is not a valid offset: should be an integer number.")
+	  unless (&IsInteger($offset));
 
 
       ## Replace start / end by summit coordinates
