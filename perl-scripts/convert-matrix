@@ -708,18 +708,16 @@ DESCRIPTION
 	The program also performs a statistical analysis of the
 	original matrix to provide different position-specific scores
 	(weight, frequencies, information contents), general
-	statistics (E-value, total information content), and synthetic
-	descriptions (consensus).
+	statistics (marginal frequencies, total information content),
+	and synthetic descriptions (strict and degenerate consensus).
 
 	PSSM can be used to represent the binding specificity of a
 	transcription factor or the conserved residues of a protein
-	domain.
-
-	Each row of the matrix corresponds to one residue (nucleotide
-	or amino-acid depending on the sequence type).  Each column
-	corresponds to one position in the alignment.  The value
-	within each cell represents the frequency of each residue at
-	each position.
+	domain. Each column of the matrix corresponds to one position
+	of a set of alignmed sequences, and each row o one residue
+	(nucleotide or amino acid depending on sequence type).  The
+	value within each cell represents the frequency of each
+	residue at each position.
 
 CATEGORY
 	util
