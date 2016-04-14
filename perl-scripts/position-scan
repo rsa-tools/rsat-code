@@ -993,6 +993,7 @@ sub DynamicProfilesR {
     $profile_cmd .= "; basename = '".$basename."'";
     $profile_cmd .= "; ID.to.names.correspondence.tab = '".$main::outfile{motif_ID_to_name}."'";
     $profile_cmd .= "; seq.length = '".$seq_length."'";
+    $profile_cmd .= "; analyze.title = '".$title."'";
     $profile_cmd .= "; individual.plots = '".$individual_plots."'";
     $profile_cmd .= "; heatmap.dendo = '".$heatmap_dendo."'";
     $profile_cmd .= "; html.template.file = '".$main::outfile{report_template}."'";
