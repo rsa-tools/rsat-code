@@ -145,7 +145,7 @@ package main;
   my $r_plots=1;
   $rplot_option="";
   if ($r_plots==1) {
-      $main::rplot_option=" -r_plot ";
+      $main::rplot_option=" -r_plot -clean_r_legend ";
   }
   ## bginput
   $main::bg_input="";
@@ -193,8 +193,8 @@ package main;
   }
   
   ## Format for the graphs
-  @image_formats = ();
-  $image_formats = "";
+  @main::image_formats = ("png");
+  $main::image_formats = "";
   
   ## Format of the sequence logos
   @logo_formats = ("png");
@@ -214,9 +214,12 @@ package main;
   ## Read argument values
   &ReadArguments();
   
+  
   ################################################################
   ## Check argument values
 
+  ##
+  @main::image_formats = uniq(@main::image_formats);
   ## If no tasks has been specified, execute them all
   if (($task{all}) || (scalar(keys(%task))==0)) {
       %task = %supported_task;
@@ -981,10 +984,10 @@ Example:
 	  my @tmp_logo_formats = split(',',$image_format);
 	  if (scalar(@tmp_logo_formats)>0) {
 	    foreach my $f (@tmp_logo_formats) {
-	      push (@main::image_formats, $f);
+	      push (@main::logo_formats, $f);
 	    }
 	  } else {
-	    push (@main::image_formats, $image_format);
+	    push (@main::logo_formats, $image_format);
 	  }
 =pod
 
