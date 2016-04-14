@@ -57,6 +57,8 @@ create.html.tab <- function(tab, img = 0){
   return(full.tab) 
 }
 
+
+# c <- c(1)
 # for(i in c){
 #   
 #   n <- rownames(feature.log2.ratio[i,])
@@ -74,14 +76,25 @@ create.html.tab <- function(tab, img = 0){
 # #   a <- get.profile.shape(p)
 # #   print(a)
 # }
-# 
-# 
+
+# "JUN_FOS"     Peak  P
+# "YY"          Peak  -
+# "REST"        Flat  
+# "SP"          Peak
+# "DDIT"        Flat
+# "FCP2_GRHL1"  Flat
+# "USF2"        Peak
+
+# rownames(feature.log2.ratio)
+# p <- feature.log2.ratio[7,]
 # x <- 1:length(p)
 # y <- as.numeric(p)
-# lo <- loess(y~x, span = 0.25)
+# lo <- loess(y~x, span = 1.75)
 # plot(x,y)
 # lines(predict(lo), col='red', lwd=2)
 # points <- lo[[2]]
+# 
+# get.profile.shape(p)
 # get.profile.shape(points)
 
 
@@ -98,8 +111,13 @@ get.profile.shape <- function(profile){
   
   ## Calculate the slope
   slope <- diff(y) / diff(x)
-
   slope <- round(slope, digits = 2)
+  
+  #######################################
+  ## New stuff
+  lo <- loess(y~x, span = 1.75)
+  profile.slope <- lo[[2]]
+  ########################################
   
 #   print(paste(y))
 #   print(paste(slope))
@@ -134,8 +152,8 @@ get.profile.shape <- function(profile){
   min.cum.sum <- min(cumsum(slope))
   sign <- max.cum.sum + min.cum.sum
 
-print(paste("Sign: ", sign))
-print(paste(profile.slope))
+# print(paste("Sign: ", sign))
+# print(paste(profile.slope))
 
   sign <- round(sign, digits = 2)
 
@@ -205,18 +223,19 @@ print(paste(profile.slope))
       if (consecutive.flat == 2){
         consecutive.flat <- 1
       }
+      
        
       ## Last position of the array
       if(length(profile.slope) == x){
         
-        if(down.flag | up.flag){
+        if(consecutive.flat == 1){
+          profile.shape <- "Flat"
+        } else if(down.flag | up.flag){
           if(slope.vector[1] == "up"){
             profile.shape <- "Hill"
           } else if(slope.vector[1] == "down"){
             profile.shape <- "Valley"
           }
-        } else if(consecutive.flat == 1){
-          profile.shape <- "Flat"
         } else {
           profile.shape <- "Flat"
         }
@@ -305,6 +324,7 @@ print(heatmap.dendo)
 # prefix <- "/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/HELA_bin_size_25_pval1e-3"
 # ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/HELA_bin_size_25_pval1e-3_TF_ID_name_correspondence.tab"
 # setwd("/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/")
+# seq.length <- 2000
 
 
 #############################################
@@ -530,8 +550,8 @@ shape <- apply(feature.log2.ratio, 1, get.profile.shape)
 feature.attributes$Shape <- shape
 
 ## Separate the motifs names by profile shape
-enriched.motifs <- names(which(shape == "Enriched"))
-avoided.motifs <- names(which(shape == "Avoided"))
+enriched.motifs <- names(which(shape == "Hill"))
+avoided.motifs <- names(which(shape == "Valley"))
 flat.motifs <- names(which(shape == "Flat"))
 
 flat.motifs <- as.vector(sapply(flat.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
@@ -555,6 +575,12 @@ avoided.motifs <- gsub("-", "", avoided.motifs)
 avoided.motifs <- gsub("\\.", "", avoided.motifs)
 avoided.motifs <- gsub(":", "", avoided.motifs)
 avoided.motifs <- gsub("\\s+", "", avoided.motifs, perl = TRUE)
+
+print(" | | | | | | | | | | | | ")
+print(length(flat.motifs))
+print(length(avoided.motifs))
+print(length(enriched.motifs))
+print(" | | | | | | | | | |  ")
 
 
 # ## Test get.profile.shape 
@@ -836,6 +862,13 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
 })
 
 
+print(" - - - - - ")
+print(length(flat.motifs))
+print(length(avoided.motifs))
+print(length(enriched.motifs))
+print(" - - - - - ")
+
+
 if(length(flat.motifs) > 0){
   ## Get the ID (required for the HTML document) of the select motif names
   flat.selection <- as.vector(sapply(flat.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
@@ -888,8 +921,6 @@ datatable.info.tab$P_val_threshold <- all.pval.match
 datatable.info.tab$IDs <- TF.IDs
 datatable.info.tab$Logo <- logos.F
 all.motifs <- all.motifs
-
-print(all.motif.names)
 
 ############################
 ## Fill the HTML template
@@ -1013,6 +1044,7 @@ if(length(flat.motifs) == 0){
   html.report <- gsub("--end_f--", "", html.report)
 }
 
+print(enriched.motifs)
 if(length(enriched.motifs) == 0){
   html.report <- gsub("--start_e--", "<!--", html.report)
   html.report <- gsub("--end_e--", "-->", html.report)
@@ -1024,6 +1056,7 @@ if(length(enriched.motifs) == 0){
   html.report <- gsub("--end_e--", "", html.report)
 }
 
+print(avoided.motifs)
 if(length(avoided.motifs) == 0){
   html.report <- gsub("--start_a--", "<!--", html.report)
   html.report <- gsub("--end_a--", "-->", html.report)
