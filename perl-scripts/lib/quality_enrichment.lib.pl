@@ -4,7 +4,7 @@
 ## - matrix-enrichment
 
 require "RSA2.cgi.lib";		## For sortable HTML tables
-
+use List::MoreUtils qw(uniq);
 
 ################################################################
 ## Export the matrix in tab-delimited format. This will be used
@@ -232,7 +232,6 @@ sub Draw_NWD{
 sub Draw_OCC{
     my ($prefix,@occ_files)= @_;
     
-    
     my $occ_input_files =" -i ". join (" -i " ,@occ_files)." ";
     my $ic_column= 7;
     my $sc_column= 11;
@@ -258,8 +257,12 @@ sub Draw_OCC{
 	$ycols = 2;
     }   
     
+
+    #print join ("++",@main::image_formats );
+    #die "BOOM";
     
-    foreach my $image_format (@image_formats) {
+    
+    foreach my $image_format (@main::image_formats) {
 	my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
 	$XYgraph_occ_cmd .= " -i ".  $occ_compare_scores_file ." ";
 	$XYgraph_occ_cmd .= " -format ". $image_format  ." " ;
@@ -271,7 +274,7 @@ sub Draw_OCC{
 	$XYgraph_occ_cmd .= " -o ". $occ_xygrpah_file.$image_format." ";
 	&doit($XYgraph_occ_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 	&RSAT::message::Info(" Drawing OCC  curves ",  $XYgraph_occ_cmd) if ($main::verbose >= 0);   
-	##die "BOOM";
+	#<STDIN>;
     }
     return($occ_compare_scores_file, $occ_xygrpah_file )
 	
