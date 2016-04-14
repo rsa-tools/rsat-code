@@ -3896,7 +3896,7 @@ sub QuickScan {
   $quick_cmd .= " -decimals ".$decimals;
   $quick_cmd .= " -m ".$matrix_quick_file;
   $quick_cmd .= " -pseudo ".$pseudo_counts; ## pseudocounts are added here
-  $quick_cmd .= " -name ".$matrix_name;
+  $quick_cmd .= " -name '".$matrix_name."'";
   $quick_cmd .= " -bgfile ".$quick_bg_file;
   if ($main::both_strands) {
     $quick_cmd .= " -2str";
