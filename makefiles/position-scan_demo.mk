@@ -18,9 +18,13 @@ BIN=25
 PVAL=1e-3
 MARKOV_ORDER=1
 OPT=
+RANDOM_SEQ=
+RANDOM_MOTIFS=
 
 ## Define a set of demo files
 JUND_PREFIX=Jun_Chip_seq
+JUND_RANDOM_SEQ_PREFIX=Jun_Chip_seq_random_sequences
+
 
 ## Choose a particular demo set
 PROFILE_PREFIX=${JUND_PREFIX}
@@ -36,8 +40,6 @@ list_param:
 	@echo "MATRIX_FILE		${MATRIX_FILE}"
 	@echo "SEQUENCE_FILE		${SEQUENCE_FILE}"
 #	@echo "		${}"
-
-
 
 
 ################################################################
@@ -56,7 +58,10 @@ PROFILE_CMD=position-scan -v ${V} \
                 -bginput \
                 -markov ${MARKOV_ORDER} \
                 -bin ${BIN} \
-		-pval ${PVAL} ${OPT}\
+		-pval ${PVAL} \
+                ${OPT} \
+                ${RANDOM_SEQ} \
+                ${RANDOM_MOTIFS} \
 		-o ${POSITION_PROFILE_FILE_PREFIX}
 
 _profiles:
@@ -67,10 +72,27 @@ _profiles:
 	@echo "		${POSITION_PROFILE_FILE_PREFIX}_report.html"
 
 
-## Cluster motifs resulting from 12 independent analysis of peak-motifs (Chen data set). 
+################################################################
+## Profiles of a set of PSSMs in a set of JUND ChIP-seq peaks
+## taken from Encode project
 HOCOMOCO_MATRICES=${RSAT}/public_html/demo_files/HOCOMOCO_Human_Ncor0.8_cor0.85_JUND_Demo.tf
 profile_Jun_ChIPseq_peaks:
 	@echo
 	@echo "Running position-scan with Hocomoco Human motifs on ChIP-seq peaks of JUND"
 	${MAKE} _profiles PROFILE_PREFIX=${JUND_PREFIX}  MATRIX_FILE=${HOCOMOCO_MATRICES}\
-		TITLE='Hocomoco motifs in JunD peaks'
+                TITLE='Hocomoco motifs in JunD peaks'
+
+################################################################
+## Profiles of a set of PSSMs in a set of JUND ChIP-seq peaks
+## taken from Encode project
+## NEGATIVE CONTROL: the original sequences are randomly permuted
+HOCOMOCO_MATRICES=${RSAT}/public_html/demo_files/HOCOMOCO_Human_Ncor0.8_cor0.85_JUND_Demo.tf
+profile_Jun_ChIPseq_peaks_random_sequences:
+	@echo
+	@echo "Running position-scan with Hocomoco Human motifs on ChIP-seq peaks of JUND"
+	@echo "Negative Control: suffled sequences. The nucleotide interdependence is lost"
+	${MAKE} _profiles PROFILE_PREFIX=${JUND_PREFIX} RANDOM_MOTIFS='-rand_seq'\
+               POSITION_PROFILE_BASENAME='Jun_Chip_seq_random_sequences_bin_size_${BIN}_pval${PVAL}_mkv_${MARKOV_ORDER}'\
+               MATRIX_FILE=${HOCOMOCO_MATRICES}\
+               POSITION_PROFILE_DIR=${POSITION_PROFILE_DIR}'/RANDOM_SEQ'\
+	       TITLE='Hocomoco motifs in JunD peaks; Random Sequences'

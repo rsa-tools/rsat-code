@@ -15,7 +15,6 @@ required.packages = c("IRanges",
                       "gplots",
                       "jpeg",
                       "qvalue")
-
 ## List of RSAT-specific packages to be compiled on the server
 for (pkg in c(required.packages)) { #required.packages.bioconductor
   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
@@ -59,178 +58,192 @@ create.html.tab <- function(tab, img = 0){
 }
 
 
+# c <- c(1)
+# for(i in c){
+#   
+#   n <- rownames(feature.log2.ratio[i,])
+#   p <- feature.log2.ratio[i,]
+#   
+#   x <- 1:length(p)
+#   y <- as.numeric(p)
+#   lo <- loess(y~x, span = 0.21)
+#   
+#   print(" - - - - - - - - - - - - -")
+#   print(n)
+#   points <- lo[[2]]
+#   print(get.profile.shape(points))
+#   
+# #   a <- get.profile.shape(p)
+# #   print(a)
+# }
+
+# "JUN_FOS"     Peak  P
+# "YY"          Peak  -
+# "REST"        Flat  
+# "SP"          Peak
+# "DDIT"        Flat
+# "FCP2_GRHL1"  Flat
+# "USF2"        Peak
+
+# rownames(feature.log2.ratio)
+# p <- feature.log2.ratio[7,]
+# x <- 1:length(p)
+# y <- as.numeric(p)
+# lo <- loess(y~x, span = 1.75)
+# plot(x,y)
+# lines(predict(lo), col='red', lwd=2)
+# points <- lo[[2]]
+# 
+# get.profile.shape(p)
+# get.profile.shape(points)
+
+
+#########################################################
+## Calculate the Profile shape:
+## First calculate the slope of the succesives points
+## Calculate the overalall sign of the curve
+## sign = max(cum(curve))  + min(cum(curve))
 get.profile.shape <- function(profile){
+
+  bin.nb <- length(profile)
+  x <- 1:bin.nb
+  y <- as.numeric(profile)
   
-  ## Initialize variables
-  previous <- 0
-  current <- 0
-  consecutive.down <- 0
-  consecutive.up <- 0
-  consecutive.flat <- 0
-  slope.vector <- NULL
-  up.flag <- 0
-  down.flag <- 0
-  peak.counter <- 0
-  valley.counter <- 0
-  complete.peak.flag <- 0
+  ## Calculate the slope
+  slope <- diff(y) / diff(x)
+  slope <- round(slope, digits = 2)
   
-  for(x in 1:length(profile)){
-    
-    ## First position of the profile
-    if(x == 1){
-      previous <- profile[x]
-      current <- previous
+  #######################################
+  ## New stuff
+  lo <- loess(y~x, span = 1.75)
+  profile.slope <- lo[[2]]
+  ########################################
+  
+#   print(paste(y))
+#   print(paste(slope))
+  
+  ## Convert the slope values into -1,0,+1
+  ## In order to indentify easily the changes in sign
+  profile.slope <- sapply(slope, function(x){
+    if(x > 0.01){
+      x <- 1
+    } else if (x < -0.01){
+      x <- -1
     } else {
-      current <- profile[x]
-      previous <- profile[x - 1]
+      x <- 0
     }
+  })
+
+#   ## Convert the slope values into -1,0,+1
+#   ## In order to indentify easily the changes in sign
+#   profile.slope <- sapply(slope, function(x){
+#     if(x > 0){
+#       x <- 1
+#     } else if (x < 0){
+#       x <- -1
+#     } else {
+#       x <- 0
+#     }
+#   })
+
+  ## Executes a cumulative sum of the profile
+  ## Calculate the max/min and calculate the sign
+  max.cum.sum <- max(cumsum(slope))
+  min.cum.sum <- min(cumsum(slope))
+  sign <- max.cum.sum + min.cum.sum
+
+# print(paste("Sign: ", sign))
+# print(paste(profile.slope))
+
+  sign <- round(sign, digits = 2)
+
+  ## End of the profile vector
+  if(sign > 1.5){
+    return("Hill")
+  } else if(sign < -1.5){
+    return("Valley")
+  
+  ## In these cases the shape is calculated based on succesive points
+  } else {
     
-    ## When there are slopes with same sign
-    ## consecutively
-    if(current == previous){
-      
-      if(current == -1){
-        consecutive.down <- consecutive.down + 1 
+    consecutive.down <- 0 
+    consecutive.up <- 0
+    consecutive.flat <- 0
+    consecutive.flat <- 0
+    slope.vector <- NULL
+    profile.shape <- NULL
+    up.flag <- 0
+    down.flag <- 0
+    
+    for(x in 1:length(profile.slope)){
         
-      } else if(current == 1){
-        consecutive.up <- consecutive.up + 1 
-      } else if(current == 0){
-        consecutive.flat <- consecutive.flat + 1
+      ## First position of the profile
+      if(x == 1){
+        previous <- profile.slope[x]
+        current <- previous
+      } else {
+        current <- profile.slope[x]
+        previous <- profile.slope[x - 1]
       }
-      
-      ## Otherwise reset the counters
-    } else {
-      
-      if(current == 0){
         
-        consecutive.flat <- consecutive.flat + 1
+      ## When there are slopes with same sign
+      ## consecutively
+      if(current == previous){
         
-        if(previous == -1){
+        ## Succesive slope counter
+        if(current == -1){
           consecutive.down <- consecutive.down + 1 
-        } else if(previous == 1){
+        } else if(current == 1){
           consecutive.up <- consecutive.up + 1 
-        }
-        
-      } else if(previous == 0){
-        
-#         if(x < length(profile)-1){
-#           if(profile[x+1] == 0){
-#             consecutive.down <- 0
-#             consecutive.up <- 0
-#             consecutive.flat <- 0
-#           }
-#         } 
-        
-        if(current == 1){
-          consecutive.up <- consecutive.up + 1 
-        } else if (current == -1){
-          consecutive.down <- consecutive.down + 1 
+        } else if(current == 0){
+          consecutive.flat <- consecutive.flat + 1
         }
       } else {
-        
-        if(up.flag == 1){
-          
-          if(x < length(profile)-1){
-            if(profile[x+1] != current){
-              peak.counter <- peak.counter + 1
-              up.flag <- 0
-            }
-          }
-          
-        } else if(down.flag == 1){
-          
-          if(x < length(profile)-1){
-            if(profile[x+1] != current){
-              valley.counter <- valley.counter + 1
-              down.flag <- 0
-            }
-          }
-        }
-        
-        consecutive.down <- 0
+        consecutive.down <- 0 
         consecutive.up <- 0
         consecutive.flat <- 0
       }
-    }
-    
-    ## Indicate the shape of the curve
-    ## up -> increasing
-    ## down -> decreasing
-    if(consecutive.up == 2){
-      slope.vector <- append(slope.vector, "up")
-      up.flag <- 1
-    } else if(consecutive.down == 2){
-      slope.vector <- append(slope.vector, "down")
-      down.flag <- 1
-    } else if(consecutive.flat == 2){
-      consecutive.flat <- 0
-      consecutive.up <- 0
-      consecutive.down <- 0
-    }
-    
-    ## Complete peaks: both sides have the same length
-    if( (up.flag == 1) & (down.flag == 1) ){
-      complete.peak.flag <- 1
-    }
-    
-    ## Count the peaks/valleys
-    if(complete.peak.flag == 1){
       
-      if(slope.vector[1] == "up"){
-        peak.counter <- peak.counter + 1
-        up.flag <- 0
+      if(x == 1){
+        consecutive.down <- 0 
         consecutive.up <- 0
-        slope.vector <- NULL
+        consecutive.flat <- 0
+      }
+      
+      if(consecutive.down == 2){
         slope.vector <- append(slope.vector, "down")
-        
-      } else if(slope.vector[1] == "down"){
-        valley.counter <- valley.counter + 1
-        down.flag <- 0
-        consecutive.down <- 0
-        slope.vector <- NULL
+        down.flag <- 1    
+      } 
+      
+      if(consecutive.up == 2){
         slope.vector <- append(slope.vector, "up")
+        up.flag <- 1 
       }
-      consecutive.flat <- 0
-      complete.peak.flag <- 0
       
-    }
-    
-#     print(paste("Number:", x))
-#     print(paste("Valleys:", valley.counter))
-#     print(paste("Valley Flag:", down.flag))
-#     print(paste("Peaks:", peak.counter))
-#     print(paste("Peak Flag:", up.flag))
-#     print(paste("Consecutive Up:", consecutive.up))
-#     print(paste("Consecutive Dw:", consecutive.down))
-#     print(paste("Consecutive Flat:", consecutive.flat))
-#     print(" --------------------------- ")
-
-    ## The sequences are not considered in the first position
-    if(x == 1){
-      consecutive.flat <- 0
-      consecutive.up <- 0
-      consecutive.down <- 0
-    }
-    
-    ## End of the profile vector
-    ## Return the profile shape either:
-    ## Enrichment, avoided, flat or multi (peaks and valleys)
-    if(x == length(profile)){
-      
-      if( (peak.counter == 1) & (valley.counter == 0)){
-        return("Enriched")
-      } else if( (valley.counter == 1) & (peak.counter == 0) ){
-        return("Avoided")
-      } else if( (valley.counter == 0) & (peak.counter == 0) ){
-        return("Flat")
-      } else if( (valley.counter >= 1) & (peak.counter >= 1) ){
-        return("Multi")
+      if (consecutive.flat == 2){
+        consecutive.flat <- 1
       }
-    } 
-  }
+      
+       
+      ## Last position of the array
+      if(length(profile.slope) == x){
+        
+        if(consecutive.flat == 1){
+          profile.shape <- "Flat"
+        } else if(down.flag | up.flag){
+          if(slope.vector[1] == "up"){
+            profile.shape <- "Hill"
+          } else if(slope.vector[1] == "down"){
+            profile.shape <- "Valley"
+          }
+        } else {
+          profile.shape <- "Flat"
+        }
+      } 
+    }
+    return(profile.shape)
+  } 
 }
-########################################################################################
-
 
 ###########################################
 ## Read arguments from the command line.
@@ -306,6 +319,13 @@ print(heatmap.dendo)
 # prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/BK/t/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1"
 # ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/BK/t/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_TF_ID_name_correspondence.tab"
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/BK/t/mkv_1/")
+
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/HELA_bin_size_25_pval1e-3_matrix_scan_results_PARSED.tab"
+# prefix <- "/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/HELA_bin_size_25_pval1e-3"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/HELA_bin_size_25_pval1e-3_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/Documents/PhD/Position_scan/Human_promoters/pval1e-3/")
+# seq.length <- 2000
+
 
 #############################################
 ## Read matrix-scan table Active Promoters
@@ -476,7 +496,11 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   ## are distributed homogenously along the sequences
   chi <- chisq.test(counts.per.bin, correct = TRUE)
   
-  feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/chi[[7]]))
+  y <- as.vector(log2(chi[[6]]/chi[[7]]))
+  y[which(y == -Inf)] <- 0
+  y[which(y == Inf)] <- 0
+  
+  feature.log2.ratio[[m]][["feature_id"]] <<- y
   
   ## Chi-squared
   cs.val <- round(chi[[1]], digits = 3)
@@ -503,6 +527,7 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   feature.attributes[[m]][["eval"]] <<- chi.eval
   
 })
+rm(thrash)
 names(feature.attributes) <- matrix.names
 names(feature.log2.ratio) <- matrix.names
 
@@ -521,68 +546,44 @@ colnames(feature.log2.ratio) <- as.character(data.frame(windows)$start)
 
 ###############################################
 ## Calculate the profile shape of each motif
-bin.nb <- dim(feature.log2.ratio)[2]
-x <- 1:bin.nb
-shape <- apply(feature.log2.ratio, 1, function(y){
-  
-  y <- as.numeric(y)
-  
-  ## Calculate the slope
-  slope <- diff(y) / diff(x)
-  
-  ## Convert the slope values into -1,0,+1
-  ## In order to indentify easily the changes in sign
-  profile.slope <- sapply(slope, function(x){
-    if(x > 0.01){
-      x <- 1
-    } else if (x < -0.01){
-      x <- -1
-    } else {
-      x <- 0
-    }
-  })
-  
-  ## Calculate the shape
-  get.profile.shape(profile.slope)
-  
-})
+shape <- apply(feature.log2.ratio, 1, get.profile.shape)
 feature.attributes$Shape <- shape
 
 ## Separate the motifs names by profile shape
-enriched.motifs <- names(which(shape == "Enriched"))
-avoided.motifs <- names(which(shape == "Avoided"))
-multi.motifs <- names(which(shape == "Multi"))
+enriched.motifs <- names(which(shape == "Hill"))
+avoided.motifs <- names(which(shape == "Valley"))
 flat.motifs <- names(which(shape == "Flat"))
 
-## Multi represents those profiles having one peak and one valley 
-## in the same profile. Thay are joined to the avoided and enriched set
-enriched.motifs <- union(enriched.motifs, multi.motifs)
-avoided.motifs <- union(avoided.motifs, multi.motifs)
+flat.motifs <- as.vector(sapply(flat.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
+avoided.motifs <- as.vector(sapply(avoided.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
+enriched.motifs <- as.vector(sapply(enriched.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
 
-flat.motifs <- as.vector(ID.names[which(ID.names[,2] == flat.motifs),1])
-avoided.motifs <- as.vector(ID.names[which(ID.names[,2] == avoided.motifs),1])
-enriched.motifs <- as.vector(ID.names[which(ID.names[,2] == enriched.motifs),1])
-
-flat.motifs <- gsub("_", "", flat.motifs)
+# flat.motifs <- gsub("_", "", flat.motifs)
 flat.motifs <- gsub("-", "", flat.motifs)
 flat.motifs <- gsub("\\.", "", flat.motifs)
 flat.motifs <- gsub(":", "", flat.motifs)
 flat.motifs <- gsub("\\s+", "", flat.motifs, perl = TRUE)
 
-enriched.motifs <- gsub("_", "", enriched.motifs)
+# enriched.motifs <- gsub("_", "", enriched.motifs)
 enriched.motifs <- gsub("-", "", enriched.motifs)
 enriched.motifs <- gsub("\\.", "", enriched.motifs)
 enriched.motifs <- gsub(":", "", enriched.motifs)
 enriched.motifs <- gsub("\\s+", "", enriched.motifs, perl = TRUE)
 
-avoided.motifs <- gsub("_", "", avoided.motifs)
+# avoided.motifs <- gsub("_", "", avoided.motifs)
 avoided.motifs <- gsub("-", "", avoided.motifs)
 avoided.motifs <- gsub("\\.", "", avoided.motifs)
 avoided.motifs <- gsub(":", "", avoided.motifs)
 avoided.motifs <- gsub("\\s+", "", avoided.motifs, perl = TRUE)
 
+print(" | | | | | | | | | | | | ")
+print(length(flat.motifs))
+print(length(avoided.motifs))
+print(length(enriched.motifs))
+print(" | | | | | | | | | |  ")
 
-## Test get.profile.shape 
+
+# ## Test get.profile.shape 
 # profile.ee <- c(1, -1, 0, 1, 1, -1, -1, -1, 0,  1, -1)
 # profile.e <- c(0, 0, 1, 1, 1, 1, -1, -1, -1, 0, 0)
 # profile.a <- c(0, 0, -1, -1, -1, 1, 1, 1, 1, 0, 0)
@@ -593,57 +594,61 @@ avoided.motifs <- gsub("\\s+", "", avoided.motifs, perl = TRUE)
 ####################################################################################
 ## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
 ####################################################################################
-verbose(paste("Drawing Heatmap profiles", 1))
 
-## Color palette
-rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(1000))
-# rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
-
-## Heatmap
-out.format <- c("pdf", "jpg")
-for (format in out.format){
+heatmap.flag <- 1
+if(heatmap.flag){
   
-  profiles.heatmap.file <- paste(basename, "_profiles_heatmap.", format, sep = "") 
+  verbose(paste("Drawing Heatmap profiles", 1))
   
-  if(format == "pdf"){
-    pdf(profiles.heatmap.file)
-  } else if (format == "jpg"){
-    jpeg(profiles.heatmap.file)
+  ## Color palette
+  rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(1000))
+  # rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
+  
+  ## Heatmap
+  out.format <- c("pdf", "jpg")
+  for (format in out.format){
+    
+    profiles.heatmap.file <- paste(basename, "_profiles_heatmap.", format, sep = "") 
+    
+    if(format == "pdf"){
+      pdf(profiles.heatmap.file)
+    } else if (format == "jpg"){
+      jpeg(profiles.heatmap.file)
+    }
+    
+    #   feature.log2.ratio.dist <- as.matrix(dist(feature.log2.ratio, method = "canberra"))
+    heatmap.2(as.matrix(feature.log2.ratio),
+              
+              ## Dendrogram control
+              dendrogram = c(heatmap.dendo),
+              Rowv = TRUE,
+              Colv = FALSE,
+              
+              main = "Profile Heatmap",
+              xlab = "Position (bp)",
+              ylab = "Motifs",
+              
+              #             hclustfun = function(d){hclust(d, method="ward")},
+              
+              ## Color
+              col = rgb.palette,
+              
+              ## Trace
+              trace = "none",
+              
+              ## Key control
+              key = TRUE,
+              keysize = 1,
+              density.info = "none",
+              key.xlab = "Density",
+              key.ylab = "",
+              key.title = "",
+              offsetCol = 0.25,
+              cexRow = 0.25,
+    )
+    dev.off()
   }
-  
-  #   feature.log2.ratio.dist <- as.matrix(dist(feature.log2.ratio, method = "canberra"))
-  heatmap.2(as.matrix(feature.log2.ratio),
-            
-            ## Dendrogram control
-            dendrogram = c(heatmap.dendo),
-            Rowv = TRUE,
-            Colv = FALSE,
-            
-            main = "Profile Heatmap",
-            xlab = "Position (bp)",
-            ylab = "Motifs",
-            
-            #             hclustfun = function(d){hclust(d, method="ward")},
-            
-            ## Color
-            col = rgb.palette,
-            
-            ## Trace
-            trace = "none",
-            
-            ## Key control
-            key = TRUE,
-            keysize = 1,
-            density.info = "none",
-            key.xlab = "Density",
-            key.ylab = "",
-            key.title = "",
-            offsetCol = 0.25,
-            cexRow = 0.25,
-  )
-  dev.off()
 }
-
 
 ## Calculate q-values
 ## This step is executed once all the p-values were calculated
@@ -856,6 +861,14 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   x.y <<- rbind(x.y, y) 
 })
 
+
+print(" - - - - - ")
+print(length(flat.motifs))
+print(length(avoided.motifs))
+print(length(enriched.motifs))
+print(" - - - - - ")
+
+
 if(length(flat.motifs) > 0){
   ## Get the ID (required for the HTML document) of the select motif names
   flat.selection <- as.vector(sapply(flat.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
@@ -911,8 +924,7 @@ all.motifs <- all.motifs
 
 ############################
 ## Fill the HTML template
-## Substitute the words marked in the tamplate by the data
-# html.template.file <- "Template/index.html"
+## Substitute the words marked in the t3mplate by the data
 html.report <- readLines(html.template.file)
 profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12, 2:6,9:10,7,13)], img = 11)
 
@@ -928,6 +940,15 @@ x.y <<- rbind(x.y, paste("['x',", paste(colnames(frequency.per.bin.table),collap
 line.w <- paste("#chart .c3-line-", all.motifs, "{ stroke-width: ", line.w, "px; }", sep = "")
 line.w <- paste(line.w, collapse = "\n")
 html.report <- gsub("--lines_w--", line.w, html.report)
+
+## Add the TF_names data
+TF.names <- paste("TF_names['", all.motif.names, "'] = '", all.motifs, "';", sep = "")
+TF.names <- paste(TF.names, collapse = "\n")
+html.report <- gsub("--TF_names--", TF.names, html.report)
+
+## Add the TF_names data
+tfs <- paste(paste("'", all.motif.names, "'", sep = ""), collapse = ",")
+html.report <- gsub("--tfs--", tfs, html.report)
 
 ## Add the e-values data
 ## They are inserted in the JS section
@@ -993,11 +1014,24 @@ if(draw.area == 1){
   html.report <- gsub("--area--", area, html.report)
 }
 
+## The plot heigth depends in the number of motifs
+motif.total <- length(all.motifs)
+chart.heigth <- 500
+if(motif.total >= 300){
+  chart.heigth <- 600
+} else if(motif.total >= 400){
+  chart.heigth <- 700
+}
+html.report <- gsub("--chart_h--", chart.heigth, html.report)
+
 
 ## Insert the motif names (to hide/show all)
 ## They are inserted in the JQuery section
 all.motifs <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
 html.report <- gsub("--all--", all.motifs, html.report)
+
+## The plot heigth depends in the number of motifs
+html.report <- gsub("--chart_h--", density.tab.file, html.report)
 
 if(length(flat.motifs) == 0){
   html.report <- gsub("--start_f--", "<!--", html.report)
@@ -1010,7 +1044,7 @@ if(length(flat.motifs) == 0){
   html.report <- gsub("--end_f--", "", html.report)
 }
 
-
+print(enriched.motifs)
 if(length(enriched.motifs) == 0){
   html.report <- gsub("--start_e--", "<!--", html.report)
   html.report <- gsub("--end_e--", "-->", html.report)
@@ -1022,7 +1056,7 @@ if(length(enriched.motifs) == 0){
   html.report <- gsub("--end_e--", "", html.report)
 }
 
-
+print(avoided.motifs)
 if(length(avoided.motifs) == 0){
   html.report <- gsub("--start_a--", "<!--", html.report)
   html.report <- gsub("--end_a--", "-->", html.report)
