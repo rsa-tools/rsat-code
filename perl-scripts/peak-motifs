@@ -21,8 +21,9 @@ $program_version
 
 =head1 DESCRIPTION
 
-Pipeline for discovering motifs from ChIP-seq (or ChIP-chip, or
-ChIP-PET) peak sequences.
+Workflow combining various algorithms to discover motifs from set of
+peak sequences, e.g. genomic regions obtained from ChIP-seq or related
+experiments (STARR-seq, ChIP-chip, ChIP-PET).
 
 =head1 AUTHORS
 
