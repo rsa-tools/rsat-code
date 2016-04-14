@@ -144,6 +144,10 @@ package main;
   }
   local $supported_heatmap_dendo_pos = join ",", @supported_heatmap_dendo_pos;
 
+  ## Negative controls
+  local $random_seq_flag = 0;
+  local $random_motifs_flag = 0;
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -202,7 +206,9 @@ package main;
 
   ## Output file names
   $main::outfile{filtered_sequences} = $main::outfile{prefix}."_filtered_sequences.fasta";
+  $main::outfile{random_sequences} = $main::outfile{prefix}."_randomized_sequences.fasta";
   $main::outfile{motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac.tf";
+  $main::outfile{random_motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac_permuted.tf";
   $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_results.tab";
   $main::outfile{matches_tab_PARSED} = $main::outfile{prefix}."_matrix_scan_results_PARSED.tab";
   $main::outfile{motif_ID_to_name} = $main::outfile{prefix}."_TF_ID_name_correspondence.tab";
@@ -282,15 +288,19 @@ package main;
   ################################################################
   ## Calculate the sequence length
   ## For the moment the input are sequences of same length
-  ## TO DO: It will take the first sequence as template and the other sequences will be adapted to
-  ## that sequence length
   &ProcessSeq();      
+
+  ################################################################
+  ## Convert the input motif file to transfac
+  ## If required, select the X top or tail matrices
+  ## If required, permute the matrices
+  &ProcessMatrices();
 
   ################################################################
   ## Run matrix-scan quick
   &ScanSequences();
   
-  ## Parse the matrix-scan results table
+  # ## Parse the matrix-scan results table
   &ParseScanResults();
 
   ################################################################
@@ -661,6 +671,36 @@ This option is incompatible with the option -bgfile.
       &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.")
 	if (($bg_file_flag) && ($bg_input_flag));
 
+
+=pod
+
+=item B<-rand_motifs>
+
+Scan the sequences with the randomly permuted input matrices.
+
+Use this option as negative control.
+
+=cut
+    } elsif ($arg eq "-rand_motif") {
+      $random_motifs_flag = 1;
+
+
+=pod
+
+=item B<-rand_seq>
+
+The input sequences are randomly permuted (thus the interdependence of nucleotides is lost).
+
+If option -bg_file is selected, the Background model is calculated from
+these shuffled sequences.
+
+Use this option as negative control.
+
+=cut
+    } elsif ($arg eq "-rand_seq") {
+      $random_seq_flag = 1;
+
+
 =pod
 
 =item	B<-o output_prefix>
@@ -705,6 +745,33 @@ sub Verbose {
   }
 }
 
+
+################################################################
+## Scan the input sequences with the input matrices using
+## RSAT matrix-scan
+sub ProcessMatrices {
+
+    &RSAT::message::TimeWarn("Processing input matrices") if ($main::verbose >= 2);
+
+    $process_motif_cmd = $SCRIPTS."/convert-matrix";
+    $process_motif_cmd .= " -i ".$main::infile{motifs};
+    $process_motif_cmd .= " -from ".$matrix_format;
+    $process_motif_cmd .= " -to transfac";
+
+    ## If motif permutations are selected
+    $process_motif_cmd .= " -perm 1" if $random_motifs_flag;
+
+    ## If top or skip matrices are required
+    $process_motif_cmd .= " -top ".$top_matrices if $top_matrix_flag;
+    $process_motif_cmd .= " -skip ".$skip_matrices if $skip_matrix_flag;
+    $process_motif_cmd .= " -o ".$main::outfile{motifs_transfac};
+    
+    &doit($process_motif_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    
+    $main::infile{motifs} = $main::outfile{motifs_transfac};
+}
+
+
 ################################################################
 ## Scan the input sequences with the input matrices using
 ## RSAT matrix-scan
@@ -724,15 +791,6 @@ sub ScanSequences {
     $matrix_scan_cmd .= " -return limits -return pval ";
     $matrix_scan_cmd .= " -o ".$main::outfile{matches_tab};
     $matrix_scan_cmd .= " -bgfile ".$main::infile{bg_file}." -bg_format ".$bg_format;
-
-    if($top_matrix_flag){
-	$matrix_scan_cmd .= " -last_matrix ".$top_matrices;
-    } 
-
-    if ($skip_matrix_flag){
-	$matrix_scan_cmd .= " -first_matrix ".$skip_matrices;
-    } 
-
     &doit($matrix_scan_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
     &RSAT::message::TimeWarn("matrix-scan file results", $main::outfile{matches_tab}) if ($main::verbose >= 2);
@@ -768,21 +826,6 @@ sub ID_NameRefTable {
 
     &RSAT::message::TimeWarn("Generating ID -> Name reference table") if ($main::verbose >= 3);
 
-    ## If it is required, convert the input motif file in Transfac format
-    if($matrix_format eq "transfac" || $matrix_format eq "tf"){
-	$main::outfile{motifs_transfac} = $main::infile{motifs};
-    } else {
-
-	&RSAT::message::TimeWarn("Converting input matrices to Tansfac format") if ($main::verbose >= 3);
-	$convert_matrix_cmd = $SCRIPTS."/convert-matrix";
-	$convert_matrix_cmd .= " -i ".$main::infile{motifs};
-	$convert_matrix_cmd .= " -from tf";
-	$convert_matrix_cmd .= " -to transfac";
-	$convert_matrix_cmd .= " -o ".$main::outfile{motifs_transfac};
-	&doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-	$to_delete{'motifs_transfac'} = $main::outfile{motifs_transfac};
-    }
-
     ## Open the ID to Motif name reference table
     my ($ID_to_Motif_name_file) = &RSAT::util::OpenOutputFile($main::outfile{motif_ID_to_name});
 
@@ -790,7 +833,7 @@ sub ID_NameRefTable {
     ## Save the unique ID in a hash table
     ## Key = ID unique
     ## Value = Motif name
-    my ($transfac_matrix_file) = &OpenInputFile($main::outfile{motifs_transfac});
+    my ($transfac_matrix_file) = &OpenInputFile($main::infile{motifs});
     my ($AC_flag, $name_flag, $null, $AC_unique, $motif_ID) = 0;
     while(<$transfac_matrix_file>){
 
@@ -832,16 +875,6 @@ sub GenerateLogos {
     $logos_cmd .= " -to transfac";
     $logos_cmd .= " -return logo -logo_program weblogo";
     $logos_cmd .= " -logo_format png,jpeg -logo_dir ".$main::outfile{prefix}."_logos";
-
-    ## If top or skip matrices are required
-    if($top_matrix_flag){
-	$logos_cmd .= " -top ".$top_matrices;
-    } 
-
-    if ($skip_matrix_flag){
-	$logos_cmd .= " -skip ".$skip_matrices;
-    } 
-
     &doit($logos_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 }
 
@@ -932,11 +965,27 @@ sub ProcessSeq {
     $convert_seq_cmd .= " -top ".$top_sequences if($top_seq_flag == 1);
     $convert_seq_cmd .= " -skip ".$skip_sequences if($skip_seq_flag == 1);
     $convert_seq_cmd .= " -o ".$main::outfile{filtered_sequences};
-    &doit($convert_seq_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);    
+    &doit($convert_seq_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 
-    $main::infile{sequences} = $main::outfile{filtered_sequences};
+    ################################################################
+    ## If it is specified randomize the input sequences
+    if($random_seq_flag){
 
-    $to_delete{'filtered_sequences'} = $main::outfile{filtered_sequences};
+	&RSAT::message::TimeWarn("Random permutation of the sequences") if ($main::verbose >= 2);
+
+	$random_seq_cmd = $SCRIPTS."/random-seq";
+	$random_seq_cmd .= " -i ".$main::outfile{filtered_sequences};
+	$random_seq_cmd .= " -o ".$main::outfile{random_sequences};
+	&doit($random_seq_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+
+	$main::infile{sequences} = $main::outfile{random_sequences};
+	$to_delete{'random_sequences'} = $main::outfile{random_sequences};
+
+    } else {
+
+	$main::infile{sequences} = $main::outfile{filtered_sequences};
+	$to_delete{'filtered_sequences'} = $main::outfile{filtered_sequences};
+    }
 
     return($seq_length);
 }

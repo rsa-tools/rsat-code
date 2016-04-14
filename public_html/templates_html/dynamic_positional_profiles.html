@@ -104,7 +104,23 @@
         cursor:pointer;
 	float: left;
         margin-top:10px;
+        margin-left:3px;
+        background-color: #D6EEFA;
+        color: #0D73A7;
+        border-radius:5px;
+        font-size: 15px;
+        text-align: center;
+//        font-weight: bold;
+//        border-style:none;
   }
+
+ #show_all_button {
+        background-color: #C1FFC7;
+ }
+
+ #hide_all_button {
+        background-color: #FCACAC;
+ }
 
   .button_click:active {
         position:relative;
@@ -196,11 +212,13 @@
 
 </div> 
    <div  style="display:block; clear:both;position:relative;float:left;">
-      <button class='small button_chart' onclick='show_all();'>Show All Profiles</button>
-      <button class='small button_chart' onclick='hide_all();'>Hide All Profiles</button>
-
+      <button class='small button_chart' id='show_all_button' onclick='show_all();'>Show All Profiles</button>
+      <button class='small button_chart' id='hide_all_button' onclick='hide_all();'>Hide All Profiles</button>
+--start_e--      <button class='small button_chart' onclick='enriched();'>Hill Profiles</button> --end_e--
+--start_a--      <button class='small button_chart' onclick='avoided();'>Valley Profiles</button> --end_a--
+--start_f--      <button class='small button_chart' onclick='flat();'>Flat Profiles</button> --end_f--
 <button class='small button_chart' onclick='sig_upper_threshold();'><b>Significance</b>: Lower threshold<div><input style="height:20px;margin:5px;" type="number" value='' id="sig_up" /></div></button>
-
+<button class='small button_chart' onclick='search_motifs();'><b>Search:</b><div><input style="height:20px;margin:5px;" type="search" value='' id="search_motifs" /></div></button>
 <!-- <button class='small button_chart' onclick='sig_lower_threshold();'>Hide TEST<div id="ccc"><input type="number" id="sig_low" /></div></button> -->
 
    </div>
@@ -260,7 +278,7 @@ var chart = c3.generate({
 
 
     size: {
-        height: 500,
+        height: --chart_h--,
         width: 1275
     },
 
@@ -322,6 +340,9 @@ var chart = c3.generate({
 });
 
 
+    var TF_names = new Array();
+--TF_names--
+
     var pvalues = new Array();
 --pvalues--
 
@@ -344,6 +365,22 @@ function show_all() {
 
 function hide_all() {
     chart.hide([--all--]);
+}
+
+// Show all the enriched/avoided/flat motifs
+function enriched() {
+    chart.hide([--all--]);
+    chart.show([--enriched--]);
+}
+
+function avoided() {
+    chart.hide([--all--]);
+    chart.show([--avoided--]);
+}
+
+function flat() {
+    chart.hide([--all--]);
+    chart.show([--flat--]);
 }
 
 Array.prototype.difference = function (x) {
@@ -397,6 +434,38 @@ function sig_lower_threshold(){
   }
 chart.hide(newIndex);
 }
+
+
+function search_motifs(){
+
+   var x = document.getElementById('search_motifs').value;
+   var index = [--tfs--];
+   var newIndex = new Array();
+   var newIDmotif = new Array();
+   c = 0;
+
+//document.write('<br>' + x + '<br>'); 
+
+   for(i = 0; i < index.length; i++){
+
+     tf = index[i];
+
+     newIDmotif[c] = TF_names[tf];
+
+     if(tf == x){  	
+  	newIndex[c] = TF_names[x];
+        c++;
+     }
+   }
+
+//   var diff = newIDmotif.difference(newIndex);
+//   chart.hide(newIDmotif);
+   
+   hide_all();
+   chart.show(newIndex);
+   
+}
+
 
 
 
