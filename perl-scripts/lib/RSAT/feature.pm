@@ -8,6 +8,7 @@ package RSAT::feature;
 			  gft=>1,
 			  gff=>1,
 			  gff3=>1,
+			  gtf=>1,
 			  dnapat=>1,
 			  bed=>1,
 			  bed3col=>1,
@@ -109,8 +110,7 @@ $header_char{gff} = "## ";
 			score
 			strand
 			frame
-			attribute
-		       );
+			attribute);
 @{$strands{gff3}} = ("+", "-", ".");
 $comment_char{gff3} = "## ";
 $header_char{gff3} = "## ";
@@ -124,6 +124,17 @@ $header_char{gff3} = "## ";
 		    "Dbxref", # database cross reference
 		    "Ontology_term"	# cross-reference to an ontology term
 		   );
+
+
+## Generic Transfer Format (gtf)
+## The GTF (General Transfer Format) is identical to GFF version 2.
+## http://www.ensembl.org/info/website/upload/gff.html
+@{$columns{gtf}} = @{$columns{gff3}};
+@{$strands{gtf}} = @{$strands{gff3}};
+$comment_char{gtf} = "## ";
+$header_char{gtf} = "## ";
+@gtf_attributes = @gff3_attributes;
+
 
 ################################################################
 ## UCSC BED
@@ -505,6 +516,7 @@ All lines with the same group are linked together into a single item.
  seq1     BLASTX  similarity   101  235 87.1 + 0   Target "HBA_HUMAN" 11 55 ; E_value 0.0003
  dJ102G20 GD_mRNA coding_exon 7105 7201   .  - 2   Sequence "dJ102G20.C1.1"
 
+=head2  gtf: Generic Transfer Format
 =head2  gff3: Generic Feature Format version 3
 
 Information: http://flybase.net/annot/gff3.html
@@ -883,9 +895,32 @@ sub parse_from_row {
   $self->force_attribute("strand", $strand);
 
   ## Format-specific conversions
-  if (($in_format eq "gff") || ($in_format eq "gff3")) {
-    $self->set_attribute("feature_name", $self->get_attribute("source"));
-    $self->set_attribute("description", $self->get_attribute("attribute"));
+  if (($in_format eq "gff") || ($in_format eq "gff3") || ($in_format eq "gtf")) {
+    my $description = $self->get_attribute("attribute");
+    $self->set_attribute("description", $description);
+
+    @description_fields = split("; ", $description);
+    foreach my $field (@description_fields) {
+      if ($field =~ /(\S+)\s+\"(.+)\"/) {
+	my $key = lc($1);
+	my $value = $2;
+	$self->force_attribute($key, $value);
+      }
+    }
+
+    ## Find an attibute for the feature name
+    my @accepted_fields = qw(gene_name
+                             gene_id
+                             id
+                             transcript_name 
+                             transcript_id
+                             source);
+    foreach my $field (@accepted_fields) {
+      if ($self->get_attribute($field)) {
+	$self->set_attribute("feature_name", $self->get_attribute($field));
+	last;
+      }
+    }
 
   } elsif ($in_format eq "swembl")  {
 
