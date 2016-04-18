@@ -27,7 +27,7 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 create.html.tab <- function(tab, img = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:15px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
   
   content.tab <- apply(tab, 1, function(row){
     
@@ -313,7 +313,7 @@ if(off.set == 0){
   if (off.set.type == "start"){
     
     windows <- IRanges(start = seq(from = seq.length, to = 0 - bin + 1, by = bin), width = bin)
-    windows <- shift(windos, seq.length - off.set)
+    windows <- shift(windows, seq.length - off.set)
     
     limit.dw <- seq.length - off.set
     limit.up <- -off.set
@@ -321,7 +321,7 @@ if(off.set == 0){
   } else if (off.set.type == "end"){
     
     windows <- IRanges(start = seq(from = seq.length, to = 0 - bin + 1, by = bin), width = bin)
-    windows <- shift(windos, off.set)
+    windows <- shift(windows, off.set)
     
     limit.dw <- seq.length - off.set
     limit.up <- off.set
@@ -380,7 +380,10 @@ counts.per.bin.table <- t(counts.per.bin)
 #counts.per.bin.table <- round(counts.per.bin.table, digits = 3)
 rm(counts.per.bin)
 rownames(counts.per.bin.table) <- matrix.names
-colnames(counts.per.bin.table) <- as.character(data.frame(windows)$start)
+
+xlab <- data.frame(windows)$start
+xlab <- ifelse(xlab >= 0, xlab + bin, xlab)
+colnames(counts.per.bin.table) <- as.character(xlab)
 
 #colnames(counts.per.bin.table) <- c(as.character(data.frame(windows)$start), as.character(data.frame(windows)$end)[dim(data.frame(windows))[1]])
 
