@@ -67,6 +67,8 @@ use List::MoreUtils qw(uniq);
 use Data::Dumper;
 use File::Basename;
 use File::Path;
+require "RSA.disco.lib";
+require "footprint.lib.pl";
 
 
 ################################################################
@@ -234,6 +236,7 @@ package main;
   $main::outfile{profiles_counts} = $main::outfile{prefix}."_counts_per_bin_profiles.tab";
   $main::outfile{profiles_heatmap} = $main::outfile{prefix}."_profiles_heatmap.pdf";
   $main::outfile{report} = $main::outfile{prefix}."_scan_profile_report.html";
+  $main::outfile{report_temp} = $main::outfile{prefix}."_scan_profile_report_temp.html";
   $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_positional_profiles.html";
 
   ## Archive to facilitate transfer of all the results in a zip file
@@ -312,10 +315,9 @@ package main;
   ## If required, permute the matrices
   &ProcessMatrices();
 
-  # foreach (keys %selected_tasks){
-  #     print $_." - ".$selected_tasks{$_}."\n";
-  # }
-  # die "\n";
+  ################################################################
+  ## Initialize HTML report, 
+  ##&OpenSynthesis() if ($main::param{progressive_synthesis});
   
   ################################################################
   ## Scan step: scan + parsing results + generate logos
@@ -348,6 +350,10 @@ package main;
       ## These steps are executed in R
       &DynamicProfilesR();
   }
+
+  ################################################################
+  ## Initialize HTML report, 
+  &ReOpenSynthesis();
 
   ################################################################
   ## Create an archive with all result files
@@ -993,7 +999,6 @@ sub DynamicProfilesR {
     $profile_cmd .= "; basename = '".$basename."'";
     $profile_cmd .= "; ID.to.names.correspondence.tab = '".$main::outfile{motif_ID_to_name}."'";
     $profile_cmd .= "; seq.length = '".$seq_length."'";
-    $profile_cmd .= "; analyze.title = '".$title."'";
     $profile_cmd .= "; individual.plots = '".$individual_plots."'";
     $profile_cmd .= "; heatmap.dendo = '".$heatmap_dendo."'";
     $profile_cmd .= "; html.template.file = '".$main::outfile{report_template}."'";
@@ -1167,6 +1172,52 @@ sub Archive {
   &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
 }
 
+##########################################
+## Open the HTML page for the synthesis
+sub ReOpenSynthesis {
+
+  ## Open the summary HTML file + temporal report 
+  my ($syn) = &OpenInputFile($main::outfile{report});
+  my ($syn2) = &OpenOutputFile($main::outfile{report_temp});
+
+  
+  my $head = &PrintHtmlResultHeader(program=>"position-scan", "title"=>$main::title);
+
+  ######################################
+  ## Read the HTML report
+  ## Add the header and command line
+  while(<$syn>){
+      
+      chomp;
+
+      ## Substitute the Header
+      if($_ =~ /--he--/){
+	  $_ =~ s/--he--/$head/;
+      }
+
+      ## Substitute the Command section
+      if($_ =~ /--show_command--/){
+
+	  ## Print arguments
+	  print $syn2 &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
+	  print $syn2 "<pre>";
+	  print $syn2 "position-scan ";
+	  &PrintArguments($syn2);
+	  print $syn2 "</pre>";
+	  print $syn2 &close_menu_heading();
+
+	  $_ =~ s/--show_command--//;
+      }
+
+      print $syn2 $_."\n";
+  }
+
+  close($syn);
+  close($syn2);
+
+  ## Rename the files
+  system("mv ".$main::outfile{report_temp}." ".$main::outfile{report});
+}
         
 __END__
 
