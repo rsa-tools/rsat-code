@@ -246,9 +246,6 @@ if (!exists("individual.plots")) {
 }
 if (!exists("heatmap.dendo")) {
   heatmap.dendo <- "show"
-} 
-if (!exists("analyze.title")) {
-  analyze.title <- "position_scan"
 }
 
 ## Heatmap dendogram position
@@ -877,11 +874,6 @@ x.y <<- rbind(x.y, paste("['x',", paste(colnames(frequency.per.bin.table),collap
 line.w <- paste("#chart .c3-line-", all.motifs, "{ stroke-width: ", line.w, "px; }", sep = "")
 line.w <- paste(line.w, collapse = "\n")
 html.report <- gsub("--lines_w--", line.w, html.report)
-
-## Add the title
-print(" - - - - - - - ")
-print(analyze.title)
-html.report <- gsub("--title--", analyze.title, html.report)
 
 ## Add the TF_names data
 TF.names <- paste("TF_names['", all.motif.names, "'] = '", all.motifs, "';", sep = "")
