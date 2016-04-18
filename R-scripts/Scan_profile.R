@@ -27,13 +27,13 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 create.html.tab <- function(tab, img = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:15px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Logo </th></tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:15px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
   
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
     rows.nb <- 1:row.length
-    if(img != 0){
+    if(length(img) > 0){
       
       ## Get the number of the columns with/without picture
       ## This is done becuase the tab require different arguments
@@ -96,7 +96,7 @@ get.profile.shape <- function(profile){
 
   sign <- round(sign, digits = 2)
   
-#   print(sign)
+  print(sign)
 
   ## End of the profile vector
   if(sign > 1.5){
@@ -852,6 +852,7 @@ datatable.info.tab <- feature.attributes
 datatable.info.tab$P_val_threshold <- all.pval.match
 datatable.info.tab$IDs <- TF.IDs
 datatable.info.tab$Logo <- logos.F
+datatable.info.tab$Logo_RC <- logos.R
 all.motifs <- all.motifs
 
 ############################
@@ -859,7 +860,7 @@ all.motifs <- all.motifs
 ## Substitute the words marked in the tamplate by the data
 # html.template.file <- "Template/index.html"
 html.report <- readLines(html.template.file)
-profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12, 2:6,9:10,7,13)], img = 11)
+profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12, 2:6,9:10,7,13,14)], img = c(11,12))
 
 profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 
@@ -878,6 +879,15 @@ html.report <- gsub("--lines_w--", line.w, html.report)
 print(" - - - - - - - ")
 print(analyze.title)
 html.report <- gsub("--title--", analyze.title, html.report)
+
+## Add the TF_names data
+TF.names <- paste("TF_names['", all.motif.names, "'] = '", all.motifs, "';", sep = "")
+TF.names <- paste(TF.names, collapse = "\n")
+html.report <- gsub("--TF_names--", TF.names, html.report)
+
+## Add the TF_names data
+tfs <- paste(paste("'", all.motif.names, "'", sep = ""), collapse = ",")
+html.report <- gsub("--tfs--", tfs, html.report)
 
 ## Add the e-values data
 ## They are inserted in the JS section
@@ -913,11 +923,29 @@ logos <- paste("pics['", all.motifs, "'] = '", as.vector(datatable.info.tab$Logo
 logos <- paste(logos, collapse = "\n")
 html.report <- gsub("--pics--", logos, html.report)
 
+## Logos in Reverse complement
+logos.rc <- sapply(TF.IDs, function(i){
+  paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
+})
+logos.rc <- paste("pics_rc['", all.motifs, "'] = '", as.vector(datatable.info.tab$Logo_RC), "';", sep = "")
+logos.rc <- paste(logos.rc, collapse = "\n")
+html.report <- gsub("--pics_rc--", logos.rc, html.report)
+
 ## Add the signficance (to display in the tooltip)
 ## They are inserted in the JS section
 sig <- paste("significances['", all.motifs, "'] = ", as.vector(datatable.info.tab$Sig), ";", sep = "")
 sig <- paste(sig, collapse = "\n")
 html.report <- gsub("--significances--", sig, html.report)
+
+## The plot heigth depends in the number of motifs
+motif.total <- length(all.motifs)
+chart.heigth <- 500
+if(motif.total >= 300){
+  chart.heigth <- 700
+} else if(motif.total >= 400){
+  chart.heigth <- 900
+}
+html.report <- gsub("--chart_h--", chart.heigth, html.report)
 
 ## Add x values (one row per motif)
 ## They are inserted in the C3 section
