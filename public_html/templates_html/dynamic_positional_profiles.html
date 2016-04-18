@@ -1,4 +1,4 @@
-<!-- Load c3.css -->
+!-- Load c3.css -->
 <link href="--c3_css--" rel="stylesheet" type="text/css">
 <link rel="stylesheet" type="text/css" href="--datatable_css--"/>
 
@@ -353,6 +353,9 @@ var chart = c3.generate({
     var pics = new Array();
 --pics--
 
+    var pics_rc = new Array();
+--pics_rc--
+
     var IDs = new Array();
 --IDs--
 
@@ -493,7 +496,8 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
             title_q = 'Q-val';
             title_s = 'Sig';
             title_logo = 'Logo';
-            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_p + "</th><th colspan='1'>" + title_q + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_logo + "</th></tr>";
+            title_logo_rc = 'Logo RC';
+            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_p + "</th><th colspan='1'>" + title_q + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";
         }
 
         name = nameFormat(d[i].name);
@@ -507,6 +511,7 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
         text += "<td>" + qvalues[d[i].id] + "</td>";
         text += "<td>" + significances[d[i].id] + "</td>";
         text += "<td><img class='small_logo' src='" + pics[d[i].id] + "' /></td>";
+        text += "<td><img class='small_logo' src='" + pics_rc[d[i].id] + "' /></td>";
         text += "</tr>";
     }
     return text + "</table>";   
@@ -522,7 +527,7 @@ $(document).ready( function () {
     $('#Motif_tab').DataTable({
         "info":     true,
         "iDisplayLength": 50,
-        "order": [[ 1, "asc" ]],
+        "order": [[ 3, "asc" ]],
 	"search": {
 	    "regex": true,
 	    "smart": true
