@@ -95,12 +95,13 @@ if($pval){
 ##############################
 ## Sequence file and format
 ($sequence_file, $sequence_format) = &GetSequenceFile();
-push @result_files, ("Input sequence", $sequence_file);
+push @result_files, ("Input sequences", $sequence_file);
 $parameters .= " -seq ".$sequence_file." -seq_format ".$sequence_format;
 
 ################################################################
 ## Background model method
 my $bg_method = $query->param('bg_method');
+my $markov_order = $query->param('markov_order');
 if ($bg_method eq "bginput") {
     $parameters .= " -bginput";
     $parameters .= " -markov ".$markov_order;
