@@ -154,6 +154,12 @@ package main;
   ## Flag to export the Newick tree
   local $export_newick = 0;
 
+  ## Flag to add links to motif tree
+  local $ID_link_flag = 0;
+  local %ID_nb_hash = ();
+  local %OLD_ID_link_hash = ();
+  local %ID_link_hash = ();
+
   ## operator
   $operator = "mean";
   local %supported_operator = ("mean"=>1, "sum"=>1);
@@ -753,8 +759,6 @@ cor	0	1	0.1
 	$nb_cluster_taks_flag = 1;
 
 
-################################################################
-
 =pod
 
 =item B<-matrix_format matrix_format>
@@ -776,6 +780,25 @@ For a description of these formats, see the help of I<convert-matrix>.
       unless ($supported_matrix_format{$matrix_format}) {
 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
       }
+
+
+=pod
+
+=item B<-ID_link_table matrix_ID_link_table>
+
+This option allows to add a link to a any website specified by the user.
+It is useful clustering a full database (e.g. Jaspar), thus each motif in the logo tree
+will point to its recpective link in the Jaspar website.
+
+Format: a two-column file
+Column 1: Motif ID (the same as the input motif file)
+Column 2: Link to any website
+
+=cut
+    } elsif ($arg eq "-ID_link_table") {
+      $main::infile{ID_link_table} = shift(@arguments);
+      $ID_link_flag = 1;
+
 
 =pod
 
@@ -1661,6 +1684,27 @@ sub pre_process_motif_files{
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
+      ##############################################
+      ## Store the motif link in a hash
+      if($ID_link_flag == 1){
+
+	  my $m_counter = 0;
+	  my ($motif_file) = &OpenInputFile($motif_set_attributes{$collection_name}{matrix_file_processed_1});
+	  while(<$motif_file>){
+
+	      next if (/^#/); ## Skip header line
+	      next if (/^;/); ## Skip comment lines
+	      next unless (/\S/); ## Skip empty lines
+	      next unless (/^AC\s+/);
+	      chomp();
+	      my($null, $AC_unique) = split(/\s+/, $_);
+	      $m_counter++;
+	      $ID_nb_hash{$AC_unique} = $m_counter;
+	  }
+	  close($motif_file);
+      }
+
+      ###############################
       ## Append prefix if required
       &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
       $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
@@ -1672,11 +1716,12 @@ sub pre_process_motif_files{
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
       unlink($motif_set_attributes{$collection_name}{matrix_file_processed_1});
 
-      ################################################
+      ########################################
       ## Save the unique ID in a hash table
       ## Key = ID unique
       ## Value = title (motif collection)
       my ($processed_matrix_file) = &OpenInputFile($motif_set_attributes{$collection_name}{matrix_file_processed});
+      $m_counter = 0;
       while(<$processed_matrix_file>){
 	  next if (/^#/); ## Skip header line
 	  next if (/^;/); ## Skip comment lines
@@ -1686,8 +1731,31 @@ sub pre_process_motif_files{
 	  my($null, $AC_unique) = split(/\s+/, $_);
 	  $motifs_ID_unique{$AC_unique} = $collection_name;
 	  $alignment_info{$AC_unique}{file_name} = $main::outfile{prefix}."_data/motif_".$AC_unique.".tf";
+
+	  if($ID_link_flag == 1){
+	      $m_counter++;
+	      $new_ID_nb_hash{$m_counter} = $AC_unique;
+	  }
       }
       close($processed_matrix_file);
+
+      ##############################################
+      ## Store the motif link in a hash
+      if($ID_link_flag == 1){
+
+	  my ($link_table) = &OpenInputFile($main::infile{ID_link_table});
+	  while(<$link_table>){
+
+	      next if (/^#/); ## Skip header line
+	      next if (/^;/); ## Skip comment lines
+	      next unless (/\S/); ## Skip empty lines
+	      chomp();
+	      my($ID, $link) = split(/\s+/, $_);
+	      $OLD_ID_link_hash{$ID} = $link;
+	      $ID_link_hash{$new_ID_nb_hash{$ID_nb_hash{$ID}}} = $OLD_ID_link_hash{$ID}; 
+	  }
+	  close($link_table);
+      }
   }
 
   ################################################################
@@ -2256,7 +2324,10 @@ sub Add_attributes_to_JSON() {
 	      $Add_this .= ",\n \"title\" : \"".$motifs_ID_unique{$M1}."\"";
 	      $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
 
-
+	      if($ID_link_flag == 1){
+		  $Add_this .= ",\n \"link_ext\" : \"".$ID_link_hash{$M1}."\"";
+	      }
+	      
 	  }
 	  
 	  ################################################################
@@ -2333,7 +2404,7 @@ sub create_html_tree_file() {
 
     my $main_label = 	        
 	"\tnodeEnter.append(\"a\")
-	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
+	\t\t.attr(\"xlink:href\", function(d) { return d.link_ext; })
 	\t\t.append(\"text\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
@@ -2584,7 +2655,7 @@ sub create_html_small_tree_file() {
 
     my $main_label = 	        
 	"\tnodeEnter.append(\"a\")
-	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
+	\t\t.attr(\"xlink:href\", function(d) { return d.link_ext; })
 	\t\t.append(\"text\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
@@ -5504,7 +5575,7 @@ sub InsertTreesAndBranchMotifs {
 
     my $label_single_tree = '
 	node.append("a")
-	        .attr("xlink:href", function(d) { return d.url; })
+	        .attr("xlink:href", function(d) { return d.link_ext; })
 	        .append("text")
 	        .text(function(d) { return d.children ? "" :  d.name; })
 		.attr("dx", function(d) { return d.children ? 0 : 20; })
@@ -6160,4 +6231,8 @@ sub Generate_matrix_description_table() {
     }
     close $desc;
 }
+
+
+
+
 __END__
