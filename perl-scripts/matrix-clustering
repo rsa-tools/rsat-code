@@ -2409,7 +2409,7 @@ sub create_html_tree_file() {
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
-	\t\t.attr(\"font-size\", \"--font--px\")
+	\t\t.style(\"fill\", \"blue\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
 
     my $new_label = 
@@ -2417,7 +2417,7 @@ sub create_html_tree_file() {
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
-        \t\t.attr(\"font-size\", \"--18--px\")
+        \t\t.attr(\"font-size\", \"15px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
  
     my $display_title_lab .= '
@@ -2426,7 +2426,7 @@ sub create_html_tree_file() {
 	.attr("x", function(d) { return d.children ? 0 : 20; })
 	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
         .attr("fill", "black")
-	.attr("font-size", "--font--px")
+	.attr("font-size", "15px")
         .attr("font-weight", "bold")
 	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
         ';
@@ -2660,7 +2660,7 @@ sub create_html_small_tree_file() {
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
-	\t\t.attr(\"font-size\", \"--font--px\")
+	\t\t.style(\"fill\", \"blue\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
 
     my $new_label = 
@@ -5581,6 +5581,7 @@ sub InsertTreesAndBranchMotifs {
 		.attr("dx", function(d) { return d.children ? 0 : 20; })
 		.attr("dy", function(d) { return d.children ? 0 : 3; })
 		.attr("font-size", "10px")
+	        .style("fill", "blue")
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
 
 		node.append("text")
