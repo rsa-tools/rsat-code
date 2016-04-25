@@ -2,7 +2,6 @@
 ## Build a distance matrix from the distance metric list
 build.distance.matrix <- function(metric="Ncor"){
 
-
   dist.table <- NULL
   distances.objects <- list()
 
@@ -66,7 +65,6 @@ build.distance.matrix <- function(metric="Ncor"){
 
   ## Build the distance table from the column metric
   dist.table <- xtabs(metric.dist ~ id1+id2, global.compare.matrices.table)
-
 
   ## Ensure that symmetrical distances are defined
   dist.table.sym <- pmax(dist.table,t(dist.table))
