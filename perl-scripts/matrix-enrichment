@@ -209,6 +209,10 @@ package main;
   $distrib_score_col = 5; ## Column containing the dCDF (decreasing cumulative density function) in the output of the command matrix-distrib-quick -distrib
 
   $main::nwd_seqs=0;
+
+  ## All matrix and sequence names
+  local @all_matrix_names = ();
+  local @all_sequence_names = ();
   
   ################################################################
   ## Read argument values
@@ -288,6 +292,12 @@ package main;
   }
   $d3_base = &RSAT::util::RelativePath($dir{output}, $js_base."/d3.v3.min.js");
   $d3_array_base = &RSAT::util::RelativePath($dir{output}, $js_base."/d3-array.v0.6.min.js");
+  $c3_base = &RSAT::util::RelativePath($dir{output}, $js_base."/c3-0.4.10/c3.js");
+  $c3_css_base = &RSAT::util::RelativePath($dir{output}, $js_base."/c3-0.4.10/c3.css");
+  $jquery_base = &RSAT::util::RelativePath($dir{output}, $js_base."/DataTables-1.10.4/media/js/jquery.js");
+  $datatable_base = &RSAT::util::RelativePath($dir{output}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
+  $datatable_css_base = &RSAT::util::RelativePath($dir{output}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
+
 
   ## ################
   ## Process sequence file if there was a top or skip selection
@@ -535,6 +545,8 @@ package main;
 
       }
 
+      push(@all_matrix_names, $matrix_name);
+
 
       $matrix->force_attribute("name", $matrix_name);
       &RSAT::message::TimeWarn("Analyzing matrix", $m, $matrix_name) if ($main::verbose >= 2);
@@ -609,6 +621,7 @@ package main;
 
       ## Shuffle the columns of the matrix (permutation test)
       &PermuteMatrixColumns();
+
       
       ################################################################
       ## Calculate theoretical distribution of probabilities
@@ -750,6 +763,7 @@ package main;
   foreach ( @main::seq_types ) {
 
       my $st= $_;
+      push(@all_sequence_names, $st);
       ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) ;
       print ((join("++", @{$tab_files_for_aux_plots_occ_proba_per_seq{$st}})), "\n");
       ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} })  ;
@@ -821,6 +835,15 @@ package main;
   ################################################################
   ## Draw the dynamic heatmap with the clustering of the maxNWD
   &DynamicHeatmapEnrichment();
+
+  ################################################################
+  ## Draw the Binomial Occ Significance curves 
+  ## of each TF on each sequence
+  &DynamicOccProfiles();
+
+  ##############################
+  ## Generate the HTML report
+  &CreateHTMLReport();
     
   ################################################################
   ## Print verbose
@@ -1370,11 +1393,7 @@ sub DynamicHeatmapEnrichment {
 
     my $dynamic_heatmap_script  = $ENV{RSAT}."/R-scripts/matrix-enrichment_heatmap.R";
 
-    print $dynamic_heatmap_script."\n\n";
-
     &RSAT::error::FatalError("Cannot read matrix-enrichment_heatmap.R script", $dynamic_heatmap_script) unless (-r $dynamic_heatmap_script);
-
-    # $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
 
     ## Command
     my $dynamic_heatmap_cmd = "";
@@ -1394,15 +1413,116 @@ sub DynamicHeatmapEnrichment {
 #    $Cluster_motifs_cmd = "(".$dynamic_heatmap_cmd.")"; # Uncomment this line to check the R output in the terminal
 #    $dynamic_heatmap_cmd = "(".$dynamic_heatmap_cmd.") 2 > ".$main::outfile{Rlog}; 
 
-
-    print $dynamic_heatmap_cmd."\n\n\n";
-
     if ($r_path) {
         &doit($dynamic_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
         &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
     }
     return();
+}
+
+
+################################################################
+## Draw the Dynamic Heatmap using the matrix
+## of maxNWD positive values
+sub DynamicOccProfiles {
+
+    ########################################
+    ## Outfiles of Dynamic heatmap script
+    $main::outfile{binomial_occ_profile} = $main::prefix{main}."_binomial_occ_sig_profiles.html";
+    $main::outfile{binomial_occ_profile_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_binomial_OCC_profiles.html";
+    
+    &RSAT::message::TimeWarn("Drawing curves of Binomial OCC significance") if ($main::verbose >= 2);
+
+    ##################################
+    ### Identify the path of the R executable
+    my $r_path = &RSAT::server::GetProgramPath("R");
+
+    my $dynamic_occ_sig_script  = $ENV{RSAT}."/R-scripts/plot_binomial_occ.R";
+
+    print $dynamic_occ_sig_script."\n\n";
+
+    &RSAT::error::FatalError("Cannot read plot_binomial_occ.R script", $dynamic_occ_sig_script) unless (-r $dynamic_occ_sig_script);
+
+    my $Seq_string = join('---', @all_sequence_names);
+    my $TFs_string = join('---', @all_matrix_names);
+
+    ## Command
+    my $dynamic_occ_sig_cmd = "";
+    $dynamic_occ_sig_cmd .= " cat ".$dynamic_occ_sig_script;
+    $dynamic_occ_sig_cmd .= " | ".$r_path;
+    $dynamic_occ_sig_cmd .= " --slave --no-save --no-restore --no-environ";
+    $dynamic_occ_sig_cmd .= " --args \"";
+    $dynamic_occ_sig_cmd .= " prefix = '".$main::prefix{main}."'";
+    $dynamic_occ_sig_cmd .= " ;html.template.file = '".$main::outfile{binomial_occ_profile_template}."'";
+    $dynamic_occ_sig_cmd .= " ;Sequences = '".$Seq_string."'";
+    $dynamic_occ_sig_cmd .= " ;TFs = '".$TFs_string."'";
+    $dynamic_occ_sig_cmd .= " \"";
+#    $Cluster_motifs_cmd = "(".$dynamic_occ_sig_cmd.")"; # Uncomment this line to check the R output in the terminal
+#    $dynamic_occ_sig_cmd = "(".$dynamic_occ_sig_cmd.") 2 > ".$main::outfile{Rlog}; 
+
+    print $dynamic_occ_sig_cmd."\n\n\n";
+
+    if ($r_path) {
+        &doit($dynamic_occ_sig_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    } else {
+        &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
+    }
+    return();
+}
+
+
+################################################################
+## Draw the Dynamic Heatmap using the matrix
+## of maxNWD positive values
+sub CreateHTMLReport {
+    
+  &RSAT::message::TimeWarn("Creating HTML report") if ($main::verbose >= 2);
+
+  $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
+  $main::outfile{report} = $main::prefix{main}."_report.html";  
+
+  ## Open the HTML template
+  my ($template) = &OpenInputFile($main::outfile{report_template});
+  
+  ## Open the HTLM report
+  my ($report) = &OpenOutputFile( $main::outfile{report});
+  
+  my $motif_nb = scalar(@all_matrix_names);
+  my $set_nb = scalar(@all_sequence_names);
+
+  ###########################################
+  ## Read the template and add the section
+  ## names and other parameters
+  while(<$template>){
+      
+      print $_;
+      
+      next if (/^#/); ## Skip header line
+      next if (/^;/); ## Skip comment lines
+      next unless (/\S/); ## Skip empty lines	
+      chomp();
+      my $line = $_;
+      
+      ###########################
+      ## Fill parameters table
+      $line =~ s/--motif_nb--/$motif_nb/g;
+      $line =~ s/--set_nb--/$set_nb/g;
+ 
+      ############################
+      ## maxNWD heatmap section
+      my $heatmap_link = &RSAT::util::RelativePath($main::outfile{report}, $main::outfile{maxNWD_heatmap_html});
+      $line =~ s/--heatmap_link--/$heatmap_link/g;
+      
+      ############################
+      ## maxNWD heatmap section
+      my $occ_profiles_link = &RSAT::util::RelativePath($main::outfile{report}, );
+      $line =~ s/--occ_profiles--/$occ_profiles_link/g;
+      
+      print $report $line."\n";
+  }
+  close($template);
+  close($report);  
 }
 
 __END__
