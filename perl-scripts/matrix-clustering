@@ -4469,7 +4469,7 @@ sub ReportStyleCSS{
   float: left;
   margin-top: 2px;
   margin-bottom: 2px;
-  width: 200px;
+  width: 250px;
   height: 20px;
   position: relative;
   display: block;
@@ -5332,7 +5332,7 @@ sub InsertHeatMap {
 sub InsertHeatmapCollectionbyCluster {
 
     my $heat_map_motifs_by_cluster = ' 
-        <div id="Heatmap_motifs_button" class="button_click Section_button"><strong>Collections per cluster</strong></div>
+        <div id="Heatmap_motifs_button" class="button_click Section_button"><strong>Cluster composition by collection</strong></div>
 	<div id="Heatmap_motifs" class="tab" style="width:208px;padding:0px;display:none;">
                 <p style="font-size: 12px;"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'">Link</a></p>
 	</div>
