@@ -1,0 +1,370 @@
+<!-- Load c3.css -->
+<link href="js/c3-0.4.10/c3.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" type="text/css" href="js/DataTables-1.10.4/media/css/jquery.dataTables.min.css"/>
+
+<!-- Load d3.js and c3.js -->
+<script type="text/javascript" src="js/d3.v3.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="js/c3-0.4.10/c3.js"></script>
+<script type="text/javascript" src="js/DataTables-1.10.4/media/js/jquery.js"></script> 
+<script type="text/javascript" src="js/DataTables-1.10.4/media/js/jquery.dataTables.min.js"></script>
+
+
+<style>
+--lines_w--
+
+        #Profile_header{
+	   margin: 7px 5px 7px 0px;
+	   width: 1280px;
+	   height: 275px;
+	   text-align: left;
+	   color: black;
+	   font-size: 16px;
+	   border-radius:5px;
+           background: #B1D4F9;
+	   position: relative;
+	   display: block;
+	   clear : both;
+	   float: left;
+        }
+
+  .tab{
+    font-size: 10px;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    background-color: #E6E6E6;
+    clear: both;
+    float: left;
+    position: relative;
+    border-radius:5px;
+    border-top: 0px;
+    padding: 15px 15px 3px 15px;
+  }
+
+  .tab_col {
+    padding: 7px 30px 7px 30px;
+    background-color: #B1D4F9 !important;
+    text-align: center;
+  }
+
+  .small_logo {
+	position: relative;
+	max-width: 100%;
+	max-height: 10%;
+	height: 45px;
+	width: 60px
+	float: left;
+	clear: both;
+  }
+
+
+  .logo_tab {
+	position: relative;
+	height: 45px;
+	width: 55px
+	float: left;
+	clear: both;
+  }
+
+  td {
+    text-align: center;
+  }
+
+  .c3 svg g g.c3-axis.c3-axis-x {
+    font: 12px sans-serif;
+  }
+
+  .c3 svg g g.c3-axis.c3-axis-y {
+    font: 12px sans-serif;
+  }
+
+  .div_chart {
+	position: relative;
+        display: block;
+	float: left;
+	clear: both;
+  //      margin-top:10px;
+  }
+
+  .div_chart_sp {
+	position: relative;
+        display: block;
+	float: left;
+	clear: both;
+        margin-top:10px;
+        margin-bottom:10px;
+  }
+
+  .spacer {
+        margin-top:10px;
+        margin-bottom:10px;
+  }
+
+  .button_chart {
+	position: relative;
+        cursor:pointer;
+	float: left;
+        margin-top:10px;
+        margin-left:3px;
+        background-color: #D6EEFA;
+        color: #0D73A7;
+        border-radius:5px;
+        font-size: 15px;
+        text-align: center;
+//        font-weight: bold;
+//        border-style:none;
+  }
+
+ #show_all_button {
+        background-color: #C1FFC7;
+ }
+
+ #hide_all_button {
+        background-color: #FCACAC;
+ }
+
+  .button_click:active {
+        position:relative;
+        top:1px;
+  }
+
+  .Section_button {
+  background-color: #D6EEFA;
+  float: left;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  width: 200px;
+  height: 20px;
+  position: relative;
+  display: block;
+  text-align: center;
+  color: #0D73A7;
+  font-size: 15px;
+  padding: 4px;
+  clear: both;
+  border-radius:5px;
+  cursor: pointer;
+  }
+
+  .selected_header_section {
+    color : #CC6600;
+    background-color: #F6E6CA !important;
+    border: 1px solid #F6E6CA;
+  }
+
+  #heatmap_png {
+	heigth: 650px;
+	width: 550px;
+  }
+
+ .file_link {
+  cursor: pointer;
+  text-decoration: none;
+  }
+
+  .file_link:hover {
+  text-decoration: underline;
+  }
+
+.c3-legend-item {
+  font-size: 10px;
+}
+
+</style>
+
+
+
+<div id="Profile_header"> 
+   <div><h2 style="text-align:center">Scanning profile</h2></div> 
+   <ul> 
+      <li type="square">The plot shows the binding profile (the counts of number of matches per bin) of each input PSSM through the input sequences.</li>
+      <li type="square">The P-values are calculated using Chi-square test of goodnes of fit, where the Null hypothesis assumes a homogeneous distribution of matches along the sequences.</li> 
+      <li type="square">The motifs names are orderer according their significance.</li> 
+   </ul> 
+   <p>
+      <ul> <h3>Dynamic Features</h3> 
+         <li type="square">Click on each PSSM name (right side) to display/hide each profile individually.</li> 
+         <li type="square">Pointing to each profile displays its <b>Motif name</b>, <b>Motif ID</b>, <b>P-value</b>, <b>Significance</b> and <b>Motif Logo</b>.</li> 
+         <li type="square">Click on the buttons to Show/Hide all the profiles.</li> 
+         <li type="square">You can filter the displayed profile in basis of their <b>Significance</b> by typing a number in the threshold button.</li> 
+      </ul> 
+   </p>  
+
+</div> 
+   <div  style="display:block; clear:both;position:relative;float:left;">
+      <button class='small button_chart' id='show_all_button' onclick='show_all();'>Show All Profiles</button>
+      <button class='small button_chart' id='hide_all_button' onclick='hide_all();'>Hide All Profiles</button>
+<button class='small button_chart' onclick='search_motifs();'><b>Search:</b><div><input style="height:20px;margin:5px;" type="search" value='' id="search_motifs" /></div></button>
+   </div>
+   <div id="chart" class="div_chart_sp"></div>
+
+
+<script>
+
+var chart = c3.generate({
+    data: {
+        xs: {
+          --xs--
+        },
+        columns: [
+          --x_y--
+        ],
+            type: 'line',
+        names: {
+          --names--
+        },
+    },
+
+    subchart: {
+        show: false
+    },
+
+    zoom: {
+        enabled: false
+    },
+
+
+    size: {
+        height: --chart_h--,
+        width: 1275
+    },
+
+    grid: {
+        x: {
+            show: true
+        },
+        y: {
+            show: true
+        }
+    },
+
+    legend: {
+        position: 'bottom'
+    },
+
+    padding: {
+        top: 0,
+        right: 100,
+        bottom: 15,
+        left: 100,
+    },
+
+    tooltip: {
+        grouped: false, // Default true
+        contents: tooltip_contents,
+    },
+
+    color: {
+        pattern: [--color_pattern--]
+    },
+
+    point: {
+        show: false
+    },
+
+    axis: {
+        y: {
+            label : {
+                    text: 'Binomial Occurence Significance',
+                    position: 'outer-middle',
+            },
+
+        },
+
+        x: {
+            label: {
+                    text: '-log10(P-value)',
+                    position: 'outer-center',
+            },
+            tick: {
+                    culling: {
+                       max : 7,   
+               },
+                fit: false,
+                multiline: false,
+            }
+        },
+    },
+
+});
+
+
+    var TF_names = new Array();
+--TF_names--
+
+    var pics = new Array();
+--pics--
+
+    var pics_rc = new Array();
+--pics_rc--
+
+    var IDs = new Array();
+--IDs--
+
+    var Names = new Array();
+--names_vector--
+
+    var Seqs = new Array();
+--seqs--
+
+
+function show_all() {
+    chart.show([--all--]);
+}
+
+function hide_all() {
+    chart.hide([--all--]);
+}
+
+Array.prototype.difference = function (x) {
+    return this.filter(function (i) {
+        return !(x.indexOf(i) > -1);
+    });
+};
+
+
+function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
+    var $$ = this, config = $$.config, CLASS = $$.CLASS,
+        titleFormat = config.tooltip_format_title || defaultTitleFormat,
+        nameFormat = config.tooltip_format_name || function (name) { return name; },
+        valueFormat = config.tooltip_format_value || defaultValueFormat,
+        text, i, title_name, title_ID, title_seq, value, name, bgcolor;
+
+
+
+    
+    // You can access all of data like this:
+    console.log($$.data.targets);
+    
+    for (i = 0; i < d.length; i++) {
+        if (! (d[i] && (d[i].value || d[i].value === 0))) { continue; }
+        
+        if (! text) {
+            title_ID = 'Motif ID';
+	    title_name = 'Motif name';
+	    title_seq = 'Sequence';
+            title_logo = 'Logo';
+            title_logo_rc = 'Logo RC';
+            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_seq + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";      
+ }
+
+        name = nameFormat(d[i].name);
+        value = valueFormat(d[i].value, d[i].ratio, d[i].id, d[i].index);
+        bgcolor = $$.levelColor ? $$.levelColor(d[i].value) : color(d[i].id);
+
+        text += "<tr class='" + CLASS.tooltipName + "-" + d[i].id + "'>";
+        text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + name + "</td>";
+        text += "<td>" + Names[d[i].id] + "</td>";
+        text += "<td>" + Seqs[d[i].id] + "</td>";
+        text += "<td><img class='small_logo' src='" + pics[d[i].id] + "' /></td>";
+        text += "<td><img class='small_logo' src='" + pics_rc[d[i].id] + "' /></td>";
+        text += "</tr>";
+    }
+    return text + "</table>";   
+}
+
+
+
+
+</script>
+
