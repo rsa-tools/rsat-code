@@ -228,9 +228,8 @@ package main;
   foreach my $method (@supported_hclust_methods) {
     $supported_hclust_methods{$method} = 1;
   }
-  
   local $supported_hclust_methods = join ",", @supported_hclust_methods;
-  local $hclust_method = "complete";
+  local $hclust_method = "average";
 
   ## Threshold parameters
   local %lth = ();		# lower threshold values
@@ -4943,9 +4942,14 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--r_numb--/$attributes_heatmap{Row_number}/;
 	$line =~ s/--gradient--/$attributes_heatmap{Gradient}/;
 	$line =~ s/--cluster_number--/$attributes_heatmap{Cluster_number}/;
-	$line =~ s/--average_number--/$attributes_heatmap{Average_number}/;
-	$line =~ s/--complete_number--/$attributes_heatmap{Complete_number}/;
-	$line =~ s/--single_number--/$attributes_heatmap{Single_number}/;
+	$line =~ s/--average_r_number--/$attributes_heatmap{Average_r_number}/;
+	$line =~ s/--complete_r_number--/$attributes_heatmap{Complete_r_number}/;
+	$line =~ s/--single_r_number--/$attributes_heatmap{Single_r_number}/;
+	$line =~ s/--ward_r_number--/$attributes_heatmap{Ward_r_number}/;
+	$line =~ s/--average_c_number--/$attributes_heatmap{Average_c_number}/;
+	$line =~ s/--complete_c_number--/$attributes_heatmap{Complete_c_number}/;
+	$line =~ s/--single_c_number--/$attributes_heatmap{Single_c_number}/;
+	$line =~ s/--ward_c_number--/$attributes_heatmap{Ward_c_number}/;
 	$line =~ s/--row_order_default--/$attributes_heatmap{Row_order_default}/;
 	$line =~ s/--label_order--/$attributes_heatmap{Cluster_names}/;
 	$line =~ s/--collections--/$attributes_heatmap{Collections}/;
@@ -5036,6 +5040,14 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--tbody_exclusive_motifs--/$tbody_exclusive_motifs/;
 	$line =~ s/--contingency_table--/$coverage_file/;
 	$line =~ s/--exclusive_motif_table--/$exclusive_motif_file/;
+	$line =~ s/--comp_average_c_number--/$attributes_heatmap{Average_c_number_comp}/;
+	$line =~ s/--comp_complete_c_number--/$attributes_heatmap{Complete_c_number_comp}/;
+	$line =~ s/--comp_single_c_number--/$attributes_heatmap{Single_c_number_comp}/;
+	$line =~ s/--comp_ward_c_number--/$attributes_heatmap{Ward_c_number_comp}/;
+	$line =~ s/--comp_average_r_number--/$attributes_heatmap{Average_r_number_comp}/;
+	$line =~ s/--comp_complete_r_number--/$attributes_heatmap{Complete_r_number_comp}/;
+	$line =~ s/--comp_single_r_number--/$attributes_heatmap{Single_r_number_comp}/;
+	$line =~ s/--comp_ward_r_number--/$attributes_heatmap{Ward_r_number_comp}/;
 
 	print TEMP $line."\n";
     }
