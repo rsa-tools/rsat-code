@@ -70,6 +70,7 @@
         fill: #00C;
       }
       #tooltip {
+        z-index: 1;
         position: absolute;
         width: 200px;
         height: auto;
@@ -124,16 +125,20 @@
 </div>
 <script src="--d3--"></script>
 
-<div  style="display:block; clear:both;position:relative;float:left;">
+<div style="display:block; clear:both;position:relative;float:left;">
 Order:
   <select id="order">
   <option value="cluster_name">cluster name</option>
   <option value="average">average linkage</option>
   <option value="complete">complete linkage</option>
   <option value="single">single linkage</option>
+  <option value="ward">ward linkage</option>
   </select>
 </div>
+
 <div id="chart" style='overflow:auto; width:1000px; height:--body--px;display:block; clear:both;position:relative;float:left;'></div>
+
+
 
 <script type="text/javascript">
 
@@ -152,12 +157,17 @@ colors = --gradient--
 
   // Order of the clusters
   hcrow = [--cluster_number--],
-  hcrow_average = [--average_number--],
-  hcrow_complete = [--complete_number--],
-  hcrow_single = [--single_number--],
+  hcrow_average = [--average_r_number--],
+  hcrow_complete = [--complete_r_number--],
+  hcrow_single = [--single_r_number--],
+  hcrow_ward = [--ward_r_number--],
 
  // Order of the collections
   hccol = [--row_order_default-- ], // change to gene name or probe id
+  hccol_average = [--average_c_number--],
+  hccol_complete = [--complete_c_number--],
+  hccol_single = [--single_c_number--],
+  hccol_ward = [--ward_c_number--],
 
   rowLabel = [--label_order--],
 
@@ -278,7 +288,7 @@ function(error, data) {
     .attr("x", width + (cellSize*4))
     .attr("y", function(d, i) { return legendElementWidth * i; })
 
-  svg.append("text")
+  legend.append("text")
     .attr({
 	'font-size': 12,
 	'x': width + (cellSize*1) + 30,
@@ -343,7 +353,7 @@ function(error, data) {
 
     var t = svg.transition().duration(1500);
     t.selectAll(".cell")
-      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("x", function(d) { return hccol_single.indexOf(d.col) * cellSize; })
       .attr("y", function(d) { return hcrow_single.indexOf(d.row) * cellSize; })
       ;
 
@@ -352,7 +362,7 @@ function(error, data) {
       ;
 
     t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hccol_single.indexOf(i+1) * cellSize; })
       ;
 
    // Complete Linkage
@@ -360,7 +370,7 @@ function(error, data) {
 
     var t = svg.transition().duration(1500);
     t.selectAll(".cell")
-      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("x", function(d) { return hccol_complete.indexOf(d.col) * cellSize; })
       .attr("y", function(d) { return hcrow_complete.indexOf(d.row) * cellSize; })
       ;
 
@@ -369,7 +379,24 @@ function(error, data) {
       ;
 
     t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hccol_complete.indexOf(i+1) * cellSize; })
+      ;
+
+   // Ward Linkage
+   } else if(value=="ward"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_ward.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_ward.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_ward.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_ward.indexOf(i+1) * cellSize; })
       ;
 
    // Average Linkage
@@ -386,7 +413,7 @@ function(error, data) {
       ;
 
     t.selectAll(".colLabel")
-      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
+      .attr("y", function (d, i) { return hccol_average.indexOf(i+1) * cellSize; })
       ;
    }
   }
