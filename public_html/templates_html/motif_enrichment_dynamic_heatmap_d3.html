@@ -194,6 +194,19 @@ function(error, data) {
       .on("mouseout" , function(d) {d3.select(this).classed("text-hover",false);})
       .on("click", function(d,i) {rowSortOrder=!rowSortOrder; sortbylabel("r",i,rowSortOrder);d3.select("#order").property("selectedIndex", 4).node().focus();;})
       ;
+      
+var logo_path = [--logo_path--]
+var pic = svg.selectAll(".logo")
+      .data(logo_path)
+      .enter()
+      .append("image")
+      .attr("xlink:href", function (d) { return d; })  
+      .attr("width", 125)
+      .attr("height", (cellSize-5))
+      .attr("x", width + 20 )  
+      .attr("y", function (d, i) { return (hcrow.indexOf(i+1) * cellSize)+5; }) 
+      .attr("cursor", "default") 
+      .attr("preserveAspectRatio", "none");
 
   var colLabels = svg.append("g")
       .selectAll(".colLabelg")
@@ -260,7 +273,7 @@ function(error, data) {
       .attr("class", "legend"); 
 
   legend.append("rect")
-    .attr("x", width + (cellSize*1) + 30)
+    .attr("x", width + 200)
     .attr("y", function(d, i) { return legendElementWidth * i - cellSize; })
     .attr("width", cellSize)
     .attr("height", legendElementWidth)
@@ -270,13 +283,13 @@ function(error, data) {
     .attr("class", "mono")
     .text(function(d) { return d; })
     .attr("width", legendElementWidth)
-    .attr("x", width + (cellSize*4) - 10)
+    .attr("x", width + 250)
     .attr("y", function(d, i) { return legendElementWidth * i - 10; })
 
   svg.append("text")
     .attr({
 	'font-size': 15,
-	'x': width + (cellSize*1) + 30,
+	'x': width + 200,
 	'y': -40
     })
     .text("maxNWD");
@@ -309,6 +322,9 @@ function(error, data) {
          t.selectAll(".rowLabel")
           .attr("y", function (d, i) { return sorted.indexOf(i) * cellSize; })
          ;
+         t.selectAll("image")
+          .attr("y", function (d, i) { return sorted.indexOf(i) * cellSize; })
+         ;
        }
   }
 
@@ -332,7 +348,9 @@ function(error, data) {
     t.selectAll(".colLabel")
       .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
       ;
-
+    t.selectAll("image")
+      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      ;
    } 
   }
   //
