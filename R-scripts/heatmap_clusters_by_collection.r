@@ -1,70 +1,3 @@
-# library("gplots")
-## Color palette
-# grad <- colorRampPalette(c("white", "green", "red", "blue", "black"),space="rgb")
-# grad <- colorRampPalette(rev(brewer.pal(11, "Spectral" ) ), space="Lab")
-# grad <- colorRampPalette(c("white", "green", "blue"),space="rgb")
-# ## Plot the heatmap
-# heatmap.2(clusters.matrix,
-#
-#           ## Select clustering method
-#           hclustfun=function(c){hclust(c, method='single')},
-#
-#           ## Hide/show the trace
-#           trace = "none",
-#
-# #           Colv = FALSE,
-#          Rowv = TRUE,
-#
-#           ## Separate the columns
-#           colsep = 1:(length(collection.names)-1),
-#           sepcolor = 'white',
-#           sepwidth = 0.05,
-#
-#           ## Set the margins
-# #           margins = c(5, 23),
-#
-#           ## Set the colors of columns, rows and cells
-#           #           ColSideColors = color.order,
-#           #           RowSideColors = color.order,
-#           col = grad,
-#           breaks = 1000,
-#
-#           ## Set the tree positions
-#            dendrogram = "row",
-#
-#           ## Set the col and row labels
-#           labCol = collection.names,
-#           labRow = clusters.names,
-#
-#           ## Set the font size
-#           cexCol = 0.4,
-#           cexRow = 0.07,
-#
-#           ## Set the key with the values
-#           key = FALSE,
-# #           keysize = 1.5,
-# #           key.xlab = "Nb of motifs",
-# #           key.ylab = "",
-# #           key.title = "",
-# #           density.info = "none",
-# )
-#
-#
-# # ## Create matrix for D3 heatmap
-# # x <- NULL
-# #
-# #   for(j in 1:dim(clusters)[2]){
-# #     for(i in 1:dim(clusters)[1]){
-# #      x <<- rbind(x, matrix(c(j,i, as.numeric(clusters[j,i])), nrow = 1))
-# #   }
-# # }
-# # colnames(x) <- c("Row", "Col", "Value")
-# # write.table(x, file = "/home/jcastro/rsat/R-scripts/matrix_heatmap.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
-# #
-# # cluster_id <- paste( paste("'", "cluster_", 1:dim(clusters)[1], "' ", sep = ""), collapse = ",")
-# # col.row <- 1:dim(clusters)[1]
-
-
 ## Define the local directory for R librairies
 dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
@@ -75,6 +8,8 @@ dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path
 source(file.path(dir.rsat, 'R-scripts/config.R'))
 library("RColorBrewer")
+library("gplots")
+library("amap")
 
 ###########################################
 ## Read arguments from the command line.
@@ -105,34 +40,34 @@ motif.DB.counts <- apply(clusters[,3:(nb.db+2)], 2, sum)
 percent.table <- NULL
 coverage.contingency.table <- NULL
 x <- sapply(names(motif.DB.counts), function(DB){
-
+  
   ## Select those cluster with at least one motif corresponding
   ## to the current motifDB
   DB.motifs <- clusters[clusters[,DB] > 0,]
-
+  
   #################################################################################
   ## Calculate the overlap between the databases
-
+  
   ## Select those cluster with at least one motif corresponding
   ## to the current motifDB
   coverage <- apply(DB.motifs[3:dim(DB.motifs)[2]], 2, sum) / motif.DB.counts
-
+  
   coverage.contingency.table <<- cbind(coverage.contingency.table, matrix(coverage, ncol = 1))
-
+  
   #################################################################################
   ## Count the number of exclusive motifs of each database
-
+  
   ## Count the number of motifs that correspond exclusively to a collection of motifs
   DB.motifs.exclusive <- apply(DB.motifs[,3:(nb.db+2)],1, sum)
   DB.motifs.exclusive <- length(DB.motifs.exclusive[DB.motifs.exclusive == 1])
-
+  
   ## Calculate the percentage of the collection which is unique
   DB.percent <- round(DB.motifs.exclusive / motif.DB.counts[DB], digits = 4)
-
+  
   ## Calculate the percentage of the total collection corresponding to the
   ## unique motifs of the analyzed motifDB
   Total.percent <- round(DB.motifs.exclusive / sum(motif.DB.counts), digits = 4)
-
+  
   #   print(paste("Nb Unique motifs: ", DB.motifs.exclusive, " -  %(internal) :", DB.percent, " -  %(total): ", Total.percent))
   percent.table <<- cbind(percent.table, matrix(c(motif.DB.counts[DB], DB.motifs.exclusive, DB.percent, Total.percent), ncol = 1))
 })
@@ -151,6 +86,31 @@ coverage.contingency.table <- round(coverage.contingency.table, digits = 3)
 colnames(coverage.contingency.table) <- names(motif.DB.counts)
 rownames(coverage.contingency.table) <- names(motif.DB.counts)
 write.table(coverage.contingency.table, file = coverage.table.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+
+#######################################################
+## Run the hierarchical clustering with four methods
+## (average + complete + single + ward). 
+## Save the order of the nodes
+comp.order.list.columns <- list()
+comp.order.list.rows <- list()
+
+sapply(c("average", "complete", "single", "ward"), function(m){
+  
+  if(m == "ward"){
+    temp <- m
+    m <- "ward.D"
+  }
+  hm.collections <- heatmap.2(coverage.contingency.table,
+                           hclustfun = function(x) hclust(x,method = m),
+                           distfun = function(x) Dist(x,method = 'pearson')
+  )
+  if(m == "ward.D"){
+    m <- "ward"
+  }
+  
+  comp.order.list.rows[[m]] <<- paste(rev(hm.collections[[1]]), collapse = ",")
+  comp.order.list.columns[[m]] <<- paste(rev(hm.collections[[2]]), collapse = ",")
+})
 
 ## Convert the coverage table to the format required in D3 heatmap
 y <- NULL
@@ -188,13 +148,34 @@ if(row.nb < 5){
   cell.size <- 15
   legend.header <- bottom - 27
 }
+
+## Save the order of the columns of the complementarity heatmap
+comp.average.c.number <- comp.order.list.columns[["average"]]
+comp.complete.c.number <- comp.order.list.columns[["complete"]]
+comp.single.c.number <- comp.order.list.columns[["single"]]
+comp.ward.c.number <- comp.order.list.columns[["ward"]]
+
+## Save the order of the rows of the complementarity heatmap
+comp.average.r.number <- comp.order.list.rows[["average"]]
+comp.complete.r.number <- comp.order.list.rows[["complete"]]
+comp.single.r.number <- comp.order.list.rows[["single"]]
+comp.ward.r.number <- comp.order.list.rows[["ward"]]
+
 coverage.info <- matrix(c("Collection_labels", default.labels,
-                       "Collection_number", default.number,
-                       "Left_space", left,
-                       "Bottom_space", bottom,
-                       "Col_number", col.nb,
-                       "Row_number", row.nb,
-                       "Legend_Head", legend.header
+                          "Collection_number", default.number,
+                          "Left_space", left,
+                          "Bottom_space", bottom,
+                          "Col_number", col.nb,
+                          "Row_number", row.nb,
+                          "Legend_Head", legend.header,
+                          "Average_r_number_comp", comp.average.r.number,
+                          "Complete_r_number_comp", comp.complete.r.number,
+                          "Single_r_number_comp", comp.single.r.number,
+                          "Ward_r_number_comp", comp.ward.r.number,
+                          "Average_c_number_comp", comp.average.c.number,
+                          "Complete_c_number_comp", comp.complete.c.number,
+                          "Single_c_number_comp", comp.single.c.number,
+                          "Ward_c_number_comp", comp.ward.c.number
 ), nrow = 2)
 coverage.info.df <- t(data.frame(coverage.info))
 write.table(coverage.info.df, file = coverage.heatmap.attributes.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
@@ -239,13 +220,31 @@ white <- append(white,rgb.palette(ceiling((max(clusters)/step))))
 ###############################################################
 ## Run the hierarchical clustering with the three methods
 ## (average + complete + single). Save the order of the nodes
-order.list <<- list()
-order.list.names <<- list()
-for(m in c("average", "complete", "single")){
-  tree <- hclust(dist(clusters.matrix), method = m)
-  order.list[[m]] <- paste(tree$order, collapse = ",")
-  order.list.names[[m]] <- paste(paste("'cluster_", tree$order, "'", sep = ""), collapse = ",")
-}
+order.list.rows <- list()
+order.list.columns <- list()
+order.list.names <- list()
+
+sapply(c("average", "complete", "single", "ward"), function(m){
+  
+  if(m == "ward"){
+    temp <- m
+    m <- "ward.D"
+  }
+  
+  hm.clusters <- heatmap.2(clusters.matrix,
+                           hclustfun = function(x) hclust(x,method = m),
+                           distfun = function(x) Dist(x,method = 'pearson')
+  )
+  
+  if(m == "ward.D"){
+    m <- "ward"
+  }
+  
+  order.list.rows[[m]] <<- paste(rev(hm.clusters[[1]]), collapse = ",")
+  order.list.columns[[m]] <<- paste(rev(hm.clusters[[2]]), collapse = ",")
+  order.list.names[[m]] <<- paste(paste("'cluster_", order.list.rows[[m]], "'", sep = ""), collapse = ",")
+})
+
 
 ###############################################
 ## Parse the Heatmap table format used in D3
@@ -271,15 +270,18 @@ gradient <- paste("[", paste(paste("'", white, "'", sep=""), collapse=","), "];"
 
 ## Get the clusters names orderer according the linkage method
 cluster.names <- paste(paste("'cluster_", 1:dim(clusters)[1], "'", sep =""), collapse=",")
-# average.names <- order.list.names[["average"]]
-# complete.names <- order.list.names[["complete"]]
-# single.names <- order.list.names[["single"]]
 
 ## Get the clusters number orderer according the linkage method
 cluster.number <- paste(1:dim(clusters)[1], collapse=",")
-average.number <- order.list[["average"]]
-complete.number <- order.list[["complete"]]
-single.number <- order.list[["single"]]
+average.r.number <- order.list.rows[["average"]]
+complete.r.number <- order.list.rows[["complete"]]
+single.r.number <- order.list.rows[["single"]]
+ward.r.number <- order.list.rows[["ward"]]
+
+average.c.number <- order.list.columns[["average"]]
+complete.c.number <- order.list.columns[["complete"]]
+single.c.number <- order.list.columns[["single"]]
+ward.c.number <- order.list.columns[["ward"]]
 
 ## Default names
 default.names <- paste(paste("'cluster_", 1:dim(clusters)[1], "'", sep = ""), collapse = ",")
@@ -337,9 +339,14 @@ html.body.size <- 200 + left + (col.nb*cell.size) + 30
 order.info <- matrix(c("Gradient", gradient,
                        "Cluster_names", cluster.names,
                        "Cluster_number", cluster.number,
-                       "Average_number", average.number,
-                       "Complete_number", complete.number,
-                       "Single_number", single.number,
+                       "Average_c_number", average.c.number,
+                       "Complete_c_number", complete.c.number,
+                       "Single_c_number", single.c.number,
+                       "Ward_c_number", ward.c.number,
+                       "Average_r_number", average.r.number,
+                       "Complete_r_number", complete.r.number,
+                       "Single_r_number", single.r.number,
+                       "Ward_r_number", ward.r.number,
                        "Cell_size", cell.size,
                        "Col_number", col.nb,
                        "Row_number", row.nb,
@@ -351,7 +358,7 @@ order.info <- matrix(c("Gradient", gradient,
                        "Bottom_space", left,
                        "Body", html.body.size,
                        "Collections", collections
-                       ), nrow = 2)
+), nrow = 2)
 order.info.df <- t(data.frame(order.info))
 verbose(paste("Exporting table with the order of the clusters (Required in D3 Heatmap)", order.list.file), 2)
 write.table(order.info.df, file = attributes.list.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
