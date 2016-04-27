@@ -98,6 +98,15 @@ logo.path <- as.vector(logo.path)
 logo.path <- paste(logo.path, collapse = ",")
 html.report <- gsub("--logo_path--", logo.path, html.report)
 
+## Add the link to the distrib comparison curves pictures
+curves.path <- sapply(motifs.names, function(m){
+  paste("'", m, "/", base.name, "_", m, "_score_distrib_compa_logy_small.png'", sep = "")
+})
+curves.path <- as.vector(curves.path)
+curves.path <- paste(curves.path, collapse = ",")
+html.report <- gsub("--curves_path--", curves.path, html.report)
+
+
 ## Insert the number of rows and columns
 col.nb <- length(sequences.names)
 row.nb <- length(motifs.names)
