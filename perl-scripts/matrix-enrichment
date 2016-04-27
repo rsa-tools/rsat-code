@@ -113,7 +113,15 @@ require "quality_enrichment.lib.pl";
 use RSAT::MatrixReader;
 use Data::Dumper;
 use List::MoreUtils qw(uniq);
-
+require "RSA2.cgi.lib";
+use RSAT::util;
+use RSAT::matrix;
+use RSAT::SeqUtil;
+use Data::Dumper;
+use File::Basename;
+use File::Path;
+require "RSA.disco.lib";
+require "footprint.lib.pl";
 
 
 ################################################################
@@ -553,8 +561,6 @@ package main;
       
       ## Print the ID -> Name in the File
       &RSAT::message::Debug("Adding matrix information to registry table ", $matrix_name , $matrix_id ) if ($main::verbose >= 0);
-      print $ID_to_Motif_name_file  $matrix_name."\t".$matrix_id."\n";
-
       
       ################################################################
       ## Compute min and max weight values for score distributions
@@ -1440,8 +1446,6 @@ sub DynamicOccProfiles {
 
     my $dynamic_occ_sig_script  = $ENV{RSAT}."/R-scripts/plot_binomial_occ.R";
 
-    print $dynamic_occ_sig_script."\n\n";
-
     &RSAT::error::FatalError("Cannot read plot_binomial_occ.R script", $dynamic_occ_sig_script) unless (-r $dynamic_occ_sig_script);
 
     my $Seq_string = join('---', @all_sequence_names);
@@ -1458,10 +1462,8 @@ sub DynamicOccProfiles {
     $dynamic_occ_sig_cmd .= " ;Sequences = '".$Seq_string."'";
     $dynamic_occ_sig_cmd .= " ;TFs = '".$TFs_string."'";
     $dynamic_occ_sig_cmd .= " \"";
-#    $Cluster_motifs_cmd = "(".$dynamic_occ_sig_cmd.")"; # Uncomment this line to check the R output in the terminal
+#    $dynamic_occ_sig_cmd = "(".$dynamic_occ_sig_cmd.")"; # Uncomment this line to check the R output in the terminal
 #    $dynamic_occ_sig_cmd = "(".$dynamic_occ_sig_cmd.") 2 > ".$main::outfile{Rlog}; 
-
-    print $dynamic_occ_sig_cmd."\n\n\n";
 
     if ($r_path) {
         &doit($dynamic_occ_sig_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
@@ -1486,23 +1488,45 @@ sub CreateHTMLReport {
   my ($template) = &OpenInputFile($main::outfile{report_template});
   
   ## Open the HTLM report
-  my ($report) = &OpenOutputFile( $main::outfile{report});
+  my ($syn) = &OpenOutputFile( $main::outfile{report});
   
   my $motif_nb = scalar(@all_matrix_names);
   my $set_nb = scalar(@all_sequence_names);
+
+  my $head = &PrintHtmlResultHeader(program=>"matrix-enrichment", "title"=>$main::title);
 
   ###########################################
   ## Read the template and add the section
   ## names and other parameters
   while(<$template>){
       
-      print $_;
-      
       next if (/^#/); ## Skip header line
       next if (/^;/); ## Skip comment lines
       next unless (/\S/); ## Skip empty lines	
       chomp();
       my $line = $_;
+
+      ## Substitute the Header
+      if($line =~ /--he--/){
+
+	  print " 1\n";
+	  $line =~ s/--he--/$head/;
+      }
+
+      ## Substitute the Command section
+      if($line =~ /--show_command--/){
+
+	  ## Print arguments
+	  print $ &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
+	  print $syn "<pre>";
+	  print $syn "matrix-enrichment ";
+	  &PrintArguments($syn);
+	  print $syn "</pre>";
+	  print $syn &close_menu_heading();
+
+	  $line =~ s/--show_command--//;
+	  print " 2\n";
+      }
       
       ###########################
       ## Fill parameters table
@@ -1516,13 +1540,13 @@ sub CreateHTMLReport {
       
       ############################
       ## maxNWD heatmap section
-      my $occ_profiles_link = &RSAT::util::RelativePath($main::outfile{report}, );
+      my $occ_profiles_link = &RSAT::util::RelativePath($main::outfile{report}, $main::outfile{binomial_occ_profile});
       $line =~ s/--occ_profiles--/$occ_profiles_link/g;
       
-      print $report $line."\n";
+      print $syn $line."\n";
   }
   close($template);
-  close($report);  
+  close($syn);  
 }
 
 __END__
