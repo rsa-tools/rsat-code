@@ -8,6 +8,11 @@
 <script type="text/javascript" src="js/DataTables-1.10.4/media/js/jquery.js"></script> 
 <script type="text/javascript" src="js/DataTables-1.10.4/media/js/jquery.dataTables.min.js"></script><!-- Load c3.css -->
 
+<head>
+  --he--
+  --show_command--
+</head>
+
 <style>
 
         #Profile_header{
@@ -153,6 +158,17 @@
   text-decoration: underline;
   }
 
+  .link_tab {
+     width: 240px;
+     height: 25px;
+  }
+
+  .p_link_tab {
+     font-size:12px;
+     text-align:center;
+     margin-top:5px;
+  }
+
 </style>
 
 <div id="summary_table_button" class="button_click Section_button selected_header_section"><strong>Parameters Table</strong></div>
@@ -171,16 +187,16 @@
 
 <div id="dynamic_heatmap_button" class="button_click Section_button"><strong>Heatmap</strong></div>
 <div id="dynamic_heatmap" style="display:none" class="div_chart">
-<div  style="width:245px;height:25px;padding:0px;background-color:#E6E6E6;"> 
-  <p style="font-size: 12px;"><a target="_blank" href='--heatmap_link--'>Link</a></p> <!-- The link is inserted in the perl-script -->
+<div class="tab link_tab">
+  <p class="p_link_tab"><a target="_blank" href='--heatmap_link--'>Link</a></p> <!-- The link is inserted in the perl-script -->
 </div> 
 </div> <!-- End of section -->
 
 
 <div id="occ_profiles_button" class="button_click Section_button"><strong>OCC significance profiles</strong></div>
 <div id="occ_profiles" style="display:none" class="div_chart">
-<div style="width:245px;height:25px;padding:0px;background-color:#E6E6E6;"> 
-  <p style="font-size: 12px;"><a target="_blank" href='--occ_profiles--'>Link</a></p> <!-- The link is inserted in the perl-script -->
+<div class="tab link_tab"> 
+  <p class="p_link_tab"><a target="_blank" href='--occ_profiles--'>Link</a></p> <!-- The link is inserted in the perl-script -->
 </div> 
 </div> <!-- End of section -->
 
