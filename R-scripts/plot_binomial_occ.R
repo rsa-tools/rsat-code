@@ -66,7 +66,7 @@ pdf(pdf.file )
 for(TF in TFs){
   
   ## Read Binomial OCC table
-  binomial.occ.file <- paste(dir.name, "/", TF, "/capstarr-seq_", TF, "_occ_proba_", TF,"_compare-scores.tab", sep = "")
+  binomial.occ.file <- paste(dir.name, "/", TF, "/", base.name, "_", TF, "_occ_proba_", TF,"_compare-scores.tab", sep = "")
   binomial.occ.tab <- read.csv(binomial.occ.file, header = TRUE, sep = "\t")
   
   col.nb <- dim(binomial.occ.tab)[2]
