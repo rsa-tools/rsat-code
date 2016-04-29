@@ -22,6 +22,7 @@ dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 ## List of packages to install
 required.packages = c("RJSONIO",
                       "dendextend",
+                      "amap",
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",

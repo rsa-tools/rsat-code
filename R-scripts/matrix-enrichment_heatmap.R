@@ -61,6 +61,8 @@ if (!exists("prefix")) {
 # maxNWD.table.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt"
 # html.template.file <- "motif_enrichment_dynamic_heatmap_d3.html"
 
+base.name <- basename(prefix)
+
 #######################################
 ## Read the input file: maxNWD table
 max.NWD.table <- read.table(maxNWD.table.file, sep = "\t", header = TRUE)
@@ -87,6 +89,23 @@ html.report <- readLines(html.template.file)
 ## Get the Sequences (column) and Motifs (row) names
 sequences.names <- colnames(max.NWD.table)
 motifs.names <- rownames(max.NWD.table)
+
+## Add the logo path to the template
+logo.path <- sapply(motifs.names, function(m){
+  paste("'", m, "/", base.name, "_", m, "_logo_m1.png'", sep = "")
+})
+logo.path <- as.vector(logo.path)
+logo.path <- paste(logo.path, collapse = ",")
+html.report <- gsub("--logo_path--", logo.path, html.report)
+
+## Add the link to the distrib comparison curves pictures
+curves.path <- sapply(motifs.names, function(m){
+  paste("'", m, "/", base.name, "_", m, "_score_distrib_compa_logy.png'", sep = "")
+})
+curves.path <- as.vector(curves.path)
+curves.path <- paste(curves.path, collapse = ",")
+html.report <- gsub("--curves_path--", curves.path, html.report)
+
 
 ## Insert the number of rows and columns
 col.nb <- length(sequences.names)

@@ -8,6 +8,11 @@
 <script type="text/javascript" src="--jquery--"></script> 
 <script type="text/javascript" src="--datatable--"></script>
 
+<head>
+  --he--
+  --show_command--
+</head>
+
 <style>
 --lines_w--
 
@@ -214,11 +219,11 @@
    <div  style="display:block; clear:both;position:relative;float:left;">
       <button class='small button_chart' id='show_all_button' onclick='show_all();'>Show All Profiles</button>
       <button class='small button_chart' id='hide_all_button' onclick='hide_all();'>Hide All Profiles</button>
---start_e--      <button class='small button_chart' onclick='enriched();'>Enriched Profiles</button> --end_e--
---start_a--      <button class='small button_chart' onclick='avoided();'>Avoided Profiles</button> --end_a--
+--start_e--      <button class='small button_chart' onclick='enriched();'>Hill Profiles</button> --end_e--
+--start_a--      <button class='small button_chart' onclick='avoided();'>Valley Profiles</button> --end_a--
 --start_f--      <button class='small button_chart' onclick='flat();'>Flat Profiles</button> --end_f--
 <button class='small button_chart' onclick='sig_upper_threshold();'><b>Significance</b>: Lower threshold<div><input style="height:20px;margin:5px;" type="number" value='' id="sig_up" /></div></button>
-
+<button class='small button_chart' onclick='search_motifs();'><b>Search:</b><div><input style="height:20px;margin:5px;" type="search" value='' id="search_motifs" /></div></button>
 <!-- <button class='small button_chart' onclick='sig_lower_threshold();'>Hide TEST<div id="ccc"><input type="number" id="sig_low" /></div></button> -->
 
    </div>
@@ -278,7 +283,7 @@ var chart = c3.generate({
 
 
     size: {
-        height: 500,
+        height: --chart_h--,
         width: 1275
     },
 
@@ -287,7 +292,7 @@ var chart = c3.generate({
             show: false
         },
         y: {
-            show: false
+            show: true
         }
     },
 
@@ -340,6 +345,9 @@ var chart = c3.generate({
 });
 
 
+    var TF_names = new Array();
+--TF_names--
+
     var pvalues = new Array();
 --pvalues--
 
@@ -348,6 +356,9 @@ var chart = c3.generate({
 
     var pics = new Array();
 --pics--
+
+    var pics_rc = new Array();
+--pics_rc--
 
     var IDs = new Array();
 --IDs--
@@ -433,6 +444,38 @@ chart.hide(newIndex);
 }
 
 
+function search_motifs(){
+
+   var x = document.getElementById('search_motifs').value;
+   var index = [--tfs--];
+   var newIndex = new Array();
+   var newIDmotif = new Array();
+   c = 0;
+
+//document.write('<br>' + x + '<br>'); 
+
+   for(i = 0; i < index.length; i++){
+
+     tf = index[i];
+
+     newIDmotif[c] = TF_names[tf];
+
+     if(tf == x){  	
+  	newIndex[c] = TF_names[x];
+        c++;
+     }
+   }
+
+//   var diff = newIDmotif.difference(newIndex);
+//   chart.hide(newIDmotif);
+   
+   hide_all();
+   chart.show(newIndex);
+   
+}
+
+
+
 
 function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
     var $$ = this, config = $$.config, CLASS = $$.CLASS,
@@ -457,7 +500,8 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
             title_q = 'Q-val';
             title_s = 'Sig';
             title_logo = 'Logo';
-            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_p + "</th><th colspan='1'>" + title_q + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_logo + "</th></tr>";
+            title_logo_rc = 'Logo RC';
+            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_p + "</th><th colspan='1'>" + title_q + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";
         }
 
         name = nameFormat(d[i].name);
@@ -471,6 +515,7 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
         text += "<td>" + qvalues[d[i].id] + "</td>";
         text += "<td>" + significances[d[i].id] + "</td>";
         text += "<td><img class='small_logo' src='" + pics[d[i].id] + "' /></td>";
+        text += "<td><img class='small_logo' src='" + pics_rc[d[i].id] + "' /></td>";
         text += "</tr>";
     }
     return text + "</table>";   
@@ -486,7 +531,7 @@ $(document).ready( function () {
     $('#Motif_tab').DataTable({
         "info":     true,
         "iDisplayLength": 50,
-        "order": [[ 1, "asc" ]],
+        "order": [[ 3, "asc" ]],
 	"search": {
 	    "regex": true,
 	    "smart": true
