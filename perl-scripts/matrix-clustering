@@ -5344,10 +5344,7 @@ sub InsertHeatMap {
 sub InsertHeatmapCollectionbyCluster {
 
     my $heat_map_motifs_by_cluster = ' 
-        <div id="Heatmap_motifs_button" class="button_click Section_button"><strong>Cluster composition by collection</strong></div>
-	<div id="Heatmap_motifs" class="tab" style="width:208px;padding:0px;display:none;">
-                <p style="font-size: 12px;"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'">Link</a></p>
-	</div>
+        <div id="Heatmap_motifs_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'"><strong>Cluster composition by collection</strong></a></div>
     ';
 
     print $syn $heat_map_motifs_by_cluster;
@@ -5359,10 +5356,7 @@ sub InsertHeatmapCollectionbyCluster {
 sub InsertHeatmapCollectionComplementarity {
 
     my $heatmap_complementarity = ' 
-        <div id="Heatmap_complementarity_button" class="button_click Section_button"><strong>Collection Complementarity</strong></div>
-	<div id="Heatmap_complementarity" class="tab" style="width:208px;padding:0px;margin-top:0px;display:none;">
-                <p style="font-size: 12px;"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'">Link</a></p>
-	</div>
+        <div id="Heatmap_complementarity_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><strong>Collection Complementarity</strong></a></div>
     ';
 
     print $syn $heatmap_complementarity;
@@ -5538,20 +5532,20 @@ $(document).ready(function() {
 });
 
 // Slide the Motif per clusters View
-$(document).ready(function() {
-    $(\'#Heatmap_motifs_button\').click(function() {
-	$(\'#Heatmap_motifs\').slideToggle(\'fast\');
-        $(this).toggleClass(\'selected_header_section\');
-    }); 
-});
+//$(document).ready(function() {
+//    $(\'#Heatmap_motifs_button\').click(function() {
+//	$(\'#Heatmap_motifs\').slideToggle(\'fast\');
+//        $(this).toggleClass(\'selected_header_section\');
+//    }); 
+//});
 
 // Slide the Collections Complementarity View
-$(document).ready(function() {
-    $(\'#Heatmap_complementarity_button\').click(function() {
-	$(\'#Heatmap_complementarity\').slideToggle(\'fast\');
-        $(this).toggleClass(\'selected_header_section\');
-    }); 
-});
+//$(document).ready(function() {
+//    $(\'#Heatmap_complementarity_button\').click(function() {
+//	$(\'#Heatmap_complementarity\').slideToggle(\'fast\');
+//        $(this).toggleClass(\'selected_header_section\');
+//    }); 
+//});
 
 // Slide the File list
 $(document).ready(function() {
