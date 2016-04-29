@@ -124,7 +124,7 @@
 
 
 <div id="header">
-   <div><h3 style="text-align:center">Motif collection coverage and exclusive motifs</h3></div>
+   <div><h3 style="text-align:center">Collection Complementarity</h3></div>
    <ol>
       <p> Here is displayed the information corresponding to the complementarity between the input collection of motifs.</p>
       <p> Note: remind that these values are dependent of the threshold  used to separate the clusters.</p>
@@ -156,11 +156,18 @@
 <script type="text/javascript" src="--datatable--"></script>
 <link rel="stylesheet" type="text/css" src="--datatablecss--">
 
+<div  style="display:block; clear:both;position:relative;float:left;">
 Order_heatmap_cells:
   <select id="order">
   <option value="contingency">Contingency_table</option>
+    <option value="average">Average linkage</option>
+    <option value="complete">Complete linkage</option>
+    <option value="single">Single linkage</option>
+    <option value="ward">Ward linkage</option>
   </select>
-<div id="chart" style='overflow:auto; width:1500px; height:auto;'></div>
+</div>
+
+<div id="chart" style='overflow:auto; width:1500px; height:auto;display:block; clear:both;position:relative;float:left;'></div>
 
 <script type="text/javascript">
 
@@ -179,9 +186,18 @@ colors = ['#FFFFFF', '#FFFFCC','#FFF7BA','#FFF0A8','#FFE897','#FEE086','#FED876'
 
   // Order of the PSSMs
   hccol = [--collection_nb--],
+  hccol_average = [--comp_average_c_number--],
+  hccol_complete = [--comp_complete_c_number--],
+  hccol_single = [--comp_single_c_number--],
+  hccol_ward = [--comp_ward_c_number--],
+  
 
   // Order of the Sequences
   hcrow = [--collection_nb-- ], // change to gene name or probe id
+  hcrow_average = [--comp_average_r_number--],
+  hcrow_complete = [--comp_complete_r_number--],
+  hcrow_single = [--comp_single_r_number--],
+  hcrow_ward = [--comp_ward_r_number--],
 
   // Labels
   colLabel = [--collection_labels--],
@@ -364,7 +380,73 @@ function(error, data) {
       .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
       ;
 
-   } 
+   } else if(value=="single"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_single.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_single.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_single.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_single.indexOf(i+1) * cellSize; })
+      ;
+
+   // Complete Linkage
+   } else if(value=="complete"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_complete.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_complete.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_complete.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_complete.indexOf(i+1) * cellSize; })
+      ;
+
+   // Ward Linkage
+   } else if(value=="ward"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_ward.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_ward.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_ward.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_ward.indexOf(i+1) * cellSize; })
+      ;
+
+   // Average Linkage
+   } else if(value=="average"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_average.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_average.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_average.indexOf(i+1) * cellSize; })
+      ;
+   }
   }
 
   //
@@ -490,7 +572,7 @@ function(error, data) {
     </table>
     <div>
       <ul style="font-size:10px;list-style-type:square">
-	<li style="font-size:10px;list-style-type:square">This <a target="_blank" href="--exclusive_motif_table--">table</a> shows the number of exclusive motifs corresponding to a particular collection after the clustering.</li>
+	<li style="font-size:10px;list-style-type:square">This <a target="_blank" href="--exclusive_motif_table--">table</a> shows the number of exclusive motifs corresponding to a particular collection.</li>
 	<li style="font-size:10px:list-style-type:square"><strong>Collection percent</strong> column indicates the percentage of this motif collection covered by its exclusive motifs.</li>
 	<li style="font-size:10px;list-style-type:square"><strong>Total percent</strong> column indicates the percentage of <strong>ALL</strong> the input motifs collection covered by the exclusive motifs of this collection.</li>
       </ul>
