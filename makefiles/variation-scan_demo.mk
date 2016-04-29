@@ -63,7 +63,7 @@ mk_result_dir:
 RESULT_DIR=results/variation_scan_demo
 VARIANT_FORMAT_IN=vcf
 DEMO_VARIANTS=${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}
-VARIANT_FORMAT_OUT=varbed
+VARIANT_FORMAT_OUT=varBed
 CONVERT_VAR_CMD=convert-variations \
 	-i ${DEMO_VARIANTS}  \
 	-e_version ${ENSEMBL_VERSION} \
@@ -158,7 +158,7 @@ RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 
 RETRIEVE_VAR_CMD_VARBED=${RETRIEVE_VAR_CMD} \
 	-i ${RESULT_DIR}/${VARIANTS}.varbed \
-	-mml 30 -format varbed \
+	-mml 30 -format varBed \
 	-o ${RESULT_DIR}/${VARIANTS}_rsat_var.varseq
 retrieve_varseq_from_varbed: mk_result_dir
 	@echo ""
