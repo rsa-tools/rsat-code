@@ -67,6 +67,8 @@ use List::MoreUtils qw(uniq);
 use Data::Dumper;
 use File::Basename;
 use File::Path;
+require "RSA.disco.lib";
+require "footprint.lib.pl";
 
 
 ################################################################
@@ -97,6 +99,7 @@ package main;
   local $individual_plots = 1;
   local $legend_pos = "bottom";
   local $heatmap_dendo = "show";
+  local $strands = "-2str";
 
   ## Optional parameters
   ## matrix-scan top/last matrices
@@ -148,6 +151,21 @@ package main;
   local $random_seq_flag = 0;
   local $random_motifs_flag = 0;
 
+  ## Supported taks
+  local @supported_tasks = qw(
+			all
+                        scan
+                        plots
+                     );
+  local @task = qw (all);
+  local $supported_tasks = join ",", @supported_tasks;
+  local %supported_tasks = ();
+  foreach my $task (@supported_tasks) {
+    $supported_tasks{$task} = 1;
+  }
+  %selected_tasks = ();
+  $selected_tasks{"all"} = 1;
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -185,7 +203,7 @@ package main;
   ## Non-recognized parameters are ignored
   if (scalar(@args_to_pass)) {
     $args_to_pass = join (" ", @args_to_pass);
-    &RSAT::message::Info("Unrecognized arguments are ignored", $args_to_pass) if ($main::verbose >= 2);
+    &RSAT::message::Warning("Unrecognized arguments are ignored", $args_to_pass) if ($main::verbose >= 2);
   }
 
   local $basename;
@@ -218,12 +236,13 @@ package main;
   $main::outfile{profiles_counts} = $main::outfile{prefix}."_counts_per_bin_profiles.tab";
   $main::outfile{profiles_heatmap} = $main::outfile{prefix}."_profiles_heatmap.pdf";
   $main::outfile{report} = $main::outfile{prefix}."_scan_profile_report.html";
+  $main::outfile{report_temp} = $main::outfile{prefix}."_scan_profile_report_temp.html";
   $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_positional_profiles.html";
 
   ## Archive to facilitate transfer of all the results in a zip file
   $main::outfile{archive} = $main::outfile{prefix}."_archive.zip";
   $param{archive_format} = "zip";
-  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
+  &RSAT::message::Info("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
 
   $main::outfile{log} = $main::outfile{prefix}."_log.txt"; push @outfiles, "log";
   $main::out = &OpenOutputFile($main::outfile{log});
@@ -255,13 +274,13 @@ package main;
   ## required to display logo trees, animations and dynamic tables
   if ($include_js_lib) {
 
-      &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 3);
+      &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 5);
       my $js_sync_cmd = "rsync -ruptl";
       $js_sync_cmd .= " ".$ENV{RSAT}."/perl-scripts/lib/js";
       $js_sync_cmd .= " ".$dir{output};
       &doit($js_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
       $js_base = $dir{output}."/js";
-      &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 3);
+      &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 5);
 
   }  elsif (defined($ENV{RSA_OUTPUT_CONTEXT}) && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
       $js_base = $ENV{rsat_www}."/lib/js";
@@ -297,25 +316,44 @@ package main;
   &ProcessMatrices();
 
   ################################################################
-  ## Run matrix-scan quick
-  &ScanSequences();
+  ## Initialize HTML report, 
+  ##&OpenSynthesis() if ($main::param{progressive_synthesis});
   
-  # ## Parse the matrix-scan results table
-  &ParseScanResults();
+  ################################################################
+  ## Scan step: scan + parsing results + generate logos
+  if( defined($selected_tasks{"scan"}) || defined($selected_tasks{"all"}) ){
+
+      ################################################################
+      ## Run matrix-scan quick
+      &ScanSequences();  
+  
+      ## Parse the matrix-scan results table
+      &ParseScanResults();
+
+      ################################################################
+      ## Produce the ID to Motif name reference table
+      &ID_NameRefTable();
+      
+      ################################################################
+      ## Produce the logos
+      &GenerateLogos();
+  }
+
 
   ################################################################
-  ## Produce the ID to Motif name reference table
-  &ID_NameRefTable();
+  ## Plots step: chi-squared calculation + draw profiles
+  if( defined($selected_tasks{"plots"}) || defined($selected_tasks{"all"}) ){
+
+      ################################################################
+      ## Compute statistics (X2 pval, eval, qval) 
+      ## Draw the dynamic profiles
+      ## These steps are executed in R
+      &DynamicProfilesR();
+  }
 
   ################################################################
-  ## Produce the logos
-  &GenerateLogos();
-
-  ################################################################
-  ## Compute statistics (X2 pval, eval, qval) 
-  ## Draw the dynamic profiles
-  ## These steps are executed in R
-  &DynamicProfilesR();
+  ## Initialize HTML report, 
+  &ReOpenSynthesis();
 
   ################################################################
   ## Create an archive with all result files
@@ -425,17 +463,26 @@ Same as -h
     } elsif ($arg eq "-help") {
       &PrintOptions();
 
+=pod
+
+=item B<-seq input_sequences_file>
+
+A file containing the sequences in fasta format.
+
+=cut
+    } elsif ($arg eq "-seq") {
+      $main::infile{sequences} = shift(@arguments);
+
 
 =pod
 
-=item	B<-title title>
+=item B<-seq_format sequence_format>
 
-Title displayed on top of the report page.
+Sequence format.
 
 =cut
-     } elsif ($arg eq "-title") {
-      $main::title = shift(@arguments);
-      $main::title =~ s/\s+/_/g;
+	} elsif ($arg eq "-seq_format") {
+	    $main::seq_format = shift(@arguments);
 
 =pod
 
@@ -475,6 +522,17 @@ For a description of these formats, see the help of I<convert-matrix>.
 
 =pod
 
+=item	B<-title title>
+
+Title displayed on top of the report page.
+
+=cut
+     } elsif ($arg eq "-title") {
+      $main::title = shift(@arguments);
+      $main::title =~ s/\s+/_/g;
+
+=pod
+
 =item B<-top_matrices X>
 
 Only analyze the first X motifs of the input file. This options is
@@ -502,27 +560,6 @@ full analysis.
       $skip_matrix_flag = 1;
       &RSAT::error::FatalError($skip_matrices, "Invalid value for option -skip_matrices: must be a natural number") 
          unless (&IsNatural($skip_matrices));
-
-=pod
-
-=item B<-seq input_sequences_file>
-
-A file containing the sequences in fasta format.
-
-=cut
-    } elsif ($arg eq "-seq") {
-      $main::infile{sequences} = shift(@arguments);
-
-
-=pod
-
-=item B<-seq_format sequence_format>
-
-Sequence format.
-
-=cut
-	} elsif ($arg eq "-seq_format") {
-	    $main::seq_format = shift(@arguments);
 
 
 =pod
@@ -700,6 +737,58 @@ Use this option as negative control.
     } elsif ($arg eq "-rand_seq") {
       $random_seq_flag = 1;
 
+################################################################
+
+=pod
+
+=item B<-task tasks>
+
+Specify one or several tasks to be run. If this option is not
+specified, all the tasks are run.
+
+Note that some tasks depend on others. This option should thus be
+used with caution, by advanced users only.
+
+Supported tasks: (all, scan, plots)
+
+=over
+
+=item B<all>
+
+Execute all the parts of the program (default)
+
+=item B<scan>
+
+Run the motif scaning step with I<matrix-scan>. Usually this is the slower step.
+Generate a table with the putative TFBSs of each PSSMs on the input sequences. 
+
+=item B<plots>
+
+Skip the matrix scan step (if the I<matrix-scan> results already exists) and only executes the step where the 
+p-values are calculated and the plots are generated.
+
+This option is ideal to saving time once the scaning has been done. 
+
+=back
+
+=cut
+
+       } elsif ($arg eq "-task") {
+	 $arg = shift (@arguments);
+	 chomp($arg);
+	 my @tasks = split ",", $arg;
+         %selected_tasks = ();
+	 foreach my $task (@tasks) {
+	   $task = lc($task);
+	   if ($supported_tasks{$task}) {
+	     $selected_tasks{$task} = 1;
+	   } else {
+	     &RSAT::error::FatalError(join("\t", $task, "Invalid tasks. Supported:", $supported_tasks));
+	   }
+	 }
+
+
+################################################################
 
 =pod
 
@@ -776,18 +865,16 @@ sub ProcessMatrices {
 ## Scan the input sequences with the input matrices using
 ## RSAT matrix-scan
 sub ScanSequences {
-
-    &RSAT::message::TimeWarn("Matrices loaded from file", $main::infile{motifs}) if ($main::verbose >= 2);
-
+    &RSAT::message::Info("Matrices loaded from file", $main::infile{motifs}) if ($main::verbose >= 2);
     &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
     
-    $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v 2 -quick ";
+    $matrix_scan_cmd = $SCRIPTS."/matrix-scan -quick -v ".($main::verbose -1);
     $matrix_scan_cmd .= " -m ".$main::infile{motifs};
     $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
     $matrix_scan_cmd .= " -origin end -n score";
     $matrix_scan_cmd .= " -uth pval ".$p_value;
     $matrix_scan_cmd .= " -i ".$main::infile{sequences}." -seq_format fasta";
-    $matrix_scan_cmd .= " -pseudo 0.01 -decimals 2 -2str -bg_pseudo 0.01";
+    $matrix_scan_cmd .= " -pseudo 0.01 -decimals 2 ".$strands." -bg_pseudo 0.01";
     $matrix_scan_cmd .= " -return limits -return pval ";
     $matrix_scan_cmd .= " -o ".$main::outfile{matches_tab};
     $matrix_scan_cmd .= " -bgfile ".$main::infile{bg_file}." -bg_format ".$bg_format;
@@ -804,7 +891,7 @@ sub ScanSequences {
 ## those columns required to draw the profiles.
 sub ParseScanResults {
 
-    &RSAT::message::TimeWarn("Parsing matrix-scan results", $main::outfile{matches_tab}) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("Parsing matrix-scan results", $main::outfile{matches_tab}) if ($main::verbose >= 2);
 
     $parse_cmd = " grep -v '^;' ".$main::outfile{matches_tab};
     $parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 4) {print $1"\t"$3"\t"($6+$5)/2"\t"$9}'." ' ";
@@ -812,7 +899,7 @@ sub ParseScanResults {
 
     &doit($parse_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
-    &RSAT::message::TimeWarn("PARSED matrix-scan file results", $main::outfile{matches_tab_PARSED}) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("PARSED matrix-scan file results", $main::outfile{matches_tab_PARSED}) if ($main::verbose >= 2);
 
     $to_delete{'matched_tab_PARSED'} = $main::outfile{matches_tab_PARSED};
 }
@@ -824,7 +911,7 @@ sub ParseScanResults {
 ## informative to display it.
 sub ID_NameRefTable {
 
-    &RSAT::message::TimeWarn("Generating ID -> Name reference table") if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("Generating ID -> Name reference table") if ($main::verbose >= 2);
 
     ## Open the ID to Motif name reference table
     my ($ID_to_Motif_name_file) = &RSAT::util::OpenOutputFile($main::outfile{motif_ID_to_name});
@@ -859,7 +946,7 @@ sub ID_NameRefTable {
     close($transfac_matrix_file);
     close($ID_to_Motif_name_file);
 
-    &RSAT::message::TimeWarn("ID to Motif name correspondence table", $main::outfile{motif_ID_to_name}) if ($main::verbose >= 3);    
+    &RSAT::message::TimeWarn("ID to Motif name correspondence table", $main::outfile{motif_ID_to_name}) if ($main::verbose >= 2);
 }
 
 
@@ -953,9 +1040,9 @@ sub ProcessSeq {
     my $seq_length_up = $seq_length + 1;
     my $seq_length_dw = $seq_length - 1;
     
-    &RSAT::message::TimeWarn("Sequence length: ", $seq_length, "bp") if ($main::verbose >= 2);
+    &RSAT::message::Info("Sequence length: ", $seq_length, "bp") if ($main::verbose >= 2);
 
-    &RSAT::message::TimeWarn("Filtering sequences shorter or longer than", $seq_length) if ($main::verbose >= 2);
+    &RSAT::message::Info("Filtering sequences shorter or longer than", $seq_length) if ($main::verbose >= 2);
 
     $convert_seq_cmd = $SCRIPTS."/convert-seq";
     $convert_seq_cmd .= " -i ".$main::infile{sequences};
@@ -1016,14 +1103,14 @@ sub Delete_temporal_files {
 ## are not. This functions will delete those files
 sub CalculateBGModel {
 
-    &RSAT::message::TimeWarn("Calculating background model by sequence set", $bg_dir) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("Calculating background model by sequence set", $bg_dir) if ($main::verbose >= 2);
     
-    my $bg_comand = $SCRIPTS."/oligo-analysis -v 1 -quick -2str " ;
+    my $bg_comand = $SCRIPTS."/oligo-analysis -v 1 -quick ".${strands};
     $bg_comand .= " -i ".$main::infile{sequences}." -l ".$markov." -noov ";
     $bg_comand .= " -o ".$main::infile{bg_file};
     
     &doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
-    &RSAT::message::TimeWarn("Background for sequence set", $main::infile{sequences}, $main::infile{bg_file}) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("Background for sequence set", $main::infile{sequences}, $main::infile{bg_file}) if ($main::verbose >= 2);
 
     $bg_format = "oligos";
 }
@@ -1085,6 +1172,52 @@ sub Archive {
   &RSAT::message::TimeWarn("Archive", $main::outfile{archive}) if ($main::verbose >= 2);
 }
 
+##########################################
+## Open the HTML page for the synthesis
+sub ReOpenSynthesis {
+
+  ## Open the summary HTML file + temporal report 
+  my ($syn) = &OpenInputFile($main::outfile{report});
+  my ($syn2) = &OpenOutputFile($main::outfile{report_temp});
+
+  
+  my $head = &PrintHtmlResultHeader(program=>"position-scan", "title"=>$main::title);
+
+  ######################################
+  ## Read the HTML report
+  ## Add the header and command line
+  while(<$syn>){
+      
+      chomp;
+
+      ## Substitute the Header
+      if($_ =~ /--he--/){
+	  $_ =~ s/--he--/$head/;
+      }
+
+      ## Substitute the Command section
+      if($_ =~ /--show_command--/){
+
+	  ## Print arguments
+	  print $syn2 &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
+	  print $syn2 "<pre>";
+	  print $syn2 "position-scan ";
+	  &PrintArguments($syn2);
+	  print $syn2 "</pre>";
+	  print $syn2 &close_menu_heading();
+
+	  $_ =~ s/--show_command--//;
+      }
+
+      print $syn2 $_."\n";
+  }
+
+  close($syn);
+  close($syn2);
+
+  ## Rename the files
+  system("mv ".$main::outfile{report_temp}." ".$main::outfile{report});
+}
         
 __END__
 
