@@ -100,7 +100,7 @@ html.report <- gsub("--logo_path--", logo.path, html.report)
 
 ## Add the link to the distrib comparison curves pictures
 curves.path <- sapply(motifs.names, function(m){
-  paste("'", m, "/", base.name, "_", m, "_score_distrib_compa_logy_small.png'", sep = "")
+  paste("'", m, "/", base.name, "_", m, "_score_distrib_compa_logy.png'", sep = "")
 })
 curves.path <- as.vector(curves.path)
 curves.path <- paste(curves.path, collapse = ",")
