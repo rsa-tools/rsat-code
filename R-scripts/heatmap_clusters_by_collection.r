@@ -26,6 +26,9 @@ if (length(args >= 1)) {
 }
 
 
+# cluster.counts.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/clusters_summary_table.tab"
+
+
 ## Read cluster count table
 clusters <- read.table(file = cluster.counts.file, sep = "\t", header = TRUE)
 names(clusters) <- gsub("X.Cluster_ID", "Cluster_ID", names(clusters))
@@ -45,12 +48,48 @@ x <- sapply(names(motif.DB.counts), function(DB){
   ## to the current motifDB
   DB.motifs <- clusters[clusters[,DB] > 0,]
   
+  
+  ######################################################################################
+  # 
+  # 
+  # xx <- DB.motifs[,c(1,3:dim(clusters)[2])]
+  # cl.names <- as.vector(DB.motifs[,1])
+  # 
+  # apply(xx, 1, function(x){
+  #   
+  #   print(length(x))
+  #   
+  #   a <- x[2:length(x)] > 0
+  #   
+  #   a.index <- which(a > 0)
+  #   
+  #   a <- as.numeric(a)
+  #   a <- as.character(a)
+  #   
+  #   clusters.B <- cl.names[a.index]
+  #   
+  #   draw.pairwise.venn(area1=length(cl.names),
+  #                      area2=length(clusters.B),
+  #                      cross.area = length(intersect(cl.names, clusters.B)),
+  #                      category = c("Sox", "CTCF"),
+  #                      ext.text = TRUE,
+  #                      col = c("red", "blue"),
+  #                      fill = c("red", "blue"),
+  #                      scaled = TRUE)
+  #   
+  # })
+  
+
+
+  
+  
   #################################################################################
   ## Calculate the overlap between the databases
   
   ## Select those cluster with at least one motif corresponding
   ## to the current motifDB
   coverage <- apply(DB.motifs[3:dim(DB.motifs)[2]], 2, sum) / motif.DB.counts
+  
   
   coverage.contingency.table <<- cbind(coverage.contingency.table, matrix(coverage, ncol = 1))
   
@@ -210,9 +249,6 @@ if(max(clusters) < 10){
 ## palette.
 ## This is exported and will be read later
 ## in the D3 heatmap code.
-# rgb.palette <- colorRampPalette(c("#75FD3A", "#1F6800"), space = "rgb")
-# rgb.palette <- colorRampPalette(c("#FFE991", "#FEAD23", "#930047"), space = "rgb")
-# rgb.palette <- colorRampPalette(c("#FFE991", "#930047"), space = "rgb")
 rgb.palette <- colorRampPalette(brewer.pal(9, "YlOrRd"), space="Lab")
 white <- "#FFFFFF"
 white <- append(white,rgb.palette(ceiling((max(clusters)/step))))
