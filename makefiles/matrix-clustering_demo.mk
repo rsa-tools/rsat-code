@@ -252,6 +252,8 @@ cluster_hocomoco_one_group:
 		TITLE='HOCOMOCO motifs' \
 		COLLECTION=${HOCOMOCO_PREFIX} \
 		METRIC_BUILD_TREE=Ncor \
+		MIN_NCOR=0.55 \
+		MIN_COR=0.75 \
 		RETURN_FIELDS=align_consensus,heatmap
 
 
@@ -275,7 +277,7 @@ cluster_footprintdb:
 JASPAR_GROUPS=nematodes fungi urochordates plants vertebrates insects all 
 JASPAR_GROUP=vertebrates
 JASPAR_VERSION=2016
-JASPAR_PREFIX=jaspar_core_${JASPAR_GROUP}_${JASPAR_VERSION}
+JASPAR_PREFIX=jaspar_core_nonredundant_${JASPAR_GROUP}_${JASPAR_VERSION}
 JASPAR_DIR=${RSAT}/public_html/motif_databases/JASPAR/Jaspar_2016
 JASPAR_MATRICES=${JASPAR_DIR}/${JASPAR_PREFIX}.tf
 cluster_jaspar_all_groups:
