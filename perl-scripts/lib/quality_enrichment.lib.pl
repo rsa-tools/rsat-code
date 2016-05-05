@@ -274,7 +274,6 @@ sub Draw_OCC{
 	$XYgraph_occ_cmd .= " -o ". $occ_xygrpah_file.$image_format." ";
 	&doit($XYgraph_occ_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 	&RSAT::message::Info(" Drawing OCC  curves ",  $XYgraph_occ_cmd) if ($main::verbose >= 0);   
-	#<STDIN>;
     }
     return($occ_compare_scores_file, $occ_xygrpah_file )
 	
@@ -410,6 +409,7 @@ sub CompareDistrib {
     $distrib_compa_cmd .= join(" ", $outfile{'matrix_theoretical_distrib'}, @distrib_files);
     &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 2);
+    
   }
   if ($task{graphs}) {
       &RSAT::message::TimeWarn("Generating comparison graphs") if ($main::verbose >= 2);
@@ -521,6 +521,7 @@ sub CompareDistrib {
 	  &RSAT::message::Info("ROC curve icon", $outfile{distrib_compa}."_roc_small.".$image_format) if ($main::verbose >= 2);
 	}
       }
+
 
       ################################################################
       ## Draw a ROC curve with xlog This is the relevant way to
@@ -783,6 +784,8 @@ sub Calculate_OCC {
 
     &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
     &RSAT::message::Info("Scanning to compute occurence probability for OCC plots", $matrix_scan_cmd) if ($main::verbose >= 2);
+     
     return ($outfile{'occ_proba_'.$seq_type});
+  
 }
 
