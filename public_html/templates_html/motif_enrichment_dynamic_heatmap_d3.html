@@ -141,7 +141,7 @@ var margin = { top: --left--, right: 500, bottom: --left--, left: --left-- },
   width = cellSize*col_number, // - margin.left - margin.right,
   height = cellSize*row_number , // - margin.top - margin.bottom,
   //gridSize = Math.floor(width / 24),
-  legendElementWidth = cellSize*1,
+  legendElementWidth = cellSize*0.5,
   colorBuckets = 21,
 
 colors = [--gradient--],
@@ -289,11 +289,11 @@ var pic = svg.selectAll(".logo")
     .text(function(d) { return d; })
     .attr("width", legendElementWidth)
     .attr("x", width + 250)
-    .attr("y", function(d, i) { return legendElementWidth * i - 10; })
+    .attr("y", function(d, i) { return legendElementWidth * (i - 1); })
 
   svg.append("text")
     .attr({
-	'font-size': 15,
+	'font-size': 12,
 	'x': width + 200,
 	'y': -40
     })
