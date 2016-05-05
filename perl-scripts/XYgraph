@@ -869,6 +869,8 @@ sub Rplot {
     } elsif ($ylog ) {
       #$r_plot_params .= ", log=c(\"y\")";
       $r_instructions .= "  y.values <- log ( y.values, base=$y_log_base )\n";
+      $r_instructions .= "  y.values <- do.call(data.frame,lapply(y.values, function(x) replace(x, is.infinite(x),NA))) \n";
+      
     }
     $r_instructions .= " input.table <- cbind( x.values,  y.values )\n";
     $r_instructions .= " input.table <- do.call(data.frame,lapply(input.table, function(x) replace(x, is.infinite(x),NA)))\n";
