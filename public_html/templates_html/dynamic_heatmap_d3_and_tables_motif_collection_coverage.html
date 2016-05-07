@@ -192,7 +192,7 @@ Order_heatmap_cells:
   </select>
 </div>
 
-<div id="chart" style='overflow:auto; width:1500px; height:auto;display:block; clear:both;position:relative;float:left;'></div>
+<div id="chart" style='overflow:auto; width:700px; height:auto;display:inline-block; clear:both;position:relative;float:left;'></div>
 
 <script type="text/javascript">
 
@@ -334,27 +334,53 @@ function(error, data) {
                }, 2000);
         })
         ;
-
-  var legend = svg.selectAll(".legend")
+        
+        
+      var legend_x = width + (cellSize*3.5);
+        
+          var legend = svg.selectAll(".legend")
       .data([0,1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100])
       .enter().append("g")
       .attr("class", "legend");
 
   legend.append("rect")
-    .attr("x", function(d, i) { return legendElementWidth * i; })
-    .attr("y", height+(cellSize*2))
-    .attr("width", legendElementWidth)
-    .attr("height", cellSize)
+    .attr("x", width + (cellSize*1) + 30)
+    .attr("y", function(d, i) { return legendElementWidth*0.25 * i - cellSize; })
+    .attr("width", cellSize)
+    .attr("height", legendElementWidth*0.25)
     .style("fill", function(d, i) { return colors[i]; });
 
   legend.append("text")
-   .attr("class", "mono")
-    .text(function(d) { return d; })
-    .attr("font-size", 8)
-    .attr("width", legendElementWidth)
-    .attr("x", function(d, i) { return legendElementWidth * i; })
-    .attr("y", height + (cellSize*4))
+    .attr("class", "mono")
+    .text("0")
+    .attr("width", legendElementWidth*0.25)
+    .attr("x", legend_x)
+    .attr("y", function(d, i) { return legendElementWidth*0.25 * 1 - legendElementWidth*0.75; })
+    
+  legend.append("text")
+    .attr("class", "mono")
+    .text("50")
+    .attr("width", legendElementWidth*0.25)
+    .attr("x", legend_x)
+    .attr("y", function(d, i) { return legendElementWidth*0.25 * 11 -legendElementWidth*0.75; })
+    
+  legend.append("text")
+    .attr("class", "mono")
+    .text("100")
+    .attr("width", legendElementWidth*0.25)
+    .attr("x", legend_x)
+    .attr("y", function(d, i) { return legendElementWidth*0.25 * 22 -legendElementWidth*0.75; })
 
+  legend.append("text")
+    .attr({
+	'font-size': 17,
+	'x': width + (cellSize*1) + 30,
+	'y': -45,
+	'class': 'mono'
+    })
+    .text("Mutual coverage");
+            
+/*
   svg.append("text")
     .attr({
 	'font-size': 12,
@@ -362,7 +388,7 @@ function(error, data) {
 	'y': height + margin.bottom - --legend_header--
     })
     .text("Mutual Coverage (%) after clustering");
-
+*/
 
 // Change ordering of cells
 
