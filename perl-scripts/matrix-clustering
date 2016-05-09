@@ -2977,7 +2977,7 @@ sub Merge_matrices() {
 		    my $line = $_;
 		    my @split_line = split("\t+", $line);
 		    my $motif_id = $split_line[0];
-		    #$motif_id =~ s/\./-/;
+		    #$motif_id =~ s/\./_/;
 		    push(@level_motifs, $motif_id);
 		}
 		close $int_align_dataframe;
@@ -5048,6 +5048,14 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--comp_complete_r_number--/$attributes_heatmap{Complete_r_number_comp}/;
 	$line =~ s/--comp_single_r_number--/$attributes_heatmap{Single_r_number_comp}/;
 	$line =~ s/--comp_ward_r_number--/$attributes_heatmap{Ward_r_number_comp}/;
+	
+	$attributes_heatmap{Coverage_pics} =~ s/--return--/\n\n/g;
+	$attributes_heatmap{Coverage_pics_buttons} =~ s/--return--/<br>\n\n/g;
+	$attributes_heatmap{Hide_show_coverage_pics} =~ s/--return--/\n\n/g;
+
+	$line =~ s/--insert_diagrams--/$attributes_heatmap{Coverage_pics}/g;
+	$line =~ s/--insert_diagram_buttons--/$attributes_heatmap{Coverage_pics_buttons}/g;
+	$line =~ s/--hide_show_diagrams--/$attributes_heatmap{Hide_show_coverage_pics}/g;
 
 	print TEMP $line."\n";
     }
