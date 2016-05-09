@@ -80,9 +80,6 @@ x <- sapply(names(motif.DB.counts), function(DB){
   # })
   
 
-
-  
-  
   #################################################################################
   ## Calculate the overlap between the databases
   
@@ -110,6 +107,42 @@ x <- sapply(names(motif.DB.counts), function(DB){
   #   print(paste("Nb Unique motifs: ", DB.motifs.exclusive, " -  %(internal) :", DB.percent, " -  %(total): ", Total.percent))
   percent.table <<- cbind(percent.table, matrix(c(motif.DB.counts[DB], DB.motifs.exclusive, DB.percent, Total.percent), ncol = 1))
 })
+
+
+coverage.counter <- 0
+coverage.pics.buttons <- NULL
+thrash <- sapply(names(motif.DB.counts), function(x){
+  sapply(names(motif.DB.counts), function(y){
+
+    coverage.counter <<- coverage.counter + 1
+    
+    coverage.pics.buttons <<- append(coverage.pics.buttons, paste("<div class='coverage_button button_click' id='d_", coverage.counter,"_link'> <strong>", x, " vs ", y,"</strong></div>", sep = ""))
+    
+    if(coverage.counter %% length(names(motif.DB.counts)) == 0){
+      coverage.pics.buttons <<- append(coverage.pics.buttons, paste("--return--", sep = ""))
+    }
+  })
+})
+coverage.pics.buttons <- as.vector(coverage.pics.buttons)
+coverage.pics.buttons <- paste(coverage.pics.buttons, collapse = "")
+
+
+coverage.pics <- sapply(1:(length(names(motif.DB.counts)) ^2), function(x){
+    coverage.counter <<- coverage.counter + 1
+    
+    paste("<div id='d_", x, "' class='coverage_pic' style='display:none;position:relative;float:left;'><p style='text-align:center;padding-top:50px;'>Venn diagram</p><img src='Multi_algorithms_analysis_hclust-complete_Ncor0.4_cor0.6_figures/heatmap.jpg' style='width:300px;height:220px; padding-top:20px;'></div> --return--", sep = "")
+
+})
+coverage.pics <- as.vector(coverage.pics)
+coverage.pics <- paste(coverage.pics, collapse = "")
+
+
+hide.show.coverage.pics <- sapply(1:(length(names(motif.DB.counts)) ^2), function(x){
+  
+  paste("$(document).ready(function() { $('#d_", x,"_link').click(function() { $('.coverage_button').removeClass('selected_coverage_button'); $('.coverage_pic').hide(); $('#d_", x, "').show(); $(this).toggleClass('selected_coverage_button') }); }); --return--", sep = "")
+})
+hide.show.coverage.pics <- as.vector(hide.show.coverage.pics)
+hide.show.coverage.pics <- paste(hide.show.coverage.pics, collapse = "")
 
 #########################################################
 ## Add a new column and re-order the percentage matrix
@@ -214,7 +247,10 @@ coverage.info <- matrix(c("Collection_labels", default.labels,
                           "Average_c_number_comp", comp.average.c.number,
                           "Complete_c_number_comp", comp.complete.c.number,
                           "Single_c_number_comp", comp.single.c.number,
-                          "Ward_c_number_comp", comp.ward.c.number
+                          "Ward_c_number_comp", comp.ward.c.number,
+                          "Coverage_pics", coverage.pics,
+                          "Coverage_pics_buttons", coverage.pics.buttons,
+                          "Hide_show_coverage_pics", hide.show.coverage.pics
 ), nrow = 2)
 coverage.info.df <- t(data.frame(coverage.info))
 write.table(coverage.info.df, file = coverage.heatmap.attributes.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
