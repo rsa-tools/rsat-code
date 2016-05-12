@@ -26,10 +26,67 @@ if (length(args >= 1)) {
 }
 
 
+################################################
+## JSON + JavaScript code to add to HTML file ##
+################################################
+
+#venn.sortAreas(div, d);--return--
+
+JSON.intersection = '
+var sets_--nb-- = [
+  {"sets": [0], "label": "--collection_A--", "size": --size_collection_A--},
+  {"sets": [1], "label": "--collection_B--", "size": --size_collection_B--},
+  {"sets": [0, 1], "size": --intersection_A_B--}]; '
+
+Venn.diagram.set = '
+<script>--return--
+var chart = venn.VennDiagram()--return--
+.width(250)--return--
+.height(250);--return--
+--return--
+var div = d3.select("#--venn--")--return--
+div.datum(--set--).call(chart);--return--
+--return--
+var tooltip = d3.select("body").append("div")--return--
+.attr("class", "venntooltip");--return--
+--return--
+div.selectAll("path")--return--
+.style("stroke-opacity", 0)--return--
+.style("stroke", "#fff")--return--
+.style("stroke-width", 0);--return--
+--return--
+div.selectAll("g")--return--
+.on("mouseover", function(d, i) {--return--
+  --return--
+  tooltip.transition().duration(400).style("opacity", .9);--return--
+  tooltip.text(d.size + " motifs");--return--
+  --return--
+  var selection = d3.select(this).transition("tooltip").duration(400);--return--
+  selection.select("path")--return--
+  .style("stroke-width", 3)--return--
+  .style("fill-opacity", d.sets.length == 1 ? .4 : .1)--return--
+  .style("stroke-opacity", 1);--return--
+})--return--
+--return--
+.on("mousemove", function() {--return--
+  tooltip.style("left", (d3.event.pageX) + "px")--return--
+  .style("top", (d3.event.pageY - 28) + "px");--return--
+})--return--
+--return--
+.on("mouseout", function(d, i) {--return--
+  tooltip.transition().duration(400).style("opacity", 0);--return--
+  var selection = d3.select(this).transition("tooltip").duration(400);--return--
+  selection.select("path")--return--
+  .style("stroke-width", 0)--return--
+  .style("fill-opacity", d.sets.length == 1 ? .25 : .0)--return--
+  .style("stroke-opacity", 0);--return--
+});--return--
+</script>--return--'
+
 # cluster.counts.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/clusters_summary_table.tab"
 
 
-## Read cluster count table
+# Read cluster count table
 clusters <- read.table(file = cluster.counts.file, sep = "\t", header = TRUE)
 names(clusters) <- gsub("X.Cluster_ID", "Cluster_ID", names(clusters))
 
@@ -42,44 +99,22 @@ motif.DB.counts <- apply(clusters[,3:(nb.db+2)], 2, sum)
 
 percent.table <- NULL
 coverage.contingency.table <- NULL
+intersect.counter <- 0
+Diagrams <- NULL
+JSON.intersect.file <- paste(coverage.json.folder, "/intersection_data.json", sep = "")
+JSON.intersect.file.rel <- paste(basename(coverage.json.folder), "/intersection_data.json", sep = "")
+intersection.clusters <- list()
 x <- sapply(names(motif.DB.counts), function(DB){
   
   ## Select those cluster with at least one motif corresponding
   ## to the current motifDB
   DB.motifs <- clusters[clusters[,DB] > 0,]
   
+  ## Get collection A information
+  collection.A.name <- DB
+  collection.A.size <- as.numeric(motif.DB.counts[DB])
+  collection.A.nb.clusters <- length(DB.motifs[,DB])
   
-  ######################################################################################
-  # 
-  # 
-  # xx <- DB.motifs[,c(1,3:dim(clusters)[2])]
-  # cl.names <- as.vector(DB.motifs[,1])
-  # 
-  # apply(xx, 1, function(x){
-  #   
-  #   print(length(x))
-  #   
-  #   a <- x[2:length(x)] > 0
-  #   
-  #   a.index <- which(a > 0)
-  #   
-  #   a <- as.numeric(a)
-  #   a <- as.character(a)
-  #   
-  #   clusters.B <- cl.names[a.index]
-  #   
-  #   draw.pairwise.venn(area1=length(cl.names),
-  #                      area2=length(clusters.B),
-  #                      cross.area = length(intersect(cl.names, clusters.B)),
-  #                      category = c("Sox", "CTCF"),
-  #                      ext.text = TRUE,
-  #                      col = c("red", "blue"),
-  #                      fill = c("red", "blue"),
-  #                      scaled = TRUE)
-  #   
-  # })
-  
-
   #################################################################################
   ## Calculate the overlap between the databases
   
@@ -87,6 +122,60 @@ x <- sapply(names(motif.DB.counts), function(DB){
   ## to the current motifDB
   coverage <- apply(DB.motifs[3:dim(DB.motifs)[2]], 2, sum) / motif.DB.counts
   
+  sapply(names(coverage), function(n){
+    
+    intersect.counter <<- intersect.counter + 1
+    intersection.clusters[[intersect.counter]] <<- list()
+    
+    ## Get collection B information
+    collection.B.name <- n
+    collection.B.size <- as.numeric(motif.DB.counts[n])
+    collection.B.nb.clusters <- length(which(DB.motifs[,n] > 0))
+    
+    ## Get the name of the clusters in Collection A and B
+    collection.A.clusters.names <- as.vector(DB.motifs[,c("Cluster_ID",collection.A.name)]$Cluster_ID)
+    
+    t <- DB.motifs[,c("Cluster_ID",collection.B.name)]
+    positive.index <- which(t[,2] > 0)
+    collection.B.clusters.names <- as.vector(DB.motifs[positive.index,c("Cluster_ID",collection.B.name)]$Cluster_ID)
+    
+    # intersect.size <- length(intersect(collection.A.clusters.names, collection.B.clusters.names))
+    intersect.size <- sum(DB.motifs[,collection.B.name])
+    
+    if(intersect.size > collection.B.size){
+      intersect.size <- collection.B.size
+      collection.B.size <- collection.A.size
+    }
+    
+    Venn.diagram.set.cp <- Venn.diagram.set
+    set.nb <- paste("sets_", intersect.counter, sep = "")
+    venn.nb <- paste("venn", intersect.counter, sep = "")
+    Venn.diagram.set.cp <- gsub("--set--", set.nb, Venn.diagram.set.cp)
+    Venn.diagram.set.cp <- gsub("--venn--", venn.nb, Venn.diagram.set.cp)
+    Venn.diagram.set.cp <- gsub("\n", "", Venn.diagram.set.cp)
+    Diagrams <<- append(Diagrams, Venn.diagram.set.cp)
+    
+    ## Fill the data for the Venn diagrams and export each JSON 
+    ## in a different file
+    JSON.intersection.cp <- JSON.intersection
+    JSON.intersection.cp <- gsub("--collection_A--", collection.A.name, JSON.intersection.cp)
+    JSON.intersection.cp <- gsub("--collection_B--", collection.B.name, JSON.intersection.cp)
+    JSON.intersection.cp <- gsub("--size_collection_A--", collection.A.size, JSON.intersection.cp)
+    JSON.intersection.cp <- gsub("--size_collection_B--", collection.B.size, JSON.intersection.cp)
+    JSON.intersection.cp <- gsub("--intersection_A_B--", intersect.size, JSON.intersection.cp)
+    JSON.intersection.cp <- gsub("--nb--", intersect.counter, JSON.intersection.cp)
+    
+    intersection.clusters[[intersect.counter]][["Collections"]] <<- paste(unique(c(collection.A.name, collection.B.name)), collapse = "<br>")
+    int.cl <- intersect(collection.A.clusters.names, collection.B.clusters.names)
+    int.cl <- paste(int.cl, collapse = "<br>")
+    intersection.clusters[[intersect.counter]][["Clusters"]] <<- int.cl
+    
+    if(intersect.counter == 1){
+      file.remove(JSON.intersect.file, showWarnings = FALSE)
+    }
+    write(JSON.intersection.cp, file = JSON.intersect.file, append = TRUE)
+        
+  })
   
   coverage.contingency.table <<- cbind(coverage.contingency.table, matrix(coverage, ncol = 1))
   
@@ -108,6 +197,7 @@ x <- sapply(names(motif.DB.counts), function(DB){
   percent.table <<- cbind(percent.table, matrix(c(motif.DB.counts[DB], DB.motifs.exclusive, DB.percent, Total.percent), ncol = 1))
 })
 
+Diagrams <- paste(Diagrams, collapse = "")
 
 coverage.counter <- 0
 coverage.pics.buttons <- NULL
@@ -130,13 +220,12 @@ coverage.pics.buttons <- paste(coverage.pics.buttons, collapse = "")
 coverage.pics <- sapply(1:(length(names(motif.DB.counts)) ^2), function(x){
     coverage.counter <<- coverage.counter + 1
     
-    paste("<div id='d_", x, "' class='coverage_pic' style='display:none;position:relative;float:left;'><p style='text-align:center;padding-top:50px;'>Venn diagram</p><img src='Multi_algorithms_analysis_hclust-complete_Ncor0.4_cor0.6_figures/heatmap.jpg' style='width:300px;height:220px; padding-top:20px;'></div> --return--", sep = "")
+    paste("<div id='d_", x, "' class='coverage_pic' style='display:none;position:relative;float:left;font-size:8px;'><p style='text-align:center;padding-top:5px;font-size:12px;'>Venn diagram</p><div id='venn", x, "'></div><table style='width:300px;font-size:10px;text-align:left;'><thead><tr><th>Collections</th><th>Intersection</th></tr></thead><tbody><td>", intersection.clusters[[x]][["Collections"]], "</td><td>", intersection.clusters[[x]][["Clusters"]],"</td></tbody></table></div> --return--", sep = "")
 
 })
 coverage.pics <- as.vector(coverage.pics)
 coverage.pics <- paste(coverage.pics, collapse = "")
-
-
+  
 hide.show.coverage.pics <- sapply(1:(length(names(motif.DB.counts)) ^2), function(x){
   
   paste("$(document).ready(function() { $('#d_", x,"_link').click(function() { $('.coverage_button').removeClass('selected_coverage_button'); $('.coverage_pic').hide(); $('#d_", x, "').show(); $(this).toggleClass('selected_coverage_button') }); }); --return--", sep = "")
@@ -155,6 +244,7 @@ write.table(percent.table, file = percent.table.file, sep = "\t", quote = FALSE,
 #########################################################
 ## Round and export the coverage contingency table
 coverage.contingency.table <- round(coverage.contingency.table, digits = 3)
+coverage.contingency.table <- coverage.contingency.table
 colnames(coverage.contingency.table) <- names(motif.DB.counts)
 rownames(coverage.contingency.table) <- names(motif.DB.counts)
 write.table(coverage.contingency.table, file = coverage.table.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
@@ -203,8 +293,9 @@ default.labels <- paste(paste("'", names(motif.DB.counts), "'", sep = ""), colla
 default.number <- paste(1:length(motif.DB.counts), collapse = ",")
 left <- (max(as.vector(sapply(names(motif.DB.counts), nchar))) + 2) * 10
 cell.size <- 20
-bottom <- 120
+bottom <- 80
 legend.header <- bottom - 35
+
 if(row.nb < 5){
   bottom <- 120
   legend.header <- bottom - 35
@@ -233,6 +324,8 @@ comp.complete.r.number <- comp.order.list.rows[["complete"]]
 comp.single.r.number <- comp.order.list.rows[["single"]]
 comp.ward.r.number <- comp.order.list.rows[["ward"]]
 
+heatmap.width <- 225 + (cell.size * col.nb) + 225
+
 coverage.info <- matrix(c("Collection_labels", default.labels,
                           "Collection_number", default.number,
                           "Left_space", left,
@@ -250,7 +343,10 @@ coverage.info <- matrix(c("Collection_labels", default.labels,
                           "Ward_c_number_comp", comp.ward.c.number,
                           "Coverage_pics", coverage.pics,
                           "Coverage_pics_buttons", coverage.pics.buttons,
-                          "Hide_show_coverage_pics", hide.show.coverage.pics
+                          "Hide_show_coverage_pics", hide.show.coverage.pics,
+                          "Diagrams", Diagrams,
+                          "Coverage_JSON", JSON.intersect.file.rel,
+                          "Heatmap_width", heatmap.width
 ), nrow = 2)
 coverage.info.df <- t(data.frame(coverage.info))
 write.table(coverage.info.df, file = coverage.heatmap.attributes.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
@@ -434,3 +530,6 @@ order.info <- matrix(c("Gradient", gradient,
 order.info.df <- t(data.frame(order.info))
 verbose(paste("Exporting table with the order of the clusters (Required in D3 Heatmap)", order.list.file), 2)
 write.table(order.info.df, file = attributes.list.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+# tfs <- c("DSP1", "Ez", "GAF", "PHOL", "PHO", "PH", "PSQ", "SPPS")
+# paste("/home/mentrevan/polycomb_clusters/results/TF-and-PolycombSU_summits/", tfs,"_replicate2_summit_sorted_by_scores_pm300/", tfs, "_replicate2_summit_sorted_by_scores_pm300_peak-motifs_top1000peaks/results/discovered_motifs/", tfs, "_replicate2_summit_sorted_by_scores_pm300_top1000peaks_motifs_discovered.tf", sep = "")
