@@ -5,12 +5,26 @@
 <meta charset="utf-8">
 <style>
 
+.venntooltip {
+  font-size: 10px;
+  position: absolute;
+  text-align: center;
+  width: 128px;
+  height: 16px;
+  background: #333;
+  color: #ddd;
+  padding: 2px;
+  border: 0px;
+  border-radius: 8px;
+  opacity: 0;
+}
+
   .coverage_button {
 	background-color: #D6EEFA;
 	float: left;
 	margin: 5px 3px 3px 3px;
-	width: 200px;
-	height: 15px;
+	width: 120px;
+	height: 25px;
 	position: relative;
 	display: inline-block;
 	text-align: center;
@@ -54,6 +68,20 @@
     background-color: #E6E6E6;
     border-radius:5px;
   }
+
+  #diagram_header {
+     width: 600px;
+	   height: 100px;
+	   position: relative;
+	   display: block;
+	   text-align: left;
+	   clear : both;
+	   color: black;
+	   font-size: 12px;
+	   border-radius:5px;
+     background: #B1D4F9;
+	   float: left;
+  }  
 
         #header{
 	   margin: 7px 5px 5px 5px;
@@ -205,6 +233,7 @@
 </div>
 
 <script type="text/javascript" src="--d3--"></script>
+<script type="text/javascript" src="--d3_venn--"></script>
 <script type="text/javascript" src="--jq--"></script>
 <script type="text/javascript" src="--datatable--"></script>
 <link rel="stylesheet" type="text/css" src="--datatablecss--">
@@ -220,9 +249,20 @@ Order_heatmap_cells:
   </select>
 </div>
 
-<div id="chart" style='overflow:auto; width:700px; height:auto;display:inline-block; clear:both;position:relative;float:left;'></div>
+<div id="chart" style='overflow:auto; width:--heatmap_width--px; height:auto;display:inline-block; clear:both;position:relative;float:left;'></div>
 
 --insert_diagrams--
+
+<div id="diagram_header">
+    <p>
+      <p style="text-align:center;"><strong>Show Venn Diagrams</strong></p>
+      <ul>
+        <li>Click on each button to visualize the intersection between each pair of motif databases.</li>
+        <li>The blue circle represents the reference collection.</li>
+        <li>The orange circle represents the compared collection.</li>
+      </ul>
+    </p>
+</div>
 
 <div style="display:block; clear:both;position:relative;float:left;">
   --insert_diagram_buttons--
@@ -231,7 +271,7 @@ Order_heatmap_cells:
 <script type="text/javascript">
 
 
-var margin = { top: --left--, right: 700, bottom: --bottom--, left: --left-- },
+var margin = { top: --left--, right: 150, bottom: --bottom--, left: --left-- },
   cellSize= 25;
   col_number= --c_numb--;
   row_number= --r_numb--;
@@ -266,8 +306,8 @@ colors = ['#FFFFFF', '#FFFFCC','#FFF7BA','#FFF0A8','#FFE897','#FEE086','#FED876'
 d3.tsv("--file--",
 function(d) {
   return {
-    row:   +d.Row, 
-    col:   +d.Col, 
+    row:   +d.Col, 
+    col:   +d.Row, 
     value: +d.Value
   };
 },
@@ -349,7 +389,7 @@ function(error, data) {
                  
                  
                  
-                 .html("<table><thead><tr class='tooltip_tab'><th colspan='1'>Collection A</th><th colspan='1'>Collection B</th><th colspan='1'>Mutual Coverage</th><th colspan='1'>Intersection</th></tr></thead><tbody><tr class='tooltip_cell'><td>" + rowLabel[d.row-1] + "</td><td>" + colLabel[d.col-1] + "</td><td>" + d.value + "</td><td><a target='_blank' href='http://www.rsat.eu/'>" + "Venn Diagram" + "</a></td></tr></tbody></table>");
+                 .html("<table><thead><tr class='tooltip_tab'><th colspan='1'>Collection A</th><th colspan='1'>Collection B</th><th colspan='1'>Mutual Coverage</th></tr></thead><tbody><tr class='tooltip_cell'><td>" + rowLabel[d.row-1] + "</td><td>" + colLabel[d.col-1] + "</td><td>" + d.value + "</td></tr></tbody></table>");
         //       ;
                
                //Show the tooltip
@@ -412,7 +452,7 @@ function(error, data) {
 	'y': -45,
 	'class': 'mono'
     })
-    .text("Mutual coverage");
+    .text("Coverage");
             
 /*
   svg.append("text")
@@ -700,3 +740,7 @@ $(document).ready( function () {
 --hide_show_diagrams--
 
 </script>
+
+<script src="--coverage_json_file--"></script>
+
+--venn_diagrams--
