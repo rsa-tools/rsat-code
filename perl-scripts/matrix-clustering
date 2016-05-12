@@ -186,6 +186,7 @@ package main;
   ## JQuery libraries, required to display logo trees and tables).
   local $js_base;
   local $d3_base;
+  local $d3_venn_base;
   local $jquery_base;
   local $datatable_base;
   local $datatable_css_base;
@@ -550,6 +551,7 @@ package main;
 	  $to_delete_folder{'clusters_information'} = $main::outfile{prefix}."_clusters_information";
 	  $to_delete_folder{'html'} = $main::outfile{prefix}."_html";
 	  $to_delete_folder{'tables'} = $main::outfile{prefix}."_tables";
+	  $to_delete_folder{'json_coverage'} = $main::outfile{prefix}."_coverage_json";
 	  $to_delete_folder{'aligned_logos'} = $main::outfile{prefix}."_aligned_logos";
 	  $to_delete_folder{'data_folder'} = $main::outfile{prefix}."_data";
 	  $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
@@ -1389,7 +1391,7 @@ sub set_output_file_names {
 
   if ($root_matrices_flag == 0) {
       ## Create output directories
-      @output_folders = qw( tables html figures pairwise_compa_logos aligned_logos);
+      @output_folders = qw( coverage_json tables html figures pairwise_compa_logos aligned_logos);
       foreach my $f (@output_folders) {
 	  my $new_f = $main::outfile{prefix}."_".$f;
 	  &RSAT::util::CheckOutDir($new_f);
@@ -1450,6 +1452,7 @@ sub set_output_file_names {
   ## This is the format required for D3 heatmap!
   $main::outfile{heatmap_coverage_d3} = $main::outfile{prefix}."_tables/convergency_heatmap_tab.tsv";
     $main::outfile{heatmap_coverage_attributes} = $main::outfile{prefix}."_tables/convergency_heatmap_attributes.tab";
+$main::outfile{coverage_json_folder} = $main::outfile{prefix}."_coverage_json";
 
   $main::outfile{heatmap_collections_d3} = $main::outfile{prefix}."_tables/collection_heatmap_tab.tsv";
     $main::outfile{heatmap_collections_attributes} = $main::outfile{prefix}."_tables/collection_heatmap_order.tab";
@@ -1509,6 +1512,7 @@ sub set_output_file_names {
 	  $js_base = $ENV{RSAT}."/perl-scripts/lib/js";
       }
       $d3_base= &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/d3.v3.min.js");
+      $d3_venn_base= &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/venn.js-master/venn.js");
       $jquery_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.js");
       $datatable_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
       $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
@@ -5026,6 +5030,7 @@ sub Dynamic_Heatmap_Complementarity {
 	my $line = $_;
 
 	$line =~ s/--d3--/$d3_base/;
+	$line =~ s/--d3_venn--/$d3_venn_base/;
 	$line =~ s/--jq--/$jquery_base/;
 	$line =~ s/--datatable--/$datatable_base/;
 	$line =~ s/--datatablecss--/$datatable_css_base/;
@@ -5048,21 +5053,25 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--comp_complete_r_number--/$attributes_heatmap{Complete_r_number_comp}/;
 	$line =~ s/--comp_single_r_number--/$attributes_heatmap{Single_r_number_comp}/;
 	$line =~ s/--comp_ward_r_number--/$attributes_heatmap{Ward_r_number_comp}/;
+	$line =~ s/--coverage_json_file--/$attributes_heatmap{Coverage_JSON}/;
+	$line =~ s/--heatmap_width--/$attributes_heatmap{Heatmap_width}/;
 	
 	$attributes_heatmap{Coverage_pics} =~ s/--return--/\n\n/g;
 	$attributes_heatmap{Coverage_pics_buttons} =~ s/--return--/<br>\n\n/g;
 	$attributes_heatmap{Hide_show_coverage_pics} =~ s/--return--/\n\n/g;
+	$attributes_heatmap{Diagrams} =~ s/--return--/\n\n/g;
 
 	$line =~ s/--insert_diagrams--/$attributes_heatmap{Coverage_pics}/g;
 	$line =~ s/--insert_diagram_buttons--/$attributes_heatmap{Coverage_pics_buttons}/g;
 	$line =~ s/--hide_show_diagrams--/$attributes_heatmap{Hide_show_coverage_pics}/g;
+	$line =~ s/--venn_diagrams--/$attributes_heatmap{Diagrams}/;
 
 	print TEMP $line."\n";
     }
 
     ## Rename the temporary file
     &RSAT::message::TimeWarn("Exporting Dynamic Heatmap") if ($main::verbose >= 2);
-    unlink($main::outfile{heatmap_coverage_attributes});
+    #unlink($main::outfile{heatmap_coverage_attributes});
     $cmd = "mv ".$main::outfile{temp_html}." ".$main::outfile{dynamic_coverage_heatmap_html};
     &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 }
@@ -5095,6 +5104,7 @@ sub Create_Attributes_for_Heatmap_D3 {
     $cluster_collection_cmd .= "; coverage.table.file = '".$main::outfile{coverage_table}."'";
     $cluster_collection_cmd .= "; coverage.table.d3 = '".$main::outfile{heatmap_coverage_d3}."'";
     $cluster_collection_cmd .= "; coverage.heatmap.attributes.file = '".$main::outfile{heatmap_coverage_attributes}."'";
+    $cluster_collection_cmd .= "; coverage.json.folder = '".$main::outfile{coverage_json_folder}."'";
     $cluster_collection_cmd .= "; \"";
 #    $cluster_collection_cmd = "(".$cluster_collection_cmd.") 2> ".$main::outfile{Rlog};
 
