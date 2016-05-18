@@ -480,8 +480,12 @@ colnames(feature.log2.ratio) <- as.character(data.frame(windows)$start)
 
 ###############################################
 ## Calculate the profile shape of each motif
-shape <- apply(feature.log2.ratio, 1, get.profile.shape)
-feature.attributes$Shape <- shape
+# shape <- apply(feature.log2.ratio, 1, get.profile.shape)
+# feature.attributes$Shape <- shape
+
+shape <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
+feature.attributes$Shape <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
+
 # for(i in 1:dim(feature.log2.ratio)[1]){
 #   
 #   
@@ -521,6 +525,9 @@ avoided.motifs <- gsub("\\.", "", avoided.motifs)
 avoided.motifs <- gsub(":", "", avoided.motifs)
 avoided.motifs <- gsub("\\s+", "", avoided.motifs, perl = TRUE)
 
+avoided.motifs <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
+enriched.motifs <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
+flat.motifs <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
 
 # ## Test get.profile.shape 
 # profile.ee <- c(1, -1, 0, 1, 1, -1, -1, -1, 0,  1, -1)
@@ -533,15 +540,22 @@ avoided.motifs <- gsub("\\s+", "", avoided.motifs, perl = TRUE)
 ####################################################################################
 ## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
 ####################################################################################
-verbose(paste("Drawing Heatmap profiles", 1))
+verbose(paste("Drawing Heatmap profiles"),1)
 
 ## Color palette
 rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(1000))
 # rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
 
-## Heatmap
+
+log2.tab <- as.matrix(feature.log2.ratio)
+log2.tab[is.infinite(log2.tab)] <- 0
+
+# load("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/df.RData")
+
+## Print the heatmap
 out.format <- c("pdf", "jpg")
-for (format in out.format){
+heatmap.profiles <- NULL
+for(format in out.format){
   
   profiles.heatmap.file <- paste(basename, "_profiles_heatmap.", format, sep = "") 
   
@@ -551,38 +565,47 @@ for (format in out.format){
     jpeg(profiles.heatmap.file)
   }
   
-  #   feature.log2.ratio.dist <- as.matrix(dist(feature.log2.ratio, method = "canberra"))
-  heatmap.2(as.matrix(feature.log2.ratio),
-            
-            ## Dendrogram control
-            dendrogram = c(heatmap.dendo),
-            Rowv = TRUE,
-            Colv = FALSE,
-            
-            main = "Profile Heatmap",
-            xlab = "Position (bp)",
-            ylab = "Motifs",
-            
-            #             hclustfun = function(d){hclust(d, method="ward")},
-            
-            ## Color
-            col = rgb.palette,
-            
-            ## Trace
-            trace = "none",
-            
-            ## Key control
-            key = TRUE,
-            keysize = 1,
-            density.info = "none",
-            key.xlab = "Density",
-            key.ylab = "",
-            key.title = "",
-            offsetCol = 0.25,
-            cexRow = 0.25,
+  ## Heatmap
+  heatmap.profiles <<- heatmap.2(log2.tab,
+                   
+                   ## Dendrogram control
+                   dendrogram = "row",
+                   Rowv = TRUE,
+                   Colv = FALSE,
+                   
+                   main = "Profile Heatmap",
+                   xlab = "Position (bp)",
+                   ylab = "Motifs",
+                   
+                   #             hclustfun = function(d){hclust(d, method="ward")},
+                   
+                   ## Color
+                   col = rgb.palette,
+                   
+                   ## Trace
+                   trace = "none",
+                   
+                   ## Key control
+                   key = TRUE,
+                   keysize = 1,
+                   density.info = "none",
+                   key.xlab = "Density",
+                   key.ylab = "",
+                   key.title = "",
+                   offsetCol = 0.25,
+                   cexRow = 0.25
   )
   dev.off()
 }
+
+# 
+print("Yes")
+heatmap.row.order <- rev(heatmap.profiles[[1]])
+heatmap.row.order.names <- rownames(feature.log2.ratio)[heatmap.row.order]
+heatmap.rows <- data.frame(row = heatmap.row.order, names = heatmap.row.order.names)
+heatmap.rows.file <- paste(basename, "_heatmap_row_order.tab", sep = "")
+write.table(heatmap.rows, file = heatmap.rows.file, quote = FALSE, sep = "\t", row.names = FALSE)
+print("Yes2")
 
 ## Calculate q-values
 ## This step is executed once all the p-values were calculated
@@ -804,17 +827,20 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
 if(length(flat.motifs) > 0){
   ## Get the ID (required for the HTML document) of the select motif names
   flat.selection <- as.vector(sapply(flat.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
-  flat.motifs <- as.vector(unlist(hash.motif.IDs[flat.selection]))
+  # flat.motifs <- as.vector(unlist(hash.motif.IDs[flat.selection]))
+  flat.motifs <- rep("No_Available", times = length(flat.motifs))
 }
 
 if(length(enriched.motifs) > 0){
   enriched.selection <- as.vector(sapply(enriched.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
-  enriched.motifs <- as.vector(unlist(hash.motif.IDs[enriched.selection]))
+  # enriched.motifs <- as.vector(unlist(hash.motif.IDs[enriched.selection]))
+  enriched.motifs <- rep("No_Available", times = length(enriched.motifs))
 }
 
 if(length(avoided.motifs) > 0){
   avoided.selection <- as.vector(sapply(avoided.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
-  avoided.motifs <- as.vector(unlist(hash.motif.IDs[avoided.selection]))
+  # avoided.motifs <- as.vector(unlist(hash.motif.IDs[avoided.selection]))
+  avoided.motifs <- rep("No_Available", times = length(avoided.motifs))
 }
   
 ## Set the line width according the significance -log10(E-value)
@@ -857,8 +883,7 @@ all.motifs <- all.motifs
 
 ############################
 ## Fill the HTML template
-## Substitute the words marked in the tamplate by the data
-# html.template.file <- "Template/index.html"
+## Substitute the words marked in the template by the data
 html.report <- readLines(html.template.file)
 profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12, 2:6,9:10,7,13,14)], img = c(11,12))
 
