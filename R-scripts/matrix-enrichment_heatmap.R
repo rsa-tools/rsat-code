@@ -52,8 +52,6 @@ if (!exists("prefix")) {
 } 
 
 
-
-
 # cat /home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/matrix-enrichment_heatmap.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " prefix = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto'; maxNWD.table.file = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt'; html.template.file = 'motif_enrichment_dynamic_heatmap_d3.html'; maxNWD.tsv = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_matrix_heatmap.tsv'; maxNWD.heatmap.html = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_motif_enrichment_maxNWD_heatmap.html'; d3.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3.v3.min.js'; d3.array.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3-array.v0.6.min.js'" 
 
 # prefix <- "test_motif_enrichment"
@@ -61,10 +59,15 @@ if (!exists("prefix")) {
 # maxNWD.table.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt"
 # html.template.file <- "motif_enrichment_dynamic_heatmap_d3.html"
 
+base.name <- basename(prefix)
+
 #######################################
 ## Read the input file: maxNWD table
 max.NWD.table <- read.table(maxNWD.table.file, sep = "\t", header = TRUE)
 max.NWD.table <- round(max.NWD.table, digits = 3)
+max.NWD.table[is.na(max.NWD.table)] <- 0
+## 
+
 #max.NWD.table <- as.matrix(max.NWD.table)
 
 #######################################################################
@@ -87,6 +90,23 @@ html.report <- readLines(html.template.file)
 ## Get the Sequences (column) and Motifs (row) names
 sequences.names <- colnames(max.NWD.table)
 motifs.names <- rownames(max.NWD.table)
+
+## Add the logo path to the template
+logo.path <- sapply(motifs.names, function(m){
+  paste("'", m, "/", base.name, "_", m, "_logo_m1.png'", sep = "")
+})
+logo.path <- as.vector(logo.path)
+logo.path <- paste(logo.path, collapse = ",")
+html.report <- gsub("--logo_path--", logo.path, html.report)
+
+## Add the link to the distrib comparison curves pictures
+curves.path <- sapply(motifs.names, function(m){
+  paste("'", m, "/", base.name, "_", m, "_score_distrib_compa_logy.png'", sep = "")
+})
+curves.path <- as.vector(curves.path)
+curves.path <- paste(curves.path, collapse = ",")
+html.report <- gsub("--curves_path--", curves.path, html.report)
+
 
 ## Insert the number of rows and columns
 col.nb <- length(sequences.names)
@@ -148,9 +168,12 @@ html.report <- gsub("--d3--", D3, html.report)
 html.body.size <- 250 + left + (col.nb*cell.size)
 html.report <- gsub("--body--", html.body.size, html.report)
 
-## Calculate the legend names for the color schale
+## Calculate the legend names for the color scale
 # stp <- (max(max.NWD.table) - min(max.NWD.table))/9
-legend.domain.values <- seq(from = min(max.NWD.table), to = max(max.NWD.table), by = 0.05)
+# legend.domain.values <- seq(from = min(max.NWD.table), to = max(max.NWD.table), by = 0.05)
+limit <- max(abs(c(min(max.NWD.table), max(max.NWD.table))))
+limit <- round(limit, digits = 1)
+legend.domain.values <- seq(-limit, limit, by = 0.05)
 legend.length <- length(legend.domain.values)
 legend <- legend.domain.values
 legend <- round(legend, digits = 3)
@@ -159,18 +182,15 @@ html.report <- gsub("--data_legend--", legend, html.report)
 
 ## Create Gradient Hexadecimal:
 ## Given X hexa colors creates a color
-## palette.
-# palette.hexa <-colorRampPalette(c("#FF0040", "#BF00FF"))
-# palette.hexa <- colorRampPalette(brewer.pal(5, "RdYlBu"), space="Lab")
-palette.hexa <- colorRampPalette(brewer.pal(5, "YlOrRd"), space="Lab")
-# palette.hexa <- colorRampPalette(brewer.pal(9, "RdBu"), space="Lab")
-# palette.hexa <- colorRampPalette(brewer.pal(9, "BuPu"), space="Lab")
+# palette.hexa <- colorRampPalette(brewer.pal(5, "YlOrRd"), space="Lab")
+palette.hexa <- colorRampPalette(brewer.pal(9, "RdYlBu"), space="Lab")
+
 palette.hexa <- palette.hexa(legend.length + 1)
 
-palette <- paste("'" , palette.hexa, "'", sep = "")
+palette <- paste("'" , rev(palette.hexa), "'", sep = "")
 palette <- paste(palette, collapse = ", ")
 
-palette.rev <- paste("'" , rev(palette.hexa), "'", sep = "")
+palette.rev <- paste("'" , palette.hexa, "'", sep = "")
 palette.rev <- paste(palette.rev, collapse = ", ")
 
 html.report <- gsub("--gradient--", palette, html.report)
