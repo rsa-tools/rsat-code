@@ -4,6 +4,85 @@
 </head>
 <meta charset="utf-8">
 <style>
+
+.venntooltip {
+  font-size: 10px;
+  position: absolute;
+  text-align: center;
+  width: 128px;
+  height: 16px;
+  background: #333;
+  color: #ddd;
+  padding: 2px;
+  border: 0px;
+  border-radius: 8px;
+  opacity: 0;
+}
+
+  .coverage_button {
+	background-color: #D6EEFA;
+	float: left;
+	margin: 5px 3px 3px 3px;
+	width: 120px;
+	height: 25px;
+	position: relative;
+	display: inline-block;
+	text-align: center;
+	color: #CC6600;
+	font-size: 10px;
+	padding: 4px;
+	cursor: pointer;
+	border-radius:5px;
+	border: 1px solid #819FF7;
+  }
+  
+  .selected_coverage_button {
+    background-color: #F6E6CA;
+    border: 1px solid orange;
+  }
+
+  .tooltip_link {
+  border-radius:5px;
+  cursor: pointer;
+  color: #2980B9;
+  }
+
+ .tooltip_tab{
+   width: auto;
+    height: 30px;
+    font-size: 10px;
+    margin-top: 3px;
+    text-align: center;
+    text-decoration: none;
+    background-color: #B1D4F9;
+    border-radius:5px;
+  }
+  
+   .tooltip_cell{
+   width:auto;
+       height: 30px;
+    font-size: 10px;
+    margin-top: 3px;
+    text-align: center;
+    text-decoration: none;
+    background-color: #E6E6E6;
+    border-radius:5px;
+  }
+
+  #diagram_header {
+     width: 600px;
+	   height: 100px;
+	   position: relative;
+	   display: block;
+	   text-align: left;
+	   clear : both;
+	   color: black;
+	   font-size: 12px;
+	   border-radius:5px;
+     background: #B1D4F9;
+	   float: left;
+  }  
+
         #header{
 	   margin: 7px 5px 5px 5px;
 	   width: 1250px;
@@ -69,9 +148,11 @@
       text.text-hover {
         fill: #00C;
       }
+      
       #tooltip {
+        z-index: 2;
         position: absolute;
-        width: 200px;
+        width: auto;
         height: auto;
         padding: 10px;
         background-color: white;
@@ -81,7 +162,7 @@
         -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
         -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
         box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-        pointer-events: none;
+        pointer-events : auto;
       }
 
       #tooltip.hidden {
@@ -124,7 +205,7 @@
 
 
 <div id="header">
-   <div><h3 style="text-align:center">Motif collection coverage and exclusive motifs</h3></div>
+   <div><h3 style="text-align:center">Collection Complementarity</h3></div>
    <ol>
       <p> Here is displayed the information corresponding to the complementarity between the input collection of motifs.</p>
       <p> Note: remind that these values are dependent of the threshold  used to separate the clusters.</p>
@@ -152,20 +233,45 @@
 </div>
 
 <script type="text/javascript" src="--d3--"></script>
+<script type="text/javascript" src="--d3_venn--"></script>
 <script type="text/javascript" src="--jq--"></script>
 <script type="text/javascript" src="--datatable--"></script>
 <link rel="stylesheet" type="text/css" src="--datatablecss--">
 
+<div  style="display:block; clear:both;position:relative;float:left;">
 Order_heatmap_cells:
   <select id="order">
   <option value="contingency">Contingency_table</option>
+    <option value="average">Average linkage</option>
+    <option value="complete">Complete linkage</option>
+    <option value="single">Single linkage</option>
+    <option value="ward">Ward linkage</option>
   </select>
-<div id="chart" style='overflow:auto; width:1500px; height:auto;'></div>
+</div>
+
+<div id="chart" style='overflow:auto; width:--heatmap_width--px; height:auto;display:inline-block; clear:both;position:relative;float:left;'></div>
+
+--insert_diagrams--
+
+<div id="diagram_header">
+    <p>
+      <p style="text-align:center;"><strong>Show Venn Diagrams</strong></p>
+      <ul>
+        <li>Click on each button to visualize the intersection between each pair of motif databases.</li>
+        <li>The blue circle represents the reference collection.</li>
+        <li>The orange circle represents the compared collection.</li>
+      </ul>
+    </p>
+</div>
+
+<div style="display:block; clear:both;position:relative;float:left;">
+  --insert_diagram_buttons--
+</div>
 
 <script type="text/javascript">
 
 
-var margin = { top: --left--, right: 700, bottom: --bottom--, left: --left-- },
+var margin = { top: --left--, right: 150, bottom: --bottom--, left: --left-- },
   cellSize= 25;
   col_number= --c_numb--;
   row_number= --r_numb--;
@@ -179,9 +285,18 @@ colors = ['#FFFFFF', '#FFFFCC','#FFF7BA','#FFF0A8','#FFE897','#FEE086','#FED876'
 
   // Order of the PSSMs
   hccol = [--collection_nb--],
+  hccol_average = [--comp_average_c_number--],
+  hccol_complete = [--comp_complete_c_number--],
+  hccol_single = [--comp_single_c_number--],
+  hccol_ward = [--comp_ward_c_number--],
+  
 
   // Order of the Sequences
   hcrow = [--collection_nb-- ], // change to gene name or probe id
+  hcrow_average = [--comp_average_r_number--],
+  hcrow_complete = [--comp_complete_r_number--],
+  hcrow_single = [--comp_single_r_number--],
+  hcrow_ward = [--comp_ward_r_number--],
 
   // Labels
   colLabel = [--collection_labels--],
@@ -191,8 +306,8 @@ colors = ['#FFFFFF', '#FFFFCC','#FFF7BA','#FFF0A8','#FFE897','#FEE086','#FED876'
 d3.tsv("--file--",
 function(d) {
   return {
-    row:   +d.Row, 
-    col:   +d.Col, 
+    row:   +d.Col, 
+    col:   +d.Row, 
     value: +d.Value
   };
 },
@@ -271,39 +386,75 @@ function(error, data) {
                  .style("left", (d3.event.pageX+10) + "px")
                  .style("top", (d3.event.pageY-10) + "px")
                  .select("#value")
-                 .text(rowLabel[d.row-1] + " vs " + colLabel[d.col-1] + " Coverage: " + d.value)
-               ;
+                 
+                 
+                 
+                 .html("<table><thead><tr class='tooltip_tab'><th colspan='1'>Collection A</th><th colspan='1'>Collection B</th><th colspan='1'>Mutual Coverage</th></tr></thead><tbody><tr class='tooltip_cell'><td>" + rowLabel[d.row-1] + "</td><td>" + colLabel[d.col-1] + "</td><td>" + d.value + "</td></tr></tbody></table>");
+        //       ;
+               
                //Show the tooltip
-               d3.select("#tooltip").classed("hidden", false);
+               d3.select("#tooltip").classed("hidden", false).attr("pointer-events", "auto");
+            
         })
         .on("mouseout", function(){
+
+          
                d3.select(this).classed("cell-hover",false);
                d3.selectAll(".rowLabel").classed("text-highlight",false);
                d3.selectAll(".colLabel").classed("text-highlight",false);
-               d3.select("#tooltip").classed("hidden", true);
+               
+               setTimeout(function() {
+                 d3.select("#tooltip").classed("hidden", true)
+               }, 2000);
         })
         ;
-
-  var legend = svg.selectAll(".legend")
+        
+        
+      var legend_x = width + (cellSize*3.5);
+        
+          var legend = svg.selectAll(".legend")
       .data([0,1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100])
       .enter().append("g")
       .attr("class", "legend");
 
   legend.append("rect")
-    .attr("x", function(d, i) { return legendElementWidth * i; })
-    .attr("y", height+(cellSize*2))
-    .attr("width", legendElementWidth)
-    .attr("height", cellSize)
+    .attr("x", width + (cellSize*1) + 30)
+    .attr("y", function(d, i) { return legendElementWidth*0.25 * i - cellSize; })
+    .attr("width", cellSize)
+    .attr("height", legendElementWidth*0.25)
     .style("fill", function(d, i) { return colors[i]; });
 
   legend.append("text")
-   .attr("class", "mono")
-    .text(function(d) { return d; })
-    .attr("font-size", 8)
-    .attr("width", legendElementWidth)
-    .attr("x", function(d, i) { return legendElementWidth * i; })
-    .attr("y", height + (cellSize*4))
+    .attr("class", "mono")
+    .text("0")
+    .attr("width", legendElementWidth*0.25)
+    .attr("x", legend_x)
+    .attr("y", function(d, i) { return legendElementWidth*0.25 * 1 - legendElementWidth*0.75; })
+    
+  legend.append("text")
+    .attr("class", "mono")
+    .text("50")
+    .attr("width", legendElementWidth*0.25)
+    .attr("x", legend_x)
+    .attr("y", function(d, i) { return legendElementWidth*0.25 * 11 -legendElementWidth*0.75; })
+    
+  legend.append("text")
+    .attr("class", "mono")
+    .text("100")
+    .attr("width", legendElementWidth*0.25)
+    .attr("x", legend_x)
+    .attr("y", function(d, i) { return legendElementWidth*0.25 * 22 -legendElementWidth*0.75; })
 
+  legend.append("text")
+    .attr({
+	'font-size': 17,
+	'x': width + (cellSize*1) + 30,
+	'y': -45,
+	'class': 'mono'
+    })
+    .text("Coverage");
+            
+/*
   svg.append("text")
     .attr({
 	'font-size': 12,
@@ -311,7 +462,7 @@ function(error, data) {
 	'y': height + margin.bottom - --legend_header--
     })
     .text("Mutual Coverage (%) after clustering");
-
+*/
 
 // Change ordering of cells
 
@@ -364,7 +515,73 @@ function(error, data) {
       .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
       ;
 
-   } 
+   } else if(value=="single"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_single.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_single.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_single.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_single.indexOf(i+1) * cellSize; })
+      ;
+
+   // Complete Linkage
+   } else if(value=="complete"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_complete.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_complete.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_complete.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_complete.indexOf(i+1) * cellSize; })
+      ;
+
+   // Ward Linkage
+   } else if(value=="ward"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_ward.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_ward.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_ward.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_ward.indexOf(i+1) * cellSize; })
+      ;
+
+   // Average Linkage
+   } else if(value=="average"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_average.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_average.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_average.indexOf(i+1) * cellSize; })
+      ;
+   }
   }
 
   //
@@ -490,7 +707,7 @@ function(error, data) {
     </table>
     <div>
       <ul style="font-size:10px;list-style-type:square">
-	<li style="font-size:10px;list-style-type:square">This <a target="_blank" href="--exclusive_motif_table--">table</a> shows the number of exclusive motifs corresponding to a particular collection after the clustering.</li>
+	<li style="font-size:10px;list-style-type:square">This <a target="_blank" href="--exclusive_motif_table--">table</a> shows the number of exclusive motifs corresponding to a particular collection.</li>
 	<li style="font-size:10px:list-style-type:square"><strong>Collection percent</strong> column indicates the percentage of this motif collection covered by its exclusive motifs.</li>
 	<li style="font-size:10px;list-style-type:square"><strong>Total percent</strong> column indicates the percentage of <strong>ALL</strong> the input motifs collection covered by the exclusive motifs of this collection.</li>
       </ul>
@@ -519,4 +736,11 @@ $(document).ready( function () {
 	]		
     });
 });
+
+--hide_show_diagrams--
+
 </script>
+
+<script src="--coverage_json_file--"></script>
+
+--venn_diagrams--

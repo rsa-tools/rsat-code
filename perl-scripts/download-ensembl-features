@@ -481,6 +481,13 @@ package main;
 					    'alternate',$row{'source'}
 				       ),"\n");
 	}
+
+
+	## Index gene names in order to pass them to gene-derived
+	## features (mrna, CDS).
+	@{$gene_names{$row{'gene_id'}}} = ($row{'gene_id'}, $row{'synonym1'}, $row{'synonym2'});
+	&RSAT::message::Debug("gene names", $row{'gene_id'}, join(";", @{$gene_names{$row{'gene_id'}}})) if ($main::verbose >= 0);
+
       }
       $gene_names_list = "";
     }
@@ -677,11 +684,16 @@ package main;
 	  print $outstream_transcript_names 'alternate',"\t",$row{'source'},"\n";
 	  $printed_name{ $row{'synonym1'} } = 1;
 	}
-
+	
 	unless ( $printed_name{ $row{'synonym2'} }) {
-	  print $outstream_transcript_names $row{'transcript_id'},"\t",$row{'synonym2'},"\t";
-	  print $outstream_transcript_names 'alternate',"\t",$row{'source'},"\n";
+	  print $outstream_transcript_names
+	      join("\t", 
+		   $row{'transcript_id'},
+		   $row{'synonym2'},
+		   'alternate',
+		   $row{'source'}),"\n";
 	}
+	 
       }
       $transcript_names_list = ();
     }
@@ -1185,7 +1197,21 @@ package main;
 					   $row{'source'}),"\n";
 	}
       }
-      $cds_names_list = ();
+      $cds_names_list = "";
+
+      ## Add gene ID and gene names as synonyms
+      if (@{$gene_names{$row{'gene_id'}}}) {
+	foreach my $gene_name (@{$gene_names{$row{'gene_id'}}}) {
+	  next if ($gene_name eq $row{'gene_id'});
+	  print $outstream_cds_names
+	      join("\t", 
+		   $row{'cds_id'},
+		   $gene_name,
+		   'alternate',
+		   'gene_name'),"\n";
+	}
+      }
+
     }
 
     ## Get protein sequences (file [Organism_name]_aa.fasta)
