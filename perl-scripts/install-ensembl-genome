@@ -6,6 +6,9 @@
 #
 ############################################################
 
+## TO DO: pass gene names from genes to CDSs
+
+
 ## use strict;
 
 =pod
