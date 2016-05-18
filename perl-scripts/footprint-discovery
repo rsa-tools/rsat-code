@@ -764,7 +764,6 @@ sub RunFootprintDisco {
     }
 
 #    print ("\n\nBatch command:\n\n", $batch_cmd, "\n\n"); 
-#    die "\n\nhELLO\n";
     &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
   }
 
@@ -1444,8 +1443,14 @@ sub CoregulationNetwork {
   $dyad_hubs_cmd .= " > " .$outfile{dyad_hubs};
 
   ## Filter out hubs
-  my $hub_nb = `wc -l $outfile{dyad_hubs}| awk '{print $1}'`;
-  chomp($hub_nb);
+  my $hub_nb = 0;
+  if (-e $outfile{dyad_hubs}) {
+    $hub_nb = `wc -l $outfile{dyad_hubs}| awk '{print $1}'`;
+    chomp($hub_nb);
+    unless (&IsNatural($hub_nb)) {
+      $hub_nb = 0;
+    }
+  } 
   if ($hub_nb >= 1) {
     $dyad_hubs_cmd .= "; grep -v -f ".$outfile{dyad_hubs};
     $dyad_hubs_cmd .= " ".$outfile{dyad_sig_classes};

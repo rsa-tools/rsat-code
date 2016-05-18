@@ -11,6 +11,8 @@
 
 ## TO DO
 ## - treat the case of ex-aequos (same E-value for distinct subjects)
+## - the object "CDS" should not be maintained anymore, its meaning is ambuiguous when there is splicing
+## - use gene names and IDs instead of CDS names and IDs 
 
 =pod
 

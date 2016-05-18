@@ -154,6 +154,12 @@ package main;
   ## Flag to export the Newick tree
   local $export_newick = 0;
 
+  ## Flag to add links to motif tree
+  local $ID_link_flag = 0;
+  local %ID_nb_hash = ();
+  local %OLD_ID_link_hash = ();
+  local %ID_link_hash = ();
+
   ## operator
   $operator = "mean";
   local %supported_operator = ("mean"=>1, "sum"=>1);
@@ -180,6 +186,7 @@ package main;
   ## JQuery libraries, required to display logo trees and tables).
   local $js_base;
   local $d3_base;
+  local $d3_venn_base;
   local $jquery_base;
   local $datatable_base;
   local $datatable_css_base;
@@ -203,7 +210,7 @@ package main;
   local $supported_label_motif_fields = join ",", @supported_label_motif_fields;
   local %label_motif_fields_to_return = ();
   ## Default name::collection
-  local @label_motif_fields_to_return = qw (name collection);
+  local @label_motif_fields_to_return = qw (id name);
 
 
   ## Supported label fields
@@ -222,9 +229,8 @@ package main;
   foreach my $method (@supported_hclust_methods) {
     $supported_hclust_methods{$method} = 1;
   }
-  
   local $supported_hclust_methods = join ",", @supported_hclust_methods;
-  local $hclust_method = "complete";
+  local $hclust_method = "average";
 
   ## Threshold parameters
   local %lth = ();		# lower threshold values
@@ -545,6 +551,7 @@ package main;
 	  $to_delete_folder{'clusters_information'} = $main::outfile{prefix}."_clusters_information";
 	  $to_delete_folder{'html'} = $main::outfile{prefix}."_html";
 	  $to_delete_folder{'tables'} = $main::outfile{prefix}."_tables";
+	  $to_delete_folder{'json_coverage'} = $main::outfile{prefix}."_coverage_json";
 	  $to_delete_folder{'aligned_logos'} = $main::outfile{prefix}."_aligned_logos";
 	  $to_delete_folder{'data_folder'} = $main::outfile{prefix}."_data";
 	  $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
@@ -753,8 +760,6 @@ cor	0	1	0.1
 	$nb_cluster_taks_flag = 1;
 
 
-################################################################
-
 =pod
 
 =item B<-matrix_format matrix_format>
@@ -776,6 +781,25 @@ For a description of these formats, see the help of I<convert-matrix>.
       unless ($supported_matrix_format{$matrix_format}) {
 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
       }
+
+
+=pod
+
+=item B<-ID_link_table matrix_ID_link_table>
+
+This option allows to add a link to a any website specified by the user.
+It is useful clustering a full database (e.g. Jaspar), thus each motif in the logo tree
+will point to its recpective link in the Jaspar website.
+
+Format: a two-column file
+Column 1: Motif ID (the same as the input motif file)
+Column 2: Link to any website
+
+=cut
+    } elsif ($arg eq "-ID_link_table") {
+      $main::infile{ID_link_table} = shift(@arguments);
+      $ID_link_flag = 1;
+
 
 =pod
 
@@ -1367,7 +1391,7 @@ sub set_output_file_names {
 
   if ($root_matrices_flag == 0) {
       ## Create output directories
-      @output_folders = qw( tables html figures pairwise_compa_logos aligned_logos);
+      @output_folders = qw( coverage_json tables html figures pairwise_compa_logos aligned_logos);
       foreach my $f (@output_folders) {
 	  my $new_f = $main::outfile{prefix}."_".$f;
 	  &RSAT::util::CheckOutDir($new_f);
@@ -1428,6 +1452,7 @@ sub set_output_file_names {
   ## This is the format required for D3 heatmap!
   $main::outfile{heatmap_coverage_d3} = $main::outfile{prefix}."_tables/convergency_heatmap_tab.tsv";
     $main::outfile{heatmap_coverage_attributes} = $main::outfile{prefix}."_tables/convergency_heatmap_attributes.tab";
+$main::outfile{coverage_json_folder} = $main::outfile{prefix}."_coverage_json";
 
   $main::outfile{heatmap_collections_d3} = $main::outfile{prefix}."_tables/collection_heatmap_tab.tsv";
     $main::outfile{heatmap_collections_attributes} = $main::outfile{prefix}."_tables/collection_heatmap_order.tab";
@@ -1487,6 +1512,7 @@ sub set_output_file_names {
 	  $js_base = $ENV{RSAT}."/perl-scripts/lib/js";
       }
       $d3_base= &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/d3.v3.min.js");
+      $d3_venn_base= &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/venn.js-master/venn.js");
       $jquery_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.js");
       $datatable_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
       $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
@@ -1661,6 +1687,27 @@ sub pre_process_motif_files{
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
+      ##############################################
+      ## Store the motif link in a hash
+      if($ID_link_flag == 1){
+
+	  my $m_counter = 0;
+	  my ($motif_file) = &OpenInputFile($motif_set_attributes{$collection_name}{matrix_file_processed_1});
+	  while(<$motif_file>){
+
+	      next if (/^#/); ## Skip header line
+	      next if (/^;/); ## Skip comment lines
+	      next unless (/\S/); ## Skip empty lines
+	      next unless (/^AC\s+/);
+	      chomp();
+	      my($null, $AC_unique) = split(/\s+/, $_);
+	      $m_counter++;
+	      $ID_nb_hash{$AC_unique} = $m_counter;
+	  }
+	  close($motif_file);
+      }
+
+      ###############################
       ## Append prefix if required
       &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
       $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
@@ -1672,11 +1719,12 @@ sub pre_process_motif_files{
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
       unlink($motif_set_attributes{$collection_name}{matrix_file_processed_1});
 
-      ################################################
+      ########################################
       ## Save the unique ID in a hash table
       ## Key = ID unique
       ## Value = title (motif collection)
       my ($processed_matrix_file) = &OpenInputFile($motif_set_attributes{$collection_name}{matrix_file_processed});
+      $m_counter = 0;
       while(<$processed_matrix_file>){
 	  next if (/^#/); ## Skip header line
 	  next if (/^;/); ## Skip comment lines
@@ -1686,8 +1734,31 @@ sub pre_process_motif_files{
 	  my($null, $AC_unique) = split(/\s+/, $_);
 	  $motifs_ID_unique{$AC_unique} = $collection_name;
 	  $alignment_info{$AC_unique}{file_name} = $main::outfile{prefix}."_data/motif_".$AC_unique.".tf";
+
+	  if($ID_link_flag == 1){
+	      $m_counter++;
+	      $new_ID_nb_hash{$m_counter} = $AC_unique;
+	  }
       }
       close($processed_matrix_file);
+
+      ##############################################
+      ## Store the motif link in a hash
+      if($ID_link_flag == 1){
+
+	  my ($link_table) = &OpenInputFile($main::infile{ID_link_table});
+	  while(<$link_table>){
+
+	      next if (/^#/); ## Skip header line
+	      next if (/^;/); ## Skip comment lines
+	      next unless (/\S/); ## Skip empty lines
+	      chomp();
+	      my($ID, $link) = split(/\s+/, $_);
+	      $OLD_ID_link_hash{$ID} = $link;
+	      $ID_link_hash{$new_ID_nb_hash{$ID_nb_hash{$ID}}} = $OLD_ID_link_hash{$ID}; 
+	  }
+	  close($link_table);
+      }
   }
 
   ################################################################
@@ -2256,7 +2327,10 @@ sub Add_attributes_to_JSON() {
 	      $Add_this .= ",\n \"title\" : \"".$motifs_ID_unique{$M1}."\"";
 	      $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
 
-
+	      if($ID_link_flag == 1){
+		  $Add_this .= ",\n \"link_ext\" : \"".$ID_link_hash{$M1}."\"";
+	      }
+	      
 	  }
 	  
 	  ################################################################
@@ -2333,12 +2407,12 @@ sub create_html_tree_file() {
 
     my $main_label = 	        
 	"\tnodeEnter.append(\"a\")
-	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
+	\t\t.attr(\"xlink:href\", function(d) { return d.link_ext; })
 	\t\t.append(\"text\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
-	\t\t.attr(\"font-size\", \"--font--px\")
+	\t\t.style(\"fill\", \"blue\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
 
     my $new_label = 
@@ -2346,7 +2420,7 @@ sub create_html_tree_file() {
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
-        \t\t.attr(\"font-size\", \"--18--px\")
+        \t\t.attr(\"font-size\", \"15px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
  
     my $display_title_lab .= '
@@ -2355,7 +2429,7 @@ sub create_html_tree_file() {
 	.attr("x", function(d) { return d.children ? 0 : 20; })
 	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
         .attr("fill", "black")
-	.attr("font-size", "--font--px")
+	.attr("font-size", "15px")
         .attr("font-weight", "bold")
 	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
         ';
@@ -2539,8 +2613,8 @@ $(document).ready(function() {
 	    }
 
 	    ## Add the collection lable to the logo tree
-	    # if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
-	    if ($display_collection_name_flag == 1) {
+	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
+	    #if ($display_collection_name_flag == 1) {
 		my $displacement = 3 + (scalar(@label_fields_to_return) * 25);
 		$display_title_lab =~ s/--dis--/$displacement/;
 		$add_this .= "\n".$display_title_lab."\n";	
@@ -2584,12 +2658,12 @@ sub create_html_small_tree_file() {
 
     my $main_label = 	        
 	"\tnodeEnter.append(\"a\")
-	\t\t.attr(\"xlink:href\", function(d) { return d.url; })
+	\t\t.attr(\"xlink:href\", function(d) { return d.link_ext; })
 	\t\t.append(\"text\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
-	\t\t.attr(\"font-size\", \"--font--px\")
+	\t\t.style(\"fill\", \"blue\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
 
     my $new_label = 
@@ -2790,8 +2864,8 @@ $(document).ready(function() {
 	    }
 
 	    ## Add the collection lable to the logo tree
-	    # if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
-	    if ($display_collection_name_flag == 1) {
+	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
+	    #if ($display_collection_name_flag == 1) {
 		my $displacement = 3 + (scalar(@label_fields_to_return) * 25);
 		$display_title_lab =~ s/--dis--/$displacement/;
 		$add_this .= "\n".$display_title_lab."\n";	
@@ -2907,7 +2981,7 @@ sub Merge_matrices() {
 		    my $line = $_;
 		    my @split_line = split("\t+", $line);
 		    my $motif_id = $split_line[0];
-		    #$motif_id =~ s/\./-/;
+		    #$motif_id =~ s/\./_/;
 		    push(@level_motifs, $motif_id);
 		}
 		close $int_align_dataframe;
@@ -3055,8 +3129,6 @@ sub Merge_matrices() {
 		}
 	    }
 
-
-################################################################################################################################################################################################################################################################ Debug_here_jaime
 	    my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{aligned_tf};
 
 	    my $new_singleton_motif_file_temp = $main::outfile{prefix}."_clusters_information/".$cluster."/".$cluster."_matrices_temp.tf";
@@ -3083,7 +3155,7 @@ sub Merge_matrices() {
 	    $root_motifs_features{$cluster}{logo} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo};
 	    $root_motifs_features{$cluster}{logo_RC} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo_rc};
 	    $root_motifs_features{$cluster}{size} = 1;
-	    $root_motifs_features{$cluster}{members} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{name};
+	    $root_motifs_features{$cluster}{members} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{id}."::".$alignment_info{"@{$cluster_nodes{$cluster}}"}{name};
 	    $root_motifs_features{$cluster}{file} = $new_singleton_motif_file;
 	    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{node_1}{$cluster}{collection_counts};
 	    ## Add the singleton cluster to the list of root motifs
@@ -4400,7 +4472,7 @@ sub ReportStyleCSS{
   float: left;
   margin-top: 2px;
   margin-bottom: 2px;
-  width: 200px;
+  width: 250px;
   height: 20px;
   position: relative;
   display: block;
@@ -4874,9 +4946,14 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--r_numb--/$attributes_heatmap{Row_number}/;
 	$line =~ s/--gradient--/$attributes_heatmap{Gradient}/;
 	$line =~ s/--cluster_number--/$attributes_heatmap{Cluster_number}/;
-	$line =~ s/--average_number--/$attributes_heatmap{Average_number}/;
-	$line =~ s/--complete_number--/$attributes_heatmap{Complete_number}/;
-	$line =~ s/--single_number--/$attributes_heatmap{Single_number}/;
+	$line =~ s/--average_r_number--/$attributes_heatmap{Average_r_number}/;
+	$line =~ s/--complete_r_number--/$attributes_heatmap{Complete_r_number}/;
+	$line =~ s/--single_r_number--/$attributes_heatmap{Single_r_number}/;
+	$line =~ s/--ward_r_number--/$attributes_heatmap{Ward_r_number}/;
+	$line =~ s/--average_c_number--/$attributes_heatmap{Average_c_number}/;
+	$line =~ s/--complete_c_number--/$attributes_heatmap{Complete_c_number}/;
+	$line =~ s/--single_c_number--/$attributes_heatmap{Single_c_number}/;
+	$line =~ s/--ward_c_number--/$attributes_heatmap{Ward_c_number}/;
 	$line =~ s/--row_order_default--/$attributes_heatmap{Row_order_default}/;
 	$line =~ s/--label_order--/$attributes_heatmap{Cluster_names}/;
 	$line =~ s/--collections--/$attributes_heatmap{Collections}/;
@@ -4953,6 +5030,7 @@ sub Dynamic_Heatmap_Complementarity {
 	my $line = $_;
 
 	$line =~ s/--d3--/$d3_base/;
+	$line =~ s/--d3_venn--/$d3_venn_base/;
 	$line =~ s/--jq--/$jquery_base/;
 	$line =~ s/--datatable--/$datatable_base/;
 	$line =~ s/--datatablecss--/$datatable_css_base/;
@@ -4967,13 +5045,33 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--tbody_exclusive_motifs--/$tbody_exclusive_motifs/;
 	$line =~ s/--contingency_table--/$coverage_file/;
 	$line =~ s/--exclusive_motif_table--/$exclusive_motif_file/;
+	$line =~ s/--comp_average_c_number--/$attributes_heatmap{Average_c_number_comp}/;
+	$line =~ s/--comp_complete_c_number--/$attributes_heatmap{Complete_c_number_comp}/;
+	$line =~ s/--comp_single_c_number--/$attributes_heatmap{Single_c_number_comp}/;
+	$line =~ s/--comp_ward_c_number--/$attributes_heatmap{Ward_c_number_comp}/;
+	$line =~ s/--comp_average_r_number--/$attributes_heatmap{Average_r_number_comp}/;
+	$line =~ s/--comp_complete_r_number--/$attributes_heatmap{Complete_r_number_comp}/;
+	$line =~ s/--comp_single_r_number--/$attributes_heatmap{Single_r_number_comp}/;
+	$line =~ s/--comp_ward_r_number--/$attributes_heatmap{Ward_r_number_comp}/;
+	$line =~ s/--coverage_json_file--/$attributes_heatmap{Coverage_JSON}/;
+	$line =~ s/--heatmap_width--/$attributes_heatmap{Heatmap_width}/;
+	
+	$attributes_heatmap{Coverage_pics} =~ s/--return--/\n\n/g;
+	$attributes_heatmap{Coverage_pics_buttons} =~ s/--return--/<br>\n\n/g;
+	$attributes_heatmap{Hide_show_coverage_pics} =~ s/--return--/\n\n/g;
+	$attributes_heatmap{Diagrams} =~ s/--return--/\n\n/g;
+
+	$line =~ s/--insert_diagrams--/$attributes_heatmap{Coverage_pics}/g;
+	$line =~ s/--insert_diagram_buttons--/$attributes_heatmap{Coverage_pics_buttons}/g;
+	$line =~ s/--hide_show_diagrams--/$attributes_heatmap{Hide_show_coverage_pics}/g;
+	$line =~ s/--venn_diagrams--/$attributes_heatmap{Diagrams}/;
 
 	print TEMP $line."\n";
     }
 
     ## Rename the temporary file
     &RSAT::message::TimeWarn("Exporting Dynamic Heatmap") if ($main::verbose >= 2);
-    unlink($main::outfile{heatmap_coverage_attributes});
+    #unlink($main::outfile{heatmap_coverage_attributes});
     $cmd = "mv ".$main::outfile{temp_html}." ".$main::outfile{dynamic_coverage_heatmap_html};
     &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 }
@@ -5006,6 +5104,7 @@ sub Create_Attributes_for_Heatmap_D3 {
     $cluster_collection_cmd .= "; coverage.table.file = '".$main::outfile{coverage_table}."'";
     $cluster_collection_cmd .= "; coverage.table.d3 = '".$main::outfile{heatmap_coverage_d3}."'";
     $cluster_collection_cmd .= "; coverage.heatmap.attributes.file = '".$main::outfile{heatmap_coverage_attributes}."'";
+    $cluster_collection_cmd .= "; coverage.json.folder = '".$main::outfile{coverage_json_folder}."'";
     $cluster_collection_cmd .= "; \"";
 #    $cluster_collection_cmd = "(".$cluster_collection_cmd.") 2> ".$main::outfile{Rlog};
 
@@ -5263,10 +5362,7 @@ sub InsertHeatMap {
 sub InsertHeatmapCollectionbyCluster {
 
     my $heat_map_motifs_by_cluster = ' 
-        <div id="Heatmap_motifs_button" class="button_click Section_button"><strong>Collections per cluster</strong></div>
-	<div id="Heatmap_motifs" class="tab" style="width:208px;padding:0px;display:none;">
-                <p style="font-size: 12px;"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'">Link</a></p>
-	</div>
+        <div id="Heatmap_motifs_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'"><strong>Cluster composition by collection</strong></a></div>
     ';
 
     print $syn $heat_map_motifs_by_cluster;
@@ -5278,10 +5374,7 @@ sub InsertHeatmapCollectionbyCluster {
 sub InsertHeatmapCollectionComplementarity {
 
     my $heatmap_complementarity = ' 
-        <div id="Heatmap_complementarity_button" class="button_click Section_button"><strong>Collection Complementarity</strong></div>
-	<div id="Heatmap_complementarity" class="tab" style="width:208px;padding:0px;margin-top:0px;display:none;">
-                <p style="font-size: 12px;"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'">Link</a></p>
-	</div>
+        <div id="Heatmap_complementarity_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><strong>Collection Complementarity</strong></a></div>
     ';
 
     print $syn $heatmap_complementarity;
@@ -5457,20 +5550,20 @@ $(document).ready(function() {
 });
 
 // Slide the Motif per clusters View
-$(document).ready(function() {
-    $(\'#Heatmap_motifs_button\').click(function() {
-	$(\'#Heatmap_motifs\').slideToggle(\'fast\');
-        $(this).toggleClass(\'selected_header_section\');
-    }); 
-});
+//$(document).ready(function() {
+//    $(\'#Heatmap_motifs_button\').click(function() {
+//	$(\'#Heatmap_motifs\').slideToggle(\'fast\');
+//        $(this).toggleClass(\'selected_header_section\');
+//    }); 
+//});
 
 // Slide the Collections Complementarity View
-$(document).ready(function() {
-    $(\'#Heatmap_complementarity_button\').click(function() {
-	$(\'#Heatmap_complementarity\').slideToggle(\'fast\');
-        $(this).toggleClass(\'selected_header_section\');
-    }); 
-});
+//$(document).ready(function() {
+//    $(\'#Heatmap_complementarity_button\').click(function() {
+//	$(\'#Heatmap_complementarity\').slideToggle(\'fast\');
+//        $(this).toggleClass(\'selected_header_section\');
+//    }); 
+//});
 
 // Slide the File list
 $(document).ready(function() {
@@ -5506,12 +5599,13 @@ sub InsertTreesAndBranchMotifs {
 
     my $label_single_tree = '
 	node.append("a")
-	        .attr("xlink:href", function(d) { return d.url; })
+	        .attr("xlink:href", function(d) { return d.link_ext; })
 	        .append("text")
 	        .text(function(d) { return d.children ? "" :  d.name; })
 		.attr("dx", function(d) { return d.children ? 0 : 20; })
 		.attr("dy", function(d) { return d.children ? 0 : 3; })
 		.attr("font-size", "10px")
+	        .style("fill", "blue")
 		.attr("text-anchor", function(d) { return d.children ? "end" : "start"; });
 
 		node.append("text")
@@ -6162,4 +6256,8 @@ sub Generate_matrix_description_table() {
     }
     close $desc;
 }
+
+
+
+
 __END__
