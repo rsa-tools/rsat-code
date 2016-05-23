@@ -1451,11 +1451,14 @@ sub set_output_file_names {
   ## Table with summary of clusters parsed.
   ## This is the format required for D3 heatmap!
   $main::outfile{heatmap_coverage_d3} = $main::outfile{prefix}."_tables/convergency_heatmap_tab.tsv";
-    $main::outfile{heatmap_coverage_attributes} = $main::outfile{prefix}."_tables/convergency_heatmap_attributes.tab";
-$main::outfile{coverage_json_folder} = $main::outfile{prefix}."_coverage_json";
+  $main::outfile{heatmap_coverage_attributes} = $main::outfile{prefix}."_tables/convergency_heatmap_attributes.tab";
+  $main::outfile{coverage_json_folder} = $main::outfile{prefix}."_coverage_json";
 
   $main::outfile{heatmap_collections_d3} = $main::outfile{prefix}."_tables/collection_heatmap_tab.tsv";
-    $main::outfile{heatmap_collections_attributes} = $main::outfile{prefix}."_tables/collection_heatmap_order.tab";
+  $main::outfile{heatmap_collections_attributes} = $main::outfile{prefix}."_tables/collection_heatmap_order.tab";
+
+  ## Table with the Clusters ID + Logo path of root motifs
+  $main::outfile{root_motifs_table} = $main::outfile{prefix}."_root_motifs_table.tab";
 
   ## Output files for the hierarchical clustering trees
   $main::outfile{distance_table} = $main::outfile{prefix}."_tables/distance_table.tab"; push @outfiles, "distance_table"; &AddTabToConvert("distance_table");
@@ -2918,6 +2921,11 @@ sub ConvertTabToHTML {
 ## Merge the matrices at each level of the hclust tree, and produce a
 ## branch-wise matrix + logo + consensus.
 sub Merge_matrices() {
+
+    if($single_input_flag == 0){
+	$root_logo_path = &OpenOutputFile($main::outfile{root_motifs_table});
+	print $root_logo_path ";Cluster_ID\tLogo\tLogo_RC\n";
+    }
     
     ## Read the file with the information of the intermediate alignments
     ## This info will be used to create branch motifs
@@ -3115,6 +3123,10 @@ sub Merge_matrices() {
 		    $root_motifs_features{$cluster}{members} = $ID_cluster;
 		    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{$folder}{$cluster}{collection_counts};
 		    $external_branch_motifs .= $mat_file." ";
+
+		    $logo_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo});
+		    $logo_rc_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC});
+		    print $root_logo_path $cluster."\t".$logo_path."\t".$logo_rc_path."\n";
 		}
 	    }
 	} else {
@@ -3160,12 +3172,20 @@ sub Merge_matrices() {
 	    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{node_1}{$cluster}{collection_counts};
 	    ## Add the singleton cluster to the list of root motifs
 	    $external_branch_motifs .= $new_singleton_motif_file." ";
+
+	    $logo_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo});
+	    $logo_rc_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC});
+	    print $root_logo_path $cluster."\t".$logo_path."\t".$logo_rc_path."\n";
 	}
     }
     
     ## Create the files with the roots motifs
     $cmd = "cat ".$external_branch_motifs." >".$main::outfile{root_motifs};
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
+    if($single_input_flag == 0){
+	close($root_logo_path);
+    }
 }
 
 
@@ -4962,6 +4982,9 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--legend_header--/$attributes_heatmap{Legend_Head}/;
 	$line =~ s/--body--/$attributes_heatmap{Body}/;
 
+	$line =~ s/--pics--/$attributes_heatmap{Logos}/;
+	$line =~ s/--pics_rc--/$attributes_heatmap{Logos_RC}/;
+
 	print TEMP $line."\n";
     }
 
@@ -5105,6 +5128,7 @@ sub Create_Attributes_for_Heatmap_D3 {
     $cluster_collection_cmd .= "; coverage.table.d3 = '".$main::outfile{heatmap_coverage_d3}."'";
     $cluster_collection_cmd .= "; coverage.heatmap.attributes.file = '".$main::outfile{heatmap_coverage_attributes}."'";
     $cluster_collection_cmd .= "; coverage.json.folder = '".$main::outfile{coverage_json_folder}."'";
+    $cluster_collection_cmd .= "; root.motifs.table = '".$main::outfile{root_motifs_table}."'";
     $cluster_collection_cmd .= "; \"";
 #    $cluster_collection_cmd = "(".$cluster_collection_cmd.") 2> ".$main::outfile{Rlog};
 
