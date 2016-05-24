@@ -894,7 +894,7 @@ sub ParseScanResults {
     &RSAT::message::TimeWarn("Parsing matrix-scan results", $main::outfile{matches_tab}) if ($main::verbose >= 2);
 
     $parse_cmd = " grep -v '^;' ".$main::outfile{matches_tab};
-    $parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 4) {print $1"\t"$3"\t"($6+$5)/2"\t"$9}'." ' ";
+    $parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 3) {print $1"\t"$3"\t"($6+$5)/2"\t"$9}'." ' ";
     $parse_cmd .= " > ".$main::outfile{matches_tab_PARSED};
 
     &doit($parse_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
