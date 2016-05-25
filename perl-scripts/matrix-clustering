@@ -2922,8 +2922,10 @@ sub ConvertTabToHTML {
 ## branch-wise matrix + logo + consensus.
 sub Merge_matrices() {
 
+    my $root_logo_path = "";
+
     if($single_input_flag == 0){
-	$root_logo_path = &OpenOutputFile($main::outfile{root_motifs_table});
+	($root_logo_path) = &OpenOutputFile($main::outfile{root_motifs_table});
 	print $root_logo_path ";Cluster_ID\tLogo\tLogo_RC\n";
     }
     
@@ -3124,8 +3126,12 @@ sub Merge_matrices() {
 		    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{$folder}{$cluster}{collection_counts};
 		    $external_branch_motifs .= $mat_file." ";
 
-		    $logo_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo});
-		    $logo_rc_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC});
+
+		    print $main::outfile{summary}."\n";
+		    print $root_motifs_features{$cluster}{logo}."\n";
+
+		    my $logo_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo});
+		    my $logo_rc_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC});
 		    print $root_logo_path $cluster."\t".$logo_path."\t".$logo_rc_path."\n";
 		}
 	    }
