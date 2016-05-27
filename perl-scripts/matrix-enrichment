@@ -160,7 +160,19 @@ package main;
   #my @bg_input_options= ("by_seq","all");
   my @bg_input_options= ("all");
 
+  ## Heatmap color palette and classes
+  local $heatmap_color_palette = "YlOrRd";
+  local $heatmap_color_classes = 9;
   
+  ## Supported heatmap colors (taken from http://colorbrewer2.org/)
+  local %supported_heatmap_color_palette = ();
+  local @supported_heatmap_color_palette = qw (YlOrRd YlOrBr YlGnBu YlGn PuRd PuBuGn PuBu OrRd GnBu BuPu BuGn Reds Purples Oranges Greys Greens Blues);
+  local %supported_heatmap_color_palette = ();
+  foreach my $palette (@supported_heatmap_color_palette) {
+      $supported_heatmap_color_palette{$palette} = 1;
+  }
+  local $supported_heatmap_color_palette = join ",", @supported_heatmap_color_palette;
+
   $main::infile{bg_file}="";
   my %bg_files= (); ## Store processed bg_files
 
@@ -1259,6 +1271,44 @@ Number of permutations for a specific set (default 0).
 
 =pod
 
+=item	B<-heatmap_color_palette Color_Palette>
+
+Select the color palette used in the heatmaps (sequential scales)
+The color palettes (and their names) are taken from ColorBrewer2 website (http://colorbrewer2.org/)
+
+Supported: YlOrRd,YlOrBr,YlGnBu,YlGn,PuRd,PuBuGn,PuBu,OrRd,GnBu,BuPu,BuGn,Reds,Purples,Oranges,Greys,Greens,Blues
+
+Default: YlOrRd
+=cut
+
+    } elsif ($arg eq "-heatmap_color_palette") {
+         $heatmap_color_palette = shift(@arguments);
+         unless(exists($supported_heatmap_color_palette{$heatmap_color_palette})) {
+	   &RSAT::error::FatalError($heatmap_color_palette, "Invalid hclust method. Supported:", $supported_heatmap_color_palette);
+         }
+
+=pod
+
+=item	B<-heatmap_color_classes X>
+
+This option specifies in how many color classes the color palette will be divided.
+
+For sequential color palettes: max 9
+For diverging color palettes: max 11
+
+If the user specified a color greater than the maximum allowed, the program takes this maximum value.
+
+For more information see ColorBrewer2 website (http://colorbrewer2.org/)
+
+=cut
+    } elsif ($arg eq "-heatmap_color_classes") {
+      $heatmap_color_classes = shift(@arguments);
+
+      &RSAT::error::FatalError($heatmap_color_classes, "Invalid value for option -top_matrices: must be a natural number") 
+         unless (&IsNatural($heatmap_color_classes));
+
+=pod
+
 =item B<-task tasks>
 
 Specify one or several tasks to be run. If this option is not
@@ -1434,6 +1484,8 @@ sub DynamicHeatmapEnrichment {
     $dynamic_heatmap_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
     $dynamic_heatmap_cmd .= "; d3.base = '".$d3_base."'";
     $dynamic_heatmap_cmd .= "; d3.array.base = '".$d3_array_base."'";
+    $dynamic_heatmap_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
+    $dynamic_heatmap_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
     $dynamic_heatmap_cmd .= " \"";
 #    $Cluster_motifs_cmd = "(".$dynamic_heatmap_cmd.")"; # Uncomment this line to check the R output in the terminal
 #    $dynamic_heatmap_cmd = "(".$dynamic_heatmap_cmd.") 2 > ".$main::outfile{Rlog}; 
