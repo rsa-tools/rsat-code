@@ -24,6 +24,7 @@ if (length(args >= 1)) {
   }
   verbose(args, 3)
 }
+heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 
 ################################################
@@ -396,7 +397,7 @@ if(max(clusters) < 10){
 ## palette.
 ## This is exported and will be read later
 ## in the D3 heatmap code.
-rgb.palette <- colorRampPalette(brewer.pal(9, "YlOrRd"), space="Lab")
+rgb.palette <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")
 white <- "#FFFFFF"
 white <- append(white,rgb.palette(ceiling((max(clusters)/step))))
 
@@ -478,6 +479,10 @@ row.nb <- dim(clusters)[2]
 heatmap.rows.nb <- paste(1:row.nb, collapse=",")
 heatmap.rows.name <- paste(paste("'", collection.names, "'", sep = ""), collapse = ",")
 
+## Color scale
+color.scale <- append("#FFFFFF",rgb.palette(21))
+color.scale <- paste("'", color.scale, "'",collapse=",")
+
 ## Collections
 collections <- paste(paste("'", collection.names, "'", sep = ""), collapse = ",")
 
@@ -542,7 +547,8 @@ order.info <- matrix(c("Gradient", gradient,
                        "Body", html.body.size,
                        "Collections", collections,
                        "Logos", pic.logos,
-                       "Logos_RC", pic.logos.rc
+                       "Logos_RC", pic.logos.rc,
+                       "Color_scale", color.scale
 ), nrow = 2)
 order.info.df <- t(data.frame(order.info))
 verbose(paste("Exporting table with the order of the clusters (Required in D3 Heatmap)", order.list.file), 2)
