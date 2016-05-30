@@ -51,7 +51,20 @@ check.param <- function() {
   if (!exists("draw.heatmap")) {
     draw.heatmap <<- "1";
   }
-
+ 
+  ########################################################################3 
+  ## Option indicating if the heatmap must be computed
+  # if (!exists("heatmap.color.palette")) {
+  #   heatmap.color.palette <<- "YlOrRd";
+  # }
+  # 
+  # ## Option indicating if the heatmap must be computed
+  # if (!exists("heatmap.color.classes")) {
+  #   heatmap.color.classes <<- "9";
+  # }
+  ########################################################################
+  
+  
   ## Option indicating if the tree
   ## in Newick format should be exported
   if (!exists("export.newick")) {

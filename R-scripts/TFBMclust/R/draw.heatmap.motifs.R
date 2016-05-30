@@ -1,7 +1,14 @@
 ####################################################
 ## Draw a heatmap usig a particular allgomeration
 ## method.
-draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, metric = "Ncor", tree.pos = "column"){
+draw.heatmap.motifs <- function(dist.table, 
+                                method = "average", 
+                                clusters.list, 
+                                metric = "Ncor", 
+                                tree.pos = "column",
+                                color.palette = "YlOrRd",
+                                color.classes = 9
+                                ){
 
 #   ################################################################
 #   ## Blue -> White -> Red palette
@@ -14,12 +21,8 @@ draw.heatmap.motifs <- function(dist.table, method = "average", clusters.list, m
 #   }
 #
 
-  library("RColorBrewer")
-# palette <- colorRampPalette(rev(brewer.pal(6, "Reds")), space="Lab")
-
-palette <- colorRampPalette(rev(brewer.pal(9, "YlOrRd")), space="Lab")
-#   palette <- colorRampPalette(rev(c("#FFF88E", "#FBE255", "#F6894E", "#990038")), space = "rgb")
-#   palette <- palette(300)
+library("RColorBrewer")
+palette <- colorRampPalette(rev(brewer.pal(color.classes, color.palette)), space="Lab")
 
   metric.definition <- NULL
   ## If required, convert similarities to distances
