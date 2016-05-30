@@ -247,6 +247,15 @@ if (!exists("individual.plots")) {
 if (!exists("heatmap.dendo")) {
   heatmap.dendo <- "show"
 }
+if (!exists("heatmap.color.palette")) {
+  heatmap.color.palette <- "RdBu";
+}
+if (!exists("heatmap.color.classes")) {
+  heatmap.color.classes <- as.numeric(11);
+}
+heatmap.color.classes <- as.numeric(heatmap.color.classes)
+
+
 
 ## Heatmap dendogram position
 if (heatmap.dendo == "show"){
@@ -438,14 +447,14 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   ## are distributed homogenously along the sequences
   chi <- chisq.test(counts.per.bin, correct = TRUE)
   
-  # ## The expected values are calculated in the next way:
-  # ## (2 * P-val) * (Sequence_length - Motif_length + 1 )
+  ## The expected values are calculated in the next way:
+  ## (2 * P-val) * (Sequence_length - Motif_length + 1 )
   # motif.name <- rownames(counts.per.bin.table)[m]
-  # expected <- (p.val * 2 * seq.length * seq.count.per.motif[[motif.name]])
+  # nb.seq <- seq.count.per.motif[[motif.name]]
+  # expected <- (p.val * 2 * seq.length * nb.seq)
   # nb.bins <- dim(counts.per.bin.table)[2]
   # expected <- round(expected/nb.bins)
   # expected <- rep(expected, times= nb.bins)
-  # # print(expected)
   # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/expected))
   
   ## The expected values are calculated in the next way:
@@ -453,7 +462,7 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   # motif.name <- rownames(counts.per.bin.table)[m]
   # nb.hits <- sum(counts.per.bin)
   # nb.seq <- seq.count.per.motif[[motif.name]]
-  nb.bins <- dim(counts.per.bin.table)[2]
+  # nb.bins <- dim(counts.per.bin.table)[2]
   # # expected <- round(nb.hits / (nb.seq/nb.bins) )
   # 
   # expected <- round((nb.hits/nb.seq)*nb.bins)
@@ -464,10 +473,11 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   ## The expected values are calculated from the Observed values
   # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
   
-  tfbd.med <- median(chi[[6]])
+  nb.bins <- dim(counts.per.bin.table)[2]
+  tfbd.med <- median(chi[[6]]) + 1
   expected <- rep(tfbd.med, times = nb.bins)
   feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
-  
+
   # [1] -1.0149503 -0.8450253 -0.6930222 -0.3145106  0.6854894  0.6289058  1.2704519  0.7924046 -0.6930222 -0.6930222 -1.0149503
   # [12] -1.0149503
   
@@ -579,10 +589,8 @@ flat.motifs <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
 ####################################################################################
 verbose(paste("Drawing Heatmap profiles"),1)
 
-## Color palette
-# rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(81))
-rgb.palette <- colorRampPalette(c("#0C60F3", "#D8E3EA", "#F30C0C"))(31)
-# rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
+## Color palette (user-defined)
+rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(27))
 
 log2.tab <- as.matrix(feature.log2.ratio)
 log2.tab[is.infinite(log2.tab)] <- 0
@@ -703,14 +711,11 @@ colnames(additional.data) <- c("Nb_sequences", "Max_pval", "Min_pval")
 feature.attributes <- cbind(feature.attributes, additional.data)
 feature.attributes  <- feature.attributes[,c(1,7,5,6,4,8,2,3,9,10)]
 
-print(head(feature.attributes))
-print("Is here ? ")
-
 feature.attributes.file <- paste(basename, "_attributes.tab", sep = "")
 # write.table(feature.attributes, file = feature.attributes.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
 # rm(additional.data)
 
-print("Not here")
+
 
 ##############################################################
 ## Plot each profile individually (if it is user-specified) ##
