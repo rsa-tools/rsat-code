@@ -69,7 +69,16 @@ $parameters .= " -matrix_format ".$query_matrix_format;
 #### Query matrix file
 local $matrix_file = &GetMatrixFile($output_path."/".$output_prefix."_query_matrices.".$query_matrix_format);
 
-$parameters .= " -i $matrix_file";
+################################
+## Add motif collection label
+local $collection_label = lc($query->param('collection_label'));
+if($collection_label){
+    $collection_label =~ s/\s+/_/g;
+} else {
+    $collection_label = "matrix-clustering";
+}
+
+$parameters .= " -matrix $collection_label $matrix_file";
 
 push @result_files, ("Input file",$matrix_file);
 push @result_files, ("Result file",$result_file);
@@ -97,14 +106,6 @@ local $title = lc($query->param('html_title'));
 if($title){
     $title =~ s/\s+/_/g;
     $parameters .= " -title '".$title."'";
-}
-
-################################
-## Add motif collection label
-local $collection_label = lc($query->param('collection_label'));
-if($collection_label){
-    $collection_label =~ s/\s+/_/g;
-    $parameters .= " -motif_collection_name '".$collection_label."'";
 }
 
 ############################
