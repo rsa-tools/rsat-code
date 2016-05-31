@@ -61,7 +61,7 @@ CLUSTER_PREFIX=${MATRIX_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN
 CLUSTER_DIR=results/matrix-clustering_results/${MATRIX_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
 CLUSTER_CMD=matrix-clustering -v ${V} \
-		-i ${MATRIX_FILE} -matrix_format tf -motif_collection_name '${MATRIX_PREFIX}' \
+		-matrix ${MATRIX_PREFIX} ${MATRIX_FILE} -matrix_format tf\
 		-title '${TITLE}' \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
@@ -74,7 +74,7 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-return ${RETURN_FIELDS} 
 
 CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
-		-file_table ${FILE_TABLE} \
+		${LIST_OF_MOTIFS} -matrix_format tf \
 		-title '${TITLE}' \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
@@ -116,13 +116,13 @@ _nb_cluster:
 	${MAKE} my_command MY_COMMAND="${NB_CLUSTER_CMD}"
 	@echo "\n${NB_CLUSTER_CMD}"
 
-## Cluster motifs resulting from 12 independent analysis of peak-motifs (Chen data set). 
-cluster_peakmotifs_ES_cells_analysis:
-	@echo
-	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct4, Sox2 and Nanog dataset from Chen 2008)"
-	${MAKE} _cluster_multi MATRIX_PREFIX=${ES_CELLS_PREFIX} \
-		TITLE='Oct4-Sox2-Nanog motifs from peak motifs' \
-		METRIC_BUILD_TREE=Ncor
+# ## Cluster motifs resulting from 12 independent analysis of peak-motifs (Chen data set). 
+# cluster_peakmotifs_ES_cells_analysis:
+# 	@echo
+# 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct4, Sox2 and Nanog dataset from Chen 2008)"
+# 	${MAKE} _cluster_multi MATRIX_PREFIX=${ES_CELLS_PREFIX} \
+# 		TITLE='Oct4-Sox2-Nanog motifs from peak motifs' \
+# 		METRIC_BUILD_TREE=Ncor
 
 
 ## Cluster motifs resulting from two independent analysis of peak-motifs (Chen data set) with Oct4 and Sox2 peaks. 
@@ -135,6 +135,7 @@ cluster_HOMER_MEME_RSAT_Oct4_motifs:
 
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
+LIST_OF_MOTIFS= -matrix MEME ${RSAT}/public_html/demo_files/MEME_ChIP_Oct4_matrices.tf -matrix Homer ${RSAT}/public_html/demo_files/Homer_l13_mis3_hyper_Oct4_matrices.tf -matrix RSAT ${RSAT}/public_html/demo_files/RSAT_peak-motifs_Oct4_matrices.tf
 cluster_peakmotifs_Oct4:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
@@ -145,25 +146,25 @@ cluster_peakmotifs_Oct4:
 		MIN_COR=0.6 MIN_NCOR=0.4
 
 
-## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
-cluster_peakmotifs_Oct4_nb_clusters:
-	@echo
-	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} _nb_cluster MATRIX_PREFIX=${OCT4_PREFIX} \
-		TITLE='Oct4 motifs peak motifs' \
-		COLLECTION=${OCT4_PREFIX} \
-		METRIC_BUILD_TREE=Ncor \
-                RETURN_FIELDS=nb_clusters
+# ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
+# cluster_peakmotifs_Oct4_nb_clusters:
+# 	@echo
+# 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+# 	${MAKE} _nb_cluster MATRIX_PREFIX=${OCT4_PREFIX} \
+# 		TITLE='Oct4 motifs peak motifs' \
+# 		COLLECTION=${OCT4_PREFIX} \
+# 		METRIC_BUILD_TREE=Ncor \
+#                 RETURN_FIELDS=nb_clusters
 
 
-cluster_peakmotifs_Oct4_roots_only:
-	@echo
-	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
-		TITLE='Oct4 motifs peak motifs' \
-		COLLECTION=${OCT4_PREFIX} \
-		METRIC_BUILD_TREE=Ncor \
-		RETURN_FIELDS=root_matrices
+# cluster_peakmotifs_Oct4_roots_only:
+# 	@echo
+# 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+# 	${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
+# 		TITLE='Oct4 motifs peak motifs' \
+# 		COLLECTION=${OCT4_PREFIX} \
+# 		METRIC_BUILD_TREE=Ncor \
+# 		RETURN_FIELDS=root_matrices
 
 ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set),
 ## without any threshold
@@ -174,30 +175,30 @@ cluster_peakmotifs_Oct4_no_threshold:
 		TITLE='Peak-motifs results for Oct4 ChIP-seq peaks - no thresholds' \
 		COLLECTION=${PEAKMO_PREFIX}
 
-## Permutation test with peak-motifs (Chen Oct4 data set)
-cluster_peakmotifs_Oct4_permute:
-	@${MAKE} ${MATRIX_PREFIX}=${PEAKMO_PREFIX} permute_matrices cluster_permuted_matrices \
-		TITLE='Permuted matrices from peak-motifs results with Oct4 ChIP-seq peaks' \
-		COLLECTION=${PEAKMO_PREFIX}
+# ## Permutation test with peak-motifs (Chen Oct4 data set)
+# cluster_peakmotifs_Oct4_permute:
+# 	@${MAKE} ${MATRIX_PREFIX}=${PEAKMO_PREFIX} permute_matrices cluster_permuted_matrices \
+# 		TITLE='Permuted matrices from peak-motifs results with Oct4 ChIP-seq peaks' \
+# 		COLLECTION=${PEAKMO_PREFIX}
 
-## Rndomize input matrices by permuting their columns
-PERMUTED_PREFIX=${MATRIX_PREFIX}_permuted
-PERMUTED_DIR=results/matrix-clustering_results/${PERMUTED_PREFIX}
-PERMUTED_MATRIX_FILE=${PERMUTED_DIR}/${PERMUTED_PREFIX}_matrices.tf
-permute_matrices: list_param
-	@echo
-	@echo "Permuting matrices	${MATRIX_FILE}"
-	@mkdir -p ${PERMUTED_DIR}
-	@permute-matrix -i ${MATRIX_FILE} \
-		-in_format transfac -out_format transfac \
-		-o ${PERMUTED_MATRIX_FILE}
-	@echo "	${PERMUTED_MATRIX_FILE}"
+# ## Rndomize input matrices by permuting their columns
+# PERMUTED_PREFIX=${MATRIX_PREFIX}_permuted
+# PERMUTED_DIR=results/matrix-clustering_results/${PERMUTED_PREFIX}
+# PERMUTED_MATRIX_FILE=${PERMUTED_DIR}/${PERMUTED_PREFIX}_matrices.tf
+# permute_matrices: list_param
+# 	@echo
+# 	@echo "Permuting matrices	${MATRIX_FILE}"
+# 	@mkdir -p ${PERMUTED_DIR}
+# 	@permute-matrix -i ${MATRIX_FILE} \
+# 		-in_format transfac -out_format transfac \
+# 		-o ${PERMUTED_MATRIX_FILE}
+# 	@echo "	${PERMUTED_MATRIX_FILE}"
 
-## Run clustering on permuted matrices
-cluster_permuted_matrices:
-	@echo
-	@echo "Clustering permuted matrices	${PERMUTED_MATRIX_FILE}"
-	${MAKE} _cluster MATRIX_PREFIX=${PERMUTED_PREFIX} MATRIX_FILE=${PERMUTED_MATRIX_FILE}
+# ## Run clustering on permuted matrices
+# cluster_permuted_matrices:
+# 	@echo
+# 	@echo "Clustering permuted matrices	${PERMUTED_MATRIX_FILE}"
+# 	${MAKE} _cluster MATRIX_PREFIX=${PERMUTED_PREFIX} MATRIX_FILE=${PERMUTED_MATRIX_FILE}
 
 ## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
 cluster_footprints:
