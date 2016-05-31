@@ -81,7 +81,7 @@ util
 
 =head1 USAGE
 
-matrix-clustering [-i inputfile] [-o outputfile] [-v ] [...]
+matrix-clustering [-matrix inputfile] [-o outputfile] [-v ] [...]
 
 
 =head1 OUTPUT FORMAT
@@ -137,6 +137,9 @@ package main;
   %main::dir = ();
   %main::param = ();
   @dirs = ();
+
+  %main::matrix_file = ();
+  %main::matrix_titles = ();
 
   $main::verbose = 0;
   $main::out = STDOUT;
@@ -329,6 +332,9 @@ package main;
   ## Permute input matrices
   local $random_flag = 0;
 
+  ## Flag to dectect the user specified at least one input matrix file
+  local $input_matrix = 0;
+
   ## display collection label in trees and alignment table
   local $display_collection_name_flag = 0;
 
@@ -413,7 +419,6 @@ package main;
   $param{archive_format} = "zip";
   $param{progressive_synthesis} = 1;
   $param{title} = "matrix-clustering results";
-  $param{motif_collection} = "matrix-clustering_results";
 
   ################################################################
   ## Read argument values
@@ -426,8 +431,8 @@ package main;
 
   ################################################################
   ## Input file is mandatory
-  unless (($main::infile{matrices}) || ($main::infile{matrices_info_tab}) || $main::infile{range_th_tab}) {
-    &RSAT::error::FatalError("Input should be specified either as a matrix file (option -i), as a file table (option -file_table) or a table with the ranges of the metrics (-range_th_table).");
+  unless ($input_matrix) {
+    &RSAT::error::FatalError("Input should be specified either as a matrix file (option -matrix): -matrix matrix_title matrix_file");
   }
 
   ################################################################
@@ -435,28 +440,6 @@ package main;
   if (scalar(@args_to_pass)) {
     $args_to_pass = join (" ", @args_to_pass);
     &RSAT::message::Info("Unrecognized arguments passed to matrix-clustering", $args_to_pass) if ($main::verbose >= 2);
-  }
-
-  ################################################################
-  ## Check the input file has been specified
-
-  ## Check that the  input file (for two or more motif set) has been specified
-  if ($multi_input_flag){
-    unless ($main::infile{matrices_info_tab}) {
-      &RSAT::error::FatalError("You must define the file table (option -file_table).");
-    }
-  }
-
-  ## Check that the  input (single) file has been specified
-  if ($single_input_flag){
-      unless ($main::infile{matrices}) {
-	  &RSAT::error::FatalError("You must define the input file (option -i).");
-      }
-
-      ## Check that the  input format has been specified
-      unless ($matrix_format) {
-	  &RSAT::error::FatalError("You must define the input matrix format (option -matrix_format).");
-      }
   }
 
   ################################################################
@@ -692,15 +675,28 @@ Same as -h
       
 =pod
 
-=item B<-i input matrix file>
+=item B<-matrx matrix_title input_matrix_file>
 
 The input file contains a set of position-specific scoring
 matrices.
 
 =cut
-    } elsif ($arg eq "-i") {
-      $main::infile{matrices} = shift(@arguments);
-      $single_input_flag = 1;
+    } elsif ($arg eq "-matrix") {
+
+#      $main::infile{matrices} = shift(@arguments);
+#      $single_input_flag = 1;
+
+      my $matrix_title = shift(@arguments);
+      ## Substitue special characters which cannot be used inside a file name
+      $matrix_title =~ s|\s|_|g;
+      $matrix_title =~ s|/|_|g;
+      $matrix_title =~ s|:|_|g;
+      
+      $main::matrix_file{$matrix_title} = shift(@arguments);
+      
+      push @main::matrix_titles, $matrix_title;
+      
+      $input_matrix = 1;
       
 =pod
 
@@ -823,19 +819,6 @@ Title displayed on top of the report page.
      } elsif ($arg eq "-title") {
       $main::param{title} = shift(@arguments);
       $main::param{title} =~ s/\s+/_/g;
-
-=pod
-
-=item	B<-motif_collection_name motif_collection_label>
-
-Label used to classify the motifs belonging to one collection.
-
-=cut
-     } elsif ($arg eq "-motif_collection_name") {
-      $main::param{motif_collection} = shift(@arguments);
-      $main::param{motif_collection} =~ s/\s+/_/g;
-      $main::param{motif_collection} =~ s/-/_/g;
-      $display_collection_name_flag = 1;
 
 =pod
 
@@ -1609,67 +1592,105 @@ sub pre_process_motif_files{
   ##   - selection of top X motifs if required
   ##   - skip the top X motifs if required
 
+  ## Count the number of input files
+  if(scalar(keys(%main::matrix_file)) == 1){
+      $single_input_flag = 1;
+  } else {
+      $single_input_flag = 0;
+  }
+  
+
   $main::dir{data} = $main::outfile{prefix}."_data";
   &RSAT::util::CheckOutDir($dir{data});
 
-  ## Set the values of the title, file and format in a hash table
-  ## if the user has enter the option -i instead of -file_table.
-  if ($single_input_flag){
-    
-    my $collection_name = $main::param{motif_collection};
-    $motif_set_attributes{$collection_name}{collection_label} = $main::param{motif_collection};
-    $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
-    $motif_set_attributes{$collection_name}{matrix_file_input} = $main::infile{matrices}; 
 
-    $motif_collection_count{$collection_name} = 0;
-
-  } else {
-    
-    ## Read the file tible and extract the information
-    my ($info_tab_matrices) = &OpenInputFile($main::infile{matrices_info_tab});
-    while (<$info_tab_matrices>) {     
-      next if (/^#/); ## Skip header line
-      next if (/^;/); ## Skip comment lines
-      next unless (/\S/); ## Skip empty lines
-      chomp();
+  ## Assign the title, matrix format and matrix file path to a hash 
+  foreach my $k (keys %main::matrix_file){
       
-      my ($matrix_file, $matrix_format, $collection_name) = split ("\t");
-      $collection_name =~ s/\s+/_/g;
+      my $collection_name = $k;
 
-      ## Replace environment variables in file names by their actual value
-      while ($matrix_file =~ /\$ENV{([^}]+)}/) {
-	$matrix_file = $ENV{$1}.$'; #'
-      }
-      while ($matrix_file =~ /\${([^}]+)}/) {
-	$matrix_file = $ENV{$1}.$'; #'
-      }
-      
-      ## The collection labels must be unique or the program crashes
+      ## The collection labels must be unique or the program will die
       if (exists($motif_set_attributes{$collection_name}{collection_label})){
-	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{collection_label}, " repeated. The collection label of each file must be unique.");	
-      } 
-      
-      ## Set the values of the collection label, file and format in a hash table
-      $motif_set_attributes{$collection_name}{collection_label} = $collection_name; 
-      $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
-      $motif_set_attributes{$collection_name}{matrix_file_input} = $matrix_file; 
-      
-      ## Check the matrix format on each line of the file
-      if (!$supported_matrix_format{$matrix_format}) {
-	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{matrix_format}, 
-				 "Invalid format for input matrices. ", 
-				 "Supported: ".$main::supported_matrix_formats);
-      } else {
-	$motif_set_counter++;
+	  &RSAT::error::FatalError($motif_set_attributes{$collection_name}{collection_label}, " repeated. The collection label of each file must be unique.");	
       }
+      
+      $motif_set_attributes{$collection_name}{collection_label} = $collection_name;
+      $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
+      $motif_set_attributes{$collection_name}{matrix_file_input} = $main::matrix_file{$collection_name};
 
-      &RSAT::message::Info("Matrix file", $matrix_format, $collection_name, $matrix_file) if ($main::verbose >= 0);
-    }
-    close $main::infile{matrices_info_tab};
-    &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
-			 "matrix files from file table", $main::infile{matrices_info_tab}) 
-	if ($main::verbose >= 2);
+      &RSAT::message::Info("Matrix file", $matrix_format, $collection_name, $main::matrix_file{$collection_name}) if ($main::verbose >= 0);
+
+      $motif_collection_count{$collection_name} = 0;
+      $motif_set_counter++;
   }
+  
+  &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
+		       "matrix files") if ($main::verbose >= 2);
+
+
+
+
+
+
+
+  ################################################################
+  ## TEST: not sure if the next part of he code will work!! 
+  ## Chec k the option -file_table
+  ################################################################
+
+  # ## Set the values of the title, file and format in a hash table
+  # ## if the user has enter the option -i instead of -file_table.
+  # if ($single_input_flag){
+
+ 
+      
+  # } else {
+    
+  #   ## Read the file tible and extract the information
+  #   my ($info_tab_matrices) = &OpenInputFile($main::infile{matrices_info_tab});
+  #   while (<$info_tab_matrices>) {     
+  #     next if (/^#/); ## Skip header line
+  #     next if (/^;/); ## Skip comment lines
+  #     next unless (/\S/); ## Skip empty lines
+  #     chomp();
+      
+  #     my ($matrix_file, $matrix_format, $collection_name) = split ("\t");
+  #     $collection_name =~ s/\s+/_/g;
+
+  #     ## Replace environment variables in file names by their actual value
+  #     while ($matrix_file =~ /\$ENV{([^}]+)}/) {
+  # 	$matrix_file = $ENV{$1}.$'; #'
+  #     }
+  #     while ($matrix_file =~ /\${([^}]+)}/) {
+  # 	$matrix_file = $ENV{$1}.$'; #'
+  #     }
+      
+  #     ## The collection labels must be unique or the program will die
+  #     if (exists($motif_set_attributes{$collection_name}{collection_label})){
+  # 	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{collection_label}, " repeated. The collection label of each file must be unique.");	
+  #     } 
+      
+  #     ## Set the values of the collection label, file and format in a hash table
+  #     $motif_set_attributes{$collection_name}{collection_label} = $collection_name; 
+  #     $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
+  #     $motif_set_attributes{$collection_name}{matrix_file_input} = $matrix_file; 
+      
+  #     ## Check the matrix format on each line of the file
+  #     if (!$supported_matrix_format{$matrix_format}) {
+  # 	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{matrix_format}, 
+  # 				 "Invalid format for input matrices. ", 
+  # 				 "Supported: ".$main::supported_matrix_formats);
+  #     } else {
+  # 	$motif_set_counter++;
+  #     }
+
+  #     &RSAT::message::Info("Matrix file", $matrix_format, $collection_name, $matrix_file) if ($main::verbose >= 0);
+  #   }
+  #   close $main::infile{matrices_info_tab};
+  #   &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
+  # 			 "matrix files from file table", $main::infile{matrices_info_tab}) 
+  # 	if ($main::verbose >= 2);
+  # }
 
 
   ## Pre-process each motif collection
@@ -1690,8 +1711,7 @@ sub pre_process_motif_files{
       ## Collect all matrices
       @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
       push(@all_matrices, @matrices);
-      &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
-	  if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file) if ($main::verbose >= 2);
       
       ################################################################
       ## Check matrix number (required for verbose + if max matrices specified).
@@ -1829,7 +1849,7 @@ sub pre_process_motif_files{
   $main::outfile{input_matrices} = $main::outfile{motif_file};
 
   ################################################################
-  ## Split all the processed motifs into sinle file
+  ## Split all the processed motifs into single file
   ## each one containing a single motif
   &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
   my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
