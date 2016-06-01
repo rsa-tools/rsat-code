@@ -5,6 +5,17 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefiles/install-ensembl-genomes_demo.mk
 
+list_param:
+	@echo
+	@echo "Parameters"
+	@echo "	ENSEMBL_RELEASE		${ENSEMBL_RELEASE}"
+	@echo "	ENSEMBLGENOMES_BRANCH	${ENSEMBLGENOMES_BRANCH}"
+	@echo "	DB			${DB}"
+	@echo "	RESULT_DIR		${RESULT_DIR}"
+	@echo "	AVAILABLE_SPECIES	${AVAILABLE_SPECIES}"
+	@echo "	ORG			${ORG}"
+	@echo "	QUERY_TYPE		${QUERY_TYPE}"
+
 DB=ensembl
 #DB=ensemblgenomes
 RESULT_DIR=results/ensemblgenomes
@@ -13,7 +24,7 @@ available_species:
 	@mkdir -p ${RESULT_DIR}
 	@echo "Collecting available species at ${DB}	release ${ENSEMBL_RELEASE}"
 	install-ensembl-genome -v ${V} -db ${DB} -available_species \
-		-version ${ENSEMBL_RELEASE} \
+		-release ${ENSEMBL_RELEASE} \
 		-o ${AVAILABLE_SPECIES}
 	@echo "	${AVAILABLE_SPECIES}"
 
