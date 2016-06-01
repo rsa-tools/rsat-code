@@ -46,7 +46,7 @@ required for RSAT use.
 
 =head1 USAGE
 
-C<download-ensembl-features -species # [-version #] [-no_name] [-o #] [-dir genomesDirectory] [-available_species] [-v #]>
+C<download-ensembl-features -species # [-release #] [-no_name] [-o #] [-dir genomesDirectory] [-available_species] [-v #]>
 
 =head2 Examples
 
@@ -105,13 +105,13 @@ package main;
   our $verbose = 0;
   our $db = "ensembl";
   our $species = "";
-  our $assembly_version = "";
+  our $assembly = "";
   our $species_suffix = "";
   our $full_species_ID = "";
   our $registry = 'Bio::EnsEMBL::Registry';
-  our $safe_ensembl_version = &get_ensembl_version_safe($db);
-  our $latest_ensembl_version = &get_ensembl_version_latest($db);
-  our $ensembl_version = &get_ensembl_version($db);
+  our $safe_ensembl_release = &get_ensembl_release_safe($db);
+  our $latest_ensembl_release = &get_ensembl_release_latest($db);
+  our $ensembl_release = &get_ensembl_release($db);
   our $dry_run = 0; ## Do not run the SQL queries, but print them out for checking
   our $null = "<NULL>";
 
@@ -138,8 +138,8 @@ package main;
   ## Read argument values
   &ReadArguments();
 
-  ## Check that the user-selected Ensembl version is supported.
-  &check_ensembl_version($db,$ensembl_version);
+  ## Check that the user-selected Ensembl release is supported.
+  &check_ensembl_release($db,$ensembl_release);
 
 #  my ($host,$port) = &Get_host_port($db);
 
@@ -152,14 +152,14 @@ package main;
   ## Print available species
   if ($get_available_species) {
     &RSAT::message::TimeWarn("download-ensembl-features", "Getting the list of available species", "db=".$db) if ($main::verbose >= 1);
-    &LoadRegistry($registry, $db, $ensembl_version);
+    &LoadRegistry($registry, $db, $ensembl_release);
 
     my @db_adaptors = @{ $registry->get_all_DBAdaptors() };
     my %species_taxon = ();
 
     if (lc($db) eq "ensemblgenomes") {
-      my $ens_version = &get_ensembl_version_safe($db);
-      %species_taxon = &Get_species_taxon($db,$ens_version);
+      my $ens_release = &get_ensembl_release_safe($db);
+      %species_taxon = &Get_species_taxon($db,$ens_release);
     }
 
     @sort_species = sort {$a->species() cmp $b->species()} @db_adaptors;
@@ -184,7 +184,7 @@ package main;
 
   ################################################################
   ## Connecting to ensembl
-  &LoadRegistry($registry, $db, $ensembl_version);
+  &LoadRegistry($registry, $db, $ensembl_release);
 
   ################################################################
   ## Get Adaptator
@@ -233,10 +233,10 @@ package main;
   ################################################################
   ## Get genome_dir
   my @fields = split(":",$slices[0]->name());
-  $assembly_version = $fields[1];
-  $full_species_ID = &Get_full_species_ID($species, $assembly_version,$ensembl_version, $species_suffix);
+  $assembly = $fields[1];
+  $full_species_ID = &Get_full_species_ID($species, $assembly,$ensembl_release, $species_suffix);
   &RSAT::message::Info("Full species ID", $full_species_ID) if ($main::verbose >= 2);
-  $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version, $species_suffix);
+  $genome_dir = &Get_genome_dir($species, $assembly,$ensembl_release, $species_suffix);
   &RSAT::message::Info("Genome directory", $genome_dir) if ($main::verbose >= 2);
   printf $out ("; %-22s\t%s\n", "Full species ID", $full_species_ID);
   printf $out ("; %-22s\t%s\n", "Genome directory", $genome_dir);
@@ -269,16 +269,16 @@ package main;
   }
 
   ################################################################
-  # Change Ensembl version to Ensembl Genomes version
-  my $ftp_ensembl_version = $ensembl_version;
+  # Change Ensembl release to Ensembl Genomes release
+  my $ftp_ensembl_release = $ensembl_release;
   if (lc($db) eq "ensemblgenomes") {
-    &LoadRegistry($registry, $db, $ensembl_version);
+    &LoadRegistry($registry, $db, $ensembl_release);
 
     my @dbas = @{ $registry->get_all_DBAdaptors() };
     foreach my $dba (@dbas) {
       if ($dba->species() eq "multi") {
         @fields = split("_",$dba->dbc()->dbname());
-        $ftp_ensembl_version = $fields[-2];
+        $ftp_ensembl_release = $fields[-2];
       }
     }
   }
@@ -486,7 +486,7 @@ package main;
 	## Index gene names in order to pass them to gene-derived
 	## features (mrna, CDS).
 	@{$gene_names{$row{'gene_id'}}} = ($row{'gene_id'}, $row{'synonym1'}, $row{'synonym2'});
-	&RSAT::message::Debug("gene names", $row{'gene_id'}, join(";", @{$gene_names{$row{'gene_id'}}})) if ($main::verbose >= 0);
+	&RSAT::message::Debug("gene names", $row{'gene_id'}, join(";", @{$gene_names{$row{'gene_id'}}})) if ($main::verbose >= 10);
 
       }
       $gene_names_list = "";
@@ -1217,7 +1217,7 @@ package main;
     ## Get protein sequences (file [Organism_name]_aa.fasta)
     &RSAT::message::TimeWarn("Getting protein sequences (FTP)") if ($verbose >= 2);
 
-    my $prot_seq_ftp = &Get_pep_fasta_ftp($db,$species,$ftp_ensembl_version);
+    my $prot_seq_ftp = &Get_pep_fasta_ftp($db,$species,$ftp_ensembl_release);
     &RSAT::util::doit("wget -NL -nv $prot_seq_ftp -P $genome_dir");
 
     @fields = split(/\//, $prot_seq_ftp);
@@ -1524,8 +1524,8 @@ sub Verbose {
       printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
-  printf $out ("; %-22s\t%s\n", "Ensembl safe version", $safe_ensembl_version);
-  printf $out ("; %-22s\t%s\n", "Ensembl version",$ensembl_version);
+  printf $out ("; %-22s\t%s\n", "Ensembl safe release", $safe_ensembl_release);
+  printf $out ("; %-22s\t%s\n", "Ensembl release",$ensembl_release);
   printf $out ("; %-22s\t%s\n", "Species suffix", $species_suffix) if ($species_suffix);
 }
 
@@ -1676,7 +1676,7 @@ Multiple types can also be specified separated by commas.
 #
 # The directory in wich RSAT genomes must be installed. The selected
 # species will be isntalled in a sub-directory composed of Species name
-# and Ensembl genome version.
+# and Ensembl genome release.
 #
 # Default : $RSAT/data/genomes/
 #
@@ -1751,11 +1751,11 @@ Get all available species on Ensembl
 
 =pod
 
-=item B<-version #>
+=item B<-release #>
 
-The release version of ensEMBL.
+The release release of ensEMBL.
 
-Supported versions: 70 to 72, safe, latest
+Supported releases: 70 to 72, safe, latest
 
 Default : I<safe>
 
@@ -1765,23 +1765,26 @@ Default : I<safe>
 
 Some Ensembl API function may change between two Ensembl release.
 
-For this reason, we defined the "safe" version, which corresponds to
-the latest version of ensembl which has been checked to work with this
+For this reason, we defined the "safe" release, which corresponds to
+the latest release of ensembl which has been checked to work with this
 script.
 
 =item latest
 
-This corresponds to the lastest version of Ensembl. Beware: this
-version is not guaranteed to be compatible with RSAT, in case Ensembl
+This corresponds to the lastest release of Ensembl. Beware: this
+release is not guaranteed to be compatible with RSAT, in case Ensembl
 would change their file formats or locations.
 
 =cut
-    } elsif ($arg eq "-version") {
-      my $version = shift(@arguments);
-      if ( &IsNatural($version) || $version eq "safe" || $version eq "latest" ) {
-        $main::ensembl_version = $version;
+    } elsif (($arg eq "-release") || ($arg eq "-version")) {
+      if ($arg eq "-version") {
+	&RSAT::message::Warning("option -version is obsolete, has been replaced by -release.");
+      }
+      my $release = shift(@arguments);
+      if ( &IsNatural($release) || $release eq "safe" || $release eq "latest" ) {
+        $main::ensembl_release = $release;
       } else {
-        &RSAT::error::FatalError($version,"is not supported");
+        &RSAT::error::FatalError($release,"is not supported");
       }
 
 =pod
@@ -1791,7 +1794,7 @@ would change their file formats or locations.
 Suffix to append to the full species ID.
 
 By default, the full species ID is composed by concatenating the
-Ensembl species and assembly version. The option I<-species_suffix>
+Ensembl species and assembly. The option I<-species_suffix>
 allows to specify a string (e.g. _ensembl76, _for_testing, ...) that
 will be appended to the full species ID.
 
@@ -1852,31 +1855,31 @@ sub OpenOutputStreams {
 
   ## Organism File
   my $file_name = 'organism';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, $file_name, $file_name, 'main', qw(id taxonomy name));
 
   ## Organism Name File
   $file_name = 'organism_names';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, 'organism', $file_name, 'lateral', qw(id names status) );
 
   ## Gene file
   $file_name = 'gene';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, $file_name, $file_name, 'main', qw(id status type name contig start_pos end_pos strand description));
 
   ## Gene Names file
   $file_name = 'gene_names';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, 'gene', $file_name, 'lateral', qw(id names status source) );
 
   ## Gene_to_reaction file
   $file_name = 'gene_to_reaction';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, $file_name, $file_name, 'main', qw(id name description source reaction));
 
@@ -1884,51 +1887,51 @@ sub OpenOutputStreams {
   foreach (@features_to_download) {
 
     my $file_name = $_;
-    $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+    $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
     $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
     &PrintHeader($out_stream{$file_name}, $time, $file_name, $file_name, 'main', qw(id status type name contig start_pos end_pos coding_start coding_end strand description gene_id) );
 
     $file_name .= "_names";
-    $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+    $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
     $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
     &PrintHeader($out_stream{$file_name}, $time, $_, $file_name, 'lateral', qw(id names status source) );
   }
 
   ## mRNA files
-  $outfile{'mrna'} = &Get_feature_file( $species, $assembly_version,$ensembl_version, $species_suffix,'mrna');
+  $outfile{'mrna'} = &Get_feature_file( $species, $assembly,$ensembl_release, $species_suffix,'mrna');
   &doit("ln -fs ".$outfile{'protein_coding'}." ".$outfile{'mrna'}, 0, 0, 0);
 
   ## mRNA Names files
-  $outfile{'mrna_names'} = &Get_feature_file( $species, $assembly_version,$ensembl_version, $species_suffix,'mrna_names');
+  $outfile{'mrna_names'} = &Get_feature_file( $species, $assembly,$ensembl_release, $species_suffix,'mrna_names');
   &doit("ln -fs ".$outfile{'protein_coding_names'}." ".$outfile{'mrna_names'}, 0, 0, 0);
 
   ## Exon File
   $file_name = 'exon';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, $file_name, $file_name, 'main', qw(id type name contig start_pos end_pos strand transcript_id gene_id) );
 
   ## Coding Exon File
   $file_name = 'coding_exon';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, $file_name, $file_name, 'main', qw(id type name contig start_pos end_pos strand transcript_id gene_id) );
 
   ## Intron file
   $file_name = 'intron';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, $file_name, $file_name, 'main', qw(id type name contig start_pos end_pos strand transcript_id gene_id) );
 
   ## UTR files
   $file_name = 'utr';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, $file_name, $file_name, 'main', qw(id type name contig start_pos end_pos strand transcript_id gene_id) );
 
   ## CDS file
   $file_name = 'cds';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
 
   ## TEMPORARY: for debugging, I add columns to the SQL output file
@@ -1940,14 +1943,14 @@ sub OpenOutputStreams {
 
   ## CDS Names files
   $file_name = 'cds_names';
-  $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+  $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
   $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   &PrintHeader($out_stream{$file_name}, $time, 'cds', $file_name, 'lateral', qw(id names status source) );
 
   ## AA seq
   if ($query_mode eq "api") {
     $file_name = 'aa_seq';
-    $outfile{$file_name} = &Get_feature_file($species, $assembly_version,$ensembl_version, $species_suffix,$file_name);
+    $outfile{$file_name} = &Get_feature_file($species, $assembly,$ensembl_release, $species_suffix,$file_name);
     $out_stream{$file_name} = &OpenOutputFile($outfile{$file_name});
   }
 
