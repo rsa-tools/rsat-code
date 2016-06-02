@@ -401,11 +401,15 @@ sub LoadSupportedTaxonomy_rj {
     $taxonomy = &RSAT::util::trim($taxonomy);
     $taxonomy =~ s/\s+/ /g;  ## Suppress multiple spaces
     $taxonomy =~ s/\.$//g;   ## Suppres trailing dot
-    my @taxa = split /\s*;\s*/, $taxonomy;
-    @taxa = map {$_ =~ s/\s+/\_/g;$_} @taxa; # removing spaces in the top and bottom taxa names
-    @taxa = map {$_ =~ s/(\(|\))/\_/g;$_} @taxa; # removing spaces in the top and bottom taxa names
-    &RSAT::message::Warning($c, $org,scalar(@taxa),"taxa"),  if ($main::verbose >= 5);
-    &RSAT::message::Warning($c, $org_id, "taxa", join ("::",(@taxa))) if ($main::verbose >= 6);
+    my @taxonomy = split /\s*;\s*/, $taxonomy;
+#    die "HELLO";
+#    if ($taxonomy =~ /fumigatus/) {
+#      &RSAT::message::Debug("&RSAT::OrganismManager::OneOrgPerTaxonomicDepth", $org, "taxonomy", join("::", @taxonomy)) if ($main::verbose >= 2);
+#    }
+    @taxonomy = map {$_ =~ s/\s+/\_/g;$_} @taxonomy; # removing spaces in the top and bottom taxonomy names
+    @taxonomy = map {$_ =~ s/(\(|\))/\_/g;$_} @taxonomy; # removing spaces in the top and bottom taxonomy names
+    &RSAT::message::Warning($c, $org,scalar(@taxonomy),"taxonomy"),  if ($main::verbose >= 5);
+    &RSAT::message::Warning($c, $org_id, "taxonomy", join ("::",(@taxonomy))) if ($main::verbose >= 6);
     
     ## Instantiate a leaf for the organism
     my $leaf = new RSAT::TreeNode(id=>$org_id,
@@ -419,13 +423,13 @@ sub LoadSupportedTaxonomy_rj {
     
 
 
-    for my $t (0..$#taxa) {     
+    for my $t (0..$#taxonomy) {     
       ## Start top->down to build the tree
-      if (defined $nodes{$taxa[$t]}) {
+      if (defined $nodes{$taxonomy[$t]}) {
 	## Special treatment for the last level of the taxonomy: 
 	## Link the lowest-level taxon to the organism node (the leaf)
-	if ($t == $#taxa) {
-	  $nodes{$taxa[$t]}->add_child($leaf);
+	if ($t == $#taxonomy) {
+	  $nodes{$taxonomy[$t]}->add_child($leaf);
 	} else {
 	  ## Skip already defined internal nodes
 	  next;
@@ -433,24 +437,24 @@ sub LoadSupportedTaxonomy_rj {
       } else {
 
 	## Instantiate new nodes
-	my $node = new RSAT::TreeNode(id=>$taxa[$t],
-				      name=>$taxa[$t],
+	my $node = new RSAT::TreeNode(id=>$taxonomy[$t],
+				      name=>$taxonomy[$t],
 				      type=>"node",
 				      ## all_leaves=>[$org]
 	    );
-	$nodes{$taxa[$t]}=$node; ## Index taxa by name
-	&RSAT::message::Debug("Created TreeNode for taxon", $t, $taxa[$t], $node) 
+	$nodes{$taxonomy[$t]}=$node; ## Index taxonomy by name
+	&RSAT::message::Debug("Created TreeNode for taxon", $t, $taxonomy[$t], $node) 
 	    if ($main::verbose >= 5);
 	
-	if ((defined $nodes{$taxa[$t-1]})&&($t-1>=0)) {
-	  $nodes{$taxa[$t-1]}->add_child($node);
+	if ((defined $nodes{$taxonomy[$t-1]})&&($t-1>=0)) {
+	  $nodes{$taxonomy[$t-1]}->add_child($node);
 	} else {
 	  # attach first taxon to the root
 	  $nodes{$root_name}->add_child($node);
 	}
 	
 	# attach organism as leaf if it is the last taxon
-	if ($t == $#taxa) {
+	if ($t == $#taxonomy) {
 	  $node->add_child($leaf);
 	}
       }
@@ -720,7 +724,7 @@ sub as_indented_hash {
   unless (defined($indent_string)) {
     $indent_string = $default_indent_string;;
   }
-  my %taxa =();
+  my %taxonomy =();
   $self->set_all_levels();
 
   my $start_node=$self->get_node_by_id($start_node_id);
@@ -734,11 +738,11 @@ sub as_indented_hash {
 	  if ($n->is_leaf()){
 	      die("This node must not be a leaf ! ".$n->getid());
 	  }else{
-	      $taxa{$n->getid()} = join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
+	      $taxonomy{$n->getid()} = join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
 	  }
       }
   }
-  return (%taxa);
+  return (%taxonomy);
 }
 
 1;

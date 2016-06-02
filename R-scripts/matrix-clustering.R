@@ -71,7 +71,7 @@ if (length(args >= 1)) {
 ######################
 ## Check parameters
 check.param()
-
+heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 #####################################
 ## Example for Debugging ############
@@ -256,7 +256,9 @@ if(number.of.motifs > 1){
                             method = hclust.method,
                             clusters,
                             metric = metric,
-                            tree.pos = "column")
+                            tree.pos = "column",
+                            color.palette = heatmap.color.palette,
+                            color.classes = heatmap.color.classes)
 
         dev.off()
       }

@@ -24,6 +24,7 @@ if (length(args >= 1)) {
   }
   verbose(args, 3)
 }
+heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 
 ################################################
@@ -85,10 +86,25 @@ div.selectAll("g")--return--
 
 # cluster.counts.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/clusters_summary_table.tab"
 
-
 # Read cluster count table
 clusters <- read.table(file = cluster.counts.file, sep = "\t", header = TRUE)
 names(clusters) <- gsub("X.Cluster_ID", "Cluster_ID", names(clusters))
+
+# Read the root motif table and save the path to the logos
+# root.motifs.table <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Multi_algorithms_analysis_hclust-average_Ncor0.4_root_motifs_table.tab"
+root.motifs.files <- read.table(file = root.motifs.table, sep = "\t", header = TRUE)
+names(root.motifs.files) <- gsub("X.Cluster_ID", "Cluster_ID", names(root.motifs.files))
+
+## Create the arrays with the paths to the logos
+## This images will be displayed in the heatmap with the number of clusters
+cl.names <- as.vector(root.motifs.files$Cluster_ID)
+logos <- as.vector(root.motifs.files$Logo)
+logos.rc <- as.vector(root.motifs.files$Logo_RC)
+pic.logos <- paste("pics['", cl.names, "'] = '", logos, "';", sep = "")
+pic.logos.rc <- paste("pics_rc['", cl.names, "'] = '", logos.rc, "';", sep = "")
+
+pic.logos <- paste(pic.logos, collapse = " ")
+pic.logos.rc <- paste(pic.logos.rc, collapse = " ")
 
 #################################
 ## Create the percentage table
@@ -381,7 +397,7 @@ if(max(clusters) < 10){
 ## palette.
 ## This is exported and will be read later
 ## in the D3 heatmap code.
-rgb.palette <- colorRampPalette(brewer.pal(9, "YlOrRd"), space="Lab")
+rgb.palette <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")
 white <- "#FFFFFF"
 white <- append(white,rgb.palette(ceiling((max(clusters)/step))))
 
@@ -463,6 +479,10 @@ row.nb <- dim(clusters)[2]
 heatmap.rows.nb <- paste(1:row.nb, collapse=",")
 heatmap.rows.name <- paste(paste("'", collection.names, "'", sep = ""), collapse = ",")
 
+## Color scale
+color.scale <- append("#FFFFFF",rgb.palette(21))
+color.scale <- paste("'", color.scale, "'",collapse=",")
+
 ## Collections
 collections <- paste(paste("'", collection.names, "'", sep = ""), collapse = ",")
 
@@ -525,7 +545,10 @@ order.info <- matrix(c("Gradient", gradient,
                        "Left_space", left,
                        "Bottom_space", left,
                        "Body", html.body.size,
-                       "Collections", collections
+                       "Collections", collections,
+                       "Logos", pic.logos,
+                       "Logos_RC", pic.logos.rc,
+                       "Color_scale", color.scale
 ), nrow = 2)
 order.info.df <- t(data.frame(order.info))
 verbose(paste("Exporting table with the order of the clusters (Required in D3 Heatmap)", order.list.file), 2)

@@ -151,6 +151,10 @@ package main;
   local $random_seq_flag = 0;
   local $random_motifs_flag = 0;
 
+  ## Heatmap color palette and classes
+  local $heatmap_color_palette = "RdBu";
+  local $heatmap_color_classes = 11;
+
   ## Supported taks
   local @supported_tasks = qw(
 			all
@@ -165,6 +169,15 @@ package main;
   }
   %selected_tasks = ();
   $selected_tasks{"all"} = 1;
+
+  ## Supported heatmap colors (taken from http://colorbrewer2.org/)
+  local %supported_heatmap_color_palette = ();
+  local @supported_heatmap_color_palette = qw (Spectral RdYlGn RdYlBu RdGy RdBu PuOr PRGn PiYG BrBG);
+  local %supported_heatmap_color_palette = ();
+  foreach my $palette (@supported_heatmap_color_palette) {
+    $supported_heatmap_color_palette{$palette} = 1;
+  }
+  local $supported_heatmap_color_palette = join ",", @supported_heatmap_color_palette;
 
   ################################################################
   ## Read argument values
@@ -737,7 +750,43 @@ Use this option as negative control.
     } elsif ($arg eq "-rand_seq") {
       $random_seq_flag = 1;
 
-################################################################
+=pod
+
+=item	B<-heatmap_color_palette Color_Palette>
+
+Select the color palette used in the heatmaps (divergent scales)
+The color palettes (and their names) are taken from ColorBrewer2 website (http://colorbrewer2.org/)
+
+Supported: Spectral,RdYlGn,RdYlBu,RdGy,RdBu,PuOr,PRGn,PiYG,BrBG
+
+Default: RdBu
+=cut
+
+    } elsif ($arg eq "-heatmap_color_palette") {
+         $heatmap_color_palette = shift(@arguments);
+         unless(exists($supported_heatmap_color_palette{$heatmap_color_palette})) {
+	   &RSAT::error::FatalError($heatmap_color_palette, "Invalid hclust method. Supported:", $supported_heatmap_color_palette);
+         }
+
+=pod
+
+=item	B<-heatmap_color_classes X>
+
+This option specifies in how many color classes the color palette will be divided.
+
+For sequential color palettes: max 9
+For diverging color palettes: max 11
+
+If the user specified a color greater than the maximum allowed, the program takes this maximum value.
+
+For more information see ColorBrewer2 website (http://colorbrewer2.org/)
+
+=cut
+    } elsif ($arg eq "-heatmap_color_classes") {
+      $heatmap_color_classes = shift(@arguments);
+
+      &RSAT::error::FatalError($heatmap_color_classes, "Invalid value for option -top_matrices: must be a natural number") 
+         unless (&IsNatural($heatmap_color_classes));
 
 =pod
 
@@ -894,7 +943,7 @@ sub ParseScanResults {
     &RSAT::message::TimeWarn("Parsing matrix-scan results", $main::outfile{matches_tab}) if ($main::verbose >= 2);
 
     $parse_cmd = " grep -v '^;' ".$main::outfile{matches_tab};
-    $parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 4) {print $1"\t"$3"\t"($6+$5)/2"\t"$9}'." ' ";
+    $parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 3) {print $1"\t"$3"\t"($6+$5)/2"\t"$9}'." ' ";
     $parse_cmd .= " > ".$main::outfile{matches_tab_PARSED};
 
     &doit($parse_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
@@ -1008,6 +1057,8 @@ sub DynamicProfilesR {
     $profile_cmd .= "; jquery.base = '".$jquery_base."'";
     $profile_cmd .= "; datatable.base = '".$datatable_base."'";
     $profile_cmd .= "; datatable.css.base = '".$datatable_css_base."'";
+    $profile_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
+    $profile_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
     $profile_cmd .= " \"";
 #    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.")"; # Uncomment this line to check the R output in the terminal
 #    $profile_cmd = "(".$profile_cmd.") 2 > ".$main::outfile{Rlog}; 
