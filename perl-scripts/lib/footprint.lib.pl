@@ -1099,7 +1099,7 @@ sub RetrieveQueryPromoters {
       $cmd .= " -i ".$outfile{genes};
     }
     $cmd .= " -noorf";
-    $cmd .= " -feattype misc_RNA,cds,trna";
+    $cmd .= " -feattype gene,mrna,cds";
     $cmd .= " -o ".$outfile{query_seq};
     &RSAT::message::Info("Retrieve seq command", $cmd) if ($main::verbose >= 5);    
     &one_command($cmd,0); ## JvH restored &one_command, 2015-03-09

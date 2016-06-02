@@ -221,7 +221,7 @@ if (!exists("matrix.scan.file")) {
 }
 
 if (!exists("p.val")) {
-  p.val <- 1e-4
+  p.val <- 1e-3
 } 
 if (!exists("bin")) {
   bin <- 25
@@ -247,6 +247,15 @@ if (!exists("individual.plots")) {
 if (!exists("heatmap.dendo")) {
   heatmap.dendo <- "show"
 }
+if (!exists("heatmap.color.palette")) {
+  heatmap.color.palette <- "RdBu";
+}
+if (!exists("heatmap.color.classes")) {
+  heatmap.color.classes <- as.numeric(11);
+}
+heatmap.color.classes <- as.numeric(heatmap.color.classes)
+
+
 
 ## Heatmap dendogram position
 if (heatmap.dendo == "show"){
@@ -257,10 +266,10 @@ if (heatmap.dendo == "show"){
 
 print(heatmap.dendo)
 
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/BK/t/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_results_PARSED.tab"
-# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/BK/t/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/BK/t/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_TF_ID_name_correspondence.tab"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/BK/t/mkv_1/")
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_results_PARSED.tab"
+# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/")
 
 #############################################
 ## Read matrix-scan table Active Promoters
@@ -339,6 +348,7 @@ setwd(results.folder)
 #########################################################################
 
 input.count.table <- 0
+seq.count.per.motif <- list()
 if(input.count.table == 0){
   
   verbose(paste("Creating counts and frequencies tables"), 1)
@@ -348,6 +358,9 @@ if(input.count.table == 0){
     matrix.query <- matrix.names[m]
     
     matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
+    
+    nb.seq <- length(unique(as.vector(matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]$seq_id)))
+    seq.count.per.motif[[matrix.query]] <<- nb.seq
     
     ## As the reference point in matrix-scan was the end of the sequence and as we are working with peaks
     ## we add 300 to the position to have -/+ position around the summit    
@@ -434,7 +447,41 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   ## are distributed homogenously along the sequences
   chi <- chisq.test(counts.per.bin, correct = TRUE)
   
-  feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/chi[[7]]))
+  ## The expected values are calculated in the next way:
+  ## (2 * P-val) * (Sequence_length - Motif_length + 1 )
+  # motif.name <- rownames(counts.per.bin.table)[m]
+  # nb.seq <- seq.count.per.motif[[motif.name]]
+  # expected <- (p.val * 2 * seq.length * nb.seq)
+  # nb.bins <- dim(counts.per.bin.table)[2]
+  # expected <- round(expected/nb.bins)
+  # expected <- rep(expected, times= nb.bins)
+  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/expected))
+  
+  ## The expected values are calculated in the next way:
+  ## (sum(nb.sites) /  Nb.seq/Nb.bin)
+  # motif.name <- rownames(counts.per.bin.table)[m]
+  # nb.hits <- sum(counts.per.bin)
+  # nb.seq <- seq.count.per.motif[[motif.name]]
+  # nb.bins <- dim(counts.per.bin.table)[2]
+  # # expected <- round(nb.hits / (nb.seq/nb.bins) )
+  # 
+  # expected <- round((nb.hits/nb.seq)*nb.bins)
+  # 
+  # expected <- rep(expected, times= nb.bins)
+  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/expected))
+  
+  ## The expected values are calculated from the Observed values
+  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
+  
+  nb.bins <- dim(counts.per.bin.table)[2]
+  tfbd.med <- median(chi[[6]]) + 1
+  expected <- rep(tfbd.med, times = nb.bins)
+  feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
+
+  # [1] -1.0149503 -0.8450253 -0.6930222 -0.3145106  0.6854894  0.6289058  1.2704519  0.7924046 -0.6930222 -0.6930222 -1.0149503
+  # [12] -1.0149503
+  
+  
   
   ## Chi-squared
   cs.val <- round(chi[[1]], digits = 3)
@@ -542,15 +589,11 @@ flat.motifs <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
 ####################################################################################
 verbose(paste("Drawing Heatmap profiles"),1)
 
-## Color palette
-rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(1000))
-# rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
-
+## Color palette (user-defined)
+rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(27))
 
 log2.tab <- as.matrix(feature.log2.ratio)
 log2.tab[is.infinite(log2.tab)] <- 0
-
-# load("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/df.RData")
 
 ## Print the heatmap
 out.format <- c("pdf", "jpg")
@@ -589,11 +632,12 @@ for(format in out.format){
                    key = TRUE,
                    keysize = 1,
                    density.info = "none",
-                   key.xlab = "Density",
+                   key.xlab = "Log2 Ratio",
                    key.ylab = "",
                    key.title = "",
-                   offsetCol = 0.25,
-                   cexRow = 0.25
+                   # cexRow = 0.25
+                   offsetCol = 0.25
+                   
   )
   dev.off()
 }
@@ -667,14 +711,11 @@ colnames(additional.data) <- c("Nb_sequences", "Max_pval", "Min_pval")
 feature.attributes <- cbind(feature.attributes, additional.data)
 feature.attributes  <- feature.attributes[,c(1,7,5,6,4,8,2,3,9,10)]
 
-print(head(feature.attributes))
-print("Is here ? ")
-
 feature.attributes.file <- paste(basename, "_attributes.tab", sep = "")
 # write.table(feature.attributes, file = feature.attributes.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
 # rm(additional.data)
 
-print("Not here")
+
 
 ##############################################################
 ## Plot each profile individually (if it is user-specified) ##
