@@ -50,6 +50,13 @@ if (!exists("prefix")) {
 } else if (!exists("maxNWD.heatmap.html")) {
   stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): maxNWD.heatmap.html  ")
 } 
+if (!exists("heatmap.color.palette")) {
+  heatmap.color.palette <- "RdBu";
+}
+if (!exists("heatmap.color.classes")) {
+  heatmap.color.classes <- as.numeric(9);
+}
+heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 
 # cat /home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/matrix-enrichment_heatmap.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " prefix = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto'; maxNWD.table.file = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt'; html.template.file = 'motif_enrichment_dynamic_heatmap_d3.html'; maxNWD.tsv = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_matrix_heatmap.tsv'; maxNWD.heatmap.html = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_motif_enrichment_maxNWD_heatmap.html'; d3.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3.v3.min.js'; d3.array.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3-array.v0.6.min.js'" 
@@ -182,10 +189,9 @@ html.report <- gsub("--data_legend--", legend, html.report)
 
 ## Create Gradient Hexadecimal:
 ## Given X hexa colors creates a color
-# palette.hexa <- colorRampPalette(brewer.pal(5, "YlOrRd"), space="Lab")
-palette.hexa <- colorRampPalette(brewer.pal(9, "RdYlBu"), space="Lab")
+palette.hexa <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")
 
-palette.hexa <- palette.hexa(legend.length + 1)
+palette.hexa <- rev(palette.hexa(legend.length + 1))
 
 palette <- paste("'" , rev(palette.hexa), "'", sep = "")
 palette <- paste(palette, collapse = ", ")
