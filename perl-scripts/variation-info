@@ -233,8 +233,8 @@ package main;
   our $out = STDOUT;
 
   our $species = '';
-  our $ensembl_version = "";
-  our $assembly_version = "";
+  our $ensembl_release = "";
+  our $assembly = "";
 
   our $col = 1;
   our $validated = 0 ;
@@ -263,7 +263,7 @@ package main;
 
   ## Species and assembly or ensembl version have to be specified
   &RSAT::error::FatalError("No species specified. Use -species") unless ($species);
-  &RSAT::error::FatalError("No assembly and ensembl version specified. Use at least one of these options: -e_version -a_version") unless ($ensembl_version || $assembly_version);
+  &RSAT::error::FatalError("No assembly and ensembl version specified. Use at least one of these options: -e_version -a_version") unless ($ensembl_release || $assembly);
 
   ## Check input format and file existance
   if ($main::infile{'input'}) {
@@ -272,8 +272,8 @@ package main;
   }
 
   ## Check species genome and variations directories
-  my $genome_dir = &Get_genome_dir($species, $assembly_version, $ensembl_version,$species_suffix);
-  my $variation_dir = &Get_variation_dir($species, $assembly_version, $ensembl_version, $species_suffix);
+  my $genome_dir = &Get_genome_dir($species, $assembly, $ensembl_release,$species_suffix);
+  my $variation_dir = &Get_variation_dir($species, $assembly, $ensembl_release, $species_suffix);
 
   &RSAT::error::FatalError("Genome directory", $genome_dir, "does not exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
   &RSAT::error::FatalError("Variation directory", $variation_dir, "does not exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);
@@ -650,31 +650,37 @@ variation/bed/id file if provided.
 
 =pod
 
-=item B<-e_version #>
+=item B<-release #>
 
-The version of ensembl database (e.g. 72).
+The version of ensembl database (e.g. 84).
 
-Note: each Ensembl version contains a specific assembly version for
-each species. When the option -e_version is used, the option
--a_version should thus in principle not be used.
+Note: each Ensembl release contains a specific assembly for
+each species. When the option -release is used, the option
+-assembly should thus in principle not be used.
 
 =cut
-    } elsif ($arg eq "-e_version") {
-      $main::ensembl_version = shift(@arguments);
+  } elsif (($arg eq "-release") || ($arg eq "-version") || ($arg eq "-e_version")) {
+    if ($arg ne "-release") {
+      &RSAT::message::Warning("Option -version is obsolete, has been replaced by -release.");
+    }
+    $main::ensembl_release = shift(@arguments);
 
 =pod
 
-=item B<-a_version #>
+=item B<-assembly #>
 
-Assembly version (e.g. GRCh37 for the assembly 37 of the Human genome).
+Assembly (e.g. GRCh37 for the assembly 37 of the Human genome).
 
 Note: genome assemblies can cover several successive ensemble
 versions. In case of ambiguity, the latest corresponding ensembl
 version is used.
 
 =cut
-    } elsif ($arg eq "-a_version") {
-      $main::assembly_version = shift(@arguments);
+    } elsif (($arg eq "-assembly") || ($arg eq "-a_version")) {
+      if ($arg ne "-assembly") {
+	&RSAT::message::Warning("Option -a_version is obsolete, has been replaced by -assembly.");
+      }
+      $main::assembly = shift(@arguments);
 
 =pod
 
