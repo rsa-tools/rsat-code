@@ -6,6 +6,9 @@
 #
 ############################################################
 
+## TO DO: pass gene names from genes to CDSs
+
+
 ## use strict;
 
 =pod
@@ -50,7 +53,7 @@ from the API, e.g. the taxonomy).
 
 =head1 USAGE
 
-C<install-ensembl-genome [-version #] [-task #] [-o outputfile] [-v #] [...]>
+C<install-ensembl-genome [-release #] [-task #] [-o outputfile] [-v #] [...]>
 
 =head2 Example
 
@@ -143,14 +146,14 @@ package main;
   our $out = STDOUT;
 
   our $db = "ensembl"; ## Alternative: ensemblgenomes
-  our $safe_ensembl_version = &get_ensembl_version_safe($db);
-  our $latest_ensembl_version = &get_ensembl_version_latest($db);
-  our $ensembl_version = &get_ensembl_version($db);
+  our $safe_ensembl_release = &get_ensembl_release_safe($db);
+  our $latest_ensembl_release = &get_ensembl_release_latest($db);
+  our $ensembl_release = &get_ensembl_release($db);
   our $species_suffix = "";
 
-  #  our $safe_ensembl_version;
-  #  our $latest_ensembl_version;
-  #  our $ensembl_version;
+  #  our $safe_ensembl_release;
+  #  our $latest_ensembl_release;
+  #  our $ensembl_release;
   our $get_available_species = 0;
 
   our @tasks = ();
@@ -173,8 +176,8 @@ package main;
   ################################################################
   ## Check argument values
 
-  ## Check that the user-selected Ensembl version is supported.
-  &check_ensembl_version($db, $ensembl_version);
+  ## Check that the user-selected Ensembl release is supported.
+  &check_ensembl_release($db, $ensembl_release);
 
   ## Set default tasks if no task has been specified
   if (scalar(@tasks) < 1) {
@@ -266,7 +269,7 @@ package main;
       $s++;
       my $arg = " -v ".$verbose;
       $arg .= " -db ".$db;
-      $arg .= " -version ".$ensembl_version;
+      $arg .= " -release ".$ensembl_release;
       $arg .= " -species ".$species;
       $arg .= " -species_suffix ".$species_suffix if ($species_suffix);
 
@@ -290,8 +293,8 @@ package main;
 
       ## Get the name of the organism as installed in RSAT. This
       ## differs from the Ensembl species name, because we add a
-      ## suffix with the assembly version.
-      my $full_species_id = &Get_full_species_ID($species, $assembly_version, $ensembl_version, $species_suffix);
+      ## suffix with the assembly.
+      my $full_species_id = &Get_full_species_ID($species, $assembly, $ensembl_release, $species_suffix);
       
       &RSAT::message::Info("Species", $species, "Full species ID", $full_species_id) if ($main::verbose >= 2);
 
@@ -435,12 +438,12 @@ the line is ignored.
 
 =pod
 
-=item B<-version #>
+=item B<-release #>
 
-The release version of ensEMBL.
+The release release of ensEMBL.
 
-Supported versions: versions later than 70, safe, latest.  This script
-was developed while Ensembl was at version 72.
+Supported releases: releases later than 70, safe, latest.  This script
+was developed while Ensembl was at release 72.
 
 Default : I<safe>
 
@@ -451,38 +454,41 @@ Default : I<safe>
 The file locations and/or formats of the Ensembl ftp distribution
 may change between two Ensembl release.
 
-For this reason, we defined the "safe" version, which corresponds to
-the latest version of ensembl which has been checked to work with this
+For this reason, we defined the "safe" release, which corresponds to
+the latest release of ensembl which has been checked to work with this
 script.
 
 =item latest
 
-This corresponds to the lastest version of Ensembl. Beware: this
-version is not guaranteed to be compatible with RSAT, in case Ensembl
+This corresponds to the lastest release of Ensembl. Beware: this
+release is not guaranteed to be compatible with RSAT, in case Ensembl
 would change their file formats or locations.
 
 =back
 
 =cut
-    } elsif ($arg eq "-version") {
-    $ensembl_version = shift(@arguments);
-    &RSAT::error::FatalError($ensembl_version,"is not a valid value for Ensembl version. Supported values: Natural numbers (e.g. 72), safe, latest.")
-      unless ( &IsNatural($ensembl_version) || $ensembl_version eq "safe" || $ensembl_version eq "latest" );
+  } elsif (($arg eq "-release") || ($arg eq "-version")) {
+    if ($arg eq "-version") {
+      &RSAT::message::Warning("option -version is obsolete, has been replaced by -release.");
+    }
+    $ensembl_release = shift(@arguments);
+    &RSAT::error::FatalError($ensembl_release,"is not a valid value for Ensembl release. Supported values: Natural numbers (e.g. 72), safe, latest.")
+      unless ( &IsNatural($ensembl_release) || $ensembl_release eq "safe" || $ensembl_release eq "latest" );
 
 =pod
 
-=item B<-assembly_version>
+=item B<-assembly>
 
-Choose a particular assembly version for the configuration. In
-principle this option should not be used, snice the assembly version
-is automatically determined when the request is send to Ensembl.
+Choose a particular assembly for the configuration. In principle this
+option should not be used, since the assembly is automatically
+determined when the request is send to Ensembl.
 
 This option can be convenient to enable the option I<-task config>
 when the genome has been synchronized from another RSAT server.
 
 =cut
-    } elsif ($arg eq "-assembly_version") {
-      $main::assembly_version = shift(@arguments);
+    } elsif ($arg eq "-assembly") {
+      $main::assembly = shift(@arguments);
 
 =pod
 
@@ -491,7 +497,7 @@ when the genome has been synchronized from another RSAT server.
 Suffix to append to the full species ID.
 
 By default, the full species ID is composed by concatenating the
-Ensembl species and assembly version. The option I<-species_suffix>
+Ensembl species and assembly. The option I<-species_suffix>
 allows to specify a string (e.g. _ensembl76, _for_testing, ...) that
 will be appended to the full species ID.
 
@@ -557,7 +563,7 @@ This task is executed by running I<install-organism>.
 #
 # The directory in wich RSAT data must be installed. The selected
 # species will be installed in a sub-directory composed of Species name
-# and Ensembl genome version.
+# and Ensembl genome release.
 #
 # Default : $RSAT/data/
 #
@@ -685,8 +691,8 @@ sub Verbose {
   print $out "; install-ensembl-genome ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
-  printf $out "; %-22s\t%s\n", "Ensembl release", $ensembl_version;
-#  printf $out "; %-22s\t%s\n", "Assembly version", $assembly_version;
+  printf $out "; %-22s\t%s\n", "Ensembl release", $ensembl_release;
+#  printf $out "; %-22s\t%s\n", "Assembly", $assembly;
   printf $out "; %-22s\t%s\n", "Species suffix", $species_suffix;
   if (%main::infile) {
     print $out "; Input files\n";
@@ -711,7 +717,7 @@ sub GetAvailableSpecies {
 
     my $arg = "-v ".$verbose;
     $arg .= " -available_species";
-    $arg .= " -version $ensembl_version";
+    $arg .= " -release $ensembl_release";
     $arg .= " -db ".$db;
 
     my %species_taxon = ();
