@@ -12,11 +12,6 @@ if (length(args >= 1)) {
   }
 }
 
-# prefix
-# TFs 
-# Sequences
-# html.template.file
-
 if (!exists("prefix")) {
   stop("Missing mandatory argument (prefix): prefix ")
 } else if (!exists("html.template.file")){
@@ -37,8 +32,10 @@ all.IDs <- NULL
 hash.profile.ID <- list()
 plot.names <- NULL
 ID.counter <- 0
-x.y <- NULL 
+x.x <- NULL
+y.y <- NULL 
 line.w <- 5
+all.profiles.max.occ <- vector()
 
 # prefix <- "/home/jaimicore/Documents/PhD/motif_enrichment/20160218/capstarr-seq"
 # TFs <- c("DDIT", "FCP2_GRHL1", "JUN_FOS", "REST", "SP", "USF2", "YY")
@@ -60,7 +57,6 @@ TFs <- unlist(strsplit(TFs, "---", perl = TRUE))
 
 prof <- as.vector(outer(Sequences, TFs, paste))
 all.profiles <<- as.vector(sapply(prof, function(p){gsub(" ", "_", p)}))
-
 pdf.file <- paste(prefix, "_Binomial_occ_plots.pdf", sep = "")
 pdf(pdf.file )
 for(TF in TFs){
@@ -113,7 +109,12 @@ for(TF in TFs){
             lwd = 2)
     }
   }
+  
   legend("topright", Sequences, fill = colors, cex = 0.75)
+  
+  max.occ <- apply(binomial.occ.tab.cp[,2:col.nb],2, function(m){ max(m, na.rm = TRUE)})
+  names(max.occ) <- paste(TF, Sequences, sep = "_")
+  all.profiles.max.occ <<- append(all.profiles.max.occ, max.occ)
   
   ################################
   ## Prepare C3 html fields     
@@ -168,11 +169,6 @@ for(TF in TFs){
     ## Only extract those positions without NA
     values.wo.NA <- values[which(values != "NA")]
     
-    a <- sum(values.wo.NA)
-    b <- cumsum(values.wo.NA)
-    print("- - - - - - - - - - - - - - - -- - - -  - - - -")
-    print(paste("Profile: ", all.profiles[ID.counter]," - Sum: ",a, " - CumSum: ", b[length(b)], sep = ""))
-    
     # Create the Y value
     y <- paste("['",
                ID,
@@ -181,7 +177,7 @@ for(TF in TFs){
                      collapse = ","),
                "],",
                sep = "")
-    x.y <<- rbind(x.y, y)
+    y.y <<- rbind(y.y, y)
     
     ## Add the X-value
     
@@ -189,7 +185,7 @@ for(TF in TFs){
     aaa <- prettyNum(aaa, scientific=TRUE, digits = 6)
     
     
-    x.y <<- rbind(x.y, paste("['x", ID.counter,"',", paste(aaa,collapse = ","), "],", sep = ""))
+    x.x <<- rbind(x.x, paste("['x", ID.counter,"',", paste(aaa,collapse = ","), "],", sep = ""))
   })
 }
 dev.off()
@@ -197,19 +193,27 @@ dev.off()
 #############################
 ## Create the HTML c3 plot ##
 #############################
+reorder <- order(all.profiles.max.occ, decreasing = TRUE)
+all.IDs <- all.IDs[reorder]
+all.profiles <- all.profiles[reorder]
+plot.names <- plot.names[reorder]
+
 html.report <- readLines(html.template.file)
 
 ## Print Motif names array
 html.names <- sapply(TFs, function(x){
   rep(x, times = length(Sequences))
 })
+html.names <- html.names[reorder]
 html.names <- paste("Names['", all.IDs, "'] = '", html.names, "';", sep = "")
 html.names <- paste(html.names, collapse = "\n")
 html.report <- gsub("--names_vector--", html.names, html.report)
 
 ## Print Sequence names array
 html.seq <- rep(Sequences, times = length(Sequences))
-html.seq<- as.vector(html.seq)
+#html.seq <- html.seq[reorder]
+html.seq <- gsub("_\\w+", "", all.profiles, perl = TRUE)
+
 html.seq <- paste("Seqs['", all.IDs, "'] = '", html.seq, "';", sep = "")
 html.seq <- paste(html.seq, collapse = "\n")
 html.report <- gsub("--seqs--", html.seq, html.report)
@@ -225,6 +229,7 @@ logos.F <- as.vector(logos.F)
 logos.F <- sapply(logos.F, function(x){
   rep(x, times = length(Sequences))
 })
+logos.F <- logos.F[reorder]
 logos.F <- paste("pics['", all.IDs, "'] = '", logos.F, "';", sep = "")
 logos.F <- paste(logos.F, collapse = "\n")
 html.report <- gsub("--pics--", logos.F, html.report)
@@ -237,6 +242,7 @@ logos.R <- as.vector(logos.R)
 logos.R <- sapply(logos.R, function(x){
   rep(x, times = length(Sequences))
 })
+logos.R <- logos.R[reorder]
 logos.R <- paste("pics_rc['", all.IDs, "'] = '", logos.R, "';", sep = "")
 logos.R <- paste(logos.R, collapse = "\n")
 html.report <- gsub("--pics_rc--", logos.R, html.report)
@@ -283,15 +289,22 @@ html.report <- gsub("--chart_h--", chart.heigth, html.report)
 
 ## Add xs values (one row per motif)
 ## They are inserted in the C3 section
-xs <- paste("'", all.IDs, "' : 'x", 1:ID.counter, "',", sep = "")
+# xs <- paste("'", all.IDs, "' : 'x", 1:ID.counter, "',", sep = "")
+xs <- paste("'", all.IDs, "' : 'x", reorder, "',", sep = "")
 xs <- paste(xs, collapse = "\n")
 html.report <- gsub("--xs--", xs, html.report)
 
 ## Add x values (one row per motif)
 ## They are inserted in the C3 section
-xx <- paste(x.y, collapse = "\n")
-xx <- gsub(",NA,", ",NaN,", xx)
-html.report <- gsub("--x_y--", xx, html.report)
+x.x <- x.x[reorder]
+y.y <- y.y[reorder]
+x.x <- paste(x.x, collapse = "\n")
+x.x <- gsub(",NA,", ",NaN,", x.x)
+y.y <- paste(y.y, collapse = "\n")
+y.y <- gsub(",NA,", ",NaN,", y.y)
+
+html.report <- gsub("--x_x--", x.x, html.report)
+html.report <- gsub("--y_y--", y.y, html.report)
 
 ## Insert the motif names
 ## They are inserted in the C3 section
