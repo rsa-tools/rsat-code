@@ -1252,35 +1252,7 @@ analysis and return a text file with the root motifs of each
 cluster.
 
 This option is useful when the user wants to explore the data and
-to avoid the cimputation of the visual elements.
-
-=item B<nb_clusters:> Advanced Option! Calculates the number of clusters in the input motif collection given a range of values that will be used as threshold.
-
-Requires the values of the metrics that will be used as threshold.
-A sequence of values with each combination of values is evaluated in the hierarchical tree to count the number of clusters.
- 
-Example: 
-
-Varying the threshold of Ncor and cor
-from 0.5 -> 0.7 with a step of 0.1
-
-             Ncor 
-                 0.5       0.6       0.7
-    cor
-        0.5       6         6         6
-        0.6       6         7         7     <-- Number of clusters
-        0.7       7         8         8
-
-
-NOTE: this option requires a lot of computation time to calculate the
-number of clusters.
-
-NOTE: the output is a heatmap showing the number of clusters found in the collection
-of motifs at different threshold values. This option is ideal as a general exploration
-of the data.
-
-NOTE: When this option is selected, the analysis is exclusively focused in count the number of clusters.
-The motif alignment is skipped. 
+to avoid the cimputation of the visual elements. 
 
 =back
 
