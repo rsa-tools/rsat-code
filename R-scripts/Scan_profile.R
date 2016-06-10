@@ -1001,10 +1001,10 @@ html.report <- gsub("--significances--", sig, html.report)
 ## The plot heigth depends in the number of motifs
 motif.total <- length(all.motifs)
 chart.heigth <- 500
-if(motif.total >= 300){
-  chart.heigth <- 700
-} else if(motif.total >= 400){
-  chart.heigth <- 900
+if(motif.total >= 200){
+  chart.heigth <- 800
+} else if(motif.total >= 300){
+  chart.heigth <- 1000
 }
 html.report <- gsub("--chart_h--", chart.heigth, html.report)
 
