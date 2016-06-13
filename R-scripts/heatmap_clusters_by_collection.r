@@ -7,9 +7,35 @@ if (dir.rsat == "") {
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path
 source(file.path(dir.rsat, 'R-scripts/config.R'))
+
+
+## Define the local directory for R librairies
+dir.rsat <- Sys.getenv("RSAT")
+if (dir.rsat == "") {
+  stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
+}
+
+dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
+dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
+
+
+## Load required libraries
+## List of packages to install
+required.packages = c("RColorBrewer",
+                      "gplots",
+                      "amap")
+
+
+## List of RSAT-specific packages to be compiled on the server
+# for (pkg in c(required.packages)) {
+#   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
+# }
+
+
 library("RColorBrewer")
 library("gplots")
 library("amap")
+
 
 ###########################################
 ## Read arguments from the command line.
@@ -84,14 +110,14 @@ div.selectAll("g")--return--
 });--return--
 </script>--return--'
 
-# cluster.counts.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/clusters_summary_table.tab"
+# cluster.counts.file <- "/home/jaimicore/test/Ncor0.4_cor0.6/Multi_algorithms_analysis_hclust-average_Ncor0.4_cor0.6_tables/clusters_summary_table.tab"
 
 # Read cluster count table
 clusters <- read.table(file = cluster.counts.file, sep = "\t", header = TRUE)
 names(clusters) <- gsub("X.Cluster_ID", "Cluster_ID", names(clusters))
 
 # Read the root motif table and save the path to the logos
-# root.motifs.table <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Multi_algorithms_analysis_hclust-average_Ncor0.4_root_motifs_table.tab"
+# root.motifs.table <- "/home/jaimicore/test/Ncor0.4_cor0.6/Multi_algorithms_analysis_hclust-average_Ncor0.4_cor0.6_root_motifs_table.tab"
 root.motifs.files <- read.table(file = root.motifs.table, sep = "\t", header = TRUE)
 names(root.motifs.files) <- gsub("X.Cluster_ID", "Cluster_ID", names(root.motifs.files))
 
@@ -128,8 +154,9 @@ x <- sapply(names(motif.DB.counts), function(DB){
   
   ## Get collection A information
   collection.A.name <- DB
-  collection.A.size <- as.numeric(motif.DB.counts[DB])
+  # collection.A.size <- as.numeric(motif.DB.counts[DB])
   collection.A.nb.clusters <- length(DB.motifs[,DB])
+  collection.A.size <- 100
   
   #################################################################################
   ## Calculate the overlap between the databases
@@ -147,6 +174,7 @@ x <- sapply(names(motif.DB.counts), function(DB){
     collection.B.name <- n
     collection.B.size <- as.numeric(motif.DB.counts[n])
     collection.B.nb.clusters <- length(which(DB.motifs[,n] > 0))
+    collection.B.size <- 100
     
     ## Get the name of the clusters in Collection A and B
     collection.A.clusters.names <- as.vector(DB.motifs[,c("Cluster_ID",collection.A.name)]$Cluster_ID)
@@ -156,12 +184,13 @@ x <- sapply(names(motif.DB.counts), function(DB){
     collection.B.clusters.names <- as.vector(DB.motifs[positive.index,c("Cluster_ID",collection.B.name)]$Cluster_ID)
     
     # intersect.size <- length(intersect(collection.A.clusters.names, collection.B.clusters.names))
-    intersect.size <- sum(DB.motifs[,collection.B.name])
+    #intersect.size <- sum(DB.motifs[,collection.B.name])
+    intersect.size <- round(coverage[n] * 100)
     
-    if(intersect.size > collection.B.size){
-      intersect.size <- collection.B.size
-      collection.B.size <- collection.A.size
-    }
+    # if(intersect.size > collection.A.size){
+    #   intersect.size <- collection.B.size
+    #   collection.B.size <- collection.A.size
+    # }
     
     Venn.diagram.set.cp <- Venn.diagram.set
     set.nb <- paste("sets_", intersect.counter, sep = "")
@@ -185,6 +214,7 @@ x <- sapply(names(motif.DB.counts), function(DB){
     int.cl <- intersect(collection.A.clusters.names, collection.B.clusters.names)
     int.cl <- paste(int.cl, collapse = "<br>")
     intersection.clusters[[intersect.counter]][["Clusters"]] <<- int.cl
+    intersection.clusters[[intersect.counter]][["Sentence"]] <<- paste(collection.A.name, " covers ", round(coverage[n] * 100, digits = 2), "% of ", collection.B.name, sep = "")
     
     if(intersect.counter == 1){
       file.remove(JSON.intersect.file, showWarnings = FALSE)
@@ -236,7 +266,7 @@ coverage.pics.buttons <- paste(coverage.pics.buttons, collapse = "")
 coverage.pics <- sapply(1:(length(names(motif.DB.counts)) ^2), function(x){
     coverage.counter <<- coverage.counter + 1
     
-    paste("<div id='d_", x, "' class='coverage_pic' style='display:none;position:relative;float:left;font-size:8px;'><p style='text-align:center;padding-top:5px;font-size:12px;'>Venn diagram</p><div id='venn", x, "'></div><table style='width:300px;font-size:10px;text-align:left;'><thead><tr><th>Collections</th><th>Intersection</th></tr></thead><tbody><td>", intersection.clusters[[x]][["Collections"]], "</td><td>", intersection.clusters[[x]][["Clusters"]],"</td></tbody></table></div> --return--", sep = "")
+    paste("<div id='d_", x, "' class='coverage_pic' style='display:none;position:relative;float:left;font-size:8px;'><p style='text-align:center;padding-top:5px;' class='mono'><strong>Venn diagram</strong></p><div id='venn", x, "'></div><p style='text-align:center;padding-top:5px;' class='mono'>", intersection.clusters[[x]][["Sentence"]], "</p><table style='width:300px;text-align:left;' class='mono'><thead><tr><th>Collections</th><th>Intersection</th></tr></thead><tbody><td>", intersection.clusters[[x]][["Collections"]], "</td><td>", intersection.clusters[[x]][["Clusters"]],"</td></tbody></table></div> --return--", sep = "")
 
 })
 coverage.pics <- as.vector(coverage.pics)
@@ -278,10 +308,18 @@ sapply(c("average", "complete", "single", "ward"), function(m){
     temp <- m
     m <- "ward.D"
   }
+  
+  
+  pfile <- paste(coverage.json.folder, "/coverage_clustering_", m,".json", sep = "")
+  pdf(file = pfile)
   hm.collections <- heatmap.2(coverage.contingency.table,
                            hclustfun = function(x) hclust(x,method = m),
                            distfun = function(x) Dist(x,method = 'pearson')
   )
+  dev.off()
+  # file.remove("test.pdf")
+  
+  
   if(m == "ward.D"){
     m <- "ward"
   }
@@ -415,10 +453,16 @@ sapply(c("average", "complete", "single", "ward"), function(m){
     m <- "ward.D"
   }
   
+  pfile <- paste(coverage.json.folder, "/collection_clustering_", m,".json", sep = "")
+  pdf(file = pfile)
+
+
   hm.clusters <- heatmap.2(clusters.matrix,
                            hclustfun = function(x) hclust(x,method = m),
                            distfun = function(x) Dist(x,method = 'pearson')
   )
+  dev.off()
+  # file.remove("test2.pdf")
   
   if(m == "ward.D"){
     m <- "ward"
@@ -482,6 +526,7 @@ heatmap.rows.name <- paste(paste("'", collection.names, "'", sep = ""), collapse
 ## Color scale
 color.scale <- append("#FFFFFF",rgb.palette(21))
 color.scale <- paste("'", color.scale, "'",collapse=",")
+
 
 ## Collections
 collections <- paste(paste("'", collection.names, "'", sep = ""), collapse = ",")
