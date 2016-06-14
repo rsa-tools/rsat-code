@@ -216,7 +216,8 @@ if ($query->param('uth_pvalue')) {
 } else {
     $uth_pvalue= "1e-4";
 }
-$parameters .=  " -scan_opt \'-uth pval ".$uth_pvalue."\'  ";
+#$parameters .=  " -scan_opt \'-uth pval ".$uth_pvalue."\'  ";
+$parameters .=  " -pval ".$uth_pvalue."  ";
 
 
 if ($query->param('uth_occ_th')) {
