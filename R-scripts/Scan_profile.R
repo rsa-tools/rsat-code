@@ -14,6 +14,7 @@ required.packages = c("IRanges",
                       "RColorBrewer",
                       "gplots",
                       "jpeg",
+                      "amap",
                       "qvalue")
 
 ## List of RSAT-specific packages to be compiled on the server
@@ -271,11 +272,34 @@ print(heatmap.dendo)
 # ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_TF_ID_name_correspondence.tab"
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/")
 
-#############################################
-## Read matrix-scan table Active Promoters
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3_matrix_scan_results_PARSED.tab"
+# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/")
+
+##############################
+## Read matrix-scan table 1
 verbose(paste("Reading matrix-scan results table"), 1)
 matrix.scan.results <- read.csv(file = matrix.scan.file, sep = "\t", header = TRUE, comment.char = ";")
 colnames(matrix.scan.results) <- c("seq_id", "ft_name", "bspos", "Pval")
+
+######################################
+## Create the column -log10(pvalue)
+## Assign a class to each p-value
+matrix.scan.results$Pval.minlog10 <- -log10(matrix.scan.results$Pval)
+matrix.scan.results$Pval.class <- ceiling(matrix.scan.results$Pval.minlog10*2)/2
+
+classes.pval <- sort(unique(matrix.scan.results$Pval.class))
+classes.pval.letters <- LETTERS[1:length(classes.pval)]
+
+matrix.scan.results$Pval.class.letter <- sapply(matrix.scan.results$Pval.class, function(x){
+  p.class <- which(classes.pval == x)
+  classes.pval.letters[p.class ]
+})
+
+min.pval.minus.log10 <- min(matrix.scan.results$Pval.minlog10)
+max.pval.minus.log10 <- max(matrix.scan.results$Pval.minlog10)
+
 
 #################
 ## Set p-value
@@ -334,6 +358,10 @@ if(off.set == 0){
   }
 }
 
+## Adapt the original BS position realtive to the limits 
+## calculated in the step before
+matrix.scan.results$bspos <- matrix.scan.results$bspos + limits
+
 ID.names.tab <- ID.to.names.correspondence.tab
 ID.names <- read.table(ID.names.tab, sep = "\t")
 
@@ -343,12 +371,128 @@ windows.labels <- NULL
 
 setwd(results.folder)
 
+
+##########################################################
+## Plot the distribution of TFBSs at different p-values ##
+##########################################################
+
+## Assign a color to each p-value class
+
+## The sequencial color palette has a maximum of 9 colors
+nb.color.classes <- length(classes.pval.letters)
+if(length(classes.pval.letters) > 9){
+  nb.color.classes <- 9
+}
+pval.class.colors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
+
+classes.to.colors <- list()
+for(x in 1:length(classes.pval.letters)){
+  classes.to.colors[[classes.pval.letters[x]]] <- pval.class.colors[x]
+}
+
+
+matrix.names <- matrix.names[matrix.names != "merge_164"]
+matrix.names <- matrix.names[matrix.names != "merge_241"]
+matrix.names <- matrix.names[matrix.names != "merge_318"]
+matrix.names <- matrix.names[matrix.names != "merge_340"]
+matrix.names <- matrix.names[matrix.names != "merge_359"]
+matrix.names <- matrix.names[matrix.names != "merge_379"]
+matrix.names <- matrix.names[matrix.names != "merge_400"]
+matrix.names <- matrix.names[matrix.names != "merge_419"]
+matrix.names <- matrix.names[matrix.names != "merge_437"]
+matrix.names <- matrix.names[matrix.names != "merge_467"]
+matrix.names <- matrix.names[matrix.names != "merge_486"]
+matrix.names <- matrix.names[matrix.names != "merge_79"]
+
+verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
+TFBSs.pval.distribution.file <- paste(basename, "_TFBSs_pval_classes.pdf", sep = "") 
+pdf(TFBSs.pval.distribution.file)
+sapply(1:length(matrix.names), function(m){
+  
+  ## Get the matrix name
+  matrix.query <- matrix.names[m]
+  
+  print(matrix.query)
+
+  ## Get the subtable with the hits of the query matrix
+  matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
+  matrix.query.classes <- sort(unique(matrix.query.selection$Pval.class.letter))
+  
+  ## Get the number of putative TFBSs of the query matrix
+  nb.TFBSs <- dim(matrix.query.selection)[1]
+  
+  class.counter <- 0
+  
+  ## Iterate in the p-val classes
+  sapply(matrix.query.classes, function(pclass){
+    
+    ## Count the number of p-val classes per query matrix
+    class.counter <<- class.counter + 1 
+    
+    ## Select the hits with the current pval class for the query matrix
+    matrix.query.classes.selection <- matrix.query.selection[matrix.query.selection$Pval.class.letter == pclass,]
+    
+    ## X-Y Plot ( TFBS position vs -log10(pval) )
+    if(class.counter == 1){
+      plot(x = matrix.query.classes.selection$bspos,
+           y = matrix.query.classes.selection$Pval.minlog10,
+           ylim = c( min(matrix.query.selection$Pval.minlog10, na.rm = TRUE), max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5),
+           xlim = c(-limits, limits),
+           main = paste("Distribution of TFBSs of ", matrix.query, sep = ""),
+           ylab = "-log10(pval) TFBSs",
+           xlab = "position (nt)",
+           col = classes.to.colors[[pclass]],
+           pch = "o",
+           cex = 1.5
+      )
+    } else {
+      lines(x = matrix.query.classes.selection$bspos,
+            y = matrix.query.classes.selection$Pval.minlog10,
+            col = classes.to.colors[[pclass]],
+            type = "p",
+            pch = "o",
+            cex = 1.5
+            )
+    }
+  })
+  
+  ## Insert legend
+  legend("topright", legend = paste("Nb of putative TFBSs: ", nb.TFBSs, sep = ""), bg="white")
+  
+  ## Insert logo
+  # logo.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_logos/cluster_70_logo_rc.jpeg"
+  matrix.ID <- as.vector(ID.names[which(ID.names[,2] == matrix.query),1])
+  logo.file <- paste(logo.folder, matrix.ID, "_logo.jpeg", sep = "")
+  logo <- readJPEG(logo.file)
+  rasterImage(logo, 
+              xleft = limits - (limits/4),
+              xright = limits - bin, 
+              ybottom = max(matrix.query.selection$Pval.minlog10, na.rm = TRUE) -0.25,
+              ytop = max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5)
+})
+dev.off()
+verbose(paste("Distribution of TFBSs at different p-values: ", TFBSs.pval.distribution.file), 1)
+
+# #######
+# all.pvalues <- round(sort(-log10(matrix.scan.results$Pval)), digits = 2)
+# minp <- -log10(p.val)
+# maxp <- max(all.pvalues)
+# breakp <- seq(minp, maxp, by = 0.5)
+# classes <- IRanges(breakp *100, width = 50)
+# values <- IRanges(all.pvalues * 100, width = 1)
+# x <- hist(all.pvalues, breaks = length(breakp), plot = FALSE)
+# ###
+# save(all.pvalues,minp,maxp, breakp, classes, values, file = "Example_classes.Rdata")
+# save(matrix.scan.results, file = "Matrix_scan_table.Rdata")
+
+
 #########################################################################
 ## Create count table from matrix-scan results (if not exist in input) ##
 #########################################################################
 
 input.count.table <- 0
 seq.count.per.motif <- list()
+
 if(input.count.table == 0){
   
   verbose(paste("Creating counts and frequencies tables"), 1)
@@ -359,7 +503,7 @@ if(input.count.table == 0){
     
     matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
     
-    nb.seq <- length(unique(as.vector(matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]$seq_id)))
+  nb.seq <- length(unique(as.vector(matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]$seq_id)))
     seq.count.per.motif[[matrix.query]] <<- nb.seq
     
     ## As the reference point in matrix-scan was the end of the sequence and as we are working with peaks
@@ -438,6 +582,12 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   #   print(m)
   counts.per.bin <- counts.per.bin.table[m,]
   
+  # plot(x = 1:12, y = counts.per.bin.table[1,], type = "l", ylim = c(0,100))
+  # plot(x = 1:12, y = counts.per.bin.table[2,], type = "l", ylim = c(0,100))
+  
+  case1 <- round(counts.per.bin.table[2,]/sum(counts.per.bin.table[2,]), digits = 2)
+  # mean(abs(counts.per.bin.table[2,] - min(counts.per.bin.table[2,])) )
+  
   ## Select the matches of the query feature
   feature.query <- rownames(counts.per.bin.table)[m]
   feature.attributes[[m]][["feature_id"]] <<- feature.query
@@ -449,13 +599,13 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   
   ## The expected values are calculated in the next way:
   ## (2 * P-val) * (Sequence_length - Motif_length + 1 )
-  # motif.name <- rownames(counts.per.bin.table)[m]
-  # nb.seq <- seq.count.per.motif[[motif.name]]
-  # expected <- (p.val * 2 * seq.length * nb.seq)
-  # nb.bins <- dim(counts.per.bin.table)[2]
-  # expected <- round(expected/nb.bins)
-  # expected <- rep(expected, times= nb.bins)
-  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/expected))
+  motif.name <- rownames(counts.per.bin.table)[m]
+  nb.seq <- seq.count.per.motif[[motif.name]]
+  expected <- (p.val * 2 * seq.length * nb.seq)
+  nb.bins <- dim(counts.per.bin.table)[2]
+  expected <- round(expected/nb.bins)
+  expected <- rep(expected, times= nb.bins)
+  feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/expected))
   
   ## The expected values are calculated in the next way:
   ## (sum(nb.sites) /  Nb.seq/Nb.bin)
@@ -476,12 +626,10 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   nb.bins <- dim(counts.per.bin.table)[2]
   tfbd.med <- median(chi[[6]]) + 1
   expected <- rep(tfbd.med, times = nb.bins)
-  feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
-
-  # [1] -1.0149503 -0.8450253 -0.6930222 -0.3145106  0.6854894  0.6289058  1.2704519  0.7924046 -0.6930222 -0.6930222 -1.0149503
-  # [12] -1.0149503
   
+  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
   
+  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(round(log2(counts.per.bin/median(counts.per.bin)), digits = 2))
   
   ## Chi-squared
   cs.val <- round(chi[[1]], digits = 3)
@@ -590,7 +738,7 @@ flat.motifs <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
 verbose(paste("Drawing Heatmap profiles"),1)
 
 ## Color palette (user-defined)
-rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(27))
+rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(heatmap.color.classes))
 
 log2.tab <- as.matrix(feature.log2.ratio)
 log2.tab[is.infinite(log2.tab)] <- 0
@@ -620,7 +768,8 @@ for(format in out.format){
                    xlab = "Position (bp)",
                    ylab = "Motifs",
                    
-                   #             hclustfun = function(d){hclust(d, method="ward")},
+                   hclustfun = function(d){hclust(d, method="ward")},
+                   distfun = function(x) Dist(x,method = 'pearson'),
                    
                    ## Color
                    col = rgb.palette,
@@ -1005,6 +1154,8 @@ if(motif.total >= 200){
   chart.heigth <- 800
 } else if(motif.total >= 300){
   chart.heigth <- 1000
+} else if(motif.total >= 600){
+  chart.heigth <- 1400
 }
 html.report <- gsub("--chart_h--", chart.heigth, html.report)
 
