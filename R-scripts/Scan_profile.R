@@ -436,7 +436,8 @@ sapply(1:length(matrix.names), function(m){
     if(class.counter == 1){
       plot(x = matrix.query.classes.selection$bspos,
            y = matrix.query.classes.selection$Pval.minlog10,
-           ylim = c( min(matrix.query.selection$Pval.minlog10, na.rm = TRUE), max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5),
+           # ylim = c( min(matrix.query.selection$Pval.minlog10, na.rm = TRUE), max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5),
+           ylim = c(min.pval.minus.log10, max.pval.minus.log10)
            xlim = c(-limits, limits),
            main = paste("Distribution of TFBSs of ", matrix.query, sep = ""),
            ylab = "-log10(pval) TFBSs",
@@ -457,7 +458,7 @@ sapply(1:length(matrix.names), function(m){
   })
   
   ## Insert legend
-  legend("topright", legend = paste("Nb of putative TFBSs: ", nb.TFBSs, sep = ""), bg="white")
+  legend("topleft", legend = paste("Nb of putative TFBSs: ", nb.TFBSs, sep = ""), bg="white")
   
   ## Insert logo
   # logo.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_logos/cluster_70_logo_rc.jpeg"
@@ -465,10 +466,11 @@ sapply(1:length(matrix.names), function(m){
   logo.file <- paste(logo.folder, matrix.ID, "_logo.jpeg", sep = "")
   logo <- readJPEG(logo.file)
   rasterImage(logo, 
-              xleft = limits - (limits/4),
-              xright = limits - bin, 
-              ybottom = max(matrix.query.selection$Pval.minlog10, na.rm = TRUE) -0.25,
-              ytop = max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5)
+              xleft = limits - (limits/3),
+              xright = limits - 5, 
+              ybottom = max.pval.minus.log10 - 1,
+              ytop = max.pval.minus.log10 - 0.25
+              )
 })
 dev.off()
 verbose(paste("Distribution of TFBSs at different p-values: ", TFBSs.pval.distribution.file), 1)
