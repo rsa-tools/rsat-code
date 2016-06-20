@@ -391,19 +391,6 @@ for(x in 1:length(classes.pval.letters)){
 }
 
 
-matrix.names <- matrix.names[matrix.names != "merge_164"]
-matrix.names <- matrix.names[matrix.names != "merge_241"]
-matrix.names <- matrix.names[matrix.names != "merge_318"]
-matrix.names <- matrix.names[matrix.names != "merge_340"]
-matrix.names <- matrix.names[matrix.names != "merge_359"]
-matrix.names <- matrix.names[matrix.names != "merge_379"]
-matrix.names <- matrix.names[matrix.names != "merge_400"]
-matrix.names <- matrix.names[matrix.names != "merge_419"]
-matrix.names <- matrix.names[matrix.names != "merge_437"]
-matrix.names <- matrix.names[matrix.names != "merge_467"]
-matrix.names <- matrix.names[matrix.names != "merge_486"]
-matrix.names <- matrix.names[matrix.names != "merge_79"]
-
 verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
 TFBSs.pval.distribution.file <- paste(basename, "_TFBSs_pval_classes.pdf", sep = "") 
 pdf(TFBSs.pval.distribution.file)
@@ -418,8 +405,10 @@ sapply(1:length(matrix.names), function(m){
   matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
   matrix.query.classes <- sort(unique(matrix.query.selection$Pval.class.letter))
   
-  ## Get the number of putative TFBSs of the query matrix
+  ## Get the number of putative TFBSs and the number of sequences with 
+  ## at least one match of the query matrix
   nb.TFBSs <- dim(matrix.query.selection)[1]
+  nb.seq <- length(as.vector(unique(matrix.query.selection$seq_id)))
   
   class.counter <- 0
   
@@ -458,7 +447,7 @@ sapply(1:length(matrix.names), function(m){
   })
   
   ## Insert legend
-  legend("topleft", legend = paste("Nb of putative TFBSs: ", nb.TFBSs, sep = ""), bg="white")
+  legend("topleft", legend = paste(c("Nb of putative TFBSs: ", "Nb of sequences: "), c(nb.TFBSs, nb.seq), sep = ""), bg="white")
   
   ## Insert logo
   # logo.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_logos/cluster_70_logo_rc.jpeg"
