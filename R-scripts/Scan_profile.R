@@ -437,7 +437,7 @@ sapply(1:length(matrix.names), function(m){
       plot(x = matrix.query.classes.selection$bspos,
            y = matrix.query.classes.selection$Pval.minlog10,
            # ylim = c( min(matrix.query.selection$Pval.minlog10, na.rm = TRUE), max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5),
-           ylim = c(min.pval.minus.log10, max.pval.minus.log10)
+           ylim = c(min.pval.minus.log10, max.pval.minus.log10),
            xlim = c(-limits, limits),
            main = paste("Distribution of TFBSs of ", matrix.query, sep = ""),
            ylab = "-log10(pval) TFBSs",
