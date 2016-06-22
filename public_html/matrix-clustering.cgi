@@ -75,10 +75,32 @@ local $collection_label = lc($query->param('collection_label'));
 if($collection_label){
     $collection_label =~ s/\s+/_/g;
 } else {
-    $collection_label = "matrix-clustering";
+    $collection_label = "Collection_1";
 }
 
 $parameters .= " -matrix $collection_label $matrix_file";
+
+
+######################
+## Add collection 2 ##
+######################
+
+################################################################
+#### Query matrix file
+local $matrix_file_2 = &GetSecondMatrixFile($output_path."/".$output_prefix."_second_matrices.".$query_matrix_format);
+
+################################
+## Add motif collection label
+local $collection_2_label = lc($query->param('collection_2_label'));
+if($collection_2_label){
+    $collection_2_label =~ s/\s+/_/g;
+} else {
+    $collection_2_label = "Collection_2";
+}
+if($query->param('matrix_2')){
+    $parameters .= " -matrix $collection_2_label $matrix_file_2";
+}
+
 
 push @result_files, ("Input file",$matrix_file);
 push @result_files, ("Result file",$result_file);
@@ -168,11 +190,11 @@ if ($heatmap) {
     $return_fields .= ",heatmap";
 }
 
-## Alignment of consensuses selection
-$heatmap = $query->param('alignment_consensuses');
-if ($heatmap) {
-    $return_fields .= ",align_consensus";
-}
+# ## Alignment of consensuses selection
+# $heatmap = $query->param('alignment_consensuses');
+# if ($heatmap) {
+#     $return_fields .= ",align_consensus";
+# }
 
 ## Export newick selection
 $newick = $query->param('newick');

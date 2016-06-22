@@ -493,7 +493,7 @@ package main;
   ## Upper P-value thrshold for selecting regulatory interactions, and
   ## for scanning promoters.
   if ($scan_opt) {
-    &RSAT::message::FatalError("Please use the footprint-scan option -pval to specify p-value, rather than entering it with -scan_opt")   if ($scan_opt =~/-uth pval/);
+    &RSAT::error::FatalError("Please use the footprint-scan option -pval to specify p-value, rather than entering it with -scan_opt")   if ($scan_opt =~/-uth pval/);
   }
   local $scan_opt .= " -uth pval ".$main::pval;
 
