@@ -1390,6 +1390,156 @@ onclick="toggleMenu(';
 }
 
 ################################################################
+################################################################
+sub GetSecondMatrix {
+  my (%args) = @_;
+  my $db_choice= $args{'db_choice'} || 0;
+  my $status_db_choice=$args{'status_db_choice'} || 0;
+#  my $consensus = $args{consensus};
+#  my $no_pseudo = $args{no_pseudo};
+  $args{title}="Input personal collection of motifs" if ($db_choice);
+  my $title = $args{title} || "Matrix (or matrices)";
+  #print "<a href=''><b>Use your own motifs collection:</b></a><br/>" ;
+  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db'  $status_db_choice >" if ($db_choice);
+  print "<B>", $title, "</B>\n";
+  print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
+  print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
+
+
+  my %supported_input_format = (
+				'alignace'=> 1,
+				'assembly'=>1,
+				'clustal'=>1,
+				'cluster-buster'=>1,
+				'consensus'=>1,
+				'feature'=>1,
+				'footprintDB'=>1,
+				'gibbs'=> 1,
+				'infogibbs'=>1,
+				'jaspar'=>1,
+				'mscan'=>1,
+				'meme'=>1,
+				'meme_block'=>1,
+				'motifsampler'=>1,
+				'sequences' => 1,
+				'stamp'=>1,
+				'stamp-transfac'=>1,
+      				'cis-bp'=>1,
+				'tab'=>1,
+				'transfac'=>1,
+				'uniprobe'=>1,
+				'encode'=>1,
+			       );
+  ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
+  ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
+  ## I SHOULD CHECK LATER
+  ##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
+  my @supported_input_formats = sort(keys( %supported_input_format));
+  #  my $supported_input_formats = join ",", @supported_input_formats;
+  #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
+
+  #### matrix format
+  print $query->popup_menu(-name=>'matrix_format',
+			   -Values=>[@supported_input_formats],
+			   -default=>$default{matrix_format});
+
+
+  ## Display option fo use consensus as matrix name
+  if ($args{consensus}) {
+    print $query->checkbox(-name=>'consensus_as_name',
+			   -checked=>$default{consensus_as_name},
+			   -label=>' use motif consensus as matrix name ');
+  }
+
+  ## Text area to enter the matrix
+  print "<BR>\n";
+  print  "Input motifs as text<br/>" if ($db_choice);
+  print "<div><div style='float:left;'>";
+  print $query->textarea(-name=>'matrix_2',
+			 -default=>$default{matrix_2},
+			 -rows=>4,
+			 -columns=>60);
+
+  ## Option to upload the matrix file from the client machine
+  print "<BR>\n"; 
+  print  "Upload motifs file<br/>" if ($db_choice);
+  print "Or select a file to upload <BR>\n" unless ($db_choice);
+  print $query->filefield(-name=>'uploaded_file_matrix_2',
+			  -default=>'',
+			  -size=>45,
+			  -maxlength=>200);
+    print "<BR>\n"; 
+
+  ## Propose help to find matrices
+  unless ($args{nowhere}) {
+    print '</div><div class="menu">
+<div class="menu_heading_closed"
+onclick="toggleMenu(';
+    print "'98'";
+    print ')" id="heading98"> Where to find matrices ?</div>
+<div id="menu98" class="menu_collapsible">
+	<a class="menu_item" href="http://www.pazar.info/" target="_blank">PAZAR</a>
+	<a class="menu_item" href="http://the_brain.bwh.harvard.edu/uniprobe/" target="_blank">UniProbe</a>
+	<a class="menu_item" href="http://www.gene-regulation.com/pub/databases.html" target="_blank">Transfac</a>
+	<a class="menu_item" href="http://jaspar.cgb.ki.se/" target="_blank">Jaspar</a>
+	<a class="menu_item" href="http://regulondb.ccg.unam.mx/download/Data_Sets.jsp" target="_blank">RegulonDB</a>
+
+</div>
+</div>
+</div>
+</div>
+<div style="clear:both;"></div>
+';
+  }
+
+  ## Display additional options: pseudo-count and pseudo-count distribution
+  unless ($args{no_pseudo}) {
+    #### pseudo-counts
+    print "<BR>\n";
+    print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+    print $query->textfield(-name=>'pseudo_counts',
+			    -default=>$default{pseudo_counts},
+			    -size=>2);
+    print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
+    print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $checked{'pseudo_prior'}>","<b>distributed proportionally to residues priors</b>");
+  }
+}
+
+sub GetSecondMatrixFile {
+  my ($matrix_file_2) = @_ ;
+
+  ################################################################
+  ## Upload sequence file from the client
+  my $upload_file_2 = $query->param('uploaded_file_matrix_2');
+  if ($upload_file_2) {
+    
+    $type = $query->uploadInfo($upload_file_2)->{'Content-Type'};
+    open MAT, ">$matrix_file_2" ||
+      &cgiError("Cannot store matrix file in temp dir.");
+    while (<$upload_file>) {
+      print MAT;
+    }
+    close MAT;
+
+    ### Fetch sequence from an URL
+  } elsif ($query->param('matrix_2') =~ /\S/) {
+    if (open MAT, ">$matrix_file_2") {
+       print MAT $query->param('matrix_2');
+      close MAT;
+    }
+
+  } 
+
+  #### sequence file will be deleted
+  &DelayedRemoval($matrix_file_2);
+
+  return($matrix_file_2);
+}
+################################################################
+################################################################
+
+
+################################################################
 ##
 ## Inspired from GetSequenceFile
 ## To eanble loading matrices via a file instead of copy / paste
@@ -1426,6 +1576,7 @@ sub GetMatrixFile {
 
   return($matrix_file);
 }
+
 
 ################################################################
 ## Print the many scores supported by compare-matrices, which are also
