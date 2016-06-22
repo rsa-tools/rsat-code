@@ -332,8 +332,31 @@ python3_modules_install:
 
 ################################################################
 ## Install R modules required for some RSAT scripts
+
+## Install R from the command line
+## Source: https://www.digitalocean.com/community/tutorials/how-to-set-up-r-on-ubuntu-14-04
+install_r:
+	@echo
+	@echo "Installing R"
+	sudo sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
+	gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
+	gpg -a --export E084DAB9 | sudo apt-key add -
+	sudo apt-get update
+	sudo apt-get -y install r-base
+	sudo apt-get -y install libcurl4-gnutls-dev libxml2-dev libssl-dev
+	sudo su - -c "R -e \"install.packages('devtools', repos='http://cran.rstudio.com/')\""
+	@echo "R installed"
+	@R --version
+
 install_r_packages:
 	Rscript ${RSAT}/R-scripts/install_packages_for_rsat.R
+
+R_PACKAGES=RColorBrewer devtools RJSONIO dendextend flux gplots RColorBrewer jpeg
+install_r_packages_cmd:
+	@for rpack in ${R_PACKAGES}; do \
+		echo "Installing R package $${rpack}"; \
+		sudo su - -c "R -e \"install.packages('$${rpack}', repos='http://cran.rstudio.com/')\""; \
+	done
 
 ##  --slave --no-save --no-restore --no-environ
 
