@@ -782,7 +782,7 @@ sub Calculate_OCC {
     
     $matrix_scan_cmd .= " > ".  $outfile{'occ_proba_'.$seq_type};
 
-    &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+    &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix) if $task{scan};
     &RSAT::message::Info("Scanning to compute occurence probability for OCC plots", $matrix_scan_cmd) if ($main::verbose >= 2);
      
     return ($outfile{'occ_proba_'.$seq_type});
