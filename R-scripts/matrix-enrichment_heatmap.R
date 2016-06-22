@@ -13,13 +13,10 @@ source(file.path(dir.rsat, 'R-scripts/config.R'))
 required.packages = c("RColorBrewer",
                       "gplots")
 
-library("RColorBrewer")
-library("gplots")
-
-# ## List of RSAT-specific packages to be compiled on the server
-# for (pkg in c(required.packages)) { #required.packages.bioconductor
-#   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
-# }
+## List of RSAT-specific packages to be compiled on the server
+for (pkg in c(required.packages)) { #required.packages.bioconductor
+  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
+}
 
 ###########################################
 ## Read arguments from the command line.
@@ -180,7 +177,7 @@ html.report <- gsub("--body--", html.body.size, html.report)
 # legend.domain.values <- seq(from = min(max.NWD.table), to = max(max.NWD.table), by = 0.05)
 limit <- max(abs(c(min(max.NWD.table), max(max.NWD.table))))
 limit <- round(limit, digits = 1)
-legend.domain.values <- seq(-limit, limit, by = 0.05)
+legend.domain.values <- seq( (min(max.NWD.table) - 0.2), limit, by = 0.05)
 legend.length <- length(legend.domain.values)
 legend <- legend.domain.values
 legend <- round(legend, digits = 3)
