@@ -553,6 +553,7 @@ frequency.per.bin.table <- apply(counts.per.bin.table, 1, function(r){
 })
 frequency.per.bin.table <- t(frequency.per.bin.table)
 frequency.per.bin.table  <- round(frequency.per.bin.table , digits = 3)
+max.y <- max(frequency.per.bin.table, na.rm = TRUE)
 
 ##########################################
 ## Export Counts and Frequencies tables
@@ -910,17 +911,15 @@ if(individual.plots == 1){
            col = "#00BFC4",
            lty = 1, 
            lwd = 3,
-           ylim = c(0, max(y.val)),
-           # xlim = c(-limits, limits),
+           ylim = c(0, max(max.y)),
 
            ## Labels
            main = paste("Motif:", feature.query),
-           xlab = "Distance to peak summit",
+           xlab = "Distance to center",
            ylab = "TFBSs fraction",
            ## Hide x-axis
-           xaxt='n', 
-      )  
-      # polygon(x = c(-250,-250, 50, 50), y = c(0, 1, 1, 0), col="#ffeda0", border = NA, lty = 0, )
+           xaxt='n'
+      ) 
       
       ## Draw the grid
       abline(v=(x.val), col="lightgray", lty="dotted")
@@ -936,16 +935,16 @@ if(individual.plots == 1){
       # lines(x = x.val, y = y.val, type = "l", col = "#00BFC4", lty = 1, lwd = 3)
       
       ## Draw the legend
-      legend("topleft", legend = c(paste(feature.query , "profile"), "Peak summit"), fill = c("#00BFC4", "#045a8d"), bty="o", bg="white")
+      legend("topleft", legend = c(paste(feature.query , "profile"), "Center"), fill = c("#00BFC4", "#045a8d"), bty="o", bg="white")
       
       matrix.ID <- as.vector(ID.names[which(ID.names[,2] == feature.query),1])
       logo.file <- paste(logo.folder, matrix.ID, "_logo.jpeg", sep = "")
       logo <- readJPEG(logo.file)
       rasterImage(logo, 
-                  xleft = 60,
-                  xright = 275, 
-                  ybottom = 0.14,
-                  ytop = 0.195)
+                  xleft = limits - (bin*3),
+                  xright = limits, 
+                  ybottom = max.y - 0.1,
+                  ytop = max.y - 0.05)
       trash <- dev.off()
     }
   })
