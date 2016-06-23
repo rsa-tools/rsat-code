@@ -60,7 +60,7 @@ heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 # prefix <- "test_motif_enrichment"
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap")
-# maxNWD.table.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt"
+maxNWD.table.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/maxNWDsignificantScore_heatmap_compare.txt"
 # html.template.file <- "motif_enrichment_dynamic_heatmap_d3.html"
 
 base.name <- basename(prefix)
@@ -175,9 +175,10 @@ html.report <- gsub("--body--", html.body.size, html.report)
 ## Calculate the legend names for the color scale
 # stp <- (max(max.NWD.table) - min(max.NWD.table))/9
 # legend.domain.values <- seq(from = min(max.NWD.table), to = max(max.NWD.table), by = 0.05)
-limit <- max(abs(c(min(max.NWD.table), max(max.NWD.table))))
-limit <- round(limit, digits = 1)
-legend.domain.values <- seq( (min(max.NWD.table) - 0.2), limit, by = 0.05)
+# limit <- max(abs(c(min(max.NWD.table), max(max.NWD.table))))
+# limit <- round(limit, digits = 1)
+# legend.domain.values <- seq( (min(max.NWD.table) - 0.2), limit, by = 0.05)
+legend.domain.values <- quantile(range(max.NWD.table), probs = seq(0, 1, 0.1))
 legend.length <- length(legend.domain.values)
 legend <- legend.domain.values
 legend <- round(legend, digits = 3)
@@ -186,9 +187,9 @@ html.report <- gsub("--data_legend--", legend, html.report)
 
 ## Create Gradient Hexadecimal:
 ## Given X hexa colors creates a color
-palette.hexa <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")
+palette.hexa <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(10)
 
-palette.hexa <- rev(palette.hexa(legend.length + 1))
+palette.hexa <- rev(palette.hexa(legend.length-1))
 
 palette <- paste("'" , rev(palette.hexa), "'", sep = "")
 palette <- paste(palette, collapse = ", ")
