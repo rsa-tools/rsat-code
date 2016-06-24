@@ -178,6 +178,7 @@ html.report <- gsub("--body--", html.body.size, html.report)
 # limit <- max(abs(c(min(max.NWD.table), max(max.NWD.table))))
 # limit <- round(limit, digits = 1)
 # legend.domain.values <- seq( (min(max.NWD.table) - 0.2), limit, by = 0.05)
+
 legend.domain.values <- quantile(range(max.NWD.table), probs = seq(0, 1, 0.1))
 legend.length <- length(legend.domain.values)
 legend <- legend.domain.values
@@ -187,7 +188,7 @@ html.report <- gsub("--data_legend--", legend, html.report)
 
 ## Create Gradient Hexadecimal:
 ## Given X hexa colors creates a color
-palette.hexa <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(10)
+palette.hexa <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(11)
 palette.hexa <- rev(palette.hexa)
 # palette.hexa <- rev(palette.hexa(legend.length-1))
 
