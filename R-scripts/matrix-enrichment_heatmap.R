@@ -188,7 +188,7 @@ html.report <- gsub("--data_legend--", legend, html.report)
 
 ## Create Gradient Hexadecimal:
 ## Given X hexa colors creates a color
-palette.hexa <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(11)
+palette.hexa <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(9)
 palette.hexa <- rev(palette.hexa)
 # palette.hexa <- rev(palette.hexa(legend.length-1))
 
