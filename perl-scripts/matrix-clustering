@@ -404,6 +404,9 @@ package main;
   }
   local $supported_heatmap_color_palette = join ",", @supported_heatmap_color_palette;
 
+  ## Number of input collections
+  local $number_of_collections = "";
+
   ## List of files to delete
   %to_delete = ();
   %to_delete_folder = ();
@@ -1519,7 +1522,8 @@ sub pre_process_motif_files{
   ##   - skip the top X motifs if required
 
   ## Count the number of input files
-  if(scalar(keys(%main::matrix_file)) == 1){
+  $number_of_collections = scalar(keys(%main::matrix_file));
+  if($number_of_collections == 1){
       $single_input_flag = 1;
   } else {
       $single_input_flag = 0;
@@ -1965,7 +1969,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     $cluster_motifs_cmd .= "; \"";
 #    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.")"; # Uncomment this line to check the R output in the terminal
-    $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2 > ".$main::outfile{Rlog};
+#    $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog};
 
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
@@ -3264,14 +3268,14 @@ sub Text_end_report {
 	    <li>
 	      <strong>References</strong>
               <ol>
-                 <li> Castro-Mondragon et al (in preparation).</li>
+                 <li> Castro-Mondragon JA et al (in preparation).</li>
                  <li><strong>Last RSAT release: </strong><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
               </ol>
 	    </li>
 	    <li>
 	      <strong>Additional Information</strong>
               <ul>
-                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/courses/SBBCU16L_cisreg/" target=\'_blank\'>Jacques van Helden course.</a></li>
+                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/courses/SBBCU16L_cisreg/" target=\'_blank\'>Jacques van Helden course</a></li>
               </ul>
 	    </li>
 	    <li>
@@ -4742,6 +4746,7 @@ sub ParametersTable{
       <thead>
 	<tr>
 	  <th class="tab_col">Nb Input motifs</th>
+	  <th class="tab_col">Nb Input collections</th>
 	  <th class="tab_col">Nb Clusters Found</th>
 	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
 	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
@@ -4752,6 +4757,7 @@ sub ParametersTable{
       <tbody>
 	<tr>
 	  <td class="par_text">'.$number_of_motifs.'</td>
+	  <td class="par_text">'.$number_of_collections.'</td>
 	  <td class="par_text">'.$number_of_clusters.'</td>
 	  <td class="par_text">'.$hclust_method.'</td>
 	  <td class="par_text">'.$main::param{matrix_compa_score}.'</td>
@@ -5349,7 +5355,7 @@ sub InsertHeatmapCollectionbyCluster {
 sub InsertHeatmapCollectionComplementarity {
 
     my $heatmap_complementarity = ' 
-        <div id="Heatmap_complementarity_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><strong>Collections Coverage</strong></a></div>
+        <div id="Heatmap_complementarity_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><strong>Collections Overlap</strong></a></div>
     ';
 
     print $syn $heatmap_complementarity;
@@ -5370,7 +5376,7 @@ $(document).ready( function () {
         "ordering": false,
         "info":     false,
         "columnDefs": [
-	    { "width": "5%", "targets": [0,1,2,3,4,5] }
+	    { "width": "5%", "targets": [0,1,2,3,4,5,6] }
 	]		
     });
 });
