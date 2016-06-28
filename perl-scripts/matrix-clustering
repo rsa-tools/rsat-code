@@ -498,12 +498,9 @@ package main;
 
   if ($selected_tasks{all} || $selected_tasks{cluster}) {
 
-     if ($nb_cluster_taks_flag == 0){
-
-	 ################################################################
-	 ## Cluster the matrices
-	 &Hclustering();
-     }
+      ################################################################
+      ## Cluster the matrices
+      &Hclustering();
   }
 
   if ($selected_tasks{all} || $selected_tasks{cluster} || $selected_tasks{report}) {
@@ -1968,7 +1965,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     $cluster_motifs_cmd .= "; \"";
 #    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.")"; # Uncomment this line to check the R output in the terminal
-    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2 > ".$main::outfile{Rlog};
+    $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2 > ".$main::outfile{Rlog};
 
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
@@ -3267,7 +3264,8 @@ sub Text_end_report {
 	    <li>
 	      <strong>References</strong>
               <ol>
-                 <li><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
+                 <li> Castro-Mondragon et al (in preparation).</li>
+                 <li><strong>Last RSAT release: </strong><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
               </ol>
 	    </li>
 	    <li>
@@ -3279,7 +3277,7 @@ sub Text_end_report {
 	    <li>
 	      <strong>Contact</strong>
               <ul>
-                 <li type="square">Jaime Castro-Mondragon - <strong>castro@tagc.univ-mrs.fr</strong></li>
+                 <li type="square">Jaime Castro-Mondragon - <strong>jaime.castro-mondragon@etu.univ-amu.fr</strong></li>
                  <li type="square">Morgane Thomas-Chollier - <strong>mthomas@biologie.ens.fr</strong></li>
                  <li type="square">Jacques van Helden - <strong>Jacques.van-Helden@univ-amu.fr</strong></li>
               </ul>
@@ -4442,7 +4440,7 @@ sub ReportStyleCSS{
   float: left;
   margin-top: 2px;
   margin-bottom: 2px;
-  width: 250px;
+  width: 450px;
   height: 20px;
   position: relative;
   display: block;
@@ -5351,7 +5349,7 @@ sub InsertHeatmapCollectionbyCluster {
 sub InsertHeatmapCollectionComplementarity {
 
     my $heatmap_complementarity = ' 
-        <div id="Heatmap_complementarity_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><strong>Collection Complementarity</strong></a></div>
+        <div id="Heatmap_complementarity_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><strong>Collections Coverage</strong></a></div>
     ';
 
     print $syn $heatmap_complementarity;
