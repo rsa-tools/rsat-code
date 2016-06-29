@@ -28,8 +28,7 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 create.html.tab <- function(tab, img = 0, plot = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1400px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
-  
+  head.tab <- "<div id='individual_motif_tab' style='width:1400px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Coverture</th><th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
@@ -70,12 +69,6 @@ create.html.tab <- function(tab, img = 0, plot = 0){
 
 
 get.profile.shape <- function(profile){
-  
-#   profile <- feature.log2.ratio[12,]
-#   profile <- feature.log2.ratio[31,]
-  #   profile <- feature.log2.ratio[10,]
-#     profile <- feature.log2.ratio[26,]
-  
   
   bin.nb <- length(profile)
   x <- 1:bin.nb
@@ -214,6 +207,8 @@ if (length(args >= 1)) {
 # message("Checking mandatory arguments")
 if (!exists("matrix.scan.file")) {
   stop("Missing mandatory argument (matrix-scan results table): matrix.scan.file ")
+} else if (!exists("sequence.names.file")) {
+  stop("Missing mandatory argument (sequence names table): sequence.names.file ")
 } else if (!exists("prefix")) {
   stop("Missing mandatory argument (prefix): prefix ")
 } else if (!exists("ID.to.names.correspondence.tab")) {
@@ -265,16 +260,17 @@ if (!exists("heatmap.color.classes")) {
 }
 heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
-
-
 ## Heatmap dendogram position
 if (heatmap.dendo == "show"){
   heatmap.dendo <- "row"
 } else if(heatmap.dendo == "hide"){
   heatmap.dendo <- "none"
 }
-
 print(heatmap.dendo)
+
+## Create a file to store the resulting tables
+covered.tables.dir <- paste(basename(prefix), "_covered_sequences_info/", sep = "")
+dir.create(covered.tables.dir, showWarnings = FALSE)
 
 # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_results_PARSED.tab"
 # prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1"
@@ -291,6 +287,14 @@ print(heatmap.dendo)
 verbose(paste("Reading matrix-scan results table"), 1)
 matrix.scan.results <- read.csv(file = matrix.scan.file, sep = "\t", header = TRUE, comment.char = ";")
 colnames(matrix.scan.results) <- c("seq_id", "ft_name", "bspos", "Pval")
+
+##############################
+## Read sequence names table
+verbose(paste("Reading sequence names table"), 1)
+sequence.names.tab <- read.csv(file = sequence.names.file, sep = "\t", header = TRUE, comment.char = ";")
+colnames(sequence.names.tab) <- c("seq_id")
+total.scanned.sequences <- length(as.vector(sequence.names.tab$seq_id))
+
 
 ######################################
 ## Create the column -log10(pvalue)
@@ -404,7 +408,7 @@ for(x in 1:length(classes.pval.letters)){
 ## Create directory with the TFBSs distribution
 dir.create(paste(basename(prefix), "_TFBSs_pval_distribution/", sep = ""), showWarnings = FALSE, recursive = TRUE)
 verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
-sapply(1:length(matrix.names), function(m){
+thr <- sapply(1:length(matrix.names), function(m){
   
   ## Get the matrix name
   matrix.query <- matrix.names[m]
@@ -483,6 +487,7 @@ sapply(1:length(matrix.names), function(m){
     trash <- dev.off()
   }
 })
+rm(thr)
 # dev.off()
 # verbose(paste("Distribution of TFBSs at different p-values: ", TFBSs.pval.distribution.file), 1)
 
@@ -539,10 +544,6 @@ rownames(counts.per.bin.table) <- matrix.names
 xlab <- data.frame(windows)$start
 xlab <- ifelse(xlab >= 0, xlab + bin, xlab)
 colnames(counts.per.bin.table) <- as.character(xlab)
-
-
-
-#colnames(counts.per.bin.table) <- c(as.character(data.frame(windows)$start), as.character(data.frame(windows)$end)[dim(data.frame(windows))[1]])
 
 ###################################
 ## Calculate the Frecuency table
@@ -794,14 +795,11 @@ for(format in out.format){
   )
   trash <- dev.off()
 }
-
-print("Yes")
 heatmap.row.order <- rev(heatmap.profiles[[1]])
 heatmap.row.order.names <- rownames(feature.log2.ratio)[heatmap.row.order]
 heatmap.rows <- data.frame(row = heatmap.row.order, names = heatmap.row.order.names)
 heatmap.rows.file <- paste(basename, "_heatmap_row_order.tab", sep = "")
 write.table(heatmap.rows, file = heatmap.rows.file, quote = FALSE, sep = "\t", row.names = FALSE)
-print("Yes2")
 
 ## Calculate q-values
 ## This step is executed once all the p-values were calculated
@@ -809,10 +807,6 @@ print("Yes2")
 pp <- as.numeric(as.vector(feature.attributes$P_val))
 features.qvalues <- p.adjust(pp, method = "BH")
 feature.attributes$Q_val <- prettyNum(features.qvalues, scientific=TRUE, digits = 2)
-
-# features.qvalues <- qvalue(pp, lambda = 0, robust = TRUE)
-# feature.attributes$Q_val <- prettyNum(features.qvalues$qvalues, scientific=TRUE, digits = 2)
-
 
 ############################################################
 ## Additional columns                                     ##
@@ -837,6 +831,24 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(f){
   
   ## Get the number of sequences with at least one hit
   nb.seq.with.hits <- length(unique(as.vector(matrix.query.selection$seq_id)))
+ 
+  ## Export the covered/non_covered sequences names 
+  covered.seq <- as.vector(matrix.query.selection$seq_id)
+  not.covered.seq <- setdiff(total.scanned.sequences, covered.seq)
+  
+  covered.sequences.file <- paste(covered.tables.dir, feature.query, "_covered_sequences_IDs.tab", sep = "")
+  not.covered.sequences.file <- paste(covered.tables.dir, feature.query, "_not_covered_sequences_IDs.tab", sep = "")
+  
+  covered.sequences.table <- data.frame("#covered_sequences" = covered.seq)
+  not.covered.sequences.table <- data.frame("#not_covered_sequences" = not.covered.seq)
+  
+  write.table(covered.sequences.table, file = covered.sequences.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
+  write.table(not.covered.sequences.table, file = not.covered.sequences.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
+
+  ## Calculate the coverture rate
+  coverture <- round(nb.seq.with.hits/total.scanned.sequences, digits = 4)*100
+  additional.data[[f]][["Coverture"]] <<- paste(coverture, "%", sep = "")
+  
   additional.data[[f]][["sequences"]] <<- nb.seq.with.hits
   
   ## Get the max p-value among the p-values of the matches
@@ -854,14 +866,14 @@ names(additional.data) <- matrix.names
 additional.data <- data.frame(t(
   matrix(as.vector(unlist(additional.data)), 
          ncol = length(additional.data))))
-colnames(additional.data) <- c("Nb_sequences", "Max_pval", "Min_pval")
+colnames(additional.data) <- c("Coverture", "Nb_sequences", "Max_pval", "Min_pval")
 
 
 #################################################################
 ## Merge the dataframes (additional data + feature attributes) ##
 #################################################################
 feature.attributes <- cbind(feature.attributes, additional.data)
-feature.attributes  <- feature.attributes[,c(1,7,5,6,4,8,2,3,9,10)]
+feature.attributes  <- feature.attributes[,c(1,7,5,6,4,8,2,3,9,11,10)]
 
 feature.attributes.file <- paste(basename, "_attributes.tab", sep = "")
 # write.table(feature.attributes, file = feature.attributes.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
@@ -1092,6 +1104,18 @@ tfbss.plots <- sapply(TF.IDs, function(i) {
   paste(basename(prefix), "_TFBSs_pval_distribution/", i, "_TFBSs_pval_classes.png", sep = "")
 })
 
+
+covered.files <- sapply(TF.IDs, function(i) {
+  paste(covered.tables.dir, "_covered_sequences_info/", i, "_covered_sequences_IDs.tab", sep = "")
+})
+not.covered.files <- sapply(TF.IDs, function(i) {
+  paste(covered.tables.dir, "_covered_sequences_info/", i, "_not_covered_sequences_IDs.tab", sep = "")
+})
+
+print("-------------------------")
+print(covered.files)
+print("-------------------------")
+
 ## Create a Dataframe containing the information of all motifs
 ## This table will be exported and displayed as a dynamic table in the report
 all.pval.match <- rep(p.val, times = length(TF.names))
@@ -1109,7 +1133,15 @@ all.motifs <- all.motifs
 ## Fill the HTML template
 ## Substitute the words marked in the template by the data
 html.report <- readLines(html.template.file)
-profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12, 2:6,9:10,7,13,14,15,16)], img = c(13,14), plot = c(11,12))
+# [1] "Feature"         "Shape"           "P_val"           "E_val"          
+# [5] "Sig"             "Q_val"           "Chi_squared"     "Degrees"        
+# [9] "Nb_hits"         "Nb_sequences"    "Coverture"       "P_val_threshold"
+# [13] "IDs"             "Profiles"        "TFBS"            "Logo"           
+# [17] "Logo_RC"
+profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,13,3:6,9:11,7,14:17)], img = c(13,14), plot = c(11,12))
+
+# print(names(datatable.info.tab[,]))
+# stop("--------------------------------------")
 
 profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 
@@ -1264,7 +1296,7 @@ html.report <- gsub("--y_axis--", max.y, html.report)
 ## Fill the parameters table
 html.report <- gsub("--bin_l--", bin, html.report)
 html.report <- gsub("--bin_nb--", ncol(counts.per.bin.table), html.report)
-html.report <- gsub("--seq_nb--", length(seq.id), html.report)
+html.report <- gsub("--seq_nb--", total.scanned.sequences, html.report)     ## Don't forget length(seq.id)
 html.report <- gsub("--motif_nb--", length(matrix.names), html.report)
 html.report <- gsub("--p--", prettyNum(p.val), html.report)
 
