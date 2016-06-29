@@ -5,8 +5,15 @@
 <meta charset="utf-8">
 <style>
 
+      .mono {
+        font-size: 12px;
+        font-family: Consolas, courier;
+        fill: #686666;
+      }
+
 .venntooltip {
-  font-size: 10px;
+  font-family: Consolas, courier;
+  font-size: 12px;
   position: absolute;
   text-align: center;
   width: 128px;
@@ -281,7 +288,9 @@ var margin = { top: --left--, right: 150, bottom: --bottom--, left: --left-- },
   legendElementWidth = cellSize*1.25,
   colorBuckets = 21,
 
-colors = ['#FFFFFF', '#FFFFCC','#FFF7BA','#FFF0A8','#FFE897','#FEE086','#FED876','#FEC965','#FEB954','#FEAA48','#FD9C42','#FD8C3B','#FD7634','#FC5C2D','#F74527','#ED3321','#E3191B','#D31020','#C40524','#B00026','#970026','#7F0026'],
+//colors = ['#FFFFFF', '#FFFFCC','#FFF7BA','#FFF0A8','#FFE897','#FEE086','#FED876','#FEC965','#FEB954','#FEAA48','#FD9C42','#FD8C3B','#FD7634','#FC5C2D','#F74527','#ED3321','#E3191B','#D31020','#C40524','#B00026','#970026','#7F0026'],
+
+colors = [--color_scale--],
 
   // Order of the PSSMs
   hccol = [--collection_nb--],
@@ -447,7 +456,6 @@ function(error, data) {
 
   legend.append("text")
     .attr({
-	'font-size': 17,
 	'x': width + (cellSize*1) + 30,
 	'y': -45,
 	'class': 'mono'

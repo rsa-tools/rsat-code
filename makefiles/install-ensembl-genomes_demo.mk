@@ -3,7 +3,18 @@
 ## connection to Ensembl and Ensembl Genomes databases.
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=makefiles/install_genomes_from_ensemblgenomes.mk
+MAKEFILE=makefiles/install-ensembl-genomes_demo.mk
+
+list_param:
+	@echo
+	@echo "Parameters"
+	@echo "	ENSEMBL_RELEASE		${ENSEMBL_RELEASE}"
+	@echo "	ENSEMBLGENOMES_BRANCH	${ENSEMBLGENOMES_BRANCH}"
+	@echo "	DB			${DB}"
+	@echo "	RESULT_DIR		${RESULT_DIR}"
+	@echo "	AVAILABLE_SPECIES	${AVAILABLE_SPECIES}"
+	@echo "	ORG			${ORG}"
+	@echo "	QUERY_TYPE		${QUERY_TYPE}"
 
 DB=ensembl
 #DB=ensemblgenomes

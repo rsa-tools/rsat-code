@@ -209,6 +209,24 @@ if (&IsReal($query->param('bg_pseudo'))) {
   $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
 }
 
+## Thresholds
+
+if ($query->param('uth_pvalue')) {
+    $uth_pvalue = $query->param('uth_pvalue');
+} else {
+    $uth_pvalue= "1e-4";
+}
+#$parameters .=  " -scan_opt \'-uth pval ".$uth_pvalue."\'  ";
+$parameters .=  " -pval ".$uth_pvalue."  ";
+
+
+if ($query->param('uth_occ_th')) {
+    $uth_occ_th = $query->param('uth_occ_th');
+} else {
+    $uth_occ_th= 5;
+}
+$parameters .= " -occ_th  ". $uth_occ_th." "; 
+
 
 ## Image format
 if ($query->param('img_format')) {
