@@ -123,7 +123,7 @@ package main;
 
 
   ## Input formats: only accept formats supporting multiple matrices
-  local @supported_matrix_formats = qw(transfac tf tab clusterbuster cb infogibbs meme stamp uniprobe);
+  local @supported_matrix_formats = qw(transfac tf tab cluster-buster cb infogibbs meme stamp uniprobe);
   local %supported_matrix_format = ();
   foreach my $format (@supported_matrix_formats) {
     $supported_matrix_format{$format} = 1;
@@ -242,6 +242,7 @@ package main;
   $main::outfile{random_motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac_permuted.tf";
   $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_results.tab";
   $main::outfile{matches_tab_PARSED} = $main::outfile{prefix}."_matrix_scan_results_PARSED.tab";
+  $main::outfile{sequence_names} = $main::outfile{prefix}."_matrix_scan_sequence_names.tab";
   $main::outfile{motif_ID_to_name} = $main::outfile{prefix}."_TF_ID_name_correspondence.tab";
 
   $main::outfile{all_profiles} = $main::outfile{prefix}."_positional_profiles.pdf";
@@ -520,7 +521,7 @@ B<Supported matrix formats>
 
 Since the program takes several matrices as input, it only accepts
 matrices in formats supporting several matrices per file (transfac,
-tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
+tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe).
 
 For a description of these formats, see the help of I<convert-matrix>.
 
@@ -942,6 +943,15 @@ sub ParseScanResults {
 
     &RSAT::message::TimeWarn("Parsing matrix-scan results", $main::outfile{matches_tab}) if ($main::verbose >= 2);
 
+    ## Extract the name and counts the input sequences 
+    $input_sequences_cmd = "more ".$main::outfile{matches_tab};
+    $input_sequences_cmd .= " | grep -v ';' | grep limit | cut -f1 | uniq ";
+    $input_sequences_cmd .= " > ".$main::outfile{sequence_names};
+    &doit($input_sequences_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+    &RSAT::message::TimeWarn("Scanned sequence names", $main::outfile{matches_tab_PARSED}) if ($main::verbose >= 2);
+
+    ## Extract somet fields in the matrix-can table
     $parse_cmd = " grep -v '^;' ".$main::outfile{matches_tab};
     $parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 3) {print $1"\t"$3"\t"($6+$5)/2"\t"$9}'." ' ";
     $parse_cmd .= " > ".$main::outfile{matches_tab_PARSED};
@@ -1040,6 +1050,7 @@ sub DynamicProfilesR {
     $profile_cmd .= " --slave --no-save --no-restore --no-environ";
     $profile_cmd .= " --args \"";
     $profile_cmd .= " matrix.scan.file = '".$main::outfile{matches_tab_PARSED}."'";
+    $profile_cmd .= "; sequence.names.file = '".$main::outfile{sequence_names}."'";
     $profile_cmd .= "; p.val = '".$p_value."'";
     $profile_cmd .= "; bin = '".$bin_size."'";
     $profile_cmd .= "; prefix = '".$main::outfile{prefix}."'";
@@ -1271,6 +1282,3 @@ sub ReOpenSynthesis {
 }
         
 __END__
-
-
-
