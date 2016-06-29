@@ -147,7 +147,7 @@ package main;
   local @tab_to_convert = (); ## Tables to convert to html
 
   ## Input formats: only accept formats supporting multiple matrices
-  local @supported_matrix_formats = qw(transfac tf tab clusterbuster cb infogibbs meme stamp uniprobe);
+  local @supported_matrix_formats = qw(transfac tf tab cluster-buster cb infogibbs meme stamp uniprobe);
   local %supported_matrix_format = ();
   foreach my $format (@supported_matrix_formats) {
     $supported_matrix_format{$format} = 1;
@@ -711,7 +711,7 @@ B<Supported matrix formats>
 
 Since the program takes several matrices as input, it only accepts
 matrices in formats supporting several matrices per file (transfac,
-tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
+tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe).
 
 For a description of these formats, see the help of I<convert-matrix>.
 
