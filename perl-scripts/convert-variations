@@ -199,10 +199,10 @@ package	main;
   our $from = "";
   our $to = "";
   our $species = "";
-  our $assembly_version = "";
+  our $assembly = "";
   our $species_suffix = "";
   our $db="ensembl";
-  our $ensembl_version = "";
+  our $ensembl_release = "";
   our $genome_dir = "";
   our %chr_file = ();
   our $last_chr = "";
@@ -225,13 +225,13 @@ package	main;
     if ($species eq "") {
       &RSAT::error::FatalError("Species must be indicated if option -to equal vcf");
     }
-    unless ($assembly_version || $ensembl_version) {
-      &RSAT::error::FatalError("Ensembl or assembly version is required when output format equals vcf (option -to)");
+    unless ($assembly || $ensembl_release) {
+      &RSAT::error::FatalError("Ensembl release or assembly is required when output format equals vcf (option -to)");
     }
-    unless ($assembly_version){
-      $assembly_version=&Get_assembly_version($species,$ensembl_version,$species_suffix);
+    unless ($assembly){
+      $assembly=&Get_assembly($species,$ensembl_release,$species_suffix);
     }
-    $genome_dir = &Get_genome_dir($species, $assembly_version,$ensembl_version)."/";
+    $genome_dir = &Get_genome_dir($species, $assembly,$ensembl_release)."/";
     &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before covert-variation.") unless (-d $genome_dir);
 
     # Check if sequence file are not missing
@@ -790,32 +790,47 @@ Species where variation are coming from (Homo_sapiens, Mus_musculus).
 
 =pod
 
-=item B<-e_version #>
+=pod
 
-The version of ensembl
+=item B<-release #>
+
+The version of ensembl database (e.g. 84).
+
+Note: each Ensembl release contains a specific assembly for
+each species. When the option -release is used, the option
+-assembly should thus in principle not be used.
 
 =cut
-    } elsif ($arg eq "-e_version") {
-      $main::ensembl_version = shift(@arguments);
+  } elsif (($arg eq "-release") || ($arg eq "-version") || ($arg eq "-e_version")) {
+    if ($arg ne "-release") {
+      &RSAT::message::Warning("Option -version is obsolete, has been replaced by -release.");
+    }
+    $main::ensembl_release = shift(@arguments);
+
 
 =pod
 
-=item B<-a_version #>
+=item B<-assembly #>
 
-The version of the assembly of the species
+Assembly (e.g. GRCh37 for the assembly 37 of the Human genome).
+
+Note: genome assemblies can cover several successive ensemble
+versions. In case of ambiguity, the latest corresponding ensembl
+version is used.
 
 =cut
-    } elsif ($arg eq "-a_version") {
-      $main::assembly_version = shift(@arguments);
-
-=pod
+    } elsif (($arg eq "-assembly") || ($arg eq "-a_version")) {
+      if ($arg ne "-assembly") {
+	&RSAT::message::Warning("Option -a_version is obsolete, has been replaced by -assembly.");
+      }
+      $main::assembly = shift(@arguments);
 
 =item B<-species_suffix>
 
 Suffix to append to the full species ID.
 
 By default, the full species ID is composed by concatenating the
-Ensembl species and assembly version. The option I<-species_suffix>
+Ensembl species and assembly. The option I<-species_suffix>
 allows to specify a string (e.g. _ensembl76, _for_testing, ...) that
 will be appended to the full species ID.
 

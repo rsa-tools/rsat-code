@@ -68,7 +68,7 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Identify groups (clusters) of similarities between a set of motifs and align them.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>&nbsp: ";
-print "<a target='_blank'>Jaime Castro</a><sup>cit</sup>\n";
+print "<a target='_blank'>Jaime Castro-Mondragon</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print "</CENTER>";
@@ -97,8 +97,11 @@ print $query->textfield(-name=>'html_title',
 print "<hr>";
 
 ################################################################
-## Query matrices
-&GetMatrix('title'=>'Query matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
+## Query matrices collection 1
+print "<h2 style='margin-left: 50px;'> Add one or two collections of PSSMs</h2>";
+print "<hr>";
+
+&GetMatrix('title'=>'Input matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
 
 ################################################################
 #### Set Motif collection label
@@ -106,6 +109,20 @@ print "<h2 style='margin-left: 1px;'> Motif Collection\nName";
 
 print $query->textfield(-name=>'collection_label',
 			 -default=>$default{collection_label},
+			 -size=>30) ."</h2>";
+print "<hr>";
+
+
+################################################################
+## Query matrices collection 2
+&GetSecondMatrix('title'=>'Input matrices 2', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
+
+################################################################
+#### Set Motif collection label
+print "<h2 style='margin-left: 1px;'> Motif Collection 2\nName";
+
+print $query->textfield(-name=>'collection_2_label',
+			 -default=>$default{collection_2_label},
 			 -size=>30) ."</h2>";
 print "<hr>";
 
@@ -173,11 +190,11 @@ print "<br><br>\n";
 
 ## Export the trees in Newick format
 ## By default trees are exported in JSON
-# print $query->checkbox(-name=>'newick',
-#   		       -checked=>$default{newick},
-#   		       -label=>'');
-# print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
-# print "<br><br>\n";
+print $query->checkbox(-name=>'newick',
+  		       -checked=>$default{newick},
+  		       -label=>'');
+print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
+print "<br><br>\n";
 
 ## Negative control: Permute the columns of the input motifs
 print $query->checkbox(-name=>'random',
@@ -234,7 +251,7 @@ $descr_1 .= "<blockquote class ='demo_1'>";
 $descr_1 .= "In this demo, we will analyze with <i>matrix-clustering</i> a
 set of motifs discovered with <a
 href='peak-motifs_form.cgi'><i>peak-motifs</i></a> in ChIP-seq binding
-peaks for the mouse transcription factor Otc4 (data from Chen et al.,
+peaks for the mouse transcription factor Oct4 (data from Chen et al.,
 2008).  </p>\n";
 
 $descr_1 .= "</blockquote>";
@@ -249,7 +266,44 @@ print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
 print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_label);
 print $query->hidden(-name=>'demo_1_descr',-default=>$descr_1);
 print $query->hidden(-name=>'matrix',-default=>$demo_1_matrices);
-print $query->submit(-label=>"DEMO");
+print $query->submit(-label=>"DEMO (one collection)");
+print "</B></TD>\n";
+print $query->end_form;
+
+
+################################################################
+## Demo 3 data
+my $descr_3 = "<H2>Comment on the demonstration example 3</H2>\n";
+$descr_3 .= "<blockquote class ='demo_3'>";
+
+$descr_3 .= "In this demo, we will cluster two set of motifs discovered with <a
+href='peak-motifs_form.cgi'><i>peak-motifs</i></a> and <i>Meme-ChIP</i> in ChIP-seq binding
+peaks for the transcription factor Oct4 (data from Chen et al.,
+2008).  </p>\n";
+
+$descr_3 .= "</blockquote>";
+
+print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
+$demo_html_title = "'Oct4 motifs found in Chen 2008 peak sets discovered by peak-motifs and meme-chip'";
+
+
+$demo_html_collection_label = "'Oct4_peak_motifs'";
+$demo_html_collection_2_label = "'Oct4_Meme-chip'";
+
+$demo_3_file_1 = "demo_files/RSAT_peak-motifs_Oct4_matrices.tf";
+$demo_3_matrices_1=`cat ${demo_3_file_1}`;
+
+$demo_3_file_2 = "demo_files/MEME_ChIP_Oct4_matrices.tf";
+$demo_3_matrices_2 = `cat ${demo_3_file_2}`;
+
+print "<TD><b>";
+print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
+print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_label);
+print $query->hidden(-name=>'collection_2_label',-default=>$demo_html_collection_2_label);
+print $query->hidden(-name=>'demo_3_descr',-default=>$descr_3);
+print $query->hidden(-name=>'matrix',-default=>$demo_3_matrices_1);
+print $query->hidden(-name=>'matrix_2',-default=>$demo_3_matrices_2);
+print $query->submit(-label=>"DEMO (two collections)");
 print "</B></TD>\n";
 print $query->end_form;
 
@@ -280,7 +334,6 @@ print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_l
 print $query->hidden(-name=>'demo_2_descr',-default=>$descr_2);
 print $query->hidden(-name=>'matrix',-default=>$demo_2_matrices);
 print $query->submit(-label=>"DEMO (negative control)");
-
 print "</B></TD>\n";
 print $query->end_form;
 

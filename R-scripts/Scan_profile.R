@@ -14,6 +14,7 @@ required.packages = c("IRanges",
                       "RColorBrewer",
                       "gplots",
                       "jpeg",
+                      "amap",
                       "qvalue")
 
 ## List of RSAT-specific packages to be compiled on the server
@@ -24,32 +25,41 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 
 #################################################################################################
 ## Functions
-create.html.tab <- function(tab, img = 0){
+create.html.tab <- function(tab, img = 0, plot = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1200px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1400px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th> <th class=\"tab_col\"> Seq with hits</th> <th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
   
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
     rows.nb <- 1:row.length
-    if(length(img) > 0){
-      
-      ## Get the number of the columns with/without picture
-      ## This is done becuase the tab require different arguments
-      rows.no.pic <- rows.nb[!(rows.nb %in% img)]
-      rows.pic <- rows.nb[rows.nb %in% img]
-      
-      row.head <- "<tr>"
-      rows.no.pic.text <- paste("<td>", row[rows.no.pic], "</td>", collapse = "")
-      rows.pic.text <- paste("<td><img class='logo_tab' src ='", row[rows.pic], "'/></td>", collapse = "")
-      row.tail <- "</tr>"
-      
-      paste(row.head, rows.no.pic.text, rows.pic.text, row.tail, sep = "")
-      
-    } else{
-      paste("<tr>", paste("<td>", row, "</td>", collapse = ""), "</tr>",sep = "")
-    }
+    
+    ## Get the number of the columns with/without picture or plot
+    ## This is done because the tab require different arguments
+    rows.simple <- rows.nb[!(rows.nb %in% img)]
+    rows.simple <- rows.simple[!(rows.simple %in% plot)]
+    
+    rows.pic <- rows.nb[rows.nb %in% img]
+    rows.plot <- rows.nb[rows.nb %in% plot]
+    
+    ## Columns with simple text
+    rows.text <- paste("<td>", row[rows.simple], "</td>", collapse = "")
+    
+    ## Columns with images
+    rows.pic.text <- paste("<td><img class='logo_tab' src ='", as.character(row[rows.pic]), "'/></td>", collapse = "")
+    
+    ## Columns with plots and links
+    rows.plot.pdf <- sapply(row[rows.plot], function(x){
+      gsub("png","pdf", x)
+    })
+    rows.plot.text <- paste("<td><a href='", rows.plot.pdf, "' target='_blank'><img class='plot_tab' src ='", row[rows.plot], "'/></a></td>", collapse = "")
+
+    ## Head and tail tags
+    row.head <- "<tr>"
+    row.tail <- "</tr>"
+    paste(row.head, rows.text, rows.plot.text, rows.pic.text, row.tail, sep = "")    
+
   })
   
   tail.tab <- "</tbody></table></div>"
@@ -247,6 +257,15 @@ if (!exists("individual.plots")) {
 if (!exists("heatmap.dendo")) {
   heatmap.dendo <- "show"
 }
+if (!exists("heatmap.color.palette")) {
+  heatmap.color.palette <- "RdBu";
+}
+if (!exists("heatmap.color.classes")) {
+  heatmap.color.classes <- as.numeric(11);
+}
+heatmap.color.classes <- as.numeric(heatmap.color.classes)
+
+
 
 ## Heatmap dendogram position
 if (heatmap.dendo == "show"){
@@ -262,11 +281,34 @@ print(heatmap.dendo)
 # ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_TF_ID_name_correspondence.tab"
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/")
 
-#############################################
-## Read matrix-scan table Active Promoters
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3_matrix_scan_results_PARSED.tab"
+# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/")
+
+##############################
+## Read matrix-scan table 1
 verbose(paste("Reading matrix-scan results table"), 1)
 matrix.scan.results <- read.csv(file = matrix.scan.file, sep = "\t", header = TRUE, comment.char = ";")
 colnames(matrix.scan.results) <- c("seq_id", "ft_name", "bspos", "Pval")
+
+######################################
+## Create the column -log10(pvalue)
+## Assign a class to each p-value
+matrix.scan.results$Pval.minlog10 <- -log10(matrix.scan.results$Pval)
+matrix.scan.results$Pval.class <- ceiling(matrix.scan.results$Pval.minlog10*2)/2
+
+classes.pval <- sort(unique(matrix.scan.results$Pval.class))
+classes.pval.letters <- LETTERS[1:length(classes.pval)]
+
+matrix.scan.results$Pval.class.letter <- sapply(matrix.scan.results$Pval.class, function(x){
+  p.class <- which(classes.pval == x)
+  classes.pval.letters[p.class ]
+})
+
+min.pval.minus.log10 <- min(matrix.scan.results$Pval.minlog10)
+max.pval.minus.log10 <- max(matrix.scan.results$Pval.minlog10)
+
 
 #################
 ## Set p-value
@@ -325,6 +367,10 @@ if(off.set == 0){
   }
 }
 
+## Adapt the original BS position realtive to the limits 
+## calculated in the step before
+matrix.scan.results$bspos <- matrix.scan.results$bspos + limits
+
 ID.names.tab <- ID.to.names.correspondence.tab
 ID.names <- read.table(ID.names.tab, sep = "\t")
 
@@ -334,12 +380,120 @@ windows.labels <- NULL
 
 setwd(results.folder)
 
+print.formats <- c("pdf", "png")
+
+
+##########################################################
+## Plot the distribution of TFBSs at different p-values ##
+##########################################################
+
+## Assign a color to each p-value class
+
+## The sequencial color palette has a maximum of 9 colors
+nb.color.classes <- length(classes.pval.letters)
+if(length(classes.pval.letters) > 9){
+  nb.color.classes <- 9
+}
+pval.class.colors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
+
+classes.to.colors <- list()
+for(x in 1:length(classes.pval.letters)){
+  classes.to.colors[[classes.pval.letters[x]]] <- pval.class.colors[x]
+}
+
+## Create directory with the TFBSs distribution
+dir.create(paste(basename(prefix), "_TFBSs_pval_distribution/", sep = ""), showWarnings = FALSE, recursive = TRUE)
+verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
+sapply(1:length(matrix.names), function(m){
+  
+  ## Get the matrix name
+  matrix.query <- matrix.names[m]
+  
+  # print(matrix.query)
+
+  ## Get the subtable with the hits of the query matrix
+  matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
+  matrix.query.classes <- sort(unique(matrix.query.selection$Pval.class.letter))
+  
+  ## Get the number of putative TFBSs and the number of sequences with 
+  ## at least one match of the query matrix
+  nb.TFBSs <- dim(matrix.query.selection)[1]
+  nb.seq <- length(as.vector(unique(matrix.query.selection$seq_id)))
+  
+  for(f in print.formats){
+    
+    if(f == "pdf"){
+      TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes.pdf", sep = "")
+      pdf(TFBSs.pval.distribution.file)
+    } else {
+      TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes.png", sep = "")
+      png(TFBSs.pval.distribution.file)
+    }
+    
+    class.counter <- 0
+    
+    ## Iterate in the p-val classes
+    sapply(matrix.query.classes, function(pclass){
+      
+      ## Count the number of p-val classes per query matrix
+      class.counter <<- class.counter + 1 
+      
+      ## Select the hits with the current pval class for the query matrix
+      matrix.query.classes.selection <- matrix.query.selection[matrix.query.selection$Pval.class.letter == pclass,]
+      
+      ## X-Y Plot ( TFBS position vs -log10(pval) )
+      if(class.counter == 1){
+        plot(x = matrix.query.classes.selection$bspos,
+             y = matrix.query.classes.selection$Pval.minlog10,
+             # ylim = c( min(matrix.query.selection$Pval.minlog10, na.rm = TRUE), max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5),
+             ylim = c(min.pval.minus.log10, round(max.pval.minus.log10)),
+             xlim = c(-limits, limits),
+             main = paste("Distribution of TFBSs of ", matrix.query, sep = ""),
+             ylab = "-log10(pval) TFBSs",
+             xlab = "position (nt)",
+             col = classes.to.colors[[pclass]],
+             pch = "o",
+             cex = 1.5,
+             panel.first=grid(col = "grey", lty = "solid") 
+        )
+      } else {
+        lines(x = matrix.query.classes.selection$bspos,
+              y = matrix.query.classes.selection$Pval.minlog10,
+              col = classes.to.colors[[pclass]],
+              type = "p",
+              pch = "o",
+              cex = 1.5
+              )
+      }
+    })
+    
+    ## Insert legend
+    legend("topleft", legend = paste(c("Nb of putative TFBSs: ", "Nb of sequences: "), c(nb.TFBSs, nb.seq), sep = ""), bg="white")
+    
+    ## Insert logo
+    matrix.ID <- as.vector(ID.names[which(ID.names[,2] == matrix.query),1])
+    logo.file <- paste(logo.folder, matrix.ID, "_logo.jpeg", sep = "")
+    logo <- readJPEG(logo.file)
+    rasterImage(logo, 
+                xleft = limits - (limits/3),
+                xright = limits - 5, 
+                ybottom = max.pval.minus.log10 - 1,
+                ytop = max.pval.minus.log10 - 0.25
+                )
+    trash <- dev.off()
+  }
+})
+# dev.off()
+# verbose(paste("Distribution of TFBSs at different p-values: ", TFBSs.pval.distribution.file), 1)
+
+
 #########################################################################
 ## Create count table from matrix-scan results (if not exist in input) ##
 #########################################################################
 
 input.count.table <- 0
 seq.count.per.motif <- list()
+
 if(input.count.table == 0){
   
   verbose(paste("Creating counts and frequencies tables"), 1)
@@ -364,7 +518,7 @@ if(input.count.table == 0){
       }
       
     } else {
-      matrix.query.selection$bspos <- matrix.query.selection$bspos + limit.dw
+      matrix.query.selection$bspos <- matrix.query.selection$bspos# + limit.dw
     }
     
     ## Convert the BSs in Ranges
@@ -386,6 +540,8 @@ xlab <- data.frame(windows)$start
 xlab <- ifelse(xlab >= 0, xlab + bin, xlab)
 colnames(counts.per.bin.table) <- as.character(xlab)
 
+
+
 #colnames(counts.per.bin.table) <- c(as.character(data.frame(windows)$start), as.character(data.frame(windows)$end)[dim(data.frame(windows))[1]])
 
 ###################################
@@ -397,6 +553,7 @@ frequency.per.bin.table <- apply(counts.per.bin.table, 1, function(r){
 })
 frequency.per.bin.table <- t(frequency.per.bin.table)
 frequency.per.bin.table  <- round(frequency.per.bin.table , digits = 3)
+max.y <- max(frequency.per.bin.table, na.rm = TRUE)
 
 ##########################################
 ## Export Counts and Frequencies tables
@@ -429,6 +586,12 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   #   print(m)
   counts.per.bin <- counts.per.bin.table[m,]
   
+  # plot(x = 1:12, y = counts.per.bin.table[1,], type = "l", ylim = c(0,100))
+  # plot(x = 1:12, y = counts.per.bin.table[2,], type = "l", ylim = c(0,100))
+  
+  # case1 <- round(counts.per.bin.table[2,]/sum(counts.per.bin.table[2,]), digits = 2)
+  # mean(abs(counts.per.bin.table[2,] - min(counts.per.bin.table[2,])) )
+  
   ## Select the matches of the query feature
   feature.query <- rownames(counts.per.bin.table)[m]
   feature.attributes[[m]][["feature_id"]] <<- feature.query
@@ -438,14 +601,14 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   ## are distributed homogenously along the sequences
   chi <- chisq.test(counts.per.bin, correct = TRUE)
   
-  # ## The expected values are calculated in the next way:
-  # ## (2 * P-val) * (Sequence_length - Motif_length + 1 )
+  ## The expected values are calculated in the next way:
+  ## (2 * P-val) * (Sequence_length - Motif_length + 1 )
   # motif.name <- rownames(counts.per.bin.table)[m]
-  # expected <- (p.val * 2 * seq.length * seq.count.per.motif[[motif.name]])
+  # nb.seq <- seq.count.per.motif[[motif.name]]
+  # expected <- (p.val * 2 * seq.length * nb.seq)
   # nb.bins <- dim(counts.per.bin.table)[2]
   # expected <- round(expected/nb.bins)
   # expected <- rep(expected, times= nb.bins)
-  # # print(expected)
   # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/expected))
   
   ## The expected values are calculated in the next way:
@@ -453,7 +616,7 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   # motif.name <- rownames(counts.per.bin.table)[m]
   # nb.hits <- sum(counts.per.bin)
   # nb.seq <- seq.count.per.motif[[motif.name]]
-  nb.bins <- dim(counts.per.bin.table)[2]
+  # nb.bins <- dim(counts.per.bin.table)[2]
   # # expected <- round(nb.hits / (nb.seq/nb.bins) )
   # 
   # expected <- round((nb.hits/nb.seq)*nb.bins)
@@ -462,16 +625,15 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/expected))
   
   ## The expected values are calculated from the Observed values
-  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
-  
-  tfbd.med <- median(chi[[6]])
-  expected <- rep(tfbd.med, times = nb.bins)
   feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
   
-  # [1] -1.0149503 -0.8450253 -0.6930222 -0.3145106  0.6854894  0.6289058  1.2704519  0.7924046 -0.6930222 -0.6930222 -1.0149503
-  # [12] -1.0149503
+  # nb.bins <- dim(counts.per.bin.table)[2]
+  # tfbd.med <- median(chi[[6]]) + 1
+  # expected <- rep(tfbd.med, times = nb.bins)
   
+  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
   
+  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(round(log2(counts.per.bin/median(counts.per.bin)), digits = 2))
   
   ## Chi-squared
   cs.val <- round(chi[[1]], digits = 3)
@@ -579,10 +741,8 @@ flat.motifs <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
 ####################################################################################
 verbose(paste("Drawing Heatmap profiles"),1)
 
-## Color palette
-# rgb.palette <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(81))
-rgb.palette <- colorRampPalette(c("#0C60F3", "#D8E3EA", "#F30C0C"))(31)
-# rgb.palette <- colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")
+## Color palette (user-defined)
+rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(heatmap.color.classes))
 
 log2.tab <- as.matrix(feature.log2.ratio)
 log2.tab[is.infinite(log2.tab)] <- 0
@@ -612,7 +772,8 @@ for(format in out.format){
                    xlab = "Position (bp)",
                    ylab = "Motifs",
                    
-                   #             hclustfun = function(d){hclust(d, method="ward")},
+                   hclustfun = function(d){hclust(d, method="ward.D")},
+                   distfun = function(x) Dist(x,method = 'pearson'),
                    
                    ## Color
                    col = rgb.palette,
@@ -631,10 +792,9 @@ for(format in out.format){
                    offsetCol = 0.25
                    
   )
-  dev.off()
+  trash <- dev.off()
 }
 
-# 
 print("Yes")
 heatmap.row.order <- rev(heatmap.profiles[[1]])
 heatmap.row.order.names <- rownames(feature.log2.ratio)[heatmap.row.order]
@@ -703,14 +863,11 @@ colnames(additional.data) <- c("Nb_sequences", "Max_pval", "Min_pval")
 feature.attributes <- cbind(feature.attributes, additional.data)
 feature.attributes  <- feature.attributes[,c(1,7,5,6,4,8,2,3,9,10)]
 
-print(head(feature.attributes))
-print("Is here ? ")
-
 feature.attributes.file <- paste(basename, "_attributes.tab", sep = "")
 # write.table(feature.attributes, file = feature.attributes.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
 # rm(additional.data)
 
-print("Not here")
+
 
 ##############################################################
 ## Plot each profile individually (if it is user-specified) ##
@@ -719,59 +876,79 @@ print("Not here")
 # individual.plots <- 0
 if(individual.plots == 1){
   
-  verbose(paste("Printing all the profiles in a PDF file"), 1)
-  pdf.file.name <- paste(basename, "_positional_profiles.pdf", sep = "")
-  pdf(pdf.file.name)
+  ## Create folder for individual profile plots
+  dir.create(paste(basename(prefix), "_TFBSs_positional_profiles/", sep = ""), recursive = TRUE, showWarnings = FALSE )
   
-  sapply(1:dim(frequency.per.bin.table)[1], function(f){
+  verbose(paste("Printing all the profiles in a PDF file"), 1)
+  
+  # pdf.file.name <- paste(basename, "_positional_profiles.pdf", sep = "")
+  # pdf(pdf.file.name)
+  
+  thrash <- sapply(1:dim(frequency.per.bin.table)[1], function(f){
     
     feature.query <- rownames(frequency.per.bin.table)[f]
     
-    y.val <- frequency.per.bin.table[f,]
-    x.val <- as.numeric(colnames(frequency.per.bin.table))
-    
-    plot(x = c(-300,-300,50,50),
-         y = c(-0.1,-0.4,-0.4,-0.1),
-         type = "l",
-         ylim = c(0, 0.20),
-         xlim = c(-300, 300),
-         col = "#ffeda0",
-         lwd = 1,
-         ## Labels
-         main = paste("Motif:", feature.query),
-         xlab = "Distance to peak summit",
-         ylab = "Normalized Nb Hits",
-         ## Hide x-axis
-         xaxt='n', 
-    )  
-    # polygon(x = c(-250,-250, 50, 50), y = c(0, 1, 1, 0), col="#ffeda0", border = NA, lty = 0, )
-    
-    ## Draw the grid
-    abline(v=(x.val), col="lightgray", lty="dotted")
-    abline(h=(seq(from = 0, to = 1, by = 0.01)), col="lightgray", lty="dotted")
-    
-    ## Draw the TSS (+1) position
-    abline(v = 0, col="#045a8d", lwd = 2, lty = 2)
-    
-    ## Set x-axis values 
-    axis(side = c(1,2,3,4), at = as.character(x.val), labels = as.character(x.val))
-    
-    ## Draw the lines for the active promoters 
-    lines(x = x.val, y = y.val, type = "l", col = "#00BFC4", lty = 1, lwd = 3)
-    
-    ## Draw the legend
-    legend("topleft", legend = c(paste(feature.query , "profile"), "Peak summit"), fill = c("#00BFC4", "#045a8d"), bty="o", bg="white")
-    
-    matrix.ID <- as.vector(ID.names[which(ID.names[,2] == feature.query),1])
-    logo.file <- paste(logo.folder, matrix.ID, "_logo.jpeg", sep = "")
-    logo <- readJPEG(logo.file)
-    rasterImage(logo, 
-                xleft = 60,
-                xright = 275, 
-                ybottom = 0.14,
-                ytop = 0.195)
+    for(pf in print.formats){
+      
+      if(pf == "pdf"){
+        pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile.pdf", sep = "")
+        pdf(pdf.file.name)
+      } else {
+        png.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile.png", sep = "")
+        png(png.file.name)
+      }
+      
+      y.val <- frequency.per.bin.table[f,]
+      x.val <- as.numeric(colnames(frequency.per.bin.table))
+      
+      
+      ## Draw the lines for the active promoters 
+      # lines(x = x.val, y = y.val, )
+      
+      plot(x = x.val,
+           y = y.val,
+           type = "l",
+           col = "#00BFC4",
+           lty = 1, 
+           lwd = 3,
+           ylim = c(0, max(max.y)),
+
+           ## Labels
+           main = paste("Motif:", feature.query),
+           xlab = "Distance to center",
+           ylab = "TFBSs fraction",
+           ## Hide x-axis
+           xaxt='n'
+      ) 
+      
+      ## Draw the grid
+      abline(v=(x.val), col="lightgray", lty="dotted")
+      abline(h=(seq(from = 0, to = 1, by = 0.01)), col="lightgray", lty="dotted")
+      
+      ## Draw the TSS (+1) position
+      abline(v = 0, col="#045a8d", lwd = 2, lty = 2)
+      
+      ## Set x-axis values 
+      axis(side = c(1,2,3,4), at = as.character(x.val), labels = as.character(x.val))
+      
+      # ## Draw the lines for the active promoters 
+      # lines(x = x.val, y = y.val, type = "l", col = "#00BFC4", lty = 1, lwd = 3)
+      
+      ## Draw the legend
+      legend("topleft", legend = c(paste(feature.query , "profile"), "Center"), fill = c("#00BFC4", "#045a8d"), bty="o", bg="white")
+      
+      matrix.ID <- as.vector(ID.names[which(ID.names[,2] == feature.query),1])
+      logo.file <- paste(logo.folder, matrix.ID, "_logo.jpeg", sep = "")
+      logo <- readJPEG(logo.file)
+      rasterImage(logo, 
+                  xleft = limits - (bin*3),
+                  xright = limits, 
+                  ybottom = max.y - 0.1,
+                  ytop = max.y - 0.05)
+      trash <- dev.off()
+    }
   })
-  dev.off()    
+  # dev.off()    
 }
 
 
@@ -902,9 +1079,17 @@ logos.F <- sapply(TF.IDs, function(i){
   paste(logo.folder, i, "_logo.jpeg", sep = "")
 })
 
-## Temporary not available
 logos.R <- sapply(TF.IDs, function(i){
   paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
+})
+
+## Write the Porfile plots path
+profiles.plots <- sapply(TF.IDs, function(i) {
+  paste(basename(prefix), "_TFBSs_positional_profiles/", i, "_positional_profile.png", sep = "")
+})
+
+tfbss.plots <- sapply(TF.IDs, function(i) {
+  paste(basename(prefix), "_TFBSs_pval_distribution/", i, "_TFBSs_pval_classes.png", sep = "")
 })
 
 ## Create a Dataframe containing the information of all motifs
@@ -913,6 +1098,9 @@ all.pval.match <- rep(p.val, times = length(TF.names))
 datatable.info.tab <- feature.attributes
 datatable.info.tab$P_val_threshold <- all.pval.match
 datatable.info.tab$IDs <- TF.IDs
+
+datatable.info.tab$Profiles <- profiles.plots
+datatable.info.tab$TFBS <- tfbss.plots
 datatable.info.tab$Logo <- logos.F
 datatable.info.tab$Logo_RC <- logos.R
 all.motifs <- all.motifs
@@ -921,7 +1109,7 @@ all.motifs <- all.motifs
 ## Fill the HTML template
 ## Substitute the words marked in the template by the data
 html.report <- readLines(html.template.file)
-profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12, 2:6,9:10,7,13,14)], img = c(11,12))
+profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1, 12, 2:6,9:10,7,13,14,15,16)], img = c(13,14), plot = c(11,12))
 
 profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 
@@ -996,10 +1184,12 @@ html.report <- gsub("--significances--", sig, html.report)
 ## The plot heigth depends in the number of motifs
 motif.total <- length(all.motifs)
 chart.heigth <- 500
-if(motif.total >= 300){
-  chart.heigth <- 700
-} else if(motif.total >= 400){
-  chart.heigth <- 900
+if(motif.total >= 200){
+  chart.heigth <- 800
+} else if(motif.total >= 300){
+  chart.heigth <- 1000
+} else if(motif.total >= 600){
+  chart.heigth <- 1400
 }
 html.report <- gsub("--chart_h--", chart.heigth, html.report)
 
