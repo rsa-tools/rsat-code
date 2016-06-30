@@ -133,6 +133,14 @@
  #hide_all_button {
         background-color: #FCACAC;
  }
+ 
+  #show_all_button_cov {
+        background-color: #C1FFC7;
+ }
+
+ #hide_all_button_cov {
+        background-color: #FCACAC;
+ }
 
   .button_click:active {
         position:relative;
@@ -223,7 +231,7 @@
    </p>  
 
 </div> 
-   <div  style="display:block; clear:both;position:relative;float:left;">
+<div  style="display:block; clear:both;position:relative;float:left;">
       <button class='small button_chart' id='show_all_button' onclick='show_all();'>Show All Profiles</button>
       <button class='small button_chart' id='hide_all_button' onclick='hide_all();'>Hide All Profiles</button>
 --start_e--      <button class='small button_chart' onclick='enriched();'>Hill Profiles</button> --end_e--
@@ -240,6 +248,23 @@
 
 <div id="individual_motif_button" class="button_click Section_button"><strong>Individual Motif View</strong></div>
 --tab--
+
+
+<!--New section-->
+<div id="sig_coverture_button" class="button_click Section_button"><strong>Significance vs Coverture</strong></div>
+<div id="sig_coverture" style="display:none" class="div_chart">
+ 
+<div  style="display:block; clear:both;position:relative;float:left;">
+      <button class='small button_chart' id='show_all_button_cov' onclick='show_all_cover();'>Show All Points</button>
+      <button class='small button_chart' id='hide_all_button_cov' onclick='hide_all_cover();'>Hide All Points</button>
+      
+<button class='small button_chart' onclick='sig_upper_threshold();'><b>Significance</b>: Lower threshold<div><input style="height:20px;margin:5px;" type="number" value='' id="sig_up" /></div></button>
+<button class='small button_chart' onclick='search_motifs();'><b>Search:</b><div><input style="height:20px;margin:5px;" type="search" value='' id="search_motifs" /></div></button>
+
+   </div>
+   <div id="chart_coverture" class="div_chart_sp"></div>
+</div>
+
 
 
 <div id="heatmap_button" class="button_click Section_button" ><strong>Profiles Heatmap</strong></div>
@@ -269,6 +294,7 @@
 <script>
 
 var chart = c3.generate({
+   bindto: '#chart',
     data: {
         x: 'x',
         columns: [
@@ -332,7 +358,7 @@ var chart = c3.generate({
             max: --y_axis--,
             min: 0,
             label : {
-                    text: 'Density of TFBSs',
+                    text: 'Fraction of TFBSs',
                     position: 'outer-middle',
             },
 
@@ -380,6 +406,14 @@ function show_all() {
 
 function hide_all() {
     chart.hide([--all--]);
+}
+
+function show_all_cover() {
+    chart.show([--all_cover--]);
+}
+
+function hide_all_cover() {
+    chart.hide([--all_cover--]);
 }
 
 // Show all the enriched/avoided/flat motifs
@@ -491,9 +525,6 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
         valueFormat = config.tooltip_format_value || defaultValueFormat,
         text, i, title_name, title_ID, title_p, title_q, title_s, value, name, bgcolor;
 
-
-
-    
     // You can access all of data like this:
     console.log($$.data.targets);
     
@@ -529,8 +560,90 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
 }
 
 
+</script>
 
 
+<script>
+
+var chart_coverture = c3.generate({
+    bindto: '#chart_coverture',
+    data: {
+                xs: {
+          --xs_coverture--
+        },
+        columns: [
+          --x_y_coverture--
+        ],
+
+        type: 'scatter',
+        names: {
+          --names_cov--
+        },
+    },
+    
+    point: {
+        r: 5
+    },
+
+    subchart: {
+        show: false,
+    },
+
+    zoom: {
+        enabled: false,
+    },
+
+
+    size: {
+        height: --chart_h--,
+        width: 1275
+    },
+
+    grid: {
+        x: {
+            show: true
+        },
+        y: {
+            show: true
+        }
+    },
+
+    legend: {
+        position: 'bottom'
+    },
+
+    padding: {
+        top: 0,
+        right: 100,
+        bottom: 15,
+        left: 100,
+    },
+    axis: {
+        y: {
+            padding: {top:5, bottom:0},
+            max: 100,
+            min: 0,
+            label : {
+                    text: 'Sequence coverture',
+                    position: 'outer-middle',
+            },
+
+        },
+
+        x: {
+            label: {
+                    text: 'Significance -log10(e-value)',
+                    position: 'outer-center',
+            },
+            tick: {
+                    culling: true,
+                    fit: false,
+                    multiline: false,
+            }
+        },
+    },
+
+});
 </script>
 
 <script charset="utf-8" type="text/javascript">
@@ -581,6 +694,15 @@ $(document).ready(function() {
 
 // Slide the Heatmap
 $(document).ready(function() {
+    $('#sig_coverture_button').click(function() {
+	$('#sig_coverture').slideToggle('fast');
+        $(this).toggleClass('selected_header_section');
+    }); 
+});
+
+
+// Slide the Heatmap
+$(document).ready(function() {
     $('#heatmap_button').click(function() {
 	$('#heatmap').slideToggle('fast');
         $(this).toggleClass('selected_header_section');
@@ -588,7 +710,7 @@ $(document).ready(function() {
 });
 
 
-// Slide the Heatmap
+// Slide the additonal files
 $(document).ready(function() {
     $('#additional_files_button').click(function() {
 	$('#additional_files').slideToggle('fast');
