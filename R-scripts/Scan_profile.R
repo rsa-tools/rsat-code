@@ -651,7 +651,7 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   chi.eval <- chi.pval * length(matrix.names)
   
   ## Calculate significance
-  sig <- round(-log(chi.eval), digits = 3)
+  sig <- round(-log10(chi.eval), digits = 3)
   feature.attributes[[m]][["significance"]] <<- sig
   
   chi.pval <- prettyNum(chi.pval, scientific=TRUE, digits = 2)
@@ -835,13 +835,13 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(f){
   ## Export the covered/non_covered sequences names 
   covered.seq <- as.vector(matrix.query.selection$seq_id)
   not.covered.seq <- setdiff(total.scanned.sequences, covered.seq)
-  
+
   covered.sequences.file <- paste(covered.tables.dir, feature.query, "_covered_sequences_IDs.tab", sep = "")
   not.covered.sequences.file <- paste(covered.tables.dir, feature.query, "_not_covered_sequences_IDs.tab", sep = "")
-  
+
   covered.sequences.table <- data.frame("#covered_sequences" = covered.seq)
   not.covered.sequences.table <- data.frame("#not_covered_sequences" = not.covered.seq)
-  
+
   write.table(covered.sequences.table, file = covered.sequences.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
   write.table(not.covered.sequences.table, file = not.covered.sequences.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
 
@@ -880,6 +880,56 @@ feature.attributes.file <- paste(basename, "_attributes.tab", sep = "")
 # rm(additional.data)
 
 
+###############################################################
+## Compute the XY-plot for Profile significance vs Coverture ##
+###############################################################
+
+verbose(paste("Drawing Significance vs Coverture plot"),1)
+
+## Calculate X-Y coordinates
+x.sig <- as.numeric(as.vector(feature.attributes$Sig))
+x.sig[x.sig == Inf] <- 350
+names(x.sig) <- as.vector(feature.attributes$Feature)
+y.cov <- as.numeric(gsub("%", "", feature.attributes$Coverture))
+names(y.cov) <- as.vector(feature.attributes$Feature)
+
+## Print the plot
+sig.coverture.file <- paste(basename, "_significance_vs_coverture.pdf", sep = "") 
+pdf(sig.coverture.file)
+
+## X-Y plot
+plot(x.sig,
+     y.cov,
+     ylim = c(0,100),
+     xlab = "Significance -log10(Corrected p-val)",
+     ylab = "Sequence coverture",
+     main = "Profile Significance vs Sequence Coverture",
+     col = ifelse((x.sig >= 20 & y.cov >= 66), "darkgreen", "gray"),
+     panel.first=grid(col = "grey", lty = "solid"),
+     pch = "o",
+     cex = 1.5,
+     )
+
+## Mark the TFBMs sattisfying the threshold
+selected.TFBMs <- feature.attributes[which(as.vector(feature.attributes$Sig) >= 20 & as.numeric(gsub("%", "", feature.attributes$Coverture)) >= 66), "Feature"]
+selected.TFBMs <- as.vector(selected.TFBMs)
+
+if(length(selected.TFBMs) > 0){
+  
+  ## Add the text to the selected TFBMs
+  text(x = x.sig[c(selected.TFBMs)],
+       y = y.cov[c(selected.TFBMs)],
+       labels = selected.TFBMs,
+       cex = 0.6, 
+       pos = 3, 
+       col="red")
+}
+thrash <- dev.off()
+
+## Convert the X-Y values to the format required for C3 plot
+xx.sig <- paste("['x',", paste(round(as.vector(x.sig)), collapse = ","), "],", sep = "")
+yy.cov <- paste("['y',", paste(round(as.vector(y.cov)), collapse = ","), "],", sep = "")
+x.y.coverture <- paste(xx.sig, yy.cov, collapse = "\n")
 
 ##############################################################
 ## Plot each profile individually (if it is user-specified) ##
@@ -997,9 +1047,13 @@ set.colors <- colorRampPalette(brewer.pal(10,"Paired"))(length(TF.IDs))
 counter <- 0
 x.correspondence <- NULL
 x.y <- NULL
+x.y.coverture <- NULL
+x.y.coverture.names <- NULL
 plot.names <- NULL
+plot.names.cover <- NULL
 area <- NULL
 all.motifs <- NULL
+all.motifs.cover <- NULL
 all.motif.names <- NULL
 hash.motif.IDs <- list()
 
@@ -1012,9 +1066,8 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   ## Here we create a unique ID without CSS special characters
   ## Only to manipulate the objects in the HTML form
   motif <- paste(counter, "_", TF.IDs.cp[counter], "_", counter, sep = "")  
+  motif.cover <- paste(counter, counter, "_", TF.IDs.cp[counter], "_", counter, counter, sep = "")
   
-  ########################################################################################################
-  ## To test 
   motif <- gsub("_", "", motif)
   motif <- gsub("-", "", motif)
   motif <- gsub("\\.", "", motif)
@@ -1046,7 +1099,27 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
              "],",
              sep = "")
   x.y <<- rbind(x.y, y) 
+  
+  ##Aqui
+  ## Convert the X-Y values to the format required for C3 plot coverture
+  xx.sig <- paste("['", motif.cover, "_x',", round(x.sig[order.by.eval])[counter], "],", sep = "")
+  yy.cov <- paste("['", motif.cover, "',", round(y.cov[order.by.eval])[counter], "],", sep = "")
+  x.y.coverture <<- rbind(x.y.coverture, xx.sig)
+  x.y.coverture <<- rbind(x.y.coverture, yy.cov)
+  
+  ## Add the motifs IDs sentences for the coverture plot
+  plot.names.cover <<- append(plot.names.cover, paste("'", motif.cover, "' : '",  TF.names[counter],"',", sep = ""))
+  
+  ## Append all the motifs IDs for the coverture plot
+  all.motifs.cover <<- append(all.motifs.cover, motif.cover)
+    
+  ## Add the motif names for the coverture plot
+  name.cov <- paste("'", motif.cover, "' : '", motif.cover, "_x',", sep = "")
+  x.y.coverture.names <<- rbind(x.y.coverture.names, name.cov)
+
 })
+
+
 
 
 if(length(flat.motifs) > 0){
@@ -1095,7 +1168,7 @@ logos.R <- sapply(TF.IDs, function(i){
   paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
 })
 
-## Write the Porfile plots path
+## Write the Profile and TFBSs plots path
 profiles.plots <- sapply(TF.IDs, function(i) {
   paste(basename(prefix), "_TFBSs_positional_profiles/", i, "_positional_profile.png", sep = "")
 })
@@ -1104,7 +1177,7 @@ tfbss.plots <- sapply(TF.IDs, function(i) {
   paste(basename(prefix), "_TFBSs_pval_distribution/", i, "_TFBSs_pval_classes.png", sep = "")
 })
 
-
+## Write the path to the covered/non_covered sequences tables
 covered.files <- sapply(TF.IDs, function(i) {
   paste(covered.tables.dir, "_covered_sequences_info/", i, "_covered_sequences_IDs.tab", sep = "")
 })
@@ -1112,16 +1185,15 @@ not.covered.files <- sapply(TF.IDs, function(i) {
   paste(covered.tables.dir, "_covered_sequences_info/", i, "_not_covered_sequences_IDs.tab", sep = "")
 })
 
-print("-------------------------")
-print(covered.files)
-print("-------------------------")
-
 ## Create a Dataframe containing the information of all motifs
 ## This table will be exported and displayed as a dynamic table in the report
 all.pval.match <- rep(p.val, times = length(TF.names))
 datatable.info.tab <- feature.attributes
 datatable.info.tab$P_val_threshold <- all.pval.match
 datatable.info.tab$IDs <- TF.IDs
+
+datatable.info.tab$covered_files <- covered.files
+datatable.info.tab$not_covered_files <- not.covered.files
 
 datatable.info.tab$Profiles <- profiles.plots
 datatable.info.tab$TFBS <- tfbss.plots
@@ -1255,6 +1327,7 @@ if(draw.area == 1){
 all.motifs <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
 html.report <- gsub("--all--", all.motifs, html.report)
 
+
 if(length(flat.motifs) == 0){
   html.report <- gsub("--start_f--", "<!--", html.report)
   html.report <- gsub("--end_f--", "-->", html.report)
@@ -1328,9 +1401,27 @@ html.report <- gsub("--jquery--", jquery.base, html.report)
 html.report <- gsub("--datatable--", datatable.base, html.report)
 html.report <- gsub("--datatable_css--", datatable.css.base, html.report)
 
+## Insert the X-Y scatterplot values
+x.y.coverture <- paste(x.y.coverture, collapse = "\n")
+html.report <- gsub("--x_y_coverture--", x.y.coverture, html.report)
+
+## Insert the X-Y scatterplot xs
+x.y.coverture.names <- paste(x.y.coverture.names, collapse = "\n")
+html.report <- gsub("--xs_coverture--", x.y.coverture.names, html.report)
+
+## Insert the names in the coverture XY-plot
+plot.names.cover <- paste(plot.names.cover, collapse = "\n")
+html.report <- gsub("--names_cov--", plot.names.cover, html.report)
+
+## Insert the motif names (to hide/show all) in coverture plot
+## They are inserted in the JQuery section
+all.motifs.cover <- paste(paste("'", all.motifs.cover, "'", sep = ""), collapse = ",")
+html.report <- gsub("--all_cover--", all.motifs.cover, html.report)
+
 ## Export the report
 html.report.file <- paste(basename, "_scan_profile_report.html", sep = "")
 write(html.report, file = html.report.file)
+
 
 # grep -v '^;' matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments.tab | awk -F '\t'  ' $2!="limit" && ($11 >= 4) {print $1"\t"$3"\t"($6+$5)/2"\t"$9} ' > matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments_PARSED.tab
 # cat /home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/enrichment_by_scan/Plot_matches_extended_promoters.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " matrix.scan.active = '/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/test_metrics_with_yeast_data/CapStarrseq_Active_Prom_K562_merge_IP_extended_matrix_scan_pval_1e-3_HOCOMOCO_bg_mkv_2.tab'; matrix.scan.inactive = '/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/test_metrics_with_yeast_data/CapStarrseq_Active_Prom_K562_merge_IP_extended_matrix_scan_pval_1e-3_HOCOMOCO_bg_mkv_2.tab'; p.val = '1e-4'; bin = '50'; pdf.file = './test.pdf'"
