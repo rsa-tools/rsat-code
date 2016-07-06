@@ -1321,7 +1321,6 @@ if(draw.area == 1){
   html.report <- gsub("--area--", area, html.report)
 }
 
-
 ## Insert the motif names (to hide/show all)
 ## They are inserted in the JQuery section
 all.motifs <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
@@ -1412,6 +1411,44 @@ html.report <- gsub("--xs_coverture--", x.y.coverture.names, html.report)
 ## Insert the names in the coverture XY-plot
 plot.names.cover <- paste(plot.names.cover, collapse = "\n")
 html.report <- gsub("--names_cov--", plot.names.cover, html.report)
+
+## Add the real motif IDs (to display in the tooltip)
+## They are inserted in the JS section
+IDs.cov <- paste("cov_IDs['", all.motifs.cover, "'] = '", TF.IDs.cp, "';", sep = "")
+IDs.cov <- paste(IDs.cov, collapse = "\n")
+html.report <- gsub("--IDs_cov--", IDs.cov, html.report)
+
+## Add the real motif logo path (to display in the tooltip)
+## They are inserted in the JS section
+logos.cov <- sapply(TF.IDs.cp, function(i){
+  paste(logo.folder, i, "_logo.jpeg", sep = "")
+})
+logos.cov <- paste("cov_pics['", all.motifs.cover, "'] = '", as.vector(datatable.info.tab$Logo), "';", sep = "")
+logos.cov <- paste(logos.cov, collapse = "\n")
+html.report <- gsub("--pics_cov--", logos.cov, html.report)
+
+## Logos in Reverse complement
+logos.rc.cov <- sapply(TF.IDs.cp, function(i){
+  paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
+})
+logos.rc.cov <- paste("cov_pics_rc['", all.motifs.cover, "'] = '", as.vector(datatable.info.tab$Logo_RC), "';", sep = "")
+logos.rc.cov <- paste(logos.rc.cov, collapse = "\n")
+html.report <- gsub("--pics_rc_cov--", logos.rc.cov, html.report)
+
+## Add the signficance (to display in the tooltip)
+## They are inserted in the JS section
+ss <- as.numeric(gsub("%", "", feature.attributes$Sig))
+ss[ss == Inf] <- 350
+sig.cov <- paste("cov_significances['", all.motifs.cover, "'] = ", as.vector(ss), ";", sep = "")
+sig.cov <- paste(sig.cov, collapse = "\n")
+html.report <- gsub("--significances_cov--", sig.cov, html.report)
+
+## Add the covertures (to display in the tooltip)
+## They are inserted in the JS section
+cc <- as.numeric(gsub("%", "", feature.attributes$Coverture))
+coverture.cov <- paste("cov_TF_coverture['", all.motifs.cover, "'] = ", as.vector(cc), ";", sep = "")
+coverture.cov <- paste(coverture.cov, collapse = "\n")
+html.report <- gsub("--TF_covertures_cov--", coverture.cov, html.report)
 
 ## Insert the motif names (to hide/show all) in coverture plot
 ## They are inserted in the JQuery section
