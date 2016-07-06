@@ -55,8 +55,8 @@
 	position: relative;
 	max-width: 100%;
 	max-height: 10%;
-	height: 90px;
-	width: 70px
+	height: 45px;
+	width: 35px
 	float: left;
 	clear: both;
   }
@@ -262,7 +262,7 @@
 <button class='small button_chart' onclick='search_motifs();'><b>Search:</b><div><input style="height:20px;margin:5px;" type="search" value='' id="search_motifs" /></div></button>
 
    </div>
-   <div id="chart_coverture" class="div_chart_sp"></div>
+   <div id="coverchart" class="div_chart_sp"></div>
 </div>
 
 
@@ -409,11 +409,11 @@ function hide_all() {
 }
 
 function show_all_cover() {
-    chart.show([--all_cover--]);
+    coverchart.show([--all_cover--]);
 }
 
 function hide_all_cover() {
-    chart.hide([--all_cover--]);
+    coverchart.hide([--all_cover--]);
 }
 
 // Show all the enriched/avoided/flat motifs
@@ -515,9 +515,6 @@ function search_motifs(){
    
 }
 
-
-
-
 function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
     var $$ = this, config = $$.config, CLASS = $$.CLASS,
         titleFormat = config.tooltip_format_title || defaultTitleFormat,
@@ -565,8 +562,8 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
 
 <script>
 
-var chart_coverture = c3.generate({
-    bindto: '#chart_coverture',
+var coverchart = c3.generate({
+    bindto: '#coverchart',
     data: {
                 xs: {
           --xs_coverture--
@@ -618,6 +615,12 @@ var chart_coverture = c3.generate({
         bottom: 15,
         left: 100,
     },
+    
+    tooltip: {
+        grouped: false, // Default true
+        contents: tooltip_contents_2,
+    },
+    
     axis: {
         y: {
             padding: {top:5, bottom:0},
@@ -644,6 +647,61 @@ var chart_coverture = c3.generate({
     },
 
 });
+
+    var cov_pics = new Array();
+--pics_cov--
+
+    var cov_pics_rc = new Array();
+--pics_rc_cov--
+
+    var cov_IDs = new Array();
+--IDs_cov--
+
+    var cov_significances = new Array();
+--significances_cov--
+
+    var cov_TF_coverture = new Array();
+--TF_covertures_cov--
+
+function tooltip_contents_2(d, defaultTitleFormat, defaultValueFormat, color) {
+    var $$ = this, config = $$.config, CLASS = $$.CLASS,
+        titleFormat = config.tooltip_format_title || defaultTitleFormat,
+        nameFormat = config.tooltip_format_name || function (name) { return name; },
+        valueFormat = config.tooltip_format_value || defaultValueFormat,
+        text, i, title_name, title_ID, title_c, title_s, value, name, bgcolor;
+
+    // You can access all of data like this:
+    console.log($$.data.targets);
+    
+    for (i = 0; i < d.length; i++) {
+        if (! (d[i] && (d[i].value || d[i].value === 0))) { continue; }
+        
+        if (! text) {
+            title_name = 'Motif Name';
+	    title_ID = 'Motif ID';
+            title_c = 'Coverture';
+            title_s = 'Sig';
+            title_logo = 'Logo';
+            title_logo_rc = 'Logo RC';
+            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_c + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";
+        }
+
+        name = nameFormat(d[i].name);
+        value = valueFormat(d[i].value, d[i].ratio, d[i].id, d[i].index);
+        bgcolor = $$.levelColor ? $$.levelColor(d[i].value) : color(d[i].id);
+
+        text += "<tr class='" + CLASS.tooltipName + "-" + d[i].id + "'>";
+        text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + name + "</td>";
+        text += "<td>" + cov_IDs[d[i].id] + "</td>";
+        text += "<td>" + cov_TF_coverture[d[i].id] + "</td>";
+        text += "<td>" + cov_significances[d[i].id] + "</td>";
+        text += "<td><img class='small_logo' src='" + cov_pics[d[i].id] + "' /></td>";
+        text += "<td><img class='small_logo' src='" + cov_pics_rc[d[i].id] + "' /></td>";
+        text += "</tr>";
+    }
+    return text + "</table>";   
+}
+
 </script>
 
 <script charset="utf-8" type="text/javascript">
