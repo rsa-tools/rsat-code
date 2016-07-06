@@ -25,10 +25,10 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 
 #################################################################################################
 ## Functions
-create.html.tab <- function(tab, img = 0, plot = 0){
+create.html.tab <- function(tab, img = 0, plot = 0, link.text.covered = 0, link.text.not.covered = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1400px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Coverture</th><th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Coverture</th><th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
@@ -38,15 +38,22 @@ create.html.tab <- function(tab, img = 0, plot = 0){
     ## This is done because the tab require different arguments
     rows.simple <- rows.nb[!(rows.nb %in% img)]
     rows.simple <- rows.simple[!(rows.simple %in% plot)]
+    rows.simple <- rows.simple[!(rows.simple %in% link.text.covered)]
+    rows.simple <- rows.simple[!(rows.simple %in% link.text.not.covered)]
     
     rows.pic <- rows.nb[rows.nb %in% img]
     rows.plot <- rows.nb[rows.nb %in% plot]
+    rows.text.link.covered <- rows.nb[rows.nb %in% link.text.covered]
+    rows.text.link.not.covered <- rows.nb[rows.nb %in% link.text.not.covered]
     
     ## Columns with simple text
     rows.text <- paste("<td>", row[rows.simple], "</td>", collapse = "")
     
     ## Columns with images
     rows.pic.text <- paste("<td><img class='logo_tab' src ='", as.character(row[rows.pic]), "'/></td>", collapse = "")
+    
+    rows.text.link.covered <- paste("<td><a href='", as.character(row[rows.text.link.covered]), "' target='_blank'>Covered</a></td>", collapse = "")
+    rows.text.link.not.covered <- paste("<td><a href='", as.character(row[rows.text.link.not.covered]), "' target='_blank'>Not Covered</a></td>", collapse = "")
     
     ## Columns with plots and links
     rows.plot.pdf <- sapply(row[rows.plot], function(x){
@@ -57,7 +64,7 @@ create.html.tab <- function(tab, img = 0, plot = 0){
     ## Head and tail tags
     row.head <- "<tr>"
     row.tail <- "</tr>"
-    paste(row.head, rows.text, rows.plot.text, rows.pic.text, row.tail, sep = "")    
+    paste(row.head, rows.text, rows.plot.text, rows.pic.text, rows.text.link.covered, rows.text.link.not.covered, row.tail, sep = "")    
 
   })
   
@@ -294,7 +301,7 @@ verbose(paste("Reading sequence names table"), 1)
 sequence.names.tab <- read.csv(file = sequence.names.file, sep = "\t", header = TRUE, comment.char = ";")
 colnames(sequence.names.tab) <- c("seq_id")
 total.scanned.sequences <- length(as.vector(sequence.names.tab$seq_id))
-
+scanned.sequences <- unique(as.vector(sequence.names.tab$seq_id))
 
 ######################################
 ## Create the column -log10(pvalue)
@@ -833,17 +840,17 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(f){
   nb.seq.with.hits <- length(unique(as.vector(matrix.query.selection$seq_id)))
  
   ## Export the covered/non_covered sequences names 
-  covered.seq <- as.vector(matrix.query.selection$seq_id)
-  not.covered.seq <- setdiff(total.scanned.sequences, covered.seq)
+  covered.seq <- unique(as.vector(matrix.query.selection$seq_id))
+  not.covered.seq <- setdiff(scanned.sequences, covered.seq)
+
+  covered.sequences.table <- data.frame(covered.seq)
+  not.covered.sequences.table <- data.frame(not.covered.seq)
 
   covered.sequences.file <- paste(covered.tables.dir, feature.query, "_covered_sequences_IDs.tab", sep = "")
   not.covered.sequences.file <- paste(covered.tables.dir, feature.query, "_not_covered_sequences_IDs.tab", sep = "")
 
-  covered.sequences.table <- data.frame("#covered_sequences" = covered.seq)
-  not.covered.sequences.table <- data.frame("#not_covered_sequences" = not.covered.seq)
-
-  write.table(covered.sequences.table, file = covered.sequences.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
-  write.table(not.covered.sequences.table, file = not.covered.sequences.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
+  write.table(covered.sequences.table, file = covered.sequences.file, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
+  write.table(not.covered.sequences.table, file = not.covered.sequences.file, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
 
   ## Calculate the coverture rate
   coverture <- round(nb.seq.with.hits/total.scanned.sequences, digits = 4)*100
@@ -879,7 +886,6 @@ feature.attributes.file <- paste(basename, "_attributes.tab", sep = "")
 # write.table(feature.attributes, file = feature.attributes.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = TRUE)
 # rm(additional.data)
 
-
 ###############################################################
 ## Compute the XY-plot for Profile significance vs Coverture ##
 ###############################################################
@@ -907,7 +913,7 @@ plot(x.sig,
      col = ifelse((x.sig >= 20 & y.cov >= 66), "darkgreen", "gray"),
      panel.first=grid(col = "grey", lty = "solid"),
      pch = "o",
-     cex = 1.5,
+     cex = 1.5
      )
 
 ## Mark the TFBMs sattisfying the threshold
@@ -962,7 +968,6 @@ if(individual.plots == 1){
       
       y.val <- frequency.per.bin.table[f,]
       x.val <- as.numeric(colnames(frequency.per.bin.table))
-      
       
       ## Draw the lines for the active promoters 
       # lines(x = x.val, y = y.val, )
@@ -1100,7 +1105,6 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
              sep = "")
   x.y <<- rbind(x.y, y) 
   
-  ##Aqui
   ## Convert the X-Y values to the format required for C3 plot coverture
   xx.sig <- paste("['", motif.cover, "_x',", round(x.sig[order.by.eval])[counter], "],", sep = "")
   yy.cov <- paste("['", motif.cover, "',", round(y.cov[order.by.eval])[counter], "],", sep = "")
@@ -1118,9 +1122,6 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   x.y.coverture.names <<- rbind(x.y.coverture.names, name.cov)
 
 })
-
-
-
 
 if(length(flat.motifs) > 0){
   ## Get the ID (required for the HTML document) of the select motif names
@@ -1179,10 +1180,10 @@ tfbss.plots <- sapply(TF.IDs, function(i) {
 
 ## Write the path to the covered/non_covered sequences tables
 covered.files <- sapply(TF.IDs, function(i) {
-  paste(covered.tables.dir, "_covered_sequences_info/", i, "_covered_sequences_IDs.tab", sep = "")
+  paste(covered.tables.dir, i, "_covered_sequences_IDs.tab", sep = "")
 })
 not.covered.files <- sapply(TF.IDs, function(i) {
-  paste(covered.tables.dir, "_covered_sequences_info/", i, "_not_covered_sequences_IDs.tab", sep = "")
+  paste(covered.tables.dir, i, "_not_covered_sequences_IDs.tab", sep = "")
 })
 
 ## Create a Dataframe containing the information of all motifs
@@ -1191,14 +1192,13 @@ all.pval.match <- rep(p.val, times = length(TF.names))
 datatable.info.tab <- feature.attributes
 datatable.info.tab$P_val_threshold <- all.pval.match
 datatable.info.tab$IDs <- TF.IDs
-
-datatable.info.tab$covered_files <- covered.files
-datatable.info.tab$not_covered_files <- not.covered.files
-
 datatable.info.tab$Profiles <- profiles.plots
 datatable.info.tab$TFBS <- tfbss.plots
 datatable.info.tab$Logo <- logos.F
 datatable.info.tab$Logo_RC <- logos.R
+## aqui
+datatable.info.tab$covered_files <- covered.files
+datatable.info.tab$not_covered_files <- not.covered.files
 all.motifs <- all.motifs
 
 ############################
@@ -1210,10 +1210,7 @@ html.report <- readLines(html.template.file)
 # [9] "Nb_hits"         "Nb_sequences"    "Coverture"       "P_val_threshold"
 # [13] "IDs"             "Profiles"        "TFBS"            "Logo"           
 # [17] "Logo_RC"
-profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,13,3:6,9:11,7,14:17)], img = c(13,14), plot = c(11,12))
-
-# print(names(datatable.info.tab[,]))
-# stop("--------------------------------------")
+profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,13,3:6,9:11,7,14:19)], img = c(13,14), plot = c(11,12), link.text.covered = 15, link.text.not.covered = 16)
 
 profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 
@@ -1325,7 +1322,6 @@ if(draw.area == 1){
 ## They are inserted in the JQuery section
 all.motifs <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
 html.report <- gsub("--all--", all.motifs, html.report)
-
 
 if(length(flat.motifs) == 0){
   html.report <- gsub("--start_f--", "<!--", html.report)
@@ -1450,6 +1446,14 @@ coverture.cov <- paste("cov_TF_coverture['", all.motifs.cover, "'] = ", as.vecto
 coverture.cov <- paste(coverture.cov, collapse = "\n")
 html.report <- gsub("--TF_covertures_cov--", coverture.cov, html.report)
 
+## Add the covertures (to display in the tooltip)
+## They are inserted in the JS section
+all.profiles.pics <- paste("'", as.vector(datatable.info.tab$Profiles), "'", sep = "")
+profiles.pics.cov <- paste("cov_pics_profile['", all.motifs.cover, "'] = ", all.profiles.pics, ";", sep = "")
+profiles.pics.cov <- paste(profiles.pics.cov, collapse = "\n")
+html.report <- gsub("--profile_pics_cov--", profiles.pics.cov, html.report)
+
+
 ## Insert the motif names (to hide/show all) in coverture plot
 ## They are inserted in the JQuery section
 all.motifs.cover <- paste(paste("'", all.motifs.cover, "'", sep = ""), collapse = ",")
@@ -1458,7 +1462,6 @@ html.report <- gsub("--all_cover--", all.motifs.cover, html.report)
 ## Export the report
 html.report.file <- paste(basename, "_scan_profile_report.html", sep = "")
 write(html.report, file = html.report.file)
-
 
 # grep -v '^;' matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments.tab | awk -F '\t'  ' $2!="limit" && ($11 >= 4) {print $1"\t"$3"\t"($6+$5)/2"\t"$9} ' > matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments_PARSED.tab
 # cat /home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/enrichment_by_scan/Plot_matches_extended_promoters.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " matrix.scan.active = '/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/test_metrics_with_yeast_data/CapStarrseq_Active_Prom_K562_merge_IP_extended_matrix_scan_pval_1e-3_HOCOMOCO_bg_mkv_2.tab'; matrix.scan.inactive = '/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/test_metrics_with_yeast_data/CapStarrseq_Active_Prom_K562_merge_IP_extended_matrix_scan_pval_1e-3_HOCOMOCO_bg_mkv_2.tab'; p.val = '1e-4'; bin = '50'; pdf.file = './test.pdf'"
