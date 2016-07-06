@@ -60,6 +60,16 @@
 	float: left;
 	clear: both;
   }
+  
+    .small_pic {
+	position: relative;
+	max-width: 100%;
+	max-height: 25%;
+	height: 115px;
+	width: 100px
+	float: left;
+	clear: both;
+  }
 
   .plot_tab {
 	position: relative;
@@ -579,7 +589,7 @@ var coverchart = c3.generate({
     },
     
     point: {
-        r: 5
+        r: 6
     },
 
     subchart: {
@@ -621,6 +631,10 @@ var coverchart = c3.generate({
         contents: tooltip_contents_2,
     },
     
+    color: {
+        pattern: [--color_pattern--]
+    },
+    
     axis: {
         y: {
             padding: {top:5, bottom:0},
@@ -654,6 +668,9 @@ var coverchart = c3.generate({
     var cov_pics_rc = new Array();
 --pics_rc_cov--
 
+    var cov_pics_profile = new Array();
+--profile_pics_cov--
+
     var cov_IDs = new Array();
 --IDs_cov--
 
@@ -683,7 +700,8 @@ function tooltip_contents_2(d, defaultTitleFormat, defaultValueFormat, color) {
             title_s = 'Sig';
             title_logo = 'Logo';
             title_logo_rc = 'Logo RC';
-            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_c + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";
+            title_profile = 'Profile';
+            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_c + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th><th colspan='1'>" + title_profile + "</th></tr>";
         }
 
         name = nameFormat(d[i].name);
@@ -697,6 +715,7 @@ function tooltip_contents_2(d, defaultTitleFormat, defaultValueFormat, color) {
         text += "<td>" + cov_significances[d[i].id] + "</td>";
         text += "<td><img class='small_logo' src='" + cov_pics[d[i].id] + "' /></td>";
         text += "<td><img class='small_logo' src='" + cov_pics_rc[d[i].id] + "' /></td>";
+        text += "<td><img class='small_pic' src='" + cov_pics_profile[d[i].id] + "' /></td>";
         text += "</tr>";
     }
     return text + "</table>";   
