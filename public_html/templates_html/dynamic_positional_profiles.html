@@ -306,7 +306,6 @@
 var chart = c3.generate({
    bindto: '#chart',
     data: {
-        x: 'x',
         columns: [
           --x_y--
         ],
@@ -381,12 +380,16 @@ var chart = c3.generate({
             },
             tick: {
                     culling: false
-            }
+            },
+            type: 'category',
+            categories: [--categories--]
         },
     },
 
 });
 
+    var TF_coverture = new Array();
+--TF_covertures--
 
     var TF_names = new Array();
 --TF_names--
@@ -530,7 +533,7 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
         titleFormat = config.tooltip_format_title || defaultTitleFormat,
         nameFormat = config.tooltip_format_name || function (name) { return name; },
         valueFormat = config.tooltip_format_value || defaultValueFormat,
-        text, i, title_name, title_ID, title_p, title_q, title_s, value, name, bgcolor;
+        text, i, title_name, title_ID, title_p, title_q, title_s, title_c, value, name, bgcolor;
 
     // You can access all of data like this:
     console.log($$.data.targets);
@@ -544,9 +547,10 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
             title_p = 'P-val';
             title_q = 'Q-val';
             title_s = 'Sig';
+            title_c = 'Coverture';
             title_logo = 'Logo';
             title_logo_rc = 'Logo RC';
-            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_p + "</th><th colspan='1'>" + title_q + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";
+            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_p + "</th><th colspan='1'>" + title_q + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_c + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";
         }
 
         name = nameFormat(d[i].name);
@@ -559,6 +563,7 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
         text += "<td>" + pvalues[d[i].id] + "</td>";
         text += "<td>" + qvalues[d[i].id] + "</td>";
         text += "<td>" + significances[d[i].id] + "</td>";
+        text += "<td>" + TF_coverture[d[i].id] + "</td>";
         text += "<td><img class='small_logo' src='" + pics[d[i].id] + "' /></td>";
         text += "<td><img class='small_logo' src='" + pics_rc[d[i].id] + "' /></td>";
         text += "</tr>";
