@@ -1217,7 +1217,8 @@ profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
 html.report <- gsub("--tab--", profile.data.tab.html, html.report)
 
-x.y <<- rbind(x.y, paste("['x',", paste(colnames(frequency.per.bin.table),collapse = ","), "],", sep = ""))
+## Define the x-axis categories
+x.axis.categories <- paste(paste("'", colnames(frequency.per.bin.table), "'", sep = ""), collapse = ",")
 
 ## CSS section to set the line width
 ## Note: the width is proportional to the significance
@@ -1282,6 +1283,13 @@ sig <- paste("significances['", all.motifs, "'] = ", as.vector(datatable.info.ta
 sig <- paste(sig, collapse = "\n")
 html.report <- gsub("--significances--", sig, html.report)
 
+## Add the covertures (to display in the tooltip)
+## They are inserted in the JS section
+cc <- as.numeric(gsub("%", "", feature.attributes$Coverture))
+coverture <- paste("TF_coverture['", all.motifs, "'] = ", as.vector(cc), ";", sep = "")
+coverture <- paste(coverture, collapse = "\n")
+html.report <- gsub("--TF_covertures--", coverture, html.report)
+
 ## The plot heigth depends in the number of motifs
 motif.total <- length(all.motifs)
 chart.heigth <- 500
@@ -1298,6 +1306,9 @@ html.report <- gsub("--chart_h--", chart.heigth, html.report)
 ## They are inserted in the C3 section
 xx <- paste(x.y, collapse = "\n")
 html.report <- gsub("--x_y--", xx, html.report)
+
+## Add the X-axis categories
+html.report <- gsub("--categories--", x.axis.categories, html.report)
 
 ## Add the color code (one color per motif)
 ## They are inserted in the C3 section
