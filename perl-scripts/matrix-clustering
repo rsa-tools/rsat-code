@@ -157,6 +157,9 @@ package main;
   ## Flag to export the Newick tree
   local $export_newick = 0;
 
+  ## Detect the input matrices command line is correct
+  local $count_input_matrix_parameters = 0;
+
   ## Flag to add links to motif tree
   local $ID_link_flag = 0;
   local %ID_nb_hash = ();
@@ -351,13 +354,12 @@ package main;
   local $skip_matrices = 0;
   
   ## To export in the results the input file
-  local $clone_input_flag = 0;
+  local $clone_input_flag = 1;
 
   ## Hashes used in the pre-process of the motifs
   local %motif_set_attributes = ();
   local %motifs_ID_unique = ();
   local $longest_title = 0;
-  local $multi_input_flag = 0;
   local $single_input_flag = 0;
 
   ## Saves the width of the largest alignment
@@ -388,7 +390,7 @@ package main;
 
   ## Supported fields to return
   local %return_fields = ();
-  local @supported_return_fields = qw (align_consensus clone_input heatmap json newick root_matrices nb_clusters);
+  local @supported_return_fields = qw (align_consensus heatmap json newick root_matrices nb_clusters);
   local %supported_return_fields = ();
   foreach my $field (@supported_return_fields) {
     $supported_return_fields{$field} = 1;
@@ -669,39 +671,9 @@ Same as -h
 The input file contains a set of position-specific scoring
 matrices.
 
-=cut
-    } elsif ($arg eq "-matrix") {
+Example: -matrix OCt_motifs Oct_motifs_peakmotifs.tf
 
-#      $main::infile{matrices} = shift(@arguments);
-#      $single_input_flag = 1;
-
-      my $matrix_title = shift(@arguments);
-      ## Substitue special characters which cannot be used inside a file name
-      $matrix_title =~ s|\s|_|g;
-      $matrix_title =~ s|/|_|g;
-      $matrix_title =~ s|:|_|g;
-      
-      $main::matrix_file{$matrix_title} = shift(@arguments);
-      
-      push @main::matrix_titles, $matrix_title;
-      
-      $input_matrix = 1;
-      
-=pod
-
-=item B<-file_table>
-
-The file table must be a tab-delimited table with three fields each
-line:
-
-1) The path to one file containing a set of position-specific scoring matrices (PSSMs).
-
-2) The matix format of the set of PSSMs.
-
-3) The motif collection label (e.g. JASPAR_core_vertebrate,
-peak-motif_result, ...).
-
-The collection label will be concatenated to each motif ID in order to
+The matrix_title will be concatenated to each motif ID in order to
 create unique motif IDs. The collection label is displayed in the results.
 
 This label is useful when two motifs for the same TF come from different
@@ -715,15 +687,34 @@ tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe).
 
 For a description of these formats, see the help of I<convert-matrix>.
 
-The file table must contain at least one line (tab separated) as the next one:
-
-peak-motifs_Oct4_matrices.tf	transfac	Oct4_motifs
-
 =cut
-    } elsif ($arg eq "-file_table") {
-      $main::infile{matrices_info_tab} = shift(@arguments);
-	$multi_input_flag = 1;
+    } elsif ($arg eq "-matrix") {
 
+	$count_input_matrix_parameters = 0;
+	my $matrix_title = shift(@arguments);
+	
+	if($matrix_title){
+	    $count_input_matrix_parameters++;
+	}
+	
+	## Substitue special characters which cannot be used inside a file name
+	$matrix_title =~ s|\s|_|g;
+	$matrix_title =~ s|/|_|g;
+	$matrix_title =~ s|:|_|g;
+	
+	$main::matrix_file{$matrix_title} = shift(@arguments);
+
+	if($main::matrix_file{$matrix_title}){
+	    $count_input_matrix_parameters++;
+	}
+	
+	push @main::matrix_titles, $matrix_title;
+	
+	$input_matrix = 1;
+
+	if( ($count_input_matrix_parameters != 2) || ($matrix_title =~ /^-/) || ($main::matrix_file{$matrix_title} =~ /^-/) ){
+	    &RSAT::error::FatalError("Input should be specified with matrix file (option -matrix) with 2 parameters: matrix_title matrix_file\n\tExample: -matrix Oct_motifs Oct_motifs_peakmotifs.tf");
+	}
 
 =pod
 
@@ -924,6 +915,20 @@ B<NOTE:> By the moment the only a few thresholds can be used with this option. (
 
     } elsif ($arg eq "-quick") {
     $quick_flag = 1;
+
+=pod
+
+=item	B<-no_clone_input>
+
+Desactive tha option to copy the input file.
+If more than one collections of motifs are provided, they are exported in a single file.
+
+NOTE: take into account the input file size
+
+=cut
+
+    } elsif ($arg eq "-no_clone_input") {
+    $clone_input_flag = 0;
 
 
 =pod
@@ -1198,21 +1203,9 @@ List of fields to return.
 
 Supported fields:
 
- clone_input,align_consensus,heatmap,json,newick,root_matrices,nb_clusters
+ heatmap,json,newick,root_matrices
 
 =over
-
-=item B<align_consensus:> Tree with aligned consensuses.
-
-When this field is selected, exports a plot with
-a single hierarchcial tree with all input motifs
-showing the clusters by different colors and also
-showing the consensus alignment.
-
-The tree is exported in JPEG and PDF format.
-
-We recommend to use this option when the number of motifs is 
-lower than 300.
 
 =item B<clone_input:> Copy input file.
 
@@ -1285,6 +1278,7 @@ to avoid the cimputation of the visual elements.
 
 	  if($return_fields{root_matrices}){
 	      $root_matrices_flag = 1;
+	      $clone_input_flag = 0;
 	  }
 
 	} else {
@@ -1556,72 +1550,6 @@ sub pre_process_motif_files{
   
   &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
 		       "matrix files") if ($main::verbose >= 2);
-
-
-
-
-
-
-
-  ################################################################
-  ## TEST: not sure if the next part of he code will work!! 
-  ## Chec k the option -file_table
-  ################################################################
-
-  # ## Set the values of the title, file and format in a hash table
-  # ## if the user has enter the option -i instead of -file_table.
-  # if ($single_input_flag){
-
- 
-      
-  # } else {
-    
-  #   ## Read the file tible and extract the information
-  #   my ($info_tab_matrices) = &OpenInputFile($main::infile{matrices_info_tab});
-  #   while (<$info_tab_matrices>) {     
-  #     next if (/^#/); ## Skip header line
-  #     next if (/^;/); ## Skip comment lines
-  #     next unless (/\S/); ## Skip empty lines
-  #     chomp();
-      
-  #     my ($matrix_file, $matrix_format, $collection_name) = split ("\t");
-  #     $collection_name =~ s/\s+/_/g;
-
-  #     ## Replace environment variables in file names by their actual value
-  #     while ($matrix_file =~ /\$ENV{([^}]+)}/) {
-  # 	$matrix_file = $ENV{$1}.$'; #'
-  #     }
-  #     while ($matrix_file =~ /\${([^}]+)}/) {
-  # 	$matrix_file = $ENV{$1}.$'; #'
-  #     }
-      
-  #     ## The collection labels must be unique or the program will die
-  #     if (exists($motif_set_attributes{$collection_name}{collection_label})){
-  # 	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{collection_label}, " repeated. The collection label of each file must be unique.");	
-  #     } 
-      
-  #     ## Set the values of the collection label, file and format in a hash table
-  #     $motif_set_attributes{$collection_name}{collection_label} = $collection_name; 
-  #     $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
-  #     $motif_set_attributes{$collection_name}{matrix_file_input} = $matrix_file; 
-      
-  #     ## Check the matrix format on each line of the file
-  #     if (!$supported_matrix_format{$matrix_format}) {
-  # 	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{matrix_format}, 
-  # 				 "Invalid format for input matrices. ", 
-  # 				 "Supported: ".$main::supported_matrix_formats);
-  #     } else {
-  # 	$motif_set_counter++;
-  #     }
-
-  #     &RSAT::message::Info("Matrix file", $matrix_format, $collection_name, $matrix_file) if ($main::verbose >= 0);
-  #   }
-  #   close $main::infile{matrices_info_tab};
-  #   &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
-  # 			 "matrix files from file table", $main::infile{matrices_info_tab}) 
-  # 	if ($main::verbose >= 2);
-  # }
-
 
   ## Pre-process each motif collection
   foreach my $collection_name (keys(%motif_set_attributes)) {
@@ -5942,7 +5870,7 @@ sub InsertListOfFiles {
 	    '
 
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_data/input_motifs.tf').'"><strong>Input motifs</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_data/input_motifs_processed.tf').'"><strong>Input motifs</strong></a></td>
 		      <td class="tab_spacer_2">The input motifs analyzed with matrix-clustering.</td>
 		   </tr>
                      ';
