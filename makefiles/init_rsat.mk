@@ -199,7 +199,7 @@ ws_test_all_servers:
 ## distribution (since 2009).
 
 ## Compile all programs
-compile_all: compile_info_gibbs compile_count_words compile_matrix_scan_quick compile_compare_matrices_quick compile_pathway_tools
+compile_all: compile_info_gibbs compile_count_words compile_matrix_scan_quick compile_compare_matrices_quick
 
 PROGRAM=info-gibbs
 SRC_DIR=${RSAT}/contrib/${PROGRAM}
@@ -212,7 +212,8 @@ BIN=${RSAT}/bin
 SUDO=
 compile_one_program:
 	@echo "Compiling ${PROGRAM}"
-	(cd ${SRC_DIR}; make clean; make all; ${SUDO} rsync -ruptL ${SRC_DIR}/${PROGRAM} ${BIN}/)
+	(cd ${SRC_DIR}; make clean; make all; ${SUDO} mv ${SRC_DIR}/${PROGRAM} ${BIN}/)
+#	(cd ${SRC_DIR}; make clean; make all; ${SUDO} rsync -ruptL ${SRC_DIR}/${PROGRAM} ${BIN}/)
 #	(cd ${SRC_DIR}; make all; ln -fs ${SRC_DIR}/${PROGRAM} ${RSAT}/bin/${PROGRAM})
 	@echo ${BIN}/${PROGRAM}
 	@echo ""
