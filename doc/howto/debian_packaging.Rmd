@@ -1,0 +1,125 @@
+---
+title: "Creating an NGS VM under Virtualbox"
+author: "Jacques van Helden"
+date: 'Last update: `r Sys.Date()`'
+output:
+  html_document:
+    fig_caption: yes
+    highlight: zenburn
+    number_sections: yes
+    theme: cerulean
+    toc: yes
+    toc_depth: 4
+    toc_fload: yes
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+  word_document: default
+---
+
+
+# To do 
+
+
+- Use the direct; link to download tar archive
+
+- watch file: regular expression to check the availbilty of new versions on the URL. 
+
+- Debian Med policy: <http://debian-med.alioth.debian.org/docs/policy.html>
+
+```
+apt-get install emacs mc subversion git
+
+
+mkdir debRSAT
+cd debRSAT
+svn export svn://anonscm.debian.org/svn/debian-med/trunk/package_template debian
+
+```
+
+## Edit the watch file
+
+The watch file will serve to check the availability of the download URL. New versions?
+
+Regular expressio including the version (in my case it is a date).
+
+## Edit he changelog file
+
+replace <pkg> by rsat
+
+- package name + version rsat ([my_version]-1)
+- the -1 is the debian package version. 
+- date -R gives the date in the required formet for Debian changelog file
+
+
+After this, use the command `dch` to edit the changelog. 
+
+
+## Edit the control file
+
+- replace <pkg> by rsat
+- section: science
+
+
+## Debian Med account
+
+I requested an account on debian med, login jvanheld. 
+
+## Downloading the URL
+
+```
+uscan --verbose
+```
+
+Checks if there is a new version of the URL documented in the watch file. 
+
+1 watch file = 1 pattern = 1 file to download
+
+```
+EDITOR=emacs dch
+
+## Deb helper
+dh
+
+## Install the devscript package
+sudo apt-get install devscript
+
+## Check if an rsat package already exists in Debian
+wnpp-check rsat
+## no
+```
+
+
+## Building the package
+
+```
+
+```
+
+
+# TO DO
+
+## Create a GPG key 
+
+<https://wiki.debian.org/Keysigning>
+
+## Suppress from the tarball
+
++ REA
++ kwalks
+- vmatch and mkvtree (must be downloaded from Stefan Schuster)
+- all binaries (must be compiled from the sources). For example matrix-scan-quick, word-count, ...
++ pdf files from doc/manuals (can be regenerated with latex since I provide the tex file)
++ motif databases (should be downloaded from the Web site)
++ demo files (can be downloaded from the Web site)
+- javascripts: 
+    - datatables is already packaged by Debian -> install it rather than downloading it <https://datatables.net/releases/DataTables-1.10.11.zip>
+    - d3 : apt-get install libjs-d3
+    
+## Install make
+
+
+make install
