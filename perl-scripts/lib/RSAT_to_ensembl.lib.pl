@@ -13,17 +13,17 @@ package main;
 ## Note: this is not very clean. I (JvH) should pass these variables
 ## in the appropriate methods and check that everything still works
 ## fine.
-our $ensembl_version_safe = $ENV{ensembl_version_safe} || 72;
-our $ensemblgenomes_version_safe = $ENV{ensemblgenomes_version_safe} || 19;
+our $ensembl_release_safe = $ENV{ensembl_release_safe} || 72;
+our $ensemblgenomes_release_safe = $ENV{ensemblgenomes_release_safe} || 19;
 
 ## Fields of the table describing the supported organisms obtained
 ## from Ensembl. These fields are used by several methods
 our @supported_header_fields = ("id",
 #			 "name", 
 			 "species",
-			 "assembly_version",
+			 "assembly",
 			 "db",
-			 "ensembl_version",
+			 "ensembl_release",
 			 "update_date",
 			 "species_directory",
 	);
@@ -33,68 +33,68 @@ our @supported_header_fields = ("id",
 ################################################################
 
 ################################################################
-## Return the safe version of ensembl or EnsemblGenomes
-## (this version should be defined in RSAT_config.props).
-sub get_ensembl_version_safe {
+## Return the safe release of ensembl or EnsemblGenomes
+## (this release should be defined in RSAT_config.props).
+sub get_ensembl_release_safe {
   my ($db) = @_;
 
   if ($db eq "ensembl") {
-    return $ensembl_version_safe;
+    return $ensembl_release_safe;
   } elsif (lc($db) eq "ensemblgenomes") {
-    return $ensemblgenomes_version_safe;
+    return $ensemblgenomes_release_safe;
   }
 }
 
 =pod
 
-=item B<&get_ensembl_version()>
+=item B<&get_ensembl_release()>
 
 Return the ensembl release to be installed.  The default ensembl
 release is specified in the local property file
 $RSAT/RSAT_config.props. This default value can be overwritten with
-the option -version.
+the option -release.
 
 =cut
-sub get_ensembl_version {
+sub get_ensembl_release {
 
-  ## TEMPORARY: for the time being, the version is only used by
+  ## TEMPORARY: for the time being, the release is only used by
   ##  reference to ensembl, not ensemblgenomes, even if the queried db is
   ##  EnsemblGenomes. I (JvH) should cliarify this.  
   my $db = "ensembl";
   # my ($db) = @_;
 
-  ## By preference, return the version defined in the property file
+  ## By preference, return the release defined in the property file
   ## (RSAT_config.props) for this database). If not defined, get the
-  ## latest version available on the Ensembl or EnsemblGenomes server.
+  ## latest release available on the Ensembl or EnsemblGenomes server.
   if ($db eq "ensemblgenomes") {
       ## Note: currently ignored, see TEMPORARY above.
-      my $ensemblgenomes_version = $ENV{ensemblgenomes_version} || &get_ensembl_version_latest("ensemblgenomes");
-      return($ensemblgenomes_version);
+      my $ensemblgenomes_release = $ENV{ensemblgenomes_release} || &get_ensembl_release_latest("ensemblgenomes");
+      return($ensemblgenomes_release);
   } else {
-      $ensembl_version = $ENV{ensembl_version} || &get_ensembl_version_latest("ensembl");
-      return ($ensembl_version);
+      $ensembl_release = $ENV{ensembl_release} || &get_ensembl_release_latest("ensembl");
+      return ($ensembl_release);
   }
 
-#  $prop_name = $db."_version";
+#  $prop_name = $db."_release";
 #  if (defined($ENV{$prop_name})) {
 #    return ($ENV{$prop_name});
 #  } else {
-#    return &get_ensembl_version_latest($db);
+#    return &get_ensembl_release_latest($db);
 #  }
 }
 
 
 ################################################################
-## Get the latest ensembl version for a species from Ensembl ftp site.
+## Get the latest ensembl release for a species from Ensembl ftp site.
 ##
 ## THIS IS REALLY TRICKY, I (JvH) should see with Ensembl if their API
 ## includes a way to get the current release.
-sub get_ensembl_version_latest {
+sub get_ensembl_release_latest {
   my ($db) = @_;
   my $latest_ensembl_release = 0;
   my $ftp = &Get_ftp($db);
 
-  &RSAT::message::TimeWarn("Getting latest ensembl version from FTP site", $ftp) 
+  &RSAT::message::TimeWarn("Getting latest ensembl release from FTP site", $ftp) 
       if ($main::verbose >= 3);
 
   my @available_releases = qx{wget -S --spider $ftp 2>&1};
@@ -109,54 +109,54 @@ sub get_ensembl_version_latest {
     $latest_ensembl_release = $token[-1] if ($latest_ensembl_release < $token[-1]);
   }
 
-  &RSAT::message::Info("&get_ensembl_version_latest() result", $latest_ensembl_release) if ($main::verbose >= 5);
+  &RSAT::message::Info("&get_ensembl_release_latest() result", $latest_ensembl_release) if ($main::verbose >= 5);
 
   return ($latest_ensembl_release);
 }
 
 ################################################################
-## Check that the user-selected version is correct.  This version can
-## neither be lower than the safe version, nor higher than the latest
-## version.
-sub check_ensembl_version {
-  my ($db,$ensembl_version) = @_;
+## Check that the user-selected release is correct.  This release can
+## neither be lower than the safe release, nor higher than the latest
+## release.
+sub check_ensembl_release {
+  my ($db,$ensembl_release) = @_;
 
-  ## TEMPORARY: for the time being, the version is only used by
+  ## TEMPORARY: for the time being, the release is only used by
   ##  reference to ensembl, not ensemblgenomes, even if the queried db is
   ##  EnsemblGenomes. I (JvH) should cliarify this.  
   $db = "ensembl";
 
-  my $safe_ensembl_version = &get_ensembl_version_safe($db);
-  my $latest_ensembl_version = &get_ensembl_version_latest($db);
+  my $safe_ensembl_release = &get_ensembl_release_safe($db);
+  my $latest_ensembl_release = &get_ensembl_release_latest($db);
 
   ## Report checking parameters
   if ($main::verbose >= 2) {
-    &RSAT::message::Info("Latest ensembl version", $latest_ensembl_version);
-    &RSAT::message::Info("Safe ensembl version", $safe_ensembl_version);
-    &RSAT::message::Info("Selected ensembl version",$ensembl_version);
+    &RSAT::message::Info("Latest ensembl release", $latest_ensembl_release);
+    &RSAT::message::Info("Safe ensembl release", $safe_ensembl_release);
+    &RSAT::message::Info("Selected ensembl release",$ensembl_release);
   }
 
-  if ($ensembl_version eq "safe") {
-    ## Automatic selection of the safe version
-    $ensembl_version = $safe_ensembl_version;
+  if ($ensembl_release eq "safe") {
+    ## Automatic selection of the safe release
+    $ensembl_release = $safe_ensembl_release;
     
-  } elsif ($ensembl_version eq "latest") {
-    ## Automatic selection of the latest version
-    $ensembl_version = $latest_ensembl_version;
+  } elsif ($ensembl_release eq "latest") {
+    ## Automatic selection of the latest release
+    $ensembl_release = $latest_ensembl_release;
     
   } else {
 
-    ## Check that selected version is not smaller than safest one (defined in RSAT_config.props)
-    &RSAT::error::FatalError($ensembl_version, 
-			     "Invalid  version for", $db, 
-			     "Minimun safe version: ".$safe_ensembl_version) 
-	if ($ensembl_version < $safe_ensembl_version);
+    ## Check that selected release is not smaller than safest one (defined in RSAT_config.props)
+    &RSAT::error::FatalError($ensembl_release, 
+			     "Invalid  release for", $db, 
+			     "Minimun safe release: ".$safe_ensembl_release) 
+	if ($ensembl_release < $safe_ensembl_release);
 
-    ## Check that selected version is not higher than the latest supported version
-    &RSAT::error::FatalError($ensembl_version, 
-			     "Invalid  version for", $db, 
-			     "Latest version: ".$latest_ensembl_version) 
-	if ($ensembl_version > $latest_ensembl_version);
+    ## Check that selected release is not higher than the latest supported release
+    &RSAT::error::FatalError($ensembl_release, 
+			     "Invalid  release for", $db, 
+			     "Latest release: ".$latest_ensembl_release) 
+	if ($ensembl_release > $latest_ensembl_release);
   }
 
   return(1);
@@ -180,25 +180,25 @@ sub Get_ftp {
 ## This is really tricky, but it is the simplest way we found to
 ## download genome sequences.
 sub Get_fasta_ftp {
-  my ($db,$ensembl_version) = @_;
+  my ($db,$ensembl_release) = @_;
   
   if ($db eq "ensembl") {                                                    ## Ensembl
-    if ($ensembl_version < 47) {                                             # Version  1 to 46
+    if ($ensembl_release < 47) {                                             # Release  1 to 46
       return ();
-    } else {                                                                 # Version 47 to ??
-      return (&Get_ftp($db)."release-".$ensembl_version."/fasta/");
+    } else {                                                                 # Release 47 to ??
+      return (&Get_ftp($db)."release-".$ensembl_release."/fasta/");
     }
   }
 
   elsif (lc($db) eq "ensemblgenomes") {                                         ## Ensembl genomes
     my @sites = ("fungi","bacteria","metazoa","plants","protists");
-    if ($ensembl_version < 3) {                                              # Version  1 to 3
+    if ($ensembl_release < 3) {                                              # Release  1 to 3
       return ();
-    } else {                                                                 # Version 3 to ??
+    } else {                                                                 # Release 3 to ??
       my @fasta_ftp = ();
 
       foreach $site (@sites) {
-        my $site_ftp = &Get_ftp($db)."release-".$ensembl_version."/".$site."/fasta/";
+        my $site_ftp = &Get_ftp($db)."release-".$ensembl_release."/".$site."/fasta/";
 
         if ($site eq "bacteria") {
           my @available_files = qx{wget -S --spider $site_ftp 2>&1};
@@ -227,10 +227,10 @@ sub Get_fasta_ftp {
 ## This URL can then be used to download peptidic sequences in a quick
 ## way.
 ##
-## Beware: the method is only valid for Ensembl version >= 72.
+## Beware: the method is only valid for Ensembl release >= 72.
 sub Get_pep_fasta_ftp {
-  my ($db,$species,$ensembl_version) = @_;
-  my @fasta_ftps = &Get_fasta_ftp($db,$ensembl_version);
+  my ($db,$species,$ensembl_release) = @_;
+  my @fasta_ftps = &Get_fasta_ftp($db,$ensembl_release);
 
   if ($db eq "ensembl") {                                                    ## Ensembl
     my $pep_fasta_ftp = $fasta_ftps[0].$species."/pep/";
@@ -263,32 +263,32 @@ sub Get_pep_fasta_ftp {
 =pod
 
 Return the URL of the FTP site containing variations for the selected
-version of ensembl.
+release of ensembl.
 
 =cut
 sub Get_variation_ftp {
-  my ($db,$ensembl_version) = @_;
+  my ($db,$ensembl_release) = @_;
   my %variation_ftp = ();
 
   ## Ensembl
   if ($db eq "ensembl") {                                                    
-    if ($ensembl_version < 60) {                                             # Version  1 to 59
+    if ($ensembl_release < 60) {                                             # Release  1 to 59
       return ();
-    } elsif ($ensembl_version < 64) {                                        # Version 60 to 63
-      return (&Get_ftp($db)."release-".$ensembl_version."/variation/");
-    } else {                                                                 # Version 64 to ??
-      return (&Get_ftp($db)."release-".$ensembl_version."/variation/gvf/");
+    } elsif ($ensembl_release < 64) {                                        # Release 60 to 63
+      return (&Get_ftp($db)."release-".$ensembl_release."/variation/");
+    } else {                                                                 # Release 64 to ??
+      return (&Get_ftp($db)."release-".$ensembl_release."/variation/gvf/");
     }
 
     ## Variations from EnsemblGenomes are distributed on a different
-    ## ftp site, and the version numbers differ
+    ## ftp site, and the release numbers differ
   } elsif (lc($db) eq "ensemblgenomes") {                                         
     my @taxa = ("fungi","bacteria","metazoa","plants","protists");
-    if ($ensembl_version < 17) {                                             # Version  1 to 16
+    if ($ensembl_release < 17) {                                             # Release  1 to 16
       return ();
-    } else {                                                                 # Version 17 to ??
+    } else {                                                                 # Release 17 to ??
       foreach $taxon (@taxa) {
-        my $gvf_ftp = &Get_ftp($db).$taxon."/release-".$ensembl_version."/gvf/";
+        my $gvf_ftp = &Get_ftp($db).$taxon."/release-".$ensembl_release."/gvf/";
 	&RSAT::message::Info("Getting list of GVF files for taxon", $taxon, "FTP", $gvf_ftp) if ($main::verbose >= 2);
         my @available_files = qx{wget -S --spider $gvf_ftp 2>&1};
         foreach my $line (@available_files) {
@@ -307,21 +307,21 @@ sub Get_variation_ftp {
 
 ## Get ftp variation species url
 sub Get_variation_species_ftp {
-  my ($db,$species,$ensembl_version) = @_;
-  my @variation_ftps = &Get_variation_ftp($db,$ensembl_version);
+  my ($db,$species,$ensembl_release) = @_;
+  my @variation_ftps = &Get_variation_ftp($db,$ensembl_release);
 
   if ($db eq "ensembl") {                                                    ## Ensembl
 
-    if ($ensembl_version == 61) {                                            # Version 61
+    if ($ensembl_release == 61) {                                            # Release 61
       return $variation_ftps[0].ucfirst($species)."/";
-    } else {                                                                 # Version 60, 62 to ??
+    } else {                                                                 # Release 60, 62 to ??
       return $variation_ftps[0].$species."/";
     }
   }
 
   elsif (lc($db) eq "ensemblgenomes") {                                         ## Ensembl genomes
 
-                                                                             # Version 17 to ??
+                                                                             # Release 17 to ??
     foreach my $variation_ftp (@variation_ftps) {
       my @available_species = qx{wget -S --spider $variation_ftp 2>&1};
       foreach my $spe (@available_species) {
@@ -336,22 +336,22 @@ sub Get_variation_species_ftp {
 
 ##Get ftp gvf file url
 sub Get_gvf_ftp {
-  my ($db,$species,$ensembl_version) = @_;
+  my ($db,$species,$ensembl_release) = @_;
 
   if ($db eq "ensembl") {                                                    ## Ensembl
 
-    if ($ensembl_version == 60) {                                            # Version 60
-      return &Get_variation_species_ftp($db,$species,$ensembl_version).$species.".gvf.gz";
+    if ($ensembl_release == 60) {                                            # Release 60
+      return &Get_variation_species_ftp($db,$species,$ensembl_release).$species.".gvf.gz";
 
-    } else {                                                                 # Version 61 to ??
-      return &Get_variation_species_ftp($db,$species,$ensembl_version).ucfirst($species).".gvf.gz";
+    } else {                                                                 # Release 61 to ??
+      return &Get_variation_species_ftp($db,$species,$ensembl_release).ucfirst($species).".gvf.gz";
     }
   }
 
   elsif (lc($db) eq "ensemblgenomes") {                                         ## Ensembl genomes
 
-                                                                             # Version 17 to ??
-    return &Get_variation_species_ftp($db,$species,$ensembl_version).$species.".gvf.gz";
+                                                                             # Release 17 to ??
+    return &Get_variation_species_ftp($db,$species,$ensembl_release).$species.".gvf.gz";
   }
 }
 
@@ -364,10 +364,10 @@ sub Get_gvf_ftp {
 ## JvH: THIS IS TRICKY: uses an ftp server. I should rewrite it using
 ## the Lookup interface or something else, see with Dan Staines.
 sub Get_species_taxon {
-  my ($db,$ensembl_version) = @_;
+  my ($db,$ensembl_release) = @_;
   my %species_taxon = ();
 
-  my @fasta_url = &Get_fasta_ftp($db,$ensembl_version);
+  my @fasta_url = &Get_fasta_ftp($db,$ensembl_release);
 
   foreach my $url (@fasta_url) {
     my @token = split('/',$url);
@@ -427,15 +427,15 @@ List of ports for EnsemblGenomes
 
 
 sub LoadRegistry {
-  ($registry, $db, $ensembl_version) = @_;
+  ($registry, $db, $ensembl_release) = @_;
 
-  &RSAT::message::TimeWarn("Loading registry from", $db, "version ".$ensembl_version) if ($main::verbose >= 2);
-# my $ensembl_version = 78;
+  &RSAT::message::TimeWarn("Loading registry from", $db, "release ".$ensembl_release) if ($main::verbose >= 2);
+# my $ensembl_release = 78;
 # Bio::EnsEMBL::Registry->load_registry_from_db(
 #            -host => 'mysql-eg-publicsql.ebi.ac.uk',
 #            -port => '4157',
 #            -user => 'anonymous',
-#            -db_version => $ensembl_version,
+#            -db_release => $ensembl_release,
 #    -verbose=>1
 #    );
 
@@ -444,7 +444,7 @@ sub LoadRegistry {
       -host => 'ensembldb.ensembl.org',
       -port => '5306',
       -user => 'anonymous',
-      -db_version => $ensembl_version,
+      -db_version => $ensembl_release,
 #      -verbose=>0
 	);
   } elsif ($db eq "ensemblgenomes") {
@@ -452,7 +452,7 @@ sub LoadRegistry {
       -host => 'mysql-eg-publicsql.ebi.ac.uk', 
       -port => '4157',
       -user => 'anonymous',
-      -db_version => $ensembl_version,
+      -db_version => $ensembl_release,
 #      -verbose=>0
 	);
   } elsif ($db eq "ensemblall") {
@@ -461,13 +461,13 @@ sub LoadRegistry {
 	 {-host => 'mysql-eg-publicsql.ebi.ac.uk',
 	  -port => 4157, 
 	  -user => 'anonymous',
-	  -db_version => $ensembl_version,
+	  -db_version => $ensembl_release,
 #	  -verbose=>0
 	 },
 	 {-host => 'ensembldb.ensembl.org',
 	  -port => 5306,
 	  -user    => 'anonymous',
-	  -db_version => $ensembl_version,
+	  -db_version => $ensembl_release,
 #	  -verbose=>0
 	 }
 	);
@@ -487,7 +487,7 @@ sub LoadRegistry {
 
 =item B<Get_full_species_ID()>
 
-Compute the directory name for a given species and assembly version.
+Compute the directory name for a given species and assembly.
 
 I<Parameters>
 
@@ -502,20 +502,20 @@ E.g.: Homo_sapiens, Escherichia_coli_str_k_12_substr_mg1655
 Species should correspond to species names supported by ensembl, with
 underscores to replace the spaces.
 
-=item i<assembly_version>
+=item i<assembly>
 
 Ex: 
   GRCh38 (for Homo sapiens), 
    GCA_000005845.2 (for Escherichia_coli_str_k_12_substr_mg1655).
 
 Optional. If not specified, the program attempts to find get
-assembly version in the table of organisms previously installed from
+assembly in the table of organisms previously installed from
 Ensembl.
 
-=item I<ensembl_version>
+=item I<ensembl_release>
 
 Optional. If not specified, the program uses the default Ensembl
-version, which is specified in the file $RSAT/RSAT_config.props.
+release, which is specified in the file $RSAT/RSAT_config.props.
 
 =back
 
@@ -531,31 +531,31 @@ Ex:
 =cut
 
 sub Get_full_species_ID {
-  my ($species, $assembly_version, $ensembl_version, $species_suffix) = @_;
+  my ($species, $assembly, $ensembl_release, $species_suffix) = @_;
 
-  &RSAT::message::Debug("&Get_full_species_ID()", $db, $species, $assembly_version, $ensembl_version, $species_suffix) if ($main::verbose >= 5);
+  &RSAT::message::Debug("&Get_full_species_ID()", $db, $species, $assembly, $ensembl_release, $species_suffix) if ($main::verbose >= 5);
 
-  ## Check that Ensembl version has been provided. If not, take
+  ## Check that Ensembl release has been provided. If not, take
   ## default one.
-  unless ($ensembl_version) {
-      $ensembl_version = &get_ensembl_version();
-      &RSAT::message::Debug("&Get_full_species_ID() called without ensembl_version argument",
-			    "Using default",$ensembl_version) if ($main::verbose >= 5);
+  unless ($ensembl_release) {
+      $ensembl_release = &get_ensembl_release();
+      &RSAT::message::Debug("&Get_full_species_ID() called without ensembl_release argument",
+			    "Using default",$ensembl_release) if ($main::verbose >= 5);
   }
 
-  ## Check that the assembly version has been provided. If not, guess
+  ## Check that the assembly has been provided. If not, guess
   ## it.
-  unless ($assembly_version) {
-      &RSAT::message::Debug("&Get_full_species_ID() called without assembly_version argument") if ($main::verbose >= 5);
-      $assembly_version = &Get_assembly_version($species,$ensembl_version,$species_suffix);
-      &RSAT::message::Debug("Got from &Get_assembly_version()", $assembly_version) if ($main::verbose >= 5);
+  unless ($assembly) {
+      &RSAT::message::Debug("&Get_full_species_ID() called without assembly argument") if ($main::verbose >= 5);
+      $assembly = &Get_assembly($species,$ensembl_release,$species_suffix);
+      &RSAT::message::Debug("Got from &Get_assembly()", $assembly) if ($main::verbose >= 5);
   }
 
   ## Full ID convention (2014-10, JvH  AMR)
-  ## [Species]_[assembly_version]_[db][ensembl_version]
+  ## [Species]_[assembly]_[db][ensembl_release]
   my $full_species_id = ucfirst($species);
-  $full_species_id .= "_".$assembly_version;
-#  $full_species_id .= "_".$main::db.$ensembl_version; ## We prefer to avoid creating one folder for each new release of ensembl
+  $full_species_id .= "_".$assembly;
+#  $full_species_id .= "_".$main::db.$ensembl_release; ## We prefer to avoid creating one folder for each new release of ensembl
   $full_species_id .= "_".$species_suffix if ($species_suffix);
 
   &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
@@ -565,19 +565,19 @@ sub Get_full_species_ID {
 
 =pod
 
-=item B<Get_assembly_version()>
+=item B<Get_assembly()>
 
 Return the genome assembly that corresponds to a specific Ensembl
-version for a given species.
+release for a given species.
 
 =cut
-sub Get_assembly_version {
-  my ($species,$ensembl_version,$species_suffix) = @_;
-  my $assembly_version = "";
-  &RSAT::message::Debug("&Get_assembly_version()", 
+sub Get_assembly {
+  my ($species,$ensembl_release,$species_suffix) = @_;
+  my $assembly = "";
+  &RSAT::message::Debug("&Get_assembly()", 
 			"main::db=".$main::db,
 			"species=".$species, 
-			"ensembl_version=".$ensembl_version,
+			"ensembl_release=".$ensembl_release,
 			"species_suffix=".$species_suffix,
       ) 
       if ($main::verbose >= 5);
@@ -601,25 +601,25 @@ sub Get_assembly_version {
 	  $$var_name = shift(@fields);
 	}
 	
-	&RSAT::message::Debug("Get_assembly_version", "line=".$l, 
-			      "\n\tquery", $species, $main::db,$ensembl_version,
-			      "\n\tdb", $db_species, $db_db, $db_ensembl_version,
+	&RSAT::message::Debug("Get_assembly", "line=".$l, 
+			      "\n\tquery", $species, $main::db,$ensembl_release,
+			      "\n\tdb", $db_species, $db_db, $db_ensembl_release,
 	    ) if ($main::verbose >= 5);
 	if ((lc($species) eq lc($db_species)) 
 	    && ($db_db eq $main::db)
-	    && ($ensembl_version eq $db_ensembl_version)
+	    && ($ensembl_release eq $db_ensembl_release)
 	    ) {
-	    $assembly_version = $db_assembly_version;
-	    &RSAT::message::Info("&Get_assembly_version() result", $assembly_version) if ($main::verbose >= 4);
-	    return($assembly_version);
+	    $assembly = $db_assembly;
+	    &RSAT::message::Info("&Get_assembly() result", $assembly) if ($main::verbose >= 4);
+	    return($assembly);
 	}
     }
   }
 
   ## If not found, issue a warning then die
-  &RSAT::message::Warning("&Get_assembly_version() could not identify species", $species, 
-			  "from", $main::db.$ensembl_version, "in the organism table\n", $supported_file);
-  &RSAT::error::FatalError($species, "genome does not seem to be installed in version ".$ensembl_version." of ".$main::db, 
+  &RSAT::message::Warning("&Get_assembly() could not identify species", $species, 
+			  "from", $main::db.$ensembl_release, "in the organism table\n", $supported_file);
+  &RSAT::error::FatalError($species, "genome does not seem to be installed in release ".$ensembl_release." of ".$main::db, 
 			   "\nTry the following command:\n\t", 
 			   "install-ensembl-genome -v 2 -db ".$main::db." -species ".$species);
 }
@@ -660,8 +660,8 @@ Ensembl) is installed on this RSAT server.
 
 =cut
 sub Get_species_dir {
-  my ($species,$assembly_version,$ensembl_version,$species_suffix) = @_;
-  &RSAT::message::Debug("&Get_species_dir()", "species=".$species, "assembly_version=".$assembly_version, "ensembl_version=".$ensembl_version) 
+  my ($species,$assembly,$ensembl_release,$species_suffix) = @_;
+  &RSAT::message::Debug("&Get_species_dir()", "species=".$species, "assembly=".$assembly, "ensembl_release=".$ensembl_release) 
       if ($main::verbose >= 5);
 
   $species = ucfirst($species);
@@ -671,10 +671,10 @@ sub Get_species_dir {
 
   my $species_dir = &Get_species_dir_from_supported_file($species);
 
-  ## Define species directory based on species name, assembly and ensembl_version
+  ## Define species directory based on species name, assembly and ensembl_release
   unless ($species_dir) {
       $species_dir = join("/", &Get_genomes_dir(),
-			  &Get_full_species_ID($species,$assembly_version,$ensembl_version,$species_suffix));
+			  &Get_full_species_ID($species,$assembly,$ensembl_release,$species_suffix));
   }
   &RSAT::message::Info("&Get_species_dir() result", $species_dir) if ($main::verbose >= 5);
   return($species_dir);
@@ -684,9 +684,9 @@ sub Get_species_dir {
 
 =item B<Get_species_dir_from_supported_file()>
 
-Given a user-specified ensembl version, identify the corresponding
-assembly version, and the full species ID (species name + assembly +
-ensembl version). The information is read from the table of
+Given a user-specified ensembl release, identify the corresponding
+assembly, and the full species ID (species name + assembly +
+ensembl release). The information is read from the table of
 ensembl-specific organisms
 (${RSAT}/public_html/data/supported_organisms_ensembl.tab).
 
@@ -710,19 +710,19 @@ sub Get_species_dir_from_supported_file {
 	    if ($name) {
 		## Note (JvH, 2014-10-30): the "species name" actually
 		## includes the species name (with _ to separate substrain
-		## etc), the assembly, and the ensembl version. This is
+		## etc), the assembly, and the ensembl release. This is
 		## not very clean. We should have a file with the
 		## different information types in separated fields.
 		my ($spe,$ass,$ens) = split(" ",$name); 
 		
-		if ($ensembl_version && $assembly_version) {
+		if ($ensembl_release && $assembly) {
 		    ## If the directory has already been defined in the
 		    ## supported organisms file, return it from there
-		    return $dir if (($spe eq $species) && ($ass eq $assembly_version) && ($ens eq $ensembl_version));
-		} elsif ($ensembl_version) {
-		  return $dir if (($spe eq $species) && ($ens eq $ensembl_version));
+		    return $dir if (($spe eq $species) && ($ass eq $assembly) && ($ens eq $ensembl_release));
+		} elsif ($ensembl_release) {
+		  return $dir if (($spe eq $species) && ($ens eq $ensembl_release));
 		} else {
-		    $assembly_directory{$ens} = $dir if (($spe eq $species) && ($ass eq $assembly_version));
+		    $assembly_directory{$ens} = $dir if (($spe eq $species) && ($ass eq $assembly));
 		}
 	    }
 	}
@@ -744,11 +744,11 @@ will be installed for a given ensembl species.
 
 =cut
 sub Get_genome_dir {
-  my ($species, $assembly_version,$ensembl_version,$species_suffix) = @_;
-  &RSAT::message::Debug("&Get_genome_dir()", "species=".$species, "assembly_version=".$assembly_version, "ensembl_version=".$ensembl_version) 
+  my ($species, $assembly,$ensembl_release,$species_suffix) = @_;
+  &RSAT::message::Debug("&Get_genome_dir()", "species=".$species, "assembly=".$assembly, "ensembl_release=".$ensembl_release) 
       if ($main::verbose >= 5);
 
-  my $genome_dir = &Get_species_dir($species, $assembly_version,$ensembl_version,$species_suffix);
+  my $genome_dir = &Get_species_dir($species, $assembly,$ensembl_release,$species_suffix);
   $genome_dir .= "/genome";
   &RSAT::message::Info("&Get_genome_dir() result", $genome_dir) if ($main::verbose >= 5);
 
@@ -765,9 +765,9 @@ given ensembl species.
 
 =cut
 sub Get_variation_dir {
-  my ($species, $assembly_version,$ensembl_version, $species_suffix) = @_;
+  my ($species, $assembly,$ensembl_release, $species_suffix) = @_;
 
-  my $variation_dir = &Get_species_dir($species, $assembly_version,$ensembl_version,$species_suffix);
+  my $variation_dir = &Get_species_dir($species, $assembly,$ensembl_release,$species_suffix);
   $variation_dir .= "/variations";
   &RSAT::message::Info("&Get_variation_dir() result", $variation_dir) if ($main::verbose >= 5);
   return ($variation_dir);
@@ -809,16 +809,16 @@ a given type.
 
 Usage: 
 
- my $feature_file = ($species, $assembly_version,$ensembl_version,$species_suffix,$type);
+ my $feature_file = ($species, $assembly,$ensembl_release,$species_suffix,$type);
 
 Where $type is the feature type (e.g. CDS, gene, mrna).
 
 =cut
 sub Get_feature_file {
-  my ($species, $assembly_version,$ensembl_version,$species_suffix,$type) = @_;
+  my ($species, $assembly,$ensembl_release,$species_suffix,$type) = @_;
   $type =~ s/ /_/g;
   $type = lc($type);
-  my $file = &Get_genome_dir($species, $assembly_version,$ensembl_version,$species_suffix)."/".$type.".tab";
+  my $file = &Get_genome_dir($species, $assembly,$ensembl_release,$species_suffix)."/".$type.".tab";
   return ($file);
 }
 
@@ -880,7 +880,7 @@ sub UpdateEnsemblSupported {
     my %species_description = ();
 
     ## Find the current species ID
-    my $current_species_id = &Get_full_species_ID($species,$assembly_version,$ensembl_version,$species_suffix);
+    my $current_species_id = &Get_full_species_ID($species,$assembly,$ensembl_release,$species_suffix);
 	
     ## Read the list of previously installed organisms if it exists.
     if (-f $supported_organism_file) {
@@ -906,18 +906,18 @@ sub UpdateEnsemblSupported {
     
 
     ## Build the line for the currently installed species
-    my $id = &Get_full_species_ID($species,$assembly_version,$ensembl_version,$species_suffix);
+    my $id = &Get_full_species_ID($species,$assembly,$ensembl_release,$species_suffix);
     my $name = $id; $name =~ s/_/ /g;
 
     my $new_org_config = join ("\t", 
 			       $id,
 #			       $name, 
 			       $species,
-			       $assembly_version,
+			       $assembly,
 			       $main::db,
-			       $ensembl_version , #&get_ensembl_version,
+			       $ensembl_release , #&get_ensembl_release,
 			       &AlphaDate(),
-			       &Get_species_dir($species,$assembly_version,$ensembl_version,$species_suffix),
+			       &Get_species_dir($species,$assembly,$ensembl_release,$species_suffix),
 	);
 
     ## Avoid to expose the full RSAT path
