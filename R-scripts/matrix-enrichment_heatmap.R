@@ -13,13 +13,10 @@ source(file.path(dir.rsat, 'R-scripts/config.R'))
 required.packages = c("RColorBrewer",
                       "gplots")
 
-library("RColorBrewer")
-library("gplots")
-
-# ## List of RSAT-specific packages to be compiled on the server
-# for (pkg in c(required.packages)) { #required.packages.bioconductor
-#   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
-# }
+## List of RSAT-specific packages to be compiled on the server
+for (pkg in c(required.packages)) { #required.packages.bioconductor
+  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
+}
 
 ###########################################
 ## Read arguments from the command line.
@@ -50,13 +47,20 @@ if (!exists("prefix")) {
 } else if (!exists("maxNWD.heatmap.html")) {
   stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): maxNWD.heatmap.html  ")
 } 
+if (!exists("heatmap.color.palette")) {
+  heatmap.color.palette <- "RdBu";
+}
+if (!exists("heatmap.color.classes")) {
+  heatmap.color.classes <- as.numeric(9);
+}
+heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 
 # cat /home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/matrix-enrichment_heatmap.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " prefix = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto'; maxNWD.table.file = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt'; html.template.file = 'motif_enrichment_dynamic_heatmap_d3.html'; maxNWD.tsv = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_matrix_heatmap.tsv'; maxNWD.heatmap.html = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_motif_enrichment_maxNWD_heatmap.html'; d3.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3.v3.min.js'; d3.array.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3-array.v0.6.min.js'" 
 
 # prefix <- "test_motif_enrichment"
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap")
-# maxNWD.table.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt"
+# maxNWD.table.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/maxNWDsignificantScore_heatmap_compare.txt"
 # html.template.file <- "motif_enrichment_dynamic_heatmap_d3.html"
 
 base.name <- basename(prefix)
@@ -171,9 +175,11 @@ html.report <- gsub("--body--", html.body.size, html.report)
 ## Calculate the legend names for the color scale
 # stp <- (max(max.NWD.table) - min(max.NWD.table))/9
 # legend.domain.values <- seq(from = min(max.NWD.table), to = max(max.NWD.table), by = 0.05)
-limit <- max(abs(c(min(max.NWD.table), max(max.NWD.table))))
-limit <- round(limit, digits = 1)
-legend.domain.values <- seq(-limit, limit, by = 0.05)
+# limit <- max(abs(c(min(max.NWD.table), max(max.NWD.table))))
+# limit <- round(limit, digits = 1)
+# legend.domain.values <- seq( (min(max.NWD.table) - 0.2), limit, by = 0.05)
+
+legend.domain.values <- quantile(range(max.NWD.table), probs = seq(0, 1, 0.1))
 legend.length <- length(legend.domain.values)
 legend <- legend.domain.values
 legend <- round(legend, digits = 3)
@@ -182,10 +188,9 @@ html.report <- gsub("--data_legend--", legend, html.report)
 
 ## Create Gradient Hexadecimal:
 ## Given X hexa colors creates a color
-# palette.hexa <- colorRampPalette(brewer.pal(5, "YlOrRd"), space="Lab")
-palette.hexa <- colorRampPalette(brewer.pal(9, "RdYlBu"), space="Lab")
-
-palette.hexa <- palette.hexa(legend.length + 1)
+palette.hexa <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(9)
+palette.hexa <- rev(palette.hexa)
+# palette.hexa <- rev(palette.hexa(legend.length-1))
 
 palette <- paste("'" , rev(palette.hexa), "'", sep = "")
 palette <- paste(palette, collapse = ", ")
