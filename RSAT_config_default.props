@@ -286,11 +286,15 @@ ensemblgenomes_release=31
 ## not be done with earlier releases than indicated here.
 ensembl_release_safe=70
 
+################################################################
+## JvH REMOVED THE FOLLOWING VARIABLES (2016-07-11) because they can be
+## rebuilt from ensembl_release and ensemblgenomes_release.
+##
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools developed by Olivier Sand
 ##   (retrieve-ensembl-seq, get-ensembl-genome)
-ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl/modules
-compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl-compara/modules
-variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl-variation/modules
+# ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl/modules
+# compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl-compara/modules
+# variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl-variation/modules
 
 ################################################################
 ## Parameters for biomart

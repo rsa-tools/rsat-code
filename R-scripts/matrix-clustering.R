@@ -374,13 +374,19 @@ i <- sapply(1:length(clusters), function(nb){
            ## If the cluster has only one element, create its JSON file and skip the
            ## hierarchical clustering step
            case.1 = {
-
-              ## Fill the cluster list with the data of the non-aligned motifs (singleton)
-              global.description.table <<- NULL
-              global.description.table <<- desc.tab
-              forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- singleton.list
-
+             
              ids <- as.character(ids)
+             
+             ## Get the central motif name
+             ## This will be used to rename the clusters
+             central.motif <- get.name(ids)[1]
+
+             ## Fill the cluster list with the data of the non-aligned motifs (singleton)
+             global.description.table <<- NULL
+             global.description.table <<- desc.tab
+             forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- singleton.list
+              
+             #ids <- as.character(ids)
 
              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["strand"]] <<- "D"
              forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["name"]] <<- get.name(ids)
@@ -426,6 +432,7 @@ i <- sapply(1:length(clusters), function(nb){
 
                 ## New comparison table (with the ids of the current cluster)
                global.compare.matrices.table <<- compa.table[which( (compa.table[,"id1"] %in% ids) & (compa.table[,"id2"] %in% ids) ),]
+               
                global.compare.matrices.table$id1 <<- as.vector(global.compare.matrices.table$id1)
                global.compare.matrices.table$id2 <<- as.vector(global.compare.matrices.table$id2)
 
@@ -438,6 +445,11 @@ i <- sapply(1:length(clusters), function(nb){
                ## Convert distance table into a distance matrix, required by hclust
                distances.objects <- build.distance.matrix(metric = metric)
                dist.matrix <- distances.objects$matrix
+               
+               ## Calculate the central motif
+               ## This will be used to rename the clusters
+               mean.dist.per.motif <- apply(distances.objects[[1]], 1, mean)
+               central.motif <- names(which.min(mean.dist.per.motif)[1])
 
                ## Build the tree by hierarchical clustering,
                tree <<- hclust.motifs(dist.matrix, hclust.method = hclust.method)
