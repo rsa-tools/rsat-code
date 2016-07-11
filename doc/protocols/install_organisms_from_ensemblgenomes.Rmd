@@ -67,11 +67,59 @@ ls -ltr $RSAT/lib
 
 ## Get the list of organisms for a given EnsemblGenome server
 
+Before downloading a genome, we need to know which genomes are available on Ensembl and EnsemblGenomes servers. 
+
+```
+make -f makefiles/install-ensembl-genomes_demo.mk available_species
+```
+
+This command will address queries to ensembl and ensemblgenomes servers, and the respective answers will be stored in different files (the file paths will be displayed on the terminal at the end of the task). 
 
 ## Download one genome
 
-We download the genome from EnsemblGenomes FTP sites.
-The script need to be tuned to take into account the taxon-specific FTP sites.
+The commands are slighly different depending on whether your genome has to be downloaded from the "historical" ensembl or from ensemblgenoems. We give hereafter one example of each. 
+
+### Download one genome from ensembl
+
+Downloading vertebrate genomes can take a while. We suggest to set a high verbosity (option `-v 2`) in order to better see the progress of the download and installation. 
+
+```
+install-ensembl-genome -v 2 -db ensembl -species Homo_sapiens
+```
+
+## Adding support for variations
+
+
+Polymorphic variations (genetic differences between individuals of a same species) are available for some species in ensembl and ensemblgenomes. If you intend to analyze the impact of polymorphic variations on regulation, you also need to download the variations for your species of interest. This can be done by adding the option `-task variations` to the  `install-ensembl-genome` command.
+
+Before doing this, we need to check if variations are supported for the selected organism. 
+
+In our example, we will analyse the human genome (species: Homo_sapiens). 
+
+We will first download the list of available species from ensembl, and check if variations are available for Homo_sapiens. 
+
+```
+install-ensembl-genome -v 1 -db ensembl -available_species \
+                -o available_species_ensembl.txt
+grep sapiens available_species_ensembl.txt
+
+```
+
+The result looks like this: 
+
+`Homo_sapiens    genome, features, variations`
+
+We can thus download variations, using the next command. 
+
+```
+install-ensembl-genome -v 2 -db ensembl -species Homo_sapiens \
+   -task variations
+```
+
+### Download one genome from EnsemblGenomes
+
+We download the genome from EnsemblGenomes, and for this we will use a faster protocol developed by Bruno Contreras-Moreira, based on data available on ensemblgenomes FTP site. 
+The script needs to be tuned to take into account the taxon-specific FTP sites.
 
 As a study case, we show how to install *Hordeum vulgarum* from the **Plant** ensemblgenomes server. 
 
