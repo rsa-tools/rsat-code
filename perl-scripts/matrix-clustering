@@ -147,7 +147,7 @@ package main;
   local @tab_to_convert = (); ## Tables to convert to html
 
   ## Input formats: only accept formats supporting multiple matrices
-  local @supported_matrix_formats = qw(transfac tf tab clusterbuster cb infogibbs meme stamp uniprobe);
+  local @supported_matrix_formats = qw(transfac tf tab cluster-buster cb infogibbs meme stamp uniprobe);
   local %supported_matrix_format = ();
   foreach my $format (@supported_matrix_formats) {
     $supported_matrix_format{$format} = 1;
@@ -156,6 +156,9 @@ package main;
 
   ## Flag to export the Newick tree
   local $export_newick = 0;
+
+  ## Detect the input matrices command line is correct
+  local $count_input_matrix_parameters = 0;
 
   ## Flag to add links to motif tree
   local $ID_link_flag = 0;
@@ -351,13 +354,12 @@ package main;
   local $skip_matrices = 0;
   
   ## To export in the results the input file
-  local $clone_input_flag = 0;
+  local $clone_input_flag = 1;
 
   ## Hashes used in the pre-process of the motifs
   local %motif_set_attributes = ();
   local %motifs_ID_unique = ();
   local $longest_title = 0;
-  local $multi_input_flag = 0;
   local $single_input_flag = 0;
 
   ## Saves the width of the largest alignment
@@ -388,7 +390,7 @@ package main;
 
   ## Supported fields to return
   local %return_fields = ();
-  local @supported_return_fields = qw (align_consensus clone_input heatmap json newick root_matrices nb_clusters);
+  local @supported_return_fields = qw (align_consensus heatmap json newick root_matrices nb_clusters);
   local %supported_return_fields = ();
   foreach my $field (@supported_return_fields) {
     $supported_return_fields{$field} = 1;
@@ -403,6 +405,9 @@ package main;
     $supported_heatmap_color_palette{$palette} = 1;
   }
   local $supported_heatmap_color_palette = join ",", @supported_heatmap_color_palette;
+
+  ## Number of input collections
+  local $number_of_collections = "";
 
   ## List of files to delete
   %to_delete = ();
@@ -498,12 +503,9 @@ package main;
 
   if ($selected_tasks{all} || $selected_tasks{cluster}) {
 
-     if ($nb_cluster_taks_flag == 0){
-
-	 ################################################################
-	 ## Cluster the matrices
-	 &Hclustering();
-     }
+      ################################################################
+      ## Cluster the matrices
+      &Hclustering();
   }
 
   if ($selected_tasks{all} || $selected_tasks{cluster} || $selected_tasks{report}) {
@@ -669,39 +671,9 @@ Same as -h
 The input file contains a set of position-specific scoring
 matrices.
 
-=cut
-    } elsif ($arg eq "-matrix") {
+Example: -matrix OCt_motifs Oct_motifs_peakmotifs.tf
 
-#      $main::infile{matrices} = shift(@arguments);
-#      $single_input_flag = 1;
-
-      my $matrix_title = shift(@arguments);
-      ## Substitue special characters which cannot be used inside a file name
-      $matrix_title =~ s|\s|_|g;
-      $matrix_title =~ s|/|_|g;
-      $matrix_title =~ s|:|_|g;
-      
-      $main::matrix_file{$matrix_title} = shift(@arguments);
-      
-      push @main::matrix_titles, $matrix_title;
-      
-      $input_matrix = 1;
-      
-=pod
-
-=item B<-file_table>
-
-The file table must be a tab-delimited table with three fields each
-line:
-
-1) The path to one file containing a set of position-specific scoring matrices (PSSMs).
-
-2) The matix format of the set of PSSMs.
-
-3) The motif collection label (e.g. JASPAR_core_vertebrate,
-peak-motif_result, ...).
-
-The collection label will be concatenated to each motif ID in order to
+The matrix_title will be concatenated to each motif ID in order to
 create unique motif IDs. The collection label is displayed in the results.
 
 This label is useful when two motifs for the same TF come from different
@@ -711,19 +683,38 @@ B<Supported matrix formats>
 
 Since the program takes several matrices as input, it only accepts
 matrices in formats supporting several matrices per file (transfac,
-tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
+tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe).
 
 For a description of these formats, see the help of I<convert-matrix>.
 
-The file table must contain at least one line (tab separated) as the next one:
-
-peak-motifs_Oct4_matrices.tf	transfac	Oct4_motifs
-
 =cut
-    } elsif ($arg eq "-file_table") {
-      $main::infile{matrices_info_tab} = shift(@arguments);
-	$multi_input_flag = 1;
+    } elsif ($arg eq "-matrix") {
 
+	$count_input_matrix_parameters = 0;
+	my $matrix_title = shift(@arguments);
+	
+	if($matrix_title){
+	    $count_input_matrix_parameters++;
+	}
+	
+	## Substitue special characters which cannot be used inside a file name
+	$matrix_title =~ s|\s|_|g;
+	$matrix_title =~ s|/|_|g;
+	$matrix_title =~ s|:|_|g;
+	
+	$main::matrix_file{$matrix_title} = shift(@arguments);
+
+	if($main::matrix_file{$matrix_title}){
+	    $count_input_matrix_parameters++;
+	}
+	
+	push @main::matrix_titles, $matrix_title;
+	
+	$input_matrix = 1;
+
+	if( ($count_input_matrix_parameters != 2) || ($matrix_title =~ /^-/) || ($main::matrix_file{$matrix_title} =~ /^-/) ){
+	    &RSAT::error::FatalError("Input should be specified with matrix file (option -matrix) with 2 parameters: matrix_title matrix_file\n\tExample: -matrix Oct_motifs Oct_motifs_peakmotifs.tf");
+	}
 
 =pod
 
@@ -924,6 +915,20 @@ B<NOTE:> By the moment the only a few thresholds can be used with this option. (
 
     } elsif ($arg eq "-quick") {
     $quick_flag = 1;
+
+=pod
+
+=item	B<-no_clone_input>
+
+Desactive tha option to copy the input file.
+If more than one collections of motifs are provided, they are exported in a single file.
+
+NOTE: take into account the input file size
+
+=cut
+
+    } elsif ($arg eq "-no_clone_input") {
+    $clone_input_flag = 0;
 
 
 =pod
@@ -1198,21 +1203,9 @@ List of fields to return.
 
 Supported fields:
 
- clone_input,align_consensus,heatmap,json,newick,root_matrices,nb_clusters
+ heatmap,json,newick,root_matrices
 
 =over
-
-=item B<align_consensus:> Tree with aligned consensuses.
-
-When this field is selected, exports a plot with
-a single hierarchcial tree with all input motifs
-showing the clusters by different colors and also
-showing the consensus alignment.
-
-The tree is exported in JPEG and PDF format.
-
-We recommend to use this option when the number of motifs is 
-lower than 300.
 
 =item B<clone_input:> Copy input file.
 
@@ -1285,6 +1278,7 @@ to avoid the cimputation of the visual elements.
 
 	  if($return_fields{root_matrices}){
 	      $root_matrices_flag = 1;
+	      $clone_input_flag = 0;
 	  }
 
 	} else {
@@ -1522,7 +1516,8 @@ sub pre_process_motif_files{
   ##   - skip the top X motifs if required
 
   ## Count the number of input files
-  if(scalar(keys(%main::matrix_file)) == 1){
+  $number_of_collections = scalar(keys(%main::matrix_file));
+  if($number_of_collections == 1){
       $single_input_flag = 1;
   } else {
       $single_input_flag = 0;
@@ -1555,72 +1550,6 @@ sub pre_process_motif_files{
   
   &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
 		       "matrix files") if ($main::verbose >= 2);
-
-
-
-
-
-
-
-  ################################################################
-  ## TEST: not sure if the next part of he code will work!! 
-  ## Chec k the option -file_table
-  ################################################################
-
-  # ## Set the values of the title, file and format in a hash table
-  # ## if the user has enter the option -i instead of -file_table.
-  # if ($single_input_flag){
-
- 
-      
-  # } else {
-    
-  #   ## Read the file tible and extract the information
-  #   my ($info_tab_matrices) = &OpenInputFile($main::infile{matrices_info_tab});
-  #   while (<$info_tab_matrices>) {     
-  #     next if (/^#/); ## Skip header line
-  #     next if (/^;/); ## Skip comment lines
-  #     next unless (/\S/); ## Skip empty lines
-  #     chomp();
-      
-  #     my ($matrix_file, $matrix_format, $collection_name) = split ("\t");
-  #     $collection_name =~ s/\s+/_/g;
-
-  #     ## Replace environment variables in file names by their actual value
-  #     while ($matrix_file =~ /\$ENV{([^}]+)}/) {
-  # 	$matrix_file = $ENV{$1}.$'; #'
-  #     }
-  #     while ($matrix_file =~ /\${([^}]+)}/) {
-  # 	$matrix_file = $ENV{$1}.$'; #'
-  #     }
-      
-  #     ## The collection labels must be unique or the program will die
-  #     if (exists($motif_set_attributes{$collection_name}{collection_label})){
-  # 	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{collection_label}, " repeated. The collection label of each file must be unique.");	
-  #     } 
-      
-  #     ## Set the values of the collection label, file and format in a hash table
-  #     $motif_set_attributes{$collection_name}{collection_label} = $collection_name; 
-  #     $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
-  #     $motif_set_attributes{$collection_name}{matrix_file_input} = $matrix_file; 
-      
-  #     ## Check the matrix format on each line of the file
-  #     if (!$supported_matrix_format{$matrix_format}) {
-  # 	&RSAT::error::FatalError($motif_set_attributes{$collection_name}{matrix_format}, 
-  # 				 "Invalid format for input matrices. ", 
-  # 				 "Supported: ".$main::supported_matrix_formats);
-  #     } else {
-  # 	$motif_set_counter++;
-  #     }
-
-  #     &RSAT::message::Info("Matrix file", $matrix_format, $collection_name, $matrix_file) if ($main::verbose >= 0);
-  #   }
-  #   close $main::infile{matrices_info_tab};
-  #   &RSAT::message::Info("Read list of",scalar(keys(%motif_set_attributes)),
-  # 			 "matrix files from file table", $main::infile{matrices_info_tab}) 
-  # 	if ($main::verbose >= 2);
-  # }
-
 
   ## Pre-process each motif collection
   foreach my $collection_name (keys(%motif_set_attributes)) {
@@ -1968,7 +1897,7 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     $cluster_motifs_cmd .= "; \"";
 #    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.")"; # Uncomment this line to check the R output in the terminal
-    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2 > ".$main::outfile{Rlog};
+#    $cluster_motifs_cmd = "(".$cluster_motifs_cmd.") 2> ".$main::outfile{Rlog};
 
     if ($r_path) {
         &doit($cluster_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
@@ -3267,19 +3196,20 @@ sub Text_end_report {
 	    <li>
 	      <strong>References</strong>
               <ol>
-                 <li><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
+                 <li> Castro-Mondragon JA et al (in preparation).</li>
+                 <li><strong>Last RSAT release: </strong><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
               </ol>
 	    </li>
 	    <li>
 	      <strong>Additional Information</strong>
               <ul>
-                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/courses/SBBCU16L_cisreg/" target=\'_blank\'>Jacques van Helden course.</a></li>
+                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/courses/SBBCU16L_cisreg/" target=\'_blank\'>Jacques van Helden course</a></li>
               </ul>
 	    </li>
 	    <li>
 	      <strong>Contact</strong>
               <ul>
-                 <li type="square">Jaime Castro-Mondragon - <strong>castro@tagc.univ-mrs.fr</strong></li>
+                 <li type="square">Jaime Castro-Mondragon - <strong>jaime.castro-mondragon@etu.univ-amu.fr</strong></li>
                  <li type="square">Morgane Thomas-Chollier - <strong>mthomas@biologie.ens.fr</strong></li>
                  <li type="square">Jacques van Helden - <strong>Jacques.van-Helden@univ-amu.fr</strong></li>
               </ul>
@@ -4442,7 +4372,7 @@ sub ReportStyleCSS{
   float: left;
   margin-top: 2px;
   margin-bottom: 2px;
-  width: 250px;
+  width: 450px;
   height: 20px;
   position: relative;
   display: block;
@@ -4744,6 +4674,7 @@ sub ParametersTable{
       <thead>
 	<tr>
 	  <th class="tab_col">Nb Input motifs</th>
+	  <th class="tab_col">Nb Input collections</th>
 	  <th class="tab_col">Nb Clusters Found</th>
 	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
 	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
@@ -4754,6 +4685,7 @@ sub ParametersTable{
       <tbody>
 	<tr>
 	  <td class="par_text">'.$number_of_motifs.'</td>
+	  <td class="par_text">'.$number_of_collections.'</td>
 	  <td class="par_text">'.$number_of_clusters.'</td>
 	  <td class="par_text">'.$hclust_method.'</td>
 	  <td class="par_text">'.$main::param{matrix_compa_score}.'</td>
@@ -5351,7 +5283,7 @@ sub InsertHeatmapCollectionbyCluster {
 sub InsertHeatmapCollectionComplementarity {
 
     my $heatmap_complementarity = ' 
-        <div id="Heatmap_complementarity_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><strong>Collection Complementarity</strong></a></div>
+        <div id="Heatmap_complementarity_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><strong>Collections Overlap</strong></a></div>
     ';
 
     print $syn $heatmap_complementarity;
@@ -5372,7 +5304,7 @@ $(document).ready( function () {
         "ordering": false,
         "info":     false,
         "columnDefs": [
-	    { "width": "5%", "targets": [0,1,2,3,4,5] }
+	    { "width": "5%", "targets": [0,1,2,3,4,5,6] }
 	]		
     });
 });
@@ -5938,7 +5870,7 @@ sub InsertListOfFiles {
 	    '
 
 		   <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_data/input_motifs.tf').'"><strong>Input motifs</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}.'_data/input_motifs_processed.tf').'"><strong>Input motifs</strong></a></td>
 		      <td class="tab_spacer_2">The input motifs analyzed with matrix-clustering.</td>
 		   </tr>
                      ';
