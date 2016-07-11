@@ -13,6 +13,7 @@
 ## can optionnally be used in some work flows (e.g. peak-motifs,
 ## cluster-motifs).
 
+RSAT=$(CURDIR)
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/install_rsat.mk
 
@@ -22,11 +23,12 @@ SSH=-e 'ssh -x'
 
 ################################################################
 ## Install the RSAT package
-install_rsat:
+install:
 	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk init
 	${MAKE} -f ${RSAT}/makefiles/install_rsat.mk install_r_packages
 	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk compile_all
 	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_ext_apps
+	(cd ${RSAT}/do/manuals/; ${MAKE} all_pdf)
 
 ################################################################
 ## Update RSAT and check the dependent tasks (compilation of C
