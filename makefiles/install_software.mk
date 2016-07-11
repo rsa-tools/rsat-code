@@ -88,7 +88,7 @@ install_ext_apps_optional:
 ## discovery tools in RSAT. If is used to purge sequences from
 ## redundant fragments. The program requires a license, which can be
 ## obtained (free of charge for academics) at http://www.vmatch.de/
-VMATCH_VERSION=2.2.4
+VMATCH_VERSION=2.2.5
 install_vmatch:
 	@echo
 	@echo "Installing vmatch for operating system ${OS}"
@@ -260,8 +260,6 @@ GS_BIN=gs-${GS_VERSION}${GS_SUBVER}-linux_x86_64
 GS_DISTRIB=ghostscript-${GS_VERSION}.${GS_SUBVER}-linux-x86_64
 GS_TAR=${GS_DISTRIB}.tgz
 GS_DIR=${SRC_DIR}/ghostscript
-
-VMATCH_VERSION=2.2.4
 install_ghostscript:
 	@echo
 	@echo "Installing ghostscript (gs) for operating system ${OS}"
