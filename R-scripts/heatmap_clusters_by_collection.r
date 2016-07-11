@@ -25,17 +25,14 @@ required.packages = c("RColorBrewer",
                       "gplots",
                       "amap")
 
+# List of RSAT-specific packages to be compiled on the server
+for (pkg in c(required.packages)) {
+  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
+}
 
-## List of RSAT-specific packages to be compiled on the server
-# for (pkg in c(required.packages)) {
-#   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
-# }
-
-
-library("RColorBrewer")
-library("gplots")
-library("amap")
-
+# library("RColorBrewer")
+# library("gplots")
+# library("amap")
 
 ###########################################
 ## Read arguments from the command line.
@@ -68,8 +65,8 @@ var sets_--nb-- = [
 Venn.diagram.set = '
 <script>--return--
 var chart = venn.VennDiagram()--return--
-.width(250)--return--
-.height(250);--return--
+.width(275)--return--
+.height(275);--return--
 --return--
 var div = d3.select("#--venn--")--return--
 div.datum(--set--).call(chart);--return--
@@ -86,7 +83,7 @@ div.selectAll("g")--return--
 .on("mouseover", function(d, i) {--return--
   --return--
   tooltip.transition().duration(400).style("opacity", .9);--return--
-  tooltip.text(d.size + " motifs");--return--
+  tooltip.text(d.size + " %");--return--
   --return--
   var selection = d3.select(this).transition("tooltip").duration(400);--return--
   selection.select("path")--return--
@@ -112,7 +109,7 @@ div.selectAll("g")--return--
 
 # cluster.counts.file <- "/home/jaimicore/test/Ncor0.4_cor0.6/Multi_algorithms_analysis_hclust-average_Ncor0.4_cor0.6_tables/clusters_summary_table.tab"
 
-# Read cluster count table
+## Read cluster count table
 clusters <- read.table(file = cluster.counts.file, sep = "\t", header = TRUE)
 names(clusters) <- gsub("X.Cluster_ID", "Cluster_ID", names(clusters))
 
@@ -170,6 +167,11 @@ x <- sapply(names(motif.DB.counts), function(DB){
     intersect.counter <<- intersect.counter + 1
     intersection.clusters[[intersect.counter]] <<- list()
     
+    ## Count the number of motifs in Collections A and B
+    collection.A.nb.motifs <- sum(DB.motifs[,DB])
+    collection.B.intersection <- sum(DB.motifs[,n])
+    collection.B.nb.motifs <- motif.DB.counts[n]
+    
     ## Get collection B information
     collection.B.name <- n
     collection.B.size <- as.numeric(motif.DB.counts[n])
@@ -183,14 +185,7 @@ x <- sapply(names(motif.DB.counts), function(DB){
     positive.index <- which(t[,2] > 0)
     collection.B.clusters.names <- as.vector(DB.motifs[positive.index,c("Cluster_ID",collection.B.name)]$Cluster_ID)
     
-    # intersect.size <- length(intersect(collection.A.clusters.names, collection.B.clusters.names))
-    #intersect.size <- sum(DB.motifs[,collection.B.name])
     intersect.size <- round(coverage[n] * 100)
-    
-    # if(intersect.size > collection.A.size){
-    #   intersect.size <- collection.B.size
-    #   collection.B.size <- collection.A.size
-    # }
     
     Venn.diagram.set.cp <- Venn.diagram.set
     set.nb <- paste("sets_", intersect.counter, sep = "")
@@ -215,6 +210,11 @@ x <- sapply(names(motif.DB.counts), function(DB){
     int.cl <- paste(int.cl, collapse = "<br>")
     intersection.clusters[[intersect.counter]][["Clusters"]] <<- int.cl
     intersection.clusters[[intersect.counter]][["Sentence"]] <<- paste(collection.A.name, " covers ", round(coverage[n] * 100, digits = 2), "% of ", collection.B.name, sep = "")
+    intersection.clusters[[intersect.counter]][["CollectionA_size"]] <<- collection.A.nb.motifs
+    intersection.clusters[[intersect.counter]][["CollectionB_size"]] <<- collection.B.nb.motifs
+    intersection.clusters[[intersect.counter]][["CollectionB_intersection"]] <<- collection.B.intersection
+    intersection.clusters[[intersect.counter]][["CollectionA_name"]] <<- DB
+    intersection.clusters[[intersect.counter]][["CollectionB_name"]] <<- n
     
     if(intersect.counter == 1){
       file.remove(JSON.intersect.file, showWarnings = FALSE)
@@ -266,7 +266,7 @@ coverage.pics.buttons <- paste(coverage.pics.buttons, collapse = "")
 coverage.pics <- sapply(1:(length(names(motif.DB.counts)) ^2), function(x){
     coverage.counter <<- coverage.counter + 1
     
-    paste("<div id='d_", x, "' class='coverage_pic' style='display:none;position:relative;float:left;font-size:8px;'><p style='text-align:center;padding-top:5px;' class='mono'><strong>Venn diagram</strong></p><div id='venn", x, "'></div><p style='text-align:center;padding-top:5px;' class='mono'>", intersection.clusters[[x]][["Sentence"]], "</p><table style='width:300px;text-align:left;' class='mono'><thead><tr><th>Collections</th><th>Intersection</th></tr></thead><tbody><td>", intersection.clusters[[x]][["Collections"]], "</td><td>", intersection.clusters[[x]][["Clusters"]],"</td></tbody></table></div> --return--", sep = "")
+    paste("<div id='d_", x, "' class='coverage_pic' style='display:none;position:relative;float:left;font-size:8px;'><p style='text-align:center;padding-top:5px;' class='mono'><strong>Venn diagram</strong></p><div style='padding-left:175px' id='venn", x, "'></div><p style='text-align:center;padding-top:5px;' class='mono'>", intersection.clusters[[x]][["Sentence"]], "</p><table style='width:650px;text-align:left;' class='mono'><thead><tr><th>Collections</th><th>", intersection.clusters[[x]][["CollectionA_name"]]," size</th><th>", intersection.clusters[[x]][["CollectionB_name"]], "<br>(intersection)</th><th>", intersection.clusters[[x]][["CollectionB_name"]]," size</th><th>Intersection</th></tr></thead><tbody><td>", intersection.clusters[[x]][["Collections"]], "</td><td>", intersection.clusters[[x]][["CollectionA_size"]], "</td><td>", intersection.clusters[[x]][["CollectionB_intersection"]], "</td><td>", intersection.clusters[[x]][["CollectionB_size"]], "</td><td>", intersection.clusters[[x]][["Clusters"]],"</td></tbody></table></div> --return--", sep = "")
 
 })
 coverage.pics <- as.vector(coverage.pics)
@@ -378,7 +378,7 @@ comp.complete.r.number <- comp.order.list.rows[["complete"]]
 comp.single.r.number <- comp.order.list.rows[["single"]]
 comp.ward.r.number <- comp.order.list.rows[["ward"]]
 
-heatmap.width <- 225 + (cell.size * col.nb) + 225
+heatmap.width <- 300 + (cell.size * col.nb)
 
 coverage.info <- matrix(c("Collection_labels", default.labels,
                           "Collection_number", default.number,
@@ -462,7 +462,6 @@ sapply(c("average", "complete", "single", "ward"), function(m){
                            distfun = function(x) Dist(x,method = 'pearson')
   )
   dev.off()
-  # file.remove("test2.pdf")
   
   if(m == "ward.D"){
     m <- "ward"
@@ -527,7 +526,6 @@ heatmap.rows.name <- paste(paste("'", collection.names, "'", sep = ""), collapse
 color.scale <- append("#FFFFFF",rgb.palette(21))
 color.scale <- paste("'", color.scale, "'",collapse=",")
 
-
 ## Collections
 collections <- paste(paste("'", collection.names, "'", sep = ""), collapse = ",")
 
@@ -544,8 +542,6 @@ legend <- paste(legend, collapse=",")
 
 ## Right space
 left <- (max(as.vector(sapply(collection.names, nchar))) + 2.5) * 10
-
-
 
 ## Div bottom + Cell size
 cell.size <- 20
