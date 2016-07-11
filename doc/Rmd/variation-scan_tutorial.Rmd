@@ -1,6 +1,6 @@
 ---
 title: "Detecting regulatory variations"
-author: "Alejandra Medina-Rivera & Jacques van Helden"
+author: "Alejandra Medina-Rivera, Yvon Mbouamboua & Jacques van Helden"
 date: '`r Sys.Date()`'
 output:
   html_document:
@@ -36,6 +36,10 @@ We will successively use the following tools.
 
 2. 
 
+
+
+
+
 ## Query file: bed coordinates
 
 
@@ -60,11 +64,26 @@ kable(head(weirauch), caption = "**Table 1.** Top rows of the bed file describin
 ## ***variation-info***: getting variations for a set of genomic regions
 
 
+### Motivation
+
+With the multiplicity of population genomics projects, the number of variations for the Human genome is increasing drastically. Scanning all known variations with a transcription factor binding motif requires a lot of computer resources. However, for various reason (time restriction and biological relevance) it might be reasonable to restrict the search to a reasonable number of genomic regions. 
+
+For example, one might want to identify putative regulatory variants for a given transcription factor of interest in the particular genomic regions where this factor has been shown to bind under some conditions (developmental stage, organ, tissue). 
+
+One mode of utilization of the program *variation-info* is to provide as input a set of genomic regions (e.g. in [bed](https://genome.ucsc.edu/FAQ/FAQformat.html#format1) format).
+
+The regions of interest can typically be obtained from ChIP-seq experiments (narrow peaks for transcription factor binding or broad peaks for histone modification marks). 
+
+### Study case
+
+In this study case, we will retrieve all the polymorphic variations that overlap a set of ChIP-seq peaks.
+
 ### Web site
 
 1. Open a connection to <http://metazoa.rsat.eu/>.
 2. In the toolset **Genetic variations**, click **Variation information**. 
-3. Click on the button "DEMO2: by regions"^[Beware, this demo takes some times because it collects information for 1600 genomic region].
+3. Click on the button "DEMO2: by regions"^[Beware, this demo takes some times because it collects information for 1600 genomic region. ]. This will select Homo sapiens GRCh37 as organism, and fill the option *"URL of variants file or genomic regions"* with the URL of a demo file. 
+4. Fill up your **email address**. This is not mandatory, but since the processing might take some time it is safer to provide an email address in order to receive an email with the URL of the result page. 
 4. Click **GO**.
 
 ### Command-line
@@ -77,13 +96,20 @@ make -f makefiles/variation-scan_demo.mk  varinfo_from_bed_regions
 
 ## Detailed command executed by the demo
 variation-info -v 2 -species Homo_sapiens \
-   -e_version 75 \
-   -a_version GRCh37   \
+   -release 84 \
+ -assembly GRCh37   \
    -i ${RSAT}/public_html/demo_files/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.bed \
    -format bed \
    -o results/variation_scan_demo/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.varbed
 
 ```
+
+*Notes*
+
+- The option `-assembly` indicates the genome assembly. Genome assemblies are changing from time to time, especially for Homo sapiens and popular model organisms) (e.g. mouse, drosophila, ...), but in principle this only occurs when the genome is re-sequenced. In this case, we used assembly 37 for the sake of consistency with the publication from which we obtained the CHIP-seq peaks.  
+
+- The option `-release` indicates the Ensembl release number. At the time of writing this tutorial, Ensmebl is at release 84, but this this is changing quite often (several releases per year). Ensembl release evolve much faster than genome assemblies. Even though a new release might correspond to the same assembly as the previous one, the annotations are likely to change with the progress of our knowledge. It is thus generally recommended to use the latest release. 
+
 
 ### Expected results
 
@@ -103,7 +129,7 @@ The output of *variation-info* is a tab-delimited text file with one row per col
 8. **so_term**: "SNP ontology" (so) term, indicating the type of variation (SNP, insertion, deletion).
 9. **validate**: Boolean value indicating whether the variation has been validated (1) or not (0). 
 10. **minor_allele_freq**: frequency of the minor allele.
-11. **is_supvar**: 1 if this variant is a "super-variation", i.e. was build by merging overlapping variants.
+11. **is_supvar**: 1 if this variant is a "super-variation", i.e. was built by merging overlapping variants.
 12. **in_supvar**: a value of 1 indicates that this variant overlaps with other annotated variants.
 
 
@@ -118,10 +144,28 @@ kable(weirauch.var[weirauch.var$id %in% selected.var.IDs,], caption = "**Table 2
 
 ```
 
+## Selecting variation types
+
+Variations can be of different types: single-nucleotide variants, insertions, deletions. By default, *variation-info* returns all variation types. However, some researchers might desire to resrict the analyses to a certain type of variations, in particular single nucleotide variants (also called SNPs, for Single nucleotide polymorphisms). 
+
+We will run the same command as above, but add the option `-type SNV`.
+
+```
+## Detailed command executed by the demo
+variation-info -v 2 -species Homo_sapiens \
+   -release 84 \
+   -assembly GRCh37   \
+   -type SNV \
+   -i ${RSAT}/public_html/demo_files/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.bed \
+   -format bed \
+   -o results/variation_scan_demo/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19_SNV.varbed
+
+```
 
 ## Getting variations for selected IDs
 
 ...
+
 
 ```{r}
 weirauch.prefix <- weirauch.prefix <- file.path(rsat, "public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs")
