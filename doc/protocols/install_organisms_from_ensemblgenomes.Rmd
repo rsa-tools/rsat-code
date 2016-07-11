@@ -1,0 +1,92 @@
+---
+title: "Install organisms from EnsemblGenomes"
+author: "Bruno Contreras, Yvon Mbouamboua & Jacques van Helden"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    fig_caption: yes
+    highlight: zenburn
+    theme: cerulean
+    toc: yes
+    toc_depth: 5
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+    toc: yes
+    toc_depth: 5
+---
+
+
+# Introduction
+
+The goal of this tutorial is to explain how to install genomes from Ensembl and EnsemblGenomes in your RSAT server. 
+
+# Prerequisite
+
+This protocol assumes that you have a working instance of the RSAT server, and that you are familar with the Unix terminal. 
+
+# Protocol
+
+## Checking the version of Ensembl libraries
+
+Ensembl queries rely on Perl libraries that are updated with every new Ensembl release. 
+Before starting any installation, we need to make sure that we use the latest version of the genome. 
+
+1. In a Web browser, open a connection to <http://ensembl.org>, and check the current version of Ensembl. At the time of writing this tutorial (July 2016), we are at **version 84**.  
+
+2. Open now a connection to <http://ensemblgenomes.org>, and check the current version of Ensembl. At the time of writing this tutorial (July 2016), we are at **version 31**^[**Ensembl vs EnsemblGenomes**. [Ensembl](http://ensembl.org/) only contains a subset of the genomes supported at EBI. More recently, a second project named EnsemblGenomes [EnsemblGenomes](http://ensemblgenomes.org/) was lanched, which is organized by taxa (Metazoa, Plants, Fungi, Protists, Bacteria), and which supports tens of thousands of genomes.  For some historical reason, ensemblgenome releases bear different numbers. In principle the versions are now synchronized, so there should always be a difference of 53 between Ensembl and EnsemblGenomes versions. ]. 
+
+2. We will now check the local version of the Ensembl Perl libraries. In you terminal, type the following command. 
+
+```
+make -f makefiles/install-ensembl-genomes_demo.mk list_param
+```
+
+If there is a difference between the two versions, install the new libraries as follows.
+
+Update your local RSAT configuration, and replace, for all ensembl-related parameters, the old version by the current one. 
+
+```
+perl $RSAT/perl-scripts/configure_rsat.pl
+```
+
+After this, check that the Ensembl-related parameters have well been adapted, and install the new version of Ensembl Perl libraries. 
+
+```
+make -f makefiles/install-ensembl-genomes_demo.mk list_param
+make -f makefiles/install_software.mk install_ensembl_api_param
+make -f makefiles/install_software.mk install_ensembl_api
+```
+
+In principle, the updated versions of the Ensembl API Perl libraries are now installed in your RSAT folder. You can check it like this: 
+
+```
+ls -ltr $RSAT/lib
+```
+
+
+## Get the list of organisms for a given EnsemblGenome server
+
+
+## Download one genome
+
+We download the genome from EnsemblGenomes FTP sites.
+The script need to be tuned to take into account the taxon-specific FTP sites.
+
+As a study case, we show how to install *Hordeum vulgarum* from the **Plant** ensemblgenomes server. 
+
+In addition, we can  choose a specific release of EnsemblGenomes (e.g. 28). 
+
+Before running the task, we can check the parameters. 
+
+```
+make -f makefiles/ensemblgenomes_FTP_client.mk \
+    SPECIES=hordeum_vulgare  GROUP=Plants RELEASE=28 list_param
+```
+
+After having checked that the parameters seem suitable, run the task **.
+
+```
+make -f makefiles/ensemblgenomes_FTP_client.mk \
+    SPECIES=hordeum_vulgare GROUP=Plants RELEASE=28 
+```
