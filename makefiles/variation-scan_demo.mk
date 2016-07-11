@@ -5,13 +5,13 @@ MAKEFILE=${RSAT}/makefiles/variation-scan_demo.mk
 
 V=2
 SPECIES=Homo_sapiens
-ASSEMBLY=GRCh37
-ENSEMBL_VERSION=75
+#ASSEMBLY=GRCh37
+ASSEMBLY=GRCh38
 
 ## The folder does not depend on the ensembl version anymore.  The
 ## following option should be used only for specific purpose (when
 ## installing several ensembl versions of the same assembly).
-#SPECIES_SUFFIX=ensembl${ENSEMBL_VERSION}
+#SPECIES_SUFFIX=ensembl${ENSEMBL_RELEASE}
 #SPECIES_SUFFIX_OPT=-species_suffix ${SPECIES_SUFFIX}
 SPECIES_SUFFIX=
 SPECIES_SUFFIX_OPT=
@@ -66,7 +66,7 @@ DEMO_VARIANTS=${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}
 VARIANT_FORMAT_OUT=varBed
 CONVERT_VAR_CMD=convert-variations \
 	-i ${DEMO_VARIANTS}  \
-	-e_version ${ENSEMBL_VERSION} \
+	-release ${ENSEMBL_RELEASE} \
 	-v ${V} -from ${VARIANT_FORMAT_IN} -to ${VARIANT_FORMAT_OUT} \
 	-o ${RESULT_DIR}/${VARIANTS}.${VARIANT_FORMAT_OUT}
 convert_var: mk_result_dir
@@ -88,8 +88,8 @@ VAR_FROM_ID_OUT=${RESULT_DIR}/variation_demo_set_MWeirauch_cell_2014_15SNPs
 
 VAR_INFO_CMD=variation-info -v ${V}\
 	-species ${SPECIES} \
-	-e_version ${ENSEMBL_VERSION} \
-	-a_version ${ASSEMBLY} \
+	-release ${ENSEMBL_RELEASE} \
+	-assembly ${ASSEMBLY} \
 	${SPECIES_SUFFIX_OPT} ${OPT}
 
 VAR_INFO_BED_CMD=${VAR_INFO_CMD} \
@@ -152,8 +152,8 @@ varinfo_from_ids: mk_result_dir
 RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-v ${V} \
 	-species ${SPECIES} \
-	-e_version ${ENSEMBL_VERSION} \
-	-a_version ${ASSEMBLY} \
+	-release ${ENSEMBL_RELEASE} \
+	-assembly ${ASSEMBLY} \
 	${SPECIES_SUFFIX_OPT} 
 
 RETRIEVE_VAR_CMD_VARBED=${RETRIEVE_VAR_CMD} \
@@ -240,7 +240,7 @@ varscan_weireauch_with_jaspar: mk_result_dir
 		-m_format transfac \
 		-m ${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2015_03.tf \
 		-i ${WEIRAUCH_VARSEQ} \
-		-bg ${RSAT}/public_html/data/genomes/Homo_sapiens_GRCh37/oligo-frequencies/3nt_upstream-noorf_Homo_sapiens_GRCh37-ovlp-1str.freq.gz \
+		-bg ${RSAT}/public_html/data/genomes/${SPECIES}_${ASSEMBLY}/oligo-frequencies/3nt_upstream-noorf_${SPECIES}_${ASSEMBLY}-ovlp-1str.freq.gz \
 		-lth score 1 \
 		-lth w_diff 1 \
 		-lth pval_ratio ${PVAL_RATIO} \
@@ -259,9 +259,9 @@ varscan_weireauch_with_cisbp: mk_result_dir
 	@echo "Scanning variations with all motifs from CISBP core vertebrate"
 	@variation-scan  -v ${V} \
 		-m_format transfac \
-		-m ${RSAT}/public_html/motif_databases/cisBP/cisBP_Homo_sapiens_2014-10.tf
+		-m ${RSAT}/public_html/motif_databases/cisBP/cisBP_${SPECIES}_2014-10.tf
 		-i ${WEIRAUCH_VARSEQ} \
-		-bg ${RSAT}/public_html/data/genomes/Homo_sapiens_GRCh37/oligo-frequencies/3nt_upstream-noorf_Homo_sapiens_GRCh37-ovlp-1str.freq.gz \
+		-bg ${RSAT}/public_html/data/genomes/${SPECIES}_${ASSEMBLY}/oligo-frequencies/3nt_upstream-noorf_${SPECIES}_${ASSEMBLY}-ovlp-1str.freq.gz \
 		-lth score 1 \
 		-lth w_diff 1 \
 		-lth pval_ratio ${PVAL_RATIO} \
