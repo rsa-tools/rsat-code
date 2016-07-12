@@ -146,10 +146,12 @@ cluster_peakmotifs_Oct4:
 		MIN_COR=0.6 MIN_NCOR=0.4
 
 ## Use STAMP to cluster the demo dataset
+STAMP_OCT4_DIR=results/stamp_results/peak-motifs_result_Chen_Oct4
 stamp_peakmotifs_Oct4:
 	@echo
 	@echo "Running STAMP on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	stamp \
+	@mkdir -p ${STAMP_OCT4_DIR}
+	(time stamp \
 		-tf ${RSAT}/public_html/demo_files/peak-motifs_result_Chen_Oct4_matrices.tf \
 		-cc PCC \
 		-align SWU \
@@ -157,7 +159,9 @@ stamp_peakmotifs_Oct4:
 		-ma IR \
 		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
 		-printpairwise \
-		-out stampout
+		-out ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp ) \
+		>& ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp_log.txt
+	@echo "	${STAMP_OCT4_DIR}"
 
 # ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 # cluster_peakmotifs_Oct4_nb_clusters:
@@ -308,6 +312,31 @@ cluster_jaspar_one_group:
 		TITLE='Jaspar core ${JASPAR_GROUP} database' \
 		COLLECTION=${JASPAR_PREFIX} \
 		METRIC_BUILD_TREE=Ncor \
+
+STAMP_JASPAR_DIR=results/stamp_results/${JASPAR_PREFIX}
+stamp_jaspar_one_group:
+	@echo
+	@echo "STAMP clustering for all matrices from JASPAR ${JASPAR_GROUP}"
+	@mkdir -p ${STAMP_JASPAR_DIR}
+	(time stamp \
+		-tf ${JASPAR_MATRICES} \
+		-cc PCC \
+		-align SWU \
+		-ch -chp \
+		-ma IR \
+		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
+		-printpairwise \
+		-out ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp ) \
+		>& ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_log.txt
+	@echo "	${STAMP_JASPAR_DIR}"
+
+	${MAKE} _cluster MATRIX_PREFIX=${JASPAR_PREFIX} \
+		MATRIX_FILE=${JASPAR_MATRICES} \
+		MIN_COR=0.6 MIN_NCOR=0.4 \
+		TITLE='Jaspar core ${JASPAR_GROUP} database' \
+		COLLECTION=${JASPAR_PREFIX} \
+		METRIC_BUILD_TREE=Ncor \
+
 
 ## Permutation test with RegulonDB
 cluster_jaspar_one_group_permute:
