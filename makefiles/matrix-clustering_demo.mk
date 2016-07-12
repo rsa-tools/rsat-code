@@ -145,6 +145,19 @@ cluster_peakmotifs_Oct4:
 		METRIC_BUILD_TREE=Ncor \
 		MIN_COR=0.6 MIN_NCOR=0.4
 
+## Use STAMP to cluster the demo dataset
+stamp_peakmotifs_Oct4:
+	@echo
+	@echo "Running STAMP on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+	stamp \
+		-tf ${RSAT}/public_html/demo_files/peak-motifs_result_Chen_Oct4_matrices.tf \
+		-cc PCC \
+		-align SWU \
+		-ch -chp \
+		-ma IR \
+		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
+		-printpairwise \
+		-out stampout
 
 # ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 # cluster_peakmotifs_Oct4_nb_clusters:
