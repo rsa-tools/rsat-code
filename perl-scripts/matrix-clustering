@@ -217,7 +217,7 @@ package main;
   local $supported_label_motif_fields = join ",", @supported_label_motif_fields;
   local %label_motif_fields_to_return = ();
   ## Default name::collection
-  local @label_motif_fields_to_return = qw (id name);
+  local @label_motif_fields_to_return = qw (name collection);
 
 
   ## Supported label fields
@@ -3048,7 +3048,8 @@ sub Merge_matrices() {
 	    $root_motifs_features{$cluster}{logo} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo};
 	    $root_motifs_features{$cluster}{logo_RC} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo_rc};
 	    $root_motifs_features{$cluster}{size} = 1;
-	    $root_motifs_features{$cluster}{members} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{id}."::".$alignment_info{"@{$cluster_nodes{$cluster}}"}{name};
+	    $root_motifs_features{$cluster}{members} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{name}."::".$alignment_info{"@{$cluster_nodes{$cluster}}"}{collection};
+
 	    $root_motifs_features{$cluster}{file} = $new_singleton_motif_file;
 	    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{node_1}{$cluster}{collection_counts};
 	    ## Add the singleton cluster to the list of root motifs
@@ -4809,6 +4810,7 @@ sub Dynamic_Heatmap_Complementarity {
 
 	$line =~ s/--d3--/$d3_base/;
 	$line =~ s/--left--/$attributes_heatmap{Left_space}/g;
+	$line =~ s/--top--/$attributes_heatmap{Top_space}/g;
 	$line =~ s/--bottom--/$attributes_heatmap{Left_space}/g;
 	$line =~ s/--file--/$tsv_file/;
 	$line =~ s/--cell_size--/$attributes_heatmap{Cell_size}/;
