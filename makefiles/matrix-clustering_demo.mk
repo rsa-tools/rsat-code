@@ -378,7 +378,7 @@ stamp_jaspar_one_group:
 		-logo_format png  \
 		-return counts,consensus,parameters,header,logo \
 		-logo_file ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters_logo \
-		-o ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tab \
+		-o ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tab
 	@echo "	${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tab"
 	@convert-matrix -v ${V} -from stamp -to transfac \
 		-i ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.txt \
@@ -387,6 +387,6 @@ stamp_jaspar_one_group:
 		-decimals 1 \
 		-bg_pseudo 0.01 \
 		-return counts,consensus,parameters \
-		-o ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf \
+		-o ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf
 	@echo "	${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf"
 
