@@ -534,6 +534,9 @@ legend <- paste(legend, collapse=",")
 ## Right space
 left <- (max(as.vector(sapply(c(collection.names, cluster.names.original), nchar))) + 2.5) * 10
 
+## Right space
+top <- (max(as.vector(sapply(collection.names, nchar))) + 2.5) * 10
+
 ## Div bottom + Cell size
 cell.size <- 20
 bottom <- 120
@@ -575,6 +578,7 @@ order.info <- matrix(c("Gradient", gradient,
                        "Legend", legend,
                        "Legend_Head", legend.header,
                        "Left_space", left,
+                       "Top_space", top,
                        "Bottom_space", left,
                        "Body", html.body.size,
                        "Collections", collections,
