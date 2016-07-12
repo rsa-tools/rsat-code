@@ -360,6 +360,9 @@ i <- sapply(1:length(clusters), function(nb){
              ## Get the central motif name
              ## This will be used to rename the clusters
              central.motif <- get.name(ids)[1]
+             central.motif<- gsub("\\(", "_", central.motif)
+             central.motif<- gsub("\\)", "_", central.motif)
+             central.motif<- gsub("\\.", "_", central.motif)
              central.motif <- paste(central.motif, "cluster", nb, sep = "_")
              
              ## Creates an individual folder for each cluster
@@ -429,6 +432,10 @@ i <- sapply(1:length(clusters), function(nb){
                ## This will be used to rename the clusters
                mean.dist.per.motif <- apply(distances.objects[[1]], 1, mean)
                central.motif <- names(which.min(mean.dist.per.motif)[1])
+               central.motif <- get.name(central.motif)
+               central.motif<- gsub("\\(", "_", central.motif)
+               central.motif<- gsub("\\)", "_", central.motif)
+               central.motif<- gsub("\\.", "_", central.motif)
                central.motif <- paste(central.motif, "cluster", nb, sep = "_")
                
                ## Creates an individual folder for each cluster
