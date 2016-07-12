@@ -346,6 +346,11 @@ stamp_peakmotifs_Oct4:
 		>& ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp_log.txt
 	@echo "	${STAMP_OCT4_DIR}"
 
+stamp_jaspar_all_groups:
+	@for g in ${JASPAR_GROUPS}; do \
+		${MAKE} stamp_jaspar_one_group JASPAR_GROUP=$${g} ; \
+	done
+
 ## Run STAMP for the sake of comparison
 STAMP_JASPAR_DIR=results/stamp_results/${JASPAR_PREFIX}
 stamp_jaspar_one_group:
