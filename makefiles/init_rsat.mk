@@ -2,6 +2,7 @@
 ## Initialize Regulatory Sequence Analysis Tools (in principle, this
 ## script should be used only once at installation).
 
+RSAT=$(CURDIR)
 MAKEFILE=${RSAT}/makefiles/init_rsat.mk
 MAKE = make -sk -f ${MAKEFILE}
 include ${RSAT}/RSAT_config.mk
@@ -38,7 +39,7 @@ init:
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/data/robots.txt
 	@echo "Options +Indexes" > public_html/data/.htaccess
 	@echo "	genomes	${RSAT}/public_html/data/genomes"
-	@mkdir -p public_html/data/genomes
+	@mkdir -p ${RSAT}/public_html/data/genomes
 #	mkdir -p ${RSAT}/public_html/data/KEGG
 #	mkdir -p ${RSAT}/public_html/data/metabolic_networks
 #	mkdir -p ${RSAT}/public_html/data/metabolic_networks/GER_files
