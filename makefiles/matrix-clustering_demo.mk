@@ -145,23 +145,6 @@ cluster_peakmotifs_Oct4:
 		METRIC_BUILD_TREE=Ncor \
 		MIN_COR=0.6 MIN_NCOR=0.4
 
-## Use STAMP to cluster the demo dataset
-STAMP_OCT4_DIR=results/stamp_results/peak-motifs_result_Chen_Oct4
-stamp_peakmotifs_Oct4:
-	@echo
-	@echo "Running STAMP on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
-	@mkdir -p ${STAMP_OCT4_DIR}
-	(time stamp \
-		-tf ${RSAT}/public_html/demo_files/peak-motifs_result_Chen_Oct4_matrices.tf \
-		-cc PCC \
-		-align SWU \
-		-ch -chp \
-		-ma IR \
-		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
-		-printpairwise \
-		-out ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp ) \
-		>& ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp_log.txt
-	@echo "	${STAMP_OCT4_DIR}"
 
 # ## Cluster motifs resulting from peak-motifs (Chen Oct4 data set)
 # cluster_peakmotifs_Oct4_nb_clusters:
@@ -313,6 +296,56 @@ cluster_jaspar_one_group:
 		COLLECTION=${JASPAR_PREFIX} \
 		METRIC_BUILD_TREE=Ncor \
 
+## Permutation test with RegulonDB
+cluster_jaspar_one_group_permute:
+	${MAKE} MATRIX_PREFIX=${JASPAR_PREFIX} permute_matrices cluster_permuted_matrices
+
+#############################
+## Cluster one cisBP group
+## Default: Mus_musculus
+CISBP_GROUPS=Homo_sapiens Mus_musculus
+CISBP_GROUP=Mus_musculus
+CISBP_PREFIX=cisBP_${CISBP_GROUP}_2014-10
+CISBP_DIR=${RSAT}/public_html/motif_databases/cisBP
+CISBP_MATRICES=${CISBP_DIR}/${CISBP_PREFIX}.tf
+cluster_cisbp_one_group:
+	@echo
+	@echo "Clustering all matrices from cisBP ${CISBP_GROUP}"
+	${MAKE} _cluster MATRIX_PREFIX=${CISBP_PREFIX} \
+		MATRIX_FILE=${CISBP_MATRICES} \
+		MIN_COR=0.6 MIN_NCOR=0.4
+		TITLE='cisBP ${CISBP_GROUP} database' \
+		COLLECTION=${CISBP_PREFIX}
+
+################################################################
+## Send some jobs to the queue to check if it works
+enqueue_some_jobs:
+	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=single
+	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=average
+	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=complete
+
+
+################################################################
+## STAMP
+
+## Use STAMP to cluster the demo dataset
+STAMP_OCT4_DIR=results/stamp_results/peak-motifs_result_Chen_Oct4
+stamp_peakmotifs_Oct4:
+	@echo
+	@echo "Running STAMP on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+	@mkdir -p ${STAMP_OCT4_DIR}
+	(time stamp \
+		-tf ${RSAT}/public_html/demo_files/peak-motifs_result_Chen_Oct4_matrices.tf \
+		-cc PCC \
+		-align SWU \
+		-ch -chp \
+		-ma IR \
+		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
+		-printpairwise \
+		-out ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp ) \
+		>& ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp_log.txt
+	@echo "	${STAMP_OCT4_DIR}"
+
 ## Run STAMP for the sake of comparison
 STAMP_JASPAR_DIR=results/stamp_results/${JASPAR_PREFIX}
 stamp_jaspar_one_group:
@@ -352,31 +385,3 @@ stamp_jaspar_one_group:
 		-o ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf \
 	@echo "	${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf"
 
-
-## Permutation test with RegulonDB
-cluster_jaspar_one_group_permute:
-	${MAKE} MATRIX_PREFIX=${JASPAR_PREFIX} permute_matrices cluster_permuted_matrices
-
-#############################
-## Cluster one cisBP group
-## Default: Mus_musculus
-CISBP_GROUPS=Homo_sapiens Mus_musculus
-CISBP_GROUP=Mus_musculus
-CISBP_PREFIX=cisBP_${CISBP_GROUP}_2014-10
-CISBP_DIR=${RSAT}/public_html/motif_databases/cisBP
-CISBP_MATRICES=${CISBP_DIR}/${CISBP_PREFIX}.tf
-cluster_cisbp_one_group:
-	@echo
-	@echo "Clustering all matrices from cisBP ${CISBP_GROUP}"
-	${MAKE} _cluster MATRIX_PREFIX=${CISBP_PREFIX} \
-		MATRIX_FILE=${CISBP_MATRICES} \
-		MIN_COR=0.6 MIN_NCOR=0.4
-		TITLE='cisBP ${CISBP_GROUP} database' \
-		COLLECTION=${CISBP_PREFIX}
-
-################################################################
-## Send some jobs to the queue to check if it works
-enqueue_some_jobs:
-	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=single
-	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=average
-	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=complete
