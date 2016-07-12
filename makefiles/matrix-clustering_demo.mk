@@ -335,15 +335,15 @@ stamp_peakmotifs_Oct4:
 	@echo "Running STAMP on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
 	@mkdir -p ${STAMP_OCT4_DIR}
 	(time stamp \
-		-tf ${RSAT}/public_html/demo_files/peak-motifs_result_Chen_Oct4_matrices.tf \
+		-tf ${RSAT}/public_html/demo_files/RSAT_peak-motifs_Oct4_matrices.tf \
 		-cc PCC \
 		-align SWU \
 		-ch -chp \
-		-ma IR \
+		-ma PPA \
 		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
 		-printpairwise \
-		-out ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp ) \
-		>& ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp_log.txt
+		-out ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp ) 
+##		>& ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp_log.txt
 	@echo "	${STAMP_OCT4_DIR}"
 
 stamp_jaspar_all_groups:
@@ -365,8 +365,8 @@ stamp_jaspar_one_group:
 		-ma IR \
 		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
 		-printpairwise \
-		-out ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp ) \
-		>& ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_log.txt
+		-out ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp ) 
+#		>& ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_log.txt
 	@echo "	${STAMP_JASPAR_DIR}"
 	@echo "Converting matrices and computing logos"
 	@convert-matrix -v ${V} -from stamp -to tab \
@@ -390,3 +390,42 @@ stamp_jaspar_one_group:
 		-o ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf
 	@echo "	${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf"
 
+
+## Run STAMP for the sake of comparison
+STAMP_HOCOMOCO_DIR=results/stamp_results/${HOCOMOCO_PREFIX}
+stamp_hocomoco_one_group:
+	@echo
+	@echo "STAMP clustering for all matrices from HOCOMOCO ${HOCOMOCO_GROUP}"
+	@mkdir -p ${STAMP_HOCOMOCO_DIR}
+	(time stamp \
+		-tf ${HOCOMOCO_MATRICES} \
+		-cc PCC \
+		-align SWU \
+		-ch -chp \
+		-ma IR \
+		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
+		-printpairwise \
+		-out ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp ) 
+#		>& ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_log.txt
+	@echo "	${STAMP_HOCOMOCO_DIR}"
+	@echo "Converting matrices and computing logos"
+	@convert-matrix -v ${V} -from stamp -to tab \
+		-i ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-logo_format png  \
+		-return counts,consensus,parameters,header,logo \
+		-logo_file ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters_logo \
+		-o ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.tab
+	@echo "	${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.tab"
+	@convert-matrix -v ${V} -from stamp -to transfac \
+		-i ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-return counts,consensus,parameters \
+		-o ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.tf
+	@echo "	${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.tf"
