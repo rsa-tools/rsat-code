@@ -313,6 +313,7 @@ cluster_jaspar_one_group:
 		COLLECTION=${JASPAR_PREFIX} \
 		METRIC_BUILD_TREE=Ncor \
 
+## Run STAMP for the sake of comparison
 STAMP_JASPAR_DIR=results/stamp_results/${JASPAR_PREFIX}
 stamp_jaspar_one_group:
 	@echo
@@ -329,13 +330,6 @@ stamp_jaspar_one_group:
 		-out ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp ) \
 		>& ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_log.txt
 	@echo "	${STAMP_JASPAR_DIR}"
-
-	${MAKE} _cluster MATRIX_PREFIX=${JASPAR_PREFIX} \
-		MATRIX_FILE=${JASPAR_MATRICES} \
-		MIN_COR=0.6 MIN_NCOR=0.4 \
-		TITLE='Jaspar core ${JASPAR_GROUP} database' \
-		COLLECTION=${JASPAR_PREFIX} \
-		METRIC_BUILD_TREE=Ncor \
 
 
 ## Permutation test with RegulonDB
