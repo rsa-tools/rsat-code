@@ -1489,7 +1489,23 @@ _compile_python_suds:
 
 ################################################################
 ## Install STAMP (zip archive kindly sent by email by Shaun Mahony)
-install_stamp:
+install_stamp: _clone_stamp _compile_stamp _install_stamp
+
+_clone_stamp:
+	@echo "Cloning stamp"
+	(cd ${SRC_DIR}; git clone https://github.com/shaunmahony/stamp.git)
+
+_compile_stamp:
+	@echo "Compiling stamp"
+	(cd ${SRC_DIR}/stamp/src; \
+		g++ -O3 -o stamp Motif.cpp Alignment.cpp ColumnComp.cpp \
+                PlatformSupport.cpp PlatformTesting.cpp Tree.cpp \
+                NeuralTree.cpp MultipleAlignment.cpp RandPSSMGen.cpp \
+                ProteinDomains.cpp main.cpp -lm -lgsl -lgslcblas)
+
+_install_stamp:
+	${SUDO} rsync -ruptvl ${SRC_DIR}/stamp/src/stamp ${RSAT_BIN}
+
 
 ################################################################
 ## Install MATLIGN
