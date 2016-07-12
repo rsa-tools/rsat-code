@@ -330,6 +330,27 @@ stamp_jaspar_one_group:
 		-out ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp ) \
 		>& ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_log.txt
 	@echo "	${STAMP_JASPAR_DIR}"
+	@echo "Converting matrices and computing logos"
+	@convert-matrix -v ${V} -from stamp -to tab \
+		-i ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-logo_format png  \
+		-return counts,consensus,parameters,header,logo \
+		-logo_file ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters_logo \
+		-o ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tab \
+	@echo "	${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tab"
+	@convert-matrix -v ${V} -from stamp -to transfac \
+		-i ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-return counts,consensus,parameters \
+		-o ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf \
+	@echo "	${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf"
 
 
 ## Permutation test with RegulonDB
