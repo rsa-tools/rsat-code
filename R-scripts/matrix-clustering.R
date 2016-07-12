@@ -176,7 +176,6 @@ if(number.of.motifs > 1){
   clusters.names <<- lapply(clusters, function(x){
     get.name(x)
   })
-  
 
 
   ## Export a table with the cluster names and its elements (IDs)
@@ -297,18 +296,7 @@ if(number.of.motifs > 1){
 #     }
 
   }
-
-#   ##################################################
-#   ##  Produce the internal nodes attributes table
-#   internal.nodes.attributes.table <- lapply(alignment.attributes, function(X){
-#     return(c(X[["node"]], X[["method"]], X[["alignment_status"]], X[["cluster_1"]], X[["cluster_2"]]))
-#   })
-#   internal.nodes.attributes.table <- t(data.frame(internal.nodes.attributes.table))
-#   colnames(internal.nodes.attributes.table) <- c("#node", "method", "alignment_status", "node_1", "node_2")
-#   attributes.file <- paste(sep="", out.prefix, "_tables/internal_nodes_attributes.tab")
-#   write.table(internal.nodes.attributes.table, file=attributes.file, sep="\t", quote=FALSE, row.names=FALSE)
-#   verbose(paste("merge attributes table", attributes.file), 3)
-
+  
 } else{
 
   motifs.info <- list()
@@ -322,7 +310,7 @@ if(number.of.motifs > 1){
                                                                 spacer.dw = 0)
   global.motifs.info <- motifs.info
   forest.nb <- length(clusters)
-  }
+}
 
 #########################
 ## Produce the forests ##
@@ -341,24 +329,13 @@ intermediate.levels <- vector()
 compa.table <- global.compare.matrices.table
 desc.tab <<- global.description.table
 
-## Print a file with the Hexadecimals code for the colors of the clusters
-## The color of the clusters showed in the heatmap will be the same
-## colors in the D3 trees.
-if(only.hclust == 0){
-  colors <- rainbow(length(clusters))
-  write.table(paste("cluster_", 1:length(colors), " ", colors, sep = ""), file = paste(sep="", out.prefix, "_hexa_colors.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
-}
-
+all.central.motifs <- vector()
 i <- sapply(1:length(clusters), function(nb){
 
     alignment.cluster <<- list()
     description.table <<- NULL
     compare.matrices.table <<- NULL
     tree <<- NULL
-
-    ## Creates an individual folder for each cluster
-    cluster.folder <<- file.path(clusters.info.folder, paste("cluster", nb, sep = "_"))
-    dir.create(cluster.folder, recursive=TRUE, showWarnings=FALSE)
 
     ids <- clusters[[paste("cluster", nb, sep = "_")]]
     if(length(ids) >= 2){
@@ -377,46 +354,48 @@ i <- sapply(1:length(clusters), function(nb){
              
              ids <- as.character(ids)
              
+             ## New description table (with the ids of the current cluster)
+             global.description.table <<- desc.tab[desc.tab[,"id"] %in% ids, ]
+             
              ## Get the central motif name
              ## This will be used to rename the clusters
              central.motif <- get.name(ids)[1]
-
+             central.motif <- paste(central.motif, "cluster", nb, sep = "_")
+             
+             ## Creates an individual folder for each cluster
+             cluster.folder <<- file.path(clusters.info.folder, central.motif)
+             dir.create(cluster.folder, recursive=TRUE, showWarnings=FALSE)
+             all.central.motifs <<- append(all.central.motifs, central.motif)
+             
              ## Fill the cluster list with the data of the non-aligned motifs (singleton)
              global.description.table <<- NULL
              global.description.table <<- desc.tab
-             forest.list[[paste("cluster", nb, sep = "_")]][[ids]] <<- singleton.list
+             forest.list[[central.motif]][[ids]] <<- singleton.list
               
-             #ids <- as.character(ids)
+             ids <- as.character(ids)
 
-             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["strand"]] <<- "D"
-             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["name"]] <<- get.name(ids)
-             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_d"]] <<- get.consensus(ids, RC = FALSE)
-             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["consensus_rc"]] <<- get.consensus(ids, RC = TRUE)
-             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["number"]] <<- as.numeric(1)
-             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["spacer.up"]] <<- as.numeric(0)
-             forest.list[[paste("cluster", nb, sep = "_")]][[ids]][["spacer.dw"]] <<- as.numeric(0)
+             forest.list[[central.motif]][[ids]][["strand"]] <<- "D"
+             forest.list[[central.motif]][[ids]][["name"]] <<- get.name(ids)
+             forest.list[[central.motif]][[ids]][["consensus_d"]] <<- get.consensus(ids, RC = FALSE)
+             forest.list[[central.motif]][[ids]][["consensus_rc"]] <<- get.consensus(ids, RC = TRUE)
+             forest.list[[central.motif]][[ids]][["number"]] <<- as.numeric(1)
+             forest.list[[central.motif]][[ids]][["spacer.up"]] <<- as.numeric(0)
+             forest.list[[central.motif]][[ids]][["spacer.dw"]] <<- as.numeric(0)
 
               if(only.hclust == 0){
 
                 ## Create a JSON file for trees with a single node
                 ## In this situation this step is required because it is not possible to use the hclustToJson function
                 JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", ids, "\",\n}\n]\n}", sep = "")
-                json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
+                json.file <- paste(out.prefix, "_trees/tree_", central.motif, ".json", sep="")
                 verbose(paste("JSON tree file", json.file), 2)
                 writeLines(JSON.single.node, con=json.file)
 
                  ## For consistency, print the empty file
                  ## It will be erased later
                  JSON.empty <- ";Empty_file\n"
-                 JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
+                 JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_", central.motif, "_table.tab")
                  write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
-
-#                  ## For consistency, Create the folder with the merged consensuses
-#                  dir.create(paste(cluster.folder, "/merged_consensuses", sep = ""), recursive = TRUE, showWarnings = FALSE)
-#                  flag <- system(paste("ls ", cluster.folder, "/merged_consensuses", "/ | wc -l", sep = ""), intern = TRUE)
-#                  if(flag >= 1){
-#                    system(paste("rm -r ", cluster.folder, "/merged_consensuses", "/*", sep = ""))
-#                  }
                }
 
                intermediate.levels.counter <<- intermediate.levels.counter + 1
@@ -450,6 +429,11 @@ i <- sapply(1:length(clusters), function(nb){
                ## This will be used to rename the clusters
                mean.dist.per.motif <- apply(distances.objects[[1]], 1, mean)
                central.motif <- names(which.min(mean.dist.per.motif)[1])
+               central.motif <- paste(central.motif, "cluster", nb, sep = "_")
+               
+               ## Creates an individual folder for each cluster
+               cluster.folder <<- file.path(clusters.info.folder, central.motif)
+               dir.create(cluster.folder, recursive=TRUE, showWarnings=FALSE)
 
                ## Build the tree by hierarchical clustering,
                tree <<- hclust.motifs(dist.matrix, hclust.method = hclust.method)
@@ -458,7 +442,7 @@ i <- sapply(1:length(clusters), function(nb){
 
                   ## Creates and export the json file
                   JSON.tree <- convert.hclust.to.JSON(tree)
-                  json.file <- paste(out.prefix, "_trees/tree_cluster_", nb,".json", sep="")
+                  json.file <- paste(out.prefix, "_trees/tree_", central.motif, ".json", sep="")
                   verbose(paste("JSON tree file", json.file), 2)
                   writeLines(JSON.tree, con = json.file)
 
@@ -466,7 +450,7 @@ i <- sapply(1:length(clusters), function(nb){
                   ## This step is required to assign a name to the branches in the JSON tree in order to create
                   ## the branch-motifs
                   JSON.clusters.table <- identify.JSON.tree.branches(tree)
-                  JSON.clusters.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_cluster_", nb,"_table.tab")
+                  JSON.clusters.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_", central.motif,"_table.tab")
                   write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
                 }
 
@@ -484,14 +468,32 @@ i <- sapply(1:length(clusters), function(nb){
 
                   node.name <- gsub("merge_level", "node", lev, perl = TRUE)
                   level.info <- data.frame(t(intern.alignment[[node.name]]))
-                  f <- paste(cluster.folder, "/levels_JSON_cluster_", nb, "_", node.name, "_dataframe.tab", sep = "")
+                  f <- paste(cluster.folder, "/levels_JSON_", central.motif, "_", node.name, "_dataframe.tab", sep = "")
                    write.table(level.info, file = f, sep = "\t", quote = FALSE, row.names = TRUE, col.names = FALSE)
                    create.dir.merge(node.name)
                })
-               forest.list[[paste("cluster", nb, sep = "_")]] <<- alignment.cluster$motifs.alignment
-           }
+               forest.list[[central.motif]] <<- alignment.cluster$motifs.alignment
+               all.central.motifs <<- append(all.central.motifs, central.motif)
+          }
        )
 })
+
+#gsub("^\\w+_(cluster_\\d+)", "\\1", all.central.motifs, perl = TRUE)
+
+all.central.motifs <- as.vector(unlist(all.central.motifs))
+all.central.motifs.ids.df <-data.frame(all.central.motifs, 1:length(all.central.motifs))
+write.table(all.central.motifs.ids.df, file = paste(sep="", out.prefix, "_cluster_IDs.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
+
+##aqui
+
+## AQui
+## Print a file with the Hexadecimals code for the colors of the clusters
+## The color of the clusters showed in the heatmap will be the same
+## colors in the D3 trees.
+if(only.hclust == 0){
+  colors <- rainbow(length(clusters))
+  write.table(paste(all.central.motifs, " ", colors, sep = ""), file = paste(sep="", out.prefix, "_hexa_colors.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
+}
 
 #################################
 ## Produce the alignment table
