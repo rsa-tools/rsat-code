@@ -4244,7 +4244,7 @@ sub ReportStyleCSS{
 	background-color: '.$blue_color.';
 	float: left;
 	margin: 5px 3px 3px 3px;
-	width: 75px;
+	width: auto;
 	height: 15px;
 	position: relative;
 	display: inline-block;
@@ -4318,7 +4318,7 @@ sub ReportStyleCSS{
 
   .Cluster_results {
   margin-top: 3px;
-  width: 90px;
+  width: auto;
   heigth: 80px;
   border: 1px;
   position: relative;
