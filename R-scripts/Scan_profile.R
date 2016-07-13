@@ -845,11 +845,15 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(f){
 
   covered.sequences.table <- data.frame(covered.seq)
   not.covered.sequences.table <- data.frame(not.covered.seq)
+  
+  print(dim(covered.sequences.table))
+  print(dim(not.covered.sequences.table))
 
   covered.sequences.file <- paste(covered.tables.dir, feature.query, "_covered_sequences_IDs.tab", sep = "")
   not.covered.sequences.file <- paste(covered.tables.dir, feature.query, "_not_covered_sequences_IDs.tab", sep = "")
 
   print("Aqui1")
+  print(feature.query)
   write.table(covered.sequences.table, file = covered.sequences.file, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
   write.table(not.covered.sequences.table, file = not.covered.sequences.file, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
   print("Aqui2")
@@ -1198,7 +1202,6 @@ datatable.info.tab$Profiles <- profiles.plots
 datatable.info.tab$TFBS <- tfbss.plots
 datatable.info.tab$Logo <- logos.F
 datatable.info.tab$Logo_RC <- logos.R
-## aqui
 datatable.info.tab$covered_files <- covered.files
 datatable.info.tab$not_covered_files <- not.covered.files
 all.motifs <- all.motifs
