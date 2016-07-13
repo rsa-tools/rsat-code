@@ -845,12 +845,9 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(f){
 
   covered.sequences.table <- data.frame(covered.seq)
   not.covered.sequences.table <- data.frame(not.covered.seq)
-  
-  print(dim(covered.sequences.table))
-  print(dim(not.covered.sequences.table))
 
-  covered.sequences.file <- file.path(covered.tables.dir, feature.query, "_covered_sequences_IDs.tab")
-  not.covered.sequences.file <- file.path(covered.tables.dir, feature.query, "_not_covered_sequences_IDs.tab")
+  covered.sequences.file <- file.path(covered.tables.dir, paste(feature.query, "_covered_sequences_IDs.tab", sep = ""))
+  not.covered.sequences.file <- file.path(covered.tables.dir, paste(feature.query, "_not_covered_sequences_IDs.tab", sep = ""))
 
   print("Aqui1")
   print(feature.query)
