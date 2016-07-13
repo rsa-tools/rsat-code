@@ -849,9 +849,11 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(f){
   covered.sequences.file <- paste(covered.tables.dir, feature.query, "_covered_sequences_IDs.tab", sep = "")
   not.covered.sequences.file <- paste(covered.tables.dir, feature.query, "_not_covered_sequences_IDs.tab", sep = "")
 
+  print("Aqui1")
   write.table(covered.sequences.table, file = covered.sequences.file, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
   write.table(not.covered.sequences.table, file = not.covered.sequences.file, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
-
+  print("Aqui2")
+  
   ## Calculate the coverture rate
   coverture <- round(nb.seq.with.hits/total.scanned.sequences, digits = 4)*100
   additional.data[[f]][["Coverture"]] <<- paste(coverture, "%", sep = "")
