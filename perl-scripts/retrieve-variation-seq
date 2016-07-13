@@ -50,11 +50,12 @@ them wiht the tool I<variation-scan>.
 =head2 Example
 
   Get variation sequence of Homo_sapiens from a bed file
-    retrieve-snp-seq -v 2 \
-      -species Homo_sapiens -release 84
+
+    retrieve-variation-seq -v 2 \
+      -species Homo_sapiens -release 84 -format bed -assembly GCRh37 \
       -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
       -mml 30 \
-      -o variations.varBed
+      -o variations.varSeq
 
 =head1 INPUT FORMAT
 
