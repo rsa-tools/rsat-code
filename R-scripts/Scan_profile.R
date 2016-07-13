@@ -276,7 +276,7 @@ if (heatmap.dendo == "show"){
 print(heatmap.dendo)
 
 ## Create a file to store the resulting tables
-covered.tables.dir <- paste(prefix, "_covered_sequences_info/", sep = "")
+covered.tables.dir <- paste(prefix, "_covered_sequences_info", sep = "")
 dir.create(covered.tables.dir, showWarnings = FALSE)
 
 # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_results_PARSED.tab"
@@ -849,8 +849,8 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(f){
   print(dim(covered.sequences.table))
   print(dim(not.covered.sequences.table))
 
-  covered.sequences.file <- paste(covered.tables.dir, feature.query, "_covered_sequences_IDs.tab", sep = "")
-  not.covered.sequences.file <- paste(covered.tables.dir, feature.query, "_not_covered_sequences_IDs.tab", sep = "")
+  covered.sequences.file <- file.path(covered.tables.dir, feature.query, "_covered_sequences_IDs.tab")
+  not.covered.sequences.file <- file.path(covered.tables.dir, feature.query, "_not_covered_sequences_IDs.tab")
 
   print("Aqui1")
   print(feature.query)
