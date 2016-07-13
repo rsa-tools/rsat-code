@@ -18,7 +18,6 @@ if (dir.rsat == "") {
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 
-
 ## Load required libraries
 ## List of packages to install
 required.packages = c("RColorBrewer",
@@ -29,10 +28,6 @@ required.packages = c("RColorBrewer",
 for (pkg in c(required.packages)) {
   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
 }
-
-# library("RColorBrewer")
-# library("gplots")
-# library("amap")
 
 ###########################################
 ## Read arguments from the command line.
@@ -55,7 +50,6 @@ heatmap.color.classes <- as.numeric(heatmap.color.classes)
 ################################################
 
 #venn.sortAreas(div, d);--return--
-
 JSON.intersection = '
 var sets_--nb-- = [
   {"sets": [0], "label": "--collection_A--", "size": --size_collection_A--},
@@ -107,14 +101,15 @@ div.selectAll("g")--return--
 });--return--
 </script>--return--'
 
-# cluster.counts.file <- "/home/jaimicore/test/Ncor0.4_cor0.6/Multi_algorithms_analysis_hclust-average_Ncor0.4_cor0.6_tables/clusters_summary_table.tab"
+# cluster.counts.file <- "/home/jaimicore/Documents/PhD/clusters_summary_table.tab"
 
 ## Read cluster count table
 clusters <- read.table(file = cluster.counts.file, sep = "\t", header = TRUE)
 names(clusters) <- gsub("X.Cluster_ID", "Cluster_ID", names(clusters))
+cluster.names.original <- as.vector(clusters$Cluster_ID)
 
 # Read the root motif table and save the path to the logos
-# root.motifs.table <- "/home/jaimicore/test/Ncor0.4_cor0.6/Multi_algorithms_analysis_hclust-average_Ncor0.4_cor0.6_root_motifs_table.tab"
+# root.motifs.table <- "/home/jaimicore/Documents/PhD/Multi_algorithms_analysis_hclust-average_Ncor0.4_cor0.6_root_motifs_table.tab"
 root.motifs.files <- read.table(file = root.motifs.table, sep = "\t", header = TRUE)
 names(root.motifs.files) <- gsub("X.Cluster_ID", "Cluster_ID", names(root.motifs.files))
 
@@ -317,8 +312,6 @@ sapply(c("average", "complete", "single", "ward"), function(m){
                            distfun = function(x) Dist(x,method = 'pearson')
   )
   dev.off()
-  # file.remove("test.pdf")
-  
   
   if(m == "ward.D"){
     m <- "ward"
@@ -406,7 +399,6 @@ coverage.info.df <- t(data.frame(coverage.info))
 write.table(coverage.info.df, file = coverage.heatmap.attributes.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
 
 
-
 ##################################################
 ## Create the collection's contribution heatmap
 
@@ -468,16 +460,16 @@ sapply(c("average", "complete", "single", "ward"), function(m){
   }
   
   order.list.rows[[m]] <<- paste(rev(hm.clusters[[1]]), collapse = ",")
+  cluster.order <- as.numeric(unlist(strsplit(order.list.rows[[m]], ",")))
   order.list.columns[[m]] <<- paste(rev(hm.clusters[[2]]), collapse = ",")
-  order.list.names[[m]] <<- paste(paste("'cluster_", order.list.rows[[m]], "'", sep = ""), collapse = ",")
+  order.list.names[[m]] <<- paste(paste("'", cluster.names.original[cluster.order], "'", sep = ""), collapse = ",")
 })
-
 
 ###############################################
 ## Parse the Heatmap table format used in D3
 ## This table is printed in a new file
 x <- data.frame(t(clusters))
-names(x) <- paste("cluster_", 1:dim(clusters)[1], sep = "")
+names(x) <- cluster.names.original
 y <- NULL
 for(j in 1:dim(x)[1]){
   for(i in 1:dim(x)[2]){
@@ -495,8 +487,7 @@ write.table(y, file = heatmap.table.d3, sep = "\t", quote = FALSE, row.names = F
 ## Color palette in Hexa code
 gradient <- paste("[", paste(paste("'", white, "'", sep=""), collapse=","), "];", sep = "")
 
-## Get the clusters names orderer according the linkage method
-cluster.names <- paste(paste("'cluster_", 1:dim(clusters)[1], "'", sep =""), collapse=",")
+cluster.names <- paste(paste("'", cluster.names.original, "'", sep =""), collapse=",")
 
 ## Get the clusters number orderer according the linkage method
 cluster.number <- paste(1:dim(clusters)[1], collapse=",")
@@ -511,7 +502,7 @@ single.c.number <- order.list.columns[["single"]]
 ward.c.number <- order.list.columns[["ward"]]
 
 ## Default names
-default.names <- paste(paste("'cluster_", 1:dim(clusters)[1], "'", sep = ""), collapse = ",")
+default.names <- paste(paste("'", cluster.names.original, "'", sep = ""), collapse = ",")
 default.number <- paste(1:dim(clusters)[1], collapse = ",")
 
 ## Heatmap variables
@@ -541,7 +532,10 @@ legend <- append(legend, seq(from = 1, to = max(clusters), by = step))
 legend <- paste(legend, collapse=",")
 
 ## Right space
-left <- (max(as.vector(sapply(collection.names, nchar))) + 2.5) * 10
+left <- (max(as.vector(sapply(c(collection.names, cluster.names.original), nchar))) + 2.5) * 10
+
+## Right space
+top <- (max(as.vector(sapply(collection.names, nchar))) + 2.5) * 10
 
 ## Div bottom + Cell size
 cell.size <- 20
@@ -584,6 +578,7 @@ order.info <- matrix(c("Gradient", gradient,
                        "Legend", legend,
                        "Legend_Head", legend.header,
                        "Left_space", left,
+                       "Top_space", top,
                        "Bottom_space", left,
                        "Body", html.body.size,
                        "Collections", collections,
