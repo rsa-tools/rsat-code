@@ -22,6 +22,7 @@ output:
     toc: yes
     toc_depth: 4
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -40,7 +41,15 @@ It is primarily inteded for RSAT development team, but can also be  of use for a
 
 # Configuration
 
-## Max OSX: Virtualbox network configuration
+We will define some environment variables to indicate the RSAT release and the location where the RSAT docker will be installed on your hard drive. These must of course be adapted depending on the current state of RSAT distribution and on your local configuration. 
+
+```
+export RSAT_RELEASE=2016-07-13
+export RSAT_DOCKER_DIR=~/rsat_docker
+```
+
+
+## For Max OSX and Windows: Virtualbox network configuration
 
 
 # Protocol
@@ -50,16 +59,11 @@ It is primarily inteded for RSAT development team, but can also be  of use for a
 The way to start a Docker daemon depends on the host operating system. 
 See the documentation on Docker Web site for more details.
 
-For Mac OSX, a docker daemon can be started with the following command. 
-
-```
-open /Applications/Docker/Docker\ Quickstart\ Terminal.app
-```
-
-| Operating System | Starting instructions                          |
-|------------------|------------------------------------------------|
+| Resource         | URL                                                        |
+|------------------|------------------------------------------------------------|
+| Docker           | <https://www.docker.com/> |
+| Mac OSX Docker   | <https://docs.docker.com/docker-for-mac/docker-toolbox/> |
 | Docker toolbox | <https://www.docker.com/products/docker-toolbox> |
-| Mac OSX Docker | <https://docs.docker.com/docker-for-mac/docker-toolbox/> |
 | Mac OSX Docker toolbox | <https://docs.docker.com/docker-for-mac/> |
 
 All the next steps are assumed to run under a Unix terminal with an active docker daemon. 
@@ -68,7 +72,7 @@ All the next steps are assumed to run under a Unix terminal with an active docke
 
 ```
 docker pull debian:jessie
-docker tag debian:jessie rsat_debian:2016-07-12.prepa
+docker tag debian:jessie rsat_debian:${RSAT_RELEASE}.prepa
 docker images
 ```
 
@@ -77,10 +81,9 @@ docker images
 We define the root of the RSAT-docker space in an environment variable named `RSAT_DOCKER_DIR`. This can be adapted depending on your local configuration, but it should be on a hard drive with sufficient available disk space (~20Gb). 
 
 ```
-export RSAT_DOCKER_DIR=~/rsat_docker
 mkdir -p ${RSAT_DOCKER_DIR}/install
-
 ```
+
 4. Downloading the installation scripts.
 
 ```
@@ -91,6 +94,73 @@ wget --no-clobber http://teaching.rsat.eu/tutorials/DockerRSAT/scripts/RSAT_debi
 5. vmatch licence
 
 The sequence-purge tool requires a user-specific license for vmatch, a software tool developed by Stefan Kurtz. After having received this license, install the `vmatch.lic` in the folder `${RSAT_DOCKER_DIR}/install`. This should be done manually.
+
+<!-- For JvH only: 
+```
+rsync -uptv ~/Applications/unix_apps/vmatch/vmatch_licence_files_JvH/vmatch_RSATVM-IFB_2016-06.lic ${RSAT_DOCKER_DIR}/install/vmatch.lic
+```
+-->
+
+6. Start a container to create the RSAT docker container
+
+```
+docker run -t -i  -p 32810:80 --volume ${RSAT_DOCKER_DIR}/install:/RsatInstall rsat_debian:${RSAT_RELEASE}.prepa
+```
+
+7. In the terminal of the container docker, run the RSAT instlalation script
+
+**Note:** this script install all the Debian packages + Perl modules + other dependencies of RSAT, and then installs and configures the whole RSAT package. It takes ~1 hour as a whole, so be sure that you can have a steady connection to internet for a while before starting it. 
+
+```
+cd /RsatInstall
+(time sh RSAT_debian_install.sh  1> RsatInstall.log) 2>RsatInstall.err
+```
+
+
+The installation process starts, and stores all the terminal messages in two files:
+
+- `RsatInstall.log` standard output
+- `RsatInstall.log` standard error
+
+These files will be stored in the install directory, which is shared between your docker container (path `/RsatInstall`) and the host machine (path `${RSAT_DOCKER_DIR}/install`)
+
+You can open a separate terminal to periodically check the tail of these files with the command `tail`, or follow the progress with `tail -f`.
+
+```
+export RSAT_DOCKER_DIR=~/rsat_docker
+tail -f ${RSAT_DOCKER_DIR}/install/RsatInstall.log
+```
+
+8. We how have a functional RSAT container, but if we shut it down, all our work will be lost. The next step is thus to create a persistent image of this docker, which we can then use to instantiate an RSAT docker container instantly on any machine where the image has been loaded. 
+
+```
+docker ps
+```
+
+
+```
+docker commit [container_name] rsat_debian:${RSAT_RELEASE}
+```
+
+# Some useful docker commands
+
+```
+## List the docker images available on your computer
+docker images
+
+## List running docker containers
+docker ps
+
+## Docker version
+docker version
+
+## Detailed info about docker configuration
+docker info
+
+## Run a separate bash session on a running container
+docker exec -it [id_of_running_container] bash
+
+```
 
 <!--
 ## Creation image rsat sous debian derniere version
@@ -126,9 +196,9 @@ Filesystem           Type   Size  Used Avail Use% Mounted on
 /dev/mapper/VolGroup-lv_home
                     ext4    25G  4.7G   19G  21% /home
 ##
-Renommer la version (ici 2016-07-12.prepa) debian en version initiale d'install de rsat (par exemple ici 2016-07-12.prepa)
+Renommer la version (ici ${RSAT_RELEASE}.prepa) debian en version initiale d'install de rsat (par exemple ici ${RSAT_RELEASE}.prepa)
 
-docker tag debian:jessie rsat_debian:2016-07-12.prepa
+docker tag debian:jessie rsat_debian:${RSAT_RELEASE}.prepa
 
 
 Create a temporary directory on the host volume for the RSAT installation
@@ -138,10 +208,10 @@ rsync -ruptvl /Users/jvanheld/Applications/unix_apps/vmatch/vmatch_licence_files
 
 
 Sur cette machine hote lancer un conteneur bati sur cette version
-  avec un port web(http) vu de l'hote en 32801 et une zone de partage
+  avec un port web(http) vu de l'hote en 32810 et une zone de partage
   hote/conteneur qui est RsatInstall/rsat
 
-docker run -t -i  -p 32801:80 --volume ${RSAT_DOCKER_DIR}_install:/RsatInstall rsat_debian:2016-07-12.prepa
+docker run -t -i  -p 32810:80 --volume ${RSAT_DOCKER_DIR}_install:/RsatInstall rsat_debian:${RSAT_RELEASE}.prepa
 
 ##
 ##
@@ -168,22 +238,22 @@ docker images
 
 REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
 debian              jessie              736e5442e772        2 weeks ago         125.1 MB
-rsat_debian         2016-07-12.prepa               736e5442e772        2 weeks ago         125.1 MB
+rsat_debian         ${RSAT_RELEASE}.prepa               736e5442e772        2 weeks ago         125.1 MB
 ##
 Faire un docker ps pour connaitre le nom du conteneur contenant Rsat, par exemple goofy_fermi dans notre cas:
 
 docker ps
 
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS                   NAMES
-6d979a7841ee        rsat_debian:2016-07-12.prepa   "/bin/bash"         About an hour ago   Up About an hour    0.0.0.0:32801->80/tcp   goofy_fermi
-remarque : 32801 est le port http(web) de connexion au service web du conteneur vu lorsque on se connecte depuis l'hote
+6d979a7841ee        rsat_debian:${RSAT_RELEASE}.prepa   "/bin/bash"         About an hour ago   Up About an hour    0.0.0.0:32810->80/tcp   goofy_fermi
+remarque : 32810 est le port http(web) de connexion au service web du conteneur vu lorsque on se connecte depuis l'hote
 Depuis cette machine hote, faire un premier test de connexion web vers apache :
-Dans un navigateur (FireFox, Chrome, Safari, ..) taper http://10.1.1.210:32801
-Puis un second pour verifier rsat http://10.1.1.210:32801/rsat avec ce meme navigateur
+Dans un navigateur (FireFox, Chrome, Safari, ..) taper http://10.1.1.210:32810
+Puis un second pour verifier rsat http://10.1.1.210:32810/rsat avec ce meme navigateur
 Verifier le bon fonctionnement de rsat en lancant quelques applications au travers de l'interface web depuis la machine hote (hebergeuse)
 Si tout est correct sur cette même machine faire, toujours depuis l'hote, une image du conteneur docker(ici: modest_almeida) qui contient un rsat fonctionnel en tapant :
 
-docker commit [container_name] rsat_debian:2016-07-12
+docker commit [container_name] rsat_debian:${RSAT_RELEASE}
 
 This may take ~5 minutes
 
@@ -196,22 +266,22 @@ On peut voir l'image créée qui fait un peu plus de 1 Giga octets
 docker images
 
 REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
-rsat_debian         2016-07-12               bc13c482aece        12 minutes ago      3.096 GB
+rsat_debian         ${RSAT_RELEASE}               bc13c482aece        12 minutes ago      3.096 GB
 rsat_debian         2.1.0               6fc7b0c59106        5 days ago          1.15 GB
 debian              jessie              736e5442e772        3 weeks ago         125.1 MB
-On peut maintenant sauver cette image dans un fichier (par exemple fichier appellé rsat_debian-2016-07-12.tar dans le dossier /RsatInstall)
+On peut maintenant sauver cette image dans un fichier (par exemple fichier appellé rsat_debian-${RSAT_RELEASE}.tar dans le dossier /RsatInstall)
 
-docker save -o ${RSAT_DOCKER_DIR}_install/rsat_debian-2016-07-12.tar rsat_debian:2016-07-12
+docker save -o ${RSAT_DOCKER_DIR}_install/rsat_debian-${RSAT_RELEASE}.tar rsat_debian:${RSAT_RELEASE}
 
 Ce fichier fait la taille de l'image :
-ls -ali  ${RSAT_DOCKER_DIR}_install/rsat_debian-2016-07-12.tar
-12 -rw-r--r--. 1 root root 3149981184 Jul  5 16:42 ${RSAT_DOCKER_DIR}_install/rsat_debian-2016-07-12.tar
+ls -ali  ${RSAT_DOCKER_DIR}_install/rsat_debian-${RSAT_RELEASE}.tar
+12 -rw-r--r--. 1 root root 3149981184 Jul  5 16:42 ${RSAT_DOCKER_DIR}_install/rsat_debian-${RSAT_RELEASE}.tar
 ##
 Execution de l'image sur une Autre Machine hote(hebergeuse)
 ##############################################################
 Ce fichier peut maintenant etre copié sur une autre machine linux de votre choix(par exemple dans un dossier  /MyRsat)sur la quelle on pourra charger cette image, après avoir installé docker sur cette machine, en tapant:
 
-docker load -i /MyRsat/rsat_debian-2016-07-12.tar
+docker load -i /MyRsat/rsat_debian-${RSAT_RELEASE}.tar
 
 7d7852532044: Loading layer [==================================================>] 130.9 MB/130.9 MB
 736e5442e772: Loading layer [==================================================>] 1.024 kB/1.024 kB
@@ -221,13 +291,13 @@ Verifier le bon chargement de cette image docker en tapant :
 docker images
 
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-rsat_debian         2016-07-12               1e3608e1c2d0        2 hours ago         3.096 GB
+rsat_debian         ${RSAT_RELEASE}               1e3608e1c2d0        2 hours ago         3.096 GB
 rsat_debian         2.1.0               4ee1910504a1        5 days ago          1.15 GB
 debian-rsat         1.2.9               dbff35251689        3 weeks ago         4.889 GB
 Avant de jouer cette image dans un conteneur en tapant par exemple  :
 
 mkdir -p ~/rsat_disk
-docker run -t -i  -p 32801:80 --volume ~/rsat_disk:/RsatInstall  rsat_debian:2016-07-12
+docker run -t -i  -p 32810:80 --volume ~/rsat_disk:/RsatInstall  rsat_debian:${RSAT_RELEASE}
 
 Execution de rsat en ligne de commande docker
 ################################################
@@ -236,7 +306,7 @@ cette commande s'alimente d'une liste de genes qu'il faut préparer (ici on a fa
 DAL5,GAP1,MEP1,MEP2,PUT4,MEP3,DAL80
 Par loption --volume de la commande docker run on va mapper le dossier /tmp de l'hote sur le dossier /RsatInstall du conteneur; vu du conteneur, la liste sera donc dans le fichier /RsatInstall/list.genes 
 
-docker run -t -i -m 1g  -v /tmp:/RsatInstall -p 32801:80 rsat_debian:2016-07-12 \
+docker run -t -i -m 1g  -v /tmp:/RsatInstall -p 32810:80 rsat_debian:${RSAT_RELEASE} \
    /rsat/perl-scripts/retrieve-seq -org Saccharomyces_cerevisiae \
    -feattype gene -type upstream -format fasta -label name -from -800 -to -1 \
     -i /RsatInstall/list.genes > /tmp/output
