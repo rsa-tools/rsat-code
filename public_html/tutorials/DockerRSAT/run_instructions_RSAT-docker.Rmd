@@ -1,0 +1,47 @@
+---
+title: "Running RSAT with a Docker container"
+author: "François-Xavier Théodule & Jacques van Helden"
+date: 'First version: July 2016; Last update: `r Sys.Date()`'
+output:
+  html_document:
+    fig_caption: yes
+    highlight: zenburn
+    number_sections: yes
+    theme: cerulean
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+  word_document:
+    fig_caption: yes
+    toc: yes
+    toc_depth: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+
+This tutorial explains how to download and run a server of the software suite Regulatory Sequence Analysis Tools (**RSAT**) via a Docker container.
+
+
+# Prerequisites
+
+**Docker**: a working version of docker must be installed on the host system. 
+
+**Disk space**: The host machine must contain a sufficient disk space to download the RSAT-docker image (~3Gb) and start a Docker container of approximately the same size. 
+
+**Memory**: The host machine must have a sufficient RAM to allocate at least 1Gb to the docker container. 
+
+**Operating systems**: Docker can run under a variety of operating systems: Unix, Mac OSX, Windows.
+
+
+
