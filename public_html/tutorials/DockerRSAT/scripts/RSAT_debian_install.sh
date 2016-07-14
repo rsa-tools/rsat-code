@@ -3,7 +3,9 @@
 ################################################################
 ## This script installs RSAT on a Linux Debian operating system
 
-## Author: François-Xavier Theodule and Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
+export RSAT_VERSION=2016-07-13
+
+## Author: Francois-Xavier Theodule and Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
 
 ## Update et upgrade apt-get
 apt-get update
@@ -79,8 +81,8 @@ a2enmod php5
 
 ## Download and install rsat tar.gz in /rsat
 cd /
-wget --no-clobber http://pedagogix-tagc.univ-mrs.fr/download_rsat/rsat_2016-05-24.tar.gz
-mv rsat_2016-05-24.tar.gz rsat.tar.gz
+wget --no-clobber http://pedagogix-tagc.univ-mrs.fr/download_rsat/rsat_${RSAT_VERSION}.tar.gz
+mv rsat_${RSAT_VERSION}.tar.gz rsat.tar.gz
 gunzip rsat.tar.gz
 tar -xvf rsat.tar
 
