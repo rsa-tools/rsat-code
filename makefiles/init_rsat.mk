@@ -61,7 +61,7 @@ init:
 	@chmod 444 public_html/tmp/index.html
 
 	@echo "	logs	${LOGS_DIR}"
-	@mkdir -p ${RSAT}/${LOGS_DIR}
+	@mkdir -p ${LOGS_DIR}
 	@chmod 777 ${LOGS_DIR}
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/logs/robots.txt
 	@echo "	peak-footprints_logs	${RSAT}/${LOGS_DIR}/peak-footprints_logs"
