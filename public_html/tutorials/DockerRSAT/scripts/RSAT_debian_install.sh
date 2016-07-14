@@ -1,25 +1,56 @@
 #!/usr/bin/env bash
 
 ################################################################
-## This script installs RSAT on a Linux Debian operating system
+## This script installs the software suite Regulatory Sequence 
+## Analysis Tools (RSAT; http://rsat.eu/) on a Linux Debian 
+## operating system.
+##
+## Authors: Francois-Xavier Theodule and Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
 
-export RSAT_VERSION=2016-07-13
+## Local installation parameters. Should be adapted to the host computer. 
+export RSAT_RELEASE=2016-07-13
+export RSAT_PARENT_PATH=/packages
 
-## Author: Francois-Xavier Theodule and Jacques van Helden <Jacques.van-Helden@univ-amu.fr>
-
-## Update et upgrade apt-get
-apt-get update
-apt-get -y upgrade
-apt install  -y openssh-client
 
 ## Time setup
+echo "`date +%Y-%m-%d_%H-%M-%S`  Setting timezone to Eurpoe/Paris"
 echo Europe/Paris > /etc/timezone
 dpkg-reconfigure -f noninteractive tzdata
 
+## Update et upgrade apt-get
+echo "`date +%Y-%m-%d_%H-%M-%S`  Updating apt-get"
+apt-get update
+echo "`date +%Y-%m-%d_%H-%M-%S`  Upgrading apt-get"
+apt-get -y upgrade
+
+
 ## Install debian packages
-apt install -y git cvs r-base-core net-tools python python-numpy libssl-dev libexpat1-dev libxml2-dev apache2 apt-utils libapache2-mod-perl2 libapache2-mod-perl2-dev php5 perl-doc libdb5.3-dev cpanminus wget sudo
+echo "`date +%Y-%m-%d_%H-%M-%S`  Installing Debian packages"
+apt-get install -y \
+  apt-utils \
+  openssh-client \
+  git \
+  cvs \
+  wget \
+  r-base-core \
+  net-tools \
+  python \
+  python-numpy \
+  libssl-dev \
+  libexpat1-dev \
+  libxml2-dev \
+  apache2 \
+  libapache2-mod-perl2 \
+  libapache2-mod-perl2-dev \
+  php5 \
+  perl-doc \
+  libdb5.3-dev \
+  cpanminus \
+  sudo \
+  nano
 
 ## Install perl modules
+echo "`date +%Y-%m-%d_%H-%M-%S`  Installing Perl modules"
 cpanm --force Net::SSLeay
 ##cpanm --force Net::SMTPSXML::Compile::SOAP11 ## --> could not find JvH PROBLEM: we need SOAP11 for Web services, to be revised
 cpanm --force Email::Sender::Transport::SMTPS
@@ -74,17 +105,12 @@ cpanm --force OLE::Storage_Lite
 cpanm --force Template::Plugin::Number::Format
 cpanm --force Readonly
 
-## Validate Perl cgi et php under apache2
-a2enmod cgi
-a2enmod perl
-a2enmod php5
-
-## Download and install rsat tar.gz in /rsat
-cd /
-wget --no-clobber http://pedagogix-tagc.univ-mrs.fr/download_rsat/rsat_${RSAT_VERSION}.tar.gz
-mv rsat_${RSAT_VERSION}.tar.gz rsat.tar.gz
-gunzip rsat.tar.gz
-tar -xvf rsat.tar
+## Download and install rsat tar.gz in ${RSAT_PARENT_PATH}/rsat
+echo "`date +%Y-%m-%d_%H-%M-%S`  Downloading RSAT release ${RSAT_RELEASE}"
+mkdir -p ${RSAT_PARENT_PATH}
+cd ${RSAT_PARENT_PATH}
+wget --no-clobber http://pedagogix-tagc.univ-mrs.fr/download_rsat/rsat_${RSAT_RELEASE}.tar.gz
+tar -xpzf rsat_${RSAT_RELEASE}.tar.gz
 
 ## RSAT configuration and installation
 ##
@@ -106,14 +132,26 @@ tar -xvf rsat.tar
 ##    RSAT configuration for the Apache web server.
 ## cp  RSAT_config_default.conf  RSAT_config.conf
 ## mise a jour RSAT_config.bashrc
-## path /rsat
+## path ${RSAT_PARENT_PATH}/rsat
 
 ## Mise a jour fichier RSAT_config.bashrc a partir de RSAT_config_default.bashrc
-cd /rsat
-sed 's/\[RSAT_PARENT_PATH\]//g' ./RSAT_config_default.bashrc > ./RSAT_config.bashrc
+echo "`date +%Y-%m-%d_%H-%M-%S`  Configuring RSAT"
+cd ${RSAT_PARENT_PATH}/rsat
+
+perl perl-scripts/configure_rsat.pl \
+  rsat_site=docker-rsat \
+  RSAT=${RSAT_PARENT_PATH}/rsat \
+  ucsc_tools=1 \
+  phylo_tools=1 \
+  ensembl_tools=1 \
+  compara_tools=1 \
+  variation_tools=1 \
+  rsat_echo=1
+  
+sed 's/\[RSAT_PARENT_PATH\]/${RSAT_PARENT_PATH}/g' ./RSAT_config_default.bashrc > ./RSAT_config.bashrc
 echo -e "export RSAT_PARENT_PATH=\n$(cat  RSAT_config.bashrc)" > RSAT_config.bashrc
 source RSAT_config.bashrc
-echo "source /rsat/RSAT_config.bashrc" >>  /etc/bash.bashrc
+echo "source ${RSAT_PARENT_PATH}/rsat/RSAT_config.bashrc" >>  /etc/bash.bashrc
 echo "service apache2 start" >>  /etc/bash.bashrc 
 
 ## Update RSAT_config.props
@@ -135,6 +173,7 @@ mkdir /DockerTodo
 make -f makefiles/init_rsat.mk init
 
 ## Compile
+echo "`date +%Y-%m-%d_%H-%M-%S`  Compiling RSAT programs"
 make -f makefiles/init_rsat.mk compile_all
 
 ##vmatch licence qui est dans /somewhere/vmatch_RSATVM-IFB_2015-07-06.lic
@@ -144,11 +183,13 @@ cp /RsatInstall/vmatch_RSATVM-IFB_*.lic /rsat/bin/vmatch.lic
 
 ################ JvH: to revise. ################
 ## PROBLEME install blast et version de vmatch (2.2.4-->2.2.5)
+echo "`date +%Y-%m-%d_%H-%M-%S`  Insgtalling third-party software"
 mv makefiles/install_software.mk makefiles/install_software_default.mk
 sed -e 's/install_blast//g' makefiles/install_software_default.mk | sed -e 's/2.2.4/2.2.5/g' > makefiles/install_software.mk
 make -f makefiles/install_software.mk install_ext_apps
 
 ## Install blast
+echo "`date +%Y-%m-%d_%H-%M-%S`  Installing BLAST"
 cd /rsat/bin
 wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.4.0+-x64-linux.tar.gz
 gunzip ncbi-blast-2.4.0+-x64-linux.tar.gz
@@ -159,11 +200,22 @@ rm -rf ncbi-blast-2.4.0+-
 cd /rsat
 
 ## Install two small-genome model organisms
+echo "`date +%Y-%m-%d_%H-%M-%S`  Installing model organisms"
 download-organism -v 1 -org Saccharomyces_cerevisiae
 download-organism -v 1 -org Escherichia_coli_K_12_substr__MG1655_uid57779
 
+## To avoid puzzling warning at apache start, set ServerName globally.
+## For this, add the following line at the end of the apache configuration file (or somewhere else)
+echo "`date +%Y-%m-%d_%H-%M-%S`  Apache2 configuration"
+echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+## Validate Perl cgi et php under apache2
+a2enmod cgi
+a2enmod perl
+a2enmod php5
+
 ## Modify Apache2 configuration from the template file  /rsat/RSAT_config_default.conf
-sed -e 's/\[RSAT_PARENT_PATH\]//g' RSAT_config_default.conf > /etc/apache2/sites-enabled/rsat.conf
+sed -e 's/\[RSAT_PARENT_PATH\]/${RSAT_PARENT_PATH}/g' RSAT_config_default.conf > /etc/apache2/sites-enabled/rsat.conf
 
 ## Adapt Apache2 config for Perl execution
 ## affected files: /etc/apache2/apache2.conf RSAT_config_default.conf (/etc/apache2/sites-enabled/rsat.conf) 
