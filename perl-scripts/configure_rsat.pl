@@ -110,11 +110,13 @@ package main;
   }
 
   ## Prompt for the RSAT path
-  print "\nAbsolute path to the RSAT package ? [", $rsat_path, "] ";
-  my $answer = <STDIN>;
-  chomp($answer);
-  if ($answer) {
-    $rsat_path = $answer;
+  unless ($auto_mode) {
+    print "\nAbsolute path to the RSAT package ? [", $rsat_path, "] ";
+    my $answer = <STDIN>;
+    chomp($answer);
+    if ($answer) {
+      $rsat_path = $answer;
+    }
   }
 
   ## Compute RSAT parent path
@@ -182,13 +184,15 @@ package main;
     }
 
     ## Prompt for the new value
-    warn "\nPLEASE CHECK THE FOLLOWING LINE BEFORE GOING FURTHER\n";
-    print "\nReady to update config file\t", $config_file, " [y/n] (y): ";
-    chomp($answer = <STDIN>);
-    $answer = "y" unless ($answer);
-    unless ($answer eq "y") {
-      warn("\nWARNING: Since you did not answer 'y', the edition of config file ${config_file} is aborted.\n");
-      die ("Good bye\n\n");
+    unless ($auto_mode) {
+      warn "\nPLEASE CHECK THE FOLLOWING LINE BEFORE GOING FURTHER\n";
+      print "\nReady to update config file\t", $config_file, " [y/n] (y): ";
+      chomp($answer = <STDIN>);
+      $answer = "y" unless ($answer);
+      unless ($answer eq "y") {
+	warn("\nWARNING: Since you did not answer 'y', the edition of config file ${config_file} is aborted.\n");
+	die ("Good bye\n\n");
+      }
     }
 
 
