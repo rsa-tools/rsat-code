@@ -33,9 +33,15 @@ This protocol explains how to create an RSAT Docker image.
 
 It is primarily inteded for RSAT development team, but can also be  of use for advanced users who might desire to create a customized Docker image. 
 
-# Prerequisites
+# Requirement
+
+- A computer with an operating system supporting Docker (Linux, Mac OSX or Winodows >= 10).
+- A sufficient disk space (3Gb for the RSAT-docker image + 3Gb for the temporary container + some space for the RSAT local disk).
 
 # Configuration
+
+## Max OSX: Virtualbox network configuration
+
 
 # Protocol
 
@@ -44,34 +50,54 @@ It is primarily inteded for RSAT development team, but can also be  of use for a
 The way to start a Docker daemon depends on the host operating system. 
 See the documentation on Docker Web site for more details.
 
+For Mac OSX, a docker daemon can be started with the following command. 
+
+```
+open /Applications/Docker/Docker\ Quickstart\ Terminal.app
+```
+
+| Operating System | Starting instructions                          |
+|------------------|------------------------------------------------|
+| Docker toolbox | <https://www.docker.com/products/docker-toolbox> |
+| Mac OSX Docker | <https://docs.docker.com/docker-for-mac/docker-toolbox/> |
+| Mac OSX Docker toolbox | <https://docs.docker.com/docker-for-mac/> |
+
 All the next steps are assumed to run under a Unix terminal with an active docker daemon. 
 
-2. Download and clone a Debian image
+2. Download and create a tag for RSAT-docker installation
 
 ```
 docker pull debian:jessie
 docker tag debian:jessie rsat_debian:2016-07-12.prepa
+docker images
 ```
 
 3. Creating the shared space on the local machine
 
+We define the root of the RSAT-docker space in an environment variable named `RSAT_DOCKER_DIR`. This can be adapted depending on your local configuration, but it should be on a hard drive with sufficient available disk space (~20Gb). 
+
 ```
-mkdir -p ~/rsat_docker/install
+export RSAT_DOCKER_DIR=~/rsat_docker
+mkdir -p ${RSAT_DOCKER_DIR}/install
 
 ```
 4. Downloading the installation scripts.
 
 ```
-cd ~/rsat_docker/install
-wget --no-clobber http://teaching.rsat.eu/tutorials/dockerRSAT_tutorials/scripts/RsatCreateImage.sh
+cd ${RSAT_DOCKER_DIR}/install
+wget --no-clobber http://teaching.rsat.eu/tutorials/DockerRSAT/scripts/RSAT_debian_install.sh
 ```
+
+5. vmatch licence
+
+The sequence-purge tool requires a user-specific license for vmatch, a software tool developed by Stefan Kurtz. After having received this license, install the `vmatch.lic` in the folder `${RSAT_DOCKER_DIR}/install`. This should be done manually.
 
 <!--
 ## Creation image rsat sous debian derniere version
 Latest debian image (jessie 8.5)
 on suppose que l'on est dans une machine hote linux qui contient un script d'install rsat appellé RsatCreateImage.sh executable en root
-ce script est dans un repertoire ~/rsat_docker_install de cette machine sur laquelle vous etes connecté avec un compte root(et son mot de passe)
-au besoin faire un chmod 744 ~/rsat_docker_install/RsatCreateImage.sh
+ce script est dans un repertoire ${RSAT_DOCKER_DIR}_install de cette machine sur laquelle vous etes connecté avec un compte root(et son mot de passe)
+au besoin faire un chmod 744 ${RSAT_DOCKER_DIR}_install/RsatCreateImage.sh
 ce repertoire contient aussi une licence vmatch : vmatch_RSATVM-IFB_2015-07-06.lic
 cette machine doit posséder un serveur ssh (verifier en tapant service --status-all | grep ssh)
 cette machine possede une interface reseau eth0 (d'adresse 10.1.1.210  dans notre cas)
@@ -106,16 +132,16 @@ docker tag debian:jessie rsat_debian:2016-07-12.prepa
 
 
 Create a temporary directory on the host volume for the RSAT installation
-mkdir -p ~/rsat_docker_install
-rsync -ruptvl CreateImage/RsatCreateImage.sh ~/rsat_docker_install
-rsync -ruptvl /Users/jvanheld/Applications/unix_apps/vmatch/vmatch_licence_files_JvH/vmatch_RSATVM-IFB_2016-06.lic ~/rsat_docker_install
+mkdir -p ${RSAT_DOCKER_DIR}_install
+rsync -ruptvl CreateImage/RsatCreateImage.sh ${RSAT_DOCKER_DIR}_install
+rsync -ruptvl /Users/jvanheld/Applications/unix_apps/vmatch/vmatch_licence_files_JvH/vmatch_RSATVM-IFB_2016-06.lic ${RSAT_DOCKER_DIR}_install
 
 
 Sur cette machine hote lancer un conteneur bati sur cette version
   avec un port web(http) vu de l'hote en 32801 et une zone de partage
   hote/conteneur qui est RsatInstall/rsat
 
-docker run -t -i  -p 32801:80 --volume ~/rsat_docker_install:/RsatInstall rsat_debian:2016-07-12.prepa
+docker run -t -i  -p 32801:80 --volume ${RSAT_DOCKER_DIR}_install:/RsatInstall rsat_debian:2016-07-12.prepa
 
 ##
 ##
@@ -175,11 +201,11 @@ rsat_debian         2.1.0               6fc7b0c59106        5 days ago          
 debian              jessie              736e5442e772        3 weeks ago         125.1 MB
 On peut maintenant sauver cette image dans un fichier (par exemple fichier appellé rsat_debian-2016-07-12.tar dans le dossier /RsatInstall)
 
-docker save -o ~/rsat_docker_install/rsat_debian-2016-07-12.tar rsat_debian:2016-07-12
+docker save -o ${RSAT_DOCKER_DIR}_install/rsat_debian-2016-07-12.tar rsat_debian:2016-07-12
 
 Ce fichier fait la taille de l'image :
-ls -ali  ~/rsat_docker_install/rsat_debian-2016-07-12.tar
-12 -rw-r--r--. 1 root root 3149981184 Jul  5 16:42 ~/rsat_docker_install/rsat_debian-2016-07-12.tar
+ls -ali  ${RSAT_DOCKER_DIR}_install/rsat_debian-2016-07-12.tar
+12 -rw-r--r--. 1 root root 3149981184 Jul  5 16:42 ${RSAT_DOCKER_DIR}_install/rsat_debian-2016-07-12.tar
 ##
 Execution de l'image sur une Autre Machine hote(hebergeuse)
 ##############################################################
