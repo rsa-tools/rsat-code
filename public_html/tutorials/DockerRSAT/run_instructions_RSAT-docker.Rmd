@@ -44,4 +44,14 @@ This tutorial explains how to download and run a server of the software suite Re
 **Operating systems**: Docker can run under a variety of operating systems: Unix, Mac OSX, Windows.
 
 
+# Tests
 
+
+## Quick test: from gene query to assembled oligos
+
+```
+gene-info -org Saccharomyces_cerevisiae -q MET \
+  | retrieve-seq -from -800 -to -1 -noorf -org Saccharomyces_cerevisiae \
+  | oligo-analysis -l 6 -markov 2 -return occ,freq,proba -lth occ_sig 0 -v 1 \
+  | pattern-assembly  -v 1 -sc 9 -subst 1
+```
