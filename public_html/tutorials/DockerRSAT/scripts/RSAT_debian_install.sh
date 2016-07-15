@@ -26,7 +26,7 @@ apt-get -y upgrade
 
 ## Install debian packages
 echo "`date +%Y-%m-%d_%H-%M-%S`  Installing Debian packages"
-apt-get install -y \
+apt install -y \
   apt-utils \
   openssh-client \
   git \
@@ -47,7 +47,10 @@ apt-get install -y \
   libdb5.3-dev \
   cpanminus \
   sudo \
-  nano
+  nano \
+  mysql-client \
+  libgd2-xpm-dev
+
 
 ## Install perl modules
 echo "`date +%Y-%m-%d_%H-%M-%S`  Installing Perl modules"
@@ -138,38 +141,31 @@ tar -xpzf rsat_${RSAT_RELEASE}.tar.gz
 echo "`date +%Y-%m-%d_%H-%M-%S`  Configuring RSAT"
 cd ${RSAT_PARENT_PATH}/rsat
 
-perl perl-scripts/configure_rsat.pl \
-  rsat_site=docker-rsat \
-  RSAT=${RSAT_PARENT_PATH}/rsat \
-  ucsc_tools=1 \
-  phylo_tools=1 \
-  ensembl_tools=1 \
-  compara_tools=1 \
-  variation_tools=1 \
-  rsat_echo=1
-  
-sed 's/\[RSAT_PARENT_PATH\]/${RSAT_PARENT_PATH}/g' ./RSAT_config_default.bashrc > ./RSAT_config.bashrc
-echo -e "export RSAT_PARENT_PATH=\n$(cat  RSAT_config.bashrc)" > RSAT_config.bashrc
+perl perl-scripts/configure_rsat.pl auto rsat_site=docker-rsat RSAT=${RSAT_PARENT_PATH}/rsat ucsc_tools=1 phylo_tools=1 ensembl_tools=1 compara_tools=1 variations_tools=1 rsat_echo=1
+
+## Load RSAT environment and configuration
 source RSAT_config.bashrc
+
+## Ensure that all future users will load RSAT environment and configuration
 echo "source ${RSAT_PARENT_PATH}/rsat/RSAT_config.bashrc" >>  /etc/bash.bashrc
-echo "service apache2 start" >>  /etc/bash.bashrc 
+
 
 ## Update RSAT_config.props
-i=`ifconfig eth0 | awk '/inet adr:/{print $2}' | awk -F ':' '{print $2}'` | sed -e "s/your_server_name/$i/g"  ./RSAT_config_default.props | sed 's/your.mail@your.mail.server/postmaster@rsat.com/g' | sed 's/\[RSAT_PARENT_PATH\]//g' > ./RSAT_config.props
+# i=`ifconfig eth0 | awk '/inet adr:/{print $2}' | awk -F ':' '{print $2}'` | sed -e "s/your_server_name/$i/g"  ./RSAT_config_default.props | sed 's/your.mail@your.mail.server/postmaster@rsat.com/g' | sed 's/\[RSAT_PARENT_PATH\]//g' > ./RSAT_config.props
 
 ## Update RSAT_config.mk apt-get for debian
 ## RSAT_config.mk apt-get
-i=`ifconfig eth0 | awk '/inet adr:/{print $2}' | awk -F ':' '{print $2}'` | sed -e "s/your_server_name/$i/g"  ./RSAT_config_default.mk | sed 's/your.mail@your.mail.server/postmaster@rsat.com/g' | sed 's/\[RSAT_PARENT_PATH\]//g' | sed 's/SUDO=/SUDO=sudo/g' > ./RSAT_config.mk
+# i=`ifconfig eth0 | awk '/inet adr:/{print $2}' | awk -F ':' '{print $2}'` | sed -e "s/your_server_name/$i/g"  ./RSAT_config_default.mk | sed 's/your.mail@your.mail.server/postmaster@rsat.com/g' | sed 's/\[RSAT_PARENT_PATH\]//g' | sed 's/SUDO=/SUDO=sudo/g' > ./RSAT_config.mk
 
 ## Update RSAT_config.mk YUM for REDHAT
 ## RSAT_config.mk yum
 ## i=`ifconfig eth0 | awk '/inet adr:/{print $2}' | awk -F ':' '{print $2}'` | sed -e "s/your_server_name/$i/g"  ./RSAT_config_default.mk | sed 's/your.mail@your.mail.server/postmaster@rsat.com/g' | sed 's/\[RSAT_PARENT_PATH\]//g' | sed 's/SUDO=/SUDO=sudo/g' | sed 's/apt-get/yum/g' > ./RSAT_config.mk
 
 ## Make directories
-mkdir /rsat/public_html/logs
-mkdir /DockerIn
-mkdir /DockerOut
-mkdir /DockerTodo
+echo "`date +%Y-%m-%d_%H-%M-%S`  Initializing RSAT directories"
+mkdir -p /DockerIn
+mkdir -p /DockerOut
+mkdir -p /DockerTodo
 make -f makefiles/init_rsat.mk init
 
 ## Compile
@@ -177,27 +173,33 @@ echo "`date +%Y-%m-%d_%H-%M-%S`  Compiling RSAT programs"
 make -f makefiles/init_rsat.mk compile_all
 
 ##vmatch licence qui est dans /somewhere/vmatch_RSATVM-IFB_2015-07-06.lic
-cp /RsatInstall/vmatch_RSATVM-IFB_*.lic /rsat/bin/vmatch.lic
+cp /RsatInstall/vmatch.lic ${RSAT_PARENT_PATH}/rsat/bin/vmatch.lic
 
-## Install thrid party
+
+## Check Perl modules
+make -f makefiles/install_rsat.mk  perl_modules_check
+
+
+## Install thrid party programs
 
 ################ JvH: to revise. ################
 ## PROBLEME install blast et version de vmatch (2.2.4-->2.2.5)
-echo "`date +%Y-%m-%d_%H-%M-%S`  Insgtalling third-party software"
-mv makefiles/install_software.mk makefiles/install_software_default.mk
-sed -e 's/install_blast//g' makefiles/install_software_default.mk | sed -e 's/2.2.4/2.2.5/g' > makefiles/install_software.mk
+echo "`date +%Y-%m-%d_%H-%M-%S`  Installing third-party software"
+#mv makefiles/install_software.mk makefiles/install_software_default.mk
+#sed -e 's/install_blast//g' makefiles/install_software_default.mk | sed -e 's/2.2.4/2.2.5/g' > makefiles/install_software.mk
 make -f makefiles/install_software.mk install_ext_apps
 
 ## Install blast
-echo "`date +%Y-%m-%d_%H-%M-%S`  Installing BLAST"
-cd /rsat/bin
-wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.4.0+-x64-linux.tar.gz
-gunzip ncbi-blast-2.4.0+-x64-linux.tar.gz
-tar -xvf ncbi-blast-2.4.0+-x64-linux.tar
-mv ncbi-blast-2.4.0+/bin/* .
-rm ncbi-blast-2.4.0+-x64-linux.tar
-rm -rf ncbi-blast-2.4.0+-
-cd /rsat
+## JvH TO REVISE: this is not the version I use for BLAST: there is no blastall
+# echo "`date +%Y-%m-%d_%H-%M-%S`  Installing BLAST"
+# cd /rsat/bin
+# wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.4.0+-x64-linux.tar.gz
+# gunzip ncbi-blast-2.4.0+-x64-linux.tar.gz
+# tar -xvf ncbi-blast-2.4.0+-x64-linux.tar
+# mv ncbi-blast-2.4.0+/bin/* .
+# rm ncbi-blast-2.4.0+-x64-linux.tar
+# rm -rf ncbi-blast-2.4.0+-
+# cd /rsat
 
 ## Install two small-genome model organisms
 echo "`date +%Y-%m-%d_%H-%M-%S`  Installing model organisms"
@@ -215,11 +217,15 @@ a2enmod perl
 a2enmod php5
 
 ## Modify Apache2 configuration from the template file  /rsat/RSAT_config_default.conf
-sed -e 's/\[RSAT_PARENT_PATH\]/${RSAT_PARENT_PATH}/g' RSAT_config_default.conf > /etc/apache2/sites-enabled/rsat.conf
+#sed -e 's/\[RSAT_PARENT_PATH\]/${RSAT_PARENT_PATH}/g' RSAT_config_default.conf > /etc/apache2/sites-enabled/rsat.conf
+cp RSAT_config_default.conf  /etc/apache2/sites-enabled/rsat.conf
 
 ## Adapt Apache2 config for Perl execution
 ## affected files: /etc/apache2/apache2.conf RSAT_config_default.conf (/etc/apache2/sites-enabled/rsat.conf) 
 echo 'AddHandler cgi-script .cgi .pl' >> /etc/apache2/apache2.conf
+
+## Include auto start of Apache2 server
+echo "service apache2 start" >>  /etc/bash.bashrc 
 
 ## Restart apache2 service
 service apache2 restart
