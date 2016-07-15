@@ -9,10 +9,10 @@
 RSAT_SITE=your_server_name
 
 ## Group specificity of this server
-GROUP=Fungi
+GROUP=None
 
 ## Default species for genome installation, which should be adapted to the group specificity
-SPECIES=saccharomyces_cerevisiae
+SPECIES=Saccharomyces_cerevisiae
 
 ## Web server URL
 # RSAT_WWW=http://localhost/rsat/
