@@ -133,8 +133,11 @@ tail -f ${RSAT_DOCKER_DIR}/install/RsatInstall.log
 
 8. We how have a functional RSAT container, but if we shut it down, all our work will be lost. The next step is thus to create a persistent image of this docker, which we can then use to instantiate an RSAT docker container instantly on any machine where the image has been loaded. 
 
+We fist need to get the identifier of the container where we installed RSAT. 
+This can be done by reading the result of the `docker ps` command, or automatically with the command below. 
+
 ```
-docker ps
+## This command should be executed in a separate terminal window
 export DOCKER_RSAT_ID=`docker ps | grep "rsat_debian:${RSAT_RELEASE}.prepa" | awk '{print $1}'`
 ```
 
