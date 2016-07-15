@@ -48,18 +48,18 @@ list_versions:
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
 EXT_APP_TARGETS=\
-	install_seqlogo \
-	install_weblogo3 \
-	install_d3 \
-	install_bedtools \
-	install_mcl \
-	install_rnsc \
-	install_blast \
-	install_ensembl_bioperl \
 	install_ensembl_api \
 	install_vmatch \
 	install_ghostscript \
-	install_gnuplot
+	install_gnuplot \
+	install_d3 \
+	install_bedtools \
+	install_blast \
+	install_seqlogo \
+	install_weblogo3 \
+	install_mcl \
+	install_rnsc \
+	install_ensembl_bioperl
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
