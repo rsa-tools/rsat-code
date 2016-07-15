@@ -68,33 +68,33 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-lth w ${MIN_W} \
                 -calc ${OPERATOR} \
 		-hclust_method ${HCLUST_METHOD} \
-		-label_in_tree name ${OPT} \
-		-o ${CLUSTER_FILE_PREFIX} \
+		-label_in_tree name  \
 		-metric_build_tree ${METRIC_BUILD_TREE} \
-		-return ${RETURN_FIELDS} 
+		-return ${RETURN_FIELDS} \
+		${OPT} -o ${CLUSTER_FILE_PREFIX} 2> ${CLUSTER_FILE_PREFIX}.err
 
-CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
-		${LIST_OF_MOTIFS} -matrix_format tf \
-		-title '${TITLE}' \
-		-lth Ncor ${MIN_NCOR} \
-		-lth cor ${MIN_COR} \
-		-lth w ${MIN_W} \
-                -calc ${OPERATOR} \
-		-hclust_method ${HCLUST_METHOD} \
-		-label_in_tree name ${OPT} \
-		-o ${CLUSTER_FILE_PREFIX} \
-		-metric_build_tree ${METRIC_BUILD_TREE} \
-		-return ${RETURN_FIELDS} 
+# CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
+# 		${LIST_OF_MOTIFS} -matrix_format tf \
+# 		-title '${TITLE}' \
+# 		-lth Ncor ${MIN_NCOR} \
+# 		-lth cor ${MIN_COR} \
+# 		-lth w ${MIN_W} \
+#                 -calc ${OPERATOR} \
+# 		-hclust_method ${HCLUST_METHOD} \
+# 		-label_in_tree name ${OPT} \
+# 		-o ${CLUSTER_FILE_PREFIX} \
+# 		-metric_build_tree ${METRIC_BUILD_TREE} \
+# 		-return ${RETURN_FIELDS} 
 
-NB_CLUSTER_CMD=matrix-clustering -v ${V} \
-	        -i ${MATRIX_FILE} -matrix_format tf -motif_collection_name '${MATRIX_PREFIX}' \
-		-range_th_table ${RANGE_TABLE} \
-		-title '${TITLE}' \
-		-hclust_method ${HCLUST_METHOD} \
-		-label_in_tree name ${OPT} \
-		-o ${CLUSTER_FILE_PREFIX} \
-		-metric_build_tree ${METRIC_BUILD_TREE} \
-		-return ${RETURN_FIELDS} 
+# NB_CLUSTER_CMD=matrix-clustering -v ${V} \
+# 	        -i ${MATRIX_FILE} -matrix_format tf -motif_collection_name '${MATRIX_PREFIX}' \
+# 		-range_th_table ${RANGE_TABLE} \
+# 		-title '${TITLE}' \
+# 		-hclust_method ${HCLUST_METHOD} \
+# 		-label_in_tree name ${OPT} \
+# 		-o ${CLUSTER_FILE_PREFIX} \
+# 		-metric_build_tree ${METRIC_BUILD_TREE} \
+# 		-return ${RETURN_FIELDS} 
 
 _cluster:
 	@echo
