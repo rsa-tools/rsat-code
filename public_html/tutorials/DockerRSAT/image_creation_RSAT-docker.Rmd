@@ -135,12 +135,17 @@ tail -f ${RSAT_DOCKER_DIR}/install/RsatInstall.log
 
 ```
 docker ps
+export DOCKER_RSAT_ID=`docker ps | grep "rsat_debian:${RSAT_RELEASE}.prepa" | awk '{print $1}'`
 ```
 
 
 ```
-docker commit [container_name] rsat_debian:${RSAT_RELEASE}
+docker commit ${DOCKER_RSAT_ID} rsat_debian:${RSAT_RELEASE}
+
+## Check that the new image has been created. 
+docker images
 ```
+
 
 # Some useful docker commands
 
