@@ -342,9 +342,53 @@ stamp_peakmotifs_Oct4:
 		-ma PPA \
 		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
 		-printpairwise \
-		-out ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp ) 
-##		>& ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp_log.txt
+		-out ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp ) \
+		>& ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp_log.txt
 	@echo "	${STAMP_OCT4_DIR}"
+	${MAKE} convert_stamp STAMP_PREFIX=${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4
+
+## Use STAMP to cluster the merged Oct4 motifs (MEME + Homer + peak-motifs)
+OCT4_MERGED=public_html/demo_files/merged_Homer_MEME-ChIP_peak-motifs_Oct4_matrices.tf
+STAMP_OCT4_MERGED_DIR=results/stamp_results/merged_results_Chen_Oct4
+stamp_merged_Oct4:
+	@echo
+	@echo "Running STAMP on 66 motifs discovered by peak-motifs, MEME-ChIP and Homer (Oct 4 dataset from Chen 2008)"
+	@mkdir -p ${STAMP_OCT4_MERGED_DIR}
+	(time stamp \
+		-tf ${OCT4_MERGED} \
+		-cc PCC \
+		-align SWU \
+		-ch -chp \
+		-ma PPA \
+		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
+		-printpairwise \
+		-out ${STAMP_OCT4_MERGED_DIR}/merged_Homer_MEME-ChIP_peak-motifs_Oct4_stamp )  \
+		>& ${STAMP_OCT4_MERGED_DIR}/merged_Homer_MEME-ChIP_peak-motifs_Oct4_stamp_log.txt
+	@echo "	${STAMP_OCT4_MERGED_DIR}"
+	${MAKE} convert_stamp STAMP_PREFIX=${STAMP_OCT4_MERGED_DIR}/merged_Homer_MEME-ChIP_peak-motifs_Oct4
+
+convert_stamp:
+	@convert-matrix -v ${V} -from stamp -to tab \
+		-i ${STAMP_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-logo_format png  \
+		-return counts,consensus,parameters,header,logo \
+		-logo_file ${STAMP_PREFIX}_stamp_tree_clusters_logo \
+		-o ${STAMP_PREFIX}_stamp_tree_clusters.tab
+	@echo "	${STAMP_PREFIX}_stamp_tree_clusters.tab"
+	@convert-matrix -v ${V} -from stamp -to transfac \
+		-i ${STAMP_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-return counts,consensus,parameters \
+		-o ${STAMP_PREFIX}_stamp_tree_clusters.tf
+	@echo "	${STAMP_PREFIX}_stamp_tree_clusters.tf"
+
 
 stamp_jaspar_all_groups:
 	@for g in ${JASPAR_GROUPS}; do \
