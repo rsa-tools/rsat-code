@@ -57,7 +57,7 @@ create.html.tab <- function(tab, img = 0, plot = 0, link.text.covered = 0, link.
     
     ## Columns with plots and links
     rows.plot.pdf <- sapply(row[rows.plot], function(x){
-      gsub("png","pdf", x)
+      gsub("jpeg","pdf", x)
     })
     rows.plot.text <- paste("<td><a href='", rows.plot.pdf, "' target='_blank'><img class='plot_tab' src ='", row[rows.plot], "'/></a></td>", collapse = "")
 
@@ -392,7 +392,7 @@ windows.labels <- NULL
 
 setwd(results.folder)
 
-print.formats <- c("pdf", "png")
+print.formats <- c("pdf", "jpeg")
 
 
 ##########################################################
@@ -442,8 +442,8 @@ thr <- sapply(1:length(matrix.names), function(m){
       TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes.pdf", sep = "")
       pdf(TFBSs.pval.distribution.file)
     } else {
-      TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes.png", sep = "")
-      png(TFBSs.pval.distribution.file)
+      TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes.jpeg", sep = "")
+      jpeg(TFBSs.pval.distribution.file)
     }
     
     class.counter <- 0
@@ -1070,8 +1070,8 @@ if(individual.plots == 1){
         pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile.pdf", sep = "")
         pdf(pdf.file.name)
       } else {
-        png.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile.png", sep = "")
-        png(png.file.name)
+        jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile.jpeg", sep = "")
+        jpeg(jpeg.file.name)
       }
       
       y.val <- frequency.per.bin.table[f,]
@@ -1279,11 +1279,11 @@ logos.R <- sapply(TF.IDs, function(i){
 
 ## Write the Profile and TFBSs plots path
 profiles.plots <- sapply(TF.IDs, function(i) {
-  paste(basename(prefix), "_TFBSs_positional_profiles/", i, "_positional_profile.png", sep = "")
+  paste(basename(prefix), "_TFBSs_positional_profiles/", i, "_positional_profile.jpeg", sep = "")
 })
 
 tfbss.plots <- sapply(TF.IDs, function(i) {
-  paste(basename(prefix), "_TFBSs_pval_distribution/", i, "_TFBSs_pval_classes.png", sep = "")
+  paste(basename(prefix), "_TFBSs_pval_distribution/", i, "_TFBSs_pval_classes.jpeg", sep = "")
 })
 
 ## Write the path to the covered/non_covered sequences tables
