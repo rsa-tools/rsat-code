@@ -283,6 +283,8 @@ dir.create(covered.tables.dir, showWarnings = FALSE)
 # prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1"
 # ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_TF_ID_name_correspondence.tab"
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/")
+# sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_sequence_names.tab"
+
 
 # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3_matrix_scan_results_PARSED.tab"
 # prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3"
@@ -319,7 +321,6 @@ matrix.scan.results$Pval.class.letter <- sapply(matrix.scan.results$Pval.class, 
 
 min.pval.minus.log10 <- min(matrix.scan.results$Pval.minlog10)
 max.pval.minus.log10 <- max(matrix.scan.results$Pval.minlog10)
-
 
 #################
 ## Set p-value
@@ -415,6 +416,7 @@ for(x in 1:length(classes.pval.letters)){
 ## Create directory with the TFBSs distribution
 dir.create(paste(basename(prefix), "_TFBSs_pval_distribution/", sep = ""), showWarnings = FALSE, recursive = TRUE)
 verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
+covered.sequences.per.motif <- list()
 thr <- sapply(1:length(matrix.names), function(m){
   
   ## Get the matrix name
@@ -422,7 +424,7 @@ thr <- sapply(1:length(matrix.names), function(m){
   
   # print(matrix.query)
 
-  ## Get the subtable with the hits of the query matrix
+  ## Get the sub-table with the hits of the query matrix
   matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
   matrix.query.classes <- sort(unique(matrix.query.selection$Pval.class.letter))
   
@@ -430,6 +432,9 @@ thr <- sapply(1:length(matrix.names), function(m){
   ## at least one match of the query matrix
   nb.TFBSs <- dim(matrix.query.selection)[1]
   nb.seq <- length(as.vector(unique(matrix.query.selection$seq_id)))
+  
+  covered.sequences.per.motif[[matrix.query]] <<- as.vector(unique(matrix.query.selection$seq_id))
+# })
   
   for(f in print.formats){
     
@@ -498,6 +503,105 @@ rm(thr)
 # dev.off()
 # verbose(paste("Distribution of TFBSs at different p-values: ", TFBSs.pval.distribution.file), 1)
 
+##########################
+## Co-ocurrence heatmap ##
+##########################
+covered.seq.percentage <- vector()
+thrash <- sapply(covered.sequences.per.motif, function(m1){
+  sapply(covered.sequences.per.motif, function(m2){
+    
+    intersected.seq <- intersect(m1, m2)
+    intersected.seq.nb <- length( intersected.seq)
+    intersected.seq.per <- intersected.seq.nb/total.scanned.sequences
+    covered.seq.percentage <<- append(covered.seq.percentage, intersected.seq.per)
+  })
+})
+covered.seq.percentage <- round(covered.seq.percentage, digits = 4) * 100
+covered.seq.percentage <- matrix(covered.seq.percentage, ncol = length(covered.sequences.per.motif))
+colnames(covered.seq.percentage) <- matrix.names
+rownames(covered.seq.percentage) <- matrix.names
+
+## Set the colors
+coocurrence.palette <- colorRampPalette(brewer.pal(9, "YlGnBu"), space="Lab")(20)
+
+## Draw the co-ocurrence heatmap
+verbose(paste("Creating co-ocurrence heatmap"), 1)
+out.format <- c("pdf", "jpg")
+heatmap.profiles <- NULL
+comp.order.list.rows <- list()
+comp.order.list.cols <- list()
+domain <- seq(from = 0, to = 100, by = 5)
+
+## Set the heatmap file name
+co.ocurrence.heatmap.file <- paste(basename, "_co_ocurrence_heatmap.pdf", sep = "")
+  
+## Create the image
+pdf(co.ocurrence.heatmap.file)
+
+## Create the heatmap using 4 agglomeration rules
+th <- sapply(c("average", "complete", "single", "ward"), function(m){
+    
+  if(m == "ward"){
+    temp <- m
+    m <- "ward.D"
+  }
+    
+  ## Compute the heatmap
+  hm.coocurrences<- heatmap.2(covered.seq.percentage,
+                
+    ## Dendrogram control
+    dendrogram = "row",
+              
+    main = paste("co-ocurrence in sequences\n", length(covered.sequences.per.motif), " motifs - ", total.scanned.sequences, " sequences", sep = ""),
+    xlab = "",
+    ylab = "",
+                
+    hclustfun = function(d){hclust(d, method="complete")},
+    distfun = function(x) Dist(x,method = 'pearson'),
+                
+    ## Color
+    col = coocurrence.palette,
+    breaks = domain,
+                
+    ## Trace
+    trace = "none",
+                
+    ## Key control
+    key = TRUE,
+    keysize = 1.5,
+    density.info = "none",
+    key.xlab = "% sequences with the two motifs",
+    key.ylab = "",
+    key.title = "",
+    # cexRow = 0.25
+    offsetCol = 0.25
+  )
+  thrash <- dev.off()      
+    
+  if(m == "ward.D"){
+     m <- "ward"
+  }
+    
+  comp.order.list.rows[[m]] <<- paste(rev(hm.coocurrences[[1]]), collapse = ",")
+  comp.order.list.cols[[m]] <<- paste(rev(hm.coocurrences[[2]]), collapse = ",")
+})
+comp.order.list.rows[["default"]] <- paste(1:length(matrix.names), collapse = ",")
+comp.order.list.cols[["default"]] <- paste(1:length(matrix.names), collapse = ",")
+  
+## Convert the coverage table to the format required in D3 heatmap
+coocurrence.table.d3 <- paste(basename(prefix), "_coocurrence_table.tsv", sep = "")
+y <- NULL
+for(j in 1:dim(covered.seq.percentage)[1]){
+  for(i in 1:dim(covered.seq.percentage)[2]){
+    y <<- rbind(y, matrix(c(j,i, as.numeric(covered.seq.percentage[j,i])), nrow = 1))
+  }
+}
+colnames(y) <- c("Row", "Col", "Value")
+y <- as.data.frame(y)
+verbose(paste("Exporting data with co-ocurreence percentage for D3 dynamic heatmap", coverage.table.d3), 2)
+write.table(y, file = coocurrence.table.d3, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+
+left <- (max(as.vector(sapply(matrix.names, nchar))) + 2) * 10
 
 #########################################################################
 ## Create count table from matrix-scan results (if not exist in input) ##
@@ -846,9 +950,7 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(f){
   covered.sequences.table <- as.data.frame(covered.seq)
   not.covered.sequences.table <- as.data.frame(not.covered.seq)
   
-
-
-  covered.sequences.file <- file.path(covered.tables.dir, paste(feature.query, "_covered_sequences_IDs.tab", sep = ""))
+  overed.sequences.file <- file.path(covered.tables.dir, paste(feature.query, "_covered_sequences_IDs.tab", sep = ""))
   not.covered.sequences.file <- file.path(covered.tables.dir, paste(feature.query, "_not_covered_sequences_IDs.tab", sep = ""))
 
   # print("Aqui1")
@@ -1274,6 +1376,12 @@ logos <- paste("pics['", all.motifs, "'] = '", as.vector(datatable.info.tab$Logo
 logos <- paste(logos, collapse = "\n")
 html.report <- gsub("--pics--", logos, html.report)
 
+## Aqui_borrar
+logos.co <- paste("pics_m1['", all.motifs, "'] = '", as.vector(datatable.info.tab$Logo), "';", sep = "")
+logos.co <- paste(logos.co, collapse = "\n")
+html.report <- gsub("--pics_m1--", logos.co, html.report)
+
+
 ## Logos in Reverse complement
 logos.rc <- sapply(TF.IDs, function(i){
   paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
@@ -1333,11 +1441,6 @@ if(draw.area == 1){
   area <- paste(area, collapse = "\n")
   html.report <- gsub("--area--", area, html.report)
 }
-
-## Insert the motif names (to hide/show all)
-## They are inserted in the JQuery section
-all.motifs <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
-html.report <- gsub("--all--", all.motifs, html.report)
 
 if(length(flat.motifs) == 0){
   html.report <- gsub("--start_f--", "<!--", html.report)
@@ -1469,11 +1572,70 @@ profiles.pics.cov <- paste("cov_pics_profile['", all.motifs.cover, "'] = ", all.
 profiles.pics.cov <- paste(profiles.pics.cov, collapse = "\n")
 html.report <- gsub("--profile_pics_cov--", profiles.pics.cov, html.report)
 
+## Aqui_borrar
+all.profiles.pics.co <- paste("'", as.vector(datatable.info.tab$Profiles), "'", sep = "")
+profiles.pics.cov.co <- paste("profiles_m1['", all.motifs, "'] = ", all.profiles.pics.co, ";", sep = "")
+profiles.pics.cov.co <- paste(profiles.pics.cov.co, collapse = "\n")
+html.report <- gsub("--profiles_m1--", profiles.pics.cov.co, html.report)
 
 ## Insert the motif names (to hide/show all) in coverture plot
 ## They are inserted in the JQuery section
 all.motifs.cover <- paste(paste("'", all.motifs.cover, "'", sep = ""), collapse = ",")
 html.report <- gsub("--all_cover--", all.motifs.cover, html.report)
+
+###################################################
+## Fill the data for the co-ocurrence d3 heatmap
+html.report <- gsub("--default_r_number--", comp.order.list.rows[["default"]], html.report)
+html.report <- gsub("--default_c_number--", comp.order.list.cols[["default"]], html.report)
+
+html.report <- gsub("--average_r_number--", comp.order.list.rows[["average"]], html.report)
+html.report <- gsub("--average_c_number--", comp.order.list.cols[["average"]], html.report)
+
+html.report <- gsub("--complete_r_number--", comp.order.list.rows[["complete"]], html.report)
+html.report <- gsub("--complete_c_number--", comp.order.list.cols[["complete"]], html.report)
+
+html.report <- gsub("--single_r_number--", comp.order.list.rows[["single"]], html.report)
+html.report <- gsub("--single_c_number--", comp.order.list.cols[["single"]], html.report)
+
+html.report <- gsub("--ward_r_number--", comp.order.list.rows[["ward"]], html.report)
+html.report <- gsub("--ward_c_number--", comp.order.list.cols[["ward"]], html.report)
+
+html.report <- gsub("--c_numb--", length(matrix.names), html.report)
+html.report <- gsub("--r_numb--", length(matrix.names), html.report)
+
+cell.size <- 20
+html.report <- gsub("--cell_size--", cell.size , html.report)
+
+html.report <- gsub("--left--", left, html.report)
+
+html.report <- gsub("--heatmap_coocurrence_pdf--", co.ocurrence.heatmap.file, html.report)
+
+coocurrence.table.d3 <- paste(basename(prefix), "_coocurrence_table.tsv", sep = "")
+html.report <- gsub("--file--", coocurrence.table.d3, html.report)
+
+domain <- paste(domain, collapse=",")
+html.report <- gsub("--domain--", domain, html.report)
+
+coocurrence.palette <- c("#FFFFFF", coocurrence.palette) 
+gradient <- paste("[", paste(paste("'", coocurrence.palette, "'", sep=""), collapse=","), "];", sep = "")
+html.report <- gsub("--gradient--", gradient, html.report)
+
+legend <- seq(from = 0, to = 100, by = 5)
+legend <- paste(legend, collapse=",")
+html.report <- gsub("--data_legend--", legend, html.report)
+
+col.labels <- paste(paste("'", matrix.names, "'", sep = ""), collapse = ",")
+row.labels <- paste(paste("'", matrix.names, "'", sep = ""), collapse = ",")
+html.report <- gsub("--col_label--", col.labels, html.report)
+html.report <- gsub("--row_label--", row.labels, html.report)
+
+html.body.size <- 200 + left + (length(matrix.names)*20) + 30
+html.report <- gsub("--body--", html.body.size, html.report)
+
+## Insert the motif names (to hide/show all)
+## They are inserted in the JQuery section
+all.motifs <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
+html.report <- gsub("--all--", all.motifs, html.report)
 
 ## Export the report
 html.report.file <- paste(basename, "_scan_profile_report.html", sep = "")
