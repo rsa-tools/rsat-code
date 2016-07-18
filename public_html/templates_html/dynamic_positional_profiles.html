@@ -132,8 +132,131 @@
         border-radius:5px;
         font-size: 15px;
         text-align: center;
-//        font-weight: bold;
-//        border-style:none;
+
+ .tooltip_tab{
+   width: auto;
+    height: 30px;
+    font-size: 10px;
+    margin-top: 3px;
+    text-align: center;
+    text-decoration: none;
+    background-color: #B1D4F9;
+    border-radius:5px;
+  }
+  
+   .tooltip_cell{
+   width:auto;
+       height: 30px;
+    font-size: 10px;
+    margin-top: 3px;
+    text-align: center;
+    text-decoration: none;
+    background-color: #E6E6E6;
+    border-radius:5px;
+  }
+
+        #header{
+	   margin: 7px 5px 5px 5px;
+	   width: 1250px;
+	   height: 215px;
+	   position: relative;
+	   display: block;
+	   text-align: left;
+	   clear : both;
+	   color: black;
+	   font-size: 12px;
+	   border-radius:5px;
+           background: #B1D4F9;
+	   float: left;
+        }
+
+      /* disable text selection */
+      svg *::selection {
+         background : transparent;
+      }
+
+      svg *::-moz-selection {
+         background:transparent;
+      }
+
+      svg *::-webkit-selection {
+         background:transparent;
+      }
+      rect.selection {
+        stroke          : #333;
+        stroke-dasharray: 4px;
+        stroke-opacity  : 0.5;
+        fill            : transparent;
+      }
+
+      rect.cell-border {
+        stroke: #eee;
+        stroke-width:0.3px;
+      }
+
+      rect.cell-selected {
+        stroke: rgb(51,102,153);
+        stroke-width:0.5px;
+      }
+
+      rect.cell-hover {
+        stroke: #F00;
+        stroke-width:0.3px;
+      }
+
+      text.mono {
+        font-size: 12pt;
+        font-family: Consolas, courier;
+        fill: #686666;
+      }
+
+      text.text-selected {
+        fill: #000;
+      }
+
+      text.text-highlight {
+        fill: #c00;
+      }
+      text.text-hover {
+        fill: #00C;
+      }
+      
+      #tooltip {
+        z-index: 1;
+        position: absolute;
+        width: auto;
+        height: auto;
+        padding: 10px;
+        background-color: white;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+      }
+
+      #tooltip.hidden {
+        display: none;
+      }
+
+      #tooltip p {
+        margin: 0;
+        font-family: sans-serif;
+        font-size: 12px;
+        line-height: 20px;
+      }
+      
+ .small_logo_tooltip {
+	position: relative;
+	max-width: 100%;
+	max-height: 10%;
+	height: 45px;
+	width: 60px
+	float: left;
+	clear: both;
+  }
   }
 
  #show_all_button {
@@ -185,6 +308,11 @@
 	heigth: 650px;
 	width: 550px;
   }
+  
+  #heatmap_coocurrence_png {
+	heigth: 650px;
+	width: 550px;
+  }
 
  .file_link {
   cursor: pointer;
@@ -197,6 +325,33 @@
 
 .c3-legend-item {
   font-size: 10px;
+  
+        #tooltip_coocurrence {
+        position: absolute;
+        width: 200px;
+        height: auto;
+        padding: 10px;
+        background-color: white;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+      }
+
+      #tooltip_coocurrence.hidden {
+        display: none;
+      }
+
+      #tooltip_coocurrence p {
+        margin: 0;
+        font-family: sans-serif;
+        font-size: 12px;
+        line-height: 20px;
+      }
+  
 }
 
 </style>
@@ -276,7 +431,6 @@
 </div>
 
 
-
 <div id="heatmap_button" class="button_click Section_button" ><strong>Profiles Heatmap</strong></div>
 <div id="heatmap" style="display:none" class="div_chart_sp tab" style="width:1200px;padding:0px 0px 20px 0px;margin-top:0px;display:none;">
 
@@ -285,6 +439,29 @@
   <a target="_blank" href="--heatmap_pdf--"><img id="heatmap_png" src="--heatmap_png--"></a>
 </div>
 
+
+<div id="heatmap_coocurrence_button" class="button_click Section_button" ><strong>Co-ocurrence Heatmap</strong></div>
+<div id="heatmap_coocurrence" style="display:none" class="div_chart_sp tab" style="width:1200px;padding:0px 0px 20px 0px;margin-top:0px;display:none;">
+  
+  
+  <h2 style="margin:0px"><a target="_blank" href="--heatmap_coocurrence_pdf--">Co-ocurrence Heatmap (PDF)</a></h2>
+
+<div id="tooltip_coocurrence" class="hidden"><p><span id="value_coocurrence"></p></div>
+
+<div style="display:block; clear:both;position:relative;float:left;">
+Order:
+  <select id="order">
+    <option value="default">default</option>
+    <option value="average">average linkage</option>
+    <option value="complete">complete linkage</option>
+    <option value="single">single linkage</option>
+    <option value="ward">ward linkage</option>
+  </select>
+</div>
+
+<div id="d3_heatmap_coocurrence" style='overflow:auto; width:auto; height:auto;display:block; clear:both;position:relative;float:left;'></div>
+  
+</div>
 
 <div id="additional_files_button" class="button_click Section_button" ><strong>Additional Files</strong></div>
 <div id="additional_files" class="tab spacer" style="display:none;">
@@ -791,6 +968,14 @@ $(document).ready(function() {
     }); 
 });
 
+// Slide the Co-ocurrence Heatmap
+$(document).ready(function() {
+    $('#heatmap_coocurrence_button').click(function() {
+	$('#heatmap_coocurrence').slideToggle('fast');
+        $(this).toggleClass('selected_header_section');
+    }); 
+});
+
 
 // Slide the additonal files
 $(document).ready(function() {
@@ -800,5 +985,392 @@ $(document).ready(function() {
     }); 
 });
 
+
+</script>
+
+
+
+<script type="text/javascript">
+
+    var pics_m1 = new Array();
+--pics_m1--
+
+    var profiles_m1 = new Array();
+--profiles_m1--
+
+var margin = { top: --left--, right: 500, bottom: --left--, left: --left-- },
+  cellSize= --cell_size--;
+  col_number= --r_numb--;
+  row_number= --c_numb--;
+  width = cellSize*col_number, // - margin.left - margin.right,
+  height = cellSize*row_number , // - margin.top - margin.bottom,
+  //gridSize = Math.floor(width / 24),
+  legendElementWidth = cellSize*1,
+  colorBuckets = 21,
+
+colors = --gradient--
+
+  // Order of the clusters
+  hcrow = [--default_r_number--],
+  hcrow_average = [--average_r_number--],
+  hcrow_complete = [--complete_r_number--],
+  hcrow_single = [--single_r_number--],
+  hcrow_ward = [--ward_r_number--],
+
+ // Order of the collections
+  hccol = [--default_c_number--],
+  hccol_average = [--average_c_number--],
+  hccol_complete = [--complete_c_number--],
+  hccol_single = [--single_c_number--],
+  hccol_ward = [--ward_c_number--],
+
+  rowLabel = [--row_label--],
+
+  colLabel = [--col_label--]; // Rownames -> Motif DataBases
+
+d3.tsv("--file--",
+function(d) {
+  return {
+    row:   +d.Col, 
+    col:   +d.Row, 
+    value: +d.Value
+  };
+},
+function(error, data) {
+  var colorScale = d3.scale.threshold()
+      .domain([--domain--])
+      .range(colors);
+
+  var svg = d3.select("#d3_heatmap_coocurrence").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+      ;
+  var rowSortOrder=false;
+  var colSortOrder=false;
+  var rowLabels = svg.append("g")
+      .selectAll(".rowLabelg")
+      .data(rowLabel)
+      .enter()
+      .append("text")
+      .text(function (d) { return d; })
+      .attr("x", 0)
+      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      .style("text-anchor", "end")
+      .attr("transform", "translate(-6," + cellSize / 1.5 + ")")
+      .attr("class", function (d,i) { return "rowLabel mono r"+i;} )
+      .on("mouseover", function(d) {d3.select(this).classed("text-hover",true);})
+      .on("mouseout" , function(d) {d3.select(this).classed("text-hover",false);})
+      .on("click", function(d,i) {rowSortOrder=!rowSortOrder; sortbylabel("r",i,rowSortOrder);d3.select("#order").property("selectedIndex", 4).node().focus();;})
+      ;
+
+  var colLabels = svg.append("g")
+      .selectAll(".colLabelg")
+      .data(colLabel)
+      .enter()
+      .append("text")
+      .text(function (d) { return d; })
+      .attr("x", 0)
+      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
+      .style("text-anchor", "left")
+      .attr("transform", "translate("+cellSize/2 + ",-6) rotate (-90)")
+      .attr("class",  function (d,i) { return "colLabel mono c"+i;} )
+      .on("mouseover", function(d) {d3.select(this).classed("text-hover",true);})
+      .on("mouseout" , function(d) {d3.select(this).classed("text-hover",false);})
+      .on("click", function(d,i) {colSortOrder=!colSortOrder;  sortbylabel("c",i,colSortOrder);d3.select("#order").property("selectedIndex", 4).node().focus();;})
+      ;
+
+  var heatMap = svg.append("g").attr("class","g3")
+        .selectAll(".cellg")
+        .data(data,function(d){return d.row+":"+d.col;})
+        .enter()
+        .append("rect")
+        .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+        .attr("y", function(d) { return hcrow.indexOf(d.row) * cellSize; })
+        .attr("class", function(d){return "cell cell-border cr"+(d.row-1)+" cc"+(d.col-1);})
+        .attr("width", cellSize)
+        .attr("height", cellSize)
+        .style("fill", function(d) { return colorScale(d.value); })
+        /* .on("click", function(d) {
+               var rowtext=d3.select(".r"+(d.row-1));
+               if(rowtext.classed("text-selected")==false){
+                   rowtext.classed("text-selected",true);
+               }else{
+                   rowtext.classed("text-selected",false);
+               }
+        })*/
+        .on("mouseover", function(d){
+               //highlight text
+               d3.select(this).classed("cell-hover",true);
+               d3.selectAll(".rowLabel").classed("text-highlight",function(r,ri){ return ri==(d.row-1);});
+               d3.selectAll(".colLabel").classed("text-highlight",function(c,ci){ return ci==(d.col-1);});
+
+               //Update the tooltip position and value
+               d3.select("#tooltip_coocurrence")
+                 .style("left", (d3.event.pageX+10) + "px")
+                 .style("top", (d3.event.pageY-10) + "px")
+                 .select("#value_coocurrence")
+                 .html("<table><thead><tr class='tooltip_tab'><th colspan='1'>Motif A</th><th colspan='1'>Motif A Logo</th><th colspan='1'>Motif A Profile</th><th>Co-occurrence (%)</th><th>Motif B</th><th>Motif B Logo</th><th>Motif B Profile</th></tr></thead><tbody><tr class='tooltip_cell'><td>" + colLabel[d.col-1] + "</td><td><img class ='small_logo'src='" + pics_m1[TF_names[colLabel[d.col-1]]] + "'></td><td><img class ='small_logo' src='" + profiles_m1[TF_names[colLabel[d.col-1]]] + "'></td><td>" + d.value + "</td><td>" + rowLabel[d.row-1] + "</td><td><img class ='small_logo'src='" + pics_m1[TF_names[rowLabel[d.row-1]]] + "'></td><td><img class ='small_logo' src='" + profiles_m1[TF_names[rowLabel[d.row-1]]] + "'></td></tr></tbody></table>")
+               ;
+               //Show the tooltip
+               d3.select("#tooltip_coocurrence").classed("hidden", false);
+        })
+        .on("mouseout", function(){
+               d3.select(this).classed("cell-hover",false);
+               d3.selectAll(".rowLabel").classed("text-highlight",false);
+               d3.selectAll(".colLabel").classed("text-highlight",false);
+               d3.select("#tooltip_coocurrence").classed("hidden", true);
+        })
+        ;
+
+  var legend = svg.selectAll(".legend")
+      .data([--data_legend--])
+      .enter().append("g")
+      .attr("class", "legend");
+
+  legend.append("rect")
+    .attr("x", width + (cellSize*1) + 30)
+    .attr("y", function(d, i) { return legendElementWidth * i - cellSize; })
+    .attr("width", cellSize)
+    .attr("height", legendElementWidth)
+    .style("fill", function(d, i) { return colors[i]; });
+
+  legend.append("text")
+    .attr("class", "mono")
+    .text(function(d) { return d; })
+    .attr("width", legendElementWidth)
+    .attr("x", width + (cellSize*4))
+    .attr("y", function(d, i) { return legendElementWidth * i; })
+
+  legend.append("text")
+    .attr({
+	'font-size': 12,
+	'x': width + (cellSize*1) + 30,
+	'y': -15
+    })
+    .text("Percentage");
+
+
+// Change ordering of cells
+
+  function sortbylabel(rORc,i,sortOrder){
+       var t = svg.transition().duration(1500);
+       var log2r=[];
+       var sorted; // sorted is zero-based index
+       d3.selectAll(".c"+rORc+i)
+         .filter(function(ce){
+            log2r.push(ce.value);
+          })
+       ;
+       if(rORc=="r"){ // sort log2ratio of a gene
+         sorted=d3.range(col_number).sort(function(a,b){ if(sortOrder){ return log2r[b]-log2r[a];}else{ return log2r[a]-log2r[b];}});
+         t.selectAll(".cell")
+           .attr("x", function(d) { return sorted.indexOf(d.col-1) * cellSize; })
+           ;
+         t.selectAll(".colLabel")
+          .attr("y", function (d, i) { return sorted.indexOf(i) * cellSize; })
+         ;
+       }else{ // sort log2ratio of a contrast
+         sorted=d3.range(row_number).sort(function(a,b){if(sortOrder){ return log2r[b]-log2r[a];}else{ return log2r[a]-log2r[b];}});
+         t.selectAll(".cell")
+           .attr("y", function(d) { return sorted.indexOf(d.row-1) * cellSize; })
+           ;
+         t.selectAll(".rowLabel")
+          .attr("y", function (d, i) { return sorted.indexOf(i) * cellSize; })
+         ;
+       }
+  }
+
+  d3.select("#order").on("change",function(){
+    order(this.value);
+  });
+
+  function order(value){
+
+  if(value=="default"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
+      ;
+
+   // Complete Linkage
+   } else if(value=="single"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_single.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_single.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_single.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_single.indexOf(i+1) * cellSize; })
+      ;
+
+   // Complete Linkage
+   } else if(value=="complete"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_complete.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_complete.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_complete.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_complete.indexOf(i+1) * cellSize; })
+      ;
+
+   // Ward Linkage
+   } else if(value=="ward"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol_ward.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_ward.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_ward.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_ward.indexOf(i+1) * cellSize; })
+      ;
+
+   // Average Linkage
+   } else if(value=="average"){
+
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow_average.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow_average.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol_average.indexOf(i+1) * cellSize; })
+      ;
+   }
+  }
+  //
+  var sa=d3.select(".g3")
+      .on("mousedown", function() {
+          if( !d3.event.altKey) {
+             d3.selectAll(".cell-selected").classed("cell-selected",false);
+             d3.selectAll(".rowLabel").classed("text-selected",false);
+             d3.selectAll(".colLabel").classed("text-selected",false);
+          }
+         var p = d3.mouse(this);
+         sa.append("rect")
+         .attr({
+             rx      : 0,
+             ry      : 0,
+             class   : "selection",
+             x       : p[0],
+             y       : p[1],
+             width   : 1,
+             height  : 1
+         })
+      })
+      .on("mousemove", function() {
+         var s = sa.select("rect.selection");
+
+         if(!s.empty()) {
+             var p = d3.mouse(this),
+                 d = {
+                     x       : parseInt(s.attr("x"), 10),
+                     y       : parseInt(s.attr("y"), 10),
+                     width   : parseInt(s.attr("width"), 10),
+                     height  : parseInt(s.attr("height"), 10)
+                 },
+                 move = {
+                     x : p[0] - d.x,
+                     y : p[1] - d.y
+                 }
+             ;
+
+             if(move.x < 1 || (move.x*2<d.width)) {
+                 d.x = p[0];
+                 d.width -= move.x;
+             } else {
+                 d.width = move.x;
+             }
+
+             if(move.y < 1 || (move.y*2<d.height)) {
+                 d.y = p[1];
+                 d.height -= move.y;
+             } else {
+                 d.height = move.y;
+             }
+             s.attr(d);
+
+                 // deselect all temporary selected state objects
+             d3.selectAll('.cell-selection.cell-selected').classed("cell-selected", false);
+             d3.selectAll(".text-selection.text-selected").classed("text-selected",false);
+
+             d3.selectAll('.cell').filter(function(cell_d, i) {
+                 if(
+                     !d3.select(this).classed("cell-selected") &&
+                         // inner circle inside selection frame
+                     (this.x.baseVal.value)+cellSize >= d.x && (this.x.baseVal.value)<=d.x+d.width &&
+                     (this.y.baseVal.value)+cellSize >= d.y && (this.y.baseVal.value)<=d.y+d.height
+                 ) {
+
+                     d3.select(this)
+                     .classed("cell-selection", true)
+                     .classed("cell-selected", true);
+
+                     d3.select(".r"+(cell_d.row-1))
+                     .classed("text-selection",true)
+                     .classed("text-selected",true);
+
+                     d3.select(".c"+(cell_d.col-1))
+                     .classed("text-selection",true)
+                     .classed("text-selected",true);
+                 }
+             });
+         }
+      })
+      .on("mouseup", function() {
+            // remove selection frame
+         sa.selectAll("rect.selection").remove();
+
+             // remove temporary selection marker class
+         d3.selectAll('.cell-selection').classed("cell-selection", false);
+         d3.selectAll(".text-selection").classed("text-selection",false);
+      })
+      .on("mouseout", function() {
+         if(d3.event.relatedTarget.tagName=='html') {
+                 // remove selection frame
+             sa.selectAll("rect.selection").remove();
+                 // remove temporary selection marker class
+             d3.selectAll('.cell-selection').classed("cell-selection", false);
+             d3.selectAll(".rowLabel").classed("text-selected",false);
+             d3.selectAll(".colLabel").classed("text-selected",false);
+         }
+      })
+      ;
+});
 
 </script>
