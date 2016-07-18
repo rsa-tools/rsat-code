@@ -71,7 +71,8 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-label_in_tree name  \
 		-metric_build_tree ${METRIC_BUILD_TREE} \
 		-return ${RETURN_FIELDS} \
-		${OPT} -o ${CLUSTER_FILE_PREFIX} 2> ${CLUSTER_FILE_PREFIX}.err
+		${OPT} -o ${CLUSTER_FILE_PREFIX}
+# 2> ${CLUSTER_FILE_PREFIX}.err
 
 # CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
 # 		${LIST_OF_MOTIFS} -matrix_format tf \
