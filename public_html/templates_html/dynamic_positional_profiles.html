@@ -108,10 +108,10 @@
   }
 
   .div_chart_sp {
-	position: relative;
+	      position: relative;
         display: block;
-	float: left;
-	clear: both;
+	      float: left;
+	      clear: both;
         margin-top:10px;
         margin-bottom:10px;
   }
@@ -124,7 +124,7 @@
   .button_chart {
 	position: relative;
         cursor:pointer;
-	float: left;
+	      float: left;
         margin-top:10px;
         margin-left:3px;
         background-color: #D6EEFA;
@@ -132,11 +132,12 @@
         border-radius:5px;
         font-size: 15px;
         text-align: center;
+  }
 
- .tooltip_tab{
+ .tooltip_tab{ 
    width: auto;
     height: 30px;
-    font-size: 10px;
+    font-size: 20px;
     margin-top: 3px;
     text-align: center;
     text-decoration: none;
@@ -147,7 +148,7 @@
    .tooltip_cell{
    width:auto;
        height: 30px;
-    font-size: 10px;
+    font-size: 20px;
     margin-top: 3px;
     text-align: center;
     text-decoration: none;
@@ -244,20 +245,26 @@
       #tooltip p {
         margin: 0;
         font-family: sans-serif;
-        font-size: 12px;
+        font-size: 20px;
         line-height: 20px;
       }
       
  .small_logo_tooltip {
 	position: relative;
-	max-width: 100%;
-	max-height: 10%;
-	height: 45px;
-	width: 60px
+	height: 85px;
+	width: 100px
 	float: left;
 	clear: both;
   }
+  
+   .small_profile_tooltip {
+	position: relative;
+	height: 150px;
+	width: 150px
+	float: left;
+	clear: both;
   }
+
 
  #show_all_button {
         background-color: #C1FFC7;
@@ -325,32 +332,7 @@
 
 .c3-legend-item {
   font-size: 10px;
-  
-        #tooltip_coocurrence {
-        position: absolute;
-        width: 200px;
-        height: auto;
-        padding: 10px;
-        background-color: white;
-        -webkit-border-radius: 10px;
-        -moz-border-radius: 10px;
-        border-radius: 10px;
-        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-        pointer-events: none;
-      }
-
-      #tooltip_coocurrence.hidden {
-        display: none;
-      }
-
-      #tooltip_coocurrence p {
-        margin: 0;
-        font-family: sans-serif;
-        font-size: 12px;
-        line-height: 20px;
-      }
+  }
   
 }
 
@@ -446,9 +428,8 @@
   
   <h2 style="margin:0px"><a target="_blank" href="--heatmap_coocurrence_pdf--">Co-ocurrence Heatmap (PDF)</a></h2>
 
-<div id="tooltip_coocurrence" class="hidden"><p><span id="value_coocurrence"></p></div>
-
 <div style="display:block; clear:both;position:relative;float:left;">
+
 Order:
   <select id="order">
     <option value="default">default</option>
@@ -458,6 +439,7 @@ Order:
     <option value="ward">ward linkage</option>
   </select>
 </div>
+<div id="tooltip" class="hidden"><p><span id="value"></p></div>
 
 <div id="d3_heatmap_coocurrence" style='overflow:auto; width:auto; height:auto;display:block; clear:both;position:relative;float:left;'></div>
   
@@ -1107,20 +1089,20 @@ function(error, data) {
                d3.selectAll(".colLabel").classed("text-highlight",function(c,ci){ return ci==(d.col-1);});
 
                //Update the tooltip position and value
-               d3.select("#tooltip_coocurrence")
-                 .style("left", (d3.event.pageX+10) + "px")
-                 .style("top", (d3.event.pageY-10) + "px")
-                 .select("#value_coocurrence")
-                 .html("<table><thead><tr class='tooltip_tab'><th colspan='1'>Motif A</th><th colspan='1'>Motif A Logo</th><th colspan='1'>Motif A Profile</th><th>Co-occurrence (%)</th><th>Motif B</th><th>Motif B Logo</th><th>Motif B Profile</th></tr></thead><tbody><tr class='tooltip_cell'><td>" + colLabel[d.col-1] + "</td><td><img class ='small_logo'src='" + pics_m1[TF_names[colLabel[d.col-1]]] + "'></td><td><img class ='small_logo' src='" + profiles_m1[TF_names[colLabel[d.col-1]]] + "'></td><td>" + d.value + "</td><td>" + rowLabel[d.row-1] + "</td><td><img class ='small_logo'src='" + pics_m1[TF_names[rowLabel[d.row-1]]] + "'></td><td><img class ='small_logo' src='" + profiles_m1[TF_names[rowLabel[d.row-1]]] + "'></td></tr></tbody></table>")
+               d3.select("#tooltip")
+                 .style("left", (d3.event.pageX+5) + "px")
+                 .style("top", (d3.event.pageY-450) + "px")
+                 .select("#value")
+                 .html("<table><thead><tr class='tooltip_tab'><th colspan='1'>Motif A</th><th colspan='1'>Motif A Logo</th><th colspan='1'>Motif A Profile</th><th>Co-occurrence (%)</th><th>Motif B</th><th>Motif B Logo</th><th>Motif B Profile</th></tr></thead><tbody><tr class='tooltip_cell'><td>" + colLabel[d.col-1] + "</td><td><img class='small_logo_tooltip' src='" + pics_m1[TF_names[colLabel[d.col-1]]] + "'></td><td><img class='small_profile_tooltip' src='" + profiles_m1[TF_names[colLabel[d.col-1]]] + "'></td><td>" + d.value + "</td><td>" + rowLabel[d.row-1] + "</td><td><img class='small_logo_tooltip' src='" + pics_m1[TF_names[rowLabel[d.row-1]]] + "'></td><td><img class ='small_profile_tooltip' src='" + profiles_m1[TF_names[rowLabel[d.row-1]]] + "'></td></tr></tbody></table>")
                ;
                //Show the tooltip
-               d3.select("#tooltip_coocurrence").classed("hidden", false);
+               d3.select("#tooltip").classed("hidden", false);
         })
         .on("mouseout", function(){
                d3.select(this).classed("cell-hover",false);
                d3.selectAll(".rowLabel").classed("text-highlight",false);
                d3.selectAll(".colLabel").classed("text-highlight",false);
-               d3.select("#tooltip_coocurrence").classed("hidden", true);
+               d3.select("#tooltip").classed("hidden", true);
         })
         ;
 
