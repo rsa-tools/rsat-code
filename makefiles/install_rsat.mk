@@ -112,7 +112,7 @@ macosx_package_install:
 	@echo "Installing packages for Mac OSX (brew install)"
 	@for package in ${BREW_PACKAGES} ; do \
 		echo "Installing brew package	$${package}" ; \
-		${SUDO} brew install $${package}; \
+		brew install $${package}; \
 	done
 
 PACKAGE_MANAGER_MAC=brew install
