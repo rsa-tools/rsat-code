@@ -165,7 +165,7 @@ information. The file includes the following columns:
 
 =item 10. B<minor_allele_freq>: frequency of the minor allele.
 
-=item 11. B<is_supvar>: 1 if this variant is a “super-variation”, i.e. was build by merging overlapping variants.
+=item 11. B<is_supvar>: 1 if this variant is a "super-variation", i.e. was build by merging overlapping variants.
 
 =item 12. B<in_supvar>: a value of 1 indicates that this variant overlaps with other annotated variants.
 
