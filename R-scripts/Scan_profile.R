@@ -724,15 +724,23 @@ thrash <- sapply(1:nb.profile.clusters, function(cl){
 })
 rm(thrash)
 
-## Get the member motif names of each cluster
-cluster.profiles.motifs.names <- list()
-thrash <- sapply(1:nb.profile.clusters, function(n){
+
+## JS code to show the motifs corresponding to one cluster
+## We require one function for each cluster
+show.profile.cluster.function <- 'function --profile_cluster_show--() {
+      chart.hide([--all--]);
+      chart.show([--names--]);
+}'
+
+## Generate the JS function to show the clusters
+sapply(1:length(cluster.profiles.motif.names), function(cl){
+
+  ## Define the profile cluster name
+  profile.cluste.name <- paste("Profile_cluster_", cl, sep = "")
   
-  cluster.profiles.motifs.names
-  cluster.profiles.motifs.names[[cluster.profiles.counter]] <<- names(which(clusters.tree.profiles == 1))
+  cluster.function <- show.profile.cluster.function
   
 })
-rm(thrash)
 
 
 ####################################################################################
