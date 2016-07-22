@@ -44,6 +44,26 @@ This tutorial explains how to download and run a server of the software suite Re
 **Operating systems**: Docker can run under a variety of operating systems: Unix, Mac OSX, Windows.
 
 
+
+# Starting an RSAT container
+
+
+## Configuration
+
+## Running RSAT commands on the RSAT container via a shell script
+
+```
+mkdir -p ~/rsat_docker/
+docker run -t -i -m 1g  -v  ~/rsat_docker/:/DockerIn -v ~/rsat_docker/:/DockerOut -v ~/rsat_docker/:/DockerTodo  rsat_debian:2016-07-13 /DockerTodo/CommandLineImage/DockerTodo.sh > ~/rsat_docker/output.txt
+
+```
+
+## Interative use of an RSAT docker
+```
+mkdir -p ~/rsat_docker/
+docker run -t -i -m 1g  -v  ~/rsat_docker/:/DockerIn -v ~/rsat_docker/:/DockerOut -v ~/rsat_docker/:/DockerTodo bash
+```
+
 # Tests
 
 
