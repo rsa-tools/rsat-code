@@ -1552,7 +1552,7 @@ install_plink:
 	@echo "	PLINK_URL	${PLINK_URL}"
 	@echo "	PLINK_DIR	${PLINK_DIR}"
 	@echo "	PLINK_ARCHIVE	${PLINK_ARCHIVE}"
-	${MAKE} _download_plink
+	${MAKE} _download_plink _install_plink
 
 _download_plink:
 	@mkdir -p ${PLINK_DIR}
