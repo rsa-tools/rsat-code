@@ -300,7 +300,7 @@ package	main;
 
 ## Check if files was given
   unless  ((-f  $main::infile{'input'} ) || !($main::in)){
-      &RSAT::error::FatalError("Input file not found, provide either input file or standar input information")  ;
+      &RSAT::error::FatalError("Input file not found", $main::infile{'input'});
   }
 
   ################################################################
