@@ -15,6 +15,7 @@ required.packages = c("IRanges",
                       "gplots",
                       "jpeg",
                       "amap",
+                      "dynamicTreeCut",
                       "qvalue")
 
 ## List of RSAT-specific packages to be compiled on the server
@@ -73,129 +74,6 @@ create.html.tab <- function(tab, img = 0, plot = 0, link.text.covered = 0, link.
   full.tab <- c(head.tab, content.tab , tail.tab)
   return(full.tab) 
 }
-
-
-get.profile.shape <- function(profile){
-  
-  bin.nb <- length(profile)
-  x <- 1:bin.nb
-  y <- as.numeric(profile)
-  
-  ## Calculate the slope
-  slope <- diff(y) / diff(x)
-
-  slope <- round(slope, digits = 2)
-  
-  ## Convert the slope values into -1,0,+1
-  ## In order to indentify easily the changes in sign
-  profile.slope <- sapply(slope, function(x){
-    if(x > 0.01){
-      x <- 1
-    } else if (x < -0.01){
-      x <- -1
-    } else {
-      x <- 0
-    }
-  })
-
-  ## Executes a cumulative sum of the profile
-  ## Calculate the max/min and calculate the sign
-  max.cum.sum <- max(cumsum(slope))
-  min.cum.sum <- min(cumsum(slope))
-  sign <- max.cum.sum + min.cum.sum
-
-  sign <- round(sign, digits = 2)
-  
-  print(sign)
-
-  ## End of the profile vector
-  if(sign > 1.5){
-    return("Hill")
-  } else if(sign < -1.5){
-    return("Valley")
-  } else {
-    
-    
-    consecutive.down <- 0 
-    consecutive.up <- 0
-    consecutive.flat <- 0
-    consecutive.flat <- 0
-    slope.vector <- NULL
-    slope.vector[1] <- ""
-    profile.shape <- NULL
-    
-    for(x in 1:length(profile.slope)){
-        
-      ## First position of the profile
-      if(x == 1){
-        previous <- profile.slope[x]
-        current <- previous
-      } else {
-        current <- profile.slope[x]
-        previous <- profile.slope[x - 1]
-      }
-        
-      ## When there are slopes with same sign
-      ## consecutively
-      if(current == previous){
-        
-        ## Succesive slope counter
-        if(current == -1){
-          consecutive.down <- consecutive.down + 1 
-        } else if(current == 1){
-          consecutive.up <- consecutive.up + 1 
-        } else if(current == 0){
-          consecutive.flat <- consecutive.flat + 1
-        }
-      } else {
-        consecutive.down <- 0 
-        consecutive.up <- 0
-        consecutive.flat <- 0
-      }
-      
-      if(x == 1){
-        consecutive.down <- 0 
-        consecutive.up <- 0
-        consecutive.flat <- 0
-      }
-      
-      if(consecutive.down == 2){
-        slope.vector <- append(slope.vector, "down")
-        down.flag <- 1
-      } else if(consecutive.up == 2){
-        slope.vector <- append(slope.vector, "up")
-        up.flag <- 1
-      } else if (consecutive.flat == 2){
-        consecutive.flat <- 1
-      }
-      
-#       print(paste("Down:", consecutive.down))
-#       print(paste("Up:", consecutive.down))
-#       print(paste("Flat:", consecutive.down))
-    
-        
-      ## Last position of the array
-      if(length(profile.slope) == x){
-        
-        if(consecutive.down | consecutive.up){
-          if(slope.vector[1] == "up"){
-            ("Hill")
-          } else if(slope.vector[1] == "down"){
-            profile.shape <- "Valley"
-          }
-        } else if(consecutive.flat == 1){
-          profile.shape <- "Flat"
-        } else {
-          profile.shape <- "Flat"
-        }
-      } 
-    }
-    return(profile.shape)
-    
-  } 
-}
-########################################################################################
-
 
 ###########################################
 ## Read arguments from the command line.
@@ -788,72 +666,88 @@ feature.log2.ratio <- data.frame(t(
 rownames(feature.log2.ratio) <- matrix.names
 colnames(feature.log2.ratio) <- as.character(data.frame(windows)$start)
 
+####################################
+## Calculate the profile clusters ##
+####################################
+verbose(paste("Calculating the motif profile clusters"),1)
+
+#############################
+## Define profile clusters
+tree.profiles <- hclust(Dist(feature.log2.ratio, method = "correlation"), method = "ward.D2")
+# ordered.names.tree.profiles <- tree.profiles[[4]][tree.profiles[[3]]]
+clusters.tree.profiles <- cutreeDynamic(tree.profiles, minClusterSize = 1, method = "tree")
+names(clusters.tree.profiles) <- tree.profiles[[4]]
+
+## Generate a color palette
+nb.profile.clusters <- length(unique(clusters.tree.profiles))
+cluster.tree.profiles.palette <- colorRampPalette(brewer.pal(9, "Set1"), space="Lab")(nb.profile.clusters)
+
+## Assign a different color to each cluster
+color.clusters.tree.profiles <- as.vector(sapply(clusters.tree.profiles, function(color){
+    cluster.tree.profiles.palette[color]
+}))
 
 ###############################################
-## Calculate the profile shape of each motif
-# shape <- apply(feature.log2.ratio, 1, get.profile.shape)
-# feature.attributes$Shape <- shape
+## Fill the Profile_cluster attribute
+profile.clusters.names <- as.vector(sapply(matrix.names, function(m){
+  profile.cluster <- as.vector(clusters.tree.profiles[m])
+  paste("Profile_cluster_", profile.cluster, sep = "")
+}))
+profile.clusters.names.unique <- unique(profile.clusters.names)
+feature.attributes$Profile_cluster <- profile.clusters.names
 
-shape <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
-feature.attributes$Shape <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
+## Remove the special characters -there characters broke the CSS variables-
+## Only for the CSS section
+motifs.names.parsed <- as.vector(sapply(matrix.names, function(m){
+  m.temp <- gsub("-", "", m)
+  m.temp <- gsub("\\.", "", m.temp)
+  m.temp <- gsub(":", "", m.temp)
+  m.temp <- gsub("\\s+", "", m.temp, perl = TRUE)
+  return(m.temp)
+}))
 
-# for(i in 1:dim(feature.log2.ratio)[1]){
-#   
-#   
-#   n <- rownames(feature.log2.ratio[i,])
-#   p <- feature.log2.ratio[i,]
-#   
-# #   print(" - - - - - - - - - - - - -")
-# #   print(n)
-#   
-#   get.profile.shape(p) 
-# }
+## Get the member motif IDs of each cluster
+cluster.profiles.motifs <- list()
+cluster.profiles.motif.names <- list()
+cluster.profiles.counter <- 0
+thrash <- sapply(1:nb.profile.clusters, function(cl){
+  
+  cluster.profiles.counter <<- cluster.profiles.counter + 1
+  cluster.profiles.motifs[[cluster.profiles.counter]] <<- names(which(clusters.tree.profiles == 1))
+  
+  ## Get the motif name
+  cluster.profiles.motif.names[[cluster.profiles.counter]] <<- as.vector(
+    sapply(cluster.profiles.motifs[[1]], function(n){
+      ID.names[which(ID.names[,2] == n),1]
+    })
+  )
+})
+rm(thrash)
 
-## Separate the motifs names by profile shape
-enriched.motifs <- names(which(shape == "Hill"))
-avoided.motifs <- names(which(shape == "Valley"))
-flat.motifs <- names(which(shape == "Flat"))
 
-flat.motifs <- as.vector(sapply(flat.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
-avoided.motifs <- as.vector(sapply(avoided.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
-enriched.motifs <- as.vector(sapply(enriched.motifs, function(m){ ID.names[which(ID.names[,2] == m),1] }))
+## JS code to show the motifs corresponding to one cluster
+## We require one function for each cluster
+show.profile.cluster.function <- 'function --profile_cluster_show--() {
+      chart.hide([--all--]);
+      chart.show([--names--]);
+}'
 
-# flat.motifs <- gsub("_", "", flat.motifs)
-flat.motifs <- gsub("-", "", flat.motifs)
-flat.motifs <- gsub("\\.", "", flat.motifs)
-flat.motifs <- gsub(":", "", flat.motifs)
-flat.motifs <- gsub("\\s+", "", flat.motifs, perl = TRUE)
+## Generate the JS function to show the clusters
+sapply(1:length(cluster.profiles.motif.names), function(cl){
 
-# enriched.motifs <- gsub("_", "", enriched.motifs)
-enriched.motifs <- gsub("-", "", enriched.motifs)
-enriched.motifs <- gsub("\\.", "", enriched.motifs)
-enriched.motifs <- gsub(":", "", enriched.motifs)
-enriched.motifs <- gsub("\\s+", "", enriched.motifs, perl = TRUE)
+  ## Define the profile cluster name
+  profile.cluste.name <- paste("Profile_cluster_", cl, sep = "")
+  
+  cluster.function <- show.profile.cluster.function
+  
+})
 
-# avoided.motifs <- gsub("_", "", avoided.motifs)
-avoided.motifs <- gsub("-", "", avoided.motifs)
-avoided.motifs <- gsub("\\.", "", avoided.motifs)
-avoided.motifs <- gsub(":", "", avoided.motifs)
-avoided.motifs <- gsub("\\s+", "", avoided.motifs, perl = TRUE)
-
-avoided.motifs <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
-enriched.motifs <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
-flat.motifs <- rep("Not-Available", times = dim(feature.log2.ratio)[1])
-
-# ## Test get.profile.shape 
-# profile.ee <- c(1, -1, 0, 1, 1, -1, -1, -1, 0,  1, -1)
-# profile.e <- c(0, 0, 1, 1, 1, 1, -1, -1, -1, 0, 0)
-# profile.a <- c(0, 0, -1, -1, -1, 1, 1, 1, 1, 0, 0)
-# profile.f <- c(1, -1, -1, 1, 0, 0, -1, 0, 1, 1, 0)
-# profile.m <- c(0, 0, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1,0, 0)
-# profile.s <- c(1, -1, -1,  1,  1,  1, -1,  1, -1,  1,  0)
 
 ####################################################################################
 ## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
 ####################################################################################
 verbose(paste("Drawing Heatmap profiles"),1)
-
-## Color palette (user-defined)
+## Profile Heatmap Color palette (user-defined)
 rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(heatmap.color.classes))
 
 log2.tab <- as.matrix(feature.log2.ratio)
@@ -875,23 +769,23 @@ for(format in out.format){
   ## Heatmap
   heatmap.profiles <<- heatmap.2(log2.tab,
                    
-                   ## Dendrogram control
-                   dendrogram = "row",
-                   Rowv = TRUE,
-                   Colv = FALSE,
-                   
                    main = "Profile Heatmap",
                    xlab = "Position (bp)",
                    ylab = "Motifs",
                    
-                   hclustfun = function(d){hclust(d, method="ward.D")},
-                   distfun = function(x) Dist(x,method = 'pearson'),
+                   ## The order of the values is set according these dendrograms
+                   Rowv = as.dendrogram(tree.profiles),
+                   Colv = FALSE,
+                   dendrogram = "row",
                    
                    ## Color
                    col = rgb.palette,
                    
                    ## Trace
                    trace = "none",
+                   
+                   ## Side colors
+                   RowSideColors = color.clusters.tree.profiles,
                    
                    ## Key control
                    key = TRUE,
@@ -902,7 +796,6 @@ for(format in out.format){
                    key.title = "",
                    # cexRow = 0.25
                    offsetCol = 0.25
-                   
   )
   trash <- dev.off()
 }
@@ -1231,25 +1124,6 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
 
 })
 
-if(length(flat.motifs) > 0){
-  ## Get the ID (required for the HTML document) of the select motif names
-  flat.selection <- as.vector(sapply(flat.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
-  # flat.motifs <- as.vector(unlist(hash.motif.IDs[flat.selection]))
-  flat.motifs <- rep("No_Available", times = length(flat.motifs))
-}
-
-if(length(enriched.motifs) > 0){
-  enriched.selection <- as.vector(sapply(enriched.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
-  # enriched.motifs <- as.vector(unlist(hash.motif.IDs[enriched.selection]))
-  enriched.motifs <- rep("No_Available", times = length(enriched.motifs))
-}
-
-if(length(avoided.motifs) > 0){
-  avoided.selection <- as.vector(sapply(avoided.motifs, function(x){  which(names(hash.motif.IDs) == x)}))
-  # avoided.motifs <- as.vector(unlist(hash.motif.IDs[avoided.selection]))
-  avoided.motifs <- rep("No_Available", times = length(avoided.motifs))
-}
-  
 ## Set the line width according the significance -log10(E-value)
 ## Higher significance means a wider line
 significance <- as.numeric(as.vector(feature.attributes$Sig))
@@ -1312,7 +1186,7 @@ all.motifs <- all.motifs
 ## Fill the HTML template
 ## Substitute the words marked in the template by the data
 html.report <- readLines(html.template.file)
-# [1] "Feature"         "Shape"           "P_val"           "E_val"          
+# [1] "Feature"         "Profile_cluster"           "P_val"           "E_val"          
 # [5] "Sig"             "Q_val"           "Chi_squared"     "Degrees"        
 # [9] "Nb_hits"         "Nb_sequences"    "Coverture"       "P_val_threshold"
 # [13] "IDs"             "Profiles"        "TFBS"            "Logo"           
@@ -1442,38 +1316,18 @@ if(draw.area == 1){
   html.report <- gsub("--area--", area, html.report)
 }
 
-if(length(flat.motifs) == 0){
-  html.report <- gsub("--start_f--", "<!--", html.report)
-  html.report <- gsub("--end_f--", "-->", html.report)
-  html.report <- gsub("--flat--", all.motifs, html.report)
-} else {
-  flat.motifs <- paste(paste("'", flat.motifs, "'", sep = ""), collapse = ",")
-  html.report <- gsub("--flat--", flat.motifs, html.report)
-  html.report <- gsub("--start_f--", "", html.report)
-  html.report <- gsub("--end_f--", "", html.report)
-}
-
-if(length(enriched.motifs) == 0){
-  html.report <- gsub("--start_e--", "<!--", html.report)
-  html.report <- gsub("--end_e--", "-->", html.report)
-  html.report <- gsub("--enriched--", all.motifs, html.report)
-} else {
-  enriched.motifs <- paste(paste("'", enriched.motifs, "'", sep = ""), collapse = ",")
-  html.report <- gsub("--enriched--", enriched.motifs, html.report)
-  html.report <- gsub("--start_e--", "", html.report)
-  html.report <- gsub("--end_e--", "", html.report)
-}
-
-if(length(avoided.motifs) == 0){
-  html.report <- gsub("--start_a--", "<!--", html.report)
-  html.report <- gsub("--end_a--", "-->", html.report)
-  html.report <- gsub("--avoided--", all.motifs, html.report)
-} else {
-  avoided.motifs <- paste(paste("'", avoided.motifs, "'", sep = ""), collapse = ",")
-  html.report <- gsub("--avoided--", avoided.motifs, html.report)
-  html.report <- gsub("--start_a--", "", html.report)
-  html.report <- gsub("--end_a--", "", html.report)
-}
+## TO DO: insert the cluster members in the HTML form
+## TO DO: create automatically in the HTML form a button to hide/show the clusters
+# if(length(avoided.motifs) == 0){
+#   html.report <- gsub("--start_a--", "<!--", html.report)
+#   html.report <- gsub("--end_a--", "-->", html.report)
+#   html.report <- gsub("--avoided--", all.motifs, html.report)
+# } else {
+#   avoided.motifs <- paste(paste("'", avoided.motifs, "'", sep = ""), collapse = ",")
+#   html.report <- gsub("--avoided--", avoided.motifs, html.report)
+#   html.report <- gsub("--start_a--", "", html.report)
+#   html.report <- gsub("--end_a--", "", html.report)
+# }
 
 ## Insert the Y axis limits
 ## They are inserted in the C3section

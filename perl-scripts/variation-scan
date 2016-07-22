@@ -731,7 +731,7 @@ package	main;
 
       ## Split line in rsat_var format
       my ($chrom, $start, $end,$strand,$id,$type,$ref,$variant,$ma_freq,$seq) = split(/\t/);
-      &RSAT::message::Debug("Reading in one viariable from rsat-var file", join("//",$chrom, $start, $end,$strand,$id,$type,$ref,$variant,$ma_freq,$seq)) if ($main::verbose >= 3);
+      &RSAT::message::Debug("Reading in one variation from rsat-var file", join("//",$chrom, $start, $end,$strand,$id,$type,$ref,$variant,$ma_freq,$seq)) if ($main::verbose >= 10);
       #die "HELLO3";
       $ref = "-" if ($ref eq "");
 
@@ -774,9 +774,9 @@ package	main;
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
 
   if ($main::verbose >= 1) {
-    print $out "; Total variations scan\t",$nb_variation/$nb_matrix,"\n";
-    print $out "; Total sequences scan\t",$nb_seq,"\n";
-    print $out "; Total matrices\t",$nb_matrix,"\n";
+    print $out "; Nb matrices\t",$nb_matrix,"\n";
+    print $out "; Nb scanned variations\t",$nb_variation/$nb_matrix,"\n";
+    print $out "; Nb scanned sequences\t",$nb_seq,"\n";
     print $out $exec_time; ## only report exec time if verbosity is specified
   }
 
