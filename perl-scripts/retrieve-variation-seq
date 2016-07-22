@@ -740,7 +740,19 @@ General format for the description of genomic features
 
 =item B<-mml #>
 
-Length of the longest Matrix
+Length of the longest Matrix. 
+
+The program will adapt the length of the flanks to be extracted on
+each side of the variants, in order to be able to align the longest
+matrix on both sides. 
+
+The flanking size on each size will be
+
+    n = mml -1
+
+For example, if the longest matrix of the database contains 30
+columns, the flanking size will be 29 base pairs, which is sufficient
+to align the SNP at all the positions of the matrix.
 
 =cut
     } elsif ($arg eq "-mml") {
