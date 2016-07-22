@@ -1542,6 +1542,7 @@ _install_matlign:
 ## plink - polymorphism linkage analysis
 PLINK_RELEASE=160705
 PLINK_URL=http://www.cog-genomics.org/static/bin/plink${PLINK_RELEASE}
+PLINK_ARCHIVE_linux=plink_linux_x86_64.zip
 PLINK_ARCHIVE_macosx=plink_mac.zip
 PLINK_ARCHIVE=${PLINK_ARCHIVE_${OS}}
 PLINK_MAC_URL=${PLINK_URL}/${PLINK_ARCHIVE}
