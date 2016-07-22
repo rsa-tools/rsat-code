@@ -293,7 +293,7 @@ perl_module_test_doc:
 
 ################################################################
 ## Install modules required for python
-PYTHON2_MODULES=numpy scipy SUDS Rpy2 lxml SOAPpy httplib requests
+PYTHON2_MODULES=numpy scipy SUDS Rpy2 lxml SOAPpy httplib2 requests
 python2_modules_list:
 	@echo "Modules to install for Python 2"
 	@echo ${PYTHON2_MODULES} | perl -pe 's|\s+|\n|g'
