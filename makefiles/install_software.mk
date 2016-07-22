@@ -1557,14 +1557,14 @@ install_plink:
 _download_plink:
 	@mkdir -p ${PLINK_DIR}
 	@echo "Downloading plink using wget"
-	(cd ${PLINK_DIR}; wget -nv -nd ${PLINK_URL}/${PLINK_ARCHIVE}; tar -xpzf ${PLINK_ARCHIVE})
+	(cd ${PLINK_DIR}; wget -nv -nd ${PLINK_URL}/${PLINK_ARCHIVE}; unzip ${PLINK_ARCHIVE})
 	@echo "plink dir	${PLINK_DIR}"
 	@echo "plink zip	${PLINK_DIR}/${PLINK_ARCHIVE}"
 
 _install_plink:
 	@echo "Uncompressing PLINK_ACHIVE	${PLINK_DIR}/${PLINK_ARCHIVE}"
 	@echo "Installing in RSA_BIN	${RSAT_BIN}"
-	(cd ${PLINK_DIR}; unzip ${PLINK_ARCHIVE}; rsync -ruptvl plink ${RSAT_BIN}/; rsync -ruptvl prettify ${RSAT_BIN}/)
+	(cd ${PLINK_DIR}; rsync -ruptvl plink ${RSAT_BIN}/; rsync -ruptvl prettify ${RSAT_BIN}/)
 
 #}; ${SUDO} rsync -ruptvl ${PLINK_BIN} ${RSAT_BIN}/; cd ${RSAT_BIN}; ${SUDO} rm -f plink; ${SUDO} ln -s ${PLINK_BIN} plink)
 
