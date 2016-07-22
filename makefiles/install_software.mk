@@ -1536,3 +1536,35 @@ _install_matlign:
 	@echo
 	@echo "Installing matlign in RSAT_BIN	${RSAT_BIN}"
 	@${SUDO} rsync -ruptl ${MATLIGN_COMPILE_DIR}/matlign ${RSAT_BIN}/
+
+
+################################################################
+## plink - polymorphism linkage analysis
+PLINK_RELEASE=160705
+PLINK_URL=http://www.cog-genomics.org/static/bin/plink${PLINK_RELEASE}
+PLINK_ARCHIVE_macosx=plink_mac.zip
+PLINK_ARCHIVE=${PLINK_ARCHIVE_${OS}}
+PLINK_MAC_URL=${PLINK_URL}/${PLINK_ARCHIVE}
+PLINK_DIR=${SRC_DIR}/plink
+install_plink:
+	@echo
+	@echo "Installing plink for operating system ${OS}"
+	@echo "	PLINK_URL	${PLINK_URL}"
+	@echo "	PLINK_DIR	${PLINK_DIR}"
+	@echo "	PLINK_ARCHIVE	${PLINK_ARCHIVE}"
+	${MAKE} _download_plink
+
+_download_plink:
+	@mkdir -p ${PLINK_DIR}
+	@echo "Downloading plink using wget"
+	(cd ${PLINK_DIR}; wget -nv -nd ${PLINK_URL}/${PLINK_ARCHIVE}; tar -xpzf ${PLINK_ARCHIVE})
+	@echo "plink dir	${PLINK_DIR}"
+	@echo "plink zip	${PLINK_DIR}/${PLINK_ARCHIVE}"
+
+_install_plink:
+	@echo "Uncompressing PLINK_ACHIVE	${PLINK_DIR}/${PLINK_ARCHIVE}"
+	@echo "Installing in RSA_BIN	${RSAT_BIN}"
+	(cd ${PLINK_DIR}; unzip ${PLINK_ARCHIVE}; rsync -ruptvl plink ${RSAT_BIN}/; rsync -ruptvl prettify ${RSAT_BIN}/)
+
+#}; ${SUDO} rsync -ruptvl ${PLINK_BIN} ${RSAT_BIN}/; cd ${RSAT_BIN}; ${SUDO} rm -f plink; ${SUDO} ln -s ${PLINK_BIN} plink)
+
