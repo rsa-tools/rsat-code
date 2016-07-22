@@ -266,7 +266,7 @@ compile_floydwarshall:
 compile_kwalks:
 	@echo "Compiling kwalks (software developed by Jerome Callut and Pierre Dupont, UCL, Belgium)"
 	@(cd ${RSAT}/contrib/kwalks/src; make clean; make; \
-		echo "Installing lkwalk executable in bin directory ${BIN}"; \
+		echo "	Installing lkwalk executable in bin directory ${BIN}"; \
 		cd ../bin; rsync -ruptvl lkwalk ${BIN})
 	@echo "Setting read/write access to ${RSAT}/contrib/kwalks for temporary files"
 	@chmod 777 ${RSAT}/contrib/kwalks
