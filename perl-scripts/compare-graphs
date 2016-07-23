@@ -171,7 +171,7 @@ package main;
     ################################################################
     ## Check argument values
     if (!exists($main::infile{graph_R}) || !exists($main::infile{graph_Q})) {
-      &RSAT::error::FatalError("You must specify two graph file");
+      &RSAT::error::FatalError("You must specify two graph files");
     }
     my $error = "0";
     if (!-e ($main::infile{graph_R}) || -z ($main::infile{graph_R})) {
