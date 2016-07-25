@@ -444,19 +444,24 @@ package main;
       next unless (defined($handle{$feature})); ## Skip feature types not defined in export list
 
       ## Parse the "attribute" field of the gtf, which contains several attributes
+      # there are alternative formats:
+      #1    tair    gene    3631    5899    .   +   .   gene_id "AT1G01010"; gene_version "1"; gene_name "NAC001"; ...
+      #Chr01    phytozomev10    gene    27355   28320   .   -   .   ID=Glyma.01G000100.Wm82.a2.v1;Name=Glyma.01G000100;...
+      #contig_1000513   Cufflinks   gene    946 4541    .   +   .   ID=TCONS_00000005;gene_id=XLOC_000003;...
+      
       my @attributes = split /;\s*+/, $attributes{attribute};
       foreach my $attr (@attributes) {
-	if ($attr =~ /(\S+)\s+\"(\S+)\"/) {
-	  $attributes{$1} = $2;
-	}
+	    if ($attr =~ /(\S+)\s+\"(\S+)\"/ || $attr =~ /(\S+?)=(\S+)/) {
+	        $attributes{$1} = $2;
+	    }
       }
 
       ## Use gene ID as gene name if not defined
       unless ($attributes{gene_name}) {
-	$attributes{gene_name} = $attributes{gene_id} || $null;
+    	$attributes{gene_name} = $attributes{gene_id} || $attributes{Name} || $null;
       }
       unless ($attributes{transcript_name}) {
-	$attributes{transcript_name} = $attributes{transcript_id} || $null;
+	    $attributes{transcript_name} = $attributes{transcript_id} || $attributes{Name} || $null;
       }
 
 
