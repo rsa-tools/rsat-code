@@ -349,7 +349,7 @@ package main;
 
     # try to get taxonomy from eg REST interface
     if ((defined($taxid)) && ($taxid ne "")) {
-      &RSAT::message::TimeWarn("Getting taaxonomy for", $organism_name, "taxid=".$taxid) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Getting taxonomy for", $organism_name, "taxid=".$taxid) if ($main::verbose >= 2);
       my ($taxonomy,$sp_name) = ('','');
       my $server = 'http://rest.ensemblgenomes.org'; # should be in %ENV
       my $ext = '/taxonomy/classification/'.$taxid.'?';
