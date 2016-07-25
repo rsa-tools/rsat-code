@@ -433,7 +433,7 @@ package main;
       $feature_per_contig_count{$attributes{seqname}}{$feature}++;
 
       ## Format some specific attribtues according to RSAT requirements
-      if(defined($attributes{strand})
+      if(defined($attributes{strand}))
       {
         $attributes{strand} =~ s/\+/D/;
         $attributes{strand} =~ s/\-/R/;
