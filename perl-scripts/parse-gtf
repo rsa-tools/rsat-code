@@ -422,8 +422,8 @@ package main;
       my @fields = split("\t");
 
       foreach my $f (0..$#gtf_fields) {
-	$field = $gtf_fields[$f];
-	$attributes{$field} = $fields[$f];
+	    $field = $gtf_fields[$f];
+	    $attributes{$field} = $fields[$f];
       }
 
       ## Increment counter per feature type
@@ -433,9 +433,11 @@ package main;
       $feature_per_contig_count{$attributes{seqname}}{$feature}++;
 
       ## Format some specific attribtues according to RSAT requirements
-      $attributes{strand} =~ s/\+/D/;
-      $attributes{strand} =~ s/\-/R/;
-
+      if(defined($attributes{strand})
+      {
+        $attributes{strand} =~ s/\+/D/;
+        $attributes{strand} =~ s/\-/R/;
+      }
 
       #    &RSAT::message::Debug($attribute) if ($main::verbose >= 2);
 
