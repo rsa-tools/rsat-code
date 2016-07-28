@@ -29,7 +29,7 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 create.html.tab <- function(tab, img = 0, plot = 0, link.text.covered = 0, link.text.not.covered = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Coverture</th><th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
@@ -1260,7 +1260,7 @@ html.report <- readLines(html.template.file)
 # [9] "Nb_hits"         "Nb_sequences"    "Coverture"       "P_val_threshold"
 # [13] "IDs"             "Profiles"        "TFBS"            "Logo"           
 # [17] "Logo_RC"
-profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,13,3:6,9:11,7,14:19)], img = c(13,14), plot = c(11,12), link.text.covered = 15, link.text.not.covered = 16)
+profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,13,3:6,9:11,7,2,14:19)], img = c(14,15), plot = c(12,13), link.text.covered = 16, link.text.not.covered = 17)
 
 profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 
@@ -1296,6 +1296,12 @@ html.report <- gsub("--evalues--", evalues, html.report)
 pvalues <- paste("pvalues['", all.motifs, "'] = '", as.vector(datatable.info.tab$P_val), "';", sep = "")
 pvalues <- paste(pvalues, collapse = "\n")
 html.report <- gsub("--pvalues--", pvalues, html.report)
+
+## Add the profile clusters (to display in the tooltip)
+## They are inserted in the JS section
+profile.clusters.array <- paste(" profile_clusters['", all.motifs, "'] = '", as.vector(datatable.info.tab$Profile_cluster), "';", sep = "")
+profile.clusters.array <- paste(profile.clusters.array, collapse = "\n")
+html.report <- gsub("--profile_clusters_array--",  profile.clusters.array, html.report)
 
 ## Add the q-values (to display in the tooltip)
 ## They are inserted in the JS section
@@ -1440,6 +1446,12 @@ html.report <- gsub("--names_cov--", plot.names.cover, html.report)
 IDs.cov <- paste("cov_IDs['", all.motifs.cover, "'] = '", TF.IDs.cp, "';", sep = "")
 IDs.cov <- paste(IDs.cov, collapse = "\n")
 html.report <- gsub("--IDs_cov--", IDs.cov, html.report)
+
+## Add the profile cluster (to display in the tooltip)
+## They are inserted in the JS section
+cov.profile.clusters <- paste("cov_profile_clusters['", all.motifs.cover, "'] = '", as.vector(datatable.info.tab$Profile_cluster), "';", sep = "")
+cov.profile.clusters <- paste(cov.profile.clusters, collapse = "\n")
+html.report <- gsub("--profile_clusters_array_cov--", cov.profile.clusters, html.report)
 
 ## Add the real motif logo path (to display in the tooltip)
 ## They are inserted in the JS section
