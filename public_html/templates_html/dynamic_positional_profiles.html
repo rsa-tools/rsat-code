@@ -396,7 +396,7 @@
 
 
 <!--New section-->
-<div id="sig_coverture_button" class="button_click Section_button"><strong>Significance vs Coverture</strong></div>
+<div id="sig_coverture_button" class="button_click Section_button"><strong>Significance vs Fraction of covered sequences</strong></div>
 <div id="sig_coverture" style="display:none" class="div_chart">
  
 <div  style="display:block; clear:both;position:relative;float:left;">
@@ -546,6 +546,9 @@ var chart = c3.generate({
 
 });
 
+    var profile_clusters = new Array();
+--profile_clusters_array--
+
     var TF_coverture = new Array();
 --TF_covertures--
 
@@ -669,7 +672,7 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
         titleFormat = config.tooltip_format_title || defaultTitleFormat,
         nameFormat = config.tooltip_format_name || function (name) { return name; },
         valueFormat = config.tooltip_format_value || defaultValueFormat,
-        text, i, title_name, title_ID, title_p, title_q, title_s, title_c, value, name, bgcolor;
+        text, i, title_name, title_ID, title_p, title_pc, title_q, title_s, title_c, value, name, bgcolor;
 
     // You can access all of data like this:
     console.log($$.data.targets);
@@ -683,10 +686,11 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
             title_p = 'P-val';
             title_q = 'Q-val';
             title_s = 'Sig';
-            title_c = 'Coverture';
+            title_c = 'Fraction of sequences';
+            title_pc = 'Profile cluster';
             title_logo = 'Logo';
             title_logo_rc = 'Logo RC';
-            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_p + "</th><th colspan='1'>" + title_q + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_c + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";
+            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_p + "</th><th colspan='1'>" + title_q + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_c + "</th><th colspan='1'>"+ title_pc +"</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";
         }
 
         name = nameFormat(d[i].name);
@@ -700,6 +704,7 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
         text += "<td>" + qvalues[d[i].id] + "</td>";
         text += "<td>" + significances[d[i].id] + "</td>";
         text += "<td>" + TF_coverture[d[i].id] + "</td>";
+        text += "<td>" + profile_clusters[d[i].id] + "</td>";
         text += "<td><img class='small_logo' src='" + pics[d[i].id] + "' /></td>";
         text += "<td><img class='small_logo' src='" + pics_rc[d[i].id] + "' /></td>";
         text += "</tr>";
@@ -803,6 +808,9 @@ var coverchart = c3.generate({
 
 });
 
+    var cov_profile_clusters = new Array();
+--profile_clusters_array_cov--
+
     var cov_pics = new Array();
 --pics_cov--
 
@@ -837,7 +845,7 @@ function tooltip_contents_2(d, defaultTitleFormat, defaultValueFormat, color) {
         titleFormat = config.tooltip_format_title || defaultTitleFormat,
         nameFormat = config.tooltip_format_name || function (name) { return name; },
         valueFormat = config.tooltip_format_value || defaultValueFormat,
-        text, i, title_name, title_ID, title_c, title_s, value, name, bgcolor;
+        text, i, title_name, title_ID, title_c, title_s,  title_pc, value, name, bgcolor;
 
     // You can access all of data like this:
     console.log($$.data.targets);
@@ -848,12 +856,13 @@ function tooltip_contents_2(d, defaultTitleFormat, defaultValueFormat, color) {
         if (! text) {
             title_name = 'Motif Name';
 	    title_ID = 'Motif ID';
-            title_c = 'Coverture';
+            title_c = 'Fraction of seq';
             title_s = 'Sig';
+            title_pc = 'Profile cluster';
             title_logo = 'Logo';
             title_logo_rc = 'Logo RC';
             title_profile = 'Profile';
-            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_c + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th><th colspan='1'>" + title_profile + "</th></tr>";
+            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_c + "</th><th colspan='1'>" + title_s + "</th><th colspan='1'>" + title_pc + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th><th colspan='1'>" + title_profile + "</th></tr>";
         }
 
         name = nameFormat(d[i].name);
@@ -865,6 +874,7 @@ function tooltip_contents_2(d, defaultTitleFormat, defaultValueFormat, color) {
         text += "<td>" + cov_IDs[d[i].id] + "</td>";
         text += "<td>" + cov_TF_coverture[d[i].id] + "</td>";
         text += "<td>" + cov_significances[d[i].id] + "</td>";
+        text += "<td>" + cov_profile_clusters[d[i].id] + "</td>";
         text += "<td><img class='small_logo' src='" + cov_pics[d[i].id] + "' /></td>";
         text += "<td><img class='small_logo' src='" + cov_pics_rc[d[i].id] + "' /></td>";
         text += "<td><img class='small_pic' src='" + cov_pics_profile[d[i].id] + "' /></td>";
@@ -886,7 +896,7 @@ $(document).ready( function () {
 	    "smart": true
 	},
 	"aoColumnDefs": [
-            { "bSortable": true, "aTargets": [ 0,1,2,3,4,5,6,7],
+            { "bSortable": true, "aTargets": [ 0,1,2,3,4,5,6,7,8],
  //             "width": "20%",
             }
 	]	
