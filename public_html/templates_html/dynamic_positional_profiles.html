@@ -381,9 +381,7 @@
 <div  style="display:block; clear:both;position:relative;float:left;">
       <button class='small button_chart' id='show_all_button' onclick='show_all();'>Show All Profiles</button>
       <button class='small button_chart' id='hide_all_button' onclick='hide_all();'>Hide All Profiles</button>
---start_e--      <button class='small button_chart' onclick='enriched();'>Hill Profiles</button> --end_e--
---start_a--      <button class='small button_chart' onclick='avoided();'>Valley Profiles</button> --end_a--
---start_f--      <button class='small button_chart' onclick='flat();'>Flat Profiles</button> --end_f--
+--button_clusters--
 <button class='small button_chart' onclick='sig_upper_threshold();'><b>Significance</b>: Lower threshold<div><input style="height:20px;margin:5px;" type="number" value='' id="sig_up" /></div></button>
 <button class='small button_chart' onclick='search_motifs();'><b>Search:</b><div><input style="height:20px;margin:5px;" type="search" value='' id="search_motifs" /></div></button>
 <!-- <button class='small button_chart' onclick='sig_lower_threshold();'>Hide TEST<div id="ccc"><input type="number" id="sig_low" /></div></button> -->
@@ -404,6 +402,7 @@
 <div  style="display:block; clear:both;position:relative;float:left;">
       <button class='small button_chart' id='show_all_button_cov' onclick='show_all_cover();'>Show All Points</button>
       <button class='small button_chart' id='hide_all_button_cov' onclick='hide_all_cover();'>Hide All Points</button>
+      --cluster_points--
       
 <button class='small button_chart' onclick='sig_upper_threshold();'><b>Significance</b>: Lower threshold<div><input style="height:20px;margin:5px;" type="number" value='' id="sig_up" /></div></button>
 <button class='small button_chart' onclick='search_motifs();'><b>Search:</b><div><input style="height:20px;margin:5px;" type="search" value='' id="search_motifs" /></div></button>
@@ -571,7 +570,6 @@ var chart = c3.generate({
     var significances = new Array();
 --significances--
 
-
 function show_all() {
     chart.show([--all--]);
 }
@@ -580,29 +578,8 @@ function hide_all() {
     chart.hide([--all--]);
 }
 
-function show_all_cover() {
-    coverchart.show([--all_cover--]);
-}
-
-function hide_all_cover() {
-    coverchart.hide([--all_cover--]);
-}
-
-// Show all the enriched/avoided/flat motifs
-function enriched() {
-    chart.hide([--all--]);
-    chart.show([--enriched--]);
-}
-
-function avoided() {
-    chart.hide([--all--]);
-    chart.show([--avoided--]);
-}
-
-function flat() {
-    chart.hide([--all--]);
-    chart.show([--flat--]);
-}
+// Show each cluster separately
+--function_profile_clusters--
 
 Array.prototype.difference = function (x) {
     return this.filter(function (i) {
@@ -843,6 +820,17 @@ var coverchart = c3.generate({
 
     var cov_TF_coverture = new Array();
 --TF_covertures_cov--
+
+function show_all_cover() {
+    coverchart.show([--all_cover--]);
+}
+
+function hide_all_cover() {
+    coverchart.hide([--all_cover--]);
+}
+
+// Show each cluster separately
+--function_profile_clusters_points--
 
 function tooltip_contents_2(d, defaultTitleFormat, defaultValueFormat, color) {
     var $$ = this, config = $$.config, CLASS = $$.CLASS,
