@@ -19,7 +19,8 @@ required.packages = c("devtools",
                       "flux",
                       "gplots",
                       "RColorBrewer",
-                      "jpeg"
+                      "jpeg",
+                      "dynamicTreeCut"
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
