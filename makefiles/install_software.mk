@@ -564,7 +564,8 @@ _download_d3:
 ################################################################
 ## Install fastqc, a software tool to control the quality of read
 ## files (next generation sequencing).
-FASTQC_VER=0.11.3
+## http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.5.zip
+FASTQC_VER=0.11.5
 FASTQC_ZIP=fastqc_v${FASTQC_VER}.zip
 FASTQC_URL=http://www.bioinformatics.babraham.ac.uk/projects/fastqc/${FASTQC_ZIP}
 FASTQC_DOWNLOAD_DIR=${SRC_DIR}/fastqc
@@ -585,8 +586,10 @@ _download_fastqc:
 
 _install_fastqc:
 	@echo
-	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
-	@echo "export PATH=$${PATH}:${FASTQC_EXEC_DIR}"
+	@ln -s -f ${FASTQC_INSTALL_DIR}/FastQC/fastqc ${RSAT_BIN}/fastqc
+	@echo "	fastqc link    	 ${RSAT_BIN}/fastqc"
+#	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
+#	@echo "export PATH=$${PATH}:${FASTQC_EXEC_DIR}"
 
 ################################################################
 ## Install BEDTools
