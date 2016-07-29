@@ -304,7 +304,9 @@ thrash <- sapply(c("average", "complete", "single", "ward"), function(m){
     m <- "ward.D"
   }
   
-  paste(m, "1")
+  print(paste(m, "1"))
+  
+  coverage.contingency.table.dist <- Dist(coverage.contingency.table, method = 'pearson')
   
   pfile <- paste(coverage.json.folder, "/coverage_clustering_", m,".json", sep = "")
   pdf(file = pfile)
@@ -439,34 +441,34 @@ order.list.rows <- list()
 order.list.columns <- list()
 order.list.names <- list()
 
-thrash <- sapply(c("average", "complete", "single", "ward"), function(m){
-  
-  if(m == "ward"){
-    temp <- m
-    m <- "ward.D"
-  }
-  
-  pfile <- paste(coverage.json.folder, "/collection_clustering_", m,".json", sep = "")
-  pdf(file = pfile)
-  
-  paste(m, "2")
-
-
-  hm.clusters <- heatmap.2(clusters.matrix,
-                           hclustfun = function(x) hclust(x, method = m),
-                           distfun = function(x) Dist(x, method = 'pearson')
-  )
-  t <- dev.off()
-  
-  if(m == "ward.D"){
-    m <- "ward"
-  }
-  
-  order.list.rows[[m]] <<- paste(rev(hm.clusters[[1]]), collapse = ",")
-  cluster.order <- as.numeric(unlist(strsplit(order.list.rows[[m]], ",")))
-  order.list.columns[[m]] <<- paste(rev(hm.clusters[[2]]), collapse = ",")
-  order.list.names[[m]] <<- paste(paste("'", cluster.names.original[cluster.order], "'", sep = ""), collapse = ",")
-})
+# thrash <- sapply(c("average", "complete", "single", "ward"), function(m){
+#   
+#   if(m == "ward"){
+#     temp <- m
+#     m <- "ward.D"
+#   }
+#   
+#   pfile <- paste(coverage.json.folder, "/collection_clustering_", m,".json", sep = "")
+#   pdf(file = pfile)
+#   
+#   print(paste(m, "2"))
+# 
+# 
+#   hm.clusters <- heatmap.2(clusters.matrix,
+#                            hclustfun = function(x) hclust(x, method = m),
+#                            distfun = function(x) Dist(x, method = 'pearson')
+#   )
+#   t <- dev.off()
+#   
+#   if(m == "ward.D"){
+#     m <- "ward"
+#   }
+#   
+#   order.list.rows[[m]] <<- paste(rev(hm.clusters[[1]]), collapse = ",")
+#   cluster.order <- as.numeric(unlist(strsplit(order.list.rows[[m]], ",")))
+#   order.list.columns[[m]] <<- paste(rev(hm.clusters[[2]]), collapse = ",")
+#   order.list.names[[m]] <<- paste(paste("'", cluster.names.original[cluster.order], "'", sep = ""), collapse = ",")
+# })
 
 ###############################################
 ## Parse the Heatmap table format used in D3
@@ -494,15 +496,6 @@ cluster.names <- paste(paste("'", cluster.names.original, "'", sep =""), collaps
 
 ## Get the clusters number orderer according the linkage method
 cluster.number <- paste(1:dim(clusters)[1], collapse=",")
-average.r.number <- order.list.rows[["average"]]
-complete.r.number <- order.list.rows[["complete"]]
-single.r.number <- order.list.rows[["single"]]
-ward.r.number <- order.list.rows[["ward"]]
-
-average.c.number <- order.list.columns[["average"]]
-complete.c.number <- order.list.columns[["complete"]]
-single.c.number <- order.list.columns[["single"]]
-ward.c.number <- order.list.columns[["ward"]]
 
 ## Default names
 default.names <- paste(paste("'", cluster.names.original, "'", sep = ""), collapse = ",")
@@ -565,14 +558,14 @@ html.body.size <- 200 + left + (col.nb*cell.size) + 30
 order.info <- matrix(c("Gradient", gradient,
                        "Cluster_names", cluster.names,
                        "Cluster_number", cluster.number,
-                       "Average_c_number", average.c.number,
-                       "Complete_c_number", complete.c.number,
-                       "Single_c_number", single.c.number,
-                       "Ward_c_number", ward.c.number,
-                       "Average_r_number", average.r.number,
-                       "Complete_r_number", complete.r.number,
-                       "Single_r_number", single.r.number,
-                       "Ward_r_number", ward.r.number,
+                       # "Average_c_number", average.c.number,
+                       # "Complete_c_number", complete.c.number,
+                       # "Single_c_number", single.c.number,
+                       # "Ward_c_number", ward.c.number,
+                       # "Average_r_number", average.r.number,
+                       # "Complete_r_number", complete.r.number,
+                       # "Single_r_number", single.r.number,
+                       # "Ward_r_number", ward.r.number,
                        "Cell_size", cell.size,
                        "Col_number", col.nb,
                        "Row_number", row.nb,
