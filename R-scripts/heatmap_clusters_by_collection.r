@@ -304,6 +304,8 @@ thrash <- sapply(c("average", "complete", "single", "ward"), function(m){
     m <- "ward.D"
   }
   
+  paste(m, "1")
+  
   pfile <- paste(coverage.json.folder, "/coverage_clustering_", m,".json", sep = "")
   pdf(file = pfile)
   hm.collections <- heatmap.2(coverage.contingency.table,
@@ -446,6 +448,8 @@ thrash <- sapply(c("average", "complete", "single", "ward"), function(m){
   
   pfile <- paste(coverage.json.folder, "/collection_clustering_", m,".json", sep = "")
   pdf(file = pfile)
+  
+  paste(m, "2")
 
 
   hm.clusters <- heatmap.2(clusters.matrix,
