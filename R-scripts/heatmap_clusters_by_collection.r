@@ -297,21 +297,20 @@ write.table(coverage.contingency.table, file = coverage.table.file, sep = "\t", 
 comp.order.list.columns <- list()
 comp.order.list.rows <- list()
 
-sapply(c("average", "complete", "single", "ward"), function(m){
+thrash <- sapply(c("average", "complete", "single", "ward"), function(m){
   
   if(m == "ward"){
     temp <- m
     m <- "ward.D"
   }
   
-  
   pfile <- paste(coverage.json.folder, "/coverage_clustering_", m,".json", sep = "")
   pdf(file = pfile)
   hm.collections <- heatmap.2(coverage.contingency.table,
-                           hclustfun = function(x) hclust(x,method = m),
-                           distfun = function(x) Dist(x,method = 'pearson')
+                           hclustfun = function(x) hclust(x, method = m),
+                           distfun = function(x) Dist(x, method = 'pearson')
   )
-  dev.off()
+  t <- dev.off()
   
   if(m == "ward.D"){
     m <- "ward"
@@ -438,7 +437,7 @@ order.list.rows <- list()
 order.list.columns <- list()
 order.list.names <- list()
 
-sapply(c("average", "complete", "single", "ward"), function(m){
+thrash <- sapply(c("average", "complete", "single", "ward"), function(m){
   
   if(m == "ward"){
     temp <- m
@@ -450,10 +449,10 @@ sapply(c("average", "complete", "single", "ward"), function(m){
 
 
   hm.clusters <- heatmap.2(clusters.matrix,
-                           hclustfun = function(x) hclust(x,method = m),
-                           distfun = function(x) Dist(x,method = 'pearson')
+                           hclustfun = function(x) hclust(x, method = m),
+                           distfun = function(x) Dist(x, method = 'pearson')
   )
-  dev.off()
+  t <- dev.off()
   
   if(m == "ward.D"){
     m <- "ward"
