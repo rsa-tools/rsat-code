@@ -3200,7 +3200,7 @@ sub Text_end_report {
 	    <li>
 	      <strong>References</strong>
               <ol>
-                 <li> Castro-Mondragon JA et al (in preparation).</li>
+                 <li> Castro-Mondragon JA et al (in preparation) <a target="_blank" href="http://biorxiv.org/content/early/2016/07/27/065565">bioRxiv 065565; doi: http://dx.doi.org/10.1101/065565</a></li>
                  <li><strong>Last RSAT release: </strong><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
               </ol>
 	    </li>
