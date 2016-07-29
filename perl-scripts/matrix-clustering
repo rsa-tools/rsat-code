@@ -4725,7 +4725,9 @@ $clust_table .= "\n".'
   foreach my $c (1 .. scalar keys %root_motifs_features){
       $cluster = $cluster_id_hash{$c};
 
-      my $count = $root_motifs_features{$cluster}{collection_count};      
+      my $count = $root_motifs_features{$cluster}{collection_count};
+
+      print $count."\t".$cluster."\n";
 
       $row_cluster_tab .= "
          <tr>
@@ -4818,14 +4820,14 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--r_numb--/$attributes_heatmap{Row_number}/;
 	$line =~ s/--gradient--/$attributes_heatmap{Gradient}/;
 	$line =~ s/--cluster_number--/$attributes_heatmap{Cluster_number}/;
-	$line =~ s/--average_r_number--/$attributes_heatmap{Average_r_number}/;
-	$line =~ s/--complete_r_number--/$attributes_heatmap{Complete_r_number}/;
-	$line =~ s/--single_r_number--/$attributes_heatmap{Single_r_number}/;
-	$line =~ s/--ward_r_number--/$attributes_heatmap{Ward_r_number}/;
-	$line =~ s/--average_c_number--/$attributes_heatmap{Average_c_number}/;
-	$line =~ s/--complete_c_number--/$attributes_heatmap{Complete_c_number}/;
-	$line =~ s/--single_c_number--/$attributes_heatmap{Single_c_number}/;
-	$line =~ s/--ward_c_number--/$attributes_heatmap{Ward_c_number}/;
+	# $line =~ s/--average_r_number--/$attributes_heatmap{Average_r_number}/; Aqui
+	# $line =~ s/--complete_r_number--/$attributes_heatmap{Complete_r_number}/;
+	# $line =~ s/--single_r_number--/$attributes_heatmap{Single_r_number}/;
+	# $line =~ s/--ward_r_number--/$attributes_heatmap{Ward_r_number}/;
+	# $line =~ s/--average_c_number--/$attributes_heatmap{Average_c_number}/;
+	# $line =~ s/--complete_c_number--/$attributes_heatmap{Complete_c_number}/;
+	# $line =~ s/--single_c_number--/$attributes_heatmap{Single_c_number}/;
+	# $line =~ s/--ward_c_number--/$attributes_heatmap{Ward_c_number}/;
 	$line =~ s/--row_order_default--/$attributes_heatmap{Row_order_default}/;
 	$line =~ s/--label_order--/$attributes_heatmap{Cluster_names}/;
 	$line =~ s/--collections--/$attributes_heatmap{Collections}/;
