@@ -29,7 +29,7 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 create.html.tab <- function(tab, img = 0, plot = 0, link.text.covered = 0, link.text.not.covered = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Coverture</th><th class=\"tab_col\"> Chi-squared</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
@@ -713,35 +713,16 @@ cluster.profiles.counter <- 0
 thrash <- sapply(1:nb.profile.clusters, function(cl){
   
   cluster.profiles.counter <<- cluster.profiles.counter + 1
-  cluster.profiles.motifs[[cluster.profiles.counter]] <<- names(which(clusters.tree.profiles == 1))
+  cluster.profiles.motifs[[cluster.profiles.counter]] <<- names(which(clusters.tree.profiles == cluster.profiles.counter))
   
   ## Get the motif name
   cluster.profiles.motif.names[[cluster.profiles.counter]] <<- as.vector(
-    sapply(cluster.profiles.motifs[[1]], function(n){
+    sapply(cluster.profiles.motifs[[cluster.profiles.counter]], function(n){
       ID.names[which(ID.names[,2] == n),1]
     })
   )
 })
 rm(thrash)
-
-
-## JS code to show the motifs corresponding to one cluster
-## We require one function for each cluster
-show.profile.cluster.function <- 'function --profile_cluster_show--() {
-      chart.hide([--all--]);
-      chart.show([--names--]);
-}'
-
-## Generate the JS function to show the clusters
-sapply(1:length(cluster.profiles.motif.names), function(cl){
-
-  ## Define the profile cluster name
-  profile.cluste.name <- paste("Profile_cluster_", cl, sep = "")
-  
-  cluster.function <- show.profile.cluster.function
-  
-})
-
 
 ####################################################################################
 ## Draw Profiles heatmap showing the frequencies of hits per bin for each feature ##
@@ -847,8 +828,6 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(f){
   not.covered.sequences.file <- file.path(covered.tables.dir, paste(feature.query, "_not_covered_sequences_IDs.tab", sep = ""))
 
   # print("Aqui1")
-  # print(feature.query)
-  # print(covered.sequences.table)
   # # write.table(covered.sequences.table, file = covered.sequences.file, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
   # # write.table(not.covered.sequences.table, file = not.covered.sequences.file, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
   # print("Aqui2")
@@ -1123,6 +1102,8 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   x.y.coverture.names <<- rbind(x.y.coverture.names, name.cov)
 
 })
+all.motifs.cover.hash <- data.frame(all.motifs.cover, all.motif.names)
+
 
 ## Set the line width according the significance -log10(E-value)
 ## Higher significance means a wider line
@@ -1141,6 +1122,94 @@ line.w <- sapply(significance, function(s){
   }
 })
 
+
+##############################################
+## Insert the cluster functions and buttons
+all.cluster.functions <- vector()
+all.cluster.buttons <- vector()
+all.cluster.functions.cov <- vector()
+all.cluster.buttons.cov <- vector()
+
+## JS code to show the motifs corresponding to one cluster
+## We require one function for each cluster
+show.profile.cluster.function <- 'function --profile_cluster_show--() {
+chart.hide([--all_motifs_function--]);
+chart.show([--names_function--]);
+}'
+show.profile.cluster.button <- "<button class='small button_chart' onclick='--function_name--();'>--cluster_name--</button>"
+
+## JS code for coverage plot
+show.profile.cluster.function.cover <- 'function --profile_cluster_show--() {
+coverchart.hide([--all_motifs_function--]);
+coverchart.show([--names_function--]);
+}'
+show.profile.cluster.button.cover <- "<button class='small button_chart' onclick='--function_name--();'>--cluster_name--</button>"
+
+all.motifs.function <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
+all.motifs.function.cov <- paste(paste("'", all.motifs.cover, "'", sep = ""), collapse = ",")
+
+## Generate the JS function to show the clusters
+thrash <- sapply(1:length(cluster.profiles.motif.names), function(cl){
+  
+  ## Define the profile cluster name
+  profile.cluster.name <- paste("Profile_cluster_", cl, sep = "")
+  
+  cluster.function <- show.profile.cluster.function
+  cluster.function.cov <- show.profile.cluster.function.cover
+  
+  ##############################################################
+  ## Change the function's name for the corresponding cluster
+  
+  ## Button name
+  cluster.function.names <- paste(profile.cluster.name, "_show", sep = "")
+  cluster.function.names.cov <- paste(profile.cluster.name, "_show_cov", sep = "")
+  
+  ## Cluster member names
+  cluster.member.names <- as.vector(unlist(sapply(cluster.profiles.motif.names[[cl]], function(m){
+    hash.motif.IDs[[m]]
+  })))
+  cluster.member.names <- paste(paste("'", cluster.member.names, "'", sep = ""), collapse = ",")
+  
+  ## Cluster member names (cover plot)
+  cluster.member.names.cov <- as.vector(unlist(sapply(cluster.profiles.motif.names[[cl]], function(m){
+    as.vector(all.motifs.cover.hash[which(all.motifs.cover.hash[,2] == m),1])
+  })))
+  cluster.member.names.cov <- paste(paste("'", cluster.member.names.cov, "'", sep = ""), collapse = ",")
+  
+  ## Substitution
+  cluster.function <- gsub("--profile_cluster_show--", cluster.function.names, cluster.function)
+  cluster.function <- gsub("--all_motifs_function--", all.motifs.function, cluster.function)
+  cluster.function <- gsub("--names_function--", cluster.member.names, cluster.function)
+  
+  ## Substitution (cov)
+  cluster.function.cov <- gsub("--profile_cluster_show--", cluster.function.names.cov, cluster.function.cov)
+  cluster.function.cov <- gsub("--all_motifs_function--", all.motifs.function.cov, cluster.function.cov)
+  cluster.function.cov <- gsub("--names_function--", cluster.member.names.cov, cluster.function.cov)
+  
+  ## Concat all the functions
+  all.cluster.functions <<- append(all.cluster.functions, cluster.function)
+  all.cluster.functions.cov <<- append(all.cluster.functions.cov, cluster.function.cov)
+  
+  ##########################################################
+  ## Create the button to show all the motifs in a cluster
+  cluster.button <- show.profile.cluster.button
+  cluster.button <- gsub("--cluster_name--", profile.cluster.name, cluster.button)
+  cluster.button <- gsub("--function_name--", cluster.function.names, cluster.button)
+  
+  ## Create the button to show all the motifs in a cluster (cov)
+  cluster.button.cov <- show.profile.cluster.button
+  cluster.button.cov <- gsub("--cluster_name--", profile.cluster.name, cluster.button.cov)
+  cluster.button.cov <- gsub("--function_name--", cluster.function.names.cov, cluster.button.cov)
+  
+  ## Concat all the functions
+  all.cluster.buttons <<- append(all.cluster.buttons, cluster.button)
+  all.cluster.buttons.cov <<- append(all.cluster.buttons.cov, cluster.button.cov)
+
+})
+all.cluster.functions <- paste(all.cluster.functions, collapse = "\n")
+all.cluster.buttons <- paste(all.cluster.buttons, collapse = "\n")
+all.cluster.functions.cov <- paste(all.cluster.functions.cov, collapse = "\n")
+all.cluster.buttons.cov <- paste(all.cluster.buttons.cov, collapse = "\n")
 
 ## Write the logo's path
 logos.F <- sapply(TF.IDs, function(i){
@@ -1191,7 +1260,7 @@ html.report <- readLines(html.template.file)
 # [9] "Nb_hits"         "Nb_sequences"    "Coverture"       "P_val_threshold"
 # [13] "IDs"             "Profiles"        "TFBS"            "Logo"           
 # [17] "Logo_RC"
-profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,13,3:6,9:11,7,14:19)], img = c(13,14), plot = c(11,12), link.text.covered = 15, link.text.not.covered = 16)
+profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,13,3:6,9:11,7,2,14:19)], img = c(14,15), plot = c(12,13), link.text.covered = 16, link.text.not.covered = 17)
 
 profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 
@@ -1228,6 +1297,12 @@ pvalues <- paste("pvalues['", all.motifs, "'] = '", as.vector(datatable.info.tab
 pvalues <- paste(pvalues, collapse = "\n")
 html.report <- gsub("--pvalues--", pvalues, html.report)
 
+## Add the profile clusters (to display in the tooltip)
+## They are inserted in the JS section
+profile.clusters.array <- paste(" profile_clusters['", all.motifs, "'] = '", as.vector(datatable.info.tab$Profile_cluster), "';", sep = "")
+profile.clusters.array <- paste(profile.clusters.array, collapse = "\n")
+html.report <- gsub("--profile_clusters_array--",  profile.clusters.array, html.report)
+
 ## Add the q-values (to display in the tooltip)
 ## They are inserted in the JS section
 qvalues <- paste("qvalues['", all.motifs, "'] = '", as.vector(datatable.info.tab$Q_val), "';", sep = "")
@@ -1250,11 +1325,9 @@ logos <- paste("pics['", all.motifs, "'] = '", as.vector(datatable.info.tab$Logo
 logos <- paste(logos, collapse = "\n")
 html.report <- gsub("--pics--", logos, html.report)
 
-## Aqui_borrar
 logos.co <- paste("pics_m1['", all.motifs, "'] = '", as.vector(datatable.info.tab$Logo), "';", sep = "")
 logos.co <- paste(logos.co, collapse = "\n")
 html.report <- gsub("--pics_m1--", logos.co, html.report)
-
 
 ## Logos in Reverse complement
 logos.rc <- sapply(TF.IDs, function(i){
@@ -1316,19 +1389,6 @@ if(draw.area == 1){
   html.report <- gsub("--area--", area, html.report)
 }
 
-## TO DO: insert the cluster members in the HTML form
-## TO DO: create automatically in the HTML form a button to hide/show the clusters
-# if(length(avoided.motifs) == 0){
-#   html.report <- gsub("--start_a--", "<!--", html.report)
-#   html.report <- gsub("--end_a--", "-->", html.report)
-#   html.report <- gsub("--avoided--", all.motifs, html.report)
-# } else {
-#   avoided.motifs <- paste(paste("'", avoided.motifs, "'", sep = ""), collapse = ",")
-#   html.report <- gsub("--avoided--", avoided.motifs, html.report)
-#   html.report <- gsub("--start_a--", "", html.report)
-#   html.report <- gsub("--end_a--", "", html.report)
-# }
-
 ## Insert the Y axis limits
 ## They are inserted in the C3section
 max.y <- max(frequency.per.bin.table) + 0.02
@@ -1387,6 +1447,12 @@ IDs.cov <- paste("cov_IDs['", all.motifs.cover, "'] = '", TF.IDs.cp, "';", sep =
 IDs.cov <- paste(IDs.cov, collapse = "\n")
 html.report <- gsub("--IDs_cov--", IDs.cov, html.report)
 
+## Add the profile cluster (to display in the tooltip)
+## They are inserted in the JS section
+cov.profile.clusters <- paste("cov_profile_clusters['", all.motifs.cover, "'] = '", as.vector(datatable.info.tab$Profile_cluster), "';", sep = "")
+cov.profile.clusters <- paste(cov.profile.clusters, collapse = "\n")
+html.report <- gsub("--profile_clusters_array_cov--", cov.profile.clusters, html.report)
+
 ## Add the real motif logo path (to display in the tooltip)
 ## They are inserted in the JS section
 logos.cov <- sapply(TF.IDs.cp, function(i){
@@ -1426,7 +1492,6 @@ profiles.pics.cov <- paste("cov_pics_profile['", all.motifs.cover, "'] = ", all.
 profiles.pics.cov <- paste(profiles.pics.cov, collapse = "\n")
 html.report <- gsub("--profile_pics_cov--", profiles.pics.cov, html.report)
 
-## Aqui_borrar
 all.profiles.pics.co <- paste("'", as.vector(datatable.info.tab$Profiles), "'", sep = "")
 profiles.pics.cov.co <- paste("profiles_m1['", all.motifs, "'] = ", all.profiles.pics.co, ";", sep = "")
 profiles.pics.cov.co <- paste(profiles.pics.cov.co, collapse = "\n")
@@ -1485,6 +1550,11 @@ html.report <- gsub("--row_label--", row.labels, html.report)
 
 html.body.size <- 200 + left + (length(matrix.names)*20) + 30
 html.report <- gsub("--body--", html.body.size, html.report)
+
+html.report <- gsub("--function_profile_clusters--", all.cluster.functions, html.report)
+html.report <- gsub("--button_clusters--", all.cluster.buttons, html.report)
+html.report <- gsub("--function_profile_clusters_points--", all.cluster.functions.cov, html.report)
+html.report <- gsub("--cluster_points--", all.cluster.buttons.cov, html.report)
 
 ## Insert the motif names (to hide/show all)
 ## They are inserted in the JQuery section
