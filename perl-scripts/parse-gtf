@@ -348,8 +348,8 @@ package main;
     $organism{taxonomy} = $null;
 
     # try to get taxonomy from eg REST interface
-    if ((defined($taxid)) && ($taxid ne "")) {
-      &RSAT::message::TimeWarn("Getting taaxonomy for", $organism_name, "taxid=".$taxid) if ($main::verbose >= 2);
+    if ( (defined($taxid)) && ($taxid ne "")) {
+      &RSAT::message::TimeWarn("Getting taxonomy for", $organism_name, "taxid=".$taxid) if ($main::verbose >= 2);
       my ($taxonomy,$sp_name) = ('','');
       my $server = 'http://rest.ensemblgenomes.org'; # should be in %ENV
       my $ext = '/taxonomy/classification/'.$taxid.'?';
@@ -422,8 +422,8 @@ package main;
       my @fields = split("\t");
 
       foreach my $f (0..$#gtf_fields) {
-	$field = $gtf_fields[$f];
-	$attributes{$field} = $fields[$f];
+	    $field = $gtf_fields[$f];
+	    $attributes{$field} = $fields[$f];
       }
 
       ## Increment counter per feature type
@@ -433,55 +433,81 @@ package main;
       $feature_per_contig_count{$attributes{seqname}}{$feature}++;
 
       ## Format some specific attribtues according to RSAT requirements
-      $attributes{strand} =~ s/\+/D/;
-      $attributes{strand} =~ s/\-/R/;
-
+      if(defined($attributes{strand}))
+      {
+        $attributes{strand} =~ s/\+/D/;
+        $attributes{strand} =~ s/\-/R/;
+      }
 
       #    &RSAT::message::Debug($attribute) if ($main::verbose >= 2);
 
       next unless (defined($handle{$feature})); ## Skip feature types not defined in export list
 
       ## Parse the "attribute" field of the gtf, which contains several attributes
+      # there are alternative formats:
+      #1    tair    gene    3631    5899    .   +   .   gene_id "AT1G01010"; gene_version "1"; gene_name "NAC001"; ...
+      #1    tair    CDS 3760    3913    .   +   0   gene_id "AT1G01010"; ... protein_id "AT1G01010.1";...
+      #Chr01    phytozomev10    gene    27355   28320   .   -   .   ID=Glyma.01G000100.Wm82.a2.v1;Name=Glyma.01G000100;...
+      #Chr01    phytozomev10    CDS 27656   27824   .   -   1   ID=Glyma.01G000100.1.Wm82.a2.v1.CDS.3;Parent=...
+      #contig_1000513   Cufflinks   gene    946 4541    .   +   .   ID=TCONS_00000005;gene_id=XLOC_000003;...
+      #
+      # new supported attributes: key=value, Parent, Name, \w+.CDS.\d+, 
+      
       my @attributes = split /;\s*+/, $attributes{attribute};
       foreach my $attr (@attributes) {
-	if ($attr =~ /(\S+)\s+\"(\S+)\"/) {
-	  $attributes{$1} = $2;
-	}
+	    if ($attr =~ /(\S+)\s+\"(\S+)\"/ || $attr =~ /(\S+?)=(\S+)/) {
+	        $attributes{$1} = $2; #print "$feature $1 -> $2\n";
+            if($feature eq 'cds') {
+                my $cds_attr = $attributes{$1};
+
+                # capture exon number from JGI annotations in GTF format
+                if($cds_attr =~ m/CDS.(\d+)/) {
+                    $attributes{exon_number} = $1;
+                }
+            }
+	    }
       }
 
       ## Use gene ID as gene name if not defined
       unless ($attributes{gene_name}) {
-	$attributes{gene_name} = $attributes{gene_id} || $null;
+    	$attributes{gene_name} = $attributes{gene_id} || $attributes{Name} || $attributes{Parent} || $null;
       }
       unless ($attributes{transcript_name}) {
-	$attributes{transcript_name} = $attributes{transcript_id} || $null;
+	    $attributes{transcript_name} = $attributes{transcript_id} || $attributes{Name} || $attributes{Parent} || $null;
       }
-
 
       ## Define feature-specific fields
       $attributes{feature_id} = $feature."_".$feature_count{$feature};
       if ($feature eq "gene") {
-	$attributes{feature_id} = $attributes{gene_id};
-	$attributes{gene_id} =  $attributes{gene_id};
-
+	    $attributes{feature_id} = $attributes{gene_id} || $attributes{Name};
+	    $attributes{gene_id}  ||= $attributes{Name};
       } elsif ($feature eq "cds") {
-	$attributes{feature_id} = $attributes{protein_id};
-	$attributes{gene_id} =  $attributes{gene_id};
+    	$attributes{feature_id}   = $attributes{protein_id} || $attributes{Parent};
+	    $attributes{gene_id}    ||= $attributes{Parent}; # in JGI GTF this is really protein_id
+        $attributes{protein_id} ||= $attributes{Parent};
+        $attributes{transcript_id} ||= $attributes{Parent};
       }
 
+      #if($feature eq 'cds'){
+      #  print "$feature";
+      #  foreach my $k qw( feature_id gene_name ) #gene_id transcript_id gene_name seqname start end strand )
+      #  {
+      #      if(!$attributes{$k}){ $attributes{$k} = '?' }
+      #      print "\t$attributes{$k}";
+      #  } print "\n";
+      #}
 
       ## parse feature type-specific fields
       my @values = ();
       foreach my $field (@{$out_fields{$feature}}) {
 #      
 #      &RSAT::message::Debug($feature, $attributes{feature_id}, $field, $attributes{$field});
-	my $value = $null;
-	if (defined($attributes{$field})) {
-	  $value =  $attributes{$field};
-	}
-	push @values, $value;
+	    my $value = $null;
+	    if (defined($attributes{$field})) {
+	        $value =  $attributes{$field};
+	    }
+	    push @values, $value;
       }
-      
 
       my $handle = $handle{$feature};
       print $handle join("\t", @values), "\n";

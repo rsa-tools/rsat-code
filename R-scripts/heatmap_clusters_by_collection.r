@@ -102,14 +102,16 @@ div.selectAll("g")--return--
 </script>--return--'
 
 # cluster.counts.file <- "/home/jaimicore/Documents/PhD/clusters_summary_table.tab"
+# cluster.counts.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/clusters_summary_table.tab"
 
 ## Read cluster count table
 clusters <- read.table(file = cluster.counts.file, sep = "\t", header = TRUE)
 names(clusters) <- gsub("X.Cluster_ID", "Cluster_ID", names(clusters))
 cluster.names.original <- as.vector(clusters$Cluster_ID)
+clusters[is.na(clusters)] <- 0
 
 # Read the root motif table and save the path to the logos
-# root.motifs.table <- "/home/jaimicore/Documents/PhD/Multi_algorithms_analysis_hclust-average_Ncor0.4_cor0.6_root_motifs_table.tab"
+# root.motifs.table <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/All_plant_motifs_root_motifs_table.tab"
 root.motifs.files <- read.table(file = root.motifs.table, sep = "\t", header = TRUE)
 names(root.motifs.files) <- gsub("X.Cluster_ID", "Cluster_ID", names(root.motifs.files))
 
@@ -215,7 +217,7 @@ x <- sapply(names(motif.DB.counts), function(DB){
       file.remove(JSON.intersect.file, showWarnings = FALSE)
     }
     write(JSON.intersection.cp, file = JSON.intersect.file, append = TRUE)
-        
+
   })
   
   coverage.contingency.table <<- cbind(coverage.contingency.table, matrix(coverage, ncol = 1))
@@ -297,21 +299,24 @@ write.table(coverage.contingency.table, file = coverage.table.file, sep = "\t", 
 comp.order.list.columns <- list()
 comp.order.list.rows <- list()
 
-sapply(c("average", "complete", "single", "ward"), function(m){
+thrash <- sapply(c("average", "complete", "single", "ward"), function(m){
   
   if(m == "ward"){
     temp <- m
     m <- "ward.D"
   }
   
+  print(paste(m, "1"))
   
-  pfile <- paste(coverage.json.folder, "/coverage_clustering_", m,".json", sep = "")
-  pdf(file = pfile)
+  coverage.contingency.table.dist <- Dist(coverage.contingency.table, method = 'pearson')
+  
+  # pfile <- paste(coverage.json.folder, "/coverage_clustering_", m,".json", sep = "")
+  # pdf(file = pfile)
   hm.collections <- heatmap.2(coverage.contingency.table,
-                           hclustfun = function(x) hclust(x,method = m),
-                           distfun = function(x) Dist(x,method = 'pearson')
+                           hclustfun = function(x) hclust(x, method = m),
+                           distfun = function(x) Dist(x, method = 'pearson')
   )
-  dev.off()
+  t <- dev.off()
   
   if(m == "ward.D"){
     m <- "ward"
@@ -438,33 +443,6 @@ order.list.rows <- list()
 order.list.columns <- list()
 order.list.names <- list()
 
-sapply(c("average", "complete", "single", "ward"), function(m){
-  
-  if(m == "ward"){
-    temp <- m
-    m <- "ward.D"
-  }
-  
-  pfile <- paste(coverage.json.folder, "/collection_clustering_", m,".json", sep = "")
-  pdf(file = pfile)
-
-
-  hm.clusters <- heatmap.2(clusters.matrix,
-                           hclustfun = function(x) hclust(x,method = m),
-                           distfun = function(x) Dist(x,method = 'pearson')
-  )
-  dev.off()
-  
-  if(m == "ward.D"){
-    m <- "ward"
-  }
-  
-  order.list.rows[[m]] <<- paste(rev(hm.clusters[[1]]), collapse = ",")
-  cluster.order <- as.numeric(unlist(strsplit(order.list.rows[[m]], ",")))
-  order.list.columns[[m]] <<- paste(rev(hm.clusters[[2]]), collapse = ",")
-  order.list.names[[m]] <<- paste(paste("'", cluster.names.original[cluster.order], "'", sep = ""), collapse = ",")
-})
-
 ###############################################
 ## Parse the Heatmap table format used in D3
 ## This table is printed in a new file
@@ -491,15 +469,6 @@ cluster.names <- paste(paste("'", cluster.names.original, "'", sep =""), collaps
 
 ## Get the clusters number orderer according the linkage method
 cluster.number <- paste(1:dim(clusters)[1], collapse=",")
-average.r.number <- order.list.rows[["average"]]
-complete.r.number <- order.list.rows[["complete"]]
-single.r.number <- order.list.rows[["single"]]
-ward.r.number <- order.list.rows[["ward"]]
-
-average.c.number <- order.list.columns[["average"]]
-complete.c.number <- order.list.columns[["complete"]]
-single.c.number <- order.list.columns[["single"]]
-ward.c.number <- order.list.columns[["ward"]]
 
 ## Default names
 default.names <- paste(paste("'", cluster.names.original, "'", sep = ""), collapse = ",")
@@ -562,14 +531,14 @@ html.body.size <- 200 + left + (col.nb*cell.size) + 30
 order.info <- matrix(c("Gradient", gradient,
                        "Cluster_names", cluster.names,
                        "Cluster_number", cluster.number,
-                       "Average_c_number", average.c.number,
-                       "Complete_c_number", complete.c.number,
-                       "Single_c_number", single.c.number,
-                       "Ward_c_number", ward.c.number,
-                       "Average_r_number", average.r.number,
-                       "Complete_r_number", complete.r.number,
-                       "Single_r_number", single.r.number,
-                       "Ward_r_number", ward.r.number,
+                       # "Average_c_number", average.c.number,
+                       # "Complete_c_number", complete.c.number,
+                       # "Single_c_number", single.c.number,
+                       # "Ward_c_number", ward.c.number,
+                       # "Average_r_number", average.r.number,
+                       # "Complete_r_number", complete.r.number,
+                       # "Single_r_number", single.r.number,
+                       # "Ward_r_number", ward.r.number,
                        "Cell_size", cell.size,
                        "Col_number", col.nb,
                        "Row_number", row.nb,

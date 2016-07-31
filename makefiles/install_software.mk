@@ -564,7 +564,8 @@ _download_d3:
 ################################################################
 ## Install fastqc, a software tool to control the quality of read
 ## files (next generation sequencing).
-FASTQC_VER=0.11.3
+## http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.5.zip
+FASTQC_VER=0.11.5
 FASTQC_ZIP=fastqc_v${FASTQC_VER}.zip
 FASTQC_URL=http://www.bioinformatics.babraham.ac.uk/projects/fastqc/${FASTQC_ZIP}
 FASTQC_DOWNLOAD_DIR=${SRC_DIR}/fastqc
@@ -585,8 +586,10 @@ _download_fastqc:
 
 _install_fastqc:
 	@echo
-	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
-	@echo "export PATH=$${PATH}:${FASTQC_EXEC_DIR}"
+	@ln -s -f ${FASTQC_INSTALL_DIR}/FastQC/fastqc ${RSAT_BIN}/fastqc
+	@echo "	fastqc link    	 ${RSAT_BIN}/fastqc"
+#	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
+#	@echo "export PATH=$${PATH}:${FASTQC_EXEC_DIR}"
 
 ################################################################
 ## Install BEDTools
@@ -1171,7 +1174,9 @@ download_ceas_data:
 SAMTOOLS_BASE_DIR=${SRC_DIR}/samtools
 SAMTOOLS_VERSION=1.3
 SAMTOOLS_ARCHIVE=samtools-${SAMTOOLS_VERSION}.tar.bz2
-SAMTOOLS_URL=https://sourceforge.net/projects/samtools/files/samtools/${SAMTOOLS_VERSION}/${SAMTOOLS_ARCHIVE}/download
+SAMTOOLS_URL=https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2
+#SAMTOOLS_URL=https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2
+#SAMTOOLS_URL=https://sourceforge.net/projects/samtools/files/samtools/${SAMTOOLS_VERSION}/${SAMTOOLS_ARCHIVE}/download
 #SAMTOOLS_URL=https://sourceforge.net/projects/samtools/files/samtools/1.3/samtools-1.3.tar.bz2/download
 SAMTOOLS_DISTRIB_DIR=${SAMTOOLS_BASE_DIR}/samtools-${SAMTOOLS_VERSION}
 install_samtools: _download_samtools _compile_samtools _install_pysam
@@ -1188,7 +1193,7 @@ _compile_samtools:
 	(cd ${SAMTOOLS_BASE_DIR}; tar --bzip2 -xpf ${SAMTOOLS_ARCHIVE})
 	@echo ${SAMTOOLS_DISTRIB_DIR}
 	(cd ${SAMTOOLS_DISTRIB_DIR}; make)
-	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
+	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 775 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
 
 ## Install a python library required for some samtool functionalities
 _install_pysam:
