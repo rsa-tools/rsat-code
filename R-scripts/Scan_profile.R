@@ -29,7 +29,7 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 create.html.tab <- function(tab, img = 0, plot = 0, link.text.covered = 0, link.text.not.covered = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th><th class=\"tab_col\"> TFBSs per seq </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
@@ -293,6 +293,7 @@ for(x in 1:length(classes.pval.letters)){
 
 ## Create directory with the TFBSs distribution
 dir.create(paste(basename(prefix), "_TFBSs_pval_distribution/", sep = ""), showWarnings = FALSE, recursive = TRUE)
+dir.create(paste(basename(prefix), "_TFBSs_per_seq/", sep = ""), showWarnings = FALSE, recursive = TRUE)
 verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
 covered.sequences.per.motif <- list()
 thr <- sapply(1:length(matrix.names), function(m){
@@ -306,11 +307,49 @@ thr <- sapply(1:length(matrix.names), function(m){
   matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
   matrix.query.classes <- sort(unique(matrix.query.selection$Pval.class.letter))
   
+  ##
+  nb.hits.per.sequence <- table(as.vector(matrix.query.selection$seq_id))
+  nb.hits.per.sequence.range <- range(nb.hits.per.sequence)
+  min.nb.hits <- nb.hits.per.sequence.range[1]
+  max.nb.hits <- nb.hits.per.sequence.range[2]
+  
+  nb.hits.per.sequence <- table(nb.hits.per.sequence)
+  no.hit.nb <- total.scanned.sequences - sum(nb.hits.per.sequence)
+  names(no.hit.nb) <- 0
+  nb.hits.per.sequence <- append(nb.hits.per.sequence, no.hit.nb, after = 0)
+  
+  for(f in print.formats){
+    
+    if(f == "pdf"){
+      TFBSs.per.seq.file <- paste(basename(prefix), "_TFBSs_per_seq/", matrix.query, "_TFBSs_per_seq.pdf", sep = "")
+      pdf(TFBSs.per.seq.file)
+    } else {
+      TFBSs.per.seq.file <- paste(basename(prefix), "_TFBSs_per_seq/", matrix.query, "_TFBSs_per_seq.jpeg", sep = "")
+      jpeg(TFBSs.per.seq.file)
+    }
+    
+    plot(y = as.vector(nb.hits.per.sequence),
+         x = as.numeric(names(nb.hits.per.sequence)),
+         type = "l",
+         col = "darkgreen",
+         lty = 1, 
+         lwd = 3,
+         main = "Number of predicted TFBS per sequence",
+         xlab = "Number of predicted TFBS",
+         ylab = "Number of sequences"
+         )
+    legend("topright",
+           legend= paste("Putative TFBSs: ", as.numeric(names(nb.hits.per.sequence)), " - Sequences: ", as.vector(nb.hits.per.sequence), sep = ""),
+           bg="white",
+           cex = 0.65
+    )
+    dev.off()
+  }
+  
   ## Get the number of putative TFBSs and the number of sequences with 
   ## at least one match of the query matrix
   nb.TFBSs <- dim(matrix.query.selection)[1]
   nb.seq <- length(as.vector(unique(matrix.query.selection$seq_id)))
-  
   covered.sequences.per.motif[[matrix.query]] <<- as.vector(unique(matrix.query.selection$seq_id))
 # })
   
@@ -425,7 +464,7 @@ th <- sapply(c("average", "complete", "single", "ward"), function(m){
   }
     
   ## Compute the heatmap
-  hm.coocurrences<- heatmap.2(covered.seq.percentage,
+  hm.coocurrences <- heatmap.2(covered.seq.percentage,
                 
     ## Dendrogram control
     dendrogram = "row",
@@ -1229,6 +1268,10 @@ tfbss.plots <- sapply(TF.IDs, function(i) {
   paste(basename(prefix), "_TFBSs_pval_distribution/", i, "_TFBSs_pval_classes.jpeg", sep = "")
 })
 
+tfbss.per.seq.plots <- sapply(TF.IDs, function(i) {
+  paste(basename(prefix), "_TFBSs_per_seq/", i, "_TFBSs_per_seq.jpeg", sep = "")
+})
+
 ## Write the path to the covered/non_covered sequences tables
 covered.files <- sapply(TF.IDs, function(i) {
   paste(covered.tables.dir, i, "_covered_sequences_IDs.tab", sep = "")
@@ -1245,6 +1288,7 @@ datatable.info.tab$P_val_threshold <- all.pval.match
 datatable.info.tab$IDs <- TF.IDs
 datatable.info.tab$Profiles <- profiles.plots
 datatable.info.tab$TFBS <- tfbss.plots
+datatable.info.tab$TFBS_per_seq <- tfbss.per.seq.plots
 datatable.info.tab$Logo <- logos.F
 datatable.info.tab$Logo_RC <- logos.R
 datatable.info.tab$covered_files <- covered.files
@@ -1258,9 +1302,9 @@ html.report <- readLines(html.template.file)
 # [1] "Feature"         "Profile_cluster"           "P_val"           "E_val"          
 # [5] "Sig"             "Q_val"           "Chi_squared"     "Degrees"        
 # [9] "Nb_hits"         "Nb_sequences"    "Coverture"       "P_val_threshold"
-# [13] "IDs"             "Profiles"        "TFBS"            "Logo"           
-# [17] "Logo_RC"
-profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,13,3:6,9:11,7,2,14:19)], img = c(14,15), plot = c(12,13), link.text.covered = 16, link.text.not.covered = 17)
+# [13] "IDs"             "Profiles"        "TFBS"            "TFBS_per_site"            
+# [17] "Logo"           "Logo_RC"
+profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,13,3:6,9:11,7,2,14:20)], img = c(15,16), plot = c(12,13,14), link.text.covered = 17, link.text.not.covered = 18)
 
 profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 
