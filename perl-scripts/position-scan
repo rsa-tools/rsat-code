@@ -139,12 +139,11 @@ package main;
   }
   local $supported_legend_pos = join ",", @supported_legend_pos;
 
-
   ## Profile heatmap deondrogram position option
   local @supported_heatmap_dendo_pos = qw(hide show);
   local %supported_heatmap_dendo_pos = ();
-  foreach my $pos (@supported_heatmap_dendo_pos) {
-    $supported_heatmap_dendo_pos{$pos} = 1;
+  foreach my $ps (@supported_heatmap_dendo_pos) {
+    $supported_heatmap_dendo_pos{$ps} = 1;
   }
   local $supported_heatmap_dendo_pos = join ",", @supported_heatmap_dendo_pos;
 
@@ -260,8 +259,8 @@ package main;
   $main::outfile{random_motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac_permuted.tf";
   $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_results.tab";
   $main::outfile{matches_tab_PARSED} = $main::outfile{prefix}."_matrix_scan_results_PARSED.tab";
-  $main::outfile{matches_tab_control} = $main::outfile{prefix}."_matrix_scan_results.tab";
-  $main::outfile{matches_tab_PARSED_control} = $main::outfile{prefix}."_matrix_scan_results_PARSED.tab";
+  $main::outfile{matches_tab_control} = $main::outfile{prefix}."_matrix_scan_results_control.tab";
+  $main::outfile{matches_tab_PARSED_control} = $main::outfile{prefix}."_matrix_scan_results_PARSED_control.tab";
   $main::outfile{sequence_names} = $main::outfile{prefix}."_matrix_scan_sequence_names.tab";
   $main::outfile{sequence_names_control} = $main::outfile{prefix}."_matrix_scan_sequence_names_control.tab";
   $main::outfile{motif_ID_to_name} = $main::outfile{prefix}."_TF_ID_name_correspondence.tab";
@@ -344,8 +343,6 @@ package main;
   ## For the moment the input are sequences of same length
   &ProcessSeq();      
 
-  die "Here\n";
-
   ################################################################
   ## Convert the input motif file to transfac
   ## If required, select the X top or tail matrices
@@ -362,8 +359,8 @@ package main;
 
       ################################################################
       ## Run matrix-scan quick
-      &ScanSequences();  
-  
+      #&ScanSequences();
+
       ## Parse the matrix-scan results table
       &ParseScanResults();
 
@@ -385,7 +382,13 @@ package main;
       ## Compute statistics (X2 pval, eval, qval) 
       ## Draw the dynamic profiles
       ## These steps are executed in R
-      &DynamicProfilesR();
+      if($diff_flag){
+	  ## For differential mode
+	  &DynamicProfilesDiffR();
+      } else {
+	  ## For non-differential mode
+	  &DynamicProfilesR();
+      }
   }
 
   ################################################################
@@ -967,18 +970,18 @@ sub ProcessMatrices {
 sub ScanSequences {
 
     ## Initialize the sequences array
-    my @sequences = ();
-    push(@sequences, $main::infile{sequences});
+    my @sequence_sets = ();
+    push(@sequence_sets, $main::infile{sequences});
 
     ## If the diff mode is activated, then add the control sequences
     ## to be processed as the query sequences
     if($diff_flag){
-	push(@sequences, $main::infile{sequences_control});
+	push(@sequence_sets, $main::infile{sequences_control});
     }
 
     ## Process each set of sequence
     my $seq_counter = 0;
-    foreach my $s (@sequences){
+    foreach my $seq (@sequence_sets){
 
 	$seq_counter++;
 	&RSAT::message::Info("Matrices loaded from file", $main::infile{motifs}) if ($main::verbose >= 2);
@@ -987,9 +990,16 @@ sub ScanSequences {
 	if($seq_counter == 1){
 	    $s = $main::infile{sequences};
 	    $so = $main::outfile{matches_tab};
+	    $bg = $main::infile{bg_file};
+
+
 	} elsif($seq_counter == 2){
 	    $s = $main::infile{sequences_control};
 	    $so = $main::outfile{matches_tab_control};
+
+	    if($bg_input_flag){
+		$bg = $main::infile{bg_file_control};
+	    }
 	}
 	
 	$matrix_scan_cmd = $SCRIPTS."/matrix-scan -quick -v ".($main::verbose -1);
@@ -997,13 +1007,13 @@ sub ScanSequences {
 	$matrix_scan_cmd .= " -matrix_format ".$matrix_format;
 	$matrix_scan_cmd .= " -origin end -n score";
 	$matrix_scan_cmd .= " -uth pval ".$p_value;
-	$matrix_scan_cmd .= " -i ".$s." -seq_format fasta";
+	$matrix_scan_cmd .= " -i ".$seq." -seq_format fasta";
 	$matrix_scan_cmd .= " -pseudo 0.01 -decimals 2 ".$strands." -bg_pseudo 0.01";
 	$matrix_scan_cmd .= " -return limits -return pval ";
 	$matrix_scan_cmd .= " -o ".$so;
-	$matrix_scan_cmd .= " -bgfile ".$main::infile{bg_file}." -bg_format ".$bg_format;
+	$matrix_scan_cmd .= " -bgfile ".$bg." -bg_format ".$bg_format;
 	&doit($matrix_scan_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-	
+
 	if($seq_counter == 1){
 	    &RSAT::message::TimeWarn("matrix-scan file results", $main::outfile{matches_tab}) if ($main::verbose >= 2);
 	} elsif($seq_counter == 2){
@@ -1030,7 +1040,7 @@ sub ParseScanResults {
 	push(@sequences, $main::infile{sequences_control});
     }
 
-    ## Process each set of sequence
+    ## Process each set of sequences
     my $seq_counter = 0;
     foreach my $s (@sequences){
 	
@@ -1060,9 +1070,8 @@ sub ParseScanResults {
 	$parse_cmd = " grep -v '^;' ".$m;
 	$parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 3) {print $1"\t"$3"\t"($6+$5)/2"\t"$9}'." ' ";
 	$parse_cmd .= " > ".$scanned;
-	
 	&doit($parse_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-	
+   
 	&RSAT::message::TimeWarn("PARSED matrix-scan file results", $scanned) if ($main::verbose >= 2);
     }
 
@@ -1194,6 +1203,66 @@ sub DynamicProfilesR {
 
 
 ################################################################
+## Call the Rscript where the statistics are calculated
+## (Chi-squared, p-val, q-val, e-val) - Differential mode 
+##
+## Within this script the dynamic profiles are drawn and exported
+## in a HTML file.
+sub DynamicProfilesDiffR {
+
+    &RSAT::message::TimeWarn("Calculating differential Chi-squared values for positional profiles of TFBSs in Query and Control sequences") if ($main::verbose >= 2);
+
+    ##################################
+    ### Identify the path of the R executable
+    my $r_path = &RSAT::server::GetProgramPath("R");
+
+    my $profiles_script  = $ENV{RSAT}."/R-scripts/Scan_profile_diff.R";
+    &RSAT::error::FatalError("Cannot read Motif scan profile script", $profiles_script) unless (-r $profiles_script);
+    # $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
+
+    ## Basic parameters
+    my $profile_cmd = "";
+    $profile_cmd .= " cat ".$profiles_script;
+    $profile_cmd .= " | ".$r_path;
+    $profile_cmd .= " --slave --no-save --no-restore --no-environ";
+    $profile_cmd .= " --args \"";
+    $profile_cmd .= " matrix.scan.file.query = '".$main::outfile{matches_tab_PARSED}."'";
+    $profile_cmd .= "; matrix.scan.file.control = '".$main::outfile{matches_tab_PARSED_control}."'";
+    $profile_cmd .= "; sequence.names.file.query = '".$main::outfile{sequence_names}."'";
+    $profile_cmd .= "; sequence.names.file.control = '".$main::outfile{sequence_names_control}."'";
+    $profile_cmd .= "; p.val = '".$p_value."'";
+    $profile_cmd .= "; bin = '".$bin_size."'";
+    $profile_cmd .= "; prefix = '".$main::outfile{prefix}."'";
+    $profile_cmd .= "; logo.folder = '".$basename."_logos/'";
+    $profile_cmd .= "; results.folder = '".$dir{output}."'";
+    $profile_cmd .= "; basename = '".$basename."'";
+    $profile_cmd .= "; ID.to.names.correspondence.tab = '".$main::outfile{motif_ID_to_name}."'";
+    $profile_cmd .= "; seq.length = '".$seq_length."'";
+    $profile_cmd .= "; individual.plots = '".$individual_plots."'";
+    $profile_cmd .= "; heatmap.dendo = '".$heatmap_dendo."'";
+    $profile_cmd .= "; html.template.file = '".$main::outfile{report_template}."'";
+    $profile_cmd .= "; c3.css.base = '".$c3_css_base."'";
+    $profile_cmd .= "; c3.base = '".$c3_base."'";
+    $profile_cmd .= "; d3.base = '".$d3_base."'";
+    $profile_cmd .= "; jquery.base = '".$jquery_base."'";
+    $profile_cmd .= "; datatable.base = '".$datatable_base."'";
+    $profile_cmd .= "; datatable.css.base = '".$datatable_css_base."'";
+    $profile_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
+    $profile_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
+    $profile_cmd .= " \"";
+#    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.")"; # Uncomment this line to check the R output in the terminal
+#    $profile_cmd = "(".$profile_cmd.") 2 > ".$main::outfile{Rlog}; 
+
+    if ($r_path) {
+        &doit($profile_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    } else {
+        &RSAT::message::Warning("Could not run position scan because the program R is not available") if ($main::verbose >= 1);
+    }
+    return();
+}
+
+
+################################################################
 ## Calculate sequence length
 sub ProcessSeq {
 
@@ -1236,10 +1305,10 @@ sub ProcessSeq {
     
 
 	if($seq_counter == 1){
-	    &RSAT::message::Info("Query Sequence length: ", $seq_length, "bp") if ($main::verbose >= 2);	
+	    &RSAT::message::Info("Query Sequences length: ", $seq_length, "bp") if ($main::verbose >= 2);	
 	    &RSAT::message::Info("Filtering sequences shorter or longer than", $seq_length) if ($main::verbose >= 2);
 	} elsif($seq_counter == 2){
-	    &RSAT::message::Info("Control Sequence length: ", $seq_length, "bp") if ($main::verbose >= 2);	
+	    &RSAT::message::Info("Control Sequences length: ", $seq_length, "bp") if ($main::verbose >= 2);	
 	    &RSAT::message::Info("Filtering sequences shorter or longer than", $seq_length) if ($main::verbose >= 2);
 	}
 	
@@ -1282,27 +1351,29 @@ sub ProcessSeq {
 	    $main::infile{sequences} = $main::outfile{random_sequences};
 	    $to_delete{'random_sequences'} = $main::outfile{random_sequences};
 	    if($diff_flag){
-		$main::infile{sequences} = $main::outfile{random_sequences_control};
+		$main::infile{sequences_control} = $main::outfile{random_sequences_control};
 		$to_delete{'random_sequences_control'} = $main::outfile{random_sequences_control};
 	    }
 	    
 	} else { 
-	    $main::infile{sequences} = $main::outfile{filtered_sequences_control};
-	    $to_delete{'filtered_sequences'} = $main::outfile{filtered_sequences_control};
+	    $main::infile{sequences} = $main::outfile{filtered_sequences};
+	    $to_delete{'filtered_sequences'} = $main::outfile{filtered_sequences};
 
 	    if($diff_flag){
-		$main::infile{sequences_control} = $main::outfile{filtered_sequences};
-		$to_delete{'filtered_sequences'} = $main::outfile{filtered_sequences};
+		$main::infile{sequences_control} = $main::outfile{filtered_sequences_control};
+		$to_delete{'filtered_sequences'} = $main::outfile{filtered_sequences_control};
 	    }
 
-	}
-	
+	}	
 #	return($seq_length);
     }
 
-    unless ($seq_length_query == $seq_length_control) {
-      &RSAT::error::FatalError("The length of the query and control sequences differs.");
-  }
+    if($seq_counter >= 2){
+	unless ($seq_length_query == $seq_length_control) {
+	&RSAT::error::FatalError("The length of the query and control sequences differs.");
+    }
+    }
+
 }
 
 
@@ -1325,22 +1396,49 @@ sub Delete_temporal_files {
 
 
 ##############################################################
-## When the option -top is used the analysis is restricted 
-## to the first X motifs, however the input motif file is 
-## splitted on individual files, although not all of them 
-## are not. This functions will delete those files
+## Calculate the BG model from the input seuences
 sub CalculateBGModel {
 
-    &RSAT::message::TimeWarn("Calculating background model by sequence set", $bg_dir) if ($main::verbose >= 2);
-    
-    my $bg_comand = $SCRIPTS."/oligo-analysis -v 1 -quick ".${strands};
-    $bg_comand .= " -i ".$main::infile{sequences}." -l ".$markov." -noov ";
-    $bg_comand .= " -o ".$main::infile{bg_file};
-    
-    &doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
-    &RSAT::message::TimeWarn("Background for sequence set", $main::infile{sequences}, $main::infile{bg_file}) if ($main::verbose >= 2);
+   ## Initialize the sequences array
+    my @sequences = ();
+    push(@sequences, $main::infile{sequences});
 
-    $bg_format = "oligos";
+    ## If the diff mode is activated, then add the control sequences
+    ## to be processed as the query sequences
+    if($diff_flag){
+	push(@sequences, $main::infile{sequences_control});
+    }
+
+    ## Process each set of sequence
+    my $seq_counter = 0;
+    foreach my $s (@sequences){
+	$seq_counter++;
+
+	if($seq_counter == 1){
+	    &RSAT::message::TimeWarn("Calculating background model from Query sequences", $bg_dir) if ($main::verbose >= 2);
+	} elsif ($seq_counter == 2){
+	    &RSAT::message::TimeWarn("Calculating background model from Control sequences", $bg_dir) if ($main::verbose >= 2);
+	}
+	
+	my $bg_comand = $SCRIPTS."/oligo-analysis -v 1 -quick ".$strands;
+	$bg_comand .= " -i ".$s." -l ".$markov." -noov ";
+
+	if($seq_counter == 1){
+	    $bg_comand .= " -o ".$main::infile{bg_file};
+	} elsif ($seq_counter == 2){
+	    $bg_comand .= " -o ".$main::infile{bg_file_control};
+
+	}
+
+	
+	&doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	if($seq_counter == 1){
+	    &RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file}) if ($main::verbose >= 2);
+	} elsif ($seq_counter == 2){
+	    &RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file_control}) if ($main::verbose >= 2);
+	}
+	$bg_format = "oligos";
+    }
 }
 
 ################################################################
