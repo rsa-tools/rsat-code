@@ -135,7 +135,7 @@ if (!exists("individual.plots")) {
   individual.plots <- 0
 }
 if (!exists("logo.folder")) {
-  logo.folder <- paste(base.name(prefix), "_logos", sep = "")
+  logo.folder <- paste(basename(prefix), "_logos", sep = "")
 }
 if (!exists("individual.plots")) {
   individual.plots <- 0
@@ -291,6 +291,8 @@ input.count.table <- 0
 seq.count.per.motif <- list()
 all.counts.per.bin.query <- data.frame()
 all.counts.per.bin.control <- data.frame()
+query.over.control <- data.frame()
+control.over.query <- data.frame()
 feature.attributes <- vector("list", length(matrix.names))
 feature.log2.ratio <- vector("list", length(matrix.names))
 
@@ -369,66 +371,73 @@ if(input.count.table == 0){
     
     feature.attributes[[m]][["feature_id"]] <<- matrix.query
     feature.attributes[[m]][["Query_vs_Control_pval"]] <<- query.vs.control.pval.pretty 
+    feature.attributes[[m]][["Query_vs_Control_eval"]] <<- query.vs.control.eval.pretty 
+    feature.attributes[[m]][["Query_vs_Control_significance"]] <<- query.vs.control.sig 
     feature.attributes[[m]][["Query_vs_Control_X2"]] <<- round(as.vector(query.vs.control[[1]]), digits = 2)
-    feature.attributes[[m]][["Control_vs_Query_pval"]] <<- control.vs.query.pval.pretty 
+    feature.attributes[[m]][["Control_vs_Query_pval"]] <<- control.vs.query.pval.pretty
+    feature.attributes[[m]][["Control_vs_Query_eval"]] <<- control.vs.query.eval.pretty 
+    feature.attributes[[m]][["Control_vs_Query_significance"]] <<- control.vs.query.sig
     feature.attributes[[m]][["Control_vs_Query_X2"]] <<- round(as.vector(control.vs.query[[1]]), digits = 2)
     feature.attributes[[m]][["DF"]] <<- as.vector(query.vs.control[[2]])
     
     ########################################
-    ## Print the Profiles in JPEG and PDF
-    for(pf in print.formats){
-
-      if(pf == "pdf"){
-        pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", matrix.query, "_positional_profile.pdf", sep = "")
-        pdf(pdf.file.name)
-      } else {
-        jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", matrix.query, "_positional_profile.jpeg", sep = "")
-        jpeg(jpeg.file.name)
-      }
-    
-      ## Draw the profile of the query sequences
-      plot(y = query/sum(query),
-           x = names(query),
-           type = "l",
-           col = "#00BFC4",
-           lty = 1,
-           lwd = 3,
-           xlab = "Position (nt)",
-           ylab = "Fraction of Binding Sites",
-           main = paste(matrix.query, "Distribution of TFBSs\nQuery vs Control sequences"),
-           panel.first=grid(col = "grey", lty = "solid"),
-           ylim = c(0, max.val+0.05)
-      )
-      
-      ## Draw the profile of the control sequences
-      lines(y = control/sum(control),
-            x = names(query),
-            type = "l",
-            col = "#F8766D",
-            lty = 1,
-            lwd = 3)
-      
-      ## Draw the legend
-      legend("topleft", legend = c("Query (Q)", "Control (C)"), fill = c("#00BFC4", "#F8766D"), bty="o", bg="white")
-      legend("bottomleft", legend = paste(c("E-value (Q vs C):", "E-value (C vs Q):"), c(query.vs.control.eval.pretty, control.vs.query.eval.pretty)), bty="o", bg="white")
-      
-      ## Add the logo in the plot
-      logo.file <- paste(logo.folder, "/", matrix.query, "_logo.jpeg", sep = "")
-      logo <- readJPEG(logo.file)
-      rasterImage(logo,
-                xleft = max(xlab) - 15 - round(seq.length/4.5),
-                xright = max(xlab) - 15,
-                ybottom = max.val,
-                ytop = max.val+0.045)
-      t <- dev.off()
-    }
+    # ## Print the Profiles in JPEG and PDF
+    # for(pf in print.formats){
+    # 
+    #   if(pf == "pdf"){
+    #     pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", matrix.query, "_positional_profile.pdf", sep = "")
+    #     pdf(pdf.file.name)
+    #   } else {
+    #     jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", matrix.query, "_positional_profile.jpeg", sep = "")
+    #     jpeg(jpeg.file.name)
+    #   }
+    # 
+    #   ## Draw the profile of the query sequences
+    #   plot(y = query/sum(query),
+    #        x = names(query),
+    #        type = "l",
+    #        col = "#00BFC4",
+    #        lty = 1,
+    #        lwd = 3,
+    #        xlab = "Position (nt)",
+    #        ylab = "Fraction of Binding Sites",
+    #        main = paste(matrix.query, "Distribution of TFBSs\nQuery vs Control sequences"),
+    #        panel.first=grid(col = "grey", lty = "solid"),
+    #        ylim = c(0, max.val+0.05)
+    #   )
+    #   
+    #   ## Draw the profile of the control sequences
+    #   lines(y = control/sum(control),
+    #         x = names(query),
+    #         type = "l",
+    #         col = "#F8766D",
+    #         lty = 1,
+    #         lwd = 3)
+    #   
+    #   ## Draw the legend
+    #   legend("topleft", legend = c("Query (Q)", "Control (C)"), fill = c("#00BFC4", "#F8766D"), bty="o", bg="white")
+    #   legend("bottomleft", legend = paste(c("E-value (Q vs C):", "E-value (C vs Q):"), c(query.vs.control.eval.pretty, control.vs.query.eval.pretty)), bty="o", bg="white")
+    #   
+    #   ## Add the logo in the plot
+    #   logo.file <- paste(logo.folder, "/", matrix.query, "_logo.jpeg", sep = "")
+    #   logo <- readJPEG(logo.file)
+    #   rasterImage(logo,
+    #             xleft = max(xlab) - 15 - round(seq.length/4.5),
+    #             xright = max(xlab) - 15,
+    #             ybottom = max.val,
+    #             ytop = max.val+0.045)
+    #   t <- dev.off()
+    # }
     
     ## Save the counts/fraction of the query and control sequences
     all.counts.per.bin.query <<- rbind(all.counts.per.bin.query, counts.per.bin.query)
     all.counts.per.bin.control <<- rbind(all.counts.per.bin.control, counts.per.bin.control)
     
-    # query.over.control 
-    # control.over.query
+    
+    ## Save the log2 ratio between the query and control
+    ## This will be used to plot the heatmap
+    query.over.control <<- rbind(query.over.control, round(-log2(query/control), digits = 3))
+    control.over.query <<- rbind(control.over.query, round(-log2(control/query), digits = 3))
     
   })
 }
@@ -437,6 +446,160 @@ if(input.count.table == 0){
 rm(thrash)
 rownames(all.counts.per.bin.query) <- matrix.names
 rownames(all.counts.per.bin.control) <- matrix.names
+
+## Heatmap data rownames and colnames
+rownames(query.over.control) <- matrix.names
+rownames(control.over.query) <- matrix.names
+colnames(query.over.control) <- xlab
+colnames(control.over.query) <- xlab
+
+
+###############################
+## Draw -log2 ratio heatmaps
+## 1) Query vs Control
+## 2) Control vs Query
+
+## Create color palette
+heatmap.color.classes <- 11
+heatmap.color.palette <- "RdBu"
+rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(heatmap.color.classes))
+
+for(counter in 1:2){
+  
+  if(counter == 1){
+    data.t <- query.over.control
+    hm.main <- paste("Profile Heatmap\nQuery over Control")
+  } else {
+    hm.main <- paste("Profile Heatmap\nControl over Query")
+    data.t <- control.over.query
+  }
+  
+  for(pf in print.formats){
+
+    if(pf == "pdf"){
+      if(counter == 1){
+        pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Query_over_control_positional_profile.pdf", sep = "")
+      } else {
+        pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Control_over_Query_positional_profile.pdf", sep = "")
+      }
+      pdf(pdf.file.name)
+    } else {
+      
+      if(counter == 1){
+        jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Query_over_control_positional_profile.jpeg", sep = "")
+      } else {
+        jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Control_over_Query_positional_profile.jpeg", sep = "")
+      }
+      jpeg(jpeg.file.name)
+    }
+    
+    data.t <- as.matrix(data.t)
+    
+    #############################
+    ## Define profile clusters
+    tree.profiles <- hclust(Dist(data.t, method = "correlation"), method = "complete")
+    clusters.tree.profiles <- cutreeDynamic(tree.profiles, minClusterSize = 2, method = "tree")
+    names(clusters.tree.profiles) <- tree.profiles[[4]]
+    
+    ## Generate a color palette
+    nb.profile.clusters <- length(unique(clusters.tree.profiles))
+    cluster.tree.profiles.palette <- colorRampPalette(brewer.pal(9, "Set1"), space="Lab")(nb.profile.clusters)
+    
+    ## Assign a different color to each cluster
+    color.clusters.tree.profiles <- as.vector(sapply(clusters.tree.profiles+1, function(color){
+      cluster.tree.profiles.palette[color]
+    }))
+  
+    heatmap.2(data.t,
+              
+              main = hm.main,
+              xlab = "Position (bp)",
+              ylab = "Motifs",
+              
+              ## The order of the values is set according these dendrograms
+              Rowv = as.dendrogram(tree.profiles),
+              Colv = FALSE,
+              dendrogram = "row",
+
+              ## Color
+              col = rgb.palette,
+              
+              ## Trace
+              trace = "none",
+              
+              ## Side colors
+              RowSideColors = color.clusters.tree.profiles,
+              
+              ## Key control
+              key = TRUE,
+              keysize = 1,
+              density.info = "none",
+              key.xlab = "Log2 Ratio",
+              key.ylab = "",
+              key.title = "",
+              cexRow = 0.66,
+              offsetCol = 0.25
+    )
+    t <- dev.off()
+  }
+}
+
+######################################
+## Convert the list in a data frame
+feature.attributes.df <- data.frame(t(
+  matrix(as.vector(unlist(feature.attributes)), 
+         ncol = length(feature.attributes))))
+colnames(feature.attributes.df) <- c("Feature", "Pval_Q_vs_C", "Eval_Q_vs_C", "Significance_Q_vs_C", "Chi_Q_vs_C", "Pval_C_vs_Q", "Eval_C_vs_Q", "Significance_C_vs_Q", "Chi_C_vs_Q", "DF")
+
+## Calculate q-values
+## This step is executed once all the p-values were calculated
+## The variable with class 'qvalue' is stored to its further exportation
+p1 <- as.numeric(as.vector(feature.attributes.df$Pval_Q_vs_C))
+features.qvalues.query.vs.control <- p.adjust(p1, method = "BH")
+feature.attributes.df$Qval_Q_vs_C <- prettyNum(features.qvalues.query.vs.control, scientific=TRUE, digits = 2)
+
+p2 <- as.numeric(as.vector(feature.attributes.df$Pval_C_vs_Q))
+features.qvalues.control.vs.query <- p.adjust(p2, method = "BH")
+feature.attributes.df$Qval_C_vs_Q <- prettyNum(features.qvalues.control.vs.query, scientific=TRUE, digits = 2)
+
+#####################################
+## Write the logo and profile path
+TF.IDs <- as.vector(feature.attributes.df$Feature)
+logos.F <- sapply(TF.IDs, function(i){
+  paste(logo.folder, "/", i, "_logo.jpeg", sep = "")
+})
+
+logos.R <- sapply(TF.IDs, function(i){
+  paste(logo.folder, "/", i, "_logo_rc.jpeg", sep = "")
+})
+
+## Write the Profile and TFBSs plots path
+profiles.plots <- sapply(TF.IDs, function(i) {
+  paste(basename(prefix), "_TFBSs_positional_profiles/", i, "_positional_profile.jpeg", sep = "")
+})
+
+###############################################
+## Fill the Profile_cluster attribute
+profile.clusters.names <- as.vector(sapply(matrix.names, function(m){
+  profile.cluster <- as.vector(clusters.tree.profiles[m])
+  paste("Profile_cluster_", profile.cluster, sep = "")
+}))
+profile.clusters.names.unique <- unique(profile.clusters.names)
+
+feature.attributes.df$Profile_cluster <- profile.clusters.names
+feature.attributes.df$Profiles <- profiles.plots
+feature.attributes.df$Logo <- logos.F
+feature.attributes.df$Logo_RC <- logos.R
+
+## Ordert the table according the Significance (-log10(E-value))
+order.by.eval <- order(as.numeric(as.vector(feature.attributes.df$Eval_Q_vs_C)))
+feature.attributes.df <- feature.attributes.df[order.by.eval,]
+
+# > names(feature.attributes.df)
+# [1] "Feature"             "Pval_Q_vs_C"         "Eval_Q_vs_C"         "Significance_Q_vs_C" "Chi_Q_vs_C"         
+# [6] "Pval_C_vs_Q"         "Eval_C_vs_Q"         "Significance_C_vs_Q" "Chi_C_vs_Q"          "DF"                 
+# [11] "Qval_Q_vs_C"         "Qval_C_vs_Q"         "Profiles"            "Logo"                "Logo_RC"            
+# [16] "Profile_cluster"  
 
 
 # xc <- all.counts.per.bin.query/all.counts.per.bin.control
