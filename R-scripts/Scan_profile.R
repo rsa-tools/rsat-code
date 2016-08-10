@@ -1048,7 +1048,7 @@ if(individual.plots == 1){
 
 verbose(paste("Creating HTML dynamic report"), 1)
 
-## Ordert the TF.names (and other variables) according the Significance (-log10(E-value))
+## Order the TF.names (and other variables) according the Significance (-log10(E-value))
 order.by.eval <- order(as.numeric(as.vector(feature.attributes$E_val)))
 feature.attributes <- feature.attributes[order.by.eval,]
 
