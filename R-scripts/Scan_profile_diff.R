@@ -26,10 +26,24 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 
 #################################################################################################
 ## Functions
+
+##############################################
+## Repeat N times each element of one array
+repeat.n <- function(x = c(1,2,3), times = 1){
+  
+  x.n <- sapply(x, function(y){
+    rep(y, times = times)
+  })
+  x.n <- as.vector(matrix(x.n, nrow = 1))
+  return(x.n)
+}
+
+#######################################
+## Create html table for the website
 create.html.tab <- function(tab, img = 0, plot = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th> <th class=\"tab_col\"> Profile </th><th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:2500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th><th class=\"tab_col\">DF</th> <th class=\"tab_col\"> Profile </th><th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
@@ -387,52 +401,52 @@ if(input.count.table == 0){
 
     ########################################
     # ## Print the Profiles in JPEG and PDF
-    # for(pf in print.formats){
-    # 
-    #   if(pf == "pdf"){
-    #     pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", matrix.query, "_positional_profile.pdf", sep = "")
-    #     pdf(pdf.file.name)
-    #   } else {
-    #     jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", matrix.query, "_positional_profile.jpeg", sep = "")
-    #     jpeg(jpeg.file.name)
-    #   }
-    # 
-    #   ## Draw the profile of the query sequences
-    #   plot(y = query/sum(query),
-    #        x = names(query),
-    #        type = "l",
-    #        col = "#00BFC4",
-    #        lty = 1,
-    #        lwd = 3,
-    #        xlab = "Position (nt)",
-    #        ylab = "Fraction of Binding Sites",
-    #        main = paste(matrix.query, "Distribution of TFBSs\nQuery vs Control sequences"),
-    #        panel.first=grid(col = "grey", lty = "solid"),
-    #        ylim = c(0, max.val+0.05)
-    #   )
-    #   
-    #   ## Draw the profile of the control sequences
-    #   lines(y = control/sum(control),
-    #         x = names(query),
-    #         type = "l",
-    #         col = "#F8766D",
-    #         lty = 1,
-    #         lwd = 3)
-    #   
-    #   ## Draw the legend
-    #   legend("topleft", legend = c("Query (Q)", "Control (C)"), fill = c("#00BFC4", "#F8766D"), bty="o", bg="white")
-    #   legend("bottomleft", legend = paste(c("E-value (Q vs C):", "E-value (C vs Q):"), c(query.vs.control.eval.pretty, control.vs.query.eval.pretty)), bty="o", bg="white")
-    #   
-    #   ## Add the logo in the plot
-    #   logo.file <- paste(logo.folder, "/", matrix.query, "_logo.jpeg", sep = "")
-    #   logo <- readJPEG(logo.file)
-    #   rasterImage(logo,
-    #             xleft = max(xlab) - 15 - round(seq.length/4.5),
-    #             xright = max(xlab) - 15,
-    #             ybottom = max.val,
-    #             ytop = max.val+0.045)
-    #   t <- dev.off()
-    # }
+    for(pf in print.formats){
+
+      if(pf == "pdf"){
+        pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", matrix.query, "_positional_profile.pdf", sep = "")
+        pdf(pdf.file.name)
+      } else {
+        jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", matrix.query, "_positional_profile.jpeg", sep = "")
+        jpeg(jpeg.file.name)
+      }
+
+      ## Draw the profile of the query sequences
+      plot(y = query/sum(query),
+           x = names(query),
+           type = "l",
+           col = "#00BFC4",
+           lty = 1,
+           lwd = 3,
+           xlab = "Position (nt)",
+           ylab = "Fraction of Binding Sites",
+           main = paste(matrix.query, "Distribution of TFBSs\nQuery vs Control sequences"),
+           panel.first=grid(col = "grey", lty = "solid"),
+           ylim = c(0, max.val+0.05)
+      )
+
+      ## Draw the profile of the control sequences
+      lines(y = control/sum(control),
+            x = names(query),
+            type = "l",
+            col = "#F8766D",
+            lty = 1,
+            lwd = 3)
+
+      ## Draw the legend
+      legend("topleft", legend = c("Query (Q)", "Control (C)"), fill = c("#00BFC4", "#F8766D"), bty="o", bg="white")
+      legend("bottomleft", legend = paste(c("E-value (Q vs C):", "E-value (C vs Q):"), c(query.vs.control.eval.pretty, control.vs.query.eval.pretty)), bty="o", bg="white")
+
+      ## Add the logo in the plot
+      logo.file <- paste(logo.folder, "/", matrix.query, "_logo.jpeg", sep = "")
+      logo <- readJPEG(logo.file)
+      rasterImage(logo,
+                xleft = max(xlab) - 15 - round(seq.length/4.5),
+                xright = max(xlab) - 15,
+                ybottom = max.val,
+                ytop = max.val+0.045)
+      t <- dev.off()
+    }
     
     ## Save the counts/fraction of the query and control sequences
     all.counts.per.bin.query <<- rbind(all.counts.per.bin.query, counts.per.bin.query)
@@ -451,6 +465,8 @@ if(input.count.table == 0){
 rm(thrash)
 rownames(all.counts.per.bin.query) <- matrix.names
 rownames(all.counts.per.bin.control) <- matrix.names
+colnames(all.counts.per.bin.query) <- xlab
+colnames(all.counts.per.bin.control) <- xlab
 
 ## Heatmap data rownames and colnames
 rownames(query.over.control) <- matrix.names
@@ -458,6 +474,26 @@ rownames(control.over.query) <- matrix.names
 colnames(query.over.control) <- xlab
 colnames(control.over.query) <- xlab
 
+all.fraction.query <- apply(all.counts.per.bin.query, 1, function(s){
+  s/sum(s)
+})
+all.fraction.control <- apply(all.counts.per.bin.control, 1, function(s){
+  s/sum(s)
+})
+
+##########################################
+## Export Counts and Frequencies tables
+query.counts.tab.file <- paste(basename, "_counts_per_bin_profiles_query.tab", sep = "") 
+write.table(all.counts.per.bin.query, file = query.counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
+
+control.counts.tab.file <- paste(basename, "_counts_per_bin_profiles_control.tab", sep = "") 
+write.table(all.counts.per.bin.control, file = control.counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
+
+fraction.tab.file.query <- paste(basename, "_tfbs_fraction_per_bin_profiles_query.tab", sep = "") 
+write.table(all.fraction.query, file = fraction.tab.file.query, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
+
+fraction.tab.file.control <- paste(basename, "_tfbs_fraction_per_bin_profiles_control.tab", sep = "") 
+write.table(all.fraction.control, file = fraction.tab.file.control, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
 
 ###############################
 ## Draw -log2 ratio heatmaps
@@ -548,6 +584,24 @@ for(counter in 1:2){
     t <- dev.off()
   }
 }
+
+##################################################
+## Fraction of bound sequences Query vs Control
+# x <- as.vector(feature.attributes.df$Query_fraction_of_sequences)
+# y <- as.vector(feature.attributes.df$Control_fraction_of_sequences)
+# plot(x,
+#      y,
+#      xlim = c(0,1),
+#      ylim = c(0,1),
+#      xlab = "Fraction of bound sequences (Query)",
+#      ylab = "Fraction of bound sequences (Control)",
+#      main = "Fraction of bound sequences\nQuery vs Control",
+#      panel.first=grid(col = "grey", lty = "solid"),
+#      col = "#00BFC4",
+#      lty = 1, 
+#      lwd = 3,
+# )
+# lines(x = c(0,1), y = c(0,1))
 
 ######################################
 ## Convert the list in a data frame
@@ -828,34 +882,45 @@ html.report <- gsub("--TF_names--", TF.names, html.report)
 tfs <- paste(paste("'", all.motif.names, "'", sep = ""), collapse = ",")
 html.report <- gsub("--tfs--", tfs, html.report)
 
+## Create the sahed lines for the control
+all.motifs.control <- all.motifs[grep("control", all.motifs)]
+dashed <- paste("'", all.motifs.control, "': [{'end':'", xlab[length(xlab)], "'}],", sep = "")
+dashed <- paste(dashed, collapse = "\n")
+html.report <- gsub("--dashed--", dashed, html.report)
+
 ## Add the e-values data
 ## They are inserted in the JS section
-evalues <- paste("evalues['", all.motifs, "'] = '", as.vector(feature.attributes.df$Eval_Q_vs_C), "';", sep = "")
+eval.rep <- repeat.n(as.vector(feature.attributes.df$Eval_Q_vs_C), times = 2)
+evalues <- paste("evalues['", all.motifs, "'] = '", eval.rep, "';", sep = "")
 evalues <- paste(evalues, collapse = "\n")
 html.report <- gsub("--evalues--", evalues, html.report)
 
 ## Add the p-values (to display in the tooltip)
 ## They are inserted in the JS section
-pvalues <- paste("pvalues['", all.motifs, "'] = '", as.vector(feature.attributes.df$Pval_Q_vs_C), "';", sep = "")
+pval.rep <- repeat.n(as.vector(feature.attributes.df$Pval_Q_vs_C), times = 2)
+pvalues <- paste("pvalues['", all.motifs, "'] = '", pval.rep, "';", sep = "")
 pvalues <- paste(pvalues, collapse = "\n")
 html.report <- gsub("--pvalues--", pvalues, html.report)
 
 ## Add the profile clusters (to display in the tooltip)
 ## They are inserted in the JS section
-profile.clusters.array <- paste(" profile_clusters['", all.motifs, "'] = '", as.vector(feature.attributes.df$Profile_cluster), "';", sep = "")
+cl.rep <- repeat.n(as.vector(feature.attributes.df$Profile_cluster), times = 2)
+profile.clusters.array <- paste(" profile_clusters['", all.motifs, "'] = '", cl.rep, "';", sep = "")
 profile.clusters.array <- paste(profile.clusters.array, collapse = "\n")
 html.report <- gsub("--profile_clusters_array--",  profile.clusters.array, html.report)
 
 ## Add the q-values (to display in the tooltip)
 ## They are inserted in the JS section
-qvalues <- paste("qvalues['", all.motifs, "'] = '", as.vector(feature.attributes.df$Qval_Q_vs_C), "';", sep = "")
+qval.rep <- repeat.n(as.vector(feature.attributes.df$Qval_Q_vs_C), times = 2)
+qvalues <- paste("qvalues['", all.motifs, "'] = '", qval.rep, "';", sep = "")
 qvalues <- paste(qvalues, collapse = "\n")
 html.report <- gsub("--qvalues--", qvalues, html.report)
 
 ## Add the real motif IDs (to display in the tooltip)
 ## They are inserted in the JS section
 ## I called them 'real' because are those found on the original motif file
-IDs <- paste("IDs['", all.motifs, "'] = '", TF.IDs, "';", sep = "")
+TF.IDs.rep <- repeat.n(TF.IDs, times = 2)
+IDs <- paste("IDs['", all.motifs, "'] = '", TF.IDs.rep, "';", sep = "")
 IDs <- paste(IDs, collapse = "\n")
 html.report <- gsub("--IDs--", IDs, html.report)
 
@@ -864,7 +929,8 @@ html.report <- gsub("--IDs--", IDs, html.report)
 logos <- sapply(TF.IDs, function(i){
   paste(logo.folder, i, "_logo.jpeg", sep = "")
 })
-logos <- paste("pics['", all.motifs, "'] = '", as.vector(feature.attributes.df$Logo), "';", sep = "")
+logos.rep <- repeat.n(as.vector(feature.attributes.df$Logo), times = 2)
+logos <- paste("pics['", all.motifs, "'] = '", logos.rep, "';", sep = "")
 logos <- paste(logos, collapse = "\n")
 html.report <- gsub("--pics--", logos, html.report)
 
@@ -872,20 +938,23 @@ html.report <- gsub("--pics--", logos, html.report)
 logos.rc <- sapply(TF.IDs, function(i){
   paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
 })
-logos.rc <- paste("pics_rc['", all.motifs, "'] = '", as.vector(feature.attributes.df$Logo_RC), "';", sep = "")
+logos.rc.rep <- repeat.n(as.vector(feature.attributes.df$Logo_RC), times = 2)
+logos.rc <- paste("pics_rc['", all.motifs, "'] = '", logos.rc.rep, "';", sep = "")
 logos.rc <- paste(logos.rc, collapse = "\n")
 html.report <- gsub("--pics_rc--", logos.rc, html.report)
 
 ## Add the signficance (to display in the tooltip)
 ## They are inserted in the JS section
-sig <- paste("significances['", all.motifs, "'] = ", as.vector(feature.attributes.df$Significance_Q_vs_C), ";", sep = "")
+sig.rep <- repeat.n(as.vector(feature.attributes.df$Significance_Q_vs_C), times = 2)
+sig <- paste("significances['", all.motifs, "'] = ", sig.rep, ";", sep = "")
 sig <- paste(sig, collapse = "\n")
 html.report <- gsub("--significances--", sig, html.report)
 
 ## Add the covertures (to display in the tooltip)
 ## They are inserted in the JS section
 cc <- as.numeric(gsub("%", "", feature.attributes.df$Query_fraction_of_sequences))
-coverture <- paste("TF_coverture['", all.motifs, "'] = ", as.vector(cc), ";", sep = "")
+cc.rep <- repeat.n(as.vector(cc), times = 2)
+coverture <- paste("TF_coverture['", all.motifs, "'] = ", cc.rep, ";", sep = "")
 coverture <- paste(coverture, collapse = "\n")
 html.report <- gsub("--TF_covertures--", coverture, html.report)
 
@@ -928,14 +997,8 @@ if(draw.area == 1){
   html.report <- gsub("--area--", area, html.report)
 }
 
-# ## Insert the Y axis limits
-# ## They are inserted in the C3section
-all.fraction.query <- apply(all.counts.per.bin.query, 1, function(s){
-  s/sum(s)
-})
-all.fraction.control <- apply(all.counts.per.bin.control, 1, function(s){
-  s/sum(s)
-})
+## Insert the Y axis limits
+## They are inserted in the C3section
 max.fraction <- round(max(all.fraction.query, all.fraction.control), digits = 2)
 
 max.y <- max.fraction + 0.02
@@ -944,17 +1007,27 @@ html.report <- gsub("--y_axis--", max.y, html.report)
 ## Fill the parameters table
 html.report <- gsub("--seq_l--", seq.length, html.report)
 html.report <- gsub("--bin_l--", bin, html.report)
-html.report <- gsub("--bin_nb--", ncol(counts.per.bin.table), html.report)
+html.report <- gsub("--bin_nb--", length(xlab), html.report)
 html.report <- gsub("--seq_nb_q--", total.scanned.sequences.query, html.report)
 html.report <- gsub("--seq_nb_c--", total.scanned.sequences.control, html.report)
 html.report <- gsub("--motif_nb--", length(matrix.names), html.report)
 html.report <- gsub("--p--", prettyNum(p.val), html.report)
 
+## Fill the heatmap section
+html.report <- gsub("--heatmap_png--", paste(basename, "_profiles_heatmap.jpg", sep = ""), html.report)
+html.report <- gsub("--heatmap_pdf--", paste(basename, "_profiles_heatmap.pdf", sep = ""), html.report)
+
 ## Insert the Hit counts per bin table
-# html.report <- gsub("--hit_counts_table--", counts.tab.file, html.report)
-# 
-# ## Insert the density of hits per bin table
-# html.report <- gsub("--density_table--", density.tab.file, html.report)
+html.report <- gsub("--hit_counts_table_query--", query.counts.tab.file, html.report)
+html.report <- gsub("--hit_counts_table_control--", control.counts.tab.file, html.report)
+
+## Insert the density of hits per bin table
+html.report <- gsub("--density_table_query--", fraction.tab.file.query, html.report)
+html.report <- gsub("--density_table_control--", fraction.tab.file.control, html.report)
+
+## Insert the Full motif description table
+feature.attributes.file <- paste(basename, "_attributes.tab", sep = "")
+html.report <- gsub("--full_motif_table--", feature.attributes.file, html.report)
 
 ## Insert the Full motif description table
 html.report <- gsub("Inf;", "Infinity;", html.report)
