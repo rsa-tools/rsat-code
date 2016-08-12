@@ -272,6 +272,9 @@ package main;
   $main::outfile{report} = $main::outfile{prefix}."_scan_profile_report.html";
   $main::outfile{report_temp} = $main::outfile{prefix}."_scan_profile_report_temp.html";
   $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_positional_profiles.html";
+  $main::outfile{report_temp_diff} = $main::outfile{prefix}."_diff_scan_profile_report_temp.html";
+  $main::outfile{report_template_diff} = $ENV{RSAT}."/public_html/templates_html/dynamic_positional_profiles_differential_mode.html";
+ 
 
   ## Archive to facilitate transfer of all the results in a zip file
   $main::outfile{archive} = $main::outfile{prefix}."_archive.zip";
@@ -359,7 +362,7 @@ package main;
 
       ################################################################
       ## Run matrix-scan quick
-      #&ScanSequences();
+      &ScanSequences();
 
       ## Parse the matrix-scan results table
       &ParseScanResults();
@@ -1240,7 +1243,7 @@ sub DynamicProfilesDiffR {
     $profile_cmd .= "; seq.length = '".$seq_length."'";
     $profile_cmd .= "; individual.plots = '".$individual_plots."'";
     $profile_cmd .= "; heatmap.dendo = '".$heatmap_dendo."'";
-    $profile_cmd .= "; html.template.file = '".$main::outfile{report_template}."'";
+    $profile_cmd .= "; html.template.file = '".$main::outfile{report_template_diff}."'";
     $profile_cmd .= "; c3.css.base = '".$c3_css_base."'";
     $profile_cmd .= "; c3.base = '".$c3_base."'";
     $profile_cmd .= "; d3.base = '".$d3_base."'";
@@ -1502,12 +1505,15 @@ sub Archive {
 ## Open the HTML page for the synthesis
 sub ReOpenSynthesis {
 
-  ## Open the summary HTML file + temporal report 
-  my ($syn) = &OpenInputFile($main::outfile{report});
-  my ($syn2) = &OpenOutputFile($main::outfile{report_temp});
+    ## Open the summary HTML file + temporal report 
+    if($diff_flag){
+	$main::outfile{report_temp} = $main::outfile{report_temp_diff};
+    }
+    my ($syn) = &OpenInputFile($main::outfile{report});
+    my ($syn2) = &OpenOutputFile($main::outfile{report_temp});
 
   
-  my $head = &PrintHtmlResultHeader(program=>"position-scan", "title"=>$main::title);
+    my $head = &PrintHtmlResultHeader(program=>"position-scan", "title"=>$main::title);
 
   ######################################
   ## Read the HTML report
