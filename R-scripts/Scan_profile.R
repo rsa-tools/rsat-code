@@ -1204,13 +1204,13 @@ thrash <- sapply(1:length(cluster.profiles.motif.names), function(cl){
   cluster.function.names.cov <- paste(profile.cluster.name, "_show_cov", sep = "")
   
   ## Cluster member names
-  cluster.member.names <- as.vector(unlist(sapply(cluster.profiles.motif.names[[cl]], function(m){
-    hash.motif.IDs[[m]]
+  cluster.member.names <- as.vector(unlist(sapply(as.vector(unlist(cluster.profiles.motif.names[[cl]])), function(m){
+    as.vector(hash.motif.IDs[[m]])
   })))
   cluster.member.names <- paste(paste("'", cluster.member.names, "'", sep = ""), collapse = ",")
   
   ## Cluster member names (cover plot)
-  cluster.member.names.cov <- as.vector(unlist(sapply(cluster.profiles.motif.names[[cl]], function(m){
+  cluster.member.names.cov <- as.vector(unlist(sapply(as.vector(unlist(cluster.profiles.motif.names[[cl]])), function(m){
     as.vector(all.motifs.cover.hash[which(all.motifs.cover.hash[,2] == m),1])
   })))
   cluster.member.names.cov <- paste(paste("'", cluster.member.names.cov, "'", sep = ""), collapse = ",")
