@@ -286,11 +286,15 @@ ensemblgenomes_release=31
 ## not be done with earlier releases than indicated here.
 ensembl_release_safe=70
 
+################################################################
+## JvH REMOVED THE FOLLOWING VARIABLES (2016-07-11) because they can be
+## rebuilt from ensembl_release and ensemblgenomes_release.
+##
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools developed by Olivier Sand
 ##   (retrieve-ensembl-seq, get-ensembl-genome)
-ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl/modules
-compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl-compara/modules
-variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl-variation/modules
+# ensembl=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl/modules
+# compara=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl-compara/modules
+# variation=[RSAT_PARENT_PATH]/rsat/lib/ensemblgenomes-31-84/ensembl-variation/modules
 
 ################################################################
 ## Parameters for biomart
@@ -304,7 +308,7 @@ neat_supported=1
 
 ## URL of the Web server hosting the NeAT Web services, where the result files
 ## are to be found 
-neat_www_root=http://wwwsup.scmbb.ulb.ac.be/rsat/
+neat_www_root=http://localhost/rsat/
 
 ## URL for the NeAT web services.  NeAT requires to install some
 ## specific programs for path finding and graph layout.  Before
@@ -312,20 +316,20 @@ neat_www_root=http://wwwsup.scmbb.ulb.ac.be/rsat/
 ## on the new neat_ws server
 ##
 ## Note: the auto option does not work for neat_ws.
-neat_ws=http://wwwsup.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl
+neat_ws=http://localhost/rsat/web_services/RSATWS.wsdl
 
 ## URL for the NeAT Web services temporary directory, where the result files
 ## are to be found
-neat_ws_tmp=http://wwwsup.scmbb.ulb.ac.be/rsat/tmp/
+neat_ws_tmp=http://localhost/rsat/tmp/
 
 ## URL for java-based NeAT web services. The same remark as above holds,
 ## please check the RSAT web server install guide to install the additional
 ## programs before changing this variable.
-neat_java_ws=http://wwwsup.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
+neat_java_ws=http://localhost/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
 
 ## The java programs on the Web interface are currently supported only at the
 ## ULB server.
-neat_java_host=http://wwwsup.scmbb.ulb.ac.be/rsat/
+neat_java_host=http://localhost/rsat/
 
 # if forwarding to apache is not activated, indicate the tomcat port
 tomcat_port=

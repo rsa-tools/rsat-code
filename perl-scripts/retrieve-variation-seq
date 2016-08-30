@@ -50,11 +50,12 @@ them wiht the tool I<variation-scan>.
 =head2 Example
 
   Get variation sequence of Homo_sapiens from a bed file
-    retrieve-snp-seq -v 2 \
-      -species Homo_sapiens -release 84
+
+    retrieve-variation-seq -v 2 \
+      -species Homo_sapiens -release 84 -format bed -assembly GCRh37 \
       -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
       -mml 30 \
-      -o variations.varBed
+      -o variations.varSeq
 
 =head1 INPUT FORMAT
 
@@ -299,7 +300,7 @@ package	main;
 
 ## Check if files was given
   unless  ((-f  $main::infile{'input'} ) || !($main::in)){
-      &RSAT::error::FatalError("Input file not found, provide either input file or standar input information")  ;
+      &RSAT::error::FatalError("Input file not found", $main::infile{'input'});
   }
 
   ################################################################
@@ -739,7 +740,19 @@ General format for the description of genomic features
 
 =item B<-mml #>
 
-Length of the longest Matrix
+Length of the longest Matrix. 
+
+The program will adapt the length of the flanks to be extracted on
+each side of the variants, in order to be able to align the longest
+matrix on both sides. 
+
+The flanking size on each size will be
+
+    n = mml -1
+
+For example, if the longest matrix of the database contains 30
+columns, the flanking size will be 29 base pairs, which is sufficient
+to align the SNP at all the positions of the matrix.
 
 =cut
     } elsif ($arg eq "-mml") {

@@ -5,8 +5,15 @@
 <meta charset="utf-8">
 <style>
 
+      .mono {
+        font-size: 12px;
+        font-family: Consolas, courier;
+        fill: #686666;
+      }
+
 .venntooltip {
-  font-size: 10px;
+  font-family: Consolas, courier;
+  font-size: 12px;
   position: absolute;
   text-align: center;
   width: 128px;
@@ -449,7 +456,6 @@ function(error, data) {
 
   legend.append("text")
     .attr({
-	'font-size': 17,
 	'x': width + (cellSize*1) + 30,
 	'y': -45,
 	'class': 'mono'

@@ -13,7 +13,7 @@ available_species:
 	@mkdir -p ${RESULT_DIR}
 	@echo "Collecting available species at ${DB}	release ${ENSEMBL_RELEASE}"
 	install-ensembl-genome -v ${V} -db ${DB} -available_species \
-		-version ${ENSEMBL_RELEASE} \
+		-release ${ENSEMBL_RELEASE} \
 		-o ${AVAILABLE_SPECIES}
 	@echo "	${AVAILABLE_SPECIES}"
 

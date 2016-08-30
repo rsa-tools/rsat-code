@@ -51,32 +51,48 @@ $cross_ext_variable{rsat_tmp} = 1;
 $cross_ext_variable{rsat_www} = 1;
 $cross_ext_variable{rsat_ws} = 1;
 #$cross_ext_variable{rsat_ws_tmp} = 1;
-$cross_ext_variable{ensembl_release} = 1;
-$cross_ext_variable{ensembl_branch} = 1;
 $cross_ext_variable{rsat_bin} = 1;
 $cross_ext_variable{qsub_manager} = 1;
 $cross_ext_variable{queue_manager} = 1;
 $cross_ext_variable{qsub_options} = 1;
 $cross_ext_variable{cluster_queue} = 1;
 $cross_ext_variable{cluster_sell} = 1;
-$cross_ext_variable{ensemblgenomes_branch} = 1;
 $cross_ext_variable{ensembl_release} = 1;
+$cross_ext_variable{ensemblgenomes_release} = 1;
 
-
-## First argument
-if (exists($ARGV[0])) {
-  if ($ARGV[0] eq "auto") {
+## Parse command-line arguments
+our @arguments = @ARGV;
+our %force_param = ();
+our $auto_mode = 0;
+while ($arg = shift(@arguments)) {
+  if (lc($arg) eq "auto") {
+    $auto_mode = 1;
     foreach my $extension (@props_extensions) {
-	$auto_extension{$extension} = 1;
+      $auto_extension{$extension} = 1;
     }
-  ## Print the help message
-  } elsif (scalar(@ARGV) > 0) {
-    warn join ("\t", "\n", "!!!!  Invalid argument  !!!!", $ARGV[0]), "\n";
-    &PrintHelp();
+  } elsif ($arg =~ /^(\S+)\=(\S+)$/) {
+    my $key = $1;
+    my $value = $2;
+    $force_param{$1} = $2;
+    print("Setting property\t$key\t$value\n");
   }
-} else {
-  warn "Entering manual mode...\n";
 }
+
+
+# ## First argument
+# if (exists($ARGV[0])) {
+#   if ($ARGV[0] eq "auto") {
+#     foreach my $extension (@props_extensions) {
+#       $auto_extension{$extension} = 1;
+#     }
+#     ## Print the help message
+#   } elsif (scalar(@ARGV) > 0) {
+#     warn join ("\t", "\n", "!!!!  Invalid argument  !!!!", $ARGV[0]), "\n";
+#     &PrintHelp();
+#   }
+# } else {
+#   warn "Entering manual mode...\n";
+# }
 
 package main;
 {
@@ -89,15 +105,18 @@ package main;
     if (($pwd =~ /rsat\/*$/) || $pwd =~(/rsa-tools/)) {
       $rsat_path = $pwd;
     } elsif ($ENV{RSAT}) {
-	$rsat_path = $ENV{RSAT};
+      $rsat_path = $ENV{RSAT};
     }
   }
 
   ## Prompt for the RSAT path
-  print "\nAbsolute path to the RSAT package ? [", $rsat_path, "] ";
-  chomp(my $answer = <>);
-  if ($answer) {
-    $rsat_path = $answer;
+  unless ($auto_mode) {
+    print "\nAbsolute path to the RSAT package ? [", $rsat_path, "] ";
+    my $answer = <STDIN>;
+    chomp($answer);
+    if ($answer) {
+      $rsat_path = $answer;
+    }
   }
 
   ## Compute RSAT parent path
@@ -119,7 +138,7 @@ package main;
   ## and php scripts) and .mk (for make scripts).
   warn("\n", "We will now edit configuration files in interactive mode, for the ", 
        scalar(@props_extensions), " following extensions: ", join(", ", @props_extensions), "\n");
-
+  
   for my $extension (@props_extensions) {
 
     ## Check that the config file exists in the RSAT path
@@ -131,25 +150,25 @@ package main;
 	 "## Based on template file\t", $config_file,"\n\n");
 
     if (-f $config_file) {
-	## Load properties from existing configuration file
-	if ($extension eq "props")  {
-	    open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
-	    while (<CONFIG>) {
-		if ((/^(\S+)=(.*)/) && !(/^#/)) {
-		    my $key = $1;
-		    my $value = $2;
-		    
-		    ## Replace the RSAT parent path if required (at first installation)
-		    $value =~ s/\[RSAT_PARENT_PATH\]/${rsat_parent_path}/;
-		    
-		    ## Store the parameter value in a hash table
-		    $prev_param{lc($key)} = $value;
+      ## Load properties from existing configuration file
+      if ($extension eq "props")  {
+	open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
+	while (<CONFIG>) {
+	  if ((/^(\S+)=(.*)/) && !(/^#/)) {
+	    my $key = $1;
+	    my $value = $2;
+	    
+	    ## Replace the RSAT parent path if required (at first installation)
+	    $value =~ s/\[RSAT_PARENT_PATH\]/${rsat_parent_path}/;
+	    
+	    ## Store the parameter value in a hash table
+	    $prev_param{lc($key)} = $value;
 ##		    warn join("\t", $key, $value, $prev_param{lc($key)}), "\n"; ## DEBUG
-		    
-		}
-	    }
-	    close CONFIG;
+	    
+	  }
 	}
+	close CONFIG;
+      }
     } else {
       my $default_config_file = $rsat_path."/RSAT_config_default.${extension}";
       if (-e $default_config_file) {
@@ -165,13 +184,15 @@ package main;
     }
 
     ## Prompt for the new value
-    warn "\nPLEASE CHECK THE FOLLOWING LINE BEFORE GOING FURTHER\n";
-    print "\nReady to update config file\t", $config_file, " [y/n] (y): ";
-    chomp($answer = <>);
-    $answer = "y" unless ($answer);
-    unless ($answer eq "y") {
-      warn("\nWARNING: Since you did not answer 'y', the edition of config file ${config_file} is aborted.\n");
-      die ("Good bye\n\n");
+    unless ($auto_mode) {
+      warn "\nPLEASE CHECK THE FOLLOWING LINE BEFORE GOING FURTHER\n";
+      print "\nReady to update config file\t", $config_file, " [y/n] (y): ";
+      chomp($answer = <STDIN>);
+      $answer = "y" unless ($answer);
+      unless ($answer eq "y") {
+	warn("\nWARNING: Since you did not answer 'y', the edition of config file ${config_file} is aborted.\n");
+	die ("Good bye\n\n");
+      }
     }
 
 
@@ -190,12 +211,11 @@ package main;
     open NEW_CONF, ">".$new_config_file || die "\n\nCannot write new config file\t", $new_config_file, "\n\n";
 
     ## Load the RSAT config file
-
     $from_template = 1;
     if ($from_template) {
-	open CONFIG, $template_file || die "\n\nCannot read template config file\t", $template_file, "\n\n";
+      open CONFIG, $template_file || die "\n\nCannot read template config file\t", $template_file, "\n\n";
     } else {
-	open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
+      open CONFIG, $config_file || die "\n\nCannot read config file\t", $config_file, "\n\n";
     }
     while (<CONFIG>) {
 
@@ -226,31 +246,35 @@ package main;
 	  }
 
 	  if ($extension eq "props") {
-	      ## Select previous parameter values if defined in the props
-	      ## file
+	    ## Select previous parameter values if defined in the props
+	    ## file
 ##	  warn join("\t", $key, $value, "previously", $prev_param{lc($key)}), "\n"; DEBUG
-	      if (defined($prev_param{lc($key)})) {
-		  $value = $prev_param{lc($key)};
-	      } else {
-		  $prev_param{lc($key)} = $value;
-	      }
-	      
+	    if (defined($force_param{lc($key)})) {
+	      $value = $force_param{lc($key)};
+	    } elsif (defined($prev_param{lc($key)})) {
+	      $value = $prev_param{lc($key)};
+	    } else {
+	      $prev_param{lc($key)} = $value;
+	    }
+	    
 	  } elsif (($extension eq "mk") || ($cross_ext_variable{lc($key)})) {
-	      ## Transmit appropriate variables across extensions, if
-	      ## already specified.
-	      
-	      if (defined($new_param{lc($key)})) {
-		  $value = $new_param{lc($key)};
-	      }
+	    ## Transmit appropriate variables across extensions, if
+	    ## already specified.
+	    
+	    if (defined($force_param{lc($key)})) {
+	      $value = $force_param{lc($key)};
+	    } elsif (defined($new_param{lc($key)})) {
+	      $value = $new_param{lc($key)};
+	    }
 	  }
 	  
 	  ## Prompt for the new value
 	  unless ($auto_extension{$extension}) {
-	      print "\n", $key, " [", $value, "] : ";
-	      chomp(my $new_value = <>);
-	      if ($new_value) {
-		  $value = $new_value;
-	      }
+	    print "\n", $key, " [", $value, "] : ";
+	    chomp(my $new_value = <STDIN>);
+	    if ($new_value) {
+	      $value = $new_value;
+	    }
 	  }
 
 	  ## Export the line in the new config file
