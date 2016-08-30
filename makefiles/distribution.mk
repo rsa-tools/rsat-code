@@ -15,7 +15,29 @@ ARCHIVE=rsat/${ARCHIVE_PREFIX}
 
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
-TAR_EXCLUDE=--exclude .git --exclude CVS --exclude '*~~' --exclude tmp --exclude data --exclude logs --exclude course --exclude eccb_2014_tutorial --exclude '*.o' --exclude Rpackages
+TAR_EXCLUDE=--exclude .git \
+	--exclude CVS \
+	--exclude '*~~' \
+	--exclude tmp \
+	--exclude data \
+	--exclude logs \
+	--exclude doc/manuals/*.toc \
+	--exclude doc/manuals/*.idx \
+	--exclude doc/manuals/*.aux \
+	--exclude doc/manuals/*.log \
+	--exclude doc/manuals/*.out \
+	--exclude doc/manuals/*.pdf \
+	--exclude course \
+	--exclude eccb_2014_tutorial \
+	--exclude '*.o' \
+	--exclude perl-scripts/lib/js \
+	--exclude peak-footprints \
+	--exclude floydwarshall \
+	--exclude kwalks \
+	--exclude REA \
+	--exclude REA-* \
+	--exclude purgatory \
+	--exclude Rpackages
 TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsat/*_default.*
 TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar 
 
@@ -70,7 +92,7 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole distribution
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
-DISTRIB_FILES= 00_README.txt 			\
+DISTRIB_FILES=rsat/00_README.txt			\
 	rsat/perl-scripts			\
 	rsat/R-scripts 				\
 	rsat/makefiles				\
@@ -78,15 +100,17 @@ DISTRIB_FILES= 00_README.txt 			\
 	rsat/RSAT_config_default.mk		\
 	rsat/RSAT_config_default.bashrc		\
 	rsat/rsat_apache_default.conf		\
-	rsat/doc/manuals/*.pdf			\
+	rsat/doc/manuals			\
 	rsat/python-scripts 			\
 	rsat/contrib/count-words  		\
 	rsat/contrib/compare-matrices-quick  	\
 	rsat/contrib/info-gibbs			\
 	rsat/contrib/matrix-scan-quick  	\
-	rsat/contrib/floydwarshall		\
 	rsat/ws_clients		  		\
-	rsat/public_html			\
+	rsat/public_html
+
+PATHWAY_FILES = \
+	rsat/contrib/floydwarshall		\
 	rsat/contrib/REA			\
 	rsat/contrib/kwalks
 
@@ -161,7 +185,10 @@ web:
 TAR_WSCLIENTS=public_html/web_services/RSATWS_clients.tar.gz
 tar_wsclients:
 	@rm -f ${TAR_WSCLIENTS}
-	tar --exclude CVS  --exclude '*~' --exclude '*.DS_Store' -cpzf ${TAR_WSCLIENTS} ws_clients
+	tar \
+	--exclude CVS  \
+	--exclude '*~' \
+	--exclude '*.DS_Store' -cpzf ${TAR_WSCLIENTS} ws_clients
 	@echo ${TAR_WSCLIENTS}
 
 publish_tar_wsclients:

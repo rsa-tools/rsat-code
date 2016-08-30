@@ -93,7 +93,7 @@
 
 <h1 id="USAGE">USAGE</h1>
 
-<pre><code> retrieve-snp-seq -species species_name (-e_version # | -a_version assembly_version)  \
+<pre><code> retrieve-snp-seq -species species_name (-release # | -assembly assembly_version)  \
    [-i #inputfile] [-format variation_format] \
    [-col ID_column] [-mml #] [-o outputfile] [-v #] [...]</code></pre>
 
@@ -101,7 +101,7 @@
 
 <pre><code>  Get variation sequence of Homo_sapiens from a bed file
     retrieve-snp-seq -v 2 \
-      -species Homo_sapiens -e_version 72
+      -species Homo_sapiens -release 72
       -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
       -mml 30 \
       -o variations.varBed</code></pre>
@@ -287,15 +287,15 @@
 <p>Species name. This name must correspond to the species of the variation/bed/id file if provided.</p>
 
 </dd>
-<dt id="e_version"><b>-e_version #</b></dt>
+<dt id="release"><b>-release #</b></dt>
 <dd>
 
 <p>The version of ensembl database (e.g. 72).</p>
 
-<p>Note: each Ensembl version contains a specific assembly version for each species. When the option -e_version is used, the option -a_version should thus in principle not be used.</p>
+<p>Note: each Ensembl version contains a specific assembly version for each species. When the option -release is used, the option -assembly should thus in principle not be used.</p>
 
 </dd>
-<dt id="a_version"><b>-a_version #</b></dt>
+<dt id="assembly"><b>-assembly #</b></dt>
 <dd>
 
 <p>Assembly version (e.g. GRCh37 for the assembly 37 of the Human genome).</p>

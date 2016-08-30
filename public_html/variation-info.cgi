@@ -62,7 +62,7 @@ if (defined($supported_organism{$organism})) {
 	);
 
     $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
-    $parameters .= " -a_version ".$assembly; ## Assembly is the third part of species ID
+    $parameters .= " -assembly ".$assembly; ## Assembly is the third part of species ID
     if (scalar (@org_name_split)>=4){
     	if (scalar (@org_name_split)>4){
     	    $species_suffix=join("_",@org_name_split[3..$#org_name_split]);

@@ -7,9 +7,27 @@ if (dir.rsat == "") {
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path
 source(file.path(dir.rsat, 'R-scripts/config.R'))
-library("RColorBrewer")
-library("gplots")
-library("amap")
+
+
+## Define the local directory for R librairies
+dir.rsat <- Sys.getenv("RSAT")
+if (dir.rsat == "") {
+  stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
+}
+
+dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
+dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
+
+## Load required libraries
+## List of packages to install
+required.packages = c("RColorBrewer",
+                      "gplots",
+                      "amap")
+
+# List of RSAT-specific packages to be compiled on the server
+for (pkg in c(required.packages)) {
+  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
+}
 
 ###########################################
 ## Read arguments from the command line.
@@ -32,7 +50,6 @@ heatmap.color.classes <- as.numeric(heatmap.color.classes)
 ################################################
 
 #venn.sortAreas(div, d);--return--
-
 JSON.intersection = '
 var sets_--nb-- = [
   {"sets": [0], "label": "--collection_A--", "size": --size_collection_A--},
@@ -42,8 +59,8 @@ var sets_--nb-- = [
 Venn.diagram.set = '
 <script>--return--
 var chart = venn.VennDiagram()--return--
-.width(250)--return--
-.height(250);--return--
+.width(275)--return--
+.height(275);--return--
 --return--
 var div = d3.select("#--venn--")--return--
 div.datum(--set--).call(chart);--return--
@@ -60,7 +77,7 @@ div.selectAll("g")--return--
 .on("mouseover", function(d, i) {--return--
   --return--
   tooltip.transition().duration(400).style("opacity", .9);--return--
-  tooltip.text(d.size + " motifs");--return--
+  tooltip.text(d.size + " %");--return--
   --return--
   var selection = d3.select(this).transition("tooltip").duration(400);--return--
   selection.select("path")--return--
@@ -84,14 +101,17 @@ div.selectAll("g")--return--
 });--return--
 </script>--return--'
 
+# cluster.counts.file <- "/home/jaimicore/Documents/PhD/clusters_summary_table.tab"
 # cluster.counts.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/clusters_summary_table.tab"
 
-# Read cluster count table
+## Read cluster count table
 clusters <- read.table(file = cluster.counts.file, sep = "\t", header = TRUE)
 names(clusters) <- gsub("X.Cluster_ID", "Cluster_ID", names(clusters))
+cluster.names.original <- as.vector(clusters$Cluster_ID)
+clusters[is.na(clusters)] <- 0
 
 # Read the root motif table and save the path to the logos
-# root.motifs.table <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Multi_algorithms_analysis_hclust-average_Ncor0.4_root_motifs_table.tab"
+# root.motifs.table <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/All_plant_motifs_root_motifs_table.tab"
 root.motifs.files <- read.table(file = root.motifs.table, sep = "\t", header = TRUE)
 names(root.motifs.files) <- gsub("X.Cluster_ID", "Cluster_ID", names(root.motifs.files))
 
@@ -128,8 +148,9 @@ x <- sapply(names(motif.DB.counts), function(DB){
   
   ## Get collection A information
   collection.A.name <- DB
-  collection.A.size <- as.numeric(motif.DB.counts[DB])
+  # collection.A.size <- as.numeric(motif.DB.counts[DB])
   collection.A.nb.clusters <- length(DB.motifs[,DB])
+  collection.A.size <- 100
   
   #################################################################################
   ## Calculate the overlap between the databases
@@ -143,10 +164,16 @@ x <- sapply(names(motif.DB.counts), function(DB){
     intersect.counter <<- intersect.counter + 1
     intersection.clusters[[intersect.counter]] <<- list()
     
+    ## Count the number of motifs in Collections A and B
+    collection.A.nb.motifs <- sum(DB.motifs[,DB])
+    collection.B.intersection <- sum(DB.motifs[,n])
+    collection.B.nb.motifs <- motif.DB.counts[n]
+    
     ## Get collection B information
     collection.B.name <- n
     collection.B.size <- as.numeric(motif.DB.counts[n])
     collection.B.nb.clusters <- length(which(DB.motifs[,n] > 0))
+    collection.B.size <- 100
     
     ## Get the name of the clusters in Collection A and B
     collection.A.clusters.names <- as.vector(DB.motifs[,c("Cluster_ID",collection.A.name)]$Cluster_ID)
@@ -155,13 +182,7 @@ x <- sapply(names(motif.DB.counts), function(DB){
     positive.index <- which(t[,2] > 0)
     collection.B.clusters.names <- as.vector(DB.motifs[positive.index,c("Cluster_ID",collection.B.name)]$Cluster_ID)
     
-    # intersect.size <- length(intersect(collection.A.clusters.names, collection.B.clusters.names))
-    intersect.size <- sum(DB.motifs[,collection.B.name])
-    
-    if(intersect.size > collection.B.size){
-      intersect.size <- collection.B.size
-      collection.B.size <- collection.A.size
-    }
+    intersect.size <- round(coverage[n] * 100)
     
     Venn.diagram.set.cp <- Venn.diagram.set
     set.nb <- paste("sets_", intersect.counter, sep = "")
@@ -185,12 +206,18 @@ x <- sapply(names(motif.DB.counts), function(DB){
     int.cl <- intersect(collection.A.clusters.names, collection.B.clusters.names)
     int.cl <- paste(int.cl, collapse = "<br>")
     intersection.clusters[[intersect.counter]][["Clusters"]] <<- int.cl
+    intersection.clusters[[intersect.counter]][["Sentence"]] <<- paste(collection.A.name, " covers ", round(coverage[n] * 100, digits = 2), "% of ", collection.B.name, sep = "")
+    intersection.clusters[[intersect.counter]][["CollectionA_size"]] <<- collection.A.nb.motifs
+    intersection.clusters[[intersect.counter]][["CollectionB_size"]] <<- collection.B.nb.motifs
+    intersection.clusters[[intersect.counter]][["CollectionB_intersection"]] <<- collection.B.intersection
+    intersection.clusters[[intersect.counter]][["CollectionA_name"]] <<- DB
+    intersection.clusters[[intersect.counter]][["CollectionB_name"]] <<- n
     
     if(intersect.counter == 1){
       file.remove(JSON.intersect.file, showWarnings = FALSE)
     }
     write(JSON.intersection.cp, file = JSON.intersect.file, append = TRUE)
-        
+
   })
   
   coverage.contingency.table <<- cbind(coverage.contingency.table, matrix(coverage, ncol = 1))
@@ -236,7 +263,7 @@ coverage.pics.buttons <- paste(coverage.pics.buttons, collapse = "")
 coverage.pics <- sapply(1:(length(names(motif.DB.counts)) ^2), function(x){
     coverage.counter <<- coverage.counter + 1
     
-    paste("<div id='d_", x, "' class='coverage_pic' style='display:none;position:relative;float:left;font-size:8px;'><p style='text-align:center;padding-top:5px;font-size:12px;'>Venn diagram</p><div id='venn", x, "'></div><table style='width:300px;font-size:10px;text-align:left;'><thead><tr><th>Collections</th><th>Intersection</th></tr></thead><tbody><td>", intersection.clusters[[x]][["Collections"]], "</td><td>", intersection.clusters[[x]][["Clusters"]],"</td></tbody></table></div> --return--", sep = "")
+    paste("<div id='d_", x, "' class='coverage_pic' style='display:none;position:relative;float:left;font-size:8px;'><p style='text-align:center;padding-top:5px;' class='mono'><strong>Venn diagram</strong></p><div style='padding-left:175px' id='venn", x, "'></div><p style='text-align:center;padding-top:5px;' class='mono'>", intersection.clusters[[x]][["Sentence"]], "</p><table style='width:650px;text-align:left;' class='mono'><thead><tr><th>Collections</th><th>", intersection.clusters[[x]][["CollectionA_name"]]," size</th><th>", intersection.clusters[[x]][["CollectionB_name"]], "<br>(intersection)</th><th>", intersection.clusters[[x]][["CollectionB_name"]]," size</th><th>Intersection</th></tr></thead><tbody><td>", intersection.clusters[[x]][["Collections"]], "</td><td>", intersection.clusters[[x]][["CollectionA_size"]], "</td><td>", intersection.clusters[[x]][["CollectionB_intersection"]], "</td><td>", intersection.clusters[[x]][["CollectionB_size"]], "</td><td>", intersection.clusters[[x]][["Clusters"]],"</td></tbody></table></div> --return--", sep = "")
 
 })
 coverage.pics <- as.vector(coverage.pics)
@@ -272,16 +299,25 @@ write.table(coverage.contingency.table, file = coverage.table.file, sep = "\t", 
 comp.order.list.columns <- list()
 comp.order.list.rows <- list()
 
-sapply(c("average", "complete", "single", "ward"), function(m){
+thrash <- sapply(c("average", "complete", "single", "ward"), function(m){
   
   if(m == "ward"){
     temp <- m
     m <- "ward.D"
   }
+  
+  print(paste(m, "1"))
+  
+  coverage.contingency.table.dist <- Dist(coverage.contingency.table, method = 'pearson')
+  
+  # pfile <- paste(coverage.json.folder, "/coverage_clustering_", m,".json", sep = "")
+  # pdf(file = pfile)
   hm.collections <- heatmap.2(coverage.contingency.table,
-                           hclustfun = function(x) hclust(x,method = m),
-                           distfun = function(x) Dist(x,method = 'pearson')
+                           hclustfun = function(x) hclust(x, method = m),
+                           distfun = function(x) Dist(x, method = 'pearson')
   )
+  t <- dev.off()
+  
   if(m == "ward.D"){
     m <- "ward"
   }
@@ -340,7 +376,7 @@ comp.complete.r.number <- comp.order.list.rows[["complete"]]
 comp.single.r.number <- comp.order.list.rows[["single"]]
 comp.ward.r.number <- comp.order.list.rows[["ward"]]
 
-heatmap.width <- 225 + (cell.size * col.nb) + 225
+heatmap.width <- 300 + (cell.size * col.nb)
 
 coverage.info <- matrix(c("Collection_labels", default.labels,
                           "Collection_number", default.number,
@@ -366,7 +402,6 @@ coverage.info <- matrix(c("Collection_labels", default.labels,
 ), nrow = 2)
 coverage.info.df <- t(data.frame(coverage.info))
 write.table(coverage.info.df, file = coverage.heatmap.attributes.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
-
 
 
 ##################################################
@@ -408,33 +443,11 @@ order.list.rows <- list()
 order.list.columns <- list()
 order.list.names <- list()
 
-sapply(c("average", "complete", "single", "ward"), function(m){
-  
-  if(m == "ward"){
-    temp <- m
-    m <- "ward.D"
-  }
-  
-  hm.clusters <- heatmap.2(clusters.matrix,
-                           hclustfun = function(x) hclust(x,method = m),
-                           distfun = function(x) Dist(x,method = 'pearson')
-  )
-  
-  if(m == "ward.D"){
-    m <- "ward"
-  }
-  
-  order.list.rows[[m]] <<- paste(rev(hm.clusters[[1]]), collapse = ",")
-  order.list.columns[[m]] <<- paste(rev(hm.clusters[[2]]), collapse = ",")
-  order.list.names[[m]] <<- paste(paste("'cluster_", order.list.rows[[m]], "'", sep = ""), collapse = ",")
-})
-
-
 ###############################################
 ## Parse the Heatmap table format used in D3
 ## This table is printed in a new file
 x <- data.frame(t(clusters))
-names(x) <- paste("cluster_", 1:dim(clusters)[1], sep = "")
+names(x) <- cluster.names.original
 y <- NULL
 for(j in 1:dim(x)[1]){
   for(i in 1:dim(x)[2]){
@@ -452,23 +465,13 @@ write.table(y, file = heatmap.table.d3, sep = "\t", quote = FALSE, row.names = F
 ## Color palette in Hexa code
 gradient <- paste("[", paste(paste("'", white, "'", sep=""), collapse=","), "];", sep = "")
 
-## Get the clusters names orderer according the linkage method
-cluster.names <- paste(paste("'cluster_", 1:dim(clusters)[1], "'", sep =""), collapse=",")
+cluster.names <- paste(paste("'", cluster.names.original, "'", sep =""), collapse=",")
 
 ## Get the clusters number orderer according the linkage method
 cluster.number <- paste(1:dim(clusters)[1], collapse=",")
-average.r.number <- order.list.rows[["average"]]
-complete.r.number <- order.list.rows[["complete"]]
-single.r.number <- order.list.rows[["single"]]
-ward.r.number <- order.list.rows[["ward"]]
-
-average.c.number <- order.list.columns[["average"]]
-complete.c.number <- order.list.columns[["complete"]]
-single.c.number <- order.list.columns[["single"]]
-ward.c.number <- order.list.columns[["ward"]]
 
 ## Default names
-default.names <- paste(paste("'cluster_", 1:dim(clusters)[1], "'", sep = ""), collapse = ",")
+default.names <- paste(paste("'", cluster.names.original, "'", sep = ""), collapse = ",")
 default.number <- paste(1:dim(clusters)[1], collapse = ",")
 
 ## Heatmap variables
@@ -498,9 +501,10 @@ legend <- append(legend, seq(from = 1, to = max(clusters), by = step))
 legend <- paste(legend, collapse=",")
 
 ## Right space
-left <- (max(as.vector(sapply(collection.names, nchar))) + 2.5) * 10
+left <- (max(as.vector(sapply(c(collection.names, cluster.names.original), nchar))) + 2.5) * 10
 
-
+## Right space
+top <- (max(as.vector(sapply(collection.names, nchar))) + 2.5) * 10
 
 ## Div bottom + Cell size
 cell.size <- 20
@@ -527,14 +531,14 @@ html.body.size <- 200 + left + (col.nb*cell.size) + 30
 order.info <- matrix(c("Gradient", gradient,
                        "Cluster_names", cluster.names,
                        "Cluster_number", cluster.number,
-                       "Average_c_number", average.c.number,
-                       "Complete_c_number", complete.c.number,
-                       "Single_c_number", single.c.number,
-                       "Ward_c_number", ward.c.number,
-                       "Average_r_number", average.r.number,
-                       "Complete_r_number", complete.r.number,
-                       "Single_r_number", single.r.number,
-                       "Ward_r_number", ward.r.number,
+                       # "Average_c_number", average.c.number,
+                       # "Complete_c_number", complete.c.number,
+                       # "Single_c_number", single.c.number,
+                       # "Ward_c_number", ward.c.number,
+                       # "Average_r_number", average.r.number,
+                       # "Complete_r_number", complete.r.number,
+                       # "Single_r_number", single.r.number,
+                       # "Ward_r_number", ward.r.number,
                        "Cell_size", cell.size,
                        "Col_number", col.nb,
                        "Row_number", row.nb,
@@ -543,6 +547,7 @@ order.info <- matrix(c("Gradient", gradient,
                        "Legend", legend,
                        "Legend_Head", legend.header,
                        "Left_space", left,
+                       "Top_space", top,
                        "Bottom_space", left,
                        "Body", html.body.size,
                        "Collections", collections,
