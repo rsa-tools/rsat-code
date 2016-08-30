@@ -73,10 +73,10 @@ MATRIX_ENRICHMENT_CDM=matrix-enrichment -v ${V} \
 	-title ${TITLE} ${OPT}\
 	-o ${PREFIX}
 
-## Enrichment with different BG models
+## Enrichment with BG model based in one sequences
 MATRIX_ENRICHMENT_BG_INPUT_CDM=matrix-enrichment -v ${V} \
 	-matrix ${MOTIFS_FILE} -matrix_format ${MTX_FORMAT} -pseudo ${PSEUDO} \
-	-bg_input by_seq -markov 2 \
+	-bg_input all -markov 2 \
 	${SEQUENCES} \
 	-title ${TITLE} ${OPT} \
 	-o ${PREFIX}
