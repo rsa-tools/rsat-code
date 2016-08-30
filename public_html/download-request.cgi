@@ -15,7 +15,10 @@ BEGIN {
 }
 require "RSA.lib";
 require "RSA2.cgi.lib";
+
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+
+my $request_date = &AlphaDate();
 
 ## Initialize parameters
 my @mandatory_fields  = qw ( first_name
@@ -62,6 +65,7 @@ foreach my $field (@all_fields) {
   $message .= sprintf("%-22s\t%s", $field, $query->param($field));
   $message .= "\n";
 }
+$message .= sprintf("%-22s\t%s\n", "request_date", $request_date);
 
 print "<pre>";
 print $message;
@@ -70,6 +74,7 @@ my $recipient = 'Jacques.van-Helden@univ-amu.fr'; ## All download requests shoul
 my $subject = join("_", 
 		   $query->param("first_name"), 
 		   $query->param("last_name"), 
+		   $request_date,
 		   "RSAT-download-request",
     );
 &RSAT::server::send_mail($message, $recipient, $subject);

@@ -68,6 +68,7 @@ ORGANISM_TABLE=${ORGANISM_DIR}/species_Ensembl${GROUP}.txt
 ## fasta and gtf in the genome dir, since we will use it for vairous
 ## purposes.
 SPECIES_UCFIRST=$(shell perl -e 'print ucfirst ${SPECIES}')
+SPECIES_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}
 SPECIES_RSAT_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}.${RELEASE}
 # SPECIES_DIR=${ORGANISM_DIR}/${SPECIES}
 SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID}
@@ -93,6 +94,7 @@ list_param:
 	@echo "	TAXON_ID 		${TAXON_ID}"
 	@echo "	ASSEMBLY_ID 		${ASSEMBLY_ID}"
 	@echo "	RELEASE 		${RELEASE}"
+	@echo " SPECIES_ID		${SPECIES_ID}"
 	@echo "	SPECIES_RSAT_ID		${SPECIES_RSAT_ID}"
 	@echo "Files to download"
 	@echo "	DOWNLOAD_TASKS		${DOWNLOAD_TASKS}"
@@ -210,24 +212,33 @@ download_gtf:
 ################################################################
 ## Download FASTA files with genomic sequences (raw and masked)
 ## and peptidic sequences
-FASTA_RAW_SUFFIX=*${RELEASE}.dna.genome.fa
+#FASTA_RAW_SUFFIX=*${RELEASE}.dna.genome.fa
+#FASTA_RAW_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_RAW_SUFFIX}.gz
+#FASTA_MSK_SUFFIX=*${RELEASE}.dna_rm.genome.fa
+#FASTA_MSK_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_MSK_SUFFIX}.gz
+#FASTA_PEP_SUFFIX=*${RELEASE}.pep.all.fa
+#FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUFFIX}.gz
+FASTA_RAW_SUFFIX=${SPECIES_ID}.dna.toplevel.fa
 FASTA_RAW_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_RAW_SUFFIX}.gz
-FASTA_MSK_SUFFIX=*${RELEASE}.dna_rm.genome.fa
+FASTA_MSK_SUFFIX=${SPECIES_ID}.dna_rm.toplevel.fa
 FASTA_MSK_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_MSK_SUFFIX}.gz
-FASTA_PEP_SUFFIX=*${RELEASE}.pep.all.fa
+FASTA_PEP_SUFFIX=${SPECIES_ID}.pep.all.fa
 FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUFFIX}.gz
+
 
 ## Define local files corresponding to the FTP-downloaded files.
 ## Note that only the first gtf file is considered
 #FASTA_RAW_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX} | grep -v '.gz$$'| head -1`
 #FASTA_RAW_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX}.gz | head -1`
-FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.genome.fa
+#FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.genome.fa
+FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_ID}.dna.toplevel.fa
 FASTA_RAW_LOCAL_GZ=${FASTA_RAW_LOCAL}.gz
-FASTA_MSK_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna_rm.genome.fa
+#FASTA_MSK_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna_rm.genome.fa
+FASTA_MSK_LOCAL=${GENOME_DIR}/${SPECIES_ID}.dna_rm.genome.fa
 FASTA_MSK_LOCAL_GZ=${FASTA_MSK_LOCAL}.gz
-FASTA_PEP_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.pep.all.fa
+FASTA_PEP_LOCAL=${GENOME_DIR}/${SPECIES_ID}.pep.all.fa
 FASTA_PEP_LOCAL_GZ=${FASTA_PEP_LOCAL}.gz
-GTF_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.gtf
+GTF_LOCAL=${GENOME_DIR}/${SPECIES_ID}.gtf
 GTF_LOCAL_GZ=${GTF_LOCAL}.gz
 #FASTA_MSK_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_MSK_SUFFIX} | grep -v '.gz$$' | head -1`
 #FASTA_PEP_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_PEP_SUFFIX}.gz | head -1`

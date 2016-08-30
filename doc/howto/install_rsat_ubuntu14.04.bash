@@ -19,6 +19,11 @@
 # locale-gen en_US.UTF-8
 # dpkg-reconfigure locales
 
+#export RSAT_PARENT_PATH=/bio
+export RSAT_PARENT_PATH=/packages
+export RSAT_RELEASE=2016-07-13
+export RSAT_HOME=${RSAT_PARENT_PATH}/rsat
+
 
 ################################################################
 ## Must be executed as root. If you are non-root but sudoer user, you
@@ -37,8 +42,6 @@ dpkg-reconfigure tzdata
 export INSTALLER=apt-get
 export INSTALLER_OPT="--quiet --assume-yes"
 ## alternative: INSTALLER=aptitude
-export INSTALL_ROOT_DIR=/bio
-export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 #export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
 #export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
 
@@ -48,11 +51,11 @@ export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 
 ## Create a separate directory for RSAT, which must be readable by all
 ## users (in particular by the apache user)
-mkdir -p ${INSTALL_ROOT_DIR}
-cd ${INSTALL_ROOT_DIR}
-mkdir -p ${INSTALL_ROOT_DIR}/install_logs
-chmod 777 ${INSTALL_ROOT_DIR}/install_logs
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
+mkdir -p ${RSAT_PARENT_PATH}
+cd ${RSAT_PARENT_PATH}
+mkdir -p ${RSAT_PARENT_PATH}/install_logs
+chmod 777 ${RSAT_PARENT_PATH}/install_logs
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 
 
 ## Check the installation device 
@@ -62,17 +65,17 @@ echo ${DEVICE}
 
 ## We can then check the increase of disk usage during the different
 ## steps of the installation
-grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
+grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 ## Install aptitude, more efficient than apt-get to treat dependencies
 ## when installing and uninstalling packages.
 ## TO SAVE SPACE, I SUPPRESS aptitude
 ## apt-get install aptitude
 apt-get update
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 ${INSTALLER} ${INSTALLER_OPT} upgrade
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
-grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
+grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 ## Packages to be checked: to I really need this ?
 PACKAGES_OPT="
@@ -218,11 +221,11 @@ echo "${PACKAGES_PERL}"
 for LIB in ${PACKAGES} ${PACKAGES_PERL}; \
 do \
    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
-   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${INSTALL_ROOT_DIR}/install_logs/${INSTALLER}_install_${LIB}.txt ; \
-   df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
+   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT_PARENT_PATH}/install_logs/${INSTALLER}_install_${LIB}.txt ; \
+   df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
-echo "Log files are in folder ${INSTALL_ROOT_DIR}/install_logs"
-grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
+echo "Log files are in folder ${RSAT_PARENT_PATH}/install_logs"
+grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 ## This package has to be installed in an interactive mode (dialog
 ## box)
@@ -235,18 +238,18 @@ ${INSTALLER} install ${INSTALLER_OPT} console-data
 ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
 ## Note that these dependencies cost 400Mb ! To be checked
 ${INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
-grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
+grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
-grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
+grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 ${INSTALLER} ${INSTALLER_OPT}  autoremove
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
 ${INSTALLER} ${INSTALLER_OPT}  clean
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 ## This really helps: it saves several hundreds Mb
-grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
+grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 ## DONE: installation of Ubuntu packages
 ################################################################
@@ -339,8 +342,8 @@ pip3 install suds-jurko
 pip3 install pysimplesoap
 
 ## Check disk usage
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
-grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
+grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 # ################################################################
 # ## TO BE CHECKED: TO WE STILL NEED TO DO ALL THE TRICKY STUFF BELOW ?
@@ -416,8 +419,8 @@ apt-get --quiet --assume-yes install libsoap-wsdl-perl
 
 ## Define an environment variable with the RSAT_HOME directory
 ## (will be used later to configure RSAT)
-export INSTALL_ROOT_DIR=/bio
-export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
+export RSAT_PARENT_PATH=/bio
+export RSAT_HOME=${RSAT_PARENT_PATH}/rsat
 
 ## RSAT installation is done under the rsat login.
 ##
@@ -426,8 +429,8 @@ export RSAT_HOME=${INSTALL_ROOT_DIR}/rsat
 ## sudo mv to place the rsat folder in /bio.
 #su - rsat
 #cd ${HOME}
-cd ${INSTALL_ROOT_DIR}
-git config --global user.mail rsat@rsat-vm-2016-03
+cd ${RSAT_PARENT_PATH}
+git config --global user.mail rsat@rsat-vm-${RSAT_RELEASE}
 git config --global user.name "rsat"
 git config --global core.editor emacs
 git config --global merge.tools meld
@@ -445,12 +448,12 @@ ln -fs ${RSAT_HOME} ${HOME}/rsat
 ## This is however less convenient than using the git clone, which
 ## greatly facilitates updates.
 #
-# cd ${INSTALL_ROOT_DIR}
+# cd ${RSAT_PARENT_PATH}
 # mkdir -p ${RSAT_HOME}
 # wget ${RSAT_DISTRIB_URL}
 # tar -xpzf ${RSAT_DISTRIB}
 # rm -f   ${RSAT_DISTRIB} ## To free space
-# df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_downloaded.txt
+# df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_downloaded.txt
 # cd ~; ln -fs ${RSAT_HOME} rsat
 
 ## Metabolic pathway tools installation
@@ -591,8 +594,8 @@ make -f makefiles/install_rsat.mk perl_modules_check
 more check_perl_modules_eval.txt
 
 ## Measure remaining disk space
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
-grep ${DEVICE} ${INSTALL_ROOT_DIR}/install_logs/df_*.txt
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
+grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 
 ################################################################
@@ -636,8 +639,8 @@ echo $RSAT_WWW
 su - rsat
 cd ${RSAT}
 make -f makefiles/init_rsat.mk compile_all
-export INSTALL_ROOT_DIR=/bio/
-sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
+export RSAT_PARENT_PATH=/bio/
+sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!  BUG    !!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -646,7 +649,7 @@ sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat
 
 ## Install some third-party programs required by some RSAT scripts.
 make -f makefiles/install_software.mk install_ext_apps
-sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
+sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## !!!!!!!!!!!!!!!!      ONLY FOR THE IFB CLOUD    !!!!!!!!!!!!!!!!
@@ -674,7 +677,7 @@ download-organism -v 1 -org Saccharomyces_cerevisiae \
 ## Get the list of organisms supported on your computer.
 supported-organisms
 
-sudo df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
+sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
 
 ################################################################
 ## Install selected R librairies, required for some RSAT scripts
@@ -714,7 +717,7 @@ cd $RSAT; make -f makefiles/install_rsat.mk update
 # ## At prompt "Save workspace image? [y/n/c]:", answer "n"
 
 ## Check remaining disk space
-df -m > ${INSTALL_ROOT_DIR}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
 
 ################################################################
 ## At this stage you can already check some simple RSAT command 

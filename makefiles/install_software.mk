@@ -48,18 +48,18 @@ list_versions:
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
 EXT_APP_TARGETS=\
-	install_seqlogo \
-	install_weblogo3 \
-	install_d3 \
-	install_bedtools \
-	install_mcl \
-	install_rnsc \
-	install_blast \
-	install_ensembl_bioperl \
 	install_ensembl_api \
 	install_vmatch \
 	install_ghostscript \
-	install_gnuplot
+	install_gnuplot \
+	install_d3 \
+	install_bedtools \
+	install_blast \
+	install_seqlogo \
+	install_weblogo3 \
+	install_mcl \
+	install_rnsc \
+	install_ensembl_bioperl
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
@@ -88,7 +88,7 @@ install_ext_apps_optional:
 ## discovery tools in RSAT. If is used to purge sequences from
 ## redundant fragments. The program requires a license, which can be
 ## obtained (free of charge for academics) at http://www.vmatch.de/
-VMATCH_VERSION=2.2.4
+VMATCH_VERSION=2.2.5
 install_vmatch:
 	@echo
 	@echo "Installing vmatch for operating system ${OS}"
@@ -260,8 +260,6 @@ GS_BIN=gs-${GS_VERSION}${GS_SUBVER}-linux_x86_64
 GS_DISTRIB=ghostscript-${GS_VERSION}.${GS_SUBVER}-linux-x86_64
 GS_TAR=${GS_DISTRIB}.tgz
 GS_DIR=${SRC_DIR}/ghostscript
-
-VMATCH_VERSION=2.2.4
 install_ghostscript:
 	@echo
 	@echo "Installing ghostscript (gs) for operating system ${OS}"
@@ -566,7 +564,8 @@ _download_d3:
 ################################################################
 ## Install fastqc, a software tool to control the quality of read
 ## files (next generation sequencing).
-FASTQC_VER=0.11.3
+## http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.5.zip
+FASTQC_VER=0.11.5
 FASTQC_ZIP=fastqc_v${FASTQC_VER}.zip
 FASTQC_URL=http://www.bioinformatics.babraham.ac.uk/projects/fastqc/${FASTQC_ZIP}
 FASTQC_DOWNLOAD_DIR=${SRC_DIR}/fastqc
@@ -587,8 +586,10 @@ _download_fastqc:
 
 _install_fastqc:
 	@echo
-	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
-	@echo "export PATH=$${PATH}:${FASTQC_EXEC_DIR}"
+	@ln -s -f ${FASTQC_INSTALL_DIR}/FastQC/fastqc ${RSAT_BIN}/fastqc
+	@echo "	fastqc link    	 ${RSAT_BIN}/fastqc"
+#	@echo "YOU NEED TO ADD THE FASTQC EXEC DIRECTORY TO YOUR PATH"
+#	@echo "export PATH=$${PATH}:${FASTQC_EXEC_DIR}"
 
 ################################################################
 ## Install BEDTools
@@ -1173,7 +1174,9 @@ download_ceas_data:
 SAMTOOLS_BASE_DIR=${SRC_DIR}/samtools
 SAMTOOLS_VERSION=1.3
 SAMTOOLS_ARCHIVE=samtools-${SAMTOOLS_VERSION}.tar.bz2
-SAMTOOLS_URL=https://sourceforge.net/projects/samtools/files/samtools/${SAMTOOLS_VERSION}/${SAMTOOLS_ARCHIVE}/download
+SAMTOOLS_URL=https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2
+#SAMTOOLS_URL=https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2
+#SAMTOOLS_URL=https://sourceforge.net/projects/samtools/files/samtools/${SAMTOOLS_VERSION}/${SAMTOOLS_ARCHIVE}/download
 #SAMTOOLS_URL=https://sourceforge.net/projects/samtools/files/samtools/1.3/samtools-1.3.tar.bz2/download
 SAMTOOLS_DISTRIB_DIR=${SAMTOOLS_BASE_DIR}/samtools-${SAMTOOLS_VERSION}
 install_samtools: _download_samtools _compile_samtools _install_pysam
@@ -1190,7 +1193,7 @@ _compile_samtools:
 	(cd ${SAMTOOLS_BASE_DIR}; tar --bzip2 -xpf ${SAMTOOLS_ARCHIVE})
 	@echo ${SAMTOOLS_DISTRIB_DIR}
 	(cd ${SAMTOOLS_DISTRIB_DIR}; make)
-	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 755 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
+	${SUDO} find  ${SAMTOOLS_DISTRIB_DIR} -maxdepth 1 -perm 775 -type f  -exec rsync -uptvL {} ${RSAT_BIN}/ \;
 
 ## Install a python library required for some samtool functionalities
 _install_pysam:
@@ -1491,7 +1494,23 @@ _compile_python_suds:
 
 ################################################################
 ## Install STAMP (zip archive kindly sent by email by Shaun Mahony)
-install_stamp:
+install_stamp: _clone_stamp _compile_stamp _install_stamp
+
+_clone_stamp:
+	@echo "Cloning stamp"
+	(cd ${SRC_DIR}; git clone https://github.com/shaunmahony/stamp.git)
+
+_compile_stamp:
+	@echo "Compiling stamp"
+	(cd ${SRC_DIR}/stamp/src; \
+		g++ -O3 -o stamp Motif.cpp Alignment.cpp ColumnComp.cpp \
+                PlatformSupport.cpp PlatformTesting.cpp Tree.cpp \
+                NeuralTree.cpp MultipleAlignment.cpp RandPSSMGen.cpp \
+                ProteinDomains.cpp main.cpp -lm -lgsl -lgslcblas)
+
+_install_stamp:
+	${SUDO} rsync -ruptvl ${SRC_DIR}/stamp/src/stamp ${RSAT_BIN}
+
 
 ################################################################
 ## Install MATLIGN
@@ -1522,3 +1541,36 @@ _install_matlign:
 	@echo
 	@echo "Installing matlign in RSAT_BIN	${RSAT_BIN}"
 	@${SUDO} rsync -ruptl ${MATLIGN_COMPILE_DIR}/matlign ${RSAT_BIN}/
+
+
+################################################################
+## plink - polymorphism linkage analysis
+PLINK_RELEASE=160705
+PLINK_URL=http://www.cog-genomics.org/static/bin/plink${PLINK_RELEASE}
+PLINK_ARCHIVE_linux=plink_linux_x86_64.zip
+PLINK_ARCHIVE_macosx=plink_mac.zip
+PLINK_ARCHIVE=${PLINK_ARCHIVE_${OS}}
+PLINK_MAC_URL=${PLINK_URL}/${PLINK_ARCHIVE}
+PLINK_DIR=${SRC_DIR}/plink
+install_plink:
+	@echo
+	@echo "Installing plink for operating system ${OS}"
+	@echo "	PLINK_URL	${PLINK_URL}"
+	@echo "	PLINK_DIR	${PLINK_DIR}"
+	@echo "	PLINK_ARCHIVE	${PLINK_ARCHIVE}"
+	${MAKE} _download_plink _install_plink
+
+_download_plink:
+	@mkdir -p ${PLINK_DIR}
+	@echo "Downloading plink using wget"
+	(cd ${PLINK_DIR}; wget -nv -nd ${PLINK_URL}/${PLINK_ARCHIVE}; unzip ${PLINK_ARCHIVE})
+	@echo "plink dir	${PLINK_DIR}"
+	@echo "plink zip	${PLINK_DIR}/${PLINK_ARCHIVE}"
+
+_install_plink:
+	@echo "Uncompressing PLINK_ACHIVE	${PLINK_DIR}/${PLINK_ARCHIVE}"
+	@echo "Installing in RSA_BIN	${RSAT_BIN}"
+	(cd ${PLINK_DIR}; rsync -ruptvl plink ${RSAT_BIN}/; rsync -ruptvl prettify ${RSAT_BIN}/)
+
+#}; ${SUDO} rsync -ruptvl ${PLINK_BIN} ${RSAT_BIN}/; cd ${RSAT_BIN}; ${SUDO} rm -f plink; ${SUDO} ln -s ${PLINK_BIN} plink)
+

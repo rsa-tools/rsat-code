@@ -2,6 +2,7 @@
 ## Initialize Regulatory Sequence Analysis Tools (in principle, this
 ## script should be used only once at installation).
 
+RSAT=$(CURDIR)
 MAKEFILE=${RSAT}/makefiles/init_rsat.mk
 MAKE = make -sk -f ${MAKEFILE}
 include ${RSAT}/RSAT_config.mk
@@ -38,7 +39,7 @@ init:
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/data/robots.txt
 	@echo "Options +Indexes" > public_html/data/.htaccess
 	@echo "	genomes	${RSAT}/public_html/data/genomes"
-	@mkdir -p public_html/data/genomes
+	@mkdir -p ${RSAT}/public_html/data/genomes
 #	mkdir -p ${RSAT}/public_html/data/KEGG
 #	mkdir -p ${RSAT}/public_html/data/metabolic_networks
 #	mkdir -p ${RSAT}/public_html/data/metabolic_networks/GER_files
@@ -60,7 +61,7 @@ init:
 	@chmod 444 public_html/tmp/index.html
 
 	@echo "	logs	${LOGS_DIR}"
-	@mkdir -p ${RSAT}/${LOGS_DIR}
+	@mkdir -p ${LOGS_DIR}
 	@chmod 777 ${LOGS_DIR}
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/logs/robots.txt
 	@echo "	peak-footprints_logs	${RSAT}/${LOGS_DIR}/peak-footprints_logs"
@@ -199,7 +200,7 @@ ws_test_all_servers:
 ## distribution (since 2009).
 
 ## Compile all programs
-compile_all: compile_info_gibbs compile_count_words compile_matrix_scan_quick compile_compare_matrices_quick compile_pathway_tools
+compile_all: compile_info_gibbs compile_count_words compile_matrix_scan_quick compile_compare_matrices_quick
 
 PROGRAM=info-gibbs
 SRC_DIR=${RSAT}/contrib/${PROGRAM}
@@ -212,7 +213,8 @@ BIN=${RSAT}/bin
 SUDO=
 compile_one_program:
 	@echo "Compiling ${PROGRAM}"
-	(cd ${SRC_DIR}; make clean; make all; ${SUDO} rsync -ruptL ${SRC_DIR}/${PROGRAM} ${BIN}/)
+	(cd ${SRC_DIR}; make clean; make all; ${SUDO} mv ${SRC_DIR}/${PROGRAM} ${BIN}/)
+#	(cd ${SRC_DIR}; make clean; make all; ${SUDO} rsync -ruptL ${SRC_DIR}/${PROGRAM} ${BIN}/)
 #	(cd ${SRC_DIR}; make all; ln -fs ${SRC_DIR}/${PROGRAM} ${RSAT}/bin/${PROGRAM})
 	@echo ${BIN}/${PROGRAM}
 	@echo ""
@@ -264,7 +266,7 @@ compile_floydwarshall:
 compile_kwalks:
 	@echo "Compiling kwalks (software developed by Jerome Callut and Pierre Dupont, UCL, Belgium)"
 	@(cd ${RSAT}/contrib/kwalks/src; make clean; make; \
-		echo "Installing lkwalk executable in bin directory ${BIN}"; \
+		echo "	Installing lkwalk executable in bin directory ${BIN}"; \
 		cd ../bin; rsync -ruptvl lkwalk ${BIN})
 	@echo "Setting read/write access to ${RSAT}/contrib/kwalks for temporary files"
 	@chmod 777 ${RSAT}/contrib/kwalks

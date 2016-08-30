@@ -146,17 +146,29 @@ information. The file includes the following columns:
 =over
 
 =item 1. B<chr>: Chromosome name.
+
 =item 2. B<start>: start position of the variant.
+
 =item 3. B<end>: end position of the variant.
+
 =item 4. B<strand>: strand of the variation.
+
 =item 5. B<ID>: variant identifier (rs number).
+
 =item 6. B<ref>: sequence of the reference allele.
+
 =item 7. B<alt>: sequence of the alternative allele.
-=item 8. B<so_term>: “SNP ontology” (so) term, indicating the type of variation (SNP, insertion, deletion).
+
+=item 8. B<so_term>: "Sequence ontology" (so) term, indicating the type of variation (SNP, insertion, deletion).
+
 =item 9. B<validated>: Boolean value indicating whether the variation has been validated (1) or not (0).
+
 =item 10. B<minor_allele_freq>: frequency of the minor allele.
-=item 11. B<is_supvar>: 1 if this variant is a “super-variation”, i.e. was build by merging overlapping variants.
+
+=item 11. B<is_supvar>: 1 if this variant is a "super-variation", i.e. was build by merging overlapping variants.
+
 =item 12. B<in_supvar>: a value of 1 indicates that this variant overlaps with other annotated variants.
+
 
 =back
 
@@ -248,6 +260,17 @@ package main;
   }
   our $format = "";
 
+  ## Supported variation types ("SO terms" for Sequence Ontology terms)
+  our @supported_vartypes = qw(SNV deletion insertion substitution sequence_alteration);
+  our $supported_vartypes = join ",", @supported_vartypes;
+  our %supported_vartype = ();
+  foreach my $vartype (@supported_vartypes) {
+    $supported_vartype{$vartype} = 1;
+  }
+  our %accepted_vartype = ();
+  our $vartype_filter = 0; ## By default no filter is applied on variation types
+
+  ## Stats on the result
   our %intervals_per_chr = (); ## Number of query intervals per chromosome
   our %variations_per_chr = (); ## Number of variations found per chromosome
   our $total_nb_variations = 0;
@@ -255,6 +278,12 @@ package main;
   ################################################################
   ## Read argument values
   &ReadArguments();
+
+  ## Check if a filter has to be applied on variation types
+  if (scalar(keys(%accepted_vartype)) > 0) {
+      &RSAT::message::Info("Variation filter on. Accepted variation types: ", join(",", sort(keys(%accepted_vartype)))) if ($main::verbose >= 2);
+      $vartype_filter = 1;
+  }
 
   our $genomes_dir = &Get_genomes_dir();
 
@@ -309,7 +338,8 @@ package main;
 		  "validated",
 		  "minor_allele_freq",
 		  "is_supvar",
-		  "in_supvar\n");
+		  "in_supvar\n"
+      );
 
   ################################################################
   ## Get the list of variation files installed in the RSAT data
@@ -390,7 +420,6 @@ package main;
       &RSAT::message::Warning("Running grep command", $grep_cmd) if ($main::verbose >= 3);
 
       my @result = qx{$grep_cmd};
-
       my $i = 0;
       foreach (@result) {
 	chomp();
@@ -399,7 +428,13 @@ package main;
 	my ($chr) = $fields[0];
 	$variations_per_chr{$chr}++;
 
-	## Skip super-variation
+	if ($vartype_filter) {
+	    my $so_term = $fields[7]; 
+#	    &RSAT::message::Debug("current SO term: ".$so_term, "accepted:", sort(keys(%accepted_vartype))) if ($main::verbose >= 10);
+	    next unless ($accepted_vartype{$so_term});
+	}
+
+	## Skip "super-variations"
 	my $is_super = $fields[10];
 	## Ale's note: colum number changed after adding minor allele frequency. JvH note: we should later check if we really want to maintain these super-variations
 	next if ($is_super);
@@ -510,9 +545,13 @@ package main;
 	next if (/^;/); ## Skip comment lines
 	next if (/^#/); ## Skip header lines
 	next unless (/\S/); ## Skip empty lines
-	my ($var_chr, $var_left, $var_right) = split("\t"); ## One variation
+	my ($var_chr, $var_left, $var_right, $strand,$id, $ref, $alt,,$so_term) = split("\t"); ## One variation
+	if ($vartype_filter) {
+#	    &RSAT::message::Debug("current SO term: ".$so_term, "accepted:", sort(keys(%accepted_vartype))) if ($main::verbose >= 10);
+	    next unless ($accepted_vartype{$so_term});
+	}
 
-	## Note: we selectall variations that overlap the interval by
+	## Note: we select all variations that overlap the interval by
 	## at least one nucleotide, even thoug they are not completely
 	## included within that interval (e.g. insertions)
 	if (($var_left <= $interval_right) &&
@@ -728,9 +767,69 @@ General format for the description of genomic features
 
 =pod
 
-=item B<-col #>
+=item B<-type accepted_variation_types>
 
-Column containing the variation IDs with the input format "id".
+Specify one or several accepted types of variation.  
+
+Variation types are specified according to the Sequence Ontology ("SO
+term" column of the output file). 
+
+Several types can be specified separated by commas. 
+
+
+Supported variation types:
+
+=over
+
+=item I<SNV>
+
+Single Nucleotide Variant (=SNP, Single Nucleotide Polymorphism)
+
+ http://www.sequenceontology.org/miso/release_2.5/term/SO:0001483
+
+=item I<deletion>
+
+Deletion
+
+ http://www.sequenceontology.org/browser/release_2.5/term/SO:0000159
+
+
+=item I<deletion>
+
+Insertion 
+
+ http://www.sequenceontology.org/browser/release_2.5/term/SO:0000667
+
+=item I<sequence_alteration>
+
+=back
+
+
+Example 1: only accept single nucleotide variations
+
+  -type SNV
+
+Example 2: only accept deletions and insertions
+
+  -type insertion,deletion
+
+=cut
+    } elsif ($arg eq "-type") {
+      my $new_types = shift(@arguments);
+      foreach my $type (split(",", $new_types)) {
+	  if ($supported_vartype{$type}) {
+	      $accepted_vartype{$type} = 1;
+	  } else {
+	      &RSAT::error::FatalError($type, "Invalid variation type. Supported: ". $supported_vartypes);
+	  }
+      }
+
+=pod
+
+=item B<-col id_column_nb>
+
+Number of the column containing the variation IDs with the input
+format "id".
 
 Default : 1
 
