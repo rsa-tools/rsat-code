@@ -14,12 +14,13 @@ if (Sys.getenv("CRAN_REPOS") == "") {
 
 ## List of packages to install
 required.packages = c("devtools",
-		                  "RJSONIO",
+                      "RJSONIO",
                       "dendextend",
                       "flux",
-		                  "gplots",
-		                  "RColorBrewer",
-                      "jpeg"
+                      "gplots",
+                      "RColorBrewer",
+                      "jpeg",
+                      "dynamicTreeCut"
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",

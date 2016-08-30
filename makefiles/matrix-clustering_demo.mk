@@ -68,33 +68,34 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 		-lth w ${MIN_W} \
                 -calc ${OPERATOR} \
 		-hclust_method ${HCLUST_METHOD} \
-		-label_in_tree name ${OPT} \
-		-o ${CLUSTER_FILE_PREFIX} \
+		-label_in_tree name  \
 		-metric_build_tree ${METRIC_BUILD_TREE} \
-		-return ${RETURN_FIELDS} 
+		-return ${RETURN_FIELDS} \
+		${OPT} -o ${CLUSTER_FILE_PREFIX}
+# 2> ${CLUSTER_FILE_PREFIX}.err
 
-CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
-		${LIST_OF_MOTIFS} -matrix_format tf \
-		-title '${TITLE}' \
-		-lth Ncor ${MIN_NCOR} \
-		-lth cor ${MIN_COR} \
-		-lth w ${MIN_W} \
-                -calc ${OPERATOR} \
-		-hclust_method ${HCLUST_METHOD} \
-		-label_in_tree name ${OPT} \
-		-o ${CLUSTER_FILE_PREFIX} \
-		-metric_build_tree ${METRIC_BUILD_TREE} \
-		-return ${RETURN_FIELDS} 
+# CLUSTER_MULTI_SET_CMD=matrix-clustering -v ${V} \
+# 		${LIST_OF_MOTIFS} -matrix_format tf \
+# 		-title '${TITLE}' \
+# 		-lth Ncor ${MIN_NCOR} \
+# 		-lth cor ${MIN_COR} \
+# 		-lth w ${MIN_W} \
+#                 -calc ${OPERATOR} \
+# 		-hclust_method ${HCLUST_METHOD} \
+# 		-label_in_tree name ${OPT} \
+# 		-o ${CLUSTER_FILE_PREFIX} \
+# 		-metric_build_tree ${METRIC_BUILD_TREE} \
+# 		-return ${RETURN_FIELDS} 
 
-NB_CLUSTER_CMD=matrix-clustering -v ${V} \
-	        -i ${MATRIX_FILE} -matrix_format tf -motif_collection_name '${MATRIX_PREFIX}' \
-		-range_th_table ${RANGE_TABLE} \
-		-title '${TITLE}' \
-		-hclust_method ${HCLUST_METHOD} \
-		-label_in_tree name ${OPT} \
-		-o ${CLUSTER_FILE_PREFIX} \
-		-metric_build_tree ${METRIC_BUILD_TREE} \
-		-return ${RETURN_FIELDS} 
+# NB_CLUSTER_CMD=matrix-clustering -v ${V} \
+# 	        -i ${MATRIX_FILE} -matrix_format tf -motif_collection_name '${MATRIX_PREFIX}' \
+# 		-range_th_table ${RANGE_TABLE} \
+# 		-title '${TITLE}' \
+# 		-hclust_method ${HCLUST_METHOD} \
+# 		-label_in_tree name ${OPT} \
+# 		-o ${CLUSTER_FILE_PREFIX} \
+# 		-metric_build_tree ${METRIC_BUILD_TREE} \
+# 		-return ${RETURN_FIELDS} 
 
 _cluster:
 	@echo
@@ -323,3 +324,153 @@ enqueue_some_jobs:
 	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=single
 	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=average
 	${MAKE}  cluster_peakmotifs_Oct4 WHEN=queue HCLUST_METHOD=complete
+
+
+################################################################
+## STAMP
+
+## Use STAMP to cluster the demo dataset
+STAMP_OCT4_DIR=results/stamp_results/peak-motifs_result_Chen_Oct4
+stamp_peakmotifs_Oct4:
+	@echo
+	@echo "Running STAMP on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
+	@mkdir -p ${STAMP_OCT4_DIR}
+	(time stamp \
+		-tf ${RSAT}/public_html/demo_files/RSAT_peak-motifs_Oct4_matrices.tf \
+		-cc PCC \
+		-align SWU \
+		-ch -chp \
+		-ma PPA \
+		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
+		-printpairwise \
+		-out ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp ) \
+		>& ${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4_stamp_log.txt
+	@echo "	${STAMP_OCT4_DIR}"
+	${MAKE} convert_stamp STAMP_PREFIX=${STAMP_OCT4_DIR}/peak-motifs_result_Chen_Oct4
+
+## Use STAMP to cluster the merged Oct4 motifs (MEME + Homer + peak-motifs)
+OCT4_MERGED=public_html/demo_files/merged_Homer_MEME-ChIP_peak-motifs_Oct4_matrices.tf
+STAMP_OCT4_MERGED_DIR=results/stamp_results/merged_results_Chen_Oct4
+stamp_merged_Oct4:
+	@echo
+	@echo "Running STAMP on 66 motifs discovered by peak-motifs, MEME-ChIP and Homer (Oct 4 dataset from Chen 2008)"
+	@mkdir -p ${STAMP_OCT4_MERGED_DIR}
+	(time stamp \
+		-tf ${OCT4_MERGED} \
+		-cc PCC \
+		-align SWU \
+		-ch -chp \
+		-ma PPA \
+		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
+		-printpairwise \
+		-out ${STAMP_OCT4_MERGED_DIR}/merged_Homer_MEME-ChIP_peak-motifs_Oct4_stamp )  \
+		>& ${STAMP_OCT4_MERGED_DIR}/merged_Homer_MEME-ChIP_peak-motifs_Oct4_stamp_log.txt
+	@echo "	${STAMP_OCT4_MERGED_DIR}"
+	${MAKE} convert_stamp STAMP_PREFIX=${STAMP_OCT4_MERGED_DIR}/merged_Homer_MEME-ChIP_peak-motifs_Oct4
+
+convert_stamp:
+	@convert-matrix -v ${V} -from stamp -to tab \
+		-i ${STAMP_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-logo_format png  \
+		-return counts,consensus,parameters,header,logo \
+		-logo_file ${STAMP_PREFIX}_stamp_tree_clusters_logo \
+		-o ${STAMP_PREFIX}_stamp_tree_clusters.tab
+	@echo "	${STAMP_PREFIX}_stamp_tree_clusters.tab"
+	@convert-matrix -v ${V} -from stamp -to transfac \
+		-i ${STAMP_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-return counts,consensus,parameters \
+		-o ${STAMP_PREFIX}_stamp_tree_clusters.tf
+	@echo "	${STAMP_PREFIX}_stamp_tree_clusters.tf"
+
+
+stamp_jaspar_all_groups:
+	@for g in ${JASPAR_GROUPS}; do \
+		${MAKE} stamp_jaspar_one_group JASPAR_GROUP=$${g} ; \
+	done
+
+## Run STAMP for the sake of comparison
+STAMP_JASPAR_DIR=results/stamp_results/${JASPAR_PREFIX}
+stamp_jaspar_one_group:
+	@echo
+	@echo "STAMP clustering for all matrices from JASPAR ${JASPAR_GROUP}"
+	@mkdir -p ${STAMP_JASPAR_DIR}
+	(time stamp \
+		-tf ${JASPAR_MATRICES} \
+		-cc PCC \
+		-align SWU \
+		-ch -chp \
+		-ma IR \
+		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
+		-printpairwise \
+		-out ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp ) 
+#		>& ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_log.txt
+	@echo "	${STAMP_JASPAR_DIR}"
+	@echo "Converting matrices and computing logos"
+	@convert-matrix -v ${V} -from stamp -to tab \
+		-i ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-logo_format png  \
+		-return counts,consensus,parameters,header,logo \
+		-logo_file ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters_logo \
+		-o ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tab
+	@echo "	${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tab"
+	@convert-matrix -v ${V} -from stamp -to transfac \
+		-i ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-return counts,consensus,parameters \
+		-o ${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf
+	@echo "	${STAMP_JASPAR_DIR}/${JASPAR_PREFIX}_stamp_tree_clusters.tf"
+
+
+## Run STAMP for the sake of comparison
+STAMP_HOCOMOCO_DIR=results/stamp_results/${HOCOMOCO_PREFIX}
+stamp_hocomoco_one_group:
+	@echo
+	@echo "STAMP clustering for all matrices from HOCOMOCO ${HOCOMOCO_GROUP}"
+	@mkdir -p ${STAMP_HOCOMOCO_DIR}
+	(time stamp \
+		-tf ${HOCOMOCO_MATRICES} \
+		-cc PCC \
+		-align SWU \
+		-ch -chp \
+		-ma IR \
+		-sd ${RSAT}/app_sources/stamp/ScoreDists/JaspRand_PCC_SWU.scores \
+		-printpairwise \
+		-out ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp ) 
+#		>& ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_log.txt
+	@echo "	${STAMP_HOCOMOCO_DIR}"
+	@echo "Converting matrices and computing logos"
+	@convert-matrix -v ${V} -from stamp -to tab \
+		-i ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-logo_format png  \
+		-return counts,consensus,parameters,header,logo \
+		-logo_file ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters_logo \
+		-o ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.tab
+	@echo "	${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.tab"
+	@convert-matrix -v ${V} -from stamp -to transfac \
+		-i ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.txt \
+		-pseudo 1 \
+		-multiply 100 \
+		-decimals 1 \
+		-bg_pseudo 0.01 \
+		-return counts,consensus,parameters \
+		-o ${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.tf
+	@echo "	${STAMP_HOCOMOCO_DIR}/${HOCOMOCO_PREFIX}_stamp_tree_clusters.tf"

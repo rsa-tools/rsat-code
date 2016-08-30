@@ -15,12 +15,17 @@ export PATH=${RSAT}/perl-scripts/parsers:${PATH}
 export PATH=${RSAT}/python-scripts:${PATH}
 
 ################################################################
-## Add RSAT R packages lib to library path
-#if  [ ${R_LIBS_USER} ]; then
-#  export R_LIBS_USER=${R_LIBS_USER}:${RSAT}/R-scripts/Rpackages/
-#else
-export R_LIBS_USER=${R_LIBS_USER}:${RSAT}/R-scripts/Rpackages/
-#fi
+## Make sure R libs are accessible to the apache user.
+##
+## Note by JvH: installing R libraries in the RSAT package creates problems 
+## because some libraries are installed both at the system-level and in the RSAT folder. 
+## I thus comment this line, I will have to find a better solution. 
+#
+# if  [ ${R_LIBS_USER} ]; then
+#   export R_LIBS_USER=${R_LIBS_USER}:${RSAT}/R-scripts/Rpackages/
+#e lse
+#  export R_LIBS_USER=${RSAT}/R-scripts/Rpackages/
+# fi
 
 ################################################################
 ## Add RSAT python libraries to PYTHONPATH
