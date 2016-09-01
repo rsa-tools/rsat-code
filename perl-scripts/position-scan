@@ -256,6 +256,7 @@ package main;
   $main::outfile{filtered_sequences_control} = $main::outfile{prefix}."_filtered_control_sequences.fasta";
   $main::outfile{random_sequences_control} = $main::outfile{prefix}."_randomized_control_sequences.fasta";
   $main::outfile{motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac.tf";
+  $main::outfile{motifs_transfac_parsed} = $main::outfile{prefix}."_input_matrix_transfac_parsed.tf";
   $main::outfile{random_motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac_permuted.tf";
   $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_results.tab";
   $main::outfile{matches_tab_PARSED} = $main::outfile{prefix}."_matrix_scan_results_PARSED.tab";
@@ -380,6 +381,8 @@ package main;
   ################################################################
   ## Plots step: chi-squared calculation + draw profiles
   if( defined($selected_tasks{"plots"}) || defined($selected_tasks{"all"}) ){
+
+      #&GenerateLogos();
 
       ################################################################
       ## Compute statistics (X2 pval, eval, qval) 
@@ -962,8 +965,32 @@ sub ProcessMatrices {
     $process_motif_cmd .= " -o ".$main::outfile{motifs_transfac};
     
     &doit($process_motif_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-    
-    $main::infile{motifs} = $main::outfile{motifs_transfac};
+
+    ## Given that some characters produce errors in R or CSS, they are substituted by "_"
+    my ($parsed_tf_file) = &RSAT::util::OpenOutputFile($main::outfile{motifs_transfac_parsed});
+    my ($non_parsed_tf_file) = &RSAT::util::OpenInputFile($main::outfile{motifs_transfac});
+
+    while(<$non_parsed_tf_file>){
+
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines	
+	chomp();
+
+	if( (/^\s*AC\s+/) || (/^\s*ID\s+/) ){
+
+	    $_ =~ s/-/_/gi;
+	    $_ =~ s/\./_/gi;
+	    $_ =~ s/::/_/gi;
+	    #$_ =~ s/\s+/_/gi;
+	}
+
+	print $parsed_tf_file $_."\n";
+    }
+    close($non_parsed_tf_file);
+    close($parsed_tf_file);
+
+    $main::infile{motifs} = $main::outfile{motifs_transfac_parsed};
 }
 
 
@@ -1012,7 +1039,7 @@ sub ScanSequences {
 	$matrix_scan_cmd .= " -uth pval ".$p_value;
 	$matrix_scan_cmd .= " -i ".$seq." -seq_format fasta";
 	$matrix_scan_cmd .= " -pseudo 0.01 -decimals 2 ".$strands." -bg_pseudo 0.01";
-	$matrix_scan_cmd .= " -return limits -return pval ";
+	$matrix_scan_cmd .= " -return limits -return pval -ac_as_name";
 	$matrix_scan_cmd .= " -o ".$so;
 	$matrix_scan_cmd .= " -bgfile ".$bg." -bg_format ".$bg_format;
 	&doit($matrix_scan_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
