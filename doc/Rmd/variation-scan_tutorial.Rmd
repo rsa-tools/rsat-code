@@ -25,7 +25,30 @@ knitr::opts_chunk$set(echo=FALSE, eval=TRUE, cache=FALSE, message=FALSE, warning
 ```
 
 
-## Study case
+# To do
+
+## variation-info
+
+- For the intersection between SNPs and regions (e.g. ChIP-seq peaks), test bedtools intersect. This might do the job *much* fatser than the Perl script. 
+
+- Add the filter options to the Web interface
+
+## retrieve-variation-seq
+
+- Web form: 
+
+    - add URL to specify input regions or SNPs
+    - why is default URL bed and not varBed ?
+    - Web form never returns the result
+
+- Bug with the demo
+
+  `make -f makefiles/variation-scan_demo.mk varinfo_from_ids`
+  
+  reports all SNPs as missing, including those correctly returned. 
+
+    
+# Study case
 
 As study case, we will look for putative regulatory variants in a restricted region of the genome, consisting of cis-regulatory modules conserved in 5 Mammalian species (Human, macaque, rat, mouse, dog), detected by ChIP-seq experiments with 4 different transcription  factors: HFN4$\alpha$, HNF6, CBP$\alpha$, FOXA1. 
 
@@ -158,7 +181,7 @@ variation-info -v 2 -species Homo_sapiens \
    -type SNV \
    -i ${RSAT}/public_html/demo_files/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.bed \
    -format bed \
-   -o results/variation_scan_demo/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19_SNV.varbed
+   -o results/variation_scan_demo/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19_SNV.varBed
 
 ```
 
@@ -176,6 +199,11 @@ weirauch.prefix <- weirauch.prefix <- file.path(rsat, "public_html/demo_files/va
 make -f makefiles/variation-scan_demo.mk varinfo_from_ids
 
 ```
+
+
+<font color=red>There isa bug here: the program reports all variations as missing, even those returned correctly
+
+`; Note: some variations may have failed to pass Ensembl or RSAT quality check`</font>
 
 ## Getting sequences surrounding the variations
 
