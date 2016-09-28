@@ -438,6 +438,7 @@ i <- sapply(1:length(clusters), function(nb){
                central.motif<- gsub("\\)", "_", central.motif)
                central.motif<- gsub("\\.", "_", central.motif)
                central.motif <- paste(central.motif, "cluster", nb, sep = "_")
+               central.motif <- paste("cluster", nb, sep = "_")
                
                ## Creates an individual folder for each cluster
                cluster.folder <<- file.path(clusters.info.folder, central.motif)

@@ -29,7 +29,7 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 create.html.tab <- function(tab, img = 0, plot = 0, link.text.covered = 0, link.text.not.covered = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th><th class=\"tab_col\"> TFBSs per seq </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_ID </th><th class=\"tab_col\"> Motif_name </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th><th class=\"tab_col\"> TFBSs per seq </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
@@ -163,6 +163,11 @@ dir.create(covered.tables.dir, showWarnings = FALSE)
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/")
 # sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_sequence_names.tab"
 
+# matrix.scan.file <- "/home/jaimicore/test/Clustered_vs_single_PSSMs_JUN_FOS/Clustered_vs_single_PSSMs_JUN_FOS_matrix_scan_results_PARSED.tab"
+# prefix <- "/home/jaimicore/test/Clustered_vs_single_PSSMs_JUN_FOS/Clustered_vs_single_PSSMs_JUN_FOS"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/test/Clustered_vs_single_PSSMs_JUN_FOS/Clustered_vs_single_PSSMs_JUN_FOS_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/test/Clustered_vs_single_PSSMs_JUN_FOS/")
+# sequence.names.file <- "/home/jaimicore/test/Clustered_vs_single_PSSMs_JUN_FOS/Clustered_vs_single_PSSMs_JUN_FOS_matrix_scan_sequence_names.tab"
 
 # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3_matrix_scan_results_PARSED.tab"
 # prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3"
@@ -203,10 +208,6 @@ max.pval.minus.log10 <- max(matrix.scan.results$Pval.minlog10)
 #################
 ## Set p-value
 p.val <- as.numeric(p.val)
-
-#############################
-## Get the matrices name's
-matrix.names <- unique(as.vector(matrix.scan.results$ft_name))
 
 #############################
 ## Get the sequences + motif name's
@@ -296,10 +297,12 @@ dir.create(paste(basename(prefix), "_TFBSs_pval_distribution/", sep = ""), showW
 dir.create(paste(basename(prefix), "_TFBSs_per_seq/", sep = ""), showWarnings = FALSE, recursive = TRUE)
 verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
 covered.sequences.per.motif <- list()
+
 thr <- sapply(1:length(matrix.names), function(m){
   
   ## Get the matrix name
   matrix.query <- matrix.names[m]
+  matrix.query.name <- as.vector(ID.names[,2][which(ID.names[,1] == matrix.query)][1])
   
   # print(matrix.query)
 
@@ -404,8 +407,7 @@ thr <- sapply(1:length(matrix.names), function(m){
     legend("topleft", legend = paste(c("Nb of putative TFBSs: ", "Nb of sequences: "), c(nb.TFBSs, nb.seq), sep = ""), bg="white")
     
     ## Insert logo
-    matrix.ID <- as.vector(ID.names[which(ID.names[,2] == matrix.query),1])
-    logo.file <- paste(logo.folder, matrix.ID, "_logo.jpeg", sep = "")
+    logo.file <- paste(logo.folder, matrix.query, "_logo.jpeg", sep = "")
     logo <- readJPEG(logo.file)
     rasterImage(logo, 
                 xleft = limits - (limits/3),
@@ -739,7 +741,7 @@ feature.attributes$Profile_cluster <- profile.clusters.names
 ## Only for the CSS section
 motifs.names.parsed <- as.vector(sapply(matrix.names, function(m){
   m.temp <- gsub("-", "", m)
-  m.temp <- gsub("\\.", "", m.temp)
+  m.temp <- gsub("\\.", "_", m.temp)
   m.temp <- gsub(":", "", m.temp)
   m.temp <- gsub("\\s+", "", m.temp, perl = TRUE)
   return(m.temp)
@@ -974,6 +976,7 @@ if(individual.plots == 1){
   thrash <- sapply(1:dim(frequency.per.bin.table)[1], function(f){
     
     feature.query <- rownames(frequency.per.bin.table)[f]
+    # matrix.query.ID <- ID.names[,1][which(ID.names[,2] == feature.query)][1]
     
     for(pf in print.formats){
       
@@ -1023,8 +1026,7 @@ if(individual.plots == 1){
       ## Draw the legend
       legend("topleft", legend = c(paste(feature.query , "profile"), "Center"), fill = c("#00BFC4", "#045a8d"), bty="o", bg="white")
       
-      matrix.ID <- as.vector(ID.names[which(ID.names[,2] == feature.query),1])
-      logo.file <- paste(logo.folder, matrix.ID, "_logo.jpeg", sep = "")
+      logo.file <- paste(logo.folder, feature.query, "_logo.jpeg", sep = "")
       logo <- readJPEG(logo.file)
       rasterImage(logo, 
                   xleft = limits - (bin*3),
@@ -1053,17 +1055,12 @@ order.by.eval <- order(as.numeric(as.vector(feature.attributes$E_val)))
 feature.attributes <- feature.attributes[order.by.eval,]
 
 ## Set the motif names and IDs
-TF.names <- as.vector(feature.attributes[,1])
+TF.IDs <- as.vector(feature.attributes[,1])
 
 ## Get the IDs of the TF
-TF.IDs <- as.vector(sapply(TF.names, function(x){
-  as.vector(ID.names[which(ID.names[,2] == x),1])
+TF.names <- as.vector(sapply(TF.IDs, function(x){
+  as.vector(ID.names[which(ID.names[,1] == x),2])
 }))
-
-## As each motif ID is unique, we used it also in the html file,
-## However as some IDs include a period ('.') in their text, we change it by
-## an underscore ('_')
-TF.IDs.cp <- gsub("\\.", "", TF.IDs)
 
 ## Set colors
 set.colors <- colorRampPalette(brewer.pal(10,"Paired"))(length(TF.IDs))
@@ -1089,8 +1086,8 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   
   ## Here we create a unique ID without CSS special characters
   ## Only to manipulate the objects in the HTML form
-  motif <- paste(counter, "_", TF.IDs.cp[counter], "_", counter, sep = "")  
-  motif.cover <- paste(counter, counter, "_", TF.IDs.cp[counter], "_", counter, counter, sep = "")
+  motif <- paste(counter, "_", TF.IDs[counter], "_", counter, sep = "")  
+  motif.cover <- paste(counter, counter, "_", TF.IDs[counter], "_", counter, counter, sep = "")
   
   motif <- gsub("_", "", motif)
   motif <- gsub("-", "", motif)
@@ -1098,7 +1095,7 @@ thrash <- apply(frequency.per.bin.table[order.by.eval,], 1, function(values){
   motif <- gsub(":", "", motif)
   motif <- gsub("\\s+", "", motif, perl = TRUE)
   
-  hash.motif.IDs[[TF.IDs.cp[counter]]] <<- motif
+  hash.motif.IDs[[TF.IDs[counter]]] <<- motif
   
   all.motifs <<- append(all.motifs, motif)
   all.motif.names <<- append(all.motif.names, TF.names[counter])
@@ -1285,7 +1282,7 @@ not.covered.files <- sapply(TF.IDs, function(i) {
 all.pval.match <- rep(p.val, times = length(TF.names))
 datatable.info.tab <- feature.attributes
 datatable.info.tab$P_val_threshold <- all.pval.match
-datatable.info.tab$IDs <- TF.IDs
+datatable.info.tab$Names <- TF.names
 datatable.info.tab$Profiles <- profiles.plots
 datatable.info.tab$TFBS <- tfbss.plots
 datatable.info.tab$TFBS_per_seq <- tfbss.per.seq.plots
@@ -1487,7 +1484,7 @@ html.report <- gsub("--names_cov--", plot.names.cover, html.report)
 
 ## Add the real motif IDs (to display in the tooltip)
 ## They are inserted in the JS section
-IDs.cov <- paste("cov_IDs['", all.motifs.cover, "'] = '", TF.IDs.cp, "';", sep = "")
+IDs.cov <- paste("cov_IDs['", all.motifs.cover, "'] = '", TF.IDs, "';", sep = "")
 IDs.cov <- paste(IDs.cov, collapse = "\n")
 html.report <- gsub("--IDs_cov--", IDs.cov, html.report)
 
@@ -1499,7 +1496,7 @@ html.report <- gsub("--profile_clusters_array_cov--", cov.profile.clusters, html
 
 ## Add the real motif logo path (to display in the tooltip)
 ## They are inserted in the JS section
-logos.cov <- sapply(TF.IDs.cp, function(i){
+logos.cov <- sapply(TF.IDs, function(i){
   paste(logo.folder, i, "_logo.jpeg", sep = "")
 })
 logos.cov <- paste("cov_pics['", all.motifs.cover, "'] = '", as.vector(datatable.info.tab$Logo), "';", sep = "")
@@ -1507,7 +1504,7 @@ logos.cov <- paste(logos.cov, collapse = "\n")
 html.report <- gsub("--pics_cov--", logos.cov, html.report)
 
 ## Logos in Reverse complement
-logos.rc.cov <- sapply(TF.IDs.cp, function(i){
+logos.rc.cov <- sapply(TF.IDs, function(i){
   paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
 })
 logos.rc.cov <- paste("cov_pics_rc['", all.motifs.cover, "'] = '", as.vector(datatable.info.tab$Logo_RC), "';", sep = "")
