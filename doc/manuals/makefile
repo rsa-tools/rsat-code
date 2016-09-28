@@ -155,8 +155,13 @@ SPLIT=4
 
 ################################################################
 ## Publish the pdf documents on the web site
-DOC_SITE=rsat@rsat.ulb.ac.be:rsat/public_html/distrib/
+DOC_SITE=rsat@pedagogix-tagc.univ-mrs.fr:rsat/public_html/distrib/
 #DOC_SITE2=jvanheld@itzamna.ccg.unam.mx:rsat/public_html/distrib/
 publish:
 	rsync -ruptvl -e ssh *.pdf ${DOC_SITE}
 #	rsync -ruptvl -e ssh *.pdf ${DOC_SITE2}
+
+BROWSER=firefox
+DOC_WEB=http://pedagogix-tagc.univ-mrs.fr/rsat/distrib/
+web:
+	open -a ${BROWSER}  ${DOC_WEB}
