@@ -838,9 +838,12 @@ sub getLineInfo {
     $line_info{'site_strand'} = $field[3];
     $line_info{'seq'} = $field[6];
     #$line_info{'score'} = sprintf("%.1f",$field[7]); ## sprintf rounds which makes a problem when the score is close to the highest posible one and then that score is not in the distribution file
-    $line_info{'score'} = substr($field[7],0,index($field[7],'.') + 1 + 1);
-
-
+    if ($field[7] =~ /\./ ){
+	$line_info{'score'} = substr($field[7],0,index($field[7],'.') + 1 + 1);
+    }else{
+	    $line_info{'score'} = $field[7].".0";
+    }
+    #print "pre $field[7]  $line_info{'score'}\n";
     my @field2 = split(/\|/,$field[0]); #var_info, coord
     $line_info{'coord'} = $field2[1];
 
