@@ -201,6 +201,14 @@
 </div> <!-- End of section -->
 
 
+<div id="differential_heatmap_button" class="button_click Section_button"><strong>Differential analysis</strong></div>
+<div id="differential_heatmap_button" style="display:none" class="div_chart">
+<div class="tab link_tab"> 
+  <p class="p_link_tab"><a target="_blank" href='--diff_heatmap--'>Link</a></p> <!-- The link is inserted in the perl-script -->
+</div> 
+</div> <!-- End of section -->
+
+
 <!-- Jquery section -->
 <script charset="utf-8" type="text/javascript">
 
@@ -228,5 +236,15 @@ $(document).ready(function() {
         $(this).toggleClass('selected_header_section');
     }); 
 });
+
+// Slide the Differential heatmap
+$(document).ready(function() {
+    $('#differential_heatmap_button').click(function() {
+	$('#differential_heatmap').slideToggle('fast');
+        $(this).toggleClass('selected_header_section');
+    }); 
+});
+
+
 
 </script>
