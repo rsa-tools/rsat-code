@@ -1196,7 +1196,7 @@ sub DynamicProfilesR {
     my $profile_cmd = "";
     $profile_cmd .= " cat ".$profiles_script;
     $profile_cmd .= " | ".$r_path;
-    $profile_cmd .= " --slave --no-save --no-restore --no-environ";
+    $profile_cmd .= " --slave --no-save --no-restore --no-environ --vanilla";
     $profile_cmd .= " --args \"";
     $profile_cmd .= " matrix.scan.file = '".$main::outfile{matches_tab_PARSED}."'";
     $profile_cmd .= "; sequence.names.file = '".$main::outfile{sequence_names}."'";
