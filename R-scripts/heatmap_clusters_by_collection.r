@@ -242,6 +242,19 @@ x <- sapply(names(motif.DB.counts), function(DB){
 
 Diagrams <- paste(Diagrams, collapse = "")
 
+######################################
+## Create and export richness table ##
+######################################
+richness <- clusters[,3:dim(clusters)[2]]
+richness <- ifelse(richness > 0, 1,0)
+richness <- apply(richness,2,sum)
+
+## Convert the coverage table to the format required in D3 barplot
+richness.tab <- data.frame(collection = names(richness), clusters = richness)
+verbose(paste("Exporting data with motif richness for D3 BarPlot", motif.richness.table), 2)
+write.table(richness.tab, file = motif.richness.table, sep = "\t", quote = FALSE, row.names = FALSE)
+
+
 coverage.counter <- 0
 coverage.pics.buttons <- NULL
 thrash <- sapply(names(motif.DB.counts), function(x){
