@@ -14,15 +14,16 @@ required.packages = c("IRanges",
                       "RColorBrewer",
                       "gplots",
                       "jpeg",
+                      "png",
                       "amap",
-                      "dynamicTreeCut",
-                      "qvalue")
+                      "ggplot2",
+                      "grid",
+                      "dynamicTreeCut")
 
 ## List of RSAT-specific packages to be compiled on the server
 for (pkg in c(required.packages)) { #required.packages.bioconductor
   suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
 }
-
 
 #################################################################################################
 ## Functions
@@ -157,22 +158,18 @@ print(heatmap.dendo)
 covered.tables.dir <- paste(prefix, "_covered_sequences_info", sep = "")
 dir.create(covered.tables.dir, showWarnings = FALSE)
 
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_results_PARSED.tab"
-# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_TF_ID_name_correspondence.tab"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/mkv_1/")
-# sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Jun_Chip_seq_bin_size_25_pval1e-3_mkv_1_matrix_scan_sequence_names.tab"
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs_matrix_scan_results_PARSED.tab"
+# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo")
+# sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs_matrix_scan_sequence_names.tab"
 
-# matrix.scan.file <- "/home/jaimicore/test/Clustered_vs_single_PSSMs_JUN_FOS/Clustered_vs_single_PSSMs_JUN_FOS_matrix_scan_results_PARSED.tab"
-# prefix <- "/home/jaimicore/test/Clustered_vs_single_PSSMs_JUN_FOS/Clustered_vs_single_PSSMs_JUN_FOS"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/test/Clustered_vs_single_PSSMs_JUN_FOS/Clustered_vs_single_PSSMs_JUN_FOS_TF_ID_name_correspondence.tab"
-# setwd("/home/jaimicore/test/Clustered_vs_single_PSSMs_JUN_FOS/")
-# sequence.names.file <- "/home/jaimicore/test/Clustered_vs_single_PSSMs_JUN_FOS/Clustered_vs_single_PSSMs_JUN_FOS_matrix_scan_sequence_names.tab"
 
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3_matrix_scan_results_PARSED.tab"
-# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/K562_bin_size_25_pval1e-3_TF_ID_name_correspondence.tab"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/")
+# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_matrix_scan_results_PARSED.tab"
+# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_TF_ID_name_correspondence.tab"
+# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters")
+# sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_matrix_scan_sequence_names.tab"
 
 ##############################
 ## Read matrix-scan table 1
@@ -301,6 +298,7 @@ covered.sequences.per.motif <- list()
 thr <- sapply(1:length(matrix.names), function(m){
   
   ## Get the matrix name
+  # m <- 403
   matrix.query <- matrix.names[m]
   matrix.query.name <- as.vector(ID.names[,2][which(ID.names[,1] == matrix.query)][1])
   
@@ -331,11 +329,17 @@ thr <- sapply(1:length(matrix.names), function(m){
       jpeg(TFBSs.per.seq.file)
     }
     
+    # aa <- data.frame(nb.seq = nb.hits.per.sequence, nb.hits = as.numeric(names(nb.hits.per.sequence)))
+    # ggplot(aa, aes(y = nb.seq, x = nb.hits)) + 
+    #   geom_line(color="darkgreen", size=2) + 
+    #   labs(title="Number oh hits",
+    #        y = "Number of sequences", x="Number of TFBSs")
+    
     plot(y = as.vector(nb.hits.per.sequence),
          x = as.numeric(names(nb.hits.per.sequence)),
          type = "l",
          col = "darkgreen",
-         lty = 1, 
+         lty = 1,
          lwd = 3,
          main = "Number of predicted TFBS per sequence",
          xlab = "Number of predicted TFBS",
@@ -365,56 +369,81 @@ thr <- sapply(1:length(matrix.names), function(m){
       TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes.jpeg", sep = "")
       jpeg(TFBSs.pval.distribution.file)
     }
+  
+    ################################
+    #Create a custom color scale
+    myColors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
+    names(myColors) <- classes.pval.letters
     
-    class.counter <- 0
-    
-    ## Iterate in the p-val classes
-    sapply(matrix.query.classes, function(pclass){
-      
-      ## Count the number of p-val classes per query matrix
-      class.counter <<- class.counter + 1 
-      
-      ## Select the hits with the current pval class for the query matrix
-      matrix.query.classes.selection <- matrix.query.selection[matrix.query.selection$Pval.class.letter == pclass,]
-      
-      ## X-Y Plot ( TFBS position vs -log10(pval) )
-      if(class.counter == 1){
-        plot(x = matrix.query.classes.selection$bspos,
-             y = matrix.query.classes.selection$Pval.minlog10,
-             # ylim = c( min(matrix.query.selection$Pval.minlog10, na.rm = TRUE), max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5),
-             ylim = c(min.pval.minus.log10, round(max.pval.minus.log10)),
-             xlim = c(-limits, limits),
-             main = paste("Distribution of TFBSs of ", matrix.query, sep = ""),
-             ylab = "-log10(pval) TFBSs",
-             xlab = "position (nt)",
-             col = classes.to.colors[[pclass]],
-             pch = "o",
-             cex = 1.5,
-             panel.first=grid(col = "grey", lty = "solid") 
-        )
-      } else {
-        lines(x = matrix.query.classes.selection$bspos,
-              y = matrix.query.classes.selection$Pval.minlog10,
-              col = classes.to.colors[[pclass]],
-              type = "p",
-              pch = "o",
-              cex = 1.5
-              )
-      }
-    })
-    
-    ## Insert legend
-    legend("topleft", legend = paste(c("Nb of putative TFBSs: ", "Nb of sequences: "), c(nb.TFBSs, nb.seq), sep = ""), bg="white")
+    ## Range of p-values for the query motif
+    pval.class.matrix.query <- sort(unique(matrix.query.selection$Pval.class))
     
     ## Insert logo
     logo.file <- paste(logo.folder, matrix.query, "_logo.jpeg", sep = "")
-    logo <- readJPEG(logo.file)
-    rasterImage(logo, 
-                xleft = limits - (limits/3),
-                xright = limits - 5, 
-                ybottom = max.pval.minus.log10 - 1,
-                ytop = max.pval.minus.log10 - 0.25
-                )
+    # logo <- readJPEG(logo.file)
+    logo.roster <- rasterGrob(logo.file, interpolate = TRUE)
+  
+    
+    ggplot(matrix.query.selection, aes(x=bspos, y=Pval.minlog10)) +
+      ylim(c(min(classes.pval)-0.5, max(classes.pval))) +
+      geom_point(aes(colour = Pval.class.letter), shape = "O", size = 5, stroke = 3) +
+      geom_rug(position='jitter') +
+      labs(title=paste("Qualitative distribution of ", matrix.query, " TFBSs", sep = ""), y = "-log10(P-value)", x = "Position") +
+      scale_colour_manual(name = "-log10(P-value)",values = myColors, labels = paste(">", pval.class.matrix.query, sep = "")) +
+      theme_minimal() +
+      annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval.minus.log10 - 1, ymax = max.pval.minus.log10 - 0.25)
+    
+    # class.counter <- 0
+    # 
+    # ## Iterate in the p-val classes
+    # sapply(matrix.query.classes, function(pclass){
+    #   
+    #   ## Count the number of p-val classes per query matrix
+    #   class.counter <<- class.counter + 1 
+    #   
+    #   ## Select the hits with the current pval class for the query matrix
+    #   matrix.query.classes.selection <- matrix.query.selection[matrix.query.selection$Pval.class.letter == pclass,]
+    #   
+    # 
+    #   
+    #   ## X-Y Plot ( TFBS position vs -log10(pval) )
+    #   if(class.counter == 1){
+    #     plot(x = matrix.query.classes.selection$bspos,
+    #          y = matrix.query.classes.selection$Pval.minlog10,
+    #          # ylim = c( min(matrix.query.selection$Pval.minlog10, na.rm = TRUE), max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5),
+    #          ylim = c(min.pval.minus.log10, round(max.pval.minus.log10)),
+    #          xlim = c(-limits, limits),
+    #          main = paste("Distribution of TFBSs of ", matrix.query, sep = ""),
+    #          ylab = "-log10(pval) TFBSs",
+    #          xlab = "position (nt)",
+    #          col = classes.to.colors[[pclass]],
+    #          pch = "o",
+    #          cex = 1.5,
+    #          panel.first=grid(col = "grey", lty = "solid") 
+    #     )
+    #   } else {
+    #     lines(x = matrix.query.classes.selection$bspos,
+    #           y = matrix.query.classes.selection$Pval.minlog10,
+    #           col = classes.to.colors[[pclass]],
+    #           type = "p",
+    #           pch = "o",
+    #           cex = 1.5
+    #           )
+    #   }
+    # })
+    # 
+    # ## Insert legend
+    # legend("topleft", legend = paste(c("Nb of putative TFBSs: ", "Nb of sequences: "), c(nb.TFBSs, nb.seq), sep = ""), bg="white")
+    # 
+    # ## Insert logo
+    # logo.file <- paste(logo.folder, matrix.query, "_logo.jpeg", sep = "")
+    # logo <- readJPEG(logo.file)
+    # rasterImage(logo, 
+    #             xleft = limits - (limits/3),
+    #             xright = limits - 5, 
+    #             ybottom = max.pval.minus.log10 - 1,
+    #             ytop = max.pval.minus.log10 - 0.25
+    #             )
     trash <- dev.off()
   }
 })
@@ -557,9 +586,7 @@ if(input.count.table == 0){
     }
     
     ## Convert the BSs in Ranges
-    selection.IR <- IRanges(start = matrix.query.selection$bspos, end = matrix.query.selection$bspos)
-    
-    ## Count the overlap of BS in the bins
+    selection.IR <- IRanges(start = matrix.query.selection$bspos, end = matrix.query.selection$bspos)    ## Count the overlap of BS in the bins
     counts.per.bin <- countOverlaps(windows, selection.IR)
     
     return(counts.per.bin)
