@@ -20,7 +20,9 @@ required.packages = c("devtools",
                       "gplots",
                       "RColorBrewer",
                       "jpeg",
-                      "dynamicTreeCut"
+                      "png",
+                      "dynamicTreeCut",
+                      "ggplot2"
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
