@@ -319,95 +319,72 @@ thr <- sapply(1:length(matrix.names), function(m){
   names(no.hit.nb) <- 0
   nb.hits.per.sequence <- append(nb.hits.per.sequence, no.hit.nb, after = 0)
   
-  for(f in print.formats){
+  ## Generate GGplot for number of TFBSs per sequence
+  TFBSs.per.seq.file <- paste(basename(prefix), "_TFBSs_per_seq/", matrix.query, "_TFBSs_per_seq", sep = "")
+  
+  aa <- data.frame(nb.seq = nb.hits.per.sequence, nb.hits = as.numeric(names(nb.hits.per.sequence)))
+  ggplot(data=aa, aes(y = nb.seq, x=nb.hits, fill=nb.seq)) +
+    geom_bar(stat="identity", position=position_dodge()) +
+    labs(title="Number of hits", y = "Number of sequences", x="Number of TFBSs")
+
+  suppressMessages(ggsave(paste(TFBSs.per.seq.file, ".jpeg", sep = "")))
+  suppressMessages(ggsave(paste(TFBSs.per.seq.file, ".pdf", sep = "")))
     
-    if(f == "pdf"){
-      TFBSs.per.seq.file <- paste(basename(prefix), "_TFBSs_per_seq/", matrix.query, "_TFBSs_per_seq.pdf", sep = "")
-      pdf(TFBSs.per.seq.file)
-    } else {
-      TFBSs.per.seq.file <- paste(basename(prefix), "_TFBSs_per_seq/", matrix.query, "_TFBSs_per_seq.jpeg", sep = "")
-      jpeg(TFBSs.per.seq.file)
-    }
-    
-    # aa <- data.frame(nb.seq = nb.hits.per.sequence, nb.hits = as.numeric(names(nb.hits.per.sequence)))
-    # ggplot(aa, aes(y = nb.seq, x = nb.hits)) + 
-    #   geom_line(color="darkgreen", size=2) + 
-    #   labs(title="Number oh hits",
-    #        y = "Number of sequences", x="Number of TFBSs")
-    
-    plot(y = as.vector(nb.hits.per.sequence),
-         x = as.numeric(names(nb.hits.per.sequence)),
-         type = "l",
-         col = "darkgreen",
-         lty = 1,
-         lwd = 3,
-         main = "Number of predicted TFBS per sequence",
-         xlab = "Number of predicted TFBS",
-         ylab = "Number of sequences"
-         )
-    legend("topright",
-           legend= paste("Putative TFBSs: ", as.numeric(names(nb.hits.per.sequence)), " - Sequences: ", as.vector(nb.hits.per.sequence), sep = ""),
-           bg="white",
-           cex = 0.65
-    )
-    dev.off()
-  }
+    # plot(y = as.vector(nb.hits.per.sequence),
+    #      x = as.numeric(names(nb.hits.per.sequence)),
+    #      type = "l",
+    #      col = "darkgreen",
+    #      lty = 1,
+    #      lwd = 3,
+    #      main = "Number of predicted TFBS per sequence",
+    #      xlab = "Number of predicted TFBS",
+    #      ylab = "Number of sequences"
+    #      )
+    # legend("topright",
+    #        legend= paste("Putative TFBSs: ", as.numeric(names(nb.hits.per.sequence)), " - Sequences: ", as.vector(nb.hits.per.sequence), sep = ""),
+    #        bg="white",
+    #        cex = 0.65
+    # )
   
   ## Get the number of putative TFBSs and the number of sequences with 
   ## at least one match of the query matrix
   nb.TFBSs <- dim(matrix.query.selection)[1]
   nb.seq <- length(as.vector(unique(matrix.query.selection$seq_id)))
   covered.sequences.per.motif[[matrix.query]] <<- as.vector(unique(matrix.query.selection$seq_id))
-# })
   
-  for(f in print.formats){
+  TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes", sep = "")
+
+  ################################
+  #Create a custom color scale
+  myColors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
+  names(myColors) <- classes.pval.letters
     
-    if(f == "pdf"){
-      TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes.pdf", sep = "")
-      pdf(TFBSs.pval.distribution.file)
-    } else {
-      TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes.jpeg", sep = "")
-      jpeg(TFBSs.pval.distribution.file)
-    }
+  ## Range of p-values for the query motif
+  pval.class.matrix.query <- sort(unique(matrix.query.selection$Pval.class))
+    
+  ## Insert logo
+  logo.file <- paste(logo.folder, matrix.query, "_logo.png", sep = "")
+  logo <- readPNG(logo.file)
+  logo.roster <- rasterGrob(logo, interpolate = TRUE)
   
-    ################################
-    #Create a custom color scale
-    myColors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
-    names(myColors) <- classes.pval.letters
+  ## X position of plot annotations
+  text.xmax <- min(matrix.query.selection$bspos) + max(matrix.query.selection$bspos) / 4
+  text.center <- (min(matrix.query.selection$bspos) - text.xmax)*2
     
-    ## Range of p-values for the query motif
-    pval.class.matrix.query <- sort(unique(matrix.query.selection$Pval.class))
+  ggplot(matrix.query.selection, aes(x=bspos, y=Pval.minlog10)) +
+    ylim(c(min(matrix.scan.results$Pval.minlog10), max(matrix.scan.results$Pval.minlog10))) +
+    geom_point(aes(colour = Pval.class.letter), shape = "O", size = 5, stroke = 3) +
+    geom_rug(position='jitter') +
+    labs(title=paste("Qualitative distribution of ", matrix.query, " TFBSs", sep = ""), y = "-log10(P-value)", x = "Position") +
+    scale_colour_manual(name = "-log10(P-value)",values = myColors, labels = paste(">", pval.class.matrix.query, sep = "")) +
+    theme_minimal() +
+    annotate("text", x = -limits + ((limits*2)/10), y = max.pval.minus.log10 - 0.25, label = paste("Nb of TFBSs: ", nb.TFBSs, sep = ""), size = 4, hjust = 0) + 
+    annotate("text", x = -limits + ((limits*2)/10), y = max.pval.minus.log10 - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) + 
+    annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval.minus.log10 - 1, ymax = max.pval.minus.log10 - 0.05)
     
-    ## Insert logo
-    logo.file <- paste(logo.folder, matrix.query, "_logo.jpeg", sep = "")
-    # logo <- readJPEG(logo.file)
-    logo.roster <- rasterGrob(logo.file, interpolate = TRUE)
-  
+  suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".pdf", sep = "")))
+  suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".jpeg", sep = "")))
     
-    ggplot(matrix.query.selection, aes(x=bspos, y=Pval.minlog10)) +
-      ylim(c(min(classes.pval)-0.5, max(classes.pval))) +
-      geom_point(aes(colour = Pval.class.letter), shape = "O", size = 5, stroke = 3) +
-      geom_rug(position='jitter') +
-      labs(title=paste("Qualitative distribution of ", matrix.query, " TFBSs", sep = ""), y = "-log10(P-value)", x = "Position") +
-      scale_colour_manual(name = "-log10(P-value)",values = myColors, labels = paste(">", pval.class.matrix.query, sep = "")) +
-      theme_minimal() +
-      annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval.minus.log10 - 1, ymax = max.pval.minus.log10 - 0.25)
-    
-    # class.counter <- 0
-    # 
-    # ## Iterate in the p-val classes
-    # sapply(matrix.query.classes, function(pclass){
-    #   
-    #   ## Count the number of p-val classes per query matrix
-    #   class.counter <<- class.counter + 1 
-    #   
-    #   ## Select the hits with the current pval class for the query matrix
-    #   matrix.query.classes.selection <- matrix.query.selection[matrix.query.selection$Pval.class.letter == pclass,]
-    #   
-    # 
-    #   
-    #   ## X-Y Plot ( TFBS position vs -log10(pval) )
-    #   if(class.counter == 1){
     #     plot(x = matrix.query.classes.selection$bspos,
     #          y = matrix.query.classes.selection$Pval.minlog10,
     #          # ylim = c( min(matrix.query.selection$Pval.minlog10, na.rm = TRUE), max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5),
@@ -421,35 +398,8 @@ thr <- sapply(1:length(matrix.names), function(m){
     #          cex = 1.5,
     #          panel.first=grid(col = "grey", lty = "solid") 
     #     )
-    #   } else {
-    #     lines(x = matrix.query.classes.selection$bspos,
-    #           y = matrix.query.classes.selection$Pval.minlog10,
-    #           col = classes.to.colors[[pclass]],
-    #           type = "p",
-    #           pch = "o",
-    #           cex = 1.5
-    #           )
-    #   }
-    # })
-    # 
-    # ## Insert legend
-    # legend("topleft", legend = paste(c("Nb of putative TFBSs: ", "Nb of sequences: "), c(nb.TFBSs, nb.seq), sep = ""), bg="white")
-    # 
-    # ## Insert logo
-    # logo.file <- paste(logo.folder, matrix.query, "_logo.jpeg", sep = "")
-    # logo <- readJPEG(logo.file)
-    # rasterImage(logo, 
-    #             xleft = limits - (limits/3),
-    #             xright = limits - 5, 
-    #             ybottom = max.pval.minus.log10 - 1,
-    #             ytop = max.pval.minus.log10 - 0.25
-    #             )
-    trash <- dev.off()
-  }
 })
 rm(thr)
-# dev.off()
-# verbose(paste("Distribution of TFBSs at different p-values: ", TFBSs.pval.distribution.file), 1)
 
 ##########################
 ## Co-ocurrence heatmap ##
