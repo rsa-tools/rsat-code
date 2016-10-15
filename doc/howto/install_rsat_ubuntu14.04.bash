@@ -21,7 +21,7 @@
 
 #export RSAT_PARENT_PATH=/bio
 export RSAT_PARENT_PATH=/packages
-export RSAT_RELEASE=2016-07-13
+export RSAT_RELEASE=2016-07-13 ## Version to be downloaded from the tar distribution
 export RSAT_HOME=${RSAT_PARENT_PATH}/rsat
 
 
@@ -51,6 +51,7 @@ export INSTALLER_OPT="--quiet --assume-yes"
 
 ## Create a separate directory for RSAT, which must be readable by all
 ## users (in particular by the apache user)
+echo "Creating RSAT_PARENT_PATH ${RSAT_PARENT_PATH}"
 mkdir -p ${RSAT_PARENT_PATH}
 cd ${RSAT_PARENT_PATH}
 mkdir -p ${RSAT_PARENT_PATH}/install_logs
@@ -60,8 +61,8 @@ df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 
 ## Check the installation device 
 DEVICE=`df -h | grep '\/$' | perl -pe 's/\/dev\///' | awk '{print $1}'`
-echo ${DEVICE}
-## This should give sda1. Of not check rthe device with 
+echo "Installation device: ${DEVICE}"
+## This should give something like sda1 or vda1. If not check the device with df
 
 ## We can then check the increase of disk usage during the different
 ## steps of the installation
@@ -77,7 +78,9 @@ ${INSTALLER} ${INSTALLER_OPT} upgrade
 df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
-## Packages to be checked: to I really need this ?
+################################################################
+## Packages to be checked by JvH. 
+## These are useful to me, but I am not sure they are required for RSAT. 
 PACKAGES_OPT="
 ess
 yum
@@ -282,6 +285,10 @@ emacs -nw /etc/apache2/mods-available/mime.conf
 ## some classical bioinformatics files.
 ##   AddType text/plain .fasta
 ##   AddType text/plain .bed
+## I also uncomment the following, for convenience
+##        AddEncoding x-compress .Z
+##        AddEncoding x-gzip .gz .tgz
+##        AddEncoding x-bzip2 .bz2
 
 ## Adapt the PHP parameters
 emacs -nw /etc/php5/apache2/php.ini
@@ -328,8 +335,6 @@ pip3 install snakemake
 pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
 ## pip3 install pygraphviz ## This fails ! Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/pygraphviz
 
-## PROBLEM: soappy seems to be discontnued for python3 !
-#      pip3 install soappy
 ## Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/wstools
 ## Storing debug log for failure in /home/rsat/.pip/pip.log
 ##
@@ -340,6 +345,7 @@ pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
 ## I should test one of the following SOAP packages
 pip3 install suds-jurko
 pip3 install pysimplesoap
+pip3 install soappy
 
 ## Check disk usage
 df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
@@ -398,7 +404,8 @@ apt-get --quiet --assume-yes install libsoap-wsdl-perl
 ################################################################
 
 
-## New (2016-03-25)
+## New (2016-03-25) : for the IFB cloud I suppress the RSAT user, and
+## install everything as root.
 # ## Create a specific user for RSAT. The user is named rsat
 # sudo adduser rsat
 # ## Full Name: Regulatory Sequence Analysis Tools admin
@@ -416,6 +423,8 @@ apt-get --quiet --assume-yes install libsoap-wsdl-perl
 ## server, which is currently only possible for RSAT developing team.
 ## In the near future, we may use git also for the end-user
 ## distribution.
+
+
 
 ## Define an environment variable with the RSAT_HOME directory
 ## (will be used later to configure RSAT)
