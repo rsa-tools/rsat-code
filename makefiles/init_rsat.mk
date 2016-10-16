@@ -16,7 +16,7 @@ usage:
 ################################################################
 ## Initialize directories and config files
 SUPPORTED_ORGANISMS=public_html/data/supported_organisms.tab
-LOGS_DIR=${RSAT}/public_html/logs
+LOGS_DIR=${RSAT}/logs
 COUNT_FILE=${LOGS_DIR}/count-file
 
 #WS_PERL_CLIENT_DIR=public_html/web_services/clients/perl
@@ -40,9 +40,9 @@ init:
 	@echo "Options +Indexes" > public_html/data/.htaccess
 	@echo "	genomes	${RSAT}/public_html/data/genomes"
 	@mkdir -p ${RSAT}/public_html/data/genomes
-#	mkdir -p ${RSAT}/public_html/data/KEGG
-#	mkdir -p ${RSAT}/public_html/data/metabolic_networks
-#	mkdir -p ${RSAT}/public_html/data/metabolic_networks/GER_files
+	mkdir -p ${RSAT}/public_html/data/KEGG
+	mkdir -p ${RSAT}/public_html/data/metabolic_networks
+	mkdir -p ${RSAT}/public_html/data/metabolic_networks/GER_files
 	@echo "	bin	${RSAT}/bin"
 	@mkdir -p ${RSAT}/bin
 	@echo "	lib	${RSAT}/lib"
@@ -63,7 +63,7 @@ init:
 	@echo "	logs	${LOGS_DIR}"
 	@mkdir -p ${LOGS_DIR}
 	@chmod 777 ${LOGS_DIR}
-	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/logs/robots.txt
+	@${MAKE} init_robots ROBOTS=${LOGS_DIR}/robots.txt
 	@echo "	peak-footprints_logs	${RSAT}/${LOGS_DIR}/peak-footprints_logs"
 	@mkdir -p ${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
 #	echo "Options -Indexes" > ${LOGS_DIR}/.htaccess
@@ -134,22 +134,20 @@ _create_download_dir:
 ################################################################
 ## Configuration for robots.
 ## Details can be found here: http://www.robotstxt.org/orig.html
-ROBOTS=${RSAT}/public_html/data/robots.txt
+ROBOTS=${RSAT}/public_html/robots.txt
 init_robots:
 	@echo
 	@echo "Disabling robots from indexing data directory"
+	@echo "Robot file	${ROBOTS}"
 	@echo "User-agent: *" > ${ROBOTS}
-	@echo "Disallow: ." >> ${ROBOTS}
-	@echo "Disallow: /rsat/data/" >> ${ROBOTS}
-	@echo "Disallow: /data/" >> ${ROBOTS}
-	@echo "Disallow: data/" >> ${ROBOTS}
-	@echo "Disallow: /rsat/tmp/" >> ${ROBOTS}
-	@echo "Disallow: /tmp/" >> ${ROBOTS}
-	@echo "Disallow: tmp/" >> ${ROBOTS}
-	@echo "Disallow: /rsat/logs/" >> ${ROBOTS}
-	@echo "Disallow: /logs/" >> ${ROBOTS}
-	@echo "Disallow: logs/" >> ${ROBOTS}
-	@echo "	ROBOTS	${ROBOTS}"
+#	@echo "Disallow: ." >> ${ROBOTS}
+#	@echo "Disallow: /rsat/data/" >> ${ROBOTS}
+#	@echo "Disallow: /data/" >> ${ROBOTS}
+#	@echo "Disallow: data/" >> ${ROBOTS}
+#	@echo "Disallow: /rsat/tmp/" >> ${ROBOTS}
+#	@echo "Disallow: /tmp/" >> ${ROBOTS}
+#	@echo "Disallow: tmp/" >> ${ROBOTS}
+#	@echo "	ROBOTS	${ROBOTS}"
 
 ## Adapt the IP address in the RSATWS.wsdl file
 ws_init:
