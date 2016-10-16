@@ -23,8 +23,8 @@ use RSAT::error;
 This class stores a classification, i.e. a set of classes, each
 containing a set of objects.
 
-The classification can be a partition (i.e. each objects belogs to one
-and only one class) or contain multiple assignations.
+The classification can be a partition (i.e. each objects belongs to
+one and only one class) or contain multiple assignations.
 
 The class is equipped with methods for importing and exporting a
 classification from various formats.
