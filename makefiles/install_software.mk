@@ -50,12 +50,12 @@ list_versions:
 EXT_APP_TARGETS=\
 	install_ensembl_api \
 	install_vmatch \
+	install_seqlogo \
 	install_ghostscript \
 	install_gnuplot \
 	install_d3 \
 	install_bedtools \
 	install_blast \
-	install_seqlogo \
 	install_weblogo3 \
 	install_mcl \
 	install_rnsc \
