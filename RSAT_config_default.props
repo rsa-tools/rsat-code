@@ -277,8 +277,8 @@ ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 ##
 ## These parameters are used by the tools to install genomes from
 ## these two sources.
-ensembl_release=84
-ensemblgenomes_release=31
+ensembl_release=86
+ensemblgenomes_release=32
 
 ## Safe release of the ensembl database (for download-ensembl-genome,
 ## download-ensembl-variations, ...). The database structures and API
@@ -308,7 +308,8 @@ neat_supported=1
 
 ## URL of the Web server hosting the NeAT Web services, where the result files
 ## are to be found 
-neat_www_root=http://localhost/rsat/
+#neat_www_root=http://localhost/rsat/
+neat_www_root=auto
 
 ## URL for the NeAT web services.  NeAT requires to install some
 ## specific programs for path finding and graph layout.  Before
@@ -316,11 +317,13 @@ neat_www_root=http://localhost/rsat/
 ## on the new neat_ws server
 ##
 ## Note: the auto option does not work for neat_ws.
-neat_ws=http://localhost/rsat/web_services/RSATWS.wsdl
+#neat_ws=http://localhost/rsat/web_services/RSATWS.wsdl
+neat_ws=auto
 
 ## URL for the NeAT Web services temporary directory, where the result files
 ## are to be found
-neat_ws_tmp=http://localhost/rsat/tmp/
+#neat_ws_tmp=http://localhost/rsat/tmp/
+neat_ws_tmp=auto
 
 ## URL for java-based NeAT web services. The same remark as above holds,
 ## please check the RSAT web server install guide to install the additional
