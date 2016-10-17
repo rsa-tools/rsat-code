@@ -65,7 +65,7 @@ our @arguments = @ARGV;
 our %force_param = ();
 our $auto_mode = 0;
 while ($arg = shift(@arguments)) {
-  if (lc($arg) eq "auto") {
+  if (lc($arg) =~ /^\-*auto$/) {
     $auto_mode = 1;
     foreach my $extension (@props_extensions) {
       $auto_extension{$extension} = 1;
