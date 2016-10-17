@@ -357,7 +357,7 @@ R_PACKAGES=RColorBrewer devtools RJSONIO dendextend flux gplots RColorBrewer jpe
 install_r_packages_cmd:
 	@for rpack in ${R_PACKAGES}; do \
 		echo "Installing R package $${rpack}"; \
-		sudo su - -c "R -e \"install.packages('$${rpack}', repos='http://cran.rstudio.com/')\""; \
+		sudo su - -c "R -e \"if !(require('$${rpack}') {install.packages('$${rpack}', repos='http://cran.rstudio.com/')}\""; \
 	done
 
 ##  --slave --no-save --no-restore --no-environ
