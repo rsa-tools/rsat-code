@@ -19,11 +19,18 @@
 # locale-gen en_US.UTF-8
 # dpkg-reconfigure locales
 
-#export RSAT_PARENT_PATH=/bio
+#export RSAT_PARENT_PATH=/packages
 export RSAT_PARENT_PATH=/packages
 export RSAT_RELEASE=2016-07-13 ## Version to be downloaded from the tar distribution
 export RSAT_HOME=${RSAT_PARENT_PATH}/rsat
 
+
+## Configuration for the installation
+export INSTALLER=apt-get
+export INSTALLER_OPT="--quiet --assume-yes"
+## alternative: INSTALLER=aptitude
+#export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
+#export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
 
 ################################################################
 ## Must be executed as root. If you are non-root but sudoer user, you
@@ -37,13 +44,6 @@ date
 ## If not, set up the time zone, date and time with this command
 ## (source: https://help.ubuntu.com/community/UbuntuTime).
 dpkg-reconfigure tzdata
-
-## Configuration for the installation
-export INSTALLER=apt-get
-export INSTALLER_OPT="--quiet --assume-yes"
-## alternative: INSTALLER=aptitude
-#export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
-#export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
 
 
 ## We need to update apt-get, to avoid trouble with python
@@ -79,6 +79,20 @@ df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALL
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 ################################################################
+## Declare R-cran as source in order to install the latest version of
+## R (3.3.1 on 2016-10) which is required for some R scripts, but not
+## distributed with Ubuntu 14.04 (this Ubuntu release 14.04 comes with
+## R version 3.0.2).
+##
+## I add the row before the original sources.list because there is
+## some problem at the end of the update.
+grep -v cran.rstudio.com /etc/apt/sources.list > /etc/apt/sources.list.bk
+echo "## R-CRAN repository, to install the most recent version of R" > /etc/apt/sources.list.rcran
+echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list.rcran
+echo "" >> /etc/apt/sources.list.rcran
+cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
+
+################################################################
 ## Packages to be checked by JvH. 
 ## These are useful to me, but I am not sure they are required for RSAT. 
 PACKAGES_OPT="
@@ -94,7 +108,6 @@ texlive-latex-base
 python-virtualenv
 ipython
 ipython-notebook
-libssl-dev
 libreadline-gplv2-dev:i386
 lib64readline-gplv2-dev:i386
 libreadline-gplv2-dev
@@ -119,6 +132,9 @@ libcrypt-ssleay-perl
 exfat-fuse
 exfat-utils 
 at
+firefox
+finger
+ncbi-blast+
 "
 
 PACKAGES="
@@ -128,7 +144,6 @@ cvs
 wget
 zip
 unzip
-finger
 screen
 make
 g++
@@ -158,15 +173,18 @@ python3-numpy
 python3-scipy
 python3-matplotlib
 python3-rpy2
-r-base
 emacs
 x11-apps
-firefox
 eog
 ntp
 curl
+r-base
 libcurl4-openssl-dev
-ncbi-blast+
+libcurl4-gnutls-dev
+libxml2-dev
+libnet-ssleay-perl
+libcrypt-ssleay-perl
+libssl-dev
 "
 
 ################################################################
@@ -406,6 +424,11 @@ apt-get --quiet --assume-yes install libsoap-wsdl-perl
 
 ## New (2016-03-25) : for the IFB cloud I suppress the RSAT user, and
 ## install everything as root.
+
+## Note (2016-10-17) : I could actually always do the whole
+## installation as root, and if required create RSAT user only at the
+## very end, and chown the rsat directory then.
+
 # ## Create a specific user for RSAT. The user is named rsat
 # sudo adduser rsat
 # ## Full Name: Regulatory Sequence Analysis Tools admin
@@ -424,18 +447,11 @@ apt-get --quiet --assume-yes install libsoap-wsdl-perl
 ## In the near future, we may use git also for the end-user
 ## distribution.
 
-
-
-## Define an environment variable with the RSAT_HOME directory
-## (will be used later to configure RSAT)
-export RSAT_PARENT_PATH=/bio
-export RSAT_HOME=${RSAT_PARENT_PATH}/rsat
-
 ## RSAT installation is done under the rsat login.
 ##
 ## We retrieve it in the home folder of the RSAT user, because RSAT
-## user has no write authorization on /bio. In a second time we do a
-## sudo mv to place the rsat folder in /bio.
+## user has no write authorization on /packages. In a second time we do a
+## sudo mv to place the rsat folder in /packages.
 #su - rsat
 #cd ${HOME}
 cd ${RSAT_PARENT_PATH}
@@ -447,8 +463,7 @@ git config --list
 git clone git@depot.biologie.ens.fr:rsat
 
 
-## Move the rsat distribution to the RSAT_HOME directory
-sudo mv ${HOME}/rsat ${RSAT_HOME}
+## Make a link from home directory to find RSAT home
 ln -fs ${RSAT_HOME} ${HOME}/rsat
 
 ## For users who don't have an account on the RSAT git server, the
@@ -491,19 +506,6 @@ echo ${RSAT}
 ## Initialise RSAT folders
 make -f makefiles/init_rsat.mk init
 
-################################################################
-## For the next operations, we need to be su
-
-## Since we became rsat user with "sudo", a simple exit brings us back
-## to the root user
-exit
-
-## Load RSAT bashrc file
-cd ${RSAT_HOME}
-source ${RSAT_HOME}/RSAT_config.bashrc
-
-## Check that the root has well loaded the RSAT configuration
-echo $RSAT
 
 ################################################################
 ## Previous way to specify bashrc parameters, via
@@ -515,8 +517,6 @@ echo $RSAT
 ## are loaded by each user at each login. Each user will then
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
-
-
 rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 ## ln -fs ${RSAT_HOME}/RSAT_config.bashrc /etc/bash_completion.d/
 
@@ -531,7 +531,7 @@ rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 ## Notes
 ##
 ## 1) limxml2-dev is required to compile the Perl module XML::LibXML
-sudo apt-get install limxml2-dev 
+# sudo apt-get install limxml2-dev 
 
 ## 2) For some modules, installation failed until I used "force"
 ##	 force install SOAP::WSDL
@@ -624,11 +624,11 @@ emacs -nw /etc/apache2/sites-available/000-default.conf
 ## such in the original config):
 ##        DocumentRoot /var/www/html                                                                            
 ## And write the following line:
-##        DocumentRoot /bio/rsat/public_html
+##        DocumentRoot /packages/rsat/public_html
+apache2ctl restart
 ## The server will now immediately display RSAT home page when you
 ## type its IP address.
 
-apache2ctl restart
 
 ## You should now test the access to the RSAT Web server, whose URL is
 ## in the environment variable RSAT_WWW
@@ -645,10 +645,8 @@ echo $RSAT_WWW
 ## Next steps require to be done as rsat administrator user
 
 ## compile RSAT programs written in C
-su - rsat
 cd ${RSAT}
 make -f makefiles/init_rsat.mk compile_all
-export RSAT_PARENT_PATH=/bio/
 sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -692,9 +690,6 @@ sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat
 ## Install selected R librairies, required for some RSAT scripts
 ################################################################
 
-whoami
-## Should return "rsat"
-
 ## Installation of R packages
 cd $RSAT; make -f makefiles/install_rsat.mk install_r_packages
 
@@ -727,6 +722,12 @@ cd $RSAT; make -f makefiles/install_rsat.mk update
 
 ## Check remaining disk space
 df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
+
+################################################################
+## Install some third-party software
+cd ${RSAT}
+make -f makefiles/install_software.mk
+make -f makefiles/install_software.mk install_ext_apps
 
 ################################################################
 ## At this stage you can already check some simple RSAT command 
@@ -872,7 +873,8 @@ qconf -as localhost ## aggregate the localhost tho the list of submitters
 
 ## Install some software tools for NGS analysis
 cd ${RSAT}
-make -f makefiles/install_software.mk install_meme
+## TO BE DONE
+
 
 ################################################################
 ## Ganglia: tool to monitor a cluster (or single machine)
