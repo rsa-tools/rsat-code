@@ -187,30 +187,43 @@ _compile_seqlogo:
 ##
 ## Source: http://weblogo.threeplusone.com/
 
-## Manual installation of Weblogo in ${RSAT_BIN}
-WEBLOGO3_VERSION=3.3
-WEBLOGO3_TAR=weblogo-${WEBLOGO3_VERSION}.tar.gz
-WEBLOGO3_URL=https://weblogo.googlecode.com/files/${WEBLOGO3_TAR}
-WEBLOGO3_DIR=${SRC_DIR}/weblogo3
-install_weblogo3: _download_weblogo3 _compile_weblogo3
+# ## Manual installation of Weblogo in ${RSAT_BIN}
+# WEBLOGO3_VERSION=3.3
+# WEBLOGO3_TAR=weblogo-${WEBLOGO3_VERSION}.tar.gz
+# WEBLOGO3_URL=https://weblogo.googlecode.com/files/${WEBLOGO3_TAR}
+# WEBLOGO3_DIR=${SRC_DIR}/weblogo3
+# install_weblogo3: _download_weblogo3 _compile_weblogo3
 
-_download_weblogo3:
-	@mkdir -p ${WEBLOGO3_DIR}
-	@echo "Getting weblogo3 using wget"
-	(cd ${WEBLOGO3_DIR}; wget --no-clobber -nv -nd ${WEBLOGO3_URL}; tar -xpzf ${WEBLOGO3_TAR})
-	@echo "weblogo3 dir	${WEBLOGO3_DIR}"
+# _download_weblogo3:
+# 	@mkdir -p ${WEBLOGO3_DIR}
+# 	@echo "Getting weblogo3 using wget"
+# 	(cd ${WEBLOGO3_DIR}; wget --no-clobber -nv -nd ${WEBLOGO3_URL}; tar -xpzf ${WEBLOGO3_TAR})
+# 	@echo "weblogo3 dir	${WEBLOGO3_DIR}"
 
-_compile_weblogo3:
-	@echo "Building weblogo vesion ${WEBLOGO3_VERSION} and installing in ${RSAT_BIN}"
-	(cd ${WEBLOGO3_DIR}/weblogo-${WEBLOGO3_VERSION}; \
-	${SUDO} ${PYTHON} setup.py install --prefix ${RSAT})
-	@echo "weblogo installed in ${RSAT_BIN}"
+# _compile_weblogo3:
+# 	@echo "Building weblogo vesion ${WEBLOGO3_VERSION} and installing in ${RSAT_BIN}"
+# 	(cd ${WEBLOGO3_DIR}/weblogo-${WEBLOGO3_VERSION}; \
+# 	${SUDO} ${PYTHON} setup.py install --prefix ${RSAT})
+# 	@echo "weblogo installed in ${RSAT_BIN}"
+
+
+
+################################################################
+## Install weblogo3
+install_weblogo3: install_weblogo3_pip
+
+
+################################################################
+## Clone weblogo3
+clone_weblogo3:
+	@echo "Clongin weblogo3 from github"
+	git clone https://github.com/WebLogo/weblogo.git
 
 ## Installation via pip is simpler, but cannot be done on all RSAT
 ## servers because it requires admin rights.
 PIP=pip
 install_weblogo3_pip:
-	@echo "Installing weblogo in RSAT_BIN	${RSAT_BIN}"
+	@echo "Installing weblogo3 using pip"
 	${SUDO} ${PIP} install --install-option "--install-scripts=${RSAT_BIN}" weblogo
 #	${SUDO} ${PIP} install --target ${RSAT_BIN} --install-option "--install-scripts=${RSAT_BIN}" weblogo
 #	${PIP} install --target ${RSAT_BIN} weblogo
