@@ -68,16 +68,6 @@ echo "Installation device: ${DEVICE}"
 ## steps of the installation
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
-## Install aptitude, more efficient than apt-get to treat dependencies
-## when installing and uninstalling packages.
-## TO SAVE SPACE, I SUPPRESS aptitude
-## apt-get install aptitude
-apt-get update
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
-${INSTALLER} ${INSTALLER_OPT} upgrade
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
-
 ################################################################
 ## Declare R-cran as source in order to install the latest version of
 ## R (3.3.1 on 2016-10) which is required for some R scripts, but not
@@ -91,6 +81,24 @@ echo "## R-CRAN repository, to install the most recent version of R" > /etc/apt/
 echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list.rcran
 echo "" >> /etc/apt/sources.list.rcran
 cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+sudo add-apt-repository ppa:marutter/rdev
+
+
+################################################################
+## Fix a problem with rabbitmq in the Ubuntu 14.04 distrib
+wget -O- https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | apt-key add -
+
+## Install aptitude, more efficient than apt-get to treat dependencies
+## when installing and uninstalling packages.
+## TO SAVE SPACE, I SUPPRESS aptitude
+## apt-get install aptitude
+apt-get update
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+${INSTALLER} ${INSTALLER_OPT} upgrade
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
+grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+
 
 ################################################################
 ## Packages to be checked by JvH. 
@@ -292,7 +300,6 @@ emacs -nw /etc/apache2/sites-available/000-default.conf
 emacs -nw /etc/apache2/apache2.conf
 ## Add the following line at the end of the file (or somewhere else)
 ##     ServerName localhost
-                                           
 
 emacs -nw /etc/apache2/mods-available/mime.conf
 ## In the file /etc/apache2/mods-available/mime.conf
@@ -490,7 +497,7 @@ ln -fs ${RSAT_HOME} ${HOME}/rsat
 
 ## Run the configuration script, to specify the environment variables.
 cd ${RSAT_HOME}
-perl perl-scripts/configure_rsat.pl
+perl perl-scripts/configure_rsat.pl --auto
 
 ## Parameters to change
 ##   rsat_site   rsat-vm-2016-03
@@ -553,7 +560,7 @@ install YAML
 ## I am not sure, but I think that this command is useful to properly install the subsequent packages.
 install CPAN 
 reload cpan
-## then type "quit"
+quit
 
 ## Set working directory to RSAT
 cd $RSAT
@@ -606,6 +613,12 @@ more check_perl_modules_eval.txt
 df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
+################################################################
+## Adapt RSAT icon for IFB cloud (should be adapted depending on VM
+## type).
+cp ${RSAT}/public_html/images/ifb-logo-s.jpg   ${RSAT}/public_html/images/RSAT_icon.jpg
+
+
 
 ################################################################
 ## Configure RSAT web server
@@ -654,9 +667,6 @@ sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat
 ## !!!! I HAVE A PROBLEM TO COMPILE KWALKS. SHOULD BE CHECKED !!!!!
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-## Install some third-party programs required by some RSAT scripts.
-make -f makefiles/install_software.mk install_ext_apps
-sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## !!!!!!!!!!!!!!!!      ONLY FOR THE IFB CLOUD    !!!!!!!!!!!!!!!!
@@ -724,10 +734,11 @@ cd $RSAT; make -f makefiles/install_rsat.mk update
 df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
 
 ################################################################
-## Install some third-party software
+## Install some third-party programs required by some RSAT scripts.
 cd ${RSAT}
 make -f makefiles/install_software.mk
 make -f makefiles/install_software.mk install_ext_apps
+sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
 
 ################################################################
 ## At this stage you can already check some simple RSAT command 
