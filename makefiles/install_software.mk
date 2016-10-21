@@ -48,13 +48,13 @@ list_versions:
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
 EXT_APP_TARGETS=\
-	install_ensembl_api \
 	install_vmatch \
 	install_seqlogo \
-	install_ghostscript \
-	install_gnuplot \
 	install_d3 \
 	install_bedtools \
+	install_ensembl_api \
+	install_ghostscript \
+	install_gnuplot \
 	install_blast \
 	install_weblogo3 \
 	install_mcl \
@@ -360,6 +360,9 @@ install_ensembl_api_git_git:
 ## "Important note: you must install version 1.2.3, not a more recent
 ## version. Starting with 1.2.4, major changes were made to the
 ## BioPerl API which have made it incompatible with Ensembl."
+##
+## ISSUES ERROR MESSAGE (2016-10-18)
+## IS IT STILL REQUIRED ?
 install_ensembl_bioperl:
 	@echo ""
 	@echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"
@@ -468,6 +471,8 @@ _compile_rnsc:
 
 ################################################################
 ## Install BLAST
+##
+## DOES NOT WORK ANMORE, SHOULD BE FIXED FOR get-orthologs (2016-10-18)
 install_blast: list_blast_param _download_blast _install_blast
 
 _download_blast: _download_blast_${OS}
