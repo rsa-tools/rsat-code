@@ -52,7 +52,7 @@ fp_disco_selected_genes_yeast:
 	@${MAKE} _fp_disco QUERY='-genes ${YEAST_DEMO_GENES}' \
 		ORG=Saccharomyces_cerevisiae \
 		TAXON=Saccharomycetales \
-		TASK=query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,gene_index,index,network,gene_index,network_index
+		TASK=query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,network,gene_index,index,network_index
 
 ################################################################
 ## Run footprint-discovery with one selected gene
@@ -67,6 +67,11 @@ fp_disco_one_gene: list_param
 ## (target fp_disco_gene_slice).
 fp_disco_all_genes: list_param
 	@${MAKE} _fp_disco  QUERY='-all_genes'
+
+################################################################
+## (Re)generae summary index
+index_all_genes: list_param
+	@${MAKE} _fp_disco  QUERY='-all_genes' TASK=index
 
 ## Run the analysis of each gene of a genome in batch. This requires a
 ## PC cluster and a properly configured job manager (see cluster
