@@ -1034,6 +1034,14 @@ sub to_STAMP {
     my ($self, %args) = @_;
     my $to_print = "";
 
+    &RSAT::message::Debug(
+      "&RSAT::matrix::to_STAMP()", 
+      $self->get_attribute("accession"), 
+      $self->get_attribute("id"), 
+      $self->get_attribute("name"), 
+      $self->get_attribute("description"), 
+	) if ($main::verbose >= 0);
+    
     my $output_format = $args{format};
     $output_format = lc($output_format);
 
@@ -1044,10 +1052,7 @@ sub to_STAMP {
     }
 
     ## Identifier
-    my $id = $self->get_attribute("identifier");
-    unless ($id) {
-	$id = $self->get_attribute("id");
-    }
+    my $id = $self->get_attribute("name") || $self->get_attribute("identifier")  || $self->get_attribute("id") || $accession;
     if ($id) {
       $to_print .= "XX	ID ".$id."\n";
     }
