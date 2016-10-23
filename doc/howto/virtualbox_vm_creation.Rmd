@@ -1,44 +1,51 @@
 ---
-title: "Creating an NGS VM under Virtualbox"
+title: "Creating an Ubuntu VM under Virtualbox"
 author: "Jacques van Helden"
 date: 'Last update: `r Sys.Date()`'
 output:
   html_document:
     fig_caption: yes
     highlight: zenburn
-    number_sections: yes
     theme: cerulean
     toc: yes
-    toc_depth: 4
+    toc_depth: 2
+    toc_float: yes
+  md_document:
+    variant: markdown_github
   pdf_document:
     fig_caption: yes
     highlight: zenburn
-    number_sections: yes
     toc: yes
-    toc_depth: 4
-  word_document: default
+    toc_depth: 2
+  word_document:
+    toc: yes
+    toc_depth: 2
 ---
 
-# Creating an NGS VM under Virtualbox
 
-
-## To do
+# To do
 
 1. Create a separate virtual disk for the data, and explain how to mount it on the virtual machine.
 
-## Requirements
-
-1. Virtualbox software can be downloaded from
-    <https://www.virtualbox.org/>
-
-2. The VM is built under Ubuntu 14.04 (latest long-term supported version)
-
-    <http://releases.ubuntu.com/14.04/ubuntu-14.04.4-desktop-amd64.iso>
-
-------------------------------------------
+****************************************************************
+# Requirements
 
 
-## Creation of the virtual machine
+## Downloads
+
+Before starting the installation process, we recommend to download the following files
+
+Virtualbox:  <https://www.virtualbox.org/wiki/Downloads>
+
+Ubuntu Desktop Version 16.04.1: <http://releases.ubuntu.com/16.04/ubuntu-16.04.1-desktop-amd64.iso>
+Ubuntu Server Version 16.04.1: <http://releases.ubuntu.com/16.04/ubuntu-16.04.1-server-amd64.iso>
+
+<!--- Version 14.04.5 <http://releases.ubuntu.com/14.04/ubuntu-14.04.5-desktop-amd64.iso>-->
+
+****************************************************************
+# Installation of the virtual machine
+
+## Creating a new virtual machine
 
 1. Open VirtualBox
 
@@ -48,7 +55,7 @@ output:
 
 - Name and operating system
 
-    - Name: RSAT-VM-2016-03
+    - Name: RSAT-VM-2016-10
     - Type: Linux
     - Version: Ubuntu (64 bits)
 
@@ -60,16 +67,16 @@ output:
 
     I chose this option because it ensures a wider compatibility with other OS and Virtual Machine management systems. 
 
-	   Another potential advantage of VMDK is that it enables to split virtualdisks in files <=2Gb, which is convenient to store them on FAT partitions. 
+	   Another potential advantage of VMDK is that it enables to split virtual disks into files <=2Gb, which is convenient to store them on FAT partitions. 
 
 - Storage on physical hard drive
     - Select *Dynamically allocated*
-    - Activate the option *Split into files less than 2Gb*, which allows to store the VM on FAT partitions for Windows host machines.
+    - Depending on your storage device, you may activate the option *Split into files less than 2Gb*, which allows to store the VM on FAT partitions for Windows host machines.
 
 
 - File location and size
 
-    - name of virtual hard drive file:    RSAT-VM-2016-03_HDD
+    - name of virtual hard drive file:    RSAT-VM-2016-10_HDD
     - max size of virtual hard drive:	    18GB
 
         Beware: the size has to be larger than you real needs, because Ubuntu will automatically create some big  partitions (/dev and /run/shm). Since we allow dynamical memory allocation, it is fine to set the max size to 18Gb, which will be grossly assigned as follows:
@@ -79,13 +86,10 @@ output:
 	      - 2Gb for /run/user
 
 
-
-
 At this stage, the VM has been created and needs to be configured before installing the operating system. 
 
----------------------------------------
 
-
+****************************************************************
 ## General configuration of the network for your VirtualBox program
 
 Before configuring the virtual machine, we need to tell VirtualBox how it will enable your local virtual machines to interact with their host (the operating system of the machine on which the VM is running).
@@ -93,8 +97,10 @@ Before configuring the virtual machine, we need to tell VirtualBox how it will e
 1. Open **VirtualBox Preferences**
 
 2. Open the tab *Network* > *Host-only Networks*
+
      - Click on the "+" icon.
-     - This creates a network vboxnet0. Select this network, click on the screw driver icon (*edit host-only network*), and set the following options:
+     - This creates a network vboxnet0. 
+     - Select this network, click on the screw driver icon (*edit host-only network*), and set the following options:
 
       - *Adapter* tab
           - IPv4 Address: 192.168.56.1
@@ -109,11 +115,9 @@ Before configuring the virtual machine, we need to tell VirtualBox how it will e
           - *Lower Address Bound:* 192.168.56.101
           - *Upper Address Bound:* 192.168.56.254
 
-## Configuration of the virtual machine
+## Network configuration of the virtual machine
 
 In the VirtualBox main window, select the newly created virtual machine, and click on the **Settings** button. We will successively select the different tabs and configure them. 
-
-### Network
 
 VirtualBox offers many alternative ways to configure network communications between the virtual machine, the host machine, and the external network. 
 
@@ -124,12 +128,9 @@ To get more information about network settings:
     
 We present here one possible way to configure your Virtual machine, but this should be adapted to the particular security/flexibility requirements of the network where the maching has to run. 
 
-
 In the VM settings, select tne *Network* tab. VirtualBox enables you to specify several adapters, each corresponding to one separate network acces (e.g. using an ethernet card + wi-fi connection).
 
-
 ### Adapter 1: Host-only adapter
-
 
 The first network adapter is the safest: the only possible communication is from the host to the guest. This is sufficient to enable you to use the RSAT VM from your computer and only from there. Besides, your VM has no possibility to establish a connection to the external work. 
 
@@ -148,9 +149,7 @@ We strongly recommend to specify a NAT as second adaptor, since this allows your
 - Attached to: *NAT*
 
 
-
-#### Additional networks (optional)
-
+### Additional networks (optional)
 
 **BEWARE!** If you activate the adaptor described below your VM will be visible from external computers in the same network as the host  machine.
 
@@ -161,7 +160,7 @@ See information at: <https://www.virtualbox.org/manual/ch06.html#network_bridged
 - Attached to : *Bridged Adapter*
 - Name: choose an option corresponding to the actual internet connection of the host machine (e.g. ethernet cable, Wi-Fi, ...).
 
-Note: you can also activate a fourth adapter, for example to support both an ethernet card (Adapter 3) and a Wi-Fi connection (Adapter 4). This is particularly interesting for laptop computers. 
+**Note:** you can also activate a fourth adapter, for example to support both an ethernet card (Adapter 3) and a Wi-Fi connection (Adapter 4). This is particularly useful for laptop computers, whose network parameters vary from place to place. 
 
 ****************************************************************
 
@@ -171,7 +170,7 @@ Note: you can also activate a fourth adapter, for example to support both an eth
 
 - A dialog box may appear *"Please select a virtual optic disk ..."*. Click on the small folder icon and locate the disk image of Ubuntu 14.04 that was downloaded in a previous step. Then click the **Start** button. 
 
-Ubuntu is now starting from the installation disk. The next section explain how to configure it. 
+Ubuntu is now starting from the installation disk. The next section explains how to configure it. 
 
 ****************************************************************
 
@@ -181,33 +180,42 @@ Ubuntu is now starting from the installation disk. The next section explain how 
 
 The desktop version of Ubuntu presents the advantage of letting users work directly in the graphical environment of the Ubuntu virtual machine, which is convenient to open non-text result files for visualization (web pages, images) and to analyze the results in other graphical packages (R, openOffice, CytoScape, ...).
 
-Ubuntu install disk downloaded from <http://releases.ubuntu.com/14.04/ubuntu-14.04.4-desktop-amd64.iso>
-
 
 - Start the default installation: Click the button: **Install Ubuntu**
 
-- Preparing to install Ubuntu. Leave all default parameters and click **Continue**.
+- Dialog box **Preparing to install Ubuntu**. 
 
-- Installation type: (leave the default) Erase disk and install Ubuntu, click **Install Now**.
+    - Make sure the option *Download updates while installing Ubuntu* is unchecked (we will update the packages after installation). 
+    - Leave the other parameters unchanged and click **Continue**.
 
-- Where are you:  if you VM has a suitable Internet connexion, your location should be detected automatically. If not, choose the right location.
+- **Installation type**: 
 
-- Keyboard layout: make your choice^[I have a *French - French Macintosh*, so I use it for installation, but I will then add an English keybord.]
+    - Check *Erase disk and install Ubuntu*
+    - Uncheck *Encrypt new Ubuntu installation for security* 
+    - Leave all other options unchanged. 
+    - Click **Install Now**. 
+    - There will be a warning message **Write the changes to disk?**. Click **Continue**. 
 
-NOTE CLAVIER FRANÇAIS: for the French Macintosh keyboard, I spent a lot of time to find the solution to use the 3-component keys
+- **Where are you?**
+
+    If you VM has a suitable Internet connexion, your location should be detected automatically. If not, choose the right location.
+
+- **Keyboard layout**: make your choice^[I have a *French - French Macintosh*, so I use it for installation, but I will later add an English keybord for the distribution.]
+
+**NOTE CLAVIER FRANÇAIS**: for the French Macintosh keyboard, I spent a lot of time to find the solution to use the 3-component keys
 (e.g. alt-shit-L for the pipe character |). The simplest solution: use the **alt key on the RIGHT side of the space bar**.
 
-- Who are you ?
+- **Who are you?**
 
 | Field | Value |
-|-------|-------|
+|--------------|-------------------------------------------------------------------------------|
 | Your name |	RSAT admin |
-| Your computer's name | rsat-vm-2016-03 |
+| Your computer's name | rsat-vm-2016-10 |
 | Pick a username | rsat |
 | Log in automatically | I activate it because this will greatly facilitate the use of the Destkop version |
 | | Click **Continue** |
 
-Ubuntu now installs the system, this should take a few dozens of seconds^[In case you would have you activated the option to update Ubuntu packages in the previous window, the installation can take several minutes].
+Ubuntu now installs the system, this should take a few minutes^[**Note** if you did  activate the option to update Ubuntu packages in the previous window, the installation can take several minutes].
 
 After installation, Ubuntu  displays a message *"Installation is complete. You need to restart ..."*. Click **Restart now**. 
 
@@ -215,15 +223,24 @@ When rebooting, Ubuntu warns you that you need to remove the installation media 
 
 ###  Screen resolution (for the Desktop version)
 
-At first log in, screen resolution is restricted to 640x480 pixels. I found the solution here: <http://www.juanrubio.me/2014/02/ubuntu-trusty-virtualbox-guest-additions/>
+At your first log in, the screen resolution is restricted to 640x480 pixels. 
+
+I found a solution to increase the screen resolution  here: <http://www.juanrubio.me/2014/02/ubuntu-trusty-virtualbox-guest-additions/>
 
 I open a terminal and run the following commands: 
 
 ```
-sudo bash
-apt-get install virtualbox-guest-dkms
 
-apt-get install virtualbox-guest-additions-iso
+sudo apt-get install virtualbox-guest-utils
+sudo apt-get install virtualbox-guest-x11
+sudo apt-get install virtualbox-guest-dkms
+```
+
+
+<!--
+## In version 14.04 I just had this. I should check if the ifconfigapt-get is still requried (it was somehat cumbersome)
+# sudo apt-get install virtualbox-guest-dkms
+# sudo ifconfigapt-get install virtualbox-guest-additions-iso
 software-properties-gtk --open-tab=4
 ```
 
@@ -232,11 +249,15 @@ In the dialog box,
 - check the option **Using x86 Virtualization ...**
 - click **Apply changes** 
 - click **Close**
+-->
 
-Reboot
 
+- You need to **restart** the Virtual machine for the changes to apply. 
 
-## Server version
+- After rebooting, the VM has a resizable screen: if you increase the VM window, the Ubunutu desktop will adapt its size accordingly.
+
+****************************************************************
+## Server version (still for version 14.04, to be checked and adapted for 16.04)
 
 The server version is less comfortable than the desktop version, but
 it should be more economic in terms of hard drive (and CPU/RAM for
@@ -282,6 +303,7 @@ Configure the package manager
   -> ... configuring apt (takes some time)
 
 Configuration taskse1
+
    Install security updates automatically
 
 Software selection : I just install the OpenSSH server, in order to be
@@ -292,34 +314,6 @@ the RSAT bash file with apt-get packages etc.
 Install the GRUB boot loader
 	Yes
 
-****************************************************************
-## Login in in the VM
-
-
-At this stage, the machine is able to boot and get a dynamic IP from
-the network. I login as rsat user and type
-    ifconfig
-to get the IP address. I then open a terminal on the host machine, and run
-   ssh rsat@[IP_OF_MY_VM]
-so I can run the rest of the installation in my familiar environment
-(terminal, keyboard, ...)
-
-
-```
-ssh rsat[myvm]
-```
-
-### Transfer my screenrc preferences
-
-```
-rsync -ruptvl rsat@rsat.ulb.ac.be:.screenrc .
-```
-
-### Transfer RSAT ssh parameters + open an agent that will manage my password for future ssh communications
-rsync -ruptvl rsat@rsat.ulb.ac.be:.ssh .
-ssh-agent > ~/agent
-source ~/agent
-ssh-add
 
 ****************************************************************
 
@@ -384,6 +378,44 @@ ssh rsat@192.168.56.101
 -->
 
 ****************************************************************
+## Remote log in to the VM
+
+
+At this stage, the machine is able to boot and get a dynamic IP from
+the network. I login as rsat user and type
+
+
+```
+ifconfig
+```
+
+to get the IP address. I then open a terminal on the host machine, and run
+
+```
+ssh rsat@[IP_OF_MY_VM]
+```
+
+so I can run the rest of the installation in my familiar environment
+(terminal, keyboard, ...)
+
+
+```
+ssh rsat[myvm]
+```
+
+### Transfer my screenrc preferences
+
+```
+rsync -ruptvl rsat@rsat.ulb.ac.be:.screenrc .
+```
+
+### Transfer RSAT ssh parameters + open an agent that will manage my password for future ssh communications
+rsync -ruptvl rsat@rsat.ulb.ac.be:.ssh .
+ssh-agent > ~/agent
+source ~/agent
+ssh-add
+
+****************************************************************
 ## Install Ubuntu packages
 
 
@@ -395,40 +427,60 @@ The instructions to install Ubuntu packages are in a separate file
 ****************************************************************
 ## Useful commands to manage VirtualBox
 
+It is useful to install some VirtualBox accompanying software on your Ubuntu virtual machine. 
 
-List running VMs
-  VBoxManage list runningvms
+```
+sudo apt-get install virtualbox
+sudo apt-get install virtualbox-dkms
+```
 
-Get the IDs of the virtual machines
-  VBoxManage list runningvms | awk -F"[{}]" '{print $2}'
+### List running VMs
+
+```
+VBoxManage list runningvms
+```
+
+### Get IDs of the virtual machines
+
+```
+VBoxManage list runningvms | awk -F"[{}]" '{print $2}'
+```
 
 For convenience, we store the IP of the machine of interest in an
 environment variable VMID.
   VMID=`VBoxManage list runningvms | awk -F"[{}]" '{print $2}'`
 
 Get properties of the VM
-  VBoxManage guestproperty enumerate ${VMID}
+
+```
+VBoxManage guestproperty enumerate ${VMID}
+```
 
 List information about a given virtual machine
-  VBoxManage showvminfo ${VMID}
 
-Note: that command fives the MAC address, but no IP address.
-  VBoxManage showvminfo ${VMID} | grep '^NIC'
+```
+VBoxManage showvminfo ${VMID}
+```
+
+Note: that command returns the MAC address, but no IP address.
+
+```
+VBoxManage showvminfo ${VMID} | grep '^NIC'
+```
 
 ****************************************************************
 ## Convenient settings (not necessary)
 
-
-
 ### Clipboard sharing between guest and host
 
-For the desktop version of Ubuntu, it is convenient to enable
-copy-paste between the guest and the host.
+For the desktop version of Ubuntu, it is convenient to enable copy-paste between the guest and the host.
 
 - select the VM
-- In the VirtualBox menu, select "Machine -> Settings"
-- In panel "General", select the tab "Advanced".
-     set "Shared clipboard" to "Bidirectional"
+- In the VirtualBox menu, select **Machine -> Settings**
+- In panel "General", select the tab **Advanced**, and set **Shared clipboard** to **Bidirectional**.
+- Optionnally, you can also set the **Drag-n Drop** option to **Bidirectional**. 
+
+
 
 ****************************************************************
 ## Create a generic user for the virtual machine
@@ -466,14 +518,14 @@ sudo useradd --password `openssl passwd -1 -salt xyz tochng`\
 sudo chage -d 0 vmuser
 
 ## Force rsat user to change password at first login
-passwd rsat 
+sudo passwd rsat 
 ## Set it to 'tochng'
 sudo chage -d 0 rsat
 
 
 ## Add sudoer rights to vmuser and rsat users
 sudo chmod 644 /etc/sudoers
-sudo emacs -nw /etc/sudoers
+sudo nano /etc/sudoers
 ## Find the following line
 ##     # User privilege specification
 ##     root    ALL=(ALL:ALL) ALL
@@ -487,17 +539,13 @@ sudo emacs -nw /etc/sudoers
 ## PROBLEMS TO BE FIXED
 
 
-1) Ethernet: optimize solution for a simple setting in the classroom.
+1. Ethernet: optimize solution for a simple setting in the classroom.
 
-2) Problem of disk occupancy: Ubuntu shared memory occupies 2Gb. This
-   can be modified as explained here.
-	http://www.cyberciti.biz/tips/what-is-devshm-and-its-practical-usage.html
+2. Problem of disk occupancy: Ubuntu shared memory occupies 2Gb. This can be modified as explained here.
 
-4) For the desktop version, I should try to use the "Advanced
-   installation" in order to use less disk without loosing too much
-   confort. For example, I could inactivate the support for all the
-   languages that are installed by default (downloading language
-   packs).
+    <http://www.cyberciti.biz/tips/what-is-devshm-and-its-practical-usage.html>
+
+4. For the desktop version, I should try to use the **Advanced installation** in order to use less disk without loosing too much confort. For example, I could inactivate the support for all the    languages that are installed by default (downloading language packs).
 
 
 
@@ -514,6 +562,7 @@ sudo dpkg-reconfigure tzdata
 ### To set up the keyboard (may vary between users who download the VirtualBox VM)
 
 ```
+sudo apt-get install console-data
 sudo dpkg-reconfigure console-data
 ## (for my laptop, mac / Unknown / French /Standard / New)
 ```
