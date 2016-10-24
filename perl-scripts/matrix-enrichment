@@ -164,12 +164,12 @@ package main;
   $seq_counter = 0;
 
   ## Heatmap color palette and classes
-  local $heatmap_color_palette = "YlOrRd";
+  local $heatmap_color_palette = "RdBu";
   local $heatmap_color_classes = 9;
   
   ## Supported heatmap colors (taken from http://colorbrewer2.org/)
   local %supported_heatmap_color_palette = ();
-  local @supported_heatmap_color_palette = qw (YlOrRd YlOrBr YlGnBu YlGn PuRd PuBuGn PuBu OrRd GnBu BuPu BuGn Reds Purples Oranges Greys Greens Blues);
+  local @supported_heatmap_color_palette = qw (YlOrRd YlOrBr YlGnBu YlGn PuRd PuBuGn PuBu OrRd GnBu BuPu BuGn Reds Purples Oranges Greys Greens Blues RdBu);
   local %supported_heatmap_color_palette = ();
   foreach my $palette (@supported_heatmap_color_palette) {
       $supported_heatmap_color_palette{$palette} = 1;
