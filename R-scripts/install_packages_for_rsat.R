@@ -22,7 +22,9 @@ required.packages = c("devtools",
                       "jpeg",
                       "png",
                       "dynamicTreeCut",
-                      "ggplot2"
+                      "ggplot2",
+                      "zoo",
+                      "reshape2"
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
