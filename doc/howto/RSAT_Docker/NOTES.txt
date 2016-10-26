@@ -1,0 +1,49 @@
+## TO DO
+## - split the installation script in order to benefit from the cache during the docker build
+## -> work by layers, with one RUN by step
+##     - apt-get packages
+##     - Perl libraries
+##     - Pyhon libraries
+##     - download and install the RSAT package
+
+## Build the docker from the Dockerfile
+docker build .
+## This returns an ID -> copy/paste it below
+
+##
+docker tag [ID] docker-registry.genouest.org/RSAT/rsat-commands-2016-10
+
+################################################################
+## Push the docker file to bioshadock
+## BEFORE THIS, I must
+## - replace the COPY by "RUN wget"
+## - make sure that the genomes dir is empty
+
+################################################################
+## Get RSAT command-line container from bioshadock
+docker pull docker-registry.genouest.org/RSAT/rsat-commands-2016-10
+
+################################################################
+## Run a test command on the bioshadock container
+docker run docker-registry.genouest.org/RSAT/rsat-commands-2016-10 random-seq -n 10 
+
+## Download a genome on your local hard drive
+mkdir -p /rsat_data/genomes
+docker run -v /rsat_data/genomes:/packages/rsat/public_html/data/genomes docker-registry.genouest.org/RSAT/rsat-commands-2016-10 download-organism -v 1 -org Saccharomyces_cerevisiae
+
+## Test the genome installation: retrieve some sequences
+docker run -v /rsat_data/genomes:/packages/rsat/public_html/data/genomes docker-registry.genouest.org/RSAT/rsat-commands-2016-10 retrieve-seq -v 1 -org Saccharomyces_cerevisiae -q MET4
+
+
+################################################################
+## To build a Web server
+FROM docker-registry.genouest.org/RSAT/rsat-commands-2016-10
+EXPOSE ["80"]
+ENTRYPOINT ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+
+################################################################
+## Push RSAT Web server file to bioshadock
+
+################################################################
+## Get RSAT Web server from bioshadock
+docker pull docker-registry.genouest.org/RSAT/rsat-web-2016-10
