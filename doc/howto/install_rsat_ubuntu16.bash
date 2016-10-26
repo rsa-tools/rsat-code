@@ -12,6 +12,14 @@
 #    add English (Macintosh)
 
 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+##
+## For the installation of Perl package and for third-party Linux
+## packages, I need to temporarily inactivate the antivirus software
+## Kaspersky.
+##
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 ## For Debian, I must set the locales manually
 # export LANGUAGE=en_US.UTF-8
 # export LANG=en_US.UTF-8
@@ -19,18 +27,19 @@
 # locale-gen en_US.UTF-8
 # dpkg-reconfigure locales
 
-#export RSAT_PARENT_PATH=/packages
+## Path for the local installation
 export RSAT_PARENT_PATH=/packages
-export RSAT_RELEASE=2016-10-23 ## Version to be downloaded from the tar distribution
 export RSAT_HOME=${RSAT_PARENT_PATH}/rsat
 
+## URL to download the RSAT distribution
+export RSAT_RELEASE=2016-10-23 ## Version to be downloaded from the tar distribution
+export RSAT_ARCHIVE=rsat_${RSAT_RELEASE}.tar.gz
+export RSAT_DISTRIB_URL=http://pedagogix-tagc.univ-mrs.fr/download_rsat/${RSAT_ARCHIVE}
 
 ## Configuration for the installation
 export INSTALLER=apt-get
 export INSTALLER_OPT="--quiet --assume-yes"
 ## alternative: INSTALLER=aptitude
-#export RSAT_DISTRIB=rsat_2014-08-22.tar.gz
-#export RSAT_DISTRIB_URL=http://rsat.ulb.ac.be/~jvanheld/rsat_distrib/${RSAT_DISTRIB}
 
 ################################################################
 ## Must be executed as root. If you are non-root but sudoer user, you
@@ -68,25 +77,6 @@ echo "Installation device: ${DEVICE}"
 ## steps of the installation
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
-################################################################
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## Still required for Ubuntu 16.04 ? TO BE CHECKED
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## Declare R-cran as source in order to install the latest version of
-## R (3.3.1 on 2016-10) which is required for some R scripts, but not
-## distributed with Ubuntu 14.04 (this Ubuntu release 14.04 comes with
-## R version 3.0.2).
-##
-## I add the row before the original sources.list because there is
-## some problem at the end of the update.
-grep -v cran.rstudio.com /etc/apt/sources.list > /etc/apt/sources.list.bk
-echo "## R-CRAN repository, to install the most recent version of R" > /etc/apt/sources.list.rcran
-echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list.rcran
-echo "" >> /etc/apt/sources.list.rcran
-cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
-sudo add-apt-repository ppa:marutter/rdev
-
 
 ################################################################
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -101,9 +91,18 @@ sudo add-apt-repository ppa:marutter/rdev
 ## apt-get install aptitude
 apt-get update
 df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+
+################################################################
+## I tried to run dist-upgrade because it 'can "intelligently" handle
+## changes in the dependencies system. This includes removing packages
+## that are no longer necessary or resolve conflicts between packages
+## that arose because of changes in the dependencies.'
+## http://askubuntu.com/questions/194651/why-use-apt-get-upgrade-instead-of-apt-get-dist-upgrade
+## HOWEVER, THE PERL UPDATE DOES NOT WORK ANYMORE AFTER THAT !!!
 ${INSTALLER} ${INSTALLER_OPT} upgrade
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgraded.txt
+df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgrade.txt
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+
 
 
 ################################################################
@@ -147,7 +146,6 @@ exfat-fuse
 exfat-utils 
 at
 firefox
-finger
 ncbi-blast+
 "
 
@@ -162,8 +160,6 @@ screen
 make
 g++
 apache2
-php5
-libapache2-mod-php5
 libgdbm-dev
 libgd-tools
 libgd-gd2-perl
@@ -192,13 +188,15 @@ x11-apps
 eog
 ntp
 curl
-r-base
 libcurl4-openssl-dev
 libcurl4-gnutls-dev
 libxml2-dev
 libnet-ssleay-perl
 libcrypt-ssleay-perl
 libssl-dev
+php
+libapache2-mod-php
+finger
 "
 
 ################################################################
@@ -231,6 +229,7 @@ libjson-perl
 libbio-perl-perl
 libdigest-md5-file-perl
 libnet-address-ip-local-perl
+libemail-sender-transport-smtp-tls-perl
 "
 
 
@@ -262,19 +261,38 @@ done
 echo "Log files are in folder ${RSAT_PARENT_PATH}/install_logs"
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
+
+## PROBLEMS WITH Ubuntu 16
+#
+#sudo apt-get install php5 ## E: Package 'php5' has no installation candidate
+#sudo apt-get install libapache2-mod-php5 ## E: Package 'libapache2-mod-php5' has no installation candidate
+# Fix: php (7) is part of the Ubuntu distribution
+# See: http://askubuntu.com/questions/756879/cant-install-php5-on-ubuntu-16-04
+# I NEED TO CHECK IF THE PHP INTERFACES STILL WORK WITH PHP7.
+#
+# 2016/10/24 07:23:02  installing apt-get library python3-rpy2
+# E: Unable to correct problems, you have held broken packages.
+
+
 ## This package has to be installed in an interactive mode (dialog
 ## box)
 ${INSTALLER} install ${INSTALLER_OPT} console-data
 
 ################################################################
-## Specific treatment for some Python libraries
-##
-## A fix for a problem to install scipy with pip: use ${INSTALLER} build-dep 
-## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
-## Note that these dependencies cost 400Mb ! To be checked
-${INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## DOES NOT WORK ON Ubunutu 16.04.1 anmore
+## Not sure it is still required though.
+## TO BE CHECKED
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# ################################################################
+# ## Specific treatment for some Python libraries
+# ##
+# ## A fix for a problem to install scipy with pip: use ${INSTALLER} build-dep 
+# ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
+# ## Note that these dependencies cost 400Mb ! To be checked
+# ${INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
+# df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
+# grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
@@ -289,59 +307,6 @@ grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 ## DONE: installation of Ubuntu packages
 ################################################################
 
-
-################################################################
-## Activate the Apache Web server
-
-
-## We need to replace some lines in the Apache configuration files
-# nano /etc/apache2/sites-available/000-default.conf
-## Uncomment the following line:
-# Include conf-available/serve-cgi-bin.conf
-perl -pi.back -e 's|\#Include conf-available/serve-cgi-bin.conf|Include conf-available/serve-cgi-bin.conf|' /etc/apache2/sites-available/000-default.conf
-
-## To avoid puzzling warning at apache start, set ServerName globally.
-echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-perl -pi.back -e 's|\#AddHandler cgi-script .cgi|AddHandler cgi-script .cgi|' /etc/apache2/mods-available/mime.conf
-## emacs -nw /etc/apache2/mods-available/mime.conf
-## In the file /etc/apache2/mods-available/mime.conf
-## uncomment the line
-##  AddHandler cgi-script .cgi
-##
-
-# echo "" >>  /etc/apache2/mods-available/mime.conf
-# echo "        ## RSAT options" >>  /etc/apache2/mods-available/mime.conf
-# echo "        AddType text/plain .fasta" >>  /etc/apache2/mods-available/mime.conf
-# echo "        AddType text/plain .bed" >>  /etc/apache2/mods-available/mime.conf
-
-## Optional : also associate a plain/text mime type to extensions for
-## some classical bioinformatics files.
-##   AddType text/plain .fasta
-##   AddType text/plain .bed
-## I also uncomment the following, for convenience
-##        AddEncoding x-compress .Z
-##        AddEncoding x-gzip .gz .tgz
-##        AddEncoding x-bzip2 .bz2
-
-## Adapt the PHP parameters
-emacs -nw /etc/php5/apache2/php.ini
-## Modify the following parameters
-##      post_max_size = 100M
-##      upload_max_filesize=200M
-
-
-## The following lines are required to activate cgi scripts.  Found at
-## http://www.techrepublic.com/blog/diy-it-guy/diy-enable-cgi-on-your-apache-server/
-chmod 755 /usr/lib/cgi-bin
-chown root.root /usr/lib/cgi-bin
-a2enmod cgi ## this is apparently required to enable cgi
-service apache2 restart
-
-## DONE: apache server configured and started
-## You can check it by opening a Web connection to 
-## http://[IP]
-################################################################
 
 ################################################################
 ## Install some python libraries with pip
@@ -385,6 +350,7 @@ pip3 install soappy
 df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
+
 # ################################################################
 # ## TO BE CHECKED: TO WE STILL NEED TO DO ALL THE TRICKY STUFF BELOW ?
 # ## NOT SURE: on 2014/08/15 Jv installed a VM on IFB cloud, and the
@@ -400,9 +366,7 @@ grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 # ## You can now quit emacs
 
 apt-get update
-
 apt-get --quiet --assume-yes install libmodule-build-perl
-
 apt-get --quiet --assume-yes install libsoap-wsdl-perl
 
 # ## Note: this is still not sufficient to get SOAP::WSDL to run the two
@@ -431,6 +395,94 @@ apt-get --quiet --assume-yes install libsoap-wsdl-perl
 # quit
 ##
 ## DONE: tricky stuff
+################################################################
+
+
+################################################################
+##
+## Install R
+##
+## This is done after the other packages becayse I need to declare
+## R-cran as source in order to install the latest version of R (3.3.1
+## on 2016-10) which is required for some R scripts, but not
+## distributed with Ubuntu 14.04 (this Ubuntu release 14.04 comes with
+## R version 3.0.2).
+##
+## I add the row before the original sources.list because there is
+## some problem at the end of the update.
+grep -v cran.rstudio.com /etc/apt/sources.list > /etc/apt/sources.list.bk
+echo "## R-CRAN repository, to install the most recent version of R" > /etc/apt/sources.list.rcran
+echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list.rcran
+echo "" >> /etc/apt/sources.list.rcran
+cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+sudo add-apt-repository ppa:marutter/rdev
+apt-get update
+${INSTALLER} install ${INSTALLER_OPT} r-base > ${RSAT_PARENT_PATH}/install_logs/${INSTALLER}_install_r-base.txt
+
+################################################################
+## Activate the Apache Web server
+
+
+## Make a backup of original apache configuration
+zip -ry apacheconf_backup_`date '+%Y-%m-%d_%H%M%S'`.zip /etc/apache2/
+
+## We need to replace some lines in the Apache configuration files
+# nano /etc/apache2/sites-available/000-default.conf
+## Uncomment the following line:
+# Include conf-available/serve-cgi-bin.conf
+perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#Include conf-available/serve-cgi-bin.conf|Include conf-available/serve-cgi-bin.conf|' /etc/apache2/sites-available/000-default.conf
+
+## To avoid puzzling warning at apache start, set ServerName globally.
+echo "" >> /etc/apache2/apache2.conf
+echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+## In the file /etc/apache2/mods-available/mime.conf
+## uncomment the line
+##  AddHandler cgi-script .cgi
+##
+perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddHandler cgi-script .cgi|AddHandler cgi-script .cgi|' /etc/apache2/mods-available/mime.conf
+perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddEncoding x-|AddEncoding x-|' /etc/apache2/mods-available/mime.conf
+
+# echo "" >>  /etc/apache2/mods-available/mime.conf
+# echo "        ## RSAT options" >>  /etc/apache2/mods-available/mime.conf
+# echo "        AddType text/plain .fasta" >>  /etc/apache2/mods-available/mime.conf
+# echo "        AddType text/plain .bed" >>  /etc/apache2/mods-available/mime.conf
+
+## Optional : also associate a plain/text mime type to extensions for
+## some classical bioinformatics files.
+##   AddType text/plain .fasta
+##   AddType text/plain .bed
+## I also uncomment the following, for convenience
+##        AddEncoding x-compress .Z
+##        AddEncoding x-gzip .gz .tgz
+##        AddEncoding x-bzip2 .bz2
+
+
+
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## Adapt the PHP parameters
+## TO DO: adapt for Ubuntu 16.04.1, where php5 has been replaced by php7. 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# emacs -nw /etc/php5/apache2/php.ini
+## Modify the following parameters
+##      post_max_size = 100M
+##      upload_max_filesize=200M
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+## The following lines are required to activate cgi scripts.  Found at
+## http://www.techrepublic.com/blog/diy-it-guy/diy-enable-cgi-on-your-apache-server/
+chmod 755 /usr/lib/cgi-bin
+chown root.root /usr/lib/cgi-bin
+a2enmod cgi ## this is apparently required to enable cgi
+a2dismod mpm_event
+a2enmod mpm_prefork
+service apache2 restart
+
+## DONE: apache server configured and started
+## You can check it by opening a Web connection to 
+## http://[IP]
 ################################################################
 
 ################################################################
@@ -463,38 +515,28 @@ apt-get --quiet --assume-yes install libsoap-wsdl-perl
 ## In the near future, we may use git also for the end-user
 ## distribution.
 
-## RSAT installation is done under the rsat login.
-##
-## We retrieve it in the home folder of the RSAT user, because RSAT
-## user has no write authorization on /packages. In a second time we do a
-## sudo mv to place the rsat folder in /packages.
-#su - rsat
-#cd ${HOME}
 cd ${RSAT_PARENT_PATH}
-git config --global user.mail rsat@rsat-vm-${RSAT_RELEASE}
-git config --global user.name "rsat"
-git config --global core.editor emacs
-git config --global merge.tools meld
-git config --list
-git clone git@depot.biologie.ens.fr:rsat
+echo "Downloading RSAT from  ${RSAT_DISTRIB_URL}"
+wget --no-clobber ${RSAT_DISTRIB_URL}
+tar -xpzf ${RSAT_ARCHIVE}
+cd ${RSAT_HOME}
 
+## Alternative: get RSAT from the git repository. 
+## THIS IS RESERVED TO RSAT DEVELOPING TEAM
+# cd ${RSAT_PARENT_PATH}
+# git config --global user.mail rsat@rsat-vm-${RSAT_RELEASE}
+# git config --global user.name "rsat"
+# git config --global core.editor emacs
+# git config --global merge.tools meld
+# git config --list
+# git clone git@depot.biologie.ens.fr:rsat
 
-## Make a link from home directory to find RSAT home
-ln -fs ${RSAT_HOME} ${HOME}/rsat
 
 ## For users who don't have an account on the RSAT git server, the
 ## code can be downloaded as a tar archive from the Web site.
-##
-## This is however less convenient than using the git clone, which
-## greatly facilitates updates.
-#
-# cd ${RSAT_PARENT_PATH}
-# mkdir -p ${RSAT_HOME}
-# wget ${RSAT_DISTRIB_URL}
-# tar -xpzf ${RSAT_DISTRIB}
-# rm -f   ${RSAT_DISTRIB} ## To free space
-# df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_downloaded.txt
-# cd ~; ln -fs ${RSAT_HOME} rsat
+
+## Make a link from home directory to find RSAT home
+ln -fs ${RSAT_HOME} ${HOME}/rsat
 
 ## Metabolic pathway tools installation
 ##
@@ -506,7 +548,9 @@ ln -fs ${RSAT_HOME} ${HOME}/rsat
 
 ## Run the configuration script, to specify the environment variables.
 cd ${RSAT_HOME}
-perl perl-scripts/configure_rsat.pl --auto
+perl perl-scripts/configure_rsat.pl --auto rsat_site=rsat-vb-2016-10 \
+    ucsc_tools=0 ensembl_tools=0 phylo_tools=0 compara_tools=0 \
+    rsat_server_admin=RSAT_admin
 
 ## Parameters to change
 ##   rsat_site   rsat-vm-2016-03
@@ -548,7 +592,6 @@ rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 ##
 ## 1) limxml2-dev is required to compile the Perl module XML::LibXML
 # sudo apt-get install limxml2-dev 
-
 ## 2) For some modules, installation failed until I used "force"
 ##	 force install SOAP::WSDL
 ##	 force install SOAP::Lite
@@ -562,17 +605,16 @@ rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 ##	sudo apt-get install libssl-dev
 
 
-## The first time we use cpan, we apparently need to open it manually
-## in order to configure and update it.
-cpan
-install YAML
-## I am not sure, but I think that this command is useful to properly install the subsequent packages.
-install CPAN 
-reload cpan
-quit
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## NOTE: at this stage I had to inactivate the Kaspersky antivirus because it
+## prevents CPAN from downloading and installing Perl modules !
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+cpan YAML ## Answer "yes" !!!
+cpan CPAN ## Update CPAN
 
 ## Set working directory to RSAT
-cd $RSAT
+cd ${RSAT}
 
 ## Get the list of Perl modules to be installed
 make -f makefiles/install_rsat.mk  perl_modules_list
@@ -594,11 +636,9 @@ grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;'
 MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | cut -f 2 | xargs`
 echo "Missing Perl modules:     ${MISSING_PERL_MODULES}"
 
-
-## Beware: the _noprompt suffix is
-## optional. It has the advantage to avoid for the admin to confirm
-## each installation step, but the counterpart is that errors may be
-## overlooked.
+## Beware: the _noprompt suffix is optional. It has the advantage to
+## avoid for the admin to confirm each installation step, but the
+## counterpart is that errors may be overlooked.
 make -f makefiles/install_rsat.mk perl_modules_install PERL_MODULES="${MISSING_PERL_MODULES}"
 
 ## Check if all required Perl modules have now been correctly installed
@@ -623,11 +663,12 @@ df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modu
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 ################################################################
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## IFB CLOUD ONLY
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## Adapt RSAT icon for IFB cloud (should be adapted depending on VM
 ## type).
-cp ${RSAT}/public_html/images/ifb-logo-s.jpg   ${RSAT}/public_html/images/RSAT_icon.jpg
-
-
+## cp ${RSAT}/public_html/images/ifb-logo-s.jpg   ${RSAT}/public_html/images/RSAT_icon.jpg
 
 ################################################################
 ## Configure RSAT web server
@@ -641,27 +682,28 @@ sudo rsync -ruptvl RSAT_config.conf /etc/apache2/sites-enabled/rsat.conf
 ## only function will be to host the RSAT server, I replace the normal
 ## default web folder by RSAT web folder. 
 ##
-emacs -nw /etc/apache2/sites-available/000-default.conf
-## Comment the line with the default document root (should appear as
-## such in the original config):
-##        DocumentRoot /var/www/html                                                                            
-## And write the following line:
-##        DocumentRoot /packages/rsat/public_html
+perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|DocumentRoot /var/www/html|DocumentRoot /packages/rsat/public_html|' /etc/apache2/sites-available/000-default.conf
+
 apache2ctl restart
 ## The server will now immediately display RSAT home page when you
 ## type its IP address.
-
 
 ## You should now test the access to the RSAT Web server, whose URL is
 ## in the environment variable RSAT_WWW
 echo $RSAT_WWW
 
-## If the value is "auto", get the URL as follows
-export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
-# export IP=192.168.56.101
-echo ${IP}
-export RSAT_WWW=http://${IP}/rsat/
-echo $RSAT_WWW
+
+################################################################
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## THIS DOES NOT WORK ON VirtualBox VM 16.04.1
+## CHECK IF I STILL NEED IT
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# ## If the value is "auto", get the URL as follows
+# export IP=`ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
+# # export IP=192.168.56.101
+# echo ${IP}
+# export RSAT_WWW=http://${IP}/rsat/
+# echo $RSAT_WWW
 
 ################################################################
 ## Next steps require to be done as rsat administrator user
@@ -683,13 +725,13 @@ sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat
 ##
 ## replace the data directory by a link to
 ## a separate disk containing all RSAT data.
-export RSAT_DATA_DIR=/root/mydisk/rsat_data
-cd ${RSAT}/public_html
-mv data/* ${RSAT_DATA_DIR}/
-mv data/.htaccess ${RSAT_DATA_DIR}/
-rmdir data
-ln -s ${RSAT_DATA_DIR} data
-cd $RSAT
+# export RSAT_DATA_DIR=/root/mydisk/rsat_data
+# cd ${RSAT}/public_html
+# mv data/* ${RSAT_DATA_DIR}/
+# mv data/.htaccess ${RSAT_DATA_DIR}/
+# rmdir data
+# ln -s ${RSAT_DATA_DIR} data
+# cd $RSAT
 
 ## Install two model organisms, required for some of the Web tools.
 download-organism -v 1 -org Saccharomyces_cerevisiae \
@@ -710,11 +752,10 @@ sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat
 ################################################################
 
 ## Installation of R packages
-cd $RSAT; make -f makefiles/install_rsat.mk install_r_packages
+cd $RSAT
 
-## More convenient: the following command does the same (install R
-## packages) + compile the C programs
-cd $RSAT; make -f makefiles/install_rsat.mk update
+make -f makefiles/install_rsat.mk install_r_packages
+
 
 # ## The command R CMD INSTALL apparently does not work at this stage.
 # ##	root@rsat-tagc:/workspace/rsat# R CMD INSTALL reshape
@@ -785,6 +826,10 @@ gs --version
 retrieve-seq -org Saccharomyces_cerevisiae -all -from 0 -to +2 \
     | oligo-analysis -l 3 -1str -return occ,freq -sort
 
+## Check that the Perl graphical libraries are properly installed
+XYgraph -help
+feature-map -help
+
 ################################################################
 ## Configure the SOAP/WSDL Web services
 
@@ -793,33 +838,38 @@ retrieve-seq -org Saccharomyces_cerevisiae -all -from 0 -to +2 \
 ## web services are used for multi-tierd architecture of some Web
 ## tools (retrieve-ensembl-seq, NeAT).
 cd $RSAT
-#echo $RSAT_WS
 
-## Get tehe current IP address
-export IP=`/sbin/ifconfig eth0 | awk '/inet /{print $2}' | cut -f2 -d':'`
+## Get the current IP address
+export IP="$(ifconfig | grep 'inet addr' |head -1 | cut -d ':' -f 2| cut -d ' ' -f 1)"
 # export IP=192.168.56.101
 echo ${IP}
-export  RSAT_WS=http://${IP}/rsat/
-## Initialize the Web services stub. 
-make -f makefiles/init_rsat.mk ws_init RSAT_WS=${RSAT_WS}
 
-## After this, re-generate the web services stubb, with the following
-## command.
-make -f makefiles/init_rsat.mk ws_stub RSAT_WS=${RSAT_WS}
+## Set a fixed IP address for the web services
+perl ${RSAT}/perl-scripts/configure_rsat.pl auto RSAT_WS=http://${IP}/rsat RSAT_WWWW=http://${IP}/rsat 
+#perl ${RSAT}/perl-scripts/configure_rsat.pl auto RSAT_WS=auto RSAT_WWWW=auto
+# rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 
-## Test the local web services
-make -f makefiles/init_rsat.mk ws_stub_test
-
-## Test RSAT Web services (local and remote) without using the
-## SOAP/WSDL stubb (direct parsing of the remote WSDL file)
-make -f makefiles/init_rsat.mk ws_nostub_test
+################################################################
+## Install the Web services
+cd ${RSAT}
+make -f makefiles/init_rsat.mk ws_param  ## Check parameters to generate the stub for the Web services
+make -f makefiles/init_rsat.mk ws_init  ## Initialize the stub for the Web services
+make -f makefiles/init_rsat.mk ws_stub  ## Generate the stub for the Web services
+make -f makefiles/init_rsat.mk ws_stub_test  ## Test the stub for the Web services
+make -f makefiles/init_rsat.mk ws_nostub_test  ## Test Web services with no stub
 
 ## Test the program supported-organisms-server, which relies on Web
 ## services without stub
-supported-organisms-server -url ${RSAT_WS} | wc
+supported-organisms-server -url http://${IP}/rsat/ | wc
 supported-organisms-server -url http://localhost/rsat/ | wc
 supported-organisms-server -url http://rsat-tagc.univ-mrs.fr/ | wc
 
+
+################################################################
+## We now change the owner of the RSAT package to the rsat user.
+cd ${RSAT_PARENT_PATH}
+chown -R rsat.rsat ${RSAT_HOME}
+find   ${RSAT_HOME}/public_html/tmp/  -maxdepth 1 -mindepth 1 -type d -exec rm -rf {} \;
 
 ################################################################
 ## tests on the Web site
@@ -842,6 +892,14 @@ supported-organisms-server -url http://rsat-tagc.univ-mrs.fr/ | wc
 ##
 ## - footprint-discovery to check the tools depending on homology
 ##   tables (blast tables).
+
+
+################################################################
+## Remove unnecessary files to clean space
+cd ${RSAT_PARENT_PATH}; rm -f  ${RSAT_ARCHIVE} ## Free space
+cd ${RSAT}; make -f makefiles/server.mk clean_tmp ## Clean temporary directory
+rm -rf ${RSAT}/app_sources
+rm -rf ${RSAT}/public_html/tmp/serialized_genomes
 
 
 ################################################################
@@ -962,3 +1020,11 @@ sudo emacs -nw /etc/sudoers
 
 ## Stop the machine (NOW)
 halt
+
+
+################################################################
+## Install gene-regulation package
+
+export GR_PARENT_PATH=/packages
+mkdir -p ${GR_PARENT_PATH}
+cd ${GR_PARENT_PATH}
