@@ -10,15 +10,18 @@ dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 source(file.path(dir.rsat, 'R-scripts/config.R'))
 
 ## Load required libraries
-required.packages = c("IRanges",
+required.packages <- c("IRanges",
                       "RColorBrewer",
                       "gplots",
-                      "jpeg",
                       "png",
                       "amap",
                       "ggplot2",
                       "grid",
+                      "zoo",
+                      "reshape2",
                       "dynamicTreeCut")
+
+# sapply(required.packages, function(x){library(x, character.only = TRUE)})
 
 ## List of RSAT-specific packages to be compiled on the server
 for (pkg in c(required.packages)) { #required.packages.bioconductor
@@ -164,12 +167,13 @@ dir.create(covered.tables.dir, showWarnings = FALSE)
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo")
 # sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs_matrix_scan_sequence_names.tab"
 
-
 # matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_matrix_scan_results_PARSED.tab"
 # prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3"
 # ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_TF_ID_name_correspondence.tab"
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters")
 # sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_matrix_scan_sequence_names.tab"
+# seq.length <- 2000
+# bin <- 50
 
 ##############################
 ## Read matrix-scan table 1
@@ -255,9 +259,10 @@ if(off.set == 0){
   }
 }
 
-## Adapt the original BS position realtive to the limits 
+## Adapt the original BS position relative to the limits 
 ## calculated in the step before
 matrix.scan.results$bspos <- matrix.scan.results$bspos + limits
+# matrix.scan.results$bspos_left <- matrix.scan.results$bspos + (limits*2)
 
 ID.names.tab <- ID.to.names.correspondence.tab
 ID.names <- read.table(ID.names.tab, sep = "\t")
@@ -323,29 +328,14 @@ thr <- sapply(1:length(matrix.names), function(m){
   TFBSs.per.seq.file <- paste(basename(prefix), "_TFBSs_per_seq/", matrix.query, "_TFBSs_per_seq", sep = "")
   
   aa <- data.frame(nb.seq = nb.hits.per.sequence, nb.hits = as.numeric(names(nb.hits.per.sequence)))
-  ggplot(data=aa, aes(y = nb.seq, x=nb.hits, fill=nb.seq)) +
-    geom_bar(stat="identity", position=position_dodge()) +
-    labs(title="Number of hits", y = "Number of sequences", x="Number of TFBSs")
+  ggplot(data=aa, aes(y = nb.seq, x=nb.hits)) +
+    geom_bar(aes(fill=nb.seq), stat="identity", position=position_dodge()) +
+    labs(title="Number of hits", y = "Number of sequences", x="Number of TFBSs") +
+    geom_text(aes(label=nb.seq), vjust=-0.15, color="black", size=3)
 
   suppressMessages(ggsave(paste(TFBSs.per.seq.file, ".jpeg", sep = "")))
   suppressMessages(ggsave(paste(TFBSs.per.seq.file, ".pdf", sep = "")))
     
-    # plot(y = as.vector(nb.hits.per.sequence),
-    #      x = as.numeric(names(nb.hits.per.sequence)),
-    #      type = "l",
-    #      col = "darkgreen",
-    #      lty = 1,
-    #      lwd = 3,
-    #      main = "Number of predicted TFBS per sequence",
-    #      xlab = "Number of predicted TFBS",
-    #      ylab = "Number of sequences"
-    #      )
-    # legend("topright",
-    #        legend= paste("Putative TFBSs: ", as.numeric(names(nb.hits.per.sequence)), " - Sequences: ", as.vector(nb.hits.per.sequence), sep = ""),
-    #        bg="white",
-    #        cex = 0.65
-    # )
-  
   ## Get the number of putative TFBSs and the number of sequences with 
   ## at least one match of the query matrix
   nb.TFBSs <- dim(matrix.query.selection)[1]
@@ -384,20 +374,6 @@ thr <- sapply(1:length(matrix.names), function(m){
     
   suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".pdf", sep = "")))
   suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".jpeg", sep = "")))
-    
-    #     plot(x = matrix.query.classes.selection$bspos,
-    #          y = matrix.query.classes.selection$Pval.minlog10,
-    #          # ylim = c( min(matrix.query.selection$Pval.minlog10, na.rm = TRUE), max(matrix.query.selection$Pval.minlog10, na.rm = TRUE)+0.5),
-    #          ylim = c(min.pval.minus.log10, round(max.pval.minus.log10)),
-    #          xlim = c(-limits, limits),
-    #          main = paste("Distribution of TFBSs of ", matrix.query, sep = ""),
-    #          ylab = "-log10(pval) TFBSs",
-    #          xlab = "position (nt)",
-    #          col = classes.to.colors[[pclass]],
-    #          pch = "o",
-    #          cex = 1.5,
-    #          panel.first=grid(col = "grey", lty = "solid") 
-    #     )
 })
 rm(thr)
 
@@ -577,10 +553,6 @@ write.table(counts.per.bin.table, file = counts.tab.file, quote = FALSE, col.nam
 ## it takes the table calculated in the previous section     ##
 ###############################################################
 
-# if(input.count.table == 0){
-#   counts.per.bin.table <- read.csv("")
-# }
-
 #####################################
 ## Initialize (pre-allocated) list
 feature.attributes <- vector("list", dim(counts.per.bin.table)[1])
@@ -594,12 +566,6 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   #   print(m)
   counts.per.bin <- counts.per.bin.table[m,]
   
-  # plot(x = 1:12, y = counts.per.bin.table[1,], type = "l", ylim = c(0,100))
-  # plot(x = 1:12, y = counts.per.bin.table[2,], type = "l", ylim = c(0,100))
-  
-  # case1 <- round(counts.per.bin.table[2,]/sum(counts.per.bin.table[2,]), digits = 2)
-  # mean(abs(counts.per.bin.table[2,] - min(counts.per.bin.table[2,])) )
-  
   ## Select the matches of the query feature
   feature.query <- rownames(counts.per.bin.table)[m]
   feature.attributes[[m]][["feature_id"]] <<- feature.query
@@ -609,40 +575,9 @@ thrash <- sapply(1:dim(counts.per.bin.table)[1], function(m){
   ## are distributed homogenously along the sequences
   chi <- chisq.test(counts.per.bin, correct = TRUE)
   
-  ## The expected values are calculated in the next way:
-  ## (2 * P-val) * (Sequence_length - Motif_length + 1 )
-  # motif.name <- rownames(counts.per.bin.table)[m]
-  # nb.seq <- seq.count.per.motif[[motif.name]]
-  # expected <- (p.val * 2 * seq.length * nb.seq)
-  # nb.bins <- dim(counts.per.bin.table)[2]
-  # expected <- round(expected/nb.bins)
-  # expected <- rep(expected, times= nb.bins)
-  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/expected))
-  
-  ## The expected values are calculated in the next way:
-  ## (sum(nb.sites) /  Nb.seq/Nb.bin)
-  # motif.name <- rownames(counts.per.bin.table)[m]
-  # nb.hits <- sum(counts.per.bin)
-  # nb.seq <- seq.count.per.motif[[motif.name]]
-  # nb.bins <- dim(counts.per.bin.table)[2]
-  # # expected <- round(nb.hits / (nb.seq/nb.bins) )
-  # 
-  # expected <- round((nb.hits/nb.seq)*nb.bins)
-  # 
-  # expected <- rep(expected, times= nb.bins)
-  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/expected))
-  
   ## The expected values are calculated from the Observed values
   feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
-  
-  # nb.bins <- dim(counts.per.bin.table)[2]
-  # tfbd.med <- median(chi[[6]]) + 1
-  # expected <- rep(tfbd.med, times = nb.bins)
-  
-  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(log2(chi[[6]]/(chi[[7]])))
-  
-  # feature.log2.ratio[[m]][["feature_id"]] <<- as.vector(round(log2(counts.per.bin/median(counts.per.bin)), digits = 2))
-  
+
   ## Chi-squared
   cs.val <- round(chi[[1]], digits = 3)
   feature.attributes[[m]][["chi_squared"]] <<- cs.val
@@ -689,10 +624,34 @@ colnames(feature.log2.ratio) <- as.character(data.frame(windows)$start)
 ####################################
 verbose(paste("Calculating the motif profile clusters"),1)
 
+motifs <- as.vector(unique(matrix.scan.results$ft_name))
+matrix.scan.results$bspos.left <- matrix.scan.results$bspos + limits
+
+raw.counts.all.motifs <- sapply(motifs, function(m){
+  
+  sites.m <- as.vector(matrix.scan.results[which(matrix.scan.results$ft_name == m),"bspos.left"])
+  raw.counts.m <- tabulate(sites.m, nbins = 2000)
+  return(raw.counts.m)
+})
+raw.counts.all.motifs <- as.data.frame(raw.counts.all.motifs)
+
+## Mean of TFBSs per bin
+mean.counts.all.motifs.bins <- rollapply(raw.counts.all.motifs, bin, mean, na.rm = TRUE, by = bin, partial = TRUE, align="left")
+
+all.columns.trimmed.means <- colSums(mean.counts.all.motifs.bins, na.rm = TRUE) 
+for (m in 1:ncol(mean.counts.all.motifs.bins)){
+  # row.mean <- mean(mean.counts.all.motifs.bins[,m],trim=0.3)
+  row.mean <- median(mean.counts.all.motifs.bins[,m])
+  all.columns.trimmed.means[m] <- row.mean
+}
+
+df_by_bins_norm = t(t(mean.counts.all.motifs.bins)-all.columns.trimmed.means)
+
 #############################
 ## Define profile clusters
-tree.profiles <- hclust(Dist(feature.log2.ratio, method = "correlation"), method = "ward.D2")
+# tree.profiles <- hclust(Dist(feature.log2.ratio, method = "correlation"), method = "ward.D2")
 # ordered.names.tree.profiles <- tree.profiles[[4]][tree.profiles[[3]]]
+tree.profiles <- hclust(Dist(t(df_by_bins_norm), method = "correlation"), method = "complete")
 clusters.tree.profiles <- cutreeDynamic(tree.profiles, minClusterSize = 1, method = "tree")
 names(clusters.tree.profiles) <- tree.profiles[[4]]
 
@@ -751,6 +710,23 @@ rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.co
 
 log2.tab <- as.matrix(feature.log2.ratio)
 log2.tab[is.infinite(log2.tab)] <- 0
+
+## Remove noisy extremities
+df.limits <- round(range(df_by_bins_norm))
+df.limits.abs <- abs(df.limits)
+
+if (df.limits.abs[1] > df.limits.abs[2]){
+  df_by_bins_norm[df_by_bins_norm < (-df.limits[2])] <- (-df.limits[2])
+  df_by_bins_norm[df_by_bins_norm > df.limits[2]] <- df.limits[2]
+} else {
+  df_by_bins_norm[df_by_bins_norm > (-df.limits[1])] <- (-df.limits[1])
+  df_by_bins_norm[df_by_bins_norm < df.limits[1]] <- df.limits[1]
+}
+
+df_by_bins_norm.t <- t(df_by_bins_norm)
+colnames(df_by_bins_norm.t) <- colnames(counts.per.bin.table)
+
+log2.tab <- df_by_bins_norm.t
 
 ## Print the heatmap
 out.format <- c("pdf", "jpg")
@@ -955,65 +931,27 @@ if(individual.plots == 1){
     feature.query <- rownames(frequency.per.bin.table)[f]
     # matrix.query.ID <- ID.names[,1][which(ID.names[,2] == feature.query)][1]
     
-    for(pf in print.formats){
+    file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile", sep = "")
       
-      if(pf == "pdf"){
-        pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile.pdf", sep = "")
-        pdf(pdf.file.name)
-      } else {
-        jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile.jpeg", sep = "")
-        jpeg(jpeg.file.name)
-      }
+    y.val <- frequency.per.bin.table[f,]
+    x.val <- as.numeric(colnames(frequency.per.bin.table))
       
-      y.val <- frequency.per.bin.table[f,]
-      x.val <- as.numeric(colnames(frequency.per.bin.table))
+    logo.file <- paste(logo.folder, feature.query, "_logo.png", sep = "")
+    logo <- readPNG(logo.file)
+    logo.roster <- rasterGrob(logo, interpolate = TRUE)
       
-      ## Draw the lines for the active promoters 
-      # lines(x = x.val, y = y.val, )
-      
-      plot(x = x.val,
-           y = y.val,
-           type = "l",
-           col = "#00BFC4",
-           lty = 1, 
-           lwd = 3,
-           ylim = c(0, max(max.y)),
-
-           ## Labels
-           main = paste("Motif:", feature.query),
-           xlab = "Distance to center",
-           ylab = "TFBSs fraction",
-           ## Hide x-axis
-           xaxt='n'
-      ) 
-      
-      ## Draw the grid
-      abline(v=(x.val), col="lightgray", lty="dotted")
-      abline(h=(seq(from = 0, to = 1, by = 0.01)), col="lightgray", lty="dotted")
-      
-      ## Draw the TSS (+1) position
-      abline(v = 0, col="#045a8d", lwd = 2, lty = 2)
-      
-      ## Set x-axis values 
-      axis(side = c(1,2,3,4), at = as.character(x.val), labels = as.character(x.val))
-      
-      # ## Draw the lines for the active promoters 
-      # lines(x = x.val, y = y.val, type = "l", col = "#00BFC4", lty = 1, lwd = 3)
-      
-      ## Draw the legend
-      legend("topleft", legend = c(paste(feature.query , "profile"), "Center"), fill = c("#00BFC4", "#045a8d"), bty="o", bg="white")
-      
-      logo.file <- paste(logo.folder, feature.query, "_logo.jpeg", sep = "")
-      logo <- readJPEG(logo.file)
-      rasterImage(logo, 
-                  xleft = limits - (bin*3),
-                  xright = limits, 
-                  ybottom = max.y - 0.1,
-                  ytop = max.y - 0.05)
-      trash <- dev.off()
-    }
+    xy.df <- data.frame(x = x.val, y = y.val)
+    ggplot(xy.df, aes(x=x, y=y)) +
+        geom_line(colour = "#00BFC4", size = 3) +
+        ylim(0, max(max.y)) +
+        labs(title=paste(feature.query, " binding profile", sep = ""), y = "Frequency of TFBSs", x = "Position") +
+        geom_rug(position='jitter', sides="l") +
+        geom_area(fill = "#00BFC4", alpha=0.35) + 
+        annotation_custom(logo.roster, xmax = limits, xmin = limits - sum(abs(range(xy.df$x)))/5, ymin = max.y - 0.01, ymax = max.y - 0.075)
+    
+    suppressMessages(ggsave(paste(file.name, ".jpeg", sep = "")))
+    suppressMessages(ggsave(paste(file.name, ".pdf", sep = "")))
   })
-  # dev.off()    
 }
 
 
@@ -1585,3 +1523,76 @@ write(html.report, file = html.report.file)
 
 # grep -v '^;' matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments.tab | awk -F '\t'  ' $2!="limit" && ($11 >= 4) {print $1"\t"$3"\t"($6+$5)/2"\t"$9} ' > matrix_scan_pval_1e-3_GAF_Jaspar_Insects_bg_mkv_2_random_fragments_PARSED.tab
 # cat /home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/bin/enrichment_by_scan/Plot_matches_extended_promoters.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " matrix.scan.active = '/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/test_metrics_with_yeast_data/CapStarrseq_Active_Prom_K562_merge_IP_extended_matrix_scan_pval_1e-3_HOCOMOCO_bg_mkv_2.tab'; matrix.scan.inactive = '/home/jcastro/Documents/JaimeCastro/PhD/Human_promoters_project/test_metrics_with_yeast_data/CapStarrseq_Active_Prom_K562_merge_IP_extended_matrix_scan_pval_1e-3_HOCOMOCO_bg_mkv_2.tab'; p.val = '1e-4'; bin = '50'; pdf.file = './test.pdf'"
+
+
+# tt <- scale(t(feature.log2.ratio))
+# melted.feature.log2.ratio <- melt(tt)
+# ggplot(data = melted.feature.log2.ratio, aes(x=Var1, y=Var2)) +
+#   geom_raster(aes(fill = value))
+# 
+# ord <- hclust( Dist(t(tt), method = "correlation"), method = "complete" )$order
+# 
+# pd <- as.data.frame( t(tt ))
+# pd <- pd[ord,]
+# pd.m <- melt(t(pd))
+# 
+# 
+# ggplot(data = pd.m, aes(x=Var1, y=Var2)) +
+#   geom_raster(aes(fill = value)) +
+#   scale_fill_gradient2(low="blue", mid = "white", high="red")
+# 
+# 
+# 
+# 
+# raw.counts <- counts.per.bin.table[403,]
+# mean.counts <- mean(raw.counts)
+# 
+# normal <- apply(counts.per.bin.table,1,function(x){
+#   
+#   x.mean <- mean(x)
+#   return(x-x.mean)
+#   
+# })
+# 
+# ord <- zz$rowInd
+# # hclust( Dist(counts.per.bin.table, method = "correlation"), method = "ward.D2" )$order
+# 
+# # tt <- scale(normal[ord,])
+# 
+# tt <- normal[,ord]
+# melted.feature.log2.ratio <- melt(tt)
+# 
+# ggplot(data = melted.feature.log2.ratio, aes(x=Var1, y=Var2)) +
+#   geom_raster(aes(fill = value)) +
+#   scale_fill_gradient2(low="blue", mid = "white", high="red")
+# 
+# zz <- heatmap.2(t(normal),
+#           dendrogram = "row",
+#           
+#           Rowv = TRUE,
+#           Colv=FALSE,
+#           
+#           xlab = "",
+#           ylab = "",
+#           
+#           hclustfun = function(d){hclust(d, method="ward.D2")},
+#           distfun = function(x) Dist(x,method = 'correlation'),
+#           
+#           ## Color
+#           # col = coocurrence.palette,
+#           # breaks = domain,
+#           
+#           ## Trace
+#           trace = "none",
+#           
+#           ## Key control
+#           key = TRUE,
+#           keysize = 1.5,
+#           density.info = "none",
+#           key.xlab = "% sequences with the two motifs",
+#           key.ylab = "",
+#           key.title = "",
+#           # cexRow = 0.25
+#           offsetCol = 0.25
+# 
+#           )
