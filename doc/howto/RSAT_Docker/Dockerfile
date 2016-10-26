@@ -23,7 +23,6 @@ LABEL    rsat.description="Regulatory Sequence Analysis Tools (RSAT)" \
     rsat.tags="implemented-in::perl, role::cis-regulatory elements,motif discovery" \ 
     bioshadock.Vendor="RSAT"
 
-
 ## Avoid the red messages at build by setting non-interactive mode.
 ## See: https://github.com/phusion/baseimage-docker/issues/58
 ENV DEBIAN_FRONTEND noninteractive
@@ -33,19 +32,25 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
 RUN apt-get install -y apt-utils
 RUN apt-get install -y wget
-RUN apt-get install -y make
 
-# RUN wget http://download.rsat.eu/install_rsat_ubuntu16/
+## FOR LATER (once the installation scripts will be finished and tested locally)
+## RUN wget http://download.rsat.eu/install_rsat_ubuntu16/
 
 ## Copy the install scripts at the root of the container
-COPY install_rsat_ubuntu16 install_rsat_ubuntu16
+COPY . install_rsat_ubuntu16
 
 ## Start the installation.
 ## Each time a RUN succeeds, it is cahced -> does not need to be
 ## re-executed for next build.
 ## To force a re-build, try: 
 ##      docker build --no-cache .
-RUN bash install_rsat_ubuntu16/install_apt-get_packages.bash
+WORKDIR /install_rsat_ubuntu16
+RUN bash 00_config.bash
+RUN bash 01_ubuntu16.4_packages.bash
+RUN bash 02_python_packages.bash
+RUN bash 04_download_rsat.bash
+RUN bash 05_install_rsat.bash
+
 # RUN bash install_rsat_ubuntu16/download_rsat_package.bash
 # RUN bash install_rsat_ubuntu16/install_rsat_package.bash
 # RUN bash install_rsat_ubuntu16/install_perl_packages.bash
