@@ -32,7 +32,7 @@ export RSAT_PARENT_PATH=/packages
 export RSAT_HOME=${RSAT_PARENT_PATH}/rsat
 
 ## URL to download the RSAT distribution
-export RSAT_RELEASE=2016-10-23 ## Version to be downloaded from the tar distribution
+export RSAT_RELEASE=2016-10-26 ## Version to be downloaded from the tar distribution
 export RSAT_ARCHIVE=rsat_${RSAT_RELEASE}.tar.gz
 export RSAT_DISTRIB_URL=http://pedagogix-tagc.univ-mrs.fr/download_rsat/${RSAT_ARCHIVE}
 
@@ -662,13 +662,6 @@ more check_perl_modules_eval.txt
 df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
-################################################################
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## IFB CLOUD ONLY
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## Adapt RSAT icon for IFB cloud (should be adapted depending on VM
-## type).
-## cp ${RSAT}/public_html/images/ifb-logo-s.jpg   ${RSAT}/public_html/images/RSAT_icon.jpg
 
 ################################################################
 ## Configure RSAT web server
@@ -718,20 +711,6 @@ sudo df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat
 ## !!!! I HAVE A PROBLEM TO COMPILE KWALKS. SHOULD BE CHECKED !!!!!
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## !!!!!!!!!!!!!!!!      ONLY FOR THE IFB CLOUD    !!!!!!!!!!!!!!!!
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-##
-## replace the data directory by a link to
-## a separate disk containing all RSAT data.
-# export RSAT_DATA_DIR=/root/mydisk/rsat_data
-# cd ${RSAT}/public_html
-# mv data/* ${RSAT_DATA_DIR}/
-# mv data/.htaccess ${RSAT_DATA_DIR}/
-# rmdir data
-# ln -s ${RSAT_DATA_DIR} data
-# cd $RSAT
 
 ## Install two model organisms, required for some of the Web tools.
 download-organism -v 1 -org Saccharomyces_cerevisiae \
@@ -866,12 +845,6 @@ supported-organisms-server -url http://rsat-tagc.univ-mrs.fr/ | wc
 
 
 ################################################################
-## We now change the owner of the RSAT package to the rsat user.
-cd ${RSAT_PARENT_PATH}
-chown -R rsat.rsat ${RSAT_HOME}
-find   ${RSAT_HOME}/public_html/tmp/  -maxdepth 1 -mindepth 1 -type d -exec rm -rf {} \;
-
-################################################################
 ## tests on the Web site
 
 ## Run the demo of the following tools
@@ -894,28 +867,102 @@ find   ${RSAT_HOME}/public_html/tmp/  -maxdepth 1 -mindepth 1 -type d -exec rm -
 ##   tables (blast tables).
 
 
+
+
 ################################################################
+###########   BEFORE DELIVERY for VirtualBox         ###########
+################################################################
+
 ## Remove unnecessary files to clean space
 cd ${RSAT_PARENT_PATH}; rm -f  ${RSAT_ARCHIVE} ## Free space
 cd ${RSAT}; make -f makefiles/server.mk clean_tmp ## Clean temporary directory
 rm -rf ${RSAT}/app_sources
 rm -rf ${RSAT}/public_html/tmp/serialized_genomes
-
+find   ${RSAT_HOME}/public_html/tmp/  -maxdepth 1 -mindepth 1 -type d -exec rm -rf {} \;
+rm -rf public_html/tmp/www-data ## Clean Apache user temporary directory
+rm -rf public_html/tmp/serialized_genomes ## Clean serialized organisms
 
 ################################################################
-## Install the cluster management system (torque, qsub, ...)
+## Last step before delivery: reset the passowrd of the RSAT
+## administrator user (rsat), and define a user (vmuser).
+
+## Create a user for the virtual machine
+##
+## This VM user is separate from the rsat user, which only serves to
+## manage the RSAT software suite and related packages.
+##
+## For the sake of security, we force this user to change password at
+## first login
+
+## First delete this user (in case it was previously defined)
+##  sudo userdel --remove vmuser
+
+## Then create vmuser
+sudo useradd --password `openssl passwd -1 -salt xyz tochng`\
+    --home /home/vmuser \
+    --create-home \
+    --shell /bin/bash \
+    --comment "VM user" \
+    vmuser
+
+## Force vmuser to change password at first login
+sudo chage -d 0 vmuser
+
+## Force rsat user to change password at first login
+usermod --password `openssl passwd -1 -salt xyz tochng` rsat
+sudo chage -d 0 rsat
+
+## Add sudoer rights to vmuser and rsat users
+sudo chmod 644 /etc/sudoers
+sudo emacs -nw /etc/sudoers
+## Find the following line
+##     # User privilege specification
+##     root    ALL=(ALL:ALL) ALL
+## Below it, add the following line:
+##     rsat    ALL=(ALL:ALL) ALL
+##     vmuser  ALL=(ALL:ALL) ALL
+
+## Stop the machine (NOW)
+halt
+
+################################################################
+## We now change the owner of the RSAT package to the rsat user.
+cd ${RSAT_PARENT_PATH}
+chown -R rsat.rsat ${RSAT_HOME}
+
+## THE INSTALLATION OF THE RSAT SERVER IS HOW DONE. THE REST IS OPTIONNAL
+################################################################
+
+
+
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## !!!!!!!!!!!    ONLY FOR THE VM ON THE IFB CLOUD    !!!!!!!!!!!!!
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## Adapt RSAT icon for IFB cloud (should be adapted depending on VM
+## type).
+cp ${RSAT}/public_html/images/ifb-logo-s.jpg   ${RSAT}/public_html/images/RSAT_icon.jpg
+
+## replace the data directory by a link to
+## a separate disk containing all RSAT data.
+export RSAT_DATA_DIR=/root/mydisk/rsat_data
+cd ${RSAT}/public_html
+mv data/* ${RSAT_DATA_DIR}/
+mv data/.htaccess ${RSAT_DATA_DIR}/
+rmdir data
+ln -s ${RSAT_DATA_DIR} data
+cd $RSAT
+
+################################################################
+################ Install Sun Grid Engine (SGE) job scheduler
+################################################################
 
 ## Check the number of core (processors)
 grep ^processor /proc/cpuinfo
 
 ## Check RAM
 grep MemTotal /proc/meminfo
-
-
-################################################################
-################ Install Sun Grid Engine (SGE) job scheduler
-################################################################
-
 
 ## Beware, before installing the grid engine we need to modify
 ## manually tjhe file /etc/hosts
@@ -945,81 +992,20 @@ qconf -as localhost ## aggregate the localhost tho the list of submitters
 
 
 ################################################################
-########################     OPTIONAL     ######################
-################################################################
-
-
-## Install some software tools for NGS analysis
-cd ${RSAT}
-## TO BE DONE
-
-
-################################################################
 ## Ganglia: tool to monitor a cluster (or single machine)
 ## https://www.digitalocean.com/community/tutorials/introduction-to-ganglia-on-ubuntu-14-04
 sudo apt-get install -y ganglia-monitor rrdtool gmetad ganglia-webfrontend
 sudo cp /etc/ganglia-webfrontend/apache.conf /etc/apache2/sites-enabled/ganglia.conf
 sudo apachectl restart
 
-
-
-
 ################################################################
-###########   BEFORE DELIVERY for VirtualBox         ###########
+## Install some software tools for NGS analysis
 ################################################################
 
-## Clean temporary directory
-sudo rm -rf public_html/tmp/www-data
-
-## Clean serialized organisms
-sudo rm -rf public_html/tmp/serialized_genomes 
+cd ${RSAT}
+## TO BE DONE
 
 
-
-## Last step before delivery: reset the passowrd of the RSAT
-## administrator user (rsat), and define a user (vmuser).
-
-################################################################
-## Create a user for the virtual machine
-##
-## This VM user is separate from the rsat user, which only serves to
-## manage the RSAT software suite and related packages.
-##
-## For the sake of security, we force this user to change password at
-## first login
-
-## First delete this user (in case it was previously defined)
-##  sudo userdel --remove vmuser
-
-## Then create vmuser
-sudo useradd --password `openssl passwd -1 -salt xyz tochng`\
-    --home /home/vmuser \
-    --create-home \
-    --shell /bin/bash \
-    --comment "VM user" \
-    vmuser
-
-## Force vmuser to change password at first login
-sudo chage -d 0 vmuser
-
-## Force rsat user to change password at first login
-passwd rsat 
-## Set it to 'tochng'
-sudo chage -d 0 rsat
-
-
-## Add sudoer rights to vmuser and rsat users
-sudo chmod 644 /etc/sudoers
-sudo emacs -nw /etc/sudoers
-## Find the following line
-##     # User privilege specification
-##     root    ALL=(ALL:ALL) ALL
-## Below it, add the following line:
-##     rsat    ALL=(ALL:ALL) ALL
-##     vmuser  ALL=(ALL:ALL) ALL
-
-## Stop the machine (NOW)
-halt
 
 
 ################################################################
