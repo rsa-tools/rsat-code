@@ -7,11 +7,41 @@
 ##     - download and install the RSAT package
 
 ## Build the docker from the Dockerfile
-docker build .
+docker build -t rsat-commands:2016-10-26 .
 ## This returns an ID -> copy/paste it below
 
-##
-docker tag [ID] docker-registry.genouest.org/RSAT/rsat-commands-2016-10
+
+## Result of the first trial
+#  ---> 3f22aecf582a
+# Removing intermediate container 4cfa3502f712
+# Step 9 : ENV DEBIAN_FRONTEND teletype
+#  ---> Running in 7c82c4ef003a
+#  ---> b074305e6257
+# Removing intermediate container 7c82c4ef003a
+# Successfully built b074305e6257
+
+# ##
+# docker tag [ID] docker-registry.genouest.org/RSAT/rsat-commands-2016-10
+# docker tag b074305e6257 rsat-commands:2016-10-26
+
+## List local Docker images
+docker images
+
+##  Start a container from the built image, in interactive mode
+docker run -it rsat-commands:2016-10-26
+## Type "exit" to quit
+
+## Get the list of running docker processes
+docker ps
+
+## Get the list of all docker processes
+docker ps -a
+
+## Get the ID of the curent rsat docker
+docker ps -a | grep rsat-commands:2016-10-26| awk '{print $1}'
+
+## Restart the sleeping RSAT docker in iterative mode
+docker start -i `docker ps -a | grep rsat-commands:2016-10-26| awk '{print $1}'`
 
 ################################################################
 ## Push the docker file to bioshadock
