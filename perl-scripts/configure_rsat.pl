@@ -71,9 +71,9 @@ while ($arg = shift(@arguments)) {
       $auto_extension{$extension} = 1;
     }
   } elsif ($arg =~ /^(\S+)\=(\S+)$/) {
-    my $key = $1;
+    my $key = lc($1);
     my $value = $2;
-    $force_param{$1} = $2;
+    $force_param{$key} = $value;
     print("Setting property\t$key\t$value\n");
   }
 }
