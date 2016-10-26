@@ -8,7 +8,7 @@ output:
     highlight: zenburn
     theme: cerulean
     toc: yes
-    toc_depth: 2
+    toc_depth: 3
     toc_float: yes
   md_document:
     variant: markdown_github
@@ -117,18 +117,19 @@ Before configuring the virtual machine, we need to tell VirtualBox how it will e
 
 ## Network configuration of the virtual machine
 
-In the VirtualBox main window, select the newly created virtual machine, and click on the **Settings** button. We will successively select the different tabs and configure them. 
+- In the VirtualBox main window, select the newly created virtual machine. 
+- Click on the **Settings** button. 
+- In the VM settings, select tne *Network* tab. 
 
-VirtualBox offers many alternative ways to configure network communications between the virtual machine, the host machine, and the external network. 
+VirtualBox enables you to specify several adapters, each corresponding to one separate network acces (e.g. using an ethernet card + wi-fi connection). Note that you will have the possibility to modify the network settings later.
 
-To get more information about network settings: 
+VirtualBox offers alternative ways to configure network communications between the virtual machine, the host machine, and the external network. To get more information about network settings: 
 
 - VirtualBox manual page: <https://www.virtualbox.org/manual/ch06.html>
 - An excellent tutorial: <http://christophermaier.name/blog/2010/09/01/host-only-networking-with-virtualbox>
     
 We present here one possible way to configure your Virtual machine, but this should be adapted to the particular security/flexibility requirements of the network where the maching has to run. 
 
-In the VM settings, select tne *Network* tab. VirtualBox enables you to specify several adapters, each corresponding to one separate network acces (e.g. using an ethernet card + wi-fi connection).
 
 ### Adapter 1: Host-only adapter
 
@@ -168,7 +169,7 @@ See information at: <https://www.virtualbox.org/manual/ch06.html#network_bridged
 
 - Once the settings have been specified, you can click on the **Start** icon (big fluo green array in VurtualBox).
 
-- A dialog box may appear *"Please select a virtual optic disk ..."*. Click on the small folder icon and locate the disk image of Ubuntu 14.04 that was downloaded in a previous step. Then click the **Start** button. 
+- A dialog box may appear *"Please select a virtual optic disk ..."*. Click on the small folder icon and locate the disk image of Ubuntu that was downloaded in a previous step. Then click the **Start** button. 
 
 Ubuntu is now starting from the installation disk. The next section explains how to configure it. 
 
@@ -183,10 +184,14 @@ The desktop version of Ubuntu presents the advantage of letting users work direc
 
 - Start the default installation: Click the button: **Install Ubuntu**
 
+![Install Ubuntu](images/virtualbox_ubuntu_16.04.1_install/ub16.04.1_snapshot01.png)
+
 - Dialog box **Preparing to install Ubuntu**. 
 
     - Make sure the option *Download updates while installing Ubuntu* is unchecked (we will update the packages after installation). 
     - Leave the other parameters unchanged and click **Continue**.
+    
+![Preparing to install Ubuntu](images/virtualbox_ubuntu_16.04.1_install/ub16.04.1_snapshot02.png)
 
 - **Installation type**: 
 
@@ -196,11 +201,20 @@ The desktop version of Ubuntu presents the advantage of letting users work direc
     - Click **Install Now**. 
     - There will be a warning message **Write the changes to disk?**. Click **Continue**. 
 
+![Installation type](images/virtualbox_ubuntu_16.04.1_install/ub16.04.1_snapshot04.png)
+
+![Write changes on disk](images/virtualbox_ubuntu_16.04.1_install/ub16.04.1_snapshot05.png)
+
+
 - **Where are you?**
 
     If you VM has a suitable Internet connexion, your location should be detected automatically. If not, choose the right location.
 
+![Where are you?](images/virtualbox_ubuntu_16.04.1_install/ub16.04.1_snapshot06.png)
+
 - **Keyboard layout**: make your choice^[I have a *French - French Macintosh*, so I use it for installation, but I will later add an English keybord for the distribution.]
+
+
 
 **NOTE CLAVIER FRANÇAIS**: for the French Macintosh keyboard, I spent a lot of time to find the solution to use the 3-component keys
 (e.g. alt-shit-L for the pipe character |). The simplest solution: use the **alt key on the RIGHT side of the space bar**.
@@ -208,18 +222,27 @@ The desktop version of Ubuntu presents the advantage of letting users work direc
 - **Who are you?**
 
 | Field | Value |
-|--------------|-------------------------------------------------------------------------------|
+|--------------------------------------|-------------------------------------------------------|
 | Your name |	RSAT admin |
-| Your computer's name | rsat-vm-2016-10 |
+| Your computer's name | rsat-vb-2016-10 |
 | Pick a username | rsat |
 | Log in automatically | I activate it because this will greatly facilitate the use of the Destkop version |
 | | Click **Continue** |
 
+![Who are you?](images/virtualbox_ubuntu_16.04.1_install/ub16.04.1_snapshot07.png)
+
 Ubuntu now installs the system, this should take a few minutes^[**Note** if you did  activate the option to update Ubuntu packages in the previous window, the installation can take several minutes].
 
-After installation, Ubuntu  displays a message *"Installation is complete. You need to restart ..."*. Click **Restart now**. 
+![Ubuntu installation](images/virtualbox_ubuntu_16.04.1_install/ub16.04.1_snapshot08.png)
 
-When rebooting, Ubuntu warns you that you need to remove the installation media and close the tray. In our case, the installation media is the iso disk. To remove it, go in the menu **Devices** -> **Optical Drives** -> **Remove Disk from Optical Drive**. If this does not work, close the window with the virtual machine, and restart this virtual machine from VirtualBox. 
+
+- After installation, Ubuntu  displays a message *"Installation is complete. You need to restart ..."*. Click **Restart now**. 
+
+- When rebooting, Ubuntu warns you that you need to remove the installation media and close the tray. In our case, the installation media is the iso disk. To remove it, go in the menu **Devices** -> **Optical Drives** -> **Remove Disk from Optical Drive**. If this does not work, close the window with the virtual machine, and restart this virtual machine from VirtualBox. 
+
+- After reboot, you will automatically log in as *RSAT admin* user. For the sake of convenience, I disactivate the lock screen and password prompt options. Indeed, since the VM is running under my account on the hosting system, there is no need to double the security options. For this, click on the **Settings** icon (toothed wheels) on the top-right corner of the Ubuntu display. Select **All Settings** and click on the panell **Brightness and Lock**. Set **Lock** to *off* and uncheck **Require my password when waking from suspend**. 
+
+![Disactivate lock screen and password prompt after suspend. ](images/virtualbox_ubuntu_16.04.1_install/disactivate_lock_screen.png)
 
 ###  Screen resolution (for the Desktop version)
 
@@ -227,12 +250,10 @@ At your first log in, the screen resolution is restricted to 640x480 pixels.
 
 I found a solution to increase the screen resolution  here: <http://www.juanrubio.me/2014/02/ubuntu-trusty-virtualbox-guest-additions/>
 
-I open a terminal and run the following commands: 
+- Open a terminal and run the following commands: 
 
 ```
-
 sudo apt-get install virtualbox-guest-utils
-sudo apt-get install virtualbox-guest-x11
 sudo apt-get install virtualbox-guest-dkms
 ```
 
@@ -316,69 +337,40 @@ Install the GRUB boot loader
 
 
 ****************************************************************
+## Convenient settings (not necessary)
 
-### Network specification
+### Clipboard sharing between guest and host
 
+For the desktop version of Ubuntu, it is convenient to enable copy-paste between the guest and the host.
 
-```
-## We need to install the ssh package in order to enable connection
-## from the host terminal
-apt-get install --quiet --assume-yes ssh
+- select the VM
+- In the VirtualBox menu, select **Machine -> Settings**
+- In panel "General", select the tab **Advanced**, and set **Shared clipboard** to **Bidirectional**.
+- Optionnally, you can also set the **Drag-n Drop** option to **Bidirectional**. 
 
-
-## We can now access the VM by ssh to its static IP address
-ssh rsat@192.168.56.101
-```
-
-<!--
-################################################################
-### ### NOT NECESSARY ANYMORE
-
-### ## I need emacs to edit the network configuration file
-### sudo bash
-### df -h
-### apt-get install  --quiet --assume-yes  emacs
-
-### ## Since this is the first installation of an apt-get package, it
-### ## takes some time to install dependencies.
-### df -h
-
-### emacs -nw /etc/network/interfaces
-
-### ## I edit the file /etc/network/interfaces
-
-### ## Host-only network interface for the VirtualBox VM
-### auto eth0
-### iface eth0 inet static
-### address 192.168.56.114
-### netmask 255.255.255.0
-### network 192.168.56.0
-### broadcast 192.168.56.255
-### gateway 192.168.56.1
-
-### ## Let the second interface automatically ask an IP address to the
-### ## DHCP server (this was by default the first interface eth0, but we
-### ## want to impose the static address as first interface).
-### autho eth1
-### iface eth1 inet dhcp
-
-### ## Re-activate the interface, this seems to be the best way with ubuntu 14.04
-### ifdown eth1 ## Stop the eth1 interface
-### ifup eth1 ## Start the eth1 interface with its new configuration
-### ifconfig ## Check that eth1 is specified as expected
-
-### ## This should display something like this
-### ## ...
-### ## eth1      Link encap:Ethernet  HWaddr 08:00:27:9e:3d:cd  
-### ##           inet addr:192.168.56.114  Bcast:192.168.56.255  Mask:255.255.255.0
-### ## ...
-
-### ## reboot
-### ## (Note: I am not sure if we still need to reboot here, to be checked)
--->
 
 ****************************************************************
 ## Remote log in to the VM
+
+So far the virtual machine does not support remote access.
+To add support for `ssh` access, we need to install the appropriate package. 
+
+- In the virtual machine, open a terminal and type the following command. 
+
+```
+sudo apt-get install --quiet --assume-yes ssh
+```
+
+
+- From the ***host*** machine, open a terminal and type the following command. 
+
+```
+ssh rsat@192.168.56.101
+```
+
+**Note**: the IP address above may be different on your computer, depending on the network settings of your VirtualBox and on the number of Virtual Machines currently running. 
+
+You are now connected to your virtual machine via an ssh session from the host machine.
 
 
 At this stage, the machine is able to boot and get a dynamic IP from
@@ -398,30 +390,6 @@ ssh rsat@[IP_OF_MY_VM]
 so I can run the rest of the installation in my familiar environment
 (terminal, keyboard, ...)
 
-
-```
-ssh rsat[myvm]
-```
-
-### Transfer my screenrc preferences
-
-```
-rsync -ruptvl rsat@rsat.ulb.ac.be:.screenrc .
-```
-
-### Transfer RSAT ssh parameters + open an agent that will manage my password for future ssh communications
-rsync -ruptvl rsat@rsat.ulb.ac.be:.ssh .
-ssh-agent > ~/agent
-source ~/agent
-ssh-add
-
-****************************************************************
-## Install Ubuntu packages
-
-
-The instructions to install Ubuntu packages are in a separate file
-
-[$RSAT/doc/howto/install_rsat_ubuntu14.04.bash](install_rsat_ubuntu14.04.bash)
 
 
 ****************************************************************
@@ -467,19 +435,6 @@ Note: that command returns the MAC address, but no IP address.
 ```
 VBoxManage showvminfo ${VMID} | grep '^NIC'
 ```
-
-****************************************************************
-## Convenient settings (not necessary)
-
-### Clipboard sharing between guest and host
-
-For the desktop version of Ubuntu, it is convenient to enable copy-paste between the guest and the host.
-
-- select the VM
-- In the VirtualBox menu, select **Machine -> Settings**
-- In panel "General", select the tab **Advanced**, and set **Shared clipboard** to **Bidirectional**.
-- Optionnally, you can also set the **Drag-n Drop** option to **Bidirectional**. 
-
 
 
 ****************************************************************
@@ -533,6 +488,14 @@ sudo nano /etc/sudoers
 ##     rsat    ALL=(ALL:ALL) ALL
 ##     vmuser  ALL=(ALL:ALL) ALL
 ```
+
+****************************************************************
+## Install Ubuntu packages and RSAT distribution
+
+
+The instructions to install Ubuntu packages are in a separate file
+
+[$RSAT/doc/howto/install_rsat_ubuntu16.bash](install_rsat_ubuntu16.bash)
 
 
 ****************************************************************
