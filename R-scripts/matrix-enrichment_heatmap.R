@@ -96,8 +96,6 @@ for(n in 1:(length(sets)-1)){
   max.NWD.table[,diff.name.2] <- max.NWD.table[,diff.name.1] * -1
 }
 
-p <- rev(colorRampPalette(brewer.pal(11, "RdBu"), space="Lab")(11))
-
 nb.sets <- length(sets)
 nb.diff.columns <- dim(max.NWD.table)[2]
 
@@ -131,7 +129,6 @@ for(set in c("Normal", "Diff")){
   ## Export the TSV table
   colnames(tsv.tab) <- c("Row", "Col", "Value")
   write.table(tsv.tab, file = file.export, sep = "\t", quote = FALSE, row.names = FALSE)
-
   
   ###############################################################
   ## Open and modify the Heatmap D3 template with the new data
@@ -236,12 +233,11 @@ for(set in c("Normal", "Diff")){
   ## Given X hexa colors creates a color
   palette.hexa <- colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(11)
   palette.hexa <- rev(palette.hexa)
-  # palette.hexa <- rev(palette.hexa(legend.length-1))
   
-  palette <- paste("'" , rev(palette.hexa), "'", sep = "")
+  palette <- paste("'" , palette.hexa, "'", sep = "")
   palette <- paste(palette, collapse = ", ")
   
-  palette.rev <- paste("'" , palette.hexa, "'", sep = "")
+  palette.rev <- paste("'" , rev(palette.hexa), "'", sep = "")
   palette.rev <- paste(palette.rev, collapse = ", ")
   
   html.report <- gsub("--gradient--", palette, html.report)
