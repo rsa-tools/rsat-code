@@ -170,7 +170,7 @@ starttls_pass=
 ## RSAT server only accessible from your own computer:
 ##   rsat_www=http://localhost/rsat/
 ## Fixed IP address
-##   rsat_www=http://[you.ip.address.here]/rsat/
+##   rsat_www=http://[your.ip.address.here]/rsat/
 ## Server automatcally gets the IP address at each request
 ##   rsat_www=auto
 rsat_www=auto
