@@ -15,7 +15,7 @@ MAINTAINER Jacques van Helden <Jacquese.van-Helden@univ-amu.fr>
 ## bioshadock labels
 LABEL    rsat.description="Regulatory Sequence Analysis Tools (RSAT)" \ 
     rsat.homepage="http://rsat.eu/" \ 
-    rsat.version="2016-10-26" \ 
+    rsat.version="2016-10-27" \ 
     rsat.copyright="© 2008-10 Genome Research Limited. All Rights Reserved." \ 
     rsat.license="GPL-2+" \ 
     rsat.binaries="/packages/rsat/bin, /packages/rsat/perl-scripts, /packages/rsat/python-scripts" \ 

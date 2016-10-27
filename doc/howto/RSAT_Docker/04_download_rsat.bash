@@ -24,7 +24,7 @@ cd ${RSAT_PARENT_PATH}
 echo "Downloading RSAT from  ${RSAT_DISTRIB_URL}"
 wget --no-clobber ${RSAT_DISTRIB_URL}
 tar -xpzf ${RSAT_ARCHIVE}
-cd ${RSAT_HOME}
+cd ${RSAT}
 
 ## Alternative: get RSAT from the git repository. 
 ## THIS IS RESERVED TO RSAT DEVELOPING TEAM
@@ -41,7 +41,7 @@ cd ${RSAT_HOME}
 ## code can be downloaded as a tar archive from the Web site.
 
 ## Make a link from home directory to find RSAT home
-ln -fs ${RSAT_HOME} ${HOME}/rsat
+ln -fs ${RSAT} ${HOME}/rsat
 
 ## Metabolic pathway tools installation
 ##
