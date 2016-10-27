@@ -50,6 +50,10 @@ RUN bash 01_ubuntu16.4_packages.bash
 RUN bash 02_python_packages.bash
 RUN bash 04_download_rsat.bash
 RUN bash 05_install_rsat.bash
+RUN bash 06_perl_packages.bash
+RUN bash 07_R-and-packages.bash
+RUN bash 08_apache_config.bash
+RUN bash 09_rsat_ws.bash
 
 # RUN bash install_rsat_ubuntu16/download_rsat_package.bash
 # RUN bash install_rsat_ubuntu16/install_rsat_package.bash
