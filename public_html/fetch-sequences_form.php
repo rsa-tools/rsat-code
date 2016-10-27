@@ -36,6 +36,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
       <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSAT</a> - fetch-sequence</h3>
       <br/>
 <?php
+
    ## first check if this tool is supported for the current server
    if ($properties['ucsc_tools'] == 0) {
      echo ("<font size='+1'>");
