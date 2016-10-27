@@ -38,7 +38,7 @@ $query = new CGI;
 &UpdateLogFile();
 
 @result_files = ();
-$command = "$ENV{RSAT}/contrib/info-gibbs/info-gibbs";
+$command = "$ENV{RSAT}/bin/info-gibbs";
 #$command = "$ENV{RSAT}/python-scripts/info-gibbs-python";
 #$convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
