@@ -14,6 +14,7 @@ require "$ENV{RSAT}/public_html/genome-scale.lib.pl";
 $query = new CGI;
 
 #### default values for dna-pattern
+$default{feattype} = "gene";
 $default{set_name} = "";
 $default{patterns} = "";
 $default{strands} = "both strands";
