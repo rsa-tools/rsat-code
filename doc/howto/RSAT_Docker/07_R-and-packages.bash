@@ -1,5 +1,7 @@
 source 00_config.bash
 
+cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+
 ################################################################
 ##
 ## Install R
@@ -18,6 +20,7 @@ echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.
 echo "" >> /etc/apt/sources.list.rcran
 cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+apt-get add-apt-repository
 add-apt-repository ppa:marutter/rdev
 apt-get update
 ${INSTALLER} install ${INSTALLER_OPT} r-base > ${RSAT_PARENT_PATH}/install_logs/${INSTALLER}_install_r-base.txt

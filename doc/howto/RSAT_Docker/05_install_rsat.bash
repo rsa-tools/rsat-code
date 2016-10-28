@@ -16,10 +16,13 @@ perl perl-scripts/configure_rsat.pl --auto rsat_site=rsat-vb-2016-10 \
 ## I activate the optional tools ucsc_tools and ensembl_tools, but not the other ones because they require many genomes (phylo tools) or big genomes (compara_tools, variation_tools).
 
 ## Load the (updated) RSAT environment variables
-source RSAT_config.bashrc
+cd ${RSAT}; source RSAT_config.bashrc
 
-## Check that the RSAT environment variable has been properly configured
-echo ${RSAT}
+## Check that the RSAT environment variable has been properly
+## configured. Note: I also define it in the beginning of the script
+## because I will beed it for the different installation chunks.
+echo "RSAT path: ${RSAT}"
+cd ${RSAT}
 
 ## Initialise RSAT folders
 make -f makefiles/init_rsat.mk init
@@ -35,6 +38,14 @@ make -f makefiles/init_rsat.mk init
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
 rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
+
+echo '' >> /etc/bash.bashrc
+echo '## Custom bash completion'  >> /etc/bash.bashrc
+echo 'for file in /etc/bash_completion.d/* ; do'  >> /etc/bash.bashrc
+echo '    source "$file"'  >> /etc/bash.bashrc
+echo 'done'  >> /etc/bash.bashrc
+echo ''  >> /etc/bash.bashrc
+
 ## ln -fs ${RSAT}/RSAT_config.bashrc /etc/bash_completion.d/
 
 #emacs -nw /etc/bash.bashrc
