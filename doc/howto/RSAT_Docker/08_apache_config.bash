@@ -1,5 +1,7 @@
 source 00_config.bash
 
+cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+
 ################################################################
 ## Configure the Apache Web server
 
