@@ -15,20 +15,20 @@ if (Sys.getenv("CRAN_REPOS") == "") {
 ## List of packages to install
 required.packages = c("devtools",
                       "RJSONIO",
-                      "dendextend",
-                      "flux",
                       "gplots",
-                      "RColorBrewer",
                       "jpeg",
                       "png",
                       "dynamicTreeCut",
                       "ggplot2",
                       "zoo",
-                      "reshape2"
+                      "reshape2",
+                      "dendextend",
+                      "RColorBrewer",
+                      "flux")
+
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
-)
 
 ## List of required packages from Bioconductor
 required.packages.bioconductor <- c("ctc", "amap", "qvalue")
