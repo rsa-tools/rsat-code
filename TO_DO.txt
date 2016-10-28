@@ -11,16 +11,17 @@
 
 - sequences from bed/gff/vcf : add a demo button with the yeast: retrieve all downstream sequences)
 
--  matrix-scan-quick
-
-	- sequences are not passed from retrieve-seq
-	- demo: sequences not passed
-
 - random-site: no demo button
 
 - implant-sites: no demo button
 
 - matrix-clustering fails on the VirtualBox VM
+
+- convert-variations form displays E.coli for the demo on the VMs, because Homo sapiens is not supported
+
+- compare-classes relies on the NeAT PHP form with the sablier, which does not work on VMs
+
+- position-analysis: the demo takes a while to load because it relies on a chip-seq peak sequence set loaded in the text box. Should be replaced by an URL to the peak-motifs demo file. 
 
 ################################################################
 ## Supported-organisms-server
