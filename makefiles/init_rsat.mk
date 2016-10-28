@@ -35,6 +35,7 @@ init:
 	@echo ""
 	@echo "Creating directories"
 	@echo "	data	${RSAT}/public_html/data"
+	@mkdir -p ${RSAT}/bin
 	@mkdir -p ${RSAT}/public_html/data
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/data/robots.txt
 	@echo "Options +Indexes" > public_html/data/.htaccess
