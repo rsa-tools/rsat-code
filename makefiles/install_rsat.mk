@@ -442,3 +442,60 @@ bioperl_test:
 	perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
 
 
+################################################################
+## Installation tests
+
+## Run a series of installation test for the different elements
+## required to get a fully working RSAT instance.
+all_tests:  test_dir \
+	test_random-seq \
+	test_purge-sequence
+
+## Create day-specific test directory
+TEST_DATE=`date +%Y-%m-%d`
+TEST_DIR=install_tests_${TEST_DATE}
+test_dir:
+	@mkdir -p ${TEST_DIR}
+	@echo "Test directory	${TEST_DIR}"
+
+## Check one test by comparing the result to the correct answer
+TEST_RESULT=${TEST_DIR}/random-seq_header.txt
+TEST_CORRECT=install_tests_correct/random-seq_header.txt
+TEST_NAME=test_random-seq
+TEST_DIFF=`diff ${TEST_RESULT} ${TEST_CORRECT} | wc -l | xargs`
+test_check:
+#	@echo "Test check"
+#	@echo "	TEST_NAME	${TEST_NAME}"
+#	@echo "	TEST_RESULT	${TEST_RESULT}"
+#	@echo "	TEST_CORRECT	${TEST_CORRECT}"
+#	@echo "	TEST_DIFF	${TEST_DIFF}"
+	if [ "${TEST_DIFF}" -eq "0" ]; \
+	then echo "PASSED	${TEST_NAME}	${TEST_RESULT}"; \
+	else echo "FAILED	${TEST_NAME}	${TEST_RESULT}	${TEST_CORRECT}"; fi
+
+## A simple Perl script that does not require external revices
+test_random-seq:
+	@random-seq -l 100 | grep '^>' > ${TEST_DIR}/random-seq_header.txt
+	@${MAKE} test_check  TEST_NAME=test_random-seq \
+		TEST_RESULT=${TEST_DIR}/random-seq_header.txt \
+		TEST_CORRECT=install_tests_correct/random-seq_header.txt
+
+## Check that the vmatch library is correctly installed
+test_purge-sequence:
+	@random-seq -l 100 | purge-sequence > ${TEST_DIR}/purge-seq_res.txt 2> ${TEST_DIR}/purge-seq_stderr.txt
+	@${MAKE} test_check  TEST_NAME=test_purge-seq \
+		TEST_RESULT=${TEST_DIR}/purge-seq_stderr.txt \
+		TEST_CORRECT=install_tests_correct/purge-seq_stderr.txt
+## Test retrieve-ensembl-seq, which requires Ensembl API Perl libraries
+test_retrieve-ensembl-seq:
+	make -f ${RSAT}/makefiles/retrieve-ensembl-seq_demo.mk one_gene \
+		> ${TEST_DIR}/retrieve-ensembl-test_res.tab \
+		2> ${TEST_DIR}/retrieve-ensembl-test_stderr.txt
+	@${MAKE} test_check  TEST_NAME=retrieve-ensembl-seq \
+		TEST_RESULT=${TEST_DIR}/retrieve-ensembl-test_res.tab \
+		TEST_CORRECT=install_tests_correct/retrieve-ensembl-test_res.tab
+
+test_ensembl_available_species:
+	@make -f makefiles/install_genomes_from_ensemblgenomes.mk available_species DB=ensembl
+	@grep -v '^;' results/ensemblgenomes/available_species_ensembl_release${ENSEMBL_RELEASE}_${TEST_DATE}.txt | wc -l > results/ensemblgenomes/available_species_ensembl_release${ENSEMBL_RELEASE}_${TEST_DATE}_nb_genomes.txt
+
