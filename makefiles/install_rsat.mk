@@ -24,20 +24,31 @@ SSH=-e 'ssh -x'
 ################################################################
 ## Install the RSAT package
 install:
-	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk init
-	${MAKE} -f ${RSAT}/makefiles/install_rsat.mk install_r_packages
-	${MAKE} -f ${RSAT}/makefiles/init_rsat.mk compile_all
-	${MAKE} -f ${RSAT}/makefiles/install_software.mk install_ext_apps
-	(cd ${RSAT}/do/manuals/; ${MAKE} all_pdf)
+	make -f ${RSAT}/makefiles/init_rsat.mk init
+	make -f ${RSAT}/makefiles/init_rsat.mk compile_all ## Compile C programs
+	make -f ${RSAT}/makefiles/init_rsat.mk ws_init ws_stub  ## Generate the stub for the Web services
+	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages ## Install external and custom R packages
+	make -f ${RSAT}/makefiles/install_software.mk install_ext_apps ## Instal external applications required for some RSAT functionalities
+
+## Generate the pdf documentation
+## This requires a LaTeX compiler
+doc:
+	(cd ${RSAT}/do/manuals/; make all_pdf)
 
 ################################################################
-## Update RSAT and check the dependent tasks (compilation of C
-## programs, installation of R packages)
-update:
+## Update RSAT from the git repository and check the dependent tasks
+## (compilation of C programs, installation of R packages).
+update_from_git:
 	git pull
-	make -f ${RSAT}/makefiles/init_rsat.mk ws_init ws_stub
-	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages
-	make -f ${RSAT}/makefiles/init_rsat.mk compile_all
+	make -f ${RSAT}/makefiles/init_rsat.mk compile_all ## Compile C programs
+	make -f ${RSAT}/makefiles/init_rsat.mk ws_init ws_stub  ## Generate the stub for the Web services
+	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages ## Install external and custom R packages
+
+update_from_wget:
+	@echo "DOWNLOAD THE LATEST TAR ARCHIVE: NOT AUTOMATED YET"
+	make -f ${RSAT}/makefiles/init_rsat.mk compile_all ## Compile C programs
+	make -f ${RSAT}/makefiles/init_rsat.mk ws_init ws_stub  ## Generate the stub for the Web services
+	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages ## Install external and custom R packages
 
 ################################################################
 ## Install Unix packages required for RSAT
@@ -149,7 +160,6 @@ PERL_MODULES= \
 	Email::Sender \
 	Email::Simple \
 	Email::Simple::Creator \
-	Email::Sender::Transport::SMTPS \
 	PostScript::Simple	 \
 	Statistics::Distributions \
 	Math::CDF \
@@ -191,7 +201,8 @@ PERL_MODULES= \
 	Number::Format \
 	OLE::Storage_Lite \
 	Template::Plugin::Number::Format \
-	Readonly
+	Readonly \
+	Email::Sender::Transport::SMTPS
 
 #t/013_complexType.t ................................... 1/? Can't locate object method "new" via package "MyElement" (perhaps you forgot to load "MyElement"?) at lib/SOAP/WSDL/XSD/Typelib/ComplexType.pm line 213.
 
@@ -357,7 +368,7 @@ R_PACKAGES=RColorBrewer devtools RJSONIO dendextend flux gplots RColorBrewer jpe
 install_r_packages_cmd:
 	@for rpack in ${R_PACKAGES}; do \
 		echo "Installing R package $${rpack}"; \
-		sudo su - -c "R -e \"if !(require('$${rpack}') {install.packages('$${rpack}', repos='http://cran.rstudio.com/')}\""; \
+		${SUDO} R --slave -e "\"if (require('$${rpack}')) {message('$${rpack} already installed')} else {install.packages('$${rpack}', repos='http://cran.rstudio.com/')}\""; \
 	done
 
 ##  --slave --no-save --no-restore --no-environ
