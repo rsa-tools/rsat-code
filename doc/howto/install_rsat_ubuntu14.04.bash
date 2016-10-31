@@ -936,10 +936,8 @@ sudo useradd --password `openssl passwd -1 -salt xyz tochng`\
 sudo chage -d 0 vmuser
 
 ## Force rsat user to change password at first login
-passwd rsat 
-## Set it to 'tochng'
+usermod --password `openssl passwd -1 -salt xyz tochng` rsat
 sudo chage -d 0 rsat
-
 
 ## Add sudoer rights to vmuser and rsat users
 sudo chmod 644 /etc/sudoers
