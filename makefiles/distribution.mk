@@ -30,7 +30,6 @@ TAR_EXCLUDE=--exclude .git \
 	--exclude course \
 	--exclude eccb_2014_tutorial \
 	--exclude '*.o' \
-	--exclude perl-scripts/lib/js \
 	--exclude peak-footprints \
 	--exclude floydwarshall \
 	--exclude kwalks \

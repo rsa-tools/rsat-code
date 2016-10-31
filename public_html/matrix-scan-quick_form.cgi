@@ -46,7 +46,9 @@ $default{thresh_value} = "1";
 
 ### print the form ###
 &RSA_header("matrix-scan QUICK and SIMPLE");
-&ListParameters() if ($ENV{rsat_echo} >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 0);
+
+### replace defaults by parameters from the cgi call, if defined
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -85,7 +87,9 @@ print $query->start_multipart_form(-action=>"matrix-scan.cgi");
 #### sequence
 print "<fieldset>
 <legend><b><a href='help.formats.html'>Sequences </a></b></legend>";
-&MultiSequenceChoice("",1);
+print "<hr>";
+&DisplaySequenceChoice();
+#&MultiSequenceChoice("",1);
 print "</fieldset><p/>";
 
 ################################################################
