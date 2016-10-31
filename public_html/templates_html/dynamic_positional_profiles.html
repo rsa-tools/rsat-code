@@ -549,7 +549,7 @@ var chart = c3.generate({
     var profile_clusters = new Array();
 --profile_clusters_array--
 
-    var TF_coverture = new Array();
+    var TF_coverage = new Array();
 --TF_covertures--
 
     var TF_names = new Array();
@@ -703,7 +703,7 @@ function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
         text += "<td>" + pvalues[d[i].id] + "</td>";
         text += "<td>" + qvalues[d[i].id] + "</td>";
         text += "<td>" + significances[d[i].id] + "</td>";
-        text += "<td>" + TF_coverture[d[i].id] + "</td>";
+        text += "<td>" + TF_coverage[d[i].id] + "</td>";
         text += "<td>" + profile_clusters[d[i].id] + "</td>";
         text += "<td><img class='small_logo' src='" + pics[d[i].id] + "' /></td>";
         text += "<td><img class='small_logo' src='" + pics_rc[d[i].id] + "' /></td>";
@@ -787,7 +787,7 @@ var coverchart = c3.generate({
             max: 100,
             min: 0,
             label : {
-                    text: 'Sequence coverture',
+                    text: 'Sequence coverage',
                     position: 'outer-middle',
             },
 
@@ -826,7 +826,7 @@ var coverchart = c3.generate({
     var cov_significances = new Array();
 --significances_cov--
 
-    var cov_TF_coverture = new Array();
+    var cov_TF_coverage = new Array();
 --TF_covertures_cov--
 
 function show_all_cover() {
@@ -872,7 +872,7 @@ function tooltip_contents_2(d, defaultTitleFormat, defaultValueFormat, color) {
         text += "<tr class='" + CLASS.tooltipName + "-" + d[i].id + "'>";
         text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + name + "</td>";
         text += "<td>" + cov_IDs[d[i].id] + "</td>";
-        text += "<td>" + cov_TF_coverture[d[i].id] + "</td>";
+        text += "<td>" + cov_TF_coverage[d[i].id] + "</td>";
         text += "<td>" + cov_significances[d[i].id] + "</td>";
         text += "<td>" + cov_profile_clusters[d[i].id] + "</td>";
         text += "<td><img class='small_logo' src='" + cov_pics[d[i].id] + "' /></td>";
