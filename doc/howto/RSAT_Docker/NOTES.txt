@@ -1,13 +1,10 @@
 ## TO DO
-## - split the installation script in order to benefit from the cache during the docker build
-## -> work by layers, with one RUN by step
-##     - apt-get packages
-##     - Perl libraries
-##     - Pyhon libraries
-##     - download and install the RSAT package
+
+- The installation of Perl libraries is failing. Not installed at the end
+
 
 ## Build the docker from the Dockerfile
-docker build -t rsat-commands:2016-10-27 .
+docker build -t rsat-commands:2016-10-29 .
 ## This returns an ID -> copy/paste it below
 
 
@@ -22,13 +19,13 @@ docker build -t rsat-commands:2016-10-27 .
 
 # ##
 # docker tag [ID] docker-registry.genouest.org/RSAT/rsat-commands-2016-10
-# docker tag b074305e6257 rsat-commands:2016-10-27
+# docker tag b074305e6257 rsat-commands:2016-10-29
 
 ## List local Docker images
 docker images
 
 ##  Start a container from the built image, in interactive mode
-docker run -it rsat-commands:2016-10-27
+docker run -it rsat-commands:2016-10-29
 ## Type "exit" to quit
 
 ## Get the list of running docker processes
@@ -38,10 +35,16 @@ docker ps
 docker ps -a
 
 ## Get the ID of the curent rsat docker
-docker ps -a | grep rsat-commands:2016-10-27| awk '{print $1}'
+docker ps -a | grep rsat-commands:2016-10-29| awk '{print $1}'
 
 ## Restart the sleeping RSAT docker in iterative mode
-docker start -i `docker ps -a | grep rsat-commands:2016-10-27| awk '{print $1}'`
+docker start -i `docker ps -a | grep rsat-commands:2016-10-29| awk '{print $1}'`
+
+
+################################################################
+## Save a local image of the docker
+
+docker save rsat-commands:2016-10-26 -o /no_backup/RSAT_Docker/Images/rsat-commands_2016-10-26.tar
 
 ################################################################
 ## Push the docker file to bioshadock
@@ -77,3 +80,10 @@ ENTRYPOINT ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
 ################################################################
 ## Get RSAT Web server from bioshadock
 docker pull docker-registry.genouest.org/RSAT/rsat-web-2016-10
+
+
+
+## Specific problem with the Docker space.
+## Docker.qcow2 never shrinks - disk space usage leak in docker for mac
+
+## https://github.com/docker/for-mac/issues/371
