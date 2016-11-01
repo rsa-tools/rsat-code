@@ -12,10 +12,13 @@
 ## third parties, and which are required for the Web site (e.g. RNSC, MCL) or
 ## can optionnally be used in some work flows (e.g. peak-motifs,
 ## cluster-motifs).
+#RSAT=$(CURDIR)
 
-RSAT=$(CURDIR)
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/install_rsat.mk
+TEST_DATE=`date +%Y-%m-%d`
+TEST_DIR=${RSAT}/install_tests_${TEST_DATE}
+TEST_CHECK_DIR=${RSAT}/install_tests_correct
 
 #################################################################
 # Programs used for downloading and sycnrhonizing
@@ -239,13 +242,13 @@ CPAN_CMD=${CPAN} ${CPAN_OPT}
 ## configuration, cpan may ask you to answer y/n for each module and
 ## dependency.
 perl_modules_install:
-	@sudo ${CPAN_CMD} -i ${PERL_MODULES}
+	@${SUDO} ${CPAN_CMD} -i ${PERL_MODULES}
 
 ## This is a somewhat risky but less cumbersome way to install Perl
 ## modules: automatically send a carriage return to accept the default
 ## options for all the modules
 perl_modules_install_noprompt:
-	@yes '' | sudo ${CPAN_CMD} -i ${PERL_MODULES}
+	@yes '' | ${SUDO} ${CPAN_CMD} -i ${PERL_MODULES}
 
 perl_modules_install_one_by_one:
 	@for module in ${PERL_MODULES} ; do \
@@ -259,7 +262,7 @@ perl_modules_install_one_by_one:
 PERL_MODULES_TO_FORCE=Object::InsideOut SOAP SOAP::Transport SOAP::WSDL
 perl_modules_install_by_force:
 	@for module in ${PERL_MODULES_TO_FORCE} ; do \
-		sudo ${CPAN_CMD} -f -i $${module}; \
+		${SUDO} ${CPAN_CMD} -f -i $${module}; \
 	done
 
 ## Install a single Perl module
@@ -268,7 +271,7 @@ PERL_MODULE=PostScript::Simple
 PERL='/usr/bin/perl'
 _install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
-	@sudo ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
+	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
 ## Check which modules are installed
 PERL_MODULE_TEST=eval
@@ -351,13 +354,13 @@ python3_modules_install:
 install_r:
 	@echo
 	@echo "Installing R"
-	sudo sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
+	${SUDO} sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
 	gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
-	gpg -a --export E084DAB9 | sudo apt-key add -
-	sudo apt-get update
-	sudo apt-get -y install r-base
-	sudo apt-get -y install libcurl4-gnutls-dev libxml2-dev libssl-dev
-	sudo su - -c "R -e \"install.packages('devtools', repos='http://cran.rstudio.com/')\""
+	gpg -a --export E084DAB9 | ${SUDO} apt-key add -
+	${SUDO} apt-get update
+	${SUDO} apt-get -y install r-base
+	${SUDO} apt-get -y install libcurl4-gnutls-dev libxml2-dev libssl-dev
+	${SUDO} su - -c "R -e \"install.packages('devtools', repos='http://cran.rstudio.com/')\""
 	@echo "R installed"
 	@R --version
 
@@ -368,7 +371,7 @@ R_PACKAGES=RColorBrewer devtools RJSONIO dendextend flux gplots RColorBrewer jpe
 install_r_packages_cmd:
 	@for rpack in ${R_PACKAGES}; do \
 		echo "Installing R package $${rpack}"; \
-		${SUDO} R --slave -e "\"if (require('$${rpack}')) {message('$${rpack} already installed')} else {install.packages('$${rpack}', repos='http://cran.rstudio.com/')}\""; \
+		${${SUDO}} R --slave -e "\"if (require('$${rpack}')) {message('$${rpack} already installed')} else {install.packages('$${rpack}', repos='http://cran.rstudio.com/')}\""; \
 	done
 
 ##  --slave --no-save --no-restore --no-environ
@@ -409,12 +412,12 @@ install_latex:
 	wget http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
 	tar -xzf install-tl-unx.tar.gz
 	cd install-tl-${TL_VERSION}
-	sudo ./install-tl
+	${SUDO} ./install-tl
 
 
 LATEX_PACKAGES=pst-pdf ifplatform 
 install_latex_packages:
-	sudo tlmgr install ${LATEX_PACKAGES}
+	${SUDO} tlmgr install ${LATEX_PACKAGES}
 
 
 ################################################################
@@ -452,15 +455,13 @@ all_tests:  test_dir \
 	test_purge-sequence
 
 ## Create day-specific test directory
-TEST_DATE=`date +%Y-%m-%d`
-TEST_DIR=install_tests_${TEST_DATE}
 test_dir:
 	@mkdir -p ${TEST_DIR}
 	@echo "Test directory	${TEST_DIR}"
 
 ## Check one test by comparing the result to the correct answer
 TEST_RESULT=${TEST_DIR}/random-seq_header.txt
-TEST_CORRECT=install_tests_correct/random-seq_header.txt
+TEST_CORRECT=${TEST_CHECK_DIR}/random-seq_header.txt
 TEST_NAME=test_random-seq
 TEST_DIFF=`diff ${TEST_RESULT} ${TEST_CORRECT} | wc -l | xargs`
 test_check:
@@ -478,14 +479,14 @@ test_random-seq:
 	@random-seq -l 100 | grep '^>' > ${TEST_DIR}/random-seq_header.txt
 	@${MAKE} test_check  TEST_NAME=test_random-seq \
 		TEST_RESULT=${TEST_DIR}/random-seq_header.txt \
-		TEST_CORRECT=install_tests_correct/random-seq_header.txt
+		TEST_CORRECT=${TEST_CHECK_DIR}/random-seq_header.txt
 
 ## Check that the vmatch library is correctly installed
 test_purge-sequence:
 	@random-seq -l 100 | purge-sequence > ${TEST_DIR}/purge-seq_res.txt 2> ${TEST_DIR}/purge-seq_stderr.txt
 	@${MAKE} test_check  TEST_NAME=test_purge-seq \
 		TEST_RESULT=${TEST_DIR}/purge-seq_stderr.txt \
-		TEST_CORRECT=install_tests_correct/purge-seq_stderr.txt
+		TEST_CORRECT=${TEST_CHECK_DIR}/purge-seq_stderr.txt
 ## Test retrieve-ensembl-seq, which requires Ensembl API Perl libraries
 test_retrieve-ensembl-seq:
 	make -f ${RSAT}/makefiles/retrieve-ensembl-seq_demo.mk one_gene \
@@ -493,7 +494,11 @@ test_retrieve-ensembl-seq:
 		2> ${TEST_DIR}/retrieve-ensembl-test_stderr.txt
 	@${MAKE} test_check  TEST_NAME=retrieve-ensembl-seq \
 		TEST_RESULT=${TEST_DIR}/retrieve-ensembl-test_res.tab \
-		TEST_CORRECT=install_tests_correct/retrieve-ensembl-test_res.tab
+		TEST_CORRECT=${TEST_CHECK_DIR}/retrieve-ensembl-test_res.tab
+
+## Test compilation of C programs by running the help message
+test_c_compilations:
+	info-gibbs -h > ${TEST_DIR}/info-gibbs_help.txt
 
 test_ensembl_available_species:
 	@make -f makefiles/install_genomes_from_ensemblgenomes.mk available_species DB=ensembl
