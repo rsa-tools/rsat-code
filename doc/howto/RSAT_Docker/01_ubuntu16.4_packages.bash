@@ -103,6 +103,7 @@ ncbi-blast+
 PACKAGES="
 apt-utils
 make
+net-tools
 ssh
 git
 cvs
