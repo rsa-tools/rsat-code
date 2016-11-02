@@ -255,8 +255,15 @@ package main;
     $return_field{logo} = 1;
   }
 
+
   ## Check return type(s)
   local %return_fields = ();
+
+  ## For parameter table, return only the parameters
+  if (lc($output_format) eq "param_table") {
+     @return_fields = ("parameters");
+  }
+
   unless (scalar(@return_fields)) {
     if ((lc($output_format ) eq "transfac") ||
 	(lc($output_format ) eq "tf") ||
@@ -270,7 +277,7 @@ package main;
     }
   }
 
-## Permutations are only compatible with -return counts
+  ## Permutations are only compatible with -return counts
   if ($perm) {
     foreach my $field (@return_fields) {
       unless ($field eq "counts") {
@@ -279,7 +286,7 @@ package main;
     }
   }
 
-## Check return fields
+  ## Check return fields
   foreach my $field (@return_fields) {
     if ($supported_return_type{$field}) {
       $return_fields{$field}++;
@@ -1909,6 +1916,10 @@ sub ExportMatrix {
     if ($return_fields{parameters}) {
       print $out_handle $matrix->toString(type=>"parameters") 
     }
+  }
+
+  if ($output_format eq "param_table") {
+      print $out_handle $matrix->toString("format"=>"param_table", "number"=>$m); 
   }
 
   ## Return logo

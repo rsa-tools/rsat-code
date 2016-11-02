@@ -73,3 +73,16 @@ TAXON=Viridiplantae
 one_taxon:
 	@${MAKE} some_genomes ORGANISMS="`supported-organisms -unique_genus -taxon ${TAXON} | xargs`" SIZE_TABLE=genome_sizes_${TAXON}.tab
 
+
+compression_plot:
+	cat genome_sizes*.tab | grep -v 'genome'| \
+		awk -F '\t' '$$4 >0 {print $$2"\t"$$3"\t"$$4"\t"$$4/$$3"\t"$$1"\t"$$5}'|\
+		sort -rn -k 3 > genome_compression_stats.tab
+	@echo "	genome_compression_stats.tab"
+	XYgraph -v ${V} -i genome_compression_stats.tab \
+		-xcol 1 -ycol 4 -title "Genome compression levels (gzip)" \
+		-xleg1 "Uncompressed genome size" -yleg1 "Compressed genome vs random seq" \
+		-xlog -hline red 1 -ygstep 0.1 ${OPT} \
+		-o genome_compression_stats.png
+	@echo "	genome_compression_stats.png"
+
