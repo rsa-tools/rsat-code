@@ -29,8 +29,23 @@ param_table_one_db:
 	@convert-matrix -v ${V} -i ${MATRICES} -from ${DB_FORMAT} -to param_table -return parameters -base ${LOG_BASE} -o ${DB_STATS}
 	@echo "	${DB_STATS}"
 
+INFO_DISTRIB=${DB_NAME}_param_table_log${LOG_BASE}_info_distrib
+IMG_FORMAT=pdf
+info_distrib_one_db:
+	@classfreq -i ${DB_STATS}  -col 20 -ci 1 -v 1 -o ${INFO_DISTRIB}.tsv
+	@echo "	${INFO_DISTRIB}.tsv"
+	@XYgraph -v 1 -i ${INFO_DISTRIB}.tsv \
+		-xcol 1 -ycol 7,8,9  \
+		-xsize 300 -ysize 200 \
+		-col 20 -ci 1 -lines -format ${IMG_FORMAT} \
+		-xleg1 "Information content per motif" \
+		-yleg1 "Number of TF binding motifs" \
+		-title "${DB_NAME}" \
+		${OPT} -o ${INFO_DISTRIB}.${IMG_FORMAT}
+	@echo "	${INFO_DISTRIB}.${IMG_FORMAT}"
+
 DATABASES=`grep -v '^;' ${DB_TABLE} | grep -v '^\#' | cut -f 1 | sort | xargs`
 param_table_all_dbs:
 	@for db in ${DATABASES}; do \
-		${MAKE} DB_NAME=$${db} param_table_one_db; \
+		${MAKE} DB_NAME=$${db} param_table_one_db info_distrib_one_db; \
 	done
