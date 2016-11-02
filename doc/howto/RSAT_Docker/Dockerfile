@@ -15,7 +15,7 @@ MAINTAINER Jacques van Helden <Jacquese.van-Helden@univ-amu.fr>
 ## bioshadock labels
 LABEL    rsat.description="Regulatory Sequence Analysis Tools (RSAT)" \ 
     rsat.homepage="http://rsat.eu/" \ 
-    rsat.version="2016-10-27" \ 
+    rsat.version="2016-10-29" \ 
     rsat.copyright="© 2008-10 Genome Research Limited. All Rights Reserved." \ 
     rsat.license="GPL-2+" \ 
     rsat.binaries="/packages/rsat/bin, /packages/rsat/perl-scripts, /packages/rsat/python-scripts" \ 
@@ -54,11 +54,9 @@ RUN bash 06_perl_packages.bash
 RUN bash 07_R-and-packages.bash
 RUN bash 08_apache_config.bash
 RUN bash 09_rsat_ws.bash
-
-# RUN bash install_rsat_ubuntu16/download_rsat_package.bash
-# RUN bash install_rsat_ubuntu16/install_rsat_package.bash
-# RUN bash install_rsat_ubuntu16/install_perl_packages.bash
-# RUN bash install_rsat_ubuntu16/install_python_packages.bash
+RUN bash 10_clean_unnecessary_files.bash
 
 ## Restore the interactive mode, which will be required to run the container
 ENV DEBIAN_FRONTEND teletype
+
+WORKDIR /

@@ -15,7 +15,7 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ##	 force install SOAP::Lite
 ##
 ## 3) Problem of dependency when installint REST::Client, even with "force".
-##	 MCRAWFOR/REST-Client-271.tar.gz              : make_test FAILED but failure ignored because 'force' in effect
+##	 MCRAWFOR/REST-Client-291.tar.gz              : make_test FAILED but failure ignored because 'force' in effect
 ##	 NANIS/Crypt-SSLeay-0.64.tar.gz               : make NO
 ## To solve it I found this
 ## 	apt-get install libnet-ssleay-perl
@@ -42,34 +42,29 @@ make -f makefiles/install_rsat.mk perl_modules_check
 ## The result file name will be displayed at the end of the tests
 
 ## Check the result of perl modules test
-more check_perl_modules_eval.txt
+# cat check_perl_modules_eval.txt
 ## On Ubuntu 14.04, Object::InsideOut has status "Fail" but there is
 ## apparently no problem
 
 ## Check missing modules
-grep Fail  check_perl_modules_eval.txt
+# grep Fail  check_perl_modules_eval.txt
 
 ## Identify Perl modules that were not OK after the ubuntu package installation
-grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;'
+#grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;'
 MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | cut -f 2 | xargs`
 echo "Missing Perl modules:     ${MISSING_PERL_MODULES}"
 
 ## Beware: the _noprompt suffix is optional. It has the advantage to
 ## avoid for the admin to confirm each installation step, but the
 ## counterpart is that errors may be overlooked.
-make -f makefiles/install_rsat.mk perl_modules_install PERL_MODULES="${MISSING_PERL_MODULES}"
-
-## Check if all required Perl modules have now been correctly installed
-make -f makefiles/install_rsat.mk perl_modules_check
-more check_perl_modules_eval.txt
-## Note: Object::InsideOut should be ignored for this test, because it
-## always display "Fail", whereas it is OK during installation.
+make SUDO='' -f makefiles/install_rsat.mk perl_modules_install PERL_MODULES="${MISSING_PERL_MODULES}"
 
 ## Note: I had to force installation for the some modules, because
 ## there seem to be some circular dependencies.
-grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v "Object::InsideOut"
-make -f makefiles/install_rsat.mk perl_modules_install_by_force PERL_MODULES_TO_FORCE="`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v Object::InsideOut| cut -f 2 | xargs`"
-
+make -f makefiles/install_rsat.mk perl_modules_check
+MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v "Object::InsideOut"`
+echo "Missing Perl modules:     ${MISSING_PERL_MODULES}"
+make SUDO='' -f makefiles/install_rsat.mk perl_modules_install_by_force PERL_MODULES_TO_FORCE="`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v Object::InsideOut| cut -f 2 | xargs`"
 
 ## Last check for Perl modules. 
 ## If some of them still fail (except Object::InsideOut), manual intervention will be required.
