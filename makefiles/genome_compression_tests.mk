@@ -7,10 +7,12 @@ MAKEFILE=${RSAT}/makefiles/genome_compression_tests.mk
 ORG=Escherichia_coli_K12
 GENOME=${RSAT}/data/genomes/${ORG}/genome/contigs.txt
 
-CHROM_SIZES=chrom_sizes_${ORG}.tab
+CHROM_SIZE_DIR=chrom_sizes
+CHROM_SIZES=${CHROM_SIZE_DIR}/${ORG}_chrom_sizes.tab
 chrom_lengths:
 	@echo
 	@echo "${DATE}	Measuring chromosome sizes	${ORG}"
+	mkdir -p ${CHROM_SIZE_DIR}
 	sequence-lengths -i ${GENOME} -in_format filelist -o ${CHROM_SIZES}
 	@echo "	${CHROM_SIZES}"
 
