@@ -241,7 +241,8 @@ the program consensus (Hertz), but not by other programs.
 				"consensus"=>1,
 				"cluster-buster" =>1,
 				"cb" =>1,
-				"infogibbs" =>1
+				"infogibbs" =>1,
+				"param_table"=>1,
 #			    "logo"=>1
     );
 
@@ -808,7 +809,11 @@ sub toString {
 
   } elsif ($output_format eq "tomtom_previous") {
     return $self->to_tomtom_previous(%args);
-  }else {
+
+  } elsif ($output_format eq "param_table") {
+    return $self->to_param_table(%args);
+
+  } else {
     &RSAT::error::FatalError($output_format, "Invalid output format for a matrix");
   }
 }
@@ -920,7 +925,7 @@ sub to_TRANSFAC {
       $accession = "matrix";
     }
 
-    ## TRANSFAC accession number corresponds to what we call name
+    ## TRANSFAC identifiers corresponds to what we call name
     my $id = $self->get_attribute("name") || $self->get_attribute("id") || $accession;
 
     &RSAT::message::Debug("&RSAT::matrix::to_TRANSFAC()",
@@ -1015,6 +1020,87 @@ sub to_TRANSFAC {
 
     ## End of record
     $to_print .=  $matrix_terminator{$output_format}."\n";
+}
+
+=pod
+
+=item to_param_table();
+
+Print a table with one row per matrix and one column per parameter.
+
+=cut
+sub to_param_table {
+    my ($self, %args) = @_;
+    my $to_print = "";
+
+    my $nb = $self->get_attribute("number") || $args{"number"} || 1;
+    $values{"nb"} = $nb;
+
+    my @fields = ("nb", "accession", "identifier", "name");
+
+    ## Accession number
+    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("id") || $self->get_attribute("identifier");;
+    unless ($accession) {
+      $accession = "matrix";
+    }
+    $values{"accession"} = $accession;
+
+    ## Identifier
+    my $identifier = $self->get_attribute("ID") || $self->get_attribute("identifier") || $self->get_attribute("name") || $accession;
+    $values{"identifier"} = $identifier;
+
+    ## Matrix name
+    my $name = $self->get_attribute("name") || $self->get_attribute("id") || $accession;
+    $values{"name"} = $name;
+
+    &RSAT::message::Debug("&RSAT::matrix::to_param_table()",
+			  "AC", $accession,
+			  "ID", $id,
+			  "name", $name) if ($main::verbose >= 5);
+
+
+    ## Description
+    ##
+    ## If the description field is empty, use matrix consensus.
+    ## Note: the DE field is necessary for the matrix-comparison
+    ## program STAMP.
+    my $desc = $self->get_attribute("description");
+    unless ($desc) {
+      $self->calcConsensus();
+      $desc = $self->get_attribute("consensus.IUPAC");
+    }
+    $values{"description"} = $description;
+    push @fields, "description";
+
+
+    ## Parameters
+    my @params = $self->get_attribute("parameters");
+    if (scalar(@params) > 0) {
+      for my $param (@params) {
+	my $value = $self->get_attribute($param);
+	$values{$param} = $value;
+	push @fields, $param;
+	&RSAT::message::Debug("param", $param, $value) if ($main::verbose >= 10);
+      }
+    }
+
+    ## For the first matrix, print the header
+    $to_print = "";
+    if ($nb == 1) {
+      $to_print .= join("\t", @fields);
+      $to_print .= "\n";
+    }
+
+    ## Print the result
+    my @values = ();
+
+    foreach my $field (@fields) {
+      push @values, $values{$field};
+    }
+    $to_print .= join("\t", @values);
+    $to_print .= "\n";
+
+    return $to_print;
 }
 
 
