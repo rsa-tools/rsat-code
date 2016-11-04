@@ -578,7 +578,7 @@ function(error, data) {
 
     var t = svg.transition().duration(1500);
     t.selectAll(".cell")
-      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("x", function(d) { return hccol_average.indexOf(d.col) * cellSize; })
       .attr("y", function(d) { return hcrow_average.indexOf(d.row) * cellSize; })
       ;
 
