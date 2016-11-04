@@ -102,6 +102,26 @@ if($query->param('matrix_2')){
 }
 
 
+######################
+## Add collection 3 ##
+######################
+
+################################################################
+#### Query matrix file
+local $matrix_file_3 = &GetThirdMatrixFile($output_path."/".$output_prefix."_third_matrices.".$query_matrix_format);
+
+################################
+## Add motif collection label
+local $collection_3_label = lc($query->param('collection_3_label'));
+if($collection_3_label){
+    $collection_3_label =~ s/\s+/_/g;
+} else {
+    $collection_3_label = "Collection_3";
+}
+if($query->param('matrix_3')){
+    $parameters .= " -matrix $collection_3_label $matrix_file_3";
+}
+
 push @result_files, ("Input file",$matrix_file);
 push @result_files, ("Result file",$result_file);
 
@@ -220,6 +240,7 @@ my $lab = "";
 $label_id = $query->param('label_id');
 $label_name = $query->param('label_name');
 $label_consensus = $query->param('label_consensus');
+#$label_ic = $query->param('label_ic');
 
 
 if($label_name){
@@ -233,6 +254,10 @@ if($label_id){
 if($label_consensus){
     push(@labs, "consensus");
 }
+
+# if($label_ic){
+#     push(@labs, "ic");
+# }
 
 $lab = join(",", @labs);
 
