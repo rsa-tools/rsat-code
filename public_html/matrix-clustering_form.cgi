@@ -35,6 +35,7 @@ $default{heatmap} = "CHECKED";
 $default{consensus} = "";
 $default{label_id} = "";
 $default{label_name} = "CHECKED";
+#$default{label_ic} = "CHECKED";
 $default{label_consensus} = "";
 $default{html_title} = "";
 $default{collection_label} = "";
@@ -98,7 +99,7 @@ print "<hr>";
 
 ################################################################
 ## Query matrices collection 1
-print "<h2 style='margin-left: 50px;'> Add one or two collections of PSSMs</h2>";
+print "<h2 style='margin-left: 50px;'> Add either one, two or three collections of PSSMs</h2>";
 print "<hr>";
 
 &GetMatrix('title'=>'Input matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
@@ -123,6 +124,20 @@ print "<h2 style='margin-left: 1px;'> Motif Collection 2\nName";
 
 print $query->textfield(-name=>'collection_2_label',
 			 -default=>$default{collection_2_label},
+			 -size=>30) ."</h2>";
+print "<hr>";
+
+
+################################################################
+## Query matrices collection 3
+&GetThirdMatrix('title'=>'Input matrices 3', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
+
+################################################################
+#### Set Motif collection label
+print "<h2 style='margin-left: 1px;'> Motif Collection 3\nName";
+
+print $query->textfield(-name=>'collection_3_label',
+			 -default=>$default{collection_3_label},
 			 -size=>30) ."</h2>";
 print "<hr>";
 
@@ -222,6 +237,13 @@ print $query->checkbox(-name=>'label_name',
 print "&nbsp;<A'><B>Motif name</B></A>";
 print "<br><br>\n";
 
+## Label: IC
+# print $query->checkbox(-name=>'label_ic',
+#   		       -checked=>$default{label_ic},
+#   		       -label=>'');
+# print "&nbsp;<A'><B>Information Content</B></A>";
+# print "<br><br>\n";
+
 ## Label: consensus
 print $query->checkbox(-name=>'label_consensus',
   		       -checked=>$default{label_consensus},
@@ -289,6 +311,7 @@ $demo_html_title = "'Oct4 motifs found in Chen 2008 peak sets discovered by peak
 
 $demo_html_collection_label = "'Oct4_peak_motifs'";
 $demo_html_collection_2_label = "'Oct4_Meme-chip'";
+$demo_html_collection_3_label = "'Oct4_Homer'";
 
 $demo_3_file_1 = "demo_files/RSAT_peak-motifs_Oct4_matrices.tf";
 $demo_3_matrices_1=`cat ${demo_3_file_1}`;
@@ -296,14 +319,19 @@ $demo_3_matrices_1=`cat ${demo_3_file_1}`;
 $demo_3_file_2 = "demo_files/MEME_ChIP_Oct4_matrices.tf";
 $demo_3_matrices_2 = `cat ${demo_3_file_2}`;
 
+$demo_3_file_3 = "demo_files/Homer_l13_mis3_hyper_Oct4_matrices.tf";
+$demo_3_matrices_3 = `cat ${demo_3_file_3}`;
+
 print "<TD><b>";
 print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
 print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_label);
 print $query->hidden(-name=>'collection_2_label',-default=>$demo_html_collection_2_label);
+print $query->hidden(-name=>'collection_3_label',-default=>$demo_html_collection_3_label);
 print $query->hidden(-name=>'demo_3_descr',-default=>$descr_3);
 print $query->hidden(-name=>'matrix',-default=>$demo_3_matrices_1);
 print $query->hidden(-name=>'matrix_2',-default=>$demo_3_matrices_2);
-print $query->submit(-label=>"DEMO (two collections)");
+print $query->hidden(-name=>'matrix_3',-default=>$demo_3_matrices_3);
+print $query->submit(-label=>"DEMO (three collections)");
 print "</B></TD>\n";
 print $query->end_form;
 
