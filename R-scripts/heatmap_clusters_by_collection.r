@@ -324,19 +324,14 @@ thrash <- sapply(c("average", "complete", "single", "ward"), function(m){
   coverage.contingency.table.dist <- Dist(coverage.contingency.table, method = 'pearson')
   
   # pfile <- paste(coverage.json.folder, "/coverage_clustering_", m,".json", sep = "")
-  # pdf(file = pfile)
-  hm.collections <- heatmap.2(coverage.contingency.table,
-                           hclustfun = function(x) hclust(x, method = m),
-                           distfun = function(x) Dist(x, method = 'pearson')
-  )
-  t <- dev.off()
+  hm.collections <- hclust(coverage.contingency.table.dist, method = m)[[3]]
   
   if(m == "ward.D"){
     m <- "ward"
   }
   
-  comp.order.list.rows[[m]] <<- paste(rev(hm.collections[[1]]), collapse = ",")
-  comp.order.list.columns[[m]] <<- paste(rev(hm.collections[[2]]), collapse = ",")
+  comp.order.list.rows[[m]] <<- paste(rev(hm.collections), collapse = ",")
+  comp.order.list.columns[[m]] <<- paste(rev(hm.collections), collapse = ",")
 })
 
 ## Convert the coverage table to the format required in D3 heatmap
