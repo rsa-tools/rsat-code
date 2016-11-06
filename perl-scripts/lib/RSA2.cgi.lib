@@ -544,12 +544,12 @@ sub MultiGetInputFile {
 
 
 ################################################################
-## Print a selection between different modes of sequence entry
+## Print a selection between diferent modes of sequence entry
 ## in a HTML form
-## - sequences copy-pasted in a textarea
-## - sequences uploaded from a file on the client side
-## - sequences piped from a previous script, and stored on the server
-##   (typically  in a temporary dir)
+## (1) sequences copy-pasted in a text area;
+## (2) sequences uploaded from a file on the client side;
+## (3) sequences piped from a previous script, already stored on the server
+##     (in the temporary dir)
 sub DisplaySequenceChoice {
     print &SequenceChoice();
 }
@@ -626,6 +626,8 @@ sub SequenceChoice {
 sub MultiSequenceChoice {
   my $seq_title = shift(@_);
   my $seq_num = shift(@_);
+  my $paste_message = shift(@_);
+  $paste_message = "Paste your sequence (fasta format)" if ($paste_message eq ""); ## Default paste message
   my $sequenceChoiceString = "";
   $sequenceChoiceString .=  "<B>$seq_title</B>";
   #$sequenceChoiceString .=  "<UL>\n";
@@ -652,8 +654,8 @@ sub MultiSequenceChoice {
 
     ## text area to copy-paste the sequence
     $sequenceChoiceString .=  "&nbsp;"x5;
-    $sequenceChoiceString .=  "Paste your sequence (fasta format)<BR>\n";
-    $sequenceChoiceString .=  $query->textarea(-name=>'sequence'.$seq_num,
+    $sequenceChoiceString .=  $paste_message."\n";
+    $sequenceChoiceString .=  "<br>".$query->textarea(-name=>'sequence'.$seq_num,
 					       -default=>$default{"sequence".$seq_num},
 					       -rows=>4,
 					       -columns=>55);
@@ -831,8 +833,20 @@ sub GetSequenceFile {
   return($sequence_file, $sequence_format);
 }
 
-########################
-## MultiGetSequenceFile
+################################################################
+## Display options enter one or several sequence files, with
+## alternative modes of entering.  (partly different from
+## &SequenceChoice()).
+## 
+## (1) Copy-paste in text area.
+## (2) Upload a file from the user computer.
+## (3) Paste the URL of a file accessible via http. 
+## (4) Path of a file already stored on the RSAT server 
+##    (in this case no option is presented).
+##
+## Usage:
+##   MultiSequenceChoice($seq_title, $seq_num, $paste_message);
+##   
 sub MultiGetSequenceFile {
   my ($seq_num, $sequence_file, $required_opt) = @_ ;
 
@@ -1102,9 +1116,22 @@ sub OrganismPopUpString {
 ## Display a pop-up menu with the list of organisms supported at
 ## Ensembl.
 sub OrganismPopUpEnsembl {
+
+## BUG : 2016-11-06: this function does not work anymore, although the
+## command works when called on the command line, either as rsat user
+## or as another user (jvanheld)
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) <= 0) {
-      my $org_list = `$SCRIPTS/supported-organisms-ensembl `;
+      my $supported_path = &RSAT::server::GetProgramPath("supported-organisms-ensembl");
+      my $supported_cmd = $supported_path;
+      $supported_cmd .= "| grep -v '^;'";
+#      my $org_list = `$SCRIPTS/supported-organisms-ensembl`;
+#      my $org_list = `$supported_cmd`;
+      my $org_list = system($supported_cmd." |");
+#      &RSAT::message::Debug("supported_path", $supported_path);
+#      &RSAT::message::Debug("supported_cmd", $supported_cmd);
+#      &RSAT::message::Debug("OrganismPopUpEnsembl", "org_list", $org_list);;
+#      die ("HELLO");
       @selected_organisms = split(/\n/,$org_list);
     }
     my $organismPopup = "";
