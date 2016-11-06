@@ -35,7 +35,7 @@ info_distrib_one_db:
 	@classfreq -i ${DB_STATS}  -col 20 -ci 1 -v 1 -o ${INFO_DISTRIB}.tsv
 	@echo "	${INFO_DISTRIB}.tsv"
 	@XYgraph -v 1 -i ${INFO_DISTRIB}.tsv \
-		-xcol 1 -ycol 7,8,9  \
+		-xcol 1 -ycol 4,5,6  \
 		-xsize 300 -ysize 200 \
 		-col 20 -ci 1 -lines -format ${IMG_FORMAT} \
 		-xleg1 "Information content per motif" \
@@ -45,7 +45,8 @@ info_distrib_one_db:
 	@echo "	${INFO_DISTRIB}.${IMG_FORMAT}"
 
 DATABASES=`grep -v '^;' ${DB_TABLE} | grep -v '^\#' | cut -f 1 | sort | xargs`
+DB_TASK= param_table_one_db info_distrib_one_db
 param_table_all_dbs:
 	@for db in ${DATABASES}; do \
-		${MAKE} DB_NAME=$${db} param_table_one_db info_distrib_one_db; \
+		${MAKE} DB_NAME=$${db} ${DB_TASK}; \
 	done
