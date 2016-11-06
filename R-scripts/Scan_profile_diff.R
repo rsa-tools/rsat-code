@@ -1,3 +1,8 @@
+#############################
+## Step 1
+## Load required libraries
+#############################
+
 ## Define the local directory for R librairies
 dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
@@ -10,13 +15,19 @@ dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 source(file.path(dir.rsat, 'R-scripts/config.R'))
 
 ## Load required libraries
-required.packages = c("IRanges",
-                      "RColorBrewer",
-                      "gplots",
-                      "jpeg",
-                      "amap",
-                      "dynamicTreeCut",
-                      "qvalue")
+required.packages <- c("RColorBrewer",
+                       "IRanges",
+                       "gplots",
+                       "png",
+                       "amap",
+                       "ggplot2",
+                       "grid",
+                       "zoo",
+                       "reshape2",
+                       "plyr",
+                       "dynamicTreeCut")
+
+# sapply(required.packages, function(x){library(x, character.only = TRUE)})
 
 ## List of RSAT-specific packages to be compiled on the server
 for (pkg in c(required.packages)) { #required.packages.bioconductor
@@ -82,19 +93,21 @@ create.html.tab <- function(tab, img = 0, plot = 0){
   return(full.tab) 
 }
 
-###########################################
-## Read arguments from the command line.
+###################################################
+## Step 2: Read arguments from the command line.
 ##
 ## Arguments passed on the command line
 ## will over-write the default arguments
 ## specified above.
-# message("Reading arguments from command-line")
+############################################
+
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args >= 1)) {
   for(i in 1:length(args)){
     eval(parse(text=args[[i]]))
   }
 }
+print.formats <- c("pdf", "jpeg")
 
 # message("Checking mandatory arguments")
 if (!exists("matrix.scan.file.query")) {
@@ -118,10 +131,6 @@ if (!exists("matrix.scan.file.query")) {
 } else if (!exists("basename")){
   stop("Missing mandatory argument (Basename): basename ")
 }
-
-# else if (!exists("html.template.file")){
-#   stop("Missing mandatory argument (HTML template to draw the profiles): html.template.file ")
-# }
 
 if (!exists("p.val")) {
   p.val <- 1e-3
@@ -169,35 +178,33 @@ print(heatmap.dendo)
 ## Create folder for individual profile plots
 dir.create(paste(prefix, "_TFBSs_positional_profiles/", sep = ""), recursive = TRUE, showWarnings = FALSE )
 
-# Borrar
-# ## Create a file to store the resulting tables
-# covered.tables.dir <- paste(prefix, "_covered_sequences_info", sep = "")
-# dir.create(covered.tables.dir, showWarnings = FALSE)
 
+# matrix.scan.file.query <-"/home/jaimicore/Documents/PhD/Others/Ariana/Cuentas/PS_diff/position_scan_diff_test_matrix_scan_results_PARSED.tab"
+# matrix.scan.file.control <- "/home/jaimicore/Documents/PhD/Others/Ariana/Cuentas/PS_diff/position_scan_diff_test_matrix_scan_results_PARSED_control.tab"
+# sequence.names.file.query <- "/home/jaimicore/Documents/PhD/Others/Ariana/Cuentas/PS_diff/position_scan_diff_test_matrix_scan_sequence_names.tab"
+# sequence.names.file.control <- "/home/jaimicore/Documents/PhD/Others/Ariana/Cuentas/PS_diff/position_scan_diff_test_matrix_scan_sequence_names_control.tab"
+# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Others/Ariana/Cuentas/PS_diff/position_scan_diff_test_TF_ID_name_correspondence.tab"
+# prefix <- "/home/jaimicore/Documents/PhD/Others/Ariana/Cuentas/PS_diff/position_scan_diff_test"
+# seq.length <- 600
+# bins <- 25
 
-#/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Diff/Pho_vs_SSPS_logos
+###########################################################
+## Step 3: Read matrix-scan tables for query and control ##
+###########################################################
 
-# matrix.scan.file.query <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Diff/Pho_vs_SSPS_matrix_scan_results_PARSED.tab"
-# matrix.scan.file.control <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Diff/Pho_vs_SSPS_matrix_scan_results_PARSED_control.tab"
-# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Diff/Pho_vs_SSPS"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Diff/Pho_vs_SSPS_TF_ID_name_correspondence.tab"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Diff")
-# sequence.names.file.query <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Diff/Pho_vs_SSPS_matrix_scan_sequence_names.tab"
-# sequence.names.file.control <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Diff/Pho_vs_SSPS_matrix_scan_sequence_names_control.tab"
-
-####################################
 ## Read matrix-scan table (Query)
 verbose(paste("Reading Query matrix-scan results table"), 1)
 matrix.scan.results.query <- read.csv(file = matrix.scan.file.query, sep = "\t", header = TRUE, comment.char = ";")
 colnames(matrix.scan.results.query) <- c("seq_id", "ft_name", "bspos", "Pval")
 
-######################################
 ## Read matrix-scan table (Control)
 verbose(paste("Reading Control matrix-scan results table"), 1)
 matrix.scan.results.control <- read.csv(file = matrix.scan.file.control, sep = "\t", header = TRUE, comment.char = ";")
 colnames(matrix.scan.results.control) <- c("seq_id", "ft_name", "bspos", "Pval")
 
-#######################################
+#############################################################
+## Step 4: Read sequence names table for query and control ##
+#############################################################
 ## Read sequence names table (Query)
 verbose(paste("Reading sequence names table"), 1)
 sequence.names.tab.query <- read.csv(file = sequence.names.file.query, sep = "\t", header = TRUE, comment.char = ";")
@@ -217,6 +224,52 @@ scanned.sequences.control <- unique(as.vector(sequence.names.tab.control$seq_id)
 ## Set p-value
 p.val <- as.numeric(p.val)
 
+#################################################################
+## Step 5: Create the column -log10(pvalue)                    ##
+## Assign a class to each p-value, and one color to each class ##
+## To later plot the qualitative distribution of TFBSs         ##
+#################################################################
+classes.pval <- list()
+classes.pval.letters <- list()
+for(i in 1:2){
+  
+  if(i == 1){
+    ms.tab <- matrix.scan.results.query
+  } else {
+    ms.tab <- matrix.scan.results.control
+  }
+  
+  ms.tab$Pval.minlog10 <- -log10(ms.tab$Pval)
+  ms.tab$Pval.class <- ceiling(ms.tab$Pval.minlog10*2)/2
+  
+  classes.pval[[i]] <- sort(unique(ms.tab$Pval.class))
+  classes.pval.letters[[i]] <- LETTERS[1:length(classes.pval[[i]])]
+  
+  ms.tab$Pval.class.letter <- sapply(ms.tab$Pval.class, function(x){
+    p.class <- which(classes.pval[[i]] == x)
+    classes.pval.letters[[i]][p.class ]
+  })
+  
+  if(i == 1){
+    matrix.scan.results.query <- ms.tab
+  } else {
+    matrix.scan.results.control <- ms.tab
+  }
+}
+min.pval.minus.log10.query <- min(matrix.scan.results.query$Pval.minlog10)
+max.pval.minus.log10.query <- max(matrix.scan.results.query$Pval.minlog10) 
+min.pval.minus.log10.control <- min(matrix.scan.results.control$Pval.minlog10)
+max.pval.minus.log10.control <- max(matrix.scan.results.control$Pval.minlog10)
+
+class.length <- sapply(classes.pval, length)
+if(class.length[1] >= class.length[2]){
+  classes.pval <- classes.pval[[1]]
+  classes.pval.letters <- classes.pval.letters[[1]]
+} else {
+  classes.pval <- classes.pval[[2]]
+  classes.pval.letters <- classes.pval.letters[[2]]
+}
+ 
 #############################
 ## Get the sequences + motif name's
 seq.id.query <- unique(as.vector(matrix.scan.results.query$seq_id))
@@ -225,11 +278,108 @@ seq.id.control <- unique(as.vector(matrix.scan.results.control$seq_id))
 matrix.names.query <- unique(as.vector(matrix.scan.results.query$ft_name))
 matrix.names.control <- unique(as.vector(matrix.scan.results.control$ft_name))
 matrix.names <- intersect(matrix.names.query, matrix.names.control)
+nb.motifs <- length(matrix.names.query)
 verbose(paste(length(matrix.names), "motifs found in the intersection of Query vs Control sequences"), 1)
 
 ###################################
 ## Calculate the sequence limits
 seq.length <- as.numeric(seq.length)
+limits <- seq.length/2
+
+################################
+## Step 6: Load the motif IDs
+ID.names.tab <- ID.to.names.correspondence.tab
+ID.names <- read.table(ID.names.tab, sep = "\t")
+
+##################################################################
+## Step 7: Plot the distribution of TFBSs at different p-values ##
+##################################################################
+setwd(results.folder)
+
+## Assign a color to each p-value class
+## The sequencial color palette has a maximum of 9 colors
+nb.color.classes <- length(classes.pval.letters)
+if(length(classes.pval.letters) > 9){
+  nb.color.classes <- 9
+}
+pval.class.colors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
+classes.to.colors <- list()
+for(x in 1:length(classes.pval.letters)){
+  classes.to.colors[[classes.pval.letters[x]]] <- pval.class.colors[x]
+}
+
+## Create directory with the TFBSs distribution
+dir.create(paste(basename(prefix), "_TFBSs_pval_distribution/", sep = ""), showWarnings = FALSE, recursive = TRUE)
+verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
+
+max.pval <- max(c(matrix.scan.results.query$Pval.minlog10, matrix.scan.results.control$Pval.minlog10))
+
+thr <- sapply(1:nb.motifs, function(m){
+  
+  ## Get the matrix name
+  motif <- matrix.names[m]
+  motif.selected.name <- as.vector(ID.names[,2][which(ID.names[,1] == motif)][1])
+  
+  ## Get the sub-table with the hits of the query matrix
+  motif.selection.query <- matrix.scan.results.query[matrix.scan.results.query$ft_name == motif,]
+  motif.classes.query <- sort(unique(motif.selection.query$Pval.class.letter))
+
+  motif.selection.control <- matrix.scan.results.control[matrix.scan.results.control$ft_name == motif,]
+  motif.classes.control <- sort(unique(motif.selection.control$Pval.class.letter))
+
+  ################################
+  #Create a custom color scale
+  myColors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
+  names(myColors) <- classes.pval.letters
+  
+  ## Insert logo
+  logo.file <- paste(logo.folder, "/", motif, "_logo.png", sep = "")
+  logo <- readPNG(logo.file)
+  logo.roster <- rasterGrob(logo, interpolate = TRUE)
+  
+  for(i in 1:2){
+    
+    ## Select the matrix-scan sub-table
+    if(i == 1){
+      seq.type <- "Query"
+      motif.selection <- motif.selection.query
+    } else {
+      seq.type <- "Control"
+      motif.selection <- motif.selection.control
+    }
+    ## Range of p-values for the query motif
+    pval.class.motif <- sort(unique(motif.selection$Pval.class))
+    TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", motif, "_TFBSs_pval_classes_", seq.type, sep = "")
+  
+    nb.TFBSs <- length(as.vector(motif.selection$bspos))
+    nb.seq <- unique(as.vector(motif.selection$seq_id))
+        
+    ## X position of plot annotations
+    text.xmax <- min(motif.selection$bspos) + max(motif.selection$bspos) / 4
+    text.center <- (min(motif.selection$bspos) - text.xmax)*2
+    
+    ggplot(motif.selection, aes(x=bspos, y=Pval.minlog10)) +
+      ylim(c(min(matrix.scan.results.query$Pval.minlog10), max.pval)) +
+      geom_point(aes(colour = Pval.class.letter), shape = "O", size = 1, stroke = 1) +
+      geom_rug(position='jitter') +
+      labs(title=paste("Qualitative distribution of ", motif, " TFBSs in ", seq.type, " sequences", sep = ""), y = "-log10(P-value)", x = "Position") +
+      scale_colour_manual(name = "-log10(P-value)",values = myColors, labels = paste(">", pval.class.motif, sep = "")) +
+      theme_minimal() +
+      # annotate("text", x = -limits + ((limits*2)/10), y = max.pval - 0.25, label = paste("Nb of TFBSs: ", nb.TFBSs, sep = ""), size = 4, hjust = 0) +
+      # annotate("text", x = -limits + ((limits*2)/10), y = max.pval - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) +
+      annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval - 1, ymax = max.pval - 0.05)
+
+    
+    suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".pdf", sep = "")))
+    suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".jpeg", sep = "")))
+  }
+
+})
+rm(thr)
+
+
+
+##########################################aqui
 
 ###################################
 ## Divide the sequences in bins 
@@ -276,8 +426,7 @@ if(off.set == 0){
 matrix.scan.results.query$bspos <- matrix.scan.results.query$bspos + limits
 matrix.scan.results.control$bspos <- matrix.scan.results.control$bspos + limits
 
-ID.names.tab <- ID.to.names.correspondence.tab
-ID.names <- read.table(ID.names.tab, sep = "\t")
+
 
 feature.attributes <- vector("list", length(matrix.names)) 
 profiles <- NULL
