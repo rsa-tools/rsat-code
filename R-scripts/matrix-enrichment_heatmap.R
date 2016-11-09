@@ -79,21 +79,24 @@ max.NWD.table[is.na(max.NWD.table)] <- 0
 sets <- colnames(max.NWD.table)
 for(n in 1:(length(sets)-1)){
   
-  ## Get the set names
-  set1 <- sets[n]
-  set2 <- sets[n+1]
-  
-  ## Skip when the both sets are the same
-  if(set1 == set2){
-    next
+  for(m in 2:(length(sets))){
+    ## Get the set names
+    set1 <- sets[n]
+    set2 <- sets[m]
+    
+    ## Skip when the both sets are the same
+    if(n < m){
+      ## Assign the names to the differential
+      diff.name.1 <- paste("Diff", set1, set2, sep = "_")
+      diff.name.2 <- paste("Diff", set2, set1, sep = "_")
+      
+      print(diff.name.1)
+      print(diff.name.2)
+      
+      # max.NWD.table[,diff.name.1] <- max.NWD.table[,set1] - max.NWD.table[,set2]
+      # max.NWD.table[,diff.name.2] <- max.NWD.table[,diff.name.1] * -1
+    }
   }
-  
-  ## Assign the names to the differential
-  diff.name.1 <- paste("Diff", set1, set2, sep = "_")
-  diff.name.2 <- paste("Diff", set2, set1, sep = "_")
-  
-  max.NWD.table[,diff.name.1] <- max.NWD.table[,set1] - max.NWD.table[,set2]
-  max.NWD.table[,diff.name.2] <- max.NWD.table[,diff.name.1] * -1
 }
 
 nb.sets <- length(sets)
@@ -222,7 +225,17 @@ for(set in c("Normal", "Diff")){
   # limit <- round(limit, digits = 1)
   # legend.domain.values <- seq( (min(max.NWD.table) - 0.2), limit, by = 0.05)
   
-  legend.domain.values <- quantile(range(tab), probs = seq(0, 1, 0.1))
+  ## Remove noisy extremities
+  tab.range <- range(tab)
+  tab.range.abs <- abs(tab.range)
+  
+  if (tab.range.abs[1] > tab.range.abs[2]){
+    tab.range[2] <- -tab.range[1]
+  } else {
+    tab.range[1] <- -tab.range[2]
+  }
+  
+  legend.domain.values <- quantile(tab.range, probs = seq(0, 1, 0.1))
   legend.length <- length(legend.domain.values)
   legend <- legend.domain.values
   legend <- round(legend, digits = 3)
