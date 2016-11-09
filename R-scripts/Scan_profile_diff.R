@@ -16,7 +16,6 @@ source(file.path(dir.rsat, 'R-scripts/config.R'))
 
 ## Load required libraries
 required.packages <- c("RColorBrewer",
-                       "IRanges",
                        "gplots",
                        "png",
                        "amap",
@@ -166,7 +165,7 @@ if (!exists("heatmap.color.classes")) {
   heatmap.color.classes <- as.numeric(11);
 }
 heatmap.color.classes <- as.numeric(heatmap.color.classes)
-
+bin <- as.numeric(bin)
 ## Heatmap dendogram position
 if (heatmap.dendo == "show"){
   heatmap.dendo <- "row"
@@ -369,7 +368,6 @@ thr <- sapply(1:nb.motifs, function(m){
       # annotate("text", x = -limits + ((limits*2)/10), y = max.pval - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) +
       annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval - 1, ymax = max.pval - 0.05)
 
-    
     suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".pdf", sep = "")))
     suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".jpeg", sep = "")))
   }
@@ -377,429 +375,365 @@ thr <- sapply(1:nb.motifs, function(m){
 })
 rm(thr)
 
+#################################################################################
+## Step 8: Calculate the raw counts of TFBSs on each position of the sequences ##
+#################################################################################
+verbose(paste("Getting the raw counts of TFBSs in the sequences"),1)
+
+matrix.scan.results.query$bspos.left <- matrix.scan.results.query$bspos + seq.length
+matrix.scan.results.control$bspos.left <- matrix.scan.results.control$bspos + seq.length
 
 
-##########################################aqui
+get.raw.counts <- function(m, df){
+  sites.m <- as.vector(df[which(df$ft_name == m),"bspos.left"])
+  raw.counts.m <- tabulate(sites.m, nbins = seq.length)
+  return(raw.counts.m)
+}
 
-###################################
-## Divide the sequences in bins 
-# bin <- 50
-verbose(paste("Setting bins of size", bin), 1)
-bin <- as.numeric(bin)
+## Get a DataFrame with the raw counts of TFBSs per each nucleotide of the sequence
+raw.counts.all.motifs.query <- sapply(matrix.names, get.raw.counts, matrix.scan.results.query)
+raw.counts.all.motifs.query <- as.data.frame(raw.counts.all.motifs.query)
 
-## If the sequences are centered in the peak summit
-if(off.set == 0){
+raw.counts.all.motifs.control <- sapply(matrix.names, get.raw.counts, matrix.scan.results.control)
+raw.counts.all.motifs.control <- as.data.frame(raw.counts.all.motifs.control)
   
-  limits <- seq.length/2
-  limit.dw <- limits
-  limit.up <- -limits
+#######################################################
+## Step 9: Calculate the raw counts of TFBSs per bin ##
+#######################################################
+## Define the bin 'names'
+x.neg <- seq(-(seq.length/2), -(bin) , bin)
+xlab <-append(x.neg, rev(-x.neg))
+
+## For each bin, sums the number of TFBSs (function rollaply)
+## The results are stored in a list where each element correspond to the counts of a given bin size
+verbose(paste("Separating the raw counts of TFBSs in bins of size:", bin),1)
+counts.per.bin.query <- rollapply(raw.counts.all.motifs.query, bin, sum, na.rm = TRUE, by = bin, partial = TRUE, align="left")
+colnames(counts.per.bin.query) <- matrix.names
+rownames(counts.per.bin.query) <- xlab
+
+counts.per.bin.control <- rollapply(raw.counts.all.motifs.control, bin, sum, na.rm = TRUE, by = bin, partial = TRUE, align="left")
+colnames(counts.per.bin.control) <- matrix.names
+rownames(counts.per.bin.control) <- xlab
+
+#####################################################
+## Step 10: Chi-squared and KS calculation section ##
+#####################################################
+verbose(paste("Calculating Chi-Squared and KS statistics"),1)
+counts.per.bin.query <- t(counts.per.bin.query)
+counts.per.bin.control <- t(counts.per.bin.control)
+all.chi.ks.results <- sapply(1:nrow(counts.per.bin.query), function(r){
+
+  #####################################
+  ## Calculate the X2 in two senses:
+  ## Query vs Control
+  ## Control vs Query
+  query <- counts.per.bin.query[r,]
+  query.freq <- query/sum(query)
+  control <- counts.per.bin.control[r,]
+  control.freq <- control/sum(control)
   
-  windows <- IRanges(start = seq(from = limit.up, to = limit.dw - bin + 1, by = bin), width = bin)
+  chisq.query.vs.control <- chisq.test(query, p = control.freq, correct = TRUE)
+  chisq.control.vs.query <- chisq.test(control, p = query.freq, correct = TRUE)
   
-  ## Calculate the shift in order to set the ranges relative to the center of the sequence
-  ## or to the user specified position
-  windows.min.value <- min(abs(min(windows)))
-  windows <- shift(windows, windows.min.value)
+  #####################################
+  ## Calculate the KS in two senses:
+  ## Query vs Control
+  ## Control vs Query
+  ## Actually both return the same result!
+  ks.query.vs.control <- ks.test(query, control, alternative = "two.sided")
+  # ks.control.vs.query <- ks.test(control, query, alternative = "two.sided")
   
-} else {
+  return(c(chisq.query.vs.control[[1]], chisq.query.vs.control[[3]], chisq.control.vs.query[[1]], chisq.control.vs.query[[3]], chisq.control.vs.query[[2]], ks.query.vs.control[[1]], ks.query.vs.control[[2]], bin))
   
-  if (off.set.type == "start"){
-    
-    windows <- IRanges(start = seq(from = seq.length, to = 0 - bin + 1, by = bin), width = bin)
-    windows <- shift(windows, seq.length - off.set)
-    
-    limit.dw <- seq.length - off.set
-    limit.up <- -off.set
-    
-  } else if (off.set.type == "end"){
-    
-    windows <- IRanges(start = seq(from = seq.length, to = 0 - bin + 1, by = bin), width = bin)
-    windows <- shift(windows, off.set)
-    
-    limit.dw <- seq.length - off.set
-    limit.up <- off.set
+})
+all.chi.ks.results <- t(all.chi.ks.results)
+rownames(all.chi.ks.results) <- matrix.names
+colnames(all.chi.ks.results) <- c("Chi_Q_vs_C", "Chi_Pvalue_Q_vs_C", "Chi_C_vs_Q", "Chi_Pvalue_C_vs_Q", "DF", "KS_D", "KS_Pvalue", "Bin_size")
+
+
+#############################################
+## Step 11: Calculate the Frequency tables ##
+#############################################
+verbose(paste("Exporting counts and frequency tables"),1)
+dir.create(paste(basename(prefix), "_tables/", sep = ""), recursive = TRUE, showWarnings = FALSE )
+
+## Number of Hits per motif (query and control)
+counts.per.bin.query.nb.hits <- apply(counts.per.bin.query, 1, sum)
+counts.per.bin.control.nb.hits <- apply(counts.per.bin.control, 1, sum)
+
+## Frequency of TFBSs (query and control)
+counts.per.bin.query.freq <- counts.per.bin.query/counts.per.bin.query.nb.hits
+counts.per.bin.control.freq <- counts.per.bin.control/counts.per.bin.control.nb.hits
+
+for(i in 1:2){
+  
+  if(i == 1){
+    freq.tab.file <- paste(basename(prefix), "_tables/density_per_bin_profiles_bin", bin, "_query.tab", sep = "")
+    counts.tab.file <- paste(basename(prefix), "_tables/counts_per_bin_profiles_bin", bin, "_query.tab", sep = "")
+    fpb <- counts.per.bin.query.freq
+    cpb <- counts.per.bin.query
+  } else {
+    freq.tab.file <- paste(basename(prefix), "_tables/density_per_bin_profiles_bin", bin, "_control.tab", sep = "")
+    counts.tab.file <- paste(basename(prefix), "_tables/counts_per_bin_profiles_bin", bin, "_control.tab", sep = "")
+    fpb <- counts.per.bin.control.freq
+    cpb <- counts.per.bin.control
   }
-}
-
-## Adapt the original BS position realtive to the limits 
-## calculated in the step before
-matrix.scan.results.query$bspos <- matrix.scan.results.query$bspos + limits
-matrix.scan.results.control$bspos <- matrix.scan.results.control$bspos + limits
-
-
-
-feature.attributes <- vector("list", length(matrix.names)) 
-profiles <- NULL
-windows.labels <- NULL
-setwd(results.folder)
-print.formats <- c("pdf", "jpeg")
-
-#########################################################################
-## Create count table from matrix-scan results (if not exist in input) ##
-#########################################################################
-
-## Get the x-axis labels
-xlab <- data.frame(windows)$start
-xlab <- ifelse(xlab >= 0, xlab + bin, xlab)
-# colnames(counts.per.bin.table) <- as.character(xlab)
-
-input.count.table <- 0
-seq.count.per.motif <- list()
-all.counts.per.bin.query <- data.frame()
-all.counts.per.bin.control <- data.frame()
-query.over.control <- data.frame()
-control.over.query <- data.frame()
-feature.attributes <- vector("list", length(matrix.names))
-feature.log2.ratio <- vector("list", length(matrix.names))
-
-if(input.count.table == 0){
   
-  verbose(paste("Creating counts and frequencies tables"), 1)
-  thrash <- sapply(1:length(matrix.names), function(m){
-    
-    print(m)
-    
-    ## Select the matches of the query motif
-    matrix.query <- matrix.names[m]
-    
-    matrix.query.selection.query.seq <- matrix.scan.results.query[matrix.scan.results.query$ft_name == matrix.query,]
-    matrix.query.selection.control.seq <- matrix.scan.results.control[matrix.scan.results.control$ft_name == matrix.query,]
-    
-    ## Count the number of hits and the name of secuences with at least one hit
-    nb.hits.query <- length(as.vector(matrix.query.selection.query.seq[matrix.query.selection.query.seq$ft_name == matrix.query,]$ft_name))
-    nb.seq.query <- length(unique(as.vector(matrix.query.selection.query.seq[matrix.query.selection.query.seq$ft_name == matrix.query,]$seq_id)))
-    fraction.query <- round(nb.seq.query/total.scanned.sequences.query, digits = 2)
-    
-    nb.hits.control <- length(as.vector(matrix.query.selection.control.seq[matrix.query.selection.control.seq$ft_name == matrix.query,]$ft_name))
-    nb.seq.control <- length(unique(as.vector(matrix.query.selection.control.seq[matrix.query.selection.control.seq$ft_name == matrix.query,]$seq_id)))
-    fraction.control <- round(nb.seq.control/total.scanned.sequences.control, digits = 2)
-
-    
-    ## To check
-    if(off.set != 0){
-      
-      if (off.set.type == "start"){
-        matrix.query.selection.query.seq$bspos <- matrix.query.selection.query.seq$bspos + seq.lengt - off.set
-        matrix.query.selection.control.seq$bspos <- matrix.query.selection.control.seq$bspos + seq.lengt - off.set
-      } else if (off.set.type == "end"){  
-        matrix.query.selection$bspos <- matrix.query.selection$bspos + off.set
-      }
-      
-    } else {
-      matrix.query.selection.query.seq$bspos <- matrix.query.selection.query.seq$bspos# + limit.dw
-      matrix.query.selection.control.seq$bspos <- matrix.query.selection.control.seq$bspos# + limit.dw
-    }
-    
-    ## Convert the BSs in Ranges
-    selection.IR.query <- IRanges(start = matrix.query.selection.query.seq$bspos, end = matrix.query.selection.query.seq$bspos)
-    selection.IR.control <- IRanges(start = matrix.query.selection.control.seq$bspos, end = matrix.query.selection.control.seq$bspos)
-    
-    ## Count the overlap of BS in the bins
-    counts.per.bin.query <- countOverlaps(windows, selection.IR.query)
-    counts.per.bin.control <- countOverlaps(windows, selection.IR.control)
-    
-    ## 
-    x1 <- round(counts.per.bin.query/sum(counts.per.bin.query), digits = 3)
-    x2 <- round(counts.per.bin.control/sum(counts.per.bin.control), digits = 3)
-    max.val <- max(c(x1,x2))
-    
-    query <- counts.per.bin.query
-    control <- counts.per.bin.control
-    names(query) <- xlab
-    names(control) <- xlab
-    
-    #####################################
-    ## Calculate the X2 in two senses:
-    ## Query vs Control
-    ## Control vs Query
-    query.vs.control <- chisq.test(query, p = control/sum(control), correct = TRUE)
-    control.vs.query <- chisq.test(control, p = query/sum(query), correct = TRUE)
-    
-    ## Get p-value and transform it in a pretty number
-    query.vs.control.pval <- round(as.vector(query.vs.control[[3]]), digits = 100000000000000000)
-    query.vs.control.pval.pretty <- prettyNum(query.vs.control.pval, scientific=TRUE, digits = 3)
-    control.vs.query.pval <- round(as.vector(control.vs.query[[3]]), digits = 100000000000000000)
-    control.vs.query.pval.pretty <- prettyNum(control.vs.query.pval, scientific=TRUE, digits = 3)
-    
-    ## Get e-value and transform it in a pretty number
-    query.vs.control.eval <- round(as.vector(query.vs.control[[3]]), digits = 100000000000000000) * length(matrix.names)
-    query.vs.control.eval.pretty <- prettyNum(query.vs.control.eval, scientific=TRUE, digits = 3)
-    control.vs.query.eval <- round(as.vector(control.vs.query[[3]]), digits = 100000000000000000) * length(matrix.names)
-    control.vs.query.eval.pretty <- prettyNum(control.vs.query.eval, scientific=TRUE, digits = 3)
-    
-    ## Get significances
-    query.vs.control.sig <- round(-log10(query.vs.control.eval), digits = 2)
-    control.vs.query.sig <- round(-log10(control.vs.query.eval), digits = 2)
-    
-    feature.attributes[[m]][["feature_id"]] <<- matrix.query
-    feature.attributes[[m]][["Query_vs_Control_pval"]] <<- query.vs.control.pval.pretty 
-    feature.attributes[[m]][["Query_vs_Control_eval"]] <<- query.vs.control.eval.pretty 
-    feature.attributes[[m]][["Query_vs_Control_significance"]] <<- query.vs.control.sig
-    feature.attributes[[m]][["Query_vs_Control_X2"]] <<- round(as.vector(query.vs.control[[1]]), digits = 2)
-    feature.attributes[[m]][["Query_nb_hits"]] <<- nb.hits.query
-    feature.attributes[[m]][["Query_nb_seq"]] <<- nb.seq.query
-    feature.attributes[[m]][["Query_Fraction_of_sequences"]] <<- fraction.query
-    feature.attributes[[m]][["Control_vs_Query_pval"]] <<- control.vs.query.pval.pretty
-    feature.attributes[[m]][["Control_vs_Query_eval"]] <<- control.vs.query.eval.pretty 
-    feature.attributes[[m]][["Control_vs_Query_significance"]] <<- control.vs.query.sig
-    feature.attributes[[m]][["Control_vs_Query_X2"]] <<- round(as.vector(control.vs.query[[1]]), digits = 2)
-    feature.attributes[[m]][["Control_nb_hits"]] <<- nb.hits.control
-    feature.attributes[[m]][["Control_nb_seq"]] <<- nb.seq.control
-    feature.attributes[[m]][["Control_Fraction_of_sequences"]] <<- fraction.control
-    feature.attributes[[m]][["DF"]] <<- as.vector(query.vs.control[[2]])
-
-    ########################################
-    # ## Print the Profiles in JPEG and PDF
-    for(pf in print.formats){
-
-      if(pf == "pdf"){
-        pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", matrix.query, "_positional_profile.pdf", sep = "")
-        pdf(pdf.file.name)
-      } else {
-        jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", matrix.query, "_positional_profile.jpeg", sep = "")
-        jpeg(jpeg.file.name)
-      }
-
-      ## Draw the profile of the query sequences
-      plot(y = query/sum(query),
-           x = names(query),
-           type = "l",
-           col = "#00BFC4",
-           lty = 1,
-           lwd = 3,
-           xlab = "Position (nt)",
-           ylab = "Fraction of Binding Sites",
-           main = paste(matrix.query, "Distribution of TFBSs\nQuery vs Control sequences"),
-           panel.first=grid(col = "grey", lty = "solid"),
-           ylim = c(0, max.val+0.05)
-      )
-
-      ## Draw the profile of the control sequences
-      lines(y = control/sum(control),
-            x = names(query),
-            type = "l",
-            col = "#F8766D",
-            lty = 1,
-            lwd = 3)
-
-      ## Draw the legend
-      legend("topleft", legend = c("Query (Q)", "Control (C)"), fill = c("#00BFC4", "#F8766D"), bty="o", bg="white")
-      legend("bottomleft", legend = paste(c("E-value (Q vs C):", "E-value (C vs Q):"), c(query.vs.control.eval.pretty, control.vs.query.eval.pretty)), bty="o", bg="white")
-
-      ## Add the logo in the plot
-      logo.file <- paste(logo.folder, "/", matrix.query, "_logo.jpeg", sep = "")
-      logo <- readJPEG(logo.file)
-      rasterImage(logo,
-                xleft = max(xlab) - 15 - round(seq.length/4.5),
-                xright = max(xlab) - 15,
-                ybottom = max.val,
-                ytop = max.val+0.045)
-      t <- dev.off()
-    }
-    
-    ## Save the counts/fraction of the query and control sequences
-    all.counts.per.bin.query <<- rbind(all.counts.per.bin.query, counts.per.bin.query)
-    all.counts.per.bin.control <<- rbind(all.counts.per.bin.control, counts.per.bin.control)
-    
-    
-    ## Save the log2 ratio between the query and control
-    ## This will be used to plot the heatmap
-    query.over.control <<- rbind(query.over.control, round(-log2(query/control), digits = 3))
-    control.over.query <<- rbind(control.over.query, round(-log2(control/query), digits = 3))
-    
-  })
+  write.table(cpb, file = counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
+  write.table(fpb, file = freq.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
+  
 }
-# counts.per.bin.table <- t(counts.per.bin)
-#counts.per.bin.table <- round(counts.per.bin.table, digits = 3)
+
+## Calculate the highest frequency of TFBSs
+max.y <- max(as.vector(c(counts.per.bin.query.freq, counts.per.bin.control.freq)), na.rm = TRUE)
+
+
+#################################
+## Step 12: calculate coverage ##
+#################################
+verbose(paste("Calculating coverage and number of hits per motif"),1)
+coverage.all.motifs <- sapply(matrix.names, function(m){
+  
+  matched.query.sequences <- as.vector(subset(matrix.scan.results.query, ft_name == m)$seq_id)
+  unique.matched.query.sequences <- unique(matched.query.sequences)
+  m1 <- length(unique.matched.query.sequences)/total.scanned.sequences.query
+  m2 <- length(unique.matched.query.sequences)
+  m3 <- length(matched.query.sequences)
+
+  matched.control.sequences <- as.vector(subset(matrix.scan.results.control, ft_name == m)$seq_id)
+  unique.matched.control.sequences <- unique(matched.control.sequences)
+  m4 <- length(unique.matched.control.sequences)/total.scanned.sequences.control
+  m5 <- length(unique.matched.control.sequences)
+  m6 <- length(matched.control.sequences)
+  
+  return(list(m1,m2,m3,m4,m5,m6))
+
+})
+coverage.query <- unlist(coverage.all.motifs[1,])
+seq.matched.query <- unlist(coverage.all.motifs[2,])
+nb.hits.query <- unlist(coverage.all.motifs[3,])
+coverage.control <- unlist(coverage.all.motifs[4,])
+seq.matched.control <- unlist(coverage.all.motifs[5,])
+nb.hits.control <- unlist(coverage.all.motifs[6,])
+rm(coverage.all.motifs)
+
+# plot(x = coverage.query,
+#      y = coverage.control,
+#      xlim = c(0,1),
+#      ylim = c(0,1))
+# lines(x = seq(0,1,0.001), y = seq(0,1,0.001))
+
+########################################################################
+## Step 13: calculate Q-value, E-value, and significance -log(pvalue) ##
+## Re-order the table                                                 ##
+########################################################################
+verbose(paste("Calculating  E-value, Q-value and significance"),1)
+df <- as.data.frame(all.chi.ks.results)
+
+## Round Chi values
+df$Chi_Q_vs_C <- round(df$Chi_Q_vs_C, digits = 3)
+df$Chi_C_vs_Q <- round(df$Chi_C_vs_Q, digits = 3)
+
+## Calculate E-values
+df$Chi_Evalue_Q_vs_C <- df$Chi_Pvalue_Q_vs_C * nb.motifs
+df$Chi_Evalue_C_vs_Q <- df$Chi_Pvalue_C_vs_Q * nb.motifs
+df$KS_Evalue <- df$KS_Pvalue * nb.motifs
+
+## Calculate Significance
+df$Sig_Chi_Q_vs_C <- round(-log10(df$Chi_Evalue_Q_vs_C), digits = 3)
+df$Sig_Chi_C_vs_Q <- round(-log10(df$Chi_Evalue_C_vs_Q), digits = 3)
+df$Sig_KS <- round(-log10(df$KS_Pvalue), digits = 3)
+
+## Calculate Q-values
+df$Chi_Qvalue_Q_vs_C <- p.adjust(as.vector(df$Chi_Pvalue_Q_vs_C), method = "BH")
+df$Chi_Qvalue_C_vs_Q <- p.adjust(as.vector(df$Chi_Pvalue_C_vs_Q), method = "BH")
+df$KS_Qvalue <- p.adjust(as.vector(df$KS_Pvalue), method = "BH")
+
+####################################################
+## Transform Pval, Eval and Qval to PrettyNumbers ##
+####################################################
+df$Chi_Pvalue_Q_vs_C <- prettyNum(df$Chi_Pvalue_Q_vs_C, scientific=TRUE, digits = 2)
+df$Chi_Pvalue_C_vs_Q <- prettyNum(df$Chi_Pvalue_C_vs_Q, scientific=TRUE, digits = 2)
+df$KS_Pvalue <- prettyNum(df$KS_Pvalue, scientific=TRUE, digits = 2)
+
+df$Chi_Evalue_Q_vs_C <- prettyNum(df$Chi_Evalue_Q_vs_C, scientific=TRUE, digits = 2)
+df$Chi_Evalue_C_vs_Q <- prettyNum(df$Chi_Evalue_C_vs_Q, scientific=TRUE, digits = 2)
+df$KS_Evalue <- prettyNum(df$KS_Evalue, scientific=TRUE, digits = 2)
+
+df$Chi_Qvalue_Q_vs_C <- prettyNum(df$Chi_Qvalue_Q_vs_C, scientific=TRUE, digits = 2)
+df$Chi_Qvalue_C_vs_Q <- prettyNum(df$Chi_Qvalue_C_vs_Q, scientific=TRUE, digits = 2)
+df$KS_Qvalue <- prettyNum(df$KS_Qvalue, scientific=TRUE, digits = 2)
+
+## Add the matrix Id as feature ID
+df$feature <- rownames(df)
+
+## Add the coverage columns (for query and control sequences)
+df$coverage_query <- coverage.query
+df$covered_seq_query <- seq.matched.query
+df$coverage_control <- coverage.control
+df$covered_seq_control <- seq.matched.control
+df$nb_hits_query <- nb.hits.query
+df$nb_hits_control <-nb.hits.control
+
+features.table <- df[, c("feature", "Chi_Q_vs_C", "DF","Sig_Chi_Q_vs_C", "Chi_Evalue_Q_vs_C", "Chi_Pvalue_Q_vs_C", "Chi_Qvalue_Q_vs_C", "KS_D", "Sig_KS", "KS_Evalue", "KS_Pvalue", "KS_Qvalue", "coverage_query", "covered_seq_query", "coverage_control", "covered_seq_control", "nb_hits_query", "nb_hits_control")]
+colnames(features.table) <- c("Feature", "Chi_squared", "Degrees", "Sig_Chi", "E_val_Chi", "P_val_Chi", "Q_val_Chi", "D", "Sig_KS", "Eval_KS", "Pval_KS", "Qval_KS","Coverage_query", "Sequences_query", "Coverage_control", "Sequences_control","Nb_hits_query", "Nb_hits_control")
+
+###############################################################################
+## Step 14: calculate -log2 ratio between Query and Control TFBS frequencies ##
+## Print the positional profiles comparing query and control sequences       ##
+###############################################################################
+verbose(paste("Drawing positional profiles"),1)
+counts.per.bin.log2 <- sapply(matrix.names, function(m){
+  
+  ## Set Output file name
+  file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", m, "_positional_profile", sep = "")
+
+  ## Load the logo
+  logo.file <- paste(logo.folder, "/", m, "_logo.png", sep = "")
+  logo <- readPNG(logo.file)
+  logo.roster <- rasterGrob(logo, interpolate = TRUE)
+
+  ## Plot profiles
+  control.points <- data.frame(y = counts.per.bin.control.freq[m,], x = xlab, Sequences = rep("control", times = length(counts.per.bin.control.freq[m,])))
+  query.points <- data.frame(y = counts.per.bin.query.freq[m,], x = xlab, Sequences = rep("query", times = length(counts.per.bin.query.freq[m,])))
+  df.freq <- rbind(control.points, query.points)
+  df.freq$Sequences <- as.factor(df.freq$Sequences)
+
+  ggplot(df.freq, aes(y=y, x=x, group = Sequences, colour=Sequences)) +
+    geom_line(size = 2) +
+    ylim(0, max.y) +
+    geom_rug(position='jitter', sides="l") +
+    labs(title=paste(m, " binding profile (Query vs Control)", sep = ""), y = "Frequency of TFBSs", x = "Position") +
+    annotation_custom(logo.roster, xmax = limits, xmin = limits - sum(abs(range(df.freq$x)))/5, ymin = max.y - 0.01, ymax = max.y - 0.075)
+
+  ## Export the file
+  suppressMessages(ggsave(paste(file.name, ".jpeg", sep = "")))
+  suppressMessages(ggsave(paste(file.name, ".pdf", sep = "")))
+
+  ## Calculate the -log2 ratio
+  -log2(counts.per.bin.query.freq[m,]/counts.per.bin.control.freq[m,])
+  
+})
+
+
+######################################
+## Step 15: Define profile clusters ##
+######################################
+verbose(paste("Clustering of differential binding profiles"),1)
+cluster.profiles.motifs <- NULL
+cluster.profiles.motif.names <- NULL
+data.t <- t(counts.per.bin.log2)
+tree.profiles <- hclust(Dist(data.t, method = "correlation"), method = "complete")
+clusters.tree.profiles <- cutreeDynamic(tree.profiles, minClusterSize = 1, method = "tree")
+names(clusters.tree.profiles) <- tree.profiles[[4]]
+
+## Generate a color palette
+nb.profile.clusters <- length(unique(clusters.tree.profiles))
+cluster.tree.profiles.palette <- colorRampPalette(brewer.pal(9, "Set1"), space="Lab")(nb.profile.clusters)
+
+## Assign a different color to each cluster
+color.clusters.tree.profiles <- as.vector(sapply(clusters.tree.profiles+1, function(color){
+  cluster.tree.profiles.palette[color]
+}))
+
+profile.clusters.names <- as.vector(sapply(matrix.names, function(m){
+  profile.cluster <- as.vector(clusters.tree.profiles[m])
+  paste("Profile_cluster_", profile.cluster, sep = "")
+}))
+
+## Get the member motif IDs of each cluster
+cluster.profiles.counter <- 0
+thrash <- sapply(1:nb.profile.clusters, function(cl){
+  
+  cluster.profiles.counter <<- cluster.profiles.counter + 1
+  cluster.profiles.motifs[[cluster.profiles.counter]] <<- names(which(clusters.tree.profiles == cluster.profiles.counter))
+  
+  ## Get the motif name
+  cluster.profiles.motif.names[[cluster.profiles.counter]] <<- as.vector(
+    sapply(cluster.profiles.motifs[[cluster.profiles.counter]], function(n){
+      ID.names[which(ID.names[,2] == n),1]
+    })
+  )
+})
 rm(thrash)
-rownames(all.counts.per.bin.query) <- matrix.names
-rownames(all.counts.per.bin.control) <- matrix.names
-colnames(all.counts.per.bin.query) <- xlab
-colnames(all.counts.per.bin.control) <- xlab
 
-## Heatmap data rownames and colnames
-rownames(query.over.control) <- matrix.names
-rownames(control.over.query) <- matrix.names
-colnames(query.over.control) <- xlab
-colnames(control.over.query) <- xlab
-
-all.fraction.query <- apply(all.counts.per.bin.query, 1, function(s){
-  s/sum(s)
-})
-all.fraction.control <- apply(all.counts.per.bin.control, 1, function(s){
-  s/sum(s)
-})
-
-##########################################
-## Export Counts and Frequencies tables
-query.counts.tab.file <- paste(basename, "_counts_per_bin_profiles_query.tab", sep = "") 
-write.table(all.counts.per.bin.query, file = query.counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
-
-control.counts.tab.file <- paste(basename, "_counts_per_bin_profiles_control.tab", sep = "") 
-write.table(all.counts.per.bin.control, file = control.counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
-
-fraction.tab.file.query <- paste(basename, "_tfbs_fraction_per_bin_profiles_query.tab", sep = "") 
-write.table(all.fraction.query, file = fraction.tab.file.query, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
-
-fraction.tab.file.control <- paste(basename, "_tfbs_fraction_per_bin_profiles_control.tab", sep = "") 
-write.table(all.fraction.control, file = fraction.tab.file.control, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
-
-###############################
-## Draw -log2 ratio heatmaps
-## 1) Query vs Control
-## 2) Control vs Query
-
+########################################
+## Step 16: Draw -log2 ratio heatmaps ##
+########################################
+verbose(paste("Drawing differential binding heatmap"),1)
 ## Create color palette
 heatmap.color.classes <- 11
 heatmap.color.palette <- "RdBu"
 rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(heatmap.color.classes))
 
-for(counter in 1:2){
-  
-  if(counter == 1){
-    data.t <- query.over.control
-    hm.main <- paste("Profile Heatmap\nQuery over Control")
+hm.main <- paste("Profile Heatmap\nQuery over Control")
+
+for(pf in print.formats){
+
+  if(pf == "pdf"){
+    pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Query_over_control_positional_profile.pdf", sep = "")
+    pdf(pdf.file.name)
   } else {
-    hm.main <- paste("Profile Heatmap\nControl over Query")
-    data.t <- control.over.query
+    jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Query_over_control_positional_profile.jpeg", sep = "")
+    jpeg(jpeg.file.name)
   }
+  data.t <- as.matrix(t(counts.per.bin.log2))
   
-  for(pf in print.formats){
+  heatmap.2(data.t,
+              
+            main = hm.main,
+            xlab = "Position (bp)",
+            ylab = "Motifs",
+              
+            ## The order of the values is set according these dendrograms
+            Rowv = as.dendrogram(tree.profiles),
+            Colv = FALSE,
+            dendrogram = "row",
 
-    if(pf == "pdf"){
-      if(counter == 1){
-        pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Query_over_control_positional_profile.pdf", sep = "")
-      } else {
-        pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Control_over_Query_positional_profile.pdf", sep = "")
-      }
-      pdf(pdf.file.name)
-    } else {
-      
-      if(counter == 1){
-        jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Query_over_control_positional_profile.jpeg", sep = "")
-      } else {
-        jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Control_over_Query_positional_profile.jpeg", sep = "")
-      }
-      jpeg(jpeg.file.name)
-    }
-    
-    data.t <- as.matrix(data.t)
-    
-    #############################
-    ## Define profile clusters
-    tree.profiles <- hclust(Dist(data.t, method = "correlation"), method = "complete")
-    clusters.tree.profiles <- cutreeDynamic(tree.profiles, minClusterSize = 2, method = "tree")
-    names(clusters.tree.profiles) <- tree.profiles[[4]]
-    
-    ## Generate a color palette
-    nb.profile.clusters <- length(unique(clusters.tree.profiles))
-    cluster.tree.profiles.palette <- colorRampPalette(brewer.pal(9, "Set1"), space="Lab")(nb.profile.clusters)
-    
-    ## Assign a different color to each cluster
-    color.clusters.tree.profiles <- as.vector(sapply(clusters.tree.profiles+1, function(color){
-      cluster.tree.profiles.palette[color]
-    }))
-  
-    heatmap.2(data.t,
+            ## Color
+            col = rgb.palette,
               
-              main = hm.main,
-              xlab = "Position (bp)",
-              ylab = "Motifs",
+            ## Trace
+            trace = "none",
               
-              ## The order of the values is set according these dendrograms
-              Rowv = as.dendrogram(tree.profiles),
-              Colv = FALSE,
-              dendrogram = "row",
-
-              ## Color
-              col = rgb.palette,
+            ## Side colors
+            RowSideColors = color.clusters.tree.profiles,
               
-              ## Trace
-              trace = "none",
-              
-              ## Side colors
-              RowSideColors = color.clusters.tree.profiles,
-              
-              ## Key control
-              key = TRUE,
-              keysize = 1,
-              density.info = "none",
-              key.xlab = "Log2 Ratio",
-              key.ylab = "",
-              key.title = "",
-              cexRow = 0.66,
-              offsetCol = 0.25
-    )
+            ## Key control
+            key = TRUE,
+            keysize = 1,
+            density.info = "none",
+            key.xlab = "Log2 Ratio",
+            key.ylab = "",
+            key.title = "",
+            cexRow = 0.66,
+            offsetCol = 0.25
+  )
     t <- dev.off()
-  }
 }
 
-##################################################
-## Fraction of bound sequences Query vs Control
-# x <- as.vector(feature.attributes.df$Query_fraction_of_sequences)
-# y <- as.vector(feature.attributes.df$Control_fraction_of_sequences)
-# plot(x,
-#      y,
-#      xlim = c(0,1),
-#      ylim = c(0,1),
-#      xlab = "Fraction of bound sequences (Query)",
-#      ylab = "Fraction of bound sequences (Control)",
-#      main = "Fraction of bound sequences\nQuery vs Control",
-#      panel.first=grid(col = "grey", lty = "solid"),
-#      col = "#00BFC4",
-#      lty = 1, 
-#      lwd = 3,
-# )
-# lines(x = c(0,1), y = c(0,1))
-
-######################################
-## Convert the list in a data frame
-feature.attributes.df <- data.frame(t(
-  matrix(as.vector(unlist(feature.attributes)), 
-         ncol = length(feature.attributes))))
-colnames(feature.attributes.df) <- c("Feature", "Pval_Q_vs_C", "Eval_Q_vs_C", "Significance_Q_vs_C", "Chi_Q_vs_C", "Query_nb_hits", "Query_nb_seq", "Query_fraction_of_sequences", "Pval_C_vs_Q", "Eval_C_vs_Q", "Significance_C_vs_Q", "Chi_C_vs_Q", "Control_nb_hits", "Control_nb_seq", "Control_fraction_of_sequences", "DF")
-
-## Calculate q-values
-## This step is executed once all the p-values were calculated
-## The variable with class 'qvalue' is stored to its further exportation
-p1 <- as.numeric(as.vector(feature.attributes.df$Pval_Q_vs_C))
-features.qvalues.query.vs.control <- p.adjust(p1, method = "BH")
-feature.attributes.df$Qval_Q_vs_C <- prettyNum(features.qvalues.query.vs.control, scientific=TRUE, digits = 2)
-
-p2 <- as.numeric(as.vector(feature.attributes.df$Pval_C_vs_Q))
-features.qvalues.control.vs.query <- p.adjust(p2, method = "BH")
-feature.attributes.df$Qval_C_vs_Q <- prettyNum(features.qvalues.control.vs.query, scientific=TRUE, digits = 2)
-
+######################################################################
+## Step 17: Add the columns Profile cluster + logos + profile plots ##
+######################################################################
+verbose(paste("Exporting attributes table"),1)
 #####################################
 ## Write the logo and profile path
-TF.IDs <- as.vector(feature.attributes.df$Feature)
-logos.F <- sapply(TF.IDs, function(i){
+logos.F <- sapply(matrix.names, function(i){
   paste(logo.folder, "/", i, "_logo.jpeg", sep = "")
 })
 
-logos.R <- sapply(TF.IDs, function(i){
+logos.R <- sapply(matrix.names, function(i){
   paste(logo.folder, "/", i, "_logo_rc.jpeg", sep = "")
 })
 
 ## Write the Profile and TFBSs plots path
-profiles.plots <- sapply(TF.IDs, function(i) {
+profiles.plots <- sapply(matrix.names, function(i) {
   paste(basename(prefix), "_TFBSs_positional_profiles/", i, "_positional_profile.jpeg", sep = "")
 })
 
-###############################################
-## Fill the Profile_cluster attribute
-profile.clusters.names <- as.vector(sapply(matrix.names, function(m){
-  profile.cluster <- as.vector(clusters.tree.profiles[m])
-  paste("Profile_cluster_", profile.cluster, sep = "")
-}))
-profile.clusters.names.unique <- unique(profile.clusters.names)
-
 ############################
 ## Get the IDs of the TFs
-
-## Set the motif names and IDs
-TF.names <- as.vector(feature.attributes.df[,1])
-TF.IDs <- as.vector(sapply(TF.names, function(x){
+TF.IDs <- as.vector(sapply(matrix.names, function(x){
   as.vector(ID.names[which(ID.names[,2] == x),1])
 }))
 
@@ -807,21 +741,27 @@ TF.IDs <- as.vector(sapply(TF.names, function(x){
 ## an underscore ('_')
 TF.IDs.cp <- gsub("\\.", "", TF.IDs)
 
-feature.attributes.df$ID <- as.vector(TF.IDs.cp)
-feature.attributes.df$Profile_cluster <- profile.clusters.names
-feature.attributes.df$Profiles <- profiles.plots
-feature.attributes.df$Logo <- logos.F
-feature.attributes.df$Logo_RC <- logos.R
+features.table$ID <- as.vector(TF.IDs.cp)
+features.table$Profile_cluster <- profile.clusters.names
+
+feature.attributes.file <- paste(basename(prefix), "_attributes.tab", sep = "")
+write.table(features.table, file = feature.attributes.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
+
+features.table$Profiles <- profiles.plots
+features.table$Logo <- logos.F
+features.table$Logo_RC <- logos.R
 
 ## Order the table according the Significance (-log10(E-value))
-order.by.eval <- order(as.numeric(as.vector(feature.attributes.df$Eval_Q_vs_C)))
-feature.attributes.df <- feature.attributes.df[order.by.eval,]
-feature.attributes.df <- feature.attributes.df[,c(1,19,2,3,17,4,6,7,8,5,9,10,18,11,13,14,15,12,16,20,21,22,23)]
+order.by.eval <- order(as.numeric(as.vector(features.table$Eval_Q_vs_C)))
+features.table <- features.table[order.by.eval,]
+
+features.table <- features.table[,c(1,19,2:18,20:23)]
+feature.attributes.df <- features.table
 
 ################################
 ## Create dynamic html report ##
 ################################
-
+verbose(paste("Creating HTML dynamic report"),1)
 ## Set colors
 set.colors <- colorRampPalette(brewer.pal(10,"Paired"))(length(TF.IDs))
 set.colors <- sapply(sample(set.colors), function(x){
@@ -907,7 +847,7 @@ thrash <- sapply(order.by.eval, function(o){
 
 ## Set the line width according the significance -log10(E-value)
 ## Higher significance means a wider line
-significance <- as.numeric(as.vector(feature.attributes.df$Significance_Q_vs_C))
+significance <- as.numeric(as.vector(feature.attributes.df$Sig_Chi))
 line.w <- sapply(significance, function(s){
   if(s <= 0){
     w <- 1
@@ -1002,12 +942,10 @@ all.cluster.buttons <- paste(all.cluster.buttons, collapse = "\n")
 ## Fill the HTML template
 ## Substitute the words marked in the template by the data
 html.report <- readLines(html.template.file)
-# [1] "Feature"                       "Pval_Q_vs_C"                   "Eval_Q_vs_C"                   "Significance_Q_vs_C"          
-# [5] "Chi_Q_vs_C"                    "Query_nb_hits"                 "Query_nb_seq"                  "Query_fraction_of_sequences"  
-# [9] "Pval_C_vs_Q"                   "Eval_C_vs_Q"                   "Significance_C_vs_Q"           "Chi_C_vs_Q"                   
-# [13] "Control_nb_hits"               "Control_nb_seq"                "Control_fraction_of_sequences" "DF"                           
-# [17] "Qval_Q_vs_C"                   "Qval_C_vs_Q"                   "ID"                            "Profile_cluster"              
-# [21] "Profiles"                      "Logo"                          "Logo_RC" 
+# [1] "Feature"           "Chi_squared"       "Degrees"           "Sig_Chi"           "E_val_Chi"         "P_val_Chi"        
+# [7] "Q_val_Chi"         "D"                 "Sig_KS"            "Eval_KS"           "Pval_KS"           "Qval_KS"          
+# [13] "Coverage_query"    "Sequences_query"   "Coverage_control"  "Sequences_control" "Nb_hits_query"     "Nb_hitd_control"  
+# [19] "ID"                "Profile_cluster"   "Profiles"          "Logo"              "Logo_RC"
 profile.data.tab.html <- create.html.tab(feature.attributes.df, img = c(22,23), plot = c(21))
 profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
@@ -1039,14 +977,14 @@ html.report <- gsub("--dashed--", dashed, html.report)
 
 ## Add the e-values data
 ## They are inserted in the JS section
-eval.rep <- repeat.n(as.vector(feature.attributes.df$Eval_Q_vs_C), times = 2)
+eval.rep <- repeat.n(as.vector(feature.attributes.df$E_val_Chi), times = 2)
 evalues <- paste("evalues['", all.motifs, "'] = '", eval.rep, "';", sep = "")
 evalues <- paste(evalues, collapse = "\n")
 html.report <- gsub("--evalues--", evalues, html.report)
 
 ## Add the p-values (to display in the tooltip)
 ## They are inserted in the JS section
-pval.rep <- repeat.n(as.vector(feature.attributes.df$Pval_Q_vs_C), times = 2)
+pval.rep <- repeat.n(as.vector(feature.attributes.df$P_val_Chi), times = 2)
 pvalues <- paste("pvalues['", all.motifs, "'] = '", pval.rep, "';", sep = "")
 pvalues <- paste(pvalues, collapse = "\n")
 html.report <- gsub("--pvalues--", pvalues, html.report)
@@ -1060,7 +998,7 @@ html.report <- gsub("--profile_clusters_array--",  profile.clusters.array, html.
 
 ## Add the q-values (to display in the tooltip)
 ## They are inserted in the JS section
-qval.rep <- repeat.n(as.vector(feature.attributes.df$Qval_Q_vs_C), times = 2)
+qval.rep <- repeat.n(as.vector(feature.attributes.df$Q_val_Chi), times = 2)
 qvalues <- paste("qvalues['", all.motifs, "'] = '", qval.rep, "';", sep = "")
 qvalues <- paste(qvalues, collapse = "\n")
 html.report <- gsub("--qvalues--", qvalues, html.report)
@@ -1094,14 +1032,14 @@ html.report <- gsub("--pics_rc--", logos.rc, html.report)
 
 ## Add the signficance (to display in the tooltip)
 ## They are inserted in the JS section
-sig.rep <- repeat.n(as.vector(feature.attributes.df$Significance_Q_vs_C), times = 2)
+sig.rep <- repeat.n(as.vector(feature.attributes.df$Sig_Chi), times = 2)
 sig <- paste("significances['", all.motifs, "'] = ", sig.rep, ";", sep = "")
 sig <- paste(sig, collapse = "\n")
 html.report <- gsub("--significances--", sig, html.report)
 
 ## Add the covertures (to display in the tooltip)
 ## They are inserted in the JS section
-cc <- as.numeric(gsub("%", "", feature.attributes.df$Query_fraction_of_sequences))
+cc <- as.numeric(gsub("%", "", feature.attributes.df$Coverage_query))
 cc.rep <- repeat.n(as.vector(cc), times = 2)
 coverture <- paste("TF_coverture['", all.motifs, "'] = ", cc.rep, ";", sep = "")
 coverture <- paste(coverture, collapse = "\n")
@@ -1148,9 +1086,7 @@ if(draw.area == 1){
 
 ## Insert the Y axis limits
 ## They are inserted in the C3section
-max.fraction <- round(max(all.fraction.query, all.fraction.control), digits = 2)
-
-max.y <- max.fraction + 0.02
+max.y <- max.y + 0.02
 html.report <- gsub("--y_axis--", max.y, html.report)
 
 ## Fill the parameters table
@@ -1182,7 +1118,7 @@ html.report <- gsub("--full_motif_table--", feature.attributes.file, html.report
 html.report <- gsub("Inf;", "Infinity;", html.report)
 
 ## Insert the Full motif description table
-min.sig <- min(as.numeric(as.vector(c(feature.attributes.df$Significance_Q_vs_C, feature.attributes.df$Significance_C_vs_Q))))
+min.sig <- min(as.numeric(as.vector(feature.attributes.df$Sig_Chi)))
 html.report <- gsub("--sig_min--", min.sig, html.report)
 
 ## Insert the JavaScript libraries path
