@@ -53,7 +53,7 @@ repeat.n <- function(x = c(1,2,3), times = 1){
 create.html.tab <- function(tab, img = 0, plot = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:2500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th><th class=\"tab_col\">DF</th> <th class=\"tab_col\"> Profile </th><th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:2500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> Chi-squared </th> <th class=\"tab_col\"> Degrees </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Sig (Chi) </th> <th class=\"tab_col\"> Eval (Chi) </th><th class=\"tab_col\"> Pval (Chi) </th><th class=\"tab_col\"> Qval (Chi) </th><th class=\"tab_col\"> D (KS) </th><th class=\"tab_col\"> Sig (KS) </th> <th class=\"tab_col\"> Eval (KS) </th> <th class=\"tab_col\"> Pval (KS) </th> <th class=\"tab_col\"> Qval (KS) </th> <th class=\"tab_col\"> Coverage (query) </th><th class=\"tab_col\"> Coverage (control) </th><th class=\"tab_col\"> Nb sequences (query) </th><th class=\"tab_col\"> Nb sequences (control) </th><th class=\"tab_col\"> Nb hits (query) </th><th class=\"tab_col\"> Nb hits (control) </th> <th class=\"tab_col\"> Profile cluster </th><th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
@@ -465,16 +465,21 @@ counts.per.bin.control.nb.hits <- apply(counts.per.bin.control, 1, sum)
 counts.per.bin.query.freq <- counts.per.bin.query/counts.per.bin.query.nb.hits
 counts.per.bin.control.freq <- counts.per.bin.control/counts.per.bin.control.nb.hits
 
+
+query.counts.tab.file <- paste(basename(prefix), "_tables/counts_per_bin_profiles_bin", bin, "_query.tab", sep = "")
+control.counts.tab.file <- paste(basename(prefix), "_tables/counts_per_bin_profiles_bin", bin, "_control.tab", sep = "")
+fraction.tab.file.query <- paste(basename(prefix), "_tables/density_per_bin_profiles_bin", bin, "_query.tab", sep = "")
+fraction.tab.file.control <- paste(basename(prefix), "_tables/density_per_bin_profiles_bin", bin, "_control.tab", sep = "")
 for(i in 1:2){
   
   if(i == 1){
-    freq.tab.file <- paste(basename(prefix), "_tables/density_per_bin_profiles_bin", bin, "_query.tab", sep = "")
-    counts.tab.file <- paste(basename(prefix), "_tables/counts_per_bin_profiles_bin", bin, "_query.tab", sep = "")
+    freq.tab.file <- fraction.tab.file.query
+    counts.tab.file <- query.counts.tab.file
     fpb <- counts.per.bin.query.freq
     cpb <- counts.per.bin.query
   } else {
-    freq.tab.file <- paste(basename(prefix), "_tables/density_per_bin_profiles_bin", bin, "_control.tab", sep = "")
-    counts.tab.file <- paste(basename(prefix), "_tables/counts_per_bin_profiles_bin", bin, "_control.tab", sep = "")
+    freq.tab.file <- fraction.tab.file.control
+    counts.tab.file <- control.counts.tab.file
     fpb <- counts.per.bin.control.freq
     cpb <- counts.per.bin.control
   }
@@ -752,11 +757,10 @@ features.table$Logo <- logos.F
 features.table$Logo_RC <- logos.R
 
 ## Order the table according the Significance (-log10(E-value))
-order.by.eval <- order(as.numeric(as.vector(features.table$Eval_Q_vs_C)))
+order.by.eval <- order(as.numeric(as.vector(features.table$Sig_Chi)))
 features.table <- features.table[order.by.eval,]
 
 features.table <- features.table[,c(1,19,2:18,20:23)]
-feature.attributes.df <- features.table
 
 ################################
 ## Create dynamic html report ##
@@ -781,15 +785,16 @@ all.motifs <- NULL
 all.motifs.cover <- NULL
 all.motif.names <- NULL
 hash.motif.IDs <- list()
+TF.names <- matrix.names
 
 thrash <- sapply(order.by.eval, function(o){
   
   counter <<- counter + 1
   
   ## Get the counts and the fraction of TFBSs per bin in query and control
-  counts.query <- all.counts.per.bin.query[o,]/sum(all.counts.per.bin.query[o,])
+  counts.query <- counts.per.bin.query[o,]/sum(counts.per.bin.query[o,])
   counts.query <- round(counts.query, digits = 3)
-  counts.control <- all.counts.per.bin.control[o,]/sum(all.counts.per.bin.control[o,])
+  counts.control <- counts.per.bin.control[o,]/sum(counts.per.bin.query[o,])
   counts.control <- round(counts.control, digits = 3)
   
   ## Here we create a unique ID without CSS special characters
@@ -847,7 +852,7 @@ thrash <- sapply(order.by.eval, function(o){
 
 ## Set the line width according the significance -log10(E-value)
 ## Higher significance means a wider line
-significance <- as.numeric(as.vector(feature.attributes.df$Sig_Chi))
+significance <- as.numeric(as.vector(features.table$Sig_Chi))
 line.w <- sapply(significance, function(s){
   if(s <= 0){
     w <- 1
@@ -942,11 +947,8 @@ all.cluster.buttons <- paste(all.cluster.buttons, collapse = "\n")
 ## Fill the HTML template
 ## Substitute the words marked in the template by the data
 html.report <- readLines(html.template.file)
-# [1] "Feature"           "Chi_squared"       "Degrees"           "Sig_Chi"           "E_val_Chi"         "P_val_Chi"        
-# [7] "Q_val_Chi"         "D"                 "Sig_KS"            "Eval_KS"           "Pval_KS"           "Qval_KS"          
-# [13] "Coverage_query"    "Sequences_query"   "Coverage_control"  "Sequences_control" "Nb_hits_query"     "Nb_hitd_control"  
-# [19] "ID"                "Profile_cluster"   "Profiles"          "Logo"              "Logo_RC"
-profile.data.tab.html <- create.html.tab(feature.attributes.df, img = c(22,23), plot = c(21))
+
+profile.data.tab.html <- create.html.tab(features.table, img = c(22,23), plot = c(21))
 profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
 html.report <- gsub("--tab--", profile.data.tab.html, html.report)
@@ -977,28 +979,28 @@ html.report <- gsub("--dashed--", dashed, html.report)
 
 ## Add the e-values data
 ## They are inserted in the JS section
-eval.rep <- repeat.n(as.vector(feature.attributes.df$E_val_Chi), times = 2)
+eval.rep <- repeat.n(as.vector(features.table$E_val_Chi), times = 2)
 evalues <- paste("evalues['", all.motifs, "'] = '", eval.rep, "';", sep = "")
 evalues <- paste(evalues, collapse = "\n")
 html.report <- gsub("--evalues--", evalues, html.report)
 
 ## Add the p-values (to display in the tooltip)
 ## They are inserted in the JS section
-pval.rep <- repeat.n(as.vector(feature.attributes.df$P_val_Chi), times = 2)
+pval.rep <- repeat.n(as.vector(features.table$P_val_Chi), times = 2)
 pvalues <- paste("pvalues['", all.motifs, "'] = '", pval.rep, "';", sep = "")
 pvalues <- paste(pvalues, collapse = "\n")
 html.report <- gsub("--pvalues--", pvalues, html.report)
 
 ## Add the profile clusters (to display in the tooltip)
 ## They are inserted in the JS section
-cl.rep <- repeat.n(as.vector(feature.attributes.df$Profile_cluster), times = 2)
+cl.rep <- repeat.n(as.vector(features.table$Profile_cluster), times = 2)
 profile.clusters.array <- paste(" profile_clusters['", all.motifs, "'] = '", cl.rep, "';", sep = "")
 profile.clusters.array <- paste(profile.clusters.array, collapse = "\n")
 html.report <- gsub("--profile_clusters_array--",  profile.clusters.array, html.report)
 
 ## Add the q-values (to display in the tooltip)
 ## They are inserted in the JS section
-qval.rep <- repeat.n(as.vector(feature.attributes.df$Q_val_Chi), times = 2)
+qval.rep <- repeat.n(as.vector(features.table$Q_val_Chi), times = 2)
 qvalues <- paste("qvalues['", all.motifs, "'] = '", qval.rep, "';", sep = "")
 qvalues <- paste(qvalues, collapse = "\n")
 html.report <- gsub("--qvalues--", qvalues, html.report)
@@ -1016,7 +1018,7 @@ html.report <- gsub("--IDs--", IDs, html.report)
 logos <- sapply(TF.IDs, function(i){
   paste(logo.folder, i, "_logo.jpeg", sep = "")
 })
-logos.rep <- repeat.n(as.vector(feature.attributes.df$Logo), times = 2)
+logos.rep <- repeat.n(as.vector(features.table$Logo), times = 2)
 logos <- paste("pics['", all.motifs, "'] = '", logos.rep, "';", sep = "")
 logos <- paste(logos, collapse = "\n")
 html.report <- gsub("--pics--", logos, html.report)
@@ -1025,21 +1027,21 @@ html.report <- gsub("--pics--", logos, html.report)
 logos.rc <- sapply(TF.IDs, function(i){
   paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
 })
-logos.rc.rep <- repeat.n(as.vector(feature.attributes.df$Logo_RC), times = 2)
+logos.rc.rep <- repeat.n(as.vector(features.table$Logo_RC), times = 2)
 logos.rc <- paste("pics_rc['", all.motifs, "'] = '", logos.rc.rep, "';", sep = "")
 logos.rc <- paste(logos.rc, collapse = "\n")
 html.report <- gsub("--pics_rc--", logos.rc, html.report)
 
 ## Add the signficance (to display in the tooltip)
 ## They are inserted in the JS section
-sig.rep <- repeat.n(as.vector(feature.attributes.df$Sig_Chi), times = 2)
+sig.rep <- repeat.n(as.vector(features.table$Sig_Chi), times = 2)
 sig <- paste("significances['", all.motifs, "'] = ", sig.rep, ";", sep = "")
 sig <- paste(sig, collapse = "\n")
 html.report <- gsub("--significances--", sig, html.report)
 
 ## Add the covertures (to display in the tooltip)
 ## They are inserted in the JS section
-cc <- as.numeric(gsub("%", "", feature.attributes.df$Coverage_query))
+cc <- as.numeric(gsub("%", "", features.table$Coverage_query))
 cc.rep <- repeat.n(as.vector(cc), times = 2)
 coverture <- paste("TF_coverture['", all.motifs, "'] = ", cc.rep, ";", sep = "")
 coverture <- paste(coverture, collapse = "\n")
@@ -1118,7 +1120,7 @@ html.report <- gsub("--full_motif_table--", feature.attributes.file, html.report
 html.report <- gsub("Inf;", "Infinity;", html.report)
 
 ## Insert the Full motif description table
-min.sig <- min(as.numeric(as.vector(feature.attributes.df$Sig_Chi)))
+min.sig <- min(as.numeric(as.vector(features.table$Sig_Chi)))
 html.report <- gsub("--sig_min--", min.sig, html.report)
 
 ## Insert the JavaScript libraries path
