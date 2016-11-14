@@ -35,6 +35,7 @@ package main;
   ## External command used to generate logo drawings
   local $logo_cmd_name = $ENV{LOGO_PROGRAM} || "weblogo"; ## Alternative: seqlogo (obsolete, maintained for backward compatibility)
   local $logo_cmd_path = "";
+  local $logo_no_title = 0;
 
   $decimals = 1;
   $pseudo_weight = 1;
@@ -516,7 +517,7 @@ package main;
 	$logo_file .= "_logo";
       }
       #	$logo_file =~ s/\.\w+$//;
-      $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0, $logo_cmd_name); ## Generate the logo image
+      $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0, $logo_cmd_name, $logo_no_title); ## Generate the logo image
       $matrix->set_attribute("logo_file" => $logo_file);
       $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_opt, 1, $logo_cmd_name);	## Generate logo image for the reverse complementary motif
       $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
@@ -983,6 +984,13 @@ OPTIONS
 		appended automatically, depending on the image file
 		format. If the matix file contains several matrices,
 		the matrix number is appended to the file name.
+
+        -logo_no_title
+        
+                 By default, a logo title is automatically composed
+                 ased on the matrix name and ID. This option
+                 inactivates the display of the logo title.
+
 
 	-logo_opt 
 
@@ -1703,6 +1711,9 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq "-logo_file") {
 	    $logo_file_base = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-logo_no_title") {
+	    $logo_no_title = 1;
 
 	} elsif ($ARGV[$a] eq "-logo_opt") {
 	    $logo_opt .= " ".$ARGV[$a+1];
