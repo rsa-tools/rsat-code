@@ -4146,7 +4146,7 @@ Arguments:
 
 =cut
 sub makeLogo {
-  my ($self,$logo_basename,$logo_formats,$logo_options, $rev_compl, $logo_cmd_name) = @_;
+  my ($self,$logo_basename,$logo_formats,$logo_options, $rev_compl, $logo_cmd_name, $no_title) = @_;
 
 #  my $logo_cmd_name = "seqlogo"; ## FOR DEBUG, OLD MODE
 
@@ -4230,30 +4230,34 @@ sub makeLogo {
   }
   
   ## Logo title indicates matrix ID, name
-  my $logo_title = &RSAT::util::ShortFileName($id);
-  if (my $ac = $self->get_attribute("ac")) {
-    if ($ac ne $id) {
-      $logo_title .= " ".&RSAT::util::ShortFileName($ac);
+  my $logo_title = "";
+  unless ($no_title) {
+    $logo_title = &RSAT::util::ShortFileName($id);
+    if (my $ac = $self->get_attribute("ac")) {
+      if ($ac ne $id) {
+	$logo_title .= " ".&RSAT::util::ShortFileName($ac);
+      }
     }
-  }
-  if (my $name = $self->get_attribute("name")) {
-    if ($name ne $id) {
-      $logo_title .= " ".&RSAT::util::ShortFileName($name);
+    if (my $name = $self->get_attribute("name")) {
+      if ($name ne $id) {
+	$logo_title .= " ".&RSAT::util::ShortFileName($name);
+      }
     }
-  }
-  
-  ## Prepare to compute the reverse complement
-  if ($rev_compl) {
-    $logo_title .= "  Rev. cpl.";
-  }
-  
-  ## Truncate logo title if too long
-  my $max_logo_title=$ncol*3;
-  if (length($logo_title) > $max_logo_title) {
-    $logo_title = "...".substr($logo_title, -$max_logo_title);
-    &RSAT::message::Warning("Truncating logo title", $logo_title) if ($main::verbose >= 5);
-  }
 
+    ## Prepare to compute the reverse complement
+    if ($rev_compl) {
+      $logo_title .= "  Rev. cpl.";
+    }
+
+    
+    ## Truncate logo title if too long
+    my $max_logo_title=$ncol*3;
+    if (length($logo_title) > $max_logo_title) {
+      $logo_title = "...".substr($logo_title, -$max_logo_title);
+      &RSAT::message::Warning("Truncating logo title", $logo_title) if ($main::verbose >= 5);
+    }
+  }
+  
 
   ################################################################
   ## Seqlogo is obsolete but maintained for consistency checking. It
@@ -4284,7 +4288,7 @@ sub makeLogo {
       $logo_cmd .= " -x '".$logo_info."'";
       $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
       $logo_cmd .= " ".$logo_options;
-      $logo_cmd .= " -t '".$logo_title."'";
+      $logo_cmd .= " -t '".$logo_title."'" unless ($no_title);
       $logo_cmd .= " -o "."./".$logo_basename;
       &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
       &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5); 
@@ -4322,7 +4326,7 @@ sub makeLogo {
       $logo_cmd .= " --size large " unless ($logo_options =~ /\-s /);
       $logo_cmd .= " --aspect-ratio 3 ";
       $logo_cmd .= " ".$logo_options;
-      $logo_cmd .= " --title '".$logo_title."'";
+      $logo_cmd .= " --title '".$logo_title."'" unless ($no_title);
       $logo_cmd .= " --fineprint ''";
       $logo_cmd .= " --show-ends YES ";
       $logo_cmd .= " --fout "."./".$logo_file;
