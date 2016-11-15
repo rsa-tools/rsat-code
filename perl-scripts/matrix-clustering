@@ -6202,7 +6202,7 @@ sub Produce_logos() {
 
     ## Add the empty columns
     my $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{all_concatenated_motifs};
-    $cmd .= " -from tf -to tf -return logo ";
+    $cmd .= " -from tf -to tf -return logo -logo_no_title";
     $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/test";
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
