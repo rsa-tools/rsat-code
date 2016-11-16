@@ -271,6 +271,10 @@ package main;
   ## Generate the matrix description table
   &Generate_matrix_description_table();
 
+  ################################################################
+  ## Produce the logos 
+  &Produce_logos();
+
   ## The permutation + comparison + logos will be stored in separated folder
   ## and are processed individually
   foreach my $motif_ID (sort keys %individual_motif_info) {
@@ -286,11 +290,6 @@ package main;
       ## Compare the motifs
       &CompareMatricesQuick($motif_ID);
   
-      ################################################################
-      ## Produce all the logos 
-      ## Aligned + Branch-wise motifs
-      #&Produce_logos();
-
   }
   die "\n===================================\n";
 
@@ -1200,12 +1199,11 @@ sub Produce_logos() {
     &RSAT::message::TimeWarn("Generating Logos") if ($main::verbose >= 2);
 
     ## Add the empty columns
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{all_concatenated_motifs};
-    $cmd .= " -from tf -to tf -return logo ";
-    $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/test";
+    my $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{input_matrices};
+    $cmd .= " -from tf -to tf -return logo -logo_no_title";
+    $cmd .= " -logo_format png ";
+    $cmd .= " -logo_dir ".$main::outfile{prefix}."_logos/";
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-
-    unlink($main::outfile{all_concatenated_motifs});
 }
 
 ################################################################
