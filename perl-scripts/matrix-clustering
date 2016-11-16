@@ -2307,6 +2307,7 @@ sub Add_attributes_to_JSON() {
 ###################################
 ## Create the html file to 
 ## display the tree
+## Don't modify
 sub create_html_tree_file() {
 
     &RSAT::message::TimeWarn("Generating HTML tree file", $main::outfile{logo_cladogram_html}) if ($main::verbose >= 2);
@@ -2331,6 +2332,7 @@ sub create_html_tree_file() {
 	"\tnodeEnter.append(\"a\")
 	\t\t.attr(\"xlink:href\", function(d) { return d.link_ext; })
 	\t\t.append(\"text\")
+        \t\t.style(\"font-size\", \"20px\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
@@ -2342,7 +2344,7 @@ sub create_html_tree_file() {
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
-        \t\t.attr(\"font-size\", \"12px\")
+        \t\t.attr(\"font-size\", \"20px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
  
     my $display_title_lab .= '
@@ -2568,9 +2570,9 @@ sub create_html_small_tree_file() {
     open(TEMP_2, ">".$main::outfile{temp_html_2}) || &RSAT::error::FatalError($main::outfile{temp_html_2}, "Cannot create temporary file");
 
     ## Values to change in the D3 tree
-    my $svg_width = 10;
-    my $svg_height = 8;
-    my $svg_x1 = 4 * $nb_char;
+    my $svg_width = 15;
+    my $svg_height = 13;
+    my $svg_x1 = 18 * $nb_char;
     my $svg_y1 = -7;
     my $svg_x2 = '2 + '.$svg_x1.' + 7';
     my $add_this = "";
@@ -2583,6 +2585,7 @@ sub create_html_small_tree_file() {
 	"\tnodeEnter.append(\"a\")
 	\t\t.attr(\"xlink:href\", function(d) { return d.link_ext; })
 	\t\t.append(\"text\")
+        \t\t.style(\"font-size\", \"20px\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
@@ -2591,11 +2594,14 @@ sub create_html_small_tree_file() {
 
     my $new_label = 
 	"\tnodeEnter.append(\"text\")
-	\t\t.text(function(d) { return d.children ? \"\" : d.; })
-	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
-	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
-        \t\t.attr(\"font-size\", \"10px\")
-	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
+	\t\t.text(function(d) { return d.children ? \"\" : d.ic; })
+	\t\t.attr(\"x\", function(d) { return d.children ? 0 : -5; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : -2; })
+	\t\t.attr(\"class\", function(d) { return d.children ? \"\" : \"show_con_--cl_id--\"; })
+	\t\t.attr(\"display\", function(d) { return d.children ? \"\" : \"none\"; })
+        \t\t.attr(\"font-size\", \"20px\")
+	\t\t.style(\"fill\", \"blue\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"end\"; });";
  
     my $display_title_lab .= '
         nodeEnter.append("text")
@@ -2603,7 +2609,7 @@ sub create_html_small_tree_file() {
 	.attr("x", function(d) { return d.children ? 0 : 20; })
 	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
         .attr("fill", "black")
-	.attr("font-size", "10px")
+	.attr("font-size", "20px")
         .attr("font-weight", "bold")
 	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
         ';
@@ -2615,7 +2621,7 @@ d3.select("#--cl_id--").append("text")
 	.attr("y", 0)    
 	.attr("class", "legend")     
 	.attr("id", "cons_button_--cl_id--") 
-      .attr("font-size", "10px")
+      .attr("font-size", "20px")
 	.text("IC") ; 
 
 
@@ -2697,7 +2703,7 @@ $(document).ready(function() {
 	}
 
 	if (/--font--/) {
-	    $_ =~ s/--font--/10/g;
+	    $_ =~ s/--font--/20/g;
 	}
 
 	if (/--sep_motifs--/) {
@@ -2722,7 +2728,8 @@ $(document).ready(function() {
 	}
 
 	if (/--image_spacer--/) {
-	    $_ =~ s/--image_spacer--/150/g;
+	    my $sp = $svg_x1 - 15;
+	    $_ =~ s/--image_spacer--/$sp/g;
 	}
 
 	if (/--svgwidth--/) {
@@ -2749,10 +2756,6 @@ $(document).ready(function() {
 	    $_ =~ s/--x2--/$svg_x2/g;
 	}
 
-	if (/--lab--/) {
-	    $_ =~ s/--lab--//g;
-	}
-
 
 	if ($_ =~ /Insert labels/) {
 	    $add_this = "";
@@ -2775,7 +2778,8 @@ $(document).ready(function() {
 			my $copy = $new_label;
 			$up = uc($field);
 			$copy =~ s/d\.;/ d\.$field;/;
-			my $y_displacement = 3 + (($labels_num -1) * 19);
+			$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+			my $y_displacement = 4 + (($labels_num -1) * 20);
 			$copy =~ s/#/$y_displacement/;
 			$add_this .= "\n\n".$copy."\n";
 		    }
@@ -2785,14 +2789,13 @@ $(document).ready(function() {
 	    ## Add the collection lable to the logo tree
 	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
 	    #if ($display_collection_name_flag == 1) {
-		my $displacement = 3 + (scalar(@label_fields_to_return) * 19);
+		my $displacement = 4 + (scalar(@label_fields_to_return) * 20);
 		$display_title_lab =~ s/--dis--/$displacement/;
 		$add_this .= "\n".$display_title_lab."\n";	
-	    }
-	    
-	    print TEMP_2 $add_this."\n";
+	    } 
+	    print TEMP_2 $add_this."\n";      
 	}
-
+	
 	print TEMP_2 $_."\n";
     }
     close(TEMP_2);
@@ -3680,7 +3683,8 @@ d3.select("#--cl_id--").append("text")
 ################################################################
 ## Insert D3 dynamic logo tree: This is the body of d3 script, 
 ## each time a new cluster is added to the file the next code 
-## is pasted and modified           
+## is pasted and modified   
+## Always Modify this tree     
 sub logo_tree_dynamic_portable{
   my $logo_tree = 
       '
@@ -3764,7 +3768,6 @@ svg = d3.select("#--cl_id--").select("svg")
         .attr("fill", "--stroke--");
 
        /*Insert labels*/
-       --lab--
 
        /*Insert consensus*/
 
@@ -3797,7 +3800,7 @@ svg = d3.select("#--cl_id--").select("svg")
   nodeUpdate.select("circle")
 	.attr("r", 5)
         .attr("fill", function(d) { return d._children ? "black" : "--stroke--"; })
-      .attr("font-size", "8px");
+      .attr("font-size", "15px");
 
 
   nodeUpdate.select("text")
@@ -3805,9 +3808,10 @@ svg = d3.select("#--cl_id--").select("svg")
       .attr("dx", function(d) { return d.children ? -3 : 20; })
       .attr("dy", function(d) { return d.children ? -6 : 3; })
       .attr("class", function(d) { return d.children ? "show_con_--cl_id--" : ""; })
+      .style("display", function(d) { return d.children ? "none" : ""; })
       .attr("fill", function(d) { return d.children ? "blue" : "black"; })
       .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
-      .attr("font-size", "8px");
+      .attr("font-size", "20px");
 
 	nodeUpdate.select("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
@@ -3838,7 +3842,7 @@ svg = d3.select("#--cl_id--").select("svg")
 
   nodeExit.select("circle")
       .attr("r", 1e-6)
-      .attr("font-size", "10px");
+      .attr("font-size", "15px");
 
   nodeExit.selectAll("image")
       .remove();
@@ -4813,7 +4817,7 @@ sub MotifRichnessPlot {
     close(TEMP);
 
     ## Rename the temporary file
-    &RSAT::message::TimeWarn("Exporting Motif Richness Barplot") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Exporting Motif Diversity Barplot") if ($main::verbose >= 2);
     $cmd = "mv ".$main::outfile{temp_html_3}." ".$main::outfile{motif_richness_barplot_html};
     &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 }
@@ -5330,7 +5334,7 @@ sub InsertHeatmapCollectionComplementarity {
 sub InsertMotifRichnessBarPlot {
 
     my $motif_richness_section = ' 
-        <div id="Motif_richness_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{motif_richness_barplot_html}).'"><strong>Motif richness per collection</strong></a></div>
+        <div id="Motif_richness_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{motif_richness_barplot_html}).'"><strong>Motif diversity per collection</strong></a></div>
     ';
 
     print $syn $motif_richness_section;
@@ -5976,7 +5980,7 @@ sub Synthesis {
 
     $number_of_clusters = scalar(keys %alignment_table_data);      
     &create_html_small_tree_file();
-    &create_html_tree_file();
+    #&create_html_tree_file();
 
 
     &OpenScriptJQuery();
