@@ -64,7 +64,7 @@ heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 # prefix <- "test_motif_enrichment"
 # setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap")
-# maxNWD.table.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/maxNWDsignificantScore_heatmap_compare.txt"
+# maxNWD.table.file <- "/home/jaimicore/Dropbox/matrix-clustering_article/NFKB_ChIP-seq/results/matrix-enrichment/NFKB_vs_Random_fragments/NFKB_vs_Random_fragments_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt"
 # html.template.file <- "motif_enrichment_dynamic_heatmap_d3.html"
 
 base.name <- basename(prefix)
@@ -87,14 +87,14 @@ for(n in 1:(length(sets)-1)){
     ## Skip when the both sets are the same
     if(n < m){
       ## Assign the names to the differential
-      diff.name.1 <- paste("Diff", set1, set2, sep = "_")
-      diff.name.2 <- paste("Diff", set2, set1, sep = "_")
+      diff.name.1 <- paste("Diff", set1, set2, sep = "__")
+      diff.name.2 <- paste("Diff", set2, set1, sep = "__")
       
       print(diff.name.1)
       print(diff.name.2)
       
-      # max.NWD.table[,diff.name.1] <- max.NWD.table[,set1] - max.NWD.table[,set2]
-      # max.NWD.table[,diff.name.2] <- max.NWD.table[,diff.name.1] * -1
+      max.NWD.table[,diff.name.1] <- max.NWD.table[,set1] - max.NWD.table[,set2]
+      max.NWD.table[,diff.name.2] <- max.NWD.table[,diff.name.1] * -1
     }
   }
 }
