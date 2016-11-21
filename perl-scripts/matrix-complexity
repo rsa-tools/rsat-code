@@ -1043,7 +1043,7 @@ sub GenerateXPermutatedMotifs{
     my $randomize_motifs_cmd = $SCRIPTS."/convert-matrix";
     $randomize_motifs_cmd .= " -i ".$motif_query_file;
     $randomize_motifs_cmd .= " -from tf -to tf";
-    $randomize_motifs_cmd .= " -perm ".$nb_permutation;
+    $randomize_motifs_cmd .= " -perm ".$individual_motif_info{$ID}{"nb_permutations"};
     $randomize_motifs_cmd .= " -o ".$motif_permuted_file;
     &doit($randomize_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
@@ -1222,6 +1222,7 @@ sub Generate_matrix_description_table() {
 			     "id",
 			     "name",
 			     "width",
+                             "nb_permutations",
 			     "consensus",
 			     "rc_consensus",
 			     "label",
@@ -1229,7 +1230,9 @@ sub Generate_matrix_description_table() {
 		             "File",
 		             "File_permuted",
 		             "Folder",
-                             "Comparison"
+                             "Comparison",
+                             "Logo",
+                             "Logo_RC"		     
 	), "\n";
     
     my $m=0;
@@ -1258,6 +1261,7 @@ sub Generate_matrix_description_table() {
 
         $individual_motif_info{$mid}{"name"} = $matrix->get_attribute("name");
         $individual_motif_info{$mid}{"ncol"} = $matrix->get_attribute("ncol");
+        $individual_motif_info{$mid}{"nb_permutations"} = $matrix->get_attribute("ncol") ** 4;
         $individual_motif_info{$mid}{"consensus"} = $c;
         $individual_motif_info{$mid}{"consensus_rc"} = $c_rc;
         $individual_motif_info{$mid}{"IC"} = $rounded_ic;
@@ -1265,19 +1269,24 @@ sub Generate_matrix_description_table() {
         $individual_motif_info{$mid}{"permutations"} = $main::dir{results}."/".$mid."/".$mid."_permuted_motifs.tf";
         $individual_motif_info{$mid}{"folder"} = $main::dir{results}."/".$mid;
         $individual_motif_info{$mid}{"comparison"} = $main::dir{results}."/".$mid."/".$mid."_motif_comparison_table.tab";
+        $individual_motif_info{$mid}{"logo"} = $main::outfile{prefix}."_logos/".$mid."_logo.png";
+        $individual_motif_info{$mid}{"logo_rc"} = $main::outfile{prefix}."_logos/".$mid."_logo_rc.png";
 
 	my $matrix_desc_string = join ("\t", 
 				       $m,
 				       $matrix->get_attribute("id"),
 				       $matrix->get_attribute("name"),
 				       $matrix->get_attribute("ncol"),
+                                       $individual_motif_info{$mid}{"nb_permutations"},
 				       $c,
 				       $c_rc,
                                        $rounded_ic,
                                        $single_mat_file,
                                        $individual_motif_info{$mid}{"permutations"},
                                        $individual_motif_info{$mid}{"folder"},
-                                       $individual_motif_info{$mid}{"comparison"}
+                                       $individual_motif_info{$mid}{"comparison"},
+                                       $individual_motif_info{$mid}{"logo"},
+                                       $individual_motif_info{$mid}{"logo_rc"}
 	    );
 	print $desc $matrix_desc_string."\n";
     }
