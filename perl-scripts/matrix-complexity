@@ -289,19 +289,19 @@ package main;
       ################################################################
       ## Compare the motifs
       &CompareMatricesQuick($motif_ID);
-  
   }
-  die "\n===================================\n";
 
-
+  ################################################################
+  ## Draw plots : Violin plot + Scatterplot + Histograms
+  &DrawScoreDistributions()
 
   ################################################################
   ## Create an archive with all result files
-  &Archive(1);
+  #&Archive(1);
 
   #######################################
   ## Delete temporal files and folders
-  &Delete_temporal_files();
+  #&Delete_temporal_files();
 
   ################################################################
   ## Print verbose
@@ -788,6 +788,10 @@ sub set_output_file_names {
   $main::outfile{matrix_descriptions} = $main::outfile{prefix}."_tables/pairwise_compa_matrix_descriptions.tab"; push @outfiles, "matrix_descriptions"; &AddTabToConvert("matrix_descriptions");
   $main::outfile{matrix_descriptions_html} = $main::outfile{prefix}."_html/pairwise_compa_matrix_descriptions.html";  push @outfiles, "matrix_descriptions_html";
 
+  ## Html report
+  $main::outfile{html_report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_complexity_template.html";
+  $main::outfile{html_report} = $main::outfile{prefix}."_report.html";
+
   ## Define the base directories for the javascripts, which are
   ## required to display logo trees, animations and dynamic tables
   
@@ -1225,7 +1229,6 @@ sub Generate_matrix_description_table() {
                              "nb_permutations",
 			     "consensus",
 			     "rc_consensus",
-			     "label",
 		             "IC",
 		             "File",
 		             "File_permuted",
@@ -1233,7 +1236,7 @@ sub Generate_matrix_description_table() {
                              "Comparison",
                              "Logo",
                              "Logo_RC"		     
-	), "\n";
+	)."\n";
     
     my $m=0;
 
@@ -1272,6 +1275,14 @@ sub Generate_matrix_description_table() {
         $individual_motif_info{$mid}{"logo"} = $main::outfile{prefix}."_logos/".$mid."_logo.png";
         $individual_motif_info{$mid}{"logo_rc"} = $main::outfile{prefix}."_logos/".$mid."_logo_rc.png";
 
+
+        my $aa = &RSAT::util::RelativePath($main::outfile{html_report}, $single_mat_file);
+        my $ab = &RSAT::util::RelativePath($main::outfile{html_report}, $main::outfile{prefix}."_results/".$mid."/".$mid."_permuted_motifs.tf");
+        my $ac = &RSAT::util::RelativePath($main::outfile{html_report}, $main::outfile{prefix}."_results/".$mid);
+        my $ad = &RSAT::util::RelativePath($main::outfile{html_report}, $main::outfile{prefix}."_results/".$mid."/".$mid."_motif_comparison_table.tab");
+        my $ae = &RSAT::util::RelativePath($main::outfile{html_report}, $main::outfile{prefix}."_logos/".$mid."_logo.png");
+        my $af = &RSAT::util::RelativePath($main::outfile{html_report}, $main::outfile{prefix}."_logos/".$mid."_logo_rc.png");
+
 	my $matrix_desc_string = join ("\t", 
 				       $m,
 				       $matrix->get_attribute("id"),
@@ -1281,15 +1292,50 @@ sub Generate_matrix_description_table() {
 				       $c,
 				       $c_rc,
                                        $rounded_ic,
-                                       $single_mat_file,
-                                       $individual_motif_info{$mid}{"permutations"},
-                                       $individual_motif_info{$mid}{"folder"},
-                                       $individual_motif_info{$mid}{"comparison"},
-                                       $individual_motif_info{$mid}{"logo"},
-                                       $individual_motif_info{$mid}{"logo_rc"}
+                                       $aa,
+                                       $ab,
+                                       $ac,
+                                       $ad,
+                                       $ae,
+                                       $af
 	    );
 	print $desc $matrix_desc_string."\n";
     }
     close $desc;
+}
+
+################################################################
+## Call a R script that produces the plots
+sub DrawScoreDistributions(){
+
+    &RSAT::message::TimeWarn("Generating plots") if ($main::verbose >= 2);
+
+    ##################################
+    ### Identify the path of the R executable
+    my $r_path = &RSAT::server::GetProgramPath("R");
+
+    my $matrix_complexity_script  = $ENV{RSAT}."/R-scripts/matrix_complexity.R";
+    &RSAT::error::FatalError("Cannot read the motif complexity script", $matrix_complexity_script) unless (-r $matrix_complexity_script);
+    $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
+    
+    ## Basic parameters
+    my $matrix_complexity_cmd = "";
+    $matrix_complexity_cmd .= " cat ".$matrix_complexity_script;
+    $matrix_complexity_cmd .= " | ".$r_path;
+    $matrix_complexity_cmd .= " --slave --no-save --no-restore --no-environ --vanilla";
+    $matrix_complexity_cmd .= " --args \"";
+
+    $matrix_complexity_cmd .= " motif.attributes.table = '".$main::outfile{matrix_descriptions}."'";
+    $matrix_complexity_cmd .= "; html.template.file = '".$main::outfile{html_report_template}."'";
+    $matrix_complexity_cmd .= "; prefix = '".$main::outfile{prefix}."'";
+    $matrix_complexity_cmd .= "; \"";
+
+    if ($r_path) {
+        &doit($matrix_complexity_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    } else {
+        &RSAT::message::Warning("Could not run matrix complexity because the program R is not available") if ($main::verbose >= 1);
+    }
+    return();
+
 }
 __END__
