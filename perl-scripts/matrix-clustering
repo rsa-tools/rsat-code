@@ -209,7 +209,7 @@ package main;
   local $concat_motif_files = "";
 
   ## Supported label motif fields
-  local @supported_label_motif_fields = qw (id name collection);
+  local @supported_label_motif_fields = qw (id name collection ic);
   local %supported_label_motif_fields = ();
   foreach my $field (@supported_label_motif_fields) {
     $supported_label_motif_fields{$field} = 1;
@@ -217,7 +217,7 @@ package main;
   local $supported_label_motif_fields = join ",", @supported_label_motif_fields;
   local %label_motif_fields_to_return = ();
   ## Default name::collection
-  local @label_motif_fields_to_return = qw (name collection);
+  local @label_motif_fields_to_return = qw (name collection ic);
 
 
   ## Supported label fields
@@ -2228,6 +2228,7 @@ sub Add_attributes_to_JSON() {
 		      }
 	 	  }
 	      }
+	      $Add_this .= ",\n \"ic\" : \"IC: ".$matrix_info{$M1}{ic}."\"";
 	      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
 	      $Add_this .= ",\n \"title\" : \"".$motifs_ID_unique{$M1}."\"";
 	      $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
@@ -2346,6 +2347,15 @@ sub create_html_tree_file() {
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
         \t\t.attr(\"font-size\", \"20px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
+
+    my $ic_leaves = 
+	"\tnodeEnter.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.ic; })
+	\t\t.attr(\"x\", function(d) { return d.children ? 0 : -20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : -3; })
+        \t\t.attr(\"font-size\", \"20px\")
+	\t\t.style(\"fill\", \"blue\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"end\"; });";
  
     my $display_title_lab .= '
         nodeEnter.append("text")
@@ -2544,7 +2554,9 @@ $(document).ready(function() {
 		$display_title_lab =~ s/--dis--/$displacement/;
 		$add_this .= "\n".$display_title_lab."\n";	
 	    }
-	    
+
+	    ## Add the IC to the logo tree
+	    $add_this .= "\n".$ic_leaves."\n";
 	    print TEMP $add_this."\n";
 	}
 
@@ -2613,6 +2625,17 @@ sub create_html_small_tree_file() {
         .attr("font-weight", "bold")
 	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
         ';
+
+    my $ic_leaves = 
+	"\tnodeEnter.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.ic; })
+	\t\t.attr(\"x\", function(d) { return d.children ? 0 : -20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : -1; })
+        \t\t.attr(\"font-size\", \"20px\")
+        \t\t.attr(\"class\", function(d) { return d.children ? \"\" : \"show_con_--cl_id--\"; })
+        \t\t.style(\"display\", function(d) { return d.children ? \"\": \"none\"; })
+	\t\t.style(\"fill\", \"blue\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"end\"; });";
 
     my $hide_show_consensus = '
 
@@ -2792,7 +2815,14 @@ $(document).ready(function() {
 		my $displacement = 4 + (scalar(@label_fields_to_return) * 20);
 		$display_title_lab =~ s/--dis--/$displacement/;
 		$add_this .= "\n".$display_title_lab."\n";	
-	    } 
+	    }
+
+	    ## Add the IC to the logo tree
+
+	    $ic_leaves =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/g;
+	    $add_this .= "\n".$ic_leaves."\n";
+	    print TEMP2 $add_this."\n";
+ 
 	    print TEMP_2 $add_this."\n";      
 	}
 	
