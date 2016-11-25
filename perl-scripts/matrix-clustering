@@ -2222,13 +2222,13 @@ sub Add_attributes_to_JSON() {
 	      foreach my $field (@supported_label_fields) {
 		  if ($label_fields_to_return{$field}) {
 		      if($field eq "ic"){
-			  $Add_this .= ",\n \"".$field."\" : \"IC: ".$matrix_info{$M1}{$field}."\"";
+			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
 		      } else {
 			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
 		      }
 	 	  }
 	      }
-	      $Add_this .= ",\n \"ic\" : \"IC: ".$matrix_info{$M1}{ic}."\"";
+	      $Add_this .= ",\n \"ic\" : \"".$matrix_info{$M1}{ic}."\"";
 	      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
 	      $Add_this .= ",\n \"title\" : \"".$motifs_ID_unique{$M1}."\"";
 	      $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
@@ -2271,7 +2271,7 @@ sub Add_attributes_to_JSON() {
 		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
-		      $Add .= " \"ic\" : \"IC: ".$rounded_ic."\",\n";
+		      $Add .= " \"ic\" : \"".$rounded_ic."\",\n";
 		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
 		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
 		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
