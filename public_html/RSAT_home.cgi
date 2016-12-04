@@ -189,7 +189,7 @@ print <<EndText;
 	    <a href="http://fungi.rsat.eu/" target="_top">
 	      <img src="images/logo_fungi.jpg" height='100' border='0'
 		   alt="fungi"></a><br> maintained by
-	    <a target='_blank' href="http://tagc.univ-mrs.fr/">TAGC - Université Aix Marseilles, France </a>
+	    <a target='_blank' href="http://tagc.univ-mrs.fr/">TAGC - Universit&eacute; Aix Marseilles, France </a>
 	  </td>
 	  
 	  <td>
@@ -210,7 +210,7 @@ print <<EndText;
 	  <td>
 	    <a href="http://protists.rsat.eu/" target="_top">
 	      <img src="images/logo_protists.jpg" height='100' border='0' alt="protists"></a><br>
-	    maintained by <a target='_blank' href="http://www.biologie.ens.fr/csb/">Ecole Normale Supérieure Paris, France</a>
+	    maintained by <a target='_blank' href="http://www.biologie.ens.fr/csb/">Ecole Normale Sup&eacute;rieure Paris, France</a>
 	  </td>
 	  
 	  <td>
