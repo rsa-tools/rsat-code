@@ -318,7 +318,7 @@ sub Panel2 {
   print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html#thresholds'>Number of top sequences to retain </a>&nbsp;</B>\n";
   print  $query->textfield(-name=>'top_sequences',
 			   -default=>$default{top_sequences},
-			   -size=>3);
+			   -size=>5);
 
   print "<br/>";
 
@@ -578,15 +578,15 @@ sub Panel5  {
 
   print ("<INPUT TYPE='radio' NAME='visualize' value='none' $checked{'none'}>","<b>No</b>");
 
-  print "<br/>";
-  print ("<INPUT TYPE='radio' NAME='visualize' value='getfasta' $checked{'getfasta'}>",
-	 "Peak coordinates specified in fasta headers in <a target='_blank' href='http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html'><b>bedtools getfasta</b></a> format (also for <b>retrieve-seq-bed</b> output).",
-	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>3:81458-81806(.)</tt>");
-
-  print "<br/>";
+  print "<br>";
   print ("<INPUT TYPE='radio' NAME='visualize' value='galaxy' $checked{'galaxy'}>",
-	 "Peak coordinates specified in fasta headers of the test sequence file (<a target='_blank' href='https://usegalaxy.org/'><b>Galaxy</b></a> format)",
-	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+</tt>");
+	 "Peak coordinates in <a target='_blank' href='https://usegalaxy.org/'><b>Galaxy/UCSC</b></a> format (also for <b>fetch-sequences</b> output)",
+	 "<br>","&nbsp;"x7,"Fasta headers should look like this: <b><tt>>mm9_chr1_3473041_3473370_+</tt></b>");
+
+  print "<br>";
+  print ("<INPUT TYPE='radio' NAME='visualize' value='getfasta' $checked{'getfasta'}>",
+	 "Peak coordinates in <a target='_blank' href='http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html'><b>bedtools getfasta</b></a> format (also for <b>retrieve-seq-bed</b> output).",
+	 "<br>","&nbsp;"x7,"Fasta headers should look like this: <b><tt>>3:81458-81806(.)</tt></b>");
 
   print "<br/>";
   print ("<INPUT TYPE='radio' NAME='visualize' value='bed_coord' $checked{'bed_coord'}>","Peak coordinates provided as a <b>custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
