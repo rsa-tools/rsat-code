@@ -13,7 +13,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ## Default values for filling the form
-$default{output} = "email";
+$default{output} = "display";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
@@ -342,7 +342,7 @@ print $query->hidden(-name=>'return_matrices',-default=>'on');
 print $query->hidden(-name=>'max_asmb_per_cluster',-default=>'2');
 print $query->hidden(-name=>'return_graphs',-default=>'on');
 print $query->hidden(-name=>'strand',-default=>'both strands');
-print $query->hidden(-name=>'output',-default=>'email');
+print $query->hidden(-name=>'output',-default=>'display');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;

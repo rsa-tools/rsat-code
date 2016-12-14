@@ -35,7 +35,13 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
     <div>
       <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSAT</a> - fetch-sequence</h3>
       <br/>
+   
+   Get  DNA sequences corresponding to set of genomic coordinates (<a target='_blank'
+	  href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed
+	  format</a>). Sequences are downloaded from the <a target='_blank' href='https://genome.ucsc.edu/'>UCSC genome browser</a>. 
+
 <?php
+
    ## first check if this tool is supported for the current server
    if ($properties['ucsc_tools'] == 0) {
      echo ("<font size='+1'>");
