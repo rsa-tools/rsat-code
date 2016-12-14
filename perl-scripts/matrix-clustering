@@ -209,7 +209,7 @@ package main;
   local $concat_motif_files = "";
 
   ## Supported label motif fields
-  local @supported_label_motif_fields = qw (id name collection);
+  local @supported_label_motif_fields = qw (id name collection ic);
   local %supported_label_motif_fields = ();
   foreach my $field (@supported_label_motif_fields) {
     $supported_label_motif_fields{$field} = 1;
@@ -217,11 +217,11 @@ package main;
   local $supported_label_motif_fields = join ",", @supported_label_motif_fields;
   local %label_motif_fields_to_return = ();
   ## Default name::collection
-  local @label_motif_fields_to_return = qw (name collection);
+  local @label_motif_fields_to_return = qw (name collection ic);
 
 
   ## Supported label fields
-  local @supported_label_fields = qw (id name consensus);
+  local @supported_label_fields = qw (id name consensus ic);
   local %supported_label_fields = ();
   foreach my $field (@supported_label_fields) {
     $supported_label_fields{$field} = 1;
@@ -1416,6 +1416,10 @@ sub set_output_file_names {
   $main::outfile{heatmap_collections_d3} = $main::outfile{prefix}."_tables/collection_heatmap_tab.tsv";
   $main::outfile{heatmap_collections_attributes} = $main::outfile{prefix}."_tables/collection_heatmap_order.tab";
 
+
+  $main::outfile{motif_richness_barplot_html} = $main::outfile{prefix}."_motif_richness_barplot.html";
+  $main::outfile{motif_richness_tsv} = $main::outfile{prefix}."_motif_richness.tsv";
+
   ## Table with the Clusters ID + Logo path of root motifs
   $main::outfile{root_motifs_table} = $main::outfile{prefix}."_root_motifs_table.tab";
 
@@ -1484,6 +1488,7 @@ sub set_output_file_names {
   ## Some temporary files
   $main::outfile{temp_html} = $main::outfile{prefix}."_temporary.html";
   $main::outfile{temp_html_2} = $main::outfile{prefix}."_temporary_2.html";
+  $main::outfile{temp_html_3} = $main::outfile{prefix}."_temporary_3.html";
   $main::outfile{int_align} = $main::outfile{prefix}."_tables/intermediate_alignments.tab";
 
   ## Archive to facilitate transfer of all the results in a zip file
@@ -1650,7 +1655,10 @@ sub pre_process_motif_files{
       $convert_matrix_cmd .= " -prefix_id ".$collection_name;
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed};
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-      unlink($motif_set_attributes{$collection_name}{matrix_file_processed_1});
+
+     #$mat_file_trimmed = &trim_matrix_low_IC_columns_preprocess($motif_set_attributes{$collection_name}{matrix_file_processed}, $motif_set_attributes{$collection_name}{matrix_file_processed_1}, 1);
+
+      #unlink($motif_set_attributes{$collection_name}{matrix_file_processed_1});
 
       ########################################
       ## Save the unique ID in a hash table
@@ -2152,6 +2160,7 @@ sub Add_attributes_to_JSON() {
       $matrix_info{$id}{width} = $alignment_info{$matrix_info{$id}{id}}{width};
       $matrix_info{$id}{consensus} = $split_line[4];
       $matrix_info{$id}{consensus_rc} = $split_line[5];
+      $matrix_info{$id}{ic} = $split_line[6];
   }
   close($mat_desc);
 
@@ -2188,7 +2197,7 @@ sub Add_attributes_to_JSON() {
 	  $line = $_;
 
 	  ################################################################
-	  ## Search the pattern separating the matrices names (tree leafs)
+	  ## Search the pattern separating the matrices names (tree leaves)
 	  if ($line =~ /\s*\"label\":\s*\"(.+)\",/) {
 	      $Flag = 1;
 	      $Add_this = "";
@@ -2212,9 +2221,14 @@ sub Add_attributes_to_JSON() {
 	      
 	      foreach my $field (@supported_label_fields) {
 		  if ($label_fields_to_return{$field}) {
-		      $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
-		  }
+		      if($field eq "ic"){
+			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
+		      } else {
+			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
+		      }
+	 	  }
 	      }
+	      $Add_this .= ",\n \"ic\" : \"".$matrix_info{$M1}{ic}."\"";
 	      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
 	      $Add_this .= ",\n \"title\" : \"".$motifs_ID_unique{$M1}."\"";
 	      $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
@@ -2233,7 +2247,23 @@ sub Add_attributes_to_JSON() {
 	      if ($children > 1) {
 		  my $folder = $levels_JSON[$children-2];
 
-		  if (exists($merged_consensuses_files{$folder})) {		
+		  if (exists($merged_consensuses_files{$folder})) {
+
+		      ## Calculate IC of branch motif
+		      my @branch_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$folder}{$cluster}{tf_file}, "tf");
+		      my $rounded_ic = 0;
+		      foreach my $matrix (@branch_motifs) {
+		    		    
+			  ## Calculates the IC of the matrix
+			  $matrix->calcInformation();
+			  $matrix->toString(col_width=>(1+4),
+					    decimals=>1,
+					    type=>"information",
+					    format=>"tf");
+                          my $ic = $matrix->get_attribute("total.information");
+                          $rounded_ic = sprintf("%.2f", $ic);
+                      }
+
 		      my $branch = $folder;
 		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
@@ -2241,6 +2271,7 @@ sub Add_attributes_to_JSON() {
 		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
+		      $Add .= " \"ic\" : \"".$rounded_ic."\",\n";
 		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
 		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
 		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
@@ -2277,6 +2308,7 @@ sub Add_attributes_to_JSON() {
 ###################################
 ## Create the html file to 
 ## display the tree
+## Don't modify
 sub create_html_tree_file() {
 
     &RSAT::message::TimeWarn("Generating HTML tree file", $main::outfile{logo_cladogram_html}) if ($main::verbose >= 2);
@@ -2285,8 +2317,8 @@ sub create_html_tree_file() {
     open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
 
     ## Values to change in the D3 (small) tree
-    my $svg_width = 25;
-    my $svg_height = 80;
+    my $svg_width = 15;
+    my $svg_height = 50;
     my $svg_x1 = 15 * $nb_char + 7;
     my $svg_y1 = -33;
     my $svg_x2 = '25 + '.$svg_x1.' + 25';;
@@ -2301,6 +2333,7 @@ sub create_html_tree_file() {
 	"\tnodeEnter.append(\"a\")
 	\t\t.attr(\"xlink:href\", function(d) { return d.link_ext; })
 	\t\t.append(\"text\")
+        \t\t.style(\"font-size\", \"20px\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
@@ -2312,8 +2345,17 @@ sub create_html_tree_file() {
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
-        \t\t.attr(\"font-size\", \"15px\")
+        \t\t.attr(\"font-size\", \"20px\")
 	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
+
+    my $ic_leaves = 
+	"\tnodeEnter.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.ic; })
+	\t\t.attr(\"x\", function(d) { return d.children ? 0 : -20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : -3; })
+        \t\t.attr(\"font-size\", \"20px\")
+	\t\t.style(\"fill\", \"blue\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"end\"; });";
  
     my $display_title_lab .= '
         nodeEnter.append("text")
@@ -2333,7 +2375,7 @@ d3.select("#--cl_id--").append("text")
 	.attr("y", 0)    
 	.attr("class", "legend")     
 	.attr("id", "cons_button_--cl_id--") 
-	.text("Consensus")  
+	.text("IC")  
 ;
 
 // Slide the Heatmap View
@@ -2383,7 +2425,7 @@ $(document).ready(function() {
 	if (/--height--/) {
 	  my $clust = $cluster_id_hash{$cluster_nb};
 	  my $mat_number = $clusters_info{$clust} + 2;
-	  $_ =~ s/--height--/100 + 81 * $mat_number/;
+	  $_ =~ s/--height--/100 + 85 * $mat_number/;
 	}
 	
 	### Set the height 
@@ -2498,7 +2540,7 @@ $(document).ready(function() {
 			my $copy = $new_label;
 			$up = uc($field);
 			$copy =~ s/d\.;/ d\.$field;/;
-			my $y_displacement = 3 + (($labels_num -1) * 25);
+			my $y_displacement = 3 + (($labels_num -1) * 19);
 			$copy =~ s/#/$y_displacement/;
 			$add_this .= "\n\n".$copy."\n";
 		    }
@@ -2508,11 +2550,13 @@ $(document).ready(function() {
 	    ## Add the collection lable to the logo tree
 	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
 	    #if ($display_collection_name_flag == 1) {
-		my $displacement = 3 + (scalar(@label_fields_to_return) * 25);
+		my $displacement = 3 + (scalar(@label_fields_to_return) * 19);
 		$display_title_lab =~ s/--dis--/$displacement/;
 		$add_this .= "\n".$display_title_lab."\n";	
 	    }
-	    
+
+	    ## Add the IC to the logo tree
+	    $add_this .= "\n".$ic_leaves."\n";
 	    print TEMP $add_this."\n";
 	}
 
@@ -2539,8 +2583,8 @@ sub create_html_small_tree_file() {
 
     ## Values to change in the D3 tree
     my $svg_width = 15;
-    my $svg_height = 8;
-    my $svg_x1 = 4 * $nb_char;
+    my $svg_height = 13;
+    my $svg_x1 = 18 * $nb_char;
     my $svg_y1 = -7;
     my $svg_x2 = '2 + '.$svg_x1.' + 7';
     my $add_this = "";
@@ -2553,6 +2597,7 @@ sub create_html_small_tree_file() {
 	"\tnodeEnter.append(\"a\")
 	\t\t.attr(\"xlink:href\", function(d) { return d.link_ext; })
 	\t\t.append(\"text\")
+        \t\t.style(\"font-size\", \"20px\")
 	\t\t.text(function(d) { return d.children ? \"\" : d.; })
 	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
 	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
@@ -2561,11 +2606,14 @@ sub create_html_small_tree_file() {
 
     my $new_label = 
 	"\tnodeEnter.append(\"text\")
-	\t\t.text(function(d) { return d.children ? \"\" : d.; })
-	\t\t.attr(\"x\", function(d) { return d.children ? 0 : 20; })
-	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : #; })
-        \t\t.attr(\"font-size\", \"--font--px\")
-	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });";
+	\t\t.text(function(d) { return d.children ? \"\" : d.ic; })
+	\t\t.attr(\"x\", function(d) { return d.children ? 0 : -5; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : -2; })
+	\t\t.attr(\"class\", function(d) { return d.children ? \"\" : \"show_con_--cl_id--\"; })
+	\t\t.attr(\"display\", function(d) { return d.children ? \"\" : \"none\"; })
+        \t\t.attr(\"font-size\", \"20px\")
+	\t\t.style(\"fill\", \"blue\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"end\"; });";
  
     my $display_title_lab .= '
         nodeEnter.append("text")
@@ -2573,10 +2621,21 @@ sub create_html_small_tree_file() {
 	.attr("x", function(d) { return d.children ? 0 : 20; })
 	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
         .attr("fill", "black")
-	.attr("font-size", "--font--px")
+	.attr("font-size", "20px")
         .attr("font-weight", "bold")
 	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
         ';
+
+    my $ic_leaves = 
+	"\tnodeEnter.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.ic; })
+	\t\t.attr(\"x\", function(d) { return d.children ? 0 : -20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : -1; })
+        \t\t.attr(\"font-size\", \"20px\")
+        \t\t.attr(\"class\", function(d) { return d.children ? \"\" : \"show_con_--cl_id--\"; })
+        \t\t.style(\"display\", function(d) { return d.children ? \"\": \"none\"; })
+	\t\t.style(\"fill\", \"blue\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"end\"; });";
 
     my $hide_show_consensus = '
 
@@ -2585,8 +2644,8 @@ d3.select("#--cl_id--").append("text")
 	.attr("y", 0)    
 	.attr("class", "legend")     
 	.attr("id", "cons_button_--cl_id--") 
-      .attr("font-size", "--font--px")
-	.text("Consensus") ; 
+      .attr("font-size", "20px")
+	.text("IC") ; 
 
 
 // Slide the Heatmap View
@@ -2636,7 +2695,7 @@ $(document).ready(function() {
 	if (/--height--/) {
 	   my $clust = $cluster_id_hash{$cluster_nb};
 	   my $mat_number = $clusters_info{$clust} + 2;
-	   $_ =~ s/--height--/50 + 81 * $mat_number/;
+	   $_ =~ s/--height--/50 + 87 * $mat_number/;
 	}
 	
 	### Set the height 
@@ -2667,7 +2726,7 @@ $(document).ready(function() {
 	}
 
 	if (/--font--/) {
-	    $_ =~ s/--font--/10/g;
+	    $_ =~ s/--font--/20/g;
 	}
 
 	if (/--sep_motifs--/) {
@@ -2692,7 +2751,8 @@ $(document).ready(function() {
 	}
 
 	if (/--image_spacer--/) {
-	    $_ =~ s/--image_spacer--/150/g;
+	    my $sp = $svg_x1 - 15;
+	    $_ =~ s/--image_spacer--/$sp/g;
 	}
 
 	if (/--svgwidth--/) {
@@ -2719,10 +2779,6 @@ $(document).ready(function() {
 	    $_ =~ s/--x2--/$svg_x2/g;
 	}
 
-	if (/--lab--/) {
-	    $_ =~ s/--lab--//g;
-	}
-
 
 	if ($_ =~ /Insert labels/) {
 	    $add_this = "";
@@ -2745,7 +2801,8 @@ $(document).ready(function() {
 			my $copy = $new_label;
 			$up = uc($field);
 			$copy =~ s/d\.;/ d\.$field;/;
-			my $y_displacement = 3 + (($labels_num -1) * 25);
+			$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+			my $y_displacement = 4 + (($labels_num -1) * 20);
 			$copy =~ s/#/$y_displacement/;
 			$add_this .= "\n\n".$copy."\n";
 		    }
@@ -2755,14 +2812,20 @@ $(document).ready(function() {
 	    ## Add the collection lable to the logo tree
 	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
 	    #if ($display_collection_name_flag == 1) {
-		my $displacement = 3 + (scalar(@label_fields_to_return) * 25);
+		my $displacement = 4 + (scalar(@label_fields_to_return) * 20);
 		$display_title_lab =~ s/--dis--/$displacement/;
 		$add_this .= "\n".$display_title_lab."\n";	
 	    }
-	    
-	    print TEMP_2 $add_this."\n";
-	}
 
+	    ## Add the IC to the logo tree
+
+	    $ic_leaves =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/g;
+	    $add_this .= "\n".$ic_leaves."\n";
+	    print TEMP2 $add_this."\n";
+ 
+	    print TEMP_2 $add_this."\n";      
+	}
+	
 	print TEMP_2 $_."\n";
     }
     close(TEMP_2);
@@ -3213,9 +3276,9 @@ sub Text_end_report {
 	    <li>
 	      <strong>Contact</strong>
               <ul>
-                 <li type="square">Jaime Castro-Mondragon - <strong>jaime.castro-mondragon@etu.univ-amu.fr</strong></li>
-                 <li type="square">Morgane Thomas-Chollier - <strong>mthomas@biologie.ens.fr</strong></li>
-                 <li type="square">Jacques van Helden - <strong>Jacques.van-Helden@univ-amu.fr</strong></li>
+                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/rsat/data/published_data/Castro_2016_matrix-clustering/Application_4/Ceevee10/demo_jaime.html" target=\'_blank\'>Jaime Castro-Mondragon</a> - <strong>jaime.castro-mondragon@etu.univ-amu.fr</strong></li>
+                 <li type="square"><a href="http://morgane.bardiaux.fr/" target=\'_blank\'>Morgane Thomas-Chollier</a> - <strong>mthomas@biologie.ens.fr</strong></li>
+                 <li type="square"><a href="http://jacques.van-helden.perso.luminy.univ-amu.fr/" target=\'_blank\'>Jacques van Helden</a> - <strong>Jacques.van-Helden@univ-amu.fr</strong></li>
               </ul>
               <strong>Software used</strong>
                  <li type="square"><a href="http://d3js.org/" target=\'_blank\'>Data-Driven Documents D3</a></li>
@@ -3521,7 +3584,7 @@ svg = d3.select("#--cl_id--").select("svg")
 
 
   nodeUpdate.select("text")
-      .text(function(d) { return d.children ? d.consensus :  d.name; })
+      .text(function(d) { return d.children ? d.ic :  d.name; })
       .attr("dx", function(d) { return d.children ? -3 : 20; })
       .attr("dy", function(d) { return d.children ? -6 : 3; })
       .attr("class", function(d) { return d.children ? "show_con_--cl_id--" : ""; })
@@ -3531,8 +3594,8 @@ svg = d3.select("#--cl_id--").select("svg")
 
 	nodeUpdate.select("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
-		.attr("width", function(d) { return (d.size + 2)  * 25; })
-		.attr("height", 80)
+		.attr("width", function(d) { return (d.size + 2)  * 15; })
+		.attr("height", 50)
 		.attr("x", --image_spacer--)    
 		.attr("y", -33) 
 		.attr("cursor", "default") 
@@ -3558,7 +3621,7 @@ svg = d3.select("#--cl_id--").select("svg")
 
   nodeExit.select("circle")
       .attr("r", 1e-6)
-      .attr("font-size", "--font--px");
+      .attr("font-size", "10px");
 
   nodeExit.selectAll("image")
       .remove();
@@ -3650,7 +3713,8 @@ d3.select("#--cl_id--").append("text")
 ################################################################
 ## Insert D3 dynamic logo tree: This is the body of d3 script, 
 ## each time a new cluster is added to the file the next code 
-## is pasted and modified           
+## is pasted and modified   
+## Always Modify this tree     
 sub logo_tree_dynamic_portable{
   my $logo_tree = 
       '
@@ -3734,7 +3798,6 @@ svg = d3.select("#--cl_id--").select("svg")
         .attr("fill", "--stroke--");
 
        /*Insert labels*/
-       --lab--
 
        /*Insert consensus*/
 
@@ -3767,17 +3830,18 @@ svg = d3.select("#--cl_id--").select("svg")
   nodeUpdate.select("circle")
 	.attr("r", 5)
         .attr("fill", function(d) { return d._children ? "black" : "--stroke--"; })
-      .attr("font-size", "8px");
+      .attr("font-size", "15px");
 
 
   nodeUpdate.select("text")
-      .text(function(d) { return d.children ? d.consensus :  d.name; })
+      .text(function(d) { return d.children ? d.ic :  d.name; })
       .attr("dx", function(d) { return d.children ? -3 : 20; })
       .attr("dy", function(d) { return d.children ? -6 : 3; })
       .attr("class", function(d) { return d.children ? "show_con_--cl_id--" : ""; })
+      .style("display", function(d) { return d.children ? "none" : ""; })
       .attr("fill", function(d) { return d.children ? "blue" : "black"; })
       .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
-      .attr("font-size", "8px");
+      .attr("font-size", "20px");
 
 	nodeUpdate.select("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
@@ -3808,7 +3872,7 @@ svg = d3.select("#--cl_id--").select("svg")
 
   nodeExit.select("circle")
       .attr("r", 1e-6)
-      .attr("font-size", "--font--px");
+      .attr("font-size", "15px");
 
   nodeExit.selectAll("image")
       .remove();
@@ -3870,7 +3934,7 @@ function click(d) {
 d3.select("#--cl_id--").append("text")
 	.attr("x", 700)             
 	.attr("y", 0)   
-      .attr("font-size", "--font--px") 
+      .attr("font-size", "10px") 
 	.attr("class", "legend")     
 	.on("click", function(){
 		// change the orientation
@@ -3883,7 +3947,7 @@ d3.select("#--cl_id--").append("text")
 d3.select("#--cl_id--").append("text")
 	.attr("x", 1000)             
 	.attr("y", 0)   
-      .attr("font-size", "--font--px") 
+      .attr("font-size", "10px") 
 	.attr("class", "legend")     
 	.on("click", function(){
 		// change the orientation
@@ -4007,6 +4071,7 @@ sub branch_consensus_table{
                                         <th class="tab_col">Logo (Reverse)</th>
                                         <th class="tab_col">Collections</th>
 					<th class="tab_col">Matrix (Transfac format)</th>
+					<th class="tab_col">Information Content</th>
 				</tr>
 			</thead>
                         <tbody>
@@ -4758,6 +4823,37 @@ $clust_table .= "\n".'
 
 
 ################################################################
+## Create the motif richness barplot in D3
+sub MotifRichnessPlot {
+    
+    ## Create a copy of the D3 heatmap template
+    $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/Barplot_motif_richness.html ".$main::outfile{motif_richness_barplot_html};
+    &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+    my $motif_richness_tsv = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{motif_richness_tsv});
+    
+    ## Read the D3 heatmap file and change the attributes
+    open(TEMP, ">".$main::outfile{temp_html_3}) || &RSAT::error::FatalError($main::outfile{temp_html_3}, "Cannot create temporary file");
+    my ($motif_richness_temp) = &RSAT::util::OpenInputFile($main::outfile{motif_richness_barplot_html});
+    while (<$motif_richness_temp>) {
+	chomp;
+	my $line = $_;
+
+	$line =~ s/--d3--/$d3_base/;
+	$line =~ s/--tsv--/$motif_richness_tsv/;
+	print TEMP $line."\n";
+    }
+    close($motif_richness_temp);
+    close(TEMP);
+
+    ## Rename the temporary file
+    &RSAT::message::TimeWarn("Exporting Motif Diversity Barplot") if ($main::verbose >= 2);
+    $cmd = "mv ".$main::outfile{temp_html_3}." ".$main::outfile{motif_richness_barplot_html};
+    &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+}
+
+
+################################################################
 ## Create the dynamic heatmap showing the complementarity
 ## between the input motifs. This function is run only when
 ## two or more Motif collections are clusteres
@@ -4804,7 +4900,7 @@ sub Dynamic_Heatmap_Complementarity {
     &doit($cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
     ## Read the D3 heatmap file and change the attributes
-    open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
+    my ($temp_template) = &RSAT::util::OpenOutputFile($main::outfile{temp_html});
     my ($dyn_heatmap) = &RSAT::util::OpenInputFile($main::outfile{dynamic_heatmap_html});
     while (<$dyn_heatmap>) {
 	chomp;
@@ -4839,8 +4935,9 @@ sub Dynamic_Heatmap_Complementarity {
 	$line =~ s/--pics--/$attributes_heatmap{Logos}/;
 	$line =~ s/--pics_rc--/$attributes_heatmap{Logos_RC}/;
 
-	print TEMP $line."\n";
+	print $temp_template $line."\n";
     }
+    close($temp_template)
 
     ## Rename the temporary file
     &RSAT::message::TimeWarn("Exporting Dynamic Heatmap") if ($main::verbose >= 2);
@@ -4980,6 +5077,7 @@ sub Create_Attributes_for_Heatmap_D3 {
     $cluster_collection_cmd .= "; attributes.list.file = '".$main::outfile{heatmap_collections_attributes}."'";
     $cluster_collection_cmd .= "; percent.table.file = '".$main::outfile{percent_table}."'";
     $cluster_collection_cmd .= "; coverage.table.file = '".$main::outfile{coverage_table}."'";
+    $cluster_collection_cmd .= "; motif.richness.table = '".$main::outfile{motif_richness_tsv}."'";
     $cluster_collection_cmd .= "; coverage.table.d3 = '".$main::outfile{heatmap_coverage_d3}."'";
     $cluster_collection_cmd .= "; coverage.heatmap.attributes.file = '".$main::outfile{heatmap_coverage_attributes}."'";
     $cluster_collection_cmd .= "; coverage.json.folder = '".$main::outfile{coverage_json_folder}."'";
@@ -5261,6 +5359,17 @@ sub InsertHeatmapCollectionComplementarity {
 }
 
 
+############################
+## Insert Heatmap of collections per clusters
+sub InsertMotifRichnessBarPlot {
+
+    my $motif_richness_section = ' 
+        <div id="Motif_richness_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{motif_richness_barplot_html}).'"><strong>Motif diversity per collection</strong></a></div>
+    ';
+
+    print $syn $motif_richness_section;
+}
+
 
 #########################################
 ## Open the <scrip> tag for JQuery code
@@ -5429,6 +5538,14 @@ $(document).ready(function() {
     }); 
 });
 
+// Slide the Heatmap View
+//$(document).ready(function() {
+//    $(\'#Motif_richness_button\').click(function() {
+//	$(\'#Motif_richness\').slideToggle(\'fast\');
+//        $(this).toggleClass(\'selected_header_section\');
+//    }); 
+//});
+
 // Slide the Motif per clusters View
 //$(document).ready(function() {
 //    $(\'#Heatmap_motifs_button\').click(function() {
@@ -5592,10 +5709,25 @@ sub InsertTreesAndBranchMotifs {
 		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{logo});
 		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{logo_RC});
 		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{tf_file});
-
+		## Get the consensus
 		$transfac_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster_id_hash{$num}."/merged_consensuses/node_".$level."/".$cluster_id_hash{$num}."_node_".$level."_matrices.tf";
 		$cons = `more $transfac_file_2 | grep DE`;
 		$cons =~ s/DE\s+//gi;
+
+		## Get the IC for the branch-motif
+		my @branch_motifs = &RSAT::MatrixReader::readFromFile($transfac_file_2, "tf");
+		my $rounded_ic = 0;
+		foreach my $matrix (@branch_motifs) {
+		    		    
+		    ## Calculates the IC of the matrix
+		    $matrix->calcInformation();
+		    $matrix->toString(col_width=>(1+4),
+				      decimals=>1,
+				      type=>"information",
+				      format=>"tf");
+                    my $ic = $matrix->get_attribute("total.information");
+                    $rounded_ic = sprintf("%.2f", $ic);
+                }		
 		
 		$consensus_table_columns .= "\n".'<tr id="'.$cluster_id_hash{$num}.'_node_'.$level.'" class="branch_motifs">'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2">Node '.$level.'</th>'."\n";
@@ -5604,6 +5736,7 @@ sub InsertTreesAndBranchMotifs {
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{collection_counts}.'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
+		$consensus_table_columns .= '   <th class="tab_spacer_2">'.$rounded_ic.'</th>'."\n";
 		$consensus_table_columns .= "</tr>\n";
 
 		## Add the code to hide/show the branch-consensus table
@@ -5877,7 +6010,7 @@ sub Synthesis {
 
     $number_of_clusters = scalar(keys %alignment_table_data);      
     &create_html_small_tree_file();
-    &create_html_tree_file();
+    #&create_html_tree_file();
 
 
     &OpenScriptJQuery();
@@ -5898,6 +6031,10 @@ sub Synthesis {
 	&InsertHeatmapCollectionComplementarity();
 
     	&Dynamic_Heatmap_Complementarity(); 
+
+	&MotifRichnessPlot
+
+	&InsertMotifRichnessBarPlot
     }
 
     &InsertSmallForest();
@@ -6002,6 +6139,77 @@ sub trim_matrix_low_IC_columns {
     return $trimmed_matrix;
 }
 
+
+#######################################
+## Trim the ends of the matrix with 
+## very low IC (pre-process step)
+sub trim_matrix_low_IC_columns_preprocess {
+
+    ## Read the matrix file name
+    my $matrix_to_trim = shift;
+    my $trimmed_matrix = shift;
+    my $IC_threshold = shift;
+    
+    my $temp_IC_file = &RSAT::util::make_temp_file("","IC_test", 1);
+    my $IC_info = "";
+    my @IC_info_array = ();
+    my $trim_up = 0; 
+    my $trim_dw = 0;
+  
+
+    ## Calculate the IC of the matrix,
+    ## save this info in a file
+    my $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -return info,header,margins -o ".$temp_IC_file;
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
+    ## Read the IC file
+    ## Select the line with the sum of IC of each column
+    my ($IC_file) = &OpenInputFile($temp_IC_file);
+    while (<$IC_file>) {
+	chomp;
+	if ($_ =~ /; i\.sum/) {
+	    $IC_info = $_;
+	    $IC_info =~ s/;\s+i.sum\s+//g;
+	    @IC_info_array = split(/\s+/, $IC_info);
+	    last;
+	} else {
+	    next;
+	}
+    }
+    close($IC_file);
+    unlink($IC_file);
+
+    ## Calculate the number of trimmed columns 
+    ## in the upstream side of the motif
+    foreach my $IC (@IC_info_array) {
+	if ($IC <= $IC_threshold) {
+	    $trim_up++;
+	} else {
+	    last;
+	}
+    }
+
+    ## Calculate the number of trimmed columns 
+    ## in the downstream side of the motif
+    @IC_info_array = reverse(@IC_info_array);
+    ## Delete the last element which correspond to the sum of IC
+    shift @IC_info_array;
+    foreach my $IC (@IC_info_array) {
+	if ($IC <= $IC_threshold) {
+	    $trim_dw++;
+	} else {
+	    last;
+	}
+    }
+
+    ## Trim the matrix
+    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf";
+    $cmd .= " -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
+
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+    return $trimmed_matrix;
+}
+
 ####################################################
 ## This function calls the program convert-matrix
 ## to add empty columns to the selected file.
@@ -6028,7 +6236,7 @@ sub Produce_logos() {
 
     ## Add the empty columns
     my $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{all_concatenated_motifs};
-    $cmd .= " -from tf -to tf -return logo ";
+    $cmd .= " -from tf -to tf -return logo -logo_no_title";
     $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/test";
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
@@ -6106,7 +6314,8 @@ sub Generate_matrix_description_table() {
 			     "width",
 			     "consensus",
 			     "rc_consensus",
-			     "label"
+			     "label",
+		             "IC"
 	), "\n";
     
     my $m=0;
@@ -6120,13 +6329,24 @@ sub Generate_matrix_description_table() {
 	$c = $matrix->get_attribute("consensus.IUPAC");
 	$c_rc = $matrix->get_attribute("consensus.IUPAC.rc");
 
+	## Calculates the IC of the matrix
+	$matrix->calcInformation();
+	$matrix->toString(col_width=>(1+4),
+					    decimals=>1,
+					    type=>"information",
+					    format=>"tf");
+        my $ic = $matrix->get_attribute("total.information");
+        my $rounded_ic = sprintf("%.2f", $ic);
+
+
 	my $matrix_desc_string = join ("\t", 
 				       $m,
 				       $matrix->get_attribute("id"),
 				       $matrix->get_attribute("name"),
 				       $matrix->get_attribute("ncol"),
 				       $c,
-				       $c_rc
+				       $c_rc,
+                                       $rounded_ic
 	    );
 	print $desc $matrix_desc_string."\n";
     }

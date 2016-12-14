@@ -296,7 +296,7 @@ sub CountWords {
 
 
 ################################################################
-#### calculate number of possible oligomers
+## calculate number of possible oligomers
 sub NbPossibleOligos {
   my ($alphabet_size, $oligo_length, $seq_type, $strand, $one_var_position) = @_;
 #  @alphabet = &alphabet($seq_type, $zeroocc);
@@ -438,7 +438,7 @@ sub CheckUpperThresholds {
 
 
 ################################################################
-#### Check threshold on some parameter for one pattern
+## Check threshold on some parameter for one pattern
 sub CheckPatternThresholds {
   my ($key, $pattern_seq) = @_;
 
@@ -509,8 +509,8 @@ sub MultiTestCorrections {
 }
 
 ################################################################
-#### when grouping occurrences with their reverse complement, 
-#### only retain one of each pair. 
+## When grouping occurrences with their reverse complement, only
+## retain one of each pair.
 sub GroupRC {
   &RSAT::message::TimeWarn("Grouping pairs of reverse complements\n") if ($main::verbose >= 2);
   foreach $pattern_seq (keys %patterns) {
@@ -520,6 +520,17 @@ sub GroupRC {
       delete $patterns{$rc_pattern_seq};
     }
   }
+
+  ## Update the list of possible oligonucleotide pairs
+  my @possible_rc_pairs = ();
+  foreach my $pattern_seq (@possible_oligos) {
+    my $rc_pattern_seq = &SmartRC($pattern_seq);
+    if ($rc_pattern_seq ge $pattern_seq) { ### only suppress one oligo from the pair
+      push @possible_rc_pairs, $pattern_seq;
+    }
+    
+  }
+  @possible_oligos = @possible_rc_pairs;
 }
 
 
@@ -538,7 +549,7 @@ sub UngroupRC {
 }
 
 ################################################################
-#### Calculate observed/expected ratio
+## Calculate observed/expected ratio
 sub CalcRatio {
   foreach $pattern_seq (keys %patterns) {
     if ($patterns{$pattern_seq}->{exp_occ} == 0) {

@@ -1,0 +1,127 @@
+---
+title: "RSAT Virtual machine (VM) User Guide"
+author: "Jacques van Helden"
+date: 'Last update: `r Sys.Date()`'
+output:
+  word_document:
+    fig_caption: yes
+    toc: yes
+    toc_depth: 4
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+  html_document:
+    fig_caption: yes
+    highlight: zenburn
+    number_sections: yes
+    theme: cerulean
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+---
+
+# Introduction
+
+This tutorial explains the steps to instantiate an RSAT Virtual Machine on the cloud of the French Institute of Bioinformatics [IFB cloud](http://www.france-bioinformatique.fr/fr/cloud) and perform some basic operations with regulatory sequences and motifs. 
+
+# Instantiating an RSAT Virtual Machine on the IFB cloud
+
+
+1. Open a connection to the IFB cloud at <http://www.france-bioinformatique.fr/fr/cloud> and click on the link **Se connecter** to access the [login window](https://cloud.france-bioinformatique.fr/accounts/login/?next=/cloud/).
+
+
+![Login window](images/IFB-cloud_login.png)
+
+2. Cliquez sur le bouton ***New Instance***. 
+
+![Click on the button **New Instnace** to start a new virtual machine. ](images/IFB-cloud_buttons.png)
+
+3. In the dialog box, select the appliance **RSAT (2016-06)**, fill the **Name** field (for example type *RSAT-VM**) and click **Run**. 
+
+![Dialog box for the configuration of a new instance of VM on the IFB cloud. ](images/New-Instance_window.png)
+
+4. Th new instance will take a couple of minutes to start. Click periodically on **Show Instances** until your new instance appears with a green light, and the *ssh* and *http* links are active. 
+
+![List of running instances on the IFB cloud. The list is user-specific, for this tutorial you only need the RSAT-VM instance. ](images/Show-Instances_window.png)
+
+5. Click then on the **<font color="orange">http</font>** link for the RSAT-VM instance. This brings you to the home page of your own RSAT server. 
+
+![Home page of the RSAT virtual machine. ](images/RSAT-VM_home.png)
+
+# A quick tour of the tools: from gene clusters to motifs
+
+We will run a quick tour of some simple modular tools of the RSAT software suite. We will successively run the following analyses: 
+
+1. Get the list of supported organisms.
+2. Select a group of yeast genes involved in a common biological process (methionine metabolism and transport), which are supposedly co-regulated by some transcription factors. 
+3. Retrieve the non-coding sequences located upstream of these genes. These upstream sequences contain the gene promoter and the cis-regulatory elements. 
+4. Apply an *ab initio* motif discovery approach based on the detection of over-represented k)mers (*oligo-analysis*) in order to detect motifs potentially involved in the transcriptional response of these genes. 
+5. Scan the promoter sequences to detect the sites (positions) matching the discovered motifs.
+6. Generate a feature-map to inspect the position of these sites. 
+
+
+## Protocol
+
+
+### 1. Supported organisms
+
+In the left panel, expland the menu **Genomes and genes** and click on the tool **Supported organisms**. 
+
+![List of supported organisms on the RSAT Virtual Machine of the IFB cloud. The current version (June 2016) supports 1535 species, whose genomes were downloaded from various sources (EnsemblGenomes, NCBI). ](images/supported-organisms.png)
+
+### 2. Getting genes by name
+
+We will now gather the genes involved in methionine metabolism and transport. In the yeast Saccharomyces cerevisiae, these genes are generally named with a prefix MET, followed by one or several numbers.  
+
+a. Under **Genes and genomes**, click **Gene information**. 
+b. In the **Organism** menu, select the species *Saccharomyces cerevisiae*.
+c. In the **Query** box, enter 'MET/d+'. This is a regular expression specifying that the gene name should contain the string MET followed by one or several digits (\d). 
+d. Click **GO**.
+    
+![Query form of the **gene-info** tool. ](images/gene-info_query.png)
+
+After a few seconds, the result form should appear, a table with the genes whose name matched the query, followed by a table of links to the result files, and another table **Next Step** of possible tools for the next step of the analysis. 
+
+![Result page of the **gene-info** tool. ](images/gene-info_result.png)
+
+### 3. Retrieving upstream sequences
+
+a. In the **Next step** table of the gene-info result, click on the button **retrieve sequence**. The **Retrieve sequence** form is displayed, where the organism and gene query box have automatically been filled with the results of your gene-info query. 
+
+b. Leave all other parameteres unchanged and click **GO**. After a few seconds, the result page is displayed. 
+
+c. Optionally, in the table **Result files**, click on the link tot the sequence file (fasta), to inspect the result.
+
+d. Come back to the retrieve-seq result page. In the **Next step** table which appears at the bottom of this result page, click on the button **oligo-analysis**. 
+
+
+### 4. Discovering over-represented k-mers in promoter sequences
+
+![**oligo-analysis** query form. ](images/oligo-analysis_form.png)
+
+![Primary result of **oligo-analysis**: list of over-represented k-mers. ](images/oligo-analysis_results_1_k-mers.png)
+
+![Assembly of the over-represented k-mers detedted by **oligo-analysis**. ](images/oligo-analysis_results_2_assembly.png)
+
+![Position-specific matrices and logo representations of the motifs discovered. by oligo-analysis ](images/oligo-analysis_results_3_matrices.png)
+
+
+### 5. Predicting binding sites in promoter sequences
+
+![Web form pf hte **dna-pattern** tool, which allows to scan sequences with string-based motifs (k-mers, consensuses, regular expressions, ...). ](images/dna-pattern_form.png)
+
+![Matching positions for the over-represented k-mers in the yeast MET genes](images/dna-pattern_result.png)
+
+### 6. Displaying the predicted binding sites
+
+
+![Web form of the **feature-map** tool. ](images/feature-map_form.png)
+
+![Feature map of the over-represented k-mers discovered by oligo-analysis and matched with dna-pattern in the previous steps. The  putative transcription factor bindng sites, which are revealed by clumps of mutually overlapping k-mers, corresponding to different fragments of the  motifs. ](images/feature-map_result.png)
+
+
+
+<!--![]()-->

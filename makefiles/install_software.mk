@@ -48,18 +48,18 @@ list_versions:
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT.
 EXT_APP_TARGETS=\
-	install_ensembl_api \
 	install_vmatch \
-	install_ghostscript \
-	install_gnuplot \
+	install_seqlogo \
 	install_d3 \
 	install_bedtools \
-	install_blast \
-	install_seqlogo \
+	install_ensembl_api \
+	install_ghostscript \
+	install_gnuplot \
 	install_weblogo3 \
 	install_mcl \
 	install_rnsc \
-	install_ensembl_bioperl
+	install_ensembl_bioperl \
+	install_blast
 list_ext_apps:
 	@echo
 	@echo "External applications to install"
@@ -187,30 +187,43 @@ _compile_seqlogo:
 ##
 ## Source: http://weblogo.threeplusone.com/
 
-## Manual installation of Weblogo in ${RSAT_BIN}
-WEBLOGO3_VERSION=3.3
-WEBLOGO3_TAR=weblogo-${WEBLOGO3_VERSION}.tar.gz
-WEBLOGO3_URL=https://weblogo.googlecode.com/files/${WEBLOGO3_TAR}
-WEBLOGO3_DIR=${SRC_DIR}/weblogo3
-install_weblogo3: _download_weblogo3 _compile_weblogo3
+# ## Manual installation of Weblogo in ${RSAT_BIN}
+# WEBLOGO3_VERSION=3.3
+# WEBLOGO3_TAR=weblogo-${WEBLOGO3_VERSION}.tar.gz
+# WEBLOGO3_URL=https://weblogo.googlecode.com/files/${WEBLOGO3_TAR}
+# WEBLOGO3_DIR=${SRC_DIR}/weblogo3
+# install_weblogo3: _download_weblogo3 _compile_weblogo3
 
-_download_weblogo3:
-	@mkdir -p ${WEBLOGO3_DIR}
-	@echo "Getting weblogo3 using wget"
-	(cd ${WEBLOGO3_DIR}; wget --no-clobber -nv -nd ${WEBLOGO3_URL}; tar -xpzf ${WEBLOGO3_TAR})
-	@echo "weblogo3 dir	${WEBLOGO3_DIR}"
+# _download_weblogo3:
+# 	@mkdir -p ${WEBLOGO3_DIR}
+# 	@echo "Getting weblogo3 using wget"
+# 	(cd ${WEBLOGO3_DIR}; wget --no-clobber -nv -nd ${WEBLOGO3_URL}; tar -xpzf ${WEBLOGO3_TAR})
+# 	@echo "weblogo3 dir	${WEBLOGO3_DIR}"
 
-_compile_weblogo3:
-	@echo "Building weblogo vesion ${WEBLOGO3_VERSION} and installing in ${RSAT_BIN}"
-	(cd ${WEBLOGO3_DIR}/weblogo-${WEBLOGO3_VERSION}; \
-	${SUDO} ${PYTHON} setup.py install --prefix ${RSAT})
-	@echo "weblogo installed in ${RSAT_BIN}"
+# _compile_weblogo3:
+# 	@echo "Building weblogo vesion ${WEBLOGO3_VERSION} and installing in ${RSAT_BIN}"
+# 	(cd ${WEBLOGO3_DIR}/weblogo-${WEBLOGO3_VERSION}; \
+# 	${SUDO} ${PYTHON} setup.py install --prefix ${RSAT})
+# 	@echo "weblogo installed in ${RSAT_BIN}"
+
+
+
+################################################################
+## Install weblogo3
+install_weblogo3: install_weblogo3_pip
+
+
+################################################################
+## Clone weblogo3
+clone_weblogo3:
+	@echo "Clongin weblogo3 from github"
+	git clone https://github.com/WebLogo/weblogo.git
 
 ## Installation via pip is simpler, but cannot be done on all RSAT
 ## servers because it requires admin rights.
 PIP=pip
 install_weblogo3_pip:
-	@echo "Installing weblogo in RSAT_BIN	${RSAT_BIN}"
+	@echo "Installing weblogo3 using pip"
 	${SUDO} ${PIP} install --install-option "--install-scripts=${RSAT_BIN}" weblogo
 #	${SUDO} ${PIP} install --target ${RSAT_BIN} --install-option "--install-scripts=${RSAT_BIN}" weblogo
 #	${PIP} install --target ${RSAT_BIN} weblogo
@@ -360,6 +373,9 @@ install_ensembl_api_git_git:
 ## "Important note: you must install version 1.2.3, not a more recent
 ## version. Starting with 1.2.4, major changes were made to the
 ## BioPerl API which have made it incompatible with Ensembl."
+##
+## ISSUES ERROR MESSAGE (2016-10-18)
+## IS IT STILL REQUIRED ?
 install_ensembl_bioperl:
 	@echo ""
 	@echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"
@@ -467,12 +483,47 @@ _compile_rnsc:
 #	${SUDO} rsync -ruptvl rnscconvert ${RSAT_BIN}/; \
 
 ################################################################
-## Install BLAST
+## Download and install NCBI BLAST "legacy" version, which was written in C
+##
 install_blast: list_blast_param _download_blast _install_blast
 
 _download_blast: _download_blast_${OS}
 
-#_install_blast: _install_blast_${OS}
+list_blast_param:
+	@echo "Downloading blast"
+	@echo "	Operating system	${OS}"
+	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
+	@echo "	BLAST_LINUX_ARCHIVE	${BLAST_LINUX_ARCHIVE}"
+	@echo "	BLAST_URL		${BLAST_URL}"
+	@echo "	BLAST_SOURCE_DIR	${BLAST_SOURCE_DIR}"
+	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
+	@echo "	RSAT_BIN		${RSAT_BIN}"
+
+## Download BLAST for linux
+BLAST_BASE_DIR=${SRC_DIR}/blast
+BLAST_VERSION=2.2.26
+BLAST_LINUX_ARCHIVE=blast-${BLAST_VERSION}-${ARCHITECTURE}-linux.tar.gz
+#BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
+#BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/legacy/${BLAST_VERSION}
+BLAST_URL=ftp://ftp.ncbi.nlm.nih.gov/blast/executables/legacy/${BLAST_VERSION}
+BLAST_SOURCE_DIR=blast_latest
+_download_blast_linux:
+	@mkdir -p ${BLAST_BASE_DIR}
+	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL}/${BLAST_LINUX_ARCHIVE}
+	(cd ${BLAST_BASE_DIR}; tar -xzf ${BLAST_LINUX_ARCHIVE}; )
+	@echo ${BLAST_BASE_DIR}
+
+## Download BLAST for Mac OS X
+BLAST_BASE_DIR=${SRC_DIR}/blast
+BLAST_MAC_ARCHIVE=blast-${BLAST_VERSION}-universal-macosx.tar.gz
+BLAST_SOURCE_DIR=blast-${BLAST_VERSION}
+_download_blast_macosx:
+	@mkdir -p ${BLAST_BASE_DIR}
+	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL}/${BLAST_MAC_ARCHIVE}
+	(cd ${BLAST_BASE_DIR}; tar -xzf ${BLAST_MAC_ARCHIVE})
+	@echo ${BLAST_BASE_DIR}
+
+## Install BLAST executablesin RSAT_BIN directory
 _install_blast:
 	@${SUDO} mkdir -p ${RSAT_BIN}
 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${RSAT_BIN}
@@ -489,58 +540,55 @@ _install_blast:
 	@echo "If your shell is csh or tcsh"
 	@echo "	setenv PATH $${RSAT_BIN}:$${PATH}"
 
-list_blast_param:
+################################################################
+## Install blast+, the C++ version of BLAST
+##
+## Note that commands changed, formatdb and blastall do not exist
+## anymore. The older versions (written in C) are found in the legacy
+## directory of the FTP site.
+install_blast+: list_blast+_param _download_blast+ _install_blast+
+
+list_blast+_param:
 	@echo "Downloading blast"
 	@echo "	Operating system	${OS}"
-	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
-	@echo "	BLAST_LINUX_ARCHIVE	${BLAST_LINUX_ARCHIVE}"
-	@echo "	BLAST_URL		${BLAST_URL}"
-	@echo "	BLAST_SOURCE_DIR	${BLAST_SOURCE_DIR}"
-	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
+	@echo "	BLASTPLUS_URL		${BLASTPLUS_URL}"
+	@echo "	BLASTPLUS_ARCHIVE	${BLASTPLUS_ARCHIVE}"
+	@echo "	BLASTPLUS_SOURCE_DIR	${BLASTPLUS_SOURCE_DIR}"
+	@echo "	BLASTPLUS_BASE_DIR	${BLASTPLUS_BASE_DIR}"
+	@echo "	BLASTPLUS_ARCHIVE	${BLASTPLUS_ARCHIVE}"
 	@echo "	RSAT_BIN		${RSAT_BIN}"
 
-################################################################
-## Install the BLAST on linux
-BLAST_BASE_DIR=${SRC_DIR}/blast
-BLAST_LINUX_ARCHIVE=blast-*-${ARCHITECTURE}-linux.tar.gz
-BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
-BLAST_SOURCE_DIR=blast_latest
-_download_blast_linux:
-	@mkdir -p ${BLAST_BASE_DIR}
-	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_LINUX_ARCHIVE}"
-	(cd ${BLAST_BASE_DIR}; tar -xzf ${BLAST_LINUX_ARCHIVE}; \
-		${SUDO} rm -rf ${BLAST_SOURCE_DIR}; \
-		${SUDO} mv -f ${BLAST_LINUX_ARCHIVE} ..; \
-		${SUDO} mv -f blast-*  ${BLAST_SOURCE_DIR} \
-	)
-	@echo ${BLAST_BASE_DIR}
+## Download BLASTPLUS archive from NCBI ftp site
+BLASTPLUS_BASE_DIR=${SRC_DIR}/blast
+BLASTPLUS_VERSION=2.5.0
+BLASTPLUS_SOURCE_DIR=ncbi-blast-${BLASTPLUS_VERSION}+
+#BLASTPLUS_LINUX_ARCHIVE=blast-*-${ARCHITECTURE}-linux.tar.gz
+BLASTPLUS_ARCHIVE=ncbi-blast-${BLASTPLUS_VERSION}+-${ARCHITECTURE}-${OS}.tar.gz
+BLASTPLUS_URL=ftp://ftp.ncbi.nih.gov/blast/executables/blast+/${BLASTPLUS_VERSION}/
+BLASTPLUS_BASE_DIR=${SRC_DIR}/blast
+_download_blast+:
+	@echo "Downloading blast+ from ${BLASTPLUS_URL}/${BLASTPLUS_ARCHIVE}"
+	@mkdir -p ${BLASTPLUS_BASE_DIR}
+	wget --no-clobber --no-directories  --directory-prefix ${BLASTPLUS_BASE_DIR} ${BLASTPLUS_URL}/${BLASTPLUS_ARCHIVE}
+	(cd ${BLASTPLUS_BASE_DIR}; tar -xzf ${BLASTPLUS_ARCHIVE})
+	@echo ${BLASTPLUS_BASE_DIR}
 
-#_install_blast_linux:
-#	@${SUDO} mkdir -p ${RSAT_BIN}
-#	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${RSAT_BIN}
-#	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${RSAT_BIN}
-#	@echo "Please check that the BLAST install directory is in your path"
-#	@echo "	${RSAT_BIN}"
-
-################################################################
-## Install the BLAST on MAC
-BLAST_BASE_DIR=${SRC_DIR}/blast
-BLAST_MAC_ARCHIVE=blast-*-universal-macosx.tar.gz
-BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
-BLAST_SOURCE_DIR=blast_latest
-_download_blast_macosx:
-	@mkdir -p ${BLAST_BASE_DIR}
-	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL} -A "${BLAST_MAC_ARCHIVE}"
-	(cd ${BLAST_BASE_DIR}; tar -xzf ${BLAST_MAC_ARCHIVE}; \
-		${SUDO} rm -rf ${BLAST_SOURCE_DIR}; \
-		${SUDO} mv -f ${BLAST_MAC_ARCHIVE} ..; \
-		${SUDO} mv -f blast-*  ${BLAST_SOURCE_DIR})
-	@echo ${BLAST_BASE_DIR}
-
-# _install_blast_macosx:
-# 	@${SUDO} mkdir -p ${RSAT_BIN}
-# 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${RSAT_BIN}
-# 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${RSAT_BIN}
+## Install BLASTPLUS from downloaded BLASTPLUS archive
+_install_blast+:
+	@echo "Installing blast+"
+	@${SUDO} mkdir -p ${RSAT_BIN}
+	${SUDO} rsync -ruptvl ${BLASTPLUS_BASE_DIR}/${BLASTPLUS_SOURCE_DIR}/bin/* ${RSAT_BIN}
+	@echo "Please edit the RSAT configuration file"
+	@echo "	${RSAT}/RSAT_config.props"
+	@echo "and copy-paste the following line to specify the BLASTPLUS bin pathway"
+	@echo "	blast_dir=${RSAT_BIN}"
+	@echo "This will allow RSAT programs to idenfity BLASTPLUS path on this server."
+	@echo
+	@echo "You can also add the BLASTPLUS bin directory in your path."
+	@echo "If your shell is bash"
+	@echo "	export PATH=$${RSAT_BIN}:$${PATH}"
+	@echo "If your shell is csh or tcsh"
+	@echo "	setenv PATH $${RSAT_BIN}:$${PATH}"
 
 
 ################################################################

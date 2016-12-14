@@ -160,13 +160,16 @@ package main;
   #my @bg_input_options= ("by_seq","all");
   my @bg_input_options= ("all");
 
+  ## Count the number of input sequences
+  $seq_counter = 0;
+
   ## Heatmap color palette and classes
-  local $heatmap_color_palette = "YlOrRd";
+  local $heatmap_color_palette = "RdBu";
   local $heatmap_color_classes = 9;
   
   ## Supported heatmap colors (taken from http://colorbrewer2.org/)
   local %supported_heatmap_color_palette = ();
-  local @supported_heatmap_color_palette = qw (YlOrRd YlOrBr YlGnBu YlGn PuRd PuBuGn PuBu OrRd GnBu BuPu BuGn Reds Purples Oranges Greys Greens Blues);
+  local @supported_heatmap_color_palette = qw (Spectral RdYlGn RdYlBu RdGy RdBu PuOr PRGn PiYG BrBG YlOrRd YlOrBr YlGnBu YlGn PuRd PuBuGn PuBu OrRd GnBu BuPu BuGn Reds Purples Oranges Greys Greens Blues);
   local %supported_heatmap_color_palette = ();
   foreach my $palette (@supported_heatmap_color_palette) {
       $supported_heatmap_color_palette{$palette} = 1;
@@ -1192,6 +1195,8 @@ A file containing the sequences in fasta format.
 	 $seq_type =~ s|\s|_|g;
 	 $seq_type =~ s|/|_|g;
 	 $seq_type =~ s|:|_|g;
+
+	 $seq_counter++;
 	 
 	 $main::seqfile{$seq_type} =
 	     shift(@arguments);
@@ -1477,7 +1482,9 @@ sub DynamicHeatmapEnrichment {
     ## Outfiles of Dynamic heatmap script
     $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
     $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
+    $main::outfile{Diff_maxNWD_tsv} = $main::prefix{main}."_diff_matrix_heatmap.tsv";
     $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
+    $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
     $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
     
     &RSAT::message::TimeWarn("Drawing heatmap of maxNWD") if ($main::verbose >= 2);
@@ -1500,8 +1507,10 @@ sub DynamicHeatmapEnrichment {
     $dynamic_heatmap_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
     $dynamic_heatmap_cmd .= "; html.template.file = '".$main::outfile{maxNWD_heatmap_template}."'";
     $dynamic_heatmap_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
+    $dynamic_heatmap_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
     $dynamic_heatmap_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
     $dynamic_heatmap_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
+    $dynamic_heatmap_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
     $dynamic_heatmap_cmd .= "; d3.base = '".$d3_base."'";
     $dynamic_heatmap_cmd .= "; d3.array.base = '".$d3_array_base."'";
     $dynamic_heatmap_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
@@ -1608,7 +1617,7 @@ sub CreateHTMLReport {
       if($line =~ /--show_command--/){
 
 	  ## Print arguments
-	  print $ &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
+	  print &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
 	  print $syn "<pre>";
 	  print $syn "matrix-enrichment ";
 	  &PrintArguments($syn);

@@ -47,27 +47,36 @@ $parameters = "";
 ############################################################
 ## Random fragments
 
-## template file (optional)
-($template_file, $template_format) = &MultiGetSequenceFile(1, $tmp_file_path."_template.fa", 0);
+## Query type
+my $query_type = $query->param('fragment_sizes');
+if ($query_type eq "template") {
 
-## a template file has been given
-my $length_file = "";
-if ($template_file) {
+  ## Template format (we cannot take it from MultiGetSequenceFile because
+  ## we also support bed format).
+  $template_format = $query->param('template_format');
+  
+  ## template file (optional)
+  ($template_file) = &MultiGetSequenceFile(1, $tmp_file_path."_template.".$template_format, 0);
+  
+  
+  ## a template file has been given
+  my $length_file = "";
+#  if ($template_file) {
   push @result_files, ("Template file ($template_format)",$template_file);
+    
+#  ## Compute sequence lengths from the template sequence file
+#  $length_file = $tmp_file_path.".lengths";
+#  push @result_files, ("Sequence lengths",$length_file);
 
-  ## Compute sequence lengths from the template sequence file
-  $length_file = $tmp_file_path.".lengths";
-  push @result_files, ("Sequence lengths",$length_file);
-
-  my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$template_file;
-  $seqlength_cmd .= " -in_format ".$template_format;
-  $seqlength_cmd .= " -o ".$length_file;
-  system($seqlength_cmd);
+#  my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$template_file;
+#  $seqlength_cmd .= " -in_format ".$template_format;
+#  $seqlength_cmd .= " -o ".$length_file;
+#  system($seqlength_cmd);
 
 
   ## Add the sequence length file as template for random-genome-fragments
-  $parameters .= " -template_format len -i ".$length_file;
-#  $parameters .= " -template_format fasta -i ".$template_file;
+#  $parameters .= " -template_format len -i ".$length_file;
+  $parameters .= " -template_format ".$template_format." -i ".$template_file;
 
 } else {
   #### number of fragments
@@ -96,7 +105,7 @@ if ($query->param('org_select')) {
     unless ($organism = $query->param('organism')) {
       &FatalError("You should specify an organism");
     }
-    if (defined(%{$supported_organism{$organism}})) {
+    if (%{$supported_organism{$organism}}) {
       $parameters .= " -org $organism ";
     } else {
       &FatalError("Organism $organism is not supported on this site");
