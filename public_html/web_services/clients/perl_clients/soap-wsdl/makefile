@@ -48,6 +48,7 @@ WSDL_URL=${SERVER}/web_services/RSATWS.wsdl
 stub:
 	@echo
 	@echo "Generating stub for server"
+	@echo "	PWD	`pwd`"
 	@echo "	SERVER=${SERVER}"
 	@echo "	WSDL_URL=${WSDL_URL}"
 	perl ./wsdl2perl.pl -b RSATWS ${WSDL_URL}

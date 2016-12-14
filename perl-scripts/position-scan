@@ -95,6 +95,7 @@ package main;
   local $p_value = 1e-3;
   local $bg_format = "oligos";
   local $seq_format = "fasta";
+  local $seq_control_format = "fasta";
   local $matrix_format = "tf";
   local $individual_plots = 1;
   local $legend_pos = "bottom";
@@ -138,18 +139,20 @@ package main;
   }
   local $supported_legend_pos = join ",", @supported_legend_pos;
 
-
   ## Profile heatmap deondrogram position option
   local @supported_heatmap_dendo_pos = qw(hide show);
   local %supported_heatmap_dendo_pos = ();
-  foreach my $pos (@supported_heatmap_dendo_pos) {
-    $supported_heatmap_dendo_pos{$pos} = 1;
+  foreach my $ps (@supported_heatmap_dendo_pos) {
+    $supported_heatmap_dendo_pos{$ps} = 1;
   }
   local $supported_heatmap_dendo_pos = join ",", @supported_heatmap_dendo_pos;
 
   ## Negative controls
   local $random_seq_flag = 0;
   local $random_motifs_flag = 0;
+
+  ## Differential mode
+  local $diff_flag = 0;
 
   ## Heatmap color palette and classes
   local $heatmap_color_palette = "RdBu";
@@ -201,6 +204,15 @@ package main;
   }
 
   ################################################################
+  ## Input control sequences file is mandatory
+  ## If the differential mode is activated
+  if($diff_flag){
+      unless ($main::infile{sequences_control}) {
+	  &RSAT::error::FatalError("The control sequences file is mandatory when the differential mode (-diff) is activated. See option -seq_control");
+      }
+  }
+
+  ################################################################
   ## Input BG file is mandatory
   unless ($main::infile{bg_file} || $bg_input_flag) {
       &RSAT::error::FatalError("The input Background Model file is mandatory. (-bgfile | -bginput)");
@@ -233,16 +245,25 @@ package main;
     &RSAT::util::CheckOutDir($bg_dir);
 
     $main::infile{bg_file} = $bg_dir."/mkv_" . $markov . "_2str.oligos"; 
+    if($diff_flag){
+	$main::infile{bg_file_control} = $bg_dir."/mkv_" . $markov . "_2str_control.oligos"; 
+    }
   }
 
   ## Output file names
   $main::outfile{filtered_sequences} = $main::outfile{prefix}."_filtered_sequences.fasta";
   $main::outfile{random_sequences} = $main::outfile{prefix}."_randomized_sequences.fasta";
+  $main::outfile{filtered_sequences_control} = $main::outfile{prefix}."_filtered_control_sequences.fasta";
+  $main::outfile{random_sequences_control} = $main::outfile{prefix}."_randomized_control_sequences.fasta";
   $main::outfile{motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac.tf";
+  $main::outfile{motifs_transfac_parsed} = $main::outfile{prefix}."_input_matrix_transfac_parsed.tf";
   $main::outfile{random_motifs_transfac} = $main::outfile{prefix}."_input_matrix_transfac_permuted.tf";
   $main::outfile{matches_tab} = $main::outfile{prefix}."_matrix_scan_results.tab";
   $main::outfile{matches_tab_PARSED} = $main::outfile{prefix}."_matrix_scan_results_PARSED.tab";
+  $main::outfile{matches_tab_control} = $main::outfile{prefix}."_matrix_scan_results_control.tab";
+  $main::outfile{matches_tab_PARSED_control} = $main::outfile{prefix}."_matrix_scan_results_PARSED_control.tab";
   $main::outfile{sequence_names} = $main::outfile{prefix}."_matrix_scan_sequence_names.tab";
+  $main::outfile{sequence_names_control} = $main::outfile{prefix}."_matrix_scan_sequence_names_control.tab";
   $main::outfile{motif_ID_to_name} = $main::outfile{prefix}."_TF_ID_name_correspondence.tab";
 
   $main::outfile{all_profiles} = $main::outfile{prefix}."_positional_profiles.pdf";
@@ -252,6 +273,9 @@ package main;
   $main::outfile{report} = $main::outfile{prefix}."_scan_profile_report.html";
   $main::outfile{report_temp} = $main::outfile{prefix}."_scan_profile_report_temp.html";
   $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_positional_profiles.html";
+  $main::outfile{report_temp_diff} = $main::outfile{prefix}."_diff_scan_profile_report_temp.html";
+  $main::outfile{report_template_diff} = $ENV{RSAT}."/public_html/templates_html/dynamic_positional_profiles_differential_mode.html";
+ 
 
   ## Archive to facilitate transfer of all the results in a zip file
   $main::outfile{archive} = $main::outfile{prefix}."_archive.zip";
@@ -339,8 +363,8 @@ package main;
 
       ################################################################
       ## Run matrix-scan quick
-      &ScanSequences();  
-  
+      &ScanSequences();
+
       ## Parse the matrix-scan results table
       &ParseScanResults();
 
@@ -358,11 +382,19 @@ package main;
   ## Plots step: chi-squared calculation + draw profiles
   if( defined($selected_tasks{"plots"}) || defined($selected_tasks{"all"}) ){
 
+      #&GenerateLogos();
+
       ################################################################
       ## Compute statistics (X2 pval, eval, qval) 
       ## Draw the dynamic profiles
       ## These steps are executed in R
-      &DynamicProfilesR();
+      if($diff_flag){
+	  ## For differential mode
+	  &DynamicProfilesDiffR();
+      } else {
+	  ## For non-differential mode
+	  &DynamicProfilesR();
+      }
   }
 
   ################################################################
@@ -496,6 +528,27 @@ Sequence format.
 
 =cut
 	} elsif ($arg eq "-seq_format") {
+	    $main::seq_format = shift(@arguments);
+
+=pod
+
+=item B<-seq_control control_sequences_file>
+
+A file containing the control sequences in fasta format.
+
+=cut
+
+    } elsif ($arg eq "-seq_control") {
+      $main::infile{sequences_control} = shift(@arguments);
+
+=pod
+
+=item B<-seq_control_format sequence_format>
+
+Control sequences format.
+
+=cut
+	} elsif ($arg eq "-seq_control_format") {
 	    $main::seq_format = shift(@arguments);
 
 =pod
@@ -722,7 +775,6 @@ This option is incompatible with the option -bgfile.
       &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.")
 	if (($bg_file_flag) && ($bg_input_flag));
 
-
 =pod
 
 =item B<-rand_motifs>
@@ -734,7 +786,6 @@ Use this option as negative control.
 =cut
     } elsif ($arg eq "-rand_motif") {
       $random_motifs_flag = 1;
-
 
 =pod
 
@@ -837,8 +888,16 @@ This option is ideal to saving time once the scaning has been done.
 	   }
 	 }
 
+=pod
 
-################################################################
+=item B<-diff>
+
+Activate the differential mode where the distribution of TFBSs in the input sequences
+are compared relative the control sequences.
+
+=cut
+    } elsif ($arg eq "-diff") {
+      $diff_flag = 1;
 
 =pod
 
@@ -906,8 +965,32 @@ sub ProcessMatrices {
     $process_motif_cmd .= " -o ".$main::outfile{motifs_transfac};
     
     &doit($process_motif_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-    
-    $main::infile{motifs} = $main::outfile{motifs_transfac};
+
+    ## Given that some characters produce errors in R or CSS, they are substituted by "_"
+    my ($parsed_tf_file) = &RSAT::util::OpenOutputFile($main::outfile{motifs_transfac_parsed});
+    my ($non_parsed_tf_file) = &RSAT::util::OpenInputFile($main::outfile{motifs_transfac});
+
+    while(<$non_parsed_tf_file>){
+
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines	
+	chomp();
+
+	if( (/^\s*AC\s+/) || (/^\s*ID\s+/) ){
+
+	    $_ =~ s/-/_/gi;
+	    $_ =~ s/\./_/gi;
+	    $_ =~ s/::/_/gi;
+	    #$_ =~ s/\s+/_/gi;
+	}
+
+	print $parsed_tf_file $_."\n";
+    }
+    close($non_parsed_tf_file);
+    close($parsed_tf_file);
+
+    $main::infile{motifs} = $main::outfile{motifs_transfac_parsed};
 }
 
 
@@ -915,22 +998,58 @@ sub ProcessMatrices {
 ## Scan the input sequences with the input matrices using
 ## RSAT matrix-scan
 sub ScanSequences {
-    &RSAT::message::Info("Matrices loaded from file", $main::infile{motifs}) if ($main::verbose >= 2);
-    &RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
-    
-    $matrix_scan_cmd = $SCRIPTS."/matrix-scan -quick -v ".($main::verbose -1);
-    $matrix_scan_cmd .= " -m ".$main::infile{motifs};
-    $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
-    $matrix_scan_cmd .= " -origin end -n score";
-    $matrix_scan_cmd .= " -uth pval ".$p_value;
-    $matrix_scan_cmd .= " -i ".$main::infile{sequences}." -seq_format fasta";
-    $matrix_scan_cmd .= " -pseudo 0.01 -decimals 2 ".$strands." -bg_pseudo 0.01";
-    $matrix_scan_cmd .= " -return limits -return pval ";
-    $matrix_scan_cmd .= " -o ".$main::outfile{matches_tab};
-    $matrix_scan_cmd .= " -bgfile ".$main::infile{bg_file}." -bg_format ".$bg_format;
-    &doit($matrix_scan_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
-    &RSAT::message::TimeWarn("matrix-scan file results", $main::outfile{matches_tab}) if ($main::verbose >= 2);
+    ## Initialize the sequences array
+    my @sequence_sets = ();
+    push(@sequence_sets, $main::infile{sequences});
+
+    ## If the diff mode is activated, then add the control sequences
+    ## to be processed as the query sequences
+    if($diff_flag){
+	push(@sequence_sets, $main::infile{sequences_control});
+    }
+
+    ## Process each set of sequence
+    my $seq_counter = 0;
+    foreach my $seq (@sequence_sets){
+
+	$seq_counter++;
+	&RSAT::message::Info("Matrices loaded from file", $main::infile{motifs}) if ($main::verbose >= 2);
+	&RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
+
+	if($seq_counter == 1){
+	    $s = $main::infile{sequences};
+	    $so = $main::outfile{matches_tab};
+	    $bg = $main::infile{bg_file};
+
+
+	} elsif($seq_counter == 2){
+	    $s = $main::infile{sequences_control};
+	    $so = $main::outfile{matches_tab_control};
+
+	    if($bg_input_flag){
+		$bg = $main::infile{bg_file_control};
+	    }
+	}
+	
+	$matrix_scan_cmd = $SCRIPTS."/matrix-scan -quick -v ".($main::verbose -1);
+	$matrix_scan_cmd .= " -m ".$main::infile{motifs};
+	$matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+	$matrix_scan_cmd .= " -origin end -n score";
+	$matrix_scan_cmd .= " -uth pval ".$p_value;
+	$matrix_scan_cmd .= " -i ".$seq." -seq_format fasta";
+	$matrix_scan_cmd .= " -pseudo 0.01 -decimals 2 ".$strands." -bg_pseudo 0.01";
+	$matrix_scan_cmd .= " -return limits -return pval -ac_as_name";
+	$matrix_scan_cmd .= " -o ".$so;
+	$matrix_scan_cmd .= " -bgfile ".$bg." -bg_format ".$bg_format;
+	&doit($matrix_scan_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+	if($seq_counter == 1){
+	    &RSAT::message::TimeWarn("matrix-scan file results", $main::outfile{matches_tab}) if ($main::verbose >= 2);
+	} elsif($seq_counter == 2){
+	    &RSAT::message::TimeWarn("matrix-scan file results", $main::outfile{matches_tab_control}) if ($main::verbose >= 2);
+	}
+    }
 }
 
 
@@ -941,26 +1060,56 @@ sub ScanSequences {
 ## those columns required to draw the profiles.
 sub ParseScanResults {
 
-    &RSAT::message::TimeWarn("Parsing matrix-scan results", $main::outfile{matches_tab}) if ($main::verbose >= 2);
+    ## Initialize the sequences array
+    my @sequences = ();
+    push(@sequences, $main::infile{sequences});
 
-    ## Extract the name and counts the input sequences 
-    $input_sequences_cmd = "more ".$main::outfile{matches_tab};
-    $input_sequences_cmd .= " | grep -v ';' | grep limit | cut -f1 | uniq ";
-    $input_sequences_cmd .= " > ".$main::outfile{sequence_names};
-    &doit($input_sequences_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    ## If the diff mode is activated, then add the control sequences
+    ## to be processed as the query sequences
+    if($diff_flag){
+	push(@sequences, $main::infile{sequences_control});
+    }
 
-    &RSAT::message::TimeWarn("Scanned sequence names", $main::outfile{matches_tab_PARSED}) if ($main::verbose >= 2);
+    ## Process each set of sequences
+    my $seq_counter = 0;
+    foreach my $s (@sequences){
+	
+	$seq_counter++;
+	if($seq_counter == 1){
+	    &RSAT::message::TimeWarn("Parsing matrix-scan results - Query", $main::outfile{matches_tab}) if ($main::verbose >= 2);
+	    $m = $main::outfile{matches_tab};
+	    $sn = $main::outfile{sequence_names};
+	    $scanned = $main::outfile{matches_tab_PARSED};
 
-    ## Extract somet fields in the matrix-can table
-    $parse_cmd = " grep -v '^;' ".$main::outfile{matches_tab};
-    $parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 3) {print $1"\t"$3"\t"($6+$5)/2"\t"$9}'." ' ";
-    $parse_cmd .= " > ".$main::outfile{matches_tab_PARSED};
+	} elsif ($seq_counter == 2){
+	    &RSAT::message::TimeWarn("Parsing matrix-scan results - Control", $main::outfile{matches_tab_control}) if ($main::verbose >= 2);
+	    $m = $main::outfile{matches_tab_control};
+	    $sn = $main::outfile{sequence_names_control};
+	    $scanned = $main::outfile{matches_tab_PARSED_control};
+	}
 
-    &doit($parse_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	## Extract the name and counts the input sequences 
+	$input_sequences_cmd = "more ".$m;
+	$input_sequences_cmd .= " | grep -v ';' | grep limit | cut -f1 | uniq ";
+	$input_sequences_cmd .= " > ".$sn;
+	&doit($input_sequences_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	
+	&RSAT::message::TimeWarn("Scanned sequence names", $sn) if ($main::verbose >= 2);
+	
+	## Extract somet fields in the matrix-can table
+	$parse_cmd = " grep -v '^;' ".$m;
+	$parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 3) {print $1"\t"$3"\t"($6+$5)/2"\t"$9}'." ' ";
+	$parse_cmd .= " > ".$scanned;
+	&doit($parse_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+   
+	&RSAT::message::TimeWarn("PARSED matrix-scan file results", $scanned) if ($main::verbose >= 2);
+    }
 
-    &RSAT::message::TimeWarn("PARSED matrix-scan file results", $main::outfile{matches_tab_PARSED}) if ($main::verbose >= 2);
-
-    $to_delete{'matched_tab_PARSED'} = $main::outfile{matches_tab_PARSED};
+    if($seq_counter == 1){
+	$to_delete{'matched_tab_PARSED'} = $main::outfile{matches_tab_PARSED};
+    } elsif ($seq_counter == 2){
+	$to_delete{'matched_tab_PARSED_control'} = $main::outfile{matches_tab_PARSED_control};
+    }
 }
 
 ################################################################
@@ -1047,7 +1196,7 @@ sub DynamicProfilesR {
     my $profile_cmd = "";
     $profile_cmd .= " cat ".$profiles_script;
     $profile_cmd .= " | ".$r_path;
-    $profile_cmd .= " --slave --no-save --no-restore --no-environ";
+    $profile_cmd .= " --slave --no-save --no-restore --no-environ --vanilla";
     $profile_cmd .= " --args \"";
     $profile_cmd .= " matrix.scan.file = '".$main::outfile{matches_tab_PARSED}."'";
     $profile_cmd .= "; sequence.names.file = '".$main::outfile{sequence_names}."'";
@@ -1084,59 +1233,177 @@ sub DynamicProfilesR {
 
 
 ################################################################
+## Call the Rscript where the statistics are calculated
+## (Chi-squared, p-val, q-val, e-val) - Differential mode 
+##
+## Within this script the dynamic profiles are drawn and exported
+## in a HTML file.
+sub DynamicProfilesDiffR {
+
+    &RSAT::message::TimeWarn("Calculating differential Chi-squared values for positional profiles of TFBSs in Query and Control sequences") if ($main::verbose >= 2);
+
+    ##################################
+    ### Identify the path of the R executable
+    my $r_path = &RSAT::server::GetProgramPath("R");
+
+    my $profiles_script  = $ENV{RSAT}."/R-scripts/Scan_profile_diff.R";
+    &RSAT::error::FatalError("Cannot read Motif scan profile script", $profiles_script) unless (-r $profiles_script);
+    # $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
+
+    ## Basic parameters
+    my $profile_cmd = "";
+    $profile_cmd .= " cat ".$profiles_script;
+    $profile_cmd .= " | ".$r_path;
+    $profile_cmd .= " --slave --no-save --no-restore --no-environ";
+    $profile_cmd .= " --args \"";
+    $profile_cmd .= " matrix.scan.file.query = '".$main::outfile{matches_tab_PARSED}."'";
+    $profile_cmd .= "; matrix.scan.file.control = '".$main::outfile{matches_tab_PARSED_control}."'";
+    $profile_cmd .= "; sequence.names.file.query = '".$main::outfile{sequence_names}."'";
+    $profile_cmd .= "; sequence.names.file.control = '".$main::outfile{sequence_names_control}."'";
+    $profile_cmd .= "; p.val = '".$p_value."'";
+    $profile_cmd .= "; bin = '".$bin_size."'";
+    $profile_cmd .= "; prefix = '".$main::outfile{prefix}."'";
+    $profile_cmd .= "; logo.folder = '".$basename."_logos/'";
+    $profile_cmd .= "; results.folder = '".$dir{output}."'";
+    $profile_cmd .= "; basename = '".$basename."'";
+    $profile_cmd .= "; ID.to.names.correspondence.tab = '".$main::outfile{motif_ID_to_name}."'";
+    $profile_cmd .= "; seq.length = '".$seq_length."'";
+    $profile_cmd .= "; individual.plots = '".$individual_plots."'";
+    $profile_cmd .= "; heatmap.dendo = '".$heatmap_dendo."'";
+    $profile_cmd .= "; html.template.file = '".$main::outfile{report_template_diff}."'";
+    $profile_cmd .= "; c3.css.base = '".$c3_css_base."'";
+    $profile_cmd .= "; c3.base = '".$c3_base."'";
+    $profile_cmd .= "; d3.base = '".$d3_base."'";
+    $profile_cmd .= "; jquery.base = '".$jquery_base."'";
+    $profile_cmd .= "; datatable.base = '".$datatable_base."'";
+    $profile_cmd .= "; datatable.css.base = '".$datatable_css_base."'";
+    $profile_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
+    $profile_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
+    $profile_cmd .= " \"";
+#    $Cluster_motifs_cmd = "(".$cluster_motifs_cmd.")"; # Uncomment this line to check the R output in the terminal
+#    $profile_cmd = "(".$profile_cmd.") 2 > ".$main::outfile{Rlog}; 
+
+    if ($r_path) {
+        &doit($profile_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    } else {
+        &RSAT::message::Warning("Could not run position scan because the program R is not available") if ($main::verbose >= 1);
+    }
+    return();
+}
+
+
+################################################################
 ## Calculate sequence length
 sub ProcessSeq {
 
-    &RSAT::message::TimeWarn("Calculating Sequence length") if ($main::verbose >= 2);
+    ## Initialize the sequences array
+    my @sequences = ();
+    push(@sequences, $main::infile{sequences});
 
-    $seq_length_cmd = $SCRIPTS."/sequence-lengths";
-    $seq_length_cmd .= " -i ".$main::infile{sequences};
-    $seq_length_cmd .= " -unit bp -in_format ".$main::seq_format;
-    $seq_length_cmd .= " | cut -f2 | uniq | head -n 1";
-
-    chomp($seq_length = `$seq_length_cmd`);
-
-    &RSAT::error::FatalError($seq_length, "Invalid value for sequence length: must be a natural number") 
-         unless (&IsNatural($seq_length));
-
-    my $seq_length_up = $seq_length + 1;
-    my $seq_length_dw = $seq_length - 1;
-    
-    &RSAT::message::Info("Sequence length: ", $seq_length, "bp") if ($main::verbose >= 2);
-
-    &RSAT::message::Info("Filtering sequences shorter or longer than", $seq_length) if ($main::verbose >= 2);
-
-    $convert_seq_cmd = $SCRIPTS."/convert-seq";
-    $convert_seq_cmd .= " -i ".$main::infile{sequences};
-    $convert_seq_cmd .= " -from ".$main::seq_format." -to ".$main::seq_format;
-    $convert_seq_cmd .= " -skip_long ".$seq_length_up;
-    $convert_seq_cmd .= " -skip_short ".$seq_length_dw;
-    $convert_seq_cmd .= " -top ".$top_sequences if($top_seq_flag == 1);
-    $convert_seq_cmd .= " -skip ".$skip_sequences if($skip_seq_flag == 1);
-    $convert_seq_cmd .= " -o ".$main::outfile{filtered_sequences};
-    &doit($convert_seq_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-
-    ################################################################
-    ## If it is specified randomize the input sequences
-    if($random_seq_flag){
-
-	&RSAT::message::TimeWarn("Random permutation of the sequences") if ($main::verbose >= 2);
-
-	$random_seq_cmd = $SCRIPTS."/random-seq";
-	$random_seq_cmd .= " -i ".$main::outfile{filtered_sequences};
-	$random_seq_cmd .= " -o ".$main::outfile{random_sequences};
-	&doit($random_seq_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-
-	$main::infile{sequences} = $main::outfile{random_sequences};
-	$to_delete{'random_sequences'} = $main::outfile{random_sequences};
-
-    } else {
-
-	$main::infile{sequences} = $main::outfile{filtered_sequences};
-	$to_delete{'filtered_sequences'} = $main::outfile{filtered_sequences};
+    ## If the diff mode is activated, then add the control sequences
+    ## to be processed as the query sequences
+    if($diff_flag){
+	push(@sequences, $main::infile{sequences_control});
     }
 
-    return($seq_length);
+    ## Process each set of sequence
+    my $seq_counter = 0;
+    foreach my $s (@sequences){
+	$seq_counter++;
+	&RSAT::message::TimeWarn("Calculating Sequence length") if ($main::verbose >= 2);
+
+	$seq_length_cmd = $SCRIPTS."/sequence-lengths";
+	$seq_length_cmd .= " -i ".$s;
+	$seq_length_cmd .= " -unit bp -in_format ".$main::seq_format;
+	$seq_length_cmd .= " | cut -f2 | uniq | head -n 1";
+	
+	chomp($seq_length = `$seq_length_cmd`);
+
+	## Save the sequence length of the query and input sequences
+	## if they are not the same, the program ends
+	if($seq_counter == 1){
+	    $seq_length_query = $seq_length;
+	} elsif ($seq_counter == 2){
+	    $seq_length_control = $seq_length;
+	}
+
+	&RSAT::error::FatalError($seq_length, "Invalid value for sequence length: must be a natural number") 
+	    unless (&IsNatural($seq_length));
+	
+	my $seq_length_up = $seq_length + 1;
+	my $seq_length_dw = $seq_length - 1;
+    
+
+	if($seq_counter == 1){
+	    &RSAT::message::Info("Query Sequences length: ", $seq_length, "bp") if ($main::verbose >= 2);	
+	    &RSAT::message::Info("Filtering sequences shorter or longer than", $seq_length) if ($main::verbose >= 2);
+	} elsif($seq_counter == 2){
+	    &RSAT::message::Info("Control Sequences length: ", $seq_length, "bp") if ($main::verbose >= 2);	
+	    &RSAT::message::Info("Filtering sequences shorter or longer than", $seq_length) if ($main::verbose >= 2);
+	}
+	
+	$convert_seq_cmd = $SCRIPTS."/convert-seq";
+	$convert_seq_cmd .= " -i ".$s;
+	$convert_seq_cmd .= " -from ".$main::seq_format." -to ".$main::seq_format;
+	$convert_seq_cmd .= " -skip_long ".$seq_length_up;
+	$convert_seq_cmd .= " -skip_short ".$seq_length_dw;
+	$convert_seq_cmd .= " -top ".$top_sequences if($top_seq_flag == 1);
+	$convert_seq_cmd .= " -skip ".$skip_sequences if($skip_seq_flag == 1);
+
+	## Indicate the proccessed sequences file name
+	if($seq_counter == 1){
+	    $convert_seq_cmd .= " -o ".$main::outfile{filtered_sequences};
+	} elsif($seq_counter == 2){
+	    $convert_seq_cmd .= " -o ".$main::outfile{filtered_sequences_control};
+	}
+	&doit($convert_seq_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	
+	################################################################
+	## If it is specified randomize the input sequences
+	if($random_seq_flag){
+	    
+	    &RSAT::message::TimeWarn("Random permutation of the sequences") if ($main::verbose >= 2);
+	    
+	    $random_seq_cmd = $SCRIPTS."/random-seq";
+
+	## Indicate the proccessed sequences file name
+	if($seq_counter == 1){
+	    $random_seq_cmd .= " -i ".$main::outfile{filtered_sequences};
+	    $random_seq_cmd .= " -o ".$main::outfile{random_sequences};
+	} elsif($seq_counter == 2){
+	    $random_seq_cmd .= " -i ".$main::outfile{filtered_sequences_control};
+	    $random_seq_cmd .= " -o ".$main::outfile{random_sequences_control};
+	}
+
+
+	    &doit($random_seq_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	    
+	    $main::infile{sequences} = $main::outfile{random_sequences};
+	    $to_delete{'random_sequences'} = $main::outfile{random_sequences};
+	    if($diff_flag){
+		$main::infile{sequences_control} = $main::outfile{random_sequences_control};
+		$to_delete{'random_sequences_control'} = $main::outfile{random_sequences_control};
+	    }
+	    
+	} else { 
+	    $main::infile{sequences} = $main::outfile{filtered_sequences};
+	    $to_delete{'filtered_sequences'} = $main::outfile{filtered_sequences};
+
+	    if($diff_flag){
+		$main::infile{sequences_control} = $main::outfile{filtered_sequences_control};
+		$to_delete{'filtered_sequences'} = $main::outfile{filtered_sequences_control};
+	    }
+
+	}	
+#	return($seq_length);
+    }
+
+    if($seq_counter >= 2){
+	unless ($seq_length_query == $seq_length_control) {
+	&RSAT::error::FatalError("The length of the query and control sequences differs.");
+    }
+    }
+
 }
 
 
@@ -1159,22 +1426,49 @@ sub Delete_temporal_files {
 
 
 ##############################################################
-## When the option -top is used the analysis is restricted 
-## to the first X motifs, however the input motif file is 
-## splitted on individual files, although not all of them 
-## are not. This functions will delete those files
+## Calculate the BG model from the input seuences
 sub CalculateBGModel {
 
-    &RSAT::message::TimeWarn("Calculating background model by sequence set", $bg_dir) if ($main::verbose >= 2);
-    
-    my $bg_comand = $SCRIPTS."/oligo-analysis -v 1 -quick ".${strands};
-    $bg_comand .= " -i ".$main::infile{sequences}." -l ".$markov." -noov ";
-    $bg_comand .= " -o ".$main::infile{bg_file};
-    
-    &doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
-    &RSAT::message::TimeWarn("Background for sequence set", $main::infile{sequences}, $main::infile{bg_file}) if ($main::verbose >= 2);
+   ## Initialize the sequences array
+    my @sequences = ();
+    push(@sequences, $main::infile{sequences});
 
-    $bg_format = "oligos";
+    ## If the diff mode is activated, then add the control sequences
+    ## to be processed as the query sequences
+    if($diff_flag){
+	push(@sequences, $main::infile{sequences_control});
+    }
+
+    ## Process each set of sequence
+    my $seq_counter = 0;
+    foreach my $s (@sequences){
+	$seq_counter++;
+
+	if($seq_counter == 1){
+	    &RSAT::message::TimeWarn("Calculating background model from Query sequences", $bg_dir) if ($main::verbose >= 2);
+	} elsif ($seq_counter == 2){
+	    &RSAT::message::TimeWarn("Calculating background model from Control sequences", $bg_dir) if ($main::verbose >= 2);
+	}
+	
+	my $bg_comand = $SCRIPTS."/oligo-analysis -v 1 -quick ".$strands;
+	$bg_comand .= " -i ".$s." -l ".$markov." -noov ";
+
+	if($seq_counter == 1){
+	    $bg_comand .= " -o ".$main::infile{bg_file};
+	} elsif ($seq_counter == 2){
+	    $bg_comand .= " -o ".$main::infile{bg_file_control};
+
+	}
+
+	
+	&doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	if($seq_counter == 1){
+	    &RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file}) if ($main::verbose >= 2);
+	} elsif ($seq_counter == 2){
+	    &RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file_control}) if ($main::verbose >= 2);
+	}
+	$bg_format = "oligos";
+    }
 }
 
 ################################################################
@@ -1238,12 +1532,15 @@ sub Archive {
 ## Open the HTML page for the synthesis
 sub ReOpenSynthesis {
 
-  ## Open the summary HTML file + temporal report 
-  my ($syn) = &OpenInputFile($main::outfile{report});
-  my ($syn2) = &OpenOutputFile($main::outfile{report_temp});
+    ## Open the summary HTML file + temporal report 
+    if($diff_flag){
+	$main::outfile{report_temp} = $main::outfile{report_temp_diff};
+    }
+    my ($syn) = &OpenInputFile($main::outfile{report});
+    my ($syn2) = &OpenOutputFile($main::outfile{report_temp});
 
   
-  my $head = &PrintHtmlResultHeader(program=>"position-scan", "title"=>$main::title);
+    my $head = &PrintHtmlResultHeader(program=>"position-scan", "title"=>$main::title);
 
   ######################################
   ## Read the HTML report

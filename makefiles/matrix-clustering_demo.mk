@@ -111,11 +111,6 @@ _cluster_multi:
 	@echo "		${CLUSTER_MULTI_SET_CMD}"
 	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
 
-_nb_cluster:
-	@echo
-	@echo "Running matrix-clustering	${MATRIX_PREFIX}	${OPT}"
-	${MAKE} my_command MY_COMMAND="${NB_CLUSTER_CMD}"
-	@echo "\n${NB_CLUSTER_CMD}"
 
 # ## Cluster motifs resulting from 12 independent analysis of peak-motifs (Chen data set). 
 # cluster_peakmotifs_ES_cells_analysis:

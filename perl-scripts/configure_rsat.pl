@@ -58,22 +58,22 @@ $cross_ext_variable{qsub_options} = 1;
 $cross_ext_variable{cluster_queue} = 1;
 $cross_ext_variable{cluster_sell} = 1;
 $cross_ext_variable{ensembl_release} = 1;
-$cross_ext_variable{ensemblgenomes_release} = 1;
+$cross_ext_variable{ensemblgenomes_branch} = 1;
 
 ## Parse command-line arguments
 our @arguments = @ARGV;
 our %force_param = ();
 our $auto_mode = 0;
 while ($arg = shift(@arguments)) {
-  if (lc($arg) eq "auto") {
+  if (lc($arg) =~ /^\-*auto$/) {
     $auto_mode = 1;
     foreach my $extension (@props_extensions) {
       $auto_extension{$extension} = 1;
     }
   } elsif ($arg =~ /^(\S+)\=(\S+)$/) {
-    my $key = $1;
+    my $key = lc($1);
     my $value = $2;
-    $force_param{$1} = $2;
+    $force_param{$key} = $value;
     print("Setting property\t$key\t$value\n");
   }
 }
