@@ -327,6 +327,7 @@ package	main;
       print $outD $field[1],"\t",$distrib_file,"\t.\t",$bg_name,"\n"; ## Print distrib file
     }
     &RSAT::message::Info("Distrib_list :", $distrib_dir.'/'.$outfile{'distrib_list'}) if ($main::verbose >= 2);
+    
 
     ################################################################
     ## Report execution time and close output stream
@@ -657,7 +658,7 @@ package	main;
 
    #####################
    ## If distribution files were not given as input or were not required as outputs
-   ## Calcul distribution for each matrix
+   ## Calculate distribution for each matrix
     } else {
       my %legend_col = ();
       ## matrix-distrib command
@@ -666,6 +667,8 @@ package	main;
       $mtx_distrob_cmd .= " -decimals 1 -pseudo 1";
       $mtx_distrob_cmd .= " -bgfile ".$main::infile{'bg'}." -bg_format oligos";
       $mtx_distrob_cmd .= " -bg_pseudo 0.01";
+
+    &RSAT::message::Debug("matrix-distrib command:", $mtx_distrob_cmd ) if ($main::verbose >= 2);
 
       ## Excute matrix-distrib command and store it in an array
       my @result_distrib = qx{$mtx_distrob_cmd };
@@ -708,8 +711,7 @@ package	main;
     $scan_cmd .= " -bgfile $bg_file";
     $scan_cmd .= " -name $matrix_ac";
 
-    &RSAT::message::TimeWarn("\tScan matrix", $matrix_ac) if ($main::verbose >= 3);
-
+    &RSAT::message::TimeWarn("\tScan matrix", $matrix_ac,$scan_cmd  ) if ($main::verbose >= 3);
 
 
     ################
@@ -835,8 +837,13 @@ sub getLineInfo {
     $line_info{'matrice'} = $field[2];
     $line_info{'site_strand'} = $field[3];
     $line_info{'seq'} = $field[6];
-    $line_info{'score'} = sprintf("%.1f",$field[7]);
-
+    #$line_info{'score'} = sprintf("%.1f",$field[7]); ## sprintf rounds which makes a problem when the score is close to the highest posible one and then that score is not in the distribution file
+    if ($field[7] =~ /\./ ){
+	$line_info{'score'} = substr($field[7],0,index($field[7],'.') + 1 + 1);
+    }else{
+	    $line_info{'score'} = $field[7].".0";
+    }
+    #print "pre $field[7]  $line_info{'score'}\n";
     my @field2 = split(/\|/,$field[0]); #var_info, coord
     $line_info{'coord'} = $field2[1];
 
@@ -857,7 +864,7 @@ sub getLineInfo {
 }
 
 ################################################################
-## Analyse result of scanning
+## Analyse matrix-scan results
 sub Analyse_scanning {
     @scanning = @_;
 
@@ -872,10 +879,14 @@ sub Analyse_scanning {
 	next if ($line =~ m/^;/);
 	chomp($line);
 	#die "Boom".$line;
+	#print $line."\n";
 	my %line_info = &getLineInfo($line);
 
-	my $same_variation =  !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'};
+	my $same_variation = !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'};
+	
+	#my $same_variation = 1 if ( !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'});
 
+	#print "same var ".$same_variation."\n" ;
 
 	$same_variant_len = 0 if ( length($line_info{'variant_alt'}) != length($line_info{'variant_ref'}) );
 	$same_variant_len = 0 if ( $line_info{'variant_alt'} eq '-' || $line_info{'variant_ref'} eq '-' );
@@ -888,20 +899,22 @@ sub Analyse_scanning {
 	    $same_variant_len = 1;
 	}
 
-	push (@{ $scanning_score_pos{$line_info{'site_offset_start'}}{$line_info{'site_strand'}}{$line_info{'score'}}{'variant_alt'} },$line_info{'variant_alt'});
-	push (@{ $scanning_score_pos{$line_info{'site_offset_start'}}{$line_info{'site_strand'}}{$line_info{'score'}}{'seq'} },$line_info{'seq'});
+	push ( @{ $scanning_score_pos{$line_info{'site_offset_start'}}{$line_info{'site_strand'}}{$line_info{'score'}}{'variant_alt'} } , $line_info{'variant_alt'} );
+	push ( @{ $scanning_score_pos{$line_info{'site_offset_start'}}{$line_info{'site_strand'}}{$line_info{'score'}}{'seq'} }         , $line_info{'seq'});
 
 	if ( !$scanning_score_var{$line_info{'variant_alt'}}{'score'} || $scanning_score_var{$line_info{'variant_alt'}}{'score'} < $line_info{'score'} ) {
 	    $scanning_score_var{$line_info{'variant_alt'}} = ();
 	    $scanning_score_var{$line_info{'variant_alt'}}{'score'} = $line_info{'score'};
-	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_offset_start'}}, $line_info{'site_offset_start'});
-	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'});
-	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}}, $line_info{'seq'});
+	    
+	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_offset_start'}} , $line_info{'site_offset_start'});
+	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_strand'}} ,       $line_info{'site_strand'});
+	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}} ,               $line_info{'seq'});
 
 	} elsif ( $scanning_score_var{$line_info{'variant_alt'}}{'score'} == $line_info{'score'} ){
-	    push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_offset_start'}}, $line_info{'site_offset_start'} );
-            push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_strand'}}, $line_info{'site_strand'} );
-            push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}}, $line_info{'seq'});
+	    
+	    push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_offset_start'}} , $line_info{'site_offset_start'} );
+            push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_strand'}} ,       $line_info{'site_strand'} );
+            push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}} ,           $line_info{'seq'});
 	}
 
 	$scanning_info{'original_ref'}=$line_info{'variant_ref'};
@@ -924,6 +937,7 @@ sub Analyse_variation {
   my %scanning_score_pos = %{ $scanning_score_pos };
   my %scanning_score_var = %{ $scanning_score_var };
 
+  
   ## Compare all positions
   if (($no_offset && $scanning_info{'same_len'})) {
     &RSAT::message::Debug("Comparing all offset positions") if ($main::verbose >= 10);
@@ -951,6 +965,8 @@ sub Analyse_variation {
     &RSAT::message::Debug("Comparing best score for each variant") if ($main::verbose >= 10);
     my %scanning_score  = ();
     foreach my $variant ( keys (%scanning_score_var ) ) {
+	&RSAT::message::Debug("Comparing  scores for one variant", $variant ) if ($main::verbose >= 10);
+	#<STDIN>;
       $score = $scanning_score_var{$variant}{'score'};
       push (@{ $scanning_score{$score}{'variant_alt'} }, $variant);
       push (@{ $scanning_score{$score}{'site_offset_start'} }, join(",",@{$scanning_score_var{$variant}{'site_offset_start'}}) );
@@ -969,6 +985,12 @@ sub Compare {
     my %scanning_info = %{$scanning_info };
     my %scanning_score = %{$scanning_score };
 
+    # foreach $key (keys %scanning_score)
+    # {
+    # 	print "$key - $scanning_score{$key}\n";
+    # }
+    
+
     &RSAT::message::Debug("Comparing scores" ) if ($main::verbose >= 10);
 
     my @sorted_score = sort {$b <=> $a} ( keys( %scanning_score ) );
@@ -982,6 +1004,9 @@ sub Compare {
 	my $best_score = $sorted_score[0];
 	my $best_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$best_score};
 
+	&RSAT::message::Debug("Best score and pval", $best_score, $best_pval ) if ($main::verbose >= 10);
+
+	
 	next if ( $lth{'score'} && $lth{'score'} > $best_score );
 	next if ( $uth{'pval'} && $uth{'pval'} < $best_pval);
 

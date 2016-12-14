@@ -1,0 +1,89 @@
+## TO DO
+
+- The installation of Perl libraries is failing. Not installed at the end
+
+
+## Build the docker from the Dockerfile
+docker build -t rsat-commands:2016-10-29 .
+## This returns an ID -> copy/paste it below
+
+
+## Result of the first trial
+#  ---> 3f22aecf582a
+# Removing intermediate container 4cfa3502f712
+# Step 9 : ENV DEBIAN_FRONTEND teletype
+#  ---> Running in 7c82c4ef003a
+#  ---> b074305e6257
+# Removing intermediate container 7c82c4ef003a
+# Successfully built b074305e6257
+
+# ##
+# docker tag [ID] docker-registry.genouest.org/RSAT/rsat-commands-2016-10
+# docker tag b074305e6257 rsat-commands:2016-10-29
+
+## List local Docker images
+docker images
+
+##  Start a container from the built image, in interactive mode
+docker run -it rsat-commands:2016-10-29
+## Type "exit" to quit
+
+## Get the list of running docker processes
+docker ps
+
+## Get the list of all docker processes
+docker ps -a
+
+## Get the ID of the curent rsat docker
+docker ps -a | grep rsat-commands:2016-10-29| awk '{print $1}'
+
+## Restart the sleeping RSAT docker in iterative mode
+docker start -i `docker ps -a | grep rsat-commands:2016-10-29| awk '{print $1}'`
+
+
+################################################################
+## Save a local image of the docker
+
+docker save rsat-commands:2016-10-26 -o /no_backup/RSAT_Docker/Images/rsat-commands_2016-10-26.tar
+
+################################################################
+## Push the docker file to bioshadock
+## BEFORE THIS, I must
+## - replace the COPY by "RUN wget"
+## - make sure that the genomes dir is empty
+
+################################################################
+## Get RSAT command-line container from bioshadock
+docker pull docker-registry.genouest.org/RSAT/rsat-commands-2016-10
+
+################################################################
+## Run a test command on the bioshadock container
+docker run docker-registry.genouest.org/RSAT/rsat-commands-2016-10 random-seq -n 10 
+
+## Download a genome on your local hard drive
+mkdir -p /rsat_data/genomes
+docker run -v /rsat_data/genomes:/packages/rsat/public_html/data/genomes docker-registry.genouest.org/RSAT/rsat-commands-2016-10 download-organism -v 1 -org Saccharomyces_cerevisiae
+
+## Test the genome installation: retrieve some sequences
+docker run -v /rsat_data/genomes:/packages/rsat/public_html/data/genomes docker-registry.genouest.org/RSAT/rsat-commands-2016-10 retrieve-seq -v 1 -org Saccharomyces_cerevisiae -q MET4
+
+
+################################################################
+## To build a Web server
+FROM docker-registry.genouest.org/RSAT/rsat-commands-2016-10
+EXPOSE ["80"]
+ENTRYPOINT ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+
+################################################################
+## Push RSAT Web server file to bioshadock
+
+################################################################
+## Get RSAT Web server from bioshadock
+docker pull docker-registry.genouest.org/RSAT/rsat-web-2016-10
+
+
+
+## Specific problem with the Docker space.
+## Docker.qcow2 never shrinks - disk space usage leak in docker for mac
+
+## https://github.com/docker/for-mac/issues/371

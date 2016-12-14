@@ -66,7 +66,7 @@ $parameters_dna_pattern .= " -format $seq_format ";
 unless ($query->param('patterns') =~ /\S/) {
   &cgiError("The pattern box should not be empty.<P>Read on-line manual for more information.");
 }
-$pattern_file = $tmp_file_path.".pat";
+$pattern_file = $tmp_file_path."_patterns.txt";
 push @result_files, ("patterns",$pattern_file);
 if (open PAT, ">$pattern_file") {
   print PAT $query->param('patterns');

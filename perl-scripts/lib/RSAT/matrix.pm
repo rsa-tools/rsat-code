@@ -241,7 +241,8 @@ the program consensus (Hertz), but not by other programs.
 				"consensus"=>1,
 				"cluster-buster" =>1,
 				"cb" =>1,
-				"infogibbs" =>1
+				"infogibbs" =>1,
+				"param_table"=>1,
 #			    "logo"=>1
     );
 
@@ -808,7 +809,11 @@ sub toString {
 
   } elsif ($output_format eq "tomtom_previous") {
     return $self->to_tomtom_previous(%args);
-  }else {
+
+  } elsif ($output_format eq "param_table") {
+    return $self->to_param_table(%args);
+
+  } else {
     &RSAT::error::FatalError($output_format, "Invalid output format for a matrix");
   }
 }
@@ -920,7 +925,7 @@ sub to_TRANSFAC {
       $accession = "matrix";
     }
 
-    ## TRANSFAC accession number corresponds to what we call name
+    ## TRANSFAC identifiers corresponds to what we call name
     my $id = $self->get_attribute("name") || $self->get_attribute("id") || $accession;
 
     &RSAT::message::Debug("&RSAT::matrix::to_TRANSFAC()",
@@ -1017,6 +1022,87 @@ sub to_TRANSFAC {
     $to_print .=  $matrix_terminator{$output_format}."\n";
 }
 
+=pod
+
+=item to_param_table();
+
+Print a table with one row per matrix and one column per parameter.
+
+=cut
+sub to_param_table {
+    my ($self, %args) = @_;
+    my $to_print = "";
+
+    my $nb = $self->get_attribute("number") || $args{"number"} || 1;
+    $values{"nb"} = $nb;
+
+    my @fields = ("nb", "accession", "identifier", "name");
+
+    ## Accession number
+    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("id") || $self->get_attribute("identifier");;
+    unless ($accession) {
+      $accession = "matrix";
+    }
+    $values{"accession"} = $accession;
+
+    ## Identifier
+    my $identifier = $self->get_attribute("ID") || $self->get_attribute("identifier") || $self->get_attribute("name") || $accession;
+    $values{"identifier"} = $identifier;
+
+    ## Matrix name
+    my $name = $self->get_attribute("name") || $self->get_attribute("id") || $accession;
+    $values{"name"} = $name;
+
+    &RSAT::message::Debug("&RSAT::matrix::to_param_table()",
+			  "AC", $accession,
+			  "ID", $id,
+			  "name", $name) if ($main::verbose >= 5);
+
+
+    ## Description
+    ##
+    ## If the description field is empty, use matrix consensus.
+    ## Note: the DE field is necessary for the matrix-comparison
+    ## program STAMP.
+    my $desc = $self->get_attribute("description");
+    unless ($desc) {
+      $self->calcConsensus();
+      $desc = $self->get_attribute("consensus.IUPAC");
+    }
+    $values{"description"} = $description;
+    push @fields, "description";
+
+
+    ## Parameters
+    my @params = $self->get_attribute("parameters");
+    if (scalar(@params) > 0) {
+      for my $param (@params) {
+	my $value = $self->get_attribute($param);
+	$values{$param} = $value;
+	push @fields, $param;
+	&RSAT::message::Debug("param", $param, $value) if ($main::verbose >= 10);
+      }
+    }
+
+    ## For the first matrix, print the header
+    $to_print = "";
+    if ($nb == 1) {
+      $to_print .= join("\t", @fields);
+      $to_print .= "\n";
+    }
+
+    ## Print the result
+    my @values = ();
+
+    foreach my $field (@fields) {
+      push @values, $values{$field};
+    }
+    $to_print .= join("\t", @values);
+    $to_print .= "\n";
+
+    return $to_print;
+}
+
 
 =pod
 
@@ -1034,6 +1120,14 @@ sub to_STAMP {
     my ($self, %args) = @_;
     my $to_print = "";
 
+    &RSAT::message::Debug(
+      "&RSAT::matrix::to_STAMP()", 
+      $self->get_attribute("accession"), 
+      $self->get_attribute("id"), 
+      $self->get_attribute("name"), 
+      $self->get_attribute("description"), 
+	) if ($main::verbose >= 0);
+    
     my $output_format = $args{format};
     $output_format = lc($output_format);
 
@@ -1044,10 +1138,7 @@ sub to_STAMP {
     }
 
     ## Identifier
-    my $id = $self->get_attribute("identifier");
-    unless ($id) {
-	$id = $self->get_attribute("id");
-    }
+    my $id = $self->get_attribute("name") || $self->get_attribute("identifier")  || $self->get_attribute("id") || $accession;
     if ($id) {
       $to_print .= "XX	ID ".$id."\n";
     }
@@ -4055,7 +4146,7 @@ Arguments:
 
 =cut
 sub makeLogo {
-  my ($self,$logo_basename,$logo_formats,$logo_options, $rev_compl, $logo_cmd_name) = @_;
+  my ($self,$logo_basename,$logo_formats,$logo_options, $rev_compl, $logo_cmd_name, $no_title) = @_;
 
 #  my $logo_cmd_name = "seqlogo"; ## FOR DEBUG, OLD MODE
 
@@ -4139,30 +4230,34 @@ sub makeLogo {
   }
   
   ## Logo title indicates matrix ID, name
-  my $logo_title = &RSAT::util::ShortFileName($id);
-  if (my $ac = $self->get_attribute("ac")) {
-    if ($ac ne $id) {
-      $logo_title .= " ".&RSAT::util::ShortFileName($ac);
+  my $logo_title = "";
+  unless ($no_title) {
+    $logo_title = &RSAT::util::ShortFileName($id);
+    if (my $ac = $self->get_attribute("ac")) {
+      if ($ac ne $id) {
+	$logo_title .= " ".&RSAT::util::ShortFileName($ac);
+      }
     }
-  }
-  if (my $name = $self->get_attribute("name")) {
-    if ($name ne $id) {
-      $logo_title .= " ".&RSAT::util::ShortFileName($name);
+    if (my $name = $self->get_attribute("name")) {
+      if ($name ne $id) {
+	$logo_title .= " ".&RSAT::util::ShortFileName($name);
+      }
     }
-  }
-  
-  ## Prepare to compute the reverse complement
-  if ($rev_compl) {
-    $logo_title .= "  Rev. cpl.";
-  }
-  
-  ## Truncate logo title if too long
-  my $max_logo_title=$ncol*3;
-  if (length($logo_title) > $max_logo_title) {
-    $logo_title = "...".substr($logo_title, -$max_logo_title);
-    &RSAT::message::Warning("Truncating logo title", $logo_title) if ($main::verbose >= 5);
-  }
 
+    ## Prepare to compute the reverse complement
+    if ($rev_compl) {
+      $logo_title .= "  Rev. cpl.";
+    }
+
+    
+    ## Truncate logo title if too long
+    my $max_logo_title=$ncol*3;
+    if (length($logo_title) > $max_logo_title) {
+      $logo_title = "...".substr($logo_title, -$max_logo_title);
+      &RSAT::message::Warning("Truncating logo title", $logo_title) if ($main::verbose >= 5);
+    }
+  }
+  
 
   ################################################################
   ## Seqlogo is obsolete but maintained for consistency checking. It
@@ -4193,7 +4288,7 @@ sub makeLogo {
       $logo_cmd .= " -x '".$logo_info."'";
       $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
       $logo_cmd .= " ".$logo_options;
-      $logo_cmd .= " -t '".$logo_title."'";
+      $logo_cmd .= " -t '".$logo_title."'" unless ($no_title);
       $logo_cmd .= " -o "."./".$logo_basename;
       &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
       &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5); 
@@ -4231,7 +4326,7 @@ sub makeLogo {
       $logo_cmd .= " --size large " unless ($logo_options =~ /\-s /);
       $logo_cmd .= " --aspect-ratio 3 ";
       $logo_cmd .= " ".$logo_options;
-      $logo_cmd .= " --title '".$logo_title."'";
+      $logo_cmd .= " --title '".$logo_title."'" unless ($no_title);
       $logo_cmd .= " --fineprint ''";
       $logo_cmd .= " --show-ends YES ";
       $logo_cmd .= " --fout "."./".$logo_file;
