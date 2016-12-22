@@ -110,14 +110,32 @@ if ($vmatch_installed) {
 } elsif ($output_file) {
   $command .= " -o ".$output_file;
 }
-#&RSAT::message:Debug("convert-seq command", $command);
+&RSAT::message::TimeWarn("Converting sequences to ensure conformity for mkvtree") if ($main::verbose >= 2);
 &doit($command, $dry_run, $die_on_error, $verbose);
+
 
 
 ################################################################
 ## Purge the sequences
 if ($vmatch_installed) {
+  &RSAT::message::TimeWarn("Indexing sequences with mkvtree") if ($main::verbose >= 2);
 
+  ## Compute the size of the temporary file in order to fix the option
+  ## -pl of mkvtree. By default we should let mkvtree choose the
+  ## optimal prefix length. However, for big files there seems to be a
+  ## discrepancy between the prefix length defined by mkvtree for
+  ## indexing, and the prefix length used by vmatch for searching
+  ## (which seems bounded to 10). We use a trick to set it to 10 for
+  ## files > 3Mb.
+  my $tmp_file_size = -s $tmp_file_path;
+  &RSAT::message::Info("Input file size", $tmp_file_size, $tmp_file_path) if ($main::verbose >= 2);
+  my $prefix_length = ""; # empty for the default prefix length
+  if ($tmp_file_size > 8e6) {
+    $prefix_length = 10; 
+    &RSAT::message::Warning("Setting prefix length to 10 to fix discrepancy between mkvtree and vmatch.") if ($main::verbose >= 2);
+  }
+
+  
   ## Define extensiosn for mkvtree
   @extensions = qw(al1 ssp bck bwt des lcp ois llv prj suf tis sds sti1);
 
@@ -131,12 +149,14 @@ if ($vmatch_installed) {
   $mkvtree_options .= " -sti1"; # output reduced inverse suffix array (sti1tab) to file
   $mkvtree_options .= " -lcp"; # output longest common prefix lengths to file
   $mkvtree_options .= " -ois"; # output the parsed input string to a file
-  $mkvtree_options .= " -pl"; # length of prefix for bucket sort (default 0)
+  $mkvtree_options .= " -pl ".$prefix_length; # length of prefix for bucket sort (default 0)
   $mkvtree_options .= " -db ".$tmp_file_name; # sequence file
   $command = "cd $tmp_file_dir; $vmatch_dir/mkvtree $mkvtree_options";
   &doit($command, $dry_run, $die_on_error, $verbose);
 
+
   ## options to locate duplications
+  &RSAT::message::TimeWarn("Purging sequences with vmatch") if ($main::verbose >= 2);
   my $vmatch_options = "-s"; # show the sequence content of a match
   if ($delete_repeats) {
     ## delete repeats
@@ -162,6 +182,7 @@ if ($vmatch_installed) {
   &doit($command, $dry_run, $die_on_error, $verbose);
 
   ## Remove temporary files
+  &RSAT::message::TimeWarn("Cleaning temporary files") if ($main::verbose >= 2);
   foreach $ext  (@extensions) {
     my $command = "rm -f ".$tmp_file_path.".".$ext;
     &doit($command, $dry_run, $die_on_error, $verbose);
