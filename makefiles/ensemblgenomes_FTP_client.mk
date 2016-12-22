@@ -212,12 +212,14 @@ download_gtf:
 ################################################################
 ## Download FASTA files with genomic sequences (raw and masked)
 ## and peptidic sequences
+# <release32
 #FASTA_RAW_SUFFIX=*${RELEASE}.dna.genome.fa
 #FASTA_RAW_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_RAW_SUFFIX}.gz
 #FASTA_MSK_SUFFIX=*${RELEASE}.dna_rm.genome.fa
 #FASTA_MSK_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_MSK_SUFFIX}.gz
 #FASTA_PEP_SUFFIX=*${RELEASE}.pep.all.fa
 #FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUFFIX}.gz
+# releases >32
 FASTA_RAW_SUFFIX=${SPECIES_ID}.dna.toplevel.fa
 FASTA_RAW_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_RAW_SUFFIX}.gz
 FASTA_MSK_SUFFIX=${SPECIES_ID}.dna_rm.toplevel.fa
@@ -231,14 +233,14 @@ FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUF
 #FASTA_RAW_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX} | grep -v '.gz$$'| head -1`
 #FASTA_RAW_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX}.gz | head -1`
 #FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.genome.fa
-FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_ID}.dna.toplevel.fa
+FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.toplevel.fa
 FASTA_RAW_LOCAL_GZ=${FASTA_RAW_LOCAL}.gz
 #FASTA_MSK_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna_rm.genome.fa
-FASTA_MSK_LOCAL=${GENOME_DIR}/${SPECIES_ID}.dna_rm.genome.fa
+FASTA_MSK_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna_rm.genome.fa
 FASTA_MSK_LOCAL_GZ=${FASTA_MSK_LOCAL}.gz
-FASTA_PEP_LOCAL=${GENOME_DIR}/${SPECIES_ID}.pep.all.fa
+FASTA_PEP_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.pep.all.fa
 FASTA_PEP_LOCAL_GZ=${FASTA_PEP_LOCAL}.gz
-GTF_LOCAL=${GENOME_DIR}/${SPECIES_ID}.gtf
+GTF_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.gtf
 GTF_LOCAL_GZ=${GTF_LOCAL}.gz
 #FASTA_MSK_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_MSK_SUFFIX} | grep -v '.gz$$' | head -1`
 #FASTA_PEP_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_PEP_SUFFIX}.gz | head -1`
