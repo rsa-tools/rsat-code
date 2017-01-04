@@ -2184,6 +2184,9 @@ sub Add_attributes_to_JSON() {
 	  push(@levels_JSON, $spl[2]);  
       }
       close(LVL_JSON);
+      
+      ## Open a file with the attributes of the nodes of each cluster (IC, width, number of motifs, etc)
+      my $cluster_nodes_ic_info = &OpenOutputFile($main::outfile{prefix}."_clusters_information/".$cluster."_attributes_table.tab");
 
       ## Open the JSON file produced by R
       my $parsed_json;
@@ -2236,11 +2239,14 @@ sub Add_attributes_to_JSON() {
 	      if($ID_link_flag == 1){
 		  $Add_this .= ",\n \"link_ext\" : \"".$ID_link_hash{$M1}."\"";
 	      }
+
+	      print $cluster_nodes_ic_info $M1."\t"."input\t".$matrix_info{$M1}{ic}."\n";
 	      
 	  }
 	  
 	  ################################################################
 	  ## Add the consensus to the json file to be displayed in the tree (tree nodes)
+	  my $IC_info_line = "";
 	  if ($line =~ /\"children\":/) {
 	      $children++;
 	      $Add = "";
@@ -2276,12 +2282,13 @@ sub Add_attributes_to_JSON() {
 		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
 		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
 		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
+                      $IC_info_line = "branch_".$branch."\t"."merged\t".$rounded_ic."\n";
 		  }
 		  push(@Parsed_JSON, $Add."\n");
 	      }
 	  }
 	  push(@Parsed_JSON, $line."\n");
-	  
+print $cluster_nodes_ic_info $IC_info_line;
 	  ### Add the new line
 	  if ($Flag) {
 	      push(@Parsed_JSON, $Add_this."\n");
