@@ -222,13 +222,13 @@ if ($query->param('output') eq "display") {
 
       ## JvH TEMPORARILY DISACTIVATED pdf (201502-05) to circumvent
       ## strange bug with ghostscript on rsat.ulb.ac.be
-      print "<a href = '".$logo.".png'><IMG SRC='".$logo.".png' height='120'></a> ";
-#      print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a> ";
+      print "<a href = '".$logo.".png'><IMG SRC='".$logo.".png' height='120'></a>";
+#      print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a>";
     } else {
       print $_;
     }
   }
-  print '</PRE>';
+  print "\n</pre>";
   close(RESULT);
 
   ################################################################
