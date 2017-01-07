@@ -1463,7 +1463,7 @@ sub to_tab {
     }
     $to_print .=  $matrix_terminator{$output_format}."\n";
   }
-  return $to_print;
+  return($to_print);
 }
 
 

@@ -1942,6 +1942,7 @@ sub ExportMatrix {
 	  print $out_handle  "; logo file:" , $logo_file.$rc_suffix.".".$logo_format, "\n";
 	}
       }
+      print $out_handle  ";\n"; ## This last line is required to add a newline for the correct display on the Web site
     }
   }
 
