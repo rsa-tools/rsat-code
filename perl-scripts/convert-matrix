@@ -483,10 +483,7 @@ package main;
     ## Calculate parameters before sorting because sorting can be done on
     ## a computed parameter rather than defined in the input file.
     if ($return_fields{parameters}) {
-      $matrix->calcWeights();
-      $matrix->calcInformation();
-      $matrix->calcConsensus();
-      $matrix->calcGCcontent();
+      $matrix->calcParameters();
     }
 
     ## Generate logos
