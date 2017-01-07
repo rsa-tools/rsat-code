@@ -2425,19 +2425,15 @@ sub calcNbSites {
     return($self->get_attribute("nb_sites_calculated"));
   }
 
-  my @col_sum = &RSAT::matrix::col_sum($nrow, $ncol, @matrix);
-
   ## Get the count matrix
-  my $nb_col = $self->ncol();
-  my $nb_row = $self->nrow();
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
   my @matrix = $self->getMatrix();
-  #my @matrix = @{$self->{table}};
   
   ## Compute the maximum of columnn sums to know the number of
   ## sequences (sites) used to build the matrix
-  my @col_sum = &col_sum($nb_row,$nb_col,@matrix);
-  my $max_col_sum = &RSAT::stats::max(@col_sum);
-  my $nb_sites = $max_col_sum;
+  my @col_sum = &RSAT::matrix::col_sum($nrow, $ncol, @matrix);
+  my $nb_sites = &RSAT::stats::max(@col_sum);
   $self->force_attribute("nb_sites_calculated", 1);
   $self->set_parameter("nb_sites", $nb_sites);
 }
@@ -2738,6 +2734,31 @@ sub _printProfile {
   return ($to_print);
 }
 
+=pod
+
+=item Compute some parameters characterizing the matrix
+
+=over
+
+=item number of sites
+=item weights
+=item information
+=item consensus
+=item GC content
+
+=back
+
+=cut
+
+sub calcParameters {
+  my ($self) = @_;
+  
+  $self->calcNbSites();
+  $self->calcWeights();
+  $self->calcInformation();
+  $self->calcConsensus();
+  $self->calcGCcontent();
+}
 
 =pod
 
@@ -2751,6 +2772,8 @@ sub _printParameters {
   my ($self, $to_print) = @_;
   $to_print .= ";\n";
   $to_print .= "; Matrix parameters\n";
+
+  $self->calcParameters();
 
   ## Number of sites
   $to_print .= sprintf ";\t%-29s\t%g\n", "Number of sites", $self->getNbSites();
