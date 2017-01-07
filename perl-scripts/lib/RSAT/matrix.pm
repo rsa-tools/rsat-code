@@ -2753,7 +2753,7 @@ sub _printParameters {
   $to_print .= "; Matrix parameters\n";
 
   ## Number of sites
-  $to_print .= sprintf ";\t%-29s\t%g\n", "Number of sures", $self->getNbSites();
+  $to_print .= sprintf ";\t%-29s\t%g\n", "Number of sites", $self->getNbSites();
 
   ## Matrix size
   $to_print .= sprintf ";\t%-29s\t%g\n", "Columns", $self->ncol();
