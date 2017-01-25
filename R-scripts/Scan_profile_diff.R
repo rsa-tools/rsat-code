@@ -203,6 +203,13 @@ verbose(paste("Reading Control matrix-scan results table"), 1)
 matrix.scan.results.control <- read.csv(file = matrix.scan.file.control, sep = "\t", header = TRUE, comment.char = ";")
 colnames(matrix.scan.results.control) <- c("seq_id", "ft_name", "bspos", "Pval")
 
+## Remove duplicated rows
+## One row can be duplicated because some motifs are palindromic and they could have
+## an identical match in the same position for the F and R strand
+matrix.scan.results.query <- matrix.scan.results.query[!duplicated(matrix.scan.results.query), ]
+matrix.scan.results.control <- matrix.scan.results.control[!duplicated(matrix.scan.results.control), ]
+
+
 #############################################################
 ## Step 4: Read sequence names table for query and control ##
 #############################################################
