@@ -365,9 +365,6 @@ package main;
       ## Run matrix-scan quick
       &ScanSequences();
 
-      ## Parse the matrix-scan results table
-      &ParseScanResults();
-
       ################################################################
       ## Produce the ID to Motif name reference table
       &ID_NameRefTable();
@@ -382,7 +379,8 @@ package main;
   ## Plots step: chi-squared calculation + draw profiles
   if( defined($selected_tasks{"plots"}) || defined($selected_tasks{"all"}) ){
 
-&ParseScanResults();
+      ## Parse the matrix-scan results table
+      &ParseScanResults();
 
       ################################################################
       ## Compute statistics (X2 pval, eval, qval) 
