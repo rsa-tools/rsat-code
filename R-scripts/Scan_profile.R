@@ -256,205 +256,205 @@ setwd(results.folder)
 ##################################################################
 ## Assign a color to each p-value class
 ## The sequencial color palette has a maximum of 9 colors
-nb.color.classes <- length(classes.pval.letters)
-if(length(classes.pval.letters) > 9){
-  nb.color.classes <- 9
-}
-pval.class.colors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
-classes.to.colors <- list()
-for(x in 1:length(classes.pval.letters)){
-  classes.to.colors[[classes.pval.letters[x]]] <- pval.class.colors[x]
-}
-
-## Create directory with the TFBSs distribution
-dir.create(paste(basename(prefix), "_TFBSs_pval_distribution/", sep = ""), showWarnings = FALSE, recursive = TRUE)
-dir.create(paste(basename(prefix), "_TFBSs_per_seq/", sep = ""), showWarnings = FALSE, recursive = TRUE)
-verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
-
-thr <- sapply(1:nb.motifs, function(m){
-
-  ## Get the matrix name
-  matrix.query <- matrix.names[m]
-  matrix.query.name <- as.vector(ID.names[,2][which(ID.names[,1] == matrix.query)][1])
-
-  ## Get the sub-table with the hits of the query matrix
-  matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
-  matrix.query.selection$bspos <- matrix.query.selection$bspos + limits
-  matrix.query.classes <- sort(unique(matrix.query.selection$Pval.class.letter))
-
-  ##
-  nb.hits.per.sequence <- table(as.vector(matrix.query.selection$seq_id))
-  nb.hits.per.sequence.range <- range(nb.hits.per.sequence)
-  min.nb.hits <- nb.hits.per.sequence.range[1]
-  max.nb.hits <- nb.hits.per.sequence.range[2]
-
-  nb.hits.per.sequence <- table(nb.hits.per.sequence)
-  no.hit.nb <- total.scanned.sequences - sum(nb.hits.per.sequence)
-  names(no.hit.nb) <- 0
-  nb.hits.per.sequence <- append(nb.hits.per.sequence, no.hit.nb, after = 0)
-
-  ## Generate GGplot for number of TFBSs per sequence
-  TFBSs.per.seq.file <- paste(basename(prefix), "_TFBSs_per_seq/", matrix.query, "_TFBSs_per_seq", sep = "")
-
-  aa <- data.frame(nb.seq = nb.hits.per.sequence, nb.hits = as.numeric(names(nb.hits.per.sequence)))
-  ggplot(data=aa, aes(y = nb.seq, x=nb.hits)) +
-    geom_bar(aes(fill=nb.seq), stat="identity", position=position_dodge()) +
-    labs(title="Number of hits", y = "Number of sequences", x="Number of TFBSs") +
-    geom_text(aes(label=nb.seq), vjust=-0.15, color="black", size=3)
-
-  suppressMessages(ggsave(paste(TFBSs.per.seq.file, ".jpeg", sep = "")))
-  suppressMessages(ggsave(paste(TFBSs.per.seq.file, ".pdf", sep = "")))
-
-  ## Get the number of putative TFBSs and the number of sequences with
-  ## at least one match of the query matrix
-  nb.TFBSs <- dim(matrix.query.selection)[1]
-  nb.seq <- length(as.vector(unique(matrix.query.selection$seq_id)))
-
-  TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes", sep = "")
-
-  ################################
-  #Create a custom color scale
-  myColors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
-  names(myColors) <- classes.pval.letters
-
-  ## Range of p-values for the query motif
-  pval.class.matrix.query <- sort(unique(matrix.query.selection$Pval.class))
-
-  ## Insert logo
-  logo.file <- paste(logo.folder, "/", matrix.query, "_logo.png", sep = "")
-  logo <- readPNG(logo.file)
-  logo.roster <- rasterGrob(logo, interpolate = TRUE)
-
-  ## X position of plot annotations
-  text.xmax <- min(matrix.query.selection$bspos) + max(matrix.query.selection$bspos) / 4
-  text.center <- (min(matrix.query.selection$bspos) - text.xmax)*2
-
-  ggplot(matrix.query.selection, aes(x=bspos, y=Pval.minlog10)) +
-    ylim(c(min(matrix.scan.results$Pval.minlog10), max(matrix.scan.results$Pval.minlog10))) +
-    geom_point(aes(colour = Pval.class.letter), shape = 18, size = 4, stroke = 0.5) +
-    # geom_rug(position='jitter') +
-    labs(title=paste("Qualitative distribution of ", matrix.query, " TFBSs", sep = ""), y = "-log10(P-value)", x = "Position") +
-    scale_colour_manual(name = "-log10(P-value)",values = myColors, labels = paste(">", pval.class.matrix.query, sep = "")) +
-    theme_minimal() +
-    annotate("text", x = -limits + ((limits*2)/10), y = max.pval.minus.log10 - 0.25, label = paste("Nb of TFBSs: ", nb.TFBSs, sep = ""), size = 4, hjust = 0) +
-    annotate("text", x = -limits + ((limits*2)/10), y = max.pval.minus.log10 - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) +
-    annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval.minus.log10 - 1, ymax = max.pval.minus.log10 - 0.05)
-
-  suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".pdf", sep = "")))
-  suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".jpeg", sep = "")))
-})
-rm(thr)
-
-
-#################################################################################
-## Step :  ##
-#################################################################################
-verbose(paste("Creating boxplot with the distribution of TFBSs Weights at each bin"), 1)
-
-boxplot.weights.dir <- paste(basename(prefix), "_Boxplot_Weight", sep = "")
-dir.create(boxplot.weights.dir, showWarnings = FALSE, recursive = TRUE)
-
-matrix.scan.results <- ddply(matrix.scan.results, .(ft_name, position_class), mutate, median.w = round(median(Weight), digits = 1))
-matrix.scan.results$median.w[matrix.scan.results$median.w < 0] <- 0
-max.W <- max(matrix.scan.results$Weight)
-# aa <- matrix.scan.results
-# matrix.scan.results <- aa
-
-median.W.values <- seq(0, max(as.vector(unique(round(sort(matrix.scan.results$median.w))))), by = 1)
-median.W.classes <- length(median.W.values)
-
-## Calculate a color palette for the Weight classes
-myColors <- colorRampPalette(brewer.pal(9, "YlGnBu"), space="Lab")(median.W.classes)
-
-matrix.scan.results$median.w <- as.factor(matrix.scan.results$median.w)
-matrix.scan.results$position_class <- as.factor(matrix.scan.results$position_class)
-
-# matrix.scan.results$class.color <- as.vector(myColors[matrix.scan.results$mean.w])
-
-thr <- sapply(1:nb.motifs, function(m){
-  
-  print(m)
-
-  ## Get the matrix name
-  matrix.query <- matrix.names[m]
-  matrix.query.name <- as.vector(ID.names[,2][which(ID.names[,1] == matrix.query)][1])
-
-  ## Get the sub-table with the hits of the query matrix
-  matrix.query.selection <- subset(matrix.scan.results, ft_name == matrix.query)
-
-  ## Calculate the mean W per bin
-  median.w.per.bin <- ddply(matrix.query.selection, "position_class", summarize, median.w = median(Weight))[,2]
-  median.w <- median(matrix.query.selection$Weight)
-
-  ## Get the possitional classes
-  pos.class <- unique(as.vector(matrix.query.selection$position_class))
-  pos.class.sep.list <- split(matrix.query.selection, f = as.factor(matrix.query.selection$position_class))
-  
-  ## Calculate a T-test of the W ditribution on each bin vs the overal W distribution
-  
-  co <- 0
-  student.pvalues <- sapply(pos.class.sep.list, function(l){
-    
-    co <<- co + 1
-    print(co)
-
-    if( dim(l)[1] < 2){
-      NA
-    } else {
-      student <- t.test(x = l$Weight,
-                        y = matrix.query.selection$Weight)
-      student[["p.value"]]
-    }
-
-  })
-  student.pvalues.corrected <- p.adjust(student.pvalues, method = "bonferroni")
-
-  ## Assign colors
-  median.w <- round(median.w.per.bin)
-  median.w[median.w < 0] <- 0
-  median.w.to.color <- as.vector(myColors[(median.w+1)])
-
-  ## Create the P-val_t_test column
-  list.counter <- 0
-  student.pvalues.corrected.vector <- as.vector(unlist(sapply(pos.class.sep.list, function(l){
-    list.counter <<- list.counter + 1
-    rep(student.pvalues.corrected[list.counter], times = nrow(l))
-  })))
-
-  student.pvalues.corrected.pretty <- prettyNum(student.pvalues.corrected.vector, scientific=TRUE, digits = 1)
-  student.pvalues.corrected.pretty <- as.character(student.pvalues.corrected.pretty)
-  matrix.query.selection$P_val_t_test <- student.pvalues.corrected.pretty
-
-  weight.boxplot.bin.file <- paste(basename(prefix), "_Boxplot_Weight/", matrix.query, "_Weight_distribution_per_bin", sep = "")
-
-  boxplot.bins <- ggplot(matrix.query.selection, aes(x=position_class, y=Weight, group = position_class, fill = position_class)) +
-    geom_boxplot(notch = FALSE) +
-    guides(fill=FALSE) +
-    labs(title=paste("Distribution of TFBSs Weigths (separated by bins) for ", matrix.query, sep = ""), y = "", x = "Position") +
-    ylim(c(-1, max.W)) +
-    scale_fill_manual(values=(median.w.to.color)) +
-    geom_text(data = matrix.query.selection, aes(x = position_class, y = 0, label = median.w), size = 3.5, colour = "#424242") +
-    geom_text(data = matrix.query.selection, aes(x = (length(median.w.to.color)/2), y = 0.55, label = "Median Weight"), size = 5, colour = "#424242") +
-    geom_text(data = matrix.query.selection, aes(x = position_class, y = -1, label = P_val_t_test), size = 3.5, colour = "#424242") +
-    geom_text(data = matrix.query.selection, aes(x = (length(median.w.to.color)/2), y = -0.65, label = "Corrected P-value (t-test)"), size = 5, colour = "#424242") +
-    theme_minimal()
-
-  boxplot.overall <- ggplot(matrix.query.selection, aes(x=ft_name, y=Weight, group = ft_name, fill = ft_name)) +
-    geom_boxplot( notch = FALSE) +
-    ylim(c(-1, max.W)) +
-    geom_text(data = matrix.query.selection, aes(x = 1, y = 0, label = median(matrix.query.selection$Weight)), size = 3.5, colour = "#424242") +
-    geom_text(data = matrix.query.selection, aes(x = 1, y = 1, label = "Median\nWeight"), size = 5, colour = "#424242") +
-    guides(fill=FALSE) +
-    labs(title=paste("Distribution of TFBSs Weigths\n", matrix.query, sep = ""), y = "Weight", x = "") +
-    theme_minimal()
-
-  xx <- plot_grid(boxplot.overall, boxplot.bins, labels=c("", ""), ncol = 2, nrow = 1, rel_widths = c(0.2, 1.75))
-
-  save_plot(filename = paste(weight.boxplot.bin.file, ".pdf", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 5, base_width = 15, base_height = 10)
-  save_plot(filename = paste(weight.boxplot.bin.file, ".jpeg", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 5, base_width = 15, base_height = 10)
-
-})
-rm(thr)
+# nb.color.classes <- length(classes.pval.letters)
+# if(length(classes.pval.letters) > 9){
+#   nb.color.classes <- 9
+# }
+# pval.class.colors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
+# classes.to.colors <- list()
+# for(x in 1:length(classes.pval.letters)){
+#   classes.to.colors[[classes.pval.letters[x]]] <- pval.class.colors[x]
+# }
+# 
+# ## Create directory with the TFBSs distribution
+# dir.create(paste(basename(prefix), "_TFBSs_pval_distribution/", sep = ""), showWarnings = FALSE, recursive = TRUE)
+# dir.create(paste(basename(prefix), "_TFBSs_per_seq/", sep = ""), showWarnings = FALSE, recursive = TRUE)
+# verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
+# 
+# thr <- sapply(1:nb.motifs, function(m){
+# 
+#   ## Get the matrix name
+#   matrix.query <- matrix.names[m]
+#   matrix.query.name <- as.vector(ID.names[,2][which(ID.names[,1] == matrix.query)][1])
+# 
+#   ## Get the sub-table with the hits of the query matrix
+#   matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
+#   matrix.query.selection$bspos <- matrix.query.selection$bspos + limits
+#   matrix.query.classes <- sort(unique(matrix.query.selection$Pval.class.letter))
+# 
+#   ##
+#   nb.hits.per.sequence <- table(as.vector(matrix.query.selection$seq_id))
+#   nb.hits.per.sequence.range <- range(nb.hits.per.sequence)
+#   min.nb.hits <- nb.hits.per.sequence.range[1]
+#   max.nb.hits <- nb.hits.per.sequence.range[2]
+# 
+#   nb.hits.per.sequence <- table(nb.hits.per.sequence)
+#   no.hit.nb <- total.scanned.sequences - sum(nb.hits.per.sequence)
+#   names(no.hit.nb) <- 0
+#   nb.hits.per.sequence <- append(nb.hits.per.sequence, no.hit.nb, after = 0)
+# 
+#   ## Generate GGplot for number of TFBSs per sequence
+#   TFBSs.per.seq.file <- paste(basename(prefix), "_TFBSs_per_seq/", matrix.query, "_TFBSs_per_seq", sep = "")
+# 
+#   aa <- data.frame(nb.seq = nb.hits.per.sequence, nb.hits = as.numeric(names(nb.hits.per.sequence)))
+#   ggplot(data=aa, aes(y = nb.seq, x=nb.hits)) +
+#     geom_bar(aes(fill=nb.seq), stat="identity", position=position_dodge()) +
+#     labs(title="Number of hits", y = "Number of sequences", x="Number of TFBSs") +
+#     geom_text(aes(label=nb.seq), vjust=-0.15, color="black", size=3)
+# 
+#   suppressMessages(ggsave(paste(TFBSs.per.seq.file, ".jpeg", sep = "")))
+#   suppressMessages(ggsave(paste(TFBSs.per.seq.file, ".pdf", sep = "")))
+# 
+#   ## Get the number of putative TFBSs and the number of sequences with
+#   ## at least one match of the query matrix
+#   nb.TFBSs <- dim(matrix.query.selection)[1]
+#   nb.seq <- length(as.vector(unique(matrix.query.selection$seq_id)))
+# 
+#   TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes", sep = "")
+# 
+#   ################################
+#   #Create a custom color scale
+#   myColors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
+#   names(myColors) <- classes.pval.letters
+# 
+#   ## Range of p-values for the query motif
+#   pval.class.matrix.query <- sort(unique(matrix.query.selection$Pval.class))
+# 
+#   ## Insert logo
+#   logo.file <- paste(logo.folder, "/", matrix.query, "_logo.png", sep = "")
+#   logo <- readPNG(logo.file)
+#   logo.roster <- rasterGrob(logo, interpolate = TRUE)
+# 
+#   ## X position of plot annotations
+#   text.xmax <- min(matrix.query.selection$bspos) + max(matrix.query.selection$bspos) / 4
+#   text.center <- (min(matrix.query.selection$bspos) - text.xmax)*2
+# 
+#   ggplot(matrix.query.selection, aes(x=bspos, y=Pval.minlog10)) +
+#     ylim(c(min(matrix.scan.results$Pval.minlog10), max(matrix.scan.results$Pval.minlog10))) +
+#     geom_point(aes(colour = Pval.class.letter), shape = 18, size = 4, stroke = 0.5) +
+#     # geom_rug(position='jitter') +
+#     labs(title=paste("Qualitative distribution of ", matrix.query, " TFBSs", sep = ""), y = "-log10(P-value)", x = "Position") +
+#     scale_colour_manual(name = "-log10(P-value)",values = myColors, labels = paste(">", pval.class.matrix.query, sep = "")) +
+#     theme_minimal() +
+#     annotate("text", x = -limits + ((limits*2)/10), y = max.pval.minus.log10 - 0.25, label = paste("Nb of TFBSs: ", nb.TFBSs, sep = ""), size = 4, hjust = 0) +
+#     annotate("text", x = -limits + ((limits*2)/10), y = max.pval.minus.log10 - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) +
+#     annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval.minus.log10 - 1, ymax = max.pval.minus.log10 - 0.05)
+# 
+#   suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".pdf", sep = "")))
+#   suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".jpeg", sep = "")))
+# })
+# rm(thr)
+# 
+# 
+# #################################################################################
+# ## Step :  ##
+# #################################################################################
+# verbose(paste("Creating boxplot with the distribution of TFBSs Weights at each bin"), 1)
+# 
+# boxplot.weights.dir <- paste(basename(prefix), "_Boxplot_Weight", sep = "")
+# dir.create(boxplot.weights.dir, showWarnings = FALSE, recursive = TRUE)
+# 
+# matrix.scan.results <- ddply(matrix.scan.results, .(ft_name, position_class), mutate, median.w = round(median(Weight), digits = 1))
+# matrix.scan.results$median.w[matrix.scan.results$median.w < 0] <- 0
+# max.W <- max(matrix.scan.results$Weight)
+# # aa <- matrix.scan.results
+# # matrix.scan.results <- aa
+# 
+# median.W.values <- seq(0, max(as.vector(unique(round(sort(matrix.scan.results$median.w))))), by = 1)
+# median.W.classes <- length(median.W.values)
+# 
+# ## Calculate a color palette for the Weight classes
+# myColors <- colorRampPalette(brewer.pal(9, "YlGnBu"), space="Lab")(median.W.classes)
+# 
+# matrix.scan.results$median.w <- as.factor(matrix.scan.results$median.w)
+# matrix.scan.results$position_class <- as.factor(matrix.scan.results$position_class)
+# 
+# # matrix.scan.results$class.color <- as.vector(myColors[matrix.scan.results$mean.w])
+# 
+# thr <- sapply(1:nb.motifs, function(m){
+#   
+#   print(m)
+# 
+#   ## Get the matrix name
+#   matrix.query <- matrix.names[m]
+#   matrix.query.name <- as.vector(ID.names[,2][which(ID.names[,1] == matrix.query)][1])
+# 
+#   ## Get the sub-table with the hits of the query matrix
+#   matrix.query.selection <- subset(matrix.scan.results, ft_name == matrix.query)
+# 
+#   ## Calculate the mean W per bin
+#   median.w.per.bin <- ddply(matrix.query.selection, "position_class", summarize, median.w = median(Weight))[,2]
+#   median.w <- median(matrix.query.selection$Weight)
+# 
+#   ## Get the possitional classes
+#   pos.class <- unique(as.vector(matrix.query.selection$position_class))
+#   pos.class.sep.list <- split(matrix.query.selection, f = as.factor(matrix.query.selection$position_class))
+#   
+#   ## Calculate a T-test of the W ditribution on each bin vs the overal W distribution
+#   
+#   co <- 0
+#   student.pvalues <- sapply(pos.class.sep.list, function(l){
+#     
+#     co <<- co + 1
+#     print(co)
+# 
+#     if( dim(l)[1] < 2){
+#       NA
+#     } else {
+#       student <- t.test(x = l$Weight,
+#                         y = matrix.query.selection$Weight)
+#       student[["p.value"]]
+#     }
+# 
+#   })
+#   student.pvalues.corrected <- p.adjust(student.pvalues, method = "bonferroni")
+# 
+#   ## Assign colors
+#   median.w <- round(median.w.per.bin)
+#   median.w[median.w < 0] <- 0
+#   median.w.to.color <- as.vector(myColors[(median.w+1)])
+# 
+#   ## Create the P-val_t_test column
+#   list.counter <- 0
+#   student.pvalues.corrected.vector <- as.vector(unlist(sapply(pos.class.sep.list, function(l){
+#     list.counter <<- list.counter + 1
+#     rep(student.pvalues.corrected[list.counter], times = nrow(l))
+#   })))
+# 
+#   student.pvalues.corrected.pretty <- prettyNum(student.pvalues.corrected.vector, scientific=TRUE, digits = 1)
+#   student.pvalues.corrected.pretty <- as.character(student.pvalues.corrected.pretty)
+#   matrix.query.selection$P_val_t_test <- student.pvalues.corrected.pretty
+# 
+#   weight.boxplot.bin.file <- paste(basename(prefix), "_Boxplot_Weight/", matrix.query, "_Weight_distribution_per_bin", sep = "")
+# 
+#   boxplot.bins <- ggplot(matrix.query.selection, aes(x=position_class, y=Weight, group = position_class, fill = position_class)) +
+#     geom_boxplot(notch = FALSE) +
+#     guides(fill=FALSE) +
+#     labs(title=paste("Distribution of TFBSs Weigths (separated by bins) for ", matrix.query, sep = ""), y = "", x = "Position") +
+#     ylim(c(-1, max.W)) +
+#     scale_fill_manual(values=(median.w.to.color)) +
+#     geom_text(data = matrix.query.selection, aes(x = position_class, y = 0, label = median.w), size = 3.5, colour = "#424242") +
+#     geom_text(data = matrix.query.selection, aes(x = (length(median.w.to.color)/2), y = 0.55, label = "Median Weight"), size = 5, colour = "#424242") +
+#     geom_text(data = matrix.query.selection, aes(x = position_class, y = -1, label = P_val_t_test), size = 3.5, colour = "#424242") +
+#     geom_text(data = matrix.query.selection, aes(x = (length(median.w.to.color)/2), y = -0.65, label = "Corrected P-value (t-test)"), size = 5, colour = "#424242") +
+#     theme_minimal()
+# 
+#   boxplot.overall <- ggplot(matrix.query.selection, aes(x=ft_name, y=Weight, group = ft_name, fill = ft_name)) +
+#     geom_boxplot( notch = FALSE) +
+#     ylim(c(-1, max.W)) +
+#     geom_text(data = matrix.query.selection, aes(x = 1, y = 0, label = median(matrix.query.selection$Weight)), size = 3.5, colour = "#424242") +
+#     geom_text(data = matrix.query.selection, aes(x = 1, y = 1, label = "Median\nWeight"), size = 5, colour = "#424242") +
+#     guides(fill=FALSE) +
+#     labs(title=paste("Distribution of TFBSs Weigths\n", matrix.query, sep = ""), y = "Weight", x = "") +
+#     theme_minimal()
+# 
+#   xx <- plot_grid(boxplot.overall, boxplot.bins, labels=c("", ""), ncol = 2, nrow = 1, rel_widths = c(0.2, 1.75))
+# 
+#   save_plot(filename = paste(weight.boxplot.bin.file, ".pdf", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 5, base_width = 15, base_height = 10)
+#   save_plot(filename = paste(weight.boxplot.bin.file, ".jpeg", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 5, base_width = 15, base_height = 10)
+# 
+# })
+# rm(thr)
 
 #################################################################################
 ## Step 8: Calculate the raw counts of TFBSs on each position of the sequences ##
@@ -598,15 +598,13 @@ freq.per.bin <- lapply(counts.per.bin, function(cpb){
   ##########################################
   ## Export Counts and Frequencies tables
   density.tab.file <<- paste(basename(prefix), "_tables/density_per_bin_profiles_bin", bins[list.counter], ".tab", sep = "")
-  write.table(freq.per.bin.query, file = density.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
+  # write.table(freq.per.bin.query, file = density.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
   
   counts.tab.file <<- paste(basename(prefix), "_tables/counts_per_bin_profiles_bin", bins[list.counter], ".tab", sep = "")
-  write.table(cpb, file = counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
+  # write.table(cpb, file = counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
   
   return(freq.per.bin.query)
 })
-## Calculate the highest frequency of TFBSs per each list
-max.y <- lapply(freq.per.bin, max, na.rm = TRUE)
 
 freq.log2.ratio <- list()
 freq.log2.ratio[[1]] <- -log2(t(counts.per.bin[[1]])/rowMeans(t(counts.per.bin[[1]])))
@@ -676,8 +674,7 @@ features.table <- lapply(all.chi.results, function(df){
   
   ## Add the number of matches per motif
   df$hits <- matches.per.motif
-  
-  ## Aqui
+
   df$cov <- covered.seq
   df$not_cov <- not.covered.seq
   
@@ -751,14 +748,21 @@ profile.clusters.names <- vector("list", length(counts.norm))
 tree.profiles <- vector("list", length(counts.norm))
 cluster.profiles.motifs <- NULL
 cluster.profiles.motif.names <- NULL
+
+freq.per.bin.norm <- list()
+freq.per.bin.norm[[1]] <- freq.per.bin[[1]]/total.scanned.sequences
+## Calculate the highest frequency of TFBSs per each list
+max.y <- max(unlist(freq.per.bin.norm[[1]]), na.rm = TRUE)
+# max.y <- lapply(freq.per.bin.norm[[1]], max, na.rm = TRUE)
+
 thr <- lapply(freq.per.bin, function(cn){
   
   list.counter <<- list.counter + 1
   
-  tree.profiles[[list.counter]] <<- hclust(Dist(cn, method = "correlation"), method = "ward.D2")
+  tree.profiles[[list.counter]] <<- hclust(Dist(cn, method = "correlation"), method = "complete")
   clusters.tree.profiles <- cutreeDynamic(tree.profiles[[list.counter]], minClusterSize = 1, method = "tree")
-  names(clusters.tree.profiles) <- tree.profiles[[list.counter]][[4]]
-  
+  names(clusters.tree.profiles) <- matrix.names
+
   ## Generate a color palette
   nb.profile.clusters <- length(unique(clusters.tree.profiles))
   cluster.tree.profiles.palette[[list.counter]] <<- colorRampPalette(brewer.pal(9, "Set1"), space="Lab")(nb.profile.clusters)
@@ -771,10 +775,7 @@ thr <- lapply(freq.per.bin, function(cn){
   ############################################
   ## Fill the Profile_cluster attribute 
   ## Add a new column to all.chi.results df
-  profile.clusters.names[[list.counter]] <<- as.vector(sapply(matrix.names, function(m){
-    profile.cluster <- as.vector(clusters.tree.profiles[m])
-    paste("Profile_cluster_", profile.cluster, sep = "")
-  }))
+  profile.clusters.names[[list.counter]] <<- paste("Profile_cluster", clusters.tree.profiles, sep = "_")
   
   ## Get the member motif IDs of each cluster
   cluster.profiles.counter <- 0
@@ -903,10 +904,6 @@ th <- sapply(bins, function(b){
   y.cov[[list.counter]] <<- as.numeric(gsub("%", "", features.table[[list.counter]]$Coverage)) *100
   names(y.cov[[list.counter]]) <- as.vector(features.table[[list.counter]]$Feature)
   
-  ## Print the Significance vs Coverage plot
-  # sig.coverage.file <- paste(basename, "_significance_vs_coverage_bins_", b, ".pdf", sep = "")
-  # pdf(sig.coverage.file)
-  
   ## X-Y plot
   plot(x.sig[[list.counter]],
        y.cov[[list.counter]],
@@ -950,7 +947,6 @@ rm(th)
 verbose(paste("Printing all the profiles in a PDF file"), 1)
 ## Create folder for individual profile plots
 dir.create(paste(basename(prefix), "_TFBSs_positional_profiles/", sep = ""), recursive = TRUE, showWarnings = FALSE )
-
 list.counter <- 0
 p.counter <- 0
 thr <- sapply(bins, function(b){
@@ -966,7 +962,7 @@ thr <- sapply(bins, function(b){
     file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile_bins_", b, sep = "")
 
     ## Get the coordinates
-    y.val <- as.numeric(freq.per.bin[[list.counter]][feature.query,])
+    y.val <- as.numeric(freq.per.bin.norm[[list.counter]][feature.query,])
     x.val <- as.numeric(xlab[[list.counter]])
 
     ## Load the logo
@@ -978,7 +974,7 @@ thr <- sapply(bins, function(b){
     xy.df <- data.frame(x = x.val, y = y.val)
     ggplot(xy.df, aes(x=x, y=y)) +
       geom_line(colour = "#00BFC4", size = 3) +
-      ylim(0, max(max.y[[list.counter]])) +
+      ylim(0, max.y) +
       labs(title=paste(feature.query, " binding profile", sep = ""), y = "Frequency of TFBSs", x = "Position") +
       # geom_rug(position='jitter', sides="l") +
       geom_area(fill = "#00BFC4", alpha=0.35) #+
@@ -1144,7 +1140,7 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   ## Each column of the variable profiles correspond to the counts per bin of each motif
   verbose(paste("Drawing dynamic profile plot"), 1)
   # thrash <- apply(freq.per.bin[[list.counter]][order.by.eval,], 1, function(values){
-    thrash <- apply(freq.per.bin[[list.counter]], 1, function(values){    
+    thrash <- apply(freq.per.bin[[list.counter]][order.by.eval,], 1, function(values){    
     
     counter <<- counter + 1
     
@@ -1249,9 +1245,7 @@ binthrash <- sapply(1:length(bins), function(list.counter){
 
     ## Cluster member names
     cluster.member.names <- as.vector(unlist(sapply(as.vector(cluster.profiles.motif.names[[list.counter]][[cl]]), function(m){
-      print(as.vector(hash.motif.IDs[[m]]))
-      as.vector(hash.motif.IDs[[m]])
-
+        as.vector(hash.motif.IDs[[m]])
     })))
     cluster.member.names <- paste(paste("'", cluster.member.names, "'", sep = ""), collapse = ",")
     
