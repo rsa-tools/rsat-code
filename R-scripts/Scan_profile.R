@@ -164,32 +164,6 @@ print(heatmap.dendo)
 covered.tables.dir <- paste(basename(prefix), "_covered_sequences_info", sep = "")
 dir.create(covered.tables.dir, showWarnings = FALSE)
 
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs_matrix_scan_results_PARSED.tab"
-# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs_TF_ID_name_correspondence.tab"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo")
-# sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs_matrix_scan_sequence_names.tab"
-
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_matrix_scan_results_PARSED.tab"
-# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_TF_ID_name_correspondence.tab"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters")
-# sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_matrix_scan_sequence_names.tab"
-# seq.length <- 2000
-# bin <- 50
-
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_discovered_motifs_matrix_scan_results_PARSED.tab"
-# sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_discovered_motifs_matrix_scan_sequence_names.tab"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_discovered_motifs_TF_ID_name_correspondence.tab"
-# seq.length <- 600
-# bin <- 50
-
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/position_scan_CapStarrSeq_K562_IFN_total_matrix_scan_results_PARSED.tab"
-# sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/position_scan_CapStarrSeq_K562_IFN_total_matrix_scan_sequence_names.tab"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Epromoters/position_scan_CapStarrSeq_K562_IFN_total_TF_ID_name_correspondence.tab"
-# bin <- 50
-# seq.length <- 2000
-
 ## Induced
 # matrix.scan.file <- "/home/jaime/Desktop/induced/position_scan_CapStarrSeq_K562_IFN_induced_matrix_scan_results_PARSED.tab"
 # sequence.names.file <- "/home/jaime/Desktop/induced/position_scan_CapStarrSeq_K562_IFN_induced_matrix_scan_sequence_names.tab"
@@ -197,12 +171,23 @@ dir.create(covered.tables.dir, showWarnings = FALSE)
 # bin <- 50
 # seq.length <- 2000
 
+## SPPS
+# matrix.scan.file <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_matrix_scan_results_PARSED.tab"
+# sequence.names.file <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_matrix_scan_sequence_names.tab"
+# ID.to.names.correspondence.tab <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_TF_ID_name_correspondence.tab"
+# bin <- 50
+# seq.length <- 600
 
 ####################################
 ## Step 3: Read matrix-scan table
 verbose(paste("Reading matrix-scan results table"), 1)
 matrix.scan.results <- read.csv(file = matrix.scan.file, sep = "\t", header = TRUE, comment.char = ";")
 colnames(matrix.scan.results) <- c("seq_id", "ft_name", "bspos", "Pval", "Weight")
+
+## Remove duplicated rows
+## One row can be duplicated because some motifs are palindromic and they could have
+## an identical match in the same position for the F and R strand
+matrix.scan.results <- matrix.scan.results[!duplicated(matrix.scan.results), ]
 
 # matrix.scan.results$ft_name <- gsub(":", "_", matrix.scan.results$ft_name)
 
