@@ -2915,6 +2915,11 @@ $(document).ready(function() {
 		}
 	    }
 
+	    			my $copy = $new_label;
+			$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+			$add_this .= "\n\n".$copy."\n";
+	    
+
 	    ## Add the collection lable to the logo tree
 	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
 	    #if ($display_collection_name_flag == 1) {
