@@ -4177,7 +4177,8 @@ sub branch_consensus_table{
                                         <th class="tab_col">Logo (Reverse)</th>
                                         <th class="tab_col">Collections</th>
 					<th class="tab_col">Matrix (Transfac format)</th>
-					<th class="tab_col">Information Content</th>
+					<th class="tab_col">IC</th>
+					<th class="tab_col">Nb sites</th>
 				</tr>
 			</thead>
                         <tbody>
@@ -5823,6 +5824,8 @@ sub InsertTreesAndBranchMotifs {
 		## Get the IC for the branch-motif
 		my @branch_motifs = &RSAT::MatrixReader::readFromFile($transfac_file_2, "tf");
 		my $rounded_ic = 0;
+		my $calc_sites = "";
+	        my $sites = "";
 		foreach my $matrix (@branch_motifs) {
 		    		    
 		    ## Calculates the IC of the matrix
@@ -5833,6 +5836,9 @@ sub InsertTreesAndBranchMotifs {
 				      format=>"tf");
                     my $ic = $matrix->get_attribute("total.information");
                     $rounded_ic = sprintf("%.2f", $ic);
+
+	            $calc_sites = $matrix->calcNbSites();
+                    $sites = $matrix->getNbSites();
                 }		
 		
 		$consensus_table_columns .= "\n".'<tr id="'.$cluster_id_hash{$num}.'_node_'.$level.'" class="branch_motifs">'."\n";
@@ -5843,6 +5849,7 @@ sub InsertTreesAndBranchMotifs {
 		$consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{collection_counts}.'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2">'.$rounded_ic.'</th>'."\n";
+		$consensus_table_columns .= '   <th class="tab_spacer_2">'.$sites.'</th>'."\n";
 		$consensus_table_columns .= "</tr>\n";
 
 		## Add the code to hide/show the branch-consensus table
@@ -5881,6 +5888,25 @@ sub InsertTreesAndBranchMotifs {
 	    $cons = `more $transfac_file_2 | grep DE`;
 	    $cons =~ s/DE\s+//gi;
 
+           ## Get the IC for the branch-motif
+	   @branch_motifs = &RSAT::MatrixReader::readFromFile($transfac_file_2, "tf");
+	   $rounded_ic = 0;
+	   $calc_sites = "";
+	   $sites = "";
+	   foreach my $matrix (@branch_motifs) {
+	    		    
+	     ## Calculates the IC of the matrix
+	     $matrix->calcInformation();
+	     $matrix->toString(col_width=>(1+4),
+			      decimals=>1,
+			      type=>"information",
+			      format=>"tf");
+             my $ic = $matrix->get_attribute("total.information");
+             $rounded_ic = sprintf("%.2f", $ic);
+	     $calc_sites = $matrix->calcNbSites();
+             $sites = $matrix->getNbSites();
+            }
+
 	    ## Fill the table
 	    $consensus_table_columns .= "\n".'<tr id="'.$cluster_id_hash{$num}.'" class="branch_motifs">'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2">Singleton</th>'."\n";
@@ -5889,6 +5915,8 @@ sub InsertTreesAndBranchMotifs {
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{collection_counts}.'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2">'.$rounded_ic.'</th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2">'.$sites.'</th>'."\n";
 	    $consensus_table_columns .= "</tr>\n";
 
 	    ## Add the code to hide/show the branch-consensus table
