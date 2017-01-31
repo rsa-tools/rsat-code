@@ -1,0 +1,115 @@
+---
+title: "RSAT login statistics"
+author: "Jacques van Helden"
+date: "First version: 11 janvier 2016; last update: `r Sys.Date()`"
+output:
+  html_document:
+    fig_caption: yes
+    highlight: zenburn
+    theme: cerulean
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    fig_caption: yes
+    toc: no
+    toc_depth: 3
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, cache = TRUE, message = FALSE, warning = FALSE, comment = "")
+
+library(data.table)
+```
+
+```{r parameters}
+Sys.setenv("RSAT"="~/rsat")
+
+dir.rsat <- Sys.getenv("RSAT")
+dir.logs <- file.path(dir.rsat, "public_html/logs")
+
+years <- c(2016)
+
+```
+
+
+```{r read_log_files, eval=TRUE}
+
+## Read log files
+log.files <- list.files(path=dir.logs, pattern="log-file.*2016", full.names = TRUE)
+log.files <- grep(pattern="_neat_", x=log.files, invert=TRUE, value = TRUE)
+log.files <- grep(pattern="_WS_", x=log.files, invert=TRUE, value = TRUE)
+#length(log.files)
+
+file <- log.files[1]
+nb.files <- length(log.files)
+for (f in 1:length(log.files)) {
+  file <- log.files[f]
+  message("Reading log file ", f, "/", nb.files, " ", file)
+  new.logs <- read.delim(file=file, header = FALSE, row.names = NULL, as.is = FALSE)
+  if (f==1) {
+    logs <- new.logs
+  } else {
+    logs <- rbind(logs, new.logs)
+  }
+  logs <- rbind(logs, new.logs)
+    
+#  dim(new.logs)
+#  dim(logs)
+#  print(head(new.logs))
+}
+names(logs) <- c("date.time", "instance", "IP", "tool", "email", "na")
+logs <- logs[,c("date.time", "instance", "IP", "tool", "email")]
+head(logs)
+message("Read log files: ", nrow(logs), " lines")
+
+```
+
+```{r read_attack_files, eval=TRUE}
+
+################################################################
+## Read web attacks
+attack.files <- list.files(path=dir.logs, pattern="web_attacks_log_.*2016.*.txt", full.names = TRUE)
+
+file <- attack.files[1]
+nb.files <- length(attack.files)
+for (f in 1:length(attack.files)) {
+  file <- attack.files[f]
+  message("Reading attack file ", f, "/", nb.files, " ", file)
+  
+  #new.attacks <- fread(file=file)
+  new.attacks <- read.delim(file=file, header = FALSE, row.names = NULL, as.is = FALSE)
+  if (f==1) {
+    attacks <- new.attacks
+  } else {
+    attacks <- rbind(attacks, new.attacks)
+  }
+  #attacks <- rbind(attacks, new.attacks)
+}
+names(attacks) <- c("date.tiem", "instance", "IP", "tool", "empty", "na")
+head(attacks)
+
+denied.ips <- 
+
+```
+
+
+```{r parse_logs}
+logs.per.ip <- as.data.frame.table(sort(table(logs$IP), decreasing = TRUE))
+names(logs.per.ip) <- c("IP", "logs")
+View(logs.per.ip)
+class(as.data.frame.table(logs.per.ip))
+
+unique.ips <- sort(unique(logs$IP))
+length(unique.ips)
+
+logs.per.ip.cdf <- ecdf(logs.per.ip)
+plot(logs.per.ip.cdf)
+
+
+hist(, breaks=sort(unique(logs.per.ip)))
+  
+```
+
