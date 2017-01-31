@@ -22,6 +22,8 @@ required.packages <- c("RColorBrewer",
                        "zoo",
                        "reshape2",
                        "plyr",
+                       "gridExtra",
+                       "cowplot",
                        "dynamicTreeCut")
 
 # sapply(required.packages, function(x){library(x, character.only = TRUE)})
@@ -36,7 +38,7 @@ for (pkg in c(required.packages)) { #required.packages.bioconductor
 create.html.tab <- function(tab, img = 0, plot = 0, link.text.covered = 0, link.text.not.covered = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_ID </th><th class=\"tab_col\"> Motif_name </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th><th class=\"tab_col\"> TFBSs per seq </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:1500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_ID </th><th class=\"tab_col\"> Motif_name </th> <th class=\"tab_col\"> P-value </th> <th class=\"tab_col\"> E-value </th> <th class=\"tab_col\"> Significance </th> <th class=\"tab_col\"> FDR </th> <th class=\"tab_col\"> Nb of hits </th><th class=\"tab_col\"> Nb of sequences </th><th class=\"tab_col\">Fraction of sequences</th><th class=\"tab_col\"> Chi-squared</th><th class=\"tab_col\">Profile cluster</th> <th class=\"tab_col\"> Profile </th> <th class=\"tab_col\"> TFBSs </th><th class=\"tab_col\"> Weight distrib </th><th class=\"tab_col\"> TFBSs per seq </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th> <th class=\"tab_col\"> Covered sequences </th> <th class=\"tab_col\"> Not Covered sequences </th> </tr></thead><tbody>"
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
@@ -162,25 +164,32 @@ print(heatmap.dendo)
 covered.tables.dir <- paste(basename(prefix), "_covered_sequences_info", sep = "")
 dir.create(covered.tables.dir, showWarnings = FALSE)
 
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs_matrix_scan_results_PARSED.tab"
-# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs_TF_ID_name_correspondence.tab"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo")
-# sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/PHO_summit_coordinates_best_score_pm300_position_scan_top500peaks_mkv_1_pval_1e-3_bin_size_25_all_discovered_motifs_matrix_scan_sequence_names.tab"
-
-# matrix.scan.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_matrix_scan_results_PARSED.tab"
-# prefix <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3"
-# ID.to.names.correspondence.tab <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_TF_ID_name_correspondence.tab"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters")
-# sequence.names.file <- "/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/Template/Demo/Epromoters/HELA_bin_size_50_pval1e-3_matrix_scan_sequence_names.tab"
-# seq.length <- 2000
+## Induced
+# matrix.scan.file <- "/home/jaime/Desktop/induced/position_scan_CapStarrSeq_K562_IFN_induced_matrix_scan_results_PARSED.tab"
+# sequence.names.file <- "/home/jaime/Desktop/induced/position_scan_CapStarrSeq_K562_IFN_induced_matrix_scan_sequence_names.tab"
+# ID.to.names.correspondence.tab <- "/home/jaime/Desktop/induced/position_scan_CapStarrSeq_K562_IFN_induced_TF_ID_name_correspondence.tab"
 # bin <- 50
+# seq.length <- 2000
+
+## SPPS
+# matrix.scan.file <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_matrix_scan_results_PARSED.tab"
+# sequence.names.file <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_matrix_scan_sequence_names.tab"
+# ID.to.names.correspondence.tab <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_TF_ID_name_correspondence.tab"
+# bin <- 50
+# seq.length <- 600
 
 ####################################
 ## Step 3: Read matrix-scan table
 verbose(paste("Reading matrix-scan results table"), 1)
 matrix.scan.results <- read.csv(file = matrix.scan.file, sep = "\t", header = TRUE, comment.char = ";")
-colnames(matrix.scan.results) <- c("seq_id", "ft_name", "bspos", "Pval")
+colnames(matrix.scan.results) <- c("seq_id", "ft_name", "bspos", "Pval", "Weight")
+
+## Remove duplicated rows
+## One row can be duplicated because some motifs are palindromic and they could have
+## an identical match in the same position for the F and R strand
+matrix.scan.results <- matrix.scan.results[!duplicated(matrix.scan.results), ]
+
+# matrix.scan.results$ft_name <- gsub(":", "_", matrix.scan.results$ft_name)
 
 #######################################
 ## Step 4: Read sequence names table
@@ -189,6 +198,18 @@ sequence.names.tab <- read.csv(file = sequence.names.file, sep = "\t", header = 
 colnames(sequence.names.tab) <- c("seq_id")
 total.scanned.sequences <- length(as.vector(sequence.names.tab$seq_id))
 scanned.sequences <- unique(as.vector(sequence.names.tab$seq_id))
+
+###################################
+## Calculate the sequence limits
+seq.length <- as.numeric(seq.length)
+limits <- seq.length/2
+
+## Define the bins size to be tested
+## Min:5 - Max:100
+## All the bins that will be a divisor of the sequences length between this range will be considered
+bins <- seq(5, seq.length/2, 1)
+bins <- bins[(seq.length/2) %% bins == 0]
+bins <- as.numeric(bin)
 
 #################################################################
 ## Step 5: Create the column -log10(pvalue)                    ##
@@ -208,6 +229,9 @@ matrix.scan.results$Pval.class.letter <- sapply(matrix.scan.results$Pval.class, 
 min.pval.minus.log10 <- min(matrix.scan.results$Pval.minlog10)
 max.pval.minus.log10 <- max(matrix.scan.results$Pval.minlog10)
 
+## Define the positional classes
+matrix.scan.results$position_class<- ceiling(((matrix.scan.results$bspos + limits)/bins))*bins
+
 #################
 ## Set p-value
 p.val <- as.numeric(p.val)
@@ -218,20 +242,18 @@ seq.id <- unique(as.vector(matrix.scan.results$seq_id))
 matrix.names <- unique(as.vector(matrix.scan.results$ft_name))
 nb.motifs <- length(matrix.names)
 
-###################################
-## Calculate the sequence limits
-seq.length <- as.numeric(seq.length)
-limits <- seq.length/2
-
 ################################
 ## Step 6: Load the motif IDs
 ID.names.tab <- ID.to.names.correspondence.tab
 ID.names <- read.table(ID.names.tab, sep = "\t")
+ID.names$V1 <- gsub(":", "_", ID.names$V1)
+ID.names$V2 <- gsub(":", "_", ID.names$V2)
+
+setwd(results.folder)
 
 ##################################################################
 ## Step 7: Plot the distribution of TFBSs at different p-values ##
 ##################################################################
-setwd(results.folder)
 ## Assign a color to each p-value class
 ## The sequencial color palette has a maximum of 9 colors
 nb.color.classes <- length(classes.pval.letters)
@@ -250,75 +272,187 @@ dir.create(paste(basename(prefix), "_TFBSs_per_seq/", sep = ""), showWarnings = 
 verbose(paste("Creating plots with distribution of TFBSs at different p-values"), 1)
 
 thr <- sapply(1:nb.motifs, function(m){
-  
+
   ## Get the matrix name
   matrix.query <- matrix.names[m]
   matrix.query.name <- as.vector(ID.names[,2][which(ID.names[,1] == matrix.query)][1])
-  
+
   ## Get the sub-table with the hits of the query matrix
   matrix.query.selection <- matrix.scan.results[matrix.scan.results$ft_name == matrix.query,]
+  matrix.query.selection$bspos <- matrix.query.selection$bspos + limits
   matrix.query.classes <- sort(unique(matrix.query.selection$Pval.class.letter))
-  
+
   ##
   nb.hits.per.sequence <- table(as.vector(matrix.query.selection$seq_id))
   nb.hits.per.sequence.range <- range(nb.hits.per.sequence)
   min.nb.hits <- nb.hits.per.sequence.range[1]
   max.nb.hits <- nb.hits.per.sequence.range[2]
-  
+
   nb.hits.per.sequence <- table(nb.hits.per.sequence)
   no.hit.nb <- total.scanned.sequences - sum(nb.hits.per.sequence)
   names(no.hit.nb) <- 0
   nb.hits.per.sequence <- append(nb.hits.per.sequence, no.hit.nb, after = 0)
-  
+
   ## Generate GGplot for number of TFBSs per sequence
   TFBSs.per.seq.file <- paste(basename(prefix), "_TFBSs_per_seq/", matrix.query, "_TFBSs_per_seq", sep = "")
-  
+
   aa <- data.frame(nb.seq = nb.hits.per.sequence, nb.hits = as.numeric(names(nb.hits.per.sequence)))
   ggplot(data=aa, aes(y = nb.seq, x=nb.hits)) +
     geom_bar(aes(fill=nb.seq), stat="identity", position=position_dodge()) +
     labs(title="Number of hits", y = "Number of sequences", x="Number of TFBSs") +
     geom_text(aes(label=nb.seq), vjust=-0.15, color="black", size=3)
-  
+
   suppressMessages(ggsave(paste(TFBSs.per.seq.file, ".jpeg", sep = "")))
   suppressMessages(ggsave(paste(TFBSs.per.seq.file, ".pdf", sep = "")))
-  
-  ## Get the number of putative TFBSs and the number of sequences with 
+
+  ## Get the number of putative TFBSs and the number of sequences with
   ## at least one match of the query matrix
   nb.TFBSs <- dim(matrix.query.selection)[1]
   nb.seq <- length(as.vector(unique(matrix.query.selection$seq_id)))
-  
+
   TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", matrix.query, "_TFBSs_pval_classes", sep = "")
-  
+
   ################################
   #Create a custom color scale
   myColors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
   names(myColors) <- classes.pval.letters
-  
+
   ## Range of p-values for the query motif
   pval.class.matrix.query <- sort(unique(matrix.query.selection$Pval.class))
-  
+
   ## Insert logo
   logo.file <- paste(logo.folder, "/", matrix.query, "_logo.png", sep = "")
   logo <- readPNG(logo.file)
   logo.roster <- rasterGrob(logo, interpolate = TRUE)
-  
+
   ## X position of plot annotations
   text.xmax <- min(matrix.query.selection$bspos) + max(matrix.query.selection$bspos) / 4
   text.center <- (min(matrix.query.selection$bspos) - text.xmax)*2
-  
+
   ggplot(matrix.query.selection, aes(x=bspos, y=Pval.minlog10)) +
     ylim(c(min(matrix.scan.results$Pval.minlog10), max(matrix.scan.results$Pval.minlog10))) +
-    geom_point(aes(colour = Pval.class.letter), shape = "O", size = 5, stroke = 3) +
-    geom_rug(position='jitter') +
+    geom_point(aes(colour = Pval.class.letter), shape = 18, size = 4, stroke = 0.5) +
+    # geom_rug(position='jitter') +
     labs(title=paste("Qualitative distribution of ", matrix.query, " TFBSs", sep = ""), y = "-log10(P-value)", x = "Position") +
     scale_colour_manual(name = "-log10(P-value)",values = myColors, labels = paste(">", pval.class.matrix.query, sep = "")) +
     theme_minimal() +
-    annotate("text", x = -limits + ((limits*2)/10), y = max.pval.minus.log10 - 0.25, label = paste("Nb of TFBSs: ", nb.TFBSs, sep = ""), size = 4, hjust = 0) + 
-    annotate("text", x = -limits + ((limits*2)/10), y = max.pval.minus.log10 - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) + 
+    annotate("text", x = -limits + ((limits*2)/10), y = max.pval.minus.log10 - 0.25, label = paste("Nb of TFBSs: ", nb.TFBSs, sep = ""), size = 4, hjust = 0) +
+    annotate("text", x = -limits + ((limits*2)/10), y = max.pval.minus.log10 - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) +
     annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval.minus.log10 - 1, ymax = max.pval.minus.log10 - 0.05)
-  
+
   suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".pdf", sep = "")))
   suppressMessages(ggsave(paste(TFBSs.pval.distribution.file, ".jpeg", sep = "")))
+})
+rm(thr)
+
+
+#################################################################################
+## Step :  ##
+#################################################################################
+verbose(paste("Creating boxplot with the distribution of TFBSs Weights at each bin"), 1)
+
+boxplot.weights.dir <- paste(basename(prefix), "_Boxplot_Weight", sep = "")
+dir.create(boxplot.weights.dir, showWarnings = FALSE, recursive = TRUE)
+
+matrix.scan.results <- ddply(matrix.scan.results, .(ft_name, position_class), mutate, median.w = round(median(Weight), digits = 1))
+matrix.scan.results$median.w[matrix.scan.results$median.w < 0] <- 0
+max.W <- max(matrix.scan.results$Weight)
+# aa <- matrix.scan.results
+# matrix.scan.results <- aa
+
+median.W.values <- seq(0, max(as.vector(unique(round(sort(matrix.scan.results$median.w))))), by = 1)
+median.W.classes <- length(median.W.values)
+
+## Calculate a color palette for the Weight classes
+myColors <- colorRampPalette(brewer.pal(9, "YlGnBu"), space="Lab")(median.W.classes)
+
+matrix.scan.results$median.w <- as.factor(matrix.scan.results$median.w)
+matrix.scan.results$position_class <- as.factor(matrix.scan.results$position_class)
+
+# matrix.scan.results$class.color <- as.vector(myColors[matrix.scan.results$mean.w])
+
+thr <- sapply(1:nb.motifs, function(m){
+
+  print(m)
+
+  ## Get the matrix name
+  matrix.query <- matrix.names[m]
+  matrix.query.name <- as.vector(ID.names[,2][which(ID.names[,1] == matrix.query)][1])
+
+  ## Get the sub-table with the hits of the query matrix
+  matrix.query.selection <- subset(matrix.scan.results, ft_name == matrix.query)
+
+  ## Calculate the mean W per bin
+  median.w.per.bin <- ddply(matrix.query.selection, "position_class", summarize, median.w = median(Weight))[,2]
+  median.w <- median(matrix.query.selection$Weight)
+
+  ## Get the possitional classes
+  pos.class <- unique(as.vector(matrix.query.selection$position_class))
+  pos.class.sep.list <- split(matrix.query.selection, f = as.factor(matrix.query.selection$position_class))
+
+  ## Calculate a T-test of the W ditribution on each bin vs the overal W distribution
+
+  co <- 0
+  student.pvalues <- sapply(pos.class.sep.list, function(l){
+
+    co <<- co + 1
+    print(co)
+
+    if( dim(l)[1] < 2){
+      NA
+    } else {
+      student <- t.test(x = l$Weight,
+                        y = matrix.query.selection$Weight)
+      student[["p.value"]]
+    }
+
+  })
+  student.pvalues.corrected <- p.adjust(student.pvalues, method = "bonferroni")
+
+  ## Assign colors
+  median.w <- round(median.w.per.bin)
+  median.w[median.w < 0] <- 0
+  median.w.to.color <- as.vector(myColors[(median.w+1)])
+
+  ## Create the P-val_t_test column
+  list.counter <- 0
+  student.pvalues.corrected.vector <- as.vector(unlist(sapply(pos.class.sep.list, function(l){
+    list.counter <<- list.counter + 1
+    rep(student.pvalues.corrected[list.counter], times = nrow(l))
+  })))
+
+  student.pvalues.corrected.pretty <- prettyNum(student.pvalues.corrected.vector, scientific=TRUE, digits = 1)
+  student.pvalues.corrected.pretty <- as.character(student.pvalues.corrected.pretty)
+  matrix.query.selection$P_val_t_test <- student.pvalues.corrected.pretty
+
+  weight.boxplot.bin.file <- paste(basename(prefix), "_Boxplot_Weight/", matrix.query, "_Weight_distribution_per_bin", sep = "")
+
+  boxplot.bins <- ggplot(matrix.query.selection, aes(x=position_class, y=Weight, group = position_class, fill = position_class)) +
+    geom_boxplot(notch = FALSE) +
+    guides(fill=FALSE) +
+    labs(title=paste("Distribution of TFBSs Weigths (separated by bins) for ", matrix.query, sep = ""), y = "", x = "Position") +
+    ylim(c(-1, max.W)) +
+    scale_fill_manual(values=(median.w.to.color)) +
+    geom_text(data = matrix.query.selection, aes(x = position_class, y = 0, label = median.w), size = 3.5, colour = "#424242") +
+    geom_text(data = matrix.query.selection, aes(x = (length(median.w.to.color)/2), y = 0.55, label = "Median Weight"), size = 5, colour = "#424242") +
+    geom_text(data = matrix.query.selection, aes(x = position_class, y = -1, label = P_val_t_test), size = 3.5, colour = "#424242") +
+    geom_text(data = matrix.query.selection, aes(x = (length(median.w.to.color)/2), y = -0.65, label = "Corrected P-value (t-test)"), size = 5, colour = "#424242") +
+    theme_minimal()
+
+  boxplot.overall <- ggplot(matrix.query.selection, aes(x=ft_name, y=Weight, group = ft_name, fill = ft_name)) +
+    geom_boxplot( notch = FALSE) +
+    ylim(c(-1, max.W)) +
+    geom_text(data = matrix.query.selection, aes(x = 1, y = 0, label = median(matrix.query.selection$Weight)), size = 3.5, colour = "#424242") +
+    geom_text(data = matrix.query.selection, aes(x = 1, y = 1, label = "Median\nWeight"), size = 5, colour = "#424242") +
+    guides(fill=FALSE) +
+    labs(title=paste("Distribution of TFBSs Weigths\n", matrix.query, sep = ""), y = "Weight", x = "") +
+    theme_minimal()
+
+  xx <- plot_grid(boxplot.overall, boxplot.bins, labels=c("", ""), ncol = 2, nrow = 1, rel_widths = c(0.2, 1.75))
+
+  save_plot(filename = paste(weight.boxplot.bin.file, ".pdf", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 5, base_width = 15, base_height = 10)
+  save_plot(filename = paste(weight.boxplot.bin.file, ".jpeg", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 5, base_width = 15, base_height = 10)
+
 })
 rm(thr)
 
@@ -339,12 +473,6 @@ raw.counts.all.motifs <- as.data.frame(raw.counts.all.motifs)
 #######################################################
 ## Step 9: Calculate the raw counts of TFBSs per bin ##
 #######################################################
-## Define the bins size to be tested
-## Min:5 - Max:100
-## All the bins that will be a divisor of the sequences length between this range will be considered
-bins <- seq(5, seq.length/2, 1)
-bins <- bins[(seq.length/2) %% bins == 0]
-bins <- as.numeric(bin)
 
 ## Define the bin 'names'
 xlab <- vector("list", length(bins))
@@ -367,6 +495,44 @@ for(b in 1:length(bins)){
   counts.per.bin[[b]] <- counts.per.bin.query
 }
 
+
+##################################
+## Enrichment in central region ##
+##################################
+# center.region.up <- 50
+# center.region.dw <- 50 
+# center.raw.counts.up <- (seq.length/2) - center.region.up
+# center.raw.counts.dw <- (seq.length/2) + center.region.dw
+# 
+# mean.counts <- floor(colMeans(raw.counts.all.motifs))
+# counts.in.center <- t(raw.counts.all.motifs[center.raw.counts.up:center.raw.counts.dw, ])
+# 
+# motif <- "cluster_11"
+# motif <- "cluster_10"
+# motif <- "cluster_1"
+# 
+# sapply(rownames(counts.in.center), function(motif){
+#   
+#   n.pos <- ncol(counts.in.center)
+#   expected.counts <- as.vector(n.pos * (mean.counts[motif]))
+#   sum.counts <- sum(counts.in.center[motif,])
+#   
+#   print(paste(sum.counts, expected.counts, sep = " - "))
+#   
+#   if(sum.counts >= expected.counts){
+#     ppois(q = sum.counts, lambda = expected.counts, lower.tail = TRUE, log.p = TRUE)
+#   } else {
+#     ppois(q = sum.counts, lambda = expected.counts, lower.tail = FALSE, log.p = TRUE)
+#   }
+#   
+# 
+#   ppois(q = sum.counts, lambda = expected.counts, lower.tail = TRUE)
+#   
+# })
+# 
+# counts.per.bin.query <- rollapply(raw.counts.all.motifs, bins[b], sum, na.rm = TRUE, by = bins[b], partial = TRUE, align="left")
+# 
+
 #############################################################
 ## Step 10: Calculate number of hits and matched sequences ##
 ## Export files with matched and unmatched sequences       ##
@@ -379,7 +545,7 @@ matched.sequences <- sapply(matrix.names, function(m){
   length(unique(as.vector(matrix.scan.results.subset$seq_id)))
 })
 
-## Count matches for each motifs
+## Count matches for each motif
 verbose(paste("Counting the number of matched sequences per motif"),1)
 matches.per.motif <- ddply(matrix.scan.results, "ft_name", summarize, x = length(bspos))
 matches.per.motif <- matches.per.motif$x
@@ -432,15 +598,17 @@ freq.per.bin <- lapply(counts.per.bin, function(cpb){
   ##########################################
   ## Export Counts and Frequencies tables
   density.tab.file <<- paste(basename(prefix), "_tables/density_per_bin_profiles_bin", bins[list.counter], ".tab", sep = "")
-  write.table(freq.per.bin.query, file = density.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
+  # write.table(freq.per.bin.query, file = density.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
   
   counts.tab.file <<- paste(basename(prefix), "_tables/counts_per_bin_profiles_bin", bins[list.counter], ".tab", sep = "")
-  write.table(cpb, file = counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
+  # write.table(cpb, file = counts.tab.file, quote = FALSE, col.names = TRUE, row.names = TRUE, sep = "\t")
   
   return(freq.per.bin.query)
 })
-## Calculate the highest frequency of TFBSs per each list
-max.y <- lapply(freq.per.bin, max, na.rm = TRUE)
+
+freq.log2.ratio <- list()
+freq.log2.ratio[[1]] <- -log2(t(counts.per.bin[[1]])/rowMeans(t(counts.per.bin[[1]])))
+freq.log2.ratio[[1]][is.infinite(freq.log2.ratio[[1]])] <- 0
 
 ##############################################
 ## Step 12: Chi-squared calculation section ##
@@ -506,8 +674,7 @@ features.table <- lapply(all.chi.results, function(df){
   
   ## Add the number of matches per motif
   df$hits <- matches.per.motif
-  
-  ## Aqui
+
   df$cov <- covered.seq
   df$not_cov <- not.covered.seq
   
@@ -527,29 +694,49 @@ write.table(features.table, file = feature.attributes.file, sep = "\t", quote = 
 ###################################
 verbose(paste("Calculating the BG number of matches per motif"),1)
 
-list.counter <- 0
+list.counter <- 1
 counts.norm <- list()
-thrash <- sapply(bins, function(b){
-  
-  list.counter <<- list.counter + 1
-  
-  ## Mean of TFBSs per bin
-  mean.counts.all.motifs.bins <- rollapply(raw.counts.all.motifs, b, mean, na.rm = TRUE, by = b, partial = TRUE, align="left")
-  
-  ## Sum the means per bin
-  all.columns.trimmed.means <- colSums(mean.counts.all.motifs.bins, na.rm = TRUE)
-  
-  ## The median of the means will be considered as the "basal" number of hits
-  for (m in 1:ncol(mean.counts.all.motifs.bins)){
-    # row.mean <- mean(mean.counts.all.motifs.bins[,m],trim=0.3)
-    row.mean <- median(mean.counts.all.motifs.bins[,m])
-    all.columns.trimmed.means[m] <- row.mean
-  }
-  
-  df_by_bins_norm = t(t(mean.counts.all.motifs.bins)-all.columns.trimmed.means)
-  
-  counts.norm[[list.counter]] <<- df_by_bins_norm
-})
+counts.norm[[list.counter]] <- -log2(t(counts.per.bin[[1]])/rowMeans(t(counts.per.bin[[1]])))
+
+# thrash <- sapply(bins, function(b){
+# 
+#   list.counter <<- list.counter + 1
+# 
+#   ## Mean of TFBSs per bin
+#   mean.counts.all.motifs.bins <- rollapply(raw.counts.all.motifs, b, mean, na.rm = TRUE, by = b, partial = TRUE, align="left")
+# 
+#   ## Mean of TFBSs per bin
+#   sum.counts.all.motifs.bins <- rollapply(raw.counts.all.motifs, b, sum, na.rm = TRUE, by = b, partial = TRUE, align="left")
+# 
+#   df_by_bins_norm <- apply(sum.counts.all.motifs.bins, 1, function(r){
+#     r/mean(r)
+#   })
+#   df_by_bins_norm <- -log2(df_by_bins_norm)
+#   df_by_bins_norm[is.infinite(df_by_bins_norm)] <- 0
+# 
+#   # ## Sum the means per bin
+#   # all.columns.trimmed.means <- colSums(mean.counts.all.motifs.bins, na.rm = TRUE)
+#   #
+#   # ## The median of the means will be considered as the "basal" number of hits
+#   # for (m in 1:ncol(mean.counts.all.motifs.bins)){
+#   #   # row.mean <- mean(mean.counts.all.motifs.bins[,m],trim=0.3)
+#   #   row.mean <- median(mean.counts.all.motifs.bins[,m])
+#   #   all.columns.trimmed.means[m] <- row.mean
+#   # }
+#   #
+#   # df_by_bins_norm = t(t(mean.counts.all.motifs.bins)-all.columns.trimmed.means)
+# 
+#   counts.norm[[list.counter]] <<- df_by_bins_norm
+# })
+
+
+# counts.norm[[1]] <- -log2(t(counts.per.bin[[1]])/rowMeans(t(counts.per.bin[[1]])))
+
+## To check
+# z <- t(counts.per.bin[[1]])[1,]
+# zz <- -log2(z/mean(z))
+# plot(zz,
+#      type = "l")
 
 ######################################
 ## Step 15: Define profile clusters ##
@@ -561,14 +748,21 @@ profile.clusters.names <- vector("list", length(counts.norm))
 tree.profiles <- vector("list", length(counts.norm))
 cluster.profiles.motifs <- NULL
 cluster.profiles.motif.names <- NULL
-thr <- lapply(counts.norm, function(cn){
+
+freq.per.bin.norm <- list()
+freq.per.bin.norm[[1]] <- freq.per.bin[[1]]/total.scanned.sequences
+## Calculate the highest frequency of TFBSs per each list
+max.y <- max(unlist(freq.per.bin.norm[[1]]), na.rm = TRUE)
+# max.y <- lapply(freq.per.bin.norm[[1]], max, na.rm = TRUE)
+
+thr <- lapply(freq.per.bin, function(cn){
   
   list.counter <<- list.counter + 1
   
-  tree.profiles[[list.counter]] <<- hclust(Dist(t(cn), method = "correlation"), method = "complete")
+  tree.profiles[[list.counter]] <<- hclust(Dist(cn, method = "correlation"), method = "complete")
   clusters.tree.profiles <- cutreeDynamic(tree.profiles[[list.counter]], minClusterSize = 1, method = "tree")
-  names(clusters.tree.profiles) <- tree.profiles[[list.counter]][[4]]
-  
+  names(clusters.tree.profiles) <- matrix.names
+
   ## Generate a color palette
   nb.profile.clusters <- length(unique(clusters.tree.profiles))
   cluster.tree.profiles.palette[[list.counter]] <<- colorRampPalette(brewer.pal(9, "Set1"), space="Lab")(nb.profile.clusters)
@@ -581,10 +775,7 @@ thr <- lapply(counts.norm, function(cn){
   ############################################
   ## Fill the Profile_cluster attribute 
   ## Add a new column to all.chi.results df
-  profile.clusters.names[[list.counter]] <<- as.vector(sapply(matrix.names, function(m){
-    profile.cluster <- as.vector(clusters.tree.profiles[m])
-    paste("Profile_cluster_", profile.cluster, sep = "")
-  }))
+  profile.clusters.names[[list.counter]] <<- paste("Profile_cluster", clusters.tree.profiles, sep = "_")
   
   ## Get the member motif IDs of each cluster
   cluster.profiles.counter <- 0
@@ -596,7 +787,7 @@ thr <- lapply(counts.norm, function(cn){
     ## Get the motif name
     cluster.profiles.motif.names[[list.counter]][[cluster.profiles.counter]] <<- as.vector(
       sapply(cluster.profiles.motifs[[list.counter]][[cluster.profiles.counter]], function(n){
-        ID.names[which(ID.names[,2] == n),1]
+        ID.names[which(ID.names[,1] == n),2]
       })
     )
   })
@@ -611,7 +802,7 @@ rm(thr)
 ##########################################################
 verbose(paste("Drawing Heatmap profiles"),1)
 list.counter <- 0
-thrash <- lapply(counts.norm, function(cn){
+thrash <- lapply(freq.log2.ratio, function(cn){
   
   list.counter <<- list.counter + 1
   
@@ -622,15 +813,16 @@ thrash <- lapply(counts.norm, function(cn){
   df.limits <- round(range(cn))
   df.limits.abs <- abs(df.limits)
   
-  if (df.limits.abs[1] > df.limits.abs[2]){
-    cn[cn < (-df.limits[2])] <- (-df.limits[2])
-    cn[cn > df.limits[2]] <- df.limits[2]
-  } else {
-    cn[cn > (-df.limits[1])] <- (-df.limits[1])
-    cn[cn < df.limits[1]] <- df.limits[1]
-  }
+  # if (df.limits.abs[1] > df.limits.abs[2]){
+  #   cn[cn < (-df.limits[2])] <- (-df.limits[2])
+  #   cn[cn > df.limits[2]] <- df.limits[2]
+  # } else {
+  #   cn[cn > (-df.limits[1])] <- (-df.limits[1])
+  #   cn[cn < df.limits[1]] <- df.limits[1]
+  # }
   
-  cn.t <- t(cn)
+  # cn.t <- t(cn)
+  cn.t <- cn
   colnames(cn.t) <- xlab[[list.counter]]
   
   ## Print the heatmap
@@ -712,10 +904,6 @@ th <- sapply(bins, function(b){
   y.cov[[list.counter]] <<- as.numeric(gsub("%", "", features.table[[list.counter]]$Coverage)) *100
   names(y.cov[[list.counter]]) <- as.vector(features.table[[list.counter]]$Feature)
   
-  ## Print the Significance vs Coverage plot
-  # sig.coverage.file <- paste(basename, "_significance_vs_coverage_bins_", b, ".pdf", sep = "")
-  # pdf(sig.coverage.file)
-  
   ## X-Y plot
   plot(x.sig[[list.counter]],
        y.cov[[list.counter]],
@@ -759,39 +947,42 @@ rm(th)
 verbose(paste("Printing all the profiles in a PDF file"), 1)
 ## Create folder for individual profile plots
 dir.create(paste(basename(prefix), "_TFBSs_positional_profiles/", sep = ""), recursive = TRUE, showWarnings = FALSE )
-
 list.counter <- 0
+p.counter <- 0
 thr <- sapply(bins, function(b){
-  
+
   list.counter <<- list.counter + 1
-  
+
   thrash <- sapply(matrix.names, function(feature.query){
-    
+
+    p.counter <<- p.counter + 1
+    # print(p.counter)
+
     ## Set Output file name
     file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile_bins_", b, sep = "")
-    
+
     ## Get the coordinates
-    y.val <- as.numeric(freq.per.bin[[list.counter]][feature.query,])
+    y.val <- as.numeric(freq.per.bin.norm[[list.counter]][feature.query,])
     x.val <- as.numeric(xlab[[list.counter]])
-    
+
     ## Load the logo
-    logo.file <- paste(logo.folder, "/", feature.query, "_logo.png", sep = "")
-    logo <- readPNG(logo.file)
-    logo.roster <- rasterGrob(logo, interpolate = TRUE)
-    
+    # logo.file <- paste(logo.folder, "/", feature.query, "_logo.png", sep = "")
+    # logo <- readPNG(logo.file)
+    # logo.roster <- rasterGrob(logo, interpolate = TRUE)
+
     ## Plot the profile (using ggplot2)
     xy.df <- data.frame(x = x.val, y = y.val)
     ggplot(xy.df, aes(x=x, y=y)) +
       geom_line(colour = "#00BFC4", size = 3) +
-      ylim(0, max(max.y[[list.counter]])) +
+      ylim(0, max.y) +
       labs(title=paste(feature.query, " binding profile", sep = ""), y = "Frequency of TFBSs", x = "Position") +
-      geom_rug(position='jitter', sides="l") +
-      geom_area(fill = "#00BFC4", alpha=0.35) + 
-      annotation_custom(logo.roster, xmax = limits, xmin = limits - sum(abs(range(xy.df$x)))/5, ymin = max.y[[list.counter]] - 0.01, ymax = max.y[[list.counter]] - 0.075)
-    
+      # geom_rug(position='jitter', sides="l") +
+      geom_area(fill = "#00BFC4", alpha=0.35) #+
+      #annotation_custom(logo.roster, xmax = limits, xmin = limits - sum(abs(range(xy.df$x)))/5, ymin = max.y[[list.counter]] - 0.01, ymax = max.y[[list.counter]] - 0.075)
+
     ## Export the file
-    suppressMessages(ggsave(paste(file.name, ".jpeg", sep = "")))
-    suppressMessages(ggsave(paste(file.name, ".pdf", sep = "")))
+    suppressMessages(ggsave(paste(file.name, ".jpeg", sep = ""), plot = last_plot()))
+    suppressMessages(ggsave(paste(file.name, ".pdf", sep = ""), plot = last_plot()))
   })
 })
 rm(thr)
@@ -808,72 +999,72 @@ names(covered.sequences.per.motif) <- matrix.names
 ###########################################################
 ## Step 20: Draw Co-ocurrence heatmap (to display in D3) ##
 ###########################################################
-covered.seq.percentage <- NULL
-thrash <- sapply(covered.sequences.per.motif, function(m1){
-  sapply(covered.sequences.per.motif, function(m2){
-    
-    intersected.seq <- intersect(m1, m2)
-    intersected.seq.nb <- length( intersected.seq)
-    intersected.seq.per <- intersected.seq.nb/total.scanned.sequences
-    covered.seq.percentage <<- append(covered.seq.percentage, intersected.seq.per)
-  })
-})
-covered.seq.percentage <- round(covered.seq.percentage, digits = 4) * 100
-covered.seq.percentage <- matrix(covered.seq.percentage, ncol = length(covered.sequences.per.motif))
-colnames(covered.seq.percentage) <- matrix.names
-rownames(covered.seq.percentage) <- matrix.names
-
-## Set the colors
-coocurrence.palette <- colorRampPalette(brewer.pal(9, "YlGnBu"), space="Lab")(20)
-
-## Draw the co-ocurrence heatmap
-verbose(paste("Creating co-ocurrence heatmap"), 1)
-
-heatmap.profiles <- NULL
-comp.order.list.rows <- vector("list", 4)
-comp.order.list.cols <- vector("list", 4)
-domain <- seq(from = 0, to = 100, by = 5)
-
-## Calculate the distance table between the co-ocurrences
-dist.coocurrence <- Dist(covered.seq.percentage ,method = 'pearson')
-
-## Create the heatmap using 4 agglomeration rules
-th <- sapply(c("average", "complete", "single", "ward"), function(m){
-  
-  if(m == "ward"){
-    temp <- m
-    m <- "ward.D"
-  }
-  
-  ## Calculate the hierarchical tree
-  col.order <- hclust(dist.coocurrence, method = m)[[3]]
-  
-  if(m == "ward.D"){
-    m <- "ward"
-  }
-  
-  ## The col and rows have the same order
-  comp.order.list.rows[[m]] <<- paste(col.order, collapse = ",")
-  comp.order.list.cols[[m]] <<- paste(col.order, collapse = ",")
-  
-})
-comp.order.list.rows[["default"]] <- paste(1:length(matrix.names), collapse = ",")
-comp.order.list.cols[["default"]] <- paste(1:length(matrix.names), collapse = ",")
-
-## Convert the coverage table to the format required in D3 heatmap
-coocurrence.table.d3 <- paste(basename(prefix), "_coocurrence_table.tsv", sep = "")
-y <- NULL
-for(j in 1:dim(covered.seq.percentage)[1]){
-  for(i in 1:dim(covered.seq.percentage)[2]){
-    y <<- rbind(y, matrix(c(j,i, as.numeric(covered.seq.percentage[j,i])), nrow = 1))
-  }
-}
-colnames(y) <- c("Row", "Col", "Value")
-y <- as.data.frame(y)
-verbose(paste("Exporting data with co-ocurreence percentage for D3 dynamic heatmap", coverage.table.d3), 2)
-write.table(y, file = coocurrence.table.d3, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
-
-left <- (max(as.vector(sapply(matrix.names, nchar))) + 2) * 10
+# covered.seq.percentage <- NULL
+# thrash <- sapply(covered.sequences.per.motif, function(m1){
+#   sapply(covered.sequences.per.motif, function(m2){
+#     
+#     intersected.seq <- intersect(m1, m2)
+#     intersected.seq.nb <- length( intersected.seq)
+#     intersected.seq.per <- intersected.seq.nb/total.scanned.sequences
+#     covered.seq.percentage <<- append(covered.seq.percentage, intersected.seq.per)
+#   })
+# })
+# covered.seq.percentage <- round(covered.seq.percentage, digits = 4) * 100
+# covered.seq.percentage <- matrix(covered.seq.percentage, ncol = length(covered.sequences.per.motif))
+# colnames(covered.seq.percentage) <- matrix.names
+# rownames(covered.seq.percentage) <- matrix.names
+# 
+# ## Set the colors
+# coocurrence.palette <- colorRampPalette(brewer.pal(9, "YlGnBu"), space="Lab")(20)
+# 
+# ## Draw the co-ocurrence heatmap
+# verbose(paste("Creating co-ocurrence heatmap"), 1)
+# 
+# heatmap.profiles <- NULL
+# comp.order.list.rows <- vector("list", 4)
+# comp.order.list.cols <- vector("list", 4)
+# domain <- seq(from = 0, to = 100, by = 5)
+# 
+# ## Calculate the distance table between the co-ocurrences
+# dist.coocurrence <- Dist(covered.seq.percentage ,method = 'pearson')
+# 
+# ## Create the heatmap using 4 agglomeration rules
+# th <- sapply(c("average", "complete", "single", "ward"), function(m){
+#   
+#   if(m == "ward"){
+#     temp <- m
+#     m <- "ward.D"
+#   }
+#   
+#   ## Calculate the hierarchical tree
+#   col.order <- hclust(dist.coocurrence, method = m)[[3]]
+#   
+#   if(m == "ward.D"){
+#     m <- "ward"
+#   }
+#   
+#   ## The col and rows have the same order
+#   comp.order.list.rows[[m]] <<- paste(col.order, collapse = ",")
+#   comp.order.list.cols[[m]] <<- paste(col.order, collapse = ",")
+#   
+# })
+# comp.order.list.rows[["default"]] <- paste(1:length(matrix.names), collapse = ",")
+# comp.order.list.cols[["default"]] <- paste(1:length(matrix.names), collapse = ",")
+# 
+# ## Convert the coverage table to the format required in D3 heatmap
+# coocurrence.table.d3 <- paste(basename(prefix), "_coocurrence_table.tsv", sep = "")
+# y <- NULL
+# for(j in 1:dim(covered.seq.percentage)[1]){
+#   for(i in 1:dim(covered.seq.percentage)[2]){
+#     y <<- rbind(y, matrix(c(j,i, as.numeric(covered.seq.percentage[j,i])), nrow = 1))
+#   }
+# }
+# colnames(y) <- c("Row", "Col", "Value")
+# y <- as.data.frame(y)
+# verbose(paste("Exporting data with co-ocurreence percentage for D3 dynamic heatmap", coverage.table.d3), 2)
+# write.table(y, file = coocurrence.table.d3, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+# 
+# left <- (max(as.vector(sapply(matrix.names, nchar))) + 2) * 10
 
 ###################################################################
 ## Step 21: Add the columns Profile cluster to the feature table ##
@@ -921,7 +1112,7 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   features.table[[list.counter]] <- features.table[[list.counter]][order.by.eval,]
   
   ## Set the motif names and IDs
-  TF.IDs <- matrix.names
+  TF.IDs <- matrix.names[order.by.eval]
   
   ## Get the IDs of the TF
   TF.names <- as.vector(sapply(TF.IDs, function(x){
@@ -948,7 +1139,8 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   
   ## Each column of the variable profiles correspond to the counts per bin of each motif
   verbose(paste("Drawing dynamic profile plot"), 1)
-  thrash <- apply(freq.per.bin[[list.counter]][order.by.eval,], 1, function(values){
+  # thrash <- apply(freq.per.bin[[list.counter]][order.by.eval,], 1, function(values){
+    thrash <- apply(freq.per.bin[[list.counter]][order.by.eval,], 1, function(values){    
     
     counter <<- counter + 1
     
@@ -1050,10 +1242,10 @@ binthrash <- sapply(1:length(bins), function(list.counter){
     ## Button name
     cluster.function.names <- paste(profile.cluster.name, "_show", sep = "")
     cluster.function.names.cov <- paste(profile.cluster.name, "_show_cov", sep = "")
-    
+
     ## Cluster member names
     cluster.member.names <- as.vector(unlist(sapply(as.vector(cluster.profiles.motif.names[[list.counter]][[cl]]), function(m){
-      as.vector(hash.motif.IDs[[m]])
+        as.vector(hash.motif.IDs[[m]])
     })))
     cluster.member.names <- paste(paste("'", cluster.member.names, "'", sep = ""), collapse = ",")
     
@@ -1116,6 +1308,10 @@ binthrash <- sapply(1:length(bins), function(list.counter){
     paste(basename(prefix), "_TFBSs_pval_distribution/", i, "_TFBSs_pval_classes.jpeg", sep = "")
   })
   
+  tfbs.weight.boxplot <- sapply(TF.IDs, function(i) {
+    paste(basename(prefix), "_Boxplot_Weight/", i, "_Weight_distribution_per_bin.jpeg", sep = "")
+  })
+  
   tfbss.per.seq.plots <- sapply(TF.IDs, function(i) {
     paste(basename(prefix), "_TFBSs_per_seq/", i, "_TFBSs_per_seq.jpeg", sep = "")
   })
@@ -1133,7 +1329,7 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   all.pval.match <- rep(p.val, times = nb.motifs)
   datatable.info.tab <- features.table[[list.counter]]
   datatable.info.tab$P_val_threshold <- all.pval.match
-  datatable.info.tab$ID <- TF.IDs[order.by.eval]
+  datatable.info.tab$ID <- TF.IDs
   datatable.info.tab$Names <- TF.names
   datatable.info.tab$Profiles <- profiles.plots
   datatable.info.tab$TFBS <- tfbss.plots
@@ -1142,6 +1338,7 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   datatable.info.tab$Logo_RC <- logos.R
   datatable.info.tab$covered_files <- covered.files
   datatable.info.tab$not_covered_files <- not.covered.files
+  datatable.info.tab$w_boxplot <- tfbs.weight.boxplot
   all.motifs <- all.motifs[[list.counter]]
   all.motif.names <- all.motif.names[[list.counter]]
   
@@ -1156,11 +1353,11 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   # [6] "E_val"             "Q_val"             "Coverage"          "Sequences"         "Nb_hits"          
   # [11] "Covered_seq"       "Not_covered_seq"   "Profile_cluster"   "P_val_threshold"   "ID"               
   # [16] "Names"             "Profiles"          "TFBS"              "TFBS_per_seq"      "Logo"             
-  # [21] "Logo_RC"           "covered_files"     "not_covered_files"
-  # c("Feature", "ID", "P_val", "E_val", "Sig", "Q_val", "Nb_hits", "Sequences", "Coverage", "Chi_squared", "Profile_cluster", "Profiles", "TFBS", "TFBS_per_site", "Logo", "Logo_RC", "covered_files", "not_covered_files")
+  # [21] "Logo_RC"           "covered_files"     "not_covered_files" "w_boxplot"
+  # c("Feature", "ID", "P_val", "E_val", "Sig", "Q_val", "Nb_hits", "Sequences", "Coverage", "Chi_squared", "Profile_cluster", "Profiles", "TFBS", "W_boxplot", "TFBS_per_site", "Logo", "Logo_RC", "covered_files", "not_covered_files")
   # c(1,15,5,6,4,7,10,9,8,2,13,17,18,19,20,21,22,23)
   
-  profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,15,5,6,4,7,10,9,8,2,13,17,18,19,20,21,22,23)], img = c(15,16), plot = c(12,13,14), link.text.covered = 17, link.text.not.covered = 18)
+  profile.data.tab.html <- create.html.tab(datatable.info.tab[,c(1,16,5,6,4,7,10,9,8,2,13,17,18,24,19,20,21,22,23)], img = c(16,17), plot = c(12,13,14,15), link.text.covered = 18, link.text.not.covered = 19)
   profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
   
   profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
@@ -1406,50 +1603,50 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   
   ###################################################
   ## Fill the data for the co-ocurrence d3 heatmap
-  html.report <- gsub("--default_r_number--", comp.order.list.rows[["default"]], html.report)
-  html.report <- gsub("--default_c_number--", comp.order.list.cols[["default"]], html.report)
-  
-  html.report <- gsub("--average_r_number--", comp.order.list.rows[["average"]], html.report)
-  html.report <- gsub("--average_c_number--", comp.order.list.cols[["average"]], html.report)
-  
-  html.report <- gsub("--complete_r_number--", comp.order.list.rows[["complete"]], html.report)
-  html.report <- gsub("--complete_c_number--", comp.order.list.cols[["complete"]], html.report)
-  
-  html.report <- gsub("--single_r_number--", comp.order.list.rows[["single"]], html.report)
-  html.report <- gsub("--single_c_number--", comp.order.list.cols[["single"]], html.report)
-  
-  html.report <- gsub("--ward_r_number--", comp.order.list.rows[["ward"]], html.report)
-  html.report <- gsub("--ward_c_number--", comp.order.list.cols[["ward"]], html.report)
-  
-  html.report <- gsub("--c_numb--", length(matrix.names), html.report)
-  html.report <- gsub("--r_numb--", length(matrix.names), html.report)
-  
-  cell.size <- 20
-  html.report <- gsub("--cell_size--", cell.size , html.report)
-  
-  html.report <- gsub("--left--", left, html.report)
-  
-  coocurrence.table.d3 <- paste(basename(prefix), "_coocurrence_table.tsv", sep = "")
-  html.report <- gsub("--file--", coocurrence.table.d3, html.report)
-  
-  domain <- paste(domain, collapse=",")
-  html.report <- gsub("--domain--", domain, html.report)
-  
-  coocurrence.palette <- c("#FFFFFF", coocurrence.palette) 
-  gradient <- paste("[", paste(paste("'", coocurrence.palette, "'", sep=""), collapse=","), "];", sep = "")
-  html.report <- gsub("--gradient--", gradient, html.report)
-  
-  legend <- seq(from = 0, to = 100, by = 5)
-  legend <- paste(legend, collapse=",")
-  html.report <- gsub("--data_legend--", legend, html.report)
-  
-  col.labels <- paste(paste("'", matrix.names, "'", sep = ""), collapse = ",")
-  row.labels <- paste(paste("'", matrix.names, "'", sep = ""), collapse = ",")
-  html.report <- gsub("--col_label--", col.labels, html.report)
-  html.report <- gsub("--row_label--", row.labels, html.report)
-  
-  html.body.size <- 200 + left + (length(matrix.names)*20) + 30
-  html.report <- gsub("--body--", html.body.size, html.report)
+  # html.report <- gsub("--default_r_number--", comp.order.list.rows[["default"]], html.report)
+  # html.report <- gsub("--default_c_number--", comp.order.list.cols[["default"]], html.report)
+  # 
+  # html.report <- gsub("--average_r_number--", comp.order.list.rows[["average"]], html.report)
+  # html.report <- gsub("--average_c_number--", comp.order.list.cols[["average"]], html.report)
+  # 
+  # html.report <- gsub("--complete_r_number--", comp.order.list.rows[["complete"]], html.report)
+  # html.report <- gsub("--complete_c_number--", comp.order.list.cols[["complete"]], html.report)
+  # 
+  # html.report <- gsub("--single_r_number--", comp.order.list.rows[["single"]], html.report)
+  # html.report <- gsub("--single_c_number--", comp.order.list.cols[["single"]], html.report)
+  # 
+  # html.report <- gsub("--ward_r_number--", comp.order.list.rows[["ward"]], html.report)
+  # html.report <- gsub("--ward_c_number--", comp.order.list.cols[["ward"]], html.report)
+  # 
+  # html.report <- gsub("--c_numb--", length(matrix.names), html.report)
+  # html.report <- gsub("--r_numb--", length(matrix.names), html.report)
+  # 
+  # cell.size <- 20
+  # html.report <- gsub("--cell_size--", cell.size , html.report)
+  # 
+  # html.report <- gsub("--left--", left, html.report)
+  # 
+  # coocurrence.table.d3 <- paste(basename(prefix), "_coocurrence_table.tsv", sep = "")
+  # html.report <- gsub("--file--", coocurrence.table.d3, html.report)
+  # 
+  # domain <- paste(domain, collapse=",")
+  # html.report <- gsub("--domain--", domain, html.report)
+  # 
+  # coocurrence.palette <- c("#FFFFFF", coocurrence.palette) 
+  # gradient <- paste("[", paste(paste("'", coocurrence.palette, "'", sep=""), collapse=","), "];", sep = "")
+  # html.report <- gsub("--gradient--", gradient, html.report)
+  # 
+  # legend <- seq(from = 0, to = 100, by = 5)
+  # legend <- paste(legend, collapse=",")
+  # html.report <- gsub("--data_legend--", legend, html.report)
+  # 
+  # col.labels <- paste(paste("'", matrix.names, "'", sep = ""), collapse = ",")
+  # row.labels <- paste(paste("'", matrix.names, "'", sep = ""), collapse = ",")
+  # html.report <- gsub("--col_label--", col.labels, html.report)
+  # html.report <- gsub("--row_label--", row.labels, html.report)
+  # 
+  # html.body.size <- 200 + left + (length(matrix.names)*20) + 30
+  # html.report <- gsub("--body--", html.body.size, html.report)
   
   html.report <- gsub("--function_profile_clusters--", all.cluster.functions, html.report)
   html.report <- gsub("--button_clusters--", all.cluster.buttons, html.report)
