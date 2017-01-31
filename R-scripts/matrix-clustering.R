@@ -484,7 +484,8 @@ i <- sapply(1:length(clusters), function(nb){
                   tree.agg.tab <- as.data.frame(matrix(tree.agg.tab, ncol = 2))
                   # tree.agg.tab$new <- rev(as.vector(JSON.clusters.table$node))
                   tree.agg.tab$order <- paste("node_", 1:nrow(tree.agg.tab), sep = "")
-                  colnames(tree.agg.tab) <- c("A", "B", "nodes")
+                  colnames(tree.agg.tab) <- c("child_1", "child_2", "merged_ID")
+                  tree.agg.tab <- tree.agg.tab[,c("merged_ID", "child_1", "child_2")]
                   JSON.clusters.order.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_", central.motif,"_table_linkage_order.tab")
                   write.table(tree.agg.tab, file = JSON.clusters.order.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
                   
