@@ -2167,7 +2167,7 @@ sub Add_attributes_to_JSON() {
 
       ## Open a file with the attributes of the nodes of each cluster (IC, width, number of motifs, etc)
       my $cluster_nodes_ic_info = &OpenOutputFile($main::outfile{prefix}."_clusters_information/".$cluster."_attributes_table.tab");
-      print $cluster_nodes_ic_info "#cluster\tnode_ID\tchild_1\tchild_2\tIC\IC_node_1\tIC_node_2\tSites\tSites_child_1\tSites_node_2\n";
+      print $cluster_nodes_ic_info "#cluster\tnode_ID\tchild_1\tchild_2\tIC\IC_child_1\tIC_child_2\tSites\tSites_child_1\tSites_child_2\n";
 
   ############################################################
   ## Read the JSON file and add the link data to each node
