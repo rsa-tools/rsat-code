@@ -6371,8 +6371,7 @@ sub Add_Empty_Col() {
 ## to add empty columns to the selected file.
 sub Produce_logos() {
 
-    &RSAT::message::TimeWarn("Generating Logos for all motifs", 
-			     $main::outfile{all_concatenated_motifs}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Generating Logos") if ($main::verbose >= 2);
 
     ## Add the empty columns
     my $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{all_concatenated_motifs};
