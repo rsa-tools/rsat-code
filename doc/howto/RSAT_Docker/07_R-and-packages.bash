@@ -6,7 +6,7 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ##
 ## Install R
 ##
-## This is done after the other packages becayse I need to declare
+## This is done after the other packages because I need to declare
 ## R-cran as source in order to install the latest version of R (3.3.1
 ## on 2016-10) which is required for some R scripts, but not
 ## distributed with Ubuntu 14.04 (this Ubuntu release 14.04 comes with
