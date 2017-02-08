@@ -55,52 +55,9 @@ df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALL
 grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 
-
 ################################################################
-## Packages to be checked by JvH. 
-## These are useful to me, but I am not sure they are required for RSAT. 
-PACKAGES_OPT="
-ess
-yum
-php-elisp
-libgd2-xpm-dev
-libxml2-dev
-links
-gfortran
-libmysqlclient-dev
-texlive-latex-base
-python-virtualenv
-ipython
-ipython-notebook
-libreadline-gplv2-dev:i386
-lib64readline-gplv2-dev:i386
-libreadline-gplv2-dev
-libx11-dev
-libxt-dev
-libxml2-dev
-tcl8.5-dev
-tk8.5-dev
-libxss-dev
-libpng12-dev
-libjpeg62-dev
-libcairo2-dev
-lib32z1
-lib32ncurses5
-lib32bz2-1.0
-libc6-dev
-build-essential
-python-dev
-python3-dev
-libnet-ssleay-perl
-libcrypt-ssleay-perl
-exfat-fuse
-exfat-utils 
-at
-firefox
-ncbi-blast+
-"
-
-PACKAGES="
+## Required apt-get packages
+PACKAGES_REQUIRED="
 apt-utils
 make
 net-tools
@@ -152,11 +109,55 @@ libapache2-mod-php
 finger
 "
 
+
+################################################################
+## Packages to be checked by JvH. 
+## These are useful to me, but I am not sure they are required for RSAT. 
+PACKAGES_OPT="
+ess
+yum
+php-elisp
+libgd2-xpm-dev
+libxml2-dev
+links
+gfortran
+libmysqlclient-dev
+texlive-latex-base
+python-virtualenv
+ipython
+ipython-notebook
+libreadline-gplv2-dev:i386
+lib64readline-gplv2-dev:i386
+libreadline-gplv2-dev
+libx11-dev
+libxt-dev
+libxml2-dev
+tcl8.5-dev
+tk8.5-dev
+libxss-dev
+libpng12-dev
+libjpeg62-dev
+libcairo2-dev
+lib32z1
+lib32ncurses5
+lib32bz2-1.0
+libc6-dev
+build-essential
+python-dev
+python3-dev
+libnet-ssleay-perl
+libcrypt-ssleay-perl
+exfat-fuse
+exfat-utils 
+at
+firefox
+ncbi-blast+
+"
+
 ################################################################
 ## apt-get packages to install Perl modules (not properly speaking
 ## necessary, could be done with cpan, but ensure consistency with
 ## ubuntu OS)
-
 PACKAGES_PERL="perl-doc
 pmtools
 libyaml-perl
@@ -184,7 +185,6 @@ libdigest-md5-file-perl
 libnet-address-ip-local-perl
 libemail-sender-transport-smtp-tls-perl
 "
-
 
 ## We did not find apt-get packages for some required Perl
 ## libraries. These will have to be installed with cpan.
