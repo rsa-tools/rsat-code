@@ -101,51 +101,8 @@ grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 
 ################################################################
-## Packages to be checked by JvH. 
-## These are useful to me, but I am not sure they are required for RSAT. 
-PACKAGES_OPT="
-ess
-yum
-php-elisp
-libgd2-xpm-dev
-libxml2-dev
-links
-gfortran
-libmysqlclient-dev
-texlive-latex-base
-python-virtualenv
-ipython
-ipython-notebook
-libreadline-gplv2-dev:i386
-lib64readline-gplv2-dev:i386
-libreadline-gplv2-dev
-libx11-dev
-libxt-dev
-libxml2-dev
-tcl8.5-dev
-tk8.5-dev
-libxss-dev
-libpng12-dev
-libjpeg62-dev
-libcairo2-dev
-lib32z1
-lib32ncurses5
-lib32bz2-1.0
-libc6-dev
-build-essential
-python-dev
-python3-dev
-libnet-ssleay-perl
-libcrypt-ssleay-perl
-exfat-fuse
-exfat-utils 
-at
-firefox
-finger
-ncbi-blast+
-"
-
-PACKAGES="
+## Required apt-get packages
+PACKAGES_REQUIRED="
 ssh
 git
 cvs
@@ -196,10 +153,55 @@ libssl-dev
 "
 
 ################################################################
+## Packages to be checked by JvH. 
+## These are useful to me, but I am not sure they are required for RSAT. 
+PACKAGES_OPT="
+ess
+yum
+php-elisp
+libgd2-xpm-dev
+libxml2-dev
+links
+gfortran
+libmysqlclient-dev
+texlive-latex-base
+python-virtualenv
+ipython
+ipython-notebook
+libreadline-gplv2-dev:i386
+lib64readline-gplv2-dev:i386
+libreadline-gplv2-dev
+libx11-dev
+libxt-dev
+libxml2-dev
+tcl8.5-dev
+tk8.5-dev
+libxss-dev
+libpng12-dev
+libjpeg62-dev
+libcairo2-dev
+lib32z1
+lib32ncurses5
+lib32bz2-1.0
+libc6-dev
+build-essential
+python-dev
+python3-dev
+libnet-ssleay-perl
+libcrypt-ssleay-perl
+exfat-fuse
+exfat-utils 
+at
+firefox
+finger
+ncbi-blast+
+"
+
+
+################################################################
 ## apt-get packages to install Perl modules (not properly speaking
 ## necessary, could be done with cpan, but ensure consistency with
-## ubuntu OS)
-
+## ubuntu OS).
 PACKAGES_PERL="perl-doc
 pmtools
 libyaml-perl
@@ -244,10 +246,10 @@ libbio-das-perl
 
 ## Install the apt-get libraries
 echo "Packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
-echo "${PACKAGES}"
+echo "${PACKAGES_REQUIRED}"
 echo "Perl module packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES_PERL}"
-for LIB in ${PACKAGES} ${PACKAGES_PERL}; \
+for LIB in ${PACKAGES_REQUIRED} ${PACKAGES_PERL}; \
 do \
    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
    ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT_PARENT_PATH}/install_logs/${INSTALLER}_install_${LIB}.txt ; \
@@ -396,32 +398,6 @@ apt-get --quiet --assume-yes install libmodule-build-perl
 
 apt-get --quiet --assume-yes install libsoap-wsdl-perl
 
-# ## Note: this is still not sufficient to get SOAP::WSDL to run the two
-# ## following targets
-# ##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb
-# ##     make -f ${RSAT}/makefiles/init_rsat.mk ws_stubb_test
-#
-# ## We first need to fix some problem with CPAN : on Ubuntu, I cannot
-# ## install the SOAP::WSDL module, which is required for several
-# ## functionalities. More precisely, after fiddling around for a few
-# ## hours, the server is able to answer to web services requests, but I
-# ## cannot run clients on it. Since NeAT relies on WSDL clients, it is
-# ## impossible to have neat running on and Ubuntu server. The
-# ## installation is however possible, since the stubb can be generated
-# ## on rsat-tagc.univ-mrs.fr.  I have no idea how we did to install
-# ## SOAP::WSDL there. In any case, the 
-# ##
-# ## Solution proposed here: http://stackoverflow.com/questions/3489642/dependency-problem-of-perl-cpan -modules
-# ## Not sure it works by its own, but cannot harm.
-# cpan
-# ## At the cpan prompt, type the following
-# install Module::Build
-# install Module::Build::Compat
-# install CPAN ## This takesa HUGE time. I answer all questions by the default answer (simply type the Enter key)
-# upgrade ## Takes a HUGE time, since all packages are apparently re-tested
-# quit
-##
-## DONE: tricky stuff
 ################################################################
 
 ################################################################
