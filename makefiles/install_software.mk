@@ -89,31 +89,31 @@ install_ext_apps_optional:
 ## redundant fragments. The program requires a license, which can be
 ## obtained (free of charge for academics) at http://www.vmatch.de/
 VMATCH_VERSION=2.2.5
+VMATCH_VERSION_MACOSX=vmatch-${VMATCH_VERSION}-Darwin_i386-64bit
+VMATCH_VERSION_LINUX=vmatch-${VMATCH_VERSION}-Linux_x86_64-64bit
+VMATCH_ARCHIVE=${VMATCH_VERSION}.tar.gz
 install_vmatch:
 	@echo
 	@echo "Installing vmatch for operating system ${OS}"
 	${MAKE} _install_vmatch_${OS}
 	${MAKE} _vmatch_warning
 
-VMATCH_VERSION_MACOSX=vmatch-${VMATCH_VERSION}-Darwin_i386-64bit
 _install_vmatch_macosx:
 	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_MACOSX} _download_vmatch _install_vmatch 
 
-VMATCH_VERSION_LINUX=vmatch-${VMATCH_VERSION}-Linux_x86_64-64bit
 _install_vmatch_linux:
 	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_LINUX} _download_vmatch _install_vmatch
 
 
 VMATCH_BASE_DIR=${SRC_DIR}/vmatch
 VMATCH_URL=ftp://lscsa.de/pub/lscsa/
-VMATCH_ARCHIVE=${VMATCH_VERSION}.tar.gz
 #VMATCH_SOURCE_DIR=vmatch_latest
 _download_vmatch: 
 	@echo ""
 	@echo "Downloading vmatch in folder"
 	@echo "	${VMATCH_BASE_DIR}"
 	@mkdir -p ${VMATCH_BASE_DIR}
-	wget --no-clobber --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
+	echo wget --no-clobber --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
 	@ls ${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE}
 
 VMATCH_SOURCE_DIR=${VMATCH_BASE_DIR}/${VMATCH_VERSION}
