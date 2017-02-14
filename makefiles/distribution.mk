@@ -100,6 +100,7 @@ DISTRIB_FILES=rsat/00_README.txt			\
 	rsat/RSAT_config_default.bashrc		\
 	rsat/rsat_apache_default.conf		\
 	rsat/doc/manuals			\
+	rsat/doc/howto				\
 	rsat/python-scripts 			\
 	rsat/contrib/count-words  		\
 	rsat/contrib/compare-matrices-quick  	\
