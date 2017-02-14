@@ -14,11 +14,12 @@ DATE = `date +%Y%m%d_%H%M%S`
 #### Directories
 GENBANK_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genbank/genomes
 NCBI_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genomes
+REFSEQ_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/refseq
 
 #################################################################
 #### Programs
 
-WGET = wget -np -rNL 
+WGET = wget -np -rNL
 MAKEFILE=${RSAT}/makefiles/install_genomes.mk
 #MAKE=nice -n 19 make -f ${MAKEFILE}
 RSYNC_OPT = -ruptvl ${OPT}
