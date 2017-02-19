@@ -52,7 +52,7 @@ else
 endif
 
 
-RELEASE=${ENSEMBLGENOMES_BRANCH}
+RELEASE=${ENSEMBLGENOMES_RELEASE}
 # should be set in RSAT_config.props
 SERVER_URL=ftp://ftp.ensemblgenomes.org/pub/${GROUP_LC}
 DATABASE=${SERVER_URL}/release-${RELEASE}
