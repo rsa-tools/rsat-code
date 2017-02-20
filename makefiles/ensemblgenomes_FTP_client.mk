@@ -25,7 +25,10 @@ MAKEFILE=${RSAT}/makefiles/ensemblgenomes_FTP_client.mk
 V=2
 
 ################################################################
-## GROUP=Plants I moved this variable to RSAT_config.mk, since it depends on the server;
+## The variable GROUP is defined in RSAT_config.mk, since it depends
+## on the server; It can however be overwritten on the command
+## line when calling the makefile , for example 
+##   make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants
 GROUP_LC=$(shell echo $(GROUP) | tr A-Z a-z)
 ifeq ($(GROUP),Fungi)
   ## For Fungal genomes, we have to extract the collection (sub-folder
@@ -152,7 +155,6 @@ download_all_species: organisms
 		$(MAKE) download_one_species SPECIES=$$org; \
 	done
 	@${MAKE} download_go
-
 
 ################################################################
 ## Install files required for all organisms
@@ -356,6 +358,8 @@ ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 5)
 PARSE_DIR=${GENOME_DIR}
 PARSE_TASK=all
 GTF_SOURCE=ensemblgenomes
+# Set the following option to -batch in order to dispatch the computation of oligo and dyad frequencies to the job scheduler
+PARSE_GTF_OPT=
 PARSE_GTF_CMD=parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-fasta ${FASTA_RAW_LOCAL} \
 		-fasta_rm ${FASTA_MSK_LOCAL} \
@@ -364,7 +368,7 @@ PARSE_GTF_CMD=parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-task ${PARSE_TASK} ${OPT} \
 		-taxid ${TAXON_ID} \
 		-gtf_source ${GTF_SOURCE} \
-		-o ${PARSE_DIR} 
+		${PARSE_GTF_OPT} -o ${PARSE_DIR} 
 parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_LOCAL}"
