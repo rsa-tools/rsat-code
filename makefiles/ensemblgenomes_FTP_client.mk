@@ -439,11 +439,11 @@ init_getfasta:
 
 ## Arabidopsis thaliana (Plant)
 install_thaliana:
-	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana organisms ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Saccharomyces cerevisiae (Fungus)
 install_yeast:
-	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae COLLECTION= ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae COLLECTION= organisms ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 
 ## Mus musculus (Metazoa)
@@ -454,18 +454,18 @@ install_yeast:
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 install_mouse:
 	${MAKE} GROUP=Metazoa SPECIES=mus_musculus SERVER_URL=ftp://ftp.ensembl.org/pub \
-		RELEASE=82 ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+		RELEASE=${ENSEMBL_RELEASE} ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Drosophila melanogaster (Metazoa)
 install_droso:
-	${MAKE} GROUP=Metazoa SPECIES=drosophila_melanogaster ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+	${MAKE} GROUP=Metazoa SPECIES=drosophila_melanogaster organisms ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Note: for bacteria we need to define a collection
 
 ## Escherichia coli (Bacteria)
 install_ecoli:
 	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655 \
-		COLLECTION=bacteria_0_collection ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+		COLLECTION=bacteria_0_collection organisms ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 
 ## Pseudomonas aeruginosa (Bacteria)
@@ -475,7 +475,7 @@ install_ecoli:
 
 install_bsub:
 	${MAKE} GROUP=Bacteria SPECIES=bacillus_subtilis_subsp_subtilis_str_168 \
-		COLLECTION=bacteria_0_collection ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+		COLLECTION=bacteria_0_collection organisms ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 
 ##################################################################
