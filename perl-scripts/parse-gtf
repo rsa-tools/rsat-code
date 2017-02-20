@@ -645,7 +645,6 @@ package main;
     my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -source ".$gtf_source." -org ".$organism_name;
     $cmd .= " -task default";
     $cmd .= " -batch" if ($batch);
-#    die ("HELLO", $cmd, "\n");
     &RSAT::util::doit($cmd);
   }
 
