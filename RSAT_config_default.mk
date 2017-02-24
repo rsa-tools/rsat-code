@@ -128,4 +128,4 @@ CLUSTER_QUEUE=
 ##  Ensembl: http://www.ensembl.org/
 ##  EnsemblGenomes: http://ensemblgenomes.org/
 ENSEMBL_RELEASE=87
-ENSEMBLGENOMES_BRANCH=34
+ENSEMBLGENOMES_RELEASE=34

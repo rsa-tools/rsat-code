@@ -314,25 +314,25 @@ install_ensembl_api: install_ensembl_api_git
 ## Note: In some cases, there are delays between Ensembl and
 ## EnsemblGenome releases. To ensure compatibility, please check the
 ## versions of both distributions on http://ensemblgenomes.org/.
-ENSEMBL_API_DIR=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}
+ENSEMBL_API_DIR=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}
 install_ensembl_api_param:
 	@echo "	BIOPERL_VERSION		${BIOPERL_VERSION}"
 	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
 	@echo "	ENSEMBL_RELEASE		${ENSEMBL_RELEASE}"
-	@echo "	ENSEMBLGENOMES_BRANCH	${ENSEMBLGENOMES_BRANCH}"
+	@echo "	ENSEMBLGENOMES_RELEASE	${ENSEMBLGENOMES_RELEASE}"
 	@echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}"
 
 ## Install the required modules for Ensembl API
 install_ensembl_api_cvs:
 	@(cd ${BIOPERL_DIR}; \
 		echo "" ; \
-		echo "Installing ensembl branch ${ENSEMBLGENOMES_BRANCH} version ${ENSEMBL_RELEASE}"; \
+		echo "Installing ensembl branch ${ENSEMBLGENOMES_RELEASE} version ${ENSEMBL_RELEASE}"; \
 		echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}" ; \
 		mkdir -p "${ENSEMBL_API_DIR}"; \
 		cd ${ENSEMBL_API_DIR}; \
 		echo  "Password is 'CVSUSER'" ; \
 		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login ; \
-		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE} ensembl-api)
+		cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE} ensembl-api)
 	@echo
 	@${MAKE} install_ensembl_api_env
 
@@ -341,10 +341,10 @@ install_ensembl_api_git:
 	@echo "	ENSEMBL_API_DIR		${ENSEMBL_API_DIR}"
 	@mkdir -p "${ENSEMBL_API_DIR}"
 	@echo ""
-	@echo "Cloning git for ensemblgenomes API branch ${ENSEMBLGENOMES_BRANCH}"
+	@echo "Cloning git for ensemblgenomes API branch ${ENSEMBLGENOMES_RELEASE}"
 	@(cd ${ENSEMBL_API_DIR}; git clone git://github.com/EnsemblGenomes/ensemblgenomes-api.git ; \
 		cd ensemblgenomes-api/ ; \
-		git checkout release/eg/${ENSEMBLGENOMES_BRANCH} )
+		git checkout release/eg/${ENSEMBLGENOMES_RELEASE} )
 	@echo ""
 	@echo "Getting git clone for ensembl API release ${ENSEMBL_RELEASE}"
 	@(cd ${ENSEMBL_API_DIR}; \
@@ -402,15 +402,15 @@ install_ensembl_api_env:
 	@echo '################################################################'
 	@echo '## Default path for the Ensembl Perl modules and sofwtare tools'
 	@echo 'export ENSEMBL_RELEASE=${ENSEMBL_RELEASE}'
-	@echo 'export ENSEMBLGENOMES_BRANCH=${ENSEMBLGENOMES_BRANCH}'
-	@echo 'export PATH=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-git-tools/bin:$${PATH}'
+	@echo 'export ENSEMBLGENOMES_RELEASE=${ENSEMBLGENOMES_RELEASE}'
+	@echo 'export PATH=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-git-tools/bin:$${PATH}'
 	@echo 'export PERL5LIB=$${RSAT}/lib/bioperl-release-$${BIOPERL_VERSION}/bioperl-live::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-compara/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-external/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-functgenomics/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-tools/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_BRANCH}-$${ENSEMBL_RELEASE}/ensembl-variation/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-compara/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-external/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-functgenomics/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-tools/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-variation/modules::$${PERL5LIB}'
 
 ################################################################
 ## Install biomart Perl libraries

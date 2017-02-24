@@ -25,7 +25,10 @@ MAKEFILE=${RSAT}/makefiles/ensemblgenomes_FTP_client.mk
 V=2
 
 ################################################################
-## GROUP=Plants I moved this variable to RSAT_config.mk, since it depends on the server;
+## The variable GROUP is defined in RSAT_config.mk, since it depends
+## on the server; It can however be overwritten on the command
+## line when calling the makefile , for example 
+##   make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants
 GROUP_LC=$(shell echo $(GROUP) | tr A-Z a-z)
 ifeq ($(GROUP),Fungi)
   ## For Fungal genomes, we have to extract the collection (sub-folder
@@ -52,7 +55,7 @@ else
 endif
 
 
-RELEASE=${ENSEMBLGENOMES_BRANCH}
+RELEASE=${ENSEMBLGENOMES_RELEASE}
 # should be set in RSAT_config.props
 SERVER_URL=ftp://ftp.ensemblgenomes.org/pub/${GROUP_LC}
 DATABASE=${SERVER_URL}/release-${RELEASE}
@@ -152,7 +155,6 @@ download_all_species: organisms
 		$(MAKE) download_one_species SPECIES=$$org; \
 	done
 	@${MAKE} download_go
-
 
 ################################################################
 ## Install files required for all organisms
@@ -356,6 +358,8 @@ ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 5)
 PARSE_DIR=${GENOME_DIR}
 PARSE_TASK=all
 GTF_SOURCE=ensemblgenomes
+# Set the following option to -batch in order to dispatch the computation of oligo and dyad frequencies to the job scheduler
+PARSE_GTF_OPT=
 PARSE_GTF_CMD=parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-fasta ${FASTA_RAW_LOCAL} \
 		-fasta_rm ${FASTA_MSK_LOCAL} \
@@ -364,7 +368,7 @@ PARSE_GTF_CMD=parse-gtf -v ${V} -i ${GTF_LOCAL} \
 		-task ${PARSE_TASK} ${OPT} \
 		-taxid ${TAXON_ID} \
 		-gtf_source ${GTF_SOURCE} \
-		-o ${PARSE_DIR} 
+		${PARSE_GTF_OPT} -o ${PARSE_DIR} 
 parse_gtf:
 	@echo
 	@echo "Parsing GTF file	${GTF_LOCAL}"
@@ -439,11 +443,11 @@ init_getfasta:
 
 ## Arabidopsis thaliana (Plant)
 install_thaliana:
-	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+	${MAKE} GROUP=Plants SPECIES=arabidopsis_thaliana organisms ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Saccharomyces cerevisiae (Fungus)
 install_yeast:
-	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae COLLECTION= ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+	${MAKE} GROUP=Fungi SPECIES=saccharomyces_cerevisiae COLLECTION= organisms ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 
 ## Mus musculus (Metazoa)
@@ -454,18 +458,18 @@ install_yeast:
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 install_mouse:
 	${MAKE} GROUP=Metazoa SPECIES=mus_musculus SERVER_URL=ftp://ftp.ensembl.org/pub \
-		RELEASE=82 ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+		RELEASE=${ENSEMBL_RELEASE} ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Drosophila melanogaster (Metazoa)
 install_droso:
-	${MAKE} GROUP=Metazoa SPECIES=drosophila_melanogaster ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+	${MAKE} GROUP=Metazoa SPECIES=drosophila_melanogaster organisms ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 ## Note: for bacteria we need to define a collection
 
 ## Escherichia coli (Bacteria)
 install_ecoli:
 	${MAKE} GROUP=Bacteria SPECIES=escherichia_coli_str_k_12_substr_mg1655 \
-		COLLECTION=bacteria_0_collection ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+		COLLECTION=bacteria_0_collection organisms ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 
 ## Pseudomonas aeruginosa (Bacteria)
@@ -475,7 +479,7 @@ install_ecoli:
 
 install_bsub:
 	${MAKE} GROUP=Bacteria SPECIES=bacillus_subtilis_subsp_subtilis_str_168 \
-		COLLECTION=bacteria_0_collection ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
+		COLLECTION=bacteria_0_collection organisms ${DOWNLOAD_TASKS} ${INSTALL_TASKS}
 
 
 ##################################################################

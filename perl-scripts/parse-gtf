@@ -198,6 +198,8 @@ package main;
   our $last = 0; ## Stop  parsing after a user-specified number of rows
   our $null = "<NA>"; ## Non-allocated values
 
+  our $batch = 0;
+
   ## Supported tasks
   our @supported_tasks = qw(parse_gtf
                             split_features
@@ -642,6 +644,7 @@ package main;
     &RSAT::message::TimeWarn("Installing organism in RSAT", $organism_name) if ($main::verbose >= 2);
     my $cmd = $ENV{RSAT}."/perl-scripts/install-organism -v 1 -source ".$gtf_source." -org ".$organism_name;
     $cmd .= " -task default";
+    $cmd .= " -batch" if ($batch);
     &RSAT::util::doit($cmd);
   }
 
@@ -979,6 +982,19 @@ server.
 	}
       }
 
+=pod
+
+=item B<-batch>
+
+This option is passed to install-organism in order to send the
+computation of oligo and dyad frequency tables to a job scheduler. It
+requires to have a job scheduler properly configured in RSAT
+configuration files.
+
+=cut
+
+    } elsif ($arg eq "-batch") {
+	$batch = 1;
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
