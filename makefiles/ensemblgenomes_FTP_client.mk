@@ -1,6 +1,7 @@
 ################################################################
 ## This makefile contains some targets to download genome seqs and
-## annotations from ensemblgenome FTP site, parse and install them
+## annotations from ensemblgenome FTP site, parse and install them on
+## an RSAT server.
 ##
 ## Authors:
 ##   Bruno Contreras Moreira <bcontreras@eead.csic.es>
@@ -14,8 +15,8 @@
 ## collection they belong to. (BCM)
 ## 
 ## Does not work for the main ensembl ftp site, because there is no
-## organism table as in ensemblgenomes. I (JvH) need to contact Stain
-## to see how we can manage this.
+## organism table as in ensemblgenomes. I (JvH) need to contact Dan
+## Staines (ensemblgenomes) to see how we can manage this.
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 include ${RSAT}/makefiles/util.mk
@@ -71,7 +72,8 @@ ORGANISM_TABLE=${ORGANISM_DIR}/species_Ensembl${GROUP}.txt
 ## fasta and gtf in the genome dir, since we will use it for vairous
 ## purposes.
 SPECIES_UCFIRST=$(shell perl -e 'print ucfirst ${SPECIES}')
-SPECIES_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}
+#SPECIES_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}
+SPECIES_ID=${SPECIES_UCFIRST}.${GCA_ID}
 SPECIES_RSAT_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}.${RELEASE}
 # SPECIES_DIR=${ORGANISM_DIR}/${SPECIES}
 SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID}
@@ -214,7 +216,7 @@ download_gtf:
 ################################################################
 ## Download FASTA files with genomic sequences (raw and masked)
 ## and peptidic sequences
-# <release32
+# release <32
 #FASTA_RAW_SUFFIX=*${RELEASE}.dna.genome.fa
 #FASTA_RAW_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_RAW_SUFFIX}.gz
 #FASTA_MSK_SUFFIX=*${RELEASE}.dna_rm.genome.fa
@@ -222,11 +224,13 @@ download_gtf:
 #FASTA_PEP_SUFFIX=*${RELEASE}.pep.all.fa
 #FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUFFIX}.gz
 # releases >32
-FASTA_RAW_SUFFIX=${SPECIES_ID}.dna.toplevel.fa
+FTP_SPECIES_PREFIX=${SPECIES_UCFIRST}.*
+#FTP_SPECIES_PREFIX=${SPECIES_ID}
+FASTA_RAW_SUFFIX=${FTP_SPECIES_PREFIX}.dna.toplevel.fa
 FASTA_RAW_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_RAW_SUFFIX}.gz
-FASTA_MSK_SUFFIX=${SPECIES_ID}.dna_rm.toplevel.fa
+FASTA_MSK_SUFFIX=${FTP_SPECIES_PREFIX}.dna_rm.toplevel.fa
 FASTA_MSK_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/dna/${FASTA_MSK_SUFFIX}.gz
-FASTA_PEP_SUFFIX=${SPECIES_ID}.pep.all.fa
+FASTA_PEP_SUFFIX=${FTP_SPECIES_PREFIX}.pep.all.fa
 FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUFFIX}.gz
 
 
@@ -354,7 +358,16 @@ install_go_annotations:
 ## Each species installation will be executed as a job for the
 ## cluster.
 TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 4)
+
+## The Assembly ID is important for some model organisms (the
+## community relies on some particular assemblies) but is sometimes
+## not defined in the table.
 ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 5)
+
+## The GCA ID is now (2017) recognized by NCBI as well as
+## EnsemblGenomes. We should decide if we include it in
+## SPECIES_RSAT_ID. 
+GCA_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 6)
 PARSE_DIR=${GENOME_DIR}
 PARSE_TASK=all
 GTF_SOURCE=ensemblgenomes
@@ -375,7 +388,6 @@ parse_gtf:
 	@echo "TaxonID = ${TAXON_ID}"
 	@${MAKE} my_command MY_COMMAND="${PARSE_GTF_CMD}"
 	@echo "	${PARSE_DIR}"
-#	@ls -1 ${PARSE_DIR}/*.tab
 
 ###############################################################
 ## parse gtf and then install organism
