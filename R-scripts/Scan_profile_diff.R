@@ -189,6 +189,17 @@ dir.create(paste(prefix, "_TFBSs_positional_profiles/", sep = ""), recursive = T
 # seq.length <- 600
 # bins <- 50
 
+# matrix.scan.file.query <-"/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative_matrix_scan_results_PARSED.tab"
+# matrix.scan.file.control <- "/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative_matrix_scan_results_PARSED_control.tab"
+# sequence.names.file.query <- "/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative_matrix_scan_sequence_names.tab"
+# sequence.names.file.control <- "/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative_matrix_scan_sequence_names_control.tab"
+# ID.to.names.correspondence.tab <- "/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative_TF_ID_name_correspondence.tab"
+# prefix <- "/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative"
+# seq.length <- 2000
+# bins <- 50
+
+
+
 ###########################################################
 ## Step 3: Read matrix-scan tables for query and control ##
 ###########################################################
@@ -323,11 +334,11 @@ verbose(paste("Creating plots with distribution of TFBSs at different p-values")
 max.pval <- max(c(matrix.scan.results.query$Pval.minlog10, matrix.scan.results.control$Pval.minlog10))
 
 thr <- sapply(1:nb.motifs, function(m){
-  
+
   ## Get the matrix name
   motif <- matrix.names[m]
   motif.selected.name <- as.vector(ID.names[,2][which(ID.names[,1] == motif)][1])
-  
+
   ## Get the sub-table with the hits of the query matrix
   motif.selection.query <- matrix.scan.results.query[matrix.scan.results.query$ft_name == motif,]
   motif.selection.query$bspos <- motif.selection.query$bspos + limits
@@ -341,16 +352,16 @@ thr <- sapply(1:nb.motifs, function(m){
   #Create a custom color scale
   myColors <- colorRampPalette(brewer.pal(nb.color.classes, "YlGnBu"), space="Lab")(length(classes.pval.letters))
   names(myColors) <- classes.pval.letters
-  
+
   ## Insert logo
   logo.file <- paste(logo.folder, "/", motif, "_logo.png", sep = "")
   logo <- readPNG(logo.file)
   logo.roster <- rasterGrob(logo, interpolate = TRUE)
-  
+
   ggplot.list <- list()
   TFBSs.pval.distribution.file <- paste(basename(prefix), "_TFBSs_pval_distribution/", motif, "_TFBSs_pval_classes", sep = "")
   for(i in 1:2){
-    
+
     ## Select the matrix-scan sub-table
     if(i == 1){
       seq.type <- "Query"
@@ -361,26 +372,26 @@ thr <- sapply(1:nb.motifs, function(m){
     }
     ## Range of p-values for the query motif
     pval.class.motif <- sort(unique(motif.selection$Pval.class))
-  
+
     nb.TFBSs <- length(as.vector(motif.selection$bspos))
     nb.seq <- unique(as.vector(motif.selection$seq_id))
-        
+
     ## X position of plot annotations
     text.xmax <- min(motif.selection$bspos) + max(motif.selection$bspos) / 4
     text.center <- (min(motif.selection$bspos) - text.xmax)*2
-    
+
     ggplot.list[[i]] <- ggplot(motif.selection, aes(x=bspos, y=Pval.minlog10)) +
       ylim(c(min(matrix.scan.results.query$Pval.minlog10), max.pval)) +
-      geom_point(aes(colour = Pval.class.letter), shape = "O", size = 1, stroke = 1) +
+      geom_point(aes(colour = Pval.class.letter), shape = 18, size = 4, stroke = 0.5) +
       # geom_rug(position='jitter') +
       labs(title=paste("Qualitative distribution of ", motif, " TFBSs\nin ", seq.type, " sequences", sep = ""), y = "-log10(P-value)", x = "Position") +
       scale_colour_manual(name = "-log10(P-value)",values = myColors, labels = paste(">", pval.class.motif, sep = "")) +
-      theme_minimal() 
+      theme_minimal()
       # annotate("text", x = -limits + ((limits*2)/10), y = max.pval - 0.25, label = paste("Nb of TFBSs: ", nb.TFBSs, sep = ""), size = 4, hjust = 0) +
       # annotate("text", x = -limits + ((limits*2)/10), y = max.pval - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) +
       # annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval - 1, ymax = max.pval - 0.05)
   }
-  
+
   xx <- plot_grid(ggplot.list[[1]], ggplot.list[[2]], labels=c("", ""), ncol = 2, nrow = 1, rel_widths = c(1,1))
   save_plot(filename = paste(TFBSs.pval.distribution.file, ".pdf", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 2, base_width = 6, base_height = 6.5)
   save_plot(filename = paste(TFBSs.pval.distribution.file, ".jpeg", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 2, base_width = 6, base_height = 6)
@@ -452,7 +463,7 @@ all.chi.ks.results <- sapply(1:nrow(counts.per.bin.query), function(r){
   ## Query vs Control
   ## Control vs Query
   ## Actually both return the same result!
-  ks.query.vs.control <- ks.test(query, control, alternative = "two.sided")
+  ks.query.vs.control <- ks.test(unique(query.freq), unique(control.freq), alternative = "two.sided")
   # ks.control.vs.query <- ks.test(control, query, alternative = "two.sided")
   
   return(c(chisq.query.vs.control[[1]], chisq.query.vs.control[[3]], chisq.control.vs.query[[1]], chisq.control.vs.query[[3]], chisq.control.vs.query[[2]], round(ks.query.vs.control[[1]], digits = 2), ks.query.vs.control[[2]], bins))
@@ -620,7 +631,7 @@ counts.per.bin.log2 <- sapply(matrix.names, function(m){
     geom_line(size = 2) +
     ylim(0, max.y) +
     geom_rug(position='jitter', sides="l") +
-    labs(title=paste(m, " binding profile (Query vs Control)", sep = ""), y = "Frequency of TFBSs", x = "Position") 
+    labs(title=paste(m, " binding profile (Query vs Control)", sep = ""), y = "Frequency of TFBSs", x = "Position")
     # annotation_custom(logo.roster, xmax = limits, xmin = limits - sum(abs(range(df.freq$x)))/5, ymin = max.y - 0.01, ymax = max.y - 0.075)
 
   ## Export the file
@@ -642,7 +653,7 @@ cluster.profiles.motif.names <- NULL
 data.t <- t(counts.per.bin.log2)
 tree.profiles <- hclust(Dist(data.t, method = "correlation"), method = "ward.D2")
 clusters.tree.profiles <- cutreeDynamic(tree.profiles, minClusterSize = 1, method = "tree")
-names(clusters.tree.profiles) <- tree.profiles[[4]]
+names(clusters.tree.profiles) <- matrix.names
 
 ## Generate a color palette
 nb.profile.clusters <- length(unique(clusters.tree.profiles))
@@ -668,7 +679,9 @@ thrash <- sapply(1:nb.profile.clusters, function(cl){
   ## Get the motif name
   cluster.profiles.motif.names[[cluster.profiles.counter]] <<- as.vector(
     sapply(cluster.profiles.motifs[[cluster.profiles.counter]], function(n){
-      ID.names[which(ID.names[,2] == n),1]
+
+      
+      as.vector(ID.names[which(ID.names[,1] == n),2])
     })
   )
 })
@@ -759,7 +772,7 @@ pval.site.plots <- sapply(matrix.names, function(i) {
 ############################
 ## Get the IDs of the TFs
 TF.IDs <- as.vector(sapply(matrix.names, function(x){
-  as.vector(ID.names[which(ID.names[,2] == x),1])
+  as.vector(ID.names[which(ID.names[,1] == x),2])
 }))
 
 ## As some IDs include a period ('.') in their text, we change it by
@@ -815,10 +828,8 @@ thrash <- sapply(order.by.eval, function(o){
   counter <<- counter + 1
   
   ## Get the counts and the fraction of TFBSs per bin in query and control
-  counts.query <- counts.per.bin.query[o,]/sum(counts.per.bin.query[o,])
-  counts.query <- round(counts.query, digits = 3)
-  counts.control <- counts.per.bin.control[o,]/sum(counts.per.bin.query[o,])
-  counts.control <- round(counts.control, digits = 3)
+  counts.query <- round(counts.per.bin.query.freq[o,], digits = 3)
+  counts.control <- round(counts.per.bin.control.freq[o,], digits = 3)
   
   ## Here we create a unique ID without CSS special characters
   ## Only to manipulate the objects in the HTML form
@@ -914,15 +925,17 @@ thrash <- sapply(1:nb.profile.clusters, function(cl){
 
   cluster.profiles.counter <<- cluster.profiles.counter + 1
   cluster.profiles.motifs[[cluster.profiles.counter]] <<- names(which(clusters.tree.profiles+1 == cluster.profiles.counter))
-
+  
   ## Get the motif name
   cluster.profiles.motif.names[[cluster.profiles.counter]] <<- as.vector(
     sapply(cluster.profiles.motifs[[cluster.profiles.counter]], function(n){
-      ID.names[which(ID.names[,2] == n),1]
+      
+      ID.names[which(ID.names[,1] == n),2]
     })
   )
 })
 rm(thrash)
+
 all.motifs.function <- paste(paste("'", all.motifs, "'", sep = ""), collapse = ",")
 
 ## Generate the JS function to show the clusters
@@ -941,6 +954,13 @@ thrash <- sapply(1:length(cluster.profiles.motif.names), function(cl){
   
   ## Cluster member names
   cluster.member.names <- as.vector(unlist(sapply(cluster.profiles.motif.names[[cl]], function(m){
+    
+    m <- gsub("_", "", m)
+    m <- gsub("-", "", m)
+    m <- gsub("\\.", "", m)
+    m <- gsub(":", "", m)
+    m <- gsub("\\s+", "", m, perl = TRUE)
+    
     hash.motif.IDs[[m]]
   })))
   cluster.member.names <- paste(paste("'", cluster.member.names, "'", sep = ""), collapse = ",")
@@ -1124,8 +1144,8 @@ html.report <- gsub("--motif_nb--", length(matrix.names), html.report)
 html.report <- gsub("--p--", prettyNum(p.val), html.report)
 
 ## Fill the heatmap section
-html.report <- gsub("--heatmap_png--", paste(basename, "_profiles_heatmap.jpg", sep = ""), html.report)
-html.report <- gsub("--heatmap_pdf--", paste(basename, "_profiles_heatmap.pdf", sep = ""), html.report)
+html.report <- gsub("--heatmap_png--", paste(basename, "/Query_over_control_positional_profile.jpeg", sep = ""), html.report)
+html.report <- gsub("--heatmap_pdf--", paste(basename, "/Query_over_control_positional_profile.pdf", sep = ""), html.report)
 
 ## Insert the Hit counts per bin table
 html.report <- gsub("--hit_counts_table_query--", query.counts.tab.file, html.report)
