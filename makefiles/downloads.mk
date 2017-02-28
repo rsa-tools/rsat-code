@@ -29,6 +29,22 @@ usage:
 
 update: genbank kegg expasy ebi_genomes taxonomy ensembl go prosite bind dbtbs
 
+
+################################################################
+## Download one dir from NCBI RefSeq with the recommended rsync
+## protocol
+## (https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#protocols).
+#REFSEQ_GROUP=bacteria
+#REFSEQ_SPECIES=Klebsiella_pneumoniae
+REFSEQ_GROUP=fungi
+REFSEQ_SPECIES=Saccharomyces_cerevisiae
+REFSEQ_DIR=genomes/refseq/${REFSEQ_GROUP}/${REFSEQ_SPECIES}/latest_assembly_versions/
+NCBI_RSYNC_BASE=rsync://ftp.ncbi.nlm.nih.gov
+rsync_from_ncbi:
+	rsync --copy-links --recursive --times -R --verbose ${NCBI_RSYNC_BASE}/${REFSEQ_DIR} downloads/
+#	rsync -ruptvl -R -z ${NCBI_RSYNC_BASE}/${REFSEQ_DIR} downloads/
+
+
 ################################################################
 #
 # Complete genomes at EBI
@@ -45,7 +61,7 @@ ebi_genomes:
 
 ################################################################
 #
-# Genbank genome repository
+# NCBI/Genbank genome repository
 #
 GENBANK_DIRS =					\
 	genomes					\
@@ -73,54 +89,42 @@ NCBI_EXCLUDE=	\
 		--exclude '*.tar.gz'						
 
 
-BIOMIRROR=rsync://bio-mirror.net/biomirror
-one_ncbi_dir_from_mirror:
-	@echo "DOWNLOAD_DIR	${DOWNLOAD_DIR}"
-	@mkdir -p ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}
-	rsync ${NCBI_EXCLUDE}						\
-		-av ${OPT} ${BIOMIRROR}/ncbigenomes/${NCBI_DIR}/*	\
-		${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/
-	@echo "NCBI directory downloaded to ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/"
+# BIOMIRROR=rsync://bio-mirror.net/biomirror
+# one_ncbi_dir_from_mirror:
+# 	@echo "DOWNLOAD_DIR	${DOWNLOAD_DIR}"
+# 	@mkdir -p ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}
+# 	rsync ${NCBI_EXCLUDE}						\
+# 		-av ${OPT} ${BIOMIRROR}/ncbigenomes/${NCBI_DIR}/*	\
+# 		${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/
+# 	@echo "NCBI directory downloaded to ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/"
 
 
-################################################################
-## Download one dir from NCBI RefSeq with the recommended rsync
-## protocol
-## (https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#protocols).
-REFSEQ_GROUP=bacteria
-REFSEQ_SPECIES=Klebsiella_pneumoniae
-REFSEQ_DIR=genomes/refseq/${REFSEQ_GROUP}/${REFSEQ_SPECIES}/latest_assembly_versions/
-NCBI_RSYNC_BASE=rsync://ftp.ncbi.nlm.nih.gov
-rsync_from_ncbi:
-	rsync --copy-links --recursive --times -R --verbose ${NCBI_RSYNC_BASE}/${REFSEQ_DIR} downloads/
-#	rsync -ruptvl -R -z ${NCBI_RSYNC_BASE}/${REFSEQ_DIR} downloads/
+# one_ncbi_dir:
+# 	${MAKE} one_ncbi_dir_from_mirror
 
-one_ncbi_dir:
-	${MAKE} one_ncbi_dir_from_mirror
+# ncbi:
+# 	rsync --delete	${NCBI_EXCLUDE}						\
+# 		-avz rsync://${BIOMIRROR}/ncbigenomes/*	\
+# 		ftp.ncbi.nih.gov/genomes/
 
-ncbi:
-	rsync --delete	${NCBI_EXCLUDE}						\
-		-avz rsync://${BIOMIRROR}/ncbigenomes/*	\
-		ftp.ncbi.nih.gov/genomes/
-
-NCBI_GENOMES_FTP_OLD=ftp://ftp.ncbi.nih.gov/genomes
-NCBI_GENOMES_FTP=ftp://ftp.ncbi.nih.gov/genomes/refseq/
-#NCBI_DIR=Fungi/Saccharomyces_cerevisiae_uid128
-NCBI_ACCEPT=							\
-		--exclude-directories 'Bacteria.OLD'		\
-		--exclude-directories ARCHIVE			\
-		--exclude-directories BACENDS			\
-		--accept=gpff --accept=gpff.gz			\
-		--accept=gbk --accept=README --accept=gbff	\
-		--accept=gaa --accept=faa --accept=gbk.gz	\
-		--accept=README.gz --accept=gbff.gz		\
-		--accept=gaa.gz --accept=faa.gz		
-one_ncbi_dir_wget:
-	@mkdir -p ${LOG_DIR}
-	@echo "Download URL	${NCBI_GENOMES_FTP}/${NCBI_DIR}"
-	@echo "${DATE}	updating dir	$${NCBI_DIR}" >> wget_updates.txt
-	${WGET} ${NCBI_ACCEPT} ${NCBI_GENOMES_FTP}/${NCBI_DIR}
-	@echo "${DATE}	updated dir	$${NCBI_DIR}" >> wget_updates.txt
+# NCBI_GENOMES_FTP_OLD=ftp://ftp.ncbi.nih.gov/genomes
+# NCBI_GENOMES_FTP=ftp://ftp.ncbi.nih.gov/genomes/refseq/
+# #NCBI_DIR=Fungi/Saccharomyces_cerevisiae_uid128
+# NCBI_ACCEPT=							\
+# 		--exclude-directories 'Bacteria.OLD'		\
+# 		--exclude-directories ARCHIVE			\
+# 		--exclude-directories BACENDS			\
+# 		--accept=gpff --accept=gpff.gz			\
+# 		--accept=gbk --accept=README --accept=gbff	\
+# 		--accept=gaa --accept=faa --accept=gbk.gz	\
+# 		--accept=README.gz --accept=gbff.gz		\
+# 		--accept=gaa.gz --accept=faa.gz		
+# one_ncbi_dir_wget:
+# 	@mkdir -p ${LOG_DIR}
+# 	@echo "Download URL	${NCBI_GENOMES_FTP}/${NCBI_DIR}"
+# 	@echo "${DATE}	updating dir	$${NCBI_DIR}" >> wget_updates.txt
+# 	${WGET} ${NCBI_ACCEPT} ${NCBI_GENOMES_FTP}/${NCBI_DIR}
+# 	@echo "${DATE}	updated dir	$${NCBI_DIR}" >> wget_updates.txt
 
 #one_genbank_dir:
 #	${MAKE} one_ncbi_dir_from_mirror
