@@ -7,6 +7,8 @@
 #
 ############################################################
 
+## TO DEBUG: with option -org_list all organisms get the same name
+## (the first one of the list). JvH 2016-02-17.
 
 # use strict;
 BEGIN {
