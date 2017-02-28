@@ -1697,25 +1697,30 @@ sub StartAndStopCodons {
   my $prefix = $dir{genome}."/".${organism_short_name};
   my $job_prefix = ${organism_short_name}."_start_codons";
   my $command = $SCRIPTS."/retrieve-seq -v -org ${organism_short_name} -all  \ ";
-  $command .= "-type upstream -feattype start_codon -from 0 -to 2  \ ";
+  $command .= "-type upstream -feattype cds -from 0 -to 2  \ ";
   $command .= "-format wc -nocomment -label $label \ ";
   $command .= " -o ".$prefix."_start_codons.wc";
   $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
   $command .= " -i ".$prefix."_start_codons.wc";
-  $command .= " -o ".$prefix."_start_codon_frequencies";
+  $command .= " -o ".$prefix."_start_codon_frequencies.tab";
+#  &RSAT::message::Debug($command) if ($main::verbose >= 10);
   &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
 #  &doit($command, $dry_run, $die_on_error, $verbose);
+  &RSAT::message::Info("\tStart codons", $prefix."_start_codons.wc") if ($main::verbose >= 2);
+  &RSAT::message::Info("\tStart codon frequencies", $prefix."_start_codon_frequencies.tab") if ($main::verbose >= 2);
 
   $job_prefix = ${organism_short_name}."_stop_codons";
   $command = $SCRIPTS."/retrieve-seq -v -org ${organism_short_name} -all  \ ";
-  $command .= "-type downstream  -feattype stop_codon -from -2 -to 0  \ ";
+  $command .= "-type downstream  -feattype cds -from -2 -to 0  \ ";
   $command .= "-format wc -nocomment -label $label \ ";
   $command .= " -o ".$prefix."_stop_codons.wc";
   $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
   $command .= " -i ".$prefix."_stop_codons.wc";
-  $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
+  $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies.tab";
   &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
 #  &doit($command, $dry_run, $die_on_error, $verbose);
+  &RSAT::message::Info("\tStop codons", $prefix."_stop_codons.wc") if ($main::verbose >= 2);
+  &RSAT::message::Info("\tStop codon frequencies", $prefix."_stop_codon_frequencies.tab") if ($main::verbose >= 2);
 }
 
 
