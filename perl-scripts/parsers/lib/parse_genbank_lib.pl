@@ -483,7 +483,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	}
 
 	################################################################
-	#### new feature
+	## New feature
       } elsif ($line =~ /^ {5}(\S+)\s+/) {
 
 	$feature_type = $1;
@@ -513,7 +513,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 
 	#	    &RSAT::message::Debug("feature type", $feature_type, $value, $position) if ($main::verbose >= 10);
 
-	#### create an object for the new feature
+	## Create an object for the new feature
 	if ($features_to_parse{$feature_type}) {
 	  &RSAT::message::Debug($l, "new feature", $feature_type, $position) if ($main::verbose >= 3);
 
@@ -554,7 +554,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	  $current_feature->set_attribute("contig",$current_contig->get_attribute("id"));
 	  $current_feature->set_attribute("chrom_position",$position);
 
-	  #### gene
+	  ## Gene
 	  if ($feature_type eq 'gene') {
 	    $last_gene = $current_feature;
 
@@ -601,7 +601,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	  undef($current_feature);
 	}
 
-	#### new feature attribute
+	## New feature attribute
 
 	### A new feature attribute is detected by
 	### - 21 spaces
@@ -657,7 +657,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	    }
 	  }
 
-	  #### detect taxid
+	  ## Detect TAXID
 	  if (($current_feature->get_attribute("type") eq "source") ) {
 	    if (($attribute_type eq "db_xref") && ($attribute_value =~ /taxon:(\d+)/)) {
 	      $taxid = $1;
