@@ -22,6 +22,7 @@ use RSAT::Tree;
 use RSAT::TreeNode;
 use RSAT::organism;
 
+
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
@@ -63,6 +64,7 @@ package main;
 		       );
 
   @extra_tasks = qw(
+                    download
 		    parse
                     fasta_genome
                     index_bedtools
@@ -90,12 +92,24 @@ package main;
   $taxonomy = $null;
   @taxa = ();
   our %infile = ();
-  $infile{organisms} = "";
-  @organisms = ();
-  $skip = 0; 
-  $last = 0;
-  our $backup_org_table = 0;
 
+  ## File containing a list of organisms to install
+  $infile{organisms} = "";
+
+  ## List of organisms
+  our @organisms = ();
+
+  ## Strain
+  our $strain = "";
+
+  ## Group
+  our $group = "";
+
+  ## options for testing and debugging
+  $skip = 0;  ## Skip the top organisms from the lsit
+  $last = 0;  ## Stop after a given number of organisms from the list
+
+  our $backup_org_table = 0;
 
   ## installation date
   local $install_date = $force_date || &AlphaDate();
@@ -145,6 +159,37 @@ package main;
   }
 
   ################################################################
+  ## Download the required files from NCBI FTP site
+  if ($task{download}) {
+    ## Check that all required parameters are defined
+    unless (scalar(@organisms) == 1) {
+      &RSAT::error::FatalError("Task 'download' requires to specify a single organism (species name, e.g. Saccharomyces_cerevisiae, Escherichia_coli).");
+    }
+    my $species = $organisms[0];
+
+    unless ($group) {
+      &RSAT::error::FatalError("Task 'download' requires to specify a group (e.g. fungi, bacteria, ...).");
+    }
+
+    # unless ($strain) {
+    #   &RSAT::error::FatalError("Task 'download' requires to specify a strain from NCBI FTP folders (e.g. GCF_000482265.1_EC_K12_MG1655_Broad_SNP).");
+    # }
+
+    my $URL = join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, $species, "latest_assembly_versions/");
+    if ($strain) { 
+      $URL .= $strain;
+    }
+    &RSAT::message::TimeWarn("Downloading genome from NCBI FTP site", $URL) if ($main::verbose >= 1);
+
+    $dir{downloads} = $ENV{RSAT}."/downloads/";
+
+    &RSAT::util::CheckOutDir($dir{downloads});
+    my $command = "rsync --copy-links --recursive --times -R --verbose ".$URL." ".$dir{downloads};
+    &doit($command, $dry_run, $die_on_error, $verbose);
+    &RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 0);
+  }
+
+  ################################################################
   ## Check the directory contianing the Genbank-formatted organisms
   ## (which can be downloaded from NCBI/refseq).
   if ($task{parse}) {
@@ -166,8 +211,8 @@ package main;
   }
 
   if ($main::all_organisms) {
-#    @organisms_dirs = glob($dir{refseq}."/*_*");
-    @organisms_dirs = &glob($dir{genbank}."/*_*");
+    @organisms_dirs = glob($dir{refseq}."/*_*");
+#    @organisms_dirs = &glob($dir{genbank}."/*_*");
     foreach my $dir (@organisms_dirs) {
       my $org = &RSAT::util::ShortFileName($dir);
       next if ($org =~ /^readme/i); ## Skip readme file
@@ -1541,6 +1586,14 @@ sub ReadArguments {
       &RSAT::error::FatalError( $organism_short_name, "Invalid organism name: should not be empty.") unless ($organism_short_name =~ /\S/);
       &RSAT::error::FatalError( $organism_short_name, "Invalid organism name: should contain at least one underscore.") unless ($organism_short_name =~ /_/);
       push @organisms, $organism_short_name;
+
+      ## Strain, used to define the FTP site for the task "download"
+    } elsif ($arg eq "-strain") {
+      $strain = shift(@arguments);
+
+      ## Group, used to define the FTP site for the task "download"
+    } elsif ($arg eq "-group") {
+      $group = shift(@arguments);
 
       ## Input file with organism list
     } elsif ($arg eq "-org_file") {
