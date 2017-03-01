@@ -691,59 +691,59 @@ rm(thrash)
 ## Step 16: Draw -log2 ratio heatmaps ##
 ########################################
 
-data.t[is.infinite(data.t)] <- 0
-
-verbose(paste("Drawing differential binding heatmap"),1)
-## Create color palette
-heatmap.color.classes <- 11
-heatmap.color.palette <- "RdBu"
-rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(heatmap.color.classes))
-
-hm.main <- paste("Profile Heatmap\nQuery over Control")
-
-for(pf in print.formats){
-
-  if(pf == "pdf"){
-    pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Query_over_control_positional_profile.pdf", sep = "")
-    pdf(pdf.file.name)
-  } else {
-    jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Query_over_control_positional_profile.jpeg", sep = "")
-    jpeg(jpeg.file.name)
-  }
-  data.t <- as.matrix(t(counts.per.bin.log2))
-
-  heatmap.2(data.t,
-
-            main = hm.main,
-            xlab = "Position (bp)",
-            ylab = "Motifs",
-
-            ## The order of the values is set according these dendrograms
-            Rowv = as.dendrogram(tree.profiles),
-            Colv = FALSE,
-            dendrogram = "row",
-
-            ## Color
-            col = rgb.palette,
-
-            ## Trace
-            trace = "none",
-
-            ## Side colors
-            RowSideColors = color.clusters.tree.profiles,
-
-            ## Key control
-            key = TRUE,
-            keysize = 1,
-            density.info = "none",
-            key.xlab = "Log2 Ratio",
-            key.ylab = "",
-            key.title = "",
-            cexRow = 0.66,
-            offsetCol = 0.25
-  )
-    t <- dev.off()
-}
+# data.t[is.infinite(data.t)] <- 0
+# 
+# verbose(paste("Drawing differential binding heatmap"),1)
+# ## Create color palette
+# heatmap.color.classes <- 11
+# heatmap.color.palette <- "RdBu"
+# rgb.palette <- rev(colorRampPalette(brewer.pal(heatmap.color.classes, heatmap.color.palette), space="Lab")(heatmap.color.classes))
+# 
+# hm.main <- paste("Profile Heatmap\nQuery over Control")
+# 
+# for(pf in print.formats){
+# 
+#   if(pf == "pdf"){
+#     pdf.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Query_over_control_positional_profile.pdf", sep = "")
+#     pdf(pdf.file.name)
+#   } else {
+#     jpeg.file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", "Query_over_control_positional_profile.jpeg", sep = "")
+#     jpeg(jpeg.file.name)
+#   }
+#   data.t <- as.matrix(t(counts.per.bin.log2))
+# 
+#   heatmap.2(data.t,
+# 
+#             main = hm.main,
+#             xlab = "Position (bp)",
+#             ylab = "Motifs",
+# 
+#             ## The order of the values is set according these dendrograms
+#             Rowv = as.dendrogram(tree.profiles),
+#             Colv = FALSE,
+#             dendrogram = "row",
+# 
+#             ## Color
+#             col = rgb.palette,
+# 
+#             ## Trace
+#             trace = "none",
+# 
+#             ## Side colors
+#             RowSideColors = color.clusters.tree.profiles,
+# 
+#             ## Key control
+#             key = TRUE,
+#             keysize = 1,
+#             density.info = "none",
+#             key.xlab = "Log2 Ratio",
+#             key.ylab = "",
+#             key.title = "",
+#             cexRow = 0.66,
+#             offsetCol = 0.25
+#   )
+#     t <- dev.off()
+# }
 
 ######################################################################
 ## Step 17: Add the columns Profile cluster + logos + profile plots ##
