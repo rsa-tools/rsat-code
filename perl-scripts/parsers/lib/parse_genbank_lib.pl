@@ -303,10 +303,12 @@ The option no_seq=>1 prevents from parsing the sequence.
       $l++;
 #      &RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
 
-      next unless ($line =~ /\S/);
+      next unless ($line =~ /\S/); # Skip blank lines
+
       unless (($in_features) ||
 	      ($in_sequence)){
-	#### organism name
+
+	## Organism name
 	if ($line =~ /^\s+ORGANISM\s+/) {
 	  $organism_name = "$'";
 	  &RSAT::message::Info("Organism name", $organism_name) if ($main::verbose >= 2);
@@ -321,7 +323,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	    $organisms->index_names(); ### required to prevent creating several objects for the same organism
 	  }
 
-	  #### collect the taxonomy
+	  ## Collect the taxonomy
 	  my $taxonomy = "";
 	  while ($line = &ReadNextLine()) {
 	    if ($line =~ /^\S/) {
@@ -329,6 +331,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	      $taxonomy =~ s/\s+/ /g;
 	      $taxonomy =~ s/\.\s*$//;
 	      #			$current_contig->set_attribute("taxonomy", $taxonomy);
+	      &RSAT::message::Info("Taxonomy", $taxonomy) if ($main::verbose >= 2);
 	      $organism->force_attribute("taxonomy", $taxonomy);
 	      last;
 	    } else {
@@ -352,6 +355,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 
 
 	if ($line =~ /^([A-Z]+)\s+/) {
+	  &RSAT::message::Debug($line) if ($main::verbose >= 5);
 	  $current_contig_key = $1;
 	  $current_contig_value = "$'";
 	  chomp($current_contig_value);
@@ -368,9 +372,9 @@ The option no_seq=>1 prevents from parsing the sequence.
 	  }
 
 	} elsif ($line =~ /^ {12}/) {
-	  ### suite of the current contig value
+	  ## Suite of the current contig value
 	  $current_contig_value .= " ".$'; ##'
-	  warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
+	  &RSAT::message::Debug( "parsing", $current_contig_key, $current_contig_value) if ($verbose >= 4);
 	  $current_contig->append_attribute(lc($current_contig_key), $current_contig_value);
 	}
 
@@ -384,7 +388,7 @@ The option no_seq=>1 prevents from parsing the sequence.
       }
 
       if ($line =~ /^LOCUS/) {
-	#### new contig
+	## New contig
 	@fields = split /\s+/, $line;
 	&RSAT::message::Info("New contig", $line) if ($main::verbose >= 2);
 	my $contig_name = $fields[1];
@@ -409,7 +413,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	#### currently ignored
 
 	################################################################
-	#### read the full sequence (at the end of the contig)
+	## Read the full sequence (at the end of a contig)
       } elsif ($line =~ /^ORIGIN/) {
 	&RSAT::message::TimeWarn("Reading sequence") if ($main::verbose >= 2);
 	$in_features = 0;
@@ -451,7 +455,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	      print SEQ "\n";
 	      $in_sequence = 0;
 	      $current_contig = "";
-#	      last;
+	      last;
 	    } else {
 	      &ErrorMessage("Invalid sequence format, skipped\t$line\n");
 	    }
@@ -479,7 +483,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	}
 
 	################################################################
-	#### new feature
+	## New feature
       } elsif ($line =~ /^ {5}(\S+)\s+/) {
 
 	$feature_type = $1;
@@ -509,7 +513,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 
 	#	    &RSAT::message::Debug("feature type", $feature_type, $value, $position) if ($main::verbose >= 10);
 
-	#### create an object for the new feature
+	## Create an object for the new feature
 	if ($features_to_parse{$feature_type}) {
 	  &RSAT::message::Debug($l, "new feature", $feature_type, $position) if ($main::verbose >= 3);
 
@@ -550,7 +554,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	  $current_feature->set_attribute("contig",$current_contig->get_attribute("id"));
 	  $current_feature->set_attribute("chrom_position",$position);
 
-	  #### gene
+	  ## Gene
 	  if ($feature_type eq 'gene') {
 	    $last_gene = $current_feature;
 
@@ -597,7 +601,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	  undef($current_feature);
 	}
 
-	#### new feature attribute
+	## New feature attribute
 
 	### A new feature attribute is detected by
 	### - 21 spaces
@@ -653,7 +657,7 @@ The option no_seq=>1 prevents from parsing the sequence.
 	    }
 	  }
 
-	  #### detect taxid
+	  ## Detect TAXID
 	  if (($current_feature->get_attribute("type") eq "source") ) {
 	    if (($attribute_type eq "db_xref") && ($attribute_value =~ /taxon:(\d+)/)) {
 	      $taxid = $1;
