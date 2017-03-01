@@ -1262,6 +1262,7 @@ OPTIONS
 		taxa.
 
     OPTIONAL ARGUMENTS
+
 	-skip #	Skip the first # organismsof the list.
 
 	        This option is convenient to resume the installation
@@ -1329,9 +1330,13 @@ OPTIONS
 		A tab-delimited file containing two coloumns. The
 		forst column contains a gene ID, the second a gene
 		name.
+
 	-up_from distal limit of the upstream regions (e.g. -800 for yeast)
+
 	-up_to	proximal limit of the upstream regions (e.g. -1)
+
 	-genbank genbank directory (obsolete, see refseq)
+
 	-refseq
 		Local directory containing the mirror of the refseq
 		genomes found on the NCBI site:
@@ -1376,6 +1381,10 @@ OPTIONS
 
 		Description of the tasks
 		------------------------
+
+		download     download genome from the NCBI FTP site 
+		             (ftp://ftp.ncbi.nih.gov/genomes/refseq/).
+
 		genome	     format genome sequence
 			     (obsolete)
 
@@ -1679,7 +1688,6 @@ incomplete.
 
       } elsif ($arg eq "-nodie") {
 	$main::die_on_error = 0;
-
 
     }
   }
