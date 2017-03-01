@@ -776,10 +776,6 @@ all.chi.results$not_cov <- not.covered.seq
 
 features.table <- all.chi.results[, c(1,2,3,6,9,4,8,10,12,13,14,7,15,16)]
 colnames(features.table) <- c("Feature", "Chi_squared", "Degrees", "Chi_app", "Sig", "P_val" ,"E_val", "Q_val", "Coverage", "Sequences", "Nb_hits", "Pval_scan", "Covered_seq", "Not_covered_seq")
-  
-feature.attributes.file <- paste(basename, "_attributes.tab", sep = "")
-write.table(features.table, file = feature.attributes.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
-
 
 ###################################
 ## Step 14: Calculate BG matches ##
@@ -1158,6 +1154,9 @@ names(covered.sequences.per.motif) <- matrix.names
 ###################################################################
 list.counter <- 1
 features.table$Profile_cluster <- profile.clusters.names[[list.counter]]
+
+feature.attributes.file <- paste(basename, "_attributes.tab", sep = "")
+write.table(features.table, file = feature.attributes.file, sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
 
 
 #################################################################
