@@ -165,9 +165,9 @@ covered.tables.dir <- paste(basename(prefix), "_covered_sequences_info", sep = "
 dir.create(covered.tables.dir, showWarnings = FALSE)
 
 ## Induced
-# matrix.scan.file <- "/home/jaime/Desktop/induced/position_scan_CapStarrSeq_K562_IFN_induced_matrix_scan_results_PARSED.tab"
-# sequence.names.file <- "/home/jaime/Desktop/induced/position_scan_CapStarrSeq_K562_IFN_induced_matrix_scan_sequence_names.tab"
-# ID.to.names.correspondence.tab <- "/home/jaime/Desktop/induced/position_scan_CapStarrSeq_K562_IFN_induced_TF_ID_name_correspondence.tab"
+# matrix.scan.file <- "/home/jcastro/Desktop/Epromoters_analysis/induced/position_scan_single/position_scan_CapStarrSeq_K562_IFN_induced_matrix_scan_results_PARSED.tab"
+# sequence.names.file <- "/home/jcastro/Desktop/Epromoters_analysis/induced/position_scan_single/position_scan_CapStarrSeq_K562_IFN_induced_matrix_scan_sequence_names.tab"
+# ID.to.names.correspondence.tab <- "/home/jcastro/Desktop/Epromoters_analysis/induced/position_scan_single/position_scan_CapStarrSeq_K562_IFN_induced_TF_ID_name_correspondence.tab"
 # bin <- 50
 # seq.length <- 2000
 
@@ -213,7 +213,7 @@ matrix.scan.results <- subset(matrix.scan.results, Pval <= p.val)
 #######################################
 ## Step 4: Read sequence names table
 verbose(paste("Reading sequence names table"), 1)
-sequence.names.tab <- read.csv(file = sequence.names.file, sep = "\t", header = TRUE, comment.char = ";")
+sequence.names.tab <- read.csv(file = sequence.names.file, sep = "\t", header = FALSE, comment.char = ";")
 colnames(sequence.names.tab) <- c("seq_id")
 total.scanned.sequences <- length(as.vector(sequence.names.tab$seq_id))
 scanned.sequences <- unique(as.vector(sequence.names.tab$seq_id))
@@ -593,7 +593,7 @@ thrash <- sapply(matrix.names, function(m){
     motif.chi.statistics[1,7] <- highest.pval
     
   } else {
-    highest.pval.sig <- as.vector(motif.chi.statistics[1,7])
+    highest.pval.sig <- as.character(as.vector(motif.chi.statistics[1,7]))
     highest.pval <- pval.sig.hash[[highest.pval.sig]]
     motif.chi.statistics[1,7] <- as.vector(highest.pval)
     
@@ -844,7 +844,10 @@ freq.per.bin.norm[[1]] <- freq.per.bin/total.scanned.sequences
 max.y <- max(unlist(freq.per.bin.norm[[1]]), na.rm = TRUE)
 # max.y <- lapply(freq.per.bin.norm[[1]], max, na.rm = TRUE)
 
-cn <- freq.per.bin
+cn <- freq.per.bin.norm[[1]]
+
+cn[is.na(data.frame(cn))] <- 0
+cn[is.infinite(data.frame(cn))] <- 0
   
 tree.profiles[[list.counter]] <- hclust(Dist(cn, method = "correlation"), method = "ward.D2")
 clusters.tree.profiles <- cutreeDynamic(tree.profiles[[list.counter]], minClusterSize = 1, method = "tree")
