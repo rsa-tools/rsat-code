@@ -158,7 +158,8 @@ ncbi-blast+
 ## apt-get packages to install Perl modules (not properly speaking
 ## necessary, could be done with cpan, but ensure consistency with
 ## ubuntu OS)
-PACKAGES_PERL="perl-doc
+PACKAGES_PERL="
+perl-doc
 pmtools
 libyaml-perl
 libemail-simple-perl

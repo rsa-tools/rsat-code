@@ -28,7 +28,7 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ## prevents CPAN from downloading and installing Perl modules !
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-cpan YAML ## Answer "yes" !!!
+cpan YAML ## Type "yes" on request !!!
 cpan CPAN ## Update CPAN
 
 ## Set working directory to RSAT

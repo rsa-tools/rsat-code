@@ -4,15 +4,18 @@ source 00_config.bash
 ## Download RSAT distribution from the tar.gz archive at
 ## http://download.rsat.eu/
 
-RSAT_ARCHIVE=`wget -q -O- http://pedagogix-tagc.univ-mrs.fr/download_rsat/ | grep rsat | grep class | awk -F'"' '{print  $6}'`
+RSAT_DOWNLOAD_SITE=http://pedagogix-tagc.univ-mrs.fr/download_rsat/
+RSAT_ARCHIVE=`wget -q -O- ${RSAT_DOWNLOAD_SITE} | grep rsat | grep -v scripts | grep class | awk -F'"' '{print  $6}'`
 RSAT_VERSION=`echo $RSAT_ARCHIVE | sed 's/rsat_//g' | sed 's/.tar.gz//g'`
+RSAT_DISTRIB_URL=${RSAT_DOWNLOAD_SITE}/${RSAT_ARCHIVE}
 
 echo "Downloading RSAT archive $RSAT_ARCHIVE"
+echo "   URL: ${RSAT_DISTRIB_URL}"
 echo ${RSAT_VERSION} > ${RSAT_PARENT_PATH}/RSAT_version
-wget http://pedagogix-tagc.univ-mrs.fr/download_rsat/$RSAT_ARCHIVE
-mv $RSAT_ARCHIVE rsat.tar.gz
-gunzip rsat.tar.gz
-tar -xvf rsat.tar
+cd ${RSAT_PARENT_PATH}
+wget --no-clobber ${RSAT_DISTRIB_URL}
+tar -xpzf ${RSAT_ARCHIVE}
+cd ${RSAT}
 
 
 ## Note: the git distribution requires an account at the ENS git
@@ -20,11 +23,6 @@ tar -xvf rsat.tar
 ## In the near future, we may use git also for the end-user
 ## distribution.
 
-cd ${RSAT_PARENT_PATH}
-echo "Downloading RSAT from  ${RSAT_DISTRIB_URL}"
-wget --no-clobber ${RSAT_DISTRIB_URL}
-tar -xpzf ${RSAT_ARCHIVE}
-cd ${RSAT}
 
 ## Alternative: get RSAT from the git repository. 
 ## THIS IS RESERVED TO RSAT DEVELOPING TEAM
