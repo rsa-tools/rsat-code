@@ -446,7 +446,7 @@ i <- sapply(1:length(clusters), function(nb){
 
                ## Build the tree by hierarchical clustering,
                tree <<- hclust.motifs(dist.matrix, hclust.method = hclust.method)
-
+               
                if(only.hclust == 0){
 
                   ## Creates and export the json file
@@ -461,6 +461,34 @@ i <- sapply(1:length(clusters), function(nb){
                   JSON.clusters.table <- identify.JSON.tree.branches(tree)
                   JSON.clusters.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_", central.motif,"_table.tab")
                   write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
+                  
+                  nodes <- as.vector(JSON.clusters.table$node)
+                  nodes <- as.numeric(gsub("node_", "", nodes))
+                  
+                  # print(nodes)
+                  # print(order(nodes, decreasing = TRUE))
+                  # stop("Here")
+                  
+                  ## Export the tree agglomeration order
+                  tree.agg<- as.vector(tree[[1]])
+                  
+                  tree.agg.tab <- sapply(tree.agg, function(x){
+                    
+                    if(x < 0){
+                      new.x <- x*-1
+                      as.vector(global.description.table$id)[new.x]
+                    } else {
+                      paste("node_", x, sep = "")
+                    }
+                  })
+                  tree.agg.tab <- as.data.frame(matrix(tree.agg.tab, ncol = 2))
+                  # tree.agg.tab$new <- rev(as.vector(JSON.clusters.table$node))
+                  tree.agg.tab$order <- paste("node_", 1:nrow(tree.agg.tab), sep = "")
+                  colnames(tree.agg.tab) <- c("child_1", "child_2", "merged_ID")
+                  tree.agg.tab <- tree.agg.tab[,c("merged_ID", "child_1", "child_2")]
+                  JSON.clusters.order.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_", central.motif,"_table_linkage_order.tab")
+                  write.table(tree.agg.tab, file = JSON.clusters.order.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
+                  
                 }
 
                ## Align the motifs and retrieve the information of the intermediate alignments

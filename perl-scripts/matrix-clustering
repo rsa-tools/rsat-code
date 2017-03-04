@@ -2161,9 +2161,13 @@ sub Add_attributes_to_JSON() {
       $matrix_info{$id}{consensus} = $split_line[4];
       $matrix_info{$id}{consensus_rc} = $split_line[5];
       $matrix_info{$id}{ic} = $split_line[6];
+      $matrix_info{$id}{nb_sites} = $split_line[7];
   }
   close($mat_desc);
 
+      ## Open a file with the attributes of the nodes of each cluster (IC, width, number of motifs, etc)
+      my $cluster_nodes_ic_info = &OpenOutputFile($main::outfile{prefix}."_clusters_information/".$cluster."_attributes_table.tab");
+      print $cluster_nodes_ic_info "#cluster\tnode_ID\tchild_1\tchild_2\tIC\IC_child_1\tIC_child_2\tSites\tSites_child_1\tSites_child_2\n";
 
   ############################################################
   ## Read the JSON file and add the link data to each node
@@ -2184,6 +2188,11 @@ sub Add_attributes_to_JSON() {
 	  push(@levels_JSON, $spl[2]);  
       }
       close(LVL_JSON);
+
+      
+      ## Read he file with the linkage order
+      ## Save the info in a hash
+      my %linkage_order_info = ();
 
       ## Open the JSON file produced by R
       my $parsed_json;
@@ -2235,25 +2244,54 @@ sub Add_attributes_to_JSON() {
 
 	      if($ID_link_flag == 1){
 		  $Add_this .= ",\n \"link_ext\" : \"".$ID_link_hash{$M1}."\"";
-	      }
-	      
+	      }  
 	  }
 	  
 	  ################################################################
 	  ## Add the consensus to the json file to be displayed in the tree (tree nodes)
+	  my $IC_info_line = "";
+          my $folder = "";
+          my @read_motifs = ();
+          my $child_1_ic = 0;
+          my $child_2_ic = 0;
 	  if ($line =~ /\"children\":/) {
 	      $children++;
 	      $Add = "";
 	      if ($children > 1) {
-		  my $folder = $levels_JSON[$children-2];
+
+		  $folder = $levels_JSON[$children-2];
 
 		  if (exists($merged_consensuses_files{$folder})) {
+
+      
+		      if(scalar(@{$cluster_nodes{$cluster}}) > 1){
+		         my ($linkage_order_info_file) = &OpenInputFile($main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table_linkage_order.tab");
+
+                          while(<$linkage_order_info_file>) {
+			      chomp;
+			      next if /^;/;
+			      my @spl = split(/\t+/, $_);
+			      my $merge_ID = $spl[0];
+			      my $child_1 = $spl[1];
+			      my $child_2 = $spl[2];
+			      $linkage_order_info{$merge_ID}{child_1} = $child_1;  
+			      $linkage_order_info{$merge_ID}{child_2} = $child_2;  
+			  }
+			 close $linkage_order_info_file;
+			 
+		      }
 
 		      ## Calculate IC of branch motif
 		      my @branch_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$folder}{$cluster}{tf_file}, "tf");
 		      my $rounded_ic = 0;
+		      my $nb_sites = 0;
+		      my $child_1_nb_sites = 0;
+		      my $child_2_nb_sites = 0;
+		      my $calc_nb_sites = 0;
+		      my $calc_child_1_nb_sites = 0;
+		      my $calc_child_2_nb_sites = 0;
 		      foreach my $matrix (@branch_motifs) {
-		    		    
+			  
 			  ## Calculates the IC of the matrix
 			  $matrix->calcInformation();
 			  $matrix->toString(col_width=>(1+4),
@@ -2262,8 +2300,68 @@ sub Add_attributes_to_JSON() {
 					    format=>"tf");
                           my $ic = $matrix->get_attribute("total.information");
                           $rounded_ic = sprintf("%.2f", $ic);
+
+	                  $calc_nb_sites = $matrix->calcNbSites();
+                          $nb_sites = $matrix->getNbSites();
                       }
 
+                      if(scalar(@{$cluster_nodes{$cluster}}) > 1){
+
+                      $linkage_order_info{$folder}{ic} = $rounded_ic;
+                      $linkage_order_info{$folder}{sites} = $nb_sites;
+
+                      ## Calculate IC from Children nodes
+                      if($linkage_order_info{$folder}{child_1} =~ /node_\d+/){
+                         ## Calculate IC of child 1
+		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$linkage_order_info{$folder}{child_1}}{$cluster}{tf_file}, "tf");
+                         foreach my $matrix (@read_motifs) {
+		    		    
+			    ## Calculates the IC of the matrix
+			    $matrix->calcInformation();
+			    $matrix->toString(col_width=>(1+4),
+					    decimals=>1,
+					    type=>"information",
+					    format=>"tf");
+                            my $ic = $matrix->get_attribute("total.information");
+                            $child_1_ic = sprintf("%.2f", $ic);
+
+	                    $calc_child_1_nb_sites = $matrix->calcNbSites();
+                            $child_1_nb_sites = $matrix->getNbSites();
+                         }
+                      } else {
+                        $child_1_ic = $matrix_info{$linkage_order_info{$folder}{child_1}}{ic};
+                        $child_1_nb_sites = $matrix_info{$linkage_order_info{$folder}{child_1}}{nb_sites};
+
+                      }
+
+                      if($linkage_order_info{$folder}{child_2} =~ /node_\d+/){
+                         ## Calculate IC of child 2
+		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$linkage_order_info{$folder}{child_2}}{$cluster}{tf_file}, "tf");
+                         foreach my $matrix (@read_motifs) {
+		    		    
+			    ## Calculates the IC of the matrix
+			    $matrix->calcInformation();
+			    $matrix->toString(col_width=>(1+4),
+					    decimals=>1,
+					    type=>"information",
+					    format=>"tf");
+                            my $ic = $matrix->get_attribute("total.information");
+                            $child_2_ic = sprintf("%.2f", $ic);
+                            $calc_child_2_nb_sites = $matrix->calcNbSites();
+                            $child_2_nb_sites = $matrix->getNbSites();
+                         }
+                      } else {
+                        $child_2_ic = $matrix_info{$linkage_order_info{$folder}{child_2}}{ic};
+                        $child_2_nb_sites = $matrix_info{$linkage_order_info{$folder}{child_2}}{nb_sites};
+                      }
+
+                      $linkage_order_info{$folder}{child_1_ic} = $child_1_ic;
+                      $linkage_order_info{$folder}{child_2_ic} = $child_2_ic;
+
+                      $linkage_order_info{$folder}{child_1_nbsites} = $child_1_nb_sites;
+                      $linkage_order_info{$folder}{child_2_nbsites} = $child_2_nb_sites;
+  }
+ 
 		      my $branch = $folder;
 		      $branch =~ s/\D+//g;
 		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
@@ -2278,15 +2376,23 @@ sub Add_attributes_to_JSON() {
 		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
 		  }
 		  push(@Parsed_JSON, $Add."\n");
+
+                  if(scalar(@{$cluster_nodes{$cluster}}) > 1){
+
+                     my $line_to_print = $cluster."\t".$folder."\t".$linkage_order_info{$folder}{child_1}."\t".$linkage_order_info{$folder}{child_2}."\t".$linkage_order_info{$folder}{ic}."\t".$linkage_order_info{$folder}{child_1_ic}."\t".$linkage_order_info{$folder}{child_2_ic}."\t".$linkage_order_info{$folder}{sites}."\t".$linkage_order_info{$folder}{child_1_nbsites}."\t".$linkage_order_info{$folder}{child_2_nbsites}."\n";
+
+                    $line_to_print =~ s/node_//gi;
+
+                     print $cluster_nodes_ic_info $line_to_print;
+                  }
 	      }
 	  }
 	  push(@Parsed_JSON, $line."\n");
-	  
+#print $cluster_nodes_ic_info $IC_info_line;
 	  ### Add the new line
 	  if ($Flag) {
 	      push(@Parsed_JSON, $Add_this."\n");
 	  }
-	  
       }
       close(JSON);
   
@@ -2809,6 +2915,11 @@ $(document).ready(function() {
 		}
 	    }
 
+	    			my $copy = $new_label;
+			$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+			$add_this .= "\n\n".$copy."\n";
+	    
+
 	    ## Add the collection lable to the logo tree
 	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
 	    #if ($display_collection_name_flag == 1) {
@@ -3276,7 +3387,7 @@ sub Text_end_report {
 	    <li>
 	      <strong>Contact</strong>
               <ul>
-                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/rsat/data/published_data/Castro_2016_matrix-clustering/Application_4/Ceevee10/demo_jaime.html" target=\'_blank\'>Jaime Castro-Mondragon</a> - <strong>jaime.castro-mondragon@etu.univ-amu.fr</strong></li>
+                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/rsat/data/published_data/Castro_2016_matrix-clustering/Application_4/Ceevee10/demo_jaime.html" target=\'_blank\'>Jaime Castro-Mondragon</a> - <strong>jcastro@lcg.unam.mx</strong></li>
                  <li type="square"><a href="http://morgane.bardiaux.fr/" target=\'_blank\'>Morgane Thomas-Chollier</a> - <strong>mthomas@biologie.ens.fr</strong></li>
                  <li type="square"><a href="http://jacques.van-helden.perso.luminy.univ-amu.fr/" target=\'_blank\'>Jacques van Helden</a> - <strong>Jacques.van-Helden@univ-amu.fr</strong></li>
               </ul>
@@ -4071,7 +4182,8 @@ sub branch_consensus_table{
                                         <th class="tab_col">Logo (Reverse)</th>
                                         <th class="tab_col">Collections</th>
 					<th class="tab_col">Matrix (Transfac format)</th>
-					<th class="tab_col">Information Content</th>
+					<th class="tab_col">IC</th>
+					<th class="tab_col">Nb sites</th>
 				</tr>
 			</thead>
                         <tbody>
@@ -5717,6 +5829,8 @@ sub InsertTreesAndBranchMotifs {
 		## Get the IC for the branch-motif
 		my @branch_motifs = &RSAT::MatrixReader::readFromFile($transfac_file_2, "tf");
 		my $rounded_ic = 0;
+		my $calc_sites = "";
+	        my $sites = "";
 		foreach my $matrix (@branch_motifs) {
 		    		    
 		    ## Calculates the IC of the matrix
@@ -5727,6 +5841,9 @@ sub InsertTreesAndBranchMotifs {
 				      format=>"tf");
                     my $ic = $matrix->get_attribute("total.information");
                     $rounded_ic = sprintf("%.2f", $ic);
+
+	            $calc_sites = $matrix->calcNbSites();
+                    $sites = $matrix->getNbSites();
                 }		
 		
 		$consensus_table_columns .= "\n".'<tr id="'.$cluster_id_hash{$num}.'_node_'.$level.'" class="branch_motifs">'."\n";
@@ -5737,6 +5854,7 @@ sub InsertTreesAndBranchMotifs {
 		$consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{collection_counts}.'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2">'.$rounded_ic.'</th>'."\n";
+		$consensus_table_columns .= '   <th class="tab_spacer_2">'.$sites.'</th>'."\n";
 		$consensus_table_columns .= "</tr>\n";
 
 		## Add the code to hide/show the branch-consensus table
@@ -5775,6 +5893,25 @@ sub InsertTreesAndBranchMotifs {
 	    $cons = `more $transfac_file_2 | grep DE`;
 	    $cons =~ s/DE\s+//gi;
 
+           ## Get the IC for the branch-motif
+	   @branch_motifs = &RSAT::MatrixReader::readFromFile($transfac_file_2, "tf");
+	   $rounded_ic = 0;
+	   $calc_sites = "";
+	   $sites = "";
+	   foreach my $matrix (@branch_motifs) {
+	    		    
+	     ## Calculates the IC of the matrix
+	     $matrix->calcInformation();
+	     $matrix->toString(col_width=>(1+4),
+			      decimals=>1,
+			      type=>"information",
+			      format=>"tf");
+             my $ic = $matrix->get_attribute("total.information");
+             $rounded_ic = sprintf("%.2f", $ic);
+	     $calc_sites = $matrix->calcNbSites();
+             $sites = $matrix->getNbSites();
+            }
+
 	    ## Fill the table
 	    $consensus_table_columns .= "\n".'<tr id="'.$cluster_id_hash{$num}.'" class="branch_motifs">'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2">Singleton</th>'."\n";
@@ -5783,6 +5920,8 @@ sub InsertTreesAndBranchMotifs {
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{collection_counts}.'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2">'.$rounded_ic.'</th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2">'.$sites.'</th>'."\n";
 	    $consensus_table_columns .= "</tr>\n";
 
 	    ## Add the code to hide/show the branch-consensus table
@@ -6315,7 +6454,8 @@ sub Generate_matrix_description_table() {
 			     "consensus",
 			     "rc_consensus",
 			     "label",
-		             "IC"
+		             "IC",
+                             "nb_sites"
 	), "\n";
     
     my $m=0;
@@ -6323,11 +6463,15 @@ sub Generate_matrix_description_table() {
     foreach my $matrix (@matrices) {
 	my $c = "";
 	my $c_rc = "";
+	my $s = 0;
 	$m ++;
 
 	$matrix->calcConsensus();
 	$c = $matrix->get_attribute("consensus.IUPAC");
 	$c_rc = $matrix->get_attribute("consensus.IUPAC.rc");
+
+	$ss = $matrix->calcNbSites();
+        $s = $matrix->getNbSites();
 
 	## Calculates the IC of the matrix
 	$matrix->calcInformation();
@@ -6346,7 +6490,8 @@ sub Generate_matrix_description_table() {
 				       $matrix->get_attribute("ncol"),
 				       $c,
 				       $c_rc,
-                                       $rounded_ic
+                                       $rounded_ic,
+                                       $s
 	    );
 	print $desc $matrix_desc_string."\n";
     }

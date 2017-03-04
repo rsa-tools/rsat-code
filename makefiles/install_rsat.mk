@@ -43,15 +43,20 @@ doc:
 ## (compilation of C programs, installation of R packages).
 update_from_git:
 	git pull
-	make -f ${RSAT}/makefiles/init_rsat.mk compile_all ## Compile C programs
-	make -f ${RSAT}/makefiles/init_rsat.mk ws_init ws_stub  ## Generate the stub for the Web services
-	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages ## Install external and custom R packages
+	${MAKE} _update_tasks
 
 update_from_wget:
 	@echo "DOWNLOAD THE LATEST TAR ARCHIVE: NOT AUTOMATED YET"
+	${MAKE} _update_tasks
+#	make -f ${RSAT}/makefiles/init_rsat.mk compile_all ## Compile C programs
+#	make -f ${RSAT}/makefiles/init_rsat.mk ws_init ws_stub  ## Generate the stub for the Web services
+#	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages ## Install external and custom R packages
+
+_update_tasks:
 	make -f ${RSAT}/makefiles/init_rsat.mk compile_all ## Compile C programs
 	make -f ${RSAT}/makefiles/init_rsat.mk ws_init ws_stub  ## Generate the stub for the Web services
 	make -f ${RSAT}/makefiles/install_rsat.mk install_r_packages ## Install external and custom R packages
+	make -f ${RSAT}/makefiles/server.mk denied_ips
 
 ################################################################
 ## Install Unix packages required for RSAT
