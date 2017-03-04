@@ -250,7 +250,7 @@ QSUB_OPTIONS=
 ##
 ## Note: the support to NCBI will soon e replaced by an installation
 ## from EnsembLGenome.
-REFSEQ_DIR=[RSAT_PARENT_PATH]/rsat/downloads/ftp.ncbi.nih.gov/genomes/refseq
+DOWNLOAD_DIR=[RSAT_PARENT_PATH]/rsat/downloads/
 
 ################################################################
 ## Libraries required for direct access to the Ensembl and
