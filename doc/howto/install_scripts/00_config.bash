@@ -12,19 +12,25 @@
 ##
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-## For Debian, I must set the locales manually
+## Note: for Debian, I must set the following locales manually so I
+## show them commented.
+#
 # export LANGUAGE=en_US.UTF-8
 # export LANG=en_US.UTF-8
 # export LC_ALL=en_US.UTF-8
 # locale-gen en_US.UTF-8
 # dpkg-reconfigure locales
 
+## Note: you should probably replace the automatic site (hostname) by
+## a name of your choice.
+export RSAT_SITE=`hostname`
+
 ## Path for the local installation
 export RSAT_PARENT_PATH=/packages
 export RSAT=${RSAT_PARENT_PATH}/rsat
 
 ## URL to download the RSAT distribution
-export RSAT_RELEASE=2017-02-08 ## Version to be downloaded from the tar distribution
+export RSAT_RELEASE=2017-02-14 ## Version to be downloaded from the tar distribution
 export RSAT_ARCHIVE=rsat_${RSAT_RELEASE}.tar.gz
 export RSAT_DISTRIB_URL=http://pedagogix-tagc.univ-mrs.fr/download_rsat/${RSAT_ARCHIVE}
 

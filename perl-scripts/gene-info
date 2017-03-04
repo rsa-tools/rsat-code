@@ -158,8 +158,10 @@ sub PrintInfo {
 		     $feature->get_attribute("ctg"),
 		     $feature->get_attribute("strand"),
 		     $feature->get_attribute("left"),
-		     $feature->get_attribute("right"),
-		     $feature->get_attribute("descr"),
+		     $feature->get_attribute("right"), 
+		     $feature->get_attribute("descr")
+# JvH 2017-02-28: PROBLEM HERE
+#		     "'".$feature->get_attribute("descr")."'"
 		     );
 #     &RSAT::message::Debug ("Gene info",
 # 			   "id: ".$feature->get_attribute("id"),
