@@ -38,8 +38,8 @@ package main;
     #### initialization
     $null = "<NULL_VALUE>";
     $data_source = "NCBI";
-    $ext = "gbk";
-    $data_type = "gbk";
+    $ext = "gbff";
+    $data_type = "gbff";
     $no_suffix=1;
     $host= $default{'host'};
     $schema="rsat";
@@ -212,9 +212,8 @@ package main;
 	@genbank_files = @noalt;
     }
 
-    if ($#genbank_files < 0) {
-	system "ls -l";
-	&RSAT::error::FatalError("There is no genbank file in the input directory $dir{input}\n");
+    if (scalar(@genbank_files) == 0) {
+	&RSAT::error::FatalError("No file with extension ${ext} or ${ext}.gz in directory $dir{input}\n");
     } else {
 	&RSAT::message::Info(scalar(@genbank_files)." Genbank files") if ($verbose >= 1);
 	&RSAT::message::Info("Genbank file names\n;\t", join("\n;\t", @genbank_files)) if ($verbose >= 2);
