@@ -97,7 +97,8 @@ package main;
   $infile{organisms} = "";
 
   ## List of organisms
-  our @organisms = ();
+  our @species = (); # for download and install
+  our @organisms = (); # organisms are concatenation of species + strain
 
   ## Strain
   our $strain = "";
@@ -158,88 +159,122 @@ package main;
     &RSAT::error::FatalError("The task 'protein_freq' requires to activate the task 'oligos'");
   }
 
-  ################################################################
-  ## Download the required files from NCBI FTP site
-  if ($task{download}) {
-    ## Check that all required parameters are defined
-    unless (scalar(@organisms) == 1) {
-      &RSAT::error::FatalError("Task 'download' requires to specify a single organism (species name, e.g. Saccharomyces_cerevisiae, Escherichia_coli).");
-    }
-    my $species = $organisms[0];
-
-    unless ($group) {
-      &RSAT::error::FatalError("Task 'download' requires to specify a group (e.g. fungi, bacteria, ...).");
-    }
-
-    # unless ($strain) {
-    #   &RSAT::error::FatalError("Task 'download' requires to specify a strain from NCBI FTP folders (e.g. GCF_000482265.1_EC_K12_MG1655_Broad_SNP).");
-    # }
-
-    my $URL = join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, $species, "latest_assembly_versions/");
-    if ($strain) { 
-      $URL .= $strain;
-    }
-    &RSAT::message::TimeWarn("Downloading genome from NCBI FTP site", $URL) if ($main::verbose >= 1);
-
-    $dir{downloads} = $ENV{RSAT}."/downloads/";
-
-    &RSAT::util::CheckOutDir($dir{downloads});
-    my $command = "rsync --copy-links --recursive --times -R --verbose ".$URL." ".$dir{downloads};
-    &doit($command, $dry_run, $die_on_error, $verbose);
-    &RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 0);
-  }
 
   ################################################################
   ## Check the directory contianing the Genbank-formatted organisms
   ## (which can be downloaded from NCBI/refseq).
-  if ($task{parse}) {
-    unless ($dir{refseq}) {
+  if ($task{parse} || $task{download}) {
+    unless ($dir{refseq}) { # Refseq dir specified on the command line
       if ($ENV{REFSEQ_DIR}) {
-	$dir{refseq} = $ENV{REFSEQ_DIR};
+	$dir{refseq} = $ENV{REFSEQ_DIR}; # Refseq dir specified in the config file
       } elsif ($REFSEQ_DIR) {
 	$dir{refseq} = $REFSEQ_DIR;
-      } elsif ($ENV{REFSEQ_DIR}) {
+      } elsif ($ENV{GENBANK_DIR}) {
 	&RSAT::message::Warning("environment variable GENBANK_DIR is obsolete, please specify REFSEQ_DIR in ", ${RSAT}."/RSAT_config.props");
 	$dir{refseq} = $ENV{GENBANK_DIR}."/refseq";
       } else {
 	&RSAT::error::FatalError("Please set the option REFSEQ_DIR in RSAT configuration file", ${RSAT}."/RSAT_config.props");
       }
     }
+    &RSAT::util::CheckOutDir($dir{refseq});
+  }
+
+  ################################################################
+  ## Download the required files from NCBI FTP site
+  if ($task{download}) {
+    ## Check that all required parameters are defined
+
+    ## One taxonomic group
+    unless ($group) {
+      &RSAT::error::FatalError("Task 'download' requires to specify a group (e.g. fungi, bacteria, ...) to which all the species to download should belong.");
+    }
+
+    ## At least one species is required
+    unless (scalar(@species) >= 1) {
+      &RSAT::error::FatalError("Task 'download' requires to specify at least one species (e.g. Saccharomyces_cerevisiae, Escherichia_coli).");
+    }
+
+    ## If strain is specified, check that only one species has been requested
+    if ($strain) {
+      &RSAT::error::FatalError("Download task with option -strain only supports a single species. ") unless (scalar(@species) == 1);
+    }
+
+    ## Download each species
+    foreach my $species (@species) {
+
+      my $URL = join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, $species, "latest_assembly_versions/");
+      if ($strain) { 
+	$URL .= $strain;
+      }
+      &RSAT::message::TimeWarn("Downloading genome from NCBI FTP site", $URL) if ($main::verbose >= 1);
+      
+      $dir{downloads} = $ENV{RSAT}."/downloads/";
+      
+      &RSAT::util::CheckOutDir($dir{downloads});
+      my $command = "rsync --copy-links --recursive --times -R --verbose ".$URL." ".$dir{downloads};
+      &doit($command, $dry_run, $die_on_error, $verbose);
+      &RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 0);
+    }
+  }
+
+  ## For parsing task, build organism names from species names +
+  ## strains (as sub-directories of the NCBI/Refseq
+  ## latest_assembly_versions)
+  if ($task{parse}) {
     unless (-d $dir{refseq}) {
       &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
     }
-  }
+    ## Collect all strains and build organism names
+    foreach my $species (@species) {
+      my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
+      my @strain_folders = glob($latest_assembly_dir."/*");
+      foreach my $strain_folder (@strain_folders) {
+	my $strain = &ShortFileName($strain_folder);
+	my $organism_name = $species."_".$strain;
+	push @organisms, $organism_name;
+	&RSAT::message::Info(scalar(@organisms), $species, $strain, $organism_name) if ($main::verbose >= 0);
 
-  if ($main::all_organisms) {
-    @organisms_dirs = glob($dir{refseq}."/*_*");
-#    @organisms_dirs = &glob($dir{genbank}."/*_*");
-    foreach my $dir (@organisms_dirs) {
-      my $org = &RSAT::util::ShortFileName($dir);
-      next if ($org =~ /^readme/i); ## Skip readme file
-
-      ## The NCBI dir Bacteria contains some folders starting with
-      ## "_", I guess these genomes are problematic.
-      next if ($org =~ /^_/);  ## Skip directories that do not seem to correspond to gene_species
-      next if ($org =~ /uncultured/);  ## Skip uncultured genomes
-
-      ## The NCBI dir Bacteria contains some gzip archives. 
-      next if ($org =~ /\.gz$/); 
-
-      ## The Bacteria dir contains some folders with fuzzy names,
-      ## starting with a lowercase. I prefer to ignore these genomes
-      ## (e.g. secondary_endosymbiont_of_Ctenarytaina_eucalypti_uid172737)
-      next unless ($org =~ /^[A-Z]/); 
-      push @organisms, $org;
-    }
-    &RSAT::message::Info("Installing",scalar(@organisms),
-			 "organisms found in the Refseq directory", 
-			 $dir{refseq}) if ($main::verbose >= 1);
-    if ($main::verbose >= 3) {
-      for my $i (1..scalar(@organisms)) {
-	&RSAT::message::Info("", $i, $organisms[$i-1]);
+	## Parse the selected organism
+	$genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
+	&ParseGenome($species, $strain, $organism_name, $strain_folder, $genome_dir) if ($task{parse});
+      
       }
     }
+
+
   }
+
+#### option  -all_organisms is not supported anymore
+#   if ($main::all_organisms) {
+#     @organisms_dirs = glob($dir{refseq}."/*_*");
+# #    @organisms_dirs = &glob($dir{genbank}."/*_*");
+#     foreach my $dir (@organisms_dirs) {
+#       my $org = &RSAT::util::ShortFileName($dir);
+#       next if ($org =~ /^readme/i); ## Skip readme file
+#
+#       ## The NCBI dir Bacteria contains some folders starting with
+#       ## "_", I guess these genomes are problematic.
+#       next if ($org =~ /^_/);  ## Skip directories that do not seem to correspond to gene_species
+#       next if ($org =~ /uncultured/);  ## Skip uncultured genomes
+#
+#       ## The NCBI dir Bacteria contains some gzip archives. 
+#       next if ($org =~ /\.gz$/); 
+#
+#       ## The Bacteria dir contains some folders with fuzzy names,
+#       ## starting with a lowercase. I prefer to ignore these genomes
+#       ## (e.g. secondary_endosymbiont_of_Ctenarytaina_eucalypti_uid172737)
+#       next unless ($org =~ /^[A-Z]/); 
+#       push @organisms, $org;
+#     }
+#     &RSAT::message::Info("Installing",scalar(@organisms),
+# 			 "organisms found in the Refseq directory", 
+# 			 $dir{refseq}) if ($main::verbose >= 1);
+#     if ($main::verbose >= 3) {
+#       for my $i (1..scalar(@organisms)) {
+# 	&RSAT::message::Info("", $i, $organisms[$i-1]);
+#       }
+#     }
+#   }
 
   ## If an organism file has been specified, read organism list
   if ($infile{organisms}) {
@@ -255,7 +290,7 @@ package main;
   }
 
 
-  ## If a taxon has been specified, collect the list of organisms
+  ## If a taxon has been specified, collect the list of organisms belonging to this taxon in the RSAT-supported organisms
   if (scalar(@taxa) > 0) {
     if ($task{parse}) {
       &RSAT::message::Warning("With the option -taxon, the parse option will only re-parse previously installed organisms from the selected taxon");
@@ -370,8 +405,6 @@ package main;
     &Uninstall() if ($task{uninstall});
     
     unless (($task{uninstall}) || ($task{erase})) {
-      
-      &ParseGenome() if ($task{parse});
       
       &UpdateConfig() if ($task{config});
       
@@ -1252,16 +1285,21 @@ DESCRIPTION
 
 	This script is a task manager, which (depending on the
 	selected tasks) manages different steps necessary for the
-	installation of an organism from the NCBI flat files :
+	installation of an organism from the NCBI flat files:
 
-	- parse the .gbk files
+	- Downloading genomes from the NCBI/Refseq ftp site via the
+          rsync protocol
+          (rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq).
 
-	- add the organism in the config file
+	- Parsing the .gbff files (Genbank-formatted flat files).
 
-	- calculate trinucleotide frequencies in the start and stop
-          codons (a way to check consistency of the gene locations)
+	- Adding the organism in the config file.
 
-	- calculates oligonucleotide and dyad frequencies
+	- Calculating trinucleotide frequencies in the start and stop
+          codons (a way to check consistency of the gene locations).
+
+	- Calculating oligonucleotide and dyad frequencies, which will
+          be used as background models for motif discovery.
 
 CATEGORY
 	Data management.
@@ -1307,6 +1345,38 @@ OPTIONS
 		The option -taxon can be used iteratively on the same
 		command line to iterate the installation over multiple
 		taxa.
+
+    SPECIFIC ARGUMENTS FOR THE DOWNLOAD AND PARSE TASK
+
+        -group taxonomic group according to the NCBI/Refseq ftp/rsync
+	       site (ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq). 
+
+	       Examples: bacteria, fungi, protozoa, plant,
+	       invertebrate, vertebrate_mammalian, vertebrate_other
+
+	-species species name, with space replaced by underscore
+	         (e.g. Saccharomyces_cerevisiae).
+
+	-strain restrict the download to a single strain or
+                assembly. By default all strains of the selected
+                species are downloaded, but this can be heavy for some
+                bacterial species where thousands of strains have been
+                sequenced (e.g. Escherichia coli).
+
+	      Note: the RSAT organism name is automatically built by
+	      concatenating the NCBI species name and strain
+	      identifier.
+
+
+	-refseq
+		Local directory containing the mirror of the refseq
+		genomes found on the NCBI site:
+		       ftp://ftp.ncbi.nih.gov/genomes/refseq
+		Normally, the refseq directory is specified by
+		defining a global variable REFSEQ_DIR in the config
+		file. The option -refseq allows to overwrite this
+		value.
+
 
     OPTIONAL ARGUMENTS
 
@@ -1383,24 +1453,6 @@ OPTIONS
 	-up_to	proximal limit of the upstream regions (e.g. -1)
 
 	-genbank genbank directory (obsolete, see refseq)
-
-	-refseq
-		Local directory containing the mirror of the refseq
-		genomes found on the NCBI site:
-		       ftp://ftp.ncbi.nih.gov/genomes/refseq
-		Normally, the refseq directory is specified by
-		defining a global variable REFSEQ_DIR in the config
-		file. The option -refseq allows to overwrite this
-		value.
-
-	-group  refseq_group 
-
-	        folder of the refseq directory corresponding to a
-	        taxonomic group (archaea, bacteria, fungi,
-	        invertebrate, plant, protist, protozoa,
-	        vertebrate_mammalian, vertebrate_other).
-
-                default: bacteria
 
 	-prefid feattype idname
 	        passed to parse-genbank.pl
@@ -1596,6 +1648,14 @@ sub ReadArguments {
       &RSAT::error::FatalError( $organism_short_name, "Invalid organism name: should contain at least one underscore.") unless ($organism_short_name =~ /_/);
       push @organisms, $organism_short_name;
 
+      ## Species, used to define the FTP site for the task "download"
+    } elsif ($arg eq "-species") {
+      my $species = shift(@arguments);
+      &RSAT::error::FatalError( $organism_short_name, "Invalid species name: cannot contain spaces") if ($species =~ /\s/);
+      &RSAT::error::FatalError( $organism_short_name, "Invalid species name: should not be empty.") unless ($species =~ /\S/);
+      &RSAT::error::FatalError( $organism_short_name, "Invalid species name: should contain at least one underscore.") unless ($species =~ /_/);
+      push @species, $species;
+
       ## Strain, used to define the FTP site for the task "download"
     } elsif ($arg eq "-strain") {
       $strain = shift(@arguments);
@@ -1788,27 +1848,32 @@ sub StartAndStopCodons {
 ################################################################
 ## Parse the genome from Genbank files
 sub ParseGenome {
-  &RSAT::message::TimeWarn("&ParseGenome()") if ($main::verbose >= 2);
-  if ($dir{ensembl}) {
-    $dir{source} = $dir{ensembl};
-  } elsif (-d "$dir{refseq}/$organism_short_name") {
-    $dir{source} = "$dir{refseq}/$organism_short_name";
-  } elsif (-d "$dir{refseq}/Bacteria/$organism_short_name") {
-    $dir{source} = "$dir{refseq}/Bacteria/$organism_short_name";
-  } else {
-    &RSAT::error::FatalError("Cannot find a directory $organism_short_name in refseq dir $dir{refseq}" );
-  }
+  my ($species, $strain, $organism_name, $strain_dir, $genome_dir) = @_;
+  &RSAT::message::TimeWarn("&ParseGenome()", $species, $strain, $organism_name, $strain_dir) if ($main::verbose >= 2);
+  ## Commmented since 2017-03-04
+  # if ($dir{ensembl}) {
+  #   $dir{source} = $dir{ensembl};
+  # } elsif (-d "$dir{refseq}/$organism_short_name") {
+  #   $dir{source} = "$dir{refseq}/$organism_short_name";
+  # } elsif (-d "$dir{refseq}/Bacteria/$organism_short_name") {
+  #   $dir{source} = "$dir{refseq}/Bacteria/$organism_short_name";
+  # } else {
+  #   &RSAT::error::FatalError("Cannot find a directory $organism_short_name in refseq dir $dir{refseq}" );
+  # }
+  ################################################################
   my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 1";
-  $command .= " -i ".$dir{source};
+  $command .= " -i ".$strain_dir;
   $command .= $parse_options;
   if ($dir{ensembl}) {
     $command .= " -ext dat";
-    $command .= " -org ".$organism_short_name;
+  } else {
+    $command .= " -ext gbff";
   }
+  $command .= " -org ".$organism_short_name;
   #    if ($source ne $null) {
   $command .= " -source '$source'";
   #    }
-  $command .= " -o ".$dir{genome};
+  $command .= " -o ".$genome_dir;
   &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
