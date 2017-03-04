@@ -118,10 +118,12 @@ package main;
   ## Store the starting directory
   $dir{main} = `pwd`;
 
+  ## Directory to download files from NCBI
+  $dir{downloads} = $ENV{DOWNLOAD_DIR} || $ENV{RSAT}."/downloads/";
+
   ################################################################
   ## Read arguments
   &ReadArguments();
-
 
   ################################################################
   ## Check parameter values
@@ -181,7 +183,6 @@ package main;
     }
     &RSAT::message::TimeWarn("Downloading genome from NCBI FTP site", $URL) if ($main::verbose >= 1);
 
-    $dir{downloads} = $ENV{RSAT}."/downloads/";
 
     &RSAT::util::CheckOutDir($dir{downloads});
     my $command = "rsync --copy-links --recursive --times -R --verbose ".$URL." ".$dir{downloads};
@@ -190,7 +191,7 @@ package main;
   }
 
   ################################################################
-  ## Check the directory contianing the Genbank-formatted organisms
+  ## Check the directory containing the Genbank-formatted organisms
   ## (which can be downloaded from NCBI/refseq).
   if ($task{parse}) {
     unless ($dir{refseq}) {
