@@ -69,9 +69,9 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Identify groups (clusters) of similarities between a set of motifs and align them.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>&nbsp: ";
-print "<a target='_blank'>Jaime Castro-Mondragon</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
-print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
+print "<a target='_blank' href='http://pedagogix-tagc.univ-mrs.fr/rsat/data/published_data/Castro_2016_matrix-clustering/Application_4/Ceevee10/demo_jaime.html'>Jaime Castro-Mondragon</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
+print ", <a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
 print "</CENTER>";
 
 ## demo 1 description

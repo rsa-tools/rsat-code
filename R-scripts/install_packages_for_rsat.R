@@ -24,6 +24,8 @@ required.packages = c("devtools",
                       "reshape2",
                       "dendextend",
                       "RColorBrewer",
+                      "gridExtra",
+                      "cowplot",
                       "flux")
 
 #                       "Rcpp",

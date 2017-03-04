@@ -1463,7 +1463,7 @@ sub to_tab {
     }
     $to_print .=  $matrix_terminator{$output_format}."\n";
   }
-  return $to_print;
+  return($to_print);
 }
 
 
@@ -2400,6 +2400,65 @@ sub calcProbabilities {
 }
 
 
+=pod
+
+=item &ccalcNbSites()
+
+Calculate the number of sites, as the maximum of the marginal sums of
+the count matrix. 
+
+Note that if the matrix contains an attribute "sites", it is ignored,
+since this attribute is only defined for some data sources
+(e.g. TRANSFAC database), and can only be documented in some
+particular formats (e.g. TRANSFAC format), and, besides, there is no
+formal guarantee that the "sites" attribute contains the same number
+of sites as those used to build the matrix.
+
+=cut
+
+sub calcNbSites {
+  my ($self, $force) = @_;
+
+  ## Caching
+  if (($self->get_attribute("nb_sites_calculated")) && !($force)) {
+    &RSAT::message::Warning("Number of sites already calculated before") if ($main::verbose >= 5);
+    return($self->get_attribute("nb_sites_calculated"));
+  }
+
+  ## Get the count matrix
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
+  my @matrix = $self->getMatrix();
+  
+  ## Compute the maximum of columnn sums to know the number of
+  ## sequences (sites) used to build the matrix
+  my @col_sum = &RSAT::matrix::col_sum($nrow, $ncol, @matrix);
+  my $nb_sites = &RSAT::stats::max(@col_sum);
+  $self->force_attribute("nb_sites_calculated", 1);
+  $self->set_parameter("nb_sites", $nb_sites);
+}
+
+=pod
+
+=item getNbSites()
+
+Return the number of sites, computed as the maximal column sum of the
+count matrix.
+
+The first time this method it called, the number of sites is computed
+with calcNbSites(), and stored in the attribute "nb_sites". After
+this, the method simply return this attribute.
+
+=cut
+sub getNbSites {
+    my ($self) = @_;
+    unless ($self->get_attribute("nb_sites_calculated")) {
+	$self->calcNbSites();
+    }
+    return $self->get_attribute("nb_sites");
+}
+
+
 
 =pod
 
@@ -2675,6 +2734,31 @@ sub _printProfile {
   return ($to_print);
 }
 
+=pod
+
+=item Compute some parameters characterizing the matrix
+
+=over
+
+=item number of sites
+=item weights
+=item information
+=item consensus
+=item GC content
+
+=back
+
+=cut
+
+sub calcParameters {
+  my ($self) = @_;
+  
+  $self->calcNbSites();
+  $self->calcWeights();
+  $self->calcInformation();
+  $self->calcConsensus();
+  $self->calcGCcontent();
+}
 
 =pod
 
@@ -2688,6 +2772,11 @@ sub _printParameters {
   my ($self, $to_print) = @_;
   $to_print .= ";\n";
   $to_print .= "; Matrix parameters\n";
+
+  $self->calcParameters();
+
+  ## Number of sites
+  $to_print .= sprintf ";\t%-29s\t%g\n", "Number of sites", $self->getNbSites();
 
   ## Matrix size
   $to_print .= sprintf ";\t%-29s\t%g\n", "Columns", $self->ncol();
@@ -2903,7 +2992,8 @@ sub permute_columns {
 
   my ($self) = @_;
 
-  my @matrix = @{$self->{table}};
+  my @matrix = $self->getMatrix();
+  #my @matrix = @{$self->{table}};
   my @perm_matrix = ();
 
   ## Permute entire columns
@@ -4181,16 +4271,17 @@ sub makeLogo {
   ## get the number of sites
   my $nb_col = $self->ncol();
   my $nb_row = $self->nrow();
-  @matrix = @{$self->{table}};
+  my @matrix = $self->getMatrix();
+  #my @matrix = @{$self->{table}};
   
   ## Compute the maximum of columnn sums to know the number of
   ## sequences (sites) used to build the matrix
-  my @col_sum = col_sum($nb_row,$nb_col,@matrix);
+  my @col_sum = &col_sum($nb_row,$nb_col,@matrix);
   my $max_col_sum = &RSAT::stats::max(@col_sum);
-  my $seq_number = $max_col_sum;
+  my $nb_sites = $max_col_sum;
   
   ## Legend on the X axis indicates number of sites
-  my $logo_info = $seq_number." sites";
+  my $logo_info = $nb_sites." sites";
   
   ## Temporarily write the matrix in TRANSFAC format, which is
   ## supported as input format for weblogo 3.  This removes the need
@@ -4267,8 +4358,8 @@ sub makeLogo {
   if ($logo_cmd_name eq "seqlogo") {
     ## Create a file with fake sequences having the same residue
     ## composition as the matrix
-    ($fake_seq_file,$seq_number) = $self->fake_seq_from_matrix($rev_compl);
-    &RSAT::message::Debug("makeLogo", $id, $logo_dir, $seq_number, $rev_compl, "fake sequences", $fake_seq_file) if ($main::verbose >= 5);
+    ($fake_seq_file,$nb_sites) = $self->fake_seq_from_matrix($rev_compl);
+    &RSAT::message::Debug("makeLogo", $id, $logo_dir, $nb_sites, $rev_compl, "fake sequences", $fake_seq_file) if ($main::verbose >= 5);
   }
 
   ## Generate the logo(s)
@@ -4390,16 +4481,17 @@ sub fake_seq_from_matrix {
   my $null_residue = "n"; ##  to fill up sequences for matrices having columns with different number of residues
   my $nb_col = $self->ncol();
   my $nb_row = $self->nrow();
-  @matrix = @{$self->{table}};
+  my @matrix = $self->getMatrix();
+#  my @matrix = @{$self->{table}};
 
   ### Check if the sum of all column identical
-  my @col_sum = col_sum($nb_row,$nb_col,@matrix);
+  my @col_sum = &col_sum($nb_row,$nb_col,@matrix);
   my $max_col_sum = &RSAT::stats::max(@col_sum);
   my @null_residues = ();
   for my $i (0..$#col_sum) {
     $null_residues[$i] = $max_col_sum - $col_sum[$i];
   }
-  my $seq_number = $max_col_sum;
+  my $nb_sites = $max_col_sum;
 
   ################################################################
   ## Create a vector of sequences representing the letters per column
@@ -4427,7 +4519,7 @@ sub fake_seq_from_matrix {
     push @intermediate, \@residues;
   }
   my @seqs=();
-  for my $residue (0..$seq_number-1) {
+  for my $residue (0..$nb_sites-1) {
     my $fake_seq;
     for my $array (@intermediate) {
       $fake_seq .= $array->[$residue];
@@ -4453,7 +4545,7 @@ sub fake_seq_from_matrix {
   print $seq_handle join("\n",@seqs)."\n";
   close $seq_handle;
 
-  return ($tmp_seq_file,$seq_number);
+  return ($tmp_seq_file, $nb_sites);
 }
 
 

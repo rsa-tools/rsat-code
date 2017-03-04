@@ -483,10 +483,7 @@ package main;
     ## Calculate parameters before sorting because sorting can be done on
     ## a computed parameter rather than defined in the input file.
     if ($return_fields{parameters}) {
-      $matrix->calcWeights();
-      $matrix->calcInformation();
-      $matrix->calcConsensus();
-      $matrix->calcGCcontent();
+      $matrix->calcParameters();
     }
 
     ## Generate logos
@@ -1942,6 +1939,7 @@ sub ExportMatrix {
 	  print $out_handle  "; logo file:" , $logo_file.$rc_suffix.".".$logo_format, "\n";
 	}
       }
+      print $out_handle  ";\n"; ## This last line is required to add a newline for the correct display on the Web site
     }
   }
 
