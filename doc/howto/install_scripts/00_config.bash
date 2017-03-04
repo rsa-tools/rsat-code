@@ -24,7 +24,7 @@ export RSAT_PARENT_PATH=/packages
 export RSAT=${RSAT_PARENT_PATH}/rsat
 
 ## URL to download the RSAT distribution
-export RSAT_RELEASE=2016-10-29 ## Version to be downloaded from the tar distribution
+export RSAT_RELEASE=2017-02-08 ## Version to be downloaded from the tar distribution
 export RSAT_ARCHIVE=rsat_${RSAT_RELEASE}.tar.gz
 export RSAT_DISTRIB_URL=http://pedagogix-tagc.univ-mrs.fr/download_rsat/${RSAT_ARCHIVE}
 

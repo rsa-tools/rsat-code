@@ -127,6 +127,7 @@ if (!$errors) {
 
   if ($_FILES["bedfile"]['name'] != "") {
     $bed_file_name = basename($_FILES['bedfile']['name']);
+    // info("bed_file_name: ".$bed_file_name);
 
     // We need to keep the original extension in order to support
     // uncompression of .gz files
