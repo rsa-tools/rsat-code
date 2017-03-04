@@ -542,7 +542,7 @@ appliance.
 
 - In VirtualBox, open "File -> Export Appliance ...", and select the VM.
 
-    - Save as: rsat-vm-2016-03.ova
+    - Save as: rsat-vm-2016-10.ova
     - Files of Type: Open Virtualization Format Archive (.ova)
     - Storage Settings
     - Format: OVF 1.0
@@ -554,12 +554,12 @@ appliance.
 
 | Parameter    |    Value                                        |
 |:-------------|:------------------------------------------------|
-|  Name  		  | rsat-vm-2016-03 |
+|  Name  		  | rsat-vm-2016-10 |
 |	Product		  | Regulatory Sequences Analysis Tools |
 |	Product-URL	| http://rsat.eu/ |
 |	Vendor		  | Jacques van Helden |
 |	Vendor URL	| http://jacques.van-helden.perso.luminy.univ-amu.fr/ |
-|	Version		  | 2016-03 |
+|	Version		  | 2016-10 |
 |	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 Virtual Machine. |
 |	License	    |	Free of use for academic users, non-commercial and non-military usage. |
 | | |
@@ -591,7 +591,7 @@ This can be useful for two purposes.
 ```
 SPLIT_SIZE=3999m
 mkdir -p ${TARGET_DIR}/appliances
-time split -b ${SPLIT_SIZE} ${SOURCE_DIR}/rsat-vm-2016-03_${VERSION}.ova ${TARGET_DIR}/appliances/rsat-vm-2016-03_${VERSION}.ova.split${SPLIT_SIZE}_
+time split -b ${SPLIT_SIZE} ${SOURCE_DIR}/rsat-vm-2016-10_${VERSION}.ova ${TARGET_DIR}/appliances/rsat-vm-2016-10_${VERSION}.ova.split${SPLIT_SIZE}_
 ```
 
 ****************************************************************

@@ -355,7 +355,7 @@ package main;
 
   ################################################################
   ## Initialize HTML report, 
-  ##&OpenSynthesis() if ($main::param{progressive_synthesis});
+  &OpenSynthesis() if ($main::param{progressive_synthesis});
   
   ################################################################
   ## Scan step: scan + parsing results + generate logos
@@ -364,9 +364,6 @@ package main;
       ################################################################
       ## Run matrix-scan quick
       &ScanSequences();
-
-      ## Parse the matrix-scan results table
-      &ParseScanResults();
 
       ################################################################
       ## Produce the ID to Motif name reference table
@@ -382,7 +379,8 @@ package main;
   ## Plots step: chi-squared calculation + draw profiles
   if( defined($selected_tasks{"plots"}) || defined($selected_tasks{"all"}) ){
 
-      #&GenerateLogos();
+      ## Parse the matrix-scan results table
+      &ParseScanResults();
 
       ################################################################
       ## Compute statistics (X2 pval, eval, qval) 
@@ -1098,7 +1096,7 @@ sub ParseScanResults {
 	
 	## Extract somet fields in the matrix-can table
 	$parse_cmd = " grep -v '^;' ".$m;
-	$parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 3) {print $1"\t"$3"\t"($6+$5)/2"\t"$9}'." ' ";
+	$parse_cmd .= " | awk -F '\t'  ' ".'$2!="limit" && ($11 >= 3) {print $1"\t"$3"\t"($6+$5)/2"\t"$9"\t"$8}'." ' ";
 	$parse_cmd .= " > ".$scanned;
 	&doit($parse_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
    

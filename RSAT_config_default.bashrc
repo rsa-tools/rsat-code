@@ -49,17 +49,17 @@ export CVS_RSH=ssh
 
 ################################################################
 ## Default path for the Ensembl Perl modules and sofwtare tools
-export ENSEMBL_RELEASE=83
-export ENSEMBLGENOMES_BRANCH=30
-export PATH=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl-git-tools/bin:${PATH}
+export ENSEMBL_RELEASE=87
+export ENSEMBLGENOMES_RELEASE=34
+export PATH=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-git-tools/bin:${PATH}
 export PERL5LIB=${RSAT}/lib/bioperl-release-${BIOPERL_VERSION}/bioperl-live::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl-compara/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl-external/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl-functgenomics/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl-tools/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensembl-variation/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_BRANCH}-${ENSEMBL_RELEASE}/ensemblgenomes-api/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-compara/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-external/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-functgenomics/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-tools/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-variation/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensemblgenomes-api/modules::${PERL5LIB}
 export PERL5LIB=${RSAT}/lib/biomart-perl/lib/::${PERL5LIB}
 
 

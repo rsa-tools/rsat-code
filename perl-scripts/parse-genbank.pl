@@ -74,8 +74,8 @@ package main;
     ## Default IDs for different feature types
     %preferred_id = (
 		     cds=>protein_id,
-		     mrna=>transcript_id,
-		     gene=>GeneID,
+		     mrna=>locus_tag,
+		     gene=>locus_tag,
 		     trna=>locus_tag,
 		     srna=>locus_tag,
 		     rrna=>locus_tag,

@@ -79,7 +79,7 @@ HOCOMOCO_MATRICES=${RSAT}/public_html/demo_files/HOCOMOCO_Human_Ncor0.8_cor0.85_
 profile_Jun_ChIPseq_peaks:
 	@echo
 	@echo "Running position-scan with Hocomoco Human motifs on ChIP-seq peaks of JUND"
-	${MAKE} _profiles PROFILE_PREFIX=${JUND_PREFIX}  MATRIX_FILE=${HOCOMOCO_MATRICES}\
+	${MAKE} _profiles PROFILE_PREFIX=${JUND_PREFIX}  MATRIX_FILE=${HOCOMOCO_MATRICES} BIN=31\
                 TITLE='Hocomoco motifs in JunD peaks'
 
 ################################################################
