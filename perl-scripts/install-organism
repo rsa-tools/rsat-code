@@ -166,9 +166,10 @@ package main;
 
 
   ################################################################
-  ## Check the directory contianing the Genbank-formatted organisms
-  ## (which can be downloaded from NCBI/refseq).
+  ## Check consistency of arguments for download/list/parse tasks.
   if ($task{parse} || $task{download} || $task{list}) {
+    ## Check the directory contianing the Genbank-formatted organisms
+    ## (which can be downloaded from NCBI/refseq).
     unless ($dir{refseq}) { # Refseq dir specified on the command line
       $dir{refseq} = $dir{downloads}."/refseq";
       # if ($ENV{REFSEQ_DIR}) {
@@ -183,27 +184,29 @@ package main;
       # }
     }
     &RSAT::util::CheckOutDir($dir{refseq});
-  }
 
-  ################################################################
-  ## Download the required files from NCBI FTP site
-  if ($task{download}) {
     ## Check that all required parameters are defined
 
     ## One taxonomic group
     unless ($group) {
-      &RSAT::error::FatalError("Task 'download' requires to specify a group (e.g. fungi, bacteria, ...) to which all the species to download should belong.");
+      &RSAT::error::FatalError("Tasks download, list and parse require to specify a group (e.g. fungi, bacteria, ...) to which all the species to download should belong.");
     }
 
     ## At least one species is required
     unless (scalar(@species) >= 1) {
-      &RSAT::error::FatalError("Task 'download' requires to specify at least one species (e.g. Saccharomyces_cerevisiae, Escherichia_coli).");
+      &RSAT::error::FatalError("Tasks download, list and parse require to specify at least one species (e.g. Saccharomyces_cerevisiae, Escherichia_coli).");
     }
 
     ## If strain is specified, check that only one species has been requested
     if ($strain) {
-      &RSAT::error::FatalError("Download task with option -strain only supports a single species. ") unless (scalar(@species) == 1);
+      &RSAT::error::FatalError("Option -strain is only compatible with a single species. ") unless (scalar(@species) == 1);
     }
+  }
+
+
+  ################################################################
+  ## Download the required files from NCBI FTP site
+  if ($task{download}) {
 
     ## Download each species
     foreach my $species (@species) {
