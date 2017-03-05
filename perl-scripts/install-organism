@@ -65,6 +65,7 @@ package main;
 
   @extra_tasks = qw(
                     download
+                    list
 		    parse
                     fasta_genome
                     index_bedtools
@@ -166,7 +167,7 @@ package main;
   ################################################################
   ## Check the directory contianing the Genbank-formatted organisms
   ## (which can be downloaded from NCBI/refseq).
-  if ($task{parse} || $task{download}) {
+  if ($task{parse} || $task{download} || $task{list}) {
     unless ($dir{refseq}) { # Refseq dir specified on the command line
       $dir{refseq} = $dir{downloads}."/refseq";
       # if ($ENV{REFSEQ_DIR}) {
@@ -217,30 +218,40 @@ package main;
       &RSAT::util::CheckOutDir($dir{downloads});
       my $command = "rsync --copy-links --recursive --times -R --verbose ".$URL." ".$dir{downloads};
       &doit($command, $dry_run, $die_on_error, $verbose);
-      &RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 0);
+      &RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 3);
     }
   }
 
   ## For parsing task, build organism names from species names +
   ## strains (as sub-directories of the NCBI/Refseq
   ## latest_assembly_versions)
-  if ($task{parse}) {
+  if (($task{parse}) || ($task{list})) {
     unless (-d $dir{refseq}) {
       &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
     }
     ## Collect all strains and build organism names
+    my $org_nb = 0;
     foreach my $species (@species) {
       my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
       my @strain_folders = glob($latest_assembly_dir."/*");
       foreach my $strain_folder (@strain_folders) {
 	my $strain = &ShortFileName($strain_folder);
 	my $organism_name = $species."_".$strain;
+	$org_nb++;
 	push @organisms, $organism_name;
-	&RSAT::message::Info(scalar(@organisms), $species, $strain, $organism_name) if ($main::verbose >= 0);
+	&RSAT::message::Info(scalar(@organisms), $species, $strain, $organism_name) if ($main::verbose >= 3);
 
 	## Parse the selected organism
 	$genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
-	&ParseGenome($species, $strain, $organism_name, $strain_folder, $genome_dir) if ($task{parse});
+
+	if ($task{list}) {
+	  print (join("\t", $org_nb, $species, $strain, $organism_name, $strain_folder, $genome_dir));
+	  print "\n";
+	}
+
+	if ($task{parse}) {
+	  &ParseGenome($species, $strain, $organism_name, $strain_folder, $genome_dir) if ($task{parse});
+	}
       
       }
     }
@@ -1485,14 +1496,17 @@ OPTIONS
 		Description of the tasks
 		------------------------
 
-		download     download genome from the NCBI FTP site 
-		             (ftp://ftp.ncbi.nih.gov/genomes/refseq/).
+		download     download genome from the NCBI FTP site
+		             (ftp://ftp.ncbi.nih.gov/genomes/refseq/)
+		             via the rsync protocol.
 
-		genome	     format genome sequence
-			     (obsolete)
+		list         print the list of downloaded strains for the
+		             user-specified species.
 
-		features     prepare feature table
-			     (obsolete)
+		parse        parse genome data (sequence, features) from 
+		             genbank-formatted flat files (gbff)
+		             downloaded from NCBI. Parsing is ensured
+		             by the program parse-genbank.pl.
 
 		config	     update configuration file
 
