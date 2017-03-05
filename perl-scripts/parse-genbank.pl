@@ -156,9 +156,11 @@ package main;
 
     #### organism name
     unless ($org) {
-	$org = `basename $dir{input}`;
-	chomp($org);
-	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 2);
+      &RSAT::error::FatalError("Organism name must be specified (option -org)");
+## 2017-03-05: I suppress the automatic determination of organism name because NCBI directory structure has been changed
+#      $org = `basename $dir{input}`;
+#      chomp($org);
+#      &RSAT::message::Warning("Auto selection of organism name from folder name", $org) if ($verbose >= 2);
     }
 
     ## treat organism-specific preferred IDs
@@ -337,7 +339,7 @@ package main;
     &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
 
     ## Export protein sequences
-    &ExportProteinSequences($CDSs,$org);
+    &ExportProteinSequences($CDSs, $org);
 
     ### Report the output directory
     &RSAT::message::Info(join("\t", "Output directory", $dir{output}));
@@ -692,13 +694,14 @@ sub ExportProteinSequences {
     $out_file{pp} = $dir{output}."/".$org."_aa.fasta";
 
     &RSAT::message::TimeWarn("Exporting translated sequences to file", $out_file{pp})
-	if ($main::verbose >= 2);
+	if ($main::verbose >= 0);
+#    die "HELLO\t";
 
     open PP, ">$out_file{pp}";
     foreach my $cds ($CDSs->get_objects()) {
 	next unless ($cds);
 	my ($translation) = $cds->get_attribute("translation");
-	next unless ($translation =~ /\S+/);
+	next unless ($translation =~ /\S+/); # Skip empty protein sequences
 	my $id = $cds->get_attribute("id");
 	my $gene = $cds->get_attribute("gene");
 	if (!($gene) || ($gene eq $null)) {
@@ -723,7 +726,7 @@ sub ExportProteinSequences {
 
         print PP $header, "\n";
 #        &PrintNextSequence(PP,"fasta",60,$translation,$pp_id, $pp_description);
-        &PrintNextSequence(PP,"fasta",60,$translation,$pp_id);
+        &PrintNextSequence(PP, "fasta", 60, $translation, $pp_id);
     }
     close PP;
 }
