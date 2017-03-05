@@ -103,6 +103,7 @@ package main;
 
   ## Strain
   our $strain = "";
+  our $max_strains = ""; # max number of strains per species for parsing task
 
   ## Group
   our $group = "";
@@ -231,10 +232,22 @@ package main;
     }
     ## Collect all strains and build organism names
     my $org_nb = 0;
+
+    # Iterate over species
     foreach my $species (@species) {
       my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
       my @strain_folders = glob($latest_assembly_dir."/*");
+
+
+      # Iterate over each strain of current species
+      my $strain_nb = 0; # Strain counter for current species
       foreach my $strain_folder (@strain_folders) {
+	$strain_nb ++;
+	if (($max_strains > 0) && ($strain_nb > $max_strains)) {
+	  my $remaining_strains = scalar(@strain_folders) - $strain_nb + 1;
+	  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", scalar(@strain_folders)) if ($main::verbose >= 0);
+	  last;
+	}
 	my $strain = &ShortFileName($strain_folder);
 	my $organism_name = $species."_".$strain;
 	$org_nb++;
@@ -1372,6 +1385,13 @@ OPTIONS
 	-species species name, with space replaced by underscore
 	         (e.g. Saccharomyces_cerevisiae).
 
+	-max_strains #
+
+	        Maximal number of strains per species to
+		parse/install.  This option avoids filling disk with
+		particular bacterial species for which thousands of
+		strains have been sequenced (e.g. Escherichia coli).
+
 	-strain restrict the download to a single strain or
                 assembly. By default all strains of the selected
                 species are downloaded, but this can be heavy for some
@@ -1599,7 +1619,10 @@ install_organism options
 -organism	full organism name (e.g. Saccharomyces cerevisiae)
 -taxon		iterate installation tasks over all the previously installed organisms of a taxon
 -org_file	organism_file_name
--all_organisms  install all organisms found in the NCBI refseq directory
+-group          taxonomic group required for the URL of the NCBI/refseq FTP site.
+-species        species name (for tasks download, list and parse)
+-strain         strain (for task parse)
+-max_strains    max number of strains per species to be parsed / installed
 -skip #         Skip the # first organisms (convenient to resume interrupted list) 
 -last #         Stop after the # first organisms (convenient to install by chunks) 
 -source		data source (e.g. refseq);
@@ -1677,6 +1700,11 @@ sub ReadArguments {
       ## Strain, used to define the FTP site for the task "download"
     } elsif ($arg eq "-strain") {
       $strain = shift(@arguments);
+
+      ## Strain, used to define the FTP site for the task "download"
+    } elsif ($arg eq "-max_strains") {
+      $max_strains = shift(@arguments);
+      &RSAT::error::FatalError($max_strains, "is not a valid value for option -max_strains. Should be a Natural number. ") unless (&RSAT::util::IsNatural($max_strains));
 
       ## Group, used to define the FTP site for the task "download"
     } elsif ($arg eq "-group") {
@@ -1887,7 +1915,7 @@ sub ParseGenome {
   } else {
     $command .= " -ext gbff";
   }
-  $command .= " -org ".$organism_short_name;
+  $command .= " -org ".$organism_name;
   #    if ($source ne $null) {
   $command .= " -source '$source'";
   #    }
