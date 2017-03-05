@@ -73,7 +73,7 @@ package main;
 
     ## Default IDs for different feature types
     %preferred_id = (
-		     cds=>protein_id,
+		     cds=>locus_tag,
 		     mrna=>locus_tag,
 		     gene=>locus_tag,
 		     trna=>locus_tag,
@@ -702,12 +702,12 @@ sub ExportProteinSequences {
 	next unless ($cds);
 	my ($translation) = $cds->get_attribute("translation");
 	next unless ($translation =~ /\S+/); # Skip empty protein sequences
-	my $id = $cds->get_attribute("id");
-	my $gene = $cds->get_attribute("gene");
-	if (!($gene) || ($gene eq $null)) {
-	    $gene = $id;
+	my $cds_id = $cds->get_attribute("id");
+	my $gene_id = $cds->get_attribute("gene");
+	if (!($gene_id) || ($gene_id eq $null)) {
+	  $gene_id = $cds_id;
 	}
-	my $pp_id = $id;
+	my $pp_id = $cds_id;
 
         ## Get CDS description
         my $description = join($separator, $org,$id,$gene);
@@ -726,7 +726,7 @@ sub ExportProteinSequences {
 
         print PP $header, "\n";
 #        &PrintNextSequence(PP,"fasta",60,$translation,$pp_id, $pp_description);
-        &PrintNextSequence(PP, "fasta", 60, $translation, $pp_id);
+        &PrintNextSequence(PP, "fasta", 60, $translation, $gene_id, "protein_ID=".$pp_id." CDS_ID=".$cds_id);
     }
     close PP;
 }
