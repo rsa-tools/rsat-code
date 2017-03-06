@@ -5,7 +5,7 @@ include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/footprint-discovery_demo.mk
 
 ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
-TAXON=Enterobacteriales
+TAXON=Enterobacteriaceae
 GENE=lexA
 QUERY=-q ${GENE}
 BATCH=

@@ -86,18 +86,18 @@
 
 <h2 id="Single-gene-footprint-discovery">Single-gene footprint discovery</h2>
 
-<p>Discover conserved motifs in the promoters of the orthologs of lexA in Enterobacteriales.</p>
+<p>Discover conserved motifs in the promoters of the orthologs of lexA in Enterobacteriaceae.</p>
 
-<pre><code> footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
+<pre><code> footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriaceae \
                 -lth occ 1 -lth occ_sig 0 -uth rank 50 \
                 -return occ,proba,rank -filter  \
                 -bg_model taxfreq -q lexA</code></pre>
 
 <h2 id="Analysis-of-a-few-genes">Analysis of a few genes</h2>
 
-<p>Discover conserved motifs in the promoters of the orthologs of lexA in Enterobacteriales.</p>
+<p>Discover conserved motifs in the promoters of the orthologs of lexA in Enterobacteriaceae.</p>
 
-<pre><code> footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
+<pre><code> footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriaceae \
                 -lth occ 1 -lth occ_sig 0 -uth rank 50 \
                 -return occ,proba,rank -filter  \
                 -bg_model taxfreq \
@@ -111,7 +111,7 @@
 
 <p>Iterate footprint discovery for each gene separately.</p>
 
-<pre><code> footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
+<pre><code> footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriaceae \
                 -lth occ 1 -lth occ_sig 0 -uth rank 50 \
                 -return occ,proba,rank -filter \
                 -bg_model taxfreq -all_genes -sep_genes</code></pre>

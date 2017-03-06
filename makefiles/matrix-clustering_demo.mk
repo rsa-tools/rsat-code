@@ -196,13 +196,13 @@ cluster_peakmotifs_Oct4_no_threshold:
 # 	@echo "Clustering permuted matrices	${PERMUTED_MATRIX_FILE}"
 # 	${MAKE} _cluster MATRIX_PREFIX=${PERMUTED_PREFIX} MATRIX_FILE=${PERMUTED_MATRIX_FILE}
 
-## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriales)
+## Cluster motifs resulting from footprint-discovery (LexA in Enterobacteriaceae)
 cluster_footprints:
 	@echo
-	@echo "Running matrix-clustering on motifs discovered by footprint-discovery (query gene=LexA; taxon=Enterobacteriales)"
+	@echo "Running matrix-clustering on motifs discovered by footprint-discovery (query gene=LexA; taxon=Enterobacteriaceae)"
 	${MAKE} _cluster MATRIX_PREFIX=${FOOTPRINT_DISCO_PREFIX} \
 		COLLECTION=${FOOTPRINT_DISCO_PREFIX} \
-		TITLE='Matrices found in LexA orthologous promoters in Enterobacteriales' \
+		TITLE='Matrices found in LexA orthologous promoters in Enterobacteriaceae' \
 		COLLECTION='LexA_motifs' \
 		METRIC_BUILD_TREE=Ncor \
 		RETURN_FIELDS=align_consensus,heatmap
