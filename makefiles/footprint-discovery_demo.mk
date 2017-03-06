@@ -16,6 +16,7 @@ list_param:
 	@echo "ORG		${ORG}"
 	@echo "TAXON		${TAXON}"
 	@echo "GENE		${GENE}"
+	@echo "GENE_FILE	${GENE_FILE}"
 	@echo "QUERY		${QUERY}"
 	@echo "TASK		${TASK}"
 	@echo "SKIP		${SKIP}"
@@ -46,13 +47,18 @@ _fp_disco:
 ## Run footprint discovery with selected genes
 ##
 ## THIS FAILS HERE:  &InitQueryOutput(), footprint.lib.pl line389
+SELECTED_GEENES=${YEAST_DEMO_GENES}
+fp_disco_selected_genes:
+	@echo "Selected ${ORG} genes	${GENE_FILE}"
+	@${MAKE} _fp_disco QUERY='-genes ${GENE_FILE' \
+		TASK=query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,network,gene_index,index,network_index
+
 YEAST_DEMO_GENES=${RSAT}/public_html/demo_files/footprint-discovery_selected_yeast_genes.tab
 fp_disco_selected_genes_yeast:
-	@echo "Selected genes	${YEAST_DEMO_GENES}"
-	@${MAKE} _fp_disco QUERY='-genes ${YEAST_DEMO_GENES}' \
+	@${MAKE} fp_disco_selected_genes \
+		GENE_FILE=${YEAST_DEMO_GENES} \
 		ORG=Saccharomyces_cerevisiae \
-		TAXON=Saccharomycetales \
-		TASK=query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,network,gene_index,index,network_index
+		TAXON=Saccharomycetales
 
 ################################################################
 ## Run footprint-discovery with one selected gene
