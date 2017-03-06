@@ -176,7 +176,7 @@ $demo_queries = "lexA\n";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K_12_substr__MG1655_uid57779");
-print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
+print $query->hidden(-name=>'taxon',-default=>"Enterobacteriaceae");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;

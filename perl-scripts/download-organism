@@ -544,7 +544,7 @@ Name of a taxon for which all organisms will be downloaded.
 The option -taxon can be used iteratively on the command line to
 specify multiple taxa.
 
- download-organism -v 1 -taxon Enterobacteriales \
+ download-organism -v 1 -taxon Enterobacteriaceae \
     -taxon Saccharomycetales
 
 =cut
