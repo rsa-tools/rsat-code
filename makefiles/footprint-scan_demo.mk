@@ -6,7 +6,7 @@ MAKEFILE=${RSAT}/makefiles/footprint-scan_demo.mk
 
 LEXA_MATRIX=${RSAT}/public_html/demo_files/LexA.2nt_upstream-noorf-ovlp-2str.20.tf
 ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
-TAXON=Enterobacteriales
+TAXON=Enterobacteriaceae
 GENE=lexA
 QUERY=-q ${GENE}
 BATCH=
@@ -33,7 +33,7 @@ _fp_scan:
 	@echo
 	@echo "Running footprint-scan 	${ORG}	${TAXON}	${QUERY}"
 	footprint-scan -v ${V} -nodie -synthesis -sep_genes \
-		-org ${ORG} -taxon Enterobacteriales \
+		-org ${ORG} -taxon Enterobacteriaceae \
 		-m ${LEXA_MATRIX} -matrix_format transfac \
 		${QUERY} \
 		-info_lines \
