@@ -168,6 +168,7 @@ package main;
   ################################################################
   ## Check consistency of arguments for download/list/parse tasks.
   if ($task{parse} || $task{download} || $task{list}) {
+    $source = "NCBI-Refseq";
     ## Check the directory contianing the Genbank-formatted organisms
     ## (which can be downloaded from NCBI/refseq).
     unless ($dir{refseq}) { # Refseq dir specified on the command line
