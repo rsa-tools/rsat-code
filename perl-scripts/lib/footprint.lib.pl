@@ -820,18 +820,15 @@ I<retrieve-seq-multigenome>).
 Purge upstream sequences of the orthologs (using I<purge-seq>).
 
 
-=item I<index>
+=item I<gene_index>
 
-Generate an HTML index with links to the result files. This option is
-used for the web interface, but can also be convenient to index
-results, especially when several genes or taxa are analyzed (options
--genes, -all_genes, -all_taxa).
+Generate an HTML index with links to the result files. 
 
 With the option -sep_genes, one index is generated for each gene
 separately. An index summarizing the results for all genes can be
-generated using the option -synthesis.
+generated using the option -index.
 
-=item I<synthesis>
+=item I<index>
 
 Generate a HTML table with links to the individual result files. The
 table contains one row per query gene, one column by output type
