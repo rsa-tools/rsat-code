@@ -50,8 +50,7 @@ _fp_disco:
 SELECTED_GEENES=${YEAST_DEMO_GENES}
 fp_disco_selected_genes:
 	@echo "Selected ${ORG} genes	${GENE_FILE}"
-	@${MAKE} _fp_disco QUERY='-genes ${GENE_FILE' \
-		TASK=query_seq,filter_dyads,orthologs,ortho_seq,purge,dyads,maps,network,gene_index,index,network_index
+	@${MAKE} _fp_disco QUERY='-genes ${GENE_FILE}' 
 
 YEAST_DEMO_GENES=${RSAT}/public_html/demo_files/footprint-discovery_selected_yeast_genes.tab
 fp_disco_selected_genes_yeast:
