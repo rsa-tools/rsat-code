@@ -40,7 +40,7 @@ Jeremy.Delerce@univ-amu.fr
 
 =head1 USAGE
 
- covert-variations -i filename -from format -to format [-species #] [-v #] [-o #]
+ convert-variations -i filename -from format -to format [-v #] [-o #]
 
 =head1 SUPPORTED FORMAT
 
@@ -175,13 +175,15 @@ package	main;
 
   our %infile	= ();
   our %outfile = ();
+  our %printout = ();
 
   our $skip = 0; ## Skip the first N variations of the input file
   our $last = 0; ## Stop after N variations of the input file
+  our $l = 0;
 
-  our $verbose = 0;
+  our $verbose = 2;
   our $in = STDIN;
-  our $out = STDOUT;
+  $printout{NaN} = STDOUT;
   our @supported_format = ("vcf","gvf","varBed");
   our $data_dir = "$ENV{'RSAT'}/data/";
 
@@ -198,14 +200,13 @@ package	main;
   our %validate_pattern = ();
   our $from = "";
   our $to = "";
-  our $species = "";
-  our $assembly = "";
-  our $species_suffix = "";
-  our $db="ensembl";
-  our $ensembl_release = "";
-  our $genome_dir = "";
-  our %chr_file = ();
-  our $last_chr = "";
+  our $phased = 0;
+  our $homozy = 0;
+  our $header = "";
+  #Sample names
+  our @samples = "NaN";
+  our $phase_status = "False";
+
 
   ################################################################
   ## Read argument values
@@ -221,33 +222,8 @@ package	main;
 
   ################################################################
   ## Check argument values
-  if ($to eq "vcf") {
-    if ($species eq "") {
-      &RSAT::error::FatalError("Species must be indicated if option -to equal vcf");
-    }
-    unless ($assembly || $ensembl_release) {
-      &RSAT::error::FatalError("Ensembl release or assembly is required when output format equals vcf (option -to)");
-    }
-    unless ($assembly){
-      $assembly=&Get_assembly($species,$ensembl_release,$species_suffix);
-    }
-    $genome_dir = &Get_genome_dir($species, $assembly,$ensembl_release)."/";
-    &RSAT::error::FatalError("$genome_dir don't exist. Use download-ensembl-genome before covert-variation.") unless (-d $genome_dir);
-
-    # Check if sequence file are not missing
-    %chr_file = &Get_file_seq_name($genome_dir);
-    foreach my $file (keys(%chr_file)) {
-      unless (-f $genome_dir.$chr_file{$file}) {
-        &RSAT::error::FatalError($genome_dir.$chr_file{$file}, " is missing.");
-      }
-    }
-  }
-
-  ################################################################
-  ## Print verbose
-  $out = &OpenOutputFile($outfile{output});
-  if ($main::to eq "varBed") {
-    &Verbose() if ($main::verbose >= 1);
+  if ($from ne "vcf" && $main::phased) {
+    &RSAT::error::FatalError("-phased must be indicated only if option -from equal vcf.");
   }
 
   ################################################################
@@ -256,9 +232,9 @@ package	main;
     &RSAT::message::TimeWarn("Transferring input file from URL", $main::infile{input_url}) if ($main::verbose >= 2);
     use LWP::Simple;
 
-    if (defined($outfile{output})) {
+    if (defined($outfile{output})) { #NOTE: WSG. What is the difference between outfile{output} and outfile{input}?
       $main::outfile{input} = $main::outfile{output};
-      $main::outfile{input} =~ s/\.varBed$//;
+      $main::outfile{input} =~ s/\.varBed$//;#This is wrong, there is a case where no of these extensions could be
       $main::outfile{input} =~ s/\.vcf$//;
       $main::outfile{input} =~ s/\.gvf$//;
 
@@ -280,78 +256,148 @@ package	main;
     getstore($main::infile{input_url}, $main::outfile{input});
     &RSAT::message::TimeWarn("Variation file transferred to local file", $main::outfile{input}) if ($main::verbose >= 2);
     $main::infile{input} = $main::outfile{input};
+    delete $outfile{input};
   }
 
+  ################################################################
+  ## Open output
+  ################################################################
+  ## Print verbose
+  &PreVerbose() if ($main::verbose >= 1);
 
   ################################################################
   ## Read input
   &RSAT::message::TimeWarn("Reading input file") if ($main::verbose >= 2);
   my $legend = 1;
 
-  print $out "##gff-version 3\n##gvf-version 1.07\n" if ($to eq "gvf");
-  print $out "##fileformat=VCFv4.1\n" if ($to eq "vcf");
-
+  if ($to eq 'varBed'){
+    $header .= "; convert-variations @ARGV\n";
+    $header .= $phased ? "; Phased                 True\n" : "; Phased                 False\n";
+    $header .= $homozy ? "; Drop Homozygotes       True\n" : "; Homozygotes            False\n";
+    $header .= ";\n".
+               "; column headers\n".
+               "; 1  chr                 variant chromosome\n".
+               "; 2  start               variant reference start\n".
+               "; 3  end                 variant reference end\n".
+               "; 4  strand              variant reference strand (+)\n".
+               "; 5  id                  variant identifier\n".
+               "; 6  ref                 reference allele\n".
+               "; 7  alt                 single or list of alt alleles\n".
+               "; 8  so_term             single or list of variant types\n".
+               "; 9  validate            validation status if provided\n".
+               "; 10 minor_allele_freq   MAF if provided\n";
+    $header .= "; 11 phase               ref and alt alleles, ':' separated from original phased genotype \n" if ($phased);
+  } else {
+    $header .= "##gff-version 3\n##gvf-version 1.07\n" if ($to eq "gvf");
+    $header .= "##fileformat=VCFv4.1\n" if ($to eq "vcf");
+    $header .= $phased ? "##RSAT; Phased                 True\n" : "##RSAT; Phased                 False\n";
+    $header .= $homozy ? "##RSAT; Drop Homozygotes       True\n" : "##RSAT; Homozygotes            False\n";
+  }
   ($main::in) = &OpenInputFile($main::infile{input});
 
 
-  my $l = 0; ## Line counter for the input file
+ ## Line counter for the input file
   while (<$main::in>) {
     $l++;
-    next if (($skip > 0) && ($l <= $skip));
-    last if (($skip > 0) && ($l > $last));
+    $main::phase_status = $1 if(/^; Phased\s+(.+)\n/);
     next if (/^;/); ## Skip RSAT-like comment lines
     next unless (/\S/); ## Skip empty lines
 
-
     while (/^#/) {
-      print $out $_ unless ((/^##fileformat/) || (/^#[^#]/));
+      $header .= $_ unless ((/^##fileformat/) || (/^#[^#]/) || (/##RSAT/));
+      $main::phase_status = $1 if (/##RSAT; Phased\s+(.+)\n/); # Could this variables be modified by this type of namespace?
+      if (/^#CHROM/ && $phased) {
+        chomp();
+        my @token = split("\t",$_);
+        if (scalar(@token) > 10  ) {
+          &RSAT::error::FatalError("Detected multiple genotype samples. Cannot write multiple files to STDOUT.") unless ($outfile{output}); #Test if filehandle is STDOUT (i.e. 1)
+          &RSAT::message::Info("Detected multiple genotype samples. Creating files.") if ($main::verbose >= 2);
+          @samples = reverse(@token[9..$#token]);
+
+          foreach my $sample (@samples) {
+            $outfile{$sample} = $outfile{output};
+            if ($outfile{$sample} =~ /\.(.+)$/ ) {
+              $outfile{$sample} =~ s/\.(.+)$/\.$sample\.$1/;
+            } else {
+              $outfile{$sample} .= ".$sample.$to";
+            }
+            $printout{$sample} = &OpenOutputFile($outfile{$sample});
+          }
+          delete $outfile{output};
+          delete $printout{NaN};
+        }
+      }
       $_ = <$main::in>;
     }
 
+    next if (($skip > 0) && ($l <= $skip));
+    last if (($last > 0) && ($l > $last));
+
     chomp();
     if ($legend) {
-      print $out join("\t","#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO\n") if ($to eq 'vcf');
-      print $out join("\t","#seqid","source","type","start","end","score","strand","phase","attribute\n") if ($to eq 'gvf');
-      print $out join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq","is_supvar","in_supvar\n") if ($to eq 'varBed');
+      ################################################################
+      ## Print verbose
+      &PostVerbose() if ($main::verbose >= 1);
+
+      if ($to eq 'vcf') {
+        $header .= "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO";
+        $header .= $phase_status eq 'True' ? "\tFORMAT\tSAMPLE\n" : "\n";
+      } elsif ($to eq 'varBed') {
+        $header .= "#chr\tstart\tend\tstrand\tid\tref\talt\tso_term\tvalidate\tminor_allele_freq";
+        $header .= $phased ? "\tphase\n" : "\n";
+      } elsif($to eq 'gvf') {
+        $header .= "#seqid\tsource\ttype\tstart\tend\tscore\tstrand\tphase\tattribute\n";
+      }
+
+      $printout{NaN} = &OpenOutputFile($outfile{output}) if(scalar keys %printout < 2);
+      &Write_To_Files(\%printout,$header);
       $legend = 0;
     }
 
     ### Read input files acording to the defined formart -from
     my %variation =  ();
+    my @token = split("\t",$_);
 
     ## VCF file
     if ($from eq "vcf") {
-      my @token = split("\t",$_);
       &RSAT::message::Debug("Input file vcf\n") if ($main::verbose >= 10);
       if (scalar( @token ) < 8 ) {
-	&RSAT::message::Warning("line", $l, "Invalid VCF line: must contain at least 8 columns", "Skipped");
-	print $_ if ($main::verbose >= 3);
-	next;
+        &RSAT::message::Warning("line", $l, "Invalid VCF line: must contain at least 8 columns", "Skipped");
+        print $_,"\n" if ($main::verbose >= 3);
+        next;
       }
-
-      %variation = &Get_var_from_vcf(\@token);
+      if ($main::phased && scalar( @token ) < 10) {
+        &RSAT::message::Warning("line", $l, "Invalid VCF line: must contain at least 10 columns to retrieve phasing information", "Skipped");
+        print $_,"\n" if ($main::verbose >= 3);
+        next;
+      }
+      %variation = &Get_var_from_vcf(\@token,\@samples);
+      unless(%variation){
+        &RSAT::message::Warning("line", $l, "Invalid VCF line: must have phased genotype information in order to retrieve it.", "Skipped");
+        print $_,"\n" if ($main::verbose >= 3);
+        next;
+      }
     }
-
 
     ## RSAT file
     if ($from eq 'varBed') {
-      my @token = split("\t",$_);
-
-      next if ($token[9] == 1);
-      if (scalar( @token ) != 11 ) {
-	&RSAT::message::Warning("$_ skip. varBed line must be cointain 11 columns");
-	next;
+      if (scalar( @token ) < 10 ) {
+        &RSAT::message::Warning("$_ skip. varBed line must cointain at least 10 columns");
+        next;
       }
 
       %variation = &Get_var_from_rsat(\@token);
-    }
+      unless (%variation) {
+        &RSAT::message::Warning("line", $l, "Homozygote found", "Skipped");
+        print $_,"\n" if ($main::verbose >= 3);
+        next;
+      }
 
+    }
 
     ## GVF file
     if ($from eq 'gvf') {
-      chomp();
-      my @token = split("\t",$_);
-
+      #chomp(); #Should be erased?
       if (scalar( @token ) != 9) {
         &RSAT::message::Warning("$_ skip. gvf line must be cointain 9 columns");
         next;
@@ -373,19 +419,27 @@ package	main;
       }
 
       %variation = &Get_var_from_gvf(\@token);
+      unless (%variation) {
+        &RSAT::message::Warning("line", $l, "Homozygote found", "Skipped");
+        print $_,"\n" if ($main::verbose >= 3);
+        next;
+      }
     }
 
-    ### Output variation
-    print $out &Convert_var_to_rsat(%variation),"\n" if ($to eq "varBed");
-    print $out &Convert_var_to_vcf(%variation),"\n" if ($to eq "vcf");
-    print $out &Convert_var_to_gvf(%variation),"\n" if ($to eq "gvf");
+    &Convert_var_to_rsat(\%variation,\%printout) if ($to eq "varBed");
+    &Convert_var_to_vcf(\%variation,\%printout) if ($to eq "vcf");
+    &Convert_var_to_gvf(\%variation,\%printout) if ($to eq "gvf");
   }
 
   ################################################################
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
   print $exec_time if ($main::verbose >= 2); ## only report exec time if verbosity is specified
-  close $out;
+
+
+  foreach (keys(%printout)) {
+    close $printout{$_};
+  }
 
   exit(0);
 }
@@ -398,78 +452,83 @@ package	main;
 ################################################################
 ## Get all variation information from a variation in vcf format
 sub Get_var_from_vcf {
-  my @token = @{$_[0]};
+  my ($token, $samples) = @_;
   my %variation = ();
 
-  $variation{'chr'} = $token[0];
-  $variation{'start'} = $token[1];
-  $variation{'end'} = $variation{'start'} + length($token[3])-1;
+  $variation{'chr'} = ${$token}[0];
+  $variation{'start'} = ${$token}[1];
+  $variation{'end'} = $variation{'start'} + length(${$token}[3])-1;
   $variation{'strand'} = "+";
-  $variation{'id'} = $token[2];
-  $variation{'ref'} = $token[3];
-  $variation{'alt'} = $token[4];
-  $variation{'SO'} = "sequence_alteration";
+  $variation{'id'} = ${$token}[2];
+  if (${$token}[3] eq '.'){
+    &RSAT::message::Warning("line", $main::l, "Invalid VCF line: '.' is forbbiden at REF column ", "Skipped");
+    return;
+  }
+  if($main::phased){
+    our @filtered_samples = ();
+    my @alleles = ${$token}[3];
+    my @description = split(":", ${$token}[8]);
+    push @alleles, split(",",${$token}[4]);
+
+    foreach my $sample (@$samples){
+      my %field = ();
+      my @information = split(":", pop @$token);
+
+      while (my($i, $descriptor) = each @description) {
+        $field{$descriptor} = $information[$i] ? $information[$i] : "NaN";
+      }
+
+      unless($field{'GT'} =~/\d\|\d/) {
+        next unless $sample eq $samples[$#samples];
+        return unless (@filtered_samples);
+      }
+
+      @{$field{'GT'}} = split(/\|/,$field{'GT'});
+
+      if ($main::homozy) {
+        if (${$field{'GT'}}[0] eq ${$field{'GT'}}[1]) {
+          &RSAT::message::Info("Homozygote found on line $main::l") if ($main::verbose >= 3);
+          next unless $sample eq $samples[$#samples];
+          return unless (@filtered_samples);
+        }
+      }
+
+      $variation{$sample}->{'ref'} = $alleles[int(${$field{'GT'}}[0])];
+      $variation{$sample}->{'alt'} = $alleles[int(${$field{'GT'}}[1])];
+      $variation{$sample}->{'phase'} = join( ":", ( join( ',', @alleles ), join("|", @{$field{'GT'}} ) ) );
+      $variation{$sample}->{'SO'} = "sequence_alteration";
+      push @filtered_samples,$sample;
+    }
+  }else{
+    $variation{'ref'} = ${$token}[3];
+    $variation{'alt'} = ${$token}[4];
+    $variation{'SO'} = "sequence_alteration";
+  }
   $variation{'validate'} = 0;
   $variation{'m_allele_freq'}="NA";
   $variation{'attribute'} = ();
 
   ## Check validate value and attribute
   ## Split attribuites and store values in a hash
-  foreach (split(";",$token[7])) {
+  foreach (split(";",${$token}[7])) {
     my ($key,$value) = split("=",$_);
     $value = 1 unless ($value);
     if($key eq "CAF"){ ## Retrieve minor allele frequency information from vcf entry
-	my ($major_freq,$minor_freq)=split(",",$value);
-	$minor_freq=~s/\]//;
-	$minor_freq="NA" if ($minor_freq eq ".");
-	$variation{'m_allele_freq'}=$minor_freq;
-	next; ## do not store the CAF information in attributes,include it manually on the gvf and rsat outfiles with the correct naming
+      my ($major_freq,$minor_freq)=split(",",$value);
+      $minor_freq=~s/\]//;
+      $minor_freq="NA" if ($minor_freq eq ".");
+      $variation{'m_allele_freq'}=$minor_freq;
+      next; ## do not store the CAF information in attributes,include it manually on the gvf and rsat outfiles with the correct naming
     }
     push(@{$variation{'attribute'}},$key.'='.$value);
     $variation{'validate'} = 1 if ($validate_pattern{$key});
   }
-
-  # Check len and first nucleotide  of variant (ref and alt)
-  my $is_indel = 0;
-  my $same_length = 1;
-
-  foreach (split(",",$variation{'alt'})) {
-    $is_indel = 1 if ( substr($_,0,1) eq substr($variation{'ref'},0,1));
-    $same_length = 0 if ( length($_) !=  length($variation{'ref'}));
-  }
-
-
-  # Check variant and start/end coordinate
-  if ($is_indel) {
-
-    # Alternatif variant
-    my @alts = ();
-    foreach (split(",",$variation{'alt'})) {
-      my $alt = ",".substr($variation{'alt'},1);
-      $alt = "-" unless ($alt);
-      push (@alts, $alt);
+  if ($main::phased) {
+    foreach my $sample (@filtered_samples) {
+      $variation{$sample}->{'SO'} = &Get_SO(\$variation{$sample}->{'ref'},\$variation{$sample}->{'alt'})
     }
-    $variation{'alt'} = join(",",@alts);
-
-    # Ref variant
-    $variation{'ref'} = substr($variation{'ref'},1);
-    $variation{'ref'} = "-" unless ($variation{'ref'});
-
-    # Coordinate
-    ## $variation{'start'} ++; ## VCF is one base coordintes in both start and end
-    $variation{'end'} = $variation{'start'} + length($variation{'ref'})-1;
-  }
-
-
-  # Check SO Term
-  if ($same_length && length($token[3]) == 1) {
-    $variation{'SO'} = "SNV";
-  } elsif ($same_length) {
-    $variation{'SO'} = "substitution";
-  } elsif ($is_indel && $variation{'ref'} eq "-") {
-    $variation{'SO'} = "insertion";
-  } elsif ($is_indel) {
-    $variation{'SO'} = "deletion";
+  } else {
+    $variation{'SO'} = &Get_SO(\$variation{'ref'},\$variation{'alt'})
   }
 
   return %variation;
@@ -482,19 +541,31 @@ sub Get_var_from_rsat {
   my @token = @{$_[0]};
   my %variation = ();
 
+  if(defined($token[10]) && $main::to eq 'vcf'){
+    my $allele = "";
+    ($allele, $variation{'format'}) = split(/\:/, $token[10]);
+    my @alleles = split(/\,/, $allele);
+    $variation{'ref'} = $alleles[0];
+    $variation{'alt'} = join(",",@alleles[1..$#alleles]);
+  }else{
+    $variation{'ref'} = $token[5];
+    $variation{'alt'} = $token[6];
+  }
   $variation{'chr'} = $token[0];
   $variation{'start'} = $token[1];
   $variation{'end'} = $token[2];
   $variation{'strand'} = $token[3];
   $variation{'id'} = $token[4];
-  $variation{'ref'} = $token[5];
-  $variation{'alt'} = $token[6];
   $variation{'SO'} = $token[7];
   $variation{'validate'} = $token[8];
   $variation{'m_allele_freq'} = $token[9];
   $variation{'attribute'} = ();
-  push (@{$variation{'attribute'}}, "validate=1") if ($variation{'validate'});
-
+  if ($variation{'validate'}){
+    push (@{$variation{'attribute'}}, "validate=1");
+  } else{
+    push (@{$variation{'attribute'}}, "validate=0");
+  }
+  return if ($main::homozy && $variation{'ref'} eq $variation{'alt'});
   return %variation;
 }
 
@@ -520,7 +591,6 @@ sub Get_var_from_gvf {
   foreach (split(";",$token[8])) {
     my ($key,$value) = split("=",$_);
 
-
     if ($key eq "ID") {
       $variation{'id'} = $value;
 
@@ -532,115 +602,185 @@ sub Get_var_from_gvf {
       $variation{'ref'} = $value;
 
     } elsif ($key eq "Variant_seq") {
-	$variation{'alt'} = $value;
+      $variation{'alt'} = $value;
 
     } elsif ($key eq "global_minor_allele_frequency") { ## Recover value for minor allele frequency from gvf file
-	my @gmaf = split("\\|",$value);
-	$variation{'m_allele_freq'}=$gmaf[1];
-	#print $variation{'id'}.$variation{'m_allele_freq'};
-	#die "BOOM";
+      my @gmaf = split("\\|",$value);
+      $variation{'m_allele_freq'}=$gmaf[1];
 
     } elsif ($validate_pattern{$key}) {
-	$variation{'validate'} = 1;
-	push(@{$variation{'attribute'}},$key.'='.$value);
+      $variation{'validate'} = 1;
+      push(@{$variation{'attribute'}},$key.'='.$value);
 
     } elsif ($key eq 'validation_states' && $value ne "-") {
       $variation{'validate'} = 1;
       push(@{$variation{'attribute'}},$key.'='.$value);
 
+    } elsif ($key eq 'GT'){
+      next if ($main::to eq 'varBed');
+      my $allele = "";
+      ($allele, $variation{'format'}) = split(/\:/, $value);
+      my @alleles = split(/\,/, $allele);
+      $variation{'ref'} = $alleles[0];
+      $variation{'alt'} = join(",",@alleles[1..$#alleles]);
+
     } else {
       push(@{$variation{'attribute'}},$key.'='.$value);
     }
   }
-
+  return if ($main::homozy && $variation{'ref'} eq $variation{'alt'});
   return %variation;
 }
 
 ################################################################
 ## Get all variation information from a variation in gvf format
 sub Convert_var_to_rsat {
-  my %variation = @_;
+  my %variation  = %{$_[0]};
+  my %files_to_print = %{$_[1]};
 
   $variation{'chr'}=~s/chr//;
-  my $line = $variation{'chr'}."\t";
-  $line .= $variation{'start'}."\t";
-  $line .= $variation{'end'}."\t";
-  $line .= $variation{'strand'}."\t";
-  $line .= $variation{'id'}."\t";
-  $line .= $variation{'ref'}."\t";
-  $line .= $variation{'alt'}."\t";
-  $line .= $variation{'SO'}."\t";
-  $line .= $variation{'validate'}."\t";
-  $line .= $variation{'m_allele_freq'}."\t";
-  $line .= "0"."\t";
-  $line .= "0";
+  my $line = $variation{'chr'}."\t".
+             $variation{'start'}."\t".
+             $variation{'end'}."\t".
+             $variation{'strand'}."\t".
+             $variation{'id'}."\t";
 
-  return  $line;
+  if ($main::phased) {
+    foreach my $sample (@filtered_samples) {
+      my $sample_alleles = $line;
+      $sample_alleles .= $variation{$sample}->{'ref'}."\t".
+                         $variation{$sample}->{'alt'}."\t".
+                         $variation{$sample}->{'SO'}."\t".
+                         $variation{'validate'}."\t".
+                         $variation{'m_allele_freq'}."\t".
+                         $variation{$sample}->{'phase'}."\n";
+
+      print {$files_to_print{$sample}} $sample_alleles;
+    }
+    return;
+  }
+
+  $line .= $variation{'ref'}."\t".
+           $variation{'alt'}."\t".
+           $variation{'SO'}."\t".
+           $variation{'validate'}."\t".
+           $variation{'m_allele_freq'}."\n";
+
+  print {$files_to_print{NaN}} $line;
+
+  return;
 }
 
 sub Convert_var_to_gvf {
-  my %variation = @_;
-
-  push (@{$variation{'attribute'}},"ID=".$variation{'id'});
-  push (@{$variation{'attribute'}},"Reference_seq=".$variation{'ref'});
-  push (@{$variation{'attribute'}},"Variant_seq=".$variation{'alt'});
+  my %variation  = %{$_[0]};
+  my %files_to_print = %{$_[1]};
 
   my $line = $variation{'chr'}."\t";
-  $line .= '.'."\t";;
-  $line .= $variation{'SO'}."\t";
-  $line .= $variation{'start'}."\t";
-  $line .= $variation{'end'}."\t";
   $line .= '.'."\t";
-  $line .= $variation{'strand'}."\t";
-  $line .= '.'."\t";
-  $line .= join(";",@{$variation{'attribute'}});
-  $line .=";global_minor_allele_frequency=NA|".$variation{'m_allele_freq'}."|NA" if $variation{'m_allele_freq'} ne "NA";
-  return  $line;
+
+  if ($main::phased) {
+    foreach my $sample (@filtered_samples) {
+      my $sample_alleles = $line;
+
+      $sample_alleles .= $variation{$sample}->{'SO'}."\t".
+                         $variation{'start'}."\t".
+                         $variation{'end'}."\t".
+                         '.'."\t".
+                         $variation{'strand'}."\t".
+                         '.'."\t".
+                         join(";",("Reference_seq=".$variation{$sample}->{'ref'},
+                                   "Variant_seq=".$variation{$sample}->{'alt'},
+                                   "ID=".$variation{'id'},
+                                   "GT=".$variation{$sample}->{'phase'},
+                                   @{$variation{'attribute'}}));
+
+      if ($variation{'m_allele_freq'} ne "NA"){
+        $sample_alleles .= ";global_minor_allele_frequency=NA|".$variation{'m_allele_freq'}."|NA";
+      }
+      $sample_alleles .= "\n";
+
+      print {$files_to_print{$sample}} $sample_alleles;
+    }
+    return;
+  }
+
+  $line .= $variation{'SO'}."\t".
+           $variation{'start'}."\t".
+           $variation{'end'}."\t".
+           '.'."\t".
+           $variation{'strand'}."\t".
+           '.'."\t".
+           join(";",("Reference_seq=".$variation{'ref'},
+                     "Variant_seq=".$variation{'alt'},
+                     "ID=".$variation{'id'},
+                     @{$variation{'attribute'}}));
+
+  $line .= ";global_minor_allele_frequency=NA|".$variation{'m_allele_freq'}."|NA" if $variation{'m_allele_freq'} ne "NA";
+  $line .= "\n";
+
+  print {$files_to_print{NaN}} $line;
+  return;
 }
 
 sub Convert_var_to_vcf {
-  my %variation = @_;
-
-  if ($variation{'ref'} eq "-" || $variation{'alt'} =~ /\-/) {
-
-    if ($variation{'chr'} ne $last_chr) {
-      my $raw_file = $genome_dir.$chr_file{$variation{'chr'}};
-      $ref_seq = qx($ENV{'RSAT'}/perl-scripts/sub-sequence -i $raw_file -from 1 -to 500000000 -format raw);
-      $last_chr = $variation{'chr'};
-    }
-
-    $variation{'start'} --;
-    $prev_nucle = substr($ref_seq,$variation{'start'},1);
-
-    $variation{'ref'} = $prev_nucle.$variation{'ref'};
-    $variation{'ref'} =~ s/\-//m;
-
-    my @alts = ();
-    foreach my $alt (split(",",$variation{'alt'})) {
-      push (@alts,$prev_nucle.$alt);
-    }
-    $variation{'alt'} = join (",",@alts);
-    $variation{'alt'} =~ s/\-//m;
-  }
+  my %variation  = %{$_[0]};
+  my %files_to_print = %{$_[1]};
 
   push (@{$variation{'attribute'}},"TSA=".$variation{'SO'});
 
-  my $line = $variation{'chr'}."\t";
-  $line .= $variation{'start'}."\t";
-  $line .= $variation{'id'}."\t";
-  $line .= $variation{'ref'}."\t";
-  $line .= $variation{'alt'}."\t";
-  $line .= '.'."\t";
-  $line .= '.'."\t";
-  $line .= join(";",@{$variation{'attribute'}});
+  my $line = $variation{'chr'}."\t".
+             $variation{'start'}."\t".
+             $variation{'id'}."\t".
+             $variation{'ref'}."\t".
+             $variation{'alt'}."\t".
+             '.'."\t".
+             '.'."\t".
+             join(";",@{$variation{'attribute'}});
+
   if ($variation{'m_allele_freq'} ne "NA"){
       my $major_allele=1-$variation{'m_allele_freq'};
       $line .=";CAF=[". $major_allele.",".$variation{'m_allele_freq'}."]" ;
   }
-  return  $line;
+
+  $line .= "\tGT\t$variation{'format'}" if ($variation{'format'});
+  $line.= "\n";
+
+  print {$files_to_print{NaN}} $line;
+  return;
 }
 
+sub Write_To_Files {
+  my %files_to_print = %{$_[0]};
+  my $line  = $_[1];
 
+  foreach (keys %files_to_print) {
+    print {$files_to_print{$_}} $line;
+  }
+  return;
+}
+
+sub Get_SO {
+  my $ref= ${$_[0]};
+  my $alt= ${$_[1]};
+  my @size_of_alts = ();
+
+  foreach (split(",",$alt)) {
+    if(length($ref) == length($_) && (length($_) == 1)) {
+      if($_ eq "."){
+        push @size_of_alts, "deletion";
+      }else{
+        push @size_of_alts, "SNV";
+      }
+    } elsif(length($ref) == length($_)){
+      push @size_of_alts, "substitution";
+    } elsif(length($ref) < length($_)) {
+      push @size_of_alts, "insertion";
+    } elsif(length($ref) > length($_)) {
+      push @size_of_alts, "deletion";
+    }
+  }
+  return join(",",@size_of_alts);
+}
 
 
 ################################################################
@@ -757,6 +897,29 @@ vcf,gvf,varBed
 
 =pod
 
+=item B<-phased>
+
+Retrieve phasing information of the vcf genotypes in order to
+write each entry phased. REF and ALT column would correspond
+to Hap1 and Hap2 respectively. Unphased sites will be skipped,
+i.e. genotypes separated by "\" instead of "|".
+
+=cut
+    } elsif ($arg eq "-phased") {
+      $main::phased = 1;
+
+=pod
+
+=item B<-homozy>
+
+Drop homozygotes alleles if present.
+
+=cut
+    } elsif ($arg eq "-drop_homozygotes") {
+      $main::homozy = 1;
+
+=pod
+
 =item B<-skip>
 
 Skip the N first variations of the input file. This option is useful
@@ -780,67 +943,6 @@ for quick tests, or to split an analysis in separate tasks.
 
 =pod
 
-=item B<-species species_name>
-
-Species where variation are coming from (Homo_sapiens, Mus_musculus).
-
-=cut
-    } elsif ($arg eq "-species") {
-      $main::species = shift(@arguments);
-
-=pod
-
-=pod
-
-=item B<-release #>
-
-The version of ensembl database (e.g. 84).
-
-Note: each Ensembl release contains a specific assembly for
-each species. When the option -release is used, the option
--assembly should thus in principle not be used.
-
-=cut
-  } elsif (($arg eq "-release") || ($arg eq "-version") || ($arg eq "-e_version")) {
-    if ($arg ne "-release") {
-      &RSAT::message::Warning("Option -version is obsolete, has been replaced by -release.");
-    }
-    $main::ensembl_release = shift(@arguments);
-
-
-=pod
-
-=item B<-assembly #>
-
-Assembly (e.g. GRCh37 for the assembly 37 of the Human genome).
-
-Note: genome assemblies can cover several successive ensemble
-versions. In case of ambiguity, the latest corresponding ensembl
-version is used.
-
-=cut
-    } elsif (($arg eq "-assembly") || ($arg eq "-a_version")) {
-      if ($arg ne "-assembly") {
-	&RSAT::message::Warning("Option -a_version is obsolete, has been replaced by -assembly.");
-      }
-      $main::assembly = shift(@arguments);
-
-=item B<-species_suffix>
-
-Suffix to append to the full species ID.
-
-By default, the full species ID is composed by concatenating the
-Ensembl species and assembly. The option I<-species_suffix>
-allows to specify a string (e.g. _ensembl76, _for_testing, ...) that
-will be appended to the full species ID.
-
-=cut
-    } elsif ($arg eq "-species_suffix") {
-    $species_suffix = shift(@arguments);
-
-
-=pod
-
 =item B<-o outputfile>
 
 If no output file is specified, the standard output is used.  This
@@ -848,7 +950,7 @@ allows to use the command within a pipe.
 
 =cut
     } elsif ($arg eq "-o") {
-      $outfile{output} = shift(@arguments);
+      $main::outfile{output} = shift(@arguments);
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
     }
@@ -863,12 +965,15 @@ allows to use the command within a pipe.
 }
 
 ################################################################
-## Verbose message
-sub Verbose {
-  print $out "; convert-variations ";
-  &PrintArguments($out);
-
-  if (%main::outfile) {
+## PreVerbose message
+sub PreVerbose {
+  print "; convert-variations";
+  print &PrintArguments(),"\n";
+}
+################################################################
+## PostVerbose message
+sub PostVerbose {
+  if(%main::outfile){
     print "; Output files\n";
     while (my ($key,$value) = each %main::outfile) {
       printf ";\t%-13s\t%s\n", $key, $value;
