@@ -54,9 +54,9 @@ footprint-discovery [-i inputfile] -o [output_prefix] \
 =head2 Single-gene footprint discovery
 
 Discover conserved motifs in the promoters of the orthologs of lexA in
-Enterobacteriales.
+Enterobacteriaceae.
 
- footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
+ footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriaceae \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter  \
 		-bg_model taxfreq -q lexA
@@ -64,9 +64,9 @@ Enterobacteriales.
 =head2 Analysis of a few genes
 
 Discover conserved motifs in the promoters of the orthologs of lexA in
-Enterobacteriales.
+Enterobacteriaceae.
 
- footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
+ footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriaceae \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter  \
 		-bg_model taxfreq \
@@ -81,7 +81,7 @@ The genes can also be specified in a file with the option -genes.
 
 Iterate footprint discovery for each gene separately.
 
- footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriales \
+ footprint-discovery  -v 1 -org Escherichia_coli_K12 -taxon Enterobacteriaceae \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter \
 		-bg_model taxfreq -all_genes -sep_genes
