@@ -19,9 +19,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Taking as input a set of position-specific scoring matrices, identify
-clusters of similar matrices and build consensus motifs by merging the
-matrices that belong to the same cluster.
+Taking  as input  one  or several  sets  of position-specific  scoring matrices,  this program  applies hierarchical  clustering to  identify clusters  of similar  motifs.  It produces  a set  of  trees (one  per cluster) and builds branch motifs at each node of each tree by merging the matrices of all descendent nodes.
 
 =head1 DEPENDENCIES
 

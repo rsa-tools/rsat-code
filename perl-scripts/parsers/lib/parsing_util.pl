@@ -460,7 +460,7 @@ sub ParsePositions {
 	my $end_pos = $null;
 
 	################################################################
-	#### separate chromosome from chromosomal position
+	## Separate chromosome from chromosomal position
 	if ($position =~ /^(\S+)\:(.*)/) {
 	    $chromosome = $1;
 	    $chrom_pos = $2;
@@ -480,7 +480,7 @@ sub ParsePositions {
 	}
 
 	################################################################
-	#### direct or reverse strand
+	## Direct or reverse strand
 	$coord = $chrom_pos;
 	if ($chrom_pos =~ /complement\((.*)\)/) {
 	    $strand = "R";
@@ -491,12 +491,12 @@ sub ParsePositions {
 	}
 
 	################################################################
-	#### split exons or treat genes accross replication origin (circular genomes)
+	## Split exons or treat genes accross replication origin (circular genomes)
 	if ($coord =~ /^join\(/) { ### exons or genes accross replication origin (circular genomes)
 	    $coord =~ s/^join\(//;
 	    $coord =~ s/\)$//;
 
-	    #### genes accross replication origin (circular genomes)
+	    ## Genes accross replication origin (circular chromosomes)
 	    if ($coord =~ /^([\>\<]{0,1}\d+)\.\.([\>\<]{0,1}\d+),(1)\.\.([\>\<]{0,1}\d+)$/) {
 		$start_pos = $1;
 		$end_pos = $4;
@@ -504,38 +504,36 @@ sub ParsePositions {
 		&RSAT::message::Debug("ParsePositions", $position, , "\n", "chrom_pos", $chrom_pos, "\n", "coord", $strand, $coord, $start_pos, $end_pos)
 		    if ($main::verbose >= 5);
 
-	    #### exons
+	    ## Exons
 	    } else {
 
-	    #### multiple segments
-	    my @exons = split ",", $coord;
-	    my @exon_starts = ();
-	    my @exon_ends = ();
-
-	    #### exon limits
-	    foreach my $exon (@exons) {
+	      #### multiple segments
+	      my @exons = split ",", $coord;
+	      my @exon_starts = ();
+	      my @exon_ends = ();
+	      
+	      #### exon limits
+	      foreach my $exon (@exons) {
 		$exon =~ s/\s+//g;
 		$feature->push_attribute("exons", $exon);
 		my ($exon_start, $exon_end) = &segment_limits($exon, $position);
 		push @exon_starts, $exon_start;
 		push @exon_ends, $exon_end;
-	    }
+	      }
 	    
-	    #### feature start and end 
-	    $start_pos = &min(@exon_starts) || $null;
-	    $end_pos = &max(@exon_ends) || $null;
+	      #### feature start and end 
+	      $start_pos = &min(@exon_starts) || $null;
+	      $end_pos = &max(@exon_ends) || $null;
 
-	    #### introns
-	    my @introns = ();
-	    for my $e (0..$#exon_starts - 1) {
+	      #### introns
+	      my @introns = ();
+	      for my $e (0..$#exon_starts - 1) {
 		my $intron = $exon_ends[$e] + 1;
 		$intron .= "..";
 		$intron .= $exon_starts[$e+1] -1;
 		$feature->push_attribute("introns", $intron);
+	      }
 	    }
-
-
-	}
 
 	} else {
 	    #### a single segment
@@ -631,14 +629,17 @@ sub segment_limits {
     &RSAT::message::Debug("Segment limits", $segment) if ($main::verbose >= 10);
 
     #### start and end positions are different
-    if ($segment =~ /^([\>\<]{0,1}\d+)\.\.([\>\<]{0,1}\d+)$/) {
-	$segment_start = $1;
-	$segment_end = $2;
+    if ($segment =~ /^([\>\<]{0,1})(\d+)\.\.([\>\<]{0,1})(\d+)$/) {
+      $imprecise_start = $1; # 2017-02-27: from now on I ignore the > and < in front of positions
+      $segment_start = $2;
+      $imprecise_end = $3; # 2017-02-27: from now on I ignore the > and < in front of positions
+      $segment_end = $4;
+      &RSAT::message::Debug("segment_limits", $imprecise_start, $segment_start, $imprecise_end, $segment_end) if ($main::verbose >= 10);
 
     #### single residue position
-    } elsif ($segment =~ /^([\>\<]{0,1}\d+)$/) {
-	$segment_start = $1;
-	$segment_end = $1;
+    } elsif ($segment =~ /^([\>\<]{0,1})(\d+)$/) {
+      $imprecise_start = $imprecise_end = $1; # 2017-02-27: from now on I ignore the > and < in front of positions
+      $segment_start = $segment_end = $2;
     } else {
 	&ErrorMessage (join "\t", "Invalid segment format", $segment, $position, "\n");
     }
