@@ -35,9 +35,9 @@ VARIATION_DIR=${RSAT}/public_html/data/genomes/${ORG}/variations
 list_param:
 	@echo
 	@echo "variation-scan demo"
-	@echo "	SPECIES		${SPECIES}"	
+	@echo "	SPECIES		${SPECIES}"
 	@echo "	ASSEMBLY	${ASSEMBLY}"
-	@echo "	ORG		${ORG}"	
+	@echo "	ORG		${ORG}"
 	@echo "	VARIATION_DIR	${VARIATION_DIR}"
 	@echo "	VARIANTS	${VARIANTS}"
 	@echo "	DEMO_VARIANTS	${DEMO_VARIANTS}"
@@ -48,9 +48,9 @@ list_param:
 ## Count the number of variations per chromosome/contig for the selected organism
 variation_stats:
 	@echo "Statistics about variations"
-	@echo "	SPECIES		${SPECIES}"	
+	@echo "	SPECIES		${SPECIES}"
 	@echo "	ASSEMBLY	${ASSEMBLY}"
-	@echo "	ORG		${ORG}"	
+	@echo "	ORG		${ORG}"
 	@echo "	VARIATION_DIR	${VARIATION_DIR}"
 	@echo "Computing number of lines per contig (this can take time)"
 	@wc -l ${VARIATION_DIR}/*.varBed | sort -n
@@ -70,7 +70,6 @@ DEMO_VARIANTS=${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}
 VARIANT_FORMAT_OUT=varBed
 CONVERT_VAR_CMD=convert-variations \
 	-i ${DEMO_VARIANTS}  \
-	-release ${ENSEMBL_RELEASE} \
 	-v ${V} -from ${VARIANT_FORMAT_IN} -to ${VARIANT_FORMAT_OUT} \
 	-o ${RESULT_DIR}/${VARIANTS}.${VARIANT_FORMAT_OUT}
 convert_var: mk_result_dir
@@ -141,21 +140,21 @@ varinfo_from_ids: mk_result_dir
 ##
 ## (2) specifying genomic regions in a bed file. The program starts by
 ## identifying the variations that overlap the regions of the bed
-## file, and then retrieve their sequences. 
+## file, and then retrieve their sequences.
 ##
 ## (3) a list of variant identifiers provided in a text file (with one
 ## ID per row). The program then extracts the information about each
 ## specified variation (varBed info) and then their sequences.
 ##
 ## RETRIEVE_VAR_CMD is the common part of the command, we then
-## specified the modality-specific parameters: 
-## RETRIEVE_VAR_CMD_VARBED and 
+## specified the modality-specific parameters:
+## RETRIEVE_VAR_CMD_VARBED and
 RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-v ${V} \
 	-species ${SPECIES} \
 	-release ${ENSEMBL_RELEASE} \
 	-assembly ${ASSEMBLY} \
-	${SPECIES_SUFFIX_OPT} 
+	${SPECIES_SUFFIX_OPT}
 
 VARSEQ_DEMO=${DEMO_DIR}/${VARIANTS}.varseq
 VARSEQ_OUT=${RESULT_DIR}/${VARIANTS}.varseq
@@ -175,7 +174,7 @@ retrieve_varseq_from_varBed: mk_result_dir
 
 
 ## Retrieve sequences of the variations that overlap a set of genomic
-## coordinates specified in a bed file. 
+## coordinates specified in a bed file.
 RETRIEVE_VAR_CMD_BED=${RETRIEVE_VAR_CMD} \
 	-i  ${BED_VARIANTS}\
 	-mml 30 -format bed \
@@ -232,7 +231,7 @@ scan_variations_with_jaspar: mk_result_dir
 	@${MAKE} variation_scan \
 		MATRIX=${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2015_03.tf \
 		VARSCAN_RES=${VARSCAN_RES_JASPAR}
-	@echo 
+	@echo
 
 ## Scan variations from Weireauch et al. (Cell., 2014) with Jaspar core Vertebrates
 JASPAR_CORE_VERTEBRATE=${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2015_03.tf
@@ -324,6 +323,3 @@ convert_varScan_from_isRSNP_to_varScan: mk_result_dir
 convert_var_Scan_from_varScan_to_isRSNP: mk_result_dir
 	@echo ${CONVERT_VARSCAN_FROM_varScan_CMD}
 	@${CONVERT_VARSCAN_FROM_varScan_CMD}
-
-
-
