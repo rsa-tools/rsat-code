@@ -185,7 +185,7 @@ OPTIONS
         -taxon selected_taxon 
 	       Only returns organisms belonging to a selected taxon.
 	       Example: 
-	           supported-organisms -taxon Enterobacteriales
+	           supported-organisms -taxon Enterobacteriaceae
 
         -group selected_group 
 
