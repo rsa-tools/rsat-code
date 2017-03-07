@@ -5,31 +5,33 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ################################################################
 ## Configure the Apache Web server
 
+APACHE_CONFIG_FOLDER=/etc/apache2/
+# on Centos: APACHE_CONFIG_FOLDER=/etc/httpd/ but the rest is different as well -> best solution is to edit manually
 
 ## Make a backup of original apache configuration
-zip -ry apacheconf_backup_`date '+%Y-%m-%d_%H%M%S'`.zip /etc/apache2/
+zip -ry apacheconf_backup_`date '+%Y-%m-%d_%H%M%S'`.zip ${APACHE_CONFIG_FOLDER}
 
 ## We need to replace some lines in the Apache configuration files
-# nano /etc/apache2/sites-available/000-default.conf
+# nano ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
 ## Uncomment the following line:
 # Include conf-available/serve-cgi-bin.conf
-perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#Include conf-available/serve-cgi-bin.conf|Include conf-available/serve-cgi-bin.conf|' /etc/apache2/sites-available/000-default.conf
+perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#Include conf-available/serve-cgi-bin.conf|Include conf-available/serve-cgi-bin.conf|' ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
 
 ## To avoid puzzling warning at apache start, set ServerName globally.
-echo "" >> /etc/apache2/apache2.conf
-echo "ServerName localhost" >> /etc/apache2/apache2.conf
+echo "" >> ${APACHE_CONFIG_FOLDER}/apache2.conf
+echo "ServerName localhost" >> ${APACHE_CONFIG_FOLDER}/apache2.conf
 
-## In the file /etc/apache2/mods-available/mime.conf
+## In the file ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
 ## uncomment the line
 ##  AddHandler cgi-script .cgi
 ##
-perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddHandler cgi-script .cgi|AddHandler cgi-script .cgi|' /etc/apache2/mods-available/mime.conf
-perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddEncoding x-|AddEncoding x-|' /etc/apache2/mods-available/mime.conf
+perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddHandler cgi-script .cgi|AddHandler cgi-script .cgi|' ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
+perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddEncoding x-|AddEncoding x-|' ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
 
-# echo "" >>  /etc/apache2/mods-available/mime.conf
-# echo "        ## RSAT options" >>  /etc/apache2/mods-available/mime.conf
-# echo "        AddType text/plain .fasta" >>  /etc/apache2/mods-available/mime.conf
-# echo "        AddType text/plain .bed" >>  /etc/apache2/mods-available/mime.conf
+# echo "" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
+# echo "        ## RSAT options" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
+# echo "        AddType text/plain .fasta" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
+# echo "        AddType text/plain .bed" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
 
 ## Optional : also associate a plain/text mime type to extensions for
 ## some classical bioinformatics files.
@@ -59,13 +61,13 @@ perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddEncoding x-|AddEncoding x-|' 
 ## Edit the file to replace [RSAT_PARENT_FOLDER] byt the parent directory
 ## of the rsat directory.
 cd ${RSAT}
-rsync -ruptvl RSAT_config.conf /etc/apache2/sites-enabled/rsat.conf
+rsync -ruptvl RSAT_config.conf ${APACHE_CONFIG_FOLDER}/sites-enabled/rsat.conf
 
 ## OPTIONAL: since I am using this to install a virtual machine whose
 ## only function will be to host the RSAT server, I replace the normal
 ## default web folder by RSAT web folder. 
 ##
-perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|DocumentRoot /var/www/html|DocumentRoot /packages/rsat/public_html|' /etc/apache2/sites-available/000-default.conf
+perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|DocumentRoot /var/www/html|DocumentRoot /packages/rsat/public_html|' ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
 
 # apache2ctl restart
 ## The server will now immediately display RSAT home page when you

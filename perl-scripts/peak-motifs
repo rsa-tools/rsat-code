@@ -2958,7 +2958,7 @@ sub SynthesisOneMotifComparison {
   ## Report number of matches
   my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
   $db_match_table .= "\n\n<tr>\n";
-  $db_match_table .= "\n<td colspan=9><a href='".$link."'>Total maches= ".$match_nb."</a>";
+  $db_match_table .= "\n<td colspan=9><a href='".$link."'>Total matches= ".$match_nb."</a>";
   if ($match_nb > $max_match_nb) {
     my $more_matches = $match_nb -$max_match_nb;
     $db_match_table .= " (".$more_matches." more)";

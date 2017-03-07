@@ -12,6 +12,7 @@ DATE=`date +%Y-%m-%d`
 ARCHIVE_PREFIX=rsat_${DATE}
 ARCHIVE_PREFIX_METAB=metabolic-tools_${DATE}
 ARCHIVE=rsat/${ARCHIVE_PREFIX}
+ARCHIVE_PREFIX_SCRIPTS=${ARCHIVE_PREFIX}_install_scripts
 
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
@@ -26,7 +27,6 @@ TAR_EXCLUDE=--exclude .git \
 	--exclude doc/manuals/*.aux \
 	--exclude doc/manuals/*.log \
 	--exclude doc/manuals/*.out \
-	--exclude doc/manuals/*.pdf \
 	--exclude course \
 	--exclude eccb_2014_tutorial \
 	--exclude '*.o' \
@@ -42,7 +42,7 @@ TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar
 
 ################################################################
 ## All the tasks for publishing the new version
-all: clean_emacs_bk tar_archive clean_distrib_site publish
+all: clean_emacs_bk tar_archive_scripts tar_archive clean_distrib_site publish publish_scripts
 
 ## List parameters
 #PUB_SERVER=rsat.ulb.ac.be
@@ -91,15 +91,16 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole distribution
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
-DISTRIB_FILES=rsat/00_README.txt			\
+DISTRIB_FILES=rsat/00_README.txt		\
 	rsat/perl-scripts			\
-	rsat/R-scripts 				\
+	rsat/R-scripts/TFBMclust		\
 	rsat/makefiles				\
 	rsat/RSAT_config_default.props		\
 	rsat/RSAT_config_default.mk		\
 	rsat/RSAT_config_default.bashrc		\
 	rsat/rsat_apache_default.conf		\
 	rsat/doc/manuals			\
+	rsat/doc/howto				\
 	rsat/python-scripts 			\
 	rsat/contrib/count-words  		\
 	rsat/contrib/compare-matrices-quick  	\
@@ -117,9 +118,13 @@ DISTRIB_FILES_METAB=rsat/java		\
 	rsat/contrib/REA		\
 	rsat/contrib/kwalks
 
+DISTRIB_FILES_SCRIPTS=rsat/doc/howto/install_scripts
+
 _create_tar_archive:
 	@echo ${TAR_CREATE} 
 	(cd ${TAR_ROOT}; ${TAR_CREATE})
+
+
 
 FILE=rsat/perl-scripts
 _add_one_file:
@@ -148,6 +153,9 @@ tar_archive:
 tar_archive_metab:
 	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB} DISTRIB_FILES="${DISTRIB_FILES_METAB}"
 
+tar_archive_scripts:
+	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS} DISTRIB_FILES="${DISTRIB_FILES_SCRIPTS}"
+
 ## Archive with zip
 # ZIP_EXCLUDE=-x CVS '*~' tmp data logs
 # ZIP =zip -ry ${ARCHIVE}.zip 
@@ -170,6 +178,9 @@ publish:
 	@echo "Synchronizing RSAT archive ${ARCHIVE_PREFIX}.${PUB_FORMAT} to server ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}"
 	@echo
 	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
+
+publish_scripts:
+	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS}
 
 publish_metab:
 	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB}
