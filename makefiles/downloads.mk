@@ -14,9 +14,11 @@ MAKEFILE=${RSAT}/makefiles/downloads.mk
 MAKE = make -sk -f ${MAKEFILE}
 
 DATE = `date +%Y%m%d_%H%M%S`
-LOGFILE=-o logs/wget_${DATE}_log.txt
-WGET=wget --passive-ftp --no-parent --recursive --timestamping --relative --dont-remove-listing --convert-links  ${LOGFILE}
-# #WGET = wget -rNL -o logs/wget_${DATE}_log.txt
+LOG_DIR=downloads/logs
+LOGFILE=-o ${LOG_DIR}/wget_${DATE}_log.txt
+#WGET=wget --passive-ftp --no-parent --recursive --timestamping --relative --dont-remove-listing --convert-links  ${LOGFILE}
+WGET=wget --passive-ftp --no-parent --recursive --relative --dont-remove-listing --no-clobber ${LOGFILE}
+# #WGET = wget -rNL -o ${LOG_DIR}/wget_${DATE}_log.txt
 RSYNC = rsync -ruptvl -e ssh
 
 ### target
@@ -26,6 +28,22 @@ usage:
 	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
 
 update: genbank kegg expasy ebi_genomes taxonomy ensembl go prosite bind dbtbs
+
+
+################################################################
+## Download one dir from NCBI RefSeq with the recommended rsync
+## protocol
+## (https://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#protocols).
+#REFSEQ_GROUP=bacteria
+#REFSEQ_SPECIES=Klebsiella_pneumoniae
+REFSEQ_GROUP=fungi
+REFSEQ_SPECIES=Saccharomyces_cerevisiae
+REFSEQ_DIR=genomes/refseq/${REFSEQ_GROUP}/${REFSEQ_SPECIES}/latest_assembly_versions/
+NCBI_RSYNC_BASE=rsync://ftp.ncbi.nlm.nih.gov
+rsync_from_ncbi:
+	rsync --copy-links --recursive --times -R --verbose ${NCBI_RSYNC_BASE}/${REFSEQ_DIR} downloads/
+#	rsync -ruptvl -R -z ${NCBI_RSYNC_BASE}/${REFSEQ_DIR} downloads/
+
 
 ################################################################
 #
@@ -43,7 +61,7 @@ ebi_genomes:
 
 ################################################################
 #
-# Genbank genome repository
+# NCBI/Genbank genome repository
 #
 GENBANK_DIRS =					\
 	genomes					\
@@ -71,40 +89,42 @@ NCBI_EXCLUDE=	\
 		--exclude '*.tar.gz'						
 
 
-BIOMIRROR=rsync://bio-mirror.net/biomirror
-one_ncbi_dir_from_mirror:
-	@echo "DOWNLOAD_DIR	${DOWNLOAD_DIR}"
-	@mkdir -p ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}
-	rsync ${NCBI_EXCLUDE}						\
-		-av ${OPT} ${BIOMIRROR}/ncbigenomes/${NCBI_DIR}/*	\
-		${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/
-	@echo "NCBI directory downloaded to ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/"
+# BIOMIRROR=rsync://bio-mirror.net/biomirror
+# one_ncbi_dir_from_mirror:
+# 	@echo "DOWNLOAD_DIR	${DOWNLOAD_DIR}"
+# 	@mkdir -p ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}
+# 	rsync ${NCBI_EXCLUDE}						\
+# 		-av ${OPT} ${BIOMIRROR}/ncbigenomes/${NCBI_DIR}/*	\
+# 		${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/
+# 	@echo "NCBI directory downloaded to ${DOWNLOAD_DIR}/ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/"
 
-one_ncbi_dir:
-	${MAKE} one_ncbi_dir_from_mirror
 
-ncbi:
-	rsync --delete	${NCBI_EXCLUDE}						\
-		-avz rsync://${BIOMIRROR}/ncbigenomes/*	\
-		ftp.ncbi.nih.gov/genomes/
+# one_ncbi_dir:
+# 	${MAKE} one_ncbi_dir_from_mirror
 
-NCBI_GENOMES_FTP_OLD=ftp://ftp.ncbi.nih.gov/genomes
-NCBI_GENOMES_FTP=ftp://ftp.ncbi.nih.gov/genomes/refseq/
-#NCBI_DIR=Fungi/Saccharomyces_cerevisiae_uid128
-one_ncbi_dir_wget:
-	@mkdir -p logs
-	@echo "${DATE}	updating dir	$${NCBI_DIR}" >> wget_updates.txt
-	${WGET}							\
-		--exclude-directories 'Bacteria.OLD'		\
-		--exclude-directories ARCHIVE			\
-		--exclude-directories BACENDS			\
-		--accept=gpff --accept=gpff.gz			\
-		--accept=gbk --accept=README --accept=gbff	\
-		--accept=gaa --accept=faa --accept=gbk.gz	\
-		--accept=README.gz --accept=gbff.gz		\
-		--accept=gaa.gz --accept=faa.gz			\
-		"${NCBI_GENOMES_FTP}/${NCBI_DIR}" 
-	@echo "${DATE}	updated dir	$${NCBI_DIR}" >> wget_updates.txt
+# ncbi:
+# 	rsync --delete	${NCBI_EXCLUDE}						\
+# 		-avz rsync://${BIOMIRROR}/ncbigenomes/*	\
+# 		ftp.ncbi.nih.gov/genomes/
+
+# NCBI_GENOMES_FTP_OLD=ftp://ftp.ncbi.nih.gov/genomes
+# NCBI_GENOMES_FTP=ftp://ftp.ncbi.nih.gov/genomes/refseq/
+# #NCBI_DIR=Fungi/Saccharomyces_cerevisiae_uid128
+# NCBI_ACCEPT=							\
+# 		--exclude-directories 'Bacteria.OLD'		\
+# 		--exclude-directories ARCHIVE			\
+# 		--exclude-directories BACENDS			\
+# 		--accept=gpff --accept=gpff.gz			\
+# 		--accept=gbk --accept=README --accept=gbff	\
+# 		--accept=gaa --accept=faa --accept=gbk.gz	\
+# 		--accept=README.gz --accept=gbff.gz		\
+# 		--accept=gaa.gz --accept=faa.gz		
+# one_ncbi_dir_wget:
+# 	@mkdir -p ${LOG_DIR}
+# 	@echo "Download URL	${NCBI_GENOMES_FTP}/${NCBI_DIR}"
+# 	@echo "${DATE}	updating dir	$${NCBI_DIR}" >> wget_updates.txt
+# 	${WGET} ${NCBI_ACCEPT} ${NCBI_GENOMES_FTP}/${NCBI_DIR}
+# 	@echo "${DATE}	updated dir	$${NCBI_DIR}" >> wget_updates.txt
 
 #one_genbank_dir:
 #	${MAKE} one_ncbi_dir_from_mirror
@@ -121,8 +141,6 @@ one_ncbi_dir_wget:
 #	@echo "${DATE}	finished to update	${GENBANK_DIRS}" >> wget_updates.txt; 
 
 
-
-
 ################################################################
 #
 # Download KEGG databases
@@ -136,18 +154,18 @@ KEGG_FTP=ftp://ftp.genome.ad.jp/pub/kegg/
 
 KEGG_GENOMES=${KEGG_FTP}/genomes/
 kegg_genomes:
-	@mkdir -p logs
+	@mkdir -p ${LOG_DIR}
 	${WGET} -X sequences.old,sequences,sequences.weekly.last.tar.Z,genes.weekly.last.tar.Z ${KEGG_GENOMES}
 
 
 KEGG_LIGAND=${KEGG_FTP}/ligand/
 kegg_ligand:
-	@mkdir -p logs
+	@mkdir -p ${LOG_DIR}
 	${WGET} ${KEGG_LIGAND}
 
 KEGG_PATHWAYS=${KEGG_FTP}/pathways/
 kegg_pathways:
-	@mkdir -p logs
+	@mkdir -p ${LOG_DIR}
 	${WGET} ${KEGG_PATHWAYS}
 
 
@@ -164,7 +182,7 @@ EXPASY_DIRS=						\
 	sp_tr_nrdb					\
 	swiss-prot/release_compressed		
 expasy:
-	@mkdir -p logs
+	@mkdir -p ${LOG_DIR}
 	for dir in ${EXPASY_DIRS} ; do		\
 		${WGET} ${EXPASY}/$${dir} ;	\
 	done
@@ -190,7 +208,7 @@ SGD_FTP=ftp://genome-ftp.stanford.edu
 SGD_dir=/pub/yeast/data_download
 SGD_excl=${SGD_dir}/obsolete_files/,${SGD_dir}/sequence/,${SGD_dir}/chromosomal_feature/archive/,${SGD_dir}/gene_registry/archive/,${SGD_dir}/literature_curation/archive/,${SGD_dir}/oracle_schema/archive/,${SGD_dir}/protein_info/archive/,${SGD_dir}/sequence_similarity/archive/,${SGD_dir}/systematic_results/archive/,${SGD_dir}/systematic_results/SAGE/archive/
 sgd:
-	@mkdir -p logs
+	@mkdir -p ${LOG_DIR}
 	${WGET} --accept '*.gbf' ftp://genome-ftp.stanford.edu/pub/yeast/data_download/sequence/NCBI_genome_source/
 	${WGET} ftp://genome-ftp.stanford.edu/pub/yeast/data_download/sequence/genomic_sequence/chromosomes/fasta/
 	${WGET} -X ${SGD_excl} ${SGD_FTP}${SGD_dir}/
@@ -446,7 +464,7 @@ rice:
 
 UPDATE=200305
 new_bacteria:
-	cat logs/wget_${UPDATE}*_log.txt		\
+	cat ${LOG_DIR}/wget_${UPDATE}*_log.txt		\
 		| grep saved			\
 		| grep gbk			\
 		| grep Bacteria			\
@@ -484,7 +502,7 @@ BIND_FTP=ftp://${BIND_URL}
 BIND_dir=/pub/BIND/current
 BIND_excl=${BIND_dir}/MMDBBIND
 bind:
-	@mkdir -p logs
+	@mkdir -p ${LOG_DIR}
 	${WGET} -X ${BIND_excl} ${BIND_FTP}${BIND_dir}/
 	chmod -R g+w ${BIND_URL}
 
@@ -496,7 +514,7 @@ PROS_FTP=ftp://${PROS_URL}
 PROS_DIR=/databases/prosite
 PROS_excl=""
 prosite:
-	@mkdir -p logs
+	@mkdir -p ${LOG_DIR}
 	${WGET} -X ${PROS_excl} ${PROS_FTP}${PROS_DIR}/
 	chmod -R g+w ${PROS_URL}${PROS_DIR}
 
@@ -515,7 +533,7 @@ go:
 	for url in ${GO_URLS} ; do ${MAKE} go_one_url GO_URL=$${url}; done
 
 go_one_url:
-	@mkdir -p logs
+	@mkdir -p ${LOG_DIR}
 	wget -np -r -l 1 -N ${GO_HTTP}
 	chmod -R g+w ${GO_URL}
 
@@ -530,7 +548,7 @@ goa_ebi:
 #JASPAR=http://jaspar.cgb.ki.se/DOWNLOAD/
 JASPAR=http://jaspar.genereg.net/html/DOWNLOAD/
 jaspar:
-	@mkdir -p logs
+	@mkdir -p ${LOG_DIR}
 	@echo "${DATE}	updating dir	${JASPAR}" 
 	${WGET} ${JASPAR}
 	@echo "${DATE}	updated dir	${JASPAR}"

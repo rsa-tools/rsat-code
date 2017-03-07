@@ -38,8 +38,8 @@ package main;
     #### initialization
     $null = "<NULL_VALUE>";
     $data_source = "NCBI";
-    $ext = "gbk";
-    $data_type = "gbk";
+    $ext = "gbff";
+    $data_type = "gbff";
     $no_suffix=1;
     $host= $default{'host'};
     $schema="rsat";
@@ -73,9 +73,9 @@ package main;
 
     ## Default IDs for different feature types
     %preferred_id = (
-		     cds=>protein_id,
-		     mrna=>transcript_id,
-		     gene=>GeneID,
+		     cds=>locus_tag,
+		     mrna=>locus_tag,
+		     gene=>locus_tag,
 		     trna=>locus_tag,
 		     srna=>locus_tag,
 		     rrna=>locus_tag,
@@ -156,9 +156,11 @@ package main;
 
     #### organism name
     unless ($org) {
-	$org = `basename $dir{input}`;
-	chomp($org);
-	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 2);
+      &RSAT::error::FatalError("Organism name must be specified (option -org)");
+## 2017-03-05: I suppress the automatic determination of organism name because NCBI directory structure has been changed
+#      $org = `basename $dir{input}`;
+#      chomp($org);
+#      &RSAT::message::Warning("Auto selection of organism name from folder name", $org) if ($verbose >= 2);
     }
 
     ## treat organism-specific preferred IDs
@@ -212,9 +214,8 @@ package main;
 	@genbank_files = @noalt;
     }
 
-    if ($#genbank_files < 0) {
-	system "ls -l";
-	&RSAT::error::FatalError("There is no genbank file in the input directory $dir{input}\n");
+    if (scalar(@genbank_files) == 0) {
+	&RSAT::error::FatalError("No file with extension ${ext} or ${ext}.gz in directory $dir{input}\n");
     } else {
 	&RSAT::message::Info(scalar(@genbank_files)." Genbank files") if ($verbose >= 1);
 	&RSAT::message::Info("Genbank file names\n;\t", join("\n;\t", @genbank_files)) if ($verbose >= 2);
@@ -338,7 +339,7 @@ package main;
     &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
 
     ## Export protein sequences
-    &ExportProteinSequences($CDSs,$org);
+    &ExportProteinSequences($CDSs, $org);
 
     ### Report the output directory
     &RSAT::message::Info(join("\t", "Output directory", $dir{output}));
@@ -693,19 +694,20 @@ sub ExportProteinSequences {
     $out_file{pp} = $dir{output}."/".$org."_aa.fasta";
 
     &RSAT::message::TimeWarn("Exporting translated sequences to file", $out_file{pp})
-	if ($main::verbose >= 2);
+	if ($main::verbose >= 0);
+#    die "HELLO\t";
 
     open PP, ">$out_file{pp}";
     foreach my $cds ($CDSs->get_objects()) {
 	next unless ($cds);
 	my ($translation) = $cds->get_attribute("translation");
-	next unless ($translation =~ /\S+/);
-	my $id = $cds->get_attribute("id");
-	my $gene = $cds->get_attribute("gene");
-	if (!($gene) || ($gene eq $null)) {
-	    $gene = $id;
+	next unless ($translation =~ /\S+/); # Skip empty protein sequences
+	my $cds_id = $cds->get_attribute("id");
+	my $gene_id = $cds->get_attribute("gene");
+	if (!($gene_id) || ($gene_id eq $null)) {
+	  $gene_id = $cds_id;
 	}
-	my $pp_id = $id;
+	my $pp_id = $cds_id;
 
         ## Get CDS description
         my $description = join($separator, $org,$id,$gene);
@@ -724,7 +726,7 @@ sub ExportProteinSequences {
 
         print PP $header, "\n";
 #        &PrintNextSequence(PP,"fasta",60,$translation,$pp_id, $pp_description);
-        &PrintNextSequence(PP,"fasta",60,$translation,$pp_id);
+        &PrintNextSequence(PP, "fasta", 60, $translation, $gene_id, "protein_ID=".$pp_id." CDS_ID=".$cds_id);
     }
     close PP;
 }

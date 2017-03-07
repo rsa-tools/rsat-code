@@ -18,7 +18,7 @@ GENE=lexA
 ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
 
 ## Reference taxon
-TAXON=Enterobacteriales
+TAXON=Enterobacteriaceae
 
 ## Taxonomic depth
 DEPTH=5
