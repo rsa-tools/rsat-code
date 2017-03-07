@@ -97,6 +97,9 @@ package main;
   ## File containing a list of organisms to install
   $infile{organisms} = "";
 
+  ## File containing a list of species to install from NCBI/Refseq FTP site
+  $infile{species} = "";
+
   ## List of organisms
   our @species = (); # for download and install
   our @organisms = (); # organisms are concatenation of species + strain
@@ -166,6 +169,22 @@ package main;
 
 
   ################################################################
+  ## If an species file has been specified, read species list
+  if ($infile{species}) {
+    &RSAT::message::TimeWarn("Reading species file", $infile{species}) if ($main::verbose >= 1);
+    my ($speciess) = &OpenInputFile($infile{species});
+    while (<$speciess>) {
+      next unless (/\S/); ## Skip empty rows
+      next if (/^;/); ## Skip comment rows
+      next if (/^#/); ## Skip header rows
+      chomp();
+      my ($species) = split /\s+/;
+      push @species, $species;
+    }
+    &RSAT::message::Info(scalar(@species), "species read from file", $infile{species}) if ($main::verbose >= 1);
+  }
+
+  ################################################################
   ## Check consistency of arguments for download/list/parse tasks.
   if ($task{parse} || $task{download} || $task{list}) {
     $source = "NCBI-Refseq";
@@ -203,6 +222,8 @@ package main;
       &RSAT::error::FatalError("Option -strain is only compatible with a single species. ") unless (scalar(@species) == 1);
     }
   }
+
+
 
 
   ################################################################
@@ -1389,6 +1410,9 @@ OPTIONS
 	-species species name, with space replaced by underscore
 	         (e.g. Saccharomyces_cerevisiae).
 
+	-species_file file containing species names in the first
+	        column.
+
 	-max_strains #
 
 	        Maximal number of strains per species to
@@ -1625,6 +1649,7 @@ install_organism options
 -org_file	organism_file_name
 -group          taxonomic group required for the URL of the NCBI/refseq FTP site.
 -species        species name (for tasks download, list and parse)
+-species_file   file containing species names in the first column
 -strain         strain (for task parse)
 -max_strains    max number of strains per species to be parsed / installed
 -skip #         Skip the # first organisms (convenient to resume interrupted list) 
@@ -1700,6 +1725,12 @@ sub ReadArguments {
       &RSAT::error::FatalError( $organism_short_name, "Invalid species name: should not be empty.") unless ($species =~ /\S/);
       &RSAT::error::FatalError( $organism_short_name, "Invalid species name: should contain at least one underscore.") unless ($species =~ /_/);
       push @species, $species;
+
+
+      ## Input file with organism list
+    } elsif ($arg eq "-species_file") {
+      $infile{species} = shift(@arguments);
+
 
       ## Strain, used to define the FTP site for the task "download"
     } elsif ($arg eq "-strain") {
