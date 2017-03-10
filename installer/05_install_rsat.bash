@@ -6,7 +6,7 @@ source 00_config.bash
 
 ## Run the configuration script, to specify the environment variables.
 cd ${RSAT}
-perl perl-scripts/configure_rsat.pl --auto rsat_site=${RSAT_SITE} \
+perl perl-scripts/configure_rsat.pl --auto rsat_site=${RSAT_SERVER_NAME} \
     ucsc_tools=0 ensembl_tools=0 phylo_tools=0 compara_tools=0 \
     rsat_server_admin=RSAT_admin
 
