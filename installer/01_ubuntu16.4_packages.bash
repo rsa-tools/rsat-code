@@ -212,11 +212,10 @@ libbio-das-perl
 PACKAGES="${PACKAGES_REQUIRED} ${PACKAGES_PERL}"
 echo "Packages to be installed with ${OS_INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES}"
-for LIB in ${PACKAGES}; \
-do \
-   echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
-   ${OS_INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT}/install_logs/${OS_INSTALLER}_install_${LIB}.txt ; \
-   df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
+for LIB in ${PACKAGES}; do \
+    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
+    ${OS_INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT}/install_logs/install_${LIB}_log.txt ; \
+    df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
 echo "Log files are in folder ${RSAT}/install_logs"
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
