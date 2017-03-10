@@ -1,4 +1,4 @@
-source 00_config.bash
+source installer/00_config.bash
 
 ################################################################
 ################       RSAT installation        ################
