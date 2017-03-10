@@ -38,6 +38,13 @@ make -f makefiles/init_rsat.mk init
 ## are loaded by each user at each login. Each user will then
 ## automatically load the RSAT configuration file when opening a bash
 ## session.
+echo
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo
+echo "Bash configuration for all users"
+echo "    /etc/bash_completion.d/RSAT_config.bashrc"
 sudo rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 
 echo '' >> /etc/bash.bashrc
