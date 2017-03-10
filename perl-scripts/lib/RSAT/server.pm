@@ -331,7 +331,7 @@ sub ReportWebAttack {
 ## Usage:
 ##     &UpdateExecTimeLogFile($start_time, $done_time, $elapsed);
 sub UpdateExecTimeLogFile {
-  my ($start_time, $done_time, $elapsed) = @_;
+  my ($start_time, $done_time, $elapsed, $warn_message) = @_;
 
   my $script_name = &RSAT::util::ShortFileName($0) || 'undefined';
   my $command = join (" ", $script_name, @ARGV);
@@ -663,7 +663,7 @@ sub CheckEmailAddress {
 =cut
 
 sub send_mail_STARTTLS {
-    my ($message, $recipient, $subject, $smtp_server, $user, $pass, $from ) = @_;
+    my ($message, $recipient, $subject, $smtp_server, $user, $pass, $from, $warn_message) = @_;
 
     if ($ENV{mail_supported} eq "no") {
     &RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
@@ -690,7 +690,7 @@ sub send_mail_STARTTLS {
     $mail_warn .= " to \"".$recipient."\"" if ($recipient);
     $mail_warn .= " ; Subject: \"".$subject."\"";
     $mail_warn .= " SMTP STARTTLS server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
-    &RSAT::message::TimeWarn($mail_warn);
+    &RSAT::message::TimeWarn($mail_warn) if ($warn_message);
     }
  
     ## Compose message
@@ -724,7 +724,7 @@ sub send_mail_STARTTLS {
 
 =cut
 sub send_mail {
-    my ($message, $recipient, $subject) = @_;
+    my ($message, $recipient, $subject, $warn_message) = @_;
 
     if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
 	(($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
@@ -770,7 +770,7 @@ sub send_mail {
 	$mail_warn .= " to \"".$recipient."\"" if ($recipient);
 	$mail_warn .= " ; Subject: \"".$subject."\"";
 	$mail_warn .= "SMTP server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
-	&RSAT::message::TimeWarn($mail_warn);
+	&RSAT::message::TimeWarn($mail_warn) if ($warn_message);
     }
 
     # ## Send the message using MIME::Lite    
