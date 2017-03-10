@@ -2,27 +2,38 @@
 
 This document explains how to install and configure the Regulatory Sequence Analysis Tools (RSAT). 
 
-# Downloading the Web installer
+# Downloading RSAT
 
 1. Go to the RSAT portal (**<http:rsat.eu>**)
 2. Select any server. 
 3. In the left-sided menu,  click on the **Download** link. 
-4. Fill in your name and coordinates and accepted the license. This will give you  access to the download link. 
+4. Fill in your name and coordinates and accept the license.
+   You now have access to the download page containing the links to : 
+   * the latest stable release web installer named 
+   `rsat_20XX-XX-XX_install_scripts.tar.gz`
+   * the previous release archives available in the folder
+     `previous_versions`.
+	 
+## Downloading the latest RSAT release via the Web installer  
 
-At this stage, you have two possibilities: install RSAT via Internet, or download the full archive directly. 
-
-Download the tar archive containing the installation scripts. 
-
-`rsat_20XX-XX-XX_install_scripts.tar.gz`
-
-Where `XX-XX-XX` should be replaced by the latest release date^[Previous releases are available in the folder `previous_versions`. ]. 
-
-Uncompress the archive. 
+5. Download the tar archive named
+`rsat_20XX-XX-XX_install_scripts.tar.gz` (`XX-XX-XX` 
+being the latest release date) and put it in your
+favorite directory.  
+6. Uncompress the archive. This wil create a directory named `rsat`
+   where we will continue the install procedure.
 
 ```
-tar -xpzf rsat_20XX-XX-XX_install_scripts.tar.gz
+tar -xpvzf rsat_20XX-XX-XX_install_scripts.tar.gz
+cd rsat
 ```
 
-This creates a folder with the installation scripts. 
+7. In the `rsat` directory, type:
+```
+
+```
+
+
+
 
 
