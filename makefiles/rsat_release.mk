@@ -1,10 +1,8 @@
 ################################################################
-## Prepare a release version of rsa-tools
-## distribution.mk makefile
-## Usage: make -f distribution.mk
+## Prepare a release of RSAT
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=${RSAT}/makefiles/distribution.mk
+MAKEFILE=${RSAT}/makefiles/release.mk
 MAKE = make -sk -f ${MAKEFILE}
 
 ## Archive file
@@ -50,10 +48,10 @@ PUB_SERVER=pedagogix-tagc.univ-mrs.fr
 PUB_LOGIN=rsat
 SSH_OPT=
 PUB_FORMAT=tar.gz
-PUB_DIR=/data/rsat_distribution
+PUB_DIR=/data/rsat_release
 DISTRIB_URL=http://${PUB_SERVER}/download_rsat/
 list_param:
-	@echo "RSAT distribution parameters"
+	@echo "RSAT release parameters"
 	@echo "	ARCHIVE			${ARCHIVE}"
 	@echo "	PUB_LOGIN		${PUB_LOGIN}"
 	@echo "	PUB_SERVER		${PUB_SERVER}"
@@ -88,7 +86,7 @@ clean_emacs_bk:
 	@rm -f *~ .#* #*
 
 ################################################################
-## Create tar and zip archives of the whole distribution
+## Create tar and zip archives of the whole release
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
 DISTRIB_FILES=rsat/00_README.txt		\
@@ -172,7 +170,7 @@ clean_distrib_site:
 	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsat_*.tar.gz ${PUB_DIR}/previous_versions/"
 
 ################################################################
-## Publish the tar archive of the whole distribution
+## Publish the tar archive of the whole release
 publish:
 	@echo
 	@echo "Synchronizing RSAT archive ${ARCHIVE_PREFIX}.${PUB_FORMAT} to server ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}"
@@ -185,7 +183,7 @@ publish_scripts:
 publish_metab:
 	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB}
 
-## Open the distribution Web site
+## Open the release Web site
 BROWSER=firefox
 web:
 	 open -a ${BROWSER} ${DISTRIB_URL}
