@@ -209,11 +209,10 @@ libbio-das-perl
 "
 
 ## Install the apt-get libraries
+PACKAGES=${PACKAGES_REQUIRED} ${PACKAGES_PERL}
 echo "Packages to be installed with ${OS_INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES}"
-echo "Perl module packages to be installed with ${OS_INSTALLER} ${INSTALLER_OPT}"
-echo "${PACKAGES_PERL}"
-for LIB in ${PACKAGES} ${PACKAGES_PERL}; \
+for LIB in ${PACKAGES}; \
 do \
    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
    ${OS_INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT}/install_logs/${OS_INSTALLER}_install_${LIB}.txt ; \
