@@ -44,15 +44,11 @@ make -f makefiles/rsat_release.mk all
 
 RSAT releases are managed by a makefile which ensures the following tasks: 
 
-- **tar_archive_scripts** Create a tar archive restricted to the installation scripts. This is a light file which can contains the required for a Web installation of RSAT.
-
-- **tar_archive** Create a tar archive with the full RSAT code.
+- **tar_archive** Create a tar archive with all the files required for the release. 
 
 - **ls_release_site** get the list of files available on the release site. This requires ssh access (with password). 
 
 - **clean_release_site** move the previous releases in the `previous_versions` folder. **Beware:** just after this task the download folder does not contain the distribution anymore. The tasks `publish_scripts` and `publish` should always be run after this, in order to post the new releases.  
-
-- **publish_scripts** transfer the scripts archive on the release Web site (via password-protected ssh).
 
 - **publish** transfer the RSAT tar archive on the release site (via password-protected ssh).
 
