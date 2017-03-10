@@ -26,7 +26,7 @@ dpkg-reconfigure -f noninteractive tzdata
 
 ## We can then check the increase of disk usage during the different
 ## steps of the installation
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 
 ################################################################
@@ -41,7 +41,7 @@ grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 ## TO SAVE SPACE, I SUPPRESS aptitude
 ## apt-get install aptitude
 apt-get update
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 
 ################################################################
 ## I tried to run dist-upgrade because it 'can "intelligently" handle
@@ -51,8 +51,8 @@ df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_u
 ## http://askubuntu.com/questions/194651/why-use-apt-get-upgrade-instead-of-apt-get-dist-upgrade
 ## HOWEVER, THE PERL UPDATE DOES NOT WORK ANYMORE AFTER THAT !!!
 ${INSTALLER} ${INSTALLER_OPT} upgrade
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgrade.txt
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgrade.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 
 ################################################################
@@ -209,11 +209,11 @@ echo "${PACKAGES_PERL}"
 for LIB in ${PACKAGES} ${PACKAGES_PERL}; \
 do \
    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
-   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT_PARENT_PATH}/install_logs/${INSTALLER}_install_${LIB}.txt ; \
-   df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
+   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT}/install_logs/${INSTALLER}_install_${LIB}.txt ; \
+   df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
-echo "Log files are in folder ${RSAT_PARENT_PATH}/install_logs"
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+echo "Log files are in folder ${RSAT}/install_logs"
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 
 ## PROBLEMS WITH Ubuntu 16
@@ -245,18 +245,18 @@ grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 # ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
 # ## Note that these dependencies cost 400Mb ! To be checked
 # ${INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
-# df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
-# grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+# df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 ${INSTALLER} ${INSTALLER_OPT}  autoremove
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
 ${INSTALLER} ${INSTALLER_OPT}  clean
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 ## This really helps: it saves several hundreds Mb
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 ## DONE: installation of Ubuntu packages
 ################################################################
