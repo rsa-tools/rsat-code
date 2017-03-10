@@ -45,8 +45,10 @@ ${OS_INSTALLER} install -y openssh-client
 ## when installing and uninstalling packages.
 ## TO SAVE SPACE, I SUPPRESS aptitude
 ## apt-get install aptitude
-apt-get update
-df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+
+## For the IFB cloud, it is recommended to start with a apt-get update
+#apt-get update
+#df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 
 ################################################################
 ## I tried to run dist-upgrade because it 'can "intelligently" handle
