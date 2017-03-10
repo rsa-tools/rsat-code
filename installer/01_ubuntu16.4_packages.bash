@@ -209,7 +209,7 @@ libbio-das-perl
 "
 
 ## Install the apt-get libraries
-PACKAGES=${PACKAGES_REQUIRED} ${PACKAGES_PERL}
+PACKAGES="${PACKAGES_REQUIRED} ${PACKAGES_PERL}"
 echo "Packages to be installed with ${OS_INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES}"
 for LIB in ${PACKAGES}; \
