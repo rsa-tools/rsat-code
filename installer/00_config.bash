@@ -23,14 +23,16 @@
 
 ## Note: you should probably replace the automatic site (hostname) by
 ## a name of your choice.
-export RSAT_SITE=`hostname`
+export RSAT_SERVER_NAME=`hostname`
 
-## Path for the local installation
-export RSAT_PARENT_PATH=/packages
+## Path for the local installation. By default, the package is
+## installed in a subdirectory rsat of the home directory of the user,
+## but this should be adapted depending on the local configuration.
+export RSAT_PARENT_PATH=${HOME}
 export RSAT=${RSAT_PARENT_PATH}/rsat
 
 ## URL to download the RSAT distribution
-export RSAT_RELEASE=2017-02-14 ## Version to be downloaded from the tar distribution
+export RSAT_RELEASE=2017-03-10 ## Version to be downloaded from the tar distribution
 export RSAT_ARCHIVE=rsat_${RSAT_RELEASE}.tar.gz
 export RSAT_DISTRIB_URL=http://pedagogix-tagc.univ-mrs.fr/download_rsat/${RSAT_ARCHIVE}
 
