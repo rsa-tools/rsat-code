@@ -4,6 +4,12 @@
 
 source installer/00_config.bash
 
+echo
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo
+
 ################################################################
 ## Before anything else, check that the date, time and time zone are
 ## correctly specified
@@ -13,7 +19,7 @@ ${OS_INSTALLER} install -y openssh-client
 
 ## Set time zone in non-interactive mode
 #echo Europe/Rome > /etc/timezone
-dpkg-reconfigure -f noninteractive tzdata
+# sudo dpkg-reconfigure -f noninteractive tzdata
 
 ## If not, set up the time zone, date and time with this command
 ## (source: https://help.ubuntu.com/community/UbuntuTime).
