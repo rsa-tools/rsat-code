@@ -39,7 +39,7 @@ echo "    RSAT=${RSAT}"
 # export RSAT_DISTRIB_URL=http://pedagogix-tagc.univ-mrs.fr/download_rsat/${RSAT_ARCHIVE}
 
 ## Configuration for the installation
-export INSTALLER=apt-get
+export OS_INSTALLER=apt-get
 echo "    INSTALLER=${OS_INSTALLER}"
 export INSTALLER_OPT="--quiet --assume-yes"
 echo "    INSTALLER_OPT=${INSTALLER_OPT}"
