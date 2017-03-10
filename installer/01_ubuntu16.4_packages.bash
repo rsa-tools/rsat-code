@@ -9,7 +9,7 @@ source installer/00_config.bash
 ## correctly specified
 date
 
-apt-get install -y openssh-client
+${OS_INSTALLER} install -y openssh-client
 
 ## Set time zone in non-interactive mode
 #echo Europe/Rome > /etc/timezone
@@ -27,7 +27,6 @@ dpkg-reconfigure -f noninteractive tzdata
 ## We can then check the increase of disk usage during the different
 ## steps of the installation
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
-
 
 ################################################################
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
