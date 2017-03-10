@@ -1,5 +1,5 @@
 ---
-title: "Creating an NGS VM under Virtualbox"
+title: "RSAT release"
 author: "Jacques van Helden"
 date: 'Last update: `r Sys.Date()`'
 output:
