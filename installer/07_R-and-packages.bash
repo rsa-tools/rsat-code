@@ -23,7 +23,7 @@ apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
 ${INSTALLER} install ${INSTALLER_OPT} software-properties-common python-software-properties
 add-apt-repository ppa:marutter/rdev
 apt-get update
-${INSTALLER} install ${INSTALLER_OPT} r-base > ${RSAT_PARENT_PATH}/install_logs/${INSTALLER}_install_r-base.txt
+${INSTALLER} install ${INSTALLER_OPT} r-base > ${RSAT}/install_logs/${INSTALLER}_install_r-base.txt
 
 
 ################################################################
@@ -60,4 +60,4 @@ make -f makefiles/install_rsat.mk install_r_packages
 # ## At prompt "Save workspace image? [y/n/c]:", answer "n"
 
 ## Check remaining disk space
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
