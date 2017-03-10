@@ -15,7 +15,7 @@ pip install httplib2
 ## optional: an utility to measure internet bandwidth
 pip install speedtest-cli
 
-#${INSTALLER} install python3-suds
+#${OS_INSTALLER} install python3-suds
 ## PROBLEM : No distributions at all found for python-suds
 ## pip3 install python-suds
 

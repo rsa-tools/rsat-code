@@ -2,7 +2,7 @@
 ## Install all the Ubuntu packages required prior to the installation
 ## of the Regulatory Sequence Analysis Tools (RSAT; http://rsat.eu/).
 
-source 00_config.bash
+source installer/00_config.bash
 
 ################################################################
 ## Before anything else, check that the date, time and time zone are
@@ -50,8 +50,8 @@ df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 ## that arose because of changes in the dependencies.'
 ## http://askubuntu.com/questions/194651/why-use-apt-get-upgrade-instead-of-apt-get-dist-upgrade
 ## HOWEVER, THE PERL UPDATE DOES NOT WORK ANYMORE AFTER THAT !!!
-${INSTALLER} ${INSTALLER_OPT} upgrade
-df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgrade.txt
+${OS_INSTALLER} ${INSTALLER_OPT} upgrade
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${OS_INSTALLER}_upgrade.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 
@@ -202,14 +202,14 @@ libbio-das-perl
 "
 
 ## Install the apt-get libraries
-echo "Packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
+echo "Packages to be installed with ${OS_INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES}"
-echo "Perl module packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
+echo "Perl module packages to be installed with ${OS_INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES_PERL}"
 for LIB in ${PACKAGES} ${PACKAGES_PERL}; \
 do \
    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
-   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT}/install_logs/${INSTALLER}_install_${LIB}.txt ; \
+   ${OS_INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT}/install_logs/${OS_INSTALLER}_install_${LIB}.txt ; \
    df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
 echo "Log files are in folder ${RSAT}/install_logs"
@@ -230,7 +230,7 @@ echo "Log files are in folder ${RSAT}/install_logs"
 
 ## This package has to be installed in an interactive mode (dialog
 ## box)
-#${INSTALLER} install ${INSTALLER_OPT} console-data
+#${OS_INSTALLER} install ${INSTALLER_OPT} console-data
 
 ################################################################
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -241,19 +241,19 @@ echo "Log files are in folder ${RSAT}/install_logs"
 # ################################################################
 # ## Specific treatment for some Python libraries
 # ##
-# ## A fix for a problem to install scipy with pip: use ${INSTALLER} build-dep 
+# ## A fix for a problem to install scipy with pip: use ${OS_INSTALLER} build-dep 
 # ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
 # ## Note that these dependencies cost 400Mb ! To be checked
-# ${INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
+# ${OS_INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
 # df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
-${INSTALLER} ${INSTALLER_OPT}  autoremove
+${OS_INSTALLER} ${INSTALLER_OPT}  autoremove
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
-${INSTALLER} ${INSTALLER_OPT}  clean
+${OS_INSTALLER} ${INSTALLER_OPT}  clean
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 ## This really helps: it saves several hundreds Mb
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
