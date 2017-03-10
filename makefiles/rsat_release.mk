@@ -2,7 +2,7 @@
 ## Prepare a release of RSAT
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=${RSAT}/makefiles/release.mk
+MAKEFILE=${RSAT}/makefiles/rsat_release.mk
 MAKE = make -sk -f ${MAKEFILE}
 
 ## Archive file
@@ -40,7 +40,7 @@ TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar
 
 ################################################################
 ## All the tasks for publishing the new version
-all: clean_emacs_bk tar_archive_scripts tar_archive clean_distrib_site publish publish_scripts
+all: clean_emacs_bk tar_archive_scripts tar_archive clean_release_site publish publish_scripts
 
 ## List parameters
 #PUB_SERVER=rsat.ulb.ac.be
@@ -49,24 +49,24 @@ PUB_LOGIN=rsat
 SSH_OPT=
 PUB_FORMAT=tar.gz
 PUB_DIR=/data/rsat_release
-DISTRIB_URL=http://${PUB_SERVER}/download_rsat/
+RELEASE_URL=http://${PUB_SERVER}/download_rsat/
 list_param:
 	@echo "RSAT release parameters"
 	@echo "	ARCHIVE			${ARCHIVE}"
 	@echo "	PUB_LOGIN		${PUB_LOGIN}"
 	@echo "	PUB_SERVER		${PUB_SERVER}"
 	@echo "	PUB_DIR			${PUB_DIR}"
-	@echo "	DISTRIB_URL		${DISTRIB_URL}"
+	@echo "	RELEASE_URL		${RELEASE_URL}"
 	@echo "	PUB_TARGET_MANUALS	${PUB_TARGET_MANUALS}"
 
 ################################################################
 ## Generate the Manuals and tutorials
 manuals:
 	(cd doc/manuals; make fullclean; make install_guide; make rsat_tutorial; make neat_tutorial; make web_server_guide; make tex_clean)
-	rsync -rtupvl -e "ssh ${SSH_OPT}" doc/manuals/*.pdf public_html/distrib
+	rsync -rtupvl -e "ssh ${SSH_OPT}" doc/manuals/*.pdf public_html/release
 
 ## Install manuals on the RSAT Web server
-PUB_TARGET_MANUALS=${PUB_LOGIN}@${PUB_SERVER}:rsat/public_html/distrib/
+PUB_TARGET_MANUALS=${PUB_LOGIN}@${PUB_SERVER}:rsat/public_html/release/
 publish_manuals:
 	echo "Publishing manuals on server ${PUB_TARGET_MANUALS}"
 	rsync -ruptvl -e 'ssh ${SSH_OPT}' doc/manuals/*.pdf ${PUB_TARGET_MANUALS}
@@ -89,7 +89,7 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole release
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
-DISTRIB_FILES=rsat/00_README.txt		\
+RELEASE_FILES=rsat/00_README.txt		\
 	rsat/perl-scripts			\
 	rsat/R-scripts/TFBMclust		\
 	rsat/makefiles				\
@@ -112,11 +112,11 @@ PATHWAY_FILES = \
 	rsat/contrib/REA			\
 	rsat/contrib/kwalks
 
-DISTRIB_FILES_METAB=rsat/java		\
+RELEASE_FILES_METAB=rsat/java		\
 	rsat/contrib/REA		\
 	rsat/contrib/kwalks
 
-DISTRIB_FILES_SCRIPTS=rsat/doc/howto/install_scripts
+RELEASE_FILES_SCRIPTS=rsat/doc/howto/install_scripts
 
 _create_tar_archive:
 	@echo ${TAR_CREATE} 
@@ -131,7 +131,7 @@ _add_one_file:
 
 _fill_archive:
 	(cd ${TAR_ROOT};				\
-	for f in ${DISTRIB_FILES}; do			\
+	for f in ${RELEASE_FILES}; do			\
 		${MAKE} _add_one_file FILE=$${f};	\
 	done)
 	@echo "Archive created	${ARCHIVE}"
@@ -147,12 +147,12 @@ tar_archive:
 	@echo "Archive"
 	@echo "	${TAR_ROOT}/${ARCHIVE}.tar.gz"
 
-## Create an archive with the metabolic tools (since the java files occupy 80Mb, we distribute them separately
+## Create an archive with the metabolic tools (since the java files occupy 80Mb, we releaseute them separately
 tar_archive_metab:
-	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB} DISTRIB_FILES="${DISTRIB_FILES_METAB}"
+	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB} RELEASE_FILES="${RELEASE_FILES_METAB}"
 
 tar_archive_scripts:
-	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS} DISTRIB_FILES="${DISTRIB_FILES_SCRIPTS}"
+	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS} RELEASE_FILES="${RELEASE_FILES_SCRIPTS}"
 
 ## Archive with zip
 # ZIP_EXCLUDE=-x CVS '*~' tmp data logs
@@ -161,13 +161,17 @@ tar_archive_scripts:
 # 	${MAKE} _fill_archive ARCHIVE_CMD='${ZIP}' POST_CMD='${ZIP_EXCLUDE}'
 
 
-ls_distrib:
+ls_release_site:
 	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "ls -ltra ${PUB_DIR}/"
 
-clean_distrib_site:
+clean_release_site:
 	@echo
 	@echo "Moving previous archives from the public server ${PUB_LOGIN}@${PUB_SERVER} to ${PUB_DIR}/previous_versions"
 	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsat_*.tar.gz ${PUB_DIR}/previous_versions/"
+	@echo 
+	@echo "BEWARE: the tar archives for RSAT code and install scripts have been moved to previous_version folder. "
+	@echo "Do not forget to publish a new version with"
+	@echo "	make -f makefiles/rsat_release.mk publish publish_scripts"
 
 ################################################################
 ## Publish the tar archive of the whole release
@@ -186,7 +190,7 @@ publish_metab:
 ## Open the release Web site
 BROWSER=firefox
 web:
-	 open -a ${BROWSER} ${DISTRIB_URL}
+	 open -a ${BROWSER} ${RELEASE_URL}
 
 ################################################################
 ## Make a tar archive of the ws clients
