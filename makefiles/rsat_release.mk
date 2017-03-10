@@ -40,7 +40,7 @@ TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar
 
 ################################################################
 ## All the tasks for publishing the new version
-all: clean_emacs_bk tar_archive_scripts tar_archive clean_release_site publish publish_scripts
+all: clean_emacs_bk tar_archive clean_release_site publish publish_scripts
 
 ## List parameters
 #PUB_SERVER=rsat.ulb.ac.be
@@ -90,6 +90,8 @@ clean_emacs_bk:
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
 RELEASE_FILES=rsat/00_README.txt		\
+	rsat/INSTALL.md				\
+	rsat/installer				\
 	rsat/perl-scripts			\
 	rsat/R-scripts/TFBMclust		\
 	rsat/makefiles				\
@@ -116,7 +118,7 @@ RELEASE_FILES_METAB=rsat/java		\
 	rsat/contrib/REA		\
 	rsat/contrib/kwalks
 
-RELEASE_FILES_SCRIPTS=rsat/doc/howto/install_scripts
+#RELEASE_FILES_SCRIPTS=rsat/installer
 
 _create_tar_archive:
 	@echo ${TAR_CREATE} 
@@ -151,8 +153,8 @@ tar_archive:
 tar_archive_metab:
 	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB} RELEASE_FILES="${RELEASE_FILES_METAB}"
 
-tar_archive_scripts:
-	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS} RELEASE_FILES="${RELEASE_FILES_SCRIPTS}"
+#tar_archive_scripts:
+#	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS} RELEASE_FILES="${RELEASE_FILES_SCRIPTS}"
 
 ## Archive with zip
 # ZIP_EXCLUDE=-x CVS '*~' tmp data logs
@@ -171,7 +173,7 @@ clean_release_site:
 	@echo 
 	@echo "BEWARE: the tar archives for RSAT code and install scripts have been moved to previous_version folder. "
 	@echo "Do not forget to publish a new version with"
-	@echo "	make -f makefiles/rsat_release.mk publish publish_scripts"
+	@echo "	make -f makefiles/rsat_release.mk publish"
 
 ################################################################
 ## Publish the tar archive of the whole release
@@ -181,8 +183,8 @@ publish:
 	@echo
 	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
 
-publish_scripts:
-	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS}
+#publish_scripts:
+#	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS}
 
 publish_metab:
 	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB}
