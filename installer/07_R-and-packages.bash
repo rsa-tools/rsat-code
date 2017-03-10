@@ -20,10 +20,10 @@ echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.
 echo "" >> /etc/apt/sources.list.rcran
 cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
-${INSTALLER} install ${INSTALLER_OPT} software-properties-common python-software-properties
+${OS_INSTALLER} install ${INSTALLER_OPT} software-properties-common python-software-properties
 add-apt-repository ppa:marutter/rdev
 apt-get update
-${INSTALLER} install ${INSTALLER_OPT} r-base > ${RSAT}/install_logs/${INSTALLER}_install_r-base.txt
+${OS_INSTALLER} install ${INSTALLER_OPT} r-base > ${RSAT}/install_logs/${OS_INSTALLER}_install_r-base.txt
 
 
 ################################################################
