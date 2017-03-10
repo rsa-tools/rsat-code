@@ -5,7 +5,7 @@
 ## been installed with apt-get under Ubuntu. For other OS, they should
 ## be added to the pip installation.
 
-source 00_config.bash
+source installer/00_config.bash
 
 pip install soappy
 pip install fisher

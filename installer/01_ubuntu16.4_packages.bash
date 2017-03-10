@@ -111,7 +111,6 @@ libcrypt-ssleay-perl
 libssl-dev
 php
 libapache2-mod-php
-finger
 "
 
 
@@ -157,6 +156,7 @@ exfat-utils
 at
 firefox
 ncbi-blast+
+finger
 "
 
 ################################################################
