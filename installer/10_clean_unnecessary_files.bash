@@ -17,7 +17,7 @@ rm -rf  ~/.ssh/ ## Make sure that the installer ssh config is not included in th
 cd ${RSAT_PARENT_PATH}; rm -f  ${RSAT_ARCHIVE} ## Free space
 rm -rf ${RSAT}/app_sources ## Remove source code of external programs
 
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned_unnecessary_files.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned_unnecessary_files.txt
 
 ## THE INSTALLATION OF THE RSAT SERVER IS HOW DONE. THE REST IS OPTIONNAL
 ################################################################
