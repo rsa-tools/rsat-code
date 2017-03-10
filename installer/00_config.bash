@@ -40,7 +40,7 @@ echo "    RSAT=${RSAT}"
 
 ## Configuration for the installation
 export OS_INSTALLER=apt-get
-echo "    INSTALLER=${OS_INSTALLER}"
+echo "    OS_INSTALLER=${OS_INSTALLER}"
 export INSTALLER_OPT="--quiet --assume-yes"
 echo "    INSTALLER_OPT=${INSTALLER_OPT}"
 ## alternative: INSTALLER=aptitude
