@@ -171,10 +171,10 @@ while ($current_line = <$in>) {
 	foreach my $type (@info_types) {
 #	  $type = "description" if ($type eq "descr");
 	  my $info = join( ";", $feature->get_attribute($type));
-	  &RSAT::message::Warning(join("\t", "Info for query",$query, $info)) if ($main::verbose >= 6);
+	  &RSAT::message::Warning(join("\t", "query",$query, $type, $info)) if ($main::verbose >= 5);
 	  push @info, $info;
 	}
-	&RSAT::message::Info(join ("\t", "Line", $l, "Info found", $query, join("\t", @info))) if ($main::verbose >= 3);
+	&RSAT::message::Info(join ("\t", "Line", $l, "found", $query, $type, join("\t", @info))) if ($main::verbose >= 3);
       } else {
 	@info = @null;
 	&RSAT::message::Warning(join ("\t", "Line", $l, "No info found for query", $query)) if ($main::verbose >= 1);
@@ -190,7 +190,7 @@ while ($current_line = <$in>) {
 
 
 
-###### close input/output files
+## Close input/output files
 close $in if $inputfile;
 
 
