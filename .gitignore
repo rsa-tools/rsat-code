@@ -33,7 +33,6 @@ doc/manuals/*.out
 doc/manuals/*.toc
 downloads
 jobs
-./lib
 logs
 logs_tmp
 public_html/data/GO
@@ -77,3 +76,7 @@ public_html/data/ceas/
 data
 .snakemake
 test
+INSTALL.html
+results
+install_logs
+./lib
