@@ -1,4 +1,13 @@
 ################################################################
+## Installation
+
+- JvH: explain the folder organization in  $RSAT/README.md
+- JvH: explain the install procedure in $RSAT/INSTALL.md
+- JvH: move the config files in the folder config_files
+- 
+
+
+################################################################
 ## Web site
 
 

@@ -1,45 +1,57 @@
-================================================================
-		          Download
-           Regulatory Sequence Analysis Tools (RSAT)
-	        Network Analysis Tools (NeAT)
-================================================================
-
-This folder contains archives to download and install local versions
-of the software suites Regulatory Sequence Analysis Tools (RSAT) and
-Network Analysis Tools (NeAT).
-
-Files: 
-
-rsat_YYYY-MM-DD.tar.gz
-
-   Stand-alone versions + web servers for RSAT and NeAT (except the
-   metabolic tools).
-
-metabolic-tools_YYYYMMDD.tar.gz
-
-   Metabolic pathway analysis tools (supported on some NeAT servers).
+# Regulatory Sequence Analysis Tools (RSAT) / Network Analysis Tools (NeAT)
 
 
-================================================================
+This folder contains all the code required to install a local version
+of the **Regulatory Sequence Analysis Tools** (**RSAT**) and **Network
+Analysis Tools** (**NeAT**).
 
-RSAT/NeAT installation
-======================
 
-After having uncompressed the archive, you will find the installation
-and user guides in the directory
+**Contact**: <Jacques.van-Helden@univ-amu.fr>
 
-      rsa-tools/doc/manuals/*.pdf
+**Authors**: Jacques van Helden + the RSAT/NeAT team.
 
-Regulatory Sequence Analysis Tools (RSAT)
-=========================================
-RSAT installation guide:   RSAT_install_guide.pdf
-Web configuration guide:   rsat_web_server.pdf
-Command-linde user guide:  tutorial_shell_rsat.pdf
 
-Network Analysis Tools (NeAT)
-=============================
-Web server configuration:  neat_web_server.pdf
-Command-line user guide:   neat_tutorial.pdf
+****************************************************************
+# Files and folders
 
-================================================================
-Contact: Jacques.van-Helden@univ-amu.fr
+## Folders coming with the release
+
+- **contrib** software tools developed by collaborators, in C,
+  requiring compilation. 
+  
+- **doc** documentation in various formats.
+
+- **perl-scripts** Perl scripts, which constitute most of the RSAT and
+NeAT code.
+
+- **public_html** Web interface (cgi + php scripts).
+
+- **python-scripts** Python scripts
+
+- **ws_clients** examples of Web services clients in different
+  languages.
+
+## Folders created for management
+
+- **app_sources** download the code source of diverse applications
+  (dependencies plus optional complementary software tools).
+  
+- **bin** executable binaries (including the compiled C programs).
+
+- **downloads** this folder is created at RSAT initialisation. It
+  serves to download the genome data from NCBI, Ensembl or other
+  databases, which will serve to install organisms on RSAT.
+
+## Folders to be evaluated
+
+- **snakefiles**
+
+- **src**
+
+- **sql_scripts**
+
+
+
+
+
+****************************************************************
