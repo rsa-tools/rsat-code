@@ -1,4 +1,5 @@
 #*
+install_logs/
 *.aux
 *.idx
 *.o
@@ -33,7 +34,6 @@ doc/manuals/*.out
 doc/manuals/*.toc
 downloads
 jobs
-./lib
 logs
 logs_tmp
 public_html/data/GO
