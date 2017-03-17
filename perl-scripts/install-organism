@@ -3,7 +3,7 @@
 #
 # $Id: install-organism,v 1.129 2013/10/13 12:24:00 jvanheld Exp $
 #
-# Time-stamp: <2003-10-21 01:20:28 jvanheld>
+# Time-stamp: <2017-03-17 10:53:06 eda>
 #
 ############################################################
 
@@ -1466,11 +1466,11 @@ OPTIONS
 		BEWARE : you should provide the absolute path of the
 		installation directory, not the relative path.
 
-	-batch  run some tasks (for example the calibration of oligos
+	-batch run some tasks (for example the calibration of oligos
 		and dyads) in batch mode.  This options works on our
 		lab cluster, but could be adapted for other
-		configurations by adapting the method &doit() in the
-		utilities ($RSAT/lib/RSA.lib).
+		configurations by adapting the parameters in
+		RSAT_config.props.
 
 	-config
 		Specify an alternative organism configuration file for the
