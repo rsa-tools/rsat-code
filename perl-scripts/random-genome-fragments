@@ -82,7 +82,7 @@ use RSAT::server;
 use DBI();
 push (@INC, $ENV{bioperl}) if ($ENV{bioperl});
 #push (@INC, $ENV{ensembl}) if ($ENV{ensembl});
-push (@INC, $ENV{RSAT}."/lib/ensemblgenomes-".$ENV{ensemblgenomes_release}."-".$ENV{ensembl_release}."/ensembl/modules");
+push (@INC, $ENV{RSAT}."/ext_lib/ensemblgenomes-".$ENV{ensemblgenomes_release}."-".$ENV{ensembl_release}."/ensembl/modules");
 require Bio::EnsEMBL::Registry;
 
 use Data::Dumper;

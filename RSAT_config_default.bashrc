@@ -30,9 +30,9 @@ export PATH=${RSAT}/python-scripts:${PATH}
 ################################################################
 ## Add RSAT python libraries to PYTHONPATH
 if  [ ${PYTHONPATH} ]; then
-    export PYTHONPATH=${PYTHONPATH}:${RSAT}/lib/python2.7/site-packages/
+    export PYTHONPATH=${PYTHONPATH}:${RSAT}/ext_lib/python2.7/site-packages/
 else
-    export PYTHONPATH=${RSAT}/lib/python2.7/site-packages/
+    export PYTHONPATH=${RSAT}/ext_lib/python2.7/site-packages/
 fi
 
 ################################################################
@@ -51,19 +51,19 @@ export CVS_RSH=ssh
 ## Default path for the Ensembl Perl modules and sofwtare tools
 export ENSEMBL_RELEASE=87
 export ENSEMBLGENOMES_RELEASE=34
-export PATH=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-git-tools/bin:${PATH}
-export PERL5LIB=${RSAT}/lib/bioperl-release-${BIOPERL_VERSION}/bioperl-live::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-compara/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-external/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-functgenomics/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-tools/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-variation/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensemblgenomes-api/modules::${PERL5LIB}
-export PERL5LIB=${RSAT}/lib/biomart-perl/lib/::${PERL5LIB}
+export PATH=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-git-tools/bin:${PATH}
+export PERL5LIB=${RSAT}/ext_lib/bioperl-release-${BIOPERL_VERSION}/bioperl-live::${PERL5LIB}
+export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-compara/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-external/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-functgenomics/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-tools/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensembl-variation/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensemblgenomes-api/modules::${PERL5LIB}
+export PERL5LIB=${RSAT}/ext_lib/biomart-perl/lib/::${PERL5LIB}
 
 
 ################################################################
 ## Python libraries
 ## (required for external tool CEAS)
-export PYTHONPATH=$PYTHONPATH:${RSAT}/lib/python2.7/site-packages
+export PYTHONPATH=$PYTHONPATH:${RSAT}/ext_lib/python2.7/site-packages
