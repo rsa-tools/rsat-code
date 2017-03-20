@@ -13,6 +13,7 @@ $calc_neighbours = 0;
 $info_before = 0;
 @ORF_column = ();
 $null = "<NULL>";
+$header_line = 0;
 
 
 @supported_info_types = qw(id ctg strand left right name descr names 
@@ -55,7 +56,6 @@ foreach my $type (@info_types) {
 
 ## Check that the column containing the ORF is specified.
 ## If not only default ORF_column is 1
-
 if (scalar(@ORF_column) == 0) {
   push @ORF_column, 1;
 }
@@ -128,7 +128,19 @@ if ($verbose) {
 ($in) = &OpenInputFile($inputfile);
 
 
-###### execute the command #########
+## Read header line
+if ($header_line) {
+  $current_line = <$in>;
+  chomp($current_line);
+  if ($info_before) {
+    $current_line =~ s/^#//;
+    print $out "#", join ("\t", @header, $current_line), "\n";
+  } else {
+    print $out join ("\t", $current_line, @header), "\n";
+  }
+}
+
+## Read the file and add info
 my $l = 0;
 while ($current_line = <$in>) {
   $l++;
@@ -171,10 +183,10 @@ while ($current_line = <$in>) {
 	foreach my $type (@info_types) {
 #	  $type = "description" if ($type eq "descr");
 	  my $info = join( ";", $feature->get_attribute($type));
-	  &RSAT::message::Warning(join("\t", "Info for query",$query, $info)) if ($main::verbose >= 6);
+	  &RSAT::message::Warning(join("\t", "query",$query, $type, $info)) if ($main::verbose >= 5);
 	  push @info, $info;
 	}
-	&RSAT::message::Info(join ("\t", "Line", $l, "Info found", $query, join("\t", @info))) if ($main::verbose >= 3);
+	&RSAT::message::Info(join ("\t", "Line", $l, "found", $query, $type, join("\t", @info))) if ($main::verbose >= 3);
       } else {
 	@info = @null;
 	&RSAT::message::Warning(join ("\t", "Line", $l, "No info found for query", $query)) if ($main::verbose >= 1);
@@ -190,7 +202,7 @@ while ($current_line = <$in>) {
 
 
 
-###### close input/output files
+## Close input/output files
 close $in if $inputfile;
 
 
@@ -248,6 +260,8 @@ OPTIONS
 	-before add the information before the input line (by default,
          	the info is added at the end of each input line).
 	
+	-null String to display for undefined values (default: $null).
+
 	-feattype
 		Feature type.
 		Supported: $supported_feature_types
@@ -284,6 +298,7 @@ add-gene-info options
 -org	    organism
 -info	    information type (supported: $supported_info_types)
 -before	    add info before rather than afte the input line
+-null       string to display for undefined values (default: $null).
 -feattype   accepted feature types. Supported: $supported_feature_types
 End_short_help
   close HELP;
@@ -338,6 +353,14 @@ sub ReadArguments() {
 	    #### add info before the input line
 	} elsif ($ARGV[$a] eq "-before") {
 	    $info_before = 1;
+
+	    ## String to display for null values
+	} elsif ($ARGV[$a] eq "-null") {
+	    $null = $ARGV[$a+1];
+
+	    ## First row contains header
+	} elsif ($ARGV[$a] eq "-header") {
+	  $header_line = 1;
 
 	    #### feature types
 	} elsif ($ARGV[$a] eq "-feattype") {
