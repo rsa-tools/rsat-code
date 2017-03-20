@@ -21,8 +21,8 @@ require RSAT::util;
 push (@INC, $ENV{bioperl});
 #push (@INC, $ENV{ensembl});
 #push (@INC, $ENV{compara});
-push (@INC, $ENV{RSAT}."/lib/ensemblgenomes-".$ENV{ensemblgenomes_release}."-".$ENV{ensembl_release}."/ensembl/modules");
-push (@INC, $ENV{RSAT}."/lib/ensemblgenomes-".$ENV{ensemblgenomes_release}."-".$ENV{ensembl_release}."/ensembl-compara/modules");
+push (@INC, $ENV{RSAT}."/ext_lib/ensemblgenomes-".$ENV{ensemblgenomes_release}."-".$ENV{ensembl_release}."/ensembl/modules");
+push (@INC, $ENV{RSAT}."/ext_lib/ensemblgenomes-".$ENV{ensemblgenomes_release}."-".$ENV{ensembl_release}."/ensembl-compara/modules");
 
 ## EnsEMBL libraries
 require Bio::EnsEMBL::Registry;

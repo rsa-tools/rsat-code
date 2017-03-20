@@ -46,8 +46,8 @@ init:
 	mkdir -p ${RSAT}/public_html/data/metabolic_networks/GER_files
 	@echo "	bin	${RSAT}/bin"
 	@mkdir -p ${RSAT}/bin
-	@echo "	lib	${RSAT}/lib"
-	@mkdir -p ${RSAT}/lib
+	@echo "	ext_lib	${RSAT}/ext_lib"
+	@mkdir -p ${RSAT}/ext_lib
 	@${MAKE} _create_download_dir
 
 	@echo "	tmp	${RSAT}/public_html/tmp"
