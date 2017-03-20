@@ -751,144 +751,154 @@ formats (synonyms, locus_tag, Accession, ...).
 
 =cut
 sub ParseFeatureNames {
-    my (@class_holders) = @_;
+  my (@class_holders) = @_;
 
-    foreach my $class_holder (@class_holders) {
-	&RSAT::message::TimeWarn("Parsing feature names for class", $class_holder->get_object_type())
-	    if ($verbose >= 2);
+  foreach my $class_holder (@class_holders) {
+    &RSAT::message::TimeWarn("Parsing feature names for class", $class_holder->get_object_type())
+	if ($verbose >= 2);
 
-	foreach my $feature ($class_holder->get_objects()) {
+    foreach my $feature ($class_holder->get_objects()) {
 
-	    ################################################################
-	    ## Attribute "synonym" (e.g. C.elegans genome version July 2003)
-	    foreach my $synonym_line ($feature->get_attribute("synonym")) {
-		my @synonyms = split /\,\s+/, $synonym_line;
+      ################################################################
+      ## Attribute "synonym" (e.g. C.elegans genome version July 2003)
+      foreach my $synonym_line ($feature->get_attribute("synonym")) {
+	my @synonyms = split /\,\s+/, $synonym_line;
 #		&RSAT::message::Debug("feature synonym field", $feature->get_attribute("id"), scalar(@synonyms), join ("; ", @synonyms)) if ($$main::verbose >= 10);
-		foreach my $synonym (@synonyms) {
-		    $feature->push_attribute("names", $synonym);
-		}
-	    }
-
-	    ################################################################
-	    ## Attribute "gene"
-	    my @genes = $feature->get_attribute("gene");
-	    foreach my $gene_name (@genes) {
-		$new_name = &trim($gene_name);
-		&RSAT::message::Debug( "\t", "Adding gene name as name to feature",
-			   $feature->get_attribute("id"),
-			   $new_name
-			   ), "\n" if ($verbose >= 4);
-		$feature->push_attribute("names", $new_name);
-	    }
-
-
-	    ################################################################
-	    ## Attribute "locus_tag"
-	    my ($locus_tag) = $feature->get_attribute("locus_tag");
-	    $locus_tag = &trim($locus_tag); ## suppress leading and trainling spaces
-	    &RSAT::message::Debug( "\t", "Adding locus tag as name to feature",
-				   $feature->get_attribute("id"),
-				   $locus_tag
-				   ), "\n" if ($verbose >= 4);
-	    $feature->push_attribute("names", $locus_tag);
-
-	    ################################################################
-	    ## Attribute "GeneID"
-	    my ($GeneID) = $feature->get_attribute("GeneID");
-	    $GeneID = &trim($GeneID); ## suppress leading and trainling spaces
-	    &RSAT::message::Debug( "\t", "Adding locus tag as name to feature",
-				   $feature->get_attribute("id"),
-				   $GeneID
-				   ), "\n" if ($verbose >= 4);
-	    $feature->push_attribute("names", $GeneID);
-
-
-
-
-	    ################################################################
-	    ## Some types of notes contain identifiers or synonyms
-	    my @notes = $feature->get_attribute("note");
-	    foreach my $note (@notes) {
-		$note = &trim($note); ### remove leading and trailing spaces
-		warn "NOTE\t'$note'\n" if ($verbose >= 4);
-
-		if ($note =~ /synonyms:/) {
-		    ## For some genomes there is a note of type 'synonyms:' (e.g. Saccharomyces cerevisiae),
-		    my $synonyms = $'; ##'
-		    my @synonyms = split /, /, $synonyms;
-		    foreach my $new_name (@synonyms) {
-			$new_name = &trim($new_name);
-			&RSAT::message::Debug( "\t", "Adding synonym to feature",
-				   $feature->get_attribute("id"),
-				   $new_name
-				   ), "\n" if ($verbose >= 4);
-			$feature->push_attribute("names", $new_name);
-		    }
-
-		} elsif ($note =~ /synonym:/) {
-		    ## For other genomes there is a note of type 'synonym:' (e.g. Arabidopsis thaliana),
-		    my $synonyms = $';  ##'
-		    $synonyms =~ s/;.*//; ## In A.thaliana there are comments after the synonym
-
-		    my @synonyms = split /, /, $synonyms;
-		    foreach my $new_name (@synonyms) {
-			$new_name = &trim($new_name);
-			&RSAT::message::Debug( "\t", "Adding synonym to feature",
-				   $feature->get_attribute("id"),
-				   $new_name
-				   ), "\n" if ($verbose >= 4);
-			$feature->push_attribute("names", $new_name);
-		    }
-
-		} elsif ($note !~ /\S/) {
-		    ## A single-word note is usually (but not always, I guess) a synonym
-		    $feature->push_attribute("names", $note);
-
-		} elsif ($org eq "Plasmodium_falciparum") {
-		    my @notes = $feature->get_attribute("note");
-		    foreach my $note (@notes) {
-			next if ($note =~/score/);
-			my @names = split /\;\s*/, $note;
-			foreach my $name (@names) {
-			    $name = &RSAT::util::trim($name);
-			    if (($name =~ /^(PF\S+)/) || ($name =~ /^(MAL\S+)/)) {
-				$feature->push_attribute("names", $1);
-# 				&RSAT::message::Debug ("\t",
-# 					   "Plasmodium_falciparum",
-# 					   $feature->get_attribute("contig"),
-# 					   $feature->get_attribute("id"),
-# 					   $feature->get_attribute("type"),
-# 					   , "adding name", $1, "from note", $note), "\n" if ($main::verbose >= 10);
-			    }
-			}
-		    }
-#		    die "Specific treatment for Plasmodium_falciparum";
-
-
-		} elsif (
-		    ## For some genomes, the locus_tag, Accession or other IDs have been annotated as "note" !
-		    ($note =~ /^locus_tag\: (\S+)/i)  ||
-		    ($note =~ /^Accession ([\w_\-\.]+)/) ||
-		    ($note =~ /^(\S+)\,\s+len:/)
-		){
-
-		    $new_name = $1;
-		    $new_name =~ s/\;$//;
-		    $new_name =~ s/\:$//;
-
-		    #### add the new name
-		    &RSAT::message::Debug( "\t", "Adding name to feature",
-			       $feature->get_attribute("id"),
-			       $new_name
-			       ), "\n" if ($verbose >= 4);
-		    $feature->push_attribute("names", $new_name);
-
-		}
-
-	    }
-
+	foreach my $synonym (@synonyms) {
+	  if ($synonym ne "") {
+	    $feature->push_attribute("names", $synonym);
+	  }
 	}
+      }
+
+      ################################################################
+      ## Attribute "gene"
+      my @genes = $feature->get_attribute("gene");
+      foreach my $gene_name (@genes) {
+	my $new_name = &trim($gene_name);
+	if ($new_name ne "") {
+	  &RSAT::message::Debug( "\t", "Adding gene name as name to feature",
+				 $feature->get_attribute("id"),
+				 $new_name
+	      ), "\n" if ($verbose >= 5);
+	  $feature->push_attribute("names", $new_name);
+	}
+      }
+
+
+      ################################################################
+      ## Attribute "locus_tag"
+      my ($locus_tag) = $feature->get_attribute("locus_tag");
+      $locus_tag = &trim($locus_tag); ## suppress leading and trainling spaces
+      if ($locus_tag ne "") {
+	&RSAT::message::Debug("\t", "Adding locus tag as name to feature",
+			      $feature->get_attribute("id"),
+			      $locus_tag
+	    ), "\n" if ($verbose >= 5);
+	$feature->push_attribute("names", $locus_tag);
+      }
+
+      ################################################################
+      ## Attribute "GeneID"
+      my ($GeneID) = $feature->get_attribute("GeneID");
+      $GeneID = &trim($GeneID); ## suppress leading and trainling spaces
+      if ($GeneID ne "") {
+	&RSAT::message::Debug( "\t", "Adding GeneID as name to feature",
+			       $feature->get_attribute("id"),
+			       $GeneID
+	    ), "\n" if ($verbose >= 5);
+	$feature->push_attribute("names", $GeneID);
+      }
+
+
+
+      ################################################################
+      ## Some types of notes contain identifiers or synonyms
+      my @notes = $feature->get_attribute("note");
+      foreach my $note (@notes) {
+	$note = &trim($note); ### remove leading and trailing spaces
+	warn "NOTE\t'$note'\n" if ($verbose >= 4);
+
+	if ($note =~ /synonyms:/) {
+	  ## For some genomes there is a note of type 'synonyms:' (e.g. Saccharomyces cerevisiae),
+	  my $synonyms = $'; ##'
+	      my @synonyms = split /, /, $synonyms;
+	  foreach my $new_name (@synonyms) {
+	    $new_name = &trim($new_name);
+	    if ($new_name ne "") {
+	      &RSAT::message::Debug( "\t", "Adding synonym to feature",
+				     $feature->get_attribute("id"),
+				     $new_name
+		  ), "\n" if ($verbose >= 5);
+	      $feature->push_attribute("names", $new_name);
+	    }
+	  }
+
+	} elsif ($note =~ /synonym:/) {
+	  ## For other genomes there is a note of type 'synonym:' (e.g. Arabidopsis thaliana),
+	  my $synonyms = $';  ##'
+	      $synonyms =~ s/;.*//; ## In A.thaliana there are comments after the synonym
+	  
+	  my @synonyms = split /, /, $synonyms;
+	  foreach my $new_name (@synonyms) {
+	    $new_name = &trim($new_name);
+	    if ($new_name ne "") {
+	      &RSAT::message::Debug( "\t", "Adding synonym to feature",
+				     $feature->get_attribute("id"),
+				     $new_name
+		  ), "\n" if ($verbose >= 4);
+	      $feature->push_attribute("names", $new_name);
+	    }
+	  }
+
+	} elsif ($note !~ /\S/) {
+	  ## A single-word note is usually (but not always, I guess) a synonym
+	  $feature->push_attribute("names", $note);
+	  
+# 		} elsif ($org eq "Plasmodium_falciparum") {
+# 		  my @notes = $feature->get_attribute("note");
+# 		  foreach my $note (@notes) {
+# 		    next if ($note =~/score/);
+# 		    my @names = split /\;\s*/, $note;
+# 		    foreach my $name (@names) {
+# 		      $name = &RSAT::util::trim($name);
+# 		      if (($name =~ /^(PF\S+)/) || ($name =~ /^(MAL\S+)/)) {
+# 			$feature->push_attribute("names", $1);
+# # 				&RSAT::message::Debug ("\t",
+# # 					   "Plasmodium_falciparum",
+# # 					   $feature->get_attribute("contig"),
+# # 					   $feature->get_attribute("id"),
+# # 					   $feature->get_attribute("type"),
+# # 					   , "adding name", $1, "from note", $note), "\n" if ($main::verbose >= 10);
+# 		      }
+# 		    }
+# 		  }
+# #		    die "Specific treatment for Plasmodium_falciparum";
+
+
+	} elsif (
+	  ## For some genomes, the locus_tag, Accession or other IDs have been annotated as "note" !
+	  ($note =~ /^locus_tag\: (\S+)/i)  ||
+	  ($note =~ /^Accession ([\w_\-\.]+)/) ||
+	  ($note =~ /^(\S+)\,\s+len:/)) {
+	  
+	  $new_name = $1;
+	  $new_name =~ s/\;$//;
+	  $new_name =~ s/\:$//;
+	  
+	  #### add the new name
+	  &RSAT::message::Debug( "\t", "Adding name to feature",
+				 $feature->get_attribute("id"),
+				 $new_name
+	      ), "\n" if ($verbose >= 4);
+	  $feature->push_attribute("names", $new_name);
+	  
+	}
+	
+      }
+      
     }
+  }
 }
 
 
