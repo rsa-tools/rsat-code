@@ -59,7 +59,7 @@ BEGIN {
 }
 require "RSA.lib";
 
-my $confFile = $ENV{RSAT}."/lib/biomart-perl/conf/martURLLocation.xml";
+my $confFile = $ENV{RSAT}."/ext_lib/biomart-perl/conf/martURLLocation.xml";
 
 ################################################################
 ## Main package

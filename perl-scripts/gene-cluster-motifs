@@ -3828,12 +3828,11 @@ OPTIONS
         -db     database_file
                 A file containing a list of known sites (from a database)
 
-	-batch (advanced users)
-		Send time-consuming jobs on a batch queue which will
-		be executed on a PC cluster. This option only works on
-		our lab cluster, but could be adapted for other
-		configurations by adapting the method &doit() in the
-		utilities ($RSAT/lib/RSA.lib).
+	-batch (advanced users) Send time-consuming jobs on a batch
+		queue which will be executed on a PC cluster. This
+		option only works on our lab cluster, but could be
+		adapted for other configurations by adapting the
+		parameters in RSAT_config.props.
 
 	-nodie
 		Continue the analysis even if errors are raised by
