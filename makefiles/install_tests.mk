@@ -41,7 +41,7 @@ matrix_clustering:
 	@echo "	${TEST_DIR}/matrix-clustering_err.txt"
 
 ## Create a zip archive with the test results
-ARCHIVE=install_test_${TIME}.zip
+ARCHIVE=install_tests_${TIME}.zip
 zip: 
 	@echo
 	@echo "Creating archive with results and log files"
