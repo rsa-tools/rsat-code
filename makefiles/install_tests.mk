@@ -8,7 +8,7 @@ MAKEFILE=makefiles/check_rsat_install.mk
 
 all: test_dir path os matrix_clustering zip
 
-TEST_DIR=./test_rsat_install
+TEST_DIR=./install_tests
 test_dir:
 	@mkdir -p ${TEST_DIR}
 
@@ -34,16 +34,16 @@ matrix_clustering:
 	@echo
 	@echo "Running matrix-clustering demo"
 	@make -f ${RSAT}/makefiles/matrix-clustering_demo.mk RES_DIR=${TEST_DIR} \
-		V=3 cluster_peakmotifs_Oct4 \
+		cluster_peakmotifs_Oct4 \
 		1> ${TEST_DIR}/matrix-clustering_log.txt \
 		2> ${TEST_DIR}/matrix-clustering_err.txt
 	@echo "	${TEST_DIR}/matrix-clustering_log.txt"
 	@echo "	${TEST_DIR}/matrix-clustering_err.txt"
 
 ## Create a zip archive with the test results
-ARCHIVE=rsat_test_${TIME}.zip
+ARCHIVE=install_test_${TIME}.zip
 zip: 
 	@echo
-	@echo "Archive"
-	@zip -ry ${ARCHIVE} ${TEST_DIR}
+	@echo "Creating archive with results and log files"
+	@zip -ry --quiet ${ARCHIVE} ${TEST_DIR}
 	@echo "	${ARCHIVE}"
