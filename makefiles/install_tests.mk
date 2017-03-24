@@ -3,7 +3,7 @@
 ## have been properly installed.
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=makefiles/check_rsat_install.mk
+MAKEFILE=makefiles/install_tests.mk
 
 
 all: test_dir path os matrix_clustering zip
@@ -33,7 +33,7 @@ os: test_dir
 matrix_clustering:
 	@echo
 	@echo "Running matrix-clustering demo"
-	@make -f ${RSAT}/makefiles/matrix-clustering_demo.mk RES_DIR=${TEST_DIR} \
+	@make -f ${RSAT}/makefiles/matrix-clustering_demo.mk \
 		cluster_peakmotifs_Oct4 \
 		1> ${TEST_DIR}/matrix-clustering_log.txt \
 		2> ${TEST_DIR}/matrix-clustering_err.txt
