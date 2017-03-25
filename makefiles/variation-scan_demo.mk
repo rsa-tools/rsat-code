@@ -17,8 +17,8 @@ SPECIES_SUFFIX=
 SPECIES_SUFFIX_OPT=
 
 ################################################################
-## The test matrix comes from Ballester et al.
-MATRIX=${RSAT}/public_html/demo_files/do798+do735_mmus_hnf6_liver.transfac
+## The test matrix comes from Weirauch et al.
+MATRIX=${RSAT}/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf
 
 ## Variants selected to illustate the typology of cases, including
 ## non-trivial cases with >2 variants.
@@ -26,6 +26,7 @@ DEMO_DIR=${RSAT}/public_html/demo_files/
 #VARSEQ_DEMO_FILE=${DEMO_DIR}/${VARIANTS}.varseq
 #VARIANTS=variation_demo_set_MWeirauch_cell_2014_15SNPs
 VARIANTS=variation_demo_set
+VARIANT_INDEL=variation_testfile
 ORG=${SPECIES}_${ASSEMBLY}
 VARIATION_DIR=${RSAT}/public_html/data/genomes/${ORG}/variations
 
@@ -66,19 +67,23 @@ mk_result_dir:
 #RESULT_DIR=results/variation_scan_demo/${VARIANTS}
 RESULT_DIR=results/variation_scan_demo
 VARIANT_FORMAT_IN=vcf
-DEMO_VARIANTS=${DEMO_DIR}/${VARIANTS}.${VARIANT_FORMAT_IN}
+DEMO_VARIANTS=${DEMO_DIR}/${VARIANT_INDEL}.${VARIANT_FORMAT_IN}
 VARIANT_FORMAT_OUT=varBed
+PHASED=
 CONVERT_VAR_CMD=convert-variations \
 	-i ${DEMO_VARIANTS}  \
-	-v ${V} -from ${VARIANT_FORMAT_IN} -to ${VARIANT_FORMAT_OUT} \
-	-o ${RESULT_DIR}/${VARIANTS}.${VARIANT_FORMAT_OUT}
-convert_var: mk_result_dir
+	-v ${V} -from ${VARIANT_FORMAT_IN} -to ${VARIANT_FORMAT_OUT} ${PHASED}\
+	-o ${RESULT_DIR}/${VARIANT_INDEL}${PHASED}.${VARIANT_FORMAT_OUT}
+convert_var:
 	@echo ""
 	@echo "Converting variations from ${VARIANT_FORMAT_IN} to ${VARIANT_FORMAT_OUT}"
 	@echo "${CONVERT_VAR_CMD}"
 	@${CONVERT_VAR_CMD}
 	@echo "Converted variation file"
-	@echo "	${RESULT_DIR}/${VARIANTS}.${VARIANT_FORMAT_OUT}"
+	@echo "	${RESULT_DIR}/${VARIANT_INDEL}.${VARIANT_FORMAT_OUT}"
+
+convert_var_phased:
+	${MAKE} convert_var PHASED=-phased
 
 ################################################################
 ## get variation information from either variant IDs or bed file region.
