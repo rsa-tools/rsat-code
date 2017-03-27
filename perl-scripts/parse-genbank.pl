@@ -188,6 +188,16 @@ package main;
 #	chdir ($dir{input});
 	push @genbank_files, glob($dir{input}."/*.${ext}");
 	push @genbank_files, glob($dir{input}."/*.${ext}.gz");
+
+	## Tricky patch: filter out the whole genome shotgun files,
+	## which do not contain sequences of features
+	my @filtered_genbank_files = ();
+	foreach my $file (@genbank_files) {
+	    push @filtered_genbank_files, $file unless ($file =~/wgsmaster/);
+	}
+	@genbank_files = @filtered_genbank_files;
+	
+
 	if (scalar(@genbank_files) > 1) {
 	    &RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the directory");
 	}
