@@ -64,6 +64,7 @@ package main;
 		       );
 
   @extra_tasks = qw(
+                    available
                     download
                     list
 		    parse
@@ -188,7 +189,8 @@ package main;
   ## Check consistency of arguments for download/list/parse tasks.
   if ($task{parse} || $task{download} || $task{list}) {
     $source = "NCBI-Refseq";
-    ## Check the directory contianing the Genbank-formatted organisms
+
+    ## Check the directory containing the Genbank-formatted organisms
     ## (which can be downloaded from NCBI/refseq).
     unless ($dir{refseq}) { # Refseq dir specified on the command line
       $dir{refseq} = $dir{downloads}."/refseq";
@@ -224,7 +226,19 @@ package main;
   }
 
 
+  ################################################################
+  ## Get the list of available species for the selected group
+  if ($task{available}) {
+      
+      unless ($group) {
+	  &RSAT::error::FatalError("The task 'availabl' requires to specify a group (e.g. fungi, bacteria, ...).");
+      }
 
+
+      my $command = 'rsync --copy-links  --times  --list-only rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq/'.$group.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
+      &doit($command, $dry_run, $die_on_error, $verbose);
+      exit(0); # Available species is not compatible with any other task
+  }
 
   ################################################################
   ## Download the required files from NCBI FTP site
@@ -1544,6 +1558,10 @@ OPTIONS
 		Description of the tasks
 		------------------------
 
+		available    list available species on the NCBI FTP site.
+		             This task cannot be combine with any
+		             other task.
+
 		download     download genome from the NCBI FTP site
 		             (ftp://ftp.ncbi.nih.gov/genomes/refseq/)
 		             via the rsync protocol.
@@ -1955,7 +1973,7 @@ sub ParseGenome {
   $command .= " -source '$source'";
   #    }
   $command .= " -o ".$genome_dir;
-  &doit($command, $dry_run, $die_on_error, $verbose);
+  &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
 }
 
 ################################################################
