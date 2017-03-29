@@ -270,7 +270,7 @@ package main;
 	    &RSAT::message::Warning("Stopped after", $last_species, "species") if ($main::verbose >= 1);
 	    last;
 	}
-	if (($skip_species > 0) && ($species_nb < $skip_species)) {
+	if (($skip_species > 0) && ($species_nb <= $skip_species)) {
 	    &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
 	    next;
 	}
@@ -296,73 +296,65 @@ package main;
   if (($task{parse}) || ($task{list})) {
 
       ## Check refseq directory
-    unless (-d $dir{refseq}) {
-      &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
-    }
-
-
-	if ($task{list}) {
-	  print (join("\t", $species_nb, $species, $strain_nb, $strain, $org_nb, $organism_name));
-	  print "\n";
-	}
-
-    ## Header for species list
-    if ($task{list}) {
-	print join("\t", "#species_nb", "species", "strain_nb", "strain", "org_nb", "organism_name"), "\n";
-    }
-
-    # Iterate over species
-    my $org_nb = 0; # Initialize organism counter
-    my $species_nb = 0; # Initialize species counter
-    foreach my $species (@species) {
-	$species_nb++;
-	if (($last_species > 0) && ($species_nb > $last_species)) {
-	    &RSAT::message::Warning("Stopped after", $last_species, "species") if ($main::verbose >= 1);
-	    last;
-	}
-
-      my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
-      my @strain_folders = glob($latest_assembly_dir."/*");
-
-
-      # Iterate over each strain of current species
-      my $strain_nb = 0; # Strain counter for current species
-      foreach my $strain_folder (@strain_folders) {
-
-	## Strain
-	$strain_nb ++;
-	if (($max_strains > 0) && ($strain_nb > $max_strains)) {
-	  my $remaining_strains = scalar(@strain_folders) - $strain_nb + 1;
-	  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", scalar(@strain_folders)) if ($main::verbose >= 2);
-	  last;
-	}
-	my $strain = &ShortFileName($strain_folder);
-
-	## Organism (concatenation of species + strain)
-	$org_nb++;
-	if (($skip_species > 0) && ($species_nb < $skip_species)) {
-	    &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
-	    next;
-	}
-	my $organism_name = $species."_".$strain;
-	push @organisms, $organism_name;
-	&RSAT::message::Info(scalar(@organisms), $species, $strain, $organism_name) if ($main::verbose >= 3);
-
-	## Parse the selected organism
-	$genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
-
-	if ($task{list}) {
-	  print join("\t", $species_nb, $species, $strain_nb, $strain, $org_nb, $organism_name), "\n";
-	}
-
-	if ($task{parse}) {
-	  &ParseGenome($species, $strain, $organism_name, $strain_folder, $genome_dir);
-	}
-      
+      unless (-d $dir{refseq}) {
+	  &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
       }
-    }
+
+      
+      ## Header for species list
+      if ($task{list}) {
+	  print join("\t", "#species_nb", "species", "strain_nb", "strain", "org_nb", "organism_name"), "\n";
+      }
+      
+      # Iterate over species
+      my $org_nb = 0; # Initialize organism counter
+      my $species_nb = 0; # Initialize species counter
+      foreach my $species (@species) {
+	  $species_nb++;
+	  if (($last_species > 0) && ($species_nb > $last_species)) {
+	      &RSAT::message::Warning("Stopped after", $last_species, "species") if ($main::verbose >= 1);
+	      last;
+	  }
+
+	  my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
+	  my @strain_folders = glob($latest_assembly_dir."/*");
 
 
+	  # Iterate over each strain of current species
+	  my $strain_nb = 0; # Strain counter for current species
+	  foreach my $strain_folder (@strain_folders) {
+
+	      ## Strain
+	      $strain_nb ++;
+	      if (($max_strains > 0) && ($strain_nb > $max_strains)) {
+		  my $remaining_strains = scalar(@strain_folders) - $strain_nb + 1;
+		  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", scalar(@strain_folders)) if ($main::verbose >= 2);
+		  last;
+	      }
+	      my $strain = &ShortFileName($strain_folder);
+
+	      ## Organism (concatenation of species + strain)
+	      $org_nb++;
+	      if (($skip_species > 0) && ($species_nb <= $skip_species)) {
+		  &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
+		  next;
+	      }
+	      my $organism_name = $species."_".$strain;
+	      push @organisms, $organism_name;
+	      &RSAT::message::Info(scalar(@organisms), $species, $strain, $organism_name) if ($main::verbose >= 3);
+
+	      ## Parse the selected organism
+	      $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
+
+	      if ($task{list}) {
+		  print join("\t", $species_nb, $species, $strain_nb, $strain, $org_nb, $organism_name), "\n";
+	      }
+
+	      if ($task{parse}) {
+		  &ParseGenome($species, $strain, $organism_name, $strain_folder, $genome_dir);
+	      }
+	  }
+      }
   }
 
 #### option  -all_organisms is not supported anymore
@@ -2043,7 +2035,7 @@ sub ParseGenome {
   my ($species, $strain, $organism_name, $strain_dir, $genome_dir) = @_;
   &RSAT::message::TimeWarn("&ParseGenome()", $species, $strain, $organism_name, $strain_dir) if ($main::verbose >= 2);
 
-  my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 1";
+  my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 0";
   $command .= " -i ".$strain_dir;
   $command .= $parse_options;
   if ($dir{ensembl}) {
