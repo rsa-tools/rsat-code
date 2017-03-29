@@ -332,7 +332,7 @@ package main;
     foreach my $factory_name (@class_factories) {
 	my $class_factory = $$factory_name;
 	&RSAT::message::TimeWarn("Dumping class $factory_name")
-	  if ($verbose >= 1);
+	  if ($verbose >= 2);
 	$suffix = "_$org" unless ($no_suffix);
 	$class_factory->dump_tables($suffix);
 	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
@@ -352,7 +352,7 @@ package main;
     &ExportProteinSequences($CDSs, $org);
 
     ### Report the output directory
-    &RSAT::message::Info(join("\t", "Output directory", $dir{output}));
+    &RSAT::message::Info(join("\t", "Output directory", $dir{output})) if ($main::verbose >= 2);
 
     ###### close output file ######
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
@@ -704,7 +704,7 @@ sub ExportProteinSequences {
     $out_file{pp} = $dir{output}."/".$org."_aa.fasta";
 
     &RSAT::message::TimeWarn("Exporting translated sequences to file", $out_file{pp})
-	if ($main::verbose >= 0);
+	if ($main::verbose >= 2);
 #    die "HELLO\t";
 
     open PP, ">$out_file{pp}";
