@@ -38,8 +38,7 @@ package main;
   @masking_modes = ("");	## by default, use no masking
   @oligo_lengths=(6,1,2,3,4,5,7,8);
   $verbose = 0;
-  $batch = 0;
-  $die_on_error = 0;
+
   $seq_format = "fasta"; ## default format for exporting sequences
   $img_format = $ENV{rsat_img_format} || "png";
   $noov="";
@@ -138,6 +137,15 @@ package main;
   ## Directory to download files from NCBI
   $dir{downloads} = $ENV{DOWNLOAD_DIR} || $ENV{RSAT}."/downloads/";
 #  $dir{refseq} = $ENV{REFSEQ_DIR} || $ENV{RSAT}."/downloads/refseq";
+
+  ## Options for the job scheduler
+  $dry = 0;
+  $die_on_error = 0;
+  $batch = 0;
+  $job_prefix = "install_org";
+  $log_handle = "";
+  $err_handle = "";
+  $cluster_queue = $ENV{CLUSTER_QUEUE};
 
   ################################################################
   ## Read arguments
@@ -1254,7 +1262,7 @@ sub CalcOligoFreq {
       my $command = "gunzip ".$seq_file.".gz";
       my $job_prefix = ${organism_short_name}."_compress";
       $uncompressed = 1;
-      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
       $seq_file =~ s/\.gz$//;
   }
 
@@ -1273,7 +1281,7 @@ sub CalcOligoFreq {
 	$command .= " -return freq,occ";
 	$command .= " -o ".$out_file;
 	$command .= "; gzip -f ".$out_file;
-	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+	&doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
       }
     }
   }
@@ -1283,7 +1291,7 @@ sub CalcOligoFreq {
       &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
       my $command = "gzip ".$seq_file;
       my $job_prefix = ${organism_short_name}."_uncompress";
-      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
   }
 }
 
@@ -1308,7 +1316,7 @@ sub CalcOligoDistrib {
 	$command .= " -return occ -distrib";
 	$command .= " -o ".$distrib_file;
 	$command .= " ; gzip -f ".$distrib_file;
-	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+	&doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
 
 	#### Fit a Poisson and a negbin on occurrence distribution
 	foreach my $theor ("negbin", "poisson") {
@@ -1350,7 +1358,7 @@ sub CalcDyadFreq {
       my $command = "gunzip ".$seq_file.".gz";
       my $job_prefix = ${organism_short_name}."_uncompress";
       $uncompressed = 1;
-      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
       $seq_file =~ s/\.gz$//;
   }
 
@@ -1372,7 +1380,7 @@ sub CalcDyadFreq {
 	$command .= " -return freq,occ";
 	$command .= " -o ".$dyad_file;
 	$command .= "; gzip -f ".$dyad_file;
-	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
+	&doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);
       }
     }
   }
@@ -1382,7 +1390,7 @@ sub CalcDyadFreq {
       &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
       my $command = "gzip ".$seq_file;
       my $job_prefix = ${organism_short_name}."_compress";
-      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
   }
 }
 
@@ -1556,6 +1564,12 @@ OPTIONS
 		lab cluster, but could be adapted for other
 		configurations by adapting the parameters in
 		RSAT_config.props.
+
+	-queue  specify a queue to send the job with the option -batch. 
+
+	        On this instance of RSAT, default queue is $ENV{CLUSTER_QUEUE}
+
+                Type 'qstat -f' to get a list of existing queues.
 
 	-config
 		Specify an alternative organism configuration file for the
@@ -1748,6 +1762,7 @@ install_organism options
 -source		data source (e.g. refseq);
 -dir		absolute path of the installation directory
 -batch  	run some tasks (for examplethe calibration of oligos and dyads) in batch mode.
+-queue          specify a queue to send the job with the option -batch (default: $ENV{CLUSTER_QUEUE}) 
 -config		alternative organism configuration file
 -backup_org_table  Store a backup copy of the organism table before overwriting it.
 -local		update local config file 
@@ -1923,6 +1938,10 @@ sub ReadArguments {
     } elsif ($arg eq "-batch") {
       $batch = 1;
 
+      ## Queue for the job scheduler
+    } elsif ($arg eq "-queue") {
+      $cluster_queue = shift(@arguments);
+
       ## Masking modes
     } elsif ($arg eq "-rm") {
       push @masking_modes, "-rm";;
@@ -2009,7 +2028,7 @@ sub StartAndStopCodons {
   $command .= " -i ".$prefix."_start_codons.wc";
   $command .= " -o ".$prefix."_start_codon_frequencies.tab";
 #  &RSAT::message::Debug($command) if ($main::verbose >= 10);
-  &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
 #  &doit($command, $dry_run, $die_on_error, $verbose);
   &RSAT::message::Info("\tStart codons", $prefix."_start_codons.wc") if ($main::verbose >= 2);
   &RSAT::message::Info("\tStart codon frequencies", $prefix."_start_codon_frequencies.tab") if ($main::verbose >= 2);
@@ -2022,7 +2041,8 @@ sub StartAndStopCodons {
   $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
   $command .= " -i ".$prefix."_stop_codons.wc";
   $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies.tab";
-  &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+
+  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
 #  &doit($command, $dry_run, $die_on_error, $verbose);
   &RSAT::message::Info("\tStop codons", $prefix."_stop_codons.wc") if ($main::verbose >= 2);
   &RSAT::message::Info("\tStop codon frequencies", $prefix."_stop_codon_frequencies.tab") if ($main::verbose >= 2);
@@ -2048,7 +2068,7 @@ sub ParseGenome {
   $command .= " -source '$source'";
   #    }
   $command .= " -o ".$genome_dir;
-  &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
+  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);
 }
 
 ################################################################
