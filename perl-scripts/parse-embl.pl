@@ -1183,7 +1183,7 @@ sub ExportProteinSequences {
     my ($features, $org) = @_;
     $outfile{pp} = $dir{output}."/".$org."_aa.fasta";
 
-    warn join ("\t", "; Exporting translated sequences to file", $outfile{pp}), "\n" if ($main::verbose >= 1);
+    warn join ("\t", "; Exporting translated sequences to file", $outfile{pp}), "\n" if ($main::verbose >= 2);
 
     open PP, ">$outfile{pp}";
     foreach my $feature ($features->get_objects()) {
