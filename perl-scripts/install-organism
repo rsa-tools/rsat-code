@@ -64,10 +64,6 @@ package main;
 		       );
 
   @extra_tasks = qw(
-                    available
-                    download
-                    list
-		    parse
                     fasta_genome
                     index_bedtools
                     uninstall
@@ -80,10 +76,24 @@ package main;
                     default
 		    all
       );
-  @supported_tasks = (@default_tasks, @extra_tasks);
+
+  ## Tasks to iterate over species rather than organisms
+  @species_tasks = qw(available
+                      download
+                      list
+                      parse);
+
+  @organism_tasks = (@default_tasks, @extra_tasks);
+  @supported_tasks = (@species_tasks, @organism_tasks);
   %supported_task = ();
   foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
+  }
+  foreach my $task (@species_tasks) {
+    $species_task{$task} = 1;
+  }
+  foreach my $task (@organism_tasks) {
+    $organism_task{$task} = 1;
   }
   $supported_tasks = join ",", @supported_tasks;
   %task = ();
@@ -148,8 +158,10 @@ package main;
     }
   }
 
+  ## Run all the tasks for each organism (not the species-wide tasks
+  ## like downloading and parsing).
   if ($task{all}) {
-    %task = %supported_task;
+    %task = %organism_task;
   }
 
 
@@ -168,9 +180,24 @@ package main;
     &RSAT::error::FatalError("The task 'protein_freq' requires to activate the task 'oligos'");
   }
 
+  ## Count the number of species-wide and organism-specific takss
+  our $requested_species_tasks = 0;
+  our $requested_organism_tasks = 0;
+  &RSAT::message::TimeWarn("Checking tasks", join(";", keys(%task))) if ($main::verbose >= 2);
+  foreach my $task (keys(%task)) {
+      if ($species_task{$task}) {
+	  $requested_species_tasks++;
+      }
+      if ($organism_task{$task}) {
+	  $requested_organism_tasks++;
+      }
+  }
+  &RSAT::message::Info("Species tasks", $requested_species_tasks) if ($main::verbose >= 2);
+  &RSAT::message::Info("Organism tasks", $requested_organism_tasks) if ($main::verbose >= 2);
+
 
   ################################################################
-  ## If an species file has been specified, read species list
+  ## If a species file has been specified, read species list
   if ($infile{species}) {
     &RSAT::message::TimeWarn("Reading species file", $infile{species}) if ($main::verbose >= 1);
     my ($speciess) = &OpenInputFile($infile{species});
@@ -194,16 +221,6 @@ package main;
     ## (which can be downloaded from NCBI/refseq).
     unless ($dir{refseq}) { # Refseq dir specified on the command line
       $dir{refseq} = $dir{downloads}."/refseq";
-      # if ($ENV{REFSEQ_DIR}) {
-      # 	$dir{refseq} = $ENV{REFSEQ_DIR}; # Refseq dir specified in the config file
-      # } elsif ($REFSEQ_DIR) {
-      # 	$dir{refseq} = $REFSEQ_DIR;
-      # } elsif ($ENV{GENBANK_DIR}) {
-      # 	&RSAT::message::Warning("environment variable GENBANK_DIR is obsolete, please specify REFSEQ_DIR in ", ${RSAT}."/RSAT_config.props");
-      # 	$dir{refseq} = $ENV{GENBANK_DIR}."/refseq";
-      # } else {
-      # 	&RSAT::error::FatalError("Please set the option REFSEQ_DIR in RSAT configuration file", ${RSAT}."/RSAT_config.props");
-      # }
     }
     &RSAT::util::CheckOutDir($dir{refseq});
 
@@ -245,7 +262,18 @@ package main;
   if ($task{download}) {
 
     ## Download each species
+    my $species_nb = 0;
     foreach my $species (@species) {
+	$species_nb++;
+
+	if (($last_species > 0) && ($species_nb > $last_species)) {
+	    &RSAT::message::Warning("Stopped after", $last_species, "species") if ($main::verbose >= 1);
+	    last;
+	}
+	if (($skip_species > 0) && ($species_nb < $skip_species)) {
+	    &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
+	    next;
+	}
 
       my $URL = join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, $species, "latest_assembly_versions/");
       if ($strain) { 
@@ -266,14 +294,33 @@ package main;
   ## strains (as sub-directories of the NCBI/Refseq
   ## latest_assembly_versions)
   if (($task{parse}) || ($task{list})) {
+
+      ## Check refseq directory
     unless (-d $dir{refseq}) {
       &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
     }
-    ## Collect all strains and build organism names
-    my $org_nb = 0;
+
+
+	if ($task{list}) {
+	  print (join("\t", $species_nb, $species, $strain_nb, $strain, $org_nb, $organism_name));
+	  print "\n";
+	}
+
+    ## Header for species list
+    if ($task{list}) {
+	print join("\t", "#species_nb", "species", "strain_nb", "strain", "org_nb", "organism_name"), "\n";
+    }
 
     # Iterate over species
+    my $org_nb = 0; # Initialize organism counter
+    my $species_nb = 0; # Initialize species counter
     foreach my $species (@species) {
+	$species_nb++;
+	if (($last_species > 0) && ($species_nb > $last_species)) {
+	    &RSAT::message::Warning("Stopped after", $last_species, "species") if ($main::verbose >= 1);
+	    last;
+	}
+
       my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
       my @strain_folders = glob($latest_assembly_dir."/*");
 
@@ -281,15 +328,23 @@ package main;
       # Iterate over each strain of current species
       my $strain_nb = 0; # Strain counter for current species
       foreach my $strain_folder (@strain_folders) {
+
+	## Strain
 	$strain_nb ++;
 	if (($max_strains > 0) && ($strain_nb > $max_strains)) {
 	  my $remaining_strains = scalar(@strain_folders) - $strain_nb + 1;
-	  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", scalar(@strain_folders)) if ($main::verbose >= 0);
+	  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", scalar(@strain_folders)) if ($main::verbose >= 2);
 	  last;
 	}
 	my $strain = &ShortFileName($strain_folder);
-	my $organism_name = $species."_".$strain;
+
+	## Organism (concatenation of species + strain)
 	$org_nb++;
+	if (($skip_species > 0) && ($species_nb < $skip_species)) {
+	    &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
+	    next;
+	}
+	my $organism_name = $species."_".$strain;
 	push @organisms, $organism_name;
 	&RSAT::message::Info(scalar(@organisms), $species, $strain, $organism_name) if ($main::verbose >= 3);
 
@@ -297,12 +352,11 @@ package main;
 	$genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
 
 	if ($task{list}) {
-	  print (join("\t", $org_nb, $species, $strain, $organism_name, $strain_folder, $genome_dir));
-	  print "\n";
+	  print join("\t", $species_nb, $species, $strain_nb, $strain, $org_nb, $organism_name), "\n";
 	}
 
 	if ($task{parse}) {
-	  &ParseGenome($species, $strain, $organism_name, $strain_folder, $genome_dir) if ($task{parse});
+	  &ParseGenome($species, $strain, $organism_name, $strain_folder, $genome_dir);
 	}
       
       }
@@ -389,6 +443,14 @@ package main;
     &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.") if ($organism_full_name);
     &RSAT::message::FatalError("The option -dir is (installation directory) not valid when multiple organisms are selected.") if ($install_dir);
     &RSAT::message::FatalError("The option -syn (synonym table) is not valid when multiple organisms are selected.") if ($outfile{synonyms});
+  }
+
+  ################################################################
+  ## Check if any task has to be done on organisms (and not just to
+  ## NCBI species).
+  if ($requested_organism_tasks == 0) {
+      &RSAT::message::Warning("No organism-specific task has been requested. ") if ($main::verbose >= 1);
+      exit(0);
   }
 
   ################################################################
@@ -570,7 +632,7 @@ sub Uninstall {
     foreach our $organism_short_name (@organisms) {
 	&RSAT::OrganismManager::check_name($organism_short_name, 1);
 	if (defined($supported_organism{$organism_short_name})) {
-	    &RSAT::message::Warning("Uninstalling organism", $organism_short_name) if ($main::verbose >= 0);
+	    &RSAT::message::Warning("Uninstalling organism", $organism_short_name) if ($main::verbose >= 1);
 	    delete($supported_organism{$organism_short_name});
 	}
     }
@@ -582,7 +644,7 @@ sub Uninstall {
 ## RSAT/public_html/data/genomes directory.
 sub Erase {
   foreach our $organism_short_name (@organisms) {
-    &RSAT::message::Warning("Erasing organism", $organism_short_name) if ($main::verbose >= 0);
+    &RSAT::message::Warning("Erasing organism", $organism_short_name) if ($main::verbose >= 1);
       
     ## Identify the data directory for the organism
     my $organism_data_dir = "";
@@ -595,7 +657,7 @@ sub Erase {
     
     ## Remove the directory
     if (-e $organism_data_dir) {
-      &RSAT::message::Warning("Erasing directory", $organism_data_dir) if ($main::verbose >= 0);
+      &RSAT::message::Warning("Erasing directory", $organism_data_dir) if ($main::verbose >= 2);
       &doit("rm -rf ".$organism_data_dir, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     } else {
       &RSAT::message::Warning("No need to erase unexisting directory", $organism_data_dir);
@@ -1382,8 +1444,7 @@ OPTIONS
     	organism(s) to be installed. This can be done with any of the
     	following options: -org, -org_file, -all_organisms, -taxon.
 
-	-org	organism name without spaces 
-	        (e.g. Saccharomyces_cerevisiae)
+	-org	organism name without spaces (e.g. Saccharomyces_cerevisiae)
 
 		The option -org can be used iteratively on the same
 		command line to iterate the installation over multiple
@@ -1396,6 +1457,7 @@ OPTIONS
 		ignored.
 
 	-all_organisms
+
 		Install all the organisms found in the Refseq
 		directory (see option -refseq).
 
@@ -1422,7 +1484,15 @@ OPTIONS
 	       invertebrate, vertebrate_mammalian, vertebrate_other
 
 	-species species name, with space replaced by underscore
-	         (e.g. Saccharomyces_cerevisiae).
+	         (e.g. Saccharomyces_cerevisiae). 
+
+		 Note that one species may correspond to several
+	         organisms if several strains are available for this
+	         species. In particular, for some bacteria there are
+	         several thousands of sequenced strains
+	         (e.g. Escherichia coli). The option -max_strains can
+	         be used to restrict the number of installed strains
+	         per species.
 
 	-species_file file containing species names in the first
 	        column.
@@ -1457,7 +1527,7 @@ OPTIONS
 
     OPTIONAL ARGUMENTS
 
-	-skip #	Skip the first # organismsof the list.
+	-skip #	Skip the first # organisms of the list.
 
 	        This option is convenient to resume the installation
 	        of a list of organisms, when it has been interrupted.
@@ -1465,13 +1535,22 @@ OPTIONS
 		It also allows to organize the installation by chunks
 		of organisms.
 
+	-skip_species # skip the first # of the list of NCBI species. 
+
+	        Note that one species can correspond to several
+	        organisms, if several strains have been sequenced.
+
 	-last #	Stop after the first # organisms of the list.
+
 		This option can be used to organize the installation
 		by chunks of organisms.
 
-	-organism
-		Full name of the organism 
-		(e.g. 'Saccharomyces cerevisiae').
+	-last_species # Stop after the first # species of the NCBI
+	        list.
+
+	-organism Full name of the organism (e.g. 'Saccharomyces
+		cerevisiae'). This option is only valid when a single
+		organism is installed.
 
 	-source	data source
 
@@ -1671,7 +1750,9 @@ install_organism options
 -strain         strain (for task parse)
 -max_strains    max number of strains per species to be parsed / installed
 -skip #         Skip the # first organisms (convenient to resume interrupted list) 
+-skip_species # Skip the # first species of the NCBI list
 -last #         Stop after the # first organisms (convenient to install by chunks) 
+-last_species # Stop after the # first species of the NCBI list
 -source		data source (e.g. refseq);
 -dir		absolute path of the installation directory
 -batch  	run some tasks (for examplethe calibration of oligos and dyads) in batch mode.
@@ -1782,12 +1863,24 @@ sub ReadArguments {
       &RSAT::error::FatalError($main::skip, "Invalid value for option -skip, should be a Natural number") 
 	  unless (&IsNatural($main::skip));
 
+      ## Skip the N first species of the NCBI list
+    } elsif ($arg eq "-skip_species") {
+      $main::skip_species = shift(@arguments);
+      &RSAT::error::FatalError($main::skip_species, "Invalid value for option -skip_species, should be a Natural number") 
+	  unless (&IsNatural($main::skip_species));
+
       ## Stop after the N first organisms of the list (can be useful
       ## for tests on a subset of the list of oganisms).
     } elsif ($arg eq "-last") {
       $main::last = shift(@arguments);
       &RSAT::error::FatalError($main::last, "Invalid value for option -last, should be a Natural number") 
 	  unless (&IsNatural($main::last));
+
+      ## Stop after the N first species of the NCBI list
+    } elsif ($arg eq "-last_species") {
+      $main::last_species = shift(@arguments);
+      &RSAT::error::FatalError($main::last_species, "Invalid value for option -last_species, should be a Natural number") 
+	  unless (&IsNatural($main::last_species));
 
 
       ## Full organism name (may include spaces)
@@ -1949,17 +2042,7 @@ sub StartAndStopCodons {
 sub ParseGenome {
   my ($species, $strain, $organism_name, $strain_dir, $genome_dir) = @_;
   &RSAT::message::TimeWarn("&ParseGenome()", $species, $strain, $organism_name, $strain_dir) if ($main::verbose >= 2);
-  ## Commmented since 2017-03-04
-  # if ($dir{ensembl}) {
-  #   $dir{source} = $dir{ensembl};
-  # } elsif (-d "$dir{refseq}/$organism_short_name") {
-  #   $dir{source} = "$dir{refseq}/$organism_short_name";
-  # } elsif (-d "$dir{refseq}/Bacteria/$organism_short_name") {
-  #   $dir{source} = "$dir{refseq}/Bacteria/$organism_short_name";
-  # } else {
-  #   &RSAT::error::FatalError("Cannot find a directory $organism_short_name in refseq dir $dir{refseq}" );
-  # }
-  ################################################################
+
   my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 1";
   $command .= " -i ".$strain_dir;
   $command .= $parse_options;
