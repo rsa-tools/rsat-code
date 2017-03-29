@@ -237,7 +237,7 @@ if ($export{analysis}) {
 }
 
 ### export the result
-warn "Dumping objects to tab files\n" if ($verbose >=1);
+warn "Dumping objects to tab files\n" if ($verbose >= 2);
 $smiles->dump_tables();
 $brenda_names->dump_tables();
 $biosequences->dump_tables();

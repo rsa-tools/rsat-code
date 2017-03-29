@@ -267,11 +267,11 @@ The option no_seq=>1 prevents from parsing the sequence.
 			    );
 
     &RSAT::message::TimeWarn("Parsing gbk file",$input_file)
-      if ($main::verbose >= 1);
+      if ($main::verbose >= 2);
     &RSAT::message::TimeWarn("Parsing features", join (",", keys %features_to_parse))
-      if ($main::verbose >= 2);
+      if ($main::verbose >= 3);
     &RSAT::message::TimeWarn(join("\t", "Sequence directory", $args{sequence_dir}))
-      if ($main::verbose >= 2);
+      if ($main::verbose >= 3);
 
     open GBK, $input_file
       || die "Error: cannot open input file $input_file.\n";
@@ -709,7 +709,7 @@ Extract GO identifiers from the feature notes
 
 sub ParseGO {
     my ($CDSs) = @_;
-    &RSAT::message::TimeWarn("Parsing Gene Ontology for CDS") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Parsing Gene Ontology for CDS") if ($main::verbose >= 2);
     foreach my $cds ($CDSs->get_objects()) {
 	foreach my $note ($cds->get_attribute("note")) {
 	    if ($note =~ /\[goid (\S+)]/) {
