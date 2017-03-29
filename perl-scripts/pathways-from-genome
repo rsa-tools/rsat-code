@@ -439,9 +439,9 @@ package main;
 
 
   ## Report main output dir and synthesis file
-  &RSAT::message::TimeWarn("Output directory", $output_dir) if ($main::verbose >= 1);
-  &RSAT::message::TimeWarn("Log file", $main_log_file) if ($main::verbose >= 1);
-  &RSAT::message::TimeWarn("Synthesis", $main_synthesis_file) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Output directory", $output_dir) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Log file", $main_log_file) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Synthesis", $main_synthesis_file) if ($main::verbose >= 2);
   exit(0);
 }
 
