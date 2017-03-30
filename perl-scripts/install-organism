@@ -569,11 +569,11 @@ package main;
       system "touch $dir{install}";
     }
 
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-    print $main::out $exec_time if ($main::verbose >= 1);
 
     close $out if ($outputfile);
   }
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
   exit(0);
 }
 
@@ -1240,7 +1240,7 @@ sub CalcOligoFreq {
   my $oligo_seq_type = "dna";
   my $residue_type = "nt";
   my $quick = "";
-  my $batch_command = "";
+  my @batch_commands = ();
 
   my @strands = ("-1str", "-2str");
   if ($seq_type eq "protein") {
@@ -1267,12 +1267,12 @@ sub CalcOligoFreq {
       $seq_file =~ s/\.gz$//;
   }
 
+  my $job_prefix = ${organism_short_name}."_oligos";
   foreach my $noov ("-noov", "-ovlp") {
     foreach my $strands (@strands) {
       foreach my $oligo_length (@current_oligo_lengths) {
-	&RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type, "l=".$oligo_length, $noov, $strands) if ($main::verbose >= 1);
+	&RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type, "l=".$oligo_length, $noov, $strands) if ($main::verbose >= 2);
 
-	my $job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 	my $out_file = $dir{oligos}."/".${oligo_length}.${residue_type}."_".${seq_type}."_".${organism_short_name}.${noov}.${strands}.".freq";
 	my $command = $SCRIPTS."/oligo-analysis  ".$quick."  -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " ".$strands;
@@ -1283,7 +1283,7 @@ sub CalcOligoFreq {
 	$command .= " -o ".$out_file;
 	$command .= "; gzip -f ".$out_file;
 	if ($batch) {
-	    $batch_command .= $command."; " 
+	    push @batch_commands, $command;
 	} else {
 	    &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
 	}
@@ -1293,9 +1293,8 @@ sub CalcOligoFreq {
 
   ## Run all the oligo frequencies in one batch job
   if ($batch) {
-      &doit($batch_command, $dry, $die_on_error, $verbose, $batch); #, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
-#      die "HELLO\n";
-      $batch_command = "";
+      my $batch_command = join(" ;", @batch_commands);
+      &doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
   }
 
   ## Recompress the sequence file if required
@@ -1324,7 +1323,7 @@ sub CalcOligoDistrib {
 	my $job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 
 	#### Calculate occurrence distributions in the sequence file
-	my $distrib_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
+	my $distrib_file = $dir{oligos}."/"."${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
 	my $command = $SCRIPTS."/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " ".$strands;
 	$command .= " ".$noov;
@@ -1360,7 +1359,7 @@ sub CalcDyadFreq {
   @monad_lengths = (3,2,1);
   @strands = ("-1str", "-2str");
   my $quick = "";
-  my $batch_command = "";
+  my @batch_commands = ();
 
   ## Quick option only works with DNA sequences in fasta format
   unless (($seq_type eq "protein") || ($seq_format ne "fasta")) {
@@ -1380,12 +1379,12 @@ sub CalcDyadFreq {
   }
 
 
+  my $job_prefix = ${organism_short_name}."_dyads";
   foreach my $noov ("-noov", "-ovlp") {
     foreach my $strands (@strands) {
       foreach my $monad_length (@monad_lengths) {
-	&RSAT::message::TimeWarn("Calculating dyad frequencies",$seq_file, $seq_format, $seq_type, "l=".$monad_length, $noov, $strands) if ($main::verbose >= 1);
-	my $job_prefix = ${organism_short_name}."_dyad_".$monad_length;
-	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
+	&RSAT::message::TimeWarn("Calculating dyad frequencies",$seq_file, $seq_format, $seq_type, "l=".$monad_length, $noov, $strands) if ($main::verbose >= 2);
+	$dyad_file = $dir{oligos}."/"."dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
 	$dyad_file .= ".freq";
 	my $command = $SCRIPTS."/dyad-analysis ".$quick." -v 1 -i $seq_file -format $seq_format";
 	$command .= " -timeout 240000 ";
@@ -1398,7 +1397,7 @@ sub CalcDyadFreq {
 	$command .= " -o ".$dyad_file;
 	$command .= "; gzip -f ".$dyad_file;
 	if ($batch) {
-	    $batch_command .= $command."; ";
+	    push @batch_commands, $command;
 	} else {
 	    &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);
 	}
@@ -1408,8 +1407,8 @@ sub CalcDyadFreq {
 
   ## Run all the oligo frequencies in one batch job
   if ($batch) {
+      my $batch_command = join(" ;", @batch_commands);
       &doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
-      $batch_command = "";
   }
 
   ## Recompress the sequence file if required
