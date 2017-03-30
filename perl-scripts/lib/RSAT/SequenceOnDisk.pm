@@ -162,7 +162,7 @@ sub get_sequence {
 	&RSAT::message::Warning("Negative coordinates converted to end coordinates", $from, $to) if ($main::verbose >= 3);
 	$sequence =  $self->get_sequence($from,$to);
       } else {
-	&RSAT::message::Warning("Cannot retrieve sub-sequence with negative limits for non-circular sequences", $self->get_id(), $from, $to);
+	&RSAT::message::Warning("Cannot retrieve sub-sequence with negative limits for non-circular sequences", $self->get_id(), $from, $to) if ($main::verbose >= 3);
 	return undef;
       }
     } else {
