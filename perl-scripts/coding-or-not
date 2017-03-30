@@ -207,7 +207,7 @@ foreach my $ctg (sort keys %contig) {
 	     "Intergenic segment without left gene",
 	     "nc_left_gene_ID", $nc_left_gene_ID,
 	     "nc_right_gene_ID", $nc_right_gene_ID,
-	      ) if ($main::verbose >= 1);
+	      ) if ($main::verbose >= 2);
 	} elsif ($nc_left_gene->get_attribute('strand') eq $nc_right_gene->get_attribute('strand')) {
 	  &PrintNextSequence(TANDEM_NC_SEQ, $seq_format,$line_width,$current_seq,$seq_id) 
 	      if ($return{'tandem'});
@@ -239,7 +239,7 @@ foreach my $ctg (sort keys %contig) {
 
 	#### The rightmost gene of this segment will be the left limit of the next intergenic segment
 	if ($gene_segment_right > $current_gene->get_attribute("right")) {
-	  &RSAT::message::Info("Embedded gene", $current_gene->get_attribute("id")) if ($main::verbose >= 1);
+	  &RSAT::message::Info("Embedded gene", $current_gene->get_attribute("id")) if ($main::verbose >= 2);
 	} else {
 	  $nc_left_gene = $current_gene; 
 	  $gene_segment_right = &max($gene_segment_right, $right{$current_gene});
