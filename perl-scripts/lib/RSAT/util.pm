@@ -1085,7 +1085,7 @@ sub doit {
 			"\n\tjob_dir", $job_dir,
 			"\n\tjob_file", $job_file,
 			"\n\tjob_log", $job_log
-      ) if ($main::verbose >= 0);
+      ) if ($main::verbose >= 10);
 #  die "HELLO";
 
     ################################################################
