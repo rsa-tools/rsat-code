@@ -132,7 +132,7 @@ package main;
   chomp $install_date;
 
   ## Store the starting directory
-  $dir{main} = `pwd`;
+  $dir{main} = $ENV{PWD};
 
   ## Directory to download files from NCBI
   $dir{downloads} = $ENV{DOWNLOAD_DIR} || $ENV{RSAT}."/downloads/";
@@ -311,7 +311,7 @@ package main;
       
       ## Header for species list
       if ($task{list}) {
-	  print join("\t", "#species_nb", "species", "strain_nb", "strain", "org_nb", "organism_name"), "\n";
+	  print join("\t", "organism_name", "org_nb",  "species",  "#species_nb", "strain", "strain_nb"), "\n";
       }
       
       # Iterate over species
@@ -355,7 +355,7 @@ package main;
 	      $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
 
 	      if ($task{list}) {
-		  print join("\t", $species_nb, $species, $strain_nb, $strain, $org_nb, $organism_name), "\n";
+		  print join("\t", $organism_name, $org_nb, $species, $species_nb, $strain, $strain_nb), "\n";
 	      }
 
 	      if ($task{parse}) {
@@ -565,7 +565,7 @@ package main;
       ## Touch the installation dir to indicate the last modification date
       $dir{main};
       chdir($dir{main});
-      &RSAT::message::Info("Working dir",  `pwd`) if ($main::verbose >= 2);
+      &RSAT::message::Info("Working dir",  $ENV{PWD}) if ($main::verbose >= 2);
       system "touch $dir{install}";
     }
 
@@ -658,7 +658,7 @@ sub Erase {
     ## Remove the directory
     if (-e $organism_data_dir) {
       &RSAT::message::Warning("Erasing directory", $organism_data_dir) if ($main::verbose >= 2);
-      &doit("rm -rf ".$organism_data_dir, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit("rm -rf ".$organism_data_dir, $dry, $die_on_error, $verbose);
     } else {
       &RSAT::message::Warning("No need to erase unexisting directory", $organism_data_dir);
     }
@@ -1077,7 +1077,7 @@ sub CalcFrequencies {
   chdir $dir{oligos};
 
   ################################################################
-  # calculate oligont frequencies in all upstream sequences
+  ## Calculate oligont frequencies in all upstream sequences
   if ($task{upstream_freq}) {
     foreach my $masking (@masking_modes) {
       foreach my $noorf ("-noorf", "") {
@@ -1140,7 +1140,7 @@ sub CalcFrequencies {
 
 
   ################################################################
-  # calculate oligont frequencies in all intergenic sequences
+  ## Calculate oligont frequencies in all intergenic sequences
   if ($task{intergenic_freq}) {
     $seq_type = "intergenic";
     &RSAT::message::TimeWarn("Calculating ${seq_type} oligo and dyad frequencies") if ($main::verbose >= 1);
@@ -1157,7 +1157,7 @@ sub CalcFrequencies {
   }
     
   ################################################################
-  # calculate oligo-frequencies in full genome
+  ## Calculate oligo-frequencies in full genome
   if ($task{genome_freq}) {
     $seq_type = "genomic";
 
@@ -1240,6 +1240,7 @@ sub CalcOligoFreq {
   my $oligo_seq_type = "dna";
   my $residue_type = "nt";
   my $quick = "";
+  my $batch_command = "";
 
   my @strands = ("-1str", "-2str");
   if ($seq_type eq "protein") {
@@ -1262,7 +1263,7 @@ sub CalcOligoFreq {
       my $command = "gunzip ".$seq_file.".gz";
       my $job_prefix = ${organism_short_name}."_compress";
       $uncompressed = 1;
-      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+      &doit($command, $dry, $die_on_error, $verbose); #, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
       $seq_file =~ s/\.gz$//;
   }
 
@@ -1281,22 +1282,37 @@ sub CalcOligoFreq {
 	$command .= " -return freq,occ";
 	$command .= " -o ".$out_file;
 	$command .= "; gzip -f ".$out_file;
-	&doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+	if ($batch) {
+	    $batch_command .= $command."; " 
+	} else {
+	    &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+	}
       }
     }
   }
 
+  ## Run all the oligo frequencies in one batch job
+  if ($batch) {
+      &doit($batch_command, $dry, $die_on_error, $verbose, $batch); #, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+#      die "HELLO\n";
+      $batch_command = "";
+  }
+
   ## Recompress the sequence file if required
   if ($uncompressed) {
-      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
       my $command = "gzip ".$seq_file;
       my $job_prefix = ${organism_short_name}."_uncompress";
-      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+      if ($batch) {
+	  &RSAT::message::Warning("Cannot recompress sequence in batch mode", $seq_file) if ($main::verbose >= 2);
+      } else {
+	  &RSAT::message::Info("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
+	  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+      }
   }
 }
 
 ################################################################
-## calculate oligonucleotide distribution for a specified sequence
+## Calculate oligonucleotide distribution for a specified sequence
 ## file
 sub CalcOligoDistrib {
   my ($seq_file,$seq_format,$seq_type) = @_;
@@ -1344,6 +1360,7 @@ sub CalcDyadFreq {
   @monad_lengths = (3,2,1);
   @strands = ("-1str", "-2str");
   my $quick = "";
+  my $batch_command = "";
 
   ## Quick option only works with DNA sequences in fasta format
   unless (($seq_type eq "protein") || ($seq_format ne "fasta")) {
@@ -1358,7 +1375,7 @@ sub CalcDyadFreq {
       my $command = "gunzip ".$seq_file.".gz";
       my $job_prefix = ${organism_short_name}."_uncompress";
       $uncompressed = 1;
-      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+      &doit($command, $dry, $die_on_error, $verbose); #, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
       $seq_file =~ s/\.gz$//;
   }
 
@@ -1380,17 +1397,31 @@ sub CalcDyadFreq {
 	$command .= " -return freq,occ";
 	$command .= " -o ".$dyad_file;
 	$command .= "; gzip -f ".$dyad_file;
-	&doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);
+	if ($batch) {
+	    $batch_command .= $command."; ";
+	} else {
+	    &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);
+	}
       }
     }
   }
 
+  ## Run all the oligo frequencies in one batch job
+  if ($batch) {
+      &doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+      $batch_command = "";
+  }
+
   ## Recompress the sequence file if required
   if ($uncompressed) {
-      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
       my $command = "gzip ".$seq_file;
-      my $job_prefix = ${organism_short_name}."_compress";
-      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+      my $job_prefix = ${organism_short_name}."_uncompress";
+      if ($batch) {
+	  &RSAT::message::Warning("Cannot recompress sequence in batch mode", $seq_file) if ($main::verbose >= 2);
+      } else {
+	  &RSAT::message::Info("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
+	  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+      }
   }
 }
 
