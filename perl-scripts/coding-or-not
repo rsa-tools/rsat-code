@@ -161,7 +161,7 @@ foreach my $ctg (sort keys %contig) {
   &RSAT::message::TimeWarn("Treating intergenic and gene segments") if ($main::verbose >= 3);
   
   if (scalar(@sorted_genes) < 1) {
-    &RSAT::message::Warning("Not a single gene on contig", $ctg);
+    &RSAT::message::Warning("Not a single gene on contig", $ctg) if ($main::verbose >= 2);
   } else {
     do {
       ################################################################
