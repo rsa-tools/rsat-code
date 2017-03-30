@@ -527,7 +527,8 @@ package main;
 
     ## Open an output stream for messages
     our $out = &OpenOutputFile($outputfile);
-    &Verbose() if ($verbose >= 1);
+    &Verbose() if ((scalar(@organisms) < 5) 
+		   || ($verbose >= 2));
     
     &Erase() if ($task{erase});
 
