@@ -547,7 +547,7 @@ sub CheckOutDir {
   $chmod = '0777' unless ($chmod);
   umask($umask);
   if ($main::verbose >= 4) {
-    my $wd = `pwd`;
+    my $wd = $ENV{PWD}; #`pwd`;
     &RSAT::message::Info("Current directory", $wd);
   }
 
@@ -1031,8 +1031,7 @@ sub doit {
   }
 
   ## Define current working directory
-  my $wd = `pwd`;
-  chomp($wd);
+  my $wd = $ENV{PWD};
 
   ## Fix scope problem with the variable $main::verbose
   unless(defined($verbose)) {
@@ -1053,7 +1052,7 @@ sub doit {
 
 
     ## Store the command in a sh script (the job)
-    my $job_dir = "jobs";
+    my $job_dir = $wd."/jobs";
     $job_dir .= "/".`date +%Y%m%d`;
     chomp($job_dir);
     &CheckOutDir($job_dir, "", 777);
@@ -1075,11 +1074,19 @@ sub doit {
     open JOB, ">$job_file" || die "Cannot write job file ".$job_file;
     print JOB $job_script;
     close JOB;
-    &RSAT::message::TimeWarn(join("\t", "wd", $wd, "Job written in file", $job_file)) if ($verbose >= 3);
+    &RSAT::message::TimeWarn("wd", $wd, "Job written in file", $job_file) if ($verbose >= 3);
 
     my $job_name = $job_file;
     $job_name =~ s/\//_/g;
-    my $job_log = $wd."/".$job_file.".log";
+    my $job_log = $job_file.".log";
+
+  &RSAT::message::Debug("\n\twd", $wd, 
+			"\n\tshell", $shell,
+			"\n\tjob_dir", $job_dir,
+			"\n\tjob_file", $job_file,
+			"\n\tjob_log", $job_log
+      ) if ($main::verbose >= 0);
+#  die "HELLO";
 
     ################################################################
     ## Check that the cluster parameters are well defined before
@@ -1129,8 +1136,8 @@ sub doit {
     ################################################################
     ## Choose the job scheduler depending on the local configuration
     if (lc($queue_manager) eq "torque") {
-      $wd = `pwd`;
-      chomp($wd);
+#      $wd = $ENV{PWD}; #`pwd`;
+#      chomp($wd);
 
       ## qsub command functionning using torque
       $qsub_command = "qsub";
