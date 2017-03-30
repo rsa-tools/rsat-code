@@ -366,7 +366,7 @@ sub supported_organism_table {
 	}
       } else {
 	$value = $null;
-	&RSAT::message::Warning("Field", $field, "has no value for organism", $org);
+	&RSAT::message::Warning("Field", $field, "has no value for organism", $org) if ($main::verbose >= 3);
       }
       push @values, $value;
     }
