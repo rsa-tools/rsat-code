@@ -173,6 +173,13 @@ package main;
   }
 
 
+  ## Check compatibility between batch and task dependencies
+  if ($batch) {
+    if ($task{allup} && $task{upstream_freq}) {
+      &RSAT::error::FatalError("Tasks allup and upsream_freq cannot be combined in batch mode. First run allup, then upstream_freq.");
+    }
+  }
+
   ## Consistency between tasks
   if ($task{oligos} || $task{dyads}) {
     unless (($task{upstream_freq}) ||
@@ -559,7 +566,9 @@ package main;
 	## Previous name for the peptidic sequence file
 	$peptidic_seq_file = ${organism_short_name}."_aa.fasta";
       }
-      &SeqLengthDistribution($peptidic_seq_file, "fasta", "protein", 50, 2000) if ($task{protein_len});
+      my $command = &SeqLengthDistributionCmd($peptidic_seq_file, "fasta", "protein", 50, 2000) if ($task{protein_len});
+      &doit($command, $dry_run, $die_on_error, $verbose);
+
 
       &CleanUp if ($task{clean});
       
@@ -903,31 +912,38 @@ sub IntergenicSegments {
   my $command = "coding-or-not ";
   $command .= "-v 1 " if ($verbose >= 1);
   $command .= "-org $organism_short_name -return ncs,cs,pos,seq,stats";
-  &doit($command, $dry_run, $die_on_error, $verbose);
+#  &doit($command, $dry_run, $die_on_error, $verbose);
 
   my @types = ();
   push @types, "gene";
   push @types, "intergenic";
 
   foreach my $seq_type (@types) {
-    my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}_segments.fasta";
+    my $seq_file = $dir{genome}."/".$organism_short_name."_".$seq_type."_segments.fasta";
 
-    #### draw sequence length distributions
+    ## Draw sequence length distributions
     &RSAT::message::TimeWarn("Computing sequence length for genomic regions", $seq_type) if ($main::verbose >= 2);
-    &SeqLengthDistribution($seq_file, "fasta", $seq_type, 50, 2000) if ($task{seq_len_distrib});
+    if ($task{seq_len_distrib}) {
+      $command .= "; " unless ($command eq "");
+      $command .= &SeqLengthDistributionCmd($seq_file, "fasta", $seq_type, 50, 2000);
+    }
 
-    #### compress sequence file
+    ## Compress sequence file
     if (-e $seq_file) {
       &RSAT::message::TimeWarn("Compressing sequences for genomic regions", $seq_type) if ($main::verbose >= 2);
-      $command = "gzip -f $seq_file";
-      &doit($command, $dry_run, $die_on_error, $verbose);
+      $command .= "; " unless ($command eq "");
+      $command .= "gzip -f $seq_file";
+
+      ## Purge sequences
+      if ($purged_frequencies) {
+	&RSAT::message::TimeWarn("Purging sequences for genomic regions", $seq_type) if ($main::verbose >= 2);
+	$command .= "; " unless ($command eq "");
+	$command .= &PurgeSeqCommand($seq_file);
+      }
+#      &doit($command, $dry_run, $die_on_error, $verbose);
+      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
     }
 
-    #### purge sequences
-    if ($purged_frequencies) {
-      &RSAT::message::TimeWarn("Purging sequences for genomic regions", $seq_type) if ($main::verbose >= 2);
-      &PurgeSequences($seq_file);
-    }
   }
 
   chdir $dir{main};
@@ -945,31 +961,39 @@ sub AllUpstream {
       my $seq_file = $dir{genome}."/".${organism_short_name}."_".${seq_type};
       my @seq_formats = qw(fasta ft);
       #      my @seq_formats = qw(ft);
+      my $command = "";
 
       ## Retrieve sequences in two formats: fasta is used for
       ## computing oligo and dyad frequencies, whereas ft is convenient for
       ## retrieve-seq-multigenome
       foreach $format (@seq_formats) {
-	my $command = "retrieve-seq -all";
+	$command .= "; " unless ($command eq ""); 
+	$command .= "retrieve-seq -all";
 	$command .= " -type upstream -feattype gene -org ".$organism_short_name;
 	$command .= " ".${noorf};
 	$command .= " ".${masking};
 	$command .= " -label ID";
 	$command .= " -format ".$format;
 	$command .= " -o ".$seq_file.".".$format;
-	&doit($command, $dry_run, $die_on_error, $verbose);
+#	&doit($command, $dry_run, $die_on_error, $verbose);
 	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 2);
       }
 
       ## Compute sequence length distributions and generate a frequency plot
-      &SeqLengthDistribution($seq_file.".fasta", "fasta", $seq_type, 50, 2000) if ($noorf);
+      $command .= "; ".&SeqLengthDistributionCmd($seq_file.".fasta", "fasta", $seq_type, 50, 2000) if ($noorf);
 
-      ## compress sequence file
-      $command = "gzip -f ".$seq_file.".fasta";
-      &doit($command, $dry_run, $die_on_error, $verbose);
+      ## Compress sequence file
+      $command .= "; gzip -f ".$seq_file.".fasta";
 
-      ## purge sequences
-      &PurgeSequences($seq_file.".fasta", "fasta") if ($purged_frequencies);
+      ## Purge sequences
+      if ($purged_frequencies) {
+	$command .= "; ";
+	$command .= &PurgeSeqCommand($seq_file.".fasta", "fasta");
+      }
+
+      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+#      &doit($command, $dry_run, $die_on_error, $verbose);
+
     }
   }
   chdir $dir{main};
@@ -1016,9 +1040,9 @@ sub GenerateBedtoolsIndex {
 
 ################################################################
 ## Draw an histogram of sequence lengths
-sub SeqLengthDistribution {
+sub SeqLengthDistributionCmd {
     my ($seq_file, $format, $seq_type, $ci, $xmax) = @_;
-    &RSAT::message::TimeWarn("&SeqLengthDistribution()", $seq_file, $format, $seq_type, $ci, $xmax) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("&SeqLengthDistributionCmd()", $seq_file, $format, $seq_type, $ci, $xmax) if ($main::verbose >= 2);
     $ci = 50 unless $ci;
     $format = "fasta" unless $format;
     my $classfreq_from = 0;
@@ -1027,15 +1051,16 @@ sub SeqLengthDistribution {
     if ($main::verbose >= 3) {
 	my $pwd = `pwd`;
 	chomp $pwd;
-	&RSAT::message::TimeWarn("&SeqLengthDistribution()", $seq_file, $seq_type, "Working dir", $pwd);
+	&RSAT::message::TimeWarn("&SeqLengthDistributionCmd()", $seq_file, $seq_type, "Working dir", $pwd);
     }
 
+    my $len_prefix = $dir{genome}."/".$organism_short_name."_".$seq_type."_lengths";
     my $command = "sequence-lengths -i $seq_file -in_format ".$format;
-    $command .= " -o ${organism_short_name}_${seq_type}_lengths.tab";
-    $command .= "; classfreq -v 1 -i ${organism_short_name}_${seq_type}_lengths.tab ";
+    $command .= " -o ${len_prefix}.tab";
+    $command .= "; classfreq -v 1 -i ${len_prefix}.tab ";
     $command .= " -ci ".$ci." -from ".$classfreq_from;
-    $command .= " -o ${organism_short_name}_${seq_type}_length_distrib.tab";
-    $command .= "; XYgraph -i ${organism_short_name}_${seq_type}_length_distrib.tab";
+    $command .= " -o ".$len_prefix."_distrib.tab";
+    $command .= "; XYgraph -i ${len_prefix}_distrib.tab";
     $command .= " -xcol 3 -ycol 4,5,6 -lines -xmin $classfreq_from";
     $command .= " -xsize 800 -ysize 400 -legend";
     $command .= " -xgstep1 200 -xgstep2 50 -xmin 0";
@@ -1047,23 +1072,26 @@ sub SeqLengthDistribution {
     $command .= " -title1 '".$organism_full_name."'";
     $command .= " -title2 'length distribution of ${seq_type} sequences'";
     $command .= " -format ".$img_format;
-    $command .= " -o ${organism_short_name}_${seq_type}_lengths.".$img_format;
-    &doit($command, $dry_run, $die_on_error, $verbose);
+    $command .= " -o ".$len_prefix."_distrib.".$img_format;
+#    &doit($command, $dry_run, $die_on_error, $verbose);
+#    die "HELLO\t", $command, "\n";
+    return($command);
 }
 
 ################################################################
 ## purge sequences
-sub PurgeSequences {
+sub PurgeSeqCommand {
   my ($seq_file, $format) = @_;
   &RSAT::message::Warning("Purging sequence", $seq_file, $format) if ($main::verbose >= 2);
   $format = "fasta" unless ($format);
   my $purged_seq_file = `basename $seq_file $format`;
   $purged_seq_file .= "_purged.$format";
   my $command = "purge-sequence -i $seq_file -format $format -ml 300 -mis 9 -2str -o $purged_seq_file";
-  &doit($command, $dry_run, $die_on_error, $verbose);
+#  &doit($command, $dry_run, $die_on_error, $verbose);
   ## compress purged sequence file
-  $command = "gzip -f $purged_seq_file";
-  &doit($command, $dry_run, $die_on_error, $verbose);
+  $command .= "; gzip -f $purged_seq_file";
+#  &doit($command, $dry_run, $die_on_error, $verbose);
+  return($command);
 }
 
 ################################################################
