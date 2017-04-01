@@ -176,7 +176,7 @@ package main;
   ## Check compatibility between batch and task dependencies
   if ($batch) {
     if ($task{allup} && $task{upstream_freq}) {
-      &RSAT::error::FatalError("Tasks allup and upsream_freq cannot be combined in batch mode. First run allup, then upstream_freq.");
+      &RSAT::error::FatalError("Tasks allup and upstream_freq cannot be combined in batch mode. First run allup, then upstream_freq.");
     }
   }
 
@@ -318,7 +318,7 @@ package main;
       
       ## Header for species list
       if ($task{list}) {
-	  print join("\t", "organism_name", "org_nb",  "species",  "#species_nb", "strain", "strain_nb"), "\n";
+	  print "#", join("\t", "organism_name", "org_nb",  "species",  "species_nb", "strain", "strain_nb"), "\n";
       }
       
       # Iterate over species
@@ -334,19 +334,28 @@ package main;
 	  my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
 	  my @strain_folders = glob($latest_assembly_dir."/*");
 
+	  my $strains_for_species = scalar(@strain_folders);
+	  
 
 	  # Iterate over each strain of current species
 	  my $strain_nb = 0; # Strain counter for current species
 	  foreach my $strain_folder (@strain_folders) {
+	      
+	      my $current_strain = &ShortFileName($strain_folder);
+
+	      ## User-selected strain
+	      if ($strain) {
+#		  &RSAT::message::Debug($strain, $current_strain) if ($main::verbose >= 10);
+		  next unless ($strain eq $current_strain);
+	      }
 
 	      ## Strain
 	      $strain_nb ++;
 	      if (($max_strains > 0) && ($strain_nb > $max_strains)) {
 		  my $remaining_strains = scalar(@strain_folders) - $strain_nb + 1;
-		  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", scalar(@strain_folders)) if ($main::verbose >= 2);
+		  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", $strains_for_species) if ($main::verbose >= 2);
 		  last;
 	      }
-	      my $strain = &ShortFileName($strain_folder);
 
 	      ## Organism (concatenation of species + strain)
 	      $org_nb++;
@@ -354,19 +363,19 @@ package main;
 		  &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
 		  next;
 	      }
-	      my $organism_name = $species."_".$strain;
+	      my $organism_name = $species."_".$current_strain;
 	      push @organisms, $organism_name;
-	      &RSAT::message::Info(scalar(@organisms), $species, $strain, $organism_name) if ($main::verbose >= 3);
+	      &RSAT::message::Info(scalar(@organisms), $species, $current_strain, $organism_name) if ($main::verbose >= 3);
 
 	      ## Parse the selected organism
 	      $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
 
 	      if ($task{list}) {
-		  print join("\t", $organism_name, $org_nb, $species, $species_nb, $strain, $strain_nb), "\n";
+		  print join("\t", $organism_name, $org_nb, $species, $species_nb, $current_strain, $strain_nb), "\n";
 	      }
 
 	      if ($task{parse}) {
-		  &ParseGenome($species, $strain, $organism_name, $strain_folder, $genome_dir);
+		  &ParseGenome($species, $current_strain, $organism_name, $strain_folder, $genome_dir);
 	      }
 	  }
       }
@@ -566,11 +575,15 @@ package main;
 	## Previous name for the peptidic sequence file
 	$peptidic_seq_file = ${organism_short_name}."_aa.fasta";
       }
-      my $command = &SeqLengthDistributionCmd($peptidic_seq_file, "fasta", "protein", 50, 2000) if ($task{protein_len});
-      &doit($command, $dry_run, $die_on_error, $verbose);
+
+      if ($task{protein_len}) {
+	  my $command = &SeqLengthDistributionCmd($peptidic_seq_file, "fasta", "protein", 50, 2000);
+	  &doit($command, $dry_run, $die_on_error, $verbose);
+      }
 
 
-      &CleanUp if ($task{clean});
+
+      &CleanUp() if ($task{clean});
       
       ## Touch the installation dir to indicate the last modification date
       $dir{main};
@@ -903,7 +916,7 @@ sub CreatePhylogeny {
 ################################################################
 ### extract the non-redudant set of intergenic and gene sequences
 sub IntergenicSegments {
-  &RSAT::message::TimeWarn("&IntergenicSegments()") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("&IntergenicSegments()") if ($main::verbose >= 2);
 
   chdir $dir{genome};
 
@@ -953,7 +966,7 @@ sub IntergenicSegments {
 ################################################################
 ### extract the complete set of upstream sequences
 sub AllUpstream {
-  &RSAT::message::TimeWarn("Retrieving all upstream sequences") if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Retrieving all upstream sequences") if ($verbose >= 2);
 
   foreach my $masking (@masking_modes) {
     foreach my $noorf ("", "-noorf") {
@@ -2074,7 +2087,7 @@ incomplete.
 ## Retrieve start and stop codons and calculate word occurrences
 ## (for checking)
 sub StartAndStopCodons {
-  &RSAT::message::TimeWarn("&StartAndStopCodons()", $organism_short_name) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("&StartAndStopCodons()", $organism_short_name) if ($main::verbose >= 2);
   #    my $label =  "orf";
   my $label =  "id,ctg,reg_left,reg_right,orf_strand";
   my $prefix = $dir{genome}."/".${organism_short_name};
