@@ -98,7 +98,8 @@ RELEASE_FILES=rsat/00_README.txt		\
 	rsat/RSAT_config_default.props		\
 	rsat/RSAT_config_default.mk		\
 	rsat/RSAT_config_default.bashrc		\
-	rsat/rsat_apache_default.conf		\
+	rsat/RSAT_config_default.conf		\
+	rsat/RSAT_config_default_apache2.2.conf	\
 	rsat/doc/manuals			\
 	rsat/doc/howto				\
 	rsat/python-scripts 			\
