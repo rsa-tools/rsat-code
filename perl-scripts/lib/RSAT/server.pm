@@ -710,7 +710,7 @@ sub send_mail_STARTTLS {
 	);
     
     ## Try to send the email
-    # use Email::Sender::Transport::SMTPS;
+    eval  "use Email::Sender::Transport::SMTPS";  die $@ if $@;
     my $transport = Email::Sender::Transport::SMTPS->new(
 	host => $smtp_server,
 	ssl  => 'starttls',

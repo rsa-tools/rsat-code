@@ -3,3 +3,5 @@
 ## servers.
 
 use Email::Sender::Transport::SMTP;
+
+return(1);
