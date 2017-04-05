@@ -23,7 +23,7 @@
 
 ## Note: you should probably replace the automatic site (hostname) by
 ## a name of your choice.
-export RSAT_SERVER_NAME=rsat_`whoami`
+export RSAT_SERVER_NAME=rsat_`whoami`_`hostname`
 echo "    RSAT_SERVER_NAME=${RSAT_SERVER_NAME}"
 
 ## Path for the local installation. By default, the package is
