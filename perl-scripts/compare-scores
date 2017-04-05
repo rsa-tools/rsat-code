@@ -58,11 +58,18 @@ foreach $f (0..$#input_files) {
 
   ($in, $input_dir) = &OpenInputFile($inputfile);
   $max_fields{$f} = 0;
+  $has_header{$f} = 0;
   while (<$in>) {
     next unless (/\S/);		## Skip empty lines
-    next if (/^\#/);		## Skip header or comment lines
     next if (/^;/);		## Skip comment lines
     chomp;
+
+    ## Parse header line if there is one
+    if (/^\#/) {
+      @{$header{$f}} = split("\t", $_);
+      $has_header{$f} = 1;
+      next;
+    } 
     @fields = split "\t";
     if (defined($sc[$f])) {
       $max_fields{$f}= 1;
@@ -162,8 +169,13 @@ foreach $f (0..$#input_files) {
     }
 
     ## Add column number
-    if ($max_fields[$f] > 1 ) {
-      $column_name .=  "_$c";
+#    &RSAT::message::Debug($f, $input_files[$f], $max_fields{$f});
+    if ($max_fields{$f} > 1 ) {
+      if ($has_header{$f}) {
+	$column_name .=  "_".${header{$f}}[$c];
+      } else {
+	$column_name .=  "_$c";
+      }
     }
 
     $column_names[$col_nb] = $column_name;
