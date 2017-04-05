@@ -55,7 +55,7 @@ echo "    INSTALLER_OPT=${INSTALLER_OPT}"
 ## Create a directory to store the install logs
 mkdir -p ${RSAT}/install_logs
 chmod 777 ${RSAT}/install_logs
-df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
+df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 
 
 ## Check the installation device 
