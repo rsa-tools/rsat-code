@@ -90,7 +90,7 @@ install_ext_apps_optional:
 ## obtained (free of charge for academics) at http://www.vmatch.de/
 VMATCH_VERSION=2.2.5
 VMATCH_VERSION_MACOSX=vmatch-${VMATCH_VERSION}-Darwin_i386-64bit
-VMATCH_VERSION_LINUX=vmatch-${VMATCH_VERSION}-Linux_x86_64-64bit
+VMATCH_VERSION_LINUX=vmatch-${VMATCH_VERSION}-Linux_x86_64bit
 VMATCH_ARCHIVE=${VMATCH_VERSION}.tar.gz
 install_vmatch:
 	@echo
