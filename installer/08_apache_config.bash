@@ -1,5 +1,12 @@
 source installer/00_config.bashk
 
+
+echo
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo
+
 cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
 
 ################################################################
@@ -15,7 +22,8 @@ zip -ry apacheconf_backup_`date '+%Y-%m-%d_%H%M%S'`.zip ${APACHE_CONFIG_FOLDER}
 # nano ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
 ## Uncomment the following line:
 # Include conf-available/serve-cgi-bin.conf
-perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#Include conf-available/serve-cgi-bin.conf|Include conf-available/serve-cgi-bin.conf|' ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
+perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#Include conf-available/serve-cgi-bin.conf|Include conf-available/serve-cgi-bin.conf|' \
+    ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
 
 ## To avoid puzzling warning at apache start, set ServerName globally.
 echo "" >> ${APACHE_CONFIG_FOLDER}/apache2.conf
