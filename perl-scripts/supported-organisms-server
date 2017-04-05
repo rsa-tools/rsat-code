@@ -7,13 +7,8 @@ require "RSA.lib";
 require RSAT::Tree;
 require RSAT::TreeNode;
 require RSAT::OrganismManager;
-
-## SOAP::WSDL modules are required for getting supported organisms on remote server
-use SOAP::WSDL;
-use XML::Compile::SOAP11;
-use XML::Compile::WSDL11;
-use XML::Compile::Transport::SOAPHTTP;
 #use strict;
+
 
 
 
@@ -72,6 +67,15 @@ package main;
   &RSAT::message::TimeWarn("Querying server", $server_url) if ($main::verbose >= 2);
 
 
+  ## SOAP::WSDL modules are required for getting supported organisms on remote server
+  eval "use SOAP::WSDL;  use XML::Compile::SOAP11; use XML::Compile::WSDL11;use XML::Compile::Transport::SOAPHTTP;";
+  if ($@) {
+      &RSAT::error::FatalError("supported-organisms-server cannot run because libraries are missing: ", 
+			       "\n\tSOAP::WSDL", 
+			       "\n\tXML::Compile::SOAP11", 
+			       "\n\tXML::Compile::WSDL11", 
+			       "\n\tXML::Compile::Transport::SOAPHTTP");
+  }
 
   eval
   {
