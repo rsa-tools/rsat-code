@@ -29,6 +29,28 @@ cd ${RSAT}
 make -f makefiles/init_rsat.mk init
 
 ################################################################
+## Next steps require to be done as rsat administrator user
+
+## compile RSAT programs written in C
+cd ${RSAT}
+make -f makefiles/init_rsat.mk compile_all
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
+
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!  BUG    !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+## !!!! I HAVE A PROBLEM TO COMPILE KWALKS. SHOULD BE CHECKED !!!!!
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+################################################################
+## Install some third-party programs required by some RSAT scripts.
+cd ${RSAT}
+make -f makefiles/install_software.mk list_ext_apps
+make -f makefiles/install_software.mk install_ext_apps
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
+
+
+################################################################
 ## Previous way to specify bashrc parameters, via
 ## /etc/bash_completion.d/. I change it (2014-09-23) because it does
 ## not allow to run remote commands via ssh (/etc/bash_completion.d is
@@ -58,40 +80,3 @@ echo ''  >> /etc/bash.bashrc
 
 #emacs -nw /etc/bash.bashrc
 
-
-
-################################################################
-## Next steps require to be done as rsat administrator user
-
-## compile RSAT programs written in C
-cd ${RSAT}
-make -f makefiles/init_rsat.mk compile_all
-df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
-
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!  BUG    !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## !!!! I HAVE A PROBLEM TO COMPILE KWALKS. SHOULD BE CHECKED !!!!!
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-## Install two model organisms, required for some of the Web tools.
-download-organism -v 1 -org Saccharomyces_cerevisiae \
- -org Escherichia_coli_K_12_substr__MG1655_uid57779
-
-## Optionally, install some pluricellular model organisms
-# download-organism -v 1 -org Drosophila_melanogaster
-# download-organism -v 1 -org Caenorhabditis_elegans
-# download-organism -v 1 -org Arabidopsis_thaliana
-
-## Get the list of organisms supported on your computer.
-supported-organisms
-
-df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
-
-
-################################################################
-## Install some third-party programs required by some RSAT scripts.
-cd ${RSAT}
-make -f makefiles/install_software.mk
-make -f makefiles/install_software.mk install_ext_apps
-df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
