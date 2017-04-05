@@ -19,5 +19,5 @@ download-organism -v 1 -org Saccharomyces_cerevisiae \
 ## Get the list of organisms supported on your computer.
 supported-organisms
 
-df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
+df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
 
