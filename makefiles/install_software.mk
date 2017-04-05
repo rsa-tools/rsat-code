@@ -90,8 +90,20 @@ install_ext_apps_optional:
 ## obtained (free of charge for academics) at http://www.vmatch.de/
 VMATCH_VERSION=2.2.5
 VMATCH_VERSION_MACOSX=vmatch-${VMATCH_VERSION}-Darwin_i386-64bit
-VMATCH_VERSION_LINUX=vmatch-${VMATCH_VERSION}-Linux_x86_64bit
+VMATCH_VERSION_LINUX=vmatch-${VMATCH_VERSION}-Linux_x86_64-64bit
 VMATCH_ARCHIVE=${VMATCH_VERSION}.tar.gz
+VMATCH_BASE_DIR=${SRC_DIR}/vmatch
+VMATCH_URL=ftp://lscsa.de/pub/lscsa/
+install_vmatch_param:
+	@echo "Parameters for vmatch instlalation"
+	@echo "	VMATCH_VERSION		${VMATCH_VERSION}"
+	@echo "	OS			${OS}"
+	@echo "	VMATCH_VERSION_MACOSX	${VMATCH_VERSION_MACOSX}"
+	@echo "	VMATCH_VERSION_LINUX	${VMATCH_VERSION_LINUX}"
+	@echo "	VMATCH_ARCHIVE		${VMATCH_ARCHIVE}"
+	@echo "	VMATCH_BASE_DIR		${VMATCH_BASE_DIR}"
+	@echo "	VMATCH_URL		${VMATCH_URL}"
+
 install_vmatch:
 	@echo
 	@echo "Installing vmatch for operating system ${OS}"
@@ -105,15 +117,13 @@ _install_vmatch_linux:
 	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_LINUX} _download_vmatch _install_vmatch
 
 
-VMATCH_BASE_DIR=${SRC_DIR}/vmatch
-VMATCH_URL=ftp://lscsa.de/pub/lscsa/
 #VMATCH_SOURCE_DIR=vmatch_latest
 _download_vmatch: 
 	@echo ""
 	@echo "Downloading vmatch in folder"
 	@echo "	${VMATCH_BASE_DIR}"
 	@mkdir -p ${VMATCH_BASE_DIR}
-	echo wget --no-clobber --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
+	wget --no-clobber --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
 	@ls ${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE}
 
 VMATCH_SOURCE_DIR=${VMATCH_BASE_DIR}/${VMATCH_VERSION}
