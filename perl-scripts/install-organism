@@ -3,7 +3,7 @@
 #
 # $Id: install-organism,v 1.129 2013/10/13 12:24:00 jvanheld Exp $
 #
-# Time-stamp: <2003-10-21 01:20:28 jvanheld>
+# Time-stamp: <2017-03-17 10:53:06 eda>
 #
 ############################################################
 
@@ -38,8 +38,7 @@ package main;
   @masking_modes = ("");	## by default, use no masking
   @oligo_lengths=(6,1,2,3,4,5,7,8);
   $verbose = 0;
-  $batch = 0;
-  $die_on_error = 0;
+
   $seq_format = "fasta"; ## default format for exporting sequences
   $img_format = $ENV{rsat_img_format} || "png";
   $noov="";
@@ -64,9 +63,6 @@ package main;
 		       );
 
   @extra_tasks = qw(
-                    download
-                    list
-		    parse
                     fasta_genome
                     index_bedtools
                     uninstall
@@ -79,10 +75,24 @@ package main;
                     default
 		    all
       );
-  @supported_tasks = (@default_tasks, @extra_tasks);
+
+  ## Tasks to iterate over species rather than organisms
+  @species_tasks = qw(available
+                      download
+                      list
+                      parse);
+
+  @organism_tasks = (@default_tasks, @extra_tasks);
+  @supported_tasks = (@species_tasks, @organism_tasks);
   %supported_task = ();
   foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
+  }
+  foreach my $task (@species_tasks) {
+    $species_task{$task} = 1;
+  }
+  foreach my $task (@organism_tasks) {
+    $organism_task{$task} = 1;
   }
   $supported_tasks = join ",", @supported_tasks;
   %task = ();
@@ -122,11 +132,20 @@ package main;
   chomp $install_date;
 
   ## Store the starting directory
-  $dir{main} = `pwd`;
+  $dir{main} = $ENV{PWD};
 
   ## Directory to download files from NCBI
   $dir{downloads} = $ENV{DOWNLOAD_DIR} || $ENV{RSAT}."/downloads/";
 #  $dir{refseq} = $ENV{REFSEQ_DIR} || $ENV{RSAT}."/downloads/refseq";
+
+  ## Options for the job scheduler
+  $dry = 0;
+  $die_on_error = 0;
+  $batch = 0;
+  $job_prefix = "install_org";
+  $log_handle = "";
+  $err_handle = "";
+  $cluster_queue = $ENV{CLUSTER_QUEUE};
 
   ################################################################
   ## Read arguments
@@ -147,10 +166,19 @@ package main;
     }
   }
 
+  ## Run all the tasks for each organism (not the species-wide tasks
+  ## like downloading and parsing).
   if ($task{all}) {
-    %task = %supported_task;
+    %task = %organism_task;
   }
 
+
+  ## Check compatibility between batch and task dependencies
+  if ($batch) {
+    if ($task{allup} && $task{upstream_freq}) {
+      &RSAT::error::FatalError("Tasks allup and upstream_freq cannot be combined in batch mode. First run allup, then upstream_freq.");
+    }
+  }
 
   ## Consistency between tasks
   if ($task{oligos} || $task{dyads}) {
@@ -167,9 +195,24 @@ package main;
     &RSAT::error::FatalError("The task 'protein_freq' requires to activate the task 'oligos'");
   }
 
+  ## Count the number of species-wide and organism-specific takss
+  our $requested_species_tasks = 0;
+  our $requested_organism_tasks = 0;
+  &RSAT::message::TimeWarn("Checking tasks", join(";", keys(%task))) if ($main::verbose >= 2);
+  foreach my $task (keys(%task)) {
+      if ($species_task{$task}) {
+	  $requested_species_tasks++;
+      }
+      if ($organism_task{$task}) {
+	  $requested_organism_tasks++;
+      }
+  }
+  &RSAT::message::Info("Species tasks", $requested_species_tasks) if ($main::verbose >= 2);
+  &RSAT::message::Info("Organism tasks", $requested_organism_tasks) if ($main::verbose >= 2);
+
 
   ################################################################
-  ## If an species file has been specified, read species list
+  ## If a species file has been specified, read species list
   if ($infile{species}) {
     &RSAT::message::TimeWarn("Reading species file", $infile{species}) if ($main::verbose >= 1);
     my ($speciess) = &OpenInputFile($infile{species});
@@ -188,20 +231,11 @@ package main;
   ## Check consistency of arguments for download/list/parse tasks.
   if ($task{parse} || $task{download} || $task{list}) {
     $source = "NCBI-Refseq";
-    ## Check the directory contianing the Genbank-formatted organisms
+
+    ## Check the directory containing the Genbank-formatted organisms
     ## (which can be downloaded from NCBI/refseq).
     unless ($dir{refseq}) { # Refseq dir specified on the command line
       $dir{refseq} = $dir{downloads}."/refseq";
-      # if ($ENV{REFSEQ_DIR}) {
-      # 	$dir{refseq} = $ENV{REFSEQ_DIR}; # Refseq dir specified in the config file
-      # } elsif ($REFSEQ_DIR) {
-      # 	$dir{refseq} = $REFSEQ_DIR;
-      # } elsif ($ENV{GENBANK_DIR}) {
-      # 	&RSAT::message::Warning("environment variable GENBANK_DIR is obsolete, please specify REFSEQ_DIR in ", ${RSAT}."/RSAT_config.props");
-      # 	$dir{refseq} = $ENV{GENBANK_DIR}."/refseq";
-      # } else {
-      # 	&RSAT::error::FatalError("Please set the option REFSEQ_DIR in RSAT configuration file", ${RSAT}."/RSAT_config.props");
-      # }
     }
     &RSAT::util::CheckOutDir($dir{refseq});
 
@@ -224,14 +258,37 @@ package main;
   }
 
 
+  ################################################################
+  ## Get the list of available species for the selected group
+  if ($task{available}) {
+      
+      unless ($group) {
+	  &RSAT::error::FatalError("The task 'availabl' requires to specify a group (e.g. fungi, bacteria, ...).");
+      }
 
+
+      my $command = 'rsync --copy-links  --times  --list-only rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq/'.$group.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
+      &doit($command, $dry_run, $die_on_error, $verbose);
+      exit(0); # Available species is not compatible with any other task
+  }
 
   ################################################################
   ## Download the required files from NCBI FTP site
   if ($task{download}) {
 
     ## Download each species
+    my $species_nb = 0;
     foreach my $species (@species) {
+	$species_nb++;
+
+	if (($last_species > 0) && ($species_nb > $last_species)) {
+	    &RSAT::message::Warning("Stopped after", $last_species, "species") if ($main::verbose >= 1);
+	    last;
+	}
+	if (($skip_species > 0) && ($species_nb <= $skip_species)) {
+	    &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
+	    next;
+	}
 
       my $URL = join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, $species, "latest_assembly_versions/");
       if ($strain) { 
@@ -252,49 +309,76 @@ package main;
   ## strains (as sub-directories of the NCBI/Refseq
   ## latest_assembly_versions)
   if (($task{parse}) || ($task{list})) {
-    unless (-d $dir{refseq}) {
-      &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
-    }
-    ## Collect all strains and build organism names
-    my $org_nb = 0;
 
-    # Iterate over species
-    foreach my $species (@species) {
-      my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
-      my @strain_folders = glob($latest_assembly_dir."/*");
-
-
-      # Iterate over each strain of current species
-      my $strain_nb = 0; # Strain counter for current species
-      foreach my $strain_folder (@strain_folders) {
-	$strain_nb ++;
-	if (($max_strains > 0) && ($strain_nb > $max_strains)) {
-	  my $remaining_strains = scalar(@strain_folders) - $strain_nb + 1;
-	  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", scalar(@strain_folders)) if ($main::verbose >= 0);
-	  last;
-	}
-	my $strain = &ShortFileName($strain_folder);
-	my $organism_name = $species."_".$strain;
-	$org_nb++;
-	push @organisms, $organism_name;
-	&RSAT::message::Info(scalar(@organisms), $species, $strain, $organism_name) if ($main::verbose >= 3);
-
-	## Parse the selected organism
-	$genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
-
-	if ($task{list}) {
-	  print (join("\t", $org_nb, $species, $strain, $organism_name, $strain_folder, $genome_dir));
-	  print "\n";
-	}
-
-	if ($task{parse}) {
-	  &ParseGenome($species, $strain, $organism_name, $strain_folder, $genome_dir) if ($task{parse});
-	}
-      
+      ## Check refseq directory
+      unless (-d $dir{refseq}) {
+	  &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
       }
-    }
 
+      
+      ## Header for species list
+      if ($task{list}) {
+	  print "#", join("\t", "organism_name", "org_nb",  "species",  "species_nb", "strain", "strain_nb"), "\n";
+      }
+      
+      # Iterate over species
+      my $org_nb = 0; # Initialize organism counter
+      my $species_nb = 0; # Initialize species counter
+      foreach my $species (@species) {
+	  $species_nb++;
+	  if (($last_species > 0) && ($species_nb > $last_species)) {
+	      &RSAT::message::Warning("Stopped after", $last_species, "species") if ($main::verbose >= 1);
+	      last;
+	  }
 
+	  my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
+	  my @strain_folders = glob($latest_assembly_dir."/*");
+
+	  my $strains_for_species = scalar(@strain_folders);
+	  
+
+	  # Iterate over each strain of current species
+	  my $strain_nb = 0; # Strain counter for current species
+	  foreach my $strain_folder (@strain_folders) {
+	      
+	      my $current_strain = &ShortFileName($strain_folder);
+
+	      ## User-selected strain
+	      if ($strain) {
+#		  &RSAT::message::Debug($strain, $current_strain) if ($main::verbose >= 10);
+		  next unless ($strain eq $current_strain);
+	      }
+
+	      ## Strain
+	      $strain_nb ++;
+	      if (($max_strains > 0) && ($strain_nb > $max_strains)) {
+		  my $remaining_strains = scalar(@strain_folders) - $strain_nb + 1;
+		  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", $strains_for_species) if ($main::verbose >= 2);
+		  last;
+	      }
+
+	      ## Organism (concatenation of species + strain)
+	      $org_nb++;
+	      if (($skip_species > 0) && ($species_nb <= $skip_species)) {
+		  &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
+		  next;
+	      }
+	      my $organism_name = $species."_".$current_strain;
+	      push @organisms, $organism_name;
+	      &RSAT::message::Info(scalar(@organisms), $species, $current_strain, $organism_name) if ($main::verbose >= 3);
+
+	      ## Parse the selected organism
+	      $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
+
+	      if ($task{list}) {
+		  print join("\t", $organism_name, $org_nb, $species, $species_nb, $current_strain, $strain_nb), "\n";
+	      }
+
+	      if ($task{parse}) {
+		  &ParseGenome($species, $current_strain, $organism_name, $strain_folder, $genome_dir, $org_nb);
+	      }
+	  }
+      }
   }
 
 #### option  -all_organisms is not supported anymore
@@ -378,6 +462,14 @@ package main;
   }
 
   ################################################################
+  ## Check if any task has to be done on organisms (and not just to
+  ## NCBI species).
+  if ($requested_organism_tasks == 0) {
+      &RSAT::message::Warning("No organism-specific task has been requested. ") if ($main::verbose >= 1);
+      exit(0);
+  }
+
+  ################################################################
   ## Iterate installation over selected organisms
   $i = 0;
   foreach our $organism_short_name (@organisms) {
@@ -451,7 +543,8 @@ package main;
 
     ## Open an output stream for messages
     our $out = &OpenOutputFile($outputfile);
-    &Verbose() if ($verbose >= 1);
+    &Verbose() if ((scalar(@organisms) < 5) 
+		   || ($verbose >= 2));
     
     &Erase() if ($task{erase});
 
@@ -482,22 +575,28 @@ package main;
 	## Previous name for the peptidic sequence file
 	$peptidic_seq_file = ${organism_short_name}."_aa.fasta";
       }
-      &SeqLengthDistribution($peptidic_seq_file, "fasta", "protein", 50, 2000) if ($task{protein_len});
 
-      &CleanUp if ($task{clean});
+      if ($task{protein_len}) {
+	  my $command = &SeqLengthDistributionCmd($peptidic_seq_file, "fasta", "protein", 50, 2000);
+	  &doit($command, $dry_run, $die_on_error, $verbose);
+      }
+
+
+
+      &CleanUp() if ($task{clean});
       
       ## Touch the installation dir to indicate the last modification date
       $dir{main};
       chdir($dir{main});
-      &RSAT::message::Info("Working dir",  `pwd`) if ($main::verbose >= 2);
+      &RSAT::message::Info("Working dir",  $ENV{PWD}) if ($main::verbose >= 2);
       system "touch $dir{install}";
     }
 
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-    print $main::out $exec_time if ($main::verbose >= 1);
 
     close $out if ($outputfile);
   }
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
   exit(0);
 }
 
@@ -556,7 +655,7 @@ sub Uninstall {
     foreach our $organism_short_name (@organisms) {
 	&RSAT::OrganismManager::check_name($organism_short_name, 1);
 	if (defined($supported_organism{$organism_short_name})) {
-	    &RSAT::message::Warning("Uninstalling organism", $organism_short_name) if ($main::verbose >= 0);
+	    &RSAT::message::Warning("Uninstalling organism", $organism_short_name) if ($main::verbose >= 1);
 	    delete($supported_organism{$organism_short_name});
 	}
     }
@@ -568,7 +667,7 @@ sub Uninstall {
 ## RSAT/public_html/data/genomes directory.
 sub Erase {
   foreach our $organism_short_name (@organisms) {
-    &RSAT::message::Warning("Erasing organism", $organism_short_name) if ($main::verbose >= 0);
+    &RSAT::message::Warning("Erasing organism", $organism_short_name) if ($main::verbose >= 1);
       
     ## Identify the data directory for the organism
     my $organism_data_dir = "";
@@ -581,8 +680,8 @@ sub Erase {
     
     ## Remove the directory
     if (-e $organism_data_dir) {
-      &RSAT::message::Warning("Erasing directory", $organism_data_dir) if ($main::verbose >= 0);
-      &doit("rm -rf ".$organism_data_dir, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Warning("Erasing directory", $organism_data_dir) if ($main::verbose >= 2);
+      &doit("rm -rf ".$organism_data_dir, $dry, $die_on_error, $verbose);
     } else {
       &RSAT::message::Warning("No need to erase unexisting directory", $organism_data_dir);
     }
@@ -817,7 +916,7 @@ sub CreatePhylogeny {
 ################################################################
 ### extract the non-redudant set of intergenic and gene sequences
 sub IntergenicSegments {
-  &RSAT::message::TimeWarn("&IntergenicSegments()") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("&IntergenicSegments()") if ($main::verbose >= 2);
 
   chdir $dir{genome};
 
@@ -826,31 +925,38 @@ sub IntergenicSegments {
   my $command = "coding-or-not ";
   $command .= "-v 1 " if ($verbose >= 1);
   $command .= "-org $organism_short_name -return ncs,cs,pos,seq,stats";
-  &doit($command, $dry_run, $die_on_error, $verbose);
+#  &doit($command, $dry_run, $die_on_error, $verbose);
 
   my @types = ();
   push @types, "gene";
   push @types, "intergenic";
 
   foreach my $seq_type (@types) {
-    my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}_segments.fasta";
+    my $seq_file = $dir{genome}."/".$organism_short_name."_".$seq_type."_segments.fasta";
 
-    #### draw sequence length distributions
+    ## Draw sequence length distributions
     &RSAT::message::TimeWarn("Computing sequence length for genomic regions", $seq_type) if ($main::verbose >= 2);
-    &SeqLengthDistribution($seq_file, "fasta", $seq_type, 50, 2000) if ($task{seq_len_distrib});
+    if ($task{seq_len_distrib}) {
+      $command .= "; " unless ($command eq "");
+      $command .= &SeqLengthDistributionCmd($seq_file, "fasta", $seq_type, 50, 2000);
+    }
 
-    #### compress sequence file
+    ## Compress sequence file
     if (-e $seq_file) {
       &RSAT::message::TimeWarn("Compressing sequences for genomic regions", $seq_type) if ($main::verbose >= 2);
-      $command = "gzip -f $seq_file";
-      &doit($command, $dry_run, $die_on_error, $verbose);
+      $command .= "; " unless ($command eq "");
+      $command .= "gzip -f $seq_file";
+
+      ## Purge sequences
+      if ($purged_frequencies) {
+	&RSAT::message::TimeWarn("Purging sequences for genomic regions", $seq_type) if ($main::verbose >= 2);
+	$command .= "; " unless ($command eq "");
+	$command .= &PurgeSeqCommand($seq_file);
+      }
+#      &doit($command, $dry_run, $die_on_error, $verbose);
+      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
     }
 
-    #### purge sequences
-    if ($purged_frequencies) {
-      &RSAT::message::TimeWarn("Purging sequences for genomic regions", $seq_type) if ($main::verbose >= 2);
-      &PurgeSequences($seq_file);
-    }
   }
 
   chdir $dir{main};
@@ -860,7 +966,7 @@ sub IntergenicSegments {
 ################################################################
 ### extract the complete set of upstream sequences
 sub AllUpstream {
-  &RSAT::message::TimeWarn("Retrieving all upstream sequences") if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Retrieving all upstream sequences") if ($verbose >= 2);
 
   foreach my $masking (@masking_modes) {
     foreach my $noorf ("", "-noorf") {
@@ -868,31 +974,39 @@ sub AllUpstream {
       my $seq_file = $dir{genome}."/".${organism_short_name}."_".${seq_type};
       my @seq_formats = qw(fasta ft);
       #      my @seq_formats = qw(ft);
+      my $command = "";
 
       ## Retrieve sequences in two formats: fasta is used for
       ## computing oligo and dyad frequencies, whereas ft is convenient for
       ## retrieve-seq-multigenome
       foreach $format (@seq_formats) {
-	my $command = "retrieve-seq -all";
+	$command .= "; " unless ($command eq ""); 
+	$command .= "retrieve-seq -all";
 	$command .= " -type upstream -feattype gene -org ".$organism_short_name;
 	$command .= " ".${noorf};
 	$command .= " ".${masking};
 	$command .= " -label ID";
 	$command .= " -format ".$format;
 	$command .= " -o ".$seq_file.".".$format;
-	&doit($command, $dry_run, $die_on_error, $verbose);
+#	&doit($command, $dry_run, $die_on_error, $verbose);
 	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 2);
       }
 
       ## Compute sequence length distributions and generate a frequency plot
-      &SeqLengthDistribution($seq_file.".fasta", "fasta", $seq_type, 50, 2000) if ($noorf);
+      $command .= "; ".&SeqLengthDistributionCmd($seq_file.".fasta", "fasta", $seq_type, 50, 2000) if ($noorf);
 
-      ## compress sequence file
-      $command = "gzip -f ".$seq_file.".fasta";
-      &doit($command, $dry_run, $die_on_error, $verbose);
+      ## Compress sequence file
+      $command .= "; gzip -f ".$seq_file.".fasta";
 
-      ## purge sequences
-      &PurgeSequences($seq_file.".fasta", "fasta") if ($purged_frequencies);
+      ## Purge sequences
+      if ($purged_frequencies) {
+	$command .= "; ";
+	$command .= &PurgeSeqCommand($seq_file.".fasta", "fasta");
+      }
+
+      &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+#      &doit($command, $dry_run, $die_on_error, $verbose);
+
     }
   }
   chdir $dir{main};
@@ -939,9 +1053,9 @@ sub GenerateBedtoolsIndex {
 
 ################################################################
 ## Draw an histogram of sequence lengths
-sub SeqLengthDistribution {
+sub SeqLengthDistributionCmd {
     my ($seq_file, $format, $seq_type, $ci, $xmax) = @_;
-    &RSAT::message::TimeWarn("&SeqLengthDistribution()", $seq_file, $format, $seq_type, $ci, $xmax) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("&SeqLengthDistributionCmd()", $seq_file, $format, $seq_type, $ci, $xmax) if ($main::verbose >= 2);
     $ci = 50 unless $ci;
     $format = "fasta" unless $format;
     my $classfreq_from = 0;
@@ -950,15 +1064,16 @@ sub SeqLengthDistribution {
     if ($main::verbose >= 3) {
 	my $pwd = `pwd`;
 	chomp $pwd;
-	&RSAT::message::TimeWarn("&SeqLengthDistribution()", $seq_file, $seq_type, "Working dir", $pwd);
+	&RSAT::message::TimeWarn("&SeqLengthDistributionCmd()", $seq_file, $seq_type, "Working dir", $pwd);
     }
 
+    my $len_prefix = $dir{genome}."/".$organism_short_name."_".$seq_type."_lengths";
     my $command = "sequence-lengths -i $seq_file -in_format ".$format;
-    $command .= " -o ${organism_short_name}_${seq_type}_lengths.tab";
-    $command .= "; classfreq -v 1 -i ${organism_short_name}_${seq_type}_lengths.tab ";
+    $command .= " -o ${len_prefix}.tab";
+    $command .= "; classfreq -v 1 -i ${len_prefix}.tab ";
     $command .= " -ci ".$ci." -from ".$classfreq_from;
-    $command .= " -o ${organism_short_name}_${seq_type}_length_distrib.tab";
-    $command .= "; XYgraph -i ${organism_short_name}_${seq_type}_length_distrib.tab";
+    $command .= " -o ".$len_prefix."_distrib.tab";
+    $command .= "; XYgraph -i ${len_prefix}_distrib.tab";
     $command .= " -xcol 3 -ycol 4,5,6 -lines -xmin $classfreq_from";
     $command .= " -xsize 800 -ysize 400 -legend";
     $command .= " -xgstep1 200 -xgstep2 50 -xmin 0";
@@ -970,23 +1085,26 @@ sub SeqLengthDistribution {
     $command .= " -title1 '".$organism_full_name."'";
     $command .= " -title2 'length distribution of ${seq_type} sequences'";
     $command .= " -format ".$img_format;
-    $command .= " -o ${organism_short_name}_${seq_type}_lengths.".$img_format;
-    &doit($command, $dry_run, $die_on_error, $verbose);
+    $command .= " -o ".$len_prefix."_distrib.".$img_format;
+#    &doit($command, $dry_run, $die_on_error, $verbose);
+#    die "HELLO\t", $command, "\n";
+    return($command);
 }
 
 ################################################################
 ## purge sequences
-sub PurgeSequences {
+sub PurgeSeqCommand {
   my ($seq_file, $format) = @_;
   &RSAT::message::Warning("Purging sequence", $seq_file, $format) if ($main::verbose >= 2);
   $format = "fasta" unless ($format);
   my $purged_seq_file = `basename $seq_file $format`;
   $purged_seq_file .= "_purged.$format";
   my $command = "purge-sequence -i $seq_file -format $format -ml 300 -mis 9 -2str -o $purged_seq_file";
-  &doit($command, $dry_run, $die_on_error, $verbose);
+#  &doit($command, $dry_run, $die_on_error, $verbose);
   ## compress purged sequence file
-  $command = "gzip -f $purged_seq_file";
-  &doit($command, $dry_run, $die_on_error, $verbose);
+  $command .= "; gzip -f $purged_seq_file";
+#  &doit($command, $dry_run, $die_on_error, $verbose);
+  return($command);
 }
 
 ################################################################
@@ -1001,7 +1119,7 @@ sub CalcFrequencies {
   chdir $dir{oligos};
 
   ################################################################
-  # calculate oligont frequencies in all upstream sequences
+  ## Calculate oligont frequencies in all upstream sequences
   if ($task{upstream_freq}) {
     foreach my $masking (@masking_modes) {
       foreach my $noorf ("-noorf", "") {
@@ -1064,7 +1182,7 @@ sub CalcFrequencies {
 
 
   ################################################################
-  # calculate oligont frequencies in all intergenic sequences
+  ## Calculate oligont frequencies in all intergenic sequences
   if ($task{intergenic_freq}) {
     $seq_type = "intergenic";
     &RSAT::message::TimeWarn("Calculating ${seq_type} oligo and dyad frequencies") if ($main::verbose >= 1);
@@ -1081,7 +1199,7 @@ sub CalcFrequencies {
   }
     
   ################################################################
-  # calculate oligo-frequencies in full genome
+  ## Calculate oligo-frequencies in full genome
   if ($task{genome_freq}) {
     $seq_type = "genomic";
 
@@ -1164,6 +1282,7 @@ sub CalcOligoFreq {
   my $oligo_seq_type = "dna";
   my $residue_type = "nt";
   my $quick = "";
+  my @batch_commands = ();
 
   my @strands = ("-1str", "-2str");
   if ($seq_type eq "protein") {
@@ -1186,16 +1305,16 @@ sub CalcOligoFreq {
       my $command = "gunzip ".$seq_file.".gz";
       my $job_prefix = ${organism_short_name}."_compress";
       $uncompressed = 1;
-      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      &doit($command, $dry, $die_on_error, $verbose); #, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
       $seq_file =~ s/\.gz$//;
   }
 
+  my $job_prefix = ${organism_short_name}."_oligos";
   foreach my $noov ("-noov", "-ovlp") {
     foreach my $strands (@strands) {
       foreach my $oligo_length (@current_oligo_lengths) {
-	&RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type, "l=".$oligo_length, $noov, $strands) if ($main::verbose >= 1);
+	&RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type, "l=".$oligo_length, $noov, $strands) if ($main::verbose >= 2);
 
-	my $job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 	my $out_file = $dir{oligos}."/".${oligo_length}.${residue_type}."_".${seq_type}."_".${organism_short_name}.${noov}.${strands}.".freq";
 	my $command = $SCRIPTS."/oligo-analysis  ".$quick."  -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " ".$strands;
@@ -1205,22 +1324,36 @@ sub CalcOligoFreq {
 	$command .= " -return freq,occ";
 	$command .= " -o ".$out_file;
 	$command .= "; gzip -f ".$out_file;
-	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+	if ($batch) {
+	    push @batch_commands, $command;
+	} else {
+	    &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+	}
       }
     }
   }
 
+  ## Run all the oligo frequencies in one batch job
+  if ($batch) {
+      my $batch_command = join(" ;", @batch_commands);
+      &doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+  }
+
   ## Recompress the sequence file if required
   if ($uncompressed) {
-      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
       my $command = "gzip ".$seq_file;
       my $job_prefix = ${organism_short_name}."_uncompress";
-      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      if ($batch) {
+	  &RSAT::message::Warning("Cannot recompress sequence in batch mode", $seq_file) if ($main::verbose >= 2);
+      } else {
+	  &RSAT::message::Info("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
+	  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+      }
   }
 }
 
 ################################################################
-## calculate oligonucleotide distribution for a specified sequence
+## Calculate oligonucleotide distribution for a specified sequence
 ## file
 sub CalcOligoDistrib {
   my ($seq_file,$seq_format,$seq_type) = @_;
@@ -1232,7 +1365,7 @@ sub CalcOligoDistrib {
 	my $job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 
 	#### Calculate occurrence distributions in the sequence file
-	my $distrib_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
+	my $distrib_file = $dir{oligos}."/"."${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
 	my $command = $SCRIPTS."/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " ".$strands;
 	$command .= " ".$noov;
@@ -1240,7 +1373,7 @@ sub CalcOligoDistrib {
 	$command .= " -return occ -distrib";
 	$command .= " -o ".$distrib_file;
 	$command .= " ; gzip -f ".$distrib_file;
-	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+	&doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
 
 	#### Fit a Poisson and a negbin on occurrence distribution
 	foreach my $theor ("negbin", "poisson") {
@@ -1268,6 +1401,7 @@ sub CalcDyadFreq {
   @monad_lengths = (3,2,1);
   @strands = ("-1str", "-2str");
   my $quick = "";
+  my @batch_commands = ();
 
   ## Quick option only works with DNA sequences in fasta format
   unless (($seq_type eq "protein") || ($seq_format ne "fasta")) {
@@ -1282,17 +1416,17 @@ sub CalcDyadFreq {
       my $command = "gunzip ".$seq_file.".gz";
       my $job_prefix = ${organism_short_name}."_uncompress";
       $uncompressed = 1;
-      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      &doit($command, $dry, $die_on_error, $verbose); #, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
       $seq_file =~ s/\.gz$//;
   }
 
 
+  my $job_prefix = ${organism_short_name}."_dyads";
   foreach my $noov ("-noov", "-ovlp") {
     foreach my $strands (@strands) {
       foreach my $monad_length (@monad_lengths) {
-	&RSAT::message::TimeWarn("Calculating dyad frequencies",$seq_file, $seq_format, $seq_type, "l=".$monad_length, $noov, $strands) if ($main::verbose >= 1);
-	my $job_prefix = ${organism_short_name}."_dyad_".$monad_length;
-	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
+	&RSAT::message::TimeWarn("Calculating dyad frequencies",$seq_file, $seq_format, $seq_type, "l=".$monad_length, $noov, $strands) if ($main::verbose >= 2);
+	$dyad_file = $dir{oligos}."/"."dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
 	$dyad_file .= ".freq";
 	my $command = $SCRIPTS."/dyad-analysis ".$quick." -v 1 -i $seq_file -format $seq_format";
 	$command .= " -timeout 240000 ";
@@ -1304,17 +1438,31 @@ sub CalcDyadFreq {
 	$command .= " -return freq,occ";
 	$command .= " -o ".$dyad_file;
 	$command .= "; gzip -f ".$dyad_file;
-	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
+	if ($batch) {
+	    push @batch_commands, $command;
+	} else {
+	    &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);
+	}
       }
     }
   }
 
+  ## Run all the oligo frequencies in one batch job
+  if ($batch) {
+      my $batch_command = join(" ;", @batch_commands);
+      &doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+  }
+
   ## Recompress the sequence file if required
   if ($uncompressed) {
-      &RSAT::message::Warning("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
       my $command = "gzip ".$seq_file;
-      my $job_prefix = ${organism_short_name}."_compress";
-      &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      my $job_prefix = ${organism_short_name}."_uncompress";
+      if ($batch) {
+	  &RSAT::message::Warning("Cannot recompress sequence in batch mode", $seq_file) if ($main::verbose >= 2);
+      } else {
+	  &RSAT::message::Info("Compressing sequence file", $seq_file) if ($main::verbose >= 2);
+	  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+      }
   }
 }
 
@@ -1368,8 +1516,7 @@ OPTIONS
     	organism(s) to be installed. This can be done with any of the
     	following options: -org, -org_file, -all_organisms, -taxon.
 
-	-org	organism name without spaces 
-	        (e.g. Saccharomyces_cerevisiae)
+	-org	organism name without spaces (e.g. Saccharomyces_cerevisiae)
 
 		The option -org can be used iteratively on the same
 		command line to iterate the installation over multiple
@@ -1382,6 +1529,7 @@ OPTIONS
 		ignored.
 
 	-all_organisms
+
 		Install all the organisms found in the Refseq
 		directory (see option -refseq).
 
@@ -1408,7 +1556,15 @@ OPTIONS
 	       invertebrate, vertebrate_mammalian, vertebrate_other
 
 	-species species name, with space replaced by underscore
-	         (e.g. Saccharomyces_cerevisiae).
+	         (e.g. Saccharomyces_cerevisiae). 
+
+		 Note that one species may correspond to several
+	         organisms if several strains are available for this
+	         species. In particular, for some bacteria there are
+	         several thousands of sequenced strains
+	         (e.g. Escherichia coli). The option -max_strains can
+	         be used to restrict the number of installed strains
+	         per species.
 
 	-species_file file containing species names in the first
 	        column.
@@ -1443,7 +1599,7 @@ OPTIONS
 
     OPTIONAL ARGUMENTS
 
-	-skip #	Skip the first # organismsof the list.
+	-skip #	Skip the first # organisms of the list.
 
 	        This option is convenient to resume the installation
 	        of a list of organisms, when it has been interrupted.
@@ -1451,13 +1607,22 @@ OPTIONS
 		It also allows to organize the installation by chunks
 		of organisms.
 
+	-skip_species # skip the first # of the list of NCBI species. 
+
+	        Note that one species can correspond to several
+	        organisms, if several strains have been sequenced.
+
 	-last #	Stop after the first # organisms of the list.
+
 		This option can be used to organize the installation
 		by chunks of organisms.
 
-	-organism
-		Full name of the organism 
-		(e.g. 'Saccharomyces cerevisiae').
+	-last_species # Stop after the first # species of the NCBI
+	        list.
+
+	-organism Full name of the organism (e.g. 'Saccharomyces
+		cerevisiae'). This option is only valid when a single
+		organism is installed.
 
 	-source	data source
 
@@ -1466,11 +1631,17 @@ OPTIONS
 		BEWARE : you should provide the absolute path of the
 		installation directory, not the relative path.
 
-	-batch  run some tasks (for example the calibration of oligos
+	-batch run some tasks (for example the calibration of oligos
 		and dyads) in batch mode.  This options works on our
 		lab cluster, but could be adapted for other
-		configurations by adapting the method &doit() in the
-		utilities ($RSAT/lib/RSA.lib).
+		configurations by adapting the parameters in
+		RSAT_config.props.
+
+	-queue  specify a queue to send the job with the option -batch. 
+
+	        On this instance of RSAT, default queue is $ENV{CLUSTER_QUEUE}
+
+                Type 'qstat -f' to get a list of existing queues.
 
 	-config
 		Specify an alternative organism configuration file for the
@@ -1543,6 +1714,10 @@ OPTIONS
 
 		Description of the tasks
 		------------------------
+
+		available    list available species on the NCBI FTP site.
+		             This task cannot be combine with any
+		             other task.
 
 		download     download genome from the NCBI FTP site
 		             (ftp://ftp.ncbi.nih.gov/genomes/refseq/)
@@ -1653,10 +1828,13 @@ install_organism options
 -strain         strain (for task parse)
 -max_strains    max number of strains per species to be parsed / installed
 -skip #         Skip the # first organisms (convenient to resume interrupted list) 
+-skip_species # Skip the # first species of the NCBI list
 -last #         Stop after the # first organisms (convenient to install by chunks) 
+-last_species # Stop after the # first species of the NCBI list
 -source		data source (e.g. refseq);
 -dir		absolute path of the installation directory
 -batch  	run some tasks (for examplethe calibration of oligos and dyads) in batch mode.
+-queue          specify a queue to send the job with the option -batch (default: $ENV{CLUSTER_QUEUE}) 
 -config		alternative organism configuration file
 -backup_org_table  Store a backup copy of the organism table before overwriting it.
 -local		update local config file 
@@ -1764,12 +1942,24 @@ sub ReadArguments {
       &RSAT::error::FatalError($main::skip, "Invalid value for option -skip, should be a Natural number") 
 	  unless (&IsNatural($main::skip));
 
+      ## Skip the N first species of the NCBI list
+    } elsif ($arg eq "-skip_species") {
+      $main::skip_species = shift(@arguments);
+      &RSAT::error::FatalError($main::skip_species, "Invalid value for option -skip_species, should be a Natural number") 
+	  unless (&IsNatural($main::skip_species));
+
       ## Stop after the N first organisms of the list (can be useful
       ## for tests on a subset of the list of oganisms).
     } elsif ($arg eq "-last") {
       $main::last = shift(@arguments);
       &RSAT::error::FatalError($main::last, "Invalid value for option -last, should be a Natural number") 
 	  unless (&IsNatural($main::last));
+
+      ## Stop after the N first species of the NCBI list
+    } elsif ($arg eq "-last_species") {
+      $main::last_species = shift(@arguments);
+      &RSAT::error::FatalError($main::last_species, "Invalid value for option -last_species, should be a Natural number") 
+	  unless (&IsNatural($main::last_species));
 
 
       ## Full organism name (may include spaces)
@@ -1819,6 +2009,10 @@ sub ReadArguments {
       ## Batch mode
     } elsif ($arg eq "-batch") {
       $batch = 1;
+
+      ## Queue for the job scheduler
+    } elsif ($arg eq "-queue") {
+      $cluster_queue = shift(@arguments);
 
       ## Masking modes
     } elsif ($arg eq "-rm") {
@@ -1893,7 +2087,7 @@ incomplete.
 ## Retrieve start and stop codons and calculate word occurrences
 ## (for checking)
 sub StartAndStopCodons {
-  &RSAT::message::TimeWarn("&StartAndStopCodons()", $organism_short_name) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("&StartAndStopCodons()", $organism_short_name) if ($main::verbose >= 2);
   #    my $label =  "orf";
   my $label =  "id,ctg,reg_left,reg_right,orf_strand";
   my $prefix = $dir{genome}."/".${organism_short_name};
@@ -1906,7 +2100,7 @@ sub StartAndStopCodons {
   $command .= " -i ".$prefix."_start_codons.wc";
   $command .= " -o ".$prefix."_start_codon_frequencies.tab";
 #  &RSAT::message::Debug($command) if ($main::verbose >= 10);
-  &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
 #  &doit($command, $dry_run, $die_on_error, $verbose);
   &RSAT::message::Info("\tStart codons", $prefix."_start_codons.wc") if ($main::verbose >= 2);
   &RSAT::message::Info("\tStart codon frequencies", $prefix."_start_codon_frequencies.tab") if ($main::verbose >= 2);
@@ -1919,7 +2113,8 @@ sub StartAndStopCodons {
   $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
   $command .= " -i ".$prefix."_stop_codons.wc";
   $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies.tab";
-  &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+
+  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
 #  &doit($command, $dry_run, $die_on_error, $verbose);
   &RSAT::message::Info("\tStop codons", $prefix."_stop_codons.wc") if ($main::verbose >= 2);
   &RSAT::message::Info("\tStop codon frequencies", $prefix."_stop_codon_frequencies.tab") if ($main::verbose >= 2);
@@ -1929,20 +2124,10 @@ sub StartAndStopCodons {
 ################################################################
 ## Parse the genome from Genbank files
 sub ParseGenome {
-  my ($species, $strain, $organism_name, $strain_dir, $genome_dir) = @_;
-  &RSAT::message::TimeWarn("&ParseGenome()", $species, $strain, $organism_name, $strain_dir) if ($main::verbose >= 2);
-  ## Commmented since 2017-03-04
-  # if ($dir{ensembl}) {
-  #   $dir{source} = $dir{ensembl};
-  # } elsif (-d "$dir{refseq}/$organism_short_name") {
-  #   $dir{source} = "$dir{refseq}/$organism_short_name";
-  # } elsif (-d "$dir{refseq}/Bacteria/$organism_short_name") {
-  #   $dir{source} = "$dir{refseq}/Bacteria/$organism_short_name";
-  # } else {
-  #   &RSAT::error::FatalError("Cannot find a directory $organism_short_name in refseq dir $dir{refseq}" );
-  # }
-  ################################################################
-  my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 1";
+  my ($species, $strain, $organism_name, $strain_dir, $genome_dir, $org_nb) = @_;
+  &RSAT::message::TimeWarn("Parsing genome", $org_nb, $species, $strain, $organism_name, $strain_dir) if ($main::verbose >= 2);
+
+  my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 0";
   $command .= " -i ".$strain_dir;
   $command .= $parse_options;
   if ($dir{ensembl}) {
@@ -1955,7 +2140,7 @@ sub ParseGenome {
   $command .= " -source '$source'";
   #    }
   $command .= " -o ".$genome_dir;
-  &doit($command, $dry_run, $die_on_error, $verbose);
+  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);
 }
 
 ################################################################

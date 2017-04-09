@@ -419,7 +419,21 @@ package main;
       my $grep_cmd = "grep '".$grep_expression."' ".$file_name;
       &RSAT::message::Warning("Running grep command", $grep_cmd) if ($main::verbose >= 3);
 
+      ################################################################
+      ## SUGGESTION BY WALTER (2017-03-15)
+      ##
+      ## THIS HAS TO BE PARALLELIZED but we need to catch the result
+      ## before pursuing -> my old &doit() function is not appropriate
+      ## for this.
+      ##
+      ## ANOTHER POSSIBILITY WOULD BE TO USE A THREAD. This runs on
+      ## the user's machine and depends on a Perl library rather than
+      ## on the installation of a job scheduler (e.g. torque), so it
+      ## should be more general.  To be tested. For this, an option
+      ## (-threads #) should be added to specify the max number of
+      ## threads for the analysis.
       my @result = qx{$grep_cmd};
+
       my $i = 0;
       foreach (@result) {
 	chomp();

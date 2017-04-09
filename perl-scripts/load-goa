@@ -350,8 +350,8 @@ Specifies an gene ontology obo file. By specifying an URL (starting by 'ftp://' 
 
 
 Run the tasks in batch. This option only works on our lab's cluster,
-but could be adapted for other configurations by adapting the method
-&doit() in the utilities ($RSAT/lib/RSA.lib).
+but could be adapted for other configurations by adapting parameters
+in RSAT_config.props.
 
 =cut
 	} elsif ($arg eq "-batch") {

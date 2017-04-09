@@ -80,7 +80,7 @@ sub IsReal {
     return if ($#_ < 0);
     return 0 unless defined($value);
 
-    if (($value =~ /^ *[\+\-]{0,1}\d+(\.\d*){0,1} *$/) || 
+    if (($value =~ /^ *[\+\-]{0,1}\d+(\.\d*){0,1} *$/) ||
         ($value =~ /^ *[\+\-]{0,1}\d+(\.\d*){0,1}e[\+\-]{0,1}\d+ *$/i)) {
 	return 1;
     } else {
@@ -239,7 +239,7 @@ sub DateAndTime {
 sub StartScript {
   my $start_time = &AlphaDate();
 
-  ## If specified in the server configuration, report start time 
+  ## If specified in the server configuration, report start time
   ## in a specific log file.
   if ($ENV{start_time}) {
     my $script_name = &RSAT::util::ShortFileName($0) || 'undefined';
@@ -326,7 +326,7 @@ sub ReportExecutionTime {
 
   ## If specified in the server configuration, report task + execution
   ## time in log file.
-  &RSAT::server::UpdateExecTimeLogFile($start_time, $done_time, $elapsed) 
+  &RSAT::server::UpdateExecTimeLogFile($start_time, $done_time, $elapsed)
     if $ENV{exec_time};
 
   return($time_report);
@@ -431,7 +431,7 @@ sub RelativePath {
   # 			"\n\treferring_file", $referring_file,
   # 			"\n\treferring_dir", $referring_dir, join("; ", @referring_path),
   # 			"\n\treferred_file", $referred_file,
-  # 			"\n\treferred_dir", $referred_dir, join("; ", @referred_path)) 
+  # 			"\n\treferred_dir", $referred_dir, join("; ", @referred_path))
   #     if ($main::verbose >= 10);
 
 
@@ -516,7 +516,7 @@ Convert the full path of a document in ${RSAT}/public_html to an URL.
 =cut
 sub rsat_path_to_url {
   my ($string) = @_;
-  $string =~ s|$ENV{RSAT}\/public_html\/|$ENV{rsat_www}\/|g; 
+  $string =~ s|$ENV{RSAT}\/public_html\/|$ENV{rsat_www}\/|g;
   return $string;
 }
 
@@ -547,7 +547,7 @@ sub CheckOutDir {
   $chmod = '0777' unless ($chmod);
   umask($umask);
   if ($main::verbose >= 4) {
-    my $wd = `pwd`;
+    my $wd = $ENV{PWD}; #`pwd`;
     &RSAT::message::Info("Current directory", $wd);
   }
 
@@ -649,7 +649,7 @@ Open an input stream. If a file name is specified, open this file. If
 not, read input from the STDIN. If the input file has extension .gz,
 or .Z, it is decopmpressed on the flight.
 
-Usage 
+Usage
    ($in,$input_dir) = &RSAT::util::OpenInputFile($filename);
 returns a file handle
 
@@ -678,7 +678,7 @@ sub OpenInputFile {
 				      warn "; Uncompressing .Z file\n" if ($main::verbose >= 4);
 				      $filename = "uncompress -c $filename |";
 								}
-	open (my $input_fh, $filename) || 
+	open (my $input_fh, $filename) ||
 	    &RSAT::error::FatalError ("Cannot read input file ".$filename);
 	return ($input_fh, $input_dir)
     } else {
@@ -701,7 +701,7 @@ Open an output stream. If a file name is specified, open this file. If
 not, write output to the STDOUT. If the file name has extension .gz,
 or .Z, it is copmpressed on the flight.
 
-Usage 
+Usage
    $out = &RSAT::util::OpenOutputFile($filename);
 returns a file handle
 
@@ -719,7 +719,7 @@ sub OpenOutputFile {
       $to_open = ">$filename";
     }
 #    warn("HELLO\t", $to_open, "\n");
-    open($fh, $to_open) || 
+    open($fh, $to_open) ||
 	&RSAT::error::FatalError ("Cannot write output file ".$to_open);
   } else {
     $fh = *STDOUT;
@@ -727,7 +727,41 @@ sub OpenOutputFile {
   return ($fh);
 }
 
+################################################################
 
+=pod
+
+=item AppendOutputFile
+
+Append to an output stream. If a file name is specified, open and
+append to this file. If not, write output to the STDOUT. If the
+file name has extension .gz,or .Z, it is compressed on the flight.
+
+Usage
+   $out = &RSAT::util::AppendOutputFile($filename);
+returns a file handle
+
+=cut
+sub AppendOutputFile {
+  ### usage $output_stream = &OpenOutputFile($filename);
+  my ($filename) = @_;
+  my $to_open = "";
+  my $fh;
+
+  if ($filename) {
+    if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
+      $to_open = "| gzip -c > $filename";
+    } else {
+      $to_open = ">>$filename";
+    }
+#    warn("HELLO\t", $to_open, "\n");
+    open($fh, $to_open) ||
+	&RSAT::error::FatalError ("Cannot append to output file ".$to_open);
+  } else {
+    $fh = *STDOUT;
+  }
+  return ($fh);
+}
 ################################################################
 
 =pod
@@ -821,8 +855,8 @@ sub rgb2hex{
   my(@rgb)=@_;
   my $hex = "#";
   my $i=0;
-  for($i=0; $i<3; $i++) { 
-    if( ($rgb[$i] > 255) || ($rgb[$i] < 0) ) { 
+  for($i=0; $i<3; $i++) {
+    if( ($rgb[$i] > 255) || ($rgb[$i] < 0) ) {
       return(0);
     }
     $tmp = sprintf("%x", $rgb[$i]);
@@ -864,7 +898,7 @@ sub get_pub_temp {
 ## Return a user-specific directory for storing temporary files.
 ##
 ## By default, temporary files are stored in a hidden folder
-## $HOME/.rsat_tmp_dir. 
+## $HOME/.rsat_tmp_dir.
 ##
 ## For the Web server, temporary files are stored in
 ## $RSAT/public_html/tmp, in order to be accessible to web browsers.
@@ -878,7 +912,7 @@ sub get_temp_dir {
   } else {
     $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
   }
-  my $tmp_dir = sprintf("%s/%04d/%02d/%02d", $tmp_base, 1900+$year,$month+1,$day); 
+  my $tmp_dir = sprintf("%s/%04d/%02d/%02d", $tmp_base, 1900+$year,$month+1,$day);
   &RSAT::message::Info("&RSAT::util::get_temp_dir()", $tmp_dir) if ($main::verbose >= 5);
   return($tmp_dir);
 }
@@ -921,7 +955,7 @@ sub make_temp_file {
     $tmp_dir = &get_temp_dir();
   }
 
-  # die(join("\n\t", 
+  # die(join("\n\t",
   # 	   "ENV{RSAT}\t".$ENV{RSAT},
   # 	   "&get_pub_temp\t".&get_pub_temp(),
   # 	   "&get_temp_dir\t".&get_temp_dir(),
@@ -933,7 +967,7 @@ sub make_temp_file {
   # die "HEREAMI";
 
   &CheckOutDir($tmp_dir, "", 755); ## temporary dir and all of its parents must be writable by all users
-  
+
   ## Create an index file in the new directory to prevent Web users
   ## from seing its whole content
   if ($protect) {
@@ -981,24 +1015,23 @@ sub make_temp_file {
 ## echo a command and send it to the system
 ## Usage:
 ##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);
-## 
+##
 sub doit {
   my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue) = @_;
-  
+
   ## Print the command to the log file
   if ($log_handle) {
     print $log_handle "\n\n", $command, "\n";
   }
 
-  &RSAT::message::Debug("&RSAT::util::doit()", "Command:", $command) if ($main::verbose >= 5); 
+  &RSAT::message::Debug("&RSAT::util::doit()", "Command:", $command) if ($main::verbose >= 5);
   unless ($command) {
     &RSAT::message::Warning("&RSAT:::util::doit() was called with empty command. I don't do anything.");
     return();
   }
 
   ## Define current working directory
-  my $wd = `pwd`;
-  chomp($wd);
+  my $wd = $ENV{PWD};
 
   ## Fix scope problem with the variable $main::verbose
   unless(defined($verbose)) {
@@ -1008,7 +1041,7 @@ sub doit {
   if ($batch) {
 
     ## command used to send the actual command as a script to the job scheduler
-    my $qsub_command; 
+    my $qsub_command;
 
     ## Define the shell
     my $shell = $ENV{CLUSTER_SHELL} || $ENV{SHELL};
@@ -1019,7 +1052,7 @@ sub doit {
 
 
     ## Store the command in a sh script (the job)
-    my $job_dir = "jobs";
+    my $job_dir = $wd."/jobs";
     $job_dir .= "/".`date +%Y%m%d`;
     chomp($job_dir);
     &CheckOutDir($job_dir, "", 777);
@@ -1032,7 +1065,7 @@ sub doit {
     $job_script .=  "#!".$shell."\n";
     $job_script .= "(cd ".$wd;
     $job_script .= "; date > ".$job_file.".started"; ## Write a file called [job].started indicating the time when the job was started
-    $job_script .= "; hostname >> ".$job_file.".started"; 
+    $job_script .= "; hostname >> ".$job_file.".started";
     $job_script .= "; source ".$ENV{RSAT}."/RSAT_config.bashrc"; ## Required for PERL5LIB
     $job_script .= "; ".$command;
     $job_script .= "; date > ".$job_file.".done"; ## Write a file called [job].done indicating the time when the job was done
@@ -1041,11 +1074,19 @@ sub doit {
     open JOB, ">$job_file" || die "Cannot write job file ".$job_file;
     print JOB $job_script;
     close JOB;
-    &RSAT::message::TimeWarn(join("\t", "wd", $wd, "Job written in file", $job_file)) if ($verbose >= 3);
+    &RSAT::message::TimeWarn("wd", $wd, "Job written in file", $job_file) if ($verbose >= 3);
 
     my $job_name = $job_file;
     $job_name =~ s/\//_/g;
-    my $job_log = $wd."/".$job_file.".log";
+    my $job_log = $job_file.".log";
+
+  &RSAT::message::Debug("\n\twd", $wd, 
+			"\n\tshell", $shell,
+			"\n\tjob_dir", $job_dir,
+			"\n\tjob_file", $job_file,
+			"\n\tjob_log", $job_log
+      ) if ($main::verbose >= 10);
+#  die "HELLO";
 
     ################################################################
     ## Check that the cluster parameters are well defined before
@@ -1055,7 +1096,7 @@ sub doit {
     my $queue_manager="";
     if (defined($ENV{QUEUE_MANAGER})) {
       $queue_manager=$ENV{QUEUE_MANAGER};
-      
+
     } elsif (defined($ENV{QSUB_MANAGER})) {
       $queue_manager=$ENV{QSUB_MANAGER};
       &RSAT::message::Warning("Parameter QSUB_MANAGER is obsolete.\nPlease rename if to QUEUE_MANAGER in ".$RSAT."/RSAT_config.props") if ($main::verbose >= 1);
@@ -1083,20 +1124,20 @@ sub doit {
 	&RSAT::error::FatalError("In order to send jobs to a PC cluster, you need to define an environment variable CLUSTER_QUEUE.");
       }
     }
-      
+
     ## Treatment of the user feed-back
     my $batch_mail = $ENV{BATCH_MAIL} || "a";
 
     ## optional: restrict the jobs to selected nodes
-    ## Example: -l nodes=1:k2.6 
+    ## Example: -l nodes=1:k2.6
     my $selected_nodes =$ENV{NODES};
 #    my $selected_nodes =$ENV{NODES} || " -l nodes=1:k2.6 "; ##
 
     ################################################################
     ## Choose the job scheduler depending on the local configuration
     if (lc($queue_manager) eq "torque") {
-      $wd = `pwd`;
-      chomp($wd);
+#      $wd = $ENV{PWD}; #`pwd`;
+#      chomp($wd);
 
       ## qsub command functionning using torque
       $qsub_command = "qsub";
@@ -1130,7 +1171,7 @@ sub doit {
       $qsub_command .= " -f ".$job_file;
 
     } else {
-      &RSAT::error::FatalError($queue_manager, 
+      &RSAT::error::FatalError($queue_manager,
 			       "Invalid job scheduler. Supported: torque | SGE.",
 			       "Please define the job scheduler by setting the variable QUEUE_MANAGER in RSAT_config.props.");
     }
@@ -1214,7 +1255,7 @@ sub EmailTheResult {
 
     ## Temporary file for storing the result
     unless ($tmp_file_path) {
-      $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); 
+      $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1);
     }
     my $result_URL = $ENV{rsat_www}."/tmp/";
     if ($args{index}) {
@@ -1269,7 +1310,7 @@ sub EmailTheResult {
     $command .= "; echo \"$completion_message\" | ".$SCRIPTS."/send-mail -subject '$subject ; Job completed' -to ".$recipient unless ($no_email);
     $command .= " &"; ## Run task in background
     print "\n\n<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 3);
-#    &RSAT::message::Debug("&RSAT::util::EmailTheResult() command", $command) if ($main::verbose >= 0); 
+#    &RSAT::message::Debug("&RSAT::util::EmailTheResult() command", $command) if ($main::verbose >= 0);
 
     system $command;
 
@@ -1282,7 +1323,7 @@ sub EmailTheResult {
 ## Treat one command, by either executing it, or concatenating it for
 ## further batch processing
 ##
-## Usage: 
+## Usage:
 ##   &one_command($cmd, $print_out, $time_file, %args);
 ##
 ## If the variable $print_out is set to 1, the command is printed to
@@ -1329,7 +1370,7 @@ sub one_command {
       my $OS = `uname -a`;
       chomp($OS);
       &RSAT::message::Debug("Adapting time command to OS-specific behaviour", $OS) if ($main::verbose >= 5);
-      if (($OS =~ /ubuntu/i) || ($OS =~ /debian/i) || ($OS =~ /bongcam/i) 
+      if (($OS =~ /ubuntu/i) || ($OS =~ /debian/i) || ($OS =~ /bongcam/i)
 	  ) { ## Some versions of Ubuntu have a special output option for time, I have to check which ones
 	  $cmd = 'time -o '.$time_file.' '.$cmd;
       } elsif ($OS =~ /biow/) {
@@ -1443,4 +1484,3 @@ sub sort_unique {
 return 1;
 
 __END__
-

@@ -7,4 +7,4 @@ Disallow: /rsat/tmp
 Disallow: /rsat/lib
 Disallow: /rsa-tools/data
 Disallow: /rsa-tools/tmp
-Disallow: /rsa-tools/lib
+Disallow: /rsa-tools/ext_lib

@@ -162,7 +162,7 @@ sub get_sequence {
 	&RSAT::message::Warning("Negative coordinates converted to end coordinates", $from, $to) if ($main::verbose >= 3);
 	$sequence =  $self->get_sequence($from,$to);
       } else {
-	&RSAT::message::Warning("Cannot retrieve sub-sequence with negative limits for non-circular sequences", $self->get_id(), $from, $to);
+	&RSAT::message::Warning("Cannot retrieve sub-sequence with negative limits for non-circular sequences", $self->get_id(), $from, $to) if ($main::verbose >= 3);
 	return undef;
       }
     } else {
@@ -177,7 +177,7 @@ sub get_sequence {
 	}
       } else {
 	### truncate and warn
-	&RSAT::message::Warning("Cannot retrieve sub-sequence with negative limits for non-circular sequences", $self->get_id(), $from, $to);
+	&RSAT::message::Warning("Cannot retrieve sub-sequence with negative limits for non-circular sequences", $self->get_id(), $from, $to) if ($main::verbose >= 3);
 	$sequence = $self->get_sequence(1,$to);
       }
     }
@@ -191,7 +191,7 @@ sub get_sequence {
       $sequence .= $self->get_sequence(1,$to - $self->get_length());
     } else {
       ### truncate and warn
-      warn join "\t", "; WARNING: cannot retrieve sub-sequence with limits larger than sequence length", $self->get_id(), $from, $to, "\n";
+      &RSAT::message::Warning("cannot retrieve sub-sequence with limits larger than sequence length", $self->get_id(), $from, $to) if ($main::verbose >= 3);
       $sequence = $self->get_sequence($from,$self->get_length());
     }
 
@@ -204,7 +204,7 @@ sub get_sequence {
       $to -= $self->get_length();
       $sequence = $self->get_sequence($from,$to);
     } else {
-      &RSAT::message::Warning("Cannot retrieve sub-sequence with limits larger than sequence size for non-circular sequences", $self->get_id(), $from, $to);
+      &RSAT::message::Warning("Cannot retrieve sub-sequence with limits larger than sequence size for non-circular sequences", $self->get_id(), $from, $to) if ($main::verbose >= 3);
       return undef;
     }
 

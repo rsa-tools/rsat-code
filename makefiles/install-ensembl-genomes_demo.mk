@@ -13,7 +13,8 @@ list_param:
 	@echo "	DB			${DB}"
 	@echo "	RESULT_DIR		${RESULT_DIR}"
 	@echo "	AVAILABLE_SPECIES	${AVAILABLE_SPECIES}"
-	@echo "	ORG			${ORG}"
+	@echo "	SPECIES			${SPECIES}"
+	@echo "	GROUP			${GROUP}"
 	@echo "	QUERY_TYPE		${QUERY_TYPE}"
 
 DB=ensembl
@@ -44,22 +45,22 @@ available_per_taxid:
 		-o ${AVAILABLE_PER_TAXID}
 	@echo "	${AVAILABLE_PER_TAXID}"
 
-ORG=Saccharomyces_cerevisiae
+SPECIES=Saccharomyces_cerevisiae
 install_one_species:
-	install-ensembl-genome -v ${V} -db ${DB} -species ${ORG}
+	install-ensembl-genome -v ${V} -db ${DB} -species ${SPECIES}
 
 install_yeast:
-	${MAKE} install_one_species DB=ensemblgenomes ORG=Saccharomyces_cerevisiae
+	${MAKE} install_one_species DB=ensemblgenomes SPECIES=Saccharomyces_cerevisiae
 
 install_coli:
-	${MAKE} install_one_species DB=ensemblgenomes ORG=Escherichia_coli_str_k_12_substr_mg1655
+	${MAKE} install_one_species DB=ensemblgenomes SPECIES=Escherichia_coli_str_k_12_substr_mg1655
 
 
-AVAILABLE_GROUP=${RESULT_DIR}/available_species_${DB}_release${ENSEMBL_RELEASE}_${DAY}_${ORG_GROUP}.txt
+AVAILABLE_GROUP=${RESULT_DIR}/available_species_${DB}_release${ENSEMBL_RELEASE}_${DAY}_${GROUP}.txt
 select_one_group:
 	@echo
-	@echo "Selecting group	${ORG_GROUP}	from db ${DB}	${AVAILABLE_SPECIES}"
-	grep -i ${ORG_GROUP} ${AVAILABLE_SPECIES} > ${AVAILABLE_GROUP}
+	@echo "Selecting group	${GROUP}	from db ${DB}	${AVAILABLE_SPECIES}"
+	grep -i ${GROUP} ${AVAILABLE_SPECIES} > ${AVAILABLE_GROUP}
 	@echo "	${AVAILABLE_GROUP}"
 
 ## Shuffle the lines of a species file, in order to avoid staying
@@ -70,40 +71,40 @@ shuffle_one_group:
 	@echo "Shuffled ${AVAILABLE_GROUP}"
 	@echo "	${AVAILABLE_GROUP_SHUFFLED}"
 
-ORG_GROUP=Fungi
+GROUP=Fungi
 install_one_group:
 	@echo
-	@echo "Installing group ${ORG_GROUP} from db ${DB}"
+	@echo "Installing group ${GROUP} from db ${DB}"
 	install-ensembl-genome -v ${V} -db ${DB} -species_file ${AVAILABLE_GROUP} -nodie
-	@echo "Installed group ${ORG_GROUP} from db ${DB}"
+	@echo "Installed group ${GROUP} from db ${DB}"
 
 install_one_group_shuffled:
 	@${MAKE} install_one_group AVAILABLE_GROUP=${AVAILABLE_GROUP_SHUFFLED}
 
 select_fungi:
-	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Fungi
+	@${MAKE} select_one_group DB=ensemblgenomes GROUP=Fungi
 
 install_fungi:
-	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Fungi
-	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Fungi
+	@${MAKE} select_one_group DB=ensemblgenomes GROUP=Fungi
+	@${MAKE} install_one_group DB=ensemblgenomes GROUP=Fungi
 
 select_plants:
-	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Plants
+	@${MAKE} select_one_group DB=ensemblgenomes GROUP=Plants
 
 install_plants:
-	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Plants
-	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Plants
+	@${MAKE} select_one_group DB=ensemblgenomes GROUP=Plants
+	@${MAKE} install_one_group DB=ensemblgenomes GROUP=Plants
 
 select_metazoa:
-	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Metazoa
+	@${MAKE} select_one_group DB=ensemblgenomes GROUP=Metazoa
 
 install_metazoa:
-	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Metazoa
-	@${MAKE} install_one_group DB=ensemblgenomes ORG_GROUP=Metazoa
+	@${MAKE} select_one_group DB=ensemblgenomes GROUP=Metazoa
+	@${MAKE} install_one_group DB=ensemblgenomes GROUP=Metazoa
 
 
-AVAILABLE_GROUP_SHUFFLED=${RESULT_DIR}/available_species_${DB}_release${ENSEMBL_RELEASE}_${DAY}_${ORG_GROUP}_shuffled.txt
+AVAILABLE_GROUP_SHUFFLED=${RESULT_DIR}/available_species_${DB}_release${ENSEMBL_RELEASE}_${DAY}_${GROUP}_shuffled.txt
 install_bacteria_shuffled:
-	@${MAKE} select_one_group DB=ensemblgenomes ORG_GROUP=Bacteria
-	@${MAKE} shuffle_one_group DB=ensemblgenomes ORG_GROUP=Bacteria
-	@${MAKE} install_one_group_shuffled DB=ensemblgenomes ORG_GROUP=Bacteria
+	@${MAKE} select_one_group DB=ensemblgenomes GROUP=Bacteria
+	@${MAKE} shuffle_one_group DB=ensemblgenomes GROUP=Bacteria
+	@${MAKE} install_one_group_shuffled DB=ensemblgenomes GROUP=Bacteria
