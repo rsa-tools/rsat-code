@@ -375,7 +375,7 @@ package main;
 	      }
 
 	      if ($task{parse}) {
-		  &ParseGenome($species, $current_strain, $organism_name, $strain_folder, $genome_dir);
+		  &ParseGenome($species, $current_strain, $organism_name, $strain_folder, $genome_dir, $org_nb);
 	      }
 	  }
       }
@@ -2124,8 +2124,8 @@ sub StartAndStopCodons {
 ################################################################
 ## Parse the genome from Genbank files
 sub ParseGenome {
-  my ($species, $strain, $organism_name, $strain_dir, $genome_dir) = @_;
-  &RSAT::message::TimeWarn("&ParseGenome()", $species, $strain, $organism_name, $strain_dir) if ($main::verbose >= 2);
+  my ($species, $strain, $organism_name, $strain_dir, $genome_dir, $org_nb) = @_;
+  &RSAT::message::TimeWarn("Parsing genome", $org_nb, $species, $strain, $organism_name, $strain_dir) if ($main::verbose >= 2);
 
   my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 0";
   $command .= " -i ".$strain_dir;
