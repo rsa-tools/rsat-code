@@ -4,6 +4,28 @@
 </head>
 <meta charset="utf-8">
 <style>
+
+ .tooltip_tab{
+   width: auto;
+    height: 30px;
+    font-size: 10px;
+    margin-top: 3px;
+    text-align: center;
+    text-decoration: none;
+    background-color: #B1D4F9;
+    border-radius:5px;
+  }
+  
+   .tooltip_cell{
+   width:auto;
+       height: 30px;
+    font-size: 10px;
+    margin-top: 3px;
+    text-align: center;
+    text-decoration: none;
+    background-color: #E6E6E6;
+    border-radius:5px;
+  }
         #header{
 	   margin: 7px 5px 5px 5px;
 	   width: 1250px;
@@ -69,9 +91,10 @@
       text.text-hover {
         fill: #00C;
       }
+      
       #tooltip {
         position: absolute;
-        width: 200px;
+        width: auto;
         height: auto;
         padding: 10px;
         background-color: white;
@@ -267,6 +290,7 @@ function(error, data) {
                    rowtext.classed("text-selected",false);
                }
         })*/
+        
         .on("mouseover", function(d){
                //highlight text
                d3.select(this).classed("cell-hover",true);
@@ -278,11 +302,13 @@ function(error, data) {
                  .style("left", (d3.event.pageX+10) + "px")
                  .style("top", (d3.event.pageY-10) + "px")
                  .select("#value")
-                 .text("Sequence: " + rowLabel[d.row-1] + " Matrix: " + colLabel[d.col-1] + " Nb Matches: " + d.value)
+                 .html("<table><thead><tr class='tooltip_tab'><th colspan='1'>Sequence</th><th>Matrix ID</th><th>Nb Matches</th></tr></thead><tbody><tr class='tooltip_cell'><td>" + rowLabel[d.row-1] + "</td><td>" + colLabel[d.col-1] + "</td><td>" + d.value + "</td></tr></tbody></table>")
                ;
                //Show the tooltip
                d3.select("#tooltip").classed("hidden", false);
-        })
+        })        
+        
+
         .on("mouseout", function(){
                d3.select(this).classed("cell-hover",false);
                d3.selectAll(".rowLabel").classed("text-highlight",false);

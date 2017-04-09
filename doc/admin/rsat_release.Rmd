@@ -1,0 +1,55 @@
+---
+title: "RSAT release"
+author: "Jacques van Helden"
+date: 'Last update: `r Sys.Date()`'
+output:
+  html_document:
+    fig_caption: yes
+    highlight: zenburn
+    number_sections: yes
+    theme: cerulean
+    toc: yes
+    toc_depth: 4
+    toc_fload: yes
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+  word_document: default
+---
+
+# Releasing RSAT
+
+RSAT releases can only be issued by members of the RSAT team having a password-protected access to the RSAT release server. 
+
+## The quick way
+
+The simplest way to post a new release of RSAT is to run the following commands. 
+
+
+```
+cd $RSAT
+git pull
+
+## Get the list of targets
+make -f makefiles/rsat_release.mk
+
+## Run all the steps to issue a new release
+make -f makefiles/rsat_release.mk all
+```
+
+## Description of the make targets
+
+RSAT releases are managed by a makefile which ensures the following tasks: 
+
+- **tar_archive** Create a tar archive with all the files required for the release. 
+
+- **ls_release_site** get the list of files available on the release site. This requires ssh access (with password). 
+
+- **clean_release_site** move the previous releases in the `previous_versions` folder. **Beware:** just after this task the download folder does not contain the distribution anymore. The tasks `publish_scripts` and `publish` should always be run after this, in order to post the new releases.  
+
+- **publish** transfer the RSAT tar archive on the release site (via password-protected ssh).
+
+

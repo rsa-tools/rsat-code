@@ -366,7 +366,7 @@ sub supported_organism_table {
 	}
       } else {
 	$value = $null;
-	&RSAT::message::Warning("Field", $field, "has no value for organism", $org);
+	&RSAT::message::Warning("Field", $field, "has no value for organism", $org) if ($main::verbose >= 3);
       }
       push @values, $value;
     }
@@ -518,17 +518,19 @@ sub CheckOrganism {
 sub GetOrganismsForTaxon {
   my ($taxon, $depth, $die_if_noorg) = @_;
   &RSAT::message::Info("Collecting organisms for taxon", $taxon, "depth: ".$depth) if ($main::verbose >= 4);
+
   my @organisms = ();
 
   ## Load the taxonomy of the organisms supported on this RSAT
   ## instance.
   unless ($tree) {
-      $tree = new RSAT::Tree();
+    $tree = new RSAT::Tree();
   }
   $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism);
 
   ## Identify the tree node corresponding to the query taxon
   my $node = $tree->get_node_by_id($taxon);
+
 
   if ($node){
 
@@ -537,6 +539,8 @@ sub GetOrganismsForTaxon {
     @organisms = $node->get_leaves_names();
     &RSAT::message::Debug("GetOrganismsForTaxon()", $taxon, scalar(@organisms)) if ($main::verbose >= 5);
 
+    &RSAT::message::Debug("node:", $node->get_attribute("id"), "nb organisms:", scalar(@organisms)) if ($main::verbose >= 5);
+#  die("HELLO\n");
 
     ## If depth argument has been specified, cut the taxonomic tree by
     ## selecting only one organism for each taxon at a given depth of

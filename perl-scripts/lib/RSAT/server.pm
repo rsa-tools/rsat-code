@@ -331,7 +331,7 @@ sub ReportWebAttack {
 ## Usage:
 ##     &UpdateExecTimeLogFile($start_time, $done_time, $elapsed);
 sub UpdateExecTimeLogFile {
-  my ($start_time, $done_time, $elapsed) = @_;
+  my ($start_time, $done_time, $elapsed, $warn_message) = @_;
 
   my $script_name = &RSAT::util::ShortFileName($0) || 'undefined';
   my $command = join (" ", $script_name, @ARGV);
@@ -588,7 +588,7 @@ sub InitRSAT {
 
   ## Directories
   $main::BIN = "$ENV{RSAT}/bin";
-  $main::LIB = "$ENV{RSAT}/lib";
+  $main::LIB = "$ENV{RSAT}/ext_lib";
 
   ################################################################
   ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -663,60 +663,67 @@ sub CheckEmailAddress {
 =cut
 
 sub send_mail_STARTTLS {
-    my ($message, $recipient, $subject, $smtp_server, $user, $pass, $from ) = @_;
+    my ($message, $recipient, $subject, $smtp_server, $user, $pass, $from, $warn_message) = @_;
+
 
     if ($ENV{mail_supported} eq "no") {
-    &RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
-    } else {
-    
+	&RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
+	return();
+    } 
+
+    ## Load the resquired module I cannot make the use() conditional
+    ## so I load a 1-line perl file with require().
+    require($ENV{RSAT}."/perl-scripts/lib/use_smtp_lib.pl");
+	
     ## Check if recipient argument contains a valid email address
     &CheckEmailAddress($recipient);
     
     ## Set a subject if not specificed in arguents
     unless ($subject) {
-        $script_name = $0;
-        $subject = join " ", "[RSAT]", $script_name, &RSAT::util::AlphaDate();
+	$script_name = $0;
+	$subject = join " ", "[RSAT]", $script_name, &RSAT::util::AlphaDate();
     }
     
     ## Set the STARTTLS connection
-    if(!$smtp_server){ $smtp_server = $ENV{starttls} }
-    if(!$user){ $user = $ENV{starttls_user} }
-    if(!$pass){ $pass = $ENV{starttls_pass} }  
-    if(!$from){ $from = $ENV{smtp_sender} }
-
+    if (!$smtp_server) { $smtp_server = $ENV{starttls} }
+    if (!$user) { $user = $ENV{starttls_user} }
+    if (!$pass) { $pass = $ENV{starttls_pass} }  
+    if (!$from) { $from = $ENV{smtp_sender} }
+    
     ## Issue a warning to indicate that mail will be sent
     if (($ENV{rsat_echo} >= 1) || ($main::verbose >= 2)) {
-    my $mail_warn = "Sending mail";
-    $mail_warn .= " to \"".$recipient."\"" if ($recipient);
-    $mail_warn .= " ; Subject: \"".$subject."\"";
-    $mail_warn .= " SMTP STARTTLS server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
-    &RSAT::message::TimeWarn($mail_warn);
+	my $mail_warn = "Sending mail";
+	$mail_warn .= " to \"".$recipient."\"" if ($recipient);
+	$mail_warn .= " ; Subject: \"".$subject."\"";
+	$mail_warn .= " SMTP STARTTLS server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
+	&RSAT::message::TimeWarn($mail_warn) if ($warn_message);
     }
- 
+    
     ## Compose message
     my $email = Email::Simple->create(
-    header => [
-        To      => $recipient,
+	header => [
+	    To      => $recipient,
         From    => $from,
-        Subject => $subject,
-    ],
-    body => $message,
-    );
-
+	    Subject => $subject,
+	],
+	body => $message,
+	);
+    
     ## Try to send the email
-    use Email::Sender::Transport::SMTPS;
+    eval  "use Email::Sender::Transport::SMTPS";  die $@ if $@;
     my $transport = Email::Sender::Transport::SMTPS->new(
-            host => $smtp_server,
-            ssl  => 'starttls',
-            sasl_username => $user,
-            sasl_password => $pass,
+	host => $smtp_server,
+	ssl  => 'starttls',
+	sasl_username => $user,
+	sasl_password => $pass,
         debug => 0, # or 1
-   );
-
-   eval{ Email::Sender::Simple->send($email, {transport => $transport}) };
-   &RSAT::error::FatalError ("Error sending email ", $@) if $@;
-   }
+	);
+    
+    eval { Email::Sender::Simple->send($email, {transport => $transport}) };
+    &RSAT::error::FatalError ("Error sending email ", $@) if $@;
+    return();
 }
+
 
 =pod
 
@@ -724,7 +731,7 @@ sub send_mail_STARTTLS {
 
 =cut
 sub send_mail {
-    my ($message, $recipient, $subject) = @_;
+    my ($message, $recipient, $subject, $warn_message) = @_;
 
     if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
 	(($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
@@ -770,7 +777,7 @@ sub send_mail {
 	$mail_warn .= " to \"".$recipient."\"" if ($recipient);
 	$mail_warn .= " ; Subject: \"".$subject."\"";
 	$mail_warn .= "SMTP server: ".$smtp_server if (($ENV{rsat_echo} >= 2) || ($main::verbose >= 2));
-	&RSAT::message::TimeWarn($mail_warn);
+	&RSAT::message::TimeWarn($mail_warn) if ($warn_message);
     }
 
     # ## Send the message using MIME::Lite    

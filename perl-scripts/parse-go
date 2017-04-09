@@ -292,8 +292,10 @@ package main;
     ###### close output stream
     close LOG;
     close ERR;
-    &RSAT::message::Info("Output directory", $dir{output});
-    &RSAT::message::Info("Log file", $out_file{log});
+    if ($main::verbose >= 2) {
+	&RSAT::message::Info("Output directory", $dir{output});
+	&RSAT::message::Info("Log file", $out_file{log});
+    }
     exit(0);
 }
 

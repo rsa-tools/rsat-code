@@ -2,18 +2,24 @@
 ## Install all the Ubuntu packages required prior to the installation
 ## of the Regulatory Sequence Analysis Tools (RSAT; http://rsat.eu/).
 
-source 00_config.bash
+source installer/00_config.bash
+
+echo
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo
 
 ################################################################
 ## Before anything else, check that the date, time and time zone are
 ## correctly specified
 date
 
-apt-get install -y openssh-client
+${OS_INSTALLER} install -y openssh-client
 
 ## Set time zone in non-interactive mode
 #echo Europe/Rome > /etc/timezone
-dpkg-reconfigure -f noninteractive tzdata
+# sudo dpkg-reconfigure -f noninteractive tzdata
 
 ## If not, set up the time zone, date and time with this command
 ## (source: https://help.ubuntu.com/community/UbuntuTime).
@@ -26,8 +32,7 @@ dpkg-reconfigure -f noninteractive tzdata
 
 ## We can then check the increase of disk usage during the different
 ## steps of the installation
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
-
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 ################################################################
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -40,8 +45,10 @@ grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 ## when installing and uninstalling packages.
 ## TO SAVE SPACE, I SUPPRESS aptitude
 ## apt-get install aptitude
-apt-get update
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+
+## For the IFB cloud, it is recommended to start with a apt-get update
+#apt-get update
+#df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 
 ################################################################
 ## I tried to run dist-upgrade because it 'can "intelligently" handle
@@ -50,9 +57,9 @@ df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_u
 ## that arose because of changes in the dependencies.'
 ## http://askubuntu.com/questions/194651/why-use-apt-get-upgrade-instead-of-apt-get-dist-upgrade
 ## HOWEVER, THE PERL UPDATE DOES NOT WORK ANYMORE AFTER THAT !!!
-${INSTALLER} ${INSTALLER_OPT} upgrade
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${INSTALLER}_upgrade.txt
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+#${OS_INSTALLER} ${INSTALLER_OPT} upgrade
+#df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${OS_INSTALLER}_upgrade.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 
 ################################################################
@@ -106,7 +113,6 @@ libcrypt-ssleay-perl
 libssl-dev
 php
 libapache2-mod-php
-finger
 "
 
 
@@ -152,6 +158,7 @@ exfat-utils
 at
 firefox
 ncbi-blast+
+finger
 "
 
 ################################################################
@@ -202,18 +209,16 @@ libbio-das-perl
 "
 
 ## Install the apt-get libraries
-echo "Packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
+PACKAGES="${PACKAGES_REQUIRED} ${PACKAGES_PERL}"
+echo "Packages to be installed with ${OS_INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES}"
-echo "Perl module packages to be installed with ${INSTALLER} ${INSTALLER_OPT}"
-echo "${PACKAGES_PERL}"
-for LIB in ${PACKAGES} ${PACKAGES_PERL}; \
-do \
-   echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
-   ${INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT_PARENT_PATH}/install_logs/${INSTALLER}_install_${LIB}.txt ; \
-   df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
+for LIB in ${PACKAGES}; do \
+    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
+    ${OS_INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT}/install_logs/install_${LIB}_log.txt ; \
+    df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
-echo "Log files are in folder ${RSAT_PARENT_PATH}/install_logs"
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+echo "Log files are in folder ${RSAT}/install_logs"
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 
 ## PROBLEMS WITH Ubuntu 16
@@ -230,7 +235,7 @@ grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 
 ## This package has to be installed in an interactive mode (dialog
 ## box)
-#${INSTALLER} install ${INSTALLER_OPT} console-data
+#${OS_INSTALLER} install ${INSTALLER_OPT} console-data
 
 ################################################################
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -241,22 +246,22 @@ grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
 # ################################################################
 # ## Specific treatment for some Python libraries
 # ##
-# ## A fix for a problem to install scipy with pip: use ${INSTALLER} build-dep 
+# ## A fix for a problem to install scipy with pip: use ${OS_INSTALLER} build-dep 
 # ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
 # ## Note that these dependencies cost 400Mb ! To be checked
-# ${INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
-# df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
-# grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+# ${OS_INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
+# df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
-${INSTALLER} ${INSTALLER_OPT}  autoremove
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
-${INSTALLER} ${INSTALLER_OPT}  clean
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
+${OS_INSTALLER} ${INSTALLER_OPT}  autoremove
+df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
+${OS_INSTALLER} ${INSTALLER_OPT}  clean
+df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 ## This really helps: it saves several hundreds Mb
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 ## DONE: installation of Ubuntu packages
 ################################################################

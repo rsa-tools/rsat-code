@@ -1,4 +1,11 @@
-source 00_config.bash
+source installer/00_config.bash
+
+
+echo
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo
 
 cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
 
@@ -15,15 +22,15 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ## I add the row before the original sources.list because there is
 ## some problem at the end of the update.
 grep -v cran.rstudio.com /etc/apt/sources.list > /etc/apt/sources.list.bk
-echo "## R-CRAN repository, to install the most recent version of R" > /etc/apt/sources.list.rcran
-echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list.rcran
-echo "" >> /etc/apt/sources.list.rcran
-cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
-apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
-${INSTALLER} install ${INSTALLER_OPT} software-properties-common python-software-properties
-add-apt-repository ppa:marutter/rdev
-apt-get update
-${INSTALLER} install ${INSTALLER_OPT} r-base > ${RSAT_PARENT_PATH}/install_logs/${INSTALLER}_install_r-base.txt
+sudo echo "## R-CRAN repository, to install the most recent version of R" > /etc/apt/sources.list.rcran
+sudo echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list.rcran
+sudo echo "" >> /etc/apt/sources.list.rcran
+sudo cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+sudo ${OS_INSTALLER} install ${INSTALLER_OPT} software-properties-common python-software-properties
+sudo add-apt-repository ppa:marutter/rdev
+sudo apt-get update
+sudo ${OS_INSTALLER} install ${INSTALLER_OPT} r-base > ${RSAT}/install_logs/${OS_INSTALLER}_install_r-base.txt
 
 
 ################################################################
@@ -60,4 +67,4 @@ make -f makefiles/install_rsat.mk install_r_packages
 # ## At prompt "Save workspace image? [y/n/c]:", answer "n"
 
 ## Check remaining disk space
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
+df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt

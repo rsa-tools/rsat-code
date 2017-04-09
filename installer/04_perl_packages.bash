@@ -1,4 +1,10 @@
-source 00_config.bash
+source installer/00_config.bash
+
+echo
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo
 
 cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
 
@@ -57,14 +63,14 @@ echo "Missing Perl modules:     ${MISSING_PERL_MODULES}"
 ## Beware: the _noprompt suffix is optional. It has the advantage to
 ## avoid for the admin to confirm each installation step, but the
 ## counterpart is that errors may be overlooked.
-make SUDO='' -f makefiles/install_rsat.mk perl_modules_install PERL_MODULES="${MISSING_PERL_MODULES}"
+make SUDO='sudo' -f makefiles/install_rsat.mk perl_modules_install PERL_MODULES="${MISSING_PERL_MODULES}"
 
 ## Note: I had to force installation for the some modules, because
 ## there seem to be some circular dependencies.
 make -f makefiles/install_rsat.mk perl_modules_check
 MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v "Object::InsideOut"`
 echo "Missing Perl modules:     ${MISSING_PERL_MODULES}"
-make SUDO='' -f makefiles/install_rsat.mk perl_modules_install_by_force PERL_MODULES_TO_FORCE="`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v Object::InsideOut| cut -f 2 | xargs`"
+make SUDO='sudo' -f makefiles/install_rsat.mk perl_modules_install_by_force PERL_MODULES_TO_FORCE="`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v Object::InsideOut| cut -f 2 | xargs`"
 
 ## Last check for Perl modules. 
 ## If some of them still fail (except Object::InsideOut), manual intervention will be required.
@@ -72,6 +78,6 @@ make -f makefiles/install_rsat.mk perl_modules_check
 more check_perl_modules_eval.txt
 
 ## Measure remaining disk space
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
