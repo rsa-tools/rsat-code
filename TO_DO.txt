@@ -1,4 +1,13 @@
 ################################################################
+## Installation
+
+- JvH: explain the folder organization in  $RSAT/README.md
+- JvH: explain the install procedure in $RSAT/INSTALL.md
+- JvH: move the config files in the folder config_files
+- 
+
+
+################################################################
 ## Web site
 
 
@@ -73,6 +82,11 @@ rnsc_input.wB79c
 
 sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks_201406*
 
+##################################################################
+In /contrib/count-words file binomial.c is never used (at least 
+for the count-words program) so should we remove it?
+
+#################################################################
 
 
 

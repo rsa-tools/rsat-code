@@ -193,6 +193,14 @@ dir.create(covered.tables.dir, showWarnings = FALSE)
 # bin <- 50
 # seq.length <- 600
 
+# TOTAL
+# matrix.scan.file <- "/home/jcastro/Desktop/n/position_scan_single/position_scan_CapStarrSeq_K562_IFN_total_matrix_scan_results_PARSED.tab"
+# sequence.names.file <- "/home/jcastro/Desktop/n/position_scan_single/position_scan_CapStarrSeq_K562_IFN_total_matrix_scan_sequence_names.tab"
+# ID.to.names.correspondence.tab <- "/home/jcastro/Desktop/n/position_scan_single/position_scan_CapStarrSeq_K562_IFN_total_TF_ID_name_correspondence.tab"
+# bin <- 50
+# seq.length <- 2000
+
+
 ####################################
 ## Step 3: Read matrix-scan table
 verbose(paste("Reading matrix-scan results table"), 1)
@@ -390,7 +398,7 @@ rm(thr)
 # thr <- sapply(1:nb.motifs, function(m){
 # 
 #   print(matrix.query)
-#   
+# 
 #   ## Get the matrix name
 #   matrix.query <- matrix.names[m]
 #   matrix.query.name <- as.vector(ID.names[,2][which(ID.names[,1] == matrix.query)][1])
@@ -479,6 +487,7 @@ matrix.scan.results$bspos.left <- matrix.scan.results$bspos + seq.length
 raw.counts.all.motifs <- list()
 p.counter <- 0
 tested.pvalues <- unique(sort(matrix.scan.results$Pval.class))[1:4]
+tested.pvalues <- unique(sort(matrix.scan.results$Pval.class))[1:1]
 for(p in tested.pvalues){
   
   p.counter <- p.counter + 1
@@ -847,7 +856,7 @@ max.y <- max(unlist(freq.per.bin.norm[[1]]), na.rm = TRUE)
 cn <- freq.per.bin.norm[[1]]
 
 cn[is.na(data.frame(cn))] <- 0
-cn[is.infinite(data.frame(cn))] <- 0
+# cn[is.infinite(data.frame(cn))] <- 0
   
 tree.profiles[[list.counter]] <- hclust(Dist(cn, method = "correlation"), method = "ward.D2")
 clusters.tree.profiles <- cutreeDynamic(tree.profiles[[list.counter]], minClusterSize = 1, method = "tree")

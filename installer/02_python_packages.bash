@@ -5,26 +5,32 @@
 ## been installed with apt-get under Ubuntu. For other OS, they should
 ## be added to the pip installation.
 
-source 00_config.bash
+source installer/00_config.bash
 
-pip install soappy
-pip install fisher
-pip install httplib2
+echo
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo
+
+sudo pip install soappy
+sudo pip install fisher
+sudo pip install httplib2
 ## pip install pygraphviz ## OSError: Error locating graphviz.
 
 ## optional: an utility to measure internet bandwidth
-pip install speedtest-cli
+sudo pip install speedtest-cli
 
-#${INSTALLER} install python3-suds
+#${OS_INSTALLER} install python3-suds
 ## PROBLEM : No distributions at all found for python-suds
 ## pip3 install python-suds
 
 ## Failures: no distributions at all found
 # pip3 install wsdl
 # pip3 install wstools
-pip3 install fisher
-pip3 install snakemake
-pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
+sudo pip3 install fisher
+sudo pip3 install snakemake
+sudo pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
 ## pip3 install pygraphviz ## This fails ! Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/pygraphviz
 
 ## Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/wstools
@@ -35,10 +41,10 @@ pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
 ## SAME ERROR: ImportError: No module named 'WSDLTools'
 
 ## I should test one of the following SOAP packages
-pip3 install suds-jurko
-pip3 install pysimplesoap
-pip3 install soappy
+sudo pip3 install suds-jurko
+sudo pip3 install pysimplesoap
+sudo pip3 install soappy
 
 ## Check disk usage
-df -m > ${RSAT_PARENT_PATH}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
-grep ${DEVICE} ${RSAT_PARENT_PATH}/install_logs/df_*.txt
+df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
+# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt

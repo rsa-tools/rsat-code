@@ -2,7 +2,7 @@
 #
 # $Id: install_rsat.mk,v 1.76 2013/07/19 06:29:14 jvanheld Exp $
 #
-# Time-stamp: <2003-05-23 09:36:00 jvanheld>
+# Time-stamp: <2017-03-17 10:39:28 eda>
 #
 ############################################################
 
@@ -436,18 +436,18 @@ install_latex_packages:
 ## Install the BioPerl library
 ##
 ## For this example, we install Bioperl and EnsEMBL libraries 
-## in $RSAT/lib, but you can install it in some other place
+## in $RSAT/ext_lib, but you can install it in some other place
 ### (password is 'cvs')
 _old_bioperl:
-	@mkdir -p ${RSAT}/lib
+	@mkdir -p ${RSAT}/ext_lib
 	@echo "Password is 'cvs'"
 	@cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
-	(cd ${RSAT}/lib;  cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live)
+	(cd ${RSAT}/ext_lib;  cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live)
 
 _old_bioperl_git:
 	@echo "This method is obsolete, BioPerl module can now be installed with cpan"
-	@mkdir -p $RSAT/lib
-	@cd $RSAT/lib
+	@mkdir -p $RSAT/ext_lib
+	@cd $RSAT/ext_lib
 	git clone git://github.com/bioperl/bioperl-live.git
 
 bioperl_install:

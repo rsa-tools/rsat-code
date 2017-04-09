@@ -138,7 +138,7 @@ if ($to < $from) {
 $seq_length = abs($to - $from + 1);
 
 ################################################################
-## organism data
+## Organism data
 
 my %contig = $organism->get_attribute("contigs");
 
@@ -166,6 +166,7 @@ if ($sequence_type eq "random fragments") {
 
 } else {
 
+
   ## Specify whether synonyms should be loaded or not
   my $synonyms = 1;
   if (($return_all) || ($ids_only)) {
@@ -178,13 +179,14 @@ if ($sequence_type eq "random fragments") {
     $organism->LoadSynonyms() if ($synonyms);
 
   } else {
+
     if ($organism->is_serialized($imp_pos, $synonyms)) {
       ## Load organism from serialized file
       my $serial_file = $organism->serial_file_name($imp_pos, $synonyms);
+#&RSAT::message::Debug($organism, $organism->get_attribute("name"), scalar(keys(%contig))." contigs", $serial_file) if ($main::verbose >= 10); die "Hello\n";
       $organism = retrieve $serial_file;
       &RSAT::message::TimeWarn("Retrieved organism", $organism_name, "from serialized file", $serial_file)
 	if ($main::verbose >= 3);
-
     } else {
 
       ### Load organism from flat files (slower)
@@ -193,6 +195,7 @@ if ($sequence_type eq "random fragments") {
     }
   }
 }
+
 
 #### no overlapping with upstream orfs
 if ($noorf) {

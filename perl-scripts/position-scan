@@ -371,13 +371,17 @@ package main;
       
       ################################################################
       ## Produce the logos
-      &GenerateLogos();
+      #&GenerateLogos();
   }
 
 
   ################################################################
   ## Plots step: chi-squared calculation + draw profiles
   if( defined($selected_tasks{"plots"}) || defined($selected_tasks{"all"}) ){
+
+      ################################################################
+      ## Produce the logos
+      &GenerateLogos();
 
       ## Parse the matrix-scan results table
       &ParseScanResults();
@@ -1166,8 +1170,8 @@ sub GenerateLogos {
     $logos_cmd .= " -i ".$main::infile{motifs};
     $logos_cmd .= " -from ".$matrix_format;
     $logos_cmd .= " -to transfac";
-    $logos_cmd .= " -return logo -logo_program weblogo";
-    $logos_cmd .= " -logo_format png,jpeg -logo_dir ".$main::outfile{prefix}."_logos";
+    $logos_cmd .= " -return logo -logo_program seqlogo";
+    $logos_cmd .= " -logo_format png -logo_dir ".$main::outfile{prefix}."_logos";
     &doit($logos_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 }
 
