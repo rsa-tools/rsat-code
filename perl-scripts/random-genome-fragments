@@ -255,17 +255,18 @@ package main;
     %main::contigs= $organism->get_contigs();
 
     foreach my $contig_name (keys(%main::contigs)) {
-      unless ($contig_name =~ /:MT:/) {	#Do not take into account mitochondrial genome.
+      unless ($contig_name =~ /:MT:/) {	# Do not take into account mitochondrial genome.
 	## store contig name
-	push (@main::contig_names, $contig_name);
+	push (@contig_names, $contig_name);
 	&RSAT::message::Debug("Contig name", $contig_name) if ($main::verbose >= 4);
       }
     }
-  }
+#  $contig_nb = scalar(@contig_names);
+
 
   #################################################################
   ## Ensembl organism
-  elsif ($main::organism_ens) {
+  } elsif ($main::organism_ens) {
 
     ## Get info from Ensembl about chromosome lengths for the selected
     ## organism
@@ -285,7 +286,7 @@ package main;
       unless ($slice_name =~ /:MT:/) { #Do not take into account mitochondrial genome.
 	&RSAT::message::Info(join ("\t", "Chromosome name", $slice_name) )
 	  if ($main::verbose >= 4);
-	push (@main::contig_names, $slice_name);
+	push (@contig_names, $slice_name);
 	$main::ens_chroms{$slice_name} = $slice;
       }
     }
@@ -304,7 +305,7 @@ package main;
   &RSAT::message::TimeWarn("Computing contig lengths") if ($main::verbose >= 2);
   my $cum_len = 0;
   foreach my $contig (0..$#contig_names) {
-    my $contig_name = $main::contig_names[$contig];
+    my $contig_name = $contig_names[$contig];
     my $contig_len = 0;
     if ($main::organism_name) {
       $contig_len = $main::contigs{$contig_name}->get_length();
@@ -318,38 +319,13 @@ package main;
 
     ## Index contig cumulative lengths
     $cum_len += $contig_len;
-    $contig_cum_len{$contig_name} = $cum_len;
 
 #    &RSAT::message::Debug("contig length", $contig_name, $contig_len, $cum_len) if ($main::verbose >= 5);
   }
   &RSAT::error::FatalError("Chdomosome lengths are not defined") if ($cum_len <= 0);
 
-  ## Compute proportions of random fragments per chromosomes
-  my @rand_contig_names = ();
-  my $allocated = 0;
-  foreach my $contig (0..$#contig_names) {
-    my $contig_name = $contig_names[$contig];
-    $contig_proba{$contig_name} = $contig_len{$contig_name} / $cum_len;
-    $contig_cdf{$contig_name} = $contig_cum_len{$contig_name} / $cum_len;
-    $contig_fragments{$contig_name} = sprintf("%d", $contig_proba{$contig_name} * $nb_fragments);
-    $contig_fragments_cum{$contig_name} = sprintf("%d", $contig_cdf{$contig_name} * $nb_fragments);
-
-    while ($allocated < $contig_fragments_cum{$contig_name}) {
-      push @rand_contigs, $contig;
-      $allocated++;
-    }
-
-    &RSAT::message::Info("contig", $contig,
-			 $contig_name,
-			 "L=".$contig_len{$contig_name},
-			 "cum_L=".$contig_cum_len{$contig_name},
-			 "P=".sprintf("%.2f", $contig_proba{$contig_name}),
-			 "CDF=".sprintf("%.2f", $contig_cdf{$contig_name}),
-			 "fragments=".$contig_fragments{$contig_name},
-			 "fragments_cum=".$contig_fragments_cum{$contig_name},
-			 )
-      if ($main::verbose >= 5);
-  }
+  ## Compute proportions of random fragments per chromosome
+  &ComputePriorProba();
 
   ################################################################
   ## Open output stream
@@ -373,79 +349,132 @@ package main;
 
   ################################################################
   ## Get random positions
-  for (my $i=1; $i<= $main::nb_fragments; $i++) {
+  &RSAT::message::TimeWarn("Selecting", $nb_fragments, "random genome fragments") if ($main::verbose >= 2);
+  my $done_fragments = 0;
+  my $trials = 0;
+  while ($done_fragments < $main::nb_fragments) {
+#  for (my $done_fragments=1; $done_fragments<= $main::nb_fragments; $done_fragments++) {
 
-    ## 1- get a random contig
-    my $rand_contig = $rand_contigs[$i-1];
-    my $rand_contig_name = $main::contig_names[$rand_contig];
+    if ($trials > ($nb_fragments * 5)) {
+      &RSAT::message::Warning("Stopping after", $trials, "trials with only", $done_fragments, "fragments generated");
+      last;
+    }
+    $trials++;
 
-    ## 2 - get contig length, and calculate last possible position to have
-    ## a fragment of the desired length
+    ## Get a random contig
+    my $rand_contig_q = rand();
+    my $rand_contig = 0;
+    while ($contig_cdf[$rand_contig] < $rand_contig_q) {
+      $rand_contig++;
+      last if ($rand_contig > $#contig_cdf);
+    }
+
+#    my $rand_contig = $rand_contigs[$done_fragments-1];
+    my $rand_contig_name = $contig_names[$rand_contig];
+
+    ## Get contig length
     my $contig_length = $contig_len{$rand_contig_name};
 
-    &RSAT::message::Info("Random chrom", $rand_contig, $rand_contig_name, "length",$contig_length)
-      if ($main::verbose >= 4);
+    &RSAT::message::Info("Random contig", $rand_contig, $rand_contig_name, "length",$contig_length)
+      if ($main::verbose >= 5);
 
+    ## Calculate last possible position to have a fragment of the
+    ## desired length.
     my $rand_fragment_size;
     if ($main::fragment_len) {
       $rand_fragment_size = $main::fragment_len;
     } else {
-      $rand_fragment_size = $lengths[$i-1];
+      $rand_fragment_size = $lengths[$done_fragments-1];
     }
     my $contig_last_rand_pos = $contig_length - $rand_fragment_size;
 
-    ## 3 - get a random start position
-    my $rand_start = int(rand ($contig_last_rand_pos));
-    ## check that the fragment is not in negative coord
-    my $count = 0;
-    while ($rand_start < 1) {
-      $rand_start = int(rand ($contig_last_rand_pos));
-      last if ($rand_start > 0);
-      $count ++;
-      last if ($count == 5);	##
-      &RSAT::message::Info(join ("\t", "Negative start value for contig", $rand_contig_name, "value",$rand_start) )
-	if ($main::verbose >= 3);
-    }
+    ## Check if the contig is at least as large as the requested
+    ## random fragment.
+    if ($contig_last_rand_pos < 1) {
+      $discarded{$rand_contig}++;
+      
+      ## Discard contigs if rejected too frequently
+      if ($discarded{$rand_contig} > 100) {
+	&RSAT::message::Info("Excluding contig", $rand_contig_name,
+			     "due to repetitive (> 100) negative starts.",
+			     "Contig length: ".$contig_length,
+			     "Fragment size: ".$main::fragment_len)
+	    if ($main::verbose >= 2);
 
-    ## Exclude the contig from the analysis, if it is too difficult to
-    ## get a fragment of the correct size.
-    if ($rand_start < 1) {
-      &RSAT::message::Info("Excluding", $rand_contig_name,
-			   "from contigs due to repetitive negative starts.",
-			   "Contig length: ".$contig_length,
-			   "Fragment size: ".$main::fragment_len)
-	if ($main::verbose >= 2);
-      splice(@main::contig_names, $rand_contig, 1);
-      $i--;
+	splice(@contig_names, $rand_contig, 1);
+
+	&RSAT::message::Debug("Remaining contigs", scalar(@contig_names), join(";", @contig_names)) if ($main::verbose >= 5);
+
+	if (scalar(@contig_names) < 1) {
+	  &RSAT::message::Warning("Stopped after", $done_fragments, "fragments because all contigs have been discarded");
+	  last;
+	}
+	&ComputePriorProba();
+      }
       next;
     }
+
+
+    ## Get a random start position
+    my $rand_start = int(rand($contig_last_rand_pos));
+
+    # ## check that the fragment is not in negative coord
+    # my $count = 0;
+    # while ($rand_start < 1) {
+    #   $rand_start = int(rand ($contig_last_rand_pos));
+    #   last if ($rand_start > 0);
+    #   $count ++;
+    #   last if ($count == 5);	##
+    #   &RSAT::message::Info(join ("\t", "Negative start value for contig", $rand_contig_name, "value",$rand_start) )
+    # 	if ($main::verbose >= 3);
+    # }
+
+#     ## Exclude the contig from the analysis, if it is too difficult to
+#     ## get a fragment of the correct size.
+#     if ($rand_start < 1) {
+#       &RSAT::message::Info("Excluding", $rand_contig_name,
+# 			   "from contigs due to repetitive negative starts.",
+# 			   "Contig length: ".$contig_length,
+# 			   "Fragment size: ".$main::fragment_len)
+# 	if ($main::verbose >= 2);
+#       splice(@contig_names, $rand_contig, 1);
+# #      $done_fragments--;
+#       next;
+#     }
 
     ## Calculate end position
     my $rand_end = $rand_start + $rand_fragment_size -1;
 
-    ## 4- rand strand
+    ## Select random strand
     my @strands = ("D","R");
     my $rand_strand = $strands[rand @strands];
 
+
+    ## Increment the fragment counter
+    $done_fragments++;
+
+
+    ## Compute sequence ID
     my $seq_id;
     if ($main::keep_names) {
-	$seq_id = $names[$i-1];
+	$seq_id = $names[$done_fragments-1];
     } else {
-	$seq_id = "randfragment_".$i;
+	$seq_id = "randfragment_".$done_fragments;
 	$seq_id .= "_".$organism_name;
 	$seq_id .= "_"; $seq_id .= join ":", $rand_contig_name, $rand_start, $rand_end, $rand_strand;
     }
 
     &RSAT::message::Info(join ("\t", "Random fragment", $seq_id, $rand_contig_name,$rand_start,$rand_end,$rand_strand) )
-      if ($main::verbose >= 4);
+      if ($main::verbose >= 5);
 
+    
     ################################################################
     ## Print sequences
-    if (($main::organism_name)&&($return_fields{seq})) {
+    if (($main::organism_name) && ($return_fields{seq})) {
       my $current_seq = $main::contigs{$rand_contig_name}->get_sequence($rand_start,$rand_end,$rand_strand);
       my @comments = join("; ",
 			  $organism_name,
-			  "random genome fragment $i of $main::nb_fragments",
+			  "random genome fragment $done_fragments of $main::nb_fragments",
 			  "length: $rand_fragment_size",
 			  "$rand_contig_name",
 			  "$rand_start:$rand_end:$rand_strand"
@@ -521,6 +550,56 @@ package main;
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
 
+
+################################################################
+## Compute prior probability for each contig + cumulative density function
+sub ComputePriorProba {
+  &RSAT::message::TimeWarn("Computing prior probability per contig for", scalar(@contig_names), "contigs") if ($main::verbose >= 2);
+  &RSAT::message::Debug("Contig names: ", join(";", @contig_names)) if ($main::verbose >= 5);
+  if (scalar(@contig_names) < 1) {
+    &RSAT::error::FatalError("&ComputePriorProba()", "requires at least one contig name");
+  }
+#  my @rand_contig_names = ();
+#  my $allocated = 0;
+
+  ## Update cumulative contig lengths (may change when contigs are discarded)
+  my $contig_name;
+  my $cum_len = 0;
+  foreach my $contig (0..$#contig_names) {
+    $contig_name = $contig_names[$contig];
+    $cum_len += $contig_len{$contig_name};
+    $contig_cum_len{$contig_name} = $cum_len;
+  }
+
+  @contig_proba = ();
+  @contig_cdf = ();
+  foreach my $contig (0..$#contig_names) {
+    my $contig_name = $contig_names[$contig];
+    $contig_proba[$contig] = $contig_len{$contig_name} / $cum_len;
+    $contig_cdf[$contig] = $contig_cum_len{$contig_name} / $cum_len;
+#    $contig_cdf{$contig_name} = $contig_cum_len{$contig_name} / $cum_len;
+    $contig_fragments{$contig_name} = sprintf("%d", $contig_proba[$contig] * $nb_fragments);
+#    $contig_fragments_cum{$contig_name} = sprintf("%d", $contig_cdf{$contig_name} * $nb_fragments);
+    $contig_fragments_cum{$contig_name} = sprintf("%d", $contig_cdf[$contig] * $nb_fragments);
+
+    # while ($allocated < $contig_fragments_cum{$contig_name}) {
+    #   push @rand_contigs, $contig;
+    #   $allocated++;
+    # }
+
+    &RSAT::message::Info("contig", $contig,
+			 $contig_name,
+			 "L=".$contig_len{$contig_name},
+			 "cum_L=".$contig_cum_len{$contig_name},
+			 "P=".sprintf("%.2f", $contig_proba[$contig]),
+			 "CDF=".sprintf("%.2f", $contig_cdf[$contig]),
+			 "fragments=".$contig_fragments{$contig_name},
+			 "fragments_cum=".$contig_fragments_cum{$contig_name},
+			 )
+      if ($main::verbose >= 5);
+  }
+
+}
 
 ################################################################
 ## Display full help message
