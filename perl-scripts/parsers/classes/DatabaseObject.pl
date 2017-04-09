@@ -121,11 +121,12 @@ sub set_attribute {
   my ($self,$attr,$value) = @_;
   my $class = ref($self);
   if (($self->get_attribute($attr)) &&
-      ($self->get_attribute($attr) ne $main::null)) {
+      ($self->get_attribute($attr) ne $main::null) &&
+      ($self->get_attribute($attr)  ne $value)) {
     my $message = join ("\t", 
 			$self->get_attribute("type"), $self->get_attribute("id"),
 			"previous ".$attr, $self->get_attribute($attr),
-			"reset to", $value);
+			"reset to", $value) if ($main::verbose >= 2);
 #      &RSAT::error::FatalError($message);
     &RSAT::message::Warning($message);
   } 
