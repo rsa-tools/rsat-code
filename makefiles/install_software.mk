@@ -2,7 +2,7 @@
 #
 # $Id: install_software.mk,v 1.54 2013/11/03 19:35:38 jvanheld Exp $
 #
-# Time-stamp: <2003-05-23 09:36:00 jvanheld>
+# Time-stamp: <2017-03-17 10:41:52 eda>
 #
 ############################################################
 
@@ -92,6 +92,18 @@ VMATCH_VERSION=2.2.5
 VMATCH_VERSION_MACOSX=vmatch-${VMATCH_VERSION}-Darwin_i386-64bit
 VMATCH_VERSION_LINUX=vmatch-${VMATCH_VERSION}-Linux_x86_64-64bit
 VMATCH_ARCHIVE=${VMATCH_VERSION}.tar.gz
+VMATCH_BASE_DIR=${SRC_DIR}/vmatch
+VMATCH_URL=ftp://lscsa.de/pub/lscsa/
+install_vmatch_param:
+	@echo "Parameters for vmatch instlalation"
+	@echo "	VMATCH_VERSION		${VMATCH_VERSION}"
+	@echo "	OS			${OS}"
+	@echo "	VMATCH_VERSION_MACOSX	${VMATCH_VERSION_MACOSX}"
+	@echo "	VMATCH_VERSION_LINUX	${VMATCH_VERSION_LINUX}"
+	@echo "	VMATCH_ARCHIVE		${VMATCH_ARCHIVE}"
+	@echo "	VMATCH_BASE_DIR		${VMATCH_BASE_DIR}"
+	@echo "	VMATCH_URL		${VMATCH_URL}"
+
 install_vmatch:
 	@echo
 	@echo "Installing vmatch for operating system ${OS}"
@@ -105,15 +117,13 @@ _install_vmatch_linux:
 	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_LINUX} _download_vmatch _install_vmatch
 
 
-VMATCH_BASE_DIR=${SRC_DIR}/vmatch
-VMATCH_URL=ftp://lscsa.de/pub/lscsa/
 #VMATCH_SOURCE_DIR=vmatch_latest
 _download_vmatch: 
 	@echo ""
 	@echo "Downloading vmatch in folder"
 	@echo "	${VMATCH_BASE_DIR}"
 	@mkdir -p ${VMATCH_BASE_DIR}
-	echo wget --no-clobber --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
+	wget --no-clobber --no-directories --no-verbose  --directory-prefix ${VMATCH_BASE_DIR} ${VMATCH_URL}/${VMATCH_ARCHIVE}
 	@ls ${VMATCH_BASE_DIR}/${VMATCH_ARCHIVE}
 
 VMATCH_SOURCE_DIR=${VMATCH_BASE_DIR}/${VMATCH_VERSION}
@@ -307,14 +317,14 @@ _install_gs:
 ## 1.2.4, major changes were made to the BioPerl API which have made
 ## it incompatible with Ensembl
 BIOPERL_VERSION=1-2-3
-BIOPERL_DIR=${RSAT}/lib/bioperl-release-${BIOPERL_VERSION}
+BIOPERL_DIR=${RSAT}/ext_lib/bioperl-release-${BIOPERL_VERSION}
 
 install_ensembl_api: install_ensembl_api_git
 
 ## Note: In some cases, there are delays between Ensembl and
 ## EnsemblGenome releases. To ensure compatibility, please check the
 ## versions of both distributions on http://ensemblgenomes.org/.
-ENSEMBL_API_DIR=${RSAT}/lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}
+ENSEMBL_API_DIR=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}
 install_ensembl_api_param:
 	@echo "	BIOPERL_VERSION		${BIOPERL_VERSION}"
 	@echo "	BIOPERL_DIR		${BIOPERL_DIR}"
@@ -403,14 +413,14 @@ install_ensembl_api_env:
 	@echo '## Default path for the Ensembl Perl modules and sofwtare tools'
 	@echo 'export ENSEMBL_RELEASE=${ENSEMBL_RELEASE}'
 	@echo 'export ENSEMBLGENOMES_RELEASE=${ENSEMBLGENOMES_RELEASE}'
-	@echo 'export PATH=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-git-tools/bin:$${PATH}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/bioperl-release-$${BIOPERL_VERSION}/bioperl-live::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-compara/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-external/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-functgenomics/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-tools/modules::$${PERL5LIB}'
-	@echo 'export PERL5LIB=$${RSAT}/lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-variation/modules::$${PERL5LIB}'
+	@echo 'export PATH=$${RSAT}/ext_lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-git-tools/bin:$${PATH}'
+	@echo 'export PERL5LIB=$${RSAT}/ext_lib/bioperl-release-$${BIOPERL_VERSION}/bioperl-live::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/ext_lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/ext_lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-compara/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/ext_lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-external/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/ext_lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-functgenomics/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/ext_lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-tools/modules::$${PERL5LIB}'
+	@echo 'export PERL5LIB=$${RSAT}/ext_lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-variation/modules::$${PERL5LIB}'
 
 ################################################################
 ## Install biomart Perl libraries
@@ -422,7 +432,7 @@ install_ensembl_api_env:
 # # Paste the text obtained on
 # # [http://plants.ensembl.org/biomart/martservice?type=registry] into
 # # the biomart-perl/conf/martURLLocation.xml file
-# # PERL5LIB=${PERL5LIB}:${RSAT}/lib/biomart-perl/lib                                                                                         # export PERL5LIB                                                                                                                                
+# # PERL5LIB=${PERL5LIB}:${RSAT}/ext_lib/biomart-perl/lib                                                                                         # export PERL5LIB                                                                                                                                
 # # check missing dependencies
 # perl bin/configure.pl -r conf/registryURLPointer.xml                                                                                        
 # #install the required modules
@@ -1202,7 +1212,7 @@ _compile_ceas:
 	@echo "Before using CEAS, you need to add a line to the log-in shell script"
 	@echo "(i.e. .bashrc in case of bash shell)"
 	@echo "Adapt the python version in the path below"
-	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/lib/${PYTHON}/site-packages'
+	@echo 'export PYTHONPATH=$$PYTHONPATH:${RSAT_BIN}/ext_lib/${PYTHON}/site-packages'
 
 ################################################################
 ## Download data required to run CEAS with Human genome hg19
@@ -1489,7 +1499,7 @@ download_local_lib:
 
 install_local_lib:
 	@echo "Installing Perl module local::lib"
-	(mkdir -p ${RSAT}/lib/perl5; ln -s ${RSAT}/lib/perl5 ${HOME}/perl5)
+	(mkdir -p ${RSAT}/ext_lib/perl5; ln -s ${RSAT}/ext_lib/perl5 ${HOME}/perl5)
 	(cd ${LOCAL_LIB_DIR}/local-lib-1.008004;  perl Makefile.PL --bootstrap; make; make test; make install)
 
 config_local_lib:
@@ -1497,7 +1507,7 @@ config_local_lib:
 	@echo ''  >>~/.bashrc
 	@echo '################################################################'  >>~/.bashrc
 	@echo '## Perl local::lib module'  >>~/.bashrc
-	@echo 'eval $$(perl -I$$HOME/perl5/lib/perl5 -Mlocal::lib)' >>~/.bashrc
+	@echo 'eval $$(perl -I$$HOME/perl5/ext_lib/perl5 -Mlocal::lib)' >>~/.bashrc
 
 #install_one_perl_module_locally:
 #	${MAKE} SUDO='' install_one_perl_module

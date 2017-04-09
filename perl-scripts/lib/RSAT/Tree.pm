@@ -163,7 +163,7 @@ sub get_node_descendents{
 	  my (@descendents) = $node->get_all_descendents($order,$type,$max_depth,$max_leaves);
 	  return ($node,@descendents);
       } else {
-	  &RSAT::message::Warning("&RSAT::Tree::get_node_descendents()", "No node with ID", $node_id) if ($main::verbose >= 2);
+	  &RSAT::message::Warning("&RSAT::Tree::get_node_descendents()", "No node with ID", $node_id) if ($main::verbose >= 3);
       }
   } else {
       &RSAT::error::FatalError("&RSAT::Tree::get_node_descendents() was called without specifying \$node_id");
@@ -220,7 +220,7 @@ sub get_node_by_id {
 #  my $id = shift;
   my $rootnode = $self->get_root_node();
 
-#  &RSAT::message::Debug("RSAT::Tree", $self, "Getting node by id", $id, $rootnode) if ($main::verbose >= 5);
+  &RSAT::message::Debug("RSAT::Tree", $self, "Getting node by id", $id, $rootnode) if ($main::verbose >= 5);
 
   if ( ($rootnode->getid) && ($rootnode->getid eq $id) ) {
     return $rootnode;
@@ -231,11 +231,12 @@ sub get_node_by_id {
   foreach my $node (@descendents) { ## SB: The type was set to "node" but I changed it to all which seemes more logical to me!    
     my $current_id = $node->get_id();
     if ($current_id eq $id) {
+	#&RSAT::message::Debug("&Tree::get_node_by_id()", "Query ID", $id, "Found ID", $current_id) if ($main::verbose >= 10);
       return $node;
     }
 #    &RSAT::message::Debug("&RSAT::Tree::get_node_by_id()",$current_id, "differs from", $node_id) if ($main::verbose >= 10);
   }
-  &RSAT::message::Warning("&RSAT::Tree::get_node_by_id()", "no node with ID", $id) if ($main::verbose >= 2);
+  &RSAT::message::Warning("&RSAT::Tree::get_node_by_id()", "no node with ID", $id) if ($main::verbose >= 3);
   return(undef);
 }
 
@@ -344,7 +345,7 @@ sub get_leaves_names {
 sub LoadSupportedTaxonomy {
   my ($self) = @_;
   &RSAT::message::Info("RSAT::Tree", $self, "Loading supported taxonomy") if ($main::verbose >= 3);
-  #  &LoadSupportedTaxonomy_jvh(@_);
+  # &LoadSupportedTaxonomy_jvh(@_);
   &LoadSupportedTaxonomy_rj(@_);
   $self->force_attribute("loaded", 1)
 ;
@@ -387,7 +388,7 @@ sub LoadSupportedTaxonomy_rj {
   $nodes{$root_name} = $root_node;
   my $root=$self->set_root_node($root_node);
   
-  ## Get the taxonomy for each supported organism.
+  ## Get the taxonomy for each supported organism
   my $c = 0;
   foreach my $org (sort {$supported_organism{$a}->{"taxonomy"} cmp $supported_organism{$b}->{"taxonomy"}}
 		   keys (%supported_organism)) {
@@ -402,12 +403,15 @@ sub LoadSupportedTaxonomy_rj {
     $taxonomy =~ s/\s+/ /g;  ## Suppress multiple spaces
     $taxonomy =~ s/\.$//g;   ## Suppres trailing dot
     my @taxonomy = split /\s*;\s*/, $taxonomy;
-#    die "HELLO";
-#    if ($taxonomy =~ /fumigatus/) {
-#      &RSAT::message::Debug("&RSAT::OrganismManager::OneOrgPerTaxonomicDepth", $org, "taxonomy", join("::", @taxonomy)) if ($main::verbose >= 2);
-#    }
-    @taxonomy = map {$_ =~ s/\s+/\_/g;$_} @taxonomy; # removing spaces in the top and bottom taxonomy names
-    @taxonomy = map {$_ =~ s/(\(|\))/\_/g;$_} @taxonomy; # removing spaces in the top and bottom taxonomy names
+
+### DEBUGGING 2017-03-12
+#     if ($org_id =~ /MG1655/) {
+#       &RSAT::message::Debug("&RSAT::Tree::LoadSupportedTaxonomy_rj", $org_id, "taxonomy", join("::", @taxonomy)) if ($main::verbose >= 0);
+# #    die "HELLO";
+#     }
+## End Debugging
+    @taxonomy = map {$_ =~ s/\s+/\_/g;$_} @taxonomy; # replace spaces by underscores
+    @taxonomy = map {$_ =~ s/(\(|\))/\_/g;$_} @taxonomy; # replace problematic characters by underscores
     &RSAT::message::Warning($c, $org,scalar(@taxonomy),"taxonomy"),  if ($main::verbose >= 5);
     &RSAT::message::Warning($c, $org_id, "taxonomy", join ("::",(@taxonomy))) if ($main::verbose >= 6);
     
@@ -420,10 +424,8 @@ sub LoadSupportedTaxonomy_rj {
     &RSAT::message::Warning("Instantiated leaf",$leaf->get_name()) if ($main::verbose >= 5);
     
 #    &RSAT::message::Debug("Created TreeNode for organism", $org, $org_id, $species_node) if ($main::verbose >= 10);
-    
 
-
-    for my $t (0..$#taxonomy) {     
+    for my $t (0..$#taxonomy) {
       ## Start top->down to build the tree
       if (defined $nodes{$taxonomy[$t]}) {
 	## Special treatment for the last level of the taxonomy: 

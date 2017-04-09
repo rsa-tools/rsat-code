@@ -10,6 +10,8 @@
 include ${RSAT}/makefiles/compare-matrices_demo.mk
 MAKEFILE=${RSAT}/makefiles/matrix-clustering_demo.mk
 
+RES_DIR=results
+
 ################################################################
 ## Parameters for the analysis
 OPERATOR=sum
@@ -58,7 +60,7 @@ list_param:
 ## specified below)
 TITLE='matrix-clustering result'
 CLUSTER_PREFIX=${MATRIX_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN_COR}
-CLUSTER_DIR=results/matrix-clustering_results/${MATRIX_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
+CLUSTER_DIR=${RES_DIR}/matrix-clustering_results/${MATRIX_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
 CLUSTER_CMD=matrix-clustering -v ${V} \
 		-matrix ${MATRIX_PREFIX} ${MATRIX_FILE} -matrix_format tf\
@@ -179,7 +181,7 @@ cluster_peakmotifs_Oct4_no_threshold:
 
 # ## Rndomize input matrices by permuting their columns
 # PERMUTED_PREFIX=${MATRIX_PREFIX}_permuted
-# PERMUTED_DIR=results/matrix-clustering_results/${PERMUTED_PREFIX}
+# PERMUTED_DIR=${RES_DIR}/matrix-clustering_results/${PERMUTED_PREFIX}
 # PERMUTED_MATRIX_FILE=${PERMUTED_DIR}/${PERMUTED_PREFIX}_matrices.tf
 # permute_matrices: list_param
 # 	@echo
@@ -209,7 +211,7 @@ cluster_footprints:
 
 
 ## Cluster all motifs from RegulonDB
-RDB_CLUSTER_DIR=results/matrix-clustering_results/regulondDB_clusters
+RDB_CLUSTER_DIR=${RES_DIR}/matrix-clustering_results/regulondDB_clusters
 RDB_CLUSTERS=${RDB_CLUSTER_DIR}/RDB_clusters
 RDB_PREFIX=regulonDB_2015-08-07
 RDB_MATRICES=${RSAT}/public_html/motif_databases/REGULONDB/${RDB_PREFIX}.tf
@@ -232,7 +234,7 @@ cluster_regulondb_permute:
 ## Cluster all motifs from HOCOMOCO
 HOCOMOCO_GROUPS=Human Mouse
 HOCOMOCO_GROUP=Human
-HOCOMOCO_CLUSTER_DIR=results/matrix-clustering_results/HOCOMOCO_clusters
+HOCOMOCO_CLUSTER_DIR=${RES_DIR}/matrix-clustering_results/HOCOMOCO_clusters
 HOCOMOCO_CLUSTERS=${HOCOMOCO_CLUSTER_DIR}/HOCOMOCO_clusters
 HOCOMOCO_PREFIX=HOCOMOCO_2015-11-23_${HOCOMOCO_GROUP}
 HOCOMOCO_MATRICES=${RSAT}/public_html/motif_databases/HOCOMOCO/${HOCOMOCO_PREFIX}.tf
@@ -256,7 +258,7 @@ cluster_hocomoco_one_group:
 
 ################################################################
 ## Cluster all motifs from FootprintDB (>4000 Motifs)
-FPDB_CLUSTER_DIR=results/matrix-clustering_results/Footprint_DB_clusters
+FPDB_CLUSTER_DIR=${RES_DIR}/matrix-clustering_results/Footprint_DB_clusters
 FPDB_CLUSTERS=${FPDB_CLUSTER_DIR}/Footprint_DB_clusters
 FPDB_PREFIX=footprintDB_motif
 FPDB_MATRICES=${RSAT}/public_html/motif_databases/footprintDB/${FPDB_PREFIX}.tf
@@ -325,7 +327,7 @@ enqueue_some_jobs:
 ## STAMP
 
 ## Use STAMP to cluster the demo dataset
-STAMP_OCT4_DIR=results/stamp_results/peak-motifs_result_Chen_Oct4
+STAMP_OCT4_DIR=${RES_DIR}/stamp_results/peak-motifs_result_Chen_Oct4
 stamp_peakmotifs_Oct4:
 	@echo
 	@echo "Running STAMP on motifs discovered by peak-motifs (Oct 4 dataset from Chen 2008)"
@@ -345,7 +347,7 @@ stamp_peakmotifs_Oct4:
 
 ## Use STAMP to cluster the merged Oct4 motifs (MEME + Homer + peak-motifs)
 OCT4_MERGED=public_html/demo_files/merged_Homer_MEME-ChIP_peak-motifs_Oct4_matrices.tf
-STAMP_OCT4_MERGED_DIR=results/stamp_results/merged_results_Chen_Oct4
+STAMP_OCT4_MERGED_DIR=${RES_DIR}/stamp_results/merged_results_Chen_Oct4
 stamp_merged_Oct4:
 	@echo
 	@echo "Running STAMP on 66 motifs discovered by peak-motifs, MEME-ChIP and Homer (Oct 4 dataset from Chen 2008)"
@@ -392,7 +394,7 @@ stamp_jaspar_all_groups:
 	done
 
 ## Run STAMP for the sake of comparison
-STAMP_JASPAR_DIR=results/stamp_results/${JASPAR_PREFIX}
+STAMP_JASPAR_DIR=${RES_DIR}/stamp_results/${JASPAR_PREFIX}
 stamp_jaspar_one_group:
 	@echo
 	@echo "STAMP clustering for all matrices from JASPAR ${JASPAR_GROUP}"
@@ -432,7 +434,7 @@ stamp_jaspar_one_group:
 
 
 ## Run STAMP for the sake of comparison
-STAMP_HOCOMOCO_DIR=results/stamp_results/${HOCOMOCO_PREFIX}
+STAMP_HOCOMOCO_DIR=${RES_DIR}/stamp_results/${HOCOMOCO_PREFIX}
 stamp_hocomoco_one_group:
 	@echo
 	@echo "STAMP clustering for all matrices from HOCOMOCO ${HOCOMOCO_GROUP}"
