@@ -4,6 +4,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
+use POSIX;
 
 our $start_time = &RSAT::util::StartScript();
 our $threshold = 0;
@@ -21,7 +22,12 @@ foreach $a (0..$#ARGV) {
   } elsif ($ARGV[$a] eq "-o") {
     $outputfile = $ARGV[$a+1];
   } elsif ($ARGV[$a] eq "-v") {
-    $verbose = 1;
+      if (&IsNatural($ARGV[$a+1])) {
+	  $verbose = $ARGV[$a+1];
+      } else {
+	  $verbose = 1;
+      }
+    
 
 =pod
 
@@ -100,9 +106,12 @@ $count = 0;
 $sum = 0;
 $sumofsquares = 0;
 ## @ListOfNumbers = ();
+&RSAT::message::TimeWarn("Reading input file", $inputfile) if ($main::verbose >= 2);
 while($current_line = <$in>) {
   next if ($current_line =~ /^;/); ### skip comment lines
   chomp $current_line;
+
+
   if (scalar(@cols) >= 1) {
     @current_linecp = split("\t", $current_line);
     $current_line = $current_linecp[($cols[0])-1];
@@ -110,6 +119,8 @@ while($current_line = <$in>) {
       $current_line .= "\t".$current_linecp[($cols[$i])-1];
     }
   }
+
+  
   while($current_line =~ /(\S+)(.*)/) {
     $word = $1;
     $current_line = $2;
@@ -128,7 +139,8 @@ while($current_line = <$in>) {
 close($in);
 
 
-##### calculate min and max of the list of numbers ######
+## Calculate min and max of the list of numbers
+&RSAT::message::TimeWarn("Computing range") if ($main::verbose >= 2);
 @values = sort {$a <=> $b} keys %freq;
 $min = $values[0];
 $max = $values[$#values];
@@ -137,6 +149,7 @@ $max = $values[$#values];
 $range = $max - $min;
 
 ## Check value of class interval
+&RSAT::message::TimeWarn("Computing class interval") if ($main::verbose >= 2);
 if ($class_interval eq "") {
   if ($range > 0) {
     $class_interval = $range/20;
@@ -153,43 +166,69 @@ if ($class_interval <= 0) {
 }
 
 if ($usermin ne "") {
-    $classmin = $usermin;
+    $class_min = $usermin;
+    &RSAT::message::Info("User-defined class min", $class_min) if ($main::verbose >= 3);
 } else {
-    $classmin = $class_interval * int($min/$class_interval);
-    if ($classmin > $min) {
-	$classmin -= $class_interval;
+    $class_min = $class_interval * int($min/$class_interval);
+    if ($class_min > $min) {
+	$class_min -= $class_interval;
     }
+    &RSAT::message::Info("Automatically defined class min", $class_min) if ($main::verbose >= 3);
 }
 if ($usermax ne "") {
-    $classmax = $usermax;
+    $class_max = $usermax;
+    &RSAT::message::Info("User-defined class max", $class_max) if ($main::verbose >= 3);
 } else {
-    $classmax = $max;
+    $class_max = $max;
+    &RSAT::message::Info("Automatically defined class max", $class_max) if ($main::verbose >= 3);
 }
 
 if ($display_from eq "") {
-    $display_from= $classmin;
-
+    $display_from= $class_min;
 }
 if ($display_to eq "") {
-    $display_to= $classmax;
+    $display_to= $class_max;
 }
 
 ## If no value is provided, instantiate a single frequency class
 if (scalar(@values) == 0) {
-  $classmax = $classmin + $class_interval;
+  $class_max = $class_min + $class_interval;
 }
 
-#&RSAT::message::Debug("classmin=".$classmin, "classmax=".$classmax, scalar(@values)." values", join (";", @values));
+## Check min and max values
+$max_float = &POSIX::FLT_MAX;
+$min_float = -&POSIX::FLT_MAX;
+if ($class_max > $max_float) {
+    &RSAT::error::FatalError("Max value", $class_max, "larger than max possible floating point value", $max_float);
+}
+if ($class_min < $min_float) {
+    &RSAT::error::FatalError("Min value", $class_min, "smaller than min possible floating point value", $min_float);
+}
 
-##### make a list with the limits of classes #####
+## Check class number
+$class_nb = &POSIX::ceil(($class_max - $class_min)  / $class_interval);
+
+&RSAT::message::Info("class_min=".$class_min, "class_max=".$class_max, 
+		      "class_interval=".$class_interval, 
+		      "class_nb=".$class_nb, 
+		      scalar(@values)." values", join (";", @values)) if (($main::verbose >= 3) || ($class_nb > 100000));
+if ($class_nb > 100000) {
+    &RSAT::message::Warning("Huge number of classes: ", $class_nb);
+    &RSAT::message::Warning("You may require to check class interval or  min/max values");
+}
+
+## Make a list with the limits of classes
+&RSAT::message::TimeWarn("Computing class limits") if ($main::verbose >= 2);
 @ListOfClasses = ();
 do {
-  @ListOfClasses = (@ListOfClasses, $classmin);
-  $classmin += $class_interval;
-} until ($classmin > $classmax);
+  @ListOfClasses = (@ListOfClasses, $class_min);
+  $class_min += $class_interval;
+  &RSAT::message::Debug($class_min, $class_interval, $class_max) if ($main::verbose >= 9);
+} until ($class_min > $class_max);
 
 
-##### calculate the frequency of each class #####
+## Calculate the frequency of each class
+&RSAT::message::TimeWarn("Computing class frequencies") if ($main::verbose >= 2);
 foreach $c (0.. $#ListOfClasses) {
   $ListOfFrequencies[$c] = 0;
 }
@@ -212,7 +251,8 @@ foreach $n (@values) {
 }
 
 
-##### print class frequencies #####
+&RSAT::message::TimeWarn("Printing result") if ($main::verbose >= 2);
+### Print header
 if ($verbose) {
   &Verbose();
   print $out "#[min\t";
@@ -230,6 +270,7 @@ $rel_cum = 0;
 $next_dcum = $count;
 $dcum = $count;
 
+## Print the result
 $inv_rel_cum = 1;
 $next_inv_rel_cum = 1;
 $median_class = "NA";
@@ -284,42 +325,40 @@ foreach $c (0.. $#ListOfClasses) {
     }
 }
 
-## print statistics
+## Print statistics
 if ($verbose) {
-  print $out "; Statistics:\n";
-  print $out "; -----------\n";
-  print $out "; input file\t$inputfile\n" unless ($inputfile eq "");
-  printf $out "; %-19s\t%g\n", "class interval", $class_interval;
-  printf $out "; %-19s\t%g\n", "classes",  $#ListOfClasses + 1;
-  printf $out "; %-19s\t%g\n", "count", $count;
-  if ($count > 0) {
-    $mean = $sum/$count;
-    if ($max > $min) {
-      $var = $sumofsquares/$count - $mean*$mean;
-      ## This is required to avoid errors due to numerical imprecision
-      $var = &max($var, 0);
-      $std = sqrt($var);
-    } else {
-      $std  = 0;
-    }
-    printf $out "; %-19s\t%g\n", "sum", $sum;
-    printf $out "; %-19s\t%g\n", "mean", $mean;
-    printf $out "; %-19s\t[%g..%g[\n", "median class", $ListOfClasses[$median_class], $ListOfClasses[$median_class]+$class_interval;
+    &RSAT::message::TimeWarn("Printing statistics") if ($main::verbose >= 2);
+    print $out "; Statistics:\n";
+    print $out "; -----------\n";
+    print $out "; input file\t$inputfile\n" unless ($inputfile eq "");
+    printf $out "; %-19s\t%g\n", "class interval", $class_interval;
+    printf $out "; %-19s\t%g\n", "classes",  $#ListOfClasses + 1;
+    printf $out "; %-19s\t%g\n", "count", $count;
+    if ($count > 0) {
+	$mean = $sum/$count;
+	if ($max > $min) {
+	    $var = $sumofsquares/$count - $mean*$mean;
+	    ## This is required to avoid errors due to numerical imprecision
+	    $var = &max($var, 0);
+	    $std = sqrt($var);
+	} else {
+	    $std  = 0;
+	}
+	printf $out "; %-19s\t%g\n", "sum", $sum;
+	printf $out "; %-19s\t%g\n", "mean", $mean;
+	printf $out "; %-19s\t[%g..%g[\n", "median class", $ListOfClasses[$median_class], $ListOfClasses[$median_class]+$class_interval;
 ##    printf $out "; median\t%.3g\n", &RSAT::stats::median(@ListOfNumbers); ## The median requires to store and sort all values -> I don't return it for the sake of efficiency
-    printf $out "; %-19s\t%.3g\n", "var", $var;
-    printf $out "; %-19s\t%g\n", "std", $std;
-  }
-  printf $out "; %-19s\t%g\n", "min", $min;
-  printf $out "; %-19s\t%g\n", "max", $max;
-  printf $out "; %-19s\t%g\n", "range", $max - $min;
+	printf $out "; %-19s\t%.3g\n", "var", $var;
+	printf $out "; %-19s\t%g\n", "std", $std;
+    }
+    printf $out "; %-19s\t%g\n", "min", $min;
+    printf $out "; %-19s\t%g\n", "max", $max;
+    printf $out "; %-19s\t%g\n", "range", $max - $min;
 
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+    print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
 }
-
-
-
 
 
 ###### close input file ######
@@ -327,7 +366,6 @@ close $in unless ($inputfile eq "");
 
 ###### close output file ######
 close $out unless ($outputfile eq "");
-
 
 exit(0);
 
