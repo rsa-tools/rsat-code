@@ -209,22 +209,36 @@ _denied_ips_one_script:
 ## This requires to filter out  the hacker IPs and of the RSAT front page
 ## access, in order to count only the real queries.
 WEB_LOG_FILES=${RSAT}/logs/log-file_${RSAT_SITE}_${YEAR}_*
-LOG_STATS=${RSAT}/logs/login_statistics_${RSAT_SITE}_${YEAR}
+WEB_LOG_STATS=${RSAT}/logs/login_statistics_${RSAT_SITE}_${YEAR}
+WS_LOG_FILES=${RSAT}/logs/log-file_${RSAT_SITE}_WS_${YEAR}_*
+WS_LOG_STATS=${RSAT}/logs/login_statistics_${RSAT_SITE}_WS_${YEAR}
 login_stats:
 	@${MAKE} denied_ips
 	@echo 
-	@echo "Computing login statistics"
 	@awk '$$2 > 50 {print $$1}' ${DENIED_IP_FILE}.tab > ${DENIED_IP_FILE}_IPs.txt 
-	@echo "Web log files"
-	@cat ${WEB_LOG_FILES} \
+	@echo "Denied IP filter file"
+	@echo "	${DENIED_IP_FILE}_IPs.txt"
+	@echo
+	@echo "Computing login statistics"
+	@echo "    Web site queries"
+	@${MAKE} _log_stats LOG_FILES='${WEB_LOG_FILES}' LOG_STATS=${WEB_LOG_STATS}
+	@echo "    Web services queries"
+	@${MAKE} _log_stats LOG_FILES='${WS_LOG_FILES}' LOG_STATS=${WS_LOG_STATS}
+
+_log_stats:
+	@cat ${LOG_FILES} \
 		| awk '$$4 != "RSAT_home.cgi"' \
 		| grep -v -f ${DENIED_IP_FILE}_IPs.txt  \
 		| cut -f 4 | sort | uniq -c | sort -nr > ${LOG_STATS}_per_tool.tab
 	@echo "	${LOG_STATS}_per_tool.tab"
-	@cat ${WEB_LOG_FILES} \
+	@cat ${LOG_FILES} \
 		| awk '$$4 != "RSAT_home.cgi"' \
 		| grep -v -f ${DENIED_IP_FILE}_IPs.txt  \
 		| cut -f 3 | sort | uniq -c | sort -nr > ${LOG_STATS}_per_IP.tab
 	@echo "	${LOG_STATS}_per_IP.tab"
 	@classfreq -v 1 -ci 50 -col 1 -i ${LOG_STATS}_per_IP.tab > ${LOG_STATS}_per_IP_classfreq.tab
 	@echo "	${LOG_STATS}_per_IP_classfreq.tab"
+	@cat ${LOG_FILES} \
+		| grep -f ${DENIED_IP_FILE}_IPs.txt  \
+		| cut -f 4 | sort | uniq -c | sort -nr > ${LOG_STATS}_denied_per_tool.tab
+	@echo "	${LOG_STATS}_denied_per_tool.tab"
