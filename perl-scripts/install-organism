@@ -178,6 +178,10 @@ package main;
     if ($task{allup} && $task{upstream_freq}) {
       &RSAT::error::FatalError("Tasks allup and upstream_freq cannot be combined in batch mode. First run allup, then upstream_freq.");
     }
+
+    if ($task{config}) {
+	&RSAT::error::FatalError("Task config cannot be executed in batch mode. ");
+    }
   }
 
   ## Consistency between tasks
@@ -268,7 +272,7 @@ package main;
 
 
       my $command = 'rsync --copy-links  --times  --list-only rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq/'.$group.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
-      &doit($command, $dry_run, $die_on_error, $verbose);
+      &doit($command, $dry, $die_on_error, $verbose);
       exit(0); # Available species is not compatible with any other task
   }
 
@@ -300,7 +304,7 @@ package main;
       
       &RSAT::util::CheckOutDir($dir{downloads});
       my $command = "rsync --copy-links --recursive --times -R --verbose ".$URL." ".$dir{downloads};
-      &doit($command, $dry_run, $die_on_error, $verbose);
+      &doit($command, $dry, $die_on_error, $verbose);
       &RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 3);
     }
   }
@@ -532,9 +536,11 @@ package main;
 	$outfile{fasta_genome_rm} = $dir{genome}."/".$organism_short_name.".dna_rm.genome.fa";
 
 	## Create output directoryies if required
-	&RSAT::util::CheckOutDir($dir{install});
-	&RSAT::util::CheckOutDir($dir{genome});
-	&RSAT::util::CheckOutDir($dir{oligos});
+	unless ($dry) {
+	    &RSAT::util::CheckOutDir($dir{install});
+	    &RSAT::util::CheckOutDir($dir{genome});
+	    &RSAT::util::CheckOutDir($dir{oligos});
+	}
     }
     
     ################################################################
@@ -578,7 +584,7 @@ package main;
 
       if ($task{protein_len}) {
 	  my $command = &SeqLengthDistributionCmd($peptidic_seq_file, "fasta", "protein", 50, 2000);
-	  &doit($command, $dry_run, $die_on_error, $verbose);
+	  &doit($command, $dry, $die_on_error, $verbose);
       }
 
 
@@ -761,7 +767,7 @@ sub UpdateConfig {
   }
   &RSAT::message::Info("Upstream region limits from", $up_from, "to", $up_to) if ($main::verbose >= 2);
 
-  &UpdateConfigTab();
+  &UpdateConfigTab() unless (($dry) || ($batch));
 }
 
 ################################################################
@@ -900,7 +906,7 @@ sub CreatePhylogeny {
 	$dir{taxonomy} = $ENV{RSAT}."/public_html/data/phylogeny/".$taxonomy;
 	$dir{taxonomy} =~ s|//|/|g;
 	my ($org_dir) = &ShortFileName($dir{install});
-	&RSAT::util::CheckOutDir($dir{taxonomy});
+	&RSAT::util::CheckOutDir($dir{taxonomy}) unless ($dry);
 	if ($main::verbose >= 2) {
 	    &RSAT::message::Info("Taxonomy directory", $dir{taxonomy});
 	    &RSAT::message::Info("Organism directory", $org_dir);
@@ -925,7 +931,7 @@ sub IntergenicSegments {
   my $command = "coding-or-not ";
   $command .= "-v 1 " if ($verbose >= 1);
   $command .= "-org $organism_short_name -return ncs,cs,pos,seq,stats";
-#  &doit($command, $dry_run, $die_on_error, $verbose);
+#  &doit($command, $dry, $die_on_error, $verbose);
 
   my @types = ();
   push @types, "gene";
@@ -953,7 +959,7 @@ sub IntergenicSegments {
 	$command .= "; " unless ($command eq "");
 	$command .= &PurgeSeqCommand($seq_file);
       }
-#      &doit($command, $dry_run, $die_on_error, $verbose);
+#      &doit($command, $dry, $die_on_error, $verbose);
       &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
     }
 
@@ -988,7 +994,7 @@ sub AllUpstream {
 	$command .= " -label ID";
 	$command .= " -format ".$format;
 	$command .= " -o ".$seq_file.".".$format;
-#	&doit($command, $dry_run, $die_on_error, $verbose);
+#	&doit($command, $dry, $die_on_error, $verbose);
 	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 2);
       }
 
@@ -1005,7 +1011,7 @@ sub AllUpstream {
       }
 
       &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
-#      &doit($command, $dry_run, $die_on_error, $verbose);
+#      &doit($command, $dry, $die_on_error, $verbose);
 
     }
   }
@@ -1021,20 +1027,23 @@ sub FastaGenome {
     $command .= " -i ".$outfile{genome};
     $command .= " -from filelist -to fasta";
     $command .= " -o ".$outfile{fasta_genome};
-    &doit($command, $dry_run, $die_on_error, $verbose);
+    &doit($command, $dry, $die_on_error, $verbose);
 
     $command = "cd ".$dir{genome}. "; ln -f -s ".$organism_short_name.".dna.genome.fa ".$organism_short_name.".dna_rm.genome.fa";
-    &doit($command, $dry_run, $die_on_error, $verbose);
+    &doit($command, $dry, $die_on_error, $verbose);
 }
 
 
 ################################################################
 ## Generate bedtool indexes. This must be done as RSAT user in order
 ## to enable retrieve-seq-bed, which relies on bedtools getfasta.
+## 
+## We use a trick to run bedtools getfasta witha single-nucleotide bed
+## file, whihc creates the fasta index if it does not exist. .
 sub GenerateBedtoolsIndex {
     my $rand_fragment_coord = &RSAT::util::make_temp_file("","random-genome-fragments_coord", 1);
     my $rand_fragment_seq = &RSAT::util::make_temp_file("","random-genome-fragments_seq", 1);
-    $command = $SCRIPTS."/random-genome-fragments -n 1 -l 100";
+    $command = $SCRIPTS."/random-genome-fragments -n 1 -l 1";
     $command .= " -org ".$organism_short_name;
     $command .= " -o ".$rand_fragment_coord;
     $command .= " ; ".$SCRIPTS."/retrieve-seq-bed";
@@ -1047,7 +1056,7 @@ sub GenerateBedtoolsIndex {
     $command .= " -o ".$rand_fragment_seq;
     $command .= " ; rm -f ".$rand_fragment_seq; 
     $command .= " ; rm -f ".$rand_fragment_coord; 
-    &doit($command, $dry_run, $die_on_error, $verbose);
+    &doit($command, $dry, $die_on_error, $verbose);
 }
 
 
@@ -1086,7 +1095,7 @@ sub SeqLengthDistributionCmd {
     $command .= " -title2 'length distribution of ${seq_type} sequences'";
     $command .= " -format ".$img_format;
     $command .= " -o ".$len_prefix."_distrib.".$img_format;
-#    &doit($command, $dry_run, $die_on_error, $verbose);
+#    &doit($command, $dry, $die_on_error, $verbose);
 #    die "HELLO\t", $command, "\n";
     return($command);
 }
@@ -1100,10 +1109,10 @@ sub PurgeSeqCommand {
   my $purged_seq_file = `basename $seq_file $format`;
   $purged_seq_file .= "_purged.$format";
   my $command = "purge-sequence -i $seq_file -format $format -ml 300 -mis 9 -2str -o $purged_seq_file";
-#  &doit($command, $dry_run, $die_on_error, $verbose);
+#  &doit($command, $dry, $die_on_error, $verbose);
   ## compress purged sequence file
   $command .= "; gzip -f $purged_seq_file";
-#  &doit($command, $dry_run, $die_on_error, $verbose);
+#  &doit($command, $dry, $die_on_error, $verbose);
   return($command);
 }
 
@@ -1382,7 +1391,7 @@ sub CalcOligoDistrib {
 	  $command .= " -o ".$fitting_file;
 	  $command .= " -distrib ".$theor;
 	  $command .= " ; gzip -f ".$fitting_file;
-	  &doit($command, $dry_run, $die_on_error, $verbose);  
+	  &doit($command, $dry, $die_on_error, $verbose);  
 	}
       }
     }
@@ -1872,7 +1881,7 @@ sub ReadArguments {
 
       ## dry run
     } elsif ($arg eq "-n") {
-      $dry_run = 1;
+      $dry = 1;
       $verbose = 1;
 
       ## detailed help
@@ -2062,7 +2071,7 @@ Dry run: print the commands but do not execute them.
 
 =cut
     } elsif ($arg eq "-dry") {
-	$main::dry_run = 1;;
+	$main::dry = 1;;
 
 =pod
 
@@ -2101,7 +2110,7 @@ sub StartAndStopCodons {
   $command .= " -o ".$prefix."_start_codon_frequencies.tab";
 #  &RSAT::message::Debug($command) if ($main::verbose >= 10);
   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
-#  &doit($command, $dry_run, $die_on_error, $verbose);
+#  &doit($command, $dry, $die_on_error, $verbose);
   &RSAT::message::Info("\tStart codons", $prefix."_start_codons.wc") if ($main::verbose >= 2);
   &RSAT::message::Info("\tStart codon frequencies", $prefix."_start_codon_frequencies.tab") if ($main::verbose >= 2);
 
@@ -2115,7 +2124,7 @@ sub StartAndStopCodons {
   $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies.tab";
 
   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
-#  &doit($command, $dry_run, $die_on_error, $verbose);
+#  &doit($command, $dry, $die_on_error, $verbose);
   &RSAT::message::Info("\tStop codons", $prefix."_stop_codons.wc") if ($main::verbose >= 2);
   &RSAT::message::Info("\tStop codon frequencies", $prefix."_stop_codon_frequencies.tab") if ($main::verbose >= 2);
 }
@@ -2167,7 +2176,7 @@ sub CleanUp {
   }
   foreach my $file (@files) {
     my $command = "rm -f $file";
-    &doit($command, $dry_run, $die_on_error, $verbose);
+    &doit($command, $dry, $die_on_error, $verbose);
   }
 }
 
