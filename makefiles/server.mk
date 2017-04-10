@@ -166,9 +166,9 @@ clean_tmp:
 ## Detect web spammers (2012). Several IP addresses are repeatedly sending Web
 ## spam to the Web interfaces of gene-info.cgi and convert-matrix.cgi.
 YEAR=`date +%Y`
-DENIED_IP_FILE=denied_IP_addresses_${RSAT_SITE}_${YEAR}.tab
+DENIED_IP_FILE=denied_IP_addresses_${RSAT_SITE}_${YEAR}
 FORM_DENIAL_THRESHOLD=500
-TAG_DENIAL_THRESHOLD=5
+TAG_DENIAL_THRESHOLD=30
 ATTACKED_FORMS=gene-info.cgi convert-matrix.cgi RSAT_home.cgi
 denied_ips:
 	@echo 
@@ -182,13 +182,13 @@ denied_ips:
 			| grep -v '^#' \
 			| cut -f 1,2 \
 			| awk '$$2 > ${TAG_DENIAL_THRESHOLD} {print $$1"\t"$$2"\tHTML_tags"}' \
-			| sort > ${DENIED_IP_FILE}
+			| sort > ${DENIED_IP_FILE}.tab
 	@for form in ${ATTACKED_FORMS}; do \
 		echo "	abusive use of form $${form}  (> ${FORM_DENIAL_THRESHOLD})"; \
 		${MAKE}  _denied_ips_one_script ATTACKED_FORM=$${form} ; \
 	done
-	@echo "	${DENIED_IP_FILE}"
-	@wc -l ${DENIED_IP_FILE}
+	@echo "	${DENIED_IP_FILE}.tab"
+	@wc -l ${DENIED_IP_FILE}.tab
 
 ATTACKED_FORM=gene-info.cgi
 _denied_ips_one_script:
@@ -201,5 +201,30 @@ _denied_ips_one_script:
 		| grep -v '^#' \
 		| cut -f 1,2 \
 		| awk '$$2 > ${FORM_DENIAL_THRESHOLD} {print $$1"\t"$$2"\t${ATTACKED_FORM}"}' \
-		| sort >> ${DENIED_IP_FILE} ; \
+		| sort >> ${DENIED_IP_FILE}.tab ; \
 
+################################################################
+## Compute login statistics
+##
+## This requires to filter out  the hacker IPs and of the RSAT front page
+## access, in order to count only the real queries.
+WEB_LOG_FILES=${RSAT}/logs/log-file_${RSAT_SITE}_${YEAR}_*
+LOG_STATS=${RSAT}/logs/login_statistics_${RSAT_SITE}_${YEAR}
+login_stats:
+	@${MAKE} denied_ips
+	@echo 
+	@echo "Computing login statistics"
+	@awk '$$2 > 50 {print $$1}' ${DENIED_IP_FILE}.tab > ${DENIED_IP_FILE}_IPs.txt 
+	@echo "Web log files"
+	@cat ${WEB_LOG_FILES} \
+		| awk '$$4 != "RSAT_home.cgi"' \
+		| grep -v -f ${DENIED_IP_FILE}_IPs.txt  \
+		| cut -f 4 | sort | uniq -c | sort -nr > ${LOG_STATS}_per_tool.tab
+	@echo "	${LOG_STATS}_per_tool.tab"
+	@cat ${WEB_LOG_FILES} \
+		| awk '$$4 != "RSAT_home.cgi"' \
+		| grep -v -f ${DENIED_IP_FILE}_IPs.txt  \
+		| cut -f 3 | sort | uniq -c | sort -nr > ${LOG_STATS}_per_IP.tab
+	@echo "	${LOG_STATS}_per_IP.tab"
+	@classfreq -v 1 -ci 50 -col 1 -i ${LOG_STATS}_per_IP.tab > ${LOG_STATS}_per_IP_classfreq.tab
+	@echo "	${LOG_STATS}_per_IP_classfreq.tab"
