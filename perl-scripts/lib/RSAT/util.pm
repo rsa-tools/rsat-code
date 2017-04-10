@@ -1287,7 +1287,7 @@ sub EmailTheResult {
     $html_submission_message =~ s|\\\$|\$|gm;
     &RSAT::message::Info($html_submission_message);
 
-    ## actually send email
+    ## Send email to notify submission of the task
     unless($no_email)
     {
         if($ENV{starttls}){
@@ -1305,14 +1305,15 @@ sub EmailTheResult {
     $completion_message .= "\nThe result file will remain there for $delay.";
 
     ## Run the command and send a notification mail if the user provided an email address
+    my $send_mail = &RSAT::server::GetProgramPath("send-mail");
     $command .=  " | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> ".$tmp_file_path;
     $command .= " 2> ".$args{error_file} if ($args{error_file}); ## JvH: added 2015-03-01; to validate
-    $command .= "; echo \"$completion_message\" | ".$SCRIPTS."/send-mail -subject '$subject ; Job completed' -to ".$recipient unless ($no_email);
+    $command .= "; echo '${completion_message}' | ".$send_mail." -subject '${subject} ; Job completed' -to ".$recipient unless ($no_email);
     $command .= " &"; ## Run task in background
-    print "\n\n<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 3);
-#    &RSAT::message::Debug("&RSAT::util::EmailTheResult() command", $command) if ($main::verbose >= 0);
+    # print "\n\n<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 5);
+    # &RSAT::message::Debug("&RSAT::util::EmailTheResult() command", $command) if ($main::verbose >= 0);
 
-    system $command;
+    system ($command);
 
     ## Prepare removal of the temporary file
     &RSAT::server::DelayedRemoval($tmp_file_path, $delay);
