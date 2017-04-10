@@ -913,11 +913,13 @@ tasks).
 
 =item B<-queue>
 
-Cluster queue. By default, the cluster queue is specified in the
-configuration file ($RSAT/RSAT_config.props). However, since each
-BLAST task can take a more or less long time depending on the proteome
-sizes, it is recommended to use a queue that supports long time (e.g.
-1h per job or more).
+Cluster queue.
+
+By default, the cluster queue is specified in the configuration file
+($RSAT/RSAT_config.props). However, since each BLAST task can take a
+more or less long time depending on the proteome sizes, it is
+recommended to use a queue that supports long time (e.g.  1h per job
+or more).
 
 =cut
       } elsif ($ARGV[$a] eq "-queue") {
