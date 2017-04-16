@@ -143,8 +143,8 @@ mail_supported=no
 ## Server for sending mail (SMTP). If not provided, mail messages will
 ## be sent via the sendmail program, which may be either allowed or
 ## not depending on the server configuration.
-#smtp=localhost:25
 smtp=
+smtp_port=
 
 ## If an email address is specified, notification email will be sent
 ## with this email in the "from" field of the mail. This address
