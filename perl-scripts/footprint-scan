@@ -375,6 +375,7 @@ package main;
   local $strands = "-2str"; ## Strands for motif discovery and pattern matching
   #local $matrix_dir="data/matrices";
   #local $matrix_file = $matrix_dir."/PHO4_matrix.tab";
+  local $matrix_suffix = "";
   local $matrix_format = "tab";
   local $markov = 1;
   local $map_format = "png";
@@ -388,7 +389,6 @@ package main;
   local %values_at_th=(); # Hash to store values at pval threshold
   local %query_indexes = ();
   local $bg_distrib; $bg_distrib = ""; ## Used in footprint.lib.pl
-
 
   ## Feature maps
   local $map_opt = "";
@@ -638,15 +638,14 @@ package main;
   if (scalar(@matrix_files)>0) {
     my $mcount =1;
     foreach my $m_option_matrices (@matrix_files) {
-      if ((!$m_suffix) && $main::tf ){
-	$matrix_suffix= $main::tf ;
+      if ((!$m_suffix) && ($main::tf) && ($main::matrix_suffix eq "")) {
+	$matrix_suffix = $main::tf ;
+      } else {
+	$matrix_suffix = "Matrix";
       }
-      else {
-	$matrix_suffix="Matrix";
-      }
-      $matrix_suffix.="_rand" if ($main::rand); #If -rand option is selected, add a suffix to the matrix suffix to id this out files
+      $matrix_suffix .= "_rand" if ($main::rand); #If -rand option is selected, add a suffix to the matrix suffix to id this out files
 
-      if (scalar(@matrix_files)==1) {
+      if (scalar(@matrix_files) == 1) {
 	$matrix_table_hash{$matrix_suffix}{"file"}= $m_option_matrices;
 	$matrix_table_hash{$matrix_suffix}{"format"}= $main::matrix_format ;
 	$matrix_table_hash{$matrix_suffix}{"tf"}=$main::tf if ($main::tf) ;
@@ -736,7 +735,7 @@ package main;
     $m++;
 
     %top_sig=();
-    local $m_suffix =$ms;
+    local $m_suffix = $ms;
     local $matrix_file=$matrix_table_hash{$m_suffix}{"file"} ;
     local $matrix_format=$matrix_table_hash{$m_suffix}{"format"} ;
     local $tf=$matrix_table_hash{$m_suffix}{"tf"} if ($matrix_table_hash{$m_suffix}{"tf"}) ;
