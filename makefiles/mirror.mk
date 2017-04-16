@@ -82,7 +82,7 @@ doc_from_server:
 	${MAKE} dir_from_server DIR=doc
 
 logs_from_server:
-	${MAKE} dir_from_server DIR='public_html/logs' RSYNC_OPT='-ruptvl ${OPT}' TARGET_DIR=${RSAT}/public_html/
+	${MAKE} dir_from_server DIR=logs RSYNC_OPT='-ruptvl ${OPT}' TARGET_DIR=${RSAT}/public_html/
 
 scripts_from_server:
 	${MAKE} dir_from_server DIR=perl-scripts
