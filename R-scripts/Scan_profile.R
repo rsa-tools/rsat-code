@@ -1386,11 +1386,11 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   
   ## Write the logo's path
   logos.F <- sapply(TF.IDs, function(i){
-    paste(logo.folder, "/", i, "_logo.jpeg", sep = "")
+    paste(logo.folder, "/", i, "_logo.png", sep = "")
   })
   
   logos.R <- sapply(TF.IDs, function(i){
-    paste(logo.folder, "/", i, "_logo_rc.jpeg", sep = "")
+    paste(logo.folder, "/", i, "_logo_rc.png", sep = "")
   })
   
   ## Write the Profile and TFBSs plots path
@@ -1515,7 +1515,7 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   ## Add the real motif logo path (to display in the tooltip)
   ## They are inserted in the JS section
   logos <- sapply(TF.IDs, function(i){
-    paste(logo.folder, "/", i, "_logo.jpeg", sep = "")
+    paste(logo.folder, "/", i, "_logo.png", sep = "")
   })
   logos <- paste("pics['", all.motifs, "'] = '", as.vector(datatable.info.tab$Logo), "';", sep = "")
   logos <- paste(logos, collapse = "\n")
@@ -1527,7 +1527,7 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   
   ## Logos in Reverse complement
   logos.rc <- sapply(TF.IDs, function(i){
-    paste(logo.folder, "/", i, "_logo_rc.jpeg", sep = "")
+    paste(logo.folder, "/", i, "_logo_rc.png", sep = "")
   })
   logos.rc <- paste("pics_rc['", all.motifs, "'] = '", as.vector(datatable.info.tab$Logo_RC), "';", sep = "")
   logos.rc <- paste(logos.rc, collapse = "\n")
@@ -1655,7 +1655,7 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   ## Add the real motif logo path (to display in the tooltip)
   ## They are inserted in the JS section
   logos.cov <- sapply(TF.IDs, function(i){
-    paste(logo.folder, i, "_logo.jpeg", sep = "")
+    paste(logo.folder, i, "_logo.png", sep = "")
   })
   logos.cov <- paste("cov_pics['", all.motifs.cover[[list.counter]], "'] = '", as.vector(datatable.info.tab$Logo), "';", sep = "")
   logos.cov <- paste(logos.cov, collapse = "\n")
@@ -1663,7 +1663,7 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   
   ## Logos in Reverse complement
   logos.rc.cov <- sapply(TF.IDs, function(i){
-    paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
+    paste(logo.folder, i, "_logo_rc.png", sep = "")
   })
   logos.rc.cov <- paste("cov_pics_rc['", all.motifs.cover[[list.counter]], "'] = '", as.vector(datatable.info.tab$Logo_RC), "';", sep = "")
   logos.rc.cov <- paste(logos.rc.cov, collapse = "\n")

@@ -266,7 +266,7 @@ package main;
       $cmd .= " -add_chr -from bed -to bed";
       $cmd .= " -i ".$coordinate_file;
       $cmd .= " -o ".$outfile{coordinates};
-      &RSAT::util::doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $out);
+      &RSAT::util::doit($cmd, $dry, $die_on_error, $verbose);
   }
 
   ## Suppress chr prefix from chromosome names if requested
@@ -276,7 +276,7 @@ package main;
       $cmd .= " -remove_chr -from bed -to bed";
       $cmd .= " -i ".$infile{coordinates};
       $cmd .= " -o ".$outfile{coordinates};
-      &RSAT::util::doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $out);
+      &RSAT::util::doit($cmd, $dry, $die_on_error, $verbose);
   }
 
   ################################################################
@@ -286,7 +286,10 @@ package main;
   $cmd .= " -bed ".$coordinate_file;
   $cmd .= " -s"; ## Take strand in consideration (this is inactive by default in bedtools getfasta)
   $cmd .= " -fo ".$outfile{sequences} if ($outfile{sequences});
-  &RSAT::util::doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $out);
+  $outfile{err_log} = $outfile{sequences}."_err.txt";
+  $cmd .= " 2> ".$outfile{err_log};
+  &RSAT::util::doit($cmd, $dry, $die_on_error, $verbose);
+#  &RSAT::util::doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $out);
 
 
   ################################################################
