@@ -123,12 +123,14 @@ sub set_attribute {
   if (($self->get_attribute($attr)) &&
       ($self->get_attribute($attr) ne $main::null) &&
       ($self->get_attribute($attr)  ne $value)) {
-    my $message = join ("\t", 
-			$self->get_attribute("type"), $self->get_attribute("id"),
-			"previous ".$attr, $self->get_attribute($attr),
-			"reset to", $value) if ($main::verbose >= 2);
+    if ($main::verbose >= 4) {
+      my $message = join ("\t", 
+			  $self->get_attribute("type"), $self->get_attribute("id"),
+			  "previous ".$attr, $self->get_attribute($attr),
+			  "reset to", $value);
 #      &RSAT::error::FatalError($message);
-    &RSAT::message::Warning($message);
+      &RSAT::message::Warning($message);
+    }
   } 
   $self->_set_attribute_cardinality($attr, "SCALAR");
   $self->_incr_attribute_count($attr);

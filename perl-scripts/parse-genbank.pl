@@ -36,7 +36,7 @@ package main;
 
     ################################################################
     #### initialization
-    $null = "<NULL_VALUE>";
+    $null = "<NA>";
     $data_source = "NCBI";
     $ext = "gbff";
     $data_type = "gbff";
@@ -48,7 +48,7 @@ package main;
     $full_path = 0;
     $test = 0;
     $test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
-    $test_lines = 10000; ## macimal number of lines to parse per file
+    $test_lines = 10000; ## maximal number of lines to parse per file
 
     %supported_prefid_key = (cds=>1,
 			     mrna=>1,
@@ -199,45 +199,57 @@ package main;
 	
 
 	if (scalar(@genbank_files) > 1) {
-	    &RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the directory");
+	    &RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the directory") if ($main::verbose >= 2);
 	}
 
-	## If no genbank files were found in the main directory (Bacteria),
-	## search in CHR_* directories (eukaryotes)
-	if (scalar(@genbank_files) ==0 ) {
-	    push @genbank_files, glob($dir{input}."/CHR*/*.${ext}");
-	    push @genbank_files, glob($dir{input}."/CHR*/*.${ext}.gz");
-	    if (scalar(@genbank_files) > 1) {
-		&RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the CHR_* subdirectories");
-	    }
-	}
+	# ## If no genbank files were found in the main directory (Bacteria),
+	# ## search in CHR_* directories (eukaryotes)
+	# if (scalar(@genbank_files) ==0 ) {
+	#     push @genbank_files, glob($dir{input}."/CHR*/*.${ext}");
+	#     push @genbank_files, glob($dir{input}."/CHR*/*.${ext}.gz");
+	#     if (scalar(@genbank_files) > 1) {
+	# 	&RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the CHR_* subdirectories");
+	#     }
+	# }
 
-	## Remove alternative haplotypes (e.g. in Apis_mellifera).
-	my @noalt = ();
+	################################################################
+	## Filter out undesired files
+
+	my @kept_files = ();
 	foreach my $file (@genbank_files) {
-	    if ($file =~ /_alt_/) {
-		&RSAT::message::Warning("Ignoring alternative haplotype file", $file);
-	    } else {
-		push @noalt, $file;
-	    }
+	  if ($file =~ /_rna.${ext}/) {
+	    ## Ignore alternative haplotypes (e.g. in Apis_mellifera).
+	    &RSAT::message::Warning("Ignoring mRNA file", $file) if ($main::verbose >= 1);
+
+	  } elsif ($file =~ /_alt_/) {
+	    ## Ignore mRNA files
+	    &RSAT::message::Warning("Ignoring alternative haplotype file", $file) if ($main::verbose >= 1);
+
+	  } elsif ($file =~ /CHR_Un/) {
+	    ## Ignore unknown chromosome
+	    &RSAT::message::Warning("Ignoring Unknown chromosome file", $file) if ($main::verbose >= 1);
+
+	  } else {
+	    push @kept_files, $file;
+	  }
 	}
-	@genbank_files = @noalt;
+	@genbank_files = @kept_files;
     }
 
     if (scalar(@genbank_files) == 0) {
 	&RSAT::error::FatalError("No file with extension ${ext} or ${ext}.gz in directory $dir{input}\n");
     } else {
-	&RSAT::message::Info(scalar(@genbank_files)." Genbank files") if ($verbose >= 1);
+	&RSAT::message::Info(scalar(@genbank_files)." Genbank files to parse") if ($verbose >= 1);
 	&RSAT::message::Info("Genbank file names\n;\t", join("\n;\t", @genbank_files)) if ($verbose >= 2);
     }
 
-    my @filtered_genbank_files = grep (!/\/CHR_Un\//, @genbank_files);
-    if (scalar(@filtered_genbank_files) < scalar(@genbank_files)) {
-      @genbank_files = @filtered_genbank_files;
-      &RSAT::message::Warning("Filtering out CHR_Un folder", scalar(@genbank_files). " remaining files");
-    }
+    # my @filtered_genbank_files = grep (!/\/CHR_Un\//, @genbank_files);
+    # if (scalar(@filtered_genbank_files) < scalar(@genbank_files)) {
+    #   @genbank_files = @filtered_genbank_files;
+    #   &RSAT::message::Warning("Filtering out CHR_Un folder", scalar(@genbank_files). " remaining files") if ($main::verbose >= 1);
+    # }
 
-    #### come back to the starting directory
+    ## Come back to the starting directory
     chdir($dir{main});
 
     #### output directory
@@ -271,8 +283,12 @@ package main;
 
     ## Restrict the number of genbank file for quick tests
     if ($test) {
-      @genbank_files = @genbank_files[0..(${test_files})];
+      if (scalar(@genbank_files) > $test_files) {
+	@genbank_files = @genbank_files[0..${test_files}];
+      }
     }
+
+#    &RSAT::message::Debug("genbank files", join(";", @genbank_files)) if ($main::verbose >= 10);
 
     ## Parse the genbank files
 #    chdir $dir{input};

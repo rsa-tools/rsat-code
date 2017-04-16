@@ -36,21 +36,15 @@ package main;
     $out_format = "obj";
     
     
-    #### selected organisms
-#    @selected_organisms = ();
-#    push @selected_organisms, qw ( Bacteria/Mycoplasma_genitalium ); 
-#    push @selected_organisms, qw ( Bacteria/Escherichia_coli_K12 );
-#    push @selected_organisms, qw ( Saccharomyces_cerevisiae ); #### problem with multiple chromosomes
-
     #### input directory
-    $dir{genbank} = $Databases."/ftp.ncbi.nih.gov/genomes/";
+    $dir{genbank} = $ENV{RSAT}."downloads/refseq/";
     
     #### default export directory
     $export_subdir = "genbank";
     $dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
 
 
-    #### classes and classholders
+    ## Classes and classholders
     
     $features = classes::ClassFactory->new_class(object_type=>"Genbank::Feature", prefix=>"ft_");
 
@@ -124,7 +118,7 @@ package main;
     ################################################################
     ### default output fields
 
-    ### output fields for features
+    ## Output fields for features
     @feature_out_fields = qw( id type name chromosome start_pos end_pos strand description chrom_position names  exons introns db_xref note);
     if ($rsa) {
 	#### specific export format for RSA-tools
@@ -155,52 +149,6 @@ package main;
     open ERR, ">$outfile{error}" || die "Error: cannot write error file $outfile{error}\n";
     
 
-    #### define organism-specific data directories
-#    foreach my $org (@selected_organisms) {
-#	my $org_dir = "${org}/";
-#	$data_dir{$org} = $dir{genbank}."${org_dir}";
-#	die ("Error: directory ", $data_dir, " does not exist.\n") 
-#	    unless (-d $data_dir);
-
-#  	@genbank_files = glob($data_dir."/*.gbk");
-#  	push @genbank_files, glob($data_dir."/*.gbk.gz"); #### compressed files are supported
-	
-#  #die join "\n", $#genbank_files, @genbank_files;
-#  	if ($#genbank_files <= -1) {
-#  	    die ("Error: there is not genbank file in the directory ", 
-#  		 $data_dir,
-#  		 "\n");
-#  	} elsif ($#genbank_files > 0) {
-#  	    warn ("Error: there are several genbank files in the directory ", 
-#  		 $data_dir, "\n\t",
-#  		 join ("\n\t", @genbank_files),
-#  		 "\n");
-#  	    next;
-#  	} else {
-#  	    $in_file{$org} = $genbank_files[0];
-#  	    push @parsed_organisms, $org;
-#  	}
-
-#  	$short_file{$org} = `basename $in_file{$org} .gbk`;
-#  	chomp $short_file{$org};
-	
-#  	if (-e $in_file{$org}) {
-#  	    if ($in_file{$org} =~ /\.gz$/) {
-#  		$in_stream{$org} = "gunzip -c $in_file{$org} | ";
-#  	    } else {
-#  		$in_stream{$org} = "cat $in_file{$org} | ";
-#  	    }
-#  	} elsif (-e "$in_file{$org}.gz") {
-#  	    $in_stream{$org} = "gunzip -c $in_file{$org}.gz | ";
-#  	} else {
-#  	    die ("Error: cannot find data file for organism ", $org, "\n",
-#  		 "\t", $in_file{$org}, "\n");
-#  	}
-       
-#  	### test conditions
-#  	if ($test) {
-#  	    $in_stream{$org} .= " head -1000 |";
-#  	}
     }
     
     if ($verbose >=1) {
@@ -288,7 +236,7 @@ package main;
     $CDSs->index_names();
 
 
-    #### parse chromosomal poitions
+    ## Parse chromosomal poitions
     &ParsePositions($features);
     &ParsePositions($genes);
     &ParsePositions($mRNAs);
@@ -385,12 +333,12 @@ DESCRIPTION
 
 
 AUTHOR
-	Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)  
+	Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 
 VERSION
 	0.01
-	Created		1999/12/16
-	Last modified	2000/01/08
+	Created		1999-12-16
+	Last modified	2017
 	
 OPTIONS	
 	-h	detailed help
