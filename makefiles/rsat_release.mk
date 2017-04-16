@@ -40,7 +40,7 @@ TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar
 
 ################################################################
 ## All the tasks for publishing the new version
-all: clean_emacs_bk tar_archive clean_release_site publish publish_scripts
+all: clean_emacs_bk tar_archive clean_release_site publish 
 
 ## List parameters
 #PUB_SERVER=rsat.ulb.ac.be
