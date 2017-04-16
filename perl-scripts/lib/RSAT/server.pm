@@ -247,12 +247,12 @@ sub UpdateLogFile {
 
   ## Check log file
   unless ($log_file) {
-      if ($main::log_file) {
-	  $log_file = $main::log_file;
-      } else {
-	  &RSAT::message::Warning("&RSAT::server::UpdateLogFile() called without \$log_file argument") if ($main::verbose >= 4);
-	  return;
-      }
+    if ($main::log_file) {
+      $log_file = $main::log_file;
+    } else {
+      &RSAT::message::Warning("&RSAT::server::UpdateLogFile() called without \$log_file argument") if ($main::verbose >= 4);
+      return;
+    }
   }
 
   &RSAT::message::Debug("&RSAT::server::UpdateLogFile()",
@@ -562,7 +562,8 @@ sub InitRSAT {
 #  $ENV{RSA_OUTPUT_CONTEXT} = "screen";
 
   &ReadProperties();
-#  &ReadConfig();
+
+  ## Load the list of user-specific supported organisms
   &LoadLocalOrganisms();
 
 
