@@ -437,7 +437,9 @@ Parse position string and add the different fields to each object
 sub ParsePositions {
     my ($features) = @_;
 
-    &RSAT::message::TimeWarn("Parsing feature positions", $features->get_object_type())
+    my $feature_type = $features->get_object_type();
+
+    &RSAT::message::TimeWarn("Parsing feature positions", $feature_type)
 	if ($verbose >= 2);
 
     foreach my $feature ($features->get_objects()) {
@@ -449,7 +451,7 @@ sub ParsePositions {
 	    $feature->set_attribute("strand",$null);
 	    $feature->set_attribute("start_pos",$null);
 	    $feature->set_attribute("end_pos",$null);
-	    &ErrorMessage("Warning: feature ", $feature->get_attribute("id"), " has no attribute chrom_position\n");
+	    &ErrorMessage("feature ", $feature->get_attribute("id"), " has no attribute chrom_position\n");
 	    next;
 	}
 	my $coord = $null;
@@ -462,22 +464,34 @@ sub ParsePositions {
 	################################################################
 	## Separate chromosome from chromosomal position
 	if ($position =~ /^(\S+)\:(.*)/) {
-	    $chromosome = $1;
+	  $chromosome = $1;
 	    $chrom_pos = $2;
 	} elsif ($position =~ /^([^\:]*)$/) {
-	    $chromosome = $feature->get_attribute("source");
-	    $chrom_pos = $1;
+#	  $chromosome = $current_contig->get_attribute("chromosome");
+#	    $chromosome = $feature->get_attribute("source");
+	  my $ft_chrom = $feature->get_attribute("chromosome");
+	  my $ft_contig = $feature->get_attribute("contig");
+	  if (($ft_chrom ne "") || ($ft_chrom ne $null)) {
+	    $chromosome = $feature->get_attribute("chromosome");
+	  } elsif (($ft_contig ne "") || ($ft_contig ne $null)) {
+	    $chromosome = $feature->get_attribute("contig");
+	  }
+	  $chrom_pos = $1;
 	} else {
-	    &ErrorMessage("Warning: invalid position",
-			  "\t", $feature->get_attribute("id"),
-			  "\t", $feature->get_attribute("organism"),
-			  "\t", $position, "\n");
+	  &ErrorMessage("Invalid position",
+			"\t", $feature->get_attribute("id"),
+			"\t", $feature->get_attribute("organism"),
+			"\t", $position, "\n");
 	    $feature->force_attribute("chromosome", $null);
-	    $feature->force_attribute("strand",$null);
-	    $feature->force_attribute("start_pos",$null);
-	    $feature->force_attribute("end_pos",$null);
-	    next;
+	  $feature->force_attribute("strand",$null);
+	  $feature->force_attribute("start_pos",$null);
+	  $feature->force_attribute("end_pos",$null);
+	  next;
 	}
+	
+	# &RSAT::message::Debug("Feature", $feature->get_attribute("id"), $feature->get_attribute("name"),
+	# 		      "type", $feature_type, 
+	# 		      "Position", $position, "source", $feature->get_attribute("source"), "Chromosome", $chromosome) if ($main::verbose >= 10);
 
 	################################################################
 	## Direct or reverse strand
