@@ -516,7 +516,7 @@ package main;
 	################################################################
 	## If the organism was previously supported, ensure that the
 	## serialized files are suppressed.
-	&RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 2);
+	&RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 3);
 	$organism = new RSAT::organism();
 #    $organism->check_name($organism_short_name, 1);
 	$organism->set_attribute("name", $organism_short_name);
@@ -568,7 +568,8 @@ package main;
     
     unless (($task{uninstall}) || ($task{erase})) {
       
-      &UpdateConfig() if ($task{config});
+      $config_ok = &UpdateConfig() if ($task{config});
+      next unless ($config_ok);
       
       &CreatePhylogeny() if ($task{phylogeny});
       
@@ -602,7 +603,7 @@ package main;
       ## Touch the installation dir to indicate the last modification date
       $dir{main};
       chdir($dir{main});
-      &RSAT::message::Info("Working dir",  $ENV{PWD}) if ($main::verbose >= 2);
+      &RSAT::message::Info("Working dir",  $ENV{PWD}) if ($main::verbose >= 4);
       system "touch $dir{install}";
     }
 
@@ -717,6 +718,18 @@ sub Erase {
 sub UpdateConfig {
   ## read taxonomy from the parsing result
   local $organism_table = $dir{install}."/genome/organism.tab";
+
+#  die "HELLO\t", $organism_table;
+
+  unless (-e $organism_table) {
+      if ($main::die_on_error) {
+	  &RSAT::error::FatalError("Missing organism table", $organism_table);
+      } else {
+	  &RSAT::message::Warning("Missing organism table", $organism_table);
+	  return(0);
+      }
+  }
+
   ($org_handle) = &OpenInputFile($organism_table);
   my $taxonomy_field = 2;
   while (<$org_handle>) {
@@ -733,7 +746,7 @@ sub UpdateConfig {
 	$taxonomy = $fields[$taxonomy_field - 1];
 	&RSAT::message::Info ("Parsed taxonomy from organism.tab", 
 			      "Id",$id, 
-			      "Taxonomy", $taxonomy) if ($main::verbose >= 2);
+			      "Taxonomy", $taxonomy) if ($main::verbose >= 3);
       } else {
 	&Warning("Cannot read taxonomy in file $organism_table\n");
 # 	print "######\n###\nlala\n########\n############\n";z
@@ -782,9 +795,10 @@ sub UpdateConfig {
       $up_to = -1;
     }
   }
-  &RSAT::message::Info("Upstream region limits from", $up_from, "to", $up_to) if ($main::verbose >= 2);
+  &RSAT::message::Info("Upstream region limits from", $up_from, "to", $up_to) if ($main::verbose >= 3);
 
   &UpdateConfigTab() unless (($dry) || ($batch));
+  return(1);
 }
 
 ################################################################
@@ -794,16 +808,14 @@ sub UpdateConfigPerl {
   if ($local_config) {
     $config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
   } else {
-    $config_to_update = "$ENV{RSAT}/public_html/data/supported_organisms.pl";
+    $config_to_update = $ENV{RSAT}."/public_html/data/supported_organisms.pl";
   }
 
   ## Check if the organism was already installed before
-  if (defined($supported_organism{$organism_short_name}->{'genome'})) {
-      &RSAT::message::Warning(join("\t", $organism_short_name, "already defined in the config file\n",
-				   $config_to_update,
-				   "\n\tprevious config will be commented")) if ($main::verbose >= 2);
+  if (($main::verbose >= 4) && defined($supported_organism{$organism_short_name}->{'genome'})) {
+      &RSAT::message::Warning($organism_short_name, "already defined in the config file", $config_to_update) ;
   }
-
+  
   ## read previous config
   open CONFIG, $config_to_update;
   while ($line = <CONFIG>) {
@@ -821,7 +833,7 @@ sub UpdateConfigPerl {
   close CONFIG;
 
   ## write new config
-  &RSAT::message::Info ("Updating supported organisms", $config_to_update) if ($verbose >= 1);
+  &RSAT::message::Info ("Updating supported organisms", $config_to_update) if ($verbose >= 3);
   open CONFIG, ">$config_to_update" 
     || die "Error: cannot write config file $config_to_update\n";
   print CONFIG $previous_config;
@@ -857,7 +869,7 @@ sub UpdateConfigPerl {
 ## Update the tab-delimited file  describing the list of organisms
 sub UpdateConfigTab {
   my (%args) = @_;
-  &RSAT::message::Info ("Updating supported organisms", $main::org_table) if ($verbose >= 2);
+  &RSAT::message::Info ("Updating supported organisms", $main::org_table) if ($verbose >= 3);
 
   ## Update the hash variable for the new organism
   $supported_organism{$organism_short_name}->{'name'} = $args{name} || $main::organism_full_name;
@@ -904,7 +916,7 @@ sub CreatePhylogeny {
 	    if (defined($taxonomy_field)) {
 		@fields = split "\t";
 		$taxonomy = $fields[$taxonomy_field - 1];
-		&RSAT::message::Info ("Taxonomyyy\t$taxonomy\n") if ($main::verbose >= 2);
+		&RSAT::message::Info ("Taxonomyyy\t$taxonomy\n") if ($main::verbose >= 3);
 	    } else {
 		&Warning("Cannot read taxonomy in file $organism_table\n");
 	    }
@@ -924,7 +936,7 @@ sub CreatePhylogeny {
 	$dir{taxonomy} =~ s|//|/|g;
 	my ($org_dir) = &ShortFileName($dir{install});
 	&RSAT::util::CheckOutDir($dir{taxonomy}) unless ($dry);
-	if ($main::verbose >= 2) {
+	if ($main::verbose >= 3) {
 	    &RSAT::message::Info("Taxonomy directory", $dir{taxonomy});
 	    &RSAT::message::Info("Organism directory", $org_dir);
 	    &RSAT::message::Info("Link to directory", $dir{install});
@@ -939,7 +951,7 @@ sub CreatePhylogeny {
 ################################################################
 ### extract the non-redudant set of intergenic and gene sequences
 sub IntergenicSegments {
-  &RSAT::message::TimeWarn("&IntergenicSegments()") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("&IntergenicSegments()") if ($main::verbose >= 3);
 
   chdir $dir{genome};
 
@@ -1012,7 +1024,7 @@ sub AllUpstream {
 	$command .= " -format ".$format;
 	$command .= " -o ".$seq_file.".".$format;
 #	&doit($command, $dry, $die_on_error, $verbose);
-	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 2);
+	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 3);
       }
 
       ## Compute sequence length distributions and generate a frequency plot
@@ -1106,9 +1118,10 @@ sub SeqLengthDistributionCmd {
     my $classfreq_from = 0;
     chdir $dir{genome};
 
-    if ($main::verbose >= 3) {
-	my $pwd = `pwd`;
-	chomp $pwd;
+    if ($main::verbose >= 4) {
+	my $pwd = $ENV{PWD};
+#2D	my $pwd = `pwd`;
+#	chomp $pwd;
 	&RSAT::message::TimeWarn("&SeqLengthDistributionCmd()", $seq_file, $seq_type, "Working dir", $pwd);
     }
 
