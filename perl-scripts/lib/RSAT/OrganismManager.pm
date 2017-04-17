@@ -191,11 +191,10 @@ sub export_supported_organisms {
   ## Write the table to a temporary file. This avoids problems if the
   ## process is interrupted during the table writing.
   $organism_table_tmp =  &RSAT::util::make_temp_file($ENV{RSAT}."/public_html/data/","supported_organisms_tmp", 1,0);
-  &RSAT::message::TimeWarn("Storing updated organism table to temporary file", $organism_table_tmp) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Storing updated organism table to temporary file", $organism_table_tmp) if ($main::verbose >= 3);
   my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table_tmp);
 
   print $table_handle &supported_organism_table("header", 1, $source, $taxon, $group, $depth, @fields);
-  &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/public_html/data/supported_organisms.pl") if ($main::verbose >= 3);
 
   ## Rename the updated table to make it effective
   system("mv ".$organism_table_tmp." ".$organism_table);
