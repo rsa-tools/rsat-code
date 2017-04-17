@@ -278,12 +278,12 @@ package main;
     
     my $command = 'rsync --copy-links  --times  --list-only rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq/'.$group.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
     my $available_species = `$command`;
-    print $out $available_species;
+    print $main::out $available_species;
 #      &doit($command, $dry, $die_on_error, $verbose);
     
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
     print $main::out $exec_time if ($main::verbose >= 1);
-    close $out if ($outputfile);
+    close $main::out if ($outputfile);
     exit(0); # Available species is not compatible with any other task
   }
 
@@ -333,7 +333,7 @@ package main;
       
       ## Header for species list
       if ($task{list}) {
-	  print "#", join("\t", "organism_name", "org_nb",  "species",  "species_nb", "strain", "strain_nb"), "\n";
+	  print $main::out "#", join("\t", "organism_name", "org_nb",  "species",  "species_nb", "strain", "strain_nb"), "\n";
       }
       
       # Iterate over species
@@ -386,7 +386,7 @@ package main;
 	      $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
 
 	      if ($task{list}) {
-		  print join("\t", $organism_name, $org_nb, $species, $species_nb, $current_strain, $strain_nb), "\n";
+		  print $out join("\t", $organism_name, $org_nb, $species, $species_nb, $current_strain, $strain_nb), "\n";
 	      }
 
 	      if ($task{parse}) {
@@ -567,9 +567,11 @@ package main;
     &Uninstall() if ($task{uninstall});
     
     unless (($task{uninstall}) || ($task{erase})) {
-      
-      $config_ok = &UpdateConfig() if ($task{config});
-      next unless ($config_ok);
+	
+	if ($task{config}) {
+	    $config_ok = &UpdateConfig();
+	    next unless ($config_ok);
+	}
       
       &CreatePhylogeny() if ($task{phylogeny});
       
