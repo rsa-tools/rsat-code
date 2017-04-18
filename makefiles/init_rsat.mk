@@ -16,8 +16,8 @@ usage:
 ################################################################
 ## Initialize directories and config files
 SUPPORTED_ORGANISMS=public_html/data/supported_organisms.tab
-LOGS_DIR=${RSAT}/logs
-COUNT_FILE=${LOGS_DIR}/count-file
+LOG_DIR=${RSAT}/logs
+COUNT_FILE=${LOG_DIR}/count-file
 
 #WS_PERL_CLIENT_DIR=public_html/web_services/clients/perl
 #WS_PERL_CLIENT_DIR=ws_clients/perl_clients
@@ -52,8 +52,8 @@ init:
 
 	@echo "	tmp	${RSAT}/public_html/tmp"
 	@mkdir -p ${RSAT}/public_html/tmp
-	@echo "	peak-footprints_output	${}"
-	@mkdir -p ${RSAT}/public_html/tmp/peak-footprints_output; chmod 777 ${RSAT}/public_html/tmp/peak-footprints_output
+#	@echo "	peak-footprints_output	${}"
+#	@mkdir -p ${RSAT}/public_html/tmp/peak-footprints_output; chmod 777 ${RSAT}/public_html/tmp/peak-footprints_output
 	@chmod 777 public_html/tmp
 #	echo "Options -Indexes" > public_html/tmp/.htaccess
 	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/tmp/robots.txt
@@ -61,16 +61,16 @@ init:
 	@echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
 	@chmod 444 public_html/tmp/index.html
 
-	@echo "	logs	${LOGS_DIR}"
-	@mkdir -p ${LOGS_DIR}
-	@chmod 777 ${LOGS_DIR}
-	@${MAKE} init_robots ROBOTS=${LOGS_DIR}/robots.txt
-	@echo "	peak-footprints_logs	${RSAT}/${LOGS_DIR}/peak-footprints_logs"
-	@mkdir -p ${LOGS_DIR}/peak-footprints_logs; chmod 777 ${LOGS_DIR}/peak-footprints_logs
-#	echo "Options -Indexes" > ${LOGS_DIR}/.htaccess
-	@rm -f ${LOGS_DIR}/index.html
-	@echo "<html><body></b<Forbidden</b></body></html>" > ${LOGS_DIR}/index.html
-	@chmod 444 ${LOGS_DIR}/index.html
+	@echo "	logs	${LOG_DIR}"
+	@mkdir -p ${LOG_DIR}
+	@chmod 777 ${LOG_DIR}
+	@${MAKE} init_robots ROBOTS=${LOG_DIR}/robots.txt
+#	@echo "	peak-footprints_logs	${RSAT}/${LOG_DIR}/peak-footprints_logs"
+#	@mkdir -p ${LOG_DIR}/peak-footprints_logs; chmod 777 ${LOG_DIR}/peak-footprints_logs
+#	echo "Options -Indexes" > ${LOG_DIR}/.htaccess
+	@rm -f ${LOG_DIR}/index.html
+	@echo "<html><body></b<Forbidden</b></body></html>" > ${LOG_DIR}/index.html
+	@chmod 444 ${LOG_DIR}/index.html
 
 	@echo
 	@echo "Setting exec rights to executable files"
@@ -93,8 +93,8 @@ init:
 	@ln -fs public_html/data .
 	@echo "	tmp"
 	@ln -fs public_html/tmp .
-	@echo "	logs"
-	@ln -fs ${LOGS_DIR} logs
+#	@echo "	logs"
+#	@ln -fs ${LOG_DIR} logs
 
 	@echo ""
 	@echo "Checking config files"
