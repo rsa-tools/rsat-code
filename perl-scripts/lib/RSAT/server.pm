@@ -247,12 +247,12 @@ sub UpdateLogFile {
 
   ## Check log file
   unless ($log_file) {
-      if ($main::log_file) {
-	  $log_file = $main::log_file;
-      } else {
-	  &RSAT::message::Warning("&RSAT::server::UpdateLogFile() called without \$log_file argument") if ($main::verbose >= 4);
-	  return;
-      }
+    if ($main::log_file) {
+      $log_file = $main::log_file;
+    } else {
+      &RSAT::message::Warning("&RSAT::server::UpdateLogFile() called without \$log_file argument") if ($main::verbose >= 4);
+      return;
+    }
   }
 
   &RSAT::message::Debug("&RSAT::server::UpdateLogFile()",
@@ -562,7 +562,8 @@ sub InitRSAT {
 #  $ENV{RSA_OUTPUT_CONTEXT} = "screen";
 
   &ReadProperties();
-#  &ReadConfig();
+
+  ## Load the list of user-specific supported organisms
   &LoadLocalOrganisms();
 
 
@@ -758,10 +759,16 @@ sub send_mail {
     }
 
     ## Define the SMTP server
-    my $smtp_server = "localhost:25"; ## Default is send by local machine
+    my $smtp_server = "localhost"; ## Default is send by local machine
     if (($ENV{smtp}) && ($ENV{smtp} !~ /smtp.at.your.site/)) {
       $smtp_server = $ENV{smtp};
     }
+    my $smtp_port = 25;
+    if ($ENV{smtp_port}) {
+	$smtp_port = $ENV{smtp_port};
+      &RSAT::message::Debug("smtp_port", $smtp_port) if ($main::verbose >= 0);
+    }
+    &RSAT::message::Debug("smtp_server", $smtp_server) if ($main::verbose >= 0);
 
     ## Define the "from" email (can be defined in RSAT_config.props or
     ## as environment variable smtp_sender)
@@ -802,13 +809,18 @@ sub send_mail {
 	);
     &RSAT::message::Debug( "email", $email) if ($main::verbose >= 3);
 
-#    my $transport = Email::Sender::Transport::SMTP->new({
-#      host => $smtp_server,
-#      port => 25,
-#							});
 #    &RSAT::message::Debug("INC", join (";", @INC)) if ($main::verbose >= 3);
-    eval  {use Email::Sender::Transport::SMTP} ;  die $@ if $@; 
-    my $transport = Email::Sender::Transport::SMTP->new(host => $smtp_server);    
+    eval  {use Email::Sender::Transport::SMTP} ;  die $@ if $@;  ## Load the Perl module only if required
+    &RSAT::message::Debug("smtp_server", $smtp_server) if ($main::verbose >= 0);
+    
+    my $transport;
+    if ($smtp_port) {
+	$transport = Email::Sender::Transport::SMTP->new({
+	host => $smtp_server,
+	port => $smtp_port});
+    } else {
+	$transport = Email::Sender::Transport::SMTP->new(host => $smtp_server);
+    }
     Email::Sender::Simple->send($email, {transport => $transport});
   }
 }

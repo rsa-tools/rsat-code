@@ -34,7 +34,7 @@ package main;
   ################################################################
   ## Initialize parameters
   local $start_time = &RSAT::util::StartScript();
-  $config_table = $ENV{RSAT}."/public_html/data/supported_organisms.tab";
+  $org_table = $ENV{RSAT}."/public_html/data/supported_organisms.tab";
   @masking_modes = ("");	## by default, use no masking
   @oligo_lengths=(6,1,2,3,4,5,7,8);
   $verbose = 0;
@@ -64,6 +64,7 @@ package main;
 
   @extra_tasks = qw(
                     fasta_genome
+                    chrom_sizes
                     index_bedtools
                     uninstall
                     erase
@@ -213,7 +214,7 @@ package main;
   }
   &RSAT::message::Info("Species tasks", $requested_species_tasks) if ($main::verbose >= 2);
   &RSAT::message::Info("Organism tasks", $requested_organism_tasks) if ($main::verbose >= 2);
-
+  
 
   ################################################################
   ## If a species file has been specified, read species list
@@ -261,19 +262,29 @@ package main;
     }
   }
 
+  ################################################################
+  ## Open output stream and print arguments if required
+  our $out = &OpenOutputFile($outputfile);
+  &Verbose if ($verbose >= 1);
 
   ################################################################
   ## Get the list of available species for the selected group
   if ($task{available}) {
-      
-      unless ($group) {
-	  &RSAT::error::FatalError("The task 'availabl' requires to specify a group (e.g. fungi, bacteria, ...).");
-      }
-
-
-      my $command = 'rsync --copy-links  --times  --list-only rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq/'.$group.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
-      &doit($command, $dry, $die_on_error, $verbose);
-      exit(0); # Available species is not compatible with any other task
+    &RSAT::message::TimeWarn("Getting available species for group", $group) if ($main::verbose >= 2);
+    unless ($group) {
+      &RSAT::error::FatalError("The task 'availabl' requires to specify a group (e.g. fungi, bacteria, ...).");
+    }
+    
+    
+    my $command = 'rsync --copy-links  --times  --list-only rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq/'.$group.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
+    my $available_species = `$command`;
+    print $main::out $available_species;
+#      &doit($command, $dry, $die_on_error, $verbose);
+    
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time if ($main::verbose >= 1);
+    close $main::out if ($outputfile);
+    exit(0); # Available species is not compatible with any other task
   }
 
   ################################################################
@@ -322,7 +333,7 @@ package main;
       
       ## Header for species list
       if ($task{list}) {
-	  print "#", join("\t", "organism_name", "org_nb",  "species",  "species_nb", "strain", "strain_nb"), "\n";
+	  print $main::out "#", join("\t", "organism_name", "org_nb",  "species",  "species_nb", "strain", "strain_nb"), "\n";
       }
       
       # Iterate over species
@@ -375,7 +386,7 @@ package main;
 	      $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
 
 	      if ($task{list}) {
-		  print join("\t", $organism_name, $org_nb, $species, $species_nb, $current_strain, $strain_nb), "\n";
+		  print $out join("\t", $organism_name, $org_nb, $species, $species_nb, $current_strain, $strain_nb), "\n";
 	      }
 
 	      if ($task{parse}) {
@@ -505,7 +516,7 @@ package main;
 	################################################################
 	## If the organism was previously supported, ensure that the
 	## serialized files are suppressed.
-	&RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 2);
+	&RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 3);
 	$organism = new RSAT::organism();
 #    $organism->check_name($organism_short_name, 1);
 	$organism->set_attribute("name", $organism_short_name);
@@ -533,6 +544,7 @@ package main;
 	$outfile{synonyms} = $dir{genome}."/feature_names.tab";
 	$outfile{genome} = $dir{genome}."/contigs.txt";
 	$outfile{fasta_genome} = $dir{genome}."/".$organism_short_name.".dna.genome.fa";
+	$outfile{chrom_sizes} = $dir{genome}."/".$organism_short_name."_chrom_sizes.txt";
 	$outfile{fasta_genome_rm} = $dir{genome}."/".$organism_short_name.".dna_rm.genome.fa";
 
 	## Create output directoryies if required
@@ -548,17 +560,18 @@ package main;
     ################################################################
 
     ## Open an output stream for messages
-    our $out = &OpenOutputFile($outputfile);
-    &Verbose() if ((scalar(@organisms) < 5) 
-		   || ($verbose >= 2));
+    &OrgParameters() if ((scalar(@organisms) ==1) || ($verbose >= 3));
     
     &Erase() if ($task{erase});
 
     &Uninstall() if ($task{uninstall});
     
     unless (($task{uninstall}) || ($task{erase})) {
-      
-      &UpdateConfig() if ($task{config});
+	
+	if ($task{config}) {
+	    $config_ok = &UpdateConfig();
+	    next unless ($config_ok);
+	}
       
       &CreatePhylogeny() if ($task{phylogeny});
       
@@ -568,9 +581,7 @@ package main;
       
       &AllUpstream() if ($task{allup});
 
-      &FastaGenome() if ($task{fasta_genome}); ## Convert genome sequence to fasta, required for bedtools
-
-      &GenerateBedtoolsIndex() if ($task{index_bedtools});
+      &FastaGenomeAndBedtoolsIndex() if ($task{fasta_genome} || $task{chrom_sizes} || $task{index_bedtools});
 
       &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
       
@@ -594,15 +605,16 @@ package main;
       ## Touch the installation dir to indicate the last modification date
       $dir{main};
       chdir($dir{main});
-      &RSAT::message::Info("Working dir",  $ENV{PWD}) if ($main::verbose >= 2);
+      &RSAT::message::Info("Working dir",  $ENV{PWD}) if ($main::verbose >= 4);
       system "touch $dir{install}";
     }
 
 
-    close $out if ($outputfile);
   }
+
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
   print $main::out $exec_time if ($main::verbose >= 1);
+  close $out if ($outputfile);
   exit(0);
 }
 
@@ -615,43 +627,51 @@ package main;
 ################################################################
 ## Display verbosity message
 sub Verbose {
-    print $out "; install-organism ";
-    &PrintArguments($out);
-    print $out ";\n; Tasks:\n";
-    foreach my $task (sort(keys(%task))) {
-	print $out ";\t$task\n";
-    }
+  print $out "; install-organism ";
+  &PrintArguments($out);
 
-    print $out ";\n; Config files:", $rsa_config,"\n";
-    printf $out ";    %-25s\t%s\n", "RSAT config", $main::config_table;
-    printf $out ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
+  print $out ";\n; Tasks:\n";
+  foreach my $task (sort(keys(%task))) {
+    print $out ";\t$task\n";
+  }
+  
+  print $out ";\n; Supported organism table:\n";
+  printf $out ";    %-25s\t%s\n", "RSAT config", $main::org_table;
+  printf $out ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
+  
+}
 
-    print $out ";\n; Organism parameters:\n";
-    if ($infile{organisms}) {
-      printf $out ";    %-25s\t%s\n", "organism file", $infile{organisms};
+
+################################################################
+## Print organism parameters
+sub OrgParameters {
+  print $out ";\n; Organism parameters:\n";
+  if ($infile{organisms}) {
+    printf $out ";    %-25s\t%s\n", "organism file", $infile{organisms};
     } else {
       printf $out ";    %-25s\t%s\n", "ID", $organism_short_name;
       printf $out ";    %-25s\t%s\n", "Name", $organism_full_name;
       printf $out ";    %-25s\t%s\n", "Update date", $install_date;
       printf $out ";    %-25s\t%s\n", "data source", $source;
     }
-
-    print $out ";\n; Directories and files:\n";
-    if ($task{genome}) {
-	printf $out ";    %-25s\t%s\n", "genome sequence format", $seq_format;
-	printf $out ";    %-25s\t%s\n", "genome sequence file", $infile{genome};
-    }
-    printf $out ";    %-25s\t%s\n", "feature table", $infile{features} if ($infile{features} );;
-    printf $out ";    %-25s\t%s\n", "feature file", $infile{ptt} if ($infile{ptt} );
-    printf $out ";    %-25s\t%s\n", "synonyms", $infile{synonyms} if ($infile{synonyms});
-    printf $out ";    %-25s\t%s\n", "Refseq dir", $dir{refseq};
-    printf $out ";    %-25s\t%s\n", "Installation directory", $dir{install};
-    printf $out ";    %-25s\t%s\n", "Genome directory", $dir{genome};
+  
+  print $out ";\n; Directories and files:\n";
+  if ($task{genome}) {
+    printf $out ";    %-25s\t%s\n", "genome sequence format", $seq_format;
+    printf $out ";    %-25s\t%s\n", "genome sequence file", $infile{genome};
+  }
+  printf $out ";    %-25s\t%s\n", "feature table", $infile{features} if ($infile{features} );;
+  printf $out ";    %-25s\t%s\n", "feature file", $infile{ptt} if ($infile{ptt} );
+  printf $out ";    %-25s\t%s\n", "synonyms", $infile{synonyms} if ($infile{synonyms});
+  printf $out ";    %-25s\t%s\n", "Refseq dir", $dir{refseq};
+  printf $out ";    %-25s\t%s\n", "Installation directory", $dir{install};
+  printf $out ";    %-25s\t%s\n", "Genome directory", $dir{genome};
     printf $out ";    %-25s\t%s\n", "genome sequence file", $outfile{genome};
-    printf $out ";    %-25s\t%s\n", "feature table", $outfile{features};
-    printf $out ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
+  printf $out ";    %-25s\t%s\n", "feature table", $outfile{features};
+  printf $out ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
 #    printf $out ";    %-25s\t%s\n", "file to update", $config_to_update;
 }
+
 
 ################################################################
 ## Uninstall an organism by deleting its row from the configuration
@@ -665,7 +685,7 @@ sub Uninstall {
 	    delete($supported_organism{$organism_short_name});
 	}
     }
-    &RSAT::OrganismManager::export_supported_organisms(file=>$main::config_table, backup=>$main::backup_org_table);
+    &RSAT::OrganismManager::export_supported_organisms(file=>$main::org_table, backup=>$main::backup_org_table);
 }
 
 ################################################################
@@ -700,6 +720,18 @@ sub Erase {
 sub UpdateConfig {
   ## read taxonomy from the parsing result
   local $organism_table = $dir{install}."/genome/organism.tab";
+
+#  die "HELLO\t", $organism_table;
+
+  unless (-e $organism_table) {
+      if ($main::die_on_error) {
+	  &RSAT::error::FatalError("Missing organism table", $organism_table);
+      } else {
+	  &RSAT::message::Warning("Missing organism table", $organism_table);
+	  return(0);
+      }
+  }
+
   ($org_handle) = &OpenInputFile($organism_table);
   my $taxonomy_field = 2;
   while (<$org_handle>) {
@@ -716,7 +748,7 @@ sub UpdateConfig {
 	$taxonomy = $fields[$taxonomy_field - 1];
 	&RSAT::message::Info ("Parsed taxonomy from organism.tab", 
 			      "Id",$id, 
-			      "Taxonomy", $taxonomy) if ($main::verbose >= 2);
+			      "Taxonomy", $taxonomy) if ($main::verbose >= 3);
       } else {
 	&Warning("Cannot read taxonomy in file $organism_table\n");
 # 	print "######\n###\nlala\n########\n############\n";z
@@ -765,9 +797,10 @@ sub UpdateConfig {
       $up_to = -1;
     }
   }
-  &RSAT::message::Info("Upstream region limits from", $up_from, "to", $up_to) if ($main::verbose >= 2);
+  &RSAT::message::Info("Upstream region limits from", $up_from, "to", $up_to) if ($main::verbose >= 3);
 
   &UpdateConfigTab() unless (($dry) || ($batch));
+  return(1);
 }
 
 ################################################################
@@ -777,16 +810,14 @@ sub UpdateConfigPerl {
   if ($local_config) {
     $config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
   } else {
-    $config_to_update = "$ENV{RSAT}/public_html/data/supported_organisms.pl";
+    $config_to_update = $ENV{RSAT}."/public_html/data/supported_organisms.pl";
   }
 
   ## Check if the organism was already installed before
-  if (defined($supported_organism{$organism_short_name}->{'genome'})) {
-      &RSAT::message::Warning(join("\t", $organism_short_name, "already defined in the config file\n",
-				   $config_to_update,
-				   "\n\tprevious config will be commented")) if ($main::verbose >= 2);
+  if (($main::verbose >= 4) && defined($supported_organism{$organism_short_name}->{'genome'})) {
+      &RSAT::message::Warning($organism_short_name, "already defined in the config file", $config_to_update) ;
   }
-
+  
   ## read previous config
   open CONFIG, $config_to_update;
   while ($line = <CONFIG>) {
@@ -804,7 +835,7 @@ sub UpdateConfigPerl {
   close CONFIG;
 
   ## write new config
-  &RSAT::message::Info ("Updating supported organisms", $config_to_update) if ($verbose >= 1);
+  &RSAT::message::Info ("Updating supported organisms", $config_to_update) if ($verbose >= 3);
   open CONFIG, ">$config_to_update" 
     || die "Error: cannot write config file $config_to_update\n";
   print CONFIG $previous_config;
@@ -840,7 +871,7 @@ sub UpdateConfigPerl {
 ## Update the tab-delimited file  describing the list of organisms
 sub UpdateConfigTab {
   my (%args) = @_;
-  &RSAT::message::Info ("Updating supported organisms", $main::config_table) if ($verbose >= 2);
+  &RSAT::message::Info ("Updating supported organisms", $main::org_table) if ($verbose >= 3);
 
   ## Update the hash variable for the new organism
   $supported_organism{$organism_short_name}->{'name'} = $args{name} || $main::organism_full_name;
@@ -862,7 +893,7 @@ sub UpdateConfigTab {
   $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from} || $main::up_from;
 
   ## Export the updated table of supported organisms
-  &RSAT::OrganismManager::export_supported_organisms(file=>$main::config_table, backup=>$main::backup_org_table);
+  &RSAT::OrganismManager::export_supported_organisms(file=>$main::org_table, backup=>$main::backup_org_table);
 }
 
 ################################################################
@@ -887,7 +918,7 @@ sub CreatePhylogeny {
 	    if (defined($taxonomy_field)) {
 		@fields = split "\t";
 		$taxonomy = $fields[$taxonomy_field - 1];
-		&RSAT::message::Info ("Taxonomyyy\t$taxonomy\n") if ($main::verbose >= 2);
+		&RSAT::message::Info ("Taxonomyyy\t$taxonomy\n") if ($main::verbose >= 3);
 	    } else {
 		&Warning("Cannot read taxonomy in file $organism_table\n");
 	    }
@@ -907,7 +938,7 @@ sub CreatePhylogeny {
 	$dir{taxonomy} =~ s|//|/|g;
 	my ($org_dir) = &ShortFileName($dir{install});
 	&RSAT::util::CheckOutDir($dir{taxonomy}) unless ($dry);
-	if ($main::verbose >= 2) {
+	if ($main::verbose >= 3) {
 	    &RSAT::message::Info("Taxonomy directory", $dir{taxonomy});
 	    &RSAT::message::Info("Organism directory", $org_dir);
 	    &RSAT::message::Info("Link to directory", $dir{install});
@@ -922,7 +953,7 @@ sub CreatePhylogeny {
 ################################################################
 ### extract the non-redudant set of intergenic and gene sequences
 sub IntergenicSegments {
-  &RSAT::message::TimeWarn("&IntergenicSegments()") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("&IntergenicSegments()") if ($main::verbose >= 3);
 
   chdir $dir{genome};
 
@@ -995,7 +1026,7 @@ sub AllUpstream {
 	$command .= " -format ".$format;
 	$command .= " -o ".$seq_file.".".$format;
 #	&doit($command, $dry, $die_on_error, $verbose);
-	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 2);
+	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($verbose >= 3);
       }
 
       ## Compute sequence length distributions and generate a frequency plot
@@ -1021,29 +1052,44 @@ sub AllUpstream {
 
 ################################################################
 ## Convert genome sequence to fasta, required for retrieve-seq-bed and
-## bedtools.
-sub FastaGenome {
-    $command = "convert-seq";
+## bedtools, and generate the fasta index file (.fai).
+sub FastaGenomeAndBedtoolsIndex {
+  &RSAT::message::TimeWarn("Generating fasta sequences and bedtools fasta index. ") if ($main::verbose >= 2);
+
+  my $command = "";
+
+  ## Generate fasta sequence
+  if ($task{fasta_genome}) {
+    $command .= "convert-seq";
     $command .= " -i ".$outfile{genome};
     $command .= " -from filelist -to fasta";
     $command .= " -o ".$outfile{fasta_genome};
-    &doit($command, $dry, $die_on_error, $verbose);
+#    &doit($command, $dry, $die_on_error, $verbose);
+ 
+    $command .= "; cd ".$dir{genome}. "; ln -f -s ".$organism_short_name.".dna.genome.fa ".$organism_short_name.".dna_rm.genome.fa; cd -";
+    &RSAT::message::Info("\tFasta genome", $outfile{fasta_genome}) if ($main::verbose >= 3);
+#    &doit($command, $dry, $die_on_error, $verbose);
+  }
 
-    $command = "cd ".$dir{genome}. "; ln -f -s ".$organism_short_name.".dna.genome.fa ".$organism_short_name.".dna_rm.genome.fa";
-    &doit($command, $dry, $die_on_error, $verbose);
-}
+  ## Compute chromosome sizes
+  if ($task{chrom_sizes}) {
+    $command .= "; " if ($command);
+    $command .= "sequence-lengths -i ".$outfile{fasta_genome};
+    $command .= " -o ".$outfile{chrom_sizes};
+    &RSAT::message::Info("\tChromsome sizes", $outfile{chrom_sizes}) if ($main::verbose >= 3);
+  }
 
-
-################################################################
-## Generate bedtool indexes. This must be done as RSAT user in order
-## to enable retrieve-seq-bed, which relies on bedtools getfasta.
-## 
-## We use a trick to run bedtools getfasta witha single-nucleotide bed
-## file, whihc creates the fasta index if it does not exist. .
-sub GenerateBedtoolsIndex {
+  ################################################################
+  ## Generate bedtool indexes. This must be done as RSAT user in order
+  ## to enable retrieve-seq-bed, which relies on bedtools getfasta.
+  ## 
+  ## We use a trick to run bedtools getfasta witha single-nucleotide bed
+  ## file, whihc creates the fasta index if it does not exist. .
+  if ($task{index_bedtools}) {
     my $rand_fragment_coord = &RSAT::util::make_temp_file("","random-genome-fragments_coord", 1);
     my $rand_fragment_seq = &RSAT::util::make_temp_file("","random-genome-fragments_seq", 1);
-    $command = $SCRIPTS."/random-genome-fragments -n 1 -l 1";
+    $command .= "; " if ($command);
+    $command .= $SCRIPTS."/random-genome-fragments -n 1 -l 1";
     $command .= " -org ".$organism_short_name;
     $command .= " -o ".$rand_fragment_coord;
     $command .= " ; ".$SCRIPTS."/retrieve-seq-bed";
@@ -1056,7 +1102,11 @@ sub GenerateBedtoolsIndex {
     $command .= " -o ".$rand_fragment_seq;
     $command .= " ; rm -f ".$rand_fragment_seq; 
     $command .= " ; rm -f ".$rand_fragment_coord; 
-    &doit($command, $dry, $die_on_error, $verbose);
+    &RSAT::message::Info("\tFasta index", $outfile{fasta_genome}.".fai") if ($main::verbose >= 3);
+    #&doit($command, $dry, $die_on_error, $verbose);
+  }
+
+  &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
 }
 
 
@@ -1070,9 +1120,10 @@ sub SeqLengthDistributionCmd {
     my $classfreq_from = 0;
     chdir $dir{genome};
 
-    if ($main::verbose >= 3) {
-	my $pwd = `pwd`;
-	chomp $pwd;
+    if ($main::verbose >= 4) {
+	my $pwd = $ENV{PWD};
+#2D	my $pwd = `pwd`;
+#	chomp $pwd;
 	&RSAT::message::TimeWarn("&SeqLengthDistributionCmd()", $seq_file, $seq_type, "Working dir", $pwd);
     }
 
