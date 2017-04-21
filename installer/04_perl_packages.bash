@@ -57,7 +57,7 @@ make -f makefiles/install_rsat.mk perl_modules_check
 
 ## Identify Perl modules that were not OK after the ubuntu package installation
 #grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;'
-MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | cut -f 2 | xargs`
+MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v InsideOut | cut -f 2 | xargs`
 echo "Missing Perl modules:     ${MISSING_PERL_MODULES}"
 
 ## Beware: the _noprompt suffix is optional. It has the advantage to
