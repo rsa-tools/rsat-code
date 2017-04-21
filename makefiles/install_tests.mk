@@ -5,8 +5,20 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefiles/install_tests.mk
 
-
-all: test_dir path os perl_modules supported_organisms r_version ws_stub ws_stub_test ws_nostub_test matrix_clustering zip
+all: 	test_dir  \
+	path \
+	os \
+	perl_modules \
+	supported_organisms \
+	r_version \
+	ws_stub \
+	ws_stub_test \
+	ws_nostub_test \
+	purge_seq \
+	crer_scan_python2 \
+	crer_scan_python3 \
+	matrix_clustering \
+	zip
 
 TEST_DIR=./install_tests
 test_dir:
