@@ -94,6 +94,8 @@ RELEASE_FILES=rsat/00_README.txt		\
 	rsat/installer				\
 	rsat/perl-scripts			\
 	rsat/R-scripts/TFBMclust		\
+	rsat/R-scripts/*.R			\
+	rsat/R-scripts/util			\
 	rsat/makefiles				\
 	rsat/RSAT_config_default.props		\
 	rsat/RSAT_config_default.mk		\
