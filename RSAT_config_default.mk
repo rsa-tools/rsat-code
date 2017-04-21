@@ -127,5 +127,5 @@ CLUSTER_QUEUE=
 ##
 ##  Ensembl: http://www.ensembl.org/
 ##  EnsemblGenomes: http://ensemblgenomes.org/
-ENSEMBL_RELEASE=87
-ENSEMBLGENOMES_RELEASE=34
+ENSEMBL_RELEASE=88
+ENSEMBLGENOMES_RELEASE=35
