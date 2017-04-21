@@ -7,7 +7,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA2.cgi.lib";
-require "patser.lib.pl";
+require "matrix_web_forms.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -46,7 +46,7 @@ $default{thresh_value} = "1";
 
 ### print the form ###
 &RSA_header("matrix-scan QUICK and SIMPLE");
-&ListParameters() if ($ENV{rsat_echo} >= 0);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ### replace defaults by parameters from the cgi call, if defined
 
