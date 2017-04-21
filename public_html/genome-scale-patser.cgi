@@ -8,7 +8,7 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "genome-scale.lib.pl";
-require "patser.lib.pl";
+require "matrix_web_forms.lib.pl";
 
 $patser_command = "$BIN/patser";
 $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
