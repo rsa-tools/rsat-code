@@ -278,8 +278,8 @@ ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 ##
 ## These parameters are used by the tools to install genomes from
 ## these two sources.
-ensembl_release=87
-ensemblgenomes_release=34
+ensembl_release=88
+ensemblgenomes_release=35
 
 ## Safe release of the ensembl database (for download-ensembl-genome,
 ## download-ensembl-variations, ...). The database structures and API
@@ -305,7 +305,7 @@ biomart_urlconfig=[RSAT_PARENT_PATH]/rsat/perl-scripts/biomart/martDBLocation.xm
 
 ################################################################
 ## Parameters for Network Analysis Tools (NeAT)
-neat_supported=1
+neat_supported=0
 
 ## URL of the Web server hosting the NeAT Web services, where the result files
 ## are to be found 
