@@ -766,9 +766,9 @@ sub send_mail {
     my $smtp_port = 25;
     if ($ENV{smtp_port}) {
 	$smtp_port = $ENV{smtp_port};
-      &RSAT::message::Debug("smtp_port", $smtp_port) if ($main::verbose >= 0);
+      &RSAT::message::Debug("smtp_port", $smtp_port) if ($main::verbose >= 5);
     }
-    &RSAT::message::Debug("smtp_server", $smtp_server) if ($main::verbose >= 0);
+    &RSAT::message::Debug("smtp_server", $smtp_server) if ($main::verbose >= 5);
 
     ## Define the "from" email (can be defined in RSAT_config.props or
     ## as environment variable smtp_sender)
@@ -811,7 +811,7 @@ sub send_mail {
 
 #    &RSAT::message::Debug("INC", join (";", @INC)) if ($main::verbose >= 3);
     eval  {use Email::Sender::Transport::SMTP} ;  die $@ if $@;  ## Load the Perl module only if required
-    &RSAT::message::Debug("smtp_server", $smtp_server) if ($main::verbose >= 0);
+    &RSAT::message::Debug("smtp_server", $smtp_server) if ($main::verbose >= 5);
     
     my $transport;
     if ($smtp_port) {
