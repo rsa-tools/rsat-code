@@ -37,9 +37,9 @@ Before starting the installation process, we recommend to download the following
 
 Virtualbox:  <https://www.virtualbox.org/wiki/Downloads>
 
-Ubuntu Desktop Version 17.04: <https://www.ubuntu.com/download/desktop>
+Ubuntu Desktop:  [ubuntu-17.04-desktop-amd64](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-desktop-amd64.iso) (1.5Gb).
 
-Lighter alternative (without graphical Ubuntu interface): Ubuntu Server Version 17.04: <https://www.ubuntu.com/download/server>
+Lighter alternative (without graphical Ubuntu interface): Ubuntu Server Version 17.04: [ubuntu-17.04-server-amd64](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-server-amd64.iso) (685Mb).
 
 <!--- Version 14.04.5 <http://releases.ubuntu.com/14.04/ubuntu-14.04.5-desktop-amd64.iso>-->
 
