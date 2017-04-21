@@ -7,7 +7,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA2.cgi.lib";
-require "patser.lib.pl";
+require "matrix_web_forms.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "$ENV{RSAT}/public_html/genome-scale.lib.pl";
 
