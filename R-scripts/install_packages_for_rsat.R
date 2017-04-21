@@ -90,7 +90,7 @@ message("Installing RSAT-specific packages")
 message(required.packages.rsat)
 for (package in required.packages.rsat) {
   message("Installing RSAT package ", package, " in folder ", dir.rsat.rlib)
-  install.packages(pkgs=file.path(dir.rsat.rscripts, "TFBMclust"), repos=NULL,  lib=dir.rsat.rlib, type="source")
+  install.packages(pkgs=file.path(dir.rsat.rscripts, package), repos=NULL,  lib=dir.rsat.rlib, type="source")
 }
 
 
