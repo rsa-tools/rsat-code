@@ -19,5 +19,27 @@ rm -rf ${RSAT}/app_sources ## Remove source code of external programs
 
 df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned_unnecessary_files.txt
 
+
+################################################################
+## I am fixing a strange bug: there is a grub file in
+## bash_completion.d which causes problem at bash login, although grub
+## is not installed on the machine.
+################################################################
+
+if [ -f /etc/bash_completion.d/grub ]; then
+   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+   echo "!! WARNING: this file may cause 'have command not found' warnings at login. "
+   echo "    /etc/bash_completion.d/grub"
+   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+   echo
+   echo "See https://askubuntu.com/questions/778439/have-command-not-found"
+   echo "I don't think  that this file is required, and I did not understand"
+   echo "when/why it is installed during the procedure. "
+   echo
+   echo "Unless grub is installed on your system, we recommend to remove it"
+   echo "   sudo mv /etc/bash_completion.d/grub ~/grub_bash.backup"
+fi
+
+
 ## THE INSTALLATION OF THE RSAT SERVER IS HOW DONE. THE REST IS OPTIONNAL
 ################################################################
