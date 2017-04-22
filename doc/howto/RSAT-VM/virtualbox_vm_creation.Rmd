@@ -27,6 +27,8 @@ output:
 
 1. Create a separate virtual disk for the data, and explain how to mount it on the virtual machine.
 
+2. Understand when and why the file `/etc/bash_completion.d/grub` appears in the folder `/etc/bash_completion.d/`. This config file creates warnings (see <https://askubuntu.com/questions/778439/have-command-not-found>), and I don't need it since grub is not installed. 
+
 ****************************************************************
 # Requirements
 
@@ -572,7 +574,7 @@ appliance.
 |	Vendor		  | Jacques van Helden |
 |	Vendor URL	| http://jacques.van-helden.perso.luminy.univ-amu.fr/ |
 |	Version		  | 2017-04 |
-|	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 Virtual Machine. |
+|	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 17.04 Virtual Machine. |
 |	License	    |	Free of use for academic users, non-commercial and non-military usage. |
 | | |
 
