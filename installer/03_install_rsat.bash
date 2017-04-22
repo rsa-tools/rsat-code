@@ -78,5 +78,8 @@ echo ''  >> /etc/bash.bashrc
 
 ## ln -fs ${RSAT}/RSAT_config.bashrc /etc/bash_completion.d/
 
+cd ~rsat
+ln -fs ${RSAT} ./rsat
+
 #emacs -nw /etc/bash.bashrc
 
