@@ -38,25 +38,22 @@ RSAT virtualboxes can be downloaded from the RSAT distribution site.
 - In the left-side menu, click on the **Download** link. 
 - Enter your coordinates and click *GO*. You will be redirected towards the download server. 
 - In the download Web site, the link *virtual_machines*.
-- Download the version of your coice (current version: rsat-vm-2016-03.ova). 
-
+- Download the version of your choice (current version: `rsat-vm-2017-04.ova`). 
 
 
 ## Importing an appliance into VirtualBox
 
-
 - In the VirtualBox menu, select the command **File > Import Appliance ...**.
-- In the import dialog box, click on the folder icon, and locate the appliance file (rsat-vm-2016-03.ova) that you downloaded from the RSAT Web site, and click on **Continue**. 
-- Check the Appliance settings ([snapshot](images/import_appliance_settings.png)). 
-- Activate the option *Reinitialize MAC address of all network cards*. 
+- In the import dialog box, click on the folder icon, and locate the appliance file (`rsat-vm-2017-04.ova`) that you downloaded from the RSAT Web site, and click on **Continue**. 
+- In the **Appliance settings** dialog box ([snapshot](images/import_appliance_settings.png)), check the option ***Reinitialize MAC address of all network cards***. 
 - Click the **Import** button. 
 
 [![](images/import_appliance_settings.png){width="600"}](images/import_appliance_settings.png)
 
 It should take a few minutes for VirtualBox to create a new instance of the virtual machine from the appliance. 
 
+****************************************************************
 # Network configuration
-
 
 Network configuration involves two aspects: 
 
@@ -109,7 +106,7 @@ We need to open two of them:
 
 This solution offers a good tradeoff between security and confort: your virtual machine (the guest) will be accessible only from your computer (the host).
 
-In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vm-2016-03), open the *Settings ...* dialog box. In the tab *Network*, select *Adapter 1*, check *Enable Network Adapter*, select *Attached to: Host-only Adapter* ([snapshot](images/vm_settings_network_host-only.png)).
+In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vm-2017-04), open the *Settings ...* dialog box. In the tab *Network*, select *Adapter 1*, check *Enable Network Adapter*, select *Attached to: Host-only Adapter* ([snapshot](images/vm_settings_network_host-only.png)).
 
 In the pop-up menu besides the option *Name*, select *vboxnet0*. [![](images/vm_settings_network_host-only.png){width="400"}](images/vm_settings_network_host-only.png)
 
@@ -127,9 +124,9 @@ Alternatively , for the sake of flexibility, you might consider to use a bridged
 
 **Attention!** The bridged network makes your virtual machine visible for all the other computers of the local network the host machine (your PC). Check with your system administrator that this fits the local security requirements.
 
-- In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vm-2016-03), open the *Settings ...* dialog box.
+- In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vm-2017-04), open the *Settings ...* dialog box.
 
-- In the tab *Network*, select <* class="option">Adapter 1*, check *Enable Network Adapter*, select *Attached to: Bridge adapter*. 
+- In the tab *Network*, select *Adapter 1*, check *Enable Network Adapter*, select *Attached to: Bridge adapter*. 
 
 - In the pop-up menu besides the option *Name*, select an adapter depending on your local network configuration, e.g.
 *Wi-fi (Airport)* ([snapshot](images/vm_settings_network_bridged.png)).
@@ -143,7 +140,7 @@ Alternatively , for the sake of flexibility, you might consider to use a bridged
 
 ## Starting the RSAT virtual machine
 
-In the left panel of **VirtualBox**, select the virual machine (rsat-vm-2016-03), and click on the *Start* icon.
+In the left panel of **VirtualBox**, select the virual machine (rsat-vm-2017-04), and click on the *Start* icon.
 
 This will open a new window  ([snapshot](images/rsat-vm_login_window.png)).
 
@@ -152,8 +149,9 @@ This will open a new window  ([snapshot](images/rsat-vm_login_window.png)).
 From now on, your RSAT Virtual Machine is up and running. You can access it in various ways: 
 
 1. As a Web server
-2. On the command line
-3. As SOAP/WSDL Web services (advanced use). 
+2. As a fully functional Linux Desktop server
+3. On the command line
+4. As SOAP/WSDL Web services (advanced use). 
 
 ## Using RSAT-VM as Web server
 
@@ -165,40 +163,58 @@ Note: this IP address is assigned dynamically by VirtualBox. If you already have
 
 [![](images/rsat-vm_web_site.png){width="600"}](images/rsat-vm_web_site.png)
 
+## As a fully functional Linux Desktop server
+
+You can also use the VirtualBox virtual machine through the Linux Desktop server interface. For this you need to login as either `vmuser` (normal user of the RSAT suite) or `rsat` user (administration of the tools, genome installations, ...). 
+
 ### RSAT-VM log-in
 
-You can log in with the following parameters:
+The RSAT VM has two predefined users: 
 
--   Username: vmuser
--   Password: tochng
+- **RSAT admin**, the owner of the RSAT folder (/packages/rsat). Log in with this account when you need to manage the RSAT installation (modify the code, install additional genomes, ...).
 
-We intently chose an overly simple temporary password to ensure compatibility with AZERTY as well as QUERTY keyboards, but we recommend to use a safer password.
+    - Username: rsat
+    - Iniitial password: tochng
 
-1. At your first login, you will be prompted to change your password before anything else. It is important to choose a suitable non-trivial password, to prevent hackers from accessing your virtual machine. 
+- **RSAT VM user**, not owner of the RSAT folder. Log in with this account for normal use of the virtual machine (including RSAT suite). 
 
-2. The user vmuser is sudoer. After login, you can thus become the master of your Virtual Machine, create new users, install packages, etc.
+    - Username: vmuser
+    - Initial password: tochng
 
+We intently chose an overly simple temporary password to ensure compatibility with AZERTY as well as QUERTY keyboards, but  you will be forced to **change your password at first login**.  It is important to choose a suitable non-trivial password, to prevent hackers from accessing your virtual machine. 
+
+Both rsat and vmuser are sudoers. After login, you thus become the master of your Virtual Machine, which allows you to create new users, install packages, etc.
 
 ### Chosing the adequate keyboard for your computer
 
 A small difficulty when distributing a VM is the large variety of keybords expected to be found on the users' computers. By default, we selected the standard British QWERTY keyboard.
 
-On Ubuntu 14.04 server version, keybord configuration can be modified with following command.
+
+On the desktop version, click on the *Settings* icon [![](images/icon_settings.png){width="40"}](images/icon_settings.png),
+then on the [![](images/icon_text-entry.png){width="50"}, and check the keyboard.](images/text-entry_options.png).
+
+On Ubuntu server version, keybord configuration can be modified with following command.
 
 ```
 sudo dpkg-reconfigure console-data
 ```
 
-For the desktop version, click on the *Settings* icon [![](images/icon_settings.png){width="40"}](images/icon_settings.png),
-then on the [![](images/icon_text-entry.png){width="50"}, and check the keyboard.](images/text-entry_options.png).
+## Connecting the RSAT instance from your system's terminal
 
+If you are familiar with the Unix command line environment, you can access your virtual machine from a terminal of the host machine, with the following commands. 
 
-### Connecting RSAT-VM in ssh
-
-If you are familiar with the Unix command line environment, you can access your virtual machine from a terminal of the host machine, with the following command. 
+- To log in as normal user: 
 
 ```
 ssh vmuser@192.168.56.101
+```
+
+**Note:** the initial password has been set to `tochng`. At your first login you will be forced to change this password. After having reset your password, you will be brought back to the terminal of your computer, and you need to re-type the ssh command in order to actually log in. 
+
+- To log in as RSAT administrator (e.g. to manage genomes):
+
+```
+ssh rsat@192.168.56.101
 ```
 
 ****************************************************************
