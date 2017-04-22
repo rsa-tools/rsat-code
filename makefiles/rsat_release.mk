@@ -189,6 +189,28 @@ publish:
 #publish_scripts:
 #	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS}
 
+
+## Publish the appliance for RSAT VirtualBox Virtual Machine (VM)
+APPLIANCE=rsat-vb-2017-04-22.ova
+LOCAL_APPLIANCE_DIR=/no_backup/VirtualBox_VMs/RSAT-VM_00/appliances/
+LOCAL_APPLIANCE=${LOCAL_APPLIANCE_DIR}/${APPLIANCE}
+RSATVM_REPO=rsat@pedagogix-tagc.univ-mrs.fr:/data/rsat_release/virtual_machines/
+RSATVM_TUTO=${RSAT}/doc/howto/RSAT-VM/RSAT-VM_tuto.html
+publish_vm:
+	@echo
+	@echo "Synchronizing RSAT-VM	${APPLIANCE}"
+	@echo "	LOCAL_APPLIANCE	${LOCAL_APPLIANCE}"
+	@du -sm ${LOCAL_APPLIANCE}
+	@rsync -ruptvl ${LOCAL_APPLIANCE}  ${RSATVM_REPO}
+
+publish_vm_tuto:
+	@echo
+	@echo "Synchronizing RSAT-VM tutorial"
+	@rsync -ruptvl ${RSATVM_TUTO}  ${RSATVM_REPO}
+	@echo "Check the web site"
+	@echo "	http://download.rsat.eu/virtual_machines/"
+	@echo "	http://download.rsat.eu/virtual_machines/RSAT-VM_tuto.html"
+
 publish_metab:
 	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB}
 
