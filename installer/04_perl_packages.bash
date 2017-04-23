@@ -78,6 +78,6 @@ make -f makefiles/install_rsat.mk perl_modules_check
 more check_perl_modules_eval.txt
 
 ## Measure remaining disk space
-df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
