@@ -34,6 +34,8 @@ TAR_EXCLUDE=--exclude .git \
 	--exclude REA \
 	--exclude REA-* \
 	--exclude purgatory \
+	--exclude .Rproj.user \
+	--exclude '*.RData' \
 	--exclude Rpackages
 TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsat/*_default.*
 TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar 
