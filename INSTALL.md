@@ -49,23 +49,35 @@ where `XX-XX-XX` is the latest release date and put it in your chosen directory.
 
 ```
 sudo mkdir -p /packages
-sudo chown rsat.rsat /packages
-cd /packages
 
 ## Replace XX-XX-XX by the actual release
-tar -xpvzf /home/rsat/Downloads/rsat_20XX-XX-XX.tar.gz
-cd rsat
+tar -C /packages/ -xpvzf rsat_20XX-XX-XX.tar.gz
+cd /packages/rsat
 ```
 
 ## Configuring your local RSAT instance
 
-7. We will start by auto-configuring RSAT in order to deine suitable basic parameters. For this, in the `rsat` directory, type:
+7. We will start by auto-configuring RSAT in order to deine suitable basic parameters. 
+
+
+    - For VirtualBox instances, replace [your.server.IP] by the actual IP address of your server. 
 
 ```
 perl perl-scripts/configure_rsat.pl -auto  \
   rsat_site=rsat-vb-2017-04 \
-  rsat_www=http://192.168.56.101/rsat/ \
-  rsat_ws=http://192.168.56.101/rsat/ \
+  rsat_www=http://[your.server.IP]/rsat/ \
+  rsat_ws=http://[your.server.IP]/rsat/ \
+  ucsc_tools=1 \
+  ensembl_tools=1
+```
+
+    - For the IFB cloud (IP address will change at each instance)
+
+```
+perl perl-scripts/configure_rsat.pl -auto  \
+  rsat_site=rsat-vb-2017-04 \
+  rsat_www=auto \
+  rsat_ws=auto \
   ucsc_tools=1 \
   ensembl_tools=1
 ```
@@ -83,7 +95,7 @@ perl perl-scripts/configure_rsat.pl
 sudo bash
 cd /packages/rsat
 source RSAT_config.bashrc
-bash installer/01_ubuntu16.4_packages.bash
+bash installer/01_ubuntu_packages.bash
 bash installer/02_python_packages.bash 
 bash installer/03_install_rsat.bash
 bash installer/04_perl_packages.bash 
@@ -104,6 +116,9 @@ This makefile runs a series of tests for different components of the *RSAT* suit
 
 
 ## Testing the Web server
+
+TO BE WRITTEN
+
 
 ****************************************************************
 # Supplementary information
