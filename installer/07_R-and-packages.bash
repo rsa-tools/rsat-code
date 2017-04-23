@@ -67,4 +67,4 @@ make -f makefiles/install_rsat.mk install_r_packages
 # ## At prompt "Save workspace image? [y/n/c]:", answer "n"
 
 ## Check remaining disk space
-df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
