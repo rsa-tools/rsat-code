@@ -48,11 +48,12 @@ where `XX-XX-XX` is the latest release date and put it in your chosen directory.
 6. Uncompress the archive. This will create a directory named `rsat` where we will continue the install procedure.
 
 ```
-sudo mkdir -p /packages
+export INSTALL_ROOT=/packages
+sudo mkdir -p ${INSTALL_ROOT}
 
 ## Replace XX-XX-XX by the actual release
-tar -C /packages/ -xpvzf rsat_20XX-XX-XX.tar.gz
-cd /packages/rsat
+tar -C ${INSTALL_ROOT}/ -xpvzf rsat_20XX-XX-XX.tar.gz
+cd ${INSTALL_ROOT}/rsat
 ```
 
 ## Configuring your local RSAT instance
@@ -93,7 +94,7 @@ perl perl-scripts/configure_rsat.pl
 
 ```
 sudo bash
-cd /packages/rsat
+cd ${INSTALL_ROOT}/rsat
 source RSAT_config.bashrc
 bash installer/01_ubuntu_packages.bash
 bash installer/02_python_packages.bash 
