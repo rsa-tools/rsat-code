@@ -2,7 +2,7 @@
 ## Prepare a release of RSAT
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=${RSAT}/makefiles/rsat_release.mk
+MAKEFILE=${RSAT}/makefiles/release_rsat.mk
 MAKE = make -sk -f ${MAKEFILE}
 
 ## Archive file
