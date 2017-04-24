@@ -48,7 +48,9 @@ where `XX-XX-XX` is the latest release date and put it in your chosen directory.
 6. Uncompress the archive. This will create a directory named `rsat` where we will continue the install procedure.
 
 ```
-export INSTALL_ROOT=/packages
+## By default we install the package in the tool directory.
+## This should be adapted according to your local setup. 
+export INSTALL_ROOT=~/packages
 sudo mkdir -p ${INSTALL_ROOT}
 
 ## Replace XX-XX-XX by the actual release
@@ -76,11 +78,16 @@ perl perl-scripts/configure_rsat.pl -auto  \
 
 ```
 perl perl-scripts/configure_rsat.pl -auto  \
-  rsat_site=rsat-vb-2017-04 \
+  rsat_site=rsatvm-ifb-2017-04 \
+  RSAT=${INSTALL_ROOT}/rsat \
   rsat_www=auto \
   rsat_ws=auto \
-  ucsc_tools=1 \
-  ensembl_tools=1
+  phylo_tools=0 \
+  compara_tools=1 \
+  variations_tools=0 \
+  ucsc_tools=0 \
+  ensembl_tools=0 \
+  SUDO=sudo
 ```
 
 8. We can now refine the configuration by choosing custom parameter to your RSAT instance (for example the email of the local admin, the instance name, ...).
