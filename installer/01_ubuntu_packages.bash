@@ -57,8 +57,13 @@ ${OS_INSTALLER} install -y openssh-client
 ## that arose because of changes in the dependencies.'
 ## http://askubuntu.com/questions/194651/why-use-apt-get-upgrade-instead-of-apt-get-dist-upgrade
 ## HOWEVER, THE PERL UPDATE DOES NOT WORK ANYMORE AFTER THAT !!!
-#${OS_INSTALLER} ${INSTALLER_OPT} upgrade
-#df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${OS_INSTALLER}_upgrade.txt
+##
+## I thus use apt-get upgrade. However this cannot be part of the
+## default installation since not everyone wants to upgrade apt-get. 
+## I thus comment the following instructions. 
+## 
+# ${OS_INSTALLER} ${INSTALLER_OPT} upgrade
+# df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${OS_INSTALLER}_upgrade.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 
