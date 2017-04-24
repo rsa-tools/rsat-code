@@ -76,7 +76,7 @@ rsync -ruptvl RSAT_config.conf ${APACHE_CONFIG_FOLDER}/sites-enabled/rsat.conf
 ## default web folder by RSAT web folder. 
 ##
 ## TO DO: CHECK IF THIS DOES NOT CREATE PROBLEMS
-## perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|DocumentRoot /var/www/html|DocumentRoot /packages/rsat/public_html|' ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
+## perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|DocumentRoot /var/www/html|DocumentRoot ${RSAT}/public_html|' ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
 
 # apache2ctl restart
 ## The server will now immediately display RSAT home page when you
