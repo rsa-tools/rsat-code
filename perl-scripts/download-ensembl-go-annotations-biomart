@@ -165,7 +165,7 @@ package main;
   $query->setDataset($dataset);    ## Select the species (dataset)
 
   $query->addAttribute("ensembl_gene_id");
-  $query->addAttribute("go_accession");
+  $query->addAttribute("go_id"); #"go_accession" deprecated in release_35_biomart_changes.txt
   $query->formatter("TSV");
 
   my ($tmpfh, $tmpfile) = tmpnam();
