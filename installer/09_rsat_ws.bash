@@ -48,4 +48,4 @@ make -f makefiles/init_rsat.mk ws_init  ## Initialize the stub for the Web servi
 make -f makefiles/init_rsat.mk ws_stub  ## Generate the stub for the Web services
 make -f makefiles/init_rsat.mk ws_stub_test  ## Test the stub for the Web services
 make -f makefiles/init_rsat.mk ws_nostub_test  ## Test Web services with no stub
-service apache2 stop
+#service apache2 restart

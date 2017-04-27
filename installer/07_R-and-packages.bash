@@ -21,16 +21,26 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ##
 ## I add the row before the original sources.list because there is
 ## some problem at the end of the update.
-grep -v cran.rstudio.com /etc/apt/sources.list > /etc/apt/sources.list.bk
+export CODENAME=`grep CODENAME /etc/lsb-release | cut -c 18-`
+#export CRAN_URL=https://pbil.univ-lyon1.fr/CRAN
+export CRAN_URL=http://cran.rstudio.com
+grep -v -i cran /etc/apt/sources.list > /etc/apt/sources.list.bk
 sudo echo "## R-CRAN repository, to install the most recent version of R" > /etc/apt/sources.list.rcran
-sudo echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list.rcran
+sudo echo "deb ${CRAN_URL}/bin/linux/ubuntu ${CODENAME}/" >> /etc/apt/sources.list.rcran
 sudo echo "" >> /etc/apt/sources.list.rcran
 sudo cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
-sudo ${OS_INSTALLER} install ${INSTALLER_OPT} software-properties-common python-software-properties
-sudo add-apt-repository ppa:marutter/rdev
+sudo grep -i "cran" /etc/apt/sources.list # Check 
+
+# Get code to allow using cran as apt-get source
+#sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 
+## Not working on the IFB cloud, so I comment it and use the option --force-yes
+
+# sudo ${OS_INSTALLER} install ${INSTALLER_OPT} software-properties-common python-software-properties
+# sudo add-apt-repository ppa:marutter/rdev
 sudo apt-get update
-sudo ${OS_INSTALLER} install ${INSTALLER_OPT} r-base > ${RSAT}/install_logs/${OS_INSTALLER}_install_r-base.txt
+sudo ${OS_INSTALLER} install --force-yes r-base:all/${CODENAME} # > ${RSAT}/install_logs/install_r-base_log.txt 
+sudo ${OS_INSTALLER} install --force-yes r-base-dev:all/${CODENAME} # > ${RSAT}/install_logs/install_r-base-dev_log.txt 
+
 
 
 ################################################################
@@ -41,7 +51,6 @@ sudo ${OS_INSTALLER} install ${INSTALLER_OPT} r-base > ${RSAT}/install_logs/${OS
 cd $RSAT
 
 make -f makefiles/install_rsat.mk install_r_packages
-
 
 # ## The command R CMD INSTALL apparently does not work at this stage.
 # ##	root@rsat-tagc:/workspace/rsat# R CMD INSTALL reshape
@@ -67,4 +76,4 @@ make -f makefiles/install_rsat.mk install_r_packages
 # ## At prompt "Save workspace image? [y/n/c]:", answer "n"
 
 ## Check remaining disk space
-df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_R_packages_installed.txt

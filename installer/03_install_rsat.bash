@@ -34,7 +34,7 @@ make -f makefiles/init_rsat.mk init
 ## compile RSAT programs written in C
 cd ${RSAT}
 make -f makefiles/init_rsat.mk compile_all
-df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.txt
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!  BUG    !!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -47,7 +47,7 @@ df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_app_compiled.t
 cd ${RSAT}
 make -f makefiles/install_software.mk list_ext_apps
 make -f makefiles/install_software.mk install_ext_apps
-df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed.txt
 
 
 ################################################################
@@ -69,14 +69,29 @@ echo "Bash configuration for all users"
 echo "    /etc/bash_completion.d/RSAT_config.bashrc"
 sudo rsync -ruptvl RSAT_config.bashrc /etc/bash_completion.d/
 
-echo '' >> /etc/bash.bashrc
-echo '## Custom bash completion'  >> /etc/bash.bashrc
-echo 'for file in /etc/bash_completion.d/* ; do'  >> /etc/bash.bashrc
-echo '    source "$file"'  >> /etc/bash.bashrc
-echo 'done'  >> /etc/bash.bashrc
-echo ''  >> /etc/bash.bashrc
+## THIS WAS CREATING THE PROBLEM WITH have command not found !
+## THE COMPLETION FILES MUST BE EXECUTED WITH bash_completion
+# echo '' >> /etc/bash.bashrc
+# echo '## Custom bash completion'  >> /etc/bash.bashrc
+# echo 'for file in /etc/bash_completion.d/* ; do'  >> /etc/bash.bashrc
+# echo '    source "$file"'  >> /etc/bash.bashrc
+# echo 'done'  >> /etc/bash.bashrc
+# echo ''  >> /etc/bash.bashrc
+
+echo "WARNING"
+echo "In order to support bash completion, you must uncomment the following lines in /etc/bash.bashrc"
+echo "# # enable bash completion in interactive shells"
+echo "# if ! shopt -oq posix; then"
+echo "#   if [ -f /usr/share/bash-completion/bash_completion ]; then"
+echo "#     . /usr/share/bash-completion/bash_completion"
+echo "#   elif [ -f /etc/bash_completion ]; then"
+echo "#     . /etc/bash_completion"
+echo "#   fi"
+echo "# fi"
 
 ## ln -fs ${RSAT}/RSAT_config.bashrc /etc/bash_completion.d/
+
+ln -fs ${RSAT} ~/rsat
 
 #emacs -nw /etc/bash.bashrc
 
