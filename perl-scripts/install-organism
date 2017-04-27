@@ -1892,17 +1892,20 @@ EXAMPLES
     species. Beware, this takes space, there are several hundreds of
     species.
 
-	install-organism -v 1 -group fungi -task download
+	install-organism -v 1 -group fungi -task download \
+    	    -species_file fungi_available_species.txt
 
     Step 3: parse the genomes of all strains for each fungal species.
 
-	install-organism -v 1 -task parse,config \
-     	    -species_list fungi_available_species.txt \
+	install-organism -v 1 -group fungi -task parse,config \
+    	    -species_file fungi_available_species.txt
 
     Step 4: collect the list of downloaded organisms. Organism names
     are built by concatenating species and strain names.
 
-	install-organism -v 1 -group fungi -task list \
+	install-organism -v 1 -group fungi \
+    	    -species_file fungi_available_species.txt \
+	    -task list \
 	    -o fungi_downloaded_orgnanisms.txt
 
     Step 5: extract fasta sequences for different types of genomic
@@ -1911,10 +1914,10 @@ EXAMPLES
     tasks are sent to a job scheuler (qsub) in order to be executed in
     parallel.
 
-	install-organisms -v 1 \
+	install-organism -v 1 \
+	    -org_file fungi_downloaded_orgnanisms.txt \
 	    -task start_stop,allup,seq_len_distrib,genome_segments \
 	    -task protein_len,fasta_genome,chrom_sizes,index_bedtools \
-	    -org_list fungi_downloaded_orgnanisms.txt \
 	    -batch
 
     Step 6: compute the oligomer frequency tables. In batch mode, this
@@ -1923,9 +1926,9 @@ EXAMPLES
     (upstream sequences have to be computed before computing their
     oligonucleotide and dyad frequencies).
 
-	install-organisms -v 1 \
+	install-organism -v 1 \
+	    -org_file fungi_downloaded_orgnanisms.txt \
 	    -task upstream_freq,genome_freq,protein_freq,oligos,dyads \
-	    -org_list fungi_downloaded_orgnanisms.txt \
 	    -batch
 
 SEE ALSO
