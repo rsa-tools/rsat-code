@@ -27,6 +27,8 @@ output:
 
 1. Create a separate virtual disk for the data, and explain how to mount it on the virtual machine.
 
+2. Understand when and why the file `/etc/bash_completion.d/grub` appears in the folder `/etc/bash_completion.d/`. This config file creates warnings (see <https://askubuntu.com/questions/778439/have-command-not-found>), and I don't need it since grub is not installed. 
+
 ****************************************************************
 # Requirements
 
@@ -37,8 +39,9 @@ Before starting the installation process, we recommend to download the following
 
 Virtualbox:  <https://www.virtualbox.org/wiki/Downloads>
 
-Ubuntu Desktop Version 16.04.1: <http://releases.ubuntu.com/16.04/ubuntu-16.04.1-desktop-amd64.iso>
-Ubuntu Server Version 16.04.1: <http://releases.ubuntu.com/16.04/ubuntu-16.04.1-server-amd64.iso>
+Ubuntu Desktop:  [ubuntu-17.04-desktop-amd64](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-desktop-amd64.iso) (1.5Gb).
+
+Lighter alternative (without graphical Ubuntu interface): Ubuntu Server Version 17.04: [ubuntu-17.04-server-amd64](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-server-amd64.iso) (685Mb).
 
 <!--- Version 14.04.5 <http://releases.ubuntu.com/14.04/ubuntu-14.04.5-desktop-amd64.iso>-->
 
@@ -55,7 +58,7 @@ Ubuntu Server Version 16.04.1: <http://releases.ubuntu.com/16.04/ubuntu-16.04.1-
 
 - Name and operating system
 
-    - Name: RSAT-VM-2016-10
+    - Name: RSAT-VM-2017-04
     - Type: Linux
     - Version: Ubuntu (64 bits)
 
@@ -67,7 +70,7 @@ Ubuntu Server Version 16.04.1: <http://releases.ubuntu.com/16.04/ubuntu-16.04.1-
 
     I chose this option because it ensures a wider compatibility with other OS and Virtual Machine management systems. 
 
-	   Another potential advantage of VMDK is that it enables to split virtual disks into files <=2Gb, which is convenient to store them on FAT partitions. 
+	   Another potential advantage of VMDK is that it enables to split virtual disks into files <=2Gb, which is convenient to store them on FAT partitions. However, for the distribution I avoid to activate this option because it is simpler to put a single dwnloable file on the server. 
 
 - Storage on physical hard drive
     - Select *Dynamically allocated*
@@ -76,10 +79,10 @@ Ubuntu Server Version 16.04.1: <http://releases.ubuntu.com/16.04/ubuntu-16.04.1-
 
 - File location and size
 
-    - name of virtual hard drive file:    RSAT-VM-2016-10_HDD
+    - name of virtual hard drive file:    RSAT-VM-2017-04_HDD
     - max size of virtual hard drive:	    18GB
 
-        Beware: the size has to be larger than you real needs, because Ubuntu will automatically create some big  partitions (/dev and /run/shm). Since we allow dynamical memory allocation, it is fine to set the max size to 18Gb, which will be grossly assigned as follows:
+        **Beware:** the size has to be larger than you real needs, because Ubuntu will automatically create some big  partitions (/dev and /run/shm). Since we allow dynamical memory allocation, it is fine to set the max size to 18Gb, which will be grossly assigned as follows:
 
         - max 14Gb for the root partition /
         - 2Gb for /dev
@@ -203,6 +206,8 @@ The desktop version of Ubuntu presents the advantage of letting users work direc
 
 ![Installation type](images/virtualbox_ubuntu_16.04.1_install/ub16.04.1_snapshot04.png)
 
+In the dialog box **Write the changes to disk?** click **Continue**. 
+
 ![Write changes on disk](images/virtualbox_ubuntu_16.04.1_install/ub16.04.1_snapshot05.png)
 
 
@@ -224,8 +229,9 @@ The desktop version of Ubuntu presents the advantage of letting users work direc
 | Field | Value |
 |--------------------------------------|-------------------------------------------------------|
 | Your name |	RSAT admin |
-| Your computer's name | rsat-vb-2016-10 |
+| Your computer's name | rsat-vb-2017-04 |
 | Pick a username | rsat |
+| Password | rsat1704^[This password is obviously not safe, but it will be changed at the end of the installation] |
 | Log in automatically | I activate it because this will greatly facilitate the use of the Destkop version |
 | | Click **Continue** |
 
@@ -240,13 +246,18 @@ Ubuntu now installs the system, this should take a few minutes^[**Note** if you 
 
 - When rebooting, Ubuntu warns you that you need to remove the installation media and close the tray. In our case, the installation media is the iso disk. To remove it, go in the menu **Devices** -> **Optical Drives** -> **Remove Disk from Optical Drive**. If this does not work, close the window with the virtual machine, and restart this virtual machine from VirtualBox. 
 
-- After reboot, you will automatically log in as *RSAT admin* user. For the sake of convenience, I disactivate the lock screen and password prompt options. Indeed, since the VM is running under my account on the hosting system, there is no need to double the security options. For this, click on the **Settings** icon (toothed wheels) on the top-right corner of the Ubuntu display. Select **All Settings** and click on the panell **Brightness and Lock**. Set **Lock** to *off* and uncheck **Require my password when waking from suspend**. 
+- After reboot, you will automatically log in as *RSAT admin* user. 
+
+- For the sake of convenience, I disactivate the lock screen and password prompt options. Indeed, since the VM is running under my account on the hosting system, there is no need to double the security options. For this, click on the **Settings** icon (toothed wheels) on the top-right corner of the Ubuntu display. Select **All Settings** and click on the panell **Brightness and Lock**. Set **Lock** to *off* and uncheck **Require my password when waking from suspend**. 
 
 ![Disactivate lock screen and password prompt after suspend. ](images/virtualbox_ubuntu_16.04.1_install/disactivate_lock_screen.png)
 
-###  Screen resolution (for the Desktop version)
+###  Screen resolution (for Desktop version 14.04)
 
-At your first log in, the screen resolution is restricted to 640x480 pixels. 
+**Note:** If you are using Ubuntu version 17.04 you can skip this section which was useful to fix a problem with version 14.04. 
+
+With Ubuntu 14.05, at your first log in, the screen resolution is restricted to 640x480 pixels.
+
 
 I found a solution to increase the screen resolution  here: <http://www.juanrubio.me/2014/02/ubuntu-trusty-virtualbox-guest-additions/>
 
@@ -359,8 +370,10 @@ To add support for `ssh` access, we need to install the appropriate package.
 
 ```
 sudo apt-get install --quiet --assume-yes ssh
+sudo apt-get install --quiet --assume-yes net-tools
 ```
 
+The package `net-tools` includes the `ifconfig` command, which will be useful to get the IP addresses of your VM. 
 
 - From the ***host*** machine, open a terminal and type the following command. 
 
@@ -473,7 +486,7 @@ sudo useradd --password `openssl passwd -1 -salt xyz tochng`\
 sudo chage -d 0 vmuser
 
 ## Force rsat user to change password at first login
-usermod --password `openssl passwd -1 -salt xyz tochng` rsat
+sudo usermod --password `openssl passwd -1 -salt xyz tochng` rsat
 sudo chage -d 0 rsat
 
 ## Add sudoer rights to vmuser and rsat users
@@ -485,6 +498,7 @@ sudo nano /etc/sudoers
 ## Below it, add the following line:
 ##     rsat    ALL=(ALL:ALL) ALL
 ##     vmuser  ALL=(ALL:ALL) ALL
+## Type "Ctrl-X" to exit from the nano editor, then "Y" to save your changes. 
 ```
 
 ****************************************************************
@@ -542,7 +556,7 @@ appliance.
 
 - In VirtualBox, open "File -> Export Appliance ...", and select the VM.
 
-    - Save as: rsat-vm-2016-10.ova
+    - Save as: rsat-vm-2017-04.ova
     - Files of Type: Open Virtualization Format Archive (.ova)
     - Storage Settings
     - Format: OVF 1.0
@@ -554,13 +568,13 @@ appliance.
 
 | Parameter    |    Value                                        |
 |:-------------|:------------------------------------------------|
-|  Name  		  | rsat-vm-2016-10 |
+|  Name  		  | rsat-vm-2017-04 |
 |	Product		  | Regulatory Sequences Analysis Tools |
 |	Product-URL	| http://rsat.eu/ |
 |	Vendor		  | Jacques van Helden |
 |	Vendor URL	| http://jacques.van-helden.perso.luminy.univ-amu.fr/ |
-|	Version		  | 2016-10 |
-|	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 14.04 Virtual Machine. |
+|	Version		  | 2017-04 |
+|	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 17.04 Virtual Machine. |
 |	License	    |	Free of use for academic users, non-commercial and non-military usage. |
 | | |
 
@@ -573,7 +587,7 @@ Prepare the VM + accompanying material on a USB key, to ensure distribution in t
 
 ```
 SOURCE_DIR=/no_backup/VirtualBox_VMs/appliances
-VERSION=2014-09-05a
+VERSION=2017-04
 
 ## Specification of the target location
 KEY_NB=02
@@ -591,7 +605,7 @@ This can be useful for two purposes.
 ```
 SPLIT_SIZE=3999m
 mkdir -p ${TARGET_DIR}/appliances
-time split -b ${SPLIT_SIZE} ${SOURCE_DIR}/rsat-vm-2016-10_${VERSION}.ova ${TARGET_DIR}/appliances/rsat-vm-2016-10_${VERSION}.ova.split${SPLIT_SIZE}_
+time split -b ${SPLIT_SIZE} ${SOURCE_DIR}/rsat-vm-2017-04_${VERSION}.ova ${TARGET_DIR}/appliances/rsat-vm-2017-04_${VERSION}.ova.split${SPLIT_SIZE}_
 ```
 
 ****************************************************************
