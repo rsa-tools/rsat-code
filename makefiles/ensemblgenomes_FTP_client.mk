@@ -332,9 +332,11 @@ GO_EXPANDED_FILE=expanded_${GO_ANNOT_LINK}
 install_go_annotations:
 	@echo
 	@mkdir -p ${GO_ANNOT_DIR}
-	@echo "Downloading GO annotations of ${SPECIES}" 
+	@echo "Downloading GO annotations of ${SPECIES}"
+	@echo download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
+        -release ${RELEASE} -list ${ORGANISM_TABLE} 
 	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
-		-release ${RELEASE}	-list ${ORGANISM_TABLE-}
+		-release ${RELEASE}	-list ${ORGANISM_TABLE}
 	@echo "Expanding GO annotations of ${SPECIES}" 
 	@rm -f ${GO_ANNOT_LINK}
 	@ln -s ${GO_ANNOT_FILE} ${GO_ANNOT_LINK}
