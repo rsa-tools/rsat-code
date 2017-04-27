@@ -302,7 +302,8 @@ check_sequences:
 
 #################################################################
 ## Download group COMPARA files from eg
-SERVER_COMPARA_FILE=${DATABASE}/tsv/ensembl-compara/Compara.homologies.${RELEASE}.tsv.gz
+#SERVER_COMPARA_FILE=${DATABASE}/tsv/ensembl-compara/Compara.homologies.${RELEASE}.tsv.gz
+SERVER_COMPARA_FILE=${DATABASE}/tsv/ensembl-compara/homologies/Compara.${ENSEMBL_RELEASE}.protein_default.homologies.tsv.gz
 download_compara:
 	@echo
 	@mkdir -p ${ORGANISM_DIR}
