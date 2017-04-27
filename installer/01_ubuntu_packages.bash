@@ -48,7 +48,7 @@ ${OS_INSTALLER} install -y openssh-client
 
 ## For the IFB cloud, it is recommended to start with a apt-get update
 #apt-get update
-#df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
+#df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
 
 ################################################################
 ## I tried to run dist-upgrade because it 'can "intelligently" handle
@@ -57,8 +57,13 @@ ${OS_INSTALLER} install -y openssh-client
 ## that arose because of changes in the dependencies.'
 ## http://askubuntu.com/questions/194651/why-use-apt-get-upgrade-instead-of-apt-get-dist-upgrade
 ## HOWEVER, THE PERL UPDATE DOES NOT WORK ANYMORE AFTER THAT !!!
-#${OS_INSTALLER} ${INSTALLER_OPT} upgrade
-#df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${OS_INSTALLER}_upgrade.txt
+##
+## I thus use apt-get upgrade. However this cannot be part of the
+## default installation since not everyone wants to upgrade apt-get. 
+## I thus comment the following instructions. 
+## 
+# ${OS_INSTALLER} ${INSTALLER_OPT} upgrade
+# df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${OS_INSTALLER}_upgrade.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 
@@ -215,7 +220,7 @@ echo "${PACKAGES}"
 for LIB in ${PACKAGES}; do \
     echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
     ${OS_INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT}/install_logs/install_${LIB}_log.txt ; \
-    df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
+    df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
 echo "Log files are in folder ${RSAT}/install_logs"
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
@@ -250,16 +255,16 @@ echo "Log files are in folder ${RSAT}/install_logs"
 # ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
 # ## Note that these dependencies cost 400Mb ! To be checked
 # ${OS_INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
-# df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
+# df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 ${OS_INSTALLER} ${INSTALLER_OPT}  autoremove
-df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt
 ${OS_INSTALLER} ${INSTALLER_OPT}  clean
-df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 ## This really helps: it saves several hundreds Mb
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 

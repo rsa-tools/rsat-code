@@ -16,7 +16,7 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 use RSAT::matrix;
 use RSAT::MatrixReader;
-require "patser.lib.pl";
+require "matrix_web_forms.lib.pl";
 
 local @supported_output_formats = sort(keys( %RSAT::matrix::supported_output_format));
 

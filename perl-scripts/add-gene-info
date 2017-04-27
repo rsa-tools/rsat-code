@@ -11,7 +11,7 @@ use Storable qw(nstore retrieve);
 $start_time = &RSAT::util::StartScript();
 $calc_neighbours = 0;
 $info_before = 0;
-@ORF_column = ();
+@ID_column = ();
 $null = "<NULL>";
 $header_line = 0;
 
@@ -54,17 +54,17 @@ foreach my $type (@info_types) {
   }
 }
 
-## Check that the column containing the ORF is specified.
-## If not only default ORF_column is 1
-if (scalar(@ORF_column) == 0) {
-  push @ORF_column, 1;
+## Check that the column containing the gene ID is specified.
+## If not only default ID_column is 1
+if (scalar(@ID_column) == 0) {
+  push @ID_column, 1;
 }
 
 
 ## Check the requested info types
-foreach my $col (@ORF_column) {
+foreach my $col (@ID_column) {
   my $suffix = "";
-  if (scalar(@ORF_column) > 1) {
+  if (scalar(@ID_column) > 1) {
     $suffix = "_".$col;
   }
   foreach my $type (@info_types) {
@@ -170,7 +170,7 @@ while ($current_line = <$in>) {
     next;
   }
   my @info = ();
-  foreach my $col (@ORF_column) {
+  foreach my $col (@ID_column) {
     if ($col > 0) {
       @columns = split("\t", $current_line);
       $query = uc($columns[$col - 1]);
@@ -225,16 +225,16 @@ NAME
 	add-gene-info
 
 DESCRIPTION
+
 	Takes as input a tab-delimited file with one ore more columns
-	containing ORFs names, and adds a column with a
-	description of the ORFs for the requested columns.
-	
-CATEGORY
-	genomics
+	containing gene IDs, and adds columns with information about
+	the corresponding genes.
+
+CATEGORY genomics
 
 USAGE
         add-gene-info [-i inputfile] [-o outputfile] [-v] 
-        [-col orf_column_1] [-col orf_column_2] -org organism
+        [-col id_column_1] [-col id_column_2] -org organism
 	
 OPTIONS
 	-h	display full help message
@@ -243,7 +243,7 @@ OPTIONS
 
 	-v	verbose
 	
-	-col	orf column
+	-col	column containing gene IDs. 
 
 	-i inputfile
 		if not specified, the standard input is used.
@@ -267,16 +267,16 @@ OPTIONS
 		Supported: $supported_feature_types
 
 INPUT FORMAT
-	Any text file containing ORF identifiers or gene names.
 
-	The first word of each row is considered as a query name
-	(identifier). Additional text on the same row is not analyzed
-	(it appears unchanged in the output).
+	Any text file containing a column with gene identifiers or
+	gene names.
 	
 OUTPUT FORMAT
-	After each line containing reference to an ORF, a 
-        column with ORF function is added. 
-	
+
+	A text file with tab-separated values reproducing the content
+	of the input file with added colums containing the requested
+	information fields.
+
 End_of_help
     close HELP;
     exit;
@@ -294,7 +294,7 @@ add-gene-info options
 -i          input file
 -o          output file
 -v          verbose
--col #      ORF column (can be used recursively)
+-col #      gene ID column (can be used recursively)
 -org	    organism
 -info	    information type (supported: $supported_info_types)
 -before	    add info before rather than afte the input line
@@ -334,13 +334,14 @@ sub ReadArguments() {
 	    
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
-	    # column containing the ORF
+
+	    # column containing the gene ID
 	} elsif ($ARGV[$a] eq "-col") {
 	    my $col = $ARGV[$a+1];
 	    unless (&RSAT::util::IsNatural($col) && ($col > 0)) {
 	      &RSAT::error::FatalError("Invalid column specification\n");
 	    } else {
-	      push @ORF_column, $col;
+	      push @ID_column, $col;
 	    }
 	    #### organism
 	} elsif ($ARGV[$a] eq "-org") {

@@ -1,4 +1,4 @@
-source installer/00_config.bashk
+source installer/00_config.bash
 
 
 echo
@@ -40,11 +40,11 @@ perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddEncoding x-|AddEncoding x-|' 
 # echo "        ## RSAT options" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
 # echo "        AddType text/plain .fasta" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
 # echo "        AddType text/plain .bed" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
+# echo "        AddType text/plain .gff3" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
+# echo "        AddType text/plain .gtf" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
+# echo "        AddType text/plain .tab" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
+# echo "        AddType text/plain .tsv" >>  ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
 
-## Optional : also associate a plain/text mime type to extensions for
-## some classical bioinformatics files.
-##   AddType text/plain .fasta
-##   AddType text/plain .bed
 ## I also uncomment the following, for convenience
 ##        AddEncoding x-compress .Z
 ##        AddEncoding x-gzip .gz .tgz
@@ -75,7 +75,8 @@ rsync -ruptvl RSAT_config.conf ${APACHE_CONFIG_FOLDER}/sites-enabled/rsat.conf
 ## only function will be to host the RSAT server, I replace the normal
 ## default web folder by RSAT web folder. 
 ##
-perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|DocumentRoot /var/www/html|DocumentRoot /packages/rsat/public_html|' ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
+## TO DO: CHECK IF THIS DOES NOT CREATE PROBLEMS
+## perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|DocumentRoot /var/www/html|DocumentRoot ${RSAT}/public_html|' ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
 
 # apache2ctl restart
 ## The server will now immediately display RSAT home page when you
@@ -95,7 +96,7 @@ a2dismod mpm_event
 a2enmod mpm_prefork
 
 ## THIS DOES NOT BELONG TO THE INSTALLER BUT TO THE RUN / TEST
-#service apache2 restart
+# service apache2 restart
 
 ## DONE: apache server configured and started
 ## You can check it by opening a Web connection to 
