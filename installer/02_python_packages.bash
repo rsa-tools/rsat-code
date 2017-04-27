@@ -46,5 +46,5 @@ sudo pip3 install pysimplesoap
 sudo pip3 install soappy
 
 ## Check disk usage
-df -m . > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt

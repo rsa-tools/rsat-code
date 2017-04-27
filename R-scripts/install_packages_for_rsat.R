@@ -49,15 +49,17 @@ dir.create(dir.rsat.rlib, showWarnings = FALSE, recursive = FALSE)
 
 ## Install R packages from the CRAN
 message("Installing R packages from CRAN repository: ", rcran.repos)
-#message(required.packages)
+
+##message(required.packages)
+# pkg <- required.packages[1]
 for (pkg in required.packages) {
-  if(suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE, lib=c(.libPaths(),dir.rsat.rlib)))) {
-    message(pkg, " CRAN package already installed. Skipping. ")
-  } else {
-    message("Installing CRAN package ", pkg, " in dir ", dir.rsat.rlib)
-    install.packages(pkg, repos=rcran.repos, dependencies=TRUE, lib=dir.rsat.rlib)
-    message(pkg, " CRAN package installed in dir ", dir.rsat.rlib)
-  }
+    if(suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE, lib=c(.libPaths(),dir.rsat.rlib)))) {
+        message(pkg, " CRAN package already installed. Skipping. ")
+    } else {
+        message("Installing CRAN package ", pkg, " in dir ", dir.rsat.rlib)
+        install.packages(pkg, repos=rcran.repos, dependencies=TRUE, lib=dir.rsat.rlib)
+        message(pkg, " CRAN package installed in dir ", dir.rsat.rlib)
+    }
 }
 
 ################################################################
@@ -72,8 +74,8 @@ for (pkg in required.packages.bioconductor) {
     .libPaths(c(dir.rsat.rlib, .libPaths())) ## this line fixes the problem at ENS (Morgane)
     source("http://bioconductor.org/biocLite.R")
 #    biocLite(ask=FALSE, lib=dir.rsat.rlib,  lib.loc=dir.rsat.rlib)
-    biocLite(lib=dir.rsat.rlib, lib.loc=c(.libPaths(),dir.rsat.rlib))
-    biocLite(pkg, dependencies=TRUE, lib=dir.rsat.rlib,  lib.loc=dir.rsat.rlib)
+    biocLite(lib=dir.rsat.rlib, lib.loc=c(.libPaths(),dir.rsat.rlib), suppressUpdates="")
+    biocLite(pkg, dependencies=TRUE, lib=dir.rsat.rlib,  lib.loc=dir.rsat.rlib, suppressUpdates="")
     message(pkg, " BioConductor package installed in dir ", dir.rsat.rlib)
   }
 }
@@ -90,7 +92,7 @@ message("Installing RSAT-specific packages")
 message(required.packages.rsat)
 for (package in required.packages.rsat) {
   message("Installing RSAT package ", package, " in folder ", dir.rsat.rlib)
-  install.packages(pkgs=file.path(dir.rsat.rscripts, "TFBMclust"), repos=NULL,  lib=dir.rsat.rlib, type="source")
+  install.packages(pkgs=file.path(dir.rsat.rscripts, package), repos=NULL,  lib=dir.rsat.rlib, type="source")
 }
 
 

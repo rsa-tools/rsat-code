@@ -59,17 +59,21 @@ foreach $f (0..$#input_files) {
   ($in, $input_dir) = &OpenInputFile($inputfile);
   $max_fields{$f} = 0;
   $has_header{$f} = 0;
+  my $l = 0;
   while (<$in>) {
     next unless (/\S/);		## Skip empty lines
     next if (/^;/);		## Skip comment lines
     chomp;
+    $l++;
 
     ## Parse header line if there is one
-    if (/^\#/) {
+    if ((($headers) && ($l==1)) 
+	|| (/^\#/)) {
+      s|^#||;
       @{$header{$f}} = split("\t", $_);
       $has_header{$f} = 1;
       next;
-    } 
+    }
     @fields = split "\t";
     if (defined($sc[$f])) {
       $max_fields{$f}= 1;
@@ -157,17 +161,6 @@ foreach $f (0..$#input_files) {
       $column_name = &ShortFileName($column_name);
     }
 
-    ## Suppress substrings
-    for my $sub (@suppress) {
-      $column_name =~ s/$sub//g;
-    }
-
-    ## Substitute substrings
-    for my $old_string (keys(%subst_header)) {
-      my $new_string = $subst_header{$old_string};
-      $column_name =~ s/$old_string/$new_string/g;
-    }
-
     ## Add column number
 #    &RSAT::message::Debug($f, $input_files[$f], $max_fields{$f});
     if ($max_fields{$f} > 1 ) {
@@ -176,6 +169,21 @@ foreach $f (0..$#input_files) {
       } else {
 	$column_name .=  "_$c";
       }
+    }
+
+    ## Suppress substrings
+    for my $sub (@suppress) {
+      $column_name =~ s/$sub//g;
+    }
+
+    ## Substitute substrings
+    for my $from (@subst_header) {
+      my $to = $subst_header{$from};
+      my $column_name_ori = $column_name;
+      $column_name =~ s/${from}/${to}/g;
+      # &RSAT::message::Debug("Header substitution", $col_nb, $from, $to, 
+      # 			    "\n\t".$column_name_ori, 
+      # 			    "\n\t".$column_name) if ($main::verbose >= 10);
     }
 
     $column_names[$col_nb] = $column_name;
@@ -304,6 +312,9 @@ OPTIONS
 
 	-ic#	identifier column for the #th file
 
+	-header use the first line of each input file as column
+	        headers.
+
 	-lc, -uc
 	        By default, the comparison is case-insensitive, but
       	        the ID case is maintained in the output. This can
@@ -380,6 +391,7 @@ compare-scores options
 -sc#		score column for the #th file
 -ic		identifier column
 -ic#		identifier column for the #th file
+-header         use the first line of each input file as column headers
 -lc		convert identifiers to lowercases
 -uc		convert identifiers to uppercases
 -null		null string (default $default_null)
@@ -484,14 +496,22 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-numbers") {
       $scores_are_numbers = 1;
 
+      ## First row contains column headers
+    } elsif ($ARGV[$a] eq "-headers") {
+      $headers = 1;
+
     } elsif ($ARGV[$a] eq '-basename') {
       $basename = 1;
 
     } elsif ($ARGV[$a] eq '-suppress') {
       push @suppress, $ARGV[$a+1];
 
+      ## Substitute in headers
     } elsif ($ARGV[$a] eq '-subst') {
-      $subst_header{$ARGV[$a+1]} = $ARGV[$a+2];
+      my $from = $ARGV[$a+1];
+      my $to = $ARGV[$a+2];
+      push @subst_header, $from;
+      $subst_header{$from} = $to;
 
     }
   }

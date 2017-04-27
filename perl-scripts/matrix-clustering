@@ -2899,7 +2899,9 @@ $(document).ready(function() {
 		    
 		    ### Add the first label with the the link to the logo
 		    if ($labels_num == 1) {
-			$add_this = $main_label;
+			my $m = $main_label;
+			$m =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+			$add_this = $m;
 			$up = uc($field);
 			$add_this =~ s/d\.;/ d\.$field;/;
 		    }
@@ -2932,8 +2934,8 @@ $(document).ready(function() {
 
 	    ## Add the IC to the logo tree
 
-	    $ic_leaves =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/g;
-	    $add_this .= "\n".$ic_leaves."\n";
+#	    $ic_leaves =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/g;
+#	    $add_this .= "\n".$ic_leaves."\n";
 #	    print TEMP_2 $add_this."\n"; 
 	    print TEMP_2 $add_this."\n";      
 	}
