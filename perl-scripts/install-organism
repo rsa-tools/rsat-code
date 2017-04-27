@@ -1732,7 +1732,7 @@ OPTIONS
 		E.g.  
 		  export RSA_LOCAL_CONFIG=/home/fred/RSA.local.config
 
-		When install-organisms is called with the option
+		When install-organism is called with the option
 		-local, the new organism is added to the file
 		indicated by the environment variable RSA_LOCAL_CONFIG
 		rather than the main RSA config file.
@@ -1845,6 +1845,88 @@ OPTIONS
 
 	-img_format
 		image format for the graphs of sequence length distribution
+
+EXAMPLES
+
+    Get the list of available genomes for one of the supported groups
+    on the NCBI FTP/rsync site.  Supported values for option -group
+    are the subdirectories of the FTP site
+    (rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq).
+
+	install-organism -v 1 -group [GROUP]  -task available \
+            -o available_vertebrate.tab
+
+    Download one species with rsync:
+
+    	install-organism -v 1  -group [GROUP] -species [SPECIES] \
+            -task download
+
+    Parse the genome for a given species, and declare it in RSAT
+    supported organism. NOTE: this installs all the strains for the
+    selected species. For some species this can represent thousands of
+    strains (e.g. Eschrichia coli). Strains can be restricted with the
+    options -strain or -max_strains.
+
+        install-organism -v 1  -group [GROUP] -species [SPECIES] \
+            -task parse,config
+
+    Run the default installation steps for a given species. Note: the
+    option -list is required in order to collect the organism names,
+    which are made by concatenating species and strain
+
+        install-organism -v 1  -group [GROUP] -species [SPECIES] \
+            -task list,default
+
+    Installation can be automated and parallelized with a job
+    scheduler (e.g. qsub) in order to install all the species of a
+    given group.
+
+    Example: install all species of the group "fungi" at NCBI.
+
+    Step 1: get the list of species available at NCBI
+
+        install-organism -v 1 -group fungi -task available \
+	    -o fungi_available_species.txt
+
+    Step 2: download genome for all the strains of these
+    species. Beware, this takes space, there are several hundreds of
+    species.
+
+	install-organism -v 1 -group fungi -task download
+
+    Step 3: parse the genomes of all strains for each fungal species.
+
+	install-organism -v 1 -task parse,config \
+     	    -species_list fungi_available_species.txt \
+
+    Step 4: collect the list of downloaded organisms. Organism names
+    are built by concatenating species and strain names.
+
+	install-organism -v 1 -group fungi -task list \
+	    -o fungi_downloaded_orgnanisms.txt
+
+    Step 5: extract fasta sequences for different types of genomic
+    regions, and run some control tests (e.g. oligonucleotide
+    frequencies of start and stop codons). With the option -batch, the
+    tasks are sent to a job scheuler (qsub) in order to be executed in
+    parallel.
+
+	install-organisms -v 1 \
+	    -task start_stop,allup,seq_len_distrib,genome_segments \
+	    -task protein_len,fasta_genome,chrom_sizes,index_bedtools \
+	    -org_list fungi_downloaded_orgnanisms.txt \
+	    -batch
+
+    Step 6: compute the oligomer frequency tables. In batch mode, this
+    task can be done only after the previous job list is finished,
+    because of the dependencies between the parallelized tasks
+    (upstream sequences have to be computed before computing their
+    oligonucleotide and dyad frequencies).
+
+	install-organisms -v 1 \
+	    -task upstream_freq,genome_freq,protein_freq,oligos,dyads \
+	    -org_list fungi_downloaded_orgnanisms.txt \
+	    -batch
 
 SEE ALSO
 
