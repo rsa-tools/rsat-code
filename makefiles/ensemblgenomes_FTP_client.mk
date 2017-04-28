@@ -311,7 +311,7 @@ download_compara:
 	@echo "	${SERVER_COMPARA_FILE}"
 	@wget -Ncnv ${SERVER_COMPARA_FILE} -P ${ORGANISM_DIR}
 	@echo
-	@ls -1 ${ORGANISM_DIR}/Compara.homologies*gz
+	@ls -1 ${ORGANISM_DIR}/Compara.${ENSEMBL_RELEASE}.protein_default.homologies.tsv.gz
 
 ##################################################################
 ## Download GO ontology file and parse it for server use
@@ -499,7 +499,8 @@ install_bsub:
 
 ##################################################################
 ## Parse Compara.homologies 
-CMP_GZ=$(shell ls -1 ${ORGANISM_DIR}/Compara.homologies*.gz)
+#CMP_GZ=$(shell ls -1 ${ORGANISM_DIR}/Compara.homologies*.gz)
+CMP_GZ=${ORGANISM_DIR}/Compara.${ENSEMBL_RELEASE}.protein_default.homologies.tsv.gz
 BDB_FILE=${ORGANISM_DIR}/compara.bdb
 BDB_LOG=${ORGANISM_DIR}/compara.log
 parse_compara:
