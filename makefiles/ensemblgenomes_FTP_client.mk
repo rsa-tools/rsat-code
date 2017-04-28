@@ -302,7 +302,8 @@ check_sequences:
 
 #################################################################
 ## Download group COMPARA files from eg
-SERVER_COMPARA_FILE=${DATABASE}/tsv/ensembl-compara/Compara.homologies.${RELEASE}.tsv.gz
+#SERVER_COMPARA_FILE=${DATABASE}/tsv/ensembl-compara/Compara.homologies.${RELEASE}.tsv.gz
+SERVER_COMPARA_FILE=${DATABASE}/tsv/ensembl-compara/homologies/Compara.${ENSEMBL_RELEASE}.protein_default.homologies.tsv.gz
 download_compara:
 	@echo
 	@mkdir -p ${ORGANISM_DIR}
@@ -332,9 +333,11 @@ GO_EXPANDED_FILE=expanded_${GO_ANNOT_LINK}
 install_go_annotations:
 	@echo
 	@mkdir -p ${GO_ANNOT_DIR}
-	@echo "Downloading GO annotations of ${SPECIES}" 
+	@echo "Downloading GO annotations of ${SPECIES}"
+	@echo download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
+        -release ${RELEASE} -list ${ORGANISM_TABLE} 
 	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
-		-release ${RELEASE}	-list ${ORGANISM_TABLE-}
+		-release ${RELEASE}	-list ${ORGANISM_TABLE}
 	@echo "Expanding GO annotations of ${SPECIES}" 
 	@rm -f ${GO_ANNOT_LINK}
 	@ln -s ${GO_ANNOT_FILE} ${GO_ANNOT_LINK}
