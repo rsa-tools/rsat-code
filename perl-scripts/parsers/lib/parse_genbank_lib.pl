@@ -708,11 +708,12 @@ sub ParseGenbankFile {
 	## the organism (taxon ID), and to all the subsequent features of the same 
 	if (($current_feature->get_attribute("type") eq "source") ) {
 
-	  ## Detect TAXID
+	  ## Detect taxonomic ID (TAXID)
 	  if (($attribute_type eq "db_xref") && ($attribute_value =~ /taxon:(\d+)/)) {
 	    $taxid = $1;
 	    $current_contig->force_attribute("taxid", $taxid);
 	    $organism->force_attribute("id", $taxid);
+	    $organism->force_attribute("taxid", $taxid);
 	    foreach my $class ($contigs,
 			       $features,
 			       $genes,
@@ -985,12 +986,12 @@ sub CreateGenbankFeatures {
   #    $genes->index_names();
 
 
-  #### extract taxid for each source object
+  ## Extract taxid for each source object
   foreach my $source ($sources->get_objects()) {
     $source->get_taxid();
   }
 
-  #### Create features for contig limits
+  ## Create features for contig limits
   &RSAT::message::TimeWarn("Creating features for contig limits")
     if ($main::verbose >= 3);
   foreach my $contig ($contigs->get_objects()) {
@@ -1025,7 +1026,6 @@ sub CreateGenbankFeatures {
     $end_feature->set_attribute("start_pos",$contig_length);
     $end_feature->set_attribute("end_pos",$contig_length);
     $end_feature->set_attribute("strand","DR");
-
   }
 
   ################################################################
