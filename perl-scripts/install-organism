@@ -99,9 +99,10 @@ package main;
   %task = ();
   $parse_options = "";
 
-  $null = "<NULL>";		## NULL value
-  $source = "<NA>";
+  $null = "<NA>";		## NULL value
+  $source = $null;
   $taxonomy = $null;
+  $taxid = $null;
   @taxa = ();
   our %infile = ();
 
@@ -718,41 +719,56 @@ sub Erase {
 ################################################################
 ## Update configuration file
 sub UpdateConfig {
-  ## read taxonomy from the parsing result
-  local $organism_table = $dir{install}."/genome/organism.tab";
+  ## Read taxonomy from the parsing result
+  my $organism_table = $dir{install}."/genome/organism.tab";
+  my $id = $null;
+  $taxid = $null;
+  $taxonomy = $null;
 
 #  die "HELLO\t", $organism_table;
 
   unless (-e $organism_table) {
-      if ($main::die_on_error) {
-	  &RSAT::error::FatalError("Missing organism table", $organism_table);
-      } else {
-	  &RSAT::message::Warning("Missing organism table", $organism_table);
+    if ($main::die_on_error) {
+      &RSAT::error::FatalError("Missing organism table", $organism_table);
+    } else {
+      &RSAT::message::Warning("Missing organism table", $organism_table);
 	  return(0);
-      }
+    }
   }
 
   ($org_handle) = &OpenInputFile($organism_table);
-  my $taxonomy_field = 2;
+  my $taxid_field = 1; ## Default field for the taxonomic ID
+  my $taxonomy_field = 2; ## Default field for the taxonomy
   while (<$org_handle>) {
-    chomp;
+    chomp();
     next unless (/\S/);
     if (/^-- field\s+(\d)	taxonomy/) {
       $taxonomy_field = $1;
+    } elsif (/^-- field\s+(\d)	taxif/) {
+      $taxid_field = $1;
     } elsif (/^--/) {
       next;
     } else {
-      if (defined($taxonomy_field)) {
-	@fields = split "\t";
-	$id = $fields[0];
-	$taxonomy = $fields[$taxonomy_field - 1];
-	&RSAT::message::Info ("Parsed taxonomy from organism.tab", 
-			      "Id",$id, 
-			      "Taxonomy", $taxonomy) if ($main::verbose >= 3);
+      @fields = split "\t";
+      $id = $fields[0];
+
+      ## Get taxonomy
+      $taxonomy = $fields[$taxonomy_field - 1];
+
+      ## Check if taxid is conform (must be a number)
+      $taxid = $fields[$taxid_field - 1];
+      if ($taxid =~ /^\d+$/) {
+	$supported_organism{$organism_short_name}->{'taxid'} = $taxid;
+	&RSAT::message::Info($organism_short_name, "TAXID", $taxid) if ($main::verbose >= 3);
       } else {
-	&Warning("Cannot read taxonomy in file $organism_table\n");
-# 	print "######\n###\nlala\n########\n############\n";z
+	&RSAT::message::Warning($taxid, "Invalid taxid in organism description table",  $organism_table);
+	$taxid = $null;
       }
+
+      &RSAT::message::Info ("Parsed taxonomy from organism.tab", 
+			    "Id", $id, 
+			    "taxid", $taxid, 
+			    "Taxonomy", $taxonomy) if ($main::verbose >= 3);
     }
   }
   close $org_handle;
@@ -834,7 +850,7 @@ sub UpdateConfigPerl {
   }
   close CONFIG;
 
-  ## write new config
+  ## Write updated config file
   &RSAT::message::Info ("Updating supported organisms", $config_to_update) if ($verbose >= 3);
   open CONFIG, ">$config_to_update" 
     || die "Error: cannot write config file $config_to_update\n";
@@ -886,6 +902,7 @@ sub UpdateConfigTab {
     $supported_organism{$organism_short_name}->{'seq_format'} = $args{seq_format} || "filelist";
 #  }
   $supported_organism{$organism_short_name}->{'taxonomy'} = $args{taxonomy} || $main::taxonomy;
+  $supported_organism{$organism_short_name}->{'taxid'} = $args{taxid} || $main::taxid;
   if (defined($main::outfile{synonyms})) {
     $supported_organism{$organism_short_name}->{'synonyms'} = $args{synonyms} || $main::outfile{synonyms};
   }
@@ -904,7 +921,7 @@ sub CreatePhylogeny {
     return;
 
     ## read taxonomy from the parsing result
-    $organism_table = $dir{install}."/genome/organism.tab";
+    my $organism_table = $dir{install}."/genome/organism.tab";
 
     ($org_handle) = &OpenInputFile($organism_table);
     while (<$org_handle>) {
