@@ -397,6 +397,7 @@ sub ParseGenbankFile {
       ## New contig
       @fields = split /\s+/, $line;
       &RSAT::message::Info("New contig", $line) if ($main::verbose >= 2);
+      $locus_line = $line; ## Store contig line as comment for fasta sequence
       my $contig_name = $fields[1];
       my $length = $fields[2];
       my $type = $fields[4];		#### DNA or peptide
@@ -436,42 +437,70 @@ sub ParseGenbankFile {
 	################################################################
 	## Save the whole contig sequence in a file
       } elsif ($args{seq_dir}) {
-	my $seq_file = $current_contig->get_attribute("id").".raw";
-	$seq_file =~ s/:/_/g;
-	$current_contig->set_attribute("seq_dir", $args{seq_dir});
-	$current_contig->set_attribute("file", $seq_file);
-	my $seq_file_path = $args{seq_dir}."/".$seq_file;
-
-	&RSAT::message::Debug ("Contig sequence file", $current_contig->get_attribute("id"), $seq_file) if ($main::verbose >= 3);
-
-	&RSAT::message::Info ("Storing sequence ",
-			      $current_contig->get_attribute("id"),
-			      "in file", $seq_file_path)
-	    if ($main::verbose >= 2);
-
-	open SEQ, ">".$seq_file_path
-	    || die "Error: cannot write sequence file $seq_file_path\n";
-
-	while (($line = &ReadNextLine()) && ($current_contig)) {
+	while (($line = &ReadNextLine()) && ($in_sequence)) {
 	  if ($line =~ /^\s*\d+\s+/) {
 	    $sequence = "$'";
 	    $sequence =~ s/\s//g;
-	    print SEQ $sequence;
+	    $contig_seq .=  $sequence;
 	  } elsif ($line =~ /^\/\/$/) {
-	    print SEQ "\n";
+	    ## end of sequence
+	    $contig_seq .= "\n"; ## TO CHECK: WHY IS THERE A CARRIAGE RETURN IN RAW?
 	    $in_sequence = 0;
-	    $current_contig = "";
 	    last;
 	  } else {
 	    &ErrorMessage("Invalid sequence format, skipped\t$line\n");
 	  }
-	  # &RSAT::message::Debug("Sequence parsing", length($sequence), $sequence) if (main::verbose >= 10);
-	}
-	close(SEQ);
-	$pwd = `pwd`;
-	chomp($pwd);
-	&RSAT::message::Debug("Working dir", $pwd,  "Sequence saved in file", $seq_file_path) if ($main::verbose >= 3);
+	  #&RSAT::message::Debug("Sequence parsing", length($sequence), length($contig_seq)) if (main::verbose >= 10);
 
+	}
+
+	## Store contig sequences in a raw file (no space, no carriage return)
+	unless ($no_raw) {
+	  my $seq_file = $current_contig->get_attribute("id").".raw";
+	  $seq_file =~ s/:/_/g;
+	  $current_contig->set_attribute("seq_dir", $args{seq_dir});
+	  $current_contig->set_attribute("file", $seq_file);
+	  my $seq_file_path = $args{seq_dir}."/".$seq_file;
+	  
+	  &RSAT::message::Debug ("Contig sequence file", $current_contig->get_attribute("id"), $seq_file) if ($main::verbose >= 3);
+	  
+	  &RSAT::message::Info ("Storing sequence ",
+				$current_contig->get_attribute("id"),
+				"in file", $seq_file_path)
+	      if ($main::verbose >= 3);
+	  
+	  open SEQ, ">".$seq_file_path
+	      || die "Error: cannot write sequence file $seq_file_path\n";
+	  print SEQ $contig_seq;
+	  close(SEQ);
+#	    $pwd = `pwd`;
+#	    chomp($pwd);
+	  &RSAT::message::Debug("Working dir", $ENV{PWD},  "Sequence saved in file", $seq_file_path) if ($main::verbose >= 4);
+	}
+
+	## Store sequences in fasta format
+	unless ($no_fasta) {
+	  ## Set chromosome name to contig ID if not defined (e.g. for bacterial genomes)
+	  unless ($current_contig->get_attribute("chromosome")) {
+	    $current_contig->force_attribute("chromosome", $current_contig->get_attribute("id"));
+	  }
+
+	  &PrintNextSequence($fasta_handle, "fasta", 60, $contig_seq, $current_contig->get_attribute("id"), 
+			     join("; ", # $locus_line, 
+				  $current_contig->get_attribute("organism"),
+				  $current_contig->get_attribute("chromosome"),
+#				  $current_contig->get_attribute("id"),
+				  $current_contig->get_attribute("length")." bp",
+				  $current_contig->get_attribute("type"),
+				  $current_contig->get_attribute("form"),
+				  $current_contig->get_attribute("taxo_group"),
+				  $current_contig->get_attribute("date"),
+			     ));
+	}
+
+	## Empty current contig variable
+	$current_contig = "";
+	
       } else {
 	#### load sequence in memory and return it
 	while ($line = &ReadNextLine()) {
