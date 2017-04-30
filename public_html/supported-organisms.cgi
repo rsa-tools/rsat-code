@@ -41,7 +41,7 @@ $query = new CGI;
 $font{variable} = 1;
 #$command = "$SCRIPTS/supported-organisms -v 1";
 
-my @return_fields = qw (ID nb source last_update data taxonomy);
+my @return_fields = qw (ID taxid nb source last_update data taxonomy);
 my $return_fields = join",", @return_fields;
 #$parameters = " -return ".$return_fields;
 
