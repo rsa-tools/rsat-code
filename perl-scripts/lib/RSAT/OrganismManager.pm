@@ -28,20 +28,21 @@ use RSAT::TreeNode;
 ## Fields for supported organisms
 our @supported_org_fields = qw(ID
 			       name
-			       data
-			       last_update
-			       taxonomy
 			       taxid
+			       source
+			       last_update
+			       nb
+			       seq_format
 			       up_from
 			       up_to
+			       taxonomy
+			       data
 			       genome
-			       seq_format
-			       source
-			       nb
-			       selected_taxon
-			       taxon_depth
-			       org_per_taxon
 			      );
+
+#			       selected_taxon
+#			       taxon_depth
+#			       org_per_taxon
 
 ## Name of the table containing the list of supported organisms
 our $organism_table_name = "supported_organisms.tab";
