@@ -25,7 +25,8 @@ require "classes/Genbank_classes.pl";
 #### main package
 package main;
 {
-    #### initialise parameters ####
+    ################################################################
+    #### Initialise parameters
     local $start_time = &RSAT::util::StartScript();
     local %infile = ();
     local %outfile = ();
@@ -34,8 +35,6 @@ package main;
     local $out = STDOUT;
     local $single_name = 1;
 
-    ################################################################
-    #### initialization
     $null = "<NA>";
     $data_source = "NCBI";
     $ext = "gbff";
@@ -47,6 +46,7 @@ package main;
     $password="rsat";
     $full_path = 0;
     $test = 0;
+    $noraw = 0;
     $test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
     $test_lines = 10000; ## maximal number of lines to parse per file
 
@@ -270,9 +270,9 @@ package main;
     $out_file{stats} = "$dir{output}/genbank.stats.txt";
 
     ### Sequence directory
-    unless ($noseq) {
-	$dir{sequences} = $dir{output};
-    }
+#    unless ($noraw) {
+    $dir{sequences} = $dir{output};
+#    }
 
     ### open error report file
     open ERR, ">$out_file{error}"
@@ -298,7 +298,7 @@ package main;
     ## Export masked sequences
     my @repeats = $repeat_regions->get_objects();
     if (scalar(@repeats) > 1) {
-	&ExportMaskedSequences() unless ($noseq);
+	&ExportMaskedSequences() unless ($noraw);
     }
 
     #### write the contig file
@@ -469,7 +469,7 @@ OPTIONS
 
 	-refseq	input files are refseq entries
 
-	-noseq  do not export sequences in .raw files
+	-noraw  do not export sequences in .raw files
 
 	-prefid feattype idname
 
@@ -544,7 +544,7 @@ parse-genbank.pl options
 -ext    	extension of the input files (default: $ext).
 -org		organism name (you should replace spaces by underscores)
 -refseq		input files are refseq entries
--noseq  	do not export sequences in .raw files
+-noraw  	do not export sequences in .raw files
 -o		output dir
 -v		verbose
 -test #		quick test (for debugging)
@@ -607,8 +607,8 @@ sub ReadArguments {
 	    $data_type = "refseq";
 
 	    ### do not export sequences
-	} elsif ($ARGV[$a] eq "-noseq") {
-	    $noseq = 1;
+	} elsif ($ARGV[$a] eq "-noraw") {
+	    $noraw = 1;
 
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
