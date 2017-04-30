@@ -453,7 +453,7 @@ sub ParseGenbankFile {
 	    || die "Error: cannot write sequence file $seq_file_path\n";
 
 	while (($line = &ReadNextLine()) && ($current_contig)) {
-	  if ($line =~ /^\s+\d+\s+/) {
+	  if ($line =~ /^\s*\d+\s+/) {
 	    $sequence = "$'";
 	    $sequence =~ s/\s//g;
 	    print SEQ $sequence;
@@ -465,8 +465,7 @@ sub ParseGenbankFile {
 	  } else {
 	    &ErrorMessage("Invalid sequence format, skipped\t$line\n");
 	  }
-
-	  #		    &RSAT::message::Debug("Sequence parsing", length($sequence), $sequence) if (main::verbose >= 10);
+	  # &RSAT::message::Debug("Sequence parsing", length($sequence), $sequence) if (main::verbose >= 10);
 	}
 	close(SEQ);
 	$pwd = `pwd`;
