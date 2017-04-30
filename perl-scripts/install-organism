@@ -861,7 +861,7 @@ sub UpdateConfigPerl {
   $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'last_update'} = \"".$install_date."\";\n";
   $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'source'} = \"$source\";\n";
   ## OLIVIER SAND SHOULD CHECK IF THIS RESTRICTION FOR ensembl IS STILL VALID
-  unless ($source eq 'ensembl') {
+  unless ($source =~ 'ensembl') {
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
@@ -893,8 +893,15 @@ sub UpdateConfigTab {
   $supported_organism{$organism_short_name}->{'name'} = $args{name} || $main::organism_full_name;
   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $dir{install};
   $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $main::install_date;
-  $supported_organism{$organism_short_name}->{'source'} = $args{source} || $main::source;
-
+ 
+  ## Change source if requested
+  #$prev_source = $supported_organism{$organism_short_name}->{'source'} ;
+  if (($main::source) && ($main::source ne $null)) {
+    $supported_organism{$organism_short_name}->{'source'} = $main::source;
+  } elsif (($args{source}) && ($args{source} ne $null)) {
+    $supported_organism{$organism_short_name}->{'source'} = $args{source};
+  }
+ 
   ## OLIVIER SAND SHOULD CHECK IF THIS RESTRICTION FOR ensembl IS STILL VALID
 #  unless ($source eq 'ensembl') {
     $supported_organism{$organism_short_name}->{'features'} = $args{features} || $main::outfile{features};
@@ -908,6 +915,14 @@ sub UpdateConfigTab {
   }
   $supported_organism{$organism_short_name}->{'up_to'} = $args{up_to} || $main::up_to;
   $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from} || $main::up_from;
+
+  &RSAT::message::Debug("&UpdateConfigTab()",
+			$supported_organism{$organism_short_name}->{'source'},
+			$supported_organism{$organism_short_name}->{'taxid'},
+			$supported_organism{$organism_short_name}->{'ID'},
+			$supported_organism{$organism_short_name}->{'last_update'},
+			$supported_organism{$organism_short_name}->{'name'},
+      ) if ($main::verbose >= 3);
 
   ## Export the updated table of supported organisms
   &RSAT::OrganismManager::export_supported_organisms(file=>$main::org_table, backup=>$main::backup_org_table);
