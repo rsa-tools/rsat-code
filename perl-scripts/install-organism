@@ -2272,7 +2272,7 @@ sub ParseGenome {
   my ($species, $strain, $organism_name, $strain_dir, $genome_dir, $org_nb) = @_;
   &RSAT::message::TimeWarn("Parsing genome", $org_nb, $species, $strain, $organism_name, $strain_dir) if ($main::verbose >= 2);
 
-  my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 0";
+  my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v ".($main::verbose -1);
   $command .= " -i ".$strain_dir;
   $command .= $parse_options;
   if ($dir{ensembl}) {
