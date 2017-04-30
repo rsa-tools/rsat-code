@@ -296,7 +296,7 @@ package main;
 
 
     unless ($no_fasta) {
-      $out_file{genome_seq} = $dir{output}."/".$org."_genome_dna.fasta";
+      $out_file{genome_seq} = $dir{output}."/".$org.".dna.genome.fa";
       $fasta_handle = &OpenOutputFile($out_file{genome_seq}); # file to store all the sequences in fasta format
       &RSAT::message::Info("Fasta genome sequence", $outfile{genome_seq}) if ($main::verbose >= 2);
     }
