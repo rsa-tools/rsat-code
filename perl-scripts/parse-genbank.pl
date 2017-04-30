@@ -46,7 +46,8 @@ package main;
     $password="rsat";
     $full_path = 0;
     $test = 0;
-    $noraw = 0;
+    $no_raw = 0;
+    $no_fasta = 0;
     $test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
     $test_lines = 10000; ## maximal number of lines to parse per file
 
@@ -270,9 +271,9 @@ package main;
     $out_file{stats} = "$dir{output}/genbank.stats.txt";
 
     ### Sequence directory
-#    unless ($noraw) {
-    $dir{sequences} = $dir{output};
-#    }
+    unless (($no_raw)  && ($no_fasta)) {
+      $dir{sequences} = $dir{output};
+    }
 
     ### open error report file
     open ERR, ">$out_file{error}"
@@ -293,15 +294,24 @@ package main;
     ## Parse the genbank files
 #    chdir $dir{input};
 
+
+    unless ($no_fasta) {
+      $out_file{genome_seq} = $dir{output}."/".$org."_genome_dna.fasta";
+      $fasta_handle = &OpenOutputFile($out_file{genome_seq}); # file to store all the sequences in fasta format
+      &RSAT::message::Info("Fasta genome sequence", $outfile{genome_seq}) if ($main::verbose >= 2);
+    }
     &ParseAllGenbankFiles(@genbank_files);
+
+    close $fasta_handle unless ($no_fasta);
+    
 
     ## Export masked sequences
     my @repeats = $repeat_regions->get_objects();
     if (scalar(@repeats) > 1) {
-	&ExportMaskedSequences() unless ($noraw);
+	&ExportMaskedSequences() unless ($no_raw);
     }
 
-    #### write the contig file
+    ## Write the contig file
     chdir $dir{main};
     $chrom = &OpenOutputFile("$dir{output}/contigs.txt"); # file with contig IDs
     foreach my $contig ($contigs->get_objects()) {
@@ -469,7 +479,20 @@ OPTIONS
 
 	-refseq	input files are refseq entries
 
-	-noraw  do not export sequences in .raw files
+	-no_raw  do not export sequences in raw files
+
+	        Raw files are required for normal functioning of
+	        retrieve-seq. They are stored as one file per contig,
+	        with a sequence with neither spaces nor carriage
+	        return). For some poorly assembled genomes this can
+	        however represent a huge number of files (e.g. Salmon,
+	        >100,000 contigs in 2017).
+
+	-no_fasta do not export sequences in fasta format.
+
+                Fasta format is used since 2015 by some tools via
+                bedtools getfasta (faster than RSAT native
+                retrieve-seq).
 
 	-prefid feattype idname
 
@@ -544,7 +567,8 @@ parse-genbank.pl options
 -ext    	extension of the input files (default: $ext).
 -org		organism name (you should replace spaces by underscores)
 -refseq		input files are refseq entries
--noraw  	do not export sequences in .raw files
+-no_raw  	do not export sequences in .raw files
+-no_fasta  	do not export sequences in fasta format
 -o		output dir
 -v		verbose
 -test #		quick test (for debugging)
@@ -606,9 +630,13 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-refseq") {
 	    $data_type = "refseq";
 
-	    ### do not export sequences
-	} elsif ($ARGV[$a] eq "-noraw") {
-	    $noraw = 1;
+	    ### do not export sequences in raw format
+	} elsif ($ARGV[$a] eq "-no_raw") {
+	    $no_raw = 1;
+
+	    ### do not export sequences in fasta format
+	} elsif ($ARGV[$a] eq "-no_fasta") {
+	    $no_fasta = 1;
 
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
