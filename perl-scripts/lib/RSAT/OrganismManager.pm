@@ -31,6 +31,7 @@ our @supported_org_fields = qw(ID
 			       data
 			       last_update
 			       taxonomy
+			       taxid
 			       up_from
 			       up_to
 			       genome
