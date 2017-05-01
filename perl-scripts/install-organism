@@ -800,7 +800,7 @@ sub UpdateConfig {
       } elsif ($taxonomy =~ /;\s*Metazoa/) {
 	$up_from=-3000;
       } elsif ($taxonomy =~ /;\s*Viridiplantae/) {
-	$up_from=-2000;
+	$up_from=-3000;
       } else {
 	$up_from=-1000;
       }
@@ -914,13 +914,20 @@ sub UpdateConfigTab {
     $supported_organism{$organism_short_name}->{'synonyms'} = $args{synonyms} || $main::outfile{synonyms};
   }
   $supported_organism{$organism_short_name}->{'up_to'} = $args{up_to} || $main::up_to;
-  $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from} || $main::up_from;
+
+  if (($main::up_from) && ($main::up_from ne $null)) {
+    $supported_organism{$organism_short_name}->{'up_from'} = $main::up_from;
+  } elsif (($args{up_from}) && ($args{up_from} ne $null)) {
+    $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from};
+  }
+ 
 
   &RSAT::message::Debug("&UpdateConfigTab()",
 			$supported_organism{$organism_short_name}->{'source'},
 			$supported_organism{$organism_short_name}->{'taxid'},
 			$supported_organism{$organism_short_name}->{'ID'},
 			$supported_organism{$organism_short_name}->{'last_update'},
+			$supported_organism{$organism_short_name}->{'up_from'},
 			$supported_organism{$organism_short_name}->{'name'},
       ) if ($main::verbose >= 3);
 
@@ -2151,8 +2158,8 @@ sub ReadArguments {
       ## Specify the limits of upstream regions
     } elsif ($arg eq "-up_from") {
       $up_from = shift(@arguments);
-      &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be integer)")) unless (&IsInteger($up_from));
-      &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be negative)")) if ($up_from >= 0);
+      &FatalError($up_from, "Invalid value for the up_from parameter (must be integer)") unless (&IsInteger($up_from));
+      &FatalError($up_from, "Invalid value for the up_from parameter (must be negative)") if ($up_from >= 0);
 
     } elsif ($arg eq "-up_to") {
       $up_to = shift(@arguments);
