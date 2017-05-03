@@ -93,7 +93,12 @@ package main;
     # check contigs, add Ns and tally genome size
     my ($contigs,$size) = (0,0);
     $file = $genomes_path . $data[0] . "/genome/$data[0].dna.genome_lengths.tab";
-    next if(!-s $file);
+    if(!-s $file)
+    {
+        $file = $genomes_path . $data[0] . "/genome/$data[0].dna.toplevel_lengths.tab";
+    }
+
+    #next if(!-s $file);
     open(TAB,$file) || next;
     while(<TAB>)
     {
@@ -186,7 +191,7 @@ package main;
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
-  png("$outfile",width=800,height=600);
+  png("$outfile",width=800,height=700);
   par(mai=c(1,4,1,1)) # make room for long horizontal labels
   data = read.table(file="$file",header=T);
   data[,2] = as.numeric(data[,2])/1e6 ## Convert genome sizes to Mb
@@ -195,12 +200,12 @@ package main;
   mdata = t(data[,2:4]) # 2 unmasked, 3 Ns, 4 masked
   colors = c('white','grey50','grey20')
   barplot( mdata, names.arg=data\$organism, #log="x", #does not show fraction of repeats proportionally!
-    xlab="genome size (Mb)", horiz=T, las=1, col=colors, cex.names=0.8 )
+    xlab="genome size (Mb)", horiz=T, las=1, col=colors, cex.names=0.9 )
   legend("topright", inset=.05, c("Ns","repeat-masked"), 
     fill=c('grey50','grey20'), horiz=F, cex=1.0 )
   dev.off()
 
-  pdf("$PDFfile",width=8,height=7);
+  pdf("$PDFfile",width=8,height=8);
   par(mai=c(1,4,1,1)) # make room for long horizontal labels
   data = read.table(file="$file",header=T);
   data[,2] = as.numeric(data[,2])/1e6 ## Convert genome sizes to Mb
@@ -245,12 +250,12 @@ EOR
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
-  png("$outfile",width=800,height=600);
+  png("$outfile",width=800,height=700);
   colors = c($colors)
   data = read.table(file="$file",header=T,check.names=F);
   par(mai=c(1,4,1,1))
   barplot( data\$genes, names.arg=data\$organism, col=colors, 
-    xlab="annotated genes", horiz=T, las=1, cex.names=0.8 )
+    xlab="annotated genes", horiz=T, las=1, cex.names=0.9 )
   dev.off()
 
   pdf("$PDFfile",width=8,height=7);
@@ -296,12 +301,12 @@ EOR
 
   open(RSHELL,"|R --no-save $Rparams ") || die "# $0 : cannot call R: $!\n";
   print RSHELL<<EOR;
-  png("$outfile",width=800,height=600);
+  png("$outfile",width=800,height=700);
   par(mai=c(1,4,1,1)) # make room for long horizontal labels
   colors = c($colors);
   data = read.table(file="$file",header=T,check.names=F); 
   boxplot( data, xlab='contig / scaffold / chromosome size', horizontal=T, las=1,
-            varwidth=F, show.names=T, log="x", col=colors, cex.axis=0.8 );
+            varwidth=F, show.names=T, log="x", col=colors, cex.axis=0.9 );
   dev.off()
 
   pdf("$PDFfile",width=8,height=7);
@@ -341,12 +346,12 @@ EOR
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
-  png("$outfile",width=800,height=600);
+  png("$outfile",width=800,height=700);
   colors = c($colors)
   data = read.table(file="$file",header=T,check.names=F);
   par(mai=c(1,4,1,1))
   barplot( data\$upstream, names.arg=data\$organism, col=colors, xlim=c(0,2000), 
-    xlab="average upstream length", horiz=T, las=1, cex.names=0.8 )
+    xlab="average upstream length", horiz=T, las=1, cex.names=0.9 )
   dev.off()
 
   pdf("$PDFfile",width=8,height=7);
