@@ -425,7 +425,7 @@ sub ParseGenbankFile {
       &RSAT::message::TimeWarn("Reading sequence") if ($main::verbose >= 3);
       $in_features = 0;
       $in_sequence = 1;
-      $contig_seq = 0;
+      $contig_seq = "";
       if ($args{no_seq}) {
 	#### skip the sequence
 	while (($line = &readNextLine()) && ($current_contig)) {
