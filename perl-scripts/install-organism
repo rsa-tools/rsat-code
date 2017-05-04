@@ -77,7 +77,7 @@ package main;
 		    all
       );
 
-  ## Tasks to iterate over species rather than organisms
+  ## Tasks to handle download and parsing of genomes from NCBI ftp/rsync site.
   @species_tasks = qw(available
                       download
                       list
