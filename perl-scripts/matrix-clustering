@@ -1431,6 +1431,7 @@ sub set_output_file_names {
   $main::outfile{clusters_table} = $main::outfile{prefix}."_tables/clusters.tab"; push @outfiles, "clusters"; &AddTabToConvert("clusters_table");
   $main::outfile{clusters_table_motif_names} = $main::outfile{prefix}."_tables/clusters_motif_names.tab"; push @outfiles, "clusters with motif names"; &AddTabToConvert("clusters_table_motif_names");
   $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_tables/internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
+  $main::outfile{central_motifs} = $main::outfile{prefix}."_central_motifs.tab";
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
@@ -6057,9 +6058,13 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{cluster_summary_table}).'"><strong>Motif collections per cluster</strong></a></td>
 		      <td class="tab_spacer_2">A tab separated file containing the counts of motif of each collection on each cluster.</td>
 		   </tr>
-                   <tr>
+           <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{clusters_table_motif_names}).'"><strong>Clusters</strong></a></td>
 		      <td class="tab_spacer_2">A tab separated file containing the clusters and their correspondng motifs.</td>
+		   </tr>
+           <tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{central_motifs}).'"><strong>Central motifs per cluster</strong></a></td>
+		      <td class="tab_spacer_2">A tab separated file containing the central motif, that one who is the most similar to all the others motif in the same cluster.</td>
 		   </tr>
                          ';
       
