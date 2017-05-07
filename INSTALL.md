@@ -30,12 +30,10 @@ This document explains how to install and configure the Regulatory Sequence Anal
 
 
 You now have access to the download page containing the links to  
-     * the latest stable release named  
-     `rsat_20XX-XX-XX.tar.gz`  
-     (XX-XX-XX are replaced by the release date).
+
+- the latest stable release named `rsat_20XX-XX-XX.tar.gz` (XX-XX-XX must be replaced by the release date).
   
-     * the previous release archives available in the folder  
-       `previous_versions`.
+- the previous release archives available in the folder `previous_versions`.
 	 
 ## Downloading the latest RSAT release via the Web installer  
 
@@ -63,7 +61,7 @@ cd ${INSTALL_ROOT}/rsat
 7. We will start by auto-configuring RSAT in order to deine suitable basic parameters. 
 
 
-    - For VirtualBox instances, replace [your.server.IP] by the actual IP address of your server. 
+For VirtualBox instances, replace [your.server.IP] by the actual IP address of your server. 
 
 ```
 perl perl-scripts/configure_rsat.pl -auto  \
@@ -74,7 +72,7 @@ perl perl-scripts/configure_rsat.pl -auto  \
   ensembl_tools=1
 ```
 
-    - For the IFB cloud (IP address will change at each instance)
+For the IFB cloud (IP address will change at each instance)
 
 ```
 perl perl-scripts/configure_rsat.pl -auto  \
@@ -83,11 +81,13 @@ perl perl-scripts/configure_rsat.pl -auto  \
   rsat_www=auto \
   rsat_ws=auto \
   phylo_tools=0 \
-  compara_tools=1 \
+  compara_tools=0 \
   variations_tools=0 \
   ucsc_tools=0 \
   ensembl_tools=0 \
   SUDO=sudo
+  
+chmod 755 /root # required for apache user to access the packages
 ```
 
 8. We can now refine the configuration by choosing custom parameter to your RSAT instance (for example the email of the local admin, the instance name, ...).
@@ -101,16 +101,17 @@ perl perl-scripts/configure_rsat.pl
 
 ```
 sudo bash
+apt-get update
 cd ${INSTALL_ROOT}/rsat
-source RSAT_config.bashrc
-bash installer/01_ubuntu_packages.bash
-bash installer/02_python_packages.bash 
-bash installer/03_install_rsat.bash
-bash installer/04_perl_packages.bash 
-bash installer/06_install_organisms.bash
-bash installer/07_R-and-packages.bash 
-bash installer/08_apache_config.bash 
-bash installer/09_rsat_ws.bash 
+source RSAT_config.bashrc && \ 
+bash installer/01_ubuntu_packages.bash && \
+bash installer/02_python_packages.bash  && \
+bash installer/03_install_rsat.bash && \
+bash installer/04_perl_packages.bash  && \
+bash installer/06_install_organisms.bash && \
+bash installer/07_R-and-packages.bash  && \
+bash installer/08_apache_config.bash && \
+bash installer/09_rsat_ws.bash && \
 bash installer/10_clean_unnecessary_files.bash
 ```
 
