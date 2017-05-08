@@ -408,6 +408,10 @@ package main;
 
   ## Number of input collections
   local $number_of_collections = "";
+  
+  ## Motif list flag
+  local $motif_list_flag = 0;
+  local $motif_direct_input_flag = 0;
 
   ## List of files to delete
   %to_delete = ();
@@ -435,7 +439,7 @@ package main;
   ################################################################
   ## Input file is mandatory
   unless ($input_matrix) {
-    &RSAT::error::FatalError("At least one matrix file should be specified (option -matrix): -matrix matrix_title matrix_file");
+    &RSAT::error::FatalError("At least one matrix file should be specified: see options -matrix or -matrix_file_table)");
   }
 
   unless ($matrix_format) {
@@ -475,6 +479,18 @@ package main;
   if ($root_matrices_flag == 1) {
       $to_delete{'summary'} = $main::outfile{summary};
   }
+  
+  ################################################################
+  ##
+  ##
+  if($motif_list_flag == 1){
+	
+			print(" *** This is a test 2");
+	
+	&read_motif_table_file();
+	
+			print(" *** This is a test 3");
+	}
 
   ################################################################
   ## Pre-process the input motif file(s):
@@ -669,7 +685,7 @@ Same as -h
       
 =pod
 
-=item B<-matrx matrix_title input_matrix_file>
+=item B<-matrix matrix_title input_matrix_file>
 
 The input file contains a set of position-specific scoring
 matrices.
@@ -714,10 +730,48 @@ For a description of these formats, see the help of I<convert-matrix>.
 	push @main::matrix_titles, $matrix_title;
 	
 	$input_matrix = 1;
+    $motif_direct_input_flag = 1;
 
 	if ( ($count_input_matrix_parameters != 2) || ($matrix_title =~ /^-/) || ($main::matrix_file{$matrix_title} =~ /^-/) ){
 	    &RSAT::error::FatalError("Input should be specified with matrix file (option -matrix) with 2 parameters: matrix_title matrix_file\n\tExample: -matrix Oct_motifs Oct_motifs_peakmotifs.tf");
-	}
+	} 
+	
+	if($motif_list_flag == $motif_direct_input_flag) {
+	&RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
+      }
+
+
+=pod
+
+=item B<-matrix_file_table matrix_file_table>
+
+This option is recommended when the input number of files is large (> 20), which
+would have a large command line and some programs are not capable of read such large arguments.
+
+The input file contains a tab-delimited table with two columns:
+
+1) The motif file - The path to the file with the motif
+2) The collection label
+
+Example: 
+
+Sox_pssms.tf	Sox
+Oct_pssms.tf	Oct
+Nanog_pssms.tf	Nanog
+
+=cut
+    } elsif ($arg eq "-matrix_file_table") {
+		
+		$main::infile{motif_table_file} = shift(@arguments);
+
+		$motif_list_flag = 1;
+		$input_matrix = 1;
+	  
+	  	if($motif_list_flag == $motif_direct_input_flag) {
+			&RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
+		}
+		
+		print(" *** This is a test 1");
 
 =pod
 
@@ -1502,6 +1556,48 @@ sub set_output_file_names {
   ## Open the HTML index file and write header
   $main::outfile{html_index} = $main::outfile{prefix}."_html/index.html";
   push @outfiles, "html_index";
+}
+
+
+######################################################
+## Read the motif file table file and load the matrices 
+## as separated collections
+sub read_motif_table_file {
+	
+	$count_input_matrix_parameters = 0;
+
+    my ($motif_table_file) = &OpenInputFile($main::infile{motif_table_file});
+    while (<$motif_table_file>) {
+		
+		chomp;
+		next if (/^#/); ## Skip header line
+		next if (/^;/); ## Skip comment lines	
+		my $line = $_;
+		my @split_line = split("\t", $line);
+
+		## Get the cluster name and motif IDs
+		my $motif_file = $split_line[0];
+		my $motif_collection = $split_line[1];
+		my $motif_format = $split_line[2];
+		
+	
+		## Substitue special characters which cannot be used inside a file name
+		$motif_collection =~ s|\s|_|g;
+		$motif_collection =~ s|/|_|g;
+		$motif_collection =~ s|:|_|g;
+		
+		$main::matrix_file{$motif_collection} = $motif_file;
+
+		if ($main::matrix_file{$motif_collection}){
+			$count_input_matrix_parameters++;
+		}
+		
+		push @main::matrix_titles, $motif_collection;
+
+	}
+    
+	close($motif_table_file)
+	
 }
 
 
