@@ -779,8 +779,9 @@ sub ExportProteinSequences {
         $pp_description .= "; ".join ("|", $cds->get_attribute("names"));
 
         print PP $header, "\n";
-#        &PrintNextSequence(PP,"fasta",60,$translation,$pp_id, $pp_description);
-        &PrintNextSequence(PP, "fasta", 60, $translation, $gene_id, "protein_ID=".$pp_id." CDS_ID=".$cds_id);
+        &PrintNextSequence(PP, "fasta", 60, $translation, $pp_id); # JvH 2017-05-07: suppressed comments and synonyms because the tab character is misinterpreted by blast formatdb
+#        &PrintNextSequence(PP, "fasta", 60, $translation, $pp_id,  $pp_description);
+#        &PrintNextSequence(PP, "fasta", 60, $translation, $gene_id, "protein_ID=".$pp_id." CDS_ID=".$cds_id);
     }
     close PP;
 }
