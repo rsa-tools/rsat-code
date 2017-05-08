@@ -1021,7 +1021,7 @@ sub OrganismScrollingListCompara {
 ################################################################
 ## Generate pop-up menu to be displayed for organism selection in
 ## Compara.
-sub OrganismPopUpCompara{
+sub OrganismPopUpCompara {
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) == 0) {
         @selected_organisms =
@@ -1106,7 +1106,7 @@ sub OrganismPopUpString {
   }
 
   $organismPopup .=  "</select>";
-    $organismPopup .= " <i>not seeing your favorite organism in the list ? Contact us to have it installed </i>";
+  $organismPopup .= " <i>not seeing your favorite organism in the list ? Contact us to have it installed </i>";
 
   $organismPopup .=  "<br>\n";
   return($organismPopup);
