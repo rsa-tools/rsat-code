@@ -234,7 +234,7 @@ package main;
  
   while(<$main::in>)
   {
-    next if(/^gene/);
+    next if(/^gene_stable_id/);
     chomp;
 
     #($gene_stable_id,$protein_stable_id,$species,$homology_type,$identity,
