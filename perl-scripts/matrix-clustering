@@ -1573,7 +1573,7 @@ sub read_motif_table_file {
 		next if (/^#/); ## Skip header line
 		next if (/^;/); ## Skip comment lines	
 		my $line = $_;
-		my @split_line = split("\t", $line);
+		my @split_line = split("\s+", $line);
 
 		## Get the cluster name and motif IDs
 		my $motif_file = $split_line[0];
