@@ -485,11 +485,7 @@ package main;
   ##
   if($motif_list_flag == 1){
 	
-			print(" *** This is a test 2\n");
-	
 	&read_motif_table_file();
-	
-			print(" *** This is a test 3\n");
 	}
 
   ################################################################
@@ -770,8 +766,6 @@ Nanog_pssms.tf	Nanog
 	  	if($motif_list_flag == $motif_direct_input_flag) {
 			&RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
 		}
-		
-		print(" *** This is a test 1");
 
 =pod
 
@@ -1591,8 +1585,6 @@ sub read_motif_table_file {
 		if ($main::matrix_file{$motif_collection}){
 			$count_input_matrix_parameters++;
 		}
-		
-		print $motif_file."\t".$motif_collection."\t".$count_input_matrix_parameters."\n";
 		
 		push @main::matrix_titles, $motif_collection;
 
