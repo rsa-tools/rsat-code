@@ -1325,6 +1325,10 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
   my ($in, $input_dir) = &OpenInputFile($main::infile{input});
   local($current_seq, $seq_id);
 
+  # Bruno 12052017
+  # global var checked from score_segment
+  my $total_printed_matches = 0;
+
   while ((($current_seq, $seq_id, @seq_comments) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 	 (($current_seq ne "") || ($seq_id ne ""))) {
 
@@ -1367,7 +1371,6 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     ##
     ## START RESTORED PART. THIS CODE, HAD DISAPPEARED BETWEEN v1.184
     ## and 1.185, I (JvH) DON'T UNDERSTAND WHY
-
 
     ## Count the number of N residues and increment the corresponding counter
     my $n_seq = $current_seq;
@@ -1474,7 +1477,6 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       }
     }
 
-
     ################################################################
     ### Initialize variables for CRER detection
     our $crer_seed;
@@ -1543,7 +1545,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
 	    $bg_model->counts_to_transitions();
 	  }
 	  $window_offset++;
-	}
+	} 
 
 	################################################################
 	## Detect sites
@@ -1768,7 +1770,6 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
 	last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
       }
     }
-
 
     ################################################################
     ## New algorithm for CRER detection (July 2011).
@@ -2136,7 +2137,8 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
 	next if ((defined($lth_matrix->{$matrix_name}->{rank})) && ($rank < $lth_matrix->{$matrix_name}->{rank}));
 	#	next if ((defined($lth_matrix->{$matrix_name}->{rank})&&($rank < $lth_matrix->{$matrix_name}->{rank}))
 	#		 ||(defined($lth{rank}->{"all_matrices"})&&($rank < $lth{rank}->{"all_matrices"})));
-	&print_match($match);
+    
+    &print_match($match);
 
 	last if (($uth_matrix->{$matrix_name}->{rank})&&($rank >= $uth_matrix->{$matrix_name}->{rank}));
 	#	last if ((defined($uth{rank}->{$matrix_name})&&($rank >= $uth{rank}->{$matrix_name}))
@@ -3658,10 +3660,17 @@ sub Verbose {
   &PrintArguments($main::out);
 
   if ($quick_scan) {
-	  printf $main::out "; %-29s\n", "Quick counting mode";
+      
+	  printf $main::out "; %-29s ", "Quick counting mode";
 	} else {
-	  printf $main::out "; %-29s\n", "Slow counting mode";
+	  printf $main::out "; %-29s ", "Slow counting mode";
 	}
+
+  # Bruno 12052017
+  if($ENV{max_matrix_scan_lines} && $ENV{max_matrix_scan_lines} > 0){
+     printf $main::out "(max_matrix_scan_lines=%d)\n",$ENV{max_matrix_scan_lines};
+  } 
+  else{ print $main::out "\n" }
 
   ## Input files
   if (%main::infile) {
@@ -4003,8 +4012,8 @@ sub QuickScan {
       next if (/^#/);
       next unless (/\S/);		## Skip empty lines
       if (/^;/) {
-	$comments.=$_;
-	next;
+         $comments.=$_;
+	     next;
       }
       $l++;
       my @line = split (/\t/,$_);
@@ -4043,6 +4052,7 @@ sub QuickScan {
 	  $match->force_attribute('eval',$eval);
       	}
       }
+
       &print_match($match);
     }
   }
@@ -4070,6 +4080,7 @@ sub QuickScan {
 Assign a score to a sequence segment and print it if it passes the
 thresholds. Return value is 1 if the segment passed the thresholds.
 
+Checks global variable $total_printed_matches.
 =back
 
 =cut
@@ -4373,7 +4384,17 @@ sub score_segment {
       #      }
       #      push @{$sequence_scores->{$seq_id}->matches} , $match if ($return_fields{seq_scores});
     } else {
-      &print_match($match);
+      # Bruno 12052017
+      $total_printed_matches++;
+
+      if(!defined($ENV{max_matrix_scan_lines}) ||
+         $total_printed_matches < $ENV{max_matrix_scan_lines}) {
+         &print_match($match);
+      }
+      elsif($total_printed_matches == $ENV{max_matrix_scan_lines}) {
+         printf $main::out "\n;WARNING: list of matches truncated due to disk space limitations (max_matrix_scan_lines).\n";
+         printf $main::out ";WARNING; consider reducing the number of sequences, matrices or changing the thresholds.\n\n";
+      }
     }
   }
   return(1);
