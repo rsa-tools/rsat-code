@@ -38,7 +38,7 @@ $default{markov_order} = "1";
 #$default{leaders} = 'checked';
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
+$default{organism}="Escherichia_coli_GCF_000005845.2_ASM584v2";
 $default{uth_pvalue} = "1e-4";
 $default{taxon} = "Gammaproteobacteria";
 $default{uth_occ_th} = "5";
@@ -156,7 +156,7 @@ $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"footprint-scan_form.cgi");
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K_12_substr__MG1655_uid57779");
+print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_GCF_000005845.2_ASM584v2");
 print $query->hidden(-name=>'taxon',-default=>"Enterobacteriaceae");
 
 #print $query->submit(-label=>"DEMO");
