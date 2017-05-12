@@ -485,11 +485,7 @@ package main;
   ##
   if($motif_list_flag == 1){
 	
-			print(" *** This is a test 2");
-	
 	&read_motif_table_file();
-	
-			print(" *** This is a test 3");
 	}
 
   ################################################################
@@ -770,8 +766,6 @@ Nanog_pssms.tf	Nanog
 	  	if($motif_list_flag == $motif_direct_input_flag) {
 			&RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
 		}
-		
-		print(" *** This is a test 1");
 
 =pod
 
@@ -1573,18 +1567,18 @@ sub read_motif_table_file {
 		next if (/^#/); ## Skip header line
 		next if (/^;/); ## Skip comment lines	
 		my $line = $_;
-		my @split_line = split("\t", $line);
+		my @split_line = split(/\s+/, $line);
 
 		## Get the cluster name and motif IDs
 		my $motif_file = $split_line[0];
 		my $motif_collection = $split_line[1];
-		my $motif_format = $split_line[2];
-		
+#		my $motif_format = $split_line[2];
 	
 		## Substitue special characters which cannot be used inside a file name
-		$motif_collection =~ s|\s|_|g;
-		$motif_collection =~ s|/|_|g;
-		$motif_collection =~ s|:|_|g;
+		$motif_collection =~ s|\s|_|gi;
+		$motif_collection =~ s|/|_|gi;
+		$motif_collection =~ s|:|_|gi;
+		$motif_collection =~ s|\.|_|gi;
 		
 		$main::matrix_file{$motif_collection} = $motif_file;
 
