@@ -15,7 +15,7 @@ $query = new CGI;
 ### default values for filling the form
 $default{genes} = "selection";
 #$default{organism} = "Escherichia coli K12";
-$default{organism} = "Escherichia_coli_K_12_substr__MG1655_uid57779";
+$default{organism} = "Escherichia_coli_GCF_000005845.2_ASM584v2";
 $default{dist_thr} = 55;
 $default{min_gene_nb} = 2;
 $default{return_leader} = "checked";
