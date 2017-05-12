@@ -2445,6 +2445,7 @@ sub PrintHtmlTable {
   my $line_count = 0;
   my $last_line = "";
   my $header_line = "";
+  my @warnings;
   unless ((defined($border)) && (&IsNatural($border))) {
     $border=0;
   }
@@ -2489,14 +2490,18 @@ sub PrintHtmlTable {
     } elsif (/^;\s*WARNING/) {		# Warning
       push @warnings, $_;
 
-
     } elsif ((/^;/) ||
 	     (/^\-\-/) ||
 	     (/^\#/) ||
 	     (/^\/\//)) {	# Comment line
       if ($table_opened) {
-	print $out "<\/TABLE><PRE>\n";
-	$table_opened = 0;
+	    print $out "<\/TABLE><PRE>\n";
+
+        if(@warnings){ # Bruno 12052017
+           print $out @warnings;
+        }
+
+	    $table_opened = 0;
       }
       $last_line =~ s/^;//;
       $last_line =~ s/^#//;
