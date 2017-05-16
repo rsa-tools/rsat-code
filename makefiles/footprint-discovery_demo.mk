@@ -6,7 +6,7 @@ MAKEFILE=${RSAT}/makefiles/footprint-discovery_demo.mk
 
 #ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
 ORG=Escherichia_coli_GCF_000005845.2_ASM584v2
-TAXON=Enterobacteriaceae
+TAXON=Gammaproteobacteria
 GENE=lexA
 QUERY=-q ${GENE}
 BATCH=
@@ -27,13 +27,14 @@ list_param:
 
 ## Generic command for footprint-discovery (will be adapted in other
 ## targets by changing parameters).
+UNIQUE_OPT=-unique_genus 
 FP_DISCO_DIR=results/footprint-discovery
 _fp_disco:
 	@mkdir -p ${FP_DISCO_DIR}
 	@echo
 	@echo "Running footprint-discovery 	${ORG}	${TAXON}	${QUERY}"
 	footprint-discovery -v ${V} -org ${ORG} -taxon ${TAXON} \
-		${QUERY} \
+		${QUERY} ${UNIQUE_OPT} \
 		-sep_genes \
 		-lth occ 1 \
 		-lth occ_sig 0 \
@@ -43,6 +44,7 @@ _fp_disco:
 		-bg_model taxfreq \
 		-task ${TASK} ${BATCH} ${OPT} \
 		-o ${FP_DISCO_DIR}
+
 
 ################################################################
 ## Run footprint discovery with selected genes
