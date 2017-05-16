@@ -99,17 +99,22 @@ sub SelectReferenceOrganisms {
   ################################################################
   ## Define a prefix indicating the type of organism selection
   ## rand indicates when a randome selections of genes instead of the othrolog genes is being selectected
-  $main::org_selection_prefix="";
+  $main::org_selection_prefix = "";
   if ($taxon){
-      $main::org_selection_prefix=$taxon;
+      $main::org_selection_prefix = $taxon;
+      if ($unique_genus) {
+	  $main::org_selection_prefix .= "_OOPS"; # one organism per species
+      } elsif ($unique_species) {
+	  $main::org_selection_prefix .= "_OOPG"; # one organism per genus
+      }
   }
   elsif ($main::orglist_file){
-    $main::org_selection_prefix="org_list";
+    $main::org_selection_prefix = "org_list";
   }
   elsif ($main::orthologs_list_file){
-    $main::org_selection_prefix="orthologs_list";
+    $main::org_selection_prefix = "orthologs_list";
   }
-  $main::org_selection_prefix.="_orthologs_randome_selection"     if($main::rand);
+  $main::org_selection_prefix .= "_orthologs_randome_selection"     if($main::rand);
 
   return @ref_organisms;
 }
@@ -1296,7 +1301,7 @@ sub RetrieveOrthoSeq {
     chomp($ortho_seq_len);
     if ($ortho_seq_len < 1) {
       ## Skip next tasks if the query promoter is empty (this sometimes occurs within operons)
-      $main::status = "Orthologous sequences have length 0 (file ".$outfile{seq}.")";
+      $main::status = "Orthologous sequences have length 0.";
     }
   } else {
     $main::status = "Missing file:  $outfile{seq}";
