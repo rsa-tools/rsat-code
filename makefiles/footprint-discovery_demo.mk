@@ -4,7 +4,8 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/footprint-discovery_demo.mk
 
-ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
+#ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
+ORG=Escherichia_coli_GCF_000005845.2_ASM584v2
 TAXON=Enterobacteriaceae
 GENE=lexA
 QUERY=-q ${GENE}
@@ -26,7 +27,7 @@ list_param:
 
 ## Generic command for footprint-discovery (will be adapted in other
 ## targets by changing parameters).
-FP_DISCO_DIR=results/footprint-discovery_demo
+FP_DISCO_DIR=results/footprint-discovery
 _fp_disco:
 	@mkdir -p ${FP_DISCO_DIR}
 	@echo
