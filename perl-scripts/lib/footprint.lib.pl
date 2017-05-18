@@ -103,9 +103,9 @@ sub SelectReferenceOrganisms {
   if ($taxon){
       $main::org_selection_prefix = $taxon;
       if ($unique_genus) {
-	  $main::org_selection_prefix .= "_OOPS"; # one organism per species
+	  $main::org_selection_prefix .= "_OOPG"; # one organism per species
       } elsif ($unique_species) {
-	  $main::org_selection_prefix .= "_OOPG"; # one organism per genus
+	  $main::org_selection_prefix .= "_OOPS"; # one organism per genus
       }
   }
   elsif ($main::orglist_file){
