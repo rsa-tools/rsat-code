@@ -22,11 +22,11 @@ required.packages = c("devtools",
                       "ggplot2",
                       "reshape2",
                       "dendextend",
-                      "RColorBrewer",
                       "gridExtra",
                       "cowplot",
                       "flux",
-                      "zoo")
+                      "zoo",
+                      "RColorBrewer")
 
 #                       "Rcpp",
 #                       "RcppEigen",
@@ -50,8 +50,8 @@ dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 ## By default, install all packages in the first element of
 ## .libPaths(). However if you are not admin user, they can be
 ## installed in the install rsat libraries.
-#install.dir <- dir.rsat.rlib
-install.dir <- .libPaths()[1]
+install.dir <- dir.rsat.rlib
+#install.dir <- .libPaths()[1]
 
 dir.create(install.dir, showWarnings = FALSE, recursive = FALSE)
 
