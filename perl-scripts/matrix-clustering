@@ -2862,7 +2862,7 @@ $(document).ready(function() {
 		$cluster_nb++;
 
 		## Add the Hide/Show consensus button only to those clusters with 2 or more motifs
-		if ($clusters_info{$cluster_id_hash{$cluster_nb}} > 1){
+		if ($clusters_info{$cluster_id_hash{$cluster_nb}} > 0){
 		    my $c = $cluster_id_hash{$cluster_nb};
 		    my $new_cons_button = $hide_show_consensus;
 		    $new_cons_button =~ s/--cl_id--/$c/g;
@@ -2985,32 +2985,32 @@ $(document).ready(function() {
 	    ################################################################
 	    ## Insert in the html script the labels selected by the user
 	    foreach my $field (@label_fields_to_return) {
-		if ($label_fields_to_return{$field}) {
-		    $labels_num++;
-		    
-		    ### Add the first label with the the link to the logo
-		    if ($labels_num == 1) {
-			my $m = $main_label;
-			$m =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
-			$add_this = $m;
-			$up = uc($field);
-			$add_this =~ s/d\.;/ d\.$field;/;
-		    }
-		    
-		    ### Add the new labels, set the distances among the labels in the tree
-		    if ($labels_num > 1) {
-			my $copy = $new_label;
-			$up = uc($field);
-			$copy =~ s/d\.;/ d\.$field;/;
-			$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
-			my $y_displacement = 4 + (($labels_num -1) * 20);
-			$copy =~ s/#/$y_displacement/;
-			$add_this .= "\n\n".$copy."\n";
-		    }
-		}
+			if ($label_fields_to_return{$field}) {
+				$labels_num++;
+				
+				### Add the first label with the the link to the logo
+				if ($labels_num == 1) {
+				my $m = $main_label;
+				$m =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+				$add_this = $m;
+				$up = uc($field);
+				$add_this =~ s/d\.;/ d\.$field;/;
+				}
+				
+				### Add the new labels, set the distances among the labels in the tree
+				if ($labels_num > 1) {
+				my $copy = $new_label;
+				$up = uc($field);
+				$copy =~ s/d\.;/ d\.$field;/;
+				$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+				my $y_displacement = 4 + (($labels_num -1) * 20);
+				$copy =~ s/#/$y_displacement/;
+				$add_this .= "\n\n".$copy."\n";
+				}
+			}
 	    }
 
-	    			my $copy = $new_label;
+	    	my $copy = $new_label;
 			$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
 			$add_this .= "\n\n".$copy."\n";
 	    
