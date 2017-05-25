@@ -52,8 +52,8 @@ extern int SHOW_DEBUG;
 // =                            string_buffer
 // ===========================================================================
 typedef struct {
-    int allocated_size;
-    int current_size;
+    long long allocated_size;
+    long long current_size;
     char *data;
 } string_buffer_t;
 
@@ -65,7 +65,7 @@ typedef struct {
 
 string_buffer_t *new_string_buffer();
 void free_string_buffer(string_buffer_t *string_buffer);
-inline void string_buffer_set_char(string_buffer_t *buffer, char c, int position);
+inline void string_buffer_set_char(string_buffer_t *buffer, char c, long long position);
 
 #endif
 
