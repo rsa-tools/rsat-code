@@ -2137,7 +2137,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
 	next if ((defined($lth_matrix->{$matrix_name}->{rank})) && ($rank < $lth_matrix->{$matrix_name}->{rank}));
 	#	next if ((defined($lth_matrix->{$matrix_name}->{rank})&&($rank < $lth_matrix->{$matrix_name}->{rank}))
 	#		 ||(defined($lth{rank}->{"all_matrices"})&&($rank < $lth{rank}->{"all_matrices"})));
-    
+   
     &print_match($match);
 
 	last if (($uth_matrix->{$matrix_name}->{rank})&&($rank >= $uth_matrix->{$matrix_name}->{rank}));
@@ -2166,6 +2166,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     }
 
     my $m = 0;
+    my $total_printed_quick_matches = 0; # Bruno 19052017
     foreach my $matrix (@matrices) {
       $m++;
       &RSAT::message::TimeWarn("Scanning sequences with matrix-scan-quick, matrix", $m."/".$matrix_nb, $matrix->get_attribute("id"))
@@ -3815,6 +3816,7 @@ sub CheckQuickScan {
 
 ################################################################
 ## Use matrix-scan-quick (developed by Matthieu Defrance) to scan the sequences
+# checks global var $total_printed_quick_matches, Bruno 19052017
 sub QuickScan {
   my ($matrix, $scan_mode, $total_scored) = @_;
   
@@ -4052,8 +4054,19 @@ sub QuickScan {
 	  $match->force_attribute('eval',$eval);
       	}
       }
+        
+      # global var, Bruno 19052017
+      $total_printed_quick_matches++;
 
-      &print_match($match);
+      if(!defined($ENV{max_matrix_scan_lines}) ||
+         $total_printed_quick_matches < $ENV{max_matrix_scan_lines}) {
+         &print_match($match);
+      }
+      elsif($total_printed_quick_matches == $ENV{max_matrix_scan_lines}) {
+         printf $main::out "\n;WARNING: list of matches truncated due to disk space limitations (max_matrix_scan_lines).\n";
+         printf $main::out ";WARNING; consider reducing the number of sequences, matrices or changing the thresholds.\n\n";
+      }
+
     }
   }
 }
