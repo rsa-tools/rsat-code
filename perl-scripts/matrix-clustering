@@ -1567,7 +1567,7 @@ sub read_motif_table_file {
 		next if (/^#/); ## Skip header line
 		next if (/^;/); ## Skip comment lines	
 		my $line = $_;
-		my @split_line = split(/\s+/, $line);
+		my @split_line = split(/\t+/, $line);
 
 		## Get the cluster name and motif IDs
 		my $motif_file = $split_line[0];
@@ -1712,10 +1712,13 @@ sub pre_process_motif_files{
       my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
       $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_input};
       $convert_matrix_cmd .= " -from ".$matrix_format;
-      $convert_matrix_cmd .= " -to transfac";
+      $convert_matrix_cmd .= " -to tf";
       $convert_matrix_cmd .= " -top ".$top_matrices if ($top_matrices > 0);
       $convert_matrix_cmd .= " -skip ".$skip_matrices if ($skip_matrices > 0);
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
+      
+      print $convert_matrix_cmd."\n";
+      
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
       ##############################################
