@@ -145,9 +145,9 @@ package main;
   &RSAT::error::FatalError("The organisms list file must be specified (option -list)") 
     unless ($infile{"list"});
 
-  ## release number must be specified
-  &RSAT::error::FatalError("EnsemblGenomes release must be specified (option -release)")
-    unless ($params{"release"});
+  ## release number must be specified (May2017 to allow non EG imports, such as Teshome's)
+  #&RSAT::error::FatalError("EnsemblGenomes release must be specified (option -release)")
+  #  unless ($params{"release"});
 
   ## Open Compara TSV infile
   ($in,$dir) = &OpenInputFile($infile{"i"});
@@ -159,6 +159,7 @@ package main;
   my (%eg_group_species,%eg_group_species_fullname,%db,$fullname2int,%species_ids);
   my ($key,$record,$gene_stable_id,$protein_stable_id,$species,$homology_type,$identity);
   my ($homology_gene_stable_id,$homology_protein_stable_id,$homology_species,$homology_identity);
+  my ($dn,$ds,$goc_score,$wga_coverage); # Added April2017
 
   # 1) read organisms file to get list of species in ensembl-flavour  
   &RSAT::message::TimeWarn("Parsing list ",$main::infile{"list"}) if ($main::verbose >= 0);
@@ -169,8 +170,17 @@ package main;
     next if(/^#/);
     @rawdata = split(/\t/);
     $eg_group_species{$rawdata[1]} = ++$n_of_species;
-    $eg_group_species_fullname{$rawdata[1]} = 
-        uc(substr($rawdata[1],0,1)).substr($rawdata[1],1).'.'.$rawdata[4].'.'.$params{"release"};
+
+    if($params{"release"})
+    {
+        $eg_group_species_fullname{$rawdata[1]} = 
+            uc(substr($rawdata[1],0,1)).substr($rawdata[1],1).'.'.$rawdata[4].'.'.$params{"release"};
+    }
+    else
+    {
+        $eg_group_species_fullname{$rawdata[1]} =
+            uc(substr($rawdata[1],0,1)).substr($rawdata[1],1).'.'.$rawdata[4];
+    }
   }
   close($LIST);
   
@@ -224,12 +234,18 @@ package main;
  
   while(<$main::in>)
   {
-    next if(/^gene/);
+    next if(/^gene_stable_id/);
     chomp;
 
-    ($gene_stable_id,$protein_stable_id,$species,$homology_type,$identity,
+    #($gene_stable_id,$protein_stable_id,$species,$homology_type,$identity,
+    #    $homology_gene_stable_id,$homology_protein_stable_id,$homology_species,
+    #    $homology_identity) = split(/\t\s*/);
+
+    # http://www.ensembl.org/info/genome/compara/Ortholog_qc_manual.html
+    # $dn,$ds,$goc_score,$wga_coverage are not used yet
+    ($gene_stable_id,$protein_stable_id,$species,$identity,$homology_type,
         $homology_gene_stable_id,$homology_protein_stable_id,$homology_species,
-        $homology_identity) = split(/\t\s*/);
+        $homology_identity,$dn,$ds,$goc_score,$wga_coverage) = split(/\t\s*/);
 
     next if(!$eg_group_species{$species} || !$eg_group_species{$homology_species});
 
