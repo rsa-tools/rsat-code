@@ -7,6 +7,7 @@
 // 
 
 #include <time.h>
+// #include <limits.h>
 #include "utils.h"
 #include "count.h"
 
@@ -79,6 +80,7 @@ int parse_spacing(char *arg, int *values)
 
 int main(int argc, char *argv[])
 {
+
     char *input_filename = NULL;
     char *output_filename = NULL;
     int add_rc = TRUE;

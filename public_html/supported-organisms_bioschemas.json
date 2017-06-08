@@ -1,0 +1,45 @@
+{
+  "@context": "http://schema.org/",
+  "@type": "SoftwareApplication",
+  "name": "RSAT supported-organisms",
+  "description": "Returns the list of organisms supported on a given instance of the Regulatory Sequence Analysis Tools (RSAT).",
+  "url": "http://rsat-tagc.univ-mrs.fr/rsat/supported-organisms.cgi",
+  "featureList": "",
+  "softwareVersion": "",
+  "applicationCategory": "Web tool",
+  "operatingSystem":"all",
+  "offers": {
+    "@type": "Offer",
+    "price": "00.00",
+    "priceCurrency": "EUR"
+  },
+  "publisher":{
+    "@type": "Person",
+    "name": "Jacques van Helden"
+  },
+  "Citation":[
+  {
+   	"@type":"CreativeWork",
+  	"name": "RSAT 2015: Regulatory Sequence Analysis Tools.",
+    "url": "https://www.ncbi.nlm.nih.gov/pubmed/25904632"
+  },
+  {
+    "@type":"CreativeWork",
+  	"name": "RSAT: regulatory sequence analysis tools.",
+    "url": "https://www.ncbi.nlm.nih.gov/pubmed/18495751"
+  }
+  ],
+  "potentialAction": {
+      "@type": "ControlAction",
+      "object": {
+        "@type": "Dataset",
+        "additionalType":"no input"
+        }, 
+      "result": {
+          "@type": "Dataset",
+          "additionalType":"http://edamontology.org/data_2909"
+        }
+      },
+  "license": "to be defined",
+  "keywords": "bioinformatics"
+}
