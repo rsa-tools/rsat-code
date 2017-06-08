@@ -43,7 +43,7 @@ $field_description{rank} = "Rank";
 
 
 ################################################################
-### default values for filling the form
+## Default values for filling the form
 
 ## Default values for dyad-analysis
 %default = ();
@@ -175,8 +175,9 @@ $demo_queries = "lexA\n";
 #$demo_queries .= "uvrB\n";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K_12_substr__MG1655_uid57779");
-print $query->hidden(-name=>'taxon',-default=>"Enterobacteriaceae");
+print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_GCF_000005845.2_ASM584v2");
+print $query->hidden(-name=>'taxon',-default=>"Gammaproteobacteria");
+print $query->hidden(-name=>'unique_taxon',-default=>"genus");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;

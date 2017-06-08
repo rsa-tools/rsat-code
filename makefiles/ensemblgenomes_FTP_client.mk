@@ -302,7 +302,8 @@ check_sequences:
 
 #################################################################
 ## Download group COMPARA files from eg
-SERVER_COMPARA_FILE=${DATABASE}/tsv/ensembl-compara/Compara.homologies.${RELEASE}.tsv.gz
+#SERVER_COMPARA_FILE=${DATABASE}/tsv/ensembl-compara/Compara.homologies.${RELEASE}.tsv.gz
+SERVER_COMPARA_FILE=${DATABASE}/tsv/ensembl-compara/homologies/Compara.${ENSEMBL_RELEASE}.protein_default.homologies.tsv.gz
 download_compara:
 	@echo
 	@mkdir -p ${ORGANISM_DIR}
@@ -310,7 +311,7 @@ download_compara:
 	@echo "	${SERVER_COMPARA_FILE}"
 	@wget -Ncnv ${SERVER_COMPARA_FILE} -P ${ORGANISM_DIR}
 	@echo
-	@ls -1 ${ORGANISM_DIR}/Compara.homologies*gz
+	@ls -1 ${ORGANISM_DIR}/Compara.${ENSEMBL_RELEASE}.protein_default.homologies.tsv.gz
 
 ##################################################################
 ## Download GO ontology file and parse it for server use
@@ -332,9 +333,11 @@ GO_EXPANDED_FILE=expanded_${GO_ANNOT_LINK}
 install_go_annotations:
 	@echo
 	@mkdir -p ${GO_ANNOT_DIR}
-	@echo "Downloading GO annotations of ${SPECIES}" 
+	@echo "Downloading GO annotations of ${SPECIES}"
+	@echo download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
+        -release ${RELEASE} -list ${ORGANISM_TABLE} 
 	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
-		-release ${RELEASE}	-list ${ORGANISM_TABLE-}
+		-release ${RELEASE}	-list ${ORGANISM_TABLE}
 	@echo "Expanding GO annotations of ${SPECIES}" 
 	@rm -f ${GO_ANNOT_LINK}
 	@ln -s ${GO_ANNOT_FILE} ${GO_ANNOT_LINK}
@@ -496,7 +499,8 @@ install_bsub:
 
 ##################################################################
 ## Parse Compara.homologies 
-CMP_GZ=$(shell ls -1 ${ORGANISM_DIR}/Compara.homologies*.gz)
+#CMP_GZ=$(shell ls -1 ${ORGANISM_DIR}/Compara.homologies*.gz)
+CMP_GZ=${ORGANISM_DIR}/Compara.${ENSEMBL_RELEASE}.protein_default.homologies.tsv.gz
 BDB_FILE=${ORGANISM_DIR}/compara.bdb
 BDB_LOG=${ORGANISM_DIR}/compara.log
 parse_compara:

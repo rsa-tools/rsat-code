@@ -172,7 +172,7 @@ if(number.of.motifs > 1){
   clusters <<- lapply(clusters, function(x){
     get.id(x)
   })
-  
+
   clusters.names <<- lapply(clusters, function(x){
     get.name(x)
   })
@@ -187,7 +187,7 @@ if(number.of.motifs > 1){
   clusters.composition.file <- paste(sep="", out.prefix, "_tables/clusters.tab")
   write.table(clusters.table, file = clusters.composition.file, sep="\t", quote=FALSE, row.names = TRUE, col.names = FALSE)
   verbose(paste("Exporting cluster table with motif IDs", clusters.composition.file), 3)
-  
+
   ## Export a table with the cluster names and its elements (TF || Motif names)
   clusters.names.table <- NULL
   clusters.names.table <-  lapply(clusters.names, function(x){
@@ -232,7 +232,7 @@ if(number.of.motifs > 1){
 
            pdf(file=heatmap.file, width=w, height=h, paper="executive")
 #           pdf(file=heatmap.file, )
-          
+
         } else if (plot.format == "jpg") {
           jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
 #           jpeg(filename=heatmap.file)
@@ -296,7 +296,7 @@ if(number.of.motifs > 1){
 #     }
 
   }
-  
+
 } else{
 
   motifs.info <- list()
@@ -330,6 +330,11 @@ compa.table <- global.compare.matrices.table
 desc.tab <<- global.description.table
 
 all.central.motifs <- vector()
+
+central.motif.IDs <- vector()
+central.motif.names <- vector()
+central.motif.IDs.cluster <- vector()
+
 i <- sapply(1:length(clusters), function(nb){
 
     alignment.cluster <<- list()
@@ -351,12 +356,12 @@ i <- sapply(1:length(clusters), function(nb){
            ## If the cluster has only one element, create its JSON file and skip the
            ## hierarchical clustering step
            case.1 = {
-             
+
              ids <- as.character(ids)
-             
+
              ## New description table (with the ids of the current cluster)
              global.description.table <<- desc.tab[desc.tab[,"id"] %in% ids, ]
-             
+
              ## Get the central motif name
              ## This will be used to rename the clusters
              central.motif <- get.name(ids)[1]
@@ -365,17 +370,22 @@ i <- sapply(1:length(clusters), function(nb){
              central.motif<- gsub("\\.", "_", central.motif)
              central.motif <- paste(central.motif, "cluster", nb, sep = "_")
              central.motif <- paste("cluster", nb, sep = "_")
-             
+
              ## Creates an individual folder for each cluster
              cluster.folder <<- file.path(clusters.info.folder, central.motif)
              dir.create(cluster.folder, recursive=TRUE, showWarnings=FALSE)
              all.central.motifs <<- append(all.central.motifs, central.motif)
-             
+
              ## Fill the cluster list with the data of the non-aligned motifs (singleton)
              global.description.table <<- NULL
              global.description.table <<- desc.tab
              forest.list[[central.motif]][[ids]] <<- singleton.list
-              
+
+             ## Fill the elements of the 'central motif table'
+             central.motif.IDs.cluster[nb] <<- paste("cluster", nb, sep = "_")
+             central.motif.names[nb] <<- get.name(ids)[1]
+             central.motif.IDs[nb] <<- ids[1]
+
              ids <- as.character(ids)
 
              forest.list[[central.motif]][[ids]][["strand"]] <<- "D"
@@ -415,7 +425,7 @@ i <- sapply(1:length(clusters), function(nb){
 
                 ## New comparison table (with the ids of the current cluster)
                global.compare.matrices.table <<- compa.table[which( (compa.table[,"id1"] %in% ids) & (compa.table[,"id2"] %in% ids) ),]
-               
+
                global.compare.matrices.table$id1 <<- as.vector(global.compare.matrices.table$id1)
                global.compare.matrices.table$id2 <<- as.vector(global.compare.matrices.table$id2)
 
@@ -428,7 +438,7 @@ i <- sapply(1:length(clusters), function(nb){
                ## Convert distance table into a distance matrix, required by hclust
                distances.objects <- build.distance.matrix(metric = metric)
                dist.matrix <- distances.objects$matrix
-               
+
                ## Calculate the central motif
                ## This will be used to rename the clusters
                mean.dist.per.motif <- apply(distances.objects[[1]], 1, mean)
@@ -439,14 +449,20 @@ i <- sapply(1:length(clusters), function(nb){
                central.motif<- gsub("\\.", "_", central.motif)
                central.motif <- paste(central.motif, "cluster", nb, sep = "_")
                central.motif <- paste("cluster", nb, sep = "_")
-               
+
+               ## Fill the elements of the 'central motif table'
+               c.m <- names(which.min(mean.dist.per.motif)[1])
+               central.motif.IDs.cluster[nb] <<- paste("cluster", nb, sep = "_")
+               central.motif.names[nb] <<- get.name(c.m)
+               central.motif.IDs[nb] <<- c.m
+
                ## Creates an individual folder for each cluster
                cluster.folder <<- file.path(clusters.info.folder, central.motif)
                dir.create(cluster.folder, recursive=TRUE, showWarnings=FALSE)
 
                ## Build the tree by hierarchical clustering,
                tree <<- hclust.motifs(dist.matrix, hclust.method = hclust.method)
-               
+
                if(only.hclust == 0){
 
                   ## Creates and export the json file
@@ -461,19 +477,16 @@ i <- sapply(1:length(clusters), function(nb){
                   JSON.clusters.table <- identify.JSON.tree.branches(tree)
                   JSON.clusters.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_", central.motif,"_table.tab")
                   write.table(JSON.clusters.table, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
-                  
+
                   nodes <- as.vector(JSON.clusters.table$node)
                   nodes <- as.numeric(gsub("node_", "", nodes))
-                  
-                  # print(nodes)
-                  # print(order(nodes, decreasing = TRUE))
-                  # stop("Here")
-                  
+
+
                   ## Export the tree agglomeration order
                   tree.agg<- as.vector(tree[[1]])
-                  
+
                   tree.agg.tab <- sapply(tree.agg, function(x){
-                    
+
                     if(x < 0){
                       new.x <- x*-1
                       as.vector(global.description.table$id)[new.x]
@@ -488,7 +501,7 @@ i <- sapply(1:length(clusters), function(nb){
                   tree.agg.tab <- tree.agg.tab[,c("merged_ID", "child_1", "child_2")]
                   JSON.clusters.order.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_", central.motif,"_table_linkage_order.tab")
                   write.table(tree.agg.tab, file = JSON.clusters.order.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
-                  
+
                 }
 
                ## Align the motifs and retrieve the information of the intermediate alignments
@@ -521,15 +534,20 @@ all.central.motifs <- as.vector(unlist(all.central.motifs))
 all.central.motifs.ids.df <-data.frame(all.central.motifs, 1:length(all.central.motifs))
 write.table(all.central.motifs.ids.df, file = paste(sep="", out.prefix, "_cluster_IDs.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
 
-##aqui
-
-## AQui
 ## Print a file with the Hexadecimals code for the colors of the clusters
 ## The color of the clusters showed in the heatmap will be the same
 ## colors in the D3 trees.
+##
+## Print as well a table with the central motif on each cluster
 if(only.hclust == 0){
   colors <- rainbow(length(clusters))
   write.table(paste(all.central.motifs, " ", colors, sep = ""), file = paste(sep="", out.prefix, "_hexa_colors.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
+
+  ## Create and export DF of central motifs
+  central.motif.table <- data.frame(central.motif.IDs.cluster, central.motif.IDs, central.motif.names)
+  colnames(central.motif.table) <- c("cluster", "ID", "name")
+  write.table(central.motif.table, file = paste(sep="", out.prefix, "_central_motifs.tab"), col.names = FALSE, row.names = FALSE, quote = FALSE, sep = "\t")
+
 }
 
 #################################

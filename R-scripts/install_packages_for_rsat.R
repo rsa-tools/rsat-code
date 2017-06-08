@@ -20,13 +20,13 @@ required.packages = c("devtools",
                       "png",
                       "dynamicTreeCut",
                       "ggplot2",
-                      "zoo",
                       "reshape2",
                       "dendextend",
-                      "RColorBrewer",
                       "gridExtra",
                       "cowplot",
-                      "flux")
+                      "flux",
+                      "zoo",
+                      "RColorBrewer")
 
 #                       "Rcpp",
 #                       "RcppEigen",
@@ -45,38 +45,52 @@ if (dir.rsat == "") {
 }
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
-dir.create(dir.rsat.rlib, showWarnings = FALSE, recursive = FALSE)
+
+################################################################
+## By default, install all packages in the first element of
+## .libPaths(). However if you are not admin user, they can be
+## installed in the install rsat libraries.
+install.dir <- dir.rsat.rlib
+#install.dir <- .libPaths()[1]
+
+dir.create(install.dir, showWarnings = FALSE, recursive = FALSE)
 
 ## Install R packages from the CRAN
 message("Installing R packages from CRAN repository: ", rcran.repos)
+message("Installing R packages in local directory: ", install.dir)
 
 ##message(required.packages)
 # pkg <- required.packages[1]
 for (pkg in required.packages) {
-    if(suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE, lib=c(.libPaths(),dir.rsat.rlib)))) {
-        message(pkg, " CRAN package already installed. Skipping. ")
+    if (suppressPackageStartupMessages(
+        require(pkg, quietly=TRUE,
+                character.only = TRUE,
+                lib=c(.libPaths(),install.dir)))) {
+        message(pkg, "         CRAN package already installed. Skipping. ")
     } else {
-        message("Installing CRAN package ", pkg, " in dir ", dir.rsat.rlib)
-        install.packages(pkg, repos=rcran.repos, dependencies=TRUE, lib=dir.rsat.rlib)
-        message(pkg, " CRAN package installed in dir ", dir.rsat.rlib)
+        message("Installing CRAN package ", pkg, " in dir ", install.dir)
+        install.packages(pkg, repos=rcran.repos, dependencies=TRUE, lib=install.dir)
+        message(pkg, " CRAN package installed in dir ", install.dir)
     }
 }
+
+
 
 ################################################################
 ## Check requirement for bioconductor packages
 message("Installing BioConductor packages")
 message(cat("Required BioConductor packages: ", required.packages.bioconductor))
 for (pkg in required.packages.bioconductor) {
-  if (suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE, lib=c(.libPaths(),dir.rsat.rlib)))) {
+  if (suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE, lib=c(.libPaths(),install.dir)))) {
     message(pkg, " BioConductor package already installed. Skipping. ")
   } else {
-    message("Installing Bioconductor package ", pkg, " in dir ", dir.rsat.rlib)
-    .libPaths(c(dir.rsat.rlib, .libPaths())) ## this line fixes the problem at ENS (Morgane)
+    message("Installing Bioconductor package ", pkg, " in dir ", install.dir)
+#    .libPaths(c(install.dir, .libPaths())) ## this line fixes the problem at ENS (Morgane) ## MAYBE BUT IT CREATES PROBLEMS IF THE USER HAS NOT DONE IT IN THE USE S
     source("http://bioconductor.org/biocLite.R")
-#    biocLite(ask=FALSE, lib=dir.rsat.rlib,  lib.loc=dir.rsat.rlib)
-    biocLite(lib=dir.rsat.rlib, lib.loc=c(.libPaths(),dir.rsat.rlib), suppressUpdates="")
-    biocLite(pkg, dependencies=TRUE, lib=dir.rsat.rlib,  lib.loc=dir.rsat.rlib, suppressUpdates="")
-    message(pkg, " BioConductor package installed in dir ", dir.rsat.rlib)
+#    biocLite(ask=FALSE, lib=install.dir,  lib.loc=install.dir)
+    biocLite(lib=install.dir, lib.loc=c(.libPaths(),install.dir), suppressUpdates="")
+    biocLite(pkg, dependencies=TRUE, lib=install.dir,  lib.loc=install.dir, suppressUpdates="")
+    message(pkg, " BioConductor package installed in dir ", install.dir)
   }
 }
 
@@ -88,8 +102,11 @@ for (pkg in required.packages.bioconductor) {
 ################################################################
 ## Install RSAT-specific packages.  We force re-installation of these
 ## packages since they may have changed since the last installation.
-message("Installing RSAT-specific packages")
+message("Installing RSAT-specific packages in ", dir.rsat.rlib)
+
+dir.create(dir.rsat.rlib, recursive=TRUE, showWarnings=FALSE)
 message(required.packages.rsat)
+
 for (package in required.packages.rsat) {
   message("Installing RSAT package ", package, " in folder ", dir.rsat.rlib)
   install.packages(pkgs=file.path(dir.rsat.rscripts, package), repos=NULL,  lib=dir.rsat.rlib, type="source")
