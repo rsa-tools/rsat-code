@@ -408,6 +408,10 @@ package main;
 
   ## Number of input collections
   local $number_of_collections = "";
+  
+  ## Motif list flag
+  local $motif_list_flag = 0;
+  local $motif_direct_input_flag = 0;
 
   ## List of files to delete
   %to_delete = ();
@@ -435,7 +439,7 @@ package main;
   ################################################################
   ## Input file is mandatory
   unless ($input_matrix) {
-    &RSAT::error::FatalError("At least one matrix file should be specified (option -matrix): -matrix matrix_title matrix_file");
+    &RSAT::error::FatalError("At least one matrix file should be specified: see options -matrix or -matrix_file_table)");
   }
 
   unless ($matrix_format) {
@@ -475,6 +479,14 @@ package main;
   if ($root_matrices_flag == 1) {
       $to_delete{'summary'} = $main::outfile{summary};
   }
+  
+  ################################################################
+  ##
+  ##
+  if($motif_list_flag == 1){
+	
+	&read_motif_table_file();
+	}
 
   ################################################################
   ## Pre-process the input motif file(s):
@@ -669,7 +681,7 @@ Same as -h
       
 =pod
 
-=item B<-matrx matrix_title input_matrix_file>
+=item B<-matrix matrix_title input_matrix_file>
 
 The input file contains a set of position-specific scoring
 matrices.
@@ -714,10 +726,46 @@ For a description of these formats, see the help of I<convert-matrix>.
 	push @main::matrix_titles, $matrix_title;
 	
 	$input_matrix = 1;
+    $motif_direct_input_flag = 1;
 
 	if ( ($count_input_matrix_parameters != 2) || ($matrix_title =~ /^-/) || ($main::matrix_file{$matrix_title} =~ /^-/) ){
 	    &RSAT::error::FatalError("Input should be specified with matrix file (option -matrix) with 2 parameters: matrix_title matrix_file\n\tExample: -matrix Oct_motifs Oct_motifs_peakmotifs.tf");
-	}
+	} 
+	
+	if($motif_list_flag == $motif_direct_input_flag) {
+	&RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
+      }
+
+
+=pod
+
+=item B<-matrix_file_table matrix_file_table>
+
+This option is recommended when the input number of files is large (> 20), which
+would have a large command line and some programs are not capable of read such large arguments.
+
+The input file contains a tab-delimited table with two columns:
+
+1) The motif file - The path to the file with the motif
+2) The collection label
+
+Example: 
+
+Sox_pssms.tf	Sox
+Oct_pssms.tf	Oct
+Nanog_pssms.tf	Nanog
+
+=cut
+    } elsif ($arg eq "-matrix_file_table") {
+		
+		$main::infile{motif_table_file} = shift(@arguments);
+
+		$motif_list_flag = 1;
+		$input_matrix = 1;
+	  
+	  	if($motif_list_flag == $motif_direct_input_flag) {
+			&RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
+		}
 
 =pod
 
@@ -1431,6 +1479,7 @@ sub set_output_file_names {
   $main::outfile{clusters_table} = $main::outfile{prefix}."_tables/clusters.tab"; push @outfiles, "clusters"; &AddTabToConvert("clusters_table");
   $main::outfile{clusters_table_motif_names} = $main::outfile{prefix}."_tables/clusters_motif_names.tab"; push @outfiles, "clusters with motif names"; &AddTabToConvert("clusters_table_motif_names");
   $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_tables/internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
+  $main::outfile{central_motifs} = $main::outfile{prefix}."_central_motifs.tab";
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
@@ -1501,6 +1550,48 @@ sub set_output_file_names {
   ## Open the HTML index file and write header
   $main::outfile{html_index} = $main::outfile{prefix}."_html/index.html";
   push @outfiles, "html_index";
+}
+
+
+######################################################
+## Read the motif file table file and load the matrices 
+## as separated collections
+sub read_motif_table_file {
+	
+	$count_input_matrix_parameters = 0;
+
+    my ($motif_table_file) = &OpenInputFile($main::infile{motif_table_file});
+    while (<$motif_table_file>) {
+		
+		chomp;
+		next if (/^#/); ## Skip header line
+		next if (/^;/); ## Skip comment lines	
+		my $line = $_;
+		my @split_line = split(/\t+/, $line);
+
+		## Get the cluster name and motif IDs
+		my $motif_file = $split_line[0];
+		my $motif_collection = $split_line[1];
+#		my $motif_format = $split_line[2];
+	
+		## Substitue special characters which cannot be used inside a file name
+		$motif_collection =~ s|\s|_|gi;
+		$motif_collection =~ s|/|_|gi;
+		$motif_collection =~ s|:|_|gi;
+		$motif_collection =~ s|\.|_|gi;
+		
+		$main::matrix_file{$motif_collection} = $motif_file;
+
+		if ($main::matrix_file{$motif_collection}){
+			$count_input_matrix_parameters++;
+		}
+		
+		push @main::matrix_titles, $motif_collection;
+
+	}
+    
+	close($motif_table_file)
+	
 }
 
 
@@ -1621,10 +1712,13 @@ sub pre_process_motif_files{
       my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
       $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_input};
       $convert_matrix_cmd .= " -from ".$matrix_format;
-      $convert_matrix_cmd .= " -to transfac";
+      $convert_matrix_cmd .= " -to tf";
       $convert_matrix_cmd .= " -top ".$top_matrices if ($top_matrices > 0);
       $convert_matrix_cmd .= " -skip ".$skip_matrices if ($skip_matrices > 0);
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
+      
+      print $convert_matrix_cmd."\n";
+      
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
       ##############################################
@@ -2771,7 +2865,7 @@ $(document).ready(function() {
 		$cluster_nb++;
 
 		## Add the Hide/Show consensus button only to those clusters with 2 or more motifs
-		if ($clusters_info{$cluster_id_hash{$cluster_nb}} > 1){
+		if ($clusters_info{$cluster_id_hash{$cluster_nb}} > 0){
 		    my $c = $cluster_id_hash{$cluster_nb};
 		    my $new_cons_button = $hide_show_consensus;
 		    $new_cons_button =~ s/--cl_id--/$c/g;
@@ -2894,32 +2988,32 @@ $(document).ready(function() {
 	    ################################################################
 	    ## Insert in the html script the labels selected by the user
 	    foreach my $field (@label_fields_to_return) {
-		if ($label_fields_to_return{$field}) {
-		    $labels_num++;
-		    
-		    ### Add the first label with the the link to the logo
-		    if ($labels_num == 1) {
-			my $m = $main_label;
-			$m =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
-			$add_this = $m;
-			$up = uc($field);
-			$add_this =~ s/d\.;/ d\.$field;/;
-		    }
-		    
-		    ### Add the new labels, set the distances among the labels in the tree
-		    if ($labels_num > 1) {
-			my $copy = $new_label;
-			$up = uc($field);
-			$copy =~ s/d\.;/ d\.$field;/;
-			$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
-			my $y_displacement = 4 + (($labels_num -1) * 20);
-			$copy =~ s/#/$y_displacement/;
-			$add_this .= "\n\n".$copy."\n";
-		    }
-		}
+			if ($label_fields_to_return{$field}) {
+				$labels_num++;
+				
+				### Add the first label with the the link to the logo
+				if ($labels_num == 1) {
+				my $m = $main_label;
+				$m =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+				$add_this = $m;
+				$up = uc($field);
+				$add_this =~ s/d\.;/ d\.$field;/;
+				}
+				
+				### Add the new labels, set the distances among the labels in the tree
+				if ($labels_num > 1) {
+				my $copy = $new_label;
+				$up = uc($field);
+				$copy =~ s/d\.;/ d\.$field;/;
+				$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+				my $y_displacement = 4 + (($labels_num -1) * 20);
+				$copy =~ s/#/$y_displacement/;
+				$add_this .= "\n\n".$copy."\n";
+				}
+			}
 	    }
 
-	    			my $copy = $new_label;
+	    	my $copy = $new_label;
 			$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
 			$add_this .= "\n\n".$copy."\n";
 	    
@@ -6057,9 +6151,13 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{cluster_summary_table}).'"><strong>Motif collections per cluster</strong></a></td>
 		      <td class="tab_spacer_2">A tab separated file containing the counts of motif of each collection on each cluster.</td>
 		   </tr>
-                   <tr>
+           <tr>
 		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{clusters_table_motif_names}).'"><strong>Clusters</strong></a></td>
 		      <td class="tab_spacer_2">A tab separated file containing the clusters and their correspondng motifs.</td>
+		   </tr>
+           <tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{central_motifs}).'"><strong>Central motifs per cluster</strong></a></td>
+		      <td class="tab_spacer_2">A tab separated file containing the central motif, that one who is the most similar to all the others motif in the same cluster.</td>
 		   </tr>
                          ';
       
