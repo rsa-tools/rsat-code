@@ -1571,8 +1571,8 @@ sub CalcProba {
 ## Print the header line before the result
 sub PrintHeaderLine {
     $col_description{"seq"} = "oligomer sequence";
-    $col_description{"sequence"} = "oligomer sequence";
-    $col_description{"identifier"} = "oligomer identifier";
+    # $col_description{"sequence"} = "oligomer sequence";
+    # $col_description{"identifier"} = "oligomer identifier";
     $col_description{"id"} = "oligomer identifier";
     $col_description{"obs_freq"} = "observed relative frequency";
     $col_description{"exp_freq"} = "expected relative frequency";
@@ -1610,23 +1610,23 @@ sub PrintHeaderLine {
 
     ################################################################
     ## Print header line
-    if ($oligo_length < 8) {
+#    if ($oligo_length < 8) {
 	push(@out_col,"seq");
-    } else {
-	push(@out_col,"sequence");
-    }
+#    } else {
+#	push(@out_col,"sequence");
+#    }
 
     my $id_width = $oligo_length;
     if ($sum_rc) {
 	$id_width += $oligo_length + 1;
     }
-    if ($id_width >= 16) {
-	push(@out_col, sprintf("%-${id_width}s", "identifier"));
-    } elsif ($id_width >= 8) {
-	push(@out_col,"identifier");
-    } else {
+    # if ($id_width >= 16) {
+    # 	push(@out_col, sprintf("%-${id_width}s", "identifier"));
+    # } elsif ($id_width >= 8) {
+    # 	push(@out_col,"identifier");
+    # } else {
 	push(@out_col,"id");
-    }
+#    }
 
     ### Frequencies
     push(@out_col,"obs_freq") if ($return{'freq'});

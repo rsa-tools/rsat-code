@@ -265,7 +265,7 @@ package main;
   } elsif (lc($main::homology_type) eq "all") {
     &RSAT::message::Info("Homology criterion: all") if ($main::verbose >= 2);
   } else {
-    &RSAT::error::FatalError($main::homology_type, "Invalid homology type");
+    &RSAT::error::FatalError($main::homology_type, "Invalid homology type. Supported: BBH, BH, all");
   }
 
   ################################################################
@@ -302,7 +302,7 @@ package main;
 	  ) if ($main::ref_taxon);
     }
 
-    ## Get organisms from a file
+    ## Get selected organisms from a file
   } elsif ($main::orglist_file) {
     ($main::orglist) = &OpenInputFile($main::orglist_file);
     &RSAT::message::Info ("Reading list of organisms form file", $main::orglist_file ) if ($main::verbose > 1);
@@ -323,6 +323,7 @@ package main;
     &RSAT::error::FatalError("The organism file", $main::orglist_file, "should contain at least one valid organism name.",
 			     "Use the command supported-organisms to obtain the listv of supported organisms.")
 	if (scalar(@main::ref_organisms) == 0) ;
+
   } else {
     &RSAT::error::FatalError("You must either specify a reference taxon (option -taxon) or a list of reference organisms (option -org_list)");
   }
@@ -389,7 +390,7 @@ package main;
 
   ################################################################
   ## Load the query organism
-  &RSAT::message::TimeWarn("Loading query organism") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Loading query organism", $query_organism) if ($main::verbose >= 2);
   $query_org_object = new RSAT::organism();
   $query_org_object->DefineAcceptedFeatureTypes("cds");
   $query_org_object->check_name($query_organism);
@@ -418,7 +419,7 @@ package main;
 
 
   ################################################################
-  ##### Read queries from input file or STDIN
+  ## Read queries from input file or STDIN
   unless (scalar(@query_genes) > 0) {
     &RSAT::message::TimeWarn("Reading queries") if ($main::verbose >= 2);
     ($main::in) = &OpenInputFile($main::infile{input});
@@ -434,12 +435,13 @@ package main;
       push @main::query_genes, $query_gene;
     }
     close $main::in if ($main::infile{input});
+    &RSAT::message::Info("Read genes from file $infile{input}", scalar(@query_genes), "query genes") if ($main::verbose >= 2);
   }
 
 
   ################################################################
   ## Identify query genes in the query organism
-  &RSAT::message::TimeWarn("Identifying query genes in query organism") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Identifying", scalar(@query_genes), "query genes in query organism") if ($main::verbose >= 2);
   foreach my $query (@main::query_genes) {
     if ($feature_index->contains(uc($query))) {
       # 	    my $current_feature = $feature_index->get_first_value(uc($query));
