@@ -3,15 +3,12 @@ dir.rsat <- Sys.getenv("RSAT")
 if (dir.rsat == "") {
   stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
 }
-dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
-dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 
 ## Load some libraries
 source(file.path(dir.rsat, 'R-scripts/config.R'))
 
 ## Load required libraries
-required.packages = c("RColorBrewer",
-                      "gplots")
+required.packages = c("RColorBrewer","gplots")
 
 ## List of RSAT-specific packages to be compiled on the server
 for (pkg in c(required.packages)) { #required.packages.bioconductor
