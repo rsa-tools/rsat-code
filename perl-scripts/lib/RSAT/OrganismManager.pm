@@ -28,19 +28,21 @@ use RSAT::TreeNode;
 ## Fields for supported organisms
 our @supported_org_fields = qw(ID
 			       name
-			       data
+			       taxid
+			       source
 			       last_update
-			       taxonomy
+			       nb
+			       seq_format
 			       up_from
 			       up_to
+			       taxonomy
+			       data
 			       genome
-			       seq_format
-			       source
-			       nb
-			       selected_taxon
-			       taxon_depth
-			       org_per_taxon
 			      );
+
+#			       selected_taxon
+#			       taxon_depth
+#			       org_per_taxon
 
 ## Name of the table containing the list of supported organisms
 our $organism_table_name = "supported_organisms.tab";
@@ -327,10 +329,17 @@ sub supported_organism_table {
   my @selected_organisms = ();
   if ($taxon) {
     @selected_organisms = &GetOrganismsForTaxon($taxon, $depth);
-  } elsif ($group) {
+  } elsif (($group) && ($group ne "None")) {
     @selected_organisms = &GetOrganismsForGroup($group, $depth);
     push @selected_organisms, &get_demo_organisms(@group_specificity);
 
+    ## Filter out duplicates between selected organisms and demo organisms
+    my %selected = ();
+    foreach my $org (@selected_organisms) {
+      $selected{$org} = 1;
+    }
+    @selected_organisms = sort(keys(%selected));
+    
   } else {
     @selected_organisms = sort keys %main::supported_organism;
     if ($depth != 0) {
@@ -338,9 +347,12 @@ sub supported_organism_table {
     }
   }
 
+  &RSAT::message::Debug("Group", $group, "Selected organisms: ", scalar(@selected_organisms)) if ($main::verbose >= 5);
+
   ## Select unique organisms per genus or species if required
   @selected_organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @selected_organisms) if ($main::unique_species);
   @selected_organisms = &RSAT::OrganismManager::UniquePerTaxon("genus", @selected_organisms) if ($main::unique_genus);
+
 
   ## Add fields for each organism
   my $n = 0;

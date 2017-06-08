@@ -344,7 +344,7 @@ sub get_leaves_names {
 ## In order to compare the results.
 sub LoadSupportedTaxonomy {
   my ($self) = @_;
-  &RSAT::message::Info("RSAT::Tree", $self, "Loading supported taxonomy") if ($main::verbose >= 3);
+  &RSAT::message::Info("RSAT::Tree", "Loading supported taxonomy") if ($main::verbose >= 5);
   # &LoadSupportedTaxonomy_jvh(@_);
   &LoadSupportedTaxonomy_rj(@_);
   $self->force_attribute("loaded", 1)

@@ -7,10 +7,12 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ###########   BEFORE DELIVERY for VirtualBox         ###########
 ################################################################
 
+df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_before_cleaned_unnecessary_files.txt
+
 cd ${RSAT}; make -f makefiles/server.mk clean_tmp ## Clean temporary directory
-find   ${RSAT}/public_html/tmp/  -maxdepth 1 -mindepth 1 -type d -exec rm -rf {} \;
 rm -rf ${RSAT}/public_html/tmp/www-data ## Clean Apache user temporary directory
 rm -rf ${RSAT}/public_html/tmp/serialized_genomes  ## Clean serialized organisms
+find   ${RSAT}/public_html/tmp/ -maxdepth 1 -mindepth 1 -type d -exec rm -rf {} \;
 
 ## Remove user-specific temoprary directory
 rm -rf ~/.rsat_tmp_dir/
