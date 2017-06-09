@@ -17,6 +17,12 @@ if (dir.rsat == "") {
 dir.R.files <- file.path(dir.rsat, "R-scripts")
 dir.util <- file.path(dir.R.files, 'util')
 
+## Define directory
+dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
+dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
+.libPaths(c( .libPaths(), dir.rsat.rlib) )
+
+
 ################################################################
 ## Load utilities
 source(file.path(dir.util, 'util.R'))

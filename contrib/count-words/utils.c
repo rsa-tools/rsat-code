@@ -17,7 +17,7 @@ string_buffer_t *new_string_buffer()
     return new_string_buffer;
 }
 
-inline void string_buffer_set_char(string_buffer_t *buffer, char c, int position)
+inline void string_buffer_set_char(string_buffer_t *buffer, char c, long long position)
 {
     if (position >= buffer->allocated_size) 
     {
