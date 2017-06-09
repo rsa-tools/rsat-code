@@ -313,6 +313,22 @@ sub RSA_header {
   #  print &html_header();
   print $query->header();
 
+  ## Check if this tool is documented for Bioschema, and if so display
+  ## the JSON description.
+  my $script = &RSAT::util::ShortFileName($0);
+  $script =~ s/\.cgi$//;
+  $script =~ s/_form$//;
+  my $bioschema_file = $ENV{RSAT}."/public_html/".$script."_bioschemas.json";
+  if (-e $bioschema_file) {
+    print "\n\n";
+    print '<script type="application/ld+json">', "\n";
+    my $json = `cat $bioschema_file`;
+    $json =~ s/\$ENV\{rsat_www\}/$ENV{rsat_www}/;
+    print $json, "\n";
+    print '</script>', "\n\n";
+  }
+
+
   print sorttable_script();
 
 
@@ -1021,7 +1037,7 @@ sub OrganismScrollingListCompara {
 ################################################################
 ## Generate pop-up menu to be displayed for organism selection in
 ## Compara.
-sub OrganismPopUpCompara{
+sub OrganismPopUpCompara {
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) == 0) {
         @selected_organisms =
@@ -1106,7 +1122,7 @@ sub OrganismPopUpString {
   }
 
   $organismPopup .=  "</select>";
-    $organismPopup .= " <i>not seeing your favorite organism in the list ? Contact us to have it installed </i>";
+  $organismPopup .= " <i>not seeing your favorite organism in the list ? Contact us to have it installed </i>";
 
   $organismPopup .=  "<br>\n";
   return($organismPopup);
@@ -2445,6 +2461,7 @@ sub PrintHtmlTable {
   my $line_count = 0;
   my $last_line = "";
   my $header_line = "";
+  my @warnings;
   unless ((defined($border)) && (&IsNatural($border))) {
     $border=0;
   }
@@ -2489,14 +2506,18 @@ sub PrintHtmlTable {
     } elsif (/^;\s*WARNING/) {		# Warning
       push @warnings, $_;
 
-
     } elsif ((/^;/) ||
 	     (/^\-\-/) ||
 	     (/^\#/) ||
 	     (/^\/\//)) {	# Comment line
       if ($table_opened) {
-	print $out "<\/TABLE><PRE>\n";
-	$table_opened = 0;
+	    print $out "<\/TABLE><PRE>\n";
+
+        if(@warnings){ # Bruno 12052017
+           print $out @warnings;
+        }
+
+	    $table_opened = 0;
       }
       $last_line =~ s/^;//;
       $last_line =~ s/^#//;
