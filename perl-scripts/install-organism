@@ -254,7 +254,7 @@ package main;
 
     ## At least one species is required
     unless (scalar(@species) >= 1) {
-      &RSAT::error::FatalError("Tasks download, list, parse and config require to specify at least one species (e.g. Saccharomyces_cerevisiae, Escherichia_coli).");
+      &RSAT::error::FatalError("Tasks download, list, parse and config require to specify at least one species (e.g. Saccharomyces_cerevisiae, Escherichia_coli). To get a list of available species, use option '-task available'. ");
     }
 
     ## If strain is specified, check that only one species has been requested
