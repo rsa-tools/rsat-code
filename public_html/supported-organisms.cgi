@@ -25,15 +25,6 @@ $query = new CGI;
 ### print the header
 &RSA_header("Supported organisms", "results");
 
-$bioschema_file = $ENV{RSAT}."/public_html/supported-organisms_bioschemas.json";
-if (-e $bioschema_file) {
-  print "\n\n";
-  print '<script type="application/ld+json">', "\n";
-  $json = `cat $bioschema_file`;
-  $json =~ s/\$ENV\{rsat_www\}/$ENV{rsat_www}/;
-  print $json, "\n";
-  print '</script>', "\n\n";
-}
 
 ## Check security issues
 &CheckWebInput($query);
