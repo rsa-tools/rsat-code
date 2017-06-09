@@ -203,7 +203,15 @@ package main;
   my ($n_of_results,$count,$idOK,$rows,$sp,$query_sp,$header,$orig_query) = (0);
   my ($ref_org,$query,$real_query,$id,$type,$subtype,$identity1,$identity2);
 
+  # parse arguments
+  &ReadArguments();
+  
   # open BerkeleyDB database
+  if($main::infile{'bdbfile'})
+  {
+     $comparabdb = $main::infile{'bdbfile'};
+  }
+  
   tie(%db,"DB_File",$comparabdb, O_RDONLY, 0666, $DB_HASH)
     || die "# $0 : cannot tie $comparabdb:$!\n";
   
@@ -216,16 +224,22 @@ package main;
   {
     $organisms{$sp} = $org2int_fullname{$sp};
   }
-    
+   
   %homology_types = split(/,/,$db{'homology_types'});
-
-  # parse arguments
-  &ReadArguments();
 
   # open output stream
   $main::out = &OpenOutputFile($main::outfile{'output'});
 
   # check arguments
+  if($main::params{'ref_org'} && !defined($organisms{$main::params{'ref_org'}})) {
+      &RSAT::error::FatalError(join("\t", "Organism", $main::params{'ref_org'},
+         "is not supported.","Use option -supported_organisms to get a list. "));
+  }
+  elsif($main::params{'query_org'} && ! defined($organisms{$main::params{'query_org'}})) {
+     &RSAT::error::FatalError(join("\t", "Organism", $main::params{'query_org'},
+        "is not supported.","Use option -supported_organisms to get a list. "));
+  }
+  
   if($params{'demo'})
   {
 #    @query_genes = qw( BRADI4G31367.1 );
@@ -580,10 +594,12 @@ to specify a file containing the list of reference organisms.
 
 	} elsif ($arg eq "-ref_org") {
 	  $main::params{'ref_org'} = shift (@arguments);
-	  unless (defined($main::organisms{$main::params{'ref_org'}})) {
-	    &RSAT::error::FatalError(join("\t", "Organism", $main::params{'ref_org'}, 
-	      "is not supported.","Use option -supported_organisms to get a list. "));
-	  }
+	  
+      # May2017
+      #unless (defined($main::organisms{$main::params{'ref_org'}})) {
+	  #  &RSAT::error::FatalError(join("\t", "Organism", $main::params{'ref_org'}, 
+	  #    "is not supported.","Use option -supported_organisms to get a list. "));
+	  #}
 
 =pod
 
@@ -600,6 +616,18 @@ organism. Lines starting with # or ; are ignored.
 
 	} elsif ($arg eq "-org_list") {
 	  $main::infile{'org_list'} = shift(@arguments);
+
+=pod
+
+=item B<-bdbfile>
+
+This option gives the posibility to specify a user-selected BerkeleyDB file
+produced with parse-compara. A valid path to that file should be indicated.
+
+=cut
+
+    } elsif ($arg eq "-bdbfile") {
+      $main::infile{'bdbfile'} = shift(@arguments);
 
 =pod
 
@@ -657,10 +685,11 @@ Genes with no homologues are not listed in output.
     } elsif ($arg eq "-query_org") {
       $main::params{'query_org'} = shift (@arguments);
 
-      unless (defined($main::organisms{$main::params{'query_org'}})) {
-        &RSAT::error::FatalError(join("\t", "Organism", $main::params{'query_org'},
-          "is not supported.","Use option -supported_organisms to get a list. "));
-      }
+      # May2017
+      #unless (defined($main::organisms{$main::params{'query_org'}})) {
+      #  &RSAT::error::FatalError(join("\t", "Organism", $main::params{'query_org'},
+      #    "is not supported.","Use option -supported_organisms to get a list. "));
+      #}
 
       &RSAT::error::FatalError("Option -query_org is incompatible with option -q")
         if (@main::query_genes);
@@ -746,7 +775,9 @@ Homologues with lower ident_query values are skipped. Default: 0 .
 sub Verbose {
   print $main::out "; get-orthologs-compara ";
   &PrintArguments($main::out);
-   
+  
+  print $main::out "; BerkeleyDBD file: $comparabdb\n";
+
   if (%main::infile) {
     print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {

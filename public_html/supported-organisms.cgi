@@ -25,6 +25,7 @@ $query = new CGI;
 ### print the header
 &RSA_header("Supported organisms", "results");
 
+
 ## Check security issues
 &CheckWebInput($query);
 
