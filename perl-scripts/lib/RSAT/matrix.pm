@@ -4423,6 +4423,17 @@ sub makeLogo {
       $logo_cmd .= " --fout "."./".$logo_file;
       $logo_cmd .= " 2> /dev/null ";
     }
+    
+
+#      $logo_cmd .= " --color '#D73027' m '5-Methylcytosine'";
+#      $logo_cmd .= " --color '#4575B4' 1 'Guanine:5-Methylcytosine'";
+#      $logo_cmd .= " --color '#F46D43' h '5-Hydroxymethylcytosine'";
+#      $logo_cmd .= " --color '#74ADD1' 2 'Guanine:5-Hydroxymethylcytosine'";
+#      $logo_cmd .= " --color '#FDAE61' f '5-Formylcytosine'";
+#      $logo_cmd .= " --color '#ABD9E9' 3 'Guanine:5-Formylcytosine'";
+#      $logo_cmd .= " --color '#FEE090' c '5-Carboxylcytosine'";
+#      $logo_cmd .= " --color '#E0F3F8' 4 'Guanine:5-Carboxylcytosine'";
+    
 
      # &RSAT::message::Debug("logo_dir=".$logo_dir,
      # 			  "\n\tlogo_cmd_path=".$logo_cmd_path,

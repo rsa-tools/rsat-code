@@ -607,7 +607,7 @@ package main;
 	      }
 
 	      ################################################################
-	      ## print totals per column
+	      ## Print totals per column
 	      if ($main::verbose >= 1) {
 		my @totals = ("total","total",sprintf("%.${decimals}f", $pattern_freq_sum),$total_occ);
 		if ($occ_per_org) {
