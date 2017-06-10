@@ -313,6 +313,22 @@ sub RSA_header {
   #  print &html_header();
   print $query->header();
 
+  ## Check if this tool is documented for Bioschema, and if so display
+  ## the JSON description.
+  my $script = &RSAT::util::ShortFileName($0);
+  $script =~ s/\.cgi$//;
+  $script =~ s/_form$//;
+  my $bioschema_file = $ENV{RSAT}."/public_html/".$script."_bioschemas.json";
+  if (-e $bioschema_file) {
+    print "\n\n";
+    print '<script type="application/ld+json">', "\n";
+    my $json = `cat $bioschema_file`;
+    $json =~ s/\$ENV\{rsat_www\}/$ENV{rsat_www}/;
+    print $json, "\n";
+    print '</script>', "\n\n";
+  }
+
+
   print sorttable_script();
 
 
