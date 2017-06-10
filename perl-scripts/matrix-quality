@@ -508,7 +508,7 @@ package main;
     $logo_formats = join ",", @logo_formats; ## For the logo
     &RSAT::message::Info("Image formats for logos: ".join (",", sort(@logo_formats))) if ($main::verbose >= 2);
 
-     ## NWD
+    ## NWD
     $task{plot}=1 if (scalar(keys %main::plot_seq_type));
     # unless ( ((scalar(@main::plot_seq_type))&& !($task{plot})) || (!(scalar(@main::plot_seq_type))&& ($task{plot})) ){
     # 	&RSAT::error::FatalError("For drawing additional plots you have to specify al least one seq_type and plot_type");
@@ -2151,7 +2151,11 @@ sub CrossValidation {
 ################################################################
 ## Options to compute the empirical score distribution using
 ## matrix-scan (quick or slow) | classfreq (slow)
+## 
+## Comment by JvH (2017-04-05): this function is not called from
+## anywhere. Is it still useful?
 sub AddSequenceDistribOptions_classfreq {
+  my ($seq_type) = @_;
     $matrix_scan_cmd .= " -return sites";
 
     ## Prepare the classfreq command (to extract the distribution from the scores)
