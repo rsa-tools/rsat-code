@@ -175,10 +175,8 @@ make -f makefiles/init_rsat.mk compile_all
 ##vmatch licence qui est dans /somewhere/vmatch_RSATVM-IFB_2015-07-06.lic
 cp /RsatInstall/vmatch.lic ${RSAT_PARENT_PATH}/rsat/bin/vmatch.lic
 
-
 ## Check Perl modules
 make -f makefiles/install_rsat.mk  perl_modules_check
-
 
 ## Install thrid party programs
 
