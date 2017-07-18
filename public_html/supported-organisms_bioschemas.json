@@ -3,7 +3,7 @@
   "@type": "SoftwareApplication",
   "name": "RSAT supported-organisms",
   "description": "Returns the list of organisms supported on a given instance of the Regulatory Sequence Analysis Tools (RSAT).",
-  "url": "http://rsat-tagc.univ-mrs.fr/rsat/supported-organisms.cgi",
+  "url": "$ENV{rsat_www}/supported-organisms.cgi",
   "featureList": "",
   "softwareVersion": "",
   "applicationCategory": "Web tool",

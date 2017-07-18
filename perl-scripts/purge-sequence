@@ -25,11 +25,11 @@ unless ((-e $vmatch_dir."/vmatch") && (-e $vmatch_dir."/mkvtree")) {
 
 ################################################################
 ## Check that the vmatch license file is installed
-$ENV{ZLM_LICENSE}=$vmatch_dir."/vmatch.lic";
-unless (-e $vmatch_dir."/vmatch.lic") {
-  $vmatch_license_installed = 0;
-  &RSAT::message::Warning("Skipping sequence purging because vmatch license file is missing (see http://www.vmatch.de/).");
-}
+# $ENV{ZLM_LICENSE}=$vmatch_dir."/vmatch.lic";
+# unless (-e $vmatch_dir."/vmatch.lic") {
+#   $vmatch_license_installed = 0;
+#   &RSAT::message::Warning("Skipping sequence purging because vmatch license file is missing (see http://www.vmatch.de/).");
+# }
 
 my $delete_repeats=0;
 

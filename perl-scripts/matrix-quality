@@ -508,7 +508,7 @@ package main;
     $logo_formats = join ",", @logo_formats; ## For the logo
     &RSAT::message::Info("Image formats for logos: ".join (",", sort(@logo_formats))) if ($main::verbose >= 2);
 
-     ## NWD
+    ## NWD
     $task{plot}=1 if (scalar(keys %main::plot_seq_type));
     # unless ( ((scalar(@main::plot_seq_type))&& !($task{plot})) || (!(scalar(@main::plot_seq_type))&& ($task{plot})) ){
     # 	&RSAT::error::FatalError("For drawing additional plots you have to specify al least one seq_type and plot_type");
@@ -600,7 +600,7 @@ package main;
       local @perm_distrib_files=();
       local @distrib_files=(); ## check something named  @main::distrib_files
       local @temporary_distrib_files=();
-      my @local_seq_types= @main::seq_types; # seq_types are all the sequences where the proceadure is performed, for each matrix the matrix_sites are added.
+      @main::local_seq_types= @main::seq_types; # seq_types are all the sequences where the proceadure is performed, for each matrix the matrix_sites are added.
       local @local_plot_seq_type=uniq (keys (%main::plot_seq_type));
       ## Redefine the matrix name (in case it would have been modified above)
       $matrix->set_attribute("pseudo", $pseudo_counts);
@@ -738,7 +738,10 @@ package main;
 	&ExportMatrixInfo($matrix);
       }
 
+      
       ## Shuffle the columns of the matrix (permutation test)
+
+     
       &PermuteMatrixColumns();
 
       ################################################################
@@ -810,7 +813,6 @@ package main;
 	    (defined($perm_nb{$seq_type})) &&
 	    ($perm_nb{$seq_type} > 0)) {
 
-
 	  ## Calculate the separate distributions for each permuted matrix
 	  ## (this highlights the variability but the graph is noisy)
 	 # my @perm_distrib_files = ();
@@ -829,7 +831,7 @@ package main;
 	  ## Define the output file for the regrouped permutation tests
 	  my $perm_suffix = $seq_type.'_'.$perm_nb{$seq_type}.'perm';
 	  $outfile{$perm_suffix} =  $matrix_prefix{$matrix_name}."_scan_".$perm_suffix."_score_distrib.tab"; push @files_to_index, $perm_suffix;
-	  &RSAT::message::Debug("Adding file to index ",  $perm_suffix, $outfile{$perm_suffix}  ) if ($main::verbose >= 10);
+	  &RSAT::message::Debug("Adding file to index ",  $perm_suffix, $outfile{$perm_suffix}  ) if ($main::verbose >= 0);
 	  push @distrib_files, $outfile{$perm_suffix}; $file_nb{$perm_suffix} = scalar(@distrib_files);
 
 	  ## Run compare-scores to compute the dCDF of the mergeed permutation test
@@ -839,8 +841,7 @@ package main;
 	  $merge_cmd .= join " ", @perm_distrib_files;
 	  my $last_col = scalar(@perm_distrib_files) + 1;
 	  $merge_cmd .= " | ".$SCRIPTS."/row-stats -before -col 2-".$last_col;
-	  &RSAT::message::Debug("Merging permuted distributions", $merge_cmd) if ($main::verbose >= 3);
-
+	  &RSAT::message::Debug("Merging permuted distributions", $merge_cmd) if ($main::verbose >= 10);
 	  ## Compute the cumulative and decreasing cumlative
 	  ## distributions
 	  my @weights = ();
@@ -2151,7 +2152,11 @@ sub CrossValidation {
 ################################################################
 ## Options to compute the empirical score distribution using
 ## matrix-scan (quick or slow) | classfreq (slow)
+## 
+## Comment by JvH (2017-04-05): this function is not called from
+## anywhere. Is it still useful?
 sub AddSequenceDistribOptions_classfreq {
+  my ($seq_type) = @_;
     $matrix_scan_cmd .= " -return sites";
 
     ## Prepare the classfreq command (to extract the distribution from the scores)
