@@ -53,7 +53,7 @@ which contains both the HTML pages, and the CGI scripts.
 
 The \RSAT interface relies on CGI (for the earlier tools) and PHP (for
 the most recent tools). These modules should be installed on the web
-server, and activated in the Apache configuration files. 
+server, and activated in the Apache configuration files. Note for MACOSX MAMP users : these modules are already activated, as well as cgi-script.
 
 Log in as super-user of your server, open the main apache
 configuration (\file{/etc/apache2/httpd.conf}) witha text editor, and
@@ -80,7 +80,7 @@ extensions for some classical bioinformatics files, in order to
 display them directly in the browser rather than proposing users to
 download them.
 
-In the config file \file{http.conf}, locate the place with the AddType
+In the config file \file{httpd.conf}, locate the place with the AddType
 directives, and add the following lines.
 
 \begin{lstlisting}
