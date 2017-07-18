@@ -348,12 +348,116 @@ sub index_alphabet {
   my @alphabet = $self->getAlphabet();
   my $row = 0;
   foreach my $letter (@alphabet) {
-    $self->add_hash_attribute("alphabet_index", lc($letter), $row);
+#    $self->add_hash_attribute("alphabet_index", lc($letter), $row);
+    $self->add_hash_attribute("alphabet_index", $letter, $row);
 #	$alphabet_index{$letter} = $row;
 #	&RSAT::message::Debug("Alphabet index", $letter, $row) if ($main::verbose >= 10);
     $row++;
   }
 }
+
+
+=pod
+
+=item B<setAlphabet(@alphabet)>
+
+Specify the alphabet (i.e. the list of valid letters) for the table.
+
+=cut
+sub setAlphabet {
+    my ($self, @new_alphabet) = @_;
+    @{$self->{alphabet}} = @new_alphabet;
+
+    ## update the number of columns
+    $self->force_attribute("nrow", scalar(@new_alphabet));
+#    &RSAT::message::Debug("&RSAT::table::setAlphabet()", "new alphabet", $self->getAlphabet())) if ($main::verbose >= 10);
+}
+
+
+
+
+=pod
+
+=item B<setAlphabet_uc(@alphabet)>
+
+Same as setAlphabet(), but first converts the alphabet to uppercases,
+to ensure case-insensitivvity.
+
+=cut
+sub setAlphabet_uc {
+    my ($self, @new_alphabet) = @_;
+
+    ## Convert alphabet to uppercases
+    for my $i (0..$#new_alphabet) {
+	$new_alphabet[$i] = uc($new_alphabet[$i]);
+    }
+
+    $self->setAlphabet(@new_alphabet);
+}
+
+
+
+
+=pod
+
+=item B<setAlphabet_lc(@alphabet)>
+
+Same as setAlphabet(), but first converts the alphabet to lowercases,
+to ensure case-insensitivvity.
+
+=cut
+sub setAlphabet_lc {
+    my ($self, @new_alphabet) = @_;
+
+    ## Convert alphabet to uppercases
+    for my $i (0..$#new_alphabet) {
+	$new_alphabet[$i] = lc($new_alphabet[$i]);
+    }
+    $self->setAlphabet(@new_alphabet);
+}
+
+
+=pod
+
+=item B<set_alphabet_for_type()>
+
+=cut
+
+sub set_alphabet_for_type {
+  my ($self) = @_;
+  my $matrix_type = $self->get_attribute("type");
+  unless ($matrix_type) {
+    $matrix_type = "dna";
+    $self->force_attribute("type", $matrix_type);
+  }
+#  &RSAT::message::Debug("matrix_type", $matrix_type) if ($main::verbose >= 10);
+  
+  ## Set alphabet for cytomod 0
+  my @alphabet;
+  if ($matrix_type eq "cytomod") {
+    @alphabet = qw(A C G T h m 1 2); 
+    $self->setAlphabet(@alphabet);
+  } elsif ($matrix_type eq "dna") {
+    @alphabet = qw(A C G T);
+    $self->setAlphabet_lc(@alphabet);
+  } else {
+    &RSAT::error::FatalError("Invalid matrix type. Supported: dna, cytomod.");
+  }
+  
+}
+
+=pod
+
+=item B<getAlphabet()>
+
+Return the list of valid letters for the table
+
+=cut
+sub getAlphabet {
+    my ($self) = @_;
+    return @{$self->{alphabet}};
+}
+
 
 
 
@@ -718,32 +822,39 @@ Usage: $matrix->sort_row()
 =cut
 sub sort_rows {
   my ($self) = @_;
-  my @alphabet = $self->getAlphabet();
-  my $ncol = $self->ncol();
-  my $nrow = $self->nrow();
-
-  ## Determine the column for each residue
-  my @sorted_alphabet = sort @alphabet;
-  foreach my $r (0..$#sorted_alphabet) {
-    my $residue = $sorted_alphabet[$r];
-    $order{$residue} = $r;
-  }
+  my $type = $self->get_attribute("type") || "dna";
+  if (lc($type) eq "dna") {
+    my @alphabet = $self->getAlphabet();
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
+    
+    ## Determine the column for each residue
+    my @sorted_alphabet = sort @alphabet;
+    foreach my $r (0..$#sorted_alphabet) {
+      my $residue = $sorted_alphabet[$r];
+      $order{$residue} = $r;
+    }
 
 #  &RSAT::message::Info("Sorting matrix rows", join(";", @alphabet), join(";", @sorted_alphabet)) if ($main::verbose >= 10);
-
-  ## Get the original count matrix
-  my @ori_matrix = $self->getMatrix();
-
-  my @sorted_matrix = ();
-  for my $r  (0..$#alphabet) {
-    my $residue = $alphabet[$r];
-    my $target_row = $order{$residue};
-    for my $c (0..($ncol-1)) {
-      $sorted_matrix[$c][$target_row] = $ori_matrix[$c][$r];
+    
+    ## Get the original count matrix
+    my @ori_matrix = $self->getMatrix();
+    
+    my @sorted_matrix = ();
+    for my $r  (0..$#alphabet) {
+      my $residue = $alphabet[$r];
+      my $target_row = $order{$residue};
+      for my $c (0..($ncol-1)) {
+	$sorted_matrix[$c][$target_row] = $ori_matrix[$c][$r];
+      }
     }
+    $self->setMatrix($nrow, $ncol, @sorted_matrix);
+#  $self->setAlphabet_lc(@sorted_alphabet);
+    $self->setAlphabet(@sorted_alphabet);
+  } else {
+    &RSAT::message::Warning("&RSAT::matrix::sort_rows()", "Matrix sorting does not work for non-DNA matrices.") if ($main::verbose >= 5);
+    $self->set_alphabet_for_type();
   }
-  $self->setMatrix($nrow, $ncol, @sorted_matrix);
-  $self->setAlphabet_lc(@sorted_alphabet);
 }
 
 
@@ -960,7 +1071,7 @@ sub to_TRANSFAC {
     my $header = "P0  "; 
     my @alphabet = $self->getAlphabet();
     foreach my $letter (@alphabet) {
-      $header .= sprintf "%6s", uc($letter);
+      $header .= sprintf "%6s", $letter;
     }
     $to_print .= $header."\n";
 
@@ -1120,13 +1231,13 @@ sub to_STAMP {
     my ($self, %args) = @_;
     my $to_print = "";
 
-    &RSAT::message::Debug(
-      "&RSAT::matrix::to_STAMP()", 
-      $self->get_attribute("accession"), 
-      $self->get_attribute("id"), 
-      $self->get_attribute("name"), 
-      $self->get_attribute("description"), 
-	) if ($main::verbose >= 0);
+    # &RSAT::message::Debug(
+    #   "&RSAT::matrix::to_STAMP()", 
+    #   $self->get_attribute("accession"), 
+    #   $self->get_attribute("id"), 
+    #   $self->get_attribute("name"), 
+    #   $self->get_attribute("description"), 
+    # 	) if ($main::verbose >= 10);
     
     my $output_format = $args{format};
     $output_format = lc($output_format);
@@ -2518,13 +2629,17 @@ sub calcConsensus {
       $regular .= "]";
     }
 
-    ## Use uppercase for scores >= 1
-    if ($col_max >= 1) {
-      $consensus_strict .= uc($col_consensus);
-      $consensus .= uc($regular);
-    } else {
-      $consensus_strict .= lc($col_consensus);
-      $consensus .= lc($regular);
+    ## Use uppercase for scores >= 1.  This is only valid for DNA
+    ## alphabet, since other alphabets may be case-sensitive
+    ## (e.g. Cytomod).
+    if ($self->get_attribute("type") eq "dna") {
+      if ($col_max >= 1) {
+	$consensus_strict .= uc($col_consensus);
+	$consensus .= uc($regular);
+      } else {
+	$consensus_strict .= lc($col_consensus);
+	$consensus .= lc($regular);
+      }
     }
   }
   my $consensus_IUPAC = &main::regular_to_IUPAC($consensus);
