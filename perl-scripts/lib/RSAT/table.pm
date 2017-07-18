@@ -650,79 +650,79 @@ sub addRow {
 
 
 
-=pod
+# =pod
 
-=item B<setAlphabet(@alphabet)>
+# =item B<setAlphabet(@alphabet)>
 
-Specify the alphabet (i.e. the list of valid letters) for the table.
+# Specify the alphabet (i.e. the list of valid letters) for the table.
 
-=cut
-sub setAlphabet {
-    my ($self, @new_alphabet) = @_;
-    @{$self->{alphabet}} = @new_alphabet;
+# =cut
+# sub setAlphabet {
+#     my ($self, @new_alphabet) = @_;
+#     @{$self->{alphabet}} = @new_alphabet;
 
-    ## update the number of columns
-    $self->force_attribute("nrow", scalar(@new_alphabet));
-#    &RSAT::message::Debug("&RSAT::table::setAlphabet()", "new alphabet", $self->getAlphabet())) if ($main::verbose >= 10);
-}
-
-
-
-
-=pod
-
-=item B<setAlphabet_uc(@alphabet)>
-
-Same as setAlphabet(), but first converts the alphabet to uppercases,
-to ensure case-insensitivvity.
-
-=cut
-sub setAlphabet_uc {
-    my ($self, @new_alphabet) = @_;
-
-    ## Convert alphabet to uppercases
-    for my $i (0..$#new_alphabet) {
-	$new_alphabet[$i] = uc($new_alphabet[$i]);
-    }
-
-    $self->setAlphabet(@new_alphabet);
-}
+#     ## update the number of columns
+#     $self->force_attribute("nrow", scalar(@new_alphabet));
+# #    &RSAT::message::Debug("&RSAT::table::setAlphabet()", "new alphabet", $self->getAlphabet())) if ($main::verbose >= 10);
+# }
 
 
 
 
-=pod
+# =pod
 
-=item B<setAlphabet_lc(@alphabet)>
+# =item B<setAlphabet_uc(@alphabet)>
 
-Same as setAlphabet(), but first converts the alphabet to lowercases,
-to ensure case-insensitivvity.
+# Same as setAlphabet(), but first converts the alphabet to uppercases,
+# to ensure case-insensitivvity.
 
-=cut
-sub setAlphabet_lc {
-    my ($self, @new_alphabet) = @_;
+# =cut
+# sub setAlphabet_uc {
+#     my ($self, @new_alphabet) = @_;
 
-    ## Convert alphabet to uppercases
-    for my $i (0..$#new_alphabet) {
-	$new_alphabet[$i] = lc($new_alphabet[$i]);
-    }
-    $self->setAlphabet(@new_alphabet);
-}
+#     ## Convert alphabet to uppercases
+#     for my $i (0..$#new_alphabet) {
+# 	$new_alphabet[$i] = uc($new_alphabet[$i]);
+#     }
+
+#     $self->setAlphabet(@new_alphabet);
+# }
 
 
 
 
-=pod
+# =pod
 
-=item B<getAlphabet()>
+# =item B<setAlphabet_lc(@alphabet)>
 
-Return the list of valid letters for the table
+# Same as setAlphabet(), but first converts the alphabet to lowercases,
+# to ensure case-insensitivvity.
 
-=cut
-sub getAlphabet {
-    my ($self) = @_;
-    return @{$self->{alphabet}};
-}
+# =cut
+# sub setAlphabet_lc {
+#     my ($self, @new_alphabet) = @_;
+
+#     ## Convert alphabet to uppercases
+#     for my $i (0..$#new_alphabet) {
+# 	$new_alphabet[$i] = lc($new_alphabet[$i]);
+#     }
+#     $self->setAlphabet(@new_alphabet);
+# }
+
+
+
+
+# =pod
+
+# =item B<getAlphabet()>
+
+# Return the list of valid letters for the table
+
+# =cut
+# sub getAlphabet {
+#     my ($self) = @_;
+#     return @{$self->{alphabet}};
+# }
 
 
 
