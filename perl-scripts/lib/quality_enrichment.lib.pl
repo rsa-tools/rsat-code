@@ -79,7 +79,7 @@ sub ExportMatrixInfo {
 ## for permuting the matrix.
 sub PermuteMatrixColumns {
   ## Define the permutation number for each sequence type and the max permutation number
-  foreach my $seq_type (@local_seq_types) {
+    foreach my $seq_type (@local_seq_types) {
     unless (defined($perm_nb{$seq_type})) {
       $perm_nb{$seq_type} = 0;
       }
@@ -101,13 +101,13 @@ sub PermuteMatrixColumns {
   ## (each sequence type can have its particular number of
   ## permutations)
   print $main::out "; Sequence sets (name, permutations, file)";
-  foreach my $seq_type (@local_seq_types) {
-#    &RSAT::message::Debug("Defining file names for column-permuted matrices",
-#			  "seq_type=".$seq_type,
-#			  "perm_nb=".$perm_nb{$seq_type},
-#			 ) if ($main::verbose >= 5);
+  foreach my $seq_type (@main::local_seq_types) {
+  &RSAT::message::Debug("Defining file names for column-permuted matrices",
+			  "seq_type=".$seq_type,
+			  "perm_nb=".$perm_nb{$seq_type},
+			 ) if ($main::verbose >= 10);
 
-    print $main::out join("\t", ";", $seq_type, $perm_nb{$seq_type}, $seqfile{$seq_type}), "\n";
+    #print $main::out join("\t", ";", $seq_type, $perm_nb{$seq_type}, $seqfile{$seq_type}), "\n";
     $outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'} = $matrix_prefix{$matrix_name}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
     push @files_to_index, 'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm' if ($perm_nb{$seq_type} > 0);
   }
@@ -116,7 +116,8 @@ sub PermuteMatrixColumns {
 
     ## Remove previous version of the column-permuted matrix files
     ## before appending the new permuted columns
-    foreach my $seq_type (@local_seq_types) {
+      foreach my $seq_type (@main::local_seq_types) {
+	  
       #    $outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'} = $matrix_prefix{$matrix_name}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
       $init_matrix_cmd = "rm -f ".$outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'};
       &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
@@ -135,8 +136,12 @@ sub PermuteMatrixColumns {
       ## for each sequence set (the number of required permutation can
       ## vary between sequence sets)
       foreach my $seq_type (sort keys %seqfile) {
-	if (defined($perm_nb{$seq_type}) && ($i <= $perm_nb{$seq_type})) {
-	  $permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'};
+	  if (defined($perm_nb{$seq_type}) && ($i <= $perm_nb{$seq_type})) {
+	      #print "seq_type ".$seq_type ." +++ perm_nb ".$perm_nb{$seq_type}." \n" ;
+	      #print "+ ".$main::outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'}." +\n";
+	      #die "boom";
+	      $permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'};
+	      
 	}
       }
 

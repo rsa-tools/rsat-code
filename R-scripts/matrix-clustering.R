@@ -23,9 +23,6 @@ dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 required.packages = c("RJSONIO",
                       "dendextend",
                       "amap",
-#                       "Rcpp",
-#                       "RcppEigen",
-#                       "Rclusterpp",
                       "gplots")
 
 ## List of required packages from Bioconductor
@@ -546,7 +543,7 @@ if(only.hclust == 0){
   ## Create and export DF of central motifs
   central.motif.table <- data.frame(central.motif.IDs.cluster, central.motif.IDs, central.motif.names)
   colnames(central.motif.table) <- c("cluster", "ID", "name")
-  write.table(central.motif.table, file = paste(sep="", out.prefix, "_central_motifs.tab"), col.names = FALSE, row.names = FALSE, quote = FALSE, sep = "\t")
+  write.table(central.motif.table, file = paste(sep="", out.prefix, "_central_motifs_IDs.tab"), col.names = FALSE, row.names = FALSE, quote = FALSE, sep = "\t")
 
 }
 

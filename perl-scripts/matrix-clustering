@@ -546,6 +546,10 @@ package main;
       ## Create the merged matrices and consensuses
       &Merge_matrices();
       
+      ################################################################
+      ## Export central motif in TF format
+      &Export_central_motif_per_cluster();
+      
       if ($root_matrices_flag == 1) {
 	  
 	  ## Some files and directories that must be deleted
@@ -557,6 +561,7 @@ package main;
 	  $to_delete_folder{'data_folder'} = $main::outfile{prefix}."_data";
 	  $to_delete{'log'} = $main::outfile{prefix}."_log.txt";
 	  $to_delete{'errors'} = $main::outfile{prefix}."_errors.txt";
+	  $to_delete{'temp_central'} = $main::outfile{central_motifs_IDs_temp};
 	  
       } else {
 	  
@@ -1479,7 +1484,9 @@ sub set_output_file_names {
   $main::outfile{clusters_table} = $main::outfile{prefix}."_tables/clusters.tab"; push @outfiles, "clusters"; &AddTabToConvert("clusters_table");
   $main::outfile{clusters_table_motif_names} = $main::outfile{prefix}."_tables/clusters_motif_names.tab"; push @outfiles, "clusters with motif names"; &AddTabToConvert("clusters_table_motif_names");
   $main::outfile{internal_nodes_attributes_table} = $main::outfile{prefix}."_tables/internal_nodes_attributes.tab"; push @outfiles, "internal_nodes_attributes_table";
-  $main::outfile{central_motifs} = $main::outfile{prefix}."_central_motifs.tab";
+  $main::outfile{central_motifs_tf} = $main::outfile{prefix}."_central_motifs_transfac.tf";
+  $main::outfile{central_motifs} = $main::outfile{prefix}."_central_motifs_IDs.tab";
+  $main::outfile{central_motifs_IDs_temp} = $main::outfile{prefix}."_central_motifs_IDs_temporal.tab";
 
   $main::outfile{consensus_cladogram_json} = $main::outfile{prefix}."_trees/tree.json"; push @outfiles, "consensus_cladogram_json";
   $main::outfile{logo_cladogram_html} = $main::outfile{prefix}."_logo_tree.html"; push @outfiles, "logo_cladogram_html";
@@ -3475,7 +3482,7 @@ sub Text_end_report {
 	    <li>
 	      <strong>References</strong>
               <ol>
-                 <li> Castro-Mondragon JA et al (in preparation) <a target="_blank" href="http://biorxiv.org/content/early/2016/07/27/065565">bioRxiv 065565; doi: http://dx.doi.org/10.1101/065565</a></li>
+                 <li> Castro-Mondragon JA et al. RSAT matrix-clustering: dynamic exploration and redundancy reduction of transcription factor binding motif collections. <a target="_blank" href="https://oup.silverchair-cdn.com/oup/backfile/Content_public/Journal/nar/PAP/10.1093_nar_gkx314/1/gkx314.pdf?Expires=1497370402&Signature=XofQRKX~0-0C8EeL8V5NIwQEFG1UZDiJgo1BxcfsLQtd93E9TpM10q6FRMUUzdpNZrvsu9wmMU9M-VLanWxzZCK~C1KEFKFYaBo1eLIK68WBHWtN4nV1Jsm4XdJ37QoNsCxiacU-VQ2vTuurLR2NnIE2XZgXz6U3vF38JU~MOp-nGqPt2wUDVFA7KGf17JA9twamWygRatTwh1winZg7j0nzolFYJSzPLwxrNkioVTEyAE3Tx8cOCD~E1m5fRvJ5sfx9~g6It17FPb3WJJQqo4bNNfvicMthjluw6USPqQKHbVwvbLxGe~VUpSh2imFfbFbbyi1wbCyo~BwlyZR1yg__&Key-Pair-Id=APKAIUCZBIA4LVPAVW3Q"> doi: 10.1093/nar/gkx314</a>; Nucleic Acids Research (2017)</li>
                  <li><strong>Last RSAT release: </strong><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
               </ol>
 	    </li>
@@ -6156,8 +6163,12 @@ sub InsertListOfFiles {
 		      <td class="tab_spacer_2">A tab separated file containing the clusters and their correspondng motifs.</td>
 		   </tr>
            <tr>
-		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{central_motifs}).'"><strong>Central motifs per cluster</strong></a></td>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{central_motifs}).'"><strong>Central motifs IDs</strong></a></td>
 		      <td class="tab_spacer_2">A tab separated file containing the central motif, that one who is the most similar to all the others motif in the same cluster.</td>
+		   </tr>
+		   <tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{central_motifs_tf}).'"><strong>Central motifs (in TRANSFAC format)</strong></a></td>
+		      <td class="tab_spacer_2">A transfac file containing the central motif, that one who is the most similar to all the others motif within the same cluster.</td>
 		   </tr>
                          ';
       
@@ -6559,8 +6570,8 @@ sub Generate_matrix_description_table {
 			     "consensus",
 			     "rc_consensus",
 			     "label",
-		             "IC",
-                             "nb_sites"
+		         "IC",
+                 "nb_sites"
 	), "\n";
     
     my $m=0;
@@ -6602,5 +6613,17 @@ sub Generate_matrix_description_table {
 	print $desc $matrix_desc_string."\n";
     }
     close $desc;
+}
+
+sub Export_central_motif_per_cluster {
+	
+	## Read Central Motif ID table
+	my $central_motif_parser_cmd = "more ".$main::outfile{central_motifs}." | cut -f2 > ".$main::outfile{central_motifs_IDs_temp};
+	system($central_motif_parser_cmd);
+	
+	my $get_central_motifs_cmd = $SCRIPTS."/convert-matrix -v 2 -i ".$main::outfile{input_matrices}." -from tf -to tf -matrix_id_file ".$main::outfile{central_motifs_IDs_temp}." -o ".$main::outfile{central_motifs_tf};
+	system($get_central_motifs_cmd);
+	
+
 }
 __END__
