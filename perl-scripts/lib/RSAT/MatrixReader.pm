@@ -150,7 +150,7 @@ sub readFromFile {
     } elsif ($format eq "meme_block") {
 	@matrices = _readFromMEMEFile($file);
 	} elsif ($format eq "meme") {
-	@matrices = _readFromMEMEFile_2015($file);
+	@matrices = _readFromMEMEFile_2015($file, %args);
     } elsif ($format eq "feature") {
 	@matrices = _readFromFeatureFile($file);
       } elsif ($format eq "sequences") {
@@ -430,9 +430,12 @@ sub InitializeEquiPriors {
   foreach my $matrix (@matrices) {
     my @alphabet = $matrix->getAlphabet();
     if (scalar(@alphabet) == 0) {
-      @alphabet = qw(a c g t);
+#      @alphabet = qw(a c g t);
+      $matrix->set_alphabet_for_type();
+    } else {
+      $matrix->setAlphabet(@alphabet);
     }
-    $matrix->setAlphabet_lc(@alphabet);
+
 #    $matrix->force_attribute("nrow", scalar(@alphabet));
     my %tmp_prior = ();
     my $prior = 1/scalar(@alphabet);
@@ -631,7 +634,9 @@ sub _readFromTRANSFACFile {
 
       ## Alphabet is parsed from the TRANSFAC matrix header (PO row)
       my @alphabet = split /\s+/, $header;
-      $matrix->setAlphabet_lc(@alphabet);
+#      $matrix->setAlphabet_lc(@alphabet);
+      $matrix->setAlphabet(@alphabet);
+#      $matrix->set_alphabet_for_type(); ## TO TEST (JvH): do we prefer to set the alphabet based on TRANSFAC column header or according to the user-specified type ? 
       &RSAT::message::Debug("Alphabet", join(";",@alphabet)) if ($main::verbose >= 5);
 
       ## Check that prior has been specified
@@ -867,8 +872,9 @@ sub _readFromSTAMPFile {
       }
 
       ## STAMP has no header to specify the alphabet. Columns are supposed to contain A,C,G,T respectively.
-      my @alphabet = qw(A C G T);
-      $matrix->setAlphabet_lc(@alphabet);
+      # my @alphabet = qw(A C G T);
+      # $matrix->setAlphabet_lc(@alphabet);
+      $matrix->set_alphabet_for_type();
       &RSAT::message::Debug("Alphabet", join(";",@alphabet)) if ($main::verbose >= 5);
 
       ## Equiprobable alphabet
@@ -1115,232 +1121,232 @@ sub _readFromInfoGibbsFile {
 }
 
 
-=pod
+# =pod
 
-=item _readFromOldInfoGibbsFile($file)
+# =item _readFromOldInfoGibbsFile($file)
 
-Read a matrix from a result file from InfoGibbs (implementation by
-Gregory Gathy, 2007). This method is called by the method
-C<readFromFile($file, "InfoGibbs")>.
+# Read a matrix from a result file from InfoGibbs (implementation by
+# Gregory Gathy, 2007). This method is called by the method
+# C<readFromFile($file, "InfoGibbs")>.
 
-This format was a customized version of the TRANSFAC format, developed
-for the Master thesis of Gregory Gathy. The program is not supported
-anymore, it has been replaced by Matthieu Defrance's implementation
-I<info-gibbs>.
+# This format was a customized version of the TRANSFAC format, developed
+# for the Master thesis of Gregory Gathy. The program is not supported
+# anymore, it has been replaced by Matthieu Defrance's implementation
+# I<info-gibbs>.
 
-=cut
-sub _readFromOldInfoGibbsFile {
-  my ($file) = @_;
-  &RSAT::message::Info ("Reading matrices from InfoGibbs file", $file) if ($main::verbose >= 3);
+# =cut
+# sub _readFromOldInfoGibbsFile {
+#   my ($file) = @_;
+#   &RSAT::message::Info ("Reading matrices from InfoGibbs file", $file) if ($main::verbose >= 3);
 
-  ## open input stream
-  my ($in, $dir) = &main::OpenInputFile($file);
-#  my ($in) = STDIN;
-#  if ($file) {
-#    open INPUT, $file;
-#    $in = INPUT;
-#  }
-  my $current_matrix_nb = 0;
-  my @matrices = ();
-  my $matrix;
-  my $version = "";
-  my $command = "";
-  my $ncol = 0;
-  my $infogibbs_consensus = "";
-  my %select_type = ("final"=>1);
+#   ## open input stream
+#   my ($in, $dir) = &main::OpenInputFile($file);
+# #  my ($in) = STDIN;
+# #  if ($file) {
+# #    open INPUT, $file;
+# #    $in = INPUT;
+# #  }
+#   my $current_matrix_nb = 0;
+#   my @matrices = ();
+#   my $matrix;
+#   my $version = "";
+#   my $command = "";
+#   my $ncol = 0;
+#   my $infogibbs_consensus = "";
+#   my %select_type = ("final"=>1);
 
-  my %prior = ();
-  my $l = 0;
-  while (<$in>) {
-    $l++;
-    chomp();
+#   my %prior = ();
+#   my $l = 0;
+#   while (<$in>) {
+#     $l++;
+#     chomp();
 
-#    &RSAT::message::Debug($l, $_) if ($main::verbose >= 10);
-    next unless (/\S/);
-    s/\r//;
-    my $version = "";
+# #    &RSAT::message::Debug($l, $_) if ($main::verbose >= 10);
+#     next unless (/\S/);
+#     s/\r//;
+#     my $version = "";
 
-    ## Read the command line
-    if (/^VV\s+/) {
-      ## InfoGibbs version
-      $version = $';		# '
-      &RSAT::message::Info("InfoGibbs version", $version) if ($main::verbose >= 5);
+#     ## Read the command line
+#     if (/^VV\s+/) {
+#       ## InfoGibbs version
+#       $version = $';		# '
+#       &RSAT::message::Info("InfoGibbs version", $version) if ($main::verbose >= 5);
 
-    } elsif (/^CM\s+/) {
-      ## InfoGibbs command
-      $command = $';		# '
-      &RSAT::message::Info("InfoGibbs command", $command) if ($main::verbose >= 5);
+#     } elsif (/^CM\s+/) {
+#       ## InfoGibbs command
+#       $command = $';		# '
+#       &RSAT::message::Info("InfoGibbs command", $command) if ($main::verbose >= 5);
 
-    } elsif (/^PR\s+/) {
-      my $prior_error = 0;
-      ## InfoGibbs command
-      my $prior_line = $';		# '
-      my @fields = split /;\s*/, $prior_line;
-      my %new_prior = ();
-      foreach my $field (@fields) {
-	if ($field =~ /([A-Z]):(\S+)/i) {
-	  my $residue = lc($1);
-	  my $prior = $2;
-	  if (&RSAT::util::IsReal($prior)) {
-	    $new_prior{$residue} = $prior;
-	  } else {
-	    &RSAT::message::Warning("InfoGibbs file", "line ".$l, "Invalid prior specification", $prior_line);
-	    $prior_error = 1;
-	  }
-	} else {
-	  &RSAT::message::Warning("InfoGibbs file", "line ".$l, "Invalid prior specification", $prior_line);
-	    $prior_error = 1;
-	}
-      }
-      unless ($prior_error) {
-	%prior = %new_prior;
-#	&RSAT::message::Debug("New prior", join (" ", %prior)) if ($main::verbose >= 10);
-      }
+#     } elsif (/^PR\s+/) {
+#       my $prior_error = 0;
+#       ## InfoGibbs command
+#       my $prior_line = $';		# '
+#       my @fields = split /;\s*/, $prior_line;
+#       my %new_prior = ();
+#       foreach my $field (@fields) {
+# 	if ($field =~ /([A-Z]):(\S+)/i) {
+# 	  my $residue = lc($1);
+# 	  my $prior = $2;
+# 	  if (&RSAT::util::IsReal($prior)) {
+# 	    $new_prior{$residue} = $prior;
+# 	  } else {
+# 	    &RSAT::message::Warning("InfoGibbs file", "line ".$l, "Invalid prior specification", $prior_line);
+# 	    $prior_error = 1;
+# 	  }
+# 	} else {
+# 	  &RSAT::message::Warning("InfoGibbs file", "line ".$l, "Invalid prior specification", $prior_line);
+# 	    $prior_error = 1;
+# 	}
+#       }
+#       unless ($prior_error) {
+# 	%prior = %new_prior;
+# #	&RSAT::message::Debug("New prior", join (" ", %prior)) if ($main::verbose >= 10);
+#       }
 
-      ## Start a new matrix (an InfoGibbs file contains several matrices)
-    } elsif (/^AC\s+(\S+)/) {
-      my $accession = &clean_id($1);
-      &RSAT::message::Info("New matrix", $accession) if ($main::verbose >= 2);
-      $current_matrix_nb++;
-      $matrix = new RSAT::matrix();
-      $matrix->set_parameter("accession", "IG.".$accession);
-      $matrix->set_parameter("id", $accession);
-      $matrix->set_parameter("program", "InfoGibbs");
-      $matrix->set_parameter("version", $version);
-      $matrix->set_parameter("command", $command);
-      $matrix->set_parameter("matrix.nb", $current_matrix_nb);
-      if (scalar(keys(%prior)) > 0) {
-	$matrix->setPrior(%prior);
-#	&RSAT::message::Debug("Prior", join (" ", %prior)) if ($main::verbose >= 5);
-      }
-      push @matrices, $matrix;
-      $ncol = 0;
-      $infogibbs_consensus = "";
+#       ## Start a new matrix (an InfoGibbs file contains several matrices)
+#     } elsif (/^AC\s+(\S+)/) {
+#       my $accession = &clean_id($1);
+#       &RSAT::message::Info("New matrix", $accession) if ($main::verbose >= 2);
+#       $current_matrix_nb++;
+#       $matrix = new RSAT::matrix();
+#       $matrix->set_parameter("accession", "IG.".$accession);
+#       $matrix->set_parameter("id", $accession);
+#       $matrix->set_parameter("program", "InfoGibbs");
+#       $matrix->set_parameter("version", $version);
+#       $matrix->set_parameter("command", $command);
+#       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
+#       if (scalar(keys(%prior)) > 0) {
+# 	$matrix->setPrior(%prior);
+# #	&RSAT::message::Debug("Prior", join (" ", %prior)) if ($main::verbose >= 5);
+#       }
+#       push @matrices, $matrix;
+#       $ncol = 0;
+#       $infogibbs_consensus = "";
 
-      &RSAT::message::Info("Parsing matrix",  $current_matrix_nb, $matrix->get_attribute("accession")) 
-	if ($main::verbose >= 2);
-      next;
+#       &RSAT::message::Info("Parsing matrix",  $current_matrix_nb, $matrix->get_attribute("accession")) 
+# 	if ($main::verbose >= 2);
+#       next;
 
-      ## Parameters for the current matrix
-    } elsif ($matrix) {
+#       ## Parameters for the current matrix
+#     } elsif ($matrix) {
 
-      ## Read prior alphabet from the matrix header (PO line)
-      ## Equiprobable alphabet.
-      if ((/^PO\s+/) || (/^P0\s+/)) {
-	my $header = $'; #'
-	$header = &RSAT::util::trim($header);
+#       ## Read prior alphabet from the matrix header (PO line)
+#       ## Equiprobable alphabet.
+#       if ((/^PO\s+/) || (/^P0\s+/)) {
+# 	my $header = $'; #'
+# 	$header = &RSAT::util::trim($header);
 
-	## Alphabet is parsed from the InfoGibbs matrix header (PO row)
-	my @alphabet = split /\s+/, $header;
-	$matrix->setAlphabet_lc(@alphabet);
+# 	## Alphabet is parsed from the InfoGibbs matrix header (PO row)
+# 	my @alphabet = split /\s+/, $header;
+# 	$matrix->setAlphabet_lc(@alphabet);
 
-	## Check that prior has been specified
-	unless ($matrix->get_attribute("prior_specified")) {
-	  foreach my $letter (@alphabet) {
-	    $prior{lc($letter)} = 1/scalar(@alphabet) 
-	      unless (defined($prior{$letter}));;
-	  }
-	  $matrix->setPrior(%prior);
-#	  &RSAT::message::Debug("Prior", join (" ", %prior)) if ($main::verbose >= 5);
-	}
+# 	## Check that prior has been specified
+# 	unless ($matrix->get_attribute("prior_specified")) {
+# 	  foreach my $letter (@alphabet) {
+# 	    $prior{lc($letter)} = 1/scalar(@alphabet) 
+# 	      unless (defined($prior{$letter}));;
+# 	  }
+# 	  $matrix->setPrior(%prior);
+# #	  &RSAT::message::Debug("Prior", join (" ", %prior)) if ($main::verbose >= 5);
+# 	}
 
-	## Count column of the matrix file (row in TRANSFAC/InfoGibbs format)
-      } elsif (/^(\d+)\s+/) {
-	my $values = $'; #'
-	$values = &RSAT::util::trim($values);
-	my @fields = split /\s+/, $values;
-	my $consensus_residue= "";
-	if ($fields[$#fields] =~ /[A-Z]/i) {
-	  $consensus_residue = pop @fields;
-	  $infogibbs_consensus .= $consensus_residue;
-	}
-	$matrix->addColumn(@fields);
-	$ncol++;
-	$matrix->force_attribute("ncol", $ncol);
-#	&RSAT::message::Debug("line ".$l, "adding column", $ncol, "counts", join (":", @fields))
-#	  if ($main::verbose >= 10);
+# 	## Count column of the matrix file (row in TRANSFAC/InfoGibbs format)
+#       } elsif (/^(\d+)\s+/) {
+# 	my $values = $'; #'
+# 	$values = &RSAT::util::trim($values);
+# 	my @fields = split /\s+/, $values;
+# 	my $consensus_residue= "";
+# 	if ($fields[$#fields] =~ /[A-Z]/i) {
+# 	  $consensus_residue = pop @fields;
+# 	  $infogibbs_consensus .= $consensus_residue;
+# 	}
+# 	$matrix->addColumn(@fields);
+# 	$ncol++;
+# 	$matrix->force_attribute("ncol", $ncol);
+# #	&RSAT::message::Debug("line ".$l, "adding column", $ncol, "counts", join (":", @fields))
+# #	  if ($main::verbose >= 10);
 
-	## Sites used to build the matrix
-      } elsif (/^BS\s+/)  {
-	my $bs = $'; #'
-	my ($site_sequence, $site_id) = split(/\s*;\s*/, $bs);
-	#      my $site_sequence = $1;
-	#      my $site_id = $2;
-	if ($site_sequence) {
-	  $matrix->push_attribute("sequences", $site_sequence);
-	  if ($site_id) {
-	    $matrix->push_attribute("site_ids", $site_id);
-	  }
-	}
-#	&RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 10);
+# 	## Sites used to build the matrix
+#       } elsif (/^BS\s+/)  {
+# 	my $bs = $'; #'
+# 	my ($site_sequence, $site_id) = split(/\s*;\s*/, $bs);
+# 	#      my $site_sequence = $1;
+# 	#      my $site_id = $2;
+# 	if ($site_sequence) {
+# 	  $matrix->push_attribute("sequences", $site_sequence);
+# 	  if ($site_id) {
+# 	    $matrix->push_attribute("site_ids", $site_id);
+# 	  }
+# 	}
+# #	&RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 10);
 
-	## Information content computed by InfoGibbs
-      } elsif (/^IC\s+/) {
-	$matrix->set_parameter("IC", $'); #'
+# 	## Information content computed by InfoGibbs
+#       } elsif (/^IC\s+/) {
+# 	$matrix->set_parameter("IC", $'); #'
 
-	## Consensus score computed by InfoGibbs
-      } elsif (/^CS\s+/) {
-	$matrix->set_parameter("CS", $'); #'
+# 	## Consensus score computed by InfoGibbs
+#       } elsif (/^CS\s+/) {
+# 	$matrix->set_parameter("CS", $'); #'
 
-	## Log-Likelihood computed by InfoGibbs
-      } elsif (/^LL\s+/) {
-	$matrix->set_parameter("LL", $'); #'
+# 	## Log-Likelihood computed by InfoGibbs
+#       } elsif (/^LL\s+/) {
+# 	$matrix->set_parameter("LL", $'); #'
 
-	## TRANSFAC matrix parameters (not used by InfoGibbs, but maintained for compatibility)
-      } elsif (/^XX/) {
-	## field separator
-	next;
+# 	## TRANSFAC matrix parameters (not used by InfoGibbs, but maintained for compatibility)
+#       } elsif (/^XX/) {
+# 	## field separator
+# 	next;
 
-      } elsif (/^ID\s+/) {
-	$matrix->force_attribute("name", $'); #'
-	$matrix->force_attribute("id", $'); #'
+#       } elsif (/^ID\s+/) {
+# 	$matrix->force_attribute("name", $'); #'
+# 	$matrix->force_attribute("id", $'); #'
 
-      } elsif (/^BF\s+/) {
-	$matrix->set_parameter("binding_factor", $'); #'
+#       } elsif (/^BF\s+/) {
+# 	$matrix->set_parameter("binding_factor", $'); #'
 
-	#    } elsif (/^SD\s+/) {
-	#      $matrix->set_parameter("short_foactor_description", $'); #'
+# 	#    } elsif (/^SD\s+/) {
+# 	#      $matrix->set_parameter("short_foactor_description", $'); #'
 
-      } elsif ((/^BA\s+/)   && ($matrix)){
-	$matrix->set_parameter("statistical_basis", $'); #'
+#       } elsif ((/^BA\s+/)   && ($matrix)){
+# 	$matrix->set_parameter("statistical_basis", $'); #'
 
-      } elsif ((/^DE\s+/)   && ($matrix)){
-	$matrix->set_parameter("description", $'); #'
+#       } elsif ((/^DE\s+/)   && ($matrix)){
+# 	$matrix->set_parameter("description", $'); #'
 
-	## Matrix type
-      } elsif ((/^TY\s+/)   && ($matrix)){
-	$matrix->set_parameter("type", $'); #'
+# 	## Matrix type
+#       } elsif ((/^TY\s+/)   && ($matrix)){
+# 	$matrix->set_parameter("type", $'); #'
 
-      } elsif (/^\/\//) {
-	if ($matrix) {
-	  $matrix->set_parameter("infogibbs_consensus", $infogibbs_consensus);
-	}
+#       } elsif (/^\/\//) {
+# 	if ($matrix) {
+# 	  $matrix->set_parameter("infogibbs_consensus", $infogibbs_consensus);
+# 	}
 
-	## Unknown field
-      } elsif (/^(\S\S)\s+(.*)/) {
-	my $field = $1;
-	my $value = $2;
-	&RSAT::message::Warning("Unknown field, not parsed", "line ".$l, $field, $value) if ($main::verbose >= 5);
+# 	## Unknown field
+#       } elsif (/^(\S\S)\s+(.*)/) {
+# 	my $field = $1;
+# 	my $value = $2;
+# 	&RSAT::message::Warning("Unknown field, not parsed", "line ".$l, $field, $value) if ($main::verbose >= 5);
 
-      } else {
-	&RSAT::message::Warning("skipped invalid row", "line ".$l, $_);
-      }
-    }
+#       } else {
+# 	&RSAT::message::Warning("skipped invalid row", "line ".$l, $_);
+#       }
+#     }
 
-  }
-  close $in if ($file);
+#   }
+#   close $in if ($file);
 
-  my @selected_matrices = ();
-  foreach my $matrix (@matrices) {
-    my $type = $matrix->get_attribute("type");
-    if (($type) && ($select_type{$type})) {
-      push @selected_matrices, $matrix;
-    }
-  }
+#   my @selected_matrices = ();
+#   foreach my $matrix (@matrices) {
+#     my $type = $matrix->get_attribute("type");
+#     if (($type) && ($select_type{$type})) {
+#       push @selected_matrices, $matrix;
+#     }
+#   }
 
-  return @selected_matrices;
+#   return @selected_matrices;
 
-}
+# }
 
 
 =pod
@@ -1390,8 +1396,9 @@ sub _readFromAlignACEFile {
       $matrix->set_parameter("alignace.oversample", $oversample);
       &RSAT::message::Info("Starting to read matrix", $matrix_nb) if ($main::verbose >= 5);
 
-      # default nucletodide alphabet
-      $matrix->setAlphabet_lc("a","c","g","t");
+      ## Default nucletodide alphabet
+#      $matrix->setAlphabet_lc("a","c","g","t");
+      $matrix->set_alphabet_for_type();
       my $atback = 1-$gcback;
       $matrix->setPrior(a=>$atback/2, c=>$gcback/2,t=>$atback/2, g=>$gcback/2);
       $matrix->force_attribute("nrow",4);
@@ -1524,7 +1531,8 @@ sub _readFromGibbsFile {
 	  push @matrices, $matrix;
 	  $in_matrix = 1;
 	  # default nucletodide alphabet
-	  $matrix->setAlphabet_lc("a","c","g","t");
+#	  $matrix->setAlphabet_lc("a","c","g","t");
+	  $matrix->set_alphabet_for_type();
 #	  $matrix->force_attribute("nrow",4);
 	}
 
@@ -1558,7 +1566,8 @@ sub _readFromGibbsFile {
 	&RSAT::message::Debug("Starting to read a motif") if ($main::verbose >= 5);
 	$in_matrix = 1;
 	# default nucletodide alphabet
-	$matrix->setAlphabet_lc("a","c","g","t");
+#	$matrix->setAlphabet_lc("a","c","g","t");
+	$matrix->set_alphabet_for_type();
 	next;
 
       } elsif ((/model map = (\S+); betaprior map = (\S+)/) && ($in_matrix)) {
@@ -1587,7 +1596,9 @@ sub _readFromGibbsFile {
 	  chomp;
 	  @header = split " +";
 	  @alphabet = @header[1..$#header-1];
-	  $matrix->setAlphabet_lc(@alphabet);
+#	  $matrix->setAlphabet_lc(@alphabet);
+	  $matrix->setAlphabet(@alphabet); ## Here we use the alphabet defined in the file rather than the user-specified type
+#	  $matrix->set_alphabet_for_type();
 	  &RSAT::message::Debug("Alphabet", join(":", @alphabet)) if ($main::verbose >= 5);
 
 	} elsif (/^\s*\d+\s+/) {
@@ -1813,7 +1824,8 @@ sub _readFromAssemblyFile {
       my $matrix_name = $seed;
       $matrix->set_parameter("name", $matrix_name);
       push @matrices, $matrix;
-      $matrix->setAlphabet_lc("A","C","G","T");
+#      $matrix->setAlphabet_lc("A","C","G","T");
+      $matrix->set_alphabet_for_type();
 #      $matrix->force_attribute("nrow", 4);
       $matrix->set_parameter("asmb.seed", $seed);
       &RSAT::message::Debug("New matrix from assembly", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 5);
@@ -1902,7 +1914,8 @@ sub _from_isolated {
   $matrix = new RSAT::matrix();
   $matrix->set_parameter("program", "pattern-assembly");
   $matrix->set_parameter("matrix.nb", $current_matrix_nb);
-  $matrix->setAlphabet_lc("A","C","G","T");
+  # $matrix->setAlphabet_lc("A","C","G","T");
+  $matrix->set_alphabet_for_type();
 #  $matrix->force_attribute("nrow", 4);
   $matrix->set_parameter("asmb.seed", $pattern);
   $matrix->set_attribute("asmb.consensus", $pattern);
@@ -2066,8 +2079,9 @@ sub _readFromClusterBusterFile {
 	  $matrix->set_attribute("AC", $name);
 	  $matrix->set_attribute("accession", $name);
 	}
-	my @alphabet = qw(a c g t);
-	$matrix->setAlphabet_lc(@alphabet);
+	# my @alphabet = qw(a c g t);
+	# $matrix->setAlphabet_lc(@alphabet);
+	$matrix->set_alphabet_for_type();
 #	$matrix->force_attribute("nrow", 4);
 	push @matrices, $matrix;
 	$current_matrix_nb++;
@@ -2153,9 +2167,10 @@ sub _readFromEncodeFile {
 	  if ($comment){
 	      $matrix->set_parameter("description", $comment);
 	  }
-	  my @alphabet = qw(a c g t);
-	  $matrix->setAlphabet_lc(@alphabet);
-#	$matrix->force_attribute("nrow", 4);
+	  # my @alphabet = qw(a c g t);
+	  # $matrix->setAlphabet_lc(@alphabet);
+	  $matrix->set_alphabet_for_type();
+	  #	$matrix->force_attribute("nrow", 4);
 	  push @matrices, $matrix;
 	  $current_matrix_nb++;
 	  &RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
@@ -2412,7 +2427,8 @@ sub _readFromJasparFile {
     close $in if ($file);
 
     foreach my $matrix (@matrices) {
-      $matrix->setAlphabet_lc(@temp_alphabet);
+#      $matrix->setAlphabet_lc(@temp_alphabet);
+      $matrix->set_alphabet_for_type();
     }
 
     &InitializeEquiPriors(@matrices);
@@ -2431,7 +2447,7 @@ sub NewJasparMatrix {
   &RSAT::message::Debug("_readFromJasparFile", $id, $name, $matrix) if ($main::verbose >= 5);
   $matrix->set_parameter("program", "jaspar");
   $ncol = 0;
-  @temp_alphabet = qw(a c g t);
+  #@temp_alphabet = qw(a c g t);
 
   ## JASPAR header line contains an ID and a name
   $matrix->set_attribute("id", $id);
@@ -2439,6 +2455,7 @@ sub NewJasparMatrix {
   $matrix->set_attribute("accession", $id); ## For compatibility with TRANSFAC format
   $matrix->set_attribute("description", join("", $id, " ", $name, "; from JASPAR"));
 #  $matrix->setAlphabet_lc(@temp_alphabet);
+  $matrix->set_alphabet_for_type();
   push @matrices, $matrix;
   $current_matrix_nb++;
   &RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
@@ -2466,7 +2483,7 @@ sub _readFromHomerFile {
     my ($in, $dir) = &main::OpenInputFile($file);
 
     ## Special treatment for the alphabet: sometimes indicated in the first column, sometimes not.
-    my @temp_alphabet = qw(a c g t);
+#    my @temp_alphabet = qw(a c g t);
 
     ## Initialize the matrix LIST
     local @matrices = (); ## updated in subroutine
@@ -2532,8 +2549,9 @@ sub _readFromHomerFile {
 	  }
 	}
 
-	my @alphabet = qw(a c g t);
-	$matrix->setAlphabet_lc(@alphabet);
+	# my @alphabet = qw(a c g t);
+	# $matrix->setAlphabet_lc(@alphabet);
+	$matrix->set_alphabet_for_type();
 #	$matrix->force_attribute("nrow", 4);
 	push @matrices, $matrix;
 	$current_matrix_nb++;
@@ -2567,7 +2585,8 @@ sub _readFromHomerFile {
     close $in if ($file);
 
     foreach my $matrix (@matrices) {
-      $matrix->setAlphabet_lc(@temp_alphabet);
+#      $matrix->setAlphabet_lc(@temp_alphabet);
+      $matrix->set_alphabet_for_type();
     }
 
     &InitializeEquiPriors(@matrices);
@@ -2588,7 +2607,7 @@ method C<readFromFile($file, "MEME")>.
 
 sub _readFromMEMEFile {
   my ($file) = @_;
-  &RSAT::message::Info("Reading matrix from meme BLOCK file\t", $file) if ($main::verbose >= 3);
+  &RSAT::message::Info("Reading matrix from MEME BLOCK file (obsolete)\t", $file) if ($main::verbose >= 3);
 
   ## open input stream
   my ($in, $dir) = &main::OpenInputFile($file);
@@ -2641,7 +2660,9 @@ sub _readFromMEMEFile {
       $matrix->set_parameter("meme.E-value", $5);
       $matrix->setPrior(%residue_frequencies);
 #      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
-      $matrix->setAlphabet_lc(@alphabet);
+      # $matrix->setAlphabet_lc(@alphabet);
+      $matrix->setAlphabet(@alphabet); # For MEME, we take the alphabet from the file itself
+      # $matrix->set_alphabet_for_type()
 #      $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
       push @matrices, $matrix;
 
@@ -2651,7 +2672,7 @@ sub _readFromMEMEFile {
 
     } elsif (/Background letter frequencies/) {
       my $alphabet = <$in>;
-      $alphabet = lc($alphabet);
+#      $alphabet = lc($alphabet);
       $alphabet = &main::trim($alphabet);
       %residue_frequencies = split /\s+/, $alphabet;
       @alphabet = sort (keys %residue_frequencies);
@@ -2661,6 +2682,7 @@ sub _readFromMEMEFile {
       foreach my $l (0..$#alphabet) {
 	$alphabet{$alphabet[$l]} = $l;
       }
+      $matrix->setAlphabet(@alphabet);
 
       ## Parse BLOCKS format
     } elsif (/Motif (\d+) in BLOCKS format/) {
@@ -2734,7 +2756,7 @@ letter-probability matrix: alength= 4 w= 19 nsites= 17 E= 4.1e-009
 
 
 sub _readFromMEMEFile_2015 {
-  my ($file) = @_;
+  my ($file, %args) = @_;
   &RSAT::message::Info("Reading matrix from meme file version 2015\t", $file) if ($main::verbose >= 3);
 
   ## open input stream
@@ -2746,8 +2768,8 @@ sub _readFromMEMEFile_2015 {
   my $ncol = 0;
   my $in_blocks = 0;
   my %alphabet = ();
-  my %residue_frequencies = ();
   my @alphabet = ();
+  my %residue_frequencies = ();
   my @frequencies = ();
   my $l = 0;
   my $prefix = "matrix";
@@ -2761,12 +2783,24 @@ sub _readFromMEMEFile_2015 {
     $_ = &main::trim($_);
 
     if (/Background letter frequencies/) {
-      my $alphabet = <$in>;
-      $alphabet = lc($alphabet);
-      $alphabet = &main::trim($alphabet);
-      %residue_frequencies = split /\s+/, $alphabet;
-      @alphabet = sort (keys %residue_frequencies);
-      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 5);
+      ## Read alphabet from the background residue frequencies
+      my $bg_freq = <$in>;
+#      $bg_freq = lc($bg_freq);
+      $bg_freq = &main::trim($bg_freq);
+      my @residue_frequencies = split /\s+/, $bg_freq;
+      while (@residue_frequencies) {
+	my $residue = shift(@residue_frequencies);
+	my $frequency = shift(@residue_frequencies);
+	push @alphabet, $residue;
+	$residue_frequencies{$residue} = $frequency;
+	push @frequencies, $frequency;
+	#&RSAT::message::Debug("MEME background frequencies", $residue, $frequency) if ($main::verbose >= 10);
+      }
+
+#      die ("HELLO");
+#      %residue_frequencies = split /\s+/, $bg_freq;
+#      @alphabet = sort (keys %residue_frequencies);     
+#      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
 
       ## Index the alphabet
       foreach my $l (0..$#alphabet) {
@@ -2788,18 +2822,29 @@ sub _readFromMEMEFile_2015 {
       $matrix->set_parameter("id", $id);
       $matrix->set_parameter("ac", $ac); ## For TRANSFAC compatibility
       $matrix->set_parameter("name", $id); ## For readability of logos
+      if (defined($args{"type"})) {
+	$matrix->set_parameter("type", $args{type});
+#	&RSAT::message::Debug("matrix type", $matrix->get_attribute("type")); die("HELLO");
+      }
+      $matrix->setAlphabet(@alphabet);
+      $matrix->setPrior(%residue_frequencies);
       
       &RSAT::message::Debug("motif found line", $l, "id=$id ac=$ac name =$id") if ($main::verbose >= 5);
     
     } elsif (/letter-probability matrix:.*w=\s*(\d+)\s+nsites=\s*(\d+)\s+E=\s*(\S+)/) {
       ## letter-probability matrix: alength= alphabet length w= motif length nsites= source sites E= source E-value
-    
-      $matrix->set_parameter("sites", $2);
       $nb_sites = $2;
+      $matrix->set_parameter("sites", $nb_sites);
       $matrix->set_parameter("meme.E-value", $3);
-      $matrix->setPrior(%residue_frequencies);
-      $matrix->setAlphabet_lc(@alphabet);
+#      $matrix->setPrior(%residue_frequencies);
+      #$matrix->setAlphabet_lc(@alphabet);
+ #     $matrix->setAlphabet(@alphabet);
       push @matrices, $matrix;
+#       &RSAT::message::Debug("MEME matrix read", 
+# 			    $matrix->get_attribute("id"),
+# 			    $matrix->get_attribute("sites"),
+# #			    join(" ", $matrix->get_attribute("prior"))
+# 	  ) if ($main::verbose >= #0);
       
       &RSAT::message::Debug("line", $l, "ncol=$1,nbsites=$nb_sites") if ($main::verbose >= 5);
 
@@ -2808,25 +2853,33 @@ sub _readFromMEMEFile_2015 {
       &RSAT::message::Debug("line", $l, "Starting to parse the matrix cells") if ($main::verbose >= 10);
 
     } elsif ($in_blocks) {
+      
+      if ($_ !~ /\d+/) {
+	&RSAT::message::Debug("line", $l, "matrix cells parsed") if ($main::verbose >= 5);
+	$in_blocks = 0;
 
-    	if ($_ !~ /\d+/) {
-			&RSAT::message::Debug("line", $l, "matrix cells parsed") if ($main::verbose >= 5);
-			$in_blocks = 0;
-			## correcting the frequency matrix to a count matrix
- 			 my @matrix = $matrix->getMatrix();
- 			 my $ncol = $matrix->ncol();
-  			 my $nrow = $matrix->nrow();
-  			 for my $c (0..($ncol-1)) {
-    			for my $r (0..($nrow-1)) {
-      			$matrix[$c][$r] *= 100; #multiply by 100 to obtain count over 100
-      			$matrix[$c][$r] = $matrix[$c][$r] * $nb_sites / 100 ; ## put back to the number of contributing sites
-      			$matrix[$c][$r] = int($matrix[$c][$r] + 0.5); ## round ton integer
-    			}
-  			}
+# 	## Converting the frequency matrix to a count matrix
+# 	my @matrix = $matrix->getMatrix();
+# 	my $ncol = $matrix->ncol();
+# 	my $nrow = $matrix->nrow();
+# 	my $nb_sites = $matrix->get_attribute("sites");
+# 	&RSAT::message::Debug("Parsing matrix", $matrix->get_attribute("id"), 
+# 			      "ncol=".$ncol,
+# 			      "nrow=".$nrow,
+# 			      "sites=".$nb_sites) if($main::verbose >= 10);
+# 	for my $c (0..($ncol-1)) {
+# 	  for my $r (0..($nrow-1)) {
+# #	    $matrix[$c][$r] *= 100; #multiply by 100 to obtain count over 100
+# #	    $matrix[$c][$r] = $matrix[$c][$r] * $nb_sites / 100 ; ## put back to the number of contributing sites
+# 	    $matrix[$c][$r] = $matrix[$c][$r] * $nb_sites; ## put back to the number of contributing sites	    
+# 	    $matrix[$c][$r] = int($matrix[$c][$r] + 0.5); ## round to integer
+# #	    $matrix[$c][$r]  = 0;
+# 	  }
+# 	}
+# 	$matrix->setMatrix(@matrix);
 			
-		} else {
+      } else {
     	## Count column of the matrix file (row like in TRANSFAC format)
-    
 	my $values = $_;
 	$values = &RSAT::util::trim($values);
 	my @fields = split /\s+/, $values;
@@ -2839,6 +2892,29 @@ sub _readFromMEMEFile_2015 {
     }
     }
   close $in if ($file);
+
+  ## Multiply frequencies by the number of sites to obtain counts
+  foreach my $matrix (@matrices) {
+    ## Converting the frequency matrix to a count matrix
+    my @matrix = $matrix->getMatrix();
+    my $ncol = $matrix->ncol();
+    my $nrow = $matrix->nrow();
+    my $nb_sites = $matrix->get_attribute("sites");
+    # &RSAT::message::Debug("Parsing matrix", $matrix->get_attribute("id"), 
+    # 			  "ncol=".$ncol,
+    # 			  "nrow=".$nrow,
+    # 			  "sites=".$nb_sites) if($main::verbose >= 10);
+    for my $c (0..($ncol-1)) {
+      for my $r (0..($nrow-1)) {
+#	    $matrix[$c][$r] *= 100; #multiply by 100 to obtain count over 100
+#	    $matrix[$c][$r] = $matrix[$c][$r] * $nb_sites / 100 ; ## put back to the number of contributing sites
+	$matrix[$c][$r] = $matrix[$c][$r] * $nb_sites; ## put back to the number of contributing sites	    
+	$matrix[$c][$r] = int($matrix[$c][$r] + 0.5); ## round to integer
+#	    $matrix[$c][$r]  = 0;
+      }
+    }
+    $matrix->setMatrix(@matrix);
+  }
 
   return @matrices;
 
@@ -2869,7 +2945,8 @@ sub _readFromSeq {
   $matrix->set_parameter("matrix.nb", 1);
   $matrix->set_attribute("name", $matrix_name);
 #      $matrix->set_attribute("id", $matrix_id);
-  $matrix->setAlphabet_lc(@alphabet);
+#  $matrix->setAlphabet_lc(@alphabet);
+  $matrix->set_alphabet_for_type();
 #      $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
 #  $matrices{$matrix_name} = $matrix;
 
@@ -2956,7 +3033,9 @@ sub _readFromFeatureFile {
 #      $matrix->set_parameter("sites", $3);
 #      $matrix->setPrior(%residue_frequencies);
 #      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
-      $matrix->setAlphabet_lc(@alphabet);
+      #$matrix->setAlphabet_lc(@alphabet);
+      #$matrix->setAlphabet(@alphabet);
+      $matrix->set_alphabet_for_type();
 #      $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
       $matrices{$matrix_name} = $matrix;
       push @matrices, $matrix;
@@ -3032,7 +3111,8 @@ sub _readFromMotifSamplerFile {
 	  $matrix->set_parameter("MS.".$field, $value);
 	}
       }
-      $matrix->setAlphabet_lc(@alphabet);
+      #$matrix->setAlphabet_lc(@alphabet);
+      $matrix->set_alphabet_for_type();
       $matrix->setPrior(%prior);
       $matrix->force_attribute("nrow", 4);
 
@@ -3108,7 +3188,8 @@ sub _readFromMotifSamplerMatrixFile {
 	$matrix->set_attribute("AC", $id);
 	$matrix->set_attribute("id", $id);
 	$matrix->force_attribute("nrow", 4);
-	$matrix->setAlphabet_lc("a","c","g","t");
+	# $matrix->setAlphabet_lc("a","c","g","t");
+	$matrix->set_alphabet_for_type();
 	push @matrices, $matrix;
       } elsif (/^#Score = (\S+)/i) {
 	$matrix->set_parameter("MS.score", $1);
@@ -3250,7 +3331,8 @@ sub _readFromClustalFile {
 	$matrix->addRow(@row);
 	&RSAT::message::Debug("Adding row", $r, $res, join ":", @row), if ($main::verbose >= 5);
     }
-    $matrix->setAlphabet_lc(@alphabet);
+    #$matrix->setAlphabet_lc(@alphabet);
+    $matrix->set_alphabet_for_type();
     $matrix->force_attribute("ncol", $ncol);
 #    $matrix->force_attribute("nrow", $nrow);
 
