@@ -1983,8 +1983,10 @@ sub PrintResult {
 
     ### obs/exp ratio
     if ($return{'ratio'}) {
-      printf $out "\t%.2f", $patterns{$pattern_seq}->{ratio};
+      printf $out "\t%.4f", $patterns{$pattern_seq}->{ratio};
     }
+
+    ## TO DO (JvH 2017-06-07): add log2FC
 
     ### log likelihood of occurrences
     printf $out "\t%15.12f", $patterns{$pattern_seq}->{occ_lkh} if ($return{'like'});
