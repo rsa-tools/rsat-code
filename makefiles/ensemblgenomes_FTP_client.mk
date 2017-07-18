@@ -365,7 +365,7 @@ TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 4)
 ## The Assembly ID is important for some model organisms (the
 ## community relies on some particular assemblies) but is sometimes
 ## not defined in the table.
-ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 5)
+ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 5 | perl -lne 's/\s+//g; print')
 
 ## The GCA ID is now (2017) recognized by NCBI as well as
 ## EnsemblGenomes. We should decide if we include it in
