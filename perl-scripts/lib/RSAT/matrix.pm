@@ -356,6 +356,104 @@ sub index_alphabet {
 }
 
 
+=pod
+
+=item B<setAlphabet(@alphabet)>
+
+Specify the alphabet (i.e. the list of valid letters) for the table.
+
+=cut
+sub setAlphabet {
+    my ($self, @new_alphabet) = @_;
+    @{$self->{alphabet}} = @new_alphabet;
+
+    ## update the number of columns
+    $self->force_attribute("nrow", scalar(@new_alphabet));
+#    &RSAT::message::Debug("&RSAT::table::setAlphabet()", "new alphabet", $self->getAlphabet())) if ($main::verbose >= 10);
+}
+
+
+
+
+=pod
+
+=item B<setAlphabet_uc(@alphabet)>
+
+Same as setAlphabet(), but first converts the alphabet to uppercases,
+to ensure case-insensitivvity.
+
+=cut
+sub setAlphabet_uc {
+    my ($self, @new_alphabet) = @_;
+
+    ## Convert alphabet to uppercases
+    for my $i (0..$#new_alphabet) {
+	$new_alphabet[$i] = uc($new_alphabet[$i]);
+    }
+
+    $self->setAlphabet(@new_alphabet);
+}
+
+
+
+
+=pod
+
+=item B<setAlphabet_lc(@alphabet)>
+
+Same as setAlphabet(), but first converts the alphabet to lowercases,
+to ensure case-insensitivvity.
+
+=cut
+sub setAlphabet_lc {
+    my ($self, @new_alphabet) = @_;
+
+    ## Convert alphabet to uppercases
+    for my $i (0..$#new_alphabet) {
+	$new_alphabet[$i] = lc($new_alphabet[$i]);
+    }
+    $self->setAlphabet(@new_alphabet);
+}
+
+
+=pod
+
+=item B<set_alphabet_for_type()>
+
+=cut
+
+sub set_alphabet_for_type {
+  my ($self) = @_;
+  my $type = $self->get_attribute("type") || "dna";
+  
+  ## Set alphabet for cytomod 0
+  my @alphabet;
+  if ($matrix_type eq "cytomod") {
+    @alphabet = qw(A C G T h 2 m 1); 
+    $self->setAlphabet(@alphabet);
+  } elsif ($matrix_type eq "dna") {
+    @alphabet = qw(A C G T);
+    $self->setAlphabet_lc(@alphabet);
+  } else {
+    &RSAT::error::FatalError("Invalid matrix type. Supported: dna, cytomod.");
+  }
+  
+}
+
+=pod
+
+=item B<getAlphabet()>
+
+Return the list of valid letters for the table
+
+=cut
+sub getAlphabet {
+    my ($self) = @_;
+    return @{$self->{alphabet}};
+}
+
+
+
 
 =pod
 
