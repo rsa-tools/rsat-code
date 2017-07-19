@@ -134,6 +134,10 @@ if (&IsReal($query->param('ylog'))) {
     $parameters .= " -ylog ".$query->param('ylog');
 }
 
+if(!$query->param('htmap')){
+    $parameters .= " -r_plot";
+}
+
 ################################################################
 ## data file 
 if ($query->param('data_file') =~ /\S/) {

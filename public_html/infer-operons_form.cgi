@@ -15,7 +15,7 @@ $query = new CGI;
 ### default values for filling the form
 $default{genes} = "selection";
 #$default{organism} = "Escherichia coli K12";
-$default{organism} = "Escherichia_coli_GCF_000005845.2_ASM584v2";
+$default{organism} = "Escherichia_coli_K_12_substr__MG1655_uid57779";
 $default{dist_thr} = 55;
 $default{min_gene_nb} = 2;
 $default{return_leader} = "checked";
@@ -90,7 +90,7 @@ if ($group_specificity) {
 
 ################################################################
 ## Form header
-print $query->start_multipart_form(-action=>"infer-operons.cgi");
+print $query->start_multipart_form(-action=>"infer-operons.cgi", -id=>"form");
 
 ################################################################
 ## Only print relevant organisms for operon inference
@@ -108,7 +108,7 @@ push @selected_organisms, &GetOrganismsForTaxon("Archaea")
 
 ### query (gene list)
 print "<p>";
-print "<B><A HREF='help.infer-operons.html#genes'>Genes</A></B>&nbsp;";
+print "<B><A class='iframe' HREF='help.infer-operons.html#genes'>Genes</A></B>&nbsp;";
 print $query->radio_group(-name=>'genes',
 			  -values=>['all','selection'],
 			  -default=>$default{genes});
@@ -116,7 +116,9 @@ print $query->radio_group(-name=>'genes',
 print "<BR>\n";
 print "<UL>\n";
 
-print $query->textarea(-name=>'gene_selection',
+print $query->textarea(
+-id=>'gene_selection',
+-name=>'gene_selection',
 		       -default=>$default{gene_selection},
 		       -rows=>6,
 		       -columns=>65);
@@ -129,14 +131,15 @@ print $query->filefield(-name=>'uploaded_file',
 
 ### distance threshold
 print "</UL><BR><HR>\n";
-print "<B><A HREF='help.infer-operons.html#dist_thr'>Distance threshold (bp)</A></B>&nbsp;\n";
-print $query->textfield(-name=>'dist_thr',
+print "<B><A class='iframe' HREF='help.infer-operons.html#dist_thr'>Distance threshold (bp)</A></B>&nbsp;\n";
+print $query->textfield(-id=>'dist_thr',
+-name=>'dist_thr',
 			-default=>$default{dist_thr},
 			-size=>5);
 
 print "&nbsp;"x5;
 
-print "<B><A HREF='help.infer-operons.html#min_gene_nb'>Minimum number of genes</A></B>&nbsp;\n";
+print "<B><A class='iframe' HREF='help.infer-operons.html#min_gene_nb'>Minimum number of genes</A></B>&nbsp;\n";
 print $query->textfield(-name=>'min_gene_nb',
 			-default=>$default{min_gene_nb},
 			-size=>5);
@@ -144,14 +147,15 @@ print "<BR><HR>\n";
 
 ################################################################
 #### Return fields
-print "<p><B><A HREF='help.infer-operons.html#return'>Return fields</A></B>&nbsp;<br>\n";
+print "<p><B><A class='iframe' HREF='help.infer-operons.html#return'>Return fields</A></B>&nbsp;<br>\n";
 my $i = 0;
 foreach my $field (@output_fields) {
   my $return_field = "return_".$field;
-  print $query->checkbox(-name=>$return_field,
+  print $query->checkbox(-id=>$return_field,
+  -name=>$return_field,
 			 -checked=>$default{$return_field},
 			 -label=>' ');
-  print join "", "<a href='help.infer-operons.html#",$field,"'>", $field_description{$field}, "</a>\n";
+  print join "", "<a class='iframe' href='help.infer-operons.html#",$field,"'>", $field_description{$field}, "</a>\n";
   print "<br>\n";
 }
 
@@ -161,45 +165,39 @@ print "<BR><HR>\n";
 
 ### data for the demo 
 @demo_genes = qw (bioD bioA trpB trpE hisB metB);
-$demo_genes = join "\n", @demo_genes;
-
+$demo_genes = join "\\n", @demo_genes;
 
 ### action buttons
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
+
+print "<script>
+function setDemo(gene){
+    \$('#reset').trigger('click');
+    \$('#gene_selection').val(gene);
+    \$('#organism').val('Escherichia_coli_K12').trigger('chosen:updated');
+    \$('#dist_thr').val('55');
+    \$('#return_leader').prop('checked', true);
+    \$('#return_query').prop('checked', true);
+    \$('#return_operon').prop('checked', true);
+}
+</script>";
 
 ## Demo 1: selected genes
-print $query->start_multipart_form(-action=>"infer-operons_form.cgi");
-print "<TD><B>";
-print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
-print $query->hidden(-name=>'organism',-default=>"Escherichia coli K12");
-print $query->hidden(-name=>'dist_thr',-default=>"55");
-print $query->hidden(-name=>'leader',-default=>"checked");
-print $query->hidden(-name=>'query',-default=>"checked");
-print $query->hidden(-name=>'operon',-default=>"checked");
-print $query->submit(-label=>"DEMO 1 (selected genes)");
-print "</B></TD>\n";
-print $query->end_form;
 
-## Demo 2: all genes
-print $query->start_multipart_form(-action=>"infer-operons_form.cgi");
-print "<TD><B>";
-print $query->hidden(-name=>'genes',-default=>'all');
-print $query->hidden(-name=>'organism',-default=>"Escherichia coli K12");
-print $query->hidden(-name=>'dist_thr',-default=>"55");
-print $query->hidden(-name=>'leader',-default=>"checked");
-print $query->hidden(-name=>'query',-default=>"checked");
-print $query->hidden(-name=>'operon',-default=>"checked");
-print $query->submit(-label=>"DEMO 2 (all genes)");
-print "</B></TD>\n";
-print $query->end_form;
+print '<TD><B>
+    <button type="button" onclick="setDemo(' . "'$demo_genes'" .')">DEMO 1 (selected genes)</button>
+</B></TD>';
 
+print '<TD><B>
+<button type="button" onclick="setDemo(' . "''" .')">DEMO 2 (all genes)</button>
+</B></TD>';
 
 #print "<TD><B><A HREF='demo.infer-operons.html'>DEMO</A></B></TD>\n";
-print "<TD><B><A HREF='help.infer-operons.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.infer-operons.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_infer-operons.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";

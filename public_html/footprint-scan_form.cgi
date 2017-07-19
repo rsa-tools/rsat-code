@@ -38,7 +38,7 @@ $default{markov_order} = "1";
 #$default{leaders} = 'checked';
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Escherichia_coli_GCF_000005845.2_ASM584v2";
+$default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
 $default{uth_pvalue} = "1e-4";
 $default{taxon} = "Gammaproteobacteria";
 $default{uth_occ_th} = "5";
@@ -148,7 +148,7 @@ of two of its target genes: lexA (the factor is auto-regulated) and
 recA.</p>\n
 
 <p> For each query gene, the orthologs are collected at the level of
-Enterobacteriaceae, their upstream sequences are scanned with the
+Enterobacteriales, their upstream sequences are scanned with the
 matrix, and the number of observed sites is compared to the random
 expectation.</p>\n";
 
@@ -156,8 +156,8 @@ $descr1 .= "</blockquote>";
 
 print $query->start_multipart_form(-action=>"footprint-scan_form.cgi");
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_GCF_000005845.2_ASM584v2");
-print $query->hidden(-name=>'taxon',-default=>"Enterobacteriaceae");
+print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K_12_substr__MG1655_uid57779");
+print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
 
 #print $query->submit(-label=>"DEMO");
 
