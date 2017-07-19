@@ -73,16 +73,16 @@ print $query->start_multipart_form(-action=>"genome-scale-dna-pattern.cgi");
 print $query->h4("Pattern matching options");
 
 ### text area to enter the patterns
-print "<A HREF='help.dna-pattern.html#patterns'><B>\n";
+print "<A class='iframe' HREF='help.dna-pattern.html#patterns'><B>\n";
 print "Query pattern(s)</B></A><BR>\n";
-print $query->textarea(-name=>'patterns',
+print $query->textarea(-name=>'patterns',-id=>'patterns',
 		       -default=>$default{patterns},
 		       -rows=>2,
 		       -columns=>60);
 print "<BR>\n";
 
 ### strands ###
-print "<A HREF='help.dna-pattern.html#strands'><B>Search strands</B></A>&nbsp;\n";
+print "<A class='iframe' HREF='help.dna-pattern.html#strands'><B>Search strands</B></A>&nbsp;\n";
 print $query->popup_menu(-name=>'strands',
 			 -Values=>['direct only',
 				   'reverse complement only',
@@ -93,7 +93,7 @@ print $query->popup_menu(-name=>'strands',
 print $query->checkbox(-name=>'noov',
 		       -checked=>'checked',
 		       -label=>'');
-print "&nbsp;<A HREF='help.dna-pattern.html#noov'><B>
+print "&nbsp;<A class='iframe' HREF='help.dna-pattern.html#noov'><B>
 prevent overlapping matches
 </B></A>";
 
@@ -105,22 +105,22 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		       [
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
-			       "<A HREF='help.dna-pattern.html#return'><B>Return</B></A>\n",
-			       "<INPUT TYPE=RADIO NAME='return' VALUE='positions' " .
+			       "<A class='iframe' HREF='help.dna-pattern.html#return'><B>Return</B></A>\n",
+			       "<INPUT TYPE=RADIO NAME='return' id='return_positions' VALUE='positions' " .
 			       "CHECKED"x$default{return}=~/position/ .
 			       "> match positions",
-			       "<A HREF='help.all-upstream-search.html#flanking'><B> flanking residues</B></A>",
-			       $query->textfield(-name=>'flanking',
+			       "<A class='iframe' HREF='help.all-upstream-search.html#flanking'><B> flanking residues</B></A>",
+			       $query->textfield(-name=>'flanking',-id=>'flanking',
 						 -default=>$default{flanking},
 						 -size=>2),
 			       
-				   "<A HREF='help.dna-pattern.html#origin'><B>Origin</B></A>",
-			       $query->popup_menu(-name=>'origin',
+				   "<A class='iframe' HREF='help.dna-pattern.html#origin'><B>Origin</B></A>",
+			       $query->popup_menu(-name=>'origin',-id=>'origin',
 						  -Values=>['start',
 							    'end'],
 						  -default=>$default{origin}),
-			       "<A HREF='help.dna-pattern.html#match_format'><B>Format</B></A>",
-			       $query->popup_menu(-name=>'match_format',
+			       "<A class='iframe' HREF='help.dna-pattern.html#match_format'><B>Format</B></A>",
+			       $query->popup_menu(-name=>'match_format',-id=>'match_format',
 						  -Values=>['table',
 							    'fasta'],
 						  -default=>$default{match_format})
@@ -129,11 +129,11 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       '',
-			       "<INPUT TYPE=RADIO NAME='return' VALUE='counts' " .
+			       "<INPUT TYPE=RADIO NAME='return' id='return_counts' VALUE='counts' " .
 			       "CHECKED"x$default{return}=~/count/ .
 			       ">match counts",
-			       "<A HREF='help.all-upstream-search.html#threshold'><B> threshold on match counts</B></A>",
-			       $query->textfield(-name=>'threshold',
+			       "<A class='iframe' HREF='help.all-upstream-search.html#threshold'><B> threshold on match counts</B></A>",
+			       $query->textfield(-name=>'threshold',-id=>'threshold',
 						 -default=>$default{threshold},
 						 -size=>2)
 			       
@@ -141,8 +141,8 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       '',
-			       "<INPUT TYPE=RADIO NAME='return' VALUE='table'>match count table",
-			       $query->checkbox(-name=>'total',
+			       "<INPUT TYPE=RADIO NAME='return' id='return_table' VALUE='table'>match count table",
+			       $query->checkbox(-name=>'total',-id=>'total',
 						-checked=>'checked',
 						-label=>'totals'),
 			       ""
@@ -153,7 +153,7 @@ print "<BR>\n";
 
 
 ### substitutions
-print "<B><A HREF='help.dna-pattern.html#subst'>Substitutions </A></B>&nbsp;\n";
+print "<B><A class='iframe' HREF='help.dna-pattern.html#subst'>Substitutions </A></B>&nbsp;\n";
 print $query->popup_menu(-name=>'subst',
 			 -Values=>[0..1],
 			 -default=>$default{subst});
@@ -178,30 +178,32 @@ print "<font color=red><B>Warning ! genome-scale searches can be time-consuming.
 print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ### data for the demo 
-print $query->start_multipart_form(-action=>"genome-scale-dna-pattern_form.cgi");
 
-$demo_patterns = "GATAAG\n";
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    patterns.value = "GATAAG\\n";
+    from.value = "-500";
+    to.value = "-1";
+    $("#return_counts").prop("checked",true);
+    threshold.value = "3";
+    flanking.value = "0";
+    $("#organism").val("Saccharomyces_cerevisiae").trigger("chosen:updated");
+    
+}
+</script>';
 
 print "<TD><B>";
-print $query->hidden(-name=>'patterns',-default=>$demo_patterns);
-print $query->hidden(-name=>'from',-default=>-500);
-print $query->hidden(-name=>'to',-default=>-1);
-print $query->hidden(-name=>'return',-default=>'match counts');
-print $query->hidden(-name=>'threshold',-default=>'3');
-print $query->hidden(-name=>'flanking',-default=>'0');
-print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
-print $query->hidden(-name=>'set_name',-default=>'genome-scale dna-pattern');
-print $query->submit(-label=>"DEMO");
+print '<button type="button" onclick="setDemo()">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
-print "<TD><B><A HREF='help.dna-pattern.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_genome-scale-dna-pattern.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.dna-pattern.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='tutorials/tut_genome-scale-dna-pattern.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

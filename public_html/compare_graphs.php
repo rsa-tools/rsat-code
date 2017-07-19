@@ -12,6 +12,8 @@
 <body class="results">
 <?php 
   require ('functions.php');
+    $menu = $_REQUEST['menu'];
+    printMenu($menu);
   # log file update
   UpdateLogFile("neat","","");
 

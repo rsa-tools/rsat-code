@@ -19,14 +19,18 @@ require RSAT::server;
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $query = new CGI;
-print $query->header;
-print $query->start_html(-class => "info",
-			 -author=>'Jacques.van-Helden\@univ-amu.fr',
-			 -style => { 	
-			   -src => ["main.css","font-awesome.min.css"],
-			   -type => 'text/css',
-			   -media => 'screen' 
-			 });
+
+&RSA_header("RSAT home","info");
+
+#print $query->header;
+#print $query->start_html(-class => "info",
+#			 -author=>'Jacques.van-Helden\@univ-amu.fr',
+#			 -style => {
+#			   -src => ["main.css","font-awesome.min.css"],
+#			   -type => 'text/css',
+#			   -media => 'screen'
+#			 });
+
 
 print "<blockquote>";
 
@@ -65,8 +69,7 @@ print <<EndText;
 
 <div class="hr-like"> </div>
 
-
-<table border='0'>
+<table class='simple' border='0'>
   <tr>
     <td>
     
@@ -77,7 +80,7 @@ print <<EndText;
     <b>1 - Choose your type of data to analyse</b></br>
         <select id="datatypes">
             <option value="">Choose Data type</option>
-            <option value="data1">ChIP-seq/ATAC-seq</option>
+            <option value="data1">ChIP-seq</option>
             <option value="data2">List of gene names</option>
             <option value="data3">Sequences</option>
             <option value="data4">Matrices (PSSM)</option>
@@ -106,11 +109,9 @@ print <<EndText;
                 <option value="convert-matrix" class="data4">I want to convert the matrix format </option>
                 
                 <option value="fetch-sequences" class="data5">I want to extract the sequences corresponding to these coordinates </option>
-                <option value="retrieve-variation-seq" class="data5">I want to retrieve the variants within these coordinates </option>
                 
                  <option value="retrieve-variation-seq" class="data6">Obtain the variants and their flanking sequences </option>
                  <option value="scan-variations" class="data6">Which transcription factor binding sites are affected by these variants ? </option>
-                 <option value="variation-info" class="data6">Obtain descriptive information of these variants </option>
             </select>
         </div>
     
@@ -142,12 +143,9 @@ print <<EndText;
                  <option value="convert-matrix_form.cgi" class="convert-matrix">convert matrix</option>
                  
                  <option value="fetch-sequences_form.php" class="fetch-sequences">fetch sequences from UCSC (only for organisms supported at genome.ucsc.edu)</option>
-                 <option value="retrieve-seq-bed_form.cgi" class="fetch-sequences">retrieve sequences from genomic coordinates (local organisms)</option>
-				
                  
                  <option value="retrieve-variation-seq_form.cgi" class="retrieve-variation-seq">retrieve variation sequences</option>
                  <option value="variation-scan_form.cgi" class="scan-variations">scan variations</option>
-                 <option value="variation-info_form.cgi" class="variation-info">variation information</option>
             </select>
         </div>
         <br/>
@@ -160,7 +158,7 @@ print <<EndText;
     </td>
 
     <td>
-    <p><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> in <b><a target='_blank' href="https://academic.oup.com/nar/article-lookup/doi/10.1093/nar/gkx314" target="_blank"> NAR about matrix-clustering (2017)</a>
+    <p><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> in <b><a target='_blank' href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target="_blank"> NAR web software issue 2015</a>
 <pre>
 	 </pre>
 	<p><i class="fa fa-graduation-cap fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsa-tools.github.io/tutorial_eccb14/index.html" target="tools">ECCB'14</a></b> and <a href="http://rsa-tools.github.io/teaching/index.html" target="tools"><b>all training material</b></a> 
@@ -174,9 +172,6 @@ print <<EndText;
 	 <p><pre>
 	 </pre><i class="fa fa-star fa-lg"></i> Try our <b>new programs</b> <img src="images/onebit_49.png" class="newprograms">
     </td>
-    <td>
-<a class="twitter-timeline" data-lang="en" data-width="220" data-height="300" href="https://twitter.com/RSATools"></a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></td>
-
   </tr>
 
 

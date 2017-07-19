@@ -75,8 +75,8 @@ print "<p/><hr>";
 
 ### Output matrix format
 print "<br>";
-print "<b><a href='help.convert-matrix.html#output_format'>Output format</A></B>&nbsp;";
-print $query->popup_menu(-name=>'output_format',
+print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>Output format</A></B>&nbsp;";
+print $query->popup_menu(-name=>'output_format', -id=>'output_format',
 			 -Values=>[@supported_output_formats],
 			 -default=>$default{output_format});
 print "<BR>\n";
@@ -101,20 +101,32 @@ print "<p>\n";
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
 ### data for the demo 
-print $query->start_multipart_form(-action=>"permute-matrix_form.cgi");
-my $demo_matrix=`cat demo_files/compare-matrices_demo.tf`;
+#print $query->start_multipart_form(-action=>"permute-matrix_form.cgi");
+#my $demo_matrix=`cat demo_files/compare-matrices_demo.tf`;
+my $demo_matrix = "";
+open(my $fh, "demo_files/compare-matrices_demo.tf");
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_matrix .= $row;
+    $demo_matrix .= "\\n";
+}
 print "<TD><B>";
-print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'input_format',-default=>'transfac');
-print $query->hidden(-name=>'output_format',-default=>'transfac');
-print $query->submit(-label=>"DEMO");
+
+print '<script>
+function setDemo(demo_matrix){
+    $("#reset").trigger("click");
+    matrix.value = demo_matrix;
+    matrix_format.value = "transfac";
+    output_format.value = "transfac";
+}
+</script>';
+print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .')">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
 

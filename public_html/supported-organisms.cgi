@@ -42,7 +42,7 @@ $query = new CGI;
 $font{variable} = 1;
 #$command = "$SCRIPTS/supported-organisms -v 1";
 
-my @return_fields = qw (ID taxid nb source last_update data taxonomy);
+my @return_fields = qw (ID nb source last_update data taxonomy);
 my $return_fields = join",", @return_fields;
 #$parameters = " -return ".$return_fields;
 
@@ -93,7 +93,7 @@ foreach my $row (@organism_rows) {
       ## Replace data directory by a link
       if ($field =~ /public_html\/(data\/\S*)/) {
 	$data_dir = $1;
-	$field = join("", "<a href='", $data_dir, "'>data</a>");
+	$field = join("", "<a href='htmllink.cgi?title=data&file=", $data_dir, "' target='_blank'>data</a>");
       }
       print "<td>", $field, "</td>\n";
     }
@@ -119,7 +119,8 @@ print "</table>";
 # close(RESULT);
 
 print '<hr size=3>';
-
+print "</div>";
+print "</div>";
 
 print $query->end_html;
 
