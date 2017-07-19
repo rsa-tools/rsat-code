@@ -1,11 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <title>RSAT - fetch-sequences</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link rel="stylesheet" type="text/css" href="main.css" media="screen,projection,print"/>
     <link rel="stylesheet" type="text/css" href="tabs.css" media="screen,projection,print"/>
-    <script src="RSAT_menu.js" type="text/javascript"></script>
     <script src="RSAT_tabs.js" type="text/javascript"></script>
     <script type="text/javascript">
 			function add_demo() {
@@ -32,16 +30,17 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
   </head>
 
   <body class="form">
+
+<?php printMenu("RSAT") ?>
+
     <div>
       <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSAT</a> - fetch-sequence</h3>
       <br/>
-   
-   Get  DNA sequences corresponding to set of genomic coordinates (<a target='_blank'
+Get  DNA sequences corresponding to set of genomic coordinates (<a target='_blank'
 	  href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed
 	  format</a>). Sequences are downloaded from the <a target='_blank' href='https://genome.ucsc.edu/'>UCSC genome browser</a>. 
 
 <?php
-
    ## first check if this tool is supported for the current server
    if ($properties['ucsc_tools'] == 0) {
      echo ("<font size='+1'>");

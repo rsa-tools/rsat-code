@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
    <head>
-   <title>RSAT - pathway-extractor</title>
+   <title>Network Analysis Tools - pathway-extractor</title>
    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
    <link rel="stylesheet" type="text/css"
    href="main.css"
@@ -26,6 +26,7 @@
    
    ## Load RSAT configuration
    require ('functions.php');
+       printMenu();
 # print_r($properties);
 #UpdateLogFile("rsat","","");
 #echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_files/pathway-extractor_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed'";

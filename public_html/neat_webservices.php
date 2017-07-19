@@ -1,11 +1,12 @@
 <?php
   require ('functions.php');
+    printMenu();
   $host= parse_url($rsat_www,PHP_URL_HOST);
   echo("
 <html>
 <head>
    <meta HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=iso-8859-1\">
-   <title>RSAT - Web Services</title>
+   <title>NeAT - Web Services</title>
 <link rel=\"stylesheet\" type=\"text/css\" href = \"main.css\" media=\"screen\">
 </head>
 <body class=\"info\">

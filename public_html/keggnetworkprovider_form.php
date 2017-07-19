@@ -1,12 +1,12 @@
 <html>
 <head>
-   <title>NAT - KEGG network provider</title>
+   <title>NeAT - KEGG network provider</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">
 <?php
   require ('functions.php');
-
+printMenu();
   // default variables
   $default_organisms = "";
   $default_organisms_file = "";

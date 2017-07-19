@@ -13,7 +13,8 @@
 <body class="results">
 <?php 
   require ('functions.php');
-  # log file update
+   printMenu(); 
+    # log file update
   UpdateLogFile("neat","","");
 
   # File to store the commands

@@ -64,22 +64,22 @@ print "&nbsp";
 print $query->checkbox(-name=>'seed',
 		       -checked=>$default{seed},
 		       -label=>'');
-print "<A HREF='help.consensus.html#seed'><B>\n";
+print "<A class='iframe' HREF='help.consensus.html#seed'><B>\n";
 print " seed with first sequence\n";
 print "</B></A>\n";
 print "<BR>\n";
 
 ### treatment of reverse complement strand
-print "<B><A HREF=help.consensus.html#strands>Complement strand</A></B>"; 
+print "<B><A class='iframe' HREF=help.consensus.html#strands>Complement strand</A></B>";
 print $query->popup_menu(-name=>'strands',
 			 -Values=>["ignore","include as separate sequence","include as a single sequence"],
 			 -default=>$default{strands});
 print "<BR>\n";
 
 ### matrix length
-print "<B><A HREF='help.consensus.html#length'>\n";
+print "<B><A class='iframe' HREF='help.consensus.html#length'>\n";
 print "Matrix length</A>\n";
-print $query->textfield(-name=>'length',
+print $query->textfield(-name=>'length',-id=>'length',
 		  -default=>$default{length},
 		  -size=>5);
 #print "<BR>\n";
@@ -89,15 +89,15 @@ print "&nbsp";
 print $query->checkbox(-name=>'symmetrical',
 		       -checked=>$default{symmetrical},
 		       -label=>'');
-print "<A HREF='help.consensus.html#symmetrical'><B>\n";
+print "<A class='iframe' HREF='help.consensus.html#symmetrical'><B>\n";
 print " Assume that the pattern is symmetrical\n";
 print "</B></A>\n";
 print "<BR>\n";
 
 ### expected number of matches
-print "<B><A HREF='help.consensus.html#cycles'>\n";
+print "<B><A class='iframe' HREF='help.consensus.html#cycles'>\n";
 print "Expected number of matches</A>\n";
-print $query->textfield(-name=>'cycles',
+print $query->textfield(-name=>'cycles',-id=>'cycles',
 		  -default=>$default{cycles},
 		  -size=>5);
 #print "<BR>\n";
@@ -109,14 +109,14 @@ print "&nbsp";
 print $query->checkbox(-name=>'one_per_seq',
 		       -checked=>$default{one_per_seq},
 		       -label=>'');
-print "<A HREF='help.consensus.html#one_per_seq'><B>\n";
+print "<A class='iframe' HREF='help.consensus.html#one_per_seq'><B>\n";
 print " at least one match within each sequence\n";
 print "</B></A>\n";
 print "<BR>\n";
 
 
 ### matrices to save
-print "<B><A HREF='help.consensus.html#matrices_to_save'>\n";
+print "<B><A class='iframe' HREF='help.consensus.html#matrices_to_save'>\n";
 print "Number of matrices to save</A>\n";
 print $query->textfield(-name=>'matrices_to_save',
 		  -default=>$default{matrices_to_save},
@@ -124,18 +124,18 @@ print $query->textfield(-name=>'matrices_to_save',
 print "<BR>\n";
 
 ### alphabet
-print "<B><A HREF='help.consensus.html#alphabet'>\n";
+print "<B><A class='iframe' HREF='help.consensus.html#alphabet'>\n";
 print "Alphabet</A>\n";
-print $query->textfield(-name=>'alphabet',
+print $query->textfield(-name=>'alphabet',-id=>'alphabet',
 			-default=>$default{alphabet},
 			-size=>50);
 print "<BR>\n";
 
 ### prior frequencies
-print $query->checkbox(-name=>'prior_freq',
+print $query->checkbox(-name=>'prior_freq',-id=>'prior_freq',
 		       -checked=>$default{prior_freq},
 		       -label=>'');
-print "<A HREF='help.consensus.html#prior_freq'><B>\n";
+print "<A class='iframe' HREF='help.consensus.html#prior_freq'><B>\n";
 print " use the designated prior frequencies\n";
 print "</B></A>\n";
 print "<BR>\n";
@@ -147,12 +147,12 @@ print "<BR>\n";
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ### data for the demo 
 print $query->start_multipart_form(-action=>"consensus_form.cgi");
-$demo_sequence = ">PHO5	pho5 upstream sequence, from -800 to -1
+$demo_sequence_raw = ">PHO5	pho5 upstream sequence, from -800 to -1
 TTTTACACATCGGACTGATAAGTTACTACTGCACATTGGCATTAGCTAGGAGGGCATCCA
 AGTAATAATTGCGAGAAACGTGACCCAACTTTGTTGTAGGTCCGCTCCTTCTAATAATCG
 CTTGTATCTCTACATATGTTCTATTTACTGACCGAAAGTAGCTCGCTACAATAATAATGT
@@ -227,21 +227,28 @@ GCAGCATGATGCAACCACATTGCACACCGGTAATGCCAACTTAGATCCACTTACTATTGT
 GGCTCGTATACGTATATATATAAGCTCATCCTCATCTCTTGTATAAAGTAAAGTTCTAAG
 TTCACTTCTAAATTTTATCTTTCCTCATCTCGTAGATCACCAGGGCACACAACAAACAAA
 ACTCCACGAATACAATCCAA";
+
+$demo_sequence = join("\\n", split(/\n/, $demo_sequence_raw));
+
+print '<script>
+function setDemo(demo_sequence){
+    $("#reset").trigger("click");
+    sequence.value = demo_sequence;
+    sequence_format.value = "fasta";
+    length.value = "10";
+    alphabet.value = "a:t 0.325 c:g 0.175";
+    cycles.value = "10";
+    $("#prior_freq").prop("checked", true);
+}
+</script>';
 print "<TD><B>";
-print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
-print $query->hidden(-name=>'sequence_format',-default=>"fasta");
-print $query->hidden(-name=>'length',-default=>"10");
-print $query->hidden(-name=>'alphabet',-default=>"a:t 0.325 c:g 0.175");
-print $query->hidden(-name=>'cycles',-default=>"10");
-print $query->hidden(-name=>'prior_freq',-default=>"on");
-print $query->submit(-label=>"DEMO");
+print '<button type="button" onclick="setDemo('. "'$demo_sequence'" .')">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
 #print "<TD><B><A HREF='demo.consensus.html'>DEMO</A></B></TD>\n";
-print "<TD><B><A HREF='help.consensus.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_consensus.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.consensus.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='tutorials/tut_consensus.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

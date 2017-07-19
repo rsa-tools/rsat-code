@@ -9,6 +9,7 @@
 <?php
   require ('functions.php');
   require ('string_functions.php');
+    printMenu();
   $genes = $_REQUEST['genes'];
   $genes = trim_text($genes);
   $gene_list = explode("\n", $genes); 

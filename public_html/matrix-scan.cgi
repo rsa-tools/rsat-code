@@ -55,11 +55,11 @@ if ($query->param("quick")) {
 
 ################################################################
 ## sequence file
-#if ($quick_mode) {
-#  ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
-#} else {
+if ($quick_mode) {
+  ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
+} else {
   ($sequence_file,$sequence_format) = &GetSequenceFile();
-#}
+}
 
 
 #### matrix-scan parameters
