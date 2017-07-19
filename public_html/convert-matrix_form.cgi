@@ -104,28 +104,31 @@ print "<hr>";
 
 ### Output matrix format
 print "<br>";
-print "<b><a href='help.convert-matrix.html#output_format'>Output format</A></B>&nbsp;";
-print $query->popup_menu(-name=>'output_format',
+print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>Output format</A></B>&nbsp;";
+print $query->popup_menu(-id=>'output_format',
+-name=>'output_format',
 			 -Values=>[@supported_output_formats],
 			 -default=>$default{output_format});
 print "<BR>\n";
 
 ################################################################
 ## Output fields
-print "<p><b><a href='help.convert-matrix.html#return'>Output fields</a></B>&nbsp;<br>\n";
+print "<p><b><a class='iframe' href='help.convert-matrix.html#return'>Output fields</a></B>&nbsp;<br>\n";
 my $i = 0;
 foreach my $stat (qw(counts frequencies weights info header margins consensus parameters profile comments)) {
-  print $query->checkbox(-name=>$stat,
+  print $query->checkbox(-id=>$stat,
+            -name=>$stat,
 			 -checked=>$default{$stat},
 			 -label=>'');
-  print "&nbsp;<A HREF='help.convert-matrix.html#",$stat,"'><B>", $stat, "</B></A>\n";
+  print "&nbsp;<A class='iframe' HREF='help.convert-matrix.html#",$stat,"'><B>", $stat, "</B></A>\n";
   print "<br>\n";
 }
 
-print $query->checkbox(-name=>'logo',
+print $query->checkbox(-id=>'logo',
+-name=>'logo',
 		       -checked=>$default{logo},
 		       -label=>'');
-print "&nbsp;<A HREF='help.convert-matrix.html#logo'><B>", "logo", "</B></A>&nbsp;(using <a target='_blank' href='http://weblogo.berkeley.edu/'>Weblogo</a>)\n";
+print "&nbsp;<A class=iframe'' HREF='help.convert-matrix.html#logo'><B>", "logo", "</B></A>&nbsp;(using <a target='_blank' href='http://weblogo.berkeley.edu/'>Weblogo</a>)\n";
 print "&nbsp;&nbsp; (<b>options</b>:";
 print $query->checkbox(-name=>'error_bar',
 		       -checked=>$default{error_bar},
@@ -141,7 +144,7 @@ print '&nbsp;'x3, $query->checkbox(-name=>'stretch',
 print ")<br>\n";
 
 print "<br/>";
-print "<A HREF='help.convert-matrix.html#decimals'><B>score decimals</B></A>\n";
+print "<A class='iframe' HREF='help.convert-matrix.html#decimals'><B>score decimals</B></A>\n";
 print $query->popup_menu(-name=>'decimals',
 			 -Values=>['0',
 				   '1','2'],
@@ -152,11 +155,11 @@ print "<BR>\n";
 print $query->checkbox(-name=>"rc",
 		       -checked=>$default{rc},
 		       -label=>'');
-print "<B><A HREF='help.convert-matrix.html#rc'>Compute reverse complement</A></b>\n";
+print "<B><A class='iframe' HREF='help.convert-matrix.html#rc'>Compute reverse complement</A></b>\n";
 
 #### Multiply counts
 print "<BR>\n";
-print "<B><A HREF='help.convert-matrix.html#multiply'>Multiply counts</A></b>\n";
+print "<B><A class='iframe' HREF='help.convert-matrix.html#multiply'>Multiply counts</A></b>\n";
 print $query->textfield(-name=>'multiply',
 			-default=>$default{multiply},
 			-size=>2);
@@ -164,7 +167,7 @@ print " (convert frequency matrices into count matrices)\n";
 
 ## Insert columns on left and/or right flanks
 print "<BR>\n";
-print "<B><A HREF='help.convert-matrix.html#insert_col'>Insert columns</A></b>\n";
+print "<B><A class='iframe' HREF='help.convert-matrix.html#insert_col'>Insert columns</A></b>\n";
 print "&nbsp;"x10, "Left side";
 print $query->textfield(-name=>'insert_col_left',
 			-default=>$default{insert_col_left},
@@ -177,7 +180,7 @@ print "<BR>\n";
 
 #### permutations
 print "<BR>\n";
-print "<B><A HREF='help.convert-matrix.html#permutations'>Permutations</A></b>\n";
+print "<B><A class='iframe' HREF='help.convert-matrix.html#permutations'>Permutations</A></b>\n";
 print $query->textfield(-name=>'perm',
 			-default=>$default{perm},
 			-size=>2);
@@ -193,31 +196,39 @@ print "<p>\n";
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
 ### data for the demo 
-print $query->start_multipart_form(-action=>"convert-matrix_form.cgi");
-my $demo_matrix=`cat demo_files/convert-matrix_demo_data.txt`;
+my $demo_matrix = "";
+open(my $fh, "demo_files/convert-matrix_demo_data.txt");
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_matrix .= $row;
+    $demo_matrix .= "\\n";
+}
+#my $demo_matrix=`cat demo_files/convert-matrix_demo_data.txt`;
 print "<TD><B>";
-print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'input_format',-default=>'tab');
-print $query->hidden(-name=>'output_format',-default=>'tab');
-print $query->hidden(-name=>'header',-default=>"off");
-print $query->hidden(-name=>'margins',-default=>"off");
-#print $query->hidden(-name=>'info',-default=>"on");
-#print $query->hidden(-name=>'weights',-default=>"on");
-print $query->hidden(-name=>'parameters',-default=>"on");
-#print $query->hidden(-name=>'links',-default=>"on");
-print $query->hidden(-name=>'logo',-default=>"on");
-print $query->submit(-label=>"DEMO");
+print '<script>
+function setDemo(demo){
+    $("#reset").trigger("click");
+    matrix.value = demo;
+    matrix_format.value = "tab";
+    output_format.value = "tab";
+    $("#header").prop("checked", false);
+    $("#margins").prop("checked", false);
+    $("#parameters").prop("checked", true);
+    $("#links").prop("checked", true);
+    $("#logo").prop("checked", true);
+}
+</script>';
+print '<button type="button" onclick="setDemo(' . "'$demo_matrix'" . ')">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
-print "<TD><B><A HREF='help.convert-matrix.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_PSSM.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.convert-matrix.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='tutorials/tut_PSSM.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

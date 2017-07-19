@@ -101,7 +101,6 @@ if($query->param('matrix_2')){
     $parameters .= " -matrix $collection_2_label $matrix_file_2";
 }
 
-
 ######################
 ## Add collection 3 ##
 ######################
@@ -240,7 +239,6 @@ my $lab = "";
 $label_id = $query->param('label_id');
 $label_name = $query->param('label_name');
 $label_consensus = $query->param('label_consensus');
-#$label_ic = $query->param('label_ic');
 
 
 if($label_name){
@@ -254,10 +252,6 @@ if($label_id){
 if($label_consensus){
     push(@labs, "consensus");
 }
-
-# if($label_ic){
-#     push(@labs, "ic");
-# }
 
 $lab = join(",", @labs);
 

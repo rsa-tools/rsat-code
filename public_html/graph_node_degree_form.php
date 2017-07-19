@@ -7,6 +7,7 @@
 <?php
   require ('functions.php');
   require ('demo_dataset.php');
+    printMenu();
   # variable definition
   $default_scol = 1;
   $default_tcol = 2;
