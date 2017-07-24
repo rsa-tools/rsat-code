@@ -44,13 +44,13 @@ sub DisplayRetrieveSeqOptions {
 
     ### from to
     print "<B><A HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
-    print $query->textfield(-name=>'from',
+    print $query->textfield(-name=>'from', -id=>'from',
 			    -default=>$default{from},
 			    -size=>10);
 
     print "&nbsp;&nbsp;";
     print "<B><A HREF='help.retrieve-seq.html#from_to'>To</A></B>&nbsp;\n";
-    print $query->textfield(-name=>'to',
+    print $query->textfield(-name=>'to', -id=>'to',
 			    -default=>$default{to},
 			    -size=>10);
     print "<BR>\n";

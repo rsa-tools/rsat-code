@@ -221,14 +221,23 @@ _compile_seqlogo:
 
 ################################################################
 ## Install weblogo3
-install_weblogo3: install_weblogo3_pip
+install_weblogo3: weblogo3_from_githhub
 
 
 ################################################################
 ## Clone weblogo3
-clone_weblogo3:
-	@echo "Clongin weblogo3 from github"
-	git clone https://github.com/WebLogo/weblogo.git
+WEBLOGO_SRC_DIR=${SRC_DIR}/weblogo
+weblogo3_from_githhub:
+	@echo "Installing weblogo3 from github"
+	@if [ -d ${WEBLOGO_SRC_DIR} ] ; then \
+		echo "	Updating weblogo with git pull"; \
+		cd ${WEBLOGO_SRC_DIR} ]; git pull;  \
+	else \
+		echo "	Cloning weblogo" ; \
+		(cd ${SRC_DIR}; git clone https://github.com/WebLogo/weblogo.git); \
+	fi
+	@echo "	WEBLOGO_SRC_DIR	${WEBLOGO_SRC_DIR})"
+	ln -fs ${WEBLOGO_SRC_DIR}/weblogo ${RSAT_BIN}/
 
 ## Installation via pip is simpler, but cannot be done on all RSAT
 ## servers because it requires admin rights.

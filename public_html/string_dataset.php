@@ -13,6 +13,7 @@
 <body class="results">
 <?php 
   require ('functions.php');
+    printMenu();
   # log file update
   UpdateLogFile("neat","","");
   title('string dataset download - results');

@@ -6,6 +6,7 @@
 <body class="form">
 <?php
   require ('functions.php');
+    printMenu();
 //   require ('demo_dataset.php');
   # variable definition
   $default_scol = 1;

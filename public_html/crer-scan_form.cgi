@@ -69,7 +69,9 @@ foreach $key (keys %default) {
 &PrintDescription();
 
 ## Demo description
-print $default{demo_descr} if ($default{demo_descr});
+#print $default{demo_descr} if ($default{demo_descr});
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr'></div>";
 
 print $query->start_multipart_form(-action=>"crer-scan.cgi");
 
@@ -78,17 +80,19 @@ print "<FONT FACE='Helvetica'>";
 
 ################################################################
 ## Sites
-print "<b><a href='help.crer-scan.html#sites'>Sites</a></b>&nbsp;";
+print "<b><a class='iframe' href='help.crer-scan.html#sites'>Sites</a></b>&nbsp;";
 
 ## Site format
-print "&nbsp;"x10, "<B><A HREF='help.crer-scan.html#in_format'>Format</A></B>&nbsp;";
-print $query->radio_group(-name=>'in_format',
-			  -values=>[@supported_feature_formats],
-			  -default=>$default{in_format});
+print "&nbsp;"x10, "<B><A class='iframe' HREF='help.crer-scan.html#in_format'>Format</A></B>&nbsp;";
+foreach $format (@supported_feature_formats){
+    print $query->radio_group(-name=>'in_format',-id=>'in_format_'.$format,
+    -values=>$format,
+    -default=>$default{in_format});
+}
 
 ## Enter sites in a text area
 print "<br>\n";
-print $query->textarea(-name=>'sites',
+print $query->textarea(-name=>'sites',-id=>'sites',
 		       -default=>$default{sites},
 		       -rows=>6,
 		       -columns=>80);
@@ -116,7 +120,7 @@ print "</blockquote>\n";
 
 print "<h2>Output options</h2>";
 
-print "<b><a href='help.crer-scan.html#limits'>Report sequence limits (only if provided in site file)</a></b>&nbsp;";
+print "<b><a class='iframe' href='help.crer-scan.html#limits'>Report sequence limits (only if provided in site file)</a></b>&nbsp;";
 print $query->radio_group(-name=>'limits',
 			  -values=>['None','Filtered','All'],
 			  -default=>$default{limits});
@@ -133,34 +137,40 @@ print "<hr>\n";
 print "<UL><UL><TABLE>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
 ## Data for the demo
-my $descr1 = "<H4>Comment on the demonstration :</H4>\n";
-$descr1 .= "<blockquote class ='demo'>";
-$descr1 .= "<p>In this demonstration, we detect cis-regulatory enriched regions (CRER) in the 5kb upstream region of the Drosophila gene even-skipped, in order to detect putative cis-regulatory modules (CRM).\n";
-$descr1 .= "The program <i>crer-scan</i> takes as input a set of binding sites, and returns regions presenting a significant enrichment for these.\n";
-$descr1 .= "Binding sites were obtained by scanning the even-skipped upstream region with 12 PSSM corresponding to transcrition factors involvd in embryonic segmentation.\n";
-$descr1 .= "For this demo, we intently choose a lenient significance threshold, in order to increase the sensitivity of the scan. The result contains groups of mutually overlapping CRERs, which can be displayed with <i>feature-map</i>.\n";
-$descr1 .= "</blockquote>";
-
-print $query->start_multipart_form(-action=>"crer-scan_form.cgi");
-#$demo_file = "demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001.ft";
 $demo_file = "demo_files/Drosophila_melanogaster_eve_segmentation_sites_pval0.001_nocomments.ft";
-$demo_sites = `cat $demo_file`;
-$#demo_sites = `grep -v '^;' $demo_file`;
-print "<TD><B>";
-print $query->hidden(-name=>'sites',-default=>$demo_sites);
-print $query->hidden(-name=>'lth_crer_sig',-default=>0.1);
-print $query->hidden(-name=>'demo_descr',-default=>$descr1);
-print $query->hidden(-name=>'in_format',-default=>"ft");
-print $query->submit(-label=>"DEMO");
-print "</B></TD>\n";
-print $query->end_form;
+$demo_sites = "";
+open ($fh, $demo_file);
+while($row = <$fh>){
+    chomp $row;
+    $demo_sites .= $row;
+    $demo_sites .= "\\n";
+}
 
-print "<TD><B><A HREF='help.crer-scan.html'>MANUAL</A></B></TD>\n";
+print '<script>
+function setDemo(demo_sites){
+    $("#reset").trigger("click");
+    descr = "<H4>Comment on the demonstration :</H4>\n<blockquote class =\'demo\'><p>In this demonstration, we detect cis-regulatory enriched regions (CRER) in the 5kb upstream region of the Drosophila gene even-skipped, in order to detect putative cis-regulatory modules (CRM).\nThe program <i>crer-scan</i> takes as input a set of binding sites, and returns regions presenting a significant enrichment for these.\nBinding sites were obtained by scanning the even-skipped upstream region with 12 PSSM corresponding to transcrition factors involvd in embryonic segmentation.\nFor this demo, we intently choose a lenient significance threshold, in order to increase the sensitivity of the scan. The result contains groups of mutually overlapping CRERs, which can be displayed with <i>feature-map</i>.\n</blockquote>";
+    
+    demo_descr.innerHTML = descr;
+    demo.value = descr;
+    sites.value = demo_sites;
+    $("#lth_crer_sig").val("0.1");
+    $("#in_format_ft").prop("checked",true);
+    
+}
+</script>';
+
+
+print "<TD><B>";
+print '<button type="button" onclick="setDemo('. "'$demo_sites'".')">DEMO</button>';
+print "</B></TD>\n";
+
+print "<TD><B><A class='iframe' HREF='help.crer-scan.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_crer-scan.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE class='formbutton'></UL></UL>\n";

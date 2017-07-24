@@ -15,6 +15,8 @@
   # log file update
   UpdateLogFile("neat","","");
 
+    printMenu();
+    
   # File to store the commands
   $cmd_file = getTempFileName('commands_alter_graph', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
