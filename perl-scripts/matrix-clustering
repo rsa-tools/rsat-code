@@ -144,12 +144,16 @@ package main;
 
   local @tab_to_convert = (); ## Tables to convert to html
 
-  ## Input formats: only accept formats supporting multiple matrices
-  local @supported_matrix_formats = qw(transfac tf tab cluster-buster cb infogibbs meme stamp uniprobe);
-  local %supported_matrix_format = ();
-  foreach my $format (@supported_matrix_formats) {
-    $supported_matrix_format{$format} = 1;
-  }
+  ## MDIFIED BY JvH (2017-06-30) Input formats: only accept formats supporting multiple matrices
+  # local @supported_matrix_formats = qw(transfac tf tab cluster-buster cb infogibbs meme stamp uniprobe);
+  # local %supported_matrix_format = ();
+  # foreach my $format (@supported_matrix_formats) {
+  #   $supported_matrix_format{$format} = 1;
+  # }
+
+  ## Supported input formats for the matrices
+  local %supported_matrix_format = &RSAT::MatrixReader::ListInputMatrixFormats();
+  local @supported_matrix_formats = sort keys %supported_matrix_format;
   local $supported_matrix_formats = join ",", @supported_matrix_formats;
 #  local $matrix_format = "transfac"; ## Default matrix format
 
