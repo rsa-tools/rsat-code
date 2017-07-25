@@ -446,9 +446,9 @@ package main;
     &RSAT::error::FatalError("At least one matrix file should be specified: see options -matrix or -matrix_file_table)");
   }
 
-  unless ($matrix_format) {
-    &RSAT::error::FatalError("Matrix format must be specified (option -matrix_format).");
-  }
+  # unless ($matrix_format) {
+  #   &RSAT::error::FatalError("Matrix format must be specified (option -matrix_format).");
+  # }
 
   ################################################################
   ## Non-recognized parameters are passed to compare-matrices
@@ -695,7 +695,7 @@ Same as -h
 The input file contains a set of position-specific scoring
 matrices.
 
-Example: -matrix OCt_motifs Oct_motifs_peakmotifs.tf
+Example: -matrix OCt_motifs Oct_motifs_peakmotifs.tf tf
 
 The matrix_title will be concatenated to each motif ID in order to
 create unique motif IDs. The collection label is displayed in the results.
@@ -727,6 +727,7 @@ For a description of these formats, see the help of I<convert-matrix>.
 	$matrix_title =~ s|:|_|g;
 	
 	$main::matrix_file{$matrix_title} = shift(@arguments);
+	$main::matrix_format{$matrix_title} = shift(@arguments);
 
 	if ($main::matrix_file{$matrix_title}){
 	    $count_input_matrix_parameters++;
@@ -1650,7 +1651,7 @@ sub pre_process_motif_files{
       }
       
       $motif_set_attributes{$collection_name}{collection_label} = $collection_name;
-      $motif_set_attributes{$collection_name}{matrix_format} = $matrix_format; 
+      $motif_set_attributes{$collection_name}{matrix_format} = $main::matrix_format{$collection_name};; 
       $motif_set_attributes{$collection_name}{matrix_file_input} = $main::matrix_file{$collection_name};
 
       &RSAT::message::Info("Matrix file", $matrix_format, $collection_name, $main::matrix_file{$collection_name}) if ($main::verbose >= 2);
