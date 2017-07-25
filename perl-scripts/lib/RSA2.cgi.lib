@@ -1453,7 +1453,7 @@ sub GetSecondMatrix {
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
   #### matrix format
-  print $query->popup_menu(-id=>'matrix_format', -name=>'matrix_format',
+  print $query->popup_menu(-id=>'matrix_format_2', -name=>'matrix_format_2',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
 
@@ -1574,7 +1574,7 @@ sub GetThirdMatrix {
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
   #### matrix format
-  print $query->popup_menu(-name=>'matrix_format',
+  print $query->popup_menu(-name=>'matrix_format_3',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
 
