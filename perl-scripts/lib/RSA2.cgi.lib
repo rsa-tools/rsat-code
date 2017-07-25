@@ -1333,38 +1333,12 @@ sub GetMatrix {
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
-
-  my %supported_input_format = (
-				'alignace'=> 1,
-				'assembly'=>1,
-				'clustal'=>1,
-				'cluster-buster'=>1,
-				'consensus'=>1,
-				'feature'=>1,
-				'footprintDB'=>1,
-				'gibbs'=> 1,
-				'infogibbs'=>1,
-				'jaspar'=>1,
-				'mscan'=>1,
-				'meme'=>1,
-				'meme_block'=>1,
-				'motifsampler'=>1,
-				'sequences' => 1,
-				'stamp'=>1,
-				'stamp-transfac'=>1,
-      				'cis-bp'=>1,
-				'tab'=>1,
-				'transfac'=>1,
-				'uniprobe'=>1,
-				'encode'=>1,
-			       );
-  ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
-  ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
-  ## I SHOULD CHECK LATER
-  ##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
+  ## Get the list of supported input formats for PSSM. Beware: this
+  ## requires to run "use RSAT::MatrixReader" beforehand.
+  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
   my @supported_input_formats = sort(keys( %supported_input_format));
-  #  my $supported_input_formats = join ",", @supported_input_formats;
-  #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
+  my $supported_input_formats = join ",", @supported_input_formats;
+  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
   #### matrix format
   print $query->popup_menu(-name=>'matrix_format',
