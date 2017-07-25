@@ -303,41 +303,42 @@ sub RSA_header {
     print $query->header();
     print sorttable_script();
     
-    print $query->start_html(-title=>"RSAT : $title",
-    -class => "$css_body_class",
-    -author=>'Jacques.van-Helden\@univ-amu.fr',
-    -script=>[
-    { -type => 'text/javascript',
-        -src      => 'js/jquery.js'
-    },
-    { -type => 'text/javascript',
-        -src      => 'RSAT_menu.js'
-    },
-    { -type => 'text/javascript',
-        -src      => 'RSAT_tabs.js'
-    }
-   ],
-    -style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
-        -type => 'text/css',
-        -media => 'screen,projection,print' });
+    print $query->start_html(
+	-title=>"RSAT : $title",
+	-class => "$css_body_class",
+	-author=>'Jacques.van-Helden\@univ-amu.fr',
+	-script=>[
+	     { -type => 'text/javascript',
+	       -src      => 'js/jquery.js'
+	     },
+	     { -type => 'text/javascript',
+	       -src      => 'RSAT_menu.js'
+	     },
+	     { -type => 'text/javascript',
+	       -src      => 'RSAT_tabs.js'
+	     }
+	],
+	-style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
+			-type => 'text/css',
+			-media => 'screen,projection,print' });
+    
+# print '<script>
+# $(function(){
+# if(typeof demo !== "undefined"){
+# txt = demo.value;
+# if(txt){
+# document.getElementById("demo_descr").innerHTML = txt;
+# }
 
-print '<script>
-$(function(){
-if(typeof demo !== "undefined"){
-txt = demo.value;
-if(txt){
-document.getElementById("demo_descr").innerHTML = txt;
-}
-
-}
-});
-</script>';
+# }
+# });
+# </script>';
 
 
-    open(my $fh, "menu.html");
-    while(my $row = <$fh>){
-        print $row."\n";
-    }
+    # open(my $fh, "menu.html");
+    # while(my $row = <$fh>){
+    #     print $row."\n";
+    # }
     
     print "<div class='container' id='page-content-wrapper'>";
     
