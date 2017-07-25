@@ -11,7 +11,7 @@ require RSAT::Tree;
 use Email::Sender::Simple qw(sendmail);
 use Email::Simple;
 use Email::Simple::Creator;
-#use Email::Sender::Transport::SMTP;
+use Email::Sender::Transport::SMTP;
 
 =pod
 
@@ -76,8 +76,7 @@ sub LoadGetOrthoComparaDefault {
 ## Load the default parameters for get-orthologs`
 sub LoadGetOrthoDefault {
   $default{organism} = "Escherichia_coli_K_12_substr__MG1655_uid57779";
-#  $default{taxon} = "Enterobacteriaceae";
-  $default{taxon} = "Enterobacterales"; 
+  $default{taxon} = "Enterobacteriales";
   $default{queries} = '';
   $default{full} = '';
   $default{match_description} = '';
@@ -121,7 +120,7 @@ sub PrintOrthoComparaSelectionSection {
 
     ################################################################
     ### gene queries
-    print "<p><B><A HREF='help.get-orthologs-compara.html#genes'>Query genes</A></B>&nbsp;";
+    print "<p><B><A class='iframe' HREF='help.get-orthologs-compara.html#genes'>Query genes</A></B>&nbsp;";
     print "<p>Paste query genes (one query per row)<br>\n";
     print $query->textarea(-name=>'queries',
 			   -default=>$default{queries},
@@ -211,7 +210,7 @@ sub PrintOrthoSelectionSection {
 
   ################################################################
   ### gene queries
-  print "<B><A HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
+  print "<B><A class='iframe' HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
   print "<BR>\n";
   print $query->textarea(-name=>'queries',
 			 -default=>$default{queries},
@@ -231,7 +230,7 @@ sub PrintOrthoSelectionSection {
 
   ## Select a single organism per taxon
   print "<br>";
-  print "<b><a href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
+  print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
   print $query->popup_menu(-name=>'unique_taxon',
 			   -Values=>['species',
 				     'genus',
@@ -284,20 +283,77 @@ sub ListDefaultParameters {
 ## returns all the fields of the %input hash
 ## TO CHECK: IS THIS METHOD STILL USED ? LOOKS LIKE AN OLD VERSION OF &LISTPARAMETERS()
 sub Print_CGI_Input {
-    print "<PRE>";
+    print "<pre>";
     foreach $key (sort keys %input) {
 	print "$key\t$input{$key}\n";
     }
-    print "</PRE>";
+    print "</pre>";
 
     print "Parameters: $parameters<P><P>\n";
 }
 
+sub RSA_header {
+    my $css_body_class = "form";
+    my ($title) = shift;
+    $title =~ s/\"//g;
+    $title =~ s/\'//g;
+    if (scalar @_ > 0) {
+        $css_body_class = shift;
+    }
+    print $query->header();
+    print sorttable_script();
+    
+    print $query->start_html(-title=>"RSAT : $title",
+    -class => "$css_body_class",
+    -author=>'Jacques.van-Helden\@univ-amu.fr',
+    -script=>[
+    { -type => 'text/javascript',
+        -src      => 'js/jquery.js'
+    },
+    { -type => 'text/javascript',
+        -src      => 'RSAT_menu.js'
+    },
+    { -type => 'text/javascript',
+        -src      => 'RSAT_tabs.js'
+    }
+   ],
+    -style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
+        -type => 'text/css',
+        -media => 'screen,projection,print' });
+
+print '<script>
+$(function(){
+if(typeof demo !== "undefined"){
+txt = demo.value;
+if(txt){
+document.getElementById("demo_descr").innerHTML = txt;
+}
+
+}
+});
+</script>';
+
+
+    open(my $fh, "menu.html");
+    while(my $row = <$fh>){
+        print $row."\n";
+    }
+    
+    print "<div class='container' id='page-content-wrapper'>";
+    
+    if(! ($title =~ 'RSAT home')) {
+        print "<h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
+    }
+
+    
+&RSAT::server::DetectDeniedIP();
+    
+}
 
 ## ##############################################################
 ## Start a new HTML page and write the header of a RSAT query form or result
 ## page usage &RSA_header($program_name)
-sub RSA_header {
+sub RSA_header_old {
   my $css_body_class = "form";
   my ($title) = shift;
   $title =~ s/\"//g;
@@ -313,28 +369,12 @@ sub RSA_header {
   #  print &html_header();
   print $query->header();
 
-  ## Check if this tool is documented for Bioschema, and if so display
-  ## the JSON description.
-  my $script = &RSAT::util::ShortFileName($0);
-  $script =~ s/\.cgi$//;
-  $script =~ s/_form$//;
-  my $bioschema_file = $ENV{RSAT}."/public_html/".$script."_bioschemas.json";
-  if (-e $bioschema_file) {
-    print "\n\n";
-    print '<script type="application/ld+json">', "\n";
-    my $json = `cat $bioschema_file`;
-    $json =~ s/\$ENV\{rsat_www\}/$ENV{rsat_www}/;
-    print $json, "\n";
-    print '</script>', "\n\n";
-  }
-
-
   print sorttable_script();
 
 
   ### print the header of the result page
   print $query->start_html(-title=>"RSAT : $title",
-			   -class => "$css_body_class",
+     -class => "$css_body_class",
 			   -author=>'Jacques.van-Helden\@univ-amu.fr',
 			   -script=>[
 				     { -type => 'text/javascript',
@@ -561,12 +601,12 @@ sub MultiGetInputFile {
 
 
 ################################################################
-## Print a selection between diferent modes of sequence entry
+## Print a selection between different modes of sequence entry
 ## in a HTML form
-## (1) sequences copy-pasted in a text area;
-## (2) sequences uploaded from a file on the client side;
-## (3) sequences piped from a previous script, already stored on the server
-##     (in the temporary dir)
+## - sequences copy-pasted in a textarea
+## - sequences uploaded from a file on the client side
+## - sequences piped from a previous script, and stored on the server
+##   (typically  in a temporary dir)
 sub DisplaySequenceChoice {
     print &SequenceChoice();
 }
@@ -593,8 +633,9 @@ sub SequenceChoice {
   } else {
     #### sequence format (pop-up menu)
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-    $sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
-    $sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format',
+    $sequenceChoiceString .=  "<B><A class='iframe' HREF='help.formats.html'>Format</A></B>&nbsp;";
+    $sequenceChoiceString .=  $query->popup_menu(-id=>'sequence_format',
+      -name=>'sequence_format',
 						 -Values=>['fasta',
 							   'ig',
 							   'wconsensus',
@@ -606,7 +647,8 @@ sub SequenceChoice {
 
     ## Text area to copy-paste the sequence
     $sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
-    $sequenceChoiceString .=  $query->textarea(-name=>'sequence',
+    $sequenceChoiceString .=  $query->textarea(-id=>'sequence',
+      -name=>'sequence',
 					       -default=>$default{sequence},
 					       -rows=>4,
 					       -columns=>55);
@@ -623,7 +665,7 @@ sub SequenceChoice {
   }
 
   ## Mask option
-  $sequenceChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
+  $sequenceChoiceString .=  "<BR><B><A class='iframe' HREF='help.formats.html'>Mask</A></B>&nbsp;";
   $sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
 					       -Values=>['none',
 							 'upper',
@@ -643,8 +685,6 @@ sub SequenceChoice {
 sub MultiSequenceChoice {
   my $seq_title = shift(@_);
   my $seq_num = shift(@_);
-  my $paste_message = shift(@_);
-  $paste_message = "Paste your sequence (fasta format)" if ($paste_message eq ""); ## Default paste message
   my $sequenceChoiceString = "";
   $sequenceChoiceString .=  "<B>$seq_title</B>";
   #$sequenceChoiceString .=  "<UL>\n";
@@ -661,7 +701,7 @@ sub MultiSequenceChoice {
     $sequenceChoiceString .=  " transferred from previous query<BR>\n";
     $sequenceChoiceString .=  "</a>";
     $sequence_format = $query->param(sequence_format);
-    $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
+    $sequenceChoiceString .=  "<INPUT type='hidden' id='sequence_format' NAME='sequence_format' VALUE='$sequence_format'>\n";
     $sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
 
   } else {
@@ -671,8 +711,8 @@ sub MultiSequenceChoice {
 
     ## text area to copy-paste the sequence
     $sequenceChoiceString .=  "&nbsp;"x5;
-    $sequenceChoiceString .=  $paste_message."\n";
-    $sequenceChoiceString .=  "<br>".$query->textarea(-name=>'sequence'.$seq_num,
+    $sequenceChoiceString .=  "Paste your sequence (fasta format)<BR>\n";
+    $sequenceChoiceString .=  $query->textarea(-name=>'sequence'.$seq_num, -id=>'sequence'.$seq_num,
 					       -default=>$default{"sequence".$seq_num},
 					       -rows=>4,
 					       -columns=>55);
@@ -689,13 +729,13 @@ sub MultiSequenceChoice {
     ## Option to fetch sequence file from an URL
     $sequenceChoiceString .=  "&nbsp;"x3;
     $sequenceChoiceString .=  "URL of a sequence file available on a Web server (e.g. Galaxy).<BR>\n";
-    $sequenceChoiceString .=  $query->textfield(-name=>'sequence_url'.$seq_num,
+    $sequenceChoiceString .=  $query->textfield(-name=>'sequence_url'.$seq_num,-id=>'sequence_url'.$seq_num,
 						-default=>$default{'sequence_url'.$seq_num},
 						-size=>62);
     $sequenceChoiceString .= "<br>\n";
 
     #### Mask option
-    $sequenceChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
+    $sequenceChoiceString .=  "<BR><B><A class='iframe' HREF='help.formats.html'>Mask</A></B>&nbsp;";
     $sequenceChoiceString .=  $query->popup_menu(-name=>'mask'.$seq_num,
 						 -Values=>['none',
 							   'upper',
@@ -841,7 +881,7 @@ sub GetSequenceFile {
     ## Execute the sequence conversion
     system($convert_seq_command);
 
-    print "<PRE>", &RSAT::util::hide_RSAT_path($convert_seq_command), "</PRE>\n" if ($ENV{rsat_echo} >= 1);
+    print "<pre>", &RSAT::util::hide_RSAT_path($convert_seq_command), "</pre>\n" if ($ENV{rsat_echo} >= 1);
     &DelayedRemoval($converted_seq_file);
     $sequence_file = $converted_seq_file;
     $sequence_format = $required_format;
@@ -850,20 +890,8 @@ sub GetSequenceFile {
   return($sequence_file, $sequence_format);
 }
 
-################################################################
-## Display options enter one or several sequence files, with
-## alternative modes of entering.  (partly different from
-## &SequenceChoice()).
-## 
-## (1) Copy-paste in text area.
-## (2) Upload a file from the user computer.
-## (3) Paste the URL of a file accessible via http. 
-## (4) Path of a file already stored on the RSAT server 
-##    (in this case no option is presented).
-##
-## Usage:
-##   MultiSequenceChoice($seq_title, $seq_num, $paste_message);
-##   
+########################
+## MultiGetSequenceFile
 sub MultiGetSequenceFile {
   my ($seq_num, $sequence_file, $required_opt) = @_ ;
 
@@ -954,7 +982,7 @@ sub MultiGetSequenceFile {
       ## Execute the sequence conversion
       system($convert_seq_command);
 
-      print "<PRE>", &RSAT::util::hide_RSAT_path($convert_seq_command), "</PRE>\n" if ($ENV{rsat_echo} >= 0);
+      print "<pre>", &RSAT::util::hide_RSAT_path($convert_seq_command), "</pre>\n" if ($ENV{rsat_echo} >= 0);
       &DelayedRemoval($converted_seq_file);
       $sequence_file = $converted_seq_file;
     }
@@ -1037,7 +1065,7 @@ sub OrganismScrollingListCompara {
 ################################################################
 ## Generate pop-up menu to be displayed for organism selection in
 ## Compara.
-sub OrganismPopUpCompara {
+sub OrganismPopUpCompara{
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) == 0) {
         @selected_organisms =
@@ -1062,7 +1090,7 @@ sub OrganismPopUpCompara {
 
     </script>';
 
-    $organismPopup .=  "<select name='organism' class='chosen-select' tabindex='2'>\n";
+    $organismPopup .=  "<select id='organism' name='organism' class='chosen-select' tabindex='2'>\n";
     foreach my $org (@selected_organisms) {
       my $name = $org;
       $name =~ s/\_/ /g;
@@ -1089,9 +1117,9 @@ sub OrganismPopUpString {
   }
   my $organismPopup = "";
   $organismPopup .=  "<B>Organism</B>&nbsp;";
-  print '<script type="text/javascript"> ' ;
-  print `cat $ENV{RSAT}/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js`;
-  print ' </script>';
+    #print '<script type="text/javascript"> ' ;
+    #print `cat $ENV{RSAT}/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js`;
+    #print ' </script>';
   print '<script type="text/javascript"> ' ;
   print `cat $ENV{RSAT}/perl-scripts/lib/js/chosen/chosen.jquery.min.js`;
   print ' </script>';
@@ -1104,7 +1132,7 @@ sub OrganismPopUpString {
   </script>';
 #  print "<pre>", join("\n", @selected_organisms), "</pre>";
 
-  $organismPopup .=  "<select name='organism' class='chosen-select' tabindex='2'>\n";
+  $organismPopup .=  "<select id='organism' name='organism' class='chosen-select' tabindex='2'>\n";
   foreach my $org (@selected_organisms) {
     if (defined($supported_organism{$org})) {
       my $name = $org;
@@ -1122,7 +1150,7 @@ sub OrganismPopUpString {
   }
 
   $organismPopup .=  "</select>";
-  $organismPopup .= " <i>not seeing your favorite organism in the list ? Contact us to have it installed </i>";
+    $organismPopup .= " <i>not seeing your favorite organism in the list ? Contact us to have it installed </i>";
 
   $organismPopup .=  "<br>\n";
   return($organismPopup);
@@ -1133,27 +1161,14 @@ sub OrganismPopUpString {
 ## Display a pop-up menu with the list of organisms supported at
 ## Ensembl.
 sub OrganismPopUpEnsembl {
-
-## BUG : 2016-11-06: this function does not work anymore, although the
-## command works when called on the command line, either as rsat user
-## or as another user (jvanheld)
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) <= 0) {
-      my $supported_path = &RSAT::server::GetProgramPath("supported-organisms-ensembl");
-      my $supported_cmd = $supported_path;
-      $supported_cmd .= "| grep -v '^;'";
-#      my $org_list = `$SCRIPTS/supported-organisms-ensembl`;
-#      my $org_list = `$supported_cmd`;
-      my $org_list = system($supported_cmd." |");
-#      &RSAT::message::Debug("supported_path", $supported_path);
-#      &RSAT::message::Debug("supported_cmd", $supported_cmd);
-#      &RSAT::message::Debug("OrganismPopUpEnsembl", "org_list", $org_list);;
-#      die ("HELLO");
+      my $org_list = `$SCRIPTS/supported-organisms-ensembl`;
       @selected_organisms = split(/\n/,$org_list);
     }
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
-    $organismPopup .=  "<SELECT NAME='organism_ens'>\n";
+    $organismPopup .=  "<SELECT id='organism_ens' NAME='organism_ens'>\n";
     foreach my $org (@selected_organisms) {
     $name = ucfirst($org);
     $name =~ s/_/ /;
@@ -1162,7 +1177,7 @@ sub OrganismPopUpEnsembl {
 		$org = lc($org);
 	    $organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
 	}elsif (lc($org) =~ /^;/) {
-	    $info_ensembl =  $org;
+	    $info_ensembl .=  $org;
 	    $info_ensembl =~ s/;//;
 	} else {
 		$org = lc($org);
@@ -1277,24 +1292,24 @@ sub SeqBoxMQ {
   print "</td>";
   print "<td>";
   print "<br>";
-  print "<b><a href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
-  print $query->popup_menu(-name=>'permutation'.$seq_num,
+  print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
+  print $query->popup_menu(-name=>'permutation'.$seq_num, -id=>'permutation'.$seq_num,
 			   -Values=>[0..5],
 			   -default=>$default{perm});
-  print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num,
+  print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num, -id=>'sep_perm'.$seq_num,
 				      -checked=>$default{sep_perm1},
 				      -label=>''), "&nbsp;separate permutations";
   print "<br>\n";
   print"</td>";
   print "<td>";
   print "<BR>\n";
-  print "<B><A HREF='help.convert-matrix.html#permutations'>&nbsp;&nbsp;&nbsp;&nbsp;Tag for this data set</A></b>\n";
-  print $query->textfield(-name=>'tag'.$seq_num,
+  print "<B><A class='iframe' HREF='help.convert-matrix.html#permutations'>&nbsp;&nbsp;&nbsp;&nbsp;Tag for this data set</A></b>\n";
+  print $query->textfield(-name=>'tag'.$seq_num, -id=>'tag'.$seq_num,
 			  -default=>$default{'tag'.$seq_num},
 			  -size=>15);
   #if ($seq_num == 1){
       print "<p></p>";
-      print $query->checkbox(-name=>'nwd',
+      print $query->checkbox(-name=>'nwd', -id=>'nwd',
   		       -checked=>$default{nwd},
 			     -label=>'');
       print "&nbsp;Calculate NWD";
@@ -1331,7 +1346,7 @@ sub GetMatrix {
   print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db'  $status_db_choice >" if ($db_choice);
   print "<B>", $title, "</B>\n";
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-  print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
+  print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
   ## Get the list of supported input formats for PSSM. Beware: this
   ## requires to run "use RSAT::MatrixReader" beforehand.
@@ -1341,14 +1356,15 @@ sub GetMatrix {
   # &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
   #### matrix format
-  print $query->popup_menu(-name=>'matrix_format',
+    print $query->popup_menu(-id=>'matrix_format',
+    -name=>'matrix_format',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
 
 
   ## Display option fo use consensus as matrix name
   if ($args{consensus}) {
-    print $query->checkbox(-name=>'consensus_as_name',
+    print $query->checkbox(-id=>'consensus_as_name', -name=>'consensus_as_name',
 			   -checked=>$default{consensus_as_name},
 			   -label=>' use motif consensus as matrix name ');
   }
@@ -1357,7 +1373,8 @@ sub GetMatrix {
   print "<BR>\n";
   print  "Input motifs as text<br/>" if ($db_choice);
   print "<div><div style='float:left;'>";
-  print $query->textarea(-name=>'matrix',
+    print $query->textarea(-id=>'matrix',
+    -name=>'matrix',
 			 -default=>$default{matrix},
 			 -rows=>4,
 			 -columns=>60);
@@ -1385,11 +1402,10 @@ onclick="toggleMenu(';
 	<a class="menu_item" href="http://www.gene-regulation.com/pub/databases.html" target="_blank">Transfac</a>
 	<a class="menu_item" href="http://jaspar.cgb.ki.se/" target="_blank">Jaspar</a>
 	<a class="menu_item" href="http://regulondb.ccg.unam.mx/download/Data_Sets.jsp" target="_blank">RegulonDB</a>
+</div>
+</div>
+</div>
 
-</div>
-</div>
-</div>
-</div>
 <div style="clear:both;"></div>
 ';
   }
@@ -1398,8 +1414,8 @@ onclick="toggleMenu(';
   unless ($args{no_pseudo}) {
     #### pseudo-counts
     print "<BR>\n";
-    print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
-    print $query->textfield(-name=>'pseudo_counts',
+    print "<B><A class='iframe' HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+    print $query->textfield(-id=>'pseudo_counts', -name=>'pseudo_counts',
 			    -default=>$default{pseudo_counts},
 			    -size=>2);
     print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
@@ -1421,7 +1437,7 @@ sub GetSecondMatrix {
   print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db'  $status_db_choice >" if ($db_choice);
   print "<B>", $title, "</B>\n";
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-  print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
+  print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
   ## Get the list of supported input formats for PSSM. Beware: this
   ## requires to run "use RSAT::MatrixReader" beforehand.
@@ -1431,14 +1447,14 @@ sub GetSecondMatrix {
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
   #### matrix format
-  print $query->popup_menu(-name=>'matrix_format',
+  print $query->popup_menu(-id=>'matrix_format', -name=>'matrix_format',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
 
 
   ## Display option fo use consensus as matrix name
   if ($args{consensus}) {
-    print $query->checkbox(-name=>'consensus_as_name',
+    print $query->checkbox(-id=>'consensus_as_name', -name=>'consensus_as_name',
 			   -checked=>$default{consensus_as_name},
 			   -label=>' use motif consensus as matrix name ');
   }
@@ -1447,7 +1463,7 @@ sub GetSecondMatrix {
   print "<BR>\n";
   print  "Input motifs as text<br/>" if ($db_choice);
   print "<div><div style='float:left;'>";
-  print $query->textarea(-name=>'matrix_2',
+    print $query->textarea(-id=>'matrix_2', -name=>'matrix_2',
 			 -default=>$default{matrix_2},
 			 -rows=>4,
 			 -columns=>60);
@@ -1488,8 +1504,8 @@ onclick="toggleMenu(';
   unless ($args{no_pseudo}) {
     #### pseudo-counts
     print "<BR>\n";
-    print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
-    print $query->textfield(-name=>'pseudo_counts',
+    print "<B><A class='iframe' HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+    print $query->textfield(-id=>'pseudo_counts', -name=>'pseudo_counts',
 			    -default=>$default{pseudo_counts},
 			    -size=>2);
     print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
@@ -1530,9 +1546,6 @@ sub GetSecondMatrixFile {
 ################################################################
 ################################################################
 
-
-################################################################
-################################################################
 sub GetThirdMatrix {
   my (%args) = @_;
   my $db_choice= $args{'db_choice'} || 0;
@@ -1571,7 +1584,7 @@ sub GetThirdMatrix {
   print "<BR>\n";
   print  "Input motifs as text<br/>" if ($db_choice);
   print "<div><div style='float:left;'>";
-  print $query->textarea(-name=>'matrix_3',
+  print $query->textarea(-name=>'matrix_3', -id=>'matrix_3',
 			 -default=>$default{matrix_3},
 			 -rows=>4,
 			 -columns=>60);
@@ -1819,7 +1832,7 @@ sub FieldsThresholdsTable {
     if ($no_checkbox) {
 	print "<td>", $field, "</td>\n";
     } else {
-	print "<td>", $query->checkbox(-name=>'return_'.$field,
+	print "<td>", $query->checkbox(-name=>'return_'.$field,-id=>'return_'.$field,
 				       -checked=>$default{'return_'.$field},
 				       -label=>''), "&nbsp;", $field, "</td>\n";
     }
@@ -1828,7 +1841,7 @@ sub FieldsThresholdsTable {
     if (lc($lth) eq "disabled") {
 	print "<td align='center'>&nbsp;</td>";
     } else {
-	print "<td>", $query->textfield(-name=>'lth_'.$field,
+	print "<td>", $query->textfield(-name=>'lth_'.$field,-id=>'lth_'.$field,
 				-default=>$lth,
 				-size=>5), "</td>\n";
     }
@@ -1837,7 +1850,7 @@ sub FieldsThresholdsTable {
     if (lc($uth) eq "disabled") {
 	print "<td>&nbsp;</td>";
     } else {
-	print "<td>", $query->textfield(-name=>'uth_'.$field,
+	print "<td>", $query->textfield(-name=>'uth_'.$field,-id=>'uth_'.$field,
 				    -default=>$uth,
 				    -size=>5), "</td>\n";
     }
@@ -1879,7 +1892,7 @@ sub GetBackgroundModel {
 
   ## Title to display above background choice options
 #  my $title = "Background model choice";
-  my $title  = "<a href=help.matrix-scan.html#bg_method>Background model estimation method</a>";
+  my $title  = "<a class='iframe' href=help.matrix-scan.html#bg_method>Background model estimation method</a>";
 
   if ($params{title}) {
     $title = $params{title};
@@ -1900,13 +1913,13 @@ sub GetBackgroundModel {
   ## BUG HERE: THE DEFAULT $default{markov_order} is not taken into account, the displayed order is always 0.
   ##  &RSAT::message::Debug("Default markov order", $default{markov_order});
   if ($params{markov}) {
-    print ("<b><a href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
+    print ("<b><a class='iframe' href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
     if ($params{simple}) {
-      print $query->popup_menu(-name=>'markov_order',
+      print $query->popup_menu(-id=>'markov_order', -name=>'markov_order',
 			       -Values=>[0..2],
 			       -default=>$default{markov_order});
     } else {
-      print $query->popup_menu(-name=>'markov_order',
+      print $query->popup_menu(-id=>'markov_order', -name=>'markov_order',
 			       -Values=>[0..7],
 			       -default=>$default{markov_order});
     }
@@ -1918,7 +1931,7 @@ sub GetBackgroundModel {
   ## Display option to estimate BG model from input sequences
   if ($params{bg_input}) {
     #### Input sequences
-    print ("<br><input type='radio' name='bg_method' value='bginput' $checked{'bginput'}>","<b>Estimate residue probabilities from input sequences</b>");
+    print ("<br><input type='radio' name='bg_method' id='bg_method_bginput' value='bginput' $checked{'bginput'}>","<b>Estimate residue probabilities from input sequences</b>");
   }
 
   ## Display option to estimate BG model from sliding window
@@ -1935,7 +1948,7 @@ sub GetBackgroundModel {
   #### Sequence type for organism- an taxon-specific background models
   print "<p>";
   unless ($params{title_choose}) {
-    print ("<input type='radio' name='bg_method' value='bgfile' $checked{bgfile}>");
+    print ("<input type='radio' name='bg_method' id='bg_method_bgfile' value='bgfile' $checked{bgfile}>");
   }
   print '<b>Organism-specific</b>';
   print '<ul>';
@@ -1951,7 +1964,7 @@ sub GetBackgroundModel {
     print  &OrganismPopUpString();
   }
 
-  print ("<b>Sequence type</b> &nbsp; ",$query->popup_menu(-name=>'background',-Values=>["upstream-noorf","upstream"],-default=>$default{background}));
+    print ("<b>Sequence type</b> &nbsp; ",$query->popup_menu(-id=>'background',-name=>'background',-Values=>["upstream-noorf","upstream"],-default=>$default{background}));
 
   print '</ul>';
 
@@ -1964,7 +1977,7 @@ sub GetBackgroundModel {
 
   ### Display strand option
   if ($params{strands}) {
-    print "<B><A HREF='help.convert-background-model.html#item__2d1str'><br>Count on</A></b>\n";
+    print "<B><A class='iframe' HREF='help.convert-background-model.html#item__2d1str'><br>Count on</A></b>\n";
     print $query->popup_menu(-name=>'strands',
 			     -Values=>[
 				       'single strand',
@@ -1978,7 +1991,7 @@ sub GetBackgroundModel {
   ## Display "no overlap" option
   if ($params{noov}) {
     print ($query->checkbox(-name=>'noov',-checked=>$default{noov},-label=>''));
-    print "<B><A HREF='help.convert-background-model.html#item__2dnoov'>prevent overlapping matches (noov)</A></b>\n";
+    print "<B><A class='iframe' HREF='help.convert-background-model.html#item__2dnoov'>prevent overlapping matches (noov)</A></b>\n";
     print "<br/>";
   }
 
@@ -2009,7 +2022,7 @@ sub GetBackgroundModel {
       }
 
       print "<p/>\n";
-      print "<B><A HREF='help.matrix-scan.html'>Pseudo-frequencies</A></b>\n";
+      print "<B><A class='iframe' HREF='help.matrix-scan.html'>Pseudo-frequencies</A></b>\n";
       print $query->textfield(-name=>'bg_pseudo',
 			      -default=>$default{bg_pseudo},
 			      -size=>5);
@@ -2026,7 +2039,7 @@ sub DisplayBackgroundFileUpload {
     }
 
     print "Upload your own background file", "&nbsp;"x5;
-    print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;<a href='help.convert-background-model.html'>Format</a></b>&nbsp;";
+    print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;<a class='iframe' href='help.convert-background-model.html'>Format</a></b>&nbsp;";
 
     #### bg format
     print $query->popup_menu(-name=>'bg_format',
@@ -2383,13 +2396,12 @@ sub PrintHtmlTable {
   my $line_count = 0;
   my $last_line = "";
   my $header_line = "";
-  my @warnings;
   unless ((defined($border)) && (&IsNatural($border))) {
     $border=0;
   }
 
   ## Open the table
-  $TABLE_OPENING="<table  class=\"sortable\"  cellspacing=1 cellpadding=3 border=$border>";
+  $TABLE_OPENING="<table  class=\"sortable\"  cellspacing='1' cellpadding='3' border='$border'>";
   unless ($main::font{variable}) {
     $font_spec_start = "<TT>";
     $font_spec_end = "</TT>";
@@ -2405,7 +2417,7 @@ sub PrintHtmlTable {
     }
   }
 
-  print $out "<PRE>";
+  print $out "<pre>";
   while (<$FILE>) {
     #### avoid exposing the full path through the web interface
     $_ = &RSAT::util::hide_RSAT_path($_);
@@ -2428,18 +2440,14 @@ sub PrintHtmlTable {
     } elsif (/^;\s*WARNING/) {		# Warning
       push @warnings, $_;
 
+
     } elsif ((/^;/) ||
 	     (/^\-\-/) ||
 	     (/^\#/) ||
 	     (/^\/\//)) {	# Comment line
       if ($table_opened) {
-	    print $out "<\/TABLE><PRE>\n";
-
-        if(@warnings){ # Bruno 12052017
-           print $out @warnings;
-        }
-
-	    $table_opened = 0;
+	print $out "<\/table><pre>\n";
+	$table_opened = 0;
       }
       $last_line =~ s/^;//;
       $last_line =~ s/^#//;
@@ -2478,7 +2486,7 @@ sub PrintHtmlTable {
       }
       chomp;
       s|\t|$font_spec_end</td>\n<td>$font_spec_start|g;
-      print $out "<tr valign=top>\n<TD>".$font_spec_start.$_.$font_spec_end."</TD>\n</TR>\n\n";
+      print $out "<tr valign='top'>\n<td>".$font_spec_start.$_.$font_spec_end."</td>\n</tr>\n\n";
     }
   }
   if ($table_opened) {
@@ -2489,7 +2497,7 @@ sub PrintHtmlTable {
   }
 
   print $out $last_line;
-  print $out "</PRE>\n";
+  print $out "</pre>\n";
 
   if ($mirror_file ne "") {
     close MIRROR;
@@ -2668,7 +2676,7 @@ sub PipingFormForSequence {
 
 
   print qq|
-<HR SIZE = 3>
+<HR SIZE = "3" />
 <table class = "nextstep">
 <tr><td colspan = 5><h3>Next step</h3></td></tr>
 
@@ -2681,6 +2689,7 @@ sub PipingFormForSequence {
 
     <td align=center>
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
+   
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
         <INPUT type="hidden" NAME="sequence_type" VALUE="$seq_type">
@@ -2900,19 +2909,19 @@ sub PrintGenomeSubsetBgOptions {
   $checked{$default{bg_method}} = "CHECKED";
 
   #### Calibrated on genome subsets
-  print( "<br><input type='radio' NAME='bg_method' VALUE='background' $checked{background}>");
+  print( "<br><input type='radio' NAME='bg_method' id='bg_method_background' VALUE='background' $checked{'background'}>");
   print ("<b>Genome subset</b>");
 
-  print ( "&nbsp;&nbsp;<a href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;",$query->popup_menu(-name=>'background',-Values=>["upstream","upstream-noorf","protein"],-default=>$default{background}));
+  print ( "&nbsp;&nbsp;<a class='iframe' href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;",$query->popup_menu(-name=>'background',-Values=>["upstream","upstream-noorf","protein"],-default=>$default{background}));
 
 
   print ("<ul>");
-  print( "<input type='radio' NAME='bg_level' VALUE='organism' $checked{organism}>", &OrganismPopUpString());
+  print( "<input type='radio' NAME='bg_level' id='bg_level_organism' VALUE='organism' $checked{organism}>", &OrganismPopUpString());
 
   
   my $taxon_popup = &TaxonPopUpString("node");
   if ($taxon_popup) {
-    print( "<br><input type='radio' NAME='bg_level' VALUE='taxon' $checked{taxon}>", $taxon_popup);
+    print( "<br><input type='radio' NAME='bg_level' id='bg_level_taxon' VALUE='taxon' $checked{taxon}>", $taxon_popup);
   }
   print ("</ul>");
 
@@ -2924,7 +2933,7 @@ sub PrintGenomeSubsetBgOptions {
 ## Background model options for oligo-analysis + ORM
 sub PrintOligoBackgroundOptions {
   $checked{$default{bg_method}} = "CHECKED";
-  print "<a href='help.oligo-analysis.html#exp_freq'><B>Background model</b></a>&nbsp;";
+  print "<a class='iframe' href='help.oligo-analysis.html#exp_freq'><B>Background model</b></a>&nbsp;";
   &PrintGenomeSubsetBgOptions();
 
   #### Estimated from the input sequence set
@@ -2932,7 +2941,7 @@ sub PrintOligoBackgroundOptions {
   print ("<br><b>Estimate from input sequence</b>");
 
   ## Markov model
-  print ("<br><input type='radio' NAME='bg_method' VALUE='Markov model (higher order dependencies)' $checked{'Markov model (higher order dependencies)'}>", "Markov model (higher order dependencies)");
+  print ("<br><input type='radio' NAME='bg_method'  VALUE='Markov model (higher order dependencies)' $checked{'Markov model (higher order dependencies)'}>", "Markov model (higher order dependencies)");
 
   print "&nbsp;&nbsp;order &nbsp;";
   print $query->textfield(-name=>'markov_order',
@@ -2946,7 +2955,7 @@ sub PrintOligoBackgroundOptions {
   #print "<br><input type='radio' NAME='bg_method' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence<p>";
 
   #### equiprobable residues
-  print "<br><input type='radio' NAME='bg_method' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
+  print "<br><input type='radio' NAME='bg_method' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A class='iframe' HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
 
 #   ## Custom expected frequency file
 #   print ("<a href='help.oligo-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
@@ -2959,7 +2968,8 @@ sub PrintOligoBackgroundOptions {
 #  print ("<br><input type='radio' NAME='bg_method' VALUE='bgfile_upload' $checked{'bgfile_upload'}>");
 #  print ($query->filefield(-name=>'upload_bgfile',-default=>'starting value',-size=>30,-maxlength=>200));
 
-  print ("<b>Custom background model</b><br>");
+  print ("<b>Custom background model</b><br><br>");
+  print "&nbsp;&nbsp;<a href=create-background-model_form.cgi><b>Create your own background model</b></a><br/>";
   &DisplayBackgroundFileUpload();
   print "<p>\n";
 }
@@ -3027,7 +3037,7 @@ sub LoadDyadDefault {
 ## Print background model optiosn for dyad-analysis
 sub PrintDyadBackgroundOptions {
   $checked{$default{bg_method}} = "CHECKED";
-  print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Background model</B></A>&nbsp;<p>";
+  print "<A class='iframe' HREF='help.oligo-analysis.html#exp_freq'><B>Background model</B></A>&nbsp;<p>";
 
   &PrintGenomeSubsetBgOptions();
 
@@ -3035,7 +3045,7 @@ sub PrintDyadBackgroundOptions {
 
   print "<BR>\n";
 
-  print ("<a href='help.dyad-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
+  print ("<a class='iframe' href='help.dyad-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
   print ("<br><input type='radio' NAME='bg_method' VALUE='file_upload' $checked{'file_upload'}>");
   print ($query->filefield(-name=>'upload_freq_file',-default=>'starting value',-size=>30,-maxlength=>200));
   print "<p>";
@@ -3052,9 +3062,9 @@ sub PrintDyadReturnFields {
   print $query->table({-border=>0,-cellpadding=>2,-cellspacing=>0, -bgcolor=>'#FFFFFF'},
 		      $query->Tr({-align=>"left",-valign=>"TOP"},
 				 [
-				  $query->th(["<a href='help.oligo-analysis.html#return_fields'><b>Return fields</b></a>",
-					      " <a href='help.oligo-analysis.html#thresholds'>Lower<br>Threshold</a> ",
-					      " <a href='help.oligo-analysis.html#thresholds'>Upper<br>Threshold</a> "]),
+				  $query->th(["<a class='iframe' href='help.oligo-analysis.html#return_fields'><b>Return fields</b></a>",
+					      " <a class='iframe' href='help.oligo-analysis.html#thresholds'>Lower<br>Threshold</a> ",
+					      " <a class='iframe' href='help.oligo-analysis.html#thresholds'>Upper<br>Threshold</a> "]),
 
 				  ### occurrences
 				  $query->td([$query->checkbox(-name=>'occ',
@@ -3245,7 +3255,7 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -o ".$pssm_prefix;
 
   ## Run the command
-  print "<hr><PRE><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >= 0);
+  print "<hr /><pre><b>Command to generate matrices (PSSM):</b> ", &RSAT::util::hide_RSAT_path($pssm_command), "\n</pre>" if ($ENV{rsat_echo} >= 0);
   system("$pssm_command");
   push @result_files, ('Significance matrices', $sig_matrix_file);
   push @result_files, ('Rescaled significance matrices', $rescaled_sig_matrix_file);
@@ -3286,7 +3296,7 @@ sub OligoDyadPipingForm {
       $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>";
       $to_matrix_scan .= "<INPUT type='submit' value='matrix-based pattern matching (matrix-scan)'>";
       $to_matrix_scan .= "</FORM>";
-      $to_matrix_scan .= "</TD>";
+      $to_matrix_scan .= "</td>";
 
       ## Prepare form for sending matrices to convert-matrix
       $to_convert_matrix = "<td valign=bottom align=center>";
@@ -3295,22 +3305,21 @@ sub OligoDyadPipingForm {
       $to_convert_matrix .= "<INPUT type='hidden' NAME='matrix_format' VALUE='transfac'>";
       $to_convert_matrix .= "<INPUT type='submit' value='matrix conversion'>";
       $to_convert_matrix .= "</FORM>";
-      $to_convert_matrix .= "</TD>";
+      $to_convert_matrix .= "</td>";
 
       $matrix_treatment = join ("<tr>", $to_matrix_scan, $to_convert_matrix, "</tr>");
     }
 
   print <<End_of_form;
-<HR SIZE = 3>
-<TABLE CLASS = "nextstep" CELLSPACING=0 CELLPADDING=10 BORDER=0 NOWRAP>
-<TR>
+<hr size = "3"><table CLASS = "nextstep" CELLSPACING=0 CELLPADDING=10 BORDER=0 NOWRAP>
+<tr>
 
-<TR VALIGN="top" ALIGN="center">
+<tr VALIGN="top" ALIGN="center">
     <Th VALIGN=BOTTOM ALIGN=CENTER COLSPAN=6>
 	Next step
     </Th>
 
-</TR>
+</tr>
 
 <td valign=bottom align=center>
 <FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
@@ -3320,7 +3329,7 @@ sub OligoDyadPipingForm {
 <INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 <INPUT type="submit" value="string-based pattern matching (dna-pattern)">
 </FORM>
-</TD>
+</td>
 
 <td valign=bottom align=center>
 <FORM METHOD="POST" ACTION="pattern-assembly_form.cgi">
@@ -3331,7 +3340,7 @@ sub OligoDyadPipingForm {
 <INPUT type="hidden" NAME="strand" VALUE=$strand_opt>
 <INPUT type="submit" value="pattern assembly">
 </FORM>
-</TD>
+</td>
 </tr>
 
 $matrix_treatment
@@ -3348,7 +3357,7 @@ $matrix_treatment
 <INPUT type="hidden" NAME="yleg1" VALUE="observed occurrences">
 <INPUT type="submit" VALUE="XY graph">
 </FORM>
-</TD>
+</td>
 
   <td>
 <FORM METHOD='POST' ACTION='classfreq_form.cgi'>
@@ -3358,8 +3367,8 @@ $matrix_treatment
   </td>
 </tr>
 
-</TR>
-</TABLE>
+</tr>
+</table>
 End_of_form
 
 }
@@ -3374,7 +3383,7 @@ sub display_matrices_web {
   my ($in_matrix_file, $in_format, $no_convert, $logo_dir) = @_;
 
   my $public_temp_dir = &RSAT::util::get_pub_temp();
-  print "\n<hr>\n";
+  print "\n<hr/>\n";
 
   &RSAT::error::FatalError("missing input matrix file for display_matices_web()") unless ($in_matrix_file);
   &RSAT::error::FatalError("missing input matrix format for display_matices_web()") unless ($in_format);
@@ -3430,7 +3439,7 @@ sub display_matrices_web {
       $logo =~ s/\.png//;
       ## JvH TEMPORARILY DISACTIVATED pdf logos (201502-05) to
       ## circumvent strange bug with ghostscript on rsat.ulb.ac.be
-      print "<a href = '".$logo.".png'><IMG SRC='".$logo.".png' height='120'></a>";
+      print "<a href = '".$logo.".png'><img src='".$logo.".png' height='120' /></a>";
 #      print "<a href = '".$logo.".pdf'><IMG SRC='".$logo.".png' height='120'></a>";
 
       ## A trick to print the carriage return only after the second logo (reverse complement)
@@ -3446,7 +3455,6 @@ sub display_matrices_web {
   }
   close ($res);
   print "</pre>";
-
 
   return ($out_matrix_file);
 }
@@ -3716,7 +3724,6 @@ sub check_variation_tools {
   }
   return();
 }
-
 
 1; # return true
 

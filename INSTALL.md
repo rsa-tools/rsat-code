@@ -99,9 +99,10 @@ perl perl-scripts/configure_rsat.pl
 
 ## Installing RSAT
 
+Before running the installation, it might be worth updating the Linux distribution (`apt-get update`) in order to get the latest versions of the basic packages. 
+
 ```
 sudo bash
-apt-get update
 cd ${INSTALL_ROOT}/rsat
 source RSAT_config.bashrc && \ 
 bash installer/01_ubuntu_packages.bash && \
