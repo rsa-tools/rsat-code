@@ -322,23 +322,28 @@ sub RSA_header {
 			-type => 'text/css',
 			-media => 'screen,projection,print' });
     
-# print '<script>
-# $(function(){
-# if(typeof demo !== "undefined"){
-# txt = demo.value;
-# if(txt){
-# document.getElementById("demo_descr").innerHTML = txt;
-# }
+    ################################################################
+    ## Print the menu inside the page (enables to have links to each
+    ## tool separately).
+    if ($ENV{DirectoryIndex} eq "RSAT_home.cgi") {
+	print '<script>
+$(function(){
+if(typeof demo !== "undefined"){
+txt = demo.value;
+if(txt){
+document.getElementById("demo_descr").innerHTML = txt;
+}
 
-# }
-# });
-# </script>';
+}
+});
+</script>';
 
+	open(my $fh, "menu.html");
+	while(my $row = <$fh>){
+	    print $row."\n";
+	}
+    }
 
-    # open(my $fh, "menu.html");
-    # while(my $row = <$fh>){
-    #     print $row."\n";
-    # }
     
     print "<div class='container' id='page-content-wrapper'>";
     
