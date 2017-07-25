@@ -38,7 +38,6 @@ $default{heatmap} = "CHECKED";
 $default{consensus} = "";
 $default{label_id} = "";
 $default{label_name} = "CHECKED";
-#$default{label_ic} = "CHECKED";
 $default{label_consensus} = "";
 $default{html_title} = "";
 $default{collection_label} = "";
@@ -78,10 +77,14 @@ print ", <a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-am
 print "</CENTER>";
 
 ## demo 1 description
-print $default{demo_1_descr};
+#print $default{demo_1_descr};
+
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr'></div>";
 
 ## demo 2 description
-print $default{demo_2_descr};
+#print $default{demo_2_descr};
+
 
 print $query->start_multipart_form(-action=>"matrix-clustering.cgi");
 
@@ -90,7 +93,8 @@ print $query->start_multipart_form(-action=>"matrix-clustering.cgi");
 print "<hr>";
 print "<h2 style='margin-left: 50px;'> Analysis Title ";
 
-print $query->textfield(-name=>'html_title',
+print $query->textfield(-id=>'html_title',
+-name=>'html_title',
 			 -default=>$default{html_title},
 			 -size=>30) ."</h2>";
 
@@ -102,7 +106,7 @@ print "<hr>";
 
 ################################################################
 ## Query matrices collection 1
-print "<h2 style='margin-left: 50px;'> Add either one, two or three collections of PSSMs</h2>";
+print "<h2 style='margin-left: 50px;'> Add one or two collections of PSSMs</h2>";
 print "<hr>";
 
 &GetMatrix('title'=>'Input matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
@@ -111,7 +115,7 @@ print "<hr>";
 #### Set Motif collection label
 print "<h2 style='margin-left: 1px;'> Motif Collection\nName";
 
-print $query->textfield(-name=>'collection_label',
+print $query->textfield(-id=>'collection_label', -name=>'collection_label',
 			 -default=>$default{collection_label},
 			 -size=>30) ."</h2>";
 print "<hr>";
@@ -125,7 +129,7 @@ print "<hr>";
 #### Set Motif collection label
 print "<h2 style='margin-left: 1px;'> Motif Collection 2\nName";
 
-print $query->textfield(-name=>'collection_2_label',
+print $query->textfield(-id=>'collection_2_label', -name=>'collection_2_label',
 			 -default=>$default{collection_2_label},
 			 -size=>30) ."</h2>";
 print "<hr>";
@@ -139,7 +143,7 @@ print "<hr>";
 #### Set Motif collection label
 print "<h2 style='margin-left: 1px;'> Motif Collection 3\nName";
 
-print $query->textfield(-name=>'collection_3_label',
+print $query->textfield(-id=>'collection_3_label', -name=>'collection_3_label',
 			 -default=>$default{collection_3_label},
 			 -size=>30) ."</h2>";
 print "<hr>";
@@ -149,7 +153,7 @@ print "<hr>";
 print "<h2>", "Motif comparison options", ,"</h2>";
 
 ## Allow run compare-matrices-quick
-print $query->checkbox(-name=>'quick',
+print $query->checkbox(-id=>'quick', -name=>'quick',
   		       -checked=>$default{quick},
   		       -label=>'');
 print "&nbsp;<A'><B>Motif comparison with <i>compare-matrices-quick</i> (100 times faster). Only for <strong>Ncor</strong> and <strong>Cor</strong>.</B></A>";
@@ -166,23 +170,23 @@ print "<h2>", "Clustering options", ,"</h2>";
 
 ## Metric selected to build the hierarchical tree
 ## print "<b>Metric to build the tree.</b>";
-print "<B><A HREF='help.matrix-clustering.html#hclust_method'> Metric to build the trees </A>&nbsp;</B>\n";
-print $query->popup_menu(-name=>'metric',
+print "<B><A class='iframe' HREF='help.matrix-clustering.html#hclust_method'> Metric to build the trees </A>&nbsp;</B>\n";
+print $query->popup_menu(-id=>'metric', -name=>'metric',
  			 -Values=>["cor", "Ncor", "NcorS", "dEucl", "NdEucl", "logocor", "Nlogocor", "logoDP", "Icor", "NIcor", "SSD", "mean_zscore", "rank_mean"],
  			 -default=>$default{metric});
 print "<br><br>\n";
 
 ## Hierarchical clusterting agglomeration rule
 ## print "<b>Agglomeration rule</b>";
-print "<B><A HREF='help.matrix-clustering.html#hclust_method'> Aglomeration rule </A>&nbsp;</B>\n";
-print $query->popup_menu(-name=>'hclust_method',
+print "<B><A class='iframe' HREF='help.matrix-clustering.html#hclust_method'> Aglomeration rule </A>&nbsp;</B>\n";
+print $query->popup_menu(-id=>'hclust_method', -name=>'hclust_method',
  			 -Values=>["complete", "average", "single", "median", "centroid"],
  			 -default=>$default{hclust_method});
 print "<br><br>\n";
 
 ## Merge matrix operator
-print "<B><A HREF='help.matrix-clustering.html#merge_operator'> Merge matrices </A>&nbsp;</B>\n";
-print $query->popup_menu(-name=>'merge_stat',
+print "<B><A class='iframe' HREF='help.matrix-clustering.html#merge_operator'> Merge matrices </A>&nbsp;</B>\n";
+print $query->popup_menu(-id=>'merge_stat', -name=>'merge_stat',
  			 -Values=>["sum", "mean"],
  			 -default=>$default{merge_stat});
 print "<br><br>\n";
@@ -240,13 +244,6 @@ print $query->checkbox(-name=>'label_name',
 print "&nbsp;<A'><B>Motif name</B></A>";
 print "<br><br>\n";
 
-## Label: IC
-# print $query->checkbox(-name=>'label_ic',
-#   		       -checked=>$default{label_ic},
-#   		       -label=>'');
-# print "&nbsp;<A'><B>Information Content</B></A>";
-# print "<br><br>\n";
-
 ## Label: consensus
 print $query->checkbox(-name=>'label_consensus',
   		       -checked=>$default{label_consensus},
@@ -265,111 +262,145 @@ print "<p>\n";
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
 ## Demo 1 data
-my $descr_1 = "<H2>Comment on the demonstration example 1</H2>\n";
-$descr_1 .= "<blockquote class ='demo_1'>";
 
-$descr_1 .= "In this demo, we will analyze with <i>matrix-clustering</i> a
-set of motifs discovered with <a
-href='peak-motifs_form.cgi'><i>peak-motifs</i></a> in ChIP-seq binding
-peaks for the mouse transcription factor Oct4 (data from Chen et al.,
-2008).  </p>\n";
-
-$descr_1 .= "</blockquote>";
-
-print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-$demo_html_title = "'Oct4 motifs found in Chen 2008 peak sets'";
-$demo_html_collection_label = "'Oct4_peak_motifs'";
 $demo_1_file = "demo_files/RSAT_peak-motifs_Oct4_matrices.tf";
-$demo_1_matrices=`cat ${demo_1_file}`;
+#$demo_1_matrices=`cat ${demo_1_file}`;
+$demo_1_matrices = "";
+open(my $fh, $demo_1_file);
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_1_matrices .= $row;
+    $demo_1_matrices .= "\\n";
+}
 print "<TD><b>";
-print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
-print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_label);
-print $query->hidden(-name=>'demo_1_descr',-default=>$descr_1);
-print $query->hidden(-name=>'matrix',-default=>$demo_1_matrices);
-print $query->submit(-label=>"DEMO (one collection)");
+
+print '<script>
+function setDemo1(demo_1_matrix){
+    $("#reset").trigger("click");
+    descr_1 = "<H2>Comment on the demonstration example 1</H2>\n \
+    <blockquote class =\'demo_1\'>\
+    In this demo, we will analyze with <i>matrix-clustering</i> a \
+    set of motifs discovered with <a \
+    href=\"peak-motifs_form.cgi\"><i>peak-motifs</i></a> in ChIP-seq binding \
+    peaks for the mouse transcription factor Oct4 (data from Chen et al., 2008).  </p>\n</blockquote>";
+    
+    demo_descr.innerHTML = descr_1;
+    html_title.value = "\'Oct4 motifs found in Chen 2008 peak sets\'";
+    collection_label.value = "\'Oct4_peak_motifs\'";
+    matrix.value = demo_1_matrix;
+    demo.value = descr_1;
+}
+</script>';
+
+print '<button type="button" onclick="setDemo1('. "'$demo_1_matrices'" .')">DEMO (one collection)</button>';
 print "</B></TD>\n";
-print $query->end_form;
+
 
 
 ################################################################
 ## Demo 3 data
-my $descr_3 = "<H2>Comment on the demonstration example 3</H2>\n";
-$descr_3 .= "<blockquote class ='demo_3'>";
+$demo_2_file_1 = "demo_files/RSAT_peak-motifs_Oct4_matrices.tf";
+$demo_2_file_2 = "demo_files/MEME_ChIP_Oct4_matrices.tf";
+$demo_2_file_3 = "demo_files/Homer_l13_mis3_hyper_Oct4_matrices.tf";
 
-$descr_3 .= "In this demo, we will cluster two set of motifs discovered with <a
-href='peak-motifs_form.cgi'><i>peak-motifs</i></a> and <i>Meme-ChIP</i> in ChIP-seq binding
-peaks for the transcription factor Oct4 (data from Chen et al.,
-2008).  </p>\n";
-
-$descr_3 .= "</blockquote>";
-
-print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-$demo_html_title = "'Oct4 motifs found in Chen 2008 peak sets discovered by peak-motifs and meme-chip'";
-
-
-$demo_html_collection_label = "'Oct4_peak_motifs'";
-$demo_html_collection_2_label = "'Oct4_Meme-chip'";
-$demo_html_collection_3_label = "'Oct4_Homer'";
-
-$demo_3_file_1 = "demo_files/RSAT_peak-motifs_Oct4_matrices.tf";
-$demo_3_matrices_1=`cat ${demo_3_file_1}`;
-
-$demo_3_file_2 = "demo_files/MEME_ChIP_Oct4_matrices.tf";
-$demo_3_matrices_2 = `cat ${demo_3_file_2}`;
-
-$demo_3_file_3 = "demo_files/Homer_l13_mis3_hyper_Oct4_matrices.tf";
-$demo_3_matrices_3 = `cat ${demo_3_file_3}`;
+$demo_2_matrices_1 = "";
+open(my $fh, $demo_2_file_1);
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_2_matrices_1 .= $row;
+    $demo_2_matrices_1 .= "\\n";
+}
+close($fh);
+$demo_2_matrices_2 = "";
+open($fh, $demo_2_file_2);
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_2_matrices_2 .= $row;
+    $demo_2_matrices_2 .= "\\n";
+}
+close($fh);
+$demo_2_matrices_3 = "";
+open($fh, $demo_2_file_3);
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_2_matrices_3 .= $row;
+    $demo_2_matrices_3 .= "\\n";
+}
+close($fh);
 
 print "<TD><b>";
-print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
-print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_label);
-print $query->hidden(-name=>'collection_2_label',-default=>$demo_html_collection_2_label);
-print $query->hidden(-name=>'collection_3_label',-default=>$demo_html_collection_3_label);
-print $query->hidden(-name=>'demo_3_descr',-default=>$descr_3);
-print $query->hidden(-name=>'matrix',-default=>$demo_3_matrices_1);
-print $query->hidden(-name=>'matrix_2',-default=>$demo_3_matrices_2);
-print $query->hidden(-name=>'matrix_3',-default=>$demo_3_matrices_3);
-print $query->submit(-label=>"DEMO (three collections)");
+
+print '<script>
+function setDemo3(demo_3_matrix, demo_3_matrix_2, demo_3_matrix_3){
+    $("#reset").trigger("click");
+    descr_3 = "<H2>Comment on the demonstration example 3</H2>\n \
+    <blockquote class =\'demo_3\'>\
+    In this demo, we will cluster two set of motifs discovered with <a\
+    href=\'peak-motifs_form.cgi\'><i>peak-motifs</i></a> and <i>Meme-ChIP</i> in ChIP-seq binding\
+    peaks for the transcription factor Oct4 (data from Chen et al.,\
+    2008).  </p>\n</blockquote>";
+    
+    demo_descr.innerHTML = descr_3;
+    html_title.value = "\'Oct4 motifs found in Chen 2008 peak sets discovered by peak-motifs and meme-chip\'";
+    collection_label.value = "\'Oct4_peak_motifs\'";
+    collection_2_label.value = "\'Oct4_Meme-chip\'";
+    collection_3_label.value = "\'Oct4_Homer\'";
+
+    matrix.value = demo_3_matrix;
+    matrix_2.value = demo_3_matrix_2;
+    matrix_3.value = demo_3_matrix_3;
+    demo.value = descr_3;
+}
+</script>';
+print '<button type="button" onclick="setDemo3('. "'$demo_2_matrices_1','$demo_2_matrices_2', '$demo_2_matrices_3'" .')">DEMO (three collections)</button>';
 print "</B></TD>\n";
-print $query->end_form;
+#print $query->end_form;
 
 
 ################################################################
-## Demo 2 data
-my $descr_2 = "<H2>Comment on the demonstration example 2</H2>\n";
-$descr_2 .= "<blockquote class ='demo_2'>";
-
-$descr_2 .= "Negative control: we will analyze with <i>matrix-clustering</i> a
-set of motifs discovered with <a
-href='peak-motifs_form.cgi'><i>peak-motifs</i></a> in ChIP-seq binding
-peaks for the mouse transcription factor Oct4 (data from Chen et al.,
-2008). The columns of the motifs are randomly permuted, conserving thus their 
-information content. Note that poor-complexity motifs (i.e. A-rich) are grouped
-together.  </p>\n";
-
-$descr_2 .= "</blockquote>";
-
-print $query->start_multipart_form(-action=>"matrix-clustering_form.cgi");
-$demo_html_title = "'Clustering column-permuted matrices discovered in Oct4 ChIP-seq'";
-$demo_html_collection_label_perm = "'Oct4_peak_motifs_permuted'";
+## Demo negative control
 $demo_2_file = "demo_files/peak-motifs_result_Chen_Oct4_permuted_matrices.tf";
-$demo_2_matrices=`cat ${demo_2_file}`;
+
+$demo_2_matrices = "";
+open($fh, $demo_2_file);
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_2_matrices .= $row;
+    $demo_2_matrices .= "\\n";
+}
+close($fh);
+
 print "<TD><b>";
-print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
-print $query->hidden(-name=>'collection_label',-default=>$demo_html_collection_label_perm);
-print $query->hidden(-name=>'demo_2_descr',-default=>$descr_2);
-print $query->hidden(-name=>'matrix',-default=>$demo_2_matrices);
-print $query->submit(-label=>"DEMO (negative control)");
+print '<script>
+function setDemo2(demo_3_matrix){
+    $("#reset").trigger("click");
+    descr_2 = "<H2>Comment on the demonstration example 2</H2>\n \
+    <blockquote class =\'demo_2\'>\
+    Negative control: we will analyze with <i>matrix-clustering</i> a\
+    set of motifs discovered with <a\
+    href=\'peak-motifs_form.cgi\'><i>peak-motifs</i></a> in ChIP-seq binding\
+    peaks for the mouse transcription factor Oct4 (data from Chen et al.,\
+    2008). The columns of the motifs are randomly permuted, conserving thus their\
+    information content. Note that poor-complexity motifs (i.e. A-rich) are grouped\
+    together.  </p>\n</blockquote>";
+    
+    demo_descr.innerHTML = descr_2;
+    html_title.value = "\'Clustering column-permuted matrices discovered in Oct4 ChIP-seq\'";
+    collection_label.value = "\'Oct4_peak_motifs_permuted\'";
+    matrix.value = demo_3_matrix;
+    demo.value = descr_2;
+}
+</script>';
+print '<button type="button" onclick="setDemo2('. "'$demo_2_matrices'" .')">DEMO (negative control)</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
-print "<td><b><a href='help.matrix-clustering.html'>[MANUAL]</a></B></TD>\n";
+print "<td><b><a class='iframe' href='help.matrix-clustering.html'>[MANUAL]</a></B></TD>\n";
 print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</tr></table></ul></ul>\n";
 

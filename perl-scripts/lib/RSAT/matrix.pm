@@ -1931,7 +1931,7 @@ sub calcWeights {
     my @weights = ();
     for my $c (0..($ncol-1)) {
 	for my $r (0..($nrow-1)) {
-	    my $letter = $alphabet[$r];
+	    my $letter = lc $alphabet[$r];
 	    my $prior = $prior{$letter};
 	    my $freq = $frequencies[$c][$r];
 	    if ($freq == 0) {
@@ -2039,7 +2039,7 @@ sub calcInformation {
     my $total_information = 0; ## Total information for the matrix
     for my $c (0..($ncol-1)) {
 	for my $r (0..($nrow-1)) {
-	    my $letter = $alphabet[$r];
+	    my $letter = lc $alphabet[$r];
 	    my $prior = $prior{$letter};
 	    my $freq = $frequencies[$c][$r];
 	    if ($freq == 0) {
@@ -2393,7 +2393,7 @@ sub calcFrequencies {
   for my $c (0..($ncol-1)) {
     my $col_sum = 0;
     for my $r (0..($nrow-1)) {
-      my $letter = $alphabet[$r];
+      my $letter = lc $alphabet[$r];
       my $prior = $prior{$letter};
       my $occ = $matrix[$c][$r];
       $col_sum += $occ;
@@ -2632,7 +2632,7 @@ sub calcConsensus {
     ## Use uppercase for scores >= 1.  This is only valid for DNA
     ## alphabet, since other alphabets may be case-sensitive
     ## (e.g. Cytomod).
-    if ($self->get_attribute("type") eq "dna") {
+    #if ($self->get_attribute("type") eq "dna") {
       if ($col_max >= 1) {
 	$consensus_strict .= uc($col_consensus);
 	$consensus .= uc($regular);
@@ -2640,7 +2640,7 @@ sub calcConsensus {
 	$consensus_strict .= lc($col_consensus);
 	$consensus .= lc($regular);
       }
-    }
+    #}
   }
   my $consensus_IUPAC = &main::regular_to_IUPAC($consensus);
 
@@ -2651,6 +2651,7 @@ sub calcConsensus {
   ## Degenerate consensus in IUPAC format
   $self->set_parameter("consensus.IUPAC", $consensus_IUPAC);
   $self->set_parameter("consensus.IUPAC.rc", &RSAT::SeqUtil::ReverseComplement($consensus_IUPAC));
+&RSAT::message::Info("Consensus IUPAC", $self->get_attribute("consensus.IUPAC"));
 
   ## Degenerate consensus in regexp format
   $self->set_parameter("consensus.regexp", $consensus);

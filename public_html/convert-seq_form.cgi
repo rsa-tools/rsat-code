@@ -47,6 +47,8 @@ foreach $key (keys %default) {
 ################################################################
 ### header
 &RSA_header("convert-seq", "form");
+
+
 print "<CENTER>";
 print "Inter-conversions between various sequence formats.<P>\n";
 print "</CENTER>";
@@ -64,13 +66,17 @@ print "<hr>";
 print "<h4>Sequence processing</h4>";
 
 ## Short sequences
-print "<B><A HREF='help.convert-seq.html'>Short sequences</A></B>&nbsp;";
+#print "<B><A HREF='help.convert-seq.html'>Short sequences</A></B>&nbsp;";
+
+
+print "<B><a class='iframe' href='help.convert-seq.html'>Short sequences</a></B>&nbsp;";
+
 print $query->popup_menu(-name=>'short_action',
 			 -Values=>['no treatment',
 				   'mask',
 				   'skip'],
 			 -default=>$default{short_action});
-print "&nbsp;"x2, "<B><A HREF='help.convert-seq.html'>min size</A></b>\n";
+print "&nbsp;"x2, "<B><A class='iframe' HREF='help.convert-seq.html'>min size</A></b>\n";
 print $query->textfield(-name=>'short_size',
 			-default=>$default{short_size},
 			-size=>3);
@@ -81,20 +87,21 @@ print "<br/>";
 print $query->checkbox(-name=>'addrc',
 		       -checked=>$default{addrc},
 		       -label=>'');
-print "<B><A HREF='help.convert-seq.html'>Add reverse complement</A></b>\n";
+print "<B><A class='iframe' HREF='help.convert-seq.html'>Add reverse complement</A></b>\n";
 
 ### Output format
 print "<hr>";
 
-print "<B><A HREF='help.convert-seq.html'>Output format</A></B>&nbsp;";
-print $query->popup_menu(-name=>'output_format',
+print "<B><A class='iframe' HREF='help.convert-seq.html'>Output format</A></B>&nbsp;";
+print $query->popup_menu(-id=>'output_format',
+-name=>'output_format',
 			 -Values=>['fasta',
 				   'wconsensus',
 				   'raw',
 				   "tab",
 				   'multi'],
 			 -default=>$default{output_format});
-print "&nbsp;"x2, "<B><A HREF='help.convert-seq.html'>Line width</A></b>\n";
+print "&nbsp;"x2, "<B><A class='iframe' HREF='help.convert-seq.html'>Line width</A></b>\n";
 print $query->textfield(-name=>'line_width',
 			-default=>$default{line_width},
 			-size=>3);
@@ -109,7 +116,7 @@ print "<p>\n";
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
@@ -117,33 +124,36 @@ print $query->end_form;
 
 ################################################################
 ### data for the demo 
-print $query->start_multipart_form(-action=>"convert-seq_form.cgi");
-$demo=">YBR020w	GAL1 upstream sequence, from -800 to -1, size 800
-CAGGTTATCAGCAACAACACAGTCATATCCATTCTCAATTAGCTCTACCACAGTGTGTGA
-ACCAATGTATCCAGCACCACCTGTAACCAAAACAATTTTAGAAGTACTTTCACTTTGTAA
-CTGAGCTGTCATTTATATTGAATTTTCAAAAATTCTTACTTTTTTTTTGGATGGACGCAA
-AGAAGTTTAATAATCATATTACATGGCATTACCACCATATACATATCCATATCTAATCTT
-ACTTATATGTTGTGGAAATGTAAAGAGCCCCATTATCTTAGCCTAAAAAAACCTTCTCTT
-TGGAACTTTCAGTAATACGCTTAACTGCTCATTGCTATATTGAAGTACGGATTAGAAGCC
-GCCGAGCGGGCGACAGCCCTCCGACGGAAGACTCTCCTCCGTGCGTCCTCGTCTTCACCG
-GTCGCGTTCCTGAAACGCAGATGTGCCTCGCGCCGCACTGCTCCGAACAATAAAGATTCT
-ACAATACTAGCTTTTATGGTTATGAAGAGGAAAAATTGGCAGTAACCTGGCCCCACAAAC
-CTTCAAATTAACGAATCAAATTAACAACCATAGGATGATAATGCGATTAGTTTTTTAGCC
-TTATTTCTGGGGTAATTAATCAGCGAAGCGATGATTTTTGATCTATTAACAGATATATAA
-ATGGAAAAGCTGCATAACCACTTTAACTAATACTTTCAACATTTTCAGTTTGTATTACTT
-CTTATTCAAATGTCATAAAAGTATCAACAAAAAATTGTTAATATACCTCTATACTTTAAC
-GTCAAGGAGAAAAAACTATA
-";
+
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    sequence.value =">YBR020w	GAL1 upstream sequence, from -800 to -1, size 800\
+    \nCAGGTTATCAGCAACAACACAGTCATATCCATTCTCAATTAGCTCTACCACAGTGTGTGA\
+    \nACCAATGTATCCAGCACCACCTGTAACCAAAACAATTTTAGAAGTACTTTCACTTTGTAA\
+    \nCTGAGCTGTCATTTATATTGAATTTTCAAAAATTCTTACTTTTTTTTTGGATGGACGCAA\
+    \nAGAAGTTTAATAATCATATTACATGGCATTACCACCATATACATATCCATATCTAATCTT\
+    \nACTTATATGTTGTGGAAATGTAAAGAGCCCCATTATCTTAGCCTAAAAAAACCTTCTCTT\
+    \nTGGAACTTTCAGTAATACGCTTAACTGCTCATTGCTATATTGAAGTACGGATTAGAAGCC\
+    \nGCCGAGCGGGCGACAGCCCTCCGACGGAAGACTCTCCTCCGTGCGTCCTCGTCTTCACCG\
+    \nGTCGCGTTCCTGAAACGCAGATGTGCCTCGCGCCGCACTGCTCCGAACAATAAAGATTCT\
+    \nACAATACTAGCTTTTATGGTTATGAAGAGGAAAAATTGGCAGTAACCTGGCCCCACAAAC\
+    \nCTTCAAATTAACGAATCAAATTAACAACCATAGGATGATAATGCGATTAGTTTTTTAGCC\
+    \nTTATTTCTGGGGTAATTAATCAGCGAAGCGATGATTTTTGATCTATTAACAGATATATAA\
+    \nATGGAAAAGCTGCATAACCACTTTAACTAATACTTTCAACATTTTCAGTTTGTATTACTT\
+    \nCTTATTCAAATGTCATAAAAGTATCAACAAAAAATTGTTAATATACCTCTATACTTTAAC\
+    \nGTCAAGGAGAAAAAACTATA";
+    sequence_format.value = "fasta";
+    output_format.value = "wconsensus";
+}
+</script>';
+
 print "<TD><B>";
-print $query->hidden(-name=>'sequence',-default=>$demo);
-print $query->hidden(-name=>'sequence_format',-default=>'fasta');
-print $query->hidden(-name=>'output_format',-default=>"wconsensus");
-print $query->submit(-label=>"DEMO");
+print '<button type="button" onclick="setDemo();">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
-print "<TD><B><A HREF='help.convert-seq.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.convert-seq.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

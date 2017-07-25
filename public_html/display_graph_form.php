@@ -7,7 +7,7 @@
 <?php
   require ('functions.php');
   require ('demo_dataset.php');
-  
+    printMenu();
   
   # variable definition
   $default_scol = 1;
@@ -59,7 +59,7 @@
    );
 
   echo ("<form method='post' action='display_graph.php' enctype='multipart/form-data'>");
-  echo ("&nbsp;&nbsp;&nbsp;<a href = 'help.display_graph.html#formats'><B>Input format</B></a>");
+  echo ("&nbsp;&nbsp;&nbsp;<a class='iframe' href = 'help.display_graph.html#formats'><B>Input format</B></a>");
   if (!$pipe) {
     echo ("
     &nbsp;<select name='in_format'>
@@ -71,7 +71,7 @@
     echo ": $graph_format<br>";
     echo "<input type='hidden' NAME='in_format' VALUE='$graph_format'>";
   }
-  echo ("&nbsp;&nbsp;&nbsp;<B><a href = 'help.display_graph.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
+  echo ("&nbsp;&nbsp;&nbsp;<B><a class='iframe' href = 'help.display_graph.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
   <option selected value = 'png'> PNG
   <option value = 'ps'> PS
   <option value = 'jpeg'> JPEG
@@ -84,14 +84,14 @@
     echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>");
     echo("<br>Upload graph from file : <br>");
     echo("<input type='file' name='graph_file' size='45' /><br>");
-    echo("<br><a href = 'help.display_graph.html#columns'>Column specification (only relevant for tab-delimited input)</a><br>");
+    echo("<br><a class='iframe' href = 'help.display_graph.html#columns'>Column specification (only relevant for tab-delimited input)</a><br>");
     echo("<table>");
-    echo("<tr><td><B><a href = 'help.display_graph.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>");
-    echo("<tr><td><B><a href = 'help.display_graph.html#tcol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>");
-    echo("<tr><td><B><a href = 'help.display_graph.html#wcol'>Weight or label </a></B></td><td><input type = 'text' name='w_col' value = '$demo_wcol' size = 1></input></td></tr>");
-    echo("<tr><td><B><a href = 'help.display_graph.html#eccol'>Edge color</a></B></td><td><input type = 'text' name='ec_col' value = '$demo_eccol' size = 1></input></td></tr>");
-    echo("<tr><td><B><a href = 'help.display_graph.html#sccol'>Source node color</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>");
-    echo("<tr><td><B><a href = 'help.display_graph.html#tccol'>Target node color</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>");
+    echo("<tr><td><B><a class='iframe' href = 'help.display_graph.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>");
+    echo("<tr><td><B><a class='iframe' href = 'help.display_graph.html#tcol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>");
+    echo("<tr><td><B><a class='iframe' href = 'help.display_graph.html#wcol'>Weight or label </a></B></td><td><input type = 'text' name='w_col' value = '$demo_wcol' size = 1></input></td></tr>");
+    echo("<tr><td><B><a class='iframe' href = 'help.display_graph.html#eccol'>Edge color</a></B></td><td><input type = 'text' name='ec_col' value = '$demo_eccol' size = 1></input></td></tr>");
+    echo("<tr><td><B><a class='iframe' href = 'help.display_graph.html#sccol'>Source node color</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>");
+    echo("<tr><td><B><a class='iframe' href = 'help.display_graph.html#tccol'>Target node color</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>");
     echo("</table>");
 
   } else {
@@ -109,7 +109,7 @@
   }
 
 
-  echo ("<B><a href = 'help.convert_graph.html#layout'>Layout</a></B>
+  echo ("<B><a class='iframe' href = 'help.convert_graph.html#layout'>Layout</a></B>
     <select name='layout'>
       <option value='none'> No layout
       <option selected value='spring'>Spring embedding
@@ -120,14 +120,14 @@
 /*  echo ("
   <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Calculate the layout of the nodes (mandatory for all input formats except GML)</a></B><br>");*/
 
-  echo ("<input type='checkbox' $demo_ewidth name='ewidth' value='on' />&nbsp;<B><a href = 'help.display_graph.html#ewidth'>Edge width proportional to weight</a></B><br>
+  echo ("<input type='checkbox' $demo_ewidth name='ewidth' value='on' />&nbsp;<B><a class='iframe' href = 'help.display_graph.html#ewidth'>Edge width proportional to weight</a></B><br>
 
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
   <TD><B><A HREF='display_graph_form.php?demo=0'>RESET</A></B></TD>
   <TD><B><A HREF='display_graph_form.php?demo=1'>DEMO</A></B></TD>
   </form>
-  <TD><B><A HREF='help.display_graph.html'>MANUAL</A></B></TD>
+  <TD><B><A class='iframe' HREF='help.display_graph.html'>MANUAL</A></B></TD>
   <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Network_visualization_forma.html")."'>TUTORIAL</A></B></TD>
   <TD><B><A HREF='mailto:sbrohee\@ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>
