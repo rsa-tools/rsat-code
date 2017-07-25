@@ -740,7 +740,7 @@ sub Rplot {
   ## Open input table
   $r_instructions .= "\n## Loading input table\n";
   $r_instructions .= "in.file <- \"$input_data_file\"\n";
-  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.", na.strings = \"<NULL>\")\n";
+  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.", na.strings = \"NA\")\n";
 
   ## Save header as vector in R
   $r_instructions .= "header.vector <- c(\"".join("\",\"",@header_list)."\")\n";

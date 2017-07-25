@@ -14,7 +14,7 @@
 
    ## Load the function library for NeAT PHP interface
    require ('functions.php');
-
+printMenu();
    ## Update the log file
    UpdateLogFile("neat","","");
    

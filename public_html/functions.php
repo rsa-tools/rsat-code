@@ -1,4 +1,22 @@
 <?php
+    
+    Function printMenu($menu){
+        if(strcmp($menu, "RSAT") == 0){
+            $handle = fopen("menu.html", "r");
+            while (($line = fgets($handle)) !== false) {
+                echo $line;
+                echo "\n";
+            }    
+            fclose($handle);
+        }else{
+            ob_start(); // begin collecting output
+            include 'menu_graph.php';
+            $result = ob_get_clean(); 
+            echo($result);
+        }
+       
+    }
+
   // NeAT TITLE
 Function title($title) {
   echo "<H3><a href='NeAT_home.html'>NeAT</a> - $title</H3>\n";
