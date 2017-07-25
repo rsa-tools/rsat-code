@@ -7,6 +7,7 @@
 <?php 
   require ('functions.php');
   title('graph-node-degree - results');
+    printMenu();
   # log file update
   UpdateLogFile("neat","","");
   # Error status

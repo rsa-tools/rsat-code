@@ -118,7 +118,7 @@ print $query->start_multipart_form(-action=>"dyad-analysis.cgi");
 print $query->checkbox(-name=>'purge',
   		       -checked=>$default{purge},
   		       -label=>'');
-print "&nbsp;<A HREF='help.dyad-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
+print "&nbsp;<A class='iframe' HREF='help.dyad-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
 print "<BR>";
 print "<HR width=550 align=left>\n";
 
@@ -127,13 +127,13 @@ print "<HR width=550 align=left>\n";
 print "<b>Dyad counting mode</b><br>\n";
 
 ### Monad length
-print "<B><A HREF='help.dyad-analysis.html#oligo_size'>Monad length</A>&nbsp;</B>\n";
+print "<B><A class='iframe' HREF='help.dyad-analysis.html#oligo_size'>Monad length</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'oligo_size',
 			 -Values=>[3..3],
 			 -default=>$default{oligo_size});
 
 ### spacing
-print "<A HREF='help.dyad-analysis.html#spacing'><B>Spacing</B></A>&nbsp;\n";
+print "<A class='iframe' HREF='help.dyad-analysis.html#spacing'><B>Spacing</B></A>&nbsp;\n";
 print "&nbsp;", "from", "&nbsp;";
 print $query->popup_menu(-name=>'spacing_from',
 			 -Values=>[0..22],
@@ -146,7 +146,7 @@ print $query->popup_menu(-name=>'spacing_to',
 print "<BR>\n";
 
 ### dyad type
-print "<B><A HREF='help.dyad-analysis.html#dyad_type'>Dyad type</A>&nbsp;</B>\n";
+print "<B><A class='iframe' HREF='help.dyad-analysis.html#dyad_type'>Dyad type</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'dyad_type',
 			 -Values=>["inverted repeats",
 				   "direct repeats",
@@ -156,7 +156,7 @@ print $query->popup_menu(-name=>'dyad_type',
 
 ### strand ###
 print "<BR>";
-print "<B><A HREF='help.dyad-analysis.html#count_strands'>Count on</A>&nbsp;</B>\n";
+print "<B><A class='iframe' HREF='help.dyad-analysis.html#count_strands'>Count on</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'strand',
 			 -Values=>['single strand',
 				  'both strands'],
@@ -167,7 +167,7 @@ print "&nbsp;" x 5;
 print $query->checkbox(-name=>'noov',
 		       -checked=>$default{noov},
 		       -label=>'');
-print "<A HREF='help.dyad-analysis.html#noov'><B>\n";
+print "<A class='iframe' HREF='help.dyad-analysis.html#noov'><B>\n";
 print "prevent overlapping matches\n";
 print "</B></A>\n";
 
@@ -203,120 +203,44 @@ print "<HR width=550 align=left>\n";
 print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ### data for the demo 
-print $query->start_multipart_form(-action=>"dyad-analysis_form.cgi");
-$demo_sequence = ">GAL1	YBR020W upstream sequence, from -800 to -1
-CAGGTTATCAGCAACAACACAGTCATATCCATTCTCAATTAGCTCTACCACAGTGTGTGA
-ACCAATGTATCCAGCACCACCTGTAACCAAAACAATTTTAGAAGTACTTTCACTTTGTAA
-CTGAGCTGTCATTTATATTGAATTTTCAAAAATTCTTACTTTTTTTTTGGATGGACGCAA
-AGAAGTTTAATAATCATATTACATGGCATTACCACCATATACATATCCATATCTAATCTT
-ACTTATATGTTGTGGAAATGTAAAGAGCCCCATTATCTTAGCCTAAAAAAACCTTCTCTT
-TGGAACTTTCAGTAATACGCTTAACTGCTCATTGCTATATTGAAGTACGGATTAGAAGCC
-GCCGAGCGGGCGACAGCCCTCCGACGGAAGACTCTCCTCCGTGCGTCCTCGTCTTCACCG
-GTCGCGTTCCTGAAACGCAGATGTGCCTCGCGCCGCACTGCTCCGAACAATAAAGATTCT
-ACAATACTAGCTTTTATGGTTATGAAGAGGAAAAATTGGCAGTAACCTGGCCCCACAAAC
-CTTCAAATTAACGAATCAAATTAACAACCATAGGATGATAATGCGATTAGTTTTTTAGCC
-TTATTTCTGGGGTAATTAATCAGCGAAGCGATGATTTTTGATCTATTAACAGATATATAA
-ATGGAAAAGCTGCATAACCACTTTAACTAATACTTTCAACATTTTCAGTTTGTATTACTT
-CTTATTCAAATGTCATAAAAGTATCAACAAAAAATTGTTAATATACCTCTATACTTTAAC
-GTCAAGGAGAAAAAACTATA
->GAL2	YLR081W upstream sequence, from -800 to -1
-CATTAATTTTGCTTCCAAGACGACAGTAATATGTCTCCTACAATACCAGTTTCGCTGCAG
-AAGGCACATCTATTACATTTACTGAGCATAACGGGCTGTACTAATCCAAGGAGGTTTACG
-GACCAGGGGAACTTTCCAGATTCAGATCACAGCAATATAGGACTAGAAAATATCAGGTAG
-CCGCACTCAACTTGTAACTGGCAACTACTTTGCATCAAACTCCAATTAAATGCGGTAGAA
-TCTTTTCACAAAAGGTACTCAACGTCAATTCGGAAAGCTTCCTTCCGGAATGGCTTAAGT
-AGGTTGCAATTTCTTTTTCTATTAGTAGCTAAAAATGGGTCACGTGATCTATATTCGAAA
-GGGGCGGTTGCCTCAGGAAGGCACCGGCGGTCTTTCGTCCGTGCGGAGATATCTGCGCCG
-TTCAGGGGTCCATGTGCCTTGGACGATATTAAGGCAGAAGGCAGTATCGGGGCGGATCAC
-TCCGAACCGAGATTAGTTAAGCCCTTCCCATCTCAAGATGGGGAGCAAATGGCATTATAC
-TCCTGCTAGAAAGTTAACTGTGCACATATTCTTAAATTATACAACATTCTGGAGAGCTAT
-TGTTCAAAAAACAAACATTTCGCAGGCTAAAATGTGGAGATAGGATAAGTTTTGTAGACA
-TATATAAACAATCAGTAATTGGATTGAAAATTTGGTGTTGTGAATTGCTCTTCATTATGC
-ACCTTATTCAATTATCATCAAGAATAGTAATAGTTAAGTAAACACAAGATTAACATAATA
-AAAAAAATAATTCTTTCATA
->GAL7	YBR018C upstream sequence, from -800 to -1
-GAGAACTGGAAAGATTGTGTAACCTTGAAAAACGGTGAAACTTACGGGTCCAAGATTGTC
-TACAGATTTTCCTGATTTGCCAGCTTACTATCCTTCTTGAAAATATGCACTCTATATCTT
-TTAGTTCTTAATTGCAACACATAGATTTGCTGTATAACGAATTTTATGCTATTTTTTAAA
-TTTGGAGTTCAGTGATAAAAGTGTCACAGCGAATTTCCTCACATGTAGGGACCGAATTGT
-TTACAAGTTCTCTGTACCACCATGGAGACATCAAAAATTGAAAATCTATGGAAAGATATG
-GACGGTAGCAACAAGAATATAGCACGAGCCGCGGAGTTCATTTCGTTACTTTTGATATCA
-CTCACAACTATTGCGAAGCGCTTCAGTGAAAAAATCATAAGGAAAAGTTGTAAATATTAT
-TGGTAGTATTCGTTTGGTAAAGTAGAGGGGGTAATTTTTCCCCTTTATTTTGTTCATACA
-TTCTTAAATTGCTTTGCCTCTCCTTTTGGAAAGCTATACTTCGGAGCACTGTTGAGCGAA
-GGCTCATTAGATATATTTTCTGTCATTTTCCTTAACCCAAAAATAAGGGAAAGGGTCCAA
-AAAGCGCTCGGACAACTGTTGACCGTGATCCGAAGGACTGGCTATACAGTGTTCACAAAA
-TAGCCAAGCTGAAAATAATGTGTAGCTATGTTCAGTTAGTTTGGCTAGCAAAGATATAAA
-AGCAGGTCGGAAATATTTATGGGCATTATTATGCAGAGCATCAACATGATAAAAAAAAAC
-AGTTGAATATTCCCTCAAAA
->GAL80	YML051W upstream sequence, from -800 to -1
-TATCCTTTACGTTTTGACTTGGTGCTCGAAGATGCTTTCAGAGATGGTGCTTATCCTCAT
-GTCTTTTGGGTTTGTCTTCAATACGGCAGCCGTTGTCTTGCAAACGGCCGCCTCTGCCAT
-GGCAAAGAATGCTTTCCATGACGATCATCGTAGTGCCCAATTGGGTGCCTCTATGATGGG
-TATGGCTTGGGCAAGTGTCTTTTTATGTATCGTGGAATTTATCCTGCTGGTCTTCTGGTC
-TGTTAGGGCAAGGTTGGCCTCTACTTACTCCATCGACAATTCAAGATACAGAACCTCCTC
-CAGATGGAATCCCTTCCATAGAGAGAAGGAGCAAGCAACTGACCCAATATTGACTGCCAC
-TGGACCTGAAGACATGCAACAAAGTGCAAGCATAGTGGGGCCTTCTTCCAATGCTAATCC
-GGTCACTGCCACTGCTGCTACGGAAAACCAACCTAAAGGTATTAACTTCTTCACTATAAG
-AAAATCACACGAGCGCCCGGACGATGTCTCTGTTTAAATGGCGCAAGTTTTCCGCTTTGT
-AATATATATTTATACCCCTTTCTTCTCTCCCCTGCAATATAATAGTTTAATTCTAATATT
-AATAATATCCTATATTTTCTTCATTTACCGGCGCACTCTCGCCCGAACGACCTCAAAATG
-TCTGCTACATTCATAATAACCAAAAGCTCATAACTTTTTTTTTTGAACCTGAATATATAT
-ACATCACATATCACTGCTGGTCCTTGCCGACCAGCGTATACAATCTCGATAGTTGGTTTC
-CCGTTCTTTCCACTCCCGTC
->MEL1	YBR184W upstream sequence, from -800 to -1
-GCATACTCTACGTTATTTACAAAAATGTCGATATCCATCAAATTTTGTTTGGCGTACAGA
-TTGTAGTTGTGGCTGCTACTGCAGGAAGTTTGACGTACAGATACGTCCATGATCCACTTG
-CCAAAAGAAATCTCAAGGCTTCAATGGCGCTCGGCGCAATTTTGTTCTTATCTGGCTACA
-TTTCGTGGCTACTTGATATACACTATTGTTCGTTCTGGGTGCACGTTAGAAGAAGTATTT
-TGGCTTTACCACTTGGTGTACTGCTTGAACCACACGGATGGTGGCATATATTAACTGGTA
-TGGGGATTTATTTCTACATTGTTTCTTTGGAACATTTAAGGGTCATTACGCTCAACGTCA
-GCTGCAATTACCAGTTCATCTGGAGATGGAAAGTCTTCCCTGAACTGATATGGAAAGGGC
-GCAAACCCTCAACAAGATATTCACTTGAACTATTTGGCCCATACGTAGAAGATCAATCAA
-TTGAAGTTAAAAAGGAGAAGTAATAATTATAGCATAATATATATTCATAATGTATAGGCA
-TATTTATTTTTTATTTTTTTTATTTCATGTTCTATTTAATGACGAATCACGAAGAAAATA
-TATCTAAGAAAAGATCTTTTGAATCCTTGATTTGCGAATAGTTTAAATGACCCAGCTTAT
-TGCTCTGGTGAAAAAAAACTTTGTGCGGTCTCAAAGCCGTCGGCGGCAAAATAACGTGAA
-TTGATGAAAGTAAATAAACAAAACAAAATCTCTAATTGTTGTAACACAAATACTAAGAAA
-TTTGTTAGCTAATTCGGGAC
->GCY1	YOR120W upstream sequence, from -800 to -1
-GTCTTAGTATCTCATCTCATCTCAATTTCTATATTCCACTATAAAATTTTTCACTCTTTC
-TGCGCGCGCCAATGTCCCCGCAACTACTCAATAGGTAACATGAGAATATTTCAGTTCGTA
-AGAGAGAAGAGATGAAGTTATTTGGGCTCTTTGCTCGAGGTTACAGAAGGGCCGCATTAG
-AGTGAATGAGCTGATGATATTTCGCCCAGTTCTACATTTTTTTTTTTTTGGAAGTATGAC
-CTCTGTTAAATTTTTTTTTTTTTAAATTTCACTTTCTAAAGTCCCAGAAATCCGCTTGAA
-TGTCTTACATATTGCAATGGATATGCTTGGGTGATCATACTTCCTGGCTTTAGATATTTG
-AAACTTAACTCTTGTCAACAAACTTCCTATGGAGTGTATAAGAATTGTAAGTTATAACAC
-CGGCGAACAATCGGGGCAGACTATTCCGGGGAAGAACAAGGAAGGGCGGTCTTTTCTCCC
-TCATTGTCATAGCAAGGTCATTTCGCCTTCTCAGAAAGGGGTAGAATCAATCTAGCACGC
-AGATTGCAAACACGGCTTAATAATATGCCTATCAGGCATTCACCCGTGTGACGAATCGCA
-CACCGCTGCTCTCCTTAATTCCCTAGAGTAGAAACCGAGCTTTCAGGAAAAGACTACGGC
-AGTAAAGAATTGCTTTACTGGGCGTATAAAACCGGGAGAATCAAGACATTCTAATGACTT
-GATTCAGGATGAGAGCTTAATAGGTGCATCTTAGCAAGCTAAAATTTGGACAGCTCTCAT
-TACTAAATTAAGATAGAAAA";
+$demo_seq = "";
+
+open(my $fh, "demo_files/dyad_analysis_demo_seq.fa");
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_seq .= $row;
+    $demo_seq .= "\\n";
+}
+
+print '<script>
+function setDemo(demo_seq){
+    $("#reset").trigger("click");
+    sequence.value = demo_seq;
+    sequence_format.value = "fasta";
+    $("[name=\'background\']").val("upstream-noorf");
+    $("#bg_level_organism").prop("checked",true);
+    
+    $("#org_select_rsat").prop("checked", true);
+    $("#organism").val("Saccharomyces_cerevisiae").trigger("chosen:updated");
+    $("#outputformat_seq").prop("checked", true);
+}
+</script>';
+
 print "<TD><B>";
-print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
-print $query->hidden(-name=>'sequence_format',-default=>"fasta");
-#print $query->hidden(-name=>'spacing_from',-default=>"8");
-#print $query->hidden(-name=>'spacing_to',-default=>"12");
-print $query->hidden(-name=>'background',-default=>"upstream-noorf");
-print $query->hidden(-name=>'bg_level',-default=>"organism");
-print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
-print $query->hidden(-name=>'gibbs_msps',-default=>"2");
-print $query->hidden(-name=>'gibbs_flanks',-default=>"2");
-#print $query->hidden(-name=>'title',-default=>'upstream sequences from the yeast GAL genes');
-print $query->submit(-label=>"DEMO");
+
+print '<button type="button" onclick="setDemo('. "'$demo_seq'" .')">DEMO</button>';
+
 print "</B></TD>\n";
 print $query->end_form;
 
 
 #print "<TD><B><A HREF='demo.dyad-analysis.html'>DEMO</A></B></TD>\n";
-print "<TD><B><A HREF='help.dyad-analysis.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_dyad-analysis.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.dyad-analysis.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='tutorials/tut_dyad-analysis.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
@@ -336,9 +260,9 @@ sub ReturnTable {
     print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 			$query->Tr({-align=>left,-valign=>TOP},
 				   [
-				    $query->th([" <A HREF='help.oligo-analysis.html#return_fields'>Fields</A> ",
-						" <A HREF='help.oligo-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
-						" <A HREF='help.oligo-analysis.html#thresholds'>Upper<BR>Threshold</A> "]),
+				    $query->th([" <A class='iframe' HREF='help.oligo-analysis.html#return_fields'>Fields</A> ",
+						" <A class='iframe' HREF='help.oligo-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
+						" <A class='iframe' HREF='help.oligo-analysis.html#thresholds'>Upper<BR>Threshold</A> "]),
 
 				    ### occurrences
 				    $query->td([$query->checkbox(-name=>'occ',

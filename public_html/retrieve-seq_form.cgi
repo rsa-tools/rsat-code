@@ -46,9 +46,9 @@ foreach $key (keys %default) {
   }
 }
 
+
 ### print the form ###
 &RSA_header("retrieve sequence", 'form');
-
 
 ### head
 print "<CENTER>";
@@ -56,8 +56,10 @@ print "Returns upstream, downstream or ORF sequences for a list of genes<P>\n";
 print "</CENTER>";
 print "<b>Remark: If you want to retrieve sequences from an organism that is in the <a href='http://www.ensembl.org'>EnsEMBL</a> database, we recommand to use the <a href='retrieve-ensembl-seq_form.cgi'>retrieve-ensembl-seq</a> program instead</b><p>\n";
 
-print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
+#print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
+print "<form method='post' enctype='multipart/form-data' action='retrieve-seq.cgi'>";
 
+print "<input type='text' id='menu_open' name='menu_open' style='display:none'>";
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
@@ -70,7 +72,7 @@ if ($default{single_multi_org} eq 'single') {
     $CHECKED = "";
 }
 print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='single' $CHECKED>", 
-       "<A HREF=help.retrieve-seq.html#single_org>",
+       "<A class='iframe' HREF=help.retrieve-seq.html#single_org>",
        "<b>Single organism</b>",
        "</A>\n");
 #print "&nbsp;"x4, &OrganismPopUpSelectable();
@@ -85,7 +87,7 @@ if ($default{single_multi_org} eq 'multi') {
 }
 print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='multi' $CHECKED>", 
        "<b>Multiple organisms</b>",
-       " (2-column input, check <A HREF=help.retrieve-seq.html#multi_org>help</a> for format)",
+       " (2-column input, check <A class='iframe' HREF=help.retrieve-seq.html#multi_org>help</a> for format)",
        "\n"
       );
 
@@ -108,7 +110,7 @@ print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='multi' $CHECKED>",
 
 ### query (gene list)
 print "<p>";
-print "<B><A HREF='help.retrieve-seq.html#genes'>Genes</A></B>&nbsp;";
+print "<B><A class='iframe' HREF='help.retrieve-seq.html#genes'>Genes</A></B>&nbsp;";
 print $query->radio_group(-name=>'genes',
 			  -values=>['all','selection'],
 			  -default=>$default{genes});
@@ -116,11 +118,14 @@ print $query->radio_group(-name=>'genes',
 print "<BR>\n";
 print "<UL>\n";
 
-print $query->textarea(-name=>'gene_selection',
-		       -default=>$default{gene_selection},
-		       -rows=>6,
-		       -columns=>65);
-### option to upload a file with the gene list from the client machine 
+#print $query->textarea(-name=>'gene_selection',
+#		       -default=>$default{gene_selection},
+#		       -rows=>6,
+#		       -columns=>65);
+
+print "<textarea id='gene_selection' name='gene_selection' rows='6' cols='65'>$default{gene_selection}</textarea>";
+
+### option to upload a file with the gene list from the client machine
 print "<BR>Upload gene list from file<BR>\n";
 print $query->filefield(-name=>'uploaded_file',
 			-default=>'',
@@ -131,51 +136,58 @@ print $query->filefield(-name=>'uploaded_file',
 print "<br>", $query->checkbox(-name=>'ids_only',
 			       -checked=>$default{ids_only},
 			       -label=>'');
-print "<a href=help.retrieve-seq.html#ids_only>Query contains only IDs (no synonyms)</a>";
+print "<a class='iframe' href=help.retrieve-seq.html#ids_only>Query contains only IDs (no synonyms)</a>";
 
 print "</UL>\n";
 print "<BR>\n";
 
 #### feature type
-print "<B><A HREF='help.retrieve-seq.html#feattype'>Reference feature type (reference coordinate for positions)</A></B>&nbsp;<br>";
+print "<B><A class='iframe' HREF='help.retrieve-seq.html#feattype'>Reference feature type (reference coordinate for positions)</A></B>&nbsp;<br>";
 print $query->radio_group(-name=>'feattype',
 			  -values=>[@supported_feature_types],
 			  -default=>$default{feattype});
 print "<BR>\n";
 
 ### sequence type
-print "<B><A HREF='help.retrieve-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
+print "<B><A class='iframe' HREF='help.retrieve-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
 print $query->popup_menu(-name=>'sequence_type',
 			 -Values=>['upstream','downstream','ORFs (unspliced)'],
 			 -default=>$default{sequence_type});
 
 ### from to
 print "&nbsp;&nbsp;";
-print "<B><A HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
-print $query->textfield(-name=>'from',
-			-default=>$default{from},
-			-size=>5);
+print "<B><A class='iframe' HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
+#print $query->textfield(-name=>'from',
+#			-default=>$default{from},
+#			-size=>5);
+
+print "<input type='text' id='from' name='from' value=$default{from} size='5'/>";
 
 print "&nbsp;&nbsp;";
-print "<B><A HREF='help.retrieve-seq.html#from_to'>To</A></B>&nbsp;\n";
-print $query->textfield(-name=>'to',
-			-default=>$default{to},
-			-size=>5);
+print "<B><A class='iframe' HREF='help.retrieve-seq.html#from_to'>To</A></B>&nbsp;\n";
+#print $query->textfield(-name=>'to',
+#			-default=>$default{to},
+#			-size=>5);
+print "<input type='text' id='to' name='to' value=$default{to} size='5'/>";
+
+
 print "<BR>\n";
 
 ### prevent ORF overlap
-print $query->checkbox(-name=>'noorf',
-  		       -checked=>$default{noorf},
-  		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>Prevent overlap with neighbour genes (noorf)</B></A>";
+#print $query->checkbox(-name=>'noorf',
+#  		       -checked=>$default{noorf},
+#  		       -label=>'');
+print "<input type='checkbox' name='noorf' id='noorf' checked='$default{noorf}' />";
+
+print "&nbsp;<A class='iframe' HREF='help.retrieve-seq.html#noorf'><B>Prevent overlap with neighbour genes (noorf)</B></A>";
 print "<BR>\n";
 
 ### Repeat masking
 print $query->checkbox(-name=>'rm',
   		       -checked=>$default{rm},
   		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
-print "&nbsp;<A HREF='help.retrieve-seq.html#rm_list'><B>(only valid for organisms with annotated repeats)</B></A>";
+print "&nbsp;<A class='iframe' HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
+print "&nbsp;<A class='iframe' HREF='help.retrieve-seq.html#rm_list'><B>(only valid for organisms with annotated repeats)</B></A>";
 print "<BR>\n";
 
 ################################################################
@@ -193,7 +205,7 @@ print "<BR>\n";
 # print "<BR>\n";
 
 ### sequence format 
-print "<B><A HREF='help.retrieve-seq.html#formats'>Sequence format</A></B>&nbsp;";
+print "<B><A class='iframe' HREF='help.retrieve-seq.html#formats'>Sequence format</A></B>&nbsp;";
 print $query->popup_menu(-name=>'format',
 			 -Values=>['fasta', 
 				   'IG',
@@ -203,7 +215,7 @@ print $query->popup_menu(-name=>'format',
 print "<BR>\n";
 
 ### sequence label
-print "<B><A HREF='help.retrieve-seq.html#seq_label'>Sequence label</A></B>&nbsp;";
+print "<B><A class='iframe' HREF='help.retrieve-seq.html#seq_label'>Sequence label</A></B>&nbsp;";
 print $query->popup_menu(-name=>'seq_label',
 			 -Values=>['gene identifier', 
 				   'gene name',
@@ -222,38 +234,47 @@ if ($query->param('taxon')) {
 ### send results by email or display on the browser
 &SelectOutput("server");
 
+
 ### data for the demo 
 @demo_genes = qw (DAL5 GAP1 MEP1 MEP2 PUT4 MEP3 DAL80);
-$demo_genes = join "\n", @demo_genes;
+$demo_genes = join "\\n", @demo_genes;
 
 
 ### action buttons
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
+
+
+
 print $query->end_form;
 
-print $query->start_multipart_form(-action=>"retrieve-seq_form.cgi");
+
+
 print "<TD><B>";
-print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
-print $query->hidden(-name=>'organism',-default=>"Saccharomyces cerevisiae");
-print $query->hidden(-name=>'from',-default=>"-800");
-print $query->hidden(-name=>'to',-default=>"-1");
-# $ENV{rsat_www} = 	'http://www.rsat.eu/';
-print $query->hidden(-name=>'noorf',-default=>"");
-print $query->submit(-label=>"DEMO");
+
+print "<script>
+function setDemo(demo_genes){
+    \$('#reset').trigger('click');
+    \$('#gene_selection').val(demo_genes);
+    \$('#from').val('-800');
+    \$('#to').val('-1');
+    \$('#noorf').removeAttr('checked');
+}
+</script>";
+print '<button type="button" onclick="setDemo('. "'$demo_genes'" .')">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
 #print "<TD><B><A HREF='demo.retrieve-seq.html'>DEMO</A></B></TD>\n";
-print "<TD><B><A HREF='help.retrieve-seq.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_retrieve-seq.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.retrieve-seq.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='htmllink.cgi?title=RSAT : Tutorials&file=tutorials/tut_retrieve-seq.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 #print "</FONT>\n";
+
 
 print $query->end_html;
 

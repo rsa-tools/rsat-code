@@ -7,6 +7,7 @@
 <?php
   require ('functions.php');
   require ('demo_dataset.php');
+    printMenu();
   # variable definition
   $default_stats = "checked";
   $default_rowstats = "checked";

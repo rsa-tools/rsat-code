@@ -6,6 +6,7 @@
 <body class="form">
 <?php
    require ('functions.php');
+    printMenu();
 
 # variable definition
 $default_mcol = 1;

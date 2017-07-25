@@ -6,6 +6,9 @@
 <body class="form">
 <?php
   require ('functions.php');
+    $menu = $_REQUEST['menu'];
+    printMenu($menu);
+    
 //   require ('demo_dataset.php');
   # variables definition
   $default_scolQ = 1;
@@ -161,9 +164,9 @@ and
     <input type='checkbox' name='directed' value='on'/>&nbsp;<B><a href = 'help.compare_graphs.html#directed'>Graphs must be considered as directed</a></B><br><br>");
   echo("<input type='checkbox' name='self' value='on'/>&nbsp;<B><a href = 'help.compare_graphs.html#directed'>Graph admits self loops</a></B><br><br></ul>");
   echo ("<ul><ul><table class='formbutton'>
-  <TD><input type='submit' name='.submit' value='GO' /></TD>
-  <TD><B><A HREF='compare_graphs_form.php?demo=0'>RESET</A></B></TD>
-  <TD><B><A HREF='compare_graphs_form.php?demo=1'>DEMO</A></B></TD>
+  <TD><input type='hidden' name='menu' value=$menu><input type='submit' name='.submit' value='GO' /></TD>
+  <TD><B><A HREF='compare_graphs_form.php?demo=0&menu=$menu'>RESET</A></B></TD>
+  <TD><B><A HREF='compare_graphs_form.php?demo=1&menu=$menu'>DEMO</A></B></TD>
   </form>
   <TD><B><A HREF='help.compare_graphs.html'>MANUAL</A></B></TD>
   <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Comparisons_between_network.html")."'>TUTORIAL</A></B></TD>
