@@ -1,13 +1,20 @@
 #!/usr/bin/perl
 #### this cgi script fills the HTML form for the program position-scan
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+    require "RSA.lib";
 }
+# if ($0 =~ /([^(\/)]+)$/) {
+#     push (@INC, "$`lib/");
+# }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA2.cgi.lib";
 require "matrix_web_forms.lib.pl";
+use RSAT::MatrixReader;
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
