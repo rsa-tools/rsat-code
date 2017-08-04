@@ -95,6 +95,7 @@
 #content h3 a {
 	color: #2D282E;
 	text-decoration: none;
+	font-weight: bold;
 }
 
 #content h3 a:hover {

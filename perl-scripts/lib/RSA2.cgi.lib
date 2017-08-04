@@ -334,17 +334,16 @@ document.getElementById("demo_descr").innerHTML = txt;
 </script>';
 
 
-    open(my $fh, "menu.html");
+    open(my $fh, "menu.php");
     while(my $row = <$fh>){
         print $row."\n";
     }
     
     print "<div class='container' id='page-content-wrapper'>";
     
-    if(! ($title =~ 'RSAT home')) {
-        print "<h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
+    if(! ($title =~ 'Regulatory Sequence Analysis Tools (RSAT)')) {
+        print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
     }
-
     
 &RSAT::server::DetectDeniedIP();
     
