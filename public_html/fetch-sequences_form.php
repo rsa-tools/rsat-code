@@ -45,6 +45,8 @@ Get  DNA sequences corresponding to set of genomic coordinates (<a target='_blan
    if ($properties['ucsc_tools'] == 0) {
      echo ("<font size='+1'>");
      echo("<span style='color:#DD0000'>Sorry, this RSAT instance does not support UCSC fetch-sequence tool.</span>");
+
+
      if (($properties['group_specificity'] != "") &&
 	 ($properties['group_specificity'] != "Metazoa")
 	 ) {
