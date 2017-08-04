@@ -14,6 +14,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA2.cgi.lib";
 require "matrix_web_forms.lib.pl";
+use RSAT::MatrixReader;
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
