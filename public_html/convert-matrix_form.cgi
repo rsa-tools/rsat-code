@@ -22,6 +22,7 @@ use RSAT::MatrixReader;
 $query = new CGI;
 
 local @supported_output_formats = sort(keys( %RSAT::matrix::supported_output_format));
+local @supported_input_formats = sort(keys( %RSAT::MatrixReader::supported_input_format));
 
 ################################################################
 ### default values for filling the form
