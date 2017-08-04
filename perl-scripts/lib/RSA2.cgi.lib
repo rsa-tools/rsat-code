@@ -344,6 +344,7 @@ document.getElementById("demo_descr").innerHTML = txt;
     if(! ($title =~ 'Regulatory Sequence Analysis Tools (RSAT)')) {
         print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
     }
+
     
 &RSAT::server::DetectDeniedIP();
     
