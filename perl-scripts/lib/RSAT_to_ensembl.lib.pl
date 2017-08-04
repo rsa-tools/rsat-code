@@ -59,7 +59,7 @@ sub get_ensembl_release {
 
   ## TEMPORARY: for the time being, the release is only used by
   ##  reference to ensembl, not ensemblgenomes, even if the queried db is
-  ##  EnsemblGenomes. I (JvH) should cliarify this.  
+  ##  EnsemblGenomes. I (JvH) should clarify this.  
   my $db = "ensembl";
   # my ($db) = @_;
 
