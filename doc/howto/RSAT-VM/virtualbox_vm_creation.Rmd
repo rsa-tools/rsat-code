@@ -29,6 +29,9 @@ output:
 
 2. Understand when and why the file `/etc/bash_completion.d/grub` appears in the folder `/etc/bash_completion.d/`. This config file creates warnings (see <https://askubuntu.com/questions/778439/have-command-not-found>), and I don't need it since grub is not installed. 
 
+3. Share folder on host computer. Answer mail from Fernando Hayashi Sant Anna <fhsantanna@yahoo.com.br> about folder sharing not working because cannot install the virtualbox guest additions package.
+
+
 ****************************************************************
 # Requirements
 
@@ -39,11 +42,16 @@ Before starting the installation process, we recommend to download the following
 
 Virtualbox:  <https://www.virtualbox.org/wiki/Downloads>
 
-Ubuntu Desktop:  [ubuntu-17.04-desktop-amd64](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-desktop-amd64.iso) (1.5Gb).
+Ubuntu Desktop: current RSAT-VM releases are based on Ubuntu 17.04, but the inscallation procedure works on earlier versions (maybe some slight modifications).
 
-Lighter alternative (without graphical Ubuntu interface): Ubuntu Server Version 17.04: [ubuntu-17.04-server-amd64](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-server-amd64.iso) (685Mb).
+- **Ubuntu 17.04 (Zesty Zapus)** [ubuntu-17.04-desktop-amd64.iso](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-desktop-amd64.iso) (1.5Gb).
 
-<!--- Version 14.04.5 <http://releases.ubuntu.com/14.04/ubuntu-14.04.5-desktop-amd64.iso>-->
+- **Ubuntu 16.04.2 LTS (Xenial Xerus):** [ubuntu-16.04.2-desktop-amd64.iso](http://releases.ubuntu.com/releases/16.04/ubuntu-16.04.2-desktop-amd64.iso) (1.4Gb).
+
+- **Ubuntu 14.04.5 LTS (Trusty Tahr)** [ubuntu-14.04.5-desktop-amd64.iso](http://releases.ubuntu.com/releases/14.04/ubuntu-14.04.5-desktop-amd64.iso) (1.0Gb).
+
+- Lighter alternative (without graphical Ubuntu interface): **Ubuntu Server Version 17.04**: [ubuntu-17.04-server-amd64.iso](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-server-amd64.iso) (685Mb).
+
 
 ****************************************************************
 # Installation of the virtual machine

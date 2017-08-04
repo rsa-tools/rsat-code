@@ -62,8 +62,8 @@ $parameters .= " -max_matrices ".$max_matrices;
 ################################################################
 ## Matrix input format
 local $query_matrix_format = lc($query->param('matrix_format'));
-($query_matrix_format) = split (/\s+/, $query_matrix_format);
-$parameters .= " -matrix_format ".$query_matrix_format;
+# ($query_matrix_format) = split (/\s+/, $query_matrix_format);
+# $parameters .= " -matrix_format ".$query_matrix_format;
 
 ################################################################
 #### Query matrix file
@@ -78,7 +78,7 @@ if($collection_label){
     $collection_label = "Collection_1";
 }
 
-$parameters .= " -matrix $collection_label $matrix_file";
+$parameters .= " -matrix $collection_label $matrix_file $query_matrix_format";
 
 
 ######################
@@ -91,6 +91,7 @@ local $matrix_file_2 = &GetSecondMatrixFile($output_path."/".$output_prefix."_se
 
 ################################
 ## Add motif collection label
+local $query_matrix_2_format = lc($query->param('matrix_format_2'));
 local $collection_2_label = lc($query->param('collection_2_label'));
 if($collection_2_label){
     $collection_2_label =~ s/\s+/_/g;
@@ -98,7 +99,7 @@ if($collection_2_label){
     $collection_2_label = "Collection_2";
 }
 if($query->param('matrix_2')){
-    $parameters .= " -matrix $collection_2_label $matrix_file_2";
+    $parameters .= " -matrix $collection_2_label $matrix_file_2 $query_matrix_2_format";
 }
 
 ######################
@@ -111,6 +112,7 @@ local $matrix_file_3 = &GetThirdMatrixFile($output_path."/".$output_prefix."_thi
 
 ################################
 ## Add motif collection label
+local $query_matrix_3_format = lc($query->param('matrix_format_3'));
 local $collection_3_label = lc($query->param('collection_3_label'));
 if($collection_3_label){
     $collection_3_label =~ s/\s+/_/g;
@@ -118,7 +120,7 @@ if($collection_3_label){
     $collection_3_label = "Collection_3";
 }
 if($query->param('matrix_3')){
-    $parameters .= " -matrix $collection_3_label $matrix_file_3";
+    $parameters .= " -matrix $collection_3_label $matrix_file_3 $query_matrix_3_format";
 }
 
 push @result_files, ("Input file",$matrix_file);
