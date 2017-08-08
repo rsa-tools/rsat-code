@@ -425,10 +425,11 @@ sub setAlphabet_lc {
 
 sub set_alphabet_for_type {
   my ($self) = @_;
-  my $matrix_type = $self->get_attribute("type");
+  my $matrix_type = $self->get_attribute("residue_type");
   unless ($matrix_type) {
     $matrix_type = "dna";
-    $self->force_attribute("type", $matrix_type);
+    $self->force_attribute("residue_type", $matrix_type);
+    $self->set_parameter("residue_type", $matrix_type);
   }
 #  &RSAT::message::Debug("matrix_type", $matrix_type) if ($main::verbose >= 10);
   
@@ -822,7 +823,7 @@ Usage: $matrix->sort_row()
 =cut
 sub sort_rows {
   my ($self) = @_;
-  my $type = $self->get_attribute("type") || "dna";
+  my $type = $self->get_attribute("residue_type") || "dna";
   if (lc($type) eq "dna") {
     my @alphabet = $self->getAlphabet();
     my $ncol = $self->ncol();
@@ -1506,10 +1507,11 @@ sub to_tab {
       @matrix = @{$self->{$type}};
     }
 
-#    &RSAT::message::Debug("matrix to print", $self->get_attribute("id"), $type, join ", ", @matrix) if ($main::verbose >= 10);
+    # &RSAT::message::Debug("matrix to print", $self->get_attribute("id"), $type, join ", ", @matrix) if ($main::verbose >= 10);
     my @alphabet = $self->getAlphabet();
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
+    &RSAT::message::Debug("matrix", $self->get_attribute("id"), $residue_type, $ncol, $nrow, join(":", @alphabet)) if ($main::verbose >= 0);
 
     ## Header of the matrix
     if (($self->get_attribute("header"))
@@ -2632,7 +2634,7 @@ sub calcConsensus {
     ## Use uppercase for scores >= 1.  This is only valid for DNA
     ## alphabet, since other alphabets may be case-sensitive
     ## (e.g. Cytomod).
-    #if ($self->get_attribute("type") eq "dna") {
+    #if ($self->get_attribute("residue_type") eq "dna") {
       if ($col_max >= 1) {
 	$consensus_strict .= uc($col_consensus);
 	$consensus .= uc($regular);
@@ -3021,7 +3023,7 @@ sub _printMatrixRow {
 
 =item get_row($row_nb, $ncol, @table)
 
-Return a row of the table as a list.
+Return an array with the values of a matrix row.
 
 =cut
 sub get_row {
@@ -4478,6 +4480,15 @@ sub makeLogo {
     &RSAT::message::Debug("makeLogo", $id, $logo_dir, $nb_sites, $rev_compl, "fake sequences", $fake_seq_file) if ($main::verbose >= 5);
   }
 
+  $self->set_alphabet_for_type();
+  my $residue_type = "";
+  $residue_type = $self->get_attribute("residue_type");
+  my $alphastring = "";
+  $alphastring = " --alphabet 'ACGTm1h2'" if ($residue_type eq 'cytomod');
+  $alphastring = " --alphabet 'ACGT'" if ($residue_type eq 'dna');
+  
+  print "-> ".$residue_type."\n";
+
   ## Generate the logo(s)
   foreach my $logo_format (@logo_formats){
     my $logo_cmd = "";
@@ -4500,7 +4511,10 @@ sub makeLogo {
       &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
       &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5); 
 
-    } else {      
+    } else {
+
+
+
       ## Prepare the NEW weblogo3 command
       $logo_cmd = "cd ".$logo_dir;
       $logo_cmd .= "; ".$logo_cmd_path;
@@ -4523,12 +4537,21 @@ sub makeLogo {
       $logo_cmd .= " --show-yaxis YES";
       $logo_cmd .= " --show-xaxis YES";
       $logo_cmd .= " --resolution 299";
-      $logo_cmd .= " --sequence-type dna";
+#      $logo_cmd .= " --sequence-type dna";
       $logo_cmd .= " --errorbars YES";
       $logo_cmd .= " --color '#CA0813' T 'Thymine'";
       $logo_cmd .= " --color '#061AC8' C 'Cytosine'";
       $logo_cmd .= " --color '#1FCA23' A 'Adenine'";
       $logo_cmd .= " --color '#FDB22B' G 'Guanine'";
+
+
+
+      $logo_cmd .= " --color '#D73027' m '5-Methylcytosine'" if ($residue_type eq 'cytomod');
+      $logo_cmd .= " --color '#4575B4' 1 'Guanine:5-Methylcytosine'" if ($residue_type eq 'cytomod');
+      $logo_cmd .= " --color '#F46D43' h '5-Hydroxymethylcytosine'" if ($residue_type eq 'cytomod');
+      $logo_cmd .= " --color '#74ADD1' 2 'Guanine:5-Hydroxymethylcytosine'" if ($residue_type eq 'cytomod');
+
+      $logo_cmd .= $alphastring;
       $logo_cmd .= " --xlabel '".$logo_info."'";
       $logo_cmd .= " --size large " unless ($logo_options =~ /\-s /);
       $logo_cmd .= " --aspect-ratio 3 ";
@@ -4541,10 +4564,7 @@ sub makeLogo {
     }
     
 
-#      $logo_cmd .= " --color '#D73027' m '5-Methylcytosine'";
-#      $logo_cmd .= " --color '#4575B4' 1 'Guanine:5-Methylcytosine'";
-#      $logo_cmd .= " --color '#F46D43' h '5-Hydroxymethylcytosine'";
-#      $logo_cmd .= " --color '#74ADD1' 2 'Guanine:5-Hydroxymethylcytosine'";
+
 #      $logo_cmd .= " --color '#FDAE61' f '5-Formylcytosine'";
 #      $logo_cmd .= " --color '#ABD9E9' 3 'Guanine:5-Formylcytosine'";
 #      $logo_cmd .= " --color '#FEE090' c '5-Carboxylcytosine'";
