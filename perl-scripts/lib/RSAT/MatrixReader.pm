@@ -110,29 +110,29 @@ sub readFromFile {
     my @matrices = ();
 
     if (($format eq "consensus") || ($format =~ /^wc/i)) {
-	@matrices = _readFromConsensusFile($file);
+	@matrices = _readFromConsensusFile($file, %args);
     } elsif ($format eq "transfac") {
-	@matrices = _readFromTRANSFACFile($file, "transfac");
+	@matrices = _readFromTRANSFACFile($file, "transfac", %args);
     } elsif ($format eq "cis-bp") {
-	@matrices = _readFromTRANSFACFile($file, "cis-bp");
+	@matrices = _readFromTRANSFACFile($file, "cis-bp", %args);
     } elsif ($format eq "yeastract"){
-	@matrices = _readFromTRANSFACFile($file, "yeastract");
+	@matrices = _readFromTRANSFACFile($file, "yeastract", %args);
     
 #    } elsif ($format eq "stamp-previous") {
     } elsif ($format eq "stamp") { ## This is the format of STAMP demo matrices
-	@matrices = _readFromSTAMPFile($file);
+	@matrices = _readFromSTAMPFile($file, %args);
     } elsif ($format eq "stamp-transfac") { ## STAMP exports files in a transfac-like format
-	@matrices = _readFromTRANSFACFile($file, "stamp"); 
+	@matrices = _readFromTRANSFACFile($file, "stamp", %args); 
     } elsif ($format eq "footprintdb") { ## footprintDB exports files in a transfac-like format
-	@matrices = _readFromTRANSFACFile($file, "stamp"); 
+	@matrices = _readFromTRANSFACFile($file, "stamp", %args); 
     } elsif ($format eq "infogibbs") {
-	@matrices = _readFromInfoGibbsFile($file);
+	@matrices = _readFromInfoGibbsFile($file, %args);
     } elsif ($format eq "assembly") {
-	@matrices = _readFromAssemblyFile($file);
+	@matrices = _readFromAssemblyFile($file, %args);
     } elsif ($format eq "gibbs") {
-	@matrices = _readFromGibbsFile($file);
+	@matrices = _readFromGibbsFile($file, %args);
     } elsif ($format eq "alignace") {
-	@matrices = _readFromAlignACEFile($file);
+	@matrices = _readFromAlignACEFile($file, %args);
     } elsif ($format eq "tab") {
 	@matrices = _readFromTabFile($file, %args);
     } elsif ($format eq "cluster-buster") {
@@ -146,13 +146,13 @@ sub readFromFile {
     } elsif ($format eq "uniprobe") {
 	@matrices = _readFromUniprobeFile($file, %args);
     } elsif ($format eq "motifsampler") {
-	@matrices = _readFromMotifSamplerFile($file);
+	@matrices = _readFromMotifSamplerFile($file, %args);
     } elsif ($format eq "meme_block") {
-	@matrices = _readFromMEMEFile($file);
+	@matrices = _readFromMEMEFile($file, %args);
 	} elsif ($format eq "meme") {
 	@matrices = _readFromMEMEFile_2015($file, %args);
     } elsif ($format eq "feature") {
-	@matrices = _readFromFeatureFile($file);
+	@matrices = _readFromFeatureFile($file, %args);
       } elsif ($format eq "sequences") {
 	@matrices = _readFromSeq($file, %args);
     } else {
@@ -502,7 +502,7 @@ C<readFromFile($file, "TRANSFAC")>.
 
 =cut
 sub _readFromTRANSFACFile {
-  my ($file, $format) = @_;
+  my ($file, $format, %args) = @_;
   &RSAT::message::Info ("Reading matrix from TRANSFAC file", $file) if ($main::verbose >= 3);
 
   ## open input stream
@@ -545,6 +545,12 @@ sub _readFromTRANSFACFile {
       $current_matrix_nb++;
       $transfac_consensus = "";
       $matrix = new RSAT::matrix();
+
+      if (defined($args{residue_type})) {
+	$matrix->set_parameter("residue_type", $args{type});
+	$matrix->force_attribute("residue_type", $args{type});
+      }
+
       $matrix->set_parameter("program", "transfac");
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       push @matrices, $matrix;
@@ -757,7 +763,7 @@ C<readFromFile($file, "STAMP")>.
 
 =cut
 sub _readFromSTAMPFile {
-  my ($file) = @_;
+  my ($file, %args) = @_;
   &RSAT::message::Info ("Reading matrix from STAMP file", $file) if ($main::verbose >= 3);
 
   ## open input stream
@@ -1136,7 +1142,7 @@ sub _readFromInfoGibbsFile {
 
 # =cut
 # sub _readFromOldInfoGibbsFile {
-#   my ($file) = @_;
+#   my ($file, %args) = @_;
 #   &RSAT::message::Info ("Reading matrices from InfoGibbs file", $file) if ($main::verbose >= 3);
 
 #   ## open input stream
@@ -1358,7 +1364,7 @@ C<readFromFile($file, "AlignACE")>.
 
 =cut
 sub _readFromAlignACEFile {
-  my ($file) = @_;
+  my ($file, %args) = @_;
   my @matrices = ();
 
   my ($in, $dir) = &main::OpenInputFile($file);
@@ -1469,7 +1475,7 @@ exported in percentages, and with some fuzzy rounding.
 
 =cut
 sub _readFromGibbsFile {
-    my ($file) = @_;
+    my ($file, %args) = @_;
 
     my $parse_model = 0; ## boolean: indicates whether or not to parse matrices from motif models
     my $initial_matrices = 0;  ## boolean: indicates whether or not to export the initial matrices resulting from the optimization
@@ -1657,7 +1663,7 @@ method C<readFromFile($file, "consensus")>.
 
 =cut
 sub _readFromConsensusFile {
-  my ($file) = @_;
+  my ($file, %args) = @_;
   &RSAT::message::Info ("Reading matrix from consensus file", $file) if ($main::verbose >= 3);
   #    ($in, $dir) = &main::OpenInputFile($file);
 
@@ -1785,7 +1791,7 @@ called by the method C<readFromFile($file, "assembly")>.
 
 =cut
 sub _readFromAssemblyFile {
-  my ($file) = @_;
+  my ($file, %args) = @_;
   &RSAT::message::Info ("Reading matrix from pattern-assembly file", $file) if ($main::verbose >= 3);
 
   ## open input stream
@@ -2124,7 +2130,7 @@ Reference:
 
 =cut
 sub _readFromEncodeFile {
-    my ($file) = @_;
+    my ($file, %args) = @_;
     &RSAT::message::Info(join("\t", "Reading matrix from Encode file\t",$file)) if ($main::verbose >= 3);
 
 
@@ -2442,7 +2448,7 @@ Instantiate a new matrix with a JASPAR record.
 =cut
 
 sub NewJasparMatrix {
-  my ($id, $name) = @_;
+  my ($id, $name, %args) = @_;
   $matrix = new RSAT::matrix();
   &RSAT::message::Debug("_readFromJasparFile", $id, $name, $matrix) if ($main::verbose >= 5);
   $matrix->set_parameter("program", "jaspar");
@@ -2606,7 +2612,7 @@ method C<readFromFile($file, "MEME")>.
 
 
 sub _readFromMEMEFile {
-  my ($file) = @_;
+  my ($file, %args) = @_;
   &RSAT::message::Info("Reading matrix from MEME BLOCK file (obsolete)\t", $file) if ($main::verbose >= 3);
 
   ## open input stream
@@ -2797,17 +2803,17 @@ sub _readFromMEMEFile_2015 {
 	#&RSAT::message::Debug("MEME background frequencies", $residue, $frequency) if ($main::verbose >= 10);
       }
 
-#      die ("HELLO");
-#      %residue_frequencies = split /\s+/, $bg_freq;
-#      @alphabet = sort (keys %residue_frequencies);     
-#      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
-
       ## Index the alphabet
-      foreach my $l (0..$#alphabet) {
-	$alphabet{$alphabet[$l]} = $l;
+      foreach my $letter (0..$#alphabet) {
+	$alphabet{$alphabet[$letter]} = $letter;
       }
 
-    # MOTIF crp alternative name
+      # &RSAT::message::Debug("line", $l, "Read letter frequencies", join(" ", %residue_frequencies)) if ($main::verbose >= 10);
+      # &RSAT::message::Debug("line", $l, "Alphabet", join(" ", @alphabet)) if ($main::verbose >= 10);
+      # die ("HELLO");
+
+
+    # MOTIF start
     } elsif (/MOTIF\s+(\S+)\s*(\S*)/) {
       $current_matrix_nb += 1;
       $ncol = 0;
@@ -2823,22 +2829,21 @@ sub _readFromMEMEFile_2015 {
       $matrix->set_parameter("ac", $ac); ## For TRANSFAC compatibility
       $matrix->set_parameter("name", $id); ## For readability of logos
       if (defined($args{"type"})) {
-	$matrix->set_parameter("type", $args{type});
+	$matrix->set_parameter("residue_type", $args{type});
+	$matrix->force_attribute("residue_type", $args{type});
 #	&RSAT::message::Debug("matrix type", $matrix->get_attribute("type")); die("HELLO");
       }
       $matrix->setAlphabet(@alphabet);
       $matrix->setPrior(%residue_frequencies);
+      $matrix->force_attribute("nrow", scalar(@alphabet));
       
       &RSAT::message::Debug("motif found line", $l, "id=$id ac=$ac name =$id") if ($main::verbose >= 5);
-    
+
     } elsif (/letter-probability matrix:.*w=\s*(\d+)\s+nsites=\s*(\d+)\s+E=\s*(\S+)/) {
       ## letter-probability matrix: alength= alphabet length w= motif length nsites= source sites E= source E-value
       $nb_sites = $2;
       $matrix->set_parameter("sites", $nb_sites);
       $matrix->set_parameter("meme.E-value", $3);
-#      $matrix->setPrior(%residue_frequencies);
-      #$matrix->setAlphabet_lc(@alphabet);
- #     $matrix->setAlphabet(@alphabet);
       push @matrices, $matrix;
 #       &RSAT::message::Debug("MEME matrix read", 
 # 			    $matrix->get_attribute("id"),
@@ -2858,40 +2863,23 @@ sub _readFromMEMEFile_2015 {
 	&RSAT::message::Debug("line", $l, "matrix cells parsed") if ($main::verbose >= 5);
 	$in_blocks = 0;
 
-# 	## Converting the frequency matrix to a count matrix
-# 	my @matrix = $matrix->getMatrix();
-# 	my $ncol = $matrix->ncol();
-# 	my $nrow = $matrix->nrow();
-# 	my $nb_sites = $matrix->get_attribute("sites");
-# 	&RSAT::message::Debug("Parsing matrix", $matrix->get_attribute("id"), 
-# 			      "ncol=".$ncol,
-# 			      "nrow=".$nrow,
-# 			      "sites=".$nb_sites) if($main::verbose >= 10);
-# 	for my $c (0..($ncol-1)) {
-# 	  for my $r (0..($nrow-1)) {
-# #	    $matrix[$c][$r] *= 100; #multiply by 100 to obtain count over 100
-# #	    $matrix[$c][$r] = $matrix[$c][$r] * $nb_sites / 100 ; ## put back to the number of contributing sites
-# 	    $matrix[$c][$r] = $matrix[$c][$r] * $nb_sites; ## put back to the number of contributing sites	    
-# 	    $matrix[$c][$r] = int($matrix[$c][$r] + 0.5); ## round to integer
-# #	    $matrix[$c][$r]  = 0;
-# 	  }
-# 	}
-# 	$matrix->setMatrix(@matrix);
 			
       } else {
-    	## Count column of the matrix file (row like in TRANSFAC format)
-	my $values = $_;
-	$values = &RSAT::util::trim($values);
-	my @fields = split /\s+/, $values;
-	&RSAT::message::Debug("line ".$l, "adding column", join (":", @fields)) if ($main::verbose >= 5);
-	$matrix->addColumn(@fields);
-	$ncol++;
-	$matrix->force_attribute("ncol", $ncol);
+    	## Count column of the matrix file (each row of MEME matrix corresponds to one column of the tab-delimited matrix)
+	$values = &RSAT::util::trim($_);
+	my @values = split /\s+/, $values;
+	$matrix->addColumn(@values);
+	&RSAT::message::Debug("line ".$l, "added column", $matrix->get_attribute("ncol"),
+			      join (":", @values)) if ($main::verbose >= 0);
+#	$ncol++;
+#	$matrix->force_attribute("ncol", $ncol);
 	next;
       }
     }
-    }
+
+  }
   close $in if ($file);
+#  die ("HELLO");
 
   ## Multiply frequencies by the number of sites to obtain counts
   foreach my $matrix (@matrices) {
@@ -2914,6 +2902,7 @@ sub _readFromMEMEFile_2015 {
       }
     }
     $matrix->setMatrix(@matrix);
+
   }
 
   return @matrices;
@@ -2985,7 +2974,7 @@ the matrix (or matrices).
 
 =cut
 sub _readFromFeatureFile {
-  my ($file) = @_;
+  my ($file, %args) = @_;
   &RSAT::message::Info("Reading matrix from feature file\t", $file) if ($main::verbose >= 3); 
 
   ## open input stream
@@ -3220,7 +3209,7 @@ Read a matrix from a multiple alignment in clustal format (extension
 
 =cut
 sub _readFromClustalFile {
-    my ($file) = @_;
+    my ($file, %args) = @_;
 
     my @matrices = ();
     my $matrix = new RSAT::matrix();
