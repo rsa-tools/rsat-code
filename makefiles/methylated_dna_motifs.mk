@@ -39,11 +39,25 @@ MAKEFILE=${RSAT}/makefiles/methylated_dna_motifs.mk
 MOTIF_FOLDER=data/motifs
 MOTIFS=${MOTIF_FOLDER}/mod_test_motifs
 OUT_FORMAT=transfac
-convert:
+
+convert_from_meme:
 	@echo "Converting methyl motifs from MEME to TRANSFAC format"
-	@echo "	${MOTIFS}.meme"
-	@convert-matrix -v 1 -type ${MATRIX_TYPE} -from meme -to ${OUT_FORMAT} -i ${MOTIFS}.meme -o ${MOTIFS}.${OUT_FORMAT}
+	@echo "	Input: ${MOTIFS}.meme"
+	@convert-matrix -v 1 -residue_type ${MATRIX_TYPE} -from meme -to ${OUT_FORMAT} \
+		-i ${MOTIFS}.meme \
+		-o ${MOTIFS}.${OUT_FORMAT}
 	@echo "	${MOTIFS}.${OUT_FORMAT}"
+
+#		-return counts,parameters \
+
+convert_from_transfac:
+	@echo "Converting methyl motifs from  TRANSFAC to ${OUT_FORMAT} format"
+	@echo "	Input: ${MOTIFS}.transfac"
+	@convert-matrix -v 1 -residue_type ${MATRIX_TYPE} -from transfac -to ${OUT_FORMAT} \
+		-i ${MOTIFS}.transfac \
+		-return counts,parameters \
+		-o ${MOTIFS}_converted.${OUT_FORMAT}
+	@echo "	${MOTIFS}_converted.${OUT_FORMAT}"
 
 #produce_logo:
 #	@echo "Generating a logo with the expanded alphabet"
