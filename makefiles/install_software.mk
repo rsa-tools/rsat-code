@@ -88,12 +88,13 @@ install_ext_apps_optional:
 ## discovery tools in RSAT. If is used to purge sequences from
 ## redundant fragments. The program requires a license, which can be
 ## obtained (free of charge for academics) at http://www.vmatch.de/
-VMATCH_VERSION=2.2.5
+VMATCH_VERSION=2.3.0
 VMATCH_VERSION_MACOSX=vmatch-${VMATCH_VERSION}-Darwin_i386-64bit
 VMATCH_VERSION_LINUX=vmatch-${VMATCH_VERSION}-Linux_x86_64-64bit
 VMATCH_ARCHIVE=${VMATCH_VERSION}.tar.gz
 VMATCH_BASE_DIR=${SRC_DIR}/vmatch
-VMATCH_URL=ftp://lscsa.de/pub/lscsa/
+#VMATCH_URL=ftp://lscsa.de/pub/lscsa/
+VMATCH_URL=http://www.vmatch.de/distributions/
 install_vmatch_param:
 	@echo "Parameters for vmatch instlalation"
 	@echo "	VMATCH_VERSION		${VMATCH_VERSION}"
@@ -108,7 +109,7 @@ install_vmatch:
 	@echo
 	@echo "Installing vmatch for operating system ${OS}"
 	${MAKE} _install_vmatch_${OS}
-	${MAKE} _vmatch_warning
+#	${MAKE} _vmatch_warning
 
 _install_vmatch_macosx:
 	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_MACOSX} _download_vmatch _install_vmatch 
@@ -138,15 +139,15 @@ _install_vmatch:
 	@${SUDO} rsync -ruptl ${VMATCH_SOURCE_DIR}/vmatch ${RSAT_BIN}/
 	@${SUDO} rsync -ruptl ${VMATCH_SOURCE_DIR}/mkvtree ${RSAT_BIN}/
 
-_vmatch_warning:
-	@echo ""
-	@echo ""
-	@echo "vmatch has been installed in bin folder ${RSAT_BIN}"
-	@echo "IN ORDER TO GET A FUNCTIONAL COPY, YOU NEED TO REQUEST A LICENSE"
-	@echo "	http://www.vmatch.de/"
-	@echo "AND PLACE THE FILE vmatch.lic IN FOLDER"
-	@echo "	 ${RSAT_BIN}"
-	@echo ""
+# _vmatch_warning:
+# 	@echo ""
+# 	@echo ""
+# 	@echo "vmatch has been installed in bin folder ${RSAT_BIN}"
+# 	@echo "IN ORDER TO GET A FUNCTIONAL COPY, YOU NEED TO REQUEST A LICENSE"
+# 	@echo "	http://www.vmatch.de/"
+# 	@echo "AND PLACE THE FILE vmatch.lic IN FOLDER"
+# 	@echo "	 ${RSAT_BIN}"
+# 	@echo ""
 
 ################################################################
 ## LOGOL
