@@ -66,7 +66,7 @@ package main;
 
   local $bg_model = new RSAT::MarkovModel();
 
-  local $matrix_type = "dna";
+  local $residue_type = "dna";
 
   local $sort_key = "";
   local $sort_order = "";
@@ -150,8 +150,8 @@ package main;
   ## Read command-line arguments
   &ReadArguments();
 
-  ## Check matrix type
-  $args{type} = $matrix_type;
+  ## Check residue type
+  $args{residue_type} = $residue_type;
 
 
   ################################################################
@@ -178,7 +178,7 @@ package main;
     while (<$mlist>) {
       next if (/'^;'/);		# skip comment lines
       next if (/'^#'/);		# skip header lines
-      next if (/'^--'/);	# skip mysql-type comment lines
+      next if (/'^--'/);	# skip mysql-residue_type comment lines
       next unless (/\S/);	# skip empty lines
       my @fields = split /\s+/;
       my $matrix_file = $fields[0];
@@ -199,7 +199,7 @@ package main;
     while (<$id_list>) {
       next if (/'^;'/);		# skip comment lines
       next if (/'^#'/);		# skip header lines
-      next if (/'^--'/);	# skip mysql-type comment lines
+      next if (/'^--'/);	# skip mysql-residue_type comment lines
       next unless (/\S/);	# skip empty lines
       my @fields = split /\s+/;
       my $matrix_id = lc($fields[0]);
@@ -215,7 +215,7 @@ package main;
     while (<$ac_list>) {
       next if (/'^;'/);		# skip comment lines
       next if (/'^#'/);		# skip header lines
-      next if (/'^--'/);	# skip mysql-type comment lines
+      next if (/'^--'/);	# skip mysql-residue_type comment lines
       next unless (/\S/);	# skip empty lines
       my @fields = split /\s+/;
       my $matrix_ac = lc($fields[0]);
@@ -743,7 +743,7 @@ OPTIONS
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
-	 -type matrix type
+	 -residue_type residue type
 
                Supported: dna (default), cytomod
 
@@ -1754,8 +1754,8 @@ convert-matrix options
 -help		(must be first argument) display options
 -v		verbose
 -i		input file
--type 		matrix type. Supported: dna (default), cytomod
--mlist 	matrix_list
+-residue_type 	residue type. Supported: dna (default), cytomod
+-mlist 	        matrix_list
 -o		output file
 -split		Split a single multi-matrices input file in a set of separate files. 
 -from		input matrix format. Supported: $supported_input_formats
@@ -1819,9 +1819,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-i") {
 	    $infile{input} = $ARGV[$a+1];
 
-	    ## Matrix type
-	} elsif ($ARGV[$a] eq "-type") {
-	    $matrix_type = lc($ARGV[$a+1]);
+	    ## Residue type
+	} elsif ($ARGV[$a] eq "-residue_type") {
+	    $residue_type = lc($ARGV[$a+1]);
 
 	    ## List of input file 
 	} elsif ($ARGV[$a] eq "-mlist") {
