@@ -3092,6 +3092,7 @@ sub ConvertTabToHTML {
 sub Merge_matrices {
 
     my $root_logo_path = "";
+    my @root_motifs_tf = ();
 
     if ($single_input_flag == 0){
 	($root_logo_path) = &OpenOutputFile($main::outfile{root_motifs_table});
@@ -3290,7 +3291,8 @@ sub Merge_matrices {
 		    $root_motifs_features{$cluster}{file} = $mat_file;
 		    $root_motifs_features{$cluster}{members} = $ID_cluster;
 		    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{$folder}{$cluster}{collection_counts};
-		    $external_branch_motifs .= $mat_file." ";
+		    push (@root_motifs_tf, $mat_file);
+		    #$external_branch_motifs .= $mat_file." ";
 
 		    my $logo_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo});
 		    my $logo_rc_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC});
@@ -3340,7 +3342,8 @@ sub Merge_matrices {
 	    $root_motifs_features{$cluster}{file} = $new_singleton_motif_file;
 	    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{node_1}{$cluster}{collection_counts};
 	    ## Add the singleton cluster to the list of root motifs
-	    $external_branch_motifs .= $new_singleton_motif_file." ";
+	    push (@root_motifs_tf, $new_singleton_motif_file);
+#	    $external_branch_motifs .= $new_singleton_motif_file." ";
 
 	    if ($single_input_flag == 0){
 		$logo_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo});
@@ -3351,8 +3354,16 @@ sub Merge_matrices {
     }
     
     ## Create the files with the roots motifs
-    $cmd = "cat ".$external_branch_motifs." >".$main::outfile{root_motifs};
-    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+    my ($print_root) = &OpenOutputFile($main::outfile{root_motifs});
+    foreach my $root (@root_motifs_tf){
+	my ($root_tf_file) = &OpenInputFile($root);
+	my $root_tf_text = "";
+	while(<$root_tf_file>){
+	    $root_tf_text .= $_;
+	}
+	print $print_root $root_tf_text;
+    }
+    
 
     if ($single_input_flag == 0){
 	close($root_logo_path);
