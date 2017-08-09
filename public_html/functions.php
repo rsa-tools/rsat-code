@@ -199,6 +199,8 @@ Function load_props($props) {
 Function getGitLastCommitDate(){
 	$date = shell_exec('git log | head -n 4 | grep Date');
 	$date = str_replace('Date:', '', $date);
+	$date = preg_replace('/^\s*\w+\s+/', '', $date);
+	$date = preg_replace('/\D+\w+\s*$/', '', $date);
 	return $date;
 }
 ////////////////////////////////////////////////////////////////
