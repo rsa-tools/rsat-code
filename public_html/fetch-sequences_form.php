@@ -31,7 +31,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 
   <body class="form">
 
-<?php printMenu("RSAT") ?>
+<?php include("menu.php"); ?>
 
     <div>
       <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSAT</a> - fetch-sequence</h3>

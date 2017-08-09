@@ -1,20 +1,6 @@
 <?php
     
-    Function printMenu($menu){
-        if(strcmp($menu, "RSAT") == 0){
-            $handle = fopen("menu.php", "r");
-            while (($line = fgets($handle)) !== false) {
-                echo $line;
-                echo "\n";
-            }    
-            fclose($handle);
-        }else{
-            ob_start(); // begin collecting output
-            include 'menu_graph.php';
-            $result = ob_get_clean(); 
-            echo($result);			
-        }
-    }
+    
 
   // NeAT TITLE
 Function title($title) {
@@ -509,6 +495,21 @@ function endsWith($haystack,$needle,$case=true)
 
   return strripos($haystack, $needle, 0) === $expectedPosition;
 }
+
+Function printMenu($menu){
+        if(strcmp($menu, "RSAT") == 0){
+            ob_start(); // begin collecting output
+            include 'menu.php';
+            $result = ob_get_clean(); 
+            echo($result);
+        }else{
+            ob_start(); // begin collecting output
+            include 'menu_graph.php';
+            $result = ob_get_clean(); 
+            echo($result);			
+        }
+    }
+
 ?> 
 <?php
 ini_set('max_execution_time', 2400);
