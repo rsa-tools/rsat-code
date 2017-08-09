@@ -4,6 +4,7 @@
 <link rel="alternate" type="application/rss+xml" title="RSAT website news feed" href="RSSAT.xml" />
 <link rel='stylesheet' type='text/css' href='css/bootstrap.min.css' />
 <link rel='stylesheet' type='text/css' href='home.css' />
+<link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
 <script src="js/jquery.js"></script>
 <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>
 </head>
@@ -11,7 +12,8 @@
 <BODY>
 <?php
     require ('functions.php');
-    printMenu("RSAT");
+    #printMenu("RSAT");
+include('menu.php');
 ?>
 
 <div class='page-content-wrapper'>
