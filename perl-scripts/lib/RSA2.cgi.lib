@@ -303,30 +303,25 @@ sub RSA_header {
     print $query->header();
     print sorttable_script();
     
-    print $query->start_html(
-	-title=>"RSAT : $title",
-	-class => "$css_body_class",
-	-author=>'Jacques.van-Helden\@univ-amu.fr',
-	-script=>[
-	     { -type => 'text/javascript',
-	       -src      => 'js/jquery.js'
-	     },
-	     { -type => 'text/javascript',
-	       -src      => 'RSAT_menu.js'
-	     },
-	     { -type => 'text/javascript',
-	       -src      => 'RSAT_tabs.js'
-	     }
-	],
-	-style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
-			-type => 'text/css',
-			-media => 'screen,projection,print' });
-    
-    ################################################################
-    ## Print the menu inside the page (enables to have links to each
-    ## tool separately).
-    if ($ENV{DirectoryIndex} eq "RSAT_home.cgi") {
-	print '<script>
+    print $query->start_html(-title=>"RSAT : $title",
+    -class => "$css_body_class",
+    -author=>'Jacques.van-Helden\@univ-amu.fr',
+    -script=>[
+    { -type => 'text/javascript',
+        -src      => 'js/jquery.js'
+    },
+    { -type => 'text/javascript',
+        -src      => 'RSAT_menu.js'
+    },
+    { -type => 'text/javascript',
+        -src      => 'RSAT_tabs.js'
+    }
+   ],
+    -style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
+        -type => 'text/css',
+        -media => 'screen,projection,print' });
+
+print '<script>
 $(function(){
 if(typeof demo !== "undefined"){
 txt = demo.value;
@@ -338,17 +333,17 @@ document.getElementById("demo_descr").innerHTML = txt;
 });
 </script>';
 
-	open(my $fh, "menu.html");
-	while(my $row = <$fh>){
-	    print $row."\n";
-	}
-    }
 
+    open(my $fh, "menu.php");
+    while(my $row = <$fh>){
+	if($row =~ "<!--perlscript"){ my $x = `cat $ENV{RSAT}/public_html/data/supported_organisms.tab | wc -l`; $x -= 1; print $x; }
+        print $row."\n";
+    }
     
     print "<div class='container' id='page-content-wrapper'>";
     
-    if(! ($title =~ 'RSAT home')) {
-        print "<h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
+    if(! ($title =~ 'Regulatory Sequence Analysis Tools (RSAT)')) {
+        print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
     }
 
     
@@ -1354,12 +1349,38 @@ sub GetMatrix {
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
-  ## Get the list of supported input formats for PSSM. Beware: this
-  ## requires to run "use RSAT::MatrixReader" beforehand.
-  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
+
+  my %supported_input_format = (
+				'alignace'=> 1,
+				'assembly'=>1,
+				'clustal'=>1,
+				'cluster-buster'=>1,
+				'consensus'=>1,
+				'feature'=>1,
+				'footprintDB'=>1,
+				'gibbs'=> 1,
+				'infogibbs'=>1,
+				'jaspar'=>1,
+				'mscan'=>1,
+				'meme'=>1,
+				'meme_block'=>1,
+				'motifsampler'=>1,
+				'sequences' => 1,
+				'stamp'=>1,
+				'stamp-transfac'=>1,
+      				'cis-bp'=>1,
+				'tab'=>1,
+				'transfac'=>1,
+				'uniprobe'=>1,
+				'encode'=>1,
+			       );
+  ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
+  ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
+  ## I SHOULD CHECK LATER
+  ##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
   my @supported_input_formats = sort(keys( %supported_input_format));
-  # my $supported_input_formats = join ",", @supported_input_formats;
-  # &RSAT::message::Warning("supported input formats:", $supported_input_formats);
+  #  my $supported_input_formats = join ",", @supported_input_formats;
+  #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
   #### matrix format
     print $query->popup_menu(-id=>'matrix_format',
@@ -1445,9 +1466,35 @@ sub GetSecondMatrix {
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
-  ## Get the list of supported input formats for PSSM. Beware: this
-  ## requires to run "use RSAT::MatrixReader" beforehand.
-  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
+
+  my %supported_input_format = (
+				'alignace'=> 1,
+				'assembly'=>1,
+				'clustal'=>1,
+				'cluster-buster'=>1,
+				'consensus'=>1,
+				'feature'=>1,
+				'footprintDB'=>1,
+				'gibbs'=> 1,
+				'infogibbs'=>1,
+				'jaspar'=>1,
+				'mscan'=>1,
+				'meme'=>1,
+				'meme_block'=>1,
+				'motifsampler'=>1,
+				'sequences' => 1,
+				'stamp'=>1,
+				'stamp-transfac'=>1,
+      				'cis-bp'=>1,
+				'tab'=>1,
+				'transfac'=>1,
+				'uniprobe'=>1,
+				'encode'=>1,
+			       );
+  ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
+  ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
+  ## I SHOULD CHECK LATER
+  ##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
   my @supported_input_formats = sort(keys( %supported_input_format));
   #  my $supported_input_formats = join ",", @supported_input_formats;
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
@@ -1566,15 +1613,42 @@ sub GetThirdMatrix {
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
-  ## Get the list of supported input formats for PSSM. Beware: this
-  ## requires to run "use RSAT::MatrixReader" beforehand.
-  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
+
+  my %supported_input_format = (
+				'alignace'=> 1,
+				'assembly'=>1,
+				'clustal'=>1,
+				'cluster-buster'=>1,
+				'consensus'=>1,
+				'feature'=>1,
+				'footprintDB'=>1,
+				'gibbs'=> 1,
+				'infogibbs'=>1,
+				'jaspar'=>1,
+				'mscan'=>1,
+				'meme'=>1,
+				'meme_block'=>1,
+				'motifsampler'=>1,
+				'sequences' => 1,
+				'stamp'=>1,
+				'stamp-transfac'=>1,
+      				'cis-bp'=>1,
+				'tab'=>1,
+				'transfac'=>1,
+				'uniprobe'=>1,
+				'encode'=>1,
+			       );
+  ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
+  ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
+  ## I SHOULD CHECK LATER
+  ##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
   my @supported_input_formats = sort(keys( %supported_input_format));
   #  my $supported_input_formats = join ",", @supported_input_formats;
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
   #### matrix format
   print $query->popup_menu(-name=>'matrix_format_3',
+			   -id=>'matrix_format_3',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
 
@@ -2162,6 +2236,68 @@ sub DisplayMatrixDBchoice {
     print "<br/>\n";
   }
 }
+
+sub DisplayMatrixDBchoice_select2 {
+  my (%args) = @_;
+
+  ## Check selection mode
+  my $mode = $args{mode} || "checkbox"; ## Display check boxes or radio buttons
+  my %supported_choice_mode = ("radio"=>1, "checkbox"=>1, "list"=>1);
+  my $supported_choice_modes = join ",", sort keys %supported_choice_mode;
+  &RSAT::error::FatalError($mode, "Invalid choice mode for &DisplayMatrixDBchoice(). Supported: ".$supported_choice_modes) 
+      unless ($supported_choice_mode{$mode});
+
+  
+  ## Get information about supported motif databases
+  my %matrix_db = &RSAT::server::supported_motif_databases();
+
+my @plants_key = ("thaliana", "plant");
+my @vertebrates_key = ("human", "Human", "mouse", "Mouse", "vertebrate");
+my @prokaryots_key = ("prokaryot","DBTBS");
+my @fungi_key = ("cerevisiae", "fungi");
+my @metazoa_key = ("Drosophila", "drosophila", "_fly", "elegan", "insect", "nematode", "urochordate");
+my @all_key = ("all");
+my @keys = ([@plants_key], [@vertebrates_key], [@prokaryots_key], [@fungi_key], [@metazoa_key], [@all_key]);
+
+my @values = (\%plants, \%vertebrates, \%prokaryots, \%fungi, \%metazoa, \%multi_organism);
+my @labels = ('Plants', 'Vertebrates', 'Prokaryotes', 'Fungi', 'Metazoa', 'Multi-organisms');
+my @colors = ('green', 'red', 'blue', 'orange', 'purple', 'yellow');
+  ## Display supported motif databases
+  foreach my $db_name (sort(keys (%matrix_db))) {
+    my $db_format = $matrix_db{$db_name}->{'format'};
+    my $descr = $matrix_db{$db_name}->{'descr'};
+    my $version = $matrix_db{$db_name}->{'version'};
+    my $url = $matrix_db{$db_name}->{'url'};
+
+	for(my $i = 0; $i < scalar @keys; $i++){
+		foreach my $key (@{$keys[$i]}){
+			if($descr =~ $key){ 
+				if($mode eq "list"){
+					if ($url) {
+      						$descr = "<a target='_blank' href=".$url.">".$descr."</a>";
+					}    				
+				}
+				${$values[$i]}{$db_name} = $descr . " (".$version.")";
+			}
+		}
+	}	
+  }
+	for(my $i = 0; $i < scalar @values; $i++){
+		if(! ($mode eq "list")){
+			print "<optgroup label='$labels[$i]'>";
+			foreach my $key (sort(keys %{$values[$i]})){ 
+				print "<option value='$key' class='$colors[$i]'>${$values[$i]}{$key}</option>";
+			}
+			print "</optgroup>";
+		}elsif($mode eq "list") {
+			print "<h3 style='padding:10px'>$labels[$i]</h3><div style='padding-left:50px;padding-top:15px'>";
+			foreach my $key (sort(keys %{$values[$i]})){ 
+				print "${$values[$i]}{$key}<br/>";
+			}
+			print "</div>";
+		}
+	}
+}	
 
 ################################################################
 ## GetMatrixDBchoice
