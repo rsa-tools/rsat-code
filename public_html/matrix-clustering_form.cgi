@@ -106,10 +106,8 @@ print "<hr>";
 
 ################################################################
 ## Query matrices collection 1
-print "<h2 style='margin-left: 50px;'> Add one or two collections of PSSMs</h2>";
+print "<h2 style='margin-left: 50px;'> Add up to three collections of PSSMs</h2>";
 print "<hr>";
-
-&GetMatrix('title'=>'Input matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
 
 ################################################################
 #### Set Motif collection label
@@ -118,12 +116,14 @@ print "<h2 style='margin-left: 1px;'> Motif Collection\nName";
 print $query->textfield(-id=>'collection_label', -name=>'collection_label',
 			 -default=>$default{collection_label},
 			 -size=>30) ."</h2>";
+
+&GetMatrix('title'=>'Input matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
+
 print "<hr>";
 
 
 ################################################################
 ## Query matrices collection 2
-&GetSecondMatrix('title'=>'Input matrices 2', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
 
 ################################################################
 #### Set Motif collection label
@@ -132,12 +132,14 @@ print "<h2 style='margin-left: 1px;'> Motif Collection 2\nName";
 print $query->textfield(-id=>'collection_2_label', -name=>'collection_2_label',
 			 -default=>$default{collection_2_label},
 			 -size=>30) ."</h2>";
+
+&GetSecondMatrix('title'=>'Input matrices 2', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
+
 print "<hr>";
 
 
 ################################################################
 ## Query matrices collection 3
-&GetThirdMatrix('title'=>'Input matrices 3', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
 
 ################################################################
 #### Set Motif collection label
@@ -146,6 +148,9 @@ print "<h2 style='margin-left: 1px;'> Motif Collection 3\nName";
 print $query->textfield(-id=>'collection_3_label', -name=>'collection_3_label',
 			 -default=>$default{collection_3_label},
 			 -size=>30) ."</h2>";
+
+&GetThirdMatrix('title'=>'Input matrices 3', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
+
 print "<hr>";
 
 ##############################################################
@@ -228,28 +233,28 @@ print "<HR width=550 align=left>\n";
 
 ####################################
 ## Labels displayed in logo trees
-print "<h2>", "Labels displayed in the logo tree", ,"</h2>";
+#print "<h2>", "Labels displayed in the logo tree", ,"</h2>";
 
 ## Label: id
-print $query->checkbox(-name=>'label_id',
-  		       -checked=>$default{label_id},
-  		       -label=>'');
-print "&nbsp;<A'><B>Motif ID</B></A>";
-print "<br><br>\n";
+#print $query->checkbox(-name=>'label_id',
+#  		       -checked=>$default{label_id},
+#  		       -label=>'');
+#print "&nbsp;<A'><B>Motif ID</B></A>";
+#print "<br><br>\n";
 
 ## Label: name
-print $query->checkbox(-name=>'label_name',
-  		       -checked=>$default{label_name},
-  		       -label=>'');
-print "&nbsp;<A'><B>Motif name</B></A>";
-print "<br><br>\n";
+#print $query->checkbox(-name=>'label_name',
+#  		       -checked=>$default{label_name},
+#  		       -label=>'');
+#print "&nbsp;<A'><B>Motif name</B></A>";
+#print "<br><br>\n";
 
 ## Label: consensus
-print $query->checkbox(-name=>'label_consensus',
-  		       -checked=>$default{label_consensus},
-  		       -label=>'');
-print "&nbsp;<A'><B>Consensus</B></A>";
-print "<br><br>\n";
+#print $query->checkbox(-name=>'label_consensus',
+#  		       -checked=>$default{label_consensus},
+#  		       -label=>'');
+#print "&nbsp;<A'><B>Consensus</B></A>";
+#print "<br><br>\n";
 
 
 ################################################################
