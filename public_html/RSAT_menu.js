@@ -1,23 +1,23 @@
+menu_number = 0;
+    heading1 = "Supported organisms;gene-info;gene-info result;infer operons;infer-operons result;get-orthologs;random gene selection;Random gene selection result";
+    heading2 = "retrieve sequence;retrieve-seq result;retrieve EnsEMBL sequence;Retrieve sequences from genomic coordinates;retrieve-seq-bed result;fetch-sequences;purge-sequence;purge-sequence result;convert-seq;convert-seq result;random sequence;Random sequence result";
+    heading3 = "oligo-analysis;oligo-analysis result;oligo-diff;oligo-diff result;dyad-analysis;dyad-analysis result;pattern-assembly;pattern-assembly result;position-analysis;position-analysis result;local-word-analysis;local-word-analysis result;info-gibbs;info-gibbs result;consensus;Consensus result file";
+    heading4 = "matrix-scan;matrix-scan result;matrix-scan QUICK and SIMPLE;crer-scan;crer-scan result;dna-pattern;dna-pattern result;genome-scale dna-pattern";
+    heading5 = "feature map;feature-map result;XYgraph;XYgraph result";
+    heading6 = "Web services;Web services documentation";
+    heading7 = "People;RSAT training material;RSA-tools - tutorials;RSA - Publications;";
+    heading8 = "Network Analysis Tools - convert-graph;NeAT - compare_classes;Frequency distribution (<i>classfreq</i>);classfreq result;convert-seq;convert-seq result;convert-matrix;convert-matrix result;create-background-model;create-background-model result;convert-background-model;convert-background-model result;seq-proba;seq-proba result;convert-features;convert-features result;compare-features;compare-features result";
+    heading9 = "Variation information;retrieve variation sequence;variation-scan;Convert variation formats;";
+    heading10 = "get-orthologs;get-orthologs-compara;footprint-discovery;footprint-scan;";
+    heading11 = "random gene selection;Random gene selection result;random sequence;Random sequence result;random genome fragments;Random genome fragments result;Random motif;random-motif result;permute-matrix;permute-matrix result;Random sites;random-sites result;Implant sites;implant-sites result";
+    heading12 = "convert-matrix;convert-matrix result;compare-matrices;compare-matrices result;matrix-clustering;matrix-clustering result;matrix-distrib;matrix-distrib result;matrix-quality;matrix-quality result"; 
+    heading13 = "peak-motifs;peak-motifs result;fetch-sequences;random genome fragments;Random genome fragments result";
+    
+    menu_numbers = [heading1, heading2, heading3, heading4, heading5,heading6,heading7,heading8,heading9, heading10, heading11, heading12, heading13];
+
 $(function(){
     title = document.title.replace("RSAT : ", "");
     title = title.replace("RSAT - ", "");
-    
-    menu_number = 0;
-    genomes_genes = "Supported organisms;gene-info;gene-info result;infer operons;infer-operons result;get-orthologs;random gene selection;Random gene selection result";
-    sequence_tools = "retrieve sequence;retrieve-seq result;retrieve EnsEMBL sequence;Retrieve sequences from genomic coordinates;retrieve-seq-bed result;fetch-sequences;purge-sequence;purge-sequence result;convert-seq;convert-seq result;random sequence;Random sequence result";
-    motif_disco = "oligo-analysis;oligo-analysis result;oligo-diff;oligo-diff result;dyad-analysis;dyad-analysis result;pattern-assembly;pattern-assembly result;position-analysis;position-analysis result;local-word-analysis;local-word-analysis result;info-gibbs;info-gibbs result;consensus;Consensus result file";
-    pattern_matching = "matrix-scan;matrix-scan result;matrix-scan QUICK and SIMPLE;crer-scan;crer-scan result;dna-pattern;dna-pattern result;genome-scale dna-pattern";
-    drawing = "feature map;feature-map result;XYgraph;XYgraph result";
-    web_services = "Web services;Web services documentation";
-    help_contacts = "People;RSAT training material;RSA-tools - tutorials;RSA - Publications;";
-    conversion = "Network Analysis Tools - convert-graph;NeAT - compare_classes;Frequency distribution (<i>classfreq</i>);classfreq result;convert-seq;convert-seq result;convert-matrix;convert-matrix result;create-background-model;create-background-model result;convert-background-model;convert-background-model result;seq-proba;seq-proba result;convert-features;convert-features result;compare-features;compare-features result";
-    genetic_variations = "Variation information;retrieve variation sequence;variation-scan;Convert variation formats;";
-    comparative_genomics = "get-orthologs;get-orthologs-compara;footprint-discovery;footprint-scan;";
-    build_control_sets = "random gene selection;Random gene selection result;random sequence;Random sequence result;random genome fragments;Random genome fragments result;Random motif;random-motif result;permute-matrix;permute-matrix result;Random sites;random-sites result;Implant sites;implant-sites result";
-    matrix_tools = "convert-matrix;convert-matrix result;compare-matrices;compare-matrices result;matrix-clustering;matrix-clustering result;matrix-distrib;matrix-distrib result;matrix-quality;matrix-quality result"; 
-    ngs_chipseq = "peak-motifs;peak-motifs result;fetch-sequences;random genome fragments;Random genome fragments result";
-    
-    menu_numbers = [genomes_genes, sequence_tools, motif_disco, pattern_matching, drawing,web_services,help_contacts,conversion,genetic_variations, comparative_genomics, build_control_sets, matrix_tools, ngs_chipseq];
     
     $.each(menu_numbers, function(key, value){
         if(value.indexOf(title) != -1){
@@ -59,6 +59,43 @@ $(function(){
     });
     
 });
+
+////// For search tool bar
+function searchfunc(){
+	var term = $("#searchfunc").val();
+	closeAll();
+	var menuitems = document.querySelectorAll(".menu_item, .menu_item_last ");
+	for(var x = 0; x < menuitems.length; x++){
+		t = (menuitems[x].textContent === undefined) ? menuitems[x].innerText : menuitems[x].textContent;
+		html = menuitems[x].innerHTML;	
+		menuitems[x].innerHTML = t;
+	
+		index = html.indexOf('<img');
+		if(index != -1){
+			menuitems[x].innerHTML += html.substring(index);			
+		}			
+	}
+	var open = false;
+	if(term.length > 0){
+		var allmenu = document.getElementsByClassName('menu_heading_closed');
+		for(var x = 1; x < menu_numbers.length; x++){
+			var obj = document.getElementById("menu"+x);
+			k = obj.childNodes;
+			for(i = 0; i < k.length; i++){
+				if(k[i].className == 'menu_item' || k[i].className == 'menu_item_last'){
+					html = k[i].innerHTML;
+					found = (k[i].textContent === undefined) ? k[i].innerText : k[i].textContent;				
+					index = found.indexOf(term);
+					if(index != -1){
+						k[i].innerHTML = html.substring(0,index) + "<span style='background-color:yellow;color:black'>" + html.substring(index,index+term.length) + "</span>" + html.substring(index+term.length);
+						open = true;
+					}
+				}
+			}
+			if(open){ openMenu(x); open=false; }							
+		}
+	}
+}
 
 
 function toggleMenu(menu_number) {
@@ -136,3 +173,10 @@ i=i+1;
 }
 }
 }
+/*Close all menu*/
+function closeAll(){
+	for(var i = 1; i< 14; i++){
+		closeMenu(i);	
+	}	
+}
+
