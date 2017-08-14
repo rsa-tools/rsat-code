@@ -6214,5 +6214,356 @@ sub Export_central_motif_per_cluster {
 	
 
 }
+
+########################################
+## Before modify the width and heigth
+## of the alignments, creates the <div>
+## in HTML script to visualize the clusters
+sub Create_dynamic_tree {
+
+    &RSAT::message::TimeWarn("\n; Creating dynamic tree") if ($main::verbose >= 2);
+
+    my $line = "";
+    my $print = "";
+    my $print_small = "";
+    my $temp_dyn_tree_Forward = &logo_tree_dynamic();
+    my $temp_dyn_tree_portable = &logo_tree_dynamic_portable();
+
+    my $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_d3_tree.html ".$main::outfile{logo_cladogram_html};
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
+    $cmd = "cp ".$ENV{RSAT}."/public_html/templates_html/display_small_d3_tree.html ".$main::outfile{small_logo_cladogram_html};
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
+    my %clusters_info_sorted = ();
+    my %clusters_info_cp = %clusters_info;
+    my @sorted_keys = keys %clusters_info;
+
+    ## ?
+    foreach my $k (@sorted_keys) {
+	$k =~ s/cluster_//;
+	$clusters_info_sorted{$k} = delete $clusters_info_cp{"cluster_".$k};
+    }
+
+    open(TEMP, ">".$main::outfile{temp_html}) || &RSAT::error::FatalError($main::outfile{temp_html}, "Cannot create temporary file");
+    open(TREE, $main::outfile{logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{logo_cladogram_html}, "Cannot found the HTML tree file");
+
+    open(TEMP_2, ">".$main::outfile{temp_html_2}) || &RSAT::error::FatalError($main::outfile{temp_html_2}, "Cannot create temporary file");
+    open(SMALL_TREE, $main::outfile{small_logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{small_logo_cladogram_html}, "Cannot found the HTML small tree file");
+
+    while(<TREE>) {
+	chomp;
+	$line = $_;
+	## Add one <div> for each cluster
+	if (/^\s*\/\/Divisions/) {
+	    $line = "";
+	    foreach my $cluster (sort keys %clusters_info) {    
+         
+		$line .= "<div id=\"".$cluster."\" style=\"clear:both;border-left:100px;float:left;\"><h2>".$cluster."</h2><\/div>\n";
+		$line .= "<br><br><br>\n";
+	    }
+	}
+
+	if (/^\s*\/\/Body/) {
+	    $line = "";	
+	    foreach my $cluster (sort keys %clusters_info) {      
+		$line .= $temp_dyn_tree_Forward."\n\n\n";
+	    }
+	}
+
+	$print .= $line."\n";
+    }
+    close(TREE);
+    $line = "";
+
+    while(<SMALL_TREE>) {
+	chomp;
+	$line = $_;
+	## Add one <div> for each cluster
+	if (/^\s*\/\/Divisions/) {
+	    $line = "";
+	    foreach my $cluster (sort keys %clusters_info) {             
+		$line .= "<div id=\"".$cluster."\" style=\"clear:both;border-left:100px;float:left;\"><h2>".$cluster."</h2><\/div>\n";
+		$line .= "<br><br><br>\n";
+	    }
+	}
+
+	if (/^\s*\/\/Body/) {
+	    $line = "";	
+	    foreach my $cluster (sort keys %clusters_info) {      
+		$line .= $temp_dyn_tree_portable."\n\n\n";
+	    }
+	}
+	$print_small .= $line."\n";
+    }
+    close(SMALL_TREE);
+
+    print TEMP $print;
+    print TEMP_2 $print_small;
+
+    close(TEMP);
+    close(TEMP_2);
+
+    unlink($main::outfile{logo_cladogram_html});
+    unlink($main::outfile{small_logo_cladogram_html});
+
+    $cmd = "mv ".$main::outfile{temp_html}." ".$main::outfile{logo_cladogram_html};
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err); 
+
+    $cmd = "mv ".$main::outfile{temp_html_2}." ".$main::outfile{small_logo_cladogram_html};
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);    
+}
+
+################################################################
+## Insert D3 dynamic logo tree: This is the body of d3 script, 
+## each time a new cluster is added to the file the next code 
+## is pasted and modified           
+sub logo_tree_dynamic{
+  my $logo_tree = 
+      '
+	(function() {
+        var width = --widthtree--,
+	height = --height--;
+	;
+
+        var i = 0,
+        duration = 750,
+        root;
+
+	var cluster = d3.layout.cluster()
+		.size([height, --size--])
+	        .separation(function(a, b) { return (a.parent == b.parent ? 1 : 1); });
+
+
+	var diagonal = function elbow(d, i) {
+		
+		return "M" + d.source.y + "," + d.source.x
+		+ "V" + d.target.x + "H" + d.target.y;
+	}
+
+
+	var svg = d3.select("#--cl_id--").append("svg")
+		.attr("width", width)
+		.attr("height", height)
+		.append("g")
+		.attr("class","drawarea")
+		.attr("transform", "translate(90,0)");
+		
+
+d3.json("--jsonfile--", function(json) {
+
+	root = json;
+	root.x0 = height / 2;
+	root.y0 = 0;
+	
+	update(root);
+});
+
+function update(source) {
+
+// compute the new height
+var levelWidth = [1];
+var childCount = function(level, n) {
+
+  if (n.children && n.children.length > 0) {
+    if (levelWidth.length <= level + 1) levelWidth.push(0);
+
+    levelWidth[level+1] += n.children.length;
+    n.children.forEach(function(d) {
+      childCount(level + 1, d);
+    });
+  }
+};
+childCount(0, root);  
+var newHeight = d3.max(levelWidth) * --sep_motifs--; // 20 pixels per line  // 250 ----------> This number must be calculated 
+cluster= cluster.size([newHeight, --size--]);
+
+// Re-draw the tree
+svg = d3.select("#--cl_id--").select("svg")
+		.attr("width", width)
+		.attr("height", newHeight)
+		.attr("transform", "translate(90,0)");
+
+  // Compute the new tree layout.
+  var nodes = cluster.nodes(root).reverse(),
+      links = cluster.links(nodes);
+
+  // Update the nodes…
+  var node = svg.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+  // Enter any new nodes at the parent"s previous position.
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .on("click", click);
+
+  nodeEnter.append("circle")
+	.attr("r", 5)
+        .attr("fill", "--stroke--");
+
+       /*Insert labels*/
+       --lab--
+
+       /*Insert consensus*/
+
+	nodeEnter.append("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
+		.attr("height", --svgheight--)
+		.attr("x", --x1--)    
+		.attr("y", --y1--) 
+		.attr("cursor", "default") 
+		.attr("preserveAspectRatio", "none");	
+
+/*		
+	nodeEnter.append("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
+		.attr("width", function(d) { return (d.size + 2)  * --svgwidth--; })
+		.attr("height", --svgheight--)
+  		.attr("x", function(d) { return (d.size + 2)  * --x2--; })  
+		.attr("y", --y1--) 
+		.attr("cursor", "default") 
+		.attr("preserveAspectRatio", "none");
+*/
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+
+  nodeUpdate.select("circle")
+	.attr("r", 5)
+        .attr("fill", function(d) { return d._children ? "black" : "--stroke--"; })
+      .attr("font-size", "8px");
+
+
+  nodeUpdate.select("text")
+      .text(function(d) { return d.children ? d.ic :  d.name; })
+      .attr("dx", function(d) { return d.children ? -3 : 20; })
+      .attr("dy", function(d) { return d.children ? -6 : 3; })
+      .attr("class", function(d) { return d.children ? "show_con_--cl_id--" : ""; })
+      .attr("fill", function(d) { return d.children ? "blue" : "black"; })
+      .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+      .attr("font-size", function(d) { return d.children ? "8px" : "10px"; });
+
+	nodeUpdate.select("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : --insert_image--; }) 
+		.attr("width", function(d) { return (d.size + 2)  * 15; })
+		.attr("height", 50)
+		.attr("x", --image_spacer--)    
+		.attr("y", -33) 
+		.attr("cursor", "default") 
+		.attr("preserveAspectRatio", "none");
+
+/*
+	node.select("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; })  
+		.attr("width", function(d) { return (d.size + 2)  * 25; })
+		.attr("height", 80)
+ 		.attr("x", function(d) { return (d.size + 2)  * 25 + 296 + 25; })  
+		.attr("y", -33)
+		.attr("cursor", "default") 
+		.attr("preserveAspectRatio", "none");
+*/
+
+
+  // Transition exiting nodes to the parent"s new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6)
+      .attr("font-size", "10px");
+
+  nodeExit.selectAll("image")
+      .remove();
+
+  nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+  // Update the links…
+  var link = svg.selectAll("path.link")
+      .data(links, function(d) { return d.target.id; });
+
+  // Enter any new links at the parent"s previous position.
+  link.enter().insert("path", "g")
+      .attr("class", "link")
+      .attr("stroke", "--stroke--")
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      });
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent"s new position.
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+
+
+// Toggle children on click.
+function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update(d);
+}
+}
+
+
+})();
+
+// Add the buttons to change the orientation
+d3.select("#--cl_id--").append("text")
+	.attr("x", 700)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
+	})
+	.text("Direct")  
+;
+
+d3.select("#--cl_id--").append("text")
+	.attr("x", 1000)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.on("click", function(){
+		// change the orientation
+		d3.select("#--cl_id--").selectAll("image")
+		.attr("xlink:href", function(d) { return d.children ? "" : d.image_rc; }) 
+	})
+	.text("Reverse")  
+;
+	
+';
+
+  return($logo_tree);
+}
+
 __END__
 
