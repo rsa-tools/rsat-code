@@ -236,26 +236,26 @@ if ($rand) {
 }
 
 ## Insert labels
-my @labs = ();
-my $lab = "";
-$label_id = $query->param('label_id');
-$label_name = $query->param('label_name');
-$label_consensus = $query->param('label_consensus');
+#my @labs = ();
+my $lab = "name";
+#$label_id = $query->param('label_id');
+#$label_name = $query->param('label_name');
+#$label_consensus = $query->param('label_consensus');
 
 
-if($label_name){
-    push(@labs, "name");
-}
+#if($label_name){
+#    push(@labs, "name");
+#}
 
-if($label_id){
-    push(@labs, "id");
-}
+#if($label_id){
+#    push(@labs, "id");
+#}
 
-if($label_consensus){
-    push(@labs, "consensus");
-}
+#if($label_consensus){
+#    push(@labs, "consensus");
+#}
 
-$lab = join(",", @labs);
+#$lab = join(",", @labs);
 
 
 $parameters .= " -label_in_tree ".$lab;
