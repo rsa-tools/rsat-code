@@ -159,6 +159,9 @@ package main;
 
   ## Flag to export the Newick tree
   local $export_newick = 0;
+
+  ## Hash containing motif information
+  local %matrix_info = ();
   
   ## Flag to export the Newick tree
   local $radial_tree_flag = 0;
@@ -1827,9 +1830,19 @@ sub pre_process_motif_files{
 	      next unless (/\S/); ## Skip empty lines
 	      chomp();
 	      my($ID, $link, $color) = split(/\s+/, $_);
-	      $OLD_ID_link_hash{$ID}{link} = $link;
-	      $OLD_ID_link_hash{$ID}{color} = $color;
-	      $ID_link_hash{$new_ID_nb_hash{$ID_nb_hash{$ID}}} = $OLD_ID_link_hash{$ID}; 
+
+
+	      # foreach my $id (keys %ID_nb_hash){
+	      # 	  if($id eq $ID){
+	      # 	  print $id."\t".$ID."\n";
+	      # 	  }
+
+	      # }
+	      # die "";
+	      
+	      $ID_link_hash{$new_ID_nb_hash{$ID_nb_hash{$ID}}}{link} = $link;
+
+	      $ID_link_hash{$new_ID_nb_hash{$ID_nb_hash{$ID}}}{color} = $color;
 	  }
 	  close($link_table);
       }
@@ -2283,8 +2296,6 @@ sub Add_gaps_to_motifs {
 ## attributes
 sub Add_attributes_to_JSON {
 
-  my (%matrix_info) = ();
-
   #############################################
   ## Create a hash with the attribute data:
   ##	key :  name
@@ -2380,7 +2391,7 @@ sub Add_attributes_to_JSON {
 		      if ($field eq "ic"){
 			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
 		      } else {
-			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
+			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";  
 		      }
 	 	  }
 	      }
@@ -4158,10 +4169,9 @@ sub ReportStyleCSS{
 
   .logo_tab {
 	position: relative;
-	max-width: 100%;
-	max-height: 10%;
+	max-height: 20%;
 	height: 45px;
-	width: 60px
+	width: 75px
 	float: left;
 	clear: both;
   }
@@ -4861,7 +4871,7 @@ sub InsertAlignmentTable{
 
   <!-- Div with the aligment table with all the motifs-->
 <div id="Motif_Tab_button" class="button_click Section_button"><strong>Individual Motif View</strong></div>	
-<div id="Motif_Tab" class="tab" style="padding:7px 7px 0px 7px; margin:0px 0px 20px 0px;width:autopx;display:none">	
+<div id="Motif_Tab" class="tab" style="padding:7px 7px 0px 7px; margin:0px 0px 20px 0px;width:auto;display:none">	
           <h2 style="margin:0px 0px 10px 0px;">Individual Motif View</h2>
 	  <table id="alignment_dyn_table" class="hover compact">
 	    <thead>
@@ -4870,6 +4880,11 @@ sub InsertAlignmentTable{
 		<th class="tab_col">Motif name</th>
 		<th class="tab_col">Cluster</th>
 		<th class="tab_col">Collection</th>
+
+		<th class="tab_col">Width</th>
+		<th class="tab_col">IC</th>
+		<th class="tab_col">Number of sites</th>
+
 		<th class="tab_col">Consensus</th>
 		<th class="tab_col">Consensus (Rev)</th>
 		<th class="tab_col">Logo</th>
@@ -4888,7 +4903,7 @@ sub InsertAlignmentTable{
 ';
 
     $alignment_table_columns = "";
-    my $logo_width = 0;
+    my $logo_width = "";
     ## Fill the column's table 
     foreach my $id (keys %ids_to_cluster) {
 
@@ -4896,7 +4911,7 @@ sub InsertAlignmentTable{
 	    $motif_width_by_cluster_width = length($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus});
 	}
 
-	$logo_width = 10*$alignment_table_data{$ids_to_cluster{$id}}{$id}{width};
+	$logo_width = 20*$alignment_table_data{$ids_to_cluster{$id}}{$id}{width};
 
 	$alignment_table_columns .= '
 				<tr>					
@@ -4904,6 +4919,11 @@ sub InsertAlignmentTable{
                                         <td class="tab_spacer_1">'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{name}.'</td>
 					<td class="tab_spacer_1">'.$ids_to_cluster{$id}.'</td>
                                         <td class="tab_spacer_1">'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{collection}.'</td>
+
+                                        <td class="tab_spacer_1">'.$matrix_info{$id}{width}.'</td>
+                                        <td class="tab_spacer_1">'.$matrix_info{$id}{ic}.'</td>
+                                        <td class="tab_spacer_1">'.$matrix_info{$id}{nb_sites}.'</td>
+
 					<td class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus}, bold=>1, iupac=>$main::param{iupac_coloring}).'</td>
 					<td class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($alignment_table_data{$ids_to_cluster{$id}}{$id}{consensus_rc}, bold=>1, iupac=>$main::param{iupac_coloring}).'</td>
                                         <th class="tab_spacer_2"><a target="_blank" href="'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{logo}.'"><img class="logo_tab" width="--width--" src="'.$alignment_table_data{$ids_to_cluster{$id}}{$id}{logo}.'" /></a></th>
@@ -4911,8 +4931,8 @@ sub InsertAlignmentTable{
 				</tr>
         ';	
     }
-    $tab =~ s/--width--/$logo_width/gi;
     $tab =~ s/--insert_col_here--/$alignment_table_columns/;
+    $tab =~ s/--width--/$logo_width/gi;
 
     ## Print the HTML to the summary file
     print $syn $tab;
@@ -5206,19 +5226,19 @@ $(document).ready( function () {
 $(document).ready( function () {
     $(\'#alignment_dyn_table\').DataTable({
         "info":     false,
-        "iDisplayLength": 10,
+        "iDisplayLength": 20,
         "order": [[ 2, "asc" ]],
 	"search": {
 	    "regex": true,
 	    "smart": true
 	},
 	"aoColumnDefs": [
-            { "bSortable": true, "aTargets": [ 6,7 ] }
+            { "bSortable": true, "aTargets": [ 0,1,2,3,4,5,6, ] }
 	],
         "columnDefs": [ {
             "targets": -1,
             "data": null,
-            "width": "3%", "targets": [0,1,2,3,4,5,6,7]
+            "width": "5%", "targets": [0,1,2,3,4,5,6,7,8,9,10]
 
         } ]	
     });
