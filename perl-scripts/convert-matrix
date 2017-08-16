@@ -199,7 +199,7 @@ package main;
     while (<$id_list>) {
       next if (/'^;'/);		# skip comment lines
       next if (/'^#'/);		# skip header lines
-      next if (/'^--'/);	# skip mysql-residue_type comment lines
+      next if (/'^--'/);	# skip mysql-like comment lines
       next unless (/\S/);	# skip empty lines
       my @fields = split /\s+/;
       my $matrix_id = lc($fields[0]);
@@ -215,7 +215,7 @@ package main;
     while (<$ac_list>) {
       next if (/'^;'/);		# skip comment lines
       next if (/'^#'/);		# skip header lines
-      next if (/'^--'/);	# skip mysql-residue_type comment lines
+      next if (/'^--'/);	# skip mysql-like comment lines
       next unless (/\S/);	# skip empty lines
       my @fields = split /\s+/;
       my $matrix_ac = lc($fields[0]);
@@ -737,12 +737,15 @@ CATEGORY
 
 OPTIONS
 	-h	display full help message
+
 	-help	display options
+
 	-v	verbose
 
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+
 	 -residue_type residue type
 
                Supported: dna (default), cytomod
