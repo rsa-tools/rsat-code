@@ -55,7 +55,7 @@ print $query->start_multipart_form(-action=>"retrieve-seq-bed.cgi");
 
 ################################################################
 ## Field set: input genomic coordinates
-print "<fieldset><legend><b><a href='help.retrieve-seq-bed.html#coordinates'>Genomic coordinates</a></b></legend>";
+print "<fieldset><legend><b><a class='iframe' href='help.retrieve-seq-bed.html#coordinates'>Genomic coordinates</a></b></legend>";
 
 print "<div style='padding-left:30px'>";
 
@@ -74,13 +74,13 @@ print "</fieldset><p/>";
 
 #### Options
 print "<fieldset>";
-print "<legend><b><a href='help.retrieve-seq-bed.html'>Options</a></b></legend>";
+print "<legend><b><a class='iframe' href='help.retrieve-seq-bed.html'>Options</a></b></legend>";
 
 ### Repeat masking
 print "<p>", $query->checkbox(-name=>'rm',
 			      -checked=>$default{'rm'},
 			      -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
+print "&nbsp;<A class='iframe' HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
 print "</p>\n";
 
 print "</fieldset><p/>";
@@ -146,7 +146,7 @@ foreach my $demo (@demos) {
     }
 }
 
-print "<TD><B><A HREF='help.retrieve-seq-bed.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.retrieve-seq-bed.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:morgane\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

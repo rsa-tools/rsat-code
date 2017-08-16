@@ -1,13 +1,20 @@
 #!/usr/bin/perl
 #### this cgi script fills the HTML form for the program matrix-scan
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+    require "RSA.lib";
 }
+# if ($0 =~ /([^(\/)]+)$/) {
+#     push (@INC, "$`lib/");
+# }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA2.cgi.lib";
 require "matrix_web_forms.lib.pl";
+use RSAT::MatrixReader;
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -150,11 +157,14 @@ print "</CENTER>";
 print "<b>Citation</b>: <a href='mailto:jturatsi\@bigre.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A>, <a href='mailto:defrance@bigre.ulb.ac.be'>Matthieu Defrance</a> and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)'>Jacques van Helden</a> (2008). Using RSAT to scan genome sequences for transcription factor binding sites and cis-regulatory modules. Nat Protoc, 3, 1578-1588. <a href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed 18802439</a>";
 
 ## demo description
-print $default{demo_descr1};
-print $default{demo_descr2};
-print $default{demo_descr3};
+#print $default{demo_descr1};
+#print $default{demo_descr2};
+#print $default{demo_descr3};
 
-print $query->start_multipart_form(-action=>"matrix-scan.cgi");
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr'></div>";
+
+print $query->start_multipart_form(-action=>"matrix-scan.cgi", -id=>"form");
 
 ################################################################
 #### sequence
@@ -196,7 +206,7 @@ print $query->popup_menu(-name=>'strands',
 ################################################################
 #### origin for calculating positions
 print "&nbsp;"x4,  "<A HREF='help.matrix-scan.html#origin'><B>Origin</B></A>\n";
-print $query->popup_menu(-name=>'origin',
+print $query->popup_menu(-name=>'origin',-id=>'origin',
 			 -Values=>['start',
 				   'center',
 				   'end',
@@ -242,107 +252,130 @@ print "<BR>\n";
 print "<UL><UL><TABLE>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
 ### data for the demo
-print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
-
 
 ## Load demo sequences
 $demo_sequence_file = $ENV{RSAT}."/public_html/demo_files/Dmelanogaster_eve_up5000.fasta";
-$demo_sequence = `cat $demo_sequence_file`;
+$demo_sequence = "";
+open($fh, $demo_sequence_file);
+while(my $row = <$fh>){
+    chomp $row;
+    if($row =~ /\'/){
+    $row =~ s/\'/\\'/g;
+    }
+    $demo_sequence .= $row;
+    $demo_sequence .= "\\n";
+}
 
 ## Load demo matrices
 $demo_matrix_file = $ENV{RSAT}."/public_html/demo_files/Dmelanogaster_segmentation_12matrices.tf";
-$demo_matrix = `cat $demo_matrix_file`;
-
-
-
-$descr = "<H4>Comment on the demonstration example : </H4>";
-
-$descr .= "<blockquote class ='demo'>";
-
-$descr .= "In this demonstration, we will analyse the promoter of
-<i>Drosophila melanogaster</i> even-skipped gene (<i>eve</i>). We will scan the 5500
-bp sequence upstream the transcription start site with matrices
-representing the binding specificity of 12 transcription factors known
-to regulate <i>eve</i>. These matrices were built from binding sites
-annotated in the <a target=_blank
-href='http://www.oreganno.org'>ORegAnno</a> database by Jean-Valery
-Turatsinze.<p/>";
+$demo_matrix = "";
+open($fh, $demo_matrix_file);
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_matrix .= $row;
+    $demo_matrix .= "\\n";
+}
 
 ## demo 1
+
+print '<script>
+
+descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will analyse the promoter of\
+<i>Drosophila melanogaster</i> even-skipped gene (<i>eve</i>). We will scan the 5500\
+bp sequence upstream the transcription start site with matrices\
+representing the binding specificity of 12 transcription factors known\
+to regulate <i>eve</i>. These matrices were built from binding sites\
+annotated in the <a target=_blank \
+href=\'http://www.oreganno.org\'>ORegAnno</a> database by Jean-Valery\
+Turatsinze.<p/>";
+
+function setDemo1(demo_matrix, demo_sequence){
+    $("#reset").trigger("click");
+    descr_1 = descr + "The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the P-value.</blockquote>";
+    
+    demo_descr.innerHTML = descr_1;
+    demo.value = descr_1;
+    $("#bg_method_bginput").prop("checked",true);
+    $("#uth_pval").val("1e-4");
+    background.value = "upstream-noorf";
+    markov_order.value = "1";
+    $("#organism").val("Drosophila_melanogaster").trigger("chosen:updated");
+    $("#analysis_type_sites").prop("checked",true);
+    $("#return_rank").prop("checked",false);
+    matrix.value = demo_matrix;
+    matrix_format.value = "transfac";
+    $("#consensus_as_name").prop("checked", false);
+    sequence.value = demo_sequence;
+    origin.value = "genomic";
+}
+
+function setDemo2(demo_matrix, demo_sequence){
+    $("#reset").trigger("click");
+    descr_2 = descr + "The program will return CRERs: regions of a few hundreds residues that have a higher density of matches than expected by chance.</blockquote>";
+    
+    demo_descr.innerHTML = descr_2;
+    demo.value = descr_2;
+    $("#bg_method_bgfile").prop("checked",true);
+    $("#uth_site_pval").val("1e-4");
+    background.value = "upstream-noorf";
+    markov_order.value = "1";
+    $("#organism").val("Drosophila_melanogaster").trigger("chosen:updated");
+    $("#analysis_type_crer").prop("checked",true);
+    $("#return_rank").prop("checked",false);
+    matrix.value = demo_matrix;
+    matrix_format.value = "transfac";
+    $("#consensus_as_name").prop("checked", false);
+    $("#crer_ids").prop("checked", false);
+    sequence.value = demo_sequence;
+    origin.value = "genomic";
+}
+
+function setDemo3(demo_matrix, demo_sequence){
+    $("#reset").trigger("click");
+    descr_3 = descr + "The program will return matrices for which the total number of hits in the input sequences is higher than expected by chance.</blockquote>";
+    
+    demo_descr.innerHTML = descr_3;
+    demo.value = descr_3;
+    $("#bg_method_input").prop("checked",true);
+    $("#uth_site_pval").val("1e-4");
+    background.value = "upstream-noorf";
+    markov_order.value = "1";
+    $("#organism").val("Drosophila_melanogaster").trigger("chosen:updated");
+    $("#analysis_type_occ").prop("checked",true);
+    $("#return_rank").prop("checked",false);
+    matrix.value = demo_matrix;
+    matrix_format.value = "transfac";
+    $("#consensus_as_name").prop("checked", false);
+    sequence.value = demo_sequence;
+    origin.value = "genomic";
+    $("#uth_occ_sig_rank").val("1");
+    $("#lth_occ_score").val("5");
+}
+
+</script>';
+
 print "<TD><B>";
-print $query->hidden(-name=>'demo_descr1',-default=>$descr."The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the P-value.
-</blockquote>");
-print $query->hidden(-name=>'bg_method',-default=>'bginput');
-print $query->hidden(-name=>'uth_pval',-default=>'1e-4');
-print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
-print $query->hidden(-name=>'background',-default=>'upstream-noorf');
-print $query->hidden(-name=>'markov_order',-default=>'1');
-print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
-print $query->hidden(-name=>'analysis_type',-default=>'analysis_sites');
-print $query->hidden(-name=>'return_rank',-default=>'');
-print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'matrix_format',-default=>'transfac');
-print $query->hidden(-name=>'consensus_as_name',-default=>'');
-print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
-print $query->hidden(-name=>'origin',-default=>'genomic');
-print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
-print $query->submit(-label=>"DEMO 1 (sites)");
+print '<button type="button" onclick="setDemo1('. "'$demo_matrix'" .','."'$demo_sequence'".')">DEMO 1 (sites)</button>';
 print "</B></TD>";
-print $query->end_form;
 
 ## demo2
-print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
 print "<TD><B>";
-
-print $query->hidden(-name=>'demo_descr2',-default=>$descr."The program will return CRERs: regions of a few hundreds residues that have a higher density of matches than expected by chance.
-</blockquote>");
-print $query->hidden(-name=>'bg_method',-default=>'bgfile');
-print $query->hidden(-name=>'uth_site_pval',-default=>'1e-4');
-print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
-print $query->hidden(-name=>'background',-default=>'upstream-noorf');
-print $query->hidden(-name=>'markov_order',-default=>'1');
-print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
-print $query->hidden(-name=>'analysis_type',-default=>'analysis_crer');
-print $query->hidden(-name=>'return_rank',-default=>'');
-print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'matrix_format',-default=>'transfac');
-print $query->hidden(-name=>'consensus_as_name',-default=>'');
-print $query->hidden(-name=>'crer_ids',-default=>'');
-print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
-print $query->hidden(-name=>'origin',-default=>'genomic');
-print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
-print $query->submit(-label=>"DEMO 2 (CRERs)");
+print '<button type="button" onclick="setDemo2('. "'$demo_matrix'" .','."'$demo_sequence'".')">DEMO 2 (CRERs)</button>';
 print "</B></TD>\n";
-print $query->end_form;
+
 
 ## demo3: detect enrichment of hits for PSSMs
-print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
+
 print "<TD><B>";
-print $query->hidden(-name=>'demo_descr3',-default=>$descr."The program will return matrices for which the total number of hits in the input sequences is higher than expected by chance.</blockquote>");
-print $query->hidden(-name=>'bg_method',-default=>'bgfile');
-print $query->hidden(-name=>'uth_site_pval',-default=>'1e-3');
-print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
-print $query->hidden(-name=>'background',-default=>'upstream-noorf');
-print $query->hidden(-name=>'markov_order',-default=>'1');
-print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
-print $query->hidden(-name=>'analysis_type',-default=>'analysis_occ');
-print $query->hidden(-name=>'return_rank',-default=>'');
-print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'matrix_format',-default=>'transfac');
-print $query->hidden(-name=>'consensus_as_name',-default=>'');
-print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
-print $query->hidden(-name=>'origin',-default=>'genomic');
-print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
-print $query->hidden(-name=>'uth_occ_sig_rank',-default=>1);
-print $query->hidden(-name=>'lth_occ_score',-default=>5);
-print $query->submit(-label=>"DEMO 3 (enrichment)");
+print '<button type="button" onclick="setDemo3('. "'$demo_matrix'" .','."'$demo_sequence'".')">DEMO 3 (enrichment)</button>';
 print "</B></TD>\n";
-print $query->end_form;
+
+
 
 #$demo_sequence = ">MET8	YBR213W; upstream from -463 to -1; size: 463; location: NC_001134.7 649900 650362 D; upstream neighbour: YBR212W (distance: 463)
 #TTACAAAAGACAAAAAAAGAAAATTTTAATCTTGTCCGCAGTTTTATCTGCGTCTCTACG
@@ -586,7 +619,7 @@ sub ReturnTable {
   my $boxes_matches = "";
   @return_fields_matches = qw(sites pval rank );
   foreach my $field (@return_fields_matches) {
-    $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
+    $boxes_matches .= $query->checkbox(-name=>'return_'.$field,-id=>'return_'.$field,
 				       -CHECKED=>$default{'return_'.$field},
 				       -label=>' '.$field.' ');
   }
@@ -595,14 +628,14 @@ sub ReturnTable {
   foreach my $field (@return_fields_matches) {
   		my $display_field = $field;
   		$display_field =~ s/site_//;
-    $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
+    $boxes_matches .= $query->checkbox(-name=>'return_'.$field,-id=>'return_'.$field,
 				       -CHECKED=>$default{'return_'.$field},
 				       -label=>' '.$display_field.' ');
   }
   $boxes_matches .= "<BR/>";
   @return_fields_matches = qw(weight_limits bg_residues);
   foreach my $field (@return_fields_matches) {
-    $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
+    $boxes_matches .= $query->checkbox(-name=>'return_'.$field,-id=>'return_'.$field,
 				       -CHECKED=>$default{'return_'.$field},
 				       -label=>' '.$field.' ');
     $boxes_matches .= "<BR/>";
@@ -613,19 +646,19 @@ sub ReturnTable {
   my $boxes_occ = "";
   @return_fields_occ = qw(distrib);
   foreach my $field (@return_fields_occ) {
-    $boxes_occ .= $query->checkbox(-name=>'return_'.$field,
+    $boxes_occ .= $query->checkbox(-name=>'return_'.$field,-id=>'return_'.$field,
 				   -CHECKED=>$default{'return_'.$field},
 				   -label=>' '.$field.' ');
   }
   $boxes_occ .= "<BR/>";
   @return_fields_occ = qw(occ_proba);
   foreach my $field (@return_fields_occ) {
-    $boxes_occ .= $query->checkbox(-name=>'return_'.$field,
+    $boxes_occ .= $query->checkbox(-name=>'return_'.$field,-id=>'return_'.$field,
 				   -CHECKED=>$default{'return_'.$field},
 				   -label=>' '.$field.' ');
   }
 
-  $boxes_occ .= "&nbsp;&nbsp; <b> sort by </b> &nbsp;&nbsp;".$query->popup_menu(-name=>'sort_distrib',
+$boxes_occ .= "&nbsp;&nbsp; <b> sort by </b> &nbsp;&nbsp;".$query->popup_menu(-name=>'sort_distrib',-id=>'sort_distrib',
 										-Values=>['scores',
 											  'occ_sig'],
 										-default=>$default{sort_distrib});
@@ -634,7 +667,7 @@ sub ReturnTable {
   my $boxes_crer = "";
   @return_fields_crer = qw(crer normw);
   foreach my $field (@return_fields_crer) {
-    $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
+    $boxes_crer .= $query->checkbox(-name=>'return_'.$field,-id=>'return_'.$field,
 				    -CHECKED=>$default{'return_'.$field},
 				    -label=>' '.$field.' ');
   }
@@ -643,18 +676,18 @@ sub ReturnTable {
   foreach my $field (@return_fields_crer) {
   	  	my $display_field = $field;
   		$display_field =~ s/crer_//;
-    $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
+    $boxes_crer .= $query->checkbox(-name=>'return_'.$field,-id=>'return_'.$field,
 				    -CHECKED=>$default{'return_'.$field},
 				    -label=>' '.$display_field.' ');
   }
   @return_fields_crer = qw(crer_sites);
   foreach my $field (@return_fields_crer) {
-    $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
+    $boxes_crer .= $query->checkbox(-name=>'return_'.$field,-id=>'return_'.$field,
 				    -CHECKED=>$default{'return_'.$field},
 				    -label=>' '."sites".' ');
   }
   $boxes_crer .= "<BR/>";
-  $boxes_crer .= $query->checkbox(-name=>'crer_ids',
+  $boxes_crer .= $query->checkbox(-name=>'crer_ids',-id=>'crer_ids',
 				  -CHECKED=>$default{crer_ids},
 				  -label=>' '."crer-specific identifiers".' ');
 
@@ -662,7 +695,7 @@ sub ReturnTable {
   my $boxes_add = "";
   @return_fields_add = qw(matrix freq_matrix weight_matrix bg_model);
   foreach my $field (@return_fields_add) {
-    $boxes_add.= $query->checkbox(-name=>'return_'.$field,
+    $boxes_add.= $query->checkbox(-name=>'return_'.$field,-id=>'return_'.$field,
 				  -CHECKED=>$default{'return_'.$field},
 				  -label=>' '.$field.' ');
   }
@@ -680,20 +713,20 @@ sub ReturnTable {
 
 			      ### Threshold on score
 			      $query->td(['Weight<br>score',
-					  $query->textfield(-name=>'lth_score',
+					  $query->textfield(-name=>'lth_score',-id=>'lth_score',
 							    -default=>$default{lth_score},
 							    -size=>5),
-					  $query->textfield(-name=>'uth_score',
+					  $query->textfield(-name=>'uth_score',-id=>'uth_score',
 							    -default=>$default{uth_score},
 							    -size=>5)
 					 ]),
 
 			      ### Threshold on P-value of the score
 			      $query->td(['P-value',
-					  $query->textfield(-name=>'lth_pval',
+					  $query->textfield(-name=>'lth_pval',-id=>'lth_pval',
 							    -default=>$default{lth_pval},
 							    -size=>5),
-					  $query->textfield(-name=>'uth_pval',
+					  $query->textfield(-name=>'uth_pval',-id=>'uth_pval',
 							    -default=>$default{uth_pval},
 							    -size=>5)
 					 ]),
@@ -765,7 +798,7 @@ sub ReturnTable {
 								    ]),
 			      ### Threshold on score
 			      $query->td(['Weight<br>score',
-					  $query->textfield(-name=>'lth_occ_score',
+					  $query->textfield(-name=>'lth_occ_score',-id=>'lth_occ_score',
 							    -default=>$default{lth_occ_score},
 							    -size=>5),
 					  $query->textfield(-name=>'uth_occ_score',
@@ -831,7 +864,7 @@ sub ReturnTable {
 					  $query->textfield(-name=>'lth_occ_sig_rank',
 							    -default=>$default{lth_occ_sig_rank},
 							    -size=>5),
-					  $query->textfield(-name=>'uth_occ_sig_rank',
+					  $query->textfield(-name=>'uth_occ_sig_rank',-id=>'uth_occ_sig_rank',
 							    -default=>$default{uth_occ_sig_rank},
 							    -size=>5)
 					 ]),
@@ -863,7 +896,7 @@ sub ReturnTable {
 					  $query->textfield(-name=>'lth_site_pval',
 							    -default=>$default{lth_site_pval},
 							    -size=>5),
-					  $query->textfield(-name=>'uth_site_pval',
+					  $query->textfield(-name=>'uth_site_pval',-id=>'uth_site_pval',
 							    -default=>$default{uth_site_pval},
 							    -size=>5)
 					 ]),
@@ -912,13 +945,13 @@ sub ReturnTable {
   print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>3},
 		      "<tr><td/>",
 		      "<th bgcolor='#CCCCCC'>
-  			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_sites' $checked{'analysis_sites'}><BR/>
+  			<INPUT TYPE='radio' NAME='analysis_type' id='analysis_type_sites' VALUE='analysis_sites' $checked{'analysis_sites'}><BR/>
   			<A HREF='help.matrix-scan.html#return_fields'>Individual matches</A></th>",
 		      "<th bgcolor='#D6EEFA'>
-  			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_crer' $checked{analysis_crer}><BR/>
+  			<INPUT TYPE='radio' NAME='analysis_type' 'analysis_type_crer' VALUE='analysis_crer' $checked{analysis_crer}><BR/>
 			<A HREF='help.matrix-scan.html#return_fields'>CRERs <BR/> (Cis-Regulatory element <BR>Enriched Regions)</A> </th>",
 		      "<th bgcolor='#F6E6CA'>
-  			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_occ' $checked{analysis_occ}><BR/>
+  			<INPUT TYPE='radio' NAME='analysis_type' 'analysis_type_occ' VALUE='analysis_occ' $checked{analysis_occ}><BR/>
   			<A HREF='help.matrix-scan.html#return_fields'>Enrichment of hits<br>in the whole input sequence set</A></th> ",
 		      "</tr>",
 		      "<tr align='left' valign='top'><td><b>Fields to <BR/> return</b></td>",

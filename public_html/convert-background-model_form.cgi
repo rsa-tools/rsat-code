@@ -85,7 +85,7 @@ print "<hr>";
 
 ### Output bg format
 print "<BR>";
-print "<B><A HREF='help.convert-background-model.html#item__2dto_output_format'>Output format</A></B>&nbsp;";
+print "<B><A class='iframe' HREF='help.convert-background-model.html#item__2dto_output_format'>Output format</A></B>&nbsp;";
 print $query->popup_menu(-name=>'output_format',
 			 -Values=>[@supported_output_formats],
 			 -default=>$default{output_format});
@@ -93,7 +93,7 @@ print "<BR>\n";
 
 
 print "<br/>";
-print "<A HREF='help.convert-background-model.html#item__2ddecimals__23'><B>decimals</B></A>\n";
+print "<A class='iframe' HREF='help.convert-background-model.html#item__2ddecimals__23'><B>decimals</B></A>\n";
 print $query->popup_menu(-name=>'decimals',
 			 -Values=>[1..12],
 			 -default=>$default{decimals});
@@ -114,7 +114,7 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 
-print "<TD><B><A HREF='help.convert-background-model.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.convert-background-model.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

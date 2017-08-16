@@ -1,0 +1,282 @@
+
+         
+        <link rel='stylesheet' href='css/simple-sidebar.css'></link>
+        <link rel="stylesheet" type="text/css" href="menu.css" media="screen,projection,print" />
+        <link rel='stylesheet' href='css/colorbox.css'></link>
+	<link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
+        <script src="js/jquery.js"></script>
+        <script src="RSAT_menu.js" type="text/javascript"></script>
+        <script src="js/jquery.colorbox-min.js"></script>
+
+        <script>
+            $(document).ready(function(){
+                $('.iframe').colorbox({iframe:true, innerWidth:'70%', innerHeight:'70%'});
+		$("#menu-toggle").click(function(e){
+			e.preventDefault();
+			$("#wrapper").toggleClass('toggled');
+		});
+            });
+
+        </script>
+
+<div id="wrapper"> 
+                   <!-- Sidebar -->
+            <div id="sidebar-wrapper">
+             <div id="menubody" style='padding-top:10px'>
+             <div id="tabmenu">
+             <ul class="rsat">
+                 <li><a class="active" href="RSAT_home.cgi">RSAT</a></li>
+                 <li><a href="NeAT_home.php" >NeAT</a></li>
+                 <!--      <li><a href="http://www.rsat.eu/index_neat.html" target="_top">NeAT</a></li>-->
+             </ul>
+             </div> <! /#tabmenu -->
+             <div id="content" class="rsat">
+                 
+                 <div class="menu">
+                     <h2>
+                         <a href="RSAT_home.cgi" >
+                             <img src="images/RSAT_icon.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0">
+                                 <!--<a href="RSAT_home.cgi" ><img src="images/RSAT_logo.png" width='65'>
+                                  <span class='brown_text'>R</span>egulatory <br/>
+                                  <span class='brown_text'>S</span>equence <br/>
+                                  <span class='brown_text'>A</span>nalysis <br/>
+                                  <span class='brown_text'>T</span>ools --></a>
+                     </h2>
+                 </div>
+                 
+                 <!--      <p ><h2 style="border-style:solid;border-color:#cc6600;padding:0 10px;background-color:#F6E6CA;"><a href="http://www.eccb14.org/program/tutorials/cis-r" target="_blank">RSAT tutorial<br>at ECCB'14</a></h2></p>>
+                  
+                  <p ><h2 style="border-style:solid;border-color:#cc6600;padding:0 10px;background-color:#F6E6CA;">
+                  <a target='_blank' href="http://rsat.ulb.ac.be/eccb14/" >RSAT tutorial<br>at ECCB'14</a>
+                  </h2></p-->
+                 <div>
+                     <p align='right'><b>New&nbsp;items</b><img src="images/onebit_49.png"  class="new"/></p>
+                 </div>
+                 <!--div class="menu">
+                  <div class="menu_heading_open" onclick="toggleMenu('100')" id="heading100">Most popular tools</div>
+                  <div id="menu100">
+                  <a class="menu_item" href="retrieve-seq_form.cgi"
+                  >retrieve sequence</a>
+                  <a class="menu_item" href="peak-motifs_form.cgi" >peak-motifs</a>
+                  <a class="menu_item" href="oligo-analysis_form.cgi" >oligo-analysis (words)</a>
+                  <a class="menu_item" href="matrix-scan-quick_form.cgi" >matrix-scan (quick)</a>
+                  </div>
+                  </div-->
+                 
+                 <div class="menu_expand" onclick="expandAll('14')" id="expand"> > view all tools</div>
+                 
+                 <div class="menu">
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('1')" id="heading1">Genomes and genes</div>
+                     <div id="menu1" class="menu_collapsible">
+                         <a class="menu_item" href="supported-organisms.cgi">supported organisms</a>
+                         <a class="menu_item" href="gene-info_form.cgi"> gene information</a>
+                         <a class="menu_item" href="infer-operons_form.cgi" >infer operons</a>
+                         <a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>
+                         <a class="menu_item" href="random-genes_form.cgi" >random gene selection</a>
+                     </div>
+                     
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('2')" id="heading2">Sequence tools <img src="images/onebit_49.png" height="30" class="new"></img></div>
+                     <div id="menu2" class="menu_collapsible">
+                         <a class="menu_item" href="retrieve-seq_form.cgi" >retrieve sequence</a>
+                         <a class="menu_item" href="retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>
+                         <a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>
+                         <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf &nbsp;<img src="images/onebit_49.png" height="30" class="new"></a>
+                         <!--	  <a class="menu_item" href="http://www.rsat.eu/retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>-->
+                         <a class="menu_item" href="purge-sequence_form.cgi" >purge sequence</a>
+                         <a class="menu_item" href="convert-seq_form.cgi" >convert sequence</a>
+                         <a class="menu_item" href="random-seq_form.cgi" >random sequences</a>
+                     </div>
+                     
+                     
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('12')" id="heading12">Matrix tools <img src="images/onebit_49.png" height="30" class="new"></img></div>
+                     <div id="menu12" class="menu_collapsible">
+                         <a class="menu_item" href="convert-matrix_form.cgi" >convert matrix</a>
+                         <a class="menu_item" href="compare-matrices_form.cgi" >compare matrices</a>
+                         <a class="menu_item" href="matrix-clustering_form.cgi" >matrix-clustering&nbsp;<img src="images/onebit_49.png" height="30" class="new"></a>
+                         <a class="menu_item" href="matrix-distrib_form.cgi" >matrix distrib</a>
+                         <a class="menu_item" href="matrix-quality_form.cgi" >matrix quality</a>
+                     </div>
+                     
+                     
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('11')" id="heading11">Build control sets</div>
+                     <div id="menu11" class="menu_collapsible">
+                         <a class="menu_item" href="random-genes_form.cgi" >random gene selection</a>
+                         <a class="menu_item" href="random-seq_form.cgi" >random sequence</a>
+                         <a class="menu_item" href="random-genome-fragments_form.cgi" >random genome fragments</a>
+                         <!--	  <a class="menu_item" href="http://www.rsat.eu/random-genome-fragments_form.cgi" >random genome fragments</a>-->
+                         <a class="menu_item" href="random-motif_form.cgi" >random-motif</a>
+                         <a class="menu_item" href="permute-matrix_form.cgi" >permute-matrix</a>
+                         <a class="menu_item" href="random-sites_form.cgi" >random-sites</a>
+                         <a class="menu_item" href="implant-sites_form.cgi" >implant-sites</a>
+                     </div>
+                 </div>
+                 
+                 <div class="menu">
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('3')" id="heading3">Motif discovery</div>
+                     <div id="menu3" class="menu_collapsible">
+                         <a class="menu_separator">strings</a>
+                         <a class="menu_item" href="oligo-analysis_form.cgi" >oligo-analysis (words)</a>
+                         <a class="menu_item" href="oligo-diff_form.cgi" >oligo-diff (words)</a>
+                         <a class="menu_item" href="dyad-analysis_form.cgi" >dyad-analysis (spaced pairs)</a>
+                         <a class="menu_item_last" href="pattern-assembly_form.cgi" >pattern assembly</a>
+                         <a class="menu_separator">strings with positional biais</a>
+                         <a class="menu_item" href="position-analysis_form.cgi" >position-analysis (words)</a>
+                         <a class="menu_item" href="local-word-analysis_form.cgi" >local-word-analysis (word and spaced pairs)</a>
+                         <a class="menu_separator">matrices</a>
+                         <a class="menu_item" href="info-gibbs_form.cgi" >info-gibbs</a>
+                         <a class="menu_item" href="consensus_form.cgi" >consensus</a>
+                         <!--	  <a class="menu_item" href="gibbs_form.cgi" >gibbs</a>-->
+                     </div>
+                     
+                     
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('4')" id="heading4">Pattern matching <img src="images/onebit_49.png" height="30" class="new"></div>
+                     <div id="menu4" class="menu_collapsible">
+                         <a class="menu_separator">matrices</a>
+                         <a class="menu_item" href="matrix-scan_form.cgi" >matrix-scan<br>(full options)</a>
+                         <a class="menu_item" href="matrix-scan-quick_form.cgi" >matrix-scan (quick)</a>
+                         <a class="menu_item" href="crer-scan_form.cgi" >crer-scan&nbsp;<img src="images/onebit_49.png" height="30" class="new"></a>
+                         <!--	  <a class="menu_item" href="patser_form.cgi" >patser [discontinued]</a>-->
+                         <!--	  <a class="menu_item" href="genome-scale-patser_form.cgi" >genome-scale patser [discontinued]</a>-->
+                         <a class="menu_separator">strings</a>
+                         <a class="menu_item" href="dna-pattern_form.cgi" >dna-pattern</a>
+                         <a class="menu_item_last" href="genome-scale-dna-pattern_form.cgi" >genome-scale dna-pattern</a>
+                     </div>
+                 </div>
+                 
+                 <div class="menu">
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('10')" id="heading10">Comparative genomics<img src="images/onebit_49.png" height="30" class="new"></img></div>
+                     <div id="menu10" class="menu_collapsible">
+                         <a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>
+                         <a class="menu_item" href="get-orthologs-compara_form.cgi" >get orthologs-compara&nbsp;<img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <a class="menu_item" href="footprint-discovery_form.cgi" >footprint-discovery</a>
+                         <a class="menu_item" href="footprint-scan_form.cgi" >footprint-scan&nbsp;<img src="images/onebit_49.png" height="30" class="new"></img>
+                         </a>
+                     </div>
+                     
+                     
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('13')" id="heading13">NGS - ChIP-seq</div>
+                     <div id="menu13" class="menu_collapsible">
+                         <a class="menu_item" href="peak-motifs_form.cgi" >peak-motifs</a>
+                         <a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>
+                         <a class="menu_item" href="random-genome-fragments_form.cgi" >random genome fragments</a>
+                         <!--	  <a class="menu_item" href="random-genome-fragments_form.cgi" >random genome fragments</a>-->
+                     </div>
+                     
+                     
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('9')" id="heading9">Genetic variations <img src="images/onebit_49.png" height="30" class="new"></img></div>
+                     <div id="menu9" class="menu_collapsible">
+                         <a class="menu_item" href="variation-info_form.cgi" >Variation information<img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <a class="menu_item" href="retrieve-variation-seq_form.cgi" >Retrieve variation sequences <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <a class="menu_item" href="variation-scan_form.cgi" >Scan variations with motifs <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <a class="menu_item" href="convert-variations_form.cgi" >Convert variation formats <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                     </div>
+                 </div>
+                 
+                 
+                 <div class="menu">
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('8')" id="heading8">Conversion/Utilities</div>
+                     <div id="menu8" class="menu_collapsible">
+                         <a class="menu_separator">Set comparisons / enrichment</a>
+                         <a class="menu_item_last" href="compare_classes_form.php?menu=RSAT" >compare classes/clusters</a>
+                         <a class="menu_separator">Stats</a>
+                         <a class="menu_item_last" href="classfreq_form.cgi" >Frequency distribution</a>
+                         <a class="menu_separator">sequences</a>
+                         <a class="menu_item_last" href="convert-seq_form.cgi" >convert sequence</a>
+                         <a class="menu_separator">matrices</a>
+                         <a class="menu_item_last" href="convert-matrix_form.cgi" >convert matrix / logo</a>
+                         <a class="menu_separator">background models</a>
+                         <a class="menu_item_last" href="create-background-model_form.cgi" >create background</a>
+                         <a class="menu_item" href="convert-background-model_form.cgi" >convert background</a>
+                         <a class="menu_item" href="seq-proba_form.cgi" >sequence probability</a>
+                         <a class="menu_separator">features</a>
+                         <a class="menu_item" href="convert-features_form.cgi" >convert features</a>
+                         <a class="menu_item_last" href="compare-features_form.cgi" >compare features</a>
+                     </div>
+                     
+                     
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('5')" id="heading5">Drawing</div>
+                     <div id="menu5" class="menu_collapsible">
+                         <a class="menu_item" href="feature-map_form.cgi" >feature map</a>
+                         <a class="menu_item" href="XYgraph_form.cgi" >XY graph</a>
+                     </div>
+                     
+                     <!--<div class="menu_heading_closed"
+                      onclick="toggleMenu('7')" id="heading7">Other tools</div>
+                      <div id="menu7" class="menu_collapsible">
+                      </div>
+                      -->
+                     
+                     
+                 </div>
+                 
+                 <div class="menu">
+                     <div class="menu_heading_closed"
+                         onclick="toggleMenu('6')" id="heading6">SOAP Web services</div>
+                     <div id="menu6" class="menu_collapsible">
+                         <a class="menu_item" href="htmllink.cgi?title=RSAT : Web services&file=web_services.html">Programmatic interface to RSAT</a>
+                         <a class="menu_item" href="htmllink.cgi?title=RSAT : Web services documentation&file=web_services/RSATWS_documentation.xml">WSDL Documentation</a>
+                         <!--a class="menu_item" href="web_services/RSATWS.wsdl" target=tools>WSDL</a>
+                          <a class="menu_item" href="ws_clients.html" target=tools>Clients</a>
+                          <a class="menu_item" href="ws_workflows.html" target=tools>Taverna workflows </a-->
+                     </div>
+                     
+                 </div>
+                 
+                 <div class="menu">
+                     <!-- <br /> -->	
+                     
+                     <div class="menu_heading_open"
+                         onclick="toggleMenu('7')" id="heading7">Help & Contact</div>
+                         <div id="menu7" class="menu_collapsible_display">
+                         <a class="menu_item" href="htmllink.cgi?title=RSAT : People&file=people.html" >RSAT team</a>
+                         <a class="menu_item" href="http://rsa-tools.github.io/teaching/index.html" target="_blank">Training material <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <a class="menu_item" href="htmllink.cgi?title=RSAT : tutorials&file=tutorials/tutorials.html" >Tutorials</a>
+                         <!--<a class="menu_item" href="forum_out.html" ><font color=#FFCCCC>Contact & Forum</font></a>-->
+                         <a class="menu_item" href="htmllink.cgi?title=RSAT : Publication&file=publications.html" >Publications</a>
+                         <a class="menu_item" href="htmllink.cgi?title=RSAT : Credits&file=credits.html" >Credits</a>
+                         <a class="menu_item" href="http://teaching.rsat.eu/download-request_form.cgi" >Download</a>
+                         <a class="menu_item_last" href="htmllink.cgi?title=RSAT : Motif databases&file=motif_databases/" >Motif databases</a>
+                         <a class="menu_item_last" href="htmllink.cgi?title=RSAT : Data&file=data/" >Data</a>
+                         
+                         </div>
+                         <!--div class="menu_heading_closed"
+                         onclick="toggleMenu('9')" id="heading9">Information</div>
+                         <div id="menu9" class="menu_collapsible">
+                         
+                         
+                         <a class="menu_item" href="citing_rsat.html" >Citing RSAT</a>
+                         
+                         
+                         
+                         <a class="menu_item" href="change_history.html" target ="tools">Change history</a>
+                         
+                         </div-->
+                         
+                         
+                         </div>
+                         
+                         <!--      <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a>-->
+                         
+                         <h3>
+                         <script type='text/javascript'><!--
+                         var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Feedback<\/a>');
+                             //--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (Using spam protection)</a></noscript>
+                                 <br/>
+                                 <A target=_top href="http://www.bigre.ulb.ac.be/Users/jvanheld/">Jacques van Helden</A>
+                                 </h3>
+                            </div>     
+                                 </div>
+            
+            </div><!-- /#sidebar-wrapper -->
+

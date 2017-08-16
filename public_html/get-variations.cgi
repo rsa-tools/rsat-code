@@ -87,7 +87,7 @@ if ($query->param('uploaded_file')) {
 	print INPUT_FILE;
     }
     close INPUT_FILE;
-} elsif ($query->param('variants_url') =~ /\S/) {
+}elsif ($query->param('variants_url') =~ /\S/) {
     my $url = $query->param('variants_url');
     &RSAT::message::Info("Fetching variants from URL ".$url) if ($ENV{rsat_echo} >= 1);
     my $var = "";

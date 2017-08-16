@@ -20,9 +20,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 
-### print the header
 &RSA_header("retrieve-seq result", 'results');
-
+### print the header
+#&RSA_header("retrieve-seq result", 'results');
 
 ## Check security issues
 &CheckWebInput($query);
