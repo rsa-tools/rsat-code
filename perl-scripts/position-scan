@@ -1044,6 +1044,7 @@ sub ScanSequences {
 	$matrix_scan_cmd .= " -return limits -return pval -ac_as_name";
 	$matrix_scan_cmd .= " -quick -o ".$so;
 	$matrix_scan_cmd .= " -bgfile ".$bg." -bg_format ".$bg_format;
+	
 	&doit($matrix_scan_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
 	if($seq_counter == 1){

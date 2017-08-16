@@ -348,117 +348,12 @@ sub index_alphabet {
   my @alphabet = $self->getAlphabet();
   my $row = 0;
   foreach my $letter (@alphabet) {
-#    $self->add_hash_attribute("alphabet_index", lc($letter), $row);
-    $self->add_hash_attribute("alphabet_index", $letter, $row);
+    $self->add_hash_attribute("alphabet_index", lc($letter), $row);
 #	$alphabet_index{$letter} = $row;
 #	&RSAT::message::Debug("Alphabet index", $letter, $row) if ($main::verbose >= 10);
     $row++;
   }
 }
-
-
-=pod
-
-=item B<setAlphabet(@alphabet)>
-
-Specify the alphabet (i.e. the list of valid letters) for the table.
-
-=cut
-sub setAlphabet {
-    my ($self, @new_alphabet) = @_;
-    @{$self->{alphabet}} = @new_alphabet;
-
-    ## update the number of columns
-    $self->force_attribute("nrow", scalar(@new_alphabet));
-#    &RSAT::message::Debug("&RSAT::table::setAlphabet()", "new alphabet", $self->getAlphabet())) if ($main::verbose >= 10);
-}
-
-
-
-
-=pod
-
-=item B<setAlphabet_uc(@alphabet)>
-
-Same as setAlphabet(), but first converts the alphabet to uppercases,
-to ensure case-insensitivvity.
-
-=cut
-sub setAlphabet_uc {
-    my ($self, @new_alphabet) = @_;
-
-    ## Convert alphabet to uppercases
-    for my $i (0..$#new_alphabet) {
-	$new_alphabet[$i] = uc($new_alphabet[$i]);
-    }
-
-    $self->setAlphabet(@new_alphabet);
-}
-
-
-
-
-=pod
-
-=item B<setAlphabet_lc(@alphabet)>
-
-Same as setAlphabet(), but first converts the alphabet to lowercases,
-to ensure case-insensitivvity.
-
-=cut
-sub setAlphabet_lc {
-    my ($self, @new_alphabet) = @_;
-
-    ## Convert alphabet to uppercases
-    for my $i (0..$#new_alphabet) {
-	$new_alphabet[$i] = lc($new_alphabet[$i]);
-    }
-    $self->setAlphabet(@new_alphabet);
-}
-
-
-=pod
-
-=item B<set_alphabet_for_type()>
-
-=cut
-
-sub set_alphabet_for_type {
-  my ($self) = @_;
-  my $matrix_type = $self->get_attribute("residue_type");
-  unless ($matrix_type) {
-    $matrix_type = "dna";
-    $self->force_attribute("residue_type", $matrix_type);
-    $self->set_parameter("residue_type", $matrix_type);
-  }
-#  &RSAT::message::Debug("matrix_type", $matrix_type) if ($main::verbose >= 10);
-  
-  ## Set alphabet for cytomod 0
-  my @alphabet;
-  if ($matrix_type eq "cytomod") {
-    @alphabet = qw(A C G T h m 1 2); 
-    $self->setAlphabet(@alphabet);
-  } elsif ($matrix_type eq "dna") {
-    @alphabet = qw(A C G T);
-    $self->setAlphabet_lc(@alphabet);
-  } else {
-    &RSAT::error::FatalError("Invalid matrix type. Supported: dna, cytomod.");
-  }
-  
-}
-
-=pod
-
-=item B<getAlphabet()>
-
-Return the list of valid letters for the table
-
-=cut
-sub getAlphabet {
-    my ($self) = @_;
-    return @{$self->{alphabet}};
-}
-
 
 
 
@@ -823,39 +718,32 @@ Usage: $matrix->sort_row()
 =cut
 sub sort_rows {
   my ($self) = @_;
-  my $type = $self->get_attribute("residue_type") || "dna";
-  if (lc($type) eq "dna") {
-    my @alphabet = $self->getAlphabet();
-    my $ncol = $self->ncol();
-    my $nrow = $self->nrow();
-    
-    ## Determine the column for each residue
-    my @sorted_alphabet = sort @alphabet;
-    foreach my $r (0..$#sorted_alphabet) {
-      my $residue = $sorted_alphabet[$r];
-      $order{$residue} = $r;
-    }
+  my @alphabet = $self->getAlphabet();
+  my $ncol = $self->ncol();
+  my $nrow = $self->nrow();
+
+  ## Determine the column for each residue
+  my @sorted_alphabet = sort @alphabet;
+  foreach my $r (0..$#sorted_alphabet) {
+    my $residue = $sorted_alphabet[$r];
+    $order{$residue} = $r;
+  }
 
 #  &RSAT::message::Info("Sorting matrix rows", join(";", @alphabet), join(";", @sorted_alphabet)) if ($main::verbose >= 10);
-    
-    ## Get the original count matrix
-    my @ori_matrix = $self->getMatrix();
-    
-    my @sorted_matrix = ();
-    for my $r  (0..$#alphabet) {
-      my $residue = $alphabet[$r];
-      my $target_row = $order{$residue};
-      for my $c (0..($ncol-1)) {
-	$sorted_matrix[$c][$target_row] = $ori_matrix[$c][$r];
-      }
+
+  ## Get the original count matrix
+  my @ori_matrix = $self->getMatrix();
+
+  my @sorted_matrix = ();
+  for my $r  (0..$#alphabet) {
+    my $residue = $alphabet[$r];
+    my $target_row = $order{$residue};
+    for my $c (0..($ncol-1)) {
+      $sorted_matrix[$c][$target_row] = $ori_matrix[$c][$r];
     }
-    $self->setMatrix($nrow, $ncol, @sorted_matrix);
-#  $self->setAlphabet_lc(@sorted_alphabet);
-    $self->setAlphabet(@sorted_alphabet);
-  } else {
-    &RSAT::message::Warning("&RSAT::matrix::sort_rows()", "Matrix sorting does not work for non-DNA matrices.") if ($main::verbose >= 5);
-    $self->set_alphabet_for_type();
   }
+  $self->setMatrix($nrow, $ncol, @sorted_matrix);
+  $self->setAlphabet_lc(@sorted_alphabet);
 }
 
 
@@ -1072,7 +960,7 @@ sub to_TRANSFAC {
     my $header = "P0  "; 
     my @alphabet = $self->getAlphabet();
     foreach my $letter (@alphabet) {
-      $header .= sprintf "%6s", $letter;
+      $header .= sprintf "%6s", uc($letter);
     }
     $to_print .= $header."\n";
 
@@ -1232,13 +1120,13 @@ sub to_STAMP {
     my ($self, %args) = @_;
     my $to_print = "";
 
-    # &RSAT::message::Debug(
-    #   "&RSAT::matrix::to_STAMP()", 
-    #   $self->get_attribute("accession"), 
-    #   $self->get_attribute("id"), 
-    #   $self->get_attribute("name"), 
-    #   $self->get_attribute("description"), 
-    # 	) if ($main::verbose >= 10);
+    &RSAT::message::Debug(
+      "&RSAT::matrix::to_STAMP()", 
+      $self->get_attribute("accession"), 
+      $self->get_attribute("id"), 
+      $self->get_attribute("name"), 
+      $self->get_attribute("description"), 
+	) if ($main::verbose >= 0);
     
     my $output_format = $args{format};
     $output_format = lc($output_format);
@@ -1507,11 +1395,10 @@ sub to_tab {
       @matrix = @{$self->{$type}};
     }
 
-    # &RSAT::message::Debug("matrix to print", $self->get_attribute("id"), $type, join ", ", @matrix) if ($main::verbose >= 10);
+#    &RSAT::message::Debug("matrix to print", $self->get_attribute("id"), $type, join ", ", @matrix) if ($main::verbose >= 10);
     my @alphabet = $self->getAlphabet();
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
-    &RSAT::message::Debug("matrix", $self->get_attribute("id"), $residue_type, $ncol, $nrow, join(":", @alphabet)) if ($main::verbose >= 0);
 
     ## Header of the matrix
     if (($self->get_attribute("header"))
@@ -1933,7 +1820,7 @@ sub calcWeights {
     my @weights = ();
     for my $c (0..($ncol-1)) {
 	for my $r (0..($nrow-1)) {
-	    my $letter = lc $alphabet[$r];
+	    my $letter = $alphabet[$r];
 	    my $prior = $prior{$letter};
 	    my $freq = $frequencies[$c][$r];
 	    if ($freq == 0) {
@@ -2041,7 +1928,7 @@ sub calcInformation {
     my $total_information = 0; ## Total information for the matrix
     for my $c (0..($ncol-1)) {
 	for my $r (0..($nrow-1)) {
-	    my $letter = lc $alphabet[$r];
+	    my $letter = $alphabet[$r];
 	    my $prior = $prior{$letter};
 	    my $freq = $frequencies[$c][$r];
 	    if ($freq == 0) {
@@ -2395,7 +2282,7 @@ sub calcFrequencies {
   for my $c (0..($ncol-1)) {
     my $col_sum = 0;
     for my $r (0..($nrow-1)) {
-      my $letter = lc $alphabet[$r];
+      my $letter = $alphabet[$r];
       my $prior = $prior{$letter};
       my $occ = $matrix[$c][$r];
       $col_sum += $occ;
@@ -2631,18 +2518,14 @@ sub calcConsensus {
       $regular .= "]";
     }
 
-    ## Use uppercase for scores >= 1.  This is only valid for DNA
-    ## alphabet, since other alphabets may be case-sensitive
-    ## (e.g. Cytomod).
-    #if ($self->get_attribute("residue_type") eq "dna") {
-      if ($col_max >= 1) {
-	$consensus_strict .= uc($col_consensus);
-	$consensus .= uc($regular);
-      } else {
-	$consensus_strict .= lc($col_consensus);
-	$consensus .= lc($regular);
-      }
-    #}
+    ## Use uppercase for scores >= 1
+    if ($col_max >= 1) {
+      $consensus_strict .= uc($col_consensus);
+      $consensus .= uc($regular);
+    } else {
+      $consensus_strict .= lc($col_consensus);
+      $consensus .= lc($regular);
+    }
   }
   my $consensus_IUPAC = &main::regular_to_IUPAC($consensus);
 
@@ -2653,7 +2536,6 @@ sub calcConsensus {
   ## Degenerate consensus in IUPAC format
   $self->set_parameter("consensus.IUPAC", $consensus_IUPAC);
   $self->set_parameter("consensus.IUPAC.rc", &RSAT::SeqUtil::ReverseComplement($consensus_IUPAC));
-&RSAT::message::Info("Consensus IUPAC", $self->get_attribute("consensus.IUPAC"));
 
   ## Degenerate consensus in regexp format
   $self->set_parameter("consensus.regexp", $consensus);
@@ -3023,7 +2905,7 @@ sub _printMatrixRow {
 
 =item get_row($row_nb, $ncol, @table)
 
-Return an array with the values of a matrix row.
+Return a row of the table as a list.
 
 =cut
 sub get_row {
@@ -4480,15 +4362,6 @@ sub makeLogo {
     &RSAT::message::Debug("makeLogo", $id, $logo_dir, $nb_sites, $rev_compl, "fake sequences", $fake_seq_file) if ($main::verbose >= 5);
   }
 
-  $self->set_alphabet_for_type();
-  my $residue_type = "";
-  $residue_type = $self->get_attribute("residue_type");
-  my $alphastring = "";
-  $alphastring = " --alphabet 'ACGTm1h2'" if ($residue_type eq 'cytomod');
-  $alphastring = " --alphabet 'ACGT'" if ($residue_type eq 'dna');
-  
-  print "-> ".$residue_type."\n";
-
   ## Generate the logo(s)
   foreach my $logo_format (@logo_formats){
     my $logo_cmd = "";
@@ -4511,10 +4384,7 @@ sub makeLogo {
       &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
       &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5); 
 
-    } else {
-
-
-
+    } else {      
       ## Prepare the NEW weblogo3 command
       $logo_cmd = "cd ".$logo_dir;
       $logo_cmd .= "; ".$logo_cmd_path;
@@ -4537,21 +4407,12 @@ sub makeLogo {
       $logo_cmd .= " --show-yaxis YES";
       $logo_cmd .= " --show-xaxis YES";
       $logo_cmd .= " --resolution 299";
-#      $logo_cmd .= " --sequence-type dna";
+      $logo_cmd .= " --sequence-type dna";
       $logo_cmd .= " --errorbars YES";
       $logo_cmd .= " --color '#CA0813' T 'Thymine'";
       $logo_cmd .= " --color '#061AC8' C 'Cytosine'";
       $logo_cmd .= " --color '#1FCA23' A 'Adenine'";
       $logo_cmd .= " --color '#FDB22B' G 'Guanine'";
-
-
-
-      $logo_cmd .= " --color '#D73027' m '5-Methylcytosine'" if ($residue_type eq 'cytomod');
-      $logo_cmd .= " --color '#4575B4' 1 'Guanine:5-Methylcytosine'" if ($residue_type eq 'cytomod');
-      $logo_cmd .= " --color '#F46D43' h '5-Hydroxymethylcytosine'" if ($residue_type eq 'cytomod');
-      $logo_cmd .= " --color '#74ADD1' 2 'Guanine:5-Hydroxymethylcytosine'" if ($residue_type eq 'cytomod');
-
-      $logo_cmd .= $alphastring;
       $logo_cmd .= " --xlabel '".$logo_info."'";
       $logo_cmd .= " --size large " unless ($logo_options =~ /\-s /);
       $logo_cmd .= " --aspect-ratio 3 ";
@@ -4564,7 +4425,10 @@ sub makeLogo {
     }
     
 
-
+#      $logo_cmd .= " --color '#D73027' m '5-Methylcytosine'";
+#      $logo_cmd .= " --color '#4575B4' 1 'Guanine:5-Methylcytosine'";
+#      $logo_cmd .= " --color '#F46D43' h '5-Hydroxymethylcytosine'";
+#      $logo_cmd .= " --color '#74ADD1' 2 'Guanine:5-Hydroxymethylcytosine'";
 #      $logo_cmd .= " --color '#FDAE61' f '5-Formylcytosine'";
 #      $logo_cmd .= " --color '#ABD9E9' 3 'Guanine:5-Formylcytosine'";
 #      $logo_cmd .= " --color '#FEE090' c '5-Carboxylcytosine'";
@@ -4910,6 +4774,82 @@ sub getCrudeFreqRC {
     }
     return @{$self->{crudeFreqRC}};
 }
+
+
+
+=pod
+
+ =item B<setAlphabet(@alphabet)>
+
+ Specify the alphabet (i.e. the list of valid letters) for the table.
+
+=cut
+
+ sub setAlphabet {
+     my ($self, @new_alphabet) = @_;
+     @{$self->{alphabet}} = @new_alphabet;
+
+     ## update the number of columns
+     $self->force_attribute("nrow", scalar(@new_alphabet));
+ #    &RSAT::message::Debug("&RSAT::table::setAlphabet()", "new alphabet", $self->getAlphabet())) if ($main::verbose >= 10);
+ }
+
+
+
+
+=pod
+
+=item B<setAlphabet_uc(@alphabet)>
+
+ Same as setAlphabet(), but first converts the alphabet to uppercases,
+ to ensure case-insensitivvity.
+
+=cut
+
+ sub setAlphabet_uc {
+     my ($self, @new_alphabet) = @_;
+
+     ## Convert alphabet to uppercases
+     for my $i (0..$#new_alphabet) {
+ 	$new_alphabet[$i] = uc($new_alphabet[$i]);
+     }
+
+     $self->setAlphabet(@new_alphabet);
+ }
+
+
+
+
+=pod
+
+=item B<setAlphabet_lc(@alphabet)>
+
+ Same as setAlphabet(), but first converts the alphabet to lowercases,
+ to ensure case-insensitivvity.
+
+=cut
+
+ sub setAlphabet_lc {
+     my ($self, @new_alphabet) = @_;
+     ## Convert alphabet to uppercases
+     for my $i (0..$#new_alphabet) {
+ 	$new_alphabet[$i] = lc($new_alphabet[$i]);
+     }
+     $self->setAlphabet(@new_alphabet);
+ }
+
+=pod
+
+=item B<getAlphabet()>
+
+ Return the list of valid letters for the table
+
+=cut
+
+ sub getAlphabet {
+     my ($self) = @_;
+     return @{$self->{alphabet}};
+ }
 
 
 
