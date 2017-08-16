@@ -49,8 +49,14 @@
                   <p ><h2 style="border-style:solid;border-color:#cc6600;padding:0 10px;background-color:#F6E6CA;">
                   <a target='_blank' href="http://rsat.ulb.ac.be/eccb14/" >RSAT tutorial<br>at ECCB'14</a>
                   </h2></p-->
-                 <div>
-                     <p align='right'><b>New&nbsp;items</b><img src="images/onebit_49.png"  class="new"/></p>
+		<div style='padding:60px 0 0 10px;'><i class='fa fa-bar-chart  fa-lg'></i> <b> 
+<!--perlscript -->
+<?php $count = shell_exec('cat ' . $properties["RSAT"] . '/public_html/data/supported_organisms.tab | wc -l'); $count = $count - 1; echo $count; ?> </b> <i>organisms supported</i></div>
+                <div>
+			<input type='search' id='searchfunc' placeholder='Search' class='searchmenu' onKeyPress='searchfunc()' onKeyUp='searchfunc()'/>
+		</div> 
+		<div align='right'>
+                     <b>New&nbsp;items</b><img src="images/onebit_49.png"  class="new"/>
                  </div>
                  <!--div class="menu">
                   <div class="menu_heading_open" onclick="toggleMenu('100')" id="heading100">Most popular tools</div>
@@ -82,7 +88,7 @@
                          <a class="menu_item" href="retrieve-seq_form.cgi" >retrieve sequence</a>
                          <a class="menu_item" href="retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>
                          <a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>
-                         <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf &nbsp;<img src="images/onebit_49.png" height="30" class="new"></a>
+                         <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf  <img src="images/onebit_49.png" height="30" class="new"></a>
                          <!--	  <a class="menu_item" href="http://www.rsat.eu/retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>-->
                          <a class="menu_item" href="purge-sequence_form.cgi" >purge sequence</a>
                          <a class="menu_item" href="convert-seq_form.cgi" >convert sequence</a>
@@ -95,7 +101,7 @@
                      <div id="menu12" class="menu_collapsible">
                          <a class="menu_item" href="convert-matrix_form.cgi" >convert matrix</a>
                          <a class="menu_item" href="compare-matrices_form.cgi" >compare matrices</a>
-                         <a class="menu_item" href="matrix-clustering_form.cgi" >matrix-clustering&nbsp;<img src="images/onebit_49.png" height="30" class="new"></a>
+                         <a class="menu_item" href="matrix-clustering_form.cgi" >matrix-clustering <img src="images/onebit_49.png" height="30" class="new"></a>
                          <a class="menu_item" href="matrix-distrib_form.cgi" >matrix distrib</a>
                          <a class="menu_item" href="matrix-quality_form.cgi" >matrix quality</a>
                      </div>
@@ -140,7 +146,7 @@
                          <a class="menu_separator">matrices</a>
                          <a class="menu_item" href="matrix-scan_form.cgi" >matrix-scan<br>(full options)</a>
                          <a class="menu_item" href="matrix-scan-quick_form.cgi" >matrix-scan (quick)</a>
-                         <a class="menu_item" href="crer-scan_form.cgi" >crer-scan&nbsp;<img src="images/onebit_49.png" height="30" class="new"></a>
+                         <a class="menu_item" href="crer-scan_form.cgi" >crer-scan <img src="images/onebit_49.png" height="30" class="new"></a>
                          <!--	  <a class="menu_item" href="patser_form.cgi" >patser [discontinued]</a>-->
                          <!--	  <a class="menu_item" href="genome-scale-patser_form.cgi" >genome-scale patser [discontinued]</a>-->
                          <a class="menu_separator">strings</a>
@@ -151,12 +157,12 @@
                  
                  <div class="menu">
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('10')" id="heading10">Comparative genomics<img src="images/onebit_49.png" height="30" class="new"></img></div>
+                         onclick="toggleMenu('10')" id="heading10">Comparative genomics&nbsp; <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu10" class="menu_collapsible">
                          <a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>
-                         <a class="menu_item" href="get-orthologs-compara_form.cgi" >get orthologs-compara&nbsp;<img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <a class="menu_item" href="get-orthologs-compara_form.cgi" >get orthologs-compara <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="footprint-discovery_form.cgi" >footprint-discovery</a>
-                         <a class="menu_item" href="footprint-scan_form.cgi" >footprint-scan&nbsp;<img src="images/onebit_49.png" height="30" class="new"></img>
+                         <a class="menu_item" href="footprint-scan_form.cgi" >footprint-scan <img src="images/onebit_49.png" height="30" class="new"></img>
                          </a>
                      </div>
                      
@@ -174,7 +180,7 @@
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('9')" id="heading9">Genetic variations <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu9" class="menu_collapsible">
-                         <a class="menu_item" href="variation-info_form.cgi" >Variation information<img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <a class="menu_item" href="variation-info_form.cgi" >Variation information <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="retrieve-variation-seq_form.cgi" >Retrieve variation sequences <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="variation-scan_form.cgi" >Scan variations with motifs <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="convert-variations_form.cgi" >Convert variation formats <img src="images/onebit_49.png" height="30" class="new"></img></a>

@@ -336,6 +336,7 @@ document.getElementById("demo_descr").innerHTML = txt;
 
     open(my $fh, "menu.php");
     while(my $row = <$fh>){
+	if($row =~ "<!--perlscript"){ my $x = `cat $ENV{RSAT}/public_html/data/supported_organisms.tab | wc -l`; $x -= 1; print $x; }
         print $row."\n";
     }
     
@@ -2234,6 +2235,68 @@ sub DisplayMatrixDBchoice {
     print "<br/>\n";
   }
 }
+
+sub DisplayMatrixDBchoice_select2 {
+  my (%args) = @_;
+
+  ## Check selection mode
+  my $mode = $args{mode} || "checkbox"; ## Display check boxes or radio buttons
+  my %supported_choice_mode = ("radio"=>1, "checkbox"=>1, "list"=>1);
+  my $supported_choice_modes = join ",", sort keys %supported_choice_mode;
+  &RSAT::error::FatalError($mode, "Invalid choice mode for &DisplayMatrixDBchoice(). Supported: ".$supported_choice_modes) 
+      unless ($supported_choice_mode{$mode});
+
+  
+  ## Get information about supported motif databases
+  my %matrix_db = &RSAT::server::supported_motif_databases();
+
+my @plants_key = ("thaliana", "plant");
+my @vertebrates_key = ("human", "Human", "mouse", "Mouse", "vertebrate");
+my @prokaryots_key = ("prokaryot","DBTBS");
+my @fungi_key = ("cerevisiae", "fungi");
+my @metazoa_key = ("Drosophila", "drosophila", "_fly", "elegan", "insect", "nematode", "urochordate");
+my @all_key = ("all");
+my @keys = ([@plants_key], [@vertebrates_key], [@prokaryots_key], [@fungi_key], [@metazoa_key], [@all_key]);
+
+my @values = (\%plants, \%vertebrates, \%prokaryots, \%fungi, \%metazoa, \%multi_organism);
+my @labels = ('Plants', 'Vertebrates', 'Prokaryotes', 'Fungi', 'Metazoa', 'Multi-organisms');
+my @colors = ('green', 'red', 'blue', 'orange', 'purple', 'yellow');
+  ## Display supported motif databases
+  foreach my $db_name (sort(keys (%matrix_db))) {
+    my $db_format = $matrix_db{$db_name}->{'format'};
+    my $descr = $matrix_db{$db_name}->{'descr'};
+    my $version = $matrix_db{$db_name}->{'version'};
+    my $url = $matrix_db{$db_name}->{'url'};
+
+	for(my $i = 0; $i < scalar @keys; $i++){
+		foreach my $key (@{$keys[$i]}){
+			if($descr =~ $key){ 
+				if($mode eq "list"){
+					if ($url) {
+      						$descr = "<a target='_blank' href=".$url.">".$descr."</a>";
+					}    				
+				}
+				${$values[$i]}{$db_name} = $descr . " (".$version.")";
+			}
+		}
+	}	
+  }
+	for(my $i = 0; $i < scalar @values; $i++){
+		if(! ($mode eq "list")){
+			print "<optgroup label='$labels[$i]'>";
+			foreach my $key (sort(keys %{$values[$i]})){ 
+				print "<option value='$key' class='$colors[$i]'>${$values[$i]}{$key}</option>";
+			}
+			print "</optgroup>";
+		}elsif($mode eq "list") {
+			print "<h3 style='padding:10px'>$labels[$i]</h3><div style='padding-left:50px;padding-top:15px'>";
+			foreach my $key (sort(keys %{$values[$i]})){ 
+				print "${$values[$i]}{$key}<br/>";
+			}
+			print "</div>";
+		}
+	}
+}	
 
 ################################################################
 ## GetMatrixDBchoice
