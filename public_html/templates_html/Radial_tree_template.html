@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
   <head>
@@ -18,14 +17,14 @@ path.arc {
 }
 
 .node {
-  font-size: 10px;
+  font-size: 2px;
   pointer-events: all;
 }
 
 .link {
   fill: none;
   stroke: #ccc;
-  stroke-width: 1.5px;
+  stroke-width: 1px;
 }
 
 	.legend {
@@ -88,13 +87,13 @@ d3.select("#cluster_1").append("text")
 
 var w = 2500,
     h = 2500,
-    rx = w / 3,
-    ry = h / 3,
+    rx = w / 4,
+    ry = h / 4,
     m0,
     rotate = 0;
 
 var cluster = d3.layout.cluster()
-    .size([360, 600])
+    .size([360, 450])
     .separation(function(a, b) { return (a.parent == b.parent ? 1 : 1); })
     .sort(null);
 
@@ -132,25 +131,26 @@ d3.json("--json_file--", function(json) {
       .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
 
   node.append("circle")
-      .attr("r", 3.5);
+      .attr("r", 2.5);
 
   node.append("svg:a")
       .attr("xlink:href", function(d) { return d.link_ext; })
       .attr("target", "_blank")
       .append("text")
       .text(function(d) { return d.children ? "" :  d.name; })
-      .style("font-size", "10px")
+      .attr("fill", function(d) { return d.color; })
+      .style("font-size", "5px")
       .attr("dx", function(d) { return d.x < 180 ? 10 : -10; })
       .attr("dy", ".31em")
       .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
       .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
-      .attr("fill", function(d) { return d.color; });
+      ;
       	
   node.append("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
-		.attr("width", function(d) { return (d.size + 2)  * 10; })
-		.attr("height", 16)
-		.attr("x", 150)    
+		.attr("width", function(d) { return (d.size + 2)  * 5; })
+		.attr("height", 5)
+		.attr("x", 50)    
 		.attr("y", -7) 
 		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");	
