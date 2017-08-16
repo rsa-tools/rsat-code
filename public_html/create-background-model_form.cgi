@@ -54,12 +54,12 @@ print "<BLOCKQUOTE>\n";
 
 #&ListDefaultParameters() if ($ENV{rsat_echo} >= 0);
 
-print $query->start_multipart_form(-action=>"create-background-model.cgi");
+print $query->start_multipart_form(-action=>"create-background-model.cgi", -id=>"form");
 
 ################################################################
 #### sequence
 print "<fieldset>
-<legend><b><a href='help.formats.html'>Sequences </a></b></legend>";
+<legend><b><a class='iframe' href='help.formats.html'>Sequences </a></b></legend>";
 #print &SequenceChoice();
 &MultiSequenceChoice("Background sequences",1);
 print "</fieldset><p/>";
@@ -70,10 +70,10 @@ print "</fieldset><p/>";
 
 
 print "<fieldset>
-<legend><b><a href='help.formats.html'>Background specifications </a></b></legend>";
+<legend><b><a class='iframe' href='help.formats.html'>Background specifications </a></b></legend>";
 
 ## markov order
-print ("<b><a href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
+print ("<b><a class='iframe' href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
 print $query->popup_menu(-name=>'markov_order',
 			       -Values=>[0..7],
 			       -default=>$default{markov_order});
@@ -83,15 +83,10 @@ print "<br/>";
 print "<p/>";
 ## overlap
    print ($query->checkbox(-name=>'noov',-checked=>$default{noov},-label=>''));
-    print "<B><A HREF='help.convert-background-model.html#item__2dnoov'>prevent overlapping matches (noov)</A></b>\n";
+    print "<B><A class='iframe' HREF='help.convert-background-model.html#item__2dnoov'>prevent overlapping matches (noov)</A></b>\n";
     print "<br/>";
 
 print "</fieldset><p/>";
-
-
-
-
-
 
 print "<br/>";
 
@@ -106,26 +101,24 @@ print "<p>\n";
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
 ## Demo button
-print $query->start_multipart_form(-action=>"create-background-model_form.cgi");
 $demo_url1= $ENV{rsat_www}."/demo_files/peak-motifs_demo.fa";
-#$demo_url = "HELLO";
-#$demo_sequence="HELLO";
-print "<TD><b>";
-#print $query->hidden(-name=>'demo_descr',-default=>$descr);
-#print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
-print $query->hidden(-name=>'sequence_url1',-default=>$demo_url1);
-#print $query->hidden(-name=>'sequence_format',-default=>'fasta');
-#print $query->hidden(-name=>'title',-default=>'Oct4 Chen2008 sites from Jaspar');
-print $query->submit(-label=>"DEMO");
-print "</B></TD>\n";
-print $query->end_form;
 
-print "<TD><B><A HREF='help.convert-background-model.html'>MANUAL</A></B></TD>\n";
+print '<script>
+function setDemo(demo_url){
+    $("#reset").trigger("click");
+    sequence_url1.value = demo_url;
+}
+</script>';
+print "<TD><b>";
+print '<button type="button" onclick="setDemo('. "'$demo_url1'" .')">DEMO</button>';
+print "</B></TD>\n";
+
+print "<TD><B><A class='iframe' HREF='help.convert-background-model.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

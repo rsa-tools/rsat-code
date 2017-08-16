@@ -12,7 +12,7 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 
 use SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
-use lib '../public_html/web_services/clients/perl_clients/soap-wsdl/RSATWS';
+use lib '../ws_clients/perl_clients/RSATWS';
 use MyInterfaces::RSATWebServices::RSATWSPortType;
 
 use File::Basename;

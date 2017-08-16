@@ -60,12 +60,12 @@ print "<fieldset><legend><b>Sequence number and sizes</b></legend>";
 
 print "<UL>\n";
 
-print " <A HREF='help.random-seq.html#length'>Sequence length</A> ";
+print " <A class='iframe' HREF='help.random-seq.html#length'>Sequence length</A> ";
 print $query->textfield(-name=>'length',
 			-default=>$default{length},
 			-size=>7);
 
-print " <A HREF='help.random-seq.html#repet'>Number of sequences</A> ";
+print " <A class='iframe' HREF='help.random-seq.html#repet'>Number of sequences</A> ";
 print $query->textfield(-name=>'repet',
 			-default=>$default{repet},
 			-size=>5);
@@ -73,7 +73,7 @@ print $query->textfield(-name=>'repet',
 print "<BR>\n";
 
 ### sequence format
-print "<A HREF='help.random-seq.html#formats'>Sequence format</A>&nbsp;";
+print "<A class='iframe' HREF='help.random-seq.html#formats'>Sequence format</A>&nbsp;";
 print $query->popup_menu(-name=>'format',
 			 -Values=>['fasta',
 				   'IG',
@@ -81,7 +81,7 @@ print $query->popup_menu(-name=>'format',
 				   'multi'],
 			 -default=>$default{sequence_format});
 
-print " <A HREF='help.random-seq.html#lw'>Line width</A> ";
+print " <A class='iframe' HREF='help.random-seq.html#lw'>Line width</A> ";
 print $query->textfield(-name=>'lw',
 			-default=>$default{lw},
 			-size=>5);
@@ -91,14 +91,14 @@ print "</UL>\n";
 
 # File lengths
 print "<p/><b> OR </b> <p/>";
-print "<b><A HREF='help.random-genome-fragments.html#lf_length_file'>Use a set of sequences as template (same nb of fragments, same lengths): </a></b><br/> \n";
+print "<b><A class='iframe' HREF='help.random-genome-fragments.html#lf_length_file'>Use a set of sequences as template (same nb of fragments, same lengths): </a></b><br/> \n";
 print "<div style='padding-left:30px'>";
 &MultiSequenceChoice("Template sequences",1);
 print "</div>";
 
 print "</fieldset><p/>";
 
-print "<fieldset><legend><a href='help.random-seq.html#alphabet'>Background model</a></legend>";
+print "<fieldset><legend><a class='iframe' href='help.random-seq.html#alphabet'>Background model</a></legend>";
 #print "<h2><a href='help.random-seq.html#alphabet'>Background model</a></h2>";
 
 print "<ul>";
@@ -111,14 +111,14 @@ print "<UL>";
 ### oligo size
 print "<br><INPUT TYPE='radio' NAME='bg_method' VALUE='upstream' checked>";
 print "DNA sequences calibrated on non-coding upstream sequences)";
-print "&nbsp"x3, "<b><a href='help.random-seq.html#oligo_size'>Oligonucleotide size</A>&nbsp;</b>\n";
+print "&nbsp"x3, "<b><a class='iframe' href='help.random-seq.html#oligo_size'>Oligonucleotide size</A>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'oligo_size',
 			 -Values=>[1..8],
 			 -default=>$default{oligo_size});
 
 print "<br><INPUT TYPE='radio' NAME='bg_method' VALUE='protein'>";
 print "Protein sequences calibrated on all proteins of this organism";
-print "&nbsp"x3, "<b><a href='help.random-seq.html#oligopept_size'>Oligopeptide size</A>&nbsp;</b>\n";
+print "&nbsp"x3, "<b><a class='iframe' href='help.random-seq.html#oligopept_size'>Oligopeptide size</A>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'oligopept_size',
 			 -Values=>[1..3],
 			 -default=>$default{oligopept_size});
@@ -184,8 +184,8 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.random-seq.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_random-seq.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.random-seq.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='htmllink.cgi?title=RSAT : Tutorials&file=tutorials/tut_random-seq.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

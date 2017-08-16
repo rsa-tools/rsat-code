@@ -7,6 +7,12 @@
 <meta http-equiv='Content-Type' content='text/html; charset=iso-8859-1' />
 </head>
 <body class='info'>
+
+<?php
+    require ('functions.php');
+    printMenu();
+    ?>
+
 <br>
 <table class = 'title' cellpadding='10' width ='100%'>
     <tr>
@@ -167,7 +173,4 @@ Sylvain Broh&eacute;e (sylvain-at-bigre.ulb.ac.be)</i>
 </body>
 
 </html>
-<?php
-  require ('functions.php');
-  echo("");
-?>
+

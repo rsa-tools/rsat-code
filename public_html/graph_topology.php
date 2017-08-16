@@ -14,6 +14,7 @@
 
   require ('functions.php');
   title('graph-topology - results');
+    printMenu();
   # log file update
   UpdateLogFile("neat","","");
 

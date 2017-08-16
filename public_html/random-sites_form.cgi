@@ -67,7 +67,7 @@ print "<B>Options</B>";
 print "<br />";
 
 #### Number of sites
-print " <a href='help.random-sites.html#sites_nb'>Number of sites</a> ";
+print " <a class='iframe' href='help.random-sites.html#sites_nb'>Number of sites</a> ";
 print $query->textfield(-name=>'sites_nb',
 			-default=>$default{sites_nb},
 			-size=>3);
@@ -85,8 +85,8 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.random-sites.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_random-sites.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.random-sites.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='tutorials/tut_random-sites.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

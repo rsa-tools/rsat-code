@@ -8,13 +8,17 @@
 
    <?php
    require ('functions.php');
+     
+       $menu = $_REQUEST['menu'];
+       printMenu($menu);
+       
 // require ('demo_dataset.php');
 $default_min_sig = 0;
   
 # PIPE VALUES
 $pipe = $_REQUEST['pipe'];
 $pipe_Q_class_file = $_REQUEST['class_file'];
-  
+       
 # demo graph
 $demo = $_REQUEST['demo'];
 
@@ -52,6 +56,7 @@ if($demo) {
 <tr align = 'center'><th>Query classes</th><th>Reference classes</th></tr>
 
 <?php
+echo "<input type='hidden' name='menu' value=$menu>";
 ################################################################
 ## Query input classes textarea
 echo "<tr><td>\n";
@@ -205,11 +210,12 @@ echo "</blockquote>";
 
 ## Buttons
 echo ("<ul><ul><table class='formbutton'>
-  <TD><input type='submit' name='.submit' value='GO' /></TD>
-  <TD><B><A HREF='compare_classes_form.php?demo=0'>RESET</A></B></TD>
-  <TD><B><A HREF='compare_classes_form.php?demo=1'>DEMO</A></B></TD>
+
+<TD><input type='submit' name='.submit' value='GO' /></TD>
+  <TD><B><A HREF='compare_classes_form.php?demo=0&menu=$menu'>RESET</A></B></TD>
+  <TD><B><A HREF='compare_classes_form.php?demo=1&menu=$menu'>DEMO</A></B></TD>
   </form>
-  <TD><B><A HREF='help.compare_classes.html'>MANUAL</A></B></TD>
+  <TD><B><A class='iframe' HREF='help.compare_classes.html'>MANUAL</A></B></TD>
   <TD><B><A HREF='mailto:sbrohee\@ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>");
 echo "<hr>";

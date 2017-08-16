@@ -48,7 +48,7 @@ print "Returns the information about genes (CDS, mRNA, ...) specified either by 
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
-print $query->start_multipart_form(-action=>"gene-info.cgi");
+print $query->start_multipart_form(-action=>"gene-info.cgi", -id=>"form");
 
 print "<FONT FACE='Helvetica'>";
 
@@ -58,12 +58,14 @@ print "<FONT FACE='Helvetica'>";
 
 ################################################################
 ## Queries
-print "<B><A HREF='help.gene-info.html#queries'>Gene queries</A></B>&nbsp;";
+print "<B><A class='iframe' HREF='help.gene-info.html#queries'>Gene queries</A></B>&nbsp;";
 print "<BR>\n";
-print $query->textarea(-name=>'queries',
+print $query->textarea(-id=>'queries',
+              -name=>'queries',
 		       -default=>$default{queries},
 		       -rows=>6,
 		       -columns=>40);
+
 
 ### option to upload a file with the gene list from the client machine 
 print "<BR>Upload gene list from file<BR>\n";
@@ -75,7 +77,7 @@ print "<BR>\n";
 
 ################################################################
 ## Feature type
-print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
+print "<B><A class='iframe' HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
 print $query->radio_group(-name=>'feattype',
 			  -values=>[@supported_feature_types],
 			  -default=>$default{feattype});
@@ -87,7 +89,7 @@ print "<BR>\n";
 print $query->checkbox(-name=>'full',
   		       -checked=>$default{full},
   		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#full'><B>Full string matching</B></A>";
+print "&nbsp;<A class='iframe' HREF='help.retrieve-seq.html#full'><B>Full string matching</B></A>";
 print "<P>\n";
 
 ################################################################
@@ -95,7 +97,7 @@ print "<P>\n";
 print $query->checkbox(-name=>'match_description',
   		       -checked=>$default{match_description},
   		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#match_description'><B>Match queries against description</B></A>";
+print "&nbsp;<A class='iframe' HREF='help.retrieve-seq.html#match_description'><B>Match queries against description</B></A>";
 print "<P>\n";
 
 ################################################################
@@ -107,24 +109,29 @@ print "<P>\n";
 print "<UL><UL><TABLE>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
 ## Data for the demo
-print $query->start_multipart_form(-action=>"gene-info_form.cgi");
 $demo_queries = "ARG3\n";
 $demo_queries .= "PHO\n";
 $demo_queries .= "YBL05[\\d]W\n";
 print "<TD><B>";
-print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Saccharomyces cerevisiae");
-print $query->submit(-label=>"DEMO");
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    queries.value = "ARG3\nPHO\nYBL05[\\\d]W\n";
+    $("#organism").val("Saccharomyces_cerevisiae").trigger("chosen:updated");
+}
+</script>';
+
+print '<button type="button" onclick="setDemo();">DEMO</button>';
+
 print "</B></TD>\n";
-print $query->end_form;
 
 
-print "<TD><B><A HREF='help.gene-info.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.gene-info.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_gene-info.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE class='formbutton'></UL></UL>\n";
