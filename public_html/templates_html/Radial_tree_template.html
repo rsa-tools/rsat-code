@@ -102,7 +102,11 @@ var diagonal = d3.svg.diagonal.radial()
 
 var svg = d3.select("#cluster_1").append("div")
     .style("width", w + "px")
-    .style("height", w + "px");
+    .style("height", w + "px")
+    .call(d3.behavior.zoom().on("zoom", function () {
+        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")
+    }))
+    .append("g")   ;
 
 var vis = svg.append("svg:svg")
     .attr("width", w)
