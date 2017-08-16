@@ -2651,7 +2651,7 @@ sub calcConsensus {
   ## Degenerate consensus in IUPAC format
   $self->set_parameter("consensus.IUPAC", $consensus_IUPAC);
   $self->set_parameter("consensus.IUPAC.rc", &RSAT::SeqUtil::ReverseComplement($consensus_IUPAC));
-&RSAT::message::Info("Consensus IUPAC", $self->get_attribute("consensus.IUPAC"));
+  &RSAT::message::Info("Consensus IUPAC", $self->get_attribute("consensus.IUPAC")) if ($main::verbose >= 5);
 
   ## Degenerate consensus in regexp format
   $self->set_parameter("consensus.regexp", $consensus);
