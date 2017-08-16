@@ -752,11 +752,11 @@ verbose(paste("Exporting attributes table"),1)
 #####################################
 ## Write the logo and profile path
 logos.F <- sapply(matrix.names, function(i){
-  paste(logo.folder, "/", i, "_logo.jpeg", sep = "")
+  paste(logo.folder, "/", i, "_logo.png", sep = "")
 })
 
 logos.R <- sapply(matrix.names, function(i){
-  paste(logo.folder, "/", i, "_logo_rc.jpeg", sep = "")
+  paste(logo.folder, "/", i, "_logo_rc.png", sep = "")
 })
 
 ## Write the Profile and TFBSs plots path
@@ -1059,7 +1059,7 @@ html.report <- gsub("--IDs--", IDs, html.report)
 ## Add the real motif logo path (to display in the tooltip)
 ## They are inserted in the JS section
 logos <- sapply(TF.IDs, function(i){
-  paste(logo.folder, i, "_logo.jpeg", sep = "")
+  paste(logo.folder, i, "_logo.png", sep = "")
 })
 logos.rep <- repeat.n(as.vector(features.table$Logo), times = 2)
 logos <- paste("pics['", all.motifs, "'] = '", logos.rep, "';", sep = "")
@@ -1068,7 +1068,7 @@ html.report <- gsub("--pics--", logos, html.report)
 
 ## Logos in Reverse complement
 logos.rc <- sapply(TF.IDs, function(i){
-  paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
+  paste(logo.folder, i, "_logo_rc.png", sep = "")
 })
 logos.rc.rep <- repeat.n(as.vector(features.table$Logo_RC), times = 2)
 logos.rc <- paste("pics_rc['", all.motifs, "'] = '", logos.rc.rep, "';", sep = "")
