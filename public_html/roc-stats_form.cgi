@@ -258,6 +258,7 @@ exit(0);
 #### print Header
 
 sub NeAT_header {
+    
   my $css_body_class = "form";
   my ($title) = shift;
   $title =~ s/\"//g;
@@ -277,5 +278,24 @@ sub NeAT_header {
 			   -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
+               
+               
+               $neat_java = $ENV{"neat_java_host"};
+               $tomcat_port = $ENV{'tomcat_port'};
+               if ($tomcat_port){
+                   $neat_java = $neat_java . ":" . $tomcat_port;
+               }
+
+               open(my $fh, "menu_graph.php");
+               while(my $row = <$fh>){
+                   if(index($row, "<?php") != -1 || index($row, ";?>") != -1 ){next;}
+                   if(index($row, '\"') != -1) { $row =~ s/\\\"/\"/g;}
+                   if($row =~ /\$neat_java_host/){
+                       $row =~ s/\$neat_java_host/$neat_java/;
+                   }
+                   print $row."\n";
+               }
+               
+               print "<div class='container' id='page-content-wrapper'>";
   print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/NeAT_home.html'>Network Analysis Tools</A> - $title</H3>";
 }

@@ -55,13 +55,13 @@ print $query->start_multipart_form(-action=>"random-motif.cgi");
 
 print "<b>Parameters<b/><br />";
 #### Motif width
-print " <a href='help.random-motif.html#width'>Motif width</a> ";
+print " <a class='iframe' href='help.random-motif.html#width'>Motif width</a> ";
 print $query->textfield(-name=>'width',
 			-default=>$default{width},
 			-size=>3);
 
 #### Conservation
-print " <a href='help.random-motif.html#conservation'>Conservation</a> ";
+print " <a class='iframe' href='help.random-motif.html#conservation'>Conservation</a> ";
 print $query->textfield(-name=>'conservation',
 			-default=>$default{conservation},
 			-size=>3);
@@ -71,7 +71,7 @@ print "<b>Options<b/><br />";
 
 #### Multiplier
 print "<br>";
-print " <a href='help.random-motif.html#multiplier'>Multiplier</A> ";
+print " <a class='iframe' href='help.random-motif.html#multiplier'>Multiplier</A> ";
 print $query->textfield(-name=>'multiplier',
 			-default=>$default{multiplier},
 			-size=>3);
@@ -80,19 +80,19 @@ print $query->textfield(-name=>'multiplier',
 print $query->checkbox(-name=>'round',
 		       -checked=>$default{round},
 		       -label=>'');
-print "<a href='help.random-motif.html#round'>round frequencies</a>\n";
+print "<a class='iframe' href='help.random-motif.html#round'>round frequencies</a>\n";
 
 
 #### Number of motifs
 print "<br>";
-print " <a href='help.random-motif.html#motif_nb'>Number of motifs</A> ";
+print " <a class='iframe' href='help.random-motif.html#motif_nb'>Number of motifs</A> ";
 print $query->textfield(-name=>'motif_nb',
 			-default=>$default{motif_nb},
 			-size=>3);
 
 ### Output matrix format
 print "<br>";
-print "<b><a href='help.convert-matrix.html#output_format'>Output format</A></B>&nbsp;";
+print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>Output format</A></B>&nbsp;";
 print $query->popup_menu(-name=>'output_format',
 			 -Values=>[@supported_output_formats],
 			 -default=>$default{output_format});
@@ -112,8 +112,8 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.random-motif.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_random-motif.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.random-motif.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='tutorials/tut_random-motif.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

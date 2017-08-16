@@ -41,14 +41,14 @@ span.tool:hover span.tip
 /* BODY  */
 body 
 {
-  font-family: Verdana, Helvetica, Arial, sans-serif;
-  font-size: 70%;
+  font-family: Verdana, Helvetica, Arial, sans-serif !important;
+  font-size: 70% !important;
   margin-top: 2px;
   margin-left: 20px;
-  text-align: left;
+  text-align: left !important;
   background: #ffffff;
   margin-right: 20px;
-  background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px;
+  /* background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px; */
   }
 
 body.info 
@@ -834,3 +834,5 @@ legend.clickable:hover
 {
   cursor: pointer;
   }
+
+
