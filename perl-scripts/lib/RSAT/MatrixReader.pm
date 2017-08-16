@@ -463,7 +463,7 @@ sub readMatrixFileList {
     while (<$mlist>) {
 	next if (/'^;'/);		# skip comment lines
 	next if (/'^#'/);		# skip header lines
-	next if (/'^--'/);	# skip mysql-type comment lines
+	next if (/'^--'/);	# skip mysql-like comment lines
 	next unless (/\S/);	# skip empty lines
 	my @fields = split /\s+/;
 	my $matrix_file = $fields[0];
@@ -2828,10 +2828,10 @@ sub _readFromMEMEFile_2015 {
       $matrix->set_parameter("id", $id);
       $matrix->set_parameter("ac", $ac); ## For TRANSFAC compatibility
       $matrix->set_parameter("name", $id); ## For readability of logos
-      if (defined($args{"type"})) {
+      if (defined($args{"residue_type"})) {
 	$matrix->set_parameter("residue_type", $args{type});
 	$matrix->force_attribute("residue_type", $args{type});
-#	&RSAT::message::Debug("matrix type", $matrix->get_attribute("type")); die("HELLO");
+#	&RSAT::message::Debug("residue type", $matrix->get_attribute("type")); die("HELLO");
       }
       $matrix->setAlphabet(@alphabet);
       $matrix->setPrior(%residue_frequencies);
