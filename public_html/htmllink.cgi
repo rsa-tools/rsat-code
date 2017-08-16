@@ -39,7 +39,7 @@ print $query->start_html(-title=>"$title",
         -media => 'screen,projection,print' });
     
     if($title =~ /RSAT/){
-    	open($fh, "menu.html");
+    	open($fh, "menu.php");
     	while($row = <$fh>){
         	print $row."\n";
     	}
