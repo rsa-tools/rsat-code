@@ -36,6 +36,8 @@ MATRIX_TYPE=cytomod
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/methylated_dna_motifs.mk
 
+DEMO_FOLDER=${RSAT}/public_html/demo_files
+DEMO_MOTIFS=${DEMO_FOLDER}/cytomod_matrices.meme
 MOTIF_FOLDER=data/motifs
 MOTIFS=${MOTIF_FOLDER}/mod_test_motifs
 OUT_FORMAT=transfac
@@ -43,8 +45,9 @@ OUT_FORMAT=transfac
 convert_from_meme:
 	@echo "Converting methyl motifs from MEME to TRANSFAC format"
 	@echo "	Input: ${MOTIFS}.meme"
+	@mkdir -p ${MOTIF_FOLDER}
 	@convert-matrix -v 1 -residue_type ${MATRIX_TYPE} -from meme -to ${OUT_FORMAT} \
-		-i ${MOTIFS}.meme \
+		-i ${DEMO_MOTIFS} \
 		-o ${MOTIFS}.${OUT_FORMAT}
 	@echo "	${MOTIFS}.${OUT_FORMAT}"
 
