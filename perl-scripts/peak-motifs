@@ -2475,6 +2475,14 @@ sub MatrixFromPatterns {
 			"\n\tpssm_file: ".$pssm_file,
       ) if ($verbose >= 5);
   my $cmd = $SCRIPTS."/matrix-from-patterns -v 1 ";
+
+  ## Done: add the option -sites (request by Anthony Mathelier,
+  ## 2017-08-08). 
+  ##
+  ## TO DO: add a link to the sites used to build the PSSM +
+  ## check that these are included in the transfac-formatted output
+  ## file.
+  $cmd .= " -sites";
 #  $cmd .= " -seq ".$infile{test_seq};
   $cmd .= " -seq ".$main::outfile{"test_converted"};
   $cmd .= " -pl ".$pattern_file;
