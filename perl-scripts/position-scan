@@ -368,10 +368,6 @@ package main;
       ################################################################
       ## Produce the ID to Motif name reference table
       &ID_NameRefTable();
-      
-      ################################################################
-      ## Produce the logos
-      #&GenerateLogos();
   }
 
 
