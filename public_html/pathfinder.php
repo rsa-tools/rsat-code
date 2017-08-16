@@ -12,6 +12,7 @@
 <body class="results">
 <?php
   require ('functions.php');
+    printMenu();
   # log file update thanks to Sylvain
   UpdateLogFile("neat","","");
   # File to store the commands

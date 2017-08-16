@@ -13,7 +13,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ## Default values for filling the form
-$default{output} = "display";
+$default{output} = "email";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
@@ -84,10 +84,12 @@ foreach $key (keys %default) {
 }
 
 ## Print the demo description
-print $default{demo_descr};
+#print $default{demo_descr};
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr'></div>";
 
 ## Form
-print $query->start_multipart_form(-action=>"position-analysis.cgi");
+print $query->start_multipart_form(-action=>"position-analysis.cgi", -id=>"form");
 
 #&MultiSequenceChoice("Sequences",1);
 print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
@@ -97,7 +99,7 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			]),
 	       $query->Tr({-align=>left,-valign=>TOP},
 		       [
-		      $query->td(["<B><A HREF='help.position-analysis.html#sequence_type'>Sequence type</A></B>".
+		      $query->td(["<B><A class='iframe' HREF='help.position-analysis.html#sequence_type'>Sequence type</A></B>".
 			       $query->popup_menu(-name=>'sequence_type',
 						  -Values=>["dna","protein","other"],
 						  -default=>$default{sequence_type})
@@ -109,14 +111,14 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 print $query->checkbox(-name=>'purge',
  		       -checked=>$default{purge},
  		       -label=>'');
-print "&nbsp;<A HREF='help.position-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
+print "&nbsp;<A class='iframe' HREF='help.position-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
 print "<BR>";
 
 print "<HR width=550 align=left>\n";
 
 
 ## Oligo size
-print "<B><A HREF='help.position-analysis.html#oligo_length'>Oligonucleotide size</A>&nbsp;</B>\n";
+print "<B><A class='iframe' HREF='help.position-analysis.html#oligo_length'>Oligonucleotide size</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'oligo_length',
 			 -Values=>[1,2,3,4,5,6,7,8],
 			 -default=>$default{oligo_length});
@@ -125,13 +127,13 @@ print $query->popup_menu(-name=>'oligo_length',
 print $query->checkbox(-name=>'noov',
 		       -checked=>$default{noov},
 		       -label=>'');
-print "&nbsp;<A HREF='help.position-analysis.html#noov'><B>prevent overlapping matches</B></A>";
+print "&nbsp;<A class='iframe' HREF='help.position-analysis.html#noov'><B>prevent overlapping matches</B></A>";
 print "<BR>\n";
 
 
 ## Strand
-print "<B><A HREF='help.position-analysis.html#count_strands'>Count on</A>&nbsp;</B>\n";
-print $query->popup_menu(-name=>'strand',
+print "<B><A class='iframe' HREF='help.position-analysis.html#count_strands'>Count on</A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'strand',-id=>'strand',
 			 -Values=>['single strand',
 				  'both strands'],
 			 -default=>$default{strand});
@@ -140,20 +142,20 @@ print $query->popup_menu(-name=>'strand',
 print $query->checkbox(-name=>'grouprc',
 		       -checked=>$default{grouprc},
 		       -label=>'');
-print "&nbsp;<A HREF='help.position-analysis.html#grouprc'><B>return reverse complements together in the output</B></A>";
+print "&nbsp;<A class='iframe' HREF='help.position-analysis.html#grouprc'><B>return reverse complements together in the output</B></A>";
 print "<BR>";
 
 
-print "<B><A HREF='help.position-analysis.html#class_grouping'>Positions</A>&nbsp;</B>\n";
+print "<B><A class='iframe' HREF='help.position-analysis.html#class_grouping'>Positions</A>&nbsp;</B>\n";
 
 ## Class interval
-print "<B>","&nbsp"x5,"<A HREF='help.position-analysis.html#class_interval'>window size</A>&nbsp;</B>\n";
+print "<B>","&nbsp"x5,"<A class='iframe' HREF='help.position-analysis.html#class_interval'>window size</A>&nbsp;</B>\n";
 print $query->textfield(-name=>'class_interval',
 			-default=>$default{class_interval},
 			-size=>3);
 
 ## Origin for calculating positions
-print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
+print "&nbsp;"x4,  "<A class='iframe' HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
 print $query->popup_menu(-name=>'origin',
 			 -Values=>['start',
 				   'center',
@@ -161,7 +163,7 @@ print $query->popup_menu(-name=>'origin',
 			 -default=>$default{origin});
 
 ## Offset for calculating positions
-print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
+print "&nbsp;"x4,  "<A class='iframe' HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
 print $query->textfield(-name=>'offset',
 			-default=>$default{offset},
 			-size=>8);
@@ -193,9 +195,9 @@ print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>TOP},
 			 [
-			  $query->th([" <A HREF='help.position-analysis.html#return'>Return</A> ",
-				   " <A HREF='help.position-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
-				   " <A HREF='help.position-analysis.html#thresholds'>Upper<BR>Threshold</A> "
+			  $query->th([" <A class='iframe' HREF='help.position-analysis.html#return'>Return</A> ",
+				   " <A class='iframe' HREF='help.position-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
+				   " <A class='iframe' HREF='help.position-analysis.html#thresholds'>Upper<BR>Threshold</A> "
 				      ]),
 
 			  ## occurrences
@@ -206,7 +208,7 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 				   '']),
 
 			  ## chi-square
-			  $query->td([$query->checkbox(-name=>'return_chi',
+			  $query->td([$query->checkbox(-name=>'return_chi', -id=>'return_chi',
 						    -checked=>$default{return_chi},
 						    -label=>' Chi2 statistics '),
 				   $query->textfield(-name=>'lth_chi',
@@ -243,7 +245,7 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 				      '']),
 
 			  ## clusters
-			  $query->td([$query->checkbox(-name=>'return_clusters',
+			  $query->td([$query->checkbox(-name=>'return_clusters',-id=>'return_clusters',
 						       -checked=>$default{return_clusters},
 						       -label=>' Clusters (words clustered by position profiles)'),
 				      "&nbsp",
@@ -252,7 +254,7 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 							-size=>5)]),
 
 			  ## matrices
-			  $query->td([$query->checkbox(-name=>'return_matrices',
+			  $query->td([$query->checkbox(-name=>'return_matrices',-id=>'return_matrices',
 						       -checked=>$default{return_matrices},
 						       -label=>' Position-specific scoring matrices'),
 				      "&nbsp",
@@ -262,7 +264,7 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 #				      '']),
 
 			  ## graphs
-			  $query->td([$query->checkbox(-name=>'return_graphs',
+			  $query->td([$query->checkbox(-name=>'return_graphs',-id=>'return_graphs',
 						       -checked=>$default{return_graphs},
 						       -label=>' Graphs '),
 				      '']),
@@ -276,7 +278,7 @@ print "</BLOCKQUOTE>\n";
 
 ## check applicability condition for the chi2 test
 print "<P>";
-print "&nbsp;<A HREF='help.position-analysis.html#applicability'><B>Applicability condition for the chi2 test</B></A>&nbsp;";
+print "&nbsp;<A class='iframe' HREF='help.position-analysis.html#applicability'><B>Applicability condition for the chi2 test</B></A>&nbsp;";
 print $query->checkbox(-name=>'check',
 		       -checked=>$default{check},
 		       -label=>' check');
@@ -288,7 +290,7 @@ print "<BR>\n";
 
 ## Sort the patterns accoring to the best score
 print "<P>";
-print "&nbsp;<A HREF='help.position-analysis.html#sort'><B>Sort patterns by significance.</B></A>&nbsp;";
+print "&nbsp;<A class='iframe' HREF='help.position-analysis.html#sort'><B>Sort patterns by significance.</B></A>&nbsp;";
 print $query->checkbox(-name=>'sort',
 		       -checked=>$default{sort},
 		       -label=>'');
@@ -304,53 +306,49 @@ print "<HR width=550 align=left>\n";
 print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ## Data for the demo 
-print $query->start_multipart_form(-action=>"position-analysis_form.cgi");
+
 $demo_seq_file = "$ENV{RSAT}/public_html/demo_files/SWEMBL_mmus_HNF4A_vs_mmus_Input_peaks_R0.05_nof_200bp.fasta.gz";
-##$demo_seq_file = "$ENV{RSAT}/public_html/data/demo_files/all_yeast_downstream_200bp.fasta.gz";
-##$demo_seq_file = "$ENV{RSAT}/public_html/demo_files/Mycoplasma_genitalium_upstream_-30_+29.fasta.gz";
-$demo_seq = `gunzip -c $demo_seq_file`;
-##$demo_url= $ENV{rsat_www}."/demo_files/peak-motifs_GSM559652_heart_p300_1000peaks.fa";
-
-
+$demo_seq_raw = `gunzip -c $demo_seq_file`;
+$demo_seq = join("\\n", split(/\n/, $demo_seq_raw));
 
 ################################################################
 ## Description of the demo test case
-my $demo_descr = "<H4>Comment on the demonstration example:</H4>\n";
-$demo_descr .= "<blockquote class ='demo'>";
-$demo_descr .= "<p>In this demonstration, we run position-analysis to detect position-biased motifs in a peak set from a ChIP-seq experiment for the transcription factor HNF4a, in mouse liver cells.";
-$demo_descr .= "<br>The peak set was obtained by running SWEMBL with stringent parameters (R=0.05) on the aligned reads. We filtered out the peaks smaller than 220bp, and clipped the remaining sequences to 110bp on each side of the peak center.\n";
-$demo_descr .= "<br>Data source: Schmidt et al. Five-vertebrate ChIP-seq reveals the evolutionary dynamics of transcription factor binding. Science (2010) vol. 328 (5981) pp. 1036-40.";
-$demo_descr .= "</p>";
-$demo_descr .= "</blockquote>";
+print '<script>
+function setDemo(demo_seq){
+    $("#reset").trigger("click");
+    descr = "<H4>Comment on the demonstration example:</H4>\n<blockquote class =\'demo\'><p>In this demonstration, we run position-analysis to detect position-biased motifs in a peak set from a ChIP-seq experiment for the transcription factor HNF4a, in mouse liver cells.<br>The peak set was obtained by running SWEMBL with stringent parameters (R=0.05) on the aligned reads. We filtered out the peaks smaller than 220bp, and clipped the remaining sequences to 110bp on each side of the peak center.\n<br>Data source: Schmidt et al. Five-vertebrate ChIP-seq reveals the evolutionary dynamics of transcription factor binding. Science (2010) vol. 328 (5981) pp. 1036-40.</p></blockquote>";
+    
+    demo_descr.innerHTML = descr;
+    demo.value = descr;
+    
+    sequence.value = demo_seq;
+    $("[name=\'oligo_length\']").val(6);
+    $("[name=\'class_interval\']").val(10);
+    $("[name=\'origin\']").val("center");
+    $("#return_chi").prop("checked",true);
+    $("[name=\'lth_sig\']").val(5);
+    $("#return_clusters").prop("checked",true);
+    $("[name=\'clust_nb\']").val(2);
+    $("#return_matrices").prop("checked",true);
+    $("[name=\'max_asmb_per_cluster\']").val(2);
+    $("#return_graphs").prop("checked",true);
+    $("#strand").val("both strands");
+}
+</script>';
+
 
 print "<TD><B>";
-print $query->hidden(-name=>'demo_descr',-default=>$demo_descr);
-print $query->hidden(-name=>'sequence',-default=>$demo_seq);
-print $query->hidden(-name=>'sequence_format',-default=>$seq_format);
-print $query->hidden(-name=>'oligo_length',-default=>'6');
-print $query->hidden(-name=>'class_interval',-default=>'10');
-print $query->hidden(-name=>'origin',-default=>'center');
-print $query->hidden(-name=>'return_chi',-default=>'on');
-print $query->hidden(-name=>'lth_sig',-default=>'5');
-print $query->hidden(-name=>'return_clusters',-default=>'on');
-print $query->hidden(-name=>'clust_nb',-default=>'2');
-print $query->hidden(-name=>'return_matrices',-default=>'on');
-print $query->hidden(-name=>'max_asmb_per_cluster',-default=>'2');
-print $query->hidden(-name=>'return_graphs',-default=>'on');
-print $query->hidden(-name=>'strand',-default=>'both strands');
-print $query->hidden(-name=>'output',-default=>'display');
-print $query->submit(-label=>"DEMO");
+print '<button type="button" onclick="setDemo('."'$demo_seq'".')">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
 #print "<TD><B><A HREF='demo.position-analysis.html'>DEMO</A></B></TD>\n";
-print "<TD><B><A HREF='help.position-analysis.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_position-analysis.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.position-analysis.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='tutorials/tut_position-analysis.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

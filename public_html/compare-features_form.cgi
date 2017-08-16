@@ -47,7 +47,7 @@ foreach $key (keys %default) {
   }
 }
 
-print $query->start_multipart_form(-action=>"compare-features.cgi");
+print $query->start_multipart_form(-action=>"compare-features.cgi", -id=>"form");
 
 #### features text areas
 
@@ -58,7 +58,7 @@ print ("<tr align='center'><th>Query features</th><th>Reference features</th></t
 ################################################################
 ## Query input classes textarea
 print "<tr><td>\n";
-print $query->textarea(-name=>'featQ',
+print $query->textarea(-name=>'featQ',-id=>'featQ',
 		       -default=>$default{featQ},
 		       -rows=>10,
 		       -columns=>60);
@@ -70,7 +70,7 @@ print "</td><td>";
 ################################################################
 ## Reference input classes textarea
 
-print $query->textarea(-name=>'featRef',
+print $query->textarea(-name=>'featRef',-id=>'featRef',
 		       -default=>$default{featRef},
 		       -rows=>10,
 		       -columns=>60);
@@ -81,7 +81,7 @@ print ("<tr align='center'></td>");
 
 #### upload query classifcation file
 print ("<tr><td>");
-print "<a href='help.compare-features.html#upload_query_features'>Query feature file</a><BR>";
+print "<a class='iframe' href='help.compare-features.html#upload_query_features'>Query feature file</a><BR>";
 print $query->filefield(-name=>'upload_query_features',
 			-default=>$default{upload_query_features},
 			-size=>30,
@@ -90,7 +90,7 @@ print ("</td>");
 #print "<p>";
 print ("<td>");
 #### upload reference feature file
-print "<a href='help.compare-features.html#upload_ref_features'>Reference feature file</a><BR>";
+print "<a class='iframe' href='help.compare-features.html#upload_ref_features'>Reference feature file</a><BR>";
 print $query->filefield(-name=>'upload_ref_features',
 			-default=>$default{upload_ref_features},
 			-size=>30,
@@ -99,7 +99,7 @@ print ("</td></tr>");
 print ("</table>");
 
 #### feature format (pop-up menu)
-print "<A HREF='help.convert-features.html'><B>Input feature format</B></a>&nbsp;";
+print "<A class='iframe' HREF='help.convert-features.html'><B>Input feature format</B></a>&nbsp;";
 print  $query->popup_menu(-name=>'feature_format',
 			 -values=>[@supported_input_formats],
 			 -default=>$default{input_format});
@@ -111,15 +111,15 @@ print "<br/>";
 #### table with all the statistics and thresholds
 
 
-print "<p><a href='help.compare-features.html#return_fields'><b>Output fields</b></a>\n", "&nbsp"x5;
+print "<p><a class='iframe' href='help.compare-features.html#return_fields'><b>Output fields</b></a>\n", "&nbsp"x5;
 
 ## Return matching statistics
-print $query->checkbox(-name=>'stats', 
+print $query->checkbox(-name=>'stats', -id=>'stats',
 		       -checked=>$default{stats},
 		       -label=>' Statistics ');
 
 ### Return intersections
-print $query->checkbox(-name=>'inter',
+print $query->checkbox(-name=>'inter',-id=>'inter',
 		       -checked=>$default{inter},
 		       -label=>' Intersections ');
 
@@ -134,8 +134,8 @@ print "<p><b>Thresholds</b></p>\n";
 print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>3},
 		    $query->Tr({-align=>'left',-valign=>'middle'},
 			       [
-				$query->th([" <A HREF='help.compare-features.html#return_fields'>Field</A> ",
-					    " <A HREF='help.compare-features.html#thresholds'>Lower threshold</A> ",
+				$query->th([" <A class='iframe' HREF='help.compare-features.html#return_fields'>Field</A> ",
+					    " <A class='iframe' HREF='help.compare-features.html#thresholds'>Lower threshold</A> ",
 					    ]),
 				
 				### Query class size
@@ -146,7 +146,7 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>3},
 					    ]),
 				### Reference class size
 				$query->td([' Intersection coverage (0-1)',
-					    $query->textfield(-name=>'inter_cov',
+					    $query->textfield(-name=>'inter_cov',-id=>'inter_cov',
 							      -default=>$default{inter_cov},
 							      -size=>5),
 					    ]),
@@ -184,15 +184,21 @@ print "<UL><UL><TABLE class='formbutton'>\n";
 print "<tr valign=middle>\n";
 #print "<TD>", $query->submit(-label=>"DEMO"), "</TD>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 
 ################################################################
 ### data for the demo 
-print $query->start_multipart_form(-action=>"compare-features_form.cgi");
 $demo_query_file = "demo_files/Blow_2010_GSM348064_forebrain_p300_peaks.bed";
-$demoQuery=`cat $demo_query_file`;
+$demoQuery="";
+open($fh, $demo_query_file);
+while($row = <$fh>){
+    chomp $row;
+    $row =~ s/\r//g;
+    $demoQuery .= $row;
+    $demoQuery .= "\\n";
+}
 # $demoQuery="
 # eve	CRER	crer_1	DR	-5395	-5283	2	1.618	2.4e-02	2.0e-09	16.3	113
 # eve	CRER	crer_2	DR	-4379	-4202	2	1.223	6.0e-02	6.3e-09	14.7	178
@@ -234,38 +240,43 @@ $demoQuery=`cat $demo_query_file`;
 # ";
 
 $demo_ref_file = "demo_files/Blow_2010_GSM559653_midbrain_p300_peaks.bed";
-$demoRef = `cat $demo_ref_file`;
+$demoRef = "";
+open($fh, $demo_ref_file);
+while($row = <$fh>){
+    chomp $row;
+    if($row =~ /\"/){
+        $row =~ s/\"/\\'/g;
+}
+if($row =~ /,/){
+$row =~ s/,/\\,/g;
+}
+    $demoRef .= $row;
+    $demoRef .= "\\n";
+}
 # $demoRef="
 # eve	TFBS	eve_mas	chr2R	-5303	-5198	5	105
 # eve	TFBS	eve_proximal_promoter_inc._TATA	chr2R	-127	80	9	207
 # eve	TFBS	eve_stripe2	chr2R	-1480	-996	19	484
 # eve	TFBS	eve_stripe_3+7	chr2R	-3741	-3230	18	511
 # ";
+print '<script>
+function setDemo(demoRef, demoQuery){
+    $("#reset").trigger("click");
+    featQ.value = demoQuery;
+    featRef.value = demoRef;
+    $("#inter").prop("checked", true);
+    $("#stats").prop("checked", true);
+    inter_cov.value = "0.25";
+    
+}
+</script>';
 
 print "<TD><B>";
-print $query->hidden(-name=>'featQ',-default=>$demoRef);
-print $query->hidden(-name=>'featRef',-default=>$demoQuery);
-print $query->hidden(-name=>'inter',-default=>"on");
-print $query->hidden(-name=>'stats',-default=>"on");
-print $query->hidden(-name=>'inter_cov',-default=>"0.25");
-# print $query->hidden(-name=>'input_format',-default=>'tab');
-# print $query->hidden(-name=>'info',-default=>"on");
-# print $query->hidden(-name=>'weights',-default=>"on");
-print $query->submit(-label=>"DEMO");
+print '<button type="button" onclick="setDemo('. "'$demoRef'" .','."'$demoQuery'".')">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
-### data for the demo 
-# print $query->start_multipart_form(-action=>"compare-features_form.cgi");
-# print "<TD><B>";
-# print $query->hidden(-name=>'sort_key',-default=>"sig");
-# print $query->submit(-label=>"DEMO");
-# print "</B></TD>\n";
-# print $query->end_form;
-
-
-print "<TD><B><A HREF='help.compare-features.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.compare-features.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_compare-features.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";

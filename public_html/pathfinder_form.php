@@ -6,7 +6,7 @@
 <body class="form">
 <?php
   require ('functions.php');
-
+printMenu();
   // default variables
   $default_in_format = "";
   $default_out_format = "";
