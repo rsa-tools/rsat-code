@@ -425,19 +425,19 @@ sub setAlphabet_lc {
 
 sub set_alphabet_for_type {
   my ($self) = @_;
-  my $matrix_type = $self->get_attribute("type");
-  unless ($matrix_type) {
-    $matrix_type = "dna";
-    $self->force_attribute("type", $matrix_type);
+  my $residue_type = $self->get_attribute("residue_type");
+  unless ($residue_type) {
+    $residue_type = "dna";
+    $self->force_attribute("type", $residue_type);
   }
-#  &RSAT::message::Debug("matrix_type", $matrix_type) if ($main::verbose >= 10);
+#  &RSAT::message::Debug("residue_type", $residue_type) if ($main::verbose >= 10);
   
   ## Set alphabet for cytomod 0
   my @alphabet;
-  if ($matrix_type eq "cytomod") {
+  if ($residue_type eq "cytomod") {
     @alphabet = qw(A C G T h m 1 2); 
     $self->setAlphabet(@alphabet);
-  } elsif ($matrix_type eq "dna") {
+  } elsif ($residue_type eq "dna") {
     @alphabet = qw(A C G T);
     $self->setAlphabet_lc(@alphabet);
   } else {
@@ -1908,7 +1908,8 @@ sub calcWeights {
 
     ## Get alphabet
     my @alphabet = $self->getAlphabet();
-    if (scalar(@alphabet) <= 0) {
+    my $alphabet_size = scalar(@alphabet);
+    if ($alphabet_size <= 0) {
 	&main::FatalError("&RSAT::matrix::calcWeights()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
 
@@ -1932,7 +1933,13 @@ sub calcWeights {
     for my $c (0..($ncol-1)) {
 	for my $r (0..($nrow-1)) {
 	    my $letter = lc $alphabet[$r];
-	    my $prior = $prior{$letter};
+	    my $prior = 0;
+	    if (defined($prior{$letter})) {
+	      $prior = $prior{$letter};
+	    } else {
+	      $prior = 1 / $alphabet_size;
+	    }
+	    
 	    my $freq = $frequencies[$c][$r];
 	    if ($freq == 0) {
 		$weights[$c][$r] = "-Inf";
@@ -2040,7 +2047,12 @@ sub calcInformation {
     for my $c (0..($ncol-1)) {
 	for my $r (0..($nrow-1)) {
 	    my $letter = lc $alphabet[$r];
-	    my $prior = $prior{$letter};
+	    my $prior = 0;
+	    if (defined($prior{$letter})) {
+	      $prior = $prior{$letter};
+	    } else {
+	      $prior = 1 / $alphabet_size;
+	    }
 	    my $freq = $frequencies[$c][$r];
 	    if ($freq == 0) {
 		$information[$c][$r] = 0;
@@ -2403,7 +2415,7 @@ sub calcFrequencies {
 	#	&RSAT::message::Info("Equiprobable distribution of the pseudo-count") if ($main::verbose >= 10);
       } else {
 	## Distribute pseudo-count according to prior
-	$frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
+	$frequencies[$c][$r] = $occ + $pseudo*$prior;
 	#		&RSAT::message::Info("pseudo-count distributed according to prior") if ($main::verbose >= 10);
       }
       #	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) unless ($letter);
