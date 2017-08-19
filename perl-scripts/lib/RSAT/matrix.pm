@@ -472,6 +472,9 @@ estimate them on the basis of equiprrobable residues.
 sub getPrior() {
   my ($self) = @_;
   my %prior = ();
+  
+  my $residue_type = $self->get_attribute("residue_type") || "dna";
+
   if ($self->get_attribute("prior_specified")) {
     %prior = $self->get_attribute("prior");
   } else {
@@ -480,7 +483,11 @@ sub getPrior() {
       my @alphabet = $self->getAlphabet();
       my $alphabet_size = scalar(@alphabet);
       foreach my $letter (@alphabet) {
-	$prior{$letter} = 1/$alphabet_size;
+	if ($residue_type eq "dna") {
+	  $prior{lc($letter)} = 1/$alphabet_size;
+	} else {
+	  $prior{$letter} = 1/$alphabet_size;
+	}
 	#		&RSAT::message::Debug("RSAT::matrix::setPrior", $letter, $prior{$letter}) if ($main::verbose >= 10);
       }
       $self->setPrior(%prior);
@@ -501,7 +508,21 @@ where keys are residues and values prior probabilities.
 sub setPrior {
   my ($self, %prior) = @_;
 
-  &RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 5);
+  ################################################################
+  ## For DNA, the alphabet has to be case-insensitive -> set the
+  ## priors to both upper- and lower-case for each residue.
+  my $residue_type = $self->get_attribute("residue_type") || "dna";
+  if (lc($residue_type) eq "dna") {
+    my %prior_case_insensitive = ();
+    foreach my $residue (keys(%prior)) {
+      $prior_case_insensitive{lc($residue)} = $prior{$residue};
+      $prior_case_insensitive{uc($residue)} = $prior{$residue};
+    }
+    %prior = %prior_case_insensitive;
+  }
+
+  ## Set the attribute
+  # &RSAT::message::Info ("setPrior", join(" ", %prior)) if ($main::verbose >= 10);
   $self->set_array_attribute("prior", %prior);
   $self->force_attribute("prior_specified", 1);
 
@@ -2461,7 +2482,7 @@ sub calcProbabilities {
 
   ## Get alphabet
   my @alphabet = $self->get_attribute("alphabet");
-  # &RSAT::message::Debug("&calcProbabilities()", "alphabet", join(" ", @alphabet)) if ($main::verbose >= 0);
+  # &RSAT::message::Debug("&calcProbabilities()", "alphabet", join(" ", @alphabet)) if ($main::verbose >= 10);
   if (scalar(@alphabet) <= 0) {
     &RSAT::error::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate weigths, because the alphabet has not been specified yet.");
   }
@@ -3358,6 +3379,7 @@ sub segment_proba {
 	$r = $self->{"alphabet_index"}->{$letter};
 	$letter_proba = $self->{"frequencies"}[$c][$r];
 	push @residue_proba, $letter_proba;
+
       } else {
 	if ($letter eq "n") {
 	  if ($self->get_attribute("n_treatment") eq "score") {
@@ -3516,14 +3538,6 @@ sub proba_range {
   my ($nrow, $ncol) = $self->size();
   my @frequencies = $self->getFrequencies();
 
-  ################################################################
-  ## DEBUG
-  print STDERR $self->toString(col_width=>($decimals+4),
-			       decimals=>2, 
-			       type=>"frequencies",
-			       format=>$output_format);
-  ## END DEBUG
-  ################################################################
 
   foreach my $c (0..($ncol-1)) {
     my $col_min = 1;
@@ -3802,7 +3816,7 @@ sub calcTheorScoreDistribBernoulli {
   my ($self, $score_type) = @_;
   $score_type = $score_type || "weights";
 
-  &RSAT::message::Debug("&RSAT::matrix::calcTheorScoreDistribBernoulli()") if ($main::verbose >= 5);
+  &RSAT::message::Debug("&RSAT::matrix::calcTheorScoreDistribBernoulli()") if ($main::verbose >= 6);
 
   ################################################################
   ## This parameter drastically affects the speed of computation By
@@ -3825,12 +3839,12 @@ sub calcTheorScoreDistribBernoulli {
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
   my @alphabet = $self->getAlphabet();
-  &RSAT::message::Debug("alphabet", join(" ", %alphabet)) if ($main::verbose >= 0);  ## BUG HERE (2017-08-19)
+  &RSAT::message::Debug("alphabet", join(" ", %alphabet)) if ($main::verbose >= 10);  ## BUG HERE (2017-08-19)
 
   ## Bernouilli Model
   my %bg_suffix_proba = $self->getPrior();
 
-  &RSAT::message::Debug("bg_suffix_proba", join(" ", %bg_suffix_proba)) if ($main::verbose >= 0);
+  &RSAT::message::Debug("bg_suffix_proba", join(" ", %bg_suffix_proba)) if ($main::verbose >= 10);
 
   my %alphabetNb =();
   foreach my $i (0..$#alphabet){
@@ -3845,7 +3859,7 @@ sub calcTheorScoreDistribBernoulli {
   for my $c (0..($ncol-1)) {
     &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 5);
     my %current_score_proba = ();
-
+    
     foreach my $suffix (@alphabet) {
       ## get frequency of the suffix, under matrix model
       my $r = $alphabetNb{$suffix};
@@ -3857,11 +3871,12 @@ sub calcTheorScoreDistribBernoulli {
 
       ## get prior frequencies (bg model)
       my $suffix_proba_B = $bg_suffix_proba{$suffix};
-#
-#      &RSAT::message::Debug("suffix_freq_M", $suffix_freq_M,
-#			    "suffix_proba_B", $suffix_proba_B,
-#			    "info_log_base", $info_log_base,
-#			    "info_log_denominator", $info_log_denominator) if ($main::verbose >= 5);
+
+      # &RSAT::message::Debug("suffix", $suffix,
+      # 			    "suffix_freq_M", $suffix_freq_M,
+      # 			    "suffix_proba_B", $suffix_proba_B,
+      # 			    "info_log_base", $info_log_base,
+      # 			    "info_log_denominator", $info_log_denominator) if ($main::verbose >= 10);
 
       ## score
       my $curr_score = log($suffix_freq_M/$suffix_proba_B)/$info_log_denominator; # Beware here, log is ln !!!
@@ -4028,7 +4043,8 @@ a background model with Markov order > 0 .
 sub calcTheorScoreDistribMarkov {
   my ($self) = @_;
   my $score_type = "weights";
-  &RSAT::message::Debug("&RSAT::matrix::calcTheorScoreDistribMarkov()") if ($main::verbose >= 5);
+  &RSAT::message::Debug("&RSAT::matrix::calcTheorScoreDistribMarkov()") if ($main::verbose >= 6);
+
 
   ################################################################
   ## This parameter drastically affects the speed of computation By
@@ -4065,6 +4081,7 @@ sub calcTheorScoreDistribMarkov {
   foreach my $i (0..$#alphabet) {
     $alphabetNb{$alphabet[$i]} = $i;
   }
+
 
   ################################################################
   ## Initialize the score probabilities with the first word of Markov
@@ -4176,6 +4193,7 @@ sub calcTheorScoreDistribMarkov {
     %distrib_proba = ();
     %distrib_proba = %current_distrib_proba;
   }
+
 
   ## finalisation phase
   my %score_proba =();
