@@ -346,10 +346,17 @@ corresponds to which letter of the alphabet.
 sub index_alphabet {
   my ($self) = @_;
   my @alphabet = $self->getAlphabet();
+  my $residue_type = $self->get_attribute("residue_type") || "dna";
   my $row = 0;
   foreach my $letter (@alphabet) {
 #    $self->add_hash_attribute("alphabet_index", lc($letter), $row);
-    $self->add_hash_attribute("alphabet_index", $letter, $row);
+    ## DNA is case-insensitive
+    if (lc($residue_type) eq "dna") {
+      $self->add_hash_attribute("alphabet_index", lc($letter), $row);
+      $self->add_hash_attribute("alphabet_index", uc($letter), $row);
+    } else {
+      $self->add_hash_attribute("alphabet_index", $letter, $row);
+    }
 #	$alphabet_index{$letter} = $row;
 #	&RSAT::message::Debug("Alphabet index", $letter, $row) if ($main::verbose >= 10);
     $row++;
