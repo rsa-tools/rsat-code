@@ -994,6 +994,11 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     foreach my $m (1..$new_matrix_nb) {
       my $matrix = $new_matrices[$m-1];
 
+      &RSAT::message::TimeWarn("\tComputing matrix parameters (consensus, distrib, ...) for matrix",
+			       $m."/".$new_matrix_nb, 
+			       $matrix->get_attribute("name")) if ($main::verbose >= 3);
+
+      unless ($bg_method eq "window") {
 
       # ## Skip some of the first matrices if required
       # if ($first_matrix > 0) {
@@ -1021,11 +1026,16 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       $matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
       $matrix->set_attribute("file", $matrix_file);
       $matrix->set_attribute("n_treatment", $n_treatment);
+
+      ## Index the alphabet
       $matrix->index_alphabet();
-      
-      &RSAT::message::TimeWarn("\tComputing matrix parameters (consensus, distrib, ...) for matrix",
-			       $m."/".$new_matrix_nb, 
-			       $matrix->get_attribute("name")) if ($main::verbose >= 3);
+
+      ## Set the matrix prior
+      $matrix->setMarkovModel($bg_model);
+      &RSAT::message::TimeWarn("Residue priors for matrix", $matrix->get_attribute("name"),
+			       "\n\t\%prior", join(" ", %prior),  
+				 "\n\tgetPrior()", join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
+      }
 
       ## Use the matrix consensus as name
       if ($consensus_name) {
@@ -1094,10 +1104,12 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       # 	}
       
       unless ($bg_method eq "window") {
-	## Set the matrix prior
-	$matrix->setMarkovModel($bg_model);
-	&RSAT::message::TimeWarn("Setting matrix priors for matrix", $matrix->get_attribute("name"),
-				 %prior, join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
+
+	# ## Set the matrix prior JvH 2017-09-17: moved above because bg model must be set before computing proba and weights
+	# $matrix->setMarkovModel($bg_model);
+	# &RSAT::message::TimeWarn("Residue priors for matrix", $matrix->get_attribute("name"),
+	# 			 "\n\t\%prior", join(" ", %prior),  
+	# 			 "\n\tgetPrior()", join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
 	## Calculate min and max weight values
 	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range() if ($return_fields{weight_limits} || $calc_fields{normw});
 	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
@@ -3087,6 +3099,7 @@ residue frequencies.
 	unless ((&RSAT::util::IsReal($main::pseudo_counts) )
 		&& ($main::pseudo_counts >= 0));
 
+
       ## Equiprobable distribution of the pseudo-weight
 
 =pod
@@ -4123,10 +4136,13 @@ sub score_segment {
    my ($proba_B) = $bg_model->segment_proba($segment, 0);
 #   my ($proba_M, $ref_residue_proba_M) = $matrix->segment_proba($segment, 1);
 #   my ($proba_B, $ref_residue_proba_B)= $bg_model->segment_proba($segment, 1);
-#   &RSAT::message::Debug("Segment", $segment,
-# 			"proba_M=".$proba_M,
-# 			"proba_B=".$proba_B, 
-# 		       ) if ($main::verbose >= 5);
+
+
+
+  # &RSAT::message::Debug("Segment", $segment,
+  # 			"proba_M=".$proba_M,
+  # 			"proba_B=".$proba_B, 
+  # 		       ) if ($main::verbose >= 0); ## JvH was here on 2017-08-19
 
 #   ## Check that the two probabilities were computed from sequences of the same lengths.
 #   my @residue_proba_M = @$ref_residue_proba_M;
