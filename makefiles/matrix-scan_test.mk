@@ -35,6 +35,11 @@ MATRIX_SCAN_CMD=matrix-scan -v ${V} \
 		-return limits,sites,pval -lth score 1 -uth pval 1e-4 \
 		-i ${SEQ} \
 		${OPT} -o ${SITES}.ft
+matrix_parameters:
+	@echo
+	@echo "Matrix parameters"
+	convert-matrix -v ${V} -matrix_format transfac -i ${MATRIX_FILE} -from transfac -to tab -pseudo 1 -decimals 2 -return counts,frequencies,margins,parameters
+
 scan_eve:
 	@echo
 	@echo "SEQ		${SEQ}"
