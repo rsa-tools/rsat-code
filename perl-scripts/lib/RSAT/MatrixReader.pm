@@ -683,7 +683,7 @@ sub _readFromTRANSFACFile {
 	  $consensus_residue = pop @fields;
 	  $transfac_consensus .= $consensus_residue;
 	}
-	&RSAT::message::Debug("line ".$l, "adding column", join (":", @fields)) if ($main::verbose >= 5);
+	&RSAT::message::Debug("line ".$l, "adding column", join (":", @fields)) if ($main::verbose >= 6);
 	$matrix->addColumn(@fields);
 	$ncol++;
 	$matrix->force_attribute("ncol", $ncol);
@@ -920,7 +920,7 @@ sub _readFromSTAMPFile {
 	  $consensus_residue = pop @fields;
 	  $transfac_consensus .= $consensus_residue;
 	}
-	&RSAT::message::Debug("line ".$l, "adding column", join (":", @fields)) if ($main::verbose >= 5);
+	&RSAT::message::Debug("line ".$l, "adding column", join (":", @fields)) if ($main::verbose >= 6);
 	$matrix->addColumn(@fields);
 	$ncol++;
 	$matrix->force_attribute("ncol", $ncol);
@@ -3318,7 +3318,7 @@ sub _readFromClustalFile {
 	    $row[$i] = 0 unless (defined($row[$i]));
 	}
 	$matrix->addRow(@row);
-	&RSAT::message::Debug("Adding row", $r, $res, join ":", @row), if ($main::verbose >= 5);
+	&RSAT::message::Debug("Adding row", $r, $res, join ":", @row), if ($main::verbose >= 6);
     }
     #$matrix->setAlphabet_lc(@alphabet);
     $matrix->set_alphabet_for_type();
