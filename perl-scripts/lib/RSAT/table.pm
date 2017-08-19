@@ -596,17 +596,17 @@ sub addColumn {
 #	push @{$self->{table}}, [@new_col];
     
     
-    &RSAT::message::Debug("Table: adding column", join (" ", @new_col)) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Table: adding column", join (" ", @new_col)) if ($main::verbose >= 7);
     
     ## Update number of columns
     my $ncol = $self->ncol()+1;
     $self->force_attribute("ncol", $ncol);
-    &RSAT::message::Debug("Table: updating number of columns", $self->ncol()) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Table: updating number of columns", $self->ncol()) if ($main::verbose >= 7);
     
     ## update number of rows
     my $column_size = scalar(@new_col);
     if ($column_size >= $self->nrow()) {
-	&RSAT::message::Debug ("Table: updating number of rows", $column_size) if ($main::verbose >= 5);
+	&RSAT::message::Debug ("Table: updating number of rows", $column_size) if ($main::verbose >= 7);
 	$self->force_attribute("nrow", scalar(@new_col));
     }
     
@@ -632,12 +632,12 @@ sub addRow {
     ## Update number of rows
     my $nrow = $self->nrow()+1;
 	$self->force_attribute("nrow", $nrow);
-    &RSAT::message::Debug("Table: updating number of rows", $self->nrow()) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Table: updating number of rows", $self->nrow()) if ($main::verbose >= 7);
     
     ## update number of colmuns
     my $row_size = scalar(@new_row);
     if ($row_size >= $self->ncol()) {
-	&RSAT::message::Debug("Table: updating number of columns", $row_size) if ($main::verbose >= 5);
+	&RSAT::message::Debug("Table: updating number of columns", $row_size) if ($main::verbose >= 7);
 	$self->force_attribute("ncol", scalar(@new_row));
     }
     
