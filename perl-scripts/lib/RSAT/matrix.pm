@@ -476,7 +476,7 @@ sub getPrior() {
     %prior = $self->get_attribute("prior");
   } else {
     if (scalar(keys %prior) <= 0) {
-      &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
+      &RSAT::message::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
       my @alphabet = $self->getAlphabet();
       my $alphabet_size = scalar(@alphabet);
       foreach my $letter (@alphabet) {
@@ -603,7 +603,6 @@ sub setInfoLogBase {
 ################################################################
 ## PROBLEM ###
 
-
 =pod
 
 =item addRow(@new_row)
@@ -617,12 +616,12 @@ sub addRow {
   ## Update number of rows
   my $nrow = $self->nrow()+1;
   $self->force_attribute("nrow", $nrow);
-  &RSAT::message::Debug("Matrix: updating number of rows", $self->nrow()) if ($main::verbose >= 5);
+  &RSAT::message::Debug("Matrix: updating number of rows", $self->nrow()) if ($main::verbose >= 6);
 
   ## update number of colmuns
   my $row_size = scalar(@new_row);
   if ($row_size >= $self->ncol()) {
-    &RSAT::message::Debug("Matrix: updating number of columns", $row_size) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Matrix: updating number of columns", $row_size) if ($main::verbose >= 6);
     $self->force_attribute("ncol", scalar(@new_row));
   }
 
@@ -1453,7 +1452,7 @@ sub to_tab {
 		      parameters=>1,
 		      consensus=>1
       );
-  &main::FatalError("Invalid matrix type $type") unless $supported_types{$type};
+  &RSAT::error::FatalError("Invalid matrix type $type") unless $supported_types{$type};
 
   ## Set formatting parameters provided in arguments as matrix attribute
   foreach my $key ("sep", "col_width", "decimals") {
@@ -1910,7 +1909,7 @@ sub calcWeights {
     my @alphabet = $self->getAlphabet();
     my $alphabet_size = scalar(@alphabet);
     if ($alphabet_size <= 0) {
-	&main::FatalError("&RSAT::matrix::calcWeights()\tCannot calculate weigths, because the alphabet has not been specified yet.");
+	&RSAT::error::FatalError("&RSAT::matrix::calcWeights()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
 
     ## Get or calculate prior residue probabilities
@@ -2023,7 +2022,7 @@ sub calcInformation {
     ## Get alphabet
     my @alphabet = $self->get_attribute("alphabet");
     if (scalar(@alphabet) <= 0) {
-	&main::FatalError("&RSAT::matrix::calcInformation()\tCannot calculate weigths, because the alphabet has not been specified yet.");
+	&RSAT::error::FatalError("&RSAT::matrix::calcInformation()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
     $self->set_parameter("alphabet.size", scalar(@alphabet));
 
@@ -2363,23 +2362,24 @@ sub calcFrequencies {
   ## Get alphabet
   my @alphabet = $self->get_attribute("alphabet");
   if (scalar(@alphabet) <= 0) {
-    &main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate weigths, because the alphabet has not been specified yet.");
+    &RSAT::error::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate weigths, because the alphabet has not been specified yet.");
   }
 
   ## Matrix size
   my ($nrow, $ncol) = $self->size();
 #    my $ncol = $self->ncol();
   if ($ncol <= 0) {
-    &main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix (not a single column).");
+    &RSAT::error::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix (not a single column).");
   }
   if ($nrow <= 0) {
-    &main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix (not a single row).");
+    &RSAT::error::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix (not a single row).");
   }
 
   ## Get or calculate prior residue probabilities
   my %prior = $self->getPrior();
+  &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", "prior", join(" ", %prior)) if ($main::verbose >= 6);
   if (scalar(keys %prior) <= 0) {
-    &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
+    &RSAT::message::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
     my $alphabet_size = scalar(@alphabet);
     foreach my $letter (@alphabet) {
       $prior{$letter} = 1/$alphabet_size;
@@ -2392,6 +2392,7 @@ sub calcFrequencies {
 
   ## pseudo-count
   my $pseudo = $self->get_attribute("pseudo") || 0;
+  ## &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", '$pseudo', $pseudo) if ($main::verbose >= 10);
 
   ## count matrix
   my @matrix = $self->getMatrix();
@@ -2460,22 +2461,23 @@ sub calcProbabilities {
 
   ## Get alphabet
   my @alphabet = $self->get_attribute("alphabet");
+  # &RSAT::message::Debug("&calcProbabilities()", "alphabet", join(" ", @alphabet)) if ($main::verbose >= 0);
   if (scalar(@alphabet) <= 0) {
-    &main::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate weigths, because the alphabet has not been specified yet.");
+    &RSAT::error::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate weigths, because the alphabet has not been specified yet.");
   }
 
   ## Matrix size
   my ($nrow, $ncol) = $self->size();
   if (($nrow <= 0) ||
       ($ncol <= 0)) {
-    &main::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate probabilities for an empty matrix.");
+    &RSAT::error::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate probabilities for an empty matrix.");
   }
 
 
   ## Get or calculate prior residue probabilities
   my %prior = $self->getPrior();
   if (scalar(keys %prior) <= 0) {
-    &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
+    &RSAT::message::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
     my $alphabet_size = scalar(@alphabet);
     foreach my $letter (@alphabet) {
       $prior{$letter} = 1/$alphabet_size;
@@ -2727,7 +2729,7 @@ sub calcGCcontent {
     
     ## Store as parameter
     $self->set_parameter("residues.content.".$matrix_type, $residues_content);
-    $self->set_parameter("G+C.content.".$matrix_type, ($row_sums{g}+$row_sums{c}));
+    $self->set_parameter("G+C.content.".$matrix_type, ($row_sums{G}+$row_sums{C}));
   }
 }
 
@@ -3510,8 +3512,18 @@ sub proba_range {
     $self->calcFrequencies();
   }
 
+
   my ($nrow, $ncol) = $self->size();
   my @frequencies = $self->getFrequencies();
+
+  ################################################################
+  ## DEBUG
+  print STDERR $self->toString(col_width=>($decimals+4),
+			       decimals=>2, 
+			       type=>"frequencies",
+			       format=>$output_format);
+  ## END DEBUG
+  ################################################################
 
   foreach my $c (0..($ncol-1)) {
     my $col_min = 1;
@@ -3790,6 +3802,8 @@ sub calcTheorScoreDistribBernoulli {
   my ($self, $score_type) = @_;
   $score_type = $score_type || "weights";
 
+  &RSAT::message::Debug("&RSAT::matrix::calcTheorScoreDistribBernoulli()") if ($main::verbose >= 5);
+
   ################################################################
   ## This parameter drastically affects the speed of computation By
   ## reducing the score to 2 decimals, the nmber of possible scors is
@@ -3802,17 +3816,6 @@ sub calcTheorScoreDistribBernoulli {
 
   my @scores = $self->getFrequencies();
 
- # my @scores;
- # if (lc($score_type) eq "counts") {
- #   @scores = $self->getMatrix();
- # } elsif (lc($score_type) eq "weights") {
- #   @scores = $self->getWeights();
- # } elsif (lc($score_type) eq "crudefrequencies") {
-  #  @scores = $self->getCrudeFrequencies();
- # } elsif (lc($score_type) eq "frequencies") {
- #   @scores = $self->getFrequencies();
- # }
-
   &RSAT::message::TimeWarn("Calculating theoretical distribution of ".$score_type,
 			   "Bernoulli model",
 			   "matrix", $self->get_attribute("name"),
@@ -3822,9 +3825,12 @@ sub calcTheorScoreDistribBernoulli {
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
   my @alphabet = $self->getAlphabet();
+  &RSAT::message::Debug("alphabet", join(" ", %alphabet)) if ($main::verbose >= 0);  ## BUG HERE (2017-08-19)
 
   ## Bernouilli Model
   my %bg_suffix_proba = $self->getPrior();
+
+  &RSAT::message::Debug("bg_suffix_proba", join(" ", %bg_suffix_proba)) if ($main::verbose >= 0);
 
   my %alphabetNb =();
   foreach my $i (0..$#alphabet){
@@ -3874,15 +3880,15 @@ sub calcTheorScoreDistribBernoulli {
     %score_proba = %current_score_proba;
   }
 
-# round the scores to the user-chosen decimals
-my %score_proba_decimals;
-for my $score (keys %score_proba) {
-	my $score_decimals = sprintf($score_format,$score);
+  ## round the scores to the user-chosen decimals
+  my %score_proba_decimals;
+  for my $score (keys %score_proba) {
+    my $score_decimals = sprintf($score_format,$score);
 	$score_decimals =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
-	$score_proba_decimals{$score_decimals} += $score_proba{$score};
-	}
-%score_proba = %score_proba_decimals;
-
+    $score_proba_decimals{$score_decimals} += $score_proba{$score};
+  }
+  %score_proba = %score_proba_decimals;
+  
 #    my @row = &RSAT::matrix::get_column($c+1, $nrow, @matrix);
 #    my @row_scores = &RSAT::matrix::get_column($c+1, $nrow, @scores);
 #    my %current_score_proba = ();
@@ -4022,6 +4028,7 @@ a background model with Markov order > 0 .
 sub calcTheorScoreDistribMarkov {
   my ($self) = @_;
   my $score_type = "weights";
+  &RSAT::message::Debug("&RSAT::matrix::calcTheorScoreDistribMarkov()") if ($main::verbose >= 5);
 
   ################################################################
   ## This parameter drastically affects the speed of computation By
