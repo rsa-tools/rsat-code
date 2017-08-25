@@ -38,9 +38,10 @@ print $query->start_html(-title=>"$title",
         -type => 'text/css',
         -media => 'screen,projection,print' });
     
-    if($title =~ /RSAT/){
+    if($title =~ /RSAT/ || $title eq 'data'){
     	open($fh, "menu.php");
     	while($row = <$fh>){
+            if($row =~ "<!--perlscript"){ my $x = `cat $ENV{RSAT}/public_html/data/supported_organisms.tab | wc -l`; $x -= 1; print $x; }
         	print $row."\n";
     	}
     }else{

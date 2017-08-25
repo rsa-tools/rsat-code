@@ -12,7 +12,6 @@
 <BODY>
 <?php
     require ('functions.php');
-    #printMenu("RSAT");
 include('menu.php');
 ?>
 
@@ -23,8 +22,8 @@ include('menu.php');
 			<div class='col-sm-4' align='center'><img src="images/RSAT_icon.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0">
 			</div>
 			<div class='col-sm-2 homemenu'>
-				<a href='htmllink.cgi?title=RSAT : Publication&file=publications.html'>Publication</a><br/>
-				<a href='htmllink.cgi?title=RSAT : tutorials&file=tutorials/tutorials.html'>FAQ</a><br/>
+				<a href='htmllink.cgi?title=RSAT : Publication&file=publications.html'>Publications</a><br/>
+				<a href='htmllink.cgi?title=RSAT : tutorials&file=tutorials/tutorials.html'>Tutorials</a><br/>
 				<a href='htmllink.cgi?title=RSAT : People&file=people.html'>About us</a>			
 			</div>
 			<div class='col-sm-6 homeheaderbar'><div class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green; padding-top: 25px;'></i></a></div></div>		
@@ -35,22 +34,27 @@ include('menu.php');
 		<div class='row'>
 			<div class='col-sm-9'>
 				<div class='row' style='padding-bottom:40px'>
-					<div class='col-sm-6'><span class='homebigtext'>Regulatory sequence<br><span style='color:orange'>Analysis tools</span></span><br/><i>This website is free and open to all users</i></div>
+					<div class='col-sm-6'><span class='homebigtext'>Regulatory sequence<br>Analysis tools</span><br/><i>This website is free and open to all users</i></div>
 					<div class='col-sm-6'><b>What we do</b><hr style='margin:10px 0 10px 0;border:2px solid #eee'>
-						<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>
+					We offer tools to analyse cis-regulatory elements in genome sequences:
+						<ul><li>motif discovery (support genome-wide data sets like ChIP-seq)</li>
+						<li>transcription factor binding motif analysis (quality assessment, comparisons and clustering)</li>
+						<li>comparative genomics</li>
+						<li>analysis of regulatory variations</li>
+						</ul>
 					</div>				
 				</div>	
 				<div class='row' align='center'>
-					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#programModal'><div class='panel-body'><div class='box-heading'>Which program to use?</div>A guide to our main tools for new users<br/><i class='fa fa-cogs fa-3x fa-style'></i></div></div></div>
+					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#programModal'><div class='panel-body'><div class='box-heading'>Which program to use?</div>Guide to main tools for new users<br/><i class='fa fa-cogs fa-3x fa-style'></i></div></div></div>
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#tutModal'><div class='panel-body'><div class='box-heading'>Tutorial and help</div>RSAT tutorial and all training material<br/><i class='fa fa-graduation-cap fa-3x fa-style'></i></div></div></div>				
 				</div>
 				<div class='row' align='center'>
-					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#serverModal'><div class='panel-body'><div class='box-heading'>Choose your server</div><img class='img-responsive' src='images/logo-allservers.png' ></div></div></div>
+					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#serverModal'><div class='panel-body'><div class='box-heading'>Choose your server</div><div class='panel-image'><div style='visibility:hidden'>Citing RSAT complete suite of tools<br/><i class='fa fa-graduation-cap fa-3x fa-style'></i></div></div></div></div></div>
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#citeModal'><div class='panel-body'><div class='box-heading'>How to cite?</div>Citing RSAT complete suite of tools<br/><i class='fa fa-book fa-3x fa-style'></i></div></div></div>			
 				</div>
 			</div>
-			<div class='col-sm-3'><span class='homepapertext'><span style="color:red"><i class="fa fa-book fa-lg"></span></i>Check <span style="color:red"><b>latest RSAT paper</b></span> in <b><a target='_blank' href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target="_blank"> NAR web software issue 2015</b></a></span><br/></br>
-				<a class="twitter-timeline" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+			<div class='col-sm-3'><span class='homepapertext'><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> on matrix-clustering <b><a target='_blank' href="https://academic.oup.com/nar/article/45/13/e119/3862068/RSAT-matrix-clustering-dynamic-exploration-and" target="_blank"> in NAR</b></a></span><br/><br/>
+				<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="460" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 			</div>	
 		</div>
 	</div>
@@ -58,11 +62,11 @@ include('menu.php');
 		<div class='social-circle'><div class='row'>
 			<div class='col-sm-4'><a class='fa fa-envelope' href='javascript:void(0)' onclick="window.location='mailto:Jacques.van.Helden@ulb.ac.be?subject='"></a> Jacques Van Helden</div>
 			<div class='col-sm-4'><a class='fa fa-twitter' href='https://twitter.com/RSATools' target='_blank'></a> Twitter</div>
-			<div class='col-sm-4'><a class='fa fa-code' href='#'></a> Code version: <?php echo $properties['git_date'];?></div></div>
+			<div class='col-sm-4'><a class='fa fa-code' href='#' style='cursor:default'></a> Code version: <?php echo $properties['git_date'];?></div></div>
 		</div><br/>
 		<div class='social-circle'><div class='row'>
 			<div class='col-sm-8'><a class='fa fa-paint-brush' href='http://www.altamirastudio.com/' target='_blank'></a> RSAT logos designed by Mauricio Guzman (<a target="_blank" href="http://www.altamirastudio.com/">http://www.altamirastudio.com/</a>)</div>
-			<div class='col-sm-4'><a class='fa fa-bug' href='#'></a><?php echo " Group specificity: <b>".$properties['group_specificity'] . "</b></p>"; ?></div>
+			<div class='col-sm-4'><a class='fa fa-bug' href='#' style='cursor:default'></a><?php echo " Group specificity: <b>".$properties['group_specificity'] . "</b></p>"; ?></div>
 		</div>
 		<div align='right'><?php echo $properties['rsat_site'] . ' (' . $properties['rsat_www'] . ')'; ?></div>
 	</div>
@@ -164,13 +168,11 @@ include('menu.php');
 				<h4 class='modal-title'>Tutorials and Help</h4>
 			</div>
 			<div class='modal-body'>
-				<i class="fa fa-graduation-cap fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsa-tools.github.io/tutorial_eccb14/index.html" target="tools">ECCB'14</a></b> and <a href="http://rsa-tools.github.io/teaching/index.html" target="tools"><b>all training material</b></a> 
+				<p><i class="fa fa-graduation-cap fa-lg"></i> <a href="http://rsa-tools.github.io/teaching/index.html" target="tools"><b>All training material</b></a> </p>
 	
 	<p><i class="fa fa-graduation-cap fa-lg"></i> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font>
-		  
-	<!--p><li> Latest features of RSAT presented in the <b>2011 NAR Web server issue</b> <br/> <a href='http://www.ncbi.nlm.nih.gov/pubmed/21715389' target=_blank>[Pubmed 21715389]</a></li-->
-	
-	<!--p><i class="fa fa-rss-square fa-lg"></i> Stay Tuned !! <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><b>RSS feed</b></a> to all RSAT news. -->
+	</p><p><i class="fa fa-graduation-cap fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsa-tools.github.io/tutorial_eccb14/index.html" target="tools">ECCB'14</a>
+	</p><p><i class="fa fa-graduation-cap fa-lg"></i><a href='htmllink.cgi?title=RSAT : tutorials&file=tutorials/tutorials.html' target='_blank'> All tutorials</a></b>
 			</div>
 		</div>
 	</div>
@@ -251,7 +253,7 @@ include('menu.php');
 				<span style="color: #cc6600;"><i class="fa fa-pencil fa-lg"></i> <b>Citing RSAT complete suite of tools:</b></span>
 	<div align="left">
       <ul>
-<li><font color="red"><b>New !</b></font>  Medina-Rivera A, Defrance M, Sand O, Herrmann C, Castro-Mondragon J, Delerce J, Jaeger S, Blanchet C, Vincens P, Caron C, Staines DM, Contreras-Moreira B, Artufel M, Charbonnier-Khamvongsa L, Hernandez C, Thieffry D, Thomas-Chollier M, van Helden J (2015)
+<li>  Medina-Rivera A, Defrance M, Sand O, Herrmann C, Castro-Mondragon J, Delerce J, Jaeger S, Blanchet C, Vincens P, Caron C, Staines DM, Contreras-Moreira B, Artufel M, Charbonnier-Khamvongsa L, Hernandez C, Thieffry D, Thomas-Chollier M, van Helden J (2015)
 	  <b>RSAT 2015: Regulatory Sequence Analysis Tools </b>. Nucleic Acids Res. 2015 (Web Server issue) in press.
 	  <!--a href=http://www.ncbi.nlm.nih.gov/pubmed/21715389>[Pubmed 21715389]</a-->
 	  <a href='http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full'>[Full text]</a>

@@ -49,9 +49,9 @@
                   <p ><h2 style="border-style:solid;border-color:#cc6600;padding:0 10px;background-color:#F6E6CA;">
                   <a target='_blank' href="http://rsat.ulb.ac.be/eccb14/" >RSAT tutorial<br>at ECCB'14</a>
                   </h2></p-->
-		<div style='padding:60px 0 0 10px;'><i class='fa fa-bar-chart  fa-lg'></i> <b> 
+		<div style='padding:60px 0 0 10px;' align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b> 
 <!--perlscript -->
-<?php $count = shell_exec('cat ' . $properties["RSAT"] . '/public_html/data/supported_organisms.tab | wc -l'); $count = $count - 1; echo $count; ?> </b> <i>organisms supported</i></div>
+<?php $count = shell_exec('cat ' . $properties["RSAT"] . '/public_html/data/supported_organisms.tab | wc -l'); $count = $count - 1; echo $count; ?> </b> <i>organisms</i></div>
                 <div>
 			<input type='search' id='searchfunc' placeholder='Search' class='searchmenu' onKeyPress='searchfunc()' onKeyUp='searchfunc()'/>
 		</div> 
@@ -249,7 +249,7 @@
                          <a class="menu_item" href="http://rsa-tools.github.io/teaching/index.html" target="_blank">Training material <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="htmllink.cgi?title=RSAT : tutorials&file=tutorials/tutorials.html" >Tutorials</a>
                          <!--<a class="menu_item" href="forum_out.html" ><font color=#FFCCCC>Contact & Forum</font></a>-->
-                         <a class="menu_item" href="htmllink.cgi?title=RSAT : Publication&file=publications.html" >Publications</a>
+                         <a class="menu_item" href="publications.cgi" >Publications</a>
                          <a class="menu_item" href="htmllink.cgi?title=RSAT : Credits&file=credits.html" >Credits</a>
                          <a class="menu_item" href="http://teaching.rsat.eu/download-request_form.cgi" >Download</a>
                          <a class="menu_item_last" href="htmllink.cgi?title=RSAT : Motif databases&file=motif_databases/" >Motif databases</a>
@@ -275,10 +275,7 @@
                          <!--      <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a>-->
                          
                          <h3>
-                         <script type='text/javascript'><!--
-                         var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Feedback<\/a>');
-                             //--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (Using spam protection)</a></noscript>
-                                 <br/>
+                         
                                  <A target=_top href="http://www.bigre.ulb.ac.be/Users/jvanheld/">Jacques van Helden</A>
                                  </h3>
                             </div>     
