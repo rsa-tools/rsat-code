@@ -54,7 +54,7 @@ include('menu.php');
 				</div>
 			</div>
 			<div class='col-sm-3'><span class='homepapertext'><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> on matrix-clustering <b><a target='_blank' href="https://academic.oup.com/nar/article/45/13/e119/3862068/RSAT-matrix-clustering-dynamic-exploration-and" target="_blank"> in NAR</b></a></span><br/><br/>
-				<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="460" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+				<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="530" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 			</div>	
 		</div>
 	</div>
