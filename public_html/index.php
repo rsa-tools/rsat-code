@@ -22,7 +22,7 @@ include('menu.php');
 			<div class='col-sm-4' align='center'><img src="images/RSAT_icon.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0">
 			</div>
 			<div class='col-sm-2 homemenu'>
-				<a href='htmllink.cgi?title=RSAT : Publication&file=publications.html'>Publications</a><br/>
+				<a href='publications.cgi'>Publications</a><br/>
 				<a href='htmllink.cgi?title=RSAT : tutorials&file=tutorials/tutorials.html'>Tutorials</a><br/>
 				<a href='htmllink.cgi?title=RSAT : People&file=people.html'>About us</a>			
 			</div>
