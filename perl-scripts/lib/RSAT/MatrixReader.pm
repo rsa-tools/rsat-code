@@ -386,7 +386,7 @@ sub readFromFile {
 	|| (scalar(@selected_ids) > 0)
 	|| (scalar(@selected_names) > 0)
 	) {
-      &RSAT::message::Info("Number of matrices after selection",  scalar(@matrices)) if ($main::verbose >= 1);
+      &RSAT::message::Info("Number of matrices after selection",  scalar(@matrices)) if ($main::verbose >= 2);
       if ($main::verbose >= 2) {
 	my @retained_acs = ();
 	my @retained_names = ();
