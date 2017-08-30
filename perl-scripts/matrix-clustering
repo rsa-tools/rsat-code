@@ -2009,6 +2009,8 @@ sub Hclustering {
     $cluster_motifs_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
     $cluster_motifs_cmd .= "; export.newick = ".$export_newick;
 
+    $cluster_motifs_cmd .= "; radial.only = ".$radial_tree_flag;
+
     ## Set the option to compute only the hclust and skip the
     ## tree and heatmap computation
     $draw_heatmap = 0 if $root_matrices_flag == 1;
@@ -2036,15 +2038,10 @@ sub Hclustering {
     if (scalar keys %lth > 0){
 
 	my $lthsp = "";
-
-	if($radial_tree_flag == 1){
-	    $lthsp .= "cor_-1_Ncor_-1_w_0";
-	} else {
-	
-	    foreach my $par (keys %lth) {
-		$lthsp.= $par."_".$lth{$par}."_";
-	    }
+	foreach my $par (keys %lth) {
+	    $lthsp.= $par."_".$lth{$par}."_";
 	}
+	
 	$cluster_motifs_cmd .= "; lthsp = '".$lthsp."'";
     }
 
@@ -2292,7 +2289,7 @@ sub Add_gaps_to_motifs {
 
 
 ################################################################
-## Add attributes to JSON file, like links to pictures and other
+## Add attributes to JSON file, links to pictures and other
 ## attributes
 sub Add_attributes_to_JSON {
 
@@ -2335,7 +2332,7 @@ sub Add_attributes_to_JSON {
       my $children = 0;
       my ($M1, $M2, $Add_this, $Flag);
       my (@Split_line, @Parsed_JSON) = ();
-	  my $file = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table.tab";
+      my $file = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table.tab";
 	  
       my @levels_JSON = ();
       open(LVL_JSON, $file) || &RSAT::error::FatalError($file, "Cannot open the JSON Levels file");
