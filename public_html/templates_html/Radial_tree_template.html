@@ -126,6 +126,7 @@ d3.json("--json_file--", function(json) {
       .data(cluster.links(nodes))
     .enter().append("svg:path")
       .attr("class", "link")
+      .style("stroke", function(d) { return d.target.branch_color; })
       .attr("d", diagonal);
 
   var node = vis.selectAll("g.node")
