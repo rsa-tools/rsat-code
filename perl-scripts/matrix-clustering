@@ -162,6 +162,11 @@ package main;
 
   ## Hash containing motif information
   local %matrix_info = ();
+
+  ## Hash containing relationship between nodes or leaves
+  ## with theur clusters
+  local %node_to_cluster_hash = ();
+  local %leaf_to_cluster_hash = ();
   
   ## Flag to export the Newick tree
   local $radial_tree_flag = 0;
@@ -553,14 +558,11 @@ package main;
 
       ################################################################
       ## Create the merged matrices and consensuses
-      if($radial_tree_flag == 0){
-	  &Merge_matrices();
+      &Merge_matrices();
             
       ################################################################
       ## Export central motif in TF format
-	  &Export_central_motif_per_cluster();
-      }
-
+      &Export_central_motif_per_cluster();
       
       if ($root_matrices_flag == 1) {
 	  
@@ -589,12 +591,15 @@ package main;
 	  
 	  ################################################################
 	  ## Parse the JSON file
-	  &Add_attributes_to_JSON();
+	  if($radial_tree_flag == 1){
+	      &Add_attributes_to_JSON_radial_tree();
+	  } else {
+	      
+	      &Add_attributes_to_JSON();
 	  
-	  ################################################################
-	  ## Creates the body of html to display
-	  ## each cluster separately
-	  if($radial_tree_flag == 0){
+	      ################################################################
+	      ## Creates the body of html to display
+	      ## each cluster separately
 	      &Create_dynamic_tree();
 	  }
 	  
@@ -2287,11 +2292,10 @@ sub Add_gaps_to_motifs {
 #   return();
 # }
 
-
 ################################################################
 ## Add attributes to JSON file, links to pictures and other
 ## attributes
-sub Add_attributes_to_JSON {
+sub Add_attributes_to_JSON_radial_tree {
 
   #############################################
   ## Create a hash with the attribute data:
@@ -2327,135 +2331,167 @@ sub Add_attributes_to_JSON {
   ############################################################
   ## Read the JSON file and add the link data to each node
   &RSAT::message::TimeWarn("Linking data to nodes in JSON files") if ($main::verbose >= 2);
-  foreach my $cluster(@clusters_to_HTML) {
-      my $line = "";
-      my $children = 0;
-      my ($M1, $M2, $Add_this, $Flag);
-      my (@Split_line, @Parsed_JSON) = ();
-      my $file = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table.tab";
+  my $cluster = "cluster_1";
+  my $line = "";
+  my $children = 0;
+  my ($M1, $M2, $Add_this, $Flag);
+  my (@Split_line, @Parsed_JSON) = ();
+  my $file = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table.tab";
 	  
-      my @levels_JSON = ();
-      open(LVL_JSON, $file) || &RSAT::error::FatalError($file, "Cannot open the JSON Levels file");
+  my @levels_JSON = ();
+  open(LVL_JSON, $file) || &RSAT::error::FatalError($file, "Cannot open the JSON Levels file");
       while(<LVL_JSON>) {
 	  chomp;
 	  next if /^;/;
 	  my @spl = split(/\t+/, $_);
 	  push(@levels_JSON, $spl[2]);  
       }
-      close(LVL_JSON);
-
+  close(LVL_JSON);
+  
+  
+  ## Node to clusters
+  my ($node_to_cluster) = &OpenInputFile($main::outfile{prefix}."_tables/node_to_cluster.tab");
+  while(<$node_to_cluster>) {
+      chomp;
+      next if /^;/;
+      my @spl = split(/\t+/, $_);
+      my $node = "node_".$spl[0];
+      my $cluster = "cluster_".$spl[1];
+      $node_to_cluster_hash{$node}{cluster} = $cluster;
+      $node_to_cluster_hash{$node}{color} = $hexa_code{$cluster};
+      if($cluster eq "cluster_0"){
+	  $node_to_cluster_hash{$node}{color} = "#ccc;";
+      }
+  }
+  close($node_to_clusters);
       
-      ## Read he file with the linkage order
-      ## Save the info in a hash
-      my %linkage_order_info = ();
-
-      ## Open the JSON file produced by R
-      my $parsed_json;
-      my $cluster_width = 0;
-      my $JSON = $main::outfile{prefix}."_trees/tree_".$cluster.".json";
-      &RSAT::message::TimeWarn("JSON file", $JSON, $cluster ) if ($main::verbose >= 2);
-      open(JSON, $JSON) || &RSAT::error::FatalError($JSON, "Cannot open the JSON file");
-      while(<JSON>) {
-	  chomp;
-	  $Flag = 0;
-	  $line = $_;
-
-	  ################################################################
-	  ## Search the pattern separating the matrices names (tree leaves)
-	  if ($line =~ /\s*\"label\":\s*\"(.+)\",/) {
-	      $Flag = 1;
-	      $Add_this = "";
-	      $M1 = $1;
-	      
-	      ## Define te URL of the logo file, relative to the location of the json file
-	      my $aligned_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $alignment_info{$M1}{logo});
-	      $aligned_logo_link =~ s/^\.\.\///g;
-
-	      my $aligned_logo_url = $aligned_logo_link.".png";
-
-	      ## Define te URL of the logo file, relative to the location of the json file
-	      my $aligned_rc_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $alignment_info{$M1}{logo_rc});
-	      $aligned_rc_logo_link =~ s/^\.\.\///g;
-	      my $aligned_rc_logo_url = $aligned_logo_link.".png";
-	      
-	      ### Create the line that will be added to JSON file
-	      $Add_this .= "\n \"image\" : \"${aligned_logo_link}\"";
-	      $Add_this .= ",\n \"image_rc\" : \"${aligned_rc_logo_link}\"";
-	      $Add_this .= ",\n \"url\" : \"${aligned_logo_link}\"";
-	      
-	      foreach my $field (@supported_label_fields) {
-		  if ($label_fields_to_return{$field}) {
-		      if ($field eq "ic"){
-			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
-		      } else {
-			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";  
-		      }
-	 	  }
-	      }
-	      $Add_this .= ",\n \"ic\" : \"".$matrix_info{$M1}{ic}."\"";
-	      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
-	      $Add_this .= ",\n \"title\" : \"".$motifs_ID_unique{$M1}."\"";
-	      $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
-
-	      if ($ID_link_flag == 1){
-
-		  $Add_this .= ",\n \"link_ext\" : \"".$ID_link_hash{$M1}{link}."\"";
-		  $Add_this .= ",\n \"color\" : \"".$ID_link_hash{$M1}{color}."\"";
+  ## Leaf to clusters
+  my ($leaf_to_cluster) = &OpenInputFile($main::outfile{prefix}."_tables/leaf_to_cluster.tab");
+  while(<$leaf_to_cluster>) {
+      chomp;
+      next if /^;/;
+      my @spl = split(/\t+/, $_);
+      my $leaf = $spl[0];
+      my $cluster = "cluster_".$spl[1];
+      $leaf_to_cluster_hash{$leaf}{cluster} = $cluster;
+	  $leaf_to_cluster_hash{$leaf}{color} = $hexa_code{$cluster};
+  }
+  close($leaf_to_clusters);	      
+  
+      
+  ## Open the nodes to cluster
+  ## Read he file with the linkage order
+  ## Save the info in a hash
+  my %linkage_order_info = ();
+  
+  ## Open the JSON file produced by R
+  my $parsed_json;
+  my $cluster_width = 0;
+  my $JSON = $main::outfile{prefix}."_trees/tree_".$cluster.".json";
+  &RSAT::message::TimeWarn("JSON file", $JSON, $cluster ) if ($main::verbose >= 2);
+  open(JSON, $JSON) || &RSAT::error::FatalError($JSON, "Cannot open the JSON file");
+  while(<JSON>) {
+      chomp;
+      $Flag = 0;
+      $line = $_;
+      
+      ################################################################
+      ## Search the pattern separating the matrices names (tree leaves)
+      if ($line =~ /\s*\"label\":\s*\"(.+)\",/) {
+	  $Flag = 1;
+	  $Add_this = "";
+	  $M1 = $1;
+	  
+	  ## Define te URL of the logo file, relative to the location of the json file
+	  my $aligned_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $alignment_info{$M1}{logo});
+	  $aligned_logo_link =~ s/^\.\.\///g;
+	  
+	  my $aligned_logo_url = $aligned_logo_link.".png";
+	  
+	  ## Define te URL of the logo file, relative to the location of the json file
+	  my $aligned_rc_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $alignment_info{$M1}{logo_rc});
+	  $aligned_rc_logo_link =~ s/^\.\.\///g;
+	  my $aligned_rc_logo_url = $aligned_logo_link.".png";
+	  
+	  ### Create the line that will be added to JSON file
+	  $Add_this .= "\n \"image\" : \"${aligned_logo_link}\"";
+	  $Add_this .= ",\n \"image_rc\" : \"${aligned_rc_logo_link}\"";
+	  $Add_this .= ",\n \"url\" : \"${aligned_logo_link}\"";
+	  
+	  foreach my $field (@supported_label_fields) {
+	      if ($label_fields_to_return{$field}) {
+		  if ($field eq "ic"){
+		      $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
+		  } else {
+		      $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
+		  }
 	      }
 	  }
+	  $Add_this .= ",\n \"ic\" : \"".$matrix_info{$M1}{ic}."\"";
+	  $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
+	  $Add_this .= ",\n \"title\" : \"".$motifs_ID_unique{$M1}."\"";
+	  $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
+	  $Add_this .= ",\n \"branch_color\" : \"".$leaf_to_cluster_hash{$M1}{color}."\"";
 	  
-	  if($radial_tree_flag == 0){
-	      ################################################################
-	      ## Add the consensus to the json file to be displayed in the tree (tree nodes)
-	      my $IC_info_line = "";
-	      my $folder = "";
-	      my @read_motifs = ();
-	      my $child_1_ic = 0;
-	      my $child_2_ic = 0;
-	      if ($line =~ /\"children\":/) {
-		  $children++;
-		  $Add = "";
-		  if ($children > 1) {
-
-		      $folder = $levels_JSON[$children-2];
-
-		      if (exists($merged_consensuses_files{$folder})) {
-
-			  
-			  if (scalar(@{$cluster_nodes{$cluster}}) > 1){
-			      my ($linkage_order_info_file) = &OpenInputFile($main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table_linkage_order.tab");
-
-			      while(<$linkage_order_info_file>) {
-				  chomp;
-				  next if /^;/;
-				  my @spl = split(/\t+/, $_);
-				  my $merge_ID = $spl[0];
-				  my $child_1 = $spl[1];
-				  my $child_2 = $spl[2];
-				  $linkage_order_info{$merge_ID}{child_1} = $child_1;  
-				  $linkage_order_info{$merge_ID}{child_2} = $child_2;  
-			      }
-			      close $linkage_order_info_file;
-			      
-			  }
-
-			  ## Calculate IC of branch motif
-			  my @branch_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$folder}{$cluster}{tf_file}, "tf");
-			  my $rounded_ic = 0;
-			  my $nb_sites = 0;
-			  my $child_1_nb_sites = 0;
-			  my $child_2_nb_sites = 0;
-			  my $calc_nb_sites = 0;
-			  my $calc_child_1_nb_sites = 0;
-			  my $calc_child_2_nb_sites = 0;
-			  foreach my $matrix (@branch_motifs) {
-			      
-			      ## Calculates the IC of the matrix
-			      $matrix->calcInformation();
-			      $matrix->toString(col_width=>(1+4),
-						decimals=>1,
-						type=>"information",
-						format=>"tf");
+	  if ($ID_link_flag == 1){
+	      
+	      $Add_this .= ",\n \"link_ext\" : \"".$ID_link_hash{$M1}{link}."\"";
+	      $Add_this .= ",\n \"color\" : \"".$ID_link_hash{$M1}{color}."\"";
+	  }
+      }
+      
+      
+      ################################################################
+      ## Add the consensus to the json file to be displayed in the tree (tree nodes)
+      my $IC_info_line = "";
+      my $folder = "";
+      my @read_motifs = ();
+      my $child_1_ic = 0;
+      my $child_2_ic = 0;
+      if ($line =~ /\"children\":/) {
+	  $children++;
+	  $Add = "";
+	  if ($children > 1) {
+	      
+	      $folder = $levels_JSON[$children-2];
+	      
+	      if (exists($merged_consensuses_files{$folder})) {
+		  
+		  
+		  if (scalar(@{$cluster_nodes{$cluster}}) > 1){
+		      my ($linkage_order_info_file) = &OpenInputFile($main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table_linkage_order.tab");
+		      
+		      while(<$linkage_order_info_file>) {
+			  chomp;
+			  next if /^;/;
+			  my @spl = split(/\t+/, $_);
+			  my $merge_ID = $spl[0];
+			  my $child_1 = $spl[1];
+			  my $child_2 = $spl[2];
+			  $linkage_order_info{$merge_ID}{child_1} = $child_1;  
+			  $linkage_order_info{$merge_ID}{child_2} = $child_2;  
+		      }
+		      close $linkage_order_info_file;
+		      
+		  }
+		  
+		  ## Calculate IC of branch motif
+		  my @branch_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$folder}{$cluster}{tf_file}, "tf");
+		  my $rounded_ic = 0;
+		  my $nb_sites = 0;
+		  my $child_1_nb_sites = 0;
+		  my $child_2_nb_sites = 0;
+		  my $calc_nb_sites = 0;
+		  my $calc_child_1_nb_sites = 0;
+		  my $calc_child_2_nb_sites = 0;
+		  foreach my $matrix (@branch_motifs) {
+		      
+		      ## Calculates the IC of the matrix
+		      $matrix->calcInformation();
+		      $matrix->toString(col_width=>(1+4),
+					decimals=>1,
+					type=>"information",
+					format=>"tf");
                           my $ic = $matrix->get_attribute("total.information");
                           $rounded_ic = sprintf("%.2f", $ic);
 
@@ -2532,6 +2568,13 @@ sub Add_attributes_to_JSON {
 		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
 		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
 		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
+
+                      if($radial_tree_flag == 1){
+		         $Add .= " \"branch_color\" : \"".$node_to_cluster_hash{$folder}{color}."\",\n";
+                      }
+
+
+
 		  }
 		  push(@Parsed_JSON, $Add."\n");
 
@@ -2545,9 +2588,8 @@ sub Add_attributes_to_JSON {
                   }
 	      }
 	  }
+    
 
-#print $cluster_nodes_ic_info $IC_info_line;
-	  }
 	  push(@Parsed_JSON, $line."\n");
 	  ### Add the new line
 	  if ($Flag) {
@@ -2561,285 +2603,11 @@ sub Add_attributes_to_JSON {
       print PARSED_JSON @Parsed_JSON;
       close(PARSED_JSON);
       $json_files_content{$cluster} = "@Parsed_JSON";
-      #unlink($JSON);
-  }
 
   my $cmd = "rm -r ".$main::outfile{prefix}."_pairwise_compa_logos";
   &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
   return();
-}
-
-
-###################################
-## Create the html file to 
-## display the tree
-sub create_html_small_tree_file {
-
-    &RSAT::message::TimeWarn("Generating HTML tree file", $main::outfile{small_logo_cladogram_html}) if ($main::verbose >= 2);
-
-    open(SMALL_TREE, $main::outfile{small_logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{small_logo_cladogram_html}, "Cannot open HTML file");
-    open(TEMP_2, ">".$main::outfile{temp_html_2}) || &RSAT::error::FatalError($main::outfile{temp_html_2}, "Cannot create temporary file");
-
-    ## Values to change in the D3 tree
-    my $svg_width = 15;
-    my $svg_height = 13;
-    my $svg_x1 = 18 * $nb_char;
-    my $svg_y1 = -7;
-    my $svg_x2 = '2 + '.$svg_x1.' + 7';
-    my $add_this = "";
-    my $labels_num = 0;
-    my $tree_counter = 0;
-    my $cluster_nb = 0;
-    my $JQuery_dynamic = "";
-
-    my $main_label = 	        
-	"\tnodeEnter.append(\"a\")
-	\t\t.attr(\"xlink:href\", function(d) { return d.link_ext; })
-	\t\t.append(\"text\")
-        \t\t.style(\"font-size\", \"20px\")
-	\t\t.text(function(d) { return d.children ? \"\" : d.; })
-	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
-	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
-	\t\t.style(\"fill\", \"blue\")
-	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
-
-    my $new_label = 
-	"\tnodeEnter.append(\"text\")
-	\t\t.text(function(d) { return d.children ? \"\" : d.ic; })
-	\t\t.attr(\"x\", function(d) { return d.children ? 0 : -5; })
-	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : -2; })
-	\t\t.attr(\"class\", function(d) { return d.children ? \"\" : \"show_con_--cl_id--\"; })
-	\t\t.attr(\"display\", function(d) { return d.children ? \"\" : \"none\"; })
-        \t\t.attr(\"font-size\", \"20px\")
-	\t\t.style(\"fill\", \"blue\")
-	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"end\"; });";
- 
-    my $display_title_lab .= '
-        nodeEnter.append("text")
-	.text(function(d) { return d.children ? "" : d.title; })
-	.attr("x", function(d) { return d.children ? 0 : 20; })
-	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
-        .attr("fill", "black")
-	.attr("font-size", "20px")
-        .attr("font-weight", "bold")
-	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
-        ';
-
-    my $ic_leaves = 
-	"\tnodeEnter.append(\"text\")
-	\t\t.text(function(d) { return d.children ? \"\" : d.ic; })
-	\t\t.attr(\"x\", function(d) { return d.children ? 0 : -20; })
-	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : -1; })
-        \t\t.attr(\"font-size\", \"20px\")
-        \t\t.attr(\"class\", function(d) { return d.children ? \"\" : \"show_con_--cl_id--\"; })
-        \t\t.style(\"display\", function(d) { return d.children ? \"\": \"none\"; })
-	\t\t.style(\"fill\", \"blue\")
-	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"end\"; });";
-
-    my $hide_show_consensus = '
-
-d3.select("#--cl_id--").append("text")
-	.attr("x", 1000)             
-	.attr("y", 0)    
-	.attr("class", "legend")     
-	.attr("id", "cons_button_--cl_id--") 
-      .attr("font-size", "20px")
-	.text("IC") ; 
-
-
-// Slide the Heatmap View
-$(document).ready(function() {
-    $(\'#cons_button_--cl_id--\').click(function() {
-        $(\'.show_con_--cl_id--\').toggle();
-    }); 
-});'."\n\n";
-
-
-    while(<SMALL_TREE>) {
-	chomp;	
-
-	if (/\(function\(\)\s*\{/) { 
-		$cluster_nb++;
-
-		## Add the Hide/Show consensus button only to those clusters with 2 or more motifs
-		if ($clusters_info{$cluster_id_hash{$cluster_nb}} > 0){
-		    my $c = $cluster_id_hash{$cluster_nb};
-		    my $new_cons_button = $hide_show_consensus;
-		    $new_cons_button =~ s/--cl_id--/$c/g;
-		    $JQuery_dynamic .= $new_cons_button;
-		}
-	}
-
-	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-	    (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
-	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
-	}
-	
-	### Fix the d3 library path
-	if (/--d3--/) {
-	    $_ =~ s/--d3--/$d3_base/g;
-	}
-
-	### Fix the jquery library path
-	if (/--jquery--/) {
-	    $_ =~ s/--jquery--/$jquery_base/g;
-	}
-
-	## Insert the JQuery code
-	if (/--jquerycode--/){
-	    $_ =~ s/--jquerycode--/$JQuery_dynamic/g;
-	}
-
-	### Set the height 
-	if (/--height--/) {
-	   my $clust = $cluster_id_hash{$cluster_nb};
-	   my $mat_number = $clusters_info{$clust} + 2;
-	   $_ =~ s/--height--/50 + 87 * $mat_number/;
-	}
-	
-	### Set the height 
-	if (/--widthtree--/) {;
-	    $_ =~ s/--widthtree--/2500/;
-	}
-
-	### Set the tree size
-	if (/--size--/) {;
-	    $_ =~ s/--size--/350/;
-	}
-
-	### Add the JSON file name
-	if (/--json_file--/) {
-	    my $clust = $cluster_id_hash{$cluster_nb};
-	    $_ =~ s/--json_file--/$json_files_content{$clust}/;
-	}
-
-	if (/--cl_id--/) {
-	    my $c = $cluster_id_hash{$cluster_nb};
-	    $_ =~ s/--cl_id--/$c/g;
-	}
-
-	## Add the color of the cluster
-	if (/--stroke--/) {
-	    my $clust = $cluster_id_hash{$cluster_nb};
-	    $_ =~ s/--stroke--/$hexa_code{$clust}/;
-	}
-
-	if (/--font--/) {
-	    $_ =~ s/--font--/20/g;
-	}
-
-	if (/--sep_motifs--/) {
-	    my $sep_motifs = 0;
-	    $clust = $cluster_id_hash{$cluster_nb};
-	    if ($clusters_info{$clust} <= 5){
-		$sep_motifs = 150;
-	    } elsif ($clusters_info{$clust} <= 9){
-		$sep_motifs = 200;
-	    } elsif ($clusters_info{$clust} <= 20){
-		$sep_motifs = 250;
-	    } elsif ($clusters_info{$clust} <= 50 ){
-		$sep_motifs = 300;
-	    } elsif ($clusters_info{$clust} > 50 ){
-		$sep_motifs = 420;
-	    }
-	    $_ =~ s/--sep_motifs--/$sep_motifs/;
-	}
-
-	if (/--insert--/) {
-	    $_ =~ s/--insert--//;
-	}
-
-	if (/--image_spacer--/) {
-	    my $sp = $svg_x1 - 15;
-	    $_ =~ s/--image_spacer--/$sp/g;
-	}
-
-	if (/--svgwidth--/) {
-	    $_ =~ s/--svgwidth--/$svg_width/g;
-	}
-
-	if (/--svgheight--/) {
-	    $_ =~ s/--svgheight--/$svg_height/g;
-	}
-
-	if (/--insert_image--/){
-	    $_ =~ s/--insert_image--/d.image/g;
-	}
-
-	if (/--x1--/) {
-	    $_ =~ s/--x1--/$svg_x1/g;
-	}
-
-	if (/--y1--/) {
-	    $_ =~ s/--y1--/$svg_y1/g;
-	}
-
-	if (/--x2--/) {
-	    $_ =~ s/--x2--/$svg_x2/g;
-	}
-
-
-	if ($_ =~ /Insert labels/) {
-	    $add_this = "";
-	    $labels_num = 0;
-	    ################################################################
-	    ## Insert in the html script the labels selected by the user
-	    foreach my $field (@label_fields_to_return) {
-			if ($label_fields_to_return{$field}) {
-				$labels_num++;
-				
-				### Add the first label with the the link to the logo
-				if ($labels_num == 1) {
-				my $m = $main_label;
-				$m =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
-				$add_this = $m;
-				$up = uc($field);
-				$add_this =~ s/d\.;/ d\.$field;/;
-				}
-				
-				### Add the new labels, set the distances among the labels in the tree
-				if ($labels_num > 1) {
-				my $copy = $new_label;
-				$up = uc($field);
-				$copy =~ s/d\.;/ d\.$field;/;
-				$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
-				my $y_displacement = 4 + (($labels_num -1) * 20);
-				$copy =~ s/#/$y_displacement/;
-				$add_this .= "\n\n".$copy."\n";
-				}
-			}
-	    }
-
-	    	my $copy = $new_label;
-			$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
-			$add_this .= "\n\n".$copy."\n";
-	    
-
-	    ## Add the collection lable to the logo tree
-	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
-	    #if ($display_collection_name_flag == 1) {
-		my $displacement = 4 + (scalar(@label_fields_to_return) * 20);
-		$display_title_lab =~ s/--dis--/$displacement/;
-		$add_this .= "\n".$display_title_lab."\n";	
-	    }
-
-	    ## Add the IC to the logo tree
-
-#	    $ic_leaves =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/g;
-#	    $add_this .= "\n".$ic_leaves."\n";
-#	    print TEMP_2 $add_this."\n"; 
-	    print TEMP_2 $add_this."\n";      
-	}
-	
-	print TEMP_2 $_."\n";
-    }
-    close(TEMP_2);
-    unlink($main::outfile{small_logo_cladogram_html});
-
-    my $cmd = "mv -f ".$main::outfile{temp_html_2}." ".$main::outfile{small_logo_cladogram_html};
-    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-    #return();
 }
 
 ################################################################
@@ -5865,7 +5633,6 @@ sub Synthesis {
 	&create_html_small_tree_file();
     }
 
-
     &OpenScriptJQuery();
     
     &ReportStyleCSS();
@@ -5893,7 +5660,7 @@ sub Synthesis {
 
     if($radial_tree_flag == 1){
 	#	&InsertRadialTree();
-	$lkkkkk = 0;
+	my $lkkkkk = 0;
     } else {
     
 	&InsertSmallForest();
@@ -6580,6 +6347,560 @@ d3.select("#--cl_id--").append("text")
 ';
 
   return($logo_tree);
+}
+
+################################################################
+## Add attributes to JSON file, like links to pictures and other
+## attributes
+sub Add_attributes_to_JSON {
+
+  #############################################
+  ## Create a hash with the attribute data:
+  ##	key :  name
+  ##	values : attribute (link, etc)
+
+  ## Open the file with the picture's data
+  my ($mat_desc) = &OpenInputFile($main::outfile{matrix_descriptions});
+  while(<$mat_desc>) {
+      next unless (/\S/); ## Skip empty rows
+      next if (/^;/); ## Skip comment rows
+      next if (/^#/); ## Skip header rows
+      chomp();
+      @split_line = split(/\s+/, $_);
+      my $matrix_label = $split_line[6];
+      my $id = $split_line[1];
+
+      $matrix_info{$id}{id} = $id;
+      $matrix_info{$id}{name} = $split_line[2];
+      $matrix_info{$id}{width} = $alignment_info{$matrix_info{$id}{id}}{width};
+      $matrix_info{$id}{consensus} = $split_line[4];
+      $matrix_info{$id}{consensus_rc} = $split_line[5];
+      $matrix_info{$id}{ic} = $split_line[6];
+      $matrix_info{$id}{nb_sites} = $split_line[7];
+  }
+  close($mat_desc);
+
+      ## Open a file with the attributes of the nodes of each cluster (IC, width, number of motifs, etc)
+      my $cluster_nodes_ic_info = &OpenOutputFile($main::outfile{prefix}."_clusters_information/".$cluster."_attributes_table.tab");
+      print $cluster_nodes_ic_info join("\t", "#cluster", "node_ID", "child_1", "child_2", "IC", "IC_child_1", "IC_child_2", "Sites", "Sites_child_1", "Sites_child_2"), "\n";
+
+
+  ############################################################
+  ## Read the JSON file and add the link data to each node
+  &RSAT::message::TimeWarn("Linking data to nodes in JSON files") if ($main::verbose >= 2);
+  foreach my $cluster(@clusters_to_HTML) {
+      my $line = "";
+      my $children = 0;
+      my ($M1, $M2, $Add_this, $Flag);
+      my (@Split_line, @Parsed_JSON) = ();
+	  my $file = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table.tab";
+	  
+      my @levels_JSON = ();
+      open(LVL_JSON, $file) || &RSAT::error::FatalError($file, "Cannot open the JSON Levels file");
+      while(<LVL_JSON>) {
+	  chomp;
+	  next if /^;/;
+	  my @spl = split(/\t+/, $_);
+	  push(@levels_JSON, $spl[2]);  
+      }
+      close(LVL_JSON);
+
+      
+      ## Read he file with the linkage order
+      ## Save the info in a hash
+      my %linkage_order_info = ();
+
+      ## Open the JSON file produced by R
+      my $parsed_json;
+      my $cluster_width = 0;
+      my $JSON = $main::outfile{prefix}."_trees/tree_".$cluster.".json";
+      &RSAT::message::TimeWarn("JSON file", $JSON, $cluster ) if ($main::verbose >= 2);
+      open(JSON, $JSON) || &RSAT::error::FatalError($JSON, "Cannot open the JSON file");
+      while(<JSON>) {
+	  chomp;
+	  $Flag = 0;
+	  $line = $_;
+
+	  ################################################################
+	  ## Search the pattern separating the matrices names (tree leaves)
+	  if ($line =~ /\s*\"label\":\s*\"(.+)\",/) {
+	      $Flag = 1;
+	      $Add_this = "";
+	      $M1 = $1;
+	      
+	      ## Define te URL of the logo file, relative to the location of the json file
+	      my $aligned_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $alignment_info{$M1}{logo});
+	      $aligned_logo_link =~ s/^\.\.\///g;
+
+	      my $aligned_logo_url = $aligned_logo_link.".png";
+
+	      ## Define te URL of the logo file, relative to the location of the json file
+	      my $aligned_rc_logo_link = &RSAT::util::RelativePath($main::outfile{summary}, $alignment_info{$M1}{logo_rc});
+	      $aligned_rc_logo_link =~ s/^\.\.\///g;
+	      my $aligned_rc_logo_url = $aligned_logo_link.".png";
+	      
+	      ### Create the line that will be added to JSON file
+	      $Add_this .= "\n \"image\" : \"${aligned_logo_link}\"";
+	      $Add_this .= ",\n \"image_rc\" : \"${aligned_rc_logo_link}\"";
+	      $Add_this .= ",\n \"url\" : \"${aligned_logo_link}\"";
+	      
+	      foreach my $field (@supported_label_fields) {
+		  if ($label_fields_to_return{$field}) {
+		      if ($field eq "ic"){
+			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";
+		      } else {
+			  $Add_this .= ",\n \"".$field."\" : \"".$matrix_info{$M1}{$field}."\"";  
+		      }
+	 	  }
+	      }
+	      $Add_this .= ",\n \"ic\" : \"".$matrix_info{$M1}{ic}."\"";
+	      $Add_this .= ",\n \"size\" : ".$matrix_info{$M1}{width};
+	      $Add_this .= ",\n \"title\" : \"".$motifs_ID_unique{$M1}."\"";
+	      $Add_this .= ",\n \"consensus_rc\" : \"".$matrix_info{$M1}{consensus_rc}."\"";
+
+	      if ($ID_link_flag == 1){
+
+		  $Add_this .= ",\n \"link_ext\" : \"".$ID_link_hash{$M1}{link}."\"";
+		  $Add_this .= ",\n \"color\" : \"".$ID_link_hash{$M1}{color}."\"";
+	      }
+	  }
+	  
+	  if($radial_tree_flag == 0){
+	      ################################################################
+	      ## Add the consensus to the json file to be displayed in the tree (tree nodes)
+	      my $IC_info_line = "";
+	      my $folder = "";
+	      my @read_motifs = ();
+	      my $child_1_ic = 0;
+	      my $child_2_ic = 0;
+	      if ($line =~ /\"children\":/) {
+		  $children++;
+		  $Add = "";
+		  if ($children > 1) {
+
+		      $folder = $levels_JSON[$children-2];
+
+		      if (exists($merged_consensuses_files{$folder})) {
+
+			  
+			  if (scalar(@{$cluster_nodes{$cluster}}) > 1){
+			      my ($linkage_order_info_file) = &OpenInputFile($main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_table_linkage_order.tab");
+
+			      while(<$linkage_order_info_file>) {
+				  chomp;
+				  next if /^;/;
+				  my @spl = split(/\t+/, $_);
+				  my $merge_ID = $spl[0];
+				  my $child_1 = $spl[1];
+				  my $child_2 = $spl[2];
+				  $linkage_order_info{$merge_ID}{child_1} = $child_1;  
+				  $linkage_order_info{$merge_ID}{child_2} = $child_2;  
+			      }
+			      close $linkage_order_info_file;
+			      
+			  }
+
+			  ## Calculate IC of branch motif
+			  my @branch_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$folder}{$cluster}{tf_file}, "tf");
+			  my $rounded_ic = 0;
+			  my $nb_sites = 0;
+			  my $child_1_nb_sites = 0;
+			  my $child_2_nb_sites = 0;
+			  my $calc_nb_sites = 0;
+			  my $calc_child_1_nb_sites = 0;
+			  my $calc_child_2_nb_sites = 0;
+			  foreach my $matrix (@branch_motifs) {
+			      
+			      ## Calculates the IC of the matrix
+			      $matrix->calcInformation();
+			      $matrix->toString(col_width=>(1+4),
+						decimals=>1,
+						type=>"information",
+						format=>"tf");
+                          my $ic = $matrix->get_attribute("total.information");
+                          $rounded_ic = sprintf("%.2f", $ic);
+
+	                  $calc_nb_sites = $matrix->calcNbSites();
+                          $nb_sites = $matrix->getNbSites();
+                      }
+
+                      if (scalar(@{$cluster_nodes{$cluster}}) > 1){
+
+                      $linkage_order_info{$folder}{ic} = $rounded_ic;
+                      $linkage_order_info{$folder}{sites} = $nb_sites;
+
+                      ## Calculate IC from Children nodes
+                      if ($linkage_order_info{$folder}{child_1} =~ /node_\d+/){
+                         ## Calculate IC of child 1
+		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$linkage_order_info{$folder}{child_1}}{$cluster}{tf_file}, "tf");
+                         foreach my $matrix (@read_motifs) {
+		    		    
+			    ## Calculates the IC of the matrix
+			    $matrix->calcInformation();
+			    $matrix->toString(col_width=>(1+4),
+					    decimals=>1,
+					    type=>"information",
+					    format=>"tf");
+                            my $ic = $matrix->get_attribute("total.information");
+                            $child_1_ic = sprintf("%.2f", $ic);
+
+	                    $calc_child_1_nb_sites = $matrix->calcNbSites();
+                            $child_1_nb_sites = $matrix->getNbSites();
+                         }
+                      } else {
+                        $child_1_ic = $matrix_info{$linkage_order_info{$folder}{child_1}}{ic};
+                        $child_1_nb_sites = $matrix_info{$linkage_order_info{$folder}{child_1}}{nb_sites};
+
+                      }
+
+                      if ($linkage_order_info{$folder}{child_2} =~ /node_\d+/){
+                         ## Calculate IC of child 2
+		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$linkage_order_info{$folder}{child_2}}{$cluster}{tf_file}, "tf");
+                         foreach my $matrix (@read_motifs) {
+		    		    
+			    ## Calculates the IC of the matrix
+			    $matrix->calcInformation();
+			    $matrix->toString(col_width=>(1+4),
+					    decimals=>1,
+					    type=>"information",
+					    format=>"tf");
+                            my $ic = $matrix->get_attribute("total.information");
+                            $child_2_ic = sprintf("%.2f", $ic);
+                            $calc_child_2_nb_sites = $matrix->calcNbSites();
+                            $child_2_nb_sites = $matrix->getNbSites();
+                         }
+                      } else {
+                        $child_2_ic = $matrix_info{$linkage_order_info{$folder}{child_2}}{ic};
+                        $child_2_nb_sites = $matrix_info{$linkage_order_info{$folder}{child_2}}{nb_sites};
+                      }
+
+                      $linkage_order_info{$folder}{child_1_ic} = $child_1_ic;
+                      $linkage_order_info{$folder}{child_2_ic} = $child_2_ic;
+
+                      $linkage_order_info{$folder}{child_1_nbsites} = $child_1_nb_sites;
+                      $linkage_order_info{$folder}{child_2_nbsites} = $child_2_nb_sites;
+  }
+ 
+		      my $branch = $folder;
+		      $branch =~ s/\D+//g;
+		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
+		      my $id_json = $cluster."_".$folder;
+		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
+		      $Add .= " \"branch\" : ".$branch.",\n";
+		      $Add .= " \"id\" : \"".$id_json."\",\n";
+		      $Add .= " \"ic\" : \"".$rounded_ic."\",\n";
+		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
+		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
+		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
+		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
+		  }
+		  push(@Parsed_JSON, $Add."\n");
+
+                  if (scalar(@{$cluster_nodes{$cluster}}) > 1){
+
+                     my $line_to_print = $cluster."\t".$folder."\t".$linkage_order_info{$folder}{child_1}."\t".$linkage_order_info{$folder}{child_2}."\t".$linkage_order_info{$folder}{ic}."\t".$linkage_order_info{$folder}{child_1_ic}."\t".$linkage_order_info{$folder}{child_2_ic}."\t".$linkage_order_info{$folder}{sites}."\t".$linkage_order_info{$folder}{child_1_nbsites}."\t".$linkage_order_info{$folder}{child_2_nbsites}."\n";
+
+                    $line_to_print =~ s/node_//gi;
+
+                     print $cluster_nodes_ic_info $line_to_print;
+                  }
+	      }
+	  }
+
+#print $cluster_nodes_ic_info $IC_info_line;
+	  }
+	  push(@Parsed_JSON, $line."\n");
+	  ### Add the new line
+	  if ($Flag) {
+	      push(@Parsed_JSON, $Add_this."\n");
+	  }
+      }
+      close(JSON);
+  
+      ### Create the JSON parsed FILE
+      open(PARSED_JSON, ">".$main::outfile{prefix}."_trees/parsed_tree_".$cluster.".json") || &RSAT::error::FatalError("Cannot create the PARSED JSON file", $main::outfile{prefix}."_trees/parsed_tree_".$cluster.".json");
+      print PARSED_JSON @Parsed_JSON;
+      close(PARSED_JSON);
+      $json_files_content{$cluster} = "@Parsed_JSON";
+      #unlink($JSON);
+  }
+
+  my $cmd = "rm -r ".$main::outfile{prefix}."_pairwise_compa_logos";
+  &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
+  return();
+}
+
+
+###################################
+## Create the html file to 
+## display the tree
+sub create_html_small_tree_file {
+
+    &RSAT::message::TimeWarn("Generating HTML tree file", $main::outfile{small_logo_cladogram_html}) if ($main::verbose >= 2);
+
+    open(SMALL_TREE, $main::outfile{small_logo_cladogram_html}) || &RSAT::error::FatalError($main::outfile{small_logo_cladogram_html}, "Cannot open HTML file");
+    open(TEMP_2, ">".$main::outfile{temp_html_2}) || &RSAT::error::FatalError($main::outfile{temp_html_2}, "Cannot create temporary file");
+
+    ## Values to change in the D3 tree
+    my $svg_width = 15;
+    my $svg_height = 13;
+    my $svg_x1 = 18 * $nb_char;
+    my $svg_y1 = -7;
+    my $svg_x2 = '2 + '.$svg_x1.' + 7';
+    my $add_this = "";
+    my $labels_num = 0;
+    my $tree_counter = 0;
+    my $cluster_nb = 0;
+    my $JQuery_dynamic = "";
+
+    my $main_label = 	        
+	"\tnodeEnter.append(\"a\")
+	\t\t.attr(\"xlink:href\", function(d) { return d.link_ext; })
+	\t\t.append(\"text\")
+        \t\t.style(\"font-size\", \"20px\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.; })
+	\t\t.attr(\"dx\", function(d) { return d.children ? 0 : 20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : 3; })
+	\t\t.style(\"fill\", \"blue\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"start\"; });\n";
+
+    my $new_label = 
+	"\tnodeEnter.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.ic; })
+	\t\t.attr(\"x\", function(d) { return d.children ? 0 : -5; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : -2; })
+	\t\t.attr(\"class\", function(d) { return d.children ? \"\" : \"show_con_--cl_id--\"; })
+	\t\t.attr(\"display\", function(d) { return d.children ? \"\" : \"none\"; })
+        \t\t.attr(\"font-size\", \"20px\")
+	\t\t.style(\"fill\", \"blue\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"end\"; });";
+ 
+    my $display_title_lab .= '
+        nodeEnter.append("text")
+	.text(function(d) { return d.children ? "" : d.title; })
+	.attr("x", function(d) { return d.children ? 0 : 20; })
+	.attr("dy", function(d) { return d.children ? 0 : --dis--; })
+        .attr("fill", "black")
+	.attr("font-size", "20px")
+        .attr("font-weight", "bold")
+	.attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+        ';
+
+    my $ic_leaves = 
+	"\tnodeEnter.append(\"text\")
+	\t\t.text(function(d) { return d.children ? \"\" : d.ic; })
+	\t\t.attr(\"x\", function(d) { return d.children ? 0 : -20; })
+	\t\t.attr(\"dy\", function(d) { return d.children ? 0 : -1; })
+        \t\t.attr(\"font-size\", \"20px\")
+        \t\t.attr(\"class\", function(d) { return d.children ? \"\" : \"show_con_--cl_id--\"; })
+        \t\t.style(\"display\", function(d) { return d.children ? \"\": \"none\"; })
+	\t\t.style(\"fill\", \"blue\")
+	\t\t.attr(\"text-anchor\", function(d) { return d.children ? \"end\" : \"end\"; });";
+
+    my $hide_show_consensus = '
+
+d3.select("#--cl_id--").append("text")
+	.attr("x", 1000)             
+	.attr("y", 0)    
+	.attr("class", "legend")     
+	.attr("id", "cons_button_--cl_id--") 
+      .attr("font-size", "20px")
+	.text("IC") ; 
+
+
+// Slide the Heatmap View
+$(document).ready(function() {
+    $(\'#cons_button_--cl_id--\').click(function() {
+        $(\'.show_con_--cl_id--\').toggle();
+    }); 
+});'."\n\n";
+
+
+    while(<SMALL_TREE>) {
+	chomp;	
+
+	if (/\(function\(\)\s*\{/) { 
+		$cluster_nb++;
+
+		## Add the Hide/Show consensus button only to those clusters with 2 or more motifs
+		if ($clusters_info{$cluster_id_hash{$cluster_nb}} > 0){
+		    my $c = $cluster_id_hash{$cluster_nb};
+		    my $new_cons_button = $hide_show_consensus;
+		    $new_cons_button =~ s/--cl_id--/$c/g;
+		    $JQuery_dynamic .= $new_cons_button;
+		}
+	}
+
+	if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	    (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
+	  $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+	}
+	
+	### Fix the d3 library path
+	if (/--d3--/) {
+	    $_ =~ s/--d3--/$d3_base/g;
+	}
+
+	### Fix the jquery library path
+	if (/--jquery--/) {
+	    $_ =~ s/--jquery--/$jquery_base/g;
+	}
+
+	## Insert the JQuery code
+	if (/--jquerycode--/){
+	    $_ =~ s/--jquerycode--/$JQuery_dynamic/g;
+	}
+
+	### Set the height 
+	if (/--height--/) {
+	   my $clust = $cluster_id_hash{$cluster_nb};
+	   my $mat_number = $clusters_info{$clust} + 2;
+	   $_ =~ s/--height--/50 + 87 * $mat_number/;
+	}
+	
+	### Set the height 
+	if (/--widthtree--/) {;
+	    $_ =~ s/--widthtree--/2500/;
+	}
+
+	### Set the tree size
+	if (/--size--/) {;
+	    $_ =~ s/--size--/350/;
+	}
+
+	### Add the JSON file name
+	if (/--json_file--/) {
+	    my $clust = $cluster_id_hash{$cluster_nb};
+	    $_ =~ s/--json_file--/$json_files_content{$clust}/;
+	}
+
+	if (/--cl_id--/) {
+	    my $c = $cluster_id_hash{$cluster_nb};
+	    $_ =~ s/--cl_id--/$c/g;
+	}
+
+	## Add the color of the cluster
+	if (/--stroke--/) {
+	    my $clust = $cluster_id_hash{$cluster_nb};
+	    $_ =~ s/--stroke--/$hexa_code{$clust}/;
+	}
+
+	if (/--font--/) {
+	    $_ =~ s/--font--/20/g;
+	}
+
+	if (/--sep_motifs--/) {
+	    my $sep_motifs = 0;
+	    $clust = $cluster_id_hash{$cluster_nb};
+	    if ($clusters_info{$clust} <= 5){
+		$sep_motifs = 150;
+	    } elsif ($clusters_info{$clust} <= 9){
+		$sep_motifs = 200;
+	    } elsif ($clusters_info{$clust} <= 20){
+		$sep_motifs = 250;
+	    } elsif ($clusters_info{$clust} <= 50 ){
+		$sep_motifs = 300;
+	    } elsif ($clusters_info{$clust} > 50 ){
+		$sep_motifs = 420;
+	    }
+	    $_ =~ s/--sep_motifs--/$sep_motifs/;
+	}
+
+	if (/--insert--/) {
+	    $_ =~ s/--insert--//;
+	}
+
+	if (/--image_spacer--/) {
+	    my $sp = $svg_x1 - 15;
+	    $_ =~ s/--image_spacer--/$sp/g;
+	}
+
+	if (/--svgwidth--/) {
+	    $_ =~ s/--svgwidth--/$svg_width/g;
+	}
+
+	if (/--svgheight--/) {
+	    $_ =~ s/--svgheight--/$svg_height/g;
+	}
+
+	if (/--insert_image--/){
+	    $_ =~ s/--insert_image--/d.image/g;
+	}
+
+	if (/--x1--/) {
+	    $_ =~ s/--x1--/$svg_x1/g;
+	}
+
+	if (/--y1--/) {
+	    $_ =~ s/--y1--/$svg_y1/g;
+	}
+
+	if (/--x2--/) {
+	    $_ =~ s/--x2--/$svg_x2/g;
+	}
+
+
+	if ($_ =~ /Insert labels/) {
+	    $add_this = "";
+	    $labels_num = 0;
+	    ################################################################
+	    ## Insert in the html script the labels selected by the user
+	    foreach my $field (@label_fields_to_return) {
+			if ($label_fields_to_return{$field}) {
+				$labels_num++;
+				
+				### Add the first label with the the link to the logo
+				if ($labels_num == 1) {
+				my $m = $main_label;
+				$m =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+				$add_this = $m;
+				$up = uc($field);
+				$add_this =~ s/d\.;/ d\.$field;/;
+				}
+				
+				### Add the new labels, set the distances among the labels in the tree
+				if ($labels_num > 1) {
+				my $copy = $new_label;
+				$up = uc($field);
+				$copy =~ s/d\.;/ d\.$field;/;
+				$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+				my $y_displacement = 4 + (($labels_num -1) * 20);
+				$copy =~ s/#/$y_displacement/;
+				$add_this .= "\n\n".$copy."\n";
+				}
+			}
+	    }
+
+	    	my $copy = $new_label;
+			$copy =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/;
+			$add_this .= "\n\n".$copy."\n";
+	    
+
+	    ## Add the collection lable to the logo tree
+	    if ($display_collection_name_flag == 1 && $single_input_flag == 0) {
+	    #if ($display_collection_name_flag == 1) {
+		my $displacement = 4 + (scalar(@label_fields_to_return) * 20);
+		$display_title_lab =~ s/--dis--/$displacement/;
+		$add_this .= "\n".$display_title_lab."\n";	
+	    }
+
+	    ## Add the IC to the logo tree
+
+#	    $ic_leaves =~ s/--cl_id--/$cluster_id_hash{$cluster_nb}/g;
+#	    $add_this .= "\n".$ic_leaves."\n";
+#	    print TEMP_2 $add_this."\n"; 
+	    print TEMP_2 $add_this."\n";      
+	}
+	
+	print TEMP_2 $_."\n";
+    }
+    close(TEMP_2);
+    unlink($main::outfile{small_logo_cladogram_html});
+
+    my $cmd = "mv -f ".$main::outfile{temp_html_2}." ".$main::outfile{small_logo_cladogram_html};
+    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+    #return();
 }
 
 __END__
