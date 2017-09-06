@@ -534,7 +534,7 @@ package	main;
 	      ## Note Ale for Jacques 20150209: I added the strand part just before this note; 
 
 	      
-	      my $left_flank = lc(substr($ref_seq,$start-$flank_len-1,$flank_len));
+	      my $left_flank = lc(substr($ref_seq,$start-$flank_len,$flank_len));
 	      my $right_flank = lc(substr($ref_seq,$end-0,$flank_len));
 	      my $variant_seq = $left_flank.$variant_aux2.$right_flank;
 	      
