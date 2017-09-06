@@ -179,6 +179,13 @@ sub load_from_file {
 
   ## Compute normalized transition frequencies
   $self->normalize_transition_frequencies();
+
+
+  ## Ensure case-insensitivity of the transitions for DNA
+  my $seq_type = $self->get_attribute("seq_type") || "dna";
+  if (lc($seq_type) eq "dna") {
+    $self->case_insensitive_transitions();
+  }
 }
 
 =pod
@@ -523,8 +530,6 @@ iterators for the subsequent processing.
 sub init_prefixes_and_suffixes_bof {
   my ($self) = @_;
 
-  ## get alphabet
-#  my @dna_alphabet =  qw (a c g t);
 
   ################################################################
   ## Ensure that all possible suffixes are taken into consideration
@@ -555,9 +560,6 @@ that will be used as iterators for the subsequent processing.
 =cut
 sub init_prefixes {
   my ($self) = @_;
-
-  ## get alphabet
-#  my @dna_alphabet =  qw (a c g t);
 
   ################################################################
   ## Define alphabet
@@ -1039,6 +1041,37 @@ sub check_transition_alphabet {
       &RSAT::message::Info("Suppressed", scalar(keys(%suppressed_suffixes)),"suffixes, incompatible with sequence type", $seq_type)
 	if ($main::verbose >= 4);
     }
+
+
+}
+
+
+
+=pod
+
+=item B<case_insensitive_transitions>
+
+Convert transitions to lowercases in order to ensure case-insensitive
+analysis.
+
+=cut
+sub case_insensitive_transitions {
+  my ($self) = @_;
+  
+  my $seq_type = $self->get_attribute("seq_type") || "dna";
+  my %accepted_residues = &RSAT::SeqUtil::get_accepted_residues($seq_type);
+  &RSAT::message::Info("Accepted residues", $seq_type, %accepted_residues) if ($main::verbose >= 4);
+  
+  foreach my $prefix (keys(%{$self->{oligo_freq}})) {
+    foreach my $suffix (keys(%{$self->{oligo_freq}->{$prefix}})) {
+      $self->{transitions}->{lc($prefix)}->{lc($suffix)} = $self->{transitions}->{$prefix}->{$suffix};
+      $self->{transitions}->{uc($prefix)}->{lc($suffix)} = $self->{transitions}->{$prefix}->{$suffix};
+      $self->{transitions}->{lc($prefix)}->{uc($suffix)} = $self->{transitions}->{$prefix}->{$suffix};
+      $self->{transitions}->{uc($prefix)}->{uc($suffix)} = $self->{transitions}->{$prefix}->{$suffix};
+#      &RSAT::message::Debug("&RSAT::MarkovModel::case_insensitive_transitions()", "prefix=".$prefix, "suffix=".$suffix, "transition=".$self->{transitions}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
+    }
+  }
+#  die ("HELLO");
 }
 
 
@@ -1105,8 +1138,8 @@ sub calc_from_seq {
 
   ## Add pseudo frequencies
 #  $self->add_pseudo_freq();
-
-	$self ->counts_to_transitions();
+  
+  $self ->counts_to_transitions();
 
 }
 
@@ -1323,6 +1356,12 @@ sub counts_to_transitions {
   ## Convert counts to transition frequencies
   $self->normalize_transition_frequencies();
   
+  ## Ensure case-insensitivity of the transitions for DNA
+  my $seq_type = $self->get_attribute("seq_type") || "dna";
+  if (lc($seq_type) eq "dna") {
+    $self->case_insensitive_transitions();
+  }
+
   my $strand = $self->get_attribute("strand") || "sensitive";
   	if ($strand eq "insensitive")  { #Beware here : 2str means that matrix-scan a
       	$self->average_strands();
@@ -1802,7 +1841,7 @@ sub to_string_patser {
 				  ))
 	unless ($self->get_attribute("order") == 0);
 
-    ## The output ormat differs between strand-sensitive and strand-insensitive models
+    ## The output format differs between strand-sensitive and strand-insensitive models
     my $strand = $self->get_attribute("strand");
     if ($strand eq "insensitive") {
 	foreach my $prefix (@prefix) {
