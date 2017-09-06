@@ -34,8 +34,9 @@ print "<CENTER>";
 print "Convert between different file formats that store genetic variation information. The most commonly used formats are:<a href='http://en.wikipedia.org/wiki/Variant_Call_Format'> VCF </a> and <a href='http://www.sequenceontology.org/resources/gvf_1.00.html'>GVF</a>, varBed format format presents several advantages for scanning variations with  matrices using <a href='variation-scan_form.cgi'>variation-scan</a> .<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
-print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
+print ", <a target='_blank' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://liigh.unam.mx/amedina/people.html'>Walter Santana</a><sup>cit</sup>\n<P>";
+print "A new version of this tool replace a previous prototype version developed by Jeremy Delerce and Jacques van Helden";
 print "</CENTER>";
 
 ## demo description
@@ -153,6 +154,8 @@ print "</B></TD>\n";
 print "<TD><B><A class='iframe' HREF='help.convert-variations.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
+
+print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a PAPIIT-UNAM (IA206517) grant.</small></font>";
 
 
 print $query->end_html;
