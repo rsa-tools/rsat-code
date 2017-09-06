@@ -2901,7 +2901,7 @@ sub _readFromMEMEFile_2015 {
 #	    $matrix[$c][$r]  = 0;
       }
     }
-    $matrix->setMatrix(@matrix);
+    $matrix->setMatrix($nrow, $ncol, @matrix);
 
   }
 
