@@ -4043,15 +4043,14 @@ sub calcTheorScoreDistribBernoulli {
 
 =item B<calcTheorScoreDistribMarkov>
 
-Calculates the theorical distribution of weights probabilities based on
-a background model with Markov order > 0 .
+Calculates the theorical distribution of weights probabilities based
+on a background model with Markov order > 0.
 
 =cut
 sub calcTheorScoreDistribMarkov {
   my ($self) = @_;
   my $score_type = "weights";
-  &RSAT::message::Debug("&RSAT::matrix::calcTheorScoreDistribMarkov()") if ($main::verbose >= 6);
-
+  &RSAT::message::Debug("&RSAT::matrix::calcTheorScoreDistribMarkov()") if ($main::verbose >= 5);
 
   ################################################################
   ## This parameter drastically affects the speed of computation By
@@ -4064,29 +4063,42 @@ sub calcTheorScoreDistribMarkov {
   my $score_format_calc = "%.".(${decimals}+1)."f";
 
   ################################################################
-  ## For Markov models, we don't work with a weight matirx, but we
+  ## For Markov models, we don't work with a weight matrix, but we
   ## treat separately the PSSM frequencies, and the transition
   ## frequencies of the bg model.
-
   my @scores = $self->getFrequencies();
 
   ## Markov Model
   my $bg_model = $self->getMarkovModel();
+  my $seq_type = $bg_model->get_attribute("seq_type");
+  unless ($seq_type) {
+    $seq_type = "dna";
+    $bg_model->force_attribute("seq_type", "dna");
+  }
   my $order = $bg_model->get_attribute("order");
 
   &RSAT::message::TimeWarn("Calculating theoretical distribution of", $score_type,
-			   "Background Markov Model order:".$order,
+			   "Markov Model order:".$order,
+			   "Seqence type:".$seq_type,
 			   "matrix", $self->get_attribute("name"),
 			   "Precision: ".$decimals." decimals",
-			  ) if ($main::verbose >= 4);
+			  ) if ($main::verbose >= 5);
 
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
-  my @alphabet = $self->getAlphabet();
 
-  my %alphabetNb =();
+  ## Index alphabet
+  my @alphabet = $self->getAlphabet();
+  my %alphabet_index =();
   foreach my $i (0..$#alphabet) {
-    $alphabetNb{$alphabet[$i]} = $i;
+    my $letter = $alphabet[$i];
+    if (lc($seq_type) eq "dna") {
+      ## DNA sequences are case-insensitive
+      $alphabet_index{lc($letter)} = $i;
+      $alphabet_index{uc($letter)} = $i;
+    } else {
+      $alphabet_index{$letter} = $i;
+    }
   }
 
 
@@ -4100,25 +4112,33 @@ sub calcTheorScoreDistribMarkov {
   my $prefix_nb = scalar(@prefixes);
   &RSAT::message::TimeWarn("Computing weight probabilities for all prefixes")
     if ($main::verbose >= 4);
-  foreach my $initial_prefix (@prefixes) {
+  foreach my $prefix (@prefixes) {
     $p++;
-    &RSAT::message::Debug("Computing weight probabilities for prefix", $initial_prefix, $p."/".$prefix_nb)
+    if (lc($seq_type) eq "dna") {
+      $prefix = lc($prefix);
+    }
+    &RSAT::message::Debug("Computing weight probabilities for prefix", $prefix, $p."/".$prefix_nb)
       if ($main::verbose >= 5);
-    $prefixes{$initial_prefix} = 1;
-    ## get frequency of the prefix, under matrix model
-    ## treat separately each letter of the prefix
+    $prefixes{$prefix} = 1;
+
+    ################################################################
+    ## Get frequency of the prefix, under matrix model. Treat
+    ## separately each letter of the prefix.
     my $prefix_freq_M = 1;
     foreach my $c (0..$initial_col) {
-      my $letter = substr($initial_prefix, $c,1);
-      my $r = $alphabetNb{$letter};
+      my $letter = substr($prefix, $c, 1);
+      if (lc($seq_type) eq "dna") {
+	$letter = lc($letter);
+      }
+      my $r = $alphabet_index{$letter}; ## Index of the residue in the alphabet array
       $prefix_freq_M *= $scores[$c][$r];
-#      &RSAT::message::Debug("prefix:",$initial_prefix,"c",$c,"letter",$letter,"nb",$r,"score",$scores[$c][$r]) if ($main::verbose >= 10);
+#      &RSAT::message::Debug("prefix:", $prefix, "c", $c, "letter", $letter, "nb", $r,"score", $scores[$c][$r]) if ($main::verbose >= 10);
     }
 
-    ## get frequency of the prefix, under bg model
-    my $prefix_freq_B = $bg_model->{prefix_proba}->{$initial_prefix};
+    ## Get frequency of the prefix, under bg model
+    my $prefix_freq_B = $bg_model->{prefix_proba}->{$prefix};
 
-    ## score
+    ## Score
     my $score_init;
     if (($prefix_freq_M == 0) || ($prefix_freq_B == 0)) {
       $score_init = 0;
@@ -4126,23 +4146,23 @@ sub calcTheorScoreDistribMarkov {
       $score_init = log($prefix_freq_M/$prefix_freq_B)/$info_log_denominator; # Beware here, log is ln !!!
     }
 
-    ## discretisation of the scores
+    ## Discretisation of the scores
     $score_init = sprintf($score_format_calc, $score_init);
 
-    ## proba
-    if ($distrib_proba{$score_init}->{$initial_prefix}) {
-      $distrib_proba{$score_init}->{$initial_prefix} += $prefix_freq_B;
+    ## Proba
+    if ($distrib_proba{$score_init}->{$prefix}) {
+      $distrib_proba{$score_init}->{$prefix} += $prefix_freq_B;
     } else {
-      $distrib_proba{$score_init}->{$initial_prefix} = $prefix_freq_B;
+      $distrib_proba{$score_init}->{$prefix} = $prefix_freq_B;
     }
-#    &RSAT::message::Debug($initial_prefix,"\tscore_init = log( $prefix_freq_M / $prefix_freq_B)\t= $score_init\n",
+#    &RSAT::message::Debug($prefix,"\tscore_init = log( $prefix_freq_M / $prefix_freq_B)\t= $score_init\n",
 #			  "\tproba\t = $prefix_freq_B\n") if ($main::verbose >= 10);
   }
 
   ################################################################
   ## Iteration on remaining columns of the matrix
   foreach my $c ($order..($ncol-1)) {
-    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 5);
+    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 6);
 
     my @curr_prefix = sort(keys(%prefixes));
     my @previous_scores = (keys(%distrib_proba));
@@ -4153,14 +4173,22 @@ sub calcTheorScoreDistribMarkov {
     ## iterate on all possible prefixes
     foreach my $prefix (@curr_prefix) {
 #      &RSAT::message::Debug("col",$c,"prefix",$prefix) if ($main::verbose >= 10);
+      if (lc($seq_type) eq "dna") {
+	$prefix = lc($prefix);
+      }
       foreach my $suffix (@alphabet) {
 
+	if (lc($seq_type) eq "dna") {
+	  $suffix = lc($suffix);
+	}
 	## get frequency of the suffix, under matrix model
-	my $r = $alphabetNb{$suffix};
+	my $r = $alphabet_index{$suffix};
 	my $suffix_freq_M = $scores[$c][$r];
 
 	## get transition frequency, from prefix to suffix (bg model)
 	my $suffix_transition_B = $bg_model->{transitions}->{$prefix}->{$suffix};
+
+#	&RSAT::message::Debug("prefix=".$prefix, "suffix=".$suffix, "suffix_transition_B=".$suffix_transition_B) if ($main::verbose >= 10);
 
 	## score
 	my $curr_score = log($suffix_freq_M/$suffix_transition_B)/$info_log_denominator; # Beware here, log is ln !!!
