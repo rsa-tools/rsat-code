@@ -852,7 +852,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     $bg_model->set_attribute("strand", "sensitive");
   }
 
-  ### For window bg_method the bg is always sensitive
+  ### Fo window bg_method the bg is always strand-sensitive
   if ($bg_method eq "window") {
     $bg_model->force_attribute("strand", "sensitive");
   }
@@ -879,7 +879,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
 				    ") must be larger than Markov order + 1 (",
 				    $main::markov."+1)."));
     }
-
+    
     ## bg window : calculate bg pseudo frequency
     if ($bg_method ne "input") {
       unless ($bg_pseudo_user_specified) {
@@ -888,9 +888,10 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       }
     }
 
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ## TO DO: read the sequences once to determine prior frequencies, in
-    ## order to set the pseudo-weight distribution
-
+    ## order to set the pseudo-weight distribution.
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
     ################################################################
@@ -925,7 +926,6 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
   } else {
     &RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
   }
-
 
   ################################################################
   ## For quick scan mode, compute genomic coordinates of input
