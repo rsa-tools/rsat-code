@@ -83,7 +83,8 @@ print "<CENTER>";
 print "Scan sequences bearing variants with a list of motifs to predict which motifs may be affected by the variant.<br/>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:</br> ";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://liigh.unam.mx/amedina/people.html'>Walter Santana</a><sup>cit</sup>\n";
 print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
 print "</CENTER>";
 print "</BLOCKQUOTE>\n";
@@ -190,8 +191,11 @@ print "<td><b><a href='help.variation-scan.html'>[MANUAL]</a></B></TD>\n";
 #print "<td><b><a href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></B></TD>\n";
 print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
+print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a PAPIIT-UNAM (IA206517) grant.</small></font>";
 
 print "</FONT>\n";
+
+
 
 print $query->end_html;
 
@@ -215,8 +219,7 @@ exit(0);
 ## Select motif data base to be used to scan variants
 
 sub Panel1 {
-  print '
-<br/>';
+  print '<br/>';
 #<div>' #  print "
 # <div class=\"menu_heading_closed\" onclick=\"toggleMenu('103')\" id=\"heading103\">
 
@@ -413,4 +416,5 @@ print "</fieldset><p/>";
 </div></div>';
     
 }
+
 
