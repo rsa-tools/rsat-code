@@ -4,6 +4,7 @@
 <link rel="alternate" type="application/rss+xml" title="RSAT website news feed" href="RSSAT.xml" />
 <link rel='stylesheet' type='text/css' href='css/bootstrap.min.css' />
 <link rel='stylesheet' type='text/css' href='home.css' />
+
 <link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
 <script src="js/jquery.js"></script>
 <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>
@@ -11,7 +12,7 @@
 
 <BODY>
 <?php
-    require ('functions.php');
+    require_once ('functions.php');
 include('menu.php');
 ?>
 
@@ -19,12 +20,12 @@ include('menu.php');
 <div class='container'>
 	<div class='homeheader'>
 		<div class='row'>
-			<div class='col-sm-4' align='center'><img src="images/RSAT_icon.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0">
+			<div class='col-sm-4' align='center'><img src="images/RSAT_logo.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0">
 			</div>
 			<div class='col-sm-2 homemenu'>
 				<a href='publications.cgi'>Publications</a><br/>
-				<a href='htmllink.cgi?title=RSAT : tutorials&file=tutorials/tutorials.html'>Tutorials</a><br/>
-				<a href='htmllink.cgi?title=RSAT : People&file=people.html'>About us</a>			
+				<a href='tutorials.php'>Tutorials</a><br/>
+				<a href='people.php'>About us</a>
 			</div>
 			<div class='col-sm-6 homeheaderbar'><div class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green; padding-top: 25px;'></i></a></div></div>		
 		</div>	
@@ -34,7 +35,7 @@ include('menu.php');
 		<div class='row'>
 			<div class='col-sm-9'>
 				<div class='row' style='padding-bottom:40px'>
-					<div class='col-sm-6'><span class='homebigtext'>Regulatory sequence<br>Analysis tools</span><br/><i>This website is free and open to all users</i></div>
+                    <div class='col-sm-6'><span style='color:#0D73A7;font-size:30px; font-weight:bold'>Regulatory Sequence<br>Analysis Tools<br/>(RSAT)</span><br/><i>This website is free and open to all users</i></div>
 					<div class='col-sm-6'><b>What we do</b><hr style='margin:10px 0 10px 0;border:2px solid #eee'>
 					We offer tools to analyse cis-regulatory elements in genome sequences:
 						<ul><li>motif discovery (support genome-wide data sets like ChIP-seq)</li>
@@ -172,7 +173,7 @@ include('menu.php');
 	
 	<p><i class="fa fa-graduation-cap fa-lg"></i> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font>
 	</p><p><i class="fa fa-graduation-cap fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsa-tools.github.io/tutorial_eccb14/index.html" target="tools">ECCB'14</a>
-	</p><p><i class="fa fa-graduation-cap fa-lg"></i><a href='htmllink.cgi?title=RSAT : tutorials&file=tutorials/tutorials.html' target='_blank'> All tutorials</a></b>
+	</p><p><i class="fa fa-graduation-cap fa-lg"></i><a href='tutorials.php' target='_blank'> All tutorials</a></b>
 			</div>
 		</div>
 	</div>
@@ -282,7 +283,7 @@ include('menu.php');
 </div>
 
 <i class="fa fa-pencil fa-lg"></i> For citing <b>individual tools</b>: the reference of each tool is indicated on top of their query form.</br>
-<i class="fa fa-pencil fa-lg"></i> <a href="htmllink.cgi?title=RSAT : Publication&file=publications.html">All RSAT publications</a> and all publications for <a href="htmllink.cgi?title=NeAT : Publication&file=neat_publications.html"> the Network Analysis Tools</a>.
+<i class="fa fa-pencil fa-lg"></i> <a href="publications.cgi">All RSAT publications</a> and all publications for <a href="htmllink.cgi?title=NeAT : Publication&file=neat_publications.html"> the Network Analysis Tools</a>.
 			</div>
 		</div>
 	</div>
