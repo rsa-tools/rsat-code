@@ -38,9 +38,10 @@ print $query->start_html(-title=>"$title",
         -type => 'text/css',
         -media => 'screen,projection,print' });
     
-    if($title =~ /RSAT/){
+    if($title =~ /RSAT/ || $title eq 'data'){
     	open($fh, "menu.php");
     	while($row = <$fh>){
+            if($row =~ "<!--perlscript"){ my @orgs =  &RSAT::OrganismManager::get_supported_organisms_formenu(); print scalar(@orgs); }
         	print $row."\n";
     	}
     }else{
@@ -63,7 +64,7 @@ print $query->start_html(-title=>"$title",
     }
     
     
-    print "<div class='container' id='page-content-wrapper'>";
+    print "<div class='container' id='page-content-wrapper' style='max-width:900px'>";
 
 
 	print "<iframe src=$file frameborder='0' width='100%' height='100%' ></iframe>";
