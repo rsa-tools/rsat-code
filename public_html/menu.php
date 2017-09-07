@@ -29,7 +29,7 @@
              <div id="menubody" style='padding-top:10px'>
              <div id="tabmenu">
              <ul class="rsat">
-                 <li><a class="active" href="RSAT_Home.cgi">RSAT</a></li>
+                 <li><a class="active" href="RSAT_home.cgi">RSAT</a></li>
                  <li><a href="NeAT_home.php" >NeAT</a></li>
                  <!--      <li><a href="http://www.rsat.eu/index_neat.html" target="_top">NeAT</a></li>-->
              </ul>
@@ -38,7 +38,7 @@
                  
                  <div class="menu">
                      <h2>
-                         <a href="RSAT_Home.cgi" >
+                         <a href="RSAT_home.cgi" >
                              <img src="images/RSAT_icon.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0">
                                  </a>
                      </h2>
