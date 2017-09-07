@@ -336,13 +336,13 @@ document.getElementById("demo_descr").innerHTML = txt;
 
     open(my $fh, "menu.php");
     while(my $row = <$fh>){
-        if($row =~ "<!--perlscript"){ my $x = `cat $ENV{RSAT}/public_html/data/supported_organisms.tab | wc -l`; $x -= 1; print $x; }
+        if($row =~ "<!--perlscript"){ my @orgs =  &RSAT::OrganismManager::get_supported_organisms_formenu(); print scalar(@orgs); }
         print $row."\n";
     }
     
     print "<div class='container' id='page-content-wrapper'>";
     
-    if(! ($title =~ 'Regulatory Sequence Analysis Tools (RSAT)') && ! ($title =~ 'Publications')) {
+    if(!($title =~ 'RSAT home')) {
         print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
     }
 
