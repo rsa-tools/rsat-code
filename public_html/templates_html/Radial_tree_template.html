@@ -100,7 +100,7 @@ var cluster = d3.layout.cluster()
 var diagonal = d3.svg.diagonal.radial()
     .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
 
-var svg = d3.select("#cluster_1").append("div")
+var svg = d3.select("#cluster_1").append("svg")
     .style("width", w + "px")
     .style("height", w + "px")
     .call(d3.behavior.zoom().on("zoom", function () {
