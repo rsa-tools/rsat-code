@@ -53,14 +53,12 @@
 
 #content.rsat {
 	background: #ffffff; 
-	border-right: 1px solid #000000;
-	border-bottom: 1px solid #000000;
-	border-left: 1px solid #000000;
+	border: 1px solid #000000;
 }
 
 #content.graph {
 	background: #ffffff; 
-	border-right: 1px solid #000000;
+	border: 1px solid #000000;
 	border-bottom: 1px solid #000000;
 	border-left: 1px solid #000000;
 }
@@ -253,10 +251,11 @@
 }
 
 #tabmenu ul {
-	width: 172px;
-	color: #000000;
-	background-color: #ffffff;
-	border-bottom: 1px solid #000000;
+	width: 172px !important;
+	color: #000000 !important;
+	background-color: #ffffff !important;
+	border-bottom: none;
+    line-height: 1.2;
 	/*z-index: 1;*/
 	padding-left: 0px;
 	padding-top: 10px;
@@ -275,8 +274,8 @@
 
 
 #tabmenu a, a.active  {
-	border: 1px solid #000000;
-	padding: 2px 5px 0px 5px;
+	border: 1px solid #000000 !important;
+	padding: 2px 5px 0px 5px !important;
 	margin: 0;
 	font-weight: bold;
 	text-decoration: none;
@@ -284,17 +283,17 @@
 }
 
 #tabmenu a , tabmenu a:visited {
-	background: #0D73A7;
-	border-left: 1px solid #000000;
+	background: #0D73A7 !important;
+	border-left: 1px solid #000000 !important;
 	color: #FFFFFF;
 	text-decoration: none;
 }
 
 #tabmenu a.active {
-	background: #ffffff;
-	border-bottom: 1px solid #ffffff;
-	border-left: 1px solid #000000;
-	color: #2D282E;
+	background: #ffffff !important;
+	border-bottom: 1px solid #ffffff !important;
+	border-left: 1px solid #000000 !important;
+	color: #2D282E !important;
 	text-decoration: none;
 }
 

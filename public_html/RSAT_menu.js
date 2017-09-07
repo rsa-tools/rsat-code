@@ -85,7 +85,8 @@ function searchfunc(){
 				if(k[i].className == 'menu_item' || k[i].className == 'menu_item_last'){
 					html = k[i].innerHTML;
 					found = (k[i].textContent === undefined) ? k[i].innerText : k[i].textContent;				
-					index = found.indexOf(term);
+					index = found.toLowerCase().indexOf(term.toLowerCase());
+                    
 					if(index != -1){
 						k[i].innerHTML = html.substring(0,index) + "<span style='background-color:yellow;color:black'>" + html.substring(index,index+term.length) + "</span>" + html.substring(index+term.length);
 						open = true;
