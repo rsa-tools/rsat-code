@@ -456,8 +456,8 @@ sub Get_var_from_vcf {
   my %variation = ();
 
   $variation{'chr'} = ${$token}[0];
-  $variation{'start'} = ${$token}[1];
-  $variation{'end'} = $variation{'start'} + length(${$token}[3])-1;
+  $variation{'start'} = ${$token}[1] - 1;
+  $variation{'end'} = $variation{'start'} + length(${$token}[3]);
   $variation{'strand'} = "+";
   $variation{'id'} = ${$token}[2];
   if (${$token}[3] eq '.'){
