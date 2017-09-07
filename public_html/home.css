@@ -1,8 +1,9 @@
 .homeheader{
 	padding: 20px 15px 0 20px;
+	border-bottom: solid 1px #f6e6ca;
 }
 .homeheaderbar{
-	background-color:orange;
+	background-color:#F6E6CA;
 	height:80px;
 	margin-left:-5px;
 }
@@ -16,11 +17,11 @@
 }
 .homecontent{
 	padding: 40px;
-	background-color: whitesmoke;
+	background-color: white;
 }
 .homefooter{
 	padding: 20px 15px 20px 20px;
-	background-color: orange;
+	background-color: #F6E6CA;
 	font-size: 13px;
 }
 .homebigtext{
@@ -39,9 +40,16 @@
 }
 .panel-default{
 	cursor: pointer;
+	border-color: #CC6600;
 }
 .panel-default:hover{
 	background-color: #efecec;
+}
+.panel-image{
+	background-image: url(images/logo-allservers.png);
+	background-size:contain;
+	background-repeat:no-repeat;
+	background-position:center
 }
 .fa-style{
 	padding: 20px;
