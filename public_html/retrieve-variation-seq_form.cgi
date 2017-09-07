@@ -33,7 +33,8 @@ print "<CENTER>";
 print "Given a set of IDs for polymorphic variations, retrieve the corresponding variants and their flanking sequences, in order to scan them wiht the tool <a href='variation-scan_form.cgi'>variation-scan</a> .<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://liigh.unam.mx/amedina/people.html'>Walter Santana</a><sup>cit</sup>\n";
 print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
 print "</CENTER>";
 
@@ -157,6 +158,8 @@ print $query->hidden(-name=>'input_type',-default=>"varBed");
 print $query->hidden(-name=>'mml',-default=>"30");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
+
+
 print $query->end_form;
 
 
@@ -164,6 +167,7 @@ print "<TD><B><A HREF='help.retrieve-variation-seq.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
+print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a PAPIIT-UNAM (IA206517) grant.</small></font>";
 
 print $query->end_html;
 
