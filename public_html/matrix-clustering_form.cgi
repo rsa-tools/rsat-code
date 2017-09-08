@@ -35,6 +35,7 @@ $default{newick} = "";
 $default{random} = "";
 $default{quick} = "";
 $default{heatmap} = "CHECKED";
+$default{radial} = "";
 $default{consensus} = "";
 $default{label_id} = "";
 $default{label_name} = "CHECKED";
@@ -223,6 +224,13 @@ print $query->checkbox(-name=>'newick',
 print "&nbsp;<A'><B>Export the trees in Newick format.</B></A>";
 print "<br><br>\n";
 
+## Export radial tree
+print $query->checkbox(-name=>'radial',
+  		       -checked=>$default{radial},
+  		       -label=>'');
+print "&nbsp;<A'><B>Radial Tree (motif browser)</B></A>";
+print "<br><br>\n";
+
 ## Negative control: Permute the columns of the input motifs
 print $query->checkbox(-name=>'random',
   		       -checked=>$default{random},
@@ -230,6 +238,8 @@ print $query->checkbox(-name=>'random',
 print "&nbsp;<A'><B>Negative control: the input motifs columns are randomly permuted.</B></A>";
 print "<br><br>\n";
 print "<HR width=550 align=left>\n";
+
+
 
 ####################################
 ## Labels displayed in logo trees

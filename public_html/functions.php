@@ -208,7 +208,11 @@ Function getGitLastCommitDate(){
 
 // Guess the main RSAT directory
 $rsat_main = getcwd()."/..";
-
+    $x = getcwd();
+    if(strpos($x, "/tutorials") !== false){
+        $x = str_replace("/tutorials", "", $x);
+        $rsat_main = $x."/..";
+    }
 // log file
 $rsat_logs = $rsat_main."/public_html/logs";
 
