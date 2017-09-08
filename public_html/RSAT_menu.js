@@ -78,14 +78,15 @@ function searchfunc(){
 	var open = false;
 	if(term.length > 0){
 		var allmenu = document.getElementsByClassName('menu_heading_closed');
-		for(var x = 1; x < menu_numbers.length; x++){
+		for(var x = 1; x <= menu_numbers.length; x++){
 			var obj = document.getElementById("menu"+x);
 			k = obj.childNodes;
 			for(i = 0; i < k.length; i++){
 				if(k[i].className == 'menu_item' || k[i].className == 'menu_item_last'){
 					html = k[i].innerHTML;
 					found = (k[i].textContent === undefined) ? k[i].innerText : k[i].textContent;				
-					index = found.indexOf(term);
+					index = found.toLowerCase().indexOf(term.toLowerCase());
+                    
 					if(index != -1){
 						k[i].innerHTML = html.substring(0,index) + "<span style='background-color:yellow;color:black'>" + html.substring(index,index+term.length) + "</span>" + html.substring(index+term.length);
 						open = true;
