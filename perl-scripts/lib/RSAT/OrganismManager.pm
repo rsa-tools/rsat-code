@@ -468,6 +468,33 @@ sub get_supported_organisms_web {
 }
 
 
+######### For menu
+sub get_supported_organisms_formenu {
+    my  @selected_organisms = ();
+    
+    ## Multiple groups can be specified
+    my @group_specificity = split(/,/, $ENV{group_specificity});
+    
+    if (scalar(@group_specificity) >= 1) {
+        ## Collect organisms for each group specificity
+        foreach my $group_specificity (@group_specificity) {
+            $group_specificity = ucfirst(lc($group_specificity));
+            push @selected_organisms , &RSAT::OrganismManager::GetOrganismsForGroup($group_specificity);
+            if (scalar(@selected_organisms) < 1) {
+                return ();
+            }
+        }
+        push @selected_organisms, &get_demo_organisms(@group_specificity);
+        
+    } else {
+        @selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
+    }
+    
+    
+    @selected_organisms = &RSAT::util::sort_unique(@selected_organisms);
+    return (@selected_organisms);
+}
+
 ################################################################
 ## Return the list of organisms required for Web demos
 sub get_demo_organisms {
@@ -563,9 +590,9 @@ sub GetOrganismsForTaxon {
     $message = join ("\t", "Taxon", $taxon, "is not supported on server", $ENV{rsat_site});
     if ($die_if_noorg) {
       &RSAT::error::FatalError($message);
-    } else {
-      &RSAT::message::TimeWarn($message);
-    }
+    } #else {
+      #&RSAT::message::TimeWarn($message);
+      #}
   }
   
   ## Select unique organisms per genus or species if required

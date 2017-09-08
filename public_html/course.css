@@ -1,34 +1,34 @@
 /* BODY  */
 body  {
-    font-family: Verdana, Helvetica, Arial, sans-serif;
+    font-family: Verdana, Helvetica, Arial, sans-serif !important;
     /*  font-family: Garamond, Times new roman, Times, serif; */
     /*  font : 14px Garamond, 12px Times new roman, 12px Times, serif;*/
-    font-size: 11px;
-    margin-top: 2px;
-    margin-left:20px;
-    margin-right: 10px;
-    text-align: justify;
-    background: #FFFFFF;
-    max-width: 650px;
+    font-size: 11px !important;
+    margin-top: 2px !important;
+    margin-left:20px !important;
+    margin-right: 10px !important;
+    text-align: justify !important;
+    background: #FFFFFF !important;
+    /*max-width: 900px;*/
 }
 
 /* Links  */
 
 A:link,A:visited {
                    color: #0D73A7;
-                   background: transparent;
-                   text-decoration: none;
+                   background: transparent !important;
+                   text-decoration: none !important;
                    }
 
 A:active {
-           color: #ff0000;
-           background: transparent;
-           text-decoration: none
+           color: #ff0000 !important;
+           background: transparent !important;
+           text-decoration: none !important
            }
 
 A:hover {
-          text-decoration: underline;
-          color: #cc6600;
+          text-decoration: underline !important;
+          color: #cc6600 !important;
           }
 
 /* Text  */
@@ -36,68 +36,70 @@ A:hover {
 
 
 h1 {
-     font-size:16px;
-     text-align: center;
-     color: #002266;
-     background-color: #F6E6CA;
-     border: 1px solid #cc6600;
-     margin-left: 0px;
-     margin-right: 0px;
-     padding-top: 10px;
-     padding-bottom: 10px;
+     font-size:16px !important;
+     text-align: center !important;
+     color: #002266 !important;
+     background-color: #F6E6CA !important;
+     border: 1px solid #cc6600 !important;
+     margin-left: 0px !important;
+     margin-right: 0px !important;
+     padding-top: 10px !important;
+     padding-bottom: 10px !important;
+     font-weight: bold !important;
      }
 
 h2 {
      /* 	text-align: center; */
-     font-size: 14px;
-     color: #002266;
-     text-align: left;
-     margin-left: 0px;
-     padding-left: 0px;
+     font-size: 14px !important;
+     color: #002266 !important;
+     text-align: left !important;
+     margin-left: 0px !important;
+     padding-left: 0px !important;
+     font-weight: bold !important;
      }
 
 h3 {
      /* 	text-align: center; */
-     font-size: 11px;
-     color: #002266;
-     font-weight: bold;
-     text-align: left;
-     margin-left: 0px;
+     font-size: 11px !important;
+     color: #002266 !important;
+     font-weight: bold !important;
+     text-align: left !important;
+     margin-left: 0px !important;
      }
 
 h4 {
      /* 	text-align: center; */
-     font-size: 10px;
-     color: #002266;
-     font-weight: bold;
-     text-align: left;
-     margin-left: 0px;
+     font-size: 10px !important;
+     color: #002266 !important;
+     font-weight: bold !important;
+     text-align: left !important;
+     margin-left: 0px !important;
      }
 
 
 hr {
-     border: 0px dotted #2D282E;
-     color: #115588;
-     background-color: #115588;
-     height: 2px;
+     border: 0px dotted #2D282E !important;
+     color: #115588 !important;
+     background-color: #115588 !important;
+     height: 2px !important;
      }
 
 hr.solid {
-           border: 0px dotted #2D282E;
-           color: #115588;
-           background-color: #115588;
-           height: 5px;
+           border: 0px dotted #2D282E !important;
+           color: #115588 !important;
+           background-color: #115588 !important;
+           height: 5px !important;
            }
 
 pre,tt {
-         font-size: 12px;
+         font-size: 8px !important;
          background-color: #EEEEEE;
-	 text-align: left;
+	 text-align: left !important;
          }
 
 .author {
-    text-align: center;
-    font-style:italic;
+    text-align: center !important;
+    font-style:italic ;
     font-size: 11px;
     color: #000000;
     # color: #002266;
