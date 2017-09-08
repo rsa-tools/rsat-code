@@ -235,6 +235,12 @@ if ($rand) {
     $parameters .= " -rand";
 }
 
+## Heatmap selection
+$radial = $query->param('radial');
+if ($radial) {
+    $parameters .= " -radial_tree_only";
+}
+
 ## Insert labels
 #my @labs = ();
 my $lab = "name";
