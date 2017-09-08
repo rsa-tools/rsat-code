@@ -78,7 +78,7 @@ function searchfunc(){
 	var open = false;
 	if(term.length > 0){
 		var allmenu = document.getElementsByClassName('menu_heading_closed');
-		for(var x = 1; x < menu_numbers.length; x++){
+		for(var x = 1; x <= menu_numbers.length; x++){
 			var obj = document.getElementById("menu"+x);
 			k = obj.childNodes;
 			for(i = 0; i < k.length; i++){
