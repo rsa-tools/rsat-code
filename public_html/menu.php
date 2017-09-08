@@ -29,7 +29,7 @@
              <div id="menubody" style='padding-top:10px'>
              <div id="tabmenu">
              <ul class="rsat">
-                 <li><a class="active" href="RSAT_Home.cgi">RSAT</a></li>
+                 <li><a class="active" href="RSAT_home.cgi">RSAT</a></li>
                  <li><a href="NeAT_home.php" >NeAT</a></li>
                  <!--      <li><a href="http://www.rsat.eu/index_neat.html" target="_top">NeAT</a></li>-->
              </ul>
@@ -38,7 +38,7 @@
                  
                  <div class="menu">
                      <h2>
-                         <a href="RSAT_Home.cgi" >
+                         <a href="RSAT_home.cgi" >
                              <img src="images/RSAT_icon.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0">
                                  </a>
                      </h2>
@@ -52,71 +52,9 @@
 		<div style='padding:60px 0 0 10px;' align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b> 
 <!--perlscript -->
 <?php
-    $grpSpec = $properties['group_specificity'];
-    $grpTaxa = '';
-    $grpTaxa2 = '';
-    
-    if($grpSpec === 'None'){
-        $count = shell_exec('cat ' . $properties["RSAT"] . '/public_html/data/supported_organisms.tab | wc -l'); $count = $count - 1; echo $count;
-    }
-    else{
-        if($grpSpec === 'Fungi' || $grpSpec === 'Metazoa' || $grpSpec === 'Bacteria' || $grpSpec === 'Archaea' || $grpSpec === 'Protists') { $grpTaxa = $grpSpec; }
-        else if($grpSpec === 'Plants'){ $grpTaxa = 'Viridiplantae'; }
-        else if($grpSpec === 'Prokaryotes'){ $grpTaxa = 'Bacteria'; $grpTaxa2 = 'Archaea';}
-        
-        $taxon = '';
-        if($grpSpec !== 'Fungi'){ $taxon = 'Saccharomyces_cerevisiae/'; }
-        if($grpSpec !== 'Metazoa'){ $taxon = 'Drosophila_melanogaster/';}
-        if($grpSpec !== 'Bacteria'){ $taxon = 'Escherichia_coli_K_12_substr__MG1655_uid57779/';}
-        if($grpSpec !== 'Prokaryotes'){ $taxon = 'Escherichia_coli_K_12_substr__MG1655_uid57779/';}
-        
-        $count = 0;
-        $count1 = 0;
-        $myFile = fopen($properties["RSAT"] . '/public_html/data/supported_organisms.tab', 'r') or die('Unable to open file!');
-        if($myFile){
-            while (($line = fgets($myFile)) !== false){
-                $pos = strpos($line, $grpTaxa);
-                if($pos !== false) { $count += 1;}
-                
-                if($grpSpec === 'Prokaryotes'){
-                    $pos = strpos($line, $grpTaxa2);
-                    if($pos !== false) { $count += 1;}
-                }
-                
-                if($grpSpec === 'Protists'){
-                    $pos = strpos($line, 'Eukaryota');
-                    if($pos !== false){
-                        $pos2 = strpos($line, 'Fungi');
-                        $pos3 = strpos($line, 'Metazoa');
-                        $pos4 = strpos($line, 'Plants');
-                        if($pos2 === false && $pos3 === false && $pos4 === false){ $count += 1;}
-                    }
-                }
-                
-                if($grpSpec === 'Teaching'){
-                    $pos = strpos($line, 'Arabidopsis_thaliana.TAIR10.29/');
-                    $pos1 = strpos($line, 'Bacillus_subtilis_168_uid57675/');
-                    $pos2 = strpos($line, 'Drosophila_melanogaster/');
-                    $pos3 = strpos($line, 'Escherichia_coli_K_12_substr__MG1655_uid57779/');
-                    $pos4 = strpos($line, 'Homo_sapiens_GRCh37/');
-                    $pos5 = strpos($line, 'Homo_sapiens_GRCh38/');
-                    $pos6 = strpos($line, 'Mus_musculus_GRCm38/');
-                    $pos7 = strpos($line, 'Saccharomyces_cerevisiae/');
-                    
-                    if($pos !== false || $pos1 !== false || $pos2 !== false || $pos3 !== false || $pos4 !== false || $pos5 !== false || $pos6 !== false || $pos7 !== false){ $count += 1;}
-                }else{
-                    $pos2 = strpos($line, $taxon);
-                    if($pos2 !== false) { $count1 += 1;}
-                }
-            }
-            fclose($myFile);
-            if($count != 0){ $count += $count1;}
-        }
-        
-        echo $count;
-    }
-    
-?> </b> <i>organisms</i></div>
+    virtual("nbOrg.cgi");
+?>
+</b> <i>organisms</i></div>
                 <div>
 			<input type='search' id='searchfunc' placeholder='Search' class='searchmenu' onKeyPress='searchfunc()' onKeyUp='searchfunc()'/>
 		</div> 
