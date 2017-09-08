@@ -19,6 +19,10 @@
 
         </script>
 
+<?php
+    require_once('functions.php');
+?>
+
 <div id="wrapper"> 
                    <!-- Sidebar -->
             <div id="sidebar-wrapper">
@@ -36,11 +40,7 @@
                      <h2>
                          <a href="RSAT_home.cgi" >
                              <img src="images/RSAT_icon.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0">
-                                 <!--<a href="RSAT_home.cgi" ><img src="images/RSAT_logo.png" width='65'>
-                                  <span class='brown_text'>R</span>egulatory <br/>
-                                  <span class='brown_text'>S</span>equence <br/>
-                                  <span class='brown_text'>A</span>nalysis <br/>
-                                  <span class='brown_text'>T</span>ools --></a>
+                                 </a>
                      </h2>
                  </div>
                  
@@ -51,7 +51,10 @@
                   </h2></p-->
 		<div style='padding:60px 0 0 10px;' align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b> 
 <!--perlscript -->
-<?php $count = shell_exec('cat ' . $properties["RSAT"] . '/public_html/data/supported_organisms.tab | wc -l'); $count = $count - 1; echo $count; ?> </b> <i>organisms</i></div>
+<?php
+    virtual("nbOrg.cgi");
+?>
+</b> <i>organisms</i></div>
                 <div>
 			<input type='search' id='searchfunc' placeholder='Search' class='searchmenu' onKeyPress='searchfunc()' onKeyUp='searchfunc()'/>
 		</div> 
@@ -245,15 +248,15 @@
                      <div class="menu_heading_open"
                          onclick="toggleMenu('7')" id="heading7">Help & Contact</div>
                          <div id="menu7" class="menu_collapsible_display">
-                         <a class="menu_item" href="htmllink.cgi?title=RSAT : People&file=people.html" >RSAT team</a>
+                         <a class="menu_item" href="people.php" >RSAT team</a>
                          <a class="menu_item" href="http://rsa-tools.github.io/teaching/index.html" target="_blank">Training material <img src="images/onebit_49.png" height="30" class="new"></img></a>
-                         <a class="menu_item" href="htmllink.cgi?title=RSAT : tutorials&file=tutorials/tutorials.html" >Tutorials</a>
+                         <a class="menu_item" href="tutorials.php" >Tutorials</a>
                          <!--<a class="menu_item" href="forum_out.html" ><font color=#FFCCCC>Contact & Forum</font></a>-->
                          <a class="menu_item" href="publications.cgi" >Publications</a>
-                         <a class="menu_item" href="htmllink.cgi?title=RSAT : Credits&file=credits.html" >Credits</a>
+                         <a class="menu_item" href="credits.php" >Credits</a>
                          <a class="menu_item" href="http://teaching.rsat.eu/download-request_form.cgi" >Download</a>
-                         <a class="menu_item_last" href="htmllink.cgi?title=RSAT : Motif databases&file=motif_databases/" >Motif databases</a>
-                         <a class="menu_item_last" href="htmllink.cgi?title=RSAT : Data&file=data/" >Data</a>
+                         <a class="menu_item_last" href="htmllink.cgi?title=RSAT-motif&file=motif_databases/" >Motif databases</a>
+                         <a class="menu_item_last" href="htmllink.cgi?title=RSAT-Data&file=data/" >Data</a>
                          
                          </div>
                          <!--div class="menu_heading_closed"
@@ -276,7 +279,7 @@
                          
                          <h3>
                          
-                                 <A target=_top href="http://www.bigre.ulb.ac.be/Users/jvanheld/">Jacques van Helden</A>
+                                 <A target=_top href="#" style='visibility:hidden'>Jacques van Helden</A>
                                  </h3>
                             </div>     
                                  </div>
