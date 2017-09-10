@@ -165,41 +165,12 @@ covered.tables.dir <- paste(basename(prefix), "_covered_sequences_info", sep = "
 dir.create(covered.tables.dir, showWarnings = FALSE)
 
 ## Induced
-# matrix.scan.file <- "/home/jcastro/Desktop/Epromoters_analysis/induced/position_scan_single/position_scan_CapStarrSeq_K562_IFN_induced_matrix_scan_results_PARSED.tab"
-# sequence.names.file <- "/home/jcastro/Desktop/Epromoters_analysis/induced/position_scan_single/position_scan_CapStarrSeq_K562_IFN_induced_matrix_scan_sequence_names.tab"
-# ID.to.names.correspondence.tab <- "/home/jcastro/Desktop/Epromoters_analysis/induced/position_scan_single/position_scan_CapStarrSeq_K562_IFN_induced_TF_ID_name_correspondence.tab"
-# bin <- 50
-# seq.length <- 2000
-
-## SPPS
-# matrix.scan.file <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_matrix_scan_results_PARSED.tab"
-# sequence.names.file <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_matrix_scan_sequence_names.tab"
-# ID.to.names.correspondence.tab <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_TF_ID_name_correspondence.tab"
+# matrix.scan.file <- "PRE_cluster_1_2_3_4_vs_PRE_cluster_6_matrix_scan_results_PARSED.tab"
+# sequence.names.file <- "PRE_cluster_1_2_3_4_vs_PRE_cluster_6_matrix_scan_sequence_names.tab"
+# ID.to.names.correspondence.tab <- "PRE_cluster_1_2_3_4_vs_PRE_cluster_6_TF_ID_name_correspondence.tab"
 # bin <- 50
 # seq.length <- 600
-
-
-# TOTAL
-# matrix.scan.file <- "/home/jcastro/Desktop/n/position_scan_single/position_scan_CapStarrSeq_K562_IFN_total_matrix_scan_results_PARSED.tab"
-# sequence.names.file <- "/home/jcastro/Desktop/n/position_scan_single/position_scan_CapStarrSeq_K562_IFN_total_matrix_scan_sequence_names.tab"
-# ID.to.names.correspondence.tab <- "/home/jcastro/Desktop/n/position_scan_single/position_scan_CapStarrSeq_K562_IFN_total_TF_ID_name_correspondence.tab"
-# bin <- 50
-# seq.length <- 2000
-
-## SPPS
-# matrix.scan.file <- "/home/jcastro/Desktop/SPPS_discovered_motifs_matrix_scan_results_PARSED.tab"
-# sequence.names.file <- "/home/jcastro/Desktop/SPPS_discovered_motifs_matrix_scan_sequence_names.tab"
-# ID.to.names.correspondence.tab <-"/home/jcastro/Desktop/SPPS_discovered_motifs_TF_ID_name_correspondence.tab"
-# bin <- 50
-# seq.length <- 600
-
-# TOTAL
-# matrix.scan.file <- "/home/jcastro/Desktop/n/position_scan_single/position_scan_CapStarrSeq_K562_IFN_total_matrix_scan_results_PARSED.tab"
-# sequence.names.file <- "/home/jcastro/Desktop/n/position_scan_single/position_scan_CapStarrSeq_K562_IFN_total_matrix_scan_sequence_names.tab"
-# ID.to.names.correspondence.tab <- "/home/jcastro/Desktop/n/position_scan_single/position_scan_CapStarrSeq_K562_IFN_total_TF_ID_name_correspondence.tab"
-# bin <- 50
-# seq.length <- 2000
-
+# prefix <- "PRE_cluster_1_2_3_4_vs_PRE_cluster_6"
 
 ####################################
 ## Step 3: Read matrix-scan table
@@ -274,9 +245,9 @@ ID.names$V2 <- gsub(":", "_", ID.names$V2)
 
 setwd(results.folder)
 
-##################################################################
-## Step 7: Plot the distribution of TFBSs at different p-values ##
-##################################################################
+####################################################################
+## Step 7: Plot the distribution of TFBSs with different p-values ##
+####################################################################
 ## Assign a color to each p-value class
 ## The sequencial color palette has a maximum of 9 colors
 nb.color.classes <- length(classes.pval.letters)
@@ -851,7 +822,8 @@ freq.per.bin.norm <- list()
 freq.per.bin.norm[[1]] <- freq.per.bin/total.scanned.sequences
 ## Calculate the highest frequency of TFBSs per each list
 max.y <- max(unlist(freq.per.bin.norm[[1]]), na.rm = TRUE)
-# max.y <- lapply(freq.per.bin.norm[[1]], max, na.rm = TRUE)
+max.y <- max(unlist(counts.per.bin), na.rm = TRUE)
+
 
 cn <- freq.per.bin.norm[[1]]
 
@@ -1057,7 +1029,8 @@ thr <- sapply(bins, function(b){
     file.name <- paste(basename(prefix), "_TFBSs_positional_profiles/", feature.query, "_positional_profile_bins_", b, sep = "")
 
     ## Get the coordinates
-    y.val <- as.numeric(freq.per.bin.norm[[list.counter]][feature.query,])
+    # y.val <- as.numeric(freq.per.bin.norm[[list.counter]][feature.query,])
+    y.val <- as.numeric(t(counts.per.bin)[feature.query,])
     x.val <- as.numeric(xlab[[list.counter]])
 
     ## Load the logo
@@ -1066,11 +1039,12 @@ thr <- sapply(bins, function(b){
     # logo.roster <- rasterGrob(logo, interpolate = TRUE)
 
     ## Plot the profile (using ggplot2)
+    max.y.val <- max(y.val) + 100
     xy.df <- data.frame(x = x.val, y = y.val)
     ggplot(xy.df, aes(x=x, y=y)) +
       geom_line(colour = "#00BFC4", size = 3) +
-      ylim(0, max.y) +
-      labs(title=paste(feature.query, " binding profile", sep = ""), y = "Frequency of TFBSs", x = "Position") +
+      ylim(0, max.y.val) +
+      labs(title=paste(feature.query, " binding profile", sep = ""), y = "Number of TFBSs", x = "Position") +
       # geom_rug(position='jitter', sides="l") +
       geom_area(fill = "#00BFC4", alpha=0.35) #+
       #annotation_custom(logo.roster, xmax = limits, xmin = limits - sum(abs(range(xy.df$x)))/5, ymin = max.y[[list.counter]] - 0.01, ymax = max.y[[list.counter]] - 0.075)
@@ -1234,7 +1208,7 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   ## Each column of the variable profiles correspond to the counts per bin of each motif
   verbose(paste("Drawing dynamic profile plot"), 1)
   # thrash <- apply(freq.per.bin[[list.counter]][order.by.eval,], 1, function(values){
-    thrash <- apply(freq.per.bin[order.by.eval,], 1, function(values){    
+    thrash <- apply(t(counts.per.bin)[order.by.eval,], 1, function(values){    
     
     counter <<- counter + 1
     
