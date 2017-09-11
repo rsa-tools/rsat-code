@@ -1042,6 +1042,7 @@ thr <- sapply(bins, function(b){
     max.y.val <- max(y.val) + 100
     xy.df <- data.frame(x = x.val, y = y.val)
     eval.annotation <- paste("e-value = ", all.chi.results[feature.query, "Evalue"], sep = "")
+    chi.annotation <- paste("chi-squared = ", all.chi.results[feature.query, "Chi"] , sep = "") 
     ggplot(xy.df, aes(x=x, y=y)) +
       geom_line(colour = "#00BFC4", size = 3) +
        theme(
@@ -1049,7 +1050,8 @@ thr <- sapply(bins, function(b){
         panel.grid.major = element_line(colour = "grey"),
         panel.ontop = FALSE
       ) +
-       annotate("text", x = 0, y = (max.y.val-75),label = eval.annotation, parse = FALSE) +
+      annotate("text", x = 0, y = (max.y.val-75),label = eval.annotation, parse = FALSE) +
+      annotate("text", x = 0, y = (max.y.val-20),label = chi.annotation, parse = FALSE) +
       ylim(0, max.y.val) +
       labs(title=paste(feature.query, " binding profile", sep = ""), y = "Number of TFBSs", x = "Position") +
       geom_area(fill = "#00BFC4", alpha=0.35) #+
@@ -1568,8 +1570,8 @@ binthrash <- sapply(1:length(bins), function(list.counter){
   
   ## Insert the Y axis limits
   ## They are inserted in the C3section
-  max.y <- max(freq.per.bin) + 0.02
-  html.report <- gsub("--y_axis--", max.y, html.report)
+  # max.y <- max(counts.per.bin) + 50
+  # html.report <- gsub("--y_axis--", max.y, html.report)
   
   ## Fill the parameters table
   verbose(paste("Creating parameters table"), 1)
