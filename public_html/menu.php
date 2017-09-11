@@ -274,15 +274,8 @@
                          
                          
                          </div>
-                         
-                         <!--      <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a>-->
-                         
-                         <h3>
-                         
-                                 <A target=_top href="#" style='visibility:hidden'>Jacques van Helden</A>
-                                 </h3>
-                            </div>     
-                                 </div>
+                    </div>
+               </div>
             
             </div><!-- /#sidebar-wrapper -->
 
