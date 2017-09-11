@@ -3,14 +3,16 @@
 	border-bottom: solid 1px #f6e6ca;
 }
 .homeheaderbar{
-	background-color:#F6E6CA;
 	height:80px;
 	margin-left:-5px;
+    background-image:url(images/banner2.png);
+    background-repeat:no-repeat
 }
 .homemenu{
 	font-weight: bold;
 	padding-top: 8px;
 	text-align: right;
+    font-family: Arial rounded MT bold;
 }
 .homemenu a {
 	text-decoration: none;
@@ -21,8 +23,9 @@
 }
 .homefooter{
 	padding: 20px 15px 20px 20px;
-	background-color: #F6E6CA;
+	background-color: #086194;
 	font-size: 13px;
+    color: #d5d5d5;
 }
 .homebigtext{
 	font-weight: bold;
