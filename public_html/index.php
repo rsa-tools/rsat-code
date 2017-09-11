@@ -20,14 +20,15 @@ include('menu.php');
 <div class='container'>
 	<div class='homeheader'>
 		<div class='row'>
-			<div class='col-sm-4' align='center'><img src="images/RSAT_logo.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0">
+			<div class='col-sm-4' align='center'><img src="images/RSAT_logo.jpg" style="max-width:150px;max-height:60px;padding-bottom:10px" alt="RSAT server" border="0"><br/>
+            <span style='color:#0D73A7;font-size:11px;font-family:Arial rounded MT bold'>Regulatory Sequence Analysis Tools</span>
 			</div>
 			<div class='col-sm-2 homemenu'>
 				<a href='publications.cgi'>Publications</a><br/>
 				<a href='tutorials.php'>Tutorials</a><br/>
 				<a href='people.php'>About us</a>
 			</div>
-			<div class='col-sm-6 homeheaderbar'><div class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green; padding-top: 25px;'></i></a></div></div>		
+            <div class='col-sm-6 homeheaderbar'><div class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green; padding-top: 25px;'></i></a></div></div>
 		</div>	
 	</div>
 
@@ -35,16 +36,18 @@ include('menu.php');
 		<div class='row'>
 			<div class='col-sm-9'>
 				<div class='row' style='padding-bottom:40px'>
-                    <div class='col-sm-6'><span style='color:#0D73A7;font-size:30px; font-weight:bold'>Regulatory Sequence<br>Analysis Tools<br/>(RSAT)</span><br/><i>This website is free and open to all users</i></div>
-					<div class='col-sm-6'><b>What we do</b><hr style='margin:10px 0 10px 0;border:2px solid #eee'>
+                    <div class='col-sm-2'><br/></div>
+					<div class='col-sm-8'><b>What we do</b><hr style='margin:10px 0 10px 0;border:2px solid #eee'>
 					We offer tools to analyse cis-regulatory elements in genome sequences:
 						<ul><li>motif discovery (support genome-wide data sets like ChIP-seq)</li>
 						<li>transcription factor binding motif analysis (quality assessment, comparisons and clustering)</li>
 						<li>comparative genomics</li>
 						<li>analysis of regulatory variations</li>
 						</ul>
-					</div>				
-				</div>	
+					</div>
+                    <div class='col-sm-2'><br/></div>
+				</div>
+<div style='padding-bottom:20px'><i>This website is free and open to all users</i></div>
 				<div class='row' align='center'>
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#programModal'><div class='panel-body'><div class='box-heading'>Which program to use?</div>Guide to main tools for new users<br/><i class='fa fa-cogs fa-3x fa-style'></i></div></div></div>
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#tutModal'><div class='panel-body'><div class='box-heading'>Tutorial and help</div>RSAT tutorial and all training material<br/><i class='fa fa-graduation-cap fa-3x fa-style'></i></div></div></div>				
