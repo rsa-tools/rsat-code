@@ -373,7 +373,11 @@ thr <- sapply(1:nb.motifs, function(m){
       # geom_rug(position='jitter') +
       labs(title=paste("Qualitative distribution of ", motif, " TFBSs\nin ", seq.type, " sequences", sep = ""), y = "-log10(P-value)", x = "Position") +
       scale_colour_manual(name = "-log10(P-value)",values = myColors, labels = paste(">", pval.class.motif, sep = "")) +
-      theme_minimal()
+      theme(
+        panel.background = element_rect(fill = NA),
+        panel.grid.major = element_line(colour = "grey"),
+        panel.ontop = FALSE
+      )
       # annotate("text", x = -limits + ((limits*2)/10), y = max.pval - 0.25, label = paste("Nb of TFBSs: ", nb.TFBSs, sep = ""), size = 4, hjust = 0) +
       # annotate("text", x = -limits + ((limits*2)/10), y = max.pval - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) +
       # annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval - 1, ymax = max.pval - 0.05)
@@ -612,6 +616,11 @@ counts.per.bin.log2 <- sapply(matrix.names, function(m){
   ggplot(df.freq, aes(y=y, x=x, group = Sequences, colour=Sequences)) +
     geom_line(size = 2) +
     ylim(0, max.y) +
+    theme(
+      panel.background = element_rect(fill = NA),
+      panel.grid.major = element_line(colour = "grey"),
+      panel.ontop = FALSE
+    ) +
     geom_rug(position='jitter', sides="l") +
     labs(title=paste(m, " binding profile (Query vs Control)", sep = ""), y = "Frequency of TFBSs", x = "Position")
     # annotation_custom(logo.roster, xmax = limits, xmin = limits - sum(abs(range(df.freq$x)))/5, ymin = max.y - 0.01, ymax = max.y - 0.075)
