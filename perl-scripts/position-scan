@@ -244,10 +244,13 @@ package main;
     local $bg_dir = $main::outfile{prefix}."_bg_model";
     &RSAT::util::CheckOutDir($bg_dir);
 
-    $main::infile{bg_file} = $bg_dir."/mkv_" . $markov . "_2str.oligos"; 
+    $main::infile{bg_file} = $bg_dir."/mkv_" . $markov . "_2str.oligos";
+    $main::outfile{bg_file_inclusive} = $bg_dir."/mkv_" . $markov . "_2str.inclusive";
     if($diff_flag){
-	$main::infile{bg_file_control} = $bg_dir."/mkv_" . $markov . "_2str_control.oligos"; 
+	$main::infile{bg_file_control} = $bg_dir."/mkv_" . $markov . "_2str_control.oligos";
+	$main::outfile{bg_file_inclusive_ctrl} = $bg_dir."/mkv_" . $markov . "_2str_control.inclusive";
     }
+
   }
 
   ## Output file names
@@ -364,12 +367,11 @@ package main;
       ################################################################
       ## Run matrix-scan quick
       &ScanSequences();
-
+      
       ################################################################
       ## Produce the ID to Motif name reference table
       &ID_NameRefTable();
   }
-
 
   ################################################################
   ## Plots step: chi-squared calculation + draw profiles
@@ -1018,7 +1020,7 @@ sub ScanSequences {
 	if($seq_counter == 1){
 	    $s = $main::infile{sequences};
 	    $so = $main::outfile{matches_tab};
-	    $bg = $main::infile{bg_file};
+	    $bg = $main::outfile{bg_file_inclusive};
 
 
 	} elsif($seq_counter == 2){
@@ -1026,20 +1028,21 @@ sub ScanSequences {
 	    $so = $main::outfile{matches_tab_control};
 
 	    if($bg_input_flag){
-		$bg = $main::infile{bg_file_control};
+		$bg = $main::outfile{bg_file_inclusive_ctrl};
+#		$bg = $main::infile{bg_file_inclusive_control};
 	    }
 	}
 	
-	$matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".($main::verbose -1);
+	$matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".($main::verbose);
 	$matrix_scan_cmd .= " -m ".$main::infile{motifs};
 	$matrix_scan_cmd .= " -matrix_format ".$matrix_format;
 	$matrix_scan_cmd .= " -origin end -n score";
 	$matrix_scan_cmd .= " -uth pval ".$p_value;
 	$matrix_scan_cmd .= " -i ".$seq." -seq_format fasta";
-	$matrix_scan_cmd .= " -pseudo 0.01 -decimals 2 ".$strands." -bg_pseudo 0.01";
+	$matrix_scan_cmd .= " -pseudo 1 -decimals 1 ".$strands." -bg_pseudo 0.01";
 	$matrix_scan_cmd .= " -return limits -return pval -ac_as_name";
 	$matrix_scan_cmd .= " -quick -o ".$so;
-	$matrix_scan_cmd .= " -bgfile ".$bg." -bg_format ".$bg_format;
+	$matrix_scan_cmd .= " -bgfile ".$bg." -bg_format inclusive";
 	
 	&doit($matrix_scan_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
@@ -1467,6 +1470,23 @@ sub CalculateBGModel {
 	    &RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file_control}) if ($main::verbose >= 2);
 	}
 	$bg_format = "oligos";
+
+	my $convert_bg_cmd = "";
+	## Convert background model in INCLUSIVE format for matrix-scan-quick
+	$convert_bg_cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+	
+	if($seq_counter == 1){
+	    $convert_bg_cmd .= " -i ".$main::infile{bg_file};
+	} elsif ($seq_counter == 2){
+	    $convert_bg_cmd .= " -i ".$main::infile{bg_file_control};
+	}
+	
+	if($seq_counter == 1){
+	    $convert_bg_cmd .= " -o ".$main::outfile{bg_file_inclusive};
+	} elsif ($seq_counter == 2){
+	    $convert_bg_cmd .= " -o ".$main::outfile{bg_file_inclusive_ctrl};
+	}
+	&doit($convert_bg_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
     }
 }
 
@@ -1576,5 +1596,5 @@ sub ReOpenSynthesis {
   ## Rename the files
   system("mv ".$main::outfile{report_temp}." ".$main::outfile{report});
 }
-        
+
 __END__
