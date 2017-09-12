@@ -28,7 +28,7 @@ include('menu.php');
 				<a href='tutorials.php'>Tutorials</a><br/>
 				<a href='people.php'>About us</a>
 			</div>
-            <div class='col-sm-6 homeheaderbar'><div class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green; padding-top: 25px;'></i></a></div></div>
+            <div class='col-sm-6 homeheaderbar'><div class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:#F58634; padding-top: 25px;'></i></a></div></div>
 		</div>	
 	</div>
 
@@ -37,7 +37,7 @@ include('menu.php');
 			<div class='col-sm-9'>
 				<div class='row' style='padding-bottom:40px'>
                     <div class='col-sm-2'><br/></div>
-					<div class='col-sm-8'><b>What we do</b><hr style='margin:10px 0 10px 0;border:2px solid #eee'>
+                    <div class='col-sm-8'><div align='center' style='font-size:17px;color:#F58634'><b>What we do</b></div><hr style='margin:10px 0 10px 0;border:2px solid #eee'>
 					We offer tools to analyse cis-regulatory elements in genome sequences:
 						<ul><li>motif discovery (support genome-wide data sets like ChIP-seq)</li>
 						<li>transcription factor binding motif analysis (quality assessment, comparisons and clustering)</li>
@@ -47,7 +47,7 @@ include('menu.php');
 					</div>
                     <div class='col-sm-2'><br/></div>
 				</div>
-<div style='padding-bottom:20px'><i>This website is free and open to all users</i></div>
+<div align='center' style='font-size:15px;padding-bottom:20px'><i>This website is free and open to all users</i></div>
 				<div class='row' align='center'>
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#programModal'><div class='panel-body'><div class='box-heading'>Which program to use?</div>Guide to main tools for new users<br/><i class='fa fa-cogs fa-3x fa-style'></i></div></div></div>
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#tutModal'><div class='panel-body'><div class='box-heading'>Tutorial and help</div>RSAT tutorial and all training material<br/><i class='fa fa-graduation-cap fa-3x fa-style'></i></div></div></div>				
