@@ -2256,7 +2256,7 @@ my @plants_key = ("thaliana", "plant");
 my @vertebrates_key = ("human", "Human", "mouse", "Mouse", "vertebrate");
 my @prokaryots_key = ("prokaryot","DBTBS");
 my @fungi_key = ("cerevisiae", "fungi");
-my @metazoa_key = ("Drosophila", "drosophila", "_fly", "elegan", "insect", "nematode", "urochordate");
+my @metazoa_key = ("Drosophila", "drosophila", "_fly", "elegan", "insect", "nematode", "urochordate", "metazoa", "Metazoa");
 my @all_key = ("all");
 my @keys = ([@plants_key], [@vertebrates_key], [@prokaryots_key], [@fungi_key], [@metazoa_key], [@all_key]);
 
