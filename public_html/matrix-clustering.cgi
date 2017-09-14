@@ -87,7 +87,7 @@ $parameters .= " -matrix $collection_label $matrix_file $query_matrix_format";
 
 ################################################################
 #### Query matrix file
-local $matrix_file_2 = &GetSecondMatrixFile($output_path."/".$output_prefix."_second_matrices.".$query_matrix_format);
+local $matrix_file_2 = &GetSecondMatrixFile($output_path."/".$output_prefix."_third_matrices.".$query_matrix_format);
 
 ################################
 ## Add motif collection label
