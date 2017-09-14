@@ -1465,7 +1465,7 @@ sub GetSecondMatrix {
   print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db'  $status_db_choice >" if ($db_choice);
   print "<B>", $title, "</B>\n";
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-  print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
+  print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
 
   my %supported_input_format = (
@@ -1500,15 +1500,16 @@ sub GetSecondMatrix {
   #  my $supported_input_formats = join ",", @supported_input_formats;
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
-  #### matrix format
-  print $query->popup_menu(-id=>'matrix_format', -name=>'matrix_format',
+  ## Second matrix format
+  print $query->popup_menu(-name=>'matrix_format_2',
+			   -id=>'matrix_format_2',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
 
 
   ## Display option fo use consensus as matrix name
   if ($args{consensus}) {
-    print $query->checkbox(-id=>'consensus_as_name', -name=>'consensus_as_name',
+    print $query->checkbox(-name=>'consensus_as_name',
 			   -checked=>$default{consensus_as_name},
 			   -label=>' use motif consensus as matrix name ');
   }
@@ -1517,7 +1518,7 @@ sub GetSecondMatrix {
   print "<BR>\n";
   print  "Input motifs as text<br/>" if ($db_choice);
   print "<div><div style='float:left;'>";
-    print $query->textarea(-id=>'matrix_2', -name=>'matrix_2',
+  print $query->textarea(-name=>'matrix_2', -id=>'matrix_2',
 			 -default=>$default{matrix_2},
 			 -rows=>4,
 			 -columns=>60);
@@ -1558,8 +1559,8 @@ onclick="toggleMenu(';
   unless ($args{no_pseudo}) {
     #### pseudo-counts
     print "<BR>\n";
-    print "<B><A class='iframe' HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
-    print $query->textfield(-id=>'pseudo_counts', -name=>'pseudo_counts',
+    print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+    print $query->textfield(-name=>'pseudo_counts',
 			    -default=>$default{pseudo_counts},
 			    -size=>2);
     print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
