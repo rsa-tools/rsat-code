@@ -43,7 +43,7 @@
 }
 .panel-default{
 	cursor: pointer;
-	border-color: #CC6600;
+	border-color: #086194;
 }
 .panel-default:hover{
 	background-color: #efecec;
@@ -60,8 +60,8 @@
 .social-circle [class*="fa fa-"] {
     width: 25px;
     height: 25px;
-    color: black;
-    background-color: white;
+    color: #d5d5d5;
+    background-color: #042B42;
     border-radius: 25px;
     display: inline-block;
     line-height: 25px;

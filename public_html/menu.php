@@ -61,17 +61,7 @@
 		<div align='right'>
                      <b>New&nbsp;items</b><img src="images/onebit_49.png"  class="new"/>
                  </div>
-                 <!--div class="menu">
-                  <div class="menu_heading_open" onclick="toggleMenu('100')" id="heading100">Most popular tools</div>
-                  <div id="menu100">
-                  <a class="menu_item" href="retrieve-seq_form.cgi"
-                  >retrieve sequence</a>
-                  <a class="menu_item" href="peak-motifs_form.cgi" >peak-motifs</a>
-                  <a class="menu_item" href="oligo-analysis_form.cgi" >oligo-analysis (words)</a>
-                  <a class="menu_item" href="matrix-scan-quick_form.cgi" >matrix-scan (quick)</a>
-                  </div>
-                  </div-->
-                 
+
                  <div class="menu_expand" onclick="expandAll('14')" id="expand"> > view all tools</div>
                  
                  <div class="menu">
@@ -220,13 +210,7 @@
                          <a class="menu_item" href="XYgraph_form.cgi" >XY graph</a>
                      </div>
                      
-                     <!--<div class="menu_heading_closed"
-                      onclick="toggleMenu('7')" id="heading7">Other tools</div>
-                      <div id="menu7" class="menu_collapsible">
-                      </div>
-                      -->
-                     
-                     
+
                  </div>
                  
                  <div class="menu">
@@ -243,7 +227,7 @@
                  </div>
                  
                  <div class="menu">
-                     <!-- <br /> -->	
+
                      
                      <div class="menu_heading_open"
                          onclick="toggleMenu('7')" id="heading7">Help & Contact</div>
@@ -251,31 +235,21 @@
                          <a class="menu_item" href="people.php" >RSAT team</a>
                          <a class="menu_item" href="http://rsa-tools.github.io/teaching/index.html" target="_blank">Training material <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="tutorials.php" >Tutorials</a>
-                         <!--<a class="menu_item" href="forum_out.html" ><font color=#FFCCCC>Contact & Forum</font></a>-->
+
                          <a class="menu_item" href="publications.cgi" >Publications</a>
                          <a class="menu_item" href="credits.php" >Credits</a>
                          <a class="menu_item" href="http://teaching.rsat.eu/download-request_form.cgi" >Download</a>
                          <a class="menu_item_last" href="htmllink.cgi?title=RSAT-motif&file=motif_databases/" >Motif databases</a>
                          <a class="menu_item_last" href="htmllink.cgi?title=RSAT-Data&file=data/" >Data</a>
                          
+                        </div>
+
                          </div>
-                         <!--div class="menu_heading_closed"
-                         onclick="toggleMenu('9')" id="heading9">Information</div>
-                         <div id="menu9" class="menu_collapsible">
-                         
-                         
-                         <a class="menu_item" href="citing_rsat.html" >Citing RSAT</a>
-                         
-                         
-                         
-                         <a class="menu_item" href="change_history.html" target ="tools">Change history</a>
-                         
-                         </div-->
-                         
-                         
-                         </div>
+
+                        <A target=_top href="#" style='font-size:3px;visibility:hidden'>bug/dont understand</A>
+
                     </div>
                </div>
-            
+
             </div><!-- /#sidebar-wrapper -->
 
