@@ -153,6 +153,27 @@ Several more tasks need to be performed before we can consider this organism as 
 | uninstall | uninstall a genome, i.e. stop displaying it as available. Beware, this does not erase the genome folder, for this you can use the option `-task erase`|
 | erase | Erase the whole folder of your organism in `$RSAT/public_html/data` |
 
+## Checking that the organism is well supported
+
+```{bash eval=FALSE}
+## Get all the organisms of the Genus Rhodospirillum
+supported-organisms -taxon Rhodospirillum
+```
+
+## Checking the correctness of gene annotation by computing start/stop codon frequencies
+
+```{bash eval=FALSE}
+## Retrieve all the start codon sequences
+retrieve-seq -all -org Rhodospirillum_centenum_GCF_000016185.1_ASM1618v1 -from 0 -to 2 -o start_seq.fasta
+
+more start_seq.fasta
+
+## Check that most genes have ATG as start codon
+oligo-analysis -v 1 -i start_seq.fasta  -l 3 -1str -return occ,freq -sort | more
+
+```
+
+
 *****
 
 
