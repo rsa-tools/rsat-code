@@ -4172,6 +4172,10 @@ sub ReportStyleCSS{
   overflow: scroll;
   }
 
+  .param {
+  font: 11px sans-serif;
+  }
+
 </style>
 ';
 
@@ -4200,10 +4204,10 @@ sub ParametersTable{
 
   my $par_table = '
   <!-- Div with the table of selected parameters-->
-  <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Results Summary</strong></div>
+<!--  <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Results Summary</strong></div>-->
   <div id="Par_tab" class="tab" style="margin-bottom:15px;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Results Summary</h2>
-    <table id="parameters_table" style="width:750px;">
+    <table id="parameters_table" style="width:700px;">
       <thead>
 	<tr>
 	  <th class="tab_col">Nb Input motifs</th>
@@ -4211,10 +4215,20 @@ sub ParametersTable{
 	  <th class="tab_col">Nb Clusters Found</th>
           <th class="tab_col">Download <br>root motifs</th>
           <th class="tab_col">Complete results [zip]</th>
+          <th class="tab_col" colspan="3">Parameters used
 
-	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
-	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
-	  <th class="tab_col">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></th>
+	      <table><tbody>
+	        <tr>
+	          <td class="tab_col param">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></td>
+                  <td class="tab_col param ">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></td>
+	          <td class="tab_col param">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></td>
+
+	        </tr>
+	     </tbody></table>
+
+          </th>
+
+
 	  
 	</tr>
       </thead>
@@ -4223,11 +4237,21 @@ sub ParametersTable{
 	  <td class="par_text">'.$number_of_motifs.'</td>
 	  <td class="par_text">'.$number_of_collections.'</td>
 	  <td class="par_text">'.$number_of_clusters.'</td>
-	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download</a></td>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{root_motifs}).'">Download</a></td>
-	  <td class="par_text">'.$hclust_method.'</td>
-	  <td class="par_text">'.$main::param{matrix_compa_score}.'</td>
-	  <td class="par_text">'.$threshold_values_html.'</td>
+	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download</a></td>
+
+	  <td>
+	    <table span="3">  
+	      <tbody>
+	        <tr>
+	  <td class="par_text" style="width:150px">'.$hclust_method.'</td>
+	  <td class="par_text" style="width:150px">'.$main::param{matrix_compa_score}.'</td>
+	  <td class="par_text"style="width:150px" >'.$threshold_values_html.'</td>
+	        </tr>
+	      </tbody>
+	    </table>
+	  </td>
+
 	</tr>
       </tbody>
     </table>
@@ -4991,7 +5015,7 @@ $(document).ready( function () {
         "ordering": false,
         "info":     false,
         "columnDefs": [
-	    { "width": "5%", "targets": [0,1,2,3,4,5,6] }
+	    { "width": "5%", "targets": [0,1,2,3,4,5] }
 	]		
     });
 });
@@ -5669,7 +5693,7 @@ sub Synthesis {
     &ParametersTable();
 
     ## Open the icons table
-    my $table_icons_head = "<table><tbody>";
+    my $table_icons_head = '<table style="display:block;clear:both;"><tbody>';
     print $syn $table_icons_head;
     
     #####################
