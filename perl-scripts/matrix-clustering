@@ -4203,8 +4203,8 @@ sub ParametersTable{
 
 
   my $par_table = '
-  <!-- Div with the table of selected parameters-->
-<!--  <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Results Summary</strong></div>-->
+  <!-- Div with the table of selected parameters -->
+<!--  <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Results Summary</strong></div> -->
   <div id="Par_tab" class="tab" style="margin-bottom:15px;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Results Summary</h2>
     <table id="parameters_table" style="width:700px;">
@@ -4244,9 +4244,9 @@ sub ParametersTable{
 	    <table span="3">  
 	      <tbody>
 	        <tr>
-	  <td class="par_text" style="width:150px">'.$hclust_method.'</td>
-	  <td class="par_text" style="width:150px">'.$main::param{matrix_compa_score}.'</td>
-	  <td class="par_text"style="width:150px" >'.$threshold_values_html.'</td>
+	  <td class="par_text" style="width:150px;">'.$hclust_method.'</td>
+	  <td class="par_text" style="width:150px;">'.$main::param{matrix_compa_score}.'</td>
+	  <td class="par_text" style="width:150px;">'.$threshold_values_html.'</td>
 	        </tr>
 	      </tbody>
 	    </table>
@@ -5006,19 +5006,6 @@ sub InsertMotifRichnessBarPlot {
 ## Open the <scrip> tag for JQuery code
 sub OpenScriptJQuery {
   $script_jquery = '<script>
-
-// Dynamic parameter table
-$(document).ready( function () {
-    $(\'#parameters_table\').DataTable({
-        "paging":   false,
-        "searching": false,
-        "ordering": false,
-        "info":     false,
-        "columnDefs": [
-	    { "width": "5%", "targets": [0,1,2,3,4,5] }
-	]		
-    });
-});
 
 // Dynamic cluster summary table
 $(document).ready( function () {
