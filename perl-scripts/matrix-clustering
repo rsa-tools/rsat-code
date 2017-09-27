@@ -3004,7 +3004,7 @@ sub cluster_delim {
 sub Text_end_report {
 
     my $end_report = '
-        <div id="References_Button" class="button_click Section_button selected_header_section" style="margin-top:2px;"><strong>References</strong></div>
+ <!--       <div id="References_Button" class="button_click Section_button selected_header_section" style="margin-top:2px;"><strong>References</strong></div> -->
 	<div id="end_report" style="margin-bottom:20px;">
 	  <ul style="list-style: none;">
 	    <li>
