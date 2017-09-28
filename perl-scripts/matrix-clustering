@@ -4778,74 +4778,66 @@ sub InsertSmallForest {
     my $div = "";
     ## Open the <div> and the <a> where the small forest will be set
     my $small_forest = '
-    <div id="Logo_Forest_button" class="button_click Section_button"><strong>Logo Forest</strong></div>
-<div id="show_forest" style="margin:0px 0px 15px 0px;display:none;">'."\n";  
+    <div class="button_click Section_button" ><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{small_logo_cladogram_html}).'"><strong>Logo Forest (dynamic browsing)</strong></a></div>
+
+    <div id="Logo_Forest_button" class="button_click Section_button" style="margin-top:2px;margin-bottom:2px"><strong>Logo Forest (rapid overview)</strong></div>
+<div id="show_forest" style="margin:0px 0px 0px 0px;display:none;background-color:#E6E6E6";>'."\n";  
     my $small_tree = '' ;
     my $sum_motifs = 0;
     my $sum = 0;
     my $cluster_sum = 0;
     my $BG_color = ".style(\"background\", \"#E6E6E6\")";
 
-    ## Insert link to the logo forest
-    $small_forest .= '
-
-    <div class="display_clusters"><h2>'.$number_of_clusters.' Clusters found</h2>
-       <p style="color:red">Sketch picture restricted to the --x-- first clusters.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{small_logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></p>
-    </div>
-    ';
-
     foreach my $num (1..scalar(keys %alignment_table_data)) {
-	#foreach my $num (1..2) {
 
 	$cl_id_s = $cluster_id_hash{$num}."_s";
 	$cl_id = $cluster_id_hash{$num};
 	
 	my $cluster_size = scalar(keys %{$alignment_table_data{$cl_id}});
 	my $sum = $sum_motifs + $cluster_size;
-	if ($sum < 20) {
-	    
-	    ## Draw the logo forest 
-	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:800px;padding:0px 0px 0px 200px;"></div>';
-	    
-	    my $tree = &logo_tree();
-	    $tree =~ s/--RC_picture_start--//g;
-	    $tree =~ s/--RC_picture_end--//g;
-	    $tree =~ s/\/\/BG_color/$BG_color/g;
-	    $tree =~ s/--lab--/$label_single_tree_no_link/;
-	    $tree =~ s/--widthtree--/820/g;
-	    $tree =~ s/--radius--/3/g;
-	    $tree =~ s/--size--/350/g;
-	    $tree =~ s/--insert--//g;
-	    $tree =~ s/--nb--/$num/g;
-	    $tree =~ s/--height--/70 + 9 * $cluster_size/g;
-	    $tree =~ s/--cl_id--/$cl_id_s/g;
-	    $tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
-	    my $json_name = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_".$cluster_id_hash{$num}.".json");
-	    $tree =~ s/--jsonfile--/$json_name/g;
-	    $tree =~ s/--svgwidth--/$svg_width/g;
-	    $tree =~ s/--svgheight--/$svg_height/g;
-	    $tree =~ s/--x1--/$svg_x1/g;
-	    $tree =~ s/--y1--/$svg_y1/g;
-	    $tree =~ s/--x2--/$svg_x2/g;
-	    
-	    $small_tree .= $tree."\n";
-	    
-	    $cluster_sum++;
-	    $sum_motifs += $cluster_size;
-	}
 	
-	if ($cluster_sum == 3) {
-	    last; 
-	}
+#	if ($sum < 20) {
+	    
+	## Draw the logo forest 
+	$div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:850px;padding:0px 0px 0px 0px;">'.$cl_id.'</div>';
+	    
+	my $tree = &logo_tree();
+	$tree =~ s/--RC_picture_start--//g;
+	$tree =~ s/--RC_picture_end--//g;
+	$tree =~ s/\/\/BG_color/$BG_color/g;
+	$tree =~ s/--lab--/$label_single_tree_no_link/;
+	$tree =~ s/--widthtree--/820/g;
+	$tree =~ s/--radius--/3/g;
+	$tree =~ s/--size--/350/g;
+	$tree =~ s/--insert--//g;
+	$tree =~ s/--nb--/$num/g;
+	$tree =~ s/--height--/70 + 9 * $cluster_size/g;
+	$tree =~ s/--cl_id--/$cl_id_s/g;
+	$tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
+	my $json_name = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_".$cluster_id_hash{$num}.".json");
+	$tree =~ s/--jsonfile--/$json_name/g;
+	$tree =~ s/--svgwidth--/$svg_width/g;
+	$tree =~ s/--svgheight--/$svg_height/g;
+	$tree =~ s/--x1--/$svg_x1/g;
+	$tree =~ s/--y1--/$svg_y1/g;
+	$tree =~ s/--x2--/$svg_x2/g;
+	
+	$small_tree .= $tree."\n";
+	
+	# $cluster_sum++;
+	# $sum_motifs += $cluster_size;
+#	}
+	
+	# if ($cluster_sum == 3) {
+	#     last; 
+	# }
     }
-    $small_forest =~ s/--x--/$cluster_sum/;
-
 
     ## Insert one <div> </div> + <script> </script> for each cluster depicted  
     $small_forest .= $div."\n".'<script type="text/javascript">'."\n".$small_tree."\n".'</script>'."\n";
 
-    ## Close the <a> and <div>
-    $small_forest .= '</a></div>';
+    ## Close the <div>
+    $small_forest .= '</div>';
 
     print $syn $small_forest;
 }
