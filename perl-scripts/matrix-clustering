@@ -4046,7 +4046,6 @@ sub ReportStyleCSS{
 	margin: 10px;
         padding: 7px;
 	text-align: left; 
-	font-size: 17px;
 	border: solid 3px #004F72; 
 	clear: both;
 	position: relative;
@@ -4213,7 +4212,7 @@ sub ParametersTable{
 	  <th class="tab_col">Nb Input motifs</th>
 	  <th class="tab_col">Nb Input collections</th>
 	  <th class="tab_col">Nb Clusters Found</th>
-          <th class="tab_col">Download <br>root motifs</th>
+          <th class="tab_col">Download <br> Root motifs </th>
           <th class="tab_col">Complete results [zip]</th>
           <th class="tab_col" colspan="3">Parameters used
 
@@ -4237,7 +4236,7 @@ sub ParametersTable{
 	  <td class="par_text">'.$number_of_motifs.'</td>
 	  <td class="par_text">'.$number_of_collections.'</td>
 	  <td class="par_text">'.$number_of_clusters.'</td>
-	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{root_motifs}).'">Download</a></td>
+	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{root_motifs}).'"><strong>Download</strong></a></td>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download</a></td>
 
 	  <td>
@@ -4769,18 +4768,18 @@ sub InsertSmallForest {
     ';
 
     ## D3 values of the parameters of the small trees
-    my $svg_width = 8;
-    my $svg_height = 16;
-    my $svg_x1 = 7 * $nb_char;
+    my $svg_width = 11;
+    my $svg_height = 22;
+    my $svg_x1 = 8 * $nb_char;
     my $svg_y1 = -7;
     my $svg_x2 = '6 + '.$svg_x1.' + 27';
     
     my $div = "";
     ## Open the <div> and the <a> where the small forest will be set
     my $small_forest = '
-    <div class="button_click Section_button" ><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{small_logo_cladogram_html}).'"><strong>Logo Forest (dynamic browsing)</strong></a></div>
+    <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{small_logo_cladogram_html}).'"><div class="button_click Section_button" ><strong>Logo Forest (dynamic browsing)</strong></div></a>
 
-    <div id="Logo_Forest_button" class="button_click Section_button" style="margin-top:2px;margin-bottom:2px"><strong>Logo Forest (rapid overview)</strong></div>
+    <div id="Logo_Forest_button" class="button_click Section_button" style="margin-top:2px;margin-bottom:2px"><strong>Logo Forest (rapid overview - low image quality)</strong></div>
 <div id="show_forest" style="margin:0px 0px 0px 0px;display:none;background-color:#E6E6E6";>'."\n";  
     my $small_tree = '' ;
     my $sum_motifs = 0;
@@ -4806,12 +4805,12 @@ sub InsertSmallForest {
 	$tree =~ s/--RC_picture_end--//g;
 	$tree =~ s/\/\/BG_color/$BG_color/g;
 	$tree =~ s/--lab--/$label_single_tree_no_link/;
-	$tree =~ s/--widthtree--/820/g;
-	$tree =~ s/--radius--/3/g;
+	$tree =~ s/--widthtree--/830/g;
+	$tree =~ s/--radius--/2/g;
 	$tree =~ s/--size--/350/g;
 	$tree =~ s/--insert--//g;
 	$tree =~ s/--nb--/$num/g;
-	$tree =~ s/--height--/70 + 9 * $cluster_size/g;
+	$tree =~ s/--height--/100 + 16 * $cluster_size/g;
 	$tree =~ s/--cl_id--/$cl_id_s/g;
 	$tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
 	my $json_name = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_".$cluster_id_hash{$num}.".json");
@@ -4963,7 +4962,7 @@ sub InsertHeatMap {
 sub InsertHeatmapCollectionbyCluster {
 
     my $heat_map_motifs_by_cluster = ' 
-        <div id="Heatmap_motifs_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'"><strong>Cluster composition by collection</strong></a></div>
+        <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'"><div id="Heatmap_motifs_button" class="button_click Section_button"><strong>Cluster composition by collection</strong></div></a>
     ';
 
     print $syn $heat_map_motifs_by_cluster;
@@ -4975,7 +4974,7 @@ sub InsertHeatmapCollectionbyCluster {
 sub InsertHeatmapCollectionComplementarity {
 
     my $heatmap_complementarity = ' 
-        <div id="Heatmap_complementarity_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><strong>Collections Overlap</strong></a></div>
+        <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><div id="Heatmap_complementarity_button" class="button_click Section_button"><strong>Collections Overlap</strong></div></a>
     ';
 
     print $syn $heatmap_complementarity;
@@ -5467,7 +5466,7 @@ sub InsertJquery {
 sub DisplaySingleCluster{
     my $div_display = '
     <div id="Cluster_Tab_button" class="button_click Section_button"><strong>Individual Cluster View</strong></div>
-    <div class="sep_clusters_div individual_results" id="Cluster_Tab" style="display:none">
+    <div class="sep_clusters_div individual_results" id="Cluster_Tab" style="display:none;font-size:12px;">
 	<!--Div with the header of the buttons-->
         <h2 style="display:block;padding:4px;width:986px;">Individual Cluster View</h2>'.
         &hide_show_buttons
@@ -5503,7 +5502,7 @@ sub InsertListOfFiles {
       my $add_files = 
 	  '
 
-	<div id="List_Files_Button" class="button_click Section_button" style="margin-top:2px;"><strong>Additional Files</strong></div>
+	<div id="List_Files_Button" class="button_click Section_button" style="margin-top:5px;margin-bottom:4px;"><strong>Additional Files</strong></div>
 	<div id="File_list" class="tab_list" style="width:960px">
 	<h2 style="text-align:center;margin-top:0px;">Exported files</h2>
 	  <table>
