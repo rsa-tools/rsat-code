@@ -2343,8 +2343,8 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
 
 
       ################################################################
-      ## Calculate inverse cumulative frequencies
-      &RSAT::message::TimeWarn("Calculating inverse cumulative frequencies") if ($main::verbose >= 2);
+      ## Calculate decreasing cumulative frequencies
+      &RSAT::message::TimeWarn("Calculating decreasing cumulative frequencies") if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
@@ -2360,7 +2360,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     }
     ################################################################
     ## Check distribution thresholds on score. This can only be done
-    ## after having computed the cumulative and inverse umulative
+    ## after having computed the cumulative and decreasing umulative
     ## frequencies
     &check_distrib_thresholds('score');
 
@@ -2377,7 +2377,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     if ($return_fields{occ_proba}) {
 
       ## Calculate expected number of occurrences with a score >= x
-      &RSAT::message::TimeWarn("Calculating expected inverse cumulative distribution.")
+      &RSAT::message::TimeWarn("Calculating expected decreasing cumulative distribution.")
 	  if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
@@ -2412,13 +2412,16 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       &check_distrib_thresholds('exp_occ');
 
       ## Calculate significance of the number of motif occurrences
-      &RSAT::message::TimeWarn("Calculating probabilities for the score distribution.")
+      ##
+      ## TO DO (JvH): this step could be accelerated by using R for the
+      ## computation of the binomial.
+      &RSAT::message::TimeWarn("Calculating probabilities for matrix score distributions.")
 	  if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
 	my $n = $matrix->{scored};
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-	&RSAT::message::TimeWarn("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 4));
+	&RSAT::message::TimeWarn("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
 	my $s = 0;
 	foreach my $score (@sorted_scores) {
 	  $s++;
