@@ -72,41 +72,43 @@ max.NWD.table <- read.table(maxNWD.table.file, sep = "\t", header = TRUE)
 max.NWD.table <- round(max.NWD.table, digits = 3)
 max.NWD.table[is.na(max.NWD.table)] <- 0
 
-## Calculate Differential
+# ## Calculate Differential
 sets <- colnames(max.NWD.table)
-for(n in 1:(length(sets)-1)){
-  
-  for(m in 2:(length(sets))){
-    ## Get the set names
-    set1 <- sets[n]
-    set2 <- sets[m]
-    
-    ## Skip when the both sets are the same
-    if(n < m){
-      ## Assign the names to the differential
-      diff.name.1 <- paste("Diff", set1, set2, sep = "__")
-      diff.name.2 <- paste("Diff", set2, set1, sep = "__")
-      
-      print(diff.name.1)
-      print(diff.name.2)
-      
-      max.NWD.table[,diff.name.1] <- max.NWD.table[,set1] - max.NWD.table[,set2]
-      max.NWD.table[,diff.name.2] <- max.NWD.table[,diff.name.1] * -1
-    }
-  }
-}
+# for(n in 1:(length(sets)-1)){
+#   
+#   for(m in 2:(length(sets))){
+#     ## Get the set names
+#     set1 <- sets[n]
+#     set2 <- sets[m]
+#     
+#     ## Skip when the both sets are the same
+#     if(n < m){
+#       ## Assign the names to the differential
+#       diff.name.1 <- paste("Diff", set1, set2, sep = "__")
+#       diff.name.2 <- paste("Diff", set2, set1, sep = "__")
+#       
+#       print(diff.name.1)
+#       print(diff.name.2)
+#       
+#       max.NWD.table[,diff.name.1] <- max.NWD.table[,set1] - max.NWD.table[,set2]
+#       max.NWD.table[,diff.name.2] <- max.NWD.table[,diff.name.1] * -1
+#     }
+#   }
+# }
 
 nb.sets <- length(sets)
 nb.diff.columns <- dim(max.NWD.table)[2]
 
-NWD.sub <- max.NWD.table[,(nb.sets+1):nb.diff.columns]
+# NWD.sub <- max.NWD.table[,(nb.sets+1):nb.diff.columns]
+NWD.sub <- max.NWD.table[,]
 NWD.sub <- NWD.sub[order(NWD.sub[,1], decreasing = TRUE),]
 NWD.sub <- as.matrix(round(NWD.sub, digits = 2))
 
 #######################################################################
 ## Convert the DataFrame in a 'tsv' object which is the input format
 ## for D3 heatmap.
-for(set in c("Normal", "Diff")){
+# for(set in c("Normal", "Diff")){
+for(set in c("Normal")){
   
   tsv.tab <- NULL
   
