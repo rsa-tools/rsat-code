@@ -1419,25 +1419,63 @@ sub GetMatrix {
 
   ## Propose help to find matrices
   unless ($args{nowhere}) {
-    print '</div><div class="menu">
-<div class="menu_heading_closed"
-onclick="toggleMenu(';
-    print "'98'";
-    print ')" id="heading98"> Where to find matrices ?</div>
-<div id="menu98" class="menu_collapsible">
-	<a class="menu_item" href="http://www.pazar.info/" target="_blank">PAZAR</a>
-	<a class="menu_item" href="http://the_brain.bwh.harvard.edu/uniprobe/" target="_blank">UniProbe</a>
-	<a class="menu_item" href="http://www.gene-regulation.com/pub/databases.html" target="_blank">Transfac</a>
-	<a class="menu_item" href="http://jaspar.cgb.ki.se/" target="_blank">Jaspar</a>
-	<a class="menu_item" href="http://regulondb.ccg.unam.mx/download/Data_Sets.jsp" target="_blank">RegulonDB</a>
-</div>
-</div>
-</div>
+      
+      print '<link rel="stylesheet" href="css/select2.min.css" /><script src="js/select2.full.min.js"></script>';
+      print '<style>.select2-results__options {font-size:10px} </style>';
+      print '<script type="text/javascript">
+      
+      function formatState(state){
+          if(!state.id){return $("<div align=\'center\' style=\'text-transform:uppercase;background-color:lightgray;border:1px solid #eee;border-radius:7px;padding:8px\'><b>" + state.text + "</b></div>");}
+          var $state = $("<span><i class=\'fa fa-circle fa-lg\' style=\'color:" + state.element.className + "\'></i></span>&nbsp;&nbsp;&nbsp;" + state.text + "</span>");
+          return $state;
+      }
+      $(function(){
+          $(".inline").colorbox({inline:true,width:"70%"});
+          // turn the element to select2 select style
+          $("#db_choice").select2({placeholder: "Select a matrix",
+          templateResult: formatState,
+          allowClear: true,
+          theme: "classic"
+          });
+          
+          $("#db_choice").change(function(){
+              db_name = $("#db_choice").val();
+              $.ajax({
+              type: "GET",
+              url: "getMatrix.cgi?db_choice=" + db_name,
+              data: {action: "request"},
+              success: function(data){
+                  data = data.replace("<html><body>", "");
+                  data = data.replace("</body></html>", "");
+                  res = data.split("</format>");
+                  $("#matrix").val(res[1]);
+                  format = "tab";
+                  if(res[0] == "tf"){
+                      format = "transfac";
+                  }
+                  $("#matrix_format").val(format);
+              },
+              error: function(){
+                  alert("Error matrix");
+              }
+              });
+          });
+          
+      });
+      </script>';
 
-<div style="clear:both;"></div>
-';
+      
+      print '</div><div style="float:left;margin-left:7px;font-size:11px">';
+      print "Or select a matrix in list:<br/>";
+      print ' <select id="db_choice" name="db_choice" style="width:300px;font-size:11px"><option></option>';
+      ## load the various databases that can be compared against
+      &DisplayMatrixDBchoice_select2("mode"=>"radio");
+      print '</select><br/><a class="inline" href="#matrix_descr""> View matrix descriptions</a> <br/>';
+      print "<div style='display:none'><div id='matrix_descr'>";
+      &DisplayMatrixDBchoice_select2("mode" => "list");
+      print "</div></div></div>";
+      print '<div style="clear:both;"></div>';
   }
-
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
     #### pseudo-counts
@@ -1450,6 +1488,7 @@ onclick="toggleMenu(';
     print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $checked{'pseudo_prior'}>","<b>distributed proportionally to residues priors</b>");
   }
 }
+
 
 ################################################################
 ################################################################
@@ -2298,7 +2337,8 @@ my @colors = ('green', 'red', 'blue', 'orange', 'purple', 'yellow');
 			print "</div>";
 		}
 	}
-}	
+}
+
 
 ################################################################
 ## GetMatrixDBchoice
@@ -2352,6 +2392,54 @@ sub GetMatrixDBchoice {
 #  &RSAT::message::Debug("GetMatrixDBchoice()", scalar(@selected_db)." matrix databases were selected", "parameters=".$matrix_db_params) if ($main::verbose >= 5);
   return($matrix_db_params, @selected_db);
 }
+
+sub GetMatrixDBchoice_select2 {
+    my (%args) = @_;
+    my $matrix_db_params ="";
+    my @selected_db = ();
+    
+    ## Check selection mode
+    my $mode = $args{mode} || "checkbox"; ## Display check boxes or radio buttons
+    my %supported_choice_mode = ("radio"=>1, "checkbox"=>1);
+    my $supported_choice_modes = join ",", sort keys %supported_choice_mode;
+    &RSAT::error::FatalError($mode, "Invalid choice mode for &GetMatrixDBchoice(). Supported: ".$supported_choice_modes)
+    unless ($supported_choice_mode{$mode});
+    
+    ## Load the file containing the description and path of supported motif databases
+    my %matrix_db = &RSAT::server::supported_motif_databases();
+    my @motifs = $query->param("db_choice");
+    ## Identify the selected matrix databases
+    foreach my $db (sort keys %matrix_db) {
+        my $db_name = $matrix_db{$db}->{name};
+        my $format = $matrix_db{$db}->{format};
+        my $file = $matrix_db{$db}->{file};
+        
+        
+        ## Treat multiple database selections if the DB list was presented with checkboxes
+        if ($mode eq "checkbox") {
+            
+            if ($db_name ~~ @motifs) {
+                $matrix_db_params .= " -motif_db ".$db_name." ".$format." ".$ENV{RSAT}."/public_html/motif_databases/".$file;
+                push @selected_db, $db_name;
+            }
+            
+        } elsif ($mode eq "radio") {
+            ## Treat single database selection if the DB list was presented with radio box
+            if ($query->param('db_choice') eq $db_name) {
+                $matrix_db_params .= " -file2 ".$ENV{RSAT}."/public_html/motif_databases/".$file;
+                $matrix_db_params .= " -format2 ".$format;
+                push @selected_db, $db_name;
+            }
+        } else {
+            &RSAT::error::FatalError($mode, "Invalid choice mode for &GetMatrixDBchoice(). Supported: ".$supported_choice_modes);
+        }
+        
+    }
+    
+    #  &RSAT::message::Debug("GetMatrixDBchoice()", scalar(@selected_db)." matrix databases were selected", "parameters=".$matrix_db_params) if ($main::verbose >= 5);
+    return($matrix_db_params, @selected_db);
+}
+
 
 
 ################################################################
