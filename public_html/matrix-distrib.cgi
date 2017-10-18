@@ -153,8 +153,10 @@ if (($query->param('output') =~ /display/i) ||
 
   print "<PRE>";
   while (<RESULT>) {
-    print "$_" unless ($query->param('output') =~ /server/i);
-    print MIRROR $_ if ($mirror);
+	if(!($_ =~ /</)){    
+		print "$_" unless ($query->param('output') =~ /server/i);
+    		print MIRROR $_ if ($mirror);}
+	else{ if(!($_ =~ /<=/)) {print $_;}}
     if ($_ =~ /Error<\/h4><blockquote/ ) {
       $error_found = 1;
     }	
