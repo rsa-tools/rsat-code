@@ -85,7 +85,7 @@
     <td><a target='_blank' href="images/people/alejandra_medina-rivera.jpg">
 	<img border=0
 	     src="images/people/alejandra_medina-rivera.jpg" width="80" alt=""></a></td>
-    <td><b><a target='_blank' href="http://liigh.unam.mx/amedina/index.html">Alejandra Medina-Rivera</b></a>
+    <td><a target='_blank' href="http://liigh.unam.mx/amedina/index.html"><b>Alejandra Medina-Rivera</b></a>
     <br/>
     Associate professor at International Laboratory for the Research on the Human Genome, UNAM (Mexico)
     </td>
@@ -101,7 +101,7 @@
   <tr>
     <td><a href="images/people/jaime_castro.jpg">
 	<img border='0' src="images/people/jaime_castro.jpg" width="80" alt="Jaime Castro"></a></td>
-    <td><b>Jaime Castro</b> 
+    <td><a target='_blank' href="http://folk.uio.no/jamondra/"><b>Jaime Castro-Mondragon</b></a>
     <br>Post-doc Centre for Molecular Medicine Norway (NCMM) (Norway)
     </td>
     <td>RSAT developper since 2013
