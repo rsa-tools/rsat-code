@@ -48,10 +48,10 @@ $default{r_plot} = "checked"; ## Plot XY graph with R rather than GD
 
 $default{visualize}="none";
 
-## motif database
-$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
-$default{custom_motif_db_name}="custom_motif_collection";
 
+## motif database
+$default{compare_motif_database}="RSAT_nonredundant_vertebrates";
+$default{custom_motif_db_name}="custom_motif_collection";
 
 ### Replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -523,8 +523,40 @@ sub Panel4 {
 #  print "<a href=''><b>Choose below the motif database(s):</b></a><br/>";
   print "<a href=''><b>Compare discovered motifs with known motifs from databases</b></a><br/>";
 
+#### select motifs
+print '<link rel="stylesheet" href="css/select2.min.css" /><script src="js/select2.full.min.js"></script>';
+print '<style>.select2-results__options {font-size:10px} .select2-search__field {width: 100px !important;}</style>';
+print '<script type="text/javascript">
+function test(){
+    alert( $("#db_choice").val() );
+}
+function formatState(state){
+    if(!state.id){return $("<div align=\'center\' style=\'text-transform:uppercase;background-color:lightgray;border:1px solid #eee;border-radius:7px;padding:8px\'><b>" + state.text + "</b></div>");}
+    var $state = $("<span><i class=\'fa fa-circle fa-lg\' style=\'color:" + state.element.className + "\'></i></span>&nbsp;&nbsp;&nbsp;" + state.text + "</span>");
+    return $state;
+}
+$(function(){
+    $(".inline").colorbox({inline:true,width:"70%"});
+    // turn the element to select2 select style
+    $("#db_choice").select2({placeholder: "Select matrices",
+        templateResult: formatState,
+        allowClear: true,
+        theme: "classic"
+    });
+    $("#db_choice").val("' . $default{compare_motif_database} . '").trigger("change");
+});
+</script>';
+
+print ' <select id="db_choice" name="db_choice" multiple="multiple" style="width:700px;font-size:11px"><option></option>';
+## load the various databases that can be compared against
+&DisplayMatrixDBchoice_select2("mode"=>"checkbox");
+print '</select><br/><a class="inline" href="#matrix_descr""> View matrix descriptions</a> <br/>';
+print "<div style='display:none'><div id='matrix_descr'>";
+&DisplayMatrixDBchoice_select2("mode" => "list");
+print "</div>";
+
   ## Display supported motif databases
-  &DisplayMatrixDBchoice("mode"=>"checkbox");
+  # &DisplayMatrixDBchoice("mode"=>"checkbox");
 
   print "<p/> ";
   print "<a href=''><b>Add your own motif database:</b></a><br/>";
