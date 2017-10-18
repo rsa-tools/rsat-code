@@ -245,7 +245,7 @@ sub DatabaseChoice_select2 {
 print ' <select id="db_choice" name="db_choice" style="width:400px"><option></option>';
   ## load the various databases that can be compared against
   &DisplayMatrixDBchoice_select2("mode"=>"radio");
-print '</select><a class="inline" href="#matrix_descr""> View matrix descriptons</a> <br/>';
+print '</select><a class="inline" href="#matrix_descr""> View matrix descriptions</a> <br/>';
 
   print ("<INPUT TYPE='radio' NAME='db_choice' VALUE='custom' id='db_choice_radio'>");
   print "Custom motif(s) in TRANSFAC format *\n";
