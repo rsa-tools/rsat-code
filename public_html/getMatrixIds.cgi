@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: getMatrix.cgi: get the matrix from the motif name
+# $Id: getMatrixIds.cgi: get the identifiants from the motif file
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dna-pattern
@@ -9,6 +9,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 use CGI;
+use JSON;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA2.cgi.lib";
@@ -17,37 +18,33 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $query = new CGI;
 
-print "Content-type:txt/html\n\n";
-print "<html>";
-print "<body>";
+print "Content-type: application/json; charset=iso-8859-1\n\n";
 
-my $db_choice = $query->param("db_choice");
-my @db_id = split(",", $query->param("db_id"));
-
+$db_choice = $query->param("db_choice");
 
 my %matrix_db = &RSAT::server::supported_motif_databases();
+my @ids;
+
 my %db = %{$matrix_db{$db_choice}};
 my $format = $db{format};
 my $file = $db{file};
 
-print "$format</format>";
 $file_name = $ENV{RSAT} . "/public_html/motif_databases/" . $file;
 open($fh, "<", $file_name) or die "Cannot open file $!";
-
-my $isprint = 0;
+my $id = "";
 while(my $row = <$fh>){
     if($row =~ /AC\s+/){
-        @f = split(/\s+/, $row);
-        if($f[1] ~~ @db_id){
-            $isprint = 1;
-            print $row;
-        }else{
-            $isprint = 0;
-        }
-    }elsif($isprint == 1) {
-        print $row;
+        my @f = split(/\s+/, $row);
+        $id = $f[1];
+    }
+    if($row =~ /ID\s+/){
+        my @f = split(/\s+/, $row);
+        push @ids, { "id" => $id, "idac" => $f[1] . " - ".$id };
+    }
+    if($row =~ /OS\s+/){
+        push @ids, { "id" => $id, "idac" => $id };
     }
 }
 
-print "</body></html>";
+print JSON::encode_json( {entries => \@ids} );
 exit(0);
