@@ -1432,28 +1432,36 @@ sub GetMatrix {
       $(function(){
           $(".inline").colorbox({inline:true,width:"70%"});
           // turn the element to select2 select style
-          $("#db_choice").select2({placeholder: "Select a matrix",
+          $("#db_choice").select2({placeholder: "Select a collection",
           templateResult: formatState,
           allowClear: true,
           theme: "classic"
           });
           
+          $("#db_id").select2({placeholder: "Select an id - ac",
+          allowClear: true,
+          dropdownAutoWidth: true,
+          theme: "classic"
+          });
+          
           $("#db_choice").change(function(){
+              $("#db_id").val("").change();
+              $("#matrix").val("");
+              document.getElementById("identifiant").style.display = "none";
               db_name = $("#db_choice").val();
               $.ajax({
               type: "GET",
-              url: "getMatrix.cgi?db_choice=" + db_name,
+              url: "getMatrixIds.cgi?db_choice=" + db_name,
+              dataType: "json",
               data: {action: "request"},
               success: function(data){
-                  data = data.replace("<html><body>", "");
-                  data = data.replace("</body></html>", "");
-                  res = data.split("</format>");
-                  $("#matrix").val(res[1]);
-                  format = "tab";
-                  if(res[0] == "tf"){
-                      format = "transfac";
+                  var res = data.entries;
+                  if(res.length != 0){ document.getElementById("identifiant").style.display = "block"; }
+                  var selectopt = "<option></option>";
+                  for(i = 0; i < res.length; i++){
+                      selectopt += "<option value=\'" + res[i].id + "\'>" + res[i].idac + "</option>";
                   }
-                  $("#matrix_format").val(format);
+                  document.getElementById("db_id").innerHTML = selectopt;
               },
               error: function(){
                   alert("Error matrix");
@@ -1461,19 +1469,51 @@ sub GetMatrix {
               });
           });
           
+          $("#db_id").change(function(){
+              db_name = $("#db_choice").val();
+              db_id = $("#db_id").val();
+              if(db_id != null && db_id != ""){
+                  $.ajax({
+                  type: "GET",
+                  url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id,
+                  data: {action: "request"},
+                  success: function(data){
+                      data = data.replace("<html><body>", "");
+                      data = data.replace("</body></html>", "");
+                      res = data.split("</format>");
+                      $("#matrix").val(res[1]);
+                      format = "tab";
+                      if(res[0] == "tf"){
+                          format = "transfac";
+                      }
+                      $("#matrix_format").val(format);
+                  },
+                  error: function(){
+                      alert("Error matrix");
+                  }
+                  });
+              }
+          });
+
+          
       });
       </script>';
 
       
       print '</div><div style="float:left;margin-left:7px;font-size:11px">';
-      print "Or select a matrix in list:<br/>";
-      print ' <select id="db_choice" name="db_choice" style="width:300px;font-size:11px"><option></option>';
+      print "Or select a collection in list:<br/>";
+      print ' <select id="db_choice" name="db_choice" style="width:300px"><option></option>';
       ## load the various databases that can be compared against
       &DisplayMatrixDBchoice_select2("mode"=>"radio");
-      print '</select><br/><a class="inline" href="#matrix_descr""> View matrix descriptions</a> <br/>';
+      print '</select>';
+      print '<br/><a class="inline" href="#matrix_descr""> View matrix descriptions</a> <br/>';
       print "<div style='display:none'><div id='matrix_descr'>";
       &DisplayMatrixDBchoice_select2("mode" => "list");
       print "</div></div></div>";
+      print "<div id='identifiant' style='display:none'><div style='float:left;margin-left:27px;font-size:11px;'>Identifications:<br/>";
+      print " <select id='db_id' style='width:200px' multiple='multiple'></select>";
+      
+      print "</div></div>";
       print '<div style="clear:both;"></div>';
   }
   ## Display additional options: pseudo-count and pseudo-count distribution
