@@ -1447,7 +1447,7 @@ sub GetMatrix {
           $("#db_choice").change(function(){
               $("#db_id").val("").change();
               $("#matrix").val("");
-              document.getElementById("identifiant").style.display = "none";
+              document.getElementById("identifier").style.display = "none";
               db_name = $("#db_choice").val();
               $.ajax({
               type: "GET",
@@ -1456,7 +1456,7 @@ sub GetMatrix {
               data: {action: "request"},
               success: function(data){
                   var res = data.entries;
-                  if(res.length != 0){ document.getElementById("identifiant").style.display = "block"; }
+                  if(res.length != 0){ document.getElementById("identifier").style.display = "block"; }
                   var selectopt = "<option></option>";
                   for(i = 0; i < res.length; i++){
                       selectopt += "<option value=\'" + res[i].id + "\'>" + res[i].idac + "</option>";
@@ -1510,7 +1510,7 @@ sub GetMatrix {
       print "<div style='display:none'><div id='matrix_descr'>";
       &DisplayMatrixDBchoice_select2("mode" => "list");
       print "</div></div></div>";
-      print "<div id='identifiant' style='display:none'><div style='float:left;margin-left:27px;font-size:11px;'>Identifications:<br/>";
+      print "<div id='identifier' style='display:none'><div style='float:left;margin-left:27px;font-size:11px;'>Identifiers:<br/>";
       print " <select id='db_id' style='width:200px' multiple='multiple'></select>";
       
       print "</div></div>";
