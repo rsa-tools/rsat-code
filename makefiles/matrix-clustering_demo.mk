@@ -63,7 +63,7 @@ CLUSTER_PREFIX=${MATRIX_PREFIX}_hclust-${HCLUST_METHOD}_Ncor${MIN_NCOR}_cor${MIN
 CLUSTER_DIR=${RES_DIR}/matrix-clustering_results/${MATRIX_PREFIX}/${HCLUST_METHOD}_linkage/Ncor${MIN_NCOR}_cor${MIN_COR}
 CLUSTER_FILE_PREFIX=${CLUSTER_DIR}/${CLUSTER_PREFIX}
 CLUSTER_CMD=matrix-clustering -v ${V} \
-		-matrix ${MATRIX_PREFIX} ${MATRIX_FILE} -matrix_format tf\
+		-matrix ${MATRIX_PREFIX} ${MATRIX_FILE} tf \
 		-title '${TITLE}' \
 		-lth Ncor ${MIN_NCOR} \
 		-lth cor ${MIN_COR} \
