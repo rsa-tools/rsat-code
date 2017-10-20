@@ -172,6 +172,15 @@ See information at: <https://www.virtualbox.org/manual/ch06.html#network_bridged
 - Attached to : *Bridged Adapter*
 - Name: choose an option corresponding to the actual internet connection of the host machine (e.g. ethernet cable, Wi-Fi, ...).
 
+Depending on your system, you may need to set up advanced option **for Wi-Fi connection**. 
+
+- in the parameter panel of the bridged network adapter, click **Advanced**
+- select *Allow all* for the **Promiscuous mode**
+- uncheck the option **cable connected** (not sure this is required, but seems reasonable to disactivate cable for a wireless connection).
+
+
+![Advanced settings to enable bridged network via a Wi-Fi connection](images/bridged_ethernet_allowall.png)
+
 **Note:** you can also activate a fourth adapter, for example to support both an ethernet card (Adapter 3) and a Wi-Fi connection (Adapter 4). This is particularly useful for laptop computers, whose network parameters vary from place to place. 
 
 ****************************************************************
@@ -502,6 +511,7 @@ sudo usermod --password `openssl passwd -1 -salt xyz tochng` rsat
 sudo chage -d 0 rsat
 
 ## Add sudoer rights to vmuser and rsat users
+more /etc/sudoers
 sudo chmod 644 /etc/sudoers
 sudo nano /etc/sudoers
 ## Find the following line
