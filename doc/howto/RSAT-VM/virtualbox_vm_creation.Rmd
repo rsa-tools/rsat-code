@@ -511,6 +511,7 @@ sudo usermod --password `openssl passwd -1 -salt xyz tochng` rsat
 sudo chage -d 0 rsat
 
 ## Add sudoer rights to vmuser and rsat users
+more /etc/sudoers
 sudo chmod 644 /etc/sudoers
 sudo nano /etc/sudoers
 ## Find the following line
