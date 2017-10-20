@@ -110,6 +110,10 @@ Before running the installation, it might be worth updating the Linux distributi
 ## This requires admin privileges
 sudo bash
 
+## Check who you are  (should be root)
+whoami
+
+
 ## Go to the RSAT directory
 export INSTALL_ROOT=/packages
 cd ${INSTALL_ROOT}/rsat
@@ -125,6 +129,15 @@ bash installer/07_R-and-packages.bash  && \
 bash installer/08_apache_config.bash && \
 bash installer/09_rsat_ws.bash && \
 bash installer/10_clean_unnecessary_files.bash
+
+## Restore rsat as owner of the $RSAT folder
+chown -R rsat.rsat $RSAT
+
+## Exit sudo session
+exit
+
+## Check who you are (should be back to normal user identity)
+whoami
 ```
 
 ## Testing the command lines
@@ -155,22 +168,23 @@ metabolic-tools_YYYYMMDD.tar.gz
 
    Metabolic pathway analysis tools (supported on some NeAT servers).
 
-## RSAT/NeAT installation
+## RSAT/NeAT installation and user guides
 
 After having uncompressed the archive, you will find the installation
-and user guides in the directory
+and user guides in the `doc/manuals` directory
 
-      rsa-tools/doc/manuals/*.pdf
+```
+ls -1 public_html/release/*.pdf
+```
 
-## Regulatory Sequence Analysis Tools (RSAT)
 
-RSAT installation guide:   RSAT_install_guide.pdf
-Web configuration guide:   rsat_web_server.pdf
-Command-linde user guide:  tutorial_shell_rsat.pdf
-
-## Network Analysis Tools (NeAT)
-
-Web server configuration:  neat_web_server.pdf
-Command-line user guide:   neat_tutorial.pdf
+| Guide | File |
+|------------------------|---------------------------|
+| RSAT installation guide |   RSAT_install_guide.pdf |
+| RSAT Web configuration guide |   rsat_web_server.pdf |
+| RSAT Command-linde user guide |  tutorial_shell_rsat.pdf |
+| NeAT Web server configuration |  neat_web_server.pdf |
+| NeAT Command-line user guide |   neat_tutorial.pdf |
 
 ****************************************************************
+
