@@ -8,7 +8,8 @@ output:
     highlight: zenburn
     theme: cerulean
     toc: yes
-    toc_depth: 5
+    toc_depth: 3
+    toc_float: yes
   pdf_document:
     fig_caption: yes
     highlight: zenburn
@@ -63,7 +64,9 @@ grep -v '^;' available_bacteria_2017-09-25.txt | wc -l
 
 On Sept 25 2017, there are 16,166 available bacterial species. Note that there are many more genomes, because some species are represented by different strains. 
 
-## Download the genomes for a given species
+## Installing the genome for a given species
+
+### Download the genome(s)
 
 
 ```{bash eval=FALSE}
@@ -82,7 +85,7 @@ install-organism -v 1 -group bacteria \
 
 3. **Beware:** for some bacterial species of particular interest (e.g. important human pathogens), tens of thousands of strains have been sequenced. It might cost a lot of time and disk space to download all of them. TO avoid that, you can specify the full strain name (more precisely the subfolder corresponding to the strain of interest in the species folder on the NCBI FTP site). 
 
-## Listing the available strains for a given species
+### Listing the available strains for the species of interest
 
 ```{bash eval=FALSE}
 ## List the available strains for a given species (e.g. Rhodospirillum centenum).
@@ -93,7 +96,7 @@ install-organism -v 1 -group bacteria \
 
 This command actually lists the folders. 
 
-## Parse the genomes
+### Parsing the genomes
 
 Parsing consists in extracting the information from a text-formatted file, in order to organise it in a computable structure. 
 
@@ -116,7 +119,7 @@ du -sm /workspace/rsat/public_html/data/genomes/Rhodospirillum_centenum_GCF_0000
 
 This gives the number of megabases occupied by the genome folder. 
 
-## Add the genome to the list of supported genomes
+### Adding the parsed genome to the list of supported genomes
 
 In order to make the parsed genome available for RSAT, you need to run the configuration task.
 
@@ -130,9 +133,20 @@ supported-organisms -taxon Rhodospirillum
 
 ```
 
-## Finalizing the installation
+### Finalizing the installation
 
 Several more tasks need to be performed before we can consider this organism as "installed". 
+
+The simplest way to run it is to select the "default" tasks. 
+
+```{bash eval=FALSE}
+## Run the installation task (retrieve upstream sequences compute background oligo and dyad frequencies, index fasta genome for bedtols, ...)
+
+install-organism -v 1 -org Rhodospirillum_centenum_GCF_000016185.1_ASM1618v1 -task default
+
+```
+
+#### Detailed list of supported installation tasks (default and others)
 
 | Task | Meaning                                     |
 |-------------|-------------------------------------------------|
@@ -153,14 +167,14 @@ Several more tasks need to be performed before we can consider this organism as 
 | uninstall | uninstall a genome, i.e. stop displaying it as available. Beware, this does not erase the genome folder, for this you can use the option `-task erase`|
 | erase | Erase the whole folder of your organism in `$RSAT/public_html/data` |
 
-## Checking that the organism is well supported
+### Checking that the organism is well supported
 
 ```{bash eval=FALSE}
 ## Get all the organisms of the Genus Rhodospirillum
 supported-organisms -taxon Rhodospirillum
 ```
 
-## Checking the correctness of gene annotation by computing start/stop codon frequencies
+### Checking the correctness of gene annotations by computing start/stop codon frequencies
 
 ```{bash eval=FALSE}
 ## Retrieve all the start codon sequences
@@ -173,8 +187,23 @@ oligo-analysis -v 1 -i start_seq.fasta  -l 3 -1str -return occ,freq -sort | more
 
 ```
 
+You can do the similar test with the stop codon frequencies. Note that nothing forces you to store the stop codong sequences in a local file, you can use the pipe symbol ` | ` to concatenate two commands. 
+
+```{bash eval=FALSE}
+## Compute all trinucleotide frequencies in the stop codons
+retrieve-seq -all -org Rhodospirillum_centenum_GCF_000016185.1_ASM1618v1  -type downstream -from -1 -to -3
+
+more start_seq.fasta
+
+## Check that most genes have ATG as start codon
+oligo-analysis -v 1 -i start_seq.fasta  -l 3 -1str -return occ,freq -sort | more
+
+```
+
 
 *****
+## Installing many genomes
+
 
 
 
