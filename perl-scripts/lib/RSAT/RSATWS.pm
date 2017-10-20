@@ -7109,7 +7109,7 @@ sub UpdateLogFileWS {
     $ENV{rsat_site} = `hostname`;
     chomp($ENV{rsat_site});
   }
-  my $log_file = join("", $ENV{RSAT}, "/public_html/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
+  my $log_file = join("", $ENV{RSAT}, "/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
   system("chmod a+w $log_file");
 #   print "LOG ### $log_file";
   if (open LOG, ">>".$log_file) {
