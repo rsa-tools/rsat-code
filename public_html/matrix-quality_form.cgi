@@ -205,7 +205,7 @@ function setDemo(demo_matrix, demo_seq1, demo_seq2){
     
     descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will analyse the PSSM of the Transcription Factor LexA available in RegulonDB. </p> \
     As a positive set we will use the obtained sequences from the ChIP-chip experiment (Wade et al. Genes Dev. 2005) of \ transcription factor LexA in the Escherichia coli K12 genome.</p>\
-    As a negative sequence set we will use the reported binding sites of CRP in the Escherichia coli K12 Genome annotated at \RegulonDB. </p></blockquote>";
+    As a negative sequence set we will use the reported binding sites of CRP in the Escherichia coli K12 Genome annotated at \RegulonDB. </p></blockquote> \ <p>We then do the reverse analysis, with the CRP matrix, where the CRP binding sites are the positive set and the LexA peaks can be considered as negative set. ";
     
     demo_descr.innerHTML = descr;
     demo.value = descr;
@@ -214,12 +214,14 @@ function setDemo(demo_matrix, demo_seq1, demo_seq2){
     matrix.value = demo_matrix;
     matrix_format.value = "transfac";
     kfold.value = "none";
-    tag1.value = "positive_set";
+    tag1.value = "LexA_peaks";
     sequence1.value = demo_seq1;
     permutation1.value = 1;
     
-    tag2.value = "negative_set";
+    tag2.value = "CRP_binding_sites";
     sequence2.value = demo_seq2;
+    permutation2.value = 1;
+
     markov_order.value = 1;
     $("#nwd").prop("checked",true);
     

@@ -48,7 +48,7 @@ where `XX-XX-XX` is the latest release date and put it in your chosen directory.
 ```
 ## By default we install the package in the tool directory.
 ## This should be adapted according to your local setup. 
-export INSTALL_ROOT=~/packages
+export INSTALL_ROOT=/packages
 sudo mkdir -p ${INSTALL_ROOT}
 
 ## Replace XX-XX-XX by the actual release
@@ -64,10 +64,15 @@ cd ${INSTALL_ROOT}/rsat
 For VirtualBox instances, replace [your.server.IP] by the actual IP address of your server. 
 
 ```
+## Get your IP address and check if it is 192.168.56.101
+ifconfig | grep inet
+
+## Semi-auto configuration for VirtualBox VM
+## (adapt IP address if required)
 perl perl-scripts/configure_rsat.pl -auto  \
-  rsat_site=rsat-vb-2017-04 \
-  rsat_www=http://[your.server.IP]/rsat/ \
-  rsat_ws=http://[your.server.IP]/rsat/ \
+  rsat_site=rsat-vb-2017-10 \
+  rsat_www=http://192.168.56.101/rsat/ \
+  rsat_ws=http://192.168.56.101/rsat/ \
   ucsc_tools=1 \
   ensembl_tools=1
 ```
@@ -76,7 +81,7 @@ For the IFB cloud (IP address will change at each instance)
 
 ```
 perl perl-scripts/configure_rsat.pl -auto  \
-  rsat_site=rsatvm-ifb-2017-04 \
+  rsat_site=rsatvm-ifb-2017-10 \
   RSAT=${INSTALL_ROOT}/rsat \
   rsat_www=auto \
   rsat_ws=auto \
@@ -102,8 +107,14 @@ perl perl-scripts/configure_rsat.pl
 Before running the installation, it might be worth updating the Linux distribution (`apt-get update`) in order to get the latest versions of the basic packages. 
 
 ```
+## This requires admin privileges
 sudo bash
+
+## Go to the RSAT directory
+export INSTALL_ROOT=/packages
 cd ${INSTALL_ROOT}/rsat
+
+## Read config and run bash installation scripts
 source RSAT_config.bashrc && \ 
 bash installer/01_ubuntu_packages.bash && \
 bash installer/02_python_packages.bash  && \
