@@ -2460,8 +2460,8 @@ sub NewJasparMatrix {
   $matrix->set_attribute("name", $name);
   $matrix->set_attribute("accession", $id); ## For compatibility with TRANSFAC format
   $matrix->set_attribute("description", join("", $id, " ", $name, "; from JASPAR"));
-#  $matrix->setAlphabet_lc(@temp_alphabet);
-  $matrix->set_alphabet_for_type();
+  $matrix->setAlphabet_lc(@temp_alphabet);
+ # $matrix->set_alphabet_for_type(); MTC 2017/10 : this line was not commented, and producing an empty matrix
   push @matrices, $matrix;
   $current_matrix_nb++;
   &RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
