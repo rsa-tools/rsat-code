@@ -1486,10 +1486,39 @@ sub MotifSelection {
             }
             });
         });
+    ';
+    if($args{retrieve} != 1){
+        print '$("#db_id").change(function(){
+            db_name = $("#db_choice").val();
+            db_id = $("#db_id").val();
+            if(db_id != null && db_id != ""){
+                $.ajax({
+                type: "GET",
+                url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id,
+                data: {action: "request"},
+                success: function(data){
+                    res = data.split("</format>");
+                    $("#matrix").val(res[1]);
+                    format = "tab";
+                    if(res[0] == "tf"){
+                        format = "transfac";
+                    }
+                    $("#matrix_format").val(format);
+                },
+                error: function(){
+                    alert("Error matrix");
+                }
+                });
+            }
+        });
         
+        ';
+    }else{
+        print '
         $("#db_id").change(function(){
             db_name = $("#db_choice").val();
             db_id = $("#db_id").val();
+            multipletable = $("#multipletable").prop("checked");
             if(db_id != null && db_id != ""){
                 $.ajax({
                 type: "GET",
@@ -1512,10 +1541,10 @@ sub MotifSelection {
                 });
             }
         });
-        
-        
-    });
-    </script>';
+        ';
+    }
+    
+    print '});</script>';
     
     
     
@@ -1543,7 +1572,7 @@ sub MotifSelection {
     print "</div></div>";
     print '<div style="clear:both;"></div>';
     if($args{retrieve} == 1){
-        print "</td></tr><tr><td style='padding-left:20px;padding-top:30px'><b>Option</b></td><td style='padding-top:30px'><input type='checkbox' checked>Display one table per matrix</td></tr></table>";
+        print "</td></tr><tr><td style='padding-left:20px;padding-top:30px'><b>Option</b></td><td style='padding-top:30px'><input type='checkbox' id='multipletable' checked>Display one table per matrix</td></tr></table>";
     }
 }
 
@@ -2355,9 +2384,9 @@ sub DisplayMatrixDBchoice_select2 {
     my @fungi_key = ("cerevisiae", "fungi");
     my @metazoa_key = ("Drosophila", "drosophila", "_fly", "elegan", "insect", "nematode", "urochordate", "metazoa", "Metazoa");
     my @all_key = ("all");
-    my @keys = ([@plants_key], [@vertebrates_key], [@prokaryots_key], [@fungi_key], [@metazoa_key], [@all_key]);
+    my @keys = ([@vertebrates_key], [@metazoa_key], [@plants_key], [@fungi_key], [@prokaryots_key], [@all_key]);
     
-    my @values = (\%plants, \%vertebrates, \%prokaryots, \%fungi, \%metazoa, \%multi_organism);
+    my @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
     my @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms');
     my @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow');
     ## Display supported motif databases
