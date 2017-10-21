@@ -203,9 +203,9 @@ print '<script>
 function setDemo(demo_matrix, demo_seq1, demo_seq2){
     $("#reset").trigger("click");
     
-    descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will analyse the PSSM of the Transcription Factor LexA available in RegulonDB. </p> \
-    As a positive set we will use the obtained sequences from the ChIP-chip experiment (Wade et al. Genes Dev. 2005) of \ transcription factor LexA in the Escherichia coli K12 genome.</p>\
-    As a negative sequence set we will use the reported binding sites of CRP in the Escherichia coli K12 Genome annotated at \RegulonDB. </p></blockquote> \ <p>We then do the reverse analysis, with the CRP matrix, where the CRP binding sites are the positive set and the LexA peaks can be considered as negative set. ";
+    descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will analyse the PSSM of the Transcription Factors LexA and CRP available in RegulonDB. </p> \
+    As first sequence set we will input the obtained sequences from the ChIP-chip experiment (Wade et al. Genes Dev. 2005) of \ transcription factor LexA in Escherichia coli K12 .</p>\
+    As second sequence set we will use the reported CRP binding sites in the Escherichia coli K12 annotated in \RegulonDB. </p>\ In the results you will observe there is an enrichment of LexA binding sites in the LexA ChIP-chip reported sequence set, \ and since LexA does not usually binds in the same sequences as CRP, you will notice there is no enrichment of LexA binding sites in CRP sequences.\ Hence, you will observe a reciprocal behavior of CRP predicted binding sites enrcihments, enriched in CRP reported bindings sequences, and not enriched in LexA ChIP-chip sequences. </p>    </blockquote> \ <p> \.";
     
     demo_descr.innerHTML = descr;
     demo.value = descr;
