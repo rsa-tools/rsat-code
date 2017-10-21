@@ -5,11 +5,12 @@ date: 'Last update: `r Sys.Date()`'
 output:
   html_document:
     fig_caption: yes
-    highlight: zenburn
     number_sections: yes
+    highlight: zenburn
     theme: cerulean
     toc: yes
     toc_depth: 4
+    toc_float: yes
   pdf_document:
     fig_caption: yes
     highlight: zenburn
@@ -55,20 +56,23 @@ It should take a few minutes for VirtualBox to create a new instance of the virt
 ****************************************************************
 # Network configuration
 
+The RSAT-VM is provided in a ready-to-use mode. However, you may need to adapt the configuration of your VirtualBox environment in order to obtain a correct behaviour of the VM.
+
 Network configuration involves two aspects: 
 
 1. Configure VirtualBox to define the way(s) it will allow exchanges between virtual machines, the host machine (your computer) and the external world. 
 
 2. Configure each virtual machine, in order to define which types of access it will request from VirtualBox. 
 
-## VirtualBox host-only adapter
+## Host configuration: VirtualBox host-only adapter
 
+The host-only adapter enables your computer (the "host") to establish connections to the "guest" virtual machine. This is necessary if you want to use the VM as a Web server, or use command lines on a terminal (via ssh connection from the host machine). 
 
 1.  Open the **VirtualBox** program.
 
 2.  Open *VirtualBox Preferences*. Click on the *Network* option. Click on the tab *Host-only Networks*. Check if a host-only adapter is already installed. If not, create a new one by clicking the ***+*** icon on the right side ([snapshot](images/vb_prefs_host-only_network.png)).
 
-    [![](images/vb_prefs_host-only_network.png){width="400"}](images/vb_prefs_host-only_network.png)
+    [![Configuration of the host-only adapter](images/vb_prefs_host-only_network.png){width="400"}](images/vb_prefs_host-only_network.png)
 
 3.  You should now see a host-only network named vboxnet0. Double-click on it to change its parameters.
 
@@ -95,12 +99,13 @@ Network configuration involves two aspects:
 
 ## Network settings for the guest machine
 
-VirtualBox supports various ways to connect the guest (virtual machine) to the network.
-We need to open two of them:
+VirtualBox supports various ways to connect the guest (virtual machine) to the network. The two first adapters are required for proper functioning of the RSAT VM. The third one is optional and should be enabled with caution. 
 
 1. *Host-only network* will enable the host machine (your computer) to access the virtual machine by HTTP (Web browser) or SSH (secure shell). 
 
 2. *NAT* will enable the communication from the virtual machine to the external world.
+
+3. Optionally, a **Bridged network** might be configured in order to make your virtual machine visible from external computers. 
 
 ### Host-only network
 
@@ -108,7 +113,9 @@ This solution offers a good tradeoff between security and confort: your virtual 
 
 In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vm-2017-04), open the *Settings ...* dialog box. In the tab *Network*, select *Adapter 1*, check *Enable Network Adapter*, select *Attached to: Host-only Adapter* ([snapshot](images/vm_settings_network_host-only.png)).
 
-In the pop-up menu besides the option *Name*, select *vboxnet0*. [![](images/vm_settings_network_host-only.png){width="400"}](images/vm_settings_network_host-only.png)
+In the pop-up menu besides the option *Name*, select *vboxnet0*.
+
+![Configuration of the host-only network adapter](images/vm_settings_network_host-only.png){width="400"}]
 
 ### NAT
 
@@ -131,7 +138,18 @@ Alternatively , for the sake of flexibility, you might consider to use a bridged
 - In the pop-up menu besides the option *Name*, select an adapter depending on your local network configuration, e.g.
 *Wi-fi (Airport)* ([snapshot](images/vm_settings_network_bridged.png)).
 
-[![](images/vm_settings_network_bridged.png){width="400"}](images/vm_settings_network_bridged.png)
+- If you are connected to Internet via an Ethernet cable, you can leave the other parameters unchanged.
+
+[![Configuration for a bridged network via an Ethernet (cable) connection](images/vm_settings_network_bridged.png){width="400"}](images/vm_settings_network_bridged.png)
+
+If you are connected via Wi-Fi (wireless), you may need to set up advanced option **for Wi-Fi connection**. 
+
+- In the parameter panel of the bridged network adapter, click **Advanced**.
+- Select *Allow all* for the **Promiscuous mode**.
+- Uncheck the option **cable connected** (not sure this is required, but seems reasonable to disactivate cable for a wireless connection).
+
+
+[![Configuration for a bridged network via a Wi-Fi (wireless) connection](images/vm_settings_network_bridged_for_wireless.png){width="400"}](images/vm_settings_network_bridged_for_wireless.png)
 
 
 ****************************************************************
@@ -163,7 +181,36 @@ Note: this IP address is assigned dynamically by VirtualBox. If you already have
 
 [![](images/rsat-vm_web_site.png){width="600"}](images/rsat-vm_web_site.png)
 
-## As a fully functional Linux Desktop server
+
+## RSAT users
+
+RSAT-VM is delivered with two default users, which enable to use the VM as an internal user, either in a terminal (via an ssh connection) or on a fully functional Linux Desktop (graphical environment). 
+
+- **vmuser**  enables to use the tools as a normal account on the VM 
+- **rsat** is the administrator of the RSAT package, it has the rights to install genomes and modify the code. 
+
+
+**Note:** the **initial password** has been set to `tochng` for bot users. At your first login you will be forced to change this password. After having reset your password, you will be brought back to the terminal of your computer, and you need to re-type the ssh command in order to actually log in. 
+
+
+## Accessing your RSAT VM via ssh (Unix terminal)
+
+If you are familiar with the Unix command-line environment, you can access your virtual machine from a terminal of the host machine, with the following commands. 
+
+- To log in as normal user: 
+
+```
+ssh vmuser@192.168.56.101
+```
+
+
+- To log in as RSAT administrator (e.g. to manage genomes):
+
+```
+ssh rsat@192.168.56.101
+```
+
+## Using your RSAT VM as a Linux Desktop server (graphical environment)
 
 You can also use the VirtualBox virtual machine through the Linux Desktop server interface. For this you need to login as either `vmuser` (normal user of the RSAT suite) or `rsat` user (administration of the tools, genome installations, ...). 
 
@@ -197,24 +244,6 @@ On Ubuntu server version, keybord configuration can be modified with following c
 
 ```
 sudo dpkg-reconfigure console-data
-```
-
-## Connecting the RSAT instance from your system's terminal
-
-If you are familiar with the Unix command line environment, you can access your virtual machine from a terminal of the host machine, with the following commands. 
-
-- To log in as normal user: 
-
-```
-ssh vmuser@192.168.56.101
-```
-
-**Note:** the initial password has been set to `tochng`. At your first login you will be forced to change this password. After having reset your password, you will be brought back to the terminal of your computer, and you need to re-type the ssh command in order to actually log in. 
-
-- To log in as RSAT administrator (e.g. to manage genomes):
-
-```
-ssh rsat@192.168.56.101
 ```
 
 ****************************************************************
