@@ -230,6 +230,7 @@ binding sites annotated in the <a target=_blank href=\'http://www.oreganno.org\'
 
 function setDemo(demo_matrix, demo_sequence){
     $("#reset").trigger("click");
+    $("#db_choice").val("").change();
     descr_1 = descr + "The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the Pval.</blockquote>";
     
     demo_descr.innerHTML = descr_1;

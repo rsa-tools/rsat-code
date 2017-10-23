@@ -296,6 +296,7 @@ Turatsinze.<p/>";
 
 function setDemo1(demo_matrix, demo_sequence){
     $("#reset").trigger("click");
+    $("#db_choice").val("").change();
     descr_1 = descr + "The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the P-value.</blockquote>";
     
     demo_descr.innerHTML = descr_1;
@@ -316,6 +317,7 @@ function setDemo1(demo_matrix, demo_sequence){
 
 function setDemo2(demo_matrix, demo_sequence){
     $("#reset").trigger("click");
+    $("#db_choice").val("").change();
     descr_2 = descr + "The program will return CRERs: regions of a few hundreds residues that have a higher density of matches than expected by chance.</blockquote>";
     
     demo_descr.innerHTML = descr_2;
@@ -337,6 +339,7 @@ function setDemo2(demo_matrix, demo_sequence){
 
 function setDemo3(demo_matrix, demo_sequence){
     $("#reset").trigger("click");
+    $("#db_choice").val("").change();
     descr_3 = descr + "The program will return matrices for which the total number of hits in the input sequences is higher than expected by chance.</blockquote>";
     
     demo_descr.innerHTML = descr_3;
