@@ -1518,22 +1518,32 @@ sub MotifSelection {
         $("#db_id").change(function(){
             db_name = $("#db_choice").val();
             db_id = $("#db_id").val();
-            multipletable = $("#multipletable").prop("checked");
+            nottable = $("#nottable").prop("checked");
             if(db_id != null && db_id != ""){
                 $.ajax({
                 type: "GET",
-                url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id,
+                dataType:"json",
+                url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id + "&mode=retrieve",
                 data: {action: "request"},
                 success: function(data){
-                    data = data.replace("<html><body>", "");
-                    data = data.replace("</body></html>", "");
-                    res = data.split("</format>");
-                    $("#matrix").val(res[1]);
-                    format = "tab";
-                    if(res[0] == "tf"){
-                        format = "transfac";
+                    res = data.entries;
+                    outputhtml = "<hr/><h2>Output</h2></br><table class=\"result\">";
+                    for(i = 0; i < res.length; i++){
+                        outputhtml += "<tr><td><pre>" + res[i].info + "</pre></td><td><pre>" + res[i].all + "</pre></td></tr>";
                     }
-                    $("#matrix_format").val(format);
+                    outputhtml += "</table>";
+                    $("#result").html(outputhtml);
+                    if(nottable == false){
+                        document.getElementById("result").style.display = "block";
+                    }else{
+                        document.getElementById("result").style.display = "none";
+                    }
+                    
+                    outputfile = "<hr><h2>Result file</h2><table class=\"resultlink\"><tr><th>Content</th><th>URL</th></tr>";
+                    outputfile += "<tr><td>Input file</td><td><a href=\"" + data.inputfile + "\" target=\"_blank\">" + data.inputfile + "</a></td></tr>";
+                    outputfile += "<tr><td>Output file</td><td><a href=\"" + data.resultfile + "\" target=\"_blank\">" + data.resultfile + "</a></td></tr>";
+                    outputfile += "</table>";
+                    $("#outputurl").html(outputfile);
                 },
                 error: function(){
                     alert("Error matrix");
@@ -1541,9 +1551,16 @@ sub MotifSelection {
                 });
             }
         });
+        
+        $("#nottable").change(function(){
+            if($(this).is(":checked")){
+                document.getElementById("result").style.display = "none";
+            }else{
+                document.getElementById("result").style.display = "block";
+            }
+        });
         ';
     }
-    
     print '});</script>';
     
     
@@ -1568,11 +1585,12 @@ sub MotifSelection {
     }
     my $display = ($args{retrieve} == 1) ? "block" : "none";
     print "<div id='identifier' style='display:$display'><div style='float:left;margin-left:27px;font-size:11px;'>Identifiers:<br/>";
-    print " <select id='db_id' style='width:200px' multiple='multiple'></select><br/>&nbsp;";
+    my $width_id = ($args{retrieve} == 1) ? "400px" : "200px";
+    print " <select id='db_id' style='width:$width_id' multiple='multiple'></select><br/>&nbsp;";
     print "</div></div>";
     print '<div style="clear:both;"></div>';
     if($args{retrieve} == 1){
-        print "</td></tr><tr><td style='padding-left:20px;padding-top:30px'><b>Option</b></td><td style='padding-top:30px'><input type='checkbox' id='multipletable' checked>Display one table per matrix</td></tr></table>";
+        print "</td></tr><tr><td style='padding-left:20px;padding-top:30px'><b>Option</b></td><td style='padding-top:30px'><input type='checkbox' id='nottable'>Display only the link to result file</td></tr></table>";
     }
 }
 
