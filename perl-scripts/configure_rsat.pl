@@ -58,7 +58,7 @@ $cross_ext_variable{qsub_options} = 1;
 $cross_ext_variable{cluster_queue} = 1;
 $cross_ext_variable{cluster_sell} = 1;
 $cross_ext_variable{ensembl_release} = 1;
-$cross_ext_variable{ensemblgenomes_branch} = 1;
+$cross_ext_variable{ensemblgenomes_release} = 1;
 
 ## Parse command-line arguments
 our @arguments = @ARGV;
