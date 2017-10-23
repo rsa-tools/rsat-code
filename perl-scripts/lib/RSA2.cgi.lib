@@ -1400,28 +1400,29 @@ sub GetMatrix {
   ## Text area to enter the matrix
   print "<BR>\n";
   print  "Input motifs as text<br/>" if ($db_choice);
-  print "<div><div style='float:left;'>";
-    print $query->textarea(-id=>'matrix',
+  print "<div>";
+  print $query->textarea(-id=>'matrix',
     -name=>'matrix',
 			 -default=>$default{matrix},
 			 -rows=>4,
 			 -columns=>60);
-
+## Propose help to find matrices
+unless ($args{nowhere}) {
+        print "<br/><br/><br/>";
+        &MotifSelection();
+    }
+    
   ## Option to upload the matrix file from the client machine
-  print "<BR>\n"; 
+  print "<BR><br/>";
   print  "Upload motifs file<br/>" if ($db_choice);
-  print "Or select a file to upload <BR>\n" unless ($db_choice);
+  print "<b>Or</b> select a file to upload <BR>\n" unless ($db_choice);
   print $query->filefield(-name=>'uploaded_file_matrix',
 			  -default=>'',
 			  -size=>45,
 			  -maxlength=>200);
     print "<BR>\n"; 
 
-  ## Propose help to find matrices
-  unless ($args{nowhere}) {
-      print "</div>";
-      &MotifSelection();
-  }
+  
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
     #### pseudo-counts
@@ -1569,8 +1570,8 @@ sub MotifSelection {
         print "<table><tr><td style='padding-left:20px'><b>Input</b></td>";
         print "<td align='top'>Select a collection in list:<br/>";
     }else{
-        print '<div style="float:left;margin-left:7px;font-size:11px">';
-        print "Or select a collection in list:<br/>";
+        print '<div style="float:left;font-size:11px">';
+        print "<b>Or</b> select a collection in list (a box will appear to select each matrix individually)<br/>";
     }
     print ' <select id="db_choice" name="db_choice" style="width:300px"><option></option>';
     ## load the various databases that can be compared against
@@ -1585,8 +1586,7 @@ sub MotifSelection {
     }
     my $display = ($args{retrieve} == 1) ? "block" : "none";
     print "<div id='identifier' style='display:$display'><div style='float:left;margin-left:27px;font-size:11px;'>Identifiers:<br/>";
-    my $width_id = ($args{retrieve} == 1) ? "400px" : "200px";
-    print " <select id='db_id' style='width:$width_id' multiple='multiple'></select><br/>&nbsp;";
+    print " <select id='db_id' style='width:300px' multiple='multiple'></select><br/>&nbsp;";
     print "</div></div>";
     print '<div style="clear:both;"></div>';
     if($args{retrieve} == 1){

@@ -92,6 +92,7 @@
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('12')" id="heading12">Matrix tools <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu12" class="menu_collapsible">
+                         <a class="menu_item" href="retrieve-matrix_form.cgi">retrieve matrix <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="convert-matrix_form.cgi" >convert matrix</a>
                          <a class="menu_item" href="compare-matrices_form.cgi" >compare matrices</a>
                          <a class="menu_item" href="matrix-clustering_form.cgi" >matrix-clustering <img src="images/onebit_49.png" height="30" class="new"></a>
