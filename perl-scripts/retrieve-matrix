@@ -75,212 +75,32 @@ sub PrintHelp {
 open(HELP, "| more");
 print HELP<<End_help;
 USAGE
-retrieve-matrix -i collection file -id identifier(s) | -id_list identifiers file [-o outpufile]
+retrieve-matrix -i collection file -id identifier(s) | -id_file identifiers file [-o outpufile]
 
 DESCRIPTION
 Returns matrix
 
 CATEGORY
-genomics
-sequences
+util
+matrix
 
 OPTIONS
--org organism
-When an organism is specified, the program automatically
-loads the appropriate genome sequence and feature table.
+-i collection file
+the path to the collection file which contains the matrices.
 
-If this option is not used, the option -seq must be used
-instead.
+-id	identifiers
+list of the accession of each matrix in request, separated by commas.
+    
+-id_file identifiers file
+the path to the identifiers file which contains the list of the accession
+of each matrix in request, one per line.
 
-(type supported-organism to obtain the list of supported
-organisms)
-
--seq	input sequence file
-(alternative to organism)
-
-Specify the input sequence file. See INPUT FORMAT
-below.
--informat	input sequence format
--prefix
-prefix for sequence identifier
--feattype
-Feature type.
-Supported: $supported_feature_types
--type	sequence type
-Currently supported sequence types
-upstream (default)
-downstream
-orf (warning: introns are not spliced out)
-random (random fragments)
-To implement in the future
-introns
-coding
-
-The sub-option
--type random
-requires to use the -n for specifying the number of sequences.
--n number of sequecnes (only with -type random)
--q query
-The query should be an orf identifier (eg 'metR').
-The query is case-insensitive.
-Multiple queries can be entered by reiteratively using the -q
-option.
--i     query file. The first word of each line is taken as a query.
-This option is incompatible with -q.
-
--ids_only
-Use this option if the queries are provided as a list
-of IDs. This avoids to load the table of synonyms, in
-order tos ave time.
--all	return all genomic upstream regions
-
--o	name of the output file
-
--oft	output features file
-in addition to the sequences, export a feature file with the
-chromosomal location of the retrieved sequences.
-
--from #1 -to #2
-where #1 and #2 are numbers. #2 should be higher than #1.
-limits of the region to extract, relative to orf start
-(=position 0). Use negative values for upstream sequence.
-example: -from -800 -to -1
-will extract the 800 bp upstream the orf start.
-(this is the default)
-
--format	allows to select different output formats, with the following
-options:
-IG	IntelliGenetics (default format)
-WC	wconsensus format
-raw	only the sequence is returned, without spaces, newlines
-nor comments.
-FastA
-
--lw ##	Line width. A newline character will be inserted in the
-sequence every ## bases. Default is 60.
--lw 0 will prevent newline insertion.
-
--label label_fields
-Field(s) to be used in the sequence label.
-Default: name.
-Supported: $supported_label_fields
-
-Multiple fields can be specified, separated by commas
-in the command line.
-
-Example:
--label org,name,id
-
-In this case, the sequence identifier will contain all
-of these fields, separated by the separator specified
-with the option -labelsep.
-
--labelsep
-Separator between label fields. Default: $label_sep
-
--noorf	prevent overlap with neighbout genes.
-
-When this option is active, the sequence size is
-adapted to avoid including coding sequences of the
-neighbour genes.
-
-The reason for preventing overlap with upstream genes
-is that (at least for microbial organisms, and in
-large part for higher eukaryotes) most cis-acting
-elements are located in the non-coding regions. Thus,
-if the neighbour gene is closer than the selected
-limit for collecting upstream sequences, the part of
-coding sequences included it the result is likely to
-add up to the noise, without bringing any additional
-signal.
-
-More importantly, coding and non-coding sequences
-generally have very different background models. The
-inclusion of coding sequences from neighbour genes may
-thus lead to biases in motif discovery.
-
-The weaknesses of using this option are that, in some
-cases, predicted orf do not correspond to real genes,
-This was particularly frequent in the early versions
-of the yeast genome, but the annotations have been
-improved since then.
-
-For bacterial sequences, it is essential to prevent
-overlap with upstream genes, because intergenic
-distances are often very short, especially between
-pairs of genes comprised in the same operon.
-
-
--rm     Use the repeat masked version of the genome.  Attention :
-repeated regions are annotated for some genomes only.
-
--nocom	no comments. Only the identifier and the sequence are
-returned. By default, the comment indicates the ORF and
-upstream sequence coordinates.
-
--imp_pos
-Admit imprecise positions.
-In the annotation of some genomes, the limits of some genes
-are imprecisely specified (e.g. <555245, >898098). By default,
-these genes are not loaded. The option -imp_pos allows to
-retrieve sequence for these genes as well, using the imprecise
-coordinate as reference position.
-
--nowarn
-Prevents warning when a gene cannot be identified.
-
--randsels #
-Select a random set of # genes in the genome annotations.
-This option ois obsolete, it has been replaced by a
-separate command: random-genes. The option is
-maintained for backward compatibility.
-
--lf	length file
-(only with the option '-type random')
-Allows to generate random sequences with the same
-lengths as a set of reference sequences. The sequence
-length file can be obtained with the command
-sequence-lengths
-The length file contains two columns :
-- sequence ID (ignored)
-- sequence length
-
--features
-alternate feature table. This option allows to speify
-an alternate file where the ORF locations are found.
-See below for a description of the feature file format.
-
-INPUT FORMATS
-Input sequence file
-Sequence file is of type filelist, i.e. this file
-contains a list of other file names, each of which
-contains a raw contig sequence (usually a whole
-chromosome). The raw sequence files cannot contain any
-space or carriage return : the character position in
-the file must correspond to the nucleotide position on
-the contig.
-
-Feature file
-The feature file contains one line per feature, with
-tab-delimited columns providing the following information:
-column	field   description
-1	id	feature identifier
-2	type	feature type (Supported: ${supported_feature_types})
-3	name	feature name
-4	ctg	chomosome.or contig
-5	left	left end position
-6	right	right end position
-7	strand	D (direct) or R (reverse)
-8	descr	short description (optional)
+-o	the path to the output file
 
 EXAMPLES
-retrieve-seq -type upstream -org Escherichia_coli_K12 \\
--q metJ -q meta -q metb		      \\
--from +59 -to -200 -noorf
+retrieve-matrix -i $RSAT/public_html/motif_databases/RSAT_nonredundant_vertebrates_2017.tf -i cluster_1,cluster_100 -o result.txt
 
-will return the sequence of 260 nucleotides, 200of which
-extracted upstream the start codon, and the 60 following being
-the beginning of the coding sequence.
+will return the matrices with the accessions: cluster_1 and cluster_100 from the collection RSAT non-redundant vertebrates (2017).
 
 End_help
 close HELP;
@@ -295,8 +115,8 @@ print HELP<<End_short_help;
 retrieve-matrix options
 --------------------
 -i		collection file path
--id		matrix identifier(s), can be a list of identifiers separated with commas
--id_file    matrix identifier(s) file which contains a list of identifiers (one per line)
+-id		matrix identifier(s), can be a list of accessions separated with commas
+-id_file    matrix identifier(s) file which contains a list of accessions (one per line)
 -o		outputfile.
 End_short_help
 close HELP;
