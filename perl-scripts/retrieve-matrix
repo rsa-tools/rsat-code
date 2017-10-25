@@ -24,14 +24,14 @@ my $id_file = "";
 &ReadArguments();
 
 my @ids;
-if($id ne ""){
-    @ids = split(",", $id);
-}elsif($id_file ne ""){
-    open(my $fh, "<", $id_file) or die "Cannot open file $!";
-    while(my $row = <$fh>){
-        chomp $row;
-        push @ids, $row;
-    }
+if ($id ne "") {
+  @ids = split(",", $id);
+} elsif($id_file ne "") {
+  open(my $fh, "<", $id_file) or die "Cannot open file $!";
+  while(my $row = <$fh>) {
+    chomp $row;
+    push @ids, $row;
+  }
 }
 
 ################################################################################
@@ -98,7 +98,7 @@ of each matrix in request, one per line.
 -o	the path to the output file
 
 EXAMPLES
-retrieve-matrix -i $RSAT/public_html/motif_databases/RSAT_nonredundant_vertebrates_2017.tf -i cluster_1,cluster_100 -o result.txt
+retrieve-matrix -i $ENV{RSAT}/public_html/motif_databases/RSAT_nonredundant_vertebrates_2017.tf -id cluster_1,cluster_100 -o result.txt
 
 will return the matrices with the accessions: cluster_1 and cluster_100 from the collection RSAT non-redundant vertebrates (2017).
 
