@@ -389,7 +389,7 @@ EOR
 #EOR
   #close RSHELL;
 
-  print REP "Upstream regions<br/><a href=\"./upstream_size.pdf\">PDF</a>\t".
+  print REP "Gene upstream regions<br/><a href=\"./upstream_size.pdf\">PDF</a><br>\t".
     "<img width='800' src='./upstream_size.png'>\n";
 
   # add summary to report
