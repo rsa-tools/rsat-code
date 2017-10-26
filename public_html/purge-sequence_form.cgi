@@ -56,10 +56,11 @@ print $query->start_multipart_form(-action=>"purge-sequence.cgi");
 
 ### add reverse complement strand
 print "&nbsp;" x 5;
-print $query->checkbox(-name=>'both_strands',
+print $query->checkbox(-id=>'both_strands',
+-name=>'both_strands',
 		       -checked=>$default{both_strands},
 		       -label=>'');
-print "<A HREF='help.purge-sequence.html#both_strands'><B>\n";
+print "<A class='iframe' HREF='help.purge-sequence.html#both_strands'><B>\n";
 print "purge reverse complement strand\n";
 print "</B></A>\n";
 
@@ -67,24 +68,26 @@ print "<BR>\n";
 
 ### delete or mask repeats them
 print "&nbsp;" x 5;
-print "<B><A HREF='help.oligo-analysis.html#treatment'>Treatment for repeats</A>&nbsp;</B>\n";
+print "<B><A class='iframe' HREF='help.oligo-analysis.html#treatment'>Treatment for repeats</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'treatment',
 			 -Values=>["delete","mask"],
 			 -default=>$default{treatment});
 print "<BR>\n";
 
 ### match length
-print "<B><A HREF='help.purge-sequence.html#match_len'>\n";
+print "<B><A class='iframe' HREF='help.purge-sequence.html#match_len'>\n";
 print "Minimal match length</A>\n";
-print $query->textfield(-name=>'match_len',
+print $query->textfield(-id=>'match_len',
+-name=>'match_len',
 		  -default=>$default{match_len},
 		  -size=>5);
 print "<BR>\n";
 
 ### mismatches
-print "<B><A HREF='help.purge-sequence.html#mismatches'>\n";
+print "<B><A class='iframe' HREF='help.purge-sequence.html#mismatches'>\n";
 print "Maximal number of mismatches</A>\n";
-print $query->textfield(-name=>'mismatches',
+print $query->textfield(-id=>'mismatches',
+-name=>'mismatches',
 		  -default=>$default{mismatches},
 		  -size=>5);
 print "<BR>\n";
@@ -97,54 +100,60 @@ print "<BR>\n";
 print "<UL><UL><TABLE class= 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ### data for the demo 
-print $query->start_multipart_form(-action=>"purge-sequence_form.cgi");
-$demo_sequence = ">YBR020w	GAL1 upstream sequence, from -800 to -1, size 800
-CAGGTTATCAGCAACAACACAGTCATATCCATTCTCAATTAGCTCTACCACAGTGTGTGA
-ACCAATGTATCCAGCACCACCTGTAACCAAAACAATTTTAGAAGTACTTTCACTTTGTAA
-CTGAGCTGTCATTTATATTGAATTTTCAAAAATTCTTACTTTTTTTTTGGATGGACGCAA
-AGAAGTTTAATAATCATATTACATGGCATTACCACCATATACATATCCATATCTAATCTT
-ACTTATATGTTGTGGAAATGTAAAGAGCCCCATTATCTTAGCCTAAAAAAACCTTCTCTT
-TGGAACTTTCAGTAATACGCTTAACTGCTCATTGCTATATTGAAGTACGGATTAGAAGCC
-GCCGAGCGGGCGACAGCCCTCCGACGGAAGACTCTCCTCCGTGCGTCCTCGTCTTCACCG
-GTCGCGTTCCTGAAACGCAGATGTGCCTCGCGCCGCACTGCTCCGAACAATAAAGATTCT
-ACAATACTAGCTTTTATGGTTATGAAGAGGAAAAATTGGCAGTAACCTGGCCCCACAAAC
-CTTCAAATTAACGAATCAAATTAACAACCATAGGATGATAATGCGATTAGTTTTTTAGCC
-TTATTTCTGGGGTAATTAATCAGCGAAGCGATGATTTTTGATCTATTAACAGATATATAA
-ATGGAAAAGCTGCATAACCACTTTAACTAATACTTTCAACATTTTCAGTTTGTATTACTT
-CTTATTCAAATGTCATAAAAGTATCAACAAAAAATTGTTAATATACCTCTATACTTTAAC
-GTCAAGGAGAAAAAACTATA
->YBR019c	GAL10 upstream sequence, from -800 to -1, size 800
-CGGTTTAGCATCATAAGCGCTTATAAATTTCTTAATTATGCTCGGGCACTTTTCGGCCAA
-TGGTCTTGGTAATTCCTTTGCGCTAGAATTGAACTCAGGTACAATCACTTCTTCTGAATG
-AGATTTAGTCATTATAGTTTTTTCTCCTTGACGTTAAAGTATAGAGGTATATTAACAATT
-TTTTGTTGATACTTTTATGACATTTGAATAAGAAGTAATACAAACTGAAAATGTTGAAAG
-TATTAGTTAAAGTGGTTATGCAGCTTTTCCATTTATATATCTGTTAATAGATCAAAAATC
-ATCGCTTCGCTGATTAATTACCCCAGAAATAAGGCTAAAAAACTAATCGCATTATCATCC
-TATGGTTGTTAATTTGATTCGTTAATTTGAAGGTTTGTGGGGCCAGGTTACTGCCAATTT
-TTCCTCTTCATAACCATAAAAGCTAGTATTGTAGAATCTTTATTGTTCGGAGCAGTGCGG
-CGCGAGGCACATCTGCGTTTCAGGAACGCGACCGGTGAAGACGAGGACGCACGGAGGAGA
-GTCTTCCGTCGGAGGGCTGTCGCCCGCTCGGCGGCTTCTAATCCGTACTTCAATATAGCA
-ATGAGCAGTTAAGCGTATTACTGAAAGTTCCAAAGAGAAGGTTTTTTTAGGCTAAGATAA
-TGGGGCTCTTTACATTTCCACAACATATAAGTAAGATTAGATATGGATATGTATATGGTG
-GTAATGCCATGTAATATGATTATTAAACTTCTTTGCGTCCATCCAAAAAAAAAGTAAGAA
-TTTTTGAAAATTCAATATAA
-";
+
+
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    document.getElementById("sequence").value = ">YBR020w	GAL1 upstream sequence, from -800 to -1, size 800\
+    \nCAGGTTATCAGCAACAACACAGTCATATCCATTCTCAATTAGCTCTACCACAGTGTGTGA\
+    \nACCAATGTATCCAGCACCACCTGTAACCAAAACAATTTTAGAAGTACTTTCACTTTGTAA\
+    \nCTGAGCTGTCATTTATATTGAATTTTCAAAAATTCTTACTTTTTTTTTGGATGGACGCAA\
+    \nAGAAGTTTAATAATCATATTACATGGCATTACCACCATATACATATCCATATCTAATCTT\
+    \nACTTATATGTTGTGGAAATGTAAAGAGCCCCATTATCTTAGCCTAAAAAAACCTTCTCTT\
+    \nTGGAACTTTCAGTAATACGCTTAACTGCTCATTGCTATATTGAAGTACGGATTAGAAGCC\
+    \nGCCGAGCGGGCGACAGCCCTCCGACGGAAGACTCTCCTCCGTGCGTCCTCGTCTTCACCG\
+    \nGTCGCGTTCCTGAAACGCAGATGTGCCTCGCGCCGCACTGCTCCGAACAATAAAGATTCT\
+    \nACAATACTAGCTTTTATGGTTATGAAGAGGAAAAATTGGCAGTAACCTGGCCCCACAAAC\
+    \nCTTCAAATTAACGAATCAAATTAACAACCATAGGATGATAATGCGATTAGTTTTTTAGCC\
+    \nTTATTTCTGGGGTAATTAATCAGCGAAGCGATGATTTTTGATCTATTAACAGATATATAA\
+    \nATGGAAAAGCTGCATAACCACTTTAACTAATACTTTCAACATTTTCAGTTTGTATTACTT\
+    \nCTTATTCAAATGTCATAAAAGTATCAACAAAAAATTGTTAATATACCTCTATACTTTAAC\
+    \nGTCAAGGAGAAAAAACTATA\
+    \n>YBR019c	GAL10 upstream sequence, from -800 to -1, size 800\
+    \nCGGTTTAGCATCATAAGCGCTTATAAATTTCTTAATTATGCTCGGGCACTTTTCGGCCAA\
+    \nTGGTCTTGGTAATTCCTTTGCGCTAGAATTGAACTCAGGTACAATCACTTCTTCTGAATG\
+    \nAGATTTAGTCATTATAGTTTTTTCTCCTTGACGTTAAAGTATAGAGGTATATTAACAATT\
+    \nTTTTGTTGATACTTTTATGACATTTGAATAAGAAGTAATACAAACTGAAAATGTTGAAAG\
+    \nTATTAGTTAAAGTGGTTATGCAGCTTTTCCATTTATATATCTGTTAATAGATCAAAAATC\
+    \nATCGCTTCGCTGATTAATTACCCCAGAAATAAGGCTAAAAAACTAATCGCATTATCATCC\
+    \nTATGGTTGTTAATTTGATTCGTTAATTTGAAGGTTTGTGGGGCCAGGTTACTGCCAATTT\
+    \nTTCCTCTTCATAACCATAAAAGCTAGTATTGTAGAATCTTTATTGTTCGGAGCAGTGCGG\
+    \nCGCGAGGCACATCTGCGTTTCAGGAACGCGACCGGTGAAGACGAGGACGCACGGAGGAGA\
+    \nGTCTTCCGTCGGAGGGCTGTCGCCCGCTCGGCGGCTTCTAATCCGTACTTCAATATAGCA\
+    \nATGAGCAGTTAAGCGTATTACTGAAAGTTCCAAAGAGAAGGTTTTTTTAGGCTAAGATAA\
+    \nTGGGGCTCTTTACATTTCCACAACATATAAGTAAGATTAGATATGGATATGTATATGGTG\
+    \nGTAATGCCATGTAATATGATTATTAAACTTCTTTGCGTCCATCCAAAAAAAAAGTAAGAA\
+    \nTTTTTGAAAATTCAATATAA";
+    
+    $("#sequence_format").val("fasta");
+    $("#match_len").val("40");
+    $("#mismatches").val("3");
+    $("#both_strands").prop("checked", true);
+}
+</script>';
+
 print "<TD><B>";
-print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
-print $query->hidden(-name=>'sequence_format',-default=>"fasta");
-print $query->hidden(-name=>'match_len',-default=>"40");
-print $query->hidden(-name=>'mismatches',-default=>"3");
-print $query->hidden(-name=>'both_strands',-default=>"on");
-print $query->submit(-label=>"DEMO");
+print '<button type="button" onclick="setDemo()">DEMO</button>';
+
 print "</B></TD>\n";
-print $query->end_form;
 
 
-print "<TD><B><A HREF='help.purge-sequence.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.purge-sequence.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_purge-sequence.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";

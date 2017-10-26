@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-## BUG: there is a bug when the option -seqtype is set to anything else than dna: result files are not created, although the commands perfectly run in a terminal.
-
 ## Get the path for RSAT Perl libraries
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
@@ -11,11 +9,11 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 BEGIN {
-  $ERR_LOG = "/dev/null";
-  use CGI::Carp qw(carpout);
-  open (LOG, ">> $ERR_LOG")
-      || die "Unable to redirect log\n";
-  carpout(*LOG);
+    $ERR_LOG = "/dev/null";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
 }
 
 ## Load RSAT librarires
@@ -73,25 +71,27 @@ if ($purge) {
   $command .= " -format ".$sequence_format;
   $command .= " -o ".$purged_seq_file;
   $command .= " -seqtype ".$sequence_type if ($sequence_type eq "dna");
+  $command .= ";";
 
   ## Define purged sequences as input file
   $input_file = $purged_seq_file;
 } else {
-  $input_file = $sequence_file;
+    $input_file = $sequence_file;
 }
 
+
+
 ################################################################
-## Collect "fixed" parameters (i.e. those that do not depend on oligo
-## length).
+## Collecte "fixed" parameteres (i.e. those that do not depend on oligo length)
 
 ## Input sequence
 $parameters .= " -i ".$input_file." -format fasta ";
 
 ## fields to return
 if ($query->param('return') eq "table") {
-  $parameters .= " -return occ -table"; 
+    $parameters .= " -return occ -table"; 
 } elsif ($query->param('return') eq "distrib") {
-  $parameters .= " -return occ -distrib"; 
+    $parameters .= " -return occ -distrib"; 
 } else {
   &CGI_return_fields();
 }
@@ -140,11 +140,11 @@ if ($query->param('bg_method') =~ /background/i) {
 
   ## Check background subset
   %supported_background = (
-    "upstream"=>1,
-    "upstream-noorf"=>1,
+			   "upstream"=>1,
+			   "upstream-noorf"=>1,
 #			   "intergenic"=>1,
-    "protein"=>1,
-      );
+			   "protein"=>1,
+			  );
   my $background = $query->param("background");
   unless ($supported_background{$background}) {
     &cgiError("$background is not supported as background model");
@@ -183,7 +183,7 @@ if ($query->param('bg_method') =~ /background/i) {
     }
     $type = $query->uploadInfo($upload_freq_file)->{'Content-Type'};
     open FREQ, ">$exp_freq_file" ||
-	&cgiError("Cannot store expected frequency file in temp dir.");
+      &cgiError("Cannot store expected frequency file in temp dir.");
     while (<$upload_freq_file>) {
       print FREQ;
     }
@@ -206,7 +206,7 @@ if ($query->param('bg_method') =~ /background/i) {
     }
     $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
     open BG, ">$bgfile" ||
-	&cgiError("Cannot store background model file in temp dir.");
+      &cgiError("Cannot store background model file in temp dir.");
     while (<$upload_bgfile>) {
       print BG;
     }
@@ -227,8 +227,8 @@ if ($query->param('bg_method') =~ /background/i) {
 } elsif ($query->param('bg_method') =~ /markov/i) {
   ## Markov model calibrated on input sequences
   if (&IsInteger($query->param('markov_order'))) {
-    $freq_option = " -markov";
-    $freq_option .= " ".$query->param('markov_order');
+      $freq_option = " -markov";
+      $freq_option .= " ".$query->param('markov_order');
   }
 
 } elsif ($query->param('bg_method') =~ /lexicon/i) {
@@ -246,8 +246,8 @@ $parameters .= "$freq_option";
 
 ## pseudo weight
 if (&IsReal($query->param('pseudo_freq'))) {
-  my $pseudo = $query->param('pseudo_freq');
-  $parameters .= " -pseudo $pseudo";
+    my $pseudo = $query->param('pseudo_freq');
+    $parameters .= " -pseudo $pseudo";
 }
 
 ## neighborhood
@@ -263,27 +263,27 @@ if ($query->param('neighborhood') =~ /N at one position/i) {
 @selected_oligo_lengths = ();
 @oligo_files = ();
 for my $oligo_length (1..8) {
-  if ($query->param("oligo_length".$oligo_length)) {
-    push @selected_oligo_lengths, $oligo_length;
-    my $oligo_file = $tmp_file_path."_".$oligo_length."nt.tab";
-    push @result_files, ($oligo_length."-mers", $oligo_file);
-    push @oligo_files, $oligo_file;
-    $command .= "; ".$oligo_analysis_command;
-    $command .= " ".$parameters;
-    $command .= " -l ".$oligo_length;
-    $command .= " -o ".$oligo_file;
-  }
+    if ($query->param("oligo_length".$oligo_length)) {
+	push @selected_oligo_lengths, $oligo_length;
+	my $oligo_file = $tmp_file_path."_".$oligo_length."nt.tab";
+	push @result_files, ($oligo_length."-mers", $oligo_file);
+	push @oligo_files, $oligo_file;
+	$command .= $oligo_analysis_command;
+	$command .= " ".$parameters;
+	$command .= " -l ".$oligo_length;
+	$command .= " -o ".$oligo_file."; ";
+    }
 }
 
 ## Check if at least one oligo length has been checked
-if (scalar@selected_oligo_lengths < 1) {
-  &RSAT::error::FatalError("You chould check at least one oligonucleotide length");
+if (scalar @selected_oligo_lengths < 1) {
+    &RSAT::error::FatalError("You chould check at least one oligonucleotide length");
 }
 
 ## Concatenate all results to a single file for assembly
 $result_file = $tmp_file_path.".tab";
 push @result_files, ('merged oligos', $result_file);
-$command .= "; cat ";
+$command .= "cat ";
 $command .= join (" ", @oligo_files);
 #$command .= " | grep -v '^;'"; ## Discard comment line, too heavy for output with multiple analyses
 #$command .= " > ".$result_file;
@@ -293,69 +293,68 @@ $command .= join (" ", @oligo_files);
 &SaveCommand("$command", $tmp_file_path);
 
 if ($query->param('output') =~ /display/i) {
-  &PipingWarning();
+    &PipingWarning();
 
-  ### execute the command ###
-  open RESULT, "$command |";
+    ### execute the command ###
+    open RESULT, "$command |";
 
-  ### Print result on the web page
-  print '<H2>Result</H2>';
-  &PrintHtmlTable(RESULT, $result_file, 1);
-  close(RESULT);
+    ### Print result on the web page
+    print '<H2>Result</H2>';
+    &PrintHtmlTable(RESULT, $result_file, 1);
+    close(RESULT);
 
-  #### oligonucleotide assembly ####
-  if (($query->param('return') ne "table") &&
-      ($query->param('return') ne "distrib") &&
-      (&IsReal($query->param('lth_occ_sig')))) {
+    #### oligonucleotide assembly ####
+    if (($query->param('return') ne "table") &&
+	($query->param('return') ne "distrib") &&
+	(&IsReal($query->param('lth_occ_sig')))) {
 
 
-    ## Assemble the significant patterns with pattern-assembly
-    $assembly_file = $tmp_file_path.".asmb";
-    push @result_files, ('Assembly', $assembly_file);
-    $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 1 -toppat 50";
-    if ($query->param('strand') =~ /single/) {
-      $pattern_assembly_command .= " -1str";
-    } else {
-      $pattern_assembly_command .= " -2str";
-    }
-    if (&IsNatural($query->param('max_asmb_nb'))) {
-      $pattern_assembly_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
-    }
-    $pattern_assembly_command .= " -i ".$result_file;
-    $pattern_assembly_command .= " -o ".$assembly_file;
-
-    unless ($ENV{RSA_ERROR}) {
-
-      ## Assemble the significant patterns
-      print "<H2>Pattern assembly</H2>\n";
-      print "<PRE>pattern-assembly command: ", &RSAT::util::hide_RSAT_path($pattern_assembly_command), "<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
-      system "$pattern_assembly_command";
-      open ASSEMBLY, $assembly_file;
-      print "<PRE>\n";
-      while (<ASSEMBLY>) {
-#	  s|$ENV{RSAT}/||g;
-	print;
+      ## Assemble the significant patterns with pattern-assembly
+      $assembly_file = $tmp_file_path.".asmb";
+      push @result_files, ('Assembly', $assembly_file);
+      $pattern_assembly_command = $SCRIPTS."/pattern-assembly -v 1 -subst 1 -toppat 50";
+      if ($query->param('strand') =~ /single/) {
+	$pattern_assembly_command .= " -1str";
+      } else {
+	$pattern_assembly_command .= " -2str";
       }
-      print "</PRE>\n";
-      close(ASSEMBLY);
+      if (&IsNatural($query->param('max_asmb_nb'))) {
+	$pattern_assembly_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
+      }
+      $pattern_assembly_command .= " -i ".$result_file;
+      $pattern_assembly_command .= " -o ".$assembly_file;
 
-      ## Convert pattern-assembly result into PSSM
-      if ($query->param('to_matrix')) {
-	if ($sequence_type eq "dna") {
-	  &MatrixFromPatterns_run();
-	} else {
-	  &RSAT::message::Warning("Conversion to matrix is only supported for DNA sequences");
+      unless ($ENV{RSA_ERROR}) {
+	## Assemble the significant patterns
+	print "<H2>Pattern assembly</H2>\n";
+	print "<pre>pattern-assembly command: ", &RSAT::util::hide_RSAT_path($pattern_assembly_command), "<P>\n</pre>" if ($ENV{rsat_echo} >=1);
+	system "$pattern_assembly_command";
+	open ASSEMBLY, $assembly_file;
+	print "<pre>\n";
+	while (<ASSEMBLY>) {
+#	  s|$ENV{RSAT}/||g;
+	  print;
+	}
+	print "</PRE>\n";
+	close(ASSEMBLY);
+
+	## Convert pattern-assembly result into PSSM
+	if ($query->param('to_matrix')) {
+	  if ($sequence_type eq "dna") {
+	    &MatrixFromPatterns_run();
+	  } else {
+	    &RSAT::message::Warning("Conversion to matrix is only supported for DNA sequences");
+	  }
 	}
       }
     }
-  }
 
-  &PrintURLTable(@result_files);
-  &OligoDyadPipingForm();
-  print '<HR SIZE=3>';
+    &PrintURLTable(@result_files);
+    &OligoDyadPipingForm();
+    print '<hr size=3 >';
 
 } else {
-  &EmailTheResult("$command", $query->param('user_email'), $tmp_file_path);
+    &EmailTheResult("$command", $query->param('user_email'), $tmp_file_path);
 }
 
 print $query->end_html;

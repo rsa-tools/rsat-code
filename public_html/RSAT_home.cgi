@@ -19,14 +19,17 @@ require RSAT::server;
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $query = new CGI;
-print $query->header;
-print $query->start_html(-class => "info",
-			 -author=>'Jacques.van-Helden\@univ-amu.fr',
-			 -style => { 	
-			   -src => ["main.css","font-awesome.min.css"],
-			   -type => 'text/css',
-			   -media => 'screen' 
-			 });
+
+&RSA_header("RSAT home","info");
+
+#print $query->header;
+#print $query->start_html(-class => "info",
+#			 -author=>'Jacques.van-Helden\@univ-amu.fr',
+#			 -style => {
+#			   -src => ["main.css","font-awesome.min.css"],
+#			   -type => 'text/css',
+#			   -media => 'screen'
+#			 });
 
 
 print "<blockquote>";
@@ -66,7 +69,7 @@ print <<EndText;
 
 <div class="hr-like"> </div>
 
-<table border='0'>
+<table class='simple' border='0'>
   <tr>
     <td>
     

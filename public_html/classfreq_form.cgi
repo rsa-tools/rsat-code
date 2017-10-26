@@ -41,7 +41,7 @@ print "<p>Compute frequency distribution of numerical values provided in a given
 print "</center>";
 print "<blockquote>\n";
 
-print $query->start_multipart_form(-action=>"classfreq.cgi");
+print $query->start_multipart_form(-action=>"classfreq.cgi", -id=>"form");
 
 print "<font face='Helvetica'>";
 
@@ -65,7 +65,7 @@ if ($query->param('transferred_file')) {
   $default{data} = $query->param('data');
   $default{data} =~ s/\"//g; #### remove quotes for security reasons (avoid imbedded command)
   $default{data} =~ s/\r//g; #### remove quotes for security reasons (avoid imbedded command)
-  print $query->textarea(-name=>'data',
+  print $query->textarea(-name=>'data',-id=>'data',
 			 -default=>$default{data},
 			 -rows=>10,
 			 -columns=>65);
@@ -102,11 +102,11 @@ print "<h2>Parameters</h2>\n";
 
 
 print "Class interval",
-  $query->textfield(-name=>'ci',
+  $query->textfield(-name=>'ci',-id=>'ci',
 		    -default=>$default{ci},
 		    -size=>5);
 print "Data column",
-  $query->textfield(-name=>'col',
+  $query->textfield(-name=>'col',-id=>'col',
 		    -default=>$default{col},
 		    -size=>5);
 
@@ -147,23 +147,46 @@ print "<hr>";
 print "<ul><ul><table>\n";
 print "<tr valign='middle'>\n";
 print "<td>", $query->submit(-label=>"GO"), "</td>\n";
-print "<td>", $query->reset, "</td>\n";
+print "<td>", $query->reset(-id=>"reset"), "</td>\n";
 print $query->end_form;
 
 ################################################################
 ## Data for the demo
-print $query->start_multipart_form(-action=>"classfreq_form.cgi");
-$demo_data = `cat demo_files/allup500_Saccharomyces_cerevisiae_some_pattern_counts.tab`;
+$demo_data = "";
+open($fh, "demo_files/allup500_Saccharomyces_cerevisiae_some_pattern_counts.tab");
+#open($fh, "demo_files/test.tab");
+while($row = <$fh>){
+    chomp $row;
+    if($row =~ /,/){
+        $row =~ s/,/\\,/g;
+    }
+    if($row =~ /\(/ ){
+        $row =~ s/\(/\\(/g;
+    }
+    if($row =~ /\)/){
+        $row =~ s/\)/\\)/g;
+    }
+    if($row =~ /\'/){
+        $row =~ s/\'/\\'/g;
+    }
+    $demo_data .= $row;
+    $demo_data .= "\\n";
+}
+print '<script>
+function setDemo(demo_data){
+    $("#reset").trigger("click");
+    $("#data").val(demo_data);
+    ci.value = "1";
+    col.value = "4";
+}
+</script>';
+
 print "<TD><B>";
-print $query->hidden(-name=>'data',-default=>$demo_data);
-print $query->hidden(-name=>'ci',-default=>'1');
-print $query->hidden(-name=>'col',-default=>'4');
-print $query->submit(-label=>"DEMO");
+print '<button type="button" onclick="setDemo('. "'$demo_data'" .')">DEMO</button>';
 print "</b></td>\n";
-print $query->end_form;
 
 
-print "<TD><B><A HREF='help.classfreq.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.classfreq.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_classfreq.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE class='formbutton'></UL></UL>\n";

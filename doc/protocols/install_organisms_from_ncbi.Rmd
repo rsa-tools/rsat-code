@@ -1,0 +1,209 @@
+---
+title: "Install organisms from NCBI"
+author: "Jacques van Helden"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    fig_caption: yes
+    highlight: zenburn
+    theme: cerulean
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    fig_caption: yes
+    highlight: zenburn
+    toc: yes
+    toc_depth: 5
+---
+
+
+# Introduction
+
+The goal of this tutorial is to explain how to install genomes from NCBI in your RSAT server. 
+
+
+# Prerequisite
+
+This protocol assumes that you have a working instance of the RSAT server, and that you are familar with the Unix terminal. 
+
+# Protocol
+
+We illustrate the installation procedure with a bacterial genome, since NCBI is the main source of prokaryote genomes for RSAT (<http://prokaryotes.rsat.eu/>). The same procedure can however apply to other taxa, as far as they are available on the NCBI FTP server (<ftp://ftp.ncbi.nlm.nih.gov/genomes/>).
+
+We download genomes from the refseq repository: <ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq>
+
+## Get the list of available species for a given main taxonomic group
+
+The NCBI FTP genome site is organised by "main" taxonomic groups: 
+
+- [archaea](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/archaea/)
+- [bacteria](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/)
+- [fungi](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/fungi/)
+- [invertebrate](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/invertebrate/)
+- [plant](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/plant/)
+- [mitochondrion](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/mitochondrion/)
+- [plasmid](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/plasmid)
+- [plastid](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/plastid)
+- [protozoa](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/protozoa/)
+- [vertebrate_mammalian](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/)
+- [vertebrate_other](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_other/)
+- [viral](ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/viral/)
+
+The option `-task available` returns the complete list of available species for the specified group. 
+
+```{bash eval=FALSE}
+## Get the list of bacterial species available on the NCBI FTP site
+install-organism -v 1 -group bacteria -task available \
+  -o available_bacteria_2017-09-25.txt
+  
+## Count the number of species.
+## Note: grep is used to filter out the comment lines.
+grep -v '^;' available_bacteria_2017-09-25.txt | wc -l
+```
+
+On Sept 25 2017, there are 16,166 available bacterial species. Note that there are many more genomes, because some species are represented by different strains. 
+
+## Installing the genome for a given species
+
+### Download the genome(s)
+
+
+```{bash eval=FALSE}
+## Download the genome(s) for a given species 
+## (e.g. Rhodospirillum_centenum)  
+install-organism -v 1 -group bacteria \
+  -species Rhodospirillum_centenum \
+  -task download
+```
+
+**Notes**
+
+1. The option `-species` requires to specify the Genus (with a leading uppercase) and species (in lowercases) separated by an undescore (_), with exactly the same spelling and cases as on the NCBI FTP refseq site. 
+
+2. Downloaded genomes will be installed in a folder `$RSAT/downloads/refseq` on your computer. 
+
+3. **Beware:** for some bacterial species of particular interest (e.g. important human pathogens), tens of thousands of strains have been sequenced. It might cost a lot of time and disk space to download all of them. TO avoid that, you can specify the full strain name (more precisely the subfolder corresponding to the strain of interest in the species folder on the NCBI FTP site). 
+
+### Listing the available strains for the species of interest
+
+```{bash eval=FALSE}
+## List the available strains for a given species (e.g. Rhodospirillum centenum).
+install-organism -v 1 -group bacteria \
+  -species Rhodospirillum_centenum \
+  -task list
+```
+
+This command actually lists the folders. 
+
+### Parsing the genomes
+
+Parsing consists in extracting the information from a text-formatted file, in order to organise it in a computable structure. 
+
+```{bash eval=FALSE}
+## Parse one genome (e.g. Rhodospirillum centenum)
+install-organism -v 1 -group bacteria -species Rhodospirillum_centenum -strain Rhodospirillum_centenum_GCF_000016185.1_ASM1618v1 -task parse
+```
+
+This creates a folder whose name is the concatenation of the genus, species and strain names:  `$RSAT/public_html/data/[Genus_species_strain]`
+
+From now on we will directly refer to this concatenated name as the "Organism name" (generally denoted by the option `-org` in RSAT commands. 
+
+```{bash eval=FALSE}
+## Check the parsing result
+ls -l /workspace/rsat/public_html/data/genomes/Rhodospirillum_centenum_GCF_000016185.1_ASM1618v1/genome/
+
+## Measure the disk space occupied by this genome (note: this will be increased in the subsequent steps)
+du -sm /workspace/rsat/public_html/data/genomes/Rhodospirillum_centenum_GCF_000016185.1_ASM1618v1/genome/
+```
+
+This gives the number of megabases occupied by the genome folder. 
+
+### Adding the parsed genome to the list of supported genomes
+
+In order to make the parsed genome available for RSAT, you need to run the configuration task.
+
+```{bash eval=FALSE}
+## Configure the organism for RSAT
+install-organism -v 1 -org Rhodospirillum_centenum_GCF_000016185.1_ASM1618v1 -task config
+
+
+## Check that the organism has weel been declared
+supported-organisms -taxon Rhodospirillum
+
+```
+
+### Finalizing the installation
+
+Several more tasks need to be performed before we can consider this organism as "installed". 
+
+The simplest way to run it is to select the "default" tasks. 
+
+```{bash eval=FALSE}
+## Run the installation task (retrieve upstream sequences compute background oligo and dyad frequencies, index fasta genome for bedtols, ...)
+
+install-organism -v 1 -org Rhodospirillum_centenum_GCF_000016185.1_ASM1618v1 -task default
+
+```
+
+#### Detailed list of supported installation tasks (default and others)
+
+| Task | Meaning                                     |
+|-------------|-------------------------------------------------|
+| default | run all the default tasks useful for the installation of a genome (this is a subset of the tasks specified below) |
+| start_stop | compute trinucleotide frequencies in all the start and stop codons (validation of the correspondance between genome sequences and gene coordinates) |
+| allup | Retrieve all upstream sequences in order to compute the background models (oligonucleotide and dyad frequencies) |
+| seq_len_distrib | Compute the distribution of upstream sequences |
+| genome_segments | SPlit the genome into segments corresponding to different genomic region types: genic, intergenic, ... |
+| upstream_freq | Compute oligonucleotide or/and dyad frequencies in upstream sequences (must be combined with tasks oligos and/or dyads) |
+| genome_freq | Compute oligonucleotide or/and dyad frequencies in the whole genome (must be combined with tasks oligos and/or dyads) |
+| protein_freq | Compute amino acid, di- and tri-peptide frequencies in all protein sequences |
+| protein_len | Compute distribution of protein lengths |
+| oligos | Compute oligonucleotide frequencies (size 1 to 8) in a given type of sequences. Must be combined with stasks upstream or genomic |
+| dyads | Idem for dyads, i.e. spaced pairs of trinucleotides |
+| fasta_genome | convert genome sequence in fasta in order to make it usable by bedtools | 
+| chrom_sizes | compute chromosome sizes from genomic sequences |
+| index_bedtools | index genome to enable its ultra-fast processing by bedtools |
+| uninstall | uninstall a genome, i.e. stop displaying it as available. Beware, this does not erase the genome folder, for this you can use the option `-task erase`|
+| erase | Erase the whole folder of your organism in `$RSAT/public_html/data` |
+
+### Checking that the organism is well supported
+
+```{bash eval=FALSE}
+## Get all the organisms of the Genus Rhodospirillum
+supported-organisms -taxon Rhodospirillum
+```
+
+### Checking the correctness of gene annotations by computing start/stop codon frequencies
+
+```{bash eval=FALSE}
+## Retrieve all the start codon sequences
+retrieve-seq -all -org Rhodospirillum_centenum_GCF_000016185.1_ASM1618v1 -from 0 -to 2 -o start_seq.fasta
+
+more start_seq.fasta
+
+## Check that most genes have ATG as start codon
+oligo-analysis -v 1 -i start_seq.fasta  -l 3 -1str -return occ,freq -sort | more
+
+```
+
+You can do the similar test with the stop codon frequencies. Note that nothing forces you to store the stop codong sequences in a local file, you can use the pipe symbol ` | ` to concatenate two commands. 
+
+```{bash eval=FALSE}
+## Compute all trinucleotide frequencies in the stop codons
+retrieve-seq -all -org Rhodospirillum_centenum_GCF_000016185.1_ASM1618v1  -type downstream -from -1 -to -3
+
+more start_seq.fasta
+
+## Check that most genes have ATG as start codon
+oligo-analysis -v 1 -i start_seq.fasta  -l 3 -1str -return occ,freq -sort | more
+
+```
+
+
+*****
+## Installing many genomes
+
+
+
+

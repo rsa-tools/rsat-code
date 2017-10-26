@@ -12,7 +12,7 @@ but sudoer user, you can become it withn "sudo bash".
 ********************************************************************************
 ## Credits
 
-- **FranÃ§ois-Xavier ThÃ©odule**
+- **François-Xavier Théodule**
 - **Jacques van Helden** (<Jacques.van-Helden@univ-amu.fr>)
 
 The RSAT instlaler bash script was developed under Ubuntu by Jacques

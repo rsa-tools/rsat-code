@@ -20,6 +20,8 @@ require RSAT::util;
 require RSAT::server;
 require RSAT::OrganismManager;
 
+use JSON;
+
 &RSAT::server::InitRSAT();
 
 ## Guess RSAT path from module full name
@@ -689,6 +691,7 @@ sub oligo_analysis {
     my $noov = $args{"noov"};
     my $str = $args{"str"};
     my $sort = $args{"sort"};
+    my $quick_if_possible = $args{"quick_if_possible"};
 
     ## List of lower thresholds
     my $lth_ref = $args{"lth"};
@@ -780,7 +783,11 @@ sub oligo_analysis {
     if ($sort == 1) {
       $command .= " -sort";
     }
-
+    
+    if($quick_if_possible == 1){
+        $command .= " -quick_if_possible";
+    }
+    
     if ($lth) {
       $command .= $lth;
     }
@@ -804,6 +811,181 @@ sub oligo_analysis {
     $command .= " -i '".$tmp_infile."'";
 
     &run_WS_command($command, $output_choice, "oligo-analysis", "tab");
+}
+################################################################
+sub oligo_analysis_pipeline {
+    my ($self, $args_ref) = @_;
+    
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+        $output_choice = 'both';
+    }
+    ## create config file
+    my %config_json = {};
+    my $tmp_path = &RSAT::util::make_temp_file("","oligo-analysis", 1,1);
+    if(!(-d $tmp_path)) { `mkdir $tmp_path` ; }
+    $config_json{"path"} = $tmp_path;
+    
+    $config_json{"scripts"} = $SCRIPTS;
+    
+    my $cne_coords = $args{"cne_coords"};
+    my $genome = $args{"genome"};
+    if($genome){ $config_json{"genome"} = $genome; }
+    
+    if ($cne_coords){
+        chomp $cne_coords;
+        $cne_coords_file = $tmp_path . "/cne_coords.txt";
+        open TMP_IN, ">".$cne_coords_file or die "cannot open temp file ".$cne_coords_file."\n";
+        print TMP_IN $cne_coords;
+        close TMP_IN;
+        $config_json{"cne_coords"} = $cne_coords_file;
+    }
+    elsif ($args{"sequence"}) {
+        my $sequence = $args{"sequence"};
+        chomp $sequence;
+        $tmp_infile = $tmp_path . "/sequence.fasta";
+        open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+        print TMP_IN $sequence;
+        close TMP_IN;
+        $config_json{"sequence"} = $tmp_infile;
+        $config_json{"cne_coords"} = "";
+    } elsif ($args{"tmp_infile"}) {
+        $tmp_infile = $tmp_path . "/sequence.fasta";
+        open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+        open $fh, "<", $args{"tmp_infile"};
+        while(<$fh>){
+            print TMP_IN $_;
+            print TMP_IN "\n";
+        }
+        close TMP_IN;
+        close $fh;
+        $config_json{"sequence"} = $tmp_infile;
+        $config_json{"cne_coords"} = "";
+    }
+    if($args{"purge_seq"} == 1){ $config_json{"purge_seq"} = 1;} else { $config_json{"purge_seq"} = 0;}
+    if($args{"format"}){ $config_json{"format"} = $args{"format"}; }
+    if($args{"organism"}){ $config_json{"organism"} = $args{"organism"}; }
+    if($args{"background"}) { $config_json{"background"} = $args{"background"}; }
+    if($args{"stats"}){ $config_json{"return"} = $args{"stats"}; }
+    if($args{"noov"} == 1){ $config_json{"noov"} = "-noov"; }
+    else { $config_json{"noov"} = ""; }
+    if($args{"str"}){
+        if ($args{"str"} == 1 || $args{"str"} == 2) {
+            $config_json{"strand"} = " -".$args{"str"}."str";
+        } else {
+            die "str value must be 1 or 2";
+        }
+    }
+    
+    ## List of length
+    my $length_ref = $args{"length"};
+    if($length_ref){
+        $config_json{"length"} = ();
+        if(!($length_ref =~ /ARRAY/)) { push @{$config_json{"length"}}, $length_ref; }
+        else{
+            foreach $l (@{$length_ref}){
+                push @{$config_json{"length"}}, $l;
+            }
+        }
+    }
+    
+    ## List of lower thresholds
+    my $lth_ref = $args{"lth"};
+    my $lth = "";
+    if ($lth_ref =~ /ARRAY/) {
+        my @lth = @{$lth_ref};
+        foreach $lt (@lth) {
+            $lt =~s/\'//g;
+            $lt =~s/\"//g;
+            @_lt = split / /, $lt;
+            $lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+        }
+    } elsif ($lth_ref) {
+        @_lt = split / /, $lth_ref;
+        $lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+    }
+    if($lth) { $config_json{"lth"} = $lth; }
+    
+    ## List of upper thresholds
+    my $uth_ref = $args{"uth"};
+    my $uth = "";
+    if ($uth_ref =~ /ARRAY/) {
+        my @uth = @{$uth_ref};
+        foreach $ut (@uth) {
+            $ut =~s/\'//g;
+            $ut =~s/\"//g;
+            @_ut = split / /, $ut;
+            $uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+        }
+    } elsif ($uth_ref) {
+        @_ut = split / /, $uth_ref;
+        $uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+    }
+    if($uth) { $config_json{"uth"} = $uth; }
+    
+    if($args{"pseudo"}){ $config_json{"pseudo"} = " -pseudo " . $args{'pseudo'}; }
+    else{ $config_json{"pseudo"} = ""; }
+    
+    if($args{"max_asmb_nb"}) { $config_json{"max_asmb_nb"} = $args{"max_asmb_nb"}; }
+    if($args{"maxfl"}) { $config_json{"flanks"} = $args{"maxfl"}; }
+    if($args{"min_weight"}) { $config_json{"min_weight"} = $args{"min_weight"}; }
+    if($args{"output_prefix"}) { $config_json{"output_prefix"} = $args{"output_prefix"}; }
+    
+    open my $fh, ">", "$tmp_path/config.json";
+    print $fh encode_json(\%config_json);
+    
+    my $command = "$SCRIPTS/snakemake --snakefile $SCRIPTS/oligo_analysis_pipeline --configfile $tmp_path/config.json --core 5 --directory $tmp_path oligo_all";
+
+    local $start_time = &RSAT::util::StartScript();
+    
+    my $tmp_outfile = $tmp_path."/snakemake_log";
+    my $snakemake_log = system("$command 2> $tmp_outfile");
+    
+    my $result = "";
+    
+    my $result_URL = $ENV{rsat_www}."/tmp/";
+    $result .= "Sequence> $result_URL" . &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), "$tmp_path/sequence.fasta") . "\n";
+    if($args{"purge_seq"} == 1){
+        $result .= "Purged Sequence> $result_URL" . &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), "$tmp_path/sequence.fasta.purged") . "\n";
+    }
+    $result .= "Merged oligos> $result_URL" . &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), "$tmp_path/oligo_analysis.tab") . "\n";
+    $result .= "Assembly> $result_URL" . &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), "$tmp_path/oligo_analysis.asmb") . "\n";
+    $result .= "Significance matrices> $result_URL" . &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), "$tmp_path/oligo_analysis_pssm_sig_matrices.tf") ."\n";
+    $result .= "Rescaled significance matrices> $result_URL". &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), "$tmp_path/oligo_analysis_pssm_sig_matrices_rescaled.tf") ."\n";
+    $result .= "Final matrices(transfac format)> $result_URL". &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), "$tmp_path/oligo_analysis_pssm_count_matrices.tf") . "\n";
+    $result .= "Final matrices (tab format)> $result_URL". &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), "$tmp_path/oligo_analysis_pssm_count_matrices.txt") ."\n";
+    $result .= "Converted matrices> $result_URL". &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), "$tmp_path/oligo_analysis_pssm_count_matrices.txt_converted.tab");
+    
+    ## Report execution time in the log file (depends on the satus of
+    ## exec_time property)
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be done for all the commands sent to WS
+    
+    
+    if ($output_choice eq 'server') {
+        return SOAP::Data->name('response' => \SOAP::Data->value(
+        SOAP::Data->name('server' => &RSAT::util::hide_RSAT_path($tmp_outfile)),
+        #TO FIX in RSATWS.wsdl		  SOAP::Data->name('URL' => $result_URL),
+        SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+        SOAP::Data->name('client' => 'NA')))
+        ->attr({'xmlns' => ''});
+    } elsif ($output_choice eq 'client') {
+        return SOAP::Data->name('response' => \SOAP::Data->value(
+        SOAP::Data->name('server' => 'NA'),
+        SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+        SOAP::Data->name('client' => $result)))
+        ->attr({'xmlns' => ''});
+    } elsif ($output_choice eq 'both') {
+        #      &RSAT::error::FatalError("HELLO", "tmp_outfile", $tmp_outfile, &RSAT::util::hide_RSAT_path($tmp_outfile));
+        
+        return SOAP::Data->name('response' => \SOAP::Data->value(
+        SOAP::Data->name('server' =>  &RSAT::util::hide_RSAT_path($tmp_outfile)),
+        #TO FIX in RSATWS.wsdl		  SOAP::Data->name('URL' => $result_URL),
+        SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),
+        SOAP::Data->name('client' => $result)))
+        ->attr({'xmlns' => ''});
+    }
+
 }
 
 
@@ -3807,7 +3989,8 @@ sub convert_matrix {
       open TMP_IN, ">".$tmp_matrix_infile or die "cannot open temp file ".$tmp_matrix_infile."\n";
       print TMP_IN $input_matrix;
       close TMP_IN;
-  } elsif ($args{tmp_matrix_infile}){
+      # $tmp_matrix_infile = $args{"matrix"};
+  } elsif ($args{"tmp_matrix_infile"}){
       $tmp_matrix_infile = $args{"tmp_matrix_infile"};
   }
   chomp $tmp_matrix_infile;
@@ -3864,9 +4047,17 @@ sub convert_matrix {
   }
 
   if ($return) {
-    $return  =~ s/\'//g;
-    $return =~ s/\"//g;
-    $command .= " -return '".$return."'";
+      if($return =~ /ARRAY/){
+          foreach my $item (@{$return}){
+              $item =~ s/\'//g;
+              $item =~ s/\"//g;
+              $command .= " -return '" . $item ."'";
+          }
+      } else {
+          $return =~ s/\'//g;
+          $return =~ s/\"//g;
+          $command .= " -return '".$return."'";
+      }
   }
 
   if ($sort) {
@@ -3918,10 +4109,307 @@ sub convert_matrix {
   if ($rc == 1) {
     $command .= " -rc";
   }
-
- &run_WS_command($command, $output_choice, "convert-matrix", $to)
+    
+    &run_WS_command($command, $output_choice, "convert-matrix", $to);
 }
 
+################################################################
+sub matrix_from_patterns {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+        $output_choice = 'both';
+    }
+    my $sequence_file = $args{"sequence_file"};
+    my $verbosity = $args{"verbosity"};
+    my $format = $args{"format"};
+    my $pattern_file = $args{"pattern_file"};
+    my $output_prefix = $args{"output_prefix"};
+    my $toppat = $args{"toppat"};
+    my $max_asmb_nb = $args{"max_asmb_nb"};
+    my $top_seq = $args{"top_seq"};
+    my $score = $args{"score"};
+    my $cluster = $args{"cluster"};
+    my $max_asmb_per_cluster = $args{"max_asmb_per_cluster"};
+    my $subst = $args{"subst"};
+    my $maxfl = $args{"maxfl"};
+    my $match = $args{"match"};
+    my $weight = $args{"weight"};
+    my $max_asmb_size = $args{"max_asmb_size"};
+    my $max_asmb_width = $args{"max_asmb_width"};
+    my $assembly_file = $args{"assembly_file"};
+    my $str = $args{"str"};
+    my $sites = $args{"sites"};
+    my $collect_method = $args{"collect_method"};
+    my $gibbs_msps = $args{"gibbs_msps"};
+    my $gibbs_iter = $args{"gibbs_iter"};
+    my $flanks = $args{"flanks"};
+    my $min_weight = $args{"min_weight"};
+    my $gibbs_final = $args{"gibbs_final"};
+    my $logo = $args{"logo"};
+    my $links = $args{"links"};
+    my $scan_param = $args{"scan_param"};
+    
+    
+    my $command = "$SCRIPTS/matrix-from-patterns";
+    
+    if ($sequence_file) {
+        $sequence_file =~ s/\'//g;
+        $sequence_file =~ s/\"//g;
+        chomp $sequence_file;
+        $command .= " -seq '".$sequence_file."'";
+    }
+    
+    if ($format) {
+        $format  =~ s/\'//g;
+        $format  =~ s/\"//g;
+        $command .= " -format '".$format."'";
+    }
+    
+    if ($assembly_file) { ## This is to make the difference between unspecified parameter and value 0
+        $assembly_file =~ s/\'//g;
+        $assembly_file =~ s/\"//g;
+        $command .= " -asmb '".$assembly_file."'";
+    }
+    
+    if ($output_prefix) {
+        $output_prefix =~ s/\'//g;
+        $output_prefix =~ s/\"//g;
+        $command .= " -o '".$output_prefix."'";
+    }
+    
+    if ($min_weight) {
+        $min_weight =~ s/\'//g;
+        $min_weight =~ s/\"//g;
+        $command .= " -min_weight '".$min_weight."'";
+    }
+    
+    if ($flanks) {
+        $flanks =~ s/\'//g;
+        $flanks =~ s/\"//g;
+        $command .= " -flanks '".$flanks."'";
+    }
+    
+    if ($max_asmb_nb) {
+        $max_asmb_nb  =~ s/\'//g;
+        $max_asmb_nb =~ s/\"//g;
+        $command .= " -max_asmb_nb '".$max_asmb_nb."'";
+    }
+    
+    
+    if ($logo == 1) {
+        $command .= " -logo";
+    }
+    
+    
+    &run_WS_command($command, $output_choice, "matrix-from-patterns", $to);
+}
+
+################################################################
+sub matrix_clustering {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+
+  my $matrix_cmd = "";
+  
+  if($args{"matrix"}){
+    my $matrix_list = $args{"matrix"};
+      open (my $fh, $matrix_list) or die "Could not open file $matrix_list";
+      while (my $row = <$fh>){
+          chomp $row;
+          if ( ! ($row =~ /#/) ){
+              my @matrix = split(";", $row);
+          chomp $matrix[0];
+          chomp $matrix[1];
+              $matrix_cmd .= " -matrix '". $matrix[0] . "' '". $matrix[1] . "'"
+          }
+      }
+
+#      my $matrix_ref = $args{"matrix"};
+#    foreach $matrix (@{$matrix_ref}){
+#        $matrix =~s/\'//g;
+#        $matrix =~s/\"//g;
+#        chomp $matrix;
+#    }
+#    if(scalar @{$matrix_ref} == 2){
+#        $matrix_cmd = " -matrix '" . ${$matrix_ref}[0] . "' '" . ${$matrix_ref}[1] . "'";
+#    }elsif(scalar @{$matrix_ref} == 4){
+#         $matrix_cmd = " -matrix '" . ${$matrix_ref}[0] . "' '" . ${$matrix_ref}[1] . "' -matrix '" . ${$matrix_ref}[2] . "' '" . ${$matrix_ref}[3] . "'";
+#    }
+  }
+
+
+  my $matrix_ID_link_table = $args{"matrix_ID_link_table"}; 
+  my $matrix_format = $args{"matrix_format"}; 
+  my $title = $args{"title"};
+  my $heatmap_position_tree = $args{"heatmap_position_tree"};
+  my $task = $args{"task"};
+  my $label_in_tree = $args{"label_in_tree"};
+  my $label_motif = $args{"label_motif"};
+  my $quick = $args{"quick"};
+  my $no_clone_input = $args{"no_clone_input"};
+  my $rand = $args{"rand"};
+  my $heatmap_color_palette = $args{"heatmap_color_palette"};
+  my $heatmap_color_classes = $args{"heatmap_color_classes"};
+  my $max_matrices = $args{"max_matrices"};
+  my $hclust_method = $args{"hclust_method"};
+  my $top_matrices = $args{"top_matrices"};
+  my $skip_matrices = $args{"skip_matrices"};
+  my $metric_build_tree = $args{"metric_build_tree"};
+  my $calc = $args{"calc"};
+  my $trim_threshold = $args{"trim_threshold"};
+  my $return = $args{"return"}; 
+
+    ## List of lower thresholds
+    my $lth_ref = $args{"lth"};
+    my $lth = "";
+    if ($lth_ref =~ /ARRAY/) {
+      my @lth = @{$lth_ref};
+      foreach $lt (@lth) {
+  $lt =~s/\'//g;
+  $lt =~s/\"//g;
+  @_lt = split / /, $lt;
+  $lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+      }
+    } elsif ($lth_ref) {
+  @_lt = split / /, $lth_ref;
+  $lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+    }
+
+    ## List of upper thresholds
+    my $uth_ref = $args{"uth"};
+    my $uth = "";
+    if ($uth_ref =~ /ARRAY/) {
+      my @uth = @{$uth_ref};
+      foreach $ut (@uth) {
+  $ut =~s/\'//g;
+  $ut =~s/\"//g;
+  @_ut = split / /, $ut;
+  $uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+      }
+    } elsif ($uth_ref) {
+  @_ut = split / /, $uth_ref;
+  $uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+    }
+
+  my $command = "$SCRIPTS/matrix-clustering";
+
+  
+  if ($args{"matrix"}) {
+      $command .= $matrix_cmd;
+  }
+
+  if ($matrix_format){
+      $command .= addToCmd($matrix_format, "matrix_format");
+  }
+
+  if ($matrix_ID_link_table) {
+      $command .= addToCmd($matrix_ID_link_table, "ID_link_table");
+  }
+
+  if ($title) {
+      $command .= addToCmd($title, "title");
+  }
+
+  if($heatmap_position_tree){
+      $command .= addToCmd($heatmap_position_tree, "heatmap_position_tree");
+  }
+
+  if ($task) {
+      $command .= addToCmd($task, "task");
+  }
+
+  if ($label_in_tree) {
+      $command .= addToCmd($label_in_tree, "label_in_tree");
+  }
+
+  if($label_motif){
+      $command .= addToCmd($label_motif, "label_motif");
+  }
+  if($no_clone_input){
+      $command .= addToCmd($no_clone_input, "no_clone_input");
+  }
+
+
+if ($quick == 1) {
+      $command .= " -quick";
+  }
+
+  if ($rand == 1) {
+      $command .= " -rand";
+  }
+
+  if($heatmap_color_palette){
+      $command .= addToCmd($heatmap_color_palette, "heatmap_color_palette");
+  }
+
+  if ($heatmap_color_classes) {
+     $command .= addToCmd($heatmap_color_classes, "heatmap_color_classes");
+  }
+
+  if ($max_matrices) {
+     $command .= addToCmd($max_matrices, "max_matrices");
+  }
+
+  if ($hclust_method) {
+     $command .= addToCmd($hclust_method, "hclust_method");
+  }
+
+  if ($top_matrices ) {
+      $command .= addToCmd($top_matrices, "top_matrices");
+  }
+
+  if ($skip_matrices ) {
+      $command .= addToCmd($skip_matrices, "skip_matrices");
+  }
+
+  if ($metric_build_tree ) {
+      $command .= addToCmd($metric_build_tree, "metric_build_tree");
+  }
+
+  if($lth){
+      $command .= $lth;
+  }
+
+  if($uth){
+      $command .= $uth;
+  }
+
+  if ($calc ) {
+      $command .= addToCmd($calc, "calc");
+  }
+
+  if ($trim_threshold ) {
+      $command .= addToCmd($trim_threshold, "trim_threshold");
+  }
+
+  if ($return_fields) {
+      $command .= addToCmd($return_fields, "return_fields");
+  }
+
+  if ($args{"output"}){
+      $command .= addToCmd($args{"output"}, "o");
+  }else{
+      $output_dir = &RSAT::util::make_temp_file("","matrix-clustering", 1,0);
+      $command .= " -o $output_dir";
+  }
+ # print $command;
+#exec($command);
+  &run_WS_command($command, $output_choice, "matrix-clustering", "")
+}
+
+sub addToCmd{
+    ($param, $name) = @_;
+      $param =~ s/\'//g;
+      $param =~ s/\"//g;
+      chomp $param;
+      return " -" . $name. " '".$param."'";
+}
 
 ################################################################
 sub matrix_distrib {
@@ -6621,8 +7109,6 @@ sub UpdateLogFileWS {
     $ENV{rsat_site} = `hostname`;
     chomp($ENV{rsat_site});
   }
-
-  ## Define log file
   my $log_file = join("", $ENV{RSAT}, "/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
   system("chmod a+w $log_file");
 #   print "LOG ### $log_file";

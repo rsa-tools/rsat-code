@@ -48,10 +48,10 @@ $default{r_plot} = "checked"; ## Plot XY graph with R rather than GD
 
 $default{visualize}="none";
 
-## motif database
-$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
-$default{custom_motif_db_name}="custom_motif_collection";
 
+## motif database
+$default{compare_motif_database}="RSAT_nonredundant_vertebrates";
+$default{custom_motif_db_name}="custom_motif_collection";
 
 ### Replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -155,7 +155,8 @@ end_part_1
 
 
 ## demo description
-print $default{demo_descr};
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr'></div>";
 
 print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 
@@ -189,7 +190,7 @@ print "<i>Note: email output is preferred for very large datasets or many compar
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
@@ -202,58 +203,74 @@ set of 1000 peak regions bound by the mouse transcription factor Oct4
 (Chen et al., 2008)</p>\n";
 $descr1 .= "</blockquote>";
 
-print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
-$demo_url= $ENV{rsat_www}."/demo_files/peak-motifs_demo.fa";
+$demo_url = $ENV{rsat_www}."/demo_files/peak-motifs_demo.fa";
+
+print '<script>
+function setDemo1(demo_url){
+    $("#reset").trigger("click");
+    descr = "<H4>Comment on the demonstration example 1 :</H4>\n";
+    descr = descr + "<blockquote class =\'demo\'>";
+    descr = descr + "In this demonstration, we apply time- and memory-efficient \
+    motif discovery algorithms to discover over-represented motifs in a \
+    set of 1000 peak regions bound by the mouse transcription factor Oct4 \
+    (Chen et al., 2008)</p>\n</blockquote>";
+    
+    demo_descr.innerHTML = descr;
+    demo.value = descr;
+    sequence_url1.value = demo_url;
+    $("#title").val("Oct4 Chen2008 sites from Jaspar");
+    max_seq_len.value = "";
+    top_sequences.value = "";
+    $("#visualize_galaxy").prop("checked", true);
+    
+}
+</script>';
+
 print "<TD><b>";
-print $query->hidden(-name=>'demo_descr',-default=>$descr1);
-#print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
-print $query->hidden(-name=>'sequence_url1',-default=>$demo_url);
-print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
-print $query->hidden(-name=>'title',-default=>'Oct4 Chen2008 sites from Jaspar');
-print $query->hidden(-name=>'max_seq_len',-default=>'');
-print $query->hidden(-name=>'top_sequences',-default=>'');
-print $query->hidden(-name=>'visualize',-default=>"galaxy");
-print $query->submit(-label=>"DEMO single");
+print '<button type="button" onclick="setDemo1('. "'$demo_url'".')">DEMO single</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 ################################################################
 ## Data for the demo of differential analysis (test vs control)
-my $descr2 = "<H4>Comment on the demonstration example 2 :</H4>\n";
-$descr2 .= "<blockquote class ='demo'>";
-$descr2 .= "In this demonstration, we run a differential analysis
-  (test vs control) to discover the motifs that are over-represented in
-  one tissue (heart) compared to another tissue (limb), for a same
-  transcription factor (p300) (Blow et al, 2010)</p>\n";
-$descr2 .= "</blockquote>";
+$demo_url = $ENV{rsat_www}."/demo_files/peak-motifs_GSM559652_heart_p300_1000peaks.fa";
+$ctrl_url = $ENV{rsat_www}."/demo_files/peak-motifs_GSM348066_limb_p300_1000peaks.fa";
 
-print $query->start_multipart_form(-action=>"peak-motifs_form.cgi");
-$demo_url= $ENV{rsat_www}."/demo_files/peak-motifs_GSM559652_heart_p300_1000peaks.fa";
-$ctrl_url= $ENV{rsat_www}."/demo_files/peak-motifs_GSM348066_limb_p300_1000peaks.fa";
+
+print '<script>
+function setDemo2(demo_url,ctrl_url){
+    $("#reset").trigger("click");
+    descr = "<H4>Comment on the demonstration example 2 :</H4>\n";
+    descr = descr + "<blockquote class =\'demo\'>";
+    descr = descr + "In this demonstration, we run a differential analysis \
+    (test vs control) to discover the motifs that are over-represented in \
+    one tissue (heart) compared to another tissue (limb), for a same \
+    transcription factor (p300) (Blow et al, 2010)</p>\n</blockquote>";
+    
+    demo_descr.innerHTML = descr;
+    demo.value = descr;
+    sequence_url1.value = demo_url;
+    sequence_url2.value = ctrl_url;
+    $("#title").val("p300 heart versus limb Blow2010");
+    max_seq_len.value = "";
+    $("#position-analysis").prop("checked",false);
+    $("#oligo-analysis").prop("checked",true);
+    $("#oligo_length6").prop("checked",true);
+    $("#oligo_length7").prop("checked",true);
+    $("#oligo_length8").prop("checked",false);
+    $("#nmotifs").val(5);
+    top_sequences.value = "";
+    $("#visualize_galaxy").prop("checked", true);
+
+};
+</script>';
+
 print "<TD><b>";
-print $query->hidden(-name=>'demo_descr',-default=>$descr2);
-print $query->hidden(-name=>'sequence_url1',-default=>$demo_url);
-print $query->hidden(-name=>'jaspar_pbm_mouse',-default=>'on');
-print $query->hidden(-name=>'sequence_url2',-default=>$ctrl_url);
-print $query->hidden(-name=>'sequence_format1',-default=>'fasta');
-print $query->hidden(-name=>'sequence_format2',-default=>'fasta');
-print $query->hidden(-name=>'title',-default=>'p300 heart versus limb Blow2010');
-print $query->hidden(-name=>'max_seq_len',-default=>'');
-print $query->hidden(-name=>'position-analysis', -default=>'');
-print $query->hidden(-name=>'oligo-analysis', -default=>'on');
-print $query->hidden(-name=>'oligo_length6', -default=>'on');
-print $query->hidden(-name=>'oligo_length7', -default=>'on');
-print $query->hidden(-name=>'oligo_length8', -default=>'');
-print $query->hidden(-name=>'nmotifs', -default=>'5');
-print $query->hidden(-name=>'top_sequences',-default=>'');
-print $query->hidden(-name=>'visualize',-default=>"galaxy");
-print $query->submit(-label=>"DEMO test vs ctrl");
+print '<button type="button" onclick="setDemo2('. "'$demo_url'".','."'$ctrl_url'".')">DEMO test vs ctrl</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 ##print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
-print "<td><b><a href='help.peak-motifs.html'>[MANUAL]</a></B></TD>\n";
-print "<td><b><a href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></B></TD>\n";
+print "<td><b><a class='iframe' href='help.peak-motifs.html'>[MANUAL]</a></B></TD>\n";
+print "<td><b><a class='iframe' href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></B></TD>\n";
 print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
@@ -269,11 +286,11 @@ exit(0);
 
 sub Panel1 {
 
-  print "<fieldset>\n<legend><b><a href='help.formats.html'>Peak Sequences </a></b></legend>\n";
+  print "<fieldset>\n<legend><b><a class='iframe' href='help.formats.html'>Peak Sequences </a></b></legend>\n";
   print "<table>
   <tr><td colspan='2' style='text-align:center;'>";
   print "<b>Title</b> <font color='red'>(mandatory)</font>\n";
-  print $query->textfield(-name=>'title',
+  print $query->textfield(-name=>'title', -id=>'title',
 			  -default=>$default{title},
 			  -size=>25);
 
@@ -298,7 +315,7 @@ sub Panel1 {
   print "<p/>\n";
 
   print "</td></tr></table>";
-  print '<b><font style="font-size:80%"><a href="tutorials/tut_peak-motifs.html#seq" target="_blank"> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b></br>';
+  print '<b><font style="font-size:80%"><a class="iframe" href="tutorials/tut_peak-motifs.html#seq" target="_blank"> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b></br>';
   print "</fieldset><p/>";
 }
 
@@ -313,17 +330,17 @@ sub Panel2 {
 
 
   print "<p/><fieldset>\n";
-  print "<legend><b><a href='help.peak-motifs.html#tasks'>Restrict the test dataset  </a></b></legend>\n";
+  print "<legend><b><a class='iframe' href='help.peak-motifs.html#tasks'>Restrict the test dataset  </a></b></legend>\n";
 
-  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html#thresholds'>Number of top sequences to retain </a>&nbsp;</B>\n";
-  print  $query->textfield(-name=>'top_sequences',
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a class='iframe' href='help.peak-motifs.html#thresholds'>Number of top sequences to retain </a>&nbsp;</B>\n";
+  print  $query->textfield(-name=>'top_sequences',-id=>'top_sequences',
 			   -default=>$default{top_sequences},
-			   -size=>5);
+			   -size=>3);
 
   print "<br/>";
 
-  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html#thresholds'>Cut peak sequences:</a> +/- &nbsp;</B>\n";
-  print  $query->textfield(-name=>'max_seq_len',
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a class='iframe' href='help.peak-motifs.html#thresholds'>Cut peak sequences:</a> +/- &nbsp;</B>\n";
+  print  $query->textfield(-name=>'max_seq_len',-id=>'max_seq_len',
 			   -default=>$default{max_seq_len},
 			   -size=>3);
   print "&nbsp;&nbsp;&nbsp;&nbsp;<b>bp on each side of peak centers</b>\n";
@@ -331,7 +348,6 @@ sub Panel2 {
 
   print "</fieldset><p/>";
   print '</div>
-</div>
 <p class="clear"></p>';
 }
 
@@ -345,7 +361,7 @@ print '
 <div id="menu102" class="menu_collapsible">';
 
 print "<p/><fieldset>
-<legend><b><a href='help.peak-motifs.html#tasks'>Discover motifs </a></b></legend>";
+<legend><b><a class='iframe' href='help.peak-motifs.html#tasks'>Discover motifs </a></b></legend>";
 
 
 
@@ -357,18 +373,18 @@ print "<ul>\n";
 
 ### oligo analysis
 print "<br>";
-print $query->checkbox(-name=>'oligo-analysis',
+print $query->checkbox(-name=>'oligo-analysis',-id=>'oligo-analysis',
 		       -checked=>$default{"oligo-analysis"},
 		       -label=>'');
-print "&nbsp;<b>Discover over-represented words</b> <a href='help.oligo-analysis.html'> [oligo-analysis]</a>\n";
+print "&nbsp;<b>Discover over-represented words</b> <a class='iframe' href='help.oligo-analysis.html'> [oligo-analysis]</a>\n";
 
 
 ### position-analysis
 print "<br>";
-print $query->checkbox(-name=>'position-analysis',
+print $query->checkbox(-name=>'position-analysis',-id=>'position-analysis',
 		       -checked=>$default{"position-analysis"},
 		       -label=>'');
-print "&nbsp;<b>Discover words with a positional bias</b> <a href='help.position-analysis.html'>[position-analysis]</a>\n";
+print "&nbsp;<b>Discover words with a positional bias</b> <a class='iframe' href='help.position-analysis.html'>[position-analysis]</a>\n";
 
 
 
@@ -376,34 +392,34 @@ print "&nbsp;<b>Discover words with a positional bias</b> <a href='help.position
 print "<br>", $query->checkbox(-name=>'local-word-analysis',
 		       -checked=>$default{'local-word-analysis'},
 		       -label=>'');
-print "&nbsp;<b>Discover words with local over-representation</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
+print "&nbsp;<b>Discover words with local over-representation</b> <a class='iframe' href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
 print "&nbsp;"x2;
 print "<br><i>Note:position-analysis and local-word-analysis will not run if a control set is provided</i>";
 
 
 ## Word size
-print "<p><b><a href='help.oligo-analysis.html#oligo_length'>Oligomer lengths</a>&nbsp;</b> for the three programs above\n";
+print "<p><b><a class='iframe' href='help.oligo-analysis.html#oligo_length'>Oligomer lengths</a>&nbsp;</b> for the three programs above\n";
 
-print $query->checkbox(-name=>'oligo_length6',
+print $query->checkbox(-name=>'oligo_length6',-id=>'oligo_length6',
 		       -checked=>$default{oligo_length6},
 		       -label=>'6');
 print "&nbsp;"x2;
-print $query->checkbox(-name=>'oligo_length7',
+print $query->checkbox(-name=>'oligo_length7',-id=>'oligo_length7',
 		       -checked=>$default{oligo_length7},
 		       -label=>'7');
 print "&nbsp;"x2;
-print $query->checkbox(-name=>'oligo_length8',
+print $query->checkbox(-name=>'oligo_length8',-id=>'oligo_length8',
 		       -checked=>$default{oligo_length8},
 		       -label=>'8');
 print "&nbsp;"x6;
-print $query->checkbox(-name=>'merge_lengths',
+print $query->checkbox(-name=>'merge_lengths',-id=>'merge_lengths',
 		       -checked=>$default{merge_lengths},
 		       -label=>'merge lengths for assembly');
 print "<br><i>Note: motifs can be larger than word sizes (words are used as seed for building matrices)</i>";
 
 
 ## Markov  order (for oligo-analysis in single strand mode)
-print "<br><p><b><a href='help.oligo-analysis.html'> Markov order (m) of the background model for oligo-analysis (k-mers)</a> </b><i>(only for single-dataset analysis, will be ignored if control set is provided)</i>\n";
+print "<br><p><b><a class='iframe' href='help.oligo-analysis.html'> Markov order (m) of the background model for oligo-analysis (k-mers)</a> </b><i>(only for single-dataset analysis, will be ignored if control set is provided)</i>\n";
 $oligoPopup = "<br>";
 $oligoPopup .=  "<select name='markov'>\n";
 $oligoPopup .=  "<option value='auto'>automatic (adapted to sequence length)</option>\n";
@@ -421,10 +437,10 @@ print "</ul>\n";
 ## dyad-analysis
 print "<p> <b>Spaced word pairs (dyads)</b>";
 print "<ul>\n";
-print $query->checkbox(-name=>'dyad-analysis',
+print $query->checkbox(-name=>'dyad-analysis',-id=>'dyad-analysis',
 			       -checked=>$default{"dyad-analysis"},
 			       -label=>'');
-print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
+print "&nbsp;<b>Discover over-represented spaced word pairs </b><a class='iframe' href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
 print "</ul>\n";
 
 
@@ -440,7 +456,7 @@ print "</ul>\n";
 
 ## Number of motifs per algorithm
 print "<b>Number of motifs per algorithm</b>\n";
-print $query->popup_menu(-name=>'nmotifs',
+print $query->popup_menu(-name=>'nmotifs',-id=>'nmotifs',
 			 -Values=>[1,2,3,4,5,6,7,8,9,10],
 			 -default=>$default{nmotifs});
 
@@ -478,8 +494,7 @@ print $strandPopup;
 #print "<br/>";
 print "</fieldset><p/>";
 
-print '
-</div></div>';
+print '</div>';
 
 }
 
@@ -496,7 +511,7 @@ sub Panel4 {
 <div id=\"menu103\" class=\"menu_collapsible\">";
 
   ## Tasks
-  print "<fieldset><legend><b><a href='help.peak-motifs.html#tasks'>Compare motifs </a></b></legend>";
+  print "<fieldset><legend><b><a class='iframe' href='help.peak-motifs.html#tasks'>Compare motifs </a></b></legend>";
 
   ### compare motifs
 #  print $query->checkbox(-name=>'compare_motif_db',
@@ -508,8 +523,40 @@ sub Panel4 {
 #  print "<a href=''><b>Choose below the motif database(s):</b></a><br/>";
   print "<a href=''><b>Compare discovered motifs with known motifs from databases</b></a><br/>";
 
+#### select motifs
+print '<link rel="stylesheet" href="css/select2.min.css" /><script src="js/select2.full.min.js"></script>';
+print '<style>.select2-results__options {font-size:10px} .select2-search__field {width: 100px !important;}</style>';
+print '<script type="text/javascript">
+function test(){
+    alert( $("#db_choice").val() );
+}
+function formatState(state){
+    if(!state.id){return $("<div align=\'center\' style=\'text-transform:uppercase;background-color:lightgray;border:1px solid #eee;border-radius:7px;padding:8px\'><b>" + state.text + "</b></div>");}
+    var $state = $("<span><i class=\'fa fa-circle fa-lg\' style=\'color:" + state.element.className + "\'></i></span>&nbsp;&nbsp;&nbsp;" + state.text + "</span>");
+    return $state;
+}
+$(function(){
+    $(".inline").colorbox({inline:true,width:"70%"});
+    // turn the element to select2 select style
+    $("#db_choice").select2({placeholder: "Select matrices",
+        templateResult: formatState,
+        allowClear: true,
+        theme: "classic"
+    });
+    $("#db_choice").val("' . $default{compare_motif_database} . '").trigger("change");
+});
+</script>';
+
+print ' <select id="db_choice" name="db_choice" multiple="multiple" style="width:700px;font-size:11px"><option></option>';
+## load the various databases that can be compared against
+&DisplayMatrixDBchoice_select2("mode"=>"checkbox");
+print '</select><br/><a class="inline" href="#matrix_descr""> View matrix descriptions</a> <br/>';
+print "<div style='display:none'><div id='matrix_descr'>";
+&DisplayMatrixDBchoice_select2("mode" => "list");
+print "</div>";
+
   ## Display supported motif databases
-  &DisplayMatrixDBchoice("mode"=>"checkbox");
+  # &DisplayMatrixDBchoice("mode"=>"checkbox");
 
   print "<p/> ";
   print "<a href=''><b>Add your own motif database:</b></a><br/>";
@@ -533,7 +580,7 @@ sub Panel4 {
 
   print '
 </div>
-</div>
+
 <p class="clear"></p>';
 }
 
@@ -550,11 +597,11 @@ sub Panel5  {
 
 
   ### matrix-scan
-  print "<fieldset><legend><b><a href='help.peak-motifs.html#tasks'>Locate motifs </a></b></legend>";
+  print "<fieldset><legend><b><a class='iframe' href='help.peak-motifs.html#tasks'>Locate motifs </a></b></legend>";
   print $query->checkbox(-name=>'matrix-scan-quick',
 			 -checked=>$default{'matrix-scan-quick'},
 			 -label=>'');
-  print "&nbsp;<b>Search putative binding sites in the peak sequences</b> <a href='help.matrix-scan.html'>[matrix-scan]</a>\n";
+  print "&nbsp;<b>Search putative binding sites in the peak sequences</b> <a class='iframe' href='help.matrix-scan.html'>[matrix-scan]</a>\n";
   print "<br/>";
 
   ## Markov order for scanning (site prediction + motif enrichment)
@@ -574,29 +621,29 @@ sub Panel5  {
 
   ################################################################
   ## Visualize UCSC custom track
-  print "<fieldset><legend><b><a href='help.peak-motifs.html#tasks'>Visualize peaks and sites in genome browser </a></b></legend>";
+  print "<fieldset><legend><b><a class='iframe' href='help.peak-motifs.html#tasks'>Visualize peaks and sites in genome browser </a></b></legend>";
 
-  print ("<INPUT TYPE='radio' NAME='visualize' value='none' $checked{'none'}>","<b>No</b>");
-
-  print "<br>";
-  print ("<INPUT TYPE='radio' NAME='visualize' value='galaxy' $checked{'galaxy'}>",
-	 "Peak coordinates in <a target='_blank' href='https://usegalaxy.org/'><b>Galaxy/UCSC</b></a> format (also for <b>fetch-sequences</b> output)",
-	 "<br>","&nbsp;"x7,"Fasta headers should look like this: <b><tt>>mm9_chr1_3473041_3473370_+</tt></b>");
-
-  print "<br>";
-  print ("<INPUT TYPE='radio' NAME='visualize' value='getfasta' $checked{'getfasta'}>",
-	 "Peak coordinates in <a target='_blank' href='http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html'><b>bedtools getfasta</b></a> format (also for <b>retrieve-seq-bed</b> output).",
-	 "<br>","&nbsp;"x7,"Fasta headers should look like this: <b><tt>>3:81458-81806(.)</tt></b>");
+  print ("<INPUT TYPE='radio' NAME='visualize' id='visualize_none' value='none' $checked{'none'}>","<b>No</b>");
 
   print "<br/>";
-  print ("<INPUT TYPE='radio' NAME='visualize' value='bed_coord' $checked{'bed_coord'}>","Peak coordinates provided as a <b>custom <a href='help.peak-motifs.html'>BED file</a>.</b>");
+  print ("<INPUT TYPE='radio' NAME='visualize' id='visualize_getfasta' value='getfasta' $checked{'getfasta'}>",
+	 "Peak coordinates specified in fasta headers in <a target='_blank' href='http://bedtools.readthedocs.org/en/latest/content/tools/getfasta.html'><b>bedtools getfasta</b></a> format (also for <b>retrieve-seq-bed</b> output).",
+	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>3:81458-81806(.)</tt>");
+
+  print "<br/>";
+  print ("<INPUT TYPE='radio' NAME='visualize' id='visualize_galaxy' value='galaxy' $checked{'galaxy'}>",
+	 "Peak coordinates specified in fasta headers of the test sequence file (<a target='_blank' href='https://usegalaxy.org/'><b>Galaxy</b></a> format)",
+	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+</tt>");
+
+  print "<br/>";
+  print ("<INPUT TYPE='radio' NAME='visualize' id='visualize_bed_coord' value='bed_coord' $checked{'bed_coord'}>","Peak coordinates provided as a <b>custom <a class='iframe' href='help.peak-motifs.html'>BED file</a>.</b>");
   print "&nbsp;"x7, "<br>The 4th column of the BED file (feature name) must correspond to the fasta headers of sequences</i><br/>";
 
   print "&nbsp;"x7, $query->filefield(-name=>'bed_file',
 				      -size=>10);
 
   ### assembly
-  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.peak-motifs.html'>Assembly version (UCSC)</a>&nbsp;</B>\n";
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a class='iframe' href='help.peak-motifs.html'>Assembly version (UCSC)</a>&nbsp;</B>\n";
   print  $query->textfield(-name=>'assembly',
 							      -default=>$default{assembly},
 							      -size=>10);
@@ -604,7 +651,6 @@ sub Panel5  {
   print "<br/></fieldset><p/>";
 
   ## Close divisions
-  print "</div>\n";
   print "</div>\n";
   print "<p class='clear'></p>\n";
 
@@ -629,7 +675,7 @@ sub Panel6  {
   print "<br> <b>Reference position for position-analysis and sequence scanning</b>";
 
   ## Origin for calculating positions and scanning sequences
-  print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
+  print "&nbsp;"x4,  "<A class='iframe' HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
   print $query->popup_menu(-name=>'origin',
 			   -Values=>['start',
 				     'center',
@@ -637,7 +683,7 @@ sub Panel6  {
 			   -default=>$default{origin});
   
   ## Offset for calculating positions
-  print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
+  print "&nbsp;"x4,  "<A class='iframe' HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
   print $query->textfield(-name=>'offset',
 			  -default=>$default{offset},
 			  -size=>8);
@@ -655,7 +701,5 @@ sub Panel6  {
 
   ## Close divisions
   print "</div>\n";
-  print "</div>\n";
   print "<p class='clear'></p>\n";
-
  }
