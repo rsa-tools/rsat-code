@@ -650,12 +650,12 @@ sub OrgParameters {
   print $out ";\n; Organism parameters:\n";
   if ($infile{organisms}) {
     printf $out ";    %-25s\t%s\n", "organism file", $infile{organisms};
-    } else {
-      printf $out ";    %-25s\t%s\n", "ID", $organism_short_name;
-      printf $out ";    %-25s\t%s\n", "Name", $organism_full_name;
-      printf $out ";    %-25s\t%s\n", "Update date", $install_date;
-      printf $out ";    %-25s\t%s\n", "data source", $source;
-    }
+  } else {
+    printf $out ";    %-25s\t%s\n", "ID", $organism_short_name;
+    printf $out ";    %-25s\t%s\n", "Name", $organism_full_name;
+    printf $out ";    %-25s\t%s\n", "Update date", $install_date;
+    printf $out ";    %-25s\t%s\n", "Data source", $source;
+  }
   
   print $out ";\n; Directories and files:\n";
   if ($task{genome}) {
@@ -801,7 +801,7 @@ sub UpdateConfig {
       } elsif ($taxonomy =~ /;\s*Metazoa/) {
 	$up_from=-3000;
       } elsif ($taxonomy =~ /;\s*Viridiplantae/) {
-	$up_from=-2000;
+	$up_from=-3000;
       } else {
 	$up_from=-1000;
       }
@@ -915,13 +915,20 @@ sub UpdateConfigTab {
     $supported_organism{$organism_short_name}->{'synonyms'} = $args{synonyms} || $main::outfile{synonyms};
   }
   $supported_organism{$organism_short_name}->{'up_to'} = $args{up_to} || $main::up_to;
-  $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from} || $main::up_from;
+
+  if (($main::up_from) && ($main::up_from ne $null)) {
+    $supported_organism{$organism_short_name}->{'up_from'} = $main::up_from;
+  } elsif (($args{up_from}) && ($args{up_from} ne $null)) {
+    $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from};
+  }
+ 
 
   &RSAT::message::Debug("&UpdateConfigTab()",
 			$supported_organism{$organism_short_name}->{'source'},
 			$supported_organism{$organism_short_name}->{'taxid'},
 			$supported_organism{$organism_short_name}->{'ID'},
 			$supported_organism{$organism_short_name}->{'last_update'},
+			$supported_organism{$organism_short_name}->{'up_from'},
 			$supported_organism{$organism_short_name}->{'name'},
       ) if ($main::verbose >= 3);
 
@@ -1225,7 +1232,7 @@ sub CalcFrequencies {
 	  $seq_file = "${organism_short_name}_${seq_type}.fasta";
 	  $seq_format = "fasta";
 	}
-	&RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies", $noorf, $masking) if ($main::verbose >= 1);
+	&RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies", $noorf, $masking) if ($main::verbose >= 2);
 	&CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
 	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
 	&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
@@ -1344,7 +1351,7 @@ sub CalcFrequencies {
   # Calculate oligopeptide frequencies in all protein sequences
   if ($task{protein_freq}) {
     $seq_type = "protein";
-
+    &RSAT::message::TimeWarn("Calculating oligopeptide frequencies") if ($main::verbose >= 2);
     # New name for peptidic sequence file (Sept 2015). I suppress
     # organism name from sequence file name.
     my $seq_file = $dir{genome}."/peptidic_sequences.fasta";
@@ -2152,8 +2159,8 @@ sub ReadArguments {
       ## Specify the limits of upstream regions
     } elsif ($arg eq "-up_from") {
       $up_from = shift(@arguments);
-      &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be integer)")) unless (&IsInteger($up_from));
-      &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be negative)")) if ($up_from >= 0);
+      &FatalError($up_from, "Invalid value for the up_from parameter (must be integer)") unless (&IsInteger($up_from));
+      &FatalError($up_from, "Invalid value for the up_from parameter (must be negative)") if ($up_from >= 0);
 
     } elsif ($arg eq "-up_to") {
       $up_to = shift(@arguments);

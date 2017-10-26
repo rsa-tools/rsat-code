@@ -1,0 +1,196 @@
+#!/usr/bin/perl
+
+############################################################
+#
+# $Id: retrieve-matrix,v 1.0 2017/10/19 14:27:53 thnguyen $
+#
+# Time-stamp: <2003-08-05 10:24:33 jvanheld>
+#
+############################################################
+if ($0 =~ /([^(\/)]+)$/) {
+push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require "RSA.seq.lib";
+
+## Initialize parameters
+local $start_time = &RSAT::util::StartScript();
+
+my $outputfile = "";
+my $collection_file = "";
+my $id = "";
+my $id_file = "";
+
+&ReadArguments();
+
+my @ids;
+if ($id ne "") {
+  @ids = split(",", $id);
+} elsif($id_file ne "") {
+  open(my $fh, "<", $id_file) or die "Cannot open file $!";
+  while(my $row = <$fh>) {
+    chomp $row;
+    push @ids, $row;
+  }
+}
+
+################################################################################
+############################### check parameters ###############################
+################################################################################
+
+&RSAT::message::TimeWarn("Checking parameters") if ($main::verbose >= 2);
+
+open(my $fh, "<", $collection_file) or die "Cannot open file $!";
+my $result_matrix = "";
+while(my $row = <$fh>){
+    chomp $row;
+    if($row =~ /^AC\s+/){
+        @f = split(/\s+/, $row);
+        if($f[1] ~~ @ids){
+            $isprint = 1;
+            $result_matrix .= $row . "\n";
+        }else{
+            $isprint = 0;
+        }
+    }elsif($isprint == 1) {
+        $result_matrix .= $row . "\n";
+    }
+}
+
+if($outputfile ne ""){
+    open(my $fh, ">", $outputfile);
+    print $fh $result_matrix;
+}else{
+    print $result_matrix;
+}
+exit(0);
+
+################################################################
+#### subroutine definitions
+################################################################
+
+################################################################
+#### detailed help message
+sub PrintHelp {
+open(HELP, "| more");
+print HELP<<End_help;
+USAGE
+retrieve-matrix -i collection file -id identifier(s) | -id_file identifiers file [-o outpufile]
+
+DESCRIPTION
+Returns matrix
+
+CATEGORY
+util
+matrix
+
+OPTIONS
+-i collection file
+the path to the collection file which contains the matrices.
+
+-id	identifiers
+list of the accession of each matrix in request, separated by commas.
+    
+-id_file identifiers file
+the path to the identifiers file which contains the list of the accession
+of each matrix in request, one per line.
+
+-o	the path to the output file
+
+EXAMPLES
+retrieve-matrix -i $ENV{RSAT}/public_html/motif_databases/RSAT_nonredundant_vertebrates_2017.tf -id cluster_1,cluster_100 -o result.txt
+
+will return the matrices with the accessions: cluster_1 and cluster_100 from the collection RSAT non-redundant vertebrates (2017).
+
+End_help
+close HELP;
+exit;
+}
+
+################################################################
+#### list of options
+sub PrintShortHelp {
+open(HELP, "| more");
+print HELP<<End_short_help;
+retrieve-matrix options
+--------------------
+-i		collection file path
+-id		matrix identifier(s), can be a list of accessions separated with commas
+-id_file    matrix identifier(s) file which contains a list of accessions (one per line)
+-o		outputfile.
+End_short_help
+close HELP;
+exit;
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+        ### output file name
+        if ($ARGV[$a] eq "-o") {
+            $outputfile = $ARGV[$a+1];
+            
+            ### input collection file
+        } elsif ($ARGV[$a] eq "-i") {
+            $collection_file = $ARGV[$a+1];
+            
+            ### help request
+        } elsif ($ARGV[$a] eq "-h") {
+            &PrintHelp;
+        } elsif ($ARGV[$a] eq "-help") {
+            &PrintShortHelp;
+            
+            ### input identifiers
+        } elsif ($ARGV[$a] eq "-id") {
+            $id = $ARGV[$a+1];
+            
+            ### input identifiers file
+        } elsif ($ARGV[$a] eq "-id_file") {
+            $id_file = $ARGV[$a+1];
+            
+            ### verbose
+        } elsif ($ARGV[$a] eq "-v") {
+            if (&IsNatural($ARGV[$a+1])) {
+                $verbose = $ARGV[$a+1];
+            } else {
+                $verbose = 1;
+            }
+        }
+    }
+}
+
+
+################################################################
+#### verbose ####
+sub Verbose {
+    print $out "; retrieve-matrix";
+    &PrintArguments($out);
+    printf $out "; %-14s\t%s\n", "organism", $organism_name;
+    printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
+    printf $out "; %-14s\t%s\n", "feature type", join ",", $organism->get_attribute("feature_types");
+    if ($input_sequence_file) {
+        printf $out "; %-14s\t%s\n", "input sequence file", $input_sequence_file;
+        printf $out "; %-14s\t%s\n", "input sequence format", $input_sequence_format;
+    }
+    printf $out "; %-14s\t%s\n", "feature table file", $annotation_table if ($annotation_table);
+    printf $out "; %-14s\t%s\n", "Output format", $out_format;
+    printf $out "; %-14s\t%s\n", "Line width", $line_width;
+    printf $out "; %-14s\t%d\n", "Random selection", $random_orfs if ($random_orfs);
+    print $out "; clipping to avoid overlap with neighbour ORFs\n" if ($noorf);
+    print $out "; relative coordinates\n";
+    print $out ";        from    $from\n";
+    print $out ";        to      $to\n";
+    print $out ";        size    ", abs($to - $from + 1), "\n";
+    if (defined($query_file)) {
+        printf $out "; %-14s\t%s\n", "Query file", $query_file;
+    } else {
+        printf $out "; %-14s\t%d\n", "Queries", scalar(@queries);
+        unless ($return_all) {
+            foreach $q (@queries) {
+                print $out ";	$q\n";
+            }
+        }
+    }
+    print $out ";\n";
+}

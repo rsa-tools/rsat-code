@@ -852,7 +852,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     $bg_model->set_attribute("strand", "sensitive");
   }
 
-  ### For window bg_method the bg is always sensitive
+  ### Fo window bg_method the bg is always strand-sensitive
   if ($bg_method eq "window") {
     $bg_model->force_attribute("strand", "sensitive");
   }
@@ -879,7 +879,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
 				    ") must be larger than Markov order + 1 (",
 				    $main::markov."+1)."));
     }
-
+    
     ## bg window : calculate bg pseudo frequency
     if ($bg_method ne "input") {
       unless ($bg_pseudo_user_specified) {
@@ -888,9 +888,10 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       }
     }
 
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ## TO DO: read the sequences once to determine prior frequencies, in
-    ## order to set the pseudo-weight distribution
-
+    ## order to set the pseudo-weight distribution.
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
     ################################################################
@@ -925,7 +926,6 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
   } else {
     &RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
   }
-
 
   ################################################################
   ## For quick scan mode, compute genomic coordinates of input
@@ -994,6 +994,11 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     foreach my $m (1..$new_matrix_nb) {
       my $matrix = $new_matrices[$m-1];
 
+      &RSAT::message::TimeWarn("\tComputing matrix parameters (consensus, distrib, ...) for matrix",
+			       $m."/".$new_matrix_nb, 
+			       $matrix->get_attribute("name")) if ($main::verbose >= 3);
+
+      unless ($bg_method eq "window") {
 
       # ## Skip some of the first matrices if required
       # if ($first_matrix > 0) {
@@ -1021,11 +1026,16 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       $matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
       $matrix->set_attribute("file", $matrix_file);
       $matrix->set_attribute("n_treatment", $n_treatment);
+
+      ## Index the alphabet
       $matrix->index_alphabet();
-      
-      &RSAT::message::TimeWarn("\tComputing matrix parameters (consensus, distrib, ...) for matrix",
-			       $m."/".$new_matrix_nb, 
-			       $matrix->get_attribute("name")) if ($main::verbose >= 3);
+
+      ## Set the matrix prior
+      $matrix->setMarkovModel($bg_model);
+      &RSAT::message::TimeWarn("Residue priors for matrix", $matrix->get_attribute("name"),
+			       "\n\t\%prior", join(" ", %prior),  
+				 "\n\tgetPrior()", join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
+      }
 
       ## Use the matrix consensus as name
       if ($consensus_name) {
@@ -1094,10 +1104,12 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       # 	}
       
       unless ($bg_method eq "window") {
-	## Set the matrix prior
-	$matrix->setMarkovModel($bg_model);
-	&RSAT::message::TimeWarn("Setting matrix priors for matrix", $matrix->get_attribute("name"),
-				 %prior, join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
+
+	# ## Set the matrix prior JvH 2017-09-17: moved above because bg model must be set before computing proba and weights
+	# $matrix->setMarkovModel($bg_model);
+	# &RSAT::message::TimeWarn("Residue priors for matrix", $matrix->get_attribute("name"),
+	# 			 "\n\t\%prior", join(" ", %prior),  
+	# 			 "\n\tgetPrior()", join(" ", $matrix->getPrior())) if ($main::verbose >= 4);
 	## Calculate min and max weight values
 	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range() if ($return_fields{weight_limits} || $calc_fields{normw});
 	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix",
@@ -2331,8 +2343,8 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
 
 
       ################################################################
-      ## Calculate inverse cumulative frequencies
-      &RSAT::message::TimeWarn("Calculating inverse cumulative frequencies") if ($main::verbose >= 2);
+      ## Calculate decreasing cumulative frequencies
+      &RSAT::message::TimeWarn("Calculating decreasing cumulative frequencies") if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
@@ -2348,7 +2360,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     }
     ################################################################
     ## Check distribution thresholds on score. This can only be done
-    ## after having computed the cumulative and inverse umulative
+    ## after having computed the cumulative and decreasing umulative
     ## frequencies
     &check_distrib_thresholds('score');
 
@@ -2365,7 +2377,7 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
     if ($return_fields{occ_proba}) {
 
       ## Calculate expected number of occurrences with a score >= x
-      &RSAT::message::TimeWarn("Calculating expected inverse cumulative distribution.")
+      &RSAT::message::TimeWarn("Calculating expected decreasing cumulative distribution.")
 	  if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
@@ -2400,13 +2412,16 @@ regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
       &check_distrib_thresholds('exp_occ');
 
       ## Calculate significance of the number of motif occurrences
-      &RSAT::message::TimeWarn("Calculating probabilities for the score distribution.")
+      ##
+      ## TO DO (JvH): this step could be accelerated by using R for the
+      ## computation of the binomial.
+      &RSAT::message::TimeWarn("Calculating probabilities for matrix score distributions.")
 	  if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
 	my $n = $matrix->{scored};
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-	&RSAT::message::TimeWarn("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 4));
+	&RSAT::message::TimeWarn("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
 	my $s = 0;
 	foreach my $score (@sorted_scores) {
 	  $s++;
@@ -3086,6 +3101,7 @@ residue frequencies.
 				    "Invalid value for a pseudo-weight. Must be a positive real number."))
 	unless ((&RSAT::util::IsReal($main::pseudo_counts) )
 		&& ($main::pseudo_counts >= 0));
+
 
       ## Equiprobable distribution of the pseudo-weight
 
@@ -4123,10 +4139,13 @@ sub score_segment {
    my ($proba_B) = $bg_model->segment_proba($segment, 0);
 #   my ($proba_M, $ref_residue_proba_M) = $matrix->segment_proba($segment, 1);
 #   my ($proba_B, $ref_residue_proba_B)= $bg_model->segment_proba($segment, 1);
-#   &RSAT::message::Debug("Segment", $segment,
-# 			"proba_M=".$proba_M,
-# 			"proba_B=".$proba_B, 
-# 		       ) if ($main::verbose >= 5);
+
+
+
+  # &RSAT::message::Debug("Segment", $segment,
+  # 			"proba_M=".$proba_M,
+  # 			"proba_B=".$proba_B, 
+  # 		       ) if ($main::verbose >= 0); ## JvH was here on 2017-08-19
 
 #   ## Check that the two probabilities were computed from sequences of the same lengths.
 #   my @residue_proba_M = @$ref_residue_proba_M;

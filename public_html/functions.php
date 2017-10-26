@@ -1,7 +1,10 @@
 <?php
+    
+    
+
   // NeAT TITLE
 Function title($title) {
-  echo "<H3><a href='NeAT_home.html'>NeAT</a> - $title</H3>\n";
+  echo "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><H3><a href='NeAT_home.html'>NeAT</a> - $title</H3>\n";
   }
 
 
@@ -193,20 +196,29 @@ Function load_props($props) {
   return $prop_array;
 }
 
-
+Function getGitLastCommitDate(){
+	$date = shell_exec('git log | head -n 4 | grep Date');
+	$date = str_replace('Date:', '', $date);
+	$date = preg_replace('/^\s*\w+\s+/', '', $date);
+	$date = preg_replace('/\D+\w+\s*$/', '', $date);
+	return $date;
+}
 ////////////////////////////////////////////////////////////////
 // Operations done when loading each php page
 
 // Guess the main RSAT directory
 $rsat_main = getcwd()."/..";
-
+    $x = getcwd();
+    if(strpos($x, "/tutorials") !== false){
+        $x = str_replace("/tutorials", "", $x);
+        $rsat_main = $x."/..";
+    }
 // log file
 $rsat_logs = $rsat_main."/public_html/logs";
 
-
 // Load properties from the site-specific configuration file RSAT_config.props
 $properties = load_props($rsat_main."/RSAT_config.props");
-
+$properties['git_date'] = getGitLastCommitDate();
 // Check if the property rsat_www has been set to "auto", and, if so,
 // set it automatically
 if ($properties['rsat_www'] == "auto") {
@@ -489,6 +501,21 @@ function endsWith($haystack,$needle,$case=true)
 
   return strripos($haystack, $needle, 0) === $expectedPosition;
 }
+
+Function printMenu($menu){
+        if(strcmp($menu, "RSAT") == 0){
+            ob_start(); // begin collecting output
+            include 'menu.php';
+            $result = ob_get_clean(); 
+            echo($result);
+        }else{
+            ob_start(); // begin collecting output
+            include 'menu_graph.php';
+            $result = ob_get_clean(); 
+            echo($result);			
+        }
+    }
+
 ?> 
 <?php
 ini_set('max_execution_time', 2400);

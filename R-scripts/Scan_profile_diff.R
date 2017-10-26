@@ -55,7 +55,7 @@ repeat.n <- function(x = c(1,2,3), times = 1){
 create.html.tab <- function(tab, img = 0, plot = 0){
   
   full.tab <- NULL
-  head.tab <- "<div id='individual_motif_tab' style='width:2500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='1190px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> Chi-squared </th> <th class=\"tab_col\"> Degrees </th> <th class=\"tab_col\"> Sig (Chi) </th> <th class=\"tab_col\"> Eval (Chi) </th> <th class=\"tab_col\"> Pval (Chi) </th><th class=\"tab_col\"> Qval (Chi) </th><th class=\"tab_col\"> D (KS) </th><th class=\"tab_col\"> Sig (KS) </th> <th class=\"tab_col\"> Eval (KS) </th> <th class=\"tab_col\"> Pval (KS) </th> <th class=\"tab_col\"> Qval (KS) </th> <th class=\"tab_col\"> Coverage (query) </th><th class=\"tab_col\"> Nb sequences (query) </th><th class=\"tab_col\"> Coverage (control) </th><th class=\"tab_col\"> Nb sequences (control) </th><th class=\"tab_col\"> Nb hits (query) </th><th class=\"tab_col\"> Nb hits (control) </th> <th class=\"tab_col\"> Profile cluster </th><th class=\"tab_col\"> Profiles </th><th class=\"tab_col\"> Site distribution </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
+  head.tab <- "<div id='individual_motif_tab' style='width:2500px;display:none' class='tab div_chart_sp'><p style='font-size:12px;padding:0px;border:0px'><b>Individual Motif View</b></p><table id='Motif_tab' class='hover compact stripe' cellspacing='0' width='900px' style='padding:15px;align:center;'><thead><tr><th class=\"tab_col\"> Motif_name </th><th class=\"tab_col\"> Motif_ID </th> <th class=\"tab_col\"> Chi-squared </th> <th class=\"tab_col\"> Degrees </th> <th class=\"tab_col\"> Sig (Chi) </th> <th class=\"tab_col\"> Eval (Chi) </th> <th class=\"tab_col\"> Pval (Chi) </th><th class=\"tab_col\"> Qval (Chi) </th> <th class=\"tab_col\"> Coverage (query) </th><th class=\"tab_col\"> Nb sequences (query) </th><th class=\"tab_col\"> Coverage (control) </th><th class=\"tab_col\"> Nb sequences (control) </th><th class=\"tab_col\"> Nb hits (query) </th><th class=\"tab_col\"> Nb hits (control) </th> <th class=\"tab_col\"> Profile cluster </th><th class=\"tab_col\"> Profiles </th><th class=\"tab_col\"> Site distribution </th> <th class=\"tab_col\"> Logo </th> <th class=\"tab_col\"> Logo (RC) </th></tr></thead><tbody>"
   content.tab <- apply(tab, 1, function(row){
     
     row.length <- length(row)
@@ -180,25 +180,13 @@ bins <- bin
 ## Create folder for individual profile plots
 dir.create(paste(prefix, "_TFBSs_positional_profiles/", sep = ""), recursive = TRUE, showWarnings = FALSE )
 
-# matrix.scan.file.query <-"/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_matrix_scan_results_PARSED.tab"
-# matrix.scan.file.control <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_matrix_scan_results_PARSED_control.tab"
-# sequence.names.file.query <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_matrix_scan_sequence_names.tab"
-# sequence.names.file.control <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_matrix_scan_sequence_names_control.tab"
-# ID.to.names.correspondence.tab <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode_TF_ID_name_correspondence.tab"
-# prefix <- "/home/jaime/Desktop/position_scan_diff/SPPS_discovered_motifs_diff_mode"
+# matrix.scan.file.query <- "PRE_cluster_1_2_3_4_vs_PRE_cluster_6_matrix_scan_results_PARSED.tab"
+# matrix.scan.file.control <- "PRE_cluster_1_2_3_4_vs_PRE_cluster_6_matrix_scan_results_PARSED_control.tab"
+# sequence.names.file.query <- "PRE_cluster_1_2_3_4_vs_PRE_cluster_6_matrix_scan_sequence_names.tab"
+# sequence.names.file.control <- "PRE_cluster_1_2_3_4_vs_PRE_cluster_6_matrix_scan_sequence_names_control.tab"
+# ID.to.names.correspondence.tab <- "PRE_cluster_1_2_3_4_vs_PRE_cluster_6_TF_ID_name_correspondence.tab"
+# bin <- 50
 # seq.length <- 600
-# bins <- 50
-
-# matrix.scan.file.query <-"/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative_matrix_scan_results_PARSED.tab"
-# matrix.scan.file.control <- "/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative_matrix_scan_results_PARSED_control.tab"
-# sequence.names.file.query <- "/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative_matrix_scan_sequence_names.tab"
-# sequence.names.file.control <- "/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative_matrix_scan_sequence_names_control.tab"
-# ID.to.names.correspondence.tab <- "/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative_TF_ID_name_correspondence.tab"
-# prefix <- "/home/jcastro/Desktop/DIFF_TEST/position_scan_CapStarrSeq_K562_IFN_total_vs_negative"
-# seq.length <- 2000
-# bins <- 50
-
-
 
 ###########################################################
 ## Step 3: Read matrix-scan tables for query and control ##
@@ -219,7 +207,6 @@ colnames(matrix.scan.results.control) <- c("seq_id", "ft_name", "bspos", "Pval")
 ## an identical match in the same position for the F and R strand
 matrix.scan.results.query <- matrix.scan.results.query[!duplicated(matrix.scan.results.query), ]
 matrix.scan.results.control <- matrix.scan.results.control[!duplicated(matrix.scan.results.control), ]
-
 
 #############################################################
 ## Step 4: Read sequence names table for query and control ##
@@ -386,7 +373,11 @@ thr <- sapply(1:nb.motifs, function(m){
       # geom_rug(position='jitter') +
       labs(title=paste("Qualitative distribution of ", motif, " TFBSs\nin ", seq.type, " sequences", sep = ""), y = "-log10(P-value)", x = "Position") +
       scale_colour_manual(name = "-log10(P-value)",values = myColors, labels = paste(">", pval.class.motif, sep = "")) +
-      theme_minimal()
+      theme(
+        panel.background = element_rect(fill = NA),
+        panel.grid.major = element_line(colour = "grey"),
+        panel.ontop = FALSE
+      )
       # annotate("text", x = -limits + ((limits*2)/10), y = max.pval - 0.25, label = paste("Nb of TFBSs: ", nb.TFBSs, sep = ""), size = 4, hjust = 0) +
       # annotate("text", x = -limits + ((limits*2)/10), y = max.pval - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) +
       # annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval - 1, ymax = max.pval - 0.05)
@@ -458,20 +449,21 @@ all.chi.ks.results <- sapply(1:nrow(counts.per.bin.query), function(r){
   chisq.query.vs.control <- chisq.test(query, p = control.freq, correct = TRUE)
   chisq.control.vs.query <- chisq.test(control, p = query.freq, correct = TRUE)
   
-  #####################################
-  ## Calculate the KS in two senses:
-  ## Query vs Control
-  ## Control vs Query
-  ## Actually both return the same result!
-  ks.query.vs.control <- ks.test(unique(query.freq), unique(control.freq), alternative = "two.sided")
-  # ks.control.vs.query <- ks.test(control, query, alternative = "two.sided")
-  
-  return(c(chisq.query.vs.control[[1]], chisq.query.vs.control[[3]], chisq.control.vs.query[[1]], chisq.control.vs.query[[3]], chisq.control.vs.query[[2]], round(ks.query.vs.control[[1]], digits = 2), ks.query.vs.control[[2]], bins))
+  # #####################################
+  # ## Calculate the KS in two senses:
+  # ## Query vs Control
+  # ## Control vs Query
+  # ## Actually both return the same result!
+  # ks.query.vs.control <- ks.test(unique(query.freq), unique(control.freq), alternative = "two.sided")
+  # # ks.control.vs.query <- ks.test(control, query, alternative = "two.sided")
+  # 
+  # return(c(chisq.query.vs.control[[1]], chisq.query.vs.control[[3]], chisq.control.vs.query[[1]], chisq.control.vs.query[[3]], chisq.control.vs.query[[2]], round(ks.query.vs.control[[1]], digits = 2), ks.query.vs.control[[2]], bins))
+  return(c(chisq.query.vs.control[[1]], chisq.query.vs.control[[3]], chisq.control.vs.query[[1]], chisq.control.vs.query[[3]], chisq.control.vs.query[[2]], bins))
   
 })
 all.chi.ks.results <- t(all.chi.ks.results)
 rownames(all.chi.ks.results) <- matrix.names
-colnames(all.chi.ks.results) <- c("Chi_Q_vs_C", "Chi_Pvalue_Q_vs_C", "Chi_C_vs_Q", "Chi_Pvalue_C_vs_Q", "DF", "KS_D", "KS_Pvalue", "Bin_size")
+colnames(all.chi.ks.results) <- c("Chi_Q_vs_C", "Chi_Pvalue_Q_vs_C", "Chi_C_vs_Q", "Chi_Pvalue_C_vs_Q", "DF", "Bin_size")
 
 
 #############################################
@@ -565,32 +557,26 @@ df$Chi_C_vs_Q <- round(df$Chi_C_vs_Q, digits = 2)
 ## Calculate E-values
 df$Chi_Evalue_Q_vs_C <- df$Chi_Pvalue_Q_vs_C * nb.motifs
 df$Chi_Evalue_C_vs_Q <- df$Chi_Pvalue_C_vs_Q * nb.motifs
-df$KS_Evalue <- df$KS_Pvalue * nb.motifs
 
 ## Calculate Significance
 df$Sig_Chi_Q_vs_C <- round(-log10(df$Chi_Evalue_Q_vs_C), digits = 2)
 df$Sig_Chi_C_vs_Q <- round(-log10(df$Chi_Evalue_C_vs_Q), digits = 2)
-df$Sig_KS <- round(-log10(df$KS_Pvalue), digits = 2)
 
 ## Calculate Q-values
 df$Chi_Qvalue_Q_vs_C <- p.adjust(as.vector(df$Chi_Pvalue_Q_vs_C), method = "BH")
 df$Chi_Qvalue_C_vs_Q <- p.adjust(as.vector(df$Chi_Pvalue_C_vs_Q), method = "BH")
-df$KS_Qvalue <- p.adjust(as.vector(df$KS_Pvalue), method = "BH")
 
 ####################################################
 ## Transform Pval, Eval and Qval to PrettyNumbers ##
 ####################################################
 df$Chi_Pvalue_Q_vs_C <- prettyNum(df$Chi_Pvalue_Q_vs_C, scientific=TRUE, digits = 2)
 df$Chi_Pvalue_C_vs_Q <- prettyNum(df$Chi_Pvalue_C_vs_Q, scientific=TRUE, digits = 2)
-df$KS_Pvalue <- prettyNum(df$KS_Pvalue, scientific=TRUE, digits = 2)
 
 df$Chi_Evalue_Q_vs_C <- prettyNum(df$Chi_Evalue_Q_vs_C, scientific=TRUE, digits = 2)
 df$Chi_Evalue_C_vs_Q <- prettyNum(df$Chi_Evalue_C_vs_Q, scientific=TRUE, digits = 2)
-df$KS_Evalue <- prettyNum(df$KS_Evalue, scientific=TRUE, digits = 2)
 
 df$Chi_Qvalue_Q_vs_C <- prettyNum(df$Chi_Qvalue_Q_vs_C, scientific=TRUE, digits = 2)
 df$Chi_Qvalue_C_vs_Q <- prettyNum(df$Chi_Qvalue_C_vs_Q, scientific=TRUE, digits = 2)
-df$KS_Qvalue <- prettyNum(df$KS_Qvalue, scientific=TRUE, digits = 2)
 
 ## Add the matrix Id as feature ID
 df$feature <- rownames(df)
@@ -603,8 +589,8 @@ df$covered_seq_control <- seq.matched.control
 df$nb_hits_query <- nb.hits.query
 df$nb_hits_control <-nb.hits.control
 
-features.table <- df[, c("feature", "Chi_Q_vs_C", "DF","Sig_Chi_Q_vs_C", "Chi_Evalue_Q_vs_C", "Chi_Pvalue_Q_vs_C", "Chi_Qvalue_Q_vs_C", "KS_D", "Sig_KS", "KS_Evalue", "KS_Pvalue", "KS_Qvalue", "coverage_query", "covered_seq_query", "coverage_control", "covered_seq_control", "nb_hits_query", "nb_hits_control")]
-colnames(features.table) <- c("Feature", "Chi_squared", "Degrees", "Sig_Chi", "E_val_Chi", "P_val_Chi", "Q_val_Chi", "D", "Sig_KS", "Eval_KS", "Pval_KS", "Qval_KS","Coverage_query", "Sequences_query", "Coverage_control", "Sequences_control","Nb_hits_query", "Nb_hits_control")
+features.table <- df[, c("feature", "Chi_Q_vs_C", "DF","Sig_Chi_Q_vs_C", "Chi_Evalue_Q_vs_C", "Chi_Pvalue_Q_vs_C", "Chi_Qvalue_Q_vs_C", "coverage_query", "covered_seq_query", "coverage_control", "covered_seq_control", "nb_hits_query", "nb_hits_control")]
+colnames(features.table) <- c("Feature", "Chi_squared", "Degrees", "Sig_Chi", "E_val_Chi", "P_val_Chi", "Q_val_Chi","Coverage_query", "Sequences_query", "Coverage_control", "Sequences_control","Nb_hits_query", "Nb_hits_control")
 
 ###############################################################################
 ## Step 14: calculate -log2 ratio between Query and Control TFBS frequencies ##
@@ -630,6 +616,11 @@ counts.per.bin.log2 <- sapply(matrix.names, function(m){
   ggplot(df.freq, aes(y=y, x=x, group = Sequences, colour=Sequences)) +
     geom_line(size = 2) +
     ylim(0, max.y) +
+    theme(
+      panel.background = element_rect(fill = NA),
+      panel.grid.major = element_line(colour = "grey"),
+      panel.ontop = FALSE
+    ) +
     geom_rug(position='jitter', sides="l") +
     labs(title=paste(m, " binding profile (Query vs Control)", sep = ""), y = "Frequency of TFBSs", x = "Position")
     # annotation_custom(logo.roster, xmax = limits, xmin = limits - sum(abs(range(df.freq$x)))/5, ymin = max.y - 0.01, ymax = max.y - 0.075)
@@ -752,11 +743,11 @@ verbose(paste("Exporting attributes table"),1)
 #####################################
 ## Write the logo and profile path
 logos.F <- sapply(matrix.names, function(i){
-  paste(logo.folder, "/", i, "_logo.jpeg", sep = "")
+  paste(logo.folder, "/", i, "_logo.png", sep = "")
 })
 
 logos.R <- sapply(matrix.names, function(i){
-  paste(logo.folder, "/", i, "_logo_rc.jpeg", sep = "")
+  paste(logo.folder, "/", i, "_logo_rc.png", sep = "")
 })
 
 ## Write the Profile and TFBSs plots path
@@ -796,7 +787,7 @@ features.table <- features.table[order.by.eval,]
 
 print(dim(features.table))
 
-features.table <- features.table[,c(1,19,2:18,20:24)]
+features.table <- features.table[,c(1,14,2:13,15:19)]
 
 ################################
 ## Create dynamic html report ##
@@ -991,7 +982,7 @@ all.cluster.buttons <- paste(all.cluster.buttons, collapse = "\n")
 ## Substitute the words marked in the template by the data
 html.report <- readLines(html.template.file)
 print(colnames(features.table))
-profile.data.tab.html <- create.html.tab(features.table, img = c(22,23), plot = c(21,24))
+profile.data.tab.html <- create.html.tab(features.table, img = c(17,18), plot = c(16,19))
 profile.data.tab.html <- gsub("Inf", "&infin;", profile.data.tab.html)
 profile.data.tab.html <- paste(profile.data.tab.html, collapse = "\n")
 html.report <- gsub("--tab--", profile.data.tab.html, html.report)
@@ -1059,7 +1050,7 @@ html.report <- gsub("--IDs--", IDs, html.report)
 ## Add the real motif logo path (to display in the tooltip)
 ## They are inserted in the JS section
 logos <- sapply(TF.IDs, function(i){
-  paste(logo.folder, i, "_logo.jpeg", sep = "")
+  paste(logo.folder, i, "_logo.png", sep = "")
 })
 logos.rep <- repeat.n(as.vector(features.table$Logo), times = 2)
 logos <- paste("pics['", all.motifs, "'] = '", logos.rep, "';", sep = "")
@@ -1068,7 +1059,7 @@ html.report <- gsub("--pics--", logos, html.report)
 
 ## Logos in Reverse complement
 logos.rc <- sapply(TF.IDs, function(i){
-  paste(logo.folder, i, "_logo_rc.jpeg", sep = "")
+  paste(logo.folder, i, "_logo_rc.png", sep = "")
 })
 logos.rc.rep <- repeat.n(as.vector(features.table$Logo_RC), times = 2)
 logos.rc <- paste("pics_rc['", all.motifs, "'] = '", logos.rc.rep, "';", sep = "")

@@ -48,7 +48,7 @@ where `XX-XX-XX` is the latest release date and put it in your chosen directory.
 ```
 ## By default we install the package in the tool directory.
 ## This should be adapted according to your local setup. 
-export INSTALL_ROOT=~/packages
+export INSTALL_ROOT=/packages
 sudo mkdir -p ${INSTALL_ROOT}
 
 ## Replace XX-XX-XX by the actual release
@@ -64,10 +64,15 @@ cd ${INSTALL_ROOT}/rsat
 For VirtualBox instances, replace [your.server.IP] by the actual IP address of your server. 
 
 ```
+## Get your IP address and check if it is 192.168.56.101
+ifconfig | grep inet
+
+## Semi-auto configuration for VirtualBox VM
+## (adapt IP address if required)
 perl perl-scripts/configure_rsat.pl -auto  \
-  rsat_site=rsat-vb-2017-04 \
-  rsat_www=http://[your.server.IP]/rsat/ \
-  rsat_ws=http://[your.server.IP]/rsat/ \
+  rsat_site=rsat-vb-2017-10 \
+  rsat_www=http://192.168.56.101/rsat/ \
+  rsat_ws=http://192.168.56.101/rsat/ \
   ucsc_tools=1 \
   ensembl_tools=1
 ```
@@ -76,7 +81,7 @@ For the IFB cloud (IP address will change at each instance)
 
 ```
 perl perl-scripts/configure_rsat.pl -auto  \
-  rsat_site=rsatvm-ifb-2017-04 \
+  rsat_site=rsatvm-ifb-2017-10 \
   RSAT=${INSTALL_ROOT}/rsat \
   rsat_www=auto \
   rsat_ws=auto \
@@ -99,10 +104,21 @@ perl perl-scripts/configure_rsat.pl
 
 ## Installing RSAT
 
+Before running the installation, it might be worth updating the Linux distribution (`apt-get update`) in order to get the latest versions of the basic packages. 
+
 ```
+## This requires admin privileges
 sudo bash
-apt-get update
+
+## Check who you are  (should be root)
+whoami
+
+
+## Go to the RSAT directory
+export INSTALL_ROOT=/packages
 cd ${INSTALL_ROOT}/rsat
+
+## Read config and run bash installation scripts
 source RSAT_config.bashrc && \ 
 bash installer/01_ubuntu_packages.bash && \
 bash installer/02_python_packages.bash  && \
@@ -113,6 +129,15 @@ bash installer/07_R-and-packages.bash  && \
 bash installer/08_apache_config.bash && \
 bash installer/09_rsat_ws.bash && \
 bash installer/10_clean_unnecessary_files.bash
+
+## Restore rsat as owner of the $RSAT folder
+chown -R rsat.rsat $RSAT
+
+## Exit sudo session
+exit
+
+## Check who you are (should be back to normal user identity)
+whoami
 ```
 
 ## Testing the command lines
@@ -143,22 +168,23 @@ metabolic-tools_YYYYMMDD.tar.gz
 
    Metabolic pathway analysis tools (supported on some NeAT servers).
 
-## RSAT/NeAT installation
+## RSAT/NeAT installation and user guides
 
 After having uncompressed the archive, you will find the installation
-and user guides in the directory
+and user guides in the `doc/manuals` directory
 
-      rsa-tools/doc/manuals/*.pdf
+```
+ls -1 public_html/release/*.pdf
+```
 
-## Regulatory Sequence Analysis Tools (RSAT)
 
-RSAT installation guide:   RSAT_install_guide.pdf
-Web configuration guide:   rsat_web_server.pdf
-Command-linde user guide:  tutorial_shell_rsat.pdf
-
-## Network Analysis Tools (NeAT)
-
-Web server configuration:  neat_web_server.pdf
-Command-line user guide:   neat_tutorial.pdf
+| Guide | File |
+|------------------------|---------------------------|
+| RSAT installation guide |   RSAT_install_guide.pdf |
+| RSAT Web configuration guide |   rsat_web_server.pdf |
+| RSAT Command-linde user guide |  tutorial_shell_rsat.pdf |
+| NeAT Web server configuration |  neat_web_server.pdf |
+| NeAT Command-line user guide |   neat_tutorial.pdf |
 
 ****************************************************************
+
