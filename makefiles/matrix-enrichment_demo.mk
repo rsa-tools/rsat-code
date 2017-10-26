@@ -2,7 +2,7 @@
 ## Usage: make -f matrix_enrichment_demo.mk
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=${RSAT}/makefiles/matrix_enrichment_demo.mk
+MAKEFILE=${RSAT}/makefiles/matrix-enrichment_demo.mk
 
 DATE=20160427
 DEMO_FILE_DIR=${RSAT}/public_html/demo_files
@@ -93,14 +93,14 @@ _bg_input:
 	@echo
 	@echo "Running 	${PREFIX}	${OPT}"
 	${MAKE} my_command MY_COMMAND="${MATRIX_ENRICHMENT_BG_INPUT_CDM}"
-	@echo "		${MATRIX_ENRICHMENT_BG_INPUT_CDM}"
-	@echo "		${PREFIX}_report.html"
+	@echo "	${MATRIX_ENRICHMENT_BG_INPUT_CDM}"
+	@echo "	${PREFIX}_report.html"
 
-# capstar_seq_demo:
-# 	@echo
-# 	@echo ${TITLE_CAPSTARR}
-# 	@echo ${MATRIX_ENRICHMENT_CDM}
-# 	${MAKE} _enrichment TITLE=${TITLE_CAPSTARR} PREFIX=${MTXE_CAP_OUT}
+capstar_seq_demo:
+	@echo
+	@echo ${TITLE_CAPSTARR}
+	@echo ${MATRIX_ENRICHMENT_CDM}
+	${MAKE} _enrichment TITLE=${TITLE_CAPSTARR} PREFIX=${MTXE_CAP_OUT}
 
 es_cells_demo:
 	@echo

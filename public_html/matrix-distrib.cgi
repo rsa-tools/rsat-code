@@ -153,8 +153,10 @@ if (($query->param('output') =~ /display/i) ||
 
   print "<PRE>";
   while (<RESULT>) {
-    print "$_" unless ($query->param('output') =~ /server/i);
-    print MIRROR $_ if ($mirror);
+	if(!($_ =~ /</)){    
+		print "$_" unless ($query->param('output') =~ /server/i);
+    		print MIRROR $_ if ($mirror);}
+	else{ if(!($_ =~ /<=/)) {print $_;}}
     if ($_ =~ /Error<\/h4><blockquote/ ) {
       $error_found = 1;
     }	
@@ -181,6 +183,7 @@ if (($query->param('output') =~ /display/i) ||
     $command2 .= " -xcol 1 -ycol 2 -legend -lines -pointsize 1";
     $command2 .= " -xleg1 'weight'";
     $command2 .= " -yleg1 'frequency'";
+    $command2 .= " -r_plot";
     $command2 .= " -format ".${plot_format};
     $command2 .= " -o $figure";
     print "<pre>command2: $command2\n</pre>" if ($ENV{rsat_echo} >= 1);
@@ -200,8 +203,9 @@ if (($query->param('output') =~ /display/i) ||
     $command3 .= " -ycol 2,4";
     $command3 .= " -legend";
     $command3 .= " -lines";
-    $command3 .= " -pointsize 1 -ylog -ymax 1 -ymin 0";
+    $command3 .= " -pointsize 1 -ylog";
     $command3 .= " -xleg1 'weight' -yleg1 'Frequency (log scale)'";
+    $command3 .= " -r_plot";
     $command3 .= " -format ${plot_format}";
     $command3 .= " -o $figure";
     print "<pre>command3: $command3\n</pre>" if ($ENV{rsat_echo} >= 1);

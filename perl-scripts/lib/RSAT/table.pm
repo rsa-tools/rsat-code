@@ -596,17 +596,17 @@ sub addColumn {
 #	push @{$self->{table}}, [@new_col];
     
     
-    &RSAT::message::Debug("Table: adding column", join (" ", @new_col)) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Table: adding column", join (" ", @new_col)) if ($main::verbose >= 7);
     
     ## Update number of columns
     my $ncol = $self->ncol()+1;
     $self->force_attribute("ncol", $ncol);
-    &RSAT::message::Debug("Table: updating number of columns", $self->ncol()) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Table: updating number of columns", $self->ncol()) if ($main::verbose >= 7);
     
     ## update number of rows
     my $column_size = scalar(@new_col);
     if ($column_size >= $self->nrow()) {
-	&RSAT::message::Debug ("Table: updating number of rows", $column_size) if ($main::verbose >= 5);
+	&RSAT::message::Debug ("Table: updating number of rows", $column_size) if ($main::verbose >= 7);
 	$self->force_attribute("nrow", scalar(@new_col));
     }
     
@@ -632,12 +632,12 @@ sub addRow {
     ## Update number of rows
     my $nrow = $self->nrow()+1;
 	$self->force_attribute("nrow", $nrow);
-    &RSAT::message::Debug("Table: updating number of rows", $self->nrow()) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Table: updating number of rows", $self->nrow()) if ($main::verbose >= 7);
     
     ## update number of colmuns
     my $row_size = scalar(@new_row);
     if ($row_size >= $self->ncol()) {
-	&RSAT::message::Debug("Table: updating number of columns", $row_size) if ($main::verbose >= 5);
+	&RSAT::message::Debug("Table: updating number of columns", $row_size) if ($main::verbose >= 7);
 	$self->force_attribute("ncol", scalar(@new_row));
     }
     
@@ -650,79 +650,79 @@ sub addRow {
 
 
 
-=pod
+# =pod
 
-=item B<setAlphabet(@alphabet)>
+# =item B<setAlphabet(@alphabet)>
 
-Specify the alphabet (i.e. the list of valid letters) for the table.
+# Specify the alphabet (i.e. the list of valid letters) for the table.
 
-=cut
-sub setAlphabet {
-    my ($self, @new_alphabet) = @_;
-    @{$self->{alphabet}} = @new_alphabet;
+# =cut
+# sub setAlphabet {
+#     my ($self, @new_alphabet) = @_;
+#     @{$self->{alphabet}} = @new_alphabet;
 
-    ## update the number of columns
-    $self->force_attribute("nrow", scalar(@new_alphabet));
-#    &RSAT::message::Debug("&RSAT::table::setAlphabet()", "new alphabet", $self->getAlphabet())) if ($main::verbose >= 10);
-}
-
-
-
-
-=pod
-
-=item B<setAlphabet_uc(@alphabet)>
-
-Same as setAlphabet(), but first converts the alphabet to uppercases,
-to ensure case-insensitivvity.
-
-=cut
-sub setAlphabet_uc {
-    my ($self, @new_alphabet) = @_;
-
-    ## Convert alphabet to uppercases
-    for my $i (0..$#new_alphabet) {
-	$new_alphabet[$i] = uc($new_alphabet[$i]);
-    }
-
-    $self->setAlphabet(@new_alphabet);
-}
+#     ## update the number of columns
+#     $self->force_attribute("nrow", scalar(@new_alphabet));
+# #    &RSAT::message::Debug("&RSAT::table::setAlphabet()", "new alphabet", $self->getAlphabet())) if ($main::verbose >= 10);
+# }
 
 
 
 
-=pod
+# =pod
 
-=item B<setAlphabet_lc(@alphabet)>
+# =item B<setAlphabet_uc(@alphabet)>
 
-Same as setAlphabet(), but first converts the alphabet to lowercases,
-to ensure case-insensitivvity.
+# Same as setAlphabet(), but first converts the alphabet to uppercases,
+# to ensure case-insensitivvity.
 
-=cut
-sub setAlphabet_lc {
-    my ($self, @new_alphabet) = @_;
+# =cut
+# sub setAlphabet_uc {
+#     my ($self, @new_alphabet) = @_;
 
-    ## Convert alphabet to uppercases
-    for my $i (0..$#new_alphabet) {
-	$new_alphabet[$i] = lc($new_alphabet[$i]);
-    }
-    $self->setAlphabet(@new_alphabet);
-}
+#     ## Convert alphabet to uppercases
+#     for my $i (0..$#new_alphabet) {
+# 	$new_alphabet[$i] = uc($new_alphabet[$i]);
+#     }
+
+#     $self->setAlphabet(@new_alphabet);
+# }
 
 
 
 
-=pod
+# =pod
 
-=item B<getAlphabet()>
+# =item B<setAlphabet_lc(@alphabet)>
 
-Return the list of valid letters for the table
+# Same as setAlphabet(), but first converts the alphabet to lowercases,
+# to ensure case-insensitivvity.
 
-=cut
-sub getAlphabet {
-    my ($self) = @_;
-    return @{$self->{alphabet}};
-}
+# =cut
+# sub setAlphabet_lc {
+#     my ($self, @new_alphabet) = @_;
+
+#     ## Convert alphabet to uppercases
+#     for my $i (0..$#new_alphabet) {
+# 	$new_alphabet[$i] = lc($new_alphabet[$i]);
+#     }
+#     $self->setAlphabet(@new_alphabet);
+# }
+
+
+
+
+# =pod
+
+# =item B<getAlphabet()>
+
+# Return the list of valid letters for the table
+
+# =cut
+# sub getAlphabet {
+#     my ($self) = @_;
+#     return @{$self->{alphabet}};
+# }
 
 
 

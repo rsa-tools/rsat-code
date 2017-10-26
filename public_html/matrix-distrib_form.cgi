@@ -83,8 +83,8 @@ my %bg_params =("markov" => 1,
 print "<hr>";
 
 print "<br/>";
-print "<A HREF='help.convert-matrix.html#decimals'><B>score decimals</B></A>\n";
-print $query->popup_menu(-name=>'decimals',
+print "<A class='iframe' HREF='help.convert-matrix.html#decimals'><B>score decimals</B></A>\n";
+print $query->popup_menu(-id=>'decimals', -name=>'decimals',
 			 -Values=>['0',
 				   '1','2'],
 			 -default=>$default{decimals});
@@ -99,33 +99,33 @@ print "<p>\n";
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
 ### data for the demo 
-print $query->start_multipart_form(-action=>"matrix-distrib_form.cgi");
-$demo_matrix = "
-; MET4 matrix, from Gonze et al. (2005). Bioinformatics 21, 3490-500.
-A |   7   9   0   0  16   0   1   0   0  11   6   9   6   1   8
-C |   5   1   4  16   0  15   0   0   0   3   5   5   0   2   0
-G |   4   4   1   0   0   0  15   0  16   0   3   0   0   2   0
-T |   0   2  11   0   0   1   0  16   0   2   2   2  10  11   8";
+
 print "<TD><B>";
-print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'input_format',-default=>'tab');
-print $query->hidden(-name=>'organism',-default=>'Saccharomyces_cerevisiae');
-print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
-print $query->hidden(-name=>'background',-default=>'upstream-noorf');
-print $query->hidden(-name=>'markov_order',-default=>'0');
 
 
-print $query->submit(-label=>"DEMO");
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    $("#db_choice").val("").change();
+    demo_matrix = "; MET4 matrix, from Gonze et al. (2005). Bioinformatics 21, 3490-500.\nA |   7   9   0   0  16   0   1   0   0  11   6   9   6   1   8\nC |   5   1   4  16   0  15   0   0   0   3   5   5   0   2   0\nG |   4   4   1   0   0   0  15   0  16   0   3   0   0   2   0\nT |   0   2  11   0   0   1   0  16   0   2   2   2  10  11   8";
+    matrix.value = demo_matrix;
+    matrix_format.value = "tab";
+    $("#organism").val("Saccharomyces_cerevisiae").trigger("chosen:updated");
+    $("#bgfile").prop("checked", true);
+    background.value = "upstream-noorf";
+    markov_order.value = "0";
+};
+</script>';
+print '<button type="button" onclick="setDemo()">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
-print "<TD><B><A HREF='help.matrix-distrib.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.matrix-distrib.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B>TUTORIAL</B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";

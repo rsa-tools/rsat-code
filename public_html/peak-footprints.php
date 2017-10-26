@@ -1,6 +1,7 @@
 <?php
 // Load RSAT configuration
 require ('functions.php');
+    printMenu();
 UpdateLogFile("rsat","","");
 
 //print_r($properties);

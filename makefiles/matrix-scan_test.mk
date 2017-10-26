@@ -6,39 +6,48 @@ MAKEFILE=${RSAT}/makefiles/matrix-scan_test.mk
 ################################################################
 ## List parameters
 V=2
+MKV=1
 SEQ=${RSAT}/public_html/demo_files/Dmelanogaster_eve_up5000.fasta
 MATRIX_FILE=${RSAT}/public_html/demo_files/Dmelanogaster_segmentation_12matrices.tf
 MATRIX_NAME_OPT=-matrix_name Kr -matrix_name bcd -matrix_name eve
 RES_DIR=results/matrix-scan_test
-SITES=${RES_DIR}/Dmelanogaster_eve_up5000_sites${SUFFIX}
+SITES=${RES_DIR}/Dmelanogaster_eve_up5000_sites_mkv${MKV}${SUFFIX}
 SUFFIX=
 list_param:
 	@echo "matrix-scan test parameters"
-	@echo "SEQ		${SEQ}"
-	@echo "MATRIX_FILE	${MATRIX_FILE}"
-	@echo "RES_DIR		${RES_DIR}"
-	@echo "SITES		${SITES}.ft"
-	@echo "SITES (quick)	${SITES}-quick.ft"
-	@echo "SUFFIX		${SUFFIX}"
-	@echo "MATRIX_NAME_OPT	${MATRIX_NAME_OPT}"
-	@echo "OPT		${OPT}"
-	@echo "MATRIX_SCAN_CMD	${MATRIX_SCAN_CMD}"
+	@echo "	SEQ		${SEQ}"
+	@echo "	MATRIX_FILE	${MATRIX_FILE}"
+	@echo "	RES_DIR		${RES_DIR}"
+	@echo "	SITES		${SITES}.ft"
+	@echo "	SITES (quick)	${SITES}-quick.ft"
+	@echo "	SUFFIX		${SUFFIX}"
+	@echo "	MKV	${MKV}"
+	@echo "	MATRIX_NAME_OPT	${MATRIX_NAME_OPT}"
+	@echo "	OPT		${OPT}"
+	@echo "	MATRIX_SCAN_CMD	${MATRIX_SCAN_CMD}"
+
 
 ################################################################
 ## Scan Drosophila even-skipped promoter with matrices corresponding
 ## to 12 transcription factors involved in embryonic segmentation.
+THRESHOLDS=-lth score 1 -uth pval 1e-4
 MATRIX_SCAN_CMD=matrix-scan -v ${V} \
 		-matrix_format transfac -m ${MATRIX_FILE} \
 		${MATRIX_NAME_OPT} \
-		-pseudo 1 -decimals 1 -2str -bginput -markov 0 -bg_pseudo 0.01 \
+		-pseudo 1 -decimals 1 -2str -bginput -markov ${MKV} -bg_pseudo 0.01 \
 		-seq_format fasta -n score -origin genomic \
-		-return limits,sites,pval -lth score 1 -uth pval 1e-4 \
+		-return limits,sites,pval,proba_BM ${THRESHOLDS} \
 		-i ${SEQ} \
 		${OPT} -o ${SITES}.ft
+matrix_parameters:
+	@echo
+	@echo "Matrix parameters"
+	@echo "	MATRIX_FILE	${MATRIX_FILE}"
+	convert-matrix -v ${V} -matrix_format transfac -i ${MATRIX_FILE} -from transfac -to tab -pseudo 1 -decimals 2 -return counts,frequencies,margins,parameters
+
 scan_eve:
 	@echo
 	@echo "SEQ		${SEQ}"
-	@echo "MATRIX_FILE	${MATRIX_FILE}"
 	@echo "${DATE}	Scanning"
 	@mkdir -p ${RES_DIR}
 	${MATRIX_SCAN_CMD}
