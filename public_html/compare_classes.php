@@ -12,11 +12,15 @@
 <body class="results">
 <?php 
   require ('functions.php');
-
+    $menu = $_REQUEST['menu'];
+    printMenu($menu);
+    
   ## log file update
   UpdateLogFile("neat","","");  
   title('compare-classes - results');
 
+    
+    
   # File to store the commands
   $cmd_file = getTempFileName('commands_compare-classes', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
@@ -430,6 +434,7 @@
             <form method='post' action='contingency_stats_form.php'>
               <input type='hidden' name='pipe' value='1'>
               <input type='hidden' name='matrix_file' value='$cc_server'>
+                <inpyt type='hidden' name='menu' value=$menu>
               <INPUT type='submit' value='Contingency-table statistics'>
             </form>
           </td>
@@ -465,6 +470,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+          <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='Display the graph'>
         </form>
       </td>");
@@ -477,6 +483,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+            <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='Compare this graph to another one'>
         </form>
       </td>");
@@ -489,6 +496,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+            <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='Convert table to graph'>
         </form>
       </td>");
@@ -504,6 +512,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+            <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='Map clusters or extract a subnetwork'>
         </form>
       </td>");
@@ -516,6 +525,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+            <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='Node topology statistics'>
         </form>
       </td>");
@@ -528,6 +538,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+            <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='Neighbourhood analysis'>
         </form>
       </td> ");
@@ -543,6 +554,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+            <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='MCL Graph clustering'>
         </form>
       </td>");
@@ -555,6 +567,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+            <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='RNSC Graph clustering'>
         </form>
       </td>");
@@ -568,6 +581,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+            <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='Graph alteration'>
         </form>
       </td>");
@@ -583,6 +597,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+            <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='Path Finding'>
         </form>
       </td>");
@@ -595,6 +610,7 @@
           <input type='hidden' name='graph_format' value='tab'>
           <input type='hidden' name='scol' value='1'>
           <input type='hidden' name='tcol' value='2'>
+           <input type='hidden' name='menu' value=$menu>
           <input type='submit' value='Load in VisANT'>
           </form>
         </td>");

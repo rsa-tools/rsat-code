@@ -355,12 +355,9 @@ package main;
 
 	## Build the matrix-clustering command
 	my $cluster_cmd = $SCRIPTS."/matrix-clustering -v 0";
-	$cluster_cmd .= " -i ".$outfile{sig_matrices_rescaled};
-	$cluster_cmd .= " -matrix_format tf";
-	$cluster_cmd .= " -motif_collection_name sig_matrices";
-#    $cluster_cmd .= " -title 'Oct4 motifs peak motifs'";
+	$cluster_cmd .= " -matrix test ".$outfile{sig_matrices_rescaled}." tf";
 	$cluster_cmd .= " -lth Ncor 0.4 -lth cor 0.6 -lth w 5 -hclust_method average";
-#    $cluster_cmd .= " -label_in_tree name";
+	$cluster_cmd .= " -label_in_tree name";
 	$cluster_cmd .= " -metric_build_tree Ncor";
 	$cluster_cmd .= " -return root_matrices";
 	$cluster_cmd .= " -quick";

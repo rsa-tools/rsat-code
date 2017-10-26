@@ -346,14 +346,125 @@ corresponds to which letter of the alphabet.
 sub index_alphabet {
   my ($self) = @_;
   my @alphabet = $self->getAlphabet();
+  my $residue_type = $self->get_attribute("residue_type") || "dna";
   my $row = 0;
   foreach my $letter (@alphabet) {
-    $self->add_hash_attribute("alphabet_index", lc($letter), $row);
+#    $self->add_hash_attribute("alphabet_index", lc($letter), $row);
+    ## DNA is case-insensitive
+    if (lc($residue_type) eq "dna") {
+      $self->add_hash_attribute("alphabet_index", lc($letter), $row);
+      $self->add_hash_attribute("alphabet_index", uc($letter), $row);
+    } else {
+      $self->add_hash_attribute("alphabet_index", $letter, $row);
+    }
 #	$alphabet_index{$letter} = $row;
 #	&RSAT::message::Debug("Alphabet index", $letter, $row) if ($main::verbose >= 10);
     $row++;
   }
 }
+
+
+=pod
+
+=item B<setAlphabet(@alphabet)>
+
+Specify the alphabet (i.e. the list of valid letters) for the table.
+
+=cut
+sub setAlphabet {
+    my ($self, @new_alphabet) = @_;
+    @{$self->{alphabet}} = @new_alphabet;
+
+    ## update the number of columns
+    $self->force_attribute("nrow", scalar(@new_alphabet));
+#    &RSAT::message::Debug("&RSAT::table::setAlphabet()", "new alphabet", $self->getAlphabet())) if ($main::verbose >= 10);
+}
+
+
+
+
+=pod
+
+=item B<setAlphabet_uc(@alphabet)>
+
+Same as setAlphabet(), but first converts the alphabet to uppercases,
+to ensure case-insensitivvity.
+
+=cut
+sub setAlphabet_uc {
+    my ($self, @new_alphabet) = @_;
+
+    ## Convert alphabet to uppercases
+    for my $i (0..$#new_alphabet) {
+	$new_alphabet[$i] = uc($new_alphabet[$i]);
+    }
+
+    $self->setAlphabet(@new_alphabet);
+}
+
+
+
+
+=pod
+
+=item B<setAlphabet_lc(@alphabet)>
+
+Same as setAlphabet(), but first converts the alphabet to lowercases,
+to ensure case-insensitivvity.
+
+=cut
+sub setAlphabet_lc {
+    my ($self, @new_alphabet) = @_;
+
+    ## Convert alphabet to uppercases
+    for my $i (0..$#new_alphabet) {
+	$new_alphabet[$i] = lc($new_alphabet[$i]);
+    }
+    $self->setAlphabet(@new_alphabet);
+}
+
+
+=pod
+
+=item B<set_alphabet_for_type()>
+
+=cut
+
+sub set_alphabet_for_type {
+  my ($self) = @_;
+  my $residue_type = $self->get_attribute("residue_type");
+  unless ($residue_type) {
+    $residue_type = "dna";
+    $self->force_attribute("type", $residue_type);
+  }
+#  &RSAT::message::Debug("residue_type", $residue_type) if ($main::verbose >= 10);
+  
+  ## Set alphabet for cytomod 0
+  my @alphabet;
+  if ($residue_type eq "cytomod") {
+    @alphabet = qw(A C G T h m 1 2); 
+    $self->setAlphabet(@alphabet);
+  } elsif ($residue_type eq "dna") {
+    @alphabet = qw(A C G T);
+    $self->setAlphabet_lc(@alphabet);
+  } else {
+    &RSAT::error::FatalError("Invalid matrix type. Supported: dna, cytomod.");
+  }
+  
+}
+
+=pod
+
+=item B<getAlphabet()>
+
+Return the list of valid letters for the table
+
+=cut
+sub getAlphabet {
+    my ($self) = @_;
+    return @{$self->{alphabet}};
+}
+
 
 
 
@@ -368,15 +479,22 @@ estimate them on the basis of equiprrobable residues.
 sub getPrior() {
   my ($self) = @_;
   my %prior = ();
+  
+  my $residue_type = $self->get_attribute("residue_type") || "dna";
+
   if ($self->get_attribute("prior_specified")) {
     %prior = $self->get_attribute("prior");
   } else {
     if (scalar(keys %prior) <= 0) {
-      &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
+      &RSAT::message::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
       my @alphabet = $self->getAlphabet();
       my $alphabet_size = scalar(@alphabet);
       foreach my $letter (@alphabet) {
-	$prior{$letter} = 1/$alphabet_size;
+	if ($residue_type eq "dna") {
+	  $prior{lc($letter)} = 1/$alphabet_size;
+	} else {
+	  $prior{$letter} = 1/$alphabet_size;
+	}
 	#		&RSAT::message::Debug("RSAT::matrix::setPrior", $letter, $prior{$letter}) if ($main::verbose >= 10);
       }
       $self->setPrior(%prior);
@@ -397,7 +515,21 @@ where keys are residues and values prior probabilities.
 sub setPrior {
   my ($self, %prior) = @_;
 
-  &RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 5);
+  ################################################################
+  ## For DNA, the alphabet has to be case-insensitive -> set the
+  ## priors to both upper- and lower-case for each residue.
+  my $residue_type = $self->get_attribute("residue_type") || "dna";
+  if (lc($residue_type) eq "dna") {
+    my %prior_case_insensitive = ();
+    foreach my $residue (keys(%prior)) {
+      $prior_case_insensitive{lc($residue)} = $prior{$residue};
+      $prior_case_insensitive{uc($residue)} = $prior{$residue};
+    }
+    %prior = %prior_case_insensitive;
+  }
+
+  ## Set the attribute
+  # &RSAT::message::Info ("setPrior", join(" ", %prior)) if ($main::verbose >= 10);
   $self->set_array_attribute("prior", %prior);
   $self->force_attribute("prior_specified", 1);
 
@@ -499,7 +631,6 @@ sub setInfoLogBase {
 ################################################################
 ## PROBLEM ###
 
-
 =pod
 
 =item addRow(@new_row)
@@ -513,12 +644,12 @@ sub addRow {
   ## Update number of rows
   my $nrow = $self->nrow()+1;
   $self->force_attribute("nrow", $nrow);
-  &RSAT::message::Debug("Matrix: updating number of rows", $self->nrow()) if ($main::verbose >= 5);
+  &RSAT::message::Debug("Matrix: updating number of rows", $self->nrow()) if ($main::verbose >= 6);
 
   ## update number of colmuns
   my $row_size = scalar(@new_row);
   if ($row_size >= $self->ncol()) {
-    &RSAT::message::Debug("Matrix: updating number of columns", $row_size) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Matrix: updating number of columns", $row_size) if ($main::verbose >= 6);
     $self->force_attribute("ncol", scalar(@new_row));
   }
 
@@ -718,32 +849,39 @@ Usage: $matrix->sort_row()
 =cut
 sub sort_rows {
   my ($self) = @_;
-  my @alphabet = $self->getAlphabet();
-  my $ncol = $self->ncol();
-  my $nrow = $self->nrow();
-
-  ## Determine the column for each residue
-  my @sorted_alphabet = sort @alphabet;
-  foreach my $r (0..$#sorted_alphabet) {
-    my $residue = $sorted_alphabet[$r];
-    $order{$residue} = $r;
-  }
+  my $type = $self->get_attribute("type") || "dna";
+  if (lc($type) eq "dna") {
+    my @alphabet = $self->getAlphabet();
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
+    
+    ## Determine the column for each residue
+    my @sorted_alphabet = sort @alphabet;
+    foreach my $r (0..$#sorted_alphabet) {
+      my $residue = $sorted_alphabet[$r];
+      $order{$residue} = $r;
+    }
 
 #  &RSAT::message::Info("Sorting matrix rows", join(";", @alphabet), join(";", @sorted_alphabet)) if ($main::verbose >= 10);
-
-  ## Get the original count matrix
-  my @ori_matrix = $self->getMatrix();
-
-  my @sorted_matrix = ();
-  for my $r  (0..$#alphabet) {
-    my $residue = $alphabet[$r];
-    my $target_row = $order{$residue};
-    for my $c (0..($ncol-1)) {
-      $sorted_matrix[$c][$target_row] = $ori_matrix[$c][$r];
+    
+    ## Get the original count matrix
+    my @ori_matrix = $self->getMatrix();
+    
+    my @sorted_matrix = ();
+    for my $r  (0..$#alphabet) {
+      my $residue = $alphabet[$r];
+      my $target_row = $order{$residue};
+      for my $c (0..($ncol-1)) {
+	$sorted_matrix[$c][$target_row] = $ori_matrix[$c][$r];
+      }
     }
+    $self->setMatrix($nrow, $ncol, @sorted_matrix);
+#  $self->setAlphabet_lc(@sorted_alphabet);
+    $self->setAlphabet(@sorted_alphabet);
+  } else {
+    &RSAT::message::Warning("&RSAT::matrix::sort_rows()", "Matrix sorting does not work for non-DNA matrices.") if ($main::verbose >= 5);
+    $self->set_alphabet_for_type();
   }
-  $self->setMatrix($nrow, $ncol, @sorted_matrix);
-  $self->setAlphabet_lc(@sorted_alphabet);
 }
 
 
@@ -960,7 +1098,7 @@ sub to_TRANSFAC {
     my $header = "P0  "; 
     my @alphabet = $self->getAlphabet();
     foreach my $letter (@alphabet) {
-      $header .= sprintf "%6s", uc($letter);
+      $header .= sprintf "%6s", $letter;
     }
     $to_print .= $header."\n";
 
@@ -1120,13 +1258,13 @@ sub to_STAMP {
     my ($self, %args) = @_;
     my $to_print = "";
 
-    &RSAT::message::Debug(
-      "&RSAT::matrix::to_STAMP()", 
-      $self->get_attribute("accession"), 
-      $self->get_attribute("id"), 
-      $self->get_attribute("name"), 
-      $self->get_attribute("description"), 
-	) if ($main::verbose >= 0);
+    # &RSAT::message::Debug(
+    #   "&RSAT::matrix::to_STAMP()", 
+    #   $self->get_attribute("accession"), 
+    #   $self->get_attribute("id"), 
+    #   $self->get_attribute("name"), 
+    #   $self->get_attribute("description"), 
+    # 	) if ($main::verbose >= 10);
     
     my $output_format = $args{format};
     $output_format = lc($output_format);
@@ -1342,7 +1480,7 @@ sub to_tab {
 		      parameters=>1,
 		      consensus=>1
       );
-  &main::FatalError("Invalid matrix type $type") unless $supported_types{$type};
+  &RSAT::error::FatalError("Invalid matrix type $type") unless $supported_types{$type};
 
   ## Set formatting parameters provided in arguments as matrix attribute
   foreach my $key ("sep", "col_width", "decimals") {
@@ -1797,8 +1935,9 @@ sub calcWeights {
 
     ## Get alphabet
     my @alphabet = $self->getAlphabet();
-    if (scalar(@alphabet) <= 0) {
-	&main::FatalError("&RSAT::matrix::calcWeights()\tCannot calculate weigths, because the alphabet has not been specified yet.");
+    my $alphabet_size = scalar(@alphabet);
+    if ($alphabet_size <= 0) {
+	&RSAT::error::FatalError("&RSAT::matrix::calcWeights()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
 
     ## Get or calculate prior residue probabilities
@@ -1820,8 +1959,14 @@ sub calcWeights {
     my @weights = ();
     for my $c (0..($ncol-1)) {
 	for my $r (0..($nrow-1)) {
-	    my $letter = $alphabet[$r];
-	    my $prior = $prior{$letter};
+	    my $letter = lc $alphabet[$r];
+	    my $prior = 0;
+	    if (defined($prior{$letter})) {
+	      $prior = $prior{$letter};
+	    } else {
+	      $prior = 1 / $alphabet_size;
+	    }
+	    
 	    my $freq = $frequencies[$c][$r];
 	    if ($freq == 0) {
 		$weights[$c][$r] = "-Inf";
@@ -1905,7 +2050,7 @@ sub calcInformation {
     ## Get alphabet
     my @alphabet = $self->get_attribute("alphabet");
     if (scalar(@alphabet) <= 0) {
-	&main::FatalError("&RSAT::matrix::calcInformation()\tCannot calculate weigths, because the alphabet has not been specified yet.");
+	&RSAT::error::FatalError("&RSAT::matrix::calcInformation()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
     $self->set_parameter("alphabet.size", scalar(@alphabet));
 
@@ -1928,8 +2073,13 @@ sub calcInformation {
     my $total_information = 0; ## Total information for the matrix
     for my $c (0..($ncol-1)) {
 	for my $r (0..($nrow-1)) {
-	    my $letter = $alphabet[$r];
-	    my $prior = $prior{$letter};
+	    my $letter = lc $alphabet[$r];
+	    my $prior = 0;
+	    if (defined($prior{$letter})) {
+	      $prior = $prior{$letter};
+	    } else {
+	      $prior = 1 / $alphabet_size;
+	    }
 	    my $freq = $frequencies[$c][$r];
 	    if ($freq == 0) {
 		$information[$c][$r] = 0;
@@ -2240,23 +2390,24 @@ sub calcFrequencies {
   ## Get alphabet
   my @alphabet = $self->get_attribute("alphabet");
   if (scalar(@alphabet) <= 0) {
-    &main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate weigths, because the alphabet has not been specified yet.");
+    &RSAT::error::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate weigths, because the alphabet has not been specified yet.");
   }
 
   ## Matrix size
   my ($nrow, $ncol) = $self->size();
 #    my $ncol = $self->ncol();
   if ($ncol <= 0) {
-    &main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix (not a single column).");
+    &RSAT::error::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix (not a single column).");
   }
   if ($nrow <= 0) {
-    &main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix (not a single row).");
+    &RSAT::error::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix (not a single row).");
   }
 
   ## Get or calculate prior residue probabilities
   my %prior = $self->getPrior();
+  &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", "prior", join(" ", %prior)) if ($main::verbose >= 6);
   if (scalar(keys %prior) <= 0) {
-    &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
+    &RSAT::message::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
     my $alphabet_size = scalar(@alphabet);
     foreach my $letter (@alphabet) {
       $prior{$letter} = 1/$alphabet_size;
@@ -2269,6 +2420,7 @@ sub calcFrequencies {
 
   ## pseudo-count
   my $pseudo = $self->get_attribute("pseudo") || 0;
+  ## &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", '$pseudo', $pseudo) if ($main::verbose >= 10);
 
   ## count matrix
   my @matrix = $self->getMatrix();
@@ -2282,7 +2434,7 @@ sub calcFrequencies {
   for my $c (0..($ncol-1)) {
     my $col_sum = 0;
     for my $r (0..($nrow-1)) {
-      my $letter = $alphabet[$r];
+      my $letter = lc $alphabet[$r];
       my $prior = $prior{$letter};
       my $occ = $matrix[$c][$r];
       $col_sum += $occ;
@@ -2292,7 +2444,7 @@ sub calcFrequencies {
 	#	&RSAT::message::Info("Equiprobable distribution of the pseudo-count") if ($main::verbose >= 10);
       } else {
 	## Distribute pseudo-count according to prior
-	$frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
+	$frequencies[$c][$r] = $occ + $pseudo*$prior;
 	#		&RSAT::message::Info("pseudo-count distributed according to prior") if ($main::verbose >= 10);
       }
       #	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) unless ($letter);
@@ -2337,22 +2489,23 @@ sub calcProbabilities {
 
   ## Get alphabet
   my @alphabet = $self->get_attribute("alphabet");
+  # &RSAT::message::Debug("&calcProbabilities()", "alphabet", join(" ", @alphabet)) if ($main::verbose >= 10);
   if (scalar(@alphabet) <= 0) {
-    &main::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate weigths, because the alphabet has not been specified yet.");
+    &RSAT::error::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate weigths, because the alphabet has not been specified yet.");
   }
 
   ## Matrix size
   my ($nrow, $ncol) = $self->size();
   if (($nrow <= 0) ||
       ($ncol <= 0)) {
-    &main::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate probabilities for an empty matrix.");
+    &RSAT::error::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate probabilities for an empty matrix.");
   }
 
 
   ## Get or calculate prior residue probabilities
   my %prior = $self->getPrior();
   if (scalar(keys %prior) <= 0) {
-    &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
+    &RSAT::message::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 5);
     my $alphabet_size = scalar(@alphabet);
     foreach my $letter (@alphabet) {
       $prior{$letter} = 1/$alphabet_size;
@@ -2518,14 +2671,18 @@ sub calcConsensus {
       $regular .= "]";
     }
 
-    ## Use uppercase for scores >= 1
-    if ($col_max >= 1) {
-      $consensus_strict .= uc($col_consensus);
-      $consensus .= uc($regular);
-    } else {
-      $consensus_strict .= lc($col_consensus);
-      $consensus .= lc($regular);
-    }
+    ## Use uppercase for scores >= 1.  This is only valid for DNA
+    ## alphabet, since other alphabets may be case-sensitive
+    ## (e.g. Cytomod).
+    #if ($self->get_attribute("type") eq "dna") {
+      if ($col_max >= 1) {
+	$consensus_strict .= uc($col_consensus);
+	$consensus .= uc($regular);
+      } else {
+	$consensus_strict .= lc($col_consensus);
+	$consensus .= lc($regular);
+      }
+    #}
   }
   my $consensus_IUPAC = &main::regular_to_IUPAC($consensus);
 
@@ -2536,6 +2693,7 @@ sub calcConsensus {
   ## Degenerate consensus in IUPAC format
   $self->set_parameter("consensus.IUPAC", $consensus_IUPAC);
   $self->set_parameter("consensus.IUPAC.rc", &RSAT::SeqUtil::ReverseComplement($consensus_IUPAC));
+  &RSAT::message::Info("Consensus IUPAC", $self->get_attribute("consensus.IUPAC")) if ($main::verbose >= 5);
 
   ## Degenerate consensus in regexp format
   $self->set_parameter("consensus.regexp", $consensus);
@@ -2599,7 +2757,7 @@ sub calcGCcontent {
     
     ## Store as parameter
     $self->set_parameter("residues.content.".$matrix_type, $residues_content);
-    $self->set_parameter("G+C.content.".$matrix_type, ($row_sums{g}+$row_sums{c}));
+    $self->set_parameter("G+C.content.".$matrix_type, ($row_sums{G}+$row_sums{C}));
   }
 }
 
@@ -3228,6 +3386,7 @@ sub segment_proba {
 	$r = $self->{"alphabet_index"}->{$letter};
 	$letter_proba = $self->{"frequencies"}[$c][$r];
 	push @residue_proba, $letter_proba;
+
       } else {
 	if ($letter eq "n") {
 	  if ($self->get_attribute("n_treatment") eq "score") {
@@ -3382,8 +3541,10 @@ sub proba_range {
     $self->calcFrequencies();
   }
 
+
   my ($nrow, $ncol) = $self->size();
   my @frequencies = $self->getFrequencies();
+
 
   foreach my $c (0..($ncol-1)) {
     my $col_min = 1;
@@ -3662,6 +3823,8 @@ sub calcTheorScoreDistribBernoulli {
   my ($self, $score_type) = @_;
   $score_type = $score_type || "weights";
 
+  &RSAT::message::Debug("&RSAT::matrix::calcTheorScoreDistribBernoulli()") if ($main::verbose >= 6);
+
   ################################################################
   ## This parameter drastically affects the speed of computation By
   ## reducing the score to 2 decimals, the nmber of possible scors is
@@ -3674,17 +3837,6 @@ sub calcTheorScoreDistribBernoulli {
 
   my @scores = $self->getFrequencies();
 
- # my @scores;
- # if (lc($score_type) eq "counts") {
- #   @scores = $self->getMatrix();
- # } elsif (lc($score_type) eq "weights") {
- #   @scores = $self->getWeights();
- # } elsif (lc($score_type) eq "crudefrequencies") {
-  #  @scores = $self->getCrudeFrequencies();
- # } elsif (lc($score_type) eq "frequencies") {
- #   @scores = $self->getFrequencies();
- # }
-
   &RSAT::message::TimeWarn("Calculating theoretical distribution of ".$score_type,
 			   "Bernoulli model",
 			   "matrix", $self->get_attribute("name"),
@@ -3694,9 +3846,12 @@ sub calcTheorScoreDistribBernoulli {
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
   my @alphabet = $self->getAlphabet();
+  &RSAT::message::Debug("alphabet", join(" ", %alphabet)) if ($main::verbose >= 10);  ## BUG HERE (2017-08-19)
 
   ## Bernouilli Model
   my %bg_suffix_proba = $self->getPrior();
+
+  &RSAT::message::Debug("bg_suffix_proba", join(" ", %bg_suffix_proba)) if ($main::verbose >= 10);
 
   my %alphabetNb =();
   foreach my $i (0..$#alphabet){
@@ -3711,7 +3866,7 @@ sub calcTheorScoreDistribBernoulli {
   for my $c (0..($ncol-1)) {
     &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 5);
     my %current_score_proba = ();
-
+    
     foreach my $suffix (@alphabet) {
       ## get frequency of the suffix, under matrix model
       my $r = $alphabetNb{$suffix};
@@ -3723,11 +3878,12 @@ sub calcTheorScoreDistribBernoulli {
 
       ## get prior frequencies (bg model)
       my $suffix_proba_B = $bg_suffix_proba{$suffix};
-#
-#      &RSAT::message::Debug("suffix_freq_M", $suffix_freq_M,
-#			    "suffix_proba_B", $suffix_proba_B,
-#			    "info_log_base", $info_log_base,
-#			    "info_log_denominator", $info_log_denominator) if ($main::verbose >= 5);
+
+      # &RSAT::message::Debug("suffix", $suffix,
+      # 			    "suffix_freq_M", $suffix_freq_M,
+      # 			    "suffix_proba_B", $suffix_proba_B,
+      # 			    "info_log_base", $info_log_base,
+      # 			    "info_log_denominator", $info_log_denominator) if ($main::verbose >= 10);
 
       ## score
       my $curr_score = log($suffix_freq_M/$suffix_proba_B)/$info_log_denominator; # Beware here, log is ln !!!
@@ -3746,15 +3902,15 @@ sub calcTheorScoreDistribBernoulli {
     %score_proba = %current_score_proba;
   }
 
-# round the scores to the user-chosen decimals
-my %score_proba_decimals;
-for my $score (keys %score_proba) {
-	my $score_decimals = sprintf($score_format,$score);
+  ## round the scores to the user-chosen decimals
+  my %score_proba_decimals;
+  for my $score (keys %score_proba) {
+    my $score_decimals = sprintf($score_format,$score);
 	$score_decimals =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
-	$score_proba_decimals{$score_decimals} += $score_proba{$score};
-	}
-%score_proba = %score_proba_decimals;
-
+    $score_proba_decimals{$score_decimals} += $score_proba{$score};
+  }
+  %score_proba = %score_proba_decimals;
+  
 #    my @row = &RSAT::matrix::get_column($c+1, $nrow, @matrix);
 #    my @row_scores = &RSAT::matrix::get_column($c+1, $nrow, @scores);
 #    my %current_score_proba = ();
@@ -3887,13 +4043,14 @@ for my $score (keys %score_proba) {
 
 =item B<calcTheorScoreDistribMarkov>
 
-Calculates the theorical distribution of weights probabilities based on
-a background model with Markov order > 0 .
+Calculates the theorical distribution of weights probabilities based
+on a background model with Markov order > 0.
 
 =cut
 sub calcTheorScoreDistribMarkov {
   my ($self) = @_;
   my $score_type = "weights";
+  &RSAT::message::Debug("&RSAT::matrix::calcTheorScoreDistribMarkov()") if ($main::verbose >= 5);
 
   ################################################################
   ## This parameter drastically affects the speed of computation By
@@ -3906,30 +4063,44 @@ sub calcTheorScoreDistribMarkov {
   my $score_format_calc = "%.".(${decimals}+1)."f";
 
   ################################################################
-  ## For Markov models, we don't work with a weight matirx, but we
+  ## For Markov models, we don't work with a weight matrix, but we
   ## treat separately the PSSM frequencies, and the transition
   ## frequencies of the bg model.
-
   my @scores = $self->getFrequencies();
 
   ## Markov Model
   my $bg_model = $self->getMarkovModel();
+  my $seq_type = $bg_model->get_attribute("seq_type");
+  unless ($seq_type) {
+    $seq_type = "dna";
+    $bg_model->force_attribute("seq_type", "dna");
+  }
   my $order = $bg_model->get_attribute("order");
 
   &RSAT::message::TimeWarn("Calculating theoretical distribution of", $score_type,
-			   "Background Markov Model order:".$order,
+			   "Markov Model order:".$order,
+			   "Seqence type:".$seq_type,
 			   "matrix", $self->get_attribute("name"),
 			   "Precision: ".$decimals." decimals",
-			  ) if ($main::verbose >= 4);
+			  ) if ($main::verbose >= 5);
 
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
-  my @alphabet = $self->getAlphabet();
 
-  my %alphabetNb =();
+  ## Index alphabet
+  my @alphabet = $self->getAlphabet();
+  my %alphabet_index =();
   foreach my $i (0..$#alphabet) {
-    $alphabetNb{$alphabet[$i]} = $i;
+    my $letter = $alphabet[$i];
+    if (lc($seq_type) eq "dna") {
+      ## DNA sequences are case-insensitive
+      $alphabet_index{lc($letter)} = $i;
+      $alphabet_index{uc($letter)} = $i;
+    } else {
+      $alphabet_index{$letter} = $i;
+    }
   }
+
 
   ################################################################
   ## Initialize the score probabilities with the first word of Markov
@@ -3941,25 +4112,33 @@ sub calcTheorScoreDistribMarkov {
   my $prefix_nb = scalar(@prefixes);
   &RSAT::message::TimeWarn("Computing weight probabilities for all prefixes")
     if ($main::verbose >= 4);
-  foreach my $initial_prefix (@prefixes) {
+  foreach my $prefix (@prefixes) {
     $p++;
-    &RSAT::message::Debug("Computing weight probabilities for prefix", $initial_prefix, $p."/".$prefix_nb)
+    if (lc($seq_type) eq "dna") {
+      $prefix = lc($prefix);
+    }
+    &RSAT::message::Debug("Computing weight probabilities for prefix", $prefix, $p."/".$prefix_nb)
       if ($main::verbose >= 5);
-    $prefixes{$initial_prefix} = 1;
-    ## get frequency of the prefix, under matrix model
-    ## treat separately each letter of the prefix
+    $prefixes{$prefix} = 1;
+
+    ################################################################
+    ## Get frequency of the prefix, under matrix model. Treat
+    ## separately each letter of the prefix.
     my $prefix_freq_M = 1;
     foreach my $c (0..$initial_col) {
-      my $letter = substr($initial_prefix, $c,1);
-      my $r = $alphabetNb{$letter};
+      my $letter = substr($prefix, $c, 1);
+      if (lc($seq_type) eq "dna") {
+	$letter = lc($letter);
+      }
+      my $r = $alphabet_index{$letter}; ## Index of the residue in the alphabet array
       $prefix_freq_M *= $scores[$c][$r];
-#      &RSAT::message::Debug("prefix:",$initial_prefix,"c",$c,"letter",$letter,"nb",$r,"score",$scores[$c][$r]) if ($main::verbose >= 10);
+#      &RSAT::message::Debug("prefix:", $prefix, "c", $c, "letter", $letter, "nb", $r,"score", $scores[$c][$r]) if ($main::verbose >= 10);
     }
 
-    ## get frequency of the prefix, under bg model
-    my $prefix_freq_B = $bg_model->{prefix_proba}->{$initial_prefix};
+    ## Get frequency of the prefix, under bg model
+    my $prefix_freq_B = $bg_model->{prefix_proba}->{$prefix};
 
-    ## score
+    ## Score
     my $score_init;
     if (($prefix_freq_M == 0) || ($prefix_freq_B == 0)) {
       $score_init = 0;
@@ -3967,23 +4146,23 @@ sub calcTheorScoreDistribMarkov {
       $score_init = log($prefix_freq_M/$prefix_freq_B)/$info_log_denominator; # Beware here, log is ln !!!
     }
 
-    ## discretisation of the scores
+    ## Discretisation of the scores
     $score_init = sprintf($score_format_calc, $score_init);
 
-    ## proba
-    if ($distrib_proba{$score_init}->{$initial_prefix}) {
-      $distrib_proba{$score_init}->{$initial_prefix} += $prefix_freq_B;
+    ## Proba
+    if ($distrib_proba{$score_init}->{$prefix}) {
+      $distrib_proba{$score_init}->{$prefix} += $prefix_freq_B;
     } else {
-      $distrib_proba{$score_init}->{$initial_prefix} = $prefix_freq_B;
+      $distrib_proba{$score_init}->{$prefix} = $prefix_freq_B;
     }
-#    &RSAT::message::Debug($initial_prefix,"\tscore_init = log( $prefix_freq_M / $prefix_freq_B)\t= $score_init\n",
+#    &RSAT::message::Debug($prefix,"\tscore_init = log( $prefix_freq_M / $prefix_freq_B)\t= $score_init\n",
 #			  "\tproba\t = $prefix_freq_B\n") if ($main::verbose >= 10);
   }
 
   ################################################################
   ## Iteration on remaining columns of the matrix
   foreach my $c ($order..($ncol-1)) {
-    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 5);
+    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 6);
 
     my @curr_prefix = sort(keys(%prefixes));
     my @previous_scores = (keys(%distrib_proba));
@@ -3994,14 +4173,22 @@ sub calcTheorScoreDistribMarkov {
     ## iterate on all possible prefixes
     foreach my $prefix (@curr_prefix) {
 #      &RSAT::message::Debug("col",$c,"prefix",$prefix) if ($main::verbose >= 10);
+      if (lc($seq_type) eq "dna") {
+	$prefix = lc($prefix);
+      }
       foreach my $suffix (@alphabet) {
 
+	if (lc($seq_type) eq "dna") {
+	  $suffix = lc($suffix);
+	}
 	## get frequency of the suffix, under matrix model
-	my $r = $alphabetNb{$suffix};
+	my $r = $alphabet_index{$suffix};
 	my $suffix_freq_M = $scores[$c][$r];
 
 	## get transition frequency, from prefix to suffix (bg model)
 	my $suffix_transition_B = $bg_model->{transitions}->{$prefix}->{$suffix};
+
+#	&RSAT::message::Debug("prefix=".$prefix, "suffix=".$suffix, "suffix_transition_B=".$suffix_transition_B) if ($main::verbose >= 10);
 
 	## score
 	my $curr_score = log($suffix_freq_M/$suffix_transition_B)/$info_log_denominator; # Beware here, log is ln !!!
@@ -4041,6 +4228,7 @@ sub calcTheorScoreDistribMarkov {
     %distrib_proba = ();
     %distrib_proba = %current_distrib_proba;
   }
+
 
   ## finalisation phase
   my %score_proba =();

@@ -42,6 +42,7 @@ $query = new CGI;
 $font{variable} = 1;
 #$command = "$SCRIPTS/supported-organisms -v 1";
 
+# my @return_fields = qw (ID taxid nb source last_update up_from taxonomy data);
 my @return_fields = qw (ID taxid nb source last_update data taxonomy);
 my $return_fields = join",", @return_fields;
 #$parameters = " -return ".$return_fields;
@@ -56,7 +57,7 @@ if ($ENV{group_specificity}) {
 ## Export the table with header and absolute paths
 my $organism_table = &RSAT::OrganismManager::supported_organism_table(1, 0, $source, $taxon, $group, $depth, @return_fields); 
 my @organism_rows = split("\n", $organism_table);
-my $nb_organisms = scalar(@organism_rows);
+my $nb_organisms = scalar(@organism_rows) - 1;
 
 ## Check if at least one organism is supported
 if ($nb_organisms == 0) {
@@ -93,7 +94,7 @@ foreach my $row (@organism_rows) {
       ## Replace data directory by a link
       if ($field =~ /public_html\/(data\/\S*)/) {
 	$data_dir = $1;
-	$field = join("", "<a href='", $data_dir, "'>data</a>");
+	$field = join("", "<a href='htmllink.cgi?title=data&file=", $data_dir, "' target='_blank'>data</a>");
       }
       print "<td>", $field, "</td>\n";
     }
@@ -119,7 +120,8 @@ print "</table>";
 # close(RESULT);
 
 print '<hr size=3>';
-
+print "</div>";
+print "</div>";
 
 print $query->end_html;
 

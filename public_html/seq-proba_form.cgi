@@ -103,13 +103,13 @@ my %bg_params = ("markov" => 1,
 ################################################################
 #### Return fields
 print "<hr/>";
-print "<p><b><a href='help.seq-proba.html#return'>Return fields</a></b>&nbsp;<br>\n";
+print "<p><b><a class='iframe' href='help.seq-proba.html#return'>Return fields</a></b>&nbsp;<br>\n";
 my $i = 0;
 foreach my $field (@return_fields) {
   print $query->checkbox(-name=>$field,
 			 -checked=>$default{$field},
 			 -label=>'');
-  print "&nbsp;<A HREF='help.seq-proba.html#",$field,"'><B>", $field, "</B></A>\n";
+  print "&nbsp;<A class='iframe' HREF='help.seq-proba.html#",$field,"'><B>", $field, "</B></A>\n";
   print "&nbsp\n";
 }
 print "<p>\n";
@@ -124,7 +124,7 @@ print "<hr>";
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 ################################################################
@@ -132,23 +132,21 @@ print $query->end_form;
 
 ################################################################
 ### data for the demo 
-print $query->start_multipart_form(-action=>"seq-proba_form.cgi");
-$demo=">seq1
-CACGTG
->seq2
-CCGCGG
->seq3
-TATAAA
-";
+
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    demo=">seq1\\nCACGTG\\n>seq2\\nCCGCGG\\n>seq3\\nTATAAA";
+    sequence.value = demo;
+    sequence_format.value = "fasta";
+}
+</script>';
+
 print "<TD><B>";
-print $query->hidden(-name=>'sequence',-default=>$demo);
-print $query->hidden(-name=>'sequence_format',-default=>'fasta');
-print $query->hidden(-name=>'output_format',-default=>"wconsensus");
-print $query->submit(-label=>"DEMO");
+print '<button type="button" onclick="setDemo()">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
-print "<TD><B><A HREF='help.seq-proba.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.seq-proba.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

@@ -35,6 +35,9 @@ $query = new CGI;
 ## update log file
 &UpdateLogFile();
 
+
+my @motifs = $query->param("db_choice");
+
 ## peak-motifs command
 $command = "$ENV{RSAT}/perl-scripts/peak-motifs";
 
@@ -205,7 +208,7 @@ if ((&IsInteger($offset)) && ($offset != 0)) {
 
 ################################################################
 ## Compare discovered motifs with motif databases
-my ($mat_db_params, @selected_db) = &GetMatrixDBchoice("mode"=>"checkbox");
+my ($mat_db_params, @selected_db) = &GetMatrixDBchoice_select2("mode"=>"checkbox");
 if (scalar(@selected_db) > 0) {
   $parameters .= $mat_db_params;
   push(@tasks, "motifs_vs_db");

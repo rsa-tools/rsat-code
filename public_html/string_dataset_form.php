@@ -7,6 +7,8 @@
 <?php
   require ('functions.php');
   require ('string_functions.php');
+    printMenu();
+    
   title('String dataset download');
   
   $evidence = array('combined_confidence','automated_textmining','experimental_interaction_data','gene_cooccurence', 'gene_fusion_events','gene_coexpression');

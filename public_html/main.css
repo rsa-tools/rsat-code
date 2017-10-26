@@ -41,14 +41,14 @@ span.tool:hover span.tip
 /* BODY  */
 body 
 {
-  font-family: Verdana, Helvetica, Arial, sans-serif;
-  font-size: 70%;
+  font-family: Verdana, Helvetica, Arial, sans-serif !important;
+  font-size: 70% !important;
   margin-top: 2px;
   margin-left: 20px;
-  text-align: left;
+  text-align: left !important;
   background: #ffffff;
   margin-right: 20px;
-  background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px;
+  /* background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px; */
   }
 
 body.info 
@@ -107,8 +107,10 @@ h1
 h2 
 {
   /* 	text-align: center; */
-  font-size: 13px;
-  color: #002266;
+  font-size: 13px !important;
+  color: #002266 !important;
+  font-weight: bold !important;
+  margin: 0.83em !important;
   }
 
 h3 
@@ -140,6 +142,8 @@ hr.portal
 {
   border: 0;
   border-bottom: 1px solid #cc6600;
+  margin-top: 0.5em !important;
+  margin-bottom: 0.5em !important;
   }
   
 .hr-like {
@@ -151,7 +155,7 @@ margin-top: 5px;
 
 pre,tt 
 {
-  font-size: 12px;
+  font-size: 12px !important;
   }
 
 
@@ -454,22 +458,23 @@ input
 /* TABLE */
 table.simple 
 {
-  margin: 10px 20px 20px;
-  color: #000000;
+  margin: 10px 20px 20px !important;
+  color: #000000 !important;
   }
 
 table.simple td,table.list th 
 {
-  font-size: 70%;
-  padding: 2px 10px;
-  background-color: #FFFFFF;
-  page-break-inside: avoid;
+  font-size: 70% !important;
+  padding: 2px 10px !important;
+  background-color: #FFFFFF !important;
+  page-break-inside: avoid !important;
   }
 
 table.simple th 
 {
-  font-size: 70%;
-  background-color: #F6E6CA;
+  font-size: 70% !important;
+  background-color: #F6E6CA !important;
+  text-align: center !important;
   }
 
 
@@ -834,3 +839,5 @@ legend.clickable:hover
 {
   cursor: pointer;
   }
+
+

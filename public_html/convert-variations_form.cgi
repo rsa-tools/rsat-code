@@ -34,11 +34,14 @@ print "<CENTER>";
 print "Convert between different file formats that store genetic variation information. The most commonly used formats are:<a href='http://en.wikipedia.org/wiki/Variant_Call_Format'> VCF </a> and <a href='http://www.sequenceontology.org/resources/gvf_1.00.html'>GVF</a>, varBed format format presents several advantages for scanning variations with  matrices using <a href='variation-scan_form.cgi'>variation-scan</a> .<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
-print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
+print ", <a target='_blank' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://liigh.unam.mx/amedina/people.html'>Walter Santana</a><sup>cit</sup>\n<P>";
+print "A new version of this tool replace a previous prototype version developed by Jeremy Delerce and Jacques van Helden";
 print "</CENTER>";
 
-print $default{demo_descr1};
+## demo description
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr'></div>";
 
 print $query->start_multipart_form(-action=>"convert-variations.cgi");
 
@@ -62,7 +65,7 @@ print "<B>Variants to be converted</B>&nbsp;";
 print "<BR>\n";
 print "<UL>\n";
 
-print $query->textarea(-name=>'input',
+print $query->textarea(-name=>'input',-id=>'input',
 		       -default=>$default{input},
 		       -rows=>6,
 		       -columns=>65);
@@ -86,14 +89,14 @@ print "<br>\n";
 
 ### Input type
 print "<B>Input format</B>&nbsp;";
-print $query->popup_menu(-name=>'input_type',
+print $query->popup_menu(-name=>'input_type',-id=>'input_type',
 			 -Values=>['varBed','vcf','gvf'],
 			 -default=>$default{input_type});
 print "<\p>";
 
 ### Out type
 print "<B>Output format</B>&nbsp;";
-print $query->popup_menu(-name=>'out_type',
+print $query->popup_menu(-name=>'out_type',-id=>'out_type',
 			 -Values=>['varBed','vcf','gvf'],
 			 -default=>$default{out_type});
 print "<\p>";
@@ -106,40 +109,53 @@ print "<BR>\n";
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 
 ################
 ## Data for demo
-$descr1 .= "<blockquote class ='demo'>";
-
-$descr1 .= "<p>In this demonstration, we convert variants in <a href='http://www.sequenceontology.org/resources/gvf_1.00.html'>GVF</a> format to varBed format.</p>\n
-
-<p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p>\n";
-
-$descr1 .= "</blockquote>";
-
-print $query->start_multipart_form(-action=>"convert-variations_form.cgi");
-## Data for demo
 $demo_gvf_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.gvf";
-$demo_gvf_var=`cat $demo_gvf_file` ;
+$demo_gvf_var= "";
+
+open(my $fh, $demo_gvf_file);
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_gvf_var .= $row;
+    $demo_gvf_var .= "\\n";
+}
+
+print '<script>
+function setDemo(demo_gvf_var){
+    $("#reset").trigger("click");
+    
+    descr = "<blockquote class =\'demo\'>";
+    
+    descr = descr + "<p>In this demonstration, we convert variants in <a href=\'http://www.sequenceontology.org/resources/gvf_1.00.html\'>GVF</a> format to varBed format.</p>\n \
+    <p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p>\n";
+    
+    descr = descr + "</blockquote>";
+    demo_descr.innerHTML = descr;
+    demo.value = descr;
+    
+    $("#organism").val("Homo_sapiens_GRCh37").trigger("chosen:updated");
+    $("#input").val(demo_gvf_var);
+    $("#input_type").val("gvf");
+    $("#out_type").val("varBed");
+}
+</script>';
 
 
 print "<TD><B>";
-print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
-print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
-print $query->hidden(-name=>'input',-default=>"$demo_gvf_var");
-print $query->hidden(-name=>'input_type',-default=>"gvf");
-print $query->hidden(-name=>'out_type',-default=>"varBed");
-print $query->submit(-label=>"DEMO");
+print '<button type="button" onclick="setDemo('. "'$demo_gvf_var'" .')">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
-print "<TD><B><A HREF='help.convert-variations.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A class='iframe' HREF='help.convert-variations.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
+
+print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a PAPIIT-UNAM (IA206517) grant.</small></font>";
 
 
 print $query->end_html;
