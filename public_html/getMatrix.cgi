@@ -120,7 +120,8 @@ if($mode eq "retrieve"){
         while(my $row = <RESULT>){
             print MIRROR $row if ($mirror);
         }
-        &EmailTheResult("$command", $query->param('user_email'), $result_file);
+        my $title = "[RSAT] retrieve-matrix " . &RSAT::util::AlphaDate();
+        &EmailTheResult("$command", $query->param('user_email'), $result_file, "title"=>$title);
     }else{
         while(<RESULT>){
             print $_;
