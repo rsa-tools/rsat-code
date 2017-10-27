@@ -81,7 +81,8 @@ print '<script type="text/javascript">
         $("#db_id").select2({placeholder: "Select identifiers",
             allowClear: true,
             dropdownAutoWidth: true,
-            theme: "classic"
+            theme: "classic",
+            closeOnSelect: false
         });
     
         $("#db_choice").change(function(){
@@ -119,9 +120,9 @@ print '<script type="text/javascript">
                 data: {action: "request"},
                 success: function(data){
                     res = data.entries;
-                    outputhtml = "</br><table class=\"result\">";
+                    outputhtml = "</br><div style=\"max-width:1200px\"><table class=\"result\">";
                     for(i = 0; i < res.length; i++){
-                        outputhtml += "<tr><td>" + res[i].info + "</td><td><pre>" + res[i].all + "</pre></td></tr>";
+                        outputhtml += "<tr><td>" + res[i].info + "</td><td>" + res[i].all + "</td></tr>";
                     }
                     outputhtml += "</table>";
                     $("#result").html(outputhtml);
@@ -129,8 +130,11 @@ print '<script type="text/javascript">
                     outputfile = "<table class=\"resultlink\"><tr><th>Content</th><th>URL</th></tr>";
                     outputfile += "<tr><td>Input file</td><td><a href=\"" + data.inputfile + "\" target=\"_blank\">" + data.inputfile + "</a></td></tr>";
                     outputfile += "<tr><td>Output file</td><td><a href=\"" + data.resultfile + "\" target=\"_blank\" id=\"resultfile\">" + data.resultfile + "</a></td></tr>";
-                    outputfile += "</table>";
+                    outputfile += "</table></div>";
                     $("#outputurl").html(outputfile);
+                    $("#sendemailmsg").html("");
+                    document.getElementById("piping").style.display = "block";
+                    document.getElementById("email").style.display = "inline";
                 },
                 error: function(){
                     alert("Error matrix");
@@ -139,19 +143,10 @@ print '<script type="text/javascript">
         }
     });
     
-    $("#email").change(function(){
-        if($(this).is(":checked")){
-            document.getElementById("sendemail").style.display = "inline";
-            document.getElementById("sendemailmsg").style.display = "block";
-        }else{
-            document.getElementById("sendemail").style.display = "none";
-            document.getElementById("sendemailmsg").style.display = "none";
-        }
-    });
     });
    </script>';
 
-
+print '<style> input.select2-search__field { width: 90% !important; } </style>';
 print "<table><tr><td style='padding-right:20px'><b>Input</b></td>";
 
 print "<td align='top'>1 - Select a collection in list:<br/>";
@@ -175,10 +170,6 @@ print "</td></tr></table>";
 
 
 print "<br/><hr>";
-### send results by email or display on the browser
-print "<input type='checkbox' id='email' />Email <input type='text' id='user_email' size='30'/>" unless ($ENV{mail_supported} eq "no");
-
-print "<button style='display:none' id='sendemail' onclick='sendemail()'>SEND EMAIL</button>&nbsp;";
 ####### useful link
 print "<script>
 function setDemo(){
@@ -207,29 +198,110 @@ function sendemail(){
     email = \$('#user_email').val();
     db_name = \$('#db_choice').val();
     db_id = \$('#db_id').val();
-    \$.ajax({
-        type: 'GET',
-        url:'getMatrix.cgi?db_choice=' + db_name + '&db_id=' + db_id + '&output=email&user_email=' + email,
-        success: function(data){
-            \$('#sendemailmsg').html(data);
-            document.getElementById('sendemailmsg').style.display = 'block';
-        }
-    });
+    if(db_id != '' && db_id != null){
+        \$.ajax({
+            type: 'GET',
+            url:'getMatrix.cgi?db_choice=' + db_name + '&db_id=' + db_id + '&output=email&user_email=' + email,
+            success: function(data){
+                \$('#sendemailmsg').html(data);
+                document.getElementById('sendemailmsg').style.display = 'block';
+            }
+        });
+    }
 }
+
+function pipto(f){
+    db_name = \$('#db_choice').val();
+    db_id = \$('#db_id').val();
+    if(db_id != null && db_id != ''){
+        \$.ajax({
+            type: 'GET',
+            url: 'getMatrix.cgi?db_choice=' + db_name + '&db_id=' + db_id,
+            data: {action: 'request'},
+            success: function(data){
+                res = data.split('</format>');
+                format = (res[0] == 'tf') ? 'transfac' : 'tab';
+                matrix = res[1];
+                document.getElementById('piping').innerHTML += '<form id=\"dynForm\" action=\"' + f + '_form.cgi\" method=\"post\" target=\"_blank\"><input type=\"hidden\" name=\"matrix_format\" value=\"' + format + '\"><input type=\"hidden\" name=\"matrix\" value=\"' + matrix + '\"></form>';
+                document.getElementById('dynForm').submit();
+            }
+        });
+    }
+}
+
+
 </script>";
 print '<br/><button type="reset" onclick="reset()">RESET</button>&nbsp;<button type="button" onclick="setDemo()">DEMO</button>';
 
-
-print "&nbsp;&nbsp;<b><A class='iframe' HREF='help.retrieve-seq.html'>MANUAL</A>&nbsp; ";
-print "<A HREF='htmllink.cgi?title=RSAT : Tutorials&file=tutorials/tut_retrieve-seq.html'>TUTORIAL</A> &nbsp;";
+print "&nbsp;<b><A class='iframe' HREF='#'>MANUAL</A>&nbsp; ";
+print "<A HREF='#'>TUTORIAL</A> &nbsp;";
 print "<A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></b>";
 
+### send results by email
+print "<div id='email' style='display:none'><hr>";
+print " <b>Send to my email</b> <input type='text' id='user_email' size='30' /><button id='sendemail' onclick='sendemail()'>SEND</button>" unless ($ENV{mail_supported} eq "no");
+print "</div>";
+
 ######### result
+
 print "<br/><br/><hr><h2>Result</h2>The selected matrix will be displayed in the table below<br/><br/>";
+print "<div id='sendemailmsg'></div>";
 print "<div id='outputurl'></div>";
 print "<div id='result'></div>";
-print "<div id='sendemailmsg'></div>";
+
+### prepare data for piping
+print "<div id='piping' style='display:none'>";
+&PipingForm();
+print "</div>";
+print "<HR SIZE = 3>";
+
 print $query->end_html;
 
 exit(0);
+
+sub PipingForm {
+    
+    ### prepare data for piping
+    $title = "Distribution of weights";
+    print qq|
+    <CENTER>
+    <HR SIZE = "3" />
+    <TABLE class='nextstep'>
+    <tr><td colspan = 4><h3 style='background-color:#0D73A7;color:#D6EEFA'>Next step</h3></td></tr>
+    <tr valign="top" align="center">
+        <th align=center>
+            <font size=-1>Matrix tools</font>
+        </th>
+        <td align="center" style='font-size:100%'>
+            <input type="button" onclick="pipto('convert-matrix')" value="convert-matrix" /><br/>
+            Convert position-specific<br/>scoring matrices (PSSM)
+        </td>
+        <td align="center" style='font-size:100%'>
+            <input type="button" onclick="pipto('compare-matrices')" value="compare-matrices" /><br/>
+            Compare two collections of<br/>position-specific scoring matrices
+        </td>
+        <td align="center" style='font-size:100%'>
+        <input type="button" onclick="pipto('matrix-clustering')" value="matrix-clustering" /><br/>
+        Identify groups (clusters) of similarities<br/>between a set of motifs and align them.
+        </td>
+    </tr>
+    
+    <tr valign="top" align="center">
+        <th align=center>
+            <font size=-1>Pattern matching</font>
+        </th>
+        <td align="center" style='font-size:100%'>
+            <input type="button" onclick="pipto('matrix-scan')" value="matrix-scan" /><br/>
+            Scan a DNA sequence with a profile matrix
+        </td>
+        <td align="center" style='font-size:100%'>
+            <input type="button" onclick="pipto('matrix-scan-quick')" value="matrices-scan(quick)" /><br/>
+            Scan a DNA sequence with a profile matrix - quick version
+        </td>
+    </tr>
+   
+    </TABLE>
+    </CENTER>
+    |;
+}
 
