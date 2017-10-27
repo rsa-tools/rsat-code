@@ -193,8 +193,9 @@ print '<script>
                     res = data.split("</format>");
                     format = (res[0] == "tf") ? "transfac" : "tab";
                     matrix = res[1];
-                    document.getElementById("piping").innerHTML += "<form id=\"dynForm\" action=\"" + f + "_form.cgi\" method=\"post\" target=\"_blank\"><input type=\"hidden\" name=\"matrix_format\" value=\"" + format + "\"><input type=\"hidden\" name=\"matrix\" value=\"" + matrix + "\"></form>";
-                    document.getElementById("dynForm").submit();
+                    $("form").remove();
+                    document.getElementById("piping").innerHTML += "<form id=\"dynForm_" + f + "\" action=\"" + f + "_form.cgi\" method=\"post\" target=\"_blank\"><input type=\"hidden\" name=\"matrix_format\" value=\"" + format + "\"><input type=\"hidden\" name=\"matrix\" value=\"" + matrix + "\"></form>";
+                    document.getElementById("dynForm_" + f).submit();
                 }
             });
         }
