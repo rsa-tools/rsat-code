@@ -39,7 +39,13 @@ while(my $row = <$fh>){
     }
     if($row =~ /^ID\s+/){
         my @f = split(/\s+/, $row);
-        push @ids, { "id" => $id, "idac" => $f[1] . " - ".$id };
+        my $idac = "";
+        if($f[1] ne $id){
+            $idac = $f[1] . " - " . $id;
+        }else{
+            $idac = $id;
+        }
+        push @ids, { "id" => $id, "idac" => $idac };
     }
     if($row =~ /^OS\s+/){
         push @ids, { "id" => $id, "idac" => $id };
