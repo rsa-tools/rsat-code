@@ -1017,7 +1017,11 @@ sub Rplot {
   print $out_R  $r_instructions;
   close ($out_R);
   my $rscript_command = $Rscript_path." ".$tmp_r_instructions_file;
-  &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+my $log_handle;
+my $error_handle;
+open ($log_handle, ">", "/export/home1/rsat/rsat/public_html/tmp/www-data/2017/10/test.log");  
+open ($error_handle, ">", "/export/home1/rsat/rsat/public_html/tmp/www-data/2017/10/test.error");
+&doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $error_handle);
   &RSAT::message::Info($rscript_command) if ($main::verbose >= 2);
 }
 
