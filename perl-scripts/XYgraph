@@ -725,6 +725,8 @@ sub Rplot {
   }
   close $in_copy;
   close $in;
+  &RSAT::message::Debug("Input file compy for R", $tmp_file ) if ($main::verbose >= 3);
+
   &RSAT::message::FatalError("No input data !!!") if ((!$inputfile) && ($in_lines == 0));
   my $input_data_file = $tmp_file;  ## Use input copy as input for R
   
