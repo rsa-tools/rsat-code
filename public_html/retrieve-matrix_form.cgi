@@ -62,7 +62,7 @@ print "<hr>";
 
 print '<link rel="stylesheet" href="css/select2.min.css" /><script src="js/select2.full.min.js"></script>';
 print '<style>.select2-results__options {font-size:10px} </style>';
-print '<script type="text/javascript">
+print '<script>
 
     function formatState(state){
         if(!state.id){return $("<div align=\'center\' style=\'text-transform:uppercase;background-color:lightgray;border:1px solid #eee;border-radius:7px;padding:8px\'><b>" + state.text + "</b></div>");}
@@ -108,42 +108,136 @@ print '<script type="text/javascript">
                 }
             });
         });
-    $("#db_id").change(function(){
+        $("#db_id").change(function(){
+            db_name = $("#db_choice").val();
+            db_id = $("#db_id").val();
+            output = $("input[name=output]:checked").val();
+            if(db_id != null && db_id != ""){
+                $.ajax({
+                    type: "GET",
+                    dataType:"json",
+                    url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id + "&mode=retrieve",
+                    data: {action: "request"},
+                    success: function(data){
+                        res = data.entries;
+                        outputhtml = "</br><div style=\"max-width:1200px\"><table class=\"result\">";
+                        for(i = 0; i < res.length; i++){
+                            outputhtml += "<tr><td>" + res[i].info + "</td><td>" + res[i].all + "</td></tr>";
+                        }
+                        outputhtml += "</table>";
+                        $("#result").html(outputhtml);
+                        
+                        outputfile = "<table class=\"resultlink\"><tr><th>Content</th><th>URL</th></tr>";
+                        outputfile += "<tr><td>Input file</td><td><a href=\"" + data.inputfile + "\" target=\"_blank\">" + data.inputfile + "</a></td></tr>";
+                        outputfile += "<tr><td>Output file</td><td><a href=\"" + data.resultfile + "\" target=\"_blank\" id=\"resultfile\">" + data.resultfile + "</a></td></tr>";
+                        outputfile += "</table></div>";
+                        $("#outputurl").html(outputfile);
+                        $("#sendemailmsg").html("");
+                        
+                        document.getElementById("piping").style.display = "block";
+                        var piphtml = "<HR SIZE = \"3\" />\
+                        <TABLE class=\'nextstep\'>\
+                        <tr><td colspan = 4><h3 style=\'background-color:#0D73A7;color:#D6EEFA\'>Next step</h3></td></tr>\
+                        <tr valign=\"top\" align=\"center\">\
+                            <th align=center>\
+                                <font size=-1>Matrix tools</font>\
+                            </th>\
+                            <td align=\"center\" style=\'font-size:100%\'>\
+                                <input type=\"button\" onclick=\"pipto(\'convert-matrix\')\" value=\"convert-matrix\" /><br/>\
+                                Convert position-specific<br/>scoring matrices (PSSM)\
+                            </td>\
+                            <td align=\"center\" style=\'font-size:100%\'>\
+                                <input type=\"button\" onclick=\"pipto(\'compare-matrices\')\" value=\"compare-matrices\" /><br/>\
+                                Compare two collections of<br/>position-specific scoring matrices\
+                            </td>\
+                            <td align=\"center\" style=\'font-size:100%\'>\
+                                <input type=\"button\" onclick=\"pipto(\'matrix-clustering\')\" value=\"matrix-clustering\" /><br/>\
+                                Identify groups (clusters) of similarities<br/>between a set of motifs and align them.\
+                            </td>\
+                        </tr>\
+                        <tr valign=\"top\" align=\"center\">\
+                            <th align=center>\
+                                <font size=-1>Pattern matching</font>\
+                            </th>\
+                            <td align=center style=\'font-size:100%\'>\
+                                <input type=\"button\" onclick=\"pipto(\'matrix-scan\')\" value=\"matrix-scan\" /><br/>\
+                                Scan a DNA sequence with a profile matrix\
+                            </td>\
+                            <td align=center style=\'font-size:100%\'>\
+                                <input type=\"button\" onclick=\"pipto(\'matrix-scan-quick\')\" value=\"matrices-scan(quick)\" /><br/>\
+                                Scan a DNA sequence with a profile matrix - quick version\
+                            </td>\
+                        </tr></TABLE>";
+                        $("#piping").html(piphtml);
+                        
+                        document.getElementById("email").style.display = "inline";
+                    },
+                    error: function(){
+                        alert("Error matrix");
+                    }
+                });
+            }
+        });
+        
+    });
+        
+    function pipto(f){
         db_name = $("#db_choice").val();
         db_id = $("#db_id").val();
-        output = $("input[name=output]:checked").val();
         if(db_id != null && db_id != ""){
             $.ajax({
                 type: "GET",
-                dataType:"json",
-                url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id + "&mode=retrieve",
+                url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id,
                 data: {action: "request"},
                 success: function(data){
-                    res = data.entries;
-                    outputhtml = "</br><div style=\"max-width:1200px\"><table class=\"result\">";
-                    for(i = 0; i < res.length; i++){
-                        outputhtml += "<tr><td>" + res[i].info + "</td><td>" + res[i].all + "</td></tr>";
-                    }
-                    outputhtml += "</table>";
-                    $("#result").html(outputhtml);
-                    
-                    outputfile = "<table class=\"resultlink\"><tr><th>Content</th><th>URL</th></tr>";
-                    outputfile += "<tr><td>Input file</td><td><a href=\"" + data.inputfile + "\" target=\"_blank\">" + data.inputfile + "</a></td></tr>";
-                    outputfile += "<tr><td>Output file</td><td><a href=\"" + data.resultfile + "\" target=\"_blank\" id=\"resultfile\">" + data.resultfile + "</a></td></tr>";
-                    outputfile += "</table></div>";
-                    $("#outputurl").html(outputfile);
-                    $("#sendemailmsg").html("");
-                    document.getElementById("piping").style.display = "block";
-                    document.getElementById("email").style.display = "inline";
-                },
-                error: function(){
-                    alert("Error matrix");
+                    res = data.split("</format>");
+                    format = (res[0] == "tf") ? "transfac" : "tab";
+                    matrix = res[1];
+                    document.getElementById("piping").innerHTML += "<form id=\"dynForm\" action=\"" + f + "_form.cgi\" method=\"post\" target=\"_blank\"><input type=\"hidden\" name=\"matrix_format\" value=\"" + format + "\"><input type=\"hidden\" name=\"matrix\" value=\"" + matrix + "\"></form>";
+                    document.getElementById("dynForm").submit();
                 }
             });
         }
-    });
+    }
     
-    });
+    
+    function setDemo(){
+        $.ajax({
+            url:setDemo1(),
+            success:function(){
+                setDemo2();
+            }
+        });
+    }
+    function setDemo1(){
+        $("#db_choice").val("jaspar_core_nonredundant_vertebrates").change();
+        
+    }
+    function setDemo2(){
+        $("input[name=output][value=display]").prop("checked", true);
+        $("#db_id").val(["MA0019.1", "MA0031.1"]).change();
+    }
+    
+    function reset(){
+        $("#db_choice").val("").change();
+    }
+    
+    function sendemail(){
+        email = $("#user_email").val();
+        db_name = $("#db_choice").val();
+        db_id = $("#db_id").val();
+        if(db_id != "" && db_id != null){
+            $.ajax({
+                type: "GET",
+                url:"getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id + "&output=email&user_email=" + email,
+                success: function(data){
+                    $("#sendemailmsg").html(data);
+                    document.getElementById("sendemailmsg").style.display = "block";
+                }
+            });
+        }
+    }
+ 
    </script>';
 
 print '<style> input.select2-search__field { width: 90% !important; } </style>';
@@ -172,63 +266,6 @@ print "</td></tr></table>";
 print "<br/><hr>";
 ####### useful link
 print "<script>
-function setDemo(){
-    \$.ajax({
-        url:setDemo1(),
-        success:function(){
-            setDemo2();
-        }
-    });
-}
-function setDemo1(){
-    \$('#db_choice').val('jaspar_core_nonredundant_vertebrates').change();
-    
-}
-function setDemo2(){
-    \$('input[name=output][value=display]').prop('checked', true);
-    \$('#db_id').val(['MA0019.1', 'MA0031.1']).change();
-}
-
-function reset(){
-    \$('#db_choice').val('').change();
-    \$('input[name=output][value=server]').prop('checked', true);
-}
-
-function sendemail(){
-    email = \$('#user_email').val();
-    db_name = \$('#db_choice').val();
-    db_id = \$('#db_id').val();
-    if(db_id != '' && db_id != null){
-        \$.ajax({
-            type: 'GET',
-            url:'getMatrix.cgi?db_choice=' + db_name + '&db_id=' + db_id + '&output=email&user_email=' + email,
-            success: function(data){
-                \$('#sendemailmsg').html(data);
-                document.getElementById('sendemailmsg').style.display = 'block';
-            }
-        });
-    }
-}
-
-function pipto(f){
-    db_name = \$('#db_choice').val();
-    db_id = \$('#db_id').val();
-    if(db_id != null && db_id != ''){
-        \$.ajax({
-            type: 'GET',
-            url: 'getMatrix.cgi?db_choice=' + db_name + '&db_id=' + db_id,
-            data: {action: 'request'},
-            success: function(data){
-                res = data.split('</format>');
-                format = (res[0] == 'tf') ? 'transfac' : 'tab';
-                matrix = res[1];
-                document.getElementById('piping').innerHTML += '<form id=\"dynForm\" action=\"' + f + '_form.cgi\" method=\"post\" target=\"_blank\"><input type=\"hidden\" name=\"matrix_format\" value=\"' + format + '\"><input type=\"hidden\" name=\"matrix\" value=\"' + matrix + '\"></form>';
-                document.getElementById('dynForm').submit();
-            }
-        });
-    }
-}
-
 
 </script>";
 print '<br/><button type="reset" onclick="reset()">RESET</button>&nbsp;<button type="button" onclick="setDemo()">DEMO</button>';
@@ -250,58 +287,8 @@ print "<div id='outputurl'></div>";
 print "<div id='result'></div>";
 
 ### prepare data for piping
-print "<div id='piping' style='display:none'>";
-&PipingForm();
-print "</div>";
-print "<HR SIZE = 3>";
+print "<div id='piping' style='display:none'></div><hr>";
 
 print $query->end_html;
 
 exit(0);
-
-sub PipingForm {
-    
-    ### prepare data for piping
-    $title = "Distribution of weights";
-    print qq|
-    <CENTER>
-    <HR SIZE = "3" />
-    <TABLE class='nextstep'>
-    <tr><td colspan = 4><h3 style='background-color:#0D73A7;color:#D6EEFA'>Next step</h3></td></tr>
-    <tr valign="top" align="center">
-        <th align=center>
-            <font size=-1>Matrix tools</font>
-        </th>
-        <td align="center" style='font-size:100%'>
-            <input type="button" onclick="pipto('convert-matrix')" value="convert-matrix" /><br/>
-            Convert position-specific<br/>scoring matrices (PSSM)
-        </td>
-        <td align="center" style='font-size:100%'>
-            <input type="button" onclick="pipto('compare-matrices')" value="compare-matrices" /><br/>
-            Compare two collections of<br/>position-specific scoring matrices
-        </td>
-        <td align="center" style='font-size:100%'>
-        <input type="button" onclick="pipto('matrix-clustering')" value="matrix-clustering" /><br/>
-        Identify groups (clusters) of similarities<br/>between a set of motifs and align them.
-        </td>
-    </tr>
-    
-    <tr valign="top" align="center">
-        <th align=center>
-            <font size=-1>Pattern matching</font>
-        </th>
-        <td align="center" style='font-size:100%'>
-            <input type="button" onclick="pipto('matrix-scan')" value="matrix-scan" /><br/>
-            Scan a DNA sequence with a profile matrix
-        </td>
-        <td align="center" style='font-size:100%'>
-            <input type="button" onclick="pipto('matrix-scan-quick')" value="matrices-scan(quick)" /><br/>
-            Scan a DNA sequence with a profile matrix - quick version
-        </td>
-    </tr>
-   
-    </TABLE>
-    </CENTER>
-    |;
-}
-
