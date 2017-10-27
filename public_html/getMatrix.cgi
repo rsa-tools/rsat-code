@@ -95,7 +95,7 @@ if($mode eq "retrieve"){
             @f = split(/^CC\s+/, $row);
             $result_cc .= "&nbsp;&nbsp;" . $f[1] . "<br/>";
         }        
-        $result_all .= $row ;  
+        $result_all .= $row . "<br/>";
     }
 
     if(! ($result_all =~ /\/\//) ){
