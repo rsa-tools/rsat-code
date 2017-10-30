@@ -449,7 +449,7 @@ sub SelectOutput {
     print $query->radio_group(-name=>'output',
 			      -values=>[@values],
 			      -default=>$default_output);
-    print $query->textfield(-name=>'user_email',
+    print $query->textfield(-name=>'user_email', -id=>'user_email',
 			    -size=>30,
 	) unless ($ENV{mail_supported} eq "no");
     print "<BR>\n";
@@ -1408,8 +1408,8 @@ sub GetMatrix {
 			 -columns=>60);
 ## Propose help to find matrices
 unless ($args{nowhere}) {
-        print "<br/><br/><br/>";
-        &MotifSelection();
+        print "<br/><br/>";
+        &MotifSelection('ids' => 1);
     }
     
   ## Option to upload the matrix file from the client machine
@@ -1437,6 +1437,7 @@ unless ($args{nowhere}) {
 }
 
 ###############################################################
+### Select a motif collection
 sub MotifSelection {
     my (%args) = @_;
     print '<link rel="stylesheet" href="css/select2.min.css" /><script src="js/select2.full.min.js"></script>';
@@ -1456,124 +1457,75 @@ sub MotifSelection {
         allowClear: true,
         theme: "classic"
         });
+ ';
         
-        $("#db_id").select2({placeholder: "Select identifiers",
-        allowClear: true,
-        dropdownAutoWidth: true,
-        theme: "classic"
-        });
+    ### if select also the identifiers.
+    if($args{ids} == 1){
         
-        $("#db_choice").change(function(){
-            $("#db_id").val("").change();
-            $("#matrix").val("");
-            document.getElementById("identifier").style.display = "none";
-            db_name = $("#db_choice").val();
-            $.ajax({
-            type: "GET",
-            url: "getMatrixIds.cgi?db_choice=" + db_name,
-            dataType: "json",
-            data: {action: "request"},
-            success: function(data){
-                var res = data.entries;
-                if(res.length != 0){ document.getElementById("identifier").style.display = "block"; }
-                var selectopt = "<option></option>";
-                for(i = 0; i < res.length; i++){
-                    selectopt += "<option value=\'" + res[i].id + "\'>" + res[i].idac + "</option>";
-                }
-                document.getElementById("db_id").innerHTML = selectopt;
-            },
-            error: function(){
-                alert("Error matrix");
-            }
+        print '$("#db_id").select2({placeholder: "Select identifiers",
+                    allowClear: true,
+                    theme: "classic",
+                    closeOnSelect: false
             });
-        });
-    ';
-    if($args{retrieve} != 1){
-        print '$("#db_id").change(function(){
-            db_name = $("#db_choice").val();
-            db_id = $("#db_id").val();
-            if(db_id != null && db_id != ""){
-                $.ajax({
-                type: "GET",
-                url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id,
-                data: {action: "request"},
-                success: function(data){
-                    res = data.split("</format>");
-                    $("#matrix").val(res[1]);
-                    format = "tab";
-                    if(res[0] == "tf"){
-                        format = "transfac";
-                    }
-                    $("#matrix_format").val(format);
-                },
-                error: function(){
-                    alert("Error matrix");
-                }
-                });
-            }
-        });
         
-        ';
-    }else{
-        print '
-        $("#db_id").change(function(){
-            db_name = $("#db_choice").val();
-            db_id = $("#db_id").val();
-            nottable = $("#nottable").prop("checked");
-            if(db_id != null && db_id != ""){
+            $("#db_choice").change(function(){
+                $("#db_id").val("").change();
+                $("#matrix").val("");
+                document.getElementById("identifier").style.display = "none";
+                db_name = $("#db_choice").val();
                 $.ajax({
                 type: "GET",
-                dataType:"json",
-                url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id + "&mode=retrieve",
+                url: "getMatrixIds.cgi?db_choice=" + db_name,
+                dataType: "json",
                 data: {action: "request"},
                 success: function(data){
-                    res = data.entries;
-                    outputhtml = "<hr/><h2>Output</h2></br><table class=\"result\">";
+                    var res = data.entries;
+                    if(res.length != 0){ document.getElementById("identifier").style.display = "block"; }
+                    var selectopt = "<option></option>";
                     for(i = 0; i < res.length; i++){
-                        outputhtml += "<tr><td><pre>" + res[i].info + "</pre></td><td><pre>" + res[i].all + "</pre></td></tr>";
+                        selectopt += "<option value=\'" + res[i].id + "\'>" + res[i].idac + "</option>";
                     }
-                    outputhtml += "</table>";
-                    $("#result").html(outputhtml);
-                    if(nottable == false){
-                        document.getElementById("result").style.display = "block";
-                    }else{
-                        document.getElementById("result").style.display = "none";
-                    }
-                    
-                    outputfile = "<hr><h2>Result file</h2><table class=\"resultlink\"><tr><th>Content</th><th>URL</th></tr>";
-                    outputfile += "<tr><td>Input file</td><td><a href=\"" + data.inputfile + "\" target=\"_blank\">" + data.inputfile + "</a></td></tr>";
-                    outputfile += "<tr><td>Output file</td><td><a href=\"" + data.resultfile + "\" target=\"_blank\">" + data.resultfile + "</a></td></tr>";
-                    outputfile += "</table>";
-                    $("#outputurl").html(outputfile);
+                    document.getElementById("db_id").innerHTML = selectopt;
                 },
                 error: function(){
                     alert("Error matrix");
                 }
                 });
-            }
-        });
-        
-        $("#nottable").change(function(){
-            if($(this).is(":checked")){
-                document.getElementById("result").style.display = "none";
-            }else{
-                document.getElementById("result").style.display = "block";
-            }
-        });
-        ';
+            });
+            
+            $("#db_id").change(function(){
+                db_name = $("#db_choice").val();
+                db_id = $("#db_id").val();
+                if(db_id != null && db_id != ""){
+                    $.ajax({
+                    type: "GET",
+                    url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id,
+                    data: {action: "request"},
+                    success: function(data){
+                        res = data.split("</format>");
+                        $("#matrix").val(res[1]);
+                        format = "tab";
+                        if(res[0] == "tf"){
+                            format = "transfac";
+                        }
+                        $("#matrix_format").val(format);
+                    },
+                    error: function(){
+                        alert("Error matrix");
+                    }
+                    });
+                }
+            });';
     }
-    print '});</script>';
+    print '}); </script>';
     
-    
-    
-    if($args{retrieve} == 1){
-        print "<table><tr><td style='padding-left:20px'><b>Input</b></td>";
-        print "<td align='top'>Select a collection in list:<br/>";
-    }else{
-        print '<div style="float:left;font-size:11px">';
-        print "<b>Or</b> select a collection in list (a box will appear to select each matrix individually)<br/>";
+    print '<style> input.select2-search__field { width: 90% !important; } </style>';
+    print '<div style="float:left;font-size:11px">';
+    if($args{ids} == 1){
+        print "<img src='images/onebit_49.png' height='30' class='new'/><b>Or</b> select a collection in list (a box will appear to select each matrix individually)<br/>";
     }
-    print ' <select id="db_choice" name="db_choice" style="width:300px"><option></option>';
+    my $width = ($args{ids} == 1) ? "300px" : "400px";
+    print ' <select id="db_choice" name="db_choice" style="width:$width"><option></option>';
     ## load the various databases that can be compared against
     &DisplayMatrixDBchoice_select2("mode"=>"radio");
     print '</select>';
@@ -1581,17 +1533,13 @@ sub MotifSelection {
     print "<div style='display:none'><div id='matrix_descr'>";
     &DisplayMatrixDBchoice_select2("mode" => "list");
     print "</div></div></div>";
-    if($args{retrieve} == 1){
-        print "</td><td align='top'>";
+    
+    if($args{ids} == 1){
+        print "<div id='identifier' style='display:none'><div style='float:left;margin-left:27px;font-size:11px;'><img src='images/onebit_49.png' height='30' class='new' style='visibility:hidden'/>Select 1 or more matrix identifiers:<br/>";
+        print " <select id='db_id' style='width:300px' multiple='multiple'></select><br/>&nbsp;";
+        print "</div></div>";
     }
-    my $display = ($args{retrieve} == 1) ? "block" : "none";
-    print "<div id='identifier' style='display:$display'><div style='float:left;margin-left:27px;font-size:11px;'>Identifiers:<br/>";
-    print " <select id='db_id' style='width:300px' multiple='multiple'></select><br/>&nbsp;";
-    print "</div></div>";
     print '<div style="clear:both;"></div>';
-    if($args{retrieve} == 1){
-        print "</td></tr><tr><td style='padding-left:20px;padding-top:30px'><b>Option</b></td><td style='padding-top:30px'><input type='checkbox' id='nottable'>Display only the link to result file</td></tr></table>";
-    }
 }
 
 ################################################################
