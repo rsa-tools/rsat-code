@@ -19,6 +19,8 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 my $mode = $query->param("mode");
+my $output = $query->param("output");
+
 if($mode eq 'retrieve'){
     print "Content-type:application/json; charset=iso-8859-1\n\n";
 }else{
@@ -33,7 +35,7 @@ my %db = %{$matrix_db{$db_choice}};
 my $format = $db{format};
 my $file = $db{file};
 
-if($mode ne "retrieve"){
+if($mode ne "retrieve" && $output ne "email"){
     print "$format</format>";
 }
 
@@ -44,7 +46,7 @@ $command = "$SCRIPTS/retrieve-matrix -i $file_name -id $id 2> /dev/null";
 open RESULT, "$command |";
 
 ######## return json array of all information
-if($mode eq "retrieve"){
+
     my @results;
     my %result;
     my $result_cc = "";
@@ -58,6 +60,7 @@ if($mode eq "retrieve"){
         &DelayedRemoval($result_file);
     }
 
+if($mode eq "retrieve"){
     while(my $row = <RESULT>){
         print MIRROR $row if ($mirror);
 
@@ -75,7 +78,7 @@ if($mode eq "retrieve"){
                 if($result{CC} eq ""){
                     $result{CC} = "\n";
                 }
-                push @results, {"info" => "<b>Accesssion:</b> $result{AC}<b>Identifier:</b> $result{ID}<b>Description:</b> $result{DE}<b>Additional information:</b> $result_cc", "all" => $result_all};
+                push @results, {"info" => "<b>Accesssion:</b> $result{AC}<br/><b>Identifier:</b> $result{ID}<br/><b>Description:</b> $result{DE}<br/><b>Additional information:</b> $result_cc", "all" => $result_all};
             }
             undef %result;
             $result_cc = "";
@@ -90,31 +93,39 @@ if($mode eq "retrieve"){
             $result{DE} = $f[1];
         }elsif($row =~ /^CC\s+/){
             @f = split(/^CC\s+/, $row);
-            $result_cc .= $f[1];
+            $result_cc .= "&nbsp;&nbsp;" . $f[1] . "<br/>";
         }        
-        $result_all .= $row ;  
+        $result_all .= $row . "<br/>";
     }
 
     if(! ($result_all =~ /\/\//) ){
         $result_all .= "//";
     }
     if($result{ID} eq ""){
-        $result{ID} = "\n";
+        $result{ID} = "<br/>";
     }
     if($result{DE} eq ""){
-        $result{DE} = "\n";
+        $result{DE} = "<br/>";
     }
     if($result{CC} eq ""){
-        $result{CC} = "\n";
+        $result{CC} = "<br/>";
     }
-    push @results, {"info" => "<b>Accesssion:</b> $result{AC}<b>Identifier:</b> $result{ID}<b>Description:</b> $result{DE}<b>Additional information:</b> $result_cc", "all" => $result_all};
+    push @results, {"info" => "<b>Accesssion:</b> $result{AC}<br/><b>Identifier:</b> $result{ID}<br/><b>Description:</b> $result{DE}<br/><b>Additional information:</b> $result_cc", "all" => $result_all};
     my $result_URL = $ENV{rsat_www}."/tmp/";
     $result_URL .= &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $result_file);
     my $input_URL = $ENV{rsat_www}."/motif_databases/$file";
     print JSON::encode_json({entries => \@results, resultfile => $result_URL, inputfile => $input_URL});
 }else{
-    while(<RESULT>){
-        print $_;
+    if($output eq "email"){
+        while(my $row = <RESULT>){
+            print MIRROR $row if ($mirror);
+        }
+        my $title = "[RSAT] retrieve-matrix " . &RSAT::util::AlphaDate();
+        &EmailTheResult("$command", $query->param('user_email'), $result_file, "title"=>$title);
+    }else{
+        while(<RESULT>){
+            print $_;
+        }
     }
 }
 close RESULT;

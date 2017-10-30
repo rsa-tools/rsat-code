@@ -50,7 +50,7 @@ $default{visualize}="none";
 
 
 ## motif database
-$default{compare_motif_database}="RSAT_nonredundant_vertebrates";
+$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
 $default{custom_motif_db_name}="custom_motif_collection";
 
 ### Replace defaults by parameters from the cgi call, if defined
