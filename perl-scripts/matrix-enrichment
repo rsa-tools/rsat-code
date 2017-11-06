@@ -121,7 +121,6 @@ use Data::Dumper;
 use File::Basename;
 use File::Path;
 require "RSA.disco.lib";
-require "footprint.lib.pl";
 
 
 ################################################################
@@ -201,7 +200,7 @@ package main;
       $supported_task{$task} = 1;
   }
 
-  $noicon=1;
+  $noicon=1; # Do not generate the smaller version of plots
   %task = (); ## Difine hash to contain user given tasks
 
 
@@ -238,7 +237,15 @@ package main;
   ## All matrix and sequence names
   local @all_matrix_names = ();
   local @all_sequence_names = ();
+
+  ## Roc Curves will only be drawn for matrix-quality
+  $draw_roc=0;
   
+  
+  ## This options are valid for matrix-quality, this declaration helps avoid warnings 
+  $graph_options = " ";
+  $distrib_options = " ";
+  $large_graph_options=" ";
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -249,15 +256,13 @@ package main;
 
   ##
   @main::image_formats = uniq(@main::image_formats);
-  ## If no tasks has been specified, execute them all
+  ## If no tasks have been specified, execute them all
   if (($task{all}) || (scalar(keys(%task))==0)) {
       %task = %supported_task;
       $task{all} = 0;
   }
   
-  # foreach (sort keys %raks) {
-  #   print "$_ : $myhash{$_}\n";
-  # }
+ 
 
   # die "BOOM";
   ## Matrix file is mandatory
@@ -363,63 +368,37 @@ package main;
   &RSAT::util::CheckOutDir($bg_dir);
 
   
-  ################
-  ## Note Ale to Jaime: I realized this option is not a consistent one. You need to have the same backgorund model to make things
-  ## comparable, so only the all option will be avialble 
-  ## background by sequence
-  # if ($main::bg_input eq "by_seq") {
-  #     &RSAT::message::TimeWarn("Calculating background model by sequence set", $bg_dir) if ($main::verbose >= 3);
-
-  #     foreach $seq (@main::seq_types){
-
-  # 	  my $new_bg_file=$bg_dir."/" . $seq . "_bg_" . $main::markov . "_2str.inclusive";
-	  
-  # 	  my $bg_command=" $SCRIPTS/oligo-analysis -v 1 -quick -2str " ;
-  # 	  $bg_command.=" -i ".$main::seqfile{$seq}." -l ".$main::markov." -noov ";
-  # 	  $bg_command.=" | convert-background-model -from oligos -to inclusive ";
-  # 	  $bg_command.=" -o ".$new_bg_file;
-
-  # 	  $bg_files{$seq} = $new_bg_file ;
-	  
-  # 	  &doit($bg_command, $dry, $die_on_error, $verbose, 0, $job_prefix);
-  # 	  &RSAT::message::TimeWarn("Background for sequence set", $seq, $new_bg_file) if ($main::verbose >= 3);
-
-  # 	  $outfile{"bg_file_directory"}=$bg_dir;
-	  
-  #     }
-      
-  # } els
-      
-      if ($main::bg_input eq "all") {
+  
+  if ($main::bg_input eq "all") {
       
       ## Create one bg model from all input sequences
       my $all_sequences_file=$bg_dir."/all_sequences.fas";
-      my $new_bg_file=$bg_dir."/all_sequences_bg_".$main::markov."_2str.inclusive";
-
+      my $new_bg_file=$bg_dir."/all_sequences_bg_mkv".$main::markov."_2str.inclusive";
+      
       my @seq_files=values( %main::seqfile);
       
       my $bg_command = " cat ".join( " " , @seq_files ) . " > ". $all_sequences_file ." ; "; 
       $bg_command.= "$SCRIPTS/oligo-analysis -v 1 -quick -2str -i  " .$all_sequences_file;
-      $bg_command.= " -l ".$main::markov." -noov ";
+      $bg_command.= " -l ".$main::markov ." -noov ";
       $bg_command.= " | convert-background-model -from oligos -to inclusive ";
       $bg_command.= " -o ".$new_bg_file;
       $main::outfile{"bg_file_inclusive"}=$new_bg_file;
       
       &RSAT::message::Debug("Calculating background model using all sequences"."\n".$bg_command,  "bg_file_inclusive".$new_bg_file  ) if ($main::verbose >= 0);
-
+      
       &doit($bg_command, $dry, $die_on_error, $verbose, 0, $job_prefix);
       
       push @files_to_index, "bg_file_inclusive";
       &RSAT::message::Debug("Adding file to index ",  "bg_file_inclusive",   $outfile{bg_file_inclusive}) if ($main::verbose >= 3 );
       
-
+      
       ## Define same bg file for all sequences
       foreach $seq ( @main::seq_types ) {
 	  $bg_files{$seq} = $new_bg_file ; 
       }
-
+      
   }elsif ($main::infile{bg_file}) {
-  
+      
       
       ## Define name of the converted bg file
       #$outfile{bg_file_inclusive} = $dir{output};
@@ -465,11 +444,12 @@ package main;
   ## Export matrix realted files and matrix information into one table
   
   ## ##############################################################
-  ## Evaluate the enrichment of each matrix of the input file
+  ## Evaluate the enrichment of each matrix in the input file
   my $m = 0; ## Matrix counter
   my %matrix_index = (); ## %matrix_index indexes matrix numbers (value) as a function of matrix names (keys)
 
-  
+
+  ## Convert matrices to transfac format if they are not already in such format
   if ($task{convert_matrix}){
       ## If it is required, convert the input motif file in Transfac format
       
@@ -482,7 +462,7 @@ package main;
       } else {
 	  $main::outfile{motifs_transfac}=$dir{output}."/".$short_prefix."_transfac_motifs.tf";
 	  
-	  &RSAT::message::TimeWarn( "Converting input matrices to Tansfac format, outputfile: ",  $main::outfile{motifs_transfac} ) if ($main::verbose >= 3);
+	  &RSAT::message::TimeWarn( "Converting input matrices to Transfac format, outputfile: ",  $main::outfile{motifs_transfac} ) if ($main::verbose >= 3);
 	  $convert_matrix_cmd = $SCRIPTS."/convert-matrix ";
 	  $convert_matrix_cmd .= " -i ".$main::infile{motifs};
 	  $convert_matrix_cmd .= " -from ".$matrix_format;
@@ -491,7 +471,7 @@ package main;
 	  
 	  &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 	  $to_delete{'motifs_transfac'} = $main::outfile{motifs_transfac};
-	  $matrix_format="trasnfac";
+	  $matrix_format="transfac";
 	  $main::infile{motifs}=$main::outfile{motifs_transfac};
 
       }
@@ -504,7 +484,7 @@ package main;
 
   if ($top_matrix_flag || $skip_matrix_flag){
       
-      &RSAT::message::TimeWarn("Selecting top and skippped motifs Tansfac format") if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn("Selecting top and skippped motifs Transfac format") if ($main::verbose >= 3);
       $main::outfile{motifs_transfac_top_skip}=$dir{output}."/".$short_prefix."_transfac_motifs_topskip_selected_motifs.tf";
       
       $convert_matrix_cmd = $SCRIPTS."/convert-matrix ";
@@ -531,8 +511,8 @@ package main;
 
   my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
 
-  ## Open the ID to Motif name reference table
-  my ($ID_to_Motif_name_file) = &RSAT::util::OpenOutputFile($main::outfile{motif_ID_to_name});
+  ## Open the ID to Motif name reference table NOTE: removed since it is not used
+  ##my ($ID_to_Motif_name_file) = &RSAT::util::OpenOutputFile($main::outfile{motif_ID_to_name});
 
   ## Analyse one matrix at a time
   foreach my $matrix (@matrices) {
@@ -548,7 +528,7 @@ package main;
       local @distrib_files=(); ## check something named  @main::distrib_files
       local @temporary_distrib_files=();
       local @local_seq_types= @main::seq_types; # seq_types are all the sequences where the proceadure is performed, for each matrix the matrix_sites are added.
-      ## Redefine the matrix name (in case it would have been modified above)
+
       $matrix->set_attribute("pseudo", $pseudo_counts);
       $matrix->set_attribute("decimals", $decimals);
       $matrix->set_attribute("file", $matrix_file);
@@ -584,14 +564,14 @@ package main;
       $matrix_name =~ s/\//_/; ## Avoid slashes in matrix names because this would make problem for subfolder definitions
       $matrix_name =~ s/\$/_/; ## Avoid $ in matrix names because the following word would be interpreted as a variable in Unix system
       
-      $matrix_id =~ s/\//_/; ## Avoid slashes in matrix names because this would make problem for subfolder definitions
-      $matrix_id =~ s/\$/_/; ## Avoid $ in matrix names because the following word would be interpreted as a variable in Unix system
+      $matrix_id =~ s/\//_/; ## Avoid slashes in matrix ids  because this would make problem for subfolder definitions
+      $matrix_id =~ s/\$/_/; ## Avoid $ in matrix ids because the following word would be interpreted as a variable in Unix system
       
 
       
       ## Check if another matrix with the same name has already been indexed)
       if (defined($matrix_index{$matrix_name})) {
-	  &RSAT::message::Warning("Matrix file contains sevral matrices with name",
+	  &RSAT::message::Warning("Matrix file contains several matrices with name",
 				  $matrix_name, ". Adding suffix m_".$m);
 	  $matrix_name .= "_m".$m;
       } else {
@@ -686,87 +666,7 @@ package main;
       
       ################################################################
       ## Compute empirical distribution in the input sequence files
-      foreach my $seq_type (@local_seq_types) {
-	  &RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type}) if ($main::verbose >= 2);
-	  &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{matrix_tab}, 'tab', $seq_type, 1,  @matrix_scan_options) ;
-	  ## Score sequences with the permuted matrices
-	  if (($seqfile{$seq_type}) &&
-	      (defined($perm_nb{$seq_type})) &&
-	      ($perm_nb{$seq_type} > 0)) {
-	      
-	      ## Calculate the separate distributions for each permuted matrix
-	      ## (this highlights the variability but the graph is noisy)
-	      for my $i (1..$perm_nb{$seq_type}) {
-		  $perm_suffix = $seq_type."_perm_col_".$i;
-		  if (defined($scanopt{$seq_type})) {
-		      $scanopt{$perm_suffix} = $scanopt{$seq_type};
-		  }
-		  push @perm_distrib_files, &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, $perm_separate_distrib,  @matrix_scan_options) if $task{scan};
-	      }
-	      
-	      ## Compute the distribution for all the permutation tests
-	      
-	      ## Define the output file for the regrouped permutation tests
-	      my $perm_suffix = $seq_type.'_'.$perm_nb{$seq_type}.'perm';
-	      $outfile{$perm_suffix} =  $matrix_prefix{$matrix_name}."_scan_".$perm_suffix."_score_distrib.tab"; push @files_to_index, $perm_suffix;
-	      &RSAT::message::Debug("Adding file to index ",  $perm_suffix, $outfile{$perm_suffix}  ) if ($main::verbose >= 10);
-	      push @distrib_files, $outfile{$perm_suffix}; $file_nb{$perm_suffix} = scalar(@distrib_files);
-	      
-	      ## Run compare-scores to compute the dCDF of the mergeed permutation test
-	      my $merge_cmd = $SCRIPTS."/compare-scores -v 2 ";
-	      $merge_cmd .= " -ic 1 -numeric -sc 2";
-	      $merge_cmd .= " -files ";
-	      $merge_cmd .= join " ", @perm_distrib_files;
-	      my $last_col = scalar(@perm_distrib_files) + 1;
-	      $merge_cmd .= " | ".$SCRIPTS."/row-stats -before -col 2-".$last_col;
-	      &RSAT::message::Debug("Merging permuted distributions", $merge_cmd) if ($main::verbose >= 3);
-	      
-	      ## Compute the cumulative and decreasing cumlative
-	      ## distributions
-	      
-	      my @weights = ();
-	      my @occ = ();
-	      my @cum_occ = ();
-	      my %merged_occ = ();
-	      my $cum_occ = 0;
-	      if ($task{scan}){
-		  open MERGE, "$merge_cmd |";
-		  while (<MERGE>) {
-		      chomp();
-		      next if /^;/;
-		      next if /^#/;
-		      next unless /\S/;
-		      my @fields = split /\t/, $_;
-		      my $weight = $fields[4];
-		      my $occ = $fields[2];
-		      $cum_occ += $occ;
-		      push @weights, $weight;
-		      push @occ, $occ;
-		      push @cum_occ, $cum_occ;
-		  }
-		  close MERGE;
-		  my $total_occ = $cum_occ[$#cum_occ];
-	      
-		  
-		  ## Print the merged distribution
-		  my $merged_distrib = &OpenOutputFile($outfile{$perm_suffix});
-		  print $merged_distrib join ("\t", "#weight", "occ", "cum", "dcum", "dCDF"), "\n";
-		  for my $i (0..$#weights) {
-		      my $dcum_occ = $total_occ - $cum_occ[$i]+$occ[$i];
-		      my $dcdf = $dcum_occ / $total_occ;
-		      print $merged_distrib join ("\t",
-						  $weights[$i],
-						  $occ[$i],
-						  $cum_occ[$i],
-						  $dcum_occ,
-						  sprintf("%7g", $dcdf)
-			  ), "\n";
-		  }
-		  close $merged_distrib;
-		  &RSAT::message::TimeWarn("Exported merged distribution", $outfile{$perm_suffix}) if ($main::verbose >= 2);    
-	      }
-	  }
-      }
+      &CalculateEmpiricalDistributions ();
       
       ## Compare the (single) theoretical and (multiple) empirical distributions
       &CompareDistrib($distrib_score_col, @distrib_files); # the column of interest is rel_ic (inv_cum_freq)
@@ -801,7 +701,7 @@ package main;
 	  ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
 	  push (@files_to_index,'matrix_nwd_table');
 	  
-	  #Draw NWD per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
+	  #Draw OCC per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 	  
 	  ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) ;
 	  push (@files_to_index,'matrix_occ_proba_table');
@@ -830,75 +730,57 @@ package main;
 	  #print $outfile{$st."all_matrices_occ_proba_table"}."\n";
 	  #print $outfile{$st."all_matrices_occ_proba_plot"}."\n";
 	  
-	  ################
-	  ## Heatmaps can only be produced when at least two matrices and two sequence sets are used for NWD calculation
-	  # if  ( ($main::plot_types{nwd}) && ($main::num_mtx>=2) && ($main::nwd_seqs>=2) ){
-	  # 	  my $nwd_all_file = $main::prefix{main}."_"."all_nwd_files.txt";
-	  # 	  my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
-	  
-	  # 	  my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
-	  
-	  # 	  $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
-	  
-	  # 	  foreach my $mtx (keys %nwd_all_files) {
-	  # 	      while (my ($seq, $nwd_file) = each %{ $nwd_all_files{$mtx} } ) {
-	  # 		  print $nwd_all_file_out join("\t",$mtx,$seq,$nwd_file)."\n";
-	  # 	      }
-	  # 	  }
-	  
-	  # 	  &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
-	  # 	  my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png');
-	  
-	  # 	  &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
-	  
-	  # 	  &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	  # 	  $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
-	  # 	  $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
-	  # 	  $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
-	  # 	  $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
-	  
-	  # }
 	  
       }
-  
-  my $nwd_all_file = $main::prefix{main}."_"."all_nwd_files.txt";
-  my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
-  
-  my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
-  
-  $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
-  
-  foreach my $mtx (keys %nwd_all_files) {
-      while (my ($seq, $nwd_file) = each %{ $nwd_all_files{$mtx} } ) {
-	  print $nwd_all_file_out join("\t",$mtx,$seq,$nwd_file)."\n";
+
+      ################
+      ## Create files for heatmaps
+
+      ## Prepare files for heatmpas
+      my $nwd_all_file = $main::prefix{main}."_"."all_nwd_files.txt";
+      my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
+      
+      my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
+      
+      $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
+      
+      foreach my $mtx (keys %nwd_all_files) {
+	  while (my ($seq, $nwd_file) = each %{ $nwd_all_files{$mtx} } ) {
+	      print $nwd_all_file_out join("\t",$mtx,$seq,$nwd_file)."\n";
+	  }
       }
+
+      ## Draw static heatmaps
+      &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
+      my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
+      
+      &RSAT::message::Info("R-command for NWD cluster",  $R_command) if ($main::verbose >= 2);
+      
+      &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
+      $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
+      $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
+      $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
+      
+      #################################################################
+      ## Create dynamic heatmaps ans graphs
+      
+      ################################################################
+      ## Draw the dynamic heatmap with the clustering of the maxNWD
+      &DynamicHeatmapEnrichment();
+      
+      ################################################################
+      ## Draw the Binomial Occ Significance curves 
+      ## of each TF on each sequence
+      &DynamicOccProfiles();
   }
-  
-  &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
-  my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
-  
-  &RSAT::message::Info("R-command for NWD cluster",  $R_command) if ($main::verbose >= 2);
-  
-  &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
-  $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
-  $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
-  $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
-  
  
-  ################################################################
-  ## Draw the dynamic heatmap with the clustering of the maxNWD
-  &DynamicHeatmapEnrichment();
-
-  ################################################################
-  ## Draw the Binomial Occ Significance curves 
-  ## of each TF on each sequence
-  &DynamicOccProfiles();
-
-  ##############################
-  ## Generate the HTML report
-  &CreateHTMLReport();
-   
+  if ($task{synthesis}){
+      ####
+      ##########################
+      ## Generate the HTML report
+      &CreateHTMLReport();
+      
   }
   
   ## Give the warning about the output prefix
@@ -1079,7 +961,7 @@ Example:
 
 =item	B<-img_format>
 
-Image format for the plots (ROC curve, score profiles, ...).
+Image format for the plots ( score profiles, ...).
 To display the supported formats, type the following command:
 XYgraph -h.
 
@@ -1377,7 +1259,7 @@ Draw the graphs with distrib comparisons
 =item B<synthesis>
 
 Generate a HTML file with a synthetic report, which displays the main
-graphs (distribution curves and ROC curve) and provides links to the
+graphs and provides links to the
 result files.
 
 In order to be correctly indexed, the graphs have to be generated in

@@ -64,6 +64,7 @@ package main;
 
   @extra_tasks = qw(
                     fasta_genome
+                    fasta_genome_rm
                     chrom_sizes
                     index_bedtools
                     uninstall
@@ -1105,10 +1106,21 @@ sub FastaGenomeAndBedtoolsIndex {
     $command .= " -from filelist -to fasta";
     $command .= " -o ".$outfile{fasta_genome};
 #    &doit($command, $dry, $die_on_error, $verbose);
- 
-    $command .= "; cd ".$dir{genome}. "; ln -f -s ".$organism_short_name.".dna.genome.fa ".$organism_short_name.".dna_rm.genome.fa; cd -";
     &RSAT::message::Info("\tFasta genome", $outfile{fasta_genome}) if ($main::verbose >= 3);
+
+    ## JvH (2017-11-02): I don't remember why I made a soft link to
+    ## dna.genome.fa instead of generating the repeat-masked genome.
+#    $command .= "; cd ".$dir{genome}. "; ln -f -s ".$organism_short_name.".dna.genome.fa ".$organism_short_name.".dna_rm.genome.fa; cd -";
+
 #    &doit($command, $dry, $die_on_error, $verbose);
+  }
+
+  ## Convert soft-masked genome into hard-masked genome
+  if ($task{fasta_genome_rm}) {
+    $command .= "; convert-seq";
+    $command .= " -i ".$outfile{fasta_genome};
+    $command .= " -from fasta -to fasta -mask lower";
+    $command .= " -o ".$outfile{fasta_genome_rm};
   }
 
   ## Compute chromosome sizes
@@ -1123,7 +1135,7 @@ sub FastaGenomeAndBedtoolsIndex {
   ## Generate bedtool indexes. This must be done as RSAT user in order
   ## to enable retrieve-seq-bed, which relies on bedtools getfasta.
   ## 
-  ## We use a trick to run bedtools getfasta witha single-nucleotide bed
+  ## We use a trick to run bedtools getfasta with a single-nucleotide bed
   ## file, whihc creates the fasta index if it does not exist. .
   if ($task{index_bedtools}) {
     my $rand_fragment_coord = &RSAT::util::make_temp_file("","random-genome-fragments_coord", 1);
@@ -1958,7 +1970,8 @@ EXAMPLES
 	install-organism -v 1 \
 	    -org_file fungi_downloaded_orgnanisms.txt \
 	    -task start_stop,allup,seq_len_distrib,genome_segments \
-	    -task protein_len,fasta_genome,chrom_sizes,index_bedtools \
+	    -task protein_len,fasta_genome,fasta_genome_rm \
+	    -task chrom_sizes,index_bedtools \
 	    -batch
 
     Step 6: compute the oligomer frequency tables. In batch mode, this
@@ -2202,7 +2215,8 @@ sub ReadArguments {
 
       ## Masking modes
     } elsif ($arg eq "-rm") {
-      push @masking_modes, "-rm";;
+      $task{mask} = 1;
+      push @masking_modes, "-rm";
 
       ## task selection
     } elsif (($arg =~ /^-task/) 
