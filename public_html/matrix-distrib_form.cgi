@@ -65,7 +65,7 @@ print "Computes the theoretical distribution of score probabilities of a given P
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
-print $query->start_multipart_form(-action=>"matrix-distrib.cgi");
+print $query->start_multipart_form(-action=>"matrix-distrib.cgi", -onreset=>"resetHandler()");
 
 #print "<FONT FACE='Helvetica'>";
 
@@ -120,6 +120,10 @@ function setDemo(){
     background.value = "upstream-noorf";
     markov_order.value = "0";
 };
+
+function resetHandler(){
+    $("#db_choice").val("").change();
+}
 </script>';
 print '<button type="button" onclick="setDemo()">DEMO</button>';
 print "</B></TD>\n";
