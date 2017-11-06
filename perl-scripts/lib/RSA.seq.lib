@@ -1602,9 +1602,9 @@ sub ReturnSequence {
   if ($mask) {
     &CheckMask($mask);
     if ($mask eq "lower") {
-      $sequence =~ s/[a-z]/n/g;
+      $sequence =~ s/[a-z]/N/g;
     } elsif ($mask eq "upper") {
-      $sequence =~ s/[A-Z]/N/g;
+      $sequence =~ s/[A-Z]/n/g;
     } elsif ($mask eq "non-dna") {
       $sequence =~ s/[^acgt\|]/n/gi;
 #    } else {
@@ -1618,14 +1618,14 @@ sub ReturnSequence {
 ################################################################
 ## Check that the mask case option is valid
 sub CheckMask {
-    my ($mask) = @_;
-    my %supported_mask = ("lower"=>1,
-			  "upper"=>1,
-			  "non-dna"=>1);
-    my $supported_mask = join(",", sort (keys(%supported_mask)));
-    unless ($supported_mask{$mask}) {
-	&RSAT::error::FatalError(join("\t", $mask, "Invalid value for the mask parameter. Supported", $supported_mask));
-    }
+  my ($mask) = @_;
+  my %supported_mask = ("lower"=>1,
+			"upper"=>1,
+			"non-dna"=>1);
+  my $supported_mask = join(",", sort (keys(%supported_mask)));
+  unless ($supported_mask{$mask}) {
+    &RSAT::error::FatalError(join("\t", $mask, "Invalid value for the mask parameter. Supported", $supported_mask));
+  }
 }
 
 ## ##############################################################
