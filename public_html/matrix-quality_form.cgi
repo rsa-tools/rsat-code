@@ -90,7 +90,7 @@ print "<b>Citation</b>: Medina-Rivera, A., Abreu-Goodger, C., Salgado-Osorio, H.
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
-print $query->start_multipart_form(-action=>"matrix-quality.cgi");
+print $query->start_multipart_form(-action=>"matrix-quality.cgi", -onreset=>"resetHandler()");
 
 
 ################################################################
@@ -225,6 +225,9 @@ function setDemo(demo_matrix, demo_seq1, demo_seq2){
     markov_order.value = 1;
     $("#nwd").prop("checked",true);
     
+}
+function resetHandler(){
+    $("#db_choice").val("").change();
 }
 </script>';
 
