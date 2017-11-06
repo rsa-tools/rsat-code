@@ -206,6 +206,7 @@ publish_vm:
 	@echo "Synchronizing RSAT-VM	${APPLIANCE}"
 	@echo "	LOCAL_APPLIANCE	${LOCAL_APPLIANCE}"
 	@du -sm ${LOCAL_APPLIANCE}
+	@chmod 644 ${LOCAL_APPLIANCE}
 	@rsync -ruptvl ${LOCAL_APPLIANCE}  ${RSATVM_REPO}
 
 publish_vm_tuto:
