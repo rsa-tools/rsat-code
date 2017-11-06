@@ -1525,7 +1525,8 @@ sub MotifSelection {
         print "<img src='images/onebit_49.png' height='30' class='new'/><b>Or</b> select a collection in list (a box will appear to select each matrix individually)<br/>";
     }
     my $width = ($args{ids} == 1) ? "300px" : "400px";
-    print ' <select id="db_choice" name="db_choice" style="width:$width"><option></option>';
+    my $multiple = ($args{mode} eq 'checkbox') ? 'multiple="multiple"' : '';
+    print " <select id='db_choice' name='db_choice' $multiple style='width:$width'><option></option>";
     ## load the various databases that can be compared against
     &DisplayMatrixDBchoice_select2("mode"=>"radio");
     print '</select>';

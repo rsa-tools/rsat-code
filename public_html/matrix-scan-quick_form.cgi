@@ -89,7 +89,7 @@ print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
 
-print $query->start_multipart_form(-action=>"matrix-scan.cgi");
+print $query->start_multipart_form(-action=>"matrix-scan.cgi", -onreset=>"resetHandler()");
 
 ################################################################
 #### sequence
@@ -245,6 +245,10 @@ function setDemo(demo_matrix, demo_sequence){
     matrix_format.value = "transfac";
     sequence1.value = demo_sequence;
     $("#origin").val("end");
+}
+
+function resetHandler(){
+    $("#db_choice").val("").change();
 }
 </script>';
 

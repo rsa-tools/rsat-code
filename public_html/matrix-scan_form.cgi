@@ -164,7 +164,7 @@ print "<b>Citation</b>: <a href='mailto:jturatsi\@bigre.ulb.ac.be (Jean Valery T
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
-print $query->start_multipart_form(-action=>"matrix-scan.cgi", -id=>"form");
+print $query->start_multipart_form(-action=>"matrix-scan.cgi", -id=>"form", -onreset=>"resetHandler()");
 
 ################################################################
 #### sequence
@@ -358,6 +358,10 @@ function setDemo3(demo_matrix, demo_sequence){
     origin.value = "genomic";
     $("#uth_occ_sig_rank").val("1");
     $("#lth_occ_score").val("5");
+}
+
+function resetHandler(){
+    $("#db_choice").val("").change();
 }
 
 </script>';
