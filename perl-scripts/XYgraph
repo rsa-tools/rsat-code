@@ -64,6 +64,8 @@ $small_font_height = 8;
 $large_font_width = 8;
 $large_font_height = 16;
 
+### Null or NA character ##
+$null_char="<NULL>";
 
 #### Condition for  highligth lines ####
 $hline=0;
@@ -742,7 +744,7 @@ sub Rplot {
   ## Open input table
   $r_instructions .= "\n## Loading input table\n";
   $r_instructions .= "in.file <- \"$input_data_file\"\n";
-  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.", na.strings = \"NA\")\n";
+  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.", na.strings = \"".$null_char."\")\n";
 
   ## Save header as vector in R
   $r_instructions .= "header.vector <- c(\"".join("\",\"",@header_list)."\")\n";
@@ -2341,7 +2343,9 @@ OPTIONS
 		 will draw a red line at the y positions 0, 10, 20 and
 		 30
 
-	-vline Draw a vertical line on the indicated position.
+	  -null Indicate the NULL or NA character in the table to omit them. Default <NULL>.
+
+          -vline Draw a vertical line on the indicated position.
 		This helps to mark some relevant positions on the graph.
 		The following colors are currently supported:
 			red, blue, green, violet, orange
@@ -2636,7 +2640,9 @@ sub ReadArguments {
 
     } elsif ($ARGV[$a] eq "-export_colors") {
       $colorexportfile = $ARGV[$a+1];
-
+    } elsif ($ARGV[$a] eq "-null") {
+	$null_char = $ARGV[$a+1];
+	
     } elsif ($ARGV[$a] eq "-gp") {
       $gp_supp_commands = $ARGV[$a+1];
 
