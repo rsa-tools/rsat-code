@@ -85,7 +85,7 @@ print "Convert different types of position-specific scoring matrices (PSSM), and
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
-print $query->start_multipart_form(-action=>"convert-matrix.cgi");
+print $query->start_multipart_form(-action=>"convert-matrix.cgi", -onreset=>"resetHandler()");
 
 #print "<FONT FACE='Helvetica'>";
 
@@ -225,6 +225,11 @@ function setDemo(demo){
     $("#links").prop("checked", true);
     $("#logo").prop("checked", true);
 }
+
+function resetHandler(){
+    $("#db_choice").val("").change();
+}
+
 </script>';
 print '<button type="button" onclick="setDemo(' . "'$demo_matrix'" . ')">DEMO</button>';
 print "</B></TD>\n";

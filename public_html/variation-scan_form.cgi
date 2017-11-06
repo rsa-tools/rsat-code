@@ -113,7 +113,7 @@ print "</div></p>\n";
 ## Demo description
 print $default{demo_descr1};
 
-print $query->start_multipart_form(-action=>"variation-scan.cgi");
+print $query->start_multipart_form(-action=>"variation-scan.cgi", -onreset=>"resetHandler()");
 
 ################# Matrix input
  &Panel1();
@@ -182,6 +182,11 @@ print $query->hidden(-name=>'background',-default=>'upstream-noorf');
 print $query->hidden(-name=>'markov_order',-default=>'2');
 
 print $query->submit(-label=>"DEMO");
+
+print '<script>function resetHandler(){
+$("#db_choice").val("").change();
+}</script>';
+
 print "</B></TD>\n";
 print $query->end_form;
 
