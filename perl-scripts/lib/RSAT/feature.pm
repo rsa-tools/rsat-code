@@ -823,9 +823,9 @@ sub parse_from_row {
       #    @fields = split("_", $row);
       $row =~ s/^\s*>/>/;
       #&RSAT::message::Debug($row) if ($main::verbose >= 5);
-      if ($row =~ /^>(\S+)_(\S+)_(\d+)_(\d+)_([+-])/) { ## Correction JvH 2017-11-07
-#      if ($row =~ /^>(\S+)*_(\S+)_(\d+)_(\d+)_([+-])$/) {
+      if ($row =~ /^>(\S+)*_(\S+)_(\d+)_(\d+)_([+-]).*$/) { ## Correction JvH 2017-11-07
 	  @fields = ($1, $2, $3, $4, $5);
+	  # &RSAT::message::Debug("Fields in fasta galaxy header", join("\t", @fields)) if ($main::verbose >= 10);
       } else {
 	  &RSAT::message::Warning("Invalid galaxy fasta header for feature extraction", $row) if ($main::verbose >= 2);
 	  return();
@@ -953,8 +953,10 @@ sub parse_from_row {
 
   } elsif ($in_format eq "galaxy_seq")  {
     $self->set_attribute("ft_type", "");
-    $row =~ s/^\s*>//;
-    $self->set_attribute("feature_name", $row);
+    my $feature_name = $row;
+    $feature_name =~ s/^\s*>//;
+    $feature_name =~ s/(\S+)\s.*/$1/; ## Correction JvH 2017-11-07
+    $self->set_attribute("feature_name", $feature_name);
   }
 
   ## Convert name
