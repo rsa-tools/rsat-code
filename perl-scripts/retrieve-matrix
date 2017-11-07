@@ -7,11 +7,61 @@
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
 ############################################################
+
+=pod
+
+=head1 NAME
+
+retrieve-matrix
+
+=head1 DESCRIPTION
+
+The program extract specific matrices from a collection of matrices. It takes as input a file containing a collection of matrices in TRANSFAC format. and a list of identifiers to retrieve.
+The program outputs each matrix in TRANSFAC format.
+
+=head1 AUTHORS
+
+=over
+
+=item Thi-Thuy-Nga NGUYEN <thnguyen@biologie.ens.fr>
+
+=item Morgane Thomas-Chollier <mthomas@biologie.ens.fr>
+
+=back
+
+=head1 CATEGORY
+
+util
+matrix
+
+=head1 USAGE
+
+retrieve-matrix -i collection_file -id identifier(s) [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The collection of matrices must be in TRANSFAC format. The program convert-matrix can be used to obtain this format.
+
+
+=head1 OUTPUT FORMAT
+
+Matrices are exported in TRANSFAC format. The format can then be changed with the program convert-matrix.
+
+=head1 EXAMPLES
+
+retrieve-matrix -i $ENV{RSAT}/public_html/motif_databases/RSAT_nonredundant_vertebrates_2017.tf -id cluster_1,cluster_100 -o result.txt
+
+will return the matrices with the accessions: cluster_1 and cluster_100 from the collection RSAT non-redundant vertebrates (2017).
+
+=cut
+
 if ($0 =~ /([^(\/)]+)$/) {
 push (@INC, "$`lib/");
 }
 require "RSA.lib";
 require "RSA.seq.lib";
+
+#use experimental 'smartmatch';
 
 ## Initialize parameters
 local $start_time = &RSAT::util::StartScript();
@@ -23,6 +73,12 @@ my $id_file = "";
 
 &ReadArguments();
 
+if(!$collection_file){
+    &RSAT::error::FatalError("You must specify the path to a collection file (-i)");
+}
+if(!$id || !id_file){
+    &RSAT::error::FatalError("You must specify either a list of identifiers (-id), or the path to a file of identifiers list (-id_file)");
+}
 my @ids;
 if ($id ne "") {
   @ids = split(",", $id);
@@ -57,12 +113,10 @@ while(my $row = <$fh>){
     }
 }
 
-if($outputfile ne ""){
-    open(my $fh, ">", $outputfile);
-    print $fh $result_matrix;
-}else{
-    print $result_matrix;
-}
+$out = &OpenOutputFile($outputfile);
+print $out $result_matrix;
+
+&Verbose() if ($verbose);
 exit(0);
 
 ################################################################
@@ -70,45 +124,14 @@ exit(0);
 ################################################################
 
 ################################################################
-#### detailed help message
+## Display full help message
 sub PrintHelp {
-open(HELP, "| more");
-print HELP<<End_help;
-USAGE
-retrieve-matrix -i collection file -id identifier(s) | -id_file identifiers file [-o outpufile]
-
-DESCRIPTION
-Returns matrix
-
-CATEGORY
-util
-matrix
-
-OPTIONS
--i collection file
-the path to the collection file which contains the matrices.
-
--id	identifiers
-list of the accession of each matrix in request, separated by commas.
-    
--id_file identifiers file
-the path to the identifiers file which contains the list of the accession
-of each matrix in request, one per line.
-
--o	the path to the output file
-
-EXAMPLES
-retrieve-matrix -i $ENV{RSAT}/public_html/motif_databases/RSAT_nonredundant_vertebrates_2017.tf -id cluster_1,cluster_100 -o result.txt
-
-will return the matrices with the accessions: cluster_1 and cluster_100 from the collection RSAT non-redundant vertebrates (2017).
-
-End_help
-close HELP;
-exit;
+    system "pod2text -c $0";
+    exit()
 }
 
 ################################################################
-#### list of options
+## Display short help message
 sub PrintShortHelp {
 open(HELP, "| more");
 print HELP<<End_short_help;
@@ -123,33 +146,91 @@ close HELP;
 exit;
 }
 
+
 ################################################################
 ## Read arguments
 sub ReadArguments {
     foreach $a (0..$#ARGV) {
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-o>
+
+the path to the output file
+
+=cut
         ### output file name
         if ($ARGV[$a] eq "-o") {
             $outputfile = $ARGV[$a+1];
-            
+
+=pod
+
+=item B<-i collection file>
+
+the path to the collection file which contains the matrices.
+
+=cut             
             ### input collection file
         } elsif ($ARGV[$a] eq "-i") {
             $collection_file = $ARGV[$a+1];
             
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut            
             ### help request
         } elsif ($ARGV[$a] eq "-h") {
             &PrintHelp;
+=pod
+
+=item B<-help>
+
+Display concise help message
+
+=cut
         } elsif ($ARGV[$a] eq "-help") {
             &PrintShortHelp;
-            
+=pod
+
+=item B<-id identifiers>
+
+list of the accession of each matrix in request, separated by commas.
+
+=cut            
             ### input identifiers
         } elsif ($ARGV[$a] eq "-id") {
             $id = $ARGV[$a+1];
+=pod
+
+=item B<-id_file identifiers file>
+
+the path to the identifiers file which contains the list of the accession
+of each matrix in request, one per line.
+
+=cut            
             
             ### input identifiers file
         } elsif ($ARGV[$a] eq "-id_file") {
             $id_file = $ARGV[$a+1];
             
-            ### verbose
+            
+=pod
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=back
+
+=cut
+		### verbose
         } elsif ($ARGV[$a] eq "-v") {
             if (&IsNatural($ARGV[$a+1])) {
                 $verbose = $ARGV[$a+1];
@@ -166,31 +247,26 @@ sub ReadArguments {
 sub Verbose {
     print $out "; retrieve-matrix";
     &PrintArguments($out);
-    printf $out "; %-14s\t%s\n", "organism", $organism_name;
-    printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
-    printf $out "; %-14s\t%s\n", "feature type", join ",", $organism->get_attribute("feature_types");
-    if ($input_sequence_file) {
-        printf $out "; %-14s\t%s\n", "input sequence file", $input_sequence_file;
-        printf $out "; %-14s\t%s\n", "input sequence format", $input_sequence_format;
+    printf $out "; %-14s\t%s\n", "collection", $collection_file;
+    if ($id) {
+        printf $out "; %-14s\t%s\n", "identifiers list", $id;
+    }elsif($id_file){
+        printf $out "; %-14s\t%s\n", "identifiers list file", $id_file;
     }
-    printf $out "; %-14s\t%s\n", "feature table file", $annotation_table if ($annotation_table);
-    printf $out "; %-14s\t%s\n", "Output format", $out_format;
-    printf $out "; %-14s\t%s\n", "Line width", $line_width;
-    printf $out "; %-14s\t%d\n", "Random selection", $random_orfs if ($random_orfs);
-    print $out "; clipping to avoid overlap with neighbour ORFs\n" if ($noorf);
-    print $out "; relative coordinates\n";
-    print $out ";        from    $from\n";
-    print $out ";        to      $to\n";
-    print $out ";        size    ", abs($to - $from + 1), "\n";
-    if (defined($query_file)) {
-        printf $out "; %-14s\t%s\n", "Query file", $query_file;
-    } else {
-        printf $out "; %-14s\t%d\n", "Queries", scalar(@queries);
-        unless ($return_all) {
-            foreach $q (@queries) {
-                print $out ";	$q\n";
-            }
-        }
-    }
+    printf $out "; %-14s\t%s\n", "output file file", $outputfile if ($outputfile);
     print $out ";\n";
 }
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item convert-matrix
+
+=back
+
+=cut
