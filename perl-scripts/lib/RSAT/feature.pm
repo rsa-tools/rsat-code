@@ -822,10 +822,12 @@ sub parse_from_row {
       ## PROBLEM HERE: DOES NOT WORK IF THE ID CONTAINS "_" characters
       #    @fields = split("_", $row);
       $row =~ s/^\s*>/>/;
-      if ($row =~ /^>(\S+)*_(\S+)_(\d+)_(\d+)_([+-])$/) {
+      #&RSAT::message::Debug($row) if ($main::verbose >= 5);
+      if ($row =~ /^>(\S+)_(\S+)_(\d+)_(\d+)_([+-])/) { ## Correction JvH 2017-11-07
+#      if ($row =~ /^>(\S+)*_(\S+)_(\d+)_(\d+)_([+-])$/) {
 	  @fields = ($1, $2, $3, $4, $5);
       } else {
-	  &RSAT::message::Warning("Invalid galaxy fasta header for feature extraction", $row) if ($main::verbose >= 0);
+	  &RSAT::message::Warning("Invalid galaxy fasta header for feature extraction", $row) if ($main::verbose >= 2);
 	  return();
       }
 
