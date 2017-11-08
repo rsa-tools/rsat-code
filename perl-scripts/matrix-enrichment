@@ -534,7 +534,7 @@ package main;
       $matrix->set_attribute("file", $matrix_file);
       $matrix->force_attribute("matrix.nb", $m);
 
-      print $main::outfile{bg_file_inclusive}."\n";
+      #print $main::outfile{bg_file_inclusive}."\n";
       $matrix->setMarkovModel($bg_model) if ($main::outfile{bg_file_inclusive}) ;
       
       my $m_width = $matrix->get_attribute("ncol");
