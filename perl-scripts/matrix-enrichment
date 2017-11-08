@@ -19,7 +19,21 @@ $program_version
 
 =head1 DESCRIPTION
 
-Template for writing new perl scripts.
+matrix-enrichment helps user make a quick assessment of the motifs patterns enriched within one or several sequence sets.
+
+For example, given two sets of annotated enhancers in one cell line before and after treatment, check which transcription factors migh be enriched in each of the sequence sets.
+
+The tool will produce two outputs:
+
+=item NWD heatmap
+
+Normalized Weight Difference curves compare the theoretical distribution of the motif scores vs the eprirical distribution observed in a given sequence set. 
+The Maximum NWD is taken for each motif-seqeunce curve and integrated into a heatmap. A high NWD vaue in the heatmap indicated enrichment while a negative or 
+low value indicates possible depletion.
+
+=item OCC curves
+Occurence distribution plots map the p-value of the weight scores with the binomial significance of the ocurrence of a given p-value. This plot enables users to identify 
+erichments of motifs with low scores but with several sites that might be understimated with NWD heatmaps.
 
 =head1 AUTHORS
 
