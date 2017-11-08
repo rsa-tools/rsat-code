@@ -384,7 +384,7 @@ package main;
       $bg_command.= " -o ".$new_bg_file;
       $main::outfile{"bg_file_inclusive"}=$new_bg_file;
       
-      &RSAT::message::Debug("Calculating background model using all sequences"."\n".$bg_command,  "bg_file_inclusive".$new_bg_file  ) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Calculating background model using all sequences"."\n".$bg_command,  "bg_file_inclusive".$new_bg_file  ) if ($main::verbose >= 5);
       
       &doit($bg_command, $dry, $die_on_error, $verbose, 0, $job_prefix);
       
@@ -586,7 +586,7 @@ package main;
       &RSAT::message::TimeWarn("Analyzing matrix", $m, $matrix_name) if ($main::verbose >= 2);
       
       ## Print the ID -> Name in the File
-      &RSAT::message::Debug("Adding matrix information to registry table ", $matrix_name , $matrix_id ) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Adding matrix information to registry table ", $matrix_name , $matrix_id ) if ($main::verbose >= 5);
 
 
       ################################################################
@@ -674,7 +674,7 @@ package main;
 
       ################################################################
       ##Calculate NWD adn OCC
-      &RSAT::message::TimeWarn("Calculating NWD file")  if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Calculating NWD and OCC files")  if ($main::verbose >= 5);
       
       if ($task{compare} || $task {graphs}) {
 	  foreach (@local_seq_types ) {
@@ -689,21 +689,26 @@ package main;
 	      $main::nwd_seqs++; ## counter to decide if the heatmap will be drawn, it requieres at least two matrices and two sequences
 	      push ( @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }, $nwd_st);
 	      push ( @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }, $nwd_st);
+	      &RSAT::message::TimeWarn(" NWD file calculated")  if ($main::verbose >= 10);    
+
 	      
 	      ## Check if NWD graph is requiered for the given sequence set
 	      my $occ_proba_st=&Calculate_OCC ($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options)   ;
 	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }, $occ_proba_st);
-	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }, $occ_proba_st);	 
+	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }, $occ_proba_st);	
+	      &RSAT::message::TimeWarn(" OCC file calculated")  if ($main::verbose >= 10);  
+
+ 
 	  }
 	  
 	  #Draw NWD per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 	  
-	  ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
+	  ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) if $task {graphs};
 	  push (@files_to_index,'matrix_nwd_table');
 	  
 	  #Draw OCC per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 	  
-	  ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) ;
+	  ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) if $task {graphs} ;
 	  push (@files_to_index,'matrix_occ_proba_table');
 	  
       }
@@ -721,7 +726,6 @@ package main;
   ## Draw NWD and OCC graphs per sequence set
   if ($task{graphs}){
       foreach ( @main::seq_types ) {
-	  
 	  my $st= $_;
 	  push(@all_sequence_names, $st);
 	  ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) ;
