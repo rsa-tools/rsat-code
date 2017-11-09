@@ -333,6 +333,15 @@ package main;
   $datatable_base = &RSAT::util::RelativePath($dir{output}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
   $datatable_css_base = &RSAT::util::RelativePath($dir{output}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
 
+        ################################################################
+      ## Copy the section icons in the results folder
+      ################################################################
+      &RSAT::message::Debug("Copying result sections icons to output directory") if ($main::verbose >= 3);
+      my $icon_sync_cmd = "rsync -ruptl";
+      $icon_sync_cmd .= " ".$ENV{RSAT}."/public_html/images/program_icons/matrix-enrichment_icons";
+      $icon_sync_cmd .= " ".$dir{output};
+      &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
 
   ## ################
   ## Process sequence file if there was a top or skip selection
