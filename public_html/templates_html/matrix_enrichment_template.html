@@ -168,6 +168,10 @@
      text-align:center;
      margin-top:5px;
   }
+  
+  .icon {
+    margin: 17px;
+  }
 
 </style>
 
@@ -185,28 +189,54 @@
 </table></div>
 
 
-<div id="dynamic_heatmap_button" class="button_click Section_button"><strong>Heatmap</strong></div>
-<div id="dynamic_heatmap" style="display:none" class="div_chart">
-<div class="tab link_tab">
-  <p class="p_link_tab"><a target="_blank" href='--heatmap_link--'>Link</a></p> <!-- The link is inserted in the perl-script -->
-</div> 
-</div> <!-- End of section -->
 
 
-<div id="occ_profiles_button" class="button_click Section_button"><strong>OCC significance profiles</strong></div>
-<div id="occ_profiles" style="display:none" class="div_chart">
-<div class="tab link_tab"> 
-  <p class="p_link_tab"><a target="_blank" href='--occ_profiles--'>Link</a></p> <!-- The link is inserted in the perl-script -->
-</div> 
-</div> <!-- End of section -->
+<table style="display:block;clear:both;">
+  <tbody>
+    <tr>
+      <td>
+        <img class="icon" src="matrix-enrichment_icons/heatmap_icon.png" height="60", width="auto">
+      </td>
+      <td>
+        <div id="dynamic_heatmap_button" class="button_click Section_button"><strong>Heatmap</strong></div>
+        <div id="dynamic_heatmap" style="display:none" class="div_chart">
+        <div class="tab link_tab">
+          <p class="p_link_tab"><a target="_blank" href='--heatmap_link--'>Link</a></p> <!-- The link is inserted in the perl-script -->
+        </div> 
+        </div> <!-- End of section -->
+      </td>  
+    </tr>
+    <tr>
+      <td>
+        <img class="icon" src="matrix-enrichment_icons/line_icon.png" height="60", width="auto">
+      </td>
+      <td>
+        <div id="occ_profiles_button" class="button_click Section_button"><strong>OCC significance profiles</strong></div>
+        <div id="occ_profiles" style="display:none" class="div_chart">
+        <div class="tab link_tab"> 
+          <p class="p_link_tab"><a target="_blank" href='--occ_profiles--'>Link</a></p> <!-- The link is inserted in the perl-script -->
+        </div> 
+        </div> <!-- End of section -->
+      </td>
+    </tr>
+  </tbody>
 
+
+
+
+
+
+
+<!--
 
 <div id="differential_heatmap_button" class="button_click Section_button"><strong>Differential analysis</strong></div>
 <div id="differential_heatmap_button" style="display:none" class="div_chart">
 <div class="tab link_tab"> 
-  <p class="p_link_tab"><a target="_blank" href='--diff_heatmap--'>Link</a></p> <!-- The link is inserted in the perl-script -->
+  <p class="p_link_tab"><a target="_blank" href='--diff_heatmap--'>Link</a></p> 
 </div> 
-</div> <!-- End of section -->
+</div> 
+
+-->
 
 
 <!-- Jquery section -->
