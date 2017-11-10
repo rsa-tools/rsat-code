@@ -985,31 +985,6 @@ Example:
 	  } else {
 	    push (@main::logo_formats, $image_format);
 	  }
-=pod
-
-=item	B<-img_format>
-
-Image format for the plots ( score profiles, ...).
-To display the supported formats, type the following command:
-XYgraph -h.
-
-Multiple image formats can be specified either by using iteratively
-the option, or by separating them by commas.
-
-Example:
-   -img_format png,pdf
-
-=cut
-	} elsif ($arg eq "-img_format") {
-	  my $image_format = shift(@arguments);
-	  my @tmp_img_formats = split(',',$image_format);
-	  if (scalar(@tmp_img_formats)>0) {
-	    foreach my $f (@tmp_img_formats) {
-	      push (@main::image_formats, $f);
-	    }
-	  } else {
-	    push (@main::image_formats, $image_format);
-	  }
 	  
   ## Pseudo weight
 
@@ -1429,7 +1404,7 @@ sub DynamicHeatmapEnrichment {
 #    $dynamic_heatmap_cmd = "(".$dynamic_heatmap_cmd.") 2 > ".$main::outfile{Rlog}; 
 
 
-    if ($main::r_path) {
+    if ($r_path) {
         &doit($dynamic_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
         &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
@@ -1475,7 +1450,7 @@ sub DynamicOccProfiles {
 #    $dynamic_occ_sig_cmd = "(".$dynamic_occ_sig_cmd.")"; # Uncomment this line to check the R output in the terminal
 #    $dynamic_occ_sig_cmd = "(".$dynamic_occ_sig_cmd.") 2 > ".$main::outfile{Rlog}; 
 
-    if ($main::r_path) {
+    if ($r_path) {
         &doit($dynamic_occ_sig_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
         &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
