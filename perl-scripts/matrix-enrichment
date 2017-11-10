@@ -216,7 +216,7 @@ package main;
 
   $noicon=1; # Do not generate the smaller version of plots
   %task = (); ## Difine hash to contain user given tasks
-
+  my $no_ind_nwd_occ_plot=1; ## Do not draw individual NWD and OCC graphs
 
   ################################################################
   ## The C command matrix-scan-quick is MUCH faster than
