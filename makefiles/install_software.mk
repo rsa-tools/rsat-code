@@ -405,7 +405,7 @@ install_ensembl_bioperl:
 		echo "Bioperl already installed"; \
 	else \
 		echo "Cloning bioperl" ; \
-		(cd ${BIOPERL_DIR}; git clone git://github.com/bioperl/bioperl-live.git); \
+		(cd ${BIOPERL_DIR}; git clone https://github.com/bioperl/bioperl-live.git); \
 	fi
 	@(cd ${BIOPERL_DIR}/bioperl-live; git checkout bioperl-release-${BIOPERL_VERSION})
 	@echo "bioperl-release-${BIOPERL_VERSION} installed in ${BIOPERL_DIR}"
