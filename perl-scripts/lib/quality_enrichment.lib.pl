@@ -210,19 +210,21 @@ sub Draw_NWD{
     
     
     my $nwd_xygrpah_file=$nwd_outfile_prefix."_compare-scores.";
-    
-    foreach my $image_format (@image_formats) {
-	my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
-	$XYgraph_nwd_cmd .= " -i ".  $nwd_compare_scores_file ." ";
-	$XYgraph_nwd_cmd .= " -format ". $image_format  ." " ;
-	$XYgraph_nwd_cmd .= " -xcol 1  -ycol ".$ycols;
-	$XYgraph_nwd_cmd .= " -lines -xlog " ;
-	$XYgraph_nwd_cmd .= " -yleg1 'NWD' -xleg1 'log10(Pvalue)' ";
-	$XYgraph_nwd_cmd .= " -legend -pointsize 0 ";
-	$XYgraph_nwd_cmd .= " -o ". $nwd_xygrpah_file.$image_format." ";
-	&doit($XYgraph_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-	&RSAT::message::Info(" Drawing NWD  curves ",  $XYgraph_nwd_cmd) if ($main::verbose >= 5);   
-	
+
+    if ($no_ind_nwd_occ_plot){
+	foreach my $image_format (@image_formats) {
+	    my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
+	    $XYgraph_nwd_cmd .= " -i ".  $nwd_compare_scores_file ." ";
+	    $XYgraph_nwd_cmd .= " -format ". $image_format  ." " ;
+	    $XYgraph_nwd_cmd .= " -xcol 1  -ycol ".$ycols;
+	    $XYgraph_nwd_cmd .= " -lines -xlog " ;
+	    $XYgraph_nwd_cmd .= " -yleg1 'NWD' -xleg1 'log10(Pvalue)' ";
+	    $XYgraph_nwd_cmd .= " -legend -pointsize 0 ";
+	    $XYgraph_nwd_cmd .= " -o ". $nwd_xygrpah_file.$image_format." ";
+	    &doit($XYgraph_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	    &RSAT::message::Info(" Drawing NWD  curves ",  $XYgraph_nwd_cmd) if ($main::verbose >= 5);   
+	    
+	}
     }
     return($nwd_compare_scores_file, $nwd_xygrpah_file )
 	
@@ -266,19 +268,20 @@ sub Draw_OCC{
     #print join ("++",@main::image_formats );
     #die "BOOM";
     
-    
-    foreach my $image_format (@main::image_formats) {
-	my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
-	$XYgraph_occ_cmd .= " -i ".  $occ_compare_scores_file ." ";
-	$XYgraph_occ_cmd .= " -format ". $image_format  ." " ;
-	$XYgraph_occ_cmd .= " -xcol 1  -ycol ".$ycols;
-	$XYgraph_occ_cmd .= " -lines -xlog 10 " ;
-	$XYgraph_occ_cmd .= " -yleg1 'Binomial significance of hit number (OCC)' -xleg1 'log10(Score Pvalue)' ";
-	$XYgraph_occ_cmd .= " -legend -pointsize 0 ";
-	$XYgraph_occ_cmd .= " -hline red 100 -hline violet 0 -ysize 400 -force_lines "; ## Parammeters suggested by Morgane      
-	$XYgraph_occ_cmd .= " -o ". $occ_xygrpah_file.$image_format." ";
+     if ($no_ind_nwd_occ_plot){
+	 foreach my $image_format (@main::image_formats) {
+	     my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
+	     $XYgraph_occ_cmd .= " -i ".  $occ_compare_scores_file ." ";
+	     $XYgraph_occ_cmd .= " -format ". $image_format  ." " ;
+	     $XYgraph_occ_cmd .= " -xcol 1  -ycol ".$ycols;
+	     $XYgraph_occ_cmd .= " -lines -xlog 10 " ;
+	     $XYgraph_occ_cmd .= " -yleg1 'Binomial significance of hit number (OCC)' -xleg1 'log10(Score Pvalue)' ";
+	     $XYgraph_occ_cmd .= " -legend -pointsize 0 ";
+	     $XYgraph_occ_cmd .= " -hline red 100 -hline violet 0 -ysize 400 -force_lines "; ## Parammeters suggested by Morgane      
+	     $XYgraph_occ_cmd .= " -o ". $occ_xygrpah_file.$image_format." ";
 	&doit($XYgraph_occ_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-	&RSAT::message::Info(" Drawing OCC  curves ",  $XYgraph_occ_cmd) if ($main::verbose >= 5);   
+	     &RSAT::message::Info(" Drawing OCC  curves ",  $XYgraph_occ_cmd) if ($main::verbose >= 5);   
+	 }
     }
     return($occ_compare_scores_file, $occ_xygrpah_file )
 	

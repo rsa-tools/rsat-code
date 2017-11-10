@@ -75,7 +75,7 @@ foreach $key (keys %default) {
 print "<center>";
 print "Evaluate the enrichment of a set of motifs in one or several sequence sets. (The web version only allows for four sequence sets)</p>\n";
 print "The most classical use of the program is to indentify transcription factor binding sites that could be enriched or depleted in one or several sequence sets.<p>\n";
-print "<p>Program developed by <a target='_top' href='https://scholar.google.com/citations?user=pcevKk0AAAAJ&hl=en'>Jaime Castro-Mondragon</a>, \n";
+print "<p>Program developed by <a target='_top' href='http://folk.uio.no/jamondra/'>Jaime Castro-Mondragon</a>, \n";
 print " <a target='_top' href='http://www.ibens.ens.fr/spip.php?article94&lang=en'>Samuel Collombet</A>,\n";
 print " <a target='_top' href='http://liigh.unam.mx/amedina/'>Alejandra Medina-Rivera</A>,\n";
 print " <a target='_top' href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A>,\n";
