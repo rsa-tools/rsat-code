@@ -60,6 +60,7 @@ _update_tasks:
 
 ################################################################
 ## Install Unix packages required for RSAT
+#
 UNIX_PACKAGES_COMMON= \
 	emacs \
 	git \
@@ -71,11 +72,7 @@ UNIX_PACKAGES_COMMON= \
 	links \
 	finger \
 	zip \
-	unzip \
-	python3.2 \
-	python3-setuptools \
-	python2.7
-
+	unzip 
 
 
 UNIX_PACKAGES_CENTOS= \
@@ -85,7 +82,10 @@ UNIX_PACKAGES_CENTOS= \
 	glibc.i686 \
 	zlib.i686 \
 	gd gd gd-devel php-gd perl-GD.x86_64 \
-	tetex-latex tetex-doc tetex-fonts
+	tetex-latex tetex-doc tetex-fonts \
+	python2 \
+	python34 \
+    python34-setuptools
 
 ## gfortran required for python scipy
 UNIX_PACKAGES_MACOSX= \
@@ -103,6 +103,7 @@ UNIX_PACKAGES_UBUNTU= \
 	texlive-latex-base \
 	libgd2-xpm-dev \
 	libgd-gd2-perl \
+	python2.7 \
 	python3 \
 	python3-dev
 
