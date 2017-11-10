@@ -362,7 +362,7 @@ install_ensembl_api_git:
 	@mkdir -p "${ENSEMBL_API_DIR}"
 	@echo ""
 	@echo "Cloning git for ensemblgenomes API branch ${ENSEMBLGENOMES_RELEASE}"
-	@(cd ${ENSEMBL_API_DIR}; git clone git://github.com/EnsemblGenomes/ensemblgenomes-api.git ; \
+	@(cd ${ENSEMBL_API_DIR}; git clone https://github.com/EnsemblGenomes/ensemblgenomes-api.git ; \
 		cd ensemblgenomes-api/ ; \
 		git checkout release/eg/${ENSEMBLGENOMES_RELEASE} )
 	@echo ""
