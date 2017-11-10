@@ -166,7 +166,7 @@ PERL_MODULES= \
 	Module::Build::Compat \
 	CGI \
 	Email::Sender \
-	Email::Sender::Transport::SMTP \
+	Email::Sender::Transport::SMTPS \
 	Email::Simple \
 	Email::Simple::Creator \
 	PostScript::Simple	 \
