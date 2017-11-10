@@ -148,12 +148,12 @@ unix_packages_install:
 ## Install required Unix packages
 unix_packages_install_centos:
 	yes | yum upgrade
-	@${MAKE} unix_packages_install PACKAGE_MANAGER=${PACKAGE_MANAGER_CENTOS} UNIX_PACKAGES="${UNIX_PACKAGES_COMMON} ${UNIX_PACKAGES_CENTOS}"
+	@${MAKE} unix_packages_install PACKAGE_MANAGER="${PACKAGE_MANAGER_CENTOS}" UNIX_PACKAGES="${UNIX_PACKAGES_COMMON} ${UNIX_PACKAGES_CENTOS}"
 
 ## Install required Unix packages
 unix_packages_install_ubuntu:
 	yes | apt-get upgrade
-	@${MAKE} unix_packages_install PACKAGE_MANAGER=${PACKAGE_MANAGER_UBUNTU} UNIX_PACKAGES="${UNIX_PACKAGES_COMMON} ${UNIX_PACKAGES_UBUNTU}"
+	@${MAKE} unix_packages_install PACKAGE_MANAGER="${PACKAGE_MANAGER_UBUNTU}" UNIX_PACKAGES="${UNIX_PACKAGES_COMMON} ${UNIX_PACKAGES_UBUNTU}"
 
 
 ################################################################
