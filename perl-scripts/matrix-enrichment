@@ -217,7 +217,11 @@ package main;
   $noicon=1; # Do not generate the smaller version of plots
   %task = (); ## Difine hash to contain user given tasks
   my $no_ind_nwd_occ_plot=1; ## Do not draw individual NWD and OCC graphs
-
+  $Rscript_path = &RSAT::server::GetProgramPath("R");
+  # print  $Rscript_path ;
+  # $users=`echo $ENV{PATH}`;
+  # print "___".$users."___";
+  # die;
   ################################################################
   ## The C command matrix-scan-quick is MUCH faster than
   ## matrix-scan. If it is supported on this machine, use it !
