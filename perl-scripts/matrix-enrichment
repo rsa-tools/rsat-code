@@ -216,8 +216,12 @@ package main;
 
   $noicon=1; # Do not generate the smaller version of plots
   %task = (); ## Difine hash to contain user given tasks
-
-
+  my $no_ind_nwd_occ_plot=1; ## Do not draw individual NWD and OCC graphs
+  $Rscript_path = &RSAT::server::GetProgramPath("R");
+  # print  $Rscript_path ;
+  # $users=`echo $ENV{PATH}`;
+  # print "___".$users."___";
+  # die;
   ################################################################
   ## The C command matrix-scan-quick is MUCH faster than
   ## matrix-scan. If it is supported on this machine, use it !
@@ -779,7 +783,8 @@ package main;
 
       ## Draw static heatmaps
       &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
-      my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
+      my $r_path = &RSAT::server::GetProgramPath("Rscript"); ## Set R path
+      my $R_command=$r_path." ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
       
       &RSAT::message::Info("R-command for NWD cluster",  $R_command) if ($main::verbose >= 2);
       
@@ -984,31 +989,6 @@ Example:
 	    }
 	  } else {
 	    push (@main::logo_formats, $image_format);
-	  }
-=pod
-
-=item	B<-img_format>
-
-Image format for the plots ( score profiles, ...).
-To display the supported formats, type the following command:
-XYgraph -h.
-
-Multiple image formats can be specified either by using iteratively
-the option, or by separating them by commas.
-
-Example:
-   -img_format png,pdf
-
-=cut
-	} elsif ($arg eq "-img_format") {
-	  my $image_format = shift(@arguments);
-	  my @tmp_img_formats = split(',',$image_format);
-	  if (scalar(@tmp_img_formats)>0) {
-	    foreach my $f (@tmp_img_formats) {
-	      push (@main::image_formats, $f);
-	    }
-	  } else {
-	    push (@main::image_formats, $image_format);
 	  }
 	  
   ## Pseudo weight
@@ -1401,8 +1381,7 @@ sub DynamicHeatmapEnrichment {
 
     ##################################
     ### Identify the path of the R executable
-    my $r_path = &RSAT::server::GetProgramPath("R");
-
+    my $r_path = &RSAT::server::GetProgramPath("R"); ## Set R path
     my $dynamic_heatmap_script  = $ENV{RSAT}."/R-scripts/matrix-enrichment_heatmap.R";
 
     &RSAT::error::FatalError("Cannot read matrix-enrichment_heatmap.R script", $dynamic_heatmap_script) unless (-r $dynamic_heatmap_script);
@@ -1428,6 +1407,7 @@ sub DynamicHeatmapEnrichment {
     $dynamic_heatmap_cmd .= " \"";
 #    $Cluster_motifs_cmd = "(".$dynamic_heatmap_cmd.")"; # Uncomment this line to check the R output in the terminal
 #    $dynamic_heatmap_cmd = "(".$dynamic_heatmap_cmd.") 2 > ".$main::outfile{Rlog}; 
+
 
     if ($r_path) {
         &doit($dynamic_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
