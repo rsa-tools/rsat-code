@@ -89,8 +89,8 @@ sub GetProgramPath {
   ## If the path has ont ben found yet, find the program anywhere in
   ## the user path
   unless ($program_path) {
-    $program_path = `which $program_name`;
-    chomp($program_path);
+      $program_path = `which $program_name`;
+      chomp($program_path);
   }
 
   ## Check if the program path has been found

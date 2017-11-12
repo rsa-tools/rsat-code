@@ -20,7 +20,7 @@ use RSAT::MatrixReader;
 
 ### Read the CGI query
 $query = new CGI;
-
+$main::quality=1;
 local @supported_input_formats = sort(keys( %RSAT::MatrixReader::supported_input_format));
 local @supported_output_formats = sort(keys( %RSAT::matrix::supported_output_format));
 
@@ -198,7 +198,6 @@ while(my $row = <$fh>){
     $demo_seq2 .= "\\n";
 }
 
-
 print '<script>
 function setDemo(demo_matrix, demo_seq1, demo_seq2){
     $("#reset").trigger("click");
@@ -210,7 +209,8 @@ function setDemo(demo_matrix, demo_seq1, demo_seq2){
     demo_descr.innerHTML = descr;
     demo.value = descr;
 
-    html_title.value = " LexA and CTCF matrices from RegulonDB 2015";
+    
+    html_title.value = "LexA and CTCF matrices from RegulonDB 2015";
     matrix.value = demo_matrix;
     matrix_format.value = "transfac";
     kfold.value = "none";
