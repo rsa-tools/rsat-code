@@ -4,7 +4,7 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/matrix-enrichment_demo.mk
 
-DATE=20160427
+DATE=20171101
 DEMO_FILE_DIR=${RSAT}/public_html/demo_files
 
 V=2
@@ -13,7 +13,7 @@ V=2
 MTXE_OUT=./results/matrix_enrichment/${DATE}
 MTXE_CAP_OUT=${MTXE_OUT}/capstarr-seq
 
-
+TASK= 
 #######################
 ## CapStarr-seq demo ##
 #######################
@@ -70,6 +70,7 @@ MATRIX_ENRICHMENT_CDM=matrix-enrichment -v ${V} \
 	-matrix ${MOTIFS_FILE} -matrix_format ${MTX_FORMAT} -pseudo ${PSEUDO} \
 	-bgfile ${BACKGROUND_MODEL} -bg_format ${BG_FORMAT} \
 	${SEQUENCES} \
+	${TASK} \
 	-title ${TITLE} ${OPT}\
 	-o ${PREFIX}
 
