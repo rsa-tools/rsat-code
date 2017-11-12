@@ -1292,33 +1292,39 @@ sub SeqBoxMQ {
   print "<table ><tr><td>";
  &MultiSequenceChoice("Dataset ".$seq_num, $seq_num);
   print "</td>";
-  print "<td>";
-  print "<br>";
-  print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
-  print $query->popup_menu(-name=>'permutation'.$seq_num, -id=>'permutation'.$seq_num,
-			   -Values=>[0..5],
-			   -default=>$default{perm});
-  print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num, -id=>'sep_perm'.$seq_num,
-				      -checked=>$default{sep_perm1},
-				      -label=>''), "&nbsp;separate permutations";
-  print "<br>\n";
-  print"</td>";
+ 
+  if ($main::quality==1){
+      print "<td>";
+      print "<br>";
+      
+      print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
+      print $query->popup_menu(-name=>'permutation'.$seq_num, -id=>'permutation'.$seq_num,
+			       -Values=>[0..5],
+			       -default=>$default{perm});
+      print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num, -id=>'sep_perm'.$seq_num,
+					  -checked=>$default{sep_perm1},
+					  -label=>''), "&nbsp;separate permutations" ;
+      print "<br>\n";
+      print"</td>";
+  }
+  
   print "<td>";
   print "<BR>\n";
-  print "<B><A class='iframe' HREF='help.convert-matrix.html#permutations'>&nbsp;&nbsp;&nbsp;&nbsp;Tag for this data set</A></b>\n";
+  print "<B><A class='iframe' HREF='help.convert-seq.html#permutations'>&nbsp;&nbsp;&nbsp;&nbsp;Tag for this data set</A></b>\n";
   print $query->textfield(-name=>'tag'.$seq_num, -id=>'tag'.$seq_num,
 			  -default=>$default{'tag'.$seq_num},
 			  -size=>15);
-  #if ($seq_num == 1){
+  if ($main::quality == 1){
       print "<p></p>";
+      
       print $query->checkbox(-name=>'nwd', -id=>'nwd',
-  		       -checked=>$default{nwd},
+			     -checked=>$default{nwd},
 			     -label=>'');
       print "&nbsp;Calculate NWD";
       #print ("<INPUT TYPE='radio' NAME='nwd' VALUE='nwd' $checked{'nwd'}>","Calculate NWD");
-  #}
-  print"</td>";
-  print "</tr></table>";
+  }
+      print"</td>";
+      print "</tr></table>";
 
 }
 
