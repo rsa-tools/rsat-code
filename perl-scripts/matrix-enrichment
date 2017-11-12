@@ -37,7 +37,7 @@ erichments of motifs with low scores but with several sites that might be unders
 
 =head1 AUTHORS
 
-Jaime Castro <castro\@univ-amu.fr>
+Jaime Castro <j.a.c.mondragon\@ncmm.uio.no>
 
 Samuel Collombet <samuel.collombet\@ens.fr>
 
@@ -788,24 +788,25 @@ package main;
       $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
       $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
       $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
+ 
+      # ################################################################
+      # ## Draw the dynamic heatmap with the clustering of the maxNWD
+      # &DynamicHeatmapEnrichment();
       
-      #################################################################
-      ## Create dynamic heatmaps ans graphs
-      
-      ################################################################
-      ## Draw the dynamic heatmap with the clustering of the maxNWD
-      &DynamicHeatmapEnrichment();
-      
-      ################################################################
-      ## Draw the Binomial Occ Significance curves 
-      ## of each TF on each sequence
-      &DynamicOccProfiles();
+      # ################################################################
+      # ## Draw the Binomial Occ Significance curves 
+      # ## of each TF on each sequence
+      # &DynamicOccProfiles();
   }
  
   if ($task{synthesis}){
-      ####
+      
       ##########################
       ## Generate the HTML report
+      ##
+      ## Draw the dynamic heatmap with the clustering of the maxNWD
+      ##
+      ## Draw the Binomial Occ Significance curves of each TF on each sequence
       &CreateHTMLReport();
       
   }
@@ -1440,42 +1441,66 @@ sub DynamicHeatmapEnrichment {
 ################################################################
 ## Draw the Dynamic Heatmap using the matrix
 ## of maxNWD positive values
-sub DynamicOccProfiles {
+sub Draw_OCCProfiles_and_Heatmap {
 
     ########################################
-    ## Outfiles of Dynamic heatmap script
+    ## Outfiles of Dynamic heatmap + Binomial Sig Curves 
     $main::outfile{binomial_occ_profile} = $main::prefix{main}."_binomial_occ_sig_profiles.html";
     $main::outfile{binomial_occ_profile_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_binomial_OCC_profiles.html";
+
+    $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
+    $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
+    $main::outfile{Diff_maxNWD_tsv} = $main::prefix{main}."_diff_matrix_heatmap.tsv";
+    $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
+    $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
+    $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
     
-    &RSAT::message::TimeWarn("Drawing curves of Binomial OCC significance") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Drawing curves of Binomial OCC significance and dynamic heatmap") if ($main::verbose >= 2);
 
     ##################################
     ### Identify the path of the R executable
     my $r_path = &RSAT::server::GetProgramPath("R");
 
-    my $dynamic_occ_sig_script  = $ENV{RSAT}."/R-scripts/plot_binomial_occ.R";
+    my $occ_sig_heatmap_script  = $ENV{RSAT}."/R-scripts/matrix-enrichment_plot_and_heatmap.R";
 
-    &RSAT::error::FatalError("Cannot read plot_binomial_occ.R script", $dynamic_occ_sig_script) unless (-r $dynamic_occ_sig_script);
+    &RSAT::error::FatalError("Cannot read plot_binomial_occ.R script", $occ_sig_heatmap_script) unless (-r $occ_sig_heatmap_script);
 
     my $Seq_string = join('---', @all_sequence_names);
     my $TFs_string = join('---', @all_matrix_names);
 
     ## Command
-    my $dynamic_occ_sig_cmd = "";
-    $dynamic_occ_sig_cmd .= " cat ".$dynamic_occ_sig_script;
-    $dynamic_occ_sig_cmd .= " | ".$r_path;
-    $dynamic_occ_sig_cmd .= " --slave --no-save --no-restore --no-environ";
-    $dynamic_occ_sig_cmd .= " --args \"";
-    $dynamic_occ_sig_cmd .= " prefix = '".$main::prefix{main}."'";
-    $dynamic_occ_sig_cmd .= " ;html.template.file = '".$main::outfile{binomial_occ_profile_template}."'";
-    $dynamic_occ_sig_cmd .= " ;Sequences = '".$Seq_string."'";
-    $dynamic_occ_sig_cmd .= " ;TFs = '".$TFs_string."'";
-    $dynamic_occ_sig_cmd .= " \"";
-#    $dynamic_occ_sig_cmd = "(".$dynamic_occ_sig_cmd.")"; # Uncomment this line to check the R output in the terminal
-#    $dynamic_occ_sig_cmd = "(".$dynamic_occ_sig_cmd.") 2 > ".$main::outfile{Rlog}; 
+    my $matrix_enrichment_plot_cmd = "";
+    $matrix_enrichment_plot_cmd .= " cat ".$occ_sig_heatmap_script;
+    $matrix_enrichment_plot_cmd .= " | ".$r_path;
+    $matrix_enrichment_plot_cmd .= " --slave --no-save --no-restore --no-environ";
+    $matrix_enrichment_plot_cmd .= " --args \"";
+    $matrix_enrichment_plot_cmd .= " prefix = '".$main::prefix{main}."'";
+    $matrix_enrichment_plot_cmd .= " ;html.template.file = '".$main::outfile{binomial_occ_profile_template}."'";
+
+    ## Arguments to draw Binomial Occ curves
+    $matrix_enrichment_plot_cmd .= " ;Sequences = '".$Seq_string."'";
+    $matrix_enrichment_plot_cmd .= " ;TFs = '".$TFs_string."'";
+
+    ## Arguments to draw heatmap
+    $matrix_enrichment_plot_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
+    $matrix_enrichment_plot_cmd .= "; html.template.file = '".$main::outfile{maxNWD_heatmap_template}."'";
+    $matrix_enrichment_plot_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
+    $matrix_enrichment_plot_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
+    $matrix_enrichment_plot_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
+    $matrix_enrichment_plot_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
+    $matrix_enrichment_plot_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
+    $matrix_enrichment_plot_cmd .= "; d3.base = '".$d3_base."'";
+    $matrix_enrichment_plot_cmd .= "; d3.array.base = '".$d3_array_base."'";
+    $matrix_enrichment_plot_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
+    $matrix_enrichment_plot_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
+
+    
+    $matrix_enrichment_plot_cmd .= " \"";
+#    $matrix_enrichment_plot_cmd = "(".$matrix_enrichment_plot_cmd.")"; # Uncomment this line to check the R output in the terminal
+#    $matrix_enrichment_plot_cmd = "(".$matrix_enrichment_plot_cmd.") 2 > ".$main::outfile{Rlog}; 
 
     if ($r_path) {
-        &doit($dynamic_occ_sig_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+        &doit($matrix_enrichment_plot_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
         &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
     }
@@ -1488,7 +1513,10 @@ sub DynamicOccProfiles {
 ## of maxNWD positive values
 sub CreateHTMLReport {
     
-  &RSAT::message::TimeWarn("Creating HTML report") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Creating HTML report") if ($main::verbose >= 2);
+
+    
+    &Draw_OCCProfiles_and_Heatmap()
 
   $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
   $main::outfile{report} = $main::prefix{main}."_report.html";  
