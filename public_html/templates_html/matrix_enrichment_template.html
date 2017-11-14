@@ -481,23 +481,17 @@
             </div>
             
             <div id="tooltip" class="hidden">
-        <p><span id="value"></p>
+              <p><span id="value"></p>
             </div>
 
-<!--
-<script src="--d3_base--"></script>
-<script src="--d3_array_base--"></script>
--->
-
-        <div  style="display:block; clear:both;position:relative;float:left;">
-Order:
-  <select id="order">
-  <option value="Default">Default</option>
-  </select>
-</div>
-        <div id="chart" style='overflow:auto; width:1000px; height:--body--px;float:left;clear:both'></div>
-
-        <script type="text/javascript">
+            <div  style="display:block; clear:both;position:relative;float:left;">
+              Order:
+              <select id="order">
+                <option value="Default">Default</option>
+              </select>
+            </div>
+            <div id="heatmap" style='overflow:auto; width:1000px; height:--body--px;float:left;clear:both'></div>
+              <script type="text/javascript">
 
 
 var margin = { top: --left--, right: 500, bottom: --left--, left: --left-- },
@@ -537,7 +531,7 @@ function(error, data) {
       .domain([--domain--])
       .range(colors);
 
-  var svg = d3.select("#chart").append("svg")
+  var svg = d3.select("#heatmap").append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
@@ -825,13 +819,7 @@ var pic = svg.selectAll(".logo")
 });
 
 </script>
-   </div> 
-          
-<!--          <p class="p_link_tab"><a target="_blank" href='--heatmap_link--'>Link</a></p> 
-
-        
-        </div> -->
-        
+            </div> 
       </td>  
     </tr>
     <tr>
@@ -840,9 +828,202 @@ var pic = svg.selectAll(".logo")
       </td>
       <td>
         <div id="occ_profiles_button" class="button_click Section_button"><strong>OCC significance profiles</strong></div>
-        <div id="occ_profiles" style="display:none" class="div_chart">
-        <div class="tab link_tab"> 
-          <p class="p_link_tab"><a target="_blank" href='--occ_profiles--'>Link</a></p> <!-- The link is inserted in the perl-script -->
+        <div id="occ_profiles" style="display:none;clear:both;position:relative;float:left;">
+
+          <div id="Profile_header"> 
+
+   <div><h2 style="text-align:center">Occurrence Probability</h2></div> 
+   <ul> 
+      <li type="square">The plot shows the Occurrence Probability Curves, that is the probability of the number of matches in the input sequence.</li>
+      <li type="square">For each matrix and each score value, calculate the statistical significance of the number of matches. This allows to select the score associated with te maximal significance, on the basis of the matrix-specific distribution, rather than by selecting some a priori threshold.</li>
+   </ul> 
+   <p>
+      <ul> <h3>Dynamic Features</h3> 
+         <li type="square">Click on each name to display/hide each profile individually.</li> 
+         <li type="square">Pointing to each profile displays its <b>ID</b>, <b>Motif name</b>, <b>Sequence</b> and <b>Motif Logo</b> in both orientation.</li> 
+         <li type="square">Click on the buttons to Show/Hide all the profiles.</li> 
+      </ul> 
+   </p>  
+
+</div> 
+   <div  style="display:block; clear:both;position:relative;float:left;">
+      <button class='small button_chart' id='show_all_button' onclick='show_all();'>Show All Profiles</button>
+      <button class='small button_chart' id='hide_all_button' onclick='hide_all();'>Hide All Profiles</button>
+<!-- <button class='small button_chart' onclick='search_motifs();'><b>Search:</b><div><input style="height:20px;margin:5px;" type="search" value='' id="search_motifs" /></div></button> -->
+   </div>
+   <div id="chart" class="div_chart_sp"></div>
+
+
+<script>
+
+var chart = c3.generate({
+    data: {
+        xs: {
+          --xs--
+        },
+        columns: [
+          --x_x--
+          --y_y--
+        ],
+            type: 'line',
+        names: {
+          --names--
+        },
+    },
+
+    subchart: {
+        show: false
+    },
+
+    zoom: {
+        enabled: false
+    },
+
+
+    size: {
+        height: --chart_h--,
+        width: 1275
+    },
+
+    grid: {
+        x: {
+            show: true
+        },
+        y: {
+            show: true
+        }
+    },
+
+    legend: {
+        position: 'bottom'
+    },
+
+    padding: {
+        top: 0,
+        right: 100,
+        bottom: 15,
+        left: 100,
+    },
+
+    tooltip: {
+        grouped: false, // Default true
+        contents: tooltip_contents,
+    },
+
+    color: {
+        pattern: [--color_pattern--]
+    },
+
+    point: {
+        show: false
+    },
+
+    axis: {
+        y: {
+            label : {
+                    text: 'Binomial Occurence Significance',
+                    position: 'outer-middle',
+            },
+
+        },
+
+        x: {
+            label: {
+                    text: '-log10(P-value)',
+                    position: 'outer-center',
+            },
+            tick: {
+                    culling: {
+                       max : 7,   
+               },
+                fit: false,
+                multiline: false,
+            }
+        },
+    },
+
+});
+
+
+    var TF_names = new Array();
+--TF_names--
+
+    var pics = new Array();
+--pics--
+
+    var pics_rc = new Array();
+--pics_rc--
+
+    var IDs = new Array();
+--IDs--
+
+    var Names = new Array();
+--names_vector--
+
+    var Seqs = new Array();
+--seqs--
+
+
+function show_all() {
+    chart.show([--all--]);
+}
+
+function hide_all() {
+    chart.hide([--all--]);
+}
+
+Array.prototype.difference = function (x) {
+    return this.filter(function (i) {
+        return !(x.indexOf(i) > -1);
+    });
+};
+
+
+function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
+    var $$ = this, config = $$.config, CLASS = $$.CLASS,
+        titleFormat = config.tooltip_format_title || defaultTitleFormat,
+        nameFormat = config.tooltip_format_name || function (name) { return name; },
+        valueFormat = config.tooltip_format_value || defaultValueFormat,
+        text, i, title_name, title_ID, title_seq, value, name, bgcolor;
+
+
+
+    
+    // You can access all of data like this:
+    console.log($$.data.targets);
+    
+    for (i = 0; i < d.length; i++) {
+        if (! (d[i] && (d[i].value || d[i].value === 0))) { continue; }
+        
+        if (! text) {
+            title_ID = 'Motif ID';
+	    title_name = 'Motif name';
+	    title_seq = 'Sequence';
+            title_logo = 'Logo';
+            title_logo_rc = 'Logo RC';
+            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_seq + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";      
+ }
+
+        name = nameFormat(d[i].name);
+        value = valueFormat(d[i].value, d[i].ratio, d[i].id, d[i].index);
+        bgcolor = $$.levelColor ? $$.levelColor(d[i].value) : color(d[i].id);
+
+        text += "<tr class='" + CLASS.tooltipName + "-" + d[i].id + "'>";
+        text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + name + "</td>";
+        text += "<td>" + Names[d[i].id] + "</td>";
+        text += "<td>" + Seqs[d[i].id] + "</td>";
+        text += "<td><img class='small_logo' src='" + pics[d[i].id] + "' /></td>";
+        text += "<td><img class='small_logo' src='" + pics_rc[d[i].id] + "' /></td>";
+        text += "</tr>";
+    }
+    return text + "</table>";   
+}
+
+
+
+
+</script>
+
         </div> 
         </div> <!-- End of section -->
       </td>
