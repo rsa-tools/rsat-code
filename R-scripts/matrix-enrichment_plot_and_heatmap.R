@@ -120,8 +120,8 @@ NWD.sub <- as.matrix(round(NWD.sub, digits = 2))
 ## Convert the DataFrame in a 'tsv' object which is the input format
 ## for D3 heatmap.
 # for(set in c("Normal", "Diff")){
-for(set in c("Normal")){
-  
+set <- "Normal"
+
   tsv.tab <- NULL
   
   if(set == "Normal"){
@@ -271,12 +271,6 @@ for(set in c("Normal")){
   domain <- legend.domain.values[1:(legend.length-1)]
   domain <- paste(domain, collapse = ",")
   html.report <- gsub("--domain--", domain, html.report)
-  
-  ## Export the report
-  # maxNWD.heatmap.html <- paste(prefix, "_motif_enrichment_maxNWD_heatmap.html", sep = "")
-  write(html.report, file = heatmap.html)
-
-}
 
 
 #################################################
@@ -456,8 +450,6 @@ all.IDs <- all.IDs[reorder]
 all.profiles <- all.profiles[reorder]
 plot.names <- plot.names[reorder]
 
-html.report <- readLines(html.template.file)
-
 ## Print Motif names array
 html.names <- sapply(TFs, function(x){
   rep(x, times = length(Sequences))
@@ -574,7 +566,5 @@ html.report <- gsub("--names--", plot.names, html.report)
 all.IDs <- paste(paste("'", all.IDs, "'", sep = ""), collapse = ",")
 html.report <- gsub("--all--", all.IDs, html.report)
 
-
 ## Export the report
-html.report.file <- paste(prefix, "_binomial_occ_sig_profiles.html", sep = "")
-write(html.report, file = html.report.file)
+write(html.report, file = heatmap.html)
