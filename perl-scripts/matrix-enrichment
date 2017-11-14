@@ -216,12 +216,8 @@ package main;
 
   $noicon=1; # Do not generate the smaller version of plots
   %task = (); ## Difine hash to contain user given tasks
-  my $no_ind_nwd_occ_plot=1; ## Do not draw individual NWD and OCC graphs
-  $Rscript_path = &RSAT::server::GetProgramPath("R");
-  # print  $Rscript_path ;
-  # $users=`echo $ENV{PATH}`;
-  # print "___".$users."___";
-  # die;
+
+
   ################################################################
   ## The C command matrix-scan-quick is MUCH faster than
   ## matrix-scan. If it is supported on this machine, use it !
@@ -783,8 +779,7 @@ package main;
 
       ## Draw static heatmaps
       &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
-      my $r_path = &RSAT::server::GetProgramPath("Rscript"); ## Set R path
-      my $R_command=$r_path." ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
+      my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
       
       &RSAT::message::Info("R-command for NWD cluster",  $R_command) if ($main::verbose >= 2);
       
@@ -989,6 +984,31 @@ Example:
 	    }
 	  } else {
 	    push (@main::logo_formats, $image_format);
+	  }
+=pod
+
+=item	B<-img_format>
+
+Image format for the plots ( score profiles, ...).
+To display the supported formats, type the following command:
+XYgraph -h.
+
+Multiple image formats can be specified either by using iteratively
+the option, or by separating them by commas.
+
+Example:
+   -img_format png,pdf
+
+=cut
+	} elsif ($arg eq "-img_format") {
+	  my $image_format = shift(@arguments);
+	  my @tmp_img_formats = split(',',$image_format);
+	  if (scalar(@tmp_img_formats)>0) {
+	    foreach my $f (@tmp_img_formats) {
+	      push (@main::image_formats, $f);
+	    }
+	  } else {
+	    push (@main::image_formats, $image_format);
 	  }
 	  
   ## Pseudo weight
@@ -1363,59 +1383,59 @@ sub Verbose {
 }
 
 
-################################################################
-## Draw the Dynamic Heatmap using the matrix
-## of maxNWD positive values
-sub DynamicHeatmapEnrichment {
+# ################################################################
+# ## Draw the Dynamic Heatmap using the matrix
+# ## of maxNWD positive values
+# sub DynamicHeatmapEnrichment {
 
-    ########################################
-    ## Outfiles of Dynamic heatmap script
-    $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
-    $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
-    $main::outfile{Diff_maxNWD_tsv} = $main::prefix{main}."_diff_matrix_heatmap.tsv";
-    $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
-    $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
-    $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
+#     ########################################
+#     ## Outfiles of Dynamic heatmap script
+#     $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
+#     $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
+#     $main::outfile{Diff_maxNWD_tsv} = $main::prefix{main}."_diff_matrix_heatmap.tsv";
+#     $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
+#     $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
+#     $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
     
-    &RSAT::message::TimeWarn("Drawing heatmap of maxNWD") if ($main::verbose >= 2);
+#     &RSAT::message::TimeWarn("Drawing heatmap of maxNWD") if ($main::verbose >= 2);
 
-    ##################################
-    ### Identify the path of the R executable
-    my $r_path = &RSAT::server::GetProgramPath("R"); ## Set R path
-    my $dynamic_heatmap_script  = $ENV{RSAT}."/R-scripts/matrix-enrichment_heatmap.R";
+#     ##################################
+#     ### Identify the path of the R executable
+#     my $r_path = &RSAT::server::GetProgramPath("R");
 
-    &RSAT::error::FatalError("Cannot read matrix-enrichment_heatmap.R script", $dynamic_heatmap_script) unless (-r $dynamic_heatmap_script);
+#     my $dynamic_heatmap_script  = $ENV{RSAT}."/R-scripts/matrix-enrichment_heatmap.R";
 
-    ## Command
-    my $dynamic_heatmap_cmd = "";
-    $dynamic_heatmap_cmd .= " cat ".$dynamic_heatmap_script;
-    $dynamic_heatmap_cmd .= " | ".$r_path;
-    $dynamic_heatmap_cmd .= " --slave --no-save --no-restore --no-environ";
-    $dynamic_heatmap_cmd .= " --args \"";
-    $dynamic_heatmap_cmd .= " prefix = '".$main::prefix{main}."'";
-    $dynamic_heatmap_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
-    $dynamic_heatmap_cmd .= "; html.template.file = '".$main::outfile{maxNWD_heatmap_template}."'";
-    $dynamic_heatmap_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
-    $dynamic_heatmap_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
-    $dynamic_heatmap_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
-    $dynamic_heatmap_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
-    $dynamic_heatmap_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
-    $dynamic_heatmap_cmd .= "; d3.base = '".$d3_base."'";
-    $dynamic_heatmap_cmd .= "; d3.array.base = '".$d3_array_base."'";
-    $dynamic_heatmap_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
-    $dynamic_heatmap_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
-    $dynamic_heatmap_cmd .= " \"";
-#    $Cluster_motifs_cmd = "(".$dynamic_heatmap_cmd.")"; # Uncomment this line to check the R output in the terminal
-#    $dynamic_heatmap_cmd = "(".$dynamic_heatmap_cmd.") 2 > ".$main::outfile{Rlog}; 
+#     &RSAT::error::FatalError("Cannot read matrix-enrichment_heatmap.R script", $dynamic_heatmap_script) unless (-r $dynamic_heatmap_script);
 
+#     ## Command
+#     my $dynamic_heatmap_cmd = "";
+#     $dynamic_heatmap_cmd .= " cat ".$dynamic_heatmap_script;
+#     $dynamic_heatmap_cmd .= " | ".$r_path;
+#     $dynamic_heatmap_cmd .= " --slave --no-save --no-restore --no-environ";
+#     $dynamic_heatmap_cmd .= " --args \"";
+#     $dynamic_heatmap_cmd .= " prefix = '".$main::prefix{main}."'";
+#     $dynamic_heatmap_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
+#     $dynamic_heatmap_cmd .= "; html.template.file = '".$main::outfile{maxNWD_heatmap_template}."'";
+#     $dynamic_heatmap_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
+#     $dynamic_heatmap_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
+#     $dynamic_heatmap_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
+#     $dynamic_heatmap_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
+#     $dynamic_heatmap_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
+#     $dynamic_heatmap_cmd .= "; d3.base = '".$d3_base."'";
+#     $dynamic_heatmap_cmd .= "; d3.array.base = '".$d3_array_base."'";
+#     $dynamic_heatmap_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
+#     $dynamic_heatmap_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
+#     $dynamic_heatmap_cmd .= " \"";
+# #    $Cluster_motifs_cmd = "(".$dynamic_heatmap_cmd.")"; # Uncomment this line to check the R output in the terminal
+# #    $dynamic_heatmap_cmd = "(".$dynamic_heatmap_cmd.") 2 > ".$main::outfile{Rlog}; 
 
-    if ($r_path) {
-        &doit($dynamic_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-    } else {
-        &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
-    }
-    return();
-}
+#     if ($r_path) {
+#         &doit($dynamic_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+#     } else {
+#         &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
+#     }
+#     return();
+# }
 
 
 ################################################################
@@ -1424,9 +1444,10 @@ sub DynamicHeatmapEnrichment {
 sub Draw_OCCProfiles_and_Heatmap {
 
     ########################################
-    ## Outfiles of Dynamic heatmap + Binomial Sig Curves 
-    $main::outfile{binomial_occ_profile} = $main::prefix{main}."_binomial_occ_sig_profiles.html";
-    $main::outfile{binomial_occ_profile_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_binomial_OCC_profiles.html";
+    ## Outfiles of Dynamic heatmap + Binomial Sig Curves
+    $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
+    $main::outfile{report_partial} = $main::prefix{main}."_report_partial.html";
+    $main::outfile{report} = $main::prefix{main}."_report.html";
 
     $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
     $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
@@ -1455,7 +1476,7 @@ sub Draw_OCCProfiles_and_Heatmap {
     $matrix_enrichment_plot_cmd .= " --slave --no-save --no-restore --no-environ";
     $matrix_enrichment_plot_cmd .= " --args \"";
     $matrix_enrichment_plot_cmd .= " prefix = '".$main::prefix{main}."'";
-    $matrix_enrichment_plot_cmd .= " ;html.template.file = '".$main::outfile{binomial_occ_profile_template}."'";
+    $matrix_enrichment_plot_cmd .= " ;html.template.file = '".$main::outfile{report_template}."'";
 
     ## Arguments to draw Binomial Occ curves
     $matrix_enrichment_plot_cmd .= " ;Sequences = '".$Seq_string."'";
@@ -1463,11 +1484,10 @@ sub Draw_OCCProfiles_and_Heatmap {
 
     ## Arguments to draw heatmap
     $matrix_enrichment_plot_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
-    $matrix_enrichment_plot_cmd .= "; html.template.file = '".$main::outfile{maxNWD_heatmap_template}."'";
-    $matrix_enrichment_plot_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
+     $matrix_enrichment_plot_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
     $matrix_enrichment_plot_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
     $matrix_enrichment_plot_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
-    $matrix_enrichment_plot_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
+    $matrix_enrichment_plot_cmd .= "; parsed.heatmap.html = '".$main::outfile{report_partial}."'";
     $matrix_enrichment_plot_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
     $matrix_enrichment_plot_cmd .= "; d3.base = '".$d3_base."'";
     $matrix_enrichment_plot_cmd .= "; d3.array.base = '".$d3_array_base."'";
@@ -1495,75 +1515,75 @@ sub CreateHTMLReport {
     
     &RSAT::message::TimeWarn("Creating HTML report") if ($main::verbose >= 2);
 
+    ################################################################
+    ## Draw the Binomail Occ curves + dynamic heatmap
+    &Draw_OCCProfiles_and_Heatmap();
     
-    &Draw_OCCProfiles_and_Heatmap()
-
-  $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
-  $main::outfile{report} = $main::prefix{main}."_report.html";  
-
-  ## Open the HTML template
-  my ($template) = &OpenInputFile($main::outfile{report_template});
-  
-  ## Open the HTLM report
-  my ($syn) = &OpenOutputFile( $main::outfile{report});
-  
-  my $motif_nb = scalar(@all_matrix_names);
-  my $set_nb = scalar(@all_sequence_names);
-
-  my $head = &PrintHtmlResultHeader(program=>"matrix-enrichment", "title"=>$main::title);
-
-  ###########################################
-  ## Read the template and add the section
-  ## names and other parameters
-  while(<$template>){
-      
-      next if (/^#/); ## Skip header line
-      next if (/^;/); ## Skip comment lines
-      next unless (/\S/); ## Skip empty lines	
-      chomp();
-      my $line = $_;
-
-      ## Substitute the Header
-      if($line =~ /--he--/){
-
-	  print " 1\n";
-	  $line =~ s/--he--/$head/;
-      }
-
-      ## Substitute the Command section
-      if($line =~ /--show_command--/){
-
-	  ## Print arguments
-	  print &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
-	  print $syn "<pre>";
-	  print $syn "matrix-enrichment ";
-	  &PrintArguments($syn);
-	  print $syn "</pre>";
-	  print $syn &close_menu_heading();
-
-	  $line =~ s/--show_command--//;
-	  print " 2\n";
-      }
-      
-      ###########################
-      ## Fill parameters table
-      $line =~ s/--motif_nb--/$motif_nb/g;
-      $line =~ s/--set_nb--/$set_nb/g;
- 
-      ############################
-      ## maxNWD heatmap section
-      my $heatmap_link = &RSAT::util::RelativePath($main::outfile{report}, $main::outfile{maxNWD_heatmap_html});
-      $line =~ s/--heatmap_link--/$heatmap_link/g;
-      
-      ############################
-      ## maxNWD heatmap section
-      my $occ_profiles_link = &RSAT::util::RelativePath($main::outfile{report}, $main::outfile{binomial_occ_profile});
-      $line =~ s/--occ_profiles--/$occ_profiles_link/g;
-      
-      print $syn $line."\n";
-  }
-  close($template);
-  close($syn);  
+    $main::outfile{report} = $main::prefix{main}."_report.html";  
+    
+    ## Open the HTML template
+    my ($template) = &OpenInputFile($main::outfile{report_partial});
+    
+    ## Open the HTLM report
+    my ($syn) = &OpenOutputFile( $main::outfile{report});
+    
+    my $motif_nb = scalar(@all_matrix_names);
+    my $set_nb = scalar(@all_sequence_names);
+    
+    my $head = &PrintHtmlResultHeader(program=>"matrix-enrichment", "title"=>$main::title);
+    
+    ###########################################
+    ## Read the template and add the section
+    ## names and other parameters
+    while(<$template>){
+	
+	next if (/^#/); ## Skip header line
+	next if (/^;/); ## Skip comment lines
+	next unless (/\S/); ## Skip empty lines	
+	chomp();
+	my $line = $_;
+	
+	## Substitute the Header
+	if($line =~ /--he--/){
+	    
+	    print " 1\n";
+	    $line =~ s/--he--/$head/;
+	}
+	
+	## Substitute the Command section
+	if($line =~ /--show_command--/){
+	    
+	    ## Print arguments
+	    print &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
+	    print $syn "<pre>";
+	    print $syn "matrix-enrichment ";
+	    &PrintArguments($syn);
+	    print $syn "</pre>";
+	    print $syn &close_menu_heading();
+	    
+	    $line =~ s/--show_command--//;
+	    print " 2\n";
+	}
+	
+	###########################
+	## Fill parameters table
+	$line =~ s/--motif_nb--/$motif_nb/g;
+	$line =~ s/--set_nb--/$set_nb/g;
+	
+	############################
+	## maxNWD heatmap section
+	my $heatmap_link = &RSAT::util::RelativePath($main::outfile{report}, $main::outfile{maxNWD_heatmap_html});
+	$line =~ s/--heatmap_link--/$heatmap_link/g;
+	
+	############################
+	## maxNWD heatmap section
+	my $occ_profiles_link = &RSAT::util::RelativePath($main::outfile{report}, $main::outfile{binomial_occ_profile});
+	$line =~ s/--occ_profiles--/$occ_profiles_link/g;
+	
+	print $syn $line."\n";
+    }
+    close($template);
+    close($syn);  
 }
 
 __END__
