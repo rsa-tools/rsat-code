@@ -157,10 +157,14 @@ package main;
   ################################################################
   ## Check argument values
 
-  ## Verbosity is only accepted for the tab-delimited format
-  unless (lc($output_format ) eq "tab") {
-    $main::verbose = 0;
-  }
+  ## Verbosity is only accepted for the tab-delimited format 
+  ##
+  ## Note: JvH 2017-11-16: this is not convenient for debugging. I
+  ## modify the behaviour: TSDERR is produced in verbosity mode, but
+  ## the &Verbose() function is only called if output format is tab.
+  # unless (lc($output_format ) eq "tab") {
+  #   $main::verbose = 0;
+  # }
 
   ## Input format
   unless ($input_format) {
@@ -376,8 +380,11 @@ package main;
     $out = &OpenOutputFile($outfile{output});
   }
 
-  ## Print verbose
-  &Verbose if ($verbose);
+  ## Print verbose only for the tab-delimited format (because the ';'
+  ## comments is not compliant with the other formats).
+  if (($verbose >= 1) && (lc($output_format ) eq "tab")) {
+    &Verbose();
+  }
 
   ################################################################
   ## Read the input matrices and collect all matrices
@@ -643,7 +650,7 @@ package main;
 	&RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
 
 	## Print result
-	if ($main::verbose >= 1) {
+	if (($main::verbose >= 1) && (lc($output_format) eq "tab")) {
 	  print $current_out "; ID\t$ID_perm\n" if ($verbose >=1);
 	  print $current_out "; AC\t$AC_perm\n" if ($verbose >=1);
 	  print $current_out "; permutation $i/$perm\n";
@@ -674,7 +681,7 @@ sub close_and_quit {
 
   ## Report execution time
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  print $main::out $exec_time if (($main::verbose >= 1) && (lc($output_format) eq "tab")); ## only report exec time if verbosity is specified
 
   ## Close output file
   if ($outfile{output}) {
@@ -1765,7 +1772,7 @@ convert-matrix options
 -to		output matrix format. Supported: $supported_output_formats
 -return		return type(s). Supported: $supported_return_fields
 -sort desc|asc|alpha key     Sort matrices according to the specified key.
--top N		stop reading the input files after the N to matrices
+-top N		stop reading the input files after the N top matrices
 -skip N		skip the first N matrices
 -prior [deprecated, use -bgfile] 		background model (prior frequency file)
 -bgfile		background model (prior frequency file)
@@ -1805,9 +1812,9 @@ sub ReadArguments {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
+		$main::verbose = $ARGV[$a+1];
 	    } else {
-		$verbose = 1;
+		$main::verbose = 1;
 	    }
 
 	    ### detailed help
