@@ -216,8 +216,8 @@ package main;
 
   $noicon=1; # Do not generate the smaller version of plots
   %task = (); ## Difine hash to contain user given tasks
-
-
+  
+  
   ################################################################
   ## The C command matrix-scan-quick is MUCH faster than
   ## matrix-scan. If it is supported on this machine, use it !
@@ -263,8 +263,24 @@ package main;
   ################################################################
   ## Read argument values
   &ReadArguments();
+
+  ########################################
+  ## Outfiles of Dynamic heatmap + Binomial Sig Curves
+  $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
+  $main::outfile{report_partial} = $main::prefix{main}."_report_partial.html";
+  $main::outfile{report} = $main::prefix{main}."_report.html";
   
+  $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
+  $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
+  $main::outfile{Diff_maxNWD_tsv} = $main::prefix{main}."_diff_matrix_heatmap.tsv";
+  $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
+  $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
+  $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
   
+  ## HTML report variables
+  $param{progressive_synthesis} = 1;
+  $param{title} = "matrix-enrichment results";
+
   ################################################################
   ## Check argument values
 
@@ -275,8 +291,6 @@ package main;
       %task = %supported_task;
       $task{all} = 0;
   }
-  
- 
 
   # die "BOOM";
   ## Matrix file is mandatory
@@ -300,6 +314,10 @@ package main;
   ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($main::prefix{main});
   &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 2);
   &RSAT::util::CheckOutDir($dir{output});
+
+  %icons = ();
+  $icons{loading} = &RSAT::util::RelativePath($main::outfile{report}, $dir{output}."/matrix-enrichment_icons/RSAT_loading.svg");
+  
 
   ################################################################
   ## Ensure the access to the java libraries, which are required to
@@ -347,14 +365,14 @@ package main;
   $datatable_base = &RSAT::util::RelativePath($dir{output}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
   $datatable_css_base = &RSAT::util::RelativePath($dir{output}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
 
-        ################################################################
-      ## Copy the section icons in the results folder
-      ################################################################
-      &RSAT::message::Debug("Copying result sections icons to output directory") if ($main::verbose >= 3);
-      my $icon_sync_cmd = "rsync -ruptl";
-      $icon_sync_cmd .= " ".$ENV{RSAT}."/public_html/images/program_icons/matrix-enrichment_icons";
-      $icon_sync_cmd .= " ".$dir{output};
-      &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+  ################################################################
+  ## Copy the section icons in the results folder
+  ################################################################
+  &RSAT::message::Debug("Copying result sections icons to output directory") if ($main::verbose >= 3);
+  my $icon_sync_cmd = "rsync -ruptl";
+  $icon_sync_cmd .= " ".$ENV{RSAT}."/public_html/images/program_icons/matrix-enrichment_icons";
+  $icon_sync_cmd .= " ".$dir{output};
+  &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
 
   ## ################
@@ -636,6 +654,10 @@ package main;
       $outfile{matrix_log} = $main::matrix_prefix{$matrix_name}."_log.txt"; push @files_to_index, "matrix_log";
       $main::out = &OpenOutputFile($outfile{matrix_log});
       &RSAT::message::Debug("Adding file to index ",   "matrix_log", $main::matrix_prefix{$matrix_name}."_log.txt" ) if ($main::verbose >= 10);
+
+      ################################################################
+      ## Initialize HTML report
+      &OpenSynthesis() if ($main::param{progressive_synthesis}); ## Already open the HTML report summary, for the Web site
 
       ################################################################
       ## Export matrix in various formats
@@ -1442,19 +1464,6 @@ sub Verbose {
 ## Draw the Dynamic Heatmap using the matrix
 ## of maxNWD positive values
 sub Draw_OCCProfiles_and_Heatmap {
-
-    ########################################
-    ## Outfiles of Dynamic heatmap + Binomial Sig Curves
-    $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
-    $main::outfile{report_partial} = $main::prefix{main}."_report_partial.html";
-    $main::outfile{report} = $main::prefix{main}."_report.html";
-
-    $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
-    $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
-    $main::outfile{Diff_maxNWD_tsv} = $main::prefix{main}."_diff_matrix_heatmap.tsv";
-    $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
-    $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
-    $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
     
     &RSAT::message::TimeWarn("Drawing curves of Binomial OCC significance and dynamic heatmap") if ($main::verbose >= 2);
 
@@ -1584,6 +1593,56 @@ sub CreateHTMLReport {
     }
     close($template);
     close($syn);  
+}
+
+
+##########################################
+## Open the HTML page for the synthesis
+sub OpenSynthesis {
+
+  my $refresh_time;
+  if ($main::param{progressive_synthesis}) {
+    $refresh_time = 90;
+  } else {
+     $refresh_time = 0;
+  }
+
+  
+  ## Open the summary HTML file
+  $syn = &OpenOutputFile($main::outfile{report});
+  $synthesis_path = `dirname $main::outfile{report}`;
+  chomp($synthesis_path);
+
+  my $head = &PrintHtmlResultHeader(program=>"matrix-enrichment", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>$refresh_time);
+  
+  print $syn $head;
+
+  &ReportCommandLoading();
+}
+
+
+################################################################
+## Report the command before running the analysis, for the sake of
+## debugging and to facilitate copy-paste of the options.
+sub ReportCommandLoading {
+  print $syn "<div width='1250px'; height='auto'; ><img style='padding-left:700px;height:500px;width:500px'; src='".$icons{loading}."'></div>";
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
+  print $syn "<pre>";
+  print $syn "matrix-enrichment";
+  &PrintArguments($syn);
+  print $syn "</pre>";
+  print $syn &close_menu_heading();
+}
+
+
+sub ReportCommand {
+
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
+  print $syn "<pre>";
+  print $syn "matrix-enrichment";
+  &PrintArguments($syn);
+  print $syn "</pre>";
+  print $syn &close_menu_heading();
 }
 
 __END__
