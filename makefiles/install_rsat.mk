@@ -60,6 +60,7 @@ _update_tasks:
 
 ################################################################
 ## Install Unix packages required for RSAT
+#
 UNIX_PACKAGES_COMMON= \
 	emacs \
 	git \
@@ -71,11 +72,7 @@ UNIX_PACKAGES_COMMON= \
 	links \
 	finger \
 	zip \
-	unzip \
-	python3.2 \
-	python3-setuptools \
-	python2.7
-
+	unzip 
 
 
 UNIX_PACKAGES_CENTOS= \
@@ -84,8 +81,12 @@ UNIX_PACKAGES_CENTOS= \
 	php \
 	glibc.i686 \
 	zlib.i686 \
-	gd gd gd-devel php-gd perl-GD.x86_64 \
-	tetex-latex tetex-doc tetex-fonts
+	gd gd gd-devel php-gd \
+	perl-GD.x86_64 perl-SOAP-WSDL \
+	tetex-latex tetex-doc tetex-fonts \
+	python2 \
+	python34 \
+    python34-setuptools
 
 ## gfortran required for python scipy
 UNIX_PACKAGES_MACOSX= \
@@ -103,6 +104,7 @@ UNIX_PACKAGES_UBUNTU= \
 	texlive-latex-base \
 	libgd2-xpm-dev \
 	libgd-gd2-perl \
+	python2.7 \
 	python3 \
 	python3-dev
 
@@ -148,12 +150,12 @@ unix_packages_install:
 ## Install required Unix packages
 unix_packages_install_centos:
 	yes | yum upgrade
-	@${MAKE} unix_packages_install PACKAGE_MANAGER=${PACKAGE_MANAGER_CENTOS} UNIX_PACKAGES="${UNIX_PACKAGES_COMMON} ${UNIX_PACKAGES_CENTOS}"
+	@${MAKE} unix_packages_install PACKAGE_MANAGER="${PACKAGE_MANAGER_CENTOS}" UNIX_PACKAGES="${UNIX_PACKAGES_COMMON} ${UNIX_PACKAGES_CENTOS}"
 
 ## Install required Unix packages
 unix_packages_install_ubuntu:
 	yes | apt-get upgrade
-	@${MAKE} unix_packages_install PACKAGE_MANAGER=${PACKAGE_MANAGER_UBUNTU} UNIX_PACKAGES="${UNIX_PACKAGES_COMMON} ${UNIX_PACKAGES_UBUNTU}"
+	@${MAKE} unix_packages_install PACKAGE_MANAGER="${PACKAGE_MANAGER_UBUNTU}" UNIX_PACKAGES="${UNIX_PACKAGES_COMMON} ${UNIX_PACKAGES_UBUNTU}"
 
 
 ################################################################
@@ -166,6 +168,7 @@ PERL_MODULES= \
 	Module::Build::Compat \
 	CGI \
 	Email::Sender \
+	Email::Sender::Transport::SMTPS \
 	Email::Simple \
 	Email::Simple::Creator \
 	PostScript::Simple	 \
