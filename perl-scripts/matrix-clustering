@@ -1595,6 +1595,7 @@ sub set_output_file_names {
       $icons{tree} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Tree.png");
       $icons{consensus} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Consensus.png");
       $icons{files} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Files.png");
+      $icons{loading} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/RSAT_loading.svg");
 
   
   }
@@ -3724,7 +3725,7 @@ sub OpenSynthesis {
   
   print $syn $head;
 
-  &ReportCommand();
+  &ReportCommandLoading();
 }
 
 
@@ -3748,8 +3749,8 @@ sub ReOpenSynthesis {
    <link rel="stylesheet" type="text/css" href="'.$datatable_css_base.'">
 </head>
      ';
-  } 
-
+  }
+  
   ## Add the CSS style for matrix-clustering summary and 
   ## concatenate it to header the CSS sytles
   my $css_matrix_clustering = &ReportStyleCSS();
@@ -3774,7 +3775,19 @@ sub CloseSynthesis {
 ################################################################
 ## Report the command before running the analysis, for the sake of
 ## debugging and to facilitate copy-paste of the options.
+sub ReportCommandLoading {
+  print $syn "<div width='1250px'; height='auto'; ><img style='padding-left:700px;height:500px;width:500px'; src='".$icons{loading}."'></div>";
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
+  print $syn "<pre>";
+  print $syn "matrix-clustering ";
+  &PrintArguments($syn);
+  print $syn "</pre>";
+  print $syn &close_menu_heading();
+}
+
+
 sub ReportCommand {
+
   print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
   print $syn "<pre>";
   print $syn "matrix-clustering ";

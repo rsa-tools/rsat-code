@@ -194,7 +194,7 @@ print '<script>
                     format = (res[0] == "tf") ? "transfac" : "tab";
                     matrix = res[1];
                     $("form").remove();
-                    document.getElementById("piping").innerHTML += "<form id=\"dynForm_" + f + "\" action=\"" + f + "_form.cgi\" method=\"post\" target=\"_blank\"><input type=\"hidden\" name=\"matrix_format\" value=\"" + format + "\"><input type=\"hidden\" name=\"matrix\" value=\"" + matrix + "\"></form>";
+                    document.getElementById("piping").innerHTML += "<form id=\"dynForm_" + f + "\" action=\"" + f + "_form.cgi\" method=\"post\"><input type=\"hidden\" name=\"matrix_format\" value=\"" + format + "\"><input type=\"hidden\" name=\"matrix\" value=\"" + matrix + "\"></form>";
                     document.getElementById("dynForm_" + f).submit();
                 }
             });
@@ -256,7 +256,7 @@ print "</div></div></div>";
 
 print "</td><td align='top'>";
 
-print "<div id='identifier'><div style='float:left;margin-left:27px;font-size:11px;'>2 - Select 1 or more matrix identifiers:<br/>";
+print "<div id='identifier'><div style='float:left;margin-left:27px;font-size:11px;'>2 - Select one or more matrix identifiers:<br/>";
 print " <select id='db_id' style='width:300px' multiple='multiple'></select><br/>&nbsp;";
 print "</div></div>";
 print '<div style="clear:both;"></div>';
@@ -271,9 +271,8 @@ print "<script>
 </script>";
 print '<br/><button type="reset" onclick="reset()">RESET</button>&nbsp;<button type="button" onclick="setDemo()">DEMO</button>';
 
-print "&nbsp;<b><A class='iframe' HREF='#'>MANUAL</A>&nbsp; ";
-print "<A HREF='#'>TUTORIAL</A> &nbsp;";
-print "<A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></b>";
+print "&nbsp;<b><A class='iframe' HREF='help.retrieve-matrix.html'>MANUAL</A>&nbsp; ";
+
 
 ### send results by email
 print "<div id='email' style='display:none'><hr>";
