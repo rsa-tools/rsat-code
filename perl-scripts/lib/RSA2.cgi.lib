@@ -2214,14 +2214,14 @@ sub GetBackgroundModel {
 ## Display the list of supported background formats and a textbox or
 ## file upload.
 sub DisplayBackgroundFileUpload {
-    unless ($params{title_choose}) {
-      print "<input type='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
-    }
-
-    print "Upload your own background file", "&nbsp;"x5;
+    #unless ($params{title_choose}) {
+    #}
+    print "<b><a class='iframe' href=help.convert-background-model.html>Input your own background file</a></b> &nbsp;";
+   # print "<b>Input your own background file", "&nbsp;"x5;
     print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;<a class='iframe' href='help.convert-background-model.html'>Format</a></b>&nbsp;";
 
-    #### bg format
+
+      #### bg format
     print $query->popup_menu(-name=>'bg_format',
 			     -Values=>[
 				       'oligo-analysis',
@@ -2230,10 +2230,26 @@ sub DisplayBackgroundFileUpload {
 				      ],
 			     -default=>$default{bg_format});
 
+    
+    print "<br/><input type='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
+    print "File Upload", "&nbsp;"x5;
+    
+    
+   
     print $query->filefield(-name=>'upload_bgfile',
 			    -default=>'starting value',
 			    -size=>30,
 			    -maxlength=>200);
+
+    print "&nbsp;"x3;
+     #unless ($params{title_choose}) {
+    print "<br/><input type='radio' NAME='bg_method' id='url' VALUE='file_url' $checked{file_url}>";
+    #}
+    print  "URL of file available on a Web server.<br>\n";
+    print  $query->textfield(-name=>'bgmodel_url', -id => 'bgmodel_url',
+			     -default=>$default{'bgmodel_url'},
+			     -size=>62);
+    print "<br/>\n"
 }
 
 
