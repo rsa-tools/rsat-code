@@ -205,5 +205,35 @@ oligo-analysis -v 1 -i start_seq.fasta  -l 3 -1str -return occ,freq -sort | more
 ## Installing many genomes
 
 
+## Selecting bacterial organisms with Complete genomes or Chromosomes
+
+The NCBI file ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt contains annotations referring to the status of the genome projects.
+
+NCBI Assembly classifies genome assemblies in four levels:
+
+1. Contig: Assemblies that include only contigs.
+2. Scaffold: Includes both scaffolds and contigs.
+3. Chromosome: Includes chromosome or linkage groups, plus scaffolds and contigs.
+4. Complete genome: Assemblies for which all molecules are fully sequenced.
+
+Reference: PMCID: PMC4702866
+
+In this case in order to work with fully sequenced bacterial genomes and chromosomes we will select genomes with "Chromosome" and "Complete Genome" annotation in this field.
+
+```{bash eval=FALSE}
+## Dowload the ftp file
+wget ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
+
+## Select only the genomes with a Complete or Chromosome annotation in the field assembly_level
+mv assembly_summary_refseq.txt ncbi_organisms_assembly_summary_bacteria_refseq.txt
+
+awk -F "\t" '($12=="Chromosome" || $12=="Complete Genome") && $11=="latest"{print $0}' ncbi_organisms_assembly_summary_bacteria_refseq.txt > chromosome_and_complete_bacterial_genomes.txt
+
+```
+Using the list of available bacterial genomes we can select only those with the amount of annotation we consider appropriate. 
+
+
+
+
 
 
