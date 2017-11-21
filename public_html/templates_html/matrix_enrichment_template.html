@@ -168,6 +168,273 @@
      text-align:center;
      margin-top:5px;
   }
+  
+  .icon {
+    margin: 17px;
+  }
+
+
+// C3 plot
+
+--lines_w--
+
+        #Profile_header{
+	   margin: 7px 5px 7px 0px;
+	   width: 1280px;
+	   height: 275px;
+	   text-align: left;
+	   color: black;
+	   font-size: 16px;
+	   border-radius:5px;
+           background: #B1D4F9;
+	   position: relative;
+	   display: block;
+	   clear : both;
+	   float: left;
+        }
+
+  .tab{
+    font-size: 10px;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    background-color: #E6E6E6;
+    clear: both;
+    float: left;
+    position: relative;
+    border-radius:5px;
+    border-top: 0px;
+    padding: 15px 15px 3px 15px;
+  }
+
+  .tab_col {
+    padding: 7px 30px 7px 30px;
+    background-color: #B1D4F9 !important;
+    text-align: center;
+  }
+
+  .small_logo {
+	position: relative;
+	max-width: 100%;
+	max-height: 10%;
+	height: 45px;
+	width: 60px
+	float: left;
+	clear: both;
+  }
+  
+    .plot_tab {
+	position: relative;
+	height: 75px;
+	width: 75px
+	float: left;
+	clear: both;
+  }
+
+
+  .logo_tab {
+	position: relative;
+	height: 45px;
+	width: 55px
+	float: left;
+	clear: both;
+  }
+
+  td {
+    text-align: center;
+  }
+
+  .c3 svg g g.c3-axis.c3-axis-x {
+    font: 12px sans-serif;
+  }
+
+  .c3 svg g g.c3-axis.c3-axis-y {
+    font: 12px sans-serif;
+  }
+
+  .div_chart {
+	position: relative;
+        display: block;
+	float: left;
+	clear: both;
+  //      margin-top:10px;
+  }
+
+  .div_chart_sp {
+	position: relative;
+        display: block;
+	float: left;
+	clear: both;
+        margin-top:10px;
+        margin-bottom:10px;
+  }
+
+  .spacer {
+        margin-top:10px;
+        margin-bottom:10px;
+  }
+
+  .button_chart {
+	position: relative;
+        cursor:pointer;
+	float: left;
+        margin-top:10px;
+        margin-left:3px;
+        background-color: #D6EEFA;
+        color: #0D73A7;
+        border-radius:5px;
+        font-size: 15px;
+        text-align: center;
+//        font-weight: bold;
+//        border-style:none;
+  }
+
+ #show_all_button {
+        background-color: #C1FFC7;
+ }
+
+ #hide_all_button {
+        background-color: #FCACAC;
+ }
+
+  .button_click:active {
+        position:relative;
+        top:1px;
+  }
+
+  .Section_button {
+  background-color: #D6EEFA;
+  float: left;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  width: 200px;
+  height: 20px;
+  position: relative;
+  display: block;
+  text-align: center;
+  color: #0D73A7;
+  font-size: 15px;
+  padding: 4px;
+  clear: both;
+  border-radius:5px;
+  cursor: pointer;
+  }
+
+  .selected_header_section {
+    color : #CC6600;
+    background-color: #F6E6CA !important;
+    border: 1px solid #F6E6CA;
+  }
+
+  #heatmap_png {
+	heigth: 650px;
+	width: 550px;
+  }
+
+ .file_link {
+  cursor: pointer;
+  text-decoration: none;
+  }
+
+  .file_link:hover {
+  text-decoration: underline;
+  }
+
+.c3-legend-item {
+  font-size: 10px;
+}
+
+        #header{
+	   margin: 7px 5px 5px 5px;
+	   width: 1100px;
+	   height: 180px;
+	   position: relative;
+	   display: block;
+	   text-align: left;
+	   clear : both;
+	   color: black;
+	   font-size: 12px;
+	   border-radius:5px;
+           background: #B1D4F9;
+	   float: left;
+        }
+
+      /* disable text selection */
+      svg *::selection {
+         background : transparent;
+      }
+
+      svg *::-moz-selection {
+         background:transparent;
+      }
+
+      svg *::-webkit-selection {
+         background:transparent;
+      }
+      rect.selection {
+        stroke          : #333;
+        stroke-dasharray: 4px;
+        stroke-opacity  : 0.5;
+        fill            : transparent;
+      }
+
+      rect.cell-border {
+        stroke: #eee;
+        stroke-width:0.3px;
+      }
+
+      rect.cell-selected {
+        stroke: rgb(51,102,153);
+        stroke-width:0.5px;
+      }
+
+      rect.cell-hover {
+        stroke: #F00;
+        stroke-width:0.3px;
+      }
+
+      text.mono {
+        font-size: 12pt;
+        font-family: Consolas, courier;
+        fill: #686666;
+      }
+
+      text.text-selected {
+        fill: #000;
+      }
+
+      text.text-highlight {
+        fill: #c00;
+      }
+      text.text-hover {
+        fill: #00C;
+      }
+      
+      #tooltip {
+        position: absolute;
+        width: 200px;
+        height: auto;
+        padding: 10px;
+        background-color: white;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+      }
+
+      #tooltip.hidden {
+        display: none;
+      }
+
+      #tooltip p {
+        margin: 0;
+        font-family: sans-serif;
+        font-size: 12px;
+        line-height: 20px;
+      }
 
 </style>
 
@@ -185,28 +452,600 @@
 </table></div>
 
 
-<div id="dynamic_heatmap_button" class="button_click Section_button"><strong>Heatmap</strong></div>
-<div id="dynamic_heatmap" style="display:none" class="div_chart">
-<div class="tab link_tab">
-  <p class="p_link_tab"><a target="_blank" href='--heatmap_link--'>Link</a></p> <!-- The link is inserted in the perl-script -->
+
+
+<table style="display:block;clear:both;">
+  <tbody>
+    <tr>
+      <td>
+        <img class="icon" src="matrix-enrichment_icons/heatmap_icon.png" height="60", width="auto">
+      </td>
+      <td>
+        <div id="dynamic_heatmap_button" class="button_click Section_button"><strong>Heatmap</strong></div>
+        <div id="dynamic_heatmap" style="display:none;clear:both;position:relative;float:left;"> 
+            <div id="header">
+            <div><h3 style="text-align:center">maxNWD of motif per sequence</h3></div>
+              <ul>
+                <li type="square">The rows of this heatmap represent the <strong>Motifs</strong>, whereas the columns represent the <strong>sequences</strong> where the enrichment was measured.
+                </li>
+              <p>
+                <h3>Dynamic Features</h3>
+                  <ol>
+                    <li type="square">Click on each column label to sort its values (increasing/decreasing).</li>
+                    <li type="square">Click on each row label to sort its values (increasing/decreasing).</li>
+                    <li type="square">Pointing one cell will display the maxNWD corresponding to a motif in a particular set of sequences.</li>
+                    <li type="square">Click on the 'Order' button to reorder the heatmap to its original configuration.</li>
+                  </ol>
+              </p>
+              </ul>
+            </div>
+            
+            <div id="tooltip" class="hidden">
+              <p><span id="value"></p>
+            </div>
+
+            <div  style="display:block; clear:both;position:relative;float:left;">
+              Order:
+              <select id="order">
+                <option value="Default">Default</option>
+              </select>
+            </div>
+            <div id="heatmap" style='overflow:auto; width:1000px; height:--body--px;float:left;clear:both'></div>
+              <script type="text/javascript">
+
+
+var margin = { top: --left--, right: 500, bottom: --left--, left: --left-- },
+  cellSize= --cell_size--;
+  col_number= --c_numb--;
+  row_number= --r_numb--;
+  width = cellSize*col_number, // - margin.left - margin.right,
+  height = cellSize*row_number , // - margin.top - margin.bottom,
+  //gridSize = Math.floor(width / 24),
+  legendElementWidth = cellSize*0.5,
+  colorBuckets = 21,
+
+colors = [--gradient--],
+
+colors_rev = [--gradient_rev--],
+
+  // Order of the clusters
+  hcrow = [--row_order_default--],
+
+ // Order of the collections
+  hccol = [--col_order_default-- ], // change to gene name or probe id
+
+  rowLabel = [--row_names--],
+
+  colLabel = [--col_names--]; // 
+
+d3.tsv("--file--",
+function(d) {
+  return {
+    row:   +d.Row, 
+    col:   +d.Col, 
+    value: +d.Value
+  };
+},
+function(error, data) {
+  var colorScale = d3.scale.threshold()
+      .domain([--domain--])
+      .range(colors);
+
+  var svg = d3.select("#heatmap").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+      ;
+  var rowSortOrder=false;
+  var colSortOrder=false;
+  var rowLabels = svg.append("g")
+      .selectAll(".rowLabelg")
+      .data(rowLabel)
+      .enter()
+      .append("text")
+      .text(function (d) { return d; })
+      .attr("x", 0)
+      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      .style("text-anchor", "end")
+      .attr("transform", "translate(-6," + cellSize / 1.5 + ")")
+      .attr("class", function (d,i) { return "rowLabel mono r"+i;} )
+      .on("mouseover", function(d) {d3.select(this).classed("text-hover",true);})
+      .on("mouseout" , function(d) {d3.select(this).classed("text-hover",false);})
+      .on("click", function(d,i) {rowSortOrder=!rowSortOrder; sortbylabel("r",i,rowSortOrder);d3.select("#order").property("selectedIndex", 4).node().focus();;})
+      ;
+      
+var logo_path = [--logo_path--];
+var curves_path = [--curves_path--];
+var pic = svg.selectAll(".logo")
+      .data(curves_path)
+      .enter()
+      .append("a")
+      .attr("xlink:href", function (d) { return d; })
+      .attr("target", "_blank")
+      .append("image")
+      .data(logo_path)
+      .attr("xlink:href", function (d) { return d; })  
+      .attr("width", 125)
+      .attr("height", (cellSize-5))
+      .attr("x", width + 20 )  
+      .attr("y", function (d, i) { return (hcrow.indexOf(i+1) * cellSize)+5; }) 
+      .attr("cursor", "pointer") 
+      .attr("preserveAspectRatio", "none");
+
+  var colLabels = svg.append("g")
+      .selectAll(".colLabelg")
+      .data(colLabel)
+      .enter()
+      .append("text")
+      .text(function (d) { return d; })
+      .attr("x", 0)
+      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
+      .style("text-anchor", "left")
+      .attr("transform", "translate("+cellSize/2 + ",-6) rotate (-90)")
+      .attr("class",  function (d,i) { return "colLabel mono c"+i;} )
+      .on("mouseover", function(d) {d3.select(this).classed("text-hover",true);})
+      .on("mouseout" , function(d) {d3.select(this).classed("text-hover",false);})
+      .on("click", function(d,i) {colSortOrder=!colSortOrder;  sortbylabel("c",i,colSortOrder);d3.select("#order").property("selectedIndex", 4).node().focus();;})
+      ;
+
+  var heatMap = svg.append("g").attr("class","g3")
+        .selectAll(".cellg")
+        .data(data,function(d){return d.row+":"+d.col;})
+        .enter()
+        .append("rect")
+        .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+        .attr("y", function(d) { return hcrow.indexOf(d.row) * cellSize; })
+        .attr("class", function(d){return "cell cell-border cr"+(d.row-1)+" cc"+(d.col-1);})
+        .attr("width", cellSize)
+        .attr("height", cellSize)
+        .style("fill", function(d) { return colorScale(d.value); })
+        /* .on("click", function(d) {
+               var rowtext=d3.select(".r"+(d.row-1));
+               if(rowtext.classed("text-selected")==false){
+                   rowtext.classed("text-selected",true);
+               }else{
+                   rowtext.classed("text-selected",false);
+               }
+        })*/
+        .on("mouseover", function(d){
+               //highlight text
+               d3.select(this).classed("cell-hover",true);
+               d3.selectAll(".rowLabel").classed("text-highlight",function(r,ri){ return ri==(d.row-1);});
+               d3.selectAll(".colLabel").classed("text-highlight",function(c,ci){ return ci==(d.col-1);});
+
+               //Update the tooltip position and value
+               d3.select("#tooltip")
+                 .style("left", (d3.event.pageX+10) + "px")
+                 .style("top", (d3.event.pageY-10) + "px")
+                 .select("#value")
+                 .text("Sequence Set: " + colLabel[d.col-1] + " Motif: " + rowLabel[d.row-1] + " maxNWD: " + d.value)
+               ;
+               //Show the tooltip
+               d3.select("#tooltip").classed("hidden", false);
+        })
+        .on("mouseout", function(){
+               d3.select(this).classed("cell-hover",false);
+               d3.selectAll(".rowLabel").classed("text-highlight",false);
+               d3.selectAll(".colLabel").classed("text-highlight",false);
+               d3.select("#tooltip").classed("hidden", true);
+        })
+        ;
+
+  var legend = svg.selectAll(".legend")
+      .data([--data_legend--])
+      .enter().append("g")
+      .attr("class", "legend"); 
+
+  legend.append("rect")
+    .attr("x", width + 200)
+    .attr("y", function(d, i) { return legendElementWidth * i - cellSize; })
+    .attr("width", cellSize)
+    .attr("height", legendElementWidth)
+    .style("fill", function(d, i) { return colors_rev[i]; });
+
+  legend.append("text")
+    .attr("class", "mono")
+    .text(function(d) { return d; })
+    .attr("width", legendElementWidth)
+    .attr("x", width + 250)
+    .attr("y", function(d, i) { return legendElementWidth * (i - 1); })
+
+  svg.append("text")
+    .attr({
+	'font-size': 12,
+	'x': width + 200,
+	'y': -40
+    })
+    .text("maxNWD");
+
+
+// Change ordering of cells
+
+  function sortbylabel(rORc,i,sortOrder){
+       var t = svg.transition().duration(1500);
+       var log2r=[];
+       var sorted; // sorted is zero-based index
+       d3.selectAll(".c"+rORc+i)
+         .filter(function(ce){
+            log2r.push(ce.value);
+          })
+       ;
+       if(rORc=="r"){ // sort log2ratio of a gene
+         sorted=d3.range(col_number).sort(function(a,b){ if(sortOrder){ return log2r[b]-log2r[a];}else{ return log2r[a]-log2r[b];}});
+         t.selectAll(".cell")
+           .attr("x", function(d) { return sorted.indexOf(d.col-1) * cellSize; })
+           ;
+         t.selectAll(".colLabel")
+          .attr("y", function (d, i) { return sorted.indexOf(i) * cellSize; })
+         ;
+       }else{ // sort log2ratio of a contrast
+         sorted=d3.range(row_number).sort(function(a,b){if(sortOrder){ return log2r[b]-log2r[a];}else{ return log2r[a]-log2r[b];}});
+         t.selectAll(".cell")
+           .attr("y", function(d) { return sorted.indexOf(d.row-1) * cellSize; })
+           ;
+         t.selectAll(".rowLabel")
+          .attr("y", function (d, i) { return sorted.indexOf(i) * cellSize; })
+         ;
+         t.selectAll("image")
+          .attr("y", function (d, i) { return sorted.indexOf(i) * cellSize; })
+         ;
+       }
+  }
+
+  d3.select("#order").on("change",function(){
+    order(this.value);
+  });
+
+  function order(value){
+
+   if(value=="Default"){
+    var t = svg.transition().duration(1500);
+    t.selectAll(".cell")
+      .attr("x", function(d) { return hccol.indexOf(d.col) * cellSize; })
+      .attr("y", function(d) { return hcrow.indexOf(d.row) * cellSize; })
+      ;
+
+    t.selectAll(".rowLabel")
+      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      ;
+
+    t.selectAll(".colLabel")
+      .attr("y", function (d, i) { return hccol.indexOf(i+1) * cellSize; })
+      ;
+    t.selectAll("image")
+      .attr("y", function (d, i) { return hcrow.indexOf(i+1) * cellSize; })
+      ;
+   } 
+  }
+  //
+  var sa=d3.select(".g3")
+      .on("mousedown", function() {
+          if( !d3.event.altKey) {
+             d3.selectAll(".cell-selected").classed("cell-selected",false);
+             d3.selectAll(".rowLabel").classed("text-selected",false);
+             d3.selectAll(".colLabel").classed("text-selected",false);
+          }
+         var p = d3.mouse(this);
+         sa.append("rect")
+         .attr({
+             rx      : 0,
+             ry      : 0,
+             class   : "selection",
+             x       : p[0],
+             y       : p[1],
+             width   : 1,
+             height  : 1
+         })
+      })
+      .on("mousemove", function() {
+         var s = sa.select("rect.selection");
+
+         if(!s.empty()) {
+             var p = d3.mouse(this),
+                 d = {
+                     x       : parseInt(s.attr("x"), 10),
+                     y       : parseInt(s.attr("y"), 10),
+                     width   : parseInt(s.attr("width"), 10),
+                     height  : parseInt(s.attr("height"), 10)
+                 },
+                 move = {
+                     x : p[0] - d.x,
+                     y : p[1] - d.y
+                 }
+             ;
+
+             if(move.x < 1 || (move.x*2<d.width)) {
+                 d.x = p[0];
+                 d.width -= move.x;
+             } else {
+                 d.width = move.x;
+             }
+
+             if(move.y < 1 || (move.y*2<d.height)) {
+                 d.y = p[1];
+                 d.height -= move.y;
+             } else {
+                 d.height = move.y;
+             }
+             s.attr(d);
+
+                 // deselect all temporary selected state objects
+             d3.selectAll('.cell-selection.cell-selected').classed("cell-selected", false);
+             d3.selectAll(".text-selection.text-selected").classed("text-selected",false);
+
+             d3.selectAll('.cell').filter(function(cell_d, i) {
+                 if(
+                     !d3.select(this).classed("cell-selected") &&
+                         // inner circle inside selection frame
+                     (this.x.baseVal.value)+cellSize >= d.x && (this.x.baseVal.value)<=d.x+d.width &&
+                     (this.y.baseVal.value)+cellSize >= d.y && (this.y.baseVal.value)<=d.y+d.height
+                 ) {
+
+                     d3.select(this)
+                     .classed("cell-selection", true)
+                     .classed("cell-selected", true);
+
+                     d3.select(".r"+(cell_d.row-1))
+                     .classed("text-selection",true)
+                     .classed("text-selected",true);
+
+                     d3.select(".c"+(cell_d.col-1))
+                     .classed("text-selection",true)
+                     .classed("text-selected",true);
+                 }
+             });
+         }
+      })
+      .on("mouseup", function() {
+            // remove selection frame
+         sa.selectAll("rect.selection").remove();
+
+             // remove temporary selection marker class
+         d3.selectAll('.cell-selection').classed("cell-selection", false);
+         d3.selectAll(".text-selection").classed("text-selection",false);
+      })
+      .on("mouseout", function() {
+         if(d3.event.relatedTarget.tagName=='html') {
+                 // remove selection frame
+             sa.selectAll("rect.selection").remove();
+                 // remove temporary selection marker class
+             d3.selectAll('.cell-selection').classed("cell-selection", false);
+             d3.selectAll(".rowLabel").classed("text-selected",false);
+             d3.selectAll(".colLabel").classed("text-selected",false);
+         }
+      })
+      ;
+});
+
+</script>
+            </div> 
+      </td>  
+    </tr>
+    <tr>
+      <td>
+        <img class="icon" src="matrix-enrichment_icons/line_icon.png" height="60", width="auto">
+      </td>
+      <td>
+        <div id="occ_profiles_button" class="button_click Section_button"><strong>OCC significance profiles</strong></div>
+        <div id="occ_profiles" style="display:none;clear:both;position:relative;float:left;">
+
+          <div id="Profile_header"> 
+
+   <div><h2 style="text-align:center">Occurrence Probability</h2></div> 
+   <ul> 
+      <li type="square">The plot shows the Occurrence Probability Curves, that is the probability of the number of matches in the input sequence.</li>
+      <li type="square">For each matrix and each score value, calculate the statistical significance of the number of matches. This allows to select the score associated with te maximal significance, on the basis of the matrix-specific distribution, rather than by selecting some a priori threshold.</li>
+   </ul> 
+   <p>
+      <ul> <h3>Dynamic Features</h3> 
+         <li type="square">Click on each name to display/hide each profile individually.</li> 
+         <li type="square">Pointing to each profile displays its <b>ID</b>, <b>Motif name</b>, <b>Sequence</b> and <b>Motif Logo</b> in both orientation.</li> 
+         <li type="square">Click on the buttons to Show/Hide all the profiles.</li> 
+      </ul> 
+   </p>  
+
 </div> 
-</div> <!-- End of section -->
+   <div  style="display:block; clear:both;position:relative;float:left;">
+      <button class='small button_chart' id='show_all_button' onclick='show_all();'>Show All Profiles</button>
+      <button class='small button_chart' id='hide_all_button' onclick='hide_all();'>Hide All Profiles</button>
+<!-- <button class='small button_chart' onclick='search_motifs();'><b>Search:</b><div><input style="height:20px;margin:5px;" type="search" value='' id="search_motifs" /></div></button> -->
+   </div>
+   <div id="chart" class="div_chart_sp"></div>
 
 
-<div id="occ_profiles_button" class="button_click Section_button"><strong>OCC significance profiles</strong></div>
-<div id="occ_profiles" style="display:none" class="div_chart">
-<div class="tab link_tab"> 
-  <p class="p_link_tab"><a target="_blank" href='--occ_profiles--'>Link</a></p> <!-- The link is inserted in the perl-script -->
-</div> 
-</div> <!-- End of section -->
+<script>
 
+var chart = c3.generate({
+    data: {
+        xs: {
+          --xs--
+        },
+        columns: [
+          --x_x--
+          --y_y--
+        ],
+            type: 'line',
+        names: {
+          --names--
+        },
+    },
+
+    subchart: {
+        show: false
+    },
+
+    zoom: {
+        enabled: false
+    },
+
+
+    size: {
+        height: --chart_h--,
+        width: 1275
+    },
+
+    grid: {
+        x: {
+            show: true
+        },
+        y: {
+            show: true
+        }
+    },
+
+    legend: {
+        position: 'bottom'
+    },
+
+    padding: {
+        top: 0,
+        right: 100,
+        bottom: 15,
+        left: 100,
+    },
+
+    tooltip: {
+        grouped: false, // Default true
+        contents: tooltip_contents,
+    },
+
+    color: {
+        pattern: [--color_pattern--]
+    },
+
+    point: {
+        show: false
+    },
+
+    axis: {
+        y: {
+            label : {
+                    text: 'Binomial Occurence Significance',
+                    position: 'outer-middle',
+            },
+
+        },
+
+        x: {
+            label: {
+                    text: '-log10(P-value)',
+                    position: 'outer-center',
+            },
+            tick: {
+                    culling: {
+                       max : 7,   
+               },
+                fit: false,
+                multiline: false,
+            }
+        },
+    },
+
+});
+
+
+    var TF_names = new Array();
+--TF_names--
+
+    var pics = new Array();
+--pics--
+
+    var pics_rc = new Array();
+--pics_rc--
+
+    var IDs = new Array();
+--IDs--
+
+    var Names = new Array();
+--names_vector--
+
+    var Seqs = new Array();
+--seqs--
+
+
+function show_all() {
+    chart.show([--all--]);
+}
+
+function hide_all() {
+    chart.hide([--all--]);
+}
+
+Array.prototype.difference = function (x) {
+    return this.filter(function (i) {
+        return !(x.indexOf(i) > -1);
+    });
+};
+
+
+function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
+    var $$ = this, config = $$.config, CLASS = $$.CLASS,
+        titleFormat = config.tooltip_format_title || defaultTitleFormat,
+        nameFormat = config.tooltip_format_name || function (name) { return name; },
+        valueFormat = config.tooltip_format_value || defaultValueFormat,
+        text, i, title_name, title_ID, title_seq, value, name, bgcolor;
+
+
+
+    
+    // You can access all of data like this:
+    console.log($$.data.targets);
+    
+    for (i = 0; i < d.length; i++) {
+        if (! (d[i] && (d[i].value || d[i].value === 0))) { continue; }
+        
+        if (! text) {
+            title_ID = 'Motif ID';
+	    title_name = 'Motif name';
+	    title_seq = 'Sequence';
+            title_logo = 'Logo';
+            title_logo_rc = 'Logo RC';
+            text = "<table class='" + CLASS.tooltip + "'>" + "<tr><th colspan='1'>" + title_ID + "</th><th colspan='1'>" + title_name + "</th><th colspan='1'>" + title_seq + "</th><th colspan='1'>" + title_logo + "</th><th colspan='1'>" + title_logo_rc + "</th></tr>";      
+ }
+
+        name = nameFormat(d[i].name);
+        value = valueFormat(d[i].value, d[i].ratio, d[i].id, d[i].index);
+        bgcolor = $$.levelColor ? $$.levelColor(d[i].value) : color(d[i].id);
+
+        text += "<tr class='" + CLASS.tooltipName + "-" + d[i].id + "'>";
+        text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + name + "</td>";
+        text += "<td>" + Names[d[i].id] + "</td>";
+        text += "<td>" + Seqs[d[i].id] + "</td>";
+        text += "<td><img class='small_logo' src='" + pics[d[i].id] + "' /></td>";
+        text += "<td><img class='small_logo' src='" + pics_rc[d[i].id] + "' /></td>";
+        text += "</tr>";
+    }
+    return text + "</table>";   
+}
+
+
+
+
+</script>
+
+        </div> 
+        </div> <!-- End of section -->
+      </td>
+    </tr>
+  </tbody>
+
+
+
+
+
+
+
+<!--
 
 <div id="differential_heatmap_button" class="button_click Section_button"><strong>Differential analysis</strong></div>
 <div id="differential_heatmap_button" style="display:none" class="div_chart">
 <div class="tab link_tab"> 
-  <p class="p_link_tab"><a target="_blank" href='--diff_heatmap--'>Link</a></p> <!-- The link is inserted in the perl-script -->
+  <p class="p_link_tab"><a target="_blank" href='--diff_heatmap--'>Link</a></p> 
 </div> 
-</div> <!-- End of section -->
+</div> 
+
+-->
 
 
 <!-- Jquery section -->
