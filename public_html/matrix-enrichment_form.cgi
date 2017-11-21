@@ -20,12 +20,13 @@ use RSAT::MatrixReader;
 
 ### Read the CGI query
 $query = new CGI;
-$main::quality=1;
+$main::quality=0; 
 local @supported_input_formats = sort(keys( %RSAT::MatrixReader::supported_input_format));
 local @supported_output_formats = sort(keys( %RSAT::matrix::supported_output_format));
 
 ################################################################
 ### default values for filling the form
+
 $default{demo_descr}="";
 $default{output}="display";
 $default{matrix}="";
@@ -39,6 +40,8 @@ $default{sep_perm2} = "";
 $checked{$default{nwd}} ="";
 $default{tag1} = "sequence_set1";
 $default{tag2} = "sequence_set2";
+$default{tag3} = "sequence_set3";
+$default{tag4} = "sequence_set4";
 $default{pseudo_prior} = "pseudo_prior";
 $default{pseudo_counts}="1";
 $checked{$default{pseudo_prior}} = "CHECKED";
@@ -46,10 +49,9 @@ $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
+$default{organism}="Homo_sapiens_GRCh37";
 #$default{html_title}="";
 $default{markov_order} = "0";
-$default{m_sites}="1";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -69,20 +71,16 @@ foreach $key (keys %default) {
 
 ################################################################
 ### header
-&RSA_header("matrix-quality", "form");
+&RSA_header("matrix-enrichment", "form");
 print "<center>";
-print "Evaluate the quality of a Position-Specific Scoring Matrix (PSSM), by
-    comparing score distributions obtained with this matrix in various
-    sequence sets.</p>\n";
-print "The most classical use of the program is to compare score distributions
-    between <em>positive</em> sequences (e.g. true binding sites for the considered
-    transcription factor) and <em>negative</em> sequences (e.g. intergenic
-    sequences between convergently transcribed genes).<p>\n";
-print "<p>Program developed by <a target='_top' href='http://www.ccg.unam.mx/ccg-OrganicG/personalInfo?idPersona=253'>Alejandra Medina Rivera</a>, \n";
-print " <a target='_top' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</A>,\n";
-print "and <a target='_top' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</A>.</p>\n";
+print "Evaluate the enrichment of a set of motifs in one or several sequence sets. (The web version only allows for four sequence sets)</p>\n";
+print "The most classical use of the program is to indentify transcription factor binding sites that could be enriched or depleted in one or several sequence sets.<p>\n";
+print "<p>Program developed by <a target='_top' href='http://folk.uio.no/jamondra/'>Jaime Castro-Mondragon</a>, \n";
+print " <a target='_top' href='http://www.ibens.ens.fr/spip.php?article94&lang=en'>Samuel Collombet</A>,\n";
+print " <a target='_top' href='http://liigh.unam.mx/amedina/'>Alejandra Medina-Rivera</A>,\n";
+print " <a target='_top' href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A>,\n";
+print "and <a target='_top' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/ '>Jacques van Helden</A>.</p>\n";
 print "</center>\n";
-print "<b>Citation</b>: Medina-Rivera, A., Abreu-Goodger, C., Salgado-Osorio, H., Collado-Vides, J. and van Helden, J. (2010). Empirical and theoretical evaluation of transcription factor binding motifs. Nucleic Acids Res. 2010 Oct 4. [Epub ahead of print] <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/20923783'>[Pubmed 20923783]</a> <a target='_blank' href='http://nar.oxfordjournals.org/content/early/2010/10/04/nar.gkq710.full.pdf'>[Full text]</a>.";
 
 
 ## demo description
@@ -90,7 +88,7 @@ print "<b>Citation</b>: Medina-Rivera, A., Abreu-Goodger, C., Salgado-Osorio, H.
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
-print $query->start_multipart_form(-action=>"matrix-quality.cgi", -onreset=>"resetHandler()");
+print $query->start_multipart_form(-action=>"matrix-enrichment.cgi", -onreset=>"resetHandler()");
 
 
 ################################################################
@@ -107,18 +105,7 @@ print "<fieldset> <legend><b><a class='iframe' href='help.convert-matrix.html#io
 
 &GetMatrix();
 print "<p></p>";
-print $query->checkbox(-name=>'matrix_sites',
-  		       -checked=>$default{m_sites},
-		       -label=>'');
-
-print "&nbsp;Matrix file includes sites";
-print "<p><font color='orange'>Only the first matrix will be taken in acount</font></p>";
-
-print "<\p><b>K fold validation</B>&nbsp;";
-print $query->popup_menu(-name=>'kfold', -id=>'kfold',
-			 -Values=>["none",0,3,4,5,6,7,8,9,10],
-			 -default=>$default{kfold});
-print "&nbsp;"x5, "<font color='orange'><b>Note:</b> validation requires a matrix with binding sites, in a suitable format (e.g. transfac, meme).</font>";
+print "<p><font color='orange'>Only the first 50 matrices will be taken into acount</font></p>";
 
 print "</fieldset><p/>";
 
@@ -130,13 +117,19 @@ print "<fieldset>
 <legend><b><a class='iframe' href='help.formats.html'>2 - Sequences </a></b></legend>";
 
 
-print "<h2> Mandatory Sequence </h2>";
+print "<h2> Mandatory Sequence Set </h2>";
 
 &SeqBoxMQ(1);
 print "<hr>";
 
-print "<h2> Optional Sequence </h2>";
+print "<h2> Optional Sequence Set 1 </h2>";
 &SeqBoxMQ(2);
+
+print "<h2> Optional Sequence Set 2 </h2>";
+&SeqBoxMQ(3);
+
+print "<h2> Optional Sequence Set 3 </h2>";
+&SeqBoxMQ(4);
 
 print "</fieldset><p/>";
 
@@ -173,57 +166,53 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 
-$demo_matrix = "";
-$demo_seq1 = "";
-$demo_seq2 = "";
 
-open(my $fh, "demo_files/matrix_quality_demo_matrix.tf");
+
+open(my $fh, "demo_files/Ballester_etal_elife_2014_4TFs_motifs.tf");
 while(my $row = <$fh>){
     chomp $row;
     $demo_matrix .= $row;
     $demo_matrix .= "\\n";
 }
+close ($fh);
 
-open($fh, "demo_files/matrix_quality_demo_seq1.fa");
-while(my $row = <$fh>){
-    chomp $row;
-    $demo_seq1 .= $row;
-    $demo_seq1 .= "\\n";
-}
+$demo_seq1_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_cebpa_singletons.fa";
+$demo_seq2_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_foxa1_singletons.fa";
+$demo_seq3_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_hnf4a_singletons.fa";
+$demo_seq4_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_hnf6_singletons.fa";
 
-open(my $fh, "demo_files/matrix_quality_demo_seq2.fa");
-while(my $row = <$fh>){
-    chomp $row;
-    $demo_seq2 .= $row;
-    $demo_seq2 .= "\\n";
-}
+$demo_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
+
 
 print '<script>
-function setDemo(demo_matrix, demo_seq1, demo_seq2){
+function setDemo(demo_matrix, demo_seq1_url, demo_seq2_url, demo_seq3_url, demo_seq4_url, demo_bg_url ){
     $("#reset").trigger("click");
     
-    descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will analyse the PSSM of the Transcription Factors LexA and CRP available in RegulonDB. </p> \
-    As first sequence set we will input the obtained sequences from the ChIP-chip experiment (Wade et al. Genes Dev. 2005) of \ transcription factor LexA in Escherichia coli K12 .</p>\
-    As second sequence set we will use the reported CRP binding sites in the Escherichia coli K12 annotated in \RegulonDB. </p>\ In the results you will observe there is an enrichment of LexA binding sites in the LexA ChIP-chip reported sequence set, \ and since LexA does not usually binds in the same sequences as CRP, you will notice there is no enrichment of LexA binding sites in CRP sequences.\ Hence, you will observe a reciprocal behavior of CRP predicted binding sites enrcihments, enriched in CRP reported bindings sequences, and not enriched in LexA ChIP-chip sequences. </p>    </blockquote> \ <p> \.";
+    descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will assess the enrichment of four liver Transcription Factors CEBP-alpha, FOXA1, HNF4 and HNF6, in the reported singleton sites of each TF. </p> \
+   Singleton sequences, are ChIP-seq assayed regions where only one of the four TFs had signal and there was no other TF in a surrounding 300bp window.</p>\
+    These data was published in the Ballestar et al, eLife, 20015 article <a target=\'_top\' href=\'https://www.ncbi.nlm.nih.gov/pubmed/25279814\'>[Pubmed]</A>. </p>    </blockquote> \ <p> \.";
     
     demo_descr.innerHTML = descr;
     demo.value = descr;
 
-    
-    html_title.value = "LexA and CTCF matrices from RegulonDB 2015";
+    html_title.value = "Zoo-ChIP_liver_Transcription_Factors_eLife_2015";
     matrix.value = demo_matrix;
     matrix_format.value = "transfac";
-    kfold.value = "none";
-    tag1.value = "LexA_peaks";
-    sequence1.value = demo_seq1;
-    permutation1.value = 1;
-    
-    tag2.value = "CRP_binding_sites";
-    sequence2.value = demo_seq2;
-    permutation2.value = 1;
 
-    markov_order.value = 1;
-    $("#nwd").prop("checked",true);
+    tag1.value = "CEBP-alpha_singleton_sites";
+    sequence_url1.value  = demo_seq1_url ;
+
+    tag2.value = "FOXA1_singleton_sites";
+    sequence_url2.value = demo_seq2_url ;
+
+    tag3.value = "HNF4_singleton_sites";
+    sequence_url3.value  = demo_seq3_url ;
+
+    tag4.value = "HNF6_singleton_sites";
+    sequence_url4.value  = demo_seq4_url ;
+    
+    $("#url").prop("checked",true);
+    bgmodel_url.value = demo_bg_url ;
     
 }
 function resetHandler(){
@@ -235,11 +224,16 @@ function resetHandler(){
 $demo_markov=1;
 
 print "<td><b>";
-print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1'" . ','. "'$demo_seq2'" .')">DEMO</button>';
+
+#print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1_url'" .',' . "'$demo_seq2_url'" .',' . "'$demo_seq3_url'" .',' . "'$demo_seq4_url'"  .')">DEMO</button>';
+print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1_url'" .',' . "'$demo_seq2_url'" .',' . "'$demo_seq3_url'" .',' . "'$demo_seq4_url'" . ',' ."'$demo_bg_url'" .')">DEMO</button>';
+
+#print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1'" .',' . "'$demo_seq2'" .',' . "'$demo_seq3'" .',' . "'$demo_seq4'" .')">DEMO</button>';
+
 print "</b></td>\n";
 
 
-print "<td><b><a class='iframe' href='help.matrix-quality.html'>MANUAL</A></B></TD>\n";
+print "<td><b><a class='iframe' href='help.matrix-enrichment.html'>MANUAL</A></B></TD>\n";
 print "</tr></table></ul></ul>\n";
 
 print "</FONT>\n";

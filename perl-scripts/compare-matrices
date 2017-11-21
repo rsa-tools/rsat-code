@@ -544,13 +544,13 @@ package main;
     ## Return field not supported by the quick scan mode
     local %quick_forbidden_field = (
     %quick_forbidden_metrics,## forbidden metrics can be asked as return field
-    'matrix_name'=>1,
+    #'matrix_name'=>1,
     'matrix_ac'=>1,
     'pos' => 1,
     'consensus'=>1,
     'graph'=>1,
     'alignments_pairwise'=>1,
-    'alignments_1ton'=>1,
+    #'alignments_1ton'=>1,
     'alignments'=>1,
     'logos'=>1,
     'all'=>1
