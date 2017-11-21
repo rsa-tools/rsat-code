@@ -1020,12 +1020,17 @@ sub Rplot {
 
   print $out_R  $r_instructions;
   close ($out_R);
+<<<<<<< HEAD
   my $rscript_command = $Rscript_path." ".$tmp_r_instructions_file;
 my $log_handle;
 my $error_handle;
 open ($log_handle, ">", "/export/home1/rsat/rsat/public_html/tmp/www-data/2017/10/test.log");  
 open ($error_handle, ">", "/export/home1/rsat/rsat/public_html/tmp/www-data/2017/10/test.error");
 &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $error_handle);
+=======
+  my $rscript_command = $Rscript_path." --vanilla  ".$tmp_r_instructions_file;
+  &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+>>>>>>> a32d044220751f43a81fe7c1c78c3d109bafb4db
   &RSAT::message::Info($rscript_command) if ($main::verbose >= 2);
 }
 
@@ -2475,9 +2480,9 @@ sub ReadArguments {
   
      ### Delegate XY plots to R rather than Perl GD library
     } elsif ($ARGV[$a] =~ /-r_plot/i) {
-      $Rscript_path = &RSAT::server::GetProgramPath("Rscript",0);
+	$Rscript_path = &RSAT::server::GetProgramPath("Rscript");
       unless ($Rscript_path) {
-	&RSAT::message::Warning("Rscript program is not found in the path. Ignoring option -r_plot.");	
+	&RSAT::message::Warning("XYgraph: Rscript program is not found in the path. Ignoring option -r_plot.");	
       } else {
 	$r_plot= 1;
       }
