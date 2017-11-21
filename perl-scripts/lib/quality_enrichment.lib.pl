@@ -206,23 +206,25 @@ sub Draw_NWD{
     $compare_nwd_cmd .= " -numeric  -basename ";
     $compare_nwd_cmd .= " -o ".  $nwd_compare_scores_file . " ";
     &doit($compare_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-    &RSAT::message::Info("Merging NWD files with compare-scores ", $compare_nwd_cmd ) if ($main::verbose >= 0);
+    &RSAT::message::Info("Merging NWD files with compare-scores ", $compare_nwd_cmd ) if ($main::verbose >= 5);
     
     
     my $nwd_xygrpah_file=$nwd_outfile_prefix."_compare-scores.";
-    
-    foreach my $image_format (@image_formats) {
-	my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
-	$XYgraph_nwd_cmd .= " -i ".  $nwd_compare_scores_file ." ";
-	$XYgraph_nwd_cmd .= " -format ". $image_format  ." " ;
-	$XYgraph_nwd_cmd .= " -xcol 1  -ycol ".$ycols;
-	$XYgraph_nwd_cmd .= " -lines -xlog " ;
-	$XYgraph_nwd_cmd .= " -yleg1 'NWD' -xleg1 'log10(Pvalue)' ";
-	$XYgraph_nwd_cmd .= " -legend -pointsize 0 ";
-	$XYgraph_nwd_cmd .= " -o ". $nwd_xygrpah_file.$image_format." ";
-	&doit($XYgraph_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-	&RSAT::message::Info(" Drawing NWD  curves ",  $XYgraph_nwd_cmd) if ($main::verbose >= 0);   
-	
+
+    if ($no_ind_nwd_occ_plot){
+	foreach my $image_format (@image_formats) {
+	    my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
+	    $XYgraph_nwd_cmd .= " -i ".  $nwd_compare_scores_file ." ";
+	    $XYgraph_nwd_cmd .= " -format ". $image_format  ." " ;
+	    $XYgraph_nwd_cmd .= " -xcol 1  -ycol ".$ycols;
+	    $XYgraph_nwd_cmd .= " -lines -xlog " ;
+	    $XYgraph_nwd_cmd .= " -yleg1 'NWD' -xleg1 'log10(Pvalue)' ";
+	    $XYgraph_nwd_cmd .= " -legend -pointsize 0 ";
+	    $XYgraph_nwd_cmd .= " -o ". $nwd_xygrpah_file.$image_format." ";
+	    &doit($XYgraph_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	    &RSAT::message::Info(" Drawing NWD  curves ",  $XYgraph_nwd_cmd) if ($main::verbose >= 5);   
+	    
+	}
     }
     return($nwd_compare_scores_file, $nwd_xygrpah_file )
 	
@@ -250,7 +252,7 @@ sub Draw_OCC{
     $compare_occ_cmd .= " -numeric  -basename ";
     $compare_occ_cmd .= " -o ".  $occ_compare_scores_file . " ";
     &doit($compare_occ_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-    &RSAT::message::Info("Merging OCC files with compare-scores ", $compare_occ_cmd ) if ($main::verbose >= 0);
+    &RSAT::message::Info("Merging OCC files with compare-scores ", $compare_occ_cmd ) if ($main::verbose >= 10);
     
     
     my $occ_xygrpah_file=$occ_outfile_prefix."_compare-scores.";
@@ -266,19 +268,20 @@ sub Draw_OCC{
     #print join ("++",@main::image_formats );
     #die "BOOM";
     
-    
-    foreach my $image_format (@main::image_formats) {
-	my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
-	$XYgraph_occ_cmd .= " -i ".  $occ_compare_scores_file ." ";
-	$XYgraph_occ_cmd .= " -format ". $image_format  ." " ;
-	$XYgraph_occ_cmd .= " -xcol 1  -ycol ".$ycols;
-	$XYgraph_occ_cmd .= " -lines -xlog 10 " ;
-	$XYgraph_occ_cmd .= " -yleg1 'Binomial significance of hit number (OCC)' -xleg1 'log10(Score Pvalue)' ";
-	$XYgraph_occ_cmd .= " -legend -pointsize 0 ";
-	$XYgraph_occ_cmd .= " -hline red 100 -hline violet 0 -ysize 400 -force_lines "; ## Parammeters suggested by Morgane      
-	$XYgraph_occ_cmd .= " -o ". $occ_xygrpah_file.$image_format." ";
+     if ($no_ind_nwd_occ_plot){
+	 foreach my $image_format (@main::image_formats) {
+	     my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
+	     $XYgraph_occ_cmd .= " -i ".  $occ_compare_scores_file ." ";
+	     $XYgraph_occ_cmd .= " -format ". $image_format  ." " ;
+	     $XYgraph_occ_cmd .= " -xcol 1  -ycol ".$ycols;
+	     $XYgraph_occ_cmd .= " -lines -xlog 10 " ;
+	     $XYgraph_occ_cmd .= " -yleg1 'Binomial significance of hit number (OCC)' -xleg1 'log10(Score Pvalue)' ";
+	     $XYgraph_occ_cmd .= " -legend -pointsize 0 ";
+	     $XYgraph_occ_cmd .= " -hline red 100 -hline violet 0 -ysize 400 -force_lines "; ## Parammeters suggested by Morgane      
+	     $XYgraph_occ_cmd .= " -o ". $occ_xygrpah_file.$image_format." ";
 	&doit($XYgraph_occ_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-	&RSAT::message::Info(" Drawing OCC  curves ",  $XYgraph_occ_cmd) if ($main::verbose >= 0);   
+	     &RSAT::message::Info(" Drawing OCC  curves ",  $XYgraph_occ_cmd) if ($main::verbose >= 5);   
+	 }
     }
     return($occ_compare_scores_file, $occ_xygrpah_file )
 	
@@ -394,7 +397,7 @@ sub CompareDistrib {
 
   if ($task{compare}) {
     &RSAT::message::TimeWarn("Comparing score distributions",  $outfile{distrib_compa})
-      if ($main::verbose >= 2);
+      if ($main::verbose >= 5);
     &RSAT::message::Info("\n", "distrib_files", @distrib_files)
       if ($main::verbose >= 2);
 
@@ -413,7 +416,8 @@ sub CompareDistrib {
     $distrib_compa_cmd .= " -files ";
     $distrib_compa_cmd .= join(" ", $outfile{'matrix_theoretical_distrib'}, @distrib_files);
     &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Comparing distribution scores from different files ", $distrib_compa_cmd ) if ($main::verbose >= 5);
+    #<STDIN>;
     
   }
   if ($task{graphs}) {
@@ -483,137 +487,138 @@ sub CompareDistrib {
 
       ################################################################
       ## Draw a ROC curve
-      my $ref_column = 2;
-      if ($roc_ref) {
-	if (defined($file_nb{$roc_ref})) {
-	  $ref_column = 2 + $file_nb{$roc_ref};
-	} else {
-	  if ($roc_ref ne "theor") {
-	    &RSAT::message::Warning($roc_ref, "Invalid reference distribution for the ROC curve: should be one of the input sequence types, or 'theor'.");
-	    $roc_ref = "Forced to use theoretical";
+      if ($draw_roc){
+	  my $ref_column = 2;
+	  if ($roc_ref) {
+	      if (defined($file_nb{$roc_ref})) {
+		  $ref_column = 2 + $file_nb{$roc_ref};
+	      } else {
+		  if ($roc_ref ne "theor") {
+		      &RSAT::message::Warning($roc_ref, "Invalid reference distribution for the ROC curve: should be one of the input sequence types, or 'theor'.");
+		      $roc_ref = "Forced to use theoretical";
+		  }
+	      }
 	  }
-	}
-      }
-
-      $ycols = join ",", 2..(scalar(@distrib_files)+2);
-#      $large_graph_options =~ s/-xsize 800/-xsize 400/;
-      $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
-      $XYgraph_cmd .= " -xcol ".$ref_column;
-      $XYgraph_cmd .= " -ycol ".$ycols;
-      $XYgraph_cmd .= " -ygstep1 0.1 -ygstep2 0.02";
-      # $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-      # $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
-      $XYgraph_cmd .= " -ymax 1 ";
-      $XYgraph_cmd .= " -xmax 1 ";
-      my $roc_file_opt = $large_graph_options.$roc_options." -o ".$outfile{distrib_compa}."_roc.".$image_format;
-      $roc_file_opt .= " -xleg1 'FPR (Reference = ".$roc_ref.")' ";
-      $roc_file_opt .= " -yleg1 'Site Sn + other distributions' ";
-
-      ################################################################
-      ## Draw a ROC curve with non-logarithmic axes
-      ## Beware: this curve is generally not informative, so I inactivate this drawing.
-      ## In case it would appear useful for some purpose, I would add an option "-ROC_nolog"
-      my $ROC_nolog = 0;
-      if ($ROC_nolog) {
-	&doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve graph", $outfile{distrib_compa}."_roc.".$image_format) if ($main::verbose >= 2);
-	print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
-
-	## Generate the icon for the ROC curve
-	unless ($noicon) {
-	  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
-	  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	  &RSAT::message::Info("ROC curve icon", $outfile{distrib_compa}."_roc_small.".$image_format) if ($main::verbose >= 2);
-	}
-      }
-
-
-      ################################################################
-      ## Draw a ROC curve with xlog This is the relevant way to
-      ## display the ROC curve with pattern matching, because we are
-      ## only interested in the low FPR values (< 10-3), which are not
-      ## visible on the non-log representations.
-      $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
-      $roc_file_opt =~ s/_roc/_roc_xlog/;
-     
-      &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xlog.".$image_format) if ($main::verbose >= 2);
-      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
-
-      ## Generate the icon for the ROC curve
-      unless ($noicon) {
-	$icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
-	&doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xlog_small.".$image_format) if ($main::verbose >= 2);
-      }
-
-      ################################################################
-      ## Draw a ROC curve with xylog
-      my $ROC_xylog = 0;
-      if ($ROC_xylog) {
-	$XYgraph_cmd =~ s/XYgraph/XYgraph -ylog 10/;
-	$roc_file_opt =~ s/_roc_xlog/_roc_xylog/;
-	&doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve graph (log XY)", $outfile{distrib_compa}."_roc_xylog.".$image_format) if ($main::verbose >= 2);
-	print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
-
-	## Generate the icon for the ROC curve
-	unless ($noicon) {
-	  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xylog_small.".$image_format;
-	  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	  &RSAT::message::Info("ROC curve icon (log XY)", $outfile{distrib_compa}."_roc_xylog_small.".$image_format) if ($main::verbose >= 2);
-	}
-      }
-
-    
-      unless ($no_cv) {
-	if ($task{theor_cv}) {
-
-	  $outfile{th_distrib_compa} = $matrix_prefix{$matrix_name}."_theoretical_score_distrib_compa";
-
-	  ################################################################
-	  ## Compare the theoretical distributions
-	  my $distrib_compa_cmd = $SCRIPTS."/compare-scores ";
-	  $distrib_compa_cmd .= " -numeric";
-	  $distrib_compa_cmd .= " -sc 4";	# score column for the theoretical distribution
-	  $distrib_compa_cmd .= " -suppress ".$matrix_prefix{$matrix_name}."_";
-	  $distrib_compa_cmd .= " -suppress .tab";
-	  $distrib_compa_cmd .= " -o ".$outfile{th_distrib_compa}.".tab";
-	  $distrib_compa_cmd .= " -files ";
-	  $distrib_compa_cmd .= join(" ", $outfile{'matrix_theoretical_distrib'}, @th_distrib_files);
-	  &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-	  ################################################################
-	  ## draw a graph with the theoretical distributions of partial and complete matrix
-	  ## General options for all the graphs below
-	  $all_graph_options =~ s/$outfile{distrib_compa}/$outfile{th_distrib_compa}/g;
-
-	  ################################################################
-	  ## Draw a graph with all the decreasing cumulative distributions
-	  my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
-	  my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
-	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
-	  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-	  $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
-	  &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	  print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
-
-	  ################################################################
-	  ## Draw a graph with all the decreasing cumulative distributions
-	  ## and a logarithmic Y axis
+	  
+	  $ycols = join ",", 2..(scalar(@distrib_files)+2);
+	  #      $large_graph_options =~ s/-xsize 800/-xsize 400/;
 	  $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
-	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
-	  $XYgraph_cmd .= " -ymax 1 -ylog 10";
-	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-	  $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
-	  &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	  print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
-	}
+	  $XYgraph_cmd .= " -xcol ".$ref_column;
+	  $XYgraph_cmd .= " -ycol ".$ycols;
+	  $XYgraph_cmd .= " -ygstep1 0.1 -ygstep2 0.02";
+	  # $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+	  # $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+	  $XYgraph_cmd .= " -ymax 1 ";
+	  $XYgraph_cmd .= " -xmax 1 ";
+	  my $roc_file_opt = $large_graph_options.$roc_options." -o ".$outfile{distrib_compa}."_roc.".$image_format;
+	  $roc_file_opt .= " -xleg1 'FPR (Reference = ".$roc_ref.")' ";
+	  $roc_file_opt .= " -yleg1 'Site Sn + other distributions' ";
+	  
+	  ################################################################
+	  ## Draw a ROC curve with non-logarithmic axes
+	  ## Beware: this curve is generally not informative, so I inactivate this drawing.
+	  ## In case it would appear useful for some purpose, I would add an option "-ROC_nolog"
+	  my $ROC_nolog = 0;
+	  if ($ROC_nolog) {
+	      &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      &RSAT::message::Info("ROC curve graph", $outfile{distrib_compa}."_roc.".$image_format) if ($main::verbose >= 2);
+	      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
+	      
+	      ## Generate the icon for the ROC curve
+	      unless ($noicon) {
+		  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
+		  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+		  &RSAT::message::Info("ROC curve icon", $outfile{distrib_compa}."_roc_small.".$image_format) if ($main::verbose >= 2);
+	      }
+	  }
+	  
+	  
+	  ################################################################
+	  ## Draw a ROC curve with xlog This is the relevant way to
+	  ## display the ROC curve with pattern matching, because we are
+	  ## only interested in the low FPR values (< 10-3), which are not
+	  ## visible on the non-log representations.
+	  $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
+	  $roc_file_opt =~ s/_roc/_roc_xlog/;
+	  
+	  &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	  &RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xlog.".$image_format) if ($main::verbose >= 2);
+	  print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
+	  
+	  ## Generate the icon for the ROC curve
+	  unless ($noicon) {
+	      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
+	      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      &RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xlog_small.".$image_format) if ($main::verbose >= 2);
+	  }
+	  
+	  ################################################################
+	  ## Draw a ROC curve with xylog
+	  my $ROC_xylog = 0;
+	  if ($ROC_xylog) {
+	      $XYgraph_cmd =~ s/XYgraph/XYgraph -ylog 10/;
+	      $roc_file_opt =~ s/_roc_xlog/_roc_xylog/;
+	      &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      &RSAT::message::Info("ROC curve graph (log XY)", $outfile{distrib_compa}."_roc_xylog.".$image_format) if ($main::verbose >= 2);
+	      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
+	      
+	      ## Generate the icon for the ROC curve
+	      unless ($noicon) {
+		  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xylog_small.".$image_format;
+		  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+		  &RSAT::message::Info("ROC curve icon (log XY)", $outfile{distrib_compa}."_roc_xylog_small.".$image_format) if ($main::verbose >= 2);
+	      }
+	  }
+      }
+      
+      unless ($no_cv) {
+	  if ($task{theor_cv} ||$task{compara}) {
+	      
+	      $outfile{th_distrib_compa} = $matrix_prefix{$matrix_name}."_theoretical_score_distrib_compa";
+
+	      ################################################################
+	      ## Compare the theoretical distributions
+	      my $distrib_compa_cmd = $SCRIPTS."/compare-scores ";
+	      $distrib_compa_cmd .= " -numeric";
+	      $distrib_compa_cmd .= " -sc 4";	# score column for the theoretical distribution
+	      $distrib_compa_cmd .= " -suppress ".$matrix_prefix{$matrix_name}."_";
+	      $distrib_compa_cmd .= " -suppress .tab";
+	      $distrib_compa_cmd .= " -o ".$outfile{th_distrib_compa}.".tab";
+	      $distrib_compa_cmd .= " -files ";
+	      $distrib_compa_cmd .= join(" ", $outfile{'matrix_theoretical_distrib'}, @th_distrib_files);
+	      &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      
+	      ################################################################
+	      ## draw a graph with the theoretical distributions of partial and complete matrix
+	      ## General options for all the graphs below
+	      $all_graph_options =~ s/$outfile{distrib_compa}/$outfile{th_distrib_compa}/g;
+	      
+	      ################################################################
+	      ## Draw a graph with all the decreasing cumulative distributions
+	      my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
+	      my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
+	      $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+	      $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+	      $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+	      $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
+	      &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
+	      
+	      ################################################################
+	      ## Draw a graph with all the decreasing cumulative distributions
+	      ## and a logarithmic Y axis
+	      $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
+	      $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+	      $XYgraph_cmd .= " -ymax 1 -ylog 10";
+	      $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+	      $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
+	      &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
+	  }	  
       }
     }
   }
-
+  
 }
 
 
@@ -640,7 +645,8 @@ sub Calculate_NWD {
     my $case_dist= $nwd_seq_type;
     my $base_dist= "theor";
 
-    &RSAT::message::Info("Calculating NWD between ", $base_dist ," and ",$case_dist , " distributions ")if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Calculating NWD between ", $base_dist ," and ",$case_dist , " distributions ")if ($main::verbose >= 5);   
+
 
     my $case_col;
     my $base_col;
@@ -655,6 +661,7 @@ sub Calculate_NWD {
 
     my %sort_pval;
 
+    ## Read distribution comparison file
     while (<$dist_file>){
 	#print $_ ; <STDIN>;
 	next if (/'^;'/);		# skip comment lines
@@ -664,6 +671,7 @@ sub Calculate_NWD {
 	    $head=0;
 	    #print "header ".$_."\n" ; <STDIN>;
 	    my @head = split/\t+/;
+	    ## Identify column with the correct header matching the base and case sequence sets IDs
 	    foreach my $i (@head) {
 		if ( ($i =~/$base_dist/) && !$base_col ){
 		    $base_col= $j ;
@@ -676,6 +684,8 @@ sub Calculate_NWD {
 	    }
 	    @head2=@head;
 	    shift(@head2);
+
+	    # If nine if the columns matched the case name die on error.
 	    &RSAT::error::FatalError("Please specify an adequate distribution to calculate the NWD\n",
 				     "Select one of the following distributions: ", 
 				     join("\t",@head2)) unless $case_col;
@@ -712,12 +722,12 @@ sub Calculate_NWD {
     my @pvals_list =  (keys(%p_val_score_case),keys(%p_val_score_base));
 
 
-    %hashTemp = map { $_ => 1 } @pvals_list;
-    @pvals_list = sort keys %hashTemp;
+    %hashTemp = map { $_ => 1 } @pvals_list; ## Declare and fill a hash with pvalue as keys
+    @pvals_list = sort keys %hashTemp; ## Sort the keys of this pval hash and restore them in the pval list array
 
     my %hash_print;
     foreach my $pval (sort {$b cmp $a}(@pvals_list)){
-	next unless $p_val_score_case{$pval};
+	next unless $p_val_score_case{$pval}; ## If one of the distributions didn't show the pval skip
 	next unless $p_val_score_base{$pval};
 
 	&RSAT::message::Debug("Intersection of score value on Pval ",$pval) if ($main::verbose >= 10);
@@ -725,19 +735,27 @@ sub Calculate_NWD {
        	my $NWD="";
 	my $case_max_score= &RSAT::stats::max(@{$p_val_score_case{$pval}});
 	my $base_max_score= &RSAT::stats::max(@{$p_val_score_base{$pval}});
-	$NWD = ($case_max_score - $base_max_score) / $m_w ;
+	$NWD = ($case_max_score - $base_max_score) / $m_w ; ## Case max score for the give pvalue minus
+	                                                    ## Base max score for the given pvalue
+	                                                    ## Divided by the matrix-width to correct
 
 	$main::key_diferences_results{$pval}{$matrix_name}=$NWD if ($NWD);
 
 	&RSAT::message::Debug("Score diference ",$matrix_name,"Pval", $pval," $case_max_score - $base_max_score  $m_w " ,$main::key_diferences_results{$pval}{$matrix_name}=$NWD) if ($main::verbose >= 10);
 
-	$hash_print{$pval}=join ("\t",$pval,$base_max_score ,$case_max_score,$NWD)."\n"
+	## Fill hash to print the NWD table
+	$hash_print{$pval}=join ("\t",$pval,$base_max_score ,$case_max_score,$NWD)."\n";
+	    
     }
 
+    ## Sort printing hash and print the content to a text file 
     foreach my $pval ( sort {$sort_pval{$b} <=> $sort_pval{$a}}  keys %sort_pval ){
 	next unless $hash_print{$pval};
 	print $main::out_nwd $hash_print{$pval} ;
     }
+    close $dist_file ;
+    &RSAT::message::TimeWarn(" NWD subroutine done")  if ($main::verbose >= 5);  
+
     return ($outfile{'distrib_nwd'.$nwd_seq_type});
 }
 
@@ -746,7 +764,7 @@ sub Calculate_NWD {
 ################################################################
 ## Calculate OCC
 ################################################################
-## Read matrix quality file and calculate the NWD curve
+## Read matrix quality file and calculate the OCC curve
 
 sub Calculate_OCC { 
     local ($sequence_file, $matrix_file, $matrix_format, $seq_type, $index, @args) = @_; 
@@ -769,10 +787,6 @@ sub Calculate_OCC {
     local $matrix_scan_cmd = "";
     local $decimals_occ=0;
     $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".$main::verbose;
-    #    $matrix_scan_cmd .= " -quick"; ## Run in quick mode if possible
-    #    $matrix_scan_cmd .= " -m ".$matrix_file;
-    #    $matrix_scan_cmd .= " -top_matrices 1";
-    #    $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
     $matrix_scan_cmd .= " -quick "; 
     $matrix_scan_cmd .= " -matrix_format tab"; ## We use tab as matrix format for compatibiliy with matrix-scan-quick
     $matrix_scan_cmd .= " -bg_format inclusive"; ## We use inclusive as bg format for compatibiliy with matrix-scan-quick
@@ -787,10 +801,104 @@ sub Calculate_OCC {
     
     $matrix_scan_cmd .= " > ".  $outfile{'occ_proba_'.$seq_type};
 
-    &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix) if $task{scan};
-    &RSAT::message::Info("Scanning to compute occurence probability for OCC plots", $matrix_scan_cmd) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Before scanning for OCC plots", $matrix_scan_cmd) if ($main::verbose >= 5);
+
+    &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix) if $task{scan} || $task {compare
+};
+    &RSAT::message::TimeWarn("Scanning to compute occurence probability for OCC plots", $matrix_scan_cmd) if ($main::verbose >= 5);
      
     return ($outfile{'occ_proba_'.$seq_type});
   
 }
 
+###############################################################
+## Calculate empirical distributions 
+###############################################################
+
+sub CalculateEmpiricalDistributions{
+    foreach my $seq_type (@local_seq_types) {
+	  &RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type}) if ($main::verbose >= 5);
+	  &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{matrix_tab}, 'tab', $seq_type, 1,  @matrix_scan_options) ;
+	  ## Score sequences with the permuted matrices
+	  if (($seqfile{$seq_type}) &&
+	      (defined($perm_nb{$seq_type})) &&
+	      ($perm_nb{$seq_type} > 0)) {
+
+	      &RSAT::message::Warning("Calculating permuted matrices and their emprical distributions for",$seq_type, "Number of permutations", $perm_nb{$seq_type}) if ($main::verbose >= 5);
+	      
+	      ## Calculate the separate distributions for each permuted matrix
+	      ## (this highlights the variability but the graph is noisy)
+	      for my $i (1..$perm_nb{$seq_type}) {
+		  $perm_suffix = $seq_type."_perm_col_".$i;
+		  if (defined($scanopt{$seq_type})) {
+		      $scanopt{$perm_suffix} = $scanopt{$seq_type};
+		  }
+		  push @perm_distrib_files, &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, $perm_separate_distrib,  @matrix_scan_options) if $task{scan};
+	      }
+	      
+	      ## Compute the distribution for all the permutation tests
+	      
+	      ## Define the output file for the regrouped permutation tests
+	      my $perm_suffix = $seq_type.'_'.$perm_nb{$seq_type}.'perm';
+	      $outfile{$perm_suffix} =  $matrix_prefix{$matrix_name}."_scan_".$perm_suffix."_score_distrib.tab"; push @files_to_index, $perm_suffix;
+	      &RSAT::message::Debug("Adding file to index ",  $perm_suffix, $outfile{$perm_suffix}  ) if ($main::verbose >= 10);
+	      push @distrib_files, $outfile{$perm_suffix}; $file_nb{$perm_suffix} = scalar(@distrib_files);
+	      
+	      ## Run compare-scores to compute the dCDF of the mergeed permutation test
+	      my $merge_cmd = $SCRIPTS."/compare-scores -v 2 ";
+	      $merge_cmd .= " -ic 1 -numeric -sc 2";
+	      $merge_cmd .= " -files ";
+	      $merge_cmd .= join " ", @perm_distrib_files;
+	      my $last_col = scalar(@perm_distrib_files) + 1;
+	      $merge_cmd .= " | ".$SCRIPTS."/row-stats -before -col 2-".$last_col;
+	      &RSAT::message::Debug("Merging permuted distributions", $merge_cmd) if ($main::verbose >= 3);
+	      
+	      ## Compute the cumulative and decreasing cumlative
+	      ## distributions
+	      
+	      my @weights = ();
+	      my @occ = ();
+	      my @cum_occ = ();
+	      my %merged_occ = ();
+	      my $cum_occ = 0;
+	      if ($task{scan}){
+		  open MERGE, "$merge_cmd |";
+		  while (<MERGE>) {
+		      chomp();
+		      next if /^;/;
+		      next if /^#/;
+		      next unless /\S/;
+		      my @fields = split /\t/, $_;
+		      my $weight = $fields[4];
+		      my $occ = $fields[2];
+		      $cum_occ += $occ;
+		      push @weights, $weight;
+		      push @occ, $occ;
+		      push @cum_occ, $cum_occ;
+		  }
+		  close MERGE;
+		  my $total_occ = $cum_occ[$#cum_occ];
+	      
+		  
+		  ## Print the merged distribution
+		  my $merged_distrib = &OpenOutputFile($outfile{$perm_suffix});
+		  print $merged_distrib join ("\t", "#weight", "occ", "cum", "dcum", "dCDF"), "\n";
+		  for my $i (0..$#weights) {
+		      my $dcum_occ = $total_occ - $cum_occ[$i]+$occ[$i];
+		      my $dcdf = $dcum_occ / $total_occ;
+		      print $merged_distrib join ("\t",
+						  $weights[$i],
+						  $occ[$i],
+						  $cum_occ[$i],
+						  $dcum_occ,
+						  sprintf("%7g", $dcdf)
+			  ), "\n";
+		  }
+		  close $merged_distrib;
+		  &RSAT::message::TimeWarn("Exported merged distribution", $outfile{$perm_suffix}) if ($main::verbose >= 10);    
+	      }
+	  }
+      }
+
+
+}
