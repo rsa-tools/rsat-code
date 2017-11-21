@@ -2,6 +2,7 @@
 use CGI;
 
 use LWP::Simple;
+use JSON;
 
 package main;
 require RSAT::OrganismManager;
@@ -292,7 +293,7 @@ sub Print_CGI_Input {
     print "Parameters: $parameters<P><P>\n";
 }
 
-sub RSA_header {
+sub RSA_header {  ### modify by Nga - 2017: demo_descr and menu.php
     my $css_body_class = "form";
     my ($title) = shift;
     $title =~ s/\"//g;
@@ -342,7 +343,6 @@ document.getElementById("demo_descr").innerHTML = txt;
     
     print "<div class='container' id='page-content-wrapper'>";
     
-#    if(!($title =~ 'RSAT home') && !($title =~ 'Publications')) {
     if(!($title =~ 'RSAT home') && !($title =~ "Publications")) {
         print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
     }
@@ -1112,7 +1112,7 @@ sub OrganismPopUpCompara{
 
 ################################################################
 ## Generate the content of the pop-up menu to be displayed for organism selection
-sub OrganismPopUpString {
+sub OrganismPopUpString_old {
   my (@selected_organisms) = @_;
   if (scalar(@selected_organisms) == 0) {
     @selected_organisms = &RSAT::OrganismManager::get_supported_organisms_web();
@@ -1156,6 +1156,69 @@ sub OrganismPopUpString {
 
   $organismPopup .=  "<br>\n";
   return($organismPopup);
+}
+
+###########################
+###
+sub OrganismPopUpString{
+    my (@selected_organisms) = @_;
+    if (scalar(@selected_organisms) == 0) {
+        @selected_organisms = &RSAT::OrganismManager::get_supported_organisms_web();
+    }
+    
+    my $organismPopup = "<div class='ui-widget' style='display:inline'>";
+    $organismPopup .=  "<B>Organism</B>&nbsp;";
+    
+    my @organisms_popup = ();
+    my $hasdefault = 0;
+    
+    foreach my $org (@selected_organisms){
+        my $name = $org;
+        $name =~ s/\_/ /g;
+        if((lc($org) eq lc($default{organism})) || (lc($name) eq lc($default{organism}))){
+           $organismPopup .= "<input id='organism_name' name='organism_name' type='text' class='txtsearchitem' autofocus='autofocus' value='$name'><input id='organism' value='$org' name='organism' type='hidden'>";
+            $hasdefault = 1;
+        }
+    }
+    
+    if($hasdefault == 0){
+        $organismPopup .= "<input id='organism_name' name='organism_name' autofocus='autofocus' placeholder='Enter your organism...' ><input id='organism' name='organism' type='hidden'><div id='tip' style='display:none'></div>";
+    }
+    
+    $organismPopup .= "</div>";
+    
+    print "<script src='/js/autocomplete/js/jquery-ui.min.js'></script>";
+    print '<script type="text/javascript">
+    jQuery(document).ready(function(){
+        $("#organism_name").autocomplete({
+        minLength: 2,
+        source: "getOrganisms.cgi",
+        focus: function(event, ui){
+            $("#organism_name").val(ui.item.label);
+            return false;
+        },
+            select: function(event, ui){
+                $("#organism").val(ui.item.value);
+                return false;
+            }
+        }).autocomplete( "instance" )._renderItem = function(ul, item){
+            if(item.label != "null"){
+                var query = $("#organism_name").val();
+                var re = new RegExp(query, "i", "m");
+                var t = item.label.replace(re, "<span style=\"color:blue\">" + query + "</span>");
+                document.getElementById("tip").style.display = "none";
+                return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
+            }else{
+                $("#tip").html("<span style=\"color:orange\">Your search has no result</span>");
+                document.getElementById("tip").style.display = "block";
+                return false;
+            }
+        };
+       
+        $("#organism_name").attr("autocomplete", "on");
+    });
+    </script>';
+    return $organismPopup;
 }
 
 
@@ -1415,7 +1478,7 @@ sub GetMatrix {
 ## Propose help to find matrices
 unless ($args{nowhere}) {
         print "<br/><br/>";
-        &MotifSelection('ids' => 1);
+    &MotifSelection('ids' => 1); ### modified by Nga
     }
     
   ## Option to upload the matrix file from the client machine
@@ -2214,14 +2277,14 @@ sub GetBackgroundModel {
 ## Display the list of supported background formats and a textbox or
 ## file upload.
 sub DisplayBackgroundFileUpload {
-    unless ($params{title_choose}) {
-      print "<input type='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
-    }
-
-    print "Upload your own background file", "&nbsp;"x5;
+    #unless ($params{title_choose}) {
+    #}
+    print "<b><a class='iframe' href=help.convert-background-model.html>Input your own background file</a></b> &nbsp;";
+   # print "<b>Input your own background file", "&nbsp;"x5;
     print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;<a class='iframe' href='help.convert-background-model.html'>Format</a></b>&nbsp;";
 
-    #### bg format
+
+      #### bg format
     print $query->popup_menu(-name=>'bg_format',
 			     -Values=>[
 				       'oligo-analysis',
@@ -2230,10 +2293,26 @@ sub DisplayBackgroundFileUpload {
 				      ],
 			     -default=>$default{bg_format});
 
+    
+    print "<br/><input type='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
+    print "File Upload", "&nbsp;"x5;
+    
+    
+   
     print $query->filefield(-name=>'upload_bgfile',
 			    -default=>'starting value',
 			    -size=>30,
 			    -maxlength=>200);
+
+    print "&nbsp;"x3;
+     #unless ($params{title_choose}) {
+    print "<br/><input type='radio' NAME='bg_method' id='url' VALUE='file_url' $checked{file_url}>";
+    #}
+    print  "URL of file available on a Web server.<br>\n";
+    print  $query->textfield(-name=>'bgmodel_url', -id => 'bgmodel_url',
+			     -default=>$default{'bgmodel_url'},
+			     -size=>62);
+    print "<br/>\n"
 }
 
 
@@ -2462,6 +2541,8 @@ sub GetMatrixDBchoice {
   return($matrix_db_params, @selected_db);
 }
 
+##########
+### modified by Nga, using select2 javascript library
 sub GetMatrixDBchoice_select2 {
     my (%args) = @_;
     my $matrix_db_params ="";
