@@ -1355,33 +1355,39 @@ sub SeqBoxMQ {
   print "<table ><tr><td>";
  &MultiSequenceChoice("Dataset ".$seq_num, $seq_num);
   print "</td>";
-  print "<td>";
-  print "<br>";
-  print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
-  print $query->popup_menu(-name=>'permutation'.$seq_num, -id=>'permutation'.$seq_num,
-			   -Values=>[0..5],
-			   -default=>$default{perm});
-  print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num, -id=>'sep_perm'.$seq_num,
-				      -checked=>$default{sep_perm1},
-				      -label=>''), "&nbsp;separate permutations";
-  print "<br>\n";
-  print"</td>";
+ 
+  if ($main::quality==1){
+      print "<td>";
+      print "<br>";
+      
+      print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
+      print $query->popup_menu(-name=>'permutation'.$seq_num, -id=>'permutation'.$seq_num,
+			       -Values=>[0..5],
+			       -default=>$default{perm});
+      print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num, -id=>'sep_perm'.$seq_num,
+					  -checked=>$default{sep_perm1},
+					  -label=>''), "&nbsp;separate permutations" ;
+      print "<br>\n";
+      print"</td>";
+  }
+  
   print "<td>";
   print "<BR>\n";
-  print "<B><A class='iframe' HREF='help.convert-matrix.html#permutations'>&nbsp;&nbsp;&nbsp;&nbsp;Tag for this data set</A></b>\n";
+  print "<B><A class='iframe' HREF='help.convert-seq.html#permutations'>&nbsp;&nbsp;&nbsp;&nbsp;Tag for this data set</A></b>\n";
   print $query->textfield(-name=>'tag'.$seq_num, -id=>'tag'.$seq_num,
 			  -default=>$default{'tag'.$seq_num},
 			  -size=>15);
-  #if ($seq_num == 1){
+  if ($main::quality == 1){
       print "<p></p>";
+      
       print $query->checkbox(-name=>'nwd', -id=>'nwd',
-  		       -checked=>$default{nwd},
+			     -checked=>$default{nwd},
 			     -label=>'');
       print "&nbsp;Calculate NWD";
       #print ("<INPUT TYPE='radio' NAME='nwd' VALUE='nwd' $checked{'nwd'}>","Calculate NWD");
-  #}
-  print"</td>";
-  print "</tr></table>";
+  }
+      print"</td>";
+      print "</tr></table>";
 
 }
 
@@ -2271,14 +2277,14 @@ sub GetBackgroundModel {
 ## Display the list of supported background formats and a textbox or
 ## file upload.
 sub DisplayBackgroundFileUpload {
-    unless ($params{title_choose}) {
-      print "<input type='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
-    }
-
-    print "Upload your own background file", "&nbsp;"x5;
+    #unless ($params{title_choose}) {
+    #}
+    print "<b><a class='iframe' href=help.convert-background-model.html>Input your own background file</a></b> &nbsp;";
+   # print "<b>Input your own background file", "&nbsp;"x5;
     print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;<a class='iframe' href='help.convert-background-model.html'>Format</a></b>&nbsp;";
 
-    #### bg format
+
+      #### bg format
     print $query->popup_menu(-name=>'bg_format',
 			     -Values=>[
 				       'oligo-analysis',
@@ -2287,10 +2293,26 @@ sub DisplayBackgroundFileUpload {
 				      ],
 			     -default=>$default{bg_format});
 
+    
+    print "<br/><input type='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
+    print "File Upload", "&nbsp;"x5;
+    
+    
+   
     print $query->filefield(-name=>'upload_bgfile',
 			    -default=>'starting value',
 			    -size=>30,
 			    -maxlength=>200);
+
+    print "&nbsp;"x3;
+     #unless ($params{title_choose}) {
+    print "<br/><input type='radio' NAME='bg_method' id='url' VALUE='file_url' $checked{file_url}>";
+    #}
+    print  "URL of file available on a Web server.<br>\n";
+    print  $query->textfield(-name=>'bgmodel_url', -id => 'bgmodel_url',
+			     -default=>$default{'bgmodel_url'},
+			     -size=>62);
+    print "<br/>\n"
 }
 
 

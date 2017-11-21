@@ -542,7 +542,13 @@ sub _readFromTRANSFACFile {
       ## Start a new matrix (one TRANSFAC file contains several matrices)
     } elsif (/^AC\s*(.*)/) {
       my $accession = &clean_id($1);
-      $current_matrix_nb++;
+      if (defined($args{top}) && ($current_matrix_nb >= $args{top})) {
+	&RSAT::message::Warning("Stopped after the top", $current_matrix_nb, "matrices") 
+	    if ($main::verbose >= 1);
+	last;
+      }
+      $current_matrix_nb++; 
+      # &RSAT::message::Info("Parsing matrix", $current_matrix_nb, $accession) if ($main::verbose >= 10);
       $transfac_consensus = "";
       $matrix = new RSAT::matrix();
 
