@@ -181,43 +181,11 @@ $demo_seq2_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_foxa1
 $demo_seq3_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_hnf4a_singletons.fa";
 $demo_seq4_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_hnf6_singletons.fa";
 
-
-# open($fh, "demo_files/matrix_quality_demo_seq2.fa");
-# while(my $row = <$fh>){
-#     chomp $row;
-#     $demo_seq1 .= $row;
-#     $demo_seq1 .= "\\n";
-# }
-# close ($fh);
-
-# open(my $fh, "demo_files/matrix_quality_demo_seq2.fa");
-# while(my $row = <$fh>){
-#     chomp $row;
-#     $demo_seq2 .= $row;
-#     $demo_seq2 .= "\\n";
-# }
-# close ($fh);
-
-# open($fh, "demo_files/matrix_quality_demo_seq1.fa");
-# while(my $row = <$fh>){
-#     chomp $row;
-#     $demo_seq3 .= $row;
-#     $demo_seq3 .= "\\n";
-# }
-# close ($fh);
-
-# open(my $fh, "demo_files/matrix_quality_demo_seq1.fa");
-# while(my $row = <$fh>){
-#     chomp $row;
-#     $demo_seq4 .= $row;
-#     $demo_seq4 .= "\\n";
-# }
-# close ($fh);
-
+$demo_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
 
 
 print '<script>
-function setDemo(demo_matrix, demo_seq1_url, demo_seq2_url, demo_seq3_url, demo_seq4_url){
+function setDemo(demo_matrix, demo_seq1_url, demo_seq2_url, demo_seq3_url, demo_seq4_url, demo_bg_url ){
     $("#reset").trigger("click");
     
     descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will assess the enrichment of four liver Transcription Factors CEBP-alpha, FOXA1, HNF4 and HNF6, in the reported singleton sites of each TF. </p> \
@@ -243,7 +211,8 @@ function setDemo(demo_matrix, demo_seq1_url, demo_seq2_url, demo_seq3_url, demo_
     tag4.value = "HNF6_singleton_sites";
     sequence_url4.value  = demo_seq4_url ;
     
-    markov_order.value = 1;
+    $("#url").prop("checked",true);
+    bgmodel_url.value = demo_bg_url ;
     
 }
 function resetHandler(){
@@ -256,7 +225,8 @@ $demo_markov=1;
 
 print "<td><b>";
 
-print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1_url'" .',' . "'$demo_seq2_url'" .',' . "'$demo_seq3_url'" .',' . "'$demo_seq4_url'" .')">DEMO</button>';
+#print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1_url'" .',' . "'$demo_seq2_url'" .',' . "'$demo_seq3_url'" .',' . "'$demo_seq4_url'"  .')">DEMO</button>';
+print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1_url'" .',' . "'$demo_seq2_url'" .',' . "'$demo_seq3_url'" .',' . "'$demo_seq4_url'" . ',' ."'$demo_bg_url'" .')">DEMO</button>';
 
 #print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1'" .',' . "'$demo_seq2'" .',' . "'$demo_seq3'" .',' . "'$demo_seq4'" .')">DEMO</button>';
 

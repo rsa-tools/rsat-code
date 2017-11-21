@@ -160,43 +160,64 @@ my $markov_order = $query->param('markov_order');
 ## Background model method
 local $bg_method = $query->param('bg_method');
 if ($bg_method eq "from_matrix") {
-  
+    
 } elsif ($bg_method eq "bgfile") {
-  ## Select pre-computed background file in RSAT genome directory
-  local $organism_name = $query->param("organism");
-  local $noov = "ovlp";
-  local $background_model = $query->param("background");
-  #local $oligo_length = 1;
-  local $oligo_length = $markov_order + 1;
-  $bg_file = &ExpectedFreqFile($organism_name,
-			       $oligo_length, $background_model,
-			       noov=>$noov, str=>"-1str");
-  $parameters .= " -bgfile ".$bg_file.".gz";
-  $parameters .= " -bg_format ".'oligo-analysis';
-
+    ## Select pre-computed background file in RSAT genome directory
+    local $organism_name = $query->param("organism");
+    local $noov = "ovlp";
+    local $background_model = $query->param("background");
+    #local $oligo_length = 1;
+    local $oligo_length = $markov_order + 1;
+    $bg_file = &ExpectedFreqFile($organism_name,
+				 $oligo_length, $background_model,
+				 noov=>$noov, str=>"-1str");
+    $parameters .= " -bgfile ".$bg_file.".gz";
+    $parameters .= " -bg_format ".'oligo-analysis';
+    
 } elsif ($bg_method =~ /upload/i) {
-  ## Upload user-specified background file
-  local $bgfile = $tmp_file_name."_bgfile.txt";
-  local $upload_bgfile = $query->param('upload_bgfile');
-  if ($upload_bgfile) {
-    if ($upload_bgfile =~ /\.gz$/) {
-      $bgfile .= ".gz";
+    ## Upload user-specified background file
+    local $bgfile = $tmp_file_name."_bgfile.txt";
+    local $upload_bgfile = $query->param('upload_bgfile');
+    if ($upload_bgfile) {
+	if ($upload_bgfile =~ /\.gz$/) {
+	    $bgfile .= ".gz";
+	}
+	local $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+	open BGFILE, ">$bgfile" ||
+	    &cgiError("Cannot store background file in temp dir.");
+	while (<$upload_bgfile>) {
+	    print BGFILE;
+	}
+	close BGFILE;
+	$parameters .= " -bgfile $bgfile";
+	$parameters .= " -bg_format ".$query->param('bg_format');
+	
+    } 
+} elsif ($bg_method =~ /url/i) {
+    ## Retrieve user-specified URL for background file
+    my $url = $query->param('bgmodel_url');
+    
+    &RSAT::message::Info("Fetching background from URL ".$url) if ($ENV{rsat_echo} >= 1);
+      my $bgmodel = "";
+    local $bgfile = $tmp_file_name."_bgfile.txt";
+    
+    if (open BGM, ">$bgfile") {
+	$bg = get($url);
+	if ($bg =~ /\S/) {
+	    print BGM $bg;
+	    close BGM;
+	} else {
+	    &RSAT::error::FatalError("No background model could be downloaded from the URL ".$url);
+	}
+	
     }
-    local $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
-    open BGFILE, ">$bgfile" ||
-      &cgiError("Cannot store background file in temp dir.");
-    while (<$upload_bgfile>) {
-      print BGFILE;
-    }
+    
     close BGFILE;
-    $parameters .= " -bgfile $bgfile";
-    $parameters .= " -bg_format ".$query->param('bg_format');
-  } else {
-    &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
-  }
-
+	$parameters .= " -bgfile $bgfile";
+	$parameters .= " -bg_format ".$query->param('bg_format');
+    
 } else {
-  &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
+    &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
 }
 
 ################################################################
@@ -216,7 +237,7 @@ $parameters .= " -o ".$result_dir."/".$file_prefix ." ";
 
 &ReportWebCommand($command." ".$parameters);
 
-$index_file = $tmp_file_name."_synthesis.html";
+$index_file = $tmp_file_name."_report.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-enrichment",  &AlphaDate());
 #&EmailTheResult($command." ". $parameters, $query->param('user_email'), $index_file, title=>$mail_title);
 if ($query->param('output') =~ /display/i) {
