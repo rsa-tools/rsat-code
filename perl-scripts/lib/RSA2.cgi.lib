@@ -1186,8 +1186,7 @@ sub OrganismPopUpString{
     }
     
     $organismPopup .= "</div>";
-    
-    print "<script src='/js/autocomplete/js/jquery-ui.min.js'></script>";
+    print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
     print '<script type="text/javascript">
     jQuery(document).ready(function(){
         $("#organism_name").autocomplete({
