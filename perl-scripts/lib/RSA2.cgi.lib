@@ -1172,13 +1172,11 @@ sub OrganismPopUpString{
     my @organisms_popup = ();
     my $hasdefault = 0;
     
-    foreach my $org (@selected_organisms){
-        my $name = $org;
-        $name =~ s/\_/ /g;
-        if((lc($org) eq lc($default{organism})) || (lc($name) eq lc($default{organism}))){
-           $organismPopup .= "<input id='organism_name' name='organism_name' type='text' class='txtsearchitem' autofocus='autofocus' value='$name'><input id='organism' value='$org' name='organism' type='hidden'>";
-            $hasdefault = 1;
-        }
+    my $name = $default{organism};
+    $name =~ s/\ /_/g;
+    if($default{organism} ~~ @seleted_organisms || $name ~~ @selected_organisms){
+        $organismPopup .= "<input id='organism_name' name='organism_name' type='text' class='txtsearchitem' autofocus='autofocus' value='$default{organism}'><input id='organism' value='$name' name='organism' type='hidden'>";
+        $hasdefault = 1;
     }
     
     if($hasdefault == 0){
@@ -1189,32 +1187,33 @@ sub OrganismPopUpString{
     print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
     print '<script type="text/javascript">
     jQuery(document).ready(function(){
-        $("#organism_name").autocomplete({
-        minLength: 2,
-        source: "getOrganisms.cgi",
-        focus: function(event, ui){
-            $("#organism_name").val(ui.item.label);
-            return false;
-        },
-            select: function(event, ui){
-                $("#organism").val(ui.item.value);
-                return false;
-            }
-        }).autocomplete( "instance" )._renderItem = function(ul, item){
-            if(item.label != "null"){
-                var query = $("#organism_name").val();
-                var re = new RegExp(query, "i", "m");
-                var t = item.label.replace(re, "<span style=\"color:blue\">" + query + "</span>");
-                document.getElementById("tip").style.display = "none";
-                return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
-            }else{
-                $("#tip").html("<span style=\"color:orange\">Your search has no result</span>");
-                document.getElementById("tip").style.display = "inline";
-                return false;
-            }
-        };
-       
-        $("#organism_name").attr("autocomplete", "on");
+            $("#organism_name").autocomplete({
+                minLength: 2,
+                source: "getOrganisms.cgi",
+                focus: function(event, ui){
+                    $("#organism_name").val(ui.item.label);
+                    return false;
+                },
+                    select: function(event, ui){
+                        $("#organism").val(ui.item.value);
+                        return false;
+                    }
+                }).autocomplete( "instance" )._renderItem = function(ul, item){
+                    if(item.label != "null"){
+                        var query = $("#organism_name").val();
+                        var re = new RegExp(query, "i", "m");
+                        var t = item.label.replace(re, "<span style=\"color:blue\">" + query + "</span>");
+                        document.getElementById("tip").style.display = "none";
+                        return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
+                    }else{
+                        $("#tip").html("<span style=\"color:orange\">Your search has no result</span>");
+                        document.getElementById("tip").style.display = "inline";
+                        return false;
+                    }
+                };
+                
+                $("#organism_name").attr("autocomplete", "on");       
+        
     });
     </script>';
     $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
