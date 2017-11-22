@@ -1217,9 +1217,9 @@ sub OrganismPopUpString{
         $("#organism_name").attr("autocomplete", "on");
     });
     </script>';
-
-    $organismPopup .= " <div id='tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i>";
-    $organismPopup .=  "<br>&nbsp;&nbsp;<a href='supported-organisms.cgi' target='_blank'>  List of organisms</a>";
+    $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
+    $organismPopup .= " <div id='tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
+    
     return $organismPopup;
 }
 
