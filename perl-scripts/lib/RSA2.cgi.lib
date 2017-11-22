@@ -1182,10 +1182,9 @@ sub OrganismPopUpString{
     }
     
     if($hasdefault == 0){
-        $organismPopup .= "<input id='organism_name' name='organism_name' autofocus='autofocus' placeholder='Enter your organism...' ><input id='organism' name='organism' type='hidden'>";
+        $organismPopup .= "<input id='organism_name' name='organism_name' autofocus='autofocus' placeholder='Enter your organism...' size='35'><input id='organism' name='organism' type='hidden'>";
     }
     
-    print "<div id='tip' style='display:none'></div>";
     $organismPopup .= "</div>";
     print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
     print '<script type="text/javascript">
@@ -1210,7 +1209,7 @@ sub OrganismPopUpString{
                 return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
             }else{
                 $("#tip").html("<span style=\"color:orange\">Your search has no result</span>");
-                document.getElementById("tip").style.display = "block";
+                document.getElementById("tip").style.display = "inline";
                 return false;
             }
         };
@@ -1218,6 +1217,9 @@ sub OrganismPopUpString{
         $("#organism_name").attr("autocomplete", "on");
     });
     </script>';
+
+    $organismPopup .= " <div id='tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i>";
+    $organismPopup .=  "<br>&nbsp;&nbsp;<a href='supported-organisms.cgi' target='_blank'>  List of organisms</a>";
     return $organismPopup;
 }
 
