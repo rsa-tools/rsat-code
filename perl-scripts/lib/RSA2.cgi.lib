@@ -293,7 +293,7 @@ sub Print_CGI_Input {
     print "Parameters: $parameters<P><P>\n";
 }
 
-sub RSA_header {  ### modify by Nga - 2017: demo_descr and menu.php
+sub RSA_header {
     my $css_body_class = "form";
     my ($title) = shift;
     $title =~ s/\"//g;
@@ -1415,7 +1415,7 @@ sub GetMatrix {
   $args{title}="Input personal collection of motifs" if ($db_choice);
   my $title = $args{title} || "Matrix (or matrices)";
   #print "<a href=''><b>Use your own motifs collection:</b></a><br/>" ;
-  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db'  $status_db_choice >" if ($db_choice);
+  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' $status_db_choice >" if ($db_choice);
   print "<B>", $title, "</B>\n";
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
@@ -1479,7 +1479,7 @@ sub GetMatrix {
 ## Propose help to find matrices
 unless ($args{nowhere}) {
         print "<br/><br/>";
-    &MotifSelection('ids' => 1); ### modified by Nga
+    &MotifSelection('ids' => 1);
     }
     
   ## Option to upload the matrix file from the client machine
@@ -1527,6 +1527,18 @@ sub MotifSelection {
         allowClear: true,
         theme: "classic"
         });
+        
+        if($("#db_choice2")){
+            $("#db_choice2").select2({placeholder: "Select a collection",
+            templateResult: formatState,
+            allowClear: true,
+            theme: "classic"
+            });
+            $("#db_choice2").change(function(){
+                $("#matrix").val("");
+                $("#db_choice").val("").change();
+            });
+        }
  ';
         
     ### if select also the identifiers.
@@ -1562,7 +1574,8 @@ sub MotifSelection {
                 }
                 });
             });
-            
+        
+        
             $("#db_id").change(function(){
                 db_name = $("#db_choice").val();
                 db_id = $("#db_id").val();
@@ -1596,7 +1609,8 @@ sub MotifSelection {
     }
     my $width = ($args{ids} == 1) ? "300px" : "400px";
     my $multiple = ($args{mode} eq 'checkbox') ? 'multiple="multiple"' : '';
-    print " <select id='db_choice' name='db_choice' $multiple style='width:$width'><option></option>";
+    my $select_id = ($args{more} == 1) ? 'db_choice2' : 'db_choice';
+    print " <select id='$select_id' name='$select_id' $multiple style='width:$width'><option></option>";
     ## load the various databases that can be compared against
     &DisplayMatrixDBchoice_select2("mode"=>"radio");
     print '</select>';
@@ -2558,7 +2572,9 @@ sub GetMatrixDBchoice_select2 {
     
     ## Load the file containing the description and path of supported motif databases
     my %matrix_db = &RSAT::server::supported_motif_databases();
-    my @motifs = $query->param("db_choice");
+    my $db_choice_param = ($args{more} == 1) ? "db_choice2" : "db_choice";
+    my @motifs = $query->param($db_choice_param);
+    
     ## Identify the selected matrix databases
     foreach my $db (sort keys %matrix_db) {
         my $db_name = $matrix_db{$db}->{name};
@@ -2576,7 +2592,7 @@ sub GetMatrixDBchoice_select2 {
             
         } elsif ($mode eq "radio") {
             ## Treat single database selection if the DB list was presented with radio box
-            if ($query->param('db_choice') eq $db_name) {
+            if ($query->param($db_choice_param) eq $db_name) {
                 $matrix_db_params .= " -file2 ".$ENV{RSAT}."/public_html/motif_databases/".$file;
                 $matrix_db_params .= " -format2 ".$format;
                 push @selected_db, $db_name;
