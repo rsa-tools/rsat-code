@@ -49,7 +49,7 @@ local $input_format=lc($query->param('matrix_format'));
 ## Get motif set or input file to scan variants
 
 ## MatrixDB selected 
-my ($mat_db_params, @selected_db) = &GetMatrixDBchoice("mode"=>"radio");
+my ($mat_db_params, @selected_db) = &GetMatrixDBchoice_select2("mode"=>"radio", "more"=>1);
 if (scalar(@selected_db) > 0) {
   $mat_db_params=~s/-file2 //;
   $mat_db_params=~s/-format2.+//;  
