@@ -190,6 +190,7 @@ function setDemo(){
     </blockquote>";
     
     demo_descr.innerHTML = descr1;
+    $("input[name=db_choice][value=\'custom_motif_db\']").prop("checked", true).change();
     matrix.value = "' . $demo_matrix . '";
     matrix_format.value = "transfac";
     variants_seqs.value = "' . $demo_var_seq . '";
@@ -280,11 +281,24 @@ sub Panel1 {
 
   
   ## load the various databases that can be compared against
-  #print "<p/>";
-  #print "<b>Select one motif collection</b></p>";
-  #&DisplayMatrixDBchoice("mode"=>"radio");
-  #print "<p/> ";
-
+  print "<p/>";
+  print "<b>Select one motif collection</b></p>";
+  &MotifSelection("mode"=>"radio", "more" => 1);
+  print "<p/> ";
+ 
+  print '<script>
+  $(function(){
+      $("#db_choice2").change(function(){
+          if($("#db_choice2").val() != ""){
+              $("input[name=db_choice][value=\'custom_motif_db\']").prop("checked", false);
+          }
+      });
+      $("input[name=db_choice][value=\'custom_motif_db\']").change(function(){
+          $("#db_choice2").val("").change();
+      });
+  });
+  
+  </script>';
  
   print "</fieldset><p/>";
 
