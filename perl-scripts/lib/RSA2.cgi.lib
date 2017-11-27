@@ -293,6 +293,23 @@ sub Print_CGI_Input {
     print "Parameters: $parameters<P><P>\n";
 }
 
+
+sub display_bioschemas {
+  my $form = $0;
+  my $bioschemas_file = $form;
+  $bioschemas_file =~ s/\.cgi/_bioschemas\.json/;
+#  die $bioschemas_file;
+  # $bioschemas_file = $ENV{RSAT}."/public_html/supported-organisms_bioschemas.json";
+  if (-e $bioschemas_file) {
+    print "\n\n";
+    print '<script type="application/ld+json">', "\n";
+    my $json = `cat $bioschemas_file`;
+    $json =~ s/\$ENV\{rsat_www\}/$ENV{rsat_www}/;
+    print $json, "\n";
+    print '</script>', "\n\n";
+  }
+}
+
 sub RSA_header {
     my $css_body_class = "form";
     my ($title) = shift;
@@ -348,7 +365,8 @@ document.getElementById("demo_descr").innerHTML = txt;
     }
 
     
-&RSAT::server::DetectDeniedIP();
+    &RSAT::server::DetectDeniedIP();
+    &display_bioschemas()
     
 }
 
