@@ -159,7 +159,7 @@ print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
 
 #$demo_matrix_file=$ENV{rsat_www}."/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf";
 $demo_matrix=`cat demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf`;
-$demo_var_seq=`cat ./demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.var-seq`;
+$demo_var_seq=`cat ./demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varseq`;
 
 print "<TD><b>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
