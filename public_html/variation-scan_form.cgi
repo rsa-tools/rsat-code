@@ -176,8 +176,6 @@ while(my $row = <$fh>){
     $demo_var_seq .= "\\n";
 }
 
-$demo_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
-
 
 print "<TD><b>";
 
@@ -199,9 +197,6 @@ function setDemo(){
     $("#bg_method_background").prop("checked", true);
     $("[name=\'background\']").val("upstream-noorf");
     markov_order.value = 2;
-
-    $("#url").prop("checked",true);
-    bgmodel_url.value =   "' . $demo_bg_url . '";
 
 }
 </script>';
