@@ -65,7 +65,7 @@ $large_font_width = 8;
 $large_font_height = 16;
 
 ### Null or NA character ##
-$null_char="<NULL>";
+$null_char="NA";
 
 #### Condition for  highligth lines ####
 $hline=0;
@@ -1020,17 +1020,8 @@ sub Rplot {
 
   print $out_R  $r_instructions;
   close ($out_R);
-<<<<<<< HEAD
-  my $rscript_command = $Rscript_path." ".$tmp_r_instructions_file;
-my $log_handle;
-my $error_handle;
-open ($log_handle, ">", "/export/home1/rsat/rsat/public_html/tmp/www-data/2017/10/test.log");  
-open ($error_handle, ">", "/export/home1/rsat/rsat/public_html/tmp/www-data/2017/10/test.error");
-&doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $error_handle);
-=======
   my $rscript_command = $Rscript_path." --vanilla  ".$tmp_r_instructions_file;
   &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
->>>>>>> a32d044220751f43a81fe7c1c78c3d109bafb4db
   &RSAT::message::Info($rscript_command) if ($main::verbose >= 2);
 }
 
