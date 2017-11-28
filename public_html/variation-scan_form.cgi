@@ -179,7 +179,6 @@ while(my $row = <$fh>){
 $demo_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
 
 
-
 print "<TD><b>";
 
 print '<script>
