@@ -293,7 +293,24 @@ sub Print_CGI_Input {
     print "Parameters: $parameters<P><P>\n";
 }
 
-sub RSA_header {  ### modify by Nga - 2017: demo_descr and menu.php
+
+sub display_bioschemas {
+  my $form = $0;
+  my $bioschemas_file = $form;
+  $bioschemas_file =~ s/\.cgi/_bioschemas\.json/;
+#  die $bioschemas_file;
+  # $bioschemas_file = $ENV{RSAT}."/public_html/supported-organisms_bioschemas.json";
+  if (-e $bioschemas_file) {
+    print "\n\n";
+    print '<script type="application/ld+json">', "\n";
+    my $json = `cat $bioschemas_file`;
+    $json =~ s/\$ENV\{rsat_www\}/$ENV{rsat_www}/;
+    print $json, "\n";
+    print '</script>', "\n\n";
+  }
+}
+
+sub RSA_header {
     my $css_body_class = "form";
     my ($title) = shift;
     $title =~ s/\"//g;
@@ -348,7 +365,8 @@ document.getElementById("demo_descr").innerHTML = txt;
     }
 
     
-&RSAT::server::DetectDeniedIP();
+    &RSAT::server::DetectDeniedIP();
+    &display_bioschemas()
     
 }
 
@@ -1172,52 +1190,53 @@ sub OrganismPopUpString{
     my @organisms_popup = ();
     my $hasdefault = 0;
     
-    foreach my $org (@selected_organisms){
-        my $name = $org;
-        $name =~ s/\_/ /g;
-        if((lc($org) eq lc($default{organism})) || (lc($name) eq lc($default{organism}))){
-           $organismPopup .= "<input id='organism_name' name='organism_name' type='text' class='txtsearchitem' autofocus='autofocus' value='$name'><input id='organism' value='$org' name='organism' type='hidden'>";
-            $hasdefault = 1;
-        }
+    my $name = $default{organism};
+    $name =~ s/\ /_/g;
+    if($default{organism} ~~ @seleted_organisms || $name ~~ @selected_organisms){
+        $organismPopup .= "<input id='organism_name' name='organism_name' type='text' class='txtsearchitem' autofocus='autofocus' value='$default{organism}'><input id='organism' value='$name' name='organism' type='hidden'>";
+        $hasdefault = 1;
     }
     
     if($hasdefault == 0){
-        $organismPopup .= "<input id='organism_name' name='organism_name' autofocus='autofocus' placeholder='Enter your organism...' ><input id='organism' name='organism' type='hidden'>";
+        $organismPopup .= "<input id='organism_name' name='organism_name' autofocus='autofocus' placeholder='Enter your organism...' size='35'><input id='organism' name='organism' type='hidden'>";
     }
     
-    print "<div id='tip' style='display:none'></div>";
     $organismPopup .= "</div>";
     print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
     print '<script type="text/javascript">
     jQuery(document).ready(function(){
-        $("#organism_name").autocomplete({
-        minLength: 2,
-        source: "getOrganisms.cgi",
-        focus: function(event, ui){
-            $("#organism_name").val(ui.item.label);
-            return false;
-        },
-            select: function(event, ui){
-                $("#organism").val(ui.item.value);
-                return false;
-            }
-        }).autocomplete( "instance" )._renderItem = function(ul, item){
-            if(item.label != "null"){
-                var query = $("#organism_name").val();
-                var re = new RegExp(query, "i", "m");
-                var t = item.label.replace(re, "<span style=\"color:blue\">" + query + "</span>");
-                document.getElementById("tip").style.display = "none";
-                return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
-            }else{
-                $("#tip").html("<span style=\"color:orange\">Your search has no result</span>");
-                document.getElementById("tip").style.display = "block";
-                return false;
-            }
-        };
-       
-        $("#organism_name").attr("autocomplete", "on");
+            $("#organism_name").autocomplete({
+                minLength: 2,
+                source: "getOrganisms.cgi",
+                focus: function(event, ui){
+                    $("#organism_name").val(ui.item.label);
+                    return false;
+                },
+                    select: function(event, ui){
+                        $("#organism").val(ui.item.value);
+                        return false;
+                    }
+                }).autocomplete( "instance" )._renderItem = function(ul, item){
+                    if(item.label != "null"){
+                        var query = $("#organism_name").val();
+                        var re = new RegExp(query, "i", "m");
+                        var t = item.label.replace(re, "<span style=\"color:blue\">" + query + "</span>");
+                        document.getElementById("tip").style.display = "none";
+                        return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
+                    }else{
+                        $("#tip").html("<span style=\"color:orange\">Your search has no result</span>");
+                        document.getElementById("tip").style.display = "inline";
+                        return false;
+                    }
+                };
+                
+                $("#organism_name").attr("autocomplete", "on");       
+        
     });
     </script>';
+    $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
+    $organismPopup .= " <div id='tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
+    
     return $organismPopup;
 }
 
@@ -1414,7 +1433,7 @@ sub GetMatrix {
   $args{title}="Input personal collection of motifs" if ($db_choice);
   my $title = $args{title} || "Matrix (or matrices)";
   #print "<a href=''><b>Use your own motifs collection:</b></a><br/>" ;
-  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db'  $status_db_choice >" if ($db_choice);
+  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' $status_db_choice >" if ($db_choice);
   print "<B>", $title, "</B>\n";
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
@@ -1478,7 +1497,7 @@ sub GetMatrix {
 ## Propose help to find matrices
 unless ($args{nowhere}) {
         print "<br/><br/>";
-    &MotifSelection('ids' => 1); ### modified by Nga
+    &MotifSelection('ids' => 1);
     }
     
   ## Option to upload the matrix file from the client machine
@@ -1526,6 +1545,18 @@ sub MotifSelection {
         allowClear: true,
         theme: "classic"
         });
+        
+        if($("#db_choice2")){
+            $("#db_choice2").select2({placeholder: "Select a collection",
+            templateResult: formatState,
+            allowClear: true,
+            theme: "classic"
+            });
+            $("#db_choice2").change(function(){
+                $("#matrix").val("");
+                $("#db_choice").val("").change();
+            });
+        }
  ';
         
     ### if select also the identifiers.
@@ -1561,7 +1592,8 @@ sub MotifSelection {
                 }
                 });
             });
-            
+        
+        
             $("#db_id").change(function(){
                 db_name = $("#db_choice").val();
                 db_id = $("#db_id").val();
@@ -1595,7 +1627,8 @@ sub MotifSelection {
     }
     my $width = ($args{ids} == 1) ? "300px" : "400px";
     my $multiple = ($args{mode} eq 'checkbox') ? 'multiple="multiple"' : '';
-    print " <select id='db_choice' name='db_choice' $multiple style='width:$width'><option></option>";
+    my $select_id = ($args{more} == 1) ? 'db_choice2' : 'db_choice';
+    print " <select id='$select_id' name='$select_id' $multiple style='width:$width'><option></option>";
     ## load the various databases that can be compared against
     &DisplayMatrixDBchoice_select2("mode"=>"radio");
     print '</select>';
@@ -2557,7 +2590,9 @@ sub GetMatrixDBchoice_select2 {
     
     ## Load the file containing the description and path of supported motif databases
     my %matrix_db = &RSAT::server::supported_motif_databases();
-    my @motifs = $query->param("db_choice");
+    my $db_choice_param = ($args{more} == 1) ? "db_choice2" : "db_choice";
+    my @motifs = $query->param($db_choice_param);
+    
     ## Identify the selected matrix databases
     foreach my $db (sort keys %matrix_db) {
         my $db_name = $matrix_db{$db}->{name};
@@ -2575,7 +2610,7 @@ sub GetMatrixDBchoice_select2 {
             
         } elsif ($mode eq "radio") {
             ## Treat single database selection if the DB list was presented with radio box
-            if ($query->param('db_choice') eq $db_name) {
+            if ($query->param($db_choice_param) eq $db_name) {
                 $matrix_db_params .= " -file2 ".$ENV{RSAT}."/public_html/motif_databases/".$file;
                 $matrix_db_params .= " -format2 ".$format;
                 push @selected_db, $db_name;
