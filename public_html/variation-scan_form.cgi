@@ -158,11 +158,7 @@ print $query->start_multipart_form(-action=>"variation-scan_form.cgi");
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
 
-#<<<<<<< HEAD
-#$demo_matrix_file=$ENV{rsat_www}."/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf";
-#$demo_matrix=`cat demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf`;
-#$demo_var_seq=`cat ./demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varseq`;
-#=======
+
 $demo_matrix_file="demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf";
 $demo_matrix = "";
 open(my $fh, $demo_matrix_file);
@@ -184,7 +180,6 @@ while(my $row = <$fh>){
 $demo_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
 
 
-#>>>>>>> c27d303a9cf6b1195808b0b7e507315efe5420b8
 
 print "<TD><b>";
 
@@ -206,9 +201,12 @@ function setDemo(){
     $("#bg_method_background").prop("checked", true);
     $("[name=\'background\']").val("upstream-noorf");
     markov_order.value = 2;
+<<<<<<< HEAD
     $("#url").prop("checked",true);
     bgmodel_url.value =   "' . $demo_bg_url . '";
 
+=======
+>>>>>>> cba3e2fcf583f001e171dd1bca37bf6cdfd1fe3d
 }
 </script>';
 
