@@ -158,7 +158,6 @@ print $query->start_multipart_form(-action=>"variation-scan_form.cgi");
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
 
-
 $demo_matrix_file="demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf";
 $demo_matrix = "";
 open(my $fh, $demo_matrix_file);
@@ -201,12 +200,10 @@ function setDemo(){
     $("#bg_method_background").prop("checked", true);
     $("[name=\'background\']").val("upstream-noorf");
     markov_order.value = 2;
-<<<<<<< HEAD
+
     $("#url").prop("checked",true);
     bgmodel_url.value =   "' . $demo_bg_url . '";
 
-=======
->>>>>>> cba3e2fcf583f001e171dd1bca37bf6cdfd1fe3d
 }
 </script>';
 
