@@ -197,7 +197,6 @@ function setDemo(){
     $("#bg_method_background").prop("checked", true);
     $("[name=\'background\']").val("upstream-noorf");
     markov_order.value = 2;
-
 }
 </script>';
 
