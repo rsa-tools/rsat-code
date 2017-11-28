@@ -75,10 +75,6 @@
           dur="2s"
           repeatCount="indefinite"/>
       </path>
-
       </g>
-    </g>
-    <g transform="matrix(0.469882,0,0,0.469882,84.6326,166.31)">
-        <text x="134.311px" y="286.044px" style="font-family:'Verdana', sans-serif;font-size:29.795px;fill:rgb(255,2,0);">S<tspan x="152.444px 161.95px 177.61px 187.116px 203.736px 217.024px 228.319px 236.559px 242.501px 258.35px 274.009px 290.338px 296.28px 312.899px 329.228px 337.832px 346.436px " y="286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px 286.044px ">tatus: loading...</tspan></text>
     </g>
   </svg>

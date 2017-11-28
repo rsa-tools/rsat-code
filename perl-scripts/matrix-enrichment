@@ -264,6 +264,11 @@ package main;
   ## Read argument values
   &ReadArguments();
 
+  ## Create main output directory if required
+  ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($main::prefix{main});
+  &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 2);
+  &RSAT::util::CheckOutDir($dir{output});
+
   ########################################
   ## Outfiles of Dynamic heatmap + Binomial Sig Curves
   $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
@@ -276,6 +281,9 @@ package main;
   $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
   $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
   $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
+
+    %icons = ();
+  $icons{loading} = &RSAT::util::RelativePath($main::outfile{report}, $dir{output}."/matrix-enrichment_icons/RSAT_loading.svg");
   
   ## HTML report variables
   $param{progressive_synthesis} = 1;
@@ -308,15 +316,6 @@ package main;
   ################################################################
   ## Open main log 
   $outfile{log} = $main::prefix{main}."_log.txt";
-
-  
-  ## Create main output directory if required
-  ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($main::prefix{main});
-  &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 2);
-  &RSAT::util::CheckOutDir($dir{output});
-
-  %icons = ();
-  $icons{loading} = &RSAT::util::RelativePath($main::outfile{report}, $dir{output}."/matrix-enrichment_icons/RSAT_loading.svg");
   
 
   ################################################################
@@ -811,14 +810,6 @@ package main;
       $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
       $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
  
-      # ################################################################
-      # ## Draw the dynamic heatmap with the clustering of the maxNWD
-      # &DynamicHeatmapEnrichment();
-      
-      # ################################################################
-      # ## Draw the Binomial Occ Significance curves 
-      # ## of each TF on each sequence
-      # &DynamicOccProfiles();
   }
  
   if ($task{synthesis}){
@@ -830,7 +821,7 @@ package main;
       ##
       ## Draw the Binomial Occ Significance curves of each TF on each sequence
       &CreateHTMLReport();
-      
+
   }
   
   ## Give the warning about the output prefix
@@ -1534,6 +1525,7 @@ sub CreateHTMLReport {
     my ($template) = &OpenInputFile($main::outfile{report_partial});
     
     ## Open the HTLM report
+    unlink($main::outfile{report});
     my ($syn) = &OpenOutputFile( $main::outfile{report});
     
     my $motif_nb = scalar(@all_matrix_names);
@@ -1546,20 +1538,17 @@ sub CreateHTMLReport {
     ## names and other parameters
     while(<$template>){
 	
-	next if (/^#/); ## Skip header line
-	next if (/^;/); ## Skip comment lines
-	next unless (/\S/); ## Skip empty lines	
+
 	chomp();
 	my $line = $_;
 	
 	## Substitute the Header
 	if($line =~ /--he--/){
 	    
-	    print " 1\n";
 	    $line =~ s/--he--/$head/;
 	}
 	
-	## Substitute the Command section
+	## Substitute the Command section	
 	if($line =~ /--show_command--/){
 	    
 	    ## Print arguments
@@ -1571,28 +1560,40 @@ sub CreateHTMLReport {
 	    print $syn &close_menu_heading();
 	    
 	    $line =~ s/--show_command--//;
-	    print " 2\n";
 	}
+
 	
 	###########################
 	## Fill parameters table
-	$line =~ s/--motif_nb--/$motif_nb/g;
-	$line =~ s/--set_nb--/$set_nb/g;
+	if($line =~ /--motif_nb--/){
+	    $line =~ s/--motif_nb--/$motif_nb/g;
+	}
+	
+	if($line =~ /--set_nb--/){
+	    $line =~ s/--set_nb--/$set_nb/g;
+	}
+
 	
 	############################
 	## maxNWD heatmap section
-	my $heatmap_link = &RSAT::util::RelativePath($main::outfile{report}, $main::outfile{maxNWD_heatmap_html});
-	$line =~ s/--heatmap_link--/$heatmap_link/g;
+	if($line =~ /--heatmap_link--/){
+	    my $heatmap_link = &RSAT::util::RelativePath($main::outfile{report_partial}, $main::outfile{maxNWD_heatmap_html});
+	    $line =~ s/--heatmap_link--/$heatmap_link/g;
+	}
 	
 	############################
 	## maxNWD heatmap section
-	my $occ_profiles_link = &RSAT::util::RelativePath($main::outfile{report}, $main::outfile{binomial_occ_profile});
-	$line =~ s/--occ_profiles--/$occ_profiles_link/g;
+	if($line =~ /--occ_profiles--/){
+	    my $occ_profiles_link = &RSAT::util::RelativePath($main::outfile{report_partial}, $main::outfile{binomial_occ_profile});
+	    $line =~ s/--occ_profiles--/$occ_profiles_link/g;
+	}
 	
 	print $syn $line."\n";
     }
     close($template);
-    close($syn);  
+    close($syn); 
+
+
 }
 
 
