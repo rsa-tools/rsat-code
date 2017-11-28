@@ -81,6 +81,7 @@ UNIX_PACKAGES_CENTOS= \
 	php \
 	glibc.i686 \
 	zlib.i686 \
+	libxml2-devel \
 	gd gd gd-devel php-gd \
 	perl-GD.x86_64 perl-SOAP-WSDL \
 	tetex-latex tetex-doc tetex-fonts \
