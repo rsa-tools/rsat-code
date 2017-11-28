@@ -111,7 +111,8 @@ print "</div></p>\n";
 #&ReadMatrixFromFile() ;
 
 ## Demo description
-print $default{demo_descr1};
+#print $default{demo_descr1};
+print "<div id='demo_descr'></div>";
 
 print $query->start_multipart_form(-action=>"variation-scan.cgi", -onreset=>"resetHandler()");
 
@@ -157,31 +158,61 @@ print $query->start_multipart_form(-action=>"variation-scan_form.cgi");
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
 
+#<<<<<<< HEAD
 #$demo_matrix_file=$ENV{rsat_www}."/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf";
-$demo_matrix=`cat demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf`;
-$demo_var_seq=`cat ./demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varseq`;
+#$demo_matrix=`cat demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf`;
+#$demo_var_seq=`cat ./demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varseq`;
+#=======
+$demo_matrix_file="demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_TFs.tf";
+$demo_matrix = "";
+open(my $fh, $demo_matrix_file);
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_matrix .= $row;
+    $demo_matrix .= "\\n";
+}
+
+$demo_var_file="demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varseq";
+$demo_var_seq = "";
+open(my $fh, $demo_var_file);
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_var_seq .= $row;
+    $demo_var_seq .= "\\n";
+}
+
+$demo_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
+
+
+#>>>>>>> c27d303a9cf6b1195808b0b7e507315efe5420b8
 
 print "<TD><b>";
-print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
-print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'matrix_format',-default=>'transfac');
-print $query->hidden(-name=>'variants_seqs', -default=>$demo_var_seq);
 
-#print $query->hidden(-name=>'db_choice', -default=>'custom_motif_db_url' );
-#print $query->hidden(-name=>'compare_motif_database', -default=>'custom_motif_db' );
-#print $query->hidden(-name=>'custom_motif_db_url', -default=>'on' );
-#print $query->hidden(-name=>'',-default=>'on');
-#print $query->hidden(-name=>'db_choice', -default=>'jaspar_pbm_mouse' );
-#print $query->hidden(-name=>'db_choice' , -default=>'custom_motif_db' ." checked" );
-#print $query->hidden(-name=>'jaspar_core_fungi' , -default=>'on'  );
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    
+    descr1 = "<H4>Comment on the demonstration :</H4>\n \
+    <blockquote class =\'demo\'> \
+    <p>In this demonstration, we use <i>variation-scan<\i> to assess the effect that a genetic variants have on transcription factor binding.</p>\n \
+    <p> The genetic variants used in this example were collected by Weirauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. Motifs correspond to the transcription factores which biniding was reported to be affected by Weirauch, et al.</p>\n \
+    </blockquote>";
+    
+    demo_descr.innerHTML = descr1;
+    $("input[name=db_choice][value=\'custom_motif_db\']").prop("checked", true).change();
+    matrix.value = "' . $demo_matrix . '";
+    matrix_format.value = "transfac";
+    variants_seqs.value = "' . $demo_var_seq . '";
+    $("#bg_method_background").prop("checked", true);
+    $("[name=\'background\']").val("upstream-noorf");
+    markov_order.value = 2;
+    $("#url").prop("checked",true);
+    bgmodel_url.value =   "' . $demo_bg_url . '";
 
-print $query->hidden(-name=>'db_choice', -default=>'custom_motif_text');
-print $query->hidden(-name=>'matrix', -default=>$demo_matrix);
-print $query->hidden(-name=>'bg_method',-default=>'background"');
-print $query->hidden(-name=>'background',-default=>'upstream-noorf');
-print $query->hidden(-name=>'markov_order',-default=>'2');
+}
+</script>';
 
-print $query->submit(-label=>"DEMO");
+print '<button type="button" onclick="setDemo()">DEMO</button>';
 
 print '<script>function resetHandler(){
 $("#db_choice").val("").change();
@@ -264,16 +295,26 @@ sub Panel1 {
   ## load the various databases that can be compared against
   print "<p/>";
   print "<b>Select one motif collection</b></p>";
-  &DisplayMatrixDBchoice("mode"=>"radio");
+  &MotifSelection("mode"=>"radio", "more" => 1);
   print "<p/> ";
-
+ 
+  print '<script>
+  $(function(){
+      $("#db_choice2").change(function(){
+          if($("#db_choice2").val() != ""){
+              $("input[name=db_choice][value=\'custom_motif_db\']").prop("checked", false);
+          }
+      });
+      $("input[name=db_choice][value=\'custom_motif_db\']").change(function(){
+          $("#db_choice2").val("").change();
+      });
+  });
+  
+  </script>';
  
   print "</fieldset><p/>";
 
-  print '
-</div>
-</div>
-<p class="clear"></p>';
+  print '</div><p class="clear"></p>';
 }
 
 ##########################################
@@ -303,12 +344,10 @@ sub Panel2 {
       print $variants_seqChoiceString ;
 
   } else {
-      print $query->textarea(-name=>'variants_seqs',
+      print $query->textarea(-name=>'variants_seqs', -id=>'variants_seqs',
 			     -default=>"",
 			     -rows=>6,
 			     -columns=>65);
-      
-      
       
       print "<br/>";
       print "<BR>Upload variant sequences<BR>\n";
@@ -320,9 +359,7 @@ sub Panel2 {
       print "<BR>\n";
   }
       print "</fieldset><p/>";
-  print '</div>
-</div>
-<p class="clear"></p>';
+  print '</div><p class="clear"></p>';
 }
 
 ##########################################
@@ -416,10 +453,6 @@ print "</fieldset><p/>";
     
     
     print "</fieldset><p/>";
-    
-    print '
-</div></div>';
-    
 }
 
 
