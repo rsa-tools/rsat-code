@@ -160,7 +160,6 @@ package main;
 		    "merge_motifs",
 		    "split_motifs",
 		    "collect_motifs",
-    
             "cluster_motifs",
 #		      "motif_compa",
 		    "scan",
@@ -173,7 +172,6 @@ package main;
   ## Extra tasks are only executed on explicit demand of the user
   @extra_tasks = ("all",
 		  "clean_seq",
-		  #"cluster_motifs",
 		  "meme_bg",
 		  "meme",
 		  "dreme",
@@ -2782,6 +2780,9 @@ sub SynthesisMotifCompa {
     print $syn &open_menu_heading($menu_nb++, "<a name='motif_compa'></a><h3>Motif comparisons</h3>", 0);
     print $syn "\n\n\n<table class='whitebg'>\n";
     
+    ## Word comparisons
+    &SynthesisWordCompa() if ($task{merge_words});
+    
     ## Comparison between discovered motifs
     &SynthesisMotifsVsMotifs();
     
@@ -4267,7 +4268,6 @@ sub CheckArguments {
 
   &RSAT::message::Debug($param{strand}, $param{scan_options}) if ($main::verbose >= 3);
     
-$task{cluster_motifs} = 1;
   ## Modalities of motif comparisons
   if ($task{motif_compa}) {
     $task{merge_motifs} = 1;
