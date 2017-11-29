@@ -127,6 +127,8 @@ package main;
 
   $main::digits = "NA"; ## Digits to be displayed 
 
+  $null_char="NA";
+    
   local $display_min;
   local $display_max;
   local $display_mean;
@@ -900,7 +902,7 @@ sub Rplot {
   if ($rownames) {
     $rownames_arg = "1";
   }
-  $r_instructions .= "input.table <-  read.table(file=in.file, sep='\\t', comment.char=';', row.names=".$rownames_arg.", header=".$header.", na.strings='<NULL>')\n";
+  $r_instructions .= "input.table <-  read.table(file=in.file, sep='\\t', comment.char=';', row.names=".$rownames_arg.", header=".$header.", na.strings='$null_char')\n";
 
   ## Compute min and max value for the heatmap colors
   if (&IsReal($min_val)) {
