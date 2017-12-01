@@ -238,7 +238,8 @@ FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUF
 ## Note that only the first gtf file is considered
 #FASTA_RAW_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX} | grep -v '.gz$$'| head -1`
 #FASTA_RAW_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX}.gz | head -1`
-#FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.genome.fa
+# _OLD is needed for backwards compatibility
+FASTA_RAW_LOCAL_OLD=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.genome.fa
 FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.toplevel.fa
 FASTA_RAW_LOCAL_GZ=${FASTA_RAW_LOCAL}.gz
 #FASTA_MSK_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna_rm.genome.fa
@@ -394,9 +395,11 @@ parse_gtf:
 
 ###############################################################
 ## parse gtf and then install organism
+# ${FASTA_RAW_LOCAL} is symb linked to ${FASTA_RAW_LOCAL_OLD} for compatibility
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
+	@ln -s ${FASTA_RAW_LOCAL} ${FASTA_RAW_LOCAL_OLD}
 	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome
 
 ## Run some test for the GTF parsing result
