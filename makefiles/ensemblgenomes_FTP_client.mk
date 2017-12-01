@@ -399,6 +399,7 @@ parse_gtf:
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
+	@rm -f ${FASTA_RAW_LOCAL_OLD}
 	@ln -s ${FASTA_RAW_LOCAL} ${FASTA_RAW_LOCAL_OLD}
 	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome
 
