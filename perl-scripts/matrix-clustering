@@ -2954,6 +2954,9 @@ sub create_html_radial_tree_file {
     my $line = "";
     my $print = "";
     my $temp_radial_tree = "";
+    my $tree_radium = 0;
+    my $motif_height = 0;
+    my $x_displacement = 0;
     my $json_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_cluster_1.json");
 
     open(RADIAL_TREE, ">".$main::outfile{radial_tree}) || &RSAT::error::FatalError($main::outfile{radial_tree_template}, "Cannot create temporary file for Radial tree");
@@ -2967,6 +2970,64 @@ sub create_html_radial_tree_file {
 	if (/--json_file--/){
 	    $line =~ s/--json_file--/$json_file/g;
 	}
+
+
+	## Set the tree radium according to the number of motifs
+	if (/--radium--/){
+
+	    if($number_of_motifs <= 30){
+		$tree_radium = 175;
+	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
+		$tree_radium = 275;
+	    } elsif ($number_of_motifs >= 100){
+		$tree_radium = 450;
+	    }
+	    
+	    $line =~ s/--radium--/$tree_radium/g;
+	}
+
+	
+	## Set the motif logo height according to the number of motifs
+	if (/--h_motif--/){
+
+	    if($number_of_motifs <= 30){
+		$motif_height = 30;
+	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
+		$motif_height = 20;
+	    } elsif ($number_of_motifs >= 100 && $number_of_motifs < 500){
+		$motif_height = 10;
+	    } elsif ($number_of_motifs >= 500){
+		$motif_height = 5;
+	    }
+	    
+	    $line =~ s/--h_motif--/$motif_height/g;
+	}
+
+
+ 	## Set displacement (x axis) of the logos according to the number of motifs
+	if (/--x_displ--/){
+	    
+	    if($number_of_motifs <= 30){
+		$x_displacement = 75;
+	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
+		$x_displacement = 70;
+	    } elsif ($number_of_motifs >= 100 && $number_of_motifs < 500){
+		$x_displacement = 55;
+	    } elsif ($number_of_motifs >= 500){
+		$x_displacement = 50;
+	    }
+	    
+	    $line =~ s/--x_displ--/$x_displacement/g;
+	}
+
+
+	## Set displacement (x axis) of the logos according to the number of motifs
+	if (/--y_displ--/){
+	    
+	    $y_displacement = ($motif_height/2) + 3;
+	    $line =~ s/--y_displ--/$y_displacement/g;
+	}
+
 
 	### Fix the d3 library path
 	if (/--d3--/) {
