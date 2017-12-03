@@ -65,7 +65,7 @@ $large_font_width = 8;
 $large_font_height = 16;
 
 ### Null or NA character ##
-$null_char="<NULL>";
+$null_char="NA";
 
 #### Condition for  highligth lines ####
 $hline=0;
