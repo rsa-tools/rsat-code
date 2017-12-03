@@ -3072,7 +3072,7 @@ sub Text_end_report {
 	    <li>
 	      <strong>References</strong>
               <ol>
-                 <li> Castro-Mondragon JA et al. <a target="_blank" href="https://oup.silverchair-cdn.com/oup/backfile/Content_public/Journal/nar/PAP/10.1093_nar_gkx314/1/gkx314.pdf?Expires=1497370402&Signature=XofQRKX~0-0C8EeL8V5NIwQEFG1UZDiJgo1BxcfsLQtd93E9TpM10q6FRMUUzdpNZrvsu9wmMU9M-VLanWxzZCK~C1KEFKFYaBo1eLIK68WBHWtN4nV1Jsm4XdJ37QoNsCxiacU-VQ2vTuurLR2NnIE2XZgXz6U3vF38JU~MOp-nGqPt2wUDVFA7KGf17JA9twamWygRatTwh1winZg7j0nzolFYJSzPLwxrNkioVTEyAE3Tx8cOCD~E1m5fRvJ5sfx9~g6It17FPb3WJJQqo4bNNfvicMthjluw6USPqQKHbVwvbLxGe~VUpSh2imFfbFbbyi1wbCyo~BwlyZR1yg__&Key-Pair-Id=APKAIUCZBIA4LVPAVW3Q"> RSAT matrix-clustering: dynamic exploration and redundancy reduction of transcription factor binding motif collections. doi: 10.1093/nar/gkx314</a>; Nucleic Acids Research (2017)</li>
+                 <li> Castro-Mondragon JA et al. <a target="_blank" href="https://academic.oup.com/nar/article/45/13/e119/3862068"> RSAT matrix-clustering: dynamic exploration and redundancy reduction of transcription factor binding motif collections. doi: 10.1093/nar/gkx314</a>; Nucleic Acids Research (2017)</li>
                  <li><strong>Last RSAT release: </strong><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
               </ol>
 	    </li>
@@ -5032,6 +5032,21 @@ sub InsertHeatMap {
 
 
 ############################
+## Insert Heatmap picture
+sub InsertRadialTreeLink {
+
+    my $radial_tree_link = ' 
+        <div id="Radial_Tree_Link_button" class="button_click Section_button"><strong>Radial Tree</strong></div>
+	<div id="Radial_Tree_Link" class="tab" style="width:1025px;padding:0px 0px 20px 0px;margin-top:0px;display:none;">
+		<h2 style="margin:0px"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{radial_tree}).'">Radial Tree </a></h2>
+	</div>
+    ';
+
+    print $syn $radial_tree_link;
+}
+
+
+############################
 ## Insert Heatmap of collections per clusters
 sub InsertHeatmapCollectionbyCluster {
 
@@ -5193,6 +5208,14 @@ $(document).ready(function() {
 $(document).ready(function() {
     $(\'#Logo_Forest_button\').click(function() {
 	$(\'#show_forest\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Logo Forest Link
+$(document).ready(function() {
+    $(\'#Radial_Tree_Link_button\').click(function() {
+	$(\'#Radial_Tree_Link\').slideToggle(\'fast\');
         $(this).toggleClass(\'selected_header_section\');
     }); 
 });
@@ -5765,7 +5788,20 @@ sub Synthesis {
 	&InsertSmallForest();
 
 	print $syn $section_tab_icon_tail;
-    
+
+    ## Insert a link to the radial tree
+    } else {
+
+	my $forest_tab_icon = ' <tr>
+      <td>
+        <img class="icon" src="'.$icons{forest}.'" height="'.$icon_height.'", width="auto">
+      </td>
+      <td>';
+	print $syn $forest_tab_icon;
+	
+	&InsertRadialTreeLink();
+
+	print $syn $section_tab_icon_tail;
     }
 
     
@@ -5859,11 +5895,17 @@ sub Synthesis {
     ## Close the icons table
     my $table_icons_tail = "</tbody></table>";
     print $syn $table_icons_tail;
-    
-    &InsertListOfFiles();
+
+    if ($radial_tree_flag == 0){
+	&InsertListOfFiles();
+    }
 
     &InsertJquery();
 
+    if ($radial_tree_flag == 1){
+	print $syn "</script>\n";
+    }
+    
     &Text_end_report();
     
     ## End of the HTML file
