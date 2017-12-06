@@ -314,7 +314,7 @@ if __name__ == '__main__':
 
 	# Define URL for RSAT services 
 	url =  serverDict[serverValue]
-	print url
+	print(url)
 
 	# Create the client
 	client = Client(url)
@@ -404,7 +404,7 @@ if __name__ == '__main__':
 
 	nameFile = "peak-motifs_results.zip"
 	urlResult=buildZipUrl(result.server)
-	print urlResult
+	print(urlResult)
 
 	#ogFile.write("\n"+urlResult)
 
