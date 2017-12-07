@@ -1205,6 +1205,11 @@ sub OrganismPopUpString{
     print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
     print '<script type="text/javascript">
     jQuery(document).ready(function(){
+        $("#organism_name").keypress(function(event){
+            if(event.keyCode == 13){
+                event.preventDefault();
+            }
+        });
             $("#organism_name").autocomplete({
                 minLength: 2,
                 source: "getOrganisms.cgi",
@@ -3091,8 +3096,7 @@ sub PipingFormForSequence {
       $dyad_background_model .= "\n<INPUT type=\"hidden\" NAME=\"background\" VALUE=\"$background\">";
     }
 
-
-  print qq|
+print qq|
 <HR SIZE = "3" />
 <table class = "nextstep">
 <tr><td colspan = 5><h3>Next step</h3></td></tr>
