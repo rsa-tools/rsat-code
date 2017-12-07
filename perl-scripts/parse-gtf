@@ -346,7 +346,7 @@ package main;
     &RSAT::message::TimeWarn("Getting organism attributes from REST web services") if ($main::verbose >= 2);
     my %organism = ();
     $organism{id} = $organism_name;
-    $organism{source} = "ensemblgenomes";
+    $organism{source} = $gtf_source;
     $organism{taxonomy} = $null;
 
     # try to get taxonomy from eg REST interface
@@ -379,7 +379,9 @@ package main;
 	}
 	$taxonomy .= $sp_name;
 
+    $organism{id} = $taxid;
 	$organism{taxonomy} = $taxonomy;
+
 	if ($taxonomy) {
 	  &RSAT::message::TimeWarn("REST taxonomy:", $taxonomy) if ($main::verbose >= 2);
 	} else {

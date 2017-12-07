@@ -746,9 +746,9 @@ sub UpdateConfig {
     next unless (/\S/);
     if (/^-- field\s+(\d)	taxonomy/) {
       $taxonomy_field = $1;
-    } elsif (/^-- field\s+(\d)	taxif/) {
+    } elsif (/^-- field\s+(\d)	taxif/) { # this is probably 'taxonid' BrunoNov2017
       $taxid_field = $1;
-    } elsif (/^--/) {
+    } elsif (/^--/ || /^;/ || /^#/) { #; are required to parse organism.tab created by parse_gtf
       next;
     } else {
       @fields = split "\t";
@@ -760,11 +760,11 @@ sub UpdateConfig {
       ## Check if taxid is conform (must be a number)
       $taxid = $fields[$taxid_field - 1];
       if ($taxid =~ /^\d+$/) {
-	$supported_organism{$organism_short_name}->{'taxid'} = $taxid;
-	&RSAT::message::Info($organism_short_name, "TAXID", $taxid) if ($main::verbose >= 3);
+	    $supported_organism{$organism_short_name}->{'taxid'} = $taxid;
+	    &RSAT::message::Info($organism_short_name, "TAXID", $taxid) if ($main::verbose >= 3);
       } else {
-	&RSAT::message::Warning($taxid, "Invalid taxid in organism description table",  $organism_table);
-	$taxid = $null;
+	    &RSAT::message::Warning($taxid, "Invalid taxid in organism description table",  $organism_table);
+	    $taxid = $null;
       }
 
       &RSAT::message::Info ("Parsed taxonomy from organism.tab", 
