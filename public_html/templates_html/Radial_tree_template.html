@@ -103,7 +103,7 @@ var w = 2500,
     rotate = 0;
 
 var cluster = d3.layout.cluster()
-    .size([360, 450])
+    .size([360, --radium--])
     .separation(function(a, b) { return (a.parent == b.parent ? 1 : 1); })
     .sort(null);
 
@@ -164,9 +164,9 @@ d3.json("--json_file--", function(json) {
   node.append("image")
 		.attr("xlink:href", function(d) { return d.children ? "" : d.image; }) 
 		.attr("width", function(d) { return (d.size + 2)  * 5; })
-		.attr("height", 5)
-		.attr("x", 50)    
-		.attr("y", -7) 
+		.attr("height", --h_motif--)
+		.attr("x", --x_displ--)    
+		.attr("y", --y-displ--) 
 		.attr("cursor", "default") 
 		.attr("preserveAspectRatio", "none");	
 });
