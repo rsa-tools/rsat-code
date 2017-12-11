@@ -1224,8 +1224,26 @@ sub OrganismPopUpString{
                 }).autocomplete( "instance" )._renderItem = function(ul, item){
                     if(item.label != "null"){
                         var query = $("#organism_name").val();
-                        var re = new RegExp(query, "i", "m");
-                        var t = item.label.replace(re, "<span style=\"color:blue\">" + query + "</span>");
+                        var terms = query.split(" ");
+                        function replacer(match, ...ps){
+                            var res = "";
+                            var str = ps[ps.length - 1];
+                            for(i = 0; i < ps.length - 3; i++){
+                                ind = str.indexOf(ps[i]) + ps[i].length;
+                                ind1 = str.indexOf(ps[i+1]);
+                                res += "<font color=\"blue\">" + ps[i] + "</font>" + str.substring(ind, ind1);
+                            }
+                            ind = str.indexOf(ps[ps.length - 3]) + ps[ps.length-3].length;
+                            res += "<font color=\"blue\">" + ps[ps.length - 3] + "</font>" + str.substring(ind);
+                            return res;
+                        }
+                        var re = "";
+                        for(var i = 0; i < terms.length; i++){
+                            re += "(" + terms[i] + ").*";
+                        }
+                        var reg = new RegExp(re , "i", "m");
+                        var t = item.label.replace(reg, replacer);
+                        
                         document.getElementById("tip").style.display = "none";
                         return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
                     }else{
