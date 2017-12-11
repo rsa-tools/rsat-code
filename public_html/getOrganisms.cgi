@@ -21,13 +21,18 @@ $query = new CGI;
 print "Content-type: application/json; charset=iso-8859-1\n\n";
 
 my $term = $query->param("term");
+my @terms = split(" ", $term);
 my @selected_organisms = &RSAT::OrganismManager::get_supported_organisms_web();
 
 my @organisms_popup = ();
 foreach my $org (@selected_organisms){
     my $name = $org;
     $name =~ s/\_/ /g;
-    if($name =~ /$term/i){
+    my $reg = "";
+    foreach $t (@terms){
+        $reg .= $t . "(.*)";
+    }
+    if($name =~ /$reg/i){
         push @organisms_popup, { "value" => $org, "label" => $name };
     }
 }
