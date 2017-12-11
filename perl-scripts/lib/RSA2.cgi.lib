@@ -1223,7 +1223,7 @@ sub OrganismPopUpString{
                     }
                 }).autocomplete( "instance" )._renderItem = function(ul, item){
                     if(item.label != "null"){
-                        var query = $("#organism_name").val();
+                        var query = $("#organism_name").val().trim();
                         var terms = query.split(" ");
                         function replacer(match, ...ps){
                             var res = "";
@@ -1232,6 +1232,7 @@ sub OrganismPopUpString{
                                 ind = str.indexOf(ps[i]) + ps[i].length;
                                 ind1 = str.indexOf(ps[i+1]);
                                 res += "<font color=\"blue\">" + ps[i] + "</font>" + str.substring(ind, ind1);
+                                
                             }
                             ind = str.indexOf(ps[ps.length - 3]) + ps[ps.length-3].length;
                             res += "<font color=\"blue\">" + ps[ps.length - 3] + "</font>" + str.substring(ind);
