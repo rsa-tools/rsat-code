@@ -244,7 +244,8 @@ function setDemo(demo_sequence){
     $("#bg_level_organism").prop("checked",true);
     bg_window_width.value = 800;
     sequence.value = demo_sequence;
-    $("#organism").val("Saccharomyces_cerevisiae").trigger("chosen:updated");
+    $("#organism").val("Saccharomyces_cerevisiae");
+    $("#organism_name").val("Saccharomyces cerevisiae");
 }
 </script>';
 

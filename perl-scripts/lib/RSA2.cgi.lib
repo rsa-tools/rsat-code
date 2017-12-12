@@ -213,7 +213,7 @@ sub PrintOrthoSelectionSection {
   ### gene queries
   print "<B><A class='iframe' HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
   print "<BR>\n";
-  print $query->textarea(-name=>'queries',
+  print $query->textarea(-name=>'queries', -id=>'queries',
 			 -default=>$default{queries},
 			 -rows=>3,
 			 -columns=>40);
@@ -464,7 +464,7 @@ sub SelectOutput {
     
     ## Display the output choice
     print "<B>Output</B>&nbsp;";
-    print $query->radio_group(-name=>'output',
+    print $query->radio_group(-name=>'output', -id=>'output',
 			      -values=>[@values],
 			      -default=>$default_output);
     print $query->textfield(-name=>'user_email', -id=>'user_email',
@@ -1187,20 +1187,7 @@ sub OrganismPopUpString{
     my $organismPopup = "<div class='ui-widget' style='display:inline'>";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
     
-    my @organisms_popup = ();
-    my $hasdefault = 0;
-    
-    my $name = $default{organism};
-    $name =~ s/\ /_/g;
-    if($default{organism} ~~ @seleted_organisms || $name ~~ @selected_organisms){
-        $organismPopup .= "<input id='organism_name' name='organism_name' type='text' class='txtsearchitem' autofocus='autofocus' value='$default{organism}'><input id='organism' value='$name' name='organism' type='hidden'>";
-        $hasdefault = 1;
-    }
-    
-    if($hasdefault == 0){
-        $organismPopup .= "<input id='organism_name' name='organism_name' autofocus='autofocus' placeholder='Enter your organism...' size='35'><input id='organism' name='organism' type='hidden'>";
-    }
-    
+    $organismPopup .= "<input id='organism_name' name='organism_name' autofocus='autofocus' placeholder='Enter the name of your organism...' size='35'><input id='organism' name='organism' type='hidden'>";
     $organismPopup .= "</div>";
     print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
     print '<script type="text/javascript">
@@ -1210,7 +1197,8 @@ sub OrganismPopUpString{
                 event.preventDefault();
             }
         });
-            $("#organism_name").autocomplete({
+        
+        $("#organism_name").autocomplete({
                 minLength: 2,
                 source: "getOrganisms.cgi",
                 focus: function(event, ui){
@@ -1360,7 +1348,7 @@ sub TaxonPopUpString {
   } else {
     $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
   }
-  $taxonomyPopup .=  "<select name='taxon'>\n";
+  $taxonomyPopup .=  "<select name='taxon' id='taxon'>\n";
   foreach my $taxon (@taxa) {
     my $name = $taxon;
     $label =~ s/_/ /g;

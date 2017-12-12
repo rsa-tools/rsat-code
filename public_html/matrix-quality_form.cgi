@@ -46,7 +46,7 @@ $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
+$default{organism}="Escherichia coli K12";
 #$default{html_title}="";
 $default{markov_order} = "0";
 $default{m_sites}="1";
@@ -198,6 +198,8 @@ while(my $row = <$fh>){
     $demo_seq2 .= "\\n";
 }
 
+my $org = $default{organism};
+$org =~ s/\ /_/g;
 print '<script>
 function setDemo(demo_matrix, demo_seq1, demo_seq2){
     $("#reset").trigger("click");
@@ -225,6 +227,8 @@ function setDemo(demo_matrix, demo_seq1, demo_seq2){
     markov_order.value = 1;
     $("#nwd").prop("checked",true);
     
+    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism").val("' . $org . '");
 }
 function resetHandler(){
     $("#db_choice").val("").change();

@@ -239,24 +239,23 @@ if ($query->param('taxon')) {
 @demo_genes = qw (DAL5 GAP1 MEP1 MEP2 PUT4 MEP3 DAL80);
 $demo_genes = join "\\n", @demo_genes;
 
-
 ### action buttons
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 
-
-
 print $query->end_form;
-
-
 
 print "<TD><B>";
 
+my $org = $default{organism};
+$org =~ s/\ /_/g;
 print "<script>
 function setDemo(demo_genes){
     \$('#reset').trigger('click');
+    \$('#organism_name').val('$default{organism}');
+    \$('#organism').val('$org');
     \$('#gene_selection').val(demo_genes);
     \$('#from').val('-800');
     \$('#to').val('-1');

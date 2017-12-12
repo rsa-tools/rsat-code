@@ -148,9 +148,13 @@ while(my $row = <$fh>){
     $demo_sequence .= $row;
     $demo_sequence .= "\\n";
 }
+my $org = $default{organism};
+$org =~ s/\ /_/g;
 print '<script>
 function setDemo(demo_sequence){
     $("#reset").trigger("click");
+    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism").val("' . $org . '");
     sequence.value = demo_sequence;
     sequence_format.value = "fasta";
     $("#length").val("20");
