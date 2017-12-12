@@ -41,6 +41,7 @@ $query = new CGI;
 ## update log file
 &UpdateLogFile();
 
+
 ################################################################
 ## Output paths
 $command = $ENV{RSAT}."/perl-scripts/matrix-clustering";
@@ -55,50 +56,51 @@ $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = 
 system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 
 ################################################################
-## Command line paramters
+## Command line parameters
 local $parameters .= " -v 1";
 $parameters .= " -max_matrices ".$max_matrices;
 
-################################################################
+############################################
+## Collection Motif 1 (Mandatory)
+############################################
+
 ## Matrix input format
-local $query_matrix_format = lc($query->param('matrix_format'));
-# ($query_matrix_format) = split (/\s+/, $query_matrix_format);
-# $parameters .= " -matrix_format ".$query_matrix_format;
+local $query_matrix_format_1 = lc($query->param('matrix_format1'));
 
-################################################################
 #### Query matrix file
-local $matrix_file = &GetMatrixFile($output_path."/".$output_prefix."_query_matrices.".$query_matrix_format);
+local $matrix_file_1 = &GetMatrixFile($output_path."/".$output_prefix."_query_matrices.".$query_matrix_format_1,1);
 
-################################
 ## Add motif collection label
-local $collection_label = lc($query->param('collection_label'));
-if($collection_label){
-    $collection_label =~ s/\s+/_/g;
+local $collection_1_label = lc($query->param('collection_1_label'));
+if($collection_1_label){
+    $collection_1_label =~ s/\s+/_/g;
 } else {
-    $collection_label = "Collection_1";
+    $collection_1_label = "Collection_1";
 }
 
-$parameters .= " -matrix $collection_label $matrix_file $query_matrix_format";
-
+$parameters .= " -matrix $collection_1_label $matrix_file_1 $query_matrix_format_1";
 
 ######################
 ## Add collection 2 ##
 ######################
 
-################################################################
-#### Query matrix file
-local $matrix_file_2 = &GetSecondMatrixFile($output_path."/".$output_prefix."_second_matrices.".$query_matrix_format);
+## check if second collection has been provided
+if ($query->param('uploaded_file_matrix2') || ($query->param('matrix2') =~ /\S/)) {
 
-################################
+## Matrix input format
+local $query_matrix_2_format = lc($query->param('matrix_format2'));
+
+#### Query matrix file
+local $matrix_file_2 = &GetMatrixFile($output_path."/".$output_prefix."_second_matrices.".$query_matrix_format_2,2);
+
 ## Add motif collection label
-local $query_matrix_2_format = lc($query->param('matrix_format_2'));
 local $collection_2_label = lc($query->param('collection_2_label'));
 if($collection_2_label){
     $collection_2_label =~ s/\s+/_/g;
 } else {
     $collection_2_label = "Collection_2";
 }
-if($query->param('matrix_2')){
+
     $parameters .= " -matrix $collection_2_label $matrix_file_2 $query_matrix_2_format";
 }
 
@@ -106,20 +108,23 @@ if($query->param('matrix_2')){
 ## Add collection 3 ##
 ######################
 
-################################################################
-#### Query matrix file
-local $matrix_file_3 = &GetThirdMatrixFile($output_path."/".$output_prefix."_third_matrices.".$query_matrix_format);
+## Matrix input format
+local $query_matrix_3_format = lc($query->param('matrix_format3'));
 
-################################
+## check if third collection has been provided
+if ($query->param('uploaded_file_matrix3') || ($query->param('matrix3') =~ /\S/)) {
+
+#### Query matrix file
+local $matrix_file_3 = &GetMatrixFile($output_path."/".$output_prefix."_third_matrices.".$query_matrix_3_format,3);
+
 ## Add motif collection label
-local $query_matrix_3_format = lc($query->param('matrix_format_3'));
 local $collection_3_label = lc($query->param('collection_3_label'));
 if($collection_3_label){
     $collection_3_label =~ s/\s+/_/g;
 } else {
     $collection_3_label = "Collection_3";
 }
-if($query->param('matrix_3')){
+
     $parameters .= " -matrix $collection_3_label $matrix_file_3 $query_matrix_3_format";
 }
 
@@ -162,10 +167,12 @@ if($metric_tree){
 
 ################################################################
 ## Specify the thresholds on all parameters for compare-matrices
-my @threshold_fields = qw(w
+my @main_threshold_fields = qw(w
 			 cor
 			 Ncor
-                         logoDP
+			);
+
+my @threshold_fields = qw(logoDP
 			 logocor
 			 Nlogocor
 			 Icor
@@ -181,10 +188,34 @@ my @threshold_fields = qw(w
 			 offset
 			);
 my $thresholds = "";
+
+## main thresholds compatible with the quick version
+foreach my $field (@main_threshold_fields) {
+  ## Selected field
+  if ($query->param('return_'.$field)) {
+    push @selected_output_fields, $field;
+  }
+  
+    ## Lower threshold
+  my $lth = $query->param('lth_'.$field);
+  if (&IsReal($lth)) {
+    $thresholds .= " -lth ".$field." ".$lth;
+  }
+  
+  ## Upper threshold
+  my $uth = $query->param('uth_'.$field);
+  if (&IsReal($uth)) {
+    $thresholds .= " -uth ".$field." ".$uth;
+  }
+}
+
+## other thresholds not compatible
+my $forbidden = 0;
 foreach my $field (@threshold_fields) {
   ## Selected field
   if ($query->param('return_'.$field)) {
     push @selected_output_fields, $field;
+    $forbidden = 1;
   }
   
   ## Lower threshold
@@ -200,6 +231,12 @@ foreach my $field (@threshold_fields) {
   }
 }
 $parameters .= $thresholds;
+
+
+## Run the C code compare-matrices-quick if the thresholds allow for it
+if ($forbidden == 0) {
+    $parameters .= " -quick";
+}
 
 
 ##############################
@@ -223,11 +260,6 @@ if ($newick) {
     $return_fields .= ",newick";
 }
 
-## Run compare-matrices-selection
-$quick = $query->param('quick');
-if ($quick) {
-    $parameters .= " -quick";
-}
 
 ## Random permutation
 $rand = $query->param('random');
