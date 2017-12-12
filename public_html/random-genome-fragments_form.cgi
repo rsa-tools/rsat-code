@@ -186,7 +186,8 @@ function setDemo1(demo_seq){
     $("input[name=fragment_sizes]").val(["template"]);    
 
     $("#org_select_rsat").prop("checked", true);
-    $("#organism").val("Saccharomyces_cerevisiae").trigger("chosen:updated");
+    $("#organism").val("Saccharomyces_cerevisiae");
+    $("#organism_name").val("Saccharomyces cerevisiae");
     $("#outputformat_seq").prop("checked", true);
 }
 </script>';
@@ -216,7 +217,8 @@ function setDemo3(demo_url){
     
     $("input[name=org_select]").val(["rsat_org"]);
     
-    $("#organism").val("Mus_musculus_GRCm37").trigger("chosen:updated");
+    $("#organism").val("Mus_musculus_GRCm37");
+    $("#organism_name").val("Mus musculus GRCm37");
     $("#outputformat_seq").prop("checked", true);
 }
 </script>';
@@ -247,7 +249,8 @@ function setDemo2(demo_seq){
     frag_nb.value = "20";
     
     $("input[name=org_select]").val(["ensembl_org"]);	
-	$("#organism").val("Saccharomyces_cerevisiae").trigger("chosen:updated");
+	$("#organism").val("Saccharomyces_cerevisiae");
+    $("#organism_name").val("Saccharomyces cerevisiae");
     $("#outputformat_coord").prop("checked", true);
     $("#coord_format").val("bed");
     $("#organism_ens").val("homo_sapiens");

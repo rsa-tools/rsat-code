@@ -14,7 +14,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{demo_descr1} = "";
-$default{organism} = "Homo_sapiens_GRCh37";
+$default{organism} = "Homo sapiens GRCh37";
 $default{input_type}="bed";
 $default{mml}=30 ; ## Length of the sequence sorounding the variant, 
                    ## has to be consistent with the longest matrix to be used
@@ -55,7 +55,9 @@ exit(0);
 ################################################################
 ### formheader
 
-print $default{demo_descr1};
+#print $default{demo_descr1};
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr'></div>";
 
 print $query->start_multipart_form(-action=>"retrieve-variation-seq.cgi");
 
@@ -92,7 +94,7 @@ print "<UL>\n";
 
 }else{
     
-    print $query->textarea(-name=>'input',
+    print $query->textarea(-name=>'input', -id=>'input',
 			   -default=>$default{input},
 			   -rows=>6,
 			   -columns=>65);
@@ -109,13 +111,13 @@ print "<UL>\n";
 }
 ### Input type
 print "<B>Input format</B>&nbsp;";
-    print $query->popup_menu(-name=>'input_type',
+    print $query->popup_menu(-name=>'input_type', -id=>'input_type',
 			     -Values=>['varBed','id','bed'],
 			     -default=>$default{input_type});
 print "<\p>";
 ### Lenght of the sequences surranding the variant
 print "<B>Length of flanking sequence on each side of the variant</B>&nbsp;\n";
-print $query->textfield(-name=>'mml',
+print $query->textfield(-name=>'mml', -id=>'mml',
 			-default=>$default{mml},
 			-size=>5);
 print "<BR>\n";
@@ -130,38 +132,45 @@ print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
-
-################
-## Data for demo
-
-## Data for demo
-my $descr1 = "<H4>Comment on the demonstration :</H4>\n";
-$descr1 .= "<blockquote class ='demo'>";
-
-$descr1 .= "<p>In this demonstration, we retrieve the sequence of genetic variants.</p>";
-$descr1 .= "<p> The genetic variants used in this example were collected by Weirauch et al (2014, Cell 158:1431-1443).";
-$desc1 .= "These variants had been reported in previous publications as affecting transcription factor binding. </p>\n";
-
-$descr1 .= "</blockquote>";
-
-print $query->start_multipart_form(-action=>"retrieve-variation-seq_form.cgi");
-
-$demo_rsat_var_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varBed";
-$demo_rsat_var=`cat $demo_rsat_var_file` ;
-
-
 print "<TD><B>";
-print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
-print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
-print $query->hidden(-name=>'input',-default=>"$demo_rsat_var");
-print $query->hidden(-name=>'input_type',-default=>"varBed");
-print $query->hidden(-name=>'mml',-default=>"30");
-print $query->submit(-label=>"DEMO");
+###############
+
+## Data for demo
+$demo_rsat_var_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varBed";
+$demo_rsat_var = "";
+open(my $fh, $demo_rsat_var_file);
+while (my $row = <$fh>){
+    chomp $row;
+    $demo_rsat_var .= $row . "\\n";
+}
+
+my $org = $default{organism};
+$org =~ s/\ /_/g;
+print '<script>
+function setDemo(demo_rsat_var){
+    $("#reset").trigger("click");
+    
+    var descr1 = "<H4>Comment on the demonstration :</H4> \
+            <blockquote class =\"demo\"> \
+            <p>In this demonstration, we retrieve the sequence of genetic variants.</p> \
+            <p> The genetic variants used in this example were collected by Weirauch et al (2014, Cell 158:1431-1443).\
+            These variants had been reported in previous publications as affecting transcription factor binding. </p>\n \
+            </blockquote>";
+
+    demo_descr.innerHTML = descr1;
+    
+    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism").val("' . $org . '");
+    $("#input").val(demo_rsat_var);
+    $("#input_type").val("varBed");
+    $("#mml").val("30");
+}
+</script>';
+print '<button type="button" onclick="setDemo('. "'$demo_rsat_var'" .')">DEMO</button>';
+
 print "</B></TD>\n";
 
-
 print $query->end_form;
-
 
 print "<TD><B><A HREF='help.retrieve-variation-seq.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";

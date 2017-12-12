@@ -132,11 +132,15 @@ print $query->end_form;
 
 ################################################################
 ### data for the demo 
+my $org = $default{organism};
+$org =~ s/\ /_/g;
 
 print '<script>
 function setDemo(){
     $("#reset").trigger("click");
     demo=">seq1\\nCACGTG\\n>seq2\\nCCGCGG\\n>seq3\\nTATAAA";
+    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism").val("' . $org . '");
     sequence.value = demo;
     sequence_format.value = "fasta";
 }
