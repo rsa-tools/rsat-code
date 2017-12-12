@@ -14,7 +14,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{demo_descr1} = "";
-$default{organism} = "Homo_sapiens_GRCh37";
+$default{organism} = "Homo sapiens GRCh37";
 $default{input_type}="gvf";
 $default{out_type}="varBed";
 $default{mml}=30 ; ## Length of the sequence surrounding the variant, 
@@ -125,10 +125,13 @@ while(my $row = <$fh>){
     $demo_gvf_var .= "\\n";
 }
 
+my $org = $default{organism};
+$org =~ s/\ /_/g;
 print '<script>
 function setDemo(demo_gvf_var){
     $("#reset").trigger("click");
-    
+    $("#organism_name").val("' . $default{organism} .'");
+    $("#organism").val("'. $org .'");
     descr = "<blockquote class =\'demo\'>";
     
     descr = descr + "<p>In this demonstration, we convert variants in <a href=\'http://www.sequenceontology.org/resources/gvf_1.00.html\'>GVF</a> format to varBed format.</p>\n \
