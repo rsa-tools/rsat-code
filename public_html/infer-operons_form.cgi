@@ -178,7 +178,8 @@ print "<script>
 function setDemo(gene){
     \$('#reset').trigger('click');
     \$('#gene_selection').val(gene);
-    \$('#organism').val('Escherichia_coli_K12').trigger('chosen:updated');
+    \$('#organism').val('Escherichia_coli_K12');
+    \$('#organism_name').val('Escherichia coli K12');
     \$('#dist_thr').val('55');
     \$('#return_leader').prop('checked', true);
     \$('#return_query').prop('checked', true);

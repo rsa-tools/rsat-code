@@ -122,7 +122,8 @@ print '<script>
 function setDemo(){
     $("#reset").trigger("click");
     queries.value = "ARG3\nPHO\nYBL05[\\\d]W\n";
-    $("#organism").val("Saccharomyces_cerevisiae").trigger("chosen:updated");
+    $("#organism").val("Saccharomyces_cerevisiae");
+    $("#organism_name").val("Saccharomyces cerevisiae");
 }
 </script>';
 
