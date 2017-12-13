@@ -175,40 +175,40 @@ sub PrintOrthoSelectionSection {
   ## This is temporary, we need to find a way to provide orhtologs for
   ## all organisms.
   ## Read supported orthologs from file
-  my $fp_org_file = $ENV{RSAT}."/public_html/data/supported_blast_tables.tab";
-  &RSAT::message::Debug("supported BLAST tables", $fp_org_file) if ($main::verbose >= 5);
-  if (-e $fp_org_file) {
-    my ($fp_org) = &OpenInputFile($fp_org_file);
-    while (<$fp_org>) {
-      next unless (/\S/) ; # skip empty rows
-      next if (/^;/); # skip comment lines
-      next if (/^\#/); # Skip header line
-      
-      my @split_line = split(/\t/, $_);
-      my $org = $split_line[0];
-      my $taxa = $split_line[1];	  
-      
-      if ($org) {
-	
-#	      if (defined($supported_organism{$org})) {## This control seems
-#	      not to work, probably because the library is read before the
-#	      list of supported organisms.
-		$supported_orthologs{$org} = 1;
-		$supported_genome_blast{$org}{$taxa} = 1;
-#	      }
-      }
-    }
-    @supported_orthologs = sort keys %supported_orthologs;
-  } else {
-    &RSAT::error::FatalError("Missing file", $fp_org_file);
-  }
+#  my $fp_org_file = $ENV{RSAT}."/public_html/data/supported_blast_tables.tab";
+#  &RSAT::message::Debug("supported BLAST tables", $fp_org_file) if ($main::verbose >= 5);
+#  if (-e $fp_org_file) {
+#    my ($fp_org) = &OpenInputFile($fp_org_file);
+#    while (<$fp_org>) {
+#      next unless (/\S/) ; # skip empty rows
+#      next if (/^;/); # skip comment lines
+#      next if (/^\#/); # Skip header line
+#      
+#      my @split_line = split(/\t/, $_);
+#      my $org = $split_line[0];
+#      my $taxa = $split_line[1];	  
+#      
+#      if ($org) {
+#	
+##	      if (defined($supported_organism{$org})) {## This control seems
+##	      not to work, probably because the library is read before the
+##	      list of supported organisms.
+#		$supported_orthologs{$org} = 1;
+#		$supported_genome_blast{$org}{$taxa} = 1;
+##	      }
+#      }
+#    }
+#    @supported_orthologs = sort keys %supported_orthologs;
+#  } else {
+#    &RSAT::error::FatalError("Missing file", $fp_org_file);
+#  }
   
   
 
   ## Choice of the organism
   print "<b>Query </b>";
-  &OrganismPopUp(@supported_orthologs);
-
+    #&OrganismPopUp(@supported_orthologs);
+    &OrganismPopUp('supported' => 'orthologs');
   ################################################################
   ### gene queries
   print "<B><A class='iframe' HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
@@ -1029,7 +1029,7 @@ sub PipingWarning {
 ## basis of the server-specific list of supported organisms.
 ## JvH: I should check if thi is still required, or replace it by OrganismPopupSelectable
 sub OrganismPopUp {
-  print &OrganismPopUpString(@_);
+    print &OrganismPopUpString(@_);
 }
 
 
@@ -1179,39 +1179,46 @@ sub OrganismPopUpString_old {
 ###########################
 ###
 sub OrganismPopUpString{
-    my (@selected_organisms) = @_;
-    if (scalar(@selected_organisms) == 0) {
-        @selected_organisms = &RSAT::OrganismManager::get_supported_organisms_web();
+    my (%args) = @_;
+   
+    my $supported = $args{'supported'};
+    my $supported_param = "";
+    if($supported ne ""){
+        $supported_param .= "?supported=$supported";
     }
+    
+    my $bg_org = $args{'bg_org'};
+    my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
+    my $popupid_name = ($bg_org == 1) ? "organism_bg_name" : "organism_name";
     
     my $organismPopup = "<div class='ui-widget' style='display:inline'>";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
     
-    $organismPopup .= "<input id='organism_name' name='organism_name' autofocus='autofocus' placeholder='Enter the name of your organism...' size='35'><input id='organism' name='organism' type='hidden'>";
+    $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' placeholder='Enter the name of your organism...' size='35'><input id=$popupid name=$popupid type='hidden'>";
     $organismPopup .= "</div>";
     print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
     print '<script type="text/javascript">
     jQuery(document).ready(function(){
-        $("#organism_name").keypress(function(event){
+        $("#' . $popupid_name . '").keypress(function(event){
             if(event.keyCode == 13){
                 event.preventDefault();
             }
         });
         
-        $("#organism_name").autocomplete({
+        $("#' . $popupid_name . '").autocomplete({
                 minLength: 2,
-                source: "getOrganisms.cgi",
+                source: "getOrganisms.cgi'. $supported_param .'",
                 focus: function(event, ui){
-                    $("#organism_name").val(ui.item.label);
+                    $("#' . $popupid_name . '").val(ui.item.label);
                     return false;
                 },
                     select: function(event, ui){
-                        $("#organism").val(ui.item.value);
+                        $("#' . $popupid . '").val(ui.item.value);
                         return false;
                     }
                 }).autocomplete( "instance" )._renderItem = function(ul, item){
                     if(item.label != "null"){
-                        var query = $("#organism_name").val().trim();
+                        var query = $("#' . $popupid_name . '").val().trim();
                         var terms = query.split(" ");
                         function replacer(match, ...ps){
                             var res = "";
@@ -1242,11 +1249,15 @@ sub OrganismPopUpString{
                     }
                 };
                 
-                $("#organism_name").attr("autocomplete", "on");       
+                $("#' . $popupid_name . '").attr("autocomplete", "on");
         
     });
     </script>';
-    $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
+    if($args{supported} eq 'orthologs'){
+        $organismPopup .=  "<a href='supported-orthologs.cgi' target='_blank'>  [List of orthologs]</a>";
+    }else{
+        $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
+    }
     $organismPopup .= " <div id='tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
     
     return $organismPopup;
@@ -1323,44 +1334,34 @@ sub TaxonPopUpStringIndented {
     return $taxonomyPopup;
 }
 
-
+sub get_taxons_web{
+    my ($node_type) =  @_;
+    $node_type = "node" unless ($node_type);
+    require RSAT::Tree;
+    my $tree = new RSAT::Tree();
+    $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
+    
+    my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
+    if (scalar(@taxa) == 0) {
+        return ("");
+        #    return ("No available taxonomic information.");
+    }
+    push @taxa, $tree->get_node_descendents_names("Fungi",undef,$node_type);
+    @taxa = sort @taxa;
+    return @taxa;
+}
 ################################################################
 ## Generate a string with alphabetical
 sub TaxonPopUpString {
   my ($node_type) =  @_;
   $node_type = "node" unless ($node_type);
-  require RSAT::Tree;
-  my $tree = new RSAT::Tree();
-  $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
-
-  my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
-
-  if (scalar(@taxa) == 0) {
-    return ("");
-#    return ("No available taxonomic information.");
-  }
-  push @taxa, $tree->get_node_descendents_names("Fungi",undef,$node_type);
-  @taxa = sort @taxa;
-
+  
   my $taxonomyPopup = "";
   if ($node_type eq "all") {
     $taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
   } else {
     $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
   }
-  $taxonomyPopup .=  "<select name='taxon' id='taxon'>\n";
-  foreach my $taxon (@taxa) {
-    my $name = $taxon;
-    $label =~ s/_/ /g;
-    if ((lc($taxon) eq lc($main::default{taxon})) ||
-	(lc($name) eq lc($main::default{taxon}))) {
-      $taxonomyPopup .=  "<option selected value='$taxon'>$name\n";
-    } else {
-      $taxonomyPopup .=  "<option value='$taxon'>$name\n";
-    }
-  }
-  $taxonomyPopup .=  "</select>";
-
   ## NOT SUPPORTED YET: TO BE ADDED TO get-orghologs, footprint-discovery, footprint-scan
   # $taxonomyPopup .=  "&nbsp;"x5;
   # $taxonomyPopup .=  "<B>Taxonomic depth</B>&nbsp;";
@@ -1368,10 +1369,114 @@ sub TaxonPopUpString {
   # 				       -Values=>[0,1,2,3,4,5],
   # 				       -default=>$default{depth}||4);
 
-  $taxonomyPopup .=  "<BR>\n";
-  return $taxonomyPopup;
+   $taxonomyPopup .= "<input id='taxon_name' name='taxon_name' autofocus='autofocus' placeholder='Enter the name of your taxon...' size='35'><input id='taxon' name='taxon' type='hidden'>";
+    print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
+    print '<script type="text/javascript">
+    jQuery(document).ready(function(){
+        $("#taxon_name").keypress(function(event){
+            if(event.keyCode == 13){
+                event.preventDefault();
+            }
+        });
+        
+        $("#taxon_name").autocomplete({
+        minLength: 2,
+        source: "getOrganisms.cgi?taxon=yes&nodetype='.$node_type.'",
+        focus: function(event, ui){
+            $("#taxon_name").val(ui.item.label);
+            return false;
+        },
+            select: function(event, ui){
+                $("#taxon").val(ui.item.value);
+                return false;
+            }
+        }).autocomplete( "instance" )._renderItem = function(ul, item){
+            if(item.label != "null"){
+                var query = $("#taxon_name").val().trim();
+                var terms = query.split(" ");
+                function replacer(match, ...ps){
+                    var res = "";
+                    var str = ps[ps.length - 1];
+                    for(i = 0; i < ps.length - 3; i++){
+                        ind = str.indexOf(ps[i]) + ps[i].length;
+                        ind1 = str.indexOf(ps[i+1]);
+                        res += "<font color=\"blue\">" + ps[i] + "</font>" + str.substring(ind, ind1);
+                        
+                    }
+                    ind = str.indexOf(ps[ps.length - 3]) + ps[ps.length-3].length;
+                    res += "<font color=\"blue\">" + ps[ps.length - 3] + "</font>" + str.substring(ind);
+                    return res;
+                }
+                var re = "";
+                for(var i = 0; i < terms.length; i++){
+                    re += "(" + terms[i] + ").*";
+                }
+                var reg = new RegExp(re , "i", "m");
+                var t = item.label.replace(reg, replacer);
+                
+                document.getElementById("tip").style.display = "none";
+                return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
+            }else{
+                $("#tip").html("<span style=\"color:orange\">Your search has no result</span>");
+                document.getElementById("tip").style.display = "inline";
+                return false;
+            }
+        };
+        
+        $("#taxon_name").attr("autocomplete", "on");
+        
+    });
+    </script>';
+    $taxonomyPopup .=  "<a href='supported-taxonomy.cgi' target='_blank'>  [List of taxonomy]</a>";
+    #$taxonomyPopup .= " <div id='tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
+    return $taxonomyPopup;
 }
 
+sub TaxonPopUpString_old {
+    my ($node_type) =  @_;
+    $node_type = "node" unless ($node_type);
+    require RSAT::Tree;
+    my $tree = new RSAT::Tree();
+    $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
+    
+    my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
+    
+    if (scalar(@taxa) == 0) {
+        return ("");
+        #    return ("No available taxonomic information.");
+    }
+    push @taxa, $tree->get_node_descendents_names("Fungi",undef,$node_type);
+    @taxa = sort @taxa;
+    
+    my $taxonomyPopup = "";
+    if ($node_type eq "all") {
+        $taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
+    } else {
+        $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
+    }
+    $taxonomyPopup .=  "<select name='taxon' id='taxon'>\n";
+    foreach my $taxon (@taxa) {
+        my $name = $taxon;
+        $label =~ s/_/ /g;
+        if ((lc($taxon) eq lc($main::default{taxon})) ||
+        (lc($name) eq lc($main::default{taxon}))) {
+            $taxonomyPopup .=  "<option selected value='$taxon'>$name\n";
+        } else {
+            $taxonomyPopup .=  "<option value='$taxon'>$name\n";
+        }
+    }
+    $taxonomyPopup .=  "</select>";
+    
+    ## NOT SUPPORTED YET: TO BE ADDED TO get-orghologs, footprint-discovery, footprint-scan
+    # $taxonomyPopup .=  "&nbsp;"x5;
+    # $taxonomyPopup .=  "<B>Taxonomic depth</B>&nbsp;";
+    # $taxonomyPopup .= $query->popup_menu(-name=>'depth',
+    # 				       -Values=>[0,1,2,3,4,5],
+    # 				       -default=>$default{depth}||4);
+    
+    $taxonomyPopup .=  "<BR>\n";
+    return $taxonomyPopup;
+}
 
 
 
@@ -2244,13 +2349,13 @@ sub GetBackgroundModel {
   if ($params{taxon}) {
     #    print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
     print "<input type='radio' NAME='bg_taxo' VALUE='organism' $checked{organism}>";
-    print &OrganismPopUpString();
+    print &OrganismPopUpString('bg_org' => '1');
     print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
     print "<input type='radio' NAME='bg_taxo' VALUE='taxon' $checked{taxon}>";
     print &TaxonPopUp();
 
   } else {
-    print  &OrganismPopUpString();
+    print  &OrganismPopUpString('bg_org'=>'1');
   }
 
     print ("<b>Sequence type</b> &nbsp; ",$query->popup_menu(-id=>'background',-name=>'background',-Values=>["upstream-noorf","upstream"],-default=>$default{background}));

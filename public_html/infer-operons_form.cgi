@@ -95,16 +95,16 @@ print $query->start_multipart_form(-action=>"infer-operons.cgi", -id=>"form");
 ################################################################
 ## Only print relevant organisms for operon inference
 @selected_organisms = ();
-push @selected_organisms, &GetOrganismsForTaxon("Bacteria")
-    if (($group_specificity eq "Bacteria") ||
-	($group_specificity eq "Prokaryotes"));
-push @selected_organisms, &GetOrganismsForTaxon("Archaea")
-    if (($group_specificity eq "Archaea") ||
-	($group_specificity eq "Prokaryotes"));
-@selected_organisms = sort(@selected_organisms);
+#push @selected_organisms, &GetOrganismsForTaxon("Bacteria")
+#    if (($group_specificity eq "Bacteria") ||
+#	($group_specificity eq "Prokaryotes"));
+#push @selected_organisms, &GetOrganismsForTaxon("Archaea")
+#    if (($group_specificity eq "Archaea") ||
+#	($group_specificity eq "Prokaryotes"));
+#@selected_organisms = sort(@selected_organisms);
 
-&OrganismPopUp(@selected_organisms);
-
+#&OrganismPopUp(@selected_organisms);
+&OrganismPopUp('supported' => 'infer');
 
 ### query (gene list)
 print "<p>";
