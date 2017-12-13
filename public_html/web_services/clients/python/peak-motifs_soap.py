@@ -274,7 +274,7 @@ if __name__ == '__main__':
 	parser.add_argument('-disco', '--discoAlgorithm', metavar='<DISCO_ALGORITHM>', type=str, nargs='*', help='Specify the software tool(s) that will be used for motif discovery (oligos|dyads|positions|local_words|merged_words). Several algorithms can be specified either by using a comma-separated list of algorithms: -disco oligos,dyads', required=False)
 	parser.add_argument('-source', '--sourceFile', metavar='<SOURCE_FILE>', type=str, nargs=1, help='Enter the source of the fasta sequence file. Supported source: galaxy', required=False)
 	parser.add_argument('-verb', '--verbosity', metavar='<VERBOSITY>', type=int, nargs=1, help='Verbosity.', required=False)
-	parser.add_argument('-motif_db', '--motif_db', metavar='<MOTIF_DB>', type=argparse.FileType('r'), nargs=1, help='Motif database(s) against which discovered motifs will be compared.', required=False)
+	parser.add_argument('-motif_db', '--motif_db', metavar='<MOTIF_DB>', type=str, nargs=1, help='Motif database(s) against which discovered motifs will be compared.', required=False)
 	parser.add_argument('-ref_motif', '--ref_motif', metavar='<REF_MOTIF>', type=argparse.FileType('r'), nargs=1, help='User-provided reference motif(s).', required=False)
 
 	################################ galaxy arguments ############################################################
@@ -299,10 +299,6 @@ if __name__ == '__main__':
 	else :
 		refMotifValue =""
 
-	if not args.motif_db is None :
-		motifDbValue = args.motif_db[0].read()
-	else :
-		motifDbValue =""
 
 	maxSeqLengthValue = testNone(args.maxSeqLength)
 	maxMotifNumberValue = testNone(args.maxMotifNumber)
@@ -318,6 +314,7 @@ if __name__ == '__main__':
 	graphTitleValue = testNone(args.graphTitle)
 	imageFormatValue = testNone(args.imageFormat)
 	discoAlgorithmValue = testNone(args.discoAlgorithm)
+        motifDbValue =  testNone(args.motif_db)
 	sourceFileValue = testNone(args.sourceFile)
 	verbosityValue = testNone(args.verbosity)
 	#outGalaxyValue = testNone(args.outGalaxy)
