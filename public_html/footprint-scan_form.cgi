@@ -39,7 +39,7 @@ $default{markov_order} = "1";
 #$default{leaders} = 'checked';
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
+$default{organism}="Escherichia coli K12 substr MG1655 uid57779";
 $default{uth_pvalue} = "1e-4";
 $default{taxon} = "Gammaproteobacteria";
 $default{uth_occ_th} = "5";
@@ -103,7 +103,9 @@ print "</div></p>\n";
 &ReadMatrixFromFile() ;
 
 ## demo description
-print $default{demo_descr1};
+#print $default{demo_descr1};
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr'></div>";
 
 print $query->start_multipart_form(-action=>"footprint-scan.cgi");
 
@@ -135,52 +137,48 @@ print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
+print "<TD><b>";
 
 ################################################################
 ### data for the demo
-$demo_queries = "lexA\nrecA\n";
+$demo_queries = "lexA\\nrecA\\n";
 
-my $descr1 = "<H4>Comment on the demonstration example 1 :</H4>\n";
-$descr1 .= "<blockquote class ='demo'>";
+$demo_matrix_file=$ENV{RSAT}."/public_html/demo_files/LexA.2nt_upstream-noorf-ovlp-2str.20.tf";
+$demo_matrix = "";
+open(my $fh, $demo_matrix_file);
+while (my $row = <$fh>){
+    chomp $row;
+    $demo_matrix .= $row . "\\n";
+}
 
-$descr1 .= "<p>In this demonstration, we apply <i>footprint-scan<\i> to
-evaluate the enrichment of LexA binding site in the upstream sequences
-of two of its target genes: lexA (the factor is auto-regulated) and
-recA.</p>\n
+my $org = $default{organism};
+$org =~ s/\ /_/g;
+print '<script>
+function setDemo(demo_matrix){
+    $("#reset").trigger("click");
+    
+    var descr1 = "<H4>Comment on the demonstration example 1 :</H4> \
+    <blockquote class =\"demo\"> \
+    <p>In this demonstration, we apply <i>footprint-scan<\i> to evaluate the enrichment of LexA binding site in the upstream sequences of two of its target genes: lexA (the factor is auto-regulated) and recA.</p>\n \
+    <p> For each query gene, the orthologs are collected at the level of Enterobacteriales, their upstream sequences are scanned with the matrix, and the number of observed sites is compared to the random expectation.</p>\n \
+    </blockquote>";
+    
+    demo_descr.innerHTML = descr1;
+    
+    $("#queries").val("'. $demo_queries . '");
+    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism").val("' . $org . '");
+    $("#taxon").val("Enterobacteriales");
+    $("#taxon_name").val("Enterobacteriales");
+    $("#matrix").val(demo_matrix);
+    $("#matrix_format").val("transfac");
+    $("#bg_method_bginput").prop("checked", true);
+    $("#markov_order").val("0");
+}
+</script>';
+print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .')">DEMO</button>';
 
-<p> For each query gene, the orthologs are collected at the level of
-Enterobacteriales, their upstream sequences are scanned with the
-matrix, and the number of observed sites is compared to the random
-expectation.</p>\n";
-
-$descr1 .= "</blockquote>";
-
-print $query->start_multipart_form(-action=>"footprint-scan_form.cgi");
-print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K_12_substr__MG1655_uid57779");
-print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
-
-#print $query->submit(-label=>"DEMO");
-
-$demo_matrix=`cat demo_files/LexA.2nt_upstream-noorf-ovlp-2str.20.tf`;
-print "<TD><b>";
-print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
-print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'matrix_format',-default=>'transfac');
-
-print $query->hidden(-name=>'bg_method',-default=>'bginput');
-print $query->hidden(-name=>'bginput',-default=>'CHECKED');
-#print $query->hidden(-name=>'background',-default=>'upstream-noorf');
-print $query->hidden(-name=>'markov_order',-default=>'0');
-
-print $query->submit(-label=>"DEMO");
-print "</B></TD>\n";
-print $query->end_form;
-
-
-##print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
 print "<td><b><a href='help.footprint-scan.html'>[MANUAL]</a></B></TD>\n";
-#print "<td><b><a href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></B></TD>\n";
 print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
@@ -211,7 +209,7 @@ sub Panel2 {
   print "<div id=\"menu101\" class=\"menu_collapsible_display\">\n";
 
   print "<p/><fieldset>\n";
-  print "<legend><b><a href='help.peak-motifs.html#tasks'>Select reference organism, query genes and taxon</a></b></legend>\n";
+  print "<legend><b><a class='iframe' href='help.peak-motifs.html#tasks'>Select reference organism, query genes and taxon</a></b></legend>\n";
 
   &PrintOrthoSelectionSection();
 
@@ -220,7 +218,7 @@ sub Panel2 {
   print $query->checkbox(-name=>'leaders',
 			 -checked=>$default{leaders},
 			 -label=>'');
-  print "<A HREF='help.footprint-scan.html#leader'><B>\n";
+  print "<A class='iframe' HREF='help.footprint-scan.html#leader'><B>\n";
   print "predict operon leader genes";
   print "</B></A>\n";
 
@@ -244,7 +242,6 @@ my %bg_params =("markov" => 1,
 		"markov_message" => 1
     );
 &GetBackgroundModel(%bg_params);
-
 
 print '
 <div class="menu_heading_closed" onclick="toggleMenu(\'102\')" id="heading102"><b>Scanning Parameters</b> </div>
@@ -291,8 +288,7 @@ print "</p>";
 
 print "</fieldset><p/>";
 
-print '
-</div></div>';
+print '</div>';
 
 }
 
