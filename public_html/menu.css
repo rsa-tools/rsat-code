@@ -52,19 +52,19 @@
 }
 
 #content.rsat {
-	background: #ffffff; 
+	background: #ffffff;
 	border: 1px solid #000000;
 }
 
 #content.graph {
-	background: #ffffff; 
+	background: #ffffff;
 	border: 1px solid #000000;
 	border-bottom: 1px solid #000000;
 	border-left: 1px solid #000000;
 }
 
 /* CONTENT TEXT   */
-#content h4 { 
+#content h4 {
 	padding-left: 5px;
 	margin-top: -5px;
 	font-size: 9px;
@@ -81,7 +81,7 @@
 	text-decoration: underline;
 }
 
-#content h3 { 
+#content h3 {
 	padding-left: 5px !important;
 	padding-right: 5px !important;
 	font-size: 11px !important;
@@ -176,7 +176,7 @@
 
 #content .menu_heading_closed {
 	background: #2D282E url(images/arrow.gif) no-repeat 5px 7px !important;
-	text-decoration: none; 
+	text-decoration: none;
 	display: block;
 	padding: 4px 5px 4px 20px;
 	margin: 0;
@@ -198,7 +198,7 @@
 #content .menu_item {
 	display: block;
 	background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px !important;
-	text-decoration: none; 
+	text-decoration: none;
 	padding: 4px 5px 4px 30px;
 	padding: 4px 5px 4px 20px;
 	border-bottom:1px dashed #444;
@@ -206,13 +206,13 @@
 	font-size: 9px;
 	/*color: #2D282E;*/
 	cursor: pointer;
-	
+
 }
 
 #content .menu_item_last {
 	display: block;
 	background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px !important;
-	text-decoration: none; 
+	text-decoration: none;
 	padding: 4px 5px 4px 30px;
 	padding: 4px 5px 4px 20px;
 	border-bottom:1px solid #444;
@@ -220,13 +220,13 @@
 	font-size: 9px;
 	/*color: #2D282E;*/
 	cursor: pointer;
-	
+
 }
 
 #content .menu_separator {
 	display: block;
 	background-color: #444;
-	text-decoration: none; 
+	text-decoration: none;
 	padding: 0px 0px 2px 3px;
 	margin: 0;
 	font-size: 9px;
@@ -249,14 +249,14 @@
 #pre {
 	text-indent: 30px
 }
-
+/* OLD TAB MENU RSAT NEAT
 #tabmenu ul {
 	width: 172px !important;
 	color: #000000 !important;
 	background-color: #ffffff !important;
 	border-bottom: none;
     line-height: 1.2;
-	/*z-index: 1;*/
+	/*z-index: 1;
 	padding-left: 0px;
 	padding-top: 10px;
 	margin-bottom: 0px;
@@ -304,12 +304,13 @@
 #tabmenu a.active:hover {
 	color: #0D73A7;
 }
+*/
 
 .searchmenu{
 	-webkit-appearance: textfield;
 	-webkit-box-sizing: content-box;
 	font-family: inherit;
-	font-size:100%; 
+	font-size:100%;
 	margin-top: 20px;
 	margin-left:10px;
 	margin-bottom: 5px;
@@ -320,11 +321,11 @@
 	border: solid 1px #ccc;
 	padding: 5px 5px 5px 30px;
 	width: 45px;
-	
+
 	-webkit-border-radius: 10em;
 	-moz-border-radius: 10em;
 	border-radius: 10em;
-	
+
 	-webkit-transition: all .5s;
 	-moz-transition: all .5s;
 	transition: all .5s;
@@ -333,7 +334,7 @@
 	width: 110px;
 	background-color: #fff;
 	border-color: #66CC75;
-	
+
 	-webkit-box-shadow: 0 0 5px rgba(109,207,246,.5);
 	-moz-box-shadow: 0 0 5px rgba(109,207,246,.5);
 	box-shadow: 0 0 5px rgba(109,207,246,.5);
