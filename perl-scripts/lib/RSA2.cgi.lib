@@ -1297,8 +1297,6 @@ sub OrganismPopUpString{
         
         $("#' . $popupid_name . '").autocomplete({
 
-        $("#organism_name").autocomplete({
-
                 minLength: 2,
                 source: "getOrganisms.cgi'. $supported_param .'",
                 focus: function(event, ui){
@@ -1342,10 +1340,7 @@ sub OrganismPopUpString{
                     }
                 };
             
-                $("#' . $popupid_name . '").attr("autocomplete", "on");
-        
-
-                $("#organism_name").attr("autocomplete", "on");
+            $("#' . $popupid_name . '").attr("autocomplete", "on");
 
     });
     </script>';
