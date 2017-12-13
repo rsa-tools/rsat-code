@@ -1276,15 +1276,11 @@ sub OrganismPopUpString{
     if($supported ne ""){
         $supported_param .= "?supported=$supported";
     }
-<<<<<<< HEAD
     
     my $bg_org = $args{'bg_org'};
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
     my $popupid_name = ($bg_org == 1) ? "organism_bg_name" : "organism_name";
     
-=======
-
->>>>>>> 81de9f2c9ccbd8131e8e483de27cf31667c1d503
     my $organismPopup = "<div class='ui-widget' style='display:inline'>";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
     
@@ -1298,13 +1294,11 @@ sub OrganismPopUpString{
                 event.preventDefault();
             }
         });
-<<<<<<< HEAD
         
         $("#' . $popupid_name . '").autocomplete({
-=======
 
         $("#organism_name").autocomplete({
->>>>>>> 81de9f2c9ccbd8131e8e483de27cf31667c1d503
+
                 minLength: 2,
                 source: "getOrganisms.cgi'. $supported_param .'",
                 focus: function(event, ui){
@@ -1347,15 +1341,12 @@ sub OrganismPopUpString{
                         return false;
                     }
                 };
-<<<<<<< HEAD
-                
+            
                 $("#' . $popupid_name . '").attr("autocomplete", "on");
         
-=======
 
                 $("#organism_name").attr("autocomplete", "on");
 
->>>>>>> 81de9f2c9ccbd8131e8e483de27cf31667c1d503
     });
     </script>';
     if($args{supported} eq 'orthologs'){
