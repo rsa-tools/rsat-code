@@ -1302,12 +1302,17 @@ sub peak_motifs_cmd {
 	$motif_db =~s/\'//g;
 	$motif_db =~s/\"//g;
 	my @_motif_db = split(',', $motif_db);
-	my %matrix_db = &RSAT::server::supported_motif_databases();
+	my %matrix_db = &RSAT::server::supported_motif_databases(); ## TO DEBUG (JvH, 2017-12-12): %motif_db est vide
 	foreach my $db (@_motif_db) {
-	    unless (/$db/ ~~ %matrix_db) {
-	      die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("$db MOTIF DATABASE IS UNKNOWN !");
-	    }
-	    $command .= " -motif_db ".$matrix_db{$db}{'name'}." ".$matrix_db{$db}{'format'}." ".$ENV{RSAT}."/public_html/motif_databases/".$matrix_db{$db}{'file'};
+	  if (defined($matrix_db{lc($db)})) {
+	    ## Select matrix DB in a case-insensitive mode
+#	    $matrix_db <- $matrix_db{lc($db)};
+	    $command .= " -motif_db ".$matrix_db{lc($db)}{'name'}." ".$matrix_db{lc($db)}{'format'}." ".$ENV{RSAT}."/public_html/motif_databases/".$matrix_db{lc($db)}{'file'};
+	  } else {
+#	  unless (/$db/ ~~ %matrix_db) {
+	    my $supported_matrix_db = join(", ", sort(keys(%matrix_db)));
+	    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("$db motif database is unknown. Supported: ".$supported_matrix_db);
+	  }
 	}
     }
 
