@@ -19,11 +19,25 @@ $program_version
 
 =head1 DESCRIPTION
 
-Template for writing new perl scripts.
+matrix-enrichment helps user make a quick assessment of the motifs patterns enriched within one or several sequence sets.
+
+For example, given two sets of annotated enhancers in one cell line before and after treatment, check which transcription factors migh be enriched in each of the sequence sets.
+
+The tool will produce two outputs:
+
+=item NWD heatmap
+
+Normalized Weight Difference curves compare the theoretical distribution of the motif scores vs the eprirical distribution observed in a given sequence set. 
+The Maximum NWD is taken for each motif-seqeunce curve and integrated into a heatmap. A high NWD vaue in the heatmap indicated enrichment while a negative or 
+low value indicates possible depletion.
+
+=item OCC curves
+Occurence distribution plots map the p-value of the weight scores with the binomial significance of the ocurrence of a given p-value. This plot enables users to identify 
+erichments of motifs with low scores but with several sites that might be understimated with NWD heatmaps.
 
 =head1 AUTHORS
 
-Jaime Castro <castro\@univ-amu.fr>
+Jaime Castro <j.a.c.mondragon\@ncmm.uio.no>
 
 Samuel Collombet <samuel.collombet\@ens.fr>
 
@@ -121,7 +135,6 @@ use Data::Dumper;
 use File::Basename;
 use File::Path;
 require "RSA.disco.lib";
-require "footprint.lib.pl";
 
 
 ################################################################
@@ -201,10 +214,10 @@ package main;
       $supported_task{$task} = 1;
   }
 
-  $noicon=1;
+  $noicon=1; # Do not generate the smaller version of plots
   %task = (); ## Difine hash to contain user given tasks
-
-
+  
+  
   ################################################################
   ## The C command matrix-scan-quick is MUCH faster than
   ## matrix-scan. If it is supported on this machine, use it !
@@ -238,26 +251,54 @@ package main;
   ## All matrix and sequence names
   local @all_matrix_names = ();
   local @all_sequence_names = ();
+
+  ## Roc Curves will only be drawn for matrix-quality
+  $draw_roc=0;
   
+  
+  ## This options are valid for matrix-quality, this declaration helps avoid warnings 
+  $graph_options = " ";
+  $distrib_options = " ";
+  $large_graph_options=" ";
   ################################################################
   ## Read argument values
   &ReadArguments();
+
+  ## Create main output directory if required
+  ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($main::prefix{main});
+  &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 2);
+  &RSAT::util::CheckOutDir($dir{output});
+
+  ########################################
+  ## Outfiles of Dynamic heatmap + Binomial Sig Curves
+  $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
+  $main::outfile{report_partial} = $main::prefix{main}."_report_partial.html";
+  $main::outfile{report} = $main::prefix{main}."_report.html";
   
+  $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
+  $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
+  $main::outfile{Diff_maxNWD_tsv} = $main::prefix{main}."_diff_matrix_heatmap.tsv";
+  $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
+  $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
+  $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
+
+    %icons = ();
+  $icons{loading} = &RSAT::util::RelativePath($main::outfile{report}, $dir{output}."/matrix-enrichment_icons/RSAT_loading.svg");
   
+  ## HTML report variables
+  $param{progressive_synthesis} = 1;
+  $param{title} = "matrix-enrichment results";
+
   ################################################################
   ## Check argument values
 
   ##
   @main::image_formats = uniq(@main::image_formats);
-  ## If no tasks has been specified, execute them all
+  ## If no tasks have been specified, execute them all
   if (($task{all}) || (scalar(keys(%task))==0)) {
       %task = %supported_task;
       $task{all} = 0;
   }
-  
-  # foreach (sort keys %raks) {
-  #   print "$_ : $myhash{$_}\n";
-  # }
 
   # die "BOOM";
   ## Matrix file is mandatory
@@ -275,12 +316,7 @@ package main;
   ################################################################
   ## Open main log 
   $outfile{log} = $main::prefix{main}."_log.txt";
-
   
-  ## Create main output directory if required
-  ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($main::prefix{main});
-  &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 2);
-  &RSAT::util::CheckOutDir($dir{output});
 
   ################################################################
   ## Ensure the access to the java libraries, which are required to
@@ -328,6 +364,15 @@ package main;
   $datatable_base = &RSAT::util::RelativePath($dir{output}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
   $datatable_css_base = &RSAT::util::RelativePath($dir{output}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
 
+  ################################################################
+  ## Copy the section icons in the results folder
+  ################################################################
+  &RSAT::message::Debug("Copying result sections icons to output directory") if ($main::verbose >= 3);
+  my $icon_sync_cmd = "rsync -ruptl";
+  $icon_sync_cmd .= " ".$ENV{RSAT}."/public_html/images/program_icons/matrix-enrichment_icons";
+  $icon_sync_cmd .= " ".$dir{output};
+  &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
 
   ## ################
   ## Process sequence file if there was a top or skip selection
@@ -363,63 +408,37 @@ package main;
   &RSAT::util::CheckOutDir($bg_dir);
 
   
-  ################
-  ## Note Ale to Jaime: I realized this option is not a consistent one. You need to have the same backgorund model to make things
-  ## comparable, so only the all option will be avialble 
-  ## background by sequence
-  # if ($main::bg_input eq "by_seq") {
-  #     &RSAT::message::TimeWarn("Calculating background model by sequence set", $bg_dir) if ($main::verbose >= 3);
-
-  #     foreach $seq (@main::seq_types){
-
-  # 	  my $new_bg_file=$bg_dir."/" . $seq . "_bg_" . $main::markov . "_2str.inclusive";
-	  
-  # 	  my $bg_command=" $SCRIPTS/oligo-analysis -v 1 -quick -2str " ;
-  # 	  $bg_command.=" -i ".$main::seqfile{$seq}." -l ".$main::markov." -noov ";
-  # 	  $bg_command.=" | convert-background-model -from oligos -to inclusive ";
-  # 	  $bg_command.=" -o ".$new_bg_file;
-
-  # 	  $bg_files{$seq} = $new_bg_file ;
-	  
-  # 	  &doit($bg_command, $dry, $die_on_error, $verbose, 0, $job_prefix);
-  # 	  &RSAT::message::TimeWarn("Background for sequence set", $seq, $new_bg_file) if ($main::verbose >= 3);
-
-  # 	  $outfile{"bg_file_directory"}=$bg_dir;
-	  
-  #     }
-      
-  # } els
-      
-      if ($main::bg_input eq "all") {
+  
+  if ($main::bg_input eq "all") {
       
       ## Create one bg model from all input sequences
       my $all_sequences_file=$bg_dir."/all_sequences.fas";
-      my $new_bg_file=$bg_dir."/all_sequences_bg_".$main::markov."_2str.inclusive";
-
+      my $new_bg_file=$bg_dir."/all_sequences_bg_mkv".$main::markov."_2str.inclusive";
+      
       my @seq_files=values( %main::seqfile);
       
       my $bg_command = " cat ".join( " " , @seq_files ) . " > ". $all_sequences_file ." ; "; 
       $bg_command.= "$SCRIPTS/oligo-analysis -v 1 -quick -2str -i  " .$all_sequences_file;
-      $bg_command.= " -l ".$main::markov." -noov ";
+      $bg_command.= " -l ".$main::markov ." -noov ";
       $bg_command.= " | convert-background-model -from oligos -to inclusive ";
       $bg_command.= " -o ".$new_bg_file;
       $main::outfile{"bg_file_inclusive"}=$new_bg_file;
       
-      &RSAT::message::Debug("Calculating background model using all sequences"."\n".$bg_command,  "bg_file_inclusive".$new_bg_file  ) if ($main::verbose >= 0);
-
+      &RSAT::message::Debug("Calculating background model using all sequences"."\n".$bg_command,  "bg_file_inclusive".$new_bg_file  ) if ($main::verbose >= 5);
+      
       &doit($bg_command, $dry, $die_on_error, $verbose, 0, $job_prefix);
       
       push @files_to_index, "bg_file_inclusive";
       &RSAT::message::Debug("Adding file to index ",  "bg_file_inclusive",   $outfile{bg_file_inclusive}) if ($main::verbose >= 3 );
       
-
+      
       ## Define same bg file for all sequences
       foreach $seq ( @main::seq_types ) {
 	  $bg_files{$seq} = $new_bg_file ; 
       }
-
+      
   }elsif ($main::infile{bg_file}) {
-  
+      
       
       ## Define name of the converted bg file
       #$outfile{bg_file_inclusive} = $dir{output};
@@ -465,11 +484,12 @@ package main;
   ## Export matrix realted files and matrix information into one table
   
   ## ##############################################################
-  ## Evaluate the enrichment of each matrix of the input file
+  ## Evaluate the enrichment of each matrix in the input file
   my $m = 0; ## Matrix counter
   my %matrix_index = (); ## %matrix_index indexes matrix numbers (value) as a function of matrix names (keys)
 
-  
+
+  ## Convert matrices to transfac format if they are not already in such format
   if ($task{convert_matrix}){
       ## If it is required, convert the input motif file in Transfac format
       
@@ -482,7 +502,7 @@ package main;
       } else {
 	  $main::outfile{motifs_transfac}=$dir{output}."/".$short_prefix."_transfac_motifs.tf";
 	  
-	  &RSAT::message::TimeWarn( "Converting input matrices to Tansfac format, outputfile: ",  $main::outfile{motifs_transfac} ) if ($main::verbose >= 3);
+	  &RSAT::message::TimeWarn( "Converting input matrices to Transfac format, outputfile: ",  $main::outfile{motifs_transfac} ) if ($main::verbose >= 3);
 	  $convert_matrix_cmd = $SCRIPTS."/convert-matrix ";
 	  $convert_matrix_cmd .= " -i ".$main::infile{motifs};
 	  $convert_matrix_cmd .= " -from ".$matrix_format;
@@ -491,7 +511,7 @@ package main;
 	  
 	  &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 	  $to_delete{'motifs_transfac'} = $main::outfile{motifs_transfac};
-	  $matrix_format="trasnfac";
+	  $matrix_format="transfac";
 	  $main::infile{motifs}=$main::outfile{motifs_transfac};
 
       }
@@ -504,7 +524,7 @@ package main;
 
   if ($top_matrix_flag || $skip_matrix_flag){
       
-      &RSAT::message::TimeWarn("Selecting top and skippped motifs Tansfac format") if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn("Selecting top and skippped motifs Transfac format") if ($main::verbose >= 3);
       $main::outfile{motifs_transfac_top_skip}=$dir{output}."/".$short_prefix."_transfac_motifs_topskip_selected_motifs.tf";
       
       $convert_matrix_cmd = $SCRIPTS."/convert-matrix ";
@@ -531,8 +551,8 @@ package main;
 
   my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
 
-  ## Open the ID to Motif name reference table
-  my ($ID_to_Motif_name_file) = &RSAT::util::OpenOutputFile($main::outfile{motif_ID_to_name});
+  ## Open the ID to Motif name reference table NOTE: removed since it is not used
+  ##my ($ID_to_Motif_name_file) = &RSAT::util::OpenOutputFile($main::outfile{motif_ID_to_name});
 
   ## Analyse one matrix at a time
   foreach my $matrix (@matrices) {
@@ -548,13 +568,13 @@ package main;
       local @distrib_files=(); ## check something named  @main::distrib_files
       local @temporary_distrib_files=();
       local @local_seq_types= @main::seq_types; # seq_types are all the sequences where the proceadure is performed, for each matrix the matrix_sites are added.
-      ## Redefine the matrix name (in case it would have been modified above)
+
       $matrix->set_attribute("pseudo", $pseudo_counts);
       $matrix->set_attribute("decimals", $decimals);
       $matrix->set_attribute("file", $matrix_file);
       $matrix->force_attribute("matrix.nb", $m);
 
-      print $main::outfile{bg_file_inclusive}."\n";
+      #print $main::outfile{bg_file_inclusive}."\n";
       $matrix->setMarkovModel($bg_model) if ($main::outfile{bg_file_inclusive}) ;
       
       my $m_width = $matrix->get_attribute("ncol");
@@ -584,14 +604,14 @@ package main;
       $matrix_name =~ s/\//_/; ## Avoid slashes in matrix names because this would make problem for subfolder definitions
       $matrix_name =~ s/\$/_/; ## Avoid $ in matrix names because the following word would be interpreted as a variable in Unix system
       
-      $matrix_id =~ s/\//_/; ## Avoid slashes in matrix names because this would make problem for subfolder definitions
-      $matrix_id =~ s/\$/_/; ## Avoid $ in matrix names because the following word would be interpreted as a variable in Unix system
+      $matrix_id =~ s/\//_/; ## Avoid slashes in matrix ids  because this would make problem for subfolder definitions
+      $matrix_id =~ s/\$/_/; ## Avoid $ in matrix ids because the following word would be interpreted as a variable in Unix system
       
 
       
       ## Check if another matrix with the same name has already been indexed)
       if (defined($matrix_index{$matrix_name})) {
-	  &RSAT::message::Warning("Matrix file contains sevral matrices with name",
+	  &RSAT::message::Warning("Matrix file contains several matrices with name",
 				  $matrix_name, ". Adding suffix m_".$m);
 	  $matrix_name .= "_m".$m;
       } else {
@@ -606,7 +626,7 @@ package main;
       &RSAT::message::TimeWarn("Analyzing matrix", $m, $matrix_name) if ($main::verbose >= 2);
       
       ## Print the ID -> Name in the File
-      &RSAT::message::Debug("Adding matrix information to registry table ", $matrix_name , $matrix_id ) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Adding matrix information to registry table ", $matrix_name , $matrix_id ) if ($main::verbose >= 5);
 
 
       ################################################################
@@ -633,6 +653,10 @@ package main;
       $outfile{matrix_log} = $main::matrix_prefix{$matrix_name}."_log.txt"; push @files_to_index, "matrix_log";
       $main::out = &OpenOutputFile($outfile{matrix_log});
       &RSAT::message::Debug("Adding file to index ",   "matrix_log", $main::matrix_prefix{$matrix_name}."_log.txt" ) if ($main::verbose >= 10);
+
+      ################################################################
+      ## Initialize HTML report
+      &OpenSynthesis() if ($main::param{progressive_synthesis}); ## Already open the HTML report summary, for the Web site
 
       ################################################################
       ## Export matrix in various formats
@@ -686,87 +710,7 @@ package main;
       
       ################################################################
       ## Compute empirical distribution in the input sequence files
-      foreach my $seq_type (@local_seq_types) {
-	  &RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type}) if ($main::verbose >= 2);
-	  &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{matrix_tab}, 'tab', $seq_type, 1,  @matrix_scan_options) ;
-	  ## Score sequences with the permuted matrices
-	  if (($seqfile{$seq_type}) &&
-	      (defined($perm_nb{$seq_type})) &&
-	      ($perm_nb{$seq_type} > 0)) {
-	      
-	      ## Calculate the separate distributions for each permuted matrix
-	      ## (this highlights the variability but the graph is noisy)
-	      for my $i (1..$perm_nb{$seq_type}) {
-		  $perm_suffix = $seq_type."_perm_col_".$i;
-		  if (defined($scanopt{$seq_type})) {
-		      $scanopt{$perm_suffix} = $scanopt{$seq_type};
-		  }
-		  push @perm_distrib_files, &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, $perm_separate_distrib,  @matrix_scan_options) if task{scan};
-	      }
-	      
-	      ## Compute the distribution for all the permutation tests
-	      
-	      ## Define the output file for the regrouped permutation tests
-	      my $perm_suffix = $seq_type.'_'.$perm_nb{$seq_type}.'perm';
-	      $outfile{$perm_suffix} =  $matrix_prefix{$matrix_name}."_scan_".$perm_suffix."_score_distrib.tab"; push @files_to_index, $perm_suffix;
-	      &RSAT::message::Debug("Adding file to index ",  $perm_suffix, $outfile{$perm_suffix}  ) if ($main::verbose >= 10);
-	      push @distrib_files, $outfile{$perm_suffix}; $file_nb{$perm_suffix} = scalar(@distrib_files);
-	      
-	      ## Run compare-scores to compute the dCDF of the mergeed permutation test
-	      my $merge_cmd = $SCRIPTS."/compare-scores -v 2 ";
-	      $merge_cmd .= " -ic 1 -numeric -sc 2";
-	      $merge_cmd .= " -files ";
-	      $merge_cmd .= join " ", @perm_distrib_files;
-	      my $last_col = scalar(@perm_distrib_files) + 1;
-	      $merge_cmd .= " | ".$SCRIPTS."/row-stats -before -col 2-".$last_col;
-	      &RSAT::message::Debug("Merging permuted distributions", $merge_cmd) if ($main::verbose >= 3);
-	      
-	      ## Compute the cumulative and decreasing cumlative
-	      ## distributions
-	      
-	      my @weights = ();
-	      my @occ = ();
-	      my @cum_occ = ();
-	      my %merged_occ = ();
-	      my $cum_occ = 0;
-	      if ($task{scan}){
-		  open MERGE, "$merge_cmd |";
-		  while (<MERGE>) {
-		      chomp();
-		      next if /^;/;
-		      next if /^#/;
-		      next unless /\S/;
-		      my @fields = split /\t/, $_;
-		      my $weight = $fields[4];
-		      my $occ = $fields[2];
-		      $cum_occ += $occ;
-		      push @weights, $weight;
-		      push @occ, $occ;
-		      push @cum_occ, $cum_occ;
-		  }
-		  close MERGE;
-		  my $total_occ = $cum_occ[$#cum_occ];
-	      
-		  
-		  ## Print the merged distribution
-		  my $merged_distrib = &OpenOutputFile($outfile{$perm_suffix});
-		  print $merged_distrib join ("\t", "#weight", "occ", "cum", "dcum", "dCDF"), "\n";
-		  for my $i (0..$#weights) {
-		      my $dcum_occ = $total_occ - $cum_occ[$i]+$occ[$i];
-		      my $dcdf = $dcum_occ / $total_occ;
-		      print $merged_distrib join ("\t",
-						  $weights[$i],
-						  $occ[$i],
-						  $cum_occ[$i],
-						  $dcum_occ,
-						  sprintf("%7g", $dcdf)
-			  ), "\n";
-		  }
-		  close $merged_distrib;
-		  &RSAT::message::TimeWarn("Exported merged distribution", $outfile{$perm_suffix}) if ($main::verbose >= 2);    
-	      }
-	  }
-      }
+      &CalculateEmpiricalDistributions ();
       
       ## Compare the (single) theoretical and (multiple) empirical distributions
       &CompareDistrib($distrib_score_col, @distrib_files); # the column of interest is rel_ic (inv_cum_freq)
@@ -774,7 +718,7 @@ package main;
 
       ################################################################
       ##Calculate NWD adn OCC
-      &RSAT::message::TimeWarn("Calculating NWD file")  if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Calculating NWD and OCC files")  if ($main::verbose >= 5);
       
       if ($task{compare} || $task {graphs}) {
 	  foreach (@local_seq_types ) {
@@ -789,21 +733,26 @@ package main;
 	      $main::nwd_seqs++; ## counter to decide if the heatmap will be drawn, it requieres at least two matrices and two sequences
 	      push ( @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }, $nwd_st);
 	      push ( @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }, $nwd_st);
+	      &RSAT::message::TimeWarn(" NWD file calculated")  if ($main::verbose >= 10);    
+
 	      
 	      ## Check if NWD graph is requiered for the given sequence set
 	      my $occ_proba_st=&Calculate_OCC ($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options)   ;
 	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }, $occ_proba_st);
-	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }, $occ_proba_st);	 
+	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }, $occ_proba_st);	
+	      &RSAT::message::TimeWarn(" OCC file calculated")  if ($main::verbose >= 10);  
+
+ 
 	  }
 	  
 	  #Draw NWD per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 	  
-	  ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
+	  ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) if $task {graphs};
 	  push (@files_to_index,'matrix_nwd_table');
 	  
-	  #Draw NWD per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
+	  #Draw OCC per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 	  
-	  ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) ;
+	  ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) if $task {graphs} ;
 	  push (@files_to_index,'matrix_occ_proba_table');
 	  
       }
@@ -821,7 +770,6 @@ package main;
   ## Draw NWD and OCC graphs per sequence set
   if ($task{graphs}){
       foreach ( @main::seq_types ) {
-	  
 	  my $st= $_;
 	  push(@all_sequence_names, $st);
 	  ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) ;
@@ -830,75 +778,50 @@ package main;
 	  #print $outfile{$st."all_matrices_occ_proba_table"}."\n";
 	  #print $outfile{$st."all_matrices_occ_proba_plot"}."\n";
 	  
-	  ################
-	  ## Heatmaps can only be produced when at least two matrices and two sequence sets are used for NWD calculation
-	  # if  ( ($main::plot_types{nwd}) && ($main::num_mtx>=2) && ($main::nwd_seqs>=2) ){
-	  # 	  my $nwd_all_file = $main::prefix{main}."_"."all_nwd_files.txt";
-	  # 	  my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
-	  
-	  # 	  my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
-	  
-	  # 	  $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
-	  
-	  # 	  foreach my $mtx (keys %nwd_all_files) {
-	  # 	      while (my ($seq, $nwd_file) = each %{ $nwd_all_files{$mtx} } ) {
-	  # 		  print $nwd_all_file_out join("\t",$mtx,$seq,$nwd_file)."\n";
-	  # 	      }
-	  # 	  }
-	  
-	  # 	  &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
-	  # 	  my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png');
-	  
-	  # 	  &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
-	  
-	  # 	  &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	  # 	  $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
-	  # 	  $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
-	  # 	  $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
-	  # 	  $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
-	  
-	  # }
 	  
       }
-  
-  my $nwd_all_file = $main::prefix{main}."_"."all_nwd_files.txt";
-  my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
-  
-  my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
-  
-  $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
-  
-  foreach my $mtx (keys %nwd_all_files) {
-      while (my ($seq, $nwd_file) = each %{ $nwd_all_files{$mtx} } ) {
-	  print $nwd_all_file_out join("\t",$mtx,$seq,$nwd_file)."\n";
+
+      ################
+      ## Create files for heatmaps
+
+      ## Prepare files for heatmpas
+      my $nwd_all_file = $main::prefix{main}."_"."all_nwd_files.txt";
+      my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
+      
+      my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
+      
+      $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
+      
+      foreach my $mtx (keys %nwd_all_files) {
+	  while (my ($seq, $nwd_file) = each %{ $nwd_all_files{$mtx} } ) {
+	      print $nwd_all_file_out join("\t",$mtx,$seq,$nwd_file)."\n";
+	  }
       }
-  }
-  
-  &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
-  my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
-  
-  &RSAT::message::Info("R-command for NWD cluster",  $R_command) if ($main::verbose >= 2);
-  
-  &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
-  $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
-  $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
-  $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
-  
+
+      ## Draw static heatmaps
+      &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
+      my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
+      
+      &RSAT::message::Info("R-command for NWD cluster",  $R_command) if ($main::verbose >= 2);
+      
+      &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
+      $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
+      $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
+      $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
  
-  ################################################################
-  ## Draw the dynamic heatmap with the clustering of the maxNWD
-  &DynamicHeatmapEnrichment();
+  }
+ 
+  if ($task{synthesis}){
+      
+      ##########################
+      ## Generate the HTML report
+      ##
+      ## Draw the dynamic heatmap with the clustering of the maxNWD
+      ##
+      ## Draw the Binomial Occ Significance curves of each TF on each sequence
+      &CreateHTMLReport();
 
-  ################################################################
-  ## Draw the Binomial Occ Significance curves 
-  ## of each TF on each sequence
-  &DynamicOccProfiles();
-
-  ##############################
-  ## Generate the HTML report
-  &CreateHTMLReport();
-   
   }
   
   ## Give the warning about the output prefix
@@ -1079,7 +1002,7 @@ Example:
 
 =item	B<-img_format>
 
-Image format for the plots (ROC curve, score profiles, ...).
+Image format for the plots ( score profiles, ...).
 To display the supported formats, type the following command:
 XYgraph -h.
 
@@ -1377,7 +1300,7 @@ Draw the graphs with distrib comparisons
 =item B<synthesis>
 
 Generate a HTML file with a synthetic report, which displays the main
-graphs (distribution curves and ROC curve) and provides links to the
+graphs and provides links to the
 result files.
 
 In order to be correctly indexed, the graphs have to be generated in
@@ -1473,100 +1396,111 @@ sub Verbose {
 }
 
 
+# ################################################################
+# ## Draw the Dynamic Heatmap using the matrix
+# ## of maxNWD positive values
+# sub DynamicHeatmapEnrichment {
+
+#     ########################################
+#     ## Outfiles of Dynamic heatmap script
+#     $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
+#     $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
+#     $main::outfile{Diff_maxNWD_tsv} = $main::prefix{main}."_diff_matrix_heatmap.tsv";
+#     $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
+#     $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
+#     $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
+    
+#     &RSAT::message::TimeWarn("Drawing heatmap of maxNWD") if ($main::verbose >= 2);
+
+#     ##################################
+#     ### Identify the path of the R executable
+#     my $r_path = &RSAT::server::GetProgramPath("R");
+
+#     my $dynamic_heatmap_script  = $ENV{RSAT}."/R-scripts/matrix-enrichment_heatmap.R";
+
+#     &RSAT::error::FatalError("Cannot read matrix-enrichment_heatmap.R script", $dynamic_heatmap_script) unless (-r $dynamic_heatmap_script);
+
+#     ## Command
+#     my $dynamic_heatmap_cmd = "";
+#     $dynamic_heatmap_cmd .= " cat ".$dynamic_heatmap_script;
+#     $dynamic_heatmap_cmd .= " | ".$r_path;
+#     $dynamic_heatmap_cmd .= " --slave --no-save --no-restore --no-environ";
+#     $dynamic_heatmap_cmd .= " --args \"";
+#     $dynamic_heatmap_cmd .= " prefix = '".$main::prefix{main}."'";
+#     $dynamic_heatmap_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
+#     $dynamic_heatmap_cmd .= "; html.template.file = '".$main::outfile{maxNWD_heatmap_template}."'";
+#     $dynamic_heatmap_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
+#     $dynamic_heatmap_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
+#     $dynamic_heatmap_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
+#     $dynamic_heatmap_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
+#     $dynamic_heatmap_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
+#     $dynamic_heatmap_cmd .= "; d3.base = '".$d3_base."'";
+#     $dynamic_heatmap_cmd .= "; d3.array.base = '".$d3_array_base."'";
+#     $dynamic_heatmap_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
+#     $dynamic_heatmap_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
+#     $dynamic_heatmap_cmd .= " \"";
+# #    $Cluster_motifs_cmd = "(".$dynamic_heatmap_cmd.")"; # Uncomment this line to check the R output in the terminal
+# #    $dynamic_heatmap_cmd = "(".$dynamic_heatmap_cmd.") 2 > ".$main::outfile{Rlog}; 
+
+#     if ($r_path) {
+#         &doit($dynamic_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+#     } else {
+#         &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
+#     }
+#     return();
+# }
+
+
 ################################################################
 ## Draw the Dynamic Heatmap using the matrix
 ## of maxNWD positive values
-sub DynamicHeatmapEnrichment {
-
-    ########################################
-    ## Outfiles of Dynamic heatmap script
-    $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
-    $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
-    $main::outfile{Diff_maxNWD_tsv} = $main::prefix{main}."_diff_matrix_heatmap.tsv";
-    $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
-    $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
-    $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
+sub Draw_OCCProfiles_and_Heatmap {
     
-    &RSAT::message::TimeWarn("Drawing heatmap of maxNWD") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Drawing curves of Binomial OCC significance and dynamic heatmap") if ($main::verbose >= 2);
 
     ##################################
     ### Identify the path of the R executable
     my $r_path = &RSAT::server::GetProgramPath("R");
 
-    my $dynamic_heatmap_script  = $ENV{RSAT}."/R-scripts/matrix-enrichment_heatmap.R";
+    my $occ_sig_heatmap_script  = $ENV{RSAT}."/R-scripts/matrix-enrichment_plot_and_heatmap.R";
 
-    &RSAT::error::FatalError("Cannot read matrix-enrichment_heatmap.R script", $dynamic_heatmap_script) unless (-r $dynamic_heatmap_script);
-
-    ## Command
-    my $dynamic_heatmap_cmd = "";
-    $dynamic_heatmap_cmd .= " cat ".$dynamic_heatmap_script;
-    $dynamic_heatmap_cmd .= " | ".$r_path;
-    $dynamic_heatmap_cmd .= " --slave --no-save --no-restore --no-environ";
-    $dynamic_heatmap_cmd .= " --args \"";
-    $dynamic_heatmap_cmd .= " prefix = '".$main::prefix{main}."'";
-    $dynamic_heatmap_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
-    $dynamic_heatmap_cmd .= "; html.template.file = '".$main::outfile{maxNWD_heatmap_template}."'";
-    $dynamic_heatmap_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
-    $dynamic_heatmap_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
-    $dynamic_heatmap_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
-    $dynamic_heatmap_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
-    $dynamic_heatmap_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
-    $dynamic_heatmap_cmd .= "; d3.base = '".$d3_base."'";
-    $dynamic_heatmap_cmd .= "; d3.array.base = '".$d3_array_base."'";
-    $dynamic_heatmap_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
-    $dynamic_heatmap_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
-    $dynamic_heatmap_cmd .= " \"";
-#    $Cluster_motifs_cmd = "(".$dynamic_heatmap_cmd.")"; # Uncomment this line to check the R output in the terminal
-#    $dynamic_heatmap_cmd = "(".$dynamic_heatmap_cmd.") 2 > ".$main::outfile{Rlog}; 
-
-    if ($r_path) {
-        &doit($dynamic_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-    } else {
-        &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
-    }
-    return();
-}
-
-
-################################################################
-## Draw the Dynamic Heatmap using the matrix
-## of maxNWD positive values
-sub DynamicOccProfiles {
-
-    ########################################
-    ## Outfiles of Dynamic heatmap script
-    $main::outfile{binomial_occ_profile} = $main::prefix{main}."_binomial_occ_sig_profiles.html";
-    $main::outfile{binomial_occ_profile_template} = $ENV{RSAT}."/public_html/templates_html/dynamic_binomial_OCC_profiles.html";
-    
-    &RSAT::message::TimeWarn("Drawing curves of Binomial OCC significance") if ($main::verbose >= 2);
-
-    ##################################
-    ### Identify the path of the R executable
-    my $r_path = &RSAT::server::GetProgramPath("R");
-
-    my $dynamic_occ_sig_script  = $ENV{RSAT}."/R-scripts/plot_binomial_occ.R";
-
-    &RSAT::error::FatalError("Cannot read plot_binomial_occ.R script", $dynamic_occ_sig_script) unless (-r $dynamic_occ_sig_script);
+    &RSAT::error::FatalError("Cannot read plot_binomial_occ.R script", $occ_sig_heatmap_script) unless (-r $occ_sig_heatmap_script);
 
     my $Seq_string = join('---', @all_sequence_names);
     my $TFs_string = join('---', @all_matrix_names);
 
     ## Command
-    my $dynamic_occ_sig_cmd = "";
-    $dynamic_occ_sig_cmd .= " cat ".$dynamic_occ_sig_script;
-    $dynamic_occ_sig_cmd .= " | ".$r_path;
-    $dynamic_occ_sig_cmd .= " --slave --no-save --no-restore --no-environ";
-    $dynamic_occ_sig_cmd .= " --args \"";
-    $dynamic_occ_sig_cmd .= " prefix = '".$main::prefix{main}."'";
-    $dynamic_occ_sig_cmd .= " ;html.template.file = '".$main::outfile{binomial_occ_profile_template}."'";
-    $dynamic_occ_sig_cmd .= " ;Sequences = '".$Seq_string."'";
-    $dynamic_occ_sig_cmd .= " ;TFs = '".$TFs_string."'";
-    $dynamic_occ_sig_cmd .= " \"";
-#    $dynamic_occ_sig_cmd = "(".$dynamic_occ_sig_cmd.")"; # Uncomment this line to check the R output in the terminal
-#    $dynamic_occ_sig_cmd = "(".$dynamic_occ_sig_cmd.") 2 > ".$main::outfile{Rlog}; 
+    my $matrix_enrichment_plot_cmd = "";
+    $matrix_enrichment_plot_cmd .= " cat ".$occ_sig_heatmap_script;
+    $matrix_enrichment_plot_cmd .= " | ".$r_path;
+    $matrix_enrichment_plot_cmd .= " --slave --no-save --no-restore --no-environ";
+    $matrix_enrichment_plot_cmd .= " --args \"";
+    $matrix_enrichment_plot_cmd .= " prefix = '".$main::prefix{main}."'";
+    $matrix_enrichment_plot_cmd .= " ;html.template.file = '".$main::outfile{report_template}."'";
+
+    ## Arguments to draw Binomial Occ curves
+    $matrix_enrichment_plot_cmd .= " ;Sequences = '".$Seq_string."'";
+    $matrix_enrichment_plot_cmd .= " ;TFs = '".$TFs_string."'";
+
+    ## Arguments to draw heatmap
+    $matrix_enrichment_plot_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
+     $matrix_enrichment_plot_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
+    $matrix_enrichment_plot_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
+    $matrix_enrichment_plot_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
+    $matrix_enrichment_plot_cmd .= "; parsed.heatmap.html = '".$main::outfile{report_partial}."'";
+    $matrix_enrichment_plot_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
+    $matrix_enrichment_plot_cmd .= "; d3.base = '".$d3_base."'";
+    $matrix_enrichment_plot_cmd .= "; d3.array.base = '".$d3_array_base."'";
+    $matrix_enrichment_plot_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
+    $matrix_enrichment_plot_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
+
+    
+    $matrix_enrichment_plot_cmd .= " \"";
+#    $matrix_enrichment_plot_cmd = "(".$matrix_enrichment_plot_cmd.")"; # Uncomment this line to check the R output in the terminal
+#    $matrix_enrichment_plot_cmd = "(".$matrix_enrichment_plot_cmd.") 2 > ".$main::outfile{Rlog}; 
 
     if ($r_path) {
-        &doit($dynamic_occ_sig_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+        &doit($matrix_enrichment_plot_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
         &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
     }
@@ -1579,74 +1513,137 @@ sub DynamicOccProfiles {
 ## of maxNWD positive values
 sub CreateHTMLReport {
     
-  &RSAT::message::TimeWarn("Creating HTML report") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Creating HTML report") if ($main::verbose >= 2);
 
-  $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
-  $main::outfile{report} = $main::prefix{main}."_report.html";  
+    ################################################################
+    ## Draw the Binomail Occ curves + dynamic heatmap
+    &Draw_OCCProfiles_and_Heatmap();
+    
+    $main::outfile{report} = $main::prefix{main}."_report.html";  
+    
+    ## Open the HTML template
+    my ($template) = &OpenInputFile($main::outfile{report_partial});
+    
+    ## Open the HTLM report
+    unlink($main::outfile{report});
+    my ($syn) = &OpenOutputFile( $main::outfile{report});
+    
+    my $motif_nb = scalar(@all_matrix_names);
+    my $set_nb = scalar(@all_sequence_names);
+    
+    my $head = &PrintHtmlResultHeader(program=>"matrix-enrichment", "title"=>$main::title);
+    
+    ###########################################
+    ## Read the template and add the section
+    ## names and other parameters
+    while(<$template>){
+	
 
-  ## Open the HTML template
-  my ($template) = &OpenInputFile($main::outfile{report_template});
-  
-  ## Open the HTLM report
-  my ($syn) = &OpenOutputFile( $main::outfile{report});
-  
-  my $motif_nb = scalar(@all_matrix_names);
-  my $set_nb = scalar(@all_sequence_names);
+	chomp();
+	my $line = $_;
+	
+	## Substitute the Header
+	if($line =~ /--he--/){
+	    
+	    $line =~ s/--he--/$head/;
+	}
+	
+	## Substitute the Command section	
+	if($line =~ /--show_command--/){
+	    
+	    ## Print arguments
+	    print &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
+	    print $syn "<pre>";
+	    print $syn "matrix-enrichment ";
+	    &PrintArguments($syn);
+	    print $syn "</pre>";
+	    print $syn &close_menu_heading();
+	    
+	    $line =~ s/--show_command--//;
+	}
 
-  my $head = &PrintHtmlResultHeader(program=>"matrix-enrichment", "title"=>$main::title);
+	
+	###########################
+	## Fill parameters table
+	if($line =~ /--motif_nb--/){
+	    $line =~ s/--motif_nb--/$motif_nb/g;
+	}
+	
+	if($line =~ /--set_nb--/){
+	    $line =~ s/--set_nb--/$set_nb/g;
+	}
 
-  ###########################################
-  ## Read the template and add the section
-  ## names and other parameters
-  while(<$template>){
-      
-      next if (/^#/); ## Skip header line
-      next if (/^;/); ## Skip comment lines
-      next unless (/\S/); ## Skip empty lines	
-      chomp();
-      my $line = $_;
+	
+	############################
+	## maxNWD heatmap section
+	if($line =~ /--heatmap_link--/){
+	    my $heatmap_link = &RSAT::util::RelativePath($main::outfile{report_partial}, $main::outfile{maxNWD_heatmap_html});
+	    $line =~ s/--heatmap_link--/$heatmap_link/g;
+	}
+	
+	############################
+	## maxNWD heatmap section
+	if($line =~ /--occ_profiles--/){
+	    my $occ_profiles_link = &RSAT::util::RelativePath($main::outfile{report_partial}, $main::outfile{binomial_occ_profile});
+	    $line =~ s/--occ_profiles--/$occ_profiles_link/g;
+	}
+	
+	print $syn $line."\n";
+    }
+    close($template);
+    close($syn); 
 
-      ## Substitute the Header
-      if($line =~ /--he--/){
 
-	  print " 1\n";
-	  $line =~ s/--he--/$head/;
-      }
+}
 
-      ## Substitute the Command section
-      if($line =~ /--show_command--/){
 
-	  ## Print arguments
-	  print &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
-	  print $syn "<pre>";
-	  print $syn "matrix-enrichment ";
-	  &PrintArguments($syn);
-	  print $syn "</pre>";
-	  print $syn &close_menu_heading();
+##########################################
+## Open the HTML page for the synthesis
+sub OpenSynthesis {
 
-	  $line =~ s/--show_command--//;
-	  print " 2\n";
-      }
-      
-      ###########################
-      ## Fill parameters table
-      $line =~ s/--motif_nb--/$motif_nb/g;
-      $line =~ s/--set_nb--/$set_nb/g;
- 
-      ############################
-      ## maxNWD heatmap section
-      my $heatmap_link = &RSAT::util::RelativePath($main::outfile{report}, $main::outfile{maxNWD_heatmap_html});
-      $line =~ s/--heatmap_link--/$heatmap_link/g;
-      
-      ############################
-      ## maxNWD heatmap section
-      my $occ_profiles_link = &RSAT::util::RelativePath($main::outfile{report}, $main::outfile{binomial_occ_profile});
-      $line =~ s/--occ_profiles--/$occ_profiles_link/g;
-      
-      print $syn $line."\n";
+  my $refresh_time;
+  if ($main::param{progressive_synthesis}) {
+    $refresh_time = 90;
+  } else {
+     $refresh_time = 0;
   }
-  close($template);
-  close($syn);  
+
+  
+  ## Open the summary HTML file
+  $syn = &OpenOutputFile($main::outfile{report});
+  $synthesis_path = `dirname $main::outfile{report}`;
+  chomp($synthesis_path);
+
+  my $head = &PrintHtmlResultHeader(program=>"matrix-enrichment", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>$refresh_time);
+  
+  print $syn $head;
+
+  &ReportCommandLoading();
+}
+
+
+################################################################
+## Report the command before running the analysis, for the sake of
+## debugging and to facilitate copy-paste of the options.
+sub ReportCommandLoading {
+  print $syn "<div width='1250px'; height='auto'; ><img style='padding-left:700px;height:500px;width:500px'; src='".$icons{loading}."'></div>";
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
+  print $syn "<pre>";
+  print $syn "matrix-enrichment";
+  &PrintArguments($syn);
+  print $syn "</pre>";
+  print $syn &close_menu_heading();
+}
+
+
+sub ReportCommand {
+
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
+  print $syn "<pre>";
+  print $syn "matrix-enrichment";
+  &PrintArguments($syn);
+  print $syn "</pre>";
+  print $syn &close_menu_heading();
 }
 
 __END__

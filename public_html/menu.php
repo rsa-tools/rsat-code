@@ -1,9 +1,10 @@
 
-         
+
         <link rel='stylesheet' href='css/simple-sidebar.css'></link>
         <link rel="stylesheet" type="text/css" href="menu.css" media="screen,projection,print" />
         <link rel='stylesheet' href='css/colorbox.css'></link>
 	<link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
+<link rel='stylesheet' type='text/css' href='js/autocomplete/css/jquery-ui.css'
         <script src="js/jquery.js"></script>
         <script src="RSAT_menu.js" type="text/javascript"></script>
         <script src="js/jquery.colorbox-min.js"></script>
@@ -23,33 +24,33 @@
     require_once('functions.php');
 ?>
 
-<div id="wrapper"> 
+<div id="wrapper">
                    <!-- Sidebar -->
             <div id="sidebar-wrapper">
              <div id="menubody" style='padding-top:10px'>
-             <div id="tabmenu">
+             <!--div id="tabmenu">
              <ul class="rsat">
-                 <li><a class="active" href="RSAT_home.cgi">RSAT</a></li>
+                 <li><a class="active" href="index.php">RSAT</a></li>
                  <li><a href="NeAT_home.php" >NeAT</a></li>
-                 <!--      <li><a href="http://www.rsat.eu/index_neat.html" target="_top">NeAT</a></li>-->
+                 <!--      <li><a href="http://www.rsat.eu/index_neat.html" target="_top">NeAT</a></li>>
              </ul>
-             </div> <! /#tabmenu -->
+             </div> < /#tabmenu -->
              <div id="content" class="rsat">
-                 
+
                  <div class="menu">
                      <h2>
-                         <a href="RSAT_home.cgi" >
+                         <a href="index.php" >
                              <img src="images/RSAT_icon.jpg" style="max-width:150px;max-height:60px;" alt="RSAT server" border="0">
                                  </a>
                      </h2>
                  </div>
-                 
+
                  <!--      <p ><h2 style="border-style:solid;border-color:#cc6600;padding:0 10px;background-color:#F6E6CA;"><a href="http://www.eccb14.org/program/tutorials/cis-r" target="_blank">RSAT tutorial<br>at ECCB'14</a></h2></p>>
-                  
+
                   <p ><h2 style="border-style:solid;border-color:#cc6600;padding:0 10px;background-color:#F6E6CA;">
                   <a target='_blank' href="http://rsat.ulb.ac.be/eccb14/" >RSAT tutorial<br>at ECCB'14</a>
                   </h2></p-->
-		<div style='padding:60px 0 0 10px;' align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b> 
+		<div style='padding:60px 0 0 10px;' align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b>
 <!--perlscript -->
 <?php
     virtual("nbOrg.cgi");
@@ -57,23 +58,13 @@
 </b> <i>organisms</i></div>
                 <div>
 			<input type='search' id='searchfunc' placeholder='Search' class='searchmenu' onKeyPress='searchfunc()' onKeyUp='searchfunc()'/>
-		</div> 
+		</div>
 		<div align='right'>
                      <b>New&nbsp;items</b><img src="images/onebit_49.png"  class="new"/>
                  </div>
-                 <!--div class="menu">
-                  <div class="menu_heading_open" onclick="toggleMenu('100')" id="heading100">Most popular tools</div>
-                  <div id="menu100">
-                  <a class="menu_item" href="retrieve-seq_form.cgi"
-                  >retrieve sequence</a>
-                  <a class="menu_item" href="peak-motifs_form.cgi" >peak-motifs</a>
-                  <a class="menu_item" href="oligo-analysis_form.cgi" >oligo-analysis (words)</a>
-                  <a class="menu_item" href="matrix-scan-quick_form.cgi" >matrix-scan (quick)</a>
-                  </div>
-                  </div-->
-                 
+
                  <div class="menu_expand" onclick="expandAll('14')" id="expand"> > view all tools</div>
-                 
+
                  <div class="menu">
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('1')" id="heading1">Genomes and genes</div>
@@ -84,7 +75,7 @@
                          <a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>
                          <a class="menu_item" href="random-genes_form.cgi" >random gene selection</a>
                      </div>
-                     
+
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('2')" id="heading2">Sequence tools <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu2" class="menu_collapsible">
@@ -97,19 +88,20 @@
                          <a class="menu_item" href="convert-seq_form.cgi" >convert sequence</a>
                          <a class="menu_item" href="random-seq_form.cgi" >random sequences</a>
                      </div>
-                     
-                     
+
+
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('12')" id="heading12">Matrix tools <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu12" class="menu_collapsible">
+                         <a class="menu_item" href="retrieve-matrix_form.cgi">retrieve matrix <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="convert-matrix_form.cgi" >convert matrix</a>
                          <a class="menu_item" href="compare-matrices_form.cgi" >compare matrices</a>
                          <a class="menu_item" href="matrix-clustering_form.cgi" >matrix-clustering <img src="images/onebit_49.png" height="30" class="new"></a>
                          <a class="menu_item" href="matrix-distrib_form.cgi" >matrix distrib</a>
                          <a class="menu_item" href="matrix-quality_form.cgi" >matrix quality</a>
                      </div>
-                     
-                     
+
+
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('11')" id="heading11">Build control sets</div>
                      <div id="menu11" class="menu_collapsible">
@@ -123,7 +115,7 @@
                          <a class="menu_item" href="implant-sites_form.cgi" >implant-sites</a>
                      </div>
                  </div>
-                 
+
                  <div class="menu">
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('3')" id="heading3">Motif discovery</div>
@@ -141,8 +133,8 @@
                          <a class="menu_item" href="consensus_form.cgi" >consensus</a>
                          <!--	  <a class="menu_item" href="gibbs_form.cgi" >gibbs</a>-->
                      </div>
-                     
-                     
+
+
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('4')" id="heading4">Pattern matching <img src="images/onebit_49.png" height="30" class="new"></div>
                      <div id="menu4" class="menu_collapsible">
@@ -157,7 +149,7 @@
                          <a class="menu_item_last" href="genome-scale-dna-pattern_form.cgi" >genome-scale dna-pattern</a>
                      </div>
                  </div>
-                 
+
                  <div class="menu">
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('10')" id="heading10">Comparative genomics&nbsp; <img src="images/onebit_49.png" height="30" class="new"></img></div>
@@ -168,8 +160,8 @@
                          <a class="menu_item" href="footprint-scan_form.cgi" >footprint-scan <img src="images/onebit_49.png" height="30" class="new"></img>
                          </a>
                      </div>
-                     
-                     
+
+
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('13')" id="heading13">NGS - ChIP-seq</div>
                      <div id="menu13" class="menu_collapsible">
@@ -178,8 +170,8 @@
                          <a class="menu_item" href="random-genome-fragments_form.cgi" >random genome fragments</a>
                          <!--	  <a class="menu_item" href="random-genome-fragments_form.cgi" >random genome fragments</a>-->
                      </div>
-                     
-                     
+
+
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('9')" id="heading9">Genetic variations <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu9" class="menu_collapsible">
@@ -189,8 +181,8 @@
                          <a class="menu_item" href="convert-variations_form.cgi" >Convert variation formats <img src="images/onebit_49.png" height="30" class="new"></img></a>
                      </div>
                  </div>
-                 
-                 
+
+
                  <div class="menu">
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('8')" id="heading8">Conversion/Utilities</div>
@@ -211,24 +203,18 @@
                          <a class="menu_item" href="convert-features_form.cgi" >convert features</a>
                          <a class="menu_item_last" href="compare-features_form.cgi" >compare features</a>
                      </div>
-                     
-                     
+
+
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('5')" id="heading5">Drawing</div>
                      <div id="menu5" class="menu_collapsible">
                          <a class="menu_item" href="feature-map_form.cgi" >feature map</a>
                          <a class="menu_item" href="XYgraph_form.cgi" >XY graph</a>
                      </div>
-                     
-                     <!--<div class="menu_heading_closed"
-                      onclick="toggleMenu('7')" id="heading7">Other tools</div>
-                      <div id="menu7" class="menu_collapsible">
-                      </div>
-                      -->
-                     
-                     
+
+
                  </div>
-                 
+
                  <div class="menu">
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('6')" id="heading6">SOAP Web services</div>
@@ -239,43 +225,32 @@
                           <a class="menu_item" href="ws_clients.html" target=tools>Clients</a>
                           <a class="menu_item" href="ws_workflows.html" target=tools>Taverna workflows </a-->
                      </div>
-                     
+
                  </div>
-                 
+
                  <div class="menu">
-                     <!-- <br /> -->	
-                     
+
+
                      <div class="menu_heading_open"
                          onclick="toggleMenu('7')" id="heading7">Help & Contact</div>
                          <div id="menu7" class="menu_collapsible_display">
                          <a class="menu_item" href="people.php" >RSAT team</a>
                          <a class="menu_item" href="http://rsa-tools.github.io/teaching/index.html" target="_blank">Training material <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="tutorials.php" >Tutorials</a>
-                         <!--<a class="menu_item" href="forum_out.html" ><font color=#FFCCCC>Contact & Forum</font></a>-->
+
                          <a class="menu_item" href="publications.cgi" >Publications</a>
                          <a class="menu_item" href="credits.php" >Credits</a>
                          <a class="menu_item" href="http://teaching.rsat.eu/download-request_form.cgi" >Download</a>
                          <a class="menu_item_last" href="htmllink.cgi?title=RSAT-motif&file=motif_databases/" >Motif databases</a>
                          <a class="menu_item_last" href="htmllink.cgi?title=RSAT-Data&file=data/" >Data</a>
-                         
+
+                        </div>
+
                          </div>
-                         <!--div class="menu_heading_closed"
-                         onclick="toggleMenu('9')" id="heading9">Information</div>
-                         <div id="menu9" class="menu_collapsible">
-                         
-                         
-                         <a class="menu_item" href="citing_rsat.html" >Citing RSAT</a>
-                         
-                         
-                         
-                         <a class="menu_item" href="change_history.html" target ="tools">Change history</a>
-                         
-                         </div-->
-                         
-                         
-                         </div>
+
+                        <A target=_top href="#" style='font-size:3px;visibility:hidden'>bug/dont understand</A>
+
                     </div>
                </div>
-            
-            </div><!-- /#sidebar-wrapper -->
 
+            </div><!-- /#sidebar-wrapper -->

@@ -48,10 +48,10 @@ $default{r_plot} = "checked"; ## Plot XY graph with R rather than GD
 
 $default{visualize}="none";
 
+
 ## motif database
 $default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
 $default{custom_motif_db_name}="custom_motif_collection";
-
 
 ### Replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -158,7 +158,7 @@ end_part_1
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
-print $query->start_multipart_form(-action=>"peak-motifs.cgi");
+print $query->start_multipart_form(-action=>"peak-motifs.cgi", -onreset=>"resetHandler()");
 
 ################# Peak sequences
  &Panel1();
@@ -224,6 +224,13 @@ function setDemo1(demo_url){
     $("#visualize_galaxy").prop("checked", true);
     
 }
+function resetHandler(){
+    $("#db_choice").val("").change();
+}
+
+$(function(){
+    $("#db_choice").val("' . $default{compare_motif_database} . '").change();
+});
 </script>';
 
 print "<TD><b>";
@@ -523,8 +530,9 @@ sub Panel4 {
 #  print "<a href=''><b>Choose below the motif database(s):</b></a><br/>";
   print "<a href=''><b>Compare discovered motifs with known motifs from databases</b></a><br/>";
 
+&MotifSelection("mode" => "checkbox");
   ## Display supported motif databases
-  &DisplayMatrixDBchoice("mode"=>"checkbox");
+  # &DisplayMatrixDBchoice("mode"=>"checkbox");
 
   print "<p/> ";
   print "<a href=''><b>Add your own motif database:</b></a><br/>";

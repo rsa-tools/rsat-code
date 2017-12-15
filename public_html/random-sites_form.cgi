@@ -52,7 +52,7 @@ print "Generate random sites given a motif (PSSM).\n";
 print "<br>Reference: <a target='_blank' href=\"http://www.ncbi.nlm.nih.gov/pubmed/19689955\">Defrance & van Helden, Bioinformatics 2009</a>.</a>";
 print "</center>";
 
-print $query->start_multipart_form(-action=>"random-sites.cgi");
+print $query->start_multipart_form(-action=>"random-sites.cgi", -onreset=>"resetHandler()");
 
 #print "<font face='Helvetica'>";
 
@@ -76,6 +76,10 @@ print "<hr>";
 ### send results by email or display on the browser
 print "<P>\n";
 &SelectOutput();
+
+print '<script>function resetHandler(){
+$("#db_choice").val("").change();
+}</script>';
 
 ### action buttons
 print "<UL><UL><TABLE class = 'formbutton'>\n";

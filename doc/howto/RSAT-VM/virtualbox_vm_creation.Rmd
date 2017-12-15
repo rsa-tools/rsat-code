@@ -46,7 +46,7 @@ Ubuntu Desktop: current RSAT-VM releases are based on Ubuntu 17.04, but the insc
 
 - **Ubuntu 17.04 (Zesty Zapus)** [ubuntu-17.04-desktop-amd64.iso](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-desktop-amd64.iso) (1.5Gb).
 
-- **Ubuntu 16.04.2 LTS (Xenial Xerus):** [ubuntu-16.04.2-desktop-amd64.iso](http://releases.ubuntu.com/releases/16.04/ubuntu-16.04.2-desktop-amd64.iso) (1.4Gb).
+- **Ubuntu 16.04.2 LTS (Xenial Xerus):** [ubuntu-16.04.3-desktop-amd64.iso](http://releases.ubuntu.com/releases/16.04/ubuntu-16.04.3-desktop-amd64.iso) (1.4Gb).
 
 - **Ubuntu 14.04.5 LTS (Trusty Tahr)** [ubuntu-14.04.5-desktop-amd64.iso](http://releases.ubuntu.com/releases/14.04/ubuntu-14.04.5-desktop-amd64.iso) (1.0Gb).
 
@@ -66,7 +66,7 @@ Ubuntu Desktop: current RSAT-VM releases are based on Ubuntu 17.04, but the insc
 
 - Name and operating system
 
-    - Name: RSAT-VM-2017-04
+    - Name: RSAT-VM-2017-10
     - Type: Linux
     - Version: Ubuntu (64 bits)
 
@@ -87,14 +87,14 @@ Ubuntu Desktop: current RSAT-VM releases are based on Ubuntu 17.04, but the insc
 
 - File location and size
 
-    - name of virtual hard drive file:    RSAT-VM-2017-04_HDD
-    - max size of virtual hard drive:	    18GB
+    - name of virtual hard drive file:    RSAT-VM-2017-10_HDD
+    - max size of virtual hard drive:	    18 GB
 
-        **Beware:** the size has to be larger than you real needs, because Ubuntu will automatically create some big  partitions (/dev and /run/shm). Since we allow dynamical memory allocation, it is fine to set the max size to 18Gb, which will be grossly assigned as follows:
+        **Note:** the size has to be larger than your real needs, because Ubuntu will automatically create some big  partitions (/dev and /run/shm). Since we allow dynamical memory allocation, it is fine to set the max size to 18Gb, which will be grossly assigned as follows:
 
-        - max 14Gb for the root partition /
-        - 2Gb for /dev
-	      - 2Gb for /run/user
+        - max 14 Gb for the root partition /
+        - 2 Gb for /dev
+	      - 2 Gb for /run/user
 
 
 At this stage, the VM has been created and needs to be configured before installing the operating system. 
@@ -172,6 +172,17 @@ See information at: <https://www.virtualbox.org/manual/ch06.html#network_bridged
 - Attached to : *Bridged Adapter*
 - Name: choose an option corresponding to the actual internet connection of the host machine (e.g. ethernet cable, Wi-Fi, ...).
 
+[![Configuration for a bridged network via an Ethernet (cable) connection](images/vm_settings_network_bridged.png){width="400"}](images/vm_settings_network_bridged.png)
+
+If you are connected via Wi-Fi (wireless), you may need to set up advanced option **for Wi-Fi connection**. 
+
+- In the parameter panel of the bridged network adapter, click **Advanced**.
+- Select *Allow all* for the **Promiscuous mode**.
+- Uncheck the option **cable connected** (not sure this is required, but seems reasonable to disactivate cable for a wireless connection).
+
+
+![Advanced settings to enable bridged network via a Wi-Fi connection](images/vm_settings_network_bridged_for_wireless.png)
+
 **Note:** you can also activate a fourth adapter, for example to support both an ethernet card (Adapter 3) and a Wi-Fi connection (Adapter 4). This is particularly useful for laptop computers, whose network parameters vary from place to place. 
 
 ****************************************************************
@@ -237,9 +248,9 @@ In the dialog box **Write the changes to disk?** click **Continue**.
 | Field | Value |
 |--------------------------------------|-------------------------------------------------------|
 | Your name |	RSAT admin |
-| Your computer's name | rsat-vb-2017-04 |
+| Your computer's name | rsat-vb-2017-10 |
 | Pick a username | rsat |
-| Password | rsat1704^[This password is obviously not safe, but it will be changed at the end of the installation] |
+| Password | tochng^[This password is obviously not safe, but it will be changed at the end of the installation] |
 | Log in automatically | I activate it because this will greatly facilitate the use of the Destkop version |
 | | Click **Continue** |
 
@@ -262,7 +273,7 @@ Ubuntu now installs the system, this should take a few minutes^[**Note** if you 
 
 ###  Screen resolution (for Desktop version 14.04)
 
-**Note:** If you are using Ubuntu version 17.04 you can skip this section which was useful to fix a problem with version 14.04. 
+**Note:** If you are using Ubuntu version 16.04 or later you can skip this section which was useful to fix a problem with version 14.04. 
 
 With Ubuntu 14.05, at your first log in, the screen resolution is restricted to 640x480 pixels.
 
@@ -297,6 +308,7 @@ In the dialog box,
 - After rebooting, the VM has a resizable screen: if you increase the VM window, the Ubunutu desktop will adapt its size accordingly.
 
 ****************************************************************
+<!--
 ## Ubuntu Server version (still for version 14.04, to be checked and adapted for 16.04)
 
 The server version is less comfortable than the desktop version, but
@@ -354,7 +366,7 @@ the RSAT bash file with apt-get packages etc.
 Install the GRUB boot loader
 	Yes
 
-
+-->
 ****************************************************************
 ## Convenient settings (not necessary)
 
@@ -377,6 +389,9 @@ To add support for `ssh` access, we need to install the appropriate package.
 - In the virtual machine, open a terminal and type the following command. 
 
 ```
+## Note: for Ubuntu 16.04.3 there is a need to do an apt-get update
+## because the ssh package coming with the distribution has unmet
+## dependencies. 
 sudo apt-get install --quiet --assume-yes ssh
 sudo apt-get install --quiet --assume-yes net-tools
 ```
@@ -498,6 +513,7 @@ sudo usermod --password `openssl passwd -1 -salt xyz tochng` rsat
 sudo chage -d 0 rsat
 
 ## Add sudoer rights to vmuser and rsat users
+more /etc/sudoers
 sudo chmod 644 /etc/sudoers
 sudo nano /etc/sudoers
 ## Find the following line
@@ -564,7 +580,7 @@ appliance.
 
 - In VirtualBox, open "File -> Export Appliance ...", and select the VM.
 
-    - Save as: rsat-vm-2017-04.ova
+    - Save as: rsat-vm-2017-10.ova
     - Files of Type: Open Virtualization Format Archive (.ova)
     - Storage Settings
     - Format: OVF 1.0
@@ -576,12 +592,12 @@ appliance.
 
 | Parameter    |    Value                                        |
 |:-------------|:------------------------------------------------|
-|  Name  		  | rsat-vm-2017-04 |
+|  Name  		  | rsat-vm-2017-10 |
 |	Product		  | Regulatory Sequences Analysis Tools |
 |	Product-URL	| http://rsat.eu/ |
 |	Vendor		  | Jacques van Helden |
 |	Vendor URL	| http://jacques.van-helden.perso.luminy.univ-amu.fr/ |
-|	Version		  | 2017-04 |
+|	Version		  | 2017-10 |
 |	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 17.04 Virtual Machine. |
 |	License	    |	Free of use for academic users, non-commercial and non-military usage. |
 | | |
@@ -595,7 +611,7 @@ Prepare the VM + accompanying material on a USB key, to ensure distribution in t
 
 ```
 SOURCE_DIR=/no_backup/VirtualBox_VMs/appliances
-VERSION=2017-04
+VERSION=2017-10
 
 ## Specification of the target location
 KEY_NB=02
@@ -613,7 +629,7 @@ This can be useful for two purposes.
 ```
 SPLIT_SIZE=3999m
 mkdir -p ${TARGET_DIR}/appliances
-time split -b ${SPLIT_SIZE} ${SOURCE_DIR}/rsat-vm-2017-04_${VERSION}.ova ${TARGET_DIR}/appliances/rsat-vm-2017-04_${VERSION}.ova.split${SPLIT_SIZE}_
+time split -b ${SPLIT_SIZE} ${SOURCE_DIR}/rsat-vm-2017-10_${VERSION}.ova ${TARGET_DIR}/appliances/rsat-vm-2017-10_${VERSION}.ova.split${SPLIT_SIZE}_
 ```
 
 ****************************************************************

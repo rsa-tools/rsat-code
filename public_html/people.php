@@ -85,7 +85,7 @@
     <td><a target='_blank' href="images/people/alejandra_medina-rivera.jpg">
 	<img border=0
 	     src="images/people/alejandra_medina-rivera.jpg" width="80" alt=""></a></td>
-    <td><b><a target='_blank' href="http://liigh.unam.mx/amedina/index.html">Alejandra Medina-Rivera</b></a>
+    <td><a target='_blank' href="http://liigh.unam.mx/amedina/index.html"><b>Alejandra Medina-Rivera</b></a>
     <br/>
     Associate professor at International Laboratory for the Research on the Human Genome, UNAM (Mexico)
     </td>
@@ -101,7 +101,7 @@
   <tr>
     <td><a href="images/people/jaime_castro.jpg">
 	<img border='0' src="images/people/jaime_castro.jpg" width="80" alt="Jaime Castro"></a></td>
-    <td><b>Jaime Castro</b> 
+    <td><a target='_blank' href="http://folk.uio.no/jamondra/"><b>Jaime Castro-Mondragon</b></a>
     <br>Post-doc Centre for Molecular Medicine Norway (NCMM) (Norway)
     </td>
     <td>RSAT developper since 2013
@@ -164,7 +164,22 @@
     </td>
   </tr>
   
-  
+  <tr><td colspan=4><hr class='portal'></td></tr>
+  <tr>
+    <td><a name=contreras></a><a href="images/people/bruno_contreras_moreira.jpg">
+    <img border=0
+         src="images/people/bruno_contreras_moreira.jpg" width="80" alt="Bruno Contreras Moreira"></a></td>
+    <td><a target='_blank' href="https://digital.csic.es/cris/rp/rp02661"><b>Bruno Contreras Moreira</b></a>
+      <br>Laboratory of Computational and Structural Biology, EEAD-CSIC, Zaragoza, Spain
+    </td>
+    <td>
+    Since 2014
+    </td>
+    <td>
+       Protocols for the analysis of regulatory sequences in plant genomes.
+    </td>
+  </tr>
+ 
   
   <tr><th colspan=4> Former Developpers</th></tr>
 

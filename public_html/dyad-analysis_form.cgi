@@ -225,7 +225,8 @@ function setDemo(demo_seq){
     $("#bg_level_organism").prop("checked",true);
     
     $("#org_select_rsat").prop("checked", true);
-    $("#organism").val("Saccharomyces_cerevisiae").trigger("chosen:updated");
+    $("#organism_name").val("Saccharomyces cerevisiae");
+    $("#organism").val("Saccharomyces_cerevisiae");
     $("#outputformat_seq").prop("checked", true);
 }
 </script>';

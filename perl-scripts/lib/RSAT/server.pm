@@ -89,8 +89,8 @@ sub GetProgramPath {
   ## If the path has ont ben found yet, find the program anywhere in
   ## the user path
   unless ($program_path) {
-    $program_path = `which $program_name`;
-    chomp($program_path);
+      $program_path = `which $program_name`;
+      chomp($program_path);
   }
 
   ## Check if the program path has been found
@@ -860,6 +860,10 @@ sub MessageToAdmin {
 Returns a hash table with the specification of motif databases on the
 current RSAT instance.
 
+Note: the keys of the hash table can be queriedd in a case-insensitive
+way by using lowercases (keys are both in the native case and in
+lowercases).
+
 Usage: 
  my %matrix_db = &RSAT::server::supported_motif_databases();
 
@@ -886,6 +890,9 @@ sub supported_motif_databases {
     $matrix_db{$db_name}->{'descr'} = $descr || $db_name;
     $matrix_db{$db_name}->{'version'} = $version || "";
     $matrix_db{$db_name}->{'url'} = $url || "";
+      #if ($db_name ne lc(db_name)) {
+      #$matrix_db{lc($db_name)} = $matrix_db{$db_name};
+      #}
   }
 
   return %matrix_db;

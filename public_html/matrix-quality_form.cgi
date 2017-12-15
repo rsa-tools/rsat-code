@@ -20,7 +20,7 @@ use RSAT::MatrixReader;
 
 ### Read the CGI query
 $query = new CGI;
-
+$main::quality=1;
 local @supported_input_formats = sort(keys( %RSAT::MatrixReader::supported_input_format));
 local @supported_output_formats = sort(keys( %RSAT::matrix::supported_output_format));
 
@@ -46,7 +46,7 @@ $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Escherichia_coli_K_12_substr__MG1655_uid57779";
+$default{organism}="Escherichia coli K12";
 #$default{html_title}="";
 $default{markov_order} = "0";
 $default{m_sites}="1";
@@ -90,7 +90,7 @@ print "<b>Citation</b>: Medina-Rivera, A., Abreu-Goodger, C., Salgado-Osorio, H.
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
-print $query->start_multipart_form(-action=>"matrix-quality.cgi");
+print $query->start_multipart_form(-action=>"matrix-quality.cgi", -onreset=>"resetHandler()");
 
 
 ################################################################
@@ -198,31 +198,40 @@ while(my $row = <$fh>){
     $demo_seq2 .= "\\n";
 }
 
-
+my $org = $default{organism};
+$org =~ s/\ /_/g;
 print '<script>
 function setDemo(demo_matrix, demo_seq1, demo_seq2){
     $("#reset").trigger("click");
     
-    descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will analyse the PSSM of the Transcription Factor LexA available in RegulonDB. </p> \
-    As a positive set we will use the obtained sequences from the ChIP-chip experiment (Wade et al. Genes Dev. 2005) of \ transcription factor LexA in the Escherichia coli K12 genome.</p>\
-    As a negative sequence set we will use the reported binding sites of CRP in the Escherichia coli K12 Genome annotated at \RegulonDB. </p></blockquote>";
+    descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will analyse the PSSM of the Transcription Factors LexA and CRP available in RegulonDB. </p> \
+    As first sequence set we will input the obtained sequences from the ChIP-chip experiment (Wade et al. Genes Dev. 2005) of \ transcription factor LexA in Escherichia coli K12 .</p>\
+    As second sequence set we will use the reported CRP binding sites in the Escherichia coli K12 annotated in \RegulonDB. </p>\ In the results you will observe there is an enrichment of LexA binding sites in the LexA ChIP-chip reported sequence set, \ and since LexA does not usually binds in the same sequences as CRP, you will notice there is no enrichment of LexA binding sites in CRP sequences.\ Hence, you will observe a reciprocal behavior of CRP predicted binding sites enrcihments, enriched in CRP reported bindings sequences, and not enriched in LexA ChIP-chip sequences. </p>    </blockquote> \ <p> \.";
     
     demo_descr.innerHTML = descr;
     demo.value = descr;
 
-    html_title.value = " LexA and CTCF matrices from RegulonDB 2015";
+    
+    html_title.value = "LexA and CTCF matrices from RegulonDB 2015";
     matrix.value = demo_matrix;
     matrix_format.value = "transfac";
     kfold.value = "none";
-    tag1.value = "positive_set";
+    tag1.value = "LexA_peaks";
     sequence1.value = demo_seq1;
     permutation1.value = 1;
     
-    tag2.value = "negative_set";
+    tag2.value = "CRP_binding_sites";
     sequence2.value = demo_seq2;
+    permutation2.value = 1;
+
     markov_order.value = 1;
     $("#nwd").prop("checked",true);
     
+    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism").val("' . $org . '");
+}
+function resetHandler(){
+    $("#db_choice").val("").change();
 }
 </script>';
 
