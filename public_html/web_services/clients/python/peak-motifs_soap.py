@@ -1,7 +1,6 @@
 #! /usr/bin/python
 # -*- coding: utf8 -*-
-"""
-Peak Motifs - developed by Jocelyn Brayet <jocelyn.brayet@curie.fr>
+"""Peak Motifs - developed by Jocelyn Brayet <jocelyn.brayet@curie.fr>
 Copyright (C) 2015  Institut Curie.
 
 This program is free software: you can redistribute it and/or modify
@@ -34,7 +33,8 @@ usage: peak-motifs_soap.py [-h] -test <TEST_FILE> [-control <CONTROL_FILE>]
 				[-image_format <IMAGE_FORMAT>]
 				[-disco [<DISCO_ALGORITHM> [<DISCO_ALGORITHM> ...]]]
 				[-source <SOURCE_FILE>] [-verb <VERBOSITY>]
-				[-ref_motif <REF_MOTIF>] -server <SERVER>
+				[-motif_db <MOTIF_DB>] [-ref_motif <REF_MOTIF>] 
+                                -server <SERVER>
 
 optional arguments:
   -h, --help		show this help message and exit
@@ -89,6 +89,12 @@ optional arguments:
 			source: galaxy
   -verb <VERBOSITY>, --verbosity <VERBOSITY>
 			Verbosity.
+  -motif_db <MOTIF_DB>, --motif_db <MOTIF_DB>
+                        Name(s) of motif database(s). List of databases
+                        of transcription factor binding motifs
+                        (e.g. JASPAR, TRANSFAC, RegulonDB, ...) which
+                        will be compared to the discovered motifs
+                        (task motifs_vs_db). 
   -ref_motif <REF_MOTIF>, --ref_motif <REF_MOTIF>
 			Motif annotated in some transcription factor database
 			(e.g. RegulonDB, Jaspar, TRANSFAC) for the
@@ -99,6 +105,7 @@ optional arguments:
 Version 0.1 - 30/01/2015 - Adapted from Jocelyn Brayet, France Genomique team
 
 ##########################################################
+
 """
 __author__ =  'Jocelyn Brayet'
 
@@ -153,6 +160,7 @@ from suds.client import Client
 #		 tmp_control_infile = None
 #		 max_seq_length = None
 #		 max_motif_number = None
+#		 motif_db = None
 #		 ref_motif = None
 #		 top_peaks = None
 #		 min_length = None
@@ -266,7 +274,8 @@ if __name__ == '__main__':
 	parser.add_argument('-disco', '--discoAlgorithm', metavar='<DISCO_ALGORITHM>', type=str, nargs='*', help='Specify the software tool(s) that will be used for motif discovery (oligos|dyads|positions|local_words|merged_words). Several algorithms can be specified either by using a comma-separated list of algorithms: -disco oligos,dyads', required=False)
 	parser.add_argument('-source', '--sourceFile', metavar='<SOURCE_FILE>', type=str, nargs=1, help='Enter the source of the fasta sequence file. Supported source: galaxy', required=False)
 	parser.add_argument('-verb', '--verbosity', metavar='<VERBOSITY>', type=int, nargs=1, help='Verbosity.', required=False)
-	parser.add_argument('-ref_motif', '--ref_motif', metavar='<REF_MOTIF>', type=argparse.FileType('r'), nargs=1, help='Motif annotated in some transcription factor database (e.g. RegulonDB, Jaspar, TRANSFAC) for the transcription factor of interest.', required=False)
+	parser.add_argument('-motif_db', '--motif_db', metavar='<MOTIF_DB>', type=str, nargs=1, help='Motif database(s) against which discovered motifs will be compared.', required=False)
+	parser.add_argument('-ref_motif', '--ref_motif', metavar='<REF_MOTIF>', type=argparse.FileType('r'), nargs=1, help='User-provided reference motif(s).', required=False)
 
 	################################ galaxy arguments ############################################################
 	#parser.add_argument('-outGalaxy', '--outGalaxy', metavar='<OUT_GALAXY>', type=str, nargs=1, required=True)
@@ -290,6 +299,7 @@ if __name__ == '__main__':
 	else :
 		refMotifValue =""
 
+
 	maxSeqLengthValue = testNone(args.maxSeqLength)
 	maxMotifNumberValue = testNone(args.maxMotifNumber)
 	topPeaksNumber = testNone(args.topPeaks)
@@ -304,6 +314,7 @@ if __name__ == '__main__':
 	graphTitleValue = testNone(args.graphTitle)
 	imageFormatValue = testNone(args.imageFormat)
 	discoAlgorithmValue = testNone(args.discoAlgorithm)
+        motifDbValue =  testNone(args.motif_db)
 	sourceFileValue = testNone(args.sourceFile)
 	verbosityValue = testNone(args.verbosity)
 	#outGalaxyValue = testNone(args.outGalaxy)
@@ -356,6 +367,7 @@ if __name__ == '__main__':
 		'image_format' : imageFormatValue,
 		'disco' : discoAlgorithmValue,
 		'source' : sourceFileValue,
+		'motif_db' : motifDbValue,
 		'ref_motif' : refMotifValue,
 		'verbosity' : verbosityValue
 		#'motif_db' : 'test'
