@@ -350,10 +350,16 @@ package main;
 	  }
 
 	  my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
-	  my @strain_folders = glob($latest_assembly_dir."/*");
+
+	  my @strain_folders;
+	  if ($strain) {
+	      @strain_folders = glob($latest_assembly_dir."/".$strain);
+#	      die "HELLO\t", $strain, "\t", join("\n\t", @strain_folders);
+	  } else {
+	      @strain_folders = glob($latest_assembly_dir."/*");
+	  }
 
 	  my $strains_for_species = scalar(@strain_folders);
-	  
 
 	  # Iterate over each strain of current species
 	  my $strain_nb = 0; # Strain counter for current species
@@ -369,23 +375,31 @@ package main;
 
 	      ## Strain
 	      $strain_nb ++;
+
+	      ## Restrinct the number of strains if requested
 	      if (($max_strains > 0) && ($strain_nb > $max_strains)) {
 		  my $remaining_strains = scalar(@strain_folders) - $strain_nb + 1;
-		  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", $strains_for_species) if ($main::verbose >= 2);
+		  &RSAT::message::Info("Species", $species, "ignoring ", $remaining_strains, "strains of", $strains_for_species) if ($main::verbose >= 2);
 		  last;
 	      }
 
-	      ## Organism (concatenation of species + strain)
+	      ## Update organism counter
 	      $org_nb++;
+
+	      ## Skip first N species if requested
 	      if (($skip_species > 0) && ($species_nb <= $skip_species)) {
 		  &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
 		  next;
 	      }
+
+	      ## Build organism name (concatenation of species + strain)
 	      my $organism_name = $species."_".$current_strain;
+
+	      ## Add organism to the list
 	      push @organisms, $organism_name;
 	      &RSAT::message::Info(scalar(@organisms), $species, $current_strain, $organism_name) if ($main::verbose >= 3);
 
-	      ## Parse the selected organism
+	      ## Parse the selected organism if requested
 	      $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
 
 	      if ($task{list}) {
@@ -470,7 +484,8 @@ package main;
   &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
 
   ## Check that at least one organism has been specified
-  &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)") unless (scalar(@organisms) > 0);
+  &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)") 
+      unless ((scalar(@organisms) > 0) || ($task{parse}));
 
   ## Some options are incompatible with multiple organisms
   if (scalar(@organisms) > 1) {
