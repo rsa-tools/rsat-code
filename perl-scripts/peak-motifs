@@ -623,7 +623,7 @@ sub DefaultParameters {
   $main::param{matrix_compa_min_Wr} = 0.3; ## min relative width
   $main::param{matrix_compa_min_cor} = 0.75; ## min correlation
   $main::param{matrix_compa_min_Ncor} = 0.4; ## min normalizd correlation
-  $main::param{matrix_compa_metrics} = "cor,Ncor,logoDP,NIcor,NsEucl,SSD,NSW";
+  $main::param{matrix_compa_metrics} = "cor,Ncor"; ## removed these for delegating to compare-matrices-quick : logoDP,NIcor,NsEucl,SSD,NSW";
   $main::param{matrix_compa_sort_field} = "Ncor"; ## sorting field
 
   my $motif_compa_options =  "";
@@ -634,8 +634,10 @@ sub DefaultParameters {
   $motif_compa_options .= " -lth Wr ".$main::param{matrix_compa_min_Wr}; ## Min relative width of the alignment
   $motif_compa_options .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $motif_compa_options .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
-  $motif_compa_options .= " -return matrix_name,matrix_id,".$main::param{matrix_compa_metrics}.",match_rank,width,strand,offset,consensus,alignments_1ton";
+#  $motif_compa_options .= " -return matrix_name,matrix_id,".$main::param{matrix_compa_metrics}.",match_rank,width,strand,offset,consensus,alignments_1ton";
+  $motif_compa_options .= " -return matrix_name,matrix_id,".$main::param{matrix_compa_metrics}.",width,strand,offset,consensus,alignments_1ton";
   $motif_compa_options .= " -sort ".$main::param{matrix_compa_sort_field};
+  $motif_compa_options .= " -quick";
   $main::param{motif_compa_options} = $motif_compa_options;
 
 }

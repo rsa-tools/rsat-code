@@ -160,6 +160,9 @@ package main;
   ## Flag to export the Newick tree
   local $export_newick = 0;
 
+  ## Hash containing the icon paths
+  local %icons = ();
+  
   ## Hash containing motif information
   local %matrix_info = ();
 
@@ -1577,9 +1580,26 @@ sub set_output_file_names {
       $jquery_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.js");
       $datatable_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
       $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
-      
-  }
 
+
+      ################################################################
+      ## Copy the section icons in the results folder
+      ################################################################
+      &RSAT::message::Debug("Copying result sections icons to output directory") if ($main::verbose >= 3);
+      my $icon_sync_cmd = "rsync -ruptl";
+      $icon_sync_cmd .= " ".$ENV{RSAT}."/public_html/images/program_icons/matrix-clustering_icons";
+      $icon_sync_cmd .= " ".$dir{output};
+      &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+      $icons{forest} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Forest.png");
+      $icons{tree} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Tree.png");
+      $icons{consensus} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Consensus.png");
+      $icons{files} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Files.png");
+      $icons{loading} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/RSAT_loading.svg");
+
+  
+  }
+  
   ## Some temporary files
   $main::outfile{temp_html} = $main::outfile{prefix}."_temporary.html";
   $main::outfile{temp_html_2} = $main::outfile{prefix}."_temporary_2.html";
@@ -2934,6 +2954,9 @@ sub create_html_radial_tree_file {
     my $line = "";
     my $print = "";
     my $temp_radial_tree = "";
+    my $tree_radium = 0;
+    my $motif_height = 0;
+    my $x_displacement = 0;
     my $json_file = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_cluster_1.json");
 
     open(RADIAL_TREE, ">".$main::outfile{radial_tree}) || &RSAT::error::FatalError($main::outfile{radial_tree_template}, "Cannot create temporary file for Radial tree");
@@ -2947,6 +2970,64 @@ sub create_html_radial_tree_file {
 	if (/--json_file--/){
 	    $line =~ s/--json_file--/$json_file/g;
 	}
+
+
+	## Set the tree radium according to the number of motifs
+	if (/--radium--/){
+
+	    if($number_of_motifs <= 30){
+		$tree_radium = 175;
+	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
+		$tree_radium = 275;
+	    } elsif ($number_of_motifs >= 100){
+		$tree_radium = 450;
+	    }
+	    
+	    $line =~ s/--radium--/$tree_radium/g;
+	}
+
+	
+	## Set the motif logo height according to the number of motifs
+	if (/--h_motif--/){
+
+	    if($number_of_motifs <= 30){
+		$motif_height = 30;
+	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
+		$motif_height = 20;
+	    } elsif ($number_of_motifs >= 100 && $number_of_motifs < 500){
+		$motif_height = 10;
+	    } elsif ($number_of_motifs >= 500){
+		$motif_height = 5;
+	    }
+	    
+	    $line =~ s/--h_motif--/$motif_height/g;
+	}
+
+
+ 	## Set displacement (x axis) of the logos according to the number of motifs
+	if (/--x_displ--/){
+	    
+	    if($number_of_motifs <= 30){
+		$x_displacement = 75;
+	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
+		$x_displacement = 70;
+	    } elsif ($number_of_motifs >= 100 && $number_of_motifs < 500){
+		$x_displacement = 55;
+	    } elsif ($number_of_motifs >= 500){
+		$x_displacement = 50;
+	    }
+	    
+	    $line =~ s/--x_displ--/$x_displacement/g;
+	}
+
+
+	## Set displacement (x axis) of the logos according to the number of motifs
+	if (/--y_displ--/){
+	    
+	    $y_displacement = ($motif_height/2) + 3;
+	    $line =~ s/--y_displ--/$y_displacement/g;
+	}
+
 
 	### Fix the d3 library path
 	if (/--d3--/) {
@@ -2985,13 +3066,13 @@ sub cluster_delim {
 sub Text_end_report {
 
     my $end_report = '
-        <div id="References_Button" class="button_click Section_button selected_header_section"><strong>References</strong></div>
+ <!--       <div id="References_Button" class="button_click Section_button selected_header_section" style="margin-top:2px;"><strong>References</strong></div> -->
 	<div id="end_report" style="margin-bottom:20px;">
 	  <ul style="list-style: none;">
 	    <li>
 	      <strong>References</strong>
               <ol>
-                 <li> Castro-Mondragon JA et al. RSAT matrix-clustering: dynamic exploration and redundancy reduction of transcription factor binding motif collections. <a target="_blank" href="https://oup.silverchair-cdn.com/oup/backfile/Content_public/Journal/nar/PAP/10.1093_nar_gkx314/1/gkx314.pdf?Expires=1497370402&Signature=XofQRKX~0-0C8EeL8V5NIwQEFG1UZDiJgo1BxcfsLQtd93E9TpM10q6FRMUUzdpNZrvsu9wmMU9M-VLanWxzZCK~C1KEFKFYaBo1eLIK68WBHWtN4nV1Jsm4XdJ37QoNsCxiacU-VQ2vTuurLR2NnIE2XZgXz6U3vF38JU~MOp-nGqPt2wUDVFA7KGf17JA9twamWygRatTwh1winZg7j0nzolFYJSzPLwxrNkioVTEyAE3Tx8cOCD~E1m5fRvJ5sfx9~g6It17FPb3WJJQqo4bNNfvicMthjluw6USPqQKHbVwvbLxGe~VUpSh2imFfbFbbyi1wbCyo~BwlyZR1yg__&Key-Pair-Id=APKAIUCZBIA4LVPAVW3Q"> doi: 10.1093/nar/gkx314</a>; Nucleic Acids Research (2017)</li>
+                 <li> Castro-Mondragon JA et al. <a target="_blank" href="https://academic.oup.com/nar/article/45/13/e119/3862068"> RSAT matrix-clustering: dynamic exploration and redundancy reduction of transcription factor binding motif collections. doi: 10.1093/nar/gkx314</a>; Nucleic Acids Research (2017)</li>
                  <li><strong>Last RSAT release: </strong><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
               </ol>
 	    </li>
@@ -3004,12 +3085,10 @@ sub Text_end_report {
 	    <li>
 	      <strong>Contact</strong>
               <ul>
-                 <li type="square"><a href="http://pedagogix-tagc.univ-mrs.fr/rsat/data/published_data/Castro_2016_matrix-clustering/Application_4/Ceevee10/demo_jaime.html" target=\'_blank\'>Jaime Castro-Mondragon</a> - <strong>jcastro@lcg.unam.mx</strong></li>
+                 <li type="square"><a href="http://folk.uio.no/jamondra/" target=\'_blank\'>Jaime Castro-Mondragon</a> - <strong>j.a.c.mondragon@ncmm.uio.no</strong></li>
                  <li type="square"><a href="http://morgane.bardiaux.fr/" target=\'_blank\'>Morgane Thomas-Chollier</a> - <strong>mthomas@biologie.ens.fr</strong></li>
                  <li type="square"><a href="http://jacques.van-helden.perso.luminy.univ-amu.fr/" target=\'_blank\'>Jacques van Helden</a> - <strong>Jacques.van-Helden@univ-amu.fr</strong></li>
               </ul>
-              <strong>Software used</strong>
-                 <li type="square"><a href="http://d3js.org/" target=\'_blank\'>Data-Driven Documents D3</a></li>
             </li>
           </ul>
 	</div>';
@@ -3707,7 +3786,7 @@ sub OpenSynthesis {
   
   print $syn $head;
 
-  &ReportCommand();
+  &ReportCommandLoading();
 }
 
 
@@ -3731,8 +3810,8 @@ sub ReOpenSynthesis {
    <link rel="stylesheet" type="text/css" href="'.$datatable_css_base.'">
 </head>
      ';
-  } 
-
+  }
+  
   ## Add the CSS style for matrix-clustering summary and 
   ## concatenate it to header the CSS sytles
   my $css_matrix_clustering = &ReportStyleCSS();
@@ -3757,7 +3836,19 @@ sub CloseSynthesis {
 ################################################################
 ## Report the command before running the analysis, for the sake of
 ## debugging and to facilitate copy-paste of the options.
+sub ReportCommandLoading {
+  print $syn "<div width='1250px'; height='auto'; ><img style='padding-left:700px;height:500px;width:500px'; src='".$icons{loading}."'></div>";
+  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
+  print $syn "<pre>";
+  print $syn "matrix-clustering ";
+  &PrintArguments($syn);
+  print $syn "</pre>";
+  print $syn &close_menu_heading();
+}
+
+
 sub ReportCommand {
+
   print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
   print $syn "<pre>";
   print $syn "matrix-clustering ";
@@ -3880,11 +3971,15 @@ sub ReportStyleCSS{
   top:1px;
   }
 
+  .icon {
+    margin: 17px;
+  }
+
   .Section_button {
   background-color: '.$blue_color.';
   float: left;
-  margin-top: 2px;
-  margin-bottom: 2px;
+  margin-top: 0px;
+  margin-bottom: 0px;
   width: 450px;
   height: 20px;
   position: relative;
@@ -3892,7 +3987,7 @@ sub ReportStyleCSS{
   text-align: center;
   color: '.$blue_font_color.';
   font-size: 15px;
-  padding: 4px;
+  padding: 1px;
   clear: both;
   border-radius:5px;
   cursor: pointer;
@@ -4025,7 +4120,6 @@ sub ReportStyleCSS{
 	margin: 10px;
         padding: 7px;
 	text-align: left; 
-	font-size: 17px;
 	border: solid 3px #004F72; 
 	clear: both;
 	position: relative;
@@ -4151,6 +4245,10 @@ sub ReportStyleCSS{
   overflow: scroll;
   }
 
+  .param {
+  font: 11px sans-serif;
+  }
+
 </style>
 ';
 
@@ -4178,20 +4276,33 @@ sub ParametersTable{
 
 
   my $par_table = '
-  <!-- Div with the table of selected parameters-->
-  <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Results Summary</strong></div>
+  <!-- Div with the table of selected parameters -->
+<!--  <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Results Summary</strong></div> -->
   <div id="Par_tab" class="tab" style="margin-bottom:15px;">
     <h2 style="margin-top: 0px;margin-bottom: 5px;">Results Summary</h2>
-    <table id="parameters_table" style="width:980px;">
+    <table id="parameters_table" style="width:700px;">
       <thead>
 	<tr>
 	  <th class="tab_col">Nb Input motifs</th>
 	  <th class="tab_col">Nb Input collections</th>
 	  <th class="tab_col">Nb Clusters Found</th>
-	  <th class="tab_col">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
-	  <th class="tab_col">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></th>
-	  <th class="tab_col">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></th>
-	  <th class="tab_col">Complete results [zip]</th>
+          <th class="tab_col">Download <br> Root motifs </th>
+          <th class="tab_col">Complete results [zip]</th>
+          <th class="tab_col" colspan="3">Parameters used
+
+	      <table><tbody>
+	        <tr>
+	          <td class="tab_col param">Linkage method <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></td>
+                  <td class="tab_col param ">Similarity metric <a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;float:right;"></a></td>
+	          <td class="tab_col param">Thresholds to partition the tree<a target=\'_blank\' href="'.$hclust_method_link.'"><img src="'.&RSAT::util::RelativePath($main::outfile{summary}, $ENV{RSAT}."/public_html/images/question-mark-button-2.png").'" style="width:15px;height:15px;position:relative;display:block;clear:both;float:right;"></a></td>
+
+	        </tr>
+	     </tbody></table>
+
+          </th>
+
+
+	  
 	</tr>
       </thead>
       <tbody>
@@ -4199,10 +4310,21 @@ sub ParametersTable{
 	  <td class="par_text">'.$number_of_motifs.'</td>
 	  <td class="par_text">'.$number_of_collections.'</td>
 	  <td class="par_text">'.$number_of_clusters.'</td>
-	  <td class="par_text">'.$hclust_method.'</td>
-	  <td class="par_text">'.$main::param{matrix_compa_score}.'</td>
-	  <td class="par_text">'.$threshold_values_html.'</td>
+	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{root_motifs}).'"><strong>Download</strong></a></td>
 	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download</a></td>
+
+	  <td>
+	    <table span="3">  
+	      <tbody>
+	        <tr>
+	  <td class="par_text" style="width:150px;">'.$hclust_method.'</td>
+	  <td class="par_text" style="width:150px;">'.$main::param{matrix_compa_score}.'</td>
+	  <td class="par_text" style="width:150px;">'.$threshold_values_html.'</td>
+	        </tr>
+	      </tbody>
+	    </table>
+	  </td>
+
 	</tr>
       </tbody>
     </table>
@@ -4720,83 +4842,75 @@ sub InsertSmallForest {
     ';
 
     ## D3 values of the parameters of the small trees
-    my $svg_width = 8;
-    my $svg_height = 16;
-    my $svg_x1 = 7 * $nb_char;
+    my $svg_width = 11;
+    my $svg_height = 22;
+    my $svg_x1 = 8 * $nb_char;
     my $svg_y1 = -7;
     my $svg_x2 = '6 + '.$svg_x1.' + 27';
     
     my $div = "";
     ## Open the <div> and the <a> where the small forest will be set
     my $small_forest = '
-    <div id="Logo_Forest_button" class="button_click Section_button"><strong>Logo Forest</strong></div>
-<div id="show_forest" style="margin:0px 0px 15px 0px;display:none;">'."\n";  
+    <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{small_logo_cladogram_html}).'"><div class="button_click Section_button" ><strong>Logo Forest (dynamic browsing)</strong></div></a>
+
+    <div id="Logo_Forest_button" class="button_click Section_button" style="margin-top:2px;margin-bottom:2px"><strong>Logo Forest (rapid overview - low image quality)</strong></div>
+<div id="show_forest" style="margin:0px 0px 0px 0px;display:none;background-color:#E6E6E6";>'."\n";  
     my $small_tree = '' ;
     my $sum_motifs = 0;
     my $sum = 0;
     my $cluster_sum = 0;
     my $BG_color = ".style(\"background\", \"#E6E6E6\")";
 
-    ## Insert link to the logo forest
-    $small_forest .= '
-
-    <div class="display_clusters"><h2>'.$number_of_clusters.' Clusters found</h2>
-       <p style="color:red">Sketch picture restricted to the --x-- first clusters.<a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{small_logo_cladogram_html}).'"> Click here to display all the clusters dynamically</a><br><br></p>
-    </div>
-    ';
-
     foreach my $num (1..scalar(keys %alignment_table_data)) {
-	#foreach my $num (1..2) {
 
 	$cl_id_s = $cluster_id_hash{$num}."_s";
 	$cl_id = $cluster_id_hash{$num};
 	
 	my $cluster_size = scalar(keys %{$alignment_table_data{$cl_id}});
 	my $sum = $sum_motifs + $cluster_size;
-	if ($sum < 20) {
-	    
-	    ## Draw the logo forest 
-	    $div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:800px;padding:0px 0px 0px 200px;"></div>';
-	    
-	    my $tree = &logo_tree();
-	    $tree =~ s/--RC_picture_start--//g;
-	    $tree =~ s/--RC_picture_end--//g;
-	    $tree =~ s/\/\/BG_color/$BG_color/g;
-	    $tree =~ s/--lab--/$label_single_tree_no_link/;
-	    $tree =~ s/--widthtree--/820/g;
-	    $tree =~ s/--radius--/3/g;
-	    $tree =~ s/--size--/350/g;
-	    $tree =~ s/--insert--//g;
-	    $tree =~ s/--nb--/$num/g;
-	    $tree =~ s/--height--/70 + 9 * $cluster_size/g;
-	    $tree =~ s/--cl_id--/$cl_id_s/g;
-	    $tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
-	    my $json_name = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_".$cluster_id_hash{$num}.".json");
-	    $tree =~ s/--jsonfile--/$json_name/g;
-	    $tree =~ s/--svgwidth--/$svg_width/g;
-	    $tree =~ s/--svgheight--/$svg_height/g;
-	    $tree =~ s/--x1--/$svg_x1/g;
-	    $tree =~ s/--y1--/$svg_y1/g;
-	    $tree =~ s/--x2--/$svg_x2/g;
-	    
-	    $small_tree .= $tree."\n";
-	    
-	    $cluster_sum++;
-	    $sum_motifs += $cluster_size;
-	}
 	
-	if ($cluster_sum == 3) {
-	    last; 
-	}
+#	if ($sum < 20) {
+	    
+	## Draw the logo forest 
+	$div .= '<div id="'.$cl_id_s.'" style="background-color:#E6E6E6;width:850px;padding:0px 0px 0px 0px;">'.$cl_id.'</div>';
+	    
+	my $tree = &logo_tree();
+	$tree =~ s/--RC_picture_start--//g;
+	$tree =~ s/--RC_picture_end--//g;
+	$tree =~ s/\/\/BG_color/$BG_color/g;
+	$tree =~ s/--lab--/$label_single_tree_no_link/;
+	$tree =~ s/--widthtree--/830/g;
+	$tree =~ s/--radius--/2/g;
+	$tree =~ s/--size--/350/g;
+	$tree =~ s/--insert--//g;
+	$tree =~ s/--nb--/$num/g;
+	$tree =~ s/--height--/100 + 16 * $cluster_size/g;
+	$tree =~ s/--cl_id--/$cl_id_s/g;
+	$tree =~ s/--stroke--/$hexa_code{$cl_id}/g;
+	my $json_name = &RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{prefix}."_trees/parsed_tree_".$cluster_id_hash{$num}.".json");
+	$tree =~ s/--jsonfile--/$json_name/g;
+	$tree =~ s/--svgwidth--/$svg_width/g;
+	$tree =~ s/--svgheight--/$svg_height/g;
+	$tree =~ s/--x1--/$svg_x1/g;
+	$tree =~ s/--y1--/$svg_y1/g;
+	$tree =~ s/--x2--/$svg_x2/g;
+	
+	$small_tree .= $tree."\n";
+	
+	# $cluster_sum++;
+	# $sum_motifs += $cluster_size;
+#	}
+	
+	# if ($cluster_sum == 3) {
+	#     last; 
+	# }
     }
-    $small_forest =~ s/--x--/$cluster_sum/;
-
 
     ## Insert one <div> </div> + <script> </script> for each cluster depicted  
     $small_forest .= $div."\n".'<script type="text/javascript">'."\n".$small_tree."\n".'</script>'."\n";
 
-    ## Close the <a> and <div>
-    $small_forest .= '</a></div>';
+    ## Close the <div>
+    $small_forest .= '</div>';
 
     print $syn $small_forest;
 }
@@ -4918,11 +5032,26 @@ sub InsertHeatMap {
 
 
 ############################
+## Insert Heatmap picture
+sub InsertRadialTreeLink {
+
+    my $radial_tree_link = ' 
+        <div id="Radial_Tree_Link_button" class="button_click Section_button"><strong>Radial Tree</strong></div>
+	<div id="Radial_Tree_Link" class="tab" style="width:1025px;padding:0px 0px 20px 0px;margin-top:0px;display:none;">
+		<h2 style="margin:0px"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{radial_tree}).'">Radial Tree </a></h2>
+	</div>
+    ';
+
+    print $syn $radial_tree_link;
+}
+
+
+############################
 ## Insert Heatmap of collections per clusters
 sub InsertHeatmapCollectionbyCluster {
 
     my $heat_map_motifs_by_cluster = ' 
-        <div id="Heatmap_motifs_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'"><strong>Cluster composition by collection</strong></a></div>
+        <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_heatmap_html}).'"><div id="Heatmap_motifs_button" class="button_click Section_button"><strong>Cluster composition by collection</strong></div></a>
     ';
 
     print $syn $heat_map_motifs_by_cluster;
@@ -4934,7 +5063,7 @@ sub InsertHeatmapCollectionbyCluster {
 sub InsertHeatmapCollectionComplementarity {
 
     my $heatmap_complementarity = ' 
-        <div id="Heatmap_complementarity_button" class="button_click Section_button"><a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><strong>Collections Overlap</strong></a></div>
+        <a target="_blank" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{dynamic_coverage_heatmap_html}).'"><div id="Heatmap_complementarity_button" class="button_click Section_button"><strong>Collections Overlap</strong></div></a>
     ';
 
     print $syn $heatmap_complementarity;
@@ -4957,19 +5086,6 @@ sub InsertMotifRichnessBarPlot {
 ## Open the <scrip> tag for JQuery code
 sub OpenScriptJQuery {
   $script_jquery = '<script>
-
-// Dynamic parameter table
-$(document).ready( function () {
-    $(\'#parameters_table\').DataTable({
-        "paging":   false,
-        "searching": false,
-        "ordering": false,
-        "info":     false,
-        "columnDefs": [
-	    { "width": "5%", "targets": [0,1,2,3,4,5,6] }
-	]		
-    });
-});
 
 // Dynamic cluster summary table
 $(document).ready( function () {
@@ -5092,6 +5208,14 @@ $(document).ready(function() {
 $(document).ready(function() {
     $(\'#Logo_Forest_button\').click(function() {
 	$(\'#show_forest\').slideToggle(\'fast\');
+        $(this).toggleClass(\'selected_header_section\');
+    }); 
+});
+
+// Slide the Logo Forest Link
+$(document).ready(function() {
+    $(\'#Radial_Tree_Link_button\').click(function() {
+	$(\'#Radial_Tree_Link\').slideToggle(\'fast\');
         $(this).toggleClass(\'selected_header_section\');
     }); 
 });
@@ -5439,7 +5563,7 @@ sub InsertJquery {
 sub DisplaySingleCluster{
     my $div_display = '
     <div id="Cluster_Tab_button" class="button_click Section_button"><strong>Individual Cluster View</strong></div>
-    <div class="sep_clusters_div individual_results" id="Cluster_Tab" style="display:none">
+    <div class="sep_clusters_div individual_results" id="Cluster_Tab" style="display:none;font-size:12px;">
 	<!--Div with the header of the buttons-->
         <h2 style="display:block;padding:4px;width:986px;">Individual Cluster View</h2>'.
         &hide_show_buttons
@@ -5475,7 +5599,7 @@ sub InsertListOfFiles {
       my $add_files = 
 	  '
 
-	<div id="List_Files_Button" class="button_click Section_button"><strong>Additional Files</strong></div>
+	<div id="List_Files_Button" class="button_click Section_button" style="margin-top:5px;margin-bottom:4px;"><strong>Additional Files</strong></div>
 	<div id="File_list" class="tab_list" style="width:960px">
 	<h2 style="text-align:center;margin-top:0px;">Exported files</h2>
 	  <table>
@@ -5620,6 +5744,10 @@ sub Synthesis {
     $all_consensus_table = "";
     $number_of_motifs = 0;
     $nb_char = 0;
+    my $section_tab_icon_tail = '</td></tr>';
+    my $section_tab_icon_intermediate = '</td></tr><tr><td>';
+    my $section_tab_icon_tail_int_table = '</td></tr></table></td></tr>';
+    my $icon_height = 60;
 
     $menu_nb = 200; ## Numbering of the IDs for collapsible elements
     
@@ -5639,15 +5767,119 @@ sub Synthesis {
 
     &ParametersTable();
 
+    ## Open the icons table
+    my $table_icons_head = '<table style="display:block;clear:both;"><tbody>';
+    print $syn $table_icons_head;
+    
+    #####################
+    ## Block 1: forest ##
+    #####################
+    
+    ## Insert logo forest
     if($radial_tree_flag == 0){
-	&ClustersSummaryTable();
+
+	my $forest_tab_icon = ' <tr>
+      <td>
+        <img class="icon" src="'.$icons{forest}.'" height="'.$icon_height.'", width="auto">
+      </td>
+      <td>';
+	print $syn $forest_tab_icon;
+	
+	&InsertSmallForest();
+
+	print $syn $section_tab_icon_tail;
+
+    ## Insert a link to the radial tree
+    } else {
+
+	my $forest_tab_icon = ' <tr>
+      <td>
+        <img class="icon" src="'.$icons{forest}.'" height="'.$icon_height.'", width="auto">
+      </td>
+      <td>';
+	print $syn $forest_tab_icon;
+	
+	&InsertRadialTreeLink();
+
+	print $syn $section_tab_icon_tail;
     }
 
+    
+    #################################
+    ## Block 2: clusters in detail ##
+    #################################
+    
+    if($radial_tree_flag == 0){
+
+	my $tree_tab_icon = ' <tr>
+      <td>
+        <img class="icon" src="'.$icons{tree}.'" height="'.$icon_height.'", width="auto">
+      </td>
+      <td>
+        <table>
+          <tr>
+            <td>';
+	print $syn $tree_tab_icon;
+	
+	&ClustersSummaryTable();
+
+	print $syn $section_tab_icon_intermediate;
+
+	&DisplaySingleCluster();
+
+	print $syn $section_tab_icon_tail_int_table;
+    }
+
+    
+    ###############################
+    ## Block 3: motifs in detail ##
+    ###############################
+
+    if($radial_tree_flag == 0){
+
+	my $consensus_tab_icon = ' <tr>
+      <td>
+        <img class="icon" src="'.$icons{consensus}.'" height="'.$icon_height.'", width="auto">
+      </td>
+      <td>
+        <table>
+          <tr>
+            <td>';
+	print $syn $consensus_tab_icon;
+	
+	&InsertAlignmentTable();
+    
+	if ($draw_heatmap == 1 && $number_of_motifs > 1) {
+	    
+	    print $syn $section_tab_icon_intermediate;
+	    &InsertHeatMap();
+	}
+
+	print $syn $section_tab_icon_tail_int_table;
+    }
+
+    
+    ############################################################
+    ## Block 4: interactive heatmaps for multiple collections ##
+    ############################################################
+    
     ## The heatmap will be created only when two or more collections of
     ## motifs are provided to matrix-clustering
     if ($single_input_flag == 0 && $radial_tree_flag == 0){
 
+	my $files_tab_icon = ' <tr>
+      <td>
+        <img class="icon" src="'.$icons{files}.'" height="'.$icon_height.'", width="auto">
+      </td>
+      <td>
+        <table>
+          <tr>
+            <td>';
+	print $syn $files_tab_icon;
+
 	&InsertHeatmapCollectionbyCluster();
+
+	print $syn $section_tab_icon_intermediate;
 
 	&InsertHeatmapCollectionComplementarity();
 
@@ -5655,29 +5887,25 @@ sub Synthesis {
 
 #	&MotifRichnessPlot();
 
-#	&InsertMotifRichnessBarPlot();
+	#	&InsertMotifRichnessBarPlot();
+
+	print $syn $section_tab_icon_tail_int_table;
     }
 
-    if($radial_tree_flag == 1){
-	#	&InsertRadialTree();
-	my $lkkkkk = 0;
-    } else {
-    
-	&InsertSmallForest();
+    ## Close the icons table
+    my $table_icons_tail = "</tbody></table>";
+    print $syn $table_icons_tail;
 
-	&InsertAlignmentTable();
-
-	&DisplaySingleCluster();
-    
-	if ($draw_heatmap == 1 && $number_of_motifs > 1) {
-	    &InsertHeatMap();
-	}
+    if ($radial_tree_flag == 0){
+	&InsertListOfFiles();
     }
-    
-    &InsertListOfFiles();
 
     &InsertJquery();
 
+    if ($radial_tree_flag == 1){
+	print $syn "</script>\n";
+    }
+    
     &Text_end_report();
     
     ## End of the HTML file

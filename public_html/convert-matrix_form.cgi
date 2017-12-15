@@ -78,13 +78,14 @@ foreach $key (keys %default) {
 ################################################################
 ### header
 &RSA_header("convert-matrix", "form");
+
 print "<CENTER>";
 print "Convert different types of position-specific scoring matrices (PSSM), and calculate statistical parameters.<P>\n";
 #print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
-print $query->start_multipart_form(-action=>"convert-matrix.cgi");
+print $query->start_multipart_form(-action=>"convert-matrix.cgi", -onreset=>"resetHandler()");
 
 #print "<FONT FACE='Helvetica'>";
 
@@ -214,6 +215,7 @@ print "<TD><B>";
 print '<script>
 function setDemo(demo){
     $("#reset").trigger("click");
+    $("#db_choice").val("").change();
     matrix.value = demo;
     matrix_format.value = "tab";
     output_format.value = "tab";
@@ -223,6 +225,11 @@ function setDemo(demo){
     $("#links").prop("checked", true);
     $("#logo").prop("checked", true);
 }
+
+function resetHandler(){
+    $("#db_choice").val("").change();
+}
+
 </script>';
 print '<button type="button" onclick="setDemo(' . "'$demo_matrix'" . ')">DEMO</button>';
 print "</B></TD>\n";

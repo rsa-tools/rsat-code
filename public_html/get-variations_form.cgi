@@ -14,7 +14,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{demo_descr1} = "";
-$default{organism} = "Homo_sapiens_GRCh37";
+$default{organism} = "Homo sapiens GRCh37";
 $default{input_type}="gvf";
 $default{out_type}="rsat-var";
 $default{mml}=30 ; ## Length of the sequence surrounding the variant, 
@@ -39,7 +39,9 @@ print ", Jeremy Delerce<sup>ci</sup>\n";
 print ", Yvon Mbouamboua<sup>t</sup>\n";
 print "</CENTER>";
 
-print $default{demo_descr1};
+#print $default{demo_descr1};
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr'></div>";
 
 print $query->start_multipart_form(-action=>"get-variations.cgi");
 
@@ -63,7 +65,7 @@ print "<B>Variations IDs or genomic regions of interest</B>&nbsp;";
 print "<BR>\n";
 print "<UL>\n";
 
-print $query->textarea(-name=>'input',
+print $query->textarea(-name=>'input', -id=>'input',
 		       -default=>$default{input},
 		       -rows=>6,
 		       -columns=>65);
@@ -87,7 +89,7 @@ print "<br>\n";
 
 ### Input type
 print "<B>Input format</B>&nbsp;";
-print $query->popup_menu(-name=>'input_type',
+print $query->popup_menu(-name=>'input_type', -id=>'input_type',
 			 -Values=>['bed', 'id'],
 			 -default=>$default{input_type});
 print "<\p>";
@@ -106,31 +108,36 @@ print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
-
-################
-## Data for demo
-$descr1 .= "<blockquote class ='demo'>";
-
-$descr1 .= "<p>In this demonstration, we retrieve varian information using a list of IDs\n
-
-<p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p>\n";
-
-$descr1 .= "</blockquote>";
-
-print $query->start_multipart_form(-action=>"get-variations_form.cgi");
-## Data for demo
-$demo_gvf_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt";
-$demo_gvf_var=`cat $demo_gvf_file` ;
-
-
 print "<TD><B>";
-print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
-print $query->hidden(-name=>'organism',-default=>"Homo_sapiens_GRCh37");
-print $query->hidden(-name=>'input',-default=>"$demo_gvf_var");
-print $query->hidden(-name=>'input_type',-default=>"id");
-print $query->submit(-label=>"DEMO");
-print "</B></TD>\n";
-print $query->end_form;
+
+### data for demo
+$demo_gvf_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt";
+$demo_gvf = "";
+open(my $fh, $demo_gvf_file);
+while (my $row = <$fh>){
+    chomp $row;
+    $demo_gvf .= $row . "\\n";
+}
+
+my $org = $default{organism};
+$org =~ s/\ /_/g;
+print '<script>
+function setDemo(demo_gvf){
+    $("#reset").trigger("click");
+    var descr1 = "<blockquote class =\'demo\'> \
+    <p>In this demonstration, we retrieve varian information using a list of IDs\n \
+    <p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p> \
+    </blockquote>";
+    
+    demo_descr.innerHTML = descr1;
+    
+    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism").val("' . $org . '");
+    $("#input").val(demo_gvf);
+    $("#input_type").val("id");
+}
+</script>';
+print '<button type="button" onclick="setDemo('. "'$demo_gvf'" .')">DEMO</button>';
 
 
 print "<TD><B><A HREF='help.get-variations.html'>MANUAL</A></B></TD>\n";

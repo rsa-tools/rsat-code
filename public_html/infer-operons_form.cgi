@@ -95,16 +95,16 @@ print $query->start_multipart_form(-action=>"infer-operons.cgi", -id=>"form");
 ################################################################
 ## Only print relevant organisms for operon inference
 @selected_organisms = ();
-push @selected_organisms, &GetOrganismsForTaxon("Bacteria")
-    if (($group_specificity eq "Bacteria") ||
-	($group_specificity eq "Prokaryotes"));
-push @selected_organisms, &GetOrganismsForTaxon("Archaea")
-    if (($group_specificity eq "Archaea") ||
-	($group_specificity eq "Prokaryotes"));
-@selected_organisms = sort(@selected_organisms);
+#push @selected_organisms, &GetOrganismsForTaxon("Bacteria")
+#    if (($group_specificity eq "Bacteria") ||
+#	($group_specificity eq "Prokaryotes"));
+#push @selected_organisms, &GetOrganismsForTaxon("Archaea")
+#    if (($group_specificity eq "Archaea") ||
+#	($group_specificity eq "Prokaryotes"));
+#@selected_organisms = sort(@selected_organisms);
 
-&OrganismPopUp(@selected_organisms);
-
+#&OrganismPopUp(@selected_organisms);
+&OrganismPopUp('supported' => 'infer');
 
 ### query (gene list)
 print "<p>";
@@ -178,7 +178,8 @@ print "<script>
 function setDemo(gene){
     \$('#reset').trigger('click');
     \$('#gene_selection').val(gene);
-    \$('#organism').val('Escherichia_coli_K12').trigger('chosen:updated');
+    \$('#organism').val('Escherichia_coli_K12');
+    \$('#organism_name').val('Escherichia coli K12');
     \$('#dist_thr').val('55');
     \$('#return_leader').prop('checked', true);
     \$('#return_query').prop('checked', true);

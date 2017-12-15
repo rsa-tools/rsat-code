@@ -33,9 +33,9 @@ include('menu.php');
 	</div>
 
 	<div class='homecontent'>
-		<div class='row'>
+		<div class='row' style='padding-bottom:20px'>
 			<div class='col-sm-9'>
-				<div class='row' style='padding-bottom:40px'>
+				<div class='row' style='padding-bottom:20px'>
                     <div class='col-sm-2'><br/></div>
                     <div class='col-sm-8'><div align='center' style='font-size:17px;color:#F58634'><b>What we do</b></div><hr style='margin:10px 0 10px 0;border:2px solid #eee'>
 					We offer tools to analyse cis-regulatory elements in genome sequences:
@@ -45,9 +45,9 @@ include('menu.php');
 						<li>analysis of regulatory variations</li>
 						</ul>
 					</div>
-                    <div class='col-sm-2'><br/></div>
+                    <div class='col-sm-2'></div>
 				</div>
-<div align='center' style='font-size:15px;padding-bottom:20px'><i>This website is free and open to all users</i></div>
+<div align='center' style='font-size:12px;padding-bottom:10px'><i>This website is free and open to all users and there is no login requirement</i></div>
 				<div class='row' align='center'>
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#programModal'><div class='panel-body'><div class='box-heading'>Which program to use?</div>Guide to main tools for new users<br/><i class='fa fa-cogs fa-3x fa-style'></i></div></div></div>
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#tutModal'><div class='panel-body'><div class='box-heading'>Tutorial and help</div>RSAT tutorial and all training material<br/><i class='fa fa-graduation-cap fa-3x fa-style'></i></div></div></div>				
@@ -58,7 +58,7 @@ include('menu.php');
 				</div>
 			</div>
 			<div class='col-sm-3'><span class='homepapertext'><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> on matrix-clustering <b><a target='_blank' href="https://academic.oup.com/nar/article/45/13/e119/3862068/RSAT-matrix-clustering-dynamic-exploration-and" target="_blank"> in NAR</b></a></span><br/><br/>
-				<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="530" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+				<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="500" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 			</div>	
 		</div>
 	</div>
@@ -66,14 +66,14 @@ include('menu.php');
 		<div class='social-circle'><div class='row'>
 			<div class='col-sm-4'><a class='fa fa-envelope' href='javascript:void(0)' onclick="window.location='mailto:Jacques.van.Helden@ulb.ac.be?subject='"></a> Jacques Van Helden</div>
 			<div class='col-sm-4'><a class='fa fa-twitter' href='https://twitter.com/RSATools' target='_blank'></a> Twitter</div>
-			<div class='col-sm-4'><a class='fa fa-code' href='#' style='cursor:default'></a> Code version: <?php echo $properties['git_date'];?></div></div>
+			<div class='col-sm-4'><a class='fa fa-code' href='#' style='cursor:default'></a> Code version: <?php echo $properties['git_date'];?></div>
 		</div><br/>
 		<div class='social-circle'><div class='row'>
 			<div class='col-sm-8'><a class='fa fa-paint-brush' href='http://www.altamirastudio.com/' target='_blank'></a> RSAT logos designed by Mauricio Guzman (<a target="_blank" href="http://www.altamirastudio.com/">http://www.altamirastudio.com/</a>)</div>
 			<div class='col-sm-4'><a class='fa fa-bug' href='#' style='cursor:default'></a><?php echo " Group specificity: <b>".$properties['group_specificity'] . "</b></p>"; ?></div>
 		</div>
 		<div align='right'><?php echo $properties['rsat_site'] . ' (' . $properties['rsat_www'] . ')'; ?></div>
-	</div>
+	</div></div></div>
 
 
 <!-- Modal Program to use-->
@@ -116,7 +116,8 @@ include('menu.php');
                 <option value="matrix-compa-programs" class="data4">I want to compare matrices (with known collections) </option>
                 <option value="matrix-compa-programs" class="data4">I want to cluster and align matrices </option>
                 <option value="convert-matrix" class="data4">I want to convert the matrix format </option>
-                
+                <option value="retrieve-matrix" class="data4">I want to extract specific matrices from a collection</option>
+                                                                                                                                                                  
                 <option value="fetch-sequences" class="data5">I want to extract the sequences corresponding to these coordinates </option>
                 
                  <option value="retrieve-variation-seq" class="data6">Obtain the variants and their flanking sequences </option>
@@ -155,14 +156,14 @@ include('menu.php');
                  
                  <option value="retrieve-variation-seq_form.cgi" class="retrieve-variation-seq">retrieve variation sequences</option>
                  <option value="variation-scan_form.cgi" class="scan-variations">scan variations</option>
+                 <option value="retrieve-matrix_form.cgi" class="retrieve-matrix">retrieve matrix</option>
             </select>
         </div>
 			</div>		
 		</div>	
 	</div>
 </div>
-</div>
-</div>
+
 <!-- Modal tutorial -->
 <div class='modal' id='tutModal' role='dialog'>
 	<div class='modal-dialog'>

@@ -10,7 +10,7 @@ menu_number = 0;
     heading9 = "Variation information;retrieve variation sequence;variation-scan;Convert variation formats;";
     heading10 = "get-orthologs;get-orthologs-compara;footprint-discovery;footprint-scan;";
     heading11 = "random gene selection;Random gene selection result;random sequence;Random sequence result;random genome fragments;Random genome fragments result;Random motif;random-motif result;permute-matrix;permute-matrix result;Random sites;random-sites result;Implant sites;implant-sites result";
-    heading12 = "convert-matrix;convert-matrix result;compare-matrices;compare-matrices result;matrix-clustering;matrix-clustering result;matrix-distrib;matrix-distrib result;matrix-quality;matrix-quality result"; 
+    heading12 = "retrieve-matrix;convert-matrix;convert-matrix result;compare-matrices;compare-matrices result;matrix-clustering;matrix-clustering result;matrix-distrib;matrix-distrib result;matrix-quality;matrix-quality result"; 
     heading13 = "peak-motifs;peak-motifs result;fetch-sequences;random genome fragments;Random genome fragments result";
     
     menu_numbers = [heading1, heading2, heading3, heading4, heading5,heading6,heading7,heading8,heading9, heading10, heading11, heading12, heading13];

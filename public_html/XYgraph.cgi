@@ -34,7 +34,7 @@ $ENV{rsat_echo}=1;
 ## update log file
 &UpdateLogFile();
 
-$XYgraph_command = "$SCRIPTS/XYgraph";
+$XYgraph_command = "$SCRIPTS/XYgraph ";
 $prefix = "XYgraph";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 
