@@ -1340,8 +1340,6 @@ sub OrganismPopUpString{
                     }
                 };
             
-            $("#' . $popupid_name . '").attr("autocomplete", "on");
-
     });
     </script>';
     if($args{supported} eq 'orthologs'){
@@ -2883,7 +2881,7 @@ sub DisplayMatrixDBchoice_select2 {
 
     ## Get information about supported motif databases
     my %matrix_db = &RSAT::server::supported_motif_databases();
-
+        
     my @plants_key = ("thaliana", "plant");
     my @vertebrates_key = ("human", "Human", "mouse", "Mouse", "vertebrate");
     my @prokaryots_key = ("prokaryot","DBTBS");
