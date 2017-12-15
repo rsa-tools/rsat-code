@@ -64,6 +64,8 @@ $small_font_height = 8;
 $large_font_width = 8;
 $large_font_height = 16;
 
+### Null or NA character ##
+$null_char="NA";
 
 #### Condition for  highligth lines ####
 $hline=0;
@@ -725,6 +727,8 @@ sub Rplot {
   }
   close $in_copy;
   close $in;
+  &RSAT::message::Debug("Input file compy for R", $tmp_file ) if ($main::verbose >= 3);
+
   &RSAT::message::FatalError("No input data !!!") if ((!$inputfile) && ($in_lines == 0));
   my $input_data_file = $tmp_file;  ## Use input copy as input for R
   
@@ -740,7 +744,7 @@ sub Rplot {
   ## Open input table
   $r_instructions .= "\n## Loading input table\n";
   $r_instructions .= "in.file <- \"$input_data_file\"\n";
-  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.", na.strings = \"NA\")\n";
+  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.", na.strings = \"".$null_char."\")\n";
 
   ## Save header as vector in R
   $r_instructions .= "header.vector <- c(\"".join("\",\"",@header_list)."\")\n";
@@ -1016,7 +1020,7 @@ sub Rplot {
 
   print $out_R  $r_instructions;
   close ($out_R);
-  my $rscript_command = $Rscript_path." ".$tmp_r_instructions_file;
+  my $rscript_command = $Rscript_path." --vanilla  ".$tmp_r_instructions_file;
   &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &RSAT::message::Info($rscript_command) if ($main::verbose >= 2);
 }
@@ -2339,7 +2343,9 @@ OPTIONS
 		 will draw a red line at the y positions 0, 10, 20 and
 		 30
 
-	-vline Draw a vertical line on the indicated position.
+	  -null Indicate the NULL or NA character in the table to omit them. Default <NULL>.
+
+          -vline Draw a vertical line on the indicated position.
 		This helps to mark some relevant positions on the graph.
 		The following colors are currently supported:
 			red, blue, green, violet, orange
@@ -2465,9 +2471,9 @@ sub ReadArguments {
   
      ### Delegate XY plots to R rather than Perl GD library
     } elsif ($ARGV[$a] =~ /-r_plot/i) {
-      $Rscript_path = &RSAT::server::GetProgramPath("Rscript",0);
+	$Rscript_path = &RSAT::server::GetProgramPath("Rscript");
       unless ($Rscript_path) {
-	&RSAT::message::Warning("Rscript program is not found in the path. Ignoring option -r_plot.");	
+	&RSAT::message::Warning("XYgraph: Rscript program is not found in the path. Ignoring option -r_plot.");	
       } else {
 	$r_plot= 1;
       }
@@ -2634,7 +2640,9 @@ sub ReadArguments {
 
     } elsif ($ARGV[$a] eq "-export_colors") {
       $colorexportfile = $ARGV[$a+1];
-
+    } elsif ($ARGV[$a] eq "-null") {
+	$null_char = $ARGV[$a+1];
+	
     } elsif ($ARGV[$a] eq "-gp") {
       $gp_supp_commands = $ARGV[$a+1];
 

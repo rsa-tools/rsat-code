@@ -89,7 +89,7 @@ print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
 
-print $query->start_multipart_form(-action=>"matrix-scan.cgi");
+print $query->start_multipart_form(-action=>"matrix-scan.cgi", -onreset=>"resetHandler()");
 
 ################################################################
 #### sequence
@@ -230,6 +230,7 @@ binding sites annotated in the <a target=_blank href=\'http://www.oreganno.org\'
 
 function setDemo(demo_matrix, demo_sequence){
     $("#reset").trigger("click");
+    $("#db_choice").val("").change();
     descr_1 = descr + "The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the Pval.</blockquote>";
     
     demo_descr.innerHTML = descr_1;
@@ -238,12 +239,15 @@ function setDemo(demo_matrix, demo_sequence){
     $("#thresh_value").val("1e-4");
     background.value = "upstream-noorf";
     markov_order.value = 1;
-    $("#organism").val("Drosophila_melanogaster").trigger("chosen:updated");
     $("#return_field").val("pval");
     matrix.value = demo_matrix;
     matrix_format.value = "transfac";
     sequence1.value = demo_sequence;
     $("#origin").val("end");
+}
+
+function resetHandler(){
+    $("#db_choice").val("").change();
 }
 </script>';
 
