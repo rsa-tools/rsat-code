@@ -32,13 +32,11 @@ $accepted_output_string = join "\n\t\t\t", "", sort(keys %accepted_output_seq);
 
 &ReadArguments();
 
-
 #### check argument values ####
 unless ($line_width >= 0) {
     print "\tinvalid line width\n";
     print "\ttype convert-seq -h for help\n";
     exit;
-
 }
 &CheckInputSeqFormat($in_format);
 &CheckOutputSeqFormat($out_format);
@@ -136,7 +134,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
       }
     }
 
-    #### case conversion
+    ## Case conversion
     if ($lowercases) {
       $current_seq = lc($current_seq);
     } elsif ($uppercases) {
@@ -144,7 +142,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
     }
 
 
-    #### DNA only
+    ## DNA only
     if ($dna) {
       &RSAT::message::Info("Cleaning DNA") if ($main::verbose >= 2);
       $current_seq = &CleanDNA($current_seq, "n");
@@ -152,6 +150,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	$dotmask = 1;
       }
     }
+
 
     ## Replace N by dots
     if ($dotmask) {

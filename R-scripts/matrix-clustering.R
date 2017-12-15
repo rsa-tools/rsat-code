@@ -43,7 +43,7 @@ if(!require("TFBMclust", lib.loc=dir.rsat.rlib)){
 }
 
 
-## Load some libraries
+## Load some custom libraries
 source(file.path(dir.rsat, 'R-scripts/config.R'))
 source(file.path(dir.rsat, 'R-scripts/cluster_motifs_lib.R'))
 

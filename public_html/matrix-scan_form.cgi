@@ -156,15 +156,11 @@ print "</p>";
 print "</CENTER>";
 print "<b>Citation</b>: <a href='mailto:jturatsi\@bigre.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A>, <a href='mailto:defrance@bigre.ulb.ac.be'>Matthieu Defrance</a> and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)'>Jacques van Helden</a> (2008). Using RSAT to scan genome sequences for transcription factor binding sites and cis-regulatory modules. Nat Protoc, 3, 1578-1588. <a href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed 18802439</a>";
 
-## demo description
-#print $default{demo_descr1};
-#print $default{demo_descr2};
-#print $default{demo_descr3};
 
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
-print $query->start_multipart_form(-action=>"matrix-scan.cgi", -id=>"form");
+print $query->start_multipart_form(-action=>"matrix-scan.cgi", -id=>"form", -onreset=>"resetHandler()");
 
 ################################################################
 #### sequence
@@ -296,6 +292,7 @@ Turatsinze.<p/>";
 
 function setDemo1(demo_matrix, demo_sequence){
     $("#reset").trigger("click");
+    $("#db_choice").val("").change();
     descr_1 = descr + "The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the P-value.</blockquote>";
     
     demo_descr.innerHTML = descr_1;
@@ -304,7 +301,7 @@ function setDemo1(demo_matrix, demo_sequence){
     $("#uth_pval").val("1e-4");
     background.value = "upstream-noorf";
     markov_order.value = "1";
-    $("#organism").val("Drosophila_melanogaster").trigger("chosen:updated");
+    
     $("#analysis_type_sites").prop("checked",true);
     $("#return_rank").prop("checked",false);
     matrix.value = demo_matrix;
@@ -316,6 +313,7 @@ function setDemo1(demo_matrix, demo_sequence){
 
 function setDemo2(demo_matrix, demo_sequence){
     $("#reset").trigger("click");
+    $("#db_choice").val("").change();
     descr_2 = descr + "The program will return CRERs: regions of a few hundreds residues that have a higher density of matches than expected by chance.</blockquote>";
     
     demo_descr.innerHTML = descr_2;
@@ -324,7 +322,8 @@ function setDemo2(demo_matrix, demo_sequence){
     $("#uth_site_pval").val("1e-4");
     background.value = "upstream-noorf";
     markov_order.value = "1";
-    $("#organism").val("Drosophila_melanogaster").trigger("chosen:updated");
+    $("#organism_name").val("Drosophila melanogaster")
+    $("#organism").val("Drosophila_melanogaster");
     $("#analysis_type_crer").prop("checked",true);
     $("#return_rank").prop("checked",false);
     matrix.value = demo_matrix;
@@ -337,6 +336,7 @@ function setDemo2(demo_matrix, demo_sequence){
 
 function setDemo3(demo_matrix, demo_sequence){
     $("#reset").trigger("click");
+    $("#db_choice").val("").change();
     descr_3 = descr + "The program will return matrices for which the total number of hits in the input sequences is higher than expected by chance.</blockquote>";
     
     demo_descr.innerHTML = descr_3;
@@ -345,7 +345,7 @@ function setDemo3(demo_matrix, demo_sequence){
     $("#uth_site_pval").val("1e-4");
     background.value = "upstream-noorf";
     markov_order.value = "1";
-    $("#organism").val("Drosophila_melanogaster").trigger("chosen:updated");
+   
     $("#analysis_type_occ").prop("checked",true);
     $("#return_rank").prop("checked",false);
     matrix.value = demo_matrix;
@@ -355,6 +355,10 @@ function setDemo3(demo_matrix, demo_sequence){
     origin.value = "genomic";
     $("#uth_occ_sig_rank").val("1");
     $("#lth_occ_score").val("5");
+}
+
+function resetHandler(){
+    $("#db_choice").val("").change();
 }
 
 </script>';

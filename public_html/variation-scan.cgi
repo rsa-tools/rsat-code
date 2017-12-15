@@ -49,7 +49,7 @@ local $input_format=lc($query->param('matrix_format'));
 ## Get motif set or input file to scan variants
 
 ## MatrixDB selected 
-my ($mat_db_params, @selected_db) = &GetMatrixDBchoice("mode"=>"radio");
+my ($mat_db_params, @selected_db) = &GetMatrixDBchoice_select2("mode"=>"radio", "more"=>1);
 if (scalar(@selected_db) > 0) {
   $mat_db_params=~s/-file2 //;
   $mat_db_params=~s/-format2.+//;  
@@ -169,41 +169,64 @@ if ($bg_method eq "bginput") {
 			       noov=>$noov, str=>"-1str");
 
   $parameters .= " -bg ".$bg_file.".gz";
-
+  
 } elsif ($bg_method =~ /upload/i) {
     ## Upload user-specified background file
-  my $bgfile = $tmp_file_path."_bgfile.txt";
-  my $upload_bgfile = $query->param('upload_bgfile');
-  if ($upload_bgfile) {
-      if ($upload_bgfile =~ /\.gz$/) {
-	  $bgfile .= ".gz";
-      }
-      my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
-      open BGFILE, ">$bgfile" ||
-	  &cgiError("Cannot store background file in temp dir.");
-      while (<$upload_bgfile>) {
-	  print BGFILE;
-      }
-      close BGFILE;
-      
-      $bg_format=$query->param('bg_format');
-      ##NEED TO CONVERT BG MODELS IN OTHER FORMAT NOT SUPPORTED
-      if (!($bg_format eq 'oligo-analysis')){
-	  $bg_file_oligo= $tmp_file_path."input_bgfile_oligoformat";
-	  
-	  $convert_bg_cmd=" convert-matrix -from $bg_format ";
-	  $convert_bg_cmd.=" -to oligo-analysis -i $bg_file ";
-	  $convert_bg_cmd.="-o $bg_file_oligo ";
-	  $bgfile=$bg_file_oligo ;
-	  $bg_convert=1;
-      }
-      $parameters .= " -bg $bgfile";
-      
-  } else {
-      &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
-  }
-  
-} else {
+    my $bgfile = $tmp_file_path."_bgfile.txt";
+    my $upload_bgfile = $query->param('upload_bgfile');
+    if ($upload_bgfile) {
+	if ($upload_bgfile =~ /\.gz$/) {
+	    $bgfile .= ".gz";
+	}
+	my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+	open BGFILE, ">$bgfile" ||
+	    &cgiError("Cannot store background file in temp dir.");
+	while (<$upload_bgfile>) {
+	    print BGFILE;
+	}
+	close BGFILE;
+	
+	$bg_format=$query->param('bg_format');
+	##NEED TO CONVERT BG MODELS IN OTHER FORMAT NOT SUPPORTED
+	if (!($bg_format eq 'oligo-analysis')){
+	    $bg_file_oligo= $tmp_file_path."input_bgfile_oligoformat";
+	    
+	    $convert_bg_cmd=" convert-matrix -from $bg_format ";
+	    $convert_bg_cmd.=" -to oligo-analysis -i $bg_file ";
+	    $convert_bg_cmd.="-o $bg_file_oligo ";
+	    $bgfile=$bg_file_oligo ;
+	    $bg_convert=1;
+	}
+	$parameters .= " -bg $bgfile";
+	
+    } else {
+	&RSAT::error::FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
+    }
+    
+}elsif ($bg_method =~/url/i) {
+    ## Retrieve user-specified URL for background file
+    my $url = $query->param('bgmodel_url');
+    
+    &RSAT::message::Info("Fetching background from URL ".$url) if ($ENV{rsat_echo} >= 1);
+      my $bgmodel = "";
+    $bgfile = $tmp_file_name."_bgfile.txt";
+    
+    if (open BGM, ">$bgfile") {
+	$bg = get($url);
+	if ($bg =~ /\S/) {
+	    print BGM $bg;
+	    close BGM;
+	} else {
+	    &RSAT::error::FatalError("No background model could be downloaded from the URL ".$url);
+	}
+	
+    }
+    
+    close BGFILE;
+	$parameters .= " -bg $bgfile";
+	#$parameters .= " -bg_format ".$query->param('bg_format');
+    
+}else {
     &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
 }
 
