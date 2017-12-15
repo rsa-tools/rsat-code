@@ -239,7 +239,6 @@ function setDemo(demo_matrix, demo_sequence){
     $("#thresh_value").val("1e-4");
     background.value = "upstream-noorf";
     markov_order.value = 1;
-    $("#organism").val("Drosophila_melanogaster").trigger("chosen:updated");
     $("#return_field").val("pval");
     matrix.value = demo_matrix;
     matrix_format.value = "transfac";
