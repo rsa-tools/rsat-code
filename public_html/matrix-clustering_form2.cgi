@@ -300,7 +300,7 @@ print '</div></div>
   print "<div class='col-sm-5'>";
 
 print $query->popup_menu(-id=>'metric', -name=>'metric',
- 			 -Values=>["cor", "Ncor", "NcorS", "dEucl", "NdEucl", "logocor", "Nlogocor", "logoDP", "Icor", "NIcor", "SSD", "mean_zscore", "rank_mean"],
+ 			 -Values=>["cor", "Ncor", "dEucl", "NdEucl", "logocor", "Nlogocor", "logoDP", "Icor", "NIcor", "SSD", "mean_zscore", "rank_mean"],
  			 -class=>'form-control',
  			 -default=>$default{metric});
 print "</div></div>\n";
