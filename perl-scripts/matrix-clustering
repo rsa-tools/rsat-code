@@ -13,13 +13,9 @@
 
 matrix-clustering
 
-=head1 VERSION
-
-$program_version
-
 =head1 DESCRIPTION
 
-Taking  as input  one  or several  sets  of position-specific  scoring matrices,  this program  applies hierarchical  clustering to  identify clusters  of similar  motifs.  It produces  a set  of  trees (one  per cluster) and builds branch motifs at each node of each tree by merging the matrices of all descendent nodes.
+Taking  as input  one  or several  sets  of position-specific scoring matrices (PSSM), this program  applies hierarchical clustering to identify clusters of similar motifs. It produces a set of trees (one  per cluster) and builds branch motifs at each node of each tree by merging the matrices of all descendent nodes.
 
 =head1 DEPENDENCIES
 
@@ -30,7 +26,6 @@ dendrogram which is exported, and to produce heatmaps.
     RJSONIO : http://cran.r-project.org/web/packages/RJSONIO/index.html
     ctc : http://www.bioconductor.org/packages/release/bioc/html/ctc.html
     dendextend : http://cran.r-project.org/web/packages/dendextend/index.html
-    Rclusterpp: http://cran.r-project.org/web/packages/Rclusterpp/index.html
     gplots : http://cran.r-project.org/web/packages/gplots/index.html
     
 For visualize the logo forest it is required the JavaScript I<D3> (Data Driven Documents) library, 
@@ -52,7 +47,7 @@ the complete list of results. We use the Javascript library I<JQuery> to create 
 
 =item Jacques.van-Helden@univ-amu.fr
 
-=item Jaime Castro <jcastro@lcg.unam.mx>
+=item Jaime Castro-Mondragon <j.a.c.mondragon@ncmm.uio.no>
 
 =back
 
@@ -61,6 +56,8 @@ the complete list of results. We use the Javascript library I<JQuery> to create 
 =over
 
 =item Jacques van Helden
+
+=item Jaime Castro-Mondragon
 
 The following collaborator contributed to the definition of
 requirements for this program.
@@ -97,6 +94,8 @@ strand) between each pair of matrices.
 =back
 
 =head1 WISH LIST
+
+
 
 =cut
 
@@ -262,7 +261,6 @@ package main;
   local @supported_thresholds = qw(
 				     cor
                                      Ncor
-                                     NcorS
                                      w
                                      dEucl
                                      NdEucl
@@ -283,7 +281,6 @@ package main;
   local @supported_metrics = qw(
 			         cor
                                  Ncor
-                                 NcorS
                                  dEucl
                                  NdEucl
                                  logocor
@@ -438,7 +435,7 @@ package main;
   ################################################################
   ## Set default options
   local %param = ();
-  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 NcorS logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
+  local @matrix_compa_metrics = qw(cor Ncor Ncor1 Ncor2 logoDP logocor Nlogocor Icor NIcor cov dEucl NdEucl NsEucl SSD SW NSW match_rank zscores);
   $param{matrix_compa_metrics} = join(",", @matrix_compa_metrics);
   $param{matrix_compa_sort_field} = "Ncor"; ## sorting field
   $main::param{matrix_compa_score} = "Ncor";
@@ -1167,7 +1164,7 @@ Select the metric which will be used to cluster the motifs.based in one metric o
 similarity. This metric can be a similarity or distance, in both cases the values are converted to 
 a distance table which is used as input for the hierarchical clustering.
 
-Supported metrics : cor, Ncor, NcorS, dEucl, NdEucl, logocor, logoDP, Nlogocor, Icor, NIcor, SSD, rank_mean, mean_zscore
+Supported metrics : cor, Ncor, dEucl, NdEucl, logocor, logoDP, Nlogocor, Icor, NIcor, SSD, rank_mean, mean_zscore
 
 Default: Ncor 
 
