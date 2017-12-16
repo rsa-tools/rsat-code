@@ -178,7 +178,7 @@ print "<h2>", "Clustering options", ,"</h2>";
 ## print "<b>Metric to build the tree.</b>";
 print "<B><A class='iframe' HREF='help.matrix-clustering.html#hclust_method'> Metric to build the trees </A>&nbsp;</B>\n";
 print $query->popup_menu(-id=>'metric', -name=>'metric',
- 			 -Values=>["cor", "Ncor", "NcorS", "dEucl", "NdEucl", "logocor", "Nlogocor", "logoDP", "Icor", "NIcor", "SSD", "mean_zscore", "rank_mean"],
+ 			 -Values=>["cor", "Ncor", "dEucl", "NdEucl", "logocor", "Nlogocor", "logoDP", "Icor", "NIcor", "SSD", "mean_zscore", "rank_mean"],
  			 -default=>$default{metric});
 print "<br><br>\n";
 
