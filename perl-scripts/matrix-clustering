@@ -1591,6 +1591,7 @@ sub set_output_file_names {
       $icons{forest} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Forest.png");
       $icons{tree} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Tree.png");
       $icons{consensus} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Consensus.png");
+      $icons{radial} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Radial_tree.png");
       $icons{files} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/Files.png");
       $icons{loading} = &RSAT::util::RelativePath($main::outfile{summary}, $dir{output}."/matrix-clustering_icons/RSAT_loading.svg");
 
@@ -5791,7 +5792,7 @@ sub Synthesis {
 
 	my $forest_tab_icon = ' <tr>
       <td>
-        <img class="icon" src="'.$icons{forest}.'" height="'.$icon_height.'", width="auto">
+        <img class="icon" src="'.$icons{radial}.'" height="'.$icon_height.'", width="auto">
       </td>
       <td>';
 	print $syn $forest_tab_icon;
