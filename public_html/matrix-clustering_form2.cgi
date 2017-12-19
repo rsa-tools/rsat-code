@@ -579,8 +579,7 @@ sub PrintMatrixClusteringMatchingScores {
 			 cor
 			 Ncor
 			);
-my @matching_scores = qw(NcorS
-                             logoDP
+my @matching_scores = qw(logoDP
     			 logocor
     			 Nlogocor
     			 Icor
@@ -594,7 +593,6 @@ my @matching_scores = qw(NcorS
   my %score_descriptions = ('w'=>'Width = number of aligned columns',
 			    'cor'=>'Pearson correlation (computed on residue occurrences in aligned columns)',
 			    'Ncor'=>'Relative width-normalized Pearson correlation',
-			    'NcorS'=>'Relative width-normalized Pearson correlation of the smallest alignment',
 			    'logoDP'=>'dot product of sequence logos',
 			    'logocor'=>'correlation computed on sequence logos',
 			    'Nlogocor'=>'Relative width-normalized logocor',
