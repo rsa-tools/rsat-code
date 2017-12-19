@@ -1,5 +1,4 @@
 #! /usr/bin/python
-# -*- coding: utf8 -*-
 """Peak Motifs - developed by Jocelyn Brayet <jocelyn.brayet@curie.fr>
 Copyright (C) 2015  Institut Curie.
 
@@ -125,62 +124,8 @@ from suds.client import Client
 ###########################################################'
 ## Define log options for suds
 
-# Import log package
-#import logging
+########################## FUNCTION DEFINITION ############'
 
-# Import log package
-#import logging
-# création de l'objet logger qui va nous servir à écrire dans les logs
-#logger = logging.getLogger()
-# on met le niveau du logger à DEBUG, comme ça il écrit tout
-#logger.setLevel(logging.DEBUG)
-# Configure log of suds clients to DEBUG for verbose output concerning Client request
-#logging.getLogger('suds.client').setLevel(logging.ERROR)
-#logging.getLogger('suds.transport').setLevel(logging.ERROR)
-#logging.getLogger('suds.xsd.schema').setLevel(logging.ERROR)
-#logging.getLogger('suds.wsdl').setLevel(logging.ERROR)
-
-
-# création d'un second handler qui va rediriger chaque écriture de log
-# sur la console
-#steam_handler = logging.StreamHandler()
-#steam_handler.setLevel(logging.DEBUG)
-#logger.addHandler(steam_handler)
-
-#logger.info('Hello')
-
-#print(client.factory.create('peak_motifs'))
-
-#	  (PeakMotifsRequest){
-#		 output = None -> ok
-#		 verbosity = None
-#		 test = None -> ok
-#		 tmp_test_infile = None
-#		 control = None
-#		 tmp_control_infile = None
-#		 max_seq_length = None
-#		 max_motif_number = None
-#		 motif_db = None
-#		 ref_motif = None
-#		 top_peaks = None
-#		 min_length = None
-#		 max_length = None
-#		 markov = None
-#		 min_markov = None
-#		 max_markov = None
-#		 noov = None
-#		 class_int = None
-#		 str = None
-#		 graph_title = None
-#		 image_format = None
-#		 disco = None
-#		 source = None
-#		 task = None
-#	  }
-# }
-
-
-################################ functions ############################################################
 ## Define a function to make a service perform the desired request using provided arguments
 def call_run_service(service, args):
 	"""
@@ -370,8 +315,6 @@ if __name__ == '__main__':
 		'motif_db' : motifDbValue,
 		'ref_motif' : refMotifValue,
 		'verbosity' : verbosityValue
-		#'motif_db' : 'test'
-		#'output' : 'blablabla'
 	
 	}
 
@@ -380,18 +323,8 @@ if __name__ == '__main__':
 	## Run job in RSAT server
 	result = call_run_service(rsat_service, peakMotifsRequest)
 
-	#logFile = open("/bioinfo/users/jbrayet/Bureau/peak_motifs.log","w")
-
-	#logFile.write("###############################################\n")
-	#logFile.write("Command performed on server\n")
-	#logFile.write(result.command)
-	#logFile.write("\n")
-	#logFile.write("###############################################\n")
-	#logFile.write("Result\n")
-	#logFile.write(result.server)
-
 	print("###############################################\n")
-	print("Command performed on server\n")
+	print("Command called on server\n")
 	print(result.command)
 	print("\n")
 	print("###############################################\n")
@@ -423,22 +356,14 @@ if __name__ == '__main__':
 	###########################################################'
 	## Wait RSAT server
 	while urllib.urlopen(urlResult).getcode() != 200:
-	#logFile.write(str(urllib.urlopen(urlResult).getcode())+"\n")
 		time.sleep(5)
 
-	#logFile.write(str(nameFile)+"\n")
-
-	#while urllib.urlretrieve(urlResult, nameFile) 
-	#try:
 	###########################################################'
 	## Download RSAT results
 	urllib.urlretrieve(urlResult, nameFile)
 	#except IOError:
 	#logFile.write("\nResult URL is false")
 	#Logger.error("Result URL is false")
-
-
-	#logFile.write("\n"+nameFile+"\n")
 
 	###########################################################'
 	## Decompress results
@@ -469,35 +394,4 @@ if __name__ == '__main__':
 				fp.write(data)		  ## ajout des donnees du fichier compresse dans le fichier local 
 				fp.close() 
 	zfile.close()
-
-	#logFile.write("\n"+folderName+"\n")
-	#logFile.write("\n"+outGalaxyValue+"\n")
-
-
-
-
-	#os.popen("cp "+folderName+"peak-motifs_synthesis.html "+outGalaxyValue)
-	
-	#os.popen("sed -i \"1iHHEELLLOOO\" "+outGalaxyValue)
-	#os.popen("sed -i \"1i<style type=\'text/css\'></style>\" "+outGalaxyValue)
-
-	###########################################################'
-	##Create results folder name
-	#outGalaxyValueDir = outGalaxyValue.replace(".dat","_files")
-	
-	#logFile.write("\noutGalaxyValueDir : " +outGalaxyValueDir)
-
-	#logFile.close()
-
-	# Create results folder
-	#os.popen("mkdir "+outGalaxyValueDir)
-
-	# Copy results files in results folder
-	#os.popen("cp -R "+folderName+"data " + outGalaxyValueDir+"/data")
-	#os.popen("cp -R "+folderName+"reports " + outGalaxyValueDir+"/reports")
-	#os.popen("cp -R "+folderName+"results " + outGalaxyValueDir+"/results")
-
-
-
-
 
