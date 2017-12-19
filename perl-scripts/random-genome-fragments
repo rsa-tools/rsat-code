@@ -24,7 +24,7 @@ Makes use of EnsEMBL API (www.ensembl.org) for EnsEMBL genomes.
 
 =head1 AUTHORS
 
-morgane@bigre.ulb.ac.be
+morgane@bigre.ulb.ac.be , bcontreras@eead.csic.es
 
 =head1 CATEGORY
 
@@ -139,6 +139,8 @@ package main;
   $supported_template_formats = join (",", sort(keys(%supported_template_format)));
   our $template_format = "fasta";
 
+  our $random_seed = 0;
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -149,7 +151,6 @@ package main;
 #    ## Verbosity is not compatible with bed format
 #    $main::verbose = 0;
 #  }
-
 
   ## Treatment of the "chr" prefix
   &RSAT::error::FatalError("The options -add_chr and -remove_chr are mutually exclusive") 
@@ -193,7 +194,7 @@ package main;
       next if ($line =~ /^--/);
       next if ($line =~ /^#/);
       next unless ($line =~ /\S/);
-      my ($name, $length) = split ("\t",$line);
+      my ($name, $length) = split ("\t",$line); 
       if (&IsNatural($length)) {
 	  push @names, $name;
 	  push @lengths, $length;
@@ -216,7 +217,7 @@ package main;
   } else {
 
     ## Check sequence lengths and repetitions
-    unless (&IsNatural($main::fragment_len)) {
+    unless ($main::fragment_len && &IsNatural($main::fragment_len)) {
       &RSAT::error::FatalError ("You should specify the sequence length");
     }
 
@@ -352,6 +353,10 @@ package main;
   &RSAT::message::TimeWarn("Selecting", $nb_fragments, "random genome fragments") if ($main::verbose >= 2);
   my $done_fragments = 0;
   my $trials = 0;
+
+  ## set random seed if required by user
+  srand($random_seed) if($random_seed);
+
   while ($done_fragments < $main::nb_fragments) {
 #  for (my $done_fragments=1; $done_fragments<= $main::nb_fragments; $done_fragments++) {
 
@@ -635,7 +640,7 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
-      if ($arg eq "-v") {
+      if ($arg eq "-v") { 
 	if (&IsNatural($arguments[0])) {
 	  $main::verbose = shift(@arguments);
 	} else {
@@ -832,9 +837,17 @@ This option is incompatible with options -lw and -rep.
 =cut
       } elsif ($arg eq "-l") {
 	$main::fragment_len = shift(@arguments);
+=pod
 
+=item   B<-seed natural>
 
+Natural seed for random number generator.
 
+=cut
+      } elsif ($arg eq "-seed") {
+          if (&IsNatural($arguments[0])) {
+             $main::random_seed = int(shift(@arguments))
+          }
 =pod
 
 =item	B<-i template_file>
