@@ -355,38 +355,44 @@ package main;
       my ($taxonomy,$sp_name) = ('','');
       my $server = 'http://rest.ensemblgenomes.org'; # should be in %ENV
       my $ext = '/taxonomy/classification/'.$taxid.'?';
-      my $http = HTTP::Tiny->new();
-      my $response = $http->get($server.$ext,{ headers => { 'Content-type' => 'application/json' } });
+
+      # hard-coded in case theres no network
+      #$taxonomy = 'Eukaryota;Viridiplantae;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;eudicotyledons;Gunneridae;Pentapetalae;rosids;malvids;Brassicales;Brassicaceae;Camelineae;Arabidopsis;Arabidopsis thaliana';
+
+      if($taxonomy eq '') {
+        my $http = HTTP::Tiny->new();
+        my $response = $http->get($server.$ext,{ headers => { 'Content-type' => 'application/json' } });
       
-      &RSAT::message::Warning("failed connecting to $server$ext") unless $response->{success};
+        &RSAT::message::Warning("failed connecting to $server$ext") unless $response->{success};
 
-      if (length ($response->{content})) {
-	my $json = decode_json($response->{content});
+        if (length ($response->{content})) {
+	      my $json = decode_json($response->{content});
 	
-	# check whether first taxon is actually a species name
-	my $last_taxon = $json->[0];
-	if ($last_taxon->{'children'}) {
-	  my $last_children = $last_taxon->{'children'}->[0];
-	  if (($last_children->{'scientific_name'}) && 
-	      ($last_children->{'scientific_name'} =~ m/^[A-Z]\w+ \w+/)) {
-	    $sp_name = $last_children->{'scientific_name'};
-	  }
-	}
+          # check whether first taxon is actually a species name
+	      my $last_taxon = $json->[0];
+	      if ($last_taxon->{'children'}) {
+	        my $last_children = $last_taxon->{'children'}->[0];
+	        if (($last_children->{'scientific_name'}) && 
+	          ($last_children->{'scientific_name'} =~ m/^[A-Z]\w+ \w+/)) {
+	             $sp_name = $last_children->{'scientific_name'};
+	        }
+	      }
 
-	# print taxonomy in reverse order
-	foreach my $taxon (reverse(@$json)) {
-	  $taxonomy .= $taxon->{'scientific_name'}.';';
-	}
-	$taxonomy .= $sp_name;
+	      # print taxonomy in reverse order
+	      foreach my $taxon (reverse(@$json)) {
+	        $taxonomy .= $taxon->{'scientific_name'}.';';
+	      }
+	      $taxonomy .= $sp_name;
+        }
 
-    $organism{id} = $taxid;
-	$organism{taxonomy} = $taxonomy;
+        $organism{id} = $taxid;
+	    $organism{taxonomy} = $taxonomy;
 
-	if ($taxonomy) {
-	  &RSAT::message::TimeWarn("REST taxonomy:", $taxonomy) if ($main::verbose >= 2);
-	} else {
-	  &RSAT::message::Warning("Could not get taxonomy for organism", $organism_name);
-	}
+	    if ($taxonomy) {
+	      &RSAT::message::TimeWarn("REST taxonomy:", $taxonomy) if ($main::verbose >= 2);
+	    } else {
+	      &RSAT::message::Warning("Could not get taxonomy for organism", $organism_name);
+	    }
       }
     } else {
       &RSAT::error::FatalError("No TAXID for organism", $organism_name);
