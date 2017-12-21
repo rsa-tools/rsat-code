@@ -360,8 +360,12 @@ install_go_annotations:
 ##      install_all_species WHEN=queue
 ##
 ## Each species installation will be executed as a job for the
-## cluster.
+## cluster
+
+## Attempt to get TAXON_ID from $ORGANISM_TABLE
+#ifeq (${TAXON_ID},)
 TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 4)
+#endif
 
 ## The Assembly ID is important for some model organisms (the
 ## community relies on some particular assemblies) but is sometimes
@@ -399,8 +403,7 @@ parse_gtf:
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
-	@rm -f ${FASTA_RAW_LOCAL_OLD}
-	@ln -s ${FASTA_RAW_LOCAL} ${FASTA_RAW_LOCAL_OLD}
+	@ln -sf ${FASTA_RAW_LOCAL} ${FASTA_RAW_LOCAL_OLD}
 	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome
 
 ## Run some test for the GTF parsing result
