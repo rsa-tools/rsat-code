@@ -350,7 +350,7 @@ EOR
   colors = c($colors)
   data = read.table(file="$file",header=T,check.names=F);
   par(mai=c(1,4,1,1))
-  barplot( data\$upstream, names.arg=data\$organism, col=colors, xlim=c(0,2000), 
+  barplot( data\$upstream, names.arg=data\$organism, col=colors, xlim=c(0,3000), 
     xlab="average upstream length", horiz=T, las=1, cex.names=0.9 )
   dev.off()
 
@@ -358,7 +358,7 @@ EOR
   colors = c($colors)
   data = read.table(file="$file",header=T,check.names=F);
   par(mai=c(1,4,1,1))
-  barplot( data\$upstream, names.arg=data\$organism, col=colors, xlim=c(0,2000), 
+  barplot( data\$upstream, names.arg=data\$organism, col=colors, xlim=c(0,3000), 
     xlab="average upstream length", horiz=T, las=1, cex.names=0.8 )
   dev.off()
   q()
