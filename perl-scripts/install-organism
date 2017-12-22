@@ -350,10 +350,16 @@ package main;
 	  }
 
 	  my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
-	  my @strain_folders = glob($latest_assembly_dir."/*");
+
+	  my @strain_folders;
+	  if ($strain) {
+	      @strain_folders = glob($latest_assembly_dir."/".$strain);
+#	      die "HELLO\t", $strain, "\t", join("\n\t", @strain_folders);
+	  } else {
+	      @strain_folders = glob($latest_assembly_dir."/*");
+	  }
 
 	  my $strains_for_species = scalar(@strain_folders);
-	  
 
 	  # Iterate over each strain of current species
 	  my $strain_nb = 0; # Strain counter for current species
@@ -369,23 +375,31 @@ package main;
 
 	      ## Strain
 	      $strain_nb ++;
+
+	      ## Restrinct the number of strains if requested
 	      if (($max_strains > 0) && ($strain_nb > $max_strains)) {
 		  my $remaining_strains = scalar(@strain_folders) - $strain_nb + 1;
-		  &RSAT::message::Info("Species", $species, "skipping ", $remaining_strains, "strains of", $strains_for_species) if ($main::verbose >= 2);
+		  &RSAT::message::Info("Species", $species, "ignoring ", $remaining_strains, "strains of", $strains_for_species) if ($main::verbose >= 2);
 		  last;
 	      }
 
-	      ## Organism (concatenation of species + strain)
+	      ## Update organism counter
 	      $org_nb++;
+
+	      ## Skip first N species if requested
 	      if (($skip_species > 0) && ($species_nb <= $skip_species)) {
 		  &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
 		  next;
 	      }
+
+	      ## Build organism name (concatenation of species + strain)
 	      my $organism_name = $species."_".$current_strain;
+
+	      ## Add organism to the list
 	      push @organisms, $organism_name;
 	      &RSAT::message::Info(scalar(@organisms), $species, $current_strain, $organism_name) if ($main::verbose >= 3);
 
-	      ## Parse the selected organism
+	      ## Parse the selected organism if requested
 	      $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
 
 	      if ($task{list}) {
@@ -470,11 +484,12 @@ package main;
   &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
 
   ## Check that at least one organism has been specified
-  &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)") unless (scalar(@organisms) > 0);
+  &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)") 
+      unless ((scalar(@organisms) > 0) || ($task{parse}));
 
   ## Some options are incompatible with multiple organisms
   if (scalar(@organisms) > 1) {
-    &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.") if ($organism_full_name);
+    &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.") if ($user_specified_orgname);
     &RSAT::message::FatalError("The option -dir is (installation directory) not valid when multiple organisms are selected.") if ($install_dir);
     &RSAT::message::FatalError("The option -syn (synonym table) is not valid when multiple organisms are selected.") if ($outfile{synonyms});
   }
@@ -503,33 +518,47 @@ package main;
     &RSAT::message::TimeWarn("Installing organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
 
     $backup_org_table = 0 if ($i > 1); ## When we treat multiple organisms, we don't want to store a backup for each one
-
+    
     unless (($task{erase}) || ($task{uninstall})) {
 
-	################################################################
-	## Automatic full name specification
-	unless ($organism_full_name) {
-	    if ($organism_short_name =~ /\_/) {
-		$organism_full_name = $organism_short_name;
-		$organism_full_name =~ s/\_/ /g;
-	    }
-	}
-	
-	
-	################################################################
-	## If the organism was previously supported, ensure that the
-	## serialized files are suppressed.
-	&RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 3);
-	$organism = new RSAT::organism();
+      ## Create an object to hold the organism attribtues
+      $organism = new RSAT::organism();
 #    $organism->check_name($organism_short_name, 1);
-	$organism->set_attribute("name", $organism_short_name);
-	$organism->set_attribute("feature_types", '*');
-	$organism->delete_serial_files();
-	
-	
+      $organism->force_attribute("ID", $organism_short_name);
+      $organism->set_attribute("feature_types", '*');
+      
+      ################################################################
+      ## If the organism was previously supported, ensure that the
+      ## serialized files are suppressed.
+      &RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 3);
+      $organism->delete_serial_files();
+
+      ################################################################
+      ## Automatic full name specification
+      my $organism_full_name = "";
+      unless ($organism_full_name{organism_short_name}) {
+	if ($user_specified_orgname) {
+	  ## Full name specified with option -organism on the command line
+	  $organism_full_name = $user_specified_orgname;
+	} else {
+	  ## Build organism full name from the organism short name (replace _ by spaces)
+	  $organism_full_name = $organism_short_name;
+	  $organism_full_name =~ s/\_/ /g;
+	}
+      }
+#      $organism->set_attribute("name", $organism_short_name);
+      $organism->set_attribute("name", $organism_full_name);
+      
+      
+      
 	################################################################
-	## Installation directories
+	## Installation directories and files
 	umask 0002;
+
+      ## TO DO (JvH, 2017-12-12): below and elsewhere in the script,
+      ## replace the global hash tables by attributes set on the
+      ## organism object;
+      
 	if ($install_dir) {
 	    $dir{install} = $install_dir;
 	    &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 3);
@@ -540,7 +569,8 @@ package main;
 	    $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
 	    &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 3);
 	}
-	
+     
+
 	$dir{genome} = $dir{install}."/genome";
 	$dir{oligos} = $dir{install}."/oligo-frequencies";
 	$outfile{features} = $dir{genome}."/feature.tab";
@@ -653,7 +683,7 @@ sub OrgParameters {
     printf $out ";    %-25s\t%s\n", "organism file", $infile{organisms};
   } else {
     printf $out ";    %-25s\t%s\n", "ID", $organism_short_name;
-    printf $out ";    %-25s\t%s\n", "Name", $organism_full_name;
+    printf $out ";    %-25s\t%s\n", "Name", $organism_full_name; ## THIS IS WRONG (JvH, 2017-12-12)
     printf $out ";    %-25s\t%s\n", "Update date", $install_date;
     printf $out ";    %-25s\t%s\n", "Data source", $source;
   }
@@ -727,14 +757,12 @@ sub UpdateConfig {
   $taxid = $null;
   $taxonomy = $null;
 
-#  die "HELLO\t", $organism_table;
-
   unless (-e $organism_table) {
     if ($main::die_on_error) {
       &RSAT::error::FatalError("Missing organism table", $organism_table);
     } else {
       &RSAT::message::Warning("Missing organism table", $organism_table);
-	  return(0);
+      return(0);
     }
   }
 
@@ -746,9 +774,9 @@ sub UpdateConfig {
     next unless (/\S/);
     if (/^-- field\s+(\d)	taxonomy/) {
       $taxonomy_field = $1;
-    } elsif (/^-- field\s+(\d)	taxif/) {
+    } elsif (/^-- field\s+(\d)	taxid/) { 
       $taxid_field = $1;
-    } elsif (/^--/) {
+    } elsif (/^--/ || /^;/ || /^#/) { #; are required to parse organism.tab created by parse_gtf
       next;
     } else {
       @fields = split "\t";
@@ -760,17 +788,17 @@ sub UpdateConfig {
       ## Check if taxid is conform (must be a number)
       $taxid = $fields[$taxid_field - 1];
       if ($taxid =~ /^\d+$/) {
-	$supported_organism{$organism_short_name}->{'taxid'} = $taxid;
-	&RSAT::message::Info($organism_short_name, "TAXID", $taxid) if ($main::verbose >= 3);
+	    $supported_organism{$organism_short_name}->{'taxid'} = $taxid;
+	    &RSAT::message::Info($organism_short_name, "TAXID", $taxid) if ($main::verbose >= 3);
       } else {
-	&RSAT::message::Warning($taxid, "Invalid taxid in organism description table",  $organism_table);
-	$taxid = $null;
+	    &RSAT::message::Warning($taxid, "Invalid taxid in organism description table",  $organism_table);
+	    $taxid = $null;
       }
 
       &RSAT::message::Info ("Parsed taxonomy from organism.tab", 
-			    "Id", $id, 
+			    "id", $id, 
 			    "taxid", $taxid, 
-			    "Taxonomy", $taxonomy) if ($main::verbose >= 3);
+			    "taxonomy", $taxonomy) if ($main::verbose >= 3);
     }
   }
   close $org_handle;
@@ -857,8 +885,8 @@ sub UpdateConfigPerl {
   open CONFIG, ">$config_to_update" 
     || die "Error: cannot write config file $config_to_update\n";
   print CONFIG $previous_config;
-  my $new_org_config = 	 "\n#### $organism_short_name\t$organism_full_name\t$install_date\n";
-  $new_org_config .= "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
+  my $new_org_config = 	 "\n#### $organism_short_name\t$organism_full_name{$organism_short_name}\t$install_date\n";
+  $new_org_config .= "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name{$organism_short_name}\";\n";
   $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'data'} = \"$dir{install}\";\n";
   $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'last_update'} = \"".$install_date."\";\n";
   $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'source'} = \"$source\";\n";
@@ -892,10 +920,12 @@ sub UpdateConfigTab {
   &RSAT::message::Info ("Updating supported organisms", $main::org_table) if ($verbose >= 3);
 
   ## Update the hash variable for the new organism
-  $supported_organism{$organism_short_name}->{'name'} = $args{name} || $main::organism_full_name;
+  $supported_organism{$organism_short_name}->{'name'} = $args{name} || $organism->get_attribute("name");
   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $dir{install};
-  $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $main::install_date;
- 
+  $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $install_date;
+
+#  &RSAT::message::Debug($organism,  $organism_short_name, $organism->get_attribute("name"), $install_date) if ($main::verbose >= 10);
+
   ## Change source if requested
   #$prev_source = $supported_organism{$organism_short_name}->{'source'} ;
   if (($main::source) && ($main::source ne $null)) {
@@ -1194,12 +1224,11 @@ sub SeqLengthDistributionCmd {
     $command .= " -xlog 2" if( ($seq_type eq "intergenic") || ($seq_type eq "gene"));
     $command .= " -xleg1 'Sequence length (bp)'";
     $command .= " -yleg1 'Frequency'";
-    $command .= " -title1 '".$organism_full_name."'";
+    $command .= " -title1 '".$organism_full_name{$organism_short_name}."'";
     $command .= " -title2 'length distribution of ${seq_type} sequences'";
     $command .= " -format ".$img_format;
     $command .= " -o ".$len_prefix."_distrib.".$img_format;
 #    &doit($command, $dry, $die_on_error, $verbose);
-#    die "HELLO\t", $command, "\n";
     return($command);
 }
 
@@ -2163,7 +2192,7 @@ sub ReadArguments {
 
       ## Full organism name (may include spaces)
     } elsif ($arg eq "-organism") {
-      $organism_full_name = shift(@arguments);
+      $user_specified_orgname = shift(@arguments);
 
       ## synonyms
     } elsif ($arg =~ /-syn/) {
