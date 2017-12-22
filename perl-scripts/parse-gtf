@@ -357,7 +357,7 @@ package main;
       my $ext = '/taxonomy/classification/'.$taxid.'?';
 
       # hard-coded in case theres no network
-      #$taxonomy = 'Eukaryota;Viridiplantae;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;eudicotyledons;Gunneridae;Pentapetalae;rosids;malvids;Brassicales;Brassicaceae;Camelineae;Arabidopsis;Arabidopsis thaliana';
+      #$taxonomy = 'Eukaryota;Viridiplantae;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Liliopsida;Poales;Poaceae;PACMAD clade;Panicoideae;Paniceae;Setaria;Setaria italica';
 
       if($taxonomy eq '') {
         my $http = HTTP::Tiny->new();
