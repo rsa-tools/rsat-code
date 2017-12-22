@@ -25,7 +25,11 @@ $query = new CGI;
 ### print the header
 &RSA_header("Supported organisms", "results");
 
-
+print "<style>#page-content-wrapper{
+overflow: auto;
+display: block;
+height: 100%;
+}</style>";
 ## Check security issues
 &CheckWebInput($query);
 
@@ -75,9 +79,10 @@ if ($group) {
   print "<p><b>Group specificity: </b>", $group, "</p>\n";
 }
 
+
 ################################################################
 ## Print the table with supported organisms
-print "<table class='sortable' width='600'>";
+print "<table class='sortable'>";
 foreach my $row (@organism_rows) {
   my @fields = split("\t", $row);
   print "<tr>\n";

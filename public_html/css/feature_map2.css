@@ -1,0 +1,92 @@
+
+body {
+  counter-reset: section;
+}
+
+.breadcrumb-counter-nav {
+  margin: 0;
+  padding: 0;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  width: 100%;
+  list-style: none;
+  background: #505962;
+   font-family: 'Montserrat';
+}
+
+.breadcrumb-counter-nav .breadcrumb-counter-nav-item {
+  position: relative;
+  -webkit-flex: 1 0 auto;
+      -ms-flex: 1 0 auto;
+          flex: 1 0 auto;
+  padding: .5rem 1rem; /* Para la parte de arriba y de abajo */
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.breadcrumb-counter-nav .breadcrumb-counter-nav-item:hover {
+  background: #67737e;
+}
+
+.breadcrumb-counter-nav .breadcrumb-counter-nav-item::before {
+  counter-increment: section;
+  content: counter(section);
+  position: relative;
+  background: #8f99a3;
+  color: #fff;
+  right: 0.8rem;
+  border-radius: 50%;
+  padding: 0.2em 0.55em;
+}
+
+.breadcrumb-counter-nav .breadcrumb-counter-nav-item.current {
+  background: #67737e;/*Para el cuadro al hoover */
+}
+
+.breadcrumb-counter-nav .breadcrumb-counter-nav-item.current::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -1rem;
+  width: 0;
+  height: 0;
+  border-top: 1.35rem solid transparent;
+  border-bottom: 1.25rem solid transparent;
+  border-left: 1rem solid #67737e;
+  z-index: 300;
+}
+
+.breadcrumb-counter-nav .breadcrumb-counter-nav-item.current::before {
+  background-color: #88a4bf;
+}
+
+.breadcrumb-counter-nav .breadcrumb-counter-nav-item a {
+  color: #fff;
+  font-size: 0.875rem;
+}
+
+@media only screen and (max-width: 52em) {
+  .breadcrumb-counter-nav {
+    -webkit-flex-direction: column;
+        -ms-flex-direction: column;
+            flex-direction: column;
+  }
+}
+
+
+.svg-container {
+    display: inline-block;
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%;
+    vertical-align: top;
+    overflow: hidden;
+}
+.svg-content {
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}

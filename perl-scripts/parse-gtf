@@ -346,7 +346,7 @@ package main;
     &RSAT::message::TimeWarn("Getting organism attributes from REST web services") if ($main::verbose >= 2);
     my %organism = ();
     $organism{id} = $organism_name;
-    $organism{source} = "ensemblgenomes";
+    $organism{source} = $gtf_source;
     $organism{taxonomy} = $null;
 
     # try to get taxonomy from eg REST interface
@@ -379,7 +379,9 @@ package main;
 	}
 	$taxonomy .= $sp_name;
 
+    $organism{id} = $taxid;
 	$organism{taxonomy} = $taxonomy;
+
 	if ($taxonomy) {
 	  &RSAT::message::TimeWarn("REST taxonomy:", $taxonomy) if ($main::verbose >= 2);
 	} else {
@@ -452,6 +454,10 @@ package main;
       #Chr01    phytozomev10    gene    27355   28320   .   -   .   ID=Glyma.01G000100.Wm82.a2.v1;Name=Glyma.01G000100;...
       #Chr01    phytozomev10    CDS 27656   27824   .   -   1   ID=Glyma.01G000100.1.Wm82.a2.v1.CDS.3;Parent=...
       #contig_1000513   Cufflinks   gene    946 4541    .   +   .   ID=TCONS_00000005;gene_id=XLOC_000003;...
+      # GDR (genome db for Rosaceae) gff-version 3
+      #PAV_r1.0chr1 maker   gene    65131   87167   .   +   .   ID=Pav_sc0000551.1_g020.1.mk;Note=PREDICTED: importin-11 isoform X2
+      #PAV_r1.0chr1 maker   exon    65131   65355   .   +   .   ID=Pav_sc0000551.1_g020.1.mk:exon:1;Parent=Pav_sc0000551.1_g020.1.mk
+      #PAV_r1.0chr1 maker   CDS 65215   65355   .   +   0   ID=Pav_sc0000551.1_g020.1.mk:CDS:1;Parent=Pav_sc0000551.1_g020.1.mk
       #
       # new supported attributes: key=value, Parent, Name, \w+.CDS.\d+, 
       
@@ -462,13 +468,16 @@ package main;
             if($feature eq 'cds') {
                 my $cds_attr = $attributes{$1};
 
-                # capture exon number from JGI annotations in GTF format
+                # capture exon number from JGI/GDR annotations in GTF format
                 if($cds_attr =~ m/CDS.(\d+)/) {
                     $attributes{exon_number} = $1;
                 }
             }
 	    }
       }
+    
+      ## set gene_id if undefined (as in gff3 made with maker)
+      if($attributes{ID} && !$attributes{gene_id}) { $attributes{gene_id} = $attributes{ID} }
 
       ## Use gene ID as gene name if not defined
       unless ($attributes{gene_name}) {
