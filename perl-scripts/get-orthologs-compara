@@ -172,7 +172,7 @@ package main;
   #### initialise parameters and vars
   our $start_time = &RSAT::util::StartScript();
   our $comparabdb = "$ENV{RSAT}/data/genomes/compara.bdb";
-  #$comparabdb = "$ENV{RSAT}/data/ensemblgenomes/plants/release-29/compara.bdb"; # debug
+  #$comparabdb = "$ENV{RSAT}/data/ensemblgenomes/plants/release-37/compara.bdb"; # debug
   
   our %infile = ();
   our %outfile = ();
