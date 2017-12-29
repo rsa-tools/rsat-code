@@ -3530,7 +3530,8 @@ print qq|
     <td align=center>
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
 
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+    <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
         <INPUT type="hidden" NAME="sequence_type" VALUE="$seq_type">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
@@ -3548,7 +3549,8 @@ print qq|
     print <<End_of_form;
     <td align=center>
 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
@@ -3560,7 +3562,8 @@ print qq|
 
     <td align=center>
 	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
@@ -3572,7 +3575,8 @@ print qq|
 
     <td align=center>
 	<FORM METHOD="POST" ACTION="local-word-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
@@ -3590,7 +3594,8 @@ print qq|
 
     <td align=center>
 	<FORM METHOD="POST" ACTION="info-gibbs_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
@@ -3601,7 +3606,8 @@ print qq|
 
     <!--td align=center>
 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
@@ -3623,7 +3629,8 @@ print qq|
 <!--
     <td align=center>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
@@ -3646,7 +3653,8 @@ print qq|
 
     <td align=center>
 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
@@ -3657,7 +3665,8 @@ print qq|
 
     <td align=center>
         <FORM METHOD="POST" ACTION="matrix-scan-quick_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
@@ -3668,7 +3677,8 @@ print qq|
 
     <td align=center>
         <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
@@ -3679,7 +3689,8 @@ print qq|
 
     <!--td align=center>
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+	<INPUT type="hidden" NAME="organism_name" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
