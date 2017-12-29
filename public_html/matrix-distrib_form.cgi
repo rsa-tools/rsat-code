@@ -40,7 +40,7 @@ $default{bg_format}="oligo-analysis";
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
 $default{markov_order} = "1";
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 
 
 &ReadMatrixFromFile();
