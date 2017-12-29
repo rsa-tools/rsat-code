@@ -118,7 +118,7 @@ print $query->textfield(-id=>'collection_label', -name=>'collection_label',
 			 -default=>$default{collection_label},
 			 -size=>30) ."</h2>";
 
-&GetMatrix('title'=>'Input matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
+&GetFirstMatrix('title'=>'Input matrices', 'nowhere'=>1,'no_pseudo'=>1, consensus=>1);
 
 print "<hr>";
 
@@ -307,7 +307,7 @@ function setDemo1(demo_1_matrix){
     demo_descr.innerHTML = descr_1;
     html_title.value = "\'Oct4 motifs found in Chen 2008 peak sets\'";
     collection_label.value = "\'Oct4_peak_motifs\'";
-    matrix.value = demo_1_matrix;
+    matrix1.value = demo_1_matrix;
     demo.value = descr_1;
 }
 </script>';
@@ -366,9 +366,9 @@ function setDemo3(demo_3_matrix, demo_3_matrix_2, demo_3_matrix_3){
     collection_2_label.value = "\'Oct4_Meme-chip\'";
     collection_3_label.value = "\'Oct4_Homer\'";
 
-    matrix.value = demo_3_matrix;
-    matrix_2.value = demo_3_matrix_2;
-    matrix_3.value = demo_3_matrix_3;
+    matrix1.value = demo_3_matrix;
+    matrix2.value = demo_3_matrix_2;
+    matrix3.value = demo_3_matrix_3;
     demo.value = descr_3;
 }
 </script>';
