@@ -407,7 +407,7 @@ function setDemo2(demo_3_matrix){
     demo_descr.innerHTML = descr_2;
     html_title.value = "\'Clustering column-permuted matrices discovered in Oct4 ChIP-seq\'";
     collection_label.value = "\'Oct4_peak_motifs_permuted\'";
-    matrix.value = demo_3_matrix;
+    matrix1.value = demo_3_matrix;
     demo.value = descr_2;
 }
 </script>';
