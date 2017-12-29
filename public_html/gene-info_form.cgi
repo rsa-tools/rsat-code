@@ -14,7 +14,7 @@ $query = new CGI;
 
 ################################################################
 ### default values for filling the form
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{queries} = '';
 $default{full} = '';
 $default{match_description} = '';
