@@ -13,7 +13,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### default values for filling the form
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{gene_nb} = 20;
 $default{group_nb} = 1;
 $default{replacement} = "";
