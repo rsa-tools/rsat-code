@@ -1739,6 +1739,109 @@ unless ($args{nowhere}) {
   }
 }
 
+sub GetFirstMatrix {
+    my (%args) = @_;
+    my $db_choice= $args{'db_choice'} || 0;
+    my $status_db_choice=$args{'status_db_choice'} || 0;
+    #  my $consensus = $args{consensus};
+    #  my $no_pseudo = $args{no_pseudo};
+    $args{title}="Input personal collection of motifs" if ($db_choice);
+    my $title = $args{title} || "Matrix (or matrices)";
+    #print "<a href=''><b>Use your own motifs collection:</b></a><br/>" ;
+    print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' $status_db_choice >" if ($db_choice);
+    print "<B>", $title, "</B>\n";
+    print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
+    print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
+    
+    my %supported_input_format = (
+				'alignace'=> 1,
+				'assembly'=>1,
+				'clustal'=>1,
+				'cluster-buster'=>1,
+				'consensus'=>1,
+				'feature'=>1,
+				'footprintDB'=>1,
+				'gibbs'=> 1,
+    'homer' => 1,
+				'infogibbs'=>1,
+				'jaspar'=>1,
+				'mscan'=>1,
+				'meme'=>1,
+				'meme_block'=>1,
+				'motifsampler'=>1,
+				'sequences' => 1,
+				'stamp'=>1,
+				'stamp-transfac'=>1,
+    'cis-bp'=>1,
+				'tab'=>1,
+				'transfac'=>1,
+				'uniprobe'=>1,
+				'encode'=>1,
+    );
+    ## THIS DOES NOT WORK, I DON'T UNDERSTAND WHY (JvH)
+    ## THE STRANGEST THING IS THAT THE SAME WORKS FOR OUTPUT MATRICES IN convert-matrix_form.cgi
+    ## I SHOULD CHECK LATER
+    ##  my %supported_input_format =  %RSAT::MatrixReader::supported_input_format;
+    my @supported_input_formats = sort(keys( %supported_input_format));
+    #  my $supported_input_formats = join ",", @supported_input_formats;
+    #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
+    
+    #### matrix format
+    print $query->popup_menu(-id=>'matrix_format1',
+    -name=>'matrix_format1',
+    -Values=>[@supported_input_formats],
+    -default=>$default{matrix_format});
+    
+    
+    ## Display option fo use consensus as matrix name
+    if ($args{consensus}) {
+        print $query->checkbox(-id=>'consensus_as_name', -name=>'consensus_as_name',
+        -checked=>$default{consensus_as_name},
+        -label=>' use motif consensus as matrix name ');
+    }
+    
+    ## Text area to enter the matrix
+    print "<BR>\n";
+    print  "Input motifs as text<br/>" if ($db_choice);
+    print "<div>";
+    
+    
+    print $query->textarea(-id=>'matrix1',
+    -name=>'matrix1',
+			 -default=>$default{matrix},
+			 -rows=>4,
+			 -columns=>60);
+    
+    ## Propose help to find matrices
+    unless ($args{nowhere}) {
+        print "<br/><br/>";
+        &MotifSelection('ids' => 1);
+    }
+    
+    ## Option to upload the matrix file from the client machine
+    print "<BR>\n";
+    print  "Upload motifs file<br/>" if ($db_choice);
+    print "<b>Or</b> select a file to upload <BR>\n" unless ($db_choice);
+    print $query->filefield(-name=>'uploaded_file_matrix1',
+    -default=>'',
+    -size=>45,
+    -maxlength=>200);
+    print "<BR>\n";
+    
+    
+    ## Display additional options: pseudo-count and pseudo-count distribution
+    unless ($args{no_pseudo}) {
+        #### pseudo-counts
+        print "<BR>\n";
+        print "<B><A class='iframe' HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+        print $query->textfield(-id=>'pseudo_counts', -name=>'pseudo_counts',
+        -default=>$default{pseudo_counts},
+        -size=>2);
+        print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
+        print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $checked{'pseudo_prior'}>","<b>distributed proportionally to residues priors</b>");
+    }
+}
+
 ######### bootstrap version #######
 sub GetMatrix_bootstrap {
   my (%args) = @_;
@@ -2120,8 +2223,8 @@ sub GetSecondMatrix {
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
   ## Second matrix format
-  print $query->popup_menu(-name=>'matrix_format_2',
-			   -id=>'matrix_format_2',
+  print $query->popup_menu(-name=>'matrix_format2',
+			   -id=>'matrix_format2',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
 
@@ -2137,7 +2240,7 @@ sub GetSecondMatrix {
   print "<BR>\n";
   print  "Input motifs as text<br/>" if ($db_choice);
   print "<div><div style='float:left;'>";
-  print $query->textarea(-name=>'matrix_2', -id=>'matrix_2',
+  print $query->textarea(-name=>'matrix2', -id=>'matrix2',
 			 -default=>$default{matrix_2},
 			 -rows=>4,
 			 -columns=>60);
@@ -2146,7 +2249,7 @@ sub GetSecondMatrix {
   print "<BR>\n";
   print  "Upload motifs file<br/>" if ($db_choice);
   print "Or select a file to upload <BR>\n" unless ($db_choice);
-  print $query->filefield(-name=>'uploaded_file_matrix_2',
+  print $query->filefield(-name=>'uploaded_file_matrix2',
 			  -default=>'',
 			  -size=>45,
 			  -maxlength=>200);
@@ -2204,9 +2307,9 @@ sub GetSecondMatrixFile {
     close MAT;
 
     ### Fetch sequence from an URL
-  } elsif ($query->param('matrix_2') =~ /\S/) {
+  } elsif ($query->param('matrix2') =~ /\S/) {
     if (open MAT, ">$matrix_file_2") {
-       print MAT $query->param('matrix_2');
+       print MAT $query->param('matrix2');
       close MAT;
     }
 
@@ -2268,8 +2371,8 @@ sub GetThirdMatrix {
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
   ## Third matrix format
-  print $query->popup_menu(-name=>'matrix_format_3',
-			   -id=>'matrix_format_3',
+  print $query->popup_menu(-name=>'matrix_format3',
+			   -id=>'matrix_format3',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
 
@@ -2285,7 +2388,7 @@ sub GetThirdMatrix {
   print "<BR>\n";
   print  "Input motifs as text<br/>" if ($db_choice);
   print "<div><div style='float:left;'>";
-  print $query->textarea(-name=>'matrix_3', -id=>'matrix_3',
+  print $query->textarea(-name=>'matrix3', -id=>'matrix3',
 			 -default=>$default{matrix_3},
 			 -rows=>4,
 			 -columns=>60);
@@ -2294,7 +2397,7 @@ sub GetThirdMatrix {
   print "<BR>\n";
   print  "Upload motifs file<br/>" if ($db_choice);
   print "Or select a file to upload <BR>\n" unless ($db_choice);
-  print $query->filefield(-name=>'uploaded_file_matrix_3',
+  print $query->filefield(-name=>'uploaded_file_matrix3',
 			  -default=>'',
 			  -size=>45,
 			  -maxlength=>200);
