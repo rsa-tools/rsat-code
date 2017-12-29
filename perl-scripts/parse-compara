@@ -169,6 +169,7 @@ package main;
   {
     next if(/^#/);
     @rawdata = split(/\t/);
+    $rawdata[4] =~ s/ //g; # remove any spaces
     $eg_group_species{$rawdata[1]} = ++$n_of_species;
 
     if($params{"release"})
