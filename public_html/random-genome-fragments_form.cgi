@@ -19,7 +19,7 @@ $default{demo_descr1} = "";
 $default{demo_descr2} = "";
 
 ### default values for filling the form
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{organism_ens} = "Homo_sapiens";
 $default{frag_nb} = 20;
 $default{frag_length} = 100;
