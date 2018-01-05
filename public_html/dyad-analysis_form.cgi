@@ -21,7 +21,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### default values for filling the form
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{taxon} = "Saccharomycetales";
 $default{bg_method} = "monads";
 #$default{bg_method} = "background";
