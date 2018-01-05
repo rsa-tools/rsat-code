@@ -14,7 +14,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{demo_descr1} = "";
-$default{organism} = "Homo sapiens GRCh37";
+$default{organism} = "";
 $default{input_type}="bed";
 $default{mml}=30 ; ## Length of the sequence sorounding the variant, 
                    ## has to be consistent with the longest matrix to be used
@@ -144,8 +144,6 @@ while (my $row = <$fh>){
     $demo_rsat_var .= $row . "\\n";
 }
 
-my $org = $default{organism};
-$org =~ s/\ /_/g;
 print '<script>
 function setDemo(demo_rsat_var){
     $("#reset").trigger("click");
@@ -159,8 +157,8 @@ function setDemo(demo_rsat_var){
 
     demo_descr.innerHTML = descr1;
     
-    $("#organism_name").val("'. $default{organism} . '");
-    $("#organism").val("' . $org . '");
+    $("#organism_name").val("Homo sapiens GRCh37");
+    $("#organism").val("Homo_sapiens_GRCh37");
     $("#input").val(demo_rsat_var);
     $("#input_type").val("varBed");
     $("#mml").val("30");

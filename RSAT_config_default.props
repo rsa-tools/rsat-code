@@ -52,6 +52,7 @@ RSAT=[RSAT_PARENT_PATH]/rsat
 ## Web server will display all the supported organisms.
 
 group_specificity=None
+default_organism=Saccharomyces_cerevisiae
 
 ################################################################
 ## Support for phylogenetic footprint analysis and related tools.
