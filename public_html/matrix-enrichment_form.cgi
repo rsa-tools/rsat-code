@@ -49,7 +49,7 @@ $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Homo_sapiens_GRCh37";
+$default{organism}="";
 #$default{html_title}="";
 $default{markov_order} = "0";
 

@@ -39,7 +39,7 @@ $default{markov_order} = "1";
 #$default{leaders} = 'checked';
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Escherichia coli K12 substr MG1655 uid57779";
+$default{organism}="";
 $default{uth_pvalue} = "1e-4";
 $default{taxon} = "Gammaproteobacteria";
 $default{uth_occ_th} = "5";
@@ -151,7 +151,8 @@ while (my $row = <$fh>){
     $demo_matrix .= $row . "\\n";
 }
 
-my $org = $default{organism};
+my $demo_org = "Escherichia coli K12 substr MG1655 uid57779";
+my $org = $demo_org;
 $org =~ s/\ /_/g;
 print '<script>
 function setDemo(demo_matrix){
@@ -166,7 +167,7 @@ function setDemo(demo_matrix){
     demo_descr.innerHTML = descr1;
     
     $("#queries").val("'. $demo_queries . '");
-    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism_name").val("'. $demo_org . '");
     $("#organism").val("' . $org . '");
     $("#taxon").val("Enterobacteriales");
     $("#taxon_name").val("Enterobacteriales");

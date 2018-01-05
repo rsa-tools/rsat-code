@@ -16,7 +16,7 @@ $query = new CGI;
 $default{sequence_format} = "fasta";
 #$default{seq_label} = "gene identifier + organism + gene name";
 $default{seq_label} = "gene name";
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{rm} = "";
 $default{noorf} = "checked";
 $default{imp_pos} = "";
@@ -249,13 +249,11 @@ print $query->end_form;
 
 print "<TD><B>";
 
-my $org = $default{organism};
-$org =~ s/\ /_/g;
 print "<script>
 function setDemo(demo_genes){
     \$('#reset').trigger('click');
-    \$('#organism_name').val('$default{organism}');
-    \$('#organism').val('$org');
+    \$('#organism_name').val('Saccharomyces cerevisiae');
+    \$('#organism').val('Saccharomyces_cerevisiae');
     \$('#gene_selection').val(demo_genes);
     \$('#from').val('-800');
     \$('#to').val('-1');
