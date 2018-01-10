@@ -607,6 +607,7 @@ sub InitRSAT {
   ################################################################
   $main::SCRIPTS = $ENV{RSAT}."/perl-scripts";
   $main::PYTHON = $ENV{RSAT}."/python-scripts";
+  $main::C_SCRIPTS = $ENV{RSAT}."/bin";
 
   ################################################################
   ## Redirect queries to a remote server
