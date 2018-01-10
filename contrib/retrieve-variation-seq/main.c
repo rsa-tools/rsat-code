@@ -3045,6 +3045,27 @@ string *Get_species_dir_from_supported_file(string *species_dir,char *species,ch
           fclose(fh_supportedFile);
           return species_dir;
         }
+    //Check if ONLY assembly was passed as query option in order to compare properly
+    } else if (assembly) {
+      if (strcmp(token[1],species) == 0 && strcmp(token[2],assembly) == 0) {
+        //Test if species_directory field is empty
+        if (token[6] != '\0') {
+          if( (rsat_idx = strchr(token[6],'}')) != NULL ) {
+            strfmt( species_dir, "%s%s", RSAT->buffer, (rsat_idx + 1) );
+          } else {
+            RsatFatalError("Get_species_dir_from_supported_file() could not identify species",
+                            species,"from assembly",assembly,
+                            "in the organism table,species_dir field was not correct\n",NULL);
+          }
+        } else {
+          RsatFatalError("Get_species_dir_from_supported_file() could not identify species",
+                          species,"from assembly",assembly,
+                          "in the organism table,species_dir field was empty\n",NULL);
+        }
+        RsatMemTracker = relem( (void*)token,RsatMemTracker );
+        RsatMemTracker = relem( (void*)line ,RsatMemTracker );
+        fclose(fh_supportedFile);
+        return species_dir;
       }
       initokadd(line,token,7);
       continue;
