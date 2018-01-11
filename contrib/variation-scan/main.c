@@ -183,7 +183,7 @@ void ReportExecutionTime(time_t start_time);
 FILE *OpenInputFile(FILE *filehandle,char *filename);
 FILE *OpenOutputFile(FILE *filehandle,char *filename);
 FILE *OpenAppendFile(FILE *filehandle,char *filename);
-int CheckOutDir(string *output_dir,int Umask, int Chmod);
+int CheckOutDir(string *output_dir,mode_t Umask, mode_t Chmod);
 string *SplitFileName(string *token[],char *filename);
 string *Get_pub_temp(string *public_temp_dir);
 string *Get_temp_dir(string *tmp_dir);
@@ -667,10 +667,10 @@ int main(int argc, char *argv[]){
   if ( strcmp(distrib_dir->buffer,"") == 0 )
     strcopy(distrib_dir, out_dir->buffer);
 
-  if ( CheckOutDir(out_dir,0,755) == 0 )
+  if ( CheckOutDir(out_dir,0,0755) == 0 )
     RsatFatalError("Unable to create directory",out_dir->buffer,"in main()",NULL);
 
-  if ( CheckOutDir(distrib_dir,0,755) == 0 )
+  if ( CheckOutDir(distrib_dir,0,0755) == 0 )
     RsatFatalError("Unable to create directory",distrib_dir->buffer,"in main()",NULL);
 
   //Declare variables
@@ -3252,7 +3252,7 @@ FILE *OpenAppendFile(FILE *filehandle,char *filename){
 /*Test if the passed directory PATH already exists, if no, create it with the appropiate
   masks and permissions. A string containing the directory PATH, a Umask and
   a Chmod code is needed. The return value is 0 on failure or 1 on success. */
-int CheckOutDir(string *output_dir,int Umask, int Chmod){
+int CheckOutDir(string *output_dir,mode_t Umask, mode_t Chmod){
   //Declare variables
   struct stat output_exists;
   string *cmd = NULL;
@@ -3465,7 +3465,7 @@ string *make_temp_file(string *tmp_file,char *tmp_dir,char *tmp_prefix,int add_d
   }
 
   //Check if directory exists or has been created successfully
-  if ( CheckOutDir(real_tmp_dir,0,755) == 0 ) RsatFatalError("Unable to create",real_tmp_dir->buffer,"in make_temp_file()",NULL);
+  if ( CheckOutDir(real_tmp_dir,0,0755) == 0 ) RsatFatalError("Unable to create",real_tmp_dir->buffer,"in make_temp_file()",NULL);
 
   //If this parameter has been passed as 1 to function, check if cgi environment is found and
   //create and index.html with the legend 'Access forbidden'
