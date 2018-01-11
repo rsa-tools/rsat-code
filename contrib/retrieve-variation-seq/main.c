@@ -135,7 +135,7 @@ void ReportExecutionTime(time_t start_time);
 FILE *OpenInputFile(FILE *filehandle,char *filename);
 FILE *OpenOutputFile(FILE *filehandle,char *filename);
 FILE *OpenAppendFile(FILE *filehandle,char *filename);
-int CheckOutDir(string *output_dir,int Umask, int Chmod);
+int CheckOutDir(string *output_dir,mode_t Umask, mode_t Chmod);
 string *SplitFileName(string *token[],char *filename);
 string *Get_pub_temp(string *public_temp_dir);
 string *Get_temp_dir(string *tmp_dir);
@@ -2472,7 +2472,7 @@ FILE *OpenAppendFile(FILE *filehandle,char *filename){
 /*Test if the passed directory PATH already exists, if no, create it with the appropiate
   masks and permissions. A string containing the directory PATH, a Umask and
   a Chmod code is needed. The return value is 0 on failure or 1 on success. */
-int CheckOutDir(string *output_dir,int Umask, int Chmod){
+int CheckOutDir(string *output_dir,mode_t Umask, mode_t Chmod){
   //Declare variables
   struct stat output_exists;
   string *cmd = NULL;
