@@ -498,6 +498,7 @@ int main(int argc, char *argv[]){
   string *outfile_var_sorted  = NULL;
   string *get_variations_cmd  = NULL;
   string *sort_variations_cmd = NULL;
+  string *deletetmps_cmd      = NULL;
 
   string *curr_chr           = NULL;
   string *seq_file           = NULL;
@@ -572,6 +573,7 @@ int main(int argc, char *argv[]){
   outfile_var_sorted  = strnewToList(&RsatMemTracker);
   get_variations_cmd  = strnewToList(&RsatMemTracker);
   sort_variations_cmd = strnewToList(&RsatMemTracker);
+  deletetmps_cmd      = strnewToList(&RsatMemTracker);
   /////////////////////////////////////////////////
   // Validate Arguments
   /////////////////////////////////////////////////
@@ -1039,6 +1041,10 @@ int main(int argc, char *argv[]){
   fclose(fin);
   fclose(fout);
 
+  //Remove tmp sorted file
+  strfmt(deletetmps_cmd,"rm %s",outfile_var_sorted->buffer);
+  doit(deletetmps_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
+
   //Update execution log files
   ReportExecutionTime(start_time);
 
@@ -1050,7 +1056,7 @@ int main(int argc, char *argv[]){
     //fclose(fin);
     //fclose(fout);
     //rlist(RsatMemTracker);
-    printf("The end!\n");
+    //printf("The end!\n");
     exit(0);
 
     ///
@@ -3024,7 +3030,7 @@ string *Get_species_dir_from_supported_file(string *species_dir,char *species,ch
         }
       //Check if ONLY release was passed as query option in order to compare properly
       } else if (release) {
-
+        printf("1HOLA!!!!\n" );
         if (strcmp(token[1],species) == 0 && strcmp(token[4],release) == 0) {
           //Test if species_directory field is empty
           if (token[6] != '\0') {
@@ -3047,6 +3053,7 @@ string *Get_species_dir_from_supported_file(string *species_dir,char *species,ch
         }
     //Check if ONLY assembly was passed as query option in order to compare properly
     } else if (assembly) {
+
       if (strcmp(token[1],species) == 0 && strcmp(token[2],assembly) == 0) {
         //Test if species_directory field is empty
         if (token[6] != '\0') {
@@ -3066,9 +3073,11 @@ string *Get_species_dir_from_supported_file(string *species_dir,char *species,ch
         RsatMemTracker = relem( (void*)line ,RsatMemTracker );
         fclose(fh_supportedFile);
         return species_dir;
-      }
-      initokadd(line,token,7);
-      continue;
+     }
+
+    }
+    initokadd(line,token,7);
+    continue;
 
     }
     //Resize line string if limit has reached

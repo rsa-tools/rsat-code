@@ -379,7 +379,11 @@ void help(){
   "    -m_format matrix_format\n"
   "        Matrix file format\n"
   "\n"
-  "        Supported formats: transfac and tab\n"
+  "        Supported formats: alignace, assembly, cb, clustal, cluster-buster,"
+  "                            consensus, sequences, feature, footprintdb, gibbs,"
+  "                            infogibbs, info-gibbs, jaspar, homer, mscan, meme,"
+  "                            meme_block, motifsampler, stamp, stamp-transfac, tab,"
+  "                            tf, transfac, cis-bp, uniprobe, yeastract and encode.\n"
   "\n"
   "    -mml #\n"
   "        Length of the longest Matrix, this values has to be consistent with\n"
@@ -469,6 +473,7 @@ int main(int argc, char *argv[]){
   TRIE *trieMatrixFmts      = NULL;
   string *program_full_path = NULL;
   string *mscanquick_cmd    = NULL;
+  string *deletetmps_cmd    = NULL;
   string *out_dir           = NULL;
 
   /////////////////////////////////
@@ -487,6 +492,7 @@ int main(int argc, char *argv[]){
   //Flags
   int only_biggest     =    0;
   int calc_distrib     =    0;
+  int debug            =    0;
 
   //Numeric
   //int top_matrix       =   -1;
@@ -575,6 +581,8 @@ int main(int argc, char *argv[]){
     } else if ( strcmp(argv[i],"-v") == 0 && CheckValOpt(argv+i) ) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       verbose = atoi(argv[++i]);
+    } else if ( strcmp(argv[i],"-debug") == 0 && CheckValOpt(argv+i) ) {
+      debug   = 1;
     } else {
       RsatFatalError("Invalid option", argv[i], NULL);
     }
@@ -591,6 +599,8 @@ int main(int argc, char *argv[]){
   program_full_path = strnewToList(&RsatMemTracker);
   mscanquick_cmd    = strnewToList(&RsatMemTracker);
   out_dir           = strnewToList(&RsatMemTracker);
+  deletetmps_cmd    = strnewToList(&RsatMemTracker);
+
 
   //Get supported matrix formats as a TRIE
   trieMatrixFmts = ListInputMatrixFormats();
@@ -968,6 +978,12 @@ int main(int argc, char *argv[]){
       ScanSingleVariants(line, token, matrixID->element->buffer, mscanquick_file, &cutoff, fout);
     }
 
+    //Remove tmp matrix-scan-quick files
+    if (!debug) {
+      strfmt(deletetmps_cmd,"rm %s",mscanquick_file->buffer);
+      doit(deletetmps_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
+    }
+
     //Pass to next matrixfileprefix
     curr_matrixfileprefix = curr_matrixfileprefix->next;
   }
@@ -1017,6 +1033,11 @@ int main(int argc, char *argv[]){
           }
           printf("\n");*/
 
+  //Remove tmp fasta sequence
+  if (!debug) {
+    strfmt(deletetmps_cmd,"rm %s",fasta_sequence->buffer);
+    doit(deletetmps_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
+  }
 
   //Update execution log files
   ReportExecutionTime(start_time);
@@ -1212,7 +1233,7 @@ void ScanSingleVariants(string *line, char **token, char *matrix_name, string * 
         printf("curr_varscan->scan_info->offset %d \n", curr_varscan->scan_info->offset);
         printf("curr_varscan->scan_info->D->sequence %s \n", curr_varscan->scan_info->D->sequence->buffer );
         printf("curr_varscan->scan_info->R->sequence %s \n", curr_varscan->scan_info->R->sequence->buffer );*/
-        curr_scan = scanadd(curr_varscan->scan_info);
+        curr_scan = scanadd(curr_scan);
         curr_scan->offset = -matrix_length + atoi(token[4]) - real_start_offset + 1; //Added a +1 in order to go from [-matrix_length,0]
         curr_scan->D = curr_site;
       } else {
