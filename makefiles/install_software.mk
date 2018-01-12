@@ -858,8 +858,8 @@ _compile_patser:
 
 ################################################################
 ## Install consensus (J.Hertz)
-#CONSENSUS_VERSION=consensus-v6c.1 ## Not distributed anymore ?
-CONSENSUS_VERSION=consensus-v6c
+#CONSENSUS_VERSION=consensus-v6d ## Not distributed anymore ?
+CONSENSUS_VERSION=consensus-v6c # neither compile in rsat 2018
 CONSENSUS_TAR=${CONSENSUS_VERSION}.tar.gz
 #CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
 CONSENSUS_URL=http://stormo.wustl.edu/src/
