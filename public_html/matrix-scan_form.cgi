@@ -322,8 +322,8 @@ function setDemo2(demo_matrix, demo_sequence){
     $("#uth_site_pval").val("1e-4");
     background.value = "upstream-noorf";
     markov_order.value = "1";
-    $("#organism_name").val("Drosophila melanogaster")
-    $("#organism").val("Drosophila_melanogaster");
+    $("#organism_bg_name").val("Drosophila melanogaster")
+    $("#organism_bg").val("Drosophila_melanogaster");
     $("#analysis_type_crer").prop("checked",true);
     $("#return_rank").prop("checked",false);
     matrix.value = demo_matrix;

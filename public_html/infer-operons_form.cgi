@@ -109,7 +109,7 @@ print $query->start_multipart_form(-action=>"infer-operons.cgi", -id=>"form");
 ### query (gene list)
 print "<p>";
 print "<B><A class='iframe' HREF='help.infer-operons.html#genes'>Genes</A></B>&nbsp;";
-print $query->radio_group(-name=>'genes',
+print $query->radio_group(-name=>'genes', -id=>'genes',
 			  -values=>['all','selection'],
 			  -default=>$default{genes});
 
@@ -178,6 +178,7 @@ print "<script>
 function setDemo(gene){
     \$('#reset').trigger('click');
     \$('#gene_selection').val(gene);
+    if(gene == ''){\$('input[name=genes][value=all]').prop('checked',true);}
     \$('#organism').val('Escherichia_coli_K12');
     \$('#organism_name').val('Escherichia coli K12');
     \$('#dist_thr').val('55');
