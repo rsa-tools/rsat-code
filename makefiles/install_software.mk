@@ -75,8 +75,7 @@ not_working:
 EXT_APP_TARGETS_OPTIONAL=install_gibbs \
 	install_consensus \
 	install_patser \
-	install_meme \
-	install_bedtools
+	install_meme 
 
 install_ext_apps_optional:
 	@${MAKE} ${EXT_APP_TARGETS_OPTIONAL}
