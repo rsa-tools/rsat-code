@@ -46,9 +46,9 @@ foreach $key (keys %default) {
 print "<CENTER>\n";
 print "Matrix-based motif discovery using CONSENSUS<BR>\n";
 print "Extract shared motifs from a set of unaligned sequences<BR>\n";
-print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A>. \n";
+print "Program developed by Jerry Hertz. \n";
 print "Web interface by <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</A>.<br>";
-print "The stand-alone version of <i>consensus</i> is available at <a target=_blank href=http://ural.wustl.edu/software.html>http://ural.wustl.edu/software.html</a><P>";
+print "The stand-alone version of <i>consensus</i> is available at <a target=_blank href='http://stormo.wustl.edu/src'>http://stormo.wustl.edu/src/</a><P>";
 print "</CENTER><hr>";
 
 
