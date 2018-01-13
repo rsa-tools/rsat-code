@@ -966,7 +966,7 @@ int main(int argc, char *argv[]){
 
 
     //Execute it
-    if(verbose >= 6) RsatInfo("Running matrix-scan-quick", curr_matrixID->buffer,"\n", NULL);
+    if(verbose >= 6) RsatInfo("Running matrix-scan-quick", mscanquick_cmd->buffer,"\n", NULL);
     doit(mscanquick_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
 
     //Analyze scanning information
