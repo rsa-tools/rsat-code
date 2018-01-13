@@ -1158,7 +1158,7 @@ string *GetProgramPath(string *program_path, char *program_name, int die_on_erro
     program_path->buffer[program_path->size] = '\0';
     program_path->size++;
     //Close filehandler
-    fclose(fh_popen);
+    pclose(fh_popen);
   }
   //Check if the program path has been found
   if (strcmp(program_path->buffer, "") == 0) {
@@ -2744,7 +2744,7 @@ string *make_temp_file(string *tmp_file,char *tmp_dir,char *tmp_prefix,int add_d
   tmp_file->buffer[tmp_file->size] = '\0';
   tmp_file->size++;
   //Close filehandler
-  fclose(fh_popen);
+  pclose(fh_popen);
 
   //Remove tmp variables
   RsatMemTracker = relem( (void*)dir_and_file[1],RsatMemTracker );
