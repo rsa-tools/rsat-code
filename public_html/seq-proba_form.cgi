@@ -136,8 +136,8 @@ print '<script>
 function setDemo(){
     $("#reset").trigger("click");
     demo=">seq1\\nCACGTG\\n>seq2\\nCCGCGG\\n>seq3\\nTATAAA";
-    $("#organism_name").val("Saccharomyces cerevisiae");
-    $("#organism").val("Saccharomyces_cerevisiae");
+    $("#organism_bg_name").val("Saccharomyces cerevisiae");
+    $("#organism_bg").val("Saccharomyces_cerevisiae");
     sequence.value = demo;
     sequence_format.value = "fasta";
 }

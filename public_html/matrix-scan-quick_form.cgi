@@ -95,7 +95,8 @@ print $query->start_multipart_form(-action=>"matrix-scan.cgi", -onreset=>"resetH
 #### sequence
 print "<fieldset>
 <legend><b><a class='iframe' href='help.formats.html'>Sequences </a></b></legend>";
-&MultiSequenceChoice("",1);
+#&MultiSequenceChoice("",1);
+&DisplaySequenceChoice();
 print "</fieldset><p/>";
 
 ################################################################
@@ -242,7 +243,7 @@ function setDemo(demo_matrix, demo_sequence){
     $("#return_field").val("pval");
     matrix.value = demo_matrix;
     matrix_format.value = "transfac";
-    sequence1.value = demo_sequence;
+    sequence.value = demo_sequence;
     $("#origin").val("end");
 }
 
