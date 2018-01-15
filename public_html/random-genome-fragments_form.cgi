@@ -184,7 +184,7 @@ function setDemo1(demo_seq){
     demo.value = descr;
     sequence1.value = demo_seq;
     $("input[name=fragment_sizes]").val(["template"]);    
-
+    template_format.value = "fasta";
     $("#org_select_rsat").prop("checked", true);
     $("#organism").val("Saccharomyces_cerevisiae");
     $("#organism_name").val("Saccharomyces cerevisiae");
@@ -211,7 +211,7 @@ function setDemo3(demo_url){
     demo.value = descr;
     sequence_url1.value = demo_url;
     $("input[name=fragment_sizes]").val(["template"]);
-    template_format.value = "bed"; 
+    template_format.value = "bed";
     frag_length.value = "100";
     frag_nb.value = "20";
     
@@ -247,7 +247,6 @@ function setDemo2(demo_seq){
     
     frag_length.value = "100";
     frag_nb.value = "20";
-    
     $("input[name=org_select]").val(["ensembl_org"]);	
 	$("#organism").val("Saccharomyces_cerevisiae");
     $("#organism_name").val("Saccharomyces cerevisiae");
