@@ -225,8 +225,8 @@ function setDemo(demo_matrix, demo_seq1, demo_seq2){
     markov_order.value = 1;
     $("#nwd").prop("checked",true);
     
-    $("#organism_name").val("Escherichia coli K12");
-    $("#organism").val("Escherichia_coli_K12");
+    $("#organism_bg_name").val("Escherichia coli K12");
+    $("#organism_bg").val("Escherichia_coli_K12");
 }
 function resetHandler(){
     $("#db_choice").val("").change();
