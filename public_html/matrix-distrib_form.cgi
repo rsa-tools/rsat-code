@@ -114,8 +114,8 @@ function setDemo(){
     demo_matrix = "; MET4 matrix, from Gonze et al. (2005). Bioinformatics 21, 3490-500.\nA |   7   9   0   0  16   0   1   0   0  11   6   9   6   1   8\nC |   5   1   4  16   0  15   0   0   0   3   5   5   0   2   0\nG |   4   4   1   0   0   0  15   0  16   0   3   0   0   2   0\nT |   0   2  11   0   0   1   0  16   0   2   2   2  10  11   8";
     matrix.value = demo_matrix;
     matrix_format.value = "tab";
-    $("#organism_name").val("Saccharomyces cerevisiae");
-    $("#organism").val("Saccharomyces_cerevisiae");
+    $("#organism_bg_name").val("Saccharomyces cerevisiae");
+    $("#organism_bg").val("Saccharomyces_cerevisiae");
     $("#bgfile").prop("checked", true);
     background.value = "upstream-noorf";
     markov_order.value = "0";
