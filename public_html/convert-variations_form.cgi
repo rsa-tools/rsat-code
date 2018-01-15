@@ -142,7 +142,6 @@ function setDemo(demo_gvf_var){
     demo_descr.innerHTML = descr;
     demo.value = descr;
     
-    $("#organism").val("Homo_sapiens_GRCh37").trigger("chosen:updated");
     $("#input").val(demo_gvf_var);
     $("#input_type").val("gvf");
     $("#out_type").val("varBed");

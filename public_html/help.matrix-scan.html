@@ -376,7 +376,7 @@ convert-background-model.</p>
 <p>Calculate background model from the input sequence set.</p>
 </dd>
 </li>
-<dt><strong><a name="item__2dmarkov"><strong>-markov</strong></a></strong>
+<dt><strong><a name="markov_order"><strong>-markov</strong></a></strong>
 
 <dd>
 <p>Order of the markov chain for the background model.</p>
@@ -466,7 +466,7 @@ allows to use the command within a pipe.</p>
 characters.</p>
 </dd>
 </li>
-<dt><strong><a name="item__2dn__5bskip_7cscore_5d"><strong>-n [skip|score]</strong></a></strong>
+<dt><strong><a name="skipscore"><strong>-n [skip|score]</strong></a></strong>
 
 <dd>
 <p>Treatment of N characters. These characters are often used in DNA
@@ -554,7 +554,7 @@ following value:</p>
   sqrt(L)/(L+sqrt(L))</pre>
 </dd>
 </li>
-<dt><strong><a name="item__2dorigin_pos"><strong>-origin pos</strong></a></strong>
+<dt><strong><a name="origin"><strong>-origin pos</strong></a></strong>
 
 <dd>
 <p>Define pos as the origin for the calculation of positions.</p>
@@ -576,7 +576,7 @@ and the end of the sequence.</p>
 base 2, in which case the information content is computed in bits.</p>
 </dd>
 </li>
-<dt><strong><a name="item__2ddecimals__23"><strong>-decimals #</strong></a></strong>
+<dt><strong><a name="decimals"><strong>-decimals #</strong></a></strong>
 
 <dd>
 <p>Number of decimals displayed for the weight score.</p>
@@ -588,7 +588,7 @@ non-tractable. We thus recommend to use the default value (2
 decimals).</p>
 </dd>
 </li>
-<dt><strong><a name="item__2duth_param_upper_threshold"><strong>-uth param upper_threshold</strong></a></strong>
+<dt><strong><a name="thresholds"><strong>-uth param upper_threshold</strong></a></strong>
 
 <dd>
 <p>Threshold on some parameter (-lth: lower, -uth: upper threshold).</p>
@@ -612,7 +612,7 @@ decimals).</p>
 <p>single-strand search for DNA sequences.</p>
 </dd>
 </li>
-<dt><strong><a name="item__2dreturn_return_fields"><strong>-return return_fields</strong></a></strong>
+<dt><strong><a name="return_fields"><strong>-return return_fields</strong></a></strong>
 
 <dd>
 <p>List of fields to return.</p>
@@ -759,7 +759,7 @@ using the binomial distribution (Aerts et al., 2003).</p>
 instances.</p>
 </dd>
 </li>
-<dt><strong><a name="item_bg_model_3a_background_model_2e"><strong>bg_model:</strong> Background model.</a></strong>
+<dt><strong><a name="bg_method"><strong>bg_model:</strong> Background model.</a></strong>
 
 <dd>
 <p>Report the transition matrix of the background model. Note that this
