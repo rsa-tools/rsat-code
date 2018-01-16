@@ -50,7 +50,7 @@ $checked{$default{fragment_sizes}} = "CHECKED";
 ### head
 print "<CENTER>";
 print "Select a set of fragments with random positions in a given genome, and return their coordinates and/or sequences.<P>
-Program developed by <a href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a>\n";
+Program developed by <a href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</a>\n";
 print "</CENTER>";
 
 
