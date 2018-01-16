@@ -78,9 +78,9 @@ print "The most classical use of the program is to compare score distributions
     between <em>positive</em> sequences (e.g. true binding sites for the considered
     transcription factor) and <em>negative</em> sequences (e.g. intergenic
     sequences between convergently transcribed genes).<p>\n";
-print "<p>Program developed by <a target='_top' href='http://www.ccg.unam.mx/ccg-OrganicG/personalInfo?idPersona=253'>Alejandra Medina Rivera</a>, \n";
-print " <a target='_top' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</A>,\n";
-print "and <a target='_top' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</A>.</p>\n";
+print "<p>Program developed by <a target='_top' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina Rivera</a>, \n";
+print " <a target='_top' href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A>,\n";
+print "and <a target='_top' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</A>.</p>\n";
 print "</center>\n";
 print "<b>Citation</b>: Medina-Rivera, A., Abreu-Goodger, C., Salgado-Osorio, H., Collado-Vides, J. and van Helden, J. (2010). Empirical and theoretical evaluation of transcription factor binding motifs. Nucleic Acids Res. 2010 Oct 4. [Epub ahead of print] <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/20923783'>[Pubmed 20923783]</a> <a target='_blank' href='http://nar.oxfordjournals.org/content/early/2010/10/04/nar.gkq710.full.pdf'>[Full text]</a>.";
 
