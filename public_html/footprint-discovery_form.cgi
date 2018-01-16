@@ -175,7 +175,7 @@ $demo_queries = "lexA\n";
 #$demo_queries .= "uvrB\n";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_GCF_000005845.2_ASM584v2");
+print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_GCF_000482265.1_EC_K12_MG1655_Broad_SNP");
 print $query->hidden(-name=>'taxon',-default=>"Gammaproteobacteria");
 print $query->hidden(-name=>'unique_taxon',-default=>"genus");
 print $query->submit(-label=>"DEMO");
