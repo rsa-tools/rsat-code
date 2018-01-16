@@ -416,7 +416,7 @@ print "</B></TD>\n";
 
 
 print "<td><b><a class='iframe' href='help.matrix-clustering.html'>[MANUAL]</a></B></TD>\n";
-print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
+print "<TD><b><a href='https://twitter.com/RSATools' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</tr></table></ul></ul>\n";
 
 print "</FONT>\n";
