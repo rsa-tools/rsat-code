@@ -281,13 +281,13 @@ while(my $row = <$fh>){
 
 print '<script>
 
-descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will analyse the promoter of\
-<i>Drosophila melanogaster</i> even-skipped gene (<i>eve</i>). We will scan the 5500\
-bp sequence upstream the transcription start site with matrices\
-representing the binding specificity of 12 transcription factors known\
-to regulate <i>eve</i>. These matrices were built from binding sites\
+descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will analyse the promoter of \
+<i>Drosophila melanogaster</i> even-skipped gene (<i>eve</i>). We will scan the 5500 \
+bp sequence upstream the transcription start site with matrices \
+representing the binding specificity of 12 transcription factors known \
+to regulate <i>eve</i>. These matrices were built from binding sites \
 annotated in the <a target=_blank \
-href=\'http://www.oreganno.org\'>ORegAnno</a> database by Jean-Valery\
+href=\'http://www.oreganno.org\'>ORegAnno</a> database by Jean-Valery \
 Turatsinze.<p/>";
 
 function setDemo1(demo_matrix, demo_sequence){
