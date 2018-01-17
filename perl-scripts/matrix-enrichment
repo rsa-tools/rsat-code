@@ -821,6 +821,8 @@ package main;
       ## Draw the dynamic heatmap with the clustering of the maxNWD
       ##
       ## Draw the Binomial Occ Significance curves of each TF on each sequence
+      &RSAT::message::Info("Creating report") if ($main::verbose >= 0);
+      
       &CreateHTMLReport();
 
   }
