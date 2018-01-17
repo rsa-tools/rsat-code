@@ -581,7 +581,7 @@ int main(int argc, char *argv[]){
     } else if ( strcmp(argv[i],"-v") == 0 && CheckValOpt(argv+i) ) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       verbose = atoi(argv[++i]);
-    } else if ( strcmp(argv[i],"-debug") == 0 && CheckValOpt(argv+i) ) {
+    } else if ( strcmp(argv[i],"-debug") == 0 ) {
       debug   = 1;
     } else {
       RsatFatalError("Invalid option", argv[i], NULL);
@@ -971,11 +971,11 @@ int main(int argc, char *argv[]){
 
     //Analyze scanning information
     if(num_tokens == 11){
-      if(verbose >= 6) RsatInfo("Detected haplotype variants. Scanning variations for matrix",matrixID->element->buffer,NULL);
-      ScanHaplosequences(line, token, matrixID->element->buffer, mscanquick_file, &cutoff, fout);
+      if(verbose >= 6) RsatInfo("Detected haplotype variants. Scanning variations for matrix",curr_matrixID->element->buffer,NULL);
+      ScanHaplosequences(line, token, curr_matrixID->element->buffer, mscanquick_file, &cutoff, fout);
     } else if (num_tokens == 10){
-      if(verbose >= 6) RsatInfo("Detected single variants. Scanning variations for matrix",matrixID->element->buffer,NULL);
-      ScanSingleVariants(line, token, matrixID->element->buffer, mscanquick_file, &cutoff, fout);
+      if(verbose >= 6) RsatInfo("Detected single variants. Scanning variations for matrix",curr_matrixID->element->buffer,NULL);
+      ScanSingleVariants(line, token, curr_matrixID->element->buffer, mscanquick_file, &cutoff, fout);
     }
 
     //Remove tmp matrix-scan-quick files
@@ -1926,7 +1926,7 @@ string *GetProgramPath(string *program_path, char *program_name, int die_on_erro
     program_path->buffer[program_path->size] = '\0';
     program_path->size++;
     //Close filehandler
-    fclose(fh_popen);
+    pclose(fh_popen);
   }
   //Check if the program path has been found
   if (strcmp(program_path->buffer, "") == 0) {
@@ -3525,7 +3525,7 @@ string *make_temp_file(string *tmp_file,char *tmp_dir,char *tmp_prefix,int add_d
   tmp_file->buffer[tmp_file->size] = '\0';
   tmp_file->size++;
   //Close filehandler
-  fclose(fh_popen);
+  pclose(fh_popen);
 
   //Remove tmp variables
   RsatMemTracker = relem( (void*)dir_and_file[1],RsatMemTracker );

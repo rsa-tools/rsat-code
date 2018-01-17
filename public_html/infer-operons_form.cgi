@@ -66,7 +66,7 @@ $field_description{gene_nb} = "Number of genes in the predicted operon";
 ### head
 print "<CENTER>";
 print "Infers the operon to which each coding gene of a given list belongs in a prokaryotic genome.";
-print "<br>This program was developed by Rekins Janky and <a target=_blank href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a>.</center>";
+print "<br>This program was developed by Rekins Janky and <a target=_blank href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a>.</center>";
 print "</CENTER>";
 
 ################################################################

@@ -106,7 +106,7 @@ print "<ul>";
 print "<b>Organism-specific Markov model</b> (Note: oligomer length = Markov order + 1)<br>";
 
 print "<UL>";
-&OrganismPopUp();
+&OrganismPopUp('bg_org'=>'1');
 
 ### oligo size
 print "<br><INPUT TYPE='radio' NAME='bg_method' VALUE='upstream' checked>";
