@@ -1459,6 +1459,12 @@ sub Verbose {
 ## Draw the Dynamic Heatmap using the matrix
 ## of maxNWD positive values
 sub Draw_OCCProfiles_and_Heatmap {
+
+    if( -e $outfile{heatmap_nwdsig}.".txt" ){
+	&RSAT::message::Info("Exists");
+    } else {
+	&RSAT::message::Info("No Exists");
+    }
     
     &RSAT::message::TimeWarn("Drawing curves of Binomial OCC significance and dynamic heatmap") if ($main::verbose >= 2);
 
