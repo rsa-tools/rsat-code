@@ -4093,7 +4093,7 @@ sub ReportStyleCSS{
   }
 
   .display_clusters{
-    width: 1000px;
+    width: 1100px;
     background-color: #E6E6E6;
     text-align: center;
     padding: 0px 10px 10px 10px;
@@ -4112,7 +4112,7 @@ sub ReportStyleCSS{
 
   .display{
 	height: auto;
-	width: auto;
+	width: 1000;
 	border-radius: 5px;
 	background-color: #FFFFFF; 
 	margin: 10px;
@@ -5296,7 +5296,7 @@ sub InsertTreesAndBranchMotifs {
     my  $svg_y1 = -15;
     my  $svg_x2 = '7.5 + '.$svg_x1.' + 42';
 
-    my $test_width = 485 + ($motif_width_by_cluster_width * 26); 
+    my $test_width = 1000 + ($motif_width_by_cluster_width * 26); 
 
     my $label_single_tree = '
 	node.append("a")
