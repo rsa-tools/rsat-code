@@ -220,8 +220,8 @@ function setDemo(demo_seq){
     $("#bg_method_background").prop("checked", true);
     $("[name=\'background\']").val("upstream-noorf");
     $("#bg_level_organism").prop("checked", true);
-    $("#organism").val("Saccharomyces_cerevisiae");
-    $("#organism_name").val("Saccharomyces cerevisiae");
+    $("#organism_bg").val("Saccharomyces_cerevisiae");
+    $("#organism_bg_name").val("Saccharomyces cerevisiae");
     $("[name=\'title\']").val("upstream sequences from the yeast PHO genes");
 }
 </script>';

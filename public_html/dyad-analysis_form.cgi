@@ -221,12 +221,11 @@ function setDemo(demo_seq){
     $("#reset").trigger("click");
     sequence.value = demo_seq;
     sequence_format.value = "fasta";
+    $("input[name=bg_method][value=background]").prop("checked",true);
     $("[name=\'background\']").val("upstream-noorf");
     $("#bg_level_organism").prop("checked",true);
-    
-    $("#org_select_rsat").prop("checked", true);
-    $("#organism_name").val("Saccharomyces cerevisiae");
-    $("#organism").val("Saccharomyces_cerevisiae");
+    $("#organism_bg_name").val("Saccharomyces cerevisiae");
+    $("#organism_bg").val("Saccharomyces_cerevisiae");
     $("#outputformat_seq").prop("checked", true);
 }
 </script>';
