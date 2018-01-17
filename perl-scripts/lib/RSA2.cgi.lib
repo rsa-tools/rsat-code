@@ -231,7 +231,7 @@ sub PrintOrthoSelectionSection {
   ## Select a single organism per taxon
   print "<br>";
   print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
-  print $query->popup_menu(-name=>'unique_taxon',
+  print $query->popup_menu(-name=>'unique_taxon', -id=>'unique_taxon',
 			   -Values=>['species',
 				     'genus',
 				     'no filter'],
@@ -1310,6 +1310,16 @@ sub OrganismPopUpString{
             if(event.keyCode == 13){
                 event.preventDefault();
             }
+            $("#' . $popupid . '").val("");
+        });
+        $("#' . $popupid_name . '").bind("paste", function(e){
+            $("#' . $popupid . '").val("");
+        });
+        
+        $("#' . $popupid_name . '").focusout(function(){
+            if($("#' . $popupid . '").val() == ""){
+                $("#' . $popupid_name . '").val("");
+            }
         });
         
         $("#' . $popupid_name . '").autocomplete({
@@ -1486,6 +1496,16 @@ sub TaxonPopUpString {
             if(event.keyCode == 13){
                 event.preventDefault();
             }
+            $("#taxon").val("");
+        });
+        $("#taxon_name").bind("paste", function(e){
+            $("#taxon").val("");
+        });
+        
+        $("#taxon_name").focusout(function(){
+            if($("#taxon").val() == ""){
+                $("#taxon_name").val("");
+            }
         });
         
         $("#taxon_name").autocomplete({
@@ -1523,7 +1543,7 @@ sub TaxonPopUpString {
                 var reg = new RegExp(re , "i", "m");
                 var t = item.label.replace(reg, replacer);
                 
-                document.getElementById("tip").style.display = "none";
+                document.getElementById("tip-taxon").style.display = "none";
                 return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
             }else{
                 $("#tip-taxon").html("<span style=\"color:orange\">Your search has no result</span>");
@@ -3947,7 +3967,7 @@ sub PrintOligoBackgroundOptions {
 ## Load default prameters for dyad-analysis form
 sub LoadDyadDefault {
   ### default values for filling the form
-  $default{organism} = "Saccharomyces cerevisiae";
+    #$default{organism} = "Saccharomyces cerevisiae";
   $default{bg_method} = "background";
   $default{background} = "upstream-noorf";
   $default{bg_level} = "organism";

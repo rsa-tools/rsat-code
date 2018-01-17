@@ -59,6 +59,7 @@ if ($group) {
 
 
 foreach $t (@taxon){
+    $t =~ s/\_/ /g;
     print $t . "<br/>";
 }
 print '<hr size=3>';
