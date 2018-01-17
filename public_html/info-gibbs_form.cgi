@@ -121,7 +121,7 @@ print "<br />\n";
 print "<br />\n";
 print "<a class='iframe' href=\"help.info-gibbs.html#background\">Background model</a>\n";
 print "<br />\n";
-print '<input type="radio" checked="checked" value="input" name="freq_estimate"/><b>Estimated from input sequences</b><br />';
+print '<input type="radio" checked="checked" value="freq_estimate" name="bg_method"/><b>Estimated from input sequences</b><br />';
 &PrintGenomeSubsetBgOptions();
 print "<ul>";
 print "&nbsp;&nbsp;<b>Markov background order</b> \n";
@@ -152,6 +152,7 @@ while(my $row = <$fh>){
 print '<script>
 function setDemo(demo_sequence){
     $("#reset").trigger("click");
+    $("input[name=bg_method][value=background]").prop("checked",true);
     $("#organism_bg_name").val("Saccharomyces cerevisiae");
     $("#organism_bg").val("Saccharomyces_cerevisiae");
     sequence.value = demo_sequence;

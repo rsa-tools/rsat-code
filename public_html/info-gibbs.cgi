@@ -258,15 +258,6 @@ sub PipingForm {
 </form>
 </td>
 
-
-<td valign=bottom align=center>
-<form method="post" target='_blank' action="http://meme.nbcr.net/meme4_3_0/cgi-bin/tomtom.cgi">
-<input type="hidden" name="query" value="$matrix_content">
-<input type="hidden" name="DIST" value="sandelin">
-<input type="submit" value="TOMTOM">
-</form>
-Compare a single matrix to a motif database.
-</td>
 </tr>
 
 
