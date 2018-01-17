@@ -282,11 +282,11 @@ package main;
   $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
   $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
 
-    %icons = ();
-  $icons{loading} = &RSAT::util::RelativePath($main::outfile{report}, $dir{output}."/matrix-enrichment_icons/RSAT_loading.svg");
+   # %icons = ();
+  #$icons{loading} = &RSAT::util::RelativePath($main::outfile{report}, $dir{output}."/matrix-enrichment_icons/RSAT_loading.svg");
   
   ## HTML report variables
-  $param{progressive_synthesis} = 1;
+  $param{progressive_synthesis} = 1; #This is not working propperly consider removing
   $param{title} = "matrix-enrichment results";
 
   ################################################################
@@ -1626,7 +1626,6 @@ sub OpenSynthesis {
 ## Report the command before running the analysis, for the sake of
 ## debugging and to facilitate copy-paste of the options.
 sub ReportCommandLoading {
-  print $syn "<div width='1250px'; height='auto'; ><img style='padding-left:700px;height:500px;width:500px'; src='".$icons{loading}."'></div>";
   print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
   print $syn "<pre>";
   print $syn "matrix-enrichment";
