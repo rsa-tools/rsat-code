@@ -169,8 +169,6 @@ print $query->end_form;
 
 ################################################################
 ### data for the demo 
-#print $query->start_multipart_form(-action=>"footprint-discovery_form.cgi");
-#$demo_queries = "lexA\n";
 #$demo_queries .= "recA\n";
 #$demo_queries .= "uvrB\n";
 

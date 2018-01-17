@@ -53,6 +53,8 @@
 		<div style='padding:60px 0 0 10px;' align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b>
 <!--perlscript -->
 <?php
+    $path = $properties['rsat_www'].'nbOrg.cgi';
+    virtual($path);
     virtual("nbOrg.cgi");
 ?>
 </b> <i>organisms</i></div>

@@ -225,8 +225,8 @@ function setDemo(demo_matrix, demo_seq1, demo_seq2){
     markov_order.value = 1;
     $("#nwd").prop("checked",true);
     
-    $("#organism_bg_name").val("Escherichia coli K12");
-    $("#organism_bg").val("Escherichia_coli_K12");
+    $("#organism_bg_name").val("Escherichia coli GCF 000482265.1 EC K12 MG1655 Broad SNP");
+    $("#organism_bg").val("Escherichia_coli_GCF_000482265.1_EC_K12_MG1655_Broad_SNP");
 }
 function resetHandler(){
     $("#db_choice").val("").change();
