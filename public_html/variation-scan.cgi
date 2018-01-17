@@ -155,7 +155,7 @@ if ($bg_method eq "bginput") {
 
 } elsif  ($bg_method eq "bgfile") {
   ## Select pre-computed background file in RSAT genome directory
-  my $organism_name = $query->param("organism");
+  my $organism_name = $query->param("organism_bg");
   @org_name_split=split(" ",$organism_name);
   $species=join("_", $org_name_split[0], $org_name_split[1]);
   $species=~s/_$//;
