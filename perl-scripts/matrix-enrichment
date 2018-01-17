@@ -1503,6 +1503,8 @@ sub Draw_OCCProfiles_and_Heatmap {
 #    $matrix_enrichment_plot_cmd = "(".$matrix_enrichment_plot_cmd.")"; # Uncomment this line to check the R output in the terminal
 #    $matrix_enrichment_plot_cmd = "(".$matrix_enrichment_plot_cmd.") 2 > ".$main::outfile{Rlog}; 
 
+    &RSAT::message::Info("R-command for report: ",  $matrix_enrichment_plot_cmd) if ($main::verbose >= 0);
+    
     if ($r_path) {
         &doit($matrix_enrichment_plot_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
