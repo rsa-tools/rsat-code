@@ -229,7 +229,7 @@ print <<end_part_1;
   <p>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:
     <a href='mailto:marie.artufel\@etu.univ-amu.fr'>Marie Artufel</a>,
     <a href='mailto:lucie.khamvongsa\@gmail.com'>Lucie Khamvongsa</a>,
-    <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>,
+    <a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>,
 </center>
 
 <div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\">
