@@ -1489,10 +1489,10 @@ sub Draw_OCCProfiles_and_Heatmap {
     ## Arguments to draw heatmap
     $matrix_enrichment_plot_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
      $matrix_enrichment_plot_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
-    $matrix_enrichment_plot_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
+ #   $matrix_enrichment_plot_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
     $matrix_enrichment_plot_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
     $matrix_enrichment_plot_cmd .= "; parsed.heatmap.html = '".$main::outfile{report_partial}."'";
-    $matrix_enrichment_plot_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
+ #   $matrix_enrichment_plot_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
     $matrix_enrichment_plot_cmd .= "; d3.base = '".$d3_base."'";
     $matrix_enrichment_plot_cmd .= "; d3.array.base = '".$d3_array_base."'";
     $matrix_enrichment_plot_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
