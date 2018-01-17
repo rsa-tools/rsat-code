@@ -92,6 +92,19 @@ print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
+print "<TD><B>";
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    $("#organism").val("Saccharomyces_cerevisiae");
+    $("#organism_name").val("Saccharomyces cerevisiae");
+}
+</script>';
+
+print '<button type="button" onclick="setDemo();">DEMO</button>';
+
+print "</B></TD>\n";
+
 
 print "<TD><B><A class='iframe' HREF='help.random-genes.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='htmllink.cgi?title=RSAT : Tutorial&file=tutorials/tut_random-genes.html'>TUTORIAL</A></B></TD>\n";

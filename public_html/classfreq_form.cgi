@@ -186,7 +186,7 @@ print '<button type="button" onclick="setDemo('. "'$demo_data'" .')">DEMO</butto
 print "</b></td>\n";
 
 
-print "<TD><B><A class='iframe' HREF='help.classfreq.html'>MANUAL</A></B></TD>\n";
+#print "<TD><B><A class='iframe' HREF='help.classfreq.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_classfreq.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE class='formbutton'></UL></UL>\n";
