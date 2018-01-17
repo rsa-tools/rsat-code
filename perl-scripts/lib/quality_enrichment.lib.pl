@@ -183,7 +183,7 @@ sub CalcTheorScoreDistribution {
 ## Draw the NWD comparison plot : by motif or by sequence
 
 sub Draw_NWD{
-    my ($prefix,@nwd_files)= @_;
+    my ($prefix,$mq_plots,@nwd_files)= @_;
     
     
     my $ycols = "";
@@ -206,12 +206,13 @@ sub Draw_NWD{
     $compare_nwd_cmd .= " -numeric  -basename ";
     $compare_nwd_cmd .= " -o ".  $nwd_compare_scores_file . " ";
     &doit($compare_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-    &RSAT::message::Info("Merging NWD files with compare-scores ", $compare_nwd_cmd ) if ($main::verbose >= 5);
+    &RSAT::message::Info("Merging NWD files with compare-scores ", $compare_nwd_cmd ) if ($main::verbose >= 0);
     
     
     my $nwd_xygrpah_file=$nwd_outfile_prefix."_compare-scores.";
 
-    if ($no_ind_nwd_occ_plot){
+    if ($mq_plots){
+	#die "BOOM";
 	foreach my $image_format (@image_formats) {
 	    my $XYgraph_nwd_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
 	    $XYgraph_nwd_cmd .= " -i ".  $nwd_compare_scores_file ." ";
@@ -237,7 +238,7 @@ sub Draw_NWD{
 ################
 ## Subroutine to draw occurrence significance plot comparing distribitions across files: by motif or by sequence
 sub Draw_OCC{
-    my ($prefix,@occ_files)= @_;
+    my ($prefix,$mq_plots,@occ_files)= @_;
     
     my $occ_input_files =" -i ". join (" -i " ,@occ_files)." ";
     my $ic_column= 7;
@@ -268,7 +269,8 @@ sub Draw_OCC{
     #print join ("++",@main::image_formats );
     #die "BOOM";
     
-     if ($no_ind_nwd_occ_plot){
+    if ($mq_plots){
+	
 	 foreach my $image_format (@main::image_formats) {
 	     my $XYgraph_occ_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." " ;
 	     $XYgraph_occ_cmd .= " -i ".  $occ_compare_scores_file ." ";
@@ -803,8 +805,7 @@ sub Calculate_OCC {
 
     &RSAT::message::TimeWarn("Before scanning for OCC plots", $matrix_scan_cmd) if ($main::verbose >= 5);
 
-    &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix) if $task{scan} || $task {compare
-};
+    &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix) if $task{scan} || $task {"compare"};
     &RSAT::message::TimeWarn("Scanning to compute occurence probability for OCC plots", $matrix_scan_cmd) if ($main::verbose >= 5);
      
     return ($outfile{'occ_proba_'.$seq_type});
