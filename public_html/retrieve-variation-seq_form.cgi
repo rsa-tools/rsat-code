@@ -32,7 +32,7 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Given a set of IDs for polymorphic variations, retrieve the corresponding variants and their flanking sequences, in order to scan them wiht the tool <a href='variation-scan_form.cgi'>variation-scan</a> .<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
-print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
+print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr//'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://liigh.unam.mx/amedina/people.html'>Walter Santana</a><sup>cit</sup>\n";
 print ", Jeremy Delerce<sup>ci</sup>\n";
