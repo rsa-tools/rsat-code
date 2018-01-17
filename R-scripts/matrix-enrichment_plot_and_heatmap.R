@@ -43,15 +43,17 @@ if (!exists("prefix")) {
   stop("Missing mandatory argument (The path to the tsv file used as input for the dynamic heatmap): maxNWD_tsv ")
 } else if (!exists("parsed.heatmap.html")) {
   stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): parsed.heatmap.html  ")
-} else if (!exists("Diff.maxNWD.tsv")) {
-  stop("Missing mandatory argument (The path to the tsv file used as input for the dynamic heatmap): Diff.maxNWD_tsv ")
-} else if (!exists("Diff.maxNWD.heatmap.html")) {
-  stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): Diff.maxNWD.heatmap.html  ")
 } else if (!exists("Sequences")){
   stop("Missing mandatory argument (Sequences names): Sequences ")
 } else if (!exists("TFs")){
   stop("Missing mandatory argument (TF names): TFs ")
 }
+
+# else if (!exists("Diff.maxNWD.tsv")) {
+#   stop("Missing mandatory argument (The path to the tsv file used as input for the dynamic heatmap): Diff.maxNWD_tsv ")
+# } else if (!exists("Diff.maxNWD.heatmap.html")) {
+#   stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): Diff.maxNWD.heatmap.html  ")
+# } 
 
 if (!exists("heatmap.color.palette")) {
   heatmap.color.palette <- "RdBu";
@@ -60,9 +62,6 @@ if (!exists("heatmap.color.classes")) {
   heatmap.color.classes <- as.numeric(9);
 }
 heatmap.color.classes <- as.numeric(heatmap.color.classes)
-
-
-
 
 
 #############################
