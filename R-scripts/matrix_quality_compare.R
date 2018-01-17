@@ -16,9 +16,9 @@ for (lib in required.libraries) {
   }
 }
 
-if(!"flux" %in% x[,1]){
-  message("Missing package: flux")
-}
+#if(!"flux" %in% x[,1]){
+ # message("Missing package: flux")
+#}
 
 args <- commandArgs(TRUE)
 
@@ -34,11 +34,12 @@ print.heatmap <- args[4]
 
 ## For debugging:
 
-#mtx.quality.nwds.file <-"./results/matrix_quality/20150428/zoo_chip_enrichment/all_nwd_files.txt"
-#plot.folder <- "./results/matrix_quality/20150428/zoo_chip_enrichment/"
-formats <-c("pdf","png")
-#print (plot.folder)
-#stop()
+##mtx.quality.nwds.file <-"./results/matrix_quality/20150428/zoo_chip_enrichment/all_nwd_files.txt"
+##plot.folder <- "./results/matrix_quality/20150428/zoo_chip_enrichment/"
+##formats <-c("pdf","png")
+##print.heatmap <-1
+##print (plot.folder)
+##stop()
 
 # mtx.quality.nwds.file <-"/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_files.txt"
 # plot.folder <- "/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_plot"
@@ -70,7 +71,6 @@ for (i in 1:dim(mtx.quality.nwds)[1]){
 
 ################
 ## Get max.nwd, max.sig.nwd, auc.all, auc.sig for each sequence matrix set
-
 print ("Reading in files with nwd data")
 lapply(names(nwd.files) ,function(matrix.name){
     print (matrix.name)
