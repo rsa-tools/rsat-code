@@ -35,7 +35,7 @@ print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t<
 print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://liigh.unam.mx/amedina/people.html'>Walter Santana</a><sup>cit</sup>\n";
-print ", <a target='_blank' href=''>Jeremy Delerce</a><sup>ci</sup>\n";
+print ", Jeremy Delerce<sup>ci</sup>\n";
 print "</CENTER>";
 
 ################################################################
