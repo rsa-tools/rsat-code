@@ -9,7 +9,8 @@
 // Load RSAT configuration
    require('functions.php');
     
-    printMenu();
+    include('menu.php');
+    //printMenu();
 // print_r($properties);
 UpdateLogFile("rsat","","");
 

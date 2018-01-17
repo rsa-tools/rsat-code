@@ -151,7 +151,7 @@ while (my $row = <$fh>){
     $demo_matrix .= $row . "\\n";
 }
 
-my $demo_org = "Escherichia coli GCF 000482265.1 EC K12 MG1655 Broad SNP";
+my $demo_org = "Escherichia coli K 12 substr  MG1655 uid57779";
 my $org = $demo_org;
 $org =~ s/\ /_/g;
 print '<script>
@@ -167,8 +167,8 @@ function setDemo(demo_matrix){
     demo_descr.innerHTML = descr1;
     
     $("#queries").val("'. $demo_queries . '");
-    $("#organism_name").val("'. $demo_org . '");
-    $("#organism").val("' . $org . '");
+    $("#organism_name").val("Escherichia coli K 12 substr  MG1655 uid57779");
+    $("#organism").val("Escherichia_coli_K_12_substr__MG1655_uid57779");
     $("#taxon").val("Enterobacteriales");
     $("#taxon_name").val("Enterobacteriales");
     $("#matrix").val(demo_matrix);
