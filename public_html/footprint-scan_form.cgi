@@ -151,7 +151,7 @@ while (my $row = <$fh>){
     $demo_matrix .= $row . "\\n";
 }
 
-my $demo_org = "Escherichia coli K12 substr MG1655 uid57779";
+my $demo_org = "Escherichia coli GCF 000482265.1 EC K12 MG1655 Broad SNP";
 my $org = $demo_org;
 $org =~ s/\ /_/g;
 print '<script>

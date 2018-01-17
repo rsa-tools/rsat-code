@@ -152,8 +152,8 @@ while(my $row = <$fh>){
 print '<script>
 function setDemo(demo_sequence){
     $("#reset").trigger("click");
-    $("#organism_name").val("Saccharomyces cerevisiae");
-    $("#organism").val("Saccharomyces_cerevisiae");
+    $("#organism_bg_name").val("Saccharomyces cerevisiae");
+    $("#organism_bg").val("Saccharomyces_cerevisiae");
     sequence.value = demo_sequence;
     sequence_format.value = "fasta";
     $("#length").val("20");
