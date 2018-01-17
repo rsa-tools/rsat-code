@@ -789,7 +789,8 @@ package main;
       my $nwd_all_file = $main::prefix{main}."_"."all_nwd_files.txt";
       my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
       
-      my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
+      my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot"; ## Folder to store NWD plots
+      &RSAT::util::CheckOutDir($nwd_all_plot); ## Create dir
       
       $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
       
