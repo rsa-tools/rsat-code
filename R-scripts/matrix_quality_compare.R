@@ -16,6 +16,7 @@ for (lib in required.libraries) {
   }
 }
 
+x <- installed.packages()
 if(!"flux" %in% x[,1]){
   message("Missing package: flux")
 }
