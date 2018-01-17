@@ -6,12 +6,19 @@
 ## Samuel Collombet <samuel.collombet@ens.fr>
 ## Morgane Thomas-Chollier <mthomas@biologie.ens.fr>
 ## Alejandra Medina-Rivera <amedina@lcg.unam.mx>
-## Jaime Castro-Mondragon <>
+## Jaime Castro-Mondragon <j.a.c.mondragon@ncmm.uio.no>
 
-library("RColorBrewer")
-library("gplots")
-library("flux")
-#library(clusterSim)
+required.libraries <- c("RColorBrewer", "gplots" ,"flux")
+for (lib in required.libraries) {
+  if (!require(lib, character.only=TRUE)) {
+    install.packages(lib)
+    library(lib, character.only=TRUE)
+  }
+}
+
+if(!"flux" %in% x[,1]){
+  message("Missing package: flux")
+}
 
 args <- commandArgs(TRUE)
 
