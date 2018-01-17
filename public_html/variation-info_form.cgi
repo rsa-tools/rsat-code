@@ -36,7 +36,7 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Get information (position, variants) about genomic variations, given a set of genomic regions (return overlapping variations) or a list of variation  IDS (return the list of variations maching query IDs).<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
-print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
+print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://liigh.unam.mx/amedina/people.html'>Walter Santana</a><sup>cit</sup>\n";
 print ", Jeremy Delerce<sup>ci</sup>\n";
@@ -132,7 +132,7 @@ print "<\p>";
 print "<BR>\n";
 
 ### send results by email or display on the browser
-&SelectOutput("server");
+&SelectOutput('server');
 
 ### action buttons
 print "<UL><UL><TABLE class='formbutton'>\n";
@@ -141,21 +141,26 @@ print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
+print " <BR>\n<\p>";
 ################
 $demo1_gvf_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs_IDs.txt";
 $demo1_gvf_var= "";
-open(my $fh, $demo_gvf_file);
+
+open(my $fh, $demo1_gvf_file);
+
 while (my $row = <$fh>){
     chomp $row;
-    $demo_gvf_var .= $row . "\\n";
+   $demo1_gvf_var .= $row . "\\n";
 }
+
 
 $demo2_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.bed";
 my $demo_org = "Homo sapiens GRCh37";
 my $org = $demo_org;
 $org =~ s/\ /_/g;
+
 print '<script>
-function setDemo1(demo_gvf_var){
+function setDemo1(){
     $("#reset").trigger("click");
     
     var descr1 = "<blockquote class =\"demo\"> \
@@ -168,7 +173,7 @@ function setDemo1(demo_gvf_var){
     
     $("#organism_name").val("'. $demo_org . '");
     $("#organism").val("' . $org . '");
-    $("#input").val(demo_gvf_var);
+    $("#input").val ("' . $demo1_gvf_var. '") ;
     $("#input_type").val("id");
 }
 
@@ -178,7 +183,7 @@ function setDemo2(){
     var descr2 = "<blockquote class =\"demo\"> \
     <p>Genomic regions corresponding to cis-regulatory modules \
      characterized by chip-seq peaks for 4 transcription factors (HFN6, FOXA1, CBPalpha, HNF4alpha), conserved across 5 mammalian species (Human, macaque, rat, mouse, doc). Source: <a target=\'_blank\' href=\'http://www.ncbi.nlm.nih.gov/pubmed/25279814\'>Ballester et al. (2013). eLife.</a></p>\
-     <p><font color=\"red\"><b>Warning</b>: this demo takes several minutes because it searches for variants ni 1600 genomic regions. Email output is recommended.</font></b> \
+     <p><font color=\"red\"><b>Warning</b>: this demo takes several minutes because it searches for variants in 1600 genomic regions. Email output is recommended.</font></b> \
     </blockquote>";
     
     demo_descr.innerHTML = descr2;

@@ -105,7 +105,7 @@ if ($query->param('freq_estimate') =~ /background/i) {
 			  );
 
   ### check organism
-  unless ($organism = $query->param('organism')) {
+  unless ($organism = $query->param('organism_bg')) {
     &cgiError("You should specify an organism to use intergenic frequency calibration");
   }
   unless (%{$supported_organism{$organism}}) {

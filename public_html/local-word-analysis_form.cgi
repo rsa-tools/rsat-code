@@ -81,7 +81,7 @@ $checked{$default{freq_estimate}} = "CHECKED";
 print '<style><!-- textarea {height: 100px; width: 550px;}--></style>';
 print "<CENTER>";
 print "Analysis of oligonucleotide occurrences in a set of DNA sequences.\n";
-print "<br>Program developed by <a href='mailto:defrance\@bigre.ulb.ac.be (Matthieu Defrance)'>Matthieu Defrance</A><P>";
+print "<br>Program developed by <a href=http://www.researchgate.net/profile/Matthieu_Defrance'>Matthieu Defrance</A><P>";
 print "</center>";
 
 &ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
@@ -244,8 +244,8 @@ function setDemo(demo_sequence){
     $("#bg_level_organism").prop("checked",true);
     bg_window_width.value = 800;
     sequence.value = demo_sequence;
-    $("#organism").val("Saccharomyces_cerevisiae");
-    $("#organism_name").val("Saccharomyces cerevisiae");
+    $("#organism_bg").val("Saccharomyces_cerevisiae");
+    $("#organism_bg_name").val("Saccharomyces cerevisiae");
 }
 </script>';
 
