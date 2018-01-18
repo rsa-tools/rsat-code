@@ -50,7 +50,7 @@ $checked{$default{fragment_sizes}} = "CHECKED";
 ### head
 print "<CENTER>";
 print "Select a set of fragments with random positions in a given genome, and return their coordinates and/or sequences.<P>
-Program developed by <a href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a>\n";
+Program developed by <a href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</a>\n";
 print "</CENTER>";
 
 
@@ -106,12 +106,13 @@ print "<legend><b><a class='iframe' href='help.random-genome-fragments.html#orga
 
 
 print "<P/>\n";
-print "<INPUT TYPE='radio' id='org_select_rsat' NAME='org_select' VALUE='rsat_org' $checked{'rsat_org'}/>";
-print "<b>Local RSAT </b>"; &OrganismPopUp();
+print "<INPUT TYPE='radio' id='org_select_rsat' NAME='org_select' VALUE='rsat_org' $checked{'rsat_org'} style='display:none'/>";
+#print "<b>Local RSAT </b>";
+&OrganismPopUp();
 
 
-print "<INPUT TYPE='radio' id='org_select_ensembl' NAME='org_select' VALUE='ensembl_org' $checked{'ensembl_org'}/>";
-print "<b>Ensembl </b>"; print &OrganismPopUpEnsembl();
+#print "<INPUT TYPE='radio' id='org_select_ensembl' NAME='org_select' VALUE='ensembl_org' $checked{'ensembl_org'}/>";
+#print "<b>Ensembl </b>"; print &OrganismPopUpEnsembl();
 print "<P/>\n";
 
 print "</fieldset><p/>";
@@ -122,7 +123,7 @@ print "<fieldset>
 print "<P/>\n";
 
 print "<INPUT TYPE='radio' id='outputformat_seq' NAME='outputformat' VALUE='outputseq' $checked{'outputseq'}/>";
-print "<b>Sequences in fasta format (only for RSAT organisms)</b>&nbsp;&nbsp;";
+print "<b>Sequences in fasta format</b>&nbsp;&nbsp;";
 
 ### Repeat masking
 print $query->checkbox(-name=>'rm',
@@ -184,7 +185,7 @@ function setDemo1(demo_seq){
     demo.value = descr;
     sequence1.value = demo_seq;
     $("input[name=fragment_sizes]").val(["template"]);    
-
+    template_format.value = "fasta";
     $("#org_select_rsat").prop("checked", true);
     $("#organism").val("Saccharomyces_cerevisiae");
     $("#organism_name").val("Saccharomyces cerevisiae");
@@ -195,74 +196,73 @@ function setDemo1(demo_seq){
 
 print "<TD><B>";
 
-print '<button type="button" onclick="setDemo1('. "'$demo_seq'" .')">DEMO RSAT organism</button>';
+print '<button type="button" onclick="setDemo1('. "'$demo_seq'" .')">DEMO</button>';
 
 print "</B></TD>\n";
 
 ################################################################
 ## data for the demo with a bed file as template
 
-print '<script>
-function setDemo3(demo_url){
-    $("#form")[0].reset();
-    descr = "<H4>Comment on the demonstration example for bed template : </H4><blockquote class =\'demo\'> In this demonstration, we use as template a bed file specifying genomic coordinates of ChIP-seq peaks.The coordinates correspond to ChIP-seq peas for the transcription factor CEBPA in the mm9 assembly of the Mus musculus genome (Schmidt et al, 2010). The program random-genome-fragments selects random genomic coordinates having the same sizes as the template peaks.</blockquote>";
+#print '<script>
+#function setDemo3(demo_url){
+#    $("#form")[0].reset();
+#    descr = "<H4>Comment on the demonstration example for bed template : </H4><blockquote class =\'demo\'> In this demonstration, we use as template a bed file specifying genomic coordinates of ChIP-seq peaks.The coordinates correspond to ChIP-seq peas for the transcription factor CEBPA in the mm9 assembly of the Mus musculus genome (Schmidt et al, 2010). The program random-genome-fragments selects random genomic coordinates having the same sizes as the template peaks.</blockquote>";
     
-    demo_descr.innerHTML = descr;
-    demo.value = descr;
-    sequence_url1.value = demo_url;
-    $("input[name=fragment_sizes]").val(["template"]);
-    template_format.value = "bed"; 
-    frag_length.value = "100";
-    frag_nb.value = "20";
+#    demo_descr.innerHTML = descr;
+#    demo.value = descr;
+#    sequence_url1.value = demo_url;
+#    $("input[name=fragment_sizes]").val(["template"]);
+#    template_format.value = "bed";
+#    frag_length.value = "100";
+#    frag_nb.value = "20";
     
-    $("input[name=org_select]").val(["rsat_org"]);
+#    $("input[name=org_select]").val(["rsat_org"]);
     
-    $("#organism").val("Mus_musculus_GRCm37");
-    $("#organism_name").val("Mus musculus GRCm37");
-    $("#outputformat_seq").prop("checked", true);
-}
-</script>';
+#    $("#organism").val("Mus_musculus_GRCm37");
+#    $("#organism_name").val("Mus musculus GRCm37");
+#    $("#outputformat_seq").prop("checked", true);
+#}
+#</script>';
 
-my $demo_bed_url= $ENV{rsat_www}."/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed";
+#my $demo_bed_url= $ENV{rsat_www}."/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed";
 
-print "<TD><B>";
+#print "<TD><B>";
 
-print '<button type="button" onclick="setDemo3('. "'$demo_bed_url'" .')">DEMO bed ChIP-seq peaks</button>';
+#print '<button type="button" onclick="setDemo3('. "'$demo_bed_url'" .')">DEMO bed ChIP-seq peaks</button>';
 
-print "</B></TD>\n";
+#print "</B></TD>\n";
 
 ################################################################
 ## data for the demo with Ensembl organism
-print '<script>
-function setDemo2(demo_seq){
-    $("#form")[0].reset();
-    descr = "<H4>Comment on the demonstration example for Ensembl organism : </H4><blockquote class =\'demo\'>\
-    In this demonstration, we calculate the coordinates of randomly-chosen fragments in the genome sequence of Homo sapiens. We \would like 10 fragments of 100bp. <p/>\
-    The program will return the coordinates of these fragments, in BED format, that can be then used to extract the sequences \with tools of\
-    sequence providers (UCSC, Galaxy, Ensembl).</blockquote>";
-    $("input[name=fragment_sizes]").val(["template"]);
-    demo_descr.innerHTML = descr;
-    demo.value = descr;
-    sequence1.value = demo_seq;
+#print '<script>
+#function setDemo2(demo_seq){
+#    $("#form")[0].reset();
+#    descr = "<H4>Comment on the demonstration example for Ensembl organism : </H4><blockquote class =\'demo\'>\
+#    In this demonstration, we calculate the coordinates of randomly-chosen fragments in the genome sequence of Homo sapiens. We \would like 10 fragments of 100bp. <p/>\
+#    The program will return the coordinates of these fragments, in BED format, that can be then used to extract the sequences \with tools of\
+#    sequence providers (UCSC, Galaxy, Ensembl).</blockquote>";
+#    $("input[name=fragment_sizes]").val(["template"]);
+#    demo_descr.innerHTML = descr;
+#    demo.value = descr;
+#    sequence1.value = demo_seq;
     
-    frag_length.value = "100";
-    frag_nb.value = "20";
-    
-    $("input[name=org_select]").val(["ensembl_org"]);	
-	$("#organism").val("Saccharomyces_cerevisiae");
-    $("#organism_name").val("Saccharomyces cerevisiae");
-    $("#outputformat_coord").prop("checked", true);
-    $("#coord_format").val("bed");
-    $("#organism_ens").val("homo_sapiens");
-}
-</script>';
+#    frag_length.value = "100";
+#    frag_nb.value = "20";
+#    $("input[name=org_select]").val(["ensembl_org"]);
+#	$("#organism").val("Saccharomyces_cerevisiae");
+#    $("#organism_name").val("Saccharomyces cerevisiae");
+#    $("#outputformat_coord").prop("checked", true);
+#    $("#coord_format").val("bed");
+#    $("#organism_ens").val("homo_sapiens");
+#}
+#</script>';
 
 
-print "<TD><B>";
+#print "<TD><B>";
 
-print '<button type="button" onclick="setDemo2('. "'$demo_seq'" .')">DEMO Ensembl organism</button>';
+#print '<button type="button" onclick="setDemo2('. "'$demo_seq'" .')">DEMO Ensembl organism</button>';
 
-print "</B></TD>\n";
+#print "</B></TD>\n";
 
 print "<TD><B><A class='iframe' HREF='help.random-genome-fragments.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:morgane\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";

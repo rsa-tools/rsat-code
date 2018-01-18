@@ -48,28 +48,28 @@ $command = "$SCRIPTS/convert-variations";
 ## Parameters
 
 ## Define species 
-$organism = $query->param('organism');
-if (defined($supported_organism{$organism})) {
-    $organism_name = $supported_organism{$organism}->{'name'};
-    @org_name_split=split(" ",$organism_name);
-    $species=join("_", $org_name_split[0], $org_name_split[1]);
-    $assembly =$org_name_split[2];
+# $organism = $query->param('organism');
+# if (defined($supported_organism{$organism})) {
+#     $organism_name = $supported_organism{$organism}->{'name'};
+#     @org_name_split=split(" ",$organism_name);
+#     $species=join("_", $org_name_split[0], $org_name_split[1]);
+#     $assembly =$org_name_split[2];
     
-    $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
-    $parameters .= " -assembly ".$assembly; ## Assembly is the third part of species ID
-    if (scalar (@org_name_split)>=4){
-	if (scalar (@org_name_split)>4){
-	    $species_suffix=join("_",@org_name_split[3..$#org_name_split]);
-	}else {
-	    $species_suffix=$org_name_split[3];
-	}
-	$parameters .= " -species_suffix ".$species_suffix; ## 
-    }
-} else {
-    &cgiError("Organism '",
-	      $organism,
-	      "' is not supported on this web site.");
-}
+#     $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
+#     $parameters .= " -assembly ".$assembly; ## Assembly is the third part of species ID
+#     if (scalar (@org_name_split)>=4){
+# 	if (scalar (@org_name_split)>4){
+# 	    $species_suffix=join("_",@org_name_split[3..$#org_name_split]);
+# 	}else {
+# 	    $species_suffix=$org_name_split[3];
+# 	}
+# 	$parameters .= " -species_suffix ".$species_suffix; ## 
+#     }
+# } else {
+#     &cgiError("Organism '",
+# 	      $organism,
+# 	      "' is not supported on this web site.");
+# }
 
 ## Get input
 
