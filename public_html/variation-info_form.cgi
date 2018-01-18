@@ -17,7 +17,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{demo_descr1} = "";
-$default{organism} = "Homo sapiens GRCh37";
+$default{organism} = "";
 $default{input_type}="gvf";
 $default{out_type}="rsat-var";
 $default{mml}=30 ; ## Length of the sequence sorounding the variant, 
@@ -151,8 +151,8 @@ while (my $row = <$fh>){
 }
 
 $demo2_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_module_beyondprimates_conserved_hg18_lift_to_hg19.bed";
-
-my $org = $default{organism};
+my $demo_org = "Homo sapiens GRCh37";
+my $org = $demo_org;
 $org =~ s/\ /_/g;
 print '<script>
 function setDemo1(demo_gvf_var){
@@ -166,7 +166,7 @@ function setDemo1(demo_gvf_var){
     
     demo_descr.innerHTML = descr1;
     
-    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism_name").val("'. $demo_org . '");
     $("#organism").val("' . $org . '");
     $("#input").val(demo_gvf_var);
     $("#input_type").val("id");
@@ -183,7 +183,7 @@ function setDemo2(){
     
     demo_descr.innerHTML = descr2;
     
-    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism_name").val("'. $demo_org . '");
     $("#organism").val("' . $org . '");
     $("#input_url").val("'.$demo2_url.'");
     $("#input_type").val("bed");

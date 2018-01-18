@@ -39,7 +39,7 @@ $checked{$default{bg_choose}} = "CHECKED";
 $default{bg_taxo}="organism";
 $checked{$default{bg_taxo}} = "CHECKED";
 $default{decimals}="3";
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{strands} = "single strand";
 $default{noov} = "";
 
@@ -132,15 +132,12 @@ print $query->end_form;
 
 ################################################################
 ### data for the demo 
-my $org = $default{organism};
-$org =~ s/\ /_/g;
-
 print '<script>
 function setDemo(){
     $("#reset").trigger("click");
     demo=">seq1\\nCACGTG\\n>seq2\\nCCGCGG\\n>seq3\\nTATAAA";
-    $("#organism_name").val("'. $default{organism} . '");
-    $("#organism").val("' . $org . '");
+    $("#organism_bg_name").val("Saccharomyces cerevisiae");
+    $("#organism_bg").val("Saccharomyces_cerevisiae");
     sequence.value = demo;
     sequence_format.value = "fasta";
 }

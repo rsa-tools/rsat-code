@@ -54,7 +54,6 @@ if ($query->param('single_multi_org') eq 'multi') {
 		     "If the answer does not appear in due time, use the option <i>output email</i>"));
 } else {
     $command = "$SCRIPTS/retrieve-seq";
-
 }
 
 

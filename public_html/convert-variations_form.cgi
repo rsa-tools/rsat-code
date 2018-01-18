@@ -14,7 +14,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{demo_descr1} = "";
-$default{organism} = "Homo sapiens GRCh37";
+$default{organism} = "";
 $default{input_type}="gvf";
 $default{out_type}="varBed";
 $default{mml}=30 ; ## Length of the sequence surrounding the variant, 
@@ -125,12 +125,13 @@ while(my $row = <$fh>){
     $demo_gvf_var .= "\\n";
 }
 
-my $org = $default{organism};
+my $demo_org = "Homo sapiens GRCh37";
+my $org = $demo_org;
 $org =~ s/\ /_/g;
 print '<script>
 function setDemo(demo_gvf_var){
     $("#reset").trigger("click");
-    $("#organism_name").val("' . $default{organism} .'");
+    $("#organism_name").val("' . $demo_org .'");
     $("#organism").val("'. $org .'");
     descr = "<blockquote class =\'demo\'>";
     
@@ -141,7 +142,6 @@ function setDemo(demo_gvf_var){
     demo_descr.innerHTML = descr;
     demo.value = descr;
     
-    $("#organism").val("Homo_sapiens_GRCh37").trigger("chosen:updated");
     $("#input").val(demo_gvf_var);
     $("#input_type").val("gvf");
     $("#out_type").val("varBed");

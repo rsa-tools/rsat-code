@@ -19,7 +19,7 @@ $default{demo_descr1} = "";
 $default{demo_descr2} = "";
 
 ### default values for filling the form
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{organism_ens} = "Homo_sapiens";
 $default{frag_nb} = 20;
 $default{frag_length} = 100;
@@ -50,7 +50,7 @@ $checked{$default{fragment_sizes}} = "CHECKED";
 ### head
 print "<CENTER>";
 print "Select a set of fragments with random positions in a given genome, and return their coordinates and/or sequences.<P>
-Program developed by <a href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a>\n";
+Program developed by <a href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</a>\n";
 print "</CENTER>";
 
 
@@ -184,7 +184,7 @@ function setDemo1(demo_seq){
     demo.value = descr;
     sequence1.value = demo_seq;
     $("input[name=fragment_sizes]").val(["template"]);    
-
+    template_format.value = "fasta";
     $("#org_select_rsat").prop("checked", true);
     $("#organism").val("Saccharomyces_cerevisiae");
     $("#organism_name").val("Saccharomyces cerevisiae");
@@ -211,7 +211,7 @@ function setDemo3(demo_url){
     demo.value = descr;
     sequence_url1.value = demo_url;
     $("input[name=fragment_sizes]").val(["template"]);
-    template_format.value = "bed"; 
+    template_format.value = "bed";
     frag_length.value = "100";
     frag_nb.value = "20";
     
@@ -247,7 +247,6 @@ function setDemo2(demo_seq){
     
     frag_length.value = "100";
     frag_nb.value = "20";
-    
     $("input[name=org_select]").val(["ensembl_org"]);	
 	$("#organism").val("Saccharomyces_cerevisiae");
     $("#organism_name").val("Saccharomyces cerevisiae");

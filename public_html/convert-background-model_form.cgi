@@ -36,7 +36,7 @@ $checked{$default{bg_choose}} = "CHECKED";
 $default{bg_taxo}="organism";
 $checked{$default{bg_taxo}} = "CHECKED";
 $default{decimals}="3";
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{strands} = "single strand";
 $default{noov} = "";
 
