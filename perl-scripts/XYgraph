@@ -855,6 +855,7 @@ sub Rplot {
   $r_instructions .= "\n## Reading Y and Y values\n";
   $r_instructions .= "x.values <- input.table[,".$xcol_r."]\n";
   $r_instructions .= "y.values <- as.data.frame(input.table[,  c(".join(",",@y_col_list_r).")])\n";
+  $r_instructions .= "y.values <-  do.call(data.frame,lapply(y.values, function(x) as.numeric(x))) \n";
   
 
   ## Logarithm
@@ -894,7 +895,7 @@ sub Rplot {
   } else {
     $r_instructions .= "xmax <- ".$x_axis_max."\n";
   }
-  $r_instructions .= "xlimits <- c(xmin, xmax)\n";
+  $r_instructions .= "xlimits <- as.numeric(c(xmin, xmax))\n";
   $r_plot_params .= ", xlim=xlimits ";
 
   ## Y axis limits for R plot
@@ -908,7 +909,7 @@ sub Rplot {
   } else {
     $r_instructions .= "ymax <- ".$y_axis_max."\n";
   }
-  $r_instructions .= "ylimits <- c(ymin, ymax)\n";
+  $r_instructions .= "ylimits <- as.numeric(c(ymin, ymax))\n";
   $r_plot_params .= ", ylim=ylimits ";
 
   ## Point or line specifications
