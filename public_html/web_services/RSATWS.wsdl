@@ -7159,15 +7159,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <service name="RSATWebServices">
     <documentation>Web services for the Regulatory Sequence Analysis Tools (RSAT). Tools developed by Jacques van Helden (jvanheld@bigre.ulb.ac.be), SOAP/WSDL interface developed by Olivier Sand (oly@bigre.ulb.ac.be).</documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-<<<<<<< HEAD
-<<<<<<< HEAD
-       <soap:address location="http://pedagogix-tagc.univ-mrs.fr/rsat//web_services/RSATWS.cgi"/>
-=======
-       <soap:address location="http://rsat-tagc.univ-mrs.fr/rsat//web_services/RSATWS.cgi"/>
->>>>>>> 2c39782cedebe6eaf0360f1c29b8c110e9801530
-=======
-       <soap:address location="http://rsat-tagc.univ-mrs.fr/rsat//web_services/RSATWS.cgi"/>
->>>>>>> 9fbc671f913c5f5f92cfaf6ba6d8ceed65bd5794
+       <soap:address location="http://localhost/rsat//web_services/RSATWS.cgi"/>
 <!--       <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>-->
 <!--       <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>-->
     </port>
