@@ -4,7 +4,7 @@
         <link rel="stylesheet" type="text/css" href="menu.css" media="screen,projection,print" />
         <link rel='stylesheet' href='css/colorbox.css'></link>
 	<link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
-<link rel='stylesheet' type='text/css' href='js/autocomplete/css/jquery-ui.css'
+<link rel='stylesheet' type='text/css' href='js/autocomplete/css/jquery-ui.css' />
         <script src="js/jquery.js"></script>
         <script src="RSAT_menu.js" type="text/javascript"></script>
         <script src="js/jquery.colorbox-min.js"></script>
@@ -53,6 +53,8 @@
 		<div style='padding:60px 0 0 10px;' align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b>
 <!--perlscript -->
 <?php
+    $path = $properties['rsat_www'].'nbOrg.cgi';
+    virtual($path);
     virtual("nbOrg.cgi");
 ?>
 </b> <i>organisms</i></div>
@@ -85,7 +87,7 @@
                          <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf  <img src="images/onebit_49.png" height="30" class="new"></a>
                          <!--	  <a class="menu_item" href="http://www.rsat.eu/retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>-->
                          <a class="menu_item" href="purge-sequence_form.cgi" >purge sequence</a>
-                         <a class="menu_item" href="convert-seq_form.cgi" >convert sequence</a>
+                         <a class="menu_item" href="convert-seq_form.cgi" >convert sequences</a>
                          <a class="menu_item" href="random-seq_form.cgi" >random sequences</a>
                      </div>
 
@@ -106,7 +108,7 @@
                          onclick="toggleMenu('11')" id="heading11">Build control sets</div>
                      <div id="menu11" class="menu_collapsible">
                          <a class="menu_item" href="random-genes_form.cgi" >random gene selection</a>
-                         <a class="menu_item" href="random-seq_form.cgi" >random sequence</a>
+                         <a class="menu_item" href="random-seq_form.cgi" >random sequences</a>
                          <a class="menu_item" href="random-genome-fragments_form.cgi" >random genome fragments</a>
                          <!--	  <a class="menu_item" href="http://www.rsat.eu/random-genome-fragments_form.cgi" >random genome fragments</a>-->
                          <a class="menu_item" href="random-motif_form.cgi" >random-motif</a>
@@ -192,7 +194,7 @@
                          <a class="menu_separator">Stats</a>
                          <a class="menu_item_last" href="classfreq_form.cgi" >Frequency distribution</a>
                          <a class="menu_separator">sequences</a>
-                         <a class="menu_item_last" href="convert-seq_form.cgi" >convert sequence</a>
+                         <a class="menu_item_last" href="convert-seq_form.cgi" >convert sequences</a>
                          <a class="menu_separator">matrices</a>
                          <a class="menu_item_last" href="convert-matrix_form.cgi" >convert matrix / logo</a>
                          <a class="menu_separator">background models</a>
