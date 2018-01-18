@@ -85,9 +85,9 @@ print $query->textarea(-name=>'data',-id=>'data',
 		       -columns=>60);
 print "<BR>\n";
 
-print "<B><A class='iframe' HREF='help.feature-map.html#file'>";
+print "<B>";
 print "File ";
-print "</A></B>&nbsp;";
+print "</B>&nbsp;";
 print $query->filefield(-name=>'uploaded_file',
 			-size=>45);
 
@@ -230,7 +230,7 @@ print "&nbsp;&nbsp;&nbsp;";
 
 print "<BR>\n";
 
-print "<B><A class='iframe' HREF='help.feature-map.html#dynamic'>";
+print "<B><A class='iframe' HREF='help.feature-map.html#keys'>";
 print "Label keys";
 print "</A></B>\n";
 print $query->checkbox(-name=>'label_strand',

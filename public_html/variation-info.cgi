@@ -161,6 +161,8 @@ push @result_files, ("Error log (text)",$err_file);
 &ReportWebCommand($command." ".$parameters);
 
 #### execute the command #####
+
+		    
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
 

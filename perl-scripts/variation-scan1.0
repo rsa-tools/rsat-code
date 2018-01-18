@@ -236,7 +236,7 @@ package	main;
   our $nb_seq = 0;
   our $nb_rvar =0;
 
-
+  
   ################
   ## Matrix format
 
@@ -248,6 +248,10 @@ package	main;
   local @matrix_files = ();
   $top_matrices = "none";
 
+  ##Recover max and min pvalue for all matrices
+
+  our %max_min_matrices_pvals=();
+  
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -609,9 +613,11 @@ package	main;
 				  type=>"counts",
 				  format=>"tab" );
 
+
       ## Remove code
       close($outM);
- 
+      #print $matrix_file_tab ;
+      #<STDIN> ;
 
       ################################################################
       ## Compute the probability distribution of weight scores for the
@@ -696,6 +702,11 @@ package	main;
 
       ## variation-scan calculates the pvalue ration or sigma between variants. Define the maximal ratio based on the theoretical max pvalues
       $matrix_info{$matrix_ac}{'sigma_max'} = log10($matrix_info{$matrix_ac}{'pval'}{$sorted_pval[0]}/$matrix_info{$matrix_ac}{'pval'}{$sorted_pval[-1]});
+
+      $main::max_min_matrices_pvals{$matrix_ac}{'score_min'} =$sorted_pval[0]; # Store the score for the min pvalue
+      $main::max_min_matrices_pvals{$matrix_ac}{'score_max'} =$sorted_pval[-1]; # Store the score for the max pvalue in the distribution
+
+
     }
 
 
@@ -712,7 +723,7 @@ package	main;
     $scan_cmd .= " -name $matrix_ac";
 
     &RSAT::message::TimeWarn("\tScan matrix", $matrix_ac,$scan_cmd  ) if ($main::verbose >= 3);
-
+    #<STDIN>;
 
     ################
     ## Open rsat variable input file and change it to fasta format to be used with matrix-scan-quick
@@ -837,13 +848,22 @@ sub getLineInfo {
     $line_info{'matrice'} = $field[2];
     $line_info{'site_strand'} = $field[3];
     $line_info{'seq'} = $field[6];
-    #$line_info{'score'} = sprintf("%.1f",$field[7]); ## sprintf rounds which makes a problem when the score is close to the highest posible one and then that score is not in the distribution file
-    if ($field[7] =~ /\./ ){
-	$line_info{'score'} = substr($field[7],0,index($field[7],'.') + 1 + 1);
-    }else{
-	    $line_info{'score'} = $field[7].".0";
-    }
-    #print "pre $field[7]  $line_info{'score'}\n";
+    $line_info{'score'} = sprintf("%.1f",$field[7]); ## sprintf rounds which makes a problem when the score is close to the highest posible one and then that score is not in the distribution file
+    my $matrix_ac= $line_info{'matrice'};
+    #print " BOOM2 $line_info{'matrice'}\n $main::max_min_matrices_pvals{$matrix_ac}{'score_min'}   ----- $main::max_min_matrices_pvals{$matrix_ac}{'score_max'} ";
+    #die;
+
+    ## If for any reason the rounding caused the score to be out of the range then use the minimal or maximal score
+    $line_info{'score'} = $main::max_min_matrices_pvals{$matrix_ac}{'score_max'}  if ( $line_info{'score'} > $main::max_min_matrices_pvals{$matrix_ac}{'score_max'} ) ;
+    $line_info{'score'} = $main::max_min_matrices_pvals{$matrix_ac}{'score_min'}   if ($line_info{'score'} < $main::max_min_matrices_pvals{$matrix_ac}{'score_min'}  ) ;
+    
+    # if ($field[7] =~ /\./ ){
+    # 	$line_info{'score'} = substr($field[7],0,index($field[7],'.') + 1 + 1);
+    # }else{
+    # 	    $line_info{'score'} = $field[7].".0";
+    # }
+    
+    
     my @field2 = split(/\|/,$field[0]); #var_info, coord
     $line_info{'coord'} = $field2[1];
 
@@ -985,9 +1005,9 @@ sub Compare {
     my %scanning_info = %{$scanning_info };
     my %scanning_score = %{$scanning_score };
 
-    # foreach $key (keys %scanning_score)
-    # {
-    # 	print "$key - $scanning_score{$key}\n";
+    #  foreach $key (keys %scanning_score)
+    #  {
+    #  	print "$key - $scanning_score{$key}\n";
     # }
     
 
@@ -1004,6 +1024,16 @@ sub Compare {
 	my $best_score = $sorted_score[0];
 	my $best_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$best_score};
 
+	## Some integer scores do not have a .0 in the matrix dsitrib file so it is necesary to remove it 
+	unless ($best_pval){
+	    if ($best_score=~/\.0/){
+		$best_score=~s/\.0//;
+		$best_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$best_score};
+	    }
+	    else{
+		&FatalError("Score ",$best_score," not present in the distrib file for the given matrix" )
+	    }
+	}
 	&RSAT::message::Debug("Best score and pval", $best_score, $best_pval ) if ($main::verbose >= 10);
 
 	
