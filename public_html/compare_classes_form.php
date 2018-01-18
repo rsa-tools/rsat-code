@@ -12,6 +12,7 @@
    require ('functions.php');
      
        $menu = $_REQUEST['menu'];
+<<<<<<< HEAD
 	if(strcmp($menu,"RSAT") == 0){
 		include("menu.php");
 	}else{
@@ -19,6 +20,13 @@
 	}       
 //printMenu($menu);
        
+=======
+       if(strcmp($menu, "RSAT") == 0){
+           include("menu.php");
+       }else{
+           include("menu_graph.php");
+       }       
+>>>>>>> 032d233c8088ca94e98c930819af473131d4769a
 // require ('demo_dataset.php');
 $default_min_sig = 0;
   
