@@ -231,7 +231,7 @@ sub PrintOrthoSelectionSection {
   ## Select a single organism per taxon
   print "<br>";
   print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
-  print $query->popup_menu(-name=>'unique_taxon',
+  print $query->popup_menu(-name=>'unique_taxon', -id=>'unique_taxon',
 			   -Values=>['species',
 				     'genus',
 				     'no filter'],
@@ -428,6 +428,14 @@ sub RSA_header {
     -style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
+    
+    if($css_body_class eq "results"){
+        print "<style>#page-content-wrapper{
+                    overflow: auto !important;
+                    display: block;
+                    height: 100%;
+                }</style>";
+    }
 
 print '<script>
 $(function(){
@@ -1267,7 +1275,10 @@ sub OrganismPopUpString_old {
 }
 
 ###########################
-###
+### Generate the content of the pop-up menu to be displayed for organism selection
+### Options: bg_org => 1: if this pop-up is displayed for the background model (ex. in matrix-distrib, matrix-quality, or random-seq...)
+#           supported => orthologs : if this pop-up is displayed for the orthologs organisms (ex. in get-orthologs)
+#           supported => infer: if this pop-up is displayed for the relevant organisms for operon inference (ex. infer-operons)
 sub OrganismPopUpString{
     my (%args) = @_;
    
@@ -1298,6 +1309,16 @@ sub OrganismPopUpString{
         $("#' . $popupid_name . '").keypress(function(event){
             if(event.keyCode == 13){
                 event.preventDefault();
+            }
+            $("#' . $popupid . '").val("");
+        });
+        $("#' . $popupid_name . '").bind("paste", function(e){
+            $("#' . $popupid . '").val("");
+        });
+        
+        $("#' . $popupid_name . '").focusout(function(){
+            if($("#' . $popupid . '").val() == ""){
+                $("#' . $popupid_name . '").val("");
             }
         });
         
@@ -1350,7 +1371,10 @@ sub OrganismPopUpString{
     </script>';
     if($args{supported} eq 'orthologs'){
         $organismPopup .=  "<a href='supported-orthologs.cgi' target='_blank'>  [List of orthologs]</a>";
-    }else{
+    }elsif($args{supported} eq 'infer'){
+        $organismPopup .=  "<a href='supported-infer.cgi' target='_blank'>  [List of operon inference organisms]</a>";
+    }
+    else{
         $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
     }
     $organismPopup .= " <div id='tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
@@ -1472,6 +1496,16 @@ sub TaxonPopUpString {
             if(event.keyCode == 13){
                 event.preventDefault();
             }
+            $("#taxon").val("");
+        });
+        $("#taxon_name").bind("paste", function(e){
+            $("#taxon").val("");
+        });
+        
+        $("#taxon_name").focusout(function(){
+            if($("#taxon").val() == ""){
+                $("#taxon_name").val("");
+            }
         });
         
         $("#taxon_name").autocomplete({
@@ -1509,11 +1543,11 @@ sub TaxonPopUpString {
                 var reg = new RegExp(re , "i", "m");
                 var t = item.label.replace(reg, replacer);
                 
-                document.getElementById("tip").style.display = "none";
+                document.getElementById("tip-taxon").style.display = "none";
                 return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
             }else{
-                $("#tip").html("<span style=\"color:orange\">Your search has no result</span>");
-                document.getElementById("tip").style.display = "inline";
+                $("#tip-taxon").html("<span style=\"color:orange\">Your search has no result</span>");
+                document.getElementById("tip-taxon").style.display = "inline";
                 return false;
             }
         };
@@ -1523,7 +1557,7 @@ sub TaxonPopUpString {
     });
     </script>';
     $taxonomyPopup .=  "<a href='supported-taxonomy.cgi' target='_blank'>  [List of taxonomy]</a>";
-    #$taxonomyPopup .= " <div id='tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
+    $taxonomyPopup .= " <div id='tip-taxon' style='display:none'></div>";
     return $taxonomyPopup;
 }
 
@@ -2160,7 +2194,7 @@ sub MotifSelection {
     ## load the various databases that can be compared against
     &DisplayMatrixDBchoice_select2("mode"=>"radio");
     print '</select>';
-    print '<br/><a class="inline" href="#matrix_descr""> View matrix descriptions</a> <br/>';
+    print '<br/><a class="inline" href="#matrix_descr""> View matrix descriptions & download full collections</a> <br/>';
     print "<div style='display:none'><div id='matrix_descr'>";
     &DisplayMatrixDBchoice_select2("mode" => "list");
     print "</div></div></div>";
@@ -3026,7 +3060,7 @@ sub DisplayMatrixDBchoice_select2 {
                         }
                         $descr .= " - [$nbmotif motifs]";
                     }
-                    ${$values[$i]}{$db_name} = $descr . " (".$version.")";
+                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{www-rsat}/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
                 }
             }
         }
@@ -3870,7 +3904,7 @@ sub PrintGenomeSubsetBgOptions {
 
 
   print ("<ul>");
-  print( "<input type='radio' NAME='bg_level' id='bg_level_organism' VALUE='organism' $checked{organism}>", &OrganismPopUpString());
+  print( "<input type='radio' NAME='bg_level' id='bg_level_organism' VALUE='organism' $checked{organism}>", &OrganismPopUpString('bg_org'=>'1'));
 
 
   my $taxon_popup = &TaxonPopUpString("node");
@@ -3933,7 +3967,7 @@ sub PrintOligoBackgroundOptions {
 ## Load default prameters for dyad-analysis form
 sub LoadDyadDefault {
   ### default values for filling the form
-  $default{organism} = "Saccharomyces cerevisiae";
+    #$default{organism} = "Saccharomyces cerevisiae";
   $default{bg_method} = "background";
   $default{background} = "upstream-noorf";
   $default{bg_level} = "organism";

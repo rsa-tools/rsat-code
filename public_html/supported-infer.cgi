@@ -23,7 +23,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### print the header
-&RSA_header("Supported taxonomy", "results");
+&RSA_header("Supported orthologs", "results");
 
 
 ## Check security issues
@@ -33,35 +33,35 @@ $query = new CGI;
 &UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
-
-@taxon = &get_taxons_web("all");
-##$tmp_file_name = sprintf "supported-organisms.%s", &AlphaDate();
-#$prefix = "supported-organisms";
-#$tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
-
-$font{variable} = 1;
-
-################################################################
-## treat taxon specificity of the server if required
 my $group = "";
 if ($ENV{group_specificity}) {
     $group = $ENV{group_specificity};
 }
+
+my @selected_organisms = ();
+push @selected_organisms, &GetOrganismsForTaxon("Bacteria")
+if (($group_specificity eq "Bacteria") ||
+($group_specificity eq "Prokaryotes"));
+push @selected_organisms, &GetOrganismsForTaxon("Archaea")
+if (($group_specificity eq "Archaea") ||
+($group_specificity eq "Prokaryotes"));
+@selected_organisms = sort(@selected_organisms);
+
+
 ################################################################
 ## Print general information about this RSAT instance
 print "<h2>RSAT instance: ", $ENV{rsat_site}, "</h2>\n";
 
-print "<p><b>Taxonomy supported: </b>", scalar @taxon, "</p>\n";
+print "<p><b>Organisms supported: </b>", scalar @selected_organisms, "</p>\n";
 
 if ($group) {
     print "<p><b>Group specificity: </b>", $group, "</p>\n";
 }
 
-
-foreach $t (@taxon){
-    $t =~ s/\_/ /g;
-    print $t . "<br/>";
+foreach $_ (@selected_organisms){
+    print $_ . "<br/>";
 }
+
 print '<hr size=3>';
 print "</div>";
 print "</div>";
@@ -69,3 +69,4 @@ print "</div>";
 print $query->end_html;
 
 exit(0);
+

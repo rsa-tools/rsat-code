@@ -156,7 +156,7 @@ if ($query->param('bg_method') eq 'background') {
 
   ### Organism-specific background model
   if ($query->param('bg_level') eq 'organism') {
-    unless ($organism = $query->param('organism')) {
+    unless ($organism = $query->param('organism_bg')) {
       &cgiError("You should specify an organism to use intergenic frequency calibration");
     }
     unless (%{$supported_organism{$organism}}) {
