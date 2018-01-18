@@ -33,7 +33,7 @@ $default{two_strands} = "checked";
 $default{bg_order} = 3;
 $default{background} = "upstream-noorf";
 $default{bg_level} = "organism";
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{taxon} = "Fungi";
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -148,13 +148,12 @@ while(my $row = <$fh>){
     $demo_sequence .= $row;
     $demo_sequence .= "\\n";
 }
-my $org = $default{organism};
-$org =~ s/\ /_/g;
+
 print '<script>
 function setDemo(demo_sequence){
     $("#reset").trigger("click");
-    $("#organism_name").val("'. $default{organism} . '");
-    $("#organism").val("' . $org . '");
+    $("#organism_name").val("Saccharomyces cerevisiae");
+    $("#organism").val("Saccharomyces_cerevisiae");
     sequence.value = demo_sequence;
     sequence_format.value = "fasta";
     $("#length").val("20");

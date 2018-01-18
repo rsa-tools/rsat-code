@@ -14,7 +14,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{demo_descr1} = "";
-$default{organism} = "Homo sapiens GRCh37";
+$default{organism} = "";
 $default{input_type}="gvf";
 $default{out_type}="rsat-var";
 $default{mml}=30 ; ## Length of the sequence surrounding the variant, 
@@ -119,7 +119,8 @@ while (my $row = <$fh>){
     $demo_gvf .= $row . "\\n";
 }
 
-my $org = $default{organism};
+my $demo_org = "Homo sapiens GRCh37";
+my $org = $demo_org;
 $org =~ s/\ /_/g;
 print '<script>
 function setDemo(demo_gvf){
@@ -131,7 +132,7 @@ function setDemo(demo_gvf){
     
     demo_descr.innerHTML = descr1;
     
-    $("#organism_name").val("'. $default{organism} . '");
+    $("#organism_name").val("'. $demo_org . '");
     $("#organism").val("' . $org . '");
     $("#input").val(demo_gvf);
     $("#input_type").val("id");

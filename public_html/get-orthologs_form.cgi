@@ -149,18 +149,22 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 ################################################################
-### data for the demo 
-print $query->start_multipart_form(-action=>"get-orthologs_form.cgi");
-$demo_queries = "lexA\n";
-#$demo_queries .= "recA\n";
-#$demo_queries .= "uvrB\n";
+
 print "<TD><B>";
-print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K_12_substr__MG1655_uid57779");
-print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
-print $query->submit(-label=>"DEMO");
+
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    queries.value = "lexA\n";
+    $("#organism").val("Escherichia_coli_K_12_substr__MG1655_uid57779");
+    $("#organism_name").val("Escherichia coli K 12 substr  MG1655 uid57779");
+    $("#taxon").val("Enterobacteriales");
+    $("#taxon_name").val("Enterobacteriales");
+}
+</script>';
+
+print '<button type="button" onclick="setDemo();">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
 print "<TD><B><A HREF='help.get-orthologs.html'>MANUAL</A></B></TD>\n";
