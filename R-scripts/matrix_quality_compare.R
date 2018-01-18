@@ -21,17 +21,28 @@ if(!"flux" %in% x[,1]){
   message("Missing package: flux")
 }
 
-args <- commandArgs(TRUE)
-
-## Get the prefix list of files to be analyzed, this list is passed by compare-qualities
-mtx.quality.nwds.file <- args[1]
-print (mtx.quality.nwds.file)
-plot.folder <- args[2]
-formats <- args[3]
+## Jaime Castro's code
+args <- commandArgs(trailingOnly=TRUE)
+if (length(args >= 1)) {
+  for(i in 1:length(args)){
+    eval(parse(text=args[[i]]))
+  }
+}
 formats <- unlist(strsplit (formats,split=","))
-print (formats)
+print.heatmap <- as.numeric(print.heatmap)
 
-print.heatmap <- args[4]
+
+## Alejandra Medina's code
+# args <- commandArgs(TRUE)
+# ## Get the prefix list of files to be analyzed, this list is passed by compare-qualities
+# mtx.quality.nwds.file <- args[1]
+# print (mtx.quality.nwds.file)
+# plot.folder <- args[2]
+# formats <- args[3]
+# formats <- unlist(strsplit (formats,split=","))
+# print (formats)
+# print.heatmap <- args[4]
+
 
 ## For debugging:
 
@@ -45,7 +56,7 @@ print.heatmap <- args[4]
 # mtx.quality.nwds.file <-"/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_files.txt"
 # plot.folder <- "/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_plot"
 
-dir.create(plot.folder, showWarnings = TRUE, recursive = TRUE)
+#dir.create(plot.folder, showWarnings = TRUE, recursive = TRUE)
 
 ################
 ## Read in table with nwd files
