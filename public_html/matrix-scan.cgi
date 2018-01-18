@@ -55,11 +55,11 @@ if ($query->param("quick")) {
 
 ################################################################
 ## sequence file
-if ($quick_mode) {
-  ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
-} else {
+#if ($quick_mode) {
+#    ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
+#} else {
   ($sequence_file,$sequence_format) = &GetSequenceFile();
-}
+#}
 
 
 #### matrix-scan parameters
@@ -322,7 +322,7 @@ sub ReadMatrixScanParameters {
 
   } elsif ($bg_method eq "bgfile") {
     ## Select pre-computed background file in RSAT genome directory
-    my $organism_name = $query->param("organism");
+    my $organism_name = $query->param("organism_bg");
     my $noov = "ovlp";
     my $background_model = $query->param("background");
     my $oligo_length = $markov_order + 1;

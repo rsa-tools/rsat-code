@@ -29,7 +29,7 @@ $default{Tfreq} = 0.325;
 $default{Cfreq} = 0.175;
 $default{Gfreq} = 0.175;
 
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{oligo_size} = 6;
 $default{oligopept_size} = 2;
 

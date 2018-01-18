@@ -52,7 +52,7 @@ $default{markov_order} = "1";
 $default{leaders} = 'checked';
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Homo_sapiens_GRCh37";
+$default{organism}="";
 #$default{organism}="Homo_sapiens";
 $default{pseudo_freq} = "0.01";
 

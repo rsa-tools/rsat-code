@@ -607,6 +607,7 @@ sub InitRSAT {
   ################################################################
   $main::SCRIPTS = $ENV{RSAT}."/perl-scripts";
   $main::PYTHON = $ENV{RSAT}."/python-scripts";
+  $main::C_SCRIPTS = $ENV{RSAT}."/bin";
 
   ################################################################
   ## Redirect queries to a remote server
@@ -890,9 +891,9 @@ sub supported_motif_databases {
     $matrix_db{$db_name}->{'descr'} = $descr || $db_name;
     $matrix_db{$db_name}->{'version'} = $version || "";
     $matrix_db{$db_name}->{'url'} = $url || "";
-      #if ($db_name ne lc(db_name)) {
-      #$matrix_db{lc($db_name)} = $matrix_db{$db_name};
-      #}
+    # if ($db_name ne lc(db_name)) {
+    #   $matrix_db{lc($db_name)} = $matrix_db{$db_name};
+    # }
   }
 
   return %matrix_db;

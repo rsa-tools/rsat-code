@@ -46,7 +46,7 @@ $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
-$default{organism}="Escherichia coli K12";
+$default{organism}="";
 #$default{html_title}="";
 $default{markov_order} = "0";
 $default{m_sites}="1";
@@ -78,9 +78,9 @@ print "The most classical use of the program is to compare score distributions
     between <em>positive</em> sequences (e.g. true binding sites for the considered
     transcription factor) and <em>negative</em> sequences (e.g. intergenic
     sequences between convergently transcribed genes).<p>\n";
-print "<p>Program developed by <a target='_top' href='http://www.ccg.unam.mx/ccg-OrganicG/personalInfo?idPersona=253'>Alejandra Medina Rivera</a>, \n";
-print " <a target='_top' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</A>,\n";
-print "and <a target='_top' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</A>.</p>\n";
+print "<p>Program developed by <a target='_top' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina Rivera</a>, \n";
+print " <a target='_top' href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A>,\n";
+print "and <a target='_top' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</A>.</p>\n";
 print "</center>\n";
 print "<b>Citation</b>: Medina-Rivera, A., Abreu-Goodger, C., Salgado-Osorio, H., Collado-Vides, J. and van Helden, J. (2010). Empirical and theoretical evaluation of transcription factor binding motifs. Nucleic Acids Res. 2010 Oct 4. [Epub ahead of print] <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/20923783'>[Pubmed 20923783]</a> <a target='_blank' href='http://nar.oxfordjournals.org/content/early/2010/10/04/nar.gkq710.full.pdf'>[Full text]</a>.";
 
@@ -198,8 +198,6 @@ while(my $row = <$fh>){
     $demo_seq2 .= "\\n";
 }
 
-my $org = $default{organism};
-$org =~ s/\ /_/g;
 print '<script>
 function setDemo(demo_matrix, demo_seq1, demo_seq2){
     $("#reset").trigger("click");
@@ -227,8 +225,8 @@ function setDemo(demo_matrix, demo_seq1, demo_seq2){
     markov_order.value = 1;
     $("#nwd").prop("checked",true);
     
-    $("#organism_name").val("'. $default{organism} . '");
-    $("#organism").val("' . $org . '");
+    $("#organism_bg_name").val("Escherichia coli K12");
+    $("#organism_bg").val("Escherichia_coli_K12");
 }
 function resetHandler(){
     $("#db_choice").val("").change();
