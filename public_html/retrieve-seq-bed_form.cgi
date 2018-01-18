@@ -20,7 +20,7 @@ $query = new CGI;
 $default{demo_descr} = "";
 
 ### default values for filling the form
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{'bed_url'.1} = "";
 $default{'rm'} = "on";
 

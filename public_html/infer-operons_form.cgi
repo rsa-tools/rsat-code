@@ -15,7 +15,7 @@ $query = new CGI;
 ### default values for filling the form
 $default{genes} = "selection";
 #$default{organism} = "Escherichia coli K12";
-$default{organism} = "Escherichia_coli_K_12_substr__MG1655_uid57779";
+$default{organism} = "";
 $default{dist_thr} = 55;
 $default{min_gene_nb} = 2;
 $default{return_leader} = "checked";
@@ -66,7 +66,7 @@ $field_description{gene_nb} = "Number of genes in the predicted operon";
 ### head
 print "<CENTER>";
 print "Infers the operon to which each coding gene of a given list belongs in a prokaryotic genome.";
-print "<br>This program was developed by Rekins Janky and <a target=_blank href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a>.</center>";
+print "<br>This program was developed by Rekins Janky and <a target=_blank href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a>.</center>";
 print "</CENTER>";
 
 ################################################################
@@ -109,7 +109,7 @@ print $query->start_multipart_form(-action=>"infer-operons.cgi", -id=>"form");
 ### query (gene list)
 print "<p>";
 print "<B><A class='iframe' HREF='help.infer-operons.html#genes'>Genes</A></B>&nbsp;";
-print $query->radio_group(-name=>'genes',
+print $query->radio_group(-name=>'genes', -id=>'genes',
 			  -values=>['all','selection'],
 			  -default=>$default{genes});
 
@@ -178,6 +178,7 @@ print "<script>
 function setDemo(gene){
     \$('#reset').trigger('click');
     \$('#gene_selection').val(gene);
+    if(gene == ''){\$('input[name=genes][value=all]').prop('checked',true);}
     \$('#organism').val('Escherichia_coli_K12');
     \$('#organism_name').val('Escherichia coli K12');
     \$('#dist_thr').val('55');

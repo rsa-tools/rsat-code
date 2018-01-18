@@ -82,7 +82,7 @@ my $bg_method = $query->param('bg_method');
 
 if ($bg_method eq "bgfile") {
   ## Select pre-computed background file in RSAT genome directory
-  my $organism_name = $query->param("organism");
+  my $organism_name = $query->param("organism_bg");
   my $noov = "ovlp";
   my $background_model = $query->param("background");
   #    my $oligo_length = 1;
