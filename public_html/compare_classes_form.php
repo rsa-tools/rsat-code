@@ -2,7 +2,9 @@
 <head>
 <title>NeAT - compare_classes</title>
 <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
-   </head>
+<link rel="stylesheet" type="text/css" href="css/colorbox.css">
+<script scr="js/jquery.js"></script>
+ </head>
    <body class="form">
 
 
@@ -93,7 +95,7 @@ echo ("</blockquote>");
 ## Score column (for the dot product)
 if (!$pipe) {
 
-  echo ("<b><a href='help.compare_classes.html#score_col'>Score column</a></b>
+  echo ("<b><a class='iframe' href='help.compare_classes.html#score_col'>Score column</a></b>
         <input type = 'text' name='score_col' size = 2\> 
         (optional; if specified, must be valid for both query and reference classes)");
 }
@@ -101,23 +103,23 @@ if (!$pipe) {
 
 <!-- Comparaison between query classes - options for self-comparison-->
 <br><input type = 'radio' checked value='off' name='self_compa' size = 1> 
-      <a href = 'help.compare_classes.html#query_vs_ref'>
+      <a class='iframe' href = 'help.compare_classes.html#query_vs_ref'>
       <b>Compare query classes to reference classes</a></b>
 
 <br><input type = 'radio' value='on' name='self_compa' size = 1> 
-      <a href = 'help.compare_classes.html#query_vs_query'>
+      <a class='iframe' href = 'help.compare_classes.html#query_vs_query'>
       <b>Compare query classes to query classes</a></b> (do not specify reference classes)<br>
 
 <ul><input type='checkbox' value='on' name='distinct' size = 1 checked/> 
-      <a href = 'help.compare_classes.html#distinct'>
+      <a class='iframe' href = 'help.compare_classes.html#distinct'>
       <b>Prevent self-comparison</a></b><br>
 
 <input type = 'checkbox' value='on' name='triangle' size = 1 checked/>
-      <a href = 'help.compare_classes.html#triangle'>
+      <a class='iframe' href = 'help.compare_classes.html#triangle'>
       <b>Prevent reciprocal comparisons</a></b><br></ul></td>
 
 <br><table>
-   <tr><td colspan = 2 >&nbsp;&nbsp;&nbsp;<B><a href = 'help.compare_classes.html#formats'>Output format</a></B>
+   <tr><td colspan = 2 >&nbsp;&nbsp;&nbsp;<B><a class='iframe' href = 'help.compare_classes.html#outputformats'>Output format</a></B>
    <tr><td><input type = 'radio' checked name='out_format' value = 'class'/></td><td>Class pairs</td></tr>
    <tr><td><input type = 'radio' name='out_format' value = 'matrix'/></td><td>Reference/query matrix</td></tr>
 
@@ -133,7 +135,7 @@ echo ("<th><input type = 'radio' name='out_format' value = 'matrix'/>Reference/q
 
 # CLASS FILE OUTPUT PARAMETERS
 echo("<td><table border='0' cellspacing='0' cellpadding='0'>
-  <tr>  <th> <A HREF='help.compare_classes.html#return_fields'>Return fields</A> </th></tr> 
+  <tr>  <th> <A class='iframe' HREF='help.compare_classes.html#return_fields'>Return fields</A> </th></tr>
   <tr><td><label><input type='checkbox' name='occ' value='on' checked='checked' />Occurrences</label></td></tr> 
   <tr><td><label><input type='checkbox' name='freq' value='on' />Frequencies</label></td></tr> 
   <tr><td><label><input type='checkbox' name='proba' value='on' checked='checked' />Hypergeometric probability</label>
@@ -147,7 +149,7 @@ echo("<td><table border='0' cellspacing='0' cellpadding='0'>
 
 echo("</table><br><br>\n");     
 echo("<table border='0' cellspacing='0' cellpadding='0'><tr>
-     <th><A HREF='help.compare_classes.html#thresholds'>Thresholds</A></th>
+     <th><A class='iframe' HREF='help.compare_classes.html#thresholds'>Thresholds</A></th>
      <th>Lower</th>
      <th>Upper</th></tr>\n"); 
 echo("<tr align='left' valign='TOP'>
