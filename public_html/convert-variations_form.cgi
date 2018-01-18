@@ -50,8 +50,8 @@ print $query->start_multipart_form(-action=>"convert-variations.cgi");
 
 #### Select organims to retrieve variants sequences from
 
-print "&nbsp;"x0, &OrganismPopUpString();
-print "<p>\n";
+#print "&nbsp;"x0, &OrganismPopUpString();
+#print "<p>\n";
 
 
 ### Query variants
@@ -125,14 +125,13 @@ while(my $row = <$fh>){
     $demo_gvf_var .= "\\n";
 }
 
-my $demo_org = "Homo sapiens GRCh37";
+#my $demo_org = "Homo sapiens GRCh37";
 my $org = $demo_org;
 $org =~ s/\ /_/g;
 print '<script>
 function setDemo(demo_gvf_var){
     $("#reset").trigger("click");
-    $("#organism_name").val("' . $demo_org .'");
-    $("#organism").val("'. $org .'");
+  
     descr = "<blockquote class =\'demo\'>";
     
     descr = descr + "<p>In this demonstration, we convert variants in <a href=\'http://www.sequenceontology.org/resources/gvf_1.00.html\'>GVF</a> format to varBed format.</p>\n \
