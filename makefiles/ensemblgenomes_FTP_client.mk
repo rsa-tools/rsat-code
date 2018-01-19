@@ -523,10 +523,10 @@ CMP_GZ=${ORGANISM_DIR}/Compara.${ENSEMBL_RELEASE}.protein_default.homologies.tsv
 BDB_FILE=${ORGANISM_DIR}/compara.bdb
 BDB_LOG=${ORGANISM_DIR}/compara.log
 parse_compara_match:
-    @echo
-    @echo "Parsing Compara file ${CMP_GZ}"
-    @echo
-    @parse-compara -i ${CMP_GZ} -list ${ORGANISM_TABLE} -match_genomes \
+	@echo
+	@echo "Parsing Compara file ${CMP_GZ}"
+	@echo
+	@parse-compara -i ${CMP_GZ} -list ${ORGANISM_TABLE} -match_genomes \
         -o ${BDB_FILE} -log ${BDB_LOG} -v ${V}
 
 #################################################################
