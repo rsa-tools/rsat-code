@@ -3784,7 +3784,7 @@ sub OpenSynthesis {
   
   print $syn $head;
 
-  &ReportCommandLoading();
+  &ReportCommand();
 }
 
 
