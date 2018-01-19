@@ -517,6 +517,18 @@ parse_compara:
 	@parse-compara -i ${CMP_GZ} -list ${ORGANISM_TABLE} -release ${RELEASE} \
 		-o ${BDB_FILE} -log ${BDB_LOG} -v ${V}
 
+##################################################################
+## Parse Compara.homologies and match genomes names to support-organisms 
+CMP_GZ=${ORGANISM_DIR}/Compara.${ENSEMBL_RELEASE}.protein_default.homologies.tsv.gz
+BDB_FILE=${ORGANISM_DIR}/compara.bdb
+BDB_LOG=${ORGANISM_DIR}/compara.log
+parse_compara_match:
+    @echo
+    @echo "Parsing Compara file ${CMP_GZ}"
+    @echo
+    @parse-compara -i ${CMP_GZ} -list ${ORGANISM_TABLE} -match_genomes \
+        -o ${BDB_FILE} -log ${BDB_LOG} -v ${V}
+
 #################################################################
 ## Install Compara db
 COMP_INSTALL_DIR=${RSAT}/public_html/data/genomes/
