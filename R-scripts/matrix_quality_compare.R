@@ -16,6 +16,7 @@ for (lib in required.libraries) {
   }
 }
 
+
 x <- installed.packages()
 if(!"flux" %in% x[,1]){
   message("Missing package: flux")
@@ -28,9 +29,14 @@ if (length(args >= 1)) {
     eval(parse(text=args[[i]]))
   }
 }
+
+
+write("Boom1", stderr())
+
 formats <- unlist(strsplit (formats,split=","))
 print.heatmap <- as.numeric(print.heatmap)
 
+write ( paste("Print Heatmap", paste(mtx.quality.nwds.file) ), stderr())
 
 ## Alejandra Medina's code
 # args <- commandArgs(TRUE)
@@ -60,8 +66,13 @@ print.heatmap <- as.numeric(print.heatmap)
 
 ################
 ## Read in table with nwd files
+
 mtx.quality.nwds <- read.table(file=mtx.quality.nwds.file, header=FALSE, stringsAsFactors=FALSE)
 colnames(mtx.quality.nwds) <- c("matrix","sequence","file")
+
+write(getwd(), stderr())
+
+write (paste(mtx.quality.nwds), stderr())
 
 ################
 ## Read in each NWD file and store it in a list
@@ -73,9 +84,10 @@ for (i in 1:dim(mtx.quality.nwds)[1]){
     #i<-2
     matrix <- mtx.quality.nwds[i,1]
     seq <- mtx.quality.nwds[i,2]
-    print (paste("Reading file for matrix and sequence",matrix,seq))
-    one.table <- read.table(mtx.quality.nwds[i,3], header=TRUE, comment.char=";")
-    colnames(one.table) <- c("Pvalue", "score_theor", "score_seq", "NWD")
+   print (paste("Reading file for matrix and sequence",matrix,seq))
+   write (paste("Reading file for matrix and sequence",matrix,seq),stderr())   
+   one.table <- read.table(mtx.quality.nwds[i,3], header=TRUE, comment.char=";")
+   colnames(one.table) <- c("Pvalue", "score_theor", "score_seq", "NWD")
     #print(head(one.table))
     #nwd.files [[paste("mtxID",matrix,"_seqID",seq, sep="")]][["table"]] <-  one.table
     nwd.files [[matrix]][[seq]][["table"]] <-  one.table
@@ -83,9 +95,11 @@ for (i in 1:dim(mtx.quality.nwds)[1]){
 
 ################
 ## Get max.nwd, max.sig.nwd, auc.all, auc.sig for each sequence matrix set
+
 print ("Reading in files with nwd data")
 lapply(names(nwd.files) ,function(matrix.name){
     print (matrix.name)
+    write (matrix.name, stderr())
     print (names(nwd.files[[matrix.name]]))
     lapply( names(nwd.files[[matrix.name]]), function(seq=x, matrix.name2=matrix.name){
         print (matrix.name2)
@@ -96,12 +110,13 @@ lapply(names(nwd.files) ,function(matrix.name){
         ## max.nwd
         max.nwd <- max(local.table$NWD)
         print(max.nwd )
+	write(max.nwd, stderr())
         nwd.files[[matrix.name2]][[seq]][["max.nwd"]] <<- max.nwd 
         
         ## ##############
         
         ## get significant values
-        local.sig.table <- local.table[local.table$score_theor>=0,]
+       local.sig.table <- local.table[local.table$score_theor>=0,]
         
         ## max.nwd.sig maximun taken from significant scores 0
         if ( dim( local.sig.table )[1]<=1){
@@ -113,9 +128,9 @@ lapply(names(nwd.files) ,function(matrix.name){
         }
         ## ##############
         ## AUC
-        #if (min(local.table[,"NWD"])<0){
-         #   local.table[,"NWD"] <- local.table[,"NWD"] + (-min(local.table[,"NWD"]))
-        #}
+        ##if (min(local.table[,"NWD"])<0){
+         ##   local.table[,"NWD"] <- local.table[,"NWD"] + (-min(local.table[,"NWD"]))
+        ##}
         nwd.files[[matrix.name2]][[seq]][["auc.all"]] <<- auc(x=local.table[,"Pvalue"],y=local.table[,"NWD"])
 
         ## ##############
@@ -135,6 +150,7 @@ lapply(names(nwd.files) ,function(matrix.name){
 ## Function draw.heatmap
 ## Takes as input the original list file with all data, the metric to be used in the heatmap
 ## the output heatmap file 
+
 draw.heatmap <- function (ListAll,
                           metric="max.nwd",
                           heatmap.file, 
@@ -150,8 +166,10 @@ draw.heatmap <- function (ListAll,
             metric.table[mtx,seq] <-  ListAll[[mtx]][[seq]][[metric]]
         }
     }
-
+    write ("Before output", stderr())
     write.table(file=paste(heatmap.file, "txt", sep="" ),metric.table,quote = FALSE, sep = "\t", na = "NA"  )
+    write (paste(heatmap.file, "txt", sep="" ), stderr())
+    write ("After output", stderr())
     if (print.heatmap==1){
         
         for (format in formats){
@@ -196,23 +214,32 @@ draw.heatmap <- function (ListAll,
 max.nwd.heatmap.file <- paste(plot.folder,"maxNWD_heatmap_compare.", sep="/")
 draw.heatmap(ListAll=nwd.files,metric="max.nwd",heatmap.file=max.nwd.heatmap.file , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
 
+write("first call", stderr())
+
 ## ###
 ## Draw heatmap using max.nwd
 max.sig.nwd.heatmap.file <- paste(plot.folder,"maxNWDsignificantScore_heatmap_compare.", sep="/")
 draw.heatmap(ListAll=nwd.files,metric="max.sig.nwd",heatmap.file=max.sig.nwd.heatmap.file  , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
 
-## ###
-## Draw heatmap using auc.all
-auc.all.heatmap.file <- paste(plot.folder,"AUC_NWD_heatmap_compare.", sep="/")
-draw.heatmap(ListAll=nwd.files,
-             metric="auc.all",heatmap.file=auc.all.heatmap.file, 
-             formats=formats, mtx.quality.nwds=mtx.quality.nwds,
-             zlim=c(0,1))
+write("scond call", stderr())
+
 
 ## ###
 ## Draw heatmap using auc.all
-auc.sig.heatmap.file <- paste(plot.folder,"AUC_NWDsignificantScore_heatmap_compare.", sep="/")
-draw.heatmap(ListAll=nwd.files,metric="auc.sig",heatmap.file=auc.sig.heatmap.file  , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
+ auc.all.heatmap.file <- paste(plot.folder,"AUC_NWD_heatmap_compare.", sep="/")
+ draw.heatmap(ListAll=nwd.files,
+             metric="auc.all",heatmap.file=auc.all.heatmap.file, 
+             formats=formats, mtx.quality.nwds=mtx.quality.nwds,
+             zlim=c(0,1))
+write("third call", stderr())
+
+
+## ###
+## Draw heatmap using auc.all
+ auc.sig.heatmap.file <- paste(plot.folder,"AUC_NWDsignificantScore_heatmap_compare.", sep="/")
+ draw.heatmap(ListAll=nwd.files,metric="auc.sig",heatmap.file=auc.sig.heatmap.file  , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
+
+write("Finish", stderr())
 
 
 ## ################################################################
@@ -349,4 +376,3 @@ draw.heatmap(ListAll=nwd.files,metric="auc.sig",heatmap.file=auc.sig.heatmap.fil
 ## ListAll.SigPval<-lapply(ListAll.SigPval,function(DF) {colnames(DF)<-gsub("_nwd.tab","",colnames(DF)); DF})
 ## ListAll.SigPval<-lapply(ListAll.SigPval,function(DF) {colnames(DF)<-gsub("_top_.+","",colnames(DF)); DF})
 
-## draw.heatmap(ListAll=ListAll.SigPval,heatmap.file="maxNWD_on_significant_pvalues.pdf")
