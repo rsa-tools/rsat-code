@@ -104,10 +104,22 @@ print $query->end_form;
 
 my @demos = ();
 
+## general yeast demo
+push @demos, {
+    "label"=>"DEMO: yeast",
+    "organism"=>"Saccharomyces_cerevisiae",
+    "url"=>$ENV{rsat_www}."/demo_files/test_yeast.bed",
+    "description"=>join("\n",
+                        "<h4>Comment on the demonstration example</h4>",
+                        "<blockquote class ='demo'>",
+                        "The demo retrieves 100b of each chromosome of yeast.",
+                        "Input coordinates are provided as the <a href='${demo_url}'>URL to a demo bed file</a>.",
+                        "</blockquote>")};
+
 ## Demo for Plants
 push @demos, {
     "label"=>"DEMO: Arabidopsis MYB3R3",
-    "organism"=>"Arabidopsis_thaliana.TAIR10.29",
+    "organism"=>"Arabidopsis_thaliana.TAIR10.37",
     "url"=>$ENV{rsat_www}."/demo_files/Arabidopsis_thaliana_GSM1482283_MYB3R3-GFP_ChIP_peaks.bed",
     "description"=>join("\n", 
 			"<h4>Comment on the demonstration example</h4>",
@@ -147,7 +159,7 @@ foreach my $demo (@demos) {
 }
 
 print "<TD><B><A class='iframe' HREF='help.retrieve-seq-bed.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:morgane\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jacques.VAN-HELDEN\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</fieldset><p/>";

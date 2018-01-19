@@ -159,7 +159,20 @@ package main;
   my (%eg_group_species,%eg_group_species_fullname,%db,$fullname2int,%species_ids);
   my ($key,$record,$gene_stable_id,$protein_stable_id,$species,$homology_type,$identity);
   my ($homology_gene_stable_id,$homology_protein_stable_id,$homology_species,$homology_identity);
-  my ($dn,$ds,$goc_score,$wga_coverage); # Added April2017
+  my ($dn,$ds,$goc_score,$wga_coverage); 
+  my (@mirror_supported_orgs,%matched_mirror_orgs,$no_release_full_name);
+
+  # 0) read list of supported-organisms if required
+  if($params{"match_genomes"})
+  {
+    open(SUPP,"supported-organisms |") || 
+      die "# $0 : cannot run supported-organisms:$!\n";
+    while(<SUPP>)
+    {
+      push(@mirror_supported_orgs, (split)[0]);
+    }
+    close(SUPP);
+  }
 
   # 1) read organisms file to get list of species in ensembl-flavour  
   &RSAT::message::TimeWarn("Parsing list ",$main::infile{"list"}) if ($main::verbose >= 0);
@@ -171,22 +184,50 @@ package main;
     @rawdata = split(/\t/);
     $rawdata[4] =~ s/ //g; # remove any spaces
     $eg_group_species{$rawdata[1]} = ++$n_of_species;
+    $no_release_full_name = uc(substr($rawdata[1],0,1)).substr($rawdata[1],1).'.'.$rawdata[4];
 
-    if($params{"release"})
+    if($params{"match_genomes"})
     {
-        $eg_group_species_fullname{$rawdata[1]} = 
-            uc(substr($rawdata[1],0,1)).substr($rawdata[1],1).'.'.$rawdata[4].'.'.$params{"release"};
+      foreach my $mirror_org (@mirror_supported_orgs)
+      {
+        if($mirror_org =~ /$no_release_full_name/)
+        {
+          $eg_group_species_fullname{$rawdata[1]} = $mirror_org;
+          $matched_mirror_orgs{$mirror_org} = $eg_group_species_fullname{$rawdata[1]};
+          last;
+        }   
+      }
+     
+      # fullname in case of no match
+      if(!$eg_group_species_fullname{$rawdata[1]})
+      {
+        $eg_group_species_fullname{$rawdata[1]} = $no_release_full_name;
+      } 
+    }
+    elsif($params{"release"})
+    {
+      $eg_group_species_fullname{$rawdata[1]} = $no_release_full_name.'.'.$params{"release"};
     }
     else
     {
-        $eg_group_species_fullname{$rawdata[1]} =
-            uc(substr($rawdata[1],0,1)).substr($rawdata[1],1).'.'.$rawdata[4];
+      $eg_group_species_fullname{$rawdata[1]} = $no_release_full_name;
     }
   }
   close($LIST);
   
   &RSAT::message::TimeWarn("EnsemblGenomes group species = ",$n_of_species);
-  
+ 
+  if($params{"match_genomes"})
+  {
+    foreach my $mirror_org (@mirror_supported_orgs)
+    {
+      if(!$matched_mirror_orgs{$mirror_org})
+      {
+        &RSAT::message::Info("Cannot match genome $mirror_org in Compara.homologies file");
+      }
+    }
+  }
+ 
   # 2) create BerkeleyDB database and store orgs and homology types
   if(-s $outfile{'bdb'})
   {
@@ -439,7 +480,7 @@ Stop parsing after N rows (for debugging and testing).
 
     } elsif ($arg eq "-last") {
       $main::last = shift(@arguments);
-      &RSAT::error::FatalError($main::last, "Invalid value for option -last. Must be Natural number.")
+      &RSAT::error::FatalError($main::last, "Invalid value for option -last. Must be natural number.")
 	  unless (&RSAT::util::IsNatural($main::last));
 
 =pod
@@ -461,6 +502,19 @@ Filename to store log of this script.
 =cut
     } elsif ($arg eq "-log") {
       $main::outfile{"log"} = shift(@arguments);
+
+=pod
+
+=item   B<-match_genomes>
+
+Match names of genomes in Compara.homologies file with those supported in this RSAT mirror
+
+=cut
+    } elsif ($arg eq "-match_genomes") {
+      $main::params{"match_genomes"} = 1;
+      &RSAT::error::FatalError("Options -release and -match_genomes cannot be invoked together.")
+        if(defined($main::params{"release"}));
+
 
 =pod
 
