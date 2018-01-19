@@ -196,6 +196,12 @@ package main;
           $matched_mirror_orgs{$mirror_org} = $eg_group_species_fullname{$rawdata[1]};
           last;
         }   
+      }
+     
+      # fullname in case of no match
+      if(!$eg_group_species_fullname{$rawdata[1]})
+      {
+        $eg_group_species_fullname{$rawdata[1]} = $no_release_full_name;
       } 
     }
     elsif($params{"release"})
