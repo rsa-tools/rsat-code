@@ -834,6 +834,8 @@ package main;
 
       &RSAT::message::Info("R-command for generate NWD tables: ", $matrix_enrichment_heatmap_cmd) if ($main::verbose >= 0);
       
+      print ("Full cmd: ".$matrix_enrichment_heatmap_cmd."\n");
+
       if ($r_path) {
 	  &doit($matrix_enrichment_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
       } else {
@@ -1485,8 +1487,10 @@ sub Draw_OCCProfiles_and_Heatmap {
 
     &RSAT::message::Info("R-command for report: ",  $matrix_enrichment_plot_cmd) if ($main::verbose >= 0);
     
+
     if ($r_path) {
-        &doit($matrix_enrichment_plot_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	system($matrix_enrichment_plot_cmd)
+	#&doit($matrix_enrichment_plot_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
         &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 0);
     }
