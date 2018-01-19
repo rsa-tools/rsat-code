@@ -175,7 +175,7 @@ print $query->end_form;
 ################################################################
 ## Data for the demo on ortholog searches
 print $query->start_multipart_form(-action=>"get-orthologs-compara_form.cgi");
-my $demo_descr = "Search orthologs for a gene from <i>Brachypodium diastychon</i> in <i>Triticum aestivum</i> genome. Note that the option many2many allows to detect multiple orthologs.";
+my $demo_descr = "Search orthologs for a gene from <i>Brachypodium distachyon</i> in <i>Triticum aestivum</i> genome. Note that the option many2many allows to detect multiple orthologs.";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>"BRADI4G31367.1");
 print $query->hidden(-name=>'type',-default=>"ortholog");
