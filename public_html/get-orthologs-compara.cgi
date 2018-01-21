@@ -155,21 +155,21 @@ if ($query->param('output') eq "display") {
     close(RESULT);
 
     &PrintURLTable(@result_files);
- 
 
     # parse organism names in result file
-    my %matched_organisms;#print "<pre>";
+    my %matched_organisms;
     open(RESULTFILE, $result_file);
     while(<RESULTFILE>)
     {
       next if(/^;/);
-      #print "|".(split)[1]."\n";;
       $matched_organisms{ (split)[1] }++;
       #grep -v "^;" kk  | cut -f 2 | sort | uniq
     }
-    close(RESULTFILE);#print "</pre>";
+    close(RESULTFILE);
+    
+    @organism = keys(%matched_organisms);
 
-    &PipingForm( $result_file , keys(%matched_organisms) );
+    &PipingForm();
 
     print "<HR SIZE = 3>";
 
@@ -189,15 +189,13 @@ exit(0);
 # Pipe the result to other commands
 #
 sub PipingForm {
-    my ( $result_file, @orgs);
     my $genes = `cat $result_file | grep -v _cannot`;
     my $single_multi_org = "single";
-    my $organism = '';
     if (scalar(@orgs) > 1) {
       $single_multi_org = "multi";
 #      &RSAT::message::Debug("Organisms for piping form: ", join("; ", @organism));
     } elsif (scalar(@orgs) == 1) {
-      $organism = $orgs[0];
+      $organism = $organism[0];
 #      &RSAT::message::Debug("Organism for piping form: ", $organism);
     }
     ### prepare data for piping
