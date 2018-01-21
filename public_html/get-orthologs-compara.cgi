@@ -195,7 +195,7 @@ sub PipingForm {
       $single_multi_org = "multi";
 #      &RSAT::message::Debug("Organisms for piping form: ", join("; ", @organism));
     } elsif (scalar(@orgs) == 1) {
-      $organism = (keys(%matched_organisms))[0];
+      $organism = $orgs[0];
 #      &RSAT::message::Debug("Organism for piping form: ", $organism);
     }
     ### prepare data for piping
