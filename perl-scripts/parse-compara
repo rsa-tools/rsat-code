@@ -165,10 +165,10 @@ package main;
   # 0) read list of supported-organisms if required
   if($params{"match_genomes"})
   {
-    open(SUPP,"supported-organisms |") || 
-      die "# $0 : cannot run supported-organisms:$!\n";
+    open(SUPP,"supported-organisms |") ||
+      &RSAT::message::Warning("Cannot run supported-organisms");
     while(<SUPP>)
-    {
+    { 
       push(@mirror_supported_orgs, (split)[0]);
     }
     close(SUPP);
@@ -185,7 +185,7 @@ package main;
     $rawdata[4] =~ s/ //g; # remove any spaces
     $eg_group_species{$rawdata[1]} = ++$n_of_species;
     $no_release_full_name = uc(substr($rawdata[1],0,1)).substr($rawdata[1],1).'.'.$rawdata[4];
-
+    
     if($params{"match_genomes"})
     {
       foreach my $mirror_org (@mirror_supported_orgs)
@@ -194,7 +194,10 @@ package main;
         {
           $eg_group_species_fullname{$rawdata[1]} = $mirror_org;
           $matched_mirror_orgs{$mirror_org} = $eg_group_species_fullname{$rawdata[1]};
-          last;
+
+          &RSAT::message::Info("Local genome $mirror_org matches $no_release_full_name in Compara.homologies file");
+
+          #last; # commented to allow multiple local versions
         }   
       }
      
@@ -507,7 +510,9 @@ Filename to store log of this script.
 
 =item   B<-match_genomes>
 
-Match names of genomes in Compara.homologies file with those supported in this RSAT mirror
+Match names of genomes in Compara.homologies file with those supported in this RSAT mirror.
+This is useful when only some EG genomes of the latest release have been installed as the 
+release notes say the rest haven't changed.
 
 =cut
     } elsif ($arg eq "-match_genomes") {
