@@ -158,16 +158,16 @@ if ($query->param('output') eq "display") {
  
 
     # parse organism names in result file
-    my %matched_organisms;print "<pre>";
+    my %matched_organisms;#print "<pre>";
     open(RESULTFILE, $result_file);
     while(<RESULTFILE>)
     {
       next if(/^;/);
-      print "|".(split)[1]."\n";;
+      #print "|".(split)[1]."\n";;
       $matched_organisms{ (split)[1] }++;
       #grep -v "^;" kk  | cut -f 2 | sort | uniq
     }
-    close(RESULTFILE);print "</pre>";
+    close(RESULTFILE);#print "</pre>";
 
     &PipingForm( $result_file , keys(%matched_organisms) );
 
