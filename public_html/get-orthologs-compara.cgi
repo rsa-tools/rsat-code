@@ -163,8 +163,8 @@ if ($query->param('output') eq "display") {
     while(<RESULTFILE>)
     {
       next if(/^;/);
-      print "|".(split)[0]."\n";;
-      $matched_organisms{ (split)[0] }++;
+      print "|".(split)[1]."\n";;
+      $matched_organisms{ (split)[1] }++;
       #grep -v "^;" kk  | cut -f 2 | sort | uniq
     }
     close(RESULTFILE);print "</pre>";
