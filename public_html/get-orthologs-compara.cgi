@@ -168,6 +168,9 @@ if ($query->param('output') eq "display") {
     close(RESULTFILE);
     
     @organism = keys(%matched_organisms);
+    if (scalar(@organism == 1)) {
+      $organism = $organism[0];
+    }
 
     &PipingForm();
 
