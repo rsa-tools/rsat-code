@@ -169,9 +169,6 @@ if ($query->param('output') eq "display") {
     
     @organism = keys(%matched_organisms);
     $organism = '';
-    #if (scalar(@organism == 1)) {
-    #  $organism = $organism[0];
-    #}
 
     &PipingForm();
 
@@ -197,6 +194,7 @@ sub PipingForm {
     my $single_multi_org = "single";
     if (scalar(@organism) > 1) {
       $single_multi_org = "multi";
+      $organism = $organism[0];
 #      &RSAT::message::Debug("Organisms for piping form: ", join("; ", @organism));
     } elsif (scalar(@organism) == 1) {
       $organism = $organism[0];
