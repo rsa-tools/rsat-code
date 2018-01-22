@@ -169,9 +169,9 @@ if ($query->param('output') eq "display") {
     
     @organism = keys(%matched_organisms);
     $organism = '';
-    if (scalar(@organism == 1)) {
-      $organism = $organism[0];
-    }
+    #if (scalar(@organism == 1)) {
+    #  $organism = $organism[0];
+    #}
 
     &PipingForm();
 
@@ -195,10 +195,10 @@ exit(0);
 sub PipingForm {
     my $genes = `cat $result_file | grep -v _cannot`;
     my $single_multi_org = "single";
-    if (scalar(@orgs) > 1) {
+    if (scalar(@organism) > 1) {
       $single_multi_org = "multi";
 #      &RSAT::message::Debug("Organisms for piping form: ", join("; ", @organism));
-    } elsif (scalar(@orgs) == 1) {
+    } elsif (scalar(@organism) == 1) {
       $organism = $organism[0];
 #      &RSAT::message::Debug("Organism for piping form: ", $organism);
     }
