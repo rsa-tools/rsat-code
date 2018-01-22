@@ -192,7 +192,6 @@ function setDemo2(){
     $("#organism").val("' . $org . '");
     $("#input_url").val("'.$demo2_url.'");
     $("#input_type").val("bed");
-    $("#output").val("email");
 }
 
 </script>';
