@@ -168,7 +168,7 @@ if ($query->param('output') eq "display") {
     close(RESULTFILE);
     
     @organism = keys(%matched_organisms);
-    $organism = ''
+    $organism = '';
     if (scalar(@organism == 1)) {
       $organism = $organism[0];
     }
