@@ -567,6 +567,7 @@ all.IDs <- paste(paste("'", all.IDs, "'", sep = ""), collapse = ",")
 html.report <- gsub("--all--", all.IDs, html.report)
 
 ## Export the report
+print(heatmap.html)
 file.remove(heatmap.html)
 file.create(heatmap.html)
 write(html.report, file = heatmap.html, append = FALSE)
