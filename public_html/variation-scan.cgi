@@ -209,7 +209,7 @@ if ($bg_method eq "bginput") {
     
     &RSAT::message::Info("Fetching background from URL ".$url) if ($ENV{rsat_echo} >= 1);
       my $bgmodel = "";
-    $bgfile = $tmp_file_name."_bgfile.txt";
+    $bgfile = $tmp_file_path."_bgfile.txt";
     
     if (open BGM, ">$bgfile") {
 	$bg = get($url);
