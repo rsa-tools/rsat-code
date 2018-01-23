@@ -547,7 +547,7 @@ sub CountOligos {
       $sum_seq_length += $seq_length[$sequence_number];
 
       &RSAT::message::TimeWarn($sequence_number,  $seq_length[$sequence_number], $sum_seq_length, $current_id)
-	  if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==0)));
+	  if (($main::verbose >= 4) || (($main::verbose >= 3) && ($sequence_number%1000==0)));
 
 
       if ($seq_length[$sequence_number] < $oligo_length) {
