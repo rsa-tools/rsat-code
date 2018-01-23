@@ -52,7 +52,7 @@ my $tmp_file_name = $result_dir."/".$file_prefix;
 
 ################################################################
 ## Set parameters
-local $parameters = " -v 0";
+local $parameters = " -v 2";
 
 
 ################################################################
