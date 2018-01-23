@@ -40,7 +40,7 @@ $default{entropy} = "checked";
 $default{jac} = "checked";
 
 ### print the form ###
-&RSA_header_bootstrap("compare-classes", 'form');
+&RSA_header("compare-classes", 'form');
 
 print "<CENTER>";
 print "Compare two classifications (clustering results, functional classes, ...), and assess the statistical significance of common members between each pair of classes.<P>\n";
