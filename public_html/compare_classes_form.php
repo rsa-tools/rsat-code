@@ -9,12 +9,15 @@
 
 
    <?php
-   require ('functions.php');
+   require_once ('functions.php');
      
        $menu = $_REQUEST['menu'];
-       printMenu($menu);
-       
-// require ('demo_dataset.php');
+       //printMenu($menu);
+	if(strcmp($menu,"RSAT") == 0){
+		include 'menu.php';
+	}else{
+		include 'menu_graph.php';
+	}       
 $default_min_sig = 0;
   
 # PIPE VALUES
@@ -44,7 +47,7 @@ title('compare-classes');
 
 <hr>
   
-<form method='post' action='compare_classes.php' enctype='multipart/form-data'>
+<form method='post' action='compare_classes.php?menu=RSAT' enctype='multipart/form-data'>
 
 <?php
 if($demo) {
