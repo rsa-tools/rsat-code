@@ -9,12 +9,34 @@
 
 
    <?php
-   require ('functions.php');
+   require_once ('functions.php');
      
        $menu = $_REQUEST['menu'];
-       printMenu($menu);
+<<<<<<< HEAD
+       //printMenu($menu);
+	if(strcmp($menu,"RSAT") == 0){
+		include 'menu.php';
+	}else{
+		include 'menu_graph.php';
+	}       
+=======
+<<<<<<< HEAD
+	if(strcmp($menu,"RSAT") == 0){
+		include("menu.php");
+	}else{
+		include("menu_graph.php");
+	}       
+//printMenu($menu);
        
+=======
+       if(strcmp($menu, "RSAT") == 0){
+           include("menu.php");
+       }else{
+           include("menu_graph.php");
+       }       
+>>>>>>> 032d233c8088ca94e98c930819af473131d4769a
 // require ('demo_dataset.php');
+>>>>>>> 32b44fb8d5dfef12eacf26dcbc34ec3198efa671
 $default_min_sig = 0;
   
 # PIPE VALUES
@@ -44,7 +66,7 @@ title('compare-classes');
 
 <hr>
   
-<form method='post' action='compare_classes.php' enctype='multipart/form-data'>
+<form method='post' action='compare_classes.php?menu=RSAT' enctype='multipart/form-data'>
 
 <?php
 if($demo) {
