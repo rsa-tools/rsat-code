@@ -1,7 +1,6 @@
 <HTML>
 <HEAD>
 <TITLE>Regulatory Sequence Analysis Tools (RSAT)</TITLE>
-<link rel="alternate" type="application/rss+xml" title="RSAT website news feed" href="RSSAT.xml" />
 <link rel='stylesheet' type='text/css' href='css/bootstrap.min.css' />
 <link rel='stylesheet' type='text/css' href='home.css' />
 
