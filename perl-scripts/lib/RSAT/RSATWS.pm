@@ -2935,7 +2935,7 @@ sub text_to_html {
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  my $command = $SCRIPTS."/text-to-html";
+  my $command = $SCRIPTS."/text-to-html -v 0";
   if ($args{inputfile}) {
    my $input_file = $args{inputfile};
    chomp $input_file;
@@ -7030,7 +7030,7 @@ sub run_WS_command {
 
   foreach my $errline(@errlines) {
       ## Some errors and RSAT warnings are not considered as fatal errors
-      unless (($errline =~ 'Use of uninitialized value') || ($errline =~ '^;') || ($errline =~ 'there is a difference in the software release')) {
+      unless (($errline =~ 'Use of uninitialized value') || ($errline =~ 'Smartmatch is experimental') || ($errline =~ '^;') || ($errline =~ 'there is a difference in the software release')) {
 	  $stderr .= $errline;
       }
       ## RSAT warnings are added at the end of results
