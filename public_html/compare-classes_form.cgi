@@ -40,8 +40,7 @@ $default{jac} = "checked";
 &RSA_header("compare-classes", 'form');
 print "<CENTER>";
 print "Compare two classifications (clustering results, functional classes, ...), and assess the statistical significance of common members between each pair of classes.<P>\n";
-print "Program developed by <A HREF='mailto:jtran\@bigre.ulb.ac.be (Joseph Tran)'>Joseph Tran</A>\n";
-print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)'>Jacques van Helden</A>\n";
+print "This program was developed by <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)'>Jacques van Helden</A>, with contributions of Joseph Tran for a first prototype\n";
 print "</CENTER>";
 print "<HR>";
 
