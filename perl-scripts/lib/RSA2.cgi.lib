@@ -122,7 +122,7 @@ sub PrintOrthoComparaSelectionSection {
     ################################################################
     ### gene queries
     print "<p><B><A class='iframe' HREF='help.get-orthologs-compara.html#genes'>Query genes</A></B>&nbsp;";
-    print "<p>Paste query genes (one query per row)<br>\n";
+    print "<p>Paste query Ensembl gene IDs (one query per row)<br>\n";
     print $query->textarea(-name=>'queries',
 			   -default=>$default{queries},
 			   -rows=>3,
