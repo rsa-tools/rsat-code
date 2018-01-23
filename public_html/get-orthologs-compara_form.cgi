@@ -180,8 +180,8 @@ print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>"Bradi1g48830");
 print $query->hidden(-name=>'type',-default=>"ortholog");
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr);
-print $query->hidden(-name=>'organism',-default=>"brachypodium_distachyon,hordeum_vulgare");
-#\noryza_indica\noryza_sativa\nsetaria_italica\nsorghum_bicolor\ntriticum_aestivum\ntriticum_urartu\zea_mays");
+print $query->hidden(-name=>'organism',-default=>['brachypodium_distachyon','hordeum_vulgare',
+    'oryza_indica','oryza_sativa','setaria_italica','sorghum_bicolor','triticum_aestivum','triticum_urartu','zea_mays']);
 print $query->submit(-label=>"DEMO 1 (FT1 orthologs)");
 print "</B></TD>\n";
 print $query->end_form;
