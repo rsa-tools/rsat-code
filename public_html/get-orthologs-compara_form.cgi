@@ -175,13 +175,14 @@ print $query->end_form;
 ################################################################
 ## Data for the demo on ortholog searches
 print $query->start_multipart_form(-action=>"get-orthologs-compara_form.cgi");
-my $demo_descr = "Search orthologs for a gene from <i>Brachypodium distachyon</i> in <i>Triticum aestivum</i> genome. Note that the option many2many allows to detect multiple orthologs.";
+my $demo_descr = "Search orthologs for gene FT1 (Bradi1g48830) from <i>Brachypodium distachyon</i> in several grasses.";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>"BRADI4G31367.1");
 print $query->hidden(-name=>'type',-default=>"ortholog");
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr);
-print $query->hidden(-name=>'organism',-default=>"triticum_aestivum");
-print $query->submit(-label=>"DEMO 1 (orthologs)");
+print $query->hidden(-name=>'organism',
+-default=>"brachypodium_distachyon\nhordeum_vulgare\noryza_indica\noryza_sativa\nsetaria_italica\nsorghum_bicolor\ntriticum_aestivum\ntriticum_urartu\zea_mays");
+print $query->submit(-label=>"DEMO 1 (FT1 orthologs)");
 print "</B></TD>\n";
 print $query->end_form;
 
@@ -196,7 +197,7 @@ print $query->hidden(-name=>'ident_target',-default=>"0");
 print $query->hidden(-name=>'ident_query',-default=>"0");
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr2);
 print $query->hidden(-name=>'organism',-default=>"arabidopsis_thaliana");
-print $query->submit(-label=>"DEMO 2 (paralogs)");
+print $query->submit(-label=>"DEMO 2 (inparalogs)");
 print "</B></TD>\n";
 print $query->end_form;
 
