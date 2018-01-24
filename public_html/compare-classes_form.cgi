@@ -172,10 +172,11 @@ print '</div>
     <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Specify a column of the input file(s) containing a score associated to each member. Must be valid for both query and reference classes. The score is used for some metrics like the dot product." data-original-title=""></i></div>
     <div class="panel-body">
         <div class="form-group">';
-
 print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10) .'
         </div>
     </div>
+</div>
+
 </div>
 
 <!-- ################################################################-->
@@ -183,8 +184,7 @@ print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10) .'
 
 <!-- ADVANCED OPTIONS -->
 
-                <div class="bhoechie-tab-content">
-
+<div class="bhoechie-tab-content">
   <div id="accordion" role="tablist">
 
 
