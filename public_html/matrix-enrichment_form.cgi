@@ -245,11 +245,7 @@ $demo_2_seq4_url= "";
 $demo_2_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
 
 print '<script>
-<<<<<<< HEAD
 function setDemo2(demo_2_matrix, demo_2_seq1_url, demo_2_seq2_url, demo_2_seq3_url, demo_2_seq4_url, demo_2_bg_url ){
-=======
-function setDemo2(demo_matrix, demo_seq1_url, demo_seq2_url, demo_seq3_url, demo_bg_url ){
->>>>>>> a192a55753528a7e3f577a1b4397a5bb15f55580
     $("#reset").trigger("click");
     
     descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will assess the enrichment of seven Transcription Factors (JUN-FOS, YY, SP1, USF2, REST, DDIT, FCP2), in human promoters displaying enhancer activity (Epromoters), the enrichment is measured in three sets of sequences: HeLa cell, K562 and a set of promoters without enhancer activity. </p> \
@@ -272,11 +268,7 @@ function setDemo2(demo_matrix, demo_seq1_url, demo_seq2_url, demo_seq3_url, demo
     sequence_url3.value  = demo_2_seq3_url ;
 
     tag4.value = "";
-<<<<<<< HEAD
     sequence_url4.value  = demo_2_seq4_url ;
-=======
-    sequence_url4.value  = "" ;
->>>>>>> a192a55753528a7e3f577a1b4397a5bb15f55580
     
     $("#url").prop("checked",true);
     bgmodel_url.value = demo_2_bg_url ;
@@ -291,12 +283,8 @@ $demo_markov=1;
 
 print "<td><b>";
 
-<<<<<<< HEAD
 #print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1_url'" .',' . "'$demo_seq2_url'" .',' . "'$demo_seq3_url'" .',' . "'$demo_seq4_url'"  .')">DEMO</button>';
 print '<button type="button" onclick="setDemo2('. "'$demo_2_matrix'" .',' . "'$demo_2_seq1_url'" .',' . "'$demo_2_seq2_url'" .',' . "'$demo_2_seq3_url'" .',' . "'$demo_2_seq4_url'" . ',' ."'$demo_2_bg_url'" .')">DEMO 2</button>';
-=======
-print '<button type="button" onclick="setDemo2('. "'$demo_2_matrix'" .',' . "'$demo_2_seq1_url'" .',' . "'$demo_2_seq2_url'" .',' . "'$demo_2_seq3_url'" .',' ."'$demo_2_bg_url'" .')">DEMO 2</button>';
->>>>>>> a192a55753528a7e3f577a1b4397a5bb15f55580
 
 print "</b></td>\n";
 
