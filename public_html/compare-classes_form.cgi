@@ -21,7 +21,7 @@ $default{query_classes} = "";
 $default{upload_query_classes} = "";
 $default{ref_classes} = "";
 $default{upload_ref_classes} = "";
-
+#$default{pipe} = "";
 $default{occ} = "checked";
 $default{lth_occ} = 1;
 $default{uth_occ} = "none";
@@ -48,6 +48,8 @@ foreach $key (keys %default) {
         $checked{$key} = "CHECKED";
     }
 }
+
+# TOBEDONE: check which tools might produce output pipeable to this form
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
@@ -128,14 +130,14 @@ print '
                 <div class="bhoechie-tab-content">
 <!-- title -->
 <div class="panel panel-danger">
-    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes (see format description in <a class=\"iframe\" href=\"help.compare-classes.html\">manual</a>)." data-original-title=""></i></div>
+    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes." data-original-title=""></i></div>
 
     <div class="panel-body">
         <div class="form-group">';
 
-print $query->textfield(-id=>'html_title',
--name=>'html_title', -class=>'form-control',-placeholder=>'Provide a Title for this analysis ', -required=>'true',
-                         -default=>$default{html_title}); 
+print $query->textarea(-id=>'classesQ',-name=>'classesQ',-rows=>6,-cols=>40, -required=>'true',
+                         -default=>$default{query_classes});
+
 
 print '
        </div>
