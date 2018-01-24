@@ -145,6 +145,11 @@ print $query->filefield(-name=>'Qclass_file',-default=>'',-size=>40);
 print '</div>
     </div>
 </div>
+</div>
+
+<!-- ################################################################ -->
+<!-- ### optional inputs ### -->
+<div class="bhoechie-tab-content">
 
 <!-- reference classes -->
 <div class="panel panel-danger">
@@ -162,11 +167,6 @@ print $query->filefield(-name=>'Rclass_file',-default=>'',-size=>40);
 print '</div>
     </div>
 </div>
-</div>
-
-<!-- ################################################################ -->
-<!-- ### optional inputs ### -->
-<div class="bhoechie-tab-content">
 
 <!-- score column -->
 <div class="panel panel-danger">
