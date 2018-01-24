@@ -138,8 +138,7 @@ print '
 print $query->textarea( -id=>'classesQ',-name=>'classesQ',-rows=>6,-cols=>40, -required=>'true',
                         -placeholder=>'Paste here your query classes, or select a file to upload below',
                         -default=>$default{query_classes});
-
-print "<b>Or</b> select a file to upload<br>\n";
+print "<br><b>Or</b> select a file to upload<br>\n";
 print $query->filefield(-name=>'Qclass_file',-default=>'',-size=>40);
 
 print '
