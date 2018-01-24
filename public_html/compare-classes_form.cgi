@@ -180,11 +180,14 @@ print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10) .'
 
 <!-- comparison type -->
 <div class="panel panel-danger">
-    <div class="panel-heading">Type of comparison <i class="fa fa-info-circle" data-container="body" data-original-title=""></i></div>
+    <div class="panel-heading">Type of comparison</div>
     <div class="panel-body">
         <div class="form-group">';
+my %self_compa_labels = ( 
+    'off','Compare query classes to reference classes',
+    'on','Compare query classes to query classes (do not specify reference classes)' );
 print $query->radio_group( -name => 'self_compa',-values  => ['off', 'on'],-default => 'on',
-        -columns => 2,-rows => 2);
+        -columns => 2,-rows => 2,-labels=>\%self_compa_labels);
 
 print "
 <!-- Comparaison between query classes - options for self-comparison
