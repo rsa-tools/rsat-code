@@ -1,7 +1,10 @@
 #!/usr/bin/perl
 #### this cgi script fills the HTML form for the program compare-classes
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+BEGIN{
+    if ($0 =~ /([^(\/)]+)$/) {
+        push (@INC, "$`lib/");
+    }
+    require "RSA.lib";
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
@@ -38,10 +41,10 @@ $default{jac} = "checked";
 
 ### print the form ###
 &RSA_header("compare-classes", 'form');
+
 print "<CENTER>";
 print "Compare two classifications (clustering results, functional classes, ...), and assess the statistical significance of common members between each pair of classes.<P>\n";
-print "Program developed by <A HREF='mailto:jtran\@bigre.ulb.ac.be (Joseph Tran)'>Joseph Tran</A>\n";
-print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)'>Jacques van Helden</A>\n";
+print "Program developed by <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)'>Jacques van Helden</A> with contributions of Joseph Tran for a first prototype.\n";
 print "</CENTER>";
 print "<HR>";
 
