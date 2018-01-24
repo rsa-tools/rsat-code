@@ -178,6 +178,37 @@ print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10) .'
     </div>
 </div>
 
+<!-- comparison type -->
+<div class="panel panel-danger">
+    <div class="panel-heading">Type of comparison <i class="fa fa-info-circle" data-container="body" data-original-title=""></i></div>
+    <div class="panel-body">
+        <div class="form-group">';
+print $query->radio_group( -name => 'self_compa',-values  => ['off', 'on'],-default => 'on',
+        -columns => 2,-rows => 2);
+
+print "
+<!-- Comparaison between query classes - options for self-comparison
+<br><input type = 'radio' checked value='off' name='self_compa' size = 1>
+      <a class='iframe' href = 'help.compare_classes.html#query_vs_ref'>
+      <b>Compare query classes to reference classes</a></b>
+
+<br><input type = 'radio' value='on' name='self_compa' size = 1>
+      <a class='iframe' href = 'help.compare_classes.html#query_vs_query'>
+      <b>Compare query classes to query classes</a></b> (do not specify reference classes)<br>
+
+<ul><input type='checkbox' value='on' name='distinct' size = 1 checked/>
+      <a class='iframe' href = 'help.compare_classes.html#distinct'>
+      <b>Prevent self-comparison</a></b><br>
+
+<input type = 'checkbox' value='on' name='triangle' size = 1 checked/>
+      <a class='iframe' href = 'help.compare_classes.html#triangle'>
+      <b>Prevent reciprocal comparisons</a></b><br></ul></td>-->
+
+        </div>
+    </div>
+</div>
+ 
+
 </div>
 
 <!-- ################################################################-->
