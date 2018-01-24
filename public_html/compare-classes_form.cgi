@@ -385,12 +385,34 @@ print " </div>
 
 ################################################################
 ### Action buttons
+print $query->submit(-label=>"GO", -class=>"btn btn-success", -type=>"button");
+print " ";
+print $query->reset(-id=>"reset",-class=>"btn btn-warning", -type=>"button");
+print $query->end_form;
+
+ print ' </div>
+        </div>
+  </div>
+</div>
+';
+
+################################################################
+### Demo area
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr' class='col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container'></div>";
+
+
+################################################################
+### Demo 1 data
 
 
 
 
+print "</div> ";
 
+print $query->end_html;
 
+exit(0);
 
 
 
