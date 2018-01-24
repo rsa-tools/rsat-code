@@ -127,7 +127,8 @@ print '
 
 <!-- ################################################################ -->
 <!-- ### mandatory inputs ### -->
-                <div class="bhoechie-tab-content">
+<div class="bhoechie-tab-content">
+
 <!-- query classes -->
 <div class="panel panel-danger">
     <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of query classes." data-original-title=""></i></div>
@@ -135,15 +136,14 @@ print '
     <div class="panel-body">
         <div class="form-group">';
 
-print $query->textarea( -id=>'classesQ',-name=>'classesQ',-rows=>6,-cols=>40, -required=>'true',
+print $query->textarea( -id=>'classesQ',-name=>'classesQ',-rows=>6,-cols=>60, -required=>'true',
                         -placeholder=>'Paste here your query classes, or select a file to upload below',
                         -default=>$default{query_classes});
 print "<br><b>Or</b> select a file to upload<br>\n";
 print $query->filefield(-name=>'Qclass_file',-default=>'',-size=>40);
 
-print '
-       </div>
-   </div>
+print '</div>
+    </div>
 </div>
 
 <!-- reference classes -->
@@ -153,73 +153,30 @@ print '
     <div class="panel-body">
         <div class="form-group">';
 
-print $query->textarea( -id=>'classesR',-name=>'classesR',-rows=>6,-cols=>40, -required=>'true',
+print $query->textarea( -id=>'classesR',-name=>'classesR',-rows=>6,-cols=>60, -required=>'true',
                         -placeholder=>'Paste here your reference classes, or select a file to upload below',
                         -default=>$default{ref_classes});
 print "<br><b>Or</b> select a file to upload<br>\n";
 print $query->filefield(-name=>'Rclass_file',-default=>'',-size=>40);
 
-print '</div></div></div>
+print '</div>
+    </div>
+</div>
 
 <!-- ################################################################ -->
- <!-- ### optional inputs ### -->
-                <div class="bhoechie-tab-content">
+<!-- ### optional inputs ### -->
+<div class="bhoechie-tab-content">
 
-<div id="accordion" role="tablist">
-  <div class="card">
-    <div class="card-header" role="tab" id="headingOne">
-      <h5> <i class="fa fa-tags"></i>
-        <a data-toggle="collapse" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-          Add a second Motif collection
-        </a>
-      </h5>
+<!-- score column -->
+<div class="panel panel-danger">
+    <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Specify a column of the input file(s) containing a score associated to each member. Must be valid for both query and reference classes. The score is used for some metrics like the dot product." data-original-title=""></i></div>
+    <div class="panel-body">
+        <div class="form-group">';
+
+print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10) .'
+        </div>
     </div>
-
-    <div id="collapseOne" class="collapse" role="tabpanel" aria-labelledby="headingOne" data-parent="#accordion">
-      <div class="card-body">
- <div class="panel panel-warning">
- <div class="panel-heading">Motif Collection 2
-  <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Input here the motif collection of interest to be clustered, you can either paste the motif in the text box or upload it from your computer" data-original-title=""></i>
 </div>
-                        <div class="panel-body">
- <div class="form-group">';
-print $query->textfield(-id=>'collection_2_label', -name=>'collection_2_label', -class=>'form-control', -placeholder=>'Provide a name for this Motif Collection',
-                         -default=>$default{collection_2_label});
-print '</div>';
-&MultiGetMatrix_bootstrap('title'=>'Matrix Format','mat_num'=>2);
-
-print '</div></div>
-      </div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-header" role="tab" id="headingTwo">
-      <h5 class="mb-0"> <i class="fa fa-tags"></i>
-        <a class="collapsed" data-toggle="collapse" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-          Add a third Motif collection
-        </a>
-      </h5>
-    </div>
-    <div id="collapseTwo" class="collapse" role="tabpanel" aria-labelledby="headingTwo" data-parent="#accordion">
-      <div class="card-body">
-<div class="panel panel-warning">
- <div class="panel-heading">Motif Collection 3
-  <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Input here the motif collection of interest to be clustered, you can either paste the motif in the text box or upload it from your computer" data-original-title=""></i>
-</div>
-                        <div class="panel-body">
- <div class="form-group">';
-print $query->textfield(-id=>'collection_3_label', -name=>'collection_3_label', -class=>'form-control', -placeholder=>'Provide a name for this Motif Collection',
-                         -default=>$default{collection_3_label});
-print '</div>';
-&MultiGetMatrix_bootstrap('title'=>'Matrix Format','mat_num'=>3);
-
-print '
-      </div>
-    </div>
-  </div>
-</div>
-                </div></div>
-                </div>
 
 <!-- ################################################################-->
 <!-- ### advanced options ###-->
