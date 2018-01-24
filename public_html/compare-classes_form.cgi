@@ -191,10 +191,10 @@ my %self_compa_labels = (
 print $query->radio_group( -name => 'self_compa',-values  => ['off', 'on'],-default => 'on',
     -labels=>\%self_compa_labels)."<br>";
 
-print $query->checkbox(-name=>'distinct',-checked=>1,-value=>'on',
-               -label=>'Prevent self-comparison of classes')."<br>";
-print $query->checkbox(-name=>'triangle',-checked=>1,-value=>'on',
-               -label=>'Prevent reciprocal comparison of classes, only applies to self');
+#print $query->checkbox(-name=>'distinct',-checked=>1,-value=>'on',
+#               -label=>'Prevent self-comparison of classes')."<br>";
+#print $query->checkbox(-name=>'triangle',-checked=>1,-value=>'on',
+#               -label=>'Prevent reciprocal comparison of classes, only applies to self');
 
 print "
         </div>
