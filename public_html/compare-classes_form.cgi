@@ -128,9 +128,9 @@ print '
 <!-- ################################################################ -->
 <!-- ### mandatory inputs ### -->
                 <div class="bhoechie-tab-content">
-<!-- title -->
+<!-- query classes -->
 <div class="panel panel-danger">
-    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes." data-original-title=""></i></div>
+    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of query classes." data-original-title=""></i></div>
 
     <div class="panel-body">
         <div class="form-group">';
@@ -146,18 +146,18 @@ print '
    </div>
 </div>
 
-<!-- Motifs -->
+<!-- reference classes -->
 <div class="panel panel-danger">
-    <div class="panel-heading">Motif Collection
-        <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Input here the motif collection of interest to be clustered, you can either paste the motif in the text box or upload it from your computer" data-original-title=""></i>
+    <div class="panel-heading">Reference classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes." data-original-title=""></i>
     </div>
     <div class="panel-body">
         <div class="form-group">';
 
-print $query->textfield(-id=>'collection_1_label', -name=>'collection_1_label', -class=>'form-control', -placeholder=>'Provide a name for this Motif Collection',
-                         -default=>$default{collection_1_label});
-print '</div>';
-&MultiGetMatrix_bootstrap('title'=>'Matrix Format','mat_num'=>1);
+print $query->textarea( -id=>'classesR',-name=>'classesR',-rows=>6,-cols=>40, -required=>'true',
+                        -placeholder=>'Paste here your reference classes, or select a file to upload below',
+                        -default=>$default{ref_classes});
+print "<br><b>Or</b> select a file to upload<br>\n";
+print $query->filefield(-name=>'Rclass_file',-default=>'',-size=>40);
 
 print '</div></div></div>
 
