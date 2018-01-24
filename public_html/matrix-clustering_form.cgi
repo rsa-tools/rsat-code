@@ -111,7 +111,8 @@ print '
                     <span class="fa-stack fa-lg">
  							 <i class="fa fa-user fa-stack-1x"></i>
 					</span>
-					Jaime Castro-Mondragon, Morgane Thomas-Chollier, Jacques van Helden<br>
+
+					<a target="_blank" href="http://folk.uio.no/jamondra/">Jaime A Castro-Mondragon</a>, <a target="_blank" href="http://morgane.bardiaux.fr/">Morgane Thomas-Chollier</a>, <a target="_blank" href="http://jacques.van-helden.perso.luminy.univ-amu.fr/ ">Jacques van Helden</a>.<br>
 
 					<span class="fa-stack fa-lg">
   							<i class="fa fa-folder-open fa-stack-1x"></i>
