@@ -128,7 +128,7 @@ print '
                 <div class="bhoechie-tab-content">
 <!-- title -->
 <div class="panel panel-danger">
-    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes (see format description in <a class="iframe" href="help.compare-classes.html">manual</a>)." data-original-title=""></i></div>
+    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes (see format description in <a class=\"iframe\" href=\"help.compare-classes.html\">manual</a>)." data-original-title=""></i></div>
 
     <div class="panel-body">
         <div class="form-group">';
