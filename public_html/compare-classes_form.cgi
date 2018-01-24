@@ -162,6 +162,7 @@ print $query->filefield(-name=>'Rclass_file',-default=>'',-size=>40);
 print '</div>
     </div>
 </div>
+</div>
 
 <!-- ################################################################ -->
 <!-- ### optional inputs ### -->
