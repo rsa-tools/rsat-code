@@ -151,6 +151,8 @@ print '</div>
 <!-- ### optional inputs ### -->
 <div class="bhoechie-tab-content">
 
+
+
 <!-- reference classes -->
 <div class="panel panel-danger">
     <div class="panel-heading">Reference classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes." data-original-title=""></i>
@@ -187,26 +189,14 @@ my %self_compa_labels = (
     'off',' Compare query classes to reference classes',
     'on',' Compare query classes to query classes (self)' );
 print $query->radio_group( -name => 'self_compa',-values  => ['off', 'on'],-default => 'on',
-    -labels=>\%self_compa_labels);
+    -labels=>\%self_compa_labels)."<br>";
+
+print $query->checkbox(-name=>'distinct',-checked=>1,-value=>'on',
+               -label=>'Prevent self-comparison of classes')."<br";
+print $query->checkbox(-name=>'triangle',-checked=>1,-value=>'on',
+               -label=>'Prevent reciprocal comparison of classes, only applies to self');
 
 print "
-<!-- Comparaison between query classes - options for self-comparison
-<br><input type = 'radio' checked value='off' name='self_compa' size = 1>
-      <a class='iframe' href = 'help.compare_classes.html#query_vs_ref'>
-      <b>Compare query classes to reference classes</a></b>
-
-<br><input type = 'radio' value='on' name='self_compa' size = 1>
-      <a class='iframe' href = 'help.compare_classes.html#query_vs_query'>
-      <b>Compare query classes to query classes</a></b> (do not specify reference classes)<br>
-
-<ul><input type='checkbox' value='on' name='distinct' size = 1 checked/>
-      <a class='iframe' href = 'help.compare_classes.html#distinct'>
-      <b>Prevent self-comparison</a></b><br>
-
-<input type = 'checkbox' value='on' name='triangle' size = 1 checked/>
-      <a class='iframe' href = 'help.compare_classes.html#triangle'>
-      <b>Prevent reciprocal comparisons</a></b><br></ul></td>-->
-
         </div>
     </div>
 </div>".
