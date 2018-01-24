@@ -64,7 +64,7 @@ print '
             <div class="col-lg-2 col-md-3 col-sm-3 col-xs-3 bhoechie-tab-menu">
               <div class="list-group">
                 <a href="#" class="list-group-item active text-center">
-                  <h4 class="glyphicon"><i class="fa fa-info-circle fa-2x"></i></h4><br/>compare-classes
+                  <h4 class="glyphicon"><i class="fa fa-info-circle fa-2x"></i></h4><br/>Compare classes
                 </a>
                 <a href="#" class="list-group-item text-center">
                   <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Mandatory inputs
@@ -118,7 +118,7 @@ print '
     <!--Cite the publication: <a href="https://twitter.com/rsatools" target="_blank"></a><br>
     <div class="panel panel-default">
         <div class="panel-body">
-        Castro-Mondragon JA, Jaeger S, Thieffry D, Thomas-Chollier M#, van Helden J#. <i>"RSAT matrix-clustering: dynamic exploration and redundancy reduction of transcription factor binding motif collections."</i>, Nucleic Acid Research, 45:13 e119 (2017) <a href="https://www.ncbi.nlm.nih.gov/pubmed/28591841" target="_blank">[Pubmed]</a><a href="https://academic.oup.com/nar/article-lookup/doi/10.1093/nar/gkx314" target="_blank">[Full text]</a>
+        # citation should go here
         </div>
     </div>-->
 </div>
@@ -128,7 +128,7 @@ print '
                 <div class="bhoechie-tab-content">
 <!-- title -->
 <div class="panel panel-danger">
-    <div class="panel-heading">Analysis Title <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Title that will be displayed at the top of the report page." data-original-title=""></i></div>
+    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes (see format description in <a class="iframe" href="help.compare-classes.html">manual</a>)." data-original-title=""></i></div>
 
     <div class="panel-body">
         <div class="form-group">';
