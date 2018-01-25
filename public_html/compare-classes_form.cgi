@@ -318,7 +318,6 @@ print "                 </div>
 
 </div></div></div></div>";
 
-print $query->reset(-id=>"reset",-class=>"btn btn-warning", -type=>"button");
 print $query->end_form;
 
 
