@@ -22,6 +22,8 @@ $default{upload_query_classes} = "";
 $default{ref_classes} = "";
 $default{upload_ref_classes} = "";
 #$default{pipe} = "";
+$default{matrix_metric} = "QR";
+
 $default{occ} = "checked";
 $default{lth_occ} = 1;
 $default{uth_occ} = "none";
@@ -226,18 +228,26 @@ print '
 
 <!-- t -->
 <div class="panel panel-danger">
-    <div class="panel-heading">Output format</div>
+    <div class="panel-heading">Metric in matrix output</div>
     <div class="panel-body">
         <div class="form-group">';
+my %metric_labels = (
+'QR','Intersection',
+'sig','Significance',
+'jac_sim','Jaccard similarity',
+'sor_sim','Sorensen similarity',
+'dotprod','Dot product',
+'E_val','E-value',
+'P_val','P-value',
+'I(Q,R)','Mutual information'
+);
 
+print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_field',
+    -Values=>['QR','sig','jac_sim','sor_sim','dotprod','E_val','P_val','I(Q,R)'],
+    -class=>'form-control',-labels=>\%metric_labels,
+    -default=>$default{metric});
 
 print "</div></div>";
-
-
-#print $query->popup_menu(-id=>'metric', -name=>'metric',
-#                         -Values=>["cor", "Ncor", "dEucl", "NdEucl", "logocor", "Nlogocor", "logoDP", "Icor", "NIcor", "SSD", "mean_zscore", "rank_mean"],
-#                         -class=>'form-control',
-#                         -default=>$default{metric});
 
 print '
  </div>
