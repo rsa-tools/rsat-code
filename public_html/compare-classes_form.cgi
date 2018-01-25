@@ -218,7 +218,7 @@ my %output_labels = (
     'matrix',' Matrix with reference classes as rows and query classes as columns' );
 
 print $query->radio_group( -name => 'outformat',-values  => ['classes','matrix'],-default => 'classes',
-    -labels=>\%output)."<br>";
+    -labels=>\%output_labels)."<br>";
 
 print "</div></div>";
 
