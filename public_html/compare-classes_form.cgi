@@ -190,7 +190,7 @@ print '</div>
 
 <!-- score column -->
 <div class="panel panel-danger">
-i    <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Column of the input files containing a score associated to each member. Must be valid for both query and reference classes. Is is used to compute matrix output with one of the supported metrics (see advanced output options)." data-original-title=""></i></div>
+    <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Column of the input files containing a score associated to each member. Must be valid for both query and reference classes. It is used for some metrics like the dot product." data-original-title=""></i></div>
     <div class="panel-body">
         <div class="form-group">';
 print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10,-placeholder=>'optional') .'
@@ -246,7 +246,24 @@ print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_field',
     -default=>$default{metric});
 print "</div></div>";
 
+print '
+<!-- classes output fields -->
+<div class="panel panel-danger">
+    <div class="panel-heading">Pairwise class comparison return fields</div>
+    <div class="panel-body">
+        <div class="form-group">';
 
+print $query->checkbox(-name=>'occ',-checked=>1,-value=>'on',-label=>'Occurrences').'<br>';
+print $query->checkbox(-name=>'freq',-checked=>0,-value=>'on',-label=>'Frequencies').'<br>';
+print $query->checkbox(-name=>'proba',-checked=>1,-value=>'on',-label=>'Hypergeometric probability').'<br>';
+print $query->checkbox(-name=>'sort',-checked=>1,-value=>'on',-label=>'Sorting criterion').'<br>';
+print $query->checkbox(-name=>'jac_sim',-checked=>1,-value=>'on',-label=>'Jaccard similarity').'<br>';
+print $query->checkbox(-name=>'sor_sim',-checked=>0,-value=>'on',-label=>'Sorensen similarity').'<br>';
+print $query->checkbox(-name=>'dotprod',-checked=>0,-value=>'on',-label=>'Dotproduct, relevant if a score column is specified').'<br>';
+print $query->checkbox(-name=>'entropy',-checked=>0,-value=>'on',-label=>'Entropy').'<br>';
+print $query->checkbox(-name=>'members',-checked=>0,-value=>'on',-label=>'Members, might generate large result files').'<br>';
+
+print "</div></div>";
 
 print '
  </div>
