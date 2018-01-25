@@ -37,17 +37,17 @@ $default{uth_occ} = "none";
 $default{lth_sig} = 0;
 $default{uth_sig} = "none";
 
-### replace defaults by parameters from the cgi call, if defined
-foreach $key (keys %default) {
-    if ($query->param($key)) {
-        $default{$key} = $query->param($key);
-    }
-    if ($query->param($key) =~ /checked/i) {
-        $checked{$key} = "CHECKED";
-    }
-}
-
 # TOBEDONE: check which tools might produce output pipeable to this form
+
+### replace defaults by parameters from the cgi call, if defined
+#foreach $key (keys %default) {
+#    if ($query->param($key)) {
+#        $default{$key} = $query->param($key);
+#    }
+#    if ($query->param($key) =~ /checked/i) {
+#        $checked{$key} = "CHECKED";
+#    }
+#}
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
@@ -236,9 +236,11 @@ my %metric_labels = (
 'E_val',' E-value',
 'P_val',' P-value',
 'I(Q,R)',' Mutual information');
-print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_field',
+print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_metric',
     -Values=>['QR','sig','jac_sim','sor_sim','dotprod','E_val','P_val','I(Q,R)'],
-    -class=>'form-control',-labels=>\%metric_labels);
+    -class=>'form-control',
+    -default='QR',
+    -labels=>\%metric_labels);
 print "</div></div>";
 
 print '
