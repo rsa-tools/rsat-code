@@ -393,7 +393,7 @@ exit(0);
 ## Print table of supported return fields of pairwise comparison tables
 sub PrintThresholdTableForm {
 
-    my @vars = qw( q r qr sig pval jac_sim mi dotprod );
+    my @vars = qw( q r qr sig eval pval jac_sim mi dotprod );
 
     my %descriptions = (
         'q',' Query occurrences (Q)', # not sure if this is equal to occ?
