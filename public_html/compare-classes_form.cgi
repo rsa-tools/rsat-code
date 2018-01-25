@@ -69,13 +69,13 @@ print '
                   <h4 class="glyphicon"><i class="fa fa-info-circle fa-2x"></i></h4><br/>Compare classes
                 </a>
                 <a href="#" class="list-group-item text-center">
-                  <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Mandatory inputs
+                  <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Mandatory input
                 </a>
                 <a href="#" class="list-group-item text-center">
-                  <h4 class="glyphicon"><i class="fa fa-tags fa-2x"></i></h4><br/>Optional inputs
+                  <h4 class="glyphicon"><i class="fa fa-tags fa-2x"></i></h4><br/>Optional input
                 </a>
                 <a href="#" class="list-group-item text-center">
-                  <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced options
+                  <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Output options
                 </a>
                 <a href="#" class="list-group-item text-center">
                   <h4 class="glyphicon"><i class="fa fa-play-circle fa-2x"></i></h4><br/>Run analysis
@@ -126,7 +126,7 @@ print '
 </div>
 
 <!-- ################################################################ -->
-<!-- ### mandatory inputs ### -->
+<!-- ### mandatory input ### -->
 <div class="bhoechie-tab-content">
 
 <!-- query classes -->
@@ -148,10 +148,8 @@ print '</div>
 </div>
 
 <!-- ################################################################ -->
-<!-- ### optional inputs ### -->
+<!-- ### optional input ### -->
 <div class="bhoechie-tab-content">
-
-
 
 <!-- reference classes -->
 <div class="panel panel-danger">
@@ -205,13 +203,10 @@ print "
 '</div>
 
 <!-- ################################################################-->
-<!-- ### advanced options ###-->
-
-<!-- ADVANCED OPTIONS -->
+<!-- ### output options ###-->
 
 <div class="bhoechie-tab-content">
   <div id="accordion" role="tablist">
-
 
  <!-- Matrix clustering-->
   <div class="card">
