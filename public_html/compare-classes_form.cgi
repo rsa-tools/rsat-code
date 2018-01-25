@@ -271,25 +271,15 @@ print '                 </div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header" role="tab" id="Thresholds">
-                        <h5> <i class="fa fa-tasks"></i>
-                        <a data-toggle="collapse" href="#collapseThresholds" aria-expanded="true" aria-controls="collapseThresholds">
-                            Thresholds
-                        </a>
-                        </h5>
-                    </div>
+                <!-- thresholds -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Thresholds for the pairwise class comparison table</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
 
-                    <div id="collapseThresholds" class="collapse" role="tabpanel" aria-labelledby="collapseThresholds" data-parent="#accordion">
-                        <div class="card-body">
-                            <div class="panel panel-warning">
-                                <div class="panel-heading">Thresholds for the pairwise class comparison table</div>
-                                <div class="panel-body">';
+                        &PrintThresholdTableForm();
 
-                                &PrintThresholdTableForm();
-
-print '                     </div>
-                        </div>
+print '                 </div>
                     </div>
                 </div>
             </div>
@@ -319,7 +309,6 @@ print "                 </div>
 </div></div></div></div>";
 
 print $query->end_form;
-
 
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr' class='col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container'></div>";
