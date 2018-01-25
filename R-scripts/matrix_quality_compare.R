@@ -22,6 +22,8 @@ if(!"flux" %in% x[,1]){
   message("Missing package: flux")
 }
 
+print("Boom1", stderr())
+
 ## Jaime Castro's code
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args >= 1)) {
@@ -31,12 +33,11 @@ if (length(args >= 1)) {
 }
 
 
-write("Boom1", stderr())
 
 formats <- unlist(strsplit (formats,split=","))
 print.heatmap <- as.numeric(print.heatmap)
 
-write ( paste("Print Heatmap", paste(mtx.quality.nwds.file) ), stderr())
+#write ( paste("Print Heatmap", paste(mtx.quality.nwds.file) ), stderr())
 
 ## Alejandra Medina's code
 # args <- commandArgs(TRUE)
@@ -70,9 +71,9 @@ write ( paste("Print Heatmap", paste(mtx.quality.nwds.file) ), stderr())
 mtx.quality.nwds <- read.table(file=mtx.quality.nwds.file, header=FALSE, stringsAsFactors=FALSE)
 colnames(mtx.quality.nwds) <- c("matrix","sequence","file")
 
-write(getwd(), stderr())
+#write(getwd(), stderr())
 
-write (paste(mtx.quality.nwds), stderr())
+#write (paste(mtx.quality.nwds), stderr())
 
 ################
 ## Read in each NWD file and store it in a list
