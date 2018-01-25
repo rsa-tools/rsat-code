@@ -75,7 +75,7 @@ print '
                   <h4 class="glyphicon"><i class="fa fa-tags fa-2x"></i></h4><br/>Optional input
                 </a>
                 <a href="#" class="list-group-item text-center">
-                  <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Output options
+                  <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced output options
                 </a>
                 <a href="#" class="list-group-item text-center">
                   <h4 class="glyphicon"><i class="fa fa-play-circle fa-2x"></i></h4><br/>Run analysis
@@ -163,6 +163,22 @@ print '</div>
     </div>
 </div>
 
+<!-- output format -->
+<div class="panel panel-danger">
+    <div class="panel-heading">Output format</div>
+    <div class="panel-body">
+        <div class="form-group">';
+
+my %output_labels = (
+    'classes',' Pairwise class comparison tab-delimited table',
+    'matrix',' Matrix with reference classes as rows and query classes as columns' );
+
+print $query->radio_group( -name => 'outformat',-values  => ['classes','matrix'],-default => 'classes',
+    -labels=>\%output_labels)."<br>";
+
+print '</div>
+    </div>
+
 </div>
 
 <!-- ################################################################ -->
@@ -203,7 +219,7 @@ print '
 </div>
 
 <!-- ################################################################-->
-<!-- ### output options ###-->
+<!-- ### advanced output options  ###-->
 
 <div class="bhoechie-tab-content">
 
