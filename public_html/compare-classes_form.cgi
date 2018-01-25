@@ -69,7 +69,7 @@ print '
                   <h4 class="glyphicon"><i class="fa fa-info-circle fa-2x"></i></h4><br/>Compare classes
                 </a>
                 <a href="#" class="list-group-item text-center">
-                  <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Mandatory input
+                  <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Main input
                 </a>
                 <a href="#" class="list-group-item text-center">
                   <h4 class="glyphicon"><i class="fa fa-tags fa-2x"></i></h4><br/>Optional input
@@ -97,7 +97,7 @@ print '
     <span class="fa-stack fa-lg">
         <i class="fa fa-user fa-stack-1x"></i>
     </span>
-    <a target="_blank" href="http://jacques.van-helden.perso.luminy.univ-amu.fr/ ">Jacques van Helden</a> with help from Joseph Tran.<br>
+    <a target="_blank" href="http://jacques.van-helden.perso.luminy.univ-amu.fr/ ">Jacques van Helden</a> with help from Joseph Tran and Bruno Contreras-Moreira.<br>
     <span class="fa-stack fa-lg">
         <i class="fa fa-folder-open fa-stack-1x"></i>
     </span>
@@ -126,7 +126,7 @@ print '
 </div>
 
 <!-- ################################################################ -->
-<!-- ### mandatory input ### -->
+<!-- ### main input ### -->
 <div class="bhoechie-tab-content">
 
 <!-- query classes -->
@@ -145,11 +145,6 @@ print $query->filefield(-name=>'Qclass_file',-default=>'',-size=>40);
 print '</div>
     </div>
 </div>
-</div>
-
-<!-- ################################################################ -->
-<!-- ### optional input ### -->
-<div class="bhoechie-tab-content">
 
 <!-- reference classes -->
 <div class="panel panel-danger">
@@ -167,6 +162,12 @@ print $query->filefield(-name=>'Rclass_file',-default=>'',-size=>40);
 print '</div>
     </div>
 </div>
+
+</div>
+
+<!-- ################################################################ -->
+<!-- ### optional input ### -->
+<div class="bhoechie-tab-content">
 
 <!-- score column -->
 <div class="panel panel-danger">
@@ -186,21 +187,20 @@ print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10) .'
 my %self_compa_labels = ( 
     'off',' Compare query classes to reference classes',
     'on',' Compare query classes to query classes (self)' );
-print $query->radio_group( -name => 'self_compa',-values  => ['off', 'on'],-default => 'on',
+print $query->radio_group( -name => 'self_compa',-values  => ['off', 'on'],-default => 'off',
     -labels=>\%self_compa_labels)."<br>";
 
+# commented out as they seem confusing,Bruno jan2018
 #print $query->checkbox(-name=>'distinct',-checked=>1,-value=>'on',
 #               -label=>'Prevent self-comparison of classes')."<br>";
 #print $query->checkbox(-name=>'triangle',-checked=>1,-value=>'on',
 #               -label=>'Prevent reciprocal comparison of classes, only applies to self');
 
-print "
+print '
         </div>
     </div>
-</div>".
- 
-
-'</div>
+</div>
+</div>
 
 <!-- ################################################################-->
 <!-- ### output options ###-->
