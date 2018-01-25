@@ -23,6 +23,7 @@ $default{ref_classes} = "";
 $default{upload_ref_classes} = "";
 #$default{pipe} = "";
 
+$default{metric} = 'QR';
 $default{occ} = 1;
 $default{sort} = 1;
 $default{proba} = 1;
@@ -239,7 +240,7 @@ my %metric_labels = (
 print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_metric',
     -Values=>['QR','sig','jac_sim','sor_sim','dotprod','E_val','P_val','MI'],
     -class=>'form-control',
-    -default=>'QR',
+    -default=>$default{metric},
     -labels=>\%metric_labels);
 print "</div></div>";
 
