@@ -42,9 +42,6 @@ $default{uth_qr} = "none";
 $default{lth_sig} = 0;
 $default{uth_sig} = "none";
 
-
-
-
 # TOBEDONE: check which tools might produce output pipeable to this form
 
 ### replace defaults by parameters from the cgi call, if defined
