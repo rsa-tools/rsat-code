@@ -66,32 +66,34 @@ print '
 <div class="container">
     <div class="row">
         <div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 bhoechie-tab-container">
+
             <div class="col-lg-2 col-md-3 col-sm-3 col-xs-3 bhoechie-tab-menu">
                 <div class="list-group">
-                <a href="#" class="list-group-item active text-center">
-                  <h4 class="glyphicon"><i class="fa fa-info-circle fa-2x"></i></h4><br/>Compare classes
-                </a>
-                <a href="#" class="list-group-item text-center">
-                  <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Main input
-                </a>
-                <a href="#" class="list-group-item text-center">
-                  <h4 class="glyphicon"><i class="fa fa-tags fa-2x"></i></h4><br/>Optional input
-                </a>
-                <a href="#" class="list-group-item text-center">
-                  <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced output options
-                </a>
-                <a href="#" class="list-group-item text-center">
-                  <h4 class="glyphicon"><i class="fa fa-play-circle fa-2x"></i></h4><br/>Run analysis
-                </a>
+                    <a href="#" class="list-group-item active text-center">
+                        <h4 class="glyphicon"><i class="fa fa-info-circle fa-2x"></i></h4><br/>Compare classes
+                    </a>
+                    <a href="#" class="list-group-item text-center">
+                        <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Main input
+                    </a>
+                    <a href="#" class="list-group-item text-center">
+                        <h4 class="glyphicon"><i class="fa fa-tags fa-2x"></i></h4><br/>Optional input
+                    </a>
+                    <a href="#" class="list-group-item text-center">
+                        <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced output options
+                    </a>
+                    <a href="#" class="list-group-item text-center">
+                        <h4 class="glyphicon"><i class="fa fa-play-circle fa-2x"></i></h4><br/>Run analysis
+                    </a>
                 </div>
             </div>
-        <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 bhoechie-tab">
+
+            <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 bhoechie-tab">
 
 <!-- ################################################################ -->
 <!-- ### info ### -->
 
-<div class="bhoechie-tab-content active">
-
+            <div class="bhoechie-tab-content active">
+            
     <h2> <img src="images/RSAT_logo.jpg" style="max-width:150px;max-height:60px;padding-bottom:10px" alt="RSAT server" border="0"></img>compare-classes</h2>
     <span class="fa-stack fa-lg">
         <i class="fa fa-info-circle fa-stack-1x"></i>
@@ -117,121 +119,120 @@ print '
         <i class="fa fa-twitter fa-stack-1x"></i>
     </span>
     <a href="https://twitter.com/rsatools" target="_blank">Ask a question to the RSAT team</a><br>
-    <span class="fa-stack fa-lg">
+    <!--<span class="fa-stack fa-lg">
         <i class="fa fa-pencil fa-stack-1x"></i>
     </span>
-    <!--Cite the publication: <a href="https://twitter.com/rsatools" target="_blank"></a><br>
+    Cite the publication: <a href="https://twitter.com/rsatools" target="_blank"></a><br>
     <div class="panel panel-default">
         <div class="panel-body">
         # citation should go here
         </div>
     </div>-->
-</div>
+            </div>
 
 <!-- ################################################################ -->
 <!-- ### main input ### -->
-<div class="bhoechie-tab-content">
+    
+            <div class="bhoechie-tab-content">
 
-<!-- query classes -->
-<div class="panel panel-danger">
-    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of query classes." data-original-title=""></i></div>
+                <!-- query classes -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of query classes." data-original-title=""></i></div>
+                    <div class="panel-body">
+                        <div class="form-group">';
 
-    <div class="panel-body">
-        <div class="form-group">';
+                        print $query->textarea( -id=>'classesQ',-name=>'classesQ',-rows=>5,-cols=>60, -required=>'true',
+                            -placeholder=>'Paste here your query classes, or select a file to upload below',
+                            -default=>$default{query_classes});
+                        print "<br><b>Or</b> select a file to upload<br>\n";
+                        print $query->filefield(-name=>'Qclass_file',-default=>'',-size=>40);
 
-print $query->textarea( -id=>'classesQ',-name=>'classesQ',-rows=>5,-cols=>60, -required=>'true',
-                        -placeholder=>'Paste here your query classes, or select a file to upload below',
-                        -default=>$default{query_classes});
-print "<br><b>Or</b> select a file to upload<br>\n";
-print $query->filefield(-name=>'Qclass_file',-default=>'',-size=>40);
+print '                 </div>
+                    </div>
+                </div>
 
-print '</div>
-    </div>
-</div>
+                <!-- reference classes -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Reference classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes." data-original-title=""></i></div>
+                    <div class="panel-body">
+                        <div class="form-group">';
 
-<!-- reference classes -->
-<div class="panel panel-danger">
-    <div class="panel-heading">Reference classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes." data-original-title=""></i>
-    </div>
-    <div class="panel-body">
-        <div class="form-group">';
+                        print $query->textarea( -id=>'classesR',-name=>'classesR',-rows=>5,-cols=>60, -required=>'true',
+                            -placeholder=>'Paste here your reference classes, or select a file to upload below',
+                            -default=>$default{ref_classes});
+                        print "<br><b>Or</b> select a file to upload<br>\n";
+                        print $query->filefield(-name=>'Rclass_file',-default=>'',-size=>40);
 
-print $query->textarea( -id=>'classesR',-name=>'classesR',-rows=>5,-cols=>60, -required=>'true',
-                        -placeholder=>'Paste here your reference classes, or select a file to upload below',
-                        -default=>$default{ref_classes});
-print "<br><b>Or</b> select a file to upload<br>\n";
-print $query->filefield(-name=>'Rclass_file',-default=>'',-size=>40);
+print '                 </div>
+                    </div>
+                </div>
 
-print '</div>
-    </div>
-</div>
+                <!-- output format -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Output format</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
 
-<!-- output format -->
-<div class="panel panel-danger">
-    <div class="panel-heading">Output format</div>
-    <div class="panel-body">
-        <div class="form-group">';
+                        my %output_labels = (
+                            'classes',' Pairwise class comparison tab-delimited table',
+                            'matrix',' Matrix with reference classes as rows and query classes as columns' );
 
-my %output_labels = (
-    'classes',' Pairwise class comparison tab-delimited table',
-    'matrix',' Matrix with reference classes as rows and query classes as columns' );
+                        print $query->radio_group( -name => 'outformat',-values  => ['classes','matrix'],-default => 'classes',
+                            -labels=>\%output_labels)."<br>";
 
-print $query->radio_group( -name => 'outformat',-values  => ['classes','matrix'],-default => 'classes',
-    -labels=>\%output_labels)."<br>";
-
-print '</div>
-    </div>
-</div>
-
-</div>
+print '                 </div>
+                    </div>
+                </div>
+            </div>
 
 <!-- ################################################################ -->
 <!-- ### optional input ### -->
-<div class="bhoechie-tab-content">
 
-<!-- score column -->
-<div class="panel panel-danger">
-    <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Column of the input files containing a score associated to each member. Must be valid for both query and reference classes. It is used for some metrics like the dot product." data-original-title=""></i></div>
-    <div class="panel-body">
-        <div class="form-group">';
-print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10,-placeholder=>'optional') .'
-        </div>
-    </div>
-</div>
+            <div class="bhoechie-tab-content">
 
-<!-- comparison type -->
-<div class="panel panel-danger">
-    <div class="panel-heading">Type of comparison</div>
-    <div class="panel-body">
-        <div class="form-group">';
-my %self_compa_labels = ( 
-    'off',' Cross-compare query classes to reference classes',
-    'on',' Self-compare query classes to query classes' );
-print $query->radio_group( -name => 'self_compa',-values  => ['off', 'on'],-default => 'off',
-    -labels=>\%self_compa_labels)."<br>";
+                <!-- score column -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Column of the input files containing a score associated to each member. Must be valid for both query and reference classes. It is used for some metrics like the dot product." data-original-title=""></i></div>
+                    <div class="panel-body">
+                        <div class="form-group">';
+                        print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10,-placeholder=>'optional') .'
+                        </div>
+                    </div>
+                </div>
 
-# commented out as they seem confusing,Bruno jan2018
-#print $query->checkbox(-name=>'distinct',-checked=>1,-value=>'on',
-#               -label=>'Prevent self-comparison of classes')."<br>";
-#print $query->checkbox(-name=>'triangle',-checked=>1,-value=>'on',
-#               -label=>'Prevent reciprocal comparison of classes, only applies to self');
+                <!-- comparison type -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Type of comparison</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
+                        my %self_compa_labels = ( 
+                            'off',' Cross-compare query classes to reference classes',
+                            'on',' Self-compare query classes to query classes' );
+                        print $query->radio_group( -name => 'self_compa',
+                            -values  => ['off', 'on'],-default => 'off',
+                            -labels=>\%self_compa_labels)."<br>";
 
-print '
-        </div>
-    </div>
-</div>
-</div>
+                        # commented out as they seem confusing,Bruno jan2018
+                        #print $query->checkbox(-name=>'distinct',-checked=>1,-value=>'on',
+                        #   -label=>'Prevent self-comparison of classes')."<br>";
+                        #print $query->checkbox(-name=>'triangle',-checked=>1,-value=>'on',
+                        #   -label=>'Prevent reciprocal comparison of classes, only applies to self');
+
+print '                 </div>
+                    </div>
+                </div>
+            </div>
 
 <!-- ################################################################-->
 <!-- ### advanced output options  ###-->
 
-<div class="bhoechie-tab-content">
+            <div class="bhoechie-tab-content">
 
-<!-- matrix metric  -->
-<div class="panel panel-danger">
-    <div class="panel-heading">Metric in matrix output</div>
-    <div class="panel-body">
-        <div class="form-group">';
+                <!-- matrix metric  -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Metric in matrix output</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
 my %metric_labels = (
 'qr',' Intersection',
 'sig',' Significance',
@@ -240,21 +241,21 @@ my %metric_labels = (
 'eval',' E-value',
 'pval',' P-value',
 'mi',' Mutual information ');
-print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_metric',
-    -Values=>['qr','sig','jac_sim','dotprod','eval','pval','mi'],
-    -class=>'form-control',
-    -default=>$default{metric},
-    -labels=>\%metric_labels);
-print " </div>
-    </div>
-</div>";
 
-print '
-<!-- classes output fields -->
-<div class="panel panel-danger">
-    <div class="panel-heading">Return fields of pairwise class comparison</div>
-    <div class="panel-body">
-        <div class="form-group">';
+                        print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_metric',
+                            -Values=>['qr','sig','jac_sim','dotprod','eval','pval','mi'],
+                            -class=>'form-control',
+                            -default=>$default{metric},
+                            -labels=>\%metric_labels);
+print '                 </div>
+                    </div>
+                </div>
+
+                <!-- classes output fields -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Return fields of pairwise class comparison</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
 
 print $query->checkbox(-name=>'occ',-checked=>$default{'occ'},-value=>'on',-label=>'Occurrences').'<br>';
 print $query->checkbox(-name=>'freq',-checked=>0,-value=>'on',-label=>'Frequencies').'<br>';
@@ -266,60 +267,61 @@ print $query->checkbox(-name=>'dotprod',-checked=>0,-value=>'on',-label=>'Dot pr
 print $query->checkbox(-name=>'entropy',-checked=>0,-value=>'on',-label=>'Entropy').'<br>';
 print $query->checkbox(-name=>'members',-checked=>0,-value=>'on',-label=>'Class members, might generate large result files');
 
-print '</div>
-    </div>
-</div>
+print '                 </div>
+                    </div>
+                </div>
 
-<div class="card">
-    <div class="card-header" role="tab" id="Thresholds">
-        <h5> <i class="fa fa-tasks"></i>
-        <a data-toggle="collapse" href="#collapseThresholds" aria-expanded="true" aria-controls="collapseThresholds">
-        Thresholds
-        </a>
-        </h5>
-    </div>
+                <div class="card">
+                    <div class="card-header" role="tab" id="Thresholds">
+                        <h5> <i class="fa fa-tasks"></i>
+                        <a data-toggle="collapse" href="#collapseThresholds" aria-expanded="true" aria-controls="collapseThresholds">
+                            Thresholds
+                        </a>
+                        </h5>
+                    </div>
 
-    <div id="collapseThresholds" class="collapse" role="tabpanel" aria-labelledby="collapseThresholds" data-parent="#accordion">
-        <div class="card-body">
-            <div class="panel panel-warning">
-                <div class="panel-heading">Thresholds for the pairwise class comparison table</div>
-                <div class="panel-body">';
+                    <div id="collapseThresholds" class="collapse" role="tabpanel" aria-labelledby="collapseThresholds" data-parent="#accordion">
+                        <div class="card-body">
+                            <div class="panel panel-warning">
+                                <div class="panel-heading">Thresholds for the pairwise class comparison table</div>
+                                <div class="panel-body">';
 
-&PrintThresholdTableForm();
+                                &PrintThresholdTableForm();
 
-print '         </div>
+print '                     </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
-    
-
-</div>
 
 <!--################################################################-->
 <!--### run & reset ###-->
 
-<div class="bhoechie-tab-content">';
-&SelectOutput();
-print "</div>";
+            <div class="bhoechie-tab-content">
 
+                <!-- job delivery options -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Job delivery options</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
 
-################################################################
-### Action buttons
+                        &SelectOutput();
 
-print $query->submit(-label=>"GO", -class=>"btn btn-success", -type=>"button");
-print " ";
+                        print $query->submit(-label=>"GO", -class=>"btn btn-success", -type=>"button");
+                        print " ";
+                        print $query->reset(-id=>"reset",-class=>"btn btn-warning", -type=>"button");
+
+print "                 </div>
+                    </div>
+                </div>
+            </div>
+
+</div></div></div></div>";
+
 print $query->reset(-id=>"reset",-class=>"btn btn-warning", -type=>"button");
 print $query->end_form;
 
- print ' </div>
-        </div>
-  </div>
-</div>
-';
 
-################################################################
-### Demo area
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr' class='col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container'></div>";
 
@@ -330,7 +332,7 @@ print "<div id='demo_descr' class='col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-butt
 
 
 
-print "</div> </div> </div>";
+#print "</div> </div> </div>";
 
 print $query->end_html;
 
