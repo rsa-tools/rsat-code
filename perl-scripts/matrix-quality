@@ -1036,6 +1036,7 @@ package main;
 	      my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
 	      
 	      my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
+	      &RSAT::util::CheckOutDir($nwd_all_plot); ## Create dir
 	      
 	      $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
 
@@ -1057,7 +1058,7 @@ package main;
 	      $matrix_quality_heatmap_cmd .= " mtx.quality.nwds.file = '".$nwd_all_file."'";
 	      $matrix_quality_heatmap_cmd .= "; plot.folder = '".$nwd_all_plot."'";
 	      $matrix_quality_heatmap_cmd .= "; formats = '".join(",",'pdf','png')."'";
-	      $matrix_quality_heatmap_cmd .= "; print.heatmap = '0'";
+	      $matrix_quality_heatmap_cmd .= "; print.heatmap = '1'";
 	      $matrix_quality_heatmap_cmd .= " \"";
 	      
 	      &RSAT::message::Info("R-command for generate NWD tables: ", $matrix_quality_heatmap_cmd) if ($main::verbose >= 0);
