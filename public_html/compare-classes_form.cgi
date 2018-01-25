@@ -23,8 +23,6 @@ $default{ref_classes} = "";
 $default{upload_ref_classes} = "";
 #$default{pipe} = "";
 
-$default{matrix_metric} = "QR";
-
 $default{occ} = 1;
 $default{sort} = 1;
 $default{proba} = 1;
@@ -230,18 +228,17 @@ print '
     <div class="panel-body">
         <div class="form-group">';
 my %metric_labels = (
-'QR','Intersection',
-'sig','Significance',
-'jac_sim','Jaccard similarity',
-'sor_sim','Sorensen similarity',
-'dotprod','Dot product',
-'E_val','E-value',
-'P_val','P-value',
-'I(Q,R)','Mutual information');
+'QR',' Intersection',
+'sig',' Significance',
+'jac_sim',' Jaccard similarity',
+'sor_sim',' Sorensen similarity',
+'dotprod',' Dot product',
+'E_val',' E-value',
+'P_val',' P-value',
+'I(Q,R)',' Mutual information');
 print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_field',
     -Values=>['QR','sig','jac_sim','sor_sim','dotprod','E_val','P_val','I(Q,R)'],
-    -class=>'form-control',-labels=>\%metric_labels,
-    -default=>$default{'matrix_metric'});
+    -class=>'form-control',-labels=>\%metric_labels);
 print "</div></div>";
 
 print '
