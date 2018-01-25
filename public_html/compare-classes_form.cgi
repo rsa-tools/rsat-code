@@ -22,24 +22,22 @@ $default{upload_query_classes} = "";
 $default{ref_classes} = "";
 $default{upload_ref_classes} = "";
 #$default{pipe} = "";
+
 $default{matrix_metric} = "QR";
 
-$default{occ} = "checked";
-$default{lth_occ} = 1;
-$default{uth_occ} = "none";
-$default{freq} = "checked";
-$default{sig} = "checked";
-$default{lth_sig} = 0;
-$default{uth_sig} = "none";
-$default{proba} = "checked";
-$default{freq} = "checked";
-$default{jac} = "checked";
-$default{entropy} = "checked";
+$default{occ} = 1;
+$default{sort} = 1;
+$default{proba} = 1;
+$default{jac} = 1;
+
 $default{members} = "";
 $default{sort_key} = "sig";
 $default{pop_size} = "auto";
-$default{entropy} = "checked";
-$default{jac} = "checked";
+
+$default{lth_occ} = 1;
+$default{uth_occ} = "none";
+$default{lth_sig} = 0;
+$default{uth_sig} = "none";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -243,7 +241,7 @@ my %metric_labels = (
 print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_field',
     -Values=>['QR','sig','jac_sim','sor_sim','dotprod','E_val','P_val','I(Q,R)'],
     -class=>'form-control',-labels=>\%metric_labels,
-    -default=>$default{metric});
+    -default=>$default{'matrix_metric'});
 print "</div></div>";
 
 print '
@@ -253,13 +251,13 @@ print '
     <div class="panel-body">
         <div class="form-group">';
 
-print $query->checkbox(-name=>'occ',-checked=>1,-value=>'on',-label=>'Occurrences').'<br>';
+print $query->checkbox(-name=>'occ',-checked=>$default{'occ'},-value=>'on',-label=>'Occurrences').'<br>';
 print $query->checkbox(-name=>'freq',-checked=>0,-value=>'on',-label=>'Frequencies').'<br>';
-print $query->checkbox(-name=>'proba',-checked=>1,-value=>'on',-label=>'Hypergeometric probability').'<br>';
-print $query->checkbox(-name=>'sort',-checked=>1,-value=>'on',-label=>'Sorting criterion').'<br>';
-print $query->checkbox(-name=>'jac_sim',-checked=>1,-value=>'on',-label=>'Jaccard similarity').'<br>';
+print $query->checkbox(-name=>'proba',-checked=>$default{'proba'},-value=>'on',-label=>'Hypergeometric probability').'<br>';
+print $query->checkbox(-name=>'sort',-checked=>$default{'sort'},-value=>'on',-label=>'Sorting criterion').'<br>';
+print $query->checkbox(-name=>'jac_sim',-checked=>$default{'jac'},-value=>'on',-label=>'Jaccard similarity').'<br>';
 print $query->checkbox(-name=>'sor_sim',-checked=>0,-value=>'on',-label=>'Sorensen similarity').'<br>';
-print $query->checkbox(-name=>'dotprod',-checked=>0,-value=>'on',-label=>'Dotproduct, relevant if a score column is specified').'<br>';
+print $query->checkbox(-name=>'dotprod',-checked=>0,-value=>'on',-label=>'Dot product, relevant if a score column is specified').'<br>';
 print $query->checkbox(-name=>'entropy',-checked=>0,-value=>'on',-label=>'Entropy').'<br>';
 print $query->checkbox(-name=>'members',-checked=>0,-value=>'on',-label=>'Members, might generate large result files').'<br>';
 
