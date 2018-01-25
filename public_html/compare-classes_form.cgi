@@ -190,7 +190,7 @@ print '</div>
 
 <!-- score column -->
 <div class="panel panel-danger">
-    <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Specify a column of the input file(s) containing a score associated to each member. Must be valid for both query and reference classes. The score is used for some metrics like the dot product." data-original-title=""></i></div>
+i    <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Column of the input files containing a score associated to each member. Must be valid for both query and reference classes. Is is used to compute matrix output with one of the supported metrics (see advanced output options)." data-original-title=""></i></div>
     <div class="panel-body">
         <div class="form-group">';
 print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10,-placeholder=>'optional') .'
@@ -226,7 +226,7 @@ print '
 
 <div class="bhoechie-tab-content">
 
-<!-- t -->
+<!-- matrix metric  -->
 <div class="panel panel-danger">
     <div class="panel-heading">Metric in matrix output</div>
     <div class="panel-body">
@@ -239,15 +239,14 @@ my %metric_labels = (
 'dotprod','Dot product',
 'E_val','E-value',
 'P_val','P-value',
-'I(Q,R)','Mutual information'
-);
-
+'I(Q,R)','Mutual information');
 print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_field',
     -Values=>['QR','sig','jac_sim','sor_sim','dotprod','E_val','P_val','I(Q,R)'],
     -class=>'form-control',-labels=>\%metric_labels,
     -default=>$default{metric});
-
 print "</div></div>";
+
+
 
 print '
  </div>
