@@ -1073,7 +1073,7 @@ package main;
 	      
 	      # &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
 
-	      &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      #&doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 	      $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
 	      $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
 	      $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
