@@ -396,19 +396,18 @@ exit(0);
 ## Print table of supported return fields of pairwise comparison tables
 sub PrintThresholdTableForm {
 
-    my @vars = qw( q r qr sig pval jac sor mi dotprod );
+    my @vars = qw( q r qr sig pval jac_sim mi dotprod );
 
     my %descriptions = (
-        'q',' Query occurrences', # not sure if this is equal to occ?
-        'r',' Reference occurrences',
-        'qr',' Intersection occurrences',
+        'q',' Query occurrences (Q)', # not sure if this is equal to occ?
+        'r',' Reference occurrences (R)',
+        'qr',' Intersection occurrences (QR)',
         'sig',' Significance',
-        'pval','P-value',
-        'eval','E-value',
-        'jac','Jaccard similarity',
-        'sor','Sorensen similarity',
-        'mi','Mutual information',
-        'dotprod','Dot product (if score column is set)' );
+        'pval',' P-value of the intersection calculated with the hypergeometric function',
+        'eval',' E-value = P-value * nb_tests',
+        'jac_sim',' Jaccard similarity = intersection/union = (Q and R)/(Q or R) ',
+        'mi',' Mutual information of class Q and R: I(Q,R) = H(Q) + H(R) - H(Q,R)',
+        'dotprod',' Dot product (if score column is set)' );
 
     &ThresholdsDiv("Thresholds of return fields",
         "help.compare_classes.html#thresholds",
