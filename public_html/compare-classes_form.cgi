@@ -278,7 +278,7 @@ print '</div>
     <div class="card-header" role="tab" id="Thresholds">
         <h5> <i class="fa fa-tasks"></i>
         <a data-toggle="collapse" href="#collapseThresholds" aria-expanded="true" aria-controls="collapseThresholds">
-        Thresholds for the pairwise class comparison table
+        Thresholds
         </a>
         </h5>
     </div>
@@ -396,7 +396,7 @@ exit(0);
 ## Print table of supported return fields of pairwise comparison tables
 sub PrintThresholdTableForm {
 
-    my @vars = qw( q r Isize sig Pval Jacsim Sorsim MI dotprod );
+    my @vars = qw( q r qr sig pval jac sor mi dotprod );
 
     my %descriptions = (
         'q',' Query occurrences', # not sure if this is equal to occ?
