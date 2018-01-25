@@ -249,7 +249,9 @@ print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_metric',
     -class=>'form-control',
     -default=>$default{metric},
     -labels=>\%metric_labels);
-print "</div></div><(div>";
+print " </div>
+    </div>
+</div>";
 
 print '
 <!-- classes output fields -->
