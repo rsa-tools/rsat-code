@@ -174,7 +174,7 @@ print '</div>
     <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Specify a column of the input file(s) containing a score associated to each member. Must be valid for both query and reference classes. The score is used for some metrics like the dot product." data-original-title=""></i></div>
     <div class="panel-body">
         <div class="form-group">';
-print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10) .'
+print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10,-placeholder=>'optional') .'
         </div>
     </div>
 </div>
@@ -185,8 +185,8 @@ print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10) .'
     <div class="panel-body">
         <div class="form-group">';
 my %self_compa_labels = ( 
-    'off',' Compare query classes to reference classes',
-    'on',' Compare query classes to query classes (self)' );
+    'off',' Cross-compare query classes to reference classes',
+    'on',' Self-compare query classes to query classes' );
 print $query->radio_group( -name => 'self_compa',-values  => ['off', 'on'],-default => 'off',
     -labels=>\%self_compa_labels)."<br>";
 
