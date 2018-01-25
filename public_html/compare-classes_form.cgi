@@ -139,7 +139,7 @@ print '
     <div class="panel-body">
         <div class="form-group">';
 
-print $query->textarea( -id=>'classesQ',-name=>'classesQ',-rows=>6,-cols=>60, -required=>'true',
+print $query->textarea( -id=>'classesQ',-name=>'classesQ',-rows=>5,-cols=>60, -required=>'true',
                         -placeholder=>'Paste here your query classes, or select a file to upload below',
                         -default=>$default{query_classes});
 print "<br><b>Or</b> select a file to upload<br>\n";
@@ -156,7 +156,7 @@ print '</div>
     <div class="panel-body">
         <div class="form-group">';
 
-print $query->textarea( -id=>'classesR',-name=>'classesR',-rows=>6,-cols=>60, -required=>'true',
+print $query->textarea( -id=>'classesR',-name=>'classesR',-rows=>5,-cols=>60, -required=>'true',
                         -placeholder=>'Paste here your reference classes, or select a file to upload below',
                         -default=>$default{ref_classes});
 print "<br><b>Or</b> select a file to upload<br>\n";
@@ -233,16 +233,15 @@ print '
     <div class="panel-body">
         <div class="form-group">';
 my %metric_labels = (
-'QR',' Intersection QR',
+'qr',' Intersection',
 'sig',' Significance',
 'jac_sim',' Jaccard similarity',
-'sor_sim',' Sorensen similarity',
 'dotprod',' Dot product of score column',
-'E_val',' E-value',
-'P_val',' P-value',
-'MI',' Mutual information');
+'eval',' E-value',
+'pval',' P-value',
+'mi',' Mutual information ');
 print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_metric',
-    -Values=>['QR','sig','jac_sim','sor_sim','dotprod','E_val','P_val','MI'],
+    -Values=>['qr','sig','jac_sim','dotprod','eval','pval','mi'],
     -class=>'form-control',
     -default=>$default{metric},
     -labels=>\%metric_labels);
@@ -262,10 +261,10 @@ print $query->checkbox(-name=>'freq',-checked=>0,-value=>'on',-label=>'Frequenci
 print $query->checkbox(-name=>'proba',-checked=>$default{'proba'},-value=>'on',-label=>'Hypergeometric probability').'<br>';
 print $query->checkbox(-name=>'sort',-checked=>$default{'sort'},-value=>'on',-label=>'Sorting criterion').'<br>';
 print $query->checkbox(-name=>'jac_sim',-checked=>$default{'jac'},-value=>'on',-label=>'Jaccard similarity').'<br>';
-print $query->checkbox(-name=>'sor_sim',-checked=>0,-value=>'on',-label=>'Sorensen similarity').'<br>';
+#print $query->checkbox(-name=>'sor_sim',-checked=>0,-value=>'on',-label=>'Sorensen similarity').'<br>';
 print $query->checkbox(-name=>'dotprod',-checked=>0,-value=>'on',-label=>'Dot product, relevant if a score column is specified').'<br>';
 print $query->checkbox(-name=>'entropy',-checked=>0,-value=>'on',-label=>'Entropy').'<br>';
-print $query->checkbox(-name=>'members',-checked=>0,-value=>'on',-label=>'Members, might generate large result files');
+print $query->checkbox(-name=>'members',-checked=>0,-value=>'on',-label=>'Class members, might generate large result files');
 
 print '</div>
     </div>
@@ -298,69 +297,16 @@ print '         </div>
 </div>
 
 <!--################################################################-->
-<!--### output & run ###-->
+<!--### run & reset ###-->
 
-                <div class="bhoechie-tab-content">
-
-<!-- ## Specific options for output files-->
-<div class="panel panel-info">
- <div class="panel-heading">Output options</div>
-
-<div class="panel-body">
-<div class="form-group">
-
-<!--A class="badge badge-primary iframe" HREF="help.matrix-clustering.html#merge_operator">Info</a></label></h5-->
-
-
-<!--## Draw heatmap-->
- <div class="form-check">
-    <label class="form-check-label">';
-    print $query->checkbox(-name=>'Heatmap',
-                       -checked=>$default{heatmap},
-                       -class=>form-check-input,
-                        -label=>'');
-print   'Heatmap</label></div>';
-
-## Export the trees in Newick format
-### By default trees are exported in JSON
-print '<div class="form-check">
-    <label class="form-check-label">';
-    print $query->checkbox(-name=>'newick',
-                       -checked=>$default{newick},
-                       -class=>form-check-input,
-                        -label=>'');
-print   'Export the trees in Newick format</label></div>';
-
-## Export radial tree
-print '<div class="form-check">
-    <label class="form-check-label">';
-    print $query->checkbox(-name=>'radial',
-                       -checked=>$default{radial},
-                       -class=>form-check-input,
-                        -label=>'');
-print   'Export Radial Tree (motif browser)</label></div>';
-
-## Negative control: Permute the columns of the input motifs
-print '<div class="form-check">
-    <label class="form-check-label">';
-    print $query->checkbox(-name=>'random',
-                       -checked=>$default{random},
-                       -class=>form-check-input,
-                        -label=>'');
-print   'Negative control: the input motifs columns are randomly permuted.</label></div>';
-
-print "<HR>\n";
-
-################################################################
-### Send results by email only
-print "<p>\n";
+<div class="bhoechie-tab-content">';
 &SelectOutput();
-print " </div>
-  </div> </div>";
+print "</div>";
 
 
 ################################################################
 ### Action buttons
+
 print $query->submit(-label=>"GO", -class=>"btn btn-success", -type=>"button");
 print " ";
 print $query->reset(-id=>"reset",-class=>"btn btn-warning", -type=>"button");
