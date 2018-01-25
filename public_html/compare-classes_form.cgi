@@ -235,11 +235,11 @@ my %metric_labels = (
 'dotprod',' Dot product',
 'E_val',' E-value',
 'P_val',' P-value',
-'I(Q,R)',' Mutual information');
+'MI',' Mutual information');
 print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_metric',
-    -Values=>['QR','sig','jac_sim','sor_sim','dotprod','E_val','P_val','I(Q,R)'],
+    -Values=>['QR','sig','jac_sim','sor_sim','dotprod','E_val','P_val','MI'],
     -class=>'form-control',
-    -default='QR',
+    -default=>'QR',
     -labels=>\%metric_labels);
 print "</div></div>";
 
