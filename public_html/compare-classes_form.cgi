@@ -206,100 +206,29 @@ print '
 <!-- ### output options ###-->
 
 <div class="bhoechie-tab-content">
-  <div id="accordion" role="tablist">
 
- <!-- Matrix clustering-->
-  <div class="card">
-    <div class="card-header" role="tab" id="headingFour">
-      <h5 class="mb-0">  <i class="fa fa-tasks"></i>
-        <a class="collapsed" data-toggle="collapse" href="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-          Options for the clustering step
-        </a>
-      </h5>
-    </div>
-    <div id="collapseFour" class="collapse" role="tabpanel" aria-labelledby="headingFour" data-parent="#accordion">
-      <div class="card-body">
+<!-- output format -->
+<div class="panel panel-danger">
+    <div class="panel-heading">Output format</div>
+    <div class="panel-body">
+        <div class="form-group">';
 
-<div class="panel panel-warning">
- <div class="panel-heading">Clustering options</div>
-                        <div class="panel-body">';
+my %output_labels = (
+    'classes',' Pairwise class comparison tab-delimited table',
+    'matrix',' Matrix with reference classes as rows and query classes as columns' );
 
-#Metric selected to build the hierarchical tree
- print "<div class='form-row'>
- <label for='metric' class='col-sm-9 control-label'>Metric for the motif-to-motif similarity matrix <A class='badge badge-primary iframe' HREF='help.matrix-clustering.html#metric_build_tree-metric'>Info</a></label>\n";
-  print "<div class='col-sm-3'>";
+print $query->radio_group( -name => 'outformat',-values  => ['classes','matrix'],-default => 'classes',
+    -labels=>\%output)."<br>";
 
-print $query->popup_menu(-id=>'metric', -name=>'metric',
-                         -Values=>["cor", "Ncor", "dEucl", "NdEucl", "logocor", "Nlogocor", "logoDP", "Icor", "NIcor", "SSD", "mean_zscore", "rank_mean"],
-                         -class=>'form-control',
-                         -default=>$default{metric});
-print "</div></div>\n";
+print "</div></div>";
 
-# Hierarchical clusterting agglomeration rule
- print "<div class='form-row'>
-  <label for='hclust_method' class='col-sm-9 control-label'>Agglomeration (linkage) rule to build the hierachical tree<A class='badge badge-primary iframe' HREF='help.matrix-clustering.html#hclust_method'>Info</a></label>\n";
 
-    print "<div class='col-sm-3'>";
+#print $query->popup_menu(-id=>'metric', -name=>'metric',
+#                         -Values=>["cor", "Ncor", "dEucl", "NdEucl", "logocor", "Nlogocor", "logoDP", "Icor", "NIcor", "SSD", "mean_zscore", "rank_mean"],
+#                         -class=>'form-control',
+#                         -default=>$default{metric});
 
-print $query->popup_menu(-id=>'hclust_method', -name=>'hclust_method',
-                         -Values=>["complete", "average", "single", "median", "centroid"],
-                          -class=>'form-control',
-                         -default=>$default{hclust_method});
-print "</div></div>\n";
-
-# Merge matrix operator
-print "<div class='form-row'>
- <label for='merge_stat' class='col-sm-9 control-label'>Merge matrices <A class='badge badge-primary iframe' HREF='help.matrix-clustering.html#merge_operator'>Info</a></label>\n";
-  print "<div class='col-sm-3'>";
-
-print $query->popup_menu(-id=>'merge_stat', -name=>'merge_stat',
-                         -Values=>["sum", "mean"],
-                          -class=>'form-control',
-                         -default=>$default{merge_stat});
 print '
-      </div>
-    </div>
-  </div>
-</div>';
-
-print'
-<!-- Compare matrices-->
-<div class="card">
-  <div class="card-header" role="tab" id="headingThree">
-    <h5> <i class="fa fa-tasks"></i>
-      <a data-toggle="collapse" href="#collapseThree" aria-expanded="true" aria-controls="collapseThree">
-       Options for the motif comparison step (program: compare-matrices)
-      </a>
-    </h5>
-  </div>
-
-  <div id="collapseThree" class="collapse" role="tabpanel" aria-labelledby="headingThree" data-parent="#accordion">
-    <div class="card-body">
-    <div class="panel panel-warning">
-    <div class="panel-heading">Motif comparison options</div>
-    <div class="panel-body">';
-
-
-# Allow run compare-matrices-quick
-#print $query->checkbox(-id=>'quick', -name=>'quick',
-#                      -checked=>$default{quick},
-#                      -label=>'');
-# print "Motif comparison with <i>compare-matrices-quick</i> (100 times faster). Only for <strong>Ncor</strong> and <strong>Cor</strong>.";
-#print "<hr>";
-
-# Selection of output fields and thresholds
-&PrintMatrixClusteringMatchingScores();
-
-print '</div></div>
-    </div>
-  </div>
-  </div>
-
-                </div></div>
-
-
-<!--close panel-->
-</div></div>
  </div>
 
  <!--################################################################-->
