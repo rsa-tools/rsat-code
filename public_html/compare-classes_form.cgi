@@ -21,7 +21,7 @@ $default{query_classes} = "";
 $default{upload_query_classes} = "";
 $default{ref_classes} = "";
 $default{upload_ref_classes} = "";
-
+#$default{pipe} = "";
 $default{occ} = "checked";
 $default{lth_occ} = 1;
 $default{uth_occ} = "none";
@@ -49,6 +49,8 @@ foreach $key (keys %default) {
     }
 }
 
+# TOBEDONE: check which tools might produce output pipeable to this form
+
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ### print the form ###
@@ -64,7 +66,7 @@ print '
             <div class="col-lg-2 col-md-3 col-sm-3 col-xs-3 bhoechie-tab-menu">
               <div class="list-group">
                 <a href="#" class="list-group-item active text-center">
-                  <h4 class="glyphicon"><i class="fa fa-info-circle fa-2x"></i></h4><br/>compare-classes
+                  <h4 class="glyphicon"><i class="fa fa-info-circle fa-2x"></i></h4><br/>Compare classes
                 </a>
                 <a href="#" class="list-group-item text-center">
                   <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Mandatory inputs
@@ -118,112 +120,96 @@ print '
     <!--Cite the publication: <a href="https://twitter.com/rsatools" target="_blank"></a><br>
     <div class="panel panel-default">
         <div class="panel-body">
-        Castro-Mondragon JA, Jaeger S, Thieffry D, Thomas-Chollier M#, van Helden J#. <i>"RSAT matrix-clustering: dynamic exploration and redundancy reduction of transcription factor binding motif collections."</i>, Nucleic Acid Research, 45:13 e119 (2017) <a href="https://www.ncbi.nlm.nih.gov/pubmed/28591841" target="_blank">[Pubmed]</a><a href="https://academic.oup.com/nar/article-lookup/doi/10.1093/nar/gkx314" target="_blank">[Full text]</a>
+        # citation should go here
         </div>
     </div>-->
 </div>
 
 <!-- ################################################################ -->
 <!-- ### mandatory inputs ### -->
-                <div class="bhoechie-tab-content">
-<!-- title -->
+<div class="bhoechie-tab-content">
+
+<!-- query classes -->
 <div class="panel panel-danger">
-    <div class="panel-heading">Analysis Title <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Title that will be displayed at the top of the report page." data-original-title=""></i></div>
+    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of query classes." data-original-title=""></i></div>
 
     <div class="panel-body">
         <div class="form-group">';
 
-print $query->textfield(-id=>'html_title',
--name=>'html_title', -class=>'form-control',-placeholder=>'Provide a Title for this analysis ', -required=>'true',
-                         -default=>$default{html_title}); 
+print $query->textarea( -id=>'classesQ',-name=>'classesQ',-rows=>6,-cols=>60, -required=>'true',
+                        -placeholder=>'Paste here your query classes, or select a file to upload below',
+                        -default=>$default{query_classes});
+print "<br><b>Or</b> select a file to upload<br>\n";
+print $query->filefield(-name=>'Qclass_file',-default=>'',-size=>40);
 
-print '
-       </div>
-   </div>
-</div>
-
-<!-- Motifs -->
-<div class="panel panel-danger">
-    <div class="panel-heading">Motif Collection
-        <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Input here the motif collection of interest to be clustered, you can either paste the motif in the text box or upload it from your computer" data-original-title=""></i>
+print '</div>
     </div>
-    <div class="panel-body">
-        <div class="form-group">';
-
-print $query->textfield(-id=>'collection_1_label', -name=>'collection_1_label', -class=>'form-control', -placeholder=>'Provide a name for this Motif Collection',
-                         -default=>$default{collection_1_label});
-print '</div>';
-&MultiGetMatrix_bootstrap('title'=>'Matrix Format','mat_num'=>1);
-
-print '</div></div></div>
+</div>
+</div>
 
 <!-- ################################################################ -->
- <!-- ### optional inputs ### -->
-                <div class="bhoechie-tab-content">
+<!-- ### optional inputs ### -->
+<div class="bhoechie-tab-content">
 
-<div id="accordion" role="tablist">
-  <div class="card">
-    <div class="card-header" role="tab" id="headingOne">
-      <h5> <i class="fa fa-tags"></i>
-        <a data-toggle="collapse" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-          Add a second Motif collection
-        </a>
-      </h5>
+
+
+<!-- reference classes -->
+<div class="panel panel-danger">
+    <div class="panel-heading">Reference classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes." data-original-title=""></i>
     </div>
+    <div class="panel-body">
+        <div class="form-group">';
 
-    <div id="collapseOne" class="collapse" role="tabpanel" aria-labelledby="headingOne" data-parent="#accordion">
-      <div class="card-body">
- <div class="panel panel-warning">
- <div class="panel-heading">Motif Collection 2
-  <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Input here the motif collection of interest to be clustered, you can either paste the motif in the text box or upload it from your computer" data-original-title=""></i>
+print $query->textarea( -id=>'classesR',-name=>'classesR',-rows=>6,-cols=>60, -required=>'true',
+                        -placeholder=>'Paste here your reference classes, or select a file to upload below',
+                        -default=>$default{ref_classes});
+print "<br><b>Or</b> select a file to upload<br>\n";
+print $query->filefield(-name=>'Rclass_file',-default=>'',-size=>40);
+
+print '</div>
+    </div>
 </div>
-                        <div class="panel-body">
- <div class="form-group">';
-print $query->textfield(-id=>'collection_2_label', -name=>'collection_2_label', -class=>'form-control', -placeholder=>'Provide a name for this Motif Collection',
-                         -default=>$default{collection_2_label});
-print '</div>';
-&MultiGetMatrix_bootstrap('title'=>'Matrix Format','mat_num'=>2);
 
-print '</div></div>
-      </div>
+<!-- score column -->
+<div class="panel panel-danger">
+    <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Specify a column of the input file(s) containing a score associated to each member. Must be valid for both query and reference classes. The score is used for some metrics like the dot product." data-original-title=""></i></div>
+    <div class="panel-body">
+        <div class="form-group">';
+print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10) .'
+        </div>
     </div>
-  </div>
-  <div class="card">
-    <div class="card-header" role="tab" id="headingTwo">
-      <h5 class="mb-0"> <i class="fa fa-tags"></i>
-        <a class="collapsed" data-toggle="collapse" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-          Add a third Motif collection
-        </a>
-      </h5>
-    </div>
-    <div id="collapseTwo" class="collapse" role="tabpanel" aria-labelledby="headingTwo" data-parent="#accordion">
-      <div class="card-body">
-<div class="panel panel-warning">
- <div class="panel-heading">Motif Collection 3
-  <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Input here the motif collection of interest to be clustered, you can either paste the motif in the text box or upload it from your computer" data-original-title=""></i>
 </div>
-                        <div class="panel-body">
- <div class="form-group">';
-print $query->textfield(-id=>'collection_3_label', -name=>'collection_3_label', -class=>'form-control', -placeholder=>'Provide a name for this Motif Collection',
-                         -default=>$default{collection_3_label});
-print '</div>';
-&MultiGetMatrix_bootstrap('title'=>'Matrix Format','mat_num'=>3);
 
-print '
-      </div>
+<!-- comparison type -->
+<div class="panel panel-danger">
+    <div class="panel-heading">Type of comparison</div>
+    <div class="panel-body">
+        <div class="form-group">';
+my %self_compa_labels = ( 
+    'off',' Compare query classes to reference classes',
+    'on',' Compare query classes to query classes (self)' );
+print $query->radio_group( -name => 'self_compa',-values  => ['off', 'on'],-default => 'on',
+    -labels=>\%self_compa_labels)."<br>";
+
+#print $query->checkbox(-name=>'distinct',-checked=>1,-value=>'on',
+#               -label=>'Prevent self-comparison of classes')."<br>";
+#print $query->checkbox(-name=>'triangle',-checked=>1,-value=>'on',
+#               -label=>'Prevent reciprocal comparison of classes, only applies to self');
+
+print "
+        </div>
     </div>
-  </div>
-</div>
-                </div></div>
-                </div>
+</div>".
+ 
+
+'</div>
 
 <!-- ################################################################-->
 <!-- ### advanced options ###-->
 
 <!-- ADVANCED OPTIONS -->
 
-                <div class="bhoechie-tab-content">
-
+<div class="bhoechie-tab-content">
   <div id="accordion" role="tablist">
 
 
@@ -385,12 +371,34 @@ print " </div>
 
 ################################################################
 ### Action buttons
+print $query->submit(-label=>"GO", -class=>"btn btn-success", -type=>"button");
+print " ";
+print $query->reset(-id=>"reset",-class=>"btn btn-warning", -type=>"button");
+print $query->end_form;
+
+ print ' </div>
+        </div>
+  </div>
+</div>
+';
+
+################################################################
+### Demo area
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr' class='col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container'></div>";
+
+
+################################################################
+### Demo 1 data
 
 
 
 
+print "</div> ";
 
+print $query->end_html;
 
+exit(0);
 
 
 
