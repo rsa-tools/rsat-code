@@ -178,6 +178,7 @@ print $query->radio_group( -name => 'outformat',-values  => ['classes','matrix']
 
 print '</div>
     </div>
+</div>
 
 </div>
 
@@ -223,18 +224,12 @@ print '
 
 <div class="bhoechie-tab-content">
 
-<!-- output format -->
+<!-- t -->
 <div class="panel panel-danger">
     <div class="panel-heading">Output format</div>
     <div class="panel-body">
         <div class="form-group">';
 
-my %output_labels = (
-    'classes',' Pairwise class comparison tab-delimited table',
-    'matrix',' Matrix with reference classes as rows and query classes as columns' );
-
-print $query->radio_group( -name => 'outformat',-values  => ['classes','matrix'],-default => 'classes',
-    -labels=>\%output_labels)."<br>";
 
 print "</div></div>";
 
