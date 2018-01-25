@@ -236,11 +236,11 @@ print '
     <div class="panel-body">
         <div class="form-group">';
 my %metric_labels = (
-'QR',' Intersection',
+'QR',' Intersection QR',
 'sig',' Significance',
 'jac_sim',' Jaccard similarity',
 'sor_sim',' Sorensen similarity',
-'dotprod',' Dot product',
+'dotprod',' Dot product of score column',
 'E_val',' E-value',
 'P_val',' P-value',
 'MI',' Mutual information');
@@ -277,13 +277,13 @@ print '</div>
 <div class="card">
     <div class="card-header" role="tab" id="Thresholds">
         <h5> <i class="fa fa-tasks"></i>
-        <a data-toggle="collapse" href="#collapseThresholds" aria-expanded="true" aria-controls="collapseThreshold">
+        <a data-toggle="collapse" href="#collapseThresholds" aria-expanded="true" aria-controls="collapseThresholds">
         Thresholds for the pairwise class comparison table
         </a>
         </h5>
     </div>
 
-    <div id="collapseThreshold" class="collapse" role="tabpanel" aria-labelledby="collapseThreshold" data-parent="#accordion">
+    <div id="collapseThresholds" class="collapse" role="tabpanel" aria-labelledby="collapseThresholds" data-parent="#accordion">
         <div class="card-body">
             <div class="panel panel-warning">
                 <div class="panel-heading">Thresholds for the pairwise class comparison table</div>
