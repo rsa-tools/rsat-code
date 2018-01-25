@@ -29,14 +29,21 @@ $default{sort} = 1;
 $default{proba} = 1;
 $default{jac} = 1;
 
-$default{members} = "";
-$default{sort_key} = "sig";
-$default{pop_size} = "auto";
+#$default{members} = "";
+#$default{sort_key} = "sig";
+#$default{pop_size} = "auto";
 
-$default{lth_occ} = 1;
-$default{uth_occ} = "none";
+$default{lth_q} = 1;
+$default{uth_q} = "none";
+$default{lth_r} = 1;
+$default{uth_r} = "none";
+$default{lth_qr} = 1;
+$default{uth_qr} = "none";
 $default{lth_sig} = 0;
 $default{uth_sig} = "none";
+
+
+
 
 # TOBEDONE: check which tools might produce output pipeable to this form
 
@@ -242,12 +249,12 @@ print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_metric',
     -class=>'form-control',
     -default=>$default{metric},
     -labels=>\%metric_labels);
-print "</div></div>";
+print "</div></div><(div>";
 
 print '
 <!-- classes output fields -->
 <div class="panel panel-danger">
-    <div class="panel-heading">Pairwise class comparison return fields</div>
+    <div class="panel-heading">Return fields of pairwise class comparison</div>
     <div class="panel-body">
         <div class="form-group">';
 
@@ -259,15 +266,40 @@ print $query->checkbox(-name=>'jac_sim',-checked=>$default{'jac'},-value=>'on',-
 print $query->checkbox(-name=>'sor_sim',-checked=>0,-value=>'on',-label=>'Sorensen similarity').'<br>';
 print $query->checkbox(-name=>'dotprod',-checked=>0,-value=>'on',-label=>'Dot product, relevant if a score column is specified').'<br>';
 print $query->checkbox(-name=>'entropy',-checked=>0,-value=>'on',-label=>'Entropy').'<br>';
-print $query->checkbox(-name=>'members',-checked=>0,-value=>'on',-label=>'Members, might generate large result files').'<br>';
+print $query->checkbox(-name=>'members',-checked=>0,-value=>'on',-label=>'Members, might generate large result files');
 
-print "</div></div>";
+print '</div>
+    </div>
+</div>
 
-print '
- </div>
+<div class="card">
+    <div class="card-header" role="tab" id="Thresholds">
+        <h5> <i class="fa fa-tasks"></i>
+        <a data-toggle="collapse" href="#collapseThresholds" aria-expanded="true" aria-controls="collapseThreshold">
+        Thresholds for the pairwise class comparison table
+        </a>
+        </h5>
+    </div>
 
- <!--################################################################-->
- <!--### output & run ###-->
+    <div id="collapseThreshold" class="collapse" role="tabpanel" aria-labelledby="collapseThreshold" data-parent="#accordion">
+        <div class="card-body">
+            <div class="panel panel-warning">
+                <div class="panel-heading">Thresholds for the pairwise class comparison table</div>
+                <div class="panel-body">';
+
+&PrintThresholdTableForm();
+
+print '         </div>
+            </div>
+        </div>
+    </div>
+</div>
+    
+
+</div>
+
+<!--################################################################-->
+<!--### output & run ###-->
 
                 <div class="bhoechie-tab-content">
 
@@ -359,224 +391,67 @@ print $query->end_html;
 
 exit(0);
 
+## Print table of supported return fields of pairwise comparison tables
+sub PrintThresholdTableForm {
+
+    my @vars = qw( q r Isize sig Pval Jacsim Sorsim MI dotprod );
+
+    my %descriptions = (
+        'q',' Query occurrences', # not sure if this is equal to occ?
+        'r',' Reference occurrences',
+        'qr',' Intersection occurrences',
+        'sig',' Significance',
+        'pval','P-value',
+        'eval','E-value',
+        'jac','Jaccard similarity',
+        'sor','Sorensen similarity',
+        'mi','Mutual information',
+        'dotprod','Dot product (if score column is set)' );
+
+    &ThresholdsDiv("Thresholds of return fields",
+        "help.compare_classes.html#thresholds",
+        \@vars,
+        \%descriptions);
+}
+
+## Display a collapsable div with selectable scores and thresholds
+sub ThresholdsDiv {
+  my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
+  print "<p><fieldset class='form-group'>\n<b>".$title."</b>";
+  &FieldsThresholdsTableMC($help_file, $field_ref, $field_descr_ref);
+    print '</fieldset><p/>';
+}
+
+## Display a table with checkboxes and thresholds for a set of return fields
+sub FieldsThresholdsTableMC {
+  my ($help_file, $field_ref, $field_descr_ref) = @_;
+  my @fields = @{$field_ref};
+  my %field_descr = %{$field_descr_ref};
+  print "<table class='table table-striped table-sm' style=';font-size:12px'>\n";
+  print $query->th(["Metrics",
+                    "Lower<br>Threshold",
+                    "Upper<br>Threshold",
+                    "description"]);
+
+  foreach my $field (@fields) {
+    my $lth = $default{'lth_'.$field} || "none";
+    my $uth = $default{'uth_'.$field} || "none";
+
+    print "<tr valign='middle'>";
+    print "<td>".$field."</td>\n";
+    print "<td>", $query->textfield(-name=>'lth_'.$field, -class=>'form-control',
+                                    -default=>$lth,
+                                    -size=>5), "</td>\n";
+    print "<td>", $query->textfield(-name=>'uth_'.$field,-class=>'form-control',
+                                    -default=>$uth,
+                                    -size=>5), "</td>\n";
+    print "<td>", $field_descr{$field}, "</td>\n";
+    print "</tr>\n";
+  }
+  print "</table>\n";
+}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-#### upload query classifcation file
-print "<a href='help.compare-classes.html#upload_query_classes'>Query classification file</a><BR>";
-print $query->filefield(-name=>'upload_query_classes',
-			-default=>$default{upload_query_classes},
-			-size=>30,
-			-maxlength=>200);
-print "<p>";
-
-#### upload reference classifcation file
-print "<a href='help.compare-classes.html#upload_ref_classes'>Reference classification file</a><BR>";
-print $query->filefield(-name=>'upload_ref_classes',
-			-default=>$default{upload_ref_classes},
-			-size=>30,
-			-maxlength=>200);
-print "<p>";
-
-#### table with all the statistics and thresholds
-print "<h4>Return</h4>\n";
-
-print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
-		    $query->Tr({-align=>left,-valign=>TOP},
-			       [
-				$query->th([" <A HREF='help.compare-classes.html#return_fields'>Fields</A> "]),
-
-				### occurrences
-				$query->td([$query->checkbox(-name=>'occ',
-							     -checked=>$default{occ},
-							     -label=>' Occurrences ')
-					    ]),
-
-				### Frequencies
-				$query->td([$query->checkbox(-name=>'freq',
-							     -checked=>$default{freq},
-							     -label=>' Frequencies ')
-					    ]),
-
-				### Probabilities
-				$query->td([$query->checkbox(-name=>'proba',
-							     -checked=>$default{proba},
-							     -label=>' Probabilities ')
-					    ]),
-
-
-				### Jaccard index
-				$query->td([$query->checkbox(-name=>'jac',
-							     -checked=>$default{jac},
-							     -label=>' Jaccard index ')
-					    ]),
-				### Entropy
-				$query->td([$query->checkbox(-name=>'entropy',
-							     -checked=>$default{entropy},
-							     -label=>' Entropy ')
-					    ]),
-
-				### Members
-				$query->td([$query->checkbox(-name=>'members',
-							     -checked=>$default{members},
-							     -label=>' Members '),
-					    ]),
-
-			 ]
-			)
-		);
-
-print "<h4>Thresholds</h4>\n";
-print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
-		    $query->Tr({-align=>left,-valign=>TOP},
-			       [
-				$query->th([" <A HREF='help.compare-classes.html#return_fields'>Fields</A> ",
-					    " <A HREF='help.compare-classes.html#thresholds'>Lower<BR>Threshold</A> ",
-					    " <A HREF='help.compare-classes.html#thresholds'>Upper<BR>Threshold</A> ",
-					    ]),
-				
-				### Query class size
-				$query->td([' Query size ',
-					    $query->textfield(-name=>'lth_q',
-							      -default=>$default{lth_q},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_q',
-							      -default=>$default{uth_q},
-							      -size=>5),
-					    ]),
-				### Reference class size
-				$query->td([' Reference size ',
-					    $query->textfield(-name=>'lth_r',
-							      -default=>$default{lth_r},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_r',
-							      -default=>$default{uth_r},
-							      -size=>5),
-					    ]),
-				### Intersection size
-				$query->td([' Intersection size ',
-					    $query->textfield(-name=>'lth_qr',
-							      -default=>$default{lth_qr},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_qr',
-							      -default=>$default{uth_qr},
-							      -size=>5),
-					    ]),
-				### Significance 
-				$query->td([' Significance ',
-					    $query->textfield(-name=>'lth_sig',
-							      -default=>$default{lth_sig},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_sig',
-							      -default=>$default{uth_sig},
-							      -size=>5),
-					    ]),
-
-				### P-value 
-				$query->td([' P-value ',
-					    $query->textfield(-name=>'lth_pval',
-							      -default=>$default{lth_pval},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_pval',
-							      -default=>$default{uth_pval},
-							      -size=>5),
-					    ]),
-
-				### E-value 
-				$query->td([' E-value ',
-					    $query->textfield(-name=>'lth_eval',
-							      -default=>$default{lth_eval},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_eval',
-							      -default=>$default{uth_eval},
-							      -size=>5),
-					    ]),
-				### Jaccard index
-				$query->td([' Jaccard index ',
-					    $query->textfield(-name=>'lth_jac',
-							      -default=>$default{lth_jac},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_jac',
-							      -default=>$default{uth_jac},
-							      -size=>5),
-					    ]),
-				$query->td([' Mutual information ',
-					    $query->textfield(-name=>'lth_mi',
-							      -default=>$default{lth_mi},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_mi',
-							      -default=>$default{uth_mi},
-							      -size=>5),
-					    ]),
-
-			 ]
-			)
-		);
-
-
-
-################################################################
-## sort key
-print "<b><a href='help.compare-classes.html#sort_key'>Sort key </a></b>";
-print  $query->popup_menu(-name=>'sort_key',
-			  -Values=>['sig',
-				    'E_val', 
-				    'P_val',
-				    'Jaccard index',
-				    'Mutual information',
-				    'names'
-				    ],
-			  -default=>$sequence_format);
-
-################################################################
-## population size
-print "&nbsp"x8, "<b><a href='help.compare-classes.html#pop_size'>Population size </a></b>";
-print $query->textfield(-name=>'pop_size',
-			-default=>$default{pop_size},
-			-size=>5);
-
-### send results by email or display on the browser
-print "<HR width=550 align=left>\n";
-&SelectOutput();
-
-### action buttons
-print "<UL><UL><TABLE class='formbutton'>\n";
-print "<TR VALIGN=MIDDLE>\n";
-print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
-print $query->end_form;
-
-### data for the demo 
-# print $query->start_multipart_form(-action=>"compare-classes_form.cgi");
-# print "<TD><B>";
-# print $query->hidden(-name=>'sort_key',-default=>"sig");
-# print $query->submit(-label=>"DEMO");
-# print "</B></TD>\n";
-# print $query->end_form;
-
-
-print "<TD><B><A HREF='help.compare-classes.html'>MANUAL</A></B></TD>\n";
-#print "<TD><B><A HREF='tutorials/tut_compare-classes.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
-print "</TR></TABLE></UL></UL>\n";
-
-print "</FONT>\n";
-print "<HR>";
-
-print $query->end_html;
-
-exit(0);
 
 
