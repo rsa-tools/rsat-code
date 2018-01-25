@@ -347,10 +347,10 @@ sub PrintThresholdTableForm {
         'r',' Reference occurrences (R)',
         'qr',' Intersection occurrences (QR)',
         'sig',' Significance',
-        'pval',' P-value of the intersection calculated with the hypergeometric function',
+        'pval',' P-value of the intersection, hypergeometric function',
         'eval',' E-value = P-value * nb_tests',
-        'jac_sim',' Jaccard similarity = intersection/union = (Q and R)/(Q or R) ',
-        'mi',' Mutual information of class Q and R: I(Q,R) = H(Q) + H(R) - H(Q,R)',
+        'jac_sim',' Jaccard similarity = (Q and R)/(Q or R) ',
+        'mi',' Mutual information of class Q and R',
         'dotprod',' Dot product (if score column is set)' );
 
     &ThresholdsDiv("Thresholds of return fields",
