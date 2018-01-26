@@ -104,7 +104,7 @@ print '
     <span class="fa-stack fa-lg">
         <i class="fa fa-user fa-stack-1x"></i>
     </span>
-    <a target="_blank" href="http://jacques.van-helden.perso.luminy.univ-amu.fr/ ">Jacques van Helden</a> with help from Joseph Tran and Bruno Contreras-Moreira.<br>
+    <a target="_blank" href="http://jacques.van-helden.perso.luminy.univ-amu.fr/ ">Jacques van Helden</a> with help from Joseph Tran. Bruno Contreras Moreira updated the web interface.<br>
     <span class="fa-stack fa-lg">
         <i class="fa fa-folder-open fa-stack-1x"></i>
     </span>
@@ -363,7 +363,7 @@ close(FILER);
 print '<script>
 function setDemo(demoQ, demoR){
     $("#reset").trigger("click");
-    descr = "<H4>Demonstration:</H4>\n \
+    descr = "<H4>Demo:</H4>\n \
     <blockquote class =\'blockquote text-justify small\'>\
     This demo consists on the comparison between protein clusters \
     obtained after application of the <a href=\'http://micans.org/mcl\' \
@@ -381,10 +381,8 @@ function setDemo(demoQ, demoR){
 }
 </script>';
 
-print ' <div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container">
-
-<button type="button" class="btn btn-info" onclick="setDemo1('. "'$demo_1_matrices'" .')">DEMO (one collection)</button> ';
-
+print '<div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container">
+<button type="button" class="btn btn-info" onclick="setDemo('. "'$demoQ'" .','. "'$demoR'"  .')">DEMO</button> ';
 print "</div>";
 
 print $query->end_html;
