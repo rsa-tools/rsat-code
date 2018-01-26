@@ -1,7 +1,11 @@
 #!/usr/bin/perl
-#### this cgi script fills the HTML form for the program compare-classes
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+#### updated by Bruno Jan2018
+
+BEGIN{
+    if ($0 =~ /([^(\/)]+)$/) {
+        push (@INC, "$`lib/");
+    }
+    require "RSA.lib";
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
@@ -17,247 +21,371 @@ $default{query_classes} = "";
 $default{upload_query_classes} = "";
 $default{ref_classes} = "";
 $default{upload_ref_classes} = "";
+#$default{pipe} = "";
 
+$default{metric} = 'QR';
+$default{occ} = 1;
+$default{sort} = 1;
+$default{proba} = 1;
+$default{jac} = 1;
 
-$default{occ} = "checked";
-$default{lth_occ} = 1;
-$default{uth_occ} = "none";
-$default{freq} = "checked";
-$default{sig} = "checked";
+#$default{members} = "";
+#$default{sort_key} = "sig";
+#$default{pop_size} = "auto";
+
+$default{lth_q} = 1;
+$default{uth_q} = "none";
+$default{lth_r} = 1;
+$default{uth_r} = "none";
+$default{lth_qr} = 1;
+$default{uth_qr} = "none";
 $default{lth_sig} = 0;
 $default{uth_sig} = "none";
-$default{proba} = "checked";
-$default{freq} = "checked";
-$default{jac} = "checked";
-$default{entropy} = "checked";
-$default{members} = "";
-$default{sort_key} = "sig";
-$default{pop_size} = "auto";
-$default{entropy} = "checked";
-$default{jac} = "checked";
 
-### print the form ###
-&RSA_header("compare-classes", 'form');
-print "<CENTER>";
-print "Compare two classifications (clustering results, functional classes, ...), and assess the statistical significance of common members between each pair of classes.<P>\n";
-print "Program developed by <A HREF='mailto:jtran\@bigre.ulb.ac.be (Joseph Tran)'>Joseph Tran</A>\n";
-print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)'>Jacques van Helden</A>\n";
-print "</CENTER>";
-print "<HR>";
+# TOBEDONE: check which tools might produce output pipeable to this form
 
 ### replace defaults by parameters from the cgi call, if defined
-foreach $key (keys %default) {
-  if ($query->param($key)) {
-    $default{$key} = $query->param($key);
-  }
-} 
+#foreach $key (keys %default) {
+#    if ($query->param($key)) {
+#        $default{$key} = $query->param($key);
+#    }
+#    if ($query->param($key) =~ /checked/i) {
+#        $checked{$key} = "CHECKED";
+#    }
+#}
+
+&ListParameters() if ($ENV{rsat_echo} >= 2);
+
+### print the form as in matrix-clustering_form.cgi
+&RSA_header_bootstrap("compare-classes", 'form');
 
 print $query->start_multipart_form(-action=>"compare-classes.cgi");
 
+print '
+<!-- Form with bootstrap -->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 bhoechie-tab-container">
 
-#### upload query classifcation file
-print "<a href='help.compare-classes.html#upload_query_classes'>Query classification file</a><BR>";
-print $query->filefield(-name=>'upload_query_classes',
-			-default=>$default{upload_query_classes},
-			-size=>30,
-			-maxlength=>200);
-print "<p>";
+            <div class="col-lg-2 col-md-3 col-sm-3 col-xs-3 bhoechie-tab-menu">
+                <div class="list-group">
+                    <a href="#" class="list-group-item active text-center">
+                        <h4 class="glyphicon"><i class="fa fa-info-circle fa-2x"></i></h4><br/>Compare classes
+                    </a>
+                    <a href="#" class="list-group-item text-center">
+                        <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Main input
+                    </a>
+                    <a href="#" class="list-group-item text-center">
+                        <h4 class="glyphicon"><i class="fa fa-tags fa-2x"></i></h4><br/>Optional input
+                    </a>
+                    <a href="#" class="list-group-item text-center">
+                        <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced output options
+                    </a>
+                    <a href="#" class="list-group-item text-center">
+                        <h4 class="glyphicon"><i class="fa fa-play-circle fa-2x"></i></h4><br/>Run analysis
+                    </a>
+                </div>
+            </div>
 
-#### upload reference classifcation file
-print "<a href='help.compare-classes.html#upload_ref_classes'>Reference classification file</a><BR>";
-print $query->filefield(-name=>'upload_ref_classes',
-			-default=>$default{upload_ref_classes},
-			-size=>30,
-			-maxlength=>200);
-print "<p>";
+            <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 bhoechie-tab">
 
-#### table with all the statistics and thresholds
-print "<h4>Return</h4>\n";
+<!-- ################################################################ -->
+<!-- ### info ### -->
 
-print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
-		    $query->Tr({-align=>left,-valign=>TOP},
-			       [
-				$query->th([" <A HREF='help.compare-classes.html#return_fields'>Fields</A> "]),
+            <div class="bhoechie-tab-content active">
+            
+    <h2> <img src="images/RSAT_logo.jpg" style="max-width:150px;max-height:60px;padding-bottom:10px" alt="RSAT server" border="0"></img>compare-classes</h2>
+    <span class="fa-stack fa-lg">
+        <i class="fa fa-info-circle fa-stack-1x"></i>
+    </span>
+    Compare two classifications (clustering results, functional classes, etc), and assess the statistical significance of common members between pairs of classes.<br>
+    <span class="fa-stack fa-lg">
+        <i class="fa fa-user fa-stack-1x"></i>
+    </span>
+    <a target="_blank" href="http://jacques.van-helden.perso.luminy.univ-amu.fr/ ">Jacques van Helden</a> with help from Joseph Tran and Bruno Contreras-Moreira.<br>
+    <span class="fa-stack fa-lg">
+        <i class="fa fa-folder-open fa-stack-1x"></i>
+    </span>
+    Sample output<br>
+    <span class="fa-stack fa-lg">
+        <i class="fa fa-book fa-stack-1x"></i>
+    </span>
+    <a class="iframe" href="help.compare-classes.html">User Manual</a><br>
+    <!--span class="fa-stack fa-lg">
+        <i class="fa fa-graduation-cap fa-stack-1x"></i>
+    </span>
+    <a class="iframe" href="help.compare-classes.html">Tutorial</a><br-->
+    <span class="fa-stack fa-lg">
+        <i class="fa fa-twitter fa-stack-1x"></i>
+    </span>
+    <a href="https://twitter.com/rsatools" target="_blank">Ask a question to the RSAT team</a><br>
+    <!--<span class="fa-stack fa-lg">
+        <i class="fa fa-pencil fa-stack-1x"></i>
+    </span>
+    Cite the publication: <a href="https://twitter.com/rsatools" target="_blank"></a><br>
+    <div class="panel panel-default">
+        <div class="panel-body">
+        # citation should go here
+        </div>
+    </div>-->
+            </div>
 
-				### occurrences
-				$query->td([$query->checkbox(-name=>'occ',
-							     -checked=>$default{occ},
-							     -label=>' Occurrences ')
-					    ]),
+<!-- ################################################################ -->
+<!-- ### main input ### -->
+    
+            <div class="bhoechie-tab-content">
 
-				### Frequencies
-				$query->td([$query->checkbox(-name=>'freq',
-							     -checked=>$default{freq},
-							     -label=>' Frequencies ')
-					    ]),
+                <!-- query classes -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Query classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of query classes." data-original-title=""></i></div>
+                    <div class="panel-body">
+                        <div class="form-group">';
 
-				### Probabilities
-				$query->td([$query->checkbox(-name=>'proba',
-							     -checked=>$default{proba},
-							     -label=>' Probabilities ')
-					    ]),
+                        print $query->textarea( -id=>'classesQ',-name=>'classesQ',-rows=>5,-cols=>60, -required=>'true',
+                            -placeholder=>'Paste here your query classes, or select a file to upload below',
+                            -default=>$default{query_classes});
+                        print "<br><b>Or</b> select a file to upload<br>\n";
+                        print $query->filefield(-name=>'Qclass_file',-default=>'',-size=>40);
 
+print '                 </div>
+                    </div>
+                </div>
 
-				### Jaccard index
-				$query->td([$query->checkbox(-name=>'jac',
-							     -checked=>$default{jac},
-							     -label=>' Jaccard index ')
-					    ]),
-				### Entropy
-				$query->td([$query->checkbox(-name=>'entropy',
-							     -checked=>$default{entropy},
-							     -label=>' Entropy ')
-					    ]),
+                <!-- reference classes -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Reference classes <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="A tab-delimited text file containing the description of reference classes." data-original-title=""></i></div>
+                    <div class="panel-body">
+                        <div class="form-group">';
 
-				### Members
-				$query->td([$query->checkbox(-name=>'members',
-							     -checked=>$default{members},
-							     -label=>' Members '),
-					    ]),
+                        print $query->textarea( -id=>'classesR',-name=>'classesR',-rows=>5,-cols=>60, -required=>'true',
+                            -placeholder=>'Paste here your reference classes, or select a file to upload below',
+                            -default=>$default{ref_classes});
+                        print "<br><b>Or</b> select a file to upload<br>\n";
+                        print $query->filefield(-name=>'Rclass_file',-default=>'',-size=>40);
 
-			 ]
-			)
-		);
+print '                 </div>
+                    </div>
+                </div>
 
-print "<h4>Thresholds</h4>\n";
-print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
-		    $query->Tr({-align=>left,-valign=>TOP},
-			       [
-				$query->th([" <A HREF='help.compare-classes.html#return_fields'>Fields</A> ",
-					    " <A HREF='help.compare-classes.html#thresholds'>Lower<BR>Threshold</A> ",
-					    " <A HREF='help.compare-classes.html#thresholds'>Upper<BR>Threshold</A> ",
-					    ]),
-				
-				### Query class size
-				$query->td([' Query size ',
-					    $query->textfield(-name=>'lth_q',
-							      -default=>$default{lth_q},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_q',
-							      -default=>$default{uth_q},
-							      -size=>5),
-					    ]),
-				### Reference class size
-				$query->td([' Reference size ',
-					    $query->textfield(-name=>'lth_r',
-							      -default=>$default{lth_r},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_r',
-							      -default=>$default{uth_r},
-							      -size=>5),
-					    ]),
-				### Intersection size
-				$query->td([' Intersection size ',
-					    $query->textfield(-name=>'lth_qr',
-							      -default=>$default{lth_qr},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_qr',
-							      -default=>$default{uth_qr},
-							      -size=>5),
-					    ]),
-				### Significance 
-				$query->td([' Significance ',
-					    $query->textfield(-name=>'lth_sig',
-							      -default=>$default{lth_sig},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_sig',
-							      -default=>$default{uth_sig},
-							      -size=>5),
-					    ]),
+                <!-- output format -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Output format</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
 
-				### P-value 
-				$query->td([' P-value ',
-					    $query->textfield(-name=>'lth_pval',
-							      -default=>$default{lth_pval},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_pval',
-							      -default=>$default{uth_pval},
-							      -size=>5),
-					    ]),
+                        my %output_labels = (
+                            'classes',' Pairwise class comparison tab-delimited table',
+                            'matrix',' Matrix with reference classes as rows and query classes as columns' );
 
-				### E-value 
-				$query->td([' E-value ',
-					    $query->textfield(-name=>'lth_eval',
-							      -default=>$default{lth_eval},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_eval',
-							      -default=>$default{uth_eval},
-							      -size=>5),
-					    ]),
-				### Jaccard index
-				$query->td([' Jaccard index ',
-					    $query->textfield(-name=>'lth_jac',
-							      -default=>$default{lth_jac},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_jac',
-							      -default=>$default{uth_jac},
-							      -size=>5),
-					    ]),
-				$query->td([' Mutual information ',
-					    $query->textfield(-name=>'lth_mi',
-							      -default=>$default{lth_mi},
-							      -size=>5),
-					    $query->textfield(-name=>'uth_mi',
-							      -default=>$default{uth_mi},
-							      -size=>5),
-					    ]),
+                        print $query->radio_group( -name => 'outformat',-values  => ['classes','matrix'],-default => 'classes',
+                            -labels=>\%output_labels)."<br>";
 
-			 ]
-			)
-		);
+print '                 </div>
+                    </div>
+                </div>
+            </div>
 
+<!-- ################################################################ -->
+<!-- ### optional input ### -->
 
+            <div class="bhoechie-tab-content">
 
-################################################################
-## sort key
-print "<b><a href='help.compare-classes.html#sort_key'>Sort key </a></b>";
-print  $query->popup_menu(-name=>'sort_key',
-			  -Values=>['sig',
-				    'E_val', 
-				    'P_val',
-				    'Jaccard index',
-				    'Mutual information',
-				    'names'
-				    ],
-			  -default=>$sequence_format);
+                <!-- score column -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Column of the input files containing a score associated to each member. Must be valid for both query and reference classes. It is used for some metrics like the dot product." data-original-title=""></i></div>
+                    <div class="panel-body">
+                        <div class="form-group">';
+                        print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10,-placeholder=>'optional') .'
+                        </div>
+                    </div>
+                </div>
 
-################################################################
-## population size
-print "&nbsp"x8, "<b><a href='help.compare-classes.html#pop_size'>Population size </a></b>";
-print $query->textfield(-name=>'pop_size',
-			-default=>$default{pop_size},
-			-size=>5);
+                <!-- comparison type -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Type of comparison</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
+                        my %self_compa_labels = ( 
+                            'off',' Cross-compare query classes to reference classes',
+                            'on',' Self-compare query classes to query classes' );
+                        print $query->radio_group( -name => 'self_compa',
+                            -values  => ['off', 'on'],-default => 'off',
+                            -labels=>\%self_compa_labels)."<br>";
 
-### send results by email or display on the browser
-print "<HR width=550 align=left>\n";
-&SelectOutput();
+                        # commented out as they seem confusing,Bruno jan2018
+                        #print $query->checkbox(-name=>'distinct',-checked=>1,-value=>'on',
+                        #   -label=>'Prevent self-comparison of classes')."<br>";
+                        #print $query->checkbox(-name=>'triangle',-checked=>1,-value=>'on',
+                        #   -label=>'Prevent reciprocal comparison of classes, only applies to self');
 
-### action buttons
-print "<UL><UL><TABLE class='formbutton'>\n";
-print "<TR VALIGN=MIDDLE>\n";
-print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print '                 </div>
+                    </div>
+                </div>
+            </div>
+
+<!-- ################################################################-->
+<!-- ### advanced output options  ###-->
+
+            <div class="bhoechie-tab-content">
+
+                <!-- matrix metric  -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Metric in matrix output</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
+my %metric_labels = (
+'qr',' Intersection',
+'sig',' Significance',
+'jac_sim',' Jaccard similarity',
+'dotprod',' Dot product of score column',
+'eval',' E-value',
+'pval',' P-value',
+'mi',' Mutual information ');
+
+                        print $query->popup_menu(-id=>'matrix_metric', -name=>'matrix_metric',
+                            -Values=>['qr','sig','jac_sim','dotprod','eval','pval','mi'],
+                            -class=>'form-control',
+                            -default=>$default{metric},
+                            -labels=>\%metric_labels);
+print '                 </div>
+                    </div>
+                </div>
+
+                <!-- classes output fields -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Return fields of pairwise class comparison</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
+
+print $query->checkbox(-name=>'occ',-checked=>$default{'occ'},-value=>'on',-label=>'Occurrences').'<br>';
+print $query->checkbox(-name=>'freq',-checked=>0,-value=>'on',-label=>'Frequencies').'<br>';
+print $query->checkbox(-name=>'proba',-checked=>$default{'proba'},-value=>'on',-label=>'Hypergeometric probability').'<br>';
+print $query->checkbox(-name=>'sort',-checked=>$default{'sort'},-value=>'on',-label=>'Sorting criterion').'<br>';
+print $query->checkbox(-name=>'jac_sim',-checked=>$default{'jac'},-value=>'on',-label=>'Jaccard similarity').'<br>';
+#print $query->checkbox(-name=>'sor_sim',-checked=>0,-value=>'on',-label=>'Sorensen similarity').'<br>';
+print $query->checkbox(-name=>'dotprod',-checked=>0,-value=>'on',-label=>'Dot product, relevant if a score column is specified').'<br>';
+print $query->checkbox(-name=>'entropy',-checked=>0,-value=>'on',-label=>'Entropy').'<br>';
+print $query->checkbox(-name=>'members',-checked=>0,-value=>'on',-label=>'Class members, might generate large result files');
+
+print '                 </div>
+                    </div>
+                </div>
+
+                <!-- thresholds -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Thresholds for the pairwise class comparison table</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
+
+                        &PrintThresholdTableForm();
+
+print '                 </div>
+                    </div>
+                </div>
+            </div>
+
+<!--################################################################-->
+<!--### run & reset ###-->
+
+            <div class="bhoechie-tab-content">
+
+                <!-- job delivery options -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Job delivery options</div>
+                    <div class="panel-body">
+                        <div class="form-group">';
+
+                        &SelectOutput();
+
+                        print $query->submit(-label=>"GO", -class=>"btn btn-success", -type=>"button");
+                        print " ";
+                        print $query->reset(-id=>"reset",-class=>"btn btn-warning", -type=>"button");
+
+print "                 </div>
+                    </div>
+                </div>
+            </div>
+
+</div></div></div></div>";
+
 print $query->end_form;
 
-### data for the demo 
-# print $query->start_multipart_form(-action=>"compare-classes_form.cgi");
-# print "<TD><B>";
-# print $query->hidden(-name=>'sort_key',-default=>"sig");
-# print $query->submit(-label=>"DEMO");
-# print "</B></TD>\n";
-# print $query->end_form;
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr' class='col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container'></div>";
 
 
-print "<TD><B><A HREF='help.compare-classes.html'>MANUAL</A></B></TD>\n";
-#print "<TD><B><A HREF='tutorials/tut_compare-classes.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
-print "</TR></TABLE></UL></UL>\n";
+################################################################
+### Demo 1 data
 
-print "</FONT>\n";
-print "<HR>";
+
+
+
+#print "</div> </div> </div>";
 
 print $query->end_html;
 
 exit(0);
+
+## Print table of supported return fields of pairwise comparison tables
+sub PrintThresholdTableForm {
+
+    my @vars = qw( q r qr sig eval pval jac_sim mi dotprod );
+
+    my %descriptions = (
+        'q',' Query occurrences (Q)', # not sure if this is equal to occ?
+        'r',' Reference occurrences (R)',
+        'qr',' Intersection occurrences (QR)',
+        'sig',' Significance',
+        'pval',' P-value of the intersection, hypergeometric function',
+        'eval',' E-value = P-value * nb_tests',
+        'jac_sim',' Jaccard similarity = (Q and R)/(Q or R) ',
+        'mi',' Mutual information of class Q and R',
+        'dotprod',' Dot product (if score column is set)' );
+
+    &ThresholdsDiv("Thresholds of return fields",
+        "help.compare_classes.html#thresholds",
+        \@vars,
+        \%descriptions);
+}
+
+## Display a collapsable div with selectable scores and thresholds
+sub ThresholdsDiv {
+  my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
+  print "<p><fieldset class='form-group'>\n<b>".$title."</b>";
+  &FieldsThresholdsTableMC($help_file, $field_ref, $field_descr_ref);
+    print '</fieldset><p/>';
+}
+
+## Display a table with checkboxes and thresholds for a set of return fields
+sub FieldsThresholdsTableMC {
+  my ($help_file, $field_ref, $field_descr_ref) = @_;
+  my @fields = @{$field_ref};
+  my %field_descr = %{$field_descr_ref};
+  print "<table class='table table-striped table-sm' style=';font-size:12px'>\n";
+  print $query->th(["Metrics",
+                    "Lower<br>Threshold",
+                    "Upper<br>Threshold",
+                    "description"]);
+
+  foreach my $field (@fields) {
+    my $lth = $default{'lth_'.$field} || "none";
+    my $uth = $default{'uth_'.$field} || "none";
+
+    print "<tr valign='middle'>";
+    print "<td>".$field."</td>\n";
+    print "<td>", $query->textfield(-name=>'lth_'.$field, -class=>'form-control',
+                                    -default=>$lth,
+                                    -size=>5), "</td>\n";
+    print "<td>", $query->textfield(-name=>'uth_'.$field,-class=>'form-control',
+                                    -default=>$uth,
+                                    -size=>5), "</td>\n";
+    print "<td>", $field_descr{$field}, "</td>\n";
+    print "</tr>\n";
+  }
+  print "</table>\n";
+}
+
+
+
 
 
