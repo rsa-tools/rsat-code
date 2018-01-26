@@ -75,9 +75,11 @@ print '
                     <a href="#" class="list-group-item text-center">
                         <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Main input
                     </a>
-                    <!--<a href="#" class="list-group-item text-center">
+                    <!--
+                    <a href="#" class="list-group-item text-center">
                         <h4 class="glyphicon"><i class="fa fa-tags fa-2x"></i></h4><br/>Optional input
-                    </a>->
+                    </a> 
+                    -->
                     <a href="#" class="list-group-item text-center">
                         <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced options
                     </a>
