@@ -350,13 +350,17 @@ my ($demoQ,$demoR);
 
 open(FILEQ, $demo_fileQ);
 while(my $row = <FILEQ>){
+    chomp $row;
     $demoQ .= $row;
+    $demoQ .= "\\n";
 }
 close(FILEQ);
 
 open(FILER, $demo_fileR);
 while(my $row = <FILER>){
+    chomp $row;
     $demoR .= $row;
+    $demoR .= "\\n";
 }
 close(FILER);
 
@@ -380,7 +384,7 @@ function setDemo(demoQ, demoR){
 </script>';
 
 print '<div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container">
-<button type="button" class="btn btn-info" onclick="setDemo('. "'demoQ'" .')">DEMO</button> ';
+<button type="button" class="btn btn-info" onclick="setDemo('. "'$demoQ'" .')">DEMO</button> ';
 print "</div>";
 
 print $query->end_html;
