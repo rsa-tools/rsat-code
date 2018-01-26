@@ -380,7 +380,7 @@ function setDemo(demoQ, demoR){
 </script>';
 
 print '<div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container">
-<button type="button" class="btn btn-info" onclick="setDemo('. "'$demoQ'" .')">DEMO</button> ';
+<button type="button" class="btn btn-info" onclick="setDemo('. "'demoQ'" .')">DEMO</button> ';
 print "</div>";
 
 print $query->end_html;
