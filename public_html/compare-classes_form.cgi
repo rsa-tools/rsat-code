@@ -75,11 +75,11 @@ print '
                     <a href="#" class="list-group-item text-center">
                         <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Main input
                     </a>
-                    <a href="#" class="list-group-item text-center">
+                    <!--<a href="#" class="list-group-item text-center">
                         <h4 class="glyphicon"><i class="fa fa-tags fa-2x"></i></h4><br/>Optional input
-                    </a>
+                    </a>->
                     <a href="#" class="list-group-item text-center">
-                        <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced output options
+                        <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced options
                     </a>
                     <a href="#" class="list-group-item text-center">
                         <h4 class="glyphicon"><i class="fa fa-play-circle fa-2x"></i></h4><br/>Run analysis
@@ -169,7 +169,7 @@ print '                 </div>
 
                 <!-- output format -->
                 <div class="panel panel-danger">
-                    <div class="panel-heading">Output format</div>
+                    <div class="panel-heading">Format</div>
                     <div class="panel-body">
                         <div class="form-group">';
 
@@ -185,12 +185,11 @@ print '                 </div>
                 </div>
             </div>
 
-<!-- ################################################################ -->
-<!-- ### optional input ### -->
+<!-- ################################################################ 
+### optional input ### 
 
             <div class="bhoechie-tab-content">
 
-                <!-- score column -->
                 <div class="panel panel-danger">
                     <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Column of the input files containing a score associated to each member. Must be valid for both query and reference classes. It is used for some metrics like the dot product." data-original-title=""></i></div>
                     <div class="panel-body">
@@ -200,12 +199,34 @@ print '                 </div>
                     </div>
                 </div>
 
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Type of comparison</div>
+                    <div class="panel-body">
+                        <div class="form-group"> -->';
+
+#                        my %self_compa_labels = ( 
+#                            'off',' Cross-compare query classes to reference classes',
+#                            'on',' Self-compare query classes to query classes' );
+#                        print $query->radio_group( -name => 'self_compa',
+#                            -values  => ['off', 'on'],-default => 'off',
+#                            -labels=>\%self_compa_labels)."<br>";
+#print '                 </div>
+#                    </div>
+#                </div>
+#            </div>
+
+print '
+<!-- ################################################################-->
+<!-- ### advanced output options  ###-->
+
+            <div class="bhoechie-tab-content">
+
                 <!-- comparison type -->
                 <div class="panel panel-danger">
                     <div class="panel-heading">Type of comparison</div>
                     <div class="panel-body">
                         <div class="form-group">';
-                        my %self_compa_labels = ( 
+                        my %self_compa_labels = (
                             'off',' Cross-compare query classes to reference classes',
                             'on',' Self-compare query classes to query classes' );
                         print $query->radio_group( -name => 'self_compa',
@@ -216,17 +237,21 @@ print '                 </div>
                         #print $query->checkbox(-name=>'distinct',-checked=>1,-value=>'on',
                         #   -label=>'Prevent self-comparison of classes')."<br>";
                         #print $query->checkbox(-name=>'triangle',-checked=>1,-value=>'on',
-                        #   -label=>'Prevent reciprocal comparison of classes, only applies to self');
+                        #   -label=>'Prevent reciprocal comparison of classes, only applies to self');   
 
 print '                 </div>
                     </div>
                 </div>
-            </div>
 
-<!-- ################################################################-->
-<!-- ### advanced output options  ###-->
-
-            <div class="bhoechie-tab-content">
+                <!-- score column -->
+                <div class="panel panel-danger">
+                    <div class="panel-heading">Score column <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Column of the input files containing a score associated to each member. Must be valid for both query and reference classes. It is used for some metrics like the dot product." data-original-title=""></i></div>
+                    <div class="panel-body">
+                        <div class="form-group">';
+                        print $query->textfield(-id=>'score_col',-name=>'score_col',-size=>10,-placeholder=>'optional') .'
+                        </div>
+                    </div>
+                </div>
 
                 <!-- matrix metric  -->
                 <div class="panel panel-danger">
@@ -289,9 +314,9 @@ print '                 </div>
 
             <div class="bhoechie-tab-content">
 
-                <!-- job delivery options -->
+                <!-- results delivery  -->
                 <div class="panel panel-danger">
-                    <div class="panel-heading">Job delivery options</div>
+                    <div class="panel-heading">Results delivery options</div>
                     <div class="panel-body">
                         <div class="form-group">';
 
@@ -315,7 +340,49 @@ print "<div id='demo_descr' class='col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-butt
 
 
 ################################################################
-### Demo 1 data
+### Demo data
+
+my $demo_fileQ = "demo_files/gavin_mcl_clusters_inf2.1.tab";
+my $demo_fileR = "demo_files/mips_complexes.tab";
+my ($demoQ,$demoR);
+
+open(FILEQ, $demo_fileQ);
+while(my $row = <FILEQ>){
+    $demoQ .= $row;
+}
+close(FILEQ);
+
+open(FILER, $demo_fileR);
+while(my $row = <FILER>){
+    $demoR .= $row;
+}
+close(FILER);
+
+print '<script>
+function setDemo(demoQ, demoR){
+    $("#reset").trigger("click");
+    descr = "<H4>Demonstration:</H4>\n \
+    <blockquote class =\'blockquote text-justify small\'>\
+    This demo consists on the comparison between protein clusters \
+    obtained after application of the <a href = 'http://micans.org/mcl/' \
+    target = 'top'>MCL</a> clustering algorithm to the <a target = '_blank' \
+    href = 'https://www.ncbi.nlm.nih.gov/pubmed/16429126'>Gavin et al \
+    (2006)</a> interaction network and the complexes annotated in the \
+    <a target = '_blank' href = 'http://mips.gsf.de/'>MIPS</a> database. \
+    Check the panel <b>Main input</b> and <b>Run analysis</b></blockquote>";
+
+    demo_descr.innerHTML = descr;
+    html_title.value = "\'clusters of protein complexes in Gavin et al dataset\'";
+    collection_label.value = "\'yeast protein complexes\'";
+    matrix1.value = demo_1_matrix;
+    demo.value = descr;
+}
+</script>';
+
+print ' <div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container">
+
+<button type="button" class="btn btn-info" onclick="setDemo1('. "'$demo_1_matrices'" .')">DEMO (one collection)</button> ';
+
 
 
 
