@@ -42,7 +42,7 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 
 
 $parameters = "";
-$command = "$SCRIPTS/retrieve-variation-seq";
+$command = "$C_SCRIPTS/retrieve-variation-seq";
 
 ################
 ## Parameters

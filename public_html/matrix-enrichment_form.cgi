@@ -75,7 +75,7 @@ foreach $key (keys %default) {
 print "<center>";
 print "Evaluate the enrichment of a set of motifs in one or several sequence sets. (The web version only allows for four sequence sets)</p>\n";
 print "The most classical use of the program is to indentify transcription factor binding sites that could be enriched or depleted in one or several sequence sets.<p>\n";
-print "<p>Program developed by <a target='_top' href='http://folk.uio.no/jamondra/'>Jaime Castro-Mondragon</a>, \n";
+print "<p>Program developed by <a target='_top' href='http://folk.uio.no/jamondra/'>Jaime A Castro-Mondragon</a>, \n";
 print " <a target='_top' href='http://www.ibens.ens.fr/spip.php?article94&lang=en'>Samuel Collombet</A>,\n";
 print " <a target='_top' href='http://liigh.unam.mx/amedina/'>Alejandra Medina-Rivera</A>,\n";
 print " <a target='_top' href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A>,\n";
@@ -163,29 +163,27 @@ print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
+
 ################################################################
 ### data for the demo 
-
-
 
 open(my $fh, "demo_files/Ballester_etal_elife_2014_4TFs_motifs.tf");
 while(my $row = <$fh>){
     chomp $row;
-    $demo_matrix .= $row;
-    $demo_matrix .= "\\n";
+    $demo_1_matrix .= $row;
+    $demo_1_matrix .= "\\n";
 }
 close ($fh);
 
-$demo_seq1_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_cebpa_singletons.fa";
-$demo_seq2_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_foxa1_singletons.fa";
-$demo_seq3_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_hnf4a_singletons.fa";
-$demo_seq4_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_hnf6_singletons.fa";
+$demo_1_seq1_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_cebpa_singletons.fa";
+$demo_1_seq2_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_foxa1_singletons.fa";
+$demo_1_seq3_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_hnf4a_singletons.fa";
+$demo_1_seq4_url= $ENV{rsat_www}."/demo_files/Ballester_etal_elife_2014_hg18_hnf6_singletons.fa";
 
-$demo_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
-
+$demo_1_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
 
 print '<script>
-function setDemo(demo_matrix, demo_seq1_url, demo_seq2_url, demo_seq3_url, demo_seq4_url, demo_bg_url ){
+function setDemo(demo_1_matrix, demo_1_seq1_url, demo_1_seq2_url, demo_1_seq3_url, demo_1_seq4_url, demo_1_bg_url ){
     $("#reset").trigger("click");
     
     descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will assess the enrichment of four liver Transcription Factors CEBP-alpha, FOXA1, HNF4 and HNF6, in the reported singleton sites of each TF. </p> \
@@ -196,23 +194,23 @@ function setDemo(demo_matrix, demo_seq1_url, demo_seq2_url, demo_seq3_url, demo_
     demo.value = descr;
 
     html_title.value = "Zoo-ChIP_liver_Transcription_Factors_eLife_2015";
-    matrix.value = demo_matrix;
+    matrix.value = demo_1_matrix;
     matrix_format.value = "transfac";
 
     tag1.value = "CEBP-alpha_singleton_sites";
-    sequence_url1.value  = demo_seq1_url ;
+    sequence_url1.value  = demo_1_seq1_url ;
 
     tag2.value = "FOXA1_singleton_sites";
-    sequence_url2.value = demo_seq2_url ;
+    sequence_url2.value = demo_1_seq2_url ;
 
     tag3.value = "HNF4_singleton_sites";
-    sequence_url3.value  = demo_seq3_url ;
+    sequence_url3.value  = demo_1_seq3_url ;
 
     tag4.value = "HNF6_singleton_sites";
-    sequence_url4.value  = demo_seq4_url ;
+    sequence_url4.value  = demo_1_seq4_url ;
     
     $("#url").prop("checked",true);
-    bgmodel_url.value = demo_bg_url ;
+    bgmodel_url.value = demo_1_bg_url ;
     
 }
 function resetHandler(){
@@ -220,15 +218,73 @@ function resetHandler(){
 }
 </script>';
 
+$demo_markov=1;
+
+print "<td><b>";
+
+#print '<button type="button" onclick="setDemo('. "'$demo_1_matrix'" .',' . "'$demo_1_seq1_url'" .',' . "'$demo_1_seq2_url'" .',' . "'$demo_1_seq3_url'" .',' . "'$demo_1_seq4_url'"  .')">DEMO</button>';
+print '<button type="button" onclick="setDemo('. "'$demo_1_matrix'" .',' . "'$demo_1_seq1_url'" .',' . "'$demo_1_seq2_url'" .',' . "'$demo_1_seq3_url'" .',' . "'$demo_1_seq4_url'" . ',' ."'$demo_1_bg_url'" .')">DEMO</button>';
+
+
+################################################################
+## Epromoters demo
+################################################################
+
+open(my $fh, "demo_files/Capstarr_selected_TFs.tf");
+while(my $row = <$fh>){
+    chomp $row;
+    $demo_2_matrix .= $row;
+    $demo_2_matrix .= "\\n";
+}
+close ($fh);
+
+$demo_2_seq1_url= $ENV{rsat_www}."/demo_files/CapStarrseq_Active_Prom_HELA_merge_IP.fasta";
+$demo_2_seq2_url= $ENV{rsat_www}."/demo_files/CapStarrseq_Active_Prom_K562_merge_IP.fasta";
+$demo_2_seq3_url= $ENV{rsat_www}."/demo_files/CapStarrseq_InactiveProm_FDR95_All_samples.fasta";
+$demo_2_seq4_url= "";
+$demo_2_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
+
+print '<script>
+function setDemo2(demo_2_matrix, demo_2_seq1_url, demo_2_seq2_url, demo_2_seq3_url, demo_2_seq4_url, demo_2_bg_url ){
+    $("#reset").trigger("click");
+    
+    descr = "<H4>Comment on the demonstration example : </H4><blockquote class =\'demo\'>In this demonstration, we will assess the enrichment of seven Transcription Factors (JUN-FOS, YY, SP1, USF2, REST, DDIT, FCP2), in human promoters displaying enhancer activity (Epromoters), the enrichment is measured in three sets of sequences: HeLa cell, K562 and a set of promoters without enhancer activity. </p> \
+#     These data was published in the Dao et al, Nat Gen, 2017 article <a target=\'_top\' href=\'doi:10.1038/ng.3884\'>[DOI]</A>. </p>    </blockquote> \ <p> \.";
+    
+    demo_descr.innerHTML = descr;
+    demo.value = descr;
+
+    html_title.value = "Enrichment in Epromoters";
+    matrix.value = demo_2_matrix;
+    matrix_format.value = "transfac";
+
+    tag1.value = "Hela";
+    sequence_url1.value  = demo_2_seq1_url ;
+
+    tag2.value = "K562";
+    sequence_url2.value = demo_2_seq2_url ;
+
+    tag3.value = "Inactive";
+    sequence_url3.value  = demo_2_seq3_url ;
+
+    tag4.value = "";
+    sequence_url4.value  = demo_2_seq4_url ;
+    
+    $("#url").prop("checked",true);
+    bgmodel_url.value = demo_2_bg_url ;
+    
+}
+function resetHandler(){
+    $("#db_choice").val("").change();
+}
+</script>';
 
 $demo_markov=1;
 
 print "<td><b>";
 
 #print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1_url'" .',' . "'$demo_seq2_url'" .',' . "'$demo_seq3_url'" .',' . "'$demo_seq4_url'"  .')">DEMO</button>';
-print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1_url'" .',' . "'$demo_seq2_url'" .',' . "'$demo_seq3_url'" .',' . "'$demo_seq4_url'" . ',' ."'$demo_bg_url'" .')">DEMO</button>';
-
-#print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1'" .',' . "'$demo_seq2'" .',' . "'$demo_seq3'" .',' . "'$demo_seq4'" .')">DEMO</button>';
+print '<button type="button" onclick="setDemo2('. "'$demo_2_matrix'" .',' . "'$demo_2_seq1_url'" .',' . "'$demo_2_seq2_url'" .',' . "'$demo_2_seq3_url'" .',' . "'$demo_2_seq4_url'" . ',' ."'$demo_2_bg_url'" .')">DEMO 2</button>';
 
 print "</b></td>\n";
 
