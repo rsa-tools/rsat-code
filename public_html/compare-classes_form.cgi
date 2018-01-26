@@ -374,9 +374,8 @@ function setDemo(demoQ, demoR){
     Check the panel <b>Main input</b> and <b>Run analysis</b></blockquote>";
 
     demo_descr.innerHTML = descr;
-    html_title.value = "\'clusters of protein complexes in Gavin et al dataset\'";
-    collection_label.value = "\'yeast protein complexes\'";
-    matrix1.value = demo_1_matrix;
+    classesQ.value = demoQ;
+    classesR.value = demoR;
     demo.value = descr;
 }
 </script>';
