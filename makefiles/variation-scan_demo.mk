@@ -154,10 +154,10 @@ varinfo_from_ids: mk_result_dir
 ## RETRIEVE_VAR_CMD is the common part of the command, we then
 ## specified the modality-specific parameters:
 ## RETRIEVE_VAR_CMD_VARBED and
+## -release ${ENSEMBL_RELEASE} 
 RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-v ${V} \
 	-species ${SPECIES} \
-	-release ${ENSEMBL_RELEASE} \
 	-assembly ${ASSEMBLY} \
 	${SPECIES_SUFFIX_OPT}
 
