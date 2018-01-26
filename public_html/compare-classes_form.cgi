@@ -42,17 +42,19 @@ $default{uth_qr} = "none";
 $default{lth_sig} = 0;
 $default{uth_sig} = "none";
 
+#demo_descr.innerHTML = descr;
+#    classesQ.value = demoQ;
+#    classesR.value = demoR;
+#    demo.value = descr;
+
 # TOBEDONE: check which tools might produce output pipeable to this form
 
 ### replace defaults by parameters from the cgi call, if defined
-#foreach $key (keys %default) {
-#    if ($query->param($key)) {
-#        $default{$key} = $query->param($key);
-#    }
-#    if ($query->param($key) =~ /checked/i) {
-#        $checked{$key} = "CHECKED";
-#    }
-#}
+foreach $key (keys %default) {
+    if ($query->param($key)) {
+        $default{$key} = $query->param($key);
+    }
+}
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
