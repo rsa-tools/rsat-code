@@ -363,8 +363,8 @@ close(FILER);
 print '<script>
 function setDemo(demoQ, demoR){
     $("#reset").trigger("click");
-    descr = "<H4>Demo:</H4>\n \
-    <blockquote class =\'blockquote text-justify small\'>\
+
+    descr = "<blockquote class =\'blockquote text-justify small\'> \
     This demo consists on the comparison between protein clusters \
     obtained after application of the <a href=\'http://micans.org/mcl\' \
     target=\'top\'>MCL</a> clustering algorithm to the <a target=\'_blank\' \
@@ -375,13 +375,12 @@ function setDemo(demoQ, demoR){
 
     demo_descr.innerHTML = descr;
     classesQ.value = demoQ;
-    classesR.value = demoR;
     demo.value = descr;
 }
 </script>';
 
 print '<div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container">
-<button type="button" class="btn btn-info" onclick="setDemo('. "'$demoQ'" .','. "'$demoR'"  .')">DEMO</button> ';
+<button type="button" class="btn btn-info" onclick="setDemo('. "'$demoQ'" .')">DEMO</button> ';
 print "</div>";
 
 print $query->end_html;
