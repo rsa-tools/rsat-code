@@ -42,11 +42,6 @@ $default{uth_qr} = "none";
 $default{lth_sig} = 0;
 $default{uth_sig} = "none";
 
-#demo_descr.innerHTML = descr;
-#    classesQ.value = demoQ;
-#    classesR.value = demoR;
-#    demo.value = descr;
-
 # TOBEDONE: check which tools might produce output pipeable to this form
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -106,7 +101,7 @@ print '
     <span class="fa-stack fa-lg">
         <i class="fa fa-user fa-stack-1x"></i>
     </span>
-    <a target="_blank" href="http://jacques.van-helden.perso.luminy.univ-amu.fr/ ">Jacques van Helden</a> with help from Joseph Tran. Bruno Contreras Moreira updated the web interface.<br>
+    <a target="_blank" href="http://jacques.van-helden.perso.luminy.univ-amu.fr/ ">Jacques van Helden</a> with help from Joseph Tran. Bruno Contreras updated the interface.<br>
     <span class="fa-stack fa-lg">
         <i class="fa fa-folder-open fa-stack-1x"></i>
     </span>
