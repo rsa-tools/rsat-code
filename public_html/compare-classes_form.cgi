@@ -364,11 +364,11 @@ function setDemo(demoQ, demoR){
     descr = "<H4>Demonstration:</H4>\n \
     <blockquote class =\'blockquote text-justify small\'>\
     This demo consists on the comparison between protein clusters \
-    obtained after application of the <a href = 'http://micans.org/mcl/' \
-    target = 'top'>MCL</a> clustering algorithm to the <a target = '_blank' \
-    href = 'https://www.ncbi.nlm.nih.gov/pubmed/16429126'>Gavin et al \
+    obtained after application of the <a href=\'http://micans.org/mcl\' \
+    target=\'top\'>MCL</a> clustering algorithm to the <a target=\'_blank\' \
+    href=\'https://www.ncbi.nlm.nih.gov/pubmed/16429126\'>Gavin et al \
     (2006)</a> interaction network and the complexes annotated in the \
-    <a target = '_blank' href = 'http://mips.gsf.de/'>MIPS</a> database. \
+    <a target=\'_blank\' href=\'http://mips.gsf.de\'>MIPS</a> database. \
     Check the panel <b>Main input</b> and <b>Run analysis</b></blockquote>";
 
     demo_descr.innerHTML = descr;
