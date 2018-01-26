@@ -176,7 +176,7 @@ print '                 </div>
                         <div class="form-group">';
 
                         my %output_labels = (
-                            'classes',' Pairwise class comparison tab-delimited table',
+                            'classes',' Pairwise class comparison table',
                             'matrix',' Matrix with reference classes as rows and query classes as columns' );
 
                         print $query->radio_group( -name => 'outformat',-values  => ['classes','matrix'],-default => 'classes',
@@ -437,8 +437,15 @@ sub FieldsThresholdsTableMC {
                     "description"]);
 
   foreach my $field (@fields) {
-    my $lth = $default{'lth_'.$field} || "none";
-    my $uth = $default{'uth_'.$field} || "none";
+    my ($lth,$uth);
+    if(defined($default{'lth_'.$field})){
+        $lth = $default{'lth_'.$field};
+    }
+    else{ $lth = "none" }
+    if(defined($default{'uth_'.$field})){
+        $uth = $default{'uth_'.$field};
+    }
+    else{ $uth = "none" }
 
     print "<tr valign='middle'>";
     print "<td>".$field."</td>\n";
