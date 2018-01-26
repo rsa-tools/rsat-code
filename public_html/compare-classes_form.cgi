@@ -385,11 +385,7 @@ print ' <div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container">
 
 <button type="button" class="btn btn-info" onclick="setDemo1('. "'$demo_1_matrices'" .')">DEMO (one collection)</button> ';
 
-
-
-
-
-#print "</div> </div> </div>";
+print "</div>";
 
 print $query->end_html;
 
