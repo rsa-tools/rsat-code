@@ -331,6 +331,7 @@ package main;
     $roc_ref = "theor";
     $draw_roc=1;
     $task{plot}=0;
+    $mq_plots=1;
 
     $r_plot=0 ; ## By defualt plots will be generated using gnuplot
 
@@ -942,7 +943,7 @@ package main;
 	  #Draw NWD for matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 
 	  if ($main::plot_types{nwd}){
-	      ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
+	      ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name,$mq_plots, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
 	      push (@files_to_index,'matrix_nwd_table');
 	  }
 	  
@@ -950,7 +951,7 @@ package main;
 	  #Draw NWD per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 
 	  if ($main::plot_types{occ_proba}){
-	      ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) ;
+	      ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name,$mq_plots, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) ;
 	      push (@files_to_index,'matrix_occ_proba_table');
 	  }
 
@@ -1021,9 +1022,9 @@ package main;
     foreach (uniq(keys(%main::plot_seq_type))) {
 	#die "BOOM";
 	 my $st= $_;
-	 ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/nwd/) ;
+	 ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,$mq_plots,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/nwd/) ;
 	 print ((join("++", @{$tab_files_for_aux_plots_occ_proba_per_seq{$st}})), "\n");
-	 ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/occ_proba/) ;
+	 ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st,$mq_plots,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/occ_proba/) ;
 	 #print $outfile{$st."all_matrices_occ_proba_table"}."\n";
 	 #print $outfile{$st."all_matrices_occ_proba_plot"}."\n";
 	 #die ("BOOM");
@@ -1035,6 +1036,7 @@ package main;
 	      my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
 	      
 	      my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
+	      &RSAT::util::CheckOutDir($nwd_all_plot); ## Create dir
 	      
 	      $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
 
@@ -1045,11 +1047,34 @@ package main;
 	      }
 
 	      &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
-	      my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 1";
-	      
-	      &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
 
-	      &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      my $r_path = &RSAT::server::GetProgramPath("R");
+	      
+	      my $matrix_quality_heatmap_cmd = "";
+	      $matrix_quality_heatmap_cmd .= " cat ".$r_mtxq_sc;
+	      $matrix_quality_heatmap_cmd .= " | ".$r_path;
+	      $matrix_quality_heatmap_cmd .= " --slave --no-save --no-restore --no-environ";
+	      $matrix_quality_heatmap_cmd .= " --args \"";
+	      $matrix_quality_heatmap_cmd .= " mtx.quality.nwds.file = '".$nwd_all_file."'";
+	      $matrix_quality_heatmap_cmd .= "; plot.folder = '".$nwd_all_plot."'";
+	      $matrix_quality_heatmap_cmd .= "; formats = '".join(",",'pdf','png')."'";
+	      $matrix_quality_heatmap_cmd .= "; print.heatmap = '1'";
+	      $matrix_quality_heatmap_cmd .= " \"";
+	      
+	      &RSAT::message::Info("R-command for generate NWD tables: ", $matrix_quality_heatmap_cmd) if ($main::verbose >= 0);
+      
+	      print ("Full cmd: ".$matrix_quality_heatmap_cmd."\n");
+	      
+	      if ($r_path) {
+		  &doit($matrix_quality_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	      } else {
+		  &RSAT::message::Warning("Could not run $r_mtxq_sc because the program R is not available") if ($main::verbose >= 0);
+	      }
+	      # my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 1";
+	      
+	      # &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
+
+	      #&doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 	      $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
 	      $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
 	      $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");

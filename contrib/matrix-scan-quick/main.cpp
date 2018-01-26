@@ -78,6 +78,7 @@ void help()
 "\n"
 "OUTPUT FORMAT\n"
 "    The output is a tab-delimited file, with one row per match.\n"
+"    If the option -t is not specified, the results will not be displayed.\n"
 "\n"
 "SCORING SCHEME\n"
 "    See matrix-scan -h for details.\n"
