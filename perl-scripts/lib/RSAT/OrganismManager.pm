@@ -519,6 +519,8 @@ sub get_demo_organisms {
     unless (($group_specificity{"Bacteria"}) || ($group_specificity{"Prokaryotes"})) {
 	if (&is_supported("Escherichia_coli_K_12_substr__MG1655_uid57779")) {
 	    push @selected_organisms, "Escherichia_coli_K_12_substr__MG1655_uid57779";
+	}elsif (&is_supported("Escherichia_coli_GCF_000005845.2_ASM584v2")){
+	    push @selected_organisms, "Escherichia_coli_GCF_000005845.2_ASM584v2";
 	} else {
 	    push @selected_organisms, &GetOrganismsForTaxon("Escherichia");
 	}
