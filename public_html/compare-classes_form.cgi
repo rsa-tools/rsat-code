@@ -56,7 +56,7 @@ foreach $key (keys %default) {
 ### print the form as in matrix-clustering_form.cgi
 &RSA_header_bootstrap("compare-classes", 'form');
 
-print $query->start_multipart_form(-action=>"compare_classes.php");
+print $query->start_multipart_form(-action=>"compare-classes.cgi");
 
 print '
 <!-- Form with bootstrap -->
