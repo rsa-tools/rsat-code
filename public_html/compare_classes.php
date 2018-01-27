@@ -1,9 +1,6 @@
 <html>
-
-<!-- updated by Bruno jan2018 -->
-
 <head>
-   <title>compare-classes</title>
+   <title>Network Analysis Tools - convert-graph</title>
    <link rel="stylesheet" type="text/css" href = "main.css" media="screen">
       <style type="text/css">
     <!--
@@ -12,16 +9,23 @@
    -->
      </style>
 </head>
-
 <body class="results">
 <?php 
   require ('functions.php');
-  include("menu.php");
-  
+    $menu = $_REQUEST['menu'];
+	if(strcmp($menu,"RSAT") == 0){
+		include("menu.php");
+	}else{
+		include("menu_graph.php");
+	}
+    #printMenu($menu);
+
   ## log file update
-  UpdateLogFile("rsatt","","");  
+  UpdateLogFile("neat","","");  
   title('compare-classes - results');
 
+    
+    
   # File to store the commands
   $cmd_file = getTempFileName('commands_compare-classes', '.txt');
   $cmd_handle = fopen($cmd_file, 'a');
