@@ -26,6 +26,7 @@ close(< INPUT >);
 
 ## Un contador, las primeras dos lineas me dan info general del general
 
+my $max_start = 0;
 my $cont = 0;
 foreach(@feature_maps){
    ##Split each line  y tabs
@@ -35,7 +36,8 @@ foreach(@feature_maps){
 
    #print "$gene\n";
 
-   if($fields[2] =~ /^SEQ_START/){
+
+if($fields[2] =~ /^SEQ_START/){
       #print "Start: $fields[5]\n";
       my @seq_start = split(/\-/,$fields[4]);
       $info_hash{$gene}{"SEQ_START"} = $seq_start[1];
@@ -53,12 +55,19 @@ foreach(@feature_maps){
 
       my $strand = $fields[3];
       ##print "Strand: $strand\n";
+      if( $strand =~ m/D/i ){
+            $strand = "DR";
+      }
       $info_hash{$gene}{"Features"}{$cont}{"Strand"} = $strand;
 
       my $start = $fields[4];
       ##print "Start: $start\n";
       my @start_array = split(/\-/,$start);
       $info_hash{$gene}{"Features"}{$cont}{"Start"} = $start_array[1];
+
+      if( $start_array[1] > $max_start ){
+         $max_start = $start_array[1];
+      }
 
       my $end = $fields[5];
       ##print "End: $end\n";
@@ -87,6 +96,12 @@ foreach my $gene (keys %info_hash){
    }
    $g_cont = $g_cont + 1;
    $info_hash{$gene}{"Features_cont"} = $f_cont;
+   if( !defined( $info_hash{ $gene }{ "SEQ_END" })){
+      $info_hash{ $gene }{ "SEQ_END" } = 1;
+   }
+   if( !defined( $info_hash{ $gene }{ "SEQ_START" })){
+      $info_hash{ $gene }{ "SEQ_START" } = $max_start;
+   }
 }
 
 ## Print Output
