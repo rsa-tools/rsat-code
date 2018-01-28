@@ -116,7 +116,7 @@ print "<fieldset>
 my %bg_params =("markov" => 1,
 		"bg_input" => 1,
 		"markov_message" => 1,
-	       );
+    );
 &GetBackgroundModel(%bg_params);
 
 #print "<br/>Note: Only Bernoulli models are supported. Higher-order Markov models are converted into Markov 0 (Bernoulli).";
