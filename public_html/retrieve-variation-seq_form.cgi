@@ -136,7 +136,7 @@ print "<TD><B>";
 ###############
 
 ## Data for demo
-$demo_rsat_var_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varbed";
+$demo_rsat_var_file=$ENV{RSAT}."/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15SNPs.varBed";
 $demo_rsat_var = "";
 open(my $fh, $demo_rsat_var_file);
 while (my $row = <$fh>){
