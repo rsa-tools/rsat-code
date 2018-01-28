@@ -25,7 +25,7 @@ required.packages <- c("RColorBrewer",
                        "reshape2",
                        "plyr",
                        "gridExtra",
-                       "cowplot",
+                       "egg",
                        "dynamicTreeCut")
 
 # sapply(required.packages, function(x){library(x, character.only = TRUE)})
@@ -382,10 +382,19 @@ thr <- sapply(1:nb.motifs, function(m){
       # annotate("text", x = -limits + ((limits*2)/10), y = max.pval - 0.55, label = paste("Nb of sequences: ", nb.seq, sep = ""), size = 4, hjust = 0) +
       # annotation_custom(logo.roster, xmax = limits - (limits/3), xmin = limits - 5, ymin = max.pval - 1, ymax = max.pval - 0.05)
   }
-
-  xx <- plot_grid(ggplot.list[[1]], ggplot.list[[2]], labels=c("", ""), ncol = 2, nrow = 1, rel_widths = c(1,1))
-  save_plot(filename = paste(TFBSs.pval.distribution.file, ".pdf", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 2, base_width = 6, base_height = 6.5)
-  save_plot(filename = paste(TFBSs.pval.distribution.file, ".jpeg", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 2, base_width = 6, base_height = 6)
+  
+  ## Draw two heatmaps (from ggplot) in the same page
+  grid.newpage()
+  heatmap.grid <- ggarrange(ggplot.list[[1]],
+                            ggplot.list[[1]],
+                            ncol = 2)
+  
+  suppressMessages(ggsave(plot = heatmap.grid, width = 25, height = 25, units = "cm", filename = filename = paste(TFBSs.pval.distribution.file, ".pdf", sep = "")))
+  suppressMessages(ggsave(plot = heatmap.grid, width = 25, height = 25, units = "cm", filename = filename = paste(TFBSs.pval.distribution.file, ".jpeg", sep = "")))
+  
+  # xx <- plot_grid(ggplot.list[[1]], ggplot.list[[2]], labels=c("", ""), ncol = 2, nrow = 1, rel_widths = c(1,1))
+  # save_plot(filename = paste(TFBSs.pval.distribution.file, ".pdf", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 2, base_width = 6, base_height = 6.5)
+  # save_plot(filename = paste(TFBSs.pval.distribution.file, ".jpeg", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 2, base_width = 6, base_height = 6)
 })
 rm(thr)
 
