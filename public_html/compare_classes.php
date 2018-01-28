@@ -13,30 +13,13 @@
 <?php 
   require ('functions.php');
     $menu = $_REQUEST['menu'];
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 32b44fb8d5dfef12eacf26dcbc34ec3198efa671
 	if(strcmp($menu,"RSAT") == 0){
 		include("menu.php");
 	}else{
 		include("menu_graph.php");
-<<<<<<< HEAD
 	}
-#printMenu($menu);
-=======
-	}   
-// printMenu($menu);
->>>>>>> 32b44fb8d5dfef12eacf26dcbc34ec3198efa671
-    
-=======
-    //printMenu($menu);
-    if(strcmp($menu, "RSAT") == 0){
-        include("menu.php");
-    }else{
-        include("menu_graph.php");
-    }
->>>>>>> 032d233c8088ca94e98c930819af473131d4769a
+    #printMenu($menu);
+
   ## log file update
   UpdateLogFile("neat","","");  
   title('compare-classes - results');
