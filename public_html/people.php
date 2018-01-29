@@ -117,7 +117,7 @@
   <tr>
     <td><a name=nga></a><a href="">
 	<img border=0
-	     src="" width="80" alt=""></a></td>
+         src="images/people/nga.png" width="80" alt="Nga Thi Thuy NGUYEN"></a></td>
     <td><b>Nga Thi Thuy NGUYEN</b>
       <br>Ing&eacute;nieure d'&eacute;tude at CNRS (IFB contract) (IBENS,Paris,France)</br>
     </td>  
@@ -128,6 +128,23 @@
       Virtual machine  <br/>
       Implementation and maintenance of the Web services.  <br/>
       RSATicus
+    </td>
+  </tr>
+  
+   <tr><td colspan=4><hr class='portal'></td></tr>
+  <tr>
+    <td><a name=contreras></a><a href="images/people/bruno_contreras_moreira.jpg">
+    <img border=0
+         src="images/people/bruno_contreras_moreira.jpg" width="80" alt="Bruno Contreras Moreira"></a></td>
+    <td><a target='_blank' href="https://digital.csic.es/cris/rp/rp02661"><b>Bruno Contreras Moreira</b></a>
+      <br>Laboratory of Computational and Structural Biology, EEAD-CSIC, Zaragoza, Spain
+    </td>
+    <td>
+    Since 2014
+    </td>
+    <td>
+       Protocols for the analysis of regulatory sequences in plant genomes.
+       Linking RSAT to Ensembl genomes.
     </td>
   </tr>
   
@@ -164,21 +181,7 @@
     </td>
   </tr>
   
-  <tr><td colspan=4><hr class='portal'></td></tr>
-  <tr>
-    <td><a name=contreras></a><a href="images/people/bruno_contreras_moreira.jpg">
-    <img border=0
-         src="images/people/bruno_contreras_moreira.jpg" width="80" alt="Bruno Contreras Moreira"></a></td>
-    <td><a target='_blank' href="https://digital.csic.es/cris/rp/rp02661"><b>Bruno Contreras Moreira</b></a>
-      <br>Laboratory of Computational and Structural Biology, EEAD-CSIC, Zaragoza, Spain
-    </td>
-    <td>
-    Since 2014
-    </td>
-    <td>
-       Protocols for the analysis of regulatory sequences in plant genomes.
-    </td>
-  </tr>
+ 
  
   
   <tr><th colspan=4> Former Developpers</th></tr>
@@ -192,7 +195,7 @@
       <br>Bioinformatic engineer at  Ecole normale sup&eacute;rieure de Paris (France)
     </td>
     <td>
-    Engineer (2014 - now)
+    Engineer (2014 - 2015)
     </td>
     <td>
       Development of new Web services clients in Python.<br/>
