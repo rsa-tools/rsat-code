@@ -132,8 +132,8 @@
                          <a class="menu_item" href="local-word-analysis_form.cgi" >local-word-analysis (word and spaced pairs)</a>
                          <a class="menu_separator">matrices</a>
                          <a class="menu_item" href="info-gibbs_form.cgi" >info-gibbs</a>
-                         <a class="menu_item" href="consensus_form.cgi" >consensus</a>
-                         <!--	  <a class="menu_item" href="gibbs_form.cgi" >gibbs</a>-->
+                         <!--<a class="menu_item" href="consensus_form.cgi" >consensus</a>
+                         	  <a class="menu_item" href="gibbs_form.cgi" >gibbs</a>-->
                      </div>
 
 
