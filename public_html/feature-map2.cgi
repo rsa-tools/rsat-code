@@ -383,8 +383,16 @@ sub print_html{
          <button id="saveButton" type="button" class="btn btn-success" onclick="">PNG</button>
          <button id="saveButton_jpeg" type="button" class="btn btn-success" onclick="">JPG</button>-->
 
+      <div class="container">
+         <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+               <div id="feature_map_div"></div>
+            </div>
+            <div class="col-md-2"></div>
+         </div>
+      </div>
 
-      <div id="feature_map_div"></div>
       <canvas id="myCanvas" width="0" height="0" style="border:1px solid #d3d3d3;">
       	Your browser does not support the HTML5 canvas tag.
       </canvas>
@@ -454,8 +462,8 @@ sub print_html{
 
          //Other options
          var default_font = "Arial";
-         var title_font_size = 26;
-         var user_title_font_size = 22;
+         var title_font_size = 20;
+         var user_title_font_size = 18;
          var color_palette_deafult = "true";
          var color_palette_random = "false";
          var transparency = "true";
@@ -484,7 +492,8 @@ sub print_html{
             }
 
             //Calculate height according to file and user preferences
-            var total_svg_height = (gene_num * dedicated_space + title_space);
+            //var total_svg_height = (gene_num * dedicated_space + title_space);
+            var total_svg_height = 4000;
 		      console.log("Total_svg_height = "+ total_svg_height);
 
             var width = total_svg_width, height = total_svg_height;
@@ -629,7 +638,7 @@ sub print_html{
                graph_svg.append("text")
                   .attr("x",legends_x + 20)
                   .attr("y",legends_y)
-                  .attr("font-size", 20)
+                  .attr("font-size", 16)
                   .attr("text-anchor","start")
                   .attr("font-family", default_font)
                   .attr("fill","rgb(51,51,51)")
@@ -638,7 +647,7 @@ sub print_html{
                   //Code for printing the legends automatically
 
                         var max_size = 0;
-                        var rect_size = 20;
+                        var rect_size = 14;
 
                         //Get the size of the longest label
                         for(i=0; i< label_array_color.length; i++){
@@ -676,7 +685,7 @@ sub print_html{
                            graph_svg.append("text")
                               .attr("x",labels_x + rect_size +4 + 20)
                               .attr("y",labels_y + rect_size -1)
-                              .attr("font-size", 16)
+                              .attr("font-size", 11)
                               .attr("text-anchor","start")
                               .attr("font-family", default_font)
                               .attr("fill","rgb(51,51,51)")
