@@ -97,7 +97,7 @@ print '
                   <span class="fa-stack fa-lg">
  							<i class="fa fa-user fa-stack-1x"></i>
 					   </span>
-					   Raul Ossio, Daniela Robles-Espinoza, Morgane Thomas-Chollier<br>
+					   Raul Ossio, Daniela Robles-Espinoza, Alejandra Medina-Rivera<br>
 
 					   <span class="fa-stack fa-lg">
   					      <i class="fa fa-folder-open fa-stack-1x"></i>
@@ -223,12 +223,22 @@ print '
                         <div class="panel-heading">File type
                         </div>
                         <div class="panel-body">
-                        <label class="radio-inline" style="color:black; font-weight:normal;">';
+                        <label class="radio-inline">';
+
 
                            print $query->radio_group(-name=>'print_file',
-                           -values=>["svg"],
-                           -default=>'svg'
+                           -values=>["none"],
+                           -default=>'none'
                            );
+
+                        print '
+                        </label>
+                        <label class="radio-inline" style="color:black; font-weight:normal;">';
+
+                        print $query->radio_group(-name=>'print_file',
+                        -values=>["svg"],
+                        -default=>'none'
+                        );
 
                         print '
                         </label>
@@ -236,7 +246,7 @@ print '
 
                            print $query->radio_group(-name=>'print_file',
                            -values=>["png"],
-                           -default=>'svg'
+                           -default=>'none'
                            );
 
                            print '
@@ -245,7 +255,7 @@ print '
 
                            print $query->radio_group(-name=>'print_file',
                            -values=>["jpg"],
-                           -default=>'svg'
+                           -default=>'none'
                            );
 
                            print '
@@ -364,13 +374,14 @@ print '
 
                   <div class="container">
                      <div class="row">
-                        <div class="col-lg-6 col-md-5 text-center">';
+
+                        <div class="col-lg-7 col-md-7 text-right">';
 
                            print
                            $query->submit(-label=>"GO", -class=>"btn btn-success", id=>"go_button", -style=>"display:none");
 
                            print '
-                              <button type="button" class="btn btn-info" id="demo_button" onclick="demo_fill()" style="display:none">DEMO</button>
+
                               <button type="button" class="btn btn-warning" id="reset_button" onclick="reset()" style="display:none" >RESET</button>
                         </div>
 
@@ -380,9 +391,23 @@ print '
                         print'
                      </div>
                   </div>
+
                </div>';
 
                         print '
+            </div>
+
+         </div>
+         <div class="container">
+            <div class="row">
+               <div class="col-md-12"><BR></div>
+            </div>
+            <div class="row">
+               <div class="col-md-4"></div>
+               <div class-"col-md-4 center">
+                  <button type="button" class="btn btn-info" id="demo_button" onclick="demo_fill()">DEMO</button>
+               </div>
+               <div class="col-md-4"></div>
             </div>
          </div>';
 
@@ -434,8 +459,8 @@ print '
                   var go = document.getElementById("go_button");
                   go.style.display = "inline";
 
-                  var x = document.getElementById("demo_button");
-                  x.style.display = "inline";
+                  //var x = document.getElementById("demo_button");
+                  //x.style.display = "inline";
 
                   var y = document.getElementById("reset_button");
                   y.style.display = "inline";
@@ -443,7 +468,7 @@ print '
 
                function hide_buttons(){
                   document.getElementById("go_button").style.display = "none";
-                  document.getElementById("demo_button").style.display = "none";
+                  //document.getElementById("demo_button").style.display = "none";
                   document.getElementById("reset_button").style.display = "none";
                }
 
