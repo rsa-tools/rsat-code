@@ -577,7 +577,7 @@ sub Get_var_from_gvf {
   my %variation = ();
 
   $variation{'chr'} = $token[0];
-  $variation{'start'} = $token[3];
+  $variation{'start'} = $token[3] - 1;
   $variation{'end'} = $token[4];
   $variation{'strand'} = $token[6];
   $variation{'id'} = "";
@@ -677,7 +677,7 @@ sub Convert_var_to_gvf {
 
   my $line = $variation{'chr'}."\t";
   $line .= '.'."\t";
-
+  $variation{'start'} = $variation{'start'} + 1;
   if ($main::phased) {
     foreach my $sample (@filtered_samples) {
       my $sample_alleles = $line;
@@ -727,7 +727,7 @@ sub Convert_var_to_vcf {
   my %files_to_print = %{$_[1]};
 
   push (@{$variation{'attribute'}},"TSA=".$variation{'SO'});
-
+  $variation{'start'} = $variation{'start'} + 1;
   my $line = $variation{'chr'}."\t".
              $variation{'start'}."\t".
              $variation{'id'}."\t".
