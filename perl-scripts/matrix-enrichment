@@ -57,7 +57,7 @@ Jacques van Helden <Jacques.van-Helden\@univ-amu.fr>
 
 =head1 USAGE
 
-matrix-enrichment [-i inputfile] [-o outputfile] [-v #] [...]
+matrix-enrichment [-seq seq_type inputfile] [-o outputfolder/prefix] [-v #] [...]
 
 =head1 INPUT FORMAT
 
@@ -1150,7 +1150,8 @@ full analysis.
 
 =item B<-seq seq_type input_sequences_file>
 
-A file containing the sequences in fasta format.
+A file containing the sequences in fasta format, an identifier has to be given (seq_type).
+Ex: -seq ChIP-control my_chip_control.fa
 
 =cut
     } elsif ($arg eq "-seq") {
@@ -1372,8 +1373,7 @@ Clean temporary files.
 
 =item	B<-o outputfile>
 
-If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.
+Specify the forlder and prefix to be used for output files. Ex: my_folder/prefix
 
 =cut
     } elsif ($arg eq "-o") {
