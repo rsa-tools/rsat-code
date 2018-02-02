@@ -71,11 +71,11 @@ print '
                   <a href="#" class="list-group-item text-center">
                      <h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Mandatory inputs
                   </a>
-                  
+
                   <a href="#" class="list-group-item text-center">
                   <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced options
                 </a>
-                
+
                 <a href="#" class="list-group-item text-center">
                   <h4 class="glyphicon"><i class="fa fa-play-circle fa-2x"></i></h4><br/>Run analysis
                 </a>
@@ -309,13 +309,15 @@ print '</div></div>
                         </div>
                         <div class="panel-body">
                            <div class="form-group">
-                           <label for="file_name">Image file name </label>';
+                           ';
 
                            print
-                           
-                           $query->textfield(-id=>'file_name',
-                           -name=>'title', -class=>'form-control',-placeholder=>'Provide a name for this file ',
-                           -default=>$default{file_name}) .'
+
+                           # $query->textfield(-id=>'file_name',
+                           # -name=>'title', -class=>'form-control',-placeholder=>'Provide a name for this file ',
+                           # -default=>$default{file_name})
+
+                           .'
 
                            </div>
  							<div class="form-group">
@@ -380,7 +382,7 @@ print "<div id='demo_descr' class='col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-butt
                         <div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container">
                   <button type="button" class="btn btn-info" id="demo_button" onclick="demo_fill()">DEMO</button>
          </div>';
-         
+
 
             my $demo_data = "";
             open ($fh, "demo_files/feature-map_demo_data.ft");
@@ -412,7 +414,7 @@ print "<div id='demo_descr' class='col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-butt
             print $query->end_html;
             exit(0);
 
-#					
+#
 ################################################################
 #################### SUBROUTINE DEFINITIONS  ###################
 ################################################################
