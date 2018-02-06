@@ -3060,7 +3060,7 @@ sub DisplayMatrixDBchoice_select2 {
                         }
                         $descr .= " - [$nbmotif motifs]";
                     }
-                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{www-rsat}/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
+                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{'www-rsat'}/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
                 }
             }
         }
