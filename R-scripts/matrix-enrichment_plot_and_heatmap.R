@@ -43,15 +43,20 @@ if (!exists("prefix")) {
   stop("Missing mandatory argument (The path to the tsv file used as input for the dynamic heatmap): maxNWD_tsv ")
 } else if (!exists("parsed.heatmap.html")) {
   stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): parsed.heatmap.html  ")
-} else if (!exists("Diff.maxNWD.tsv")) {
-  stop("Missing mandatory argument (The path to the tsv file used as input for the dynamic heatmap): Diff.maxNWD_tsv ")
-} else if (!exists("Diff.maxNWD.heatmap.html")) {
-  stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): Diff.maxNWD.heatmap.html  ")
 } else if (!exists("Sequences")){
   stop("Missing mandatory argument (Sequences names): Sequences ")
 } else if (!exists("TFs")){
   stop("Missing mandatory argument (TF names): TFs ")
 }
+
+
+## Not required
+# else if (!exists("Diff.maxNWD.tsv")) {
+#   stop("Missing mandatory argument (The path to the tsv file used as input for the dynamic heatmap): Diff.maxNWD_tsv ")
+# } else if (!exists("Diff.maxNWD.heatmap.html")) {
+#   stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): Diff.maxNWD.heatmap.html  ")
+# }
+
 
 if (!exists("heatmap.color.palette")) {
   heatmap.color.palette <- "RdBu";
@@ -62,20 +67,13 @@ if (!exists("heatmap.color.classes")) {
 heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 
-
-
+#maxNWD.table.file <- "/home/jamondra/Downloads/maxNWD_heatmap_compare.txt"
+# TFs <- c("DDIT", "FCP2_GRHL1", "JUN_FOS", "REST", "SP", "USF2", "YY")
+# Sequences <- c("HELA", "K562", "inactive")
 
 #############################
 ## Draw the maxNWD heatmap ##
 #############################
-
-# cat /home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/matrix-enrichment_heatmap.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " prefix = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto'; maxNWD.table.file = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt'; html.template.file = 'motif_enrichment_dynamic_heatmap_d3.html'; maxNWD.tsv = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_matrix_heatmap.tsv'; parsed.heatmap.html = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_motif_enrichment_maxNWD_heatmap.html'; d3.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3.v3.min.js'; d3.array.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3-array.v0.6.min.js'" 
-
-# prefix <- "test_motif_enrichment"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap")
-# maxNWD.table.file <- "/home/jaimicore/Dropbox/matrix-clustering_article/NFKB_ChIP-seq/results/matrix-enrichment/NFKB_vs_Random_fragments/NFKB_vs_Random_fragments_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt"
-# html.template.file <- "motif_enrichment_dynamic_heatmap_d3.html"
-
 base.name <- basename(prefix)
 
 #######################################
@@ -83,6 +81,7 @@ base.name <- basename(prefix)
 max.NWD.table <- read.table(maxNWD.table.file, sep = "\t", header = TRUE)
 max.NWD.table <- round(max.NWD.table, digits = 3)
 max.NWD.table[is.na(max.NWD.table)] <- 0
+
 
 # ## Calculate Differential
 sets <- colnames(max.NWD.table)
@@ -112,9 +111,10 @@ nb.sets <- length(sets)
 nb.diff.columns <- dim(max.NWD.table)[2]
 
 # NWD.sub <- max.NWD.table[,(nb.sets+1):nb.diff.columns]
-NWD.sub <- max.NWD.table[,]
+NWD.sub <- max.NWD.table
 NWD.sub <- NWD.sub[order(NWD.sub[,1], decreasing = TRUE),]
 NWD.sub <- as.matrix(round(NWD.sub, digits = 2))
+
 
 #######################################################################
 ## Convert the DataFrame in a 'tsv' object which is the input format
@@ -279,6 +279,7 @@ set <- "Normal"
 
 ##########################
 ## Initialize variables
+# binomial.occ.file <- "/home/jamondra/Downloads/test_SP_occ_proba_SP_compare-scores.tab"
 all.IDs <- NULL
 # all.names <- all.profiles ## Remember!
 hash.profile.ID <- list()
@@ -289,11 +290,6 @@ y.y <- NULL
 line.w <- 5
 all.profiles.max.occ <- vector()
 
-# prefix <- "/home/jaimicore/Documents/PhD/motif_enrichment/20160218/capstarr-seq"
-# TFs <- c("DDIT", "FCP2_GRHL1", "JUN_FOS", "REST", "SP", "USF2", "YY")
-# Sequences <- c("HELA", "K562", "inactive")
-
-# html.template.file <- "/home/jaimicore/Documents/PhD/motif_enrichment/dynamic_OCC_profiles.html"
 base.name <- basename(prefix)
 dir.name <- dirname(prefix)
 
@@ -302,10 +298,6 @@ Sequences <- unlist(strsplit(Sequences, "---", perl = TRUE))
 
 ## Get TF names
 TFs <- unlist(strsplit(TFs, "---", perl = TRUE))
-
-# cat /home/jaimicore/Documents/PhD/motif_enrichment/20160218/plot_binomial_occ.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " prefix = '/home/jaimicore/Documents/PhD/motif_enrichment/20160218/capstarr-seq'; html.template.file = '/home/jaimicore/Documents/PhD/motif_enrichment/dynamic_OCC_profiles.html'; Sequences = 'HELA---K562---inactive---'; TFs = 'DDIT---FCP2_GRHL1---JUN_FOS---REST---SP---USF2---YY---';"
-
-
 
 prof <- as.vector(outer(Sequences, TFs, paste))
 all.profiles <<- as.vector(sapply(prof, function(p){gsub(" ", "_", p)}))
@@ -317,6 +309,7 @@ for(TF in TFs){
   binomial.occ.file <- paste(dir.name, "/", TF, "/", base.name, "_", TF, "_occ_proba_", TF,"_compare-scores.tab", sep = "")
   binomial.occ.tab <- read.csv(binomial.occ.file, header = TRUE, sep = "\t")
   
+  ## Assign a color to each sequence set
   col.nb <- dim(binomial.occ.tab)[2]
   colors <- colorRampPalette(brewer.pal(5, "Set1"), space="Lab")(col.nb-1)
   
@@ -353,6 +346,7 @@ for(TF in TFs){
   )
   
   ## Add the lines only if there are 2 or more sequences
+  ## The first sequences is in column 2.
   if(col.nb > 2){
     for(c in 3:col.nb){
       lines(x = x, y = binomial.occ.tab.cp[,c],
@@ -361,10 +355,21 @@ for(TF in TFs){
             lwd = 2)
     }
   }
-  
   legend("topright", Sequences, fill = colors, cex = 0.75)
   
-  max.occ <- apply(binomial.occ.tab.cp[,2:col.nb],2, function(m){ max(m, na.rm = TRUE)})
+  
+  ## When only one set of sequences is used R converts it to a vector, then the program dies.
+  ## So the vector should be converted in a data.frame
+  
+  # print(col.nb)
+  # if(col.nb == 2){
+  #   binomial.occ.tab.cp <- as.data.frame("1" = as.vector(binomial.occ.tab.cp[,2]),
+  #                                     "2" = as.vector(binomial.occ.tab.cp[,2]))
+  #   stop(binomial.occ.tab.cp)
+  # }
+  # 
+  
+  max.occ <- apply(as.data.frame(binomial.occ.tab.cp[,2:col.nb]), 2, function(m){ max(m, na.rm = TRUE)})
   names(max.occ) <- paste(TF, Sequences, sep = "_")
   all.profiles.max.occ <<- append(all.profiles.max.occ, max.occ)
   
@@ -392,7 +397,7 @@ for(TF in TFs){
   ## Get the X and Y data
   ## As there are some NA values, they are removed 
   ## from the data to draw them properly in C3
-  thrash <- apply(binomial.occ.tab, 1, function(values){
+  thrash <- apply(as.data.frame(binomial.occ.tab), 1, function(values){
     
     ## Count the IDs
     ID.counter <<- ID.counter + 1
@@ -567,7 +572,6 @@ all.IDs <- paste(paste("'", all.IDs, "'", sep = ""), collapse = ",")
 html.report <- gsub("--all--", all.IDs, html.report)
 
 ## Export the report
-print(heatmap.html)
 file.remove(heatmap.html)
 file.create(heatmap.html)
 write(html.report, file = heatmap.html, append = FALSE)
