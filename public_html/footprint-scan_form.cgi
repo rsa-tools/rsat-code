@@ -169,7 +169,7 @@ function setDemo(demo_matrix){
     $("#queries").val("'. $demo_queries . '");
     $("#organism_name").val("Escherichia coli GCF 000005845.2 ASM584v2");
     $("#organism").val("Escherichia_coli_GCF_000005845.2_ASM584v2");
-    $("#taxon").val("Enterobacteriales");
+    $("#taxon").val("Gammaproteobacteria");
     $("#taxon_name").val("Gammaproteobacteria");
     $("#matrix").val(demo_matrix);
     $("#matrix_format").val("transfac");
