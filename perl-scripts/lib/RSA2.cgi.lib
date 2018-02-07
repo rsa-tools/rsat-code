@@ -228,14 +228,15 @@ sub PrintOrthoSelectionSection {
 #  &TaxonPopUp("node");
   &TaxonPopUp("all");
 
+  ## ALE: This is not working correctly and makes a conflict since this taxon frequencies have not been calculated, and the final html name does not match.
   ## Select a single organism per taxon
-  print "<br>";
-  print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
-  print $query->popup_menu(-name=>'unique_taxon', -id=>'unique_taxon',
-			   -Values=>['species',
-				     'genus',
-				     'no filter'],
-			   -default=>$default{unique_taxon});
+  # print "<br>";
+  # print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
+  # print $query->popup_menu(-name=>'unique_taxon', -id=>'unique_taxon',
+  # 			   -Values=>['species',
+  # 				     'genus',
+  # 				     'no filter'],
+  # 			   -default=>$default{unique_taxon});
 
 }
 
