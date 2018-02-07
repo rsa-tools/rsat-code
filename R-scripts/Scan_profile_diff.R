@@ -389,8 +389,8 @@ thr <- sapply(1:nb.motifs, function(m){
                             ggplot.list[[1]],
                             ncol = 2)
   
-  suppressMessages(ggsave(plot = heatmap.grid, width = 25, height = 25, units = "cm", filename = filename = paste(TFBSs.pval.distribution.file, ".pdf", sep = "")))
-  suppressMessages(ggsave(plot = heatmap.grid, width = 25, height = 25, units = "cm", filename = filename = paste(TFBSs.pval.distribution.file, ".jpeg", sep = "")))
+  suppressMessages(ggsave(plot = heatmap.grid, width = 25, height = 25, units = "cm", filename = paste(TFBSs.pval.distribution.file, ".pdf", sep = "")))
+  suppressMessages(ggsave(plot = heatmap.grid, width = 25, height = 25, units = "cm", filename = paste(TFBSs.pval.distribution.file, ".jpeg", sep = "")))
   
   # xx <- plot_grid(ggplot.list[[1]], ggplot.list[[2]], labels=c("", ""), ncol = 2, nrow = 1, rel_widths = c(1,1))
   # save_plot(filename = paste(TFBSs.pval.distribution.file, ".pdf", sep = ""), plot = xx, ncol = 2, base_aspect_ratio = 2, base_width = 6, base_height = 6.5)
