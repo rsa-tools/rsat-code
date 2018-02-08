@@ -78,6 +78,8 @@ typedef struct _varscan {
 
 string *GetProgramPath(string *program_path, char *program_name, int die_on_error, stringlist *preferred_path);
 void argToList(stringlist *list, char **value);
+void gvfDeletion(FILE *fout,int mml,char *sequence ,char *chr,char *start,char *end,char *strand,char *id,char *ref,char *alt,char *soterm,char *validate,char *freq);
+void gvfInsertion(FILE *fout,int mml,char *sequence ,char *chr,char *start,char *end,char *strand,char *id,char *ref,char *alt,char *soterm,char *validate,char *freq);
 void strlistfree(stringlist *delete);
 void strlistend(stringlist *group);
 stringlist *strlistnew(void);
@@ -975,7 +977,7 @@ int main(int argc, char *argv[]){
         ////////////////////////////////////////
         //Retrieve sequences for each variant
         k = 0;
-        left_flank  = atoi(token[1]) - mml -1;
+        left_flank  = atoi(token[1]) - mml;// -1; NOTE WSG I erased this because it was going a base beyond
         right_flank = atoi(token[2]);
 
         //Test if alleles are in '-' strand and convert them to '+'
@@ -990,6 +992,11 @@ int main(int argc, char *argv[]){
         }
         //ALT alleles
         alt_allele = token[6];
+        //Eval if there is an insertion by gvf format
+        if(alt_allele[0] == '-') { gvfDeletion(fout,mml,sequence,token[0],token[1],token[2],token[3],token[4],token[5],token[6],token[7],token[8],token[9]);continue;}
+        //Eval if there is a deletion by gvf format
+        if(token[5][0] == '-') {gvfInsertion(fout,mml,sequence,token[0],token[1],token[2],token[3],token[4],token[5],token[6],token[7],token[8],token[9]);continue;}
+
         do {
           for (i = 0; alt_allele[i] != '\0' ; i++) {
             if ( alt_allele[i] == ',') {
@@ -1062,6 +1069,118 @@ int main(int argc, char *argv[]){
     ///
     //////////////////////
   return 0;
+}
+
+void gvfDeletion(FILE *fout,int mml,char *sequence ,char *chr,char *start,char *end,char *strand,char *id,char *ref,char *alt,char *soterm,char *validate,char *freq){
+  //Declare variables
+  char alt_allele       = '\0';
+
+  long long left_flank  =    0;
+  long long right_flank =    0;
+  long long index       =    0;
+  long long k           =    0;
+
+  string *ref_allele    = NULL;
+
+  //Allocate memory for variables
+  ref_allele = strnewToList(&RsatMemTracker);
+  index = atoi(start);
+
+  //Retrieve 1 base before the current coordinates in order to create REF allele
+  strfmt(ref_allele,"%c%s",sequence[index - 1],ref);
+  //Create ALT allele
+  alt_allele = sequence[index - 1];
+
+  ////////////////////////////////////////
+  //Retrieve sequences for each variant
+  k = 0;
+  left_flank  = index - mml -1; //NOTE WSG I did not erased -1 due to gvf recovered previous base
+  right_flank = atoi(end);
+
+  //do {
+    fprintf(fout,"%s\t%lld\t%s\t%s\t%s\t%s\t%s\t%c\t%s\t",chr,index - 1,end,strand,id,soterm,ref_allele->buffer,alt_allele,freq);
+    for (k = left_flank; k < left_flank + mml; k++) {
+      fprintf(fout,"%c",tolower(sequence[k]));
+    }
+    fprintf(fout,"%c", alt_allele);
+    for (k = right_flank; k < right_flank + mml; k++) {
+      fprintf(fout,"%c",tolower(sequence[k]));
+    }
+    fprintf(fout,"\n");
+  //  alt_allele = alt_allele + i + 1;
+  //} while( alt_allele  != token[7] );
+
+  //REF allele
+  fprintf(fout,"%s\t%lld\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",chr,index - 1,end,strand,id,soterm,ref_allele->buffer,ref_allele->buffer,freq);
+  for (k = left_flank; k < left_flank + mml; k++) {
+    fprintf(fout,"%c",tolower(sequence[k]));
+  }
+  fprintf(fout,"%s", ref_allele->buffer);
+  for (k = right_flank; k < right_flank + mml; k++) {
+    fprintf(fout,"%c",tolower(sequence[k]));
+  }
+  fprintf(fout,"\n");
+
+  //Remove tmp sorted file
+  RsatMemTracker = relem((void*)ref_allele, RsatMemTracker);
+
+  return;
+}
+
+void gvfInsertion(FILE *fout,int mml,char *sequence ,char *chr,char *start,char *end,char *strand,char *id,char *ref,char *alt,char *soterm,char *validate,char *freq){
+  //Declare variables
+  char ref_allele       = '\0';
+
+  long long left_flank  =    0;
+  long long right_flank =    0;
+  long long index       =    0;
+  long long k           =    0;
+
+  string *alt_allele    = NULL;
+
+  //Allocate memory for variables
+  alt_allele = strnewToList(&RsatMemTracker);
+  index = atoi(start);
+
+  //Retrieve 1 base before the current coordinates in order to create REF allele
+  strfmt(alt_allele,"%c%s",sequence[index - 1],alt);
+  //Create ALT allele
+  ref_allele = sequence[index - 1];
+
+  ////////////////////////////////////////
+  //Retrieve sequences for each variant
+  k = 0;
+  left_flank  = index - mml -1; //NOTE WSG I did not erased -1 due to gvf recovered previous base
+  right_flank = atoi(end);
+
+  //do {
+  fprintf(fout,"%s\t%lld\t%s\t%s\t%s\t%s\t%c\t%s\t%s\t",chr,index - 1,end,strand,id,soterm,ref_allele,alt_allele->buffer,freq);
+  for (k = left_flank; k < left_flank + mml; k++) {
+    fprintf(fout,"%c",tolower(sequence[k]));
+  }
+  fprintf(fout,"%s", alt_allele->buffer);
+  for (k = right_flank; k < right_flank + mml; k++) {
+    fprintf(fout,"%c",tolower(sequence[k]));
+  }
+  fprintf(fout,"\n");
+  //  alt_allele = alt_allele + i + 1;
+  //} while( alt_allele  != token[7] );
+
+  //REF allele
+  fprintf(fout,"%s\t%lld\t%s\t%s\t%s\t%s\t%c\t%c\t%s\t",chr,index - 1,end,strand,id,soterm,ref_allele,ref_allele,freq);
+  for (k = left_flank; k < left_flank + mml; k++) {
+    fprintf(fout,"%c",tolower(sequence[k]));
+  }
+  fprintf(fout,"%c", ref_allele);
+  for (k = right_flank; k < right_flank + mml; k++) {
+    fprintf(fout,"%c",tolower(sequence[k]));
+  }
+  fprintf(fout,"\n");
+
+  //Remove tmp sorted file
+  RsatMemTracker = relem((void*)alt_allele, RsatMemTracker);
+
+  return;
 }
 
 ///////////////////////////////////////
