@@ -4685,10 +4685,7 @@ sub check_phylo_tools() {
 sub check_prokaryote_server() {
     if ($ENV{prokaryote_server} == 1) {
 	print "<p><font color='red'>Genomes in the RSAT Prokaryotes server were recently re-installed.</font> \n";
-	print "Genome names now follow the NCBI standard to easily identify assemblies, if you cannot find your genome please check this naming list to find the correct ID.</p>";
-	print "<ol>\n";
-	print "<li>Prokaryotes: <a target='_top' href='http://embnet.ccg.unam.mx/rsat/data/genomes/RSAT_NCBI_ID_genomes.html'>Genome IDs list</a></li>";
-	print "</ol>\n";
+	print "Genome names now follow the NCBI standard to easily identify assemblies, if you cannot find your genome please check this naming list to find the correct ID: <a target='_top' href='http://embnet.ccg.unam.mx/rsat/data/genomes/RSAT_NCBI_ID_genomes.html'>Genome IDs list</a></p>";
 	#exit(0);
     }
 }
