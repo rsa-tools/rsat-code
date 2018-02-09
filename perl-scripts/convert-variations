@@ -474,9 +474,16 @@ sub Get_var_from_vcf {
       my %field = ();
       my @information = split(":", pop @$token);
 
-      while (my($i, $descriptor) = each @description) {
+      my $i = 0;
+      foreach my $descriptor (@description) {
+        $i++;
         $field{$descriptor} = $information[$i] ? $information[$i] : "NaN";
       }
+      #NOTE WSG (2018-02-08) I believe this snippet of code
+      #is not supported in some Perl versions
+      #while (my($i, $descriptor) = each @description) {
+      #  $field{$descriptor} = $information[$i] ? $information[$i] : "NaN";
+      #}
 
       unless($field{'GT'} =~/\d\|\d/) {
         next unless $sample eq $samples[$#samples];
