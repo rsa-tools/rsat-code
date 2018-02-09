@@ -822,7 +822,7 @@ if(view_scale == "true"){
    // //Print of each of the gene names
    var gene_name_x;
    var gene_name_y = scale_bar_y + 40;
-   var gene_jump = 80;
+   var gene_jump = 40;
    console.log(data);
    graph_svg.selectAll("text.genes")
       .data(data)
@@ -992,6 +992,7 @@ else if(jpg_export == "true"){
       }//Closing of function feature map
 
    //FUNCTIONS
+
    function save_to_png(){
       var svgString = getSVGString(graph_svg.node());
       svgString2Image( svgString, 2*width, 2*height, "png", save ); // passes Blob and filesize String to the callback
