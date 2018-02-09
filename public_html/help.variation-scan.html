@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>perl-scripts/variation-scan</title>
+<title>variation-scan</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" href="main.css" type="text/css" />
 </head>
@@ -10,7 +10,7 @@
 <body class="info">
 
 <center>
-<h2><A HREF="RSAT_home.cgi">RSAT</A> - <a href='variation-scan.cgi'>variation-scan</a> manual</h2>
+<h2><A HREF="RSAT_home.cgi">RSAT</A> - <a href='variation-scan_form.cgi'>variation-scan</a> manual</h2>
 
 </center>
 
@@ -24,12 +24,7 @@
   <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
   <li><a href="#AUTHORS">AUTHORS</a></li>
   <li><a href="#CATEGORY">CATEGORY</a></li>
-  <li><a href="#USAGE">USAGE</a>
-    <ul>
-      <li><a href="#Example">Example</a></li>
-    </ul>
-  </li>
-  <li><a href="#INPUT-FORMAT">INPUT FORMAT</a>
+  <li><a href="#INPUT-DATA">INPUT DATA</a>
     <ul>
       <li><a href="#Sequence-file">Sequence file</a></li>
       <li><a href="#Matrix-file">Matrix file</a></li>
@@ -37,178 +32,158 @@
     </ul>
   </li>
   <li><a href="#OUTPUT-FORMAT">OUTPUT FORMAT</a></li>
-  <li><a href="#SEE-ALSO">SEE ALSO</a>
-    <ul>
-      <li><a href="#download-ensembl-genome">download-ensembl-genome</a></li>
-      <li><a href="#download-ensembl-variations">download-ensembl-variations</a></li>
-      <li><a href="#variation-scan">variation-scan</a></li>
-    </ul>
-  </li>
-  <li><a href="#WISH-LIST">WISH LIST</a></li>
   <li><a href="#OPTIONS">OPTIONS</a></li>
+      <ul>
+      <li><a href="#Matrix-collections">Matrix collections</a></li>
+      <li><a href="#Input-variation-sequences">Input variation sequences</a></li>
+      <li><a href="#Background">Background</a></li>
+      <li><a href="#Scanning-parameters">Scanning parameters</a></li>
+
+    </ul>
+  <li><a href="#CONTACT">CONTACT</a></li>
 </ul>
 
 <h1 id="NAME">NAME</h1>
-
-<p>variation-scan</p>
-
+  <p>variation-scan</p>
 <h1 id="VERSION">VERSION</h1>
-
-<p>$program_version</p>
-
+  <p>2.0</p>
 <h1 id="DESCRIPTION">DESCRIPTION</h1>
-
-<p>Scan variant sequences with position specific scoring matrices (PSSM) and report variations that affect the binding score, in order to predict regulatory variants.</p>
-
+  <p>Scan variant sequences with position specific scoring matrices (PSSM) and report variations that affect the binding score, in order to predict regulatory variants.</p>
 <h1 id="AUTHORS">AUTHORS</h1>
-
 <dl>
-
-<dt id="Jeremy.Delerce-univ-amu.fr">Jeremy.Delerce@univ-amu.fr</dt>
+  <dt id="Walter Santana-Garcia">Walter Santana-Garcia</dt>
 <dd>
 
 </dd>
-<dt id="Jacques.van-Helden-univ-amu.fr">Jacques.van-Helden\@univ-amu.fr</dt>
+  <dt id="Jacques van Helden">Jacques van Helden</dt>
 <dd>
 
 </dd>
-<dt id="Alejandra-Medina-Rivera-amedina-lcg.unam.mx">Alejandra Medina-Rivera &lt;amedina@lcg.unam.mx&gt;</dt>
+  <dt id="Alejandra-Medina-Rivera">Alejandra Medina-Rivera</dt>
 <dd>
 
 </dd>
 </dl>
 
 <h1 id="CATEGORY">CATEGORY</h1>
-
 <dl>
-
-<dt id="util">util</dt>
-<dd>
-
-</dd>
+<dt id="util">Genetic variations</dt>
 </dl>
 
-<h1 id="USAGE">USAGE</h1>
+<!-- <h1 id="USAGE">USAGE</h1>
 
 <pre><code> variation-scan [-i sequence_file] -m matrix_file -bg backgournd_file [-calc_distrib] [-o outputfile] [-v #] [...]</code></pre>
 
-<h2 id="Example">Example</h2>
+<h2 id="Example">Example</h2> -->
 
-<h1 id="INPUT-FORMAT">INPUT FORMAT</h1>
+<h1 id="INPUT-DATA">INPUT DATA</h1>
 
 <h2 id="Sequence-file">Sequence file</h2>
 
-<p><i>variation-scan</i> takes as input a variation file in the format produced by <i>retrieve-variation-seq</i>. for details about this format, see <i>retrieve-variation-seq</i> output format.</p>
+<p><i>variation-scan</i> takes as input a <b>.varseq</b> file in the format produced by <i>retrieve-variation-seq</i>. For details about this format and how to create a <b>.varseq</b> file, see <a href='retrieve-variation-seq_form.cgi'> <i>retrieve-variation-seq</i> </a> output format.</p>
 
 <h2 id="Matrix-file">Matrix file</h2>
 
-<p>A list of matrix in transfanc format</p>
+<p>A list of matrices in a valid format. Supported formats: alignance, assembly, cis-bp, clustal, cluster-buster, consensus, encode, feature, footprintDB, gibbs, homer, infogibbs, jaspar, meme, meme_block,<br> motifsampler, mscan, sequences, stamp, stamp-transfac, tab, transfac and uniprobe.</p>
 
 <h2 id="Background-file">Background file</h2>
 
-<p>oligo-analysis format</p>
+<p>A background model file in oligo-analysis format as produced by <i>oligo-analysis</i>. For details about this format and how to create a <i>oligo-analysis</i> file, see <a href= 'oligo-analysis_form.cgi'><i>oligo-analysis</i></a>  output format.</p>
 
 <h1 id="OUTPUT-FORMAT">OUTPUT FORMAT</h1>
 
-<p>A tab delimited file with the following column content.</p>
+<p>    A tab delimited file with the following column content. </p>
 
 <dl>
 
-<dt id="matrix">1. matrix</dt>
+<dt>    1. matrix_ac </dt>
 <dd>
-
-<p>Name of the matrice</p>
-
+       <p> Name of the matrix (generally the transcription factor name) </p>
 </dd>
-<dt id="variation">2. variation</dt>
+<dt>    2. var_id </dt>
 <dd>
-
-<p>Name of the variation</p>
-
+       <p> ID of the variation </p>
 </dd>
-<dt id="SO">3. SO</dt>
+<dt>    3. var_class </dt>
 <dd>
-
-<p>SO term of the variation.</p>
-
+       <p> Variation type, according to Sequence Ontology (SO) nomenclature </p>
 </dd>
-<dt id="var_coord">4. var_coord</dt>
+<dt>    4. var_coord </dt>
 <dd>
-
-<p>Coordinate of the variation.</p>
-
+       <p> Coordinates of the variation </p>
 </dd>
-<dt id="B_weight">5. B_weight</dt>
+<dt>    5. best_w </dt>
 <dd>
-
-<p>Best max weigth.</p>
-
+       <p> Best weigth for the putative site </p>
 </dd>
-<dt id="W_weight">8. W_weight</dt>
+<dt>    6. worst_w </dt>
 <dd>
-
-<p>Worst max weigth.</p>
-
+       <p> Worst weigth for the putative site </p>
 </dd>
-<dt id="Diff">7. Diff</dt>
+<dt>    7. w_diff </dt>
 <dd>
-
-<p>Difference between the two max weigth.</p>
-
+       <p> Difference between best and worst weigth </p>
 </dd>
-<dt id="variant">8. variant</dt>
+<dt>    8. best_pval </dt>
 <dd>
-
-<p>Variant of the variation in the sequence.</p>
-
+       <p> P_value of the best putative site </p>
 </dd>
-<dt id="B_pval">9. B_pval</dt>
+<dt>    9. worst_pval </dt>
 <dd>
-
-<p>Pvalue of the best max weigth.</p>
-
+       <p> P_value of the worst putative site </p>
 </dd>
-<dt id="W_pval">10. W_pval</dt>
+<dt>   10. pval_ratio </dt>
 <dd>
-
-<p>Pvalue of the worst max weigth.</p>
-
-<p>item 11. sigma</p>
-
-<p>Log10 difference between the two p-value.</p>
-
-<p>item 12. B_var</p>
-
-<p>Variant(s) in the sequence with the best max weigth.</p>
-
-<p>Multiple variant are return comma separate if the highest max weigth is the same in multiple sequence.</p>
-
-<p>item 13. W_var</p>
-
-<p>Variant(s) in the sequence with the worst max weigth.</p>
-
-<p>Multiple variant are return comma separate if the lowest max weigth is the same in multiple sequence.</p>
-
-<p>item 14. B_offset</p>
-
-<p>item 15. W_offset</p>
-
-<p>item 14. B_seq</p>
-
-<p>Sequence with the highest max weigth.</p>
-
-<p>Multiple sequence are return comma separate if the best max weigth is the same in multiple sequence.</p>
-
-<p>item 15. W_seq</p>
-
-<p>Sequence with the lowest max weigth.</p>
-
-<p>Multiple sequence are return comma separate if the worst max weigth is the same in multiple sequence.</p>
-
+       <p> Ratio between worst and best pval ( pval_ratio = worst_pval/best_pval ) </p>
 </dd>
+<dt>   11. best_variant </dt>
+<dd>
+       <p> Variant in the best putative site </p>
+</dd>
+<dt>   12. worst_variant </dt>
+<dd>
+       <p> Variant in the worst putative site </p>
+</dd>
+<dt>   13. best_offest </dt>
+<dd>
+       <p> Offset of the best putative site </p>
+</dd>
+<dt>   14. worst_offset </dt>
+<dd>
+       <p> Offset of the worst putative site </p>
+</dd>
+<dt>   15. min_offset_diff </dt>
+<dd>
+       <p> Difference minimal between best and worst putative site </p>
+</dd>
+<dt>   16. best_strand </dt>
+<dd>
+       <p> Strand of the best putative site </p>
+</dd>
+<dt>   17. worst_strand </dt>
+<dd>
+       <p> Strand of the worst putative site </p>
+</dd>
+<dt>   18. str_change </dt>
+<dd>
+       <p> Indicate if strand have change between the offset of min_offset_diff </p>
+</dd>
+<dt>   19. best_seq </dt>
+<dd>
+       <p> Sequence of the worst putative site </p>
+</dd>
+<dt>   20. worst_seq </dt>
+<dd>
+       <p> Sequence of the worst putative site </p>
+</dd>
+<dt>   21. minor_alle_freq </dt>
+<dd>
+       <p> Minor allele frequency</p>
+</dd>
+
 </dl>
 
-<h1 id="SEE-ALSO">SEE ALSO</h1>
+<!--<h1 id="SEE-ALSO">SEE ALSO</h1>
 
 <h2 id="download-ensembl-genome">download-ensembl-genome</h2>
 
@@ -222,127 +197,124 @@
 
 <p>Scan variation sequences with one or several position-specific scoring matrices.</p>
 
-<h1 id="WISH-LIST">WISH LIST</h1>
+<h1 id="WISH-LIST">WISH LIST</h1> -->
 
 <h1 id="OPTIONS">OPTIONS</h1>
 
 <dl>
 
-<dt id="v"><b>-v #</b></dt>
+
+<dt id="Matrix-collections"><b>Matrix collections</b></dt>
 <dd>
 
-<p>Level of verbosity (detail in the warning messages during execution)</p>
+<p>A matrix or a list of matrices in a valid format. Supported formats: alignance, assembly, cis-bp,
+  clustal, cluster-buster, consensus, encode, feature, footprintDB, gibbs, homer, infogibbs, jaspar,
+  meme, <br>meme_block, motifsampler, mscan, sequences, stamp, stamp-transfac, tab, transfac and uniprobe.</p>
 
 </dd>
-<dt id="h"><b>-h</b></dt>
-<dd>
+ <dd id="mml">
+  <dl>
+      <dt id="Input-personal-collection-of-motifs"><b>Input personal collection of motifs</b></dt>
+      <dd><p>Input own motif collections as text or upload motifs as file. </p>
+      </dd>
 
-<p>Display full help message</p>
+     <dt id="Select-a-collection-in-list"><b>Select a collection in list</b></dt>
+     <dd><p>Input a motif from a collection in list. </p>
+     </dd>
 
-</dd>
-<dt id="help"><b>-help</b></dt>
-<dd>
+     <dt id="Select-one-motif-collection"><b>Select one motif collection</b></dt>
+     <dd><p>Input an available motif collection from list. </p>
+     </dd>
 
-<p>Same as -h</p>
-
-</dd>
-<dt id="i"><b>-i #</b></dt>
-<dd>
-
-<p>Variation file RSAT format</p>
-
-</dd>
-<dt id="m"><b>-m #</b></dt>
-<dd>
-
-<p>The matrix file transfac format</p>
+ </dl>
 
 </dd>
-<dt id="bg"><b>-bg</b></dt>
+<dt id="Input-variation-sequences"><b>Input variation sequences</b></dt>
 <dd>
 
-<p>Background file</p>
+<p><i>variation-scan</i> takes as input a <b>.varseq</b> file in the format produced by <i>retrieve-variation-seq</i>. For details about this format and how to create a <b>.varseq</b> file, see <a href='retrieve-variation-seq_form.cgi'> <i>retrieve-variation-seq</i> </a> output format.</p>
 
 </dd>
-<dt id="i1"><b>-i #</b></dt>
-<dd>
 
-<p>Input File</p>
+<dt id="Background"><b>Background</b></dt>
+  <p> Background model estimation </p>
+<dd id="mml">
+  <dl>
 
-</dd>
-<dt id="mml"><b>-mml #</b></dt>
-<dd>
+      <dt id="Organism-specific"><b>Organism-specific</b></dt>
+      <dd><p>Estimate background model with genome sequences from a specific organism.</p>
+      </dd>
+      <dd>
+      <dl>
+        <dt><b>Markov order</b></dt>
+        <dd><p>Markov order of the background model estimation.</p></dd>
+        <dt><b>Organism</b></dt>
+        <dd><p>Name of the organism where the background model estimation will be made.</p></dd>
+        <dt><b>Sequence type</b></dt>
+        <dd><p>Sequence type of the selected organism genome that will be used to estimate the background model.</p></dd>
+      </dl>
+    </dd>
 
-<p>Length of the longest Matrix, this values has to be consistent with the one used io for retrieving the variant sequences (see &lt;retrieve-variation-seq&gt;).</p>
+     <dt id="Input-your-own-background-file"><b>Input your own background file</b></dt>
+     <dd><p>Input a previously estimated background model file.</p>
+     </dd>
 
-</dd>
-<dt id="top_matrix"><b>-top_matrix #</b></dt>
-<dd>
-
-<p>Only work with the # top matrix</p>
-
-</dd>
-<dt id="top_variationmatrix"><b>-top_variationmatrix #</b></dt>
-<dd>
-
-<p>Only work with the # top variation</p>
-
-</dd>
-<dt id="lth-type"><b>-lth type #</b></dt>
-<dd>
-
-<p>Only return rvar with type_score &gt; #</p>
-
-</dd>
-<dt id="uth-type"><b>-uth type #</b></dt>
-<dd>
-
-</dd>
-<dt id="html"><b>-html #</b></dt>
-<dd>
-
-<p>Convert the tab-delimited file into an HTML file, which facilitates the inspection of the results with a Web browser. The HTML file has the same name as the output file, but the extension (.tab, .txt) is replaced by the .html extension</p>
+    <dd>
+      <dl>
+        <dt><b>Format</b></dt>
+        <dd><p>Specify the background model file format.</p></dd>
+        <dt><b>File Upload</b></dt>
+        <dd><p>Upload the background model file.</p></dd>
+        <dt><b>URL of file available on a Web server </b></dt>
+        <dd><p>Input the background model file from a URL.</p></dd>
+      </dl>
+    </dd>
+ </dl>
 
 </dd>
-<dt id="calc_distrib"><b>-calc_distrib</b></dt>
-<dd>
 
-<p>Calculate and save distribution of matrices</p>
 
-</dd>
-<dt id="distrib_dir"><b>-distrib_dir #</b></dt>
-<dd>
+<dt id="Scanning-parameters"><b>Scanning parameters </b></dt>
 
-<p>Directory to store the distribution files. Mandatory if -calc_distrib is being used.</p>
+<dd id="Length-of-sequence-around-the-variant">
+  <dl>
+      <dt><b>Length of sequence around the variant </b></dt>
+      <dd><p>Length of the longest matrix in the input list used to scan the current variant sequences. This value has to be consistent with
+             the value used for retrieving the variant sequences <br>and by no means the longest matrix at the input list must be
+             greater than this value. For details of this option, see <i>Length of flanking sequence on each side of the variant</i>
+             <br>option at <a href='retrieve-variation-seq_form.cgi'> <i>retrieve-variation-seq</i></a>.</p>
+     </dd>
+     <dt id="Thresholds"><b>Thresholds</b></dt>
+     <dd><p>Only output hits with values passing the thresholds. </p>
+     </dd>
 
-</dd>
-<dt id="distrib_list"><b>-distrib_list #</b></dt>
-<dd>
-
-<p>Name of the file containing the list of matrix distrib file name</p>
-
-<p>/!\ This file must be in the same directory as the distrib file</p>
-
-</dd>
-<dt id="only_biggest"><b>-only_biggest</b></dt>
-<dd>
-
-<p>Only return the biggest difference of score between two alleles of a variation regarthless of the window, this option is usefull for insertions and deletions</p>
-
-</dd>
-<dt id="o-outputfile"><b>-o outputfile</b></dt>
-<dd>
-
-<p>The output file is in fasta format.</p>
-
-<p>If no output file is specified, the standard output is used. This allows to use the command within a pipe.</p>
+    <dd>
+      <dl>
+        <dt><b>Weight of predicted sites</b></dt>
+        <dd><p>This value will be used as a lower threshold and all scanned variation records with best weight (<i>best_w</i>) greater than this
+               value will be reported.</p></dd>
+        <dt><b>Weight difference between variants</b></dt>
+        <dd><p>This value will be used as a lower threshold and all scanned variation records with weight difference (<i>w_diff</i>) between alleles
+               greater than this value will be reported.</p></dd>
+        <dt><b>P-value of predicted sites</b></dt>
+        <dd><p>This value will be used as a upper threshold and all scanned variation records with best p-value smaller than this
+               value will be reported.</p></dd>
+        <dt><b>P-value ratio between variants</b></dt>
+        <dd><p>This value will be used as a lower threshold and all scanned variation records with p-value ratio (<i>pval_ratio</i>) between alleles
+               greater than this value will be reported.</p></dd>
+      </dl>
+    </dd>
+ </dl>
 
 </dd>
 </dl>
+  <h1 id="CONTACT">CONTACT</h1>
+  <dl>
+    <dd>For further inquiries, please contact Jacques van Helden (<i>Jacques.van-Helden@univ-amu.fr</i>) or
+      <a href= 'https://twitter.com/RSATools'>Ask a question to the RSAT team </a>!</dd>
+  </dl>
 
 
 </body>
 
 </html>
-
-
