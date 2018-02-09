@@ -70,6 +70,13 @@ default_organism=Saccharomyces_cerevisiae
 
 phylo_tools=0
 
+
+## Prokaryote genomes
+## The prokaryotes server has to display a link to a list of genomes
+## to facilitate user searches.
+prokaryote_server=0
+
+
 ################################################################
 ### Support for Ensembl Compara orthologs and related tools.
 ###
