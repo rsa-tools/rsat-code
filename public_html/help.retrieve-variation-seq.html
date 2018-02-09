@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>perl-scripts/matrix-quality</title>
+<title>retrieve-variation-seq</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" href="main.css" type="text/css" />
 </head>
@@ -10,7 +10,7 @@
 <body class="info">
 
 <center>
-<h2><A HREF="RSAT_home.cgi">RSAT</A> - <a href='retrieve-variation-seq.cgi'>retrieve-variation-seq</a> manual</h2>
+<h2><A HREF="RSAT_home.cgi">RSAT</A> - <a href='retrieve-variation-seq_form.cgi'>retrieve-variation-seq</a> manual</h2>
 
 </center>
 
@@ -18,20 +18,13 @@
 <div name="index">
 <p><a name="__index__"></a></p>
 
-
-
 <ul id="index">
   <li><a href="#NAME">NAME</a></li>
   <li><a href="#VERSION">VERSION</a></li>
   <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
   <li><a href="#AUTHORS">AUTHORS</a></li>
   <li><a href="#CATEGORY">CATEGORY</a></li>
-  <li><a href="#USAGE">USAGE</a>
-    <ul>
-      <li><a href="#Example">Example</a></li>
-    </ul>
-  </li>
-  <li><a href="#INPUT-FORMAT">INPUT FORMAT</a>
+  <li><a href="#INPUT-DATA">INPUT DATA</a>
     <ul>
       <li><a href="#Genomic-coordinate-file">Genomic coordinate file</a></li>
       <li><a href="#Example-of-bed-file">Example of bed file</a></li>
@@ -40,77 +33,55 @@
     </ul>
   </li>
   <li><a href="#OUTPUT-FORMAT">OUTPUT FORMAT</a></li>
-  <li><a href="#SEE-ALSO">SEE ALSO</a>
-    <ul>
-      <li><a href="#download-ensembl-genome">download-ensembl-genome</a></li>
-      <li><a href="#download-ensembl-variations">download-ensembl-variations</a></li>
-      <li><a href="#variation-scan">variation-scan</a></li>
-    </ul>
-  </li>
-  <li><a href="#WISH-LIST">WISH LIST</a></li>
   <li><a href="#OPTIONS">OPTIONS</a></li>
+      <ul>
+      <li><a href="#Organism">Organism</a></li>
+      <li><a href="#Data">Input a list of dbSNP variation IDs (rsID), a set of variants in varBed format, or genomic regions in bed format</a></li>
+      <li><a href="#Input-format">Input format</a></li>
+      <li><a href="#Scanning-parameters">Length of flanking sequence on each side of the variant</a></li>
+
+    </ul>
+  <li><a href="#CONTACT">CONTACT</a></li>
 </ul>
 
 <h1 id="NAME">NAME</h1>
-
-<p>retrieve-variation-seq</p>
-
+  <p>retrieve-variation-seq</p>
 <h1 id="VERSION">VERSION</h1>
-
-<p>$program_version</p>
-
+  <p>2.0</p>
 <h1 id="DESCRIPTION">DESCRIPTION</h1>
-
-<p>Given a set of IDs for polymorphic variations, retrieve the corresponding variants and their flanking sequences, in order to scan them wiht the tool <i>variation-scan</i>.</p>
-
+  <p>Given a set of set of variants in varBed format (see <a href='convert-variations_form.cgi'> <i>convert-variations</i></a>), list of dbSNP IDs or genomic coordinates in bed format, retrieve the corresponding variants and their flanking sequences, in order to scan them with the tool <a href='variation-scan_form.cgi'> <i>variation-scan</i></a>.</p>
 <h1 id="AUTHORS">AUTHORS</h1>
-
 <dl>
-
-<dt id="Jeremy-Delerce-M2-thesis-project-2013"><b>Jeremy Delerce</b> (M2 thesis project 2013)</dt>
+  <dt id="Walter Santana-Garcia">Walter Santana-Garcia</dt>
 <dd>
 
 </dd>
-<dt id="Alejandra-Medina-Rivera-amedina-lcg.unam.mx"><b>Alejandra Medina Rivera</b> &lt;amedina@lcg.unam.mx&gt;</dt>
+  <dt id="Jacques van Helden">Jacques van Helden</dt>
 <dd>
 
 </dd>
-<dt id="Jacques-van-Helden-Jacques.van-Helden-univ-amu.fr"><b>Jacques van Helden</b> &lt;Jacques.van-Helden\@univ-amu.fr&gt;</dt>
+  <dt id="Alejandra-Medina-Rivera">Alejandra Medina-Rivera</dt>
 <dd>
 
 </dd>
 </dl>
 
 <h1 id="CATEGORY">CATEGORY</h1>
-
 <dl>
-
-<dt id="util">util</dt>
-<dd>
-
-</dd>
+<dt id="util">Genetic variations</dt>
 </dl>
 
-<h1 id="USAGE">USAGE</h1>
+<!-- <h1 id="USAGE">USAGE</h1>
 
-<pre><code> retrieve-snp-seq -species species_name (-release # | -assembly assembly_version)  \
-   [-i #inputfile] [-format variation_format] \
-   [-col ID_column] [-mml #] [-o outputfile] [-v #] [...]</code></pre>
+<pre><code> variation-scan [-i sequence_file] -m matrix_file -bg backgournd_file [-calc_distrib] [-o outputfile] [-v #] [...]</code></pre>
 
-<h2 id="Example">Example</h2>
+<h2 id="Example">Example</h2> -->
 
-<pre><code>  Get variation sequence of Homo_sapiens from a bed file
-    retrieve-snp-seq -v 2 \
-      -species Homo_sapiens -release 72
-      -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \
-      -mml 30 \
-      -o variations.varBed</code></pre>
-
-<h1 id="INPUT-FORMAT">INPUT FORMAT</h1>
+<h1 id="INPUT-DATA">INPUT DATA</h1>
 
 <h2 id="Genomic-coordinate-file">Genomic coordinate file</h2>
 
-<p>The option <i>-i</i> allows to specify a genomic coordinate file in bed format. The program only takes into account the 3 first columns of the bed file, which specify the genomic coordinates.</p>
+<p>A genomic coordinate file in bed format. The program only takes into account the 3 first columns of the bed file, which specify the genomic coordinates.</p>
 
 <p><b>Note</b> (from Jacques van Helden): the UCSC genome browser adopts a somewhat inconsistent convention for start and end coordinates: the start position is zero-based (first nucleotide of a chromosome/scaffold has coordinate 0), but the end position is considered not included in the selection. This is equivalent to have a zero-based coordinate for the start, and a 1-base coordinate for the end.</p>
 
@@ -163,11 +134,11 @@
 
 <h2 id="Variation-file">Variation file</h2>
 
-<p>See <i>download-ensembl-variation</i> output format.</p>
+<p> A variation file in varBed format, see <a href='convert-variations_form.cgi'> <i>convert-variations</i></a>. </p>
 
 <h2 id="Variation-ID-list">Variation ID list</h2>
 
-<p>A tab delimited file with id of variation in column.</p>
+<p>A list of dbSNP IDs.</p>
 
 <h1 id="OUTPUT-FORMAT">OUTPUT FORMAT</h1>
 
@@ -205,7 +176,7 @@
 <p>ID of the variation</p>
 
 </dd>
-<dt id="SO-term">8. SO term</dt>
+<dt id="SO-term">6. SO term</dt>
 <dd>
 
 <p>SO Term of the the variation</p>
@@ -223,7 +194,7 @@
 <p>Allele of the variation in the sequence</p>
 
 </dd>
-<dt id="allele_frequency">10. allele_frequency</dt>
+<dt id="allele_frequency">9. allele frequency</dt>
 <dd>
 
 <p>Allele frequency</p>
@@ -232,12 +203,12 @@
 <dt id="sequence">10. sequence</dt>
 <dd>
 
-<p>Sequence of lenght L center on the variation</p>
+<p>Sequence of the current variant, flanked by a user-specified neighbouring region</p>
 
 </dd>
 </dl>
 
-<h1 id="SEE-ALSO">SEE ALSO</h1>
+<!--<h1 id="SEE-ALSO">SEE ALSO</h1>
 
 <h2 id="download-ensembl-genome">download-ensembl-genome</h2>
 
@@ -251,127 +222,52 @@
 
 <p>Scan variation sequences with one or several position-specific scoring matrices.</p>
 
-<h1 id="WISH-LIST">WISH LIST</h1>
+<h1 id="WISH-LIST">WISH LIST</h1> -->
 
 <h1 id="OPTIONS">OPTIONS</h1>
 
 <dl>
 
-<dt id="v"><b>-v #</b></dt>
+
+<dt id="Organism"><b>Organism</b></dt>
 <dd>
 
-<p>Level of verbosity (detail in the warning messages during execution)</p>
+<p>Name of the genome organism where the flanking sequences will be retrieved.</p>
 
 </dd>
-<dt id="h"><b>-h</b></dt>
+
+<dt id="Data"><b>Input a list of dbSNP variation IDs (rsID), a set of variants in varBed format, or genomic regions in bed format </b></dt>
 <dd>
 
-<p>Display full help message</p>
+<p> Set of variants in varBed format (see <a href='convert-variations_form.cgi'> <i>convert-variations</i></a>), list of dbSNP IDs or genomic coordinates in bed format that will be used to retrieve the
+    corresponding variants and their flanking sequences. <br>The data can be provided either as text or as a file.</p>
 
 </dd>
-<dt id="help"><b>-help</b></dt>
+
+<dt id="Input-format"><b>Input format</b></dt>
 <dd>
 
-<p>Same as -h</p>
+<p>Format of the current input data (varBed, bed or id).</p>
 
 </dd>
-<dt id="species-species_name"><b>-species species_name</b></dt>
+
+
+<dt id="Length-of-flanking-sequences"><b>Length of flanking sequence on each side of the variant </b></dt>
+
 <dd>
 
-<p>Species name. This name must correspond to the species of the variation/bed/id file if provided.</p>
-
-</dd>
-<dt id="species_suffix"><b>-species_suffix</b></dt>
-<dd>
-
-<p>Species name. This name must correspond to the species of the variation/bed/id file if provided.</p>
-
-</dd>
-<dt id="release"><b>-release #</b></dt>
-<dd>
-
-<p>The version of ensembl database (e.g. 72).</p>
-
-<p>Note: each Ensembl version contains a specific assembly version for each species. When the option -release is used, the option -assembly should thus in principle not be used.</p>
-
-</dd>
-<dt id="assembly"><b>-assembly #</b></dt>
-<dd>
-
-<p>Assembly version (e.g. GRCh37 for the assembly 37 of the Human genome).</p>
-
-<p>Note: genome assemblies can cover several successive ensemble versions. In case of ambiguity, the latest corresponding ensembl version is used.</p>
-
-<p>#=item <b>-available_species</b> # #Get the list of all locally supported species and genome assemblies. # #=cut # } elsif ($arg eq &quot;-available_species&quot;) { # $main::available = 1; # #=pod</p>
-
-</dd>
-<dt id="i-input_file"><b>-i input_file</b></dt>
-<dd>
-
-<p>Input File.</p>
-
-<p>The input file specifies a list of query variations. Each row corresponds to one query.</p>
-
-<p>The variations can be provided in various formats (see option -format below).</p>
-
-</dd>
-<dt id="format-variation_format"><b>-format variation_format</b></dt>
-<dd>
-
-<p>Format of the input file</p>
-
-<p>Supported formats:</p>
-
-<dl>
-
-<dt id="varBed"><i>varBed</i></dt>
-<dd>
-
-<p>Format of variation files used by all RSAT scripts.</p>
-
-</dd>
-<dt id="id"><i>id</i></dt>
-<dd>
-
-<p>tab-delimited file with all variation IDs in a given column, which can be specified by the option <i>-col</i>.</p>
-
-</dd>
-<dt id="bed"><i>bed</i></dt>
-<dd>
-
-<p>General format for the description of genomic features (see https://genome.ucsc.edu/FAQ/FAQformat.html#format1).</p>
+<p>Length of the flanking sequences that will be retrieved around the variants.</p>
 
 </dd>
 </dl>
 
-</dd>
-<dt id="mml"><b>-mml #</b></dt>
-<dd>
-
-<p>Length of the longest Matrix</p>
-
-</dd>
-<dt id="col"><b>-col #</b></dt>
-<dd>
-
-<p>Column containing the variation IDs with the input format &quot;id&quot;.</p>
-
-<p>Default : 1</p>
-
-</dd>
-<dt id="o-outputfile"><b>-o outputfile</b></dt>
-<dd>
-
-<p>The output file is in fasta format.</p>
-
-<p>If no output file is specified, the standard output is used. This allows to use the command within a pipe.</p>
-
-</dd>
-</dl>
+  <h1 id="CONTACT">CONTACT</h1>
+  <dl>
+    <dd>For further inquiries, please contact Jacques van Helden (<i>Jacques.van-Helden@univ-amu.fr</i>) or
+      <a href= 'https://twitter.com/RSATools'>Ask a question to the RSAT team </a>!</dd>
+  </dl>
 
 
 </body>
 
 </html>
-
-
