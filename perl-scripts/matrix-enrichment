@@ -1542,7 +1542,7 @@ sub CreateHTMLReport {
 	if($line =~ /--show_command--/){
 	    
 	    ## Print arguments
-	    print &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
+	    print $syn &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
 	    print $syn "<pre>";
 	    print $syn "matrix-enrichment ";
 	    &PrintArguments($syn);
