@@ -3494,7 +3494,7 @@ sub Synthesis {
   print $syn "<li>Thomas-Chollier M, Herrmann C, Defrance M, Sand O, Thieffry D, van Helden J. (2012). RSAT peak-motifs: motif analysis in full-size ChIP-seq datasets. Nucleic Acids Res 40(4): e31.</li>\n";
   print $syn "<li>Thomas-Chollier M, Darbo E, Herrmann C, Defrance M, Thieffry D, van Helden J. (2012). A complete workflow for the analysis of full-size ChIP-seq (and similar) data sets using peak-motifs. Nat Protoc 7(8): 1551-1568.</li>\n";
   print $syn "</ol>\n";
-
+  print $syn &close_menu_heading();
   ## End of the HTML file
   &CloseSynthesis();
 
