@@ -164,6 +164,7 @@ package main;
 		    "motifs_vs_motifs",
 		    "motifs_vs_ref",
 		    "motifs_vs_db",
+            "cluster_motifs",
 #		      "motif_compa",
 		    "scan",
 		    "timelog",
@@ -175,7 +176,7 @@ package main;
   ## Extra tasks are only executed on explicit demand of the user
   @extra_tasks = ("all",
 		  "clean_seq",
-		  "cluster_motifs",
+		  #"cluster_motifs",
 		  "meme_bg",
 		  "meme",
 		  "dreme",
@@ -635,7 +636,7 @@ sub DefaultParameters {
   $motif_compa_options .= " -lth cor ".$main::param{matrix_compa_min_cor}; ## Min correlation
   $motif_compa_options .= " -lth Ncor ".$main::param{matrix_compa_min_Ncor}; ## Min normalized correlation
 #  $motif_compa_options .= " -return matrix_name,matrix_id,".$main::param{matrix_compa_metrics}.",match_rank,width,strand,offset,consensus,alignments_1ton";
-  $motif_compa_options .= " -return matrix_name,matrix_id,".$main::param{matrix_compa_metrics}.",width,strand,offset,consensus,alignments_1ton";
+  $motif_compa_options .= " -return matrix_name,matrix_id,".$main::param{matrix_compa_metrics}.",width,strand,offset,alignments_1ton";
   $motif_compa_options .= " -sort ".$main::param{matrix_compa_sort_field};
   $motif_compa_options .= " -quick";
   $main::param{motif_compa_options} = $motif_compa_options;
@@ -2203,9 +2204,8 @@ sub MotifsVersusMotifs {
 ## consensus motifs.
 sub ClusterMotifs {
   my $cmd = $SCRIPTS."/matrix-clustering -v 0";
-  $cmd .= " -i ".$main::outfile{motifs_discovered};
-  $cmd .= " -matrix_format tf ";
-  $cmd .= " -motif_collection_name '".$main::param{prefix}."'";
+  $cmd .= " -matrix '".$main::param{prefix}."' ".$main::outfile{motifs_discovered};
+  $cmd .= " transfac ";
   $cmd .= " -title '".$main::param{title}."'";
   $cmd .= " -lth Ncor 0.4 -lth cor 0.5 -lth w 5 ";
   $cmd .= " -hclust_method average -label_in_tree name ";
@@ -3358,7 +3358,7 @@ sub SynthesisMergedSites {
 ## Report the command before running the analysis, for the sake of
 ## debugging and to facilitate copy-paste of the options.
 sub ReportCommand {
-  print $syn &open_menu_heading($menu_nb++, "<a name='logs'></a><h3>Command</h3>", 1);
+  print $syn &open_menu_heading($menu_nb++, "<h3>Command</h3>", 1);
   print $syn "<pre>";
   print $syn "peak-motifs ";
   &PrintArguments($syn);
@@ -3494,7 +3494,7 @@ sub Synthesis {
   print $syn "<li>Thomas-Chollier M, Herrmann C, Defrance M, Sand O, Thieffry D, van Helden J. (2012). RSAT peak-motifs: motif analysis in full-size ChIP-seq datasets. Nucleic Acids Res 40(4): e31.</li>\n";
   print $syn "<li>Thomas-Chollier M, Darbo E, Herrmann C, Defrance M, Thieffry D, van Helden J. (2012). A complete workflow for the analysis of full-size ChIP-seq (and similar) data sets using peak-motifs. Nat Protoc 7(8): 1551-1568.</li>\n";
   print $syn "</ol>\n";
-
+  print $syn &close_menu_heading();
   ## End of the HTML file
   &CloseSynthesis();
 
@@ -5264,7 +5264,8 @@ sub CheckArguments {
   $main::param{scan_enrich_options} .= " -bginput -markov ".$main::param{scan_markov};
 
   &RSAT::message::Debug($param{strand}, $param{scan_options}) if ($main::verbose >= 3);
-
+    
+$task{cluster_motifs} = 1;
   ## Modalities of motif comparisons
   if ($task{motif_compa}) {
     $task{merge_motifs} = 1;
