@@ -2935,7 +2935,7 @@ sub text_to_html {
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  my $command = $SCRIPTS."/text-to-html";
+  my $command = $SCRIPTS."/text-to-html -v 0";
   if ($args{inputfile}) {
    my $input_file = $args{inputfile};
    chomp $input_file;
