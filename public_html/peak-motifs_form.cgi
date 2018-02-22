@@ -208,6 +208,7 @@ $demo_url = $ENV{rsat_www}."/demo_files/peak-motifs_demo.fa";
 print '<script>
 function setDemo1(demo_url){
     $("#reset").trigger("click");
+    $("#db_choice").val("' . $default{compare_motif_database} . '").change();
     descr = "<H4>Comment on the demonstration example 1 :</H4>\n";
     descr = descr + "<blockquote class =\'demo\'>";
     descr = descr + "In this demonstration, we apply time- and memory-efficient \
@@ -354,8 +355,7 @@ sub Panel2 {
 
 
   print "</fieldset><p/>";
-  print '</div>
-<p class="clear"></p>';
+  print '</div><p class="clear"></p>';
 }
 
 ##########################################
@@ -528,14 +528,14 @@ sub Panel4 {
 
   print "<p/> ";
 #  print "<a href=''><b>Choose below the motif database(s):</b></a><br/>";
-  print "<a href=''><b>Compare discovered motifs with known motifs from databases</b></a><br/>";
+  print "<b>Compare discovered motifs with known motifs from databases</b><br/>";
 
 &MotifSelection("mode" => "checkbox");
   ## Display supported motif databases
   # &DisplayMatrixDBchoice("mode"=>"checkbox");
 
   print "<p/> ";
-  print "<a href=''><b>Add your own motif database:</b></a><br/>";
+  print "<b>Add your own motif database:</b><br/>";
   print  $query->textfield(-name=>'custom_motif_db_name',
 			   -default=>$default{custom_motif_db_name},
 			   -size=>20);
@@ -545,7 +545,7 @@ sub Panel4 {
 
  ## Reference motifs
   print"</p>";
-  print "<a href=''><b>Add known reference motifs for this experiment:</b></a><br/>";
+  print "<b>Add known reference motifs for this experiment:</b><br/>";
   print $query->filefield(-name=>'ref_motif',
 			  -size=>10);
   print "<br>Database and reference motifs (matrices) should be in <b>Transfac format</b>";
@@ -554,10 +554,7 @@ sub Panel4 {
 
   print "</fieldset><p/>";
 
-  print '
-</div>
-
-<p class="clear"></p>';
+  print '</div><p class="clear"></p>';
 }
 
 ##########################################
@@ -612,14 +609,14 @@ sub Panel5  {
 	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+</tt>");
 
   print "<br/>";
-  print ("<INPUT TYPE='radio' NAME='visualize' id='visualize_bed_coord' value='bed_coord' $checked{'bed_coord'}>","Peak coordinates provided as a <b>custom <a class='iframe' href='help.peak-motifs.html'>BED file</a>.</b>");
+  print ("<INPUT TYPE='radio' NAME='visualize' id='visualize_bed_coord' value='bed_coord' $checked{'bed_coord'}>","Peak coordinates provided as a <b>custom BED file.</b>");
   print "&nbsp;"x7, "<br>The 4th column of the BED file (feature name) must correspond to the fasta headers of sequences</i><br/>";
 
   print "&nbsp;"x7, $query->filefield(-name=>'bed_file',
 				      -size=>10);
 
   ### assembly
-  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a class='iframe' href='help.peak-motifs.html'>Assembly version (UCSC)</a>&nbsp;</B>\n";
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b>Assembly version (UCSC)&nbsp;</B>\n";
   print  $query->textfield(-name=>'assembly',
 							      -default=>$default{assembly},
 							      -size=>10);
