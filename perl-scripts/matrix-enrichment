@@ -801,18 +801,56 @@ package main;
       }
 
       ## Draw static heatmaps
-      my $rscript_path = &RSAT::server::GetProgramPath("Rscript");
-      &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
-      my $R_command= $rscript_path." ".$r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
+
+      ## Alejandra Medina's command
+      # my $rscript_path = &RSAT::server::GetProgramPath("Rscript");
+      # &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
+      # my $R_command= $rscript_path." ".$r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 0";
       
-      &RSAT::message::Info("R-command for NWD cluster",  $R_command) if ($main::verbose >= 0);
+      # &RSAT::message::Info("R-command for NWD cluster",  $R_command) if ($main::verbose >= 0);
       
-      &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      # &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      # $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
+      # $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
+      # $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
+      # $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
+
+      
+      
+      ## Jaime Castro's Command
+
+      my $r_path = &RSAT::server::GetProgramPath("R");
+      
+      my $matrix_enrichment_heatmap_cmd = "";
+      $matrix_enrichment_heatmap_cmd .= " cat ".$r_mtxq_sc;
+      $matrix_enrichment_heatmap_cmd .= " | ".$r_path;
+      $matrix_enrichment_heatmap_cmd .= " --slave --no-save --no-restore --no-environ";
+      $matrix_enrichment_heatmap_cmd .= " --args \"";
+      $matrix_enrichment_heatmap_cmd .= " mtx.quality.nwds.file = '".$nwd_all_file."'";
+      $matrix_enrichment_heatmap_cmd .= "; plot.folder = '".$nwd_all_plot."'";
+      $matrix_enrichment_heatmap_cmd .= "; formats = '".join(",",'pdf','png')."'";
+      $matrix_enrichment_heatmap_cmd .= "; print.heatmap = '0'";
+      $matrix_enrichment_heatmap_cmd .= " \"";
+
+      &RSAT::message::Info("R-command for generate NWD tables: ", $matrix_enrichment_heatmap_cmd) if ($main::verbose >= 0);
+      
+      print ("Full cmd: ".$matrix_enrichment_heatmap_cmd."\n");
+
+      if ($r_path) {
+	  &doit($matrix_enrichment_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+      } else {
+	  &RSAT::message::Warning("Could not run $r_mtxq_sc because the program R is not available") if ($main::verbose >= 0);
+      }
+
       $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
       $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
       $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
       $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
- 
+
+      ## Check if the NWD table was created
+      unless( -e $outfile{"heatmap_nwdsig"}.".txt" ){
+	  &RSAT::error::FatalError($outfile{heatmap_nwdsig}.".txt does not Exist");
+      }
   }
  
   if ($task{synthesis}){
@@ -1399,70 +1437,11 @@ sub Verbose {
 }
 
 
-# ################################################################
-# ## Draw the Dynamic Heatmap using the matrix
-# ## of maxNWD positive values
-# sub DynamicHeatmapEnrichment {
-
-#     ########################################
-#     ## Outfiles of Dynamic heatmap script
-#     $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
-#     $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
-#     $main::outfile{Diff_maxNWD_tsv} = $main::prefix{main}."_diff_matrix_heatmap.tsv";
-#     $main::outfile{maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_heatmap.html";
-#     $main::outfile{Diff_maxNWD_heatmap_html} = $main::prefix{main}."_motif_enrichment_maxNWD_diff_heatmap.html";
-#     $main::outfile{maxNWD_heatmap_template} = $ENV{RSAT}."/public_html/templates_html/motif_enrichment_dynamic_heatmap_d3.html";
-    
-#     &RSAT::message::TimeWarn("Drawing heatmap of maxNWD") if ($main::verbose >= 2);
-
-#     ##################################
-#     ### Identify the path of the R executable
-#     my $r_path = &RSAT::server::GetProgramPath("R");
-
-#     my $dynamic_heatmap_script  = $ENV{RSAT}."/R-scripts/matrix-enrichment_heatmap.R";
-
-#     &RSAT::error::FatalError("Cannot read matrix-enrichment_heatmap.R script", $dynamic_heatmap_script) unless (-r $dynamic_heatmap_script);
-
-#     ## Command
-#     my $dynamic_heatmap_cmd = "";
-#     $dynamic_heatmap_cmd .= " cat ".$dynamic_heatmap_script;
-#     $dynamic_heatmap_cmd .= " | ".$r_path;
-#     $dynamic_heatmap_cmd .= " --slave --no-save --no-restore --no-environ";
-#     $dynamic_heatmap_cmd .= " --args \"";
-#     $dynamic_heatmap_cmd .= " prefix = '".$main::prefix{main}."'";
-#     $dynamic_heatmap_cmd .= "; maxNWD.table.file = '".$outfile{heatmap_nwdsig}.".txt'";
-#     $dynamic_heatmap_cmd .= "; html.template.file = '".$main::outfile{maxNWD_heatmap_template}."'";
-#     $dynamic_heatmap_cmd .= "; maxNWD.tsv = '".$main::outfile{maxNWD_tsv}."'";
-#     $dynamic_heatmap_cmd .= "; Diff.maxNWD.tsv = '".$main::outfile{Diff_maxNWD_tsv}."'";
-#     $dynamic_heatmap_cmd .= "; shortpath.maxNWD.tsv = '".$main::outfile{short_path_maxNWD_tsv}."'";
-#     $dynamic_heatmap_cmd .= "; maxNWD.heatmap.html = '".$main::outfile{maxNWD_heatmap_html}."'";
-#     $dynamic_heatmap_cmd .= "; Diff.maxNWD.heatmap.html = '".$main::outfile{Diff_maxNWD_heatmap_html}."'";
-#     $dynamic_heatmap_cmd .= "; d3.base = '".$d3_base."'";
-#     $dynamic_heatmap_cmd .= "; d3.array.base = '".$d3_array_base."'";
-#     $dynamic_heatmap_cmd .= "; heatmap.color.palette = '".$heatmap_color_palette."'";
-#     $dynamic_heatmap_cmd .= "; heatmap.color.classes = '".$heatmap_color_classes."'";
-#     $dynamic_heatmap_cmd .= " \"";
-# #    $Cluster_motifs_cmd = "(".$dynamic_heatmap_cmd.")"; # Uncomment this line to check the R output in the terminal
-# #    $dynamic_heatmap_cmd = "(".$dynamic_heatmap_cmd.") 2 > ".$main::outfile{Rlog}; 
-
-#     if ($r_path) {
-#         &doit($dynamic_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-#     } else {
-#         &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
-#     }
-#     return();
-# }
-
-
 ################################################################
 ## Draw the Dynamic Heatmap using the matrix
 ## of maxNWD positive values
 sub Draw_OCCProfiles_and_Heatmap {
 
-    unless( -e $outfile{heatmap_nwdsig}.".txt" ){
-	&RSAT::message::Info("$outfile{heatmap_nwdsig}.txt does not Exist");
-    }
-    
     &RSAT::message::TimeWarn("Drawing curves of Binomial OCC significance and dynamic heatmap") if ($main::verbose >= 2);
 
     ##################################
@@ -1508,10 +1487,12 @@ sub Draw_OCCProfiles_and_Heatmap {
 
     &RSAT::message::Info("R-command for report: ",  $matrix_enrichment_plot_cmd) if ($main::verbose >= 0);
     
+
     if ($r_path) {
-        &doit($matrix_enrichment_plot_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	system($matrix_enrichment_plot_cmd)
+	#&doit($matrix_enrichment_plot_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
     } else {
-        &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 1);
+        &RSAT::message::Warning("Could not run matrix-enrichment because the program R is not available") if ($main::verbose >= 0);
     }
     return();
 }
@@ -1561,7 +1542,7 @@ sub CreateHTMLReport {
 	if($line =~ /--show_command--/){
 	    
 	    ## Print arguments
-	    print &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
+	    print $syn &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
 	    print $syn "<pre>";
 	    print $syn "matrix-enrichment ";
 	    &PrintArguments($syn);

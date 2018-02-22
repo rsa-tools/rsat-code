@@ -13,12 +13,13 @@
 <?php 
   require ('functions.php');
     $menu = $_REQUEST['menu'];
-    //printMenu($menu);
-    if(strcmp($menu, "RSAT") == 0){
-        include("menu.php");
-    }else{
-        include("menu_graph.php");
-    }
+	if(strcmp($menu,"RSAT") == 0){
+		include("menu.php");
+	}else{
+		include("menu_graph.php");
+	}
+    #printMenu($menu);
+
   ## log file update
   UpdateLogFile("neat","","");  
   title('compare-classes - results');

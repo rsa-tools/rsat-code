@@ -1036,6 +1036,7 @@ package main;
 	      my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
 	      
 	      my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
+	      &RSAT::util::CheckOutDir($nwd_all_plot); ## Create dir
 	      
 	      $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
 
@@ -1046,11 +1047,34 @@ package main;
 	      }
 
 	      &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
-	      my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 1";
-	      
-	      &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
 
-	      &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      my $r_path = &RSAT::server::GetProgramPath("R");
+	      
+	      my $matrix_quality_heatmap_cmd = "";
+	      $matrix_quality_heatmap_cmd .= " cat ".$r_mtxq_sc;
+	      $matrix_quality_heatmap_cmd .= " | ".$r_path;
+	      $matrix_quality_heatmap_cmd .= " --slave --no-save --no-restore --no-environ";
+	      $matrix_quality_heatmap_cmd .= " --args \"";
+	      $matrix_quality_heatmap_cmd .= " mtx.quality.nwds.file = '".$nwd_all_file."'";
+	      $matrix_quality_heatmap_cmd .= "; plot.folder = '".$nwd_all_plot."'";
+	      $matrix_quality_heatmap_cmd .= "; formats = '".join(",",'pdf','png')."'";
+	      $matrix_quality_heatmap_cmd .= "; print.heatmap = '1'";
+	      $matrix_quality_heatmap_cmd .= " \"";
+	      
+	      &RSAT::message::Info("R-command for generate NWD tables: ", $matrix_quality_heatmap_cmd) if ($main::verbose >= 0);
+      
+	      print ("Full cmd: ".$matrix_quality_heatmap_cmd."\n");
+	      
+	      if ($r_path) {
+		  &doit($matrix_quality_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	      } else {
+		  &RSAT::message::Warning("Could not run $r_mtxq_sc because the program R is not available") if ($main::verbose >= 0);
+	      }
+	      # my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 1";
+	      
+	      # &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
+
+	      #&doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 	      $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
 	      $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
 	      $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");

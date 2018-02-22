@@ -132,18 +132,19 @@
                          <a class="menu_item" href="local-word-analysis_form.cgi" >local-word-analysis (word and spaced pairs)</a>
                          <a class="menu_separator">matrices</a>
                          <a class="menu_item" href="info-gibbs_form.cgi" >info-gibbs</a>
-                         <a class="menu_item" href="consensus_form.cgi" >consensus</a>
-                         <!--	  <a class="menu_item" href="gibbs_form.cgi" >gibbs</a>-->
+                         <!--<a class="menu_item" href="consensus_form.cgi" >consensus</a>
+                         	  <a class="menu_item" href="gibbs_form.cgi" >gibbs</a>-->
                      </div>
 
 
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('4')" id="heading4">Pattern matching <img src="images/onebit_49.png" height="30" class="new"></div>
+                         onclick="toggleMenu('4')" id="heading4">Pattern matching <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu4" class="menu_collapsible">
                          <a class="menu_separator">matrices</a>
                          <a class="menu_item" href="matrix-scan_form.cgi" >matrix-scan<br>(full options)</a>
                          <a class="menu_item" href="matrix-scan-quick_form.cgi" >matrix-scan (quick)</a>
-                         <a class="menu_item" href="crer-scan_form.cgi" >crer-scan <img src="images/onebit_49.png" height="30" class="new"></a>
+                         <a class="menu_item" href="crer-scan_form.cgi" >crer-scan</a>
+                         <a class="menu_item" href="matrix-enrichment_form.cgi" >matrix-enrichment <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <!--	  <a class="menu_item" href="patser_form.cgi" >patser [discontinued]</a>-->
                          <!--	  <a class="menu_item" href="genome-scale-patser_form.cgi" >genome-scale patser [discontinued]</a>-->
                          <a class="menu_separator">strings</a>
@@ -211,6 +212,7 @@
                          onclick="toggleMenu('5')" id="heading5">Drawing</div>
                      <div id="menu5" class="menu_collapsible">
                          <a class="menu_item" href="feature-map_form.cgi" >feature map</a>
+                         <a class="menu_item" href="feature-map_form2.cgi" >feature map 2</a>
                          <a class="menu_item" href="XYgraph_form.cgi" >XY graph</a>
                      </div>
 
@@ -237,7 +239,7 @@
                          onclick="toggleMenu('7')" id="heading7">Help & Contact</div>
                          <div id="menu7" class="menu_collapsible_display">
                          <a class="menu_item" href="people.php" >RSAT team</a>
-                         <a class="menu_item" href="http://rsa-tools.github.io/teaching/index.html" target="_blank">Training material <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <a class="menu_item" href="http://rsa-tools.github.io/teaching/index.html" target="_blank">Training material</a>
                          <a class="menu_item" href="tutorials.php" >Tutorials</a>
 
                          <a class="menu_item" href="publications.cgi" >Publications</a>

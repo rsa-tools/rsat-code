@@ -70,6 +70,13 @@ default_organism=Saccharomyces_cerevisiae
 
 phylo_tools=0
 
+
+## Prokaryote genomes
+## The prokaryotes server has to display a link to a list of genomes
+## to facilitate user searches.
+prokaryote_server=0
+
+
 ################################################################
 ### Support for Ensembl Compara orthologs and related tools.
 ###
@@ -279,8 +286,8 @@ ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 ##
 ## These parameters are used by the tools to install genomes from
 ## these two sources.
-ensembl_release=90
-ensemblgenomes_release=37
+ensembl_release=91
+ensemblgenomes_release=38
 
 ## Safe release of the ensembl database (for download-ensembl-genome,
 ## download-ensembl-variations, ...). The database structures and API

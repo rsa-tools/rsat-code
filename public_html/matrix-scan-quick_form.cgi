@@ -73,11 +73,11 @@ foreach $key (keys %default) {
 ### head
 print "<center>";
 print "Scan a DNA sequence with a profile matrix<br>\n";
-print "This quick version was programmed by <a href='mailto:defrance@bigre.ulb.ac.be'>Matthieu Defrance</a>, Web interface by <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A><br>\n";
+print "This quick version was programmed by <a href='http://www.researchgate.net/profile/Matthieu_Defrancee'>Matthieu Defrance</a>, Web interface by <A HREF='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A><br>\n";
 print "</CENTER>";
 
 print "<div align=center>";
-print "<b>Citation</b>: <a href='mailto:jturatsi\@bigre.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A>, <a href='mailto:defrance@bigre.ulb.ac.be'>Matthieu Defrance</a> and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)'>Jacques van Helden</a> (2008).<br> Using RSAT to scan genome sequences for transcription factor binding sites and cis-regulatory modules. Nat Protoc, 3, 1578-1588. <a href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed 18802439</a>";
+print "<b>Citation</b>: <a href='http://lmedex.ulb.ac.be/index.php'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A>, <a href='http://www.researchgate.net/profile/Matthieu_Defrance'>Matthieu Defrance</a> and <A HREF='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a> (2008).<br> Using RSAT to scan genome sequences for transcription factor binding sites and cis-regulatory modules. Nat Protoc, 3, 1578-1588. <a href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed 18802439</a>";
 print "</p>";
 
 print "<a href='matrix-scan_form.cgi'><b><font color=red>--> Click here to access the ADVANCED form <-- </font></b></a> <i>(custom background, CRER detection, overrepresentation of sites,...)</i>";

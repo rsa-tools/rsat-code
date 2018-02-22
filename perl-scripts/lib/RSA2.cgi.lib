@@ -122,7 +122,7 @@ sub PrintOrthoComparaSelectionSection {
     ################################################################
     ### gene queries
     print "<p><B><A class='iframe' HREF='help.get-orthologs-compara.html#genes'>Query genes</A></B>&nbsp;";
-    print "<p>Paste query genes (one query per row)<br>\n";
+    print "<p>Paste query Ensembl gene IDs (one query per row)<br>\n";
     print $query->textarea(-name=>'queries',
 			   -default=>$default{queries},
 			   -rows=>3,
@@ -228,14 +228,15 @@ sub PrintOrthoSelectionSection {
 #  &TaxonPopUp("node");
   &TaxonPopUp("all");
 
+  ## ALE: This is not working correctly and makes a conflict since this taxon frequencies have not been calculated, and the final html name does not match.
   ## Select a single organism per taxon
-  print "<br>";
-  print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
-  print $query->popup_menu(-name=>'unique_taxon', -id=>'unique_taxon',
-			   -Values=>['species',
-				     'genus',
-				     'no filter'],
-			   -default=>$default{unique_taxon});
+  # print "<br>";
+  # print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
+  # print $query->popup_menu(-name=>'unique_taxon', -id=>'unique_taxon',
+  # 			   -Values=>['species',
+  # 				     'genus',
+  # 				     'no filter'],
+  # 			   -default=>$default{unique_taxon});
 
 }
 
@@ -1287,7 +1288,8 @@ sub OrganismPopUpString{
     if($supported ne ""){
         $supported_param .= "?supported=$supported";
     }
-    
+    &check_prokaryote_server();
+
     my $bg_org = $args{'bg_org'};
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
     my $popupid_name = ($bg_org == 1) ? "organism_bg_name" : "organism_name";
@@ -3060,7 +3062,7 @@ sub DisplayMatrixDBchoice_select2 {
                         }
                         $descr .= " - [$nbmotif motifs]";
                     }
-                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{www-rsat}/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
+                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{'www-rsat'}/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
                 }
             }
         }
@@ -4675,7 +4677,21 @@ sub check_phylo_tools() {
     }
 }
 
+################################################################
+## &CheckProkaryotServer()
+##
+## Check if phylogenetic footprint approaches are supported on this
+## instance of RSAT.
+sub check_prokaryote_server() {
+    if ($ENV{prokaryote_server} == 1) {
+	print "<p><font color='red'>Genomes in the RSAT Prokaryotes server were recently re-installed.</font> \n";
+	print "Genome names now follow the NCBI standard to easily identify assemblies, if you cannot find your genome please check this naming list to find the correct ID: <a target='_top' href='http://prokaryotes.rsat.eu/data/genomes/RSAT_NCBI_ID_genomes.html'>Genome IDs list</a></p>";
+	#exit(0);
+    }
+}
+
 =pod
+
 
 =item B<check_ensembl_tools>
 
