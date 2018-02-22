@@ -2586,12 +2586,12 @@ sub ScanSequences {
       $cmd = $SCRIPTS."/convert-features";
       $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites'};
       $cmd .= " -coord ".$main::infile{coord} if ($main::infile{coord});
-      if ($main::param{seq_source}) {
-	  $cmd .= " -coord ".$main::outfile{"test_seq_coord"};
-	  $cmd .= " -from ".$main::param{seq_source};
-      } else {
+        #if ($main::param{seq_source}) {
+        #$cmd .= " -coord ".$main::outfile{"test_seq_coord"};
+        #$cmd .= " -from ".$main::param{seq_source};
+        #} else {
 	  $cmd .= " -from ft";
-      }
+        #}
       $cmd .= " -origin ".$main::param{origin};
 #      $cmd .= " -offset ".$main::param{offset};
       $cmd .= " -to bed ";
@@ -2599,7 +2599,7 @@ sub ScanSequences {
       my $bed_header= "track name=\"".$motif_id."\" description=\"RSAT peak-motifs ".$bed_prefix.": ".$motif_id."\" visibility=2 itemRgb=\"On\" use_score=1 color=247,73,2";
       $cmd .= " | sed '1s/^.*/".$bed_header."/' ";## change first line
       $cmd .= " > ".$main::outfile{$motif_id.'_pssm_sites_genomic'};
-      &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
+        &RSAT::util::one_command($cmd, 1, "", log=>"xx.txt");#$main::out);
     }
 
     ################################################################
@@ -3217,9 +3217,9 @@ sub SynthesisByMotif {
 	my $browser_url = "<a target='_blank' href='";
 	$browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
 	$browser_url .= "db=".$genome_assembly;
-	$browser_url .= "&hgt.customText=".$BED_URL.">";
+	$browser_url .= "&hgt.customText=".$BED_URL."'>";
 
-	$browser_url .= "'<img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+	$browser_url .= "<img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
 
 	&SyntheticTableAddRow_New("Predicted sites on test peaks",
 				  $table,
