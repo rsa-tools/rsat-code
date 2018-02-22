@@ -18,6 +18,8 @@
 	}else{
 		include 'menu_graph.php';
 	}       
+// require ('demo_dataset.php');
+
 $default_min_sig = 0;
   
 # PIPE VALUES
