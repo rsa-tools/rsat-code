@@ -7,6 +7,17 @@
 ############################################################
 
 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ##
+## DEBUG COMMENTS JVH 2018-02-25
+##
+## - matrix-clustering was running even though the result is not
+##   used. I disactivate it until I find time to seriously use it.
+## - Motifenrichment is still running although we don't display the
+##   result. I conditioned it to an optional task.
+##
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ##
+
+
 ## use strict;
 
 =pod
@@ -164,7 +175,7 @@ package main;
 		    "motifs_vs_motifs",
 		    "motifs_vs_ref",
 		    "motifs_vs_db",
-            "cluster_motifs",
+#		    "cluster_motifs",
 #		      "motif_compa",
 		    "scan",
 		    "timelog",
@@ -176,7 +187,8 @@ package main;
   ## Extra tasks are only executed on explicit demand of the user
   @extra_tasks = ("all",
 		  "clean_seq",
-		  #"cluster_motifs",
+		  "cluster_motifs",
+		  "motif_enrichment",
 		  "meme_bg",
 		  "meme",
 		  "dreme",
@@ -2586,12 +2598,12 @@ sub ScanSequences {
       $cmd = $SCRIPTS."/convert-features";
       $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites'};
       $cmd .= " -coord ".$main::infile{coord} if ($main::infile{coord});
-        #if ($main::param{seq_source}) {
-        #$cmd .= " -coord ".$main::outfile{"test_seq_coord"};
-        #$cmd .= " -from ".$main::param{seq_source};
-        #} else {
+      if ($main::param{seq_source}) {
+        $cmd .= " -coord ".$main::outfile{"test_seq_coord"};
+#        $cmd .= " -from ".$main::param{seq_source}; ## JvH suppressed this on 2018-02-25, it was provoking the bug
+      } else {
 	  $cmd .= " -from ft";
-        #}
+      }
       $cmd .= " -origin ".$main::param{origin};
 #      $cmd .= " -offset ".$main::param{offset};
       $cmd .= " -to bed ";
@@ -2656,10 +2668,12 @@ sub ScanSequences {
 
     ################################################################
     ## Analyze enrichment of test sequences for the discovered motif
-    &RSAT::message::Debug("Estimating enrichment of test sequences for motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
-    &MotifEnrichment($main::outfile{"test_converted"}, $main::outfile{$motif_id."_tf"},
-		     $main::outfile{$motif_id.'_pssm_enrichment'},
-		     $main::outfile{$motif_id.'_pssm_enrichment_png'});
+    if ($task{motif_enrichment}) {
+      &RSAT::message::Debug("Estimating enrichment of test sequences for motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
+      &MotifEnrichment($main::outfile{"test_converted"}, $main::outfile{$motif_id."_tf"},
+		       $main::outfile{$motif_id.'_pssm_enrichment'},
+		       $main::outfile{$motif_id.'_pssm_enrichment_png'});
+    }
   }
 
   ################################################################
@@ -5265,7 +5279,6 @@ sub CheckArguments {
 
   &RSAT::message::Debug($param{strand}, $param{scan_options}) if ($main::verbose >= 3);
     
-$task{cluster_motifs} = 1;
   ## Modalities of motif comparisons
   if ($task{motif_compa}) {
     $task{merge_motifs} = 1;
