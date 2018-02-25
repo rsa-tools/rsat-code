@@ -200,7 +200,7 @@ void help(){
   "    retrieve-variation-seq\n"
   "\n"
   "VERSION\n"
-  "    2.0\n"
+  "    2.0.1\n"
   "\n"
   "DESCRIPTION\n"
   "    Given a set of IDs for polymorphic variations, retrieve the\n"
@@ -576,6 +576,7 @@ int main(int argc, char *argv[]){
   get_variations_cmd  = strnewToList(&RsatMemTracker);
   sort_variations_cmd = strnewToList(&RsatMemTracker);
   deletetmps_cmd      = strnewToList(&RsatMemTracker);
+
   /////////////////////////////////////////////////
   // Validate Arguments
   /////////////////////////////////////////////////
@@ -583,13 +584,17 @@ int main(int argc, char *argv[]){
   if (!(assembly || release)) RsatFatalError("No assembly and ensembl version specified. Use at least one of these options: -release -assembly",NULL);
   if (!format) RsatFatalError("No input format specified. Use -format",NULL);
 
-  // Retrieve and check genome and variation directories
+  // Retrieve and check genome directory
   Get_genome_dir(genome_dir,species,assembly,release,species_suffix);
-  Get_variation_dir(variant_dir,species,assembly,release,species_suffix);
-
   //QUESTION WSG(2017-06-18). stat() needs to have execute permissions on all path folders
   if ( !(stat(genome_dir->buffer,  &dir_exists) == 0 && S_ISDIR(dir_exists.st_mode)) ) RsatFatalError("Genome directory" ,  genome_dir->buffer, "does not exists or granted permissions were not properly set. Use download-ensembl-variation before retrieve-variation-seq or check for access/execution permissions.",NULL);
-  if ( !(stat(variant_dir->buffer, &dir_exists) == 0 && S_ISDIR(dir_exists.st_mode)) ) RsatFatalError("Variation directory",variant_dir->buffer,"does not exists or granted permissions were not properly set. Use download-ensembl-variation before retrieve-variation-seq or check for access/execution permissions.",NULL);
+
+  //Retrieve and check variation directory if variation-info will be used
+  if(strcmp(format,"varBed") != 0) {
+    Get_variation_dir(variant_dir,species,assembly,release,species_suffix);
+    //QUESTION WSG(2017-06-18). stat() needs to have execute permissions on all path folders
+    if ( !(stat(variant_dir->buffer, &dir_exists) == 0 && S_ISDIR(dir_exists.st_mode)) ) RsatFatalError("Variation directory",variant_dir->buffer,"does not exists or granted permissions were not properly set. Use download-ensembl-variation before retrieve-variation-seq or check for access/execution permissions.",NULL);
+  }
 
   //Check if chromosome files are not missing
   trieChrom = Get_file_seq_name(genome_dir);

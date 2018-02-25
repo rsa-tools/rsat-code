@@ -122,8 +122,8 @@ scan *scanfill(scan *element,char *offset_scan, char *sequence_D, char *weight_D
 void scanend(scan *group);
 
 string *GetVariantIndex(string *offset_and_length,char *sequence);
-void CreateFastaFromHaplosequences(string *line,char **token, int *nb_variation, int top_variation, int *nb_seq, FILE *fh_varsequence,FILE *fh_fasta_sequence);
-void CreateFastaFromSingleVariants(string *line,char **token, int *nb_variation, int top_variation, int *nb_seq, FILE *fh_varsequence,FILE *fh_fasta_sequence);
+void CreateFastaFromHaplosequences(string *line ,char **token, unsigned long int *nb_variation, unsigned long int top_variation, int *nb_seq, FILE *fh_varsequence,FILE *fh_fasta_sequence);
+void CreateFastaFromSingleVariants(string *line, char **token, unsigned long int *nb_variation, unsigned long int top_variation, int *nb_seq, FILE *fh_varsequence, FILE *fh_fasta_sequence);
 TRIE *ListInputMatrixFormats(void);
 string *GetProgramPath(string *program_path, char *program_name, int die_on_error, stringlist *preferred_path);
 void argToList(stringlist *list, char *value);
@@ -241,7 +241,7 @@ void help(){
   "    variation-scan\n"
   "\n"
   "VERSION\n"
-  "    2.0\n"
+  "    2.0.1\n"
   "\n"
   "DESCRIPTION\n"
   "    Scan variant sequences with position specific scoring matrices (PSSM)\n"
@@ -380,10 +380,10 @@ void help(){
   "    -m_format matrix_format\n"
   "        Matrix file format\n"
   "\n"
-  "        Supported formats: alignace, assembly, cb, clustal, cluster-buster,"
-  "                            consensus, sequences, feature, footprintdb, gibbs,"
-  "                            infogibbs, info-gibbs, jaspar, homer, mscan, meme,"
-  "                            meme_block, motifsampler, stamp, stamp-transfac, tab,"
+  "        Supported formats: alignace, assembly, cb, clustal, cluster-buster,\n"
+  "                            consensus, sequences, feature, footprintdb, gibbs,\n"
+  "                            infogibbs, info-gibbs, jaspar, homer, mscan, meme,\n"
+  "                            meme_block, motifsampler, stamp, stamp-transfac, tab,\n"
   "                            tf, transfac, cis-bp, uniprobe, yeastract and encode.\n"
   "\n"
   "    -mml #\n"
@@ -447,8 +447,9 @@ int main(int argc, char *argv[]){
   //Numeric
   //int no_offset      =  1;
   int nb_matrix      =  0;
-  int nb_variation   =  0;
+  unsigned long int nb_variation   =  0;
   int nb_seq         =  0;
+  char *end_nb = NULL;
   //int nb_var         =  0;
   //int output_lines   =  0;
   //int flank_len      = 29; // Default -mml value
@@ -497,7 +498,7 @@ int main(int argc, char *argv[]){
 
   //Numeric
   //int top_matrix       =   -1;
-  int top_variation    =    0;
+  unsigned long int top_variation    =    0;
   int top_matrices     =    0;
   int mml              =   29;
 
@@ -556,7 +557,8 @@ int main(int argc, char *argv[]){
       mml = atoi(argv[++i]);
     } else if ( strcmp(argv[i],"-top_variation") == 0 && CheckValOpt(argv+i) ) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
-      top_variation = atoi(argv[++i]);
+      top_variation = strtoul(argv[++i], &end_nb, 10);
+      //top_variation = atoi(argv[++i]);
     } else if ( strcmp(argv[i],"-lth") == 0 && CheckValOpt(argv+i) ) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       type =  argv[++i];
@@ -1083,13 +1085,21 @@ void ScanSingleVariants(string *line, char **token, char *matrix_name, string * 
   varscan  *locus        = NULL;
   varscan  *curr_varscan = NULL;
 
+  string *curr_group      = NULL;
+
   //Prepare variables for buffer reading
   line->size = 0;
   token[0] = line->buffer;
   //Allocate memory for variables
-  varfield    = getokens(7);
+  varfield    = getokens(8);
   varcoord    = getokens(4);
   offset_info = getokens(3);
+
+  curr_group = strnewToList(&RsatMemTracker);
+
+  //Initialize strings
+  strcopy(curr_group,"");
+
   //Open input file
   fh_mscanquick_input = OpenInputFile(fh_mscanquick_input, mscanquick_file->buffer);
   while ( fread( (line->buffer + line->size),1,1,fh_mscanquick_input) == 1 ) {
@@ -1112,16 +1122,17 @@ void ScanSingleVariants(string *line, char **token, char *matrix_name, string * 
       //Split 1st field ';' delimited
       character   = token[0];
       varfield[0] = token[0];
-      varcoord[0] = token[0];
+      //varcoord[0] = token[0];
       for(int index = 0; character[index] != '\0'; index++) {
         //Split the genomic coordinate in varcoord[0]
         //i.e. chr_start_end_strand
         if(character[index] == '_'){
           character[index] = '\0';
+          varcoord[0] = varfield[1];
           varcoord[++j]    = character + index + 1;
         }
-        //Split the 7 ';'-separated fields of token[0]
-        //i.e. coordinate;id;Allele2;Allele1;SO;Freq;totalvars|offset-length
+        //Split the 8 ';'-separated fields of token[0]
+        //i.e. nb;coordinate;id;Allele2;Allele1;SO;Freq;totalvars|offset-length
         if(character[index] == ';') {
           character[index] = '\0';
           varfield[++i] = character + index + 1;
@@ -1136,7 +1147,7 @@ void ScanSingleVariants(string *line, char **token, char *matrix_name, string * 
         //i.e.totalvars|offset-length[|offset-length]{1,n}
         if(character[index] == '|') {
           character[index] = '\0';
-          offset_info[0] = varfield[6];
+          offset_info[0] = varfield[7];
           offset_info[1] = character + index + 1;
           for (index += 1; character[index] != '\0'; index++) {
             if(character[index] == '_') {
@@ -1171,8 +1182,8 @@ void ScanSingleVariants(string *line, char **token, char *matrix_name, string * 
       //Test if it is a deletion or insertion and move +1 the start
       //because ggctgtgcGCcggctccc the first letter in sequence is the same,
       //        ggctgtgcGcggctccc  and it is not necessary in the comparison
-      if((strcmp(varfield[4],"deletion")  == 0) ||
-        (strcmp(varfield[4],"insertion") == 0)) eval_start_offset++ ;
+      if((strcmp(varfield[5],"deletion")  == 0) ||
+        (strcmp(varfield[5],"insertion") == 0)) eval_start_offset++ ;
 
       //If offset is out of boundaries, skip the line
       if(atoi(token[4]) < eval_start_offset || atoi(token[4]) > eval_end_offset)
@@ -1201,7 +1212,8 @@ void ScanSingleVariants(string *line, char **token, char *matrix_name, string * 
         printf("This is varfield[5] : %s\n",varfield[5]);*/
 
 
-        varfill(curr_varscan->variation,varcoord[0],varcoord[1],varcoord[2],varcoord[3],varfield[3],varfield[4],"",varfield[1],varfield[5]);
+
+        varfill(curr_varscan->variation,varcoord[0],varcoord[1],varcoord[2],varcoord[3],varfield[4],varfield[5],"",varfield[2],varfield[6]);
         curr_scan->offset = -matrix_length + atoi(token[4]) - real_start_offset + 1; //Added a +1 in order to go from [-matrix_length,0]
         curr_scan->D = curr_site;
 
@@ -1209,15 +1221,19 @@ void ScanSingleVariants(string *line, char **token, char *matrix_name, string * 
         curr_varscan->bestD = curr_scan;
         curr_varscan->bestR = curr_scan;
 
+        strcopy(curr_group,varfield[0]);
         initokadd(line,token,9);
         continue;
       }
       //*Test for variant information
-      isCoordDiff = ((strcmp(varcoord[0],curr_varscan->variation->chromosome->buffer) == 0 ) &&
+      /*isCoordDiff = ((strcmp(varcoord[0],curr_varscan->variation->chromosome->buffer) == 0 ) &&
                      (strcmp(varcoord[1],curr_varscan->variation->start->buffer) == 0) &&
-                     (strcmp(varcoord[2],curr_varscan->variation->end->buffer)  == 0)) ? 0 : 1;
-      isAllelDiff =  (strcmp(varfield[1],curr_varscan->variation->alleles->buffer)  == 0) ? 0 : 1;
-
+                     (strcmp(varcoord[2],curr_varscan->variation->end->buffer)  == 0)) ? 0 : 1;*/
+      //isAllelDiff =  (strcmp(varfield[1],curr_varscan->variation->alleles->buffer)  == 0) ? 0 : 1;
+      isCoordDiff =  (strcmp(varfield[0],curr_group->buffer) == 0) ? 0 : 1;
+      isAllelDiff =  (strcmp(varfield[2],curr_varscan->variation->alleles->buffer)  == 0) ? 0 : 1;
+      //Update previous group of alleles number
+      strcopy(curr_group,varfield[0]);
       //Add another allele to list
       if(!isCoordDiff && isAllelDiff) {
         curr_varscan = varscanadd(locus);
@@ -1225,7 +1241,7 @@ void ScanSingleVariants(string *line, char **token, char *matrix_name, string * 
         prev_scan = curr_scan;
 
 
-        varfill(curr_varscan->variation,varcoord[0],varcoord[1],varcoord[2],varcoord[3],varfield[3],varfield[4],"",varfield[1],varfield[5]);
+        varfill(curr_varscan->variation,varcoord[0],varcoord[1],varcoord[2],varcoord[3],varfield[4],varfield[5],"",varfield[2],varfield[6]);
         curr_scan->offset = -matrix_length + atoi(token[4]) - real_start_offset + 1; //Added a +1 in order to go from [-matrix_length,0]
         curr_scan->D = curr_site;
 
@@ -1245,7 +1261,7 @@ void ScanSingleVariants(string *line, char **token, char *matrix_name, string * 
         curr_scan = locus->scan_info;
         prev_scan = curr_scan;
 
-        varfill(curr_varscan->variation,varcoord[0],varcoord[1],varcoord[2],varcoord[3],varfield[3],varfield[4],"",varfield[1],varfield[5]);
+        varfill(curr_varscan->variation,varcoord[0],varcoord[1],varcoord[2],varcoord[3],varfield[4],varfield[5],"",varfield[2],varfield[6]);
         curr_scan->offset = -matrix_length + atoi(token[4]) - real_start_offset + 1; //Added a +1 in order to go from [-matrix_length,0]
         curr_scan->D = curr_site;
 
@@ -1716,8 +1732,8 @@ scan *scanew(void){
 
   //Initialize attributes
   new->offset = 0;
-  new->D      = sitenew();
-  new->R      = sitenew();
+  new->D      = NULL;//sitenew();
+  new->R      = NULL;//sitenew();
   new->next   = NULL;
 
   return new;
@@ -1778,7 +1794,7 @@ void scanend(scan *group){
   return;
 }
 
-void CreateFastaFromHaplosequences(string *line, char **token, int *nb_variation, int top_variation, int *nb_seq, FILE *fh_varsequence, FILE *fh_fasta_sequence) {
+void CreateFastaFromHaplosequences(string *line, char **token, unsigned long int *nb_variation, unsigned long int top_variation, int *nb_seq, FILE *fh_varsequence, FILE *fh_fasta_sequence) {
   //Declare variables
   int i = 0;
   string *offset_and_length = NULL;
@@ -1797,6 +1813,7 @@ void CreateFastaFromHaplosequences(string *line, char **token, int *nb_variation
   strfmt(chrom,"");
   strfmt(start,"");
   strfmt(end,"");
+
   while ( fread( (line->buffer + line->size),1,1,fh_varsequence) == 1 ) {
     //If '\t' is found assign next char address as the next token
     if (line->buffer[line->size] == '\t') {
@@ -1851,7 +1868,7 @@ void CreateFastaFromHaplosequences(string *line, char **token, int *nb_variation
   return;
 }
 
-void CreateFastaFromSingleVariants(string *line, char **token, int *nb_variation, int top_variation, int *nb_seq, FILE *fh_varsequence, FILE *fh_fasta_sequence) {
+void CreateFastaFromSingleVariants(string *line, char **token, unsigned long int *nb_variation, unsigned long int top_variation, int *nb_seq, FILE *fh_varsequence, FILE *fh_fasta_sequence) {
   //Declare variables
   int i = 0;
   string *offset_and_length = NULL;
@@ -1870,6 +1887,8 @@ void CreateFastaFromSingleVariants(string *line, char **token, int *nb_variation
   strfmt(chrom,"");
   strfmt(start,"");
   strfmt(end,"");
+  //(*nb_variation)++;
+
   while ( fread( (line->buffer + line->size),1,1,fh_varsequence) == 1 ) {
     //If '\t' is found assign next char address as the next token
     if (line->buffer[line->size] == '\t') {
@@ -1883,26 +1902,31 @@ void CreateFastaFromSingleVariants(string *line, char **token, int *nb_variation
       line->buffer[line->size] = '\0';
       line->size = 0;
       i = 0;
-      //If locus is different add +1 to variaiton counter
-      if( !((strcmp(chrom->buffer, token[0]) == 0) &&
-            (strcmp(start->buffer, token[1]) == 0) &&
-            (strcmp(end->buffer, token[2]) == 0)) ) {
-              (*nb_variation)++;
-              strcopy(chrom,token[0]);
-              strcopy(start,token[1]);
-              strcopy(end,token[2]);
-            }
-      //Check if nb of top variations has been reached
-      if(top_variation && !(*nb_variation < top_variation)) break;
+
+
       //Add +1 to sequence counter
       (*nb_seq)++;
       //Get offset and length of all variants in sequence
       GetVariantIndex(offset_and_length,token[9]);
 
       //Print fasta header and sequence
-      fprintf(fh_fasta_sequence, ">%s_%s_%s_%s;%s;%s;%s;%s;%s;%s\n",
-      token[0], token[1], token[2], token[3], token[7], token[6],token[4], token[5], token[8],offset_and_length->buffer);
+      fprintf(fh_fasta_sequence, ">%lu;%s_%s_%s_%s;%s;%s;%s;%s;%s;%s\n",
+      *nb_variation,token[0], token[1], token[2], token[3], token[7], token[6],token[4], token[5], token[8],offset_and_length->buffer);
       fprintf(fh_fasta_sequence, "%s\n", token[9]);
+
+      //If locus is different add +1 to variation counter
+      /*if( !((strcmp(chrom->buffer, token[0]) == 0) &&
+            (strcmp(start->buffer, token[1]) == 0) &&
+            (strcmp(end->buffer, token[2]) == 0))) {*/
+      if (strcmp(token[6],token[7]) == 0 ){
+            (*nb_variation)++;
+            strcopy(chrom,token[0]);
+            strcopy(start,token[1]);
+            strcopy(end,token[2]);
+          }
+      //Check if nb of top variations has been reached
+      if(top_variation && !(*nb_variation < top_variation)) break;
+
       //If successful continue to the next start of line for reading
       initokadd(line,token,11);
       continue;
