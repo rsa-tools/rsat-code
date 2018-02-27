@@ -297,7 +297,7 @@ print " <a class='badge badge-primary iframe' HREF='help.retrieve-seq.html#forma
 
 ### sequence label
 print "Sequence label&nbsp;";
-print $query->popup_menu(-name=>'seq_label', class=>'form-control',style=>'display:inline;width:auto;height:25px',
+print $query->popup_menu(-name=>'seq_label', class=>'form-control',
 -Values=>['gene identifier',
 'gene name',
 'gene identifier + name',

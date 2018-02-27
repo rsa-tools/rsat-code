@@ -5,5 +5,4 @@ input[type="radio"], input[type="checkbox"] {
 .form-control {
     display: inline;
     width: auto;
-    height: 25px;
 }
