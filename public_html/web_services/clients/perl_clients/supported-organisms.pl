@@ -27,7 +27,7 @@ my @servers =  $ARGV[0] ||
 	http://plants.rsat.eu
 	http://metazoa.rsat.eu
 	http://protists.rsat.eu
-	http://training.rsat.eu
+	http://teaching.rsat.eu
         http://dev.rsat.eu/
        );
 

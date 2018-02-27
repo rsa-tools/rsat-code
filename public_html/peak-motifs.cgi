@@ -81,7 +81,7 @@ if ($query->param('title')){
 #	  "merge_words",
 	  "merge_motifs",
 	  "split_motifs",
-	  "motifs_vs_motifs",
+      "motifs_vs_motifs",
 	  "timelog",
 	  "archive",
 	  "synthesis",

@@ -67,9 +67,14 @@ if (!exists("heatmap.color.classes")) {
 heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 
-#maxNWD.table.file <- "/home/jamondra/Downloads/maxNWD_heatmap_compare.txt"
+# maxNWD.table.file <- "/home/jamondra/Downloads/maxNWD_heatmap_compare.txt"
 # TFs <- c("DDIT", "FCP2_GRHL1", "JUN_FOS", "REST", "SP", "USF2", "YY")
 # Sequences <- c("HELA", "K562", "inactive")
+
+# maxNWD.table.file <- "/home/jamondra/Downloads/maxNWD_heatmap_compare.txt"
+# TFs <- c("LEF1_HUMAN_H11MO_0_A", "TCF7_HUMAN_H11MO_0_A")
+# Sequences <- c("ADULT_E7")
+
 
 #############################
 ## Draw the maxNWD heatmap ##
@@ -279,7 +284,7 @@ set <- "Normal"
 
 ##########################
 ## Initialize variables
-# binomial.occ.file <- "/home/jamondra/Downloads/test_SP_occ_proba_SP_compare-scores.tab"
+# binomial.occ.file <- "/home/jamondra/Downloads/results_me_A7_LEF1_HUMAN_H11MO_0_A_occ_proba_LEF1_HUMAN_H11MO_0_A_compare-scores.tab"
 all.IDs <- NULL
 # all.names <- all.profiles ## Remember!
 hash.profile.ID <- list()
@@ -322,7 +327,7 @@ for(TF in TFs){
     
     x <- as.vector(x)
     x <- as.numeric(gsub("<NULL>", NA, x))
-    return(x)
+    x
   })
   
   calculate.max.y <- max(binomial.occ.tab.cp[,2:col.nb], na.rm = TRUE)
@@ -360,15 +365,6 @@ for(TF in TFs){
   
   ## When only one set of sequences is used R converts it to a vector, then the program dies.
   ## So the vector should be converted in a data.frame
-  
-  # print(col.nb)
-  # if(col.nb == 2){
-  #   binomial.occ.tab.cp <- as.data.frame("1" = as.vector(binomial.occ.tab.cp[,2]),
-  #                                     "2" = as.vector(binomial.occ.tab.cp[,2]))
-  #   stop(binomial.occ.tab.cp)
-  # }
-  # 
-  
   max.occ <- apply(as.data.frame(binomial.occ.tab.cp[,2:col.nb]), 2, function(m){ max(m, na.rm = TRUE)})
   names(max.occ) <- paste(TF, Sequences, sep = "_")
   all.profiles.max.occ <<- append(all.profiles.max.occ, max.occ)
@@ -390,13 +386,21 @@ for(TF in TFs){
   
   ## Rename the columns
   colnames(binomial.occ.tab) <- binomial.occ.tab[1,]
-  binomial.occ.tab <- binomial.occ.tab[2:(length(set.profiles)+1),]
-  sub.tab.nb.col <- dim(binomial.occ.tab)[1]
+  
+  ## This step must be done when the sequences sets == 1
+  ## Transpose the values
+  if(nb.sets == 1){
+    binomial.occ.tab <- t(data.frame(binomial.occ.tab[2:(length(set.profiles)+1),] )) 
+  } else {
+    binomial.occ.tab <- binomial.occ.tab[2:(length(set.profiles)+1),]
+  }
+  sub.tab.nb.col <- dim(as.data.frame(binomial.occ.tab))[1]
   
   ###################################################
   ## Get the X and Y data
   ## As there are some NA values, they are removed 
   ## from the data to draw them properly in C3
+  
   thrash <- apply(as.data.frame(binomial.occ.tab), 1, function(values){
     
     ## Count the IDs
