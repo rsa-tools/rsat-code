@@ -258,13 +258,13 @@ function setDemo2(demo_2_matrix, demo_2_seq1_url, demo_2_seq2_url, demo_2_seq3_u
     matrix.value = demo_2_matrix;
     matrix_format.value = "transfac";
 
-    tag1.value = "Hela";
+    tag1.value = "Hela_Epromoters";
     sequence_url1.value  = demo_2_seq1_url ;
 
-    tag2.value = "K562";
+    tag2.value = "K562_Epromoter";
     sequence_url2.value = demo_2_seq2_url ;
 
-    tag3.value = "Inactive";
+    tag3.value = "Inactive_promoters";
     sequence_url3.value  = demo_2_seq3_url ;
 
     tag4.value = "";
