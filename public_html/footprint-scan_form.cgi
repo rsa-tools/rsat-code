@@ -151,7 +151,7 @@ while (my $row = <$fh>){
     $demo_matrix .= $row . "\\n";
 }
 
-my $demo_org = "Escherichia coli K 12 substr  MG1655 uid57779";
+my $demo_org = "Escherichia coli GCF 000005845.2 ASM584v2";
 my $org = $demo_org;
 $org =~ s/\ /_/g;
 print '<script>
@@ -161,16 +161,16 @@ function setDemo(demo_matrix){
     var descr1 = "<H4>Comment on the demonstration example 1 :</H4> \
     <blockquote class =\"demo\"> \
     <p>In this demonstration, we apply <i>footprint-scan<\i> to evaluate the enrichment of LexA binding site in the upstream sequences of two of its target genes: lexA (the factor is auto-regulated) and recA.</p>\n \
-    <p> For each query gene, the orthologs are collected at the level of Enterobacteriales, their upstream sequences are scanned with the matrix, and the number of observed sites is compared to the random expectation.</p>\n \
+    <p> For each query gene, the orthologs are collected at the level of Gammaproteobacteria, their upstream sequences are scanned with the matrix, and the number of observed sites is compared to the random expectation.</p>\n \
     </blockquote>";
     
     demo_descr.innerHTML = descr1;
     
     $("#queries").val("'. $demo_queries . '");
-    $("#organism_name").val("Escherichia coli K 12 substr  MG1655 uid57779");
-    $("#organism").val("Escherichia_coli_K_12_substr__MG1655_uid57779");
-    $("#taxon").val("Enterobacteriales");
-    $("#taxon_name").val("Enterobacteriales");
+    $("#organism_name").val("Escherichia coli GCF 000005845.2 ASM584v2");
+    $("#organism").val("Escherichia_coli_GCF_000005845.2_ASM584v2");
+    $("#taxon").val("Gammaproteobacteria");
+    $("#taxon_name").val("Gammaproteobacteria");
     $("#matrix").val(demo_matrix);
     $("#matrix_format").val("transfac");
     $("#bg_method_bginput").prop("checked", true);

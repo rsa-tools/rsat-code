@@ -1,0 +1,8 @@
+input[type="radio"], input[type="checkbox"] {
+    margin: 4px 5px 0 !important;
+}
+
+.form-control {
+    display: inline;
+    width: auto;
+}

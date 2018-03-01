@@ -1,12 +1,8 @@
-
-
         <link rel='stylesheet' href='css/simple-sidebar.css'></link>
         <link rel="stylesheet" type="text/css" href="menu.css" media="screen,projection,print" />
         <link rel='stylesheet' href='css/colorbox.css'></link>
-	<link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
-<link rel='stylesheet' type='text/css' href='js/autocomplete/css/jquery-ui.css' />
-        <script src="js/jquery.js"></script>
-        <script src="RSAT_menu.js" type="text/javascript"></script>
+	<link rel='stylesheet' type='text/css' href='js/autocomplete/css/jquery-ui.css' />
+         <script src="RSAT_menu.js" type="text/javascript"></script>
         <script src="js/jquery.colorbox-min.js"></script>
 
         <script>
@@ -132,18 +128,19 @@
                          <a class="menu_item" href="local-word-analysis_form.cgi" >local-word-analysis (word and spaced pairs)</a>
                          <a class="menu_separator">matrices</a>
                          <a class="menu_item" href="info-gibbs_form.cgi" >info-gibbs</a>
-                         <a class="menu_item" href="consensus_form.cgi" >consensus</a>
-                         <!--	  <a class="menu_item" href="gibbs_form.cgi" >gibbs</a>-->
+                         <!--<a class="menu_item" href="consensus_form.cgi" >consensus</a>
+                         	  <a class="menu_item" href="gibbs_form.cgi" >gibbs</a>-->
                      </div>
 
 
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('4')" id="heading4">Pattern matching</div>
+                         onclick="toggleMenu('4')" id="heading4">Pattern matching <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu4" class="menu_collapsible">
                          <a class="menu_separator">matrices</a>
                          <a class="menu_item" href="matrix-scan_form.cgi" >matrix-scan<br>(full options)</a>
                          <a class="menu_item" href="matrix-scan-quick_form.cgi" >matrix-scan (quick)</a>
                          <a class="menu_item" href="crer-scan_form.cgi" >crer-scan</a>
+                         <a class="menu_item" href="matrix-enrichment_form.cgi" >matrix-enrichment <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <!--	  <a class="menu_item" href="patser_form.cgi" >patser [discontinued]</a>-->
                          <!--	  <a class="menu_item" href="genome-scale-patser_form.cgi" >genome-scale patser [discontinued]</a>-->
                          <a class="menu_separator">strings</a>
@@ -211,6 +208,7 @@
                          onclick="toggleMenu('5')" id="heading5">Drawing</div>
                      <div id="menu5" class="menu_collapsible">
                          <a class="menu_item" href="feature-map_form.cgi" >feature map</a>
+                         <a class="menu_item" href="feature-map_form2.cgi" >feature map 2</a>
                          <a class="menu_item" href="XYgraph_form.cgi" >XY graph</a>
                      </div>
 
