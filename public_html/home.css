@@ -3,14 +3,14 @@
 	border-bottom: solid 1px #f6e6ca;
 }
 .homeheaderbar{
-	height:80px;
+	height:120px;
 	margin-left:-5px;
-    background-image:url(images/banner2.png);
-    background-repeat:no-repeat
+    background-image:url(images/RSAT_banner.png);
+    background-repeat:no-repeat;
 }
 .homemenu{
 	font-weight: bold;
-	padding-top: 8px;
+	padding-top: 28px;
 	text-align: right;
     font-family: Arial rounded MT bold;
 }

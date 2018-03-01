@@ -19,7 +19,7 @@ include('menu.php');
 <div class='container'>
 	<div class='homeheader'>
 		<div class='row'>
-			<div class='col-sm-4' align='center'><img src="images/RSAT_logo.jpg" style="max-width:150px;max-height:60px;padding-bottom:10px" alt="RSAT server" border="0"><br/>
+			<div class='col-sm-4' align='center'><img src="images/RSAT_20_Ann_logo.jpg" style="max-width:250px;max-height:100px" alt="RSAT server" border="0"><br/>
             <span style='color:#0D73A7;font-size:11px;font-family:Arial rounded MT bold'>Regulatory Sequence Analysis Tools</span>
 			</div>
 			<div class='col-sm-2 homemenu'>

@@ -228,14 +228,15 @@ sub PrintOrthoSelectionSection {
 #  &TaxonPopUp("node");
   &TaxonPopUp("all");
 
+  ## ALE: This is not working correctly and makes a conflict since this taxon frequencies have not been calculated, and the final html name does not match.
   ## Select a single organism per taxon
-  print "<br>";
-  print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
-  print $query->popup_menu(-name=>'unique_taxon', -id=>'unique_taxon',
-			   -Values=>['species',
-				     'genus',
-				     'no filter'],
-			   -default=>$default{unique_taxon});
+  # print "<br>";
+  # print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
+  # print $query->popup_menu(-name=>'unique_taxon', -id=>'unique_taxon',
+  # 			   -Values=>['species',
+  # 				     'genus',
+  # 				     'no filter'],
+  # 			   -default=>$default{unique_taxon});
 
 }
 
@@ -337,7 +338,7 @@ sub RSA_header_bootstrap {
         -src      => 'RSAT_tabs.js'
     }
    ],
-    -style => { 	-src => ["css/bootstrap.min.css","css/bhoechie-tab.css","tabs.css","chosen.css","font-awesome.min.css"],
+    -style => { 	-src => ["css/bootstrap.min.css","css/bhoechie-tab.css","tabs.css","chosen.css","font-awesome.min.css","form.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
 
@@ -371,12 +372,11 @@ $(document).ready(function() {
 <script>
 $(document).ready(function(){
     $(\'[data-toggle="tooltip"]\').tooltip();
+    $(\'[rel="popover"]\').popover();
 });
 </script>
 
 ';
-
-
 
     open(my $fh, "menu.php");
     while(my $row = <$fh>){
@@ -565,8 +565,8 @@ sub SelectOutput {
     print $query->radio_group(-name=>'output', -id=>'output',
 			      -values=>[@values],
 			      -default=>$default_output);
-    print $query->textfield(-name=>'user_email', -id=>'user_email',
-			    -size=>30,
+    print "&nbsp;";
+    print $query->textfield(-name=>'user_email', -id=>'user_email', class=>'form-control', -size=>30,
 	) unless ($ENV{mail_supported} eq "no");
     print "<BR>\n";
 }
@@ -1287,7 +1287,8 @@ sub OrganismPopUpString{
     if($supported ne ""){
         $supported_param .= "?supported=$supported";
     }
-    
+    &check_prokaryote_server();
+
     my $bg_org = $args{'bg_org'};
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
     my $popupid_name = ($bg_org == 1) ? "organism_bg_name" : "organism_name";
@@ -1298,9 +1299,9 @@ sub OrganismPopUpString{
     if($default{organism} ne ""){
         $org_name = $default{organism};
         $org_name =~ s/_/\ /g;
-        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' value='$org_name' size='35'><input id=$popupid name=$popupid value='$default{organism}' type='hidden'>";
+        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' value='$org_name' size='35' class='form-control' <input id=$popupid name=$popupid value='$default{organism}' type='hidden'>";
     }else{
-        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' placeholder='Enter the name of your organism...' size='35'><input id=$popupid name=$popupid type='hidden'>";
+        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' placeholder='Enter the name of your organism...' size='35' class='form-control' ><input id=$popupid name=$popupid type='hidden'>";
     }
     $organismPopup .= "</div>";
     print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
@@ -3060,7 +3061,7 @@ sub DisplayMatrixDBchoice_select2 {
                         }
                         $descr .= " - [$nbmotif motifs]";
                     }
-                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{www-rsat}/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
+                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{'www-rsat'}/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
                 }
             }
         }
@@ -4676,7 +4677,21 @@ sub check_phylo_tools() {
     }
 }
 
+################################################################
+## &CheckProkaryotServer()
+##
+## Check if phylogenetic footprint approaches are supported on this
+## instance of RSAT.
+sub check_prokaryote_server() {
+    if ($ENV{prokaryote_server} == 1) {
+	print "<p><font color='red'>Genomes in the RSAT Prokaryotes server were recently re-installed.</font> \n";
+	print "Genome names now follow the NCBI standard to easily identify assemblies, if you cannot find your genome please check this naming list to find the correct ID: <a target='_top' href='http://prokaryotes.rsat.eu/data/genomes/RSAT_NCBI_ID_genomes.html'>Genome IDs list</a></p>";
+	#exit(0);
+    }
+}
+
 =pod
+
 
 =item B<check_ensembl_tools>
 

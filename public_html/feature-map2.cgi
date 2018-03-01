@@ -40,6 +40,8 @@ $prefix = "feature-map";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &ShortFileName($tmp_file_path);
 $tmp_color_path = &RSAT::util::make_temp_file("","color_file", 1); $tmp_color_file = &ShortFileName($tmp_color_path);
 
+
+
 $features_from_swissprot_cmd = $SCRIPTS."/features-from-swissprot";
 $features_from_msf_cmd = $SCRIPTS."/features-from-msf";
 $features_from_gibbs_cmd = $SCRIPTS."/features-from-gibbs";
@@ -367,6 +369,7 @@ exit(0);
 sub print_html{
 	my ( $title, $json_URL, $file_name, $title_position, $view_scalebar, $legends_position, $export_to_svg, $export_to_png, $export_to_jpg) = @_;
 	#print( "Title " . $title . ", ". "path " . $json_URL . " $title_position" . "$legends_position" ."$view_scalebar" . "$export_file");
+   #print("$json_file");
 
 	my $html = qq(
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
@@ -383,8 +386,16 @@ sub print_html{
          <button id="saveButton" type="button" class="btn btn-success" onclick="">PNG</button>
          <button id="saveButton_jpeg" type="button" class="btn btn-success" onclick="">JPG</button>-->
 
+      <div class="container">
+         <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+               <div id="feature_map_div"></div>
+            </div>
+            <div class="col-md-2"></div>
+         </div>
+      </div>
 
-      <div id="feature_map_div"></div>
       <canvas id="myCanvas" width="0" height="0" style="border:1px solid #d3d3d3;">
       	Your browser does not support the HTML5 canvas tag.
       </canvas>
@@ -398,6 +409,9 @@ sub print_html{
 
          //Get values of all the basic and advanced options to make the first iteration of the feature map graph
          var user_title = "Esta es una prueba del titulo de RSAT";
+
+         var output_file = output_file_name("$json_URL");
+         console.log("OUTPUT FILE ARRIBA "+ output_file);
 
          var title_position_left = "false";
          var title_position_center = "true";
@@ -454,8 +468,8 @@ sub print_html{
 
          //Other options
          var default_font = "Arial";
-         var title_font_size = 26;
-         var user_title_font_size = 22;
+         var title_font_size = 20;
+         var user_title_font_size = 18;
          var color_palette_deafult = "true";
          var color_palette_random = "false";
          var transparency = "true";
@@ -484,7 +498,8 @@ sub print_html{
             }
 
             //Calculate height according to file and user preferences
-            var total_svg_height = (gene_num * dedicated_space + title_space);
+            //var total_svg_height = (gene_num * dedicated_space + title_space);
+            var total_svg_height = 4000;
 		      console.log("Total_svg_height = "+ total_svg_height);
 
             var width = total_svg_width, height = total_svg_height;
@@ -629,7 +644,7 @@ sub print_html{
                graph_svg.append("text")
                   .attr("x",legends_x + 20)
                   .attr("y",legends_y)
-                  .attr("font-size", 20)
+                  .attr("font-size", 16)
                   .attr("text-anchor","start")
                   .attr("font-family", default_font)
                   .attr("fill","rgb(51,51,51)")
@@ -638,7 +653,7 @@ sub print_html{
                   //Code for printing the legends automatically
 
                         var max_size = 0;
-                        var rect_size = 20;
+                        var rect_size = 14;
 
                         //Get the size of the longest label
                         for(i=0; i< label_array_color.length; i++){
@@ -676,7 +691,7 @@ sub print_html{
                            graph_svg.append("text")
                               .attr("x",labels_x + rect_size +4 + 20)
                               .attr("y",labels_y + rect_size -1)
-                              .attr("font-size", 16)
+                              .attr("font-size", 11)
                               .attr("text-anchor","start")
                               .attr("font-family", default_font)
                               .attr("fill","rgb(51,51,51)")
@@ -807,7 +822,7 @@ if(view_scale == "true"){
    // //Print of each of the gene names
    var gene_name_x;
    var gene_name_y = scale_bar_y + 40;
-   var gene_jump = 80;
+   var gene_jump = 40;
    console.log(data);
    graph_svg.selectAll("text.genes")
       .data(data)
@@ -949,7 +964,7 @@ d3.select("#saveButton_jpeg").on("click", function(){
 
 //Export options
 if (svg_export == "true"){
-create_svg();
+create_svg(output_file);
 }
 else if(png_export == "true"){
 
@@ -957,7 +972,7 @@ else if(png_export == "true"){
       svgString2Image( svgString, 2*width, 2*height, "png", save ); // passes Blob and filesize String to the callback
 
       function save( dataBlob, filesize ){
-      saveAs( dataBlob, "D3 vis exported to PNG.png" ); // FileSaver.js function
+      saveAs( dataBlob, output_file + ".png" ); // FileSaver.js function
       }
 
 }
@@ -966,7 +981,7 @@ else if(jpg_export == "true"){
    svgString2Image_jpeg( svgString, 2*width, 2*height, "jpeg", save ); // passes Blob and filesize String to the callback
 
    function save( dataBlob, filesize ){
-      saveAs( dataBlob, "D3 vis exported to JPEG.jpeg" ); // FileSaver.js function
+      saveAs( dataBlob, output_file + ".jpeg" ); // FileSaver.js function
    }
 }
 
@@ -977,6 +992,7 @@ else if(jpg_export == "true"){
       }//Closing of function feature map
 
    //FUNCTIONS
+
    function save_to_png(){
       var svgString = getSVGString(graph_svg.node());
       svgString2Image( svgString, 2*width, 2*height, "png", save ); // passes Blob and filesize String to the callback
@@ -1129,8 +1145,18 @@ function svgString2Image_jpeg( svgString, width, height, format, callback ) {
 //----------------------
 
 
+function output_file_name(json_url){
+   console.log("OUTPUT " + json_url);
+   var data = json_url;
+   var name = data.substring(data.indexOf("feature-map_")+12,data.indexOf(".json"));
+   console.log("Name " + name);
+   return name;
+}
 
-function create_svg(){
+
+
+function create_svg(output_file){
+   console.log("CREATE SVG OUTPUT " +output_file );
 
    var doctype = '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
 
@@ -1318,14 +1344,14 @@ function create_svg(){
    }
 
    function download(source) {
-     var filename = "untitled";
-
+     var filename = output_file;
+      console.log("Y AQUI "+ filename);
      if (source.id) {
-       filename = source.id;
+       filename = output_file;
      } else if (source.class) {
-       filename = source.class;
+       filename = output_file;
      } else if (window.document.title) {
-       filename = window.document.title.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+       filename = output_file;
      }
 
      var url = window.URL.createObjectURL(new Blob(source.source, { "type" : "text\/xml" }));
