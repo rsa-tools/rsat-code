@@ -3165,7 +3165,8 @@ sub GetMatrixDBchoice_select2 {
         ## Treat multiple database selections if the DB list was presented with checkboxes
         if ($mode eq "checkbox") {
 
-            if ($db_name ~~ @motifs) {
+            #if ($db_name ~~ @motifs) { # avoid experimental ~~, feb2018 Bruno
+            if(grep { $db_name eq $_ } @motifs){
                 $matrix_db_params .= " -motif_db ".$db_name." ".$format." ".$ENV{RSAT}."/public_html/motif_databases/".$file;
                 push @selected_db, $db_name;
             }
