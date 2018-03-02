@@ -338,7 +338,7 @@ sub RSA_header_bootstrap {
         -src      => 'RSAT_tabs.js'
     }
    ],
-    -style => { 	-src => ["css/bootstrap.min.css","css/bhoechie-tab.css","tabs.css","chosen.css","font-awesome.min.css"],
+    -style => { 	-src => ["css/bootstrap.min.css","css/bhoechie-tab.css","tabs.css","chosen.css","font-awesome.min.css","form.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
 
@@ -372,12 +372,11 @@ $(document).ready(function() {
 <script>
 $(document).ready(function(){
     $(\'[data-toggle="tooltip"]\').tooltip();
+    $(\'[rel="popover"]\').popover();
 });
 </script>
 
 ';
-
-
 
     open(my $fh, "menu.php");
     while(my $row = <$fh>){
@@ -566,8 +565,8 @@ sub SelectOutput {
     print $query->radio_group(-name=>'output', -id=>'output',
 			      -values=>[@values],
 			      -default=>$default_output);
-    print $query->textfield(-name=>'user_email', -id=>'user_email',
-			    -size=>30,
+    print "&nbsp;";
+    print $query->textfield(-name=>'user_email', -id=>'user_email', class=>'form-control', -size=>30,
 	) unless ($ENV{mail_supported} eq "no");
     print "<BR>\n";
 }
@@ -1300,9 +1299,9 @@ sub OrganismPopUpString{
     if($default{organism} ne ""){
         $org_name = $default{organism};
         $org_name =~ s/_/\ /g;
-        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' value='$org_name' size='35'><input id=$popupid name=$popupid value='$default{organism}' type='hidden'>";
+        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' value='$org_name' size='35' class='form-control' <input id=$popupid name=$popupid value='$default{organism}' type='hidden'>";
     }else{
-        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' placeholder='Enter the name of your organism...' size='35'><input id=$popupid name=$popupid type='hidden'>";
+        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' placeholder='Enter the name of your organism...' size='35' class='form-control' ><input id=$popupid name=$popupid type='hidden'>";
     }
     $organismPopup .= "</div>";
     print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
@@ -3167,7 +3166,8 @@ sub GetMatrixDBchoice_select2 {
         ## Treat multiple database selections if the DB list was presented with checkboxes
         if ($mode eq "checkbox") {
 
-            if ($db_name ~~ @motifs) {
+            #if ($db_name ~~ @motifs) { # avoid experimental ~~, feb2018 Bruno
+            if(grep { $db_name eq $_ } @motifs){
                 $matrix_db_params .= " -motif_db ".$db_name." ".$format." ".$ENV{RSAT}."/public_html/motif_databases/".$file;
                 push @selected_db, $db_name;
             }
