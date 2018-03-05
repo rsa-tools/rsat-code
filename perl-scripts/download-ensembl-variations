@@ -542,7 +542,7 @@ package	main;
 
         #Load raw reference sequence if chromosome is a different from last one
         #Perhaps $ref_seq = qx(cat $raw_file); ?NOTE. WSG
-        my $raw_file = $genome_dir.$chr_file{$chr};
+        my $raw_file = $genome_dir."/".$chr_file{$chr};
         $ref_seq = qx(cat $raw_file);
         #$main::last_chr = $chr;
 
@@ -752,7 +752,7 @@ package	main;
           if($alt eq "-"){
             $alt = $prev_nucle;
           } else {
-            $alt = $prev_nucle.$alt
+            $alt = $prev_nucle.$alt;
           }
 
           push (@alts,$alt);
