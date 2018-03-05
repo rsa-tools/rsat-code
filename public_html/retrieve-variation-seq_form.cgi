@@ -61,14 +61,13 @@ print "<div id='demo_descr'></div>";
 
 print $query->start_multipart_form(-action=>"retrieve-variation-seq.cgi");
 
-
-
 #### Select organims to retrieve variants sequences from
-
+print "<div id='organisms_popup' style='display:none'>";
 print "&nbsp;"x0, &OrganismPopUpString();
-print "<p>\n";
-
-
+print "<p>\n</div>";
+print "<div id='variations_popup'>";
+print &OrganismPopUpString("supported"=>"variations", "bg_org"=>"1");
+print "<p></div>";
 ### Query variants
 ### Variants can be input as a list of rs numbers, rsa variation file or bed regiones
 ### from where variants annotated in ensembl variations will be extracted.
@@ -145,6 +144,20 @@ while (my $row = <$fh>){
 }
 
 print '<script>
+
+$(document).ready(function(){
+    $("#input_type").change(function(){
+        if($("#input_type").val() == "varBed"){
+            document.getElementById("organisms_popup").style.display = "block";
+            document.getElementById("variations_popup").style.display = "none";
+            $("#organism_bg").val("");
+        }else{
+            document.getElementById("organisms_popup").style.display = "none";
+            document.getElementById("variations_popup").style.display = "block";
+            $("#organism").val("");
+        }
+    });
+});
 function setDemo(demo_rsat_var){
     $("#reset").trigger("click");
     
@@ -156,7 +169,8 @@ function setDemo(demo_rsat_var){
             </blockquote>";
 
     demo_descr.innerHTML = descr1;
-    
+    document.getElementById("organisms_popup").style.display = "block";
+    document.getElementById("variations_popup").style.display = "none";
     $("#organism_name").val("Homo sapiens GRCh37");
     $("#organism").val("Homo_sapiens_GRCh37");
     $("#input").val(demo_rsat_var);

@@ -49,6 +49,7 @@ $command = "$C_SCRIPTS/retrieve-variation-seq";
 
 ## Define species 
 $organism = $query->param('organism');
+if($organism eq ""){ $organism = $query->param('organism_bg')};
 if (defined($supported_organism{$organism})) {
     $organism_name = $supported_organism{$organism}->{'name'};
     @org_name_split=split(" ",$organism_name);
