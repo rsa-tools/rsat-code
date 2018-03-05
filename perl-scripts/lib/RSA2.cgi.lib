@@ -1283,15 +1283,16 @@ sub OrganismPopUpString{
     my (%args) = @_;
    
     my $supported = $args{'supported'};
-    my $supported_param = "";
+    my $supported_param = "?get=json";
     if($supported ne ""){
-        $supported_param .= "?supported=$supported";
+        $supported_param .= "&supported=$supported";
     }
     &check_prokaryote_server();
 
     my $bg_org = $args{'bg_org'};
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
     my $popupid_name = ($bg_org == 1) ? "organism_bg_name" : "organism_name";
+    my $tip = ($bg_org == 1) ? "tip_bg" : "tip";
     
     my $organismPopup = "<div class='ui-widget' style='display:inline'>";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
@@ -1359,26 +1360,29 @@ sub OrganismPopUpString{
                         var reg = new RegExp(re , "i", "m");
                         var t = item.label.replace(reg, replacer);
 
-                        document.getElementById("tip").style.display = "none";
+                        document.getElementById("' . $tip . '").style.display = "none";
                         return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
                     }else{
-                        $("#tip").html("<span style=\"color:orange\">Your search has no result</span>");
-                        document.getElementById("tip").style.display = "inline";
+                        $("#' . $tip . '").html("<span style=\"color:orange\">Your search has no result</span>");
+                        document.getElementById("'. $tip .'").style.display = "inline";
                         return false;
                     }
                 };
             
     });
     </script>';
-    if($args{supported} eq 'orthologs'){
-        $organismPopup .=  "<a href='supported-orthologs.cgi' target='_blank'>  [List of orthologs]</a>";
-    }elsif($args{supported} eq 'infer'){
-        $organismPopup .=  "<a href='supported-infer.cgi' target='_blank'>  [List of operon inference organisms]</a>";
+    if($args{supported}){
+        $list = $args{supported};
+        if($args{supported} eq "infer"){
+            $list = "operon inference organisms";
+        }
+        $organismPopup .=  "<a href='getOrganisms.cgi?get=display&supported=$args{supported}' target='_blank'>  [List of $list]</a>";
     }
+    
     else{
         $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
     }
-    $organismPopup .= " <div id='tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
+    $organismPopup .= " <div id='$tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
 
     return $organismPopup;
 }
@@ -1511,7 +1515,7 @@ sub TaxonPopUpString {
         
         $("#taxon_name").autocomplete({
         minLength: 2,
-        source: "getOrganisms.cgi?taxon=yes&nodetype='.$node_type.'",
+        source: "getOrganisms.cgi?get=json&taxon=yes&nodetype='.$node_type.'",
         focus: function(event, ui){
             $("#taxon_name").val(ui.item.label);
             return false;
@@ -3061,7 +3065,7 @@ sub DisplayMatrixDBchoice_select2 {
                         }
                         $descr .= " - [$nbmotif motifs]";
                     }
-                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{'www-rsat'}/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
+                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{'www-rsat'}/rsat/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
                 }
             }
         }
