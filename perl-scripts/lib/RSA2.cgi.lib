@@ -1375,6 +1375,8 @@ sub OrganismPopUpString{
         $list = $args{supported};
         if($args{supported} eq "infer"){
             $list = "operon inference organisms";
+        }elsif($args{supported} eq "variations"){
+            $list = " organisms with variations";
         }
         $organismPopup .=  "<a href='getOrganisms.cgi?get=display&supported=$args{supported}' target='_blank'>  [List of $list]</a>";
     }
