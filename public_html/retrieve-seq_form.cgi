@@ -361,7 +361,7 @@ function setDemo1(demo_genes){
     $("#reset").trigger("click");
     descr_1 = "<H4>Demonstration</H4>\n \
     <blockquote class =\'blockquote text-justify small\'>\
-    In this demo, we will retrieve the 800bp sequence upstream of a list of genes from the organism <i>Saccharomyces cerevisiae</i>. Check the panel <b>Mandatory inputs</b> and then <b>Run analysis</b></blockquote>";
+    In this demo, we will retrieve the 800bp sequence upstream of a list of genes from the organism <i>Saccharomyces cerevisiae</i>. Check the panel <b>Mandatory inputs</b>, <b>Mandatory options</b> and then <b>Run analysis</b></blockquote>";
     
     demo_descr.innerHTML = descr_1;
     $("#organism_name").val("Saccharomyces cerevisiae");
