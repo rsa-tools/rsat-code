@@ -57,7 +57,7 @@ $(function(){
             parent.className ='menu_heading_open';
         }
     });
-    
+ 
 });
 
 ////// For search tool bar

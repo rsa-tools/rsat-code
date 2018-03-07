@@ -5,8 +5,8 @@ MAKEFILE=${RSAT}/makefiles/variation-scan_demo.mk
 
 V=2
 SPECIES=Homo_sapiens
-#ASSEMBLY=GRCh37
-ASSEMBLY=GRCh38
+ASSEMBLY=GRCh37
+#ASSEMBLY=GRCh38
 
 ## The folder does not depend on the ensembl version anymore.  The
 ## following option should be used only for specific purpose (when
@@ -154,7 +154,7 @@ varinfo_from_ids: mk_result_dir
 ## RETRIEVE_VAR_CMD is the common part of the command, we then
 ## specified the modality-specific parameters:
 ## RETRIEVE_VAR_CMD_VARBED and
-## -release ${ENSEMBL_RELEASE} 
+## -release ${ENSEMBL_RELEASE}
 RETRIEVE_VAR_CMD=retrieve-variation-seq  \
 	-v ${V} \
 	-species ${SPECIES} \
