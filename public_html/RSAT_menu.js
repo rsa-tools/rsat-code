@@ -18,7 +18,7 @@ menu_number = 0;
 $(function(){
     title = document.title.replace("RSAT : ", "");
     title = title.replace("RSAT - ", "");
-    
+    title = title.replace("NeAT - ", "");   
     $.each(menu_numbers, function(key, value){
         if(value.indexOf(title) != -1){
             menu_number = key + 1;
