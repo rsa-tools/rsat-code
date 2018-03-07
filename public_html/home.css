@@ -5,9 +5,8 @@
 .homeheaderbar{
 	height:120px;
 	margin-left:-5px;
-    background-image:url(images/banner2.png);
+    background-image:url(images/RSAT_banner.png);
     background-repeat:no-repeat;
-    background-size: 540px 120px;
 }
 .homemenu{
 	font-weight: bold;

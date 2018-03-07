@@ -75,10 +75,7 @@ print '
 <h4 class="glyphicon"><i class="fa fa-info-circle fa-2x"></i></h4><br/>retrieve sequence
 </a>
 <a href="#" class="list-group-item text-center">
-<h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Mandatory inputs
-</a>
-<a href="#" class="list-group-item text-center">
-<h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Mandatory options
+<h4 class="glyphicon"><i class="fa fa-tag fa-2x"></i></h4><br/>Mandatory options
 </a>
 <a href="#" class="list-group-item text-center">
 <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced options
@@ -144,7 +141,7 @@ van Helden, J., Andre, B. & Collado-Vides, J. (2000). <i>A web site for the comp
 </div>
 
 <!-- ################################################################ -->
-<!-- ### mandatory inputs ### -->
+<!-- ### mandatory options ### -->
 <div class="bhoechie-tab-content">
 <!-- Organism -->
 <div class="panel panel-danger">
@@ -216,25 +213,18 @@ print $query->filefield(-name=>'uploaded_file',
 -size=>45,
 -maxlength=>200);
 
-#print '</div></div></div>';
+print '</div></div></div>';
 
-print '</div></div></div></div>
-<!-- ################################################################-->
-<!-- ### mandatory options ###-->
 
-<!-- MANDATORY OPTIONS -->
-<div class="bhoechie-tab-content">
-
-<div class="panel panel-danger">
-<div class="panel-heading">Mandatory options</div>
-<div class="panel-body"> <br>
-
+print '
 <!-- Sequence type -->
-<b>Sequence type</b>
+<div class="panel panel-danger">
+<div class="panel-heading">Sequence type
 <i class="fa fa-info-circle" data-container="body" data-trigger="hover" rel="popover" data-placement="right" data-content="Precise the type of sequence and its localisation relative to the gene"></i>
-<p>
+</div>
+<div class="panel-body">
 <div class="form-group">
-<a class="badge badge-primary iframe" HREF="help.retrieve-seq.html#sequence_type">Info</a>&nbsp;';
+<a class="badge badge-primary iframe" HREF="help.retrieve-seq.html#sequence_type">Info</a>';
 
 print $query->popup_menu(-name=>'sequence_type', class=>'form-control',
 -Values=>['upstream','downstream','ORFs (unspliced)'],
@@ -242,14 +232,12 @@ print $query->popup_menu(-name=>'sequence_type', class=>'form-control',
 
 ### from to
 print "&nbsp;"x10;
-print "From&nbsp;\n";
+print "<B><A class='iframe' HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
 print "<input type='text' id='from' name='from' value=$default{from} class='form-control' style='width:80px'/>";
 print "&nbsp;&nbsp;";
-print "To&nbsp;\n";
+print "<B><A class='iframe' HREF='help.retrieve-seq.html#from_to'>To</A></B>&nbsp;\n";
 print "<input type='text' id='to' name='to' value=$default{to} style='width:80px' class='form-control'/>";
-
-print '</div>' x 4;
-print '
+print '</div></div></div></div>
 <!-- ################################################################-->
 <!-- ### advanced options ###-->
 
@@ -361,7 +349,7 @@ function setDemo1(demo_genes){
     $("#reset").trigger("click");
     descr_1 = "<H4>Demonstration</H4>\n \
     <blockquote class =\'blockquote text-justify small\'>\
-    In this demo, we will retrieve the 800bp sequence upstream of a list of genes from the organism <i>Saccharomyces cerevisiae</i>. Check the panel <b>Mandatory inputs</b>, <b>Mandatory options</b> and then <b>Run analysis</b></blockquote>";
+    In this demo, we will retrieve the 800bp sequence upstream of a list of genes from the organism <i>Saccharomyces cerevisiae</i>. Check the panel <b>Mandatory inputs</b> and then <b>Run analysis</b></blockquote>";
     
     demo_descr.innerHTML = descr_1;
     $("#organism_name").val("Saccharomyces cerevisiae");

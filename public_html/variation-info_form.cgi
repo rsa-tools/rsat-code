@@ -61,24 +61,13 @@ print $query->start_multipart_form(-action=>"variation-info.cgi");
 
 #print "<FONT FACE='Helvetica'>";
 
-my @org_variation=();
+#my @org_variation=();
 
 my $data_rsat=join("/",$ENV{RSAT},"data") ;
 my $supported_variation_organims_file=join ("/",$data_rsat,"supported_organisms_variation.tab");
 
 if (-e $supported_variation_organims_file){
-    my ($var_org) = &OpenInputFile($supported_variation_organims_file);
-    while(<$var_org>){
-	chomp;
-	next unless (/\S/) ; # skip empty rows
-	next if (/^;/); # skip comment lines
-	next if (/^\#/); # Skip header line	
-	my $org=$_ ;
-	push (@org_variations, $org) ;
-	
-    }
-    print "&nbsp;"x0, &OrganismPopUpString(@org_variations);
-    
+    print "&nbsp;"x0, &OrganismPopUpString('supported'=>'variations');
 }
 else {
   &RSAT::message::Warning("This RSAT site does not contain any genome with variations");
@@ -190,6 +179,7 @@ function setDemo2(){
     
     $("#organism_name").val("'. $demo_org . '");
     $("#organism").val("' . $org . '");
+    $("#input").val("");
     $("#input_url").val("'.$demo2_url.'");
     $("#input_type").val("bed");
 }
