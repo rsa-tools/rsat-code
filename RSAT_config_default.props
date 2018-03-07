@@ -219,7 +219,10 @@ exec_time=0
 rsat_ws=http://localhost/rsat/
 ## Note: the auto option does not work for rsat_ws.
 
+################################################################
 ## Default image format
+##
+## Supported: png, jpg, pdf
 rsat_img_format=png
 
 ################################################################
