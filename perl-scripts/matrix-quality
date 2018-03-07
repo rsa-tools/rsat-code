@@ -327,13 +327,7 @@ package main;
     $roc_options = " ";
     $distrib_options = " ";
     $main::num_mtx=0;
-    ## Reference distribution for the ROC curve
-    $roc_ref = "theor";
-    $draw_roc=1;
-    $task{plot}=0;
-    $mq_plots=1;
 
-    $r_plot=0 ; ## By defualt plots will be generated using gnuplot
 
     ## Tasks
     local @supported_tasks = ("all", ## Run all other tasks
@@ -355,6 +349,14 @@ package main;
       $supported_task{$task} = 1;
     }
     %task = ();
+
+    ## Reference distribution for the ROC curve
+    $roc_ref = "theor";
+    $draw_roc=1;
+    $task{plot}=0; 
+    $mq_plots=1;
+
+    $r_plot=0 ; ## By defualt plots will be generated using gnuplot
 
     ################################################################
     ## The C command matrix-scan-quick is MUCH faster than
