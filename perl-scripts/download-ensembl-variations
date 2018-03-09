@@ -438,15 +438,19 @@ package	main;
       my $time_stamp_gvf_file = `stat -c %Y $gvf_file_local_path`;
       my $time_stamp_gvf_file_gz = `stat -c %Y $gvf_file_gz`;
       if ((&IsReal($time_stamp_gvf_file))
-	  &&(&IsReal($time_stamp_gvf_file_gz))
-	  && ($time_stamp_gvf_file >= $time_stamp_gvf_file_gz)) {
-	  &RSAT::message::Info("Skipping uncompression, since gz file is not newer than uncompressed file", $gvf_file_local_path)
-	      if ($main::verbose >= 0);
+	         &&(&IsReal($time_stamp_gvf_file_gz))
+	         && ($time_stamp_gvf_file >= $time_stamp_gvf_file_gz)) {
+
+	            &RSAT::message::Info("Skipping uncompression, since gz file is not newer than uncompressed file", $gvf_file_local_path)
+	            if ($main::verbose >= 0);
+
       }  else {
-	  &RSAT::message::TimeWarn("Decompressing GVF file", $gvf_file_gz) if ($main::verbose >= 2);
-	  my $cmd = "gunzip -vcf ".$gvf_file_gz." > ".$gvf_file_local_path; ## Uncompress the gz GVF file
-	  $cmd .= "; touch -r ".$gvf_file_gz." ".$gvf_file_local_path; ## Assign the time stamp of the gzip file to the uncompressed file
-	  system($cmd);
+
+	           &RSAT::message::TimeWarn("Decompressing GVF file", $gvf_file_gz) if ($main::verbose >= 2);
+	           my $cmd = "gunzip -vcf ".$gvf_file_gz." > ".$gvf_file_local_path; ## Uncompress the gz GVF file
+	          $cmd .= "; touch -r ".$gvf_file_gz." ".$gvf_file_local_path; ## Assign the time stamp of the gzip file to the uncompressed file
+	          system($cmd);
+            
       }
   }
 
@@ -541,7 +545,6 @@ package	main;
         $out_var = $out_vars{$chr};
 
         #Load raw reference sequence if chromosome is a different from last one
-        #Perhaps $ref_seq = qx(cat $raw_file); ?NOTE. WSG
         my $raw_file = $genome_dir."/".$chr_file{$chr};
         $ref_seq = qx(cat $raw_file);
         #$main::last_chr = $chr;
@@ -677,7 +680,7 @@ package	main;
     ###############################################################
 	  ### Update start coordinate due to 0-based start
     $start = $start -1;
-    #NOTE I AM HERE; NEED TO START RETYOING CORRECT VARIABLES
+
     ##################################################################
     ### Start assessing if the variant contains an insertion/deletion
     ### WSG: The start of the insertion is really the end
@@ -697,11 +700,6 @@ package	main;
       #Append each insertion allele to the retrieved nucleotide
       my @alts = ();
       foreach my $alt (split(",",$info{'Variant_seq'})) {
-        #Skip invalid alleles
-        #if($alt =~ /[^ATCG]/) {
-        #  &RSAT::message::Warning("Skipping. Invalid allele $alt at $token[0] $token[3] $token[4]");
-        #  return;
-        #}
         push (@alts,$prev_nucle.$alt);
       }
 
@@ -712,15 +710,10 @@ package	main;
       #Get length of reference variant
       my $ref_size    = length($info{'Reference_seq'});
       my $indel_found = 0 ;
-
+      my @valid_alts = ();
       #my @alts_size = ();
       foreach my $alt ( split(",", $info{'Variant_seq'} ) ) {
 
-        #Skip invalid alleles
-        #if($alt =~ /[^ATCG\-]/) {
-        #  &RSAT::message::Warning("Skipping. Invalid allele $alt at $token[0] $token[3] $token[4]");
-        #  return;
-        #}
         ############################################################################################
         ### WSG: Check if allele is not the same as reference. This is mandatory when the Genotype
         ### is heterozygous as stated by GVF format. That is why I need to iterate through ALL
@@ -760,13 +753,14 @@ package	main;
 
         #Update alternative alleles
         @valid_alts = @alts;
+
         #Update reference allele
         $info{'Reference_seq'} = $prev_nucle.$info{'Reference_seq'};
 
       }
 
       #Update alternative alleles
-      $info{'Variant_seq'} = join (",",@alts);
+      $info{'Variant_seq'} = join (",",@valid_alts);
 
 
     }
