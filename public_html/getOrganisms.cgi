@@ -169,8 +169,11 @@ else{
     }else{
         ## Print general information about this RSAT instance
         print "<h2>RSAT instance: ", $ENV{rsat_site}, "</h2>\n";
-        
-        print "<p><b>Organisms supported: </b>", scalar @selected_organisms, "</p>\n";
+        $orglist = "";
+        if($supported_orgs eq "variations"){
+            $orglist .= " with variations";
+        }
+        print "<p><b>Organisms $orglist supported: </b>", scalar @selected_organisms, "</p>\n";
         
         if ($group) {
             print "<p><b>Group specificity: </b>", $group, "</p>\n";
