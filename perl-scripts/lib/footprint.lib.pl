@@ -710,6 +710,7 @@ Dry run: print the commands but do not execute them.
   } elsif ($arg eq "-dry") {
     $main::dry = 1;;
 
+
     ## Don't die on error
 =pod
 
@@ -1377,7 +1378,6 @@ sub CalcMAtrixTheorDistrib {
       $cmd .= " -1str ";
       $cmd .= " -o ".$main::bg_distrib;
       &one_command($cmd);
-      #print $cmd ;
     }
 
     ## Check that the background model file exists
@@ -1742,5 +1742,58 @@ sub OrthoMap {
   &IndexOneFile("Map", $outfile{map});
 }
 
+################################################################
+## Calculate a conservation score ahcorcha.
+
+sub BayesianScore {
+
+    if ($task{bbls}){
+
+	# Check that the tree file exists Get support for .gz files in python.
+	&RSAT::error::FatalError("File specified as a phylogenetic tree does not exist") unless ( (-e  $main::tree) || (-e  $main::tree.".gz") ) ;
+
+	$outfile{matrix_distrib} = $outfile{matrix_prefix}."_matrix-distrib_occsig.tab";
+	&CalcMAtrixTheorDistrib;
+	print "\n\n\nDebug bbls flag";
+
+	my $analysis_group = "";
+	my $org_num_cmd = "";
+
+	# If feature map
+	if ($main::taxon){
+	    $analysis_group = $main::taxon;
+	    $org_num_cmd = "supported-organisms -taxon ".$main::taxon." -return ID -format tab | wc -l";
+	}
+	if ($main::orglist_file){
+	    $analysis_group = $main::orglist_file;
+	    $org_num_cmd = "egrep -cv ';|^$' ".$main::orglist_file;
+	}
+	if ($main::orthologs_list_file){
+	    $analysis_group = $main::orthologs_list_file;
+	    $org_num_cmd = "egrep -cv ';|^$' ".$main::orthologs_list_file;
+	}
+	my $org_num = &one_command($org_num_cmd);
+	
+	# This only works when you have one matrix.
+	#my $min_weight = GetMinWeight(); # Pass this as the Score threshold. 
+	my $cmd = "$SCRIPTS/../python-scripts/bbls";
+	$cmd .= " --verbose ".$main::verbose;
+	$cmd .= " --organism ".$main::organism_name;
+	$cmd .= " --tree ".$main::tree;
+	$cmd .= " --p-value ".$main::pval;
+	$cmd .= " --tfb_sites ".$outfile{sites};
+	# Add BBLS/Bayesian etc inside bbls.
+	$cmd .= " --prefix ".$outfile{prefix};
+	$cmd .= " --matrix_distrib ".$outfile{matrix_distrib};
+	$cmd .= " --query_genes ".$outfile{genes};
+	$cmd .= " --orthologs ".$outfile{orthologs};
+	$cmd .= " --infer_operons ".$infer_operons;
+	## New options
+	$cmd .= " --group_name ".$analysis_group;
+	$cmd .= " --num_organisms ".$org_num;
+	
+	&one_command($cmd);
+    }
+}
 
 1;
