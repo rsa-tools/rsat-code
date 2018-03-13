@@ -967,6 +967,18 @@ Deprecated, replaced by the task "index".
     $main::create_index = 1;
     &RSAT::message::Warning("Option -index is deprecated, indexes are now always created.");
 
+    ## Use ranks_dmnd from diamond blast computed in genome-blast.
+=pod
+
+=item B<-diamond>
+
+Use ranks_dmnd.tab from diamond blast computed in genome-blast.
+
+=cut
+  } elsif ($arg eq "-diamond") {
+    $main::diamond = 1;
+
+    
     ## Create a tab-delimited file and a HTML Index for all the results
 =pod
 
@@ -1210,8 +1222,9 @@ sub GetOrthologs {
     $cmd .= " -return e_value";
     $cmd .= " -only_blast";	## only use genome having blast files
     $cmd .= " -rand " if ($main::rand);
+    $cmd .= " -diamond" if ($main::diamond); #ahcorcha
     $cmd .= " -o ".$outfile{orthologs};
-#    &one_command($cmd);
+    # &one_command($cmd);
     &one_command($cmd, 1, 0, task=>'orthologs', log=>$main_log);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
 
@@ -1754,28 +1767,24 @@ sub BayesianScore {
 
 	$outfile{matrix_distrib} = $outfile{matrix_prefix}."_matrix-distrib_occsig.tab";
 	&CalcMAtrixTheorDistrib;
-	print "\n\n\nDebug bbls flag";
-
 	my $analysis_group = "";
 	my $org_num_cmd = "";
-
-	# If feature map
+	my $org_in_group = $outfile{prefix}."_org_in_group_or_taxon.txt";
+        
 	if ($main::taxon){
 	    $analysis_group = $main::taxon;
-	    $org_num_cmd = "supported-organisms -taxon ".$main::taxon." -return ID -format tab | wc -l";
+	    $org_num_cmd = "supported-organisms -taxon ".$main::taxon." -return ID -format tab | wc -l | tee ".$org_in_group;
 	}
 	if ($main::orglist_file){
 	    $analysis_group = $main::orglist_file;
-	    $org_num_cmd = "egrep -cv ';|^$' ".$main::orglist_file;
+	    $org_num_cmd = "egrep -cv ';|^$' ".$main::orglist_file." | tee ".$org_in_group;
 	}
 	if ($main::orthologs_list_file){
 	    $analysis_group = $main::orthologs_list_file;
-	    $org_num_cmd = "egrep -cv ';|^$' ".$main::orthologs_list_file;
+	    $org_num_cmd = "egrep -cv ';|^$' ".$main::orthologs_list_file." | tee ".$org_in_group;
 	}
-	my $org_num = &one_command($org_num_cmd);
+	&one_command($org_num_cmd);
 	
-	# This only works when you have one matrix.
-	#my $min_weight = GetMinWeight(); # Pass this as the Score threshold. 
 	my $cmd = "$SCRIPTS/../python-scripts/bbls";
 	$cmd .= " --verbose ".$main::verbose;
 	$cmd .= " --organism ".$main::organism_name;
@@ -1788,10 +1797,8 @@ sub BayesianScore {
 	$cmd .= " --query_genes ".$outfile{genes};
 	$cmd .= " --orthologs ".$outfile{orthologs};
 	$cmd .= " --infer_operons ".$infer_operons;
-	## New options
 	$cmd .= " --group_name ".$analysis_group;
-	$cmd .= " --num_organisms ".$org_num;
-	
+	$cmd .= " --num_organisms ".$org_in_group;	
 	&one_command($cmd);
     }
 }
