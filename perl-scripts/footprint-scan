@@ -391,7 +391,8 @@ package main;
   local $bg_distrib; $bg_distrib = ""; ## Used in footprint.lib.pl
 
   ## Tree for Bayesian score # ahcorcha
-  local $tree = ""; # /ahcorcha
+  local $tree = ""; 
+  #local $diamond = 0; # /ahcorcha
   
   ## Feature maps
   local $map_opt = "";
