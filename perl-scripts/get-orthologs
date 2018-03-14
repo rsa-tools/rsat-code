@@ -149,6 +149,10 @@ package main;
   @main::is_query = ();
   @main::query_gene_id = ();
 
+  #ahcorcha
+  $main::diamond = 0;
+  # /ahcorcha
+  
   ## Max number of queries for which the grep filter is applied.
   ## This filter speeds up the search of orthologs when there are a
   ## few genes to be searched for, but when there are hundreds of
@@ -513,12 +517,24 @@ package main;
     &RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 4);
 
     ## Check if the BLAST file exists and read it
-    my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
+
+    # ahcorcha
+    my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism);
+    my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism);
+    if ($main::diamond == 1){
+	$blast_file .= "_ranks_dmnd.tab";
+	$rev_blast_file .= "_ranks_dmnd.tab";
+    }
+    else {
+	$blast_file .= "_ranks.tab";
+	$rev_blast_file .= "_ranks.tab";
+    }
+    # /ahcorcha
+    
     #my ($hits)=&readBLAST($blast_file,\@main::blast_columns);
     my ($hits)=&select_hits($blast_file,\@main::blast_columns,"query_id",\%is_query);
     #	print &Dumper($hits) if ($main::verbose >= 0); # DEBUG
-
-    my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
+    
     # my (%rev_hits)=&readBLAST($rev_blast_file,\@main::blast_columns);
     my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"ref_id",\%is_query);
 
@@ -737,8 +753,19 @@ sub FilterOrganismsHavingBlast{
     ## Check if the BLAST file exists
     my $miss = 0;
 
+
+    
     ## Find BLAST file from query to reference organism
-    my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
+    # ahcorcha
+    my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism);
+
+    if ($main::diamond == 1) {
+	$blast_file .= "_ranks_dmnd.tab"
+    }else{
+	$blast_file .= "_ranks.tab"
+    }
+    #/ahcorcha
+    
     unless ((-e $blast_file) || (-e $blast_file.".gz")) {
 	$miss = 1;
 	push @main::missing_blast_files, $blast_file;
@@ -753,7 +780,16 @@ sub FilterOrganismsHavingBlast{
     ## Check the existence of the BLAST file from reference to query organism for
     ## the bidirectional best hit (BBH)
     if ($homology_type eq "BBH") {
-      $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
+	
+	# ahcorcha
+	$rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism);
+	if ($main::diamond == 1){
+	    $rev_blast_file .= "_ranks_dmnd.tab"
+	}else{
+	    $rev_blast_file .= "_ranks.tab"
+	}
+	#/ahcorcha
+	
       unless ((-e $rev_blast_file) || (-e $rev_blast_file.".gz")) {
 	$miss = 1;
 	push @main::missing_blast_files, $rev_blast_file;
@@ -1328,8 +1364,20 @@ organism. Lines starting with a semicolumn are ignored.
 	} elsif ($arg eq "-org_list") {
 	    $main::orglist_file= shift(@arguments);
 
+=pod
+
+# ahcorcha
+=item B<-diamond>
+
+Use ranks_dmnd from diamond blast computed in genome-blast.
+
+=cut
+
+	} elsif ($arg eq "-diamond") {
+	    $main::diamond= 1;
 
 =pod
+# /ahcorcha
 
 =item B<-rand>
 
