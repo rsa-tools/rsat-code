@@ -790,12 +790,12 @@ sub ReadArguments {
 		unless (&RSAT::util::IsNatural($allowed_subst));
 	    if ($allowed_subst > 0) {
 		$search_method = "IUPAC";
-		&RSAT::message::Info("Seach method: IUPAC") if ($verbose >=1);
+		&RSAT::message::Info("Search method: IUPAC") if ($verbose >=2);
 	    }
 
 	} elsif ($arg eq "-IUPAC") {
 	    $search_method = "IUPAC";
-	    &RSAT::message::Info("Seach method: IUPAC") if ($verbose >=1);
+	    &RSAT::message::Info("Search method: IUPAC") if ($verbose >=2);
 
 	    ################################################################
 	    #### pattern specification

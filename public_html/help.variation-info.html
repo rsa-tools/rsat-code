@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>perl-scripts/matrix-quality</title>
+<title>variation-info</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" href="main.css" type="text/css" />
 </head>
@@ -10,7 +10,7 @@
 <body class="info">
 
 <center>
-<h2><A HREF="RSAT_home.cgi">RSAT</A> - <a href='variation-info.cgi'>variation-info</a> manual</h2>
+<h2><A HREF="RSAT_home.cgi">RSAT</A> - <a href='variation-info_form.cgi'>variation-info</a> manual</h2>
 
 </center>
 
@@ -18,86 +18,71 @@
 <div name="index">
 <p><a name="__index__"></a></p>
 
-
-
 <ul id="index">
   <li><a href="#NAME">NAME</a></li>
   <li><a href="#VERSION">VERSION</a></li>
   <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
   <li><a href="#AUTHORS">AUTHORS</a></li>
   <li><a href="#CATEGORY">CATEGORY</a></li>
-  <li><a href="#USAGE">USAGE</a></li>
-  <li><a href="#INPUT-FORMAT-head2-Genomic-coordinate-file">INPUT FORMAT </a>
+  <li><a href="#INPUT-DATA">INPUT DATA</a>
     <ul>
       <li><a href="#Genomic-coordinate-file">Genomic coordinate file</a></li>
-      <li><a href="#Example-of-bed-file">Example of bed file</a></li>
-      <li><a href="#Variation-file">Variation file</a></li>
       <li><a href="#Variation-ID-list">Variation ID list</a></li>
     </ul>
   </li>
   <li><a href="#OUTPUT-FORMAT">OUTPUT FORMAT</a></li>
-  <li><a href="#SEE-ALSO">SEE ALSO</a>
-    <ul>
-      <li><a href="#download-ensembl-genome">download-ensembl-genome</a></li>
-      <li><a href="#download-ensembl-variations">download-ensembl-variations</a></li>
-      <li><a href="#convert-variations">convert-variations</a></li>
-      <li><a href="#retrieve-variations-seq">retrieve-variations-seq</a></li>
-      <li><a href="#variation-scan">variation-scan</a></li>
-    </ul>
-  </li>
-  <li><a href="#WISH-LIST">WISH LIST</a></li>
   <li><a href="#OPTIONS">OPTIONS</a></li>
+      <ul>
+      <li><a href="#Organism">Organism </a></li>
+      <li><a href="#Variations-IDs-or-genomic-regions-of-interest">Variations IDs or genomic regions of interest </a></li>
+      <li><a href="#Input-format">Input format</a></li>
+
+    </ul>
+  <li><a href="#CONTACT">CONTACT</a></li>
 </ul>
 
 <h1 id="NAME">NAME</h1>
-
-<p>variation-info</p>
-
+  <p>variation-info</p>
 <h1 id="VERSION">VERSION</h1>
-
-<p>$program_version</p>
-
+  <p>2.0</p>
 <h1 id="DESCRIPTION">DESCRIPTION</h1>
-
-<p>Taking as input variation IDs (rs numbers) or regions in a given genome <i>variation-info</i> will retrieve the varians information varBed format.</p>
-
+  <p>Taking as input variation IDs (rs numbers) or regions in a given genome, <i>variation-info</i> retrieves variant information associated to the queries in varBed format.</p>
 <h1 id="AUTHORS">AUTHORS</h1>
-
 <dl>
-
-<dt id="Alejandra-Medina-Rivera-amedina-liigh.unam.mx"><b>Alejandra Medina Rivera</b> &lt;amedina\@liigh.unam.mx&gt;</dt>
+  <dt id="Walter Santana-Garcia">Walter Santana-Garcia</dt>
 <dd>
 
 </dd>
-<dt id="Jacques-van-Helden-Jacques.van-Helden-univ-amu.fr"><b>Jacques van Helden</b> &lt;Jacques.van-Helden\@univ-amu.fr&gt;</dt>
+  <dt id="Jacques van Helden">Jacques van Helden</dt>
+<dd>
+
+</dd>
+  <dt id="Alejandra-Medina-Rivera">Alejandra Medina-Rivera</dt>
 <dd>
 
 </dd>
 </dl>
 
 <h1 id="CATEGORY">CATEGORY</h1>
-
 <dl>
-
-<dt id="util">util</dt>
-<dd>
-
-</dd>
+<dt id="util">Genetic variations</dt>
 </dl>
 
-<h1 id="USAGE">USAGE</h1>
+<!-- <h1 id="USAGE">USAGE</h1>
 
-<p>variation-info [-i inputfile] [-o outputfile] [-v #] [-format variatio_format] [- col ID_column ] [-mml #] [-o output_file] [...]</p>
+<pre><code> variation-scan [-i sequence_file] -m matrix_file -bg backgournd_file [-calc_distrib] [-o outputfile] [-v #] [...]</code></pre>
 
-<h1 id="INPUT-FORMAT-head2-Genomic-coordinate-file">INPUT FORMAT</h1>
+<h2 id="Example">Example</h2> -->
+
+<h1 id="INPUT-DATA">INPUT DATA</h1>
 
 <h2 id="Genomic-coordinate-file">Genomic coordinate file</h2>
 
-<p>The option <i>-i</i> allows to specify a genomic coordinate file in bed format. The program only takes into account the 3 first columns of the bed file, which specify the genomic coordinates.</p>
+<p>A genomic coordinate file in bed format can be used as input to retrieve overlapping variants from ensembl databases. The tool only takes into account the 3 first columns of the bed file, which specify the genomic coordinates.</p>
 
 <p><b>Note</b> (from Jacques van Helden): the UCSC genome browser adopts a somewhat inconsistent convention for start and end coordinates: the start position is zero-based (first nucleotide of a chromosome/scaffold has coordinate 0), but the end position is considered not included in the selection. This is equivalent to have a zero-based coordinate for the start, and a 1-base coordinate for the end.</p>
 
-<h2 id="Example-of-bed-file">Example of bed file</h2>
+<b>Example of bed file</b>
 
 <pre><code> chr1   3473041 3473370
  chr1   4380371 4380650
@@ -106,7 +91,7 @@
 
 <p>The definition of the BED format is provided on the UCSC Genome Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).</p>
 
-<p>This program only takes into account the 3 first columns, which specify the genomic coordinates.</p>
+<p>This tool only takes into account the 3 first columns, which specify the genomic coordinates.</p>
 
 <dl>
 
@@ -144,13 +129,9 @@
 </dd>
 </dl>
 
-<h2 id="Variation-file">Variation file</h2>
-
-<p>See <i>download-ensembl-variation</i> output format.</p>
-
 <h2 id="Variation-ID-list">Variation ID list</h2>
 
-<p>A tab delimited file with id of variation in column.</p>
+<p>An ID (dbSNP) list of variation in one column.</p>
 
 <h1 id="OUTPUT-FORMAT">OUTPUT FORMAT</h1>
 
@@ -161,208 +142,119 @@
 <dt id="chr">1) chr</dt>
 <dd>
 
-<p>Chromosome number (without &quot;chr&quot;)</p>
+<p>Chromosome number (without &quot;chr&quot;).</p>
 
 </dd>
 <dt id="start">2) start</dt>
 <dd>
 
-<pre><code> Possition of the variations</code></pre>
+<p> Start position of the variation.</p>
 
 </dd>
 <dt id="end">3) end</dt>
 <dd>
 
-<p>Possition of the variation</p>
+<p>End position of the variation.</p>
 
 </dd>
 <dt id="strand">4) strand</dt>
 <dd>
 
-<p>strand were the variation was annotates</p>
+<p>Strand were the variation is found.</p>
 
 </dd>
 <dt id="id">5) id</dt>
 <dd>
 
-<p>variant ID, rs number</p>
+<p>Variant ID, rs number.</p>
 
 </dd>
 <dt id="ref">6) ref</dt>
 <dd>
 
-<p>Reference allele</p>
+<p>Reference allele.</p>
 
 </dd>
 <dt id="alt">7) alt</dt>
 <dd>
 
-<p>Alternative allele</p>
+<p>Alternative allele(s).</p>
 
 </dd>
-<dt id="so_term-validate">8) so_term validate</dt>
+<dt id="so_term-validate">8) so_term </dt>
 <dd>
 
-<p>validation of the variant, 1 if it had evidence</p>
+<p> Sequence Ontology term of the variant. </p>
 
 </dd>
-<dt id="minor_allele_freq">9) minor_allele_freq</dt>
+
+ <dt id="alt">9) validate</dt>
+  <dd>
+
+  <p>Validation status of the variant: 1 if it had evidence, 0 otherwhise.</p>
+
+  </dd>
+
+<dt id="minor_allele_freq">10) minor_allele_freq</dt>
 <dd>
 
-<p>Frequency of the alternative allele</p>
+<p>Frequency of the alternative allele.</p>
 
 </dd>
-<dt id="is_supvar">10) is_supvar</dt>
-<dd>
 
-<p>1 if this variant was constructed using overlaped variants</p>
-
-</dd>
-<dt id="in_supvar">11) in_supvar</dt>
-<dd>
-
-<p>1 if this this variant is overlaping with other anntotated variants</p>
-
-</dd>
 </dl>
 
-<h1 id="SEE-ALSO">SEE ALSO</h1>
+<!--<h1 id="SEE-ALSO">SEE ALSO</h1>
 
 <h2 id="download-ensembl-genome">download-ensembl-genome</h2>
 
-<p>Installe organims from ensembl genomes.</p>
+<p><i>retrieve-variation-seq</i> uses the sequences downloaded from Ensembl using the tool <i>download-ensembl-genome</i>.</p>
 
 <h2 id="download-ensembl-variations">download-ensembl-variations</h2>
 
-<p>Get variation coordiantes from ensembl. Variants information obtained with this tool are retrived by <i>variation-info</i>.</p>
-
-<h2 id="convert-variations">convert-variations</h2>
-
-<p>Convert between diferent variation data file types. <i>variation-info</i> retrieves variants in varBed format, &lt;convert-variations&gt; can be used to convert to vcf anf gvf formats.</p>
-
-<h2 id="retrieve-variations-seq">retrieve-variations-seq</h2>
-
-<p>Given a set of regions, varian IDs (rsNumber) or variants in varBed format &lt;retrieve-variation-seq&gt; will retrive the corresponding genomic sequence sorounding the genetic variants.</p>
+<p><i>retrieve-variation-seq</i> uses variation coordinates downloaded from Ensembl using the tool <i>download-ensembl-variations</i>.</p>
 
 <h2 id="variation-scan">variation-scan</h2>
 
 <p>Scan variation sequences with one or several position-specific scoring matrices.</p>
 
-<h1 id="WISH-LIST">WISH LIST</h1>
-
-<dl>
-
-<dt id="wish-1"><b>wish 1</b></dt>
-<dd>
-
-</dd>
-</dl>
+<h1 id="WISH-LIST">WISH LIST</h1> -->
 
 <h1 id="OPTIONS">OPTIONS</h1>
 
 <dl>
 
-<dt id="v"><b>-v #</b></dt>
+
+<dt id="Organism"><b>Organism </b></dt>
 <dd>
 
-<p>Level of verbosity (detail in the warning messages during execution)</p>
+<p>Name of the organism where the queries will be searched.</p>
 
 </dd>
-<dt id="h"><b>-h</b></dt>
+
+<dt id="Variations-IDs-or-genomic-regions-of-interest"><b>Variations IDs or genomic regions of interest  </b></dt>
 <dd>
 
-<p>Display full help message</p>
+<p> Input data, provided either as a list of variants IDs (dbSNPs) or as set of genomic coordinates (BED file).</p>
 
 </dd>
-<dt id="help"><b>-help</b></dt>
+
+<dt id="Input-format"><b>Input format</b></dt>
 <dd>
 
-<p>Same as -h</p>
+<p>Format of the supplied queries, supported: bed or id.</p>
 
 </dd>
-<dt id="species-species_name"><b>-species species_name</b></dt>
-<dd>
 
-<p>Species name. This name must correspond to the species of the variation/bed/id file if provided.</p>
-
-</dd>
-<dt id="species_suffix"><b>-species_suffix</b></dt>
-<dd>
-
-<p>Species name. This name must correspond to the species of the variation/bed/id file if provided.</p>
-
-</dd>
-<dt id="e_version"><b>-e_version #</b></dt>
-<dd>
-
-<p>The version of ensembl database (e.g. 72).</p>
-
-<p>Note: each Ensembl version contains a specific assembly version for each species. When the option -e_version is used, the option -assembly should thus in principle not be used.</p>
-
-</dd>
-<dt id="assembly"><b>-assembly #</b></dt>
-<dd>
-
-<p>Assembly version (e.g. GRCh37 for the assembly 37 of the Human genome).</p>
-
-<p>Note: genome assemblies can cover several successive ensemble versions. In case of ambiguity, the latest corresponding ensembl version is used.</p>
-
-</dd>
-<dt id="i-inputfile"><b>-i inputfile</b></dt>
-<dd>
-
-<p>If no input file is specified, the standard input is used. This allows to use the command within a pipe.</p>
-
-</dd>
-<dt id="format-variation_format"><b>-format variation_format</b></dt>
-<dd>
-
-<p>Format of the input file</p>
-
-<p>Supported formats:</p>
-
-<dl>
-
-<dt id="varBed"><i>varBed</i></dt>
-<dd>
-
-<p>Format of variation files used by all RSAT scripts.</p>
-
-</dd>
-<dt id="id1"><i>id</i></dt>
-<dd>
-
-<p>tab-delimited file with all variation IDs in a given column, which can be specified by the option <i>-col</i>.</p>
-
-</dd>
-<dt id="bed"><i>bed</i></dt>
-<dd>
-
-<p>General format for the description of genomic features (see https://genome.ucsc.edu/FAQ/FAQformat.html#format1).</p>
-
-</dd>
 </dl>
 
-</dd>
-<dt id="col"><b>-col #</b></dt>
-<dd>
-
-<p>Column containing the variation IDs with the input format &quot;id&quot;.</p>
-
-<p>Default : 1</p>
-
-</dd>
-<dt id="o-outputfile"><b>-o outputfile</b></dt>
-<dd>
-
-<p>If no output file is specified, the standard output is used. This allows to use the command within a pipe.</p>
-
-</dd>
-</dl>
+  <h1 id="CONTACT">CONTACT</h1>
+  <dl>
+    <dd>For further inquiries, please contact Jacques van Helden (<i>Jacques.van-Helden@univ-amu.fr</i>) or
+      <a href= 'https://twitter.com/RSATools'>Ask a question to the RSAT team</a>!</dd>
+  </dl>
 
 
 </body>
 
 </html>
-
-
