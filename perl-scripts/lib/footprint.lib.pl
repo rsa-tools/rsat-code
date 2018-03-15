@@ -1799,6 +1799,7 @@ sub BayesianScore {
 	$cmd .= " --infer_operons ".$infer_operons;
 	$cmd .= " --group_name ".$analysis_group;
 	$cmd .= " --num_organisms ".$org_in_group;	
+	$cmd .= " --bbls_draw ".$main::bbls_draw;
 	&one_command($cmd);
     }
 }
