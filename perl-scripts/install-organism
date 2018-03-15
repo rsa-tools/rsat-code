@@ -1704,9 +1704,15 @@ OPTIONS
 	         organisms if several strains are available for this
 	         species. In particular, for some bacteria there are
 	         several thousands of sequenced strains
-	         (e.g. Escherichia coli). The option -max_strains can
-	         be used to restrict the number of installed strains
-	         per species.
+	         (e.g. Escherichia coli). 
+
+		 The option -max_strains can be used to restrict the
+	         number of installed strains per species. 
+
+		 An alternative is to specify a custom list of species
+		 + strains with the option -org_table (this is the
+		 recommended way to install multiple genomes from
+		 NCBI).
 
 	-species_file file containing species names in the first
 	        column.
@@ -1728,6 +1734,28 @@ OPTIONS
 	      concatenating the NCBI species name and strain
 	      identifier.
 
+	-assembly_table
+
+	        Table extracted from the NCBI ftp site, indicating the
+	        organisms to install. 
+
+		Example: assembly table of fungi:
+
+	        ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/fungi/assembly_summary.txt
+
+		The table can be the full table for a given group, or
+		a custom subset, which can be selected on some
+		informative fields of the assembly table. 
+
+                We recommend to select the subset of rows having
+		either "Complete genome" or "Chromosome" in the 12th
+		column ("assembly_level"), and to add a filter on
+		"refseq_category" in order to select "representative
+		genome" or "reference genome". 
+
+		The assembly table can also be filtered out manually
+		in order to select a custom subset of the available
+		genomes.
 
 	-refseq
 		Local directory containing the mirror of the refseq

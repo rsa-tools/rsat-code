@@ -710,6 +710,7 @@ Dry run: print the commands but do not execute them.
   } elsif ($arg eq "-dry") {
     $main::dry = 1;;
 
+
     ## Don't die on error
 =pod
 
@@ -966,6 +967,18 @@ Deprecated, replaced by the task "index".
     $main::create_index = 1;
     &RSAT::message::Warning("Option -index is deprecated, indexes are now always created.");
 
+    ## Use ranks_dmnd from diamond blast computed in genome-blast.
+=pod
+
+=item B<-diamond>
+
+Use ranks_dmnd.tab from diamond blast computed in genome-blast.
+
+=cut
+  } elsif ($arg eq "-diamond") {
+    $main::diamond = 1;
+
+    
     ## Create a tab-delimited file and a HTML Index for all the results
 =pod
 
@@ -1209,8 +1222,9 @@ sub GetOrthologs {
     $cmd .= " -return e_value";
     $cmd .= " -only_blast";	## only use genome having blast files
     $cmd .= " -rand " if ($main::rand);
+    $cmd .= " -diamond" if ($main::diamond); #ahcorcha
     $cmd .= " -o ".$outfile{orthologs};
-#    &one_command($cmd);
+    # &one_command($cmd);
     &one_command($cmd, 1, 0, task=>'orthologs', log=>$main_log);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
 
@@ -1377,7 +1391,6 @@ sub CalcMAtrixTheorDistrib {
       $cmd .= " -1str ";
       $cmd .= " -o ".$main::bg_distrib;
       &one_command($cmd);
-      #print $cmd ;
     }
 
     ## Check that the background model file exists
@@ -1742,5 +1755,52 @@ sub OrthoMap {
   &IndexOneFile("Map", $outfile{map});
 }
 
+################################################################
+## Calculate a conservation score ahcorcha.
+
+sub BayesianScore {
+
+    if ($task{bbls}){
+
+	# Check that the tree file exists Get support for .gz files in python.
+	&RSAT::error::FatalError("File specified as a phylogenetic tree does not exist") unless ( (-e  $main::tree) || (-e  $main::tree.".gz") ) ;
+
+	$outfile{matrix_distrib} = $outfile{matrix_prefix}."_matrix-distrib_occsig.tab";
+	&CalcMAtrixTheorDistrib;
+	my $analysis_group = "";
+	my $org_num_cmd = "";
+	my $org_in_group = $outfile{prefix}."_org_in_group_or_taxon.txt";
+        
+	if ($main::taxon){
+	    $analysis_group = $main::taxon;
+	    $org_num_cmd = "supported-organisms -taxon ".$main::taxon." -return ID -format tab | wc -l | tee ".$org_in_group;
+	}
+	if ($main::orglist_file){
+	    $analysis_group = $main::orglist_file;
+	    $org_num_cmd = "egrep -cv ';|^$' ".$main::orglist_file." | tee ".$org_in_group;
+	}
+	if ($main::orthologs_list_file){
+	    $analysis_group = $main::orthologs_list_file;
+	    $org_num_cmd = "egrep -cv ';|^$' ".$main::orthologs_list_file." | tee ".$org_in_group;
+	}
+	&one_command($org_num_cmd);
+	
+	my $cmd = "$SCRIPTS/../python-scripts/bbls";
+	$cmd .= " --verbose ".$main::verbose;
+	$cmd .= " --organism ".$main::organism_name;
+	$cmd .= " --tree ".$main::tree;
+	$cmd .= " --p-value ".$main::pval;
+	$cmd .= " --tfb_sites ".$outfile{sites};
+	# Add BBLS/Bayesian etc inside bbls.
+	$cmd .= " --prefix ".$outfile{prefix};
+	$cmd .= " --matrix_distrib ".$outfile{matrix_distrib};
+	$cmd .= " --query_genes ".$outfile{genes};
+	$cmd .= " --orthologs ".$outfile{orthologs};
+	$cmd .= " --infer_operons ".$infer_operons;
+	$cmd .= " --group_name ".$analysis_group;
+	$cmd .= " --num_organisms ".$org_in_group;	
+	&one_command($cmd);
+    }
+}
 
 1;

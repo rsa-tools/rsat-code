@@ -37,7 +37,7 @@ $default{mml}=30;
 #$default{custom_motif_db_name}="custom_motif_collection";
 
 ## Threshold values for site detection
-## Suported uth 
+## Suported uth
 $default{uth_pval} = "1e-3";
 
 ## Suported lth
@@ -184,13 +184,13 @@ print "<TD><b>";
 print '<script>
 function setDemo(){
     $("#reset").trigger("click");
-    
+
     descr1 = "<H4>Comment on the demonstration :</H4>\n \
     <blockquote class =\'demo\'> \
     <p>In this demonstration, we use <i>variation-scan<\i> to assess the effect that a genetic variants have on transcription factor binding.</p>\n \
     <p> The genetic variants used in this example were collected by Weirauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. Motifs correspond to the transcription factores which biniding was reported to be affected by Weirauch, et al.</p>\n \
     </blockquote>";
-    
+
     demo_descr.innerHTML = descr1;
     $("input[name=db_choice][value=\'custom_motif_db\']").prop("checked", true).change();
     matrix.value = "' . $demo_matrix . '";
@@ -217,9 +217,11 @@ print $query->end_form;
 
 
 ##print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
-print "<td><b><a href='help.variation-scan.html'>[MANUAL]</a></B></TD>\n";
+print "<td><b><a href='help.variation-scan.html'>MANUAL</a></B></TD>\n";
+print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
+
 #print "<td><b><a href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></B></TD>\n";
-print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
+#print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a PAPIIT-UNAM (IA206517) grant.</small></font>";
 
@@ -255,23 +257,23 @@ sub Panel1 {
 
 #  <span title=\"A set conformed by different motifs representing binding profiles for several transcription factors will be used to scan the variants. Select here the known motifs collection or provide your own.\"></span> </div>\n
 # <div id=\"menu103\" class=\"menu_collapsible\">";
-  
+
   ## Tasks
   print "<fieldset><legend><a href='help.variation-scan.html'><b>Matrix collections</b></a></legend>";
-  
+
 
   print "<p/> ";
   print "<b>A set conformed by different motifs representing binding profiles for several transcription factors will be used to scan the variants. Provide your own motifs collection or select one to be used.</b><br/>";
    print "<BR>\n";
-  
-  
+
+
   ## Old code to input the motif database via file or url
   # print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' $checked{file_upload}>";
   # print "<a href=''><b>Use your own motif database file:</b></a><br/>";
   # print $query->filefield(-name=>'custom_motif_db_txt',
   # 			  -size=>10);
   # print "<p/> ";
-  # print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db_url' >";   
+  # print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db_url' >";
   # print "<a href=''><b>Use your own motif database from URL source:</b></a><br/>";
   # print $query->textfield(-name=>'custom_motif_db_url_txt',
   # 		  -default=>$default{'custom_motif_db_url'},
@@ -282,16 +284,16 @@ sub Panel1 {
       'no_pseudo'=>1,
       'status_db_choice'=>"checked"
       );
-  
+
   &GetMatrix(%matrix_args);
 
-  
+
   ## load the various databases that can be compared against
   print "<p/>";
   print "<b>Select one motif collection</b></p>";
   &MotifSelection("mode"=>"radio", "more" => 1);
   print "<p/> ";
- 
+
   print '<script>
   $(function(){
       $("#db_choice2").change(function(){
@@ -303,9 +305,9 @@ sub Panel1 {
           $("#db_choice2").val("").change();
       });
   });
-  
+
   </script>';
- 
+
   print "</fieldset><p/>";
 
   print '</div><p class="clear"></p>';
@@ -333,7 +335,7 @@ sub Panel2 {
       $variants_seq_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
       $variants_seqChoiceString .=  "<a href=".$variants_seq_url.">";
       $variants_seqChoiceString .=  " transferred from previous query<BR>\n";
-      $variants_seqChoiceString .=  "</a>";   
+      $variants_seqChoiceString .=  "</a>";
       $variants_seqChoiceString .=  "<INPUT type='hidden' NAME='variants_seq_file' VALUE='".$variants_seq_file."'>\n";
       print $variants_seqChoiceString ;
 
@@ -342,7 +344,7 @@ sub Panel2 {
 			     -default=>"",
 			     -rows=>6,
 			     -columns=>65);
-      
+
       print "<br/>";
       print "<BR>Upload variant sequences<BR>\n";
       print $query->filefield(-name=>'uploaded_file',
@@ -358,17 +360,17 @@ sub Panel2 {
 
 ##########################################
 sub Panel3 {
-   
+
 ################################################################
 ## Background model
-    
+
     #my %bg_params =("markov" => 1,
 #		    #"bg_input" => 1,
 #		    "no_bg_pseudo" => 1,
 #		    "markov_message" => 1
 		    #"ensembl"=>1
 #	);
-    
+
 print "<fieldset>
 <legend><b><a href='help.convert-matrix.html#io_format'>Background </a></b></legend>";
 
@@ -380,8 +382,8 @@ my %bg_params =("markov" => 1,
 &GetBackgroundModel(%bg_params);
 
 print "</fieldset><p/>";
-   
-    
+
+
     print "<p/><fieldset>
 <legend><b><a href='help.peak-motifs.html#tasks'>Scanning Parameters </a></b></legend>";
 ## Lenght of the sequences surranding the variant
@@ -389,7 +391,7 @@ print "</fieldset><p/>";
     print $query->textfield(-name=>'mml',
 			    -default=>$default{mml},
 			    -size=>5);
-    
+
     ## Threshold table
 
   my $thresh_matches =
@@ -407,7 +409,7 @@ print "</fieldset><p/>";
 							    -size=>5),
 					  ""
 					 ]),
-			      
+
 			      ### Threshold on Sig of the score
 			      $query->td(['Weight difference between variants',
 					  $query->textfield(-name=>'lth_w_diff',
@@ -421,7 +423,7 @@ print "</fieldset><p/>";
 					  "",
 					  $query->textfield(-name=>'uth_pval',
 							    -default=>$default{uth_pval},
-							    -size=>5)				       
+							    -size=>5)
 					 ]),
 
 			      ### Threshold on P-value of the score
@@ -431,22 +433,20 @@ print "</fieldset><p/>";
 							    -size=>5),
 					  ""
 					 ]),
-					  
-		      
+
+
 			     ]
 			    )
 		 );
 
-   
+
     print "<br> <b>Thresholds </b> </br>";
-    
+
     print "<td bgcolor='#F6E6CA'>$thresh_matches</td>";
- 
-    
+
+
     print "</p>";
-    
-    
+
+
     print "</fieldset><p/>";
 }
-
-
