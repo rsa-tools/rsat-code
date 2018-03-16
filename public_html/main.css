@@ -545,7 +545,7 @@ table.sortable th
 table.formbutton 
 {
   margin: 10px;
-  background-color: #FFFFFF;
+  /*background-color: #FFFFFF;*/
   border: 0px solid #FFFFFF;
   white-space: nowrap;
   display: inline;
