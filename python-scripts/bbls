@@ -125,7 +125,8 @@ parser.add_option("-o", "--output", action="store", \
                   dest="output", default=sys.stdout)
 parser.add_option("--debug", action="store_true", \
                   dest="debug", help=optparse.SUPPRESS_HELP)
-## options wishlist
+# options wishlist
+
 # taxon
 parser.add_option("--group_name", action="store", \
                   dest="taxon_name", default=sys.stdin)
@@ -134,13 +135,12 @@ parser.add_option("--num_organisms", action="store", \
                   dest="num_organisms", default=sys.stdin)
 # Operon name
 parser.add_option("--operon_name", action="store", \
-                  dest="operon_name", default=sys.stdin)
+                   dest="operon_name", default=sys.stdin)
 # Format of report by site output, png, pdf, no (False) report default no?
 parser.add_option("--report_format", action="store", \
                   dest="report_format", default=sys.stdin)
-# Draw feature map.
-parser.add_option("--map", action="store", \
-                  dest="feature_map", default=sys.stdin)
+# Format for the report output (png, pdf or none)
+parser.add_option("--bbls_draw", action="store", dest="bbls_draw", default=sys.stdin)
 '''
 # option names (outside the program)
 
@@ -649,7 +649,7 @@ def main(args, options):
 
     ############################################################################
 
-    def write_tree_image(tree, path, org_name, tfbs_per_matrix, tf_name):
+    def write_tree_image(tree, org_name, tfbs_per_matrix, tf_name):
         '''
         Writes an image of the phylogenetic tree used in the analysis
         '''
@@ -739,7 +739,15 @@ def main(args, options):
             leaf.add_face(score_face, column=0, position="aligned")
             leaf.add_face(motif_face, column=1, position="aligned")
 
-        tree.render(path, w=2500, tree_style=ts)
+            tree_path = options.prefix_name + "_tree_" + tf_name + "_" + \
+                        gene_name
+
+            if options.bbls_draw == "pdf":
+                tree_path = tree_path + ".pdf"
+            else:
+                tree_path = tree_path + ".png"
+
+        tree.render(tree_path, w=2500, tree_style=ts)
 
     ##################################################
     ####################### MAIN #####################
@@ -919,17 +927,14 @@ def main(args, options):
 
             # Condense results for especific organism.
             org_name = options.query_organism
-
             org_row = tfbs_per_matrix[tfbs_per_matrix.org_name == org_name]
 
             # Add lines to report dataframe that includes all sites.
             bbls_report = bbls_report.append(org_row)
 
-            #Function that writes tree
-            tree_path = options.prefix_name + "_tree_" + TF + "_" + gene + ".png"
-
             # Write tree image
-            write_tree_image(t, tree_path, org_name, tfbs_per_matrix, TF)
+            if options.bbls_draw == "pdf" or options.bbls_draw == "png":
+                write_tree_image(t, org_name, tfbs_per_matrix, TF)
 
     # Save results for all sites.
     report_path = options.prefix_name + "_BBLS_report.tab"

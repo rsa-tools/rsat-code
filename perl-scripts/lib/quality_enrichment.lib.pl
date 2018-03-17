@@ -10,21 +10,22 @@ use List::MoreUtils qw(uniq);
 ## Export the matrix in tab-delimited format. This will be used
 ## for permuting the matrix.
 sub ExportTabMatrix {
-  my ($matrix) = @_;
-
-  &RSAT::message::TimeWarn("Exporting matrix in tab-delimited format",  $main::outfile{matrix_tab})
-    if ($main::verbose >= 2);
-
-  my $verbose_bk = $verbose;
-  $verbose = 0;
-  $matrix_handle = &OpenOutputFile($main::outfile{matrix_tab});
-  print $matrix_handle $matrix->toString(sep=>"\t",
-					 type=>"counts",
-					 format=>"tab",
+    my ($matrix) = @_;
+    
+    &RSAT::message::TimeWarn("Exporting matrix in tab-delimited format",  $main::outfile{matrix_tab})
+	if ($main::verbose >= 2);
+    
+    my $verbose_bk = $verbose;
+    $verbose = 0;
+    $matrix_handle = &OpenOutputFile($main::outfile{matrix_tab});
+    print $matrix_handle $matrix->toString(sep=>"\t",
+					   type=>"counts",
+					   format=>"tab",
 					 pipe=>"", ## We suppress the pipe for permute-table
 					);
   close $matrix_handle;
-  $verbose = $verbose_bk;
+  $verbose = $verbose_bk; 
+
 }
 
 
