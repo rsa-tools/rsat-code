@@ -140,7 +140,7 @@
                          <a class="menu_item" href="matrix-scan_form.cgi" >matrix-scan<br>(full options)</a>
                          <a class="menu_item" href="matrix-scan-quick_form.cgi" >matrix-scan (quick)</a>
                          <a class="menu_item" href="crer-scan_form.cgi" >crer-scan</a>
-                         <a class="menu_item" href="matrix-enrichment_form.cgi" >matrix-enrichment <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <!--<a class="menu_item" href="matrix-enrichment_form.cgi" >matrix-enrichment <img src="images/onebit_49.png" height="30" class="new"></img></a>-->
                          <!--	  <a class="menu_item" href="patser_form.cgi" >patser [discontinued]</a>-->
                          <!--	  <a class="menu_item" href="genome-scale-patser_form.cgi" >genome-scale patser [discontinued]</a>-->
                          <a class="menu_separator">strings</a>
@@ -187,7 +187,7 @@
                          onclick="toggleMenu('8')" id="heading8">Conversion/Utilities</div>
                      <div id="menu8" class="menu_collapsible">
                          <a class="menu_separator">Set comparisons / enrichment</a>
-                         <a class="menu_item_last" href="compare_classes_form.php?menu=RSAT" >compare classes/clusters</a>
+                         <!--<a class="menu_item_last" href="compare_classes_form.php?menu=RSAT" >compare classes/clusters</a> -->
                          <a class="menu_separator">Stats</a>
                          <a class="menu_item_last" href="classfreq_form.cgi" >Frequency distribution</a>
                          <a class="menu_separator">sequences</a>

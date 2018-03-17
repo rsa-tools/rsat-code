@@ -607,7 +607,7 @@ sub MultiInputChoice {
     ## Text area to copy-paste the input
     $inputChoiceString .=  "&nbsp;"x5;
     $inputChoiceString .=  "Paste your ".$in_type." (".$in_format." format)<BR>\n";
-    $inputChoiceString .=  $query->textarea(-name=>'input'.$in_num,
+    $inputChoiceString .=  $query->textarea(-name=>'input'.$in_num, -id=>'input'.$in_num,
 					    -default=>$default{"input".$in_num},
 					    -rows=>4,
 					    -columns=>55);
@@ -615,7 +615,7 @@ sub MultiInputChoice {
 
     ## Option to upload the input file from the client machine
     $inputChoiceString .=  "Or select a file to upload (.gz compressed files supported) <BR>\n";
-    $inputChoiceString .=  $query->filefield(-name=>'uploaded_file'.$in_num,
+    $inputChoiceString .=  $query->filefield(-name=>'uploaded_file'.$in_num, -id=>'uploaded_file'.$in_num,
 						-default=>'',
 						-size=>45,
 						-maxlength=>200);
@@ -624,7 +624,7 @@ sub MultiInputChoice {
     ## Option to fetch input file from an URL
     $inputChoiceString .=  "&nbsp;"x3;
     $inputChoiceString .=  "URL of a ".$in_type." file available on a Web server.<br>\n";
-    $inputChoiceString .=  $query->textfield(-name=>'input_url'.$in_num,
+    $inputChoiceString .=  $query->textfield(-name=>'input_url'.$in_num, -id=>'input_url'.$in_num,
 						-default=>$default{'input_url'.$in_num},
 						-size=>62);
     $inputChoiceString .= "<br>\n";

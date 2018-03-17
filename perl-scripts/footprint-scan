@@ -390,9 +390,11 @@ package main;
   local %query_indexes = ();
   local $bg_distrib; $bg_distrib = ""; ## Used in footprint.lib.pl
 
-  ## Tree for Bayesian score # ahcorcha
-  local $tree = ""; 
-  #local $diamond = 0; # /ahcorcha
+  # ahcorcha
+  ## Tree for Bayesian score 
+  local $tree = "";
+  local $bbls_draw = "";
+  # /ahcorcha
   
   ## Feature maps
   local $map_opt = "";
@@ -548,7 +550,10 @@ package main;
   ## Check parameters for bbls # ahcorcha
   &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ($task{bbls} && $main::tree eq "" );
   
-  &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" ); # /ahcorcha
+  &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" );
+
+  &RSAT::error::FatalError("Option -bbls_draw only works with bbls.") if (!$task{bbls} && $main::bbls_draw ne "" );
+  # /ahcorcha
   
   ################################################################
   ## Check parameters for matrix-scan
@@ -1298,10 +1303,18 @@ it should be in Newick format with distances and leaf names.
 	} elsif ($arg eq "-tree") {
 	    $main::tree = shift(@arguments);
 	    
-	    # It should work even if the occurrence significance task is not being executed.
-	    #  changes should be made.
-	    #/ahcorcha
-	    
+=pod
+
+=item B<-bbls_draw>
+Fomat for the output image. Represents the phylogenetic tree of organisms
+with ortholog genes. Shows the conservation of the motif across the tree
+over the p-value. The default value is png (png, pdf or none).
+
+=cut
+	} elsif ($arg eq "-bbls_draw") {
+	    $main::bbls_draw = shift(@arguments);	    
+	    &RSAT::error::FatalError("The option -bbls_draw takes pdf, png or none (no output).") if !( ($main::bbls_draw eq "png") || ($main::bbls_draw eq "pdf") || ($main::bbls_draw eq "none") );
+	    #/ahcorcha	    
 =pod
 
 =item B<-bg_pseudo #>
@@ -1760,7 +1773,6 @@ sub RunFootprintScan {
   if ($task{synthesis} && !($batch)){
     ## $selected_interaction = &Select_interaction(); ## Modified by JvH on 2015-03-09: $selected_interaction was not used anywhere, and &Select_interaction() has no return value
       &Select_interaction();
-
 
       ## Index occ sig files for the synthetic table
       $occ_sig_file{$current_gene} = $outfile{occ_sig} if (-e $outfile{occ_sig} );
