@@ -518,6 +518,7 @@ package main;
   ## Check compatibility between -batch, -all and -task synthesis, whcih can't be use together since this can cause sever file dependency problems
 
   ## Check compatibility between -batch and -task all
+  
   if (  ((scalar(keys(%task)) == 0) || ($task{all} ) ) && ($batch)  ) {
       &RSAT::error::FatalError("Execution of all tasks is incompatible with \"-batch\" option, you should execute each tasks independently, to avoid dependency files problems. See help \"-task\" to consult all possible tasks ");
   }
@@ -548,7 +549,10 @@ package main;
   
   ################################################################
   ## Check parameters for bbls # ahcorcha
-  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ($task{bbls} && $main::tree eq "" );
+
+  
+  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ( ($task{bbls}) && ($main::tree eq "") );
+
   
   &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" );
 

@@ -418,7 +418,7 @@ package main;
 
 
     ## If no tasks has been specified, execute them all
-    if (($task{all}) || (scalar(keys(%task))==0)) {
+    if (($task{all}) || (scalar(keys(%task))==0) || (($task{plot}==0) && (scalar(keys(%task))==1))  ) {
       %task = %supported_task;
       $task{all} = 0;
 
@@ -435,7 +435,7 @@ package main;
       }
     }
 
-   # die  join ("\t", "HELLO", sort keys %task), "\n";
+    #die  join ("\t", "HELLO", sort keys %task), "\n";
 
     ## Matrix+sites file is also matrix
     if ($infile{matrix_sites}) {
