@@ -549,11 +549,6 @@ package main;
   ################################################################
   ## Check parameters for bbls # ahcorcha
 
-    if ($task{all}) {
-      printf "";
-      $task{bbls} = 0;
-  }
-
   &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ($task{bbls} && $main::tree eq "" );  
   
   &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" );
