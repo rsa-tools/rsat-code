@@ -517,7 +517,13 @@ package main;
   ################################################################
   ## Check compatibility between -batch, -all and -task synthesis, whcih can't be use together since this can cause sever file dependency problems
 
+  ## Due to dependencies bbls is not a default task, hence when the user does not provide tasks this one is invalidated
+  if (  scalar(keys(%task)) == 0){
+      $task{bbls}=0;
+  }
+
   ## Check compatibility between -batch and -task all
+  
   if (  ((scalar(keys(%task)) == 0) || ($task{all} ) ) && ($batch)  ) {
       &RSAT::error::FatalError("Execution of all tasks is incompatible with \"-batch\" option, you should execute each tasks independently, to avoid dependency files problems. See help \"-task\" to consult all possible tasks ");
   }
