@@ -517,11 +517,6 @@ package main;
   ################################################################
   ## Check compatibility between -batch, -all and -task synthesis, whcih can't be use together since this can cause sever file dependency problems
 
-  ## Due to dependencies bbls is not a default task, hence when the user does not provide tasks this one is invalidated
-  if (  scalar(keys(%task)) == 0){
-      $task{bbls}=0;
-  }
-
   ## Check compatibility between -batch and -task all
   
   if (  ((scalar(keys(%task)) == 0) || ($task{all} ) ) && ($batch)  ) {
@@ -554,7 +549,10 @@ package main;
   
   ################################################################
   ## Check parameters for bbls # ahcorcha
-  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ($task{bbls} && $main::tree eq "" );
+
+  
+  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ( ($task{bbls}) && ($main::tree eq "") );
+
   
   &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" );
 

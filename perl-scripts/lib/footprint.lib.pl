@@ -141,7 +141,12 @@ sub CheckFootprintParameters {
   ## tasks.
   if ((scalar(keys(%task)) == 0) || ($task{all})) {
     foreach my $task (keys %supported_task) {
-      next if ($task eq "test");
+	next if ($task eq "test");
+	
+	unless ($task{all}){
+	    next if ($task eq "bbls")  ;
+	    
+	}
       &RSAT::message::Debug("Auto adding task", $task) if  ($main::verbose >= 5);
       $task{$task} = 1;
     }
