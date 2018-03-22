@@ -200,9 +200,8 @@ print '<TD><B>
 #print $query->end_form;
 
 
+print "<td><b><a href='sample_outputs/footprint-discovery_demo_output/Gammaproteobacteria/Escherichia_coli_GCF_000005845.2_ASM584v2/Gammaproteobacteria_Escherichia_coli_GCF_000005845.2_ASM584v2_bg_taxfreq_result_index.html'>[Sample Output]</a></B></TD>\n";
 print "<TD><B><A HREF='help.footprint-discovery.html'>MANUAL</A></B></TD>\n";
-#print "<TD><B><A HREF='tutorials/tut_footprint-discovery.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</BLOCKQUOTE>\n";
