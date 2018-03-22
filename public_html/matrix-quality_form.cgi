@@ -240,7 +240,7 @@ print "<td><b>";
 print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .',' . "'$demo_seq1'" . ','. "'$demo_seq2'" .')">DEMO</button>';
 print "</b></td>\n";
 
-
+print "<td><b><a href='sample_outputs/matrix-quality_demo_output/matrix-quality_2018-03-21.175002_synthesis.html'>[Sample Output]</a></B></TD>\n";
 print "<td><b><a class='iframe' href='help.matrix-quality.html'>MANUAL</A></B></TD>\n";
 print "</tr></table></ul></ul>\n";
 
