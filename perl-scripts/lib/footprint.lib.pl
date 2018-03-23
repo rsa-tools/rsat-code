@@ -141,7 +141,12 @@ sub CheckFootprintParameters {
   ## tasks.
   if ((scalar(keys(%task)) == 0) || ($task{all})) {
     foreach my $task (keys %supported_task) {
-      next if ($task eq "test");
+	next if ($task eq "test");
+	
+	unless ($task{all}){
+	    next if ($task eq "bbls")  ;
+	    
+	}
       &RSAT::message::Debug("Auto adding task", $task) if  ($main::verbose >= 5);
       $task{$task} = 1;
     }
@@ -1421,33 +1426,35 @@ sub OccurrenceSig {
     &CalcMAtrixTheorDistrib() if (($bg_method eq "input" )||($bg_method eq "window") );
 
     if ($task{occ_sig}) {
-    ## Compute observed distribution of hits + estimate the hit
-    ## significance for each weight score
-    &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 2);
-    if ($main::no_purge) {
-      &CheckDependency("occ_sig", "seq");
-    } else {
-      &CheckDependency("occ_sig", "purged");
+	## Compute observed distribution of hits + estimate the hit
+	## significance for each weight score
+	&RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 2);
+	if ($main::no_purge) {
+	    &CheckDependency("occ_sig", "seq");
+	} else {
+	    &CheckDependency("occ_sig", "purged");
+	}
+	my $cmd = $SCRIPTS."/matrix-scan";
+	$cmd .= $ms_parameters;
+	$cmd .= " -quick ";
+	#$cmd .= " -m ".$matrix_file;
+	#$cmd .= " -matrix_format ".$matrix_format;
+	$cmd .= " -return distrib,occ_proba,rank"; # -sort_distrib";
+	#  $cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
+	if ($main::no_purge) {
+	    $cmd .= " -i ".$outfile{seq};
+	} else {
+	    $cmd .= " -i ".$outfile{purged};
+	}
+	$cmd .= " -o ".$outfile{occ_sig};
+	$cmd .= $occ_sig_opt;
+	
+	&one_command($cmd);
     }
-    my $cmd = $SCRIPTS."/matrix-scan";
-    $cmd .= $ms_parameters;
-    $cmd .= " -quick ";
-    #$cmd .= " -m ".$matrix_file;
-    #$cmd .= " -matrix_format ".$matrix_format;
-    $cmd .= " -return distrib,occ_proba,rank"; # -sort_distrib";
-    #  $cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
-    if ($main::no_purge) {
-      $cmd .= " -i ".$outfile{seq};
-    } else {
-      $cmd .= " -i ".$outfile{purged};
+    
+    if (-e $outfile{occ_sig}) {
+	&IndexOneFile("Occ sig", $outfile{occ_sig});
     }
-    $cmd .= " -o ".$outfile{occ_sig};
-    $cmd .= $occ_sig_opt;
-
-
-    &one_command($cmd);
-  }
-  &IndexOneFile("Occ sig", $outfile{occ_sig});
 }
 
 ################################################################
@@ -1687,9 +1694,13 @@ sub OccurrenceSigGraph {
     $cmd .= " ".$occ_sig_graph_opt;
     &one_command($cmd);
   }
-  &IndexOneFile("Occ sig graph", $outfile{occ_sig_graph}, image =>1);
-  &IndexOneFile("Occ freq graph", $outfile{occ_freq_graph}, image =>1);
-
+  
+  if ( -e $outfile{occ_sig_graph} ) {
+      &IndexOneFile("Occ sig graph", $outfile{occ_sig_graph}, image =>1);
+  }
+  if ( -e $outfile{occ_freq_graph} ) {
+      &IndexOneFile("Occ freq graph", $outfile{occ_freq_graph}, image =>1);
+  }
 }
 
 
@@ -1760,6 +1771,10 @@ sub OrthoMap {
 
 sub BayesianScore {
 
+    $outfile{bbls_sites} = $outfile{prefix}."_bbls_report.tab";
+    # file with the path to every tree path1\npath2\n
+    $outfile{bbls_tree} = $outfile{prefix}."_bbls_tree.tab";
+    
     if ($task{bbls}){
 
 	# Check that the tree file exists Get support for .gz files in python.
@@ -1800,8 +1815,33 @@ sub BayesianScore {
 	$cmd .= " --group_name ".$analysis_group;
 	$cmd .= " --num_organisms ".$org_in_group;	
 	$cmd .= " --bbls_draw ".$main::bbls_draw;
+	# Outputs
+	$cmd .= " --bbls_sites_file ".$outfile{bbls_sites};
+	$cmd .= " --bbls_tree_file ".$outfile{bbls_tree};
 	&one_command($cmd);
     }
+
+    #$outfile{bbls_sites}
+    #$outfile{bbls_tree}
+    &IndexOneFile("bbls", $outfile{bbls_sites});
+    
+    # Get the list of all the files named "prefix_tree_*"    
+    # Use a for loop to IndexOneFile for each file name.
+    if (-e $outfile{bbls_tree}) {
+     	open (my $MYFILE, '<', $outfile{bbls_tree});
+     	while (my $line = <$MYFILE>) {
+     	    chomp($line);
+	    
+	    if ($main::bbls_draw eq "png") {
+		&IndexOneFile("bbls tree", $line, image =>1);
+	    } elsif ($main::bbls_draw eq "pdf") {
+		&IndexOneFile("bbls tree", $line);
+	    }
+     	    
+     	}
+     	close ($MYFILE);
+    }   
+
 }
 
 1;
