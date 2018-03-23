@@ -226,6 +226,7 @@ print $query->end_form;
 
 
 ##print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
+print "<td><b><a href='sample_outputs/variation-scan_demo20180322.variants-seq_result'>[Sample Output]</a></B></TD>\n";
 print "<td><b><a href='help.variation-scan.html'>MANUAL</a></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 
