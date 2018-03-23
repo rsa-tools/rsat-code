@@ -607,7 +607,7 @@ sub MultiInputChoice {
     ## Text area to copy-paste the input
     $inputChoiceString .=  "&nbsp;"x5;
     $inputChoiceString .=  "Paste your ".$in_type." (".$in_format." format)<BR>\n";
-    $inputChoiceString .=  $query->textarea(-name=>'input'.$in_num,
+    $inputChoiceString .=  $query->textarea(-name=>'input'.$in_num, -id=>'input'.$in_num,
 					    -default=>$default{"input".$in_num},
 					    -rows=>4,
 					    -columns=>55);
@@ -615,7 +615,7 @@ sub MultiInputChoice {
 
     ## Option to upload the input file from the client machine
     $inputChoiceString .=  "Or select a file to upload (.gz compressed files supported) <BR>\n";
-    $inputChoiceString .=  $query->filefield(-name=>'uploaded_file'.$in_num,
+    $inputChoiceString .=  $query->filefield(-name=>'uploaded_file'.$in_num, -id=>'uploaded_file'.$in_num,
 						-default=>'',
 						-size=>45,
 						-maxlength=>200);
@@ -624,7 +624,7 @@ sub MultiInputChoice {
     ## Option to fetch input file from an URL
     $inputChoiceString .=  "&nbsp;"x3;
     $inputChoiceString .=  "URL of a ".$in_type." file available on a Web server.<br>\n";
-    $inputChoiceString .=  $query->textfield(-name=>'input_url'.$in_num,
+    $inputChoiceString .=  $query->textfield(-name=>'input_url'.$in_num, -id=>'input_url'.$in_num,
 						-default=>$default{'input_url'.$in_num},
 						-size=>62);
     $inputChoiceString .= "<br>\n";
@@ -1686,7 +1686,7 @@ sub GetMatrix {
   $args{title}="Input personal collection of motifs" if ($db_choice);
   my $title = $args{title} || "Matrix (or matrices)";
   #print "<a href=''><b>Use your own motifs collection:</b></a><br/>" ;
-  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' $status_db_choice >" if ($db_choice);
+  print "<input type='radio' NAME='db_choice_radio' VALUE='custom_motif_db' $status_db_choice >" if ($db_choice);
   print "<B>", $title, "</B>\n";
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
@@ -1750,11 +1750,6 @@ sub GetMatrix {
 			 -rows=>4,
 			 -columns=>60);
 
-## Propose help to find matrices
-unless ($args{nowhere}) {
-        print "<br/><br/>";
-    &MotifSelection('ids' => 1);
-    }
 
   ## Option to upload the matrix file from the client machine
   print "<BR>\n";
@@ -1764,9 +1759,13 @@ unless ($args{nowhere}) {
 			  -default=>'',
 			  -size=>45,
 			  -maxlength=>200);
-    print "<BR>\n";
 
-
+    ## Propose help to find matrices
+    unless ($args{nowhere}) {
+        print "<br/><br/>";
+        &MotifSelection('ids' => 1);
+    }
+    
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
     #### pseudo-counts
@@ -1853,12 +1852,6 @@ sub GetFirstMatrix {
 			 -rows=>4,
 			 -columns=>60);
     
-    ## Propose help to find matrices
-    unless ($args{nowhere}) {
-        print "<br/><br/>";
-        &MotifSelection('ids' => 1);
-    }
-    
     ## Option to upload the matrix file from the client machine
     print "<BR>\n";
     print  "Upload motifs file<br/>" if ($db_choice);
@@ -1867,7 +1860,13 @@ sub GetFirstMatrix {
     -default=>'',
     -size=>45,
     -maxlength=>200);
-    print "<BR>\n";
+    
+    ## Propose help to find matrices
+    unless ($args{nowhere}) {
+        print "<br/><br/>";
+        &MotifSelection('ids' => 1);
+    }
+    #print "<BR>\n";
     
     
     ## Display additional options: pseudo-count and pseudo-count distribution
@@ -1965,11 +1964,6 @@ print '</div></div>
 			 -columns=>60);
 
 print '</div>';
-## Propose help to find matrices
-unless ($args{nowhere}) {
-        print "<br/><br/>";
-    &MotifSelection('ids' => 1);
-    }
 
   ## Option to upload the matrix file from the client machine
   print  "Upload motifs file<br/>" if ($db_choice);
@@ -1978,9 +1972,13 @@ unless ($args{nowhere}) {
 			  -default=>'',
 			  -size=>45,
 			  -maxlength=>200);
+  ## Propose help to find matrices
+  unless ($args{nowhere}) {
+    print "<br/><br/>";
+    &MotifSelection('ids' => 1);
+  }
+  
     print "<BR></div>\n";
-
-
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
     #### pseudo-counts
@@ -2122,15 +2120,17 @@ sub MotifSelection {
             theme: "classic"
             });
             $("#db_choice2").change(function(){
-                $("#matrix").val("");
-                $("#db_choice").val("").change();
+                if($("#db_choice2").val() != ""){
+                    $("#matrix").val("");
+                    $("#db_choice").val("").change();
+                    $("input[name=db_choice_radio][value=motif_collection_all]").prop("checked",true);
+                }
             });
         }
  ';
 
     ### if select also the identifiers.
     if($args{ids} == 1){
-
         print '$("#db_id").select2({placeholder: "Select identifiers",
                     allowClear: true,
                     theme: "classic",
@@ -2138,8 +2138,12 @@ sub MotifSelection {
             });
 
             $("#db_choice").change(function(){
-                $("#db_id").val("").change();
-                $("#matrix").val("");
+                if($("#db_choice").val() != ""){
+                    $("#db_id").val("").change();
+                    $("#matrix").val("");
+                    $("input[name=db_choice_radio][value=custom_motif_db]").prop("checked",true);
+                    $("#db_choice2").val("").change();
+                }
                 document.getElementById("identifier").style.display = "none";
                 db_name = $("#db_choice").val();
                 $.ajax({
@@ -2166,6 +2170,9 @@ sub MotifSelection {
             $("#db_id").change(function(){
                 db_name = $("#db_choice").val();
                 db_id = $("#db_id").val();
+                if(db_id == null || db_id == ""){
+                    $("#matrix").val("");
+                }
                 if(db_id != null && db_id != ""){
                     $.ajax({
                     type: "GET",
@@ -2192,7 +2199,7 @@ sub MotifSelection {
     print '<style> input.select2-search__field { width: 90% !important; } </style>';
     print '<div style="float:left;font-size:11px">';
     if($args{ids} == 1){
-        print "<img src='images/onebit_49.png' height='30' class='new'/><b>Or</b> select a collection in list (a box will appear to select each matrix individually)<br/>";
+        print "<b>Or</b> Dynamic selection of motifs from the available collections</b> <img src='images/onebit_49.png' height='30' class='new'/><br/><span style='font-size:10px'>(select the collection and a dropdown menu will appear to select motifs)</span><br/><br/>";
     }
     my $width = ($args{ids} == 1) ? "300px" : "400px";
     my $multiple = ($args{mode} eq 'checkbox') ? 'multiple="multiple"' : '';
@@ -2207,7 +2214,7 @@ sub MotifSelection {
     print "</div></div></div>";
 
     if($args{ids} == 1){
-        print "<div id='identifier' style='display:none'><div style='float:left;margin-left:27px;font-size:11px;'><img src='images/onebit_49.png' height='30' class='new' style='visibility:hidden'/>Select 1 or more matrix identifiers:<br/>";
+        print "<div id='identifier' style='display:none'><div style='float:left;margin-left:27px;margin-top:30px;font-size:11px;'>Select 1 or more matrix identifiers:<br/><br/>";
         print " <select id='db_id' style='width:300px' multiple='multiple'></select><br/>&nbsp;";
         print "</div></div>";
     }
@@ -3067,7 +3074,10 @@ sub DisplayMatrixDBchoice_select2 {
                         }
                         $descr .= " - [$nbmotif motifs]";
                     }
-                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{'www-rsat'}/rsat/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
+                    ${$values[$i]}{$db_name} = $descr . " (".$version.")";
+                    if($mode eq "list") {
+                        ${$values[$i]}{$db_name} .= " - [<a href='$ENV{'www-rsat'}/rsat/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
+                    }
                 }
             }
         }

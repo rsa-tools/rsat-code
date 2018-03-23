@@ -78,6 +78,14 @@
                          onclick="toggleMenu('2')" id="heading2">Sequence tools <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu2" class="menu_collapsible">
                          <a class="menu_item" href="retrieve-seq_form.cgi" >retrieve sequence</a>
+<?php
+    
+    if($properties['group_specificity'] == 'Metazoa') {
+        echo '<a class="menu_item" href="retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>'; }
+    else{
+        echo '<span class="menu_item" style="cursor:default;color:lightgray"> retrieve EnsEMBL seq</span>';
+    }
+?>
                          <a class="menu_item" href="retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>
                          <a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>
                          <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf  <img src="images/onebit_49.png" height="30" class="new"></a>
@@ -140,7 +148,7 @@
                          <a class="menu_item" href="matrix-scan_form.cgi" >matrix-scan<br>(full options)</a>
                          <a class="menu_item" href="matrix-scan-quick_form.cgi" >matrix-scan (quick)</a>
                          <a class="menu_item" href="crer-scan_form.cgi" >crer-scan</a>
-                         <a class="menu_item" href="matrix-enrichment_form.cgi" >matrix-enrichment <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <!--<a class="menu_item" href="matrix-enrichment_form.cgi" >matrix-enrichment <img src="images/onebit_49.png" height="30" class="new"></img></a>-->
                          <!--	  <a class="menu_item" href="patser_form.cgi" >patser [discontinued]</a>-->
                          <!--	  <a class="menu_item" href="genome-scale-patser_form.cgi" >genome-scale patser [discontinued]</a>-->
                          <a class="menu_separator">strings</a>
@@ -187,7 +195,7 @@
                          onclick="toggleMenu('8')" id="heading8">Conversion/Utilities</div>
                      <div id="menu8" class="menu_collapsible">
                          <a class="menu_separator">Set comparisons / enrichment</a>
-                         <a class="menu_item_last" href="compare_classes_form.php?menu=RSAT" >compare classes/clusters</a>
+                         <!--<a class="menu_item_last" href="compare_classes_form.php?menu=RSAT" >compare classes/clusters</a> -->
                          <a class="menu_separator">Stats</a>
                          <a class="menu_item_last" href="classfreq_form.cgi" >Frequency distribution</a>
                          <a class="menu_separator">sequences</a>

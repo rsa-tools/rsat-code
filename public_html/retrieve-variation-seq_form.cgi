@@ -195,6 +195,7 @@ print "</B></TD>\n";
 
 print $query->end_form;
 
+print "<td><b><a href='sample_outputs/retrieve-variation-seq_demo20180226.varSeq'>[Sample Output]</a></B></TD>\n";
 print "<TD><B><A HREF='help.retrieve-variation-seq.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";

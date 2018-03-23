@@ -182,6 +182,14 @@ $demo_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
 print "<TD><b>";
 
 print '<script>
+$(function(){
+    $("input[name=db_choice_radio]").change(function(){
+        if($("input[name=db_choice_radio][value=custom_motif_db]").is(":checked")){
+            $("#db_choice2").val("").change();
+        }
+    });
+});
+
 function setDemo(){
     $("#reset").trigger("click");
 
@@ -192,7 +200,7 @@ function setDemo(){
     </blockquote>";
 
     demo_descr.innerHTML = descr1;
-    $("input[name=db_choice][value=\'custom_motif_db\']").prop("checked", true).change();
+    $("input[name=db_choice_radio][value=\'custom_motif_db\']").prop("checked", true).change();
     matrix.value = "' . $demo_matrix . '";
     matrix_format.value = "transfac";
     variants_seqs.value = "' . $demo_var_seq . '";
@@ -210,6 +218,7 @@ print '<button type="button" onclick="setDemo()">DEMO</button>';
 
 print '<script>function resetHandler(){
 $("#db_choice").val("").change();
+$("#db_choice2").val("").change();
 }</script>';
 
 print "</B></TD>\n";
@@ -217,8 +226,8 @@ print $query->end_form;
 
 
 ##print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
+print "<td><b><a href='sample_outputs/variation-scan_demo20180322.variants-seq_result'>[Sample Output]</a></B></TD>\n";
 print "<td><b><a href='help.variation-scan.html'>MANUAL</a></B></TD>\n";
-print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 
 #print "<td><b><a href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></B></TD>\n";
 #print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
@@ -259,7 +268,7 @@ sub Panel1 {
 # <div id=\"menu103\" class=\"menu_collapsible\">";
 
   ## Tasks
-  print "<fieldset><legend><a href='help.variation-scan.html'><b>Matrix collections</b></a></legend>";
+  print "<fieldset><legend><a href='help.variation-scan.html#Matrix-collections'><b>Matrix collections</b></a></legend>";
 
 
   print "<p/> ";
@@ -290,7 +299,8 @@ sub Panel1 {
 
   ## load the various databases that can be compared against
   print "<p/>";
-  print "<b>Select one motif collection</b></p>";
+  print "<input type='radio' NAME='db_choice_radio' VALUE='motif_collection_all' >";
+  print "<b>Select one motif collection</b><img src='images/onebit_49.png' height='30' class='new'/>";
   &MotifSelection("mode"=>"radio", "more" => 1);
   print "<p/> ";
 
@@ -320,7 +330,7 @@ sub Panel2 {
   print "<div id=\"menu101\" class=\"menu_collapsible_display\">\n";
 
   print "<p/><fieldset>\n";
-  print "<legend><b><a href='help.variation-scan.html'>Input variation sequences</a></b></legend>\n";
+  print "<legend><b><a href='help.variation-scan.html#Sequence-file'>Input variation sequences</a></b></legend>\n";
 
 
 ### Input variant-seqs
@@ -385,7 +395,7 @@ print "</fieldset><p/>";
 
 
     print "<p/><fieldset>
-<legend><b><a href='help.peak-motifs.html#tasks'>Scanning Parameters </a></b></legend>";
+<legend><b><a href='help.variation-scan.html#Scanning-parameters'>Scanning Parameters </a></b></legend>";
 ## Lenght of the sequences surranding the variant
     print "<B>Length of sequence around the variant</B>&nbsp;\n";
     print $query->textfield(-name=>'mml',
@@ -398,9 +408,9 @@ print "</fieldset><p/>";
     $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
 		  $query->Tr({-align=>center,-valign=>MIDDLE},
 			     [
-			      $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
-					  " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
-					  " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A>"]),
+			      $query->th([" <A HREF='help.variation-scan.html#Scanning-parameters'>Field</A> ",
+					  " <A HREF='help.variation-scan.html#Scanning-parameters'>Lower<BR>Threshold</A> ",
+					  " <A HREF='help.variation-scan.html#Scanning-parameters'>Upper<BR>Threshold</A>"]),
 
 			      ### Threshold on weight score
 			      $query->td(['Weight of predicted sites',
