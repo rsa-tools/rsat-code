@@ -48,8 +48,8 @@ print "</CENTER>";
 
 
 ## demo description
-print $default{demo_descr};
-
+#print $default{demo_descr};
+print "<div id='demo_descr'>$default{demo_descr}</div>";
 print $query->start_multipart_form(-action=>"retrieve-seq-bed.cgi");
 
 
@@ -77,7 +77,7 @@ print "<fieldset>";
 print "<legend><b><a class='iframe' href='help.retrieve-seq-bed.html'>Options</a></b></legend>";
 
 ### Repeat masking
-print "<p>", $query->checkbox(-name=>'rm',
+print "<p>", $query->checkbox(-name=>'rm', -id=>'rm',
 			      -checked=>$default{'rm'},
 			      -label=>'');
 print "&nbsp;<A class='iframe' HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
@@ -109,54 +109,46 @@ push @demos, {
     "label"=>"DEMO: yeast",
     "organism"=>"Saccharomyces_cerevisiae",
     "url"=>$ENV{rsat_www}."/demo_files/test_yeast.bed",
-    "description"=>join("\n",
-                        "<h4>Comment on the demonstration example</h4>",
-                        "<blockquote class ='demo'>",
-                        "The demo retrieves 100b of each chromosome of yeast.",
-                        "Input coordinates are provided as the <a href='${demo_url}'>URL to a demo bed file</a>.",
-                        "</blockquote>")};
+    "description"=>"The demo retrieves 100b of each chromosome of yeast."};
 
 ## Demo for Plants
 push @demos, {
     "label"=>"DEMO: Arabidopsis MYB3R3",
     "organism"=>"Arabidopsis_thaliana.TAIR10.37",
     "url"=>$ENV{rsat_www}."/demo_files/Arabidopsis_thaliana_GSM1482283_MYB3R3-GFP_ChIP_peaks.bed",
-    "description"=>join("\n", 
-			"<h4>Comment on the demonstration example</h4>",
-			"<blockquote class ='demo'>",
-			"The demo retrieves peak sequences from Arabidopsis thaliana, based on the coordinates of the peaks from {REF}.",
-			"Input coordinates are provided as the <a href='${demo_url}'>URL to a demo bed file</a>.",
-			"</blockquote>")};
+    "description"=>"The demo retrieves peak sequences from Arabidopsis thaliana, based on the coordinates of the peaks from {REF}."};
 
 ## Demo for Metazoa
 push @demos, {
     "label"=>"DEMO: Mus musculus ICN1",
     "organism"=>"Mus_musculus_GRCm38",
     "url"=>$ENV{rsat_www}."/demo_files/Nakamura_GSM1368207_gamma8_mm10_ICN1_peaks.bed",
-    "description"=>join("\n", 
-			"<h4>Comment on the demonstration example</h4>",
-			"<blockquote class ='demo'>",
-			"ICN1 binding sites in mmouse gamma delta T cells (Nakamura et al., J Immunol, 2015, GEO GSE56756).",
-			"Input coordinates are provided as the <a href='${demo_url}'>URL to a demo bed file</a>.",
-			"</blockquote>")};
+    "description"=>"ICN1 binding sites in mmouse gamma delta T cells (Nakamura et al., J Immunol, 2015, GEO GSE56756)."};
 
 
 
 foreach my $demo (@demos) {
     %demo = %{$demo};
     if (&RSAT::OrganismManager::is_supported($demo{"organism"})) {
-	print $query->start_multipart_form(-action=>"retrieve-seq-bed_form.cgi");
-	print "<TD><B>";
-	$query->delete_all();
-	print $query->hidden(-name=>'organism',-default=>$demo{"organism"});
-	print $query->hidden(-name=>'input_url1',-default=>$demo{"url"});
-	print $query->hidden(-name=>'demo',-default=>$demo{"description"});
-	print $query->hidden(-name=>'rm',-default=>'on');
-	print $query->submit(-label=>$demo{"label"});
-	print "</B></TD>\n";
-	print $query->end_form;
+        
+        print "<TD><B>";
+        print '<button type="button" onclick="setDemo(\'' . $demo{"organism"} .'\', \''. $demo{"url"}. '\',\'' . $demo{"description"}.'\')">'.$demo{"label"}.'</button>';
+        print "<B></TD>\n";
+        
     }
 }
+print '<script>
+function setDemo(demo_org,demo_url,demo_descr){
+    $("#reset").trigger("click");
+    document.getElementById("demo_descr").innerHTML = "<h4>Comment on the demonstration example</h4><blockquote class =\'demo\'>" + demo_descr +
+    " Input coordinates are provided as the <a href=\'" + demo_url +"\'>URL to a demo bed file</a>.</blockquote>";
+    $("#organism").val(demo_org);
+    demo_name = demo_org.replace(/_/g, " ");
+    $("#organism_name").val(demo_name);
+    $("#input_url1").val(demo_url);
+    $("#rm").prop("checked", true);
+}
+</script>';
 
 print "<TD><B><A class='iframe' HREF='help.retrieve-seq-bed.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jacques.VAN-HELDEN\@univ-amu.fr'>MAIL</A></B></TD>\n";
