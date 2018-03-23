@@ -188,8 +188,9 @@ function setDemo2(){
 print '<button type="button" onclick="setDemo1('. "'$demo_gvf_var'" .')">DEMO 1: by SNP IDs</button>';
 print '<button type="button" onclick="setDemo2()">DEMO 2: by genomic regions (peaks)</button>';
 
+print "<td><b><a href='sample_outputs/variation-info_demo20180321.varBed'>[Sample Output]</a></B></TD>\n";
 print "<TD><B><A HREF='help.variation-info.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
+
 print "</TR></TABLE></UL></UL>\n";
 
 print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a PAPIIT-UNAM (IA206517) grant.</small></font>";
