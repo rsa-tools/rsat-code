@@ -78,6 +78,14 @@
                          onclick="toggleMenu('2')" id="heading2">Sequence tools <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu2" class="menu_collapsible">
                          <a class="menu_item" href="retrieve-seq_form.cgi" >retrieve sequence</a>
+<?php
+    
+    if($properties['group_specificity'] == 'Metazoa') {
+        echo '<a class="menu_item" href="retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>'; }
+    else{
+        echo '<span class="menu_item" style="cursor:default;color:lightgray"> retrieve EnsEMBL seq</span>';
+    }
+?>
                          <a class="menu_item" href="retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>
                          <a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>
                          <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf  <img src="images/onebit_49.png" height="30" class="new"></a>
