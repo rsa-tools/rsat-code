@@ -182,6 +182,14 @@ $demo_bg_url= $ENV{rsat_www}."/demo_files/all_human_ENCODE_DNAse_mk1_bg.ol";
 print "<TD><b>";
 
 print '<script>
+$(function(){
+    $("input[name=db_choice_radio]").change(function(){
+        if($("input[name=db_choice_radio][value=custom_motif_db]").is(":checked")){
+            $("#db_choice2").val("").change();
+        }
+    });
+});
+
 function setDemo(){
     $("#reset").trigger("click");
 
@@ -192,7 +200,7 @@ function setDemo(){
     </blockquote>";
 
     demo_descr.innerHTML = descr1;
-    $("input[name=db_choice][value=\'custom_motif_db\']").prop("checked", true).change();
+    $("input[name=db_choice_radio][value=\'custom_motif_db\']").prop("checked", true).change();
     matrix.value = "' . $demo_matrix . '";
     matrix_format.value = "transfac";
     variants_seqs.value = "' . $demo_var_seq . '";
@@ -210,6 +218,7 @@ print '<button type="button" onclick="setDemo()">DEMO</button>';
 
 print '<script>function resetHandler(){
 $("#db_choice").val("").change();
+$("#db_choice2").val("").change();
 }</script>';
 
 print "</B></TD>\n";
@@ -290,7 +299,8 @@ sub Panel1 {
 
   ## load the various databases that can be compared against
   print "<p/>";
-  print "<b>Select one motif collection</b></p>";
+  print "<input type='radio' NAME='db_choice_radio' VALUE='motif_collection_all' >";
+  print "<b>Select one motif collection</b><img src='images/onebit_49.png' height='30' class='new'/>";
   &MotifSelection("mode"=>"radio", "more" => 1);
   print "<p/> ";
 

@@ -26,7 +26,7 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$command = "$C_SCRIPTS/variation-scan";
+$command = "$C_SCRIPTS/variation-scan1.0";
 
 #### read parameters ####
 $parameters = " -v 1 ";

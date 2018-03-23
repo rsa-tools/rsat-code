@@ -179,8 +179,8 @@ function setDemo(demo_matrix){
 </script>';
 print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .')">DEMO</button>';
 
+print "<td><b><a href='sample_outputs/footprint-scan_demo_output/footprint-scan_Gammaproteobacteria__lexA_recA_2018-03-21.183943_2018-03-21.183943_J8t3qJ/lexA_recA/Gammaproteobacteria/Escherichia_coli_GCF_000005845.2_ASM584v2/all_matrices_report.html'>[Sample Output]</a></B></TD>\n";
 print "<td><b><a href='help.footprint-scan.html'>[MANUAL]</a></B></TD>\n";
-print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
