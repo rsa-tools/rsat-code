@@ -126,7 +126,6 @@ parser.add_option("-o", "--output", action="store", \
 parser.add_option("--debug", action="store_true", \
                   dest="debug", help=optparse.SUPPRESS_HELP)
 # options wishlist
-
 # taxon
 parser.add_option("--group_name", action="store", \
                   dest="taxon_name", default=sys.stdin)
@@ -140,14 +139,20 @@ parser.add_option("--operon_name", action="store", \
 parser.add_option("--report_format", action="store", \
                   dest="report_format", default=sys.stdin)
 # Format for the report output (png, pdf or none)
-parser.add_option("--bbls_draw", action="store", dest="bbls_draw", default=sys.stdin)
+parser.add_option("--bbls_draw", action="store", \
+                  dest="bbls_draw", default=sys.stdin)
+
+
+# All sequences report 
+parser.add_option("--bbls_sites_file", action="store", \
+                  dest="bbls_sites_file", default=sys.stdout)
+# 
+parser.add_option("--bbls_tree_file", action="store", \
+                  dest="bbls_tree_file", default=sys.stdout)
+
+
+
 '''
-# option names (outside the program)
-
---operon_name    
---report_format  
---map
-
 # option variable names (inside the program)
 operon_name      not urgent cosmetic.
 NOT ->    feature_map      pass it to bbls
@@ -748,7 +753,8 @@ def main(args, options):
                 tree_path = tree_path + ".png"
 
         tree.render(tree_path, w=2500, tree_style=ts)
-
+        return tree_path
+        
     ##################################################
     ####################### MAIN #####################
     ##################################################
@@ -758,7 +764,8 @@ def main(args, options):
     # os.makedirs(bbls_report)
 
     pandas.options.mode.chained_assignment = None  # default='warn'
-
+    trees_path = []
+    
     # From matrix distrib, get associated weight to pval for each tf.
     score_threshold = get_scores_threshold(options.p_value, \
                                            options.matrix_distrib_file)
@@ -902,43 +909,66 @@ def main(args, options):
             #if VERBOSITY >= 5:
             #    print("Wrote regulatory limits to " + limit_path)
 
+            # Add rest of the limit rows for report, dont.
+            ''' 
             # Add START_STOP sites of organisms where we had scores,
             # these are not consider in the BBLS calc. just for drawing.
             left_ortho = limit.loc[limit["org_seq"].\
                                    isin(list(in_ortho))]
             tfbs_per_matrix = tfbs_per_matrix.append(left_ortho)
+            '''
 
-            # Add gene name, for all site report.
-            tfbs_per_matrix['gene'] = gene
+            ## Extract motif length to write the correct number of "-"
+            #   as a replacement for the motif if it is not found.
 
+            motif_len = len(tfbs_per_matrix[tfbs_per_matrix.ft_type == "site"]\
+                            ["sequence"].values[0])
+            
             # Report results per analysis (matrix-gene-site).
             limit_columns = ['weight', 'sequence', 'sig', 'rank', 'rank_pm',\
                              'num_orthologs', 'ln_Pval', 'Pval']
             tfbs_per_matrix.loc[tfbs_per_matrix.ft_type == 'limit',\
                                 limit_columns] = '-'
 
+
+            tfbs_per_matrix.loc[tfbs_per_matrix.ft_type == 'limit',\
+                                'sequence'] = motif_len*"N"
+
+
+            # Add gene name, for all site report.
+            tfbs_per_matrix['gene'] = gene
+
             tfbs_per_matrix_path = options.prefix_name + "_BBLS_" + gene \
                                    + "_" + TF + ".tab"
             tfbs_per_matrix.to_csv(tfbs_per_matrix_path, sep='\t')
 
             if VERBOSITY >= 1:
-                print(";Wrote TF binding sites per matrix in: " + \
+                print("; Wrote TF binding sites per matrix in: " + \
                       str(tfbs_per_matrix_path))
 
             # Condense results for especific organism.
-            org_name = options.query_organism
-            org_row = tfbs_per_matrix[tfbs_per_matrix.org_name == org_name]
+            org_row = tfbs_per_matrix[tfbs_per_matrix.org_name == \
+                                      options.query_organism]
 
             # Add lines to report dataframe that includes all sites.
             bbls_report = bbls_report.append(org_row)
 
             # Write tree image
             if options.bbls_draw == "pdf" or options.bbls_draw == "png":
-                write_tree_image(t, org_name, tfbs_per_matrix, TF)
+
+                tree_path = write_tree_image(t, options.query_organism,\
+                                             tfbs_per_matrix, TF)
+
+                trees_path.append(tree_path)
 
     # Save results for all sites.
-    report_path = options.prefix_name + "_BBLS_report.tab"
+    report_path = options.bbls_sites_file
+    bbls_report.reset_index(drop=True, inplace=True)
     bbls_report.to_csv(report_path, sep="\t")
+
+    with open(options.bbls_tree_file, 'w') as tree_file:
+        tree_file.writelines("%s\n" % line for line in trees_path)
+
     # Remove 'number of organisms' file.
     # os.remove(options.num_organisms)
 
