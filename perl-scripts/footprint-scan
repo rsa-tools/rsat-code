@@ -518,7 +518,6 @@ package main;
   ## Check compatibility between -batch, -all and -task synthesis, whcih can't be use together since this can cause sever file dependency problems
 
   ## Check compatibility between -batch and -task all
-  
   if (  ((scalar(keys(%task)) == 0) || ($task{all} ) ) && ($batch)  ) {
       &RSAT::error::FatalError("Execution of all tasks is incompatible with \"-batch\" option, you should execute each tasks independently, to avoid dependency files problems. See help \"-task\" to consult all possible tasks ");
   }
@@ -550,9 +549,7 @@ package main;
   ################################################################
   ## Check parameters for bbls # ahcorcha
 
-  
-  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ( ($task{bbls}) && ($main::tree eq "") );
-
+  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ($task{bbls} && $main::tree eq "" );  
   
   &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" );
 
@@ -1963,21 +1960,21 @@ sub MatrixReportHeader {
     &RSAT::message::TimeWarn("Initializing results report for matrix",$m_suffix) if ($main::verbose >= 5);
     $occ_sig_header = `grep '^#' $occ_one_gene_file`;
     chomp $occ_sig_header;
-
+    
     my @header_occ_gene=split(/\t/,$occ_sig_header);
     pop (@header_occ_gene); ## Last element is the internal ranking of the occ_sig and is one for all the genes
 
     # $occ_sig_header =~ s/occ_sig_rank//;
-#     $occ_sig_header =~ s/^#//;
+    # $occ_sig_header =~ s/^#//;
     #$occ_sig_header =~ s/occ_sig_rank/gene_rank/; #the rank makes no sense if the $sort_creteria is alphabthic
     @header_values_at_th=("weight_at_th","occ_at_th","exp_at_th","sig_at_th");
     #Write header for the table
     print $synthesis_table join("\t", "#gene",@header_occ_gene, @header_values_at_th,@info_fields,"file"), "\n";
-
-
+    
+    
     ################
     ## Initiatie the Html file
-
+    
     ##Title includes information about the parameters used in the program
     print $synthesis_index "<html>\n";
     my $html_title = "footprint-scan";
@@ -2006,7 +2003,7 @@ sub MatrixReportHeader {
     $occ_sig_header=~s/\t/$html_sep/g;
 
     #Creat the header for the html matrix-wise report
-    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene,@header_values_at_th, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", @info_fields)."</th>";
+    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene,@header_values_at_th, "OCC_Sig", "SigPlot" ,"FreqPlot","Map","bbls score", "bbls tree", @info_fields)."</th>";
     $header_index .= "\n";
     print $synthesis_index $header_index;
     print $synthesis_index "</tr>\n";
