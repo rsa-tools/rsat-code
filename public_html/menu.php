@@ -49,8 +49,14 @@
                   </h2></p-->
 		<div style='padding:60px 0 0 10px;' align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b>
 <?php
-    $out = shell_exec("perl -e 'push @INC, \"$`lib/\"; require \"RSA.lib\";require \"RSA2.cgi.lib\"; @org = &RSAT::OrganismManager::get_supported_organisms_web(); print scalar @org'");
-    echo $out;
+    if (php_sapi_name() == 'cli'){
+        $out = shell_exec("perl -e 'push @INC, \"$`lib/\"; require \"RSA.lib\";require \"RSA2.cgi.lib\"; @org = &RSAT::OrganismManager::get_supported_organisms_web(); print scalar @org'");
+        echo $out;
+    }else{
+        $path = $properties['rsat_www'].'nbOrg.cgi';
+        virtual($path);
+        virtual('nbOrg.cgi');
+    }
 ?>
 </b> <i>organisms</i></div>
                 <div>
