@@ -3049,6 +3049,27 @@ sub DisplayMatrixDBchoice_select2 {
     	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms');
     	@colors = ('blue', 'orange', 'yellow');
     
+    } elsif ($ENV{group_specificity} eq "Fungi") {
+    
+    @keys = ([@fungi_key], [@all_key]);
+    @values = (\%fungi, \%multi_organism);
+    @labels = ( 'Fungi', 'Multi-organisms');
+    @colors = ( 'purple', 'yellow');  
+
+ 	} elsif ($ENV{group_specificity} eq "Prokaryotes") {
+    
+    @keys = ([@prokaryots_key], [@all_key]);
+    @values = (\%prokaryots, \%multi_organism);
+    @labels = ('Prokaryotes', 'Multi-organisms');
+    @colors = ('teal', 'yellow'); 
+    
+    } elsif ($ENV{group_specificity} eq "Plants") {
+    
+    @keys = ( [@plants_key], [@all_key]);
+    @values = ( \%plants, \%multi_organism);
+    @labels = ( 'Plants', 'Multi-organisms');
+    @colors = ( 'green', 'yellow'); 
+    
     } else {
     
     @keys = ([@vertebrates_key], [@metazoa_key], [@plants_key], [@fungi_key], [@prokaryots_key], [@all_key]);
