@@ -24,6 +24,7 @@
                    <!-- Sidebar -->
             <div id="sidebar-wrapper">
              <div id="menubody" style='padding-top:10px'>
+
              <!--div id="tabmenu">
              <ul class="rsat">
                  <li><a class="active" href="index.php">RSAT</a></li>
@@ -69,8 +70,27 @@
                      <div id="menu1" class="menu_collapsible">
                          <a class="menu_item" href="supported-organisms.cgi">supported organisms</a>
                          <a class="menu_item" href="gene-info_form.cgi"> gene information</a>
-                         <a class="menu_item" href="infer-operons_form.cgi" >infer operons</a>
-                         <a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>
+     
+
+<?php    
+
+    if ($properties['phylo_tools'] == '1') {
+
+        echo '<a class="menu_item" href="infer-operons_form.cgi"> infer operons</a>'; }
+    else{
+        echo '<span class="menu_item" style="cursor:default;color:lightgray"> infer operons</span>';
+    }
+?> 
+
+<?php    
+    if(($properties['group_specificity'] == 'Prokaryotes')||($properties['group_specificity'] == 'Fungi')) {
+        echo '<a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>'; }
+    else{
+        echo '<span class="menu_item" style="cursor:default;color:lightgray"> get orthologs</span>';
+    }
+?>                         
+                         
+                         
                          <a class="menu_item" href="random-genes_form.cgi" >random gene selection</a>
                      </div>
 
@@ -81,13 +101,12 @@
 <?php
     
     if($properties['group_specificity'] == 'Metazoa') {
-        echo '<a class="menu_item" href="retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>'; }
+        echo '<a class="menu_item" href="retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a><a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>'; }
     else{
-        echo '<span class="menu_item" style="cursor:default;color:lightgray"> retrieve EnsEMBL seq</span>';
+        echo '<span class="menu_item" style="cursor:default;color:lightgray"> retrieve EnsEMBL seq</span><span class="menu_item" style="cursor:default;color:lightgray"> fetch-sequences from UCSC</span>';
     }
 ?>
-                         <a class="menu_item" href="retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>
-                         <a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>
+                         
                          <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf  <img src="images/onebit_49.png" height="30" class="new"></a>
                          <!--	  <a class="menu_item" href="http://www.rsat.eu/retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>-->
                          <a class="menu_item" href="purge-sequence_form.cgi" >purge sequence</a>
@@ -161,11 +180,36 @@
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('10')" id="heading10">Comparative genomics&nbsp; <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu10" class="menu_collapsible">
-                         <a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>
-                         <a class="menu_item" href="get-orthologs-compara_form.cgi" >get orthologs-compara <img src="images/onebit_49.png" height="30" class="new"></img></a>
-                         <a class="menu_item" href="footprint-discovery_form.cgi" >footprint-discovery</a>
+<?php
+    
+    if(($properties['group_specificity'] == 'Prokaryotes')||($properties['group_specificity'] == 'Fungi')) {
+        echo '<a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>'; }
+    else{
+        echo '<span class="menu_item" style="cursor:default;color:lightgray"> get orthologs</span>';
+    }
+?>      
+                     
+                         <?php
+    
+    if($properties['group_specificity'] == 'Plants') {
+        echo '<a class="menu_item" href="get-orthologs-compara_form.cgi" >get orthologs-compara <img src="images/onebit_49.png" height="30" class="new"></img></a>'; }
+    else{
+        echo '<span class="menu_item" style="cursor:default;color:lightgray"> get orthologs-compara </span>';
+    }
+?>                     
+                         
+                         
+<?php
+    
+    if(($properties['group_specificity'] == 'Prokaryotes')||($properties['group_specificity'] == 'Fungi')) {
+        echo '                         <a class="menu_item" href="footprint-discovery_form.cgi" >footprint-discovery</a>
                          <a class="menu_item" href="footprint-scan_form.cgi" >footprint-scan <img src="images/onebit_49.png" height="30" class="new"></img>
-                         </a>
+                         </a>'; }
+    else{
+        echo '<span class="menu_item" style="cursor:default;color:lightgray"> footprint-discovery</span><span class="menu_item" style="cursor:default;color:lightgray"> footprint-scan</span>';
+    }
+?>   
+
                      </div>
 
 
@@ -173,7 +217,16 @@
                          onclick="toggleMenu('13')" id="heading13">NGS - ChIP-seq</div>
                      <div id="menu13" class="menu_collapsible">
                          <a class="menu_item" href="peak-motifs_form.cgi" >peak-motifs</a>
-                         <a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>
+                         <?php
+    
+    if($properties['group_specificity'] == 'Metazoa') {
+        echo '<a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>'; }
+    else{
+        echo '<span class="menu_item" style="cursor:default;color:lightgray"> fetch-sequences from UCSC</span>';
+    }
+?>
+                        <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf  <img src="images/onebit_49.png" height="30" class="new"></a>
+
                          <a class="menu_item" href="random-genome-fragments_form.cgi" >random genome fragments</a>
                          <!--	  <a class="menu_item" href="random-genome-fragments_form.cgi" >random genome fragments</a>-->
                      </div>
