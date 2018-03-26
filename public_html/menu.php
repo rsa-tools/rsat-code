@@ -73,14 +73,11 @@
 <?php    
 
     if ($properties['phylo_tools'] == '1') {
-        echo '<a class="menu_item" href="infer-operons_form.cgi"> infer operons</a>'; }
+        echo '<a class="menu_item" href="infer-operons_form.cgi"> infer operons</a>';
+        echo '<a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>';
+    }
     else{
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> infer operons</span>';
-    }
-   
-    if(($properties['group_specificity'] == 'Prokaryotes')||($properties['group_specificity'] == 'Fungi')) {
-        echo '<a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>'; }
-    else{
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> get orthologs</span>';
     }
 ?>                         
