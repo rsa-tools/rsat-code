@@ -97,6 +97,7 @@ print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
+print "</TR>";
 print $query->end_form;
 
 ################################################################
@@ -150,6 +151,7 @@ function setDemo(demo_org,demo_url,demo_descr){
 }
 </script>';
 
+print "<TR VALIGN=MIDDLE>\n";
 print "<TD><B><A class='iframe' HREF='help.retrieve-seq-bed.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jacques.VAN-HELDEN\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "<TD><B><A HREF='sample_outputs/retrieve-seq-bed_demo20180326.fasta'>Sample output</A></B></TD>\n";
