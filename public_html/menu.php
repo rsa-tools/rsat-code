@@ -50,9 +50,7 @@
 		<div style='padding:60px 0 0 10px;' align='center'><i class='fa fa-bar-chart  fa-lg'></i> <b>
 <!--perlscript -->
 <?php
-    $path = $properties['rsat_www'].'nbOrg.cgi';
-    virtual($path);
-    virtual("nbOrg.cgi");
+    echo exec("perl nbOrg.cgi");
 ?>
 </b> <i>organisms</i></div>
                 <div>
@@ -75,14 +73,11 @@
 <?php    
 
     if ($properties['phylo_tools'] == '1') {
-
         echo '<a class="menu_item" href="infer-operons_form.cgi"> infer operons</a>'; }
     else{
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> infer operons</span>';
     }
-?> 
-
-<?php    
+   
     if(($properties['group_specificity'] == 'Prokaryotes')||($properties['group_specificity'] == 'Fungi')) {
         echo '<a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>'; }
     else{

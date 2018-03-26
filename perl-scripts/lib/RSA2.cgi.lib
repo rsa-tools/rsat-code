@@ -378,12 +378,7 @@ $(document).ready(function(){
 
 ';
 
-    open(my $fh, "menu.php");
-    while(my $row = <$fh>){
-        if($row =~ "<!--perlscript"){ my @orgs =  &RSAT::OrganismManager::get_supported_organisms_formenu(); print scalar(@orgs); }
-        print $row."\n";
-    }
-
+    system("php menu.php");
     print "<div class='container' id='page-content-wrapper'>";
 
     if(!($title =~ 'RSAT home') && !($title =~ "Publications")) {
@@ -449,14 +444,9 @@ document.getElementById("demo_descr").innerHTML = txt;
 });
 </script>';
 
+system("php menu.php");
 
-    open(my $fh, "menu.php");
-    while(my $row = <$fh>){
-        if($row =~ "<!--perlscript"){ my @orgs =  &RSAT::OrganismManager::get_supported_organisms_formenu(); print scalar(@orgs); }
-        print $row."\n";
-    }
-
-    print "<div class='container' id='page-content-wrapper'>";
+print "<div class='container' id='page-content-wrapper'>";
 
     if(!($title =~ 'RSAT home') && !($title =~ "Publications")) {
         print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
