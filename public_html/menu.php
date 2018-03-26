@@ -235,9 +235,21 @@
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('9')" id="heading9">Genetic variations <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu9" class="menu_collapsible">
-                         <a class="menu_item" href="variation-info_form.cgi" >Variation information <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                     
+                     <?php
+    
+    if($properties['variations_tools'] == '1') {
+        echo '<a class="menu_item" href="variation-info_form.cgi" >Variation information <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="retrieve-variation-seq_form.cgi" >Retrieve variation sequences <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="variation-scan_form.cgi" >Scan variations with motifs <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         '; }
+    else{
+        echo '<span class="menu_item" style="cursor:default;color:lightgray"> Variation information </span>
+        <span class="menu_item" style="cursor:default;color:lightgray"> Retrieve variation sequences</span>
+        <span class="menu_item" style="cursor:default;color:lightgray"> Scan variations with motifs</span>';
+    }
+?>
+                     
                          <a class="menu_item" href="convert-variations_form.cgi" >Convert variation formats <img src="images/onebit_49.png" height="30" class="new"></img></a>
                      </div>
                  </div>
