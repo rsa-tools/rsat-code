@@ -15,7 +15,7 @@
                 <BODY class="info">
                 <?php
                 require_once ('functions.php');
-                include('menu.php');
+                include('menu_php.php');
                 ?>
                 
        
