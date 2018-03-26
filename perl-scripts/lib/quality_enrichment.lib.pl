@@ -207,7 +207,7 @@ sub Draw_NWD{
     $compare_nwd_cmd .= " -numeric  -basename ";
     $compare_nwd_cmd .= " -o ".  $nwd_compare_scores_file . " ";
     &doit($compare_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-    &RSAT::message::Info("Merging NWD files with compare-scores ", $compare_nwd_cmd ) if ($main::verbose >= 0);
+    &RSAT::message::Info("Merging NWD files with compare-scores ", $compare_nwd_cmd ) if ($main::verbose >= 2);
     
     
     my $nwd_xygrpah_file=$nwd_outfile_prefix."_compare-scores.";

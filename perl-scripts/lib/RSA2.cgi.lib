@@ -378,12 +378,7 @@ $(document).ready(function(){
 
 ';
 
-    open(my $fh, "menu.php");
-    while(my $row = <$fh>){
-        if($row =~ "<!--perlscript"){ my @orgs =  &RSAT::OrganismManager::get_supported_organisms_formenu(); print scalar(@orgs); }
-        print $row."\n";
-    }
-
+    system("php menu.php");
     print "<div class='container' id='page-content-wrapper'>";
 
     if(!($title =~ 'RSAT home') && !($title =~ "Publications")) {
@@ -449,14 +444,9 @@ document.getElementById("demo_descr").innerHTML = txt;
 });
 </script>';
 
+system("php menu.php");
 
-    open(my $fh, "menu.php");
-    while(my $row = <$fh>){
-        if($row =~ "<!--perlscript"){ my @orgs =  &RSAT::OrganismManager::get_supported_organisms_formenu(); print scalar(@orgs); }
-        print $row."\n";
-    }
-
-    print "<div class='container' id='page-content-wrapper'>";
+print "<div class='container' id='page-content-wrapper'>";
 
     if(!($title =~ 'RSAT home') && !($title =~ "Publications")) {
         print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
@@ -3045,11 +3035,49 @@ sub DisplayMatrixDBchoice_select2 {
     my @fungi_key = ("cerevisiae", "fungi");
     my @metazoa_key = ("Drosophila", "drosophila", "_fly", "elegan", "insect", "nematode", "urochordate", "metazoa", "Metazoa");
     my @all_key = ("all");
-    my @keys = ([@vertebrates_key], [@metazoa_key], [@plants_key], [@fungi_key], [@prokaryots_key], [@all_key]);
+    
+    ## declare the variables
+    my @keys;
+    my @values;
+    my @labels;
+    my @colors;
+    
+    ## adapt for server-specific motifs
+    if ($ENV{group_specificity} eq "Metazoa") {
+    	@keys = ([@vertebrates_key], [@metazoa_key], [@all_key]);
+    	@values = (\%vertebrates, \%metazoa, \%multi_organism);
+    	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms');
+    	@colors = ('blue', 'orange', 'yellow');
+    
+    } elsif ($ENV{group_specificity} eq "Fungi") {
+    
+    @keys = ([@fungi_key], [@all_key]);
+    @values = (\%fungi, \%multi_organism);
+    @labels = ( 'Fungi', 'Multi-organisms');
+    @colors = ( 'purple', 'yellow');  
 
-    my @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
-    my @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms');
-    my @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow');
+ 	} elsif ($ENV{group_specificity} eq "Prokaryotes") {
+    
+    @keys = ([@prokaryots_key], [@all_key]);
+    @values = (\%prokaryots, \%multi_organism);
+    @labels = ('Prokaryotes', 'Multi-organisms');
+    @colors = ('teal', 'yellow'); 
+    
+    } elsif ($ENV{group_specificity} eq "Plants") {
+    
+    @keys = ( [@plants_key], [@all_key]);
+    @values = ( \%plants, \%multi_organism);
+    @labels = ( 'Plants', 'Multi-organisms');
+    @colors = ( 'green', 'yellow'); 
+    
+    } else {
+    
+    @keys = ([@vertebrates_key], [@metazoa_key], [@plants_key], [@fungi_key], [@prokaryots_key], [@all_key]);
+    @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
+    @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms');
+    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow');  
+    }
+    
     ## Display supported motif databases
     foreach my $db_name (sort(keys (%matrix_db))) {
         my $db_format = $matrix_db{$db_name}->{'format'};
