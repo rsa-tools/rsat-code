@@ -3045,11 +3045,28 @@ sub DisplayMatrixDBchoice_select2 {
     my @fungi_key = ("cerevisiae", "fungi");
     my @metazoa_key = ("Drosophila", "drosophila", "_fly", "elegan", "insect", "nematode", "urochordate", "metazoa", "Metazoa");
     my @all_key = ("all");
-    my @keys = ([@vertebrates_key], [@metazoa_key], [@plants_key], [@fungi_key], [@prokaryots_key], [@all_key]);
-
-    my @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
-    my @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms');
-    my @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow');
+    
+    ## declare the variables
+    my @keys;
+    my @values;
+    my @labels;
+    my @colors;
+    
+    ## adapt for server-specific motifs
+    if ($ENV{group_specificity} eq "Metazoa") {
+    	@keys = ([@vertebrates_key], [@metazoa_key], [@all_key]);
+    	@values = (\%vertebrates, \%metazoa, \%multi_organism);
+    	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms');
+    	@colors = ('blue', 'orange', 'yellow');
+    
+    } else {
+    
+    @keys = ([@vertebrates_key], [@metazoa_key], [@plants_key], [@fungi_key], [@prokaryots_key], [@all_key]);
+    @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
+    @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms');
+    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow');  
+    }
+    
     ## Display supported motif databases
     foreach my $db_name (sort(keys (%matrix_db))) {
         my $db_format = $matrix_db{$db_name}->{'format'};
