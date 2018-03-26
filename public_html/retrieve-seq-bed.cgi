@@ -86,14 +86,14 @@ $output_format = "fasta";
 
 ## Output file
 $result_file = $tmp_file_path.".".$output_format;
-#$log_file = $tmp_file_path."_log.txt";
+$log_file = $tmp_file_path."_log.txt";
 $parameters .= " -o ".$result_file;
 &RSAT::message::Info("result_file", $result_file) if ($echo >= 0);
 push @result_files, ("Result sequences (".$output_format.")", $result_file);
-#push @result_files, ("Command log (text)", $log_file); 
+push @result_files, ("Command log (text)", $log_file); 
 
 ## Error log
-$err_file = $tmp_file_path."_error_log.txt";
+$err_file = $tmp_file_path.".".$output_format."_err.txt";
 $parameters .= " 2> ".$err_file;
 push @result_files, ("Error log (text)",$err_file);
 
@@ -113,7 +113,7 @@ if (($query->param('output') =~ /display/i) ||
   print '<H4>Result</H4>';
 
   print "<PRE>";
-  open RESULT, $result_file;
+  open RESULT, $err_file;
   while (<RESULT>) {
     print "$_" unless ($query->param('output') =~ /server/i);
   }
