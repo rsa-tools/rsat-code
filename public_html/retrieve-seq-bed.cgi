@@ -115,7 +115,7 @@ if (($query->param('output') =~ /display/i) ||
   print "<PRE>";
   open RESULT, $err_file;
   while (<RESULT>) {
-    print "$_" unless ($query->param('output') =~ /server/i);
+    print $_; #unless ($query->param('output') =~ /server/i);
   }
   print "</PRE>";
   close RESULT;
