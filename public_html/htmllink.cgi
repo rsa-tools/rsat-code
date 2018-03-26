@@ -39,11 +39,7 @@ print $query->start_html(-title=>"$title",
         -media => 'screen,projection,print' });
     
     if($title =~ /RSAT/ || $title eq 'data'){
-    	open($fh, "menu.php");
-    	while($row = <$fh>){
-            if($row =~ "<!--perlscript"){ my @orgs =  &RSAT::OrganismManager::get_supported_organisms_formenu(); print scalar(@orgs); }
-        	print $row."\n";
-    	}
+        system("php menu.php");
     }else{
     	$neat_java = $ENV{"neat_java_host"};
         $tomcat_port = $ENV{'tomcat_port'};
