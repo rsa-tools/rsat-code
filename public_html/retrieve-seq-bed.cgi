@@ -66,12 +66,13 @@ unless ($coordinate_file) {
 push @result_files, ("Coordinate file ($coordinate_format)",$coordinate_file);
 
 ## Compute genome fragment lengths from the coordinates
-my $length_file = $tmp_file_path."_lengths.tab";
-push @result_files, ("Genome fragment lengths",$length_file);
-my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$coordinate_file;
-$seqlength_cmd .= " -in_format ".$coordinate_format;
-$seqlength_cmd .= " -o ".$length_file;
-system($seqlength_cmd);
+## this only works for BED, Brunofeb2018
+#my $length_file = $tmp_file_path."_lengths.tab";
+#push @result_files, ("Genome fragment lengths",$length_file);
+#my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$coordinate_file;
+#$seqlength_cmd .= " -in_format ".$coordinate_format;
+#$seqlength_cmd .= " -o ".$length_file;
+#system($seqlength_cmd);
 
 ## Repeats
 if ($query->param('rm') =~ /on/) {
