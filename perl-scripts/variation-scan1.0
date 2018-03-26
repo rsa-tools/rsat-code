@@ -236,7 +236,7 @@ package	main;
   our $nb_seq = 0;
   our $nb_rvar =0;
 
-  
+
   ################
   ## Matrix format
 
@@ -251,7 +251,7 @@ package	main;
   ##Recover max and min pvalue for all matrices
 
   our %max_min_matrices_pvals=();
-  
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -331,7 +331,7 @@ package	main;
       print $outD $field[1],"\t",$distrib_file,"\t.\t",$bg_name,"\n"; ## Print distrib file
     }
     &RSAT::message::Info("Distrib_list :", $distrib_dir.'/'.$outfile{'distrib_list'}) if ($main::verbose >= 2);
-    
+
 
     ################################################################
     ## Report execution time and close output stream
@@ -586,7 +586,7 @@ package	main;
       ## We prefer to keep separately the matrix accession (AC) and
       ## the matrix/factor name (ID), because the AC permits to
       ## recover the matrix.
-#      if (($ID eq $AC) || 
+#      if (($ID eq $AC) ||
 #	  ($ID !~/\S/)) {
 	  $matrix_ac=$AC;
 #      } else {
@@ -597,10 +597,10 @@ package	main;
 	  &RSAT::message::Info("Matrix is wider than varian flank region:",$matrix_ac ) if ($main::verbose >= 3);
 	  next;
       }
-      
+
       $matrices_id{$matrix_ac}=$ID;
       #print "AC $matrix_ac\t$ID";
-      
+
       ## Save matrix in tab format. matrix-scan-quick only takes as
       ## input matrices in tab delimited format
       my $outM = &OpenOutputFile($matrix_file_tab);
@@ -631,7 +631,7 @@ package	main;
       ## Use precalculte distrib file if it was specified or distributions were requested as output
       if ($distrib_file_list{$matrix_ac}) {
 	  my %legend_col = ();
-	
+
 	  my $distrib_file = $distrib_dir."/".$distrib_file_list{$matrix_ac};
 	  my ($d_file) = &OpenInputFile($distrib_file);
 	   # print "$distrib_file" ; die "BOOM";
@@ -751,7 +751,7 @@ package	main;
       if ($last_id ne $id && $last_id ne "") {
 	  $nb_variation ++;
 	  last if ($nb_variation > $top_variation && $top_variation>0);
-	
+
 	  if ($nb_variation >= $last_nb) {
 	      &RSAT::message::Info("matrix-scan command", $scan_cmd ) if ($main::verbose >= 3);
 	      my @scanning = qx{$scan_cmd};
@@ -785,12 +785,11 @@ package	main;
   ################################################################
   ## Report execution time and close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-
   if ($main::verbose >= 1) {
     print $out "; Nb matrices\t",$nb_matrix,"\n";
     print $out "; Nb scanned variations\t",$nb_variation/$nb_matrix,"\n";
     print $out "; Nb scanned sequences\t",$nb_seq,"\n";
-    print $out $exec_time; ## only report exec time if verbosity is specified
+    print $exec_time; ## only report exec time if verbosity is specified
   }
 
   close $out;
@@ -856,14 +855,14 @@ sub getLineInfo {
     ## If for any reason the rounding caused the score to be out of the range then use the minimal or maximal score
     $line_info{'score'} = $main::max_min_matrices_pvals{$matrix_ac}{'score_max'}  if ( $line_info{'score'} > $main::max_min_matrices_pvals{$matrix_ac}{'score_max'} ) ;
     $line_info{'score'} = $main::max_min_matrices_pvals{$matrix_ac}{'score_min'}   if ($line_info{'score'} < $main::max_min_matrices_pvals{$matrix_ac}{'score_min'}  ) ;
-    
+
     # if ($field[7] =~ /\./ ){
     # 	$line_info{'score'} = substr($field[7],0,index($field[7],'.') + 1 + 1);
     # }else{
     # 	    $line_info{'score'} = $field[7].".0";
     # }
-    
-    
+
+
     my @field2 = split(/\|/,$field[0]); #var_info, coord
     $line_info{'coord'} = $field2[1];
 
@@ -903,7 +902,7 @@ sub Analyse_scanning {
 	my %line_info = &getLineInfo($line);
 
 	my $same_variation = !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'};
-	
+
 	#my $same_variation = 1 if ( !$scanning_info{'variation'} || $line_info{'id'} eq $scanning_info{'variation'});
 
 	#print "same var ".$same_variation."\n" ;
@@ -925,13 +924,13 @@ sub Analyse_scanning {
 	if ( !$scanning_score_var{$line_info{'variant_alt'}}{'score'} || $scanning_score_var{$line_info{'variant_alt'}}{'score'} < $line_info{'score'} ) {
 	    $scanning_score_var{$line_info{'variant_alt'}} = ();
 	    $scanning_score_var{$line_info{'variant_alt'}}{'score'} = $line_info{'score'};
-	    
+
 	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_offset_start'}} , $line_info{'site_offset_start'});
 	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'site_strand'}} ,       $line_info{'site_strand'});
 	    push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}} ,               $line_info{'seq'});
 
 	} elsif ( $scanning_score_var{$line_info{'variant_alt'}}{'score'} == $line_info{'score'} ){
-	    
+
 	    push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_offset_start'}} , $line_info{'site_offset_start'} );
             push ( @{ $scanning_score{$line_info{'variant_alt'}}{'site_strand'}} ,       $line_info{'site_strand'} );
             push ( @{ $scanning_score_var{$line_info{'variant_alt'}}{'seq'}} ,           $line_info{'seq'});
@@ -957,7 +956,7 @@ sub Analyse_variation {
   my %scanning_score_pos = %{ $scanning_score_pos };
   my %scanning_score_var = %{ $scanning_score_var };
 
-  
+
   ## Compare all positions
   if (($no_offset && $scanning_info{'same_len'})) {
     &RSAT::message::Debug("Comparing all offset positions") if ($main::verbose >= 10);
@@ -1009,7 +1008,7 @@ sub Compare {
     #  {
     #  	print "$key - $scanning_score{$key}\n";
     # }
-    
+
 
     &RSAT::message::Debug("Comparing scores" ) if ($main::verbose >= 10);
 
@@ -1024,7 +1023,7 @@ sub Compare {
 	my $best_score = $sorted_score[0];
 	my $best_pval = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$best_score};
 
-	## Some integer scores do not have a .0 in the matrix dsitrib file so it is necesary to remove it 
+	## Some integer scores do not have a .0 in the matrix dsitrib file so it is necesary to remove it
 	unless ($best_pval){
 	    if ($best_score=~/\.0/){
 		$best_score=~s/\.0//;
@@ -1036,7 +1035,7 @@ sub Compare {
 	}
 	&RSAT::message::Debug("Best score and pval", $best_score, $best_pval ) if ($main::verbose >= 10);
 
-	
+
 	next if ( $lth{'score'} && $lth{'score'} > $best_score );
 	next if ( $uth{'pval'} && $uth{'pval'} < $best_pval);
 
@@ -1064,7 +1063,7 @@ sub Compare {
 	    $scanning_info{'w_diff'} = $diff_1;
 	    $scanning_info{'best_pval'} = $best_pval;
 	    $scanning_info{'worst_pval'} = $matrix_info{$scanning_info{'matrice'}}{'pval'}{$score};
-	
+
 	    $scanning_info{'pval_ratio'} = $pval_ratio_1;
 	    $scanning_info{'best_offset'} =  join(";", @{ $scanning_score{$best_score}{'site_offset_start'} });
 	    $scanning_info{'worst_offset'} = join(";", @{ $scanning_score{$score}{'site_offset_start'} });
@@ -1077,7 +1076,7 @@ sub Compare {
 	} elsif ($diff_1 == $diff_2) {
 	    next if ( $lth{'w_diff'} && $lth{'w_diff'} > $diff_1 );
 	    next if ( $lth{'pval_ratio'} && $lth{'pval_ratio'} > $pval_ratio_1);
-	
+
 	    $scanning_info{'best_variant'} =  pop( @{ $scanning_score{$best_score}{'variant_alt'} });
 	    $scanning_info{'worst_variant'} =  join(";", @{ $scanning_score{$best_score}{'variant_alt'} } );
 	    $scanning_info{'best_score'} = $best_score;
@@ -1203,7 +1202,7 @@ sub Printline {
 
   #$mtx_aux_id=$scanning_info{'matrice'};
   #die "AC ". $mtx_aux_id. $matrices_id{ $mtx_aux_id}  ;
-  my $str = join ("\t", 
+  my $str = join ("\t",
 		  $scanning_info{'matrice'},
 		  #$matrix_list{$scanning_info{'matrice'}}{'id'},
 		  $matrices_id{$scanning_info{'matrice'}},
