@@ -12,7 +12,7 @@
 <BODY>
 <?php
     require_once ('functions.php');
-    include('menu_php.php');
+    include('menu.php');
 ?>
 
 <div class='page-content-wrapper'>
