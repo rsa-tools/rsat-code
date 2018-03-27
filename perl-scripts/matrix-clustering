@@ -2119,7 +2119,7 @@ sub ReadClusterComposition {
     my ($node, $name, $cluster, $strand, $offset_l, $offset_r, $width) = split ("\t");
 
     push(@{$cluster_nodes{$cluster}}, $node);
-    push(@{$cluster_nodes_clean_names{$cluster}}, join("::", $motifs_ID_unique{$node}, $name));
+    push(@{$cluster_nodes_clean_names{$cluster}}, join(":::", $motifs_ID_unique{$node}, $name));
     
     ## Store the ID, strand and offset of each aligned motif
     $cluster_info_width{$cluster} = $width;
@@ -5577,6 +5577,7 @@ sub DisplaySingleCluster{
 	<div class="display"><strong style="display:block">Display Branch-Motifs</strong>'."\n\n".$all_consensus_table."\n\n".'</div>
 
 	  <ul style="text-align:left;clear:both;display:block;">
+	     <li type="square"><strong>Each cluster has a different color.</strong></li>
 	     <li type="square"><strong>Click on the upper buttons to display separately the information of each cluster.</strong></li>
 	     <li type="square"><strong>Click on the circles at each tree to display its corresponding merged motifs.</strong></li>
 	  </ul>  
@@ -5983,7 +5984,7 @@ sub trim_matrix_low_IC_columns {
 	}
     }
 
-    $motif_ac =~ s/_m\d+_/::/gi;
+    $motif_ac =~ s/_m\d+_/:::/gi;
     # die $motif_ac." ------------------>\n";
     
     ## Trim the matrix

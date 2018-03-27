@@ -390,9 +390,11 @@ package main;
   local %query_indexes = ();
   local $bg_distrib; $bg_distrib = ""; ## Used in footprint.lib.pl
 
-  ## Tree for Bayesian score # ahcorcha
-  local $tree = ""; 
-  #local $diamond = 0; # /ahcorcha
+  # ahcorcha
+  ## Tree for Bayesian score 
+  local $tree = "";
+  local $bbls_draw = "";
+  # /ahcorcha
   
   ## Feature maps
   local $map_opt = "";
@@ -546,9 +548,13 @@ package main;
   
   ################################################################
   ## Check parameters for bbls # ahcorcha
-  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ($task{bbls} && $main::tree eq "" );
+
+  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ($task{bbls} && $main::tree eq "" );  
   
-  &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" ); # /ahcorcha
+  &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" );
+
+  &RSAT::error::FatalError("Option -bbls_draw only works with bbls.") if (!$task{bbls} && $main::bbls_draw ne "" );
+  # /ahcorcha
   
   ################################################################
   ## Check parameters for matrix-scan
@@ -1298,10 +1304,18 @@ it should be in Newick format with distances and leaf names.
 	} elsif ($arg eq "-tree") {
 	    $main::tree = shift(@arguments);
 	    
-	    # It should work even if the occurrence significance task is not being executed.
-	    #  changes should be made.
-	    #/ahcorcha
-	    
+=pod
+
+=item B<-bbls_draw>
+Fomat for the output image. Represents the phylogenetic tree of organisms
+with ortholog genes. Shows the conservation of the motif across the tree
+over the p-value. The default value is png (png, pdf or none).
+
+=cut
+	} elsif ($arg eq "-bbls_draw") {
+	    $main::bbls_draw = shift(@arguments);	    
+	    &RSAT::error::FatalError("The option -bbls_draw takes pdf, png or none (no output).") if !( ($main::bbls_draw eq "png") || ($main::bbls_draw eq "pdf") || ($main::bbls_draw eq "none") );
+	    #/ahcorcha	    
 =pod
 
 =item B<-bg_pseudo #>
@@ -1761,7 +1775,6 @@ sub RunFootprintScan {
     ## $selected_interaction = &Select_interaction(); ## Modified by JvH on 2015-03-09: $selected_interaction was not used anywhere, and &Select_interaction() has no return value
       &Select_interaction();
 
-
       ## Index occ sig files for the synthetic table
       $occ_sig_file{$current_gene} = $outfile{occ_sig} if (-e $outfile{occ_sig} );
       $occ_freq_graph_file{$current_gene} = $outfile{occ_freq_graph} if (-e $outfile{occ_freq_graph});
@@ -1947,21 +1960,21 @@ sub MatrixReportHeader {
     &RSAT::message::TimeWarn("Initializing results report for matrix",$m_suffix) if ($main::verbose >= 5);
     $occ_sig_header = `grep '^#' $occ_one_gene_file`;
     chomp $occ_sig_header;
-
+    
     my @header_occ_gene=split(/\t/,$occ_sig_header);
     pop (@header_occ_gene); ## Last element is the internal ranking of the occ_sig and is one for all the genes
 
     # $occ_sig_header =~ s/occ_sig_rank//;
-#     $occ_sig_header =~ s/^#//;
+    # $occ_sig_header =~ s/^#//;
     #$occ_sig_header =~ s/occ_sig_rank/gene_rank/; #the rank makes no sense if the $sort_creteria is alphabthic
     @header_values_at_th=("weight_at_th","occ_at_th","exp_at_th","sig_at_th");
     #Write header for the table
     print $synthesis_table join("\t", "#gene",@header_occ_gene, @header_values_at_th,@info_fields,"file"), "\n";
-
-
+    
+    
     ################
     ## Initiatie the Html file
-
+    
     ##Title includes information about the parameters used in the program
     print $synthesis_index "<html>\n";
     my $html_title = "footprint-scan";
@@ -1990,7 +2003,7 @@ sub MatrixReportHeader {
     $occ_sig_header=~s/\t/$html_sep/g;
 
     #Creat the header for the html matrix-wise report
-    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene,@header_values_at_th, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", @info_fields)."</th>";
+    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene,@header_values_at_th, "OCC_Sig", "SigPlot" ,"FreqPlot","Map","bbls score", "bbls tree", @info_fields)."</th>";
     $header_index .= "\n";
     print $synthesis_index $header_index;
     print $synthesis_index "</tr>\n";

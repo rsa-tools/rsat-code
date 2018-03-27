@@ -152,7 +152,7 @@ print "<TD><B>";
 print '<button type="button" onclick="setDemo('. "'$demo_gvf_var'" .')">DEMO</button>';
 print "</B></TD>\n";
 
-
+print "<td><b><a href='sample_outputs/convert-variations_demo20180322.varBed'>[Sample Output]</a></B></TD>\n";
 print "<TD><B><A class='iframe' HREF='help.convert-variations.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
