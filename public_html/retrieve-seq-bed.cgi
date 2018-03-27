@@ -41,7 +41,7 @@ $query = new CGI;
 
 ############################################################
 ## Read parameters
-$parameters = " -v 1 -check_chr ";
+$parameters = " -v 2 -check_chr ";
 
 ################################################################
 ## Organism
@@ -116,7 +116,7 @@ if (($query->param('output') =~ /display/i) ||
     print "<PRE>";
     open RESULT, $err_file;
     while (<RESULT>) {
-        print $_ if(/^;INFO/); #unless ($query->param('output') =~ /server/i);
+        print $_ if(/^;INFO/ || /WARNING/); #unless ($query->param('output') =~ /server/i);
     }
     print "</PRE>";
     close RESULT;
