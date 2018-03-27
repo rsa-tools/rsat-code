@@ -52,24 +52,21 @@ if ($query->param('single_multi_org') eq 'multi') {
     &cgiMessage(join("<P>",
 		     "The computation can take more or less time depending on the taxon size.",
 		     "If the answer does not appear in due time, use the option <i>output email</i>"));
+
+    # multiple org job: organism parsed from input file
+
 } else {
     $command = "$SCRIPTS/retrieve-seq";
+
+    ## single org job: organism passed as param
+    $organism = $query->param('organism');
+    if (defined($supported_organism{$organism})) {
+        $organism_name = $supported_organism{$organism}->{'name'};
+        $parameters .= " -org ".$organism;
+    } else {
+        &cgiError("Organism '".$organism."' is not supported on this web site.");
+    }
 }
-
-
-
-#### organism
-$organism = $query->param('organism');
-if (defined($supported_organism{$organism})) {
-    $organism_name = $supported_organism{$organism}->{'name'};
-
-    $parameters .= " -org ".$organism unless ($query->param('single_multi_org') eq 'multi'); ## For multi-genome retrieval, the query organism name is passed to motif discovery programs, but it is not necessary
-} else {
-    &cgiError("Organism '",
-	      $organism,
-	      "' is not supported on this web site.");
-}
-
 
 ### feature type
 if ($query->param('feattype')) {
