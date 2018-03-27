@@ -3369,24 +3369,47 @@ sub SortMatrices {
     my %key_value = ();
     my $attr_not_found = 0;
     my $not_real = 0;
-    foreach my $matrix (@matrices) {
-      if (my $value = $matrix->get_attribute($sort_key)) {
-	$key_value{$matrix} = $value;
-	unless (&RSAT::util::IsReal($value)) {
-	  &RSAT::message::Debug("&RSAT::MatirxReader::SortMatrices()", "matrix", $matrix->get_attribute("id"), 
-				"Non-real attribute", $sort_key, "value", $value) if ($main::verbose >= 2);
-	  $not_real++;
+
+    if (lc($sort_key) eq "id") {
+	$sort_key = "id";
+    }
+
+    ## Collect the sorting attribute
+    unless ($sort_order eq "rand") {
+      foreach my $matrix (@matrices) {
+        if (my $value = $matrix->get_attribute($sort_key)) {
+	  $key_value{$matrix} = $value;
+	  unless (&RSAT::util::IsReal($value)) {
+	    &RSAT::message::Debug("&RSAT::MatirxReader::SortMatrices()", "matrix", $matrix->get_attribute("id"), 
+				  "Non-real attribute", $sort_key, "value", $value) if ($main::verbose >= 2);
+	    $not_real++;
+	  }
+	} else {
+	    $attr_not_found++;
 	}
-      } else {
-	$attr_not_found++;
       }
     }
 
-    if ($attr_not_found > 0) {
+    ## Sort matrices in random order
+    if ($sort_order eq "rand") {
+      &RSAT::message::Warning("Sorting matrices randomly") if ($main::verbose >= 2);
+      @perm_matrices = ();
+      srand();
+      while (scalar(@matrices) > 0) {
+	my $r = int(rand(scalar(@matrices))); ## pick a random number among indices of the remaining matrices
+	push(@perm_matrices, splice(@matrices, $r, 1));
+	&RSAT::message::Debug(join(" ", "sampled", scalar(@perm_matrices), "among", $nb_matrices, "; remaining: ",  scalar(@matrices))) if ($main::verbose >= 4);
+      }
+      @matrices = @perm_matrices;
+
+    ## Check if attribtue was found in all the matrices, else return unsorted matrices
+    } elsif ($attr_not_found > 0) {
       &RSAT::message::Warning("Cannot sort matrices by", $sort_key,
 			      "because this attribute is missing in", $attr_not_found."/".$nb_matrices, "matrices")
 	if ($main::verbose >= 1);
-    } elsif ($not_real > 0) {
+
+    ## For ascending or descending sorting, check if attribtue has Real values in all the matrices, else return unsorted matrices
+    } elsif (($not_real > 0) && (($sort_order eq "desc") || ($sort_order eq "asc"))) {
       &RSAT::message::Warning("Cannot sort matrices by", $sort_key,
 			      "because this attribute has non real values in", $not_real."/".$nb_matrices, "matrices")
 	if ($main::verbose >= 1);
