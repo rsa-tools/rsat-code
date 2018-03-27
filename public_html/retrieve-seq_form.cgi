@@ -171,6 +171,9 @@ print "<p><br/>";
 #### Multiple organisms, selected in a previos program, such as get-orthologs-compara
 if ($default{single_multi_org} eq 'multi') {
     $CHECKED = "checked";
+    # organism actually not needed, as org is parsed from two-column input tab file
+    # however, it causes errors downstream if unset; set to 'yeast' by default
+    if(!defined($default{'organism'})){ $default{'organism'} = 'yeast' }
     print ("<INPUT type=\"hidden\" NAME=\"organism\" VALUE=\"$default{'organism'}\">");
 } else {
     $CHECKED = "";
