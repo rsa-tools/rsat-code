@@ -54,6 +54,9 @@ foreach $key (keys %default) {
     if ($query->param($key)) {
         $default{$key} = $query->param($key);
     }
+    elsif($query->hidden($key)) { # take also hidden values
+        $default{$key} = $query->hidden($key);
+    }
 }
 
 ################################################################
@@ -324,6 +327,7 @@ print " <a class='badge badge-primary iframe' HREF='help.retrieve-seq.html#seq_l
 if ($query->param('taxon')) {
     print $query->hidden(-name=>'taxon',-default=>$query->param('taxon'));
 }
+
 
 ### send results by email or display on the browser
 print '<hr/>';
