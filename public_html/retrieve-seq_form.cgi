@@ -158,6 +158,10 @@ van Helden, J., Andre, B. & Collado-Vides, J. (2000). <i>A web site for the comp
 #### Single organism
 if ($default{single_multi_org} eq 'single') {
     $CHECKED = "checked";
+
+    if($default{'organism'}) {
+        print ("<INPUT type=\"hidden\" NAME=\"organism\" VALUE=\"$default{'organism'}\">");
+    }
 } else {
     $CHECKED = "";
 }
