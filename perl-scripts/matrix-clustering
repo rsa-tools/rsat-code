@@ -5577,6 +5577,7 @@ sub DisplaySingleCluster{
 	<div class="display"><strong style="display:block">Display Branch-Motifs</strong>'."\n\n".$all_consensus_table."\n\n".'</div>
 
 	  <ul style="text-align:left;clear:both;display:block;">
+	     <li type="square"><strong>Each cluster has a different color.</strong></li>
 	     <li type="square"><strong>Click on the upper buttons to display separately the information of each cluster.</strong></li>
 	     <li type="square"><strong>Click on the circles at each tree to display its corresponding merged motifs.</strong></li>
 	  </ul>  
