@@ -1868,10 +1868,15 @@ sub ReadArguments {
 	    unless (($sort_order eq "desc")
 		    || ($sort_order eq "asc")
 		    || ($sort_order eq "alpha")
+		    || ($sort_order eq "rand")
 		) {
 		&RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc,alpha.");
 	    }
-	    $sort_key = $ARGV[$a+2];
+	    if ($sort_order eq "rand") {
+		$sort_key = "rand"
+	    } else {
+		$sort_key = $ARGV[$a+2];
+	    }
 
 	    ### prior frequency file
 	} elsif ($ARGV[$a] eq "-prior") {
