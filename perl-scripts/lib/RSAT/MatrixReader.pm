@@ -3394,9 +3394,9 @@ sub SortMatrices {
         if (my $value = $matrix->get_attribute($sort_key)) {
 	  $key_value{$matrix} = $value;
 	  $index_value{$m} = $value;
-	  unless (&RSAT::util::IsReal($value)) {
+	  unless ((&RSAT::util::IsReal($value)) && (($sort_key eq "asc")|| ($sort_key eq "desc"))) {
 	    &RSAT::message::Debug("&RSAT::MatirxReader::SortMatrices()", "matrix", $matrix->get_attribute("id"), 
-				  "Non-real attribute", $sort_key, "value", $value) if ($main::verbose >= 2);
+				  "Non-real attribute", $sort_key, "value", $value) if ($main::verbose >= 4);
 	    $not_real++;
 	  }
 	} else {
