@@ -109,16 +109,18 @@ if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
   &PipingWarning();
 
-  ## Print the result
-  print '<H4>Result</H4>';
+  ## Print any errors to help user
+  if(-s $err_file) {
+    print '<H4>Check the warnings/errors:</H4>';
 
-  print "<PRE>";
-  open RESULT, $err_file;
-  while (<RESULT>) {
-    print $_ if(/^;INFO/); #unless ($query->param('output') =~ /server/i);
+    print "<PRE>";
+    open RESULT, $err_file;
+    while (<RESULT>) {
+        print $_ if(/^;INFO/); #unless ($query->param('output') =~ /server/i);
+    }
+    print "</PRE>";
+    close RESULT;
   }
-  print "</PRE>";
-  close RESULT;
 
   ## Print table with links to the result files
   &PrintURLTable(@result_files);
