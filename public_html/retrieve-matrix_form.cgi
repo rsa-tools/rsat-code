@@ -194,7 +194,19 @@ print '<script>
                     format = (res[0] == "tf") ? "transfac" : "tab";
                     matrix = res[1];
                     $("form").remove();
-                    document.getElementById("piping").innerHTML += "<form id=\"dynForm_" + f + "\" action=\"" + f + "_form.cgi\" method=\"post\"><input type=\"hidden\" name=\"matrix_format\" value=\"" + format + "\"><input type=\"hidden\" name=\"matrix\" value=\"" + matrix + "\"></form>";
+                    var html = "<form id=\"dynForm_" + f + "\" action=\"" + f + "_form.cgi\" method=\"post\"><input type=\"hidden\" name=\"matrix_format";
+                    if(f == "matrix-clustering"){
+                        html += "1\" value=\"" + format + "\"><input type=\"hidden\" name=\"matrix";
+                    }else{
+                        html += "\" value=\"" + format + "\"><input type=\"hidden\" name=\"matrix";
+                    }
+                    
+                    if(f == "matrix-clustering"){
+                        html += "1\" value=\"" + matrix + "\"><input type=\"hidden\" name=\"html_title\" value=\"from retrieve-matrix\"></form>";
+                    }else{
+                        html += "\" value=\"" + matrix + "\"></form>";
+                    }
+                    document.getElementById("piping").innerHTML += html;
                     document.getElementById("dynForm_" + f).submit();
                 }
             });
@@ -216,7 +228,7 @@ print '<script>
     }
     function setDemo2(){
         $("input[name=output][value=display]").prop("checked", true);
-        $("#db_id").val(["MA0019.1", "MA0031.1"]).change();
+        $("#db_id").val(["MA0019_1", "MA0031_1"]).change();
     }
     
     function reset(){
