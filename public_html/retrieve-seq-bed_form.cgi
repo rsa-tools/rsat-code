@@ -80,7 +80,7 @@ print "<legend><b><a class='iframe' href='help.retrieve-seq-bed.html'>Options</a
 print "<p>", $query->checkbox(-name=>'rm', -id=>'rm',
 			      -checked=>$default{'rm'},
 			      -label=>'');
-print "&nbsp;<A class='iframe' HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
+print "&nbsp;<A class='iframe' HREF='help.retrieve-seq-bed.html#rm'><B>Mask repeats</B></A>";
 print "</p>\n";
 
 print "</fieldset><p/>";
