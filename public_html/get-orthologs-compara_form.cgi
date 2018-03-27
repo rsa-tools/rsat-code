@@ -166,7 +166,7 @@ print "<hr/>\n";
 
 ################################################################
 ## Action buttons
-print "<UL><UL><TABLE class = 'formbutton'>\n";
+print "<UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
@@ -203,7 +203,8 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.get-orthologs-compara.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
-print "</TR></TABLE></UL></UL>\n";
+print "<TD><B><A HREF='sample_outputs/get-orthologs-compara_20180327.tab'>Sample output</A></B></TD>\n";
+print "</TR></TABLE></UL>\n";
 
 print "</BLOCKQUOTE>\n";
 
