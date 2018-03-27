@@ -168,9 +168,10 @@ print '<a class="badge badge-primary iframe" HREF="help.retrieve-seq.html#single
 print "&nbsp;"x4, &OrganismPopUpString();
 print "<p><br/>";
 
-#### Multiple organisms
+#### Multiple organisms, selected in a previos program, such as get-orthologs-compara
 if ($default{single_multi_org} eq 'multi') {
     $CHECKED = "checked";
+    print ("<INPUT type=\"hidden\" NAME=\"organism\" VALUE=\"$default{'organism'}\">");
 } else {
     $CHECKED = "";
 }
