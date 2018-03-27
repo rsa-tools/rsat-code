@@ -172,8 +172,8 @@ print "<p><br/>";
 if ($default{single_multi_org} eq 'multi') {
     $CHECKED = "checked";
     # organism actually not needed, as org is parsed from two-column input tab file
-    # however, it causes errors downstream if unset; set to 'yeast' by default
-    if(!defined($default{'organism'})){ $default{'organism'} = 'yeast' }
+    # however, it causes errors downstream if unset; set to yeast by default
+    if(!$default{'organism'}){ $default{'organism'} = 'Saccharomyces_cerevisiae' }
     print ("<INPUT type=\"hidden\" NAME=\"organism\" VALUE=\"$default{'organism'}\">");
 } else {
     $CHECKED = "";
