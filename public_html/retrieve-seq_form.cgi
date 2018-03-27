@@ -171,10 +171,12 @@ print "<p><br/>";
 #### Multiple organisms, selected in a previos program, such as get-orthologs-compara
 if ($default{single_multi_org} eq 'multi') {
     $CHECKED = "checked";
+
     # organism actually not needed, as org is parsed from two-column input tab file
-    # however, it causes errors downstream if unset; set to yeast by default
-    if(!$default{'organism'}){ $default{'organism'} = 'Saccharomyces_cerevisiae' }
-    print ("<INPUT type=\"hidden\" NAME=\"organism\" VALUE=\"$default{'organism'}\">");
+    # but is passed if available from previous programs
+    if($default{'organism'}) { 
+        print ("<INPUT type=\"hidden\" NAME=\"organism\" VALUE=\"$default{'organism'}\">");
+    }
 } else {
     $CHECKED = "";
 }
