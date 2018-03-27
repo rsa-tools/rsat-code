@@ -50,15 +50,10 @@ $default{ids_only} = "";
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ### replace defaults by parameters from the cgi call, if defined
-my $tmpdebug = '';
 foreach $key (keys %default) {
     if ($query->param($key)) {
         $default{$key} = $query->param($key);
-        $tmpdebug .= "<pre>$key $default{$key}</pre>\n";
     }
-    #elsif($query->hidden($key)) { # take also hidden values
-    #    $default{$key} = $query->hidden($key);
-    #}
 }
 
 ################################################################
@@ -159,7 +154,7 @@ van Helden, J., Andre, B. & Collado-Vides, J. (2000). <i>A web site for the comp
 <div class="panel-body">
 <div class="form-group">
 ';
-print $tmpdebug;
+
 #### Single organism
 if ($default{single_multi_org} eq 'single') {
     $CHECKED = "checked";
