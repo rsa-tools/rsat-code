@@ -302,12 +302,12 @@ package main;
     my $bad_chr_names = 0;
     open(ERR,'<',$outfile{err_log});
     while(my $err_line = <ERR>) {
-        &RSAT::message::Info($err_line);
+        &RSAT::message::Warning($err_line);
         if($err_line =~ m/was not found in the FASTA file/) { $bad_chr_names++ }
     }
     close(ERR);  
     if($bad_chr_names > 0) {
-            &RSAT::message::Info("Valid chromosome names are: ". join(",", sort(keys(%fasta_chrom))));
+            &RSAT::message::Warning("Valid chromosome names are: ". join(",", sort(keys(%fasta_chrom))));
         }
 
   }
