@@ -53,10 +53,11 @@ $default{ids_only} = "";
 foreach $key (keys %default) {
     if ($query->param($key)) {
         $default{$key} = $query->param($key);
+        print "<pre>$key $default{$key}</pre>\n";
     }
-    elsif($query->hidden($key)) { # take also hidden values
-        $default{$key} = $query->hidden($key);
-    }
+    #elsif($query->hidden($key)) { # take also hidden values
+    #    $default{$key} = $query->hidden($key);
+    #}
 }
 
 ################################################################
