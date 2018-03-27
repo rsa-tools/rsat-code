@@ -1,5 +1,6 @@
 #!/usr/bin/perl
-#### this cgi script fills the HTML form for the program matrix-clustering
+#### this cgi script fills the HTML form for the program retrieve-seq
+
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
         push (@INC, "$`lib/");
@@ -157,6 +158,10 @@ van Helden, J., Andre, B. & Collado-Vides, J. (2000). <i>A web site for the comp
 #### Single organism
 if ($default{single_multi_org} eq 'single') {
     $CHECKED = "checked";
+
+    if($default{'organism'}) {
+        print ("<INPUT type=\"hidden\" NAME=\"organism\" VALUE=\"$default{'organism'}\">");
+    }
 } else {
     $CHECKED = "";
 }
@@ -167,9 +172,15 @@ print '<a class="badge badge-primary iframe" HREF="help.retrieve-seq.html#single
 print "&nbsp;"x4, &OrganismPopUpString();
 print "<p><br/>";
 
-#### Multiple organisms
+#### Multiple organisms, selected in a previos program, such as get-orthologs-compara
 if ($default{single_multi_org} eq 'multi') {
     $CHECKED = "checked";
+
+    # organism actually not needed, as org is parsed from two-column input tab file
+    # but is passed if available from previous programs
+    if($default{'organism'}) { 
+        print ("<INPUT type=\"hidden\" NAME=\"organism\" VALUE=\"$default{'organism'}\">");
+    }
 } else {
     $CHECKED = "";
 }
@@ -323,6 +334,7 @@ print " <a class='badge badge-primary iframe' HREF='help.retrieve-seq.html#seq_l
 if ($query->param('taxon')) {
     print $query->hidden(-name=>'taxon',-default=>$query->param('taxon'));
 }
+
 
 ### send results by email or display on the browser
 print '<hr/>';

@@ -1290,9 +1290,9 @@ sub OrganismPopUpString{
     if($default{organism} ne ""){
         $org_name = $default{organism};
         $org_name =~ s/_/\ /g;
-        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' value='$org_name' size='35' class='form-control' <input id=$popupid name=$popupid value='$default{organism}' type='hidden'>";
+        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' value='$org_name' size='35' class='form-control'> <input id=$popupid name=$popupid value='$default{organism}' type='hidden'>";
     }else{
-        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' placeholder='Enter the name of your organism...' size='35' class='form-control' ><input id=$popupid name=$popupid type='hidden'>";
+        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' placeholder='Enter the name of your organism...' size='35' class='form-control'><input id=$popupid name=$popupid type='hidden'>";
     }
     $organismPopup .= "</div>";
     print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
