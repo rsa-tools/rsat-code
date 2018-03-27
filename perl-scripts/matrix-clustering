@@ -7027,7 +7027,7 @@ $(document).ready(function() {
 	if (/--sep_motifs--/) {
 	    my $sep_motifs = 0;
 	    $clust = $cluster_id_hash{$cluster_nb};
-	    if ($clusters_info{$clust} <= 5){
+	    if ($clusters_info{$clust} < 5){
 		$sep_motifs = 150;
 	    } elsif ($clusters_info{$clust} <= 9){
 		$sep_motifs = 200;
