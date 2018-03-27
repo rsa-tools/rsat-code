@@ -152,6 +152,7 @@ function setDemo(demo_org,demo_url,demo_descr){
 
 print "<TD><B><A class='iframe' HREF='help.retrieve-seq-bed.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jacques.VAN-HELDEN\@univ-amu.fr'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='sample_outputs/retrieve-seq-bed_demo20180326.fasta'>SAMPLE</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</fieldset><p/>";

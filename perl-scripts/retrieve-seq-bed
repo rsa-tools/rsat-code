@@ -297,7 +297,8 @@ package main;
   if ($main::verbose >= 1){ 
     Verbose() 
   }
-  elsif(-s $outfile{err_log}) {
+  
+  if(-s $outfile{err_log}) {
     open(ERR,'<',$outfile{err_log});
     while(my $err_line = <ERR>) {
         &RSAT::message::Info($err_line)
