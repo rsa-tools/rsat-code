@@ -47,7 +47,8 @@ package main;
   %args = (); ## Arguments for matrix reading
   %force_attribute = ();
   %set_parameters = ();
-  $top_matrices = "none";
+  local $import_top_matrices = "none";
+  local $export_top_matrices = "none";
   $skip_matrices = 0;
   $multiply = 1;
   $column_rescaling = "none";
@@ -150,9 +151,11 @@ package main;
   ## Read command-line arguments
   &ReadArguments();
 
+  ################################################################
+  ## Check parameter values
+  
   ## Check residue type
   $args{residue_type} = $residue_type;
-
 
   ################################################################
   ## Check argument values
@@ -160,12 +163,22 @@ package main;
   ## Verbosity is only accepted for the tab-delimited format 
   ##
   ## Note: JvH 2017-11-16: this is not convenient for debugging. I
-  ## modify the behaviour: TSDERR is produced in verbosity mode, but
+  ## modify the behaviour: STDERR is produced in verbosity mode, but
   ## the &Verbose() function is only called if output format is tab.
   # unless (lc($output_format ) eq "tab") {
   #   $main::verbose = 0;
   # }
 
+  ## If the option -sort has been activated, the option -top N is
+  ## applied to the output rather than input, in order to import all
+  ## matrices, sort them according to the specified criterion, and
+  ## export N top-ranking sorted matrices.
+  if ($sort_order) {
+      $import_top_matrices = "none";
+  } else {
+      $args{top} = $import_top_matrices;
+  }
+  
   ## Input format
   unless ($input_format) {
     &RSAT::error::FatalError("You should specify the input matrix format.");
@@ -395,11 +408,11 @@ package main;
       if (scalar(@tf_name_in_file)>=1){
 	$main::args{prefix}=shift(@tf_name_in_file);
       }
-      last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop reading files if we already collected the specified number of matrices
+      last if ((&IsNatural($import_top_matrices)) && ($m > $import_top_matrices)); ## Stop reading files if we already collected the specified number of matrices
       my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, %args);  
       foreach my $matrix (@matrices_from_file) {
 	$m++;
-	last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
+	last if ((&IsNatural($import_top_matrices)) && ($m > $import_top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
 	&SetMatrixName($matrix, $m, $matrix_file, $input_format);
 	push @matrices, $matrix;
       }
@@ -409,7 +422,7 @@ package main;
       my $m = 0;
       foreach my $matrix (@matrices_from_file) {
       $m++;
-      last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
+      last if ((&IsNatural($import_top_matrices)) && ($m > $import_top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
       &SetMatrixName($matrix, $m, "", $input_format);
       push @matrices, $matrix;
       }
@@ -557,7 +570,7 @@ package main;
 
   foreach my $matrix (@matrices) {
     $m++;
-    last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
+    last if ((&IsNatural($export_top_matrices)) && ($m > $export_top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
     &RSAT::message::TimeWarn("Exporting matrix", $m."/".scalar(@matrices))
 	if ($main::verbose >= 3);
 
@@ -622,7 +635,7 @@ package main;
     }
 
 
-    ## Matrix permutations
+    ## Random permutations of matrix columns (matrix randomisation)
     if ($perm) {
       my $AC = $matrix->get_attribute("accession") || $ID;
       &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
@@ -882,6 +895,7 @@ OPTIONS
 		.... The supported return types are described in detail below.
 
 	-sort desc|asc|alpha key
+	-sort rand
 
 		Sort matrices according to the specified attribute
 		(sort_key). The sorting can be done on numerical
@@ -897,6 +911,10 @@ OPTIONS
 		information content:
 			-sort desc MS.ic
 
+		The option -sort rand returns the matrices in random
+		order. It can be combined with the option -top N in
+		order to select N matrices from the input file.
+
 	-top N
 	        Maximal number of matrices to return.
 
@@ -910,6 +928,10 @@ OPTIONS
 		be combined with the option -skip to split a large
 		matrix file in smaller subsets.
 
+                The option -top N can also be combined with -sort rand
+		in order to perform a random sampling (without
+		replacement) of N matrices of a collection.
+    
 	-skip N
 	        Skip the first N matrices. See -top for details.
 
@@ -1851,10 +1873,11 @@ sub ReadArguments {
 	    
 	    ### Maximal number of matrices to return
 	} elsif ($ARGV[$a] eq "-top") {
-	  $top_matrices = $ARGV[$a+1];
-	  $args{top} = $top_matrices;
-	  &FatalError($top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")
-	    unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
+	  ##  Depending on other parmaeters, we will either apply thefiltr at import or export level
+	  $import_top_matrices = $ARGV[$a+1]; 
+	  $export_top_matrices = $ARGV[$a+1];
+	  &FatalError($import_top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")
+	    unless ((&IsNatural($import_top_matrices)) && ($import_top_matrices >= 1));
 
 	    ### Number of top matrices to skip
 	} elsif ($ARGV[$a] eq "-skip") {
