@@ -16,7 +16,7 @@ CHROMOSOME_FILE_NAME=${RSAT}/data/genomes/${ORG}/genome/chromosome*.raw
 CHROMOSOME_EQUIVALENCE_TABLE=${RSAT}/data/genomes/${ORG}/genome/common_to_ensemble_chromosome_names.tab
 
 create_equivalence_table:
-	ls -1 ${CHROMOSOME_FILE_NAME} | grep -v repeatmasked | perl -ane 's/.+\/// ;chomp; @line=split("_",$$_); print "${CHROMOSOME_PREFIX}".$$line[2]."\t".$$_."\n" ' > ${CHROMOSOME_EQUIVALENCE_TABLE}
+	ls -1 ${CHROMOSOME_FILE_NAME} | grep -v repeatmasked | perl -ane 's/.+\/// ; s/\.raw//;chomp; @line=split("_",$$_); print "${CHROMOSOME_PREFIX}".$$line[2]."\t".$$_."\n" ' > ${CHROMOSOME_EQUIVALENCE_TABLE}
 	@echo "Equivalence table for" ${ORG} ${CHROMOSOME_EQUIVALENCE_TABLE}
 
 create_equivalence_table_human37:
