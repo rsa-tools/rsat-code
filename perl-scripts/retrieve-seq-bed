@@ -126,6 +126,7 @@ package main;
   our %fasta_chrom = (); ## Index of chromosome names found in the fasta genome file
   our %fasta_chr_prefix = (); ## Index of chromosome names starting with the chr prefix in the fasta genome file
   our %bed_chr_prefix = (); ## Index of chromosome names starting with the chr prefix in the bed file
+  our %common_chr = ();  ## hash linking common chr names to real names in FASTA headers 
 
   ## Arguments for &RSAT::util::doit();
   our $dry = "";
@@ -192,6 +193,24 @@ package main;
 
 
   ################################################################
+  ## chck whether file with common chr names is available
+  if($infile{commonchrfile}) {
+   
+    ## Get the list of common chromosome names from optional infile
+    &RSAT::message::TimeWarn("Reading common chr names from ", $infile{commonchrfile}) if ($main::verbose >= 2);
+
+    if(open(COMMON,"<",$infile{commonchrfile})) { # no exception, this is optional
+        while(<COMMON>) {
+            if(/^(\S+)\s+(\S+)/) {
+                $common_chr{$1} = $2;          
+                &RSAT::message::Debug("\tCommon chr name: ".$1." fullname: ". $2) if ($main::verbose >= 5);
+            }
+        }
+        close(COMMON);
+    }
+  }
+  
+
   ## Treat the chr prefix
   if ($check_chr) {
       &RSAT::message::TimeWarn("Checking chromosome names") if ($main::verbose >= 2);
@@ -220,15 +239,15 @@ package main;
       $cmd .= ' | grep -v \'^#\' | sort | uniq |';
       open(CHR, $cmd);
       while (<CHR>) {
-	  chomp();
-	  if (/(\S+)/) {
+	    chomp();
+	    if (/(\S+)/) {
 	      my $chrom = $1;
 	      if ($chrom =~ /^chr/i) {
 		  $bed_chr_prefix{$chrom} = 1;
 	      }
 	      $bed_chrom{$chrom} = 1;
 	      &RSAT::message::Debug("\tBed chromosome name", $chrom) if ($main::verbose >= 5);
-	  }
+	    }
       }
       close (CHR);
 
@@ -468,6 +487,16 @@ Use repeat-masked version of the genome.
     } elsif ($arg eq "-rm") {
       $main::repeat_masked = 1;
 
+=pod
+
+=item   B<-common_chr file>
+
+Tab-separated file matching common, short chr names to full names 
+actually used in underlying FASTA file.
+
+=cut
+    } elsif ($arg eq "-common_chr") {
+      $main::infile{commonchrfile} = shift(@arguments);
 
 =pod
 
