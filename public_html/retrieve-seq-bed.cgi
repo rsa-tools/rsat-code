@@ -66,8 +66,10 @@ unless ($coordinate_file) {
 push @result_files, ("Coordinate file ($coordinate_format)",$coordinate_file);
 
 ## Check whether there is a list of common chr names for this org
-if(-s $RSAT."/data/genomes/$organism/genome/common_to_ensemble_chromosome_names.tab") {
-    $parameters .= " -common_chr $RSAT/data/genomes/$organism/genome/common_to_ensemble_chromosome_names.tab";
+my $common_names_file=$ENV{RSAT}."/data/genomes/$organism/genome/common_to_ensemble_chromosome_names.tab";
+#print "$common_names_file";die;
+if(-s $common_names_file) {
+    $parameters .= " -common_chr $common_names_file ";
 }
 else{ $parameters .= " -check_chr "; }
 
