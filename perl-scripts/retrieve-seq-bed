@@ -74,7 +74,7 @@ having to install them locally.
 =item B<-extend_up up_length>
 =item B<-extend_down down_length>
 
-Extend the peaks by a given length on the upstream (I<-exetend_up>),
+Extend the peaks by a given length on the upstream (I<-extend_up>),
 downstream (I<-extend_down>) or both sides (I<-extend>). The side is
 adapted according to the strand.
 
@@ -120,6 +120,7 @@ package main;
   our $repeat_masked = 0; ## If set ot 1, use repeat-masked version of the genome
   $infile{coordinates} = ""; ## Mandatory argument
 
+  our $common = 0;
   our $add_chr = 0;      ## Prepend chr prefix to chromosome column in bed file
   our $remove_chr = 0;   ## Remove chr prefix from chromosome column in bed file
   our $check_chr = 0;    ## Check consistency between chromosome names in bed and genome fasta
@@ -143,7 +144,7 @@ package main;
   ## Check argument values
 
   ## Treatment of the "chr" prefix
-  &RSAT::error::FatalError("The options -add_chr, -remove_chr and -check_chr are mutually exclusive") 
+  &RSAT::error::FatalError("The options -common_chr, -add_chr, -remove_chr and -check_chr are mutually exclusive") 
       if ($remove_chr + $add_chr + $check_chr > 1);
 
   ## Check that input coordinates file has been specified
@@ -203,7 +204,7 @@ package main;
         while(<COMMON>) {
             if(/^(\S+)\s+(\S+)/) {
                 $common_chr{$1} = $2;          
-                &RSAT::message::Debug("\tCommon chr name: ".$1." fullname: ". $2) if ($main::verbose >= 5);
+                &RSAT::message::Info("\tAccepted common chr name: ".$1." => ". $2);
             }
         }
         close(COMMON);
@@ -220,16 +221,16 @@ package main;
       $cmd =  'grep \'^>\' '.$infile{fasta_genome}.' |';
       open(CHR, $cmd);
       while (<CHR>) {
-	  chomp();
-	  &RSAT::message::Debug("\tSequence header", $_) if ($main::verbose >= 10);
-	  if (/^\>(\S+)/) {
+	    chomp();
+	    &RSAT::message::Debug("\tSequence header", $_) if ($main::verbose >= 10);
+	    if (/^\>(\S+)/) {
 	      my $chrom = $1;
 	      if ($chrom =~ /^chr/i) {
-		  $fasta_chr_prefix{$chrom} = 1;
+		    $fasta_chr_prefix{$chrom} = 1;
 	      }
 	      $fasta_chrom{$chrom} = 1;
 	      &RSAT::message::Debug("\tChromosome name", $chrom) if ($main::verbose >= 5);
-	  }
+	    }
       }
       close (CHR);
 
@@ -243,7 +244,7 @@ package main;
 	    if (/(\S+)/) {
 	      my $chrom = $1;
 	      if ($chrom =~ /^chr/i) {
-		  $bed_chr_prefix{$chrom} = 1;
+		    $bed_chr_prefix{$chrom} = 1;
 	      }
 	      $bed_chrom{$chrom} = 1;
 	      &RSAT::message::Debug("\tBed chromosome name", $chrom) if ($main::verbose >= 5);
@@ -255,15 +256,15 @@ package main;
       my $bed_chr_prefixes = scalar(keys(%bed_chr_prefix));
       my $fasta_chr_prefixes = scalar(keys(%fasta_chr_prefix));
       if ($main::verbose >= 2) {
-	  &RSAT::message::Info("Bed chromosome names with chr prefix", $bed_chr_prefixes, join(",", sort(keys(%bed_chrom))));
-	  &RSAT::message::Info("Fasta chromosome names with chr prefix", $fasta_chr_prefixes, join(",", sort(keys(%fasta_chrom))));
+	    &RSAT::message::Info("Bed chromosome names with chr prefix", $bed_chr_prefixes, join(",", sort(keys(%bed_chrom))));
+	    &RSAT::message::Info("Fasta chromosome names with chr prefix", $fasta_chr_prefixes, join(",", sort(keys(%fasta_chrom))));
       }
       if (($bed_chr_prefixes == 0) && ($fasta_chr_prefixes > 0)) {
-	  $add_chr = 1;
-	  &RSAT::message::Info("Adding chr prefixes to ensure compatiblity between bed and fasta file") if ($main::verbose >= 1);
+	    $add_chr = 1;
+	    &RSAT::message::Info("Adding chr prefixes to ensure compatibility between bed and fasta file") if ($main::verbose >= 1);
       } elsif (($bed_chr_prefixes > 0) && ($fasta_chr_prefixes == 0)) {
-	  $remove_chr = 1;
-	  &RSAT::message::Info("Removing chr prefixes to ensure compatiblity between bed and fasta file") if ($main::verbose >= 1);
+	    $remove_chr = 1;
+	    &RSAT::message::Info("Removing chr prefixes to ensure compatiblity between bed and fasta file") if ($main::verbose >= 1);
       }
   }
 
@@ -489,27 +490,17 @@ Use repeat-masked version of the genome.
 
 =pod
 
-=item   B<-common_chr file>
+=item B<-common_chr file>, B<-add_chr>, B<-remove_chr>, B<-check_chr>
 
-Tab-separated file matching common, short chr names to full names 
-actually used in underlying FASTA file.
-
-=cut
-    } elsif ($arg eq "-common_chr") {
-      $main::infile{commonchrfile} = shift(@arguments);
-
-=pod
-
-=item B<-add_chr>
-=item B<-remove_chr>
-=item B<-check_chr>
-
-These three options allow to ensure consistency between chromosome
+These four options allow to ensure consistency between chromosome
 naming in the query bed file and in the genome annotations. Indeed,
 the chromosome naming varies depending on the genome reference center,
 so that a bed file obtained with one convention may have chromosome
 names incompatible with the convention used in the database that
 served as source to install the genome in RSAT.
+
+I<-common_chr file> takes a tab-separated file matching common, short 
+chr names to full names actually used in underlying FASTA file.
 
 I<-add_chr> adds a prefix "chr" to chromosome names of the query bed
 file before running the analysis.
@@ -521,6 +512,9 @@ annotation table, and checks the consistency between naming
 conventions.
 
 =cut
+    } elsif ($arg eq "-common_chr") {
+      $main::infile{commonchrfile} = shift(@arguments);
+      $common = 1;
 
     } elsif ($arg eq "-add_chr") {
       $add_chr = 1;
