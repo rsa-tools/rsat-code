@@ -282,6 +282,7 @@ package main;
     close (CHR);
 
     # Decide whether to add or remove chr prefixes
+    # Not sure this logic is correct but I leave it as it was Bruno Mar2018
     my $bed_chr_prefixes = scalar(keys(%bed_chr_prefix));
     my $fasta_chr_prefixes = scalar(keys(%fasta_chr_prefix));
     if ($main::verbose >= 2) {
