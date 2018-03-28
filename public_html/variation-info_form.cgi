@@ -61,24 +61,13 @@ print $query->start_multipart_form(-action=>"variation-info.cgi");
 
 #print "<FONT FACE='Helvetica'>";
 
-my @org_variation=();
+#my @org_variation=();
 
 my $data_rsat=join("/",$ENV{RSAT},"data") ;
 my $supported_variation_organims_file=join ("/",$data_rsat,"supported_organisms_variation.tab");
 
 if (-e $supported_variation_organims_file){
-    my ($var_org) = &OpenInputFile($supported_variation_organims_file);
-    while(<$var_org>){
-	chomp;
-	next unless (/\S/) ; # skip empty rows
-	next if (/^;/); # skip comment lines
-	next if (/^\#/); # Skip header line	
-	my $org=$_ ;
-	push (@org_variations, $org) ;
-	
-    }
-    print "&nbsp;"x0, &OrganismPopUpString(@org_variations);
-    
+    print "&nbsp;"x0, &OrganismPopUpString('supported'=>'variations');
 }
 else {
   &RSAT::message::Warning("This RSAT site does not contain any genome with variations");
@@ -190,6 +179,7 @@ function setDemo2(){
     
     $("#organism_name").val("'. $demo_org . '");
     $("#organism").val("' . $org . '");
+    $("#input").val("");
     $("#input_url").val("'.$demo2_url.'");
     $("#input_type").val("bed");
 }
@@ -198,8 +188,9 @@ function setDemo2(){
 print '<button type="button" onclick="setDemo1('. "'$demo_gvf_var'" .')">DEMO 1: by SNP IDs</button>';
 print '<button type="button" onclick="setDemo2()">DEMO 2: by genomic regions (peaks)</button>';
 
+print "<td><b><a href='sample_outputs/variation-info_demo20180321.varBed'>[Sample Output]</a></B></TD>\n";
 print "<TD><B><A HREF='help.variation-info.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
+
 print "</TR></TABLE></UL></UL>\n";
 
 print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a PAPIIT-UNAM (IA206517) grant.</small></font>";

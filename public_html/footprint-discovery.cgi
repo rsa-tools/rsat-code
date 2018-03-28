@@ -142,12 +142,14 @@ if ($query->param('queries') =~ /\S/) {
 }
 
 
-## Unique species per taxon (filter)
-if ($query->param("unique_taxon") eq "species") {
-  $parameters .= " -unique_species";
-} elsif ($query->param("unique_taxon") eq "genus") {
-  $parameters .= " -unique_genus";
-}
+## ALE: This option has been removed from the web since it crashes with the current genome installation.
+## This option is not correctly paired with footprint-scan and creates a conflict
+# ## Unique species per taxon (filter)
+# if ($query->param("unique_taxon") eq "species") {
+#   $parameters .= " -unique_species";
+# } elsif ($query->param("unique_taxon") eq "genus") {
+#   $parameters .= " -unique_genus";
+# }
 
 ## Anlayze genes separately
 if ($query->param("multi_genes") eq "separately") {

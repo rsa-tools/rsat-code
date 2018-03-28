@@ -33,8 +33,6 @@ if (!exists("prefix")) {
   stop("Missing mandatory argument (prefix): prefix ")
 } else if (!exists("maxNWD.table.file")) {
   stop("Missing mandatory argument ( NWD table (matrix-quality output) ): maxNWD.table.file ")
-} else if (!exists("html.template.file")) {
-  stop("Missing mandatory argument (The path to the RSAT template for the heatmap): html.template.file ")
 } else if (!exists("d3.base")) {
   stop("Missing mandatory argument (The path to the D3 source code):d3.base  ")
 } else if (!exists("d3.array.base")) {
@@ -43,15 +41,24 @@ if (!exists("prefix")) {
   stop("Missing mandatory argument (The path to the tsv file used as input for the dynamic heatmap): maxNWD_tsv ")
 } else if (!exists("parsed.heatmap.html")) {
   stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): parsed.heatmap.html  ")
-} else if (!exists("Diff.maxNWD.tsv")) {
-  stop("Missing mandatory argument (The path to the tsv file used as input for the dynamic heatmap): Diff.maxNWD_tsv ")
-} else if (!exists("Diff.maxNWD.heatmap.html")) {
-  stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): Diff.maxNWD.heatmap.html  ")
 } else if (!exists("Sequences")){
   stop("Missing mandatory argument (Sequences names): Sequences ")
 } else if (!exists("TFs")){
   stop("Missing mandatory argument (TF names): TFs ")
+} else if (!exists("fields.table")){
+  stop("Missing mandatory argument (The path to the table to complete the html report): fields.table ")
 }
+
+
+
+## Not required
+# else if (!exists("Diff.maxNWD.tsv")) {
+#   stop("Missing mandatory argument (The path to the tsv file used as input for the dynamic heatmap): Diff.maxNWD_tsv ")
+# } else if (!exists("Diff.maxNWD.heatmap.html")) {
+#   stop("Missing mandatory argument (The path to the D3 Dynamic heatmap): Diff.maxNWD.heatmap.html  ")
+# }
+
+
 
 if (!exists("heatmap.color.palette")) {
   heatmap.color.palette <- "RdBu";
@@ -61,21 +68,20 @@ if (!exists("heatmap.color.classes")) {
 }
 heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
+fields.to.fill.report <- data.frame()
 
+# maxNWD.table.file <- "/home/jamondra/Downloads/maxNWD_heatmap_compare.txt"
+# TFs <- c("DDIT", "FCP2_GRHL1", "JUN_FOS", "REST", "SP", "USF2", "YY")
+# Sequences <- c("HELA", "K562", "inactive")
 
+# maxNWD.table.file <- "/home/jaime/Downloads/MatEnr/maxNWD_heatmap_compare.txt"
+# TFs <- c("DDIT", "FCP2_GRHL1", "JUN_FOS", "REST", "SP", "USF2", "YY")
+# Sequences <- c("HELA", "K562", "inactive")
 
 
 #############################
 ## Draw the maxNWD heatmap ##
 #############################
-
-# cat /home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/matrix-enrichment_heatmap.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " prefix = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto'; maxNWD.table.file = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Motif_Enrichment_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt'; html.template.file = 'motif_enrichment_dynamic_heatmap_d3.html'; maxNWD.tsv = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_matrix_heatmap.tsv'; parsed.heatmap.html = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/second_test_auto_motif_enrichment_maxNWD_heatmap.html'; d3.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3.v3.min.js'; d3.array.base = '/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap/d3-array.v0.6.min.js'" 
-
-# prefix <- "test_motif_enrichment"
-# setwd("/home/jaimicore/Documents/PhD/Human_promoters_project/Drosophila_TFs_MArianne/Bin/t/temp/Human_motifs_Epromoters_vs_Inactive_Promoters_2/Dynamic_Heatmap")
-# maxNWD.table.file <- "/home/jaimicore/Dropbox/matrix-clustering_article/NFKB_ChIP-seq/results/matrix-enrichment/NFKB_vs_Random_fragments/NFKB_vs_Random_fragments_all_nwd_plot/maxNWDsignificantScore_heatmap_compare.txt"
-# html.template.file <- "motif_enrichment_dynamic_heatmap_d3.html"
-
 base.name <- basename(prefix)
 
 #######################################
@@ -83,6 +89,7 @@ base.name <- basename(prefix)
 max.NWD.table <- read.table(maxNWD.table.file, sep = "\t", header = TRUE)
 max.NWD.table <- round(max.NWD.table, digits = 3)
 max.NWD.table[is.na(max.NWD.table)] <- 0
+
 
 # ## Calculate Differential
 sets <- colnames(max.NWD.table)
@@ -112,9 +119,10 @@ nb.sets <- length(sets)
 nb.diff.columns <- dim(max.NWD.table)[2]
 
 # NWD.sub <- max.NWD.table[,(nb.sets+1):nb.diff.columns]
-NWD.sub <- max.NWD.table[,]
+NWD.sub <- max.NWD.table
 NWD.sub <- NWD.sub[order(NWD.sub[,1], decreasing = TRUE),]
 NWD.sub <- as.matrix(round(NWD.sub, digits = 2))
+
 
 #######################################################################
 ## Convert the DataFrame in a 'tsv' object which is the input format
@@ -144,9 +152,11 @@ set <- "Normal"
   colnames(tsv.tab) <- c("Row", "Col", "Value")
   write.table(tsv.tab, file = file.export, sep = "\t", quote = FALSE, row.names = FALSE)
   
-  ###############################################################
-  ## Open and modify the Heatmap D3 template with the new data
-  html.report <- readLines(html.template.file)
+    
+  ################################################
+  ## Generate the lines to fill the html report ##
+  ## Export the fields in a table               ##
+  ################################################
   
   ## Get the Sequences (column) and Motifs (row) names
   sequences.names <- colnames(tab)
@@ -158,7 +168,10 @@ set <- "Normal"
   })
   logo.path <- as.vector(logo.path)
   logo.path <- paste(logo.path, collapse = ",")
-  html.report <- gsub("--logo_path--", logo.path, html.report)
+  
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--logo_path--",
+                                          content = logo.path))
+  
   
   ## Add the link to the distrib comparison curves pictures
   curves.path <- sapply(motifs.names, function(m){
@@ -166,35 +179,50 @@ set <- "Normal"
   })
   curves.path <- as.vector(curves.path)
   curves.path <- paste(curves.path, collapse = ",")
-  html.report <- gsub("--curves_path--", curves.path, html.report)
+
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--curves_path--",
+                                                                   content = curves.path))
   
   
   ## Insert the number of rows and columns
   col.nb <- length(sequences.names)
   row.nb <- length(motifs.names)
-  html.report <- gsub("--r_numb--", row.nb, html.report)
-  html.report <- gsub("--c_numb--", col.nb, html.report)
+  
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--r_numb--",
+                                                                   content = as.character(row.nb)))
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--c_numb--",
+                                                                   content = as.character(col.nb)))
+  
   
   ## Insert the D3 paths
-  html.report <- gsub("--d3_base--", d3.base, html.report)
-  html.report <- gsub("--d3_array_base--", d3.array.base, html.report)
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--d3_base--",
+                                                                   content = d3.base))
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--d3_array_base--",
+                                                                   content = d3.array.base))
   
   ## Insert the Default order of the rows and columns
   seq.number <- paste(1:col.nb, collapse = ",")
   motif.number <- paste(1:row.nb, collapse = ",")
-  html.report <- gsub("--col_order_default--", seq.number, html.report)
-  html.report <- gsub("--row_order_default--", motif.number, html.report)
+  
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--col_order_default--",
+                                                                   content = seq.number))
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--row_order_default--",
+                                                                   content = motif.number))
   
   ## Insert the Column and Row names
   sequences.names.cat <- paste("'" , sequences.names, "'", sep = "")
   sequences.names.cat <- paste(sequences.names.cat, collapse = ", ")
   motifs.names.cat <- paste("'" , motifs.names, "'", sep = "")
   motifs.names.cat <- paste(motifs.names.cat, collapse = ", ")
-  html.report <- gsub("--col_names--", sequences.names.cat, html.report)
-  html.report <- gsub("--row_names--", motifs.names.cat, html.report)
+  
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--col_names--",
+                                                                   content = sequences.names.cat))
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--row_names--",
+                                                                   content = motifs.names.cat))
   
   ## Insert the TSV file
-  html.report <- gsub("--file--", shortpath.maxNWD.tsv, html.report)
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--file--",
+                                                                   content = shortpath.maxNWD.tsv))
   
   ## Div bottom + Cell size
   cell.size <- 30
@@ -215,19 +243,28 @@ set <- "Normal"
     cell.size <- 15
     legend.header <- bottom - 27
   }
-  html.report <- gsub("--cell_size--", cell.size, html.report)
+  
+  ## Set the cell size
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--cell_size--",
+                                                                   content = as.character(cell.size)))
   
   ## Left space
   left <- (max(as.vector(sapply(c(sequences.names, motifs.names), nchar))) + 2.5) * 10
-  html.report <- gsub("--left--", left, html.report)
+  
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--left--",
+                                                                   content = as.character(left)))
   
   ## D3 path
   D3 <- "d3js.org/d3.v3.min.js"
-  html.report <- gsub("--d3--", D3, html.report)
+
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--d3--",
+                                                                   content = D3))
   
   ## Body size
   html.body.size <- 250 + left + (col.nb*cell.size)
-  html.report <- gsub("--body--", html.body.size, html.report)
+  
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--body--",
+                                                                   content = as.character(html.body.size)))
   
   ## Calculate the legend names for the color scale
   # stp <- (max(max.NWD.table) - min(max.NWD.table))/9
@@ -251,7 +288,9 @@ set <- "Normal"
   legend <- legend.domain.values
   legend <- round(legend, digits = 3)
   legend <- paste(rev(legend), collapse = ",")
-  html.report <- gsub("--data_legend--", legend, html.report)
+  
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--data_legend--",
+                                                                   content = legend))
   
   ## Create Gradient Hexadecimal:
   ## Given X hexa colors creates a color
@@ -264,13 +303,18 @@ set <- "Normal"
   palette.rev <- paste("'" , rev(palette.hexa), "'", sep = "")
   palette.rev <- paste(palette.rev, collapse = ", ")
   
-  html.report <- gsub("--gradient--", palette, html.report)
-  html.report <- gsub("--gradient_rev--", palette.rev, html.report)
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--gradient--",
+                                                                   content = palette))
+  
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--gradient_rev--",
+                                                                   content = palette.rev))
   
   ## Color domain
   domain <- legend.domain.values[1:(legend.length-1)]
   domain <- paste(domain, collapse = ",")
-  html.report <- gsub("--domain--", domain, html.report)
+  
+  fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--domain--",
+                                                                   content = domain))
 
 
 #################################################
@@ -279,6 +323,7 @@ set <- "Normal"
 
 ##########################
 ## Initialize variables
+# binomial.occ.file <- "/home/jamondra/Downloads/results_me_A7_LEF1_HUMAN_H11MO_0_A_occ_proba_LEF1_HUMAN_H11MO_0_A_compare-scores.tab"
 all.IDs <- NULL
 # all.names <- all.profiles ## Remember!
 hash.profile.ID <- list()
@@ -289,11 +334,6 @@ y.y <- NULL
 line.w <- 5
 all.profiles.max.occ <- vector()
 
-# prefix <- "/home/jaimicore/Documents/PhD/motif_enrichment/20160218/capstarr-seq"
-# TFs <- c("DDIT", "FCP2_GRHL1", "JUN_FOS", "REST", "SP", "USF2", "YY")
-# Sequences <- c("HELA", "K562", "inactive")
-
-# html.template.file <- "/home/jaimicore/Documents/PhD/motif_enrichment/dynamic_OCC_profiles.html"
 base.name <- basename(prefix)
 dir.name <- dirname(prefix)
 
@@ -303,20 +343,17 @@ Sequences <- unlist(strsplit(Sequences, "---", perl = TRUE))
 ## Get TF names
 TFs <- unlist(strsplit(TFs, "---", perl = TRUE))
 
-# cat /home/jaimicore/Documents/PhD/motif_enrichment/20160218/plot_binomial_occ.R | /usr/bin/R --slave --no-save --no-restore --no-environ --args " prefix = '/home/jaimicore/Documents/PhD/motif_enrichment/20160218/capstarr-seq'; html.template.file = '/home/jaimicore/Documents/PhD/motif_enrichment/dynamic_OCC_profiles.html'; Sequences = 'HELA---K562---inactive---'; TFs = 'DDIT---FCP2_GRHL1---JUN_FOS---REST---SP---USF2---YY---';"
-
-
-
 prof <- as.vector(outer(Sequences, TFs, paste))
 all.profiles <<- as.vector(sapply(prof, function(p){gsub(" ", "_", p)}))
-pdf.file <- paste(prefix, "_Binomial_occ_plots.pdf", sep = "")
-pdf(pdf.file )
+# pdf.file <- paste(prefix, "_Binomial_occ_plots.pdf", sep = "")
+# pdf(pdf.file )
 for(TF in TFs){
   
   ## Read Binomial OCC table
   binomial.occ.file <- paste(dir.name, "/", TF, "/", base.name, "_", TF, "_occ_proba_", TF,"_compare-scores.tab", sep = "")
   binomial.occ.tab <- read.csv(binomial.occ.file, header = TRUE, sep = "\t")
   
+  ## Assign a color to each sequence set
   col.nb <- dim(binomial.occ.tab)[2]
   colors <- colorRampPalette(brewer.pal(5, "Set1"), space="Lab")(col.nb-1)
   
@@ -329,7 +366,7 @@ for(TF in TFs){
     
     x <- as.vector(x)
     x <- as.numeric(gsub("<NULL>", NA, x))
-    return(x)
+    x
   })
   
   calculate.max.y <- max(binomial.occ.tab.cp[,2:col.nb], na.rm = TRUE)
@@ -342,29 +379,32 @@ for(TF in TFs){
   x <- -log10(x)
   
   ## Plot the Binomial OCC separately of each TF
-  plot(x,y, 
-       type = "l", 
-       col = colors[1],
-       main = paste("Binomial OCC", TF, sep = " "),
-       ylim = c(calculate.min.y - 1, calculate.max.y + 1),
-       lwd = 2,
-       xlab = "P-value",
-       ylab = "Binomial OCC significance"
-  )
+  # plot(x,y, 
+  #      type = "l", 
+  #      col = colors[1],
+  #      main = paste("Binomial OCC", TF, sep = " "),
+  #      ylim = c(calculate.min.y - 1, calculate.max.y + 1),
+  #      lwd = 2,
+  #      xlab = "P-value",
+  #      ylab = "Binomial OCC significance"
+  # )
+  # 
+  # ## Add the lines only if there are 2 or more sequences
+  # ## The first sequences is in column 2.
+  # if(col.nb > 2){
+  #   for(c in 3:col.nb){
+  #     lines(x = x, y = binomial.occ.tab.cp[,c],
+  #           type = "l", 
+  #           col = colors[c-1],
+  #           lwd = 2)
+  #   }
+  # }
+  # legend("topright", Sequences, fill = colors, cex = 0.75)
   
-  ## Add the lines only if there are 2 or more sequences
-  if(col.nb > 2){
-    for(c in 3:col.nb){
-      lines(x = x, y = binomial.occ.tab.cp[,c],
-            type = "l", 
-            col = colors[c-1],
-            lwd = 2)
-    }
-  }
   
-  legend("topright", Sequences, fill = colors, cex = 0.75)
-  
-  max.occ <- apply(binomial.occ.tab.cp[,2:col.nb],2, function(m){ max(m, na.rm = TRUE)})
+  ## When only one set of sequences is used R converts it to a vector, then the program dies.
+  ## So the vector should be converted in a data.frame
+  max.occ <- apply(as.data.frame(binomial.occ.tab.cp[,2:col.nb]), 2, function(m){ max(m, na.rm = TRUE)})
   names(max.occ) <- paste(TF, Sequences, sep = "_")
   all.profiles.max.occ <<- append(all.profiles.max.occ, max.occ)
   
@@ -385,14 +425,22 @@ for(TF in TFs){
   
   ## Rename the columns
   colnames(binomial.occ.tab) <- binomial.occ.tab[1,]
-  binomial.occ.tab <- binomial.occ.tab[2:(length(set.profiles)+1),]
-  sub.tab.nb.col <- dim(binomial.occ.tab)[1]
+  
+  ## This step must be done when the sequences sets == 1
+  ## Transpose the values
+  if(nb.sets == 1){
+    binomial.occ.tab <- t(data.frame(binomial.occ.tab[2:(length(set.profiles)+1),] )) 
+  } else {
+    binomial.occ.tab <- binomial.occ.tab[2:(length(set.profiles)+1),]
+  }
+  sub.tab.nb.col <- dim(as.data.frame(binomial.occ.tab))[1]
   
   ###################################################
   ## Get the X and Y data
   ## As there are some NA values, they are removed 
   ## from the data to draw them properly in C3
-  thrash <- apply(binomial.occ.tab, 1, function(values){
+  
+  thrash <- apply(as.data.frame(binomial.occ.tab), 1, function(values){
     
     ## Count the IDs
     ID.counter <<- ID.counter + 1
@@ -440,7 +488,7 @@ for(TF in TFs){
     x.x <<- rbind(x.x, paste("['x", ID.counter,"',", paste(aaa,collapse = ","), "],", sep = ""))
   })
 }
-dev.off()
+# dev.off()
 
 #############################
 ## Create the HTML c3 plot ##
@@ -456,8 +504,10 @@ html.names <- sapply(TFs, function(x){
 })
 html.names <- html.names[reorder]
 html.names <- paste("Names['", all.IDs, "'] = '", html.names, "';", sep = "")
-html.names <- paste(html.names, collapse = "\n")
-html.report <- gsub("--names_vector--", html.names, html.report)
+html.names <- paste(html.names, collapse = " ")
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--names_vector--",
+                                                                 content = html.names))
 
 ## Print Sequence names array
 html.seq <- rep(Sequences, times = length(Sequences))
@@ -465,8 +515,10 @@ html.seq <- rep(Sequences, times = length(Sequences))
 html.seq <- gsub("_\\w+", "", all.profiles, perl = TRUE)
 
 html.seq <- paste("Seqs['", all.IDs, "'] = '", html.seq, "';", sep = "")
-html.seq <- paste(html.seq, collapse = "\n")
-html.report <- gsub("--seqs--", html.seq, html.report)
+html.seq <- paste(html.seq, collapse = " ")
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--seqs--",
+                                                                 content = html.seq))
 
 ## Write the logo's path
 ## for both orientations
@@ -481,8 +533,10 @@ logos.F <- sapply(logos.F, function(x){
 })
 logos.F <- logos.F[reorder]
 logos.F <- paste("pics['", all.IDs, "'] = '", logos.F, "';", sep = "")
-logos.F <- paste(logos.F, collapse = "\n")
-html.report <- gsub("--pics--", logos.F, html.report)
+logos.F <- paste(logos.F, collapse = " ")
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--pics--",
+                                                                 content = logos.F))
 
 
 logos.R <- sapply(TFs, function(i){
@@ -494,38 +548,51 @@ logos.R <- sapply(logos.R, function(x){
 })
 logos.R <- logos.R[reorder]
 logos.R <- paste("pics_rc['", all.IDs, "'] = '", logos.R, "';", sep = "")
-logos.R <- paste(logos.R, collapse = "\n")
-html.report <- gsub("--pics_rc--", logos.R, html.report)
+logos.R <- paste(logos.R, collapse = " ")
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--pics_rc--",
+                                                                 content = logos.R))
 
 
 ## Add the color code (one color per motif)
 ## They are inserted in the C3 section
 colors <- colorRampPalette(brewer.pal(5, "Set1"), space="Lab")(length(all.IDs))
 set.colors <- paste(paste("'", colors, "'", sep = ""), collapse = ",")
-html.report <- gsub("--color_pattern--", set.colors, html.report)
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--color_pattern--",
+                                                                 content = set.colors))
 
 ## CSS section to set the line width
 ## Note: the width is proportional cummulative sum of the profile (TO DO)
 ## For the moment, only a fixed value is working
 line.w <- paste("#chart .c3-line-", all.IDs, "{ stroke-width: ", line.w, "px; }", sep = "")
-line.w <- paste(line.w, collapse = "\n")
-html.report <- gsub("--lines_w--", line.w, html.report)
+line.w <- paste(line.w, collapse = "; ")
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--lines_w--",
+                                                                 content = line.w))
 
 ## Add the TF_names data
 TF.names <- paste("TF_names['", all.profiles, "'] = '", all.IDs, "';", sep = "")
-TF.names <- paste(TF.names, collapse = "\n")
-html.report <- gsub("--TF_names--", TF.names, html.report)
+TF.names <- paste(TF.names, collapse = " ")
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--TF_names--",
+                                                                 content = TF.names))
 
 ## Add the TF_names data
 tfs <- paste(paste("'", all.profiles, "'", sep = ""), collapse = ",")
-html.report <- gsub("--tfs--", tfs, html.report)
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--tfs--",
+                                                                 content = tfs))
+
 
 ## Add the real motif IDs (to display in the tooltip)
 ## They are inserted in the JS section
 ## I called them 'real' because are those found on the original motif file
 IDs <- paste("IDs['", all.IDs, "'] = '", all.profiles, "';", sep = "")
-IDs <- paste(IDs, collapse = "\n")
-html.report <- gsub("--IDs--", IDs, html.report)
+IDs <- paste(IDs, collapse = " ")
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--IDs--",
+                                                                 content = IDs))
 
 ## The plot heigth depends in the number of motifs
 motif.total <- length(all.profiles)
@@ -535,39 +602,47 @@ if(motif.total >= 300){
 } else if(motif.total >= 400){
   chart.heigth <- 900
 }
-html.report <- gsub("--chart_h--", chart.heigth, html.report)
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--chart_h--",
+                                                                 content = as.character(chart.heigth)))
 
 ## Add xs values (one row per motif)
 ## They are inserted in the C3 section
 # xs <- paste("'", all.IDs, "' : 'x", 1:ID.counter, "',", sep = "")
 xs <- paste("'", all.IDs, "' : 'x", reorder, "',", sep = "")
-xs <- paste(xs, collapse = "\n")
-html.report <- gsub("--xs--", xs, html.report)
+xs <- paste(xs, collapse = " ")
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--xs--",
+                                                                 content = xs))
 
 ## Add x values (one row per motif)
 ## They are inserted in the C3 section
 x.x <- x.x[reorder]
 y.y <- y.y[reorder]
-x.x <- paste(x.x, collapse = "\n")
+x.x <- paste(x.x, collapse = "  ")
 x.x <- gsub(",NA,", ",NaN,", x.x)
-y.y <- paste(y.y, collapse = "\n")
+y.y <- paste(y.y, collapse = "  ")
 y.y <- gsub(",NA,", ",NaN,", y.y)
 
-html.report <- gsub("--x_x--", x.x, html.report)
-html.report <- gsub("--y_y--", y.y, html.report)
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--x_x--",
+                                                                 content = x.x))
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--y_y--",
+                                                                 content = y.y))
 
 ## Insert the motif names
 ## They are inserted in the C3 section
-plot.names <- paste(plot.names, collapse = "\n")
-html.report <- gsub("--names--", plot.names, html.report)
+plot.names <- paste(plot.names, collapse = " ")
+
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--names--",
+                                                                 content = plot.names))
 
 ## Insert the motif names (to hide/show all)
 ## They are inserted in the JQuery section
 all.IDs <- paste(paste("'", all.IDs, "'", sep = ""), collapse = ",")
-html.report <- gsub("--all--", all.IDs, html.report)
 
-## Export the report
-print(heatmap.html)
-file.remove(heatmap.html)
-file.create(heatmap.html)
-write(html.report, file = heatmap.html, append = FALSE)
+fields.to.fill.report <- rbind(fields.to.fill.report, data.frame(field = "--all--",
+                                                                 content = all.IDs))
+
+## Export the field table
+write.table(fields.to.fill.report, file = fields.table, sep = "\t\t", quote = FALSE, row.names = FALSE, col.names = TRUE)

@@ -50,7 +50,7 @@ genes separately (option -sep_genes), or on a group of genes
 altogether.
 
 Query genes can be entered on the command line (option -q) or in a
-text file (option-genes). Alternatively, teh option -all_genes will
+text file (option-genes). Alternatively, the option -all_genes will
 run the analysis on all the genes of a genome.
 
 =head2 Position-specific scoring matrices (PSSMs)
@@ -390,6 +390,12 @@ package main;
   local %query_indexes = ();
   local $bg_distrib; $bg_distrib = ""; ## Used in footprint.lib.pl
 
+  # ahcorcha
+  ## Tree for Bayesian score 
+  local $tree = "";
+  local $bbls_draw = "";
+  # /ahcorcha
+  
   ## Feature maps
   local $map_opt = "";
 
@@ -466,13 +472,15 @@ package main;
 			scan
 			map
 			synthesis
-		       );
+			bbls
+		       ); # ahcorcha: Added bbls task.
   $supported_tasks = join (",", @supported_tasks);
   %supported_task = ();
   foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
   }
 
+  
   ## PArameters for matrix-wise report tables
   local $sort_criterion = "sig"; ## Supported: sig | alpha | list;
   local @info_fields = qw(name
@@ -486,7 +494,7 @@ package main;
 
 
   ################################################################
-  ## Read argument values
+  ## Read argument values  
   &ReadArguments();
 
   ################################################################
@@ -537,6 +545,17 @@ package main;
   &RSAT::error::FatalError("For using the option -tf with option  -matrix_table you should type \"-tf file\" to indicate that TF names are included in the matrixx table file")
     if (($main::matrix_table_file) && ($main::tf ne "") && ($main::tf ne "file"));
 
+  
+  ################################################################
+  ## Check parameters for bbls # ahcorcha
+
+  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ($task{bbls} && $main::tree eq "" );  
+  
+  &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" );
+
+  &RSAT::error::FatalError("Option -bbls_draw only works with bbls.") if (!$task{bbls} && $main::bbls_draw ne "" );
+  # /ahcorcha
+  
   ################################################################
   ## Check parameters for matrix-scan
   local $ms_general_parameters = " -v 1"; ## for all matices
@@ -843,7 +862,7 @@ package main;
     if( defined($main::infile{bg}) ){
 	$dir{matrix_result_dir} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name,$m_suffix);
 	&RSAT::util::CheckOutDir($dir{matrix_result_dir});
-	$outfile{matrix_distrib} = join( "/",$dir{synthesis},$m_suffix."_matrix-distrib_occsig.tab") ;
+	$outfile{matrix_distrib} = join( "/",$dir{synthesis},$m_suffix."_matrix-distrib_occsig.tab");
 	&CalcMAtrixTheorDistrib   ;
     }
     
@@ -1274,6 +1293,29 @@ This option is incompatible with the option -bgfile.
 	    &RSAT::error::FatalError("Window size must be a natural number.") unless &RSAT::util::IsNatural($main::window_size);
 	    &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") if (defined($infile{bg}));
 
+	    # ahcorcha
+=pod
+
+=item B<-tree>
+Phylogenetic tree use for the Bayesian Branch Length Scoring task, 
+it should be in Newick format with distances and leaf names.
+
+=cut
+	} elsif ($arg eq "-tree") {
+	    $main::tree = shift(@arguments);
+	    
+=pod
+
+=item B<-bbls_draw>
+Fomat for the output image. Represents the phylogenetic tree of organisms
+with ortholog genes. Shows the conservation of the motif across the tree
+over the p-value. The default value is png (png, pdf or none).
+
+=cut
+	} elsif ($arg eq "-bbls_draw") {
+	    $main::bbls_draw = shift(@arguments);	    
+	    &RSAT::error::FatalError("The option -bbls_draw takes pdf, png or none (no output).") if !( ($main::bbls_draw eq "png") || ($main::bbls_draw eq "pdf") || ($main::bbls_draw eq "none") );
+	    #/ahcorcha	    
 =pod
 
 =item B<-bg_pseudo #>
@@ -1693,8 +1735,6 @@ sub RunFootprintScan {
 
   ################################################################
   ## Identify ortholog genes
-
-
   &GetOrthologs();
 
   ################################################################
@@ -1726,10 +1766,14 @@ sub RunFootprintScan {
   &OrthoMap();
 
 
+  ################################################################
+  ## ahcorcha
+  &BayesianScore();
+  #################################################################################################
+  
   if ($task{synthesis} && !($batch)){
     ## $selected_interaction = &Select_interaction(); ## Modified by JvH on 2015-03-09: $selected_interaction was not used anywhere, and &Select_interaction() has no return value
       &Select_interaction();
-
 
       ## Index occ sig files for the synthetic table
       $occ_sig_file{$current_gene} = $outfile{occ_sig} if (-e $outfile{occ_sig} );
@@ -1791,7 +1835,7 @@ sub GetOrthologsTF {
 
 
   ################################################################
-  ## Initialize output directory + output files
+   ## Initialize output directory + output files
   local ($outfile_prefix, $query_prefix)= &InitQueryOutput();
 
   ## Output files for matrix-scan
@@ -1916,21 +1960,21 @@ sub MatrixReportHeader {
     &RSAT::message::TimeWarn("Initializing results report for matrix",$m_suffix) if ($main::verbose >= 5);
     $occ_sig_header = `grep '^#' $occ_one_gene_file`;
     chomp $occ_sig_header;
-
+    
     my @header_occ_gene=split(/\t/,$occ_sig_header);
     pop (@header_occ_gene); ## Last element is the internal ranking of the occ_sig and is one for all the genes
 
     # $occ_sig_header =~ s/occ_sig_rank//;
-#     $occ_sig_header =~ s/^#//;
+    # $occ_sig_header =~ s/^#//;
     #$occ_sig_header =~ s/occ_sig_rank/gene_rank/; #the rank makes no sense if the $sort_creteria is alphabthic
     @header_values_at_th=("weight_at_th","occ_at_th","exp_at_th","sig_at_th");
     #Write header for the table
     print $synthesis_table join("\t", "#gene",@header_occ_gene, @header_values_at_th,@info_fields,"file"), "\n";
-
-
+    
+    
     ################
     ## Initiatie the Html file
-
+    
     ##Title includes information about the parameters used in the program
     print $synthesis_index "<html>\n";
     my $html_title = "footprint-scan";
@@ -1959,7 +2003,7 @@ sub MatrixReportHeader {
     $occ_sig_header=~s/\t/$html_sep/g;
 
     #Creat the header for the html matrix-wise report
-    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene,@header_values_at_th, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", @info_fields)."</th>";
+    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene,@header_values_at_th, "OCC_Sig", "SigPlot" ,"FreqPlot","Map","bbls score", "bbls tree", @info_fields)."</th>";
     $header_index .= "\n";
     print $synthesis_index $header_index;
     print $synthesis_index "</tr>\n";

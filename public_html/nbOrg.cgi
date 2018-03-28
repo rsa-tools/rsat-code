@@ -16,8 +16,7 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 print "Content-type:txt/html\n\n";
-print "<html>";
-print "<body>";
+print "<html><body>";
 
 @orgs = &RSAT::OrganismManager::get_supported_organisms_web();
 print scalar @orgs;

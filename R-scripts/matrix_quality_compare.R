@@ -22,7 +22,6 @@ if(!"flux" %in% x[,1]){
   message("Missing package: flux")
 }
 
-print("Boom1", stderr())
 
 ## Jaime Castro's code
 args <- commandArgs(trailingOnly=TRUE)
@@ -85,33 +84,33 @@ for (i in 1:dim(mtx.quality.nwds)[1]){
     #i<-2
     matrix <- mtx.quality.nwds[i,1]
     seq <- mtx.quality.nwds[i,2]
-   print (paste("Reading file for matrix and sequence",matrix,seq))
-   write (paste("Reading file for matrix and sequence",matrix,seq),stderr())   
+   # print (paste("Reading file for matrix and sequence",matrix,seq))
+   # write (paste("Reading file for matrix and sequence",matrix,seq),stderr())   
    one.table <- read.table(mtx.quality.nwds[i,3], header=TRUE, comment.char=";")
    colnames(one.table) <- c("Pvalue", "score_theor", "score_seq", "NWD")
     #print(head(one.table))
     #nwd.files [[paste("mtxID",matrix,"_seqID",seq, sep="")]][["table"]] <-  one.table
-    nwd.files [[matrix]][[seq]][["table"]] <-  one.table
+    nwd.files[[matrix]][[seq]][["table"]] <-  one.table
 }
 
 ################
 ## Get max.nwd, max.sig.nwd, auc.all, auc.sig for each sequence matrix set
 
-print ("Reading in files with nwd data")
-lapply(names(nwd.files) ,function(matrix.name){
-    print (matrix.name)
-    write (matrix.name, stderr())
-    print (names(nwd.files[[matrix.name]]))
-    lapply( names(nwd.files[[matrix.name]]), function(seq=x, matrix.name2=matrix.name){
-        print (matrix.name2)
-        print (seq)
+# print ("Reading in files with nwd data")
+th <- lapply(names(nwd.files) ,function(matrix.name){
+    # print (matrix.name)
+    # write (matrix.name, stderr())
+    # print (names(nwd.files[[matrix.name]]))
+    th2 <- lapply( names(nwd.files[[matrix.name]]), function(seq=x, matrix.name2=matrix.name){
+        # print (matrix.name2)
+        # print (seq)
         local.table <- nwd.files[[matrix.name2]][[seq]][["table"]]
         #local.table$NWD <- scale(local.table$NWD)
         #local.table$NWD <- data.Normalization( local.table$NWD,type="n1",normalization="column")
         ## max.nwd
         max.nwd <- max(local.table$NWD)
-        print(max.nwd )
-	write(max.nwd, stderr())
+        # print(max.nwd )
+	# write(max.nwd, stderr())
         nwd.files[[matrix.name2]][[seq]][["max.nwd"]] <<- max.nwd 
         
         ## ##############
@@ -167,10 +166,10 @@ draw.heatmap <- function (ListAll,
             metric.table[mtx,seq] <-  ListAll[[mtx]][[seq]][[metric]]
         }
     }
-    write ("Before output", stderr())
+    # write ("Before output", stderr())
     write.table(file=paste(heatmap.file, "txt", sep="" ),metric.table,quote = FALSE, sep = "\t", na = "NA"  )
-    write (paste(heatmap.file, "txt", sep="" ), stderr())
-    write ("After output", stderr())
+    # write (paste(heatmap.file, "txt", sep="" ), stderr())
+    # write ("After output", stderr())
     if (print.heatmap==1){
         
         for (format in formats){
@@ -215,14 +214,14 @@ draw.heatmap <- function (ListAll,
 max.nwd.heatmap.file <- paste(plot.folder,"maxNWD_heatmap_compare.", sep="/")
 draw.heatmap(ListAll=nwd.files,metric="max.nwd",heatmap.file=max.nwd.heatmap.file , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
 
-write("first call", stderr())
+# write("first call", stderr())
 
 ## ###
 ## Draw heatmap using max.nwd
 max.sig.nwd.heatmap.file <- paste(plot.folder,"maxNWDsignificantScore_heatmap_compare.", sep="/")
 draw.heatmap(ListAll=nwd.files,metric="max.sig.nwd",heatmap.file=max.sig.nwd.heatmap.file  , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
 
-write("scond call", stderr())
+# write("scond call", stderr())
 
 
 ## ###
@@ -232,7 +231,7 @@ write("scond call", stderr())
              metric="auc.all",heatmap.file=auc.all.heatmap.file, 
              formats=formats, mtx.quality.nwds=mtx.quality.nwds,
              zlim=c(0,1))
-write("third call", stderr())
+# write("third call", stderr())
 
 
 ## ###
@@ -240,7 +239,7 @@ write("third call", stderr())
  auc.sig.heatmap.file <- paste(plot.folder,"AUC_NWDsignificantScore_heatmap_compare.", sep="/")
  draw.heatmap(ListAll=nwd.files,metric="auc.sig",heatmap.file=auc.sig.heatmap.file  , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
 
-write("Finish", stderr())
+# write("Finish", stderr())
 
 
 ## ################################################################

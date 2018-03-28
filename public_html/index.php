@@ -12,14 +12,14 @@
 <BODY>
 <?php
     require_once ('functions.php');
-include('menu.php');
+    include('menu.php');
 ?>
 
 <div class='page-content-wrapper'>
 <div class='container'>
 	<div class='homeheader'>
 		<div class='row'>
-			<div class='col-sm-4' align='center'><img src="images/RSAT_logo.jpg" style="max-width:150px;max-height:60px;padding-bottom:10px" alt="RSAT server" border="0"><br/>
+			<div class='col-sm-4' align='center'><img src="images/RSAT_20_Ann_logo.jpg" style="max-width:250px;max-height:100px" alt="RSAT server" border="0"><br/>
             <span style='color:#0D73A7;font-size:11px;font-family:Arial rounded MT bold'>Regulatory Sequence Analysis Tools</span>
 			</div>
 			<div class='col-sm-2 homemenu'>
@@ -131,10 +131,10 @@ include('menu.php');
                 <option value="peak-motifs_form.cgi" class="peak-motifs">peak-motifs</option>
                 
                 <option value="retrieve-seq_form.cgi" class="retrieve-seq-programs">retrieve sequences</option>
-                <option value="retrieve-ensembl-seq_form.cgi" class="retrieve-seq-programs">retrieve Ensembl sequences (only for organisms supported at Ensembl.org)</option>
+                <option value="http://metazoa.rsat.eu/retrieve-ensembl-seq_form.cgi" class="retrieve-seq-programs">retrieve Ensembl sequences (only for organisms supported at Ensembl.org)</option>
                 
-                 <option value="footprint-discovery_form.cgi" class="footprint-programs">footprint discovery</option>
-                 <option value="footprint-scan_form.cgi" class="footprint-programs">footprint-scan</option>
+                 <option value="http://prokaryotes.rsat.eu/footprint-discovery_form.cgi" class="footprint-programs">footprint discovery (Prokaryotes+Fungi)</option>
+                 <option value="http://prokaryotes.rsat.eu/footprint-scan_form.cgi" class="footprint-programs">footprint-scan (Prokaryotes+Fungi)</option>
                  
                  <option value="oligo-analysis_form.cgi" class="disco-programs">oligo-analysis (words)</option>
                  <option value="dyad-analysis_form.cgi" class="disco-programs">dyad-analysis (spaced pairs)</option>
@@ -151,10 +151,12 @@ include('menu.php');
                  
                  <option value="convert-matrix_form.cgi" class="convert-matrix">convert matrix</option>
                  
-                 <option value="fetch-sequences_form.php" class="fetch-sequences">fetch sequences from UCSC (only for organisms supported at genome.ucsc.edu)</option>
+                 <option value="retrieve-seq-bed_form.cgi" class="fetch-sequences">sequences from bed/gff/vcf (locally-installed organisms)</option>
+                 <option value="http://metazoa.rsat.eu/fetch-sequences_form.php" class="fetch-sequences">fetch sequences from UCSC (only for organisms supported at genome.ucsc.edu)</option>
                  
-                 <option value="retrieve-variation-seq_form.cgi" class="retrieve-variation-seq">retrieve variation sequences</option>
-                 <option value="variation-scan_form.cgi" class="scan-variations">scan variations</option>
+                 <option value="http://metazoa.rsat.eu/retrieve-variation-seq_form.cgi" class="retrieve-variation-seq">retrieve variation sequences (Metazoa)</option>
+                 <option value="http://metazoa.rsat.eu/variation-scan_form.cgi" class="scan-variations">scan variations (Metazoa)</option>
+                 
                  <option value="retrieve-matrix_form.cgi" class="retrieve-matrix">retrieve matrix</option>
             </select>
         </div>

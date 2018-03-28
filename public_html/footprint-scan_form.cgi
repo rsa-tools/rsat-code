@@ -161,7 +161,7 @@ function setDemo(demo_matrix){
     var descr1 = "<H4>Comment on the demonstration example 1 :</H4> \
     <blockquote class =\"demo\"> \
     <p>In this demonstration, we apply <i>footprint-scan<\i> to evaluate the enrichment of LexA binding site in the upstream sequences of two of its target genes: lexA (the factor is auto-regulated) and recA.</p>\n \
-    <p> For each query gene, the orthologs are collected at the level of Enterobacteriales, their upstream sequences are scanned with the matrix, and the number of observed sites is compared to the random expectation.</p>\n \
+    <p> For each query gene, the orthologs are collected at the level of Gammaproteobacteria, their upstream sequences are scanned with the matrix, and the number of observed sites is compared to the random expectation.</p>\n \
     </blockquote>";
     
     demo_descr.innerHTML = descr1;
@@ -169,8 +169,8 @@ function setDemo(demo_matrix){
     $("#queries").val("'. $demo_queries . '");
     $("#organism_name").val("Escherichia coli GCF 000005845.2 ASM584v2");
     $("#organism").val("Escherichia_coli_GCF_000005845.2_ASM584v2");
-    $("#taxon").val("Enterobacteriales");
-    $("#taxon_name").val("Enterobacteriales");
+    $("#taxon").val("Gammaproteobacteria");
+    $("#taxon_name").val("Gammaproteobacteria");
     $("#matrix").val(demo_matrix);
     $("#matrix_format").val("transfac");
     $("#bg_method_bginput").prop("checked", true);
@@ -179,8 +179,8 @@ function setDemo(demo_matrix){
 </script>';
 print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .')">DEMO</button>';
 
+print "<td><b><a href='sample_outputs/footprint-scan_demo_output/footprint-scan_Gammaproteobacteria__lexA_recA_2018-03-21.183943_2018-03-21.183943_J8t3qJ/lexA_recA/Gammaproteobacteria/Escherichia_coli_GCF_000005845.2_ASM584v2/all_matrices_report.html'>[Sample Output]</a></B></TD>\n";
 print "<td><b><a href='help.footprint-scan.html'>[MANUAL]</a></B></TD>\n";
-print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

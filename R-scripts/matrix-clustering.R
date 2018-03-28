@@ -775,7 +775,7 @@ if(only.hclust == 0){
     n.colors <- length(clusters)
   }
   # colors <- rainbow(n.colors)
-  colors <- colorRampPalette(brewer.pal(9, "Set1"), space="Lab")(n.colors)
+  colors <- colorRampPalette(brewer.pal(8, "Dark2"), space="Lab")(n.colors)
   
   write.table(paste(paste("cluster_", 1:n.colors, sep = ""), " ", colors, sep = ""), file = paste(sep="", out.prefix, "_hexa_colors.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
   

@@ -214,7 +214,7 @@ $rsat_main = getcwd()."/..";
         $rsat_main = $x."/..";
     }
 // log file
-$rsat_logs = $rsat_main."/public_html/logs";
+$rsat_logs = $rsat_main."/logs";
 
 // Load properties from the site-specific configuration file RSAT_config.props
 $properties = load_props($rsat_main."/RSAT_config.props");
