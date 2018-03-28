@@ -16,7 +16,7 @@ $query = new CGI;
 $default{demo_descr1} = "";
 $default{organism} = "";
 $default{input_type}="bed";
-$default{mml}=30 ; ## Length of the sequence sorounding the variant, 
+$default{mml}=30 ; ## Length of the sequence sorounding the variant,
                    ## has to be consistent with the longest matrix to be used
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -39,9 +39,9 @@ print ", Jeremy Delerce<sup>ci</sup>\n";
 print "</CENTER>";
 
 ################################################################
-### display the form only if the organisms on the curent server 
+### display the form only if the organisms on the curent server
 ###  are coherent with this tool, otherwise, display an info message
- 
+
 if ($ENV{variations_tools} == 0){
 
 print "<font color='#DD0000'>Sorry, this tool is not compatible with the organisms supported on this server.</font>\n";
@@ -49,7 +49,7 @@ print "<font color='#DD0000'>Sorry, this tool is not compatible with the organis
 print $query->end_html;
 
 exit(0);
-	
+
 }
 
 ################################################################
@@ -61,14 +61,13 @@ print "<div id='demo_descr'></div>";
 
 print $query->start_multipart_form(-action=>"retrieve-variation-seq.cgi");
 
-
-
 #### Select organims to retrieve variants sequences from
-
-print "&nbsp;"x0, &OrganismPopUpString();
-print "<p>\n";
-
-
+#print "<div id='organisms_popup' style='display:none'>";
+#print "&nbsp;"x0, &OrganismPopUpString();
+#print "<p>\n</div>";
+#print "<div id='variations_popup'>";
+#print &OrganismPopUpString("supported"=>"variations", "bg_org"=>"1");
+#print "<p></div>";
 ### Query variants
 ### Variants can be input as a list of rs numbers, rsa variation file or bed regiones
 ### from where variants annotated in ensembl variations will be extracted.
@@ -93,12 +92,12 @@ print "<UL>\n";
     print $variantsChoiceString ;
 
 }else{
-    
+
     print $query->textarea(-name=>'input', -id=>'input',
 			   -default=>$default{input},
 			   -rows=>6,
 			   -columns=>65);
-### Option to upload a file with variant information (IDs, varBed file or 
+### Option to upload a file with variant information (IDs, varBed file or
 ### genomic regions in bed format)
     print "<BR>Upload variants or regions<BR>\n";
     print $query->filefield(-name=>'uploaded_file',
@@ -107,14 +106,25 @@ print "<UL>\n";
 			    -maxlength=>200);
     print "</UL>\n";
     print "<BR>\n";
-    
+
 }
+
+
 ### Input type
 print "<B>Input format</B>&nbsp;";
     print $query->popup_menu(-name=>'input_type', -id=>'input_type',
 			     -Values=>['varBed','id','bed'],
 			     -default=>$default{input_type});
 print "<\p>";
+
+#### Select organims to retrieve variants sequences from
+print "<div id='organisms_popup' style='display:none'>";
+print "&nbsp;"x0, &OrganismPopUpString();
+print "<p>\n</div>";
+print "<div id='variations_popup'>";
+print &OrganismPopUpString("supported"=>"variations", "bg_org"=>"1");
+print "<p></div>";
+
 ### Lenght of the sequences surranding the variant
 print "<B>Length of flanking sequence on each side of the variant</B>&nbsp;\n";
 print $query->textfield(-name=>'mml', -id=>'mml',
@@ -145,9 +155,23 @@ while (my $row = <$fh>){
 }
 
 print '<script>
+
+$(document).ready(function(){
+    $("#input_type").change(function(){
+        if($("#input_type").val() == "varBed"){
+            document.getElementById("organisms_popup").style.display = "block";
+            document.getElementById("variations_popup").style.display = "none";
+            $("#organism_bg").val("");
+        }else{
+            document.getElementById("organisms_popup").style.display = "none";
+            document.getElementById("variations_popup").style.display = "block";
+            $("#organism").val("");
+        }
+    });
+});
 function setDemo(demo_rsat_var){
     $("#reset").trigger("click");
-    
+
     var descr1 = "<H4>Comment on the demonstration :</H4> \
             <blockquote class =\"demo\"> \
             <p>In this demonstration, we retrieve the sequence of genetic variants.</p> \
@@ -156,7 +180,8 @@ function setDemo(demo_rsat_var){
             </blockquote>";
 
     demo_descr.innerHTML = descr1;
-    
+    document.getElementById("organisms_popup").style.display = "block";
+    document.getElementById("variations_popup").style.display = "none";
     $("#organism_name").val("Homo sapiens GRCh37");
     $("#organism").val("Homo_sapiens_GRCh37");
     $("#input").val(demo_rsat_var);
@@ -170,6 +195,7 @@ print "</B></TD>\n";
 
 print $query->end_form;
 
+print "<td><b><a href='sample_outputs/retrieve-variation-seq_demo20180226.varSeq'>[Sample Output]</a></B></TD>\n";
 print "<TD><B><A HREF='help.retrieve-variation-seq.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
@@ -179,4 +205,3 @@ print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a
 print $query->end_html;
 
 exit(0);
-

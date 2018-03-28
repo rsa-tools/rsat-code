@@ -12,31 +12,14 @@
    require_once ('functions.php');
      
        $menu = $_REQUEST['menu'];
-<<<<<<< HEAD
        //printMenu($menu);
 	if(strcmp($menu,"RSAT") == 0){
 		include 'menu.php';
 	}else{
 		include 'menu_graph.php';
 	}       
-=======
-<<<<<<< HEAD
-	if(strcmp($menu,"RSAT") == 0){
-		include("menu.php");
-	}else{
-		include("menu_graph.php");
-	}       
-//printMenu($menu);
-       
-=======
-       if(strcmp($menu, "RSAT") == 0){
-           include("menu.php");
-       }else{
-           include("menu_graph.php");
-       }       
->>>>>>> 032d233c8088ca94e98c930819af473131d4769a
 // require ('demo_dataset.php');
->>>>>>> 32b44fb8d5dfef12eacf26dcbc34ec3198efa671
+
 $default_min_sig = 0;
   
 # PIPE VALUES

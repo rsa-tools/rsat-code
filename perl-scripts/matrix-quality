@@ -327,13 +327,7 @@ package main;
     $roc_options = " ";
     $distrib_options = " ";
     $main::num_mtx=0;
-    ## Reference distribution for the ROC curve
-    $roc_ref = "theor";
-    $draw_roc=1;
-    $task{plot}=0;
-    $mq_plots=1;
 
-    $r_plot=0 ; ## By defualt plots will be generated using gnuplot
 
     ## Tasks
     local @supported_tasks = ("all", ## Run all other tasks
@@ -355,6 +349,14 @@ package main;
       $supported_task{$task} = 1;
     }
     %task = ();
+
+    ## Reference distribution for the ROC curve
+    $roc_ref = "theor";
+    $draw_roc=1;
+    $task{plot}=0; 
+    $mq_plots=1;
+
+    $r_plot=0 ; ## By defualt plots will be generated using gnuplot
 
     ################################################################
     ## The C command matrix-scan-quick is MUCH faster than
@@ -416,7 +418,7 @@ package main;
 
 
     ## If no tasks has been specified, execute them all
-    if (($task{all}) || (scalar(keys(%task))==0)) {
+    if (($task{all}) || (scalar(keys(%task))==0) || (($task{plot}==0) && (scalar(keys(%task))==1))  ) {
       %task = %supported_task;
       $task{all} = 0;
 
@@ -433,7 +435,7 @@ package main;
       }
     }
 
-   # die  join ("\t", "HELLO", sort keys %task), "\n";
+    #die  join ("\t", "HELLO", sort keys %task), "\n";
 
     ## Matrix+sites file is also matrix
     if ($infile{matrix_sites}) {

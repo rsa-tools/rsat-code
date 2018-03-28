@@ -228,14 +228,15 @@ sub PrintOrthoSelectionSection {
 #  &TaxonPopUp("node");
   &TaxonPopUp("all");
 
+  ## ALE: This is not working correctly and makes a conflict since this taxon frequencies have not been calculated, and the final html name does not match.
   ## Select a single organism per taxon
-  print "<br>";
-  print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
-  print $query->popup_menu(-name=>'unique_taxon', -id=>'unique_taxon',
-			   -Values=>['species',
-				     'genus',
-				     'no filter'],
-			   -default=>$default{unique_taxon});
+  # print "<br>";
+  # print "<b><a class='iframe' href='help.footprint-discovery.html#unique_taxon'>Unique organism per</a>&nbsp;</b>\n";
+  # print $query->popup_menu(-name=>'unique_taxon', -id=>'unique_taxon',
+  # 			   -Values=>['species',
+  # 				     'genus',
+  # 				     'no filter'],
+  # 			   -default=>$default{unique_taxon});
 
 }
 
@@ -337,7 +338,7 @@ sub RSA_header_bootstrap {
         -src      => 'RSAT_tabs.js'
     }
    ],
-    -style => { 	-src => ["css/bootstrap.min.css","css/bhoechie-tab.css","tabs.css","chosen.css","font-awesome.min.css"],
+    -style => { 	-src => ["css/bootstrap.min.css","css/bhoechie-tab.css","tabs.css","chosen.css","font-awesome.min.css","form.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
 
@@ -371,19 +372,13 @@ $(document).ready(function() {
 <script>
 $(document).ready(function(){
     $(\'[data-toggle="tooltip"]\').tooltip();
+    $(\'[rel="popover"]\').popover();
 });
 </script>
 
 ';
 
-
-
-    open(my $fh, "menu.php");
-    while(my $row = <$fh>){
-        if($row =~ "<!--perlscript"){ my @orgs =  &RSAT::OrganismManager::get_supported_organisms_formenu(); print scalar(@orgs); }
-        print $row."\n";
-    }
-
+    system("php menu.php");
     print "<div class='container' id='page-content-wrapper'>";
 
     if(!($title =~ 'RSAT home') && !($title =~ "Publications")) {
@@ -449,14 +444,9 @@ document.getElementById("demo_descr").innerHTML = txt;
 });
 </script>';
 
+system("php menu.php");
 
-    open(my $fh, "menu.php");
-    while(my $row = <$fh>){
-        if($row =~ "<!--perlscript"){ my @orgs =  &RSAT::OrganismManager::get_supported_organisms_formenu(); print scalar(@orgs); }
-        print $row."\n";
-    }
-
-    print "<div class='container' id='page-content-wrapper'>";
+print "<div class='container' id='page-content-wrapper'>";
 
     if(!($title =~ 'RSAT home') && !($title =~ "Publications")) {
         print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
@@ -565,8 +555,8 @@ sub SelectOutput {
     print $query->radio_group(-name=>'output', -id=>'output',
 			      -values=>[@values],
 			      -default=>$default_output);
-    print $query->textfield(-name=>'user_email', -id=>'user_email',
-			    -size=>30,
+    print "&nbsp;";
+    print $query->textfield(-name=>'user_email', -id=>'user_email', class=>'form-control', -size=>30,
 	) unless ($ENV{mail_supported} eq "no");
     print "<BR>\n";
 }
@@ -607,7 +597,7 @@ sub MultiInputChoice {
     ## Text area to copy-paste the input
     $inputChoiceString .=  "&nbsp;"x5;
     $inputChoiceString .=  "Paste your ".$in_type." (".$in_format." format)<BR>\n";
-    $inputChoiceString .=  $query->textarea(-name=>'input'.$in_num,
+    $inputChoiceString .=  $query->textarea(-name=>'input'.$in_num, -id=>'input'.$in_num,
 					    -default=>$default{"input".$in_num},
 					    -rows=>4,
 					    -columns=>55);
@@ -615,7 +605,7 @@ sub MultiInputChoice {
 
     ## Option to upload the input file from the client machine
     $inputChoiceString .=  "Or select a file to upload (.gz compressed files supported) <BR>\n";
-    $inputChoiceString .=  $query->filefield(-name=>'uploaded_file'.$in_num,
+    $inputChoiceString .=  $query->filefield(-name=>'uploaded_file'.$in_num, -id=>'uploaded_file'.$in_num,
 						-default=>'',
 						-size=>45,
 						-maxlength=>200);
@@ -624,7 +614,7 @@ sub MultiInputChoice {
     ## Option to fetch input file from an URL
     $inputChoiceString .=  "&nbsp;"x3;
     $inputChoiceString .=  "URL of a ".$in_type." file available on a Web server.<br>\n";
-    $inputChoiceString .=  $query->textfield(-name=>'input_url'.$in_num,
+    $inputChoiceString .=  $query->textfield(-name=>'input_url'.$in_num, -id=>'input_url'.$in_num,
 						-default=>$default{'input_url'.$in_num},
 						-size=>62);
     $inputChoiceString .= "<br>\n";
@@ -1283,14 +1273,16 @@ sub OrganismPopUpString{
     my (%args) = @_;
    
     my $supported = $args{'supported'};
-    my $supported_param = "";
+    my $supported_param = "?get=json";
     if($supported ne ""){
-        $supported_param .= "?supported=$supported";
+        $supported_param .= "&supported=$supported";
     }
-    
+    &check_prokaryote_server();
+
     my $bg_org = $args{'bg_org'};
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
     my $popupid_name = ($bg_org == 1) ? "organism_bg_name" : "organism_name";
+    my $tip = ($bg_org == 1) ? "tip_bg" : "tip";
     
     my $organismPopup = "<div class='ui-widget' style='display:inline'>";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
@@ -1298,9 +1290,9 @@ sub OrganismPopUpString{
     if($default{organism} ne ""){
         $org_name = $default{organism};
         $org_name =~ s/_/\ /g;
-        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' value='$org_name' size='35'><input id=$popupid name=$popupid value='$default{organism}' type='hidden'>";
+        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' value='$org_name' size='35' class='form-control'> <input id=$popupid name=$popupid value='$default{organism}' type='hidden'>";
     }else{
-        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' placeholder='Enter the name of your organism...' size='35'><input id=$popupid name=$popupid type='hidden'>";
+        $organismPopup .= "<input id=$popupid_name name=$popupid_name autofocus='autofocus' placeholder='Enter the name of your organism...' size='35' class='form-control'><input id=$popupid name=$popupid type='hidden'>";
     }
     $organismPopup .= "</div>";
     print "<script src='$ENV{rsat_www}/js/autocomplete/js/jquery-ui.min.js'></script>";
@@ -1358,26 +1350,31 @@ sub OrganismPopUpString{
                         var reg = new RegExp(re , "i", "m");
                         var t = item.label.replace(reg, replacer);
 
-                        document.getElementById("tip").style.display = "none";
+                        document.getElementById("' . $tip . '").style.display = "none";
                         return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
                     }else{
-                        $("#tip").html("<span style=\"color:orange\">Your search has no result</span>");
-                        document.getElementById("tip").style.display = "inline";
+                        $("#' . $tip . '").html("<span style=\"color:orange\">Your search has no result</span>");
+                        document.getElementById("'. $tip .'").style.display = "inline";
                         return false;
                     }
                 };
             
     });
     </script>';
-    if($args{supported} eq 'orthologs'){
-        $organismPopup .=  "<a href='supported-orthologs.cgi' target='_blank'>  [List of orthologs]</a>";
-    }elsif($args{supported} eq 'infer'){
-        $organismPopup .=  "<a href='supported-infer.cgi' target='_blank'>  [List of operon inference organisms]</a>";
+    if($args{supported}){
+        $list = $args{supported};
+        if($args{supported} eq "infer"){
+            $list = "operon inference organisms";
+        }elsif($args{supported} eq "variations"){
+            $list = " organisms with variations";
+        }
+        $organismPopup .=  "<a href='getOrganisms.cgi?get=display&supported=$args{supported}' target='_blank'>  [List of $list]</a>";
     }
+    
     else{
         $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
     }
-    $organismPopup .= " <div id='tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
+    $organismPopup .= " <div id='$tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
 
     return $organismPopup;
 }
@@ -1510,7 +1507,7 @@ sub TaxonPopUpString {
         
         $("#taxon_name").autocomplete({
         minLength: 2,
-        source: "getOrganisms.cgi?taxon=yes&nodetype='.$node_type.'",
+        source: "getOrganisms.cgi?get=json&taxon=yes&nodetype='.$node_type.'",
         focus: function(event, ui){
             $("#taxon_name").val(ui.item.label);
             return false;
@@ -1679,7 +1676,7 @@ sub GetMatrix {
   $args{title}="Input personal collection of motifs" if ($db_choice);
   my $title = $args{title} || "Matrix (or matrices)";
   #print "<a href=''><b>Use your own motifs collection:</b></a><br/>" ;
-  print "<input type='radio' NAME='db_choice' VALUE='custom_motif_db' $status_db_choice >" if ($db_choice);
+  print "<input type='radio' NAME='db_choice_radio' VALUE='custom_motif_db' $status_db_choice >" if ($db_choice);
   print "<B>", $title, "</B>\n";
   print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
   print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
@@ -1743,11 +1740,6 @@ sub GetMatrix {
 			 -rows=>4,
 			 -columns=>60);
 
-## Propose help to find matrices
-unless ($args{nowhere}) {
-        print "<br/><br/>";
-    &MotifSelection('ids' => 1);
-    }
 
   ## Option to upload the matrix file from the client machine
   print "<BR>\n";
@@ -1757,9 +1749,13 @@ unless ($args{nowhere}) {
 			  -default=>'',
 			  -size=>45,
 			  -maxlength=>200);
-    print "<BR>\n";
 
-
+    ## Propose help to find matrices
+    unless ($args{nowhere}) {
+        print "<br/><br/>";
+        &MotifSelection('ids' => 1);
+    }
+    
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
     #### pseudo-counts
@@ -1846,12 +1842,6 @@ sub GetFirstMatrix {
 			 -rows=>4,
 			 -columns=>60);
     
-    ## Propose help to find matrices
-    unless ($args{nowhere}) {
-        print "<br/><br/>";
-        &MotifSelection('ids' => 1);
-    }
-    
     ## Option to upload the matrix file from the client machine
     print "<BR>\n";
     print  "Upload motifs file<br/>" if ($db_choice);
@@ -1860,7 +1850,13 @@ sub GetFirstMatrix {
     -default=>'',
     -size=>45,
     -maxlength=>200);
-    print "<BR>\n";
+    
+    ## Propose help to find matrices
+    unless ($args{nowhere}) {
+        print "<br/><br/>";
+        &MotifSelection('ids' => 1);
+    }
+    #print "<BR>\n";
     
     
     ## Display additional options: pseudo-count and pseudo-count distribution
@@ -1958,11 +1954,6 @@ print '</div></div>
 			 -columns=>60);
 
 print '</div>';
-## Propose help to find matrices
-unless ($args{nowhere}) {
-        print "<br/><br/>";
-    &MotifSelection('ids' => 1);
-    }
 
   ## Option to upload the matrix file from the client machine
   print  "Upload motifs file<br/>" if ($db_choice);
@@ -1971,9 +1962,13 @@ unless ($args{nowhere}) {
 			  -default=>'',
 			  -size=>45,
 			  -maxlength=>200);
+  ## Propose help to find matrices
+  unless ($args{nowhere}) {
+    print "<br/><br/>";
+    &MotifSelection('ids' => 1);
+  }
+  
     print "<BR></div>\n";
-
-
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
     #### pseudo-counts
@@ -2115,15 +2110,17 @@ sub MotifSelection {
             theme: "classic"
             });
             $("#db_choice2").change(function(){
-                $("#matrix").val("");
-                $("#db_choice").val("").change();
+                if($("#db_choice2").val() != ""){
+                    $("#matrix").val("");
+                    $("#db_choice").val("").change();
+                    $("input[name=db_choice_radio][value=motif_collection_all]").prop("checked",true);
+                }
             });
         }
  ';
 
     ### if select also the identifiers.
     if($args{ids} == 1){
-
         print '$("#db_id").select2({placeholder: "Select identifiers",
                     allowClear: true,
                     theme: "classic",
@@ -2131,8 +2128,12 @@ sub MotifSelection {
             });
 
             $("#db_choice").change(function(){
-                $("#db_id").val("").change();
-                $("#matrix").val("");
+                if($("#db_choice").val() != ""){
+                    $("#db_id").val("").change();
+                    $("#matrix").val("");
+                    $("input[name=db_choice_radio][value=custom_motif_db]").prop("checked",true);
+                    $("#db_choice2").val("").change();
+                }
                 document.getElementById("identifier").style.display = "none";
                 db_name = $("#db_choice").val();
                 $.ajax({
@@ -2159,6 +2160,9 @@ sub MotifSelection {
             $("#db_id").change(function(){
                 db_name = $("#db_choice").val();
                 db_id = $("#db_id").val();
+                if(db_id == null || db_id == ""){
+                    $("#matrix").val("");
+                }
                 if(db_id != null && db_id != ""){
                     $.ajax({
                     type: "GET",
@@ -2185,7 +2189,7 @@ sub MotifSelection {
     print '<style> input.select2-search__field { width: 90% !important; } </style>';
     print '<div style="float:left;font-size:11px">';
     if($args{ids} == 1){
-        print "<img src='images/onebit_49.png' height='30' class='new'/><b>Or</b> select a collection in list (a box will appear to select each matrix individually)<br/>";
+        print "<b>Or</b> Dynamic selection of motifs from the available collections</b> <img src='images/onebit_49.png' height='30' class='new'/><br/><span style='font-size:10px'>(select the collection and a dropdown menu will appear to select motifs)</span><br/><br/>";
     }
     my $width = ($args{ids} == 1) ? "300px" : "400px";
     my $multiple = ($args{mode} eq 'checkbox') ? 'multiple="multiple"' : '';
@@ -2200,7 +2204,7 @@ sub MotifSelection {
     print "</div></div></div>";
 
     if($args{ids} == 1){
-        print "<div id='identifier' style='display:none'><div style='float:left;margin-left:27px;font-size:11px;'><img src='images/onebit_49.png' height='30' class='new' style='visibility:hidden'/>Select 1 or more matrix identifiers:<br/>";
+        print "<div id='identifier' style='display:none'><div style='float:left;margin-left:27px;margin-top:30px;font-size:11px;'>Select 1 or more matrix identifiers:<br/><br/>";
         print " <select id='db_id' style='width:300px' multiple='multiple'></select><br/>&nbsp;";
         print "</div></div>";
     }
@@ -3031,11 +3035,49 @@ sub DisplayMatrixDBchoice_select2 {
     my @fungi_key = ("cerevisiae", "fungi");
     my @metazoa_key = ("Drosophila", "drosophila", "_fly", "elegan", "insect", "nematode", "urochordate", "metazoa", "Metazoa");
     my @all_key = ("all");
-    my @keys = ([@vertebrates_key], [@metazoa_key], [@plants_key], [@fungi_key], [@prokaryots_key], [@all_key]);
+    
+    ## declare the variables
+    my @keys;
+    my @values;
+    my @labels;
+    my @colors;
+    
+    ## adapt for server-specific motifs
+    if ($ENV{group_specificity} eq "Metazoa") {
+    	@keys = ([@vertebrates_key], [@metazoa_key], [@all_key]);
+    	@values = (\%vertebrates, \%metazoa, \%multi_organism);
+    	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms');
+    	@colors = ('blue', 'orange', 'yellow');
+    
+    } elsif ($ENV{group_specificity} eq "Fungi") {
+    
+    @keys = ([@fungi_key], [@all_key]);
+    @values = (\%fungi, \%multi_organism);
+    @labels = ( 'Fungi', 'Multi-organisms');
+    @colors = ( 'purple', 'yellow');  
 
-    my @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
-    my @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms');
-    my @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow');
+ 	} elsif ($ENV{group_specificity} eq "Prokaryotes") {
+    
+    @keys = ([@prokaryots_key], [@all_key]);
+    @values = (\%prokaryots, \%multi_organism);
+    @labels = ('Prokaryotes', 'Multi-organisms');
+    @colors = ('teal', 'yellow'); 
+    
+    } elsif ($ENV{group_specificity} eq "Plants") {
+    
+    @keys = ( [@plants_key], [@all_key]);
+    @values = ( \%plants, \%multi_organism);
+    @labels = ( 'Plants', 'Multi-organisms');
+    @colors = ( 'green', 'yellow'); 
+    
+    } else {
+    
+    @keys = ([@vertebrates_key], [@metazoa_key], [@plants_key], [@fungi_key], [@prokaryots_key], [@all_key]);
+    @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
+    @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms');
+    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow');  
+    }
+    
     ## Display supported motif databases
     foreach my $db_name (sort(keys (%matrix_db))) {
         my $db_format = $matrix_db{$db_name}->{'format'};
@@ -3060,7 +3102,10 @@ sub DisplayMatrixDBchoice_select2 {
                         }
                         $descr .= " - [$nbmotif motifs]";
                     }
-                    ${$values[$i]}{$db_name} = $descr . " (".$version.") - [<a href='$ENV{'www-rsat'}/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
+                    ${$values[$i]}{$db_name} = $descr . " (".$version.")";
+                    if($mode eq "list") {
+                        ${$values[$i]}{$db_name} .= " - [<a href='$ENV{'www-rsat'}/rsat/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
+                    }
                 }
             }
         }
@@ -3165,7 +3210,8 @@ sub GetMatrixDBchoice_select2 {
         ## Treat multiple database selections if the DB list was presented with checkboxes
         if ($mode eq "checkbox") {
 
-            if ($db_name ~~ @motifs) {
+            #if ($db_name ~~ @motifs) { # avoid experimental ~~, feb2018 Bruno
+            if(grep { $db_name eq $_ } @motifs){
                 $matrix_db_params .= " -motif_db ".$db_name." ".$format." ".$ENV{RSAT}."/public_html/motif_databases/".$file;
                 push @selected_db, $db_name;
             }
@@ -4675,7 +4721,21 @@ sub check_phylo_tools() {
     }
 }
 
+################################################################
+## &CheckProkaryotServer()
+##
+## Check if phylogenetic footprint approaches are supported on this
+## instance of RSAT.
+sub check_prokaryote_server() {
+    if ($ENV{prokaryote_server} == 1) {
+	print "<p><font color='red'>Genomes in the RSAT Prokaryotes server were recently re-installed.</font> \n";
+	print "Genome names now follow the NCBI standard to easily identify assemblies, if you cannot find your genome please check this naming list to find the correct ID: <a target='_top' href='http://prokaryotes.rsat.eu/data/genomes/RSAT_NCBI_ID_genomes.html'>Genome IDs list</a></p>";
+	#exit(0);
+    }
+}
+
 =pod
+
 
 =item B<check_ensembl_tools>
 

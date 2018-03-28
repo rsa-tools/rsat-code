@@ -179,6 +179,8 @@ package main;
   ## Heatmap color palette and classes
   local $heatmap_color_palette = "RdBu";
   local $heatmap_color_classes = 9;
+
+  local %fields_for_html_report = ();
   
   ## Supported heatmap colors (taken from http://colorbrewer2.org/)
   local %supported_heatmap_color_palette = ();
@@ -275,6 +277,7 @@ package main;
   $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
   $main::outfile{report_partial} = $main::prefix{main}."_report_partial.html";
   $main::outfile{report} = $main::prefix{main}."_report.html";
+  $main::outfile{fields_to_fill_report} = $main::prefix{main}."_fields_to_fill_report.tab";
   
   $main::outfile{short_path_maxNWD_tsv} = $short_prefix."_matrix_heatmap.tsv";
   $main::outfile{maxNWD_tsv} = $main::prefix{main}."_matrix_heatmap.tsv";
@@ -340,11 +343,11 @@ package main;
   ## required to display logo trees, animations and dynamic tables
   if ($include_js_lib) {
       
-      &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 3);
-      my $js_sync_cmd = "rsync -ruptl";
+      &RSAT::message::Debug("Copying javascript libraries to output directory") if ($main::verbose >= 5);
+      my $js_sync_cmd = "rsync -ruptl ";
       $js_sync_cmd .= " ".$ENV{RSAT}."/perl-scripts/lib/js";
       $js_sync_cmd .= " ".$dir{output};
-      &doit($js_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+      &one_command($js_sync_cmd, 0);
       $js_base = $dir{output}."/js";
       &RSAT::message::Info("Javascript libraries copied to output directory", $js_base) if ($main::verbose >= 3);
       
@@ -368,11 +371,11 @@ package main;
   ################################################################
   ## Copy the section icons in the results folder
   ################################################################
-  &RSAT::message::Debug("Copying result sections icons to output directory") if ($main::verbose >= 3);
+  &RSAT::message::Debug("Copying result sections icons to output directory") if ($main::verbose >= 5);
   my $icon_sync_cmd = "rsync -ruptl";
   $icon_sync_cmd .= " ".$ENV{RSAT}."/public_html/images/program_icons/matrix-enrichment_icons";
   $icon_sync_cmd .= " ".$dir{output};
-  &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+  &one_command($icon_sync_cmd, 0);
 
 
   ## ################
@@ -504,13 +507,12 @@ package main;
 	  $main::outfile{motifs_transfac}=$dir{output}."/".$short_prefix."_transfac_motifs.tf";
 	  
 	  &RSAT::message::TimeWarn( "Converting input matrices to Transfac format, outputfile: ",  $main::outfile{motifs_transfac} ) if ($main::verbose >= 3);
-	  $convert_matrix_cmd = $SCRIPTS."/convert-matrix ";
+	  $convert_matrix_cmd = $SCRIPTS."/convert-matrix -v 0";
 	  $convert_matrix_cmd .= " -i ".$main::infile{motifs};
 	  $convert_matrix_cmd .= " -from ".$matrix_format;
 	  $convert_matrix_cmd .= " -to transfac ";
 	  $convert_matrix_cmd .= " -o ".$main::outfile{motifs_transfac};
-	  
-	  &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	  &one_command($convert_matrix_cmd, 0);
 	  $to_delete{'motifs_transfac'} = $main::outfile{motifs_transfac};
 	  $matrix_format="transfac";
 	  $main::infile{motifs}=$main::outfile{motifs_transfac};
@@ -528,7 +530,7 @@ package main;
       &RSAT::message::TimeWarn("Selecting top and skippped motifs Transfac format") if ($main::verbose >= 3);
       $main::outfile{motifs_transfac_top_skip}=$dir{output}."/".$short_prefix."_transfac_motifs_topskip_selected_motifs.tf";
       
-      $convert_matrix_cmd = $SCRIPTS."/convert-matrix ";
+      $convert_matrix_cmd = $SCRIPTS."/convert-matrix -v 0";
       $convert_matrix_cmd .= " -i ". $main::outfile{motifs_transfac};
       $convert_matrix_cmd .= " -from transfac ";
       $convert_matrix_cmd .= " -to transfac "; 
@@ -540,7 +542,7 @@ package main;
       
       $main::infile{motifs} = $main::outfile{motifs_transfac_top_skip} ;
       
-      &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+      &one_command($convert_matrix_cmd, 0);
       $to_delete{'motifs_transfac'} = $main::outfile{motifs_transfac_top_skip} ;
 
   }  
@@ -774,7 +776,7 @@ package main;
 	  my $st= $_;
 	  push(@all_sequence_names, $st);
 	  ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st, $mq_plots,  @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) ;
-	  print ((join("++", @{$tab_files_for_aux_plots_occ_proba_per_seq{$st}})), "\n");
+	  # print ((join("++", @{$tab_files_for_aux_plots_occ_proba_per_seq{$st}})), "\n");
 	  ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st, $mq_plots,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} })  ;
 	  #print $outfile{$st."all_matrices_occ_proba_table"}."\n";
 	  #print $outfile{$st."all_matrices_occ_proba_plot"}."\n";
@@ -816,7 +818,6 @@ package main;
       # $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
 
       
-      
       ## Jaime Castro's Command
 
       my $r_path = &RSAT::server::GetProgramPath("R");
@@ -832,9 +833,7 @@ package main;
       $matrix_enrichment_heatmap_cmd .= "; print.heatmap = '0'";
       $matrix_enrichment_heatmap_cmd .= " \"";
 
-      &RSAT::message::Info("R-command for generate NWD tables: ", $matrix_enrichment_heatmap_cmd) if ($main::verbose >= 0);
-      
-      print ("Full cmd: ".$matrix_enrichment_heatmap_cmd."\n");
+      &RSAT::message::Info("R-command for generate NWD tables: ", $matrix_enrichment_heatmap_cmd) if ($main::verbose >= 5);
 
       if ($r_path) {
 	  &doit($matrix_enrichment_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
@@ -1462,7 +1461,7 @@ sub Draw_OCCProfiles_and_Heatmap {
     $matrix_enrichment_plot_cmd .= " --slave --no-save --no-restore --no-environ";
     $matrix_enrichment_plot_cmd .= " --args \"";
     $matrix_enrichment_plot_cmd .= " prefix = '".$main::prefix{main}."'";
-    $matrix_enrichment_plot_cmd .= " ;html.template.file = '".$main::outfile{report_template}."'";
+    $matrix_enrichment_plot_cmd .= " ;fields.table = '".$main::outfile{fields_to_fill_report}."'";
 
     ## Arguments to draw Binomial Occ curves
     $matrix_enrichment_plot_cmd .= " ;Sequences = '".$Seq_string."'";
@@ -1485,7 +1484,7 @@ sub Draw_OCCProfiles_and_Heatmap {
 #    $matrix_enrichment_plot_cmd = "(".$matrix_enrichment_plot_cmd.")"; # Uncomment this line to check the R output in the terminal
 #    $matrix_enrichment_plot_cmd = "(".$matrix_enrichment_plot_cmd.") 2 > ".$main::outfile{Rlog}; 
 
-    &RSAT::message::Info("R-command for report: ",  $matrix_enrichment_plot_cmd) if ($main::verbose >= 0);
+    &RSAT::message::Info("R-command for report: ",  $matrix_enrichment_plot_cmd) if ($main::verbose >= 5);
     
 
     if ($r_path) {
@@ -1508,14 +1507,28 @@ sub CreateHTMLReport {
     ################################################################
     ## Draw the Binomail Occ curves + dynamic heatmap
     &Draw_OCCProfiles_and_Heatmap();
-    
-    $main::outfile{report} = $main::prefix{main}."_report.html";  
+
+    ################################################################
+    ## Read and save the fields to fill the HTML report
+    &RSAT::message::TimeWarn("Reading table with fields to fill html report") if ($main::verbose >= 2);
+    my ($fields_tab) = &OpenInputFile($main::outfile{fields_to_fill_report});
+    while(<$fields_tab>){
+
+	chomp;
+	my @split_line = split('\t\t',$_);
+	my $field = $split_line[0];
+	my $content = $split_line[1];
+	$fields_for_html_report{$field} = $content;
+	
+    }
+    close($fields_tab);
     
     ## Open the HTML template
-    my ($template) = &OpenInputFile($main::outfile{report_partial});
+    # my ($template) = &OpenInputFile($main::outfile{report_partial});
+    my ($template) = &OpenInputFile($main::outfile{report_template});
     
     ## Open the HTLM report
-    unlink($main::outfile{report});
+    # unlink($main::outfile{report});
     my ($syn) = &OpenOutputFile( $main::outfile{report});
     
     my $motif_nb = scalar(@all_matrix_names);
@@ -1542,7 +1555,7 @@ sub CreateHTMLReport {
 	if($line =~ /--show_command--/){
 	    
 	    ## Print arguments
-	    print &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
+	    print $syn &open_menu_heading(1, "<a name='logs'></a><h3>Command</h3>", 1);
 	    print $syn "<pre>";
 	    print $syn "matrix-enrichment ";
 	    &PrintArguments($syn);
@@ -1576,6 +1589,14 @@ sub CreateHTMLReport {
 	if($line =~ /--occ_profiles--/){
 	    my $occ_profiles_link = &RSAT::util::RelativePath($main::outfile{report_partial}, $main::outfile{binomial_occ_profile});
 	    $line =~ s/--occ_profiles--/$occ_profiles_link/g;
+	}
+
+	## Fill the template
+	foreach my $f (keys %fields_for_html_report){
+
+	    if($line =~ /$f/){
+		$line =~ s/$f/$fields_for_html_report{$f}/g;
+	    }
 	}
 	
 	print $syn $line."\n";
