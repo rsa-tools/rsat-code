@@ -211,7 +211,16 @@ print <<End_of_form;
     <INPUT type="hidden" NAME="fill_form" VALUE="on">
     <INPUT type="submit" value="feature map">
     </FORM>
-  </TD>
+ 
+    <FORM METHOD="POST" ACTION="feature-map_form2.cgi">
+    <INPUT type="hidden" NAME="queries" VALUE="$genes">
+     <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
+    <INPUT type="hidden" NAME="format" VALUE="feature-map">
+    <INPUT type="hidden" NAME="handle" VALUE="none">
+    <INPUT type="hidden" NAME="fill_form" VALUE="on">
+    <INPUT type="submit" value="feature map2">
+    </FORM>
+  </TD>  
   <TD>
     <FORM METHOD="POST" ACTION="gene-info_form.cgi">
     <INPUT type="hidden" NAME="queries" VALUE="$genes">
