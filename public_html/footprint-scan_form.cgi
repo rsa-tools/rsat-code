@@ -73,8 +73,8 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Pipeline for footprint-scan.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
-print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
+print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://liigh.unam.mx/amedina/'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
 print "</CENTER>";
 print "</BLOCKQUOTE>\n";
 
