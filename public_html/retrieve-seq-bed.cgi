@@ -41,7 +41,7 @@ $query = new CGI;
 
 ############################################################
 ## Read parameters
-$parameters = " -v 1 -check_chr ";
+$parameters = " -v 1 ";
 
 ################################################################
 ## Organism
@@ -65,8 +65,16 @@ unless ($coordinate_file) {
 
 push @result_files, ("Coordinate file ($coordinate_format)",$coordinate_file);
 
+## Check whether there is a list of common chr names for this org
+my $common_names_file=$ENV{RSAT}."/data/genomes/$organism/genome/common_to_ensemble_chromosome_names.tab";
+#print "$common_names_file";die;
+if(-s $common_names_file) {
+    $parameters .= " -common_chr $common_names_file ";
+}
+else{ $parameters .= " -check_chr "; }
+
 ## Compute genome fragment lengths from the coordinates
-## this only works for BED, Brunofeb2018
+## this only works for BED, Bruno Mar2018
 #my $length_file = $tmp_file_path."_lengths.tab";
 #push @result_files, ("Genome fragment lengths",$length_file);
 #my $seqlength_cmd = $SCRIPTS."/sequence-lengths -v 1 -i ".$coordinate_file;
