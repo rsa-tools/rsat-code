@@ -34,7 +34,9 @@ foreach $key (keys %default) {
 
 ### head
 print "<CENTER>";
-print "Get information (position, variants) about genomic variations, given a set of genomic regions (return overlapping variations) or a list of variation  IDS (return the list of variations maching query IDs).<P>\n";
+print "Get information (position, variants) about genomic variations, given a set of genomic regions (return overlapping variations) or a list of variation  IDS (return the list of variations maching query IDs).<P>
+Locally installed variants were directly downloaded from <a target='_blank' href='http://www.ensembl.org/index.html'>ensembl</a>, specific versions for each isntalled genome can be consulted here, updates can be done on demand. <\P>\n";
+
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
