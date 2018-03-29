@@ -167,7 +167,6 @@ print "</B></TD>\n";
 
 print "<TD><B><A class='iframe' HREF='help.info-gibbs.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A class='iframe' HREF='tutorials/tut_info-gibbs.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:defrance\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
