@@ -2876,7 +2876,7 @@ sub _readFromMEMEFile_2015 {
 	my @values = split /\s+/, $values;
 	$matrix->addColumn(@values);
 	&RSAT::message::Debug("line ".$l, "added column", $matrix->get_attribute("ncol"),
-			      join (":", @values)) if ($main::verbose >= 0);
+			      join (":", @values)) if ($main::verbose >= 10);
 #	$ncol++;
 #	$matrix->force_attribute("ncol", $ncol);
 	next;
@@ -3369,24 +3369,51 @@ sub SortMatrices {
     my %key_value = ();
     my $attr_not_found = 0;
     my $not_real = 0;
-    foreach my $matrix (@matrices) {
-      if (my $value = $matrix->get_attribute($sort_key)) {
-	$key_value{$matrix} = $value;
-	unless (&RSAT::util::IsReal($value)) {
-	  &RSAT::message::Debug("&RSAT::MatirxReader::SortMatrices()", "matrix", $matrix->get_attribute("id"), 
-				"Non-real attribute", $sort_key, "value", $value) if ($main::verbose >= 2);
-	  $not_real++;
+
+    if (lc($sort_key) eq "id") {
+	$sort_key = "id";
+    }
+
+    ## Sort matrices in random order
+    if ($sort_order eq "rand") {
+      &RSAT::message::Warning("Sorting matrices randomly") if ($main::verbose >= 2);
+      @perm_matrices = ();
+      srand();
+      while (scalar(@matrices) > 0) {
+	my $r = int(rand(scalar(@matrices))); ## pick a random number among indices of the remaining matrices
+	push(@perm_matrices, splice(@matrices, $r, 1));
+	&RSAT::message::Debug(join(" ", "sampled", scalar(@perm_matrices), "among", $nb_matrices, "; remaining: ",  scalar(@matrices))) if ($main::verbose >= 4);
+      }
+      return(@perm_matrices);
+
+    } else {
+      ## Collect the sorting attribute
+      foreach my $m (0..$#matrices) {
+#      foreach my $matrix (@matrices) {
+	$matrix = $matrices[$m];
+        if (my $value = $matrix->get_attribute($sort_key)) {
+	  $key_value{$matrix} = $value;
+	  $index_value{$m} = $value;
+	  unless ((&RSAT::util::IsReal($value)) && (($sort_key eq "asc")|| ($sort_key eq "desc"))) {
+	    &RSAT::message::Debug("&RSAT::MatirxReader::SortMatrices()", "matrix", $matrix->get_attribute("id"), 
+				  "Non-real attribute", $sort_key, "value", $value) if ($main::verbose >= 4);
+	    $not_real++;
+	  }
+	} else {
+	    $attr_not_found++;
 	}
-      } else {
-	$attr_not_found++;
       }
     }
 
+
+    ## Check if attribtue was found in all the matrices, else return unsorted matrices
     if ($attr_not_found > 0) {
       &RSAT::message::Warning("Cannot sort matrices by", $sort_key,
 			      "because this attribute is missing in", $attr_not_found."/".$nb_matrices, "matrices")
 	if ($main::verbose >= 1);
-    } elsif ($not_real > 0) {
+
+    ## For ascending or descending sorting, check if attribtue has Real values in all the matrices, else return unsorted matrices
+    } elsif (($not_real > 0) && (($sort_order eq "desc") || ($sort_order eq "asc"))) {
       &RSAT::message::Warning("Cannot sort matrices by", $sort_key,
 			      "because this attribute has non real values in", $not_real."/".$nb_matrices, "matrices")
 	if ($main::verbose >= 1);
@@ -3406,6 +3433,10 @@ sub SortMatrices {
       } elsif ($sort_order eq "alpha") {
 	&RSAT::message::Warning("Sorting matrices by alphabetic values of", $sort_key) if ($main::verbose >= 2);
 	@matrices = sort {lc($a->{$sort_key}) cmp lc($b->{$sort_key})} @matrices;
+#	@matrices = sort {lc($a->{$sort_key}) cmp lc($b->{$sort_key})} @matrices;
+	for my $matrix (@matrices) {
+	    &RSAT::message::Debug(lc($matrix->{$sort_key}), $key_value{$matrix}) if ($main::verbose >= 5);
+	}
       } else {
 	&RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc,alpha.");
       }
