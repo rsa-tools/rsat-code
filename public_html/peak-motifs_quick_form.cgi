@@ -78,12 +78,12 @@ print <<end_part_1;
 <p>Pipeline for discovering motifs in massive ChIP-seq peak sequences.</p>
 <!--
 <p>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:
-<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>,
-<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>cit</sup>,
-<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/defrance/'>Matthieu Defrance</a><sup>ci</sup>,
-<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/oly/'>Olivier Sand</a><sup>i</sup>,
+<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>,
+<a target='_blank' href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</a><sup>cit</sup>,
+<a target='_blank' href='https://www.ulb.ac.be/rech/inventaire/chercheurs/4/CH10464.html'>Matthieu Defrance</a><sup>ci</sup>,
+<a target='_blank' href='https://www.linkedin.com/in/olivier-sand-243570b5/'>Olivier Sand</a><sup>i</sup>,
 <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>ct</sup>,
-and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>,
+and <a target='_blank' href='https://ibios.dkfz.de/tbi/index.php/about/eilslabs-people/128-carl-herrmann'>Carl Herrmann</a><sup>ct</sup>,
 -->
 </center>
 <p><b>References</b>
@@ -261,7 +261,6 @@ print "</B></TD>\n";
 ##print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
 print "<td><b><a class='iframe' href='help.peak-motifs.html'>[MANUAL]</a></B></TD>\n";
 print "<td><b><a class='iframe' href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></B></TD>\n";
-print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
