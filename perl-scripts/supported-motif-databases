@@ -84,7 +84,7 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  our @supported_out_fields = qw(name format file descr version url);
+  our @supported_out_fields = qw(name format file descr version url label);
   our %supported_out_field = ();
   foreach my $field (@supported_out_fields) {
     $supported_out_field{$field} = 1;
