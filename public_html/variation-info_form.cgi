@@ -20,7 +20,7 @@ $default{demo_descr1} = "";
 $default{organism} = "";
 $default{input_type}="gvf";
 $default{out_type}="rsat-var";
-$default{mml}=30 ; ## Length of the sequence sorounding the variant, 
+$default{mml}=30 ; ## Length of the sequence sorounding the variant,
                    ## has to be consistent with the longest matrix to be used
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -35,7 +35,7 @@ foreach $key (keys %default) {
 ### head
 print "<CENTER>";
 print "Get information (position, variants) about genomic variations, given a set of genomic regions (return overlapping variations) or a list of variation  IDS (return the list of variations maching query IDs).<P>
-Locally installed variants were directly downloaded from <a target='_blank' href='http://www.ensembl.org/index.html'>ensembl</a>, specific versions for each installed genome can be consulted here, updates can be done on demand. <\P>\n";
+Locally installed variants were directly downloaded from <a target='_blank' href='http://www.ensembl.org/index.html'>ensembl</a>, specific versions for each installed genome can be consulted <a target='_blank' href='data/supported_variation_info.tab'>here</a>, updates can be done on demand. <\P>\n";
 
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
@@ -44,7 +44,7 @@ print ", <a target='_blank' href='http://liigh.unam.mx/amedina/people.html'>Walt
 print ", Jeremy Delerce<sup>ci</sup>\n";
 print ", Yvon Mbouamboua<sup>t</sup>\n";
 print "</CENTER>";
- 
+
 ################################################################
 ## Display the form only if this RSAT instance supports variation
 ## analysis.
@@ -93,7 +93,7 @@ print $query->textarea(-name=>'input', -id=>'input',
 		       -default=>$default{input},
 		       -rows=>6,
 		       -columns=>65);
-### Option to upload a file with variant information (IDs  or 
+### Option to upload a file with variant information (IDs  or
 ### genomic regions in bed format)
 print "<BR>Upload variants or regions<BR>\n";
 print $query->filefield(-name=>'uploaded_file',
@@ -153,15 +153,15 @@ $org =~ s/\ /_/g;
 print '<script>
 function setDemo1(){
     $("#reset").trigger("click");
-    
+
     var descr1 = "<blockquote class =\"demo\"> \
     <p>In this demonstration, we retrieve information about a set of variations specified by providing a list of IDs as query. </p>\n\n\
     <p>The genetic variations used in this example were taken from Weireauch, et al (Cell, 2014). \
     These authors collected from the litterature a set of variants shown to affect transcription factor binding. </p>\n \
     </blockquote>";
-    
+
     demo_descr.innerHTML = descr1;
-    
+
     $("#organism_name").val("'. $demo_org . '");
     $("#organism").val("' . $org . '");
     $("#input").val ("' . $demo1_gvf_var. '") ;
@@ -170,15 +170,15 @@ function setDemo1(){
 
 function setDemo2(){
     $("#reset").trigger("click");
-    
+
     var descr2 = "<blockquote class =\"demo\"> \
     <p>Genomic regions corresponding to cis-regulatory modules \
      characterized by chip-seq peaks for 4 transcription factors (HFN6, FOXA1, CBPalpha, HNF4alpha), conserved across 5 mammalian species (Human, macaque, rat, mouse, doc). Source: <a target=\'_blank\' href=\'http://www.ncbi.nlm.nih.gov/pubmed/25279814\'>Ballester et al. (2013). eLife.</a></p>\
      <p><font color=\"red\"><b>Warning</b>: this demo takes several minutes because it searches for variants in 1600 genomic regions. Email output is recommended.</font></b> \
     </blockquote>";
-    
+
     demo_descr.innerHTML = descr2;
-    
+
     $("#organism_name").val("'. $demo_org . '");
     $("#organism").val("' . $org . '");
     $("#input").val("");
@@ -201,4 +201,3 @@ print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a
 print $query->end_html;
 
 exit(0);
-
