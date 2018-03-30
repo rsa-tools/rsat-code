@@ -30,7 +30,8 @@ foreach $key (keys %default) {
 
 ### head
 print "<CENTER>";
-print "Given a set of polymorphic variations, dbSNP IDs or varBed variants file, retrieve the corresponding variants and their flanking sequences. Optionally, the user can input a set of genomic coordinates in bed format, and the tool will retrieve dbSNP annotated variants within them, together with their flanking sequences. The output of this tool can then be used in  <a href='variation-scan_form.cgi'>variation-scan</a> to assess the impact of genetic variants on trasncription factor binding sites. <P>\n";
+print "Given a set of polymorphic variations, dbSNP IDs or varBed variants file, retrieve the corresponding variants and their flanking sequences. Optionally, the user can input a set of genomic coordinates in bed format, and the tool will retrieve dbSNP annotated variants within them, together with their flanking sequences. The output of this tool can then be used in  <a href='variation-scan_form.cgi'>variation-scan</a> to assess the impact of genetic variants on trasncription factor binding sites. <\P>
+Locally installed variants were directly downloaded from <a target='_blank' href='http://www.ensembl.org/index.html'>ensembl</a>, specific versions for each installed genome can be consulted here, updates can be done on demand. <\P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr//'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
