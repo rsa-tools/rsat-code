@@ -3037,32 +3037,32 @@ sub DisplayMatrixDBchoice_select2 {
     ## adapt for server-specific motifs
     if ($ENV{group_specificity} eq "Metazoa") {
     	@values = (\%vertebrates, \%metazoa, \%multi_organism);
-    	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms');
+    	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms','RNA binding');
     	@colors = ('blue', 'orange', 'yellow');
     
     } elsif ($ENV{group_specificity} eq "Fungi") {
     
     @values = (\%fungi, \%multi_organism);
-    @labels = ( 'Fungi', 'Multi-organisms');
+    @labels = ( 'Fungi', 'Multi-organisms','RNA binding');
     @colors = ( 'purple', 'yellow');  
 
  	} elsif ($ENV{group_specificity} eq "Prokaryotes") {
     
     @values = (\%prokaryots, \%multi_organism);
-    @labels = ('Prokaryotes', 'Multi-organisms');
+    @labels = ('Prokaryotes', 'Multi-organisms','RNA binding');
     @colors = ('teal', 'yellow'); 
     
     } elsif ($ENV{group_specificity} eq "Plants") {
     
     @values = ( \%plants, \%multi_organism);
-    @labels = ( 'Plants', 'Multi-organisms');
+    @labels = ( 'Plants', 'Multi-organisms','RNA binding');
     @colors = ( 'green', 'yellow'); 
     
     } else {
     
     @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
-    @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms');
-    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow');  
+    @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms','RNA binding');
+    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow','coral');  
     }
     
     ## Display supported motif databases
