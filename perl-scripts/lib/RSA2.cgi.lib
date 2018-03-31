@@ -3028,6 +3028,7 @@ sub DisplayMatrixDBchoice_select2 {
 
     ## Get information about supported motif databases
     my %matrix_db = &RSAT::server::supported_motif_databases();
+<<<<<<< HEAD
 
     my @plants_key = ("thaliana", "plant");
     my @vertebrates_key = ("human", "Human", "mouse", "Mouse", "vertebrate");
@@ -3036,20 +3037,22 @@ sub DisplayMatrixDBchoice_select2 {
     my @metazoa_key = ("Drosophila", "drosophila", "_fly", "elegan", "insect", "nematode", "urochordate", "metazoa", "Metazoa");
     my @all_key = ("all");
 
+=======
+    
+>>>>>>> c0910638001ba6a3d82a2dc6d6d67b776d3b9ff9
     ## declare the variables
-    my @keys;
     my @values;
     my @labels;
     my @colors;
 
     ## adapt for server-specific motifs
     if ($ENV{group_specificity} eq "Metazoa") {
-    	@keys = ([@vertebrates_key], [@metazoa_key], [@all_key]);
     	@values = (\%vertebrates, \%metazoa, \%multi_organism);
-    	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms');
+    	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms','RNA binding');
     	@colors = ('blue', 'orange', 'yellow');
 
     } elsif ($ENV{group_specificity} eq "Fungi") {
+<<<<<<< HEAD
 
     @keys = ([@fungi_key], [@all_key]);
     @values = (\%fungi, \%multi_organism);
@@ -3076,6 +3079,30 @@ sub DisplayMatrixDBchoice_select2 {
     @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
     @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms');
     @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow');
+=======
+    
+    @values = (\%fungi, \%multi_organism);
+    @labels = ( 'Fungi', 'Multi-organisms','RNA binding');
+    @colors = ( 'purple', 'yellow');  
+
+ 	} elsif ($ENV{group_specificity} eq "Prokaryotes") {
+    
+    @values = (\%prokaryots, \%multi_organism);
+    @labels = ('Prokaryotes', 'Multi-organisms','RNA binding');
+    @colors = ('teal', 'yellow'); 
+    
+    } elsif ($ENV{group_specificity} eq "Plants") {
+    
+    @values = ( \%plants, \%multi_organism);
+    @labels = ( 'Plants', 'Multi-organisms','RNA binding');
+    @colors = ( 'green', 'yellow'); 
+    
+    } else {
+    
+    @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
+    @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms','RNA binding');
+    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow','coral');  
+>>>>>>> c0910638001ba6a3d82a2dc6d6d67b776d3b9ff9
     }
 
     ## Display supported motif databases
@@ -3085,10 +3112,10 @@ sub DisplayMatrixDBchoice_select2 {
         my $version = $matrix_db{$db_name}->{'version'};
         my $url = $matrix_db{$db_name}->{'url'};
         my $file = $matrix_db{$db_name}->{'file'};
+        my $label = $matrix_db{$db_name}->{'label'};
 
-        for(my $i = 0; $i < scalar @keys; $i++){
-            foreach my $key (@{$keys[$i]}){
-                if($descr =~ $key){
+        for(my $i = 0; $i < scalar @labels; $i++){
+                if($label eq $labels[$i]){
                     if($mode eq "list"){
                         open (my $fh, "<", $ENV{RSAT}. "/public_html/motif_databases/" . $file);
                         my $nbmotif = 0;
@@ -3106,7 +3133,6 @@ sub DisplayMatrixDBchoice_select2 {
                     if($mode eq "list") {
                         ${$values[$i]}{$db_name} .= " - [<a href='$ENV{'www-rsat'}/rsat/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]";
                     }
-                }
             }
         }
     }
