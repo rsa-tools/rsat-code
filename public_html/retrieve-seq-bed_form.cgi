@@ -123,18 +123,18 @@ push @demos, {
     "label"=>"DEMO: Mus musculus ICN1",
     "organism"=>"Mus_musculus_GRCm38",
     "url"=>$ENV{rsat_www}."/demo_files/Nakamura_GSM1368207_gamma8_mm10_ICN1_peaks.bed",
-    "description"=>"ICN1 binding sites in mmouse gamma delta T cells (Nakamura et al., J Immunol, 2015, GEO GSE56756)."};
+    "description"=>"ICN1 binding sites in mouse gamma delta T cells (Nakamura et al., J Immunol, 2015, GEO GSE56756)."};
 
 
 
 foreach my $demo (@demos) {
     %demo = %{$demo};
     if (&RSAT::OrganismManager::is_supported($demo{"organism"})) {
-        
+
         print "<TD><B>";
         print '<button type="button" onclick="setDemo(\'' . $demo{"organism"} .'\', \''. $demo{"url"}. '\',\'' . $demo{"description"}.'\')">'.$demo{"label"}.'</button>';
         print "<B></TD>\n";
-        
+
     }
 }
 print '<script>
@@ -162,4 +162,3 @@ print "</fieldset><p/>";
 print $query->end_html;
 
 exit(0);
-

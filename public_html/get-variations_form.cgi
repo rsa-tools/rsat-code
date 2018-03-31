@@ -33,8 +33,8 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Get information (position, variants) about genomic variations, given a set of genomic regions (return overlapping variations) or a list of variation  IDS (return the list of variations maching query IDs).<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
-print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.epernicus.com/am27'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
+print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
+print ", <a target='_blank' href='http://liigh.unam.mx/amedina/'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
 print ", Jeremy Delerce<sup>ci</sup>\n";
 print ", Yvon Mbouamboua<sup>t</sup>\n";
 print "</CENTER>";

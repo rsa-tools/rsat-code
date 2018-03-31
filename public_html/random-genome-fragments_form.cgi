@@ -265,7 +265,6 @@ print "</B></TD>\n";
 #print "</B></TD>\n";
 
 print "<TD><B><A class='iframe' HREF='help.random-genome-fragments.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:morgane\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 

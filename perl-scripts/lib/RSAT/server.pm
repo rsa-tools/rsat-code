@@ -884,13 +884,14 @@ sub supported_motif_databases {
     next if ($line =~ /^;/); ## Skip comment lines
     next if ($line =~ /^#/); ## Skip header line
     next unless ($line =~ /\S/); ## Skip empty lines
-    my ($db_name, $format, $file, $descr, $version, $url) = split (/\t/,$line);
+    my ($db_name, $format, $file, $descr, $version, $url, $label) = split (/\t/,$line);
     $matrix_db{$db_name}->{'name'} = $db_name;
     $matrix_db{$db_name}->{'format'} = $format || "";
     $matrix_db{$db_name}->{'file'} = $file;
     $matrix_db{$db_name}->{'descr'} = $descr || $db_name;
     $matrix_db{$db_name}->{'version'} = $version || "";
     $matrix_db{$db_name}->{'url'} = $url || "";
+    $matrix_db{$db_name}->{'label'} = $label || "";
     # if ($db_name ne lc(db_name)) {
     #   $matrix_db{lc($db_name)} = $matrix_db{$db_name};
     # }
