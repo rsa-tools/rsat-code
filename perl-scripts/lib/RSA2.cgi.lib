@@ -183,13 +183,13 @@ sub PrintOrthoSelectionSection {
 #      next unless (/\S/) ; # skip empty rows
 #      next if (/^;/); # skip comment lines
 #      next if (/^\#/); # Skip header line
-#
+#      
 #      my @split_line = split(/\t/, $_);
 #      my $org = $split_line[0];
-#      my $taxa = $split_line[1];
-#
+#      my $taxa = $split_line[1];	  
+#      
 #      if ($org) {
-#
+#	
 ##	      if (defined($supported_organism{$org})) {## This control seems
 ##	      not to work, probably because the library is read before the
 ##	      list of supported organisms.
@@ -202,7 +202,7 @@ sub PrintOrthoSelectionSection {
 #  } else {
 #    &RSAT::error::FatalError("Missing file", $fp_org_file);
 #  }
-
+  
 
   ## Choice of the organism
   print "<b>Query </b>";
@@ -423,7 +423,7 @@ sub RSA_header {
     -style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
-
+    
     if($css_body_class eq "results"){
         print "<style>#page-content-wrapper{
                     overflow: auto !important;
@@ -1271,7 +1271,7 @@ sub OrganismPopUpString_old {
 #           supported => infer: if this pop-up is displayed for the relevant organisms for operon inference (ex. infer-operons)
 sub OrganismPopUpString{
     my (%args) = @_;
-
+   
     my $supported = $args{'supported'};
     my $supported_param = "?get=json";
     if($supported ne ""){
@@ -1283,10 +1283,10 @@ sub OrganismPopUpString{
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
     my $popupid_name = ($bg_org == 1) ? "organism_bg_name" : "organism_name";
     my $tip = ($bg_org == 1) ? "tip_bg" : "tip";
-
+    
     my $organismPopup = "<div class='ui-widget' style='display:inline'>";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
-
+    
     if($default{organism} ne ""){
         $org_name = $default{organism};
         $org_name =~ s/_/\ /g;
@@ -1307,13 +1307,13 @@ sub OrganismPopUpString{
         $("#' . $popupid_name . '").bind("paste", function(e){
             $("#' . $popupid . '").val("");
         });
-
+        
         $("#' . $popupid_name . '").focusout(function(){
             if($("#' . $popupid . '").val() == ""){
                 $("#' . $popupid_name . '").val("");
             }
         });
-
+        
         $("#' . $popupid_name . '").autocomplete({
 
                 minLength: 2,
@@ -1358,7 +1358,7 @@ sub OrganismPopUpString{
                         return false;
                     }
                 };
-
+            
     });
     </script>';
     if($args{supported}){
@@ -1370,7 +1370,7 @@ sub OrganismPopUpString{
         }
         $organismPopup .=  "<a href='getOrganisms.cgi?get=display&supported=$args{supported}' target='_blank'>  [List of $list]</a>";
     }
-
+    
     else{
         $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
     }
@@ -1456,7 +1456,7 @@ sub get_taxons_web{
     require RSAT::Tree;
     my $tree = new RSAT::Tree();
     $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
-
+    
     my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
     if (scalar(@taxa) == 0) {
         return ("");
@@ -1471,7 +1471,7 @@ sub get_taxons_web{
 sub TaxonPopUpString {
   my ($node_type) =  @_;
   $node_type = "node" unless ($node_type);
-
+  
   my $taxonomyPopup = "";
   if ($node_type eq "all") {
     $taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
@@ -1498,13 +1498,13 @@ sub TaxonPopUpString {
         $("#taxon_name").bind("paste", function(e){
             $("#taxon").val("");
         });
-
+        
         $("#taxon_name").focusout(function(){
             if($("#taxon").val() == ""){
                 $("#taxon_name").val("");
             }
         });
-
+        
         $("#taxon_name").autocomplete({
         minLength: 2,
         source: "getOrganisms.cgi?get=json&taxon=yes&nodetype='.$node_type.'",
@@ -1527,7 +1527,7 @@ sub TaxonPopUpString {
                         ind = str.indexOf(ps[i]) + ps[i].length;
                         ind1 = str.indexOf(ps[i+1]);
                         res += "<font color=\"blue\">" + ps[i] + "</font>" + str.substring(ind, ind1);
-
+                        
                     }
                     ind = str.indexOf(ps[ps.length - 3]) + ps[ps.length-3].length;
                     res += "<font color=\"blue\">" + ps[ps.length - 3] + "</font>" + str.substring(ind);
@@ -1539,7 +1539,7 @@ sub TaxonPopUpString {
                 }
                 var reg = new RegExp(re , "i", "m");
                 var t = item.label.replace(reg, replacer);
-
+                
                 document.getElementById("tip-taxon").style.display = "none";
                 return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
             }else{
@@ -1548,9 +1548,9 @@ sub TaxonPopUpString {
                 return false;
             }
         };
-
+        
         $("#taxon_name").attr("autocomplete", "on");
-
+        
     });
     </script>';
     $taxonomyPopup .=  "<a href='supported-taxonomy.cgi' target='_blank'>  [List of taxonomy]</a>";
@@ -1564,16 +1564,16 @@ sub TaxonPopUpString_old {
     require RSAT::Tree;
     my $tree = new RSAT::Tree();
     $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
-
+    
     my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
-
+    
     if (scalar(@taxa) == 0) {
         return ("");
         #    return ("No available taxonomic information.");
     }
     push @taxa, $tree->get_node_descendents_names("Fungi",undef,$node_type);
     @taxa = sort @taxa;
-
+    
     my $taxonomyPopup = "";
     if ($node_type eq "all") {
         $taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
@@ -1592,14 +1592,14 @@ sub TaxonPopUpString_old {
         }
     }
     $taxonomyPopup .=  "</select>";
-
+    
     ## NOT SUPPORTED YET: TO BE ADDED TO get-orghologs, footprint-discovery, footprint-scan
     # $taxonomyPopup .=  "&nbsp;"x5;
     # $taxonomyPopup .=  "<B>Taxonomic depth</B>&nbsp;";
     # $taxonomyPopup .= $query->popup_menu(-name=>'depth',
     # 				       -Values=>[0,1,2,3,4,5],
     # 				       -default=>$default{depth}||4);
-
+    
     $taxonomyPopup .=  "<BR>\n";
     return $taxonomyPopup;
 }
@@ -1755,7 +1755,7 @@ sub GetMatrix {
         print "<br/><br/>";
         &MotifSelection('ids' => 1);
     }
-
+    
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
     #### pseudo-counts
@@ -1782,7 +1782,7 @@ sub GetFirstMatrix {
     print "<B>", $title, "</B>\n";
     print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
     print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
-
+    
     my %supported_input_format = (
 				'alignace'=> 1,
 				'assembly'=>1,
@@ -1815,33 +1815,33 @@ sub GetFirstMatrix {
     my @supported_input_formats = sort(keys( %supported_input_format));
     #  my $supported_input_formats = join ",", @supported_input_formats;
     #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
-
+    
     #### matrix format
     print $query->popup_menu(-id=>'matrix_format1',
     -name=>'matrix_format1',
     -Values=>[@supported_input_formats],
     -default=>$default{matrix_format});
-
-
+    
+    
     ## Display option fo use consensus as matrix name
     if ($args{consensus}) {
         print $query->checkbox(-id=>'consensus_as_name', -name=>'consensus_as_name',
         -checked=>$default{consensus_as_name},
         -label=>' use motif consensus as matrix name ');
     }
-
+    
     ## Text area to enter the matrix
     print "<BR>\n";
     print  "Input motifs as text<br/>" if ($db_choice);
     print "<div>";
-
-
+    
+    
     print $query->textarea(-id=>'matrix1',
     -name=>'matrix1',
 			 -default=>$default{matrix},
 			 -rows=>4,
 			 -columns=>60);
-
+    
     ## Option to upload the matrix file from the client machine
     print "<BR>\n";
     print  "Upload motifs file<br/>" if ($db_choice);
@@ -1850,15 +1850,15 @@ sub GetFirstMatrix {
     -default=>'',
     -size=>45,
     -maxlength=>200);
-
+    
     ## Propose help to find matrices
     unless ($args{nowhere}) {
         print "<br/><br/>";
         &MotifSelection('ids' => 1);
     }
     #print "<BR>\n";
-
-
+    
+    
     ## Display additional options: pseudo-count and pseudo-count distribution
     unless ($args{no_pseudo}) {
         #### pseudo-counts
@@ -1967,7 +1967,7 @@ print '</div>';
     print "<br/><br/>";
     &MotifSelection('ids' => 1);
   }
-
+  
     print "<BR></div>\n";
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
@@ -3028,58 +3028,19 @@ sub DisplayMatrixDBchoice_select2 {
 
     ## Get information about supported motif databases
     my %matrix_db = &RSAT::server::supported_motif_databases();
-<<<<<<< HEAD
-
-    my @plants_key = ("thaliana", "plant");
-    my @vertebrates_key = ("human", "Human", "mouse", "Mouse", "vertebrate");
-    my @prokaryots_key = ("prokaryot","DBTBS");
-    my @fungi_key = ("cerevisiae", "fungi");
-    my @metazoa_key = ("Drosophila", "drosophila", "_fly", "elegan", "insect", "nematode", "urochordate", "metazoa", "Metazoa");
-    my @all_key = ("all");
-
-=======
     
->>>>>>> c0910638001ba6a3d82a2dc6d6d67b776d3b9ff9
     ## declare the variables
     my @values;
     my @labels;
     my @colors;
-
+    
     ## adapt for server-specific motifs
     if ($ENV{group_specificity} eq "Metazoa") {
     	@values = (\%vertebrates, \%metazoa, \%multi_organism);
     	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms','RNA binding');
     	@colors = ('blue', 'orange', 'yellow');
-
+    
     } elsif ($ENV{group_specificity} eq "Fungi") {
-<<<<<<< HEAD
-
-    @keys = ([@fungi_key], [@all_key]);
-    @values = (\%fungi, \%multi_organism);
-    @labels = ( 'Fungi', 'Multi-organisms');
-    @colors = ( 'purple', 'yellow');
-
- 	} elsif ($ENV{group_specificity} eq "Prokaryotes") {
-
-    @keys = ([@prokaryots_key], [@all_key]);
-    @values = (\%prokaryots, \%multi_organism);
-    @labels = ('Prokaryotes', 'Multi-organisms');
-    @colors = ('teal', 'yellow');
-
-    } elsif ($ENV{group_specificity} eq "Plants") {
-
-    @keys = ( [@plants_key], [@all_key]);
-    @values = ( \%plants, \%multi_organism);
-    @labels = ( 'Plants', 'Multi-organisms');
-    @colors = ( 'green', 'yellow');
-
-    } else {
-
-    @keys = ([@vertebrates_key], [@metazoa_key], [@plants_key], [@fungi_key], [@prokaryots_key], [@all_key]);
-    @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
-    @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms');
-    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow');
-=======
     
     @values = (\%fungi, \%multi_organism);
     @labels = ( 'Fungi', 'Multi-organisms','RNA binding');
@@ -3102,9 +3063,8 @@ sub DisplayMatrixDBchoice_select2 {
     @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
     @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms','RNA binding');
     @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow','coral');  
->>>>>>> c0910638001ba6a3d82a2dc6d6d67b776d3b9ff9
     }
-
+    
     ## Display supported motif databases
     foreach my $db_name (sort(keys (%matrix_db))) {
         my $db_format = $matrix_db{$db_name}->{'format'};
