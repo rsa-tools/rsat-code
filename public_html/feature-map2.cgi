@@ -933,6 +933,44 @@ if(viewScale == "true"){
          .attr("stroke","#333333")
          .attr("stroke-width",1);
 
+         graph_svg.selectAll("line.tickCero")
+            .data(data)
+            .enter()
+            .append("line")
+            .attr("x1", function(){
+              return (scalePrueba(0) + scaleBarX);
+              })
+            .attr("y1",function(d,i){
+               return ((gene_name_y + ((i+1)*gene_jump))-10) - 5 ;
+               })
+            .attr("x2",function(){
+              return (scalePrueba(0) + scaleBarX);
+               })
+             .attr("y2",function(d,i){
+                return ((gene_name_y + ((i+1)*gene_jump))-10) + 5;
+                })
+            .attr("stroke","#333333")
+            .attr("stroke-width",1);
+
+            graph_svg.selectAll("line.tickFinal")
+               .data(data)
+               .enter()
+               .append("line")
+               .attr("x1", function(d){
+                 return (scalePrueba(d.Start) + scaleBarX);
+                 })
+               .attr("y1",function(d,i){
+                  return ((gene_name_y + ((i+1)*gene_jump))-10) - 5 ;
+                  })
+               .attr("x2",function(d){
+                 return (scalePrueba(d.Start) + scaleBarX);
+                  })
+                .attr("y2",function(d,i){
+                   return ((gene_name_y + ((i+1)*gene_jump))-10) + 5;
+                   })
+               .attr("stroke","#333333")
+               .attr("stroke-width",1);
+
       //var gene_line_ticks_y;
    //var gene_line_ticks_x = svgWidth - 50;
 
@@ -971,6 +1009,8 @@ if(viewScale == "true"){
     //  }
     //  gene_line_ticks_x = svgWidth - 50;
    //}
+
+
 
    for(i=0; i < data.length; i++){
 
@@ -1021,7 +1061,12 @@ if(viewScale == "true"){
                   return label_array_color[c].color;
                }
             }
-         });
+         })
+         .on("mouseover", function(){
+
+           console.log("DATA " + data[i].Features[f].seq);
+
+			   });
    }
 }
 
