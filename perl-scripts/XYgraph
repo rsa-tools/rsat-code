@@ -81,7 +81,7 @@ if ($force_lines && (!$lines && scalar @lines == 0)) {
 if ((($img_format eq "eps")||($img_format eq "pdf") )&& (!$r_plot)) {
 
   if (($xgstep1) || ($ygstep1) || ($xgstep2) || ($ygstep2)) {
-    &RSAT::message::Warning("grid options -gstep are not yet compatible with eps format => no grid.");
+    &RSAT::message::Warning("grid options -gstep are not yet compatible with pdf/eps formats => no grid.");
     #     &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.");
     #     $img_format = "png";
     #     $outputfile .=".png";
@@ -90,34 +90,34 @@ if ((($img_format eq "eps")||($img_format eq "pdf") )&& (!$r_plot)) {
     &RSAT::message::Warning("-force_lines option is not compatible with the vectorial format");
   }
   if ($bg ne "white") {
-    &RSAT::message::Warning("changing background color is not yet compatible with eps format => ignored.");
+    &RSAT::message::Warning("changing background color is not yet compatible with pdf/eps formats => ignored.");
     # 	&RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => png format is used.");
     # 	 $img_format = "png";
     # 	 $outputfile .=".png";
   }
 
   if (($histogram)||($filled_histogram)) {
-    &RSAT::message::Warning("histogram plot  is not yet compatible with eps format => this option will be ignored.");
+    &RSAT::message::Warning("histogram plot  is not yet compatible with pdf/eps formats => this option will be ignored.");
     # 	 &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => png format is used.");
     # 	  $img_format = "png";
     # 	  $outputfile .=".png";
   }
 
   if ($HTML_map) {
-    &RSAT::message::Warning("-htmap is not compatible with eps format..");
+    &RSAT::message::Warning("-htmap is not compatible with pdf/eps format..");
     # 	 &RSAT::message::TimeWarn("-htmap is not compatible with eps format => png format is used.");
     # 	  $img_format = "png";
   }
 
   if (($hbox_bottom)||($tbox_low_x)) {
-    &RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format.");
+    &RSAT::message::Warning("hbox and tbox are not yet compatible with pdf/eps formats.");
     # 	&RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format => png format is used.");
     # 	 $img_format = "png";
     # 	 $outputfile .=".png";
   }
 
   if ($data_fields != "columns") {
-    &RSAT::message::TimeWarn("-rows is not yet compatible with eps format => png format is used.");
+    &RSAT::message::Warning("-rows is not yet compatible with eps format => png format is used.");
     $img_format = "png";
     $outputfile .=".png";
   }
