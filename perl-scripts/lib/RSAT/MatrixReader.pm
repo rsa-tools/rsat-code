@@ -547,7 +547,10 @@ sub _readFromTRANSFACFile {
 
 #	&RSAT::message::Debug("args{top}", $args{top}, "current_matrix_nb", $current_matrix_nb) if ($main::verbose >=10);
 #	die;
-	if ((defined($args{top}) && &RSAT::util::IsInteger($args{top})) && ($current_matrix_nb >= $args{top})) {
+	if (defined($args{top})
+	    && &RSAT::util::IsInteger($args{top})
+	    && ($args{top} > 0) 
+	    && ($current_matrix_nb >= $args{top})) {
 	    &RSAT::message::Warning("Stopped after the top", $current_matrix_nb, "matrices") 
 		if ($main::verbose >= 2);
 	last;
