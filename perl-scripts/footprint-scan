@@ -850,6 +850,7 @@ package main;
     if ($task{synthesis}) {
 	($synthesis_index, $synthesis_table,$synthesis_all_table) = &OpenSynthesisPerMatrix ;
 	&RSAT::message::Info("Synthesis files: "," Index ". $outfile{$m_suffix."_synthesis_html"} . " Table  ". $outfile{$m_suffix."_synthesis_tab"} );
+
 	print $synthesis_all_table join ("\t", "#gene","TF","weight_at_th","occ_at_th","exp_at_th","sig_at_th","top_sig","score_at_topsig"),"\n"; ## Header for the complete report table
       }
 
@@ -983,7 +984,9 @@ package main;
 	  ################
 	  ## Print gene info and results in the text tab delimited table
 	  #my @gene_table_fields=$gene, $gene_sig, $g,$gene_info_line,  $occ_sig_file{$gene} ;  #the rank ($g) makes no sense if the $sort_creteria is alphabthic
-	  my @gene_table_fields=($gene, $gene_sig,$values_at_th{$gene}, $gene_info_line,  $occ_sig_file{$gene}) ;
+	  
+	  my @gene_table_fields=($gene, $gene_sig,$values_at_th{$gene}, $gene_info_line,  $occ_sig_file{$gene}) ; ## ahcorcha_html # Add bbls values
+	  
 	  print  $synthesis_table join("\t",@gene_table_fields  ). "\n";
 
 	  ################
@@ -2003,7 +2006,7 @@ sub MatrixReportHeader {
     $occ_sig_header=~s/\t/$html_sep/g;
 
     #Creat the header for the html matrix-wise report
-    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene,@header_values_at_th, "OCC_Sig", "SigPlot" ,"FreqPlot","Map","bbls score", "bbls tree", @info_fields)."</th>";
+    my $header_index=join("</th>\n<th>", "<th>gene", @header_occ_gene,@header_values_at_th, "OCC_Sig", "SigPlot" ,"FreqPlot","Map", @info_fields)."</th>"; ## ahcorcha_html  
     $header_index .= "\n";
     print $synthesis_index $header_index;
     print $synthesis_index "</tr>\n";
