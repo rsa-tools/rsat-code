@@ -29,6 +29,9 @@ close(< INPUT >);
 my $max_start = 0;
 my $cont = 0;
 foreach(@feature_maps){
+   if( $_ =~ /^[\#\;]/ ){
+     next;
+   }
    ##Split each line  y tabs
    my @fields = split(/\t/,$_);
    my $gene = $fields[0];
