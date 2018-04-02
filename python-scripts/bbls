@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 '''NAME
         %(progname)s
@@ -12,8 +12,8 @@ AUTHOR
 DESCRIPTION
         Determinates the bayesian branch length score (BBLS).
         Describes the level of conservation for motif sites.
-        Described in: 
-              https://academic.oup.com/bioinformatics/article/25/2/167/219205
+        Described in:
+https://academic.oup.com/bioinformatics/article/25/2/167/219205
 
 CATEGORY
         comparative genomics
@@ -50,14 +50,10 @@ import os
 import os.path
 import sys
 import optparse
-import csv
-from pydoc import pager
+
 # BEGIN DEPENDENCIES
-import ete3
 import pandas
-import numpy as np
-from ete3 import Tree, TreeStyle, TextFace, NodeStyle, SeqMotifFace,\
-    AttrFace, CircleFace
+from ete3 import Tree
 
 # END DEPENDENCIES
 
@@ -658,6 +654,9 @@ def main(args, options):
         '''
         Writes an image of the phylogenetic tree used in the analysis
         '''
+        from ete3 import TreeStyle, TextFace, NodeStyle, SeqMotifFace,\
+    AttrFace, CircleFace
+
         num_organisms = open(options.num_organisms, 'r').readline()
 
         # Get values from tfbs_per_matrix
