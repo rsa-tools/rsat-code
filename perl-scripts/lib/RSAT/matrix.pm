@@ -2734,6 +2734,7 @@ sub calcGCcontent {
     }
 
     my @alphabet = $self->getAlphabet();
+#    &RSAT::message::Debug("alphabet", join(";", @alphabet)) if ($main::verbose >= 9);
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
 
@@ -2746,7 +2747,7 @@ sub calcGCcontent {
 	$row_sum += $matrix[$c][$r];
       }
       my $letter = $alphabet[$r];
-      $row_sums{$letter} = ($row_sum/$ncol);
+      $row_sums{lc($letter)} = ($row_sum/$ncol);
     }
 
     my $residues_content ="";
@@ -2757,7 +2758,7 @@ sub calcGCcontent {
     
     ## Store as parameter
     $self->set_parameter("residues.content.".$matrix_type, $residues_content);
-    $self->set_parameter("G+C.content.".$matrix_type, ($row_sums{G}+$row_sums{C}));
+    $self->set_parameter("G+C.content.".$matrix_type, ($row_sums{g}+$row_sums{c}));
   }
 }
 
