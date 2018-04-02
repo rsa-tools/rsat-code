@@ -19,6 +19,8 @@ $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
 $default{oligo_length} = 6;
 $default{class_interval} = 20;
+$default{min_pos} = "none";
+$default{max_pos} = "none";
 $default{strand} = "single strand";
 $default{noov} = 'checked';
 $default{grouprc} = 'checked';
@@ -99,7 +101,7 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			]),
 	       $query->Tr({-align=>left,-valign=>TOP},
 		       [
-		      $query->td(["<B><A class='iframe' HREF='help.position-analysis.html#sequence_type'>Sequence type</A></B>".
+		      $query->td(["<b><a class='iframe' href='help.position-analysis.html#sequence_type'>Sequence type</a></b>".
 			       $query->popup_menu(-name=>'sequence_type',
 						  -Values=>["dna","protein","other"],
 						  -default=>$default{sequence_type})
@@ -111,14 +113,14 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 print $query->checkbox(-name=>'purge',
  		       -checked=>$default{purge},
  		       -label=>'');
-print "&nbsp;<A class='iframe' HREF='help.position-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
+print "&nbsp;<a class='iframe' href='help.position-analysis.html#purge'><b>purge sequences (highly recommended)</b></a>";
 print "<BR>";
 
 print "<HR width=550 align=left>\n";
 
 
 ## Oligo size
-print "<B><A class='iframe' HREF='help.position-analysis.html#oligo_length'>Oligonucleotide size</A>&nbsp;</B>\n";
+print "<b><a class='iframe' href='help.position-analysis.html#oligo_length'>Oligonucleotide size</a>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'oligo_length',
 			 -Values=>[1,2,3,4,5,6,7,8],
 			 -default=>$default{oligo_length});
@@ -127,12 +129,12 @@ print $query->popup_menu(-name=>'oligo_length',
 print $query->checkbox(-name=>'noov',
 		       -checked=>$default{noov},
 		       -label=>'');
-print "&nbsp;<A class='iframe' HREF='help.position-analysis.html#noov'><B>prevent overlapping matches</B></A>";
+print "&nbsp;<a class='iframe' href='help.position-analysis.html#noov'><b>prevent overlapping matches</b></a>";
 print "<BR>\n";
 
 
 ## Strand
-print "<B><A class='iframe' HREF='help.position-analysis.html#count_strands'>Count on</A>&nbsp;</B>\n";
+print "<b><a class='iframe' href='help.position-analysis.html#count_strands'>Count on</a>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'strand',-id=>'strand',
 			 -Values=>['single strand',
 				  'both strands'],
@@ -142,20 +144,20 @@ print $query->popup_menu(-name=>'strand',-id=>'strand',
 print $query->checkbox(-name=>'grouprc',
 		       -checked=>$default{grouprc},
 		       -label=>'');
-print "&nbsp;<A class='iframe' HREF='help.position-analysis.html#grouprc'><B>return reverse complements together in the output</B></A>";
+print "&nbsp;<a class='iframe' href='help.position-analysis.html#grouprc'><b>return reverse complements together in the output</b></a>";
 print "<BR>";
 
 
-print "<B><A class='iframe' HREF='help.position-analysis.html#class_grouping'>Positions</A>&nbsp;</B>\n";
+print "<b><a class='iframe' href='help.position-analysis.html#class_grouping'>Positions</a>&nbsp;</b>\n";
 
 ## Class interval
-print "<B>","&nbsp"x5,"<A class='iframe' HREF='help.position-analysis.html#class_interval'>window size</A>&nbsp;</B>\n";
+print "<b>","&nbsp"x5,"<a class='iframe' href='help.position-analysis.html#class_interval'>window size</a>&nbsp;</b>\n";
 print $query->textfield(-name=>'class_interval',
 			-default=>$default{class_interval},
 			-size=>3);
 
 ## Origin for calculating positions
-print "&nbsp;"x4,  "<A class='iframe' HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
+print "&nbsp;"x4,  "<a class='iframe' href='help.position-analysis.html#origin'><b>Origin</b></a>\n";
 print $query->popup_menu(-name=>'origin',
 			 -Values=>['start',
 				   'center',
@@ -163,10 +165,24 @@ print $query->popup_menu(-name=>'origin',
 			 -default=>$default{origin});
 
 ## Offset for calculating positions
-print "&nbsp;"x4,  "<A class='iframe' HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
+print "&nbsp;"x4,  "<a class='iframe' href='help.position-analysis.html#offset'><b>Offset</b></a>\n";
 print $query->textfield(-name=>'offset',
 			-default=>$default{offset},
 			-size=>8);
+
+## max and min positions for computing the chi2 statistics
+print "<br><b>", "<a class='iframe' href='help.position-analysis.html#min_mos'>Position limits for chi2: </a>&nbsp;</b>\n";
+print "&nbsp;"x5, "min:&nbsp";
+print $query->textfield(-name=>'min_pos',
+			-default=>$default{min_pos},
+			-size=>4);
+
+print "&nbsp;"x5, "max:&nbsp";
+print $query->textfield(-name=>'max_pos',
+			-default=>$default{min_pos},
+			-size=>4);
+
+
 
 ################################################################
 ## Background model
@@ -195,9 +211,9 @@ print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>TOP},
 			 [
-			  $query->th([" <A class='iframe' HREF='help.position-analysis.html#return'>Return</A> ",
-				   " <A class='iframe' HREF='help.position-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
-				   " <A class='iframe' HREF='help.position-analysis.html#thresholds'>Upper<BR>Threshold</A> "
+			  $query->th([" <a class='iframe' href='help.position-analysis.html#return'>Return</a> ",
+				   " <a class='iframe' href='help.position-analysis.html#thresholds'>Lower<BR>Threshold</a> ",
+				   " <a class='iframe' href='help.position-analysis.html#thresholds'>Upper<BR>Threshold</a> "
 				      ]),
 
 			  ## occurrences
@@ -278,7 +294,7 @@ print "</BLOCKQUOTE>\n";
 
 ## check applicability condition for the chi2 test
 print "<P>";
-print "&nbsp;<A class='iframe' HREF='help.position-analysis.html#applicability'><B>Applicability condition for the chi2 test</B></A>&nbsp;";
+print "&nbsp;<a class='iframe' href='help.position-analysis.html#applicability'><b>Applicability condition for the chi2 test</b></a>&nbsp;";
 print $query->checkbox(-name=>'check',
 		       -checked=>$default{check},
 		       -label=>' check');
@@ -290,23 +306,23 @@ print "<BR>\n";
 
 ## Sort the patterns accoring to the best score
 print "<P>";
-print "&nbsp;<A class='iframe' HREF='help.position-analysis.html#sort'><B>Sort patterns by significance.</B></A>&nbsp;";
+print "&nbsp;<a class='iframe' href='help.position-analysis.html#sort'><b>Sort patterns by significance.</b></a>&nbsp;";
 print $query->checkbox(-name=>'sort',
 		       -checked=>$default{sort},
 		       -label=>'');
 
 print "<HR width=550 align=left>\n";
 
-#print "<font color=red><B>Warning!</B> position-analysis is time-consuming. If the result is not displayed after 5 minutes, try email output.</font><BR>\n";
+#print "<font color=red><b>Warning!</b> position-analysis is time-consuming. If the result is not displayed after 5 minutes, try email output.</font><BR>\n";
 
 ## Send results by email or display on the browser
 &SelectOutput($default{output});
 
 ## Action buttons
-print "<UL><UL><TABLE class = 'formbutton'>\n";
-print "<TR VALIGN=MIDDLE>\n";
-print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
+print "<ul><ul><table class = 'formbutton'>\n";
+print "<tr VALIGN=MIDDLE>\n";
+print "<td>", $query->submit(-label=>"GO"), "</td>\n";
+print "<td>", $query->reset(-id=>"reset"), "</td>\n";
 print $query->end_form;
 
 ## Data for the demo 
@@ -341,16 +357,16 @@ function setDemo(demo_seq){
 </script>';
 
 
-print "<TD><B>";
+print "<td><b>";
 print '<button type="button" onclick="setDemo('."'$demo_seq'".')">DEMO</button>';
-print "</B></TD>\n";
+print "</b></td>\n";
 
 
-#print "<TD><B><A HREF='demo.position-analysis.html'>DEMO</A></B></TD>\n";
-print "<TD><B><A class='iframe' HREF='help.position-analysis.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A class='iframe' HREF='tutorials/tut_position-analysis.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
-print "</TR></TABLE></UL></UL>\n";
+#print "<td><b><a href='demo.position-analysis.html'>DEMO</a></b></td>\n";
+print "<td><b><a class='iframe' href='help.position-analysis.html'>MANUAL</a></b></td>\n";
+print "<td><b><a class='iframe' href='tutorials/tut_position-analysis.html'>TUTORIAL</a></b></td>\n";
+print "<td><b><a href='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</a></b></td>\n";
+print "</tr></table></ul></ul>\n";
 
 print "</FONT>\n";
 print "</blockquote>";
