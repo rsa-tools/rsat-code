@@ -483,8 +483,22 @@ sub print_html{
             var p_title_space = 26;
             var p_legends_left_x = p_title_x;
 
+            //Calculate max size of the name of genes
+
+            var geneNameList = [];
+            for (i = 0; i < data.length; i++){
+              geneNameList.push(data[i].Gene_name);
+            }
+
+            var maxSizeGeneName = calculateMaxSizeOfTextList(geneNameList, defaultFont, 16);
+
+
             // Relative width of the svg according to the grid in which the feature_map_div resides
             var svgWidth = document.getElementById("feature_map_div").offsetWidth;
+
+            if(maxSizeGeneName >= (.5 * svgWidth)){
+              svgWidth = svgWidth + maxSizeGeneName + 50; 
+            }
 
             // Make function to calculate
             var gene_num = 0;
@@ -810,14 +824,7 @@ var tick_space = 50; // Puede ser definida por el usuario
 var tick_jump = ((tick_space * line_width) / range);
 var value = range;
 
-//Calculate max size of the name of genes
 
-var geneNameList = [];
-for (i = 0; i < data.length; i++){
-  geneNameList.push(data[i].Gene_name);
-}
-
-var maxSizeGeneName = calculateMaxSizeOfTextList(geneNameList, defaultFont, 16);
 
 // CODIGO PRUEBA NUEVA ESCALA
 var geneNameSpace = {
