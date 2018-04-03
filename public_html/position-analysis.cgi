@@ -202,11 +202,11 @@ if ((&IsInteger($offset)) && ($offset != 0)) {
 
 ## Min and max positions for chi2 computation
 $min_pos = $query->param('min_pos') ;
-if (&IsNatural($min_pos)) {
+if (&IsInteger($min_pos)) {
   $parameters .= " -min_pos ".$min_pos;
 }
 $max_pos = $query->param('max_pos') ;
-if (&IsNatural($max_pos)) {
+if (&IsInteger($max_pos)) {
   $parameters .= " -max_pos ".$max_pos;
 }
 
