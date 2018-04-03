@@ -1223,14 +1223,14 @@ the chi2 test will be applied. Each row of the input table is
 considered as a series of values. The number of columns corresponds to
 the number of values per series ("classes").
 
-For the goodness of fit test, there must be exactly two series: the
-first series indicates observed values, the second expected
+For the goodness of fit test, there must be exactly two rows: the
+first one indicates observed values, the second one the expected
 values. The homogeneity and independence test can be applied to tables
-containing two or more series.
+containing two or more rows.
 
 =head2 Usage
 
- $chi_square = &ChiSquare($test,$series_nb, $class_nb, $sort_by_exp, @values);
+ $chi_square = &ChiSquare($test, $series_nb, $class_nb, $check_assumption, $group_tails, $sort_by_exp, @values);
 
 where
 
@@ -1240,13 +1240,20 @@ where
 
 Supported: independence, homogeneity, goodness (of fit)
 
-=item I<$series_nb>: number of series.
+=item I<$series_nb>: number of rows in the input matrix.
 
-=item I<$class_nb>: number of classes
+=item I<$class_nb>: number of columns in the input matrix.
 
-=item I<$sort_by_exp>: sort series by expected values (if parameter is > 0)
+=item I<$check_assumption>: check assumptions for the chi2 test: all
+expected values must be >= 5.
 
-Only for goodness of fit test. Sort obs and exp series by increasing
+=item I<$group_tails>: if necessary, group left or right tails in
+order to achieve expected frequencies >= 5.
+
+=item I<$sort_by_exp>: sort each row by expected values (if parameter
+is > 0) before grouping tail classes.
+
+Only for goodness of fit test. Sort obs and exp values by increasing
 expected values before grouping tail classes. This reduces the number
 of classes to be grouped, since after sorting all the classes with exp
 < 5 are on the same side of the sorted arrays.
@@ -1305,7 +1312,7 @@ warn the user that the chi2 value is not valid.
 =cut
 
 sub ChiSquare {
-  my($test, $series_nb, $class_nb,  $sort_by_exp, @values) = @_;
+  my($test, $series_nb, $class_nb, $check_assmption, $group_tails,  $sort_by_exp, @values) = @_;
   my $N;
   my $row;
   my $col;
@@ -1318,7 +1325,8 @@ sub ChiSquare {
   my $obs;
   my $exp;
   my $not_valid = 0;
-  my $group_tails = 1;
+#  my $group_tails = 1;
+#  my $check_assumption = 1;
   my $left_group = 0;
   my $left_sum = 0;
   my $right_group = 0;
@@ -1326,7 +1334,10 @@ sub ChiSquare {
   my @observed = ();
   my @expected = ();
 
-  &RSAT::message::Debug("RSAT::stat::ChiSquare", "test=".$test, "row_nb=".$series_nb, "col_nb=".$class_nb, scalar(@values)." values")
+  &RSAT::message::Debug("RSAT::stat::ChiSquare", 
+			"test=".$test, 
+			"row_nb=".$series_nb, 
+			"col_nb=".$class_nb, scalar(@values)." values")
       if ($main::verbose >= 4);
 
   ### Check parameter values
@@ -1548,8 +1559,8 @@ sub ChiSquare {
   my $answer = $chi_square;
   if (!&RSAT::util::IsReal($chi_square)) {
     $answer = $chi_square;
-#    } elsif ($not_valid) {
-#      $answer = sprintf "{%.3f}", $chi_square;
+  } elsif (($not_valid) && ($check_assumption)) {
+    $answer = sprintf "{%.3f}", $chi_square;
   } else {
     $answer = sprintf "%.5f", $chi_square;
   }
