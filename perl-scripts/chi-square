@@ -11,7 +11,11 @@ $start_time = &RSAT::util::StartScript();
 
 #### initialise parameters
 $test = "homogeneity";
+$check_assumption = 1;
+$group_tails = 1;
 $sort_by_exp = 1; ## Sort series by expected values for the goodness of fit test.
+
+
 &ReadArguments();
 
 #### check argument values
@@ -70,7 +74,7 @@ while (<$in>) {
 my $row_nb = $row;
 
 ## Compute value of ch2_obs
-($chi_square, $df, $left_group, $right_group) = &ChiSquare($test, $row_nb, $col_nb, $sort_by_exp, @values);
+($chi_square, $df, $left_group, $right_group) = &ChiSquare($test, $row_nb, $col_nb, $check_assumption, $group_tails, $sort_by_exp, @values);
 
 ## Compute P-value
 if ($chi_square > 0) {
