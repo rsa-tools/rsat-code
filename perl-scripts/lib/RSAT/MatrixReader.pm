@@ -4,11 +4,13 @@
 #
 package RSAT::MatrixReader;
 
+
 use RSAT::GenericObject;
 use RSAT::matrix;
 use RSAT::error;
 use RSAT::feature;
 @ISA = qw( RSAT::GenericObject );
+
 
 ### class attributes
 
@@ -284,12 +286,12 @@ sub readFromFile {
 
     ## Only retain the N top matrices if requested
     my $top = 0;
-    if (defined($args{top})) {
+    if ((defined($args{top}) && &RSAT::util::IsInteger($args{top}))) {
       $top = $args{top};
       if ((&RSAT::util::IsNatural($top)) && ($top > 0)) {
 	my $matrix_nb = scalar(@matrices);
 	if ($matrix_nb > $top) {
-	  &RSAT::message::Info("Retaining", $top, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
+	  &RSAT::message::Info("Retaining", $top, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 2);
 	  foreach my $m (($top+1)..$matrix_nb) {
 	    pop @matrices;
 	  }
@@ -300,9 +302,9 @@ sub readFromFile {
 
     ## Skip the N first matrices if requested
     my $skip = 0;
-    if (defined($args{skip})) {
+    if (defined($args{skip}) && &RSAT::util::IsInteger($args{skip})) {
       $skip = $args{skip};
-      &RSAT::message::Info("Skipping", $skip, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
+      &RSAT::message::Info("Skipping", $skip, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 2);
       if ((&RSAT::util::IsNatural($skip)) && ($skip > 0)) {
 	for my $m (1..$skip) {
 	  shift(@matrices);
@@ -397,7 +399,7 @@ sub readFromFile {
 	}
 #	&RSAT::message::Info("Retained matrix ACs",  join ",", (@retained_acs));
 #	&RSAT::message::Info("Retained matrix names",  join ",", (@retained_names));
-	&RSAT::message::Info("Retained matrices",  join "; ", (@retained_message));
+	&RSAT::message::Info("Retained matrices",  join "; ", (@retained_message)) if ($main::verbose >= 3);
       }
     }
 
@@ -541,10 +543,16 @@ sub _readFromTRANSFACFile {
 
       ## Start a new matrix (one TRANSFAC file contains several matrices)
     } elsif (/^AC\s*(.*)/) {
-      my $accession = &clean_id($1);
-      if (defined($args{top}) && ($current_matrix_nb >= $args{top})) {
-	&RSAT::message::Warning("Stopped after the top", $current_matrix_nb, "matrices") 
-	    if ($main::verbose >= 1);
+	my $accession = &clean_id($1);
+
+#	&RSAT::message::Debug("args{top}", $args{top}, "current_matrix_nb", $current_matrix_nb) if ($main::verbose >=10);
+#	die;
+	if (defined($args{top})
+	    && &RSAT::util::IsInteger($args{top})
+	    && ($args{top} > 0) 
+	    && ($current_matrix_nb >= $args{top})) {
+	    &RSAT::message::Warning("Stopped after the top", $current_matrix_nb, "matrices") 
+		if ($main::verbose >= 2);
 	last;
       }
       $current_matrix_nb++; 
@@ -2261,7 +2269,7 @@ sub _readFromUniprobeFile {
 		  ((!$in_matrix) && ($line =~ /^(\S+)/))) {
 	    
 	    ## Stop reading if the number of matrices to read has been restricted
-	    if (defined($args{top})) {
+	    if ((defined($args{top} && &RSAT::util::IsInteger($args{top})))) {
 		if (scalar(@matrices) >= $args{top}) {
 		    &RSAT::message::Warning("Stop reading after",
 					    $current_matrix_nb, scalar(@matrices),

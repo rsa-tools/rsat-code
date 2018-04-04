@@ -50,7 +50,7 @@ $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = 
 system("rm -f $output_path; mkdir -p $output_path"); ## We have to delete the file created by &make_temp_file() to create the directory with same name
 
 ## Read parameters ####
-$parameters = " -v 2";
+$parameters = " -v 1";
 $parameters .= " -sort" if ($query->param('sort'));
 $parameters .= " -nofilter" unless ($query->param('filter'));
 $parameters .= " -nocheck" unless ($query->param('check'));
@@ -182,12 +182,12 @@ if ($query->param('noov')) {
 ## Oligo length
 $oligo_length = $query->param('oligo_length') ;
 &FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
-$parameters .= " -l $oligo_length";
+$parameters .= " -l ".$oligo_length;
 
 ## Class interval
 $class_interval = $query->param('class_interval') ;
 &FatalError("$class_interval Invalid class interval") unless &IsNatural($class_interval);
-$parameters .= " -ci $class_interval";
+$parameters .= " -ci ".$class_interval;
 
 ## Origin
 $origin = $query->param('origin');
@@ -197,6 +197,17 @@ $parameters .= " -origin ".$origin;
 my $offset = $query->param('offset');
 if ((&IsInteger($offset)) && ($offset != 0)) {
   $parameters .= " -offset ".$offset;
+}
+
+
+## Min and max positions for chi2 computation
+$min_pos = $query->param('min_pos') ;
+if (&IsInteger($min_pos)) {
+  $parameters .= " -min_pos ".$min_pos;
+}
+$max_pos = $query->param('max_pos') ;
+if (&IsInteger($max_pos)) {
+  $parameters .= " -max_pos ".$max_pos;
 }
 
 

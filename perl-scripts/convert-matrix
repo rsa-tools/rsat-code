@@ -47,11 +47,11 @@ package main;
   %args = (); ## Arguments for matrix reading
   %force_attribute = ();
   %set_parameters = ();
-  local $import_top_matrices = "none";
-  local $export_top_matrices = "none";
-  $skip_matrices = 0;
-  $multiply = 1;
-  $column_rescaling = "none";
+  local $import_top_matrices = 0; ## 0 means "import all"
+  local $export_top_matrices = 0; ## 0 means "export all"
+  local $skip_matrices = 0;  ## 0 means "skip none"
+  local $multiply = 1;
+  local $column_rescaling = "none";
 
   local %selected_matrix = ();
 
@@ -174,8 +174,9 @@ package main;
   ## matrices, sort them according to the specified criterion, and
   ## export N top-ranking sorted matrices.
   if ($sort_order) {
-      $import_top_matrices = "none";
-  } else {
+      $import_top_matrices = 0;
+  } elsif (&IsNatural($import_top_matrices) 
+	   && ($import_top_matrices > 0)) {
       $args{top} = $import_top_matrices;
   }
   
@@ -408,11 +409,17 @@ package main;
       if (scalar(@tf_name_in_file)>=1){
 	$main::args{prefix}=shift(@tf_name_in_file);
       }
-      last if ((&IsNatural($import_top_matrices)) && ($m > $import_top_matrices)); ## Stop reading files if we already collected the specified number of matrices
+      last if (&IsNatural($import_top_matrices)
+	       && ($import_top_matrices > 0) 
+	       && ($m > $import_top_matrices)); ## Stop reading files if we already collected the specified number of matrices
       my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, %args);  
+
+      ## Read matrices in each input matrix file (stop if a specified top number of matrices is reached)
       foreach my $matrix (@matrices_from_file) {
 	$m++;
-	last if ((&IsNatural($import_top_matrices)) && ($m > $import_top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
+	last if ((&IsNatural($import_top_matrices)) 
+		 && ($import_top_matrices > 0) 
+		 && ($m > $import_top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
 	&SetMatrixName($matrix, $m, $matrix_file, $input_format);
 	push @matrices, $matrix;
       }
@@ -421,10 +428,12 @@ package main;
       my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format, %args);
       my $m = 0;
       foreach my $matrix (@matrices_from_file) {
-      $m++;
-      last if ((&IsNatural($import_top_matrices)) && ($m > $import_top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
-      &SetMatrixName($matrix, $m, "", $input_format);
-      push @matrices, $matrix;
+	  $m++;
+	  last if ((&IsNatural($import_top_matrices)) 
+		   && ($import_top_matrices > 0) 
+		   && ($m > $import_top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
+	  &SetMatrixName($matrix, $m, "", $input_format);
+	  push @matrices, $matrix;
       }
   }
   
@@ -570,7 +579,9 @@ package main;
 
   foreach my $matrix (@matrices) {
     $m++;
-    last if ((&IsNatural($export_top_matrices)) && ($m > $export_top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
+    last if (&IsNatural($export_top_matrices)
+	     && ($export_top_matrices > 0)
+	     && ($m > $export_top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
     &RSAT::message::TimeWarn("Exporting matrix", $m."/".scalar(@matrices))
 	if ($main::verbose >= 3);
 
@@ -1876,14 +1887,14 @@ sub ReadArguments {
 	  ##  Depending on other parmaeters, we will either apply thefiltr at import or export level
 	  $import_top_matrices = $ARGV[$a+1]; 
 	  $export_top_matrices = $ARGV[$a+1];
-	  &FatalError($import_top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")
-	    unless ((&IsNatural($import_top_matrices)) && ($import_top_matrices >= 1));
+	  &FatalError($import_top_matrices, "Invalid value for the option -top. Should be a Natural number.")
+	    unless (&IsNatural($import_top_matrices));
 
 	    ### Number of top matrices to skip
 	} elsif ($ARGV[$a] eq "-skip") {
 	    $skip_matrices = $ARGV[$a+1];
-	    &FatalError($skip_matrices, "Invalid value for the option -skip. Should be a strictly positive Natural number.")
-		unless ((&IsNatural($skip_matrices)) && ($skip_matrices >= 1));
+	    &FatalError($skip_matrices, "Invalid value for the option -skip. Should be a Natural number.")
+		unless (&IsNatural($skip_matrices));
 
 	    ## Sort matrices
 	} elsif ($ARGV[$a] eq "-sort") {
