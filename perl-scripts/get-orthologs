@@ -1366,7 +1366,6 @@ organism. Lines starting with a semicolumn are ignored.
 
 =pod
 
-# ahcorcha
 =item B<-diamond>
 
 Use ranks_dmnd from diamond blast computed in genome-blast.
@@ -1374,10 +1373,9 @@ Use ranks_dmnd from diamond blast computed in genome-blast.
 =cut
 
 	} elsif ($arg eq "-diamond") {
-	    $main::diamond= 1;
+	    $main::diamond= 1; # ahcorcha
 
 =pod
-# /ahcorcha
 
 =item B<-rand>
 
