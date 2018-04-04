@@ -483,8 +483,22 @@ sub print_html{
             var p_title_space = 26;
             var p_legends_left_x = p_title_x;
 
+            //Calculate max size of the name of genes
+
+            var geneNameList = [];
+            for (i = 0; i < data.length; i++){
+              geneNameList.push(data[i].Gene_name);
+            }
+
+            var maxSizeGeneName = calculateMaxSizeOfTextList(geneNameList, defaultFont, 16);
+
+
             // Relative width of the svg according to the grid in which the feature_map_div resides
             var svgWidth = document.getElementById("feature_map_div").offsetWidth;
+
+            if(maxSizeGeneName >= (.5 * svgWidth)){
+              svgWidth = svgWidth + maxSizeGeneName + 50; 
+            }
 
             // Make function to calculate
             var gene_num = 0;
@@ -810,14 +824,7 @@ var tick_space = 50; // Puede ser definida por el usuario
 var tick_jump = ((tick_space * line_width) / range);
 var value = range;
 
-//Calculate max size of the name of genes
 
-var geneNameList = [];
-for (i = 0; i < data.length; i++){
-  geneNameList.push(data[i].Gene_name);
-}
-
-var maxSizeGeneName = calculateMaxSizeOfTextList(geneNameList, defaultFont, 16);
 
 // CODIGO PRUEBA NUEVA ESCALA
 var geneNameSpace = {
@@ -933,6 +940,44 @@ if(viewScale == "true"){
          .attr("stroke","#333333")
          .attr("stroke-width",1);
 
+         graph_svg.selectAll("line.tickCero")
+            .data(data)
+            .enter()
+            .append("line")
+            .attr("x1", function(){
+              return (scalePrueba(0) + scaleBarX);
+              })
+            .attr("y1",function(d,i){
+               return ((gene_name_y + ((i+1)*gene_jump))-10) - 5 ;
+               })
+            .attr("x2",function(){
+              return (scalePrueba(0) + scaleBarX);
+               })
+             .attr("y2",function(d,i){
+                return ((gene_name_y + ((i+1)*gene_jump))-10) + 5;
+                })
+            .attr("stroke","#333333")
+            .attr("stroke-width",1);
+
+            graph_svg.selectAll("line.tickFinal")
+               .data(data)
+               .enter()
+               .append("line")
+               .attr("x1", function(d){
+                 return (scalePrueba(d.Start) + scaleBarX);
+                 })
+               .attr("y1",function(d,i){
+                  return ((gene_name_y + ((i+1)*gene_jump))-10) - 5 ;
+                  })
+               .attr("x2",function(d){
+                 return (scalePrueba(d.Start) + scaleBarX);
+                  })
+                .attr("y2",function(d,i){
+                   return ((gene_name_y + ((i+1)*gene_jump))-10) + 5;
+                   })
+               .attr("stroke","#333333")
+               .attr("stroke-width",1);
+
       //var gene_line_ticks_y;
    //var gene_line_ticks_x = svgWidth - 50;
 
@@ -971,6 +1016,8 @@ if(viewScale == "true"){
     //  }
     //  gene_line_ticks_x = svgWidth - 50;
    //}
+
+
 
    for(i=0; i < data.length; i++){
 
@@ -1021,7 +1068,12 @@ if(viewScale == "true"){
                   return label_array_color[c].color;
                }
             }
-         });
+         })
+         .on("mouseover", function(){
+
+           console.log("DATA " + data[i].Features[f].seq);
+
+			   });
    }
 }
 
