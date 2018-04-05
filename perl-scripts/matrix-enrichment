@@ -270,8 +270,12 @@ package main;
   ## Create main output directory if required
   ($dir{output}, $short_prefix) = &RSAT::util::SplitFileName($main::prefix{main});
   &RSAT::message::TimeWarn("Checking main output directory", $dir{output}) if ($main::verbose >= 2);
-  &RSAT::util::CheckOutDir($dir{output});
+  unless ($dir{output}){
+      $dir{output}=".";
+  }
 
+      &RSAT::util::CheckOutDir($dir{output});
+  
   ########################################
   ## Outfiles of Dynamic heatmap + Binomial Sig Curves
   $main::outfile{report_template} = $ENV{RSAT}."/public_html/templates_html/matrix_enrichment_template.html";
