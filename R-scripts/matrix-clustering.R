@@ -779,12 +779,13 @@ if(only.hclust == 0){
   
   write.table(paste(paste("cluster_", 1:n.colors, sep = ""), " ", colors, sep = ""), file = paste(sep="", out.prefix, "_hexa_colors.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
   
-  ## Create and export DF of central motifs
-  central.motif.table <- data.frame(central.motif.IDs.cluster, central.motif.IDs, central.motif.names)
-  colnames(central.motif.table) <- c("cluster", "ID", "name")
-  write.table(central.motif.table, file = paste(sep="", out.prefix, "_central_motifs_IDs.tab"), col.names = FALSE, row.names = FALSE, quote = FALSE, sep = "\t")
-  
+
 }
+## Create and export DF of central motifs
+central.motif.table <- data.frame(central.motif.IDs.cluster, central.motif.IDs, central.motif.names)
+colnames(central.motif.table) <- c("cluster", "ID", "name")
+write.table(central.motif.table, file = paste(sep="", out.prefix, "_central_motifs_IDs.tab"), col.names = FALSE, row.names = FALSE, quote = FALSE, sep = "\t")
+
 
 #################################
 ## Produce the alignment table
