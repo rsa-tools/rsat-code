@@ -179,7 +179,7 @@ package main;
   ## Flag to add links to motif tree
   local $ID_link_flag = 0;
   local %ID_nb_hash = ();
-  local %OLD_ID_link_hash = ();
+  #local %OLD_ID_link_hash = ();
   local %ID_link_hash = ();
   local %cluster_id_hash = ();
 
@@ -2385,7 +2385,7 @@ sub Add_attributes_to_JSON_radial_tree {
 	  $node_to_cluster_hash{$node}{color} = "#ccc;";
       }
   }
-  close($node_to_clusters);
+  close($node_to_cluster);
       
   ## Leaf to clusters
   my ($leaf_to_cluster) = &OpenInputFile($main::outfile{prefix}."_tables/leaf_to_cluster.tab");
@@ -2398,7 +2398,7 @@ sub Add_attributes_to_JSON_radial_tree {
       $leaf_to_cluster_hash{$leaf}{cluster} = $cluster;
 	  $leaf_to_cluster_hash{$leaf}{color} = $hexa_code{$cluster};
   }
-  close($leaf_to_clusters);	      
+  close($leaf_to_cluster);	      
   
       
   ## Open the nodes to cluster
@@ -2940,10 +2940,11 @@ sub Merge_matrices {
 	print $print_root $root_tf_text;
     }
     
-
-    if ($single_input_flag == 0){
-	close($root_logo_path);
-    }
+    close($print_root);
+    
+    # if ($single_input_flag == 0){
+    # 	close($root_logo_path);
+    # }
 }
 
 
@@ -6225,10 +6226,10 @@ sub Export_central_motif_per_cluster {
 	
 	## Read Central Motif ID table
 	my $central_motif_parser_cmd = "more ".$main::outfile{central_motifs}." | cut -f2 > ".$main::outfile{central_motifs_IDs_temp};
-	system($central_motif_parser_cmd);
+	&RSAT::util::one_command($central_motif_parser_cmd, 1, "");
 	
 	my $get_central_motifs_cmd = $SCRIPTS."/convert-matrix -v 2 -i ".$main::outfile{input_matrices}." -from tf -to tf -matrix_id_file ".$main::outfile{central_motifs_IDs_temp}." -o ".$main::outfile{central_motifs_tf};
-	system($get_central_motifs_cmd);
+	&RSAT::util::one_command($get_central_motifs_cmd, 1, "");
 	
 
 }
