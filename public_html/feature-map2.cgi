@@ -483,6 +483,21 @@ sub print_html{
             var p_title_space = 26;
             var p_legends_left_x = p_title_x;
 
+            //START - CODE FOR SOLVING THE START OF EACH GENE PROBLEM (Needs refactoring in the tsv to json perl file)
+              for(i = 0; i < data.length; i++){
+                console.log("#" + i + " Name: " + data[i].Gene_name);
+                let maxStart = 0;
+                for (p =0; p < data[i].Features.length; p++){
+                  console.log("ft# " + p + " fts " + data[i].Features[p].start);
+                  if(maxStart < data[i].Features[p].start){
+                    maxStart = data[i].Features[p].start;
+                  }
+                data[i].Start = maxStart;
+                console.log("Max Start " + data[i].Start );
+                }
+              }
+            //END - CODE FOR SOLVING THE START OF EACH GENE PROBLEM (Needs refactoring in the tsv to json perl file)
+
             //Calculate max size of the name of genes
 
             var geneNameList = [];
@@ -497,7 +512,7 @@ sub print_html{
             var svgWidth = document.getElementById("feature_map_div").offsetWidth;
 
             if(maxSizeGeneName >= (.5 * svgWidth)){
-              svgWidth = svgWidth + maxSizeGeneName + 50; 
+              svgWidth = svgWidth + maxSizeGeneName + 50;
             }
 
             // Make function to calculate
@@ -1039,10 +1054,10 @@ if(viewScale == "true"){
             }
          })
          .attr("width", function(){
-          console.log("fStart " + data[i].Features[f].start + " fEnd " + data[i].Features[f].end);
+          //console.log("fStart " + data[i].Features[f].start + " fEnd " + data[i].Features[f].end);
           var vOne = scalePrueba(data[i].Features[f].start);
           var vTwo = scalePrueba(data[i].Features[f].end);
-          console.log("VStart " + vOne + " VEnd " + vTwo);
+          //console.log("VStart " + vOne + " VEnd " + vTwo);
           return (scalePrueba(data[i].Features[f].end) - scalePrueba(data[i].Features[f].start));
          })
          .attr("height", function(){
@@ -1548,9 +1563,6 @@ function create_svg(jsonFile){
      return styles;
    }
 }
-
-
-
 
    </script>
 
