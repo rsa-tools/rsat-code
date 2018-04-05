@@ -119,6 +119,10 @@ if ($query->param('uploaded_file')) {
   } else {
     my $input_var = $query->param('input');
     $input_varc =~ s/\r/\n/g;
+    #Convert back html entities "<>" to their origin
+    $input_var =~ s/&lt;/</g;
+    $input_var =~ s/&gt;/>/g;
+
     my @input_var = split (/[\n\r]/, $input_var);
     if ($input_var =~ /\S/) {
 	open QUERY, ">".$input_set_file;
