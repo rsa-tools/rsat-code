@@ -23,7 +23,6 @@ required.packages <- c("RColorBrewer",
                        "reshape2",
                        "plyr",
                        "gridExtra",
-                       "cowplot",
                        "dynamicTreeCut")
 
 # sapply(required.packages, function(x){library(x, character.only = TRUE)})
