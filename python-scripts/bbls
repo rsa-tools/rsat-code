@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+v#!/usr/bin/env python3
 
 '''NAME
         %(progname)s
@@ -45,11 +45,12 @@ SEE ALSO
 #                                      #
 ########################################
 
+import optparse
 import copy
 import os
 import os.path
 import sys
-import optparse
+import pager
 
 # BEGIN DEPENDENCIES
 import pandas
@@ -219,14 +220,14 @@ def main(args, options):
             print("match function")
 
         if (set(tree.get_leaf_names()) == set(motifs.keys())) and VERBOSITY >= 5:
-            print(";Every organism with sites is present in the tree")
+            print("; Every organism with sites is present in the tree")
 
         # In the case that there are more species in tree that in motifs keys.
         if not set(tree.get_leaf_names()) == set(motifs.keys()):
 
             if VERBOSITY >= 3:
-                print(";Dropping organisms" + \
-                      "present in the tree without gene orthologs")
+                print("; Dropping organisms" + \
+                      " present in the tree without gene orthologs")
 
             for i in list(set(set(tree.get_leaf_names())) - \
                           set(set(motifs.keys()))):
@@ -240,7 +241,11 @@ def main(args, options):
 
         if VERBOSITY >= 3:
             # Matched organisms
-            print(";Matched organisms")
+            print("; Matched organisms")
+            for i in set(tree.get_leaf_names()) == set(motifs.keys()):
+                print(i)
+                
+                
 
         return set(tree.get_leaf_names()) == set(motifs.keys()), tree
 
@@ -257,7 +262,7 @@ def main(args, options):
         None
         """
         if VERBOSITY >= 10:
-            print(";initialize_nodes function")
+            print("; initialize_nodes function")
 
         match_, tree = match(tree, motifs)
         # Raises error if the tree leaves and motif sites names do not match.
@@ -281,7 +286,7 @@ def main(args, options):
                         node.complement_prob = None
                         node.effective_length = node.dist
         else:
-            raise ValueError(';Tree leaves and motif species do not match')
+            raise ValueError('; Tree leaves and motif species do not match')
 
     def tree_probabilities(tree):
         """
@@ -473,10 +478,18 @@ def main(args, options):
         if VERBOSITY >= 10:
             print(";read_motif_site_file function")
 
-        tfb_sites_list = [[]]
-        matrix_info_list = []
-
         with open(site_file, 'r') as motif_list:
+            tfb_sites = pandas.read_csv(motif_list,\
+                                        comment=";", \
+                                        header="infer", \
+                                        sep="\t")
+            # Change column name #seq_id to seq_id
+            tfb_sites.rename(columns={"#seq_id": "seq_id"}, inplace=True)
+            
+        # Read comments in sites.tab file to get max weight value for matrix.
+        matrix_info_list = []
+        with open(site_file, 'r') as motif_list:
+
             flag1 = 0
             for line in motif_list:
                 words = line.replace("\n", "").replace("#", "").split("\t")
@@ -493,15 +506,12 @@ def main(args, options):
                 if words[0] == '; Matrices':
                     flag1 = 1
 
-                if line[0] != ";":
-                    tfb_sites_list.append(words)
-
-        del tfb_sites_list[0] # There is a hidden newline in the file.
-        headers = tfb_sites_list.pop(0) # Erase the column names from the data
-
-        # Defining and triming the tfbs file.
-        tfb_sites = pandas.DataFrame(data=tfb_sites_list, columns=headers)
-
+        if options.verbosity == 5:
+            print("\n\nMatrix\n")
+            print(tfb_sites)
+            print(list(tfb_sites))
+            print("\n\n")
+        
         matrix_info = pandas.DataFrame(data=matrix_info_list, columns=columns)
 
         matrix_info["Wth"] = score_threshold
@@ -861,21 +871,17 @@ def main(args, options):
                 #  the threshold in this ortholog seq (counter == 0).
                 #  wishlist, report that there is no sites.
                 if VERBOSITY >= 1:
-                    print(";No TF binding sites found")
+                    print("; No TF binding sites found")
                 continue
 
             if VERBOSITY >= 3:
-                print(";TFBS probabilities")
+                print("; TFBS probabilities")
                 for motif in motifs:
                     print("; " + str(motif))
 
             # Opens tree file into ModTree format.
             tree = open(str(options.tree_file), 'r')
             t = ModTree(tree.readline(), 1)
-
-            if VERBOSITY >= 5:
-                print(";Tree before pruning")
-                print(t.get_ascii(attributes=['name']))
 
             # Sets up tree to calculate bbls and bls.
             initialize_nodes(t, motifs)
@@ -884,7 +890,7 @@ def main(args, options):
             tree_complement_probabilities(t)
 
             if VERBOSITY >= 3:
-                print(";Tree after pruning")
+                print("; Tree after pruning")
                 print(t.get_ascii(attributes=['name']))
 
             
