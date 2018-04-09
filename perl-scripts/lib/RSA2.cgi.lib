@@ -932,6 +932,7 @@ sub GetSequenceFile {
     #### sequence file will be deleted
     &DelayedRemoval($sequence_file);
   }
+  $sequence_file =~ s/\s+$//g;
 
   ## Mask option
   my $mask = "";
