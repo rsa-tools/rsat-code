@@ -1,4 +1,4 @@
-v#!/usr/bin/env python3
+#!/usr/bin/env python3
 
 '''NAME
         %(progname)s
@@ -50,7 +50,7 @@ import copy
 import os
 import os.path
 import sys
-import pager
+# import pager
 
 # BEGIN DEPENDENCIES
 import pandas
@@ -242,7 +242,7 @@ def main(args, options):
         if VERBOSITY >= 3:
             # Matched organisms
             print("; Matched organisms")
-            for i in set(tree.get_leaf_names()) == set(motifs.keys()):
+            for i in set(tree.get_leaf_names()) - set(motifs.keys()):
                 print(i)
                 
                 
@@ -987,7 +987,7 @@ if __name__ == '__main__':
             doc = globals()['__doc__'] % {'usage' : USAGE % PROG_NAME,\
                                           'version' : VERSION, \
                                           'progname' : PROG_NAME}
-            pager(doc)
+            # pager(doc)
             sys.exit(0)
 
         else:
