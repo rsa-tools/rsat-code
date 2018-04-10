@@ -240,7 +240,6 @@ package main;
   ## Create a BG model folder and assign a file name
   ## when the '-bginput' option is specified
   if($bg_input_flag == 1){
-
     local $bg_dir = $main::outfile{prefix}."_bg_model";
     &RSAT::util::CheckOutDir($bg_dir);
 
@@ -251,7 +250,13 @@ package main;
 	$main::outfile{bg_file_inclusive_ctrl} = $bg_dir."/mkv_" . $markov . "_2str_control.inclusive";
     }
 
+  }elsif($main::infile{bg_file}){
+      local $bg_dir = $main::outfile{prefix}."_bg_model";
+      &RSAT::util::CheckOutDir($bg_dir);
+      
+      $main::outfile{bg_file_inclusive} = $bg_dir."/converted_innput.inclusive";
   }
+  
 
   ## Output file names
   $main::outfile{filtered_sequences} = $main::outfile{prefix}."_filtered_sequences.fasta";
@@ -341,9 +346,9 @@ package main;
 
   ################################################################
   ## Calculate background of the input sequences
-  if ($bg_input_flag == 1) {
+  #if ($bg_input_flag == 1) {
       &CalculateBGModel();
-  }
+  #}
 
   ################################################################
   ## Calculate the sequence length
@@ -1010,13 +1015,16 @@ sub ScanSequences {
     }
 
     ## Process each set of sequence
+    
     my $seq_counter = 0;
     foreach my $seq (@sequence_sets){
 
 	$seq_counter++;
 	&RSAT::message::Info("Matrices loaded from file", $main::infile{motifs}) if ($main::verbose >= 2);
 	&RSAT::message::TimeWarn("Scanning sequences") if ($main::verbose >= 2);
+	
 
+	
 	if($seq_counter == 1){
 	    $s = $main::infile{sequences};
 	    $so = $main::outfile{matches_tab};
@@ -1028,10 +1036,12 @@ sub ScanSequences {
 	    $so = $main::outfile{matches_tab_control};
 
 	    if($bg_input_flag){
+
 		$bg = $main::outfile{bg_file_inclusive_ctrl};
 #		$bg = $main::infile{bg_file_inclusive_control};
-	    }
-	}
+	    } 
+	    
+	} 
 	
 	$matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".($main::verbose);
 	$matrix_scan_cmd .= " -m ".$main::infile{motifs};
@@ -1435,58 +1445,68 @@ sub CalculateBGModel {
     my @sequences = ();
     push(@sequences, $main::infile{sequences});
 
-    ## If the diff mode is activated, then add the control sequences
-    ## to be processed as the query sequences
-    if($diff_flag){
-	push(@sequences, $main::infile{sequences_control});
-    }
-
-    ## Process each set of sequence
-    my $seq_counter = 0;
-    foreach my $s (@sequences){
-	$seq_counter++;
-
-	if($seq_counter == 1){
-	    &RSAT::message::TimeWarn("Calculating background model from Query sequences", $bg_dir) if ($main::verbose >= 2);
-	} elsif ($seq_counter == 2){
-	    &RSAT::message::TimeWarn("Calculating background model from Control sequences", $bg_dir) if ($main::verbose >= 2);
-	}
-	
-	my $bg_comand = $SCRIPTS."/oligo-analysis -v 1 -quick ".$strands;
-	$bg_comand .= " -i ".$s." -l ".$markov." -noov ";
-
-	if($seq_counter == 1){
-	    $bg_comand .= " -o ".$main::infile{bg_file};
-	} elsif ($seq_counter == 2){
-	    $bg_comand .= " -o ".$main::infile{bg_file_control};
-
-	}
-
-	
-	&doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
-	if($seq_counter == 1){
-	    &RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file}) if ($main::verbose >= 2);
-	} elsif ($seq_counter == 2){
-	    &RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file_control}) if ($main::verbose >= 2);
-	}
-	$bg_format = "oligos";
-
-	my $convert_bg_cmd = "";
-	## Convert background model in INCLUSIVE format for matrix-scan-quick
-	$convert_bg_cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
-	
-	if($seq_counter == 1){
-	    $convert_bg_cmd .= " -i ".$main::infile{bg_file};
-	} elsif ($seq_counter == 2){
-	    $convert_bg_cmd .= " -i ".$main::infile{bg_file_control};
-	}
-	
-	if($seq_counter == 1){
-	    $convert_bg_cmd .= " -o ".$main::outfile{bg_file_inclusive};
-	} elsif ($seq_counter == 2){
-	    $convert_bg_cmd .= " -o ".$main::outfile{bg_file_inclusive_ctrl};
-	}
+    ##If a bg input file was given convert it to inclusive
+    if ($main::infile{bg_file}){
+    	$convert_bg_cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+	$convert_bg_cmd .= " -i ". $main::infile{bg_file};
+	$convert_bg_cmd .= " -o ".$main::outfile{bg_file_inclusive};
 	&doit($convert_bg_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	return;
+    }elsif($bg_input_flag == 1){
+	
+	## If the diff mode is activated, then add the control sequences
+	## to be processed as the query sequences
+	if($diff_flag){
+	push(@sequences, $main::infile{sequences_control});
+	}
+	
+	## Process each set of sequence
+	my $seq_counter = 0;
+	foreach my $s (@sequences){
+	    $seq_counter++;
+	    
+	    if($seq_counter == 1){
+		&RSAT::message::TimeWarn("Calculating background model from Query sequences", $bg_dir) if ($main::verbose >= 2);
+	    } elsif ($seq_counter == 2){
+		&RSAT::message::TimeWarn("Calculating background model from Control sequences", $bg_dir) if ($main::verbose >= 2);
+	    }
+	    
+	    my $bg_comand = $SCRIPTS."/oligo-analysis -v 1 -quick ".$strands;
+	    $bg_comand .= " -i ".$s." -l ".$markov." -noov ";
+	    
+	    if($seq_counter == 1){
+		$bg_comand .= " -o ".$main::infile{bg_file};
+	    } elsif ($seq_counter == 2){
+		$bg_comand .= " -o ".$main::infile{bg_file_control};
+		
+	    }
+	    
+	    
+	    &doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	    if($seq_counter == 1){
+		&RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file}) if ($main::verbose >= 2);
+	    } elsif ($seq_counter == 2){
+		&RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file_control}) if ($main::verbose >= 2);
+	    }
+	    $bg_format = "oligos";
+	    
+	    my $convert_bg_cmd = "";
+	    ## Convert background model in INCLUSIVE format for matrix-scan-quick
+	    $convert_bg_cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+	    
+	    if($seq_counter == 1){
+		$convert_bg_cmd .= " -i ".$main::infile{bg_file};
+	    } elsif ($seq_counter == 2){
+		$convert_bg_cmd .= " -i ".$main::infile{bg_file_control};
+	    }
+	    
+	    if($seq_counter == 1){
+		$convert_bg_cmd .= " -o ".$main::outfile{bg_file_inclusive};
+	    } elsif ($seq_counter == 2){
+		$convert_bg_cmd .= " -o ".$main::outfile{bg_file_inclusive_ctrl};
+	    }
+	    &doit($convert_bg_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	}
     }
 }
 
