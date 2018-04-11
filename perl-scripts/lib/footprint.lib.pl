@@ -1802,6 +1802,7 @@ sub BayesianScore {
 	
 	my $cmd = "$SCRIPTS/../python-scripts/bbls";
 	$cmd .= " --verbose ".$main::verbose;
+	$cmd .= " --task bbls ";
 	$cmd .= " --organism ".$main::organism_name;
 	$cmd .= " --tree ".$main::tree;
 	$cmd .= " --p-value ".$main::pval;
@@ -1841,6 +1842,25 @@ sub BayesianScore {
      	}
      	close ($MYFILE);
     }   
+}
+sub SynthesizeBayesianScore(){
+    # if task == synthesize
+
+    local $organisms_dir = join( "/",$main::dir{output_root}, $main::org_selection_prefix, $main::organism_name);
+    
+
+    my $cmd = "$SCRIPTS/../python-scripts/bbls";
+    $cmd .= " --verbose ".$main::verbose;
+    $cmd .= " --task synthesis ";
+    $cmd .= " --path_report ".$organisms_dir;
+    &one_command($cmd);
+
+
+
+    
+    #$RSAT/perl-scripts/../python-scripts/bbls --verbose 5 \
+    #                                      --task synthesis \
+    #                                      --path_report /home/aldo/programas/footprint-scan-bbls/data/footprint_scan_reports/03/Gammaproteobacteria/Escherichia_coli_GCF_000005845.2_ASM584v2/
 
 }
 
