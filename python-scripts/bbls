@@ -172,6 +172,13 @@ VERBOSITY = options.verbosity
 if options.debug:
     VERBOSITY = 10
 
+COLUMN_ORDER = ["org_name", "seq_id", "ft_name", "ft_type", "gene", \
+                "sequence", "strand", "start", "end", "weight", \
+                "Pval", "branch_prob", "num_orthologs", "BLS", "BBLS", \
+                "BBLS_norm"]
+COLUMN_DELETE = ["rank", "rank_pm", "sig", "org_seq", "ln_Pval"]
+
+    
 #print(parser.print_usage())
 
 ########################################
@@ -252,7 +259,9 @@ def synthesis(path_report):
             print("; Writing synthesis report for all sites in: " + \
                   matrix_path + "report_per_matrix.tab")
 
-        df_.to_csv(matrix_path + "bbls_report_per_matrix.tab", sep="\t")
+        df_ = df_.reindex(columns=COLUMN_ORDER)
+        df_.to_csv(matrix_path + "bbls_report_per_matrix.tab", sep="\t",\
+                   index=False)
 
 
     # read and append reports all, organisms/
@@ -267,7 +276,8 @@ def synthesis(path_report):
             print("; Writing synthesis report for all sites in: " + \
                   path_report + "/all_bbls_report.tab")
 
-        df_.to_csv(path_report + "/all_bbls_report.tab", sep="\t")
+        df_ = df_.reindex(columns=COLUMN_ORDER)
+        df_.to_csv(path_report + "/all_bbls_report.tab", sep="\t", index=False)
 
     
 def main(args, options):
@@ -722,8 +732,9 @@ def main(args, options):
         if query_gene in unknown_genes:
             known_gene = False
 
-        return ortholog_df["seq_id"].values, ortholog_df["ref_org"].values,\
-            known_gene
+        return ortholog_df["seq_id"].values, known_gene
+        #return ortholog_df["seq_id"].values, ortholog_df["ref_org"].values,\
+        #        known_gene
 
     ############################################################################
 
@@ -784,8 +795,10 @@ def main(args, options):
         ts.title.add_face(TextFace(title), column=0)
         ts.aligned_header.add_face(TextFace("Taxon or group used: " + \
                                             options.taxon_name + \
-                                            ". Genomes: " + \
-                                            num_organisms), \
+                                            "\nGenomes in taxon: " + \
+                                            num_organisms + \
+                                            "Genomes used: " + \
+                                            str(len(tree))), \
                                    column=0)
         ts.aligned_foot.add_face(TextFace("Normalized BBLS: " + bbls_norm),\
                                  column=0)
@@ -841,7 +854,7 @@ def main(args, options):
 
     pandas.options.mode.chained_assignment = None  # default='warn'
     trees_path = []
-    
+
     # From matrix distrib, get associated weight to pval for each tf.
     score_threshold = get_scores_threshold(options.p_value, \
                                            options.matrix_distrib_file)
@@ -858,9 +871,8 @@ def main(args, options):
 
     # Empty dataframe where we add sites for the report.
     columns = ['seq_id', 'ft_type', 'ft_name', 'strand', 'start', 'end',\
-               'sequence', 'weight', 'Pval', 'ln_Pval', 'sig', 'rank', \
-               'rank_pm', 'org_seq', 'org_name', 'branch_prob', 'BBLS', \
-               'BLS', 'BBLS_norm', 'gene']
+               'sequence', 'weight', 'Pval', 'org_name', 'branch_prob', \
+               'BBLS', 'BLS', 'BBLS_norm', 'gene']
 
     bbls_report = pandas.DataFrame(data=None, columns=columns, index=None)
 
@@ -870,7 +882,7 @@ def main(args, options):
             print(";Query gene: " + str(gene))
 
         # Redefine the working table only with organisms with ortholog seq.
-        ortho_seq, ortho_org, known = get_ortho_seq_id(options.orthologs_file,\
+        ortho_seq, known = get_ortho_seq_id(options.orthologs_file,\
                                                        gene,\
                                                        options.infer_operons,\
                                                        options.prefix_name)
@@ -973,6 +985,9 @@ def main(args, options):
 
             # Add number of orthologs to all sites reports
             tfbs_per_matrix['num_orthologs'] = len(ortho_seq)
+            # This should be the orthologs used to calc the bbls.
+            # ortho_seq is the total number of orthologs ~3000
+            tfbs_per_matrix['num_orthologs'] = len(t)
 
             # Write limits to output folder
             # limit_path = options.prefix_name + "_start_end.tab"
@@ -1012,7 +1027,11 @@ def main(args, options):
 
             tfbs_per_matrix_path = options.prefix_name + "_BBLS_" + gene \
                                    + "_" + TF + ".tab"
-            tfbs_per_matrix.to_csv(tfbs_per_matrix_path, sep='\t')
+
+            tfbs_per_matrix.drop(COLUMN_DELETE, axis=1, inplace=True)
+            tfbs_per_matrix = tfbs_per_matrix.reindex(columns=COLUMN_ORDER)
+
+            tfbs_per_matrix.to_csv(tfbs_per_matrix_path, sep='\t', index=False)
 
             if VERBOSITY >= 1:
                 print("; Wrote TF binding sites per matrix in: " + \
@@ -1036,7 +1055,8 @@ def main(args, options):
     # Save results for all sites.
     report_path = options.bbls_sites_file
     bbls_report.reset_index(drop=True, inplace=True)
-    bbls_report.to_csv(report_path, sep="\t")
+    bbls_report = bbls_report.reindex(columns=COLUMN_ORDER)
+    bbls_report.to_csv(report_path, sep="\t", index=False)
 
     with open(options.bbls_tree_file, 'w') as tree_file:
         tree_file.writelines("%s\n" % line for line in trees_path)
