@@ -147,14 +147,16 @@ parser.add_option("--bbls_sites_file", action="store", \
 parser.add_option("--bbls_tree_file", action="store", \
                   dest="bbls_tree_file", default=sys.stdout)
 
+### ============================================================
+### Synthesis report.
+# Task
+parser.add_option("--task", action="store", \
+                  dest="task", default=sys.stdout)
+# Total report
+parser.add_option("--path_report", action="store", \
+                  dest="path_report", default=sys.stdout)
+### ===========================================================
 
-
-'''
-# option variable names (inside the program)
-operon_name      not urgent cosmetic.
-NOT ->    feature_map      pass it to bbls
-report_format
-'''
 ## To-do list
 
 # taxon, number of organisms in the group that we are analizing.
@@ -197,6 +199,77 @@ class ModTree(Tree):
         print(self.get_ascii(attributes=['name', 'effective_length']))
 
 
+def synthesis(path_report):
+    '''
+    Descripton:
+    Creates the synthesized results of the bbls analysis.
+
+    Parameters:
+    paths to the report files.
+    '''
+
+    def concat_results(list_of_reports):
+        df_list = []
+        for i in list_of_reports:
+            df1 = pandas.read_csv(i, sep="\t")
+            df_list.append(df1)
+
+        df_ = pandas.concat(df_list)
+        return df_
+
+    # Get data from each matrix. list of folders in the path.
+    all_matrices = next(os.walk(path_report))[1]
+
+    if options.verbosity == 10:
+        print("; Looking in folders: " + str(all_matrices))
+
+    all_reports = []
+
+    for matrix in all_matrices:
+
+        matrix_path = path_report + "/" + matrix + "/"
+        matrix_folder = os.walk(matrix_path)
+        next(matrix_folder)
+        matrix_reports = []
+
+        for i in matrix_folder:
+            
+            for j in i[2]:
+                if "bbls_report.tab" in j:
+                    matrix_reports.append(i[0] + "/" + j)
+                    all_reports.append(i[0] + "/" + j)
+
+            if not matrix_reports:
+                break
+
+        # read and append reports by matrix, matrix specific path.
+        if not all_reports:
+            break
+
+        df_ = concat_results(matrix_reports)
+
+        if options.verbosity == 3:
+            print("; Writing synthesis report for all sites in: " + \
+                  matrix_path + "report_per_matrix.tab")
+
+        df_.to_csv(matrix_path + "bbls_report_per_matrix.tab", sep="\t")
+
+
+    # read and append reports all, organisms/
+    if not all_reports:
+        if options.verbosity == 3:
+            print("; There is no bbls reports to synthesize.")
+    else:
+
+        df_ = concat_results(all_reports)
+
+        if options.verbosity == 3:
+            print("; Writing synthesis report for all sites in: " + \
+                  path_report + "/all_bbls_report.tab")
+
+        df_.to_csv(path_report + "/all_bbls_report.tab", sep="\t")
+
+    
 def main(args, options):
     """
     """
@@ -204,7 +277,7 @@ def main(args, options):
     ##############################  FUNCTIONS  ############################
     #######################################################################
 
-    def match(tree, motifs):
+    def prune_tree(tree, motifs):
         """
         Description:
         Returns boolean value. Asserts that the leaves of the tree match the
@@ -221,6 +294,7 @@ def main(args, options):
 
         if (set(tree.get_leaf_names()) == set(motifs.keys())) and VERBOSITY >= 5:
             print("; Every organism with sites is present in the tree")
+            return tree
 
         # In the case that there are more species in tree that in motifs keys.
         if not set(tree.get_leaf_names()) == set(motifs.keys()):
@@ -239,15 +313,7 @@ def main(args, options):
                 # Delete leaves that do not match
                 tree.get_leaves_by_name(i)[0].delete()
 
-        if VERBOSITY >= 3:
-            # Matched organisms
-            print("; Matched organisms")
-            for i in set(tree.get_leaf_names()) - set(motifs.keys()):
-                print(i)
-                
-                
-
-        return set(tree.get_leaf_names()) == set(motifs.keys()), tree
+        return  tree
 
     def initialize_nodes(tree, motifs):
         """
@@ -264,29 +330,30 @@ def main(args, options):
         if VERBOSITY >= 10:
             print("; initialize_nodes function")
 
-        match_, tree = match(tree, motifs)
-        # Raises error if the tree leaves and motif sites names do not match.
-        if match_:
+        tree = prune_tree(tree, motifs)
 
-            for node in tree.traverse('levelorder'):
+        # Raises error if there are no tree nodes.
+        if len(tree.get_leaf_names()) == 1:
+            raise ValueError("Error: motif and tree share no entries.")
 
-                if node.is_root(): # Root node
-                    node.prob = None
-                    node.complement_prob = 1 # In theory, it should be 1.
+
+        for node in tree.traverse('levelorder'):
+
+            if node.is_root(): # Root node
+                node.prob = None
+                node.complement_prob = 1 # In theory, it should be 1.
+                node.effective_length = node.dist
+
+            else:
+                if node.is_leaf(): # Leaf nodes
+                    node.prob = motifs[str(node.name)]
+                    node.complement_prob = None
                     node.effective_length = node.dist
 
-                else:
-                    if node.is_leaf(): # Leaf nodes
-                        node.prob = motifs[str(node.name)]
-                        node.complement_prob = None
-                        node.effective_length = node.dist
-
-                    else: # Middle nodes
-                        node.prob = None
-                        node.complement_prob = None
-                        node.effective_length = node.dist
-        else:
-            raise ValueError('; Tree leaves and motif species do not match')
+                else: # Middle nodes
+                    node.prob = None
+                    node.complement_prob = None
+                    node.effective_length = node.dist
 
     def tree_probabilities(tree):
         """
@@ -336,7 +403,7 @@ def main(args, options):
             except ZeroDivisionError:
                 node.effective_length = 0
 
-    def tree_complement_probabilities(tree):
+    def tree_complement_probabilities(t):
         '''
         Computes the probability that the complement tree does not have a sites,
         from root to leaves. 
@@ -652,9 +719,9 @@ def main(args, options):
 
         known_gene = True
         # Unknown gene
-        if gene in unknown_genes:
+        if query_gene in unknown_genes:
             known_gene = False
-            
+
         return ortholog_df["seq_id"].values, ortholog_df["ref_org"].values,\
             known_gene
 
@@ -990,7 +1057,10 @@ if __name__ == '__main__':
             # pager(doc)
             sys.exit(0)
 
-        else:
+        elif options.task == "synthesis":
+            synthesis(options.path_report)
+
+        elif options.task == "bbls":
             main(args, options)
 
     except KeyboardInterrupt:
