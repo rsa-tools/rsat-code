@@ -97,7 +97,9 @@ if (length(args >= 1)) {
   }
 }
 print.formats <- c("pdf", "jpeg")
-# message("Checking mandatory arguments")
+
+##print.formats <-c("pdf","png")
+## message("Checking mandatory arguments")
 if (!exists("matrix.scan.file")) {
   stop("Missing mandatory argument (matrix-scan results table): matrix.scan.file ")
 } else if (!exists("sequence.names.file")) {
@@ -902,7 +904,9 @@ thrash <- lapply(freq.log2.ratio, function(cn){
       pdf(profiles.heatmap.file)
     } else if (format == "jpg"){
       jpeg(profiles.heatmap.file)
-    }
+  } else if (format == "png"){
+      png(profiles.heatmap.file)
+  }
     
     ## Heatmap
     heatmap.profiles <<- heatmap.2(cn.t,
