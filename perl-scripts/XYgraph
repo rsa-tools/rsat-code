@@ -739,12 +739,12 @@ sub Rplot {
 
   ## Color library
   my $r_instructions = "library(RColorBrewer)\n";
-  $r_instructions .= "options(bitmapType='cairo')\n";
+  $r_instructions .= "options(bitmapType='cairo', scipen=999)\n";
 
   ## Open input table
   $r_instructions .= "\n## Loading input table\n";
   $r_instructions .= "in.file <- \"$input_data_file\"\n";
-  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.", na.strings = \"".$null_char."\")\n";
+  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.",stringsAsFactors=FALSE, na.strings = \"".$null_char."\")\n";
 
   ## Save header as vector in R
   $r_instructions .= "header.vector <- c(\"".join("\",\"",@header_list)."\")\n";
