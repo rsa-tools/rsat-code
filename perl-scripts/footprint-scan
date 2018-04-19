@@ -392,8 +392,8 @@ package main;
 
   # ahcorcha
   ## Tree for Bayesian score 
-  local $tree = "";
-  local $bbls_draw = "";
+  #local $tree = "";
+  #local $bbls_draw = "";
   # /ahcorcha
   
   ## Feature maps
@@ -506,14 +506,17 @@ package main;
   local $scan_opt .= " -uth pval ".$main::pval;
 
   ################################################################
+  ## Create output directory
+  &SetOutputDir();
+  
   ## Check argument values
-
+  
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
   ## Define main output directory
   &SetMainOutputDir();
-
+  
   ################################################################
   ## Check compatibility between -batch, -all and -task synthesis, whcih can't be use together since this can cause sever file dependency problems
 
@@ -546,13 +549,16 @@ package main;
     if (($main::matrix_table_file) && ($main::tf ne "") && ($main::tf ne "file"));
 
   ################################################################
-  ## Check parameters for bbls # ahcorcha
+  ## Check parameters for bbls # ahcorcha2
   
-  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ($task{bbls} && $main::tree eq "" );  
+  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option") if ($task{bbls} && !defined($main::tree) );  
   
-  &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" );
+  &RSAT::error::FatalError("The -tree option is exclusive of the bbls task") if (!$task{bbls} && defined($main::tree)  );
   
-  &RSAT::error::FatalError("Option -bbls_draw only works with bbls.") if (!$task{bbls} && $main::bbls_draw ne "" );
+  &RSAT::error::FatalError("Option -bbls_draw only works with bbls") if (!$task{bbls} && defined($main::bbls_draw));
+
+  #&RSAT::error::FatalError("-use_tree_org requires with -tree option and bbls task (footprint-scan exclusive)") if (!defined($main::use_tree_org) && !defined($main::tree));
+  
   # /ahcorcha
   ################################################################
   ## Check parameters for matrix-scan
