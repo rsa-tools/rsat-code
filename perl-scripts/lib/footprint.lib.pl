@@ -29,41 +29,52 @@ $dir{output_root} = "footprints"; ## Default root output directory. Can be chang
 ################################################################
 ## Read a list of organisms from a file, and select those supported on
 ## the RSAT server (issue a warning for non-supported organisms).
-sub ReadOrganismsFromFile {
-  ($main::orglist) = &OpenInputFile($main::orglist_file);
-  my @organisms = ();
-  while (<$main::orglist>) {
-    chomp();
-    s/\r/\n/g;		  ## Suppress Windows-specific carriage return
-    next if /^;/;		## Comment line
-    next if /^\#/;		## Header line
-    next if /^\--/;		## SQL comment line
-    next unless /\S/;		## Empty line
-    my ($org_from_list) = split /\s/;
-    $org_from_list = &trim($org_from_list); ## Remove leading and trailing spaces
-    push @main::org_from_lists, $org_from_list;	## We need a list to report the results in the same order as the org file.
-    $main::org_from_lists{$org_from_list} = 1; ## The hash table is convenient for checking which organism is part of the list
-  }
-  close $main::orglist if ($main::orglist_file);
-  if (scalar(@org_from_lists) > 0) {
-    &RSAT::message::Info(scalar(@org_from_lists), "organisms specified in file", $main::orglist_file) if ($main::verbose >= 2);
-  } else {
-    &RSAT::error::FatalError("The organism file does not contain any valid organism name.", $main::orglist_file);
-  }
-
-  ## Select only the supported organisms in the input list
-  foreach my $org (@org_from_lists) {
-    if ($supported_organism{$org}) {
-      push @organisms, $org;
-    } else {
-      &RSAT::message::Warning("Organism", $org, "is not supported on this RSAT server");
+sub ReadOrganismsFromFile (){
+    $orglist_file = shift(@_); # ahcorcha
+    #($main::orglist) = &OpenInputFile($main::orglist_file);
+    ($orglist) = &OpenInputFile($orglist_file);
+    my @organisms = ();
+    
+    while (<$orglist>) {
+	chomp();
+	s/\r/\n/g;		## Suppress Windows-specific carriage return
+	next if /^;/;		## Comment line
+	next if /^\#/;		## Header line
+	next if /^\--/;		## SQL comment line
+	next unless /\S/;	## Empty line
+	my ($org_from_list) = split /\s/;
+	
+	## Remove leading and trailing spaces
+	$org_from_list = &trim($org_from_list); 
+	
+	## We need a list to report the results in the same order as the org file.
+	push @main::org_from_lists, $org_from_list;
+	
+	## The hash table is convenient for checking which organism is part 
+	#   of the list
+	$main::org_from_lists{$org_from_list} = 1;
     }
-  }
-
-  &RSAT::error::FatalError("There is no supported organism in the organism list", $main::orglist_file,
-			   "\nUse the RSAT command supported-organisms to obtain the list of supported organisms."
-			  )  if (scalar(@organisms) == 0);
-  return(@organisms);
+    close $orglist if ($orglist_file);
+    if (scalar(@org_from_lists) > 0) {
+	&RSAT::message::Info(scalar(@org_from_lists), "organisms specified in file", $orglist_file) if ($main::verbose >= 2);
+    } else {
+	&RSAT::error::FatalError("The organism file does not contain any valid organism name.", $orglist_file);
+    }
+    
+    ## Select only the supported organisms in the input list
+    foreach my $org (@org_from_lists) {
+	if ($supported_organism{$org}) {
+	    push @organisms, $org;
+	} else {
+	    &RSAT::message::Warning("Organism", $org, "is not supported on this RSAT server");
+	}
+    }
+    
+    &RSAT::error::FatalError("There is no supported organism in the organism list", $orglist_file,
+			     "\nUse the RSAT command supported-organisms to obtain the list of supported organisms."
+	)  if (scalar(@organisms) == 0);
+  
+    return(@organisms);
 }
 
 ################################################################
@@ -77,23 +88,29 @@ sub SelectReferenceOrganisms {
   ################################################################
   ## Check reference taxon or org_list
   &RSAT::error::FatalError("You should select a taxon of interest or provide a list of organisms")
-    unless ($main::taxon || $main::orglist_file);
+    unless ($main::taxon || $main::orglist_file || $main::use_tree_org);
 
-  &RSAT::error::FatalError("-taxon and -org_list option are mutually exclusive")
+  &RSAT::error::FatalError("-taxon, and -org_list option are mutually exclusive")
     if (($main::taxon) && ($main::orglist_file));
-
+  
+  &RSAT::error::FatalError("-use_tree_org, taxon and -org_list option are mutually exclusive")
+    if (($main::use_tree_org) && ($main::orglist_file || $main::taxon));  
+  
   ################################################################
   ## Read the list reference organisms from a user-specified file
   if ($main::orglist_file) {
-    @ref_organisms = &ReadOrganismsFromFile($main::orglist_file);
-  } else {
-    #check if there is is at least one organism for that Taxon
-    @ref_organisms = &RSAT::OrganismManager::CheckTaxon($taxon) if $main::taxon;
-
-    ## Check option -no_purge and -org_list
-    if ($main::no_purge) {
-      &RSAT::error::FatalError("-no_purge option can only be used if -org_list option is active (not with -taxon).");
-    }
+      @ref_organisms = &ReadOrganismsFromFile($main::orglist_file);
+  } elsif (defined($main::use_tree_org)){
+      $main::orglist_tree = &WriteOrganismsListFromTree(); # ahcorcha
+      @ref_organisms = &ReadOrganismsFromFile($main::orglist_tree);
+  }else {
+      #check if there is is at least one organism for that Taxon
+      @ref_organisms = &RSAT::OrganismManager::CheckTaxon($taxon) if $main::taxon;
+      
+      ## Check option -no_purge and -org_list
+      if ($main::no_purge) {
+	  &RSAT::error::FatalError("-no_purge option can only be used if -org_list option is active (not with -taxon).");
+      }
   }
 
   ################################################################
@@ -109,13 +126,16 @@ sub SelectReferenceOrganisms {
       }
   }
   elsif ($main::orglist_file){
-    $main::org_selection_prefix = "org_list";
+      $main::org_selection_prefix = "org_list";
+  }
+  elsif ($main::use_tree_org){
+      $main::org_selection_prefix = "tree_list"; #ahcorcha1
   }
   elsif ($main::orthologs_list_file){
     $main::org_selection_prefix = "orthologs_list";
   }
   $main::org_selection_prefix .= "_orthologs_randome_selection"     if($main::rand);
-
+  
   return @ref_organisms;
 }
 
@@ -163,7 +183,7 @@ sub CheckFootprintParameters {
 
   ################################################################
   ## Check reference organisms (taxon or org list)
-  my @ref_organisms = &SelectReferenceOrganisms() unless  $main::orthologs_list_file ;
+  my @ref_organisms = &SelectReferenceOrganisms() unless $main::orthologs_list_file;
 
   ################################################################
   ## Check query organism
@@ -315,6 +335,12 @@ sub GetQueryPrefix {
 ## Define and index the output directory for the whole analysis, but
 ## concatenating output root, taxon, species, and (for footprint-scan
 ## only) matrix suffix.
+sub SetOutputDir {
+    $dir{main_output} = join("/",$main::dir{output_root});
+    &RSAT::util::CheckOutDir($dir{main_output});
+    return($dir{main_output});
+    
+}
 sub SetMainOutputDir {
 #  if($m_suffix){
 #    $dir{main_output} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name,$m_suffix);
@@ -512,7 +538,7 @@ Alternatively, reference organisms can be specified with the option
 =cut
   } elsif ($arg eq "-taxon") {
     $main::taxon = shift(@arguments);
-    &RSAT::error::FatalError("Options -taxon and -org_list are mutually incompatible") if ($main::orglist_file);
+    &RSAT::error::FatalError("Options -taxon, org_list, -orthologs_list and -use_tree_org are mutually incompatible") if ($main::orglist_file || $main::orthologs_list_file || $main::use_tree_org); # ahcorcha
 
 ## Organism List
 =pod
@@ -530,7 +556,7 @@ This option is incompatible with the option "-taxon".
 =cut
   } elsif ($arg eq "-org_list") {
     $main::orglist_file = shift(@arguments);
-    &RSAT::error::FatalError("Options -taxon, -org_list and -orthologs_list are mutually incompatible") if ($main::taxon || $main::orthologs_list_file);
+    &RSAT::error::FatalError("Options -taxon, org_list, -orthologs_list and -use_tree_org are mutually incompatible") if ($main::taxon || $main::orthologs_list_file || $main::use_tree_org);
 
 =pod 
 
@@ -597,7 +623,20 @@ This option is incompatible with the option "-taxon", and "-bg_model taxfreq" op
 =cut
   } elsif ($arg eq "-orthologs_list") {
     $main::orthologs_list_file = shift(@arguments);
-    &RSAT::error::FatalError("Options -taxon, org_list and -orthologs_list are mutually incompatible") if ($main::taxon || $main::orglist_file);
+    &RSAT::error::FatalError("Options -taxon, org_list, -orthologs_list and -use_tree_org are mutually incompatible") if ($main::taxon || $main::orglist_file || $main::use_tree_org);
+
+=pod
+
+=item B<-use_tree_org>
+
+Only uses organisms in the phylogenetic tree for orthologs search. Especified
+by option -tree. Incompatible with "-taxon", "-orthologs_list" and "-org_list".
+
+=cut
+  } elsif ($arg eq "-use_tree_org") {
+      $main::use_tree_org = 1;
+      &RSAT::error::FatalError("Options -taxon, org_list, -orthologs_list and -use_tree_org are mutually incompatible") if ($main::taxon || $main::orglist_file || $main::orthologs_list_file);
+      
 
     ## Query gene
 =pod
@@ -1782,23 +1821,26 @@ sub BayesianScore {
 
 	$outfile{matrix_distrib} = $outfile{matrix_prefix}."_matrix-distrib_occsig.tab";
 	&CalcMAtrixTheorDistrib;
-	my $analysis_group = "";
-	my $org_num_cmd = "";
-	my $org_in_group = $outfile{prefix}."_org_in_group_or_taxon.txt";
-        
-	if ($main::taxon){
-	    $analysis_group = $main::taxon;
-	    $org_num_cmd = "supported-organisms -taxon ".$main::taxon." -return ID -format tab | wc -l | tee ".$org_in_group;
-	}
-	if ($main::orglist_file){
-	    $analysis_group = $main::orglist_file;
-	    $org_num_cmd = "egrep -cv ';|^$' ".$main::orglist_file." | tee ".$org_in_group;
-	}
-	if ($main::orthologs_list_file){
-	    $analysis_group = $main::orthologs_list_file;
-	    $org_num_cmd = "egrep -cv ';|^$' ".$main::orthologs_list_file." | tee ".$org_in_group;
-	}
-	&one_command($org_num_cmd);
+
+
+	# Not stable. I should fix this to get the number for the image.
+	# Not urgent.
+	# my $org_num_cmd = "";
+	# my $org_in_group = $outfile{prefix}."_org_in_group_or_taxon.txt";       
+	# if ($main::taxon){
+	#     $org_num_cmd = "supported-organisms -taxon ".$main::taxon." -return ID -format tab | wc -l | tee ".$org_in_group;
+	# }
+	# if ($main::orglist_file){
+	#     $org_num_cmd = "egrep -cv ';|^$' ".$main::orglist_file." | tee ".$org_in_group;
+	# }
+	# if ($main::orthologs_list_file){
+	#     $org_num_cmd = "egrep -cv ';|^$' ".$main::orthologs_list_file." | tee ".$org_in_group;
+	# }
+	# if ($main::use_tree_org){
+	#     $org_num_cmd = "wc -l ".$main::org_tree_output_file." | tee ".$org_in_group;
+	# }
+	# &one_command($org_num_cmd);
+
 	
 	my $cmd = "$SCRIPTS/../python-scripts/bbls";
 	$cmd .= " --verbose ".$main::verbose;
@@ -1813,8 +1855,7 @@ sub BayesianScore {
 	$cmd .= " --query_genes ".$outfile{genes};
 	$cmd .= " --orthologs ".$outfile{orthologs};
 	$cmd .= " --infer_operons ".$infer_operons;
-	$cmd .= " --group_name ".$analysis_group;
-	$cmd .= " --num_organisms ".$org_in_group;	
+	$cmd .= " --group_name ".$main::org_selection_prefix;
 	$cmd .= " --bbls_draw ".$main::bbls_draw;
 	# Outputs
 	$cmd .= " --bbls_sites_file ".$outfile{bbls_sites};
@@ -1843,8 +1884,8 @@ sub BayesianScore {
      	close ($MYFILE);
     }   
 }
+
 sub SynthesizeBayesianScore(){
-    # if task == synthesize
 
     local $organisms_dir = join( "/",$main::dir{output_root}, $main::org_selection_prefix, $main::organism_name);
     
@@ -1854,14 +1895,23 @@ sub SynthesizeBayesianScore(){
     $cmd .= " --task synthesis ";
     $cmd .= " --path_report ".$organisms_dir;
     &one_command($cmd);
+}
 
+sub WriteOrganismsListFromTree() {
+    # Create cmd to call python function that returns 
+    # a list of organisms in tree -> same as orglist_file (check)
+    #  here, especify file name.
 
+    $main::org_tree_output_file = $main::dir{output_root}."/tree_org_list.txt";
+    my $cmd = "$SCRIPTS/../python-scripts/bbls";
+    $cmd .= " --task tree_org ";
+    $cmd .= " --organism ".$main::organism_name;
+    $cmd .= " --verbose ".$main::verbose;
+    $cmd .= " --tree ".$main::tree;
+    $cmd .= " --output_org_tree ".$main::org_tree_output_file;
+    &one_command($cmd);
 
-    
-    #$RSAT/perl-scripts/../python-scripts/bbls --verbose 5 \
-    #                                      --task synthesis \
-    #                                      --path_report /home/aldo/programas/footprint-scan-bbls/data/footprint_scan_reports/03/Gammaproteobacteria/Escherichia_coli_GCF_000005845.2_ASM584v2/
-
+    return $main::org_tree_output_file;    
 }
 
 1;
