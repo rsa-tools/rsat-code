@@ -122,7 +122,6 @@ parser.add_option("-o", "--output", action="store", \
                   dest="output", default=sys.stdout)
 parser.add_option("--debug", action="store_true", \
                   dest="debug", help=optparse.SUPPRESS_HELP)
-# options wishlist
 # taxon
 parser.add_option("--group_name", action="store", \
                   dest="taxon_name", default=sys.stdin)
@@ -148,7 +147,7 @@ parser.add_option("--bbls_tree_file", action="store", \
                   dest="bbls_tree_file", default=sys.stdout)
 
 ### ============================================================
-### Synthesis report.
+### Synthesis task.
 # Task
 parser.add_option("--task", action="store", \
                   dest="task", default=sys.stdout)
@@ -156,15 +155,15 @@ parser.add_option("--task", action="store", \
 parser.add_option("--path_report", action="store", \
                   dest="path_report", default=sys.stdout)
 ### ===========================================================
+### Org list
+parser.add_option("--output_org_tree", action="store", \
+                  dest="output_org_tree", default=sys.stdout)
 
 ## To-do list
 
 # taxon, number of organisms in the group that we are analizing.
-# operon name if operon is an option in footprint-scan.
-# opcion para que cree, png o pdf.
-# synthesis report, without limits. 
-# especify if the motif is reverse or forward in the image report
 # every operation with bbls should be float type.
+
 (options, args) = parser.parse_args()
 
 VERBOSITY = options.verbosity
@@ -178,7 +177,7 @@ COLUMN_ORDER = ["org_name", "seq_id", "ft_name", "ft_type", "gene", \
                 "BBLS_norm"]
 COLUMN_DELETE = ["rank", "rank_pm", "sig", "org_seq", "ln_Pval"]
 
-    
+
 #print(parser.print_usage())
 
 ########################################
@@ -203,8 +202,44 @@ class ModTree(Tree):
         print('\n- Tree complement probabilities')
         print(self.get_ascii(attributes=['name', 'complement_prob']))
         print('\n- Effective length')
-        print(self.get_ascii(attributes=['name', 'effective_length']))
+        print(self.get_ascii(attributes=['name',\
+                                         'effective_length']))
 
+########################################
+#                                      #
+#  Tasks                               #
+#                                      #
+########################################
+
+def write_org_tree_file(tree_file, output_file):
+    '''
+    descr
+    '''
+    tree_ = open(str(tree_file), 'r')
+    tree = ModTree(tree_.readline(), 1)
+
+    # Check if query organism is in tree.
+    if not options.query_organism in tree:
+        # Pythonic
+        # raise ValueError("Error\n\t" + options.query_organism + \
+        #                  " Not in tree")
+        # Same syntax as RSAT
+        print("Error\n\t" + options.query_organism + \
+              " Not in tree")
+        exit(1)
+
+    # Check if query organism is leaf, it should be.
+    if not tree.get_leaves_by_name(options.query_organism):
+        print("Error\n\t" + options.query_organism + \
+              " is not a leaf node")
+        exit(1)
+
+    with open(output_file, "w+") as output_tree_org:
+        leaves = []
+        for leaf in tree:
+            leaves.append(leaf.name)
+
+        output_tree_org.write('\n'.join(leaves))
 
 def synthesis(path_report):
     '''
@@ -240,7 +275,7 @@ def synthesis(path_report):
         matrix_reports = []
 
         for i in matrix_folder:
-            
+
             for j in i[2]:
                 if "bbls_report.tab" in j:
                     matrix_reports.append(i[0] + "/" + j)
@@ -279,13 +314,13 @@ def synthesis(path_report):
         df_ = df_.reindex(columns=COLUMN_ORDER)
         df_.to_csv(path_report + "/all_bbls_report.tab", sep="\t", index=False)
 
-    
 def main(args, options):
     """
+    docstring method
     """
-    #######################################################################
-    ##############################  FUNCTIONS  ############################
-    #######################################################################
+    ##########################################
+    #                FUNCTIONS               #
+    ##########################################
 
     def prune_tree(tree, motifs):
         """
@@ -745,7 +780,7 @@ def main(args, options):
         from ete3 import TreeStyle, TextFace, NodeStyle, SeqMotifFace,\
     AttrFace, CircleFace
 
-        num_organisms = open(options.num_organisms, 'r').readline()
+        # num_organisms = open(options.num_organisms, 'r').readline()
 
         # Get values from tfbs_per_matrix
         # Get bbls_norm
@@ -795,11 +830,10 @@ def main(args, options):
         ts.title.add_face(TextFace(title), column=0)
         ts.aligned_header.add_face(TextFace("Taxon or group used: " + \
                                             options.taxon_name + \
-                                            "\nGenomes in taxon: " + \
-                                            num_organisms + \
-                                            "Genomes used: " + \
+                                            "\nGenomes used: " + \
                                             str(len(tree))), \
                                    column=0)
+        #                                             num_organisms + \
         ts.aligned_foot.add_face(TextFace("Normalized BBLS: " + bbls_norm),\
                                  column=0)
 
@@ -843,7 +877,7 @@ def main(args, options):
 
         tree.render(tree_path, w=2500, tree_style=ts)
         return tree_path
-        
+
     ##################################################
     ####################### MAIN #####################
     ##################################################
@@ -854,6 +888,26 @@ def main(args, options):
 
     pandas.options.mode.chained_assignment = None  # default='warn'
     trees_path = []
+
+    # Opens tree file into ModTree format.
+    tree = open(str(options.tree_file), 'r')
+    t = ModTree(tree.readline(), 1)
+
+    # Check if query organism is in tree
+    if not options.query_organism in t:
+        # Pythonic
+        # raise ValueError("Error\n\t" + options.query_organism + \
+        #                  " Not in tree")
+        # Same sintax as RSAT
+        print("Error\n\t" + options.query_organism + \
+              " Not in tree")
+        exit(1)
+
+    # Check if query organism is leaf, it should be.
+    if not t.get_leaves_by_name(options.query_organism):
+        print("Error\n\t" + options.query_organism + \
+              " is not a leaf node")
+        exit(1)
 
     # From matrix distrib, get associated weight to pval for each tf.
     score_threshold = get_scores_threshold(options.p_value, \
@@ -958,10 +1012,7 @@ def main(args, options):
                 for motif in motifs:
                     print("; " + str(motif))
 
-            # Opens tree file into ModTree format.
-            tree = open(str(options.tree_file), 'r')
-            t = ModTree(tree.readline(), 1)
-
+            
             # Sets up tree to calculate bbls and bls.
             initialize_nodes(t, motifs)
             tree_probabilities(t)
@@ -1070,6 +1121,7 @@ def main(args, options):
 if __name__ == '__main__':
 
     try:
+
         if options.help:
             doc = globals()['__doc__'] % {'usage' : USAGE % PROG_NAME,\
                                           'version' : VERSION, \
@@ -1077,12 +1129,19 @@ if __name__ == '__main__':
             # pager(doc)
             sys.exit(0)
 
+        elif options.task == "tree_org":
+            
+            write_org_tree_file(options.tree_file, \
+                                options.output_org_tree)
+
         elif options.task == "synthesis":
             synthesis(options.path_report)
 
         elif options.task == "bbls":
             main(args, options)
-
+        else:
+            print("Error\n\t"+ str(options.task) + " is no a task")
+            exit(1)
     except KeyboardInterrupt:
 
         sys.stderr.write('\n')
@@ -1091,6 +1150,6 @@ if __name__ == '__main__':
 
     except SystemExit:
         pass
-
+    
 else:
     main(args, options)
