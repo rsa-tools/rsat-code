@@ -224,6 +224,10 @@ def check_change_tree_names(tree):
             if VERBOSITY >= 10:
                 print("; leaf name: " + str(leaf.name))
 
+
+    if VERBOSITY >= 7:
+        print("Tree structure")
+        print(tree.get_ascii(attributes=['name']))                
     if flag1 and VERBOSITY >= 5:
         print("; Warning\tTree names were changed from seq|Organism_name|seq" + \
               " to Organism_name")
@@ -240,9 +244,6 @@ def write_org_tree_file(tree_file, output_file):
     # Checks if tree names follow the format seq|org|seq if so corrects it
     # with a warning.
     tree = check_change_tree_names(tree)
-
-    if VERBOSITY >= 5:
-        print(tree.get_ascii(attributes=['name']))
 
     # Check if query organism is in tree.
     if not options.query_organism in tree:
