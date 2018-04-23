@@ -211,6 +211,25 @@ class ModTree(Tree):
 #                                      #
 ########################################
 
+def check_change_tree_names(tree):
+    """
+    self
+    """
+    flag1 = False
+    for leaf in tree:
+
+        if len(leaf.name.split("|")) == 3:
+            leaf.name = leaf.name.split("|")[1]
+            flag1 = True
+            if VERBOSITY >= 10:
+                print("; leaf name: " + str(leaf.name))
+
+    if flag1 and VERBOSITY >= 5:
+        print("; Warning\tTree names were changed from seq|Organism_name|seq" + \
+              " to Organism_name")
+    return tree
+
+
 def write_org_tree_file(tree_file, output_file):
     '''
     descr
@@ -218,19 +237,9 @@ def write_org_tree_file(tree_file, output_file):
     tree_ = open(str(tree_file), 'r')
     tree = ModTree(tree_.readline(), 1)
 
-
     # Checks if tree names follow the format seq|org|seq if so corrects it
     # with a warning.
-    for leaf in tree:
-
-        if VERBOSITY >= 3:
-            print("; WARNING\tLeaf nodes follow the format:" + \
-                " seq1 | Organism name | seq2\n Will only use Organism name ")
-
-        if len(leaf.name.split("|")) == 3:
-            leaf.name = leaf.name.split("|")[1]
-            if VERBOSITY >= 10:
-                print("leaf name: " + str(leaf.name))
+    tree = check_change_tree_names(tree)
 
     if VERBOSITY >= 5:
         print(tree.get_ascii(attributes=['name']))
@@ -392,6 +401,8 @@ def main(args, options):
         """
         if VERBOSITY >= 10:
             print("; initialize_nodes function")
+
+        tree = check_change_tree_names(tree)
 
         tree = prune_tree(tree, motifs)
 
