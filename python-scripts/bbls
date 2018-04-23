@@ -232,6 +232,9 @@ def write_org_tree_file(tree_file, output_file):
             if VERBOSITY >= 10:
                 print("leaf name: " + str(leaf.name))
 
+    if VERBOSITY >= 5:
+        print(tree.get_ascii(attributes=['name']))
+
     # Check if query organism is in tree.
     if not options.query_organism in tree:
         # Pythonic
