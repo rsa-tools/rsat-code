@@ -403,8 +403,6 @@ def main(args, options):
         if VERBOSITY >= 10:
             print("; initialize_nodes function")
 
-        tree = check_change_tree_names(tree)
-
         tree = prune_tree(tree, motifs)
 
         # Raises error if there are no tree nodes.
@@ -922,7 +920,8 @@ def main(args, options):
     # Opens tree file into ModTree format.
     tree = open(str(options.tree_file), 'r')
     t = ModTree(tree.readline(), 1)
-
+    t = check_change_tree_names(t)
+    
     # Check if query organism is in tree
     if not options.query_organism in t:
         # Pythonic
