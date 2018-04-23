@@ -218,6 +218,20 @@ def write_org_tree_file(tree_file, output_file):
     tree_ = open(str(tree_file), 'r')
     tree = ModTree(tree_.readline(), 1)
 
+
+    # Checks if tree names follow the format seq|org|seq if so corrects it
+    # with a warning.
+    for leaf in tree:
+
+        if VERBOSITY >= 3:
+            print("; WARNING\tLeaf nodes follow the format:" + \
+                " seq1 | Organism name | seq2\n Will only use Organism name ")
+
+        if len(leaf.name.split("|")) == 3:
+            leaf.name = leaf.name.split("|")[1]
+            if VERBOSITY >= 10:
+                print("leaf name: " + str(leaf.name))
+
     # Check if query organism is in tree.
     if not options.query_organism in tree:
         # Pythonic
@@ -234,6 +248,7 @@ def write_org_tree_file(tree_file, output_file):
               " is not a leaf node")
         exit(1)
 
+    # Write organisms names.
     with open(output_file, "w+") as output_tree_org:
         leaves = []
         for leaf in tree:
@@ -1012,7 +1027,7 @@ def main(args, options):
                 for motif in motifs:
                     print("; " + str(motif))
 
-            
+
             # Sets up tree to calculate bbls and bls.
             initialize_nodes(t, motifs)
             tree_probabilities(t)
@@ -1023,7 +1038,7 @@ def main(args, options):
                 print("; Tree after pruning")
                 print(t.get_ascii(attributes=['name']))
 
-            
+
             if VERBOSITY >= 10:
                 t.see_state()
 
@@ -1048,7 +1063,7 @@ def main(args, options):
             #    print("Wrote regulatory limits to " + limit_path)
 
             # Add rest of the limit rows for report, dont.
-            ''' 
+            '''
             # Add START_STOP sites of organisms where we had scores,
             # these are not consider in the BBLS calc. just for drawing.
             left_ortho = limit.loc[limit["org_seq"].\
@@ -1130,7 +1145,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
         elif options.task == "tree_org":
-            
+
             write_org_tree_file(options.tree_file, \
                                 options.output_org_tree)
 
@@ -1150,6 +1165,6 @@ if __name__ == '__main__':
 
     except SystemExit:
         pass
-    
+
 else:
     main(args, options)
