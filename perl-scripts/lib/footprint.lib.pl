@@ -1865,7 +1865,7 @@ sub BayesianScore {
 
     #$outfile{bbls_sites}
     #$outfile{bbls_tree}
-    &IndexOneFile("bbls", $outfile{bbls_sites});
+    &IndexOneFile("bbls", $outfile{bbls_sites}) if (-e $outfile{bbls_sites});
     
     # Get the list of all the files named "prefix_tree_*"    
     # Use a for loop to IndexOneFile for each file name.
