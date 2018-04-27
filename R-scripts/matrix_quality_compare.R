@@ -5,7 +5,7 @@
 ## Authors
 ## Samuel Collombet <samuel.collombet@ens.fr>
 ## Morgane Thomas-Chollier <mthomas@biologie.ens.fr>
-## Alejandra Medina-Rivera <amedina@lcg.unam.mx>
+## Alejandra Medina-Rivera <amedina@liigh.unam.mx>
 ## Jaime Castro-Mondragon <j.a.c.mondragon@ncmm.uio.no>
 
 required.libraries <- c("RColorBrewer", "gplots" ,"flux")
@@ -59,7 +59,8 @@ print.heatmap <- as.numeric(print.heatmap)
 ##print (plot.folder)
 ##stop()
 
-# mtx.quality.nwds.file <-"/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_files.txt"
+## mtx.quality.nwds.file <-"/Users/amedina/local/rsat/results/matrix_enrichment_permutation/Test1_all_nwd_files.txt"
+##/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_files.txt"
 # plot.folder <- "/Users/amedina/work_area/prueba/debug_matrix_quality/test/HOCOMOCO_motifs_CapStarrseq_Active_Prom_common_HeLa_K562_IP_vs_CapStarrseq_InactiveProm_FDR95_All_samples_bg_mkv_2_all_nwd_plot"
 
 #dir.create(plot.folder, showWarnings = TRUE, recursive = TRUE)
@@ -79,6 +80,14 @@ colnames(mtx.quality.nwds) <- c("matrix","sequence","file")
 
 matrices <- unique(mtx.quality.nwds$matrix)
 nwd.files <- list()
+
+sequences.names <- unique (mtx.quality.nwds$sequence)
+if (perm==1){
+    perm.names <- sequences.names[grep("perm$", sequences.names )]
+    perm.suffix <- tail(unlist(strsplit( perm.names[1],"_")), n=1)
+    sequences.names <- sequences.names[grep("perm", sequences.names , invert=TRUE)]
+
+}
 
 for (i in 1:dim(mtx.quality.nwds)[1]){
     #i<-2
@@ -146,6 +155,9 @@ th <- lapply(names(nwd.files) ,function(matrix.name){
     })
 })
 
+
+
+
 ################
 ## Function draw.heatmap
 ## Takes as input the original list file with all data, the metric to be used in the heatmap
@@ -155,17 +167,29 @@ draw.heatmap <- function (ListAll,
                           metric="max.nwd",
                           heatmap.file, 
                           formats=c("pdf"), 
-                          mtx.quality.nwds,
+                          mtx.quality.nwds,perm=0,sequences.names, perm.suffix,
                           ...) {
     metric.table <- matrix(ncol = length(unique(mtx.quality.nwds$sequence)), nrow =length(unique(mtx.quality.nwds$matrix))) 
     colnames(metric.table) <- unique(mtx.quality.nwds$sequence)
     rownames(metric.table) <- unique(mtx.quality.nwds$matrix)
-    
-    for (mtx in unique(mtx.quality.nwds$matrix) ) {
-        for (seq in unique(mtx.quality.nwds$sequence) ){
-            metric.table[mtx,seq] <-  ListAll[[mtx]][[seq]][[metric]]
+
+    if (perm==1){
+        for (mtx in unique(mtx.quality.nwds$matrix) ) {
+            for (seq in sequences.names){
+                perm.id <- paste(seq,"_",perm.suffix, sep="_")
+                metric.table[mtx,seq] <-  (ListAll[[mtx]][[seq]][[metric]])/(ListAll[[mtx]][[perm.id]][[metric]])
+            }
+        }
+        
+    }
+    else {
+        for (mtx in unique(mtx.quality.nwds$matrix) ) {
+            for (seq in unique(mtx.quality.nwds$sequence) ){
+                metric.table[mtx,seq] <-  ListAll[[mtx]][[seq]][[metric]]
+            }
         }
     }
+    
     # write ("Before output", stderr())
     write.table(file=paste(heatmap.file, "txt", sep="" ),metric.table,quote = FALSE, sep = "\t", na = "NA"  )
     # write (paste(heatmap.file, "txt", sep="" ), stderr())
@@ -212,7 +236,7 @@ draw.heatmap <- function (ListAll,
 ## If required draw heatmap
 
 max.nwd.heatmap.file <- paste(plot.folder,"maxNWD_heatmap_compare.", sep="/")
-draw.heatmap(ListAll=nwd.files,metric="max.nwd",heatmap.file=max.nwd.heatmap.file , formats=formats, mtx.quality.nwds=mtx.quality.nwds)
+draw.heatmap(ListAll=nwd.files,metric="max.nwd",heatmap.file=max.nwd.heatmap.file , formats=formats, mtx.quality.nwds=mtx.quality.nwds, sequences.names=sequences.names ,  perm.suffix= perm.suffix, perm=1)
 
 # write("first call", stderr())
 
