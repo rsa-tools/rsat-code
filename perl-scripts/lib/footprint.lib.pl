@@ -1856,7 +1856,7 @@ sub BayesianScore {
 	$cmd .= " --orthologs ".$outfile{orthologs};
 	$cmd .= " --infer_operons ".$infer_operons;
 	$cmd .= " --group_name ".$main::org_selection_prefix;
-	$cmd .= " --bbls_draw ".$main::bbls_draw;
+	$cmd .= " --bbls_draw ".$main::bbls_draw if (-e $main::bbls_draw);
 	# Outputs
 	$cmd .= " --bbls_sites_file ".$outfile{bbls_sites};
 	$cmd .= " --bbls_tree_file ".$outfile{bbls_tree};
