@@ -54,7 +54,7 @@ import sys
 
 # BEGIN DEPENDENCIES
 import pandas
-
+import numpy as np
 from ete3 import Tree
 
 # END DEPENDENCIES
@@ -449,14 +449,14 @@ def main(args):
 
         for node in tree.traverse("postorder"):
 
-            prob = 1
+            prob = 1.0
 
             if not node.is_leaf():
 
                 for child_node in node.get_children():
-                    prob = prob * (1 - child_node.prob)
+                    prob = prob * (1.0 - child_node.prob)
 
-                node.prob = 1 - prob
+                node.prob = 1.0 - prob
 
     def effective_length(tree):
         '''
@@ -467,7 +467,7 @@ def main(args):
             print(";effective_length function")
 
         for node in tree.traverse("postorder"):
-            len_prob = 0
+            len_prob = 0.0
 
             if not node.is_leaf():
 
@@ -480,27 +480,27 @@ def main(args):
                                         (len_prob / node.prob)
 
             except ZeroDivisionError:
-                node.effective_length = 0
+                node.effective_length = 0.0
 
     def tree_complement_probabilities(t):
         '''
         Computes the probability that the complement tree does not have a sites,
-        from root to leaves. 
+        from root to leaves.
         '''
         if VERBOSITY >= 10:
             print(";tree_complement_probability function")
-        
+
         for node in t.traverse("preorder"):
 
             if node.is_root():
-                node.complement_prob = 1
+                node.complement_prob = 1.0
 
             else:
                 parent_complement_prob = node.up.complement_prob
-                sister_prob = 1
+                sister_prob = 1.0
 
                 for sister_node in node.get_sisters():
-                    sister_prob = sister_prob * (1 - sister_node.prob)
+                    sister_prob = sister_prob * (1.0 - sister_node.prob)
 
                 node.complement_prob = parent_complement_prob * sister_prob
 
@@ -520,7 +520,7 @@ def main(args):
         if VERBOSITY >= 10:
             print(";bbls function")
 
-        bbls = 0
+        bbls = 0.0
 
         for node in tree.traverse():
 
@@ -528,7 +528,7 @@ def main(args):
 
                 node_bbls = node.complement_prob
 
-                children_node_length = 0
+                children_node_length = 0.0
 
                 for child_node in node.get_children():
 
@@ -564,7 +564,7 @@ def main(args):
         motifs_ = copy.copy(motifs)
 
         for motif in motifs_:
-            motifs_[motif] = 1
+            motifs_[motif] = 1.0
 
         initialize_nodes(tree_, motifs_)
         tree_probabilities(tree_)
@@ -629,9 +629,14 @@ def main(args):
                                         comment=";", \
                                         header="infer", \
                                         sep="\t")
+
+            # Asserts that the specific columns are float type.
+            tfb_sites[["weight", "Pval", "ln_Pval", "sig"]]\
+                = tfb_sites[["weight", "Pval", "ln_Pval", "sig"]].astype(np.float)
+
             # Change column name #seq_id to seq_id
             tfb_sites.rename(columns={"#seq_id": "seq_id"}, inplace=True)
-            
+
         # Read comments in sites.tab file to get max weight value for matrix.
         matrix_info_list = []
         with open(site_file, 'r') as motif_list:
@@ -658,14 +663,12 @@ def main(args):
             print(list(tfb_sites))
 
         matrix_info = pandas.DataFrame(data=matrix_info_list, columns=columns)
+        matrix_info[["Wmin", "Wmax", "Wrange"]]\
+            = matrix_info[["Wmin", "Wmax", "Wrange"]].astype(np.float)
 
-        matrix_info["Wth"] = score_threshold
+        matrix_info["Wth"] = [float(i) for i in score_threshold]
 
         tf = matrix_info[:]["name"].values
-
-        # Asserts that the weights are float type.
-        tfb_sites['weight'] = tfb_sites['weight'].astype(float)
-
 
         org_names = tfb_sites["seq_id"].values
         org_seq = []
@@ -711,7 +714,7 @@ def main(args):
             print(matrix_info)
             print(";Putative TF binding sites")
             print(tfb_sites)
-        
+
         return matrix_info, tfb_sites, limit
     ############################################################################
     def get_query_genes(query_genes_file):
@@ -767,7 +770,7 @@ def main(args):
             # the operons.
 
             operon_leaders = prefix + "_leaders_bbh.tab"
-            operons_leaders = open(operon_leaders, 'r') 
+            operons_leaders = open(operon_leaders, 'r')
 
             for leaders in operons_leaders:
                 leaders = leaders.replace("\n", "").split("\t")
@@ -788,7 +791,7 @@ def main(args):
                                 ortholog_df["ref_org"]
 
         if VERBOSITY >= 3:
-            print( ";Orthologs for current gene: " + \
+            print(";Orthologs for current gene: " + \
                    str(len(ortholog_df["seq_id"].values)))
 
         if VERBOSITY >= 10:
@@ -919,10 +922,6 @@ def main(args):
     ####################### MAIN #####################
     ##################################################
 
-    # Create BBLS report Folder.
-    # bbls_report = args.prefix_name + "_BBLS_report/"
-    # os.makedirs(bbls_report)
-
     pandas.options.mode.chained_assignment = None  # default='warn'
     trees_path = []
 
@@ -981,13 +980,13 @@ def main(args):
         if len(ortho_seq) == 1:
             # Skip analysis of current gene if there are no orthologs.
             if VERBOSITY >= 1:
-                print(";There are no orthologs for query gene")
+                print("; There are no orthologs for query gene")
             continue
 
         if known is False:
             # Skip analysis of current gene if the gene is unknown.
             if VERBOSITY >= 1:
-                print(";Unknown query gene")
+                print("; Unknown query gene")
             continue
 
         # tfb_sites is gene especific.
@@ -1037,7 +1036,7 @@ def main(args):
                 motifs[i[0]] = i[1]
                 counter += motifs[i[0]]
 
-            if counter == 0:
+            if counter == 0.0:
                 # Does not run the rest of the code if there was no site over the
                 #  the threshold in this ortholog seq (counter == 0).
                 #  wishlist, report that there is no sites.
@@ -1078,21 +1077,6 @@ def main(args):
             # ortho_seq is the total number of orthologs ~3000
             tfbs_per_matrix['num_orthologs'] = len(t)
 
-            # Write limits to output folder
-            # limit_path = args.prefix_name + "_start_end.tab"
-            # limit.to_csv(limit_path, sep="\t")
-
-            #if VERBOSITY >= 5:
-            #    print("Wrote regulatory limits to " + limit_path)
-
-            # Add rest of the limit rows for report, dont.
-            '''
-            # Add START_STOP sites of organisms where we had scores,
-            # these are not consider in the BBLS calc. just for drawing.
-            left_ortho = limit.loc[limit["org_seq"].\
-                                   isin(list(in_ortho))]
-            tfbs_per_matrix = tfbs_per_matrix.append(left_ortho)
-            '''
 
             ## Extract motif length to write the correct number of "-"
             #   as a replacement for the motif if it is not found.
@@ -1163,7 +1147,6 @@ if __name__ == '__main__':
             # pager(DOC)
         #     sys.exit(0)
 
-        
         if args.task == "tree_org":
 
             write_org_tree_file(args.tree_file, \
