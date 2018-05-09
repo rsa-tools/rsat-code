@@ -36,14 +36,14 @@ WWWSUP=rsat@wwwsup.scmbb.ulb.ac.be:rsat/
 #MAMAZE=rsat@${MERLIN}:/rsat_servers/mamaze
 PEDAGOGIX=rsat@pedagogix-tagx.univ-mrs.fr:rsat/
 RSATIX=rsat@rsat-tagx.univ-mrs.fr:rsat/
-FLORESTA=rsat@floresta.eead.csic.es:rsat/
+PLANTS=rsat@rsat.eead.csic.es:rsat/
 
 #CCG=jvanheld@itzamna.ccg.unam.mx:rsa-tools
 CCG=rsat@itzamna.ccg.unam.mx:rsa-tools
 TAGC=jvanheld@pedagogix-tagc.univ-mrs.fr:rsa-tools
 UPPSALA=jvanheld@bongcam1.hgen.slu.se:rsa-tools
 PRETORIA=jvanheld@anjie.bi.up.ac.za:.
-LOG_SERVERS=${PEDAGOGIX} ${RSATIX} ${FLORESTA} ${BIGRE}  ${WWWSUP} 
+LOG_SERVERS=${PEDAGOGIX} ${RSATIX} ${PLANTS} ${BIGRE}  ${WWWSUP} 
 ## ${CCG} ${UPPSALA} ${PRETORIA} 
 
 ################################################################
