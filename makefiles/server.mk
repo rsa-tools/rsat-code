@@ -46,6 +46,9 @@ PRETORIA=jvanheld@anjie.bi.up.ac.za:.
 LOG_SERVERS=${PEDAGOGIX} ${RSATIX} ${PLANTS} ${BIGRE}  ${WWWSUP} 
 ## ${CCG} ${UPPSALA} ${PRETORIA} 
 
+# to be set by user from command line
+DONTBANIP=
+
 ################################################################
 ## OLD SERVERS, NOT MAINTAINED ANYMORE
 #FLYCHIP=jvanheld@flychip.org.uk:rsa-tools
@@ -180,6 +183,7 @@ denied_ips:
 			| contingency-table  -col1 1 -col2 1 -margin \
 			| grep -v '^;' \
 			| grep -v '^#' \
+			| grep -v ${DONTBANIP} \
 			| cut -f 1,2 \
 			| awk '$$2 > ${TAG_DENIAL_THRESHOLD} {print $$1"\t"$$2"\tHTML_tags"}' \
 			| sort > ${DENIED_IP_FILE}.tab
@@ -199,6 +203,7 @@ _denied_ips_one_script:
 		| contingency-table  -col1 1 -col2 1 -margin \
 		| grep -v '^;' \
 		| grep -v '^#' \
+		| grep -v ${DONTBANIP} \
 		| cut -f 1,2 \
 		| awk '$$2 > ${FORM_DENIAL_THRESHOLD} {print $$1"\t"$$2"\t${ATTACKED_FORM}"}' \
 		| sort >> ${DENIED_IP_FILE}.tab ; \
