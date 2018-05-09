@@ -47,7 +47,7 @@ LOG_SERVERS=${PEDAGOGIX} ${RSATIX} ${PLANTS} ${BIGRE}  ${WWWSUP}
 ## ${CCG} ${UPPSALA} ${PRETORIA} 
 
 # to be set by user from command line
-DONTBANIP=
+DONTBANIP=''
 
 ################################################################
 ## OLD SERVERS, NOT MAINTAINED ANYMORE
