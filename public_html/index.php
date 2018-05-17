@@ -63,7 +63,7 @@
 	</div>
 	<div class='homefooter'>
 		<div class='social-circle'><div class='row'>
-			<div class='col-sm-4'><a class='fa fa-envelope' href='javascript:void(0)' onclick="window.location='mailto:Jacques.van.Helden@ulb.ac.be?subject='"></a> Jacques Van Helden</div>
+			<div class='col-sm-4'><a class='fa fa-envelope' href='javascript:void(0)' onclick="window.location='mailto:rsat-contact@list01.biologie.ens.fr?subject='"></a> contact RSAT team</div>
 			<div class='col-sm-4'><a class='fa fa-twitter' href='https://twitter.com/RSATools' target='_blank'></a> Twitter</div>
 			<div class='col-sm-4'><a class='fa fa-code' href='#' style='cursor:default'></a> Code version: <?php echo $properties['git_date'];?></div>
 		</div><br/>
