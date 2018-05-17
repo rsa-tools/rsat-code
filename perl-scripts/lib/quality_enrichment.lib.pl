@@ -221,7 +221,7 @@ sub Draw_NWD{
 	    $XYgraph_nwd_cmd .= " -xcol 1  -ycol ".$ycols;
 	    $XYgraph_nwd_cmd .= " -lines -xlog " ;
 	    $XYgraph_nwd_cmd .= " -yleg1 'NWD' -xleg1 'log10(Pvalue)' ";
-	    $XYgraph_nwd_cmd .= " -legend -pointsize 0 ";
+	    $XYgraph_nwd_cmd .= " -legend -pointsize 0 -null '<NULL>' ";
 	    $XYgraph_nwd_cmd .= " -o ". $nwd_xygrpah_file.$image_format." ";
 	    &doit($XYgraph_nwd_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 	    &RSAT::message::Info(" Drawing NWD  curves ",  $XYgraph_nwd_cmd) if ($main::verbose >= 5);   
@@ -277,7 +277,7 @@ sub Draw_OCC{
 	     $XYgraph_occ_cmd .= " -i ".  $occ_compare_scores_file ." ";
 	     $XYgraph_occ_cmd .= " -format ". $image_format  ." " ;
 	     $XYgraph_occ_cmd .= " -xcol 1  -ycol ".$ycols;
-	     $XYgraph_occ_cmd .= " -lines -xlog 10 " ;
+	     $XYgraph_occ_cmd .= " -lines -xlog 10  -null '<NULL>' " ;
 	     $XYgraph_occ_cmd .= " -yleg1 'Binomial significance of hit number (OCC)' -xleg1 'log10(Score Pvalue)' ";
 	     $XYgraph_occ_cmd .= " -legend -pointsize 0 ";
 	     $XYgraph_occ_cmd .= " -hline red 100 -hline violet 0 -ysize 400 -force_lines "; ## Parammeters suggested by Morgane      
@@ -454,7 +454,7 @@ sub CompareDistrib {
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1 -ygstep1 0.1 -ygstep2 0.02";
-      $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+      $XYgraph_cmd .= " -gp 'set size ratio 0.5'   -null '<NULL>' ";
       $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{distrib_compa}.".".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("Distribution comparison graph", $outfile{distrib_compa}.".".$image_format) if ($main::verbose >= 2);
@@ -473,7 +473,7 @@ sub CompareDistrib {
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
       $XYgraph_cmd .= " -ymax 1 -ylog 10";
-      $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+      $XYgraph_cmd .= " -gp 'set size ratio 0.5'  -null '<NULL>' ";
       $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("Distribution comparison graph (log Y)", $outfile{distrib_compa}."_logy.".$image_format)
@@ -508,7 +508,7 @@ sub CompareDistrib {
 	  $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
 	  $XYgraph_cmd .= " -xcol ".$ref_column;
 	  $XYgraph_cmd .= " -ycol ".$ycols;
-	  $XYgraph_cmd .= " -ygstep1 0.1 -ygstep2 0.02";
+	  $XYgraph_cmd .= " -ygstep1 0.1 -ygstep2 0.02 -null '<NULL>' ";
 	  # $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
 	  # $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
 	  $XYgraph_cmd .= " -ymax 1 ";
@@ -601,7 +601,7 @@ sub CompareDistrib {
 	      my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
 	      my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
 	      $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
-	      $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+	      $XYgraph_cmd .= " -ymin 0  -ymax 1  -null '<NULL>' ";
 	      $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
 	      $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
 	      &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -612,7 +612,7 @@ sub CompareDistrib {
 	      ## and a logarithmic Y axis
 	      $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
 	      $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
-	      $XYgraph_cmd .= " -ymax 1 -ylog 10";
+	      $XYgraph_cmd .= " -ymax 1 -ylog 10  -null '<NULL>' ";
 	      $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
 	      $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
 	      &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
