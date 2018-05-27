@@ -13,7 +13,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### default values for filling the form
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{gene_nb} = 20;
 $default{group_nb} = 1;
 $default{replacement} = "";
@@ -91,6 +91,19 @@ print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
+
+print "<TD><B>";
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    $("#organism").val("Saccharomyces_cerevisiae");
+    $("#organism_name").val("Saccharomyces cerevisiae");
+}
+</script>';
+
+print '<button type="button" onclick="setDemo();">DEMO</button>';
+
+print "</B></TD>\n";
 
 
 print "<TD><B><A class='iframe' HREF='help.random-genes.html'>MANUAL</A></B></TD>\n";

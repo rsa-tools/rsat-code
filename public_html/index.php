@@ -1,7 +1,6 @@
 <HTML>
 <HEAD>
 <TITLE>Regulatory Sequence Analysis Tools (RSAT)</TITLE>
-<link rel="alternate" type="application/rss+xml" title="RSAT website news feed" href="RSSAT.xml" />
 <link rel='stylesheet' type='text/css' href='css/bootstrap.min.css' />
 <link rel='stylesheet' type='text/css' href='home.css' />
 
@@ -13,14 +12,14 @@
 <BODY>
 <?php
     require_once ('functions.php');
-include('menu.php');
+    include('menu.php');
 ?>
 
 <div class='page-content-wrapper'>
 <div class='container'>
 	<div class='homeheader'>
 		<div class='row'>
-			<div class='col-sm-4' align='center'><img src="images/RSAT_logo.jpg" style="max-width:150px;max-height:60px;padding-bottom:10px" alt="RSAT server" border="0"><br/>
+			<div class='col-sm-4' align='center'><img src="images/RSAT_20_Ann_logo.jpg" style="max-width:250px;max-height:100px" alt="RSAT server" border="0"><br/>
             <span style='color:#0D73A7;font-size:11px;font-family:Arial rounded MT bold'>Regulatory Sequence Analysis Tools</span>
 			</div>
 			<div class='col-sm-2 homemenu'>
@@ -33,9 +32,9 @@ include('menu.php');
 	</div>
 
 	<div class='homecontent'>
-		<div class='row'>
+		<div class='row' style='padding-bottom:20px'>
 			<div class='col-sm-9'>
-				<div class='row' style='padding-bottom:40px'>
+				<div class='row' style='padding-bottom:20px'>
                     <div class='col-sm-2'><br/></div>
                     <div class='col-sm-8'><div align='center' style='font-size:17px;color:#F58634'><b>What we do</b></div><hr style='margin:10px 0 10px 0;border:2px solid #eee'>
 					We offer tools to analyse cis-regulatory elements in genome sequences:
@@ -45,9 +44,9 @@ include('menu.php');
 						<li>analysis of regulatory variations</li>
 						</ul>
 					</div>
-                    <div class='col-sm-2'><br/></div>
+                    <div class='col-sm-2'></div>
 				</div>
-<div align='center' style='font-size:15px;padding-bottom:20px'><i>This website is free and open to all users</i></div>
+<div align='center' style='font-size:12px;padding-bottom:10px'><i>This website is free and open to all users and there is no login requirement</i></div>
 				<div class='row' align='center'>
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#programModal'><div class='panel-body'><div class='box-heading'>Which program to use?</div>Guide to main tools for new users<br/><i class='fa fa-cogs fa-3x fa-style'></i></div></div></div>
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#tutModal'><div class='panel-body'><div class='box-heading'>Tutorial and help</div>RSAT tutorial and all training material<br/><i class='fa fa-graduation-cap fa-3x fa-style'></i></div></div></div>				
@@ -57,23 +56,23 @@ include('menu.php');
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#citeModal'><div class='panel-body'><div class='box-heading'>How to cite?</div>Citing RSAT complete suite of tools<br/><i class='fa fa-book fa-3x fa-style'></i></div></div></div>			
 				</div>
 			</div>
-			<div class='col-sm-3'><span class='homepapertext'><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> on matrix-clustering <b><a target='_blank' href="https://academic.oup.com/nar/article/45/13/e119/3862068/RSAT-matrix-clustering-dynamic-exploration-and" target="_blank"> in NAR</b></a></span><br/><br/>
-				<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="530" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+			<div class='col-sm-3'><span class='homepapertext'><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> for the 20th Anniversary <b><a target='_blank' href="https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gky317/4990780" target="_blank"> in NAR</b></a></span><br/><br/>
+				<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="500" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 			</div>	
 		</div>
 	</div>
 	<div class='homefooter'>
 		<div class='social-circle'><div class='row'>
-			<div class='col-sm-4'><a class='fa fa-envelope' href='javascript:void(0)' onclick="window.location='mailto:Jacques.van.Helden@ulb.ac.be?subject='"></a> Jacques Van Helden</div>
+			<div class='col-sm-4'><a class='fa fa-envelope' href='javascript:void(0)' onclick="window.location='mailto:rsat-contact@list01.biologie.ens.fr?subject='"></a> contact RSAT team</div>
 			<div class='col-sm-4'><a class='fa fa-twitter' href='https://twitter.com/RSATools' target='_blank'></a> Twitter</div>
-			<div class='col-sm-4'><a class='fa fa-code' href='#' style='cursor:default'></a> Code version: <?php echo $properties['git_date'];?></div></div>
+			<div class='col-sm-4'><a class='fa fa-code' href='#' style='cursor:default'></a> Code version: <?php echo $properties['git_date'];?></div>
 		</div><br/>
 		<div class='social-circle'><div class='row'>
 			<div class='col-sm-8'><a class='fa fa-paint-brush' href='http://www.altamirastudio.com/' target='_blank'></a> RSAT logos designed by Mauricio Guzman (<a target="_blank" href="http://www.altamirastudio.com/">http://www.altamirastudio.com/</a>)</div>
 			<div class='col-sm-4'><a class='fa fa-bug' href='#' style='cursor:default'></a><?php echo " Group specificity: <b>".$properties['group_specificity'] . "</b></p>"; ?></div>
 		</div>
 		<div align='right'><?php echo $properties['rsat_site'] . ' (' . $properties['rsat_www'] . ')'; ?></div>
-	</div>
+	</div></div></div>
 
 
 <!-- Modal Program to use-->
@@ -116,7 +115,8 @@ include('menu.php');
                 <option value="matrix-compa-programs" class="data4">I want to compare matrices (with known collections) </option>
                 <option value="matrix-compa-programs" class="data4">I want to cluster and align matrices </option>
                 <option value="convert-matrix" class="data4">I want to convert the matrix format </option>
-                
+                <option value="retrieve-matrix" class="data4">I want to extract specific matrices from a collection</option>
+                                                                                                                                                                  
                 <option value="fetch-sequences" class="data5">I want to extract the sequences corresponding to these coordinates </option>
                 
                  <option value="retrieve-variation-seq" class="data6">Obtain the variants and their flanking sequences </option>
@@ -131,10 +131,10 @@ include('menu.php');
                 <option value="peak-motifs_form.cgi" class="peak-motifs">peak-motifs</option>
                 
                 <option value="retrieve-seq_form.cgi" class="retrieve-seq-programs">retrieve sequences</option>
-                <option value="retrieve-ensembl-seq_form.cgi" class="retrieve-seq-programs">retrieve Ensembl sequences (only for organisms supported at Ensembl.org)</option>
+                <option value="http://metazoa.rsat.eu/retrieve-ensembl-seq_form.cgi" class="retrieve-seq-programs">retrieve Ensembl sequences (only for organisms supported at Ensembl.org)</option>
                 
-                 <option value="footprint-discovery_form.cgi" class="footprint-programs">footprint discovery</option>
-                 <option value="footprint-scan_form.cgi" class="footprint-programs">footprint-scan</option>
+                 <option value="http://prokaryotes.rsat.eu/footprint-discovery_form.cgi" class="footprint-programs">footprint discovery (Prokaryotes+Fungi)</option>
+                 <option value="http://prokaryotes.rsat.eu/footprint-scan_form.cgi" class="footprint-programs">footprint-scan (Prokaryotes+Fungi)</option>
                  
                  <option value="oligo-analysis_form.cgi" class="disco-programs">oligo-analysis (words)</option>
                  <option value="dyad-analysis_form.cgi" class="disco-programs">dyad-analysis (spaced pairs)</option>
@@ -151,18 +151,20 @@ include('menu.php');
                  
                  <option value="convert-matrix_form.cgi" class="convert-matrix">convert matrix</option>
                  
-                 <option value="fetch-sequences_form.php" class="fetch-sequences">fetch sequences from UCSC (only for organisms supported at genome.ucsc.edu)</option>
+                 <option value="retrieve-seq-bed_form.cgi" class="fetch-sequences">sequences from bed/gff/vcf (locally-installed organisms)</option>
+                 <option value="http://metazoa.rsat.eu/fetch-sequences_form.php" class="fetch-sequences">fetch sequences from UCSC (only for organisms supported at genome.ucsc.edu)</option>
                  
-                 <option value="retrieve-variation-seq_form.cgi" class="retrieve-variation-seq">retrieve variation sequences</option>
-                 <option value="variation-scan_form.cgi" class="scan-variations">scan variations</option>
+                 <option value="http://metazoa.rsat.eu/retrieve-variation-seq_form.cgi" class="retrieve-variation-seq">retrieve variation sequences (Metazoa)</option>
+                 <option value="http://metazoa.rsat.eu/variation-scan_form.cgi" class="scan-variations">scan variations (Metazoa)</option>
+                 
+                 <option value="retrieve-matrix_form.cgi" class="retrieve-matrix">retrieve matrix</option>
             </select>
         </div>
 			</div>		
 		</div>	
 	</div>
 </div>
-</div>
-</div>
+
 <!-- Modal tutorial -->
 <div class='modal' id='tutModal' role='dialog'>
 	<div class='modal-dialog'>
@@ -233,7 +235,7 @@ include('menu.php');
           <td>
 	    <a href="http://teaching.rsat.eu" target="_blank" >
 	      <img src="images/logo_teaching.jpg" height='100' border='0' alt="teaching"></a><br>
-	    maintained by <a target='_blank' href="http://sgbc.slu.se/">SLU Global Bioinformatics Center, Uppsala, Sweden  </a>
+	    maintained by <a target='_blank' href="http://tagc.univ-mrs.fr/">TAGC - Universit&eacute; Aix Marseilles, France  </a>
 	  </td>
 	  
 
@@ -257,8 +259,12 @@ include('menu.php');
 				<span style="color: #cc6600;"><i class="fa fa-pencil fa-lg"></i> <b>Citing RSAT complete suite of tools:</b></span>
 	<div align="left">
       <ul>
+      <li> Nguyen NTT, Contreras-Moreira B, Castro-Mondragon J, Santana-Garcia W, Ossio R, Robles-Espinoza CD, Bahin M, Collombet S, Vincens P, Thieffry  D, van Helden J, Medina-Rivera A, Thomas-Chollier  M (2018)
+	  <b>RSAT 2018: regulatory sequence analysis tools 20th anniversary</b>. Nucleic Acids Res. 2018 (Web Server issue) in press.
+	  <a href='https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gky317/4990780'>[Full text]</a>
+	</li>
 <li>  Medina-Rivera A, Defrance M, Sand O, Herrmann C, Castro-Mondragon J, Delerce J, Jaeger S, Blanchet C, Vincens P, Caron C, Staines DM, Contreras-Moreira B, Artufel M, Charbonnier-Khamvongsa L, Hernandez C, Thieffry D, Thomas-Chollier M, van Helden J (2015)
-	  <b>RSAT 2015: Regulatory Sequence Analysis Tools </b>. Nucleic Acids Res. 2015 (Web Server issue) in press.
+	  <b>RSAT 2015: Regulatory Sequence Analysis Tools </b>. Nucleic Acids Res. 2015 (Web Server issue) 43:W50–W56.
 	  <!--a href=http://www.ncbi.nlm.nih.gov/pubmed/21715389>[Pubmed 21715389]</a-->
 	  <a href='http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full'>[Full text]</a>
 	</li>

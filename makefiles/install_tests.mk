@@ -97,6 +97,17 @@ ws_nostub_test:
 		1> ${TEST_DIR}/ws_nostub_test_result.txt \
 		2> ${TEST_DIR}/ws_nostub_test_msg.txt
 
+
+## test python web serviecs with peak-motifs (time-consuming)
+WS_SERVER=fungi
+PYTHON=python2
+ws_python_peakmo:
+	@echo 
+	@echo "Testing stub-based SOAP/WSDL web services with peak-motifs python client"	
+	${PYTHON} ${RSAT}/public_html/web_services/clients/python/peak-motifs_soap.py \
+		-test ${RSAT}/public_html/demo_files/peak-motifs_demo.fa \
+		-server ${WS_SERVER}
+
 purge_seq:
 	@echo
 	@echo "Testing random-seq | purge-sequence"

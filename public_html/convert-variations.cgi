@@ -42,34 +42,34 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 
 
 $parameters = "";
-$command = "$SCRIPTS/convert-variations";
+$command = "$SCRIPTS/convert-variations -v 0";
 
 ################
 ## Parameters
 
-## Define species 
-$organism = $query->param('organism');
-if (defined($supported_organism{$organism})) {
-    $organism_name = $supported_organism{$organism}->{'name'};
-    @org_name_split=split(" ",$organism_name);
-    $species=join("_", $org_name_split[0], $org_name_split[1]);
-    $assembly =$org_name_split[2];
-    
-    $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
-    $parameters .= " -assembly ".$assembly; ## Assembly is the third part of species ID
-    if (scalar (@org_name_split)>=4){
-	if (scalar (@org_name_split)>4){
-	    $species_suffix=join("_",@org_name_split[3..$#org_name_split]);
-	}else {
-	    $species_suffix=$org_name_split[3];
-	}
-	$parameters .= " -species_suffix ".$species_suffix; ## 
-    }
-} else {
-    &cgiError("Organism '",
-	      $organism,
-	      "' is not supported on this web site.");
-}
+## Define species
+# $organism = $query->param('organism');
+# if (defined($supported_organism{$organism})) {
+#     $organism_name = $supported_organism{$organism}->{'name'};
+#     @org_name_split=split(" ",$organism_name);
+#     $species=join("_", $org_name_split[0], $org_name_split[1]);
+#     $assembly =$org_name_split[2];
+
+#     $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
+#     $parameters .= " -assembly ".$assembly; ## Assembly is the third part of species ID
+#     if (scalar (@org_name_split)>=4){
+# 	if (scalar (@org_name_split)>4){
+# 	    $species_suffix=join("_",@org_name_split[3..$#org_name_split]);
+# 	}else {
+# 	    $species_suffix=$org_name_split[3];
+# 	}
+# 	$parameters .= " -species_suffix ".$species_suffix; ##
+#     }
+# } else {
+#     &cgiError("Organism '",
+# 	      $organism,
+# 	      "' is not supported on this web site.");
+# }
 
 ## Get input
 
@@ -110,7 +110,7 @@ if ($query->param('uploaded_file')) {
       &doit($cmd);
     }
 
-    &RSAT::message::Debug("Variants file=", &RSAT::util::hide_RSAT_path($input_set_file), 
+    &RSAT::message::Debug("Variants file=", &RSAT::util::hide_RSAT_path($input_set_file),
 			  "<p>File type=", &RSAT::util::hide_RSAT_path($file_type),
 	) if ($main::verbose >= 5);
 
@@ -119,6 +119,10 @@ if ($query->param('uploaded_file')) {
   } else {
     my $input_var = $query->param('input');
     $input_varc =~ s/\r/\n/g;
+    #Convert back html entities "<>" to their origin
+    $input_var =~ s/&lt;/</g;
+    $input_var =~ s/&gt;/>/g;
+
     my @input_var = split (/[\n\r]/, $input_var);
     if ($input_var =~ /\S/) {
 	open QUERY, ">".$input_set_file;
@@ -217,9 +221,9 @@ sub PipingForm {
 	<INPUT type="submit" value="retrieve variants sequence">
 	</FORM>
 	</TD>
- 
+
 End_of_form
-print '   
+print '
 </TR>
 </TABLE>
 </CENTER>';

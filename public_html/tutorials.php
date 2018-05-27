@@ -57,7 +57,7 @@ directly enter at any step of an analysis with external data of your
 own.
 
 <p style="text-align:center">
-<a href="../images/RSAT_flowchart_2011.pdf"><img width="100%" style="border:1px solid" src="../images/RSAT_flowchart_2011.png"></a></center>
+<a href="images/RSAT_flowchart_2011.pdf"><img width="100%" style="border:1px solid" src="images/RSAT_flowchart_2011.png"></a></center>
 <!--<IMG border=1 SRC="RSAT_flowchart.jpg" ALT="RSAT_flowchart.jpg" HSPACE=20 VSPACE=20>-->
 </p>
 <p>

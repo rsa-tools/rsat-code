@@ -172,7 +172,7 @@ package main;
   #### initialise parameters and vars
   our $start_time = &RSAT::util::StartScript();
   our $comparabdb = "$ENV{RSAT}/data/genomes/compara.bdb";
-  #$comparabdb = "$ENV{RSAT}/data/ensemblgenomes/plants/release-29/compara.bdb"; # debug
+  #$comparabdb = "$ENV{RSAT}/data/ensemblgenomes/plants/release-37/compara.bdb"; # debug
   
   our %infile = ();
   our %outfile = ();
@@ -393,26 +393,35 @@ package main;
     if(!$idOK)
     {
       my $trimmed_id = strip_gene_id($query);
-      if($trimmed_id ne $query)
-      { 
+      if($trimmed_id eq $query) 
+      {
+        $trimmed_id = uc($trimmed_id); # try upper-case
         $idOK = id_exists_in_db($trimmed_id);
-        if(!$idOK)
+      }
+      else
+      {  
+        $idOK = id_exists_in_db($trimmed_id);
+        if(!$idOK) 
         {
-          # TO BE DONE: here is where synonyms should be retrieved ...
-
-          # Bad IDs
-          print $out "_cannot\tfind\tquery\t$query/$trimmed_id\tNA\tNA\tNA\n";
-          
-          $stats{$query}{'bad_gene_id'} = 1;
-          next;
-        }
-        else
-        {
-          RSAT::message::Info("Change query",$query,"to",$trimmed_id) if($verbose >=2);
-          $real_query = $trimmed_id;
+          $trimmed_id = uc($trimmed_id); # try upper-case
+          $idOK = id_exists_in_db($trimmed_id);
         }
       }
-      else{ print $out "_cannot\tfind\tquery\t$query\tNA\tNA\tNA\n"; }
+      
+      # TO BE DONE: here is where synonyms should be retrieved ...
+
+      if(!$idOK)
+      {
+        # Bad IDs
+        print $out "_cannot\tfind\tquery\t$query/$trimmed_id\tNA\tNA\tNA\n";
+        $stats{$query}{'bad_gene_id'} = 1;
+        next;
+      }
+      else
+      {
+        RSAT::message::Info("Change query",$query,"to",$trimmed_id) if($verbose >=2);
+        $real_query = $trimmed_id;
+      }
     }
 
     # query Compara for all requested organisms

@@ -1,9 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.80 2013/10/09 07:04:55 jvanheld Exp $
-#
-# Time-stamp: <2003-10-22 11:53:22 jvanheld>
+# $Id: nbOrg.cgi: get the number of supported_organisms
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dna-pattern
@@ -18,8 +16,7 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 print "Content-type:txt/html\n\n";
-print "<html>";
-print "<body>";
+print "<html><body>";
 
 @orgs = &RSAT::OrganismManager::get_supported_organisms_web();
 print scalar @orgs;

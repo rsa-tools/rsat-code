@@ -1,5 +1,5 @@
 ---
-title: "RSAT installation guide"
+title: "RSAT installation guide for Ubuntu (16.04)"
 author: "Jacques van Helden"
 date: 'Last update: 2017/04/21'
 output:
@@ -46,13 +46,17 @@ where `XX-XX-XX` is the latest release date and put it in your chosen directory.
 6. Uncompress the archive. This will create a directory named `rsat` where we will continue the install procedure.
 
 ```
-## By default we install the package in the tool directory.
+export RELEASE=20XX-XX-XX
+## e.g. export RELEASE=2018-05-26
+
+
+## By default we install the package a folder named packages. 
 ## This should be adapted according to your local setup. 
 export INSTALL_ROOT=~/packages
-sudo mkdir -p ${INSTALL_ROOT}
+mkdir -p ${INSTALL_ROOT}
 
 ## Replace XX-XX-XX by the actual release
-tar -C ${INSTALL_ROOT}/ -xpvzf rsat_20XX-XX-XX.tar.gz
+tar -C ${INSTALL_ROOT}/ -xpvzf rsat_${RELEASE}.tar.gz
 cd ${INSTALL_ROOT}/rsat
 ```
 
@@ -61,22 +65,36 @@ cd ${INSTALL_ROOT}/rsat
 7. We will start by auto-configuring RSAT in order to deine suitable basic parameters. 
 
 
-For VirtualBox instances, replace [your.server.IP] by the actual IP address of your server. 
+Replace [your.server.IP] by the actual IP address of your server. 
+(e.g.: for Virtualbox Virtual Machines, we set the IP to 192.168.56.101). 
+
 
 ```
+## Get your IP address and check if it is 192.168.56.101
+ifconfig | grep inet
+export MY_IP=XXX.XXX.XXX.XXX
+## e.g. export MY_IP=192.168.56.101
+
+## Semi-auto configuration for VirtualBox VM
+## (adapt IP address if required)
 perl perl-scripts/configure_rsat.pl -auto  \
-  rsat_site=rsat-vb-2017-04 \
-  rsat_www=http://[your.server.IP]/rsat/ \
-  rsat_ws=http://[your.server.IP]/rsat/ \
+  rsat_site=rsat-vb-2018-05 \
+  rsat_www=http://${MY_IP}/rsat/ \
+  rsat_ws=http://${MY_IP}/rsat/ \
   ucsc_tools=1 \
   ensembl_tools=1
 ```
 
-For the IFB cloud (IP address will change at each instance)
+### For the IFB cloud
+
+RSAT has been ported on the cloud of the [**Institut Français de Bioinformatique**](http://www.france-bioinformatique.fr) (**IFB**). The tools are available as an appliance which enables each user to automatically start an RSAT server, that can be used in a terminal, via a Web interface, or invoked remotely as Web services. 
+
+
+Since the IP address is allocated dynamically during at the start of the instance booting, we use an automatic configuration. 
 
 ```
 perl perl-scripts/configure_rsat.pl -auto  \
-  rsat_site=rsatvm-ifb-2017-04 \
+  rsat_site=rsatvm-ifb-2018-05 \
   RSAT=${INSTALL_ROOT}/rsat \
   rsat_www=auto \
   rsat_ws=auto \
@@ -102,8 +120,18 @@ perl perl-scripts/configure_rsat.pl
 Before running the installation, it might be worth updating the Linux distribution (`apt-get update`) in order to get the latest versions of the basic packages. 
 
 ```
+## This requires admin privileges
 sudo bash
+
+## Check who you are  (should be root)
+whoami
+
+
+## Go to the RSAT directory
+export INSTALL_ROOT=~/packages
 cd ${INSTALL_ROOT}/rsat
+
+## Read config and run bash installation scripts
 source RSAT_config.bashrc && \ 
 bash installer/01_ubuntu_packages.bash && \
 bash installer/02_python_packages.bash  && \
@@ -114,21 +142,70 @@ bash installer/07_R-and-packages.bash  && \
 bash installer/08_apache_config.bash && \
 bash installer/09_rsat_ws.bash && \
 bash installer/10_clean_unnecessary_files.bash
+
+## Restore rsat as owner of the $RSAT folder
+chown -R rsat.rsat $RSAT
+
+## Exit sudo session
+exit
+
+## Check who you are (should be back to normal user identity)
+whoami ## This should give 'rsat'
 ```
 
 ## Testing the command lines
 
+The script `makefile/install_tests.mk` runs a series of tests for different components of the *RSAT* suite. Each test result is stored in a separate file in the test directory (`./install_tests` by default). Output file names are printed out after each test. 
+
 ```
+## Load the RSAT configuration
+source RSAT_config.bashrc
+
+cd $RSAT
 make -f makefiles/install_tests.mk all
+
+## Check the results
+ls -ltr install_tests
 ```
 
-This makefile runs a series of tests for different components of the *RSAT* suite. Each test result is stored in a separate file in the test directory (`./install_tests` by default). Output file names are printed out after each test. 
 
 
 ## Testing the Web server
 
-TO BE WRITTEN
+The web site can be tested by selecting any supported tool, clicking on the demo button and checking the result. 
 
+We usually use the following tools as diagnostic of the proper functioning of a server. 
+
+
+1. **Supported organisms** to check if the default organisms have been installed. 
+
+2. **Fetch sequences from UCSC**: 
+
+    - is the list of organisms is correctly displayed (obtained dynamically from UCSC) ?
+    - run the demo: do you obtain fasta sequences ?
+
+3. **retrieven Ensembl seq**: 
+
+    - is the list of organisms is correctly displayed (obtained dynamically from Ensembl) ?
+    - run the demo 1 (single organism): do you obtain fasta sequences ?
+    
+4. **convert-matrix**: check that logos are properly generated
+
+5. **gene-info** to **feature-map**: check that the genes are well returned with gene-info, then successively send the results throught the following tools: 
+
+      - **gene-info** demo -> gene list. Check if you obtain a table with genes. If so, under *Next steps*, click the button *retrieve sequences*.
+      
+      - **retrieve sequences**. Click "Run Analysis" then "GO". In the result, check the fasta file. Next step: *oligo-analysis*. 
+      
+      - **oligo-analysis**. In the result, check the k-mers (oligos) then the matrices and the logos. In the Next step box, end the result to *string-based pattern matching*. 
+      
+      - **dna-pattern**
+      
+      - **feature-map** check that the png figure is properly generated and displayed. 
+
+At the end of this process the results should look like the figure <installer/images/feature-map_web_result.png>
+
+![**Feature-map result** at the end of the pipeline from gene-info to feature-map.](installer/images/feature-map_web_result.png)
 
 ****************************************************************
 # Supplementary information
@@ -144,22 +221,23 @@ metabolic-tools_YYYYMMDD.tar.gz
 
    Metabolic pathway analysis tools (supported on some NeAT servers).
 
-## RSAT/NeAT installation
+## RSAT/NeAT installation and user guides
 
 After having uncompressed the archive, you will find the installation
-and user guides in the directory
+and user guides in the `doc/manuals` directory
 
-      rsa-tools/doc/manuals/*.pdf
+```
+ls -1 public_html/release/*.pdf
+```
 
-## Regulatory Sequence Analysis Tools (RSAT)
 
-RSAT installation guide:   RSAT_install_guide.pdf
-Web configuration guide:   rsat_web_server.pdf
-Command-linde user guide:  tutorial_shell_rsat.pdf
-
-## Network Analysis Tools (NeAT)
-
-Web server configuration:  neat_web_server.pdf
-Command-line user guide:   neat_tutorial.pdf
+| Guide | File |
+|------------------------|---------------------------|
+| RSAT installation guide |   RSAT_install_guide.pdf |
+| RSAT Web configuration guide |   rsat_web_server.pdf |
+| RSAT Command-linde user guide |  tutorial_shell_rsat.pdf |
+| NeAT Web server configuration |  neat_web_server.pdf |
+| NeAT Command-line user guide |   neat_tutorial.pdf |
 
 ****************************************************************
+

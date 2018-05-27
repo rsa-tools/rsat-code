@@ -75,8 +75,7 @@ not_working:
 EXT_APP_TARGETS_OPTIONAL=install_gibbs \
 	install_consensus \
 	install_patser \
-	install_meme \
-	install_bedtools
+	install_meme 
 
 install_ext_apps_optional:
 	@${MAKE} ${EXT_APP_TARGETS_OPTIONAL}
@@ -362,7 +361,7 @@ install_ensembl_api_git:
 	@mkdir -p "${ENSEMBL_API_DIR}"
 	@echo ""
 	@echo "Cloning git for ensemblgenomes API branch ${ENSEMBLGENOMES_RELEASE}"
-	@(cd ${ENSEMBL_API_DIR}; git clone git://github.com/EnsemblGenomes/ensemblgenomes-api.git ; \
+	@(cd ${ENSEMBL_API_DIR}; git clone https://github.com/EnsemblGenomes/ensemblgenomes-api.git ; \
 		cd ensemblgenomes-api/ ; \
 		git checkout release/eg/${ENSEMBLGENOMES_RELEASE} )
 	@echo ""
@@ -405,7 +404,7 @@ install_ensembl_bioperl:
 		echo "Bioperl already installed"; \
 	else \
 		echo "Cloning bioperl" ; \
-		(cd ${BIOPERL_DIR}; git clone git://github.com/bioperl/bioperl-live.git); \
+		(cd ${BIOPERL_DIR}; git clone https://github.com/bioperl/bioperl-live.git); \
 	fi
 	@(cd ${BIOPERL_DIR}/bioperl-live; git checkout bioperl-release-${BIOPERL_VERSION})
 	@echo "bioperl-release-${BIOPERL_VERSION} installed in ${BIOPERL_DIR}"
@@ -859,13 +858,12 @@ _compile_patser:
 
 ################################################################
 ## Install consensus (J.Hertz)
-#CONSENSUS_VERSION=consensus-v6c.1 ## Not distributed anymore ?
-CONSENSUS_VERSION=consensus-v6d.2
+#CONSENSUS_VERSION=consensus-v6d ## Not distributed anymore ?
+CONSENSUS_VERSION=consensus-v6c # neither compile in rsat 2018
 CONSENSUS_TAR=${CONSENSUS_VERSION}.tar.gz
 #CONSENSUS_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus
 CONSENSUS_URL=http://stormo.wustl.edu/src/
 #CONSENSUS_URL=http://gzhertz.home.comcast.net/~gzhertz/
-#does not compile in baobab Oct2015!
 CONSENSUS_DIR=${SRC_DIR}/consensus/${CONSENSUS_VERSION}
 install_consensus: _download_consensus _compile_consensus
 

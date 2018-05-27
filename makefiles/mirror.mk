@@ -12,8 +12,8 @@ MAKEFILE=${RSAT}/makefiles/mirror.mk
 ################################################################
 #
 # Server
-RSAT_SERVER=merlin.bigre.ulb.ac.be
-RSAT_SERVER_DIR=/rsat_servers/rsat
+RSAT_SERVER=rsat-tagc.univ-mrs.fr
+RSAT_SERVER_DIR=rsat
 RSAT_SERVER_LOGIN=rsat
 SERVER=${RSAT_SERVER_LOGIN}@${RSAT_SERVER}:${RSAT_SERVER_DIR}
 
@@ -83,6 +83,13 @@ doc_from_server:
 
 logs_from_server:
 	${MAKE} dir_from_server DIR=logs RSYNC_OPT='-ruptvl ${OPT}' TARGET_DIR=${RSAT}/public_html/
+
+logs_from_servers:
+	${MAKE} logs_from_server RSAT_SERVER_DIR=rsat RSAT_SERVER_LOGIN=rsat RSAT_SERVER=rsat-tagc.univ-mrs.fr 
+	${MAKE} logs_from_server RSAT_SERVER_DIR=rsat RSAT_SERVER_LOGIN=rsat RSAT_SERVER=pedagogix-tagc.univ-mrs.fr 
+	${MAKE} logs_from_server RSAT_SERVER_DIR=rsat RSAT_SERVER_LOGIN=rsat RSAT_SERVER=floresta.eead.csic.es
+	${MAKE} logs_from_server RSAT_SERVER_DIR=rsat RSAT_SERVER_LOGIN=rsat RSAT_SERVER=baobab.eead.csic.es
+	${MAKE} logs_from_server RSAT_SERVER_DIR=rsat RSAT_SERVER_LOGIN=rsat RSAT_SERVER=sinik.ccg.unam.mx
 
 scripts_from_server:
 	${MAKE} dir_from_server DIR=perl-scripts

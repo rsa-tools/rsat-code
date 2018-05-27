@@ -33,15 +33,21 @@ $file_name = $ENV{RSAT} . "/public_html/motif_databases/" . $file;
 open($fh, "<", $file_name) or die "Cannot open file $!";
 my $id = "";
 while(my $row = <$fh>){
-    if($row =~ /AC\s+/){
+    if($row =~ /^AC\s+/){
         my @f = split(/\s+/, $row);
         $id = $f[1];
     }
-    if($row =~ /ID\s+/){
+    if($row =~ /^ID\s+/){
         my @f = split(/\s+/, $row);
-        push @ids, { "id" => $id, "idac" => $f[1] . " - ".$id };
+        my $idac = "";
+        if($f[1] ne $id){
+            $idac = $f[1] . " - " . $id;
+        }else{
+            $idac = $id;
+        }
+        push @ids, { "id" => $id, "idac" => $idac };
     }
-    if($row =~ /OS\s+/){
+    if($row =~ /^OS\s+/){
         push @ids, { "id" => $id, "idac" => $id };
     }
 }

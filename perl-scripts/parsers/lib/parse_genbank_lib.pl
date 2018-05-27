@@ -375,7 +375,18 @@ sub ParseGenbankFile {
 	if (lc($current_contig_key) eq "version") {
 	  @current_contig_values = split / +/, $current_contig_value;
 	  $current_contig->force_attribute("id", $current_contig_values[0]);
+
+	  ## Define contig sequence file path
+	  my $seq_file = $current_contig->get_attribute("id").".raw";
+	  $seq_file =~ s/:/_/g;
+	  $current_contig->set_attribute("seq_dir", $args{seq_dir});
+	  $current_contig->set_attribute("file", $seq_file);
+	  my $seq_file_path = $args{seq_dir}."/".$seq_file;
+      
+	  &RSAT::message::Debug ("Contig sequence file", $current_contig->get_attribute("id"), $seq_file) if ($main::verbose >= 3);
 	}
+
+
 
       } elsif ($line =~ /^ {12}/) {
 	## Suite of the current contig value
@@ -455,15 +466,10 @@ sub ParseGenbankFile {
 
 	}
 
+
+	
 	## Store contig sequences in a raw file (no space, no carriage return)
 	unless ($no_raw) {
-	  my $seq_file = $current_contig->get_attribute("id").".raw";
-	  $seq_file =~ s/:/_/g;
-	  $current_contig->set_attribute("seq_dir", $args{seq_dir});
-	  $current_contig->set_attribute("file", $seq_file);
-	  my $seq_file_path = $args{seq_dir}."/".$seq_file;
-	  
-	  &RSAT::message::Debug ("Contig sequence file", $current_contig->get_attribute("id"), $seq_file) if ($main::verbose >= 3);
 	  
 	  &RSAT::message::Info ("Storing sequence ",
 				$current_contig->get_attribute("id"),
@@ -478,6 +484,7 @@ sub ParseGenbankFile {
 #	    chomp($pwd);
 	  &RSAT::message::Debug("Working dir", $ENV{PWD},  "Sequence saved in file", $seq_file_path) if ($main::verbose >= 4);
 	}
+
 
 	## Store sequences in fasta format
 	unless ($no_fasta) {

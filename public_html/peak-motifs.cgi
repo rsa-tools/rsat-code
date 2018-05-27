@@ -56,7 +56,10 @@ system("mkdir -p $output_dir_full_path; chmod 755 $output_dir_full_path");
 ## command line paramters
 ### read parameters
 $parameters = " -v 1";
-$parameters .= " -r_plot" if ($query->param("r_plot"));
+
+if ($ENV{R_supported} &&  $query->param("r_plot")) {
+    $parameters .= " -r_plot";
+}
 
 ### title
 if ($query->param('title')){
@@ -81,7 +84,7 @@ if ($query->param('title')){
 #	  "merge_words",
 	  "merge_motifs",
 	  "split_motifs",
-	  "motifs_vs_motifs",
+      "motifs_vs_motifs",
 	  "timelog",
 	  "archive",
 	  "synthesis",

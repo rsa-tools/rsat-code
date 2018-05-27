@@ -140,10 +140,12 @@ package main;
         next if(/^[#;]/);
         s/\r/\n/g;
         $id = (split)[0];
-        $trimmed_id = strip_gene_id($id); 
+        my $trimmed_id = strip_gene_id($id);
+        my $uc_trimmed_id = uc($trimmed_id); 
         push(@query_genes,$id);
         $genes{$id}=1;
         $genes{$trimmed_id}=$id; 
+        $genes{$uc_trimmed_id}=$id;
       }
       close($genefile);
     }
@@ -336,8 +338,10 @@ query genes.
       my $id = shift(@arguments);
       push(@main::query_genes, $id);
       my $trimmed_id = strip_gene_id($id);
+      my $uc_trimmed_id = uc($trimmed_id);
       $genes{$id}=1;
       $genes{$trimmed_id}=$id;
+      $genes{$uc_trimmed_id}=$id;
 =pod
 
 =back

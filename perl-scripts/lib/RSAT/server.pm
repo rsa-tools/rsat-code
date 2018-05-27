@@ -89,8 +89,8 @@ sub GetProgramPath {
   ## If the path has ont ben found yet, find the program anywhere in
   ## the user path
   unless ($program_path) {
-    $program_path = `which $program_name`;
-    chomp($program_path);
+      $program_path = `which $program_name`;
+      chomp($program_path);
   }
 
   ## Check if the program path has been found
@@ -607,6 +607,7 @@ sub InitRSAT {
   ################################################################
   $main::SCRIPTS = $ENV{RSAT}."/perl-scripts";
   $main::PYTHON = $ENV{RSAT}."/python-scripts";
+  $main::C_SCRIPTS = $ENV{RSAT}."/bin";
 
   ################################################################
   ## Redirect queries to a remote server
@@ -860,6 +861,10 @@ sub MessageToAdmin {
 Returns a hash table with the specification of motif databases on the
 current RSAT instance.
 
+Note: the keys of the hash table can be queriedd in a case-insensitive
+way by using lowercases (keys are both in the native case and in
+lowercases).
+
 Usage: 
  my %matrix_db = &RSAT::server::supported_motif_databases();
 
@@ -879,13 +884,17 @@ sub supported_motif_databases {
     next if ($line =~ /^;/); ## Skip comment lines
     next if ($line =~ /^#/); ## Skip header line
     next unless ($line =~ /\S/); ## Skip empty lines
-    my ($db_name, $format, $file, $descr, $version, $url) = split (/\t/,$line);
+    my ($db_name, $format, $file, $descr, $version, $url, $label) = split (/\t/,$line);
     $matrix_db{$db_name}->{'name'} = $db_name;
     $matrix_db{$db_name}->{'format'} = $format || "";
     $matrix_db{$db_name}->{'file'} = $file;
     $matrix_db{$db_name}->{'descr'} = $descr || $db_name;
     $matrix_db{$db_name}->{'version'} = $version || "";
     $matrix_db{$db_name}->{'url'} = $url || "";
+    $matrix_db{$db_name}->{'label'} = $label || "";
+    # if ($db_name ne lc(db_name)) {
+    #   $matrix_db{lc($db_name)} = $matrix_db{$db_name};
+    # }
   }
 
   return %matrix_db;

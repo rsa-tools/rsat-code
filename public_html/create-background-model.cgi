@@ -62,8 +62,8 @@ $parameters .= " -l ".$oligo_length;
 
 
 ## Output file
-$result_file = $tmp_file_path.".".$output_format;
-push @result_files, "Background model file ($output_format)", $result_file;
+$result_file = $tmp_file_path;
+push @result_files, "Background model file", $result_file;
 
 &ReportWebCommand($command." ".$parameters);
 

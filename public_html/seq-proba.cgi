@@ -54,7 +54,7 @@ $parameters .= " -i $in_sequence_file -seq_format $sequence_format";
 my $bg_choose = $query->param('bg_choose');
 if ($bg_choose eq "rsat") {
   ## Select pre-computed background file in RSAT genome directory
-  my $organism_name = $query->param("organism");
+  my $organism_name = $query->param("organism_bg");
   my $noov = "ovlp";
   my $background_model = $query->param("background");
   my $markov_order = $query->param('markov_order');

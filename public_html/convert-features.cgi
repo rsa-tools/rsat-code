@@ -33,7 +33,7 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$command = "$SCRIPTS/convert-features -v 1";
+$command = "$SCRIPTS/convert-features -v 0";
 $prefix = "convert-features";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 $tmp_file_name = sprintf "convert-features.%s", &AlphaDate();

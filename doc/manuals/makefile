@@ -19,7 +19,7 @@ TEX_FILES = \
 	tutorial_shell_rsat.tex \
 	rsat_web_server.tex \
 	neat_tutorial.tex \
-	neat_web_server.tex 
+	neat_web_server.tex
 
 INCLUDE_TEX_FILES = \
 	rsat_latex_commands.tex

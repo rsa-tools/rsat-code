@@ -42,8 +42,8 @@ foreach $key (keys %default) {
 
 print "<CENTER>\n";
 print "Discards duplicated segments from a sequence set<BR>\n";
-print "Program developed by <a target=_blank href=http://www.techfak.uni-bielefeld.de/~kurtz/>Stefan Kurtz</a> (<A HREF='mailto:kurtz\@TechFak.Uni-Bielefeld.DE (Stefan Kurtz)'>kurtz\@TechFak.Uni-Bielefeld.DE</A>)<BR>\n";
-print "Web interface by <a target=_blank href=http://www.bigre.ulb.ac.be/~jvanheld/>Jacques van Helden</a> (<A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques.van-Helden\@univ-amu.fr</A>).\n";
+print "Program developed by <a target=_blank href=https://www.zbh.uni-hamburg.de/en/prof-dr-stefan-kurtz.html>Stefan Kurtz</a> (<A HREF='mailto:kurtz\@TechFak.Uni-Bielefeld.DE (Stefan Kurtz)'>kurtz\@TechFak.Uni-Bielefeld.DE</A>)<BR>\n";
+print "Web interface by <a target=_blank href=http://jacques.van-helden.perso.luminy.univ-amu.fr/</a> (<A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques.van-Helden\@univ-amu.fr</A>).\n";
 print "</CENTER>\n";
 
 

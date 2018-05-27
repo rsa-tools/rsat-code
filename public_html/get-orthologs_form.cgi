@@ -69,7 +69,7 @@ foreach $key (keys %default) {
 &RSA_header("get-orthologs", "form");
 print "<CENTER>";
 print "Given a list of genes from a query organism and a taxon of interest, <br>return genes coding for similar proteins in each genome of the taxon.<br>\n";
-print "Program developed by <A HREF='mailto:rekins\@bigre.ulb.ac.be'>Rekin's Janky</A>\n";
+print "Program developed by <A HREF='https://www.kuleuven.be/wieiswie/en/person/u0076845'>Rekin's Janky</A>\n";
 print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</A>).\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
@@ -149,18 +149,22 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 ################################################################
-### data for the demo 
-print $query->start_multipart_form(-action=>"get-orthologs_form.cgi");
-$demo_queries = "lexA\n";
-#$demo_queries .= "recA\n";
-#$demo_queries .= "uvrB\n";
+
 print "<TD><B>";
-print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K_12_substr__MG1655_uid57779");
-print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
-print $query->submit(-label=>"DEMO");
+
+print '<script>
+function setDemo(){
+    $("#reset").trigger("click");
+    queries.value = "lexA\n";
+    $("#organism").val("Escherichia_coli_K_12_substr__MG1655_uid57779");
+    $("#organism_name").val("Escherichia coli K 12 substr  MG1655 uid57779");
+    $("#taxon").val("Enterobacteriales");
+    $("#taxon_name").val("Enterobacteriales");
+}
+</script>';
+
+print '<button type="button" onclick="setDemo();">DEMO</button>';
 print "</B></TD>\n";
-print $query->end_form;
 
 
 print "<TD><B><A HREF='help.get-orthologs.html'>MANUAL</A></B></TD>\n";

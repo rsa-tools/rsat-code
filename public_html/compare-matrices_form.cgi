@@ -71,9 +71,9 @@ print "<CENTER>";
 print "Comparison between two collections of position-specific scoring matrices.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
-print ", <a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
-print ", <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>t</sup>\n";
-print "and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>\n";
+print ", <a target='_blank' href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";
+print ", <a target='_blank' href='https://www.ibens.ens.fr/spip.php?rubrique27&lang=en'>Denis Thieffry</a><sup>t</sup>\n";
+print "and <a target='_blank' href='https://ibios.dkfz.de/tbi/index.php/about/eilslabs-people/128-carl-herrmann'>Carl Herrmann</a><sup>ct</sup>\n";
 print "</CENTER>";
 
 ## demo description
@@ -94,37 +94,6 @@ print "<hr>";
 
 ################################################################
 ## Supported databases
-
-print '<link rel="stylesheet" href="css/select2.min.css" /><script src="js/select2.full.min.js"></script><script type="text/javascript">
-function formatState(state){
-	if(!state.id){return $("<div align=\'center\' style=\'text-transform:uppercase;background-color:lightgray;border:1px solid #eee;border-radius:7px;padding:8px\'><b>" + state.text + "</b></div>");}
-	var $state = $("<span><i class=\'fa fa-circle fa-lg\' style=\'color:" + state.element.className + "\'></i></span>&nbsp;&nbsp;&nbsp;" + state.text + "</span>");
-	return $state;
-}
-$(function(){
- $(".inline").colorbox({inline:true,width:"70%"});
-      // turn the element to select2 select style
-      $("#db_choice").select2({placeholder: "Select a matrix",
-	templateResult: formatState,
-	allowClear: true,
-	theme: "classic"
-	});
-
-$("#db_choice").change(function(){
-		if($("#db_choice").val() != ""){
-			$("#db_choice_radio").prop("checked", false);
-		}
-});
-
-$("#db_choice_radio").change(function(){
-		$("#db_choice").val("").trigger("change");
-});
-$("#db_choice").val("' . $default{compare_motif_database} . '").trigger("change");
-
-});
-
-</script>';
-
 
 &DatabaseChoice_select2();
 
@@ -210,30 +179,6 @@ exit(0);
 
 ################################################################
 ## Comparisons with motif databases
-sub DatabaseChoice {
-  print '<br/>';
-
-  ## Tasks
-  print "<fieldset><legend><b><a class='iframe' href='help.compare-matrices.html#tasks'>Reference matrices (database or custom motif collection)</a></b></legend>";
-  print "<p> ";
-
-  ## load the various databases that can be compared against
-  &DisplayMatrixDBchoice("mode"=>"radio");
-
-  print ("<INPUT TYPE='radio' NAME='db_choice' VALUE='custom'>");
-  print "Custom motif(s) in TRANSFAC format *\n";
-#  print "<ul>\n";
-  print $query->filefield(-name=>'upload_custom_motif_file',
-			  -size=>10);
-#  print "&nbsp;"x6, "Matrices should be in <b>Transfac format</b>";
-  print "<br>", "&nbsp;"x6, "* Other formats can be converted with <a class='iframe' href='convert-matrix_form.cgi'><i>convert-matrix</i></a>.";
-#  print"</ul>\n";
-  print "</p>\n";
-
-  print "</fieldset>";
-
-  print '<p class="clear"></p>';
-}
 
 sub DatabaseChoice_select2 {
   print '<br/>';
@@ -242,19 +187,12 @@ sub DatabaseChoice_select2 {
   print "<fieldset><legend><b><a class='iframe' href='help.compare-matrices.html#tasks'>Reference matrices (database or custom motif collection)</a></b></legend>";
   print "<p> ";
 
-print ' <select id="db_choice" name="db_choice" style="width:400px"><option></option>';
-  ## load the various databases that can be compared against
-  &DisplayMatrixDBchoice_select2("mode"=>"radio");
-print '</select><a class="inline" href="#matrix_descr""> View matrix descriptions</a> <br/>';
 
-  print ("<INPUT TYPE='radio' NAME='db_choice' VALUE='custom' id='db_choice_radio'>");
-  print "Custom motif(s) in TRANSFAC format *\n";
-#  print "<ul>\n";
+  &MotifSelection();
+  print "<br/><b>Or</b> Custom motif(s) in TRANSFAC format *\n";
   print $query->filefield(-name=>'upload_custom_motif_file',
-			  -size=>10);
-#  print "&nbsp;"x6, "Matrices should be in <b>Transfac format</b>";
+			  -size=>10, -onchange=>'fileupload(event)');
   print "<br>", "&nbsp;"x6, "* Other formats can be converted with <a class='iframe' href='convert-matrix_form.cgi'><i>convert-matrix</i></a>.";
-#  print"</ul>\n";
   print "</p>\n";
 
   print "</fieldset>";

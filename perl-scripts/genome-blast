@@ -264,6 +264,12 @@ local @query_taxons = ();
 local @db_taxons = ();
 
 local $reciprocal = 0;
+
+# ahcorcha
+local $diamond = 0;
+local $threads = 1;
+# /ahcorcha
+
 local $depth = 0;
 local $die_if_noorg = 0;
 
@@ -526,7 +532,10 @@ sub iterate_blast {
 
 	    ## Name of the output file
 	    $compa_prefix="q_".${query_organism}."_db_".${db_organism};
+
 	    $outfile{blast_ranks}=$dir{blast_result}."/".$compa_prefix."_ranks.tab.gz";
+	    # Add suffix specifying it's a diamond output. #ahcorcha
+	    $outfile{blast_ranks} = $dir{blast_result}."/".$compa_prefix."_ranks_dmnd.tab.gz" if ($main::diamond == 1); #/ahcorcha
 
 	    ## Skip comparison if the BLAST file already exists
 	    if ($new_only) {
@@ -756,6 +765,35 @@ taxon organism. This option is useless when dbtaxon == qtaxon.
 	} elsif ($ARGV[$a] eq "-reciprocal") {
 	    $main::reciprocal = 1;
 
+# ahcorcha
+=pod
+
+=item B<-diamond>
+
+Use diamond instead of formatdb and blastall. 
+
+genome-blast uses blastall by default. This option makes it use diamond
+blast which has a significant increase in speed. Although, slighly
+ less sensitive.
+
+=cut
+ 	} elsif ($ARGV[$a] eq "-diamond") {
+	    $main::diamond = 1;
+# /ahcorcha
+
+# ahcorcha
+=pod
+
+=item B<-threads>
+
+Specifies the number of threads used for diamond blast. Uses 1 by default.
+
+=cut
+ 	} elsif ($ARGV[$a] eq "-threads") {
+	    $main::threads = $ARGV[$a+1];
+	    &RSAT::error::FatalError("-threads is only used with the -diamond option") 
+		if ($main::diamond == 0);
+# /ahcorcha
 
 =pod
 
@@ -984,9 +1022,26 @@ sub Verbose {
 sub FormatDB {
     &RSAT::message::TimeWarn(join ("\t","Formatting DB for organism", $db_organism)) if ($main::verbose >= 1);
     &RSAT::util::CheckOutDir($dir{blast_db}); 
-    my $formatdb_cmd = &RSAT::server::GetProgramPath("formatdb", 1, $ENV{RSAT_BIN});
-    my $command = $formatdb_cmd." -i ".$infile{db_org_fasta}." -p t -o t -n ".$outfile{blast_db};
+
+    #ahcorcha
+    my $format_method = "";
+    my $format_parameters = "";
+    
+    if ($main::diamond == 1) {
+	$format_method = "diamond";
+	$format_parameters = " makedb --in ".$infile{db_org_fasta}." --db ".$outfile{blast_db};
+	
+    } else {
+	$format_method = "formatdb";
+	$format_parameters = " -i ".$infile{db_org_fasta}." -p t -o t -n ".$outfile{blast_db};
+    }
+    
+    my $formatdb_cmd = &RSAT::server::GetProgramPath($format_method, 1, $ENV{RSAT_BIN});
+    my $command = $formatdb_cmd.$format_parameters;
+    #/ahcorcha
+    
     &doit($command, $dry, $die_on_error, $main::verbose);
+    
     &RSAT::message::Info(join("\t", "DB formatted", $outfile{blast_db}.".*")) if ($main::verbose >= 2);
 }
 
@@ -994,6 +1049,7 @@ sub FormatDB {
 ################################################################
 ## Rank the blast hits
 sub BlastAndRank {
+    
     my %hits_per_query = ();
     my %hits_per_subject = ();
 
@@ -1003,9 +1059,37 @@ sub BlastAndRank {
     ## Check the existence of the output  directory
     &RSAT::util::CheckOutDir($dir{blast_result}); 
 
+    # ahcorcha
+    # If first line in aa.fasta file is newline, erase first line.
+    open my $file, '<', $infile{query_org_fasta}; 
+    my $firstLine = <$file>; 
+    close $file;
+
+    #Assert that the first line of the file is a newline
+    if ($firstLine eq "\n") {
+	my $command = "sed -i 1d ".$infile{query_org_fasta};
+	&doit($command, $dry, $die_on_error, $main::verbose);	
+    }
+    # /ahcorcha
+
+    # ahcorcha
     ## Run the blastall command
-    my $blastall_cmd = &RSAT::server::GetProgramPath("blastall", 1, $ENV{RSAT_BIN});
-    my $blast_command = $blastall_cmd." -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e ".$expect_threshold;
+    my $blast_method = "";
+    my $blast_parameters = "";
+
+    if ($main::diamond == 1) {
+	$blast_method = "diamond";	
+	$blast_parameters = " blastp --max-target-seqs 500 --more-sensitive --outfmt 6 --matrix ".$blast_matrix." --threads ".$main::threads." --evalue ".$expect_threshold." -q ".$infile{query_org_fasta}." --db ".$outfile{blast_db};	
+    }
+    else {
+	$blast_method = "blastall";
+	$blast_parameters = " -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e ".$expect_threshold;	
+    }
+    
+    my $blastall_cmd = &RSAT::server::GetProgramPath($blast_method, 1, $ENV{RSAT_BIN});
+    my $blast_command = $blastall_cmd.$blast_parameters;
+    #/ahcorcha
+    
     &RSAT::message::TimeWarn(join("\t", "Running blastall", $blast_command)) if ($main::verbose >= 1);
 
     # Print the blast output table (useful for debugging)
@@ -1104,7 +1188,9 @@ sub BlastAndRank {
     &RSAT::message::Info("Printing the result") if ($main::verbose >= 1);
     my @header = join "\t", @output_columns;
     &RSAT::message::Info(join("\t", "Ranked BLAST hits", $outfile{blast_ranks})) if ($main::verbose >= 1);
+
     $output = &OpenOutputFile($outfile{blast_ranks});
+	
     print $output join ("\t", "query_organism", "db_organism", @header), "\n";
 
 

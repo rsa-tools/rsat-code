@@ -238,7 +238,8 @@ FASTA_PEP_FTP_URL=${DATABASE}/fasta/${COLLECTION}/${SPECIES}/pep/${FASTA_PEP_SUF
 ## Note that only the first gtf file is considered
 #FASTA_RAW_LOCAL=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX} | grep -v '.gz$$'| head -1`
 #FASTA_RAW_LOCAL_GZ=`ls -1 ${GENOME_DIR}/${FASTA_RAW_SUFFIX}.gz | head -1`
-#FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.genome.fa
+# _OLD is needed for backwards compatibility
+FASTA_RAW_LOCAL_OLD=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.genome.fa
 FASTA_RAW_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna.toplevel.fa
 FASTA_RAW_LOCAL_GZ=${FASTA_RAW_LOCAL}.gz
 #FASTA_MSK_LOCAL=${GENOME_DIR}/${SPECIES_RSAT_ID}.dna_rm.genome.fa
@@ -359,8 +360,12 @@ install_go_annotations:
 ##      install_all_species WHEN=queue
 ##
 ## Each species installation will be executed as a job for the
-## cluster.
+## cluster
+
+## Attempt to get TAXON_ID from $ORGANISM_TABLE
+#ifeq (${TAXON_ID},)
 TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 4)
+#endif
 
 ## The Assembly ID is important for some model organisms (the
 ## community relies on some particular assemblies) but is sometimes
@@ -394,9 +399,11 @@ parse_gtf:
 
 ###############################################################
 ## parse gtf and then install organism
+# ${FASTA_RAW_LOCAL} is symb linked to ${FASTA_RAW_LOCAL_OLD} for compatibility
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
+	@ln -sf ${FASTA_RAW_LOCAL} ${FASTA_RAW_LOCAL_OLD}
 	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome
 
 ## Run some test for the GTF parsing result
@@ -509,6 +516,18 @@ parse_compara:
 	@echo
 	@parse-compara -i ${CMP_GZ} -list ${ORGANISM_TABLE} -release ${RELEASE} \
 		-o ${BDB_FILE} -log ${BDB_LOG} -v ${V}
+
+##################################################################
+## Parse Compara.homologies and match genomes names to support-organisms 
+CMP_GZ=${ORGANISM_DIR}/Compara.${ENSEMBL_RELEASE}.protein_default.homologies.tsv.gz
+BDB_FILE=${ORGANISM_DIR}/compara.bdb
+BDB_LOG=${ORGANISM_DIR}/compara.log
+parse_compara_match:
+	@echo
+	@echo "Parsing Compara file ${CMP_GZ}"
+	@echo
+	@parse-compara -i ${CMP_GZ} -list ${ORGANISM_TABLE} -match_genomes \
+        -o ${BDB_FILE} -log ${BDB_LOG} -v ${V}
 
 #################################################################
 ## Install Compara db

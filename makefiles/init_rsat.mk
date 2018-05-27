@@ -37,34 +37,33 @@ init:
 	@echo "	data	${RSAT}/public_html/data"
 	@mkdir -p ${RSAT}/bin
 	@mkdir -p ${RSAT}/public_html/data
-	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/data/robots.txt
 	@echo "Options +Indexes" > public_html/data/.htaccess
 	@echo "	genomes	${RSAT}/public_html/data/genomes"
 	@mkdir -p ${RSAT}/public_html/data/genomes
-	mkdir -p ${RSAT}/public_html/data/KEGG
-	mkdir -p ${RSAT}/public_html/data/metabolic_networks
-	mkdir -p ${RSAT}/public_html/data/metabolic_networks/GER_files
+	@mkdir -p ${RSAT}/public_html/data/KEGG
+	@mkdir -p ${RSAT}/public_html/data/metabolic_networks
+	@mkdir -p ${RSAT}/public_html/data/metabolic_networks/GER_files
 	@echo "	bin	${RSAT}/bin"
 	@mkdir -p ${RSAT}/bin
 	@echo "	ext_lib	${RSAT}/ext_lib"
 	@mkdir -p ${RSAT}/ext_lib
 	@${MAKE} _create_download_dir
-
 	@echo "	tmp	${RSAT}/public_html/tmp"
 	@mkdir -p ${RSAT}/public_html/tmp
-#	@echo "	peak-footprints_output	${}"
-#	@mkdir -p ${RSAT}/public_html/tmp/peak-footprints_output; chmod 777 ${RSAT}/public_html/tmp/peak-footprints_output
-	@chmod 777 public_html/tmp
+	@chmod 777 ${RSAT}/public_html/tmp
+	@echo "	serialized_genomes	${RSAT}/public_html/tmp/serialized_genomes"
+	@mkdir -p ${RSAT}/public_html/tmp/serialized_genomes
+	@chmod 777 ${RSAT}/public_html/tmp/serialized_genomes
 #	echo "Options -Indexes" > public_html/tmp/.htaccess
-	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/tmp/robots.txt
-	@rm -f public_html/tmp/index.html
-	@echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
-	@chmod 444 public_html/tmp/index.html
-
 	@echo "	logs	${LOG_DIR}"
 	@mkdir -p ${LOG_DIR}
 	@chmod 777 ${LOG_DIR}
+	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/data/robots.txt
+	@${MAKE} init_robots ROBOTS=${RSAT}/public_html/tmp/robots.txt
 	@${MAKE} init_robots ROBOTS=${LOG_DIR}/robots.txt
+	@rm -f public_html/tmp/index.html
+	@echo "<html><body><b>Forbidden</b></body></html>" > public_html/tmp/index.html
+	@chmod 444 public_html/tmp/index.html
 #	@echo "	peak-footprints_logs	${RSAT}/${LOG_DIR}/peak-footprints_logs"
 #	@mkdir -p ${LOG_DIR}/peak-footprints_logs; chmod 777 ${LOG_DIR}/peak-footprints_logs
 #	echo "Options -Indexes" > ${LOG_DIR}/.htaccess
@@ -139,7 +138,7 @@ ROBOTS=${RSAT}/public_html/robots.txt
 init_robots:
 	@echo
 	@echo "Disabling robots from indexing data directory"
-	@echo "Robot file	${ROBOTS}"
+	@echo "	Robot file	${ROBOTS}"
 	@echo "User-agent: *" > ${ROBOTS}
 #	@echo "Disallow: ." >> ${ROBOTS}
 #	@echo "Disallow: /rsat/data/" >> ${ROBOTS}

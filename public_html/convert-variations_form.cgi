@@ -14,10 +14,10 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{demo_descr1} = "";
-$default{organism} = "Homo_sapiens_GRCh37";
+$default{organism} = "";
 $default{input_type}="gvf";
 $default{out_type}="varBed";
-$default{mml}=30 ; ## Length of the sequence surrounding the variant, 
+$default{mml}=30 ; ## Length of the sequence surrounding the variant,
                    ## has to be consistent with the longest matrix to be used
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -50,8 +50,8 @@ print $query->start_multipart_form(-action=>"convert-variations.cgi");
 
 #### Select organims to retrieve variants sequences from
 
-print "&nbsp;"x0, &OrganismPopUpString();
-print "<p>\n";
+#print "&nbsp;"x0, &OrganismPopUpString();
+#print "<p>\n";
 
 
 ### Query variants
@@ -69,7 +69,7 @@ print $query->textarea(-name=>'input',-id=>'input',
 		       -default=>$default{input},
 		       -rows=>6,
 		       -columns=>65);
-### Option to upload a file with variant information (IDs, varBed file or 
+### Option to upload a file with variant information (IDs, varBed file or
 ### genomic regions in bed format)
 print "<BR>Upload variants or regions<BR>\n";
 print $query->filefield(-name=>'uploaded_file',
@@ -108,7 +108,7 @@ print "<BR>\n";
 ### action buttons
 print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
-print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
+print "<TD>", $query->submit(-label=>"GO",-onclick=>"escapeChars()"), "</TD>\n";
 print "<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
@@ -125,20 +125,27 @@ while(my $row = <$fh>){
     $demo_gvf_var .= "\\n";
 }
 
+#my $demo_org = "Homo sapiens GRCh37";
+my $org = $demo_org;
+$org =~ s/\ /_/g;
 print '<script>
+function escapeChars(){
+  document.getElementById("input").value = document.getElementById("input").value.replace(/</g,"&lt;");
+  document.getElementById("input").value = document.getElementById("input").value.replace(/>/g,"&gt;");
+};
+
 function setDemo(demo_gvf_var){
     $("#reset").trigger("click");
-    
+
     descr = "<blockquote class =\'demo\'>";
-    
+
     descr = descr + "<p>In this demonstration, we convert variants in <a href=\'http://www.sequenceontology.org/resources/gvf_1.00.html\'>GVF</a> format to varBed format.</p>\n \
     <p> The genetic variants used in this example were collected by Weireauch, et al (Cell, 2014), these variants were reported in previous publications as affecting transcription factor binding. </p>\n";
-    
+
     descr = descr + "</blockquote>";
     demo_descr.innerHTML = descr;
     demo.value = descr;
-    
-    $("#organism").val("Homo_sapiens_GRCh37").trigger("chosen:updated");
+
     $("#input").val(demo_gvf_var);
     $("#input_type").val("gvf");
     $("#out_type").val("varBed");
@@ -150,7 +157,7 @@ print "<TD><B>";
 print '<button type="button" onclick="setDemo('. "'$demo_gvf_var'" .')">DEMO</button>';
 print "</B></TD>\n";
 
-
+print "<td><b><a href='sample_outputs/convert-variations_demo20180322.varBed'>[Sample Output]</a></B></TD>\n";
 print "<TD><B><A class='iframe' HREF='help.convert-variations.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
@@ -161,4 +168,3 @@ print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a
 print $query->end_html;
 
 exit(0);
-

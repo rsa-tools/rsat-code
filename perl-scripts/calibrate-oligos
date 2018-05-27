@@ -29,6 +29,10 @@ our $organism_name = "Saccharomyces_cerevisiae";
 our $start = 1;
 our $end = undef;
 
+## Parameters for ChiSquare test
+$check_assumption = 0;
+$group_tails = 1;
+
 @supported_tasks = qw (all upstream random oligos group_distrib fit clean_seq clean_oligos);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
@@ -604,7 +608,7 @@ sub CalculateStatistics {
 	}
 
 	## Perform a chi-square test
-	my ($chi2, $df, $left_group, $right_group) = &ChiSquare("goodness", 2, $max_occ+1, 1, @counts, @expected);
+	my ($chi2, $df, $left_group, $right_group) = &ChiSquare("goodness", 2, $max_occ+1, $check_assumption, $group_tails, @counts, @expected);
 
 	## Discard cases where applicability conditions are not met
 	unless (&IsReal($chi2)) {

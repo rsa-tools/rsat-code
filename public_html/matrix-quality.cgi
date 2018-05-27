@@ -54,7 +54,9 @@ my $tmp_file_name = $result_dir."/".$file_prefix;
 ## Set parameters
 local $parameters = " -v 0";
 
-#local $parameters .= " -r_plot";
+if ($ENV{R_supported}) {
+    $parameters .= " -r_plot";
+}
 
 ################################################################
 ## Title specification
@@ -178,7 +180,7 @@ if ($bg_method eq "from_matrix") {
   
 } elsif ($bg_method eq "bgfile") {
   ## Select pre-computed background file in RSAT genome directory
-  local $organism_name = $query->param("organism");
+  local $organism_name = $query->param("organism_bg");
   local $noov = "ovlp";
   local $background_model = $query->param("background");
   #local $oligo_length = 1;

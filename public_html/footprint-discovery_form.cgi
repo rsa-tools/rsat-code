@@ -76,7 +76,7 @@ foreach $key (keys %default) {
 &RSA_header("footprint-discovery", "form");
 print "<CENTER>";
 print "Given one or several genes from a query organism, collect all orthologous genes for a given taxonomical level <br>and discover conserved elements in their promoters.<br>\n";
-print "(Program developed by <A href='mailto:rekins\@bigre.ulb.ac.be'>Rekin's Janky</A>\n";
+print "(Program developed by <A href='https://www.kuleuven.be/wieiswie/en/person/u0076845'>Rekin's Janky</A>\n";
 print "and <a href='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</A>).\n";
 print "<br>Reference: <a target='_blank' href=\"http://www.biomedcentral.com/1471-2105/9/37\">Janky & van Helden, BMC Bioinformatics 2008, 9:37.</a>";
 print "</CENTER>";
@@ -169,23 +169,39 @@ print $query->end_form;
 
 ################################################################
 ### data for the demo 
-print $query->start_multipart_form(-action=>"footprint-discovery_form.cgi");
-$demo_queries = "lexA\n";
 #$demo_queries .= "recA\n";
 #$demo_queries .= "uvrB\n";
-print "<TD><B>";
-print $query->hidden(-name=>'queries',-default=>$demo_queries);
-print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_GCF_000005845.2_ASM584v2");
-print $query->hidden(-name=>'taxon',-default=>"Gammaproteobacteria");
-print $query->hidden(-name=>'unique_taxon',-default=>"genus");
-print $query->submit(-label=>"DEMO");
-print "</B></TD>\n";
-print $query->end_form;
+
+print "<script>
+function setDemo(){
+    \$('#reset').trigger('click');
+    \$('#queries').val('lexA');
+    
+    \$('#organism').val('Escherichia_coli_GCF_000005845.2_ASM584v2');
+    \$('#organism_name').val('Escherichia coli GCF_000005845.2 ASM584v2');
+    \$('#taxon_name').val('Gammaproteobacteria');
+    \$('#taxon').val('Gammaproteobacteria');
+    unique_taxon.value = 'genus';
+}
+</script>";
+
+print '<TD><B>
+<button type="button" onclick="setDemo()">DEMO</button>
+</B></TD>';
 
 
+#print "<TD><B>";
+#print $query->hidden(-name=>'queries',-default=>$demo_queries);
+#print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_GCF_000005845.2_ASM584v2");
+#print $query->hidden(-name=>'taxon',-default=>"Gammaproteobacteria");
+#print $query->hidden(-name=>'unique_taxon',-default=>"genus");
+#print $query->submit(-label=>"DEMO");
+#print "</B></TD>\n";
+#print $query->end_form;
+
+
+print "<td><b><a href='sample_outputs/footprint-discovery_demo_output/Gammaproteobacteria/Escherichia_coli_GCF_000005845.2_ASM584v2/Gammaproteobacteria_Escherichia_coli_GCF_000005845.2_ASM584v2_bg_taxfreq_result_index.html'>[Sample Output]</a></B></TD>\n";
 print "<TD><B><A HREF='help.footprint-discovery.html'>MANUAL</A></B></TD>\n";
-#print "<TD><B><A HREF='tutorials/tut_footprint-discovery.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</BLOCKQUOTE>\n";

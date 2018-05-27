@@ -42,7 +42,7 @@ TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar
 
 ################################################################
 ## All the tasks for publishing the new version
-all: clean_emacs_bk tar_archive clean_release_site publish 
+all: clean_emacs_bk manuals tar_archive clean_release_site publish 
 
 ## List parameters
 #PUB_SERVER=rsat.ulb.ac.be
@@ -64,8 +64,11 @@ list_param:
 ################################################################
 ## Generate the Manuals and tutorials
 manuals:
-	(cd doc/manuals; make fullclean; make install_guide; make rsat_tutorial; make neat_tutorial; make web_server_guide; make tex_clean)
+	@echo "Generating installation manuals and user guides"
+	(cd doc/manuals; make fullclean; make all_pdf; make tex_clean)
+	mkdir -p public_html/release
 	rsync -rtupvl -e "ssh ${SSH_OPT}" doc/manuals/*.pdf public_html/release
+	@echo "Up-to-date manuals can be found in public_html/release" 
 
 ## Install manuals on the RSAT Web server
 PUB_TARGET_MANUALS=${PUB_LOGIN}@${PUB_SERVER}:rsat/public_html/release/
@@ -203,6 +206,7 @@ publish_vm:
 	@echo "Synchronizing RSAT-VM	${APPLIANCE}"
 	@echo "	LOCAL_APPLIANCE	${LOCAL_APPLIANCE}"
 	@du -sm ${LOCAL_APPLIANCE}
+	@chmod 644 ${LOCAL_APPLIANCE}
 	@rsync -ruptvl ${LOCAL_APPLIANCE}  ${RSATVM_REPO}
 
 publish_vm_tuto:

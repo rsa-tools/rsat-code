@@ -52,7 +52,7 @@ print "Generate random sites given a motif (PSSM).\n";
 print "<br>Reference: <a target='_blank' href=\"http://www.ncbi.nlm.nih.gov/pubmed/19689955\">Defrance & van Helden, Bioinformatics 2009</a>.</a>";
 print "</center>";
 
-print $query->start_multipart_form(-action=>"random-sites.cgi");
+print $query->start_multipart_form(-action=>"random-sites.cgi", -onreset=>"resetHandler()");
 
 #print "<font face='Helvetica'>";
 
@@ -77,6 +77,10 @@ print "<hr>";
 print "<P>\n";
 &SelectOutput();
 
+print '<script>function resetHandler(){
+$("#db_choice").val("").change();
+}</script>';
+
 ### action buttons
 print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
@@ -86,7 +90,6 @@ print $query->end_form;
 
 
 print "<TD><B><A class='iframe' HREF='help.random-sites.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A class='iframe' HREF='tutorials/tut_random-sites.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

@@ -29,7 +29,7 @@ $default{Tfreq} = 0.325;
 $default{Cfreq} = 0.175;
 $default{Gfreq} = 0.175;
 
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{oligo_size} = 6;
 $default{oligopept_size} = 2;
 
@@ -106,7 +106,7 @@ print "<ul>";
 print "<b>Organism-specific Markov model</b> (Note: oligomer length = Markov order + 1)<br>";
 
 print "<UL>";
-&OrganismPopUp();
+&OrganismPopUp('bg_org'=>'1');
 
 ### oligo size
 print "<br><INPUT TYPE='radio' NAME='bg_method' VALUE='upstream' checked>";

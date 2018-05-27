@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>perl-scripts/matrix-quality</title>
+<title>convert-variations</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" href="main.css" type="text/css" />
 </head>
@@ -10,7 +10,7 @@
 <body class="info">
 
 <center>
-<h2><A HREF="RSAT_home.cgi">RSAT</A> - <a href='matrix-quality.cgi'>matrix-quality</a> manual</h2>
+<h2><A HREF="RSAT_home.cgi">RSAT</A> - <a href='convert-variations_form.cgi'>convert-variations</a> manual</h2>
 
 </center>
 
@@ -18,66 +18,65 @@
 <div name="index">
 <p><a name="__index__"></a></p>
 
-
 <ul id="index">
   <li><a href="#NAME">NAME</a></li>
   <li><a href="#VERSION">VERSION</a></li>
   <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
   <li><a href="#AUTHORS">AUTHORS</a></li>
   <li><a href="#CATEGORY">CATEGORY</a></li>
-  <li><a href="#USAGE">USAGE</a></li>
-  <li><a href="#SUPPORTED-FORMAT">SUPPORTED FORMAT</a>
+  <li><a href="#INPUT-DATA">INPUT DATA</a>
     <ul>
       <li><a href="#Genome-Variant-Format-GVF">Genome Variant Format (GVF)</a></li>
       <li><a href="#Variant-Call-Format-VCF">Variant Call Format (VCF)</a></li>
-      <li><a href="#RSAT-variation-format-varBed">RSAT variation format (varBed)</a></li>
+      <li><a href="#RSAT-variation-Format-varBed">RSAT variation format (varBed)</a></li>
     </ul>
   </li>
   <li><a href="#OUTPUT-FORMAT">OUTPUT FORMAT</a></li>
-  <li><a href="#SEE-ALSO">SEE ALSO</a>
-    <ul>
-      <li><a href="#retrieve-variation-seq">retrieve-variation-seq</a></li>
-    </ul>
-  </li>
-  <li><a href="#WISH-LIST">WISH LIST</a></li>
   <li><a href="#OPTIONS">OPTIONS</a></li>
+      <ul>
+      <li><a href="#Variants-to-be-converted">Variants to be converted </a></li>
+      <li><a href="#Input-format">Input format</a></li>
+      <li><a href="#Output-format">Output format</a></li>
+
+    </ul>
+  <li><a href="#CONTACT">CONTACT</a></li>
 </ul>
 
 <h1 id="NAME">NAME</h1>
-
-<p>convert-variation</p>
-
+  <p>convert-variations</p>
 <h1 id="VERSION">VERSION</h1>
-
-<p>$program_version</p>
-
+  <p>2.0</p>
 <h1 id="DESCRIPTION">DESCRIPTION</h1>
-
-<p>Ensure inter-conversions between different formats of polymorphic variations.</p>
-
-<p>/!\ To convert to VCF format, raw genomic sequence must be installed (<i>download-ensembl-genome</i>).</p>
-
+  <p>Performs inter-conversions between different formats of polymorphic variations.</p>
 <h1 id="AUTHORS">AUTHORS</h1>
-
-<p>Jeremy.Delerce@univ-amu.fr</p>
-
-<h1 id="CATEGORY">CATEGORY</h1>
-
 <dl>
+  <dt id="Walter Santana-Garcia">Walter Santana-Garcia</dt>
+<dd>
 
-<dt id="util">util</dt>
+</dd>
+  <dt id="Jacques van Helden">Jacques van Helden</dt>
+<dd>
+
+</dd>
+  <dt id="Alejandra-Medina-Rivera">Alejandra Medina-Rivera</dt>
 <dd>
 
 </dd>
 </dl>
 
-<h1 id="USAGE">USAGE</h1>
+<h1 id="CATEGORY">CATEGORY</h1>
+<dl>
+<dt id="util">Genetic variations</dt>
+</dl>
 
-<pre><code> covert-variations -i filename -from format -to format [-species #] [-v #] [-o #]</code></pre>
+<!-- <h1 id="USAGE">USAGE</h1>
 
-<h1 id="SUPPORTED-FORMAT">SUPPORTED FORMAT</h1>
+<pre><code> variation-scan [-i sequence_file] -m matrix_file -bg backgournd_file [-calc_distrib] [-o outputfile] [-v #] [...]</code></pre>
 
-<p>GVF, VCF, varBed</p>
+<h2 id="Example">Example</h2> -->
+
+<h1 id="INPUT-DATA">INPUT DATA</h1>
+<p>Genome Variant Format (GVF), Variant Call Format (VCF) and RSAT variation format (varBed).</p>
 
 <h2 id="Genome-Variant-Format-GVF">Genome Variant Format (GVF)</h2>
 
@@ -110,7 +109,7 @@
 
 <p>The last column contains a lot of relevant information, but is not very easy to read. We should keep in mind that this format was initially defined to describe generic genomic features, so all the specific attributes come in the last column (description).</p>
 
-<p>For this reasons, we developed a custom tab-delimited format to store variations, which we call <i>varBed</i> (see description below).</p>
+<!-- <p>For this reasons, we developed a custom tab-delimited format to store variations, which we call <i>varBed</i> (see description below).</p> -->
 
 <h2 id="Variant-Call-Format-VCF">Variant Call Format (VCF)</h2>
 
@@ -118,127 +117,50 @@
 
 <p>This format was defined for the 1000 genomes project. It is no longer maintained. The converter supports it merely for the sake of backwards compatibility.</p>
 
-<h2 id="RSAT-variation-format-varBed">RSAT variation format (varBed)</h2>
+<h2 id="RSAT-variation-Format-varBed">RSAT variation format (varBed)</h2>
 
-<p>Tab-delimited format with a specific column order, used as input by <i>retrieve-variation-seq</i>.</p>
+<p>Tab-delimited format with a specific column order, used as input by <a href='retrieve-variation-seq_form.cgi'><i>retrieve-variation-seq</i></a>.</p>
 
 <p>This format presents several advantages for scanning variations with matrices.</p>
-
-<dl>
-
-<dt id="tab-delimited-organization">tab-delimited organization</dt>
-<dd>
-
-<p>Each field comes in a separate column -&gt; the parsing does not require to further parse the last column of the GVF file.</p>
-
-</dd>
-<dt id="File-separated-per-chromosome">File separated per chromosome</dt>
-<dd>
-
-<p>This is a matter of organization rather than an intrinsic property of the format (we could as well have used chromosome-separated GVF files, or whole-genomes RSAT variant files), but it speeds up the search for variants.</p>
-
-</dd>
-<dt id="Combined-variations">Combined variations</dt>
-<dd>
-
-<p>When several variants are mutually overlapping, <i>install-ensembl-variations</i> enables to compute all possible combinations of variations. However, this option may require considerable computer resources (computing time, storage), so we inactivate it by default. To support combinatory variants, <i>install-ensembl-variations</i> must be called with the option <i>-task combine</i>.</p>
-
-</dd>
-</dl>
-
 <h1 id="OUTPUT-FORMAT">OUTPUT FORMAT</h1>
+<p>A tab delimited file on selected output format.</p>
 
-<p>A tab delimited on selected output format</p>
-
-<h1 id="SEE-ALSO">SEE ALSO</h1>
-
-<h2 id="retrieve-variation-seq">retrieve-variation-seq</h2>
-
-<p><i>retrieve-variation-seq</i> retrieves variant information and sequences using ensembl variation files obtained with the program <i>download-ensembl-variations</i>.</p>
-
-<h1 id="WISH-LIST">WISH LIST</h1>
 
 <h1 id="OPTIONS">OPTIONS</h1>
 
 <dl>
 
-<dt id="v"><b>-v #</b></dt>
+
+<dt id="Variants-to-be-converted "><b>Variants to be converted </b></dt>
 <dd>
 
-<p>Level of verbosity (detail in the warning messages during execution)</p>
+<p>Variation data that will be converted, supported formats: GVF, VCF or varBed.</p>
 
 </dd>
-<dt id="h"><b>-h</b></dt>
+
+<dt id="Input-format"><b>Input format </b></dt>
 <dd>
 
-<p>Display full help message</p>
+<p> Variation format of the input data, supported formats: GVF, VCF or varBed.</p>
 
 </dd>
-<dt id="help"><b>-help</b></dt>
+
+<dt id="Output-format"><b>Output format</b></dt>
 <dd>
 
-<p>Same as -h</p>
+<p>Variation format of the desired output data, supported formats: GVF, VCF or varBed</p>
 
 </dd>
-<dt id="i-inputfile"><b>-i inputfile</b></dt>
-<dd>
 
-<p>Variation files in tab format</p>
-
-<p>If no input file is specified, the standard input is used. This allows to use the command within a pipe.</p>
-
-<p>This option is mutually exclusive with option <i>-u</i>.</p>
-
-</dd>
-<dt id="u-input_file_URL"><b>-u input_file_URL</b></dt>
-<dd>
-
-<p>Use as input a file available on a remote Web server.</p>
-
-<p>This option is mutually exclusive with option <i>-i</i>.</p>
-
-</dd>
-<dt id="from"><b>-from #</b></dt>
-<dd>
-
-<p>Format of the input file vcf,gvf,varBed</p>
-
-</dd>
-<dt id="to"><b>-to #</b></dt>
-<dd>
-
-<p>Format of the output file vcf,gvf,varBed</p>
-
-</dd>
-<dt id="species-species_name"><b>-species species_name</b></dt>
-<dd>
-
-<p>Species where variation are coming from (Homo_sapiens, Mus_musculus).</p>
-
-</dd>
-<dt id="release"><b>-release #</b></dt>
-<dd>
-
-<p>The version of ensembl</p>
-
-</dd>
-<dt id="assembly"><b>-assembly #</b></dt>
-<dd>
-
-<p>The version of the assembly of the species</p>
-
-</dd>
-<dt id="o-outputfile"><b>-o outputfile</b></dt>
-<dd>
-
-<p>If no output file is specified, the standard output is used. This allows to use the command within a pipe.</p>
-
-</dd>
 </dl>
+
+  <h1 id="CONTACT">CONTACT</h1>
+  <dl>
+    <dd>For further inquiries, please contact Jacques van Helden (<i>Jacques.van-Helden@univ-amu.fr</i>) or
+      <a href= 'https://twitter.com/RSATools'>Ask a question to the RSAT team</a>!</dd>
+  </dl>
 
 
 </body>
 
 </html>
-
-

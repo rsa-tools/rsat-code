@@ -98,7 +98,7 @@ if ($input_sequence_file) {
   $organism->OpenContigs($organism_name, $annotation_table, $input_sequence_file, $input_sequence_format);
 } else {
   if ($organism_name) {
-    #### automatic selection of genome file (and feature file)
+    ## Automatic selection of genome file (and feature file)
     $organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
   } else {
     &RSAT::error::FatalError("You should specify an organism name.",
@@ -106,7 +106,7 @@ if ($input_sequence_file) {
   }
 }
 
-#### Default limits (from, to)
+## Default limits (from, to)
 if ($sequence_type eq "upstream") {
     if (defined($supported_organism{$organism_name}->{'up_to'})) {
 	$default{to} = $supported_organism{$organism_name}->{'up_to'};
