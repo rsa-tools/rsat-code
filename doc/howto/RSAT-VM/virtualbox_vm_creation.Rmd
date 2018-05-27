@@ -42,7 +42,7 @@ Before starting the installation process, we recommend to download the following
 
 Virtualbox:  <https://www.virtualbox.org/wiki/Downloads>
 
-Ubuntu Desktop: current RSAT-VM releases are based on Ubuntu 16.04, but the installation procedure works on earlier versions (maybe some slight modifications), as well as on Ubuntu 17.04. 
+Ubuntu Desktop: current RSAT-VM releases are based on Ubuntu 16.04, but the installation procedure works on earlier versions (maybe some slight modifications), as well as on Ubuntu 16.04. 
 
 ### Recommended Ubuntu release
 
@@ -534,10 +534,7 @@ sudo nano /etc/sudoers
 ## Install Ubuntu packages and RSAT distribution
 
 
-The instructions to install Ubuntu packages are in a separate file
-
-[$RSAT/doc/howto/install_rsat_ubuntu16.bash](install_rsat_ubuntu16.bash)
-
+The instructions to install Ubuntu packages are found in the file `INSTALL.md` at the root of the RSAT folder. 
 
 ****************************************************************
 ## PROBLEMS TO BE FIXED
@@ -581,12 +578,14 @@ sudo dpkg-reconfigure console-data
 
 
 Once the Virtual Machine is working fine, it can be exported to an
-appliance.
+appliance. 
+
+- Shut down the Virtual Machine if it has not been done yet. 
 
 - In VirtualBox, open "File -> Export Appliance ...", and select the VM.
 
-    - Save as: rsat-vm-2018-05.ova
-    - Files of Type: Open Virtualization Format Archive (.ova)
+    - Save as: *rsat-vm-2018-05.ova*
+    - Files of Type: *Open Virtualization Format 1*
     - Storage Settings
     - Format: OVF 1.0
 	  - Check this option:   v Write Manifest File
@@ -603,7 +602,7 @@ appliance.
 |	Vendor		  | Jacques van Helden |
 |	Vendor URL	| http://jacques.van-helden.perso.luminy.univ-amu.fr/ |
 |	Version		  | 2018-05 |
-|	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 17.04 Virtual Machine. |
+|	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), version 2018-05, installed on an Ubuntu 16.04 Virtual Machine. |
 |	License	    |	Free of use for academic users, non-commercial and non-military usage. |
 | | |
 
