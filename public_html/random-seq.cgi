@@ -137,7 +137,7 @@ if ($query->param('bg_method') eq "alphabet") {
 } elsif (($query->param('bg_method') =~ /upstream/i) ||
 	 ($query->param('bg_method') =~ /protein/i)) {
     ### check organism
-    unless ($organism = $query->param('organism')) {
+    unless ($organism = $query->param('organism_bg')) {
 	&cgiError("You should specify an organism to use upstream frequency calibration");
     }
     unless (%{$supported_organism{$organism}}) {

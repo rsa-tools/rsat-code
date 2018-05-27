@@ -67,7 +67,7 @@ print "<center>";
 print "Scan a set of DNA sequences (e.g. ChIP-seq peaks) with a profile matrix and display the profile of putative TFBSs along the sequences.<br>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>&nbsp: ";
 print "<a target='_blank'>Jaime Castro</a><sup>cit</sup>\n";
-print "<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>\n";
+print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
 print "</CENTER>";
 
 # print "<div align=center>";
@@ -116,7 +116,7 @@ print "<fieldset>
 my %bg_params =("markov" => 1,
 		"bg_input" => 1,
 		"markov_message" => 1,
-	       );
+    );
 &GetBackgroundModel(%bg_params);
 
 #print "<br/>Note: Only Bernoulli models are supported. Higher-order Markov models are converted into Markov 0 (Bernoulli).";

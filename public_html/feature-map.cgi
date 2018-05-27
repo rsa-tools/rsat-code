@@ -317,7 +317,7 @@ if (($image_format ne 'ps')
 #  $htmap_content =~ s/>/&gt;/g;
   print $htmap_content;
 } else {
-  print "<center><a href='".$graph_URL."'><img src='".$graph_URL."'></a></center><P>\n";
+  #print "<center><a href='".$html_URL."'><img src='".$html_URL."'></a></center><P>\n";
 }
 
 &PrintURLTable(@result_files);

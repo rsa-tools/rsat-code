@@ -544,13 +544,13 @@ package main;
     ## Return field not supported by the quick scan mode
     local %quick_forbidden_field = (
     %quick_forbidden_metrics,## forbidden metrics can be asked as return field
-    'matrix_name'=>1,
+    #'matrix_name'=>1,
     'matrix_ac'=>1,
     'pos' => 1,
     'consensus'=>1,
     'graph'=>1,
     'alignments_pairwise'=>1,
-    'alignments_1ton'=>1,
+    #'alignments_1ton'=>1,
     'alignments'=>1,
     'logos'=>1,
     'all'=>1
@@ -948,7 +948,8 @@ package main;
     $main::outfile{html_index} = $main::outfile{prefix}."_index.html";
     push @outfiles, "html_index";
     $main::html_index = &OpenOutputFile($main::outfile{html_index});
-    my $header = &PrintHtmlResultHeader(program=>"compare-matrices", refresh_time=>120);
+    
+    my $header = &PrintHtmlResultHeader(program=>"compare-matrices");
     #      &RSAT::message::Debug("header", $header) if ($main::verbose >= 10);
     print $main::html_index $header;
 

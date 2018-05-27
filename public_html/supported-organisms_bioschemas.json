@@ -4,9 +4,9 @@
   "name": "RSAT supported-organisms",
   "description": "Returns the list of organisms supported on a given instance of the Regulatory Sequence Analysis Tools (RSAT).",
   "url": "$ENV{rsat_www}/supported-organisms.cgi",
-  "featureList": "",
+  "featureList": "http://edamontology.org/operation_3289",
   "softwareVersion": "",
-  "applicationCategory": "Web tool",
+  "applicationCategory": "Web Application",
   "operatingSystem":"all",
   "offers": {
     "@type": "Offer",
@@ -15,13 +15,17 @@
   },
   "publisher":{
     "@type": "Person",
-    "name": "Jacques van Helden"
+    "name": "Jacques van Helden",
+    "description": "RSAT projet leader and developer",
+    "email": "Jacques.van-Helden@univ-amu.fr"
   },
   "Citation":[
   {
-   	"@type":"CreativeWork",
-  	"name": "RSAT 2015: Regulatory Sequence Analysis Tools.",
-    "url": "https://www.ncbi.nlm.nih.gov/pubmed/25904632"
+    "@type":"CreativeWork",
+    "name": "RSAT 2015: Regulatory Sequence Analysis Tools.",
+    "datePublished": "2015",
+    "url": "https://doi.org/10.1093/nar/gkv362",
+    "description": "Medina-Rivera, A., Defrance, M., Sand, O., Herrmann, C., Castro-Mondragon, JA., Delerce, J., Jaeger, S., Blanchet, C., Vincens, P., Caron, C., Staines, DM., Contreras-Moreira, B., Artufel, M., Charbonnier-Khamvongsa, L., Hernandez, C., Thieffry, D., Thomas-Chollier, M., van Helden, J. (2015) RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Res, 43, W50–6." 
   },
   {
     "@type":"CreativeWork",
@@ -33,11 +37,13 @@
       "@type": "ControlAction",
       "object": {
         "@type": "Dataset",
-        "additionalType":"no input"
+        "variableMeasured": null,
+        "additionalType": null
         }, 
       "result": {
           "@type": "Dataset",
-          "additionalType":"http://edamontology.org/data_2909"
+          "variableMeasured": "http://edamontology.org/data_2909",
+	  "additionalType": "http://edamontology.org/format_3475"
         }
       },
   "license": "to be defined",

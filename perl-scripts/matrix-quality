@@ -327,11 +327,7 @@ package main;
     $roc_options = " ";
     $distrib_options = " ";
     $main::num_mtx=0;
-    ## Reference distribution for the ROC curve
-    $roc_ref = "theor";
-    $task{plot}=0;
 
-    $r_plot=0 ; ## By defualt plots will be generated using gnuplot
 
     ## Tasks
     local @supported_tasks = ("all", ## Run all other tasks
@@ -353,6 +349,14 @@ package main;
       $supported_task{$task} = 1;
     }
     %task = ();
+
+    ## Reference distribution for the ROC curve
+    $roc_ref = "theor";
+    $draw_roc=1;
+    $task{plot}=0; 
+    $mq_plots=1;
+
+    $r_plot=0 ; ## By defualt plots will be generated using gnuplot
 
     ################################################################
     ## The C command matrix-scan-quick is MUCH faster than
@@ -414,7 +418,7 @@ package main;
 
 
     ## If no tasks has been specified, execute them all
-    if (($task{all}) || (scalar(keys(%task))==0)) {
+    if (($task{all}) || (scalar(keys(%task))==0) || (($task{plot}==0) && (scalar(keys(%task))==1))  ) {
       %task = %supported_task;
       $task{all} = 0;
 
@@ -431,7 +435,7 @@ package main;
       }
     }
 
-   # die  join ("\t", "HELLO", sort keys %task), "\n";
+    #die  join ("\t", "HELLO", sort keys %task), "\n";
 
     ## Matrix+sites file is also matrix
     if ($infile{matrix_sites}) {
@@ -805,97 +809,101 @@ package main;
 
       ################################################################
       ## Compute empirical distribution in the input sequence files
-      foreach my $seq_type (@local_seq_types) {
-	&RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type}) if ($main::verbose >= 2);
-       	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{matrix_tab}, 'tab', $seq_type, 1,  @matrix_scan_options) ;
-	## Score sequences with the permuted matrices
-	if (($seqfile{$seq_type}) &&
-	    (defined($perm_nb{$seq_type})) &&
-	    ($perm_nb{$seq_type} > 0)) {
+      
+      &CalculateEmpiricalDistributions ();
 
-	  ## Calculate the separate distributions for each permuted matrix
-	  ## (this highlights the variability but the graph is noisy)
-	 # my @perm_distrib_files = ();
-	  for my $i (1..$perm_nb{$seq_type}) {
-	    $perm_suffix = $seq_type."_perm_col_".$i;
-	    if (defined($scanopt{$seq_type})) {
-	      $scanopt{$perm_suffix} = $scanopt{$seq_type};
-	      #	      $scanopt{$perm_suffix} .= " -top_matrices 1"; ## Select a single matrix
-	    }
-	    push @perm_distrib_files, &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, $perm_separate_distrib,  @matrix_scan_options) ;
-	  }
+      ## This section was moved to the quality_enrichment library under the subroutine CalculateEmpiricalDisctributions
+      # foreach my $seq_type (@local_seq_types) {
+      # 	&RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type}) if ($main::verbose >= 2);
+      #  	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{matrix_tab}, 'tab', $seq_type, 1,  @matrix_scan_options) ;
+      # 	## Score sequences with the permuted matrices
+      # 	if (($seqfile{$seq_type}) &&
+      # 	    (defined($perm_nb{$seq_type})) &&
+      # 	    ($perm_nb{$seq_type} > 0)) {
 
-	  ## Compute the distribution for all the permutation tests
-	  #	unless ($perm_separate_distrib) {
+      # 	  ## Calculate the separate distributions for each permuted matrix
+      # 	  ## (this highlights the variability but the graph is noisy)
+      # 	 # my @perm_distrib_files = ();
+      # 	  for my $i (1..$perm_nb{$seq_type}) {
+      # 	    $perm_suffix = $seq_type."_perm_col_".$i;
+      # 	    if (defined($scanopt{$seq_type})) {
+      # 	      $scanopt{$perm_suffix} = $scanopt{$seq_type};
+      # 	      #	      $scanopt{$perm_suffix} .= " -top_matrices 1"; ## Select a single matrix
+      # 	    }
+      # 	    push @perm_distrib_files, &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, $perm_separate_distrib,  @matrix_scan_options) ;
+      # 	  }
 
-	  ## Define the output file for the regrouped permutation tests
-	  my $perm_suffix = $seq_type.'_'.$perm_nb{$seq_type}.'perm';
-	  $outfile{$perm_suffix} =  $matrix_prefix{$matrix_name}."_scan_".$perm_suffix."_score_distrib.tab"; push @files_to_index, $perm_suffix;
-	  &RSAT::message::Debug("Adding file to index ",  $perm_suffix, $outfile{$perm_suffix}  ) if ($main::verbose >= 0);
-	  push @distrib_files, $outfile{$perm_suffix}; $file_nb{$perm_suffix} = scalar(@distrib_files);
+      # 	  ## Compute the distribution for all the permutation tests
+      # 	  #	unless ($perm_separate_distrib) {
 
-	  ## Run compare-scores to compute the dCDF of the mergeed permutation test
-	  my $merge_cmd = $SCRIPTS."/compare-scores -v 1 ";
-	  $merge_cmd .= " -ic 1 -numeric -sc 2";
-	  $merge_cmd .= " -files ";
-	  $merge_cmd .= join " ", @perm_distrib_files;
-	  my $last_col = scalar(@perm_distrib_files) + 1;
-	  $merge_cmd .= " | ".$SCRIPTS."/row-stats -before -col 2-".$last_col;
-	  &RSAT::message::Debug("Merging permuted distributions", $merge_cmd) if ($main::verbose >= 10);
-	  ## Compute the cumulative and decreasing cumlative
-	  ## distributions
-	  my @weights = ();
-	  my @occ = ();
-	  my @cum_occ = ();
-	  my %merged_occ = ();
-	  my $cum_occ = 0;
-	  open MERGE, "$merge_cmd |";
-	  while (<MERGE>) {
-	    chomp();
-	    next if /^;/;
-	    next if /^#/;
-	    next unless /\S/;
-	    my @fields = split /\t/, $_;
-	    my $weight = $fields[4];
-	    my $occ = $fields[2];
-	    $cum_occ += $occ;
-	    push @weights, $weight;
-	    push @occ, $occ;
-	    push @cum_occ, $cum_occ;
-	  }
-	  close MERGE;
-	  my $total_occ = $cum_occ[$#cum_occ];
+      # 	  ## Define the output file for the regrouped permutation tests
+      # 	  my $perm_suffix = $seq_type.'_'.$perm_nb{$seq_type}.'perm';
+      # 	  $outfile{$perm_suffix} =  $matrix_prefix{$matrix_name}."_scan_".$perm_suffix."_score_distrib.tab"; push @files_to_index, $perm_suffix;
+      # 	  &RSAT::message::Debug("Adding file to index ",  $perm_suffix, $outfile{$perm_suffix}  ) if ($main::verbose >= 0);
+      # 	  push @distrib_files, $outfile{$perm_suffix}; $file_nb{$perm_suffix} = scalar(@distrib_files);
 
-	  ## Print the merged distribution
-	  my $merged_distrib = &OpenOutputFile($outfile{$perm_suffix});
-	  print $merged_distrib join ("\t", "#weight", "occ", "cum", "dcum", "dCDF"), "\n";
-	  for my $i (0..$#weights) {
-	    my $dcum_occ = $total_occ - $cum_occ[$i]+$occ[$i];
-	    my $dcdf = $dcum_occ / $total_occ;
-	    print $merged_distrib join ("\t",
-					$weights[$i],
-					$occ[$i],
-					$cum_occ[$i],
-					$dcum_occ,
-					sprintf("%7g", $dcdf)
-				       ), "\n";
-	  }
-	  close $merged_distrib;
-	  &RSAT::message::TimeWarn("Exported merged distribution", $outfile{$perm_suffix}) if ($main::verbose >= 2);
-	  #      }
+      # 	  ## Run compare-scores to compute the dCDF of the mergeed permutation test
+      # 	  my $merge_cmd = $SCRIPTS."/compare-scores -v 1 ";
+      # 	  $merge_cmd .= " -ic 1 -numeric -sc 2";
+      # 	  $merge_cmd .= " -files ";
+      # 	  $merge_cmd .= join " ", @perm_distrib_files;
+      # 	  my $last_col = scalar(@perm_distrib_files) + 1;
+      # 	  $merge_cmd .= " | ".$SCRIPTS."/row-stats -before -col 2-".$last_col;
+      # 	  &RSAT::message::Debug("Merging permuted distributions", $merge_cmd) if ($main::verbose >= 10);
+      # 	  ## Compute the cumulative and decreasing cumlative
+      # 	  ## distributions
+      # 	  my @weights = ();
+      # 	  my @occ = ();
+      # 	  my @cum_occ = ();
+      # 	  my %merged_occ = ();
+      # 	  my $cum_occ = 0;
+      # 	  open MERGE, "$merge_cmd |";
+      # 	  while (<MERGE>) {
+      # 	    chomp();
+      # 	    next if /^;/;
+      # 	    next if /^#/;
+      # 	    next unless /\S/;
+      # 	    my @fields = split /\t/, $_;
+      # 	    my $weight = $fields[4];
+      # 	    my $occ = $fields[2];
+      # 	    $cum_occ += $occ;
+      # 	    push @weights, $weight;
+      # 	    push @occ, $occ;
+      # 	    push @cum_occ, $cum_occ;
+      # 	  }
+      # 	  close MERGE;
+      # 	  my $total_occ = $cum_occ[$#cum_occ];
 
-	  ## Calculate the merged distribution for permuted matrices
-	  ## THIS IS NOT SUPPORTED ANYMORE SINCE matrix-scan-quick ONLY ACCEPTS ONE MATRIX
-	  # } else {
-	  #	my $perm_suffix = $seq_type."_perm_col_1-".$perm_nb{$seq_type};
-	  #	if (defined($scanopt{$seq_type})) {
-	  #	  $scanopt{$perm_suffix} = $scanopt{$seq_type};
-	  #	  $scanopt{$perm_suffix} .= " -top_matrices ".$perm_nb{$seq_type}; ## Select the type-specific number of permutations
-	  #	}
-	  #	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'}, "tab", $perm_suffix,   @matrix_scan_options) ;
-	  # }
-	}
-      }
+      # 	  ## Print the merged distribution
+      # 	  my $merged_distrib = &OpenOutputFile($outfile{$perm_suffix});
+      # 	  print $merged_distrib join ("\t", "#weight", "occ", "cum", "dcum", "dCDF"), "\n";
+      # 	  for my $i (0..$#weights) {
+      # 	    my $dcum_occ = $total_occ - $cum_occ[$i]+$occ[$i];
+      # 	    my $dcdf = $dcum_occ / $total_occ;
+      # 	    print $merged_distrib join ("\t",
+      # 					$weights[$i],
+      # 					$occ[$i],
+      # 					$cum_occ[$i],
+      # 					$dcum_occ,
+      # 					sprintf("%7g", $dcdf)
+      # 				       ), "\n";
+      # 	  }
+      # 	  close $merged_distrib;
+      # 	  &RSAT::message::TimeWarn("Exported merged distribution", $outfile{$perm_suffix}) if ($main::verbose >= 2);
+      # 	  #      }
+
+      # 	  ## Calculate the merged distribution for permuted matrices
+      # 	  ## THIS IS NOT SUPPORTED ANYMORE SINCE matrix-scan-quick ONLY ACCEPTS ONE MATRIX
+      # 	  # } else {
+      # 	  #	my $perm_suffix = $seq_type."_perm_col_1-".$perm_nb{$seq_type};
+      # 	  #	if (defined($scanopt{$seq_type})) {
+      # 	  #	  $scanopt{$perm_suffix} = $scanopt{$seq_type};
+      # 	  #	  $scanopt{$perm_suffix} .= " -top_matrices ".$perm_nb{$seq_type}; ## Select the type-specific number of permutations
+      # 	  #	}
+      # 	  #	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'perm_col_matrices_'.$seq_type.'_'.$perm_nb{$seq_type}.'perm'}, "tab", $perm_suffix,   @matrix_scan_options) ;
+      # 	  # }
+      # 	}
+      # }
       ## Compare the (single) theoretical and (multiple) empirical distributions
       &CompareDistrib($distrib_score_col, @distrib_files); # the column of interest is rel_ic (inv_cum_freq)
 
@@ -937,7 +945,7 @@ package main;
 	  #Draw NWD for matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 
 	  if ($main::plot_types{nwd}){
-	      ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
+	      ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name,$mq_plots, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
 	      push (@files_to_index,'matrix_nwd_table');
 	  }
 	  
@@ -945,7 +953,7 @@ package main;
 	  #Draw NWD per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 
 	  if ($main::plot_types{occ_proba}){
-	      ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) ;
+	      ( $outfile{matrix_occ_proba_table}, $outfile{matrix_occ_proba_plots}) =  &Draw_OCC ($main::matrix_prefix{$matrix_name}."_occ_proba_".$matrix_name,$mq_plots, @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }) ;
 	      push (@files_to_index,'matrix_occ_proba_table');
 	  }
 
@@ -1016,9 +1024,9 @@ package main;
     foreach (uniq(keys(%main::plot_seq_type))) {
 	#die "BOOM";
 	 my $st= $_;
-	 ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/nwd/) ;
+	 ( $outfile{$st."all_matrices_nwd_table"}, $outfile{$st."all_matrices_nwd_plot"}) =  &Draw_NWD ($main::prefix{main}."_nwd_".$st,$mq_plots,   @{ $tab_files_for_aux_plots_nwd_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/nwd/) ;
 	 print ((join("++", @{$tab_files_for_aux_plots_occ_proba_per_seq{$st}})), "\n");
-	 ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/occ_proba/) ;
+	 ( $outfile{$st."all_matrices_occ_proba_table"}, $outfile{$st."all_matrices_occ_proba_plot"}) =  &Draw_OCC ($main::prefix{main}."_occ_proba_".$st,$mq_plots,   @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }) if ($main::plot_seq_type{$st} =~/occ_proba/) ;
 	 #print $outfile{$st."all_matrices_occ_proba_table"}."\n";
 	 #print $outfile{$st."all_matrices_occ_proba_plot"}."\n";
 	 #die ("BOOM");
@@ -1030,6 +1038,7 @@ package main;
 	      my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
 	      
 	      my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
+	      &RSAT::util::CheckOutDir($nwd_all_plot); ## Create dir
 	      
 	      $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
 
@@ -1040,11 +1049,34 @@ package main;
 	      }
 
 	      &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
-	      my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 1";
-	      
-	      &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
 
-	      &doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	      my $r_path = &RSAT::server::GetProgramPath("R");
+	      
+	      my $matrix_quality_heatmap_cmd = "";
+	      $matrix_quality_heatmap_cmd .= " cat ".$r_mtxq_sc;
+	      $matrix_quality_heatmap_cmd .= " | ".$r_path;
+	      $matrix_quality_heatmap_cmd .= " --slave --no-save --no-restore --no-environ";
+	      $matrix_quality_heatmap_cmd .= " --args \"";
+	      $matrix_quality_heatmap_cmd .= " mtx.quality.nwds.file = '".$nwd_all_file."'";
+	      $matrix_quality_heatmap_cmd .= "; plot.folder = '".$nwd_all_plot."'";
+	      $matrix_quality_heatmap_cmd .= "; formats = '".join(",",'pdf','png')."'";
+	      $matrix_quality_heatmap_cmd .= "; print.heatmap = '1'";
+	      $matrix_quality_heatmap_cmd .= " \"";
+	      
+	      &RSAT::message::Info("R-command for generate NWD tables: ", $matrix_quality_heatmap_cmd) if ($main::verbose >= 0);
+      
+	      print ("Full cmd: ".$matrix_quality_heatmap_cmd."\n");
+	      
+	      if ($r_path) {
+		  &doit($matrix_quality_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	      } else {
+		  &RSAT::message::Warning("Could not run $r_mtxq_sc because the program R is not available") if ($main::verbose >= 0);
+	      }
+	      # my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 1";
+	      
+	      # &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
+
+	      #&doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 	      $outfile{"heatmap_max_nwd"} = join("/",$nwd_all_plot,"maxNWD_heatmap_compare");
 	      $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
 	      $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");

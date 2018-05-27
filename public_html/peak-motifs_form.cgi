@@ -44,13 +44,17 @@ $default{top_sequences}="";
 $default{nmotifs} = 5;
 $default{origin} = "center";
 $default{offset} = "0";
-$default{r_plot} = "checked"; ## Plot XY graph with R rather than GD
-
+## Plot XY graph with R rather than GD
+if ($ENV{R_supported}) {
+    $default{r_plot} = "checked"; 
+} else {
+    $default{r_plot} = ""; 
+}
 $default{visualize}="none";
 
 
 ## motif database
-$default{compare_motif_database}="RSAT_nonredundant_vertebrates";
+$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
 $default{custom_motif_db_name}="custom_motif_collection";
 
 ### Replace defaults by parameters from the cgi call, if defined
@@ -85,12 +89,12 @@ print <<end_part_1;
 <p>Pipeline for discovering motifs in massive ChIP-seq peak sequences.</p>
 <!--
 <p>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:
-<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/jvanheld/'>Jacques van Helden</a><sup>cit</sup>,
-<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a><sup>cit</sup>,
-<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/defrance/'>Matthieu Defrance</a><sup>ci</sup>,
-<a target='_blank' href='http://www.bigre.ulb.ac.be/Users/oly/'>Olivier Sand</a><sup>i</sup>,
+<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>,
+<a target='_blank' href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</a><sup>cit</sup>,
+<a target='_blank' href='https://www.ulb.ac.be/rech/inventaire/chercheurs/4/CH10464.html'>Matthieu Defrance</a><sup>ci</sup>,
+<a target='_blank' href='https://www.linkedin.com/in/olivier-sand-243570b5/'>Olivier Sand</a><sup>i</sup>,
 <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>ct</sup>,
-and <a target='_blank' href='http://biologie.univ-mrs.fr/view-data.php?id=202'>Carl Herrmann</a><sup>ct</sup>,
+and <a target='_blank' href='https://ibios.dkfz.de/tbi/index.php/about/eilslabs-people/128-carl-herrmann'>Carl Herrmann</a><sup>ct</sup>,
 -->
 </center>
 <p><b>References</b>
@@ -158,7 +162,7 @@ end_part_1
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
-print $query->start_multipart_form(-action=>"peak-motifs.cgi");
+print $query->start_multipart_form(-action=>"peak-motifs.cgi", -onreset=>"resetHandler()");
 
 ################# Peak sequences
  &Panel1();
@@ -208,6 +212,7 @@ $demo_url = $ENV{rsat_www}."/demo_files/peak-motifs_demo.fa";
 print '<script>
 function setDemo1(demo_url){
     $("#reset").trigger("click");
+    $("#db_choice").val("' . $default{compare_motif_database} . '").change();
     descr = "<H4>Comment on the demonstration example 1 :</H4>\n";
     descr = descr + "<blockquote class =\'demo\'>";
     descr = descr + "In this demonstration, we apply time- and memory-efficient \
@@ -224,6 +229,13 @@ function setDemo1(demo_url){
     $("#visualize_galaxy").prop("checked", true);
     
 }
+function resetHandler(){
+    $("#db_choice").val("").change();
+}
+
+$(function(){
+    $("#db_choice").val("' . $default{compare_motif_database} . '").change();
+});
 </script>';
 
 print "<TD><b>";
@@ -271,7 +283,6 @@ print "</B></TD>\n";
 ##print "<td><b><a href='tutorials/tut_peak_motif.html'>[TUTORIAL]</a></B></TD>\n";
 print "<td><b><a class='iframe' href='help.peak-motifs.html'>[MANUAL]</a></B></TD>\n";
 print "<td><b><a class='iframe' href='tutorials/tut_peak-motifs.html'>[TUTORIAL]</a></B></TD>\n";
-print "<TD><b><a href='http://www.bigre.ulb.ac.be/forums/' target='_top'>[ASK A QUESTION]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
@@ -347,8 +358,7 @@ sub Panel2 {
 
 
   print "</fieldset><p/>";
-  print '</div>
-<p class="clear"></p>';
+  print '</div><p class="clear"></p>';
 }
 
 ##########################################
@@ -521,45 +531,14 @@ sub Panel4 {
 
   print "<p/> ";
 #  print "<a href=''><b>Choose below the motif database(s):</b></a><br/>";
-  print "<a href=''><b>Compare discovered motifs with known motifs from databases</b></a><br/>";
+  print "<b>Compare discovered motifs with known motifs from databases</b><br/>";
 
-#### select motifs
-print '<link rel="stylesheet" href="css/select2.min.css" /><script src="js/select2.full.min.js"></script>';
-print '<style>.select2-results__options {font-size:10px} .select2-search__field {width: 100px !important;}</style>';
-print '<script type="text/javascript">
-function test(){
-    alert( $("#db_choice").val() );
-}
-function formatState(state){
-    if(!state.id){return $("<div align=\'center\' style=\'text-transform:uppercase;background-color:lightgray;border:1px solid #eee;border-radius:7px;padding:8px\'><b>" + state.text + "</b></div>");}
-    var $state = $("<span><i class=\'fa fa-circle fa-lg\' style=\'color:" + state.element.className + "\'></i></span>&nbsp;&nbsp;&nbsp;" + state.text + "</span>");
-    return $state;
-}
-$(function(){
-    $(".inline").colorbox({inline:true,width:"70%"});
-    // turn the element to select2 select style
-    $("#db_choice").select2({placeholder: "Select matrices",
-        templateResult: formatState,
-        allowClear: true,
-        theme: "classic"
-    });
-    $("#db_choice").val("' . $default{compare_motif_database} . '").trigger("change");
-});
-</script>';
-
-print ' <select id="db_choice" name="db_choice" multiple="multiple" style="width:700px;font-size:11px"><option></option>';
-## load the various databases that can be compared against
-&DisplayMatrixDBchoice_select2("mode"=>"checkbox");
-print '</select><br/><a class="inline" href="#matrix_descr""> View matrix descriptions</a> <br/>';
-print "<div style='display:none'><div id='matrix_descr'>";
-&DisplayMatrixDBchoice_select2("mode" => "list");
-print "</div>";
-
+&MotifSelection("mode" => "checkbox");
   ## Display supported motif databases
   # &DisplayMatrixDBchoice("mode"=>"checkbox");
 
   print "<p/> ";
-  print "<a href=''><b>Add your own motif database:</b></a><br/>";
+  print "<b>Add your own motif database:</b><br/>";
   print  $query->textfield(-name=>'custom_motif_db_name',
 			   -default=>$default{custom_motif_db_name},
 			   -size=>20);
@@ -569,7 +548,7 @@ print "</div>";
 
  ## Reference motifs
   print"</p>";
-  print "<a href=''><b>Add known reference motifs for this experiment:</b></a><br/>";
+  print "<b>Add known reference motifs for this experiment:</b><br/>";
   print $query->filefield(-name=>'ref_motif',
 			  -size=>10);
   print "<br>Database and reference motifs (matrices) should be in <b>Transfac format</b>";
@@ -578,10 +557,7 @@ print "</div>";
 
   print "</fieldset><p/>";
 
-  print '
-</div>
-
-<p class="clear"></p>';
+  print '</div><p class="clear"></p>';
 }
 
 ##########################################
@@ -636,14 +612,14 @@ sub Panel5  {
 	 "<br>","&nbsp;"x7,"Fasta headers should be in the form: <tt>>mm9_chr1_3473041_3473370_+</tt>");
 
   print "<br/>";
-  print ("<INPUT TYPE='radio' NAME='visualize' id='visualize_bed_coord' value='bed_coord' $checked{'bed_coord'}>","Peak coordinates provided as a <b>custom <a class='iframe' href='help.peak-motifs.html'>BED file</a>.</b>");
+  print ("<INPUT TYPE='radio' NAME='visualize' id='visualize_bed_coord' value='bed_coord' $checked{'bed_coord'}>","Peak coordinates provided as a <b>custom BED file.</b>");
   print "&nbsp;"x7, "<br>The 4th column of the BED file (feature name) must correspond to the fasta headers of sequences</i><br/>";
 
   print "&nbsp;"x7, $query->filefield(-name=>'bed_file',
 				      -size=>10);
 
   ### assembly
-  print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a class='iframe' href='help.peak-motifs.html'>Assembly version (UCSC)</a>&nbsp;</B>\n";
+  print "&nbsp;&nbsp;&nbsp;&nbsp;<b>Assembly version (UCSC)&nbsp;</B>\n";
   print  $query->textfield(-name=>'assembly',
 							      -default=>$default{assembly},
 							      -size=>10);
@@ -689,15 +665,19 @@ sub Panel6  {
 			  -size=>8);
 
 
-  ## Use R to generate XY plots
-  print "<br>";
-  print $query->checkbox(-name=>'r_plot',
-			 -checked=>$default{"r_plot"},
-			 -label=>'');
-  print "&nbsp;<b>Use R to generate plots</b> (only works for servers with R installed).\n";
   
-  print "</fieldset><p/>";
+  ## Use R to generate XY plots.
+  if ($ENV{R_supported}) {
+      ## This option is displayed only if R is supported on the server. 
+      print "<br>";
+      print $query->checkbox(-name=>'r_plot',
+			     -checked=>$default{"r_plot"},
+			     -label=>'');
+      print "&nbsp;<b>Use R to generate plots</b> (only works for servers with R installed).\n";
+      
+  }
 
+  print "</fieldset><p/>";
 
   ## Close divisions
   print "</div>\n";

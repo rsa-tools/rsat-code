@@ -1223,14 +1223,14 @@ the chi2 test will be applied. Each row of the input table is
 considered as a series of values. The number of columns corresponds to
 the number of values per series ("classes").
 
-For the goodness of fit test, there must be exactly two series: the
-first series indicates observed values, the second expected
+For the goodness of fit test, there must be exactly two rows: the
+first one indicates observed values, the second one the expected
 values. The homogeneity and independence test can be applied to tables
-containing two or more series.
+containing two or more rows.
 
 =head2 Usage
 
- $chi_square = &ChiSquare($test,$series_nb, $class_nb, $sort_by_exp, @values);
+ $chi_square = &ChiSquare($test, $series_nb, $class_nb, $check_assumption, $group_tails, $sort_by_exp, @values);
 
 where
 
@@ -1240,13 +1240,20 @@ where
 
 Supported: independence, homogeneity, goodness (of fit)
 
-=item I<$series_nb>: number of series.
+=item I<$series_nb>: number of rows in the input matrix.
 
-=item I<$class_nb>: number of classes
+=item I<$class_nb>: number of columns in the input matrix.
 
-=item I<$sort_by_exp>: sort series by expected values (if parameter is > 0)
+=item I<$check_assumption>: check assumptions for the chi2 test: all
+expected values must be >= 5.
 
-Only for goodness of fit test. Sort obs and exp series by increasing
+=item I<$group_tails>: if necessary, group left or right tails in
+order to achieve expected frequencies >= 5.
+
+=item I<$sort_by_exp>: sort each row by expected values (if parameter
+is > 0) before grouping tail classes.
+
+Only for goodness of fit test. Sort obs and exp values by increasing
 expected values before grouping tail classes. This reduces the number
 of classes to be grouped, since after sorting all the classes with exp
 < 5 are on the same side of the sorted arrays.
@@ -1305,265 +1312,271 @@ warn the user that the chi2 value is not valid.
 =cut
 
 sub ChiSquare {
-    my($test, $series_nb, $class_nb,  $sort_by_exp, @values) = @_;
-    my $N;
-    my $row;
-    my $col;
-    my @col_sum;
-    my @row_sum;
-    my $offset;
-    my $i;
-    my $chi_square;
-    my $val_nb = $#values + 1;
-    my $obs;
-    my $exp;
-    my $not_valid = 0;
-    my $group_tails = 1;
-    my $left_group = 0;
-    my $left_sum = 0;
-    my $right_group = 0;
-    my $right_sum = 0;
-    my @observed = ();
-    my @expected = ();
+  my($test, $series_nb, $class_nb, $check_assmption, $group_tails,  $sort_by_exp, @values) = @_;
+  my $N;
+  my $row;
+  my $col;
+  my @col_sum;
+  my @row_sum;
+  my $offset;
+  my $i;
+  my $chi_square;
+  my $val_nb = $#values + 1;
+  my $obs;
+  my $exp;
+  my $not_valid = 0;
+#  my $group_tails = 1;
+#  my $check_assumption = 1;
+  my $left_group = 0;
+  my $left_sum = 0;
+  my $right_group = 0;
+  my $right_sum = 0;
+  my @observed = ();
+  my @expected = ();
 
-    &RSAT::message::Debug("RSAT::stat::ChiSquare", "test=".$test, "row_nb=".$series_nb, "col_nb=".$class_nb, scalar(@values)." values")
-	if ($main::verbose >= 4);
+  &RSAT::message::Debug("RSAT::stat::ChiSquare", 
+			"test=".$test, 
+			"row_nb=".$series_nb, 
+			"col_nb=".$class_nb, scalar(@values)." values")
+      if ($main::verbose >= 4);
 
-    ### Check parameter values
-    unless (($test =~ /^indep/i) || ($test =~ /^good/i) || ($test =~ /^homog/i)) {
-	&RSAT::error::FatalError("Unknown test (supported: 'goodness of fit', 'homogeneity' and 'independence')");
+  ### Check parameter values
+  unless (($test =~ /^indep/i) || ($test =~ /^good/i) || ($test =~ /^homog/i)) {
+    &RSAT::error::FatalError("Unknown test (supported: 'goodness of fit', 'homogeneity' and 'independence')");
+  }
+  if (($series_nb < 2) || ($class_nb < 2)) {
+    &RSAT::error::FatalError("At least 2 rows and 2 columns are required"); # too few rows or columns
+  }
+
+  ## Nb values = nb columns * nb rows
+  unless ($val_nb == $series_nb * $class_nb) {
+    &RSAT::error::FatalError( ";ChiSquare: invalid number of numeric values",
+			      "\t".$series_nb." rows",
+			      "\t".$class_nb." columns",
+			      "\t".$val_nb." values");
+  }
+
+  ## All values must be real numbers
+  foreach $val (@values) {
+    &RSAT::error::FatalError("Invalid value: $val is not a real number") unless &RSAT::util::IsReal($val); # invalid values
+  }
+
+  ################################################################
+  ## Independence of homogeneity test
+  if (($test =~ /^indep/i) || ($test =~ /^homog/i)) {
+
+    #### Calculate marginal sums ni+, n+j, and N
+    $N = 0;
+    for $row (1..$series_nb) {
+      $col_sum[$row] = 0;
+      for $col (1..$class_nb) {
+	$offset = ($row-1) * $class_nb + $col -1;
+	$col_sum[$row] += $values[$offset];
+      }
+      $N += $col_sum[$row];
     }
-    if (($series_nb < 2) || ($class_nb < 2)) {
-	&RSAT::error::FatalError("At least 2 rows and 2 columns are required"); # too few rows or columns
-    }
-
-    ## values = columns*rows
-    unless ($val_nb == $series_nb * $class_nb) {
-	&RSAT::error::FatalError( ";ChiSquare: invalid number of numeric values",
-				  "\t".$series_nb." rows",
-				  "\t".$class_nb." columns",
-				  "\t".$val_nb." values");
-    }
-
-    ### All values must be real numbers
-    foreach $val (@values) {
-	&RSAT::error::FatalError("Invalid values: $val is not a real number") unless &RSAT::util::IsReal($val); # invalid values
-    }
-
-    ################################################################
-    ## Independence of homogeneity test
-    if (($test =~ /^indep/i) || ($test =~ /^homog/i)) {
-
-	#### Calculate marginal sums ni+, n+j, and N
-	$N = 0;
-	for $row (1..$series_nb) {
-	    $col_sum[$row] = 0;
-	    for $col (1..$class_nb) {
-		$offset = ($row-1) * $class_nb + $col -1;
-		$col_sum[$row] += $values[$offset];
-	    }
-	    $N += $col_sum[$row];
-	}
-	for $col (1..$class_nb) {
-	    $row_sum[$col] = 0;
-	    for $row (1..$series_nb) {
-		$offset = ($row-1) * $class_nb + $col -1;
-		$row_sum[$col] += $values[$offset];
-	    }
-	}
-
-	#### Calculate the chi square value
-	$chi_square = 0;
-	for $row (1..$series_nb) {
-	    for $col (1..$class_nb) {
-		$exp = $row_sum[$col] * $col_sum[$row] / $N;
-		$not_valid = 1 if ($exp < 5);
-		$offset = ($row-1) * $class_nb + $col -1;
-		$obs = $values[$offset];
-		if ($exp == 0) {
-		    $chi_square = "NA";
-		    &RSAT::message::Warning("&ChiSquare()", "chi2 is undefined (NA) because some expected values are null (some rows or columns contain only null values).");
-		    last;
-		} else {
-		    $chi_square += (($obs - $exp)**2)/$exp unless ($exp == 0);
-		}
-	    }
-	    last if ($chi_square eq "NA");
-	}
-
-	################################################################
-	## Goodness of fit test
-    } elsif ($test =~ /^good/i) {
-	unless ($series_nb == 2) {
-	    &RSAT::error::FatalError("Goodness of fit test requires esactly two lines");
-	}
-	$chi_square = 0;
-	@observed = @values[0..$class_nb-1];
-	@expected = @values[$class_nb..2*$class_nb-1];
-
-  	if ($main::verbose >= 10) {
-	    &RSAT::message::Debug("rank original", join("\t", 1..scalar(@expected)));
-  	    &RSAT::message::Debug("obs original", join( "\t", @observed));
-  	    &RSAT::message::Debug("exp original", join( "\t", @expected));
-  	}
-
-	#### Group tails to fulfill the condition of applicability
-	if ($group_tails) {
-	    &RSAT::message::Info("&ChiSquare()", "Grouping classes on left and right tails to ensure exp >= 5.") if ($main::verbose >= 3);
-
-	    ## Sort by increasing expected values before grouping
-	    ## terminal classes.  This is , in order to get the two
-	    ## tails on the same side, which generally reduces the
-	    ## number of classes to be grouped. I am not sure this
-	    ## treatment is orthodox (I did not find it in any
-	    ## textbook) but since the Chi2 test does not make any
-	    ## assumption on the order of the columns, I don't see any
-	    ## reason to forbid it.
-	    if ($sort_by_exp) {
-		&RSAT::message::Info("&ChiSquare()", "Sorting by expected value before class grouping") if ($main::verbose >= 3);
-		@order = sort {$expected[$a] <=> $expected[$b]} 0..$#expected;
-		@observed_sorted = @observed[@order];
-		@expected_sorted = @expected[@order];
-		if ($main::verbose >= 10) {
-		    &RSAT::message::Debug("rank", join("\t", 1..scalar(@expected)));
-		    &RSAT::message::Debug("order by incr exp", join( "\t", @order));
-		    &RSAT::message::Debug("obs sorted by exp", join( "\t", @observed_sorted));
-		    &RSAT::message::Debug("exp sorted by exp", join( "\t", @expected_sorted));
-		}
-		@observed = @observed_sorted;
-		@expected = @expected_sorted;
-	    }
-
-	    ## Report expected and observed vectors before grouping
-	    if ($main::verbose >= 10) {
-		&RSAT::message::Debug("obs before grouping", join("\t", @observed));
-		&RSAT::message::Debug("exp before grouping", join("\t", @expected));
-	    }
-
-	    ## Group left tail
-	    $left_group = 0; ## Counter for the number of grouped classes on the left tail
-	    while (($#expected > 1) && ($expected[0] < 5)) {
-		$left_group++;
-		$exp_sum = shift(@expected);
-		$expected[0] += $exp_sum;
-		$obs_sum = shift(@observed);
-		$observed[0] += $obs_sum;
-	    }
-
-	    ## Recalculate the number of columns after left grouping
-	    $class_nb = scalar(@expected);
-	    &RSAT::message::Debug("Left tail collapsed", $left_group, "remaining", $class_nb) if ($main::verbose >= 3);
-	    if ($main::verbose >= 10) {
-		&RSAT::message::Debug("rank after left grouping", join("\t", 1..scalar(@expected)));
-		&RSAT::message::Debug("obs after left grouping", join("\t", @observed));
-		&RSAT::message::Debug("exp after left grouping", join("\t", @expected));
-	    }
-
-	    unless ($sort_by_exp) {
-		## Group right tail
-		$right_group = 0; ## Counter for the number of grouped classes on the right tail
-		while (($#expected > 1) && ($expected[$#expected] < 5)) {
-		    $right_group++;
-		    $exp_sum = pop(@expected);
-		    $expected[$#expected] += $exp_sum;
-		    $obs_sum = pop(@observed);
-		    $observed[$#observed] += $obs_sum;
-		}
-
-		## Recalculate the number of columns after right grouping
-		$class_nb = scalar(@expected);
-		&RSAT::message::Debug("Right tail collapsed", $right_group, "remaining", $class_nb) if ($main::verbose >= 3);
-		if ($main::verbose >= 10) {
-		    &RSAT::message::Debug("rank after right grouping", join("\t", 1..scalar(@expected)));
-		    &RSAT::message::Debug("obs after right grouping", join("\t", @observed));
-		    &RSAT::message::Debug("exp after right grouping", join("\t", @expected));
-		}
-	    }
- 	}
-
-	## Calculate the observed chi-square
-	for $col (1..$class_nb) {
-	    $obs = $observed[$col-1];
-	    $exp = $expected[$col-1];
-	    $not_valid = 1 if ($exp < 5);
-	    if ($exp == 0) {
-		$chi_square = "ERR_exp0";
-		&RSAT::message::Warning("Cannot calculate the observed chi2 because class $col has an expected value of 0");
-		last;
-	    } else {
-		$chi_square +=  (($obs - $exp)**2)/$exp;
-	    }
-	    &RSAT::message::Info($obs, $exp, $not_valid, $chi_square) if ($main::verbose >= 5);
-	}
+    for $col (1..$class_nb) {
+      $row_sum[$col] = 0;
+      for $row (1..$series_nb) {
+	$offset = ($row-1) * $class_nb + $col -1;
+	$row_sum[$col] += $values[$offset];
+      }
     }
 
-    ################################################################
-    ## Calculate the degrees of freedom
-    my $deg_freedom = ($series_nb - 1)*($class_nb - 1);
-
-    ################################################################
-    ### data report
-    if ($report_data) {
-	print $out ";Pearson chi-square statistics with $series_nb rows and $class_nb col ($val_nb values)\n";
-	print $out ";Test of $test\n";
-	print $out ";$deg_freedom degrees of freedom\n";
-	print $out ";DATA REPORT\n";
-	if (($not_valid) && ($main::verbose >= 2)) {
-	    print $out "; WARNING: data do not conform to the applicability conditions \n; (some classes have less than 5 expected observations).\n";
-	}
-	print $out ";";
-	for $col (1..$class_nb) {
-	    print $out "\tA$col";
-	}
-	if (($test =~ /^indep/i) || ($test =~ /^homog/i)) {
-	    print $out "\tni+\n";
-	    for $row (1..$series_nb) {
-		print $out ";B$row";
-		for $col (1..$class_nb) {
-		    $offset = ($row-1) * $class_nb + $col -1;
-		    print $out "\t$values[$offset]";
-		}
-		print $out "\t$col_sum[$row]\n";
-	    }
-	    print $out ";n+j";
-	    for $col (1..$class_nb) {
-		print $out "\t$row_sum[$col]";
-	    }
-	    print $out "\t$N\n";
+    #### Calculate the chi square value
+    $chi_square = 0;
+    for $row (1..$series_nb) {
+      for $col (1..$class_nb) {
+	$exp = $row_sum[$col] * $col_sum[$row] / $N;
+	$not_valid = 1 if ($exp < 5);
+	$offset = ($row-1) * $class_nb + $col -1;
+	$obs = $values[$offset];
+	if ($exp == 0) {
+	  $chi_square = "NA";
+	  &RSAT::message::Warning("&ChiSquare()", "chi2 is undefined (NA) because some expected values are null (some rows or columns contain only null values).");
+	  last;
 	} else {
-	    print $out "\n;obs";
-	    for $col (1..$class_nb) {
-		print $out "\t$values[$col-1]";
-	    }
-	    print $out "\n;exp";
-	    for $col (1..$class_nb) {
-		print $out "\t$values[$class_nb + $col-1]";
-	    }
-	    print $out "\n";
+	  $chi_square += (($obs - $exp)**2)/$exp unless ($exp == 0);
 	}
+      }
+      last if ($chi_square eq "NA");
     }
 
-    my $answer = $chi_square;
-    if (!&RSAT::util::IsReal($chi_square)) {
-	$answer = $chi_square;
-#    } elsif ($not_valid) {
-#      $answer = sprintf "{%.3f}", $chi_square;
+    ################################################################
+    ## Goodness of fit test
+  } elsif ($test =~ /^good/i) {
+    unless ($series_nb == 2) {
+      &RSAT::error::FatalError("Goodness of fit test requires esactly two lines");
+    }
+    $chi_square = 0;
+    @observed = @values[0..$class_nb-1];
+    @expected = @values[$class_nb..2*$class_nb-1];
+
+    if ($main::verbose >= 10) {
+      &RSAT::message::Debug("rank original", join("\t", 1..scalar(@expected)));
+      &RSAT::message::Debug("obs original", join( "\t", @observed));
+      &RSAT::message::Debug("exp original", join( "\t", @expected));
+    }
+
+    #### Group tails to fulfill the condition of applicability
+    if ($group_tails) {
+      &RSAT::message::Info("&ChiSquare()", "Grouping classes on left and right tails to ensure exp >= 5.") if ($main::verbose >= 3);
+
+      ## Sort by increasing expected values before grouping
+      ## terminal classes.  This is , in order to get the two
+      ## tails on the same side, which generally reduces the
+      ## number of classes to be grouped. I am not sure this
+      ## treatment is orthodox (I did not find it in any
+      ## textbook) but since the Chi2 test does not make any
+      ## assumption on the order of the columns, I don't see any
+      ## reason to forbid it.
+      if ($sort_by_exp) {
+	&RSAT::message::Info("&ChiSquare()", "Sorting by expected value before class grouping") if ($main::verbose >= 3);
+	@order = sort {$expected[$a] <=> $expected[$b]} 0..$#expected;
+	@observed_sorted = @observed[@order];
+	@expected_sorted = @expected[@order];
+	if ($main::verbose >= 10) {
+	  &RSAT::message::Debug("rank", join("\t", 1..scalar(@expected)));
+	  &RSAT::message::Debug("order by incr exp", join( "\t", @order));
+	  &RSAT::message::Debug("obs sorted by exp", join( "\t", @observed_sorted));
+	  &RSAT::message::Debug("exp sorted by exp", join( "\t", @expected_sorted));
+	}
+	@observed = @observed_sorted;
+	@expected = @expected_sorted;
+      }
+
+      ## Report expected and observed vectors before grouping
+      if ($main::verbose >= 10) {
+	&RSAT::message::Debug("obs before grouping", join("\t", @observed));
+	&RSAT::message::Debug("exp before grouping", join("\t", @expected));
+      }
+
+      ## Group left tail
+      $left_group = 0; ## Counter for the number of grouped classes on the left tail
+      while (($#expected > 1) && ($expected[0] < 5)) {
+	$left_group++;
+	$exp_sum = shift(@expected);
+	$expected[0] += $exp_sum;
+	$obs_sum = shift(@observed);
+	$observed[0] += $obs_sum;
+      }
+
+      ## Recalculate the number of columns after left grouping
+      $class_nb = scalar(@expected);
+      &RSAT::message::Debug("Left tail collapsed", $left_group, "remaining", $class_nb) if ($main::verbose >= 3);
+      if ($main::verbose >= 10) {
+	&RSAT::message::Debug("rank after left grouping", join("\t", 1..scalar(@expected)));
+	&RSAT::message::Debug("obs after left grouping", join("\t", @observed));
+	&RSAT::message::Debug("exp after left grouping", join("\t", @expected));
+      }
+
+      unless ($sort_by_exp) {
+	## Group right tail
+	$right_group = 0; ## Counter for the number of grouped classes on the right tail
+	while (($#expected > 1) && ($expected[$#expected] < 5)) {
+	  $right_group++;
+	  $exp_sum = pop(@expected);
+	  $expected[$#expected] += $exp_sum;
+	  $obs_sum = pop(@observed);
+	  $observed[$#observed] += $obs_sum;
+	}
+
+	## Recalculate the number of columns after right grouping
+	$class_nb = scalar(@expected);
+	&RSAT::message::Debug("Right tail collapsed", $right_group, "remaining", $class_nb) if ($main::verbose >= 3);
+	if ($main::verbose >= 10) {
+	  &RSAT::message::Debug("rank after right grouping", join("\t", 1..scalar(@expected)));
+	  &RSAT::message::Debug("obs after right grouping", join("\t", @observed));
+	  &RSAT::message::Debug("exp after right grouping", join("\t", @expected));
+	}
+      }
+    }
+
+    ## Calculate the observed chi-square
+    for $col (1..$class_nb) {
+      $obs = $observed[$col-1];
+      $exp = $expected[$col-1];
+      if ($exp == 0) {
+	$chi_square = "ERR_exp0";
+	$not_valid = 1;
+	&RSAT::message::Warning("Cannot calculate the observed chi2 because class $col has an expected value of 0");
+	last;
+      } elsif ($exp < 5) {
+	$not_valid = 1;
+      } else {
+	$chi_square +=  (($obs - $exp)**2)/$exp;
+      }
+      &RSAT::message::Info($obs, $exp, $not_valid, $chi_square) if ($main::verbose >= 5);
+    }
+  }
+
+  ################################################################
+  ## Calculate the degrees of freedom
+  my $deg_freedom = ($series_nb - 1)*($class_nb - 1);
+
+  ################################################################
+  ### data report
+  if ($report_data) {
+    print $out ";Pearson chi-square statistics with $series_nb rows and $class_nb col ($val_nb values)\n";
+    print $out ";Test of $test\n";
+    print $out ";$deg_freedom degrees of freedom\n";
+    print $out ";DATA REPORT\n";
+    if (($not_valid) && ($main::verbose >= 2)) {
+      print $out "; WARNING: data do not conform to the applicability conditions \n; (some classes have less than 5 expected observations).\n";
+    }
+    print $out ";";
+    for $col (1..$class_nb) {
+      print $out "\tA$col";
+    }
+    if (($test =~ /^indep/i) || ($test =~ /^homog/i)) {
+      print $out "\tni+\n";
+      for $row (1..$series_nb) {
+	print $out ";B$row";
+	for $col (1..$class_nb) {
+	  $offset = ($row-1) * $class_nb + $col -1;
+	  print $out "\t$values[$offset]";
+	}
+	print $out "\t$col_sum[$row]\n";
+      }
+      print $out ";n+j";
+      for $col (1..$class_nb) {
+	print $out "\t$row_sum[$col]";
+      }
+      print $out "\t$N\n";
     } else {
-	$answer = sprintf "%.5f", $chi_square;
+      print $out "\n;obs";
+      for $col (1..$class_nb) {
+	print $out "\t$values[$col-1]";
+      }
+      print $out "\n;exp";
+      for $col (1..$class_nb) {
+	print $out "\t$values[$class_nb + $col-1]";
+      }
+      print $out "\n";
     }
-    &RSAT::message::Debug($answer,
-			  $deg_freedom,
-			  $left_group,
-			  $right_group,
-			  $#expected,
-			  $expected[0],
-			  $expected[$#expected],
-	) if ($main::verbose >= 6);
+  }
 
-    &RSAT::message::Debug("chi2=",$answer, "df=".$deg_freedom, "left_group=".$left_group, "right_group=".$right_group, "obs:".scalar(@observed), "exp:".scalar(@expected))
-	if ($main::verbose >= 5);
+  my $answer = $chi_square;
+  if (!&RSAT::util::IsReal($chi_square)) {
+    $answer = $chi_square;
+  } elsif (($not_valid) && ($check_assumption)) {
+    $answer = sprintf "{%.3f}", $chi_square;
+  } else {
+    $answer = sprintf "%.5f", $chi_square;
+  }
+  &RSAT::message::Debug($answer,
+			$deg_freedom,
+			$left_group,
+			$right_group,
+			$#expected,
+			$expected[0],
+			$expected[$#expected],
+      ) if ($main::verbose >= 6);
 
-    return ($answer, $deg_freedom, $left_group, $right_group, \@observed, \@expected);
+  &RSAT::message::Debug("chi2=",$answer, "df=".$deg_freedom, "left_group=".$left_group, "right_group=".$right_group, "obs:".scalar(@observed), "exp:".scalar(@expected))
+      if ($main::verbose >= 5);
+
+  return ($answer, $deg_freedom, $left_group, $right_group, \@observed, \@expected);
 } ### end ChiSquare
 
 

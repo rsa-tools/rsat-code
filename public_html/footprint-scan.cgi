@@ -79,7 +79,7 @@ unless ($organism = $query->param('organism')) {
     &cgiError("You should specify a query organism");
 }
 unless (defined(%{$supported_organism{$organism}})) {
-    &cgiError("Organism $org is not supported on this site");
+    &cgiError("Organism $organism is not supported on this site");
 }
 $parameters .= " -org $organism";
 
@@ -169,7 +169,7 @@ if ($bg_method eq "bginput") {
 
 } elsif ($bg_method eq "bgfile") {
   ## Select pre-computed background file in RSAT genome directory
-  my $organism_name = $query->param("organism");
+  my $organism_name = $query->param("organism_bg");
   my $noov = "ovlp";
   my $background_model = $query->param("background");
   my $oligo_length = $markov_order + 1;

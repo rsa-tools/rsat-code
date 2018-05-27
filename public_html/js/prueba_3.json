@@ -1,0 +1,1828 @@
+[
+	{
+		"Gene":"MET22",
+		"Start":215,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":92,
+				"end":87,
+				"seq_2":"ccatGCCACAtata",
+				"score":3.41
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":136,
+				"end":131,
+				"seq_2":"caacACGTGAtatt",
+				"score":4.86
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":135,
+				"end":130,
+				"seq_2":"atatCACGTGttgc",
+				"score":9.02
+
+		},
+		{
+				"seq":"gactca|tgagtc",
+				"strand":"DR",
+				"start":153,
+				"end":148,
+				"seq_2":"gaatGACTCAgacg",
+				"score":0.05
+
+		},
+		{
+				"seq":"cgcgca|tgcgcg",
+				"strand":"R",
+				"start":162,
+				"end":157,
+				"seq_2":"cattCGCGCAtttc",
+				"score":0.26
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"R",
+				"start":155,
+				"end":150,
+				"seq_2":"tctgAGTCATtcgc",
+				"score":0.60
+
+		}
+		]
+},
+	{
+		"Gene":"MET32",
+		"Start":547,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"acgtgc|gcacgt",
+				"strand":"R",
+				"start":379,
+				"end":374,
+				"seq_2":"tgtcACGTGCatgt",
+				"score":0.11
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"R",
+				"start":380,
+				"end":375,
+				"seq_2":"gtcaCGTGCAtgtt",
+				"score":1.43
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":327,
+				"end":322,
+				"seq_2":"gtacGCCACAgttt",
+				"score":3.41
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"R",
+				"start":325,
+				"end":320,
+				"seq_2":"ataaACTGTGgcgt",
+				"score":2.69
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":326,
+				"end":321,
+				"seq_2":"tacgCCACAGttta",
+				"score":3.69
+
+		},
+		{
+				"seq":"cgtgac|gtcacg",
+				"strand":"DR",
+				"start":376,
+				"end":371,
+				"seq_2":"tgcaCGTGACattt",
+				"score":0.30
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"R",
+				"start":324,
+				"end":319,
+				"seq_2":"tataAACTGTggcg",
+				"score":0.64
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"DR",
+				"start":527,
+				"end":522,
+				"seq_2":"atacTAGTCAaaga",
+				"score":0.47
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":377,
+				"end":372,
+				"seq_2":"atgcACGTGAcatt",
+				"score":4.86
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":378,
+				"end":373,
+				"seq_2":"catgCACGTGacat",
+				"score":9.02
+
+		}
+		]
+},
+	{
+		"Gene":"MET13",
+		"Start":380,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"gactca|tgagtc",
+				"strand":"DR",
+				"start":251,
+				"end":246,
+				"seq_2":"ctttGACTCAaatt",
+				"score":0.05
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":116,
+				"end":111,
+				"seq_2":"taatGCCACAgctt",
+				"score":3.41
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":30,
+				"end":25,
+				"seq_2":"accaCCACAGttac",
+				"score":3.69
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"DR",
+				"start":303,
+				"end":298,
+				"seq_2":"cgttTAGTCAttct",
+				"score":0.47
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"DR",
+				"start":277,
+				"end":272,
+				"seq_2":"atagACTGTGaata",
+				"score":2.69
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":115,
+				"end":110,
+				"seq_2":"aatgCCACAGcttg",
+				"score":3.69
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"R",
+				"start":29,
+				"end":24,
+				"seq_2":"agtaACTGTGgtgg",
+				"score":2.69
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"R",
+				"start":28,
+				"end":23,
+				"seq_2":"tagtAACTGTggtg",
+				"score":0.64
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"DR",
+				"start":302,
+				"end":297,
+				"seq_2":"gtttAGTCATtcta",
+				"score":0.60
+
+		}
+		]
+},
+	{
+		"Gene":"MET18",
+		"Start":568,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"gactca|tgagtc",
+				"strand":"R",
+				"start":278,
+				"end":273,
+				"seq_2":"ctttGACTCAttga",
+				"score":0.05
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":490,
+				"end":485,
+				"seq_2":"taggACGTGActgg",
+				"score":4.86
+
+		},
+		{
+				"seq":"agccac|gtggct",
+				"strand":"R",
+				"start":391,
+				"end":386,
+				"seq_2":"cgacAGCCACacag",
+				"score":0.34
+
+		},
+		{
+				"seq":"cgtgac|gtcacg",
+				"strand":"R",
+				"start":491,
+				"end":486,
+				"seq_2":"aggaCGTGACtggt",
+				"score":0.30
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"R",
+				"start":392,
+				"end":387,
+				"seq_2":"gacaGCCACAcagg",
+				"score":3.41
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"DR",
+				"start":101,
+				"end":96,
+				"seq_2":"tttaCGTGCAatga",
+				"score":1.43
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"R",
+				"start":415,
+				"end":410,
+				"seq_2":"atagAACTGTagaa",
+				"score":0.64
+
+		},
+		{
+				"seq":"acgtgc|gcacgt",
+				"strand":"DR",
+				"start":102,
+				"end":97,
+				"seq_2":"ttttACGTGCaatg",
+				"score":0.11
+
+		}
+		]
+},
+	{
+		"Gene":"MET10",
+		"Start":338,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"agccac|gtggct",
+				"strand":"R",
+				"start":204,
+				"end":199,
+				"seq_2":"aaaaAGCCACacct",
+				"score":0.34
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"DR",
+				"start":150,
+				"end":145,
+				"seq_2":"ccatAGTCATcttc",
+				"score":0.60
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":230,
+				"end":225,
+				"seq_2":"aagcACGTGAccac",
+				"score":4.86
+
+		},
+		{
+				"seq":"gactca|tgagtc",
+				"strand":"DR",
+				"start":179,
+				"end":174,
+				"seq_2":"aaaaGACTCAttca",
+				"score":0.05
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":248,
+				"end":243,
+				"seq_2":"caccACGTGAgctt",
+				"score":4.86
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":231,
+				"end":226,
+				"seq_2":"gaagCACGTGacca",
+				"score":9.02
+
+		},
+		{
+				"seq":"cgtgac|gtcacg",
+				"strand":"DR",
+				"start":229,
+				"end":224,
+				"seq_2":"agcaCGTGACcaca",
+				"score":0.30
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":249,
+				"end":244,
+				"seq_2":"acacCACGTGagct",
+				"score":9.02
+
+		},
+		{
+				"seq":"acgtgc|gcacgt",
+				"strand":"R",
+				"start":232,
+				"end":227,
+				"seq_2":"ggtcACGTGCttct",
+				"score":0.11
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"R",
+				"start":205,
+				"end":200,
+				"seq_2":"aaaaGCCACAcctg",
+				"score":3.41
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":212,
+				"end":207,
+				"seq_2":"caccCCACAGgtgt",
+				"score":3.69
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"DR",
+				"start":151,
+				"end":146,
+				"seq_2":"cccaTAGTCAtctt",
+				"score":0.47
+
+		}
+		]
+},
+	{
+		"Gene":"MET4",
+		"Start":800,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"cgcgca|tgcgcg",
+				"strand":"DR",
+				"start":677,
+				"end":672,
+				"seq_2":"tgcaCGCGCAtgac",
+				"score":0.26
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":330,
+				"end":325,
+				"seq_2":"taatCACGTGcgcg",
+				"score":9.02
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"R",
+				"start":695,
+				"end":690,
+				"seq_2":"tgtgCGTGCAtgta",
+				"score":1.43
+
+		},
+		{
+				"seq":"cgcgca|tgcgcg",
+				"strand":"R",
+				"start":326,
+				"end":321,
+				"seq_2":"taccCGCGCAcgtg",
+				"score":0.26
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":331,
+				"end":326,
+				"seq_2":"gcgcACGTGAttaa",
+				"score":4.86
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"DR",
+				"start":76,
+				"end":71,
+				"seq_2":"cgtcAACTGTttag",
+				"score":0.64
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"R",
+				"start":681,
+				"end":676,
+				"seq_2":"tgcgCGTGCAtgta",
+				"score":1.43
+
+		},
+		{
+				"seq":"cgcgca|tgcgcg",
+				"strand":"R",
+				"start":583,
+				"end":578,
+				"seq_2":"ccgaCGCGCAggaa",
+				"score":0.26
+
+		},
+		{
+				"seq":"acgtgc|gcacgt",
+				"strand":"DR",
+				"start":329,
+				"end":324,
+				"seq_2":"aatcACGTGCgcgg",
+				"score":0.11
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"R",
+				"start":566,
+				"end":561,
+				"seq_2":"ggttAGTCATcgct",
+				"score":0.60
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":264,
+				"end":259,
+				"seq_2":"tcggGCCACAcaag",
+				"score":3.41
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"R",
+				"start":565,
+				"end":560,
+				"seq_2":"aggtTAGTCAtcgc",
+				"score":0.47
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"DR",
+				"start":111,
+				"end":106,
+				"seq_2":"atatTAGTCAactc",
+				"score":0.47
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"DR",
+				"start":10,
+				"end":5,
+				"seq_2":"ttccACTGTGaacg",
+				"score":2.69
+
+		}
+		]
+},
+	{
+		"Gene":"MET30",
+		"Start":177,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"cgcgca|tgcgcg",
+				"strand":"R",
+				"start":154,
+				"end":149,
+				"seq_2":"tctcCGCGCAaact",
+				"score":0.26
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":177,
+				"end":172,
+				"seq_2":"CACGTGatcg",
+				"score":9.02
+
+		},
+		{
+				"seq":"agccac|gtggct",
+				"strand":"DR",
+				"start":164,
+				"end":159,
+				"seq_2":"gggaAGCCACagtt",
+				"score":0.34
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"R",
+				"start":160,
+				"end":155,
+				"seq_2":"cgcaAACTGTggct",
+				"score":0.64
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":163,
+				"end":158,
+				"seq_2":"ggaaGCCACAgttt",
+				"score":3.41
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":162,
+				"end":157,
+				"seq_2":"gaagCCACAGtttg",
+				"score":3.69
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":176,
+				"end":171,
+				"seq_2":"cACGTGAtcgg",
+				"score":4.86
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"R",
+				"start":161,
+				"end":156,
+				"seq_2":"gcaaACTGTGgctt",
+				"score":2.69
+
+		}
+		]
+},
+	{
+		"Gene":"MET1",
+		"Start":702,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"cgtgac|gtcacg",
+				"strand":"DR",
+				"start":266,
+				"end":261,
+				"seq_2":"tgcaCGTGACatta",
+				"score":0.30
+
+		},
+		{
+				"seq":"gactca|tgagtc",
+				"strand":"R",
+				"start":428,
+				"end":423,
+				"seq_2":"gttgGACTCAgaga",
+				"score":0.05
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"R",
+				"start":270,
+				"end":265,
+				"seq_2":"gtcaCGTGCAtaat",
+				"score":1.43
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":268,
+				"end":263,
+				"seq_2":"tatgCACGTGacat",
+				"score":9.02
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"DR",
+				"start":225,
+				"end":220,
+				"seq_2":"aataAACTGTgaac",
+				"score":0.64
+
+		},
+		{
+				"seq":"gactca|tgagtc",
+				"strand":"DR",
+				"start":214,
+				"end":209,
+				"seq_2":"aacgGACTCAtaat",
+				"score":0.05
+
+		},
+		{
+				"seq":"acgtgc|gcacgt",
+				"strand":"R",
+				"start":269,
+				"end":264,
+				"seq_2":"tgtcACGTGCataa",
+				"score":0.11
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":267,
+				"end":262,
+				"seq_2":"atgcACGTGAcatt",
+				"score":4.86
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"DR",
+				"start":406,
+				"end":401,
+				"seq_2":"tcgcAACTGTagaa",
+				"score":0.64
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"DR",
+				"start":224,
+				"end":219,
+				"seq_2":"ataaACTGTGaacg",
+				"score":2.69
+
+		}
+		]
+},
+	{
+		"Gene":"MET8",
+		"Start":463,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"R",
+				"start":270,
+				"end":265,
+				"seq_2":"acggAACTGTttga",
+				"score":0.64
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"R",
+				"start":151,
+				"end":146,
+				"seq_2":"ccgtAGTCATcgga",
+				"score":0.60
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"R",
+				"start":150,
+				"end":145,
+				"seq_2":"cccgTAGTCAtcgg",
+				"score":0.47
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"DR",
+				"start":363,
+				"end":358,
+				"seq_2":"aaccTAGTCAattg",
+				"score":0.47
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":209,
+				"end":204,
+				"seq_2":"atttCACGTGttat",
+				"score":9.02
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":210,
+				"end":205,
+				"seq_2":"taacACGTGAaatt",
+				"score":4.86
+
+		}
+		]
+},
+	{
+		"Gene":"MET31",
+		"Start":161,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"R",
+				"start":25,
+				"end":20,
+				"seq_2":"atcgACTGTGtata",
+				"score":2.69
+
+		}
+		]
+},
+	{
+		"Gene":"MET17",
+		"Start":800,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"R",
+				"start":644,
+				"end":639,
+				"seq_2":"gaaaTAGTCAtcta",
+				"score":0.47
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":299,
+				"end":294,
+				"seq_2":"tggcACGTGAagct",
+				"score":4.86
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"R",
+				"start":274,
+				"end":269,
+				"seq_2":"accaCCACAGttcc",
+				"score":3.69
+
+		},
+		{
+				"seq":"acgtgc|gcacgt",
+				"strand":"R",
+				"start":301,
+				"end":296,
+				"seq_2":"cttcACGTGCcatt",
+				"score":0.11
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"R",
+				"start":257,
+				"end":252,
+				"seq_2":"taatTAGTCAtttg",
+				"score":0.47
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":300,
+				"end":295,
+				"seq_2":"atggCACGTGaagc",
+				"score":9.02
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"R",
+				"start":258,
+				"end":253,
+				"seq_2":"aattAGTCATttgc",
+				"score":0.60
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"DR",
+				"start":275,
+				"end":270,
+				"seq_2":"gggaACTGTGgtgg",
+				"score":2.69
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"DR",
+				"start":244,
+				"end":239,
+				"seq_2":"aagtTAGTCAaggc",
+				"score":0.47
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"DR",
+				"start":219,
+				"end":214,
+				"seq_2":"gaaaACTGTGtaac",
+				"score":2.69
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"R",
+				"start":645,
+				"end":640,
+				"seq_2":"aaatAGTCATctaa",
+				"score":0.60
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"DR",
+				"start":276,
+				"end":271,
+				"seq_2":"ggggAACTGTggtg",
+				"score":0.64
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"DR",
+				"start":220,
+				"end":215,
+				"seq_2":"tgaaAACTGTgtaa",
+				"score":0.64
+
+		}
+		]
+},
+	{
+		"Gene":"MET28",
+		"Start":489,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":285,
+				"end":280,
+				"seq_2":"agatGCCACAgttg",
+				"score":3.41
+
+		},
+		{
+				"seq":"cgtgac|gtcacg",
+				"strand":"DR",
+				"start":217,
+				"end":212,
+				"seq_2":"tgcaCGTGACttat",
+				"score":0.30
+
+		},
+		{
+				"seq":"acgtgc|gcacgt",
+				"strand":"R",
+				"start":220,
+				"end":215,
+				"seq_2":"agtcACGTGCactc",
+				"score":0.11
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"DR",
+				"start":389,
+				"end":384,
+				"seq_2":"ctgcCGTGCAaaaa",
+				"score":1.43
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"R",
+				"start":283,
+				"end":278,
+				"seq_2":"cacaACTGTGgcat",
+				"score":2.69
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"R",
+				"start":152,
+				"end":147,
+				"seq_2":"caaaACTGTGgtgt",
+				"score":2.69
+
+		},
+		{
+				"seq":"gactca|tgagtc",
+				"strand":"R",
+				"start":103,
+				"end":98,
+				"seq_2":"ccttGACTCAcgcc",
+				"score":0.05
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":218,
+				"end":213,
+				"seq_2":"gtgcACGTGActta",
+				"score":4.86
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":153,
+				"end":148,
+				"seq_2":"aacaCCACAGtttt",
+				"score":3.69
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"R",
+				"start":151,
+				"end":146,
+				"seq_2":"ccaaAACTGTggtg",
+				"score":0.64
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"R",
+				"start":282,
+				"end":277,
+				"seq_2":"ccacAACTGTggca",
+				"score":0.64
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"R",
+				"start":82,
+				"end":77,
+				"seq_2":"tcttAGTCATtggc",
+				"score":0.60
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"DR",
+				"start":488,
+				"end":483,
+				"seq_2":"gACTGTGataa",
+				"score":2.69
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"R",
+				"start":81,
+				"end":76,
+				"seq_2":"ttctTAGTCAttgg",
+				"score":0.47
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":219,
+				"end":214,
+				"seq_2":"agtgCACGTGactt",
+				"score":9.02
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"R",
+				"start":221,
+				"end":216,
+				"seq_2":"gtcaCGTGCActca",
+				"score":1.43
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":284,
+				"end":279,
+				"seq_2":"gatgCCACAGttgt",
+				"score":3.69
+
+		}
+		]
+},
+	{
+		"Gene":"MET6",
+		"Start":687,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"agtcat|atgact",
+				"strand":"DR",
+				"start":353,
+				"end":348,
+				"seq_2":"ctagAGTCATcgca",
+				"score":0.60
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":650,
+				"end":645,
+				"seq_2":"tttcCCACAGccat",
+				"score":3.69
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"DR",
+				"start":305,
+				"end":300,
+				"seq_2":"caaaACTGTGgtag",
+				"score":2.69
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":495,
+				"end":490,
+				"seq_2":"atttCACGTGactt",
+				"score":9.02
+
+		},
+		{
+				"seq":"cgtgac|gtcacg",
+				"strand":"DR",
+				"start":493,
+				"end":488,
+				"seq_2":"ttcaCGTGACttac",
+				"score":0.30
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"DR",
+				"start":344,
+				"end":339,
+				"seq_2":"tcgcAGTCATggca",
+				"score":0.60
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"DR",
+				"start":298,
+				"end":293,
+				"seq_2":"gtggTAGTCAtagc",
+				"score":0.47
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"DR",
+				"start":381,
+				"end":376,
+				"seq_2":"cgaaCGTGCAaaag",
+				"score":1.43
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":540,
+				"end":535,
+				"seq_2":"tcacGCCACAtcac",
+				"score":3.41
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":494,
+				"end":489,
+				"seq_2":"tttcACGTGActta",
+				"score":4.86
+
+		},
+		{
+				"seq":"agccac|gtggct",
+				"strand":"DR",
+				"start":512,
+				"end":507,
+				"seq_2":"taaaAGCCACagga",
+				"score":0.34
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"DR",
+				"start":306,
+				"end":301,
+				"seq_2":"gcaaAACTGTggta",
+				"score":0.64
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"R",
+				"start":304,
+				"end":299,
+				"seq_2":"actaCCACAGtttt",
+				"score":3.69
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":510,
+				"end":505,
+				"seq_2":"aaagCCACAGgaaa",
+				"score":3.69
+
+		},
+		{
+				"seq":"acgtgc|gcacgt",
+				"strand":"DR",
+				"start":382,
+				"end":377,
+				"seq_2":"gcgaACGTGCaaaa",
+				"score":0.11
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":534,
+				"end":529,
+				"seq_2":"gtgcACGTGAtgtg",
+				"score":4.86
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":496,
+				"end":491,
+				"seq_2":"agtcACGTGAaata",
+				"score":4.86
+
+		},
+		{
+				"seq":"acgtgc|gcacgt",
+				"strand":"DR",
+				"start":532,
+				"end":527,
+				"seq_2":"catcACGTGCacat",
+				"score":0.11
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"DR",
+				"start":269,
+				"end":264,
+				"seq_2":"gagaACTGTGaatg",
+				"score":2.69
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":511,
+				"end":506,
+				"seq_2":"aaaaGCCACAggaa",
+				"score":3.41
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"DR",
+				"start":531,
+				"end":526,
+				"seq_2":"atcaCGTGCAcatt",
+				"score":1.43
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"DR",
+				"start":270,
+				"end":265,
+				"seq_2":"tgagAACTGTgaat",
+				"score":0.64
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"DR",
+				"start":297,
+				"end":292,
+				"seq_2":"tggtAGTCATagct",
+				"score":0.60
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":533,
+				"end":528,
+				"seq_2":"acatCACGTGcaca",
+				"score":9.02
+
+		}
+		]
+},
+	{
+		"Gene":"MET16",
+		"Start":443,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"gactca|tgagtc",
+				"strand":"DR",
+				"start":147,
+				"end":142,
+				"seq_2":"acatGACTCAgcaa",
+				"score":0.05
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":178,
+				"end":173,
+				"seq_2":"atttCACGTGgcta",
+				"score":9.02
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":157,
+				"end":152,
+				"seq_2":"aaaaGCCACAacat",
+				"score":3.41
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"R",
+				"start":149,
+				"end":144,
+				"seq_2":"gctgAGTCATgttg",
+				"score":0.60
+
+		},
+		{
+				"seq":"agccac|gtggct",
+				"strand":"R",
+				"start":175,
+				"end":170,
+				"seq_2":"tactAGCCACgtga",
+				"score":0.34
+
+		},
+		{
+				"seq":"agccac|gtggct",
+				"strand":"DR",
+				"start":158,
+				"end":153,
+				"seq_2":"gaaaAGCCACaaca",
+				"score":0.34
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":179,
+				"end":174,
+				"seq_2":"agccACGTGAaatg",
+				"score":4.86
+
+		},
+		{
+				"seq":"cgcgca|tgcgcg",
+				"strand":"R",
+				"start":361,
+				"end":356,
+				"seq_2":"tcagCGCGCAttaa",
+				"score":0.26
+
+		}
+		]
+},
+	{
+		"Gene":"MET3",
+		"Start":800,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"R",
+				"start":78,
+				"end":73,
+				"seq_2":"tcacAACTGTtacg",
+				"score":0.64
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"R",
+				"start":251,
+				"end":246,
+				"seq_2":"gtaaAACTGTggct",
+				"score":0.64
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":253,
+				"end":248,
+				"seq_2":"aaagCCACAGtttt",
+				"score":3.69
+
+		},
+		{
+				"seq":"cgtgac|gtcacg",
+				"strand":"R",
+				"start":379,
+				"end":374,
+				"seq_2":"gtcaCGTGACcttt",
+				"score":0.30
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"DR",
+				"start":318,
+				"end":313,
+				"seq_2":"ctgtCGTGCAcact",
+				"score":1.43
+
+		},
+		{
+				"seq":"cgtgac|gtcacg",
+				"strand":"R",
+				"start":362,
+				"end":357,
+				"seq_2":"tacaCGTGACtttt",
+				"score":0.30
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"R",
+				"start":252,
+				"end":247,
+				"seq_2":"taaaACTGTGgctt",
+				"score":2.69
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":377,
+				"end":372,
+				"seq_2":"aggtCACGTGacca",
+				"score":9.02
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":378,
+				"end":373,
+				"seq_2":"ggtcACGTGAcctt",
+				"score":4.86
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":361,
+				"end":356,
+				"seq_2":"ttacACGTGActtt",
+				"score":4.86
+
+		},
+		{
+				"seq":"cgcgca|tgcgcg",
+				"strand":"DR",
+				"start":412,
+				"end":407,
+				"seq_2":"ccaaCGCGCAtcct",
+				"score":0.26
+
+		},
+		{
+				"seq":"cgtgac|gtcacg",
+				"strand":"DR",
+				"start":375,
+				"end":370,
+				"seq_2":"gtcaCGTGACcaga",
+				"score":0.30
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":376,
+				"end":371,
+				"seq_2":"ggtcACGTGAccag",
+				"score":4.86
+
+		},
+		{
+				"seq":"agccac|gtggct",
+				"strand":"DR",
+				"start":255,
+				"end":250,
+				"seq_2":"acaaAGCCACagtt",
+				"score":0.34
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"DR",
+				"start":515,
+				"end":510,
+				"seq_2":"gggtCCACAGatat",
+				"score":3.69
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":254,
+				"end":249,
+				"seq_2":"caaaGCCACAgttt",
+				"score":3.41
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":360,
+				"end":355,
+				"seq_2":"aagtCACGTGtaat",
+				"score":9.02
+
+		}
+		]
+},
+	{
+		"Gene":"MET2",
+		"Start":481,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":354,
+				"end":349,
+				"seq_2":"catcACGTGAaaat",
+				"score":4.86
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"DR",
+				"start":274,
+				"end":269,
+				"seq_2":"actaAGTCATgtta",
+				"score":0.60
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"DR",
+				"start":455,
+				"end":450,
+				"seq_2":"gcacTAGTCAtgaa",
+				"score":0.47
+
+		},
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"DR",
+				"start":326,
+				"end":321,
+				"seq_2":"aggcGCCACAcatt",
+				"score":3.41
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":352,
+				"end":347,
+				"seq_2":"tttcACGTGAtgcg",
+				"score":4.86
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"DR",
+				"start":454,
+				"end":449,
+				"seq_2":"cactAGTCATgaaa",
+				"score":0.60
+
+		},
+		{
+				"seq":"tagtca|tgacta",
+				"strand":"DR",
+				"start":76,
+				"end":71,
+				"seq_2":"ttttTAGTCAcagg",
+				"score":0.47
+
+		},
+		{
+				"seq":"agccac|gtggct",
+				"strand":"R",
+				"start":378,
+				"end":373,
+				"seq_2":"ggggAGCCACtaac",
+				"score":0.34
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":353,
+				"end":348,
+				"seq_2":"ttttCACGTGatgc",
+				"score":9.02
+
+		}
+		]
+},
+	{
+		"Gene":"MET12",
+		"Start":384,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"R",
+				"start":213,
+				"end":208,
+				"seq_2":"tataGCCACAgtca",
+				"score":3.41
+
+		},
+		{
+				"seq":"actgtg|cacagt",
+				"strand":"DR",
+				"start":215,
+				"end":210,
+				"seq_2":"attgACTGTGgcta",
+				"score":2.69
+
+		},
+		{
+				"seq":"agccac|gtggct",
+				"strand":"R",
+				"start":212,
+				"end":207,
+				"seq_2":"ctatAGCCACagtc",
+				"score":0.34
+
+		},
+		{
+				"seq":"ccacag|ctgtgg",
+				"strand":"R",
+				"start":214,
+				"end":209,
+				"seq_2":"atagCCACAGtcaa",
+				"score":3.69
+
+		}
+		]
+},
+	{
+		"Gene":"MET14",
+		"Start":800,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"gccaca|tgtggc",
+				"strand":"R",
+				"start":192,
+				"end":187,
+				"seq_2":"cattGCCACAtttt",
+				"score":3.41
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"R",
+				"start":229,
+				"end":224,
+				"seq_2":"gatcACGTGAaatt",
+				"score":4.86
+
+		},
+		{
+				"seq":"gactca|tgagtc",
+				"strand":"DR",
+				"start":167,
+				"end":162,
+				"seq_2":"gaacGACTCAatat",
+				"score":0.05
+
+		},
+		{
+				"seq":"aactgt|acagtt",
+				"strand":"R",
+				"start":336,
+				"end":331,
+				"seq_2":"aagcAACTGTattc",
+				"score":0.64
+
+		},
+		{
+				"seq":"cacgtg|cacgtg",
+				"strand":"DR",
+				"start":228,
+				"end":223,
+				"seq_2":"atttCACGTGatca",
+				"score":9.02
+
+		},
+		{
+				"seq":"agccac|gtggct",
+				"strand":"DR",
+				"start":207,
+				"end":202,
+				"seq_2":"tacaAGCCACctca",
+				"score":0.34
+
+		},
+		{
+				"seq":"acgtga|tcacgt",
+				"strand":"DR",
+				"start":227,
+				"end":222,
+				"seq_2":"tttcACGTGAtcaa",
+				"score":4.86
+
+		},
+		{
+				"seq":"cgtgca|tgcacg",
+				"strand":"R",
+				"start":268,
+				"end":263,
+				"seq_2":"aaagCGTGCAgcta",
+				"score":1.43
+
+		},
+		{
+				"seq":"agtcat|atgact",
+				"strand":"R",
+				"start":159,
+				"end":154,
+				"seq_2":"ttgaAGTCATattg",
+				"score":0.60
+
+		}
+		]
+},
+	{
+		"Gene":"MET7",
+		"Start":250,
+		"End":1,
+		"Features":
+		[
+		{
+				"seq":"cgcgca|tgcgcg",
+				"strand":"DR",
+				"start":190,
+				"end":185,
+				"seq_2":"tcgtCGCGCAtatt",
+				"score":0.26
+
+		}
+		]
+}
+]

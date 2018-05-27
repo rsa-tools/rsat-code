@@ -1,0 +1,17 @@
+input[type="radio"], input[type="checkbox"] {
+    margin: 4px 5px 0 !important;
+}
+
+.form-control {
+    display: inline;
+    width: auto;
+}
+
+.ui-widget {
+    font-family: Helvetica !important;
+    font-size: 14px !important;
+}
+
+label {
+    font-weight: normal;
+}

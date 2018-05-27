@@ -225,7 +225,7 @@ print <<EndText;
           <td>
 	    <a href="http://teaching.rsat.eu" target="_top" >
 	      <img src="images/logo_teaching.jpg" height='100' border='0' alt="teaching"></a><br>
-	    maintained by <a target='_blank' href="http://sgbc.slu.se/">SLU Global Bioinformatics Center, Uppsala, Sweden  </a>
+	    maintained by <a target='_blank' href="http://tagc.univ-mrs.fr/">TAGC - Universit&eacute; Aix Marseilles, France  </a>
 	  </td>
 	  
 

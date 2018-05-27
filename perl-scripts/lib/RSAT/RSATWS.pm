@@ -1302,12 +1302,17 @@ sub peak_motifs_cmd {
 	$motif_db =~s/\'//g;
 	$motif_db =~s/\"//g;
 	my @_motif_db = split(',', $motif_db);
-	my %matrix_db = &RSAT::server::supported_motif_databases();
+	my %matrix_db = &RSAT::server::supported_motif_databases(); ## TO DEBUG (JvH, 2017-12-12): %motif_db est vide
 	foreach my $db (@_motif_db) {
-	    unless (/$db/ ~~ %matrix_db) {
-	      die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("$db MOTIF DATABASE IS UNKNOWN !");
-	    }
+	  if (defined($matrix_db{$db})) {
+	    ## Select matrix DB in a case-insensitive mode
+#	    $matrix_db <- $matrix_db{$db};
 	    $command .= " -motif_db ".$matrix_db{$db}{'name'}." ".$matrix_db{$db}{'format'}." ".$ENV{RSAT}."/public_html/motif_databases/".$matrix_db{$db}{'file'};
+	  } else {
+#	  unless (/$db/ ~~ %matrix_db) {
+	    my $supported_matrix_db = join(", ", sort(keys(%matrix_db)));
+	    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("$db motif database is unknown. Supported: ".$supported_matrix_db);
+	  }
 	}
     }
 
@@ -2930,7 +2935,7 @@ sub text_to_html {
   unless ($output_choice) {
     $output_choice = 'both';
   }
-  my $command = $SCRIPTS."/text-to-html";
+  my $command = $SCRIPTS."/text-to-html -v 0";
   if ($args{inputfile}) {
    my $input_file = $args{inputfile};
    chomp $input_file;
@@ -7025,7 +7030,7 @@ sub run_WS_command {
 
   foreach my $errline(@errlines) {
       ## Some errors and RSAT warnings are not considered as fatal errors
-      unless (($errline =~ 'Use of uninitialized value') || ($errline =~ '^;') || ($errline =~ 'there is a difference in the software release')) {
+      unless (($errline =~ 'Use of uninitialized value') || ($errline =~ 'Smartmatch is experimental') || ($errline =~ '^;') || ($errline =~ 'there is a difference in the software release')) {
 	  $stderr .= $errline;
       }
       ## RSAT warnings are added at the end of results
@@ -7109,7 +7114,7 @@ sub UpdateLogFileWS {
     $ENV{rsat_site} = `hostname`;
     chomp($ENV{rsat_site});
   }
-  my $log_file = join("", $ENV{RSAT}, "/public_html/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
+  my $log_file = join("", $ENV{RSAT}, "/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
   system("chmod a+w $log_file");
 #   print "LOG ### $log_file";
   if (open LOG, ">>".$log_file) {

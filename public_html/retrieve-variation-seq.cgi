@@ -42,13 +42,14 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 
 
 $parameters = "";
-$command = "$SCRIPTS/retrieve-variation-seq";
+$command = "$C_SCRIPTS/retrieve-variation-seq";
 
 ################
 ## Parameters
 
 ## Define species 
 $organism = $query->param('organism');
+if($organism eq ""){ $organism = $query->param('organism_bg')};
 if (defined($supported_organism{$organism})) {
     $organism_name = $supported_organism{$organism}->{'name'};
     @org_name_split=split(" ",$organism_name);

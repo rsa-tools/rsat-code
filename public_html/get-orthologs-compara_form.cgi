@@ -67,7 +67,7 @@ print "<CENTER>";
 print "Returns orthologues, plus optionally paralogues and homeologues, for a
     set of genes in one or more organisms. <br>Relies on primary data from
     Ensembl Compara.<br><br>\n";
-print "Program developed by <A HREF='bcontreras\@eead.csic.es'>Bruno Contreras-Moreira</A>\n";
+print "Program developed by <A HREF='mailto:bcontreras\@eead.csic.es'>Bruno Contreras-Moreira</A>\n";
 print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</A>.\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
@@ -166,7 +166,7 @@ print "<hr/>\n";
 
 ################################################################
 ## Action buttons
-print "<UL><UL><TABLE class = 'formbutton'>\n";
+print "<UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
@@ -175,13 +175,14 @@ print $query->end_form;
 ################################################################
 ## Data for the demo on ortholog searches
 print $query->start_multipart_form(-action=>"get-orthologs-compara_form.cgi");
-my $demo_descr = "Search orthologs for a gene from <i>Brachypodium diastychon</i> in <i>Triticum aestivum</i> genome. Note that the option many2many allows to detect multiple orthologs.";
+my $demo_descr = "Search orthologs for gene FT1 (Bradi1g48830) from <i>Brachypodium distachyon</i> in several grasses.";
 print "<TD><B>";
-print $query->hidden(-name=>'queries',-default=>"BRADI4G31367.1");
+print $query->hidden(-name=>'queries',-default=>"Bradi1g48830");
 print $query->hidden(-name=>'type',-default=>"ortholog");
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr);
-print $query->hidden(-name=>'organism',-default=>"triticum_aestivum");
-print $query->submit(-label=>"DEMO 1 (orthologs)");
+print $query->hidden(-name=>'organism',-default=>['brachypodium_distachyon','hordeum_vulgare',
+    'oryza_indica','oryza_sativa','setaria_italica','sorghum_bicolor','triticum_aestivum','triticum_urartu','zea_mays']);
+print $query->submit(-label=>"DEMO 1 (FT1 orthologs)");
 print "</B></TD>\n";
 print $query->end_form;
 
@@ -196,13 +197,14 @@ print $query->hidden(-name=>'ident_target',-default=>"0");
 print $query->hidden(-name=>'ident_query',-default=>"0");
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr2);
 print $query->hidden(-name=>'organism',-default=>"arabidopsis_thaliana");
-print $query->submit(-label=>"DEMO 2 (paralogs)");
+print $query->submit(-label=>"DEMO 2 (inparalogs)");
 print "</B></TD>\n";
 print $query->end_form;
 
 print "<TD><B><A HREF='help.get-orthologs-compara.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>\n";
-print "</TR></TABLE></UL></UL>\n";
+print "<TD><B><A HREF='sample_outputs/get-orthologs-compara_20180327.tab'>Sample output</A></B></TD>\n";
+print "</TR></TABLE></UL>\n";
 
 print "</BLOCKQUOTE>\n";
 

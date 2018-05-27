@@ -29,6 +29,9 @@ package main;
   local $out = STDOUT;
   local $last_repet = 0;
 
+  local $check_assumption = 1;
+  local $group_tails = 1;
+
   local $distrib = "poisson";
   local @out_fields = qw (
 			  avg
@@ -234,30 +237,29 @@ package main;
 			   ) if ($main::verbose >= 10);
 
       ## Perform a chi-square test
-      ($chi2, $df, $left_group, $right_group, $obs_ref, $exp_ref) = &ChiSquare("goodness", 2, scalar(@counts), 1, @counts, @expected);
+      ($chi2, $df, $left_group, $right_group, $obs_ref, $exp_ref) = &ChiSquare("goodness", 2, scalar(@counts), $check_assumption, $group_tails, @counts, @expected);
 
       $obs_grouped = join ":", @{$obs_ref};
       $exp_grouped = join ":", @{$exp_ref};
 
       ## Discard cases where applicability conditions are not met
-      #    unless (&IsReal($chi2)) {
-      #	$chi2 = "NA";
-      #    }
-
-      warn join ("\t",
-		 $pattern,
-		 $id,
-		 $avg,
-		 $std,
-		 $var,
-		 $sum,
-		 $ssq,
-		 $exp_sum,
-		 $chi2,
-		 $df,
-		 $left_group,
-		 $right_group),
-		   "\n" if ($verbose >= 3);
+      # unless (&IsReal($chi2)) {
+      # 	$chi2 = "NA";
+      # }
+      
+      &RSAT::message::Debug(
+	$pattern,
+	$id,
+	$avg,
+	$std,
+	$var,
+	$sum,
+	$ssq,
+	$exp_sum,
+	$chi2,
+	$df,
+	$left_group,
+	$right_group)  if ($verbose >= 4);
     }
 
     my  @out_values = ();
@@ -271,7 +273,7 @@ package main;
   }
 
   ################################################################
-  ###### close output stream
+  ## Close output stream
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
   print $main::out $exec_time if ($main::verbose >= 1);
   close $out if ($outfile{output});

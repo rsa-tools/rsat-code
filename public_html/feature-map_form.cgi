@@ -30,7 +30,7 @@ foreach $key (keys %default) {
     if ($query->param($key)) {
 	$default{$key} = $query->param($key);
     }
-} 
+}
 
 #### specific treatment for internal feature file (piped from dna-patttern)
 if (-e $query->param('feature_file')) {
@@ -63,7 +63,7 @@ print "<A class='iframe' HREF='help.feature-map.html#formats'>";
 print "Format</A>&nbsp;";
 
 print $query->popup_menu(-name=>'format',
-			 -Values=>['feature map', 
+			 -Values=>['feature map',
 				   'dna-pattern',
 				   'Patser',
 				   'Matinspector',
@@ -85,9 +85,9 @@ print $query->textarea(-name=>'data',-id=>'data',
 		       -columns=>60);
 print "<BR>\n";
 
-print "<B><A class='iframe' HREF='help.feature-map.html#file'>";
+print "<B>";
 print "File ";
-print "</A></B>&nbsp;";
+print "</B>&nbsp;";
 print $query->filefield(-name=>'uploaded_file',
 			-size=>45);
 
@@ -230,7 +230,7 @@ print "&nbsp;&nbsp;&nbsp;";
 
 print "<BR>\n";
 
-print "<B><A class='iframe' HREF='help.feature-map.html#dynamic'>";
+print "<B><A class='iframe' HREF='help.feature-map.html#keys'>";
 print "Label keys";
 print "</A></B>\n";
 print $query->checkbox(-name=>'label_strand',
@@ -271,7 +271,7 @@ print"<TD>", $query->reset(-id=>"reset"), "</TD>\n";
 print $query->end_form;
 
 
-### data for the demo 
+### data for the demo
 $demo_data = "";
 open ($fh, "demo_files/feature-map_demo_data.ft");
 while($row = <$fh>){
@@ -312,9 +312,3 @@ print "</FONT>";
 print $query->end_html;
 
 exit(0);
-
-
-
-
-
-

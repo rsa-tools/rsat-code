@@ -4,11 +4,13 @@
 #
 package RSAT::MatrixReader;
 
+
 use RSAT::GenericObject;
 use RSAT::matrix;
 use RSAT::error;
 use RSAT::feature;
 @ISA = qw( RSAT::GenericObject );
+
 
 ### class attributes
 
@@ -284,12 +286,12 @@ sub readFromFile {
 
     ## Only retain the N top matrices if requested
     my $top = 0;
-    if (defined($args{top})) {
+    if ((defined($args{top}) && &RSAT::util::IsInteger($args{top}))) {
       $top = $args{top};
       if ((&RSAT::util::IsNatural($top)) && ($top > 0)) {
 	my $matrix_nb = scalar(@matrices);
 	if ($matrix_nb > $top) {
-	  &RSAT::message::Info("Retaining", $top, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
+	  &RSAT::message::Info("Retaining", $top, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 2);
 	  foreach my $m (($top+1)..$matrix_nb) {
 	    pop @matrices;
 	  }
@@ -300,9 +302,9 @@ sub readFromFile {
 
     ## Skip the N first matrices if requested
     my $skip = 0;
-    if (defined($args{skip})) {
+    if (defined($args{skip}) && &RSAT::util::IsInteger($args{skip})) {
       $skip = $args{skip};
-      &RSAT::message::Info("Skipping", $skip, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 1);
+      &RSAT::message::Info("Skipping", $skip, "top matrices among", (scalar(@matrices))) if ($main::verbose >= 2);
       if ((&RSAT::util::IsNatural($skip)) && ($skip > 0)) {
 	for my $m (1..$skip) {
 	  shift(@matrices);
@@ -397,7 +399,7 @@ sub readFromFile {
 	}
 #	&RSAT::message::Info("Retained matrix ACs",  join ",", (@retained_acs));
 #	&RSAT::message::Info("Retained matrix names",  join ",", (@retained_names));
-	&RSAT::message::Info("Retained matrices",  join "; ", (@retained_message));
+	&RSAT::message::Info("Retained matrices",  join "; ", (@retained_message)) if ($main::verbose >= 3);
       }
     }
 
@@ -541,8 +543,20 @@ sub _readFromTRANSFACFile {
 
       ## Start a new matrix (one TRANSFAC file contains several matrices)
     } elsif (/^AC\s*(.*)/) {
-      my $accession = &clean_id($1);
-      $current_matrix_nb++;
+	my $accession = &clean_id($1);
+
+#	&RSAT::message::Debug("args{top}", $args{top}, "current_matrix_nb", $current_matrix_nb) if ($main::verbose >=10);
+#	die;
+	if (defined($args{top})
+	    && &RSAT::util::IsInteger($args{top})
+	    && ($args{top} > 0) 
+	    && ($current_matrix_nb >= $args{top})) {
+	    &RSAT::message::Warning("Stopped after the top", $current_matrix_nb, "matrices") 
+		if ($main::verbose >= 2);
+	last;
+      }
+      $current_matrix_nb++; 
+      # &RSAT::message::Info("Parsing matrix", $current_matrix_nb, $accession) if ($main::verbose >= 10);
       $transfac_consensus = "";
       $matrix = new RSAT::matrix();
 
@@ -2255,7 +2269,7 @@ sub _readFromUniprobeFile {
 		  ((!$in_matrix) && ($line =~ /^(\S+)/))) {
 	    
 	    ## Stop reading if the number of matrices to read has been restricted
-	    if (defined($args{top})) {
+	    if ((defined($args{top} && &RSAT::util::IsInteger($args{top})))) {
 		if (scalar(@matrices) >= $args{top}) {
 		    &RSAT::message::Warning("Stop reading after",
 					    $current_matrix_nb, scalar(@matrices),
@@ -2460,8 +2474,8 @@ sub NewJasparMatrix {
   $matrix->set_attribute("name", $name);
   $matrix->set_attribute("accession", $id); ## For compatibility with TRANSFAC format
   $matrix->set_attribute("description", join("", $id, " ", $name, "; from JASPAR"));
-#  $matrix->setAlphabet_lc(@temp_alphabet);
-  $matrix->set_alphabet_for_type();
+  $matrix->setAlphabet_lc(@temp_alphabet);
+ # $matrix->set_alphabet_for_type(); MTC 2017/10 : this line was not commented, and producing an empty matrix
   push @matrices, $matrix;
   $current_matrix_nb++;
   &RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
@@ -2870,7 +2884,7 @@ sub _readFromMEMEFile_2015 {
 	my @values = split /\s+/, $values;
 	$matrix->addColumn(@values);
 	&RSAT::message::Debug("line ".$l, "added column", $matrix->get_attribute("ncol"),
-			      join (":", @values)) if ($main::verbose >= 0);
+			      join (":", @values)) if ($main::verbose >= 10);
 #	$ncol++;
 #	$matrix->force_attribute("ncol", $ncol);
 	next;
@@ -3363,24 +3377,51 @@ sub SortMatrices {
     my %key_value = ();
     my $attr_not_found = 0;
     my $not_real = 0;
-    foreach my $matrix (@matrices) {
-      if (my $value = $matrix->get_attribute($sort_key)) {
-	$key_value{$matrix} = $value;
-	unless (&RSAT::util::IsReal($value)) {
-	  &RSAT::message::Debug("&RSAT::MatirxReader::SortMatrices()", "matrix", $matrix->get_attribute("id"), 
-				"Non-real attribute", $sort_key, "value", $value) if ($main::verbose >= 2);
-	  $not_real++;
+
+    if (lc($sort_key) eq "id") {
+	$sort_key = "id";
+    }
+
+    ## Sort matrices in random order
+    if ($sort_order eq "rand") {
+      &RSAT::message::Warning("Sorting matrices randomly") if ($main::verbose >= 2);
+      @perm_matrices = ();
+      srand();
+      while (scalar(@matrices) > 0) {
+	my $r = int(rand(scalar(@matrices))); ## pick a random number among indices of the remaining matrices
+	push(@perm_matrices, splice(@matrices, $r, 1));
+	&RSAT::message::Debug(join(" ", "sampled", scalar(@perm_matrices), "among", $nb_matrices, "; remaining: ",  scalar(@matrices))) if ($main::verbose >= 4);
+      }
+      return(@perm_matrices);
+
+    } else {
+      ## Collect the sorting attribute
+      foreach my $m (0..$#matrices) {
+#      foreach my $matrix (@matrices) {
+	$matrix = $matrices[$m];
+        if (my $value = $matrix->get_attribute($sort_key)) {
+	  $key_value{$matrix} = $value;
+	  $index_value{$m} = $value;
+	  unless ((&RSAT::util::IsReal($value)) && (($sort_key eq "asc")|| ($sort_key eq "desc"))) {
+	    &RSAT::message::Debug("&RSAT::MatirxReader::SortMatrices()", "matrix", $matrix->get_attribute("id"), 
+				  "Non-real attribute", $sort_key, "value", $value) if ($main::verbose >= 4);
+	    $not_real++;
+	  }
+	} else {
+	    $attr_not_found++;
 	}
-      } else {
-	$attr_not_found++;
       }
     }
 
+
+    ## Check if attribtue was found in all the matrices, else return unsorted matrices
     if ($attr_not_found > 0) {
       &RSAT::message::Warning("Cannot sort matrices by", $sort_key,
 			      "because this attribute is missing in", $attr_not_found."/".$nb_matrices, "matrices")
 	if ($main::verbose >= 1);
-    } elsif ($not_real > 0) {
+
+    ## For ascending or descending sorting, check if attribtue has Real values in all the matrices, else return unsorted matrices
+    } elsif (($not_real > 0) && (($sort_order eq "desc") || ($sort_order eq "asc"))) {
       &RSAT::message::Warning("Cannot sort matrices by", $sort_key,
 			      "because this attribute has non real values in", $not_real."/".$nb_matrices, "matrices")
 	if ($main::verbose >= 1);
@@ -3400,6 +3441,10 @@ sub SortMatrices {
       } elsif ($sort_order eq "alpha") {
 	&RSAT::message::Warning("Sorting matrices by alphabetic values of", $sort_key) if ($main::verbose >= 2);
 	@matrices = sort {lc($a->{$sort_key}) cmp lc($b->{$sort_key})} @matrices;
+#	@matrices = sort {lc($a->{$sort_key}) cmp lc($b->{$sort_key})} @matrices;
+	for my $matrix (@matrices) {
+	    &RSAT::message::Debug(lc($matrix->{$sort_key}), $key_value{$matrix}) if ($main::verbose >= 5);
+	}
       } else {
 	&RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc,alpha.");
       }

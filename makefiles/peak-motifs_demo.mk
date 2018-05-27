@@ -40,6 +40,7 @@ MOTIF_PREFIX=Oct4_Chen2008_sites_from_Jaspar
 MERGE_LEN_OPT=-no_merge_lengths
 NMOTIFS=5
 PLOT_OPT=-r_plot
+MOTIF_DB=${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2015_03.tf
 PM_CMD=peak-motifs -v ${V} \
 		-title ${MOTIF_PREFIX} \
 		-i ${RSAT}/public_html/demo_files/peak-motifs_demo.fa \
@@ -48,12 +49,11 @@ PM_CMD=peak-motifs -v ${V} \
 		-nmotifs ${NMOTIFS} -minol ${MIN_OL} -maxol ${MAX_OL} \
 		${MERGE_LEN_OPT} -2str \
 		-origin center \
-		-source galaxy \
-		-motif_db jaspar_core_vertebrates tf ${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2015_03.tf \
+		-motif_db jaspar_core_vertebrates tf ${MOTIF_DB} \
 		-scan_markov 1 -source galaxy \
 		-task ${TASK} \
 		-prefix peak-motifs \
-		-noov -img_format png ${PLOT_OPT} \
+		-noov -img_format pdf ${PLOT_OPT} \
 		${OPT} ${OPT2} \
 		-outdir ${DIR_PEAKMO}
 peakmo_demo:

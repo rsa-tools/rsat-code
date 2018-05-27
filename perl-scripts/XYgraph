@@ -64,6 +64,8 @@ $small_font_height = 8;
 $large_font_width = 8;
 $large_font_height = 16;
 
+### Null or NA character ##
+$null_char="NA";
 
 #### Condition for  highligth lines ####
 $hline=0;
@@ -79,7 +81,7 @@ if ($force_lines && (!$lines && scalar @lines == 0)) {
 if ((($img_format eq "eps")||($img_format eq "pdf") )&& (!$r_plot)) {
 
   if (($xgstep1) || ($ygstep1) || ($xgstep2) || ($ygstep2)) {
-    &RSAT::message::Warning("grid options -gstep are not yet compatible with eps format => no grid.");
+    &RSAT::message::Warning("grid options -gstep are not yet compatible with pdf/eps formats => no grid.");
     #     &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.");
     #     $img_format = "png";
     #     $outputfile .=".png";
@@ -88,34 +90,34 @@ if ((($img_format eq "eps")||($img_format eq "pdf") )&& (!$r_plot)) {
     &RSAT::message::Warning("-force_lines option is not compatible with the vectorial format");
   }
   if ($bg ne "white") {
-    &RSAT::message::Warning("changing background color is not yet compatible with eps format => ignored.");
+    &RSAT::message::Warning("changing background color is not yet compatible with pdf/eps formats => ignored.");
     # 	&RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => png format is used.");
     # 	 $img_format = "png";
     # 	 $outputfile .=".png";
   }
 
   if (($histogram)||($filled_histogram)) {
-    &RSAT::message::Warning("histogram plot  is not yet compatible with eps format => this option will be ignored.");
+    &RSAT::message::Warning("histogram plot  is not yet compatible with pdf/eps formats => this option will be ignored.");
     # 	 &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => png format is used.");
     # 	  $img_format = "png";
     # 	  $outputfile .=".png";
   }
 
   if ($HTML_map) {
-    &RSAT::message::Warning("-htmap is not compatible with eps format..");
+    &RSAT::message::Warning("-htmap is not compatible with pdf/eps format..");
     # 	 &RSAT::message::TimeWarn("-htmap is not compatible with eps format => png format is used.");
     # 	  $img_format = "png";
   }
 
   if (($hbox_bottom)||($tbox_low_x)) {
-    &RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format.");
+    &RSAT::message::Warning("hbox and tbox are not yet compatible with pdf/eps formats.");
     # 	&RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format => png format is used.");
     # 	 $img_format = "png";
     # 	 $outputfile .=".png";
   }
 
   if ($data_fields != "columns") {
-    &RSAT::message::TimeWarn("-rows is not yet compatible with eps format => png format is used.");
+    &RSAT::message::Warning("-rows is not yet compatible with eps format => png format is used.");
     $img_format = "png";
     $outputfile .=".png";
   }
@@ -725,6 +727,8 @@ sub Rplot {
   }
   close $in_copy;
   close $in;
+  &RSAT::message::Debug("Input file compy for R", $tmp_file ) if ($main::verbose >= 3);
+
   &RSAT::message::FatalError("No input data !!!") if ((!$inputfile) && ($in_lines == 0));
   my $input_data_file = $tmp_file;  ## Use input copy as input for R
   
@@ -735,12 +739,12 @@ sub Rplot {
 
   ## Color library
   my $r_instructions = "library(RColorBrewer)\n";
-  $r_instructions .= "options(bitmapType='cairo')\n";
+  $r_instructions .= "options(bitmapType='cairo', scipen=999)\n";
 
   ## Open input table
   $r_instructions .= "\n## Loading input table\n";
   $r_instructions .= "in.file <- \"$input_data_file\"\n";
-  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.", na.strings = \"NA\")\n";
+  $r_instructions .= "input.table <-  read.table(file=in.file, sep=\"\\t\", comment.char=\";\", header=".$header.",stringsAsFactors=FALSE, na.strings = \"".$null_char."\")\n";
 
   ## Save header as vector in R
   $r_instructions .= "header.vector <- c(\"".join("\",\"",@header_list)."\")\n";
@@ -851,6 +855,7 @@ sub Rplot {
   $r_instructions .= "\n## Reading Y and Y values\n";
   $r_instructions .= "x.values <- input.table[,".$xcol_r."]\n";
   $r_instructions .= "y.values <- as.data.frame(input.table[,  c(".join(",",@y_col_list_r).")])\n";
+  $r_instructions .= "y.values <-  do.call(data.frame,lapply(y.values, function(x) as.numeric(x))) \n";
   
 
   ## Logarithm
@@ -890,7 +895,7 @@ sub Rplot {
   } else {
     $r_instructions .= "xmax <- ".$x_axis_max."\n";
   }
-  $r_instructions .= "xlimits <- c(xmin, xmax)\n";
+  $r_instructions .= "xlimits <- as.numeric(c(xmin, xmax))\n";
   $r_plot_params .= ", xlim=xlimits ";
 
   ## Y axis limits for R plot
@@ -904,7 +909,7 @@ sub Rplot {
   } else {
     $r_instructions .= "ymax <- ".$y_axis_max."\n";
   }
-  $r_instructions .= "ylimits <- c(ymin, ymax)\n";
+  $r_instructions .= "ylimits <- as.numeric(c(ymin, ymax))\n";
   $r_plot_params .= ", ylim=ylimits ";
 
   ## Point or line specifications
@@ -1016,7 +1021,7 @@ sub Rplot {
 
   print $out_R  $r_instructions;
   close ($out_R);
-  my $rscript_command = $Rscript_path." ".$tmp_r_instructions_file;
+  my $rscript_command = $Rscript_path." --vanilla  ".$tmp_r_instructions_file;
   &doit($rscript_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &RSAT::message::Info($rscript_command) if ($main::verbose >= 2);
 }
@@ -2339,7 +2344,9 @@ OPTIONS
 		 will draw a red line at the y positions 0, 10, 20 and
 		 30
 
-	-vline Draw a vertical line on the indicated position.
+	  -null Indicate the NULL or NA character in the table to omit them. Default <NULL>.
+
+          -vline Draw a vertical line on the indicated position.
 		This helps to mark some relevant positions on the graph.
 		The following colors are currently supported:
 			red, blue, green, violet, orange
@@ -2465,9 +2472,9 @@ sub ReadArguments {
   
      ### Delegate XY plots to R rather than Perl GD library
     } elsif ($ARGV[$a] =~ /-r_plot/i) {
-      $Rscript_path = &RSAT::server::GetProgramPath("Rscript",0);
+	$Rscript_path = &RSAT::server::GetProgramPath("Rscript");
       unless ($Rscript_path) {
-	&RSAT::message::Warning("Rscript program is not found in the path. Ignoring option -r_plot.");	
+	&RSAT::message::Warning("XYgraph: Rscript program is not found in the path. Ignoring option -r_plot.");	
       } else {
 	$r_plot= 1;
       }
@@ -2634,7 +2641,9 @@ sub ReadArguments {
 
     } elsif ($ARGV[$a] eq "-export_colors") {
       $colorexportfile = $ARGV[$a+1];
-
+    } elsif ($ARGV[$a] eq "-null") {
+	$null_char = $ARGV[$a+1];
+	
     } elsif ($ARGV[$a] eq "-gp") {
       $gp_supp_commands = $ARGV[$a+1];
 

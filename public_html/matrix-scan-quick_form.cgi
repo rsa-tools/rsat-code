@@ -31,7 +31,7 @@ $default{origin}="end";
 $default{bg_method}="bginput";
 $checked{$default{bg_method}} = "CHECKED";
 $default{markov_order} = "1";
-$default{organism} = "Saccharomyces cerevisiae";
+$default{organism} = "";
 $default{matrix_format} = "tab";
 $default{pseudo_counts} = 1;
 $default{pseudo_distribution} = "pseudo_prior";
@@ -73,11 +73,11 @@ foreach $key (keys %default) {
 ### head
 print "<center>";
 print "Scan a DNA sequence with a profile matrix<br>\n";
-print "This quick version was programmed by <a href='mailto:defrance@bigre.ulb.ac.be'>Matthieu Defrance</a>, Web interface by <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A><br>\n";
+print "This quick version was programmed by <a href='http://www.researchgate.net/profile/Matthieu_Defrancee'>Matthieu Defrance</a>, Web interface by <A HREF='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A><br>\n";
 print "</CENTER>";
 
 print "<div align=center>";
-print "<b>Citation</b>: <a href='mailto:jturatsi\@bigre.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A>, <a href='mailto:defrance@bigre.ulb.ac.be'>Matthieu Defrance</a> and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr (Jacques van Helden)'>Jacques van Helden</a> (2008).<br> Using RSAT to scan genome sequences for transcription factor binding sites and cis-regulatory modules. Nat Protoc, 3, 1578-1588. <a href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed 18802439</a>";
+print "<b>Citation</b>: <a href='http://lmedex.ulb.ac.be/index.php'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A>, <a href='http://www.researchgate.net/profile/Matthieu_Defrance'>Matthieu Defrance</a> and <A HREF='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a> (2008).<br> Using RSAT to scan genome sequences for transcription factor binding sites and cis-regulatory modules. Nat Protoc, 3, 1578-1588. <a href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed 18802439</a>";
 print "</p>";
 
 print "<a href='matrix-scan_form.cgi'><b><font color=red>--> Click here to access the ADVANCED form <-- </font></b></a> <i>(custom background, CRER detection, overrepresentation of sites,...)</i>";
@@ -89,13 +89,14 @@ print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
 
-print $query->start_multipart_form(-action=>"matrix-scan.cgi");
+print $query->start_multipart_form(-action=>"matrix-scan.cgi", -onreset=>"resetHandler()");
 
 ################################################################
 #### sequence
 print "<fieldset>
 <legend><b><a class='iframe' href='help.formats.html'>Sequences </a></b></legend>";
-&MultiSequenceChoice("",1);
+#&MultiSequenceChoice("",1);
+&DisplaySequenceChoice();
 print "</fieldset><p/>";
 
 ################################################################
@@ -230,6 +231,7 @@ binding sites annotated in the <a target=_blank href=\'http://www.oreganno.org\'
 
 function setDemo(demo_matrix, demo_sequence){
     $("#reset").trigger("click");
+    $("#db_choice").val("").change();
     descr_1 = descr + "The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the Pval.</blockquote>";
     
     demo_descr.innerHTML = descr_1;
@@ -238,12 +240,15 @@ function setDemo(demo_matrix, demo_sequence){
     $("#thresh_value").val("1e-4");
     background.value = "upstream-noorf";
     markov_order.value = 1;
-    $("#organism").val("Drosophila_melanogaster").trigger("chosen:updated");
     $("#return_field").val("pval");
     matrix.value = demo_matrix;
     matrix_format.value = "transfac";
-    sequence1.value = demo_sequence;
+    sequence.value = demo_sequence;
     $("#origin").val("end");
+}
+
+function resetHandler(){
+    $("#db_choice").val("").change();
 }
 </script>';
 

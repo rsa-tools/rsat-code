@@ -13,8 +13,13 @@
 <?php 
   require ('functions.php');
     $menu = $_REQUEST['menu'];
-    printMenu($menu);
-    
+	if(strcmp($menu,"RSAT") == 0){
+		include("menu.php");
+	}else{
+		include("menu_graph.php");
+	}
+    #printMenu($menu);
+
   ## log file update
   UpdateLogFile("neat","","");  
   title('compare-classes - results');
@@ -47,7 +52,7 @@
   $classesR = $_REQUEST['classesR'];
   $score_col = $_REQUEST['score_col'];
   $sort = "";
-
+    
   ## self comparaison
   $self_compa = 0;
   $distinct = 0;
@@ -372,8 +377,6 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
-
-
     # Execute the command and catch the errors
     try {
       $cc_echoed = $soap_client->compare_classes($cc_parameters);
@@ -395,14 +398,18 @@
 
     ## Text-to-html
     $cc_server = rtrim ($cc_server);
-    $cc_file = storeFile($cc_server, "html");
+    $cc_file = storeFile($cc_server);
     $tth_parameters = array( 
         "request" => array(
         "inputfile"=>$cc_file,
         "chunk"=>1000,
       )
     );
+       echo ($cc_server);
+       echo ($cc_file);
     $tth_echoed = $soap_client->text_to_html($tth_parameters);
+       echo($tth_parameters);
+       
     $tth_response =  $tth_echoed->response;
     $tth_command = $tth_response->command;
     $tth_server = $tth_response->server;

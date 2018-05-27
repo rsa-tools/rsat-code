@@ -55,11 +55,11 @@ if ($query->param("quick")) {
 
 ################################################################
 ## sequence file
-if ($quick_mode) {
-  ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
-} else {
+#if ($quick_mode) {
+#    ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
+#} else {
   ($sequence_file,$sequence_format) = &GetSequenceFile();
-}
+#}
 
 
 #### matrix-scan parameters
@@ -211,7 +211,16 @@ print <<End_of_form;
     <INPUT type="hidden" NAME="fill_form" VALUE="on">
     <INPUT type="submit" value="feature map">
     </FORM>
-  </TD>
+ 
+    <FORM METHOD="POST" ACTION="feature-map_form2.cgi">
+    <INPUT type="hidden" NAME="queries" VALUE="$genes">
+     <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
+    <INPUT type="hidden" NAME="format" VALUE="feature-map">
+    <INPUT type="hidden" NAME="handle" VALUE="none">
+    <INPUT type="hidden" NAME="fill_form" VALUE="on">
+    <INPUT type="submit" value="feature map2">
+    </FORM>
+  </TD>  
   <TD>
     <FORM METHOD="POST" ACTION="gene-info_form.cgi">
     <INPUT type="hidden" NAME="queries" VALUE="$genes">
@@ -322,7 +331,7 @@ sub ReadMatrixScanParameters {
 
   } elsif ($bg_method eq "bgfile") {
     ## Select pre-computed background file in RSAT genome directory
-    my $organism_name = $query->param("organism");
+    my $organism_name = $query->param("organism_bg");
     my $noov = "ovlp";
     my $background_model = $query->param("background");
     my $oligo_length = $markov_order + 1;
