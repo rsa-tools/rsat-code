@@ -2,7 +2,7 @@
 ## Usage: make -f matrix_enrichment_demo.mk
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=${RSAT}/makefiles/matrix_enrichment_demo.mk
+MAKEFILE=${RSAT}/makefiles/matrix-enrichment_demo.mk
 
 DATE=20160427
 DEMO_FILE_DIR=${RSAT}/public_html/demo_files
