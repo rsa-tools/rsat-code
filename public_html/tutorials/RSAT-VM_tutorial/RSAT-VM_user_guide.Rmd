@@ -68,7 +68,7 @@ Virtualbox RSAT Virtual Machines can be downloaded from the RSAT distribution si
 - In the left-side menu, click on the **Download** link. 
 - Enter your coordinates and click *GO*. You will be redirected towards the download server. 
 - In the download Web site, the link *virtual_machines*.
-- Download the version of your choice (current version: `rsat-vm-2017-04.ova`). 
+- Download the version of your choice (current version: `rsat-vm-2018-05.ova`). 
 
 # Network configuration
 
