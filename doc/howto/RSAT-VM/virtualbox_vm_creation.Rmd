@@ -42,13 +42,18 @@ Before starting the installation process, we recommend to download the following
 
 Virtualbox:  <https://www.virtualbox.org/wiki/Downloads>
 
-Ubuntu Desktop: current RSAT-VM releases are based on Ubuntu 17.04, but the inscallation procedure works on earlier versions (maybe some slight modifications).
+Ubuntu Desktop: current RSAT-VM releases are based on Ubuntu 16.04, but the installation procedure works on earlier versions (maybe some slight modifications), as well as on Ubuntu 16.04. 
 
-- **Ubuntu 17.04 (Zesty Zapus)** [ubuntu-17.04-desktop-amd64.iso](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-desktop-amd64.iso) (1.5Gb).
+### Recommended Ubuntu release
 
-- **Ubuntu 16.04.2 LTS (Xenial Xerus):** [ubuntu-16.04.3-desktop-amd64.iso](http://releases.ubuntu.com/releases/16.04/ubuntu-16.04.3-desktop-amd64.iso) (1.4Gb).
+- **Ubuntu 16.04.4 LTS (Xenial Xerus):** [ubuntu-16.04.4-desktop-amd64.iso](http://releases.ubuntu.com/releases/16.04/ubuntu-16.04.4-desktop-amd64.iso) (1.4Gb).
+
+
+### Alternative Ubuntu release
 
 - **Ubuntu 14.04.5 LTS (Trusty Tahr)** [ubuntu-14.04.5-desktop-amd64.iso](http://releases.ubuntu.com/releases/14.04/ubuntu-14.04.5-desktop-amd64.iso) (1.0Gb).
+
+- **Ubuntu 17.04 (Zesty Zapus)** [ubuntu-17.04-desktop-amd64.iso](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-desktop-amd64.iso) (1.5Gb).
 
 - Lighter alternative (without graphical Ubuntu interface): **Ubuntu Server Version 17.04**: [ubuntu-17.04-server-amd64.iso](http://releases.ubuntu.com/releases/17.04/ubuntu-17.04-server-amd64.iso) (685Mb).
 
@@ -66,7 +71,7 @@ Ubuntu Desktop: current RSAT-VM releases are based on Ubuntu 17.04, but the insc
 
 - Name and operating system
 
-    - Name: RSAT-VM-2017-10
+    - Name: RSAT-VM-2018-05
     - Type: Linux
     - Version: Ubuntu (64 bits)
 
@@ -87,8 +92,8 @@ Ubuntu Desktop: current RSAT-VM releases are based on Ubuntu 17.04, but the insc
 
 - File location and size
 
-    - name of virtual hard drive file:    RSAT-VM-2017-10_HDD
-    - max size of virtual hard drive:	    18 GB
+    - name of virtual hard drive file:    RSAT-VM-2018-05_HDD
+    - max size of virtual hard drive:	    18GB
 
         **Note:** the size has to be larger than your real needs, because Ubuntu will automatically create some big  partitions (/dev and /run/shm). Since we allow dynamical memory allocation, it is fine to set the max size to 18Gb, which will be grossly assigned as follows:
 
@@ -248,7 +253,7 @@ In the dialog box **Write the changes to disk?** click **Continue**.
 | Field | Value |
 |--------------------------------------|-------------------------------------------------------|
 | Your name |	RSAT admin |
-| Your computer's name | rsat-vb-2017-10 |
+| Your computer's name | rsat-vb-2018-05 |
 | Pick a username | rsat |
 | Password | tochng^[This password is obviously not safe, but it will be changed at the end of the installation] |
 | Log in automatically | I activate it because this will greatly facilitate the use of the Destkop version |
@@ -529,10 +534,7 @@ sudo nano /etc/sudoers
 ## Install Ubuntu packages and RSAT distribution
 
 
-The instructions to install Ubuntu packages are in a separate file
-
-[$RSAT/doc/howto/install_rsat_ubuntu16.bash](install_rsat_ubuntu16.bash)
-
+The instructions to install Ubuntu packages are found in the file `INSTALL.md` at the root of the RSAT folder. 
 
 ****************************************************************
 ## PROBLEMS TO BE FIXED
@@ -569,19 +571,21 @@ sudo dpkg-reconfigure console-data
 ****************************************************************
 ## For the Virtualbox VM: mount the virtual disk rsat_data
 
-
+***TO BE WRITTEN***
 
 ****************************************************************
 # Export appliance
 
 
 Once the Virtual Machine is working fine, it can be exported to an
-appliance.
+appliance. 
+
+- Shut down the Virtual Machine if it has not been done yet. 
 
 - In VirtualBox, open "File -> Export Appliance ...", and select the VM.
 
-    - Save as: rsat-vm-2017-10.ova
-    - Files of Type: Open Virtualization Format Archive (.ova)
+    - Save as: *rsat-vm-2018-05.ova*
+    - Files of Type: *Open Virtualization Format 1*
     - Storage Settings
     - Format: OVF 1.0
 	  - Check this option:   v Write Manifest File
@@ -592,13 +596,13 @@ appliance.
 
 | Parameter    |    Value                                        |
 |:-------------|:------------------------------------------------|
-|  Name  		  | rsat-vm-2017-10 |
+|  Name  		  | rsat-vm-2018-05 |
 |	Product		  | Regulatory Sequences Analysis Tools |
 |	Product-URL	| http://rsat.eu/ |
 |	Vendor		  | Jacques van Helden |
 |	Vendor URL	| http://jacques.van-helden.perso.luminy.univ-amu.fr/ |
-|	Version		  | 2017-10 |
-|	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), installed on an Ubuntu 17.04 Virtual Machine. |
+|	Version		  | 2018-05 |
+|	Description	| Regulatory Sequence Analysis Tools (RSAT, http://rsat.eu/), version 2018-05, installed on an Ubuntu 16.04 Virtual Machine. |
 |	License	    |	Free of use for academic users, non-commercial and non-military usage. |
 | | |
 
@@ -611,7 +615,7 @@ Prepare the VM + accompanying material on a USB key, to ensure distribution in t
 
 ```
 SOURCE_DIR=/no_backup/VirtualBox_VMs/appliances
-VERSION=2017-10
+VERSION=2018-05
 
 ## Specification of the target location
 KEY_NB=02
@@ -629,7 +633,7 @@ This can be useful for two purposes.
 ```
 SPLIT_SIZE=3999m
 mkdir -p ${TARGET_DIR}/appliances
-time split -b ${SPLIT_SIZE} ${SOURCE_DIR}/rsat-vm-2017-10_${VERSION}.ova ${TARGET_DIR}/appliances/rsat-vm-2017-10_${VERSION}.ova.split${SPLIT_SIZE}_
+time split -b ${SPLIT_SIZE} ${SOURCE_DIR}/rsat-vm-2018-05_${VERSION}.ova ${TARGET_DIR}/appliances/rsat-vm-2018-05_${VERSION}.ova.split${SPLIT_SIZE}_
 ```
 
 ****************************************************************
