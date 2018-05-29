@@ -39,13 +39,13 @@ RSAT virtualboxes can be downloaded from the RSAT distribution site.
 - In the left-side menu, click on the **Download** link. 
 - Enter your coordinates and click *GO*. You will be redirected towards the download server. 
 - In the download Web site, the link *virtual_machines*.
-- Download the version of your choice (current version: `rsat-vm-2017-04.ova`). 
+- Download the version of your choice (current version: `rsat-vm-2018-05.ova`). 
 
 
 ## Importing an appliance into VirtualBox
 
 - In the VirtualBox menu, select the command **File > Import Appliance ...**.
-- In the import dialog box, click on the folder icon, and locate the appliance file (`rsat-vm-2017-04.ova`) that you downloaded from the RSAT Web site, and click on **Continue**. 
+- In the import dialog box, click on the folder icon, and locate the appliance file (`rsat-vm-2018-05.ova`) that you downloaded from the RSAT Web site, and click on **Continue**. 
 - In the **Appliance settings** dialog box ([snapshot](images/import_appliance_settings.png)), check the option ***Reinitialize MAC address of all network cards***. 
 - Click the **Import** button. 
 
@@ -111,7 +111,7 @@ VirtualBox supports various ways to connect the guest (virtual machine) to the n
 
 This solution offers a good tradeoff between security and confort: your virtual machine (the guest) will be accessible only from your computer (the host).
 
-In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vm-2017-04), open the *Settings ...* dialog box. In the tab *Network*, select *Adapter 1*, check *Enable Network Adapter*, select *Attached to: Host-only Adapter* ([snapshot](images/vm_settings_network_host-only.png)).
+In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vm-2018-05), open the *Settings ...* dialog box. In the tab *Network*, select *Adapter 1*, check *Enable Network Adapter*, select *Attached to: Host-only Adapter* ([snapshot](images/vm_settings_network_host-only.png)).
 
 In the pop-up menu besides the option *Name*, select *vboxnet0*.
 
@@ -131,7 +131,7 @@ Alternatively , for the sake of flexibility, you might consider to use a bridged
 
 **Attention!** The bridged network makes your virtual machine visible for all the other computers of the local network the host machine (your PC). Check with your system administrator that this fits the local security requirements.
 
-- In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vm-2017-04), open the *Settings ...* dialog box.
+- In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vm-2018-05), open the *Settings ...* dialog box.
 
 - In the tab *Network*, select *Adapter 1*, check *Enable Network Adapter*, select *Attached to: Bridge adapter*. 
 
@@ -158,7 +158,7 @@ If you are connected via Wi-Fi (wireless), you may need to set up advanced optio
 
 ## Starting the RSAT virtual machine
 
-In the left panel of **VirtualBox**, select the virual machine (rsat-vm-2017-04), and click on the *Start* icon.
+In the left panel of **VirtualBox**, select the virual machine (rsat-vm-2018-05), and click on the *Start* icon.
 
 This will open a new window  ([snapshot](images/rsat-vm_login_window.png)).
 

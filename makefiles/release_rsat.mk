@@ -196,15 +196,27 @@ publish:
 
 
 ## Publish the appliance for RSAT VirtualBox Virtual Machine (VM)
-APPLIANCE=rsat-vb-2017-04-22.ova
+APPLIANCE=rsat-vb-2018-05.ova
 LOCAL_APPLIANCE_DIR=/no_backup/VirtualBox_VMs/RSAT-VM_00/appliances/
 LOCAL_APPLIANCE=${LOCAL_APPLIANCE_DIR}/${APPLIANCE}
 RSATVM_REPO=rsat@pedagogix-tagc.univ-mrs.fr:/data/rsat_release/virtual_machines/
 RSATVM_TUTO=${RSAT}/doc/howto/RSAT-VM/RSAT-VM_tuto.html
+publish_vm_param:
+	@echo
+	@echo "Parameters for RSAT-VM publication"
+	@echo "	APPLIANCE		${APPLIANCE}"
+	@echo "	LOCAL_APPLIANCE_DIR	${LOCAL_APPLIANCE_DIR}"
+	@echo "	LOCAL_APPLIANCE		${LOCAL_APPLIANCE}"
+	@echo "	Local appliance size (Mb)	`du -sm ${LOCAL_APPLIANCE}`"
+	@echo "	RSATVM_REPO		${RSATVM_REPO}"
+	@echo "	RSATVM_TUTO		${RSATVM_TUTO}"
+	@echo "			${}"
+
 publish_vm:
 	@echo
 	@echo "Synchronizing RSAT-VM	${APPLIANCE}"
 	@echo "	LOCAL_APPLIANCE	${LOCAL_APPLIANCE}"
+	@chmod 644 ${LOCAL_APPLIANCE}
 	@du -sm ${LOCAL_APPLIANCE}
 	@chmod 644 ${LOCAL_APPLIANCE}
 	@rsync -ruptvl ${LOCAL_APPLIANCE}  ${RSATVM_REPO}
