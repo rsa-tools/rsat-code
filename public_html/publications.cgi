@@ -88,9 +88,9 @@ print "&nbsp;&nbsp;Type: ";
 print $query->popup_menu(-name=>'type', -id=>'type', -values=>['All','RSAT suite', 'Individual tools','Protocols','Others'], -default=>'All', onchange=>'show()');
 
 print "<div id='result' style='border:solid 1px #F6E6AC; padding:10px; margin-top:10px'>";
-print "<h3>2017</h3>";
+print "<h3>$default{year}</h3>";
 print "<ol>";
-foreach $_ (@{$years{'2017'}}){
+foreach $_ (@{$years{$default{year}}}){
         print "<p><li>";
         print ${$_}[0];
         print "</li></p>";
