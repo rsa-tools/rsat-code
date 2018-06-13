@@ -34,6 +34,8 @@ print '<center>
 print '<br/><span style="color: #cc6600;"><i class="fa fa-pencil fa-lg"></i> <b>Citing RSAT complete suite of tools:</b></span>
 <div align="left" style="border:1px solid #F6E6CA; padding:10px">
 <ul>
+<li>Nguyen, NTT, Contreras-Moreira, B, Castro-Mondragon, JA, Santana-Garcia, W, Ossio, R, Robles-Espinoza, CD, Bahin, M, Collombet, S, Vincens, P, Thieffry, D, van Helden, J, Medina-Rivera, A, Thomas-Chollier, M. (2018) <b>RSAT 2018: regulatory sequence analysis tools 20th anniversary</b>. Nucleic Acids Res., gky317, doi:10.1093/nar/gky317. <a href="https://doi.org/10.1093/nar/gky317">[Full text]</a>
+</li>
 <li>Medina-Rivera A, Defrance M, Sand O, Herrmann C, Castro-Mondragon J, Delerce J, Jaeger S, Blanchet C, Vincens P, Caron C, Staines DM, Contreras-Moreira B, Artufel M, Charbonnier-Khamvongsa L, Hernandez C, Thieffry D, Thomas-Chollier M, van Helden J (2015)
 <b>RSAT 2015: Regulatory Sequence Analysis Tools </b>. Nucleic Acids Res. 2015 (Web Server issue) in press.
 <a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full">[Full text]</a>
