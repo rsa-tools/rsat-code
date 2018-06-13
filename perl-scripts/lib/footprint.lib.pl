@@ -1772,7 +1772,9 @@ sub OrthoScan {
     my $cmd = $SCRIPTS."/matrix-scan";
     $cmd .= $ms_parameters;
     $cmd .= " -quick ";
-    $cmd .= " -return limits,sites,rank";
+    $cmd .= " -return limits,sites";
+    # ahcorcha
+    # $cmd .= " -return limits,sites,rank";
     $cmd .= " -i ".$outfile{seq};
     $cmd .= " -o ".$outfile{sites};
     $cmd .= " ".$scan_opt; #Default -uth pval 1e-3
