@@ -13,7 +13,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $query = new CGI;
 
-$default{year} = '2017';
+$default{year} = '2018';
 $default{type} = 'all';
 
 foreach $key (keys %default) {
