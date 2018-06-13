@@ -1773,8 +1773,8 @@ sub OrthoScan {
     $cmd .= $ms_parameters;
     $cmd .= " -quick ";
     # ahcorcha
-    #$cmd .= " -return limits,sites";
-    $cmd .= " -return limits,sites,rank";
+    $cmd .= " -return limits,sites";
+    # $cmd .= " -return limits,sites,rank";
     $cmd .= " -i ".$outfile{seq};
     $cmd .= " -o ".$outfile{sites};
     $cmd .= " ".$scan_opt; #Default -uth pval 1e-3
