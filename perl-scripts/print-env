@@ -23,6 +23,14 @@ foreach $key (sort keys %SIG) {
     print "\$SIG\{$key\}\t$SIG{$key}\n";
 }
 
+################################################################
+## R path
+print "\nR\n";
+print "=\n";
+
+print "R path\t", `which R`;
+
+
 print "\n\n";
 print "Perl variables\n";
 print "==============\n";
@@ -39,7 +47,8 @@ $perlvar{"ARGV"} = "ARGV";
 $perlvar{""} = "";
 $perlvar{""} = "";
 $perlvar{""} = "";
-print "truc ",$0,"\n";
+
+print '$0',"\t", $0,"\n";
 
 foreach $varname (sort keys %perlvar) {
     print "$perlvar{$varname}\t\$$varname\t${$varname}\n";
@@ -84,7 +93,6 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib.pl";
-
 
 
 
