@@ -27,7 +27,9 @@ required.packages = c("devtools",
                       "egg",
                       "flux",
                       "zoo",
-                      "RColorBrewer")
+                      "RColorBrewer", # below those required after major R updates
+                      "gtools"
+)
 
 #                       "Rcpp",
 #                       "RcppEigen",
