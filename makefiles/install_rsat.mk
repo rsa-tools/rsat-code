@@ -74,7 +74,8 @@ UNIX_PACKAGES_COMMON= \
 	zip \
 	unzip 
 
-
+# june2018 BCM: these I had to install while installing some R packages
+# libcurl-devel mariadb-devel cairo-devel postgresql-devel libXt-devel
 UNIX_PACKAGES_CENTOS= \
 	httpd \
 	cpan \
