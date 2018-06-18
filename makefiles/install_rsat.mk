@@ -391,6 +391,9 @@ install_r_packages_cmd:
 		${${SUDO}} R --slave -e "\"if (require('$${rpack}')) {message('$${rpack} already installed')} else {install.packages('$${rpack}', repos='http://cran.rstudio.com/')}\""; \
 	done
 
+update_r_packages:
+	Rscript ${RSAT}/R-scripts/update_packages_for_rsat.R
+
 ##  --slave --no-save --no-restore --no-environ
 
 # R_MODULES=RJSONIO dendextend Rcpp Rclusterpp gplots devtools
