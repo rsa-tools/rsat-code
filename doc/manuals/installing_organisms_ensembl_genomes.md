@@ -48,19 +48,18 @@ make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=X organisms
 ```
 
 Once this is done then you can install all genomes with one command.
-If the RSAT instance was already configured usually the GROUP can be omitted:
 
 ```{r, engine='bash', eval=FALSE}
 cd $RSAT
 
 # download FASTA and GTF files
-nohup make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=X download_all_species
+nohup make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=X download_all_species
 
 # parse input files, extract genomic features and compute oligo frequencies
-nohup make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=X install_all_species
+nohup make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=X install_all_species
 
 # check upstream sequences can be retrieved
-nohup make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=X check_all_species
+nohup make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=X check_all_species
 
 # compute descriptive genome stats and produce HTML report
 # such as http://rsat.eead.csic.es/plants/data/stats/
@@ -73,17 +72,17 @@ In case you want to install a single genome you can do that by:
 
 ```{r, engine='bash', eval=FALSE}
 cd $RSAT
-make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=X SPECIES=oryza_longistaminata download_one_species
-make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=X SPECIES=oryza_longistaminata install_one_species
+make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=X SPECIES=oryza_longistaminata download_one_species
+make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=X SPECIES=oryza_longistaminata install_one_species
 ```
 
 You can even install selected genomes from older releases (Y in the example):
 
 ```{r, engine='bash', eval=FALSE}
 cd $RSAT
-make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=Y organisms
-make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=Y SPECIES=oryza_longistaminata download_one_species
-make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=Y SPECIES=oryza_longistaminata install_one_species
+make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=Y organisms
+make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=Y SPECIES=oryza_sativa download_one_species
+make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=Y SPECIES=oryza_sativa install_one_species
 ```
 
 # Installing from other sources
