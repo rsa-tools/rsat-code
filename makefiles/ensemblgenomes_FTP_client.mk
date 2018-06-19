@@ -225,9 +225,10 @@ download_gtf:
 ## Download VCF files from ensemblgenomes
 VCF_FTP_URL=${DATABASE}/vcf/${COLLECTION}/${SPECIES}/
 VCF_SERVER_GZ=${VCF_FTP_URL}/${SPECIES}.vcf.gz
-VCF_SERVER_TBI=${VCF_FTP_URL}/${SPECIES}.vcf.tbi
+VCF_SERVER_TBI=${VCF_FTP_URL}/${SPECIES}.vcf.gz.tbi
+VCF_README=${VCF_FTP_URL}/README
 VCF_LOCAL_GZ=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.gz
-VCF_LOCAL_TBI=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.tbi
+VCF_LOCAL_TBI=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.gz.tbi
 download_vcf:
 	@echo
 	@mkdir -p ${VARIATIONS_DIR}
@@ -238,6 +239,7 @@ download_vcf:
 	echo "  VCF_LOCAL_GZ  ${VCF_LOCAL_GZ}"; \
 	wget -cnv ${VCF_SERVER_TBI} -O ${VCF_LOCAL_TBI}; \
     echo "  VCF_LOCAL_TBI  ${VCF_LOCAL_TBI}"; \
+	wget -cnv ${VCF_README};
 
 
 ################################################################
