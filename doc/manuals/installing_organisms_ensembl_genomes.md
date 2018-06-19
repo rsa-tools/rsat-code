@@ -76,6 +76,14 @@ make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=X SPECIES=or
 make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=X SPECIES=oryza_longistaminata install_one_species
 ```
 
+If variation data is available for your species of interest at Ensembl Genomes you can download it with:
+
+```{r, engine='bash', eval=FALSE}
+cd $RSAT
+make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=Plants RELEASE=X SPECIES=oryza_sativa variations_one_species
+```
+
+
 You can even install selected genomes from older releases (Y in the example):
 
 ```{r, engine='bash', eval=FALSE}
