@@ -156,7 +156,7 @@ download_one_species: ${DOWNLOAD_TASKS}
 
 install_one_species: ${INSTALL_TASKS}
 
-variants_one_species: ${VARIANT_TASKS}
+variations_one_species: ${VARIANT_TASKS}
 
 download_all_species: organisms
 	@echo
@@ -223,7 +223,7 @@ download_gtf:
 
 ################################################################
 ## Download VCF files from ensemblgenomes
-VCF_FTP_URL=${DATABASE}/gtf/${COLLECTION}/${SPECIES}/
+VCF_FTP_URL=${DATABASE}/vcf/${COLLECTION}/${SPECIES}/
 VCF_SERVER_GZ=${VCF_FTP_URL}/${SPECIES}.vcf.gz
 VCF_SERVER_TBI=${VCF_FTP_URL}/${SPECIES}.vcf.tbi
 VCF_LOCAL_GZ=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.gz
