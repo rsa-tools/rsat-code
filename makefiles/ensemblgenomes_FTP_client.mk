@@ -82,7 +82,7 @@ SPECIES_RSAT_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}.${RELEASE}
 # SPECIES_DIR=${ORGANISM_DIR}/${SPECIES}
 SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID}
 GENOME_DIR=${SPECIES_DIR}/genome
-VARIATIONS_DIR==${SPECIES_DIR}/variations
+VARIATIONS_DIR=${SPECIES_DIR}/variations
 
 ###############################################################
 ## Get all supported organisms in an ensemblgenome release and store them 
