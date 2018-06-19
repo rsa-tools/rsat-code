@@ -60,6 +60,10 @@ RELEASE=${ENSEMBLGENOMES_RELEASE}
 # should be set in RSAT_config.props
 SERVER_URL=ftp://ftp.ensemblgenomes.org/pub/${GROUP_LC}
 DATABASE=${SERVER_URL}/release-${RELEASE}
+# as of june2018 this works, but default seems to be:
+#SERVER_URL=ftp://ftp.ensemblgenomes.org/pub/release-${RELEASE}
+#DATABASE=${SERVER_URL}/${GROUP_LC}
+
 
 #name preffix hard-coded, might change in future
 SERVERLIST=${DATABASE}/species_Ensembl${GROUP}.txt
@@ -143,12 +147,15 @@ DOWNLOAD_TASKS=download_gtf download_fasta gunzip_downloads
 #INSTALL_TASKS=install_from_gtf index_fasta_downloads install_go_annotations
 INSTALL_TASKS=install_from_gtf index_fasta_downloads
 COMPARA_TASKS=organisms download_compara parse_compara install_compara
+VARIANT_TASKS=download_vcf
 # not used
 #ALL_TASKS=${ORG_TASKS} ${DOWNLOAD_TASKS} ${INSTALL_TASKS} ${COMPARA_TASKS}
 
 download_one_species: ${DOWNLOAD_TASKS}
 
 install_one_species: ${INSTALL_TASKS}
+
+variants_one_species: ${VARIANT_TASKS}
 
 download_all_species: organisms
 	@echo
@@ -212,6 +219,27 @@ download_gtf:
 		echo; \
 		ls -1 ${GENOME_DIR}/*.gtf.gz; \
 	fi
+
+################################################################
+## Download VCF files from ensemblgenomes
+# example URL: 
+# ftp://ftp.ensemblgenomes.org/pub/release-39/plants/vcf/brachypodium_distachyon/brachypodium_distachyon.vcf.gz
+VCF_FTP_URL=${DATABASE}/gtf/${COLLECTION}/${SPECIES}/
+VCF_SERVER_GZ=${VCF_FTP_URL}/${SPECIES}.vcf.gz
+VCF_SERVER_TBI=${VCF_FTP_URL}/${SPECIES}.vcf.tbi
+VCF_LOCAL_GZ=${GENOME_DIR}/${SPECIES_RSAT_ID}.vcf.gz
+VCF_LOCAL_TBI=${GENOME_DIR}/${SPECIES_RSAT_ID}.vcf.tbi
+download_vcf:
+	@echo
+	@mkdir -p ${GENOME_DIR}
+	@echo " GENOME_DIR  ${GENOME_DIR}"	
+	@echo
+	@echo "Downloading VCF file for species ${SPECIES}"
+	wget -cnv ${VCF_SERVER_GZ} -O ${VCF_LOCAL_GZ}; \
+	echo "  VCF_LOCAL_GZ  ${VCF_LOCAL_GZ}"; \
+	wget -cnv ${VCF_SERVER_TBI} -O ${VCF_LOCAL_TBI}; \
+    echo "  VCF_LOCAL_TBI  ${VCF_LOCAL_TBI}"; \
+
 
 ################################################################
 ## Download FASTA files with genomic sequences (raw and masked)
