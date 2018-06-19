@@ -1,9 +1,20 @@
 CC = gcc
 CFLAGS = -g -Wall -std=gnu11
 
-retrieve-variation-seq :
+retrieve-variation-seq:
+	@echo ""
+	@echo "Compiling retrieve-variation-seq"
 	$(CC) $(CFLAGS) -o retrieve-variation-seq main.c
-	cp retrieve-variation-seq ../../bin/retrieve-variation-seq
+	@echo "	retrieve-variation-seq"
+
+install:
+	@echo ""
+	@echo "Installing retrieve-variation-seq"
+	rsync -ruptl retrieve-variation-seq ../../bin/retrieve-variation-seq
 
 clean :
-	rm retrieve-variation-seq
+	rm -f retrieve-variation-seq
+
+all:  clean retrieve-variation-seq install
+
+
