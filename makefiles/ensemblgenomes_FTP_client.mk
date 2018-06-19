@@ -82,6 +82,7 @@ SPECIES_RSAT_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}.${RELEASE}
 # SPECIES_DIR=${ORGANISM_DIR}/${SPECIES}
 SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID}
 GENOME_DIR=${SPECIES_DIR}/genome
+VARIATIONS_DIR==${SPECIES_DIR}/variations
 
 ###############################################################
 ## Get all supported organisms in an ensemblgenome release and store them 
@@ -222,17 +223,15 @@ download_gtf:
 
 ################################################################
 ## Download VCF files from ensemblgenomes
-# example URL: 
-# ftp://ftp.ensemblgenomes.org/pub/release-39/plants/vcf/brachypodium_distachyon/brachypodium_distachyon.vcf.gz
 VCF_FTP_URL=${DATABASE}/gtf/${COLLECTION}/${SPECIES}/
 VCF_SERVER_GZ=${VCF_FTP_URL}/${SPECIES}.vcf.gz
 VCF_SERVER_TBI=${VCF_FTP_URL}/${SPECIES}.vcf.tbi
-VCF_LOCAL_GZ=${GENOME_DIR}/${SPECIES_RSAT_ID}.vcf.gz
-VCF_LOCAL_TBI=${GENOME_DIR}/${SPECIES_RSAT_ID}.vcf.tbi
+VCF_LOCAL_GZ=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.gz
+VCF_LOCAL_TBI=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.tbi
 download_vcf:
 	@echo
-	@mkdir -p ${GENOME_DIR}
-	@echo " GENOME_DIR  ${GENOME_DIR}"	
+	@mkdir -p ${VARIATIONS_DIR}
+	@echo " VARIATIONS_DIR  ${VARIATIONS_DIR}"	
 	@echo
 	@echo "Downloading VCF file for species ${SPECIES}"
 	wget -cnv ${VCF_SERVER_GZ} -O ${VCF_LOCAL_GZ}; \
