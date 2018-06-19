@@ -240,7 +240,7 @@ download_vcf:
 	echo "  VCF_LOCAL_GZ  ${VCF_LOCAL_GZ}"; \
 	wget -cnv ${VCF_SERVER_TBI} -O ${VCF_LOCAL_TBI}; \
     echo "  VCF_LOCAL_TBI  ${VCF_LOCAL_TBI}"; \
-	wget -cnv ${VCF_README} -O ${VCF_LOCAL_README};
+	wget -cnv ${VCF_SERVER_README} -O ${VCF_LOCAL_README};
 
 
 ################################################################
