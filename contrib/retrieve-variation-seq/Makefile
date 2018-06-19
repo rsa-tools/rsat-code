@@ -8,6 +8,7 @@ retrieve-variation-seq:
 	@echo "	retrieve-variation-seq"
 
 install:
+	@echo ""
 	@echo "Installing retrieve-variation-seq"
 	rsync -ruptl retrieve-variation-seq ../../bin/retrieve-variation-seq
 

@@ -1,9 +1,18 @@
 CC = gcc
 CFLAGS = -g -std=gnu11
 
-variation-scan :
+variation-scan:
+	@echo ""
+	@echo "Compiling retrieve-variation-seq"
 	$(CC) $(CFLAGS) -o variation-scan main.c
-	cp variation-scan ../../bin/variation-scan
+
+install:
+	@echo ""
+	@echo "Installing retrieve-variation-seq"
+	rsync -ruptl variation-scan ../../bin/variation-scan
 
 clean :
-	rm variation-scan
+	rm -f variation-scan
+
+
+all:  clean variation-scan install

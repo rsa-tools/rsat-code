@@ -218,6 +218,15 @@ compile_one_program:
 	@echo ""
 
 
+
+## Compile and install retrieve-variation-seq
+compile_retrieve_variation_seq:
+	@${MAKE} compile_one_program PROGRAM=retrieve-variation-seq
+
+## Compile and install variation-scan
+compile_variation_scan:
+	@${MAKE} compile_one_program PROGRAM=variation-scan
+
 ## Compile and install info-gibbs (developed by Matthieu Defrance)
 compile_info_gibbs:
 	@${MAKE} compile_one_program PROGRAM=info-gibbs
