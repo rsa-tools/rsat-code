@@ -222,7 +222,7 @@ def check_change_tree_names(tree):
 
     if VERBOSITY >= 7:
         print("Tree structure")
-        print(tree.get_ascii(attributes=['name']))                
+        print(tree.get_ascii(attributes=['name']))
     if flag1 and VERBOSITY >= 5:
         print("; Warning\tTree names were changed from seq|Organism_name|seq" + \
               " to Organism_name")
@@ -272,11 +272,13 @@ def synthesis(path_report):
     Parameters:
     paths to the report files.
     '''
-    print("\n;Function synthesis" if VERBOSITY >= 10 else "")
+    if VERBOSITY >= 10:
+        print("\n;Function synthesis")
 
     def concat_results(list_of_reports):
-        print("\n; Function concat_results" \
-              if VERBOSITY >= 10 else "")
+
+        if VERBOSITY >= 10:
+            print("\n; Function concat_results")
 
         df_list = []
         for i in list_of_reports:
@@ -291,24 +293,26 @@ def synthesis(path_report):
     # Get data from each matrix. list of folders in the path.
     all_matrices = next(os.walk(path_report))[1]
 
-
-    print("; Looking in dir for: " + str(all_matrices) \
-          if VERBOSITY >= 10 else "")
+    if VERBOSITY >= 10:
+        print("; Looking in dir for: " + str(all_matrices))
 
     all_reports = []
 
     for matrix in all_matrices:
 
         matrix_path = path_report + "/" + matrix + "/"
-        print("matrix path" + matrix_path if VERBOSITY >= 10 else "")
+
+        if VERBOSITY >= 10:
+            print("matrix path" + matrix_path)
+
         matrix_dirs = os.walk(matrix_path)
         next(matrix_dirs)
         matrix_reports = []
 
         for matrix_dir in matrix_dirs:
+            if VERBOSITY >= 10:
+                print("Looking in: " + str(matrix_dir[2]))
 
-            print("Looking in: " + str(matrix_dir[2])\
-                  if VERBOSITY >= 10 else "")
             for file_ in matrix_dir[2]:
                 if "bbls_report.tab" in file_:
                     matrix_reports.append(matrix_dir[0] + "/"\
@@ -321,9 +325,10 @@ def synthesis(path_report):
 
             results_df = concat_results(matrix_reports)
 
-            print("; Writing synthesis report for all sites in: " + \
-                  matrix_path + "report_per_matrix.tab" \
-                  if VERBOSITY >= 10 else "")
+            if VERBOSITY >= 10:
+
+                print("; Writing synthesis report for all sites in: " + \
+                  matrix_path + "report_per_matrix.tab")
 
             results_df = results_df.reindex(columns=COLUMN_ORDER)
 
