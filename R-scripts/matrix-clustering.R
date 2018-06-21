@@ -734,6 +734,7 @@ i <- sapply(1:length(clusters), function(nb){
            if(radial.only == 1){
              thresholds <- list(Ncor = -1, cor = -1, w = 0)
            }
+           message("; Aligning each cluster individually")
            alignment.cluster <<- align.motifs(thresholds = thresholds,
                                               method = hclust.method,
                                               metric = metric,
