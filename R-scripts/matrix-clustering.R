@@ -155,6 +155,7 @@ if(number.of.motifs > 1){
   ###########################################################
   ## Initially align all the motifs and search the cluster
   ## After each cluster will be aligned separately
+  message("; Aligning all the motifs")
   alignment <- align.motifs(thresholds = thresholds,
                             method = hclust.method,
                             metric = metric,
@@ -171,6 +172,7 @@ if(number.of.motifs > 1){
   #############################################
   ## Define the clusters: Bottom-up approach
   ## and get their motif IDs
+  message("; Define the thresholds in a bottom-up way")
   clusters <<- find.clusters(alignment.attributes, tree)
   original.number.clusters <- length(clusters)
   
