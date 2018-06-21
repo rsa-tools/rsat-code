@@ -10,6 +10,7 @@ align.two.leaves <- function(child1,
                              nodes.attributes = TRUE,
                              motif.at.tree.level = motif.at.tree.level){
 
+
   ## Identify the node numbers and merge level
   n1 <- min(-child1,-child2)
   n2 <- max(-child1,-child2)
@@ -18,6 +19,8 @@ align.two.leaves <- function(child1,
   ## Saves the order of the IDs in the hclust$merge object
   id1.hclust <- get.id(n1)
   id2.hclust <- get.id(n2)
+
+  message("; Aligning: ", id1.hclust, " - ", id2.hclust)
 
   ## According to the hierarchical clustering method selected,
   ## Check if the motifs corresponding to the current level shall be aligned
