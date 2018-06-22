@@ -170,7 +170,9 @@ COLUMN_ORDER = ["org_name", "seq_id", "ft_name", "ft_type", "gene", \
                 "sequence", "strand", "start", "end", "weight", \
                 "Pval", "branch_prob", "num_orthologs", "BLS", "BBLS", \
                 "BBLS_norm"]
-COLUMN_DELETE = ["rank", "rank_pm", "sig", "org_seq", "ln_Pval"]
+COLUMN_DELETE = ["sig", "org_seq", "ln_Pval"]
+#COLUMN_KEEP = ["seq_id", "ft_type", "ft_name", "strand", "start", \
+#               "end", "sequence", "weight", "Pval", "ln_Pval", "sig"]
 
 
 #print(parser.print_usage())
@@ -600,6 +602,14 @@ def main(args):
 
         th_score = []
 
+        try:
+            distrib = open(matrix_distrib_file, 'r')
+            distrib.close()
+
+        except:
+            print("; Unable to open matrix distrib file: \n" + str(matrix_distrib_file))
+            exit(2)
+    
         with open(matrix_distrib_file, 'r') as distrib:
 
             flag = False
@@ -993,7 +1003,7 @@ def main(args):
             if VERBOSITY >= 1:
                 print("; Unknown query gene")
             continue
-
+        
         # tfb_sites is gene especific.
         tfb_sites = tfbs.loc[tfbs["org_seq"].\
                              isin(ortho_seq)]
@@ -1090,7 +1100,7 @@ def main(args):
                             ["sequence"].values[0])
             
             # Report results per analysis (matrix-gene-site).
-            limit_columns = ['weight', 'sequence', 'sig', 'rank', 'rank_pm',\
+            limit_columns = ['weight', 'sequence', 'sig',\
                              'num_orthologs', 'ln_Pval', 'Pval']
             tfbs_per_matrix.loc[tfbs_per_matrix.ft_type == 'limit',\
                                 limit_columns] = '-'
@@ -1107,6 +1117,8 @@ def main(args):
                                    + "_" + TF + ".tab"
 
             tfbs_per_matrix.drop(COLUMN_DELETE, axis=1, inplace=True)
+
+            #tfbs_per_matrix = tfbs_per_matrix[COLUMN_KEEP]
             tfbs_per_matrix = tfbs_per_matrix.reindex(columns=COLUMN_ORDER)
 
             tfbs_per_matrix.to_csv(tfbs_per_matrix_path, sep='\t', index=False)
