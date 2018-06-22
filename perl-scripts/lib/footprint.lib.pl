@@ -1821,10 +1821,6 @@ sub BayesianScore {
 	# Check that the tree file exists Get support for .gz files in python.
 	&RSAT::error::FatalError("File specified as a phylogenetic tree does not exist") unless ( (-e  $main::tree) || (-e  $main::tree.".gz") ) ;
 
-	$outfile{matrix_distrib} = $outfile{matrix_prefix}."_matrix-distrib_occsig.tab";
-	&CalcMAtrixTheorDistrib;
-
-
 	# Not stable. I should fix this to get the number for the image.
 	# Not urgent.
 	# my $org_num_cmd = "";
