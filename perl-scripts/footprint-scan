@@ -393,7 +393,7 @@ package main;
   # ahcorcha
   ## Tree for Bayesian score 
   #local $tree = "";
-  #local $bbls_draw = "";
+  local $main::bbls_draw = "none";
   # /ahcorcha
   
   ## Feature maps
@@ -555,7 +555,7 @@ package main;
   
   &RSAT::error::FatalError("The -tree option is exclusive of the bbls task") if (!$task{bbls} && defined($main::tree)  );
   
-  &RSAT::error::FatalError("Option -bbls_draw only works with bbls") if (!$task{bbls} && defined($main::bbls_draw));
+  #&RSAT::error::FatalError("Option -bbls_draw only works with bbls") if (!$task{bbls} && $main::bbls_draw == "");
 
   #&RSAT::error::FatalError("-use_tree_org requires with -tree option and bbls task (footprint-scan exclusive)") if (!defined($main::use_tree_org) && !defined($main::tree));
   
