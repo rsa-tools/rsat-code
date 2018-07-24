@@ -5,7 +5,9 @@
 ## been installed with apt-get under Ubuntu. For other OS, they should
 ## be added to the pip installation.
 
-source installer/00_config.bash
+# source installer/00_config.bash
+
+source ${RSAT}/RSAT_config.bashrc
 
 echo
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -13,6 +15,10 @@ echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo
 
+sudo pip install numpy
+sudo pip install scipy
+sudo pip install matplotlib
+sudo pip install suds
 sudo pip install soappy
 sudo pip install fisher
 sudo pip install httplib2
@@ -28,6 +34,10 @@ sudo pip install speedtest-cli
 ## Failures: no distributions at all found
 # pip3 install wsdl
 # pip3 install wstools
+sudo pip3 install numpy
+sudo pip3 install scipy
+sudo pip3 install matplotlib
+# sudo pip3 install suds ## Error on Mac OSX
 sudo pip3 install fisher
 sudo pip3 install snakemake
 sudo pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
