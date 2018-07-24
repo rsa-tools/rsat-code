@@ -5,6 +5,9 @@
 ## ${RSAT}/makefiles/util.mk, which is itself loaded by all the RSAT
 ## makefile scripts.
 
+## Main RSAT directory
+RSAT=~/rsat
+
 ## Name of the site (which will appear in the log file)
 RSAT_SITE=your_server_name
 
@@ -127,5 +130,5 @@ CLUSTER_QUEUE=
 ##
 ##  Ensembl: http://www.ensembl.org/
 ##  EnsemblGenomes: http://ensemblgenomes.org/
-ENSEMBL_RELEASE=91
-ENSEMBLGENOMES_RELEASE=38
+ENSEMBL_RELEASE=93
+ENSEMBLGENOMES_RELEASE=40
