@@ -17,6 +17,22 @@ output:
     toc_depth: 2
 ---
 
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=TRUE, 
+  eval=FALSE, 
+  cache=TRUE, 
+  message=FALSE, 
+  warning=FALSE, 
+  comment = "",  
+  fig.align= "center",
+  fig.width = 7, 
+  fig.height = 5,
+  fig.path = "figures/")
+```
+
 # Introduction
 
 This document explains how to install and configure the Regulatory Sequence Analysis Tools (RSAT). 
@@ -45,7 +61,7 @@ where `XX-XX-XX` is the latest release date and put it in your chosen directory.
 
 6. Uncompress the archive. This will create a directory named `rsat` where we will continue the install procedure.
 
-```
+```{bash}{bash}
 export RELEASE=20XX-XX-XX
 ## e.g. export RELEASE=2018-05-26
 
@@ -69,7 +85,7 @@ Replace [your.server.IP] by the actual IP address of your server.
 (e.g.: for Virtualbox Virtual Machines, we set the IP to 192.168.56.101). 
 
 
-```
+```{bash}{bash}
 ## Get your IP address and check if it is 192.168.56.101
 ifconfig | grep inet
 export MY_IP=XXX.XXX.XXX.XXX
@@ -92,7 +108,7 @@ RSAT has been ported on the cloud of the [**Institut Français de Bioinformatiqu
 
 Since the IP address is allocated dynamically during at the start of the instance booting, we use an automatic configuration. 
 
-```
+```{bash}{bash}
 perl perl-scripts/configure_rsat.pl -auto  \
   rsat_site=rsatvm-ifb-2018-05 \
   RSAT=${INSTALL_ROOT}/rsat \
@@ -110,7 +126,7 @@ chmod 755 /root # required for apache user to access the packages
 
 8. We can now refine the configuration by choosing custom parameter to your RSAT instance (for example the email of the local admin, the instance name, ...).
 
-```
+```{bash}
 perl perl-scripts/configure_rsat.pl
 ```
 
@@ -119,7 +135,7 @@ perl perl-scripts/configure_rsat.pl
 
 Before running the installation, it might be worth updating the Linux distribution (`apt-get update`) in order to get the latest versions of the basic packages. 
 
-```
+```{bash}
 ## This requires admin privileges
 sudo bash
 
@@ -157,7 +173,7 @@ whoami ## This should give 'rsat'
 
 The script `makefile/install_tests.mk` runs a series of tests for different components of the *RSAT* suite. Each test result is stored in a separate file in the test directory (`./install_tests` by default). Output file names are printed out after each test. 
 
-```
+```{bash}
 ## Load the RSAT configuration
 source RSAT_config.bashrc
 
@@ -226,7 +242,7 @@ metabolic-tools_YYYYMMDD.tar.gz
 After having uncompressed the archive, you will find the installation
 and user guides in the `doc/manuals` directory
 
-```
+```{bash}
 ls -1 public_html/release/*.pdf
 ```
 
