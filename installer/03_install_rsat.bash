@@ -4,12 +4,17 @@ source installer/00_config.bash
 ################       RSAT installation        ################
 ################################################################
 
-## Run the configuration script, to specify the environment variables.
-cd ${RSAT}
-perl perl-scripts/configure_rsat.pl --auto rsat_site=${RSAT_SERVER_NAME} \
-    ucsc_tools=0 ensembl_tools=0 phylo_tools=0 compara_tools=0 \
-    rsat_server_admin=RSAT_admin
+## NOTE: before running this script, you should already have specified
+## the RSAT configuration with the script configure_rsat.pl. If this
+## has not been done before, you can run it with automatic options as
+## shown below.
+# perl perl-scripts/configure_rsat.pl --auto rsat_site=${RSAT_SERVER_NAME} \
+#    ucsc_tools=0 ensembl_tools=0 phylo_tools=0 compara_tools=0 \
+#    rsat_server_admin=RSAT_admin
 
+
+## Go th the main RSAT directory
+cd ${RSAT}
 
 ## Parameters to change
 ##   rsat_site   rsat-vm-2016-03
