@@ -4,6 +4,7 @@ author: "Jacques van Helden"
 date: 'Last update: 2017/04/21'
 output:
   html_document:
+    code_folding: show
     fig_caption: yes
     highlight: zenburn
     theme: cerulean
@@ -61,7 +62,7 @@ where `XX-XX-XX` is the latest release date and put it in your chosen directory.
 
 6. Uncompress the archive. This will create a directory named `rsat` where we will continue the install procedure.
 
-```{bash}{bash}
+```{bash}
 export RELEASE=20XX-XX-XX
 ## e.g. export RELEASE=2018-05-26
 
@@ -78,28 +79,65 @@ cd ${INSTALL_ROOT}/rsat
 
 ## Configuring your local RSAT instance
 
-7. We will start by auto-configuring RSAT in order to deine suitable basic parameters. 
+We will start by auto-configuring RSAT in order to deine suitable basic parameters. 
 
+### Getting the IP address of your machine
 
 Replace [your.server.IP] by the actual IP address of your server. 
 (e.g.: for Virtualbox Virtual Machines, we set the IP to 192.168.56.101). 
 
-
-```{bash}{bash}
+```{bash}
 ## Get your IP address and check if it is 192.168.56.101
 ifconfig | grep inet
 export MY_IP=XXX.XXX.XXX.XXX
 ## e.g. export MY_IP=192.168.56.101
+```
+
+Note: if you install RSAT on a personal PC (e.g. a laptop) and intend to use it only from this machine, you can configure it with the local network.
+
+```{r}
+## Configure RSAT to be used internally inly
+export MY_IP=127.0.0.1
+```
+
+### Choose a site name for your RSAT instance
+
+You can choose an arbitrary name for your RSAT instance. 
+For this tutorial, we will call it "my_rsat".
+
+```{bash}
+export RSAT_SITE=my_rsat
+```
+
+
+### Automatic configuration of RSAT parameters
+
+```{bash}
+
+## Check that the IP site of your machine has been specified
+echo ${MY_IP}
+
+## Check that you defined a site name for your RSAT instance
+echo ${RSAT_SITE}
 
 ## Semi-auto configuration for VirtualBox VM
 ## (adapt IP address if required)
 perl perl-scripts/configure_rsat.pl -auto  \
-  rsat_site=rsat-vb-2018-05 \
+  rsat_site=${RSAT_SITE} \
   rsat_www=http://${MY_IP}/rsat/ \
   rsat_ws=http://${MY_IP}/rsat/ \
   ucsc_tools=1 \
   ensembl_tools=1
 ```
+
+You can add some additional option, e.g.
+
+```{bash}
+rsat_server_admin=your.mail@your.mail.server
+variation_tools=1
+```
+
+
 
 ### For the IFB cloud
 
@@ -108,7 +146,7 @@ RSAT has been ported on the cloud of the [**Institut Français de Bioinformatiqu
 
 Since the IP address is allocated dynamically during at the start of the instance booting, we use an automatic configuration. 
 
-```{bash}{bash}
+```{bash}
 perl perl-scripts/configure_rsat.pl -auto  \
   rsat_site=rsatvm-ifb-2018-05 \
   RSAT=${INSTALL_ROOT}/rsat \
@@ -124,11 +162,16 @@ perl perl-scripts/configure_rsat.pl -auto  \
 chmod 755 /root # required for apache user to access the packages
 ```
 
-8. We can now refine the configuration by choosing custom parameter to your RSAT instance (for example the email of the local admin, the instance name, ...).
+
+### Advanced RSAT configuration
+
+In order to see all options, you can run the script `configure_rsat.pl` without the option `--auto`
 
 ```{bash}
 perl perl-scripts/configure_rsat.pl
 ```
+
+You can now refine the configuration by choosing custom parameter to your RSAT instance (for example the email of the local admin, the organism group, ...).
 
 
 ## Installing RSAT
