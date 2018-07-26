@@ -35,6 +35,9 @@ sudo grep -i "cran" /etc/apt/sources.list # Check
 #sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 
 ## Not working on the IFB cloud, so I comment it and use the option --force-yes
 
+################################################################
+## NOTE: THIS IS FOR UBUNTU ONLY ###
+
 # sudo ${OS_INSTALLER} install ${INSTALLER_OPT} software-properties-common python-software-properties
 # sudo add-apt-repository ppa:marutter/rdev
 sudo apt-get update

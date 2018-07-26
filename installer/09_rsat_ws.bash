@@ -31,8 +31,9 @@ cd $RSAT
 ## Set a fixed IP address for the web services
 # perl ${RSAT}/perl-scripts/configure_rsat.pl auto RSAT_WS=$RSAT_WWW RSAT_WWWW=$RSAT_WS SUDO=''
 
+## In principle the configuration should have been run before.
 ## Set localhost address for the web services
-perl ${RSAT}/perl-scripts/configure_rsat.pl auto RSAT_WS=http://localhost/rsat RSAT_WWWW=http://localhost/rsat SUDO=''
+# perl ${RSAT}/perl-scripts/configure_rsat.pl auto RSAT_WS=http://localhost/rsat RSAT_WWWW=http://localhost/rsat SUDO=''
 
 ## Set auto IP address for the web services
 # perl ${RSAT}/perl-scripts/configure_rsat.pl auto RSAT_WS=auto RSAT_WWWW=auto SUDO=''
@@ -42,7 +43,7 @@ perl ${RSAT}/perl-scripts/configure_rsat.pl auto RSAT_WS=http://localhost/rsat R
 ################################################################
 ## Install the Web services
 cd ${RSAT}
-service apache2 restart ## Make sure the Apache server is running because it is required to generate the WS stub
+sudo service apache2 restart ## Make sure the Apache server is running because it is required to generate the WS stub
 make -f makefiles/init_rsat.mk ws_param  ## Check parameters to generate the stub for the Web services
 make -f makefiles/init_rsat.mk ws_init  ## Initialize the stub for the Web services
 make -f makefiles/init_rsat.mk ws_stub  ## Generate the stub for the Web services
