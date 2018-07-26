@@ -20,6 +20,18 @@ TEST_DATE=`date +%Y-%m-%d`
 TEST_DIR=${RSAT}/install_tests_${TEST_DATE}
 TEST_CHECK_DIR=${RSAT}/install_tests_correct
 
+
+## BEWARE: the location of perl and cpan may vary bewteen computers.
+## Even worse on Mac OSX there are 2 versions of perl and cpan.
+## These two programs are found in both /usr/bin and /usr/local/bin.
+## Make sure to use the same path for perl and cpan. 
+PERL=`which perl`
+CPAN=`which cpan`
+#PERL='/usr/bin/perl'
+
+#@echo "perl path	${PERL}"
+#@echo "cpan path	${CPAN}"
+
 #################################################################
 # Programs used for downloading and sycnrhonizing
 SSH=-e 'ssh -x'
@@ -246,7 +258,6 @@ perl_modules_cmd:
 
 ## Do not test the modules, simply install them
 CPAN_OPT=-T 
-CPAN=cpan
 CPAN_CMD=${CPAN} ${CPAN_OPT}
 ## Install all Perl modules in one short. Beware: depending on the
 ## configuration, cpan may ask you to answer y/n for each module and
@@ -277,8 +288,6 @@ perl_modules_install_by_force:
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
-#PERL=`which perl`
-PERL='/usr/bin/perl'
 _install_one_perl_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
