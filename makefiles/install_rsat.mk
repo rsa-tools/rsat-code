@@ -193,6 +193,7 @@ PERL_MODULES= \
 	REST::Client \
 	JSON \
 	HTTP::Tiny \
+	LWP::UserAgent \
 	XML::LibXML \
 	XML::LibXML::Simple \
 	XML::Parser::Expat \
