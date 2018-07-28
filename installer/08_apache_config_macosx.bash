@@ -89,7 +89,7 @@ perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddHandler cgi-script .cgi|AddHa
 perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#LoadModule cgi_module libexec/apache2/mod_cgi.so|LoadModule cgi_module libexec/apache2/mod_cgi.so|' ${APACHE_CONF_MAIN}
 apachectl restart
 
-perl -pe 's|\#LoadModule cgi_module libexec/apache2/mod_cgi.so|LoadModule cgi_module libexec/apache2/mod_cgi.so|' ${APACHE_CONF_MAIN} | grep cgi
+echo("TO BE CONTINUED")
 
 
 
