@@ -77,11 +77,11 @@ tar -C ${INSTALL_ROOT}/ -xpvzf rsat_${RELEASE}.tar.gz
 cd ${INSTALL_ROOT}/rsat
 ```
 
-## Configuring your local RSAT instance
+# Configuring your local RSAT instance
 
 We will start by auto-configuring RSAT in order to deine suitable basic parameters. 
 
-### Getting the IP address of your machine
+## Getting the IP address of your machine
 
 Replace [your.server.IP] by the actual IP address of your server. 
 (e.g.: for Virtualbox Virtual Machines, we set the IP to 192.168.56.101). 
@@ -100,7 +100,7 @@ Note: if you install RSAT on a personal PC (e.g. a laptop) and intend to use it 
 export MY_IP=127.0.0.1
 ```
 
-### Choose a site name for your RSAT instance
+## Choose a site name for your RSAT instance
 
 You can choose an arbitrary name for your RSAT instance. 
 For this tutorial, we will call it "my_rsat".
@@ -110,7 +110,7 @@ export RSAT_SITE=my_rsat
 ```
 
 
-### Automatic configuration of RSAT parameters
+## Automatic configuration of RSAT parameters
 
 ```{bash}
 
@@ -139,7 +139,7 @@ variation_tools=1
 
 
 
-### For the IFB cloud
+## For the IFB cloud
 
 RSAT has been ported on the cloud of the [**Institut Français de Bioinformatique**](http://www.france-bioinformatique.fr) (**IFB**). The tools are available as an appliance which enables each user to automatically start an RSAT server, that can be used in a terminal, via a Web interface, or invoked remotely as Web services. 
 
@@ -163,7 +163,7 @@ chmod 755 /root # required for apache user to access the packages
 ```
 
 
-### Advanced RSAT configuration
+## Advanced RSAT configuration
 
 In order to see all options, you can run the script `configure_rsat.pl` without the option `--auto`
 
@@ -174,7 +174,7 @@ perl perl-scripts/configure_rsat.pl
 You can now refine the configuration by choosing custom parameter to your RSAT instance (for example the email of the local admin, the organism group, ...).
 
 
-## Installing RSAT
+# Installing RSAT
 
 Before running the installation, it might be worth updating the Linux distribution (`apt-get update`) in order to get the latest versions of the basic packages. 
 
@@ -203,6 +203,7 @@ bash installer/09_rsat_ws.bash && \
 bash installer/10_clean_unnecessary_files.bash
 
 ## Restore rsat as owner of the $RSAT folder
+## NOTE: the following command should be adapted to the login and group of the user owing the rsat package.
 chown -R rsat.rsat $RSAT
 
 ## Exit sudo session
@@ -212,7 +213,7 @@ exit
 whoami ## This should give 'rsat'
 ```
 
-## Testing the command lines
+# Testing the command lines
 
 The script `makefile/install_tests.mk` runs a series of tests for different components of the *RSAT* suite. Each test result is stored in a separate file in the test directory (`./install_tests` by default). Output file names are printed out after each test. 
 
@@ -229,7 +230,7 @@ ls -ltr install_tests
 
 
 
-## Testing the Web server
+# Testing the Web server
 
 The web site can be tested by selecting any supported tool, clicking on the demo button and checking the result. 
 
