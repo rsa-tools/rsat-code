@@ -173,6 +173,7 @@ foreach $f (0..$#input_files) {
 
     ## Suppress substrings
     for my $sub (@suppress) {
+	&RSAT::message::Info("\tsuppressing ", $sub, "from column headers") if ($main::verbose >= 3);
       $column_name =~ s/$sub//g;
     }
 
