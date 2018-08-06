@@ -251,6 +251,15 @@ PERL_MODULES_PROBLEMS= \
 
 PERLMOD_TO_UPGRADE=Archive::Tar
 
+## Display the parameters for perl module installation
+perl_modules_param:
+	@echo
+	@echo "Parameters for perl module installation"
+	@echo "	PERL		${PERL}"
+	@echo "	CPAN		${CPAN}"
+	@echo "	CPAN_CMD	${CPAN_CMD}"
+	@echo "	PERL_MODULES	${PERL_MODULES}"
+
 perl_modules_list:
 	@echo ${PERL_MODULES} | perl -pe 's|\s+|\n|g'
 
