@@ -273,7 +273,7 @@ perl_modules_install_noprompt:
 
 perl_modules_install_one_by_one:
 	@for module in ${PERL_MODULES} ; do \
-		${MAKE} _install_one_perl_module PERL_MODULE=$${module}; \
+		${MAKE} perl_install_one_module PERL_MODULE=$${module}; \
 	done
 	${MAKE} perl_modules_install_by_force
 
@@ -288,7 +288,7 @@ perl_modules_install_by_force:
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
-_install_one_perl_module:
+perl_install_one_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
@@ -300,6 +300,8 @@ perl_modules_check:
 	@echo "Checking perl modules ${PERL_MODULE_TEST}"
 	@echo "; Checking perl modules ${PERL_MODULE_TEST}" > ${PERL_MODULES_CHECK_FILE}
 	@echo "; Host: `hostname`" >> ${PERL_MODULES_CHECK_FILE}
+	@echo "; CPAN		${CPAN}"
+	@echo "; CPAN_CMD	${CPAN_CMD}"
 	@for module in ${PERL_MODULES} ; do \
 		 ${MAKE} perl_module_test_${PERL_MODULE_TEST} PERL_MODULE=$${module}; \
 	done
@@ -313,7 +315,7 @@ perl_modules_check_doc:
 	@${MAKE} perl_modules_check PERL_MODULE_TEST=doc
 
 perl_module_test_eval:
-	@echo "	Checking perl module	${PERL_MODULE}"
+	@echo "	Checking perl module	${PERL_MODULE}	${PERL}"
 	@echo "${PERL_MODULE}" | xargs -I MODULE ${PERL} -e  'print eval "use MODULE;1"?"OK\t${PERL_MODULE}\n":"Fail\t${PERL_MODULE}\n"' >> ${PERL_MODULES_CHECK_FILE}
 
 perl_module_test_version:
@@ -468,7 +470,7 @@ _old_bioperl_git:
 	git clone git://github.com/bioperl/bioperl-live.git
 
 bioperl_install:
-	@${MAKE} _install_one_perl_module PERL_MODULE=Bio::Perl
+	@${MAKE} perl_install_one_module PERL_MODULE=Bio::Perl
 
 bioperl_test:
 	perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
