@@ -360,21 +360,22 @@ print '</div></div>
 <!--## Draw heatmap-->
  <div class="form-check">
     <label class="form-check-label">';
-    print $query->checkbox(-name=>'Heatmap',
+    print $query->checkbox(-name=>'heatmap',
   		       -checked=>$default{heatmap},
   		       -class=>form-check-input,
   		        -label=>'');
 print   'Heatmap</label></div>';
 
+
 ## Export the trees in Newick format
 ## By default trees are exported in JSON
-print '<div class="form-check">
-    <label class="form-check-label">';
-    print $query->checkbox(-name=>'newick',
-  		       -checked=>$default{newick},
-  		       -class=>form-check-input,
-  		        -label=>'');
-print   'Export the trees in Newick format</label></div>';
+#print '<div class="form-check">
+#    <label class="form-check-label">';
+#    print $query->checkbox(-name=>'newick',
+#  		       -checked=>$default{newick},
+#  		       -class=>form-check-input,
+#  		        -label=>'');
+#print   'Export the trees in Newick format</label></div>';
 
 ## Export radial tree
 print '<div class="form-check">

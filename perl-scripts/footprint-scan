@@ -392,8 +392,8 @@ package main;
 
   # ahcorcha
   ## Tree for Bayesian score 
-  local $tree = "";
-  local $bbls_draw = "";
+  #local $tree = "";
+  local $main::bbls_draw = "none";
   # /ahcorcha
   
   ## Feature maps
@@ -506,14 +506,17 @@ package main;
   local $scan_opt .= " -uth pval ".$main::pval;
 
   ################################################################
+  ## Create output directory
+  &SetOutputDir();
+  
   ## Check argument values
-
+  
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
 
   ## Define main output directory
   &SetMainOutputDir();
-
+  
   ################################################################
   ## Check compatibility between -batch, -all and -task synthesis, whcih can't be use together since this can cause sever file dependency problems
 
@@ -545,17 +548,18 @@ package main;
   &RSAT::error::FatalError("For using the option -tf with option  -matrix_table you should type \"-tf file\" to indicate that TF names are included in the matrixx table file")
     if (($main::matrix_table_file) && ($main::tf ne "") && ($main::tf ne "file"));
 
-  
   ################################################################
-  ## Check parameters for bbls # ahcorcha
-
-  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option.") if ($task{bbls} && $main::tree eq "" );  
+  ## Check parameters for bbls # ahcorcha2
   
-  &RSAT::error::FatalError("The -tree option is exclusive of the bbls task.") if (!$task{bbls} && $main::tree ne "" );
+  &RSAT::error::FatalError("Usage of bbls task requieres a tree file specified by -tree option") if ($task{bbls} && !defined($main::tree) );  
+  
+  &RSAT::error::FatalError("The -tree option is exclusive of the bbls task") if (!$task{bbls} && defined($main::tree)  );
+  
+  #&RSAT::error::FatalError("Option -bbls_draw only works with bbls") if (!$task{bbls} && $main::bbls_draw == "");
 
-  &RSAT::error::FatalError("Option -bbls_draw only works with bbls.") if (!$task{bbls} && $main::bbls_draw ne "" );
+  #&RSAT::error::FatalError("-use_tree_org requires with -tree option and bbls task (footprint-scan exclusive)") if (!defined($main::use_tree_org) && !defined($main::tree));
+  
   # /ahcorcha
-  
   ################################################################
   ## Check parameters for matrix-scan
   local $ms_general_parameters = " -v 1"; ## for all matices
@@ -850,9 +854,11 @@ package main;
     if ($task{synthesis}) {
 	($synthesis_index, $synthesis_table,$synthesis_all_table) = &OpenSynthesisPerMatrix ;
 	&RSAT::message::Info("Synthesis files: "," Index ". $outfile{$m_suffix."_synthesis_html"} . " Table  ". $outfile{$m_suffix."_synthesis_tab"} );
-
-	print $synthesis_all_table join ("\t", "#gene","TF","weight_at_th","occ_at_th","exp_at_th","sig_at_th","top_sig","score_at_topsig"),"\n"; ## Header for the complete report table
-      }
+	
+	print $synthesis_all_table join ("\t", "TF","#gene","weight_at_th","occ_at_th","exp_at_th","sig_at_th","top_sig","score_at_topsig"),"\n"; ## Header for the complete report table
+	# ahcorcha1
+	
+    }
 
     ################################################################
     ## Obtain the score related to the threshold p-value for selecting
@@ -864,7 +870,7 @@ package main;
 	$dir{matrix_result_dir} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name,$m_suffix);
 	&RSAT::util::CheckOutDir($dir{matrix_result_dir});
 	$outfile{matrix_distrib} = join( "/",$dir{synthesis},$m_suffix."_matrix-distrib_occsig.tab");
-	&CalcMAtrixTheorDistrib   ;
+	&CalcMAtrixTheorDistrib;
     }
     
     ################################################################
@@ -1048,6 +1054,14 @@ package main;
 	&RunFootprintScan(@query_genes);
     }
 
+
+    ###########################################
+    #  If task == synthesis, for debugging, 
+    #   run it always now ahcorcha
+    &SynthesizeBayesianScore();
+    ###########################################
+
+    
     ################################################################
     ## Close output stream.
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
@@ -1735,7 +1749,7 @@ sub RunFootprintScan {
     &RSAT::message::Info("Skipping: no site for matrix", $m_suffix, "in query promoter(s)", join(";",@current_query_genes)) if ($main::verbose >= 0);
     return;
   }
-
+  
   ################################################################
   ## Identify ortholog genes
   &GetOrthologs();
@@ -1771,6 +1785,7 @@ sub RunFootprintScan {
 
   ################################################################
   ## ahcorcha
+  # $dir{synthesis} = join( "/",$dir{output_root}, $org_selection_prefix, $organism_name,$m_suffix); where the all report should be 
   &BayesianScore();
   #################################################################################################
   

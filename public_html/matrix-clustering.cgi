@@ -248,17 +248,12 @@ if ($heatmap) {
     $return_fields .= ",heatmap";
 }
 
-# ## Alignment of consensuses selection
-# $heatmap = $query->param('alignment_consensuses');
-# if ($heatmap) {
-#     $return_fields .= ",align_consensus";
-# }
 
 ## Export newick selection
-$newick = $query->param('newick');
-if ($newick) {
-    $return_fields .= ",newick";
-}
+#$newick = $query->param('newick');
+#if ($newick) {
+#    $return_fields .= ",newick";
+#}
 
 
 ## Random permutation

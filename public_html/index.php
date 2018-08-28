@@ -56,14 +56,14 @@
 					<div class='col-sm-6'><div class='panel panel-default' data-toggle='modal' data-target='#citeModal'><div class='panel-body'><div class='box-heading'>How to cite?</div>Citing RSAT complete suite of tools<br/><i class='fa fa-book fa-3x fa-style'></i></div></div></div>			
 				</div>
 			</div>
-			<div class='col-sm-3'><span class='homepapertext'><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> on matrix-clustering <b><a target='_blank' href="https://academic.oup.com/nar/article/45/13/e119/3862068/RSAT-matrix-clustering-dynamic-exploration-and" target="_blank"> in NAR</b></a></span><br/><br/>
+			<div class='col-sm-3'><span class='homepapertext'><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> for the 20th Anniversary <b><a target='_blank' href="https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gky317/4990780" target="_blank"> in NAR</b></a></span><br/><br/>
 				<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="500" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 			</div>	
 		</div>
 	</div>
 	<div class='homefooter'>
 		<div class='social-circle'><div class='row'>
-			<div class='col-sm-4'><a class='fa fa-envelope' href='javascript:void(0)' onclick="window.location='mailto:Jacques.van.Helden@ulb.ac.be?subject='"></a> Jacques Van Helden</div>
+			<div class='col-sm-4'><a class='fa fa-envelope' href='javascript:void(0)' onclick="window.location='mailto:rsat-contact@list01.biologie.ens.fr?subject='"></a> contact RSAT team</div>
 			<div class='col-sm-4'><a class='fa fa-twitter' href='https://twitter.com/RSATools' target='_blank'></a> Twitter</div>
 			<div class='col-sm-4'><a class='fa fa-code' href='#' style='cursor:default'></a> Code version: <?php echo $properties['git_date'];?></div>
 		</div><br/>
@@ -259,8 +259,12 @@
 				<span style="color: #cc6600;"><i class="fa fa-pencil fa-lg"></i> <b>Citing RSAT complete suite of tools:</b></span>
 	<div align="left">
       <ul>
+      <li> Nguyen NTT, Contreras-Moreira B, Castro-Mondragon J, Santana-Garcia W, Ossio R, Robles-Espinoza CD, Bahin M, Collombet S, Vincens P, Thieffry  D, van Helden J, Medina-Rivera A, Thomas-Chollier  M (2018)
+	  <b>RSAT 2018: regulatory sequence analysis tools 20th anniversary</b>. Nucleic Acids Res. 2018 (Web Server issue) in press.
+	  <a href='https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gky317/4990780'>[Full text]</a>
+	</li>
 <li>  Medina-Rivera A, Defrance M, Sand O, Herrmann C, Castro-Mondragon J, Delerce J, Jaeger S, Blanchet C, Vincens P, Caron C, Staines DM, Contreras-Moreira B, Artufel M, Charbonnier-Khamvongsa L, Hernandez C, Thieffry D, Thomas-Chollier M, van Helden J (2015)
-	  <b>RSAT 2015: Regulatory Sequence Analysis Tools </b>. Nucleic Acids Res. 2015 (Web Server issue) in press.
+	  <b>RSAT 2015: Regulatory Sequence Analysis Tools </b>. Nucleic Acids Res. 2015 (Web Server issue) 43:W50–W56.
 	  <!--a href=http://www.ncbi.nlm.nih.gov/pubmed/21715389>[Pubmed 21715389]</a-->
 	  <a href='http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full'>[Full text]</a>
 	</li>

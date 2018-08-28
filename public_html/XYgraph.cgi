@@ -134,7 +134,7 @@ if (&IsReal($query->param('ylog'))) {
     $parameters .= " -ylog ".$query->param('ylog');
 }
 
-if(!$query->param('htmap')){
+if ($ENV{R_supported} && !$query->param('htmap')){
     $parameters .= " -r_plot";
 }
 

@@ -45,14 +45,16 @@ SEE ALSO
 #                                      #
 ########################################
 
+import argparse
 import copy
 import os
 import os.path
 import sys
-import optparse
+# import pager
 
 # BEGIN DEPENDENCIES
 import pandas
+import numpy as np
 from ete3 import Tree
 
 # END DEPENDENCIES
@@ -93,81 +95,85 @@ HEADER = ''';
 
 
 PROG_NAME = os.path.basename(sys.argv[0])
-parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0,\
-                               version=VERSION)
-parser.add_option("-h", "--help", action="store_true", \
-                  dest="help")
-parser.add_option("-v", "--verbose", action="store", \
-                  dest="verbosity", type="int")
-parser.add_option("--organism", action="store", \
-                  dest="query_organism", default=sys.stdin)
-parser.add_option("-t", "--tree", action="store", \
-                  dest="tree_file", default=sys.stdin)
-parser.add_option("--p-value", action="store", \
-                  dest="p_value", type="float")
-parser.add_option("--tfb_sites", action="store",\
-                  dest="sites_file", default=sys.stdin)
-parser.add_option("--prefix", action="store", \
-                  dest="prefix_name", default=sys.stdin)
-parser.add_option("--matrix_distrib", action="store", \
-                  dest="matrix_distrib_file", default=sys.stdin)
-parser.add_option("-q", "--query_genes", action="store", \
-                  dest="query_genes_file", default=sys.stdin)
-parser.add_option("--infer_operons", action="store", \
-                  dest="infer_operons", default=sys.stdin)
-parser.add_option("--orthologs", action="store", \
-                  dest="orthologs_file", default=sys.stdin)
-parser.add_option("-o", "--output", action="store", \
-                  dest="output", default=sys.stdout)
-parser.add_option("--debug", action="store_true", \
-                  dest="debug", help=optparse.SUPPRESS_HELP)
-# options wishlist
+PARSER = argparse.ArgumentParser(description=USAGE % PROG_NAME)
+
+#                                  version=VERSION)
+
+PARSER.add_argument("--organism", action="store", \
+                    dest="query_organism", default="", \
+                    type=str)
+PARSER.add_argument("--verbose", action="store", \
+                    dest="verbosity", type=int, default=1)
+PARSER.add_argument("--tree", action="store", \
+                    dest="tree_file", default="", type=str)
+PARSER.add_argument("--p-value", action="store", \
+                    dest="p_value", type=float, default=0.0001)
+PARSER.add_argument("--tfb_sites", action="store",\
+                    dest="sites_file", default="", type=str)
+PARSER.add_argument("--prefix", action="store", \
+                    dest="prefix_name", default="", type=str)
+PARSER.add_argument("--matrix_distrib", action="store", \
+                    dest="matrix_distrib_file", default="", type=str)
+PARSER.add_argument("--query_genes", action="store", \
+                    dest="query_genes_file", default="", type=str)
+PARSER.add_argument("--infer_operons", action="store", \
+                    dest="infer_operons", default="", type=str)
+PARSER.add_argument("--orthologs", action="store", \
+                    dest="orthologs_file", default="", type=str)
+PARSER.add_argument("--debug", action="store_true", \
+                    dest="debug", default=False)
 # taxon
-parser.add_option("--group_name", action="store", \
-                  dest="taxon_name", default=sys.stdin)
-# Number of organisms in taxon or organisms list
-parser.add_option("--num_organisms", action="store", \
-                  dest="num_organisms", default=sys.stdin)
+PARSER.add_argument("--group_name", action="store", \
+                    dest="taxon_name", default="", type=str)
 # Operon name
-parser.add_option("--operon_name", action="store", \
-                   dest="operon_name", default=sys.stdin)
-# Format of report by site output, png, pdf, no (False) report default no?
-parser.add_option("--report_format", action="store", \
-                  dest="report_format", default=sys.stdin)
+PARSER.add_argument("--operon_name", action="store", type=str,\
+                    dest="operon_name", default="")
+
 # Format for the report output (png, pdf or none)
-parser.add_option("--bbls_draw", action="store", \
-                  dest="bbls_draw", default=sys.stdin)
-
-
+PARSER.add_argument("--bbls_draw", action="store", type=str,\
+                  dest="bbls_draw", default="none")
 # All sequences report 
-parser.add_option("--bbls_sites_file", action="store", \
-                  dest="bbls_sites_file", default=sys.stdout)
+PARSER.add_argument("--bbls_sites_file", action="store", type=str,\
+                    dest="bbls_sites_file", default="")
 # 
-parser.add_option("--bbls_tree_file", action="store", \
-                  dest="bbls_tree_file", default=sys.stdout)
+PARSER.add_argument("--bbls_tree_file", action="store", type=str,\
+                    dest="bbls_tree_file", default="")
 
+### ============================================================
+### Synthesis task.
+# Task
+PARSER.add_argument("--task", action="store", type=str, \
+                    dest="task", default="none")
+# Total report
+PARSER.add_argument("--path_report", action="store", \
+                    dest="path_report", default="", type=str)
+### ===========================================================
+### Org list
+PARSER.add_argument("--output_org_tree", action="store", \
+                    dest="output_org_tree", default="", type=str)
 
-
-'''
-# option variable names (inside the program)
-operon_name      not urgent cosmetic.
-NOT ->    feature_map      pass it to bbls
-report_format
-'''
 ## To-do list
-
+# Number of organisms in taxon or organisms list
+#PARSER.add_argument(["--num_organisms"], action="store", type="str",\
+#dest="num_organisms", default="")
 # taxon, number of organisms in the group that we are analizing.
-# operon name if operon is an option in footprint-scan.
-# opcion para que cree, png o pdf.
-# synthesis report, without limits. 
-# especify if the motif is reverse or forward in the image report
 # every operation with bbls should be float type.
-(options, args) = parser.parse_args()
 
-VERBOSITY = options.verbosity
+args = PARSER.parse_args()
 
-if options.debug:
+VERBOSITY = args.verbosity
+
+if args.debug:
     VERBOSITY = 10
+
+COLUMN_ORDER = ["org_name", "seq_id", "ft_name", "ft_type", "gene", \
+                "sequence", "strand", "start", "end", "weight", \
+                "Pval", "branch_prob", "num_orthologs", "BLS", "BBLS", \
+                "BBLS_norm"]
+COLUMN_DELETE = ["sig", "org_seq", "ln_Pval"]
+#COLUMN_KEEP = ["seq_id", "ft_type", "ft_name", "strand", "start", \
+#               "end", "sequence", "weight", "Pval", "ln_Pval", "sig"]
+
 
 #print(parser.print_usage())
 
@@ -193,17 +199,171 @@ class ModTree(Tree):
         print('\n- Tree complement probabilities')
         print(self.get_ascii(attributes=['name', 'complement_prob']))
         print('\n- Effective length')
-        print(self.get_ascii(attributes=['name', 'effective_length']))
+        print(self.get_ascii(attributes=['name',\
+                                         'effective_length']))
 
+########################################
+#                                      #
+#  Tasks                               #
+#                                      #
+########################################
 
-def main(args, options):
+def check_change_tree_names(tree):
     """
+    self
     """
-    #######################################################################
-    ##############################  FUNCTIONS  ############################
-    #######################################################################
+    flag1 = False
+    for leaf in tree:
 
-    def match(tree, motifs):
+        if len(leaf.name.split("|")) == 3:
+            leaf.name = leaf.name.split("|")[1]
+            flag1 = True
+            if VERBOSITY >= 10:
+                print("; leaf name: " + str(leaf.name))
+
+
+    if VERBOSITY >= 7:
+        print("Tree structure")
+        print(tree.get_ascii(attributes=['name']))
+    if flag1 and VERBOSITY >= 5:
+        print("; Warning\tTree names were changed from seq|Organism_name|seq" + \
+              " to Organism_name")
+    return tree
+
+
+def write_org_tree_file(tree_file, output_file):
+    '''
+    descr
+    '''
+    tree_ = open(str(tree_file), 'r')
+    tree = ModTree(tree_.readline(), 1)
+
+    # Checks if tree names follow the format seq|org|seq if so corrects it
+    # with a warning.
+    tree = check_change_tree_names(tree)
+
+    # Check if query organism is in tree.
+    if not args.query_organism in tree:
+        # Pythonic
+        # raise ValueError("Error\n\t" + args.query_organism + \
+        #                  " Not in tree")
+        # Same syntax as RSAT
+        print("Error\n\t" + args.query_organism + \
+              " Not in tree")
+        exit(1)
+
+    # Check if query organism is leaf, it should be.
+    if not tree.get_leaves_by_name(args.query_organism):
+        print("Error\n\t" + args.query_organism + \
+              " is not a leaf node")
+        exit(1)
+
+    # Write organisms names.
+    with open(output_file, "w+") as output_tree_org:
+        leaves = []
+        for leaf in tree:
+            leaves.append(leaf.name)
+
+        output_tree_org.write('\n'.join(leaves))
+
+def synthesis(path_report):
+    '''
+    Descripton:
+    Creates the synthesized results of the bbls analysis.
+
+    Parameters:
+    paths to the report files.
+    '''
+    if VERBOSITY >= 10:
+        print("\n;Function synthesis")
+
+    def concat_results(list_of_reports):
+
+        if VERBOSITY >= 10:
+            print("\n; Function concat_results")
+
+        df_list = []
+        for i in list_of_reports:
+
+            df1 = pandas.read_csv(i, sep="\t")
+            df_list.append(df1)
+
+        df_ = pandas.concat(df_list)
+
+        return df_
+
+    # Get data from each matrix. list of folders in the path.
+    all_matrices = next(os.walk(path_report))[1]
+
+    if VERBOSITY >= 10:
+        print("; Looking in dir for: " + str(all_matrices))
+
+    all_reports = []
+
+    for matrix in all_matrices:
+
+        matrix_path = path_report + "/" + matrix + "/"
+
+        if VERBOSITY >= 10:
+            print("matrix path" + matrix_path)
+
+        matrix_dirs = os.walk(matrix_path)
+        next(matrix_dirs)
+        matrix_reports = []
+
+        for matrix_dir in matrix_dirs:
+            if VERBOSITY >= 10:
+                print("Looking in: " + str(matrix_dir[2]))
+
+            for file_ in matrix_dir[2]:
+                if "bbls_report.tab" in file_:
+                    matrix_reports.append(matrix_dir[0] + "/"\
+                                          + file_)
+                    all_reports.append(matrix_dir[0] + "/"\
+                                       + file_)
+
+        # read and append reports by matrix, matrix specific path.
+        if all_reports:
+
+            results_df = concat_results(matrix_reports)
+
+            if VERBOSITY >= 10:
+
+                print("; Writing synthesis report for all sites in: " + \
+                  matrix_path + "report_per_matrix.tab")
+
+            results_df = results_df.reindex(columns=COLUMN_ORDER)
+
+            results_df.to_csv(matrix_path + \
+                              "bbls_report_per_matrix.tab", \
+                              sep="\t", \
+                              index=False)
+
+    # read and append reports all, organisms/
+    if not all_reports:
+        if VERBOSITY >= 3:
+            print("; There are no bbls reports to synthesize.")
+            exit(1)
+    else:
+
+        df_ = concat_results(all_reports)
+
+        if VERBOSITY == 3:
+            print("; Writing synthesis report for all sites in: " + \
+                  path_report + "/all_bbls_report.tab")
+
+        df_ = df_.reindex(columns=COLUMN_ORDER)
+        df_.to_csv(path_report + "/all_bbls_report.tab", sep="\t", index=False)
+
+def main(args):
+    """
+    docstring method
+    """
+    ##########################################
+    #                FUNCTIONS               #
+    ##########################################
+
+    def prune_tree(tree, motifs):
         """
         Description:
         Returns boolean value. Asserts that the leaves of the tree match the
@@ -219,14 +379,15 @@ def main(args, options):
             print("match function")
 
         if (set(tree.get_leaf_names()) == set(motifs.keys())) and VERBOSITY >= 5:
-            print(";Every organism with sites is present in the tree")
+            print("; Every organism with sites is present in the tree")
+            return tree
 
         # In the case that there are more species in tree that in motifs keys.
         if not set(tree.get_leaf_names()) == set(motifs.keys()):
 
             if VERBOSITY >= 3:
-                print(";Dropping organisms" + \
-                      "present in the tree without gene orthologs")
+                print("; Dropping organisms" + \
+                      " present in the tree without gene orthologs")
 
             for i in list(set(set(tree.get_leaf_names())) - \
                           set(set(motifs.keys()))):
@@ -238,11 +399,7 @@ def main(args, options):
                 # Delete leaves that do not match
                 tree.get_leaves_by_name(i)[0].delete()
 
-        if VERBOSITY >= 3:
-            # Matched organisms
-            print(";Matched organisms")
-
-        return set(tree.get_leaf_names()) == set(motifs.keys()), tree
+        return  tree
 
     def initialize_nodes(tree, motifs):
         """
@@ -257,31 +414,32 @@ def main(args, options):
         None
         """
         if VERBOSITY >= 10:
-            print(";initialize_nodes function")
+            print("; initialize_nodes function")
 
-        match_, tree = match(tree, motifs)
-        # Raises error if the tree leaves and motif sites names do not match.
-        if match_:
+        tree = prune_tree(tree, motifs)
 
-            for node in tree.traverse('levelorder'):
+        # Raises error if there are no tree nodes.
+        if len(tree.get_leaf_names()) == 1:
+            raise ValueError("Error: motif and tree share no entries.")
 
-                if node.is_root(): # Root node
-                    node.prob = None
-                    node.complement_prob = 1 # In theory, it should be 1.
+
+        for node in tree.traverse('levelorder'):
+
+            if node.is_root(): # Root node
+                node.prob = None
+                node.complement_prob = 1 # In theory, it should be 1.
+                node.effective_length = node.dist
+
+            else:
+                if node.is_leaf(): # Leaf nodes
+                    node.prob = motifs[str(node.name)]
+                    node.complement_prob = None
                     node.effective_length = node.dist
 
-                else:
-                    if node.is_leaf(): # Leaf nodes
-                        node.prob = motifs[str(node.name)]
-                        node.complement_prob = None
-                        node.effective_length = node.dist
-
-                    else: # Middle nodes
-                        node.prob = None
-                        node.complement_prob = None
-                        node.effective_length = node.dist
-        else:
-            raise ValueError(';Tree leaves and motif species do not match')
+                else: # Middle nodes
+                    node.prob = None
+                    node.complement_prob = None
+                    node.effective_length = node.dist
 
     def tree_probabilities(tree):
         """
@@ -298,14 +456,14 @@ def main(args, options):
 
         for node in tree.traverse("postorder"):
 
-            prob = 1
+            prob = 1.0
 
             if not node.is_leaf():
 
                 for child_node in node.get_children():
-                    prob = prob * (1 - child_node.prob)
+                    prob = prob * (1.0 - child_node.prob)
 
-                node.prob = 1 - prob
+                node.prob = 1.0 - prob
 
     def effective_length(tree):
         '''
@@ -316,7 +474,7 @@ def main(args, options):
             print(";effective_length function")
 
         for node in tree.traverse("postorder"):
-            len_prob = 0
+            len_prob = 0.0
 
             if not node.is_leaf():
 
@@ -329,27 +487,27 @@ def main(args, options):
                                         (len_prob / node.prob)
 
             except ZeroDivisionError:
-                node.effective_length = 0
+                node.effective_length = 0.0
 
-    def tree_complement_probabilities(tree):
+    def tree_complement_probabilities(t):
         '''
         Computes the probability that the complement tree does not have a sites,
-        from root to leaves. 
+        from root to leaves.
         '''
         if VERBOSITY >= 10:
             print(";tree_complement_probability function")
-        
+
         for node in t.traverse("preorder"):
 
             if node.is_root():
-                node.complement_prob = 1
+                node.complement_prob = 1.0
 
             else:
                 parent_complement_prob = node.up.complement_prob
-                sister_prob = 1
+                sister_prob = 1.0
 
                 for sister_node in node.get_sisters():
-                    sister_prob = sister_prob * (1 - sister_node.prob)
+                    sister_prob = sister_prob * (1.0 - sister_node.prob)
 
                 node.complement_prob = parent_complement_prob * sister_prob
 
@@ -369,7 +527,7 @@ def main(args, options):
         if VERBOSITY >= 10:
             print(";bbls function")
 
-        bbls = 0
+        bbls = 0.0
 
         for node in tree.traverse():
 
@@ -377,7 +535,7 @@ def main(args, options):
 
                 node_bbls = node.complement_prob
 
-                children_node_length = 0
+                children_node_length = 0.0
 
                 for child_node in node.get_children():
 
@@ -413,7 +571,7 @@ def main(args, options):
         motifs_ = copy.copy(motifs)
 
         for motif in motifs_:
-            motifs_[motif] = 1
+            motifs_[motif] = 1.0
 
         initialize_nodes(tree_, motifs_)
         tree_probabilities(tree_)
@@ -444,6 +602,14 @@ def main(args, options):
 
         th_score = []
 
+        try:
+            distrib = open(matrix_distrib_file, 'r')
+            distrib.close()
+
+        except:
+            print("; Unable to open matrix distrib file: \n" + str(matrix_distrib_file))
+            exit(2)
+    
         with open(matrix_distrib_file, 'r') as distrib:
 
             flag = False
@@ -473,10 +639,23 @@ def main(args, options):
         if VERBOSITY >= 10:
             print(";read_motif_site_file function")
 
-        tfb_sites_list = [[]]
-        matrix_info_list = []
-
         with open(site_file, 'r') as motif_list:
+            tfb_sites = pandas.read_csv(motif_list,\
+                                        comment=";", \
+                                        header="infer", \
+                                        sep="\t")
+
+            # Asserts that the specific columns are float type.
+            tfb_sites[["weight", "Pval", "ln_Pval", "sig"]]\
+                = tfb_sites[["weight", "Pval", "ln_Pval", "sig"]].astype(np.float)
+
+            # Change column name #seq_id to seq_id
+            tfb_sites.rename(columns={"#seq_id": "seq_id"}, inplace=True)
+
+        # Read comments in sites.tab file to get max weight value for matrix.
+        matrix_info_list = []
+        with open(site_file, 'r') as motif_list:
+
             flag1 = 0
             for line in motif_list:
                 words = line.replace("\n", "").replace("#", "").split("\t")
@@ -493,24 +672,21 @@ def main(args, options):
                 if words[0] == '; Matrices':
                     flag1 = 1
 
-                if line[0] != ";":
-                    tfb_sites_list.append(words)
+        if VERBOSITY >= 5:
+            print(";Matrix")
+            print(tfb_sites)
+            print(list(tfb_sites))
 
-        del tfb_sites_list[0] # There is a hidden newline in the file.
-        headers = tfb_sites_list.pop(0) # Erase the column names from the data
-
-        # Defining and triming the tfbs file.
-        tfb_sites = pandas.DataFrame(data=tfb_sites_list, columns=headers)
+        columns = [w.replace(' ', '') for w in columns]
 
         matrix_info = pandas.DataFrame(data=matrix_info_list, columns=columns)
 
-        matrix_info["Wth"] = score_threshold
+        matrix_info[["Wmin", "Wmax", "Wrange"]]\
+            = matrix_info[["Wmin", "Wmax", "Wrange"]].astype(np.float)
+
+        matrix_info["Wth"] = [float(i) for i in score_threshold]
 
         tf = matrix_info[:]["name"].values
-
-        # Asserts that the weights are float type.
-        tfb_sites['weight'] = tfb_sites['weight'].astype(float)
-
 
         org_names = tfb_sites["seq_id"].values
         org_seq = []
@@ -556,7 +732,7 @@ def main(args, options):
             print(matrix_info)
             print(";Putative TF binding sites")
             print(tfb_sites)
-        
+
         return matrix_info, tfb_sites, limit
     ############################################################################
     def get_query_genes(query_genes_file):
@@ -612,7 +788,7 @@ def main(args, options):
             # the operons.
 
             operon_leaders = prefix + "_leaders_bbh.tab"
-            operons_leaders = open(operon_leaders, 'r') 
+            operons_leaders = open(operon_leaders, 'r')
 
             for leaders in operons_leaders:
                 leaders = leaders.replace("\n", "").split("\t")
@@ -633,7 +809,7 @@ def main(args, options):
                                 ortholog_df["ref_org"]
 
         if VERBOSITY >= 3:
-            print( ";Orthologs for current gene: " + \
+            print(";Orthologs for current gene: " + \
                    str(len(ortholog_df["seq_id"].values)))
 
         if VERBOSITY >= 10:
@@ -642,11 +818,12 @@ def main(args, options):
 
         known_gene = True
         # Unknown gene
-        if gene in unknown_genes:
+        if query_gene in unknown_genes:
             known_gene = False
-            
-        return ortholog_df["seq_id"].values, ortholog_df["ref_org"].values,\
-            known_gene
+
+        return ortholog_df["seq_id"].values, known_gene
+        #return ortholog_df["seq_id"].values, ortholog_df["ref_org"].values,\
+        #        known_gene
 
     ############################################################################
 
@@ -657,7 +834,7 @@ def main(args, options):
         from ete3 import TreeStyle, TextFace, NodeStyle, SeqMotifFace,\
     AttrFace, CircleFace
 
-        num_organisms = open(options.num_organisms, 'r').readline()
+        # num_organisms = open(args.num_organisms, 'r').readline()
 
         # Get values from tfbs_per_matrix
         # Get bbls_norm
@@ -706,10 +883,11 @@ def main(args, options):
         # Add Tree surroundings
         ts.title.add_face(TextFace(title), column=0)
         ts.aligned_header.add_face(TextFace("Taxon or group used: " + \
-                                            options.taxon_name + \
-                                            ". Genomes: " + \
-                                            num_organisms), \
+                                            args.taxon_name + \
+                                            "\nGenomes used: " + \
+                                            str(len(tree))), \
                                    column=0)
+        #                                             num_organisms + \
         ts.aligned_foot.add_face(TextFace("Normalized BBLS: " + bbls_norm),\
                                  column=0)
 
@@ -737,53 +915,73 @@ def main(args, options):
             seq = str(tfbs_per_matrix[tfbs_per_matrix.org_name == name]\
                       ['sequence'].values[0])
 
-            motif_face = SeqMotifFace(seq=seq, seq_format="seq", seqtype='nt')
+            motif_face = SeqMotifFace(seq=seq, seq_format="seq", \
+                                      seqtype='nt')
 
             # Apply it to node
             leaf.add_face(score_face, column=0, position="aligned")
             leaf.add_face(motif_face, column=1, position="aligned")
 
-            tree_path = options.prefix_name + "_tree_" + tf_name + "_" + \
+            tree_path = args.prefix_name + "_tree_" + tf_name + "_" + \
                         gene_name
 
-            if options.bbls_draw == "pdf":
-                tree_path = tree_path + ".pdf"
+            if args.bbls_draw == "pdf":
+                tree_path += ".pdf"
+            elif args.bbls_draw == "png":
+                tree_path += ".png"
             else:
-                tree_path = tree_path + ".png"
+                print("; Option bbls_draw not pdf or png, default to png")
+                tree_path += ".png"
 
         tree.render(tree_path, w=2500, tree_style=ts)
         return tree_path
-        
+
     ##################################################
     ####################### MAIN #####################
     ##################################################
 
-    # Create BBLS report Folder.
-    # bbls_report = options.prefix_name + "_BBLS_report/"
-    # os.makedirs(bbls_report)
-
     pandas.options.mode.chained_assignment = None  # default='warn'
     trees_path = []
-    
+
+    # Opens tree file into ModTree format.
+    tree = open(str(args.tree_file), 'r')
+    t = ModTree(tree.readline(), 1)
+    t = check_change_tree_names(t)
+
+    # Check if query organism is in tree
+    if not args.query_organism in t:
+        # Pythonic
+        # raise ValueError("Error\n\t" + args.query_organism + \
+        #                  " Not in tree")
+        # Same sintax as RSAT
+        print("Error\n\t" + args.query_organism + \
+              " Not in tree")
+        exit(1)
+
+    # Check if query organism is leaf, it should be.
+    if not t.get_leaves_by_name(args.query_organism):
+        print("Error\n\t" + args.query_organism + \
+              " is not a leaf node")
+        exit(1)
+
     # From matrix distrib, get associated weight to pval for each tf.
-    score_threshold = get_scores_threshold(options.p_value, \
-                                           options.matrix_distrib_file)
+    score_threshold = get_scores_threshold(args.p_value, \
+                                           args.matrix_distrib_file)
 
     # tf_descriptors, sites previous name
-    matrix_info, tfbs, limit = read_motif_site_file(options.sites_file,\
+    matrix_info, tfbs, limit = read_motif_site_file(args.sites_file,\
                                                     score_threshold)
 
-    query_genes = get_query_genes(options.query_genes_file)
+    query_genes = get_query_genes(args.query_genes_file)
 
     # Save reports max tfbs and matrix information.
-    # matrix_info.to_csv(options.prefix_name + "_matrix_info.tab", sep="\t")
-    # tfbs.to_csv(options.prefix_name + "_tfbs_info.tab", sep="\t")
+    # matrix_info.to_csv(args.prefix_name + "_matrix_info.tab", sep="\t")
+    # tfbs.to_csv(args.prefix_name + "_tfbs_info.tab", sep="\t")
 
     # Empty dataframe where we add sites for the report.
     columns = ['seq_id', 'ft_type', 'ft_name', 'strand', 'start', 'end',\
-               'sequence', 'weight', 'Pval', 'ln_Pval', 'sig', 'rank', \
-               'rank_pm', 'org_seq', 'org_name', 'branch_prob', 'BBLS', \
-               'BLS', 'BBLS_norm', 'gene']
+               'sequence', 'weight', 'Pval', 'org_name', 'branch_prob', \
+               'BBLS', 'BLS', 'BBLS_norm', 'gene']
 
     bbls_report = pandas.DataFrame(data=None, columns=columns, index=None)
 
@@ -793,22 +991,22 @@ def main(args, options):
             print(";Query gene: " + str(gene))
 
         # Redefine the working table only with organisms with ortholog seq.
-        ortho_seq, ortho_org, known = get_ortho_seq_id(options.orthologs_file,\
+        ortho_seq, known = get_ortho_seq_id(args.orthologs_file,\
                                                        gene,\
-                                                       options.infer_operons,\
-                                                       options.prefix_name)
+                                                       args.infer_operons,\
+                                                       args.prefix_name)
         if len(ortho_seq) == 1:
             # Skip analysis of current gene if there are no orthologs.
             if VERBOSITY >= 1:
-                print(";There are no orthologs for query gene")
+                print("; There are no orthologs for query gene")
             continue
 
         if known is False:
             # Skip analysis of current gene if the gene is unknown.
             if VERBOSITY >= 1:
-                print(";Unknown query gene")
+                print("; Unknown query gene")
             continue
-
+        
         # tfb_sites is gene especific.
         tfb_sites = tfbs.loc[tfbs["org_seq"].\
                              isin(ortho_seq)]
@@ -856,26 +1054,19 @@ def main(args, options):
                 motifs[i[0]] = i[1]
                 counter += motifs[i[0]]
 
-            if counter == 0:
+            if counter == 0.0:
                 # Does not run the rest of the code if there was no site over the
                 #  the threshold in this ortholog seq (counter == 0).
                 #  wishlist, report that there is no sites.
                 if VERBOSITY >= 1:
-                    print(";No TF binding sites found")
+                    print("; No TF binding sites found")
                 continue
 
             if VERBOSITY >= 3:
-                print(";TFBS probabilities")
+                print("; TFBS probabilities")
                 for motif in motifs:
                     print("; " + str(motif))
 
-            # Opens tree file into ModTree format.
-            tree = open(str(options.tree_file), 'r')
-            t = ModTree(tree.readline(), 1)
-
-            if VERBOSITY >= 5:
-                print(";Tree before pruning")
-                print(t.get_ascii(attributes=['name']))
 
             # Sets up tree to calculate bbls and bls.
             initialize_nodes(t, motifs)
@@ -884,10 +1075,10 @@ def main(args, options):
             tree_complement_probabilities(t)
 
             if VERBOSITY >= 3:
-                print(";Tree after pruning")
+                print("; Tree after pruning")
                 print(t.get_ascii(attributes=['name']))
 
-            
+
             if VERBOSITY >= 10:
                 t.see_state()
 
@@ -900,22 +1091,10 @@ def main(args, options):
 
             # Add number of orthologs to all sites reports
             tfbs_per_matrix['num_orthologs'] = len(ortho_seq)
+            # This should be the orthologs used to calc the bbls.
+            # ortho_seq is the total number of orthologs ~3000
+            tfbs_per_matrix['num_orthologs'] = len(t)
 
-            # Write limits to output folder
-            # limit_path = options.prefix_name + "_start_end.tab"
-            # limit.to_csv(limit_path, sep="\t")
-
-            #if VERBOSITY >= 5:
-            #    print("Wrote regulatory limits to " + limit_path)
-
-            # Add rest of the limit rows for report, dont.
-            ''' 
-            # Add START_STOP sites of organisms where we had scores,
-            # these are not consider in the BBLS calc. just for drawing.
-            left_ortho = limit.loc[limit["org_seq"].\
-                                   isin(list(in_ortho))]
-            tfbs_per_matrix = tfbs_per_matrix.append(left_ortho)
-            '''
 
             ## Extract motif length to write the correct number of "-"
             #   as a replacement for the motif if it is not found.
@@ -924,7 +1103,7 @@ def main(args, options):
                             ["sequence"].values[0])
             
             # Report results per analysis (matrix-gene-site).
-            limit_columns = ['weight', 'sequence', 'sig', 'rank', 'rank_pm',\
+            limit_columns = ['weight', 'sequence', 'sig',\
                              'num_orthologs', 'ln_Pval', 'Pval']
             tfbs_per_matrix.loc[tfbs_per_matrix.ft_type == 'limit',\
                                 limit_columns] = '-'
@@ -937,9 +1116,15 @@ def main(args, options):
             # Add gene name, for all site report.
             tfbs_per_matrix['gene'] = gene
 
-            tfbs_per_matrix_path = options.prefix_name + "_BBLS_" + gene \
+            tfbs_per_matrix_path = args.prefix_name + "_BBLS_" + gene \
                                    + "_" + TF + ".tab"
-            tfbs_per_matrix.to_csv(tfbs_per_matrix_path, sep='\t')
+
+            tfbs_per_matrix.drop(COLUMN_DELETE, axis=1, inplace=True)
+
+            #tfbs_per_matrix = tfbs_per_matrix[COLUMN_KEEP]
+            tfbs_per_matrix = tfbs_per_matrix.reindex(columns=COLUMN_ORDER)
+
+            tfbs_per_matrix.to_csv(tfbs_per_matrix_path, sep='\t', index=False)
 
             if VERBOSITY >= 1:
                 print("; Wrote TF binding sites per matrix in: " + \
@@ -947,29 +1132,26 @@ def main(args, options):
 
             # Condense results for especific organism.
             org_row = tfbs_per_matrix[tfbs_per_matrix.org_name == \
-                                      options.query_organism]
+                                      args.query_organism]
 
             # Add lines to report dataframe that includes all sites.
             bbls_report = bbls_report.append(org_row)
 
             # Write tree image
-            if options.bbls_draw == "pdf" or options.bbls_draw == "png":
-
-                tree_path = write_tree_image(t, options.query_organism,\
+            if not args.bbls_draw == "none":
+                tree_path = write_tree_image(t, \
+                                             args.query_organism,\
                                              tfbs_per_matrix, TF)
-
                 trees_path.append(tree_path)
 
     # Save results for all sites.
-    report_path = options.bbls_sites_file
+    report_path = args.bbls_sites_file
     bbls_report.reset_index(drop=True, inplace=True)
-    bbls_report.to_csv(report_path, sep="\t")
+    bbls_report = bbls_report.reindex(columns=COLUMN_ORDER)
+    bbls_report.to_csv(args.bbls_sites_file, sep="\t", index=False)
 
-    with open(options.bbls_tree_file, 'w') as tree_file:
+    with open(args.bbls_tree_file, 'w') as tree_file:
         tree_file.writelines("%s\n" % line for line in trees_path)
-
-    # Remove 'number of organisms' file.
-    # os.remove(options.num_organisms)
 
     if VERBOSITY >= 1:
         print(";Wrote all TF binding sites report to: " + str(report_path))
@@ -977,16 +1159,27 @@ def main(args, options):
 if __name__ == '__main__':
 
     try:
-        if options.help:
-            doc = globals()['__doc__'] % {'usage' : USAGE % PROG_NAME,\
-                                          'version' : VERSION, \
-                                          'progname' : PROG_NAME}
-            pager(doc)
-            sys.exit(0)
 
+        # if args.help:
+            # DOC = globals()['__doc__'] % {'usage' : USAGE % PROG_NAME,\
+            #                            'version' : VERSION, \
+            #                           'progname' : PROG_NAME}
+            # pager(DOC)
+        #     sys.exit(0)
+
+        if args.task == "tree_org":
+
+            write_org_tree_file(args.tree_file, \
+                                args.output_org_tree)
+
+        elif args.task == "synthesis":
+            synthesis(args.path_report)
+
+        elif args.task == "bbls":
+            main(args)
         else:
-            main(args, options)
-
+            print("; Error\n\t"+ str(args.task) + " is not a task")
+            exit(1)
     except KeyboardInterrupt:
 
         sys.stderr.write('\n')
@@ -997,4 +1190,4 @@ if __name__ == '__main__':
         pass
 
 else:
-    main(args, options)
+    main(args)

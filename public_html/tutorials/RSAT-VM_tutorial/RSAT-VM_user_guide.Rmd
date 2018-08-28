@@ -5,18 +5,39 @@ date: '`r Sys.Date()`'
 output:
   html_document:
     fig_caption: yes
+    highlight: zenburn
     number_sections: yes
-    highlight: tango
-    theme: united
+    theme: cerulean
     toc: yes
-    toc_depth: 3
+    toc_depth: 4
     toc_float: yes
   pdf_document:
+    fig_caption: yes
     highlight: zenburn
+    number_sections: yes
     toc: yes
-    toc_depth: 3
-css: ../../course.css
+    toc_depth: 4
+  word_document: default
+editor_options: 
+  chunk_output_type: console
+#css: ../../course.css
 ---
+
+
+```{r knitr setup, include=FALSE,  eval=TRUE, echo=FALSE, warning=FALSE}
+## Global configuration to generate the documents from this Rmd file
+library(knitr)
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  cache = T, 
+  message = FALSE, 
+  warning = FALSE, 
+  comment = "", 
+  fig.align = "center",
+  fig.width = 7, 
+  fig.height = 5, 
+  fig.path = "figures/")
+```
 
 # Introduction
 
@@ -35,18 +56,19 @@ The RSAT Virtual Machine (<span class="concept">RSAT-VM</span>) requires
 
 # Technical specifications
 
-- *RSAT-VM version* : rsat-vm-2015-02
-- *Linux distribution*: [ubuntu-14.04.1-desktop-amd64](http://releases.ubuntu.com/14.04.1/ubuntu-14.04.1-desktop-amd64.iso)
+- *RSAT-VM version* : rsat-vm-2018-05
+- *Ubuntu 16.04.4 LTS (Xenial Xerus):* [ubuntu-16.04.4-desktop-amd64.iso](http://releases.ubuntu.com/releases/16.04/ubuntu-16.04.4-desktop-amd64.iso) (1.4Gb).
 
+****************************************************************
 # Downloading RSAT-VM
 
-RSAT virtualboxes can be downloaded from the RSAT distribution site. 
+Virtualbox RSAT Virtual Machines can be downloaded from the RSAT distribution site. 
 
 - Open a connection to any RSAT server (<http://rsat.eu/>).
 - In the left-side menu, click on the **Download** link. 
 - Enter your coordinates and click *GO*. You will be redirected towards the download server. 
 - In the download Web site, the link *virtual_machines*.
-- Download the version of your choice (current version: `rsat-vm-2017-04.ova`). 
+- Download the version of your choice (current version: `rsat-vm-2018-05.ova`). 
 
 # Network configuration
 
@@ -55,6 +77,7 @@ The RSAT-VM is provided in a ready-to-use mode.  However, you may need to adapt 
 ##  VirtualBox host-only adapter
 
 The host-only adapter enables your computer (the "host") to establish connections to the "guest" virtual machine. This is necessary if you want to use the VM as a Web server, or use command lines on a terminal (via ssh connection from the host machine). 
+
 
 <div class="protocol">
 1. Open the <span class="program">VirtualBox</span> program.
@@ -65,7 +88,8 @@ The host-only adapter enables your computer (the "host") to establish connection
 	
 1. Double-click on the host-only adapter to change its parameters.
 
-1. In the <span class="option">Adaptor</span> tab, set the parameters as follows (<a href="images/vb_prefs_host-only_adaptor.png">snapshot</a>).	 
+1. In the <span class="option">Adaptor</span> tab, set the parameters as follows (<a href="images/vb_prefs_host-only_adaptor.png">snapshot</a>).	
+
 	    1. IPv4 Address: 192.168.56.1
 	    1. IPv4 Network Mask: 255.255.255.0
 	    1. IPv6 Address: (leave this field blank)
@@ -87,7 +111,6 @@ The host-only adapter enables your computer (the "host") to establish connection
 
 ## Network settings for the guest machine
 
-
 VirtualBox supports various ways to connect the guest (virtual machine) to the network. The two first adapters are required for proper functioning of the RSAT VM. The third one is optional and should be enabled with caution. 
 
 1. *Host-only network* will enable the host machine (your computer) to access the virtual machine by HTTP (Web browser) or SSH (secure shell). 
@@ -96,14 +119,13 @@ VirtualBox supports various ways to connect the guest (virtual machine) to the n
 
 3. Optionally, a **Bridged network** might be configured in order to make your virtual machine visible from external computers. 
 
-
 ### Host-only network
 
 
 This solution offers a good tradeoff between security and confort: your virtual machine (the guest) will be accessible only from your computer (the host).
 
 <div class="protocol">
-1. In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vb-ub14d), open the <span class="option">Settings ...</span> dialog box.
+1. In the panel showing the available virtual machines, right-click on the RSAT-VM (RSAT-VM-2018-05), open the <span class="option">Settings ...</span> dialog box.
 
 1. In the tab <span class="option">Network</span>, select <span class="option">Adapter 1</span>, check <span class="option">Enable Network Adapter</span>, select <span class="option">Attached to: **Host-only Adapter**</span> (<a href="images/vm_settings_network_host-only.png">snapshot</a>).
 
@@ -133,14 +155,14 @@ Alternatively , for the sake of flexibility, you might consider to use a bridged
 
 <div class="protocol">
 
-1. In the panel showing the available virtual machines, right-click on the RSAT-VM (rsat-vb-ub14d), open the <span class="option">Settings ...</span> dialog box.
+1. In the panel showing the available virtual machines, right-click on the RSAT-VM (RSAT-VM-2018-05), open the <span class="option">Settings ...</span> dialog box.
 1. In the tab <span class="option">Network</span>, select <span class="option">Adapter 1</span>, check <span class="option">Enable Network Adapter</span>, select <span class="option">Attached to: Bridge   adapter</span>.
 1. In the pop-up menu besides the option <span class="option">Name</span>, select an adapter depending on your local network configuration, e.g. <span class="option">Wi-fi (Airport)</span> (<a href="images/vm_settings_network_bridged.png">snapshot</a>).
 	    <a href="images/vm_settings_network_bridged.png"><img width="400" border="1" src="images/vm_settings_network_bridged.png"></a>
 	
 </div>
 
-
+****************************************************************
 # Running RSAT-VM
 
 
@@ -149,7 +171,7 @@ Alternatively , for the sake of flexibility, you might consider to use a bridged
 
 <div class="protocol">
 
-1. In the left panel of <span class="program">VirtualBox</span>, select the  virual machine (rsat-vb-ub14d), and click on   the <span class="option">Start</span> icon.
+1. In the left panel of <span class="program">VirtualBox</span>, select the  virual machine (RSAT-VM-2018-05), and click on   the <span class="option">Start</span> icon.
  
 <p class="tips">
 At this stage, your RSAT VM should now be ready to be used from the Web interface. Assuming that you activated the host-only network as described abve, and that you only started one virtual machine), VirtualBox hould have assigned the first IP address of the range defined in the settings above: 192.168.56.101.</p>
@@ -161,9 +183,9 @@ At this stage, your RSAT VM should now be ready to be used from the Web interfac
 <div class="protocol">
 
 1.  Open a connection to **<a target="_blank"
-					href="http://192.168.56.101/">http://192.168.56.101/</a>**   in your web browser.
+					href="http://192.168.56.101/rsat/">http://192.168.56.101/rsat/</a>**   in your web browser.
 	 
-<p class="tips">If the link does not work, it probably means that your network was not activated as described above. You will then need to obtain the IP address of your VM. Unfortunately, VirtualBox does not provide a direct way to know which IP address has been assigned to a VM. The only way we found to get this information is to <a href="#rsat-vm_login">log in in the VM</a>, open a terminal, and run the command <span class="command">/sbin/ifconfig</span>.</p>
+<p class="tips">If the link does not work, it probably means that your network was not activated as described above. You will then need to obtain the IP address of your VM. Unfortunately, VirtualBox does not provide a direct way to know which IP address has been assigned to a VM. The only way we found to get this information is to run the VM with the graphical interface, open a terminal, and run the command `/sbin/ifconfig`.</p>
 
 </div>
 
@@ -172,9 +194,8 @@ At this stage, your RSAT VM should now be ready to be used from the Web interfac
 
 You can log with the following parameters:
 
-1. Username: vmuser
-1. Password: tochng
- 
+1. Username: **vmuser**
+1. Password: **tochng**
 
 
 <p class="tips">We intently chose an overly simple temporary password to ensure compatibility with AZERTY as well as QUERTY keyboards, but we recommend to use a safer password.</p>
@@ -192,21 +213,23 @@ You can log with the following parameters:
 A small difficulty when distributing a VM is the large variety of keybords expected to be found on the users' computers. By default, we selected the standard British QWERTY keyboard.
 
 
-On Ubuntu 14.04 server version, keybord configuration can be
-  modified with following command.
+On Ubuntu 16.04 server version, keybord configuration can be modified with following command.
 
-<pre class="brush:bash;">
-  sudo dpkg-reconfigure console-data
-</pre>
+
+```{bash eval=FALSE}
+sudo dpkg-reconfigure console-data
+```
 
 For the desktop version, click on the <span class="option">Settings</span> icon <a href="images/icon_settings.png"><img width="40" border=1 src="images/icon_settings.png"></a>, then on the <a href="images/text-entry_options.png"><img width="50" src="images/icon_text-entry.png" border=1>, and check the keyboard.</a>.
 
 
 ## Connecting RSAT-VM in ssh
 
-<pre class="brush:bash;">
-	ssh vmuser@192.168.56.101
-</pre>
+In principle your RSAT VM should be accessible at the following address. 
+
+```{bash eval=FALSE}
+ssh vmuser@192.168.56.101
+```
 
 
 

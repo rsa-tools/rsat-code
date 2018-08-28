@@ -41,8 +41,12 @@ $default{top_sequences}="";
 $default{nmotifs} = 5;
 $default{origin} = "center";
 $default{offset} = "0";
-$default{r_plot} = "checked"; ## Plot XY graph with R rather than GD
-
+## Plot XY graph with R rather than GD
+if ($ENV{R_supported}) {
+    $default{r_plot} = "checked"; 
+} else {
+    $default{r_plot} = ""; 
+}
 $default{visualize}="none";
 
 
@@ -582,15 +586,16 @@ sub Panel6  {
 			  -size=>8);
 
 
-  ## Use R to generate XY plots
-  print "<br>";
-  print $query->checkbox(-name=>'r_plot',
-			 -checked=>$default{"r_plot"},
-			 -label=>'');
-  print "&nbsp;<b>Use R to generate plots</b> (only works for servers with R installed).\n";
+  ## Use R to generate XY plots.
+  if ($ENV{R_supported}) {
+      print "<br>";
+      print $query->checkbox(-name=>'r_plot',
+			     -checked=>$default{"r_plot"},
+			     -label=>'');
+      print "&nbsp;<b>Use R to generate plots</b> (only works for servers with R installed).\n";
+  }
   
   print "</fieldset><p/>";
-
 
   ## Close divisions
   print "</div>\n";

@@ -338,20 +338,17 @@ sub Get_variation_species_ftp {
 sub Get_gvf_ftp {
   my ($db,$species,$ensembl_release) = @_;
 
-  if ($db eq "ensembl") {                                                    ## Ensembl
-
-    if ($ensembl_release == 60) {                                            # Release 60
+  if ($db eq "ensembl") {
+      ## Note: the case of GVF file names changed between release 90 and 91.
+      ## Until release 90 (included), species name was with first letter in uppercase.
+      ## Since release 91, genus and species names are fully in lowercases.
+      if ($ensembl_release <= 90) {
+	  return &Get_variation_species_ftp($db,$species,$ensembl_release).ucfirst($species).".gvf.gz";
+      } else {
+	  return &Get_variation_species_ftp($db,$species,$ensembl_release).$species.".gvf.gz";
+      }
+  } elsif (lc($db) eq "ensemblgenomes") {
       return &Get_variation_species_ftp($db,$species,$ensembl_release).$species.".gvf.gz";
-
-    } else {                                                                 # Release 61 to ??
-      return &Get_variation_species_ftp($db,$species,$ensembl_release).ucfirst($species).".gvf.gz";
-    }
-  }
-
-  elsif (lc($db) eq "ensemblgenomes") {                                         ## Ensembl genomes
-
-                                                                             # Release 17 to ??
-    return &Get_variation_species_ftp($db,$species,$ensembl_release).$species.".gvf.gz";
   }
 }
 
