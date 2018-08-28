@@ -150,6 +150,11 @@ function setDemo(demo_matrices){
     matrix.value = demo_matrices;
     $("#db_choice").val("' . $default{compare_motif_database} . '").trigger("change");
 }
+function fileupload(){
+    if($("#upload_custom_file").val() != ""){
+        $("#db_choice").val("custom").trigger("change");
+    }
+}
 </script>';
 
 print '<button type="button" onclick="setDemo('. "'$demo_matrices'" .')">DEMO</button>';
@@ -190,8 +195,8 @@ sub DatabaseChoice_select2 {
 
   &MotifSelection();
   print "<br/><b>Or</b> Custom motif(s) in TRANSFAC format *\n";
-  print $query->filefield(-name=>'upload_custom_motif_file',
-			  -size=>10, -onchange=>'fileupload(event)');
+  print $query->filefield(-name=>'upload_custom_motif_file',-id=>'upload_custom_file',
+			  -size=>10, -onchange=>'fileupload()');
   print "<br>", "&nbsp;"x6, "* Other formats can be converted with <a class='iframe' href='convert-matrix_form.cgi'><i>convert-matrix</i></a>.";
   print "</p>\n";
 
