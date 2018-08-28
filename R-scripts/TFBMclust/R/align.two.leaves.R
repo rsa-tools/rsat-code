@@ -10,6 +10,7 @@ align.two.leaves <- function(child1,
                              nodes.attributes = TRUE,
                              motif.at.tree.level = motif.at.tree.level){
 
+
   ## Identify the node numbers and merge level
   n1 <- min(-child1,-child2)
   n2 <- max(-child1,-child2)
@@ -19,6 +20,12 @@ align.two.leaves <- function(child1,
   id1.hclust <- get.id(n1)
   id2.hclust <- get.id(n2)
 
+  # message("; Aligning: ", id1.hclust, " - ", id2.hclust)
+  if(align == TRUE){
+    verbose(paste("Aligning motifs: ", id1.hclust, " - ", id2.hclust), 1)
+  }
+
+
   ## According to the hierarchical clustering method selected,
   ## Check if the motifs corresponding to the current level shall be aligned
   aligned.motif.flag <- 0
@@ -27,6 +34,8 @@ align.two.leaves <- function(child1,
                                         thresholds,
                                         hclust.method = hclust.method,
                                         metric = metric)
+
+
 
   ## Fill the attributes table
   if(nodes.attributes == TRUE){
@@ -126,12 +135,14 @@ align.two.leaves <- function(child1,
       motifs.info[[id1]][["number"]] <<- n1
       motifs.info[[id1]][["spacer.up"]] <<- get.spacer.nb(motifs.info[[id1]][["consensus_d"]])$up.spacer
       motifs.info[[id1]][["spacer.dw"]] <<- get.spacer.nb(motifs.info[[id1]][["consensus_d"]])$dw.spacer
-
       motifs.info[[id2]][["name"]] <<- get.name(id2)
       motifs.info[[id2]][["consensus_d"]] <<- consensus2a
       motifs.info[[id2]][["consensus_rc"]] <<- consensus2b
       motifs.info[[id2]][["strand"]] <<- id2.strand
       motifs.info[[id2]][["number"]] <<- n2
+
+
+
       motifs.info[[id2]][["spacer.up"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$up.spacer
       motifs.info[[id2]][["spacer.dw"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$dw.spacer
 

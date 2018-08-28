@@ -183,7 +183,9 @@ if (($query->param('output') =~ /display/i) ||
     $command2 .= " -xcol 1 -ycol 2 -legend -lines -pointsize 1";
     $command2 .= " -xleg1 'weight'";
     $command2 .= " -yleg1 'frequency'";
-    $command2 .= " -r_plot";
+    if ($ENV{R_supported}) {
+	$command2 .= " -r_plot";
+    }
     $command2 .= " -format ".${plot_format};
     $command2 .= " -o $figure";
     print "<pre>command2: $command2\n</pre>" if ($ENV{rsat_echo} >= 1);
@@ -205,7 +207,9 @@ if (($query->param('output') =~ /display/i) ||
     $command3 .= " -lines";
     $command3 .= " -pointsize 1 -ylog";
     $command3 .= " -xleg1 'weight' -yleg1 'Frequency (log scale)'";
-    $command3 .= " -r_plot";
+    if ($ENV{R_supported}) {
+	$command3 .= " -r_plot";
+    }
     $command3 .= " -format ${plot_format}";
     $command3 .= " -o $figure";
     print "<pre>command3: $command3\n</pre>" if ($ENV{rsat_echo} >= 1);

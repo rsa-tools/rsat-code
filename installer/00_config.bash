@@ -62,3 +62,6 @@ df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 # DEVICE=`df -h | grep '\/$' | perl -pe 's/\/dev\///' | awk '{print $1}'`
 # echo "Installation device: ${DEVICE}"
 ## This should give something like sda1 or vda1. If not check the device with df
+
+export APACHE_CONFIG_FOLDER=/etc/apache2
+echo "    APACHE_CONFIG_FOLDER=${APACHE_CONFIG_FOLDER}"

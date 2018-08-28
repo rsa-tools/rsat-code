@@ -236,4 +236,3 @@ Using the list of available bacterial genomes we can select only those with the 
 
 
 
-

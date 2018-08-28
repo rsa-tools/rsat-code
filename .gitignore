@@ -59,12 +59,10 @@ authorized_IP*
 python-scripts/lib/*.pyc
 formatdb.log
 share
-public_html/web_services/RSATWS.wsdl
 check_perl_modules_*.txt
 RSAT_config.conf
 backups
 ws_clients/perl_clients/RSATWS/MyInterfaces/RSATWebServices/RSATWSPortType.pm
-public_html/web_services/RSATWS.wsdl
 public_html/web_services/RSATWS_documentation.xml
 results
 rsat_*.tar.gz
@@ -81,3 +79,4 @@ INSTALL.html
 results
 install_logs
 ext_lib
+INSTALL_cache

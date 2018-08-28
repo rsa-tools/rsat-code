@@ -136,6 +136,7 @@ package main;
   @dirs = ();
 
   %main::matrix_file = ();
+  %main::matrix_format = ();
   %main::matrix_titles = ();
 
   $main::verbose = 0;
@@ -770,16 +771,17 @@ For a description of these formats, see the help of I<convert-matrix>.
 This option is recommended when the input number of files is large (> 20), which
 would have a large command line and some programs are not capable of read such large arguments.
 
-The input file contains a tab-delimited table with two columns:
+The input file contains a tab-delimited table with three columns:
 
 1) The motif file - The path to the file with the motif
 2) The collection label
+3) The matrix format
 
 Example: 
 
-Sox_pssms.tf	Sox
-Oct_pssms.tf	Oct
-Nanog_pssms.tf	Nanog
+Sox_pssms.tf	Sox     Transfac
+Oct_pssms.tf	Oct     Transfac
+Nanog_pssms.tf	Nanog   Transfac
 
 =cut
     } elsif ($arg eq "-matrix_file_table") {
@@ -809,11 +811,11 @@ tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
 For a description of these formats, see the help of I<convert-matrix>.
 
 =cut
-    } elsif ($arg eq "-matrix_format") {
-      $main::matrix_format = shift(@arguments);
-      unless ($supported_matrix_format{$matrix_format}) {
-	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
-      }
+    # } elsif ($arg eq "-matrix_format") {
+    #   $main::matrix_format = shift(@arguments);
+    #   unless ($supported_matrix_format{$matrix_format}) {
+    # 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+    #   }
 
 
 =pod
@@ -1635,7 +1637,7 @@ sub read_motif_table_file {
 		## Get the cluster name and motif IDs
 		my $motif_file = $split_line[0];
 		my $motif_collection = $split_line[1];
-#		my $motif_format = $split_line[2];
+		my $motif_format = $split_line[2];
 	
 		## Substitue special characters which cannot be used inside a file name
 		$motif_collection =~ s|\s|_|gi;
@@ -1644,6 +1646,7 @@ sub read_motif_table_file {
 		$motif_collection =~ s|\.|_|gi;
 		
 		$main::matrix_file{$motif_collection} = $motif_file;
+		$main::matrix_format{$motif_collection} = $motif_format;
 
 		if ($main::matrix_file{$motif_collection}){
 			$count_input_matrix_parameters++;
@@ -1702,7 +1705,7 @@ sub pre_process_motif_files{
       }
       
       $motif_set_attributes{$collection_name}{collection_label} = $collection_name;
-      $motif_set_attributes{$collection_name}{matrix_format} = $main::matrix_format{$collection_name};; 
+      $motif_set_attributes{$collection_name}{matrix_format} = $main::matrix_format{$collection_name};
       $motif_set_attributes{$collection_name}{matrix_file_input} = $main::matrix_file{$collection_name};
 
       &RSAT::message::Info("Matrix file", $matrix_format, $collection_name, $main::matrix_file{$collection_name}) if ($main::verbose >= 2);
@@ -4661,7 +4664,7 @@ sub Create_Attributes_for_Heatmap_D3 {
     ### Identify the path of the R executable
     my $r_path = &RSAT::server::GetProgramPath("R");
 
-    my $cluster_collection_script  = $ENV{RSAT}."/R-scripts/heatmap_clusters_by_collection.r";
+    my $cluster_collection_script  = $ENV{RSAT}."/R-scripts/heatmap_clusters_by_collection.R";
     &RSAT::error::FatalError("Cannot read cluster collection script", $cluster_collection_script) unless (-r $cluster_collection_script);
     $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
     
