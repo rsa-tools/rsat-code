@@ -170,7 +170,9 @@ COLUMN_ORDER = ["org_name", "seq_id", "ft_name", "ft_type", "gene", \
                 "sequence", "strand", "start", "end", "weight", \
                 "Pval", "branch_prob", "num_orthologs", "BLS", "BBLS", \
                 "BBLS_norm"]
-COLUMN_DELETE = ["rank", "rank_pm", "sig", "org_seq", "ln_Pval"]
+COLUMN_DELETE = ["sig", "org_seq", "ln_Pval"]
+#COLUMN_KEEP = ["seq_id", "ft_type", "ft_name", "strand", "start", \
+#               "end", "sequence", "weight", "Pval", "ln_Pval", "sig"]
 
 
 #print(parser.print_usage())
@@ -222,7 +224,7 @@ def check_change_tree_names(tree):
 
     if VERBOSITY >= 7:
         print("Tree structure")
-        print(tree.get_ascii(attributes=['name']))                
+        print(tree.get_ascii(attributes=['name']))
     if flag1 and VERBOSITY >= 5:
         print("; Warning\tTree names were changed from seq|Organism_name|seq" + \
               " to Organism_name")
@@ -272,11 +274,13 @@ def synthesis(path_report):
     Parameters:
     paths to the report files.
     '''
-    print("\n;Function synthesis" if VERBOSITY >= 10 else "")
+    if VERBOSITY >= 10:
+        print("\n;Function synthesis")
 
     def concat_results(list_of_reports):
-        print("\n; Function concat_results" \
-              if VERBOSITY >= 10 else "")
+
+        if VERBOSITY >= 10:
+            print("\n; Function concat_results")
 
         df_list = []
         for i in list_of_reports:
@@ -291,24 +295,26 @@ def synthesis(path_report):
     # Get data from each matrix. list of folders in the path.
     all_matrices = next(os.walk(path_report))[1]
 
-
-    print("; Looking in dir for: " + str(all_matrices) \
-          if VERBOSITY >= 10 else "")
+    if VERBOSITY >= 10:
+        print("; Looking in dir for: " + str(all_matrices))
 
     all_reports = []
 
     for matrix in all_matrices:
 
         matrix_path = path_report + "/" + matrix + "/"
-        print("matrix path" + matrix_path if VERBOSITY >= 10 else "")
+
+        if VERBOSITY >= 10:
+            print("matrix path" + matrix_path)
+
         matrix_dirs = os.walk(matrix_path)
         next(matrix_dirs)
         matrix_reports = []
 
         for matrix_dir in matrix_dirs:
+            if VERBOSITY >= 10:
+                print("Looking in: " + str(matrix_dir[2]))
 
-            print("Looking in: " + str(matrix_dir[2])\
-                  if VERBOSITY >= 10 else "")
             for file_ in matrix_dir[2]:
                 if "bbls_report.tab" in file_:
                     matrix_reports.append(matrix_dir[0] + "/"\
@@ -321,9 +327,10 @@ def synthesis(path_report):
 
             results_df = concat_results(matrix_reports)
 
-            print("; Writing synthesis report for all sites in: " + \
-                  matrix_path + "report_per_matrix.tab" \
-                  if VERBOSITY >= 10 else "")
+            if VERBOSITY >= 10:
+
+                print("; Writing synthesis report for all sites in: " + \
+                  matrix_path + "report_per_matrix.tab")
 
             results_df = results_df.reindex(columns=COLUMN_ORDER)
 
@@ -595,6 +602,14 @@ def main(args):
 
         th_score = []
 
+        try:
+            distrib = open(matrix_distrib_file, 'r')
+            distrib.close()
+
+        except:
+            print("; Unable to open matrix distrib file: \n" + str(matrix_distrib_file))
+            exit(2)
+    
         with open(matrix_distrib_file, 'r') as distrib:
 
             flag = False
@@ -662,7 +677,10 @@ def main(args):
             print(tfb_sites)
             print(list(tfb_sites))
 
+        columns = [w.replace(' ', '') for w in columns]
+
         matrix_info = pandas.DataFrame(data=matrix_info_list, columns=columns)
+
         matrix_info[["Wmin", "Wmax", "Wrange"]]\
             = matrix_info[["Wmin", "Wmax", "Wrange"]].astype(np.float)
 
@@ -988,7 +1006,7 @@ def main(args):
             if VERBOSITY >= 1:
                 print("; Unknown query gene")
             continue
-
+        
         # tfb_sites is gene especific.
         tfb_sites = tfbs.loc[tfbs["org_seq"].\
                              isin(ortho_seq)]
@@ -1085,7 +1103,7 @@ def main(args):
                             ["sequence"].values[0])
             
             # Report results per analysis (matrix-gene-site).
-            limit_columns = ['weight', 'sequence', 'sig', 'rank', 'rank_pm',\
+            limit_columns = ['weight', 'sequence', 'sig',\
                              'num_orthologs', 'ln_Pval', 'Pval']
             tfbs_per_matrix.loc[tfbs_per_matrix.ft_type == 'limit',\
                                 limit_columns] = '-'
@@ -1102,6 +1120,8 @@ def main(args):
                                    + "_" + TF + ".tab"
 
             tfbs_per_matrix.drop(COLUMN_DELETE, axis=1, inplace=True)
+
+            #tfbs_per_matrix = tfbs_per_matrix[COLUMN_KEEP]
             tfbs_per_matrix = tfbs_per_matrix.reindex(columns=COLUMN_ORDER)
 
             tfbs_per_matrix.to_csv(tfbs_per_matrix_path, sep='\t', index=False)

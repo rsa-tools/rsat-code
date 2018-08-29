@@ -1821,10 +1821,6 @@ sub BayesianScore {
 	# Check that the tree file exists Get support for .gz files in python.
 	&RSAT::error::FatalError("File specified as a phylogenetic tree does not exist") unless ( (-e  $main::tree) || (-e  $main::tree.".gz") ) ;
 
-	$outfile{matrix_distrib} = $outfile{matrix_prefix}."_matrix-distrib_occsig.tab";
-	&CalcMAtrixTheorDistrib;
-
-
 	# Not stable. I should fix this to get the number for the image.
 	# Not urgent.
 	# my $org_num_cmd = "";
@@ -1842,8 +1838,6 @@ sub BayesianScore {
 	#     $org_num_cmd = "wc -l ".$main::org_tree_output_file." | tee ".$org_in_group;
 	# }
 	# &one_command($org_num_cmd);
-
-	
 	my $cmd = "$SCRIPTS/../python-scripts/bbls";
 	$cmd .= " --verbose ".$main::verbose;
 	$cmd .= " --task bbls ";
@@ -1858,7 +1852,7 @@ sub BayesianScore {
 	$cmd .= " --orthologs ".$outfile{orthologs};
 	$cmd .= " --infer_operons ".$infer_operons;
 	$cmd .= " --group_name ".$main::org_selection_prefix;
-	$cmd .= " --bbls_draw ".$main::bbls_draw if (-e $main::bbls_draw);
+	$cmd .= " --bbls_draw ".$main::bbls_draw;
 	# Outputs
 	$cmd .= " --bbls_sites_file ".$outfile{bbls_sites};
 	$cmd .= " --bbls_tree_file ".$outfile{bbls_tree};
