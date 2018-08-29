@@ -4,8 +4,9 @@ author: "Jacques van Helden"
 date: 'Last update: 2017/04/21'
 output:
   html_document:
+    code_folding: show
     fig_caption: yes
-    highlight: zenburn
+    highlight: kate
     theme: cerulean
     toc: yes
     toc_depth: 3
@@ -16,6 +17,22 @@ output:
     toc: yes
     toc_depth: 2
 ---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=TRUE, 
+  eval=FALSE, 
+  cache=TRUE, 
+  message=FALSE, 
+  warning=FALSE, 
+  comment = "",  
+  fig.align= "center",
+  fig.width = 7, 
+  fig.height = 5,
+  fig.path = "figures/")
+```
 
 # Introduction
 
@@ -45,7 +62,7 @@ where `XX-XX-XX` is the latest release date and put it in your chosen directory.
 
 6. Uncompress the archive. This will create a directory named `rsat` where we will continue the install procedure.
 
-```
+```{bash}
 export RELEASE=20XX-XX-XX
 ## e.g. export RELEASE=2018-05-26
 
@@ -60,39 +77,76 @@ tar -C ${INSTALL_ROOT}/ -xpvzf rsat_${RELEASE}.tar.gz
 cd ${INSTALL_ROOT}/rsat
 ```
 
-## Configuring your local RSAT instance
+# Configuring your local RSAT instance
 
-7. We will start by auto-configuring RSAT in order to deine suitable basic parameters. 
+We will start by auto-configuring RSAT in order to deine suitable basic parameters. 
 
+## Getting the IP address of your machine
 
 Replace [your.server.IP] by the actual IP address of your server. 
 (e.g.: for Virtualbox Virtual Machines, we set the IP to 192.168.56.101). 
 
-
-```
+```{bash}
 ## Get your IP address and check if it is 192.168.56.101
-ifconfig | grep inet
+ifconfig | grep 'inet '
 export MY_IP=XXX.XXX.XXX.XXX
 ## e.g. export MY_IP=192.168.56.101
+```
+
+Note: if you install RSAT on a personal PC (e.g. a laptop) and intend to use it only from this machine, you can configure it with the local network.
+
+```{r}
+## Configure RSAT to be used internally inly
+export MY_IP=127.0.0.1
+```
+
+## Choose a site name for your RSAT instance
+
+You can choose an arbitrary name for your RSAT instance. 
+For this tutorial, we will call it "my_rsat".
+
+```{bash}
+export RSAT_SITE=my_rsat
+```
+
+
+## Automatic configuration of RSAT parameters
+
+```{bash}
+
+## Check that the IP site of your machine has been specified
+echo ${MY_IP}
+
+## Check that you defined a site name for your RSAT instance
+echo ${RSAT_SITE}
 
 ## Semi-auto configuration for VirtualBox VM
 ## (adapt IP address if required)
 perl perl-scripts/configure_rsat.pl -auto  \
-  rsat_site=rsat-vb-2018-05 \
+  rsat_site=${RSAT_SITE} \
   rsat_www=http://${MY_IP}/rsat/ \
   rsat_ws=http://${MY_IP}/rsat/ \
   ucsc_tools=1 \
   ensembl_tools=1
 ```
 
-### For the IFB cloud
+You can add some additional option, e.g. enter your mail address as server admin, activate some specific tools that are disabled by default. 
+
+```{bash}
+rsat_server_admin=your.mail@your.mail.server
+variation_tools=1
+```
+
+<!--
+
+## For the IFB cloud
 
 RSAT has been ported on the cloud of the [**Institut Français de Bioinformatique**](http://www.france-bioinformatique.fr) (**IFB**). The tools are available as an appliance which enables each user to automatically start an RSAT server, that can be used in a terminal, via a Web interface, or invoked remotely as Web services. 
 
 
 Since the IP address is allocated dynamically during at the start of the instance booting, we use an automatic configuration. 
 
-```
+```{bash}
 perl perl-scripts/configure_rsat.pl -auto  \
   rsat_site=rsatvm-ifb-2018-05 \
   RSAT=${INSTALL_ROOT}/rsat \
@@ -107,24 +161,33 @@ perl perl-scripts/configure_rsat.pl -auto  \
   
 chmod 755 /root # required for apache user to access the packages
 ```
+-->
 
-8. We can now refine the configuration by choosing custom parameter to your RSAT instance (for example the email of the local admin, the instance name, ...).
+## Advanced RSAT configuration
 
-```
+In order to see all options, you can run the script `configure_rsat.pl` without the option `--auto`
+
+```{bash}
 perl perl-scripts/configure_rsat.pl
 ```
 
+You can now refine the configuration by choosing custom parameter to your RSAT instance (for example the email of the local admin, the organism group, ...).
 
-## Installing RSAT
+
+# Installing RSAT
 
 Before running the installation, it might be worth updating the Linux distribution (`apt-get update`) in order to get the latest versions of the basic packages. 
 
-```
+```{bash}
 ## This requires admin privileges
 sudo bash
 
 ## Check who you are  (should be root)
 whoami
+
+## Define your operating system (currently supported: ubuntu, macosx) by running one (and only one) of the commands below. 
+export MY_OS=macosx
+export MY_OS=ubuntu
 
 
 ## Go to the RSAT directory
@@ -133,7 +196,7 @@ cd ${INSTALL_ROOT}/rsat
 
 ## Read config and run bash installation scripts
 source RSAT_config.bashrc && \ 
-bash installer/01_ubuntu_packages.bash && \
+bash installer/01_${MY_OS}_packages.bash && \
 bash installer/02_python_packages.bash  && \
 bash installer/03_install_rsat.bash && \
 bash installer/04_perl_packages.bash  && \
@@ -144,6 +207,7 @@ bash installer/09_rsat_ws.bash && \
 bash installer/10_clean_unnecessary_files.bash
 
 ## Restore rsat as owner of the $RSAT folder
+## NOTE: the following command should be adapted to the login and group of the user owing the rsat package.
 chown -R rsat.rsat $RSAT
 
 ## Exit sudo session
@@ -153,11 +217,11 @@ exit
 whoami ## This should give 'rsat'
 ```
 
-## Testing the command lines
+# Testing the command lines
 
 The script `makefile/install_tests.mk` runs a series of tests for different components of the *RSAT* suite. Each test result is stored in a separate file in the test directory (`./install_tests` by default). Output file names are printed out after each test. 
 
-```
+```{bash}
 ## Load the RSAT configuration
 source RSAT_config.bashrc
 
@@ -170,7 +234,7 @@ ls -ltr install_tests
 
 
 
-## Testing the Web server
+# Testing the Web server
 
 The web site can be tested by selecting any supported tool, clicking on the demo button and checking the result. 
 
@@ -226,7 +290,7 @@ metabolic-tools_YYYYMMDD.tar.gz
 After having uncompressed the archive, you will find the installation
 and user guides in the `doc/manuals` directory
 
-```
+```{bash}
 ls -1 public_html/release/*.pdf
 ```
 

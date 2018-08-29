@@ -28,7 +28,6 @@ required.packages = c("devtools",
                       "flux",
                       "zoo",
                       "RColorBrewer")
-
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
@@ -56,7 +55,7 @@ install.dir <- dir.rsat.rlib
 
 dir.create(install.dir, showWarnings = FALSE, recursive = FALSE)
 
-## Install R packages from the CRAN
+## Install R packages from the CRAN (type="source" is default)
 message("Installing R packages from CRAN repository: ", rcran.repos)
 message("Installing R packages in local directory: ", install.dir)
 

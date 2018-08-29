@@ -98,9 +98,6 @@ RELEASE_FILES=rsat/00_README.txt		\
 	rsat/INSTALL.md				\
 	rsat/installer				\
 	rsat/perl-scripts			\
-	rsat/R-scripts/TFBMclust		\
-	rsat/R-scripts/*.R			\
-	rsat/R-scripts/util			\
 	rsat/makefiles				\
 	rsat/RSAT_config_default.props		\
 	rsat/RSAT_config_default.mk		\
@@ -114,8 +111,14 @@ RELEASE_FILES=rsat/00_README.txt		\
 	rsat/contrib/compare-matrices-quick  	\
 	rsat/contrib/info-gibbs			\
 	rsat/contrib/matrix-scan-quick  	\
+	rsat/contrib/retrieve-variation-seq  	\
 	rsat/ws_clients		  		\
+	rsat/R-scripts				\
 	rsat/public_html
+
+#	rsat/R-scripts/TFBMclust		\
+#	rsat/R-scripts/*.R			\
+#	rsat/R-scripts/util			\
 
 PATHWAY_FILES = \
 	rsat/contrib/floydwarshall		\

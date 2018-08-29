@@ -316,7 +316,6 @@ package	main;
 
 #   ## Retrieve the subfolders in the variations folder
 #   ## in the ensembl server
-# >>>>>>> b078097db7f4286a2036f24e8aa99ceccb0912a4
   my @available_species_dir = ();
   my @available_species = ();
   my %variation_ftp = ();
@@ -408,7 +407,8 @@ package	main;
   my $species_variation_ftp = &Get_variation_species_ftp($db,$species,$ensembl_release);
 
   ## Define the basename of the GVF file
-  my $gvf_file = ucfirst($species).".gvf";
+  my $gvf_file = lc($species).".gvf";
+  &RSAT::message::Debug("GVF file: ", $gvf_file, "\n") if ($main::verbose >= 0);
 
   ## Define the path of the GVF file in the variation directory
   my $variation_dir = &Get_variation_dir($species, $assembly,$ensembl_release, $species_suffix);
@@ -416,7 +416,7 @@ package	main;
   my $gvf_file_gz = $gvf_file_local_path.".gz";
 
   ## Define the URL of the GVF file on Ensembl FTP server
-  my $gvf_file_ftp = &Get_gvf_ftp($db,$species,$ensembl_release);
+  my $gvf_file_ftp = &Get_gvf_ftp($db, $species, $ensembl_release);
 
   &RSAT::message::Info("Species variation URL --> $species_variation_ftp") if ($main::verbose >= 2);
   &RSAT::message::Info("Species gvf URL --> $gvf_file_ftp") if ($main::verbose >= 2);
