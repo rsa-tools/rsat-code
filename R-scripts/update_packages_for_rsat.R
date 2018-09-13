@@ -13,7 +13,7 @@ if (Sys.getenv("CRAN_REPOS") == "") {
 }
 
 ## List of required packages from Bioconductor
-#required.packages.bioconductor <- c("ctc", "amap", "qvalue")
+required.packages.bioconductor <- c("ctc", "amap", "qvalue", "GenomicRanges")
 
 ## List of RSAT-specific packages to be compiled on the server
 #required.packages.rsat <- c("TFBMclust")
@@ -43,6 +43,13 @@ message("Installing R packages in local directory: ", install.dir)
 
 update.packages(instPkgs=required.packages, repos=rcran.repos, lib=install.dir, ask = FALSE, checkBuilt = TRUE)
 
+message("Updating BioConductor packages")
+
+for (pkg in required.packages.bioconductor) {
+    source("http://bioconductor.org/biocLite.R")
+    biocLite(lib=install.dir, lib.loc=c(.libPaths(),install.dir), suppressUpdates="")
+    biocLite(pkg, dependencies=TRUE, lib=install.dir,  lib.loc=install.dir, suppressUpdates="")
+}
 
 
 
