@@ -36,7 +36,7 @@ required.packages = c("devtools",
 )
 
 ## List of required packages from Bioconductor
-required.packages.bioconductor <- c("ctc", "amap", "qvalue", "GenomicRanges")
+required.packages.bioconductor <- c("S4Vectors", "ctc", "amap", "qvalue", "GenomicRanges")
 
 ## List of RSAT-specific packages to be compiled on the server
 required.packages.rsat <- c("TFBMclust")
