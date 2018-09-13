@@ -13,8 +13,14 @@ if (Sys.getenv("CRAN_REPOS") == "") {
 }
 
 ## List of required packages from Bioconductor
-required.packages.bioconductor <- c("S4Vectors","IRanges", 
-					"ctc", "amap", "qvalue", "GenomicRanges")
+required.packages.bioconductor <- c("S4Vectors",
+                                    "IRanges", 
+                                    "BiocGenerics",
+                                    "ctc", 
+                                    "amap", 
+                                    "qvalue", 
+                                    "GenomicRanges"
+)
 
 ## List of RSAT-specific packages to be compiled on the server
 #required.packages.rsat <- c("TFBMclust")
