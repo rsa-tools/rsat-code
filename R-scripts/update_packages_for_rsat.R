@@ -47,7 +47,6 @@ message("Updating BioConductor packages")
 
 for (pkg in required.packages.bioconductor) {
     source("http://bioconductor.org/biocLite.R")
-    biocLite(lib=install.dir, lib.loc=c(.libPaths(),install.dir), suppressUpdates="")
     biocLite(pkg, dependencies=TRUE, lib=install.dir,  lib.loc=install.dir, suppressUpdates="")
 }
 
