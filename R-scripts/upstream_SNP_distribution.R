@@ -2,7 +2,7 @@
 #
 # Computes and plots the distribution of SNPs in upstream regions
 # It is called by makefile/prom_Var.mk
-# Author: Chesco Montardir Tarda 2018 (edited by BContreras)
+# Author: Chesco Montardit Tarda 2018 (edited by BContreras)
 
 ## Define the local directory for R libs
 dir.rsat <- Sys.getenv("RSAT")
@@ -14,10 +14,14 @@ dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 
 ## Load required libraries or warn user
-required.packages = c("GenomicRanges",                     
-                      "zoo","changepoint", # zoo is required by changepoint in my old centos5
+required.packages = c("BiocGenerics", "S4Vectors", "IRanges", "GenomeInfoDb", # required by GenomicRanges
+		      "GenomicRanges",                     
+                      "zoo", # required by changepoint
+                      "changepoint",
+		      "crayon","pillar","withr", # required by ggplot2
                       "ggplot2",
-                      "dplyr")
+                      "dplyr"
+)
 
 for (pkg in required.packages) { 
   suppressPackageStartupMessages(library(pkg, warn.conflicts=TRUE, 
