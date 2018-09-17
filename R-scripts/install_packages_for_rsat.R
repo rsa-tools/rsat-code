@@ -29,7 +29,7 @@ required.packages = c("devtools",
                       "RColorBrewer",
                       "changepoint",
                       "dplyr",
-                      "ggplot2",
+                      "ggplot2"
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
