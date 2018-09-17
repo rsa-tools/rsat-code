@@ -7,7 +7,7 @@
 ## Define the preferred CRAN repository.
 ## If not defined in an environment variable, take rstudio by default.
 if (Sys.getenv("CRAN_REPOS") == "") {
-  rcran.repos <- "http://cran.rstudio.com/"
+  rcran.repos <- "https://cran.rstudio.com/"
 } else {
   rcran.repos <- Sys.getenv("CRAN_REPOS")
 }
@@ -19,7 +19,6 @@ required.packages = c("devtools",
                       "jpeg",
                       "png",
                       "dynamicTreeCut",
-                      "ggplot2",
                       "reshape2",
                       "dendextend",
                       "gridExtra",
@@ -28,8 +27,8 @@ required.packages = c("devtools",
                       "flux",
                       "zoo",
                       "RColorBrewer",
-                      "dplyr",
-                      "changepoint"
+                      "changepoint",
+                      "tidyverse" # includes ggplot2, dplyr
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
@@ -37,11 +36,11 @@ required.packages = c("devtools",
 
 ## List of required packages from Bioconductor
 required.packages.bioconductor <- c("S4Vectors",
+				    "ctc",
+                                    "qvalue",
 				    "IRanges", 
                                     "BiocGenerics",
-			            "ctc", 
                                     "amap", 
-                                    "qvalue", 
                                     "GenomicRanges"
 )
 
