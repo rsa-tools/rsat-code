@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript 
 #
 # Computes and plots the distribution of SNPs in upstream regions
-# It is called by makefile/prom_Var.mk
+# It is called by makefile/upstream-variation.mk
 # Author: Chesco Montardit Tarda 2018 (edited by BContreras)
 
 ## Define the local directory for R libs
