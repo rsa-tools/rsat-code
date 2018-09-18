@@ -11,39 +11,51 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/upstream-variation.mk
 
-## Define parameters
+VCF_INPUT = ${VCF_INPUT}    # might be GZIP-compressed
+RET_INPUT = ${VCF_INPUT}    # might be GZIP-compressed
 
+# default chr prefixes
+ifeq ($(CHR_ORI),)
+	CHR_ORI=""
+	CHR_NEW=""
+endif
 
-DIR = ${DIR}
-VCF_INPUT = ${VCF_INPUT}
-RET_INPUT = ${RET_INPUT}
-RSAT_ORG = ${RSAT_ORG}
-CHR_NAME = ${CHR_NAME}
-VCF_POSITIONS = ${RSAT_ORG}_SNPs_position.tab
-RET_RANGES = ${RSAT_ORG}_ranges.tab
+# default location and names of temp files
+TMPDIR    = /tmp
+VCF_POSITIONS = ${TMPDIR}/${VCF_INPUT}.variants.tab
+RET_RANGES = ${TMPDIR}/${RET_INPUT}.ranges.tab
 
-#### vcf_pos parses a VCF-file to output a list of polymorphisms positions
-vcf_pos:
+#this could be used to call this makefile from others such as ensemblgenomes_FTP_client.mk
+#SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID} instead of RSAT_ORG
+#GENOME_DIR=${SPECIES_DIR}/genome
+#VARIATIONS_DIR=${SPECIES_DIR}/variations
+#data/genomes/Oryza_sativa.IRGSP-1.0.38/genome/Oryza_sativa.IRGSP-1.0.38_upstream-noorf.fasta.gz
+
+#### Parses a VCF-file and produces a temporary list of tab-separated polymorphism positions.
+#### Optionanly uses $CHR_NEW to replace $CHR_ORI chr names in VCF so that they match those in FASTA file
+#### NOTE: only first base of variant is taken
+_vcf_pos:
 	@echo
-	@echo	"Collecting polymorphisms positions from ${VCF_INPUT}" 
-	@perl -F'\t' -lane 'print "@F[0..1]"' ${DIR}/${VCF_INPUT} > ${DIR}/${VCF_POSITIONS}
-	@perl -i -ne 's/${CHR_NAME}//; print' ${DIR}/${VCF_POSITIONS}
-	@sed -i '/scaffold/d' ${DIR}/${VCF_POSITIONS}
-	@echo	"List of positions can be found at  ${DIR}/${VCF_POSITIONS}"
+	@echo "Collecting polymorphisms positions from ${VCF_INPUT}" 
+	@gzip -cdfq ${VCF_INPUT} | perl -lne 's/^${CHR_ORI}/${CHR_NEW}/; print' | \
+		perl -F'\t' -lane 'next if(/^#/); print "@F[0..1]"' > ${VCF_POSITIONS}
+	@echo "List of positions stored in ${VCF_POSITIONS}"
 
-### sequence_pos gathers genomic ranges and strand of retrieved sequences
-sequence_pos:
+### Sequence_pos gathers genomic ranges and strand of retrieved sequences
+_sequence_pos:
 	@echo
-	@echo "Parsing ${RET_INPUT} to acquire genomic ranges of sequences"	
-	@awk -F';' '/location:/{sub(/.*location: /,""); print $1}' ${RET_INPUT} > ${DIR}/${RET_RANGES}
-	@perl -i -ne 's/${RSAT_ORG}://, print' ${DIR}/${RET_RANGES}
-	@sed -i '/\;/ s/;.*//' ${DIR}/${RET_RANGES}
-	@echo "Genomic ranges can be found at ${DIR}/${RET_RANGES}"
+	@echo "Parsing sequence range coordinates from ${RET_INPUT}"
+	@gzip -cdfq ${RET_INPUT} | perl -lne 'print $$1 if(/location: \S+?:(\S+?);/)' > ${RET_RANGES} 
+	@echo "Genomic ranges can be found at ${RET_RANGES}"
 
-### This command needs the next order of variables when called: VCF_POSITIONS=X RET_RANGES=Y DIR=Z etc
-snp_vs_sequence:
+_clean:
 	@echo
-	@echo "Overlapping polymorphisms in upstream sequences"
-	@Rscript ${RSAT}/R-scripts/upstream_SNP_distribution.R ${DIR}/${VCF_POSITIONS} ${DIR}/${RET_RANGES}
-	@rm tmp_points.tab
+	@echo "Clean temporary files ${VCF_POSITIONS}, ${RET_RANGES}"
+	@rm ${VCF_POSITIONS} ${RET_RANGES}
+
+dist: _vcf_pos _sequence_pos
+	@echo
+	@echo "Computing distribution of polymorphisms in upstream sequences"
+	@Rscript ${RSAT}/R-scripts/upstream_SNP_distribution.R ${VCF_POSITIONS} ${RET_RANGES}
+	$(MAKE) _clean
 	@echo "Done"
