@@ -21,9 +21,9 @@ ifeq ($(CHR_ORI),)
 endif
 
 # default location and names of temp files
-TMPDIR    = /tmp
-VCF_POSITIONS = ${TMPDIR}/${VCF_INPUT}.variants.tab
-RET_RANGES = ${TMPDIR}/${RET_INPUT}.ranges.tab
+TMPDIR        = /tmp
+VCF_POSITIONS = ${TMPDIR}/$(basename VCF_INPUT).variants.tab
+RET_RANGES    = ${TMPDIR}/$(basename RET_INPUT).ranges.tab
 
 #this could be used to call this makefile from others such as ensemblgenomes_FTP_client.mk
 #SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID} instead of RSAT_ORG
@@ -59,3 +59,10 @@ dist: _vcf_pos _sequence_pos
 	@Rscript ${RSAT}/R-scripts/upstream_SNP_distribution.R ${VCF_POSITIONS} ${RET_RANGES}
 	$(MAKE) _clean
 	@echo "Done"
+
+VCF_INPUT = ${RSAT}/public_html/demo_files/Ppersica_Varieties.chr1.vcf.gz
+RET_INPUT = ${RSAT}/public_html/demo_files/Prunus_persica.Prunus_persica_NCBIv2.38_upstream.chr1.fasta.gz
+CHR_ORI=Pp0
+CHR_NEW=G
+demo:
+	$(MAKE) dist
