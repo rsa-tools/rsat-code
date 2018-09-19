@@ -15,16 +15,16 @@ dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 
 ## Load required libraries or warn user
 required.packages = c("BiocGenerics", "S4Vectors", "IRanges", "GenomeInfoDb", # required by GenomicRanges
-		      "GenomicRanges",                     
+                      "GenomicRanges",
                       "zoo", # required by changepoint
                       "changepoint",
-		      "crayon","pillar","withr", # required by ggplot2
+                      "crayon","pillar","withr", # required by ggplot2
                       "ggplot2",
                       "dplyr"
 )
 
-for (pkg in required.packages) { 
-  suppressPackageStartupMessages(library(pkg, warn.conflicts=TRUE, 
+for (pkg in required.packages) {
+  suppressPackageStartupMessages(library(pkg, warn.conflicts=TRUE,
     character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
 }
 
@@ -68,7 +68,7 @@ snp_vs_upstream <- function(){
   upstream_snps_R$snp_pos <- upstream_snps_R$low_pos - upstream_snps_R$pos + 500
   snp_counts_R <- as.data.frame(table(upstream_snps_R$snp_pos))
   colnames(snp_counts_R) <- c("seq", "freq")
-  snp_counts_R$seq <- as.numeric(as.character(snp_counts_D$seq))
+  snp_counts_R$seq <- as.numeric(as.character(snp_counts_R$seq))
   rm(ranges_R, snp_overlaps_R)
 
   # Compute the number of genes per position:
@@ -80,12 +80,18 @@ snp_vs_upstream <- function(){
   tmp_limits <- merge(tmpseq, limits, all=TRUE)
   tmp_limits$Freq[is.na(tmp_limits$Freq)] <- 0
   genes <- cumsum(tmp_limits$Freq)
-  gene_per_nt <- c(genes,rep(nrow(upstream),500))
-  rm(tmpseq, tmp_limits)
+  genes_total <- c(genes,rep(nrow(upstream),500))
+  gene_per_nt <- data.frame(seq(-5000,500,1), genes_total)
+  colnames(gene_per_nt) <- c("seq", "genes")
 
   # Merge occurrences of polymorphisms per position from D/R strand and calculate normalized frequency (norm) and conservation
-  snp_counts <- data.frame(snp_counts_R$seq, snp_counts_D$freq + snp_counts_R$freq, gene_per_nt)
-  rm(snp_counts_R, snp_counts_D, upstream_snps_D, upstream_snps_R, upstream_R, upstream_D)
+  snp_joined <- inner_join(snp_counts_R, snp_counts_D, by="seq")
+  snp_joined$freq <- snp_joined$freq.x + snp_joined$freq.y
+  snp_counts_tmp <- merge(tmpseq, snp_joined, by="seq", all=TRUE)
+  snp_counts_tmp$freq[is.na(snp_counts_tmp$freq)] <- 0
+  snp_counts <- inner_join(snp_counts_tmp, gene_per_nt, by="seq")
+  rm(snp_counts_R, snp_counts_D, upstream_snps_D, upstream_snps_R, upstream_R, upstream_D, tmp_limits, tmpseq)
+  snp_counts[2:4] <- list(NULL)
   colnames(snp_counts) <- c("seq", "freq", "genes")
   snp_counts$norm <- snp_counts$freq / snp_counts$genes
   snp_counts$seq <- as.numeric(as.character(snp_counts$seq))
@@ -118,14 +124,14 @@ utr_points <- head(var_points[var_points > 50], -1)
 prom_points <- var_points[var_points < - 50 & var_points > - 1000]
 recommended_point <- mean(prom_points)
 png("snp_plot.png", width = 1000, height= 843)
-ggplot(snp_counts, aes(seq, conservation)) + geom_point(alpha=0.8) + geom_smooth(method="loess", data=snp_counts, aes(seq, conservation)) + 
+ggplot(snp_counts, aes(seq, conservation)) + geom_point(alpha=0.8) + geom_line(alpha=0.3) + geom_smooth(method="loess", data=snp_counts, aes(seq, conservation)) + 
   xlab("Sequence position (nt)") + ylab("Normalized conservation frequency") + ggtitle("Normalized conservation by genetic variant") +
   scale_x_continuous(breaks=seq(-5000,500,250), limits=c(-2000,500)) + geom_vline(xintercept = 0, color="black") +
   geom_vline(xintercept= utr_points, color="red", linetype="dashed") + 
   geom_vline(xintercept = prom_points, color="black", linetype="dotted") + geom_vline(xintercept = recommended_point, color="red")
 dev.off()
 png("snp_plot_total.png", width = 1000, height= 843)
-ggplot(snp_counts, aes(seq, conservation)) + geom_point(alpha=0.8) + geom_smooth(method="loess", data=snp_counts, aes(seq, conservation)) + 
+ggplot(snp_counts, aes(seq, conservation)) + geom_point(alpha=0.7) + geom_line(alpha=0.3) + geom_smooth(method="loess", data=snp_counts, aes(seq, conservation)) + 
   xlab("Sequence position (nt)") + ylab("Normalized conservation frequency") + ggtitle("Normalized conservation by genetic variant") +
   scale_x_continuous(breaks=seq(-5000,500,250)) + geom_vline(xintercept = 0, color="black") +
   geom_vline(xintercept= utr_points, color="red", linetype="dashed") + 
