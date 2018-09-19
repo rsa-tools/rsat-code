@@ -18,7 +18,7 @@ required.packages = c("BiocGenerics", "S4Vectors", "IRanges", "GenomeInfoDb", # 
                       "GenomicRanges",
                       "zoo", # required by changepoint
                       "changepoint",
-                      "crayon","pillar","withr", # required by ggplot2
+                      "crayon","pillar","withr","labeling", # required by ggplot2
                       "ggplot2",
                       "dplyr"
 )
@@ -123,17 +123,27 @@ var_points <- read.table("tmp_points.tab", sep="\t", header=FALSE, skip=1)
 utr_points <- head(var_points[var_points > 50], -1)
 prom_points <- var_points[var_points < - 50 & var_points > - 1000]
 recommended_point <- mean(prom_points)
-png("snp_plot.png", width = 1000, height= 843)
+
+plot_filename1 = "snp_plot.png"
+
+png(plot_filename1, width = 1000, height= 843)
 ggplot(snp_counts, aes(seq, conservation)) + geom_point(alpha=0.8) + geom_line(alpha=0.3) + geom_smooth(method="loess", data=snp_counts, aes(seq, conservation)) + 
   xlab("Sequence position (nt)") + ylab("Normalized conservation frequency") + ggtitle("Normalized conservation by genetic variant") +
   scale_x_continuous(breaks=seq(-5000,500,250), limits=c(-2000,500)) + geom_vline(xintercept = 0, color="black") +
   geom_vline(xintercept= utr_points, color="red", linetype="dashed") + 
   geom_vline(xintercept = prom_points, color="black", linetype="dotted") + geom_vline(xintercept = recommended_point, color="red")
 dev.off()
-png("snp_plot_total.png", width = 1000, height= 843)
+
+message("# output file (zoomed): ", plot_filename1)
+
+plot_filename2 = "snp_plot_total.png"
+
+png(plot_filename2, width = 1000, height= 843)
 ggplot(snp_counts, aes(seq, conservation)) + geom_point(alpha=0.7) + geom_line(alpha=0.3) + geom_smooth(method="loess", data=snp_counts, aes(seq, conservation)) + 
   xlab("Sequence position (nt)") + ylab("Normalized conservation frequency") + ggtitle("Normalized conservation by genetic variant") +
   scale_x_continuous(breaks=seq(-5000,500,250)) + geom_vline(xintercept = 0, color="black") +
   geom_vline(xintercept= utr_points, color="red", linetype="dashed") + 
   geom_vline(xintercept = prom_points, color="black", linetype="dotted") + geom_vline(xintercept = recommended_point, color="red")
 dev.off()
+
+message("# output file (total): ", plot_filename2, "\n\n")
