@@ -22,8 +22,10 @@ endif
 
 # default location and names of temp files
 TMPDIR        = /tmp
-VCF_POSITIONS = ${TMPDIR}/$(basename VCF_INPUT).variants.tab
-RET_RANGES    = ${TMPDIR}/$(basename RET_INPUT).ranges.tab
+VCF_ROOT      = $(notdir ${VCF_INPUT})
+RET_ROOT      = $(notdir ${RET_INPUT})
+VCF_POSITIONS = ${TMPDIR}/${VCF_ROOT}.variants.tab
+RET_RANGES    = ${TMPDIR}/${RET_ROOT}.ranges.tab
 
 #this could be used to call this makefile from others such as ensemblgenomes_FTP_client.mk
 #SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID} instead of RSAT_ORG
