@@ -20,6 +20,18 @@ TEST_DATE=`date +%Y-%m-%d`
 TEST_DIR=${RSAT}/install_tests_${TEST_DATE}
 TEST_CHECK_DIR=${RSAT}/install_tests_correct
 
+
+## BEWARE: the location of perl and cpan may vary bewteen computers.
+## Even worse on Mac OSX there are 2 versions of perl and cpan.
+## These two programs are found in both /usr/bin and /usr/local/bin.
+## Make sure to use the same path for perl and cpan. 
+PERL=`which perl`
+CPAN=`which cpan`
+#PERL='/usr/bin/perl'
+
+#@echo "perl path	${PERL}"
+#@echo "cpan path	${CPAN}"
+
 #################################################################
 # Programs used for downloading and sycnrhonizing
 SSH=-e 'ssh -x'
@@ -86,6 +98,7 @@ UNIX_PACKAGES_CENTOS= \
 	gd gd gd-devel php-gd \
 	perl-GD.x86_64 perl-SOAP-WSDL \
 	tetex-latex tetex-doc tetex-fonts \
+        netcdf-devel \
 	python2 \
 	python34 \
     python34-setuptools
@@ -239,6 +252,15 @@ PERL_MODULES_PROBLEMS= \
 
 PERLMOD_TO_UPGRADE=Archive::Tar
 
+## Display the parameters for perl module installation
+perl_modules_param:
+	@echo
+	@echo "Parameters for perl module installation"
+	@echo "	PERL		${PERL}"
+	@echo "	CPAN		${CPAN}"
+	@echo "	CPAN_CMD	${CPAN_CMD}"
+	@echo "	PERL_MODULES	${PERL_MODULES}"
+
 perl_modules_list:
 	@echo ${PERL_MODULES} | perl -pe 's|\s+|\n|g'
 
@@ -247,7 +269,6 @@ perl_modules_cmd:
 
 ## Do not test the modules, simply install them
 CPAN_OPT=-T 
-CPAN=cpan
 CPAN_CMD=${CPAN} ${CPAN_OPT}
 ## Install all Perl modules in one short. Beware: depending on the
 ## configuration, cpan may ask you to answer y/n for each module and
@@ -263,7 +284,7 @@ perl_modules_install_noprompt:
 
 perl_modules_install_one_by_one:
 	@for module in ${PERL_MODULES} ; do \
-		${MAKE} _install_one_perl_module PERL_MODULE=$${module}; \
+		${MAKE} perl_install_one_module PERL_MODULE=$${module}; \
 	done
 	${MAKE} perl_modules_install_by_force
 
@@ -278,9 +299,7 @@ perl_modules_install_by_force:
 
 ## Install a single Perl module
 PERL_MODULE=PostScript::Simple
-#PERL=`which perl`
-PERL='/usr/bin/perl'
-_install_one_perl_module:
+perl_install_one_module:
 	@echo "Installing Perl module ${PERL_MODULE}"
 	@${SUDO} ${PERL} -MCPAN -e 'install ${PERL_MODULE}'
 
@@ -292,6 +311,8 @@ perl_modules_check:
 	@echo "Checking perl modules ${PERL_MODULE_TEST}"
 	@echo "; Checking perl modules ${PERL_MODULE_TEST}" > ${PERL_MODULES_CHECK_FILE}
 	@echo "; Host: `hostname`" >> ${PERL_MODULES_CHECK_FILE}
+	@echo "; CPAN		${CPAN}"
+	@echo "; CPAN_CMD	${CPAN_CMD}"
 	@for module in ${PERL_MODULES} ; do \
 		 ${MAKE} perl_module_test_${PERL_MODULE_TEST} PERL_MODULE=$${module}; \
 	done
@@ -305,7 +326,7 @@ perl_modules_check_doc:
 	@${MAKE} perl_modules_check PERL_MODULE_TEST=doc
 
 perl_module_test_eval:
-	@echo "	Checking perl module	${PERL_MODULE}"
+	@echo "	Checking perl module	${PERL_MODULE}	${PERL}"
 	@echo "${PERL_MODULE}" | xargs -I MODULE ${PERL} -e  'print eval "use MODULE;1"?"OK\t${PERL_MODULE}\n":"Fail\t${PERL_MODULE}\n"' >> ${PERL_MODULES_CHECK_FILE}
 
 perl_module_test_version:
@@ -460,7 +481,7 @@ _old_bioperl_git:
 	git clone git://github.com/bioperl/bioperl-live.git
 
 bioperl_install:
-	@${MAKE} _install_one_perl_module PERL_MODULE=Bio::Perl
+	@${MAKE} perl_install_one_module PERL_MODULE=Bio::Perl
 
 bioperl_test:
 	perl -MBio::Perl -le 'print Bio::Perl->VERSION;'
