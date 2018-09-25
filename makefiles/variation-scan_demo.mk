@@ -5,8 +5,8 @@ MAKEFILE=${RSAT}/makefiles/variation-scan_demo.mk
 
 V=2
 SPECIES=Homo_sapiens
-ASSEMBLY=GRCh37
-#ASSEMBLY=GRCh38
+#ASSEMBLY=GRCh37
+ASSEMBLY=GRCh38
 
 ## The folder does not depend on the ensembl version anymore.  The
 ## following option should be used only for specific purpose (when
@@ -24,8 +24,8 @@ MATRIX=${RSAT}/public_html/demo_files/variation_demo_set_MWeirauch_cell_2014_15S
 ## non-trivial cases with >2 variants.
 DEMO_DIR=${RSAT}/public_html/demo_files/
 #VARSEQ_DEMO_FILE=${DEMO_DIR}/${VARIANTS}.varseq
-#VARIANTS=variation_demo_set_MWeirauch_cell_2014_15SNPs
-VARIANTS=variation_demo_set
+VARIANTS=variation_demo_set_MWeirauch_cell_2014_15SNPs
+#VARIANTS=variation_demo_set
 VARIANT_INDEL=variation_testfile
 ORG=${SPECIES}_${ASSEMBLY}
 VARIATION_DIR=${RSAT}/public_html/data/genomes/${ORG}/variations
