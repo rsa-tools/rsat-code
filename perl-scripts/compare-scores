@@ -63,12 +63,14 @@ foreach $f (0..$#input_files) {
   while (<$in>) {
     next unless (/\S/);		## Skip empty lines
     next if (/^;/);		## Skip comment lines
+    s/\r//; ## Suppress window-specific carriage return characters
     chomp;
     $l++;
 
     ## Parse header line if there is one
     if ((($headers) && ($l==1)) 
 	|| (/^\#/)) {
+#	&RSAT::message::Debug("Header\t", $l) if ($main::verbose >= 0);
       s|^#||;
       @{$header{$f}} = split("\t", $_);
       $has_header{$f} = 1;
@@ -498,8 +500,8 @@ sub ReadArguments {
       $scores_are_numbers = 1;
 
       ## First row contains column headers
-    } elsif ($ARGV[$a] eq "-headers") {
-      $headers = 1;
+    } elsif ($ARGV[$a] eq "-header") {
+	$headers = 1;
 
     } elsif ($ARGV[$a] eq '-basename') {
       $basename = 1;

@@ -98,6 +98,7 @@ UNIX_PACKAGES_CENTOS= \
 	gd gd gd-devel php-gd \
 	perl-GD.x86_64 perl-SOAP-WSDL \
 	tetex-latex tetex-doc tetex-fonts \
+        netcdf-devel \
 	python2 \
 	python34 \
     python34-setuptools
