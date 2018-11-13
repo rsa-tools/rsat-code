@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # RSATWS.cgi - SOAP server for rsa-tools.
 
 =pod
