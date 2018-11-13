@@ -312,7 +312,7 @@ package main;
 	&RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species, $full_species_id) if ($main::verbose >= 1);
 	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ".$db;
 	$command .= " -org ".$full_species_id;
-	$command .= " -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop";
+	$command .= " -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop,index_bedtools";
 	$command .= " -batch" if ($batch); ## JvH : to check: I don't thinkn I can pass here if the batch option is active
 	&doit($command, $dry_run, $die_on_error, $verbose);
       }
