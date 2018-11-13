@@ -6,7 +6,7 @@ MAKEFILE=${RSAT}/makefiles/release_rsat.mk
 MAKE = make -sk -f ${MAKEFILE}
 
 ## Archive file
-DATE=`date +%Y-%m-%d`
+DATE=`date +%Y.%m.%d`
 ARCHIVE_PREFIX=rsat_${DATE}
 ARCHIVE_PREFIX_METAB=metabolic-tools_${DATE}
 ARCHIVE=rsat/${ARCHIVE_PREFIX}
@@ -42,7 +42,7 @@ TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar
 
 ################################################################
 ## All the tasks for publishing the new version
-all: clean_emacs_bk manuals tar_archive clean_release_site publish 
+all: manuals tar_archive clean_release_site publish
 
 ## List parameters
 #PUB_SERVER=rsat.ulb.ac.be
@@ -193,6 +193,7 @@ publish:
 	@echo "Synchronizing RSAT archive ${ARCHIVE_PREFIX}.${PUB_FORMAT} to server ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}"
 	@echo
 	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
+	@ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "cd ${PUB_DIR}; ln -sf ${ARCHIVE_PREFIX}.${PUB_FORMAT} latest"
 
 #publish_scripts:
 #	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS}
