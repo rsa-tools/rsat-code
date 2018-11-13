@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #############################################################
 # $Id: parse-genbank.pl,v 1.69 2012/09/23 05:34:51 jvanheld Exp $

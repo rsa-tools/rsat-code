@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: supported-organisms-ucsc.pl,v 1.2 2012/03/14 08:39:08 jeremy Exp $

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: random-peaks,v 1.8 2012/07/02 12:54:32 jvanheld Exp $

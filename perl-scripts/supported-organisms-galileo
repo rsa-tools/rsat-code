@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: supported-organisms-galileo,v 1.2 2013/09/24 13:29:14 jvanheld Exp $

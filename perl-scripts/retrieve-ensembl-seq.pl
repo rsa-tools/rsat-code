@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: retrieve-ensembl-seq.pl,v 1.82 2013/09/02 12:36:15 rsat Exp $

@@ -1,6 +1,6 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 # get-all-ensembl-human-seqs
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: get-ensembl-genome,v 1.2 2011/04/10 13:30:53 rsat Exp $

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: graph-cluster-membership,v 1.28 2011/02/17 04:54:49 rsat Exp $

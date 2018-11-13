@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: random-genome-fragments,v 1.35 2013/04/03 01:09:13 jvanheld Exp $

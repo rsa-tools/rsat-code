@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: calibrate-oligos,v 1.18 2013/09/29 04:56:22 jvanheld Exp $

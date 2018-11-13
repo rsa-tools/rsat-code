@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: compare-two-sets,v 1.8 2013/01/31 14:17:55 sylvain Exp $

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: display-graph,v 1.28 2011/01/18 11:29:50 jvanheld Exp $
