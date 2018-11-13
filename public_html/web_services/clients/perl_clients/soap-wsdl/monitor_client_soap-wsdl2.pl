@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 
 use strict;
 use SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL

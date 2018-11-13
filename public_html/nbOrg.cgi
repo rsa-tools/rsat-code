@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: nbOrg.cgi: get the number of supported_organisms
