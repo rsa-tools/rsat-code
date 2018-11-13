@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: retrieve-seq-multigenome,v 1.25 2012/10/08 23:17:35 rsat Exp $

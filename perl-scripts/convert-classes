@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: convert-classes,v 1.20 2012/06/17 11:12:43 jvanheld Exp $

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: get-genes2reactions,v 1.1 2011/12/02 11:53:32 jvanheld Exp $

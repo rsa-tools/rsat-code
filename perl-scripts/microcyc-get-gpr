@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: microcyc-get-gpr,v 1.4 2013/04/24 12:37:18 jvanheld Exp $

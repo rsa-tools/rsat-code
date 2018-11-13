@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: draw-heatmap,v 1.21 2013/02/20 12:11:56 jvanheld Exp $

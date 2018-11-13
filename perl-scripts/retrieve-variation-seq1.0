@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: retrieve-variation-seq,v 1.18 2013/08/18 10:00:18 jvanheld Exp $

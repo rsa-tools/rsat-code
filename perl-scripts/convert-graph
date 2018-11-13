@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: convert-graph,v 1.65 2012/03/28 09:27:02 jvanheld Exp $

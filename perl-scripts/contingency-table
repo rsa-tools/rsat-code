@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: contingency-table,v 1.18 2013/07/16 12:53:52 rsat Exp $

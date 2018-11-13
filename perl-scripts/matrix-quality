@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: matrix-quality,v 1.156 2013/11/04 01:14:36 jvanheld Exp $

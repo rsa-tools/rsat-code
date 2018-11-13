@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 
 ## TO DO: calculate GC content of the motif in parameters
 

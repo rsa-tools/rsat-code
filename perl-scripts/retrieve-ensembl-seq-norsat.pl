@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: retrieve-ensembl-seq-norsat.pl,v 1.7 2011/04/10 13:49:58 jvanheld Exp $
