@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: get-orthologs,v 1.68 2013/09/30 12:50:35 jvanheld Exp $

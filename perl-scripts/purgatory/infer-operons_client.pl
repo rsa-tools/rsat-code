@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ################################################################
 ## Run the RSATtool infer-operon remotely, using the Web servicee

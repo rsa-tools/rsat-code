@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ################################################################
 ##
 ## This script runs a simple demo of the web service inerface to the

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: footprint-scan,v 1.115 2013/05/02 06:02:41 jvanheld Exp $

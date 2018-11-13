@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: parse_pathway_skeletons.pl,v 1.16 2011/02/17 05:07:46 rsat Exp $

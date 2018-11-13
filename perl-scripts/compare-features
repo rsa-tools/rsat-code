@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: compare-features,v 1.32 2013/10/01 22:30:04 jvanheld Exp $

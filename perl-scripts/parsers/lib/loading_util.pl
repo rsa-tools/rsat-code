@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: loading_util.pl,v 1.2 2005/04/21 22:55:08 jvanheld Exp $

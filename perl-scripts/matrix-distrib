@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: matrix-distrib,v 1.23 2011/10/11 22:39:16 jvanheld Exp $

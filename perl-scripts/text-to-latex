@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ############################################################
 #
 # $Id: text-to-latex,v 1.2 2012/06/17 11:16:02 jvanheld Exp $

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ################################################################
 #### use the soap interface to retrieve a list of oranisms supported in KEGG
 ###INSTAL SOAP!
