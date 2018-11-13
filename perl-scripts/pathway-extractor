@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: pathway-extractor,v 1.39 2013/10/11 10:55:31 jvanheld Exp $

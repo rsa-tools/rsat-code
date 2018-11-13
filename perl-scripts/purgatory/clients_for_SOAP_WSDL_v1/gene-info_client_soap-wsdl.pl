@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 # gene-info_client_soap-wsdl.pl - Client gene-info using the SOAP::WSDL module
 
 ################################################################

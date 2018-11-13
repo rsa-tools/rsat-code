@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: graph-node-degree,v 1.19 2013/05/02 10:33:22 jvanheld Exp $

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: fetch-sequences,v 1.34 2013/10/24 07:22:08 morgane Exp $

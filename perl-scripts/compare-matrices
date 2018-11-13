@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: compare-matrices,v 1.118 2013/06/20 00:30:30 jvanheld Exp $

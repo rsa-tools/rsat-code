@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 # retrieve-ensembl-seq_client_soap-wsdl-2.pl - Client retrieve-seq using the SOAP::WSDL module
 
 ################################################################

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: retrieve-seq-UCSC,v 1.2 2011/02/17 04:54:49 rsat Exp $

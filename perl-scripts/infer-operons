@@ -4,7 +4,7 @@
 ## WARNING OF DEEP RECURSION FOR LARGE INTERGENIC DISTANCES (directons).
 ##
 ## I should "derecursivate" &ExtendOperon()
-## !/usr/bin/env perl -w
+## !/usr/bin/env perl
 
 ############################################################
 #

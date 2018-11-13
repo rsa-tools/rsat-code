@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 # pipe-test2.pl - Client retrieve-seq -> oligo-analysis -> feature-âp
 
 ################################################################

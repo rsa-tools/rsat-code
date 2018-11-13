@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: taxon-frequencies,v 1.48 2012/02/05 14:53:29 rsat Exp $

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: process-pathwayextractor-output,v 1.2 2012/03/27 23:21:56 rsat Exp $

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: parse-broad-mit,v 1.9 2011/02/17 04:54:49 rsat Exp $
