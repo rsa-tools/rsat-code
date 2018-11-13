@@ -17,6 +17,7 @@ required.packages = c("devtools",
                       "RJSONIO",
                       "gplots",
                       "jpeg",
+                      "scales",
                       "png",
                       "dynamicTreeCut",
                       "reshape2",
@@ -83,7 +84,6 @@ for (pkg in required.packages) {
         message(pkg, " CRAN package installed in dir ", install.dir)
     }
 }
-
 
 
 ################################################################
