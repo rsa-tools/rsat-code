@@ -42,7 +42,8 @@ TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar
 
 ################################################################
 ## All the tasks for publishing the new version
-all: manuals tar_archive clean_release_site publish
+#all: manuals tar_archive clean_release_site publish
+all: manuals tar_archive publish
 
 ## List parameters
 #PUB_SERVER=rsat.ulb.ac.be
@@ -111,6 +112,7 @@ RELEASE_FILES=rsat/00_README.txt		\
 	rsat/contrib/compare-matrices-quick  	\
 	rsat/contrib/info-gibbs			\
 	rsat/contrib/matrix-scan-quick  	\
+	rsat/contrib/variation-scan	  	\
 	rsat/contrib/retrieve-variation-seq  	\
 	rsat/ws_clients		  		\
 	rsat/R-scripts				\
@@ -179,8 +181,8 @@ ls_release_site:
 
 clean_release_site:
 	@echo
-	@echo "Moving previous archives from the public server ${PUB_LOGIN}@${PUB_SERVER} to ${PUB_DIR}/previous_versions"
-	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsat_*.tar.gz ${PUB_DIR}/previous_versions/"
+#	@echo "Moving previous archives from the public server ${PUB_LOGIN}@${PUB_SERVER} to ${PUB_DIR}/previous_versions"
+#	ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsat_*.tar.gz ${PUB_DIR}/previous_versions/"
 	@echo 
 	@echo "BEWARE: the tar archives for RSAT code and install scripts have been moved to previous_version folder. "
 	@echo "Do not forget to publish a new version with"
