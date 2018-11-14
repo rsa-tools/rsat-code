@@ -1,21 +1,21 @@
-CC      = g++ 
-CCFLAGS = -O3 -Wall
-#CCFLAGS = -O3 -Wall -stdlib=libc++
+CXX      = g++ 
+CXXFLAGS = -O3 -Wall
+#CXXFLAGS = -O3 -Wall -stdlib=libc++
 SRC     = $(wildcard *.cpp) 
 OBJS    = $(SRC:.cpp=.o)
 APP     = matrix-scan-quick
 
 # compile: $(OBJS)
-# 	$(CC) $(OBJS) -lc++ -o $(APP)
+# 	$(CXX) $(OBJS) -lc++ -o $(APP)
 
 compile: $(OBJS)
-	$(CC) $(OBJS) -o $(APP)
+	$(CXX) $(OBJS) -o $(APP)
 
 %.o: %.cpp
-	$(CC) -c $(CCFLAGS) $<
+	$(CXX) -c $(CXXFLAGS) $<
 
 %.o: %.c
-	$(CC) -c $(CCFLAGS) $<
+	$(CXX) -c $(CXXFLAGS) $<
 
 clean:
 	rm -f *.o $(APP)
