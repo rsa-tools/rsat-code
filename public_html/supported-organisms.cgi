@@ -25,6 +25,7 @@ $query = new CGI;
 ### print the header
 &RSA_header("Supported organisms", "results");
 
+
 print "<style>#page-content-wrapper{
 overflow: auto;
 display: block;
@@ -38,6 +39,7 @@ height: 100%;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
+check_prokaryote_server();
 
 ##$tmp_file_name = sprintf "supported-organisms.%s", &AlphaDate();
 #$prefix = "supported-organisms";
