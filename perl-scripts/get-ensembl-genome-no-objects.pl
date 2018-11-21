@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: get-ensembl-genome-no-objects.pl,v 1.23 2011/02/17 05:07:46 rsat Exp $

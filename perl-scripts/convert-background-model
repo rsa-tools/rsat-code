@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: convert-background-model,v 1.31 2013/09/11 23:37:18 jvanheld Exp $

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 # workflow_nature_protocols.pl
 
 ################################################################

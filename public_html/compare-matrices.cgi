@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ############################################ 
 ## Import lib pat
@@ -94,7 +94,7 @@ push @result_files, ("Result file",$result_file);
 
 ################################################################
 ## Motif database
-if ($query->param('db_choice') eq "custom") {
+if ($query->param('db_choice') eq "") {
   ## Upload custom reference motif file
   local $custom_motif_file = $output_path."/custom_motif_file.tf";
   local $upload_custom_motif_file = $query->param('upload_custom_motif_file');

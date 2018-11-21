@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: supported-organisms-metab,v 1.1 2012/03/27 13:43:40 jvanheld Exp $
