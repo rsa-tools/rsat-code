@@ -1,6 +1,15 @@
 ###########################################################
 ## Build a distance matrix from the distance metric list
-build.distance.matrix <- function(metric="Ncor"){
+
+## NOTE (JvH 2018-11-14): this function should be revised
+## - it uses a global variable
+## - apparently a former version was passing the matrix as argument,
+##   and  the doc and vignette are inconsistent with the function.
+## - the option named "score" in the usage of help(build.distance.matrix)
+## is named "metric" here.
+## - the variable distance.objects is defined here but not used. Is i t used somewhere else in the code ?
+build.distance.matrix <- function(
+  metric="Ncor") {
 
   dist.table <- NULL
   distances.objects <- list()

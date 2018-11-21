@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #### this cgi script fills the HTML form for the publications page
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
