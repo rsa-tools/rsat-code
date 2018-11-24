@@ -201,7 +201,6 @@ oligo-analysis -v 1 -i start_seq.fasta  -l 3 -1str -return occ,freq -sort | more
 ```
 
 
-*****
 ## Installing many genomes
 
 
