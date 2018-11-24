@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ## Get the path for RSAT Perl libraries
 if ($0 =~ /([^(\/)]+)$/) {

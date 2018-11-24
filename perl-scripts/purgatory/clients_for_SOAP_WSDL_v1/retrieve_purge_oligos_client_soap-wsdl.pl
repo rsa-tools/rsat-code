@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 # retrieve_purge_oligos_client_soap-wsdl.pl - Client retrieve-seq + oligo-analysis
 
 ################################################################

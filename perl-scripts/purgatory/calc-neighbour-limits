@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/env perl 
 ############################################################
 #
 # $Id: calc-neighbour-limits,v 1.15 2013/09/29 04:55:28 jvanheld Exp $
