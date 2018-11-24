@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: dyad-analysis.cgi,v 1.54 2013/11/03 19:33:31 jvanheld Exp $

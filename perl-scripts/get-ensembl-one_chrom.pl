@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: get-ensembl-one_chrom.pl,v 1.6 2005/02/24 10:00:05 oly Exp $

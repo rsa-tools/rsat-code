@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: contingency-stats,v 1.14 2011/02/17 04:54:49 rsat Exp $

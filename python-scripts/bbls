@@ -677,7 +677,10 @@ def main(args):
             print(tfb_sites)
             print(list(tfb_sites))
 
+        columns = [w.replace(' ', '') for w in columns]
+
         matrix_info = pandas.DataFrame(data=matrix_info_list, columns=columns)
+
         matrix_info[["Wmin", "Wmax", "Wrange"]]\
             = matrix_info[["Wmin", "Wmax", "Wrange"]].astype(np.float)
 
