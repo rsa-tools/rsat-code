@@ -14,6 +14,9 @@ SUPPORTED_FILE=${RES_DIR}/supported_${TAXON}_${SERVER}_${SERVER_PATH}.tab
 supported_taxon:
 	@echo ""
 	@echo "Collecting supported ${TAXON} at ${URL}"
+	@echo "	SERVER	${SERVER}"
+	@echo "	TAXON	${TAXON}"
+#	@echo "	OPT	${OPT}"
 	@mkdir -p ${RES_DIR}
 	@supported-organisms-server -taxon ${TAXON} -url ${URL} ${OPT} \
 		-return last_update,source,ID,taxonomy \
@@ -27,7 +30,8 @@ fungi:
 	@${MAKE} supported_taxon TAXON=Fungi SERVER=rsat-tagc.univ-mrs.fr SERVER_PATH=rsat
 
 plants:
-	@${MAKE} supported_taxon TAXON=Viridiplantae SERVER=floresta.eead.csic.es SERVER_PATH=rsat
+	@${MAKE} supported_taxon TAXON=Viridiplantae SERVER=rsat.eead.csic.es SERVER_PATH=plants
+#	@${MAKE} supported_taxon TAXON=Viridiplantae SERVER=floresta.eead.csic.es SERVER_PATH=rsat
 
 prokaryotes:
 	@${MAKE} supported_taxon TAXON=Bacteria SERVER=embnet.ccg.unam.mx SERVER_PATH=rsa-tools

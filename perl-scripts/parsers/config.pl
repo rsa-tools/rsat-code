@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 unless ($ENV{RSAT}) {
 	die "ERROR: you should define the environment variable RSAT (main dir of the rsa-tools)";
