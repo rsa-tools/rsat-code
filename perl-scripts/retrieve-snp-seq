@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: retrieve-snp-seq,v 1.15 2013/04/29 13:58:58 jeremy Exp $

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: parse_regulation.pl,v 1.10 2011/02/17 05:07:46 rsat Exp $

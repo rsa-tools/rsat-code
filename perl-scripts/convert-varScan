@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: convert-varScan ,v 1.00 2015/05/26 17:24:24 amedina Exp $

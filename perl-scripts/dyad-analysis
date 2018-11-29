@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ## CVS: changed the formula for computing obs_freq from (occ/dyad_occ_sum{$spacing}) to (occ/dyad_total_sum{$spacing}) in order to obtain a probability of renewing occurrence (sum is lower than 0)
 

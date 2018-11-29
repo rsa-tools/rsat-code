@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: footprint-discovery-quality,v 1.13 2013/09/29 04:56:22 jvanheld Exp $

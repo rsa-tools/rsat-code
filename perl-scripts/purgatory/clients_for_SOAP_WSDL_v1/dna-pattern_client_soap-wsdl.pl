@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 # dna-pattern_client_soap-wsdl.pl - Client dna-pattern using the SOAP::WSDL module
 
 ################################################################

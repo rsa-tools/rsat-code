@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 # oligos_client_soap-wsdl.pl - Client oligo-analysis using the SOAP::WSDL module
 
 ################################################################
