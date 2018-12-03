@@ -36,8 +36,8 @@ reverse strand position=L-1-b = L-w-a
 """
 import sys
 
-from . import cli
-from . import dna
+import cli
+import dna
 
 MIN_INT = -sys.maxsize +1
 

@@ -6,7 +6,7 @@ VERSION
         %(version)s
 
 AUTHOR
-        Matthieu Defrance <defrance@bigre.ulb.ac.be>
+        Matthieu Defrance <matthieu.dc.defrance@ulb.ac.be>
 
 DESCRIPTION
         implants motifs occurrences (sites) in DNA sequences
@@ -46,7 +46,7 @@ import os
 from math import *
 import random
 import optparse
-import matrix
+from lib import matrix
 from pydoc import pager
 from random import choice, randint, shuffle
 
