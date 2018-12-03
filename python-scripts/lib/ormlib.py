@@ -20,13 +20,13 @@ import bisect
 import gzip
 #import sets
 
-from . import cli
-from . import dna
-from . import markov
-from . import ST
-from .dna import reverse_complement, find_location
-from .dist import pbinom, ppois, pbinom_right_left, pbinom_left
-from .tab import load_oligo_file
+import cli
+import dna
+import markov
+import ST
+from dna import reverse_complement, find_location
+from dist import pbinom, ppois, pbinom_right_left, pbinom_left
+from tab import load_oligo_file
 
 def list_unique(seq):
     keys = {}

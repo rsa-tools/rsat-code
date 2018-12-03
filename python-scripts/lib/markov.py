@@ -15,7 +15,7 @@ print m.P('ATGT')
 
 import gzip
 from math import log
-from .dna import reverse_complement
+from dna import reverse_complement
 
 ALPHABET = 'ACGT'
 

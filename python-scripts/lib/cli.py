@@ -230,14 +230,14 @@ def end(msg='OK', info=''):
     
     """
     if  msg != 'OK':
-	if COLOR:
-      	    sys.stderr.write("[" + RED + "%s" % msg + RESET + "]\n")
-	else:
+    	if COLOR:
+            sys.stderr.write("[" + RED + "%s" % msg + RESET + "]\n")
+    	else:
             sys.stderr.write("[" + "%s" % msg  + "]\n")
     else:
-	if COLOR:
+    	if COLOR:
             sys.stderr.write("[" + GREEN + "OK" + RESET + "] " + info + "\n")
-	else:
+    	else:
             sys.stderr.write("[" + "OK" + "] " + info + "\n")
     sys.stderr.flush()
 
@@ -346,21 +346,19 @@ def auto_script(function, usage='', help=''):
 
 # TEST
 #-------------------------------------------------------------------------------
-def test_runner():
-    for i in range(10):
-	if i == 0:
-		runner('%d 123' % i)
-	else:
-		runner('%d kkkkk' % i)
-        time.sleep(1)
+# def test_runner():
+#     for i in range(10):
+#     	if i == 0:
+#     		runner('%d 123' % i)
+#     	else:
+#     		runner('%d kkkkk' % i)
+#             time.sleep(1)
 
-def test_info(x=100):
-    
-    m = Info(x, 1)
-    for i in range(x):
-
-        time.sleep(1)
-        m('processing item%d' % i)
+# def test_info(x=100):
+#     m = Info(x, 1)
+#     for i in range(x):
+#         time.sleep(1)
+#         m('processing item%d' % i)
 #-------------------------------------------------------------------------------
 # TEST
 
