@@ -54,7 +54,7 @@ def pmf_tail(pmf, pvalue, lowerValue=0):
     """
     v = list(pfm.keys())
     v.sort()
-    p = map(pmf.get, v)
+    p = list(map(pmf.get, v))
 
     i = len(p)
     pv = 0.0
@@ -174,12 +174,12 @@ def table(v, binFunc=None):
     return tuple (values, counts)
     """
     binFunc = binFunc or (lambda x: round(x))
-    v = map(binFunc, v)
+    v = list(map(binFunc, v))
     #v = map(float, v)
     t = {}
     for i in v:
         t[i] = t.get(i, 0) + 1
-    l = t.items()
+    l = list(t.items())
     l.sort()
     return [i[0] for i in l], [i[1] for i in l]
 

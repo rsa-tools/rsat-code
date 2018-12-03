@@ -27,7 +27,7 @@ def unzip(l):
         return ()
     r = []
     for i in range(len(l[0])):
-        r.append(map( lambda e: e[i], l ) )
+        r.append([e[i] for e in l] )
     return tuple(r)
 
 #python 2.3 compatibility
@@ -109,13 +109,13 @@ class Struct:
     """Struct like empty class
     """
     def __init__(self, **kargs):
-        for key,value in kargs.items():
+        for key,value in list(kargs.items()):
             setattr(self, key, value)    
 
     def values(self):
         """return values of objects in struct
         """
-        return self.__dict__.values()
+        return list(self.__dict__.values())
 
 ########################################
 #                                      #
@@ -154,7 +154,7 @@ class MemoryCache(object):
         
     def __call__(self, *args):
         self.access += 1
-        if not self.data.has_key(args):
+        if args not in self.data:
             self.data[args] = self.f(*args)
         else:
             self.success += 1

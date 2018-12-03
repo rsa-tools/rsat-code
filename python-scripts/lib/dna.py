@@ -182,7 +182,7 @@ class FastaReader(Reader):
         self.last = ''
         self.sequence = []
 
-    def next(self):
+    def __next__(self):
         self.item = False
         self.eof  = False
 
