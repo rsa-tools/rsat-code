@@ -20,19 +20,19 @@ import bisect
 import gzip
 #import sets
 
-import cli
-import dna
-import markov
-import ST
-from dna import reverse_complement, find_location
-from dist import pbinom, ppois, pbinom_right_left, pbinom_left
-from tab import load_oligo_file
+from . import cli
+from . import dna
+from . import markov
+from . import ST
+from .dna import reverse_complement, find_location
+from .dist import pbinom, ppois, pbinom_right_left, pbinom_left
+from .tab import load_oligo_file
 
 def list_unique(seq):
     keys = {}
     for e in seq:
         keys[e] = 1
-    return keys.keys()
+    return list(keys.keys())
 
 ##
 #
@@ -243,7 +243,7 @@ def extract_windows(sequences, bg, location=None, wl=None, params=None):
     H = r['H']
     N = r['N']
     #print H
-    wl = wl or H.keys()    
+    wl = wl or list(H.keys())    
     info = cli.Info(len(wl), 1, 1)
 
     for w in wl:
@@ -550,12 +550,12 @@ def convert_thresholds(defaults, MIN, MAX, columnHeader, columnType):
         t[k] = list(defaults[k])
 
     for colname, th in MIN:
-        if t.has_key(colname):
+        if colname in t:
             type = columnType[columnHeader.index(colname)]
             t[colname][0] = type(th)
 
     for colname, th in MAX:
-        if t.has_key(colname):
+        if colname in t:
             type = columnType[columnHeader.index(colname)]
             t[colname][1] = type(th)
 
@@ -733,7 +733,7 @@ class Bg(dict):
             for k in H:
                 H[k] = len(H[k]) / float(sum(N[len(k)]))
             self[loc] = H
-        sorted_keys = self.keys()
+        sorted_keys = list(self.keys())
         sorted_keys.sort()
         self.intervals = sorted_keys
 
@@ -769,7 +769,7 @@ class Bg(dict):
             mm.learn([s.get_dna(loc) for s in sequences])
             self[loc] = mm
 
-        sorted_keys = self.keys()
+        sorted_keys = list(self.keys())
         sorted_keys.sort()
         self.intervals = sorted_keys
 

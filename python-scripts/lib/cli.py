@@ -319,7 +319,7 @@ def auto_script(function, usage='', help=''):
 
     parser  = optparse.OptionParser(usage)
 
-    argNames = function.func_code.co_varnames[:function.func_code.co_argcount]
+    argNames = function.__code__.co_varnames[:function.__code__.co_argcount]
     for argName in argNames:
 
         try:
@@ -336,7 +336,7 @@ def auto_script(function, usage='', help=''):
 
     outputstr = function(**kwargs)
     if outputstr != None:
-        print sys.stderr, outputstr
+        print(sys.stderr, outputstr)
 
     
         

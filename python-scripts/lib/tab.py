@@ -93,7 +93,7 @@ class Tab(object):
 
     def append(self, data):
         line = [None] * len(self.header)
-        for k,v in data.items():
+        for k,v in list(data.items()):
             line[self.index[k]] = v
         self.data.append(line)
 
@@ -191,7 +191,7 @@ class Tab(object):
             content += [ COMMENT_CHAR + ' date\t%(date)s' % {'date' : time.ctime()} ]
             content += [ COMMENT_CHAR + ' runningTime\t%s' % str(self.timer) ]
         if comments:
-            for k,v in comments.items():
+            for k,v in list(comments.items()):
                 content += [ COMMENT_CHAR + ' %s\t%s'% (str(k), str(v)) ]
 
         #header help
@@ -239,13 +239,13 @@ def read(filename):
             comments += [line[1:].strip()]
             last = 'comment'
         elif line.startswith(TAB_HEADER_CHAR):
-            header = map(string.strip, line[1:].split('\t'))
+            header = list(map(string.strip, line[1:].split('\t')))
             last = 'header'
         else:
             if last == 'comment':
-                header = map(string.strip, comments.pop().split('\t'))
+                header = list(map(string.strip, comments.pop().split('\t')))
             if header:
-                data += [ map(string.strip, line.split('\t')) ]
+                data += [ list(map(string.strip, line.split('\t'))) ]
                 last = 'data'
         
     t = Tab(header)
@@ -261,7 +261,7 @@ def read(filename):
 
 def create_filename(id, params, ext=None):
     p = []
-    for k,v in params.items():
+    for k,v in list(params.items()):
         v = str(v).replace(',', '+')
         p += [ '%s_%s' % (k, v)]
     if ext != None:
@@ -309,12 +309,12 @@ def convert_thresholds(MIN, MAX, columnHeader, columnType, defaults=None):
 
     for colname, th in MIN:
 
-        if t.has_key(colname):
+        if colname in t:
             type = columnType[columnHeader.index(colname)]
             t[colname][0] = type(th)
 
     for colname, th in MAX:
-        if t.has_key(colname):
+        if colname in t:
             type = columnType[columnHeader.index(colname)]
             t[colname][1] = type(th)
 
@@ -404,6 +404,6 @@ def load_assemblies(filename):
 if __name__ == '__main__':
     t = read('test.tab')
     data = t.data
-    print '\n'.join(t.comments)
+    print('\n'.join(t.comments))
     #print t['header']
     #print data[0:3]

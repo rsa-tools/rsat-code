@@ -105,7 +105,7 @@ def main(options, args):
 # ===========================================================================
 if __name__ == '__main__':
     USAGE = '''%s -l motiflength [-c conservation] [-h]'''
-    VERSION = '2009.11'
+    VERSION = '20181203'
     PROG_NAME = os.path.basename(sys.argv[0])
 
     parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)

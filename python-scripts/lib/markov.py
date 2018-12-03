@@ -15,12 +15,12 @@ print m.P('ATGT')
 
 import gzip
 from math import log
-from dna import reverse_complement
+from .dna import reverse_complement
 
 ALPHABET = 'ACGT'
 
 ALPHABET_SIZE = len(ALPHABET)
-ALPHABET2index = dict(zip(list(ALPHABET), range(ALPHABET_SIZE)))
+ALPHABET2index = dict(list(zip(list(ALPHABET), list(range(ALPHABET_SIZE)))))
 
 
 def sequences2bernoulli(s, pseudo=1.0):
@@ -247,15 +247,15 @@ def test():
 
     mm1 = MM(1)
     mm1.learn(sequences)
-    print mm1.T
-    print mm1.S
+    print(mm1.T)
+    print(mm1.S)
     
     word = 'AATT'
-    print word , mm1.P(word)
-    print word , mm1.logP(word)
+    print(word , mm1.P(word))
+    print(word , mm1.logP(word))
    
     word = 'AAAA'
-    print word , mm1.P(word) 
+    print(word , mm1.P(word)) 
 
     mm0 = MM(0)
     mm0.learn(sequences)
@@ -264,7 +264,7 @@ def test():
     mm0.load_oligo_file('oligo.freq')
     
     mm = oligo2MM('oligo.freq')
-    print mm.P('ATGTGGTGTTC')
+    print(mm.P('ATGTGGTGTTC'))
     
 if __name__ == '__main__':
     test()
