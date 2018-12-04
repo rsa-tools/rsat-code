@@ -43,6 +43,26 @@ def list_unique(seq):
 #pbinom_cached = Core.cache.MemoryCache(pbinom)
 #ppois_cached = Core.cache.MemoryCache(ppois)
 
+## python 2 to 3
+def cmp_to_key(mycmp):
+    'Convert a cmp= function into a key= function'
+    class K:
+        def __init__(self, obj, *args):
+            self.obj = obj
+        def __lt__(self, other):
+            return mycmp(self.obj, other.obj) < 0
+        def __gt__(self, other):
+            return mycmp(self.obj, other.obj) > 0
+        def __eq__(self, other):
+            return mycmp(self.obj, other.obj) == 0
+        def __le__(self, other):
+            return mycmp(self.obj, other.obj) <= 0
+        def __ge__(self, other):
+            return mycmp(self.obj, other.obj) >= 0
+        def __ne__(self, other):
+            return mycmp(self.obj, other.obj) != 0
+    return K
+
 ##############################################################################
 #                                                                            #
 #                                 COUNT WORDS
@@ -607,9 +627,8 @@ def sort(R, criteria, columnHeader):
             if not G and acmp(b[i], a[i]) != 0:
                 return acmp(b[i], a[i])
         return 0
-    R.sort( mycmp )
-    return R
 
+    return sorted(R, key=lambda i: i[7])
 
 def window_rank(R, columnHeader):
     c = columnHeader.index('w_rank')

@@ -323,8 +323,9 @@ def main(args, options):
     if options.window != 'variable' and options.window != 'none':
         if int(options.window) > s.location[1] - s.location[0] + 1:
             options.window = s.location[1] - s.location[0] + 1
-        if options.window_group > s.location[1] - s.location[0] + 1:
-            options.window_group = s.location[1] - s.location[0] + 1
+        if options.window_group:
+          if options.window_group > s.location[1] - s.location[0] + 1:
+              options.window_group = s.location[1] - s.location[0] + 1
 
     if not (location[0] >= bg.location[0] and location[1] <= bg.location[1]):
         cli.error('Given location do not match Background model location')
