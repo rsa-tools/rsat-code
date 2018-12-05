@@ -53,6 +53,7 @@ perl-scripts/retrieve-seq-multigenome
 perl-scripts/retrieve-seq-quick
 perl-scripts/retrieve-snp-seq
 perl-scripts/retrieve-variation-seq1.0
+
 '''
 
 usage = '''rsat Regulatory Sequence Analysis Tools
