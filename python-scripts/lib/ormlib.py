@@ -32,7 +32,7 @@ def list_unique(seq):
     keys = {}
     for e in seq:
         keys[e] = 1
-    return keys.keys()
+    return list(keys.keys())
 
 ##
 #
@@ -42,6 +42,26 @@ def list_unique(seq):
 #pbinom_right_left_cached = Core.cache.MemoryCache(pbinom_right_left)
 #pbinom_cached = Core.cache.MemoryCache(pbinom)
 #ppois_cached = Core.cache.MemoryCache(ppois)
+
+## python 2 to 3
+def cmp_to_key(mycmp):
+    'Convert a cmp= function into a key= function'
+    class K:
+        def __init__(self, obj, *args):
+            self.obj = obj
+        def __lt__(self, other):
+            return mycmp(self.obj, other.obj) < 0
+        def __gt__(self, other):
+            return mycmp(self.obj, other.obj) > 0
+        def __eq__(self, other):
+            return mycmp(self.obj, other.obj) == 0
+        def __le__(self, other):
+            return mycmp(self.obj, other.obj) <= 0
+        def __ge__(self, other):
+            return mycmp(self.obj, other.obj) >= 0
+        def __ne__(self, other):
+            return mycmp(self.obj, other.obj) != 0
+    return K
 
 ##############################################################################
 #                                                                            #
@@ -243,7 +263,7 @@ def extract_windows(sequences, bg, location=None, wl=None, params=None):
     H = r['H']
     N = r['N']
     #print H
-    wl = wl or H.keys()    
+    wl = wl or list(H.keys())    
     info = cli.Info(len(wl), 1, 1)
 
     for w in wl:
@@ -550,12 +570,12 @@ def convert_thresholds(defaults, MIN, MAX, columnHeader, columnType):
         t[k] = list(defaults[k])
 
     for colname, th in MIN:
-        if t.has_key(colname):
+        if colname in t:
             type = columnType[columnHeader.index(colname)]
             t[colname][0] = type(th)
 
     for colname, th in MAX:
-        if t.has_key(colname):
+        if colname in t:
             type = columnType[columnHeader.index(colname)]
             t[colname][1] = type(th)
 
@@ -607,9 +627,8 @@ def sort(R, criteria, columnHeader):
             if not G and acmp(b[i], a[i]) != 0:
                 return acmp(b[i], a[i])
         return 0
-    R.sort( mycmp )
-    return R
 
+    return sorted(R, key=lambda i: i[7])
 
 def window_rank(R, columnHeader):
     c = columnHeader.index('w_rank')
@@ -733,7 +752,7 @@ class Bg(dict):
             for k in H:
                 H[k] = len(H[k]) / float(sum(N[len(k)]))
             self[loc] = H
-        sorted_keys = self.keys()
+        sorted_keys = list(self.keys())
         sorted_keys.sort()
         self.intervals = sorted_keys
 
@@ -769,7 +788,7 @@ class Bg(dict):
             mm.learn([s.get_dna(loc) for s in sequences])
             self[loc] = mm
 
-        sorted_keys = self.keys()
+        sorted_keys = list(self.keys())
         sorted_keys.sort()
         self.intervals = sorted_keys
 

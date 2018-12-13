@@ -1,0 +1,123 @@
+#!/usr/bin/python
+
+#Standard imports
+import os
+import sys
+import getopt
+import sets
+import math
+
+def printHelp():
+	print "Usage: kw_comp -t targetFile -a approxFile -p subGraphRelSize [-o outFile] [-d directed]"
+
+################################################################################
+
+#Get the command line arguments
+tflg = 0
+aflg = 0
+pflg = 0
+oflg = 0
+dflg = 0
+directed = 0
+
+try:
+	opts,args = getopt.getopt(sys.argv[1:], "t:a:p:o:h")
+except getopt.GetoptError:
+	printHelp()
+	sys.exit(2)
+
+for o,a in opts:
+	if o == '-t':
+		tflg = 1
+		targetFname = a
+	if o == '-a':
+		aflg = 1
+		approxFname = a
+	if o == '-p':
+		pflg = 1
+		prop = float(a)
+	if o == '-o':
+		oflg = 1
+		outFname = a
+	if o == '-d':
+		dflg = 1
+		directed = int(a)		
+	if o == '-h':
+		printHelp()
+		sys.exit(2)
+
+if tflg == 0 or aflg == 0 or pflg == 0:
+	print 'Mandatory argument(s) missing'
+	printHelp()
+	sys.exit(2)
+	
+if oflg:
+	outFile = open(outFname,'w')
+else:
+	outFile = sys.stdout
+	
+#Read the target file
+targetFile = open(targetFname,'U')
+targetFile.readline() #Skip the first line containing #nodes
+tEdges     = []
+for line in targetFile:
+	entries = line.strip().split(' ')
+	if len(entries) > 1:
+		l = int(entries[0])
+		for entry in entries[1:]:
+			pair = entry.split(':')
+			c    = int(pair[0])
+			val  = float(pair[1])			
+			if directed or ((not directed) and (c >= l)):
+				tEdges.append((val,l,c))
+nbTEdges = len(tEdges)
+
+#Read the approx file
+approxFile = open(approxFname,'U')
+approxFile.readline() #Skip the first line containing #nodes
+aEdges     = []
+for line in approxFile:
+	entries = line.strip().split(' ')
+	if len(entries) > 1:
+		l = int(entries[0])
+		for entry in entries[1:]:
+			pair   = entry.split(':')
+			c      = int(pair[0])
+			val    = float(pair[1])
+			if directed or ((not directed) and (c >= l)):
+				aEdges.append((val,l,c))
+	
+#Sort the edges
+tEdges.sort(reverse=True)
+aEdges.sort(reverse=True)
+
+#Extract the target subgraph
+nbExtract = int(math.ceil(nbTEdges*prop))
+subgraph  = sets.Set()
+for (val,l,c) in tEdges[0:nbExtract]:
+	subgraph.add((l,c))
+
+#Compute the precision/recall curve
+prec_rec = []
+tp=0;fp=0;tick=0
+for (val,l,c) in aEdges:
+	if (l,c) in subgraph:
+		tp += 1
+	else:
+		fp += 1
+
+	if float(tp+fp)/float(len(aEdges)) >= tick :
+		prec = float(tp)/float(tp+fp)	
+		rec  = float(tp)/float(nbExtract)		
+		prec_rec.append((rec,prec))
+		tick += 0.01
+		
+#Output the precision/recall table
+print >>outFile,"#Recall\t\tPrecision"
+for (rec,prec)in prec_rec:
+	print >>outFile, "%e\t%e" % (rec,prec)
+
+#Close files
+targetFile.close()
+approxFile.close()
+outFile.close()

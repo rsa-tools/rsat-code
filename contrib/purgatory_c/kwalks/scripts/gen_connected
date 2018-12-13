@@ -1,0 +1,85 @@
+#!/usr/bin/python
+
+#Standard imports
+import os
+import sys
+import getopt
+import sets
+import random
+
+DEG_DISTRIB_CMD = "deg_distrib"
+GEN_GRAPH_CMD = "gen_graph"
+
+def printHelp():
+	print "Usage: gen_connected -n nbNodes -m meanDeg [-o outFile]"
+
+################################################################################
+
+#Get the command line arguments
+nflg = 0
+mflg = 0
+oflg = 0
+
+try:
+	opts,args = getopt.getopt(sys.argv[1:], "n:m:o:")
+except getopt.GetoptError:
+	printHelp()
+	sys.exit(2)
+
+for o,a in opts:
+	if o == '-n':
+		nflg = 1
+		nbNodes = int(a)
+	if o == '-m':
+		mflg = 1
+		meanDeg = int(a)
+	if o == '-o':
+		oflg = 1
+		outFname = a
+
+if nflg == 0 or mflg == 0 :
+	print 'Mandatory argument(s) missing'
+	printHelp()
+	sys.exit(2)
+	
+if oflg:
+	outFile = open(outFname,'w')
+else:
+	outFile = sys.stdout
+	
+#Generate the graph with the program of Fabien Viger
+CMD = DEG_DISTRIB_CMD + ' -c -r '+str(nbNodes) +' 2.5 1 '+ str(nbNodes)+' '+str(meanDeg) + '|'+GEN_GRAPH_CMD
+genScript = os.popen(CMD,'r')
+
+#Shuffle the node indices
+nodeIdx = range(0,nbNodes)
+random.shuffle(nodeIdx)
+
+#Write the number of nodes in outfile
+print >> outFile,str(nbNodes)
+	
+#Read the adjancency matrix and shuffle the indices
+adj = []
+for line in genScript:
+	if line.find('Error') != -1:
+		print line;sys.exit(2)
+	nodes = line.strip().split(' ')
+	nlist = []
+	for node in nodes[1:]:
+		nlist.append(nodeIdx[int(node)])
+	nlist.sort()
+	nlist.insert(0,nodeIdx[int(nodes[0])])
+	adj.append(nlist)
+
+#Sort the ajdancency matrix
+adj.sort()
+
+#Output the adjacency matrix in the right format
+for line in adj:
+	oline = str(line[0]+1)
+	for entry in line[1:]:
+		oline += ' ' + str(entry+1) + ':1' 			
+	print >>outFile,oline
+	
+genScript.close()
+outFile.close()

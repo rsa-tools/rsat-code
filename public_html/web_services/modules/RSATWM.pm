@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 require "RSA.lib";
 BEGIN {
    if ($0 =~ /([^(\/)]+)$/) {

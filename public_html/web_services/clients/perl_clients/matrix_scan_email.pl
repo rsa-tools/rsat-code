@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # the first line of the script must tell us which language interpreter to use,
 # in this case its perl
 

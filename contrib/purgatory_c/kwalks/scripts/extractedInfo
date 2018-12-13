@@ -1,0 +1,146 @@
+#!/usr/bin/python
+
+#Standard imports
+import os
+import sys
+import getopt
+import sets
+
+def printHelp():
+	print "Usage: extractedInfo -g graphFile -s subgraphFile -k relNodes -o outFile [-d directed]"
+	
+def get_adj_list(arcs):
+   adj_list={}
+   for i,j in arcs:
+       adj_list.setdefault(i,{})[j]=None
+       adj_list.setdefault(j,{})[i]=None
+   return adj_list
+
+def isConnected(arcs):
+   empty={}
+   to_be_visited = sets.Set([u for (u,v) in arcs])
+   to_be_visited.update([v for (u,v) in arcs])
+   nbComp=0
+   adj_list=get_adj_list(arcs)
+   while to_be_visited:
+       n = to_be_visited.pop()
+       nbComp+=1 
+       fringe=[]
+       fringe.extend([v for v in adj_list[n] if v in to_be_visited])
+       while fringe:
+           n = fringe.pop()
+           to_be_visited.discard(n)
+           fringe.extend([v for v in adj_list[n] if v in to_be_visited and v not in fringe])
+   return (nbComp==1)
+		
+################################################################################
+
+#Get the command line arguments
+gflg = 0
+sflg = 0
+kflg = 0
+oflg = 0
+dflg = 0
+directed = 0
+
+try:
+	opts,args = getopt.getopt(sys.argv[1:], "g:s:k:o:d:h")
+except getopt.GetoptError:
+	printHelp()
+	sys.exit(2)
+
+for o,a in opts:
+	if o == '-g':
+		gflg = 1
+		graphFname = a
+	if o == '-s':
+		sflg = 1
+		subgraphFname = a		
+	if o == '-k':
+		kflg = 1
+		knodes = []
+		for elem in a.split('#'): knodes.append(int(elem))
+		nbKnodes = len(knodes) 
+	if o == '-o':
+		oflg = 1
+		outFname = a
+	if o == '-d':
+		dflg = 1
+		directed = int(a)		
+	if o == '-h':
+		printHelp()
+		sys.exit(2)
+		
+if gflg == 0 or sflg == 0 or kflg == 0 or oflg == 0 :
+	print 'Mandatory argument(s) missing'
+	printHelp()
+	sys.exit(2)
+		
+#Read the original graph file
+graphFile = open(graphFname,'U')
+nbNodes   = int(graphFile.readline())
+nbEdges   = 0
+for line in graphFile:
+	entries  = line.strip().split(' ')
+	src      = int(entries[0])
+	if len(entries) > 1:
+		for entry in entries[1:]:
+			pair   = entry.split(':')
+			dest   = int(pair[0])
+			if directed or ((not directed) and (dest >= src)):
+				nbEdges += 1
+graphFile.close()
+
+#Read the subgraph file
+sgFile  = open(subgraphFname,'U')
+sgFile.readline() #Skip the first line containing #nodes
+edges   = []
+totInfo = 0
+for line in sgFile:
+	entries = line.strip().split(' ')
+	src     = int(entries[0])
+	if len(entries) > 1:
+		for entry in entries[1:]:
+			pair   = entry.split(':')
+			dest   = int(pair[0])
+			weight = float(pair[1])
+			if directed or ((not directed) and (dest >= src)):
+				totInfo += weight 
+				edges.append((weight,src,dest))
+sgFile.close()
+#Sort the edges by decreasing weight
+edges.sort(reverse=True)
+
+#Build the ufo and cfo files
+ufoFile     = open(outFname+'.ufo','w')
+cfoFile     = open(outFname+'.cfo','w')
+subgraph    = []
+connex      = 0
+cumInfo     = 0
+nodeTouched = sets.Set()
+kTouched    = sets.Set()
+
+for (weight,src,dest) in edges:
+	subgraph.append((src,dest))
+	cumInfo += weight
+	#Update attained nodes
+	nodeTouched.add(src)
+	nodeTouched.add(dest)
+	#Update touched nodes of interest
+	if src in knodes : kTouched.add(src)
+	if dest in knodes :kTouched.add(dest)
+	#Connexity check
+	if (not connex) and (len(kTouched) == nbKnodes) :
+		connex = isConnected(subgraph)
+	#Prepare information to write
+	nbEdgeS      = len(subgraph)
+	nbEdgeS_rel  = float(nbEdgeS)/float(nbEdges)
+	nbNodeS      = len(nodeTouched)
+	nbNodeS_rel  = float(nbNodeS)/float(nbNodes)
+	curInfo      = float(cumInfo)/float(totInfo)
+	if not connex :
+		print>>ufoFile,"%e %e %e %e %e %e %e"%(nbEdgeS,nbEdgeS_rel,nbNodeS,nbNodeS_rel,curInfo,src,dest)
+	else :
+		print>>cfoFile,"%e %e %e %e %e %e %e"%(nbEdgeS,nbEdgeS_rel,nbNodeS,nbNodeS_rel,curInfo,src,dest)
+ufoFile.close()
+cfoFile.close()

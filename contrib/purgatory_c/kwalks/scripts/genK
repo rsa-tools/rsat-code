@@ -1,0 +1,24 @@
+#!/usr/bin/python
+
+#Standard imports
+import os
+import sys
+import getopt
+import sets
+import random
+
+if len(sys.argv) < 3 :
+	print "Usage: genK sizeOfK nbNodesInGraph [seed]"
+	sys.exit(2)
+
+ksize   = int(sys.argv[1])
+nbNodes = int(sys.argv[2])
+if len(sys.argv) > 3:
+	random.seed(int(sys.argv[3]))
+	
+#Build the set K	
+kset    = sets.Set()
+while len(kset) < ksize:
+	kset.add(str(random.randint(1,nbNodes)))
+#Output K
+print '#'.join(kset)

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: graph-get-clusters,v 1.32 2010/12/08 13:08:48 rsat Exp $

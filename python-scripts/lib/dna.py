@@ -170,7 +170,7 @@ class Reader(object):
         @param decode:  if True decode title
         @return (title, sequence) 
         """
-        raise NotImplementedError
+        return self.__next__()
 
 class FastaReader(Reader):
     """Fasta Reader
@@ -182,7 +182,7 @@ class FastaReader(Reader):
         self.last = ''
         self.sequence = []
 
-    def next(self):
+    def __next__(self):
         self.item = False
         self.eof  = False
 

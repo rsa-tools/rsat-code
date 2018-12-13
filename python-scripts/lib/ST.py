@@ -39,7 +39,7 @@ import sys
 import cli
 import dna
 
-MIN_INT = -sys.maxint +1
+MIN_INT = -sys.maxsize +1
 
 A = 0
 C = 1
@@ -183,19 +183,19 @@ def display(node, maxDepth=3, full=False):
         if subnode:
             PREFIX = '|  ' * node.depth + '+--'
             if full:
-                print PREFIX + IUPACcode2str(code) + ' [C%d,I%d,N%d,D%d]' % (subnode.count, subnode.IUPACcount, subnode.NCount, subnode.depth)
+                print(PREFIX + IUPACcode2str(code) + ' [C%d,I%d,N%d,D%d]' % (subnode.count, subnode.IUPACcount, subnode.NCount, subnode.depth))
             else:
-                print PREFIX + IUPACcode2str(code) + '[%d]' % (subnode.count)
+                print(PREFIX + IUPACcode2str(code) + '[%d]' % (subnode.count))
             display(subnode, maxDepth, full)
     #print '|  ' * node.depth
 
 
 def print_count(c):
-    l = [ (k,v) for k,v in c.items() ]
+    l = [ (k,v) for k,v in list(c.items()) ]
     l.sort()
     for w,wcount in l:
         wrc = dna.reverse_complement(w)
-        print '%s|%s %4d' % (w, wrc, wcount)
+        print('%s|%s %4d' % (w, wrc, wcount))
 
 
 def count(node, path, c, minLength, maxLength):
@@ -240,7 +240,7 @@ def get_positions_two_strands(c, overlap=False):
     for wf in c:
         wrc = dna.reverse_complement(wf)
         w = min(wf, wrc)
-        if positions.has_key(w):
+        if w in positions:
             continue
 
         l = []
@@ -282,10 +282,10 @@ def group_rc(c):
     for w in c:
         wrc = dna.reverse_complement(w)
         x = min(w, wrc)
-        if groupedc.has_key(x):
+        if x in groupedc:
             continue
         groupedc[x] = c[w]
-        if w != wrc and c.has_key(wrc):
+        if w != wrc and wrc in c:
             groupedc[x] += c[wrc]
         else:
             groupedc[x] *= 2            
@@ -480,7 +480,7 @@ def realtest(N=2):
     #filename = 'E2F.fa'
     filename = 'Test/MM0.fa'    
     sequences = dna.fasta2sequences(filename)
-    print sequences
+    print(sequences)
     st = SuffixTree(maxDepth=N, overlapping=True, maxIUPAC=N, NExtension=(1,1), storePosition=0)
     info = cli.Info(len(sequences))
     for i in range(len(sequences)):
@@ -497,12 +497,12 @@ def test(N=2):
     n = 5
     st = SuffixTree(maxDepth=n, overlapping=True, maxIUPAC=1, NExtension=(6,6), storePosition=1)
     dna = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-    print dna
+    print(dna)
     st.add_dna(dna)
     display(st.root, full=1)
-    print st.extract(minLength=n, maxLength=n)
-    keys = st.extract(minLength=n, maxLength=n).keys()
-    print keys
+    print(st.extract(minLength=n, maxLength=n))
+    keys = list(st.extract(minLength=n, maxLength=n).keys())
+    print(keys)
     
     #print st.nodeCount
     #count = group_rc(st.count(minLength=N, maxLength=N))
@@ -514,5 +514,5 @@ if __name__ == '__main__':
     m = memory_usage()
     #str = test(4)
     x = realtest(int(sys.argv[1]))
-    print 'memory usage : %.3fM' % (memory_usage() - m)
+    print('memory usage : %.3fM' % (memory_usage() - m))
 

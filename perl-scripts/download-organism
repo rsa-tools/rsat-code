@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: download-organism,v 1.32 2013/08/12 10:11:54 rsat Exp $

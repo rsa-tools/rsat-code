@@ -6,7 +6,7 @@ VERSION
         %(version)s
 
 AUTHOR
-        Matthieu Defrance <defrance@bigre.ulb.ac.be>
+        Matthieu Defrance <matthieu.dc.defrance@ulb.ac.be>
 
 DESCRIPTION
         Generates random sites according to a given motif model (PSSM)
@@ -86,7 +86,7 @@ def main(options, args):
             data += ['; number.of.sites              %d\t'   % options.sites]
         for n in range(options.sites):
             data += ["> motif%d_site%d" % (i + 1, n + 1)]
-            data += [ generator.next() ]
+            data += [ next(generator) ]
         data += [ '' ]
         options.output.write('\n'.join(data))
 
@@ -95,7 +95,7 @@ def main(options, args):
 # ===========================================================================
 if __name__ == '__main__':
     USAGE = '''%s -m motif -n numberofsites [-h]'''
-    VERSION = '2009.11'
+    VERSION = '20181203'
     PROG_NAME = os.path.basename(sys.argv[0])
     parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
     parser.add_option("-v", "--verbosity", action="store", dest="verbosity", default=0)
