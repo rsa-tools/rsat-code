@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use CGI;
 
 use LWP::Simple;
@@ -9,49 +9,7 @@ require RSAT::OrganismManager;
 require RSAT::server;
 require RSAT::error;
 require RSAT::Tree;
-use Email::Sender::Simple qw(sendmail);
-use Email::Simple;
-use Email::Simple::Creator;
-use Email::Sender::Transport::SMTP;
 
-=pod
-
-=item B<google_analytics_tag_old>
-
-Print a tag for Google Analytics, a tool for monitoring the access to the
-Web site.
-
-=cut
-sub google_analytics_tag_old {
-    print <<EndGATag
-<script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script>
-<script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-10629344-1");
-pageTracker._trackPageview();
-} catch(err) {}</script>
-EndGATag
-}
-
-################################################################
-## Print a tag for Google Analytics, a tool for monitoring the access to the
-## Web site.
-sub google_analytics_tag {
-    print <<EndGATag
-<script type="text/javascript">
-    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script>
-<script type="text/javascript">
-    try {
-	var pageTracker = _gat._getTracker("UA-10629344-1");
-	pageTracker._trackPageview();
-} catch(err) {}</script>
-EndGATag
-}
 
 ################################################################
 ## Load the default parameters for get-orthologs`
@@ -456,52 +414,6 @@ print "<div class='container' id='page-content-wrapper'>";
     &RSAT::server::DetectDeniedIP();
     &display_bioschemas()
 
-}
-
-## ##############################################################
-## Start a new HTML page and write the header of a RSAT query form or result
-## page usage &RSA_header($program_name)
-sub RSA_header_old {
-  my $css_body_class = "form";
-  my ($title) = shift;
-  $title =~ s/\"//g;
-  $title =~ s/\'//g;
-  if (scalar @_ > 0) {
-    $css_body_class = shift;
-  }
-
-  #    <link rel="stylesheet" type="text/css" href="main.css" media="screen,projection" />
-#    <link rel="stylesheet" type="text/css" href="print.css" media="print" />
-
-
-  #  print &html_header();
-  print $query->header();
-
-  print sorttable_script();
-
-
-  ### print the header of the result page
-  print $query->start_html(-title=>"RSAT : $title",
-     -class => "$css_body_class",
-			   -author=>'Jacques.van-Helden\@univ-amu.fr',
-			   -script=>[
-				     { -type => 'text/javascript',
-				       -src      => 'RSAT_menu.js'
-				     },
-				     { -type => 'text/javascript',
-				       -src      => 'RSAT_tabs.js'
-				     }
-                                 ],
-			   -style => { 	-src => ["main.css","tabs.css","chosen.css"],
-                             	       	-type => 'text/css',
-                             		-media => 'screen,projection,print' });
-  print "<h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
-
-  ################################################################
-  ## Check if client IP is blacklisted on this server.
-  ##
-  ## We insert this control here so it is applied to each Web form.
-  &RSAT::server::DetectDeniedIP();
 }
 
 
@@ -1217,53 +1129,6 @@ sub OrganismPopUpCompara{
     return($organismPopup);
 }
 
-################################################################
-## Generate the content of the pop-up menu to be displayed for organism selection
-sub OrganismPopUpString_old {
-  my (@selected_organisms) = @_;
-  if (scalar(@selected_organisms) == 0) {
-    @selected_organisms = &RSAT::OrganismManager::get_supported_organisms_web();
-  }
-  my $organismPopup = "";
-  $organismPopup .=  "<B>Organism</B>&nbsp;";
-    #print '<script type="text/javascript"> ' ;
-    #print `cat $ENV{RSAT}/perl-scripts/lib/js/DataTables-1.10.4/media/js/jquery.js`;
-    #print ' </script>';
-  print '<script type="text/javascript"> ' ;
-  print `cat $ENV{RSAT}/perl-scripts/lib/js/chosen/chosen.jquery.min.js`;
-  print ' </script>';
-  print '<script type="text/javascript">
-     jQuery(document).ready(function(){
-	 $(".chosen-select").chosen();
-	 $(".chosen-container").css({"font-size": "11px"});
-});
-
-  </script>';
-#  print "<pre>", join("\n", @selected_organisms), "</pre>";
-
-  $organismPopup .=  "<select id='organism' name='organism' class='chosen-select' tabindex='2'>\n";
-  foreach my $org (@selected_organisms) {
-    if (defined($supported_organism{$org})) {
-      my $name = $org;
-      $name =~ s/\_/ /g;
-#	    $name = $supported_organism{$org}->{'name'};
-      if ((lc($org) eq lc($default{organism})) ||
-	  (lc($name) eq lc($default{organism}))) {
-	$organismPopup .=  "<option selected VALUE='$org'>$name\n";
-      } else {
-	$organismPopup .=  "<option value='$org'>$name\n";
-      }
-#    } else {
-#	&RSAT::message::Warning("Discarding", $org, "not supported");
-    }
-  }
-
-  $organismPopup .=  "</select>";
-    $organismPopup .= " <i>not seeing your favorite organism in the list ? Contact us to have it installed </i>";
-
-  $organismPopup .=  "<br>\n";
-  return($organismPopup);
-}
 
 ###########################
 ### Generate the content of the pop-up menu to be displayed for organism selection
@@ -2637,22 +2502,6 @@ sub ScoresAndThresholdsDiv {
   print '</div><p class=\"clear\"></p>';
 }
 
-# ################################################################
-# ## Display a collapsable div with selectable scores and thresholds
-# sub ScoresAndThresholdsDiv {
-#   my ($title, $help_file, $field_ref, $field_descr_ref) = @_;
-
-#   print "<p class=\"clear\"></p>\n";
-# #  print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
-#   print "<div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'101\')\" id=\"heading101\"><b>",$title,"</b>\n";
-#   print "<div id=\"menu101\" class=\"menu_collapsible\">\n";
-#   print "<p><fieldset>\n";
-
-#   &FieldsThresholdsTable($help_file, $field_ref, $field_descr_ref);
-
-#   print "</fieldset></p>";
-#   print '</div></div><p class=\"clear\"></p>';
-# }
 
 ################################################################
 ## Display a table with checkboxes and thresholds for a set of

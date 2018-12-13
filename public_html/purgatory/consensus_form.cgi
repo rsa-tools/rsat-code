@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: consensus_form.cgi,v 1.11 2011/04/10 13:49:57 jvanheld Exp $

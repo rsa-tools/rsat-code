@@ -11,8 +11,8 @@ import bisect
 from copy import copy
 from math import *
 
-import cli
-import matrix
+from . import cli
+from . import matrix
 
 ########################################
 #
@@ -225,7 +225,7 @@ def find_occurrences(motif, max=100):
             word = motif.word( (s,p) )
             probs += [ matrix.Q(word, mymatrix) / motif.bg.P(word) ]
 
-    L = zip(probs, ids)
+    L = list(zip(probs, ids))
     L.sort(reverse=True)
     return [i[1] for i in L[:max]]
 
@@ -618,7 +618,7 @@ def run(sequences, startmotif, bg, length, N, gibbsiterations, EMiterations, nmo
 ########################################
 
 def test_gibbs():
-    import markov
+    from . import markov
     l = 3
     sequences = ['CATTGG', 'TTAGTG']
     bg = markov.MM(0)
@@ -636,7 +636,7 @@ def test_gibbs():
     sites = all_sites(sequences, bg, l)
     bestmotif = run_gibbs(m, sequences, bg, sites, 10)
 
-    print motif2str(bestmotif, sequences, bg, '+-')
+    print(motif2str(bestmotif, sequences, bg, '+-'))
 
 
 if __name__ == '__main__':

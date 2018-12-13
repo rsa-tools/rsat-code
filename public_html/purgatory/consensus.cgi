@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: consensus.cgi,v 1.25 2013/11/03 19:33:31 jvanheld Exp $

@@ -1,21 +1,21 @@
-CC      = g++
-CCFLAGS = -O3 -Wall
+CXX      = g++
+CXXFLAGS = -O3 -Wall
 SRC		= $(wildcard *.cpp)
 OBJS    = $(SRC:.cpp=.o)
-	
+
 compile: info-gibbs
 
 info-gibbs:	$(OBJS)
-	$(CC) $(OBJS) -o info-gibbs
+	$(CXX) $(OBJS) -o info-gibbs
 
 %.o: %.cpp
-	$(CC) -c $(CCFLAGS) $<
-	
+	$(CXX) -c $(CXXFLAGS) $<
+
 clean:
 	rm -f *.o info-gibbs *.ic
 
 all: clean compile
-	
+
 zip:
 	@cd ../; zip -q -r info-gibbs.zip info-gibbs/README info-gibbs/Makefile \
 	info-gibbs/*.cpp info-gibbs/*.h

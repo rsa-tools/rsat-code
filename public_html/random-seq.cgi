@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ## CVS
 ## added the possibility to specify the expected frequency for each nucleotide separately

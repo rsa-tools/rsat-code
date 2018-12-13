@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: Genbank_classes.pl,v 1.13 2009/05/14 11:04:44 jvanheld Exp $
