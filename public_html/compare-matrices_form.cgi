@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #### this cgi script fills the HTML form for the program compare-matrices
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {

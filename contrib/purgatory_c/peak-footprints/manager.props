@@ -1,0 +1,34 @@
+# Path to the folder where the log files and the 'output' folder 
+# containing all the outputs will be created. This path is relative to the RSAT install dir
+# or the user HOME directory
+base_output_dir=public_html/tmp/peak-footprints_output
+
+# Path to the folder containing the serverQueue.txt file. This path is relative to the RSAT install dir
+# or the user HOME directory
+server_queue_dir=public_html/tmp/peak-footprints_queue_management
+
+# (Mode server only) Folder where tickets containing commands to send in queue will be copied
+# This path must be relative to RSAT install dir
+listening_dir=ticket
+
+
+################################################################
+## Optional parameters
+
+## MEME/tomtom was tested in the initial phase of the project, but
+## compare-matrices is faster and more flexible. It is still supported
+## for the sake of comparisons of the results.
+meme_dir=/Tools/meme
+
+################################################################
+## The following parameters are not (yet) taken into
+## consideration. Wein future versions, we envisage to add support for
+## alternative multiple alignment algorithms (clustal or mafft).
+
+# Clustal executable name. If executable path is not in the PATH,
+# a full path to the clustalW executable file must be provided.
+clustalw_command=/home/spinelli/Tools/clustalw2/clustalw2
+
+# Name of the MAFFT script or executable file. If the MAFFT bin directory is not in the PATH,
+# a full path must be provided. Default value for this option is 'mafft --auto'
+mafft_command=/home/spinelli/Tools/mafft/bin/mafft-linsi

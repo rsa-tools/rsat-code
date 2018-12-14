@@ -35,7 +35,7 @@ def words2weblogo(words, outdir='.', bin=SEQLOGO, type='PNG', title='', filename
     f = open(seqfilename, 'w')
     f.write('\n'.join(words))
     f.close()
-    print '%s -F %s -Y -c  -n -t "%s" -f %s > %s/%s.%s' % (bin, type, title, seqfilename, outdir, filename, type)
+    print('%s -F %s -Y -c  -n -t "%s" -f %s > %s/%s.%s' % (bin, type, title, seqfilename, outdir, filename, type))
     os.system('%s -F %s -Y -c  -n -t "%s" -f %s > %s/%s.%s' % (bin, type, title, seqfilename, outdir, filename, type.lower()))
     os.remove(seqfilename)
 
@@ -264,7 +264,7 @@ CONSENSUS = { 'A' : 'A',
               'AGT' : 'D',
               'ACGT' : 'N'
               }
-EXPLAIN_CONSENSUS = dict([(v,k) for k,v in CONSENSUS.items()])
+EXPLAIN_CONSENSUS = dict([(v,k) for k,v in list(CONSENSUS.items())])
 
 def explain_consensus(w):
     str = []
@@ -472,19 +472,19 @@ def test_matrix():
     priori = [0.25, 0.25, 0.25, 0.25]
     words = ['AAA', 'TTT']
 
-    print words2countmatrix(['AAA', 'TTT'], priori)
-    print words2matrix(['AAA', 'TTT'], priori, 0.2)
-    print matrix2tab(mymatrix, title='test matrix')
-    print tab2matrix('simple.mat')
-    print explain_consensus('ACCWNATC')
-    print consensus(mycountmatrix, priori, False)
+    print(words2countmatrix(['AAA', 'TTT'], priori))
+    print(words2matrix(['AAA', 'TTT'], priori, 0.2))
+    print(matrix2tab(mymatrix, title='test matrix'))
+    print(tab2matrix('simple.mat'))
+    print(explain_consensus('ACCWNATC'))
+    print(consensus(mycountmatrix, priori, False))
 
-    print Q('ATT', mymatrix)
-    print Iseq(mymatrix, priori)
+    print(Q('ATT', mymatrix))
+    print(Iseq(mymatrix, priori))
 
     matrix = words2matrix(words, priori, 0.2)
-    print llr_markov(words, matrix, markovmodel)
-    print Iseq_markov(words, matrix, markovmodel)
+    print(llr_markov(words, matrix, markovmodel))
+    print(Iseq_markov(words, matrix, markovmodel))
     
     #myllr = LLR(words, markovmodel, 0.1)
     #print myllr.llr('AAA')

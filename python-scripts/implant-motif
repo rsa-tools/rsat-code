@@ -6,7 +6,7 @@ VERSION
         %(version)s
 
 AUTHOR
-        Matthieu Defrance <defrance@bigre.ulb.ac.be>
+        Matthieu Defrance <matthieu.dc.defrance@ulb.ac.be>
 
 DESCRIPTION
         implants motifs occurrences (sites) in DNA sequences
@@ -46,7 +46,7 @@ import os
 from math import *
 import random
 import optparse
-import matrix
+from lib import matrix
 from pydoc import pager
 from random import choice, randint, shuffle
 
@@ -95,7 +95,7 @@ def implant(sequences, matrices, esps, espp):
         while p < len(sequence):
             if random.random() < sitep:
                 try:
-                    (name, word) = sitegenerator.next()
+                    (name, word) = next(sitegenerator)
                 except StopIteration:
                     break
                 if (p+len(word) < len(sequence)):
@@ -121,7 +121,7 @@ def main(options, args):
 # ===========================================================================
 if __name__ == '__main__':
     USAGE = '''%s -i sequences -m motifs [-h]'''
-    VERSION = '2009.11'
+    VERSION = '20181203'
     PROG_NAME = os.path.basename(sys.argv[0])
     
     parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
@@ -138,13 +138,13 @@ if __name__ == '__main__':
 
     if options.help:
         doc =  globals()['__doc__'] % {'usage' : USAGE % PROG_NAME, 'version' : VERSION, 'progname' : PROG_NAME}
-        print doc
+        print(doc)
         sys.exit(0)
     if not options.input:
         parser.print_usage()
         sys.exit()
     if len(sys.argv) == 1:
-        print USAGE % PROG_NAME
+        print(USAGE % PROG_NAME)
         sys.exit(0)    
     try:
         main(options, args)

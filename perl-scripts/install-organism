@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: install-organism,v 1.129 2013/10/13 12:24:00 jvanheld Exp $

@@ -6,7 +6,7 @@ VERSION
         %(version)s
 
 AUTHOR
-        Matthieu Defrance <defrance@bigre.ulb.ac.be>
+        Matthieu Defrance <matthieu.dc.defrance@ulb.ac.be>
 
 DESCRIPTION
         compute oligomer frequencies in a set of sequences,
@@ -118,7 +118,7 @@ STATISTICS
 
 '''        
 
-VERSION = '20120626'
+VERSION = '20181203'
 USAGE = '''local-word-analysis -l OLIGOMER_LENGTH [-i inputfile]
                 [-o outputfile] 
                 [--max parameter #][--min parameter #]
@@ -292,7 +292,7 @@ def main(args, options):
     #
     ##
     bgfile = ''
-    options.bgwindow = options.bgwindow or sys.maxint
+    options.bgwindow = options.bgwindow or sys.maxsize
     if options.bgwindow > s.location[1] - s.location[0] + 1:
         options.bgwindow = s.location[1] - s.location[0] + 1
 
@@ -323,8 +323,9 @@ def main(args, options):
     if options.window != 'variable' and options.window != 'none':
         if int(options.window) > s.location[1] - s.location[0] + 1:
             options.window = s.location[1] - s.location[0] + 1
-        if options.window_group > s.location[1] - s.location[0] + 1:
-            options.window_group = s.location[1] - s.location[0] + 1
+        if options.window_group:
+          if options.window_group > s.location[1] - s.location[0] + 1:
+              options.window_group = s.location[1] - s.location[0] + 1
 
     if not (location[0] >= bg.location[0] and location[1] <= bg.location[1]):
         cli.error('Given location do not match Background model location')
@@ -335,8 +336,8 @@ def main(args, options):
     # Thresholds
     #
     ##
-    defaults = {'width' : (2, sys.maxint),
-                'occ'   : (1, sys.maxint),
+    defaults = {'width' : (2, sys.maxsize),
+                'occ'   : (1, sys.maxsize),
                 'occ_sig'   : (None, None),
                 'occ_E' : (None, None),
                 'occ_P' : (None, None),

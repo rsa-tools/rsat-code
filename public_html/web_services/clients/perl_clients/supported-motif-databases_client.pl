@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ################################################################
 ## Connect a RSAT server and get a  list of supported motif dbs

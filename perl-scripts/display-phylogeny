@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: display-phylogeny,v 1.8 2011/04/27 12:21:56 rsat Exp $
