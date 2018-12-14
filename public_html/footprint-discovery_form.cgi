@@ -1,7 +1,7 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ################################################################
 ## this cgi script fills the HTML form for the program footprint-discovery
-#!/usr/bin/perl
+#!/usr/bin/env perl
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push @INC, "$`lib/";

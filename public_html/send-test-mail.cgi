@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #### redirect error log to a file
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");

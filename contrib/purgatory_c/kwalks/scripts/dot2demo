@@ -1,0 +1,132 @@
+#!/usr/bin/python
+
+#Standard imports
+import os
+import sys
+import getopt
+import sets
+
+def printHelp():
+	print "Usage: dot2demo -d dotFile [-o outFile]"
+
+################################################################################
+
+#Get the command line arguments
+dflg = 0
+oflg = 0
+
+try:
+	opts,args = getopt.getopt(sys.argv[1:], "d:o:h")
+except getopt.GetoptError:
+	printHelp()
+	sys.exit(2)
+
+for o,a in opts:
+	if o == '-d':
+		dflg = 1
+		dotFname = a
+	if o == '-o':
+		oflg = 1
+		outFname = a
+
+#Check for mandatory arguments
+if dflg == 0:
+	printHelp()
+	sys.exit(2)
+
+#define the output as stdout if no file is provided
+if oflg == 1:
+	outFile = open(outFname,'w')
+else:
+	outFile = sys.stdout
+
+#Run dot to compute the layout
+coordFile = os.popen("dot "+dotFname)
+
+#Check if the graph is symmetric
+line = coordFile.readline()
+if line.find("digraph") != -1:
+	directed = 1
+else:
+	directed = 0
+
+#Skip node [label="\N", shape=circle, fontcolor=black];
+coordFile.readline()
+
+#Get the box width and height
+line = coordFile.readline()
+hdim = line.split(',')[2].strip()
+vdim = line.split(',')[3].split('"')[0].strip()
+
+#Get the node positions
+nodePos={}
+for line in coordFile:
+	#If the line defines an edge don't scan further
+	if line.find("->") != -1 or line.find("--") != -1: break
+	#Get the node x,y coordinates
+	node = int(line.split(' ')[0].strip())
+	x = line.split('"')[1].split(',')[0].strip()
+	y = line.split('"')[1].split(',')[1].strip()
+	nodePos[node] = (x,y)
+nodePos.keys().sort()	
+nbNode = len(nodePos)
+		
+#Get the edges
+edges = []
+#Add the already read edge
+if line.find("}") == -1: #End of graph
+	if directed:
+		if line.find("->") != -1:
+			tailNode = int(line.split("->")[0].strip()) #from node
+			headNode = int(line.split("->")[1].split('[')[0].strip()) #to node
+			weight   = line.split('"')[1]	
+	else:
+		if line.find("--") != -1:
+			tailNode = int(line.split("--")[0].strip()) #from node
+			headNode = int(line.split("--")[1].split('[')[0].strip()) #to node
+			weight   = line.split('"')[1]			
+	edges.append((headNode,tailNode,weight))
+
+#Add the following edges
+for line in coordFile:
+	if line.find("}") == -1: #End of graph
+		if directed:
+			if line.find("->") != -1:
+				tailNode = int(line.split("->")[0].strip()) #from node
+				headNode = int(line.split("->")[1].split('[')[0].strip()) #to node
+				weight   = line.split('"')[1]	
+		else:
+			if line.find("--") != -1:
+				tailNode = int(line.split("--")[0].strip()) #from node
+				headNode = int(line.split("--")[1].split('[')[0].strip()) #to node
+				weight   = line.split('"')[1]			
+		edges.append((headNode,tailNode,weight))
+edges.sort()		
+nbEdges = len(edges)		
+		
+#WRITE HEADER
+print >>outFile,"graph:"
+print >>outFile,"dir:"+str(directed)+"; simp:0; eucl:0; int:0; ew:1; vw:1;"
+print >>outFile,"scroller:"
+print >>outFile,"vdim:"+vdim+"; hdim:"+hdim+"; vlinc:10; hlinc:10; vpinc:50; hpinc:50;"
+
+#WRITE NODES
+print >>outFile,"vertices:"+str(nbNode)+";"
+for node in nodePos.keys():
+	(x,y) = nodePos[node]
+	print >>outFile,"n:"+str(node)+"; x:"+x+"; y:"+y+"; w:0;"
+
+#WRITE EDGES
+print >>outFile,"edges:"+str(nbEdges)+";"
+i = 0
+for (headNode,tailNode,weight) in edges:
+	i += 1
+	if i < nbEdges:
+		print >>outFile,"h:"+str(headNode)+"; t:"+str(tailNode)+"; w:"+weight +";"
+	else:
+		#Avoid empty line at end of file
+		outFile.write("h:"+str(headNode)+"; t:"+str(tailNode)+"; w:"+weight +";")
+
+#Close files
+coordFile.close()
+outFile.close()

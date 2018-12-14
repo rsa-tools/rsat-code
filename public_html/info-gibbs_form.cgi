@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: info-gibbs_form.cgi

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: purge-sequence_form.cgi,v 1.5 2009/11/03 10:06:12 jvanheld Exp $

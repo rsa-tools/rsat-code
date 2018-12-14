@@ -1,14 +1,13 @@
-# Regulatory Sequence Analysis Tools (RSAT) / Network Analysis Tools (NeAT)
+# Regulatory Sequence Analysis Tools (RSAT)
 
 
-This folder contains all the code required to install a local version
-of the **Regulatory Sequence Analysis Tools** (**RSAT**) and **Network
-Analysis Tools** (**NeAT**).
+This folder contains the code required to install a local version of
+the **Regulatory Sequence Analysis Tools** (**RSAT**). 
 
 
 **Contact**: <Jacques.van-Helden@univ-amu.fr>
 
-**Authors**: Jacques van Helden + the RSAT/NeAT team.
+**Authors**: Jacques van Helden + the RSAT team.
 
 
 ****************************************************************
@@ -41,15 +40,6 @@ NeAT code.
 - **downloads** this folder is created at RSAT initialisation. It
   serves to download the genome data from NCBI, Ensembl or other
   databases, which will serve to install organisms on RSAT.
-
-## Folders to be evaluated
-
-- **snakefiles**
-
-- **src**
-
-- **sql_scripts**
-
 
 
 

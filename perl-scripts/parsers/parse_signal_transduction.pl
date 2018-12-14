@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ### add the program's directory to the lib path
 BEGIN {
