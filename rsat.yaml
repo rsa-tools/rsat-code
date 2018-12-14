@@ -1,0 +1,21 @@
+usage:
+  "rsat Regulatory Sequence Analysis Tools
+
+Usage: rsat <subcommand> [options]
+
+The rsat subcommands include:
+
+%(table_of_content)s
+
+Type rsat [command] -h to display the command help."
+
+commands:
+  - command: 'perl-scripts/retrieve-seq'
+    desc: "retrieve sequences"
+    group: "Data fetching"
+  - command: 'perl-scripts/oligo-analysis'
+    desc: "One of the most iconic RSAT tool!"
+    group: "Motif discovery"
+  - command: 'perl-scripts/dyad-analysis'
+    desc: "*-* motifs discovery"
+    group: "Motif discovery"
