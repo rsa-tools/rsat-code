@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-## use strict;
-
 =pod
 
 =head1 NAME
@@ -64,12 +62,16 @@ package main;
   our %outfile = ();
 
   our $verbose = 0;
-  our $in = STDIN;
   our $out = STDOUT;
 
   our $old_folder_name = '';
   our $new_folder_name = '';
  
+  my %supported_subfolders = ( 
+    'genome' => 1,
+    'oligo-frequencies' => 1
+  );
+
   my ($subfolder, $file, $subfile, $oldname, $newname);
 
   ################################################################
@@ -111,27 +113,33 @@ package main;
      &RSAT::error::FatalError("Cannot list folder ", $infile{old}); 
   foreach $file (readdir(OLD)) {
     next if($file eq '.' || $file eq '..'); 
-    
-    if(-d $file){ # subfolders therein, depth 1
-        $subfolder = $file;
+   
+    if($supported_subfolders{$file}){ # -d was confused with symb links
+        $subfolder = $file; 
         opendir(SUBDIR,$old_folder_name."/$subfolder") ||
              &RSAT::error::FatalError("Cannot list subfolder ", $subfolder);
    
         # create new subfolder in upgraded folder
-        mkdir($new_folder_name."/$subfolder");
-        &RSAT::error::FatalError("Cannot create subfolder ", $outfile{new})
-            unless (-d $new_folder_name."/$subfolder");
+        if(!-d $new_folder_name."/$subfolder"){
+            mkdir($new_folder_name."/$subfolder") ||
+                &RSAT::error::FatalError("Cannot create subfolder ", 
+                    $new_folder_name."/$subfolder");
+        }
 
         foreach $subfile (readdir(SUBDIR)){
-            next if(-d $subfile);
+            next if($subfile eq '.' || $subfile eq '..');
 
             $oldname = $old_folder_name."/$subfolder/$subfile";
             $newname = $subfile; 
             $newname =~ s/$infile{old}/$outfile{new}/;
-            $newname = $outfile{new}."/$subfolder/$newname";
-            next if(-e $newname);
-            if(!link($oldname, $newname)){
-                &RSAT::error::FatalError("Cannot link ",$oldname);
+            $newname = $new_folder_name."/$subfolder/$newname";
+            if(!-e $newname){
+                if(!link($oldname, $newname)){
+                    &RSAT::error::FatalError("Cannot link ",$oldname, " to ", $newname);
+                }
+                elsif($main::verbose >= 5){
+                    &RSAT::message::Debug("\tLinked file", $newname);
+                }              
             }
         }      
         closedir(SUBDIR);      
@@ -140,17 +148,17 @@ package main;
         $oldname = $old_folder_name."/$file";
         $newname = $file;
         $newname =~ s/$infile{old}/$outfile{new}/;
-        $newname = $outfile{new}."/$newname";
+        $newname = $new_folder_name."/$newname";
         next if(-e $newname);   
         if(!link($oldname, $newname)){
-            &RSAT::error::FatalError("Cannot link ",$oldname);          
-        } 
+            &RSAT::error::FatalError("Cannot link file ",$oldname);          
+        }
+        elsif($main::verbose >= 5){
+            &RSAT::message::Debug("\tLinked file", $newname);
+        }
     }
   }
   closedir(OLD);
-
-  #&RSAT::message::TimeWarn("Checking chromosome names") if ($main::verbose >= 2);
-  #&RSAT::message::Debug("\tChromosome name", $chrom) if ($main::verbose >= 5);
 
   ################################################################
   ## Print verbose
