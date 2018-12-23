@@ -12,90 +12,11 @@ import os.path
 from sys import exit
 # import argparse
 import subprocess
+import yaml
 
 path = os.path.dirname(os.path.realpath(__file__))
 
-allowed_commands = '''
-contrib/compare-matrices-quick
-contrib/count-words
-contrib/info-gibbs
-contrib/matrix-scan-quick
-contrib/purgatory_c
-contrib/retrieve-variation-seq
-contrib/variation-scan
-python-scripts/bbls
-python-scripts/crer-scan
-python-scripts/implant-motif
-python-scripts/implant-sites
-python-scripts/local-word-analysis
-python-scripts/random-motif
-python-scripts/random-sites
-perl-scripts/matrix-bg-eval
-perl-scripts/matrix-clustering
-perl-scripts/matrix-complexity
-perl-scripts/matrix-distrib
-perl-scripts/matrix-enrichment
-perl-scripts/matrix-from-align
-perl-scripts/matrix-from-contrast
-perl-scripts/matrix-from-patterns
-perl-scripts/matrix-from-transfac
-perl-scripts/check-oligo-analysis
-perl-scripts/dyad-analysis
-perl-scripts/multiple-family-analysis
-perl-scripts/oligo-analysis
-perl-scripts/position-analysis
-perl-scripts/retrieve-ensembl-go
-perl-scripts/retrieve-matrix
-perl-scripts/retrieve-seq
-perl-scripts/retrieve-seq-UCSC
-perl-scripts/retrieve-seq-bed
-perl-scripts/retrieve-seq-multigenome
-perl-scripts/retrieve-seq-quick
-perl-scripts/retrieve-snp-seq
-perl-scripts/retrieve-variation-seq1.0
-
-'''
-
-usage = '''rsat Regulatory Sequence Analysis Tools
-
-Usage: rsat <subcommand> [options]
-
-The rsat subcommands include:
-
-[ Motif discovery ]
-    check-oligo-analysis
-    dyad-analysis
-    multiple-family-analysis
-    oligo-analysis
-    position-analysis
-
-[ PSSM tools ]
-    matrix-bg-eval
-    matrix-clustering
-    matrix-complexity
-    matrix-distrib
-    matrix-enrichment
-    matrix-from-align
-    matrix-from-contrast
-    matrix-from-patterns
-    matrix-from-transfac
-
-[ data fetching tools ]
-    retrieve-ensembl-go
-    retrieve-matrix
-    retrieve-seq
-    retrieve-seq-UCSC
-    retrieve-seq-bed
-    retrieve-seq-multigenome
-    retrieve-seq-quick
-    retrieve-snp-seq
-    retrieve-variation-seq1.0
-
-Type rsat [command] -h to display the command help.
-
-'''
-
-def usage_and_exit():
+def usage_and_exit(usage):
     print(usage)
     exit()
 
@@ -103,19 +24,46 @@ def error(msg):
     print(msg + '\n')
     exit()
 
+def build_toc(commands):
+    # groups commands
+    d = {}
+    for c in commands:
+        d[c['group']] = d.get(c['group'], [])
+        d[c['group']] += [(c['command'], c['desc'])]
+
+    # build toc
+    s = []
+    for k in d.keys():
+        s += ['[ %s ]' % k]
+        for c in d[k]:
+            s += ['\t%s\t%s' % (c[0].split('/')[-1], c[1])]
+        s += [' ']
+    return '\n'.join(s)
+
+##
+# Main
+##
 try:
+    # usage
+    ref = yaml.load(open('rsat.yaml').read())
+    toc = build_toc(ref['commands'])
+    usage = ref['usage'] % {'table_of_content' : toc}
+
+    # allowed commands
+    allowed_commands = [c['command'] for c in ref['commands']]
+
     # check for help
     if len(sys.argv) == 1:
-        usage_and_exit()
+        usage_and_exit(usage)
     if sys.argv[1] in ['-h', '--help', 'help']:
-        usage_and_exit()
+        usage_and_exit(usage)
 
     # get the command name and arguments
     command = sys.argv[1]
     args = sys.argv[2:]
 
     # preprocess allowed_commands
-    paths = [cmd.strip() for cmd in allowed_commands.split()]
+    paths = [cmd.strip() for cmd in allowed_commands]
     cmds  = [cmd.split('/')[-1] for cmd in paths]
     path_table = dict(zip(cmds, paths))
 
