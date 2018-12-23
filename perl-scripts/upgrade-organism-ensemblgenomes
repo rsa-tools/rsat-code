@@ -1,0 +1,299 @@
+#!/usr/bin/env perl
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+upgrade-organism-ensemblgenomes
+
+=head1 DESCRIPTION
+
+Upgrades a folder with an installed genomes from EG from one version
+to another by creating hard links. Conserves original folder.
+genomes.
+
+=head1 AUTHORS
+
+Bruno Contreras Moreira <bcontreras\@eead.csic.es>
+Jacques.van-Helden\@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item genome
+
+=back
+
+=head1 USAGE
+
+upgrade-organism-ensemblgenomes -old Zea_mays.39 -new Zea_mays.40 
+
+=head1 INPUT FORMAT
+
+The old folder names must correspond to an already installed EG genome.
+A new folder will be created with the provided name, all files hard-linked
+from the old folder, and files with the old name renamed accordingly.
+
+=head1 OUTPUT FORMAT
+
+A message saying ERROR if something went wrong.
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our $old_folder_name = '';
+  our $new_folder_name = '';
+ 
+  my ($subfolder, $file, $subfile, $oldname, $newname);
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ## Check that input folder has been specified
+  unless ($infile{old}) {
+      &RSAT::error::FatalError("You must specify the old folder name (option -old).");
+  }
+
+  ## Check that output folder has been specified
+  unless ($outfile{new}) {
+      &RSAT::error::FatalError("You must specify the new folder name (option -new).");
+  }
+
+  ## Check that the old folder exists
+  $infile{old} =~ s/\/$//g;
+  $old_folder_name = $ENV{RSAT}."/data/genomes/".$infile{old};
+  &RSAT::error::FatalError("Cannot find old genome folder ", $infile{old}) 
+      unless (-d $old_folder_name) ;
+  &RSAT::message::Info("Old genome folder", $infile{old}) if ($main::verbose >= 2);
+
+  ## Create new folder
+  $outfile{old} =~ s/\/$//g;
+  $new_folder_name = $ENV{RSAT}."/data/genomes/".$outfile{new};
+  mkdir($new_folder_name);
+  &RSAT::error::FatalError("Cannot create folder ", $outfile{new})
+      unless (-d $new_folder_name) ;
+  &RSAT::message::Info("Upgraded genome folder", $outfile{new}) if ($main::verbose >= 2);
+
+  ################################################################
+ 
+  ## browse old folder
+  opendir(OLD,$old_folder_name) ||
+     &RSAT::error::FatalError("Cannot list folder ", $infile{old}); 
+  foreach $file (readdir(OLD)) {
+    next if($file eq '.' || $file eq '..'); 
+    
+    if(-d $file){ # subfolders therein, depth 1
+        $subfolder = $file;
+        opendir(SUBDIR,$old_folder_name."/$subfolder") ||
+             &RSAT::error::FatalError("Cannot list subfolder ", $subfolder);
+   
+        # create new subfolder in upgraded folder
+        mkdir($new_folder_name."/$subfolder");
+        &RSAT::error::FatalError("Cannot create subfolder ", $outfile{new})
+            unless (-d $new_folder_name."/$subfolder");
+
+        foreach $subfile (readdir(SUBDIR)){
+            next if(-d $subfile);
+
+            $oldname = $old_folder_name."/$subfolder/$subfile";
+            $newname = $subfile; 
+            $newname =~ s/$infile{old}/$outfile{new}/;
+            $newname = $outfile{new}."/$subfolder/$newname";
+            next if(-e $newname);
+            if(!link($oldname, $newname)){
+                &RSAT::error::FatalError("Cannot link ",$oldname);
+            }
+        }      
+        closedir(SUBDIR);      
+    }
+    else { # files at depth 0
+        $oldname = $old_folder_name."/$file";
+        $newname = $file;
+        $newname =~ s/$infile{old}/$outfile{new}/;
+        $newname = $outfile{new}."/$newname";
+        next if(-e $newname);   
+        if(!link($oldname, $newname)){
+            &RSAT::error::FatalError("Cannot link ",$oldname);          
+        } 
+    }
+  }
+  closedir(OLD);
+
+  #&RSAT::message::TimeWarn("Checking chromosome names") if ($main::verbose >= 2);
+  #&RSAT::message::Debug("\tChromosome name", $chrom) if ($main::verbose >= 5);
+
+  ################################################################
+  ## Print verbose
+  if ($main::verbose >= 1){ 
+    Verbose() 
+  }
+  
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-old folder_name.version>
+
+Name of folder containing old genome, no path.
+
+=cut
+    } elsif ($arg eq "-old") {
+      $main::infile{old} = shift(@arguments);
+
+# =pod
+
+=pod
+
+=item	B<-new folder_name.version>
+
+Name of folder containing upgraded genome, no path.
+Usually it will be same as old, wit increased version number.
+
+=cut
+    } elsif ($arg eq "-new") {
+      $outfile{new} = shift(@arguments);
+    }
+  }
+=pod
+
+=back
+
+=cut
+
+}
+
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; upgrade-organism-ensemblgenomes ";
+  &PrintArguments($out);
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
