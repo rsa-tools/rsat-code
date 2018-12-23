@@ -55,7 +55,7 @@ else
   COLLECTION=
 endif
 
-
+NEXTRELEASE=
 RELEASE=${ENSEMBLGENOMES_RELEASE}
 # should be set in RSAT_config.props
 SERVER_URL=ftp://ftp.ensemblgenomes.org/pub/${GROUP_LC}
