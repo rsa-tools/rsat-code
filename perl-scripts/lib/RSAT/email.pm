@@ -1,3 +1,5 @@
+package RSAT::email;
+
 ## use Mail::Sendmail;
 use Email::Sender::Simple qw(sendmail);
 use Email::Simple;
@@ -220,3 +222,4 @@ sub send_mail {
   }
 }
 
+1;
