@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: variation-info,v 1.0 2013/10/03 17:24:24 amedina Exp $

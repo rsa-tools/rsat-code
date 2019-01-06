@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 # compare-graphs-client.pl is a perl example of a RSAT convert-graph using the SOAP::WSDL module
 
 ################################################################

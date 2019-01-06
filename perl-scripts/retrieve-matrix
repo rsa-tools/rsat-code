@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ############################################################
 #
@@ -44,7 +44,7 @@ The collection of matrices must be in TRANSFAC format. The program convert-matri
 
 
 =head1 OUTPUT FORMAT
-
+#}
 Matrices are exported in TRANSFAC format. The format can then be changed with the program convert-matrix.
 
 =head1 EXAMPLES
@@ -76,14 +76,14 @@ my $id_file = "";
 if(!$collection_file){
     &RSAT::error::FatalError("You must specify the path to a collection file (-i)");
 }
-if(!$id || !id_file){
-    &RSAT::error::FatalError("You must specify either a list of identifiers (-id), or the path to a file of identifiers list (-id_file)");
-}
+#if(!$id || !$id_file){
+   &RSAT::error::FatalError("You must specify either a list of identifiers (-id), or the path to a file of identifiers list (-id_file)") unless ($id || $id_file) ;
+#}
 my @ids;
 if ($id ne "") {
   @ids = split(",", $id);
 } elsif($id_file ne "") {
-  open(my $fh, "<", $id_file) or die "Cannot open file $!";
+  open(my $fh, "<", $id_file) or die "Cannot open file $id_file";
   while(my $row = <$fh>) {
     chomp $row;
     push @ids, $row;
@@ -173,18 +173,18 @@ the path to the output file
 
 the path to the collection file which contains the matrices.
 
-=cut             
+=cut
             ### input collection file
         } elsif ($ARGV[$a] eq "-i") {
             $collection_file = $ARGV[$a+1];
-            
+
 =pod
 
 =item B<-h>
 
 Display full help message
 
-=cut            
+=cut
             ### help request
         } elsif ($ARGV[$a] eq "-h") {
             &PrintHelp;
@@ -198,12 +198,13 @@ Display concise help message
         } elsif ($ARGV[$a] eq "-help") {
             &PrintShortHelp;
 =pod
+            die "BOOM".$id_file;
 
 =item B<-id identifiers>
 
 list of the accession of each matrix in request, separated by commas.
 
-=cut            
+=cut
             ### input identifiers
         } elsif ($ARGV[$a] eq "-id") {
             $id = $ARGV[$a+1];
@@ -214,13 +215,13 @@ list of the accession of each matrix in request, separated by commas.
 the path to the identifiers file which contains the list of the accession
 of each matrix in request, one per line.
 
-=cut            
-            
+=cut
+
             ### input identifiers file
         } elsif ($ARGV[$a] eq "-id_file") {
             $id_file = $ARGV[$a+1];
-            
-            
+
+
 =pod
 
 =item B<-v #>

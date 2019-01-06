@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 =pod
 
@@ -115,7 +115,7 @@ get the relevant list of organisms.
 =head2 Get orthologs from a query gene in a list of reference genomes
 
  get-orthologs-compara -v 1 -org_list compara_organisms.tab \
-   -type ortholog -q BRADI4G31367.1 
+   -type ortholog -q AT5G45730.1 
 
 =head2 Get all orthologs from a query genome, shortening genome names 
 
@@ -244,7 +244,7 @@ package main;
   {
 #    @query_genes = qw( BRADI4G31367.1 );
 #    @ref_organisms = qw( triticum_aestivum );
-      &doit("get-orthologs-compara -v ".$main::verbose." -q BRADI4G31367.1 -ref_org triticum_aestivum");
+      &doit("get-orthologs-compara -v ".$main::verbose." -q BRADI_1g48830v3 -ref_org triticum_aestivum");
       exit(0);
   }
   elsif($params{'supported_organisms'})

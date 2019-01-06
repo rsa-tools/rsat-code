@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: create_pathway_extractor_index.pl,v 1.2 2012/01/27 10:39:19 jvanheld Exp $

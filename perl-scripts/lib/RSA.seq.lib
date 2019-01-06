@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 require "RSA.stat.lib";
 require RSAT::pattern;
@@ -821,7 +821,7 @@ sub ReverseComplement {
     while (($complement =~ /(\}\d+\{)/)
 	   || ($complement =~ /(\}\d+,\d+\{)/) ) {
 	$rev_mul = reverse $1;
-	$complement =~ s/$1/$rev_mul/g;
+	$complement =~ s/\Q$1\E/$rev_mul/g;
     }
     $complement =~ s/(\{\d+\})(\w)/$2$1/g;
     $complement =~ s/(\{\d+,\d+\})(\w)/$2$1/g;

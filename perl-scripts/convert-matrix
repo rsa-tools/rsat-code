@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 ## TO DO: calculate GC content of the motif in parameters
 
@@ -33,7 +33,7 @@ package main;
   local $start_time = &RSAT::util::StartScript();
 
   ## External command used to generate logo drawings
-  local $logo_cmd_name = $ENV{LOGO_PROGRAM} || "weblogo"; ## Alternative: seqlogo (obsolete, maintained for backward compatibility)
+  local $logo_cmd_name = $ENV{LOGO_PROGRAM} || "seqlogo"; ## Alternative: weblogo (more recent, but harder to install on Mac)
   local $logo_cmd_path = "";
   local $logo_no_title = 0;
 
@@ -379,8 +379,8 @@ package main;
     	$logo_cmd_path="";
       }
     } else {
-      &RSAT::message::Warning("Cannot generate logos because the program weblogo is not found in the expected path", 
-    			      $logo_cmd_path);
+      &RSAT::message::Warning("Cannot generate logos because the program weblogo is not found in the expected path: '", 
+    			      $logo_cmd_path, "'");
       $logo_cmd_path="";
     }
   }

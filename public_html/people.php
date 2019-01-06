@@ -136,7 +136,7 @@
     <td><a name=contreras></a><a href="images/people/bruno_contreras_moreira.jpg">
     <img border=0
          src="images/people/bruno_contreras_moreira.jpg" width="80" alt="Bruno Contreras Moreira"></a></td>
-    <td><a target='_blank' href="https://digital.csic.es/cris/rp/rp02661"><b>Bruno Contreras Moreira</b></a>
+    <td><a target='_blank' href="https://orcid.org/0000-0002-5462-907X"><b>Bruno Contreras Moreira</b></a>
       <br>Laboratory of Computational and Structural Biology, EEAD-CSIC, Zaragoza, Spain
     </td>
     <td>

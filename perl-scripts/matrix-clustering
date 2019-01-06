@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: matrix-clustering,v 1.5 2013/02/19 05:35:16 jvanheld Exp $
@@ -118,6 +118,9 @@ use Data::Dumper;
 use File::Basename;
 use File::Path;
 
+use Parallel::ForkManager;
+use MCE::Shared;
+
 ################################################################
 ## Main package
 package main;
@@ -136,7 +139,6 @@ package main;
   @dirs = ();
 
   %main::matrix_file = ();
-  %main::matrix_format = ();
   %main::matrix_titles = ();
 
   $main::verbose = 0;
@@ -217,14 +219,14 @@ package main;
 
   ## Motif Collection names counter
   local %motif_collection_count = ();
-
+tie %motif_collection_count, "MCE::Shared";
   ## Parsed JSON files content
   local %json_files_content = ();
 
   ## Concatenate all the files which a logo will be produced
   ## This is done to call the system once
   local $concat_motif_files = "";
-
+tie $concat_motif_files, "MCE::Shared";
   ## Supported label motif fields
   local @supported_label_motif_fields = qw (id name collection ic);
   local %supported_label_motif_fields = ();
@@ -311,12 +313,17 @@ package main;
   
   ## Hash with the final alignment information
   local %alignment_info = ();
-  local %cluster_info_width = ();
+  tie %alignment_info, 'MCE::Shared';
+    local %cluster_info_width = ();
 
+    #tie $main::outfile{all_concatenated_motifs}, 'MCE::Shared';
+    
   ## Hash with the cluster information
   ## required to the HTML tree
   local %clusters_info = ();
-  local %cluster_nodes = (); 
+  tie %clusters_info, "MCE::Shared";
+    local %cluster_nodes = ();
+    tie %cluster_nodes, "MCE::Shared";
   local %cluster_nodes_clean_names = (); 
   local %clusters_to_HTML = (); 
 
@@ -326,7 +333,12 @@ package main;
 
   ## Merged consensuses logos
   local %merged_consensuses_files = ();
-
+tie %merged_consensuses_files, 'MCE::Shared';
+    
+local $root_logo_path = "";
+    #tie $root_logo_path, "MCE::Shared";
+local @root_motifs_tf = ();
+    tie @root_motifs_tf, "MCE::Shared";
   ## Supported taks
   local @supported_tasks = qw(
 			all
@@ -364,6 +376,7 @@ package main;
 
   ## Saves the features of the root motifs
   local %root_motifs_features = ();
+    tie %root_motifs_features, 'MCE::Shared';
 
   ## Limit the number of input motifs
   local $max_matrices = 0;
@@ -584,7 +597,7 @@ package main;
 	  ################################################################
 	  ## Produce all the logos 
 	  ## Aligned + Branch-wise motifs
-	  &Produce_logos();
+          #&Produce_logos();
 	  
 	  ################################################################
 	  ## Read the table with the hexadecimal code 
@@ -771,17 +784,16 @@ For a description of these formats, see the help of I<convert-matrix>.
 This option is recommended when the input number of files is large (> 20), which
 would have a large command line and some programs are not capable of read such large arguments.
 
-The input file contains a tab-delimited table with three columns:
+The input file contains a tab-delimited table with two columns:
 
 1) The motif file - The path to the file with the motif
 2) The collection label
-3) The matrix format
 
 Example: 
 
-Sox_pssms.tf	Sox     Transfac
-Oct_pssms.tf	Oct     Transfac
-Nanog_pssms.tf	Nanog   Transfac
+Sox_pssms.tf	Sox
+Oct_pssms.tf	Oct
+Nanog_pssms.tf	Nanog
 
 =cut
     } elsif ($arg eq "-matrix_file_table") {
@@ -811,11 +823,11 @@ tf, tab, clusterbuster, cb, infogibbs, meme, stamp, uniprobe).
 For a description of these formats, see the help of I<convert-matrix>.
 
 =cut
-    # } elsif ($arg eq "-matrix_format") {
-    #   $main::matrix_format = shift(@arguments);
-    #   unless ($supported_matrix_format{$matrix_format}) {
-    # 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
-    #   }
+    } elsif ($arg eq "-matrix_format") {
+      $main::matrix_format = shift(@arguments);
+      unless ($supported_matrix_format{$matrix_format}) {
+	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
+      }
 
 
 =pod
@@ -1537,6 +1549,7 @@ sub set_output_file_names {
   $main::outfile{heatmap_pdf} = $main::outfile{prefix}."_figures/heatmap.pdf";
 
   $main::outfile{all_concatenated_motifs} = $main::outfile{prefix}."_aligned_logos/All_concatenated_motifs.tf";
+    
   &OpenOutputFile($main::outfile{all_concatenated_motifs});
   
 
@@ -1637,7 +1650,7 @@ sub read_motif_table_file {
 		## Get the cluster name and motif IDs
 		my $motif_file = $split_line[0];
 		my $motif_collection = $split_line[1];
-		my $motif_format = $split_line[2];
+#		my $motif_format = $split_line[2];
 	
 		## Substitue special characters which cannot be used inside a file name
 		$motif_collection =~ s|\s|_|gi;
@@ -1646,7 +1659,6 @@ sub read_motif_table_file {
 		$motif_collection =~ s|\.|_|gi;
 		
 		$main::matrix_file{$motif_collection} = $motif_file;
-		$main::matrix_format{$motif_collection} = $motif_format;
 
 		if ($main::matrix_file{$motif_collection}){
 			$count_input_matrix_parameters++;
@@ -1705,7 +1717,7 @@ sub pre_process_motif_files{
       }
       
       $motif_set_attributes{$collection_name}{collection_label} = $collection_name;
-      $motif_set_attributes{$collection_name}{matrix_format} = $main::matrix_format{$collection_name};
+      $motif_set_attributes{$collection_name}{matrix_format} = $main::matrix_format{$collection_name};; 
       $motif_set_attributes{$collection_name}{matrix_file_input} = $main::matrix_file{$collection_name};
 
       &RSAT::message::Info("Matrix file", $matrix_format, $collection_name, $main::matrix_file{$collection_name}) if ($main::verbose >= 2);
@@ -1721,56 +1733,56 @@ sub pre_process_motif_files{
   foreach my $collection_name (keys(%motif_set_attributes)) {
 
       $motif_collection_count{$collection_name} = 0;
-    
+      
       ## Set the values of the title, file and format in a hash table
-      my $matrix_format = $motif_set_attributes{$collection_name}{matrix_format}; 
+      my $matrix_format = $motif_set_attributes{$collection_name}{matrix_format};
       my $matrix_file = $motif_set_attributes{$collection_name}{matrix_file_input};
-    
+      
       ## Compute the longest collection name for display
       if (length($collection_name) > $longest_title){
-	  $longest_title = length($collection_name);
+          $longest_title = length($collection_name);
       }
       
       ################################################################
       ## Collect all matrices
-      @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+      @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, "tf");
       push(@all_matrices, @matrices);
       &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file) if ($main::verbose >= 2);
       
       ################################################################
       ## Check matrix number (required for verbose + if max matrices specified).
       if ($max_matrices > 0) {
-	  &RSAT::message::TimeWarn("Checking max number of input matrices (".$max_matrices.")") if ($main::verbose >= 2);
-	  &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
-	      if ($main::verbose >= 2);
-	  &RSAT::message::TimeWarn(scalar(@all_matrices), "Matrices loaded in total")
-	      if ($main::verbose >= 2);
-	  
-	  if (scalar(@all_matrices) > $max_matrices) {
-	      &RSAT::message::Warning("Input files contain ".scalar(@all_matrices)." matrices.", 
-				      "The analysis will be limited to the ".$max_matrices." first matrices (option -max_matrices).");
-	      
-	      @all_matrices = @all_matrices[1..$max_matrices];
-	  }
-      }    
+          &RSAT::message::TimeWarn("Checking max number of input matrices (".$max_matrices.")") if ($main::verbose >= 2);
+          &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
+          if ($main::verbose >= 2);
+          &RSAT::message::TimeWarn(scalar(@all_matrices), "Matrices loaded in total")
+          if ($main::verbose >= 2);
+          
+          if (scalar(@all_matrices) > $max_matrices) {
+              &RSAT::message::Warning("Input files contain ".scalar(@all_matrices)." matrices.",
+              "The analysis will be limited to the ".$max_matrices." first matrices (option -max_matrices).");
+              
+              @all_matrices = @all_matrices[1..$max_matrices];
+          }
+      }
       
       ## Create a single file combining all the matrices from all the current
       ## input file, and append the motif collection name to each matrix ID.
       $motif_set_attributes{$collection_name}{matrix_file_processed_1} = $main::dir{data}."/".$collection_name."_input_motifs_processed_1.tf";
       $motif_set_attributes{$collection_name}{matrix_file_processed} = $main::dir{data}."/".$collection_name."_input_motifs_processed.tf";
-
+      
       ## If it is required, permute the input motifs
       if ($random_flag == 1){
-      
-	  ## Temporal file with random motifs
-	  my $rand_motif_file = $main::outfile{prefix}."_data/".$collection_name."_random_motifs.tf";
-	  my $randomize_motifs_cmd = $SCRIPTS."/convert-matrix";
-	  $randomize_motifs_cmd .= " -i ".$matrix_file;
-	  $randomize_motifs_cmd .= " -from tf -to tf";
-	  $randomize_motifs_cmd .= " -perm 1";
-	  $randomize_motifs_cmd .= " -o ".$rand_motif_file;
-	  &doit($randomize_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-	  $motif_set_attributes{$collection_name}{matrix_file_input} = $rand_motif_file;
+          
+          ## Temporal file with random motifs
+          my $rand_motif_file = $main::outfile{prefix}."_data/".$collection_name."_random_motifs.tf";
+          my $randomize_motifs_cmd = $SCRIPTS."/convert-matrix";
+          $randomize_motifs_cmd .= " -i ".$matrix_file;
+          $randomize_motifs_cmd .= " -from tf -to tf";
+          $randomize_motifs_cmd .= " -perm 1";
+          $randomize_motifs_cmd .= " -o ".$rand_motif_file;
+          &doit($randomize_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+          $motif_set_attributes{$collection_name}{matrix_file_input} = $rand_motif_file;
       }
       
       ## Convert input matrices in transfac format + append prefix if required
@@ -1786,27 +1798,27 @@ sub pre_process_motif_files{
       print $convert_matrix_cmd."\n";
       
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-
+      
       ##############################################
       ## Store the motif link in a hash
       if ($ID_link_flag == 1){
-
-	  my $m_counter = 0;
-	  my ($motif_file) = &OpenInputFile($motif_set_attributes{$collection_name}{matrix_file_processed_1});
-	  while(<$motif_file>){
-
-	      next if (/^#/); ## Skip header line
-	      next if (/^;/); ## Skip comment lines
-	      next unless (/\S/); ## Skip empty lines
-	      next unless (/^AC\s+/);
-	      chomp();
-	      my($null, $AC_unique) = split(/\s+/, $_);
-	      $m_counter++;
-	      $ID_nb_hash{$AC_unique} = $m_counter;
-	  }
-	  close($motif_file);
+          
+          my $m_counter = 0;
+          my ($motif_file) = &OpenInputFile($motif_set_attributes{$collection_name}{matrix_file_processed_1});
+          while(<$motif_file>){
+              
+              next if (/^#/); ## Skip header line
+                  next if (/^;/); ## Skip comment lines
+              next unless (/\S/); ## Skip empty lines
+              next unless (/^AC\s+/);
+              chomp();
+              my($null, $AC_unique) = split(/\s+/, $_);
+              $m_counter++;
+              $ID_nb_hash{$AC_unique} = $m_counter;
+          }
+          close($motif_file);
       }
-
+      
       ###############################
       ## Append prefix if required
       &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
@@ -1829,26 +1841,26 @@ sub pre_process_motif_files{
       my ($processed_matrix_file) = &OpenInputFile($motif_set_attributes{$collection_name}{matrix_file_processed});
       $m_counter = 0;
       while(<$processed_matrix_file>){
-	  next if (/^#/); ## Skip header line
-	  next if (/^;/); ## Skip comment lines
-	  next unless (/\S/); ## Skip empty lines
-	  next unless (/^AC\s+/);
-	  chomp();
-	  my($null, $AC_unique) = split(/\s+/, $_);
-	  $motifs_ID_unique{$AC_unique} = $collection_name;
-	  $alignment_info{$AC_unique}{file_name} = $main::outfile{prefix}."_data/motif_".$AC_unique.".tf";
-
-	  if ($ID_link_flag == 1){
-	      $m_counter++;
-	      $new_ID_nb_hash{$m_counter} = $AC_unique;
-	  }
+          next if (/^#/); ## Skip header line
+          next if (/^;/); ## Skip comment lines
+          next unless (/\S/); ## Skip empty lines
+          next unless (/^AC\s+/);
+          chomp();
+          my($null, $AC_unique) = split(/\s+/, $_);
+          $motifs_ID_unique{$AC_unique} = $collection_name;
+          $alignment_info{$AC_unique}{file_name} = $main::outfile{prefix}."_data/motif_".$AC_unique.".tf";
+          
+          if ($ID_link_flag == 1){
+              $m_counter++;
+              $new_ID_nb_hash{$m_counter} = $AC_unique;
+          }
       }
       close($processed_matrix_file);
-
+      
       ##############################################
       ## Store the motif link in a hash
       if ($ID_link_flag == 1){
-
+          
 	  my ($link_table) = &OpenInputFile($main::infile{ID_link_table});
 	  while(<$link_table>){
 
@@ -2166,75 +2178,153 @@ sub ReadClusterComposition {
 ################################################################
 ## Add the empty columns to the logos that will be displayed, in order
 ## to get multiple alignment on the logo cladogram.
+
 sub Add_gaps_to_motifs {
 
     &RSAT::message::TimeWarn("Adding gaps to the matrices") if ($main::verbose >= 2);
 
     ## Call the program 'convert-matrix' to add the empty columns
     ## to the aligned logos and retrieve the logos in RC
+    my $pm = Parallel::ForkManager->new(40);
+    LINKS:
     foreach my $id (keys %alignment_info) {
+        $pm->start and next LINKS;
+        
+        ## Reset the variables
+        my $aligned_motif = "";
+        my $aligned_motif_rc = "";
+        my $offset_left = $alignment_info{$id}{offset_left};
+        my $offset_right = $alignment_info{$id}{offset_right};
+        my $file_name = $alignment_info{$id}{file_name};
+        my $strand = $alignment_info{$id}{strand};
+        
+        my @matrix_from_file = &RSAT::MatrixReader::readFromFile($file_name, "tf");
+        my $matrix = $matrix_from_file[0];
+        my $ID = $matrix->get_attribute("accession") || $matrix->get_attribute("identifier")
+        || $matrix->get_attribute("name")
+        || $matrix->get_attribute("ID");
+        my $AC = $matrix->get_attribute("accession") || $matrix->get_attribute("AC");
+        
+        $matrix->force_attribute("ID", $ID);
+        ## Run the convert-matrix command to add the empty columns to the logos
+        if ($strand eq "D") {
+            
+            $aligned_motif = $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf";
+            ## Add the empty columns + Produce Transfac File
+            #&Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus", $aligned_motif);
+            ###############
+            &RSAT::error::FatalError($offset_left, "Invalid number for columns. Must be a Natural number")
+            unless &RSAT::util::IsNatural($offset_left);
+            &RSAT::error::FatalError($offset_right, "Invalid number for columns. Must be a Natural number")
+            unless &RSAT::util::IsNatural($offset_right);
+            
+            $matrix->insert_columns($offset_left,$offset_right);
+            
+            $matrix->calcConsensus();
+            my $out = &OpenOutputFile($aligned_motif);
+            print $out $matrix->toString(sep=>"\t", type=>"counts", format=>"tf");
+            close $out;
+            ################
+            ## The Logos + RC are not computed when only the root motifs are required
+            if ($root_matrices_flag == 0){
+                ## Compute the logos (both orientations)
+                
+                #my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
+                #&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+                #Produce_logo($aligned_motif, $id);
+                ##########
+                my $logo_file = $main::outfile{prefix}."_aligned_logos/";
+                $logo_file .= $AC || $ID;
+                $logo_file .= "_logo";
+                my @logo_formats = ("png");
+                
+                $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+                $matrix->set_attribute("logo_file" => $logo_file);
+                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1,"seqlogo",1);
+                $matrix->set_attribute("logo_file_rc"=> $logo_file."_rc");
+                ##########
+                ## Convert the aligned matrix to reverse complement
+                $aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
+                #&Rev_Comp_Motif ($file_name, $aligned_motif_rc);
+                ############
+                my $matrix_rc = $matrix_from_file[0];
+                $matrix_rc->reverse_complement();
+                $matrix_rc->calcConsensus();
+                my $out_rc = &OpenOutputFile($aligned_motif_rc);
+                print $out_rc $matrix_rc->toString(sep=>"\t", type=>"counts", format=>"tf");
+                close $out_rc;
+                ############
+            }
+            
+        } else {
+            
+            ## First convert the matrix to reverse complement
+            my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp_" . $id .".tf";
+            $matrix->reverse_complement();
+            $matrix->calcConsensus();
+            my $out_rc = &OpenOutputFile($temp_mat);
+            print $out_rc $matrix->toString(sep=>"\t", type=>"counts", format=>"tf");
+            close $out_rc;
 
-	## Reset the variables
-	my $aligned_motif = "";
-	my $aligned_motif_rc = "";
-	my $offset_left = $alignment_info{$id}{offset_left};
-	my $offset_right = $alignment_info{$id}{offset_right};
-	my $file_name = $alignment_info{$id}{file_name};
-	my $strand = $alignment_info{$id}{strand};
-	
-	## Run the convert-matrix command to add the empty columns to the logos
-	if ($strand eq "D") {
-
-	    $aligned_motif = $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf";
-	    ## Add the empty columns + Produce Transfac File
-	    &Add_Empty_Col($file_name, $offset_left, $offset_right, "counts,consensus", $aligned_motif);
-
-	    ## The Logos + RC are not computed when only the root motifs are required
-	    if ($root_matrices_flag == 0){ 
-		## Compute the logos (both orientations)
-
-		my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
-		&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);		
-
-		## Convert the aligned matrix to reverse complement 
-		$aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
-		&Rev_Comp_Motif ($file_name, $aligned_motif_rc);
-	    }
-
-	} else {
-	    
-	    ## First convert the matrix to reverse complement 
-	    my $temp_mat = $main::outfile{prefix}."_aligned_logos/temp.tf";
-	    &Rev_Comp_Motif ($file_name, $temp_mat);
-
-	    ## Add the empty columns + Produce Transfac File
-	    $aligned_motif = $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf";
-	    &Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf");
-
-	    my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
-	    &doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-
-	    ## The Logos + RC are not computed when only the root motifs are required
-	    if ($root_matrices_flag == 0){ 
-
-		## Compute the logos (both orientations)
-		my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
-		&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-		
-		## Convert the aligned matrix to reverse complement 
-		$aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
-		&Rev_Comp_Motif ($aligned_motif, $aligned_motif_rc);
-	    }
-	    unlink($temp_mat);
-	}
-	unlink($file_name);
-	
-	## Store the path of the logos
-	$alignment_info{$id}{aligned_tf} = $aligned_motif;
-	$alignment_info{$id}{aligned_rc_tf} = $aligned_motif_rc;
-	$alignment_info{$id}{logo} =  $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
-	$alignment_info{$id}{logo_rc} = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
-    }  
+            #&Rev_Comp_Motif ($file_name, $temp_mat);
+            
+            ## Add the empty columns + Produce Transfac File
+            $aligned_motif = $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf";
+            #&Add_Empty_Col($temp_mat, $offset_left, $offset_right, "counts,consensus", $main::outfile{prefix}."_aligned_logos/".$id."_aligned.tf");
+            $matrix->insert_columns($offset_left,$offset_right);
+            
+            $matrix->calcConsensus();
+            my $out = &OpenOutputFile($aligned_motif);
+            print $out $matrix->toString(sep=>"\t", type=>"counts", format=>"tf");
+            close $out;
+            
+            
+            #my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
+            #&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+            #Produce_logo($aligned_motif,$id);
+            
+            
+            ## The Logos + RC are not computed when only the root motifs are required
+            if ($root_matrices_flag == 0){
+                
+                ## Compute the logos (both orientations)
+                #my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
+                #&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+                #Produce_logo($aligned_motif, $id);
+                ##########
+                my $logo_file = $main::outfile{prefix}."_aligned_logos/";
+                $logo_file .= $AC || $ID;
+                $logo_file .= "_logo";
+                my @logo_formats = ("png");
+                
+                $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+                $matrix->set_attribute("logo_file" => $logo_file);
+                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1,"seqlogo",1);
+                $matrix->set_attribute("logo_file_rc"=> $logo_file."_rc");
+                ##########
+                
+                ## Convert the aligned matrix to reverse complement
+                $aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
+                $matrix->reverse_complement();
+                $matrix->calcConsensus();
+                my $out_rc2 = &OpenOutputFile($aligned_motif_rc);
+                print $out_rc2 $matrix->toString(sep=>"\t", type=>"counts", format=>"tf");
+                close $out_rc2;
+                #&Rev_Comp_Motif ($aligned_motif, $aligned_motif_rc);
+            }
+            unlink($temp_mat);
+        }
+        unlink($file_name);
+        
+        ## Store the path of the logos
+        $alignment_info{$id}{aligned_tf} = $aligned_motif;
+        $alignment_info{$id}{aligned_rc_tf} = $aligned_motif_rc;
+        $alignment_info{$id}{logo} =  $main::outfile{prefix}."_aligned_logos/".$id."_logo.png";
+        $alignment_info{$id}{logo_rc} = $main::outfile{prefix}."_aligned_logos/".$id."_logo_rc.png";
+        
+        $pm->finish;
+    }
+    $pm->wait_all_children;
 }
 
 # ################################################################
@@ -2480,7 +2570,7 @@ sub Add_attributes_to_JSON_radial_tree {
 	      
 	      $folder = $levels_JSON[$children-2];
 	      
-	      if (exists($merged_consensuses_files{$folder})) {
+          if (exists($merged_consensuses_files{$cluster}{$folder})) {
 		  
 		  
 		  if (scalar(@{$cluster_nodes{$cluster}}) > 1){
@@ -2501,7 +2591,7 @@ sub Add_attributes_to_JSON_radial_tree {
 		  }
 		  
 		  ## Calculate IC of branch motif
-		  my @branch_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$folder}{$cluster}{tf_file}, "tf");
+		  my @branch_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$cluster}{$folder}{tf_file}, "tf");
 		  my $rounded_ic = 0;
 		  my $nb_sites = 0;
 		  my $child_1_nb_sites = 0;
@@ -2532,7 +2622,7 @@ sub Add_attributes_to_JSON_radial_tree {
                       ## Calculate IC from Children nodes
                       if ($linkage_order_info{$folder}{child_1} =~ /node_\d+/){
                          ## Calculate IC of child 1
-		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$linkage_order_info{$folder}{child_1}}{$cluster}{tf_file}, "tf");
+		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$cluster}{$linkage_order_info{$folder}{child_1}}{tf_file}, "tf");
                          foreach my $matrix (@read_motifs) {
 		    		    
 			    ## Calculates the IC of the matrix
@@ -2555,7 +2645,7 @@ sub Add_attributes_to_JSON_radial_tree {
 
                       if ($linkage_order_info{$folder}{child_2} =~ /node_\d+/){
                          ## Calculate IC of child 2
-		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$linkage_order_info{$folder}{child_2}}{$cluster}{tf_file}, "tf");
+		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$cluster}{$linkage_order_info{$folder}{child_2}}{tf_file}, "tf");
                          foreach my $matrix (@read_motifs) {
 		    		    
 			    ## Calculates the IC of the matrix
@@ -2583,16 +2673,16 @@ sub Add_attributes_to_JSON_radial_tree {
  
 		      my $branch = $folder;
 		      $branch =~ s/\D+//g;
-		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
+		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster}{$folder}{logo});
 		      my $id_json = $cluster."_".$folder;
-		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
+		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$cluster}{$folder}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
 		      $Add .= " \"ic\" : \"".$rounded_ic."\",\n";
 		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
-		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
-		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
-		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
+		      $Add .= " \"name\" : \"".$merged_consensuses_files{$cluster}{$folder}{motif_name}."\",\n";
+		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster}{$folder}{logo})."\",\n";
+		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster}{$folder}{logo_RC})."\",\n";
 
                       if($radial_tree_flag == 1){
 		         $Add .= " \"branch_color\" : \"".$node_to_cluster_hash{$folder}{color}."\",\n";
@@ -2670,12 +2760,14 @@ sub ConvertTabToHTML {
 ## branch-wise matrix + logo + consensus.
 sub Merge_matrices {
 
-    my $root_logo_path = "";
-    my @root_motifs_tf = ();
-
+    #my $root_logo_path = "";
+    #tie $root_logo_path, "MCE::Shared";
+    #my @root_motifs_tf = ();
+    #tie @root_motifs_tf, "MCE::Shared";
+    
     if ($single_input_flag == 0){
-	($root_logo_path) = &OpenOutputFile($main::outfile{root_motifs_table});
-	print $root_logo_path ";Cluster_ID\tLogo\tLogo_RC\n";
+        ($root_logo_path) = &OpenOutputFile($main::outfile{root_motifs_table});
+        print $root_logo_path ";Cluster_ID\tLogo\tLogo_RC\n";
     }
     
     ## Read the file with the information of the intermediate alignments
@@ -2683,264 +2775,311 @@ sub Merge_matrices {
     my %int_align_files = ();
     my ($int_align_file) = &OpenInputFile($main::outfile{int_align});
     while (<$int_align_file>) {
-	chomp;
-	my $line = $_;
-	my @split_line = split("\t", $line);
-	my $cluster_number = $cluster_id_hash{$split_line[1]};
-	my $level_number = "node_".$split_line[2];
-	my $file_path = $split_line[3];
-	$int_align_files{$cluster_number}{$level_number} = $file_path;
+        chomp;
+        my $line = $_;
+        my @split_line = split("\t", $line);
+        my $cluster_number = $cluster_id_hash{$split_line[1]};
+        my $level_number = "node_".$split_line[2];
+        my $file_path = $split_line[3];
+        $int_align_files{$cluster_number}{$level_number} = $file_path;
     }
     close $int_align_file;
-
+    
     my %width_internal_alignments = ();
     &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
+    
+    my $pm = Parallel::ForkManager->new(20);
+    LINKS:
     foreach my $cluster (@clusters_to_HTML) {
-
+        $pm->start and next LINKS;
+        
         ## Get the cluster sizes
-	my @nodes = @{$cluster_nodes{$cluster}};
-	&RSAT::message::Debug("Merging matrices for cluster", $cluster, "Nodes", join (";", @nodes)) if ($main::verbose >= 3);
-	
-	$clusters_info{$cluster} = scalar(@nodes); 
-	$clusters_info{$cluster} =~ s/\s+//g;
-
-	## Folders with the aligned matrices
-	my @folder_merged_matrices = ();
-	my $singleton_cluster = 0;
-	if (scalar(@nodes) == 1){
-	    $singleton_cluster = 1;	
-	} else {
-	    for my $n (1..scalar(@nodes)-1){
-		push(@folder_merged_matrices, "node_".$n);			
-	    }
-	}
-
-	my %int_align_info = ();
-	if ($singleton_cluster == 0){
-	    my $node_counter = 0;
-	    foreach my $folder (@folder_merged_matrices) {
-
-		## Skip the merging except for the root node when the
-		## root motifs are required
-		$node_counter++;
-		if ($root_matrices_flag == 1){ 
-		    unless(scalar(@folder_merged_matrices) == $node_counter){
-			next;
-		    }
-		}
-		
-		## Read the table with the number of spaced for each matrix,
-		## for each level of each cluster
-		my $merge_level = $folder;
-		$main::outfile{int_align_offset} = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_".$merge_level."_dataframe.tab";
-		my @level_motifs = ();
-		my ($int_align_dataframe) = &OpenInputFile($main::outfile{int_align_offset});
-		while (<$int_align_dataframe>) {
-		    chomp;
-		    my $line = $_;
-		    my @split_line = split("\t+", $line);
-		    my $motif_id = $split_line[0];
-		    #$motif_id =~ s/\./_/;
-		    push(@level_motifs, $motif_id);
-		}
-		close $int_align_dataframe;
-		#unlink($main::outfile{int_align_offset});
-
-		## Count the number of motif of each collection
-		%collection_count = %motif_collection_count;
-
-		## Concatenate the motif's file names
-		my @file_names = ();
-		my @ID_names = ();
-		my @ID_motifs = ();
-
-		## Get the names of the files of each level
-		foreach my $m (@level_motifs) {
-
-		    push(@ID_motifs, $alignment_info{$m}{name});
-		    
-		    ## Count the number of motifs belonging to a specific collection
-		    $collection_count{$alignment_info{$m}{collection}}++;
-
-		    ## Set the label motifs according to the user selection
-		    my @motif_labels = ();
-		    foreach my $field (@label_motif_fields_to_return) {
-		      my $align_info = "";
-		      if (defined($alignment_info{$m}{$field})) {
-			$align_info = $alignment_info{$m}{$field};
-		      }
-		      push(@motif_labels, $align_info);
-		    }
-		    my $motif_labels_separated = join("::", @motif_labels);
-		    push(@ID_names, $motif_labels_separated);
-		    push(@file_names, $alignment_info{$m}{aligned_tf});
-		}
-
-
-		## Count the number of motifs belonging to each collection of motifs
-		## at each node of each cluster
-		$merged_consensuses_files{$folder}{$cluster}{collection_counts} = "";
-		foreach my $c (keys %collection_count){
-
-		    ## Store the number of motif for each collection (incluiding 0)
-		    $merged_consensuses_files{$cluster}{counter_collection}{$c} = $collection_count{$c};
-
-		    ## Print the HTML string to print the collection counts
-		    if ($collection_count{$c} > 0){
-			if ($collection_count{$c} == 1){
-			    $merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c."::".$collection_count{$c}."_motif<br>";
-			} else {
-			    $merged_consensuses_files{$folder}{$cluster}{collection_counts} .= $c."::".$collection_count{$c}."_motifs<br>";
-			}
-		    }
-		}
-		my $files = join(" ", @file_names);
-		my $ID_cluster = join("<br>", @ID_names);
-		
-		################################################################
-		## Merge the matrices and create a single matrix
-		my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_cat.tf";
-		my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_matrices.tf";
-
-		my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_trimmed_matrices.tf";
-		$cmd = "cat ".$files." >".$cat_file;
-		$cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
-		$cmd .= " -in_format tf -out_format tf";
-		$cmd .= " -id ".$cluster." -name ".$cluster;
-		$cmd .= " -calc ".$operator;
-		$cmd .= " -o ".$merged_mat_file;
-		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-		## Delete files with single matrices
-		unlink($cat_file);		
-
-		my $mt_nb = scalar(@file_names)."motifs";
-		my $motif_name = $cluster."_".$merge_level."_".$mt_nb;
-
-		if (scalar(@folder_merged_matrices) == $node_counter){
-		    $motif_name = $cluster;
-		}
-
-		my $lev_motif_ac = join(",", @level_motifs);
-		my $lev_motif_id = join(",", @ID_motifs);
-		my $matrix_type = "merge";
-		my $mer_type = $operator;
-		my $mer_number = scalar(@file_names);
-
-
-		## Addig attributes (ID + AC: cluster + level + motif_nb)
-		my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_nb_motifs_".scalar(@file_names).".tf";
-		$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
-		$cmd .= " -from tf -to tf -return counts,consensus";
-		$cmd .= " -attr name ".$motif_name;
-		$cmd .= " -attr accession ".$motif_name;
-		$cmd .= " -o ".$merged_mat_file_2; 
-		&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);		
-
-		## Calculate the IC content and remove low IC columns
-		$merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, -2, $lev_motif_ac, $lev_motif_id, $matrix_type, $mer_type, $mer_number);
-
-		## Create branch-wise logos
-		$concat_motif_files .= $merged_mat_file_trimmed." ";
-		my $c = "cat ".$merged_mat_file_trimmed." >> ".$main::outfile{all_concatenated_motifs};
-		&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-
-		$merged_consensuses_files{$folder}{$cluster}{logo} = $main::outfile{prefix}."_aligned_logos/".$motif_name."_logo.png";
-		$merged_consensuses_files{$folder}{$cluster}{logo_RC} = $main::outfile{prefix}."_aligned_logos/".$motif_name."_logo_rc.png";
-		$merged_consensuses_files{$folder}{$cluster}{width} = 	$width_internal_alignments{$cluster}{$folder};
-		$merged_consensuses_files{$folder}{$cluster}{motif_name} = $motif_name;
-		$merged_consensuses_files{$folder}{$cluster}{consensus} = "";
-		$merged_consensuses_files{$folder}{$cluster}{tf_file} = $merged_mat_file_trimmed;
-
-		my $mat_file = $merged_mat_file_trimmed;
-
-		my $cons = `more $mat_file | grep '^DE'`;
-		chomp($cons);
-		$cons =~ s/^DE\s+//;
-		$cons =~ s/-//g;
-		$merged_consensuses_files{$folder}{$cluster}{consensus} = $cons;
-
-		## Add the most external motif in the tree as a root motif
-		## Add the info to the Root Motifs Features hash
-		if (scalar(@folder_merged_matrices) == $node_counter){
-
-		    $root_motifs_features{$cluster}{logo} = $merged_consensuses_files{$folder}{$cluster}{logo};
-		    $root_motifs_features{$cluster}{logo_RC} = $merged_consensuses_files{$folder}{$cluster}{logo_RC};
-		    $root_motifs_features{$cluster}{size} = $node_counter + 1; ## Because we count the number of branches
-		    $root_motifs_features{$cluster}{members} = "";
-		    $root_motifs_features{$cluster}{file} = $mat_file;
-		    $root_motifs_features{$cluster}{members} = $ID_cluster;
-		    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{$folder}{$cluster}{collection_counts};
-		    push (@root_motifs_tf, $mat_file);
-		    #$external_branch_motifs .= $mat_file." ";
-
-		    my $logo_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo});
-		    my $logo_rc_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC});
-		    print $root_logo_path $cluster."\t".$logo_path."\t".$logo_rc_path."\n" if ($root_logo_path);
-		}
-	    }
-	} else {
-
-	    ## Store the number of motif for each collection (incluiding 0)
-	    foreach my $c (keys %collection_count){
-		if ($c eq $alignment_info{"@{$cluster_nodes{$cluster}}"}{collection}){
-		    $merged_consensuses_files{node_1}{$cluster}{collection_counts} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{collection}." : 1 motif";
-		    $merged_consensuses_files{$cluster}{counter_collection}{$c} = 1;
-		} else {
-		    $merged_consensuses_files{$cluster}{counter_collection}{$c} = 0;
-		}
-	    }
-
-	    my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{aligned_tf};
-
-	    my $new_singleton_motif_file_temp = $main::outfile{prefix}."_clusters_information/".$cluster."/".$cluster."_matrices_temp.tf";
-
-	    my $new_singleton_motif_file = $main::outfile{prefix}."_clusters_information/".$cluster."/".$cluster."_matrices.tf";
-	    $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file_temp;
-	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-
-	    $cmd = $SCRIPTS."/convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf ";
-	    $cmd .= " -attr name ".$cluster." -attr accession ".$cluster;
-	    $cmd .= " -set_attr merged_AC @{$cluster_nodes_clean_names{$cluster}} -set_attr merged_ID ".$alignment_info{"@{$cluster_nodes{$cluster}}"}{name};
-	    $cmd .= " -set_attr type merge";
-	    $cmd .= " -set_attr merge_type ".$operator;
-	    $cmd .= " -set_attr merge_nb 1";
-	    $cmd .= " -o ".$new_singleton_motif_file;
-	    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-	    unlink($new_singleton_motif_file_temp);
-
-	    $concat_motif_files .= $new_singleton_motif_file." ";
-	    my $c = "cat ".$new_singleton_motif_file." >> ".$main::outfile{all_concatenated_motifs};
-	    &doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-
-	    ## Add the info to the Root Motifs Features hash
-	    $root_motifs_features{$cluster}{logo} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo};
-	    $root_motifs_features{$cluster}{logo_RC} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo_rc};
-	    $root_motifs_features{$cluster}{size} = 1;
-	    $root_motifs_features{$cluster}{members} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{name}."::".$alignment_info{"@{$cluster_nodes{$cluster}}"}{collection};
-
-	    $root_motifs_features{$cluster}{file} = $new_singleton_motif_file;
-	    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{node_1}{$cluster}{collection_counts};
-	    ## Add the singleton cluster to the list of root motifs
-	    push (@root_motifs_tf, $new_singleton_motif_file);
-#	    $external_branch_motifs .= $new_singleton_motif_file." ";
-
-	    if ($single_input_flag == 0){
-		$logo_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo});
-		$logo_rc_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC});
-		print $root_logo_path $cluster."\t".$logo_path."\t".$logo_rc_path."\n";
-	    }
-	}
+        my @nodes = @{$cluster_nodes{$cluster}};
+        &RSAT::message::Debug("Merging matrices for cluster", $cluster, "Nodes", join (";", @nodes)) if ($main::verbose >= 3);
+        
+        $clusters_info{$cluster} = scalar(@nodes);
+        $clusters_info{$cluster} =~ s/\s+//g;
+        
+        ## Folders with the aligned matrices
+        my @folder_merged_matrices = ();
+        my $singleton_cluster = 0;
+        if (scalar(@nodes) == 1){
+            $singleton_cluster = 1;
+        } else {
+            for my $n (1..scalar(@nodes)-1){
+                push(@folder_merged_matrices, "node_".$n);
+            }
+        }
+        
+        my %int_align_info = ();
+        if ($singleton_cluster == 0){
+            my $num_proc = (scalar(@folder_merged_matrices) < 40) ? 15 : 20;
+            my $pm_child = Parallel::ForkManager->new($num_proc);
+        LINKS_CHILD:
+            foreach my $folder (@folder_merged_matrices) {
+                $pm_child->start and next LINKS_CHILD;
+                ## Skip the merging except for the root node when the
+                ## root motifs are required
+                if ($root_matrices_flag == 1){
+                    unless($folder eq $folder_merged_matrices[-1]){
+                        next LINKS_CHILD;
+                    }
+                }
+                
+                ## Read the table with the number of spaced for each matrix,
+                ## for each level of each cluster
+                my $merge_level = $folder;
+                $main::outfile{int_align_offset} = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_".$merge_level."_dataframe.tab";
+                my @level_motifs = ();
+                my ($int_align_dataframe) = &OpenInputFile($main::outfile{int_align_offset});
+                while (<$int_align_dataframe>) {
+                    chomp;
+                    my $line = $_;
+                    my @split_line = split("\t+", $line);
+                    my $motif_id = $split_line[0];
+                    #$motif_id =~ s/\./_/;
+                    push(@level_motifs, $motif_id);
+                }
+                close $int_align_dataframe;
+                #unlink($main::outfile{int_align_offset});
+                
+                ## Count the number of motif of each collection
+                %collection_count = %motif_collection_count;
+                
+                ## Concatenate the motif's file names
+                my @file_names = ();
+                my @ID_names = ();
+                my @ID_motifs = ();
+                
+                ## Get the names of the files of each level
+                foreach my $m (@level_motifs) {
+                    push(@ID_motifs, $alignment_info{$m}{name});
+                    
+                    ## Count the number of motifs belonging to a specific collection
+                    $collection_count{$alignment_info{$m}{collection}}++;
+                    
+                    ## Set the label motifs according to the user selection
+                    my @motif_labels = ();
+                    foreach my $field (@label_motif_fields_to_return) {
+                        my $align_info = "";
+                        if (defined($alignment_info{$m}{$field})) {
+                            $align_info = $alignment_info{$m}{$field};
+                        }
+                        push(@motif_labels, $align_info);
+                    }
+                    my $motif_labels_separated = join("::", @motif_labels);
+                    push(@ID_names, $motif_labels_separated);
+                    push(@file_names, $alignment_info{$m}{aligned_tf});
+                }
+                
+                my $files = join(" ", @file_names);
+                my $ID_cluster = join("<br>", @ID_names);
+                
+                ## Count the number of motifs belonging to each collection of motifs
+                ## at each node of each cluster
+                $merged_consensuses_files{$cluster}{$folder}{collection_counts} = "";
+                foreach my $c (keys %collection_count){
+                    ## Store the number of motif for each collection (incluiding 0)
+                    if($folder eq $folder_merged_matrices[-1]){
+                        $merged_consensuses_files{$cluster}{counter_collection}{$c} = $collection_count{$c};
+                    }
+                    ## Print the HTML string to print the collection counts
+                    if ($collection_count{$c} > 0){
+                        if ($collection_count{$c} == 1){
+                            $merged_consensuses_files{$cluster}{$folder}{collection_counts} .= $c."::".$collection_count{$c}."_motif<br>";
+                        } else {
+                            $merged_consensuses_files{$cluster}{$folder}{collection_counts} .= $c."::".$collection_count{$c}."_motifs<br>";
+                        }
+                    }
+                }
+                
+                
+                ################################################################
+                ## Merge the matrices and create a single matrix
+                my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_cat.tf";
+                my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_matrices.tf";
+                
+                my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_trimmed_matrices.tf";
+                $cmd = "cat ".$files." >".$cat_file;
+                $cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
+                $cmd .= " -in_format tf -out_format tf";
+                $cmd .= " -id ".$cluster." -name ".$cluster;
+                $cmd .= " -calc ".$operator;
+                $cmd .= " -o ".$merged_mat_file;
+                &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+                ## Delete files with single matrices
+                unlink($cat_file);
+                
+                my $mt_nb = scalar(@file_names)."motifs";
+                my $motif_name = $cluster."_".$merge_level."_".$mt_nb;
+            
+            if($folder eq $folder_merged_matrices[-1]){
+                    $motif_name = $cluster;
+                }
+                
+                my $lev_motif_ac = join(",", @level_motifs);
+                my $lev_motif_id = join(",", @ID_motifs);
+                my $matrix_type = "merge";
+                my $mer_type = $operator;
+                my $mer_number = scalar(@file_names);
+                
+                
+                ## Addig attributes (ID + AC: cluster + level + motif_nb)
+                my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_nb_motifs_".scalar(@file_names).".tf";
+                
+                #$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
+                #$cmd .= " -from tf -to tf -return counts,consensus";
+                #$cmd .= " -attr name ".$motif_name;
+                #$cmd .= " -attr accession ".$motif_name;
+                #$cmd .= " -o ".$merged_mat_file_2;
+                #&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+                my @matrices = &RSAT::MatrixReader::readFromFile($merged_mat_file, "tf");
+                my $matrix = $matrices[0];
+                $matrix->calcConsensus();
+                $matrix->force_attribute("name",$motif_name);
+                $matrix->force_attribute("accession",$motif_name);
+                my $out = &OpenOutputFile($merged_mat_file_2);
+                print $out $matrix->toString(sep=>"\t",type=>"counts", format=>"tf");
+                close $out;
+                
+                ## Calculate the IC content and remove low IC columns
+                $merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, -2, $lev_motif_ac, $lev_motif_id, $matrix_type, $mer_type, $mer_number);
+                
+                ## Create branch-wise logos
+                $concat_motif_files .= $merged_mat_file_trimmed." ";
+                #my $c = "cat ".$merged_mat_file_trimmed." >> ".$main::outfile{all_concatenated_motifs};
+                #&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+                #Produce_logo($merged_mat_file_trimmed,$clusters_info{$cluster});
+                
+                ##########
+                my @matrices_trimmed = &RSAT::MatrixReader::readFromFile($merged_mat_file_trimmed, "tf");
+                my $matrix_trimmed = $matrices_trimmed[0];
+                my $logo_file = $main::outfile{prefix}."_aligned_logos/";
+                $logo_file .= $matrix_trimmed->get_attribute("accession") || $matrix_trimmed->get_attribute("AC") || $matrix_trimmed->get_attribute("identifier") || $matrix_trimmed->get_attribute("id");
+                $logo_file .= "_logo";
+                my @logo_formats = ("png");
+                
+                $matrix_trimmed->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+                $matrix_trimmed->set_attribute("logo_file" => $logo_file);
+                $matrix_trimmed->makeLogo($logo_file."_rc", \@logo_formats, "",1,"seqlogo",1);
+                $matrix_trimmed->set_attribute("logo_file_rc"=> $logo_file."_rc");
+                #########
+                
+                $merged_consensuses_files{$cluster}{$folder}{logo} = $main::outfile{prefix}."_aligned_logos/".$motif_name."_logo.png";
+                $merged_consensuses_files{$cluster}{$folder}{logo_RC} = $main::outfile{prefix}."_aligned_logos/".$motif_name."_logo_rc.png";
+                $merged_consensuses_files{$cluster}{$folder}{width} = 	$width_internal_alignments{$cluster}{$folder};
+                $merged_consensuses_files{$cluster}{$folder}{motif_name} = $motif_name;
+                $merged_consensuses_files{$cluster}{$folder}{consensus} = "";
+                $merged_consensuses_files{$cluster}{$folder}{tf_file} = $merged_mat_file_trimmed;
+                
+                my $mat_file = $merged_mat_file_trimmed;
+                
+                my $cons = `more $mat_file | grep '^DE'`;
+                chomp($cons);
+                $cons =~ s/^DE\s+//;
+                $cons =~ s/-//g;
+                $merged_consensuses_files{$cluster}{$folder}{consensus} = $cons;
+                
+                ## Add the most external motif in the tree as a root motif
+                ## Add the info to the Root Motifs Features hash
+            if($folder eq $folder_merged_matrices[-1]){
+                    $root_motifs_features{$cluster}{logo} = $merged_consensuses_files{$cluster}{$folder}{logo};
+                    $root_motifs_features{$cluster}{logo_RC} = $merged_consensuses_files{$cluster}{$folder}{logo_RC};
+                $root_motifs_features{$cluster}{size} = scalar(@folder_merged_matrices) + 1; #$node_counter + 1; ## Because we count the number of branches
+                    $root_motifs_features{$cluster}{members} = "";
+                    $root_motifs_features{$cluster}{file} = $mat_file;
+                    $root_motifs_features{$cluster}{members} = $ID_cluster;
+                    $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{$cluster}{$folder}{collection_counts};
+                    push (@root_motifs_tf, $mat_file);
+                    #$external_branch_motifs .= $mat_file." ";
+                    
+                    my $logo_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo});
+                    my $logo_rc_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC});
+                    print $root_logo_path $cluster."\t".$logo_path."\t".$logo_rc_path."\n" if ($root_logo_path);
+                }
+                
+                $pm_child->finish;
+            }
+            $pm_child->wait_all_children;
+        } else {
+            
+            ## Store the number of motif for each collection (incluiding 0)
+            foreach my $c (keys %motif_collection_count){
+                if ($c eq $alignment_info{"@{$cluster_nodes{$cluster}}"}{collection}){
+                    $merged_consensuses_files{$cluster}{node_1}{collection_counts} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{collection}." : 1 motif";
+                    $merged_consensuses_files{$cluster}{counter_collection}{$c} = 1;
+                } else {
+                    $merged_consensuses_files{$cluster}{counter_collection}{$c} = 0;
+                }
+            }
+            
+            my $singleton_motif_file = $alignment_info{"@{$cluster_nodes{$cluster}}"}{aligned_tf};
+            
+            my $new_singleton_motif_file_temp = $main::outfile{prefix}."_clusters_information/".$cluster."/".$cluster."_matrices_temp.tf";
+            
+            my $new_singleton_motif_file = $main::outfile{prefix}."_clusters_information/".$cluster."/".$cluster."_matrices.tf";
+            $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file_temp;
+            &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+            
+            $cmd = $SCRIPTS."/convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf ";
+            $cmd .= " -attr name ".$cluster." -attr accession ".$cluster;
+            $cmd .= " -set_attr merged_AC '@{$cluster_nodes_clean_names{$cluster}}' -set_attr merged_ID '".$alignment_info{"@{$cluster_nodes{$cluster}}"}{name} ."'";
+            $cmd .= " -set_attr type merge";
+            $cmd .= " -set_attr merge_type ".$operator;
+            $cmd .= " -set_attr merge_nb 1";
+            $cmd .= " -o ".$new_singleton_motif_file;
+            &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+            
+            unlink($new_singleton_motif_file_temp);
+            
+            $concat_motif_files .= $new_singleton_motif_file." ";
+            ##########
+            my @matrices = &RSAT::MatrixReader::readFromFile($new_singleton_motif_file, "tf");
+            my $matrix = $matrices[0];
+           
+            my $logo_file = $main::outfile{prefix}."_aligned_logos/";
+            $logo_file .= $matrix->get_attribute("accession") || $matrix->get_attribute("AC") || $matrix->get_attribute("identifier") || $matrix->get_attribute("id");
+            $logo_file .= "_logo";
+            my @logo_formats = ("png");
+            
+            $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+            $matrix->set_attribute("logo_file" => $logo_file);
+            $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1,"seqlogo",1);
+            $matrix->set_attribute("logo_file_rc"=> $logo_file."_rc");
+            #########
+            
+            ## Add the info to the Root Motifs Features hash
+            $root_motifs_features{$cluster}{logo} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo};
+            $root_motifs_features{$cluster}{logo_RC} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{logo_rc};
+            $root_motifs_features{$cluster}{size} = 1;
+            $root_motifs_features{$cluster}{members} = $alignment_info{"@{$cluster_nodes{$cluster}}"}{name}."::".$alignment_info{"@{$cluster_nodes{$cluster}}"}{collection};
+            
+            $root_motifs_features{$cluster}{file} = $new_singleton_motif_file;
+            $root_motifs_features{$cluster}{collection_count} = $merged_consensuses_files{$cluster}{node_1}{collection_counts};
+            ## Add the singleton cluster to the list of root motifs
+            push (@root_motifs_tf, $new_singleton_motif_file);
+            #	    $external_branch_motifs .= $new_singleton_motif_file." ";
+            
+            if ($single_input_flag == 0){
+                $logo_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo});
+                $logo_rc_path = &RSAT::util::RelativePath($main::outfile{summary}, $root_motifs_features{$cluster}{logo_RC});
+                print $root_logo_path $cluster."\t".$logo_path."\t".$logo_rc_path."\n";
+            }
+        }
+        
+        $pm->finish;
     }
+    $pm->wait_all_children;
     
     ## Create the files with the roots motifs
     my ($print_root) = &OpenOutputFile($main::outfile{root_motifs});
     foreach my $root (@root_motifs_tf){
-	my ($root_tf_file) = &OpenInputFile($root);
-	my $root_tf_text = "";
-	while(<$root_tf_file>){
-	    $root_tf_text .= $_;
-	}
-	print $print_root $root_tf_text;
+        my ($root_tf_file) = &OpenInputFile($root);
+        my $root_tf_text = "";
+        while(<$root_tf_file>){
+            $root_tf_text .= $_;
+        }
+        print $print_root $root_tf_text;
     }
     
     close($print_root);
@@ -4664,7 +4803,7 @@ sub Create_Attributes_for_Heatmap_D3 {
     ### Identify the path of the R executable
     my $r_path = &RSAT::server::GetProgramPath("R");
 
-    my $cluster_collection_script  = $ENV{RSAT}."/R-scripts/heatmap_clusters_by_collection.r";
+    my $cluster_collection_script  = $ENV{RSAT}."/R-scripts/heatmap_clusters_by_collection.R";
     &RSAT::error::FatalError("Cannot read cluster collection script", $cluster_collection_script) unless (-r $cluster_collection_script);
     $r_verbosity = &RSAT::stats::max(($main::verbose-1), 0);
     
@@ -5418,9 +5557,9 @@ sub InsertTreesAndBranchMotifs {
 		
 		my ($cons, $logo_D, $logo_R, $transfac_file, $transfac_file_2);
 
-		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{logo});
-		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{logo_RC});
-		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{tf_file});
+		$logo_D = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster_id_hash{$num}}{"node_".$level}{logo});
+		$logo_R = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster_id_hash{$num}}{"node_".$level}{logo_RC});
+		$transfac_file = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster_id_hash{$num}}{"node_".$level}{tf_file});
 		## Get the consensus
 		$transfac_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster_id_hash{$num}."/merged_consensuses/node_".$level."/".$cluster_id_hash{$num}."_node_".$level."_matrices.tf";
 		$cons = `more $transfac_file_2 | grep DE`;
@@ -5451,7 +5590,7 @@ sub InsertTreesAndBranchMotifs {
 		$consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
-		$consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{collection_counts}.'</th>'."\n";
+		$consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{$cluster_id_hash{$num}}{"node_".$level}{collection_counts}.'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2">'.$rounded_ic.'</th>'."\n";
 		$consensus_table_columns .= '   <th class="tab_spacer_2">'.$sites.'</th>'."\n";
@@ -5518,7 +5657,7 @@ sub InsertTreesAndBranchMotifs {
 	    $consensus_table_columns .= '   <th class="seq tab_spacer_1">'.&RSAT::SeqUtil::ColorConsensus($cons, bold=>1, iupac=>$main::param{iupac_coloring}).'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_D.'"><img class="logo" src="'.$logo_D.'" /></a></th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$logo_R.'"><img class="logo" src="'.$logo_R.'" /></a></th>'."\n";
-	    $consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{"node_".$level}{$cluster_id_hash{$num}}{collection_counts}.'</th>'."\n";
+	    $consensus_table_columns .= '   <th class="tab_spacer_2" style="text-align:left;font-weight:normal;">'.$merged_consensuses_files{$cluster_id_hash{$num}}{"node_".$level}{collection_counts}.'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2"><a target="_blank" href="'.$transfac_file.'">PSSM</a></th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2">'.$rounded_ic.'</th>'."\n";
 	    $consensus_table_columns .= '   <th class="tab_spacer_2">'.$sites.'</th>'."\n";
@@ -5992,15 +6131,34 @@ sub trim_matrix_low_IC_columns {
     # die $motif_ac." ------------------>\n";
     
     ## Trim the matrix
-    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf";
-    $cmd .= " -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
-    $cmd .= " -set_attr type ".$motif_type;
-    $cmd .= " -set_attr merge_type ".$merge_type;
-    $cmd .= " -set_attr merge_nb ".$merge_nb;
-    $cmd .= " -set_attr merged_AC ".$motif_ac;
-    $cmd .= " -set_attr merged_ID ".$motif_id;
-
-    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+#    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf";
+#    $cmd .= " -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
+#    $cmd .= " -set_attr type ".$motif_type;
+#    $cmd .= " -set_attr merge_type ".$merge_type;
+#    $cmd .= " -set_attr merge_nb ".$merge_nb;
+#    $cmd .= " -set_attr merged_AC '".$motif_ac."'";
+#    $cmd .= " -set_attr merged_ID '".$motif_id."'";
+#
+#    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+    ####################
+    my @matrices = &RSAT::MatrixReader::readFromFile($matrix_to_trim, "tf");
+    my $matrix = $matrices[0];
+    if($trim_up > 0 || $trim_dw > 0){
+        $matrix->trim_columns($trim_up,$trim_dw);
+        $matrix->calcConsensus();
+    }
+    $matrix->calcConsensus();
+    $matrix->set_parameter("type", $motif_type);
+    $matrix->set_parameter("merge_type", $merge_type);
+    $matrix->set_parameter("merge_nb", $merge_nb);
+    $matrix->set_parameter("merged_AC", "'".$motif_ac."'");
+    $matrix->set_parameter("merged_ID", "'".$motif_id."'");
+    
+    my $out = &OpenOutputFile($trimmed_matrix);
+    print $out $matrix->toString(sep=>"\t", type=>"counts", format=>"tf");
+    close $out;
+    ####################
+    
     return $trimmed_matrix;
 }
 
@@ -6130,36 +6288,43 @@ sub Clustered_PSSMS_TRANSFAC_format(){
     my $file_names = "";
 
     my ($clusters_table) = &OpenInputFile($main::outfile{clusters_table});
+    my $pm = Parallel::ForkManager->new(30);
+LINKS:
     while (<$clusters_table>) {
-	chomp;
-	next if (/^#/); ## Skip header line
-	next if (/^;/); ## Skip comment lines	
-	my $line = $_;
-	my @split_line = split("\t", $line);
-
-	## Get the cluster name and motif IDs
-	my $cluster = $split_line[0];
-	my $cluster_motif_ids = $split_line[1];
-	$cluster_motif_ids =~ s/,/\n/g;
-
-	## Create a temporary file
-	$main::outfile{clusters_id_temp} = $main::outfile{prefix}."_tables/".$cluster."_motif_IDs.tab";
-	$main::outfile{clusters_transfac} = $main::outfile{prefix}."_data/".$cluster."_transfac_motifs.tf";
-	my ($motifs_id_handle) = &OpenOutputFile($main::outfile{clusters_id_temp});
-	print $motifs_id_handle $cluster_motif_ids."\n";
-	close($motifs_id_handle);
-
-	## Separate the files (calling convert-matrix)
-	my $separate_motifs_cmd = $SCRIPTS."/convert-matrix";
-	$separate_motifs_cmd .= " -i ".$main::outfile{input_matrices};
-	$separate_motifs_cmd .= " -from tf -to tf";
-	$separate_motifs_cmd .= " -matrix_id_file ".$main::outfile{clusters_id_temp};
-	$separate_motifs_cmd .= " -o ".$main::outfile{clusters_transfac};
-	&doit($separate_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-
-	## Delete the temporal files
-	unlink($main::outfile{clusters_id_temp});
+        $pm->start and next LINKS;
+        
+        chomp;
+        next if (/^#/); ## Skip header line
+            next if (/^;/); ## Skip comment lines
+        my $line = $_;
+        my @split_line = split("\t", $line);
+        
+        ## Get the cluster name and motif IDs
+        my $cluster = $split_line[0];
+        my $cluster_motif_ids = $split_line[1];
+        $cluster_motif_ids =~ s/,/\n/g;
+        
+        ## Create a temporary file
+        $main::outfile{clusters_id_temp} = $main::outfile{prefix}."_tables/".$cluster."_motif_IDs.tab";
+        $main::outfile{clusters_transfac} = $main::outfile{prefix}."_data/".$cluster."_transfac_motifs.tf";
+        my ($motifs_id_handle) = &OpenOutputFile($main::outfile{clusters_id_temp});
+        print $motifs_id_handle $cluster_motif_ids."\n";
+        close($motifs_id_handle);
+        
+        ## Separate the files (calling convert-matrix)
+        my $separate_motifs_cmd = $SCRIPTS."/convert-matrix";
+        $separate_motifs_cmd .= " -i ".$main::outfile{input_matrices};
+        $separate_motifs_cmd .= " -from tf -to tf";
+        $separate_motifs_cmd .= " -matrix_id_file ".$main::outfile{clusters_id_temp};
+        $separate_motifs_cmd .= " -o ".$main::outfile{clusters_transfac};
+        &doit($separate_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+        
+        ## Delete the temporal files
+        unlink($main::outfile{clusters_id_temp});
+        
+        $pm->finish;
     }
+    $pm->wait_all_children;
 }
 
 
@@ -6718,7 +6883,7 @@ sub Add_attributes_to_JSON {
 
 		      $folder = $levels_JSON[$children-2];
 
-		      if (exists($merged_consensuses_files{$folder})) {
+              if (exists($merged_consensuses_files{$cluster}{$folder})) {
 
 			  
 			  if (scalar(@{$cluster_nodes{$cluster}}) > 1){
@@ -6739,7 +6904,7 @@ sub Add_attributes_to_JSON {
 			  }
 
 			  ## Calculate IC of branch motif
-			  my @branch_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$folder}{$cluster}{tf_file}, "tf");
+			  my @branch_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$cluster}{$folder}{tf_file}, "tf");
 			  my $rounded_ic = 0;
 			  my $nb_sites = 0;
 			  my $child_1_nb_sites = 0;
@@ -6770,7 +6935,7 @@ sub Add_attributes_to_JSON {
                       ## Calculate IC from Children nodes
                       if ($linkage_order_info{$folder}{child_1} =~ /node_\d+/){
                          ## Calculate IC of child 1
-		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$linkage_order_info{$folder}{child_1}}{$cluster}{tf_file}, "tf");
+		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$cluster}{$linkage_order_info{$folder}{child_1}}{tf_file}, "tf");
                          foreach my $matrix (@read_motifs) {
 		    		    
 			    ## Calculates the IC of the matrix
@@ -6793,7 +6958,7 @@ sub Add_attributes_to_JSON {
 
                       if ($linkage_order_info{$folder}{child_2} =~ /node_\d+/){
                          ## Calculate IC of child 2
-		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$linkage_order_info{$folder}{child_2}}{$cluster}{tf_file}, "tf");
+		         @read_motifs = &RSAT::MatrixReader::readFromFile($merged_consensuses_files{$cluster}{$linkage_order_info{$folder}{child_2}}{tf_file}, "tf");
                          foreach my $matrix (@read_motifs) {
 		    		    
 			    ## Calculates the IC of the matrix
@@ -6821,16 +6986,16 @@ sub Add_attributes_to_JSON {
  
 		      my $branch = $folder;
 		      $branch =~ s/\D+//g;
-		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo}); 
+		      my $consensus_link = &RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster}{$folder}{logo});
 		      my $id_json = $cluster."_".$folder;
-		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$folder}{$cluster}{consensus}."\",\n";
+		      $Add .= " \"consensus\" : \"".$merged_consensuses_files{$cluster}{$folder}{consensus}."\",\n";
 		      $Add .= " \"branch\" : ".$branch.",\n";
 		      $Add .= " \"id\" : \"".$id_json."\",\n";
 		      $Add .= " \"ic\" : \"".$rounded_ic."\",\n";
 		      $Add .= " \"size\" : ".$cluster_info_width{$cluster}.",\n";
-		      $Add .= " \"name\" : \"".$merged_consensuses_files{$folder}{$cluster}{motif_name}."\",\n";
-		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo})."\",\n";
-		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$folder}{$cluster}{logo_RC})."\",\n";
+		      $Add .= " \"name\" : \"".$merged_consensuses_files{$cluster}{$folder}{motif_name}."\",\n";
+		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster}{$folder}{logo})."\",\n";
+		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster}{$folder}{logo_RC})."\",\n";
 		  }
 		  push(@Parsed_JSON, $Add."\n");
 
@@ -7142,3 +7307,4 @@ $(document).ready(function() {
 }
 
 __END__
+

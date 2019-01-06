@@ -6,7 +6,12 @@ echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo
 
-cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+## Set working directory to RSAT
+echo "RSAT directory${RSAT}"
+cd ${RSAT}
+
+echo "sourcing RSAT config file" 
+source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
 
 
 ################################################################
@@ -37,14 +42,12 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 cpan YAML ## Type "yes" on request !!!
 cpan CPAN ## Update CPAN
 
-## Set working directory to RSAT
-cd ${RSAT}
 
 ## Get the list of Perl modules to be installed
-make -f makefiles/install_rsat.mk  perl_modules_list
+make -f ${RSAT}/makefiles/install_rsat.mk  perl_modules_list
 
 ## Check which Perl modules are already installed
-make -f makefiles/install_rsat.mk perl_modules_check
+make -f ${RSAT}/makefiles/install_rsat.mk perl_modules_check
 ## The result file name will be displayed at the end of the tests
 
 ## Check the result of perl modules test

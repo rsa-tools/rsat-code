@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: fit-distribution,v 1.24 2012/01/18 17:33:46 jvanheld Exp $

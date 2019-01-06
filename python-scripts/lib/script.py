@@ -9,7 +9,7 @@ utilities for scripting
 
 from os import system
 from popen2 import popen3
-from commands import getoutput
+from subprocess import getoutput
 from os import system
 #import time
 
