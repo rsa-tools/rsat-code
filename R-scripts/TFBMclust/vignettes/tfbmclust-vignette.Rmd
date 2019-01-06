@@ -91,9 +91,11 @@ Some observations:
 
 In this example we selected _Ncor_ as the metric that will be used to group the motifs. 
 This function returns a table (_dataframe_) and an object of class _dist_ with the distances between the motifs.
+
 ```{r cache=TRUE}
 ## Convert distance table into a distance matrix, required by hclust
-distances.objects <- build.distance.matrix(oct4.tfbm.compa, score = "Ncor")
+global.compare.matrices.table <- oct4.tfbm.compa
+distances.objects <- build.distance.matrix(metric = "Ncor")
 dist.table <- distances.objects$table
 dist.matrix <- distances.objects$matrix
 ```
@@ -103,6 +105,7 @@ dist.matrix <- distances.objects$matrix
 
 Once we produced the distance matrix, we can use the hierarchical clustering approach to group the motifs.
 There are many method used to group the nodes in the tree, for this example we will use the _average_ method.
+
 ```{r cache=TRUE }
 tree <- hclust.motifs(dist.matrix, hclust.method = "average")
 ```
@@ -160,16 +163,20 @@ thr <- list(
 
 ## Align the motifs, also return the internal attributes at each level of the tree
 ## and each intermediate alignment at each level.
-alignment <- align.motifs(tree, 
-                          desc.table = oct4.tfbm.desc, 
-                          compa.table = oct4.tfbm.compa, 
-                          thresholds = thr, 
-                          score = "Ncor", 
-                          method = "average", 
-                          metric = "Ncor", 
-                          nodes.attributes = TRUE, 
-                          intermediate.alignments = TRUE
-              )
+
+global.description.table <- oct4.tfbm.desc
+
+alignment <- align.motifs(
+#  tree, 
+#  desc.table = oct4.tfbm.desc, 
+#  compa.table = oct4.tfbm.compa, 
+  thresholds = thr, 
+#  score = "Ncor", 
+  method = "average", 
+  metric = "Ncor", 
+  nodes.attributes = TRUE, 
+  intermediate.alignments = TRUE
+)
 
 ## Save the alignment, attributes and intermediate alignments in different variables
 alignment.list <- alignment$motifs.alignment
@@ -177,9 +184,13 @@ alignment.attributes <- alignment$node.attributes
 alignment.intermediates <- alignment$intermediate.alignments
 
 ## Reset the labels with the aligned consensuses + the motif name
-tree$labels <- sapply(tree$labels, function(x){
-  paste(alignment.list[[x]][["consensus"]], alignment.list[[x]][["name"]], sep = "   " )
-})
+
+## DEBUG JvH 2018-11-14: THIS CRASHES, I TEMPORARILY COMMENT IT
+# tree$labels <- sapply(tree$labels, 
+#                       function(x) {
+#                         paste(alignment.list[[x]][["consensus"]], alignment.list[[x]][["name"]], sep = "   " )
+#                       })
+
 ```
 
 
@@ -189,9 +200,15 @@ Using the object _list_ containing the attributes of the alignment at each level
 
 ```{r}
 ## Define the clusters: Bottom-up approach
-clusters <- define.clusters.bottom.up(alignment.attributes, tree, oct4.tfbm.desc)
 
-print(clusters)
+## DEBUG JvH 2018-11-14: 
+##   could not find function "define.clusters.bottom.up"
+## I  TEMPORARILY COMMENT THE CODE
+
+
+# clusters <- define.clusters.bottom.up(alignment.attributes, tree, oct4.tfbm.desc)
+
+# print(clusters)
 ```
 
 
@@ -204,8 +221,10 @@ The heatmap produced corresponds to the distance table, where the column names a
 
 ```{r fig.show='hold',fig.width=7,fig.height=8}
 
+## DEBUG JVH 2018-11-14 NOT WORKING, I COMMENT
+
 ## Draw the heatmap
-draw.heatmap.motifs(dist.table, method = "average", clusters, alignment.list)
+#draw.heatmap.motifs(dist.table, method = "average", clusters, alignment.list)
 ```
 
 ### Draw the hierarchical clustering tree
@@ -218,11 +237,15 @@ We calculate the length of the largest label in order to set the tree when is dr
 
 
 
-```{r cache=TRUE}
+```{r cache=TRUE, eval=FALSE}
 suppressPackageStartupMessages(library("dendextend", warn.conflicts=FALSE))
 
 ## Define the label color of the tree according to the cluster
-color.code <- color.code.clusters(clusters, tree, oct4.tfbm.desc)
+
+## DEBUG JVH 2018-11-14 NOT WORKING, I COMMENT THE LAST ARGUME?NT
+
+
+color.code <- color.code.clusters(clusters, tree) #, oct4.tfbm.desc)
 
 ## Convert the hclust object in a dendrogram
 tree.dendro <- as.dendrogram(tree)
@@ -240,10 +263,13 @@ alignment.width <- as.vector(
 )
 alignment.width <- max(alignment.width)
 ```
-```{r fig.show='hold',fig.width=7,fig.height=8}
+
+```{r fig.show='hold',fig.width=7,fig.height=8, eval=FALSE}
 ## Plot the tree
-mar4 <- alignment.width - 20
-par(mar=c(3,2,1,mar4),family="mono")
+
+## DEBUG JvH 2018-11-14: THIS CRASHES BECAUSE WITH THE STRUDY CASE mar4 has value -2 !! I MAKE A QUICK FIX BUT THIS SHOULD BE REVISED. 
+mar4 <- max(5, alignment.width - 20)
+par(mar=c(3,2,1,mar4), family="mono")
 plot(tree.dendro, 
      horiz=TRUE, 
      main = "Aligned consensus tree"

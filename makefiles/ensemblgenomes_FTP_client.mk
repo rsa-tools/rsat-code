@@ -55,7 +55,7 @@ else
   COLLECTION=
 endif
 
-
+NEXTRELEASE=
 RELEASE=${ENSEMBLGENOMES_RELEASE}
 # should be set in RSAT_config.props
 SERVER_URL=ftp://ftp.ensemblgenomes.org/pub/${GROUP_LC}
@@ -79,6 +79,7 @@ SPECIES_UCFIRST=$(shell perl -e 'print ucfirst ${SPECIES}')
 #SPECIES_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}
 SPECIES_ID=${SPECIES_UCFIRST}.${GCA_ID}
 SPECIES_RSAT_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}.${RELEASE}
+SPECIES_RSAT_UPGRADE_ID=${SPECIES_UCFIRST}.${ASSEMBLY_ID}.${NEXTRELEASE}
 # SPECIES_DIR=${ORGANISM_DIR}/${SPECIES}
 SPECIES_DIR=${RSAT}/data/genomes/${SPECIES_RSAT_ID}
 GENOME_DIR=${SPECIES_DIR}/genome
@@ -155,6 +156,11 @@ VARIANT_TASKS=download_vcf
 download_one_species: ${DOWNLOAD_TASKS}
 
 install_one_species: ${INSTALL_TASKS}
+
+upgrade_one_species: 
+	@echo
+	@echo Upgrading ${SPECIES_RSAT_ID} to ${SPECIES_RSAT_UPGRADE_ID}
+	@upgrade-organism-ensemblgenomes -old ${SPECIES_RSAT_ID} -new ${SPECIES_RSAT_UPGRADE_ID}	
 
 variations_one_species: ${VARIANT_TASKS}
 

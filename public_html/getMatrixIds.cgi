@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: getMatrixIds.cgi: get the identifiants from the motif file
