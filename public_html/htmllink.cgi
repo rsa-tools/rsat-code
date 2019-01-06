@@ -16,7 +16,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 $title = $query->param("title");
-$file = $query->param("file");
+$file = $query->param("file"); $file=~tr/[:()';<>]/[       ]/; # 20181205 ajhernan / quick fix to prevent xss
 
 print $query->header();
 print sorttable_script();
