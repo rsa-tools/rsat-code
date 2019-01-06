@@ -336,9 +336,7 @@ package main;
 		  "alt",
 		  "so_term",
 		  "validated",
-		  "minor_allele_freq",
-		  "is_supvar",
-		  "in_supvar\n"
+		  "minor_allele_freq\n"
       );
 
   ################################################################
@@ -443,17 +441,19 @@ package main;
 	$variations_per_chr{$chr}++;
 
 	if ($vartype_filter) {
-	    my $so_term = $fields[7]; 
+	    my $so_term = $fields[7];
 #	    &RSAT::message::Debug("current SO term: ".$so_term, "accepted:", sort(keys(%accepted_vartype))) if ($main::verbose >= 10);
 	    next unless ($accepted_vartype{$so_term});
 	}
 
 	## Skip "super-variations"
-	my $is_super = $fields[10];
+	#my $is_super = $fields[10];
 	## Ale's note: colum number changed after adding minor allele frequency. JvH note: we should later check if we really want to maintain these super-variations
-	next if ($is_super);
+	#next if ($is_super);
 
 	## Check if the variation ID is part of the queries
+  ## NOTE: This might seems redundant,but in fact it is an IMPORTANT checkpoint for preventing the retrieve of non-specific variant records
+  ##       USUALLY returned by the "grep".
 	my $current_id = $fields[4];
 	next unless ($variation_id{$current_id});
 
@@ -462,7 +462,7 @@ package main;
 	delete($variation_id{$fields[4]});
 
 	## Remove info about in_super_variation  ## Ale's note: colum number changed after adding minor allele frequency
-	$fields[11] = 0;
+	#$fields[11] = 0;
 
 	## Report variation information in outfile
 	print $out join("\t",@fields),"\n";
@@ -475,7 +475,8 @@ package main;
     }
 
     ## Report not found variations
-    my @not_found = sort(@variation_ids);
+    # list of sorted keys in numeric order
+    my @not_found = sort { $a <=> $b } keys %variation_id;
     my $not_found_nb = scalar(@not_found);
     if ($not_found_nb > 0) {
       &RSAT::message::Warning("; Non-identified variations: ",$not_found_nb) if ($main::verbose >= 2);
@@ -783,12 +784,12 @@ General format for the description of genomic features
 
 =item B<-type accepted_variation_types>
 
-Specify one or several accepted types of variation.  
+Specify one or several accepted types of variation.
 
 Variation types are specified according to the Sequence Ontology ("SO
-term" column of the output file). 
+term" column of the output file).
 
-Several types can be specified separated by commas. 
+Several types can be specified separated by commas.
 
 
 Supported variation types:
@@ -810,7 +811,7 @@ Deletion
 
 =item I<deletion>
 
-Insertion 
+Insertion
 
  http://www.sequenceontology.org/browser/release_2.5/term/SO:0000667
 

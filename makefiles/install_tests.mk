@@ -14,10 +14,10 @@ all: 	test_dir  \
 	purge_seq \
 	crer_scan_python2 \
 	crer_scan_python3 \
-	matrix_clustering \
 	ws_stub \
 	ws_stub_test \
 	ws_nostub_test \
+	matrix_clustering \
 	zip
 
 TEST_DIR=./install_tests
@@ -29,7 +29,7 @@ PATH_FILE=${TEST_DIR}/RSAT_path.txt
 path: test_dir
 	@echo
 	@echo "Checking RSAT_path"
-	@uname -mrs > ${PATH_FILE}
+	@echo ${RSAT} > ${PATH_FILE}
 	@echo "	${PATH_FILE}"
 
 ## Operating system properties
@@ -74,15 +74,16 @@ r_version:
 
 ws_stub:
 	@echo
+	@echo "Updating SOAP/WSDL stub"
 	@echo "	${TEST_DIR}/ws_stub_log.txt"
 	@echo "	${TEST_DIR}/ws_stub_msg.txt"
 	@make -f ${RSAT}/makefiles/init_rsat.mk  ws_init ws_stub \
 		1> ${TEST_DIR}/ws_stub_log.txt \
 		2> ${TEST_DIR}/ws_stub_msg.txt
 
-
 ws_stub_test:
 	@echo
+	@echo "Testing Web services with stub"
 	@echo "	${TEST_DIR}/ws_stub_test_result.txt"
 	@echo "	${TEST_DIR}/ws_stub_test_msg.txt"
 	@make -f ${RSAT}/makefiles/init_rsat.mk  ws_init ws_stub_test \
@@ -91,6 +92,7 @@ ws_stub_test:
 
 ws_nostub_test:
 	@echo
+	@echo "Testing Web services without stub"
 	@echo "	${TEST_DIR}/ws_nostub_test_result.txt"
 	@echo "	${TEST_DIR}/ws_nostub_test_msg.txt"
 	@make -f ${RSAT}/makefiles/init_rsat.mk  ws_init ws_nostub_test \
@@ -141,11 +143,11 @@ matrix_clustering: test_dir
 	@echo
 	@echo "Running matrix-clustering demo"
 	@echo "	${TEST_DIR}/matrix-clustering_log.txt"
-	@echo "	${TEST_DIR}/matrix-clustering_err.txt"
+	@echo "	${TEST_DIR}/matrix-clustering_msg.txt"
 	@make -f ${RSAT}/makefiles/matrix-clustering_demo.mk \
 		cluster_peakmotifs_Oct4 \
 		1> ${TEST_DIR}/matrix-clustering_log.txt \
-		2> ${TEST_DIR}/matrix-clustering_err.txt
+		2> ${TEST_DIR}/matrix-clustering_msg.txt
 
 ## Create a zip archive with the test results
 ARCHIVE=install_tests_${TIME}.zip
