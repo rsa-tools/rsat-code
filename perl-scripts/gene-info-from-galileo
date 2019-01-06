@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: gene-info-from-galileo,v 1.4 2013/10/03 17:23:59 jvanheld Exp $

@@ -1,7 +1,7 @@
 ---
 title: "RSAT installation guide for Ubuntu (16.04)"
 author: "Jacques van Helden"
-date: 'Last update: 2017/04/21'
+date: 'Last update: `r Sys.Date()`'
 output:
   html_document:
     code_folding: show
@@ -21,16 +21,19 @@ output:
 
 
 ```{r setup, include=FALSE}
+library(knitr, warn.conflicts = FALSE)
+
 knitr::opts_chunk$set(
-  echo=TRUE, 
-  eval=FALSE, 
-  cache=TRUE, 
-  message=FALSE, 
-  warning=FALSE, 
+  echo = TRUE, 
+  eval = FALSE, 
+  cache = TRUE, 
+  message = FALSE, 
+  warning = FALSE, 
   comment = "",  
-  fig.align= "center",
+  fig.align = "center",
   fig.width = 7, 
   fig.height = 5,
+  out.width = "90%",
   fig.path = "figures/")
 ```
 

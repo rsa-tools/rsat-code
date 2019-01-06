@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: send-mail,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
@@ -62,7 +62,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
-require RSAT::server;
+require RSAT::email;
 use Email::Sender::Simple qw(sendmail);
 use Email::Simple;
 use Email::Simple::Creator;
@@ -82,9 +82,9 @@ package main;
 
   our %infile = ();
   our %outfile = ();
-  our %args = (); ## Arguments passed to &RSAT::server::send_mail()
+  our %args = (); ## Arguments passed to &RSAT::email::send_mail()
   our $STARTTLS = 0;
-  our @starttlsparams = (); ## passed to &RSAT::server::send_mail_STARTTLS()
+  our @starttlsparams = (); ## passed to &RSAT::email::send_mail_STARTTLS()
  
   our $verbose = 0;
   our $in = STDIN;
@@ -116,10 +116,10 @@ package main;
   ################################################################
   ## Execute the command
   if($STARTTLS == 1){
-    &RSAT::server::send_mail_STARTTLS($message, $recipient, $subject, @starttlsparams);
+    &RSAT::email::send_mail_STARTTLS($message, $recipient, $subject, @starttlsparams);
   }
   else {
-    &RSAT::server::send_mail($message, $recipient, $subject, %args);
+    &RSAT::email::send_mail($message, $recipient, $subject, %args);
   }
 
   ################################################################

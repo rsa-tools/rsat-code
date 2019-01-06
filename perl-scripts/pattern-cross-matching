@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ## CVS: I wonder if this script is still useful, since count-matches provides the same functionality
 

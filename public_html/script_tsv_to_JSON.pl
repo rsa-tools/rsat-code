@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ##Programa para convertir salida TSV de RSAT feature maps a JSON jerarquico
 
 use strict;

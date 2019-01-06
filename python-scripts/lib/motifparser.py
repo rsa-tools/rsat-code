@@ -19,7 +19,7 @@ import sys
 import os
 import re
 
-import dna
+from . import dna
 
 
 TYPE = {
@@ -167,7 +167,7 @@ def parse(filename, format='auto'):
     if format == 'auto':
         format = EXT.get('.'+filename.split('.')[-1], '')
 
-    if format not in TYPE.keys():
+    if format not in list(TYPE.keys()):
         sys.stderr.write('WARNING: unknonw file extension or unsupported format\n')
         return []
 

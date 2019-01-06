@@ -8,6 +8,7 @@ use POSIX;
 use RSAT::GenericObject;
 use RSAT::message;
 use RSAT::error;
+use RSAT::email;
 @ISA = qw( RSAT::GenericObject );
 
 =pod
@@ -1251,7 +1252,7 @@ sub EmailTheResult {
     $subject = &RSAT::util::hide_RSAT_path($subject);
 
     ## Check the email address
-    &RSAT::server::CheckEmailAddress($recipient)  unless ($no_email);;
+    &RSAT::email::CheckEmailAddress($recipient)  unless ($no_email);;
 
     ## Temporary file for storing the result
     unless ($tmp_file_path) {
@@ -1291,9 +1292,9 @@ sub EmailTheResult {
     unless($no_email)
     {
         if($ENV{starttls}){
-            &RSAT::server::send_mail_STARTTLS($submission_message, $recipient, $subject.' ; Job submitted');
+            &RSAT::email::send_mail_STARTTLS($submission_message, $recipient, $subject.' ; Job submitted');
         } else {
-            &RSAT::server::send_mail($submission_message, $recipient, $subject.' ; Job submitted');
+            &RSAT::email::send_mail($submission_message, $recipient, $subject.' ; Job submitted');
         }
     }
 
@@ -1482,6 +1483,6 @@ sub sort_unique {
     return(@sorted_list);
 }
 
-return 1;
+1;
 
 __END__
