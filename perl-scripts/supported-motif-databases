@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: supported-motif-databases,v 1.00 2015/04/18 jvanheld Exp $

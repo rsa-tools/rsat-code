@@ -13,17 +13,19 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ## Configure the Apache Web server
 
 export APACHE_CONFIG_FOLDER=/etc/apache2/
+export APACHE_CONFIG_MAIN=${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
 # on Centos: APACHE_CONFIG_FOLDER=/etc/httpd/ but the rest is different as well -> best solution is to edit manually
 
 ## Make a backup of original apache configuration
 zip -ry apacheconf_backup_`date '+%Y-%m-%d_%H%M%S'`.zip ${APACHE_CONFIG_FOLDER}
 
 ## We need to replace some lines in the Apache configuration files
-# nano ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
+# nano ${APACHE_CONFIG_MAIN}
 ## Uncomment the following line:
 # Include conf-available/serve-cgi-bin.conf
 perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#Include conf-available/serve-cgi-bin.conf|Include conf-available/serve-cgi-bin.conf|' \
-    ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
+     ${APACHE_CONFIG_MAIN}
+
 
 ## To avoid puzzling warning at apache start, set ServerName globally.
 echo "" >> ${APACHE_CONFIG_FOLDER}/apache2.conf

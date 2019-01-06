@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: peak-quality,v 1.9 2012/10/16 07:09:13 jvanheld Exp $

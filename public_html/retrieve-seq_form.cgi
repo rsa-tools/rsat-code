@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #### this cgi script fills the HTML form for the program retrieve-seq
 
 BEGIN {
@@ -136,8 +136,8 @@ To retrieve sequences from an organism that is in the EnsEMBL database, we recom
 Cite the publication: <a href="https://twitter.com/rsatools" target="_blank"></a><br>
 <div class="panel panel-default">
 <div class="panel-body">
-Medina-Rivera A*, Defrance M*, Sand O*, Herrmann C, Castro-Mondragon J, Delerce J, Jaeger S, Blanchet C, Vincens P, Caron C, Staines DM, Contreras-Moreira B, Artufel M, Charbonnier - Khamvongsa L, Hernandez C, Thieffry D, Thomas-Chollier M., van Helden J. <i>"RSAT 2015 : Regulatory Sequence Analysis Tools"</i>, Nucleic Acid Research 43(W1):W50-W56 (2015) [<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4489296/" target="_blank">Pubmed</a>][<a href="https://academic.oup.com/nar/article/43/W1/W50/2467887" target="_blank">Full text</a>]
-<br>
+Nguyen, NTT, Contreras-Moreira, B, Castro-Mondragon, JA, Santana-Garcia, W, Ossio, R, Robles-Espinoza, CD, Bahin, M, Collombet, S, Vincens, P, Thieffry, D, van Helden, J, Medina-Rivera, A, Thomas-Chollier, M. (2018). RSAT 2018: regulatory sequence analysis tools 20th anniversary. Nucleic Acids Research, gky317, doi:10.1093/nar/gky317. [<a href="https://doi.org/10.1093/nar/gky317">Full text</a>]
+<br><br>
 van Helden, J., Andre, B. & Collado-Vides, J. (2000). <i>A web site for the computational analysis of yeast regulatory sequences</i>. Yeast 16(2), 177-187. [<a href="https://www.ncbi.nlm.nih.gov/pubmed/10641039" target="_blank">Pubmed 10641039</a>]
 
 </div>

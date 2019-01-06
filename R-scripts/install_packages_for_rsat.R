@@ -7,7 +7,7 @@
 ## Define the preferred CRAN repository.
 ## If not defined in an environment variable, take rstudio by default.
 if (Sys.getenv("CRAN_REPOS") == "") {
-  rcran.repos <- "http://cran.rstudio.com/"
+  rcran.repos <- "https://cran.rstudio.com/"
 } else {
   rcran.repos <- Sys.getenv("CRAN_REPOS")
 }
@@ -17,9 +17,9 @@ required.packages = c("devtools",
                       "RJSONIO",
                       "gplots",
                       "jpeg",
+                      "scales",
                       "png",
                       "dynamicTreeCut",
-                      "ggplot2",
                       "reshape2",
                       "dendextend",
                       "gridExtra",
@@ -27,14 +27,24 @@ required.packages = c("devtools",
                       "egg",
                       "flux",
                       "zoo",
-                      "RColorBrewer")
-
+                      "RColorBrewer",
+                      "changepoint",
+                      "dplyr",
+                      "ggplot2"
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
+)
 
 ## List of required packages from Bioconductor
-required.packages.bioconductor <- c("ctc", "amap", "qvalue")
+required.packages.bioconductor <- c("S4Vectors",
+				    "ctc",
+                                    "qvalue",
+				    "IRanges", 
+                                    "BiocGenerics",
+                                    "amap", 
+                                    "GenomicRanges"
+)
 
 ## List of RSAT-specific packages to be compiled on the server
 required.packages.rsat <- c("TFBMclust")
@@ -56,7 +66,7 @@ install.dir <- dir.rsat.rlib
 
 dir.create(install.dir, showWarnings = FALSE, recursive = FALSE)
 
-## Install R packages from the CRAN
+## Install R packages from the CRAN (type="source" is default)
 message("Installing R packages from CRAN repository: ", rcran.repos)
 message("Installing R packages in local directory: ", install.dir)
 
@@ -74,7 +84,6 @@ for (pkg in required.packages) {
         message(pkg, " CRAN package installed in dir ", install.dir)
     }
 }
-
 
 
 ################################################################
