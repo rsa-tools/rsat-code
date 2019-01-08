@@ -308,6 +308,7 @@ package main;
 	}
 
       my $URL = join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, $species, "latest_assembly_versions/");
+      #my $URL = join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, $species, "all_assembly_versions/suppressed/");
       if ($strain) { 
 	$URL .= $strain;
       }
@@ -350,6 +351,8 @@ package main;
 	  }
 
 	  my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
+	#  my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/all_assembly_versions/suppressed";
+
 
 	  my @strain_folders;
 	  if ($strain) {
