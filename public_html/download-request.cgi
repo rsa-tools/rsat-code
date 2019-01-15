@@ -77,7 +77,7 @@ my $subject = join("_",
 		   $request_date,
 		   "RSAT-download-request",
     );
-&RSAT::server::send_mail($message, $recipient, $subject);
+&RSAT::email::send_mail($message, $recipient, $subject);
 
 ## Indicate download URL
 print "<h2>Download URL</h2>";
