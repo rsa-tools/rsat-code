@@ -163,7 +163,7 @@ if ($bg_method eq "from_matrix") {
     
 } elsif ($bg_method eq "bgfile") {
     ## Select pre-computed background file in RSAT genome directory
-    local $organism_name = $query->param("organism");
+    local $organism_name = $query->param("organism_bg");
     local $noov = "ovlp";
     local $background_model = $query->param("background");
     #local $oligo_length = 1;
