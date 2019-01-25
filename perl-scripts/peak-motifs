@@ -634,14 +634,14 @@ sub DefaultParameters {
   ## Options used for motif comparison
   $main::param{matrix_compa_min_w} = 5; ## min number of aligned columns
   $main::param{matrix_compa_min_Wr} = 0.3; ## min relative width
-  $main::param{matrix_compa_min_cor} = 0.75; ## min correlation
+  $main::param{matrix_compa_min_cor} = 0.7; ## min correlation
   $main::param{matrix_compa_min_Ncor} = 0.4; ## min normalizd correlation
   $main::param{matrix_compa_metrics} = "cor,Ncor"; ## removed these for delegating to compare-matrices-quick : logoDP,NIcor,NsEucl,SSD,NSW";
   $main::param{matrix_compa_sort_field} = "Ncor"; ## sorting field
 
   my $motif_compa_options =  "";
   $motif_compa_options .= " -mode matches";
-  $motif_compa_options .= " -DR";
+  $motif_compa_options .= " -strand DR";
   $motif_compa_options .= " -uth offset_rank 1"; ## Only report the best matching shift between a pair of matrices
   $motif_compa_options .= " -lth w ".$main::param{matrix_compa_min_w}; ## Min number of aligned columns
   $motif_compa_options .= " -lth Wr ".$main::param{matrix_compa_min_Wr}; ## Min relative width of the alignment
