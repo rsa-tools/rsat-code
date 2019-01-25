@@ -152,6 +152,9 @@ package main;
     if(scalar(@{$stats{$data[0]}{'upstream_L'}}) > $max_ups){ $max_ups = scalar(@{$stats{$data[0]}{'upstream_L'}}) }
 
     # print summary
+    #Triticum_urartu.ASM34745v1.40  3.747e+09   499222  19.7    77.5    36922   2601
+    #Vigna_angularis.Vigan1.1.40    4.667e+08   37373   3.6 10.1    0   2758
+    #
     printf("%s\t%1.4g\t%d\t%1.1f\t%1.1f\t%d\t%1.0f\n",
         $data[0],$stats{$data[0]}{'genome_L'},$stats{$data[0]}{'contigs_N'},
         100*$stats{$data[0]}{'Ns_raw'}/$stats{$data[0]}{'genome_L'},
