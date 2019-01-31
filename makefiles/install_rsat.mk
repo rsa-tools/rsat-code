@@ -229,7 +229,9 @@ PERL_MODULES= \
 	OLE::Storage_Lite \
 	Template::Plugin::Number::Format \
 	Readonly \
-	Email::Sender::Transport::SMTPS
+	Email::Sender::Transport::SMTPS \
+	Parallel::ForkManager \
+	MCE::Shared
 
 #t/013_complexType.t ................................... 1/? Can't locate object method "new" via package "MyElement" (perhaps you forgot to load "MyElement"?) at lib/SOAP/WSDL/XSD/Typelib/ComplexType.pm line 213.
 
