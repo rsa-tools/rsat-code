@@ -2185,7 +2185,7 @@ sub Add_gaps_to_motifs {
 
     ## Call the program 'convert-matrix' to add the empty columns
     ## to the aligned logos and retrieve the logos in RC
-    my $max_sys_process = `ulimit -u` + 0;
+    my $max_sys_process = qx/bash -c "ulimit -u"/ + 0;
     my $num_process = ($max_sys_process > $ENV{max_num_process}) ? $ENV{max_num_process} : $max_sys_process;
     my $pm = Parallel::ForkManager->new($num_process);
     LINKS:
@@ -2790,7 +2790,7 @@ sub Merge_matrices {
     my %width_internal_alignments = ();
     &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
     
-    my $max_sys_process = `ulimit -u` + 0;
+    my $max_sys_process = qx/bash -c "ulimit -u"/ + 0;
     my $num_process = ($max_sys_process > $ENV{max_num_process}) ? $ENV{max_num_process} : $max_sys_process;
     my $pm = Parallel::ForkManager->new($num_process);
     LINKS:
@@ -6293,7 +6293,7 @@ sub Clustered_PSSMS_TRANSFAC_format(){
     my $file_names = "";
 
     my ($clusters_table) = &OpenInputFile($main::outfile{clusters_table});
-    my $max_sys_process = `ulimit -u` + 0;
+    my $max_sys_process = qx/bash -c "ulimit -u"/ + 0;
     my $num_process = ($max_sys_process > $ENV{max_num_process}) ? $ENV{max_num_process} : $max_sys_process;
     my $pm = Parallel::ForkManager->new($num_process);
 LINKS:
