@@ -126,6 +126,12 @@ use MCE::Shared;
 package main;
 {
 
+    
+    ################### Define max_num_process if has not been defined
+    if(! defined $ENV{max_num_process}){ $ENV{max_num_process} = 40; }
+    if(! defined $ENV{max_num_child_process}) { $ENV{max_num_child_process} = 30; }
+    ###################
+    
   ################################################################
   ## Initialise parameters
   local $start_time = &RSAT::util::StartScript();
@@ -2791,7 +2797,7 @@ sub Merge_matrices {
     &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
     
     my $max_sys_process = qx/bash -c "ulimit -u"/ + 0;
-    my $num_process = ($max_sys_process > $ENV{max_num_process}) ? $ENV{max_num_process} : $max_sys_process;
+    my $num_process = ($max_sys_process > $ENV{max_num_child_process}) ? $ENV{max_num_child_process} : $max_sys_process;
     my $pm = Parallel::ForkManager->new($num_process);
     LINKS:
     foreach my $cluster (@clusters_to_HTML) {
@@ -2817,8 +2823,8 @@ sub Merge_matrices {
         
         my %int_align_info = ();
         if ($singleton_cluster == 0){
-            my $num_proc_child = ($max_sys_process/$num_process > $ENV{max_num_process}) ? $ENV{max_num_process} - 10 : $max_sys_process/$num_process;
-            my $num_proc = (scalar(@folder_merged_matrices) < $ENV{max_num_process}) ? ($num_proc_child - 10 ) : $num_proc_child;
+            my $max_num_child_process = ($max_sys_process/$num_process > $ENV{max_num_child_process}) ? $ENV{max_num_child_process} : $max_sys_process/$num_process;
+            my $num_proc = (scalar(@folder_merged_matrices) < $max_num_child_process) ? $max_num_child_process/2 : $max_num_child_process;
             my $pm_child = Parallel::ForkManager->new($num_proc);
         LINKS_CHILD:
             foreach my $folder (@folder_merged_matrices) {
