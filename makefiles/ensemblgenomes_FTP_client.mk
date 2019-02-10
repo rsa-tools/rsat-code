@@ -433,13 +433,16 @@ parse_gtf:
 	@${MAKE} my_command MY_COMMAND="${PARSE_GTF_CMD}"
 	@echo "	${PARSE_DIR}"
 
+# ${FASTA_RAW_LOCAL} is symb linked to ${FASTA_RAW_LOCAL_OLD} for compatibility
+prepare_gtf_install:
+	@ln -sf ${FASTA_RAW_LOCAL} ${FASTA_RAW_LOCAL_OLD}
+
 ###############################################################
 ## parse gtf and then install organism
-# ${FASTA_RAW_LOCAL} is symb linked to ${FASTA_RAW_LOCAL_OLD} for compatibility
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
-	@ln -sf ${FASTA_RAW_LOCAL} ${FASTA_RAW_LOCAL_OLD}
+	@${MAKE} prepare_gtf_install
 	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome
 
 ## Run some test for the GTF parsing result
