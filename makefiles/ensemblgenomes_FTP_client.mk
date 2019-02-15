@@ -229,14 +229,15 @@ download_gtf:
 
 ################################################################
 ## Download VCF files from ensemblgenomes
-# these are now set and handled in download-ensembl-variations
-#VCF_FTP_URL=${DATABASE}/vcf/${COLLECTION}/${SPECIES}/
-#VCF_SERVER_GZ=${VCF_FTP_URL}/${SPECIES}.vcf.gz
-#VCF_SERVER_TBI=${VCF_FTP_URL}/${SPECIES}.vcf.gz.tbi
-#VCF_SERVER_README=${VCF_FTP_URL}/README
-#VCF_LOCAL_GZ=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.gz
-#VCF_LOCAL_TBI=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.gz.tbi
-#VCF_LOCAL_README=${VARIATIONS_DIR}/README
+# these are now set handled in download-ensembl-variations
+VCF_FTP_URL=${DATABASE}/vcf/${COLLECTION}/${SPECIES}/
+VCF_SERVER_GZ=${VCF_FTP_URL}/${SPECIES}.vcf.gz
+VCF_SERVER_TBI=${VCF_FTP_URL}/${SPECIES}.vcf.gz.tbi
+VCF_SERVER_README=${VCF_FTP_URL}/README
+VCF_LOCAL_README=${VARIATIONS_DIR}/README
+VCF_LOCAL=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}
+VCF_LOCAL_GZ=${VCF_LOCAL}.vcf.gz
+VCF_LOCAL_TBI=${VCF_LOCAL}.vcf.gz.tbi
 #wget -cnv ${VCF_SERVER_GZ} -O ${VCF_LOCAL_GZ}; \
 #echo "  VCF_LOCAL_GZ  ${VCF_LOCAL_GZ}"; \
 #wget -cnv ${VCF_SERVER_TBI} -O ${VCF_LOCAL_TBI}; \
@@ -249,6 +250,7 @@ download_vcf:
 	@echo
 	@echo "Downloading variation VCF file for species ${SPECIES}"
 	download-ensembl-variations -db ensemblgenomes -task fromvcf -species ${SPECIES} -release ${RELEASE} -group ${GROUP}
+	rm -f ${VCF_LOCAL}.vcf; 
 
 
 ################################################################
