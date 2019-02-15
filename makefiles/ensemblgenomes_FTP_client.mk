@@ -237,17 +237,17 @@ download_gtf:
 #VCF_LOCAL_GZ=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.gz
 #VCF_LOCAL_TBI=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.gz.tbi
 #VCF_LOCAL_README=${VARIATIONS_DIR}/README
+#wget -cnv ${VCF_SERVER_GZ} -O ${VCF_LOCAL_GZ}; \
+#echo "  VCF_LOCAL_GZ  ${VCF_LOCAL_GZ}"; \
+#wget -cnv ${VCF_SERVER_TBI} -O ${VCF_LOCAL_TBI}; \
+#echo "  VCF_LOCAL_TBI  ${VCF_LOCAL_TBI}"; \
+#wget -cnv ${VCF_SERVER_README} -O ${VCF_LOCAL_README};
 download_vcf:
 	@echo
 	@mkdir -p ${VARIATIONS_DIR}
 	@echo " VARIATIONS_DIR  ${VARIATIONS_DIR}"	
 	@echo
 	@echo "Downloading variation VCF file for species ${SPECIES}"
-	#wget -cnv ${VCF_SERVER_GZ} -O ${VCF_LOCAL_GZ}; \
-	#echo "  VCF_LOCAL_GZ  ${VCF_LOCAL_GZ}"; \
-	#wget -cnv ${VCF_SERVER_TBI} -O ${VCF_LOCAL_TBI}; \
-    #echo "  VCF_LOCAL_TBI  ${VCF_LOCAL_TBI}"; \
-	#wget -cnv ${VCF_SERVER_README} -O ${VCF_LOCAL_README};
 	download-ensembl-variations -db ensemblgenomes -task fromvcf -species ${SPECIES} -release ${RELEASE} -group ${GROUP}
 
 
