@@ -20,7 +20,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Download GVF file of variations from Ensembl, decompress the file,
+Download a GVF/VCF file of variations from Ensembl, decompress the file &
 remove variations that fail to pass the quality check.
 
 Create "combinatory variations" from sets of overlapping variations.
@@ -155,7 +155,7 @@ Why the variation is remove
 
 I<install-ensembl-genome> is a tool that allow to install all Ensembl genome, feature and variation.
 
-=head1 WISH LIST
+=head1 WISH LIST: -genome_dir
 
 =cut
 
