@@ -140,8 +140,10 @@ if ($query->param('bg_method') eq "alphabet") {
     unless ($organism = $query->param('organism_bg')) {
 	&cgiError("You should specify an organism to use upstream frequency calibration");
     }
-    unless (%{$supported_organism{$organism}}) {
-	&cgiError("Organism $organism is not supported on this site");
+    $organism = &CheckOrganismAvail($organism);
+    #unless (%{$supported_organism{$organism}}) {
+    if($organism eq ""){
+        &cgiError("Organism ".$query->param('organism')." is not supported on this site");
     }
     if ($query->param('bg_method') =~ /protein/i) {
       $oligopept_size = $query->param("oligopept_size");

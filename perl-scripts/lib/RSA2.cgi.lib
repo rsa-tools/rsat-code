@@ -1174,11 +1174,20 @@ sub OrganismPopUpString{
             $("#' . $popupid . '").val("");
         });
         
-        $("#' . $popupid_name . '").focusout(function(){
-            if($("#' . $popupid . '").val() == ""){
-                $("#' . $popupid_name . '").val("");
+        $("#'.$popupid_name.'").focusout(function(){
+            if(($("#'.$popupid. '").val() == "") && ($("#' . $popupid_name . '").val() != "")){
+                $("#'.$popupid. '").val($("#' . $popupid_name . '").val());
+            }
+            if($("#' . $popupid_name . '").val() == ""){
+                $("#'.$popupid. '").val("");
             }
         });
+        
+        //$("#' . $popupid_name . '").focusout(function(){
+        //    if($("#' . $popupid . '").val() == ""){
+        //        $("#' . $popupid_name . '").val("");
+        //    }
+        //});
         
         $("#' . $popupid_name . '").autocomplete({
 
@@ -1245,7 +1254,32 @@ sub OrganismPopUpString{
     return $organismPopup;
 }
 
+################################################################
+## Check if organism is supported
+sub CheckOrganismAvail{
+    my $org_check = shift;
+    my $org_list = `$SCRIPTS/supported-organisms`;
+    my @supported_orgs = split(/\n/, $org_list);
+    foreach my $org (@supported_orgs){
+        my $name = ucfirst($org);
+        $name =~ s/_/ /;
+        if((lc($org_check) eq lc($org)) || (lc($org_check) eq lc($name))){
+            return $org;
+        }
+    }
+    return "";
+}
 
+sub CheckTaxonAvail{
+    my $taxon_check = shift;
+    my @taxons = &get_taxons_web("all");
+    foreach my $taxon (@taxons){
+        if(lc($taxon) eq lc($taxon_check)){
+            return $taxon;
+        }
+    }
+    return "";
+}
 ################################################################
 ## Display a pop-up menu with the list of organisms supported at
 ## Ensembl.
@@ -1316,6 +1350,7 @@ sub TaxonPopUpStringIndented {
     return $taxonomyPopup;
 }
 
+##### Get list of supported taxons
 sub get_taxons_web{
     my ($node_type) =  @_;
     $node_type = "node" unless ($node_type);
@@ -1366,10 +1401,18 @@ sub TaxonPopUpString {
         });
         
         $("#taxon_name").focusout(function(){
-            if($("#taxon").val() == ""){
-                $("#taxon_name").val("");
+            if(($("#taxon").val() == "") && ($("#taxon_name").val() != "")){
+                $("#taxon").val($("#taxon_name").val());
+            }
+            if($("#taxon_name").val() == ""){
+                $("#taxon").val("");
             }
         });
+        //$("#taxon_name").focusout(function(){
+        //    if($("#taxon").val() == ""){
+        //        $("#taxon_name").val("");
+        //    }
+        //});
         
         $("#taxon_name").autocomplete({
         minLength: 2,

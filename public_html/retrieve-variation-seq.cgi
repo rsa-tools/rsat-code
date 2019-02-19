@@ -50,7 +50,9 @@ $command = "$C_SCRIPTS/retrieve-variation-seq";
 ## Define species 
 $organism = $query->param('organism');
 if($organism eq ""){ $organism = $query->param('organism_bg')};
-if (defined($supported_organism{$organism})) {
+$organism = &CheckOrganismAvail($organism);
+if(!($organism eq "")){
+#if (defined($supported_organism{$organism})) {
     $organism_name = $supported_organism{$organism}->{'name'};
     @org_name_split=split(" ",$organism_name);
     $species=join("_", $org_name_split[0], $org_name_split[1]);
@@ -67,9 +69,7 @@ if (defined($supported_organism{$organism})) {
 	$parameters .= " -species_suffix ".$species_suffix; ## 
     }
 } else {
-    &cgiError("Organism '",
-	      $organism,
-	      "' is not supported on this web site.");
+    &cgiError("Organism '".$query->param('organism')."' is not supported on this web site.");
 }
 
 ## Get input
