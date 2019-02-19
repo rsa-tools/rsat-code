@@ -74,62 +74,119 @@ print $query->start_multipart_form(-action=>"retrieve-variation-seq.cgi");
 ### from where variants annotated in ensembl variations will be extracted.
 
 print "<p>";
-print "<B>Input a list of dbSNP variation IDs (rsID), a set of variants in varBed format, or genomic regions in bed format</B>&nbsp;";
 
+if (-e "$ENV{RSAT}/data/supported_organisms_variation.tab"){
 
-print "<BR>\n";
-print "<UL>\n";
- if ($variants_file = $query->param('variants_file')) {
-    ## Variants file is already on the server machine
-    ## (piped from a previous script)
-    $variants_url = $variants_file;
-    $variants_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
-    $variantsChoiceString .=  "<a href=$variants_url>";
-    $variantsChoiceString .=  " transferred from previous query<BR>\n";
-    $variantsChoiceString .=  "</a>";
-    $variants_format = $query->param(variants_format);
-    $variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_format' VALUE='$variants_format'>\n";
-    $variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_file' VALUE='$variants_file'>\n";
-    print $variantsChoiceString ;
+    print "<B>Input a list of dbSNP variation IDs (rsID), a set of variants in varBed format, or genomic regions in bed format</B>&nbsp;";
 
-}else{
-
-    print $query->textarea(-name=>'input', -id=>'input',
-			   -default=>$default{input},
-			   -rows=>6,
-			   -columns=>65);
-### Option to upload a file with variant information (IDs, varBed file or
-### genomic regions in bed format)
-    print "<BR>Upload variants or regions<BR>\n";
-    print $query->filefield(-name=>'uploaded_file',
-			    -default=>'',
-			    -size=>45,
-			    -maxlength=>200);
-    print "</UL>\n";
+    
     print "<BR>\n";
+    print "<UL>\n";
+    if ($variants_file = $query->param('variants_file')) {
+	## Variants file is already on the server machine
+	## (piped from a previous script)
+	$variants_url = $variants_file;
+	$variants_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+	$variantsChoiceString .=  "<a href=$variants_url>";
+	$variantsChoiceString .=  " transferred from previous query<BR>\n";
+	$variantsChoiceString .=  "</a>";
+	$variants_format = $query->param(variants_format);
+	$variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_format' VALUE='$variants_format'>\n";
+	$variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_file' VALUE='$variants_file'>\n";
+	print $variantsChoiceString ;
+	
+    }else{
 
-}
+	print $query->textarea(-name=>'input', -id=>'input',
+			       -default=>$default{input},
+			       -rows=>6,
+			       -columns=>65);
+	### Option to upload a file with variant information (IDs, varBed file or
+	### genomic regions in bed format)
+	print "<BR>Upload variants or regions<BR>\n";
+	print $query->filefield(-name=>'uploaded_file',
+				-default=>'',
+			    -size=>45,
+				-maxlength=>200);
+	print "</UL>\n";
+	print "<BR>\n";
+
+    }
 
 
-### Input type
-print "<B>Input format</B>&nbsp;";
+    ### Input type
+    print "<B>Input format</B>&nbsp;";
     print $query->popup_menu(-name=>'input_type', -id=>'input_type',
 			     -Values=>['varBed','id','bed'],
 			     -default=>$default{input_type});
-print "<\p>";
+    print "<\p>";
 
-#### Select organims to retrieve variants sequences from
-print "<div id='organisms_popup' style='display:none'>";
-print "&nbsp;"x0, &OrganismPopUpString();
-print "<p>\n</div>";
-print "<div id='variations_popup'>";
-print &OrganismPopUpString("supported"=>"variations", "bg_org"=>"1");
-print "<p></div>";
+    #### Select organims to retrieve variants sequences from
+    print "<div id='organisms_popup' style='display:none'>";
+    print "&nbsp;"x0, &OrganismPopUpString();
+    print "<p>\n</div>";
+    print "<div id='variations_popup'>";
+    print &OrganismPopUpString("supported"=>"variations", "bg_org"=>"1");
+    print "<p></div>";
+}
+else {
+    print "<B>Input  a set of variants in varBed format</B>&nbsp;";
+    
+    
+    print "<BR>\n";
+    print "<UL>\n";
+    if ($variants_file = $query->param('variants_file')) {
+	## Variants file is already on the server machine
+	## (piped from a previous script)
+	$variants_url = $variants_file;
+	$variants_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+	$variantsChoiceString .=  "<a href=$variants_url>";
+	$variantsChoiceString .=  " transferred from previous query<BR>\n";
+	$variantsChoiceString .=  "</a>";
+	$variants_format = $query->param(variants_format);
+	$variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_format' VALUE='$variants_format'>\n";
+	$variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_file' VALUE='$variants_file'>\n";
+	print $variantsChoiceString ;
+	
+    }else{
+
+	print $query->textarea(-name=>'input', -id=>'input',
+			       -default=>$default{input},
+			       -rows=>6,
+			       -columns=>65);
+	### Option to upload a file with variant information (IDs, varBed file or
+	### genomic regions in bed format)
+	print "<BR>Upload variants or regions<BR>\n";
+	print $query->filefield(-name=>'uploaded_file',
+				-default=>'',
+				-size=>45,
+				-maxlength=>200);
+	print "</UL>\n";
+	print "<BR>\n";
+
+    }
+
+
+    ### Input type
+    print "<B>Input format</B>&nbsp;";
+    print $query->popup_menu(-name=>'input_type', -id=>'input_type',
+			     -Values=>['varBed'],
+			     -default=>$default{input_type});
+    print "<\p>";
+
+    #### Select organims to retrieve variants sequences from
+    print "<div id='organisms_popup' style='display:none'>";
+    print "&nbsp;"x0, &OrganismPopUpString();
+    print "<p>\n</div>";
+    print "<div id='variations_popup'>";
+    print &OrganismPopUpString( "bg_org"=>"1");
+    print "<p></div>";
+}
 
 ### Lenght of the sequences surranding the variant
 print "<B>Length of flanking sequence on each side of the variant</B>&nbsp;\n";
 print $query->textfield(-name=>'mml', -id=>'mml',
-			-default=>$default{mml},
+			    -default=>$default{mml},
 			-size=>5);
 print "<BR>\n";
 
