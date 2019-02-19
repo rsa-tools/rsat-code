@@ -159,8 +159,11 @@ if ($query->param('bg_method') eq 'background') {
     unless ($organism = $query->param('organism_bg')) {
       &cgiError("You should specify an organism to use intergenic frequency calibration");
     }
-    unless (%{$supported_organism{$organism}}) {
-      &cgiError("Organism $org is not supported on this site");
+    
+    #unless (%{$supported_organism{$organism}}) {
+    $organism = &CheckOrganismAvail($organism);
+    unless (!($organism eq "")){
+        &cgiError("Organism ". $query->param('organism'). " is not supported on this site");
     }
     $freq_option .= " -org $organism";
   }
@@ -170,6 +173,9 @@ if ($query->param('bg_method') eq 'background') {
     unless ($taxon = $query->param('taxon')) {
       &cgiError("You should specify an taxon to use intergenic frequency calibration");
     }
+    #&CheckTaxon($taxon);
+    $taxon = &CheckTaxonAvail($taxon);
+    if ($taxon eq ""){ &cgiError("Taxon ".$query->param('taxon')." is not supported on this site");}
     &CheckTaxon($taxon);
     $freq_option .= " -taxon $taxon";
   }
