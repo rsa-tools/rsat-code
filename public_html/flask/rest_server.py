@@ -8,12 +8,12 @@ from time import localtime
 import datetime
 import pwd
 import subprocess
-import urllib2
+import requests
 
 app = Flask(__name__, static_url_path = "")
 
-perl_scripts = '/Users/thnguyen/rsat/perl-scripts'
-public_html = '/Users/thnguyen/rsat/public_html'
+perl_scripts = '/home/rsat/rsat/perl-scripts'
+public_html = '/home/rsat/rsat/public_html'
 
 @app.errorhandler(400)
 def not_found(error):
@@ -28,9 +28,14 @@ def index():
     return "Hello World"
 
 #### supported_organisms
-@app.route('/supported-organisms', methods = ['POST'])
+@app.route('/supported-organisms', methods = ['POST','GET'])
 def get_supported_organisms():
-    data = request.get_json(force=True)
+    output_choice = 'email'
+    if request.method=='POST':
+    	data = request.get_json(force=True)
+    elif request.method=='GET':
+	data = request.args
+	output_choice='display'
     command = perl_scripts + '/supported-organisms'
     if 'group' in data:
         command += ' -group ' + data['group']
@@ -39,28 +44,33 @@ def get_supported_organisms():
     if 'depth' in data:
         command += ' -depth ' + data['depth']
 
-    return run_command(command, 'email', 'supported-organisms', 'txt')
+    return run_command(command, output_choice, 'supported-organisms', 'txt')
 
 #### fetch_sequence
 #### return: {'output' : error, 'command' : command, 'server' : result file URL}
-@app.route('/fetch_sequences', methods = ['POST'])
+@app.route('/fetch-sequences', methods = ['POST', 'GET'])
 def get_sequences():
-    args = request.get_json(force=True)
+    output_choice = 'email'
+    if request.method=='POST':
+    	args = request.form or request.get_json(force=True)
+	files = request.files
+    elif request.method == 'GET':
+	args = request.args
+	output_choice = 'display'
     command = perl_scripts + '/fetch-sequences'
+    (fd,tmp_input_file_name) = make_tmp_file('fetch-sequences', '','')
     if 'input' in args:
         input = args['input']
         input.strip()
-        tmp_input_file = make_tmp_file('fetch-sequences', '', '')
-        with open(tmp_input_file, 'w') as f:
+        with open(tmp_input_file_name, 'w') as f:
             f.write(input)
             f.close()
-    elif 'tmp_input_file' in args:
-        tmp_input_file = args['tmp_input_file']
-        tmp_input_file = tmp_input_file.replace("'", '')
-        tmp_input_file = tmp_input_file.replace('"', '')
+    elif 'tmp_input_file' in files:
+        tmp_input_file = files['tmp_input_file']
+        tmp_input_file.save(tmp_input_file_name)
 
-    tmp_input_file.strip()
-    command += " -i '" + tmp_input_file + "'"
+    if 'input' in args or 'tmp_input_file' in files:
+	command += " -i '" + tmp_input_file_name + "'"
 
     if 'url' in args:
         url = args['url']
@@ -90,14 +100,18 @@ def get_sequences():
         chunk = args['chunk']
         command += " -chunk '" + chunk + "'"
 
-    return run_command(command, 'display', 'fetch-sequences', 'fasta')
+    return run_command(command, output_choice, 'fetch-sequences', 'fasta')
 
 
 ### peak-motifs
 ### return: {'output' : errors/warnings, 'command' : command, 'server' : synthesis file URL}
-@app.route('/peak-motifs', methods=['POST'])
+@app.route('/peak-motifs', methods=['POST','GET'])
 def peak_motifs():
-	args = request.get_json(force=True)
+	if request.method=='POST':
+		args = request.form or request.get_json(force=True)
+		files = request.files
+	elif request.method =='GET':
+		args = request.args
 	command = perl_scripts + '/peak-motifs'
 	### get parameters
 	if 'verbosity' in args:
@@ -181,46 +195,45 @@ def peak_motifs():
 		command += " -ci '" + class_int + "'"
 	
 	#sequence file
-	tmp_test_infile = ''	
+	dir = make_tmp_dir('peak-motifs')
+	(fd, tmp_test_infile_name) = make_tmp_file('peak-motifs','',dir=dir)
 	if 'test' in args:
 	    test = args['test'].rstrip()
-	    (fd,tmp_test_file) = make_tmp_file('peak-motifs', '', dir="")
 	    with open(tmp_test_file, 'w') as f:
 	        f.write(test)
 	        f.close()
 	
-	if 'tmp_test_infile' in args:
-		tmp_test_infile = args['tmp_test_infile'].rstrip()
+	if 'tmp_test_infile' in files:
+		tmp_test_infile = files['tmp_test_infile']
+		tmp_test_infile.save(tmp_test_infile_name)
 
 	if 'tmp_test_infile_URL' in args:
 		if args['tmp_test_infile_URL'] != '':
-			readURL = urllib2.urlopen(args['tmp_test_infile_URL'])
-			(fd,tmp_test_infile) = make_tmp_file('peak-motifs', '', dir='')
-			with open(tmp_test_infile, 'w') as f:
-				f.write(readURL.read())
+			readURL = requests.get(args['tmp_test_infile_URL'])
+			with open(tmp_test_infile_name, 'w') as f:
+				f.write(readURL.tex)
 				f.close()
-	if tmp_test_infile != '':
-		command += " -i '" + tmp_test_infile + "'"
+	if 'test' in args or 'tmp_test_infile' in request.files or 'tmp_test_infile_URL' in args:
+		command += " -i '" + tmp_test_infile_name + "'"
 	
 	#control file
-	tmp_control_infile = ''
+	(fd,tmp_control_infile_name) = make_tmp_file('peak-motifs-ctr','tab',dir=dir)
 	if 'control' in args:
 		control = args['control'].rstrip()
-		(fd,tmp_control_infile) = make_tmp_file("peak-motifs-ctr", "tab", dir="")
-		with open(tmp_control_infile, 'w') as f:
+		with open(tmp_control_infile_name, 'w') as f:
 			f.write(control)
 			f.close()
-	if 'tmp_control_infile' in args:
-		tmp_control_infile = args['tmp_control_infile']
-	if tmp_control_infile != '':
-		tmp_control_infile = tmp_control_infile.rstrip()		
-		command += " -ctrl '" + tmp_control_infile + "'"
+	if 'tmp_control_infile' in files:
+		tmp_control_infile = files['tmp_control_infile']
+		tmp_control_infile.save(tmp_control_infile_name)
+	if 'control' in args or 'tmp_control_infile' in files:
+		command += " -ctrl '" + tmp_control_infile_name + "'"
 	
 	# ref_motif
 	tmp_ref_motif = ''
 	if 'ref_motif' in args:
 		ref_motif = args['ref_motif'].rstrip()
-		(fd, tmp_ref_motif) = make_tmp_file("peak-motifs_ref-motifs", "tab",dir="")
+		(fd, tmp_ref_motif) = make_tmp_file("peak-motifs_ref-motifs", "tab",dir=dir)
 		with open(tmp_ref_motif, 'w') as f:
 			f.write(ref_motif)
 			f.close()
@@ -228,8 +241,7 @@ def peak_motifs():
 		command += " -ref_motifs '" + tmp_ref_motif + "'"	
 
 	# outdir
-	tmp_dir = make_tmp_dir("peak-motifs")
-	command += " -outdir '" + tmp_dir + "' -prefix peak-motifs &"
+	command += " -outdir '" + dir + "' -prefix peak-motifs &"
 	
 	## execute command
 	#p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
@@ -247,7 +259,7 @@ def peak_motifs():
     #		result += '\nServer Error/Warnings: ' + error
 	os.system(command)
 	#path to synthesis page	
-	server_dir = tmp_dir + "/peak-motifs_synthesis.html"
+	server_dir = dir + "/peak-motifs_synthesis.html"
 	## change path to url
 	server_dir = server_dir.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])
 	return jsonify( {'output' : result, 'command' : command, 'server' : server_dir} )
@@ -449,13 +461,19 @@ def run_command(command, output_choice, method_name, out_format):
 
     #### write to file
     (fd, temp_path) = make_tmp_file(method_name, out_format, dir='')
+    os.chmod(temp_path,0777)
     with open(temp_path, 'w') as f:
         f.write(result)
     os.close(fd)
     if error != '':
         result = 'Server Error/Warning: ' + error
 	# change path to url
-    return jsonify( {'output' : error, 'command' : command, 'server' : temp_path.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])} )
+    output = ''
+    if output_choice == 'email':
+ 	output = error
+    elif output_choice == 'display':
+	output = result
+    return jsonify( {'output' : output, 'command' : command, 'server' : temp_path.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])} )
 
 def make_tmp_file(method_name, out_format, dir=''):
     if dir == '':
@@ -469,19 +487,17 @@ def make_tmp_file(method_name, out_format, dir=''):
     return (fd, temp_path)
 
 def make_tmp_dir(method_name):
-    user = pwd.getpwuid(os.getuid())[0]
-    tmp_dir = os.environ['RSAT'] + '/public_html/tmp/' + user
-    
-    dt = datetime.datetime.now()
-    tmp_dir += '/' + dt.strftime('%Y') + '/' + dt.strftime('%m') + '/' + dt.strftime('%d') + '/'
-    if not os.path.exists(tmp_dir):
-        os.makedirs(tmp_dir)
-	os.chmod(tmp_dir,0777)
-    pref = method_name + '_' + dt.strftime('%Y') + '-' + dt.strftime('%m') + '-' + dt.strftime('%d') + '.' + dt.strftime('%H')+dt.strftime('%M')+dt.strftime('%S') + '_'
-
-    dir_path = mkdtemp('',pref,tmp_dir)
-    os.chmod(dir_path,0777)
-    return dir_path
+	user = pwd.getpwuid(os.getuid())[0]
+	tmp_dir = os.environ['RSAT'] + '/public_html/tmp/' + user
+	dt = datetime.datetime.now()
+	tmp_dir += '/' + dt.strftime('%Y') + '/' + dt.strftime('%m') + '/' + dt.strftime('%d') + '/'
+	if not os.path.exists(tmp_dir):
+		os.makedirs(tmp_dir)
+		os.chmod(tmp_dir,0777)
+	pref = method_name + '_' + dt.strftime('%Y') + '-' + dt.strftime('%m') + '-' + dt.strftime('%d') + '.' + dt.strftime('%H')+dt.strftime('%M')+dt.strftime('%S') + '_'
+	dir_path = mkdtemp('',pref,tmp_dir)
+	os.chmod(dir_path,0777)
+	return dir_path
 
 if __name__ == '__main__':
     app.run(debug = True)
