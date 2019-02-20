@@ -9,6 +9,7 @@ import datetime
 import pwd
 import subprocess
 import urllib2
+import requests
 
 app = Flask(__name__, static_url_path = "")
 
@@ -28,9 +29,14 @@ def index():
     return "Hello World"
 
 #### supported_organisms
-@app.route('/supported-organisms', methods = ['POST'])
+@app.route('/supported-organisms', methods = ['POST', 'GET'])
 def get_supported_organisms():
-    data = request.get_json(force=True)
+    output_choice = email
+    if request.method == 'POST':
+        data = request.get_json(force=True) or request.form
+    elif request.method == 'GET':
+        data = request.args
+        output_choice = 'display'
     command = perl_scripts + '/supported-organisms'
     if 'group' in data:
         command += ' -group ' + data['group']
@@ -39,28 +45,34 @@ def get_supported_organisms():
     if 'depth' in data:
         command += ' -depth ' + data['depth']
 
-    return run_command(command, 'email', 'supported-organisms', 'txt')
+    return run_command(command, output_choice, 'supported-organisms', 'txt')
 
 #### fetch_sequence
 #### return: {'output' : error, 'command' : command, 'server' : result file URL}
-@app.route('/fetch_sequences', methods = ['POST'])
+@app.route('/fetch-sequences', methods = ['POST', 'GET'])
 def get_sequences():
-    args = request.get_json(force=True)
+    output_choice = 'email'
+    if request.method == 'POST':
+        args = request.form or request.get_json(force=True)
+        files = request.files
+    elif request.method == 'GET':
+        args = request.args
+        output_choice = 'display'
     command = perl_scripts + '/fetch-sequences'
+    (fd,tmp_input_file_name) = make_tmp_file('fetch-sequences', '', '');
     if 'input' in args:
         input = args['input']
         input.strip()
-        tmp_input_file = make_tmp_file('fetch-sequences', '', '')
-        with open(tmp_input_file, 'w') as f:
+        with open(tmp_input_file_name, 'w') as f:
             f.write(input)
             f.close()
-    elif 'tmp_input_file' in args:
-        tmp_input_file = args['tmp_input_file']
-        tmp_input_file = tmp_input_file.replace("'", '')
-        tmp_input_file = tmp_input_file.replace('"', '')
+    elif 'tmp_input_file' in files:
+        tmp_input_file = files['tmp_input_file']
+        tmp_input_file.save(tmp_input_file_name)
 
-    tmp_input_file.strip()
-    command += " -i '" + tmp_input_file + "'"
+    if 'input' in args or 'tmp_input_file' in files:
+        tmp_input_file_name.strip()
+        command += " -i '" + tmp_input_file_name + "'"
 
     if 'url' in args:
         url = args['url']
@@ -90,35 +102,40 @@ def get_sequences():
         chunk = args['chunk']
         command += " -chunk '" + chunk + "'"
 
-    return run_command(command, 'display', 'fetch-sequences', 'fasta')
-
+    return run_command(command, output_choice, 'fetch-sequences', 'fasta')
 
 ### peak-motifs
 ### return: {'output' : errors/warnings, 'command' : command, 'server' : synthesis file URL}
-@app.route('/peak-motifs', methods=['POST'])
+@app.route('/peak-motifs', methods=['POST', 'GET'])
 def peak_motifs():
-	args = request.get_json(force=True)
-	command = perl_scripts + '/peak-motifs'
+    if request.method == 'POST':
+        args = request.get_json(force=True) or request.form
+        files = request.files
+    elif request.method == 'GET':
+        args = request.args
+        
+    command = perl_scripts + '/peak-motifs'
 	### get parameters
-	if 'verbosity' in args:
+	
+    if 'verbosity' in args:
 		verbosity = args['verbosity'].replace("'","");
 		verbosity = verbosity.replace('"', '');
 		command += " -v '" + verbosity +"'";
-	if 'max_seq_length' in args:
+    if 'max_seq_length' in args:
 		max_seq_length = args['max_seq_length'].replace("'", "")
 		max_seq_length = max_seq_length.replace('"', '')
 		command += " -max_seq_len '" + max_seq_length + "'"
-	if 'noov' in args:
+    if 'noov' in args:
 		if args['noov'] == 1:
 			command += " -noov"
-	if 'str' in args:
+    if 'str' in args:
 		strand = args['str']
 		if isinstance(strand, int):
 			if strand == 1 or strand == 2:
 				command += " -" + strand + "str"
 			else:
 				raise Exception("str value must be 1 or 2")
-	if 'motif_db' in args:
+    if 'motif_db' in args:
 		motif_db = args['motif_db'].replace("'","")
 		motif_db = motif_db.replace('"','')
 		dbs = motif_db.split(",")
@@ -127,114 +144,113 @@ def peak_motifs():
 			if db in matrix_db:
 				command += " -motif_db " + matrix_db[db]['name'] + " " + matrix_db[db]['format'] + " " + public_html + "/motif_databases/" + matrix_db[db]['file']
 	
-	if 'graph_title' in args:
+    if 'graph_title' in args:
 		graph_title = args['graph_title'].replace("'","")
 		graph_title = graph_title.replace('"',"")
 		command += " -title '" + graph_title + "'"
-	if 'image_format' in args:
+    if 'image_format' in args:
 		image_format = args['image_format'].replace("'", "")
 		image_format = image_format.replace('"', '')
 		command += " -img_format '" + image_format + "'"
-	if 'source' in args:
+    if 'source' in args:
 		source = args['source'].replace("'", "")
 		source = source.replace('"', '')
 		command += " -source '" + source + "'"
-	if 'task' in args:
+    if 'task' in args:
 		task = args['task'].replace("'", "")
 		task = task.replace('"', '')
 		command += " -task '" + task + "'"
-	if 'disco' in args:
+    if 'disco' in args:
 		disco = args['disco'].replace("'", "")
 		disco = disco.replace('"', '')
 		command += " -disco '" + disco + "'"
-	if 'max_motif_number' in args:
+    if 'max_motif_number' in args:
 		max_motif_number = args['max_motif_number'].replace("'", "")
 		max_motif_number = max_motif_number.replace('"', '')
 		command += " -nmotifs '" + max_motif_number + "'"
-	if 'top_peaks' in args:
+    if 'top_peaks' in args:
 		top_peaks = args['top_peaks'].replace("'", "")
 		top_peaks = top_peaks.replace('"', '')
 		command += " -top_peaks '" + top_peaks + "'"
-	if 'min_length' in args:
+    if 'min_length' in args:
 		min_length = args['min_length'].replace("'", "")
 		min_length = min_length.replace('"', '')
 		command += " -minol '" + min_length + "'"
-	if 'max_length' in args:
+    if 'max_length' in args:
 		max_length = args['max_length'].replace("'", "")
 		max_length = max_length.replace('"', '')
 		command += " -maxol '" + max_length + "'"
-	if 'markov' in args:
+    if 'markov' in args:
 		markov = args['markov'].replace("'", "")
 		markov = markov.replace('"', '')
 		command += " -markov '" + markov + "'"
-	if 'min_markov' in args:
+    if 'min_markov' in args:
 		min_markov = args['min_markov'].replace("'", "")
 		min_markov = min_markov.replace('"', '')
 		command += " -min_markov '" + min_markov + "'"
-	if 'max_markov' in args:
+    if 'max_markov' in args:
 		max_markov = args['max_markov'].replace("'", "")
 		max_markov = max_markov.replace('"', '')
 		command += " -max_markov '" + max_markov + "'"
-	if 'class_int' in args:
+    if 'class_int' in args:
 		class_int = args['class_int'].replace("'", "")
 		class_int = class_int.replace('"', '')
 		command += " -ci '" + class_int + "'"
 	
 	#sequence file
-	tmp_test_infile = ''	
-	if 'test' in args:
-	    test = args['test'].rstrip()
-	    (fd,tmp_test_file) = make_tmp_file('peak-motifs', '', dir="")
-	    with open(tmp_test_file, 'w') as f:
-	        f.write(test)
-	        f.close()
-	
-	if 'tmp_test_infile' in args:
-		tmp_test_infile = args['tmp_test_infile'].rstrip()
+    dir = make_tmp_dir("peak-motifs")
+    (fd,tmp_test_infile_name) = make_tmp_file('peak-motifs', '', dir=dir)
+    if 'test' in args:
+        test = args['test'].rstrip()
+        with open(tmp_test_infile_name, 'w') as f:
+            f.write(test)
+            f.close()
 
-	if 'tmp_test_infile_URL' in args:
-		if args['tmp_test_infile_URL'] != '':
-			readURL = urllib2.urlopen(args['tmp_test_infile_URL'])
-			(fd,tmp_test_infile) = make_tmp_file('peak-motifs', '', dir='')
-			with open(tmp_test_infile, 'w') as f:
-				f.write(readURL.read())
-				f.close()
-	if tmp_test_infile != '':
-		command += " -i '" + tmp_test_infile + "'"
+    if 'tmp_test_infile' in files:
+        tmp_test_infile = files['tmp_test_infile']
+        tmp_test_infile.save(tmp_test_infile_name)
+
+    if 'tmp_test_infile_URL' in args:
+        if args['tmp_test_infile_URL'] != '':
+            readURL = requests.get(args['tmp_test_infile_URL'])
+            with open(tmp_test_infile_name, 'w') as f:
+                f.write(readURL.text)
+                f.close()
+    if 'test' in args or 'tmp_test_infile' in files or 'tmp_test_infile_URL' in args:
+        command += " -i '" + tmp_test_infile_name + "'"
 	
 	#control file
-	tmp_control_infile = ''
-	if 'control' in args:
-		control = args['control'].rstrip()
-		(fd,tmp_control_infile) = make_tmp_file("peak-motifs-ctr", "tab", dir="")
-		with open(tmp_control_infile, 'w') as f:
-			f.write(control)
-			f.close()
-	if 'tmp_control_infile' in args:
-		tmp_control_infile = args['tmp_control_infile']
-	if tmp_control_infile != '':
-		tmp_control_infile = tmp_control_infile.rstrip()		
-		command += " -ctrl '" + tmp_control_infile + "'"
+    (fd,tmp_control_infile_name) = make_tmp_file("peak-motifs-ctr", "tab", dir=dir)
+    if 'control' in args:
+        control = args['control'].rstrip()
+        with open(tmp_control_infile_name, 'w') as f:
+            f.write(control)
+            f.close()
+    if 'tmp_control_infile' in files:
+        tmp_control_infile = files['tmp_control_infile']
+        tmp_control_infile.save(tmp_control_infile_name)
+        
+    if 'control' in args or 'tmp_control_infile' in files:
+        command += " -ctrl '" + tmp_control_infile_name + "'"
 	
 	# ref_motif
-	tmp_ref_motif = ''
-	if 'ref_motif' in args:
-		ref_motif = args['ref_motif'].rstrip()
-		(fd, tmp_ref_motif) = make_tmp_file("peak-motifs_ref-motifs", "tab",dir="")
-		with open(tmp_ref_motif, 'w') as f:
+    tmp_ref_motif = ''
+    if 'ref_motif' in args:
+        ref_motif = args['ref_motif'].rstrip()
+        (fd, tmp_ref_motif) = make_tmp_file("peak-motifs_ref-motifs", "tab",dir=dir)
+        with open(tmp_ref_motif, 'w') as f:
 			f.write(ref_motif)
 			f.close()
-		tmp_ref_motif = tmp_ref_motif.rstrip()
-		command += " -ref_motifs '" + tmp_ref_motif + "'"	
+        tmp_ref_motif = tmp_ref_motif.rstrip()
+        command += " -ref_motifs '" + tmp_ref_motif + "'"	
 
 	# outdir
-	tmp_dir = make_tmp_dir("peak-motifs")
-	command += " -outdir '" + tmp_dir + "' -prefix peak-motifs &"
+    command += " -outdir '" + dir + "' -prefix peak-motifs &"
 	
 	## execute command
 	#p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 	#(child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
-	result = ''
+    result = ''
 	#for line in iter(child_stdout.readline, ''):
 	#	result += line
 	#error = ''
@@ -245,12 +261,12 @@ def peak_motifs():
 
     #if error != '':
     #		result += '\nServer Error/Warnings: ' + error
-	os.system(command)
+    os.system(command)
 	#path to synthesis page	
-	server_dir = tmp_dir + "/peak-motifs_synthesis.html"
+    server_dir = dir + "/peak-motifs_synthesis.html"
 	## change path to url
-	server_dir = server_dir.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])
-	return jsonify( {'output' : result, 'command' : command, 'server' : server_dir} )
+    server_dir = server_dir.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])
+    return jsonify( {'output' : result, 'command' : command, 'server' : server_dir} )
 
 def supported_motif_database():
 	matrix_db = {}
@@ -454,8 +470,11 @@ def run_command(command, output_choice, method_name, out_format):
     os.close(fd)
     if error != '':
         result = 'Server Error/Warning: ' + error
+    output = error
+    if(output_choice == 'display'):
+        output = result
 	# change path to url
-    return jsonify( {'output' : error, 'command' : command, 'server' : temp_path.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])} )
+    return jsonify( {'output' : output, 'command' : command, 'server' : temp_path.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])} )
 
 def make_tmp_file(method_name, out_format, dir=''):
     if dir == '':
