@@ -8,13 +8,12 @@ from time import localtime
 import datetime
 import pwd
 import subprocess
-import urllib2
 import requests
 
 app = Flask(__name__, static_url_path = "")
 
-perl_scripts = '/Users/thnguyen/rsat/perl-scripts'
-public_html = '/Users/thnguyen/rsat/public_html'
+perl_scripts = '/home/rsat/rsat/perl-scripts'
+public_html = '/home/rsat/rsat/public_html'
 
 @app.errorhandler(400)
 def not_found(error):
@@ -31,7 +30,7 @@ def index():
 #### supported_organisms
 @app.route('/supported-organisms', methods = ['POST', 'GET'])
 def get_supported_organisms():
-    output_choice = email
+    output_choice = 'email'
     if request.method == 'POST':
         data = request.get_json(force=True) or request.form
     elif request.method == 'GET':
@@ -59,7 +58,8 @@ def get_sequences():
         args = request.args
         output_choice = 'display'
     command = perl_scripts + '/fetch-sequences'
-    (fd,tmp_input_file_name) = make_tmp_file('fetch-sequences', '', '');
+    tmp_dir = make_tmp_dir('fetch-sequences')
+    (fd,tmp_input_file_name) = make_tmp_file('fetch-sequences', '', dir=tmp_dir);
     if 'input' in args:
         input = args['input']
         input.strip()
@@ -71,7 +71,6 @@ def get_sequences():
         tmp_input_file.save(tmp_input_file_name)
 
     if 'input' in args or 'tmp_input_file' in files:
-        tmp_input_file_name.strip()
         command += " -i '" + tmp_input_file_name + "'"
 
     if 'url' in args:
@@ -102,7 +101,7 @@ def get_sequences():
         chunk = args['chunk']
         command += " -chunk '" + chunk + "'"
 
-    return run_command(command, output_choice, 'fetch-sequences', 'fasta')
+    return run_command(command, output_choice, 'fetch-sequences', 'fasta', out_dir=tmp_dir)
 
 ### peak-motifs
 ### return: {'output' : errors/warnings, 'command' : command, 'server' : synthesis file URL}
@@ -450,7 +449,7 @@ def oligo_analysis_pipeline():
     return jsonify({'command':command, 'server': return_files })
 
 
-def run_command(command, output_choice, method_name, out_format):
+def run_command(command, output_choice, method_name, out_format, out_dir=''):
     ### execute command
     p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
     (child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
@@ -464,7 +463,8 @@ def run_command(command, output_choice, method_name, out_format):
         error += line
 
     #### write to file
-    (fd, temp_path) = make_tmp_file(method_name, out_format, dir='')
+    (fd, temp_path) = make_tmp_file(method_name, out_format, dir=out_dir)
+    os.chmod(temp_path, 0777)
     with open(temp_path, 'w') as f:
         f.write(result)
     os.close(fd)
@@ -495,7 +495,7 @@ def make_tmp_dir(method_name):
     tmp_dir += '/' + dt.strftime('%Y') + '/' + dt.strftime('%m') + '/' + dt.strftime('%d') + '/'
     if not os.path.exists(tmp_dir):
         os.makedirs(tmp_dir)
-	os.chmod(tmp_dir,0777)
+        os.chmod(tmp_dir,0777)
     pref = method_name + '_' + dt.strftime('%Y') + '-' + dt.strftime('%m') + '-' + dt.strftime('%d') + '.' + dt.strftime('%H')+dt.strftime('%M')+dt.strftime('%S') + '_'
 
     dir_path = mkdtemp('',pref,tmp_dir)
