@@ -90,14 +90,16 @@ if ($query->param('queries') =~ /\S/) {
 
 ################################################################
 #### organism
-local $organism_name = "";
-unless ($organism_name = $query->param('organism')) {
+local $organism = "";
+unless ($organism = $query->param('organism')) {
     &cgiError("You should specify a query organism");
 }
-unless (%{$supported_organism{$organism_name}}) {
-    &cgiError("Organism $org is not supported on this site");
+$organism = &CheckOrganismAvail($organism);
+#unless (%{$supported_organism{$organism}}) {
+unless( ! ($organism eq "")){
+    &cgiError("Organism " . $query->param('organism'). " is not supported on this site");
 }
-$parameters .= " -org $organism_name";
+$parameters .= " -org $organism";
 
 
 ################################################################
@@ -106,12 +108,15 @@ local $taxon = "";
 unless ($taxon = $query->param('taxon')) {
     &cgiError("You should specify a taxon");
 }
+$taxon = &CheckTaxonAvail($taxon);
+if ($taxon eq ""){ &cgiError("Taxon ".$query->param('taxon')." is not supported on this site");}
+&CheckTaxon($taxon);
 $parameters .= " -taxon $taxon";
 
 ################################################################
 ## Create output directory. This must be done after having read the
 ## organism and taxon, in order to include these in the path.
-$tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism_name, $query_prefix, &AlphaDate());
+$tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism, $query_prefix, &AlphaDate());
 $result_subdir = $tmp_file_name;
 $result_dir = &RSAT::util::make_temp_file("", $result_subdir, 1, 1);
 #$result_prefix = "footprint-discovery";
@@ -191,12 +196,12 @@ $parameters .= " -o ".$result_dir;
 &ReportWebCommand($command." ".$parameters);
 
 #$index_file = $result_subdir."/";
-$index_dir = join ("/", $result_dir, $taxon, $organism_name);
+$index_dir = join ("/", $result_dir, $taxon, $organism);
 $index_file = $index_dir."/";
 $index_file .= (&MainIndexFileName())[0];
 
-#$index_file .= join("_", $taxon, $organism_name, "bg", $bg_model, "result_index.html");
-my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism_name, &AlphaDate());
+#$index_file .= join("_", $taxon, $organism, "bg", $bg_model, "result_index.html");
+my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
 my $log_file = $result_dir."/server_log.txt";
 my $error_file = $result_dir."/server_errors.txt";
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", &AlphaDate());
@@ -234,7 +239,7 @@ sub PipingForm {
 <tr>
 <TD>
 <FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
-<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+<INPUT type="hidden" NAME="organism" VALUE="$organism">
 <INPUT type="hidden" NAME="single_multi_org" VALUE="multi">
 <INPUT type="hidden" NAME="seq_label" VALUE="gene identifier + organism + gene name">
 <INPUT type="hidden" NAME="genes" VALUE="selection">

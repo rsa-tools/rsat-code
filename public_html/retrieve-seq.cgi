@@ -59,13 +59,24 @@ if ($query->param('single_multi_org') eq 'multi') {
     $command = "$SCRIPTS/retrieve-seq";
 
     ## single org job: organism passed as param
-    $organism = $query->param('organism');
-    if (defined($supported_organism{$organism})) {
-        $organism_name = $supported_organism{$organism}->{'name'};
-        $parameters .= " -org ".$organism;
-    } else {
-        &cgiError("Organism '".$organism."' is not supported on this web site.");
+    unless ($organism = $query->param('organism')) {
+        &FatalError("You should specify an organism");
     }
+    $organism = &CheckOrganismAvail($organism);
+    #if (%{$supported_organism{$organism}}) {
+    if(! ($organism eq "")){
+        $parameters .= " -org $organism ";
+    } else {
+        &FatalError("Organism ".$query->param('organism'). " is not supported on this site");
+    }
+
+#$organism = $query->param('organism');
+#   if (defined($supported_organism{$organism})) {
+#       $organism_name = $supported_organism{$organism}->{'name'};
+#       $parameters .= " -org ".$organism;
+#   } else {
+#       &cgiError("Organism '".$organism."' is not supported on this web site.");
+#   }
 }
 
 ### feature type

@@ -229,24 +229,28 @@ download_gtf:
 
 ################################################################
 ## Download VCF files from ensemblgenomes
+# these are now set handled in download-ensembl-variations
 VCF_FTP_URL=${DATABASE}/vcf/${COLLECTION}/${SPECIES}/
 VCF_SERVER_GZ=${VCF_FTP_URL}/${SPECIES}.vcf.gz
 VCF_SERVER_TBI=${VCF_FTP_URL}/${SPECIES}.vcf.gz.tbi
 VCF_SERVER_README=${VCF_FTP_URL}/README
-VCF_LOCAL_GZ=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.gz
-VCF_LOCAL_TBI=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}.vcf.gz.tbi
 VCF_LOCAL_README=${VARIATIONS_DIR}/README
+VCF_LOCAL=${VARIATIONS_DIR}/${SPECIES_RSAT_ID}
+VCF_LOCAL_GZ=${VCF_LOCAL}.vcf.gz
+VCF_LOCAL_TBI=${VCF_LOCAL}.vcf.gz.tbi
+#wget -cnv ${VCF_SERVER_GZ} -O ${VCF_LOCAL_GZ}; \
+#echo "  VCF_LOCAL_GZ  ${VCF_LOCAL_GZ}"; \
+#wget -cnv ${VCF_SERVER_TBI} -O ${VCF_LOCAL_TBI}; \
+#echo "  VCF_LOCAL_TBI  ${VCF_LOCAL_TBI}"; \
+#wget -cnv ${VCF_SERVER_README} -O ${VCF_LOCAL_README};
 download_vcf:
 	@echo
 	@mkdir -p ${VARIATIONS_DIR}
 	@echo " VARIATIONS_DIR  ${VARIATIONS_DIR}"	
 	@echo
-	@echo "Downloading VCF file for species ${SPECIES}"
-	wget -cnv ${VCF_SERVER_GZ} -O ${VCF_LOCAL_GZ}; \
-	echo "  VCF_LOCAL_GZ  ${VCF_LOCAL_GZ}"; \
-	wget -cnv ${VCF_SERVER_TBI} -O ${VCF_LOCAL_TBI}; \
-    echo "  VCF_LOCAL_TBI  ${VCF_LOCAL_TBI}"; \
-	wget -cnv ${VCF_SERVER_README} -O ${VCF_LOCAL_README};
+	@echo "Downloading variation VCF file for species ${SPECIES}"
+	download-ensembl-variations -db ensemblgenomes -task fromvcf -species ${SPECIES} -release ${RELEASE} -group ${GROUP}
+	rm -f ${VCF_LOCAL}.vcf; 
 
 
 ################################################################
@@ -433,13 +437,16 @@ parse_gtf:
 	@${MAKE} my_command MY_COMMAND="${PARSE_GTF_CMD}"
 	@echo "	${PARSE_DIR}"
 
+# ${FASTA_RAW_LOCAL} is symb linked to ${FASTA_RAW_LOCAL_OLD} for compatibility
+prepare_gtf_install:
+	@ln -sf ${FASTA_RAW_LOCAL} ${FASTA_RAW_LOCAL_OLD}
+
 ###############################################################
 ## parse gtf and then install organism
-# ${FASTA_RAW_LOCAL} is symb linked to ${FASTA_RAW_LOCAL_OLD} for compatibility
 install_from_gtf:
 	@echo
 	@echo "Parsing and installing in RSAT	${SPECIES}"
-	@ln -sf ${FASTA_RAW_LOCAL} ${FASTA_RAW_LOCAL_OLD}
+	@${MAKE} prepare_gtf_install
 	@${MAKE} parse_gtf PARSE_DIR=${RSAT}/public_html/data/genomes/${SPECIES_RSAT_ID}/genome
 
 ## Run some test for the GTF parsing result
