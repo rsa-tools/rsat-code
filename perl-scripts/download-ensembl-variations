@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl -w
 
 ############################################################
 #
@@ -20,7 +20,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Download GVF file of variations from Ensembl, decompress the file,
+Download a GVF/VCF file of variations from Ensembl, decompress the file &
 remove variations that fail to pass the quality check.
 
 Create "combinatory variations" from sets of overlapping variations.
@@ -38,6 +38,10 @@ I<download-ensembl-genome>.
 
 =item I<Jeremy Delerce> (Master 2 thesis 2013)
 
+=item I<Aníbal Rivera-Gonzalez>
+
+=item I<Walter Santana-Garcia> (wsantana@lcg.unam.mx)
+
 =item I<Alejandra Medina-Rivera> (amedina@lcg.unam.mx)
 
 =item I<Jacques van Helden> (Jacques.van-Helden\@univ-amu.fr)
@@ -54,13 +58,13 @@ I<download-ensembl-genome>.
 
 =head1 USAGE
 
- download-ensembl-variations -species # [-dir #] [-available_species] [-v #]
+ download-ensembl-variations -species # -assembly # -release #
 
 =head2 Example
 
 Get all variations for Homo sapiens
 
- download-ensembl-variations -species Homo_sapiens
+ download-ensembl-variations -species Homo_sapiens -assembly GRCh38 -release 90
 
 =head1 OUTPUT FORMAT
 
@@ -113,14 +117,6 @@ http://www.ncbi.nlm.nih.gov/projects/SNP/snp_legend.cgi?legend=validation
 
 Minor allele frequency
 
-=item 11. isSpVar
-
-If the variation is a combinatory variation
-
-=item 12. inSpVar
-
-If the variation is in a combinatory variation
-
 =back
 
 =head2 VARIATIONS FAILING QC
@@ -157,9 +153,9 @@ Why the variation is remove
 
 =head2 install-ensembl-genome
 
-I<install-ensembl-genome> is a tools that allow to install all Ensembl genome, feature and variation.
+I<install-ensembl-genome> is a tool that allow to install all Ensembl genome, feature and variation.
 
-=head1 WISH LIST
+=head1 WISH LIST: -genome_dir, missing task: clean_vcf
 
 =cut
 
@@ -169,8 +165,11 @@ BEGIN {
   }
 }
 
+#require "RSA.lib";
+#require "RSAT_to_ensembl.lib.pl";
 require "RSA.lib";
 require "RSAT_to_ensembl.lib.pl";
+use Bio::EnsEMBL::Registry;
 
 ################################################################
 ## Main package
@@ -203,6 +202,9 @@ package	main;
   our $get_available_species = 0;
   our $ref_seq = "";
 
+  our $group_lc; ## Just used with the fromvcf task ## ANRG_2
+  our $personal_release; ## Just used with the fromvcf task ## ANRG_2
+
   ################################################################
   ## Tasks
 
@@ -221,10 +223,15 @@ package	main;
       "super_variations", ## Compute super-variations
       "clean_gvf_gz", ## Delete the downloaded compressed GVF files after processing
       );
+  ## The extra tasks change exclusively for VCF download
+  local @extra_tasks = (
+      "fromvcf", ## Download the vcf file from ensembl
+  );
   local @supported_tasks = (
       @default_tasks,
       @optional_tasks,
-      "default", ## Run default tasks (avoid eavy tasks such as check_ref_seq)
+      @extra_tasks,
+      "default", ## Run default tasks (avoid heavy tasks such as check_ref_seq)
       "all", ## Run all other tasks
       );
   local $supported_tasks = join (",", @supported_tasks);
@@ -239,6 +246,15 @@ package	main;
   ## Read argument values
   &ReadArguments();
 
+  ################################################################
+  ## The vcf download process begins if -task is fromvcf ##ANRG_2
+  ##
+  ## This order is needed to the correctly work
+  &Download_from_vcf() if(defined($task{"fromvcf"}));
+
+  ################################################################
+  ## The new rutine to validate_release ##ANRG_2
+  &Validate_release();
 
   ################################################################
   ## Check the selected options
@@ -280,7 +296,7 @@ package	main;
 
   ## Change Ensembl release to EnsemblGenomes release if required
   if (lc($db) eq "ensemblgenomes") {
-    use Bio::EnsEMBL::Registry;
+
     &RSAT::message::TimeWarn("download-ensembl-variations", "Getting the list of available species", "db=".$db) if ($main::verbose >= 1);
     &LoadRegistry($registry, $db, $ensembl_release);
 
@@ -316,6 +332,7 @@ package	main;
 
 #   ## Retrieve the subfolders in the variations folder
 #   ## in the ensembl server
+# >>>>>>> b078097db7f4286a2036f24e8aa99ceccb0912a4
   my @available_species_dir = ();
   my @available_species = ();
   my %variation_ftp = ();
@@ -374,7 +391,10 @@ package	main;
   &RSAT::error::FatalError("No variation avalaible for $species on $db") unless ( grep($_ eq $species, @available_species ));
 
   ## Get genome assembly
-  $assembly = &Get_assembly($species,$ensembl_release, $species_suffix);
+  #S ANRG
+  #$assembly = &Get_assembly($species,$ensembl_release, $species_suffix);
+  $assembly = &Get_assembly($species,&get_ensembl_release("ensembl"), $species_suffix);
+  #E ANRG
   #die "BOOM";
 
   &RSAT::error::FatalError("No assembly found for $species and $db release $ensembl_release. Use download-ensembl-genome before download-ensembl-variations.") unless ($assembly);
@@ -404,11 +424,23 @@ package	main;
   ## Retrieve GVF file from ensembl
 
   ## Get URL
-  my $species_variation_ftp = &Get_variation_species_ftp($db,$species,$ensembl_release);
+  #S ANRG
+  #my $species_variation_ftp = &Get_variation_species_ftp($db,$species,$ensembl_release);
+  &RSAT::message::Info("SEE. We are here, this is the number: ",&get_ensembl_release("ensemblgenomes",1)) if ($main::verbose >= 8);
+  my $species_variation_ftp = "";
+  if ($db eq "ensemblgenomes"){
+  $species_variation_ftp = &Get_variation_species_ftp($db,$species,&get_ensembl_release("ensemblgenomes",1));
+  }
+  elsif ($db eq "ensembl"){
+  $species_variation_ftp = &Get_variation_species_ftp($db,$species,&get_ensembl_release());
+  }
+  #F ANRG
 
   ## Define the basename of the GVF file
-  my $gvf_file = lc($species).".gvf";
-  &RSAT::message::Debug("GVF file: ", $gvf_file, "\n") if ($main::verbose >= 0);
+  #S ANRG
+  my $gvf_file = ucfirst($species).".gvf";
+  $gvf_file = lc($species).".gvf";
+  #E ANRG
 
   ## Define the path of the GVF file in the variation directory
   my $variation_dir = &Get_variation_dir($species, $assembly,$ensembl_release, $species_suffix);
@@ -416,7 +448,17 @@ package	main;
   my $gvf_file_gz = $gvf_file_local_path.".gz";
 
   ## Define the URL of the GVF file on Ensembl FTP server
-  my $gvf_file_ftp = &Get_gvf_ftp($db, $species, $ensembl_release);
+  #S ANRG
+  #my $gvf_file_ftp = &Get_gvf_ftp($db,$species,$ensembl_release);
+  &RSAT::message::Info("SEE. We are here, this is the number: ",$ensembl_release) if ($main::verbose >= 8);
+  my $gvf_file_ftp="";
+  if ($db eq "ensemblgenomes"){
+  $gvf_file_ftp = &Get_gvf_ftp($db,$species,&get_ensembl_release("ensemblgenomes",1));
+  }
+  elsif ($db eq "ensembl"){
+  $gvf_file_ftp = &Get_gvf_ftp($db,$species,&get_ensembl_release());
+  }
+  #E ANRG
 
   &RSAT::message::Info("Species variation URL --> $species_variation_ftp") if ($main::verbose >= 2);
   &RSAT::message::Info("Species gvf URL --> $gvf_file_ftp") if ($main::verbose >= 2);
@@ -450,7 +492,7 @@ package	main;
 	           my $cmd = "gunzip -vcf ".$gvf_file_gz." > ".$gvf_file_local_path; ## Uncompress the gz GVF file
 	          $cmd .= "; touch -r ".$gvf_file_gz." ".$gvf_file_local_path; ## Assign the time stamp of the gzip file to the uncompressed file
 	          system($cmd);
-            
+
       }
   }
 
@@ -1101,7 +1143,7 @@ sub MakeSuperVar {
 	if ($same_len && length($super_ref) == 1) {
 	    $so_term = "SNV";
 	} elsif ($same_len) {
-	    $so_term = "subsitution";
+	    $so_term = "substitution";
 	} elsif ($is_del) {
 	    $so_term = "deletion";
 	}
@@ -1139,6 +1181,248 @@ sub Get_alternative_variant {
   return (@list_variants);
 }
 
+################################################################
+## The vcf download process begins if -task is fromvcf ## ANRG_2
+##
+## The temporary form in which it is structured, avoids the problems
+## of functions in the Rsat_to_ensembl.lib script, mainly related to the release
+sub Download_from_vcf{
+
+   &RSAT::message::Info(" Downloading VCF file for species $main::species") if($main::verbose >= 1);
+   ## The following code fragment was extracted and modified from
+   ## $RSAT/makefiles/ensemblgenomes_ftp_client.mk fro compatibility with that code
+
+   $group_lc = lc($group_lc); ## Generates the organisms document in lowercase letters unlike the original
+   my $release=$main::personal_release;
+   chomp($release);
+   my $server_url="ftp://ftp.ensemblgenomes.org/pub/".$group_lc;
+   my $database=$server_url."/release-".$release;
+   my $organism_dir=$ENV{'RSAT'}."/data/ensemblgenomes/".$group_lc."/release-".$release;
+
+   my $organism_table=$organism_dir."/species_Ensembl".ucfirst($group_lc).".txt";
+   &RSAT::message::Warning("The document ",$organism_table, " doesn't exist") unless(-e $organism_table||$main::verbose < 2);
+   &Install_table_of_organisms_per_group($organism_dir,$organism_table,$database,$group_lc) unless(-e $organism_table); ## If the organism table doesn't exist, it is generated
+
+   my $collection=&Get_Collection($organism_table,$species,$group_lc,$release); ## Get the collection variable from a verification process
+
+   my $species_ucfirst=ucfirst($species);
+   my $assembly_id=`grep -w $species $organism_table | cut -f 5 | perl -lne \'s\/\\s+//g; print\'`; ## Check This part
+   chomp($assembly_id);
+   my $species_rsat_id=$species_ucfirst.".".join("",$assembly_id).".".$release;
+
+   my $species_dir=$ENV{'RSAT'}."/data/genomes/".$species_rsat_id;
+   my $variations_dir=$species_dir."/variations";
+   my $vcf_ftp_url=$database."/vcf/".$collection."/".$species."/";
+
+   my $vcf_server_gz=$vcf_ftp_url."/".$species.".vcf.gz";
+   my $vcf_server_tbi=$vcf_ftp_url."/".$species.".vcf.gz.tbi";
+   my $vcf_server_readme=$vcf_ftp_url."/README";
+
+   my $vcf_local_gz=$variations_dir."/".$species_rsat_id.".vcf.gz";
+   my $vcf_local_tbi=$variations_dir."/".$species_rsat_id.".vcf.gz.tbi";
+   my $vcf_local_readme=$variations_dir."/README";
+
+   my $cmd="echo". ###
+	"\nmkdir -p $variations_dir". ###
+	"\necho \" VARIATIONS_DIR  $variations_dir\"". ###
+	"\necho". ###
+	"\necho \"Downloading VCF file for species $species\"". ###
+	"\nwget -cnv $vcf_server_gz -O $vcf_local_gz; \\". ## Download the vcf.gz file
+	"\necho \"  VCF_LOCAL_GZ  $vcf_local_gz\"; \\".
+	"\nwget -cnv $vcf_server_tbi -O $vcf_local_tbi; \\". ## Download the vcf.gz.tbi file
+	"\necho \"  VCF_LOCAL_TBI  $vcf_local_tbi\"; \\".
+	"\nwget -cnv $vcf_server_readme -O $vcf_local_readme; ". ## Download the readme file
+	"";
+   &RSAT::message::Info("Downloading vcf.gz, vcf.gz.tbi and README files") if($main::verbose >= 2);
+   &RSAT::message::Warning("The $vcf_local_gz document already exist") if($main::verbose >=2 &&-e $vcf_local_gz);
+   &RSAT::message::Warning("The $vcf_local_tbi document already exist") if($main::verbose >=2 &&-e $vcf_local_tbi);
+   &RSAT::message::Warning("The $vcf_local_readme document already exist") if($main::verbose >=2 &&-e $vcf_local_readme);
+   &doit($cmd, 0, 1, $verbose);
+   #system($cmd) unless(-e $vcf_local_gz&&-e $vcf_local_tbi&&-e $vcf_local_readme);
+
+   ## END of ensemblgenomes_ftp_client.mk fragment code
+
+   ## Proceed with the extraction and conversion of vcf.gz to vcf and to varBed
+
+   &RSAT::message::Info("Decompressing the file ",$vcf_local_gz) if($main::verbose >= 2);
+   #TODO Remove .txt and make the file extension $organism.vcf
+   my $vcf_local_dec=$variations_dir."/".$species_rsat_id.".vcf";
+   unless(-e $vcf_local_dec){
+	if (-e $vcf_local_gz){
+      &doit("gunzip -vcf $vcf_local_gz > $vcf_local_dec", 0, 1, $verbose);
+  		#system("gunzip -vcf $vcf_local_gz > $vcf_local_dec");
+	} else {
+   		&RSAT::error::FatalError("The document $vcf_local_gz doesn't exist!\n");
+	}
+   }
+
+   my ($tmp_lines) = &OpenInputFile($vcf_local_dec);
+   my $out_rm = &OpenOutputFile($variations_dir."/Failed.tab");
+   my %chromosomes=();
+   my %chromosome_files=();
+   my %file_chromosomes=();
+   my $file_chromosome="";
+   my $line=0;
+   while (<$tmp_lines>){
+	chomp();
+	my ($chr,$pos,$id,$ref,$alt,$qual,$filter,$attributes)=split("\t");
+	next if($chr =~ /^\#/);
+	$line++;
+
+	## Code fragment adapted from $RSAT/perl_scripts/convert-variations
+
+	################################################################
+	## Remove variations that do not meet the information
+	## quality expectation.
+
+	if($ref =~ /[^ATCG]/){
+		&RSAT::message::Warning("Line ", $line, " Invalid VCF line: $ref don't have just ATCG", "Skipped") if($main::verbose >= 7);
+		print $out_rm (join("\t",$chr,$pos,$id,$ref,$alt,$qual,$filter,$attributes)."\tReference squence $ref does not only contain A,C,G,T\n");
+		next;
+	}
+
+	if($alt =~ /[^ATCG\,]/){
+		&RSAT::message::Warning("Line ", $line, " Invalid VCF line: $alt don't have just ATCG", "Skipped") if($main::verbose >= 7);
+		print $out_rm (join("\t",$chr,$pos,$id,$ref,$alt,$qual,$filter,$attributes)."\tAlternative squence $alt does not only contain A,C,G,T,\",\"\n");
+		next;
+	}
+  #TODO Find in which snippet of code this happening
+
+	## End of the revision of invalid lines
+
+	################################################################
+	## Checking and opening varBed files
+	unless(defined($chromosomes{$chr})){
+		#print($chr); ##
+		$chromosomes{$chr} = $chr;
+		$chromosome_files{$chr} = $variations_dir."/".$chr.".varBed";
+		$file_chromosomes{$chr} = "FILE".$chr;
+		&RSAT::message::Info("Creating the file ",$chromosome_files{$chr}) if($main::verbose >= 7);
+		&RSAT::message::Warning("The document", $chromosome_files{$chr},"already exists, it will be rewritten") if($main::verbose >= 2 && -e $chromosome_files{$chr});
+		$file_chromosomes{$chr} = &OpenOutputFile($chromosome_files{$chr});
+		$file_chromosome = $file_chromosomes{$chr};
+		print $file_chromosome (join("\t","#chr","start","end","strand","id","ref","alt","so_term","validate","minor_allele_freq\n"));
+	}
+	## End of cheking and opening
+
+	my %info = ();
+	  foreach my $fields (split(";",$attributes)) { ## Split and store attribute values
+	      my ($attributeID,$value) = split("=",$fields);
+	      $info{$attributeID} = $value;
+	  }
+
+	my $start = $pos-1;
+  my $end = $pos-1+length($ref);
+  my $strand = "+";
+	my $so_term = $info{"TSA"};
+  if(lc($info{"TSA"}) eq "indel"){
+    #my $alt_tmp = join(",",$alt);
+    #my $ref_seq = qx(cat $chromosome_files{$chr});
+    #$so_term = &Get_SO(substr($ref_seq, $start,1).$alt.$ref,$alt_tmp);
+    $so_term = &Get_SO(\$ref,\$alt);
+  }
+  my $validate = 0;
+  $validate = $info{"VALIDATED"} if(defined($info{"VALIDATED"}));
+	my $minor_allele_freq = "NA";
+	$minor_allele_freq = $info{"CAF"} if(defined($info{"CAF"}));
+
+	$file_chromosome = $file_chromosomes{$chr};
+
+	&RSAT::message::Info("Writing the line: ",$chr,$start,$end,$strand,$id,$ref,$alt,$so_term,$validate,$minor_allele_freq,"in the document ", $chromosome_files{$chr}) if ($main::verbose >=12);
+	print $file_chromosome (join("\t",$chr,$start,$end,$strand,$id,$ref,$alt,$so_term,$validate,$minor_allele_freq)."\n"); ## Writing the line in the corresponding file
+   }
+   foreach $chromosome_file (keys(%file_chromosomes)){
+	    $file_chromosome = $file_chromosomes{$chromosome_file};
+	    close $file_chromosome;
+   }
+   close $out_rm;
+   close $tmp_lines;
+   #&doit("rm $vcf_local_dec", 0, 1, $verbose);
+   #system("rm $vcf_local_dec");
+   ## END of extraction and convertion
+
+   ##########################################################
+   # Update variations table
+   &UpdateVariationsSupported($species_ucfirst,$assembly_id,"ensemblgenomes",$release);
+
+   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+   print $out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+   close $out;
+
+   exit(0);
+}
+
+################################################################
+## Search the organism table according to the format of url ## ANRG_2
+##
+## Code fragment extracted and modified from ensemblgenomes_ftp_client.mk
+sub Get_Collection{
+   my ($organism_table,$species,$group_lc,$release)=@_;
+   my $collection="";
+   ## For Fungal and Bacterial genomes, we have to extract the collection (sub-folder
+   ## of the ftp site) from the organism table
+   my $collection_from_table=`awk -F\'\\t\' \'\$\$2 ==\"$species\" {print \$\$13}\' $organism_table | perl -pe \'s|_core_$release\_\.*||\'`;
+   if ($group_lc eq "fungi"){
+  	## Trick: some Fungi are in the root folder rather than in a
+  	## collection sub-folder.  These species however have a collection
+  	## field in the species table, but its value equals the species
+  	## name.
+  	if ($collection_from_table eq $species){
+    	    $collection="TRICK";
+  	}  else {
+    	    $collection=$collection_from_table;
+  	}
+   } elsif ($group_lc eq "bacteria"){
+  	## For Fungal genomes, we have to extract the collection (sub-folder
+  	## of the ftp site) from the organism table.
+  	$collection=$collection_from_table;
+   }
+   return($collection);
+}
+
+################################################################
+## Install group organism table ## ANRG_2
+##
+## Code fragment extracted and modified from ensemblgenomes_ftp_client.mk
+sub Install_table_of_organisms_per_group{
+  my ($organism_dir,$organism_table,$database,$group_lc)=@_;
+  &RSAT::message::Info("Downloading group organism table",$group_lc, "from ensemblgenomes") if($main::verbose >= 2);
+  my $serverlist=$database."/species_Ensembl".ucfirst($group_lc).".txt";
+  my $cmd="echo".
+	"\nmkdir -p $organism_dir".
+	"\necho \"Getting list of organisms from $database\" ".
+	"\necho \"$organism_dir\" ".
+	"\nwget -Ncnv $serverlist -P $organism_dir ".
+	"\necho ".
+	"\necho \"$organism_table\"".
+	"";
+  &doit($cmd, 0, 1, $verbose); #TODO FOR ANRG This is the way commands should be runned
+   #system($cmd); ## It must die when we have a error
+}
+
+
+################################################################
+## Install table of organism per group ## ANRG_2
+## NOTE WSG. TODO I need to come back and clean this.
+## This part must be modified
+sub Validate_release {
+  #my $release = $main::personal_release;
+  #if (&IsNatural($release)) {
+  #    $main::ensembl_release = $release;
+  #    &RSAT::error::FatalError($release ,
+  #        "Invalid Ensembl release: cannot be lower than the \"safe\" release",
+  #        $ensembl_release_safe)   if ($main::ensembl_release < $ensembl_release_safe);
+  #    &RSAT::error::FatalError($release,
+  #        "Invalid Ensembl release: cannot be higher than the latest available release",
+  #        $ensembl_release_latest) if ($main::ensembl_release > $ensembl_release_latest);
+  #} elsif ($release eq "safe") {
+  #  $main::ensembl_release = $ensembl_release_safe;
+  #} elsif ($release eq "latest" ) {
+  #  $main::ensembl_release = $ensembl_release_latest;
+  #} else {
+  #  &RSAT::error::FatalError($release, "Invalid value for Ensembl release.");
+  #}
+}
 
 ################################################################
 ## Read arguments
@@ -1289,7 +1573,13 @@ Download the GVF (Genome variant file) from Ensembl.
 
 =item B<report_snps>
 
-Calculate the theoretical distribution
+Process variant information and convert it to varBed.
+
+=item B<fromvcf>
+
+Used to retrieve and install variations from ftp ensemblgenomes. Must be Used
+with -group, -species and -release options. This task can not be used in
+combination with the others. IMPORTANT: task must be declared before the release.
 
 =back
 
@@ -1345,28 +1635,13 @@ Ensembl would change their file formats or locations.
 =back
 
 =cut
+
   } elsif (($arg eq "-release") || ($arg eq "-version")) {
     if ($arg eq "-version") {
       &RSAT::message::Warning("option -version is obsolete, has been replaced by -release.");
     }
       my $release = shift(@arguments);
-      if (&IsNatural($release)) {
-	  $main::ensembl_release = $release;
-	  &RSAT::error::FatalError($release ,
-				   "Invalid Ensembl release: cannot be lower than the \"safe\" release",
-				   $ensembl_release_safe)
-	      if ($main::ensembl_release < $ensembl_release_safe);
-	  &RSAT::error::FatalError($release,
-				   "Invalid Ensembl release: cannot be higher than the latest available release",
-				   $ensembl_release_latest)
-	      if ($main::ensembl_release > $ensembl_release_latest);
-      } elsif ($release eq "safe") {
-	  $main::ensembl_release = $ensembl_release_safe;
-      } elsif ($release eq "latest" ) {
-	  $main::ensembl_release = $ensembl_release_latest;
-      } else {
-        &RSAT::error::FatalError($release, "Invalid value for Ensembl release.");
-      }
+      $main::personal_release = $release;
 
 =pod
 
@@ -1383,7 +1658,28 @@ will be appended to the full species ID.
     } elsif ($arg eq "-species_suffix") {
     $species_suffix = shift(@arguments);
 
+## ANRG_2 S
 
+=pod
+
+=item B<-group>
+
+Group species as indicated in the RSAT manual
+
+This option can only be used for the ensemblgenomes database.
+and in combination with '-task fromvcf'.
+
+=cut
+
+    } elsif ($arg eq "-group") {
+    chomp($group_lc = shift(@arguments));
+    my @valid_groups=("plants","fungi","metazoa","protists","bacteria");
+    my %valid_grps=();
+    foreach $valid_group (@valid_groups){
+	$valid_grps{$valid_group}=$valid_group;
+    }
+    &RSAT::error::FatalError($group_lc," Invalid group. Supported: ",join("\n",@valid_groups)) unless($valid_grps{lc($group_lc)});
+## ANRG_2 E
     } else {
       &FatalError($arg, "Invalid option");
     }
@@ -1394,6 +1690,7 @@ will be appended to the full species ID.
 =back
 
 =cut
+
 
 }
 

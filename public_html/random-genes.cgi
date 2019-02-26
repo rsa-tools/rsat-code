@@ -60,12 +60,12 @@ if (&IsNatural($group_nb)) {
 unless ($organism = $query->param('organism')) {
     &FatalError("You should specify an organism to use upstream frequency calibration");
 }
-if (%{$supported_organism{$organism}}) {
-    $parameters .= " -org $organism ";
-} else {
-    &FatalError("Organism $organism is not supported on this site");
+$organism = &CheckOrganismAvail($organism);
+if($organism eq ""){
+#if (%{$supported_organism{$organism}}) {
+    &FatalError("Organism ".$query->param('organism')." is not supported on this site");
 }
-
+$parameters .= " -org $organism ";
 ### feature type
 ($feattype) = split " ", $query->param('feattype'); ### take the first word
 if ($feattype) {

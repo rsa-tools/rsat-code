@@ -59,8 +59,10 @@ my $organism = "";
 unless ($organism = $query->param('organism')) {
     &cgiError("You should specify a query organism");
 }
+#$organism = &CheckOrganismAvail($organism);
 unless (%{$supported_organism{$organism}}) {
-    &cgiError("Organism $org is not supported on this site");
+    #unless (! ($organism eq "")){
+    &cgiError("Organism " .$query->param('organism'). " is not supported on this site");
 }
 $parameters .= " -org $organism";
 
@@ -71,6 +73,9 @@ my $taxon = "";
 unless ($taxon = $query->param('taxon')) {
     &cgiError("You should specify a taxon");
 }
+$taxon = &CheckTaxonAvail($taxon);
+if($taxon eq ""){ &cgiError("Taxon ". $query->param('taxon')." is not supported in this site");}
+&CheckTaxon($taxon);
 $parameters .= " -taxon $taxon";
 
 ## Unique species per taxon (filter)

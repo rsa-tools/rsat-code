@@ -105,10 +105,12 @@ if ($query->param('org_select')) {
     unless ($organism = $query->param('organism')) {
       &FatalError("You should specify an organism");
     }
-    if (%{$supported_organism{$organism}}) {
-      $parameters .= " -org $organism ";
+    $organism = &CheckOrganismAvail($organism);
+    #if (%{$supported_organism{$organism}}) {
+    if(! ($organism eq "")){
+        $parameters .= " -org $organism ";
     } else {
-      &FatalError("Organism $organism is not supported on this site");
+      &FatalError("Organism ".$query->param('organism'). " is not supported on this site");
     }
 
     ## EnsEMBL organism
