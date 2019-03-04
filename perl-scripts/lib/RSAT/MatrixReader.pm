@@ -2656,7 +2656,7 @@ sub _readFromMEMEFile {
     chomp();
     $_ = &main::trim($_);
     if (/MOTIF\s+(\d+)\s+width =\s+(\d+)\s+sites =\s+(\d+)\s+llr =\s+(\d+)\s+E-value =\s+(\S+)/) {
-      &RSAT::message::Debug("line", $l, "Parsing matrix parameters") if ($main::verbose >= 5);
+	&RSAT::message::Debug("line", $l, "Parsing matrix parameters") if ($main::verbose >= 5);
 
       $current_matrix_nb = $1;
       $width_to_parse = $2;
@@ -2838,6 +2838,7 @@ sub _readFromMEMEFile_2015 {
 
       my $id = $1;
       my $ac = $2 || $id;
+
       
       $matrix->set_parameter("id", $id);
       $matrix->set_parameter("ac", $ac); ## For TRANSFAC compatibility
@@ -2852,6 +2853,16 @@ sub _readFromMEMEFile_2015 {
       $matrix->force_attribute("nrow", scalar(@alphabet));
       
       &RSAT::message::Debug("motif found line", $l, "id=$id ac=$ac name =$id") if ($main::verbose >= 5);
+
+    }  elsif (/(\S+)\s+\(\s*\d+\)\s+(\S+)/) {
+	my $seq_id = $1;
+	my $seq = $2;
+	my $seq_len =  length($seq);
+	&RSAT::message::Debug("Reading sequences for MEME matrix", "SeqId", $seq_id, "\n\t", "++".$seq."++") if ($main::verbose >= 10);
+	if ($seq_len > 0) {
+#	  $parsed_width = &main::max($parsed_width, $seq_len);
+	  $matrix->add_site($seq, score=>1, id=>$seq_id, max_score=>0);
+	}
 
     } elsif (/letter-probability matrix:.*w=\s*(\d+)\s+nsites=\s*(\d+)\s+E=\s*(\S+)/) {
       ## letter-probability matrix: alength= alphabet length w= motif length nsites= source sites E= source E-value
@@ -2872,7 +2883,10 @@ sub _readFromMEMEFile_2015 {
       &RSAT::message::Debug("line", $l, "Starting to parse the matrix cells") if ($main::verbose >= 10);
 
     } elsif ($in_blocks) {
-      
+
+	
+
+	
       if ($_ !~ /\d+/) {
 	&RSAT::message::Debug("line", $l, "matrix cells parsed") if ($main::verbose >= 5);
 	$in_blocks = 0;
