@@ -2859,14 +2859,18 @@ sub _readFromMEMEFile_2015 {
 	my $seq = $2;
 	my $seq_len =  length($seq);
 	&RSAT::message::Debug("Reading sequences for MEME matrix", "SeqId", $seq_id, "\n\t", "++".$seq."++") if ($main::verbose >= 10);
+
 	if ($seq_len > 0) {
 #	  $parsed_width = &main::max($parsed_width, $seq_len);
 	  $matrix->add_site($seq, score=>1, id=>$seq_id, max_score=>0);
 	}
 
+	$matrix->force_attribute("ncol",0);
+
     } elsif (/letter-probability matrix:.*w=\s*(\d+)\s+nsites=\s*(\d+)\s+E=\s*(\S+)/) {
       ## letter-probability matrix: alength= alphabet length w= motif length nsites= source sites E= source E-value
-      $nb_sites = $2;
+	$nb_sites = $2;
+
       $matrix->set_parameter("sites", $nb_sites);
       $matrix->set_parameter("meme.E-value", $3);
       push @matrices, $matrix;
@@ -2876,7 +2880,7 @@ sub _readFromMEMEFile_2015 {
 # #			    join(" ", $matrix->get_attribute("prior"))
 # 	  ) if ($main::verbose >= #0);
       
-      &RSAT::message::Debug("line", $l, "ncol=$1,nbsites=$nb_sites") if ($main::verbose >= 5);
+      &RSAT::message::Debug("line", $l, "ncol=$1,nbsites=$nb_sites") if ($main::verbose >= 10);
 
       ## next lines has the probabilities infos
       $in_blocks = 1;
@@ -2894,7 +2898,7 @@ sub _readFromMEMEFile_2015 {
 			
       } else {
     	## Count column of the matrix file (each row of MEME matrix corresponds to one column of the tab-delimited matrix)
-	$values = &RSAT::util::trim($_);
+	  $values = &RSAT::util::trim($_);
 	my @values = split /\s+/, $values;
 	$matrix->addColumn(@values);
 	&RSAT::message::Debug("line ".$l, "added column", $matrix->get_attribute("ncol"),
@@ -2907,7 +2911,7 @@ sub _readFromMEMEFile_2015 {
 
   }
   close $in if ($file);
-#  die ("HELLO");
+  #die ("HELLO");
 
   ## Multiply frequencies by the number of sites to obtain counts
   foreach my $matrix (@matrices) {
