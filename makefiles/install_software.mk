@@ -279,16 +279,53 @@ _compile_gnuplot_linux:
 	(cd ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VERSION}; \
 	./configure --prefix ${GNUPLOT_DIR}/gnuplot-${GNUPLOT_VERSION} --bindir ${RSAT_BIN}  && make; ${SUDO} make install)
 
+# ################################################################
+# ## Get and install the program ghostscript
+# ## Note: for Mac users, please go to the ghostscript Web site
+# ##
+# GS_URL=http://downloads.ghostscript.com/public/binaries/
+# GS_VERSION=9
+# ## Beware: I use an older version 9.07 because linux version 9.10 issues
+# ## warnings Unrecoverable error: stackunderflow in .setdistillerparams"
+# GS_SUBVER=07
+# GS_BIN=gs-${GS_VERSION}${GS_SUBVER}-linux_x86_64
+# GS_DISTRIB=ghostscript-${GS_VERSION}.${GS_SUBVER}-linux-x86_64
+# GS_TAR=${GS_DISTRIB}.tgz
+# GS_DIR=${SRC_DIR}/ghostscript
+# install_ghostscript:
+# 	@echo
+# 	@echo "Installing ghostscript (gs) for operating system ${OS}"
+# 	${MAKE} install_ghostscript_${OS}
+
+# install_ghostscript_macosx:
+# 	brew install ghostscript
+
+# install_ghostscript_linux: _download_gs _install_gs
+
+# _download_gs:
+# 	@mkdir -p ${GS_DIR}
+# 	@echo "Getting gs using wget"
+# 	(cd ${GS_DIR}; wget -nv -nd ${GS_URL}/${GS_TAR}; tar -xpzf ${GS_TAR})
+# 	@echo "gs dir	${GS_DIR}"
+
+# _install_gs:
+# 	@echo "Installing gs in RSAT_BIN	${RSAT_BIN}"
+# 	(cd ${GS_DIR}/${GS_DISTRIB}; ${SUDO} rsync -ruptvl ${GS_BIN} ${RSAT_BIN}/; cd ${RSAT_BIN}; ${SUDO} rm -f gs; ${SUDO} ln -s ${GS_BIN} gs)
+
+
 ################################################################
 ## Get and install the program ghostscript
 ## Note: for Mac users, please go to the ghostscript Web site
+## New URL: https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs926/ghostscript-9.26-linux-x86_64.tgz
+## FIEXES SENT BY oriol@cmmt.ubc.ca, 2019-03-07
 ##
-GS_URL=http://downloads.ghostscript.com/public/binaries/
+#GS_URL=http://downloads.ghostscript.com/public/binaries/
 GS_VERSION=9
 ## Beware: I use an older version 9.07 because linux version 9.10 issues
 ## warnings Unrecoverable error: stackunderflow in .setdistillerparams"
-GS_SUBVER=07
-GS_BIN=gs-${GS_VERSION}${GS_SUBVER}-linux_x86_64
+GS_SUBVER=26
+GS_URL=https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs${GS_VERSION}${GS_SUBVER}/
+GS_BIN=gs-${GS_VERSION}${GS_SUBVER}-linux-x86_64
 GS_DISTRIB=ghostscript-${GS_VERSION}.${GS_SUBVER}-linux-x86_64
 GS_TAR=${GS_DISTRIB}.tgz
 GS_DIR=${SRC_DIR}/ghostscript
@@ -306,11 +343,15 @@ _download_gs:
 	@mkdir -p ${GS_DIR}
 	@echo "Getting gs using wget"
 	(cd ${GS_DIR}; wget -nv -nd ${GS_URL}/${GS_TAR}; tar -xpzf ${GS_TAR})
-	@echo "gs dir	${GS_DIR}"
+	@echo "gs dir   ${GS_DIR}"
 
 _install_gs:
-	@echo "Installing gs in RSAT_BIN	${RSAT_BIN}"
+	@echo "Installing gs in RSAT_BIN        ${RSAT_BIN}"
 	(cd ${GS_DIR}/${GS_DISTRIB}; ${SUDO} rsync -ruptvl ${GS_BIN} ${RSAT_BIN}/; cd ${RSAT_BIN}; ${SUDO} rm -f gs; ${SUDO} ln -s ${GS_BIN} gs)
+
+#_compile_gs:
+#       @echo "Compiling gs"
+#       (cd ${GS_DIR}/${GS_DISTRIB}; ./configure && make)
 
 #_compile_gs:
 #	@echo "Compiling gs"
@@ -476,10 +517,37 @@ _compile_mcl:
 	@echo "Please check that MCL binary directory is in your PATH"
 	@echo "	${MCL_BIN_DIR}"
 
+# ################################################################
+# ## Install the graph-based clustering algorithm RNSC
+# RNSC_BASE_DIR=${SRC_DIR}/rnsc
+# RNSC_ARCHIVE=rnsc.tar.gz
+# RNSC_URL=http://www.cs.utoronto.ca/~juris/data/rnsc/${RNSC_ARCHIVE}
+# install_rnsc: _download_rnsc _compile_rnsc
+
+# _download_rnsc:
+# 	@echo
+# 	@echo "Downloading RNSC"
+# 	@mkdir -p ${RNSC_BASE_DIR}
+# 	wget --no-directories  --directory-prefix ${RNSC_BASE_DIR} -rNL ${RNSC_URL}
+# 	(cd ${RNSC_BASE_DIR}; tar -xpf ${RNSC_ARCHIVE})
+# 	@echo ${RNSC_BASE_DIR}
+
+# _compile_rnsc:
+# 	@echo
+# 	@echo "Installing RNSC in RSAT_BIN	${RSAT_BIN}"
+# 	@${SUDO} mkdir -p ${RSAT_BIN}
+# 	(cd ${RNSC_BASE_DIR}; make ;  \
+# 	${SUDO} rsync -ruptvl rnsc ${RSAT_BIN}; \
+# 	${SUDO} rsync -ruptvl rnscfilter ${RSAT_BIN}; \
+# 	)
+#	${SUDO} rsync -ruptvl rnscconvert ${RSAT_BIN}/; \
+
 ################################################################
 ## Install the graph-based clustering algorithm RNSC
+## FIXES SENT BY oriol@cmmt.ubc.ca, 2019-03-07
 RNSC_BASE_DIR=${SRC_DIR}/rnsc
-RNSC_ARCHIVE=rnsc.tar.gz
+#RNSC_ARCHIVE=rnsc.tar.gz
+RNSC_ARCHIVE=rnsc.zip
 RNSC_URL=http://www.cs.utoronto.ca/~juris/data/rnsc/${RNSC_ARCHIVE}
 install_rnsc: _download_rnsc _compile_rnsc
 
@@ -488,18 +556,77 @@ _download_rnsc:
 	@echo "Downloading RNSC"
 	@mkdir -p ${RNSC_BASE_DIR}
 	wget --no-directories  --directory-prefix ${RNSC_BASE_DIR} -rNL ${RNSC_URL}
-	(cd ${RNSC_BASE_DIR}; tar -xpf ${RNSC_ARCHIVE})
+	(cd ${RNSC_BASE_DIR}; unzip -qq ${RNSC_ARCHIVE})
 	@echo ${RNSC_BASE_DIR}
 
 _compile_rnsc:
 	@echo
-	@echo "Installing RNSC in RSAT_BIN	${RSAT_BIN}"
+	@echo "Installing RNSC in RSAT_BIN      ${RSAT_BIN}"
 	@${SUDO} mkdir -p ${RSAT_BIN}
 	(cd ${RNSC_BASE_DIR}; make ;  \
 	${SUDO} rsync -ruptvl rnsc ${RSAT_BIN}; \
 	${SUDO} rsync -ruptvl rnscfilter ${RSAT_BIN}; \
 	)
-#	${SUDO} rsync -ruptvl rnscconvert ${RSAT_BIN}/; \
+#       ${SUDO} rsync -ruptvl rnscconvert ${RSAT_BIN}/; \
+
+# ################################################################
+# ## Download and install NCBI BLAST "legacy" version, which was written in C
+# ##
+# install_blast: list_blast_param _download_blast _install_blast
+
+# _download_blast: _download_blast_${OS}
+
+# list_blast_param:
+# 	@echo "Downloading blast"
+# 	@echo "	Operating system	${OS}"
+# 	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
+# 	@echo "	BLAST_LINUX_ARCHIVE	${BLAST_LINUX_ARCHIVE}"
+# 	@echo "	BLAST_URL		${BLAST_URL}"
+# 	@echo "	BLAST_SOURCE_DIR	${BLAST_SOURCE_DIR}"
+# 	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
+# 	@echo "	RSAT_BIN		${RSAT_BIN}"
+
+# ## Download BLAST for linux
+# BLAST_BASE_DIR=${SRC_DIR}/blast
+# BLAST_VERSION=2.2.26
+# BLAST_LINUX_ARCHIVE=blast-${BLAST_VERSION}-${ARCHITECTURE}-linux.tar.gz
+# #BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
+# #BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/legacy/${BLAST_VERSION}
+# BLAST_URL=ftp://ftp.ncbi.nlm.nih.gov/blast/executables/legacy/${BLAST_VERSION}
+# BLAST_SOURCE_DIR=blast_latest
+# _download_blast_linux:
+# 	@mkdir -p ${BLAST_BASE_DIR}
+# 	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL}/${BLAST_LINUX_ARCHIVE}
+# 	(cd ${BLAST_BASE_DIR}; tar -xzf ${BLAST_LINUX_ARCHIVE}; )
+# 	@echo ${BLAST_BASE_DIR}
+
+# ## Download BLAST for Mac OS X
+# BLAST_BASE_DIR=${SRC_DIR}/blast
+# BLAST_MAC_ARCHIVE=blast-${BLAST_VERSION}-universal-macosx.tar.gz
+# BLAST_SOURCE_DIR=blast-${BLAST_VERSION}
+# _download_blast_macosx:
+# 	@mkdir -p ${BLAST_BASE_DIR}
+# 	wget --no-directories  --directory-prefix ${BLAST_BASE_DIR} -rNL ${BLAST_URL}/${BLAST_MAC_ARCHIVE}
+# 	(cd ${BLAST_BASE_DIR}; tar -xzf ${BLAST_MAC_ARCHIVE})
+# 	@echo ${BLAST_BASE_DIR}
+
+# ## Install BLAST executablesin RSAT_BIN directory
+# _install_blast:
+# 	@${SUDO} mkdir -p ${RSAT_BIN}
+# 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${RSAT_BIN}
+# 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${RSAT_BIN}
+# 	@echo "Please edit the RSAT configuration file"
+# 	@echo "	${RSAT}/RSAT_config.props"
+# 	@echo "and copy-paste the following line to specify the BLAST bin pathway"
+# 	@echo "	blast_dir=${RSAT_BIN}"
+# 	@echo "This will allow RSAT programs to idenfity BLAST path on this server."
+# 	@echo
+# 	@echo "You can also add the BLAST bin directory in your path."
+# 	@echo "If your shell is bash"
+# 	@echo "	export PATH=$${RSAT_BIN}:$${PATH}"
+# 	@echo "If your shell is csh or tcsh"
+# 	@echo "	setenv PATH $${RSAT_BIN}:$${PATH}"
+
 
 ################################################################
 ## Download and install NCBI BLAST "legacy" version, which was written in C
@@ -510,13 +637,13 @@ _download_blast: _download_blast_${OS}
 
 list_blast_param:
 	@echo "Downloading blast"
-	@echo "	Operating system	${OS}"
-	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
-	@echo "	BLAST_LINUX_ARCHIVE	${BLAST_LINUX_ARCHIVE}"
-	@echo "	BLAST_URL		${BLAST_URL}"
-	@echo "	BLAST_SOURCE_DIR	${BLAST_SOURCE_DIR}"
-	@echo "	BLAST_BASE_DIR		${BLAST_BASE_DIR}"
-	@echo "	RSAT_BIN		${RSAT_BIN}"
+	@echo " Operating system        ${OS}"
+	@echo " BLAST_BASE_DIR          ${BLAST_BASE_DIR}"
+	@echo " BLAST_LINUX_ARCHIVE     ${BLAST_LINUX_ARCHIVE}"
+	@echo " BLAST_URL               ${BLAST_URL}"
+	@echo " BLAST_SOURCE_DIR        ${BLAST_SOURCE_DIR}"
+	@echo " BLAST_BASE_DIR          ${BLAST_BASE_DIR}"
+	@echo " RSAT_BIN                ${RSAT_BIN}"
 
 ## Download BLAST for linux
 BLAST_BASE_DIR=${SRC_DIR}/blast
@@ -524,7 +651,7 @@ BLAST_VERSION=2.2.26
 BLAST_LINUX_ARCHIVE=blast-${BLAST_VERSION}-${ARCHITECTURE}-linux.tar.gz
 #BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/LATEST/
 #BLAST_URL=ftp://ftp.ncbi.nih.gov/blast/executables/release/legacy/${BLAST_VERSION}
-BLAST_URL=ftp://ftp.ncbi.nlm.nih.gov/blast/executables/legacy/${BLAST_VERSION}
+BLAST_URL=ftp://ftp.ncbi.nlm.nih.gov/blast/executables/legacy.NOTSUPPORTED/${BLAST_VERSION}
 BLAST_SOURCE_DIR=blast_latest
 _download_blast_linux:
 	@mkdir -p ${BLAST_BASE_DIR}
@@ -548,16 +675,16 @@ _install_blast:
 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/blastall ${RSAT_BIN}
 	${SUDO} rsync -ruptvl ${BLAST_BASE_DIR}/${BLAST_SOURCE_DIR}/bin/formatdb ${RSAT_BIN}
 	@echo "Please edit the RSAT configuration file"
-	@echo "	${RSAT}/RSAT_config.props"
+	@echo " ${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following line to specify the BLAST bin pathway"
-	@echo "	blast_dir=${RSAT_BIN}"
+	@echo " blast_dir=${RSAT_BIN}"
 	@echo "This will allow RSAT programs to idenfity BLAST path on this server."
 	@echo
 	@echo "You can also add the BLAST bin directory in your path."
 	@echo "If your shell is bash"
-	@echo "	export PATH=$${RSAT_BIN}:$${PATH}"
+	@echo " export PATH=$${RSAT_BIN}:$${PATH}"
 	@echo "If your shell is csh or tcsh"
-	@echo "	setenv PATH $${RSAT_BIN}:$${PATH}"
+	@echo " setenv PATH $${RSAT_BIN}:$${PATH}"
 
 ################################################################
 ## Install blast+, the C++ version of BLAST
@@ -1570,9 +1697,9 @@ _compile_stamp:
 	@echo "Compiling stamp"
 	(cd ${SRC_DIR}/stamp/src; \
 		g++ -O3 -o stamp Motif.cpp Alignment.cpp ColumnComp.cpp \
-                PlatformSupport.cpp PlatformTesting.cpp Tree.cpp \
-                NeuralTree.cpp MultipleAlignment.cpp RandPSSMGen.cpp \
-                ProteinDomains.cpp main.cpp -lm -lgsl -lgslcblas)
+	        PlatformSupport.cpp PlatformTesting.cpp Tree.cpp \
+	        NeuralTree.cpp MultipleAlignment.cpp RandPSSMGen.cpp \
+	        ProteinDomains.cpp main.cpp -lm -lgsl -lgslcblas)
 
 _install_stamp:
 	${SUDO} rsync -ruptvl ${SRC_DIR}/stamp/src/stamp ${RSAT_BIN}
