@@ -137,7 +137,7 @@ scan *scanewToList(memstd **List);
 scan *scanadd(scan *group);
 scan *scanfill(scan *element,char *offset_scan, char *sequence_D, char *weight_D, char *pval_D,char *sequence_R, char *weight_R, char *pval_R );
 void scanend(scan *group);
-
+string *GetVariantHapIndex(string *offset_and_length,char *alleles,char *sequence);
 string *GetVariantIndex(string *offset_and_length,char *sequence);
 char *splitstr(char *str_to_split, char sep);
 char *SplitOffsetFromTotalVars(char *variants_info);
@@ -270,7 +270,7 @@ void help(){
   "    variation-scan\n"
   "\n"
   "VERSION\n"
-  "    2.0.3\n"
+  "    2.0.4\n"
   "\n"
   "DESCRIPTION\n"
   "    Scan variant sequences with position specific scoring matrices (PSSM)\n"
@@ -1170,20 +1170,6 @@ int main(int argc, char *argv[]){
       ///////////////////////////////////////////////////////////////////////////
       prev_matrix_size = matrix_size;
 
-      //Test for number of fields i.e. which kind of sequence file is it reading
-      //(Haplotypes or single variants) and create fasta.
-      //Add +1 due token index starting on 0.
-      //num_tokens += 1;
-      //if(num_tokens == 11){
-      //  if(verbose >= 6) RsatInfo("Detected haplotype variants. Creating fasta for matrix: ", matrix_file, NULL);
-      //  CreateFastaFromHaplosequences(line, token, &nb_variation, top_variation, &nb_seq, fh_varsequence, fh_fasta_sequence);
-      //} else if (num_tokens == 10){
-      //  if(verbose >= 6) RsatInfo("Detected single variants. Creating fasta for matrix: ", matrix_file, NULL);
-      //  CreateFastaFromSingleVariants(line, token, &nb_variation, top_variation, &nb_seq, fh_varsequence, fh_fasta_sequence);
-      //} else {
-      //  RsatFatalError("This file does not contain the correct number of fields",NULL);
-      //}
-
       //If successful continue to the next start of line for reading
       initokadd(line,token,7);continue;
     }
@@ -1202,117 +1188,6 @@ int main(int argc, char *argv[]){
   /////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////
 
-
-
-  /////////////////////////////////////////////////////////////////////////
-  // Get distributions for each matrix and execute matrix-scan-quick
-  ////////////////////////////////////////////////////////////////////////
-  //Declare variables
-  /*
-  string *mscanquick_file = NULL;
-
-  //Allocate memory for variables
-  token           = getokens(9);
-  mscanquick_file = strnewToList(&RsatMemTracker);
-
-  stringlist *curr_matrixfileprefix = matrixfileprefix;
-  for (stringlist *curr_matrixID = matrixID; curr_matrixID != NULL; curr_matrixID = curr_matrixID->next) {
-    ////////////////////////////////////////////
-    //Prepare cmd for matrix-distrib
-    strfmt(convert_matrix_cmd,"%s/matrix-distrib -m %s/%s_%s.tab -matrix_format tab -decimals 1 "
-    "-bgfile %s -bg_pseudo 0.01 -bg_format oligos -pseudo 1 -o %s/%s_%s_%s.distrib",
-    SCRIPTS->buffer,
-    out_dir->buffer, curr_matrixfileprefix->element->buffer,curr_matrixID->element->buffer,
-    bg,
-    distrib_dir->buffer, bgprefix->buffer, curr_matrixfileprefix->element->buffer,curr_matrixID->element->buffer);
-
-    //Execute matrix-distrib
-    if(verbose >= 6) RsatInfo("Calculating p-val distribution for matrix",
-                               curr_matrixID->element->buffer, convert_matrix_cmd->buffer,"\n", NULL);
-    doit(convert_matrix_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
-
-    ////////////////////////////////////////////
-    //Prepare cmd for matrix-scan-quick
-    strfmt(mscanquick_file,"%s/%s_%s_%s.mscan",out_dir->buffer, bgprefix->buffer,
-          curr_matrixfileprefix->element->buffer, curr_matrixID->element->buffer);
-    strfmt(mscanquick_cmd, "%s -i %s -m %s/%s_%s.tab -pseudo 1 -decimals 1 -2str -origin start -bgfile %s "
-          "-name %s -t 1 -distrib %s/%s_%s_%s.distrib -o %s",
-          program_full_path->buffer, fasta_sequence->buffer,
-          out_dir->buffer, curr_matrixfileprefix->element->buffer, curr_matrixID->element->buffer,
-          bg_inclusive->buffer, curr_matrixID->element->buffer,
-          distrib_dir->buffer, bgprefix->buffer, curr_matrixfileprefix->element->buffer, curr_matrixID->element->buffer,
-          mscanquick_file->buffer);
-
-
-    //Execute matrix-scan-quick
-    if(verbose >= 6) RsatInfo("Running matrix-scan-quick", mscanquick_cmd->buffer,"\n", NULL);
-    doit(mscanquick_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
-
-    ////////////////////////////////////////////
-    //Analyze scanning information
-    if(num_tokens == 11){
-      if(verbose >= 6) RsatInfo("Detected haplotype variants. Scanning variations for matrix",curr_matrixID->element->buffer,NULL);
-      ScanHaplosequences(line, token, curr_matrixID->element->buffer, mscanquick_file, &cutoff, fout);
-    } else if (num_tokens == 10){
-      if(verbose >= 6) RsatInfo("Detected single variants. Scanning variations for matrix",curr_matrixID->element->buffer,NULL);
-      ScanSingleVariants(line, token, curr_matrixID->element->buffer, mscanquick_file, &cutoff, fout);
-    }
-
-    //Remove tmp matrix-scan-quick files
-    if (!debug) {
-      strfmt(deletetmps_cmd,"rm %s",mscanquick_file->buffer);
-      doit(deletetmps_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
-    }
-
-    //Pass to next matrixfileprefix
-    curr_matrixfileprefix = curr_matrixfileprefix->next;
-  }
-
-  //////////////////////
-  ///TODO WSG. Remove!!!
-  printf("Hello WORLD1 !\n" );
-  fclose(fin);
-  printf("Hello WORLD2 !\n" );
-  rlist(RsatMemTracker);
-  printf("Hello WORLD3 !\n" );
-  fclose(fout);
-  printf("The end!\n");
-  exit(0);
-
-
-
-          for (stringlist *temporal = matrix_files; temporal != NULL; temporal = temporal->next) {
-            printf("This is matrix_files content: %s , pointer: %p and next: %p\n",
-                    temporal->element->buffer, temporal, temporal->next);
-          }
-          printf("\n");
-          for (stringlist *temporal = matrixID; temporal != NULL; temporal = temporal->next) {
-            printf("This is matrixID content: %s , pointer: %p and next: %p\n",
-                    temporal->element->buffer, temporal, temporal->next);
-          }
-          printf("\n");
-          for (stringlist *temporal = matrixfileprefix; temporal != NULL; temporal = temporal->next) {
-            printf("This is matrixfileprefix content: %s , pointer: %p and next: %p\n",
-                    temporal->element->buffer, temporal, temporal->next);
-          }
-          printf("\n");
-
-          for(memstd *pointer = RsatMemTracker; pointer != NULL; pointer = pointer->next){
-            printf("This is RsatMemTracker mem: %p , pointer: %p , id : %d and next: %p\n",
-                    (void*)pointer->mem, (void*)pointer, pointer->id, (void*)pointer->next);
-          }
-          printf("\n");
-
-          RsatMemTracker = relem((void*)matrix_files,RsatMemTracker);
-          RsatMemTracker = relem((void*)matrixID,RsatMemTracker);
-          RsatMemTracker = relem((void*)matrixfileprefix,RsatMemTracker);
-
-          for(memstd *pointer = RsatMemTracker; pointer != NULL; pointer = pointer->next){
-            printf("AGAIN This is RsatMemTracker mem: %p , pointer: %p , id : %d and next: %p\n",
-                    (void*)pointer->mem, (void*)pointer, pointer->id, (void*)pointer->next);
-          }
-          printf("\n");
-  */
 
 
   //Update execution log files
@@ -2032,7 +1907,7 @@ void compareHapAlleles(range *intersect,int is_indel,int matrix_size,varscan *fi
     // Get intersection with ranges
     /// Create haplogroup
     while(intersect_tmp != NULL ) {
-      //printf("Starting range comparisons\n");
+      //rintf("Starting range comparisons\n");
       //printf("left_flank[0]: %d and right_flank[0]: %d and first_offset: %d \n", intersect_tmp->left_flank[0],intersect_tmp->right_flank[0], first_offset);
       if(first_offset >= intersect_tmp->left_flank[0] && first_offset <= intersect_tmp->end[0] ) {
       if(j == 0){
@@ -3190,7 +3065,7 @@ void CreateFastaFromVarseqHaplotypes(string *input, string *fasta_sequence , int
 
       //Initialize offset_and_length_tmp
       strfmt(offset_and_length_tmp,"");
-      GetVariantIndex(offset_and_length_tmp,token[10]);
+      GetVariantHapIndex(offset_and_length_tmp,token[8],token[10]);
       //printf("This is offset_and_length_tmp after  GetVariantIndex:%s\n",offset_and_length_tmp->buffer );
       //printf("This is      token[10]        after  GetVariantIndex:%s\n",token[10] );
 
@@ -3335,7 +3210,7 @@ void CreateFastaFromVarseqHaplotypes(string *input, string *fasta_sequence , int
             //}
             ////-----------------IMPORTANT DELETE-------------
             //printf("start curr_var %d  intersect curr_var-1-end %d matrix size%d\n",
-            //intersect[curr_var]->start[0], intersect[curr_var - 1]->end[0], matrix_size);
+             //intersect[curr_var]->start[0], intersect[curr_var - 1]->end[0], matrix_size);
              //+1 REALLY IMPORTANT
             if(intersect[curr_var]->start[0] - intersect[curr_var - 1]->end[0] +1 > matrix_size ){
 
@@ -4775,6 +4650,142 @@ void DEPRECATED_CreateFastaFromSingleVariants(string *line, char **token, unsign
   RsatMemTracker = relem((void*)offset_and_length, RsatMemTracker);
 
   return;
+}
+
+/* Returns a string in the forma:
+total|offset_length[,offset_length]{1,n}
+for all the variants in the haplotype.
+*/
+string *GetVariantHapIndex(string *offset_and_length,char *alleles,char *sequence){
+  //Declare variables
+  int i               = 0;
+  int offset          = 0;
+  int var_length      = 0;
+  int upcase_stat     = 0;
+  int nb_variants     = 0;
+
+  char *allele        = NULL;
+
+  string *tmp         = NULL;
+  string *tmp_alleles = NULL;
+  variant *variants   = NULL;
+  variant *curr_var   = NULL;
+
+  //Allocate memory for variable
+  tmp          = strnewToList(&RsatMemTracker);
+  tmp_alleles  = strnewToList(&RsatMemTracker);
+  variants     = varnewToList(&RsatMemTracker);
+
+
+  //Format string
+  strfmt(tmp,"");
+  strfmt(tmp_alleles,"");
+  strfmt(offset_and_length, "");
+
+  //Copy alleles to tmp string variables
+  strcopy(tmp_alleles, alleles);
+
+  //Initialize first allele token
+  allele = tmp_alleles->buffer;
+  //printf("This is alleles %s and sequence %s\n", tmp_alleles->buffer, sequence);
+  ///////////////////////////////////////////////
+  //Split the list of alleles
+  for (i = 0; tmp_alleles->buffer[i] != '\0'; i++){
+
+    //Split allele tokens when ',' found
+    if(tmp_alleles->buffer[i] == ','){
+
+      //Add +1 to number of variants
+      nb_variants++;
+      //Insert null
+      tmp_alleles->buffer[i] = '\0';
+      //Convert size of variant to string
+      strfmt(tmp, "%d", strlen(allele));
+      //printf("This is %d)size of variant %s with allele %s\n",nb_variants,tmp->buffer, allele );
+      //var_length = 0;
+      //Add information directly to the first variant
+      //NOTE:
+      //variant->start will be used to store variant length and
+      //variant->alleles will be used to store allele information
+      if(nb_variants == 1){
+        varfill(variants,"",tmp->buffer,"","","","","",allele,"" );
+        curr_var = variants;
+      } else {
+        curr_var = varadd(variants);
+        varfill(curr_var,"",tmp->buffer,"","","","","",allele,"" );
+      }
+
+      //Update start of next token
+      allele = tmp_alleles->buffer + i + 1;
+    }
+
+    //Add +1 to size of the current variant
+    var_length++;
+
+  }
+  //printf("Number of total vars %d\n",nb_variants );
+  ////////////////////////////////////////////
+  // Add the remaining variant
+  //Add +1 to number of variants
+  nb_variants++;
+  //printf("Number of total vars %d\n",nb_variants );
+
+  // Convert size of variant to string
+  strfmt(tmp, "%d", strlen(allele));
+  //Test if no list of variants was found
+  //i.e. only a single variation.
+  //printf("This is %d)size of variant %s with allele %s\n",nb_variants,tmp->buffer, allele );
+
+  //Single variant processing
+  if(curr_var == NULL){
+    varfill(variants,"",tmp->buffer,"","","","","",allele,"" );
+  //Multiple variants were found
+  } else {
+    curr_var = varadd(variants);
+    varfill(curr_var,"",tmp->buffer,"","","","","",allele,"" );
+  }
+
+  //Reinitialize curr_var to the first element in variants
+  curr_var = variants;
+  //Reinitialize tmp string
+  strfmt(tmp,"");
+
+  ////////////////////////////////////////////
+  // Start iterating through the sequence
+  for (i = 0; sequence[i] != '\0'; i++) {
+    upcase_stat = isupper(sequence[i]);
+    if( upcase_stat ) {
+      //Assign counter value to offset
+      offset = i;
+
+      //Update forward the index counter,
+      //i.e. add the length of the variant
+      // but consider -1 of the i++
+      i += atoi(curr_var->start->buffer) - 1;
+
+      //Append offset and length of variant
+      strccat(tmp,"|%d_%s", offset, curr_var->start->buffer);
+
+      //Check if this is the last variant of list
+      if(curr_var->next == NULL){
+        break;
+      //Go to next variant
+      } else {
+        curr_var = curr_var->next;
+      }
+
+    }
+
+  }
+  //printf("Number of total vars %d\n",nb_variants );
+  strfmt(offset_and_length,"%d%s",nb_variants,tmp->buffer);
+
+  //Remove tmp variables
+  RsatMemTracker = relem((void*)variants,RsatMemTracker);
+  RsatMemTracker = relem((void*)tmp_alleles,RsatMemTracker);
+  RsatMemTracker = relem((void*)tmp,RsatMemTracker);
+
+  return offset_and_length;
 }
 
 string *GetVariantIndex(string *offset_and_length,char *sequence){
