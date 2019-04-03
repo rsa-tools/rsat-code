@@ -145,7 +145,8 @@ string *make_temp_file(string *tmp_file,char *tmp_dir,char *tmp_prefix,int add_d
 string *limlinetok(string *line, char **token,int numtok);
 string *Get_contigs_file(string *contigs_file,string *genome_dir);
 string *Get_contig_file(string *contig_file,string *genome_dir);
-TRIE *Get_file_seq_name(string *genome_dir);
+TRIE *Get_file_seq_name_metazoa(string *genome_dir);
+TRIE *Get_file_seq_name_plants(string *genome_dir);
 string *Get_species_dir_from_supported_file(string *species_dir,char *species,char *assembly,char *release,char *supported_file);
 string *Get_data_dir(string *data_dir);
 string *Get_supported_file(string *supported_file);
@@ -203,7 +204,7 @@ void help(){
   "    retrieve-variation-seq\n"
   "\n"
   "VERSION\n"
-  "    2.0.1\n"
+  "    2.0.2\n"
   "\n"
   "DESCRIPTION\n"
   "    Given a set of IDs for polymorphic variations, retrieve the\n"
@@ -430,6 +431,11 @@ void help(){
   "        bed General format for the description of genomic features (see\n"
   "            https://genome.ucsc.edu/FAQ/FAQformat.html#format1).\n"
 "\n"
+  "    -source [metazoa|plants]\n"
+  "        Source of the RSAT genome server.\n"
+  "        Currently supported: 'metazoa' or 'plants'.\n"
+  "        Default: metazoa.\n"
+"\n"
   "    -mml #\n"
   "        Length of the longest Matrix.\n"
 "\n"
@@ -489,6 +495,7 @@ int main(int argc, char *argv[]){
   char *release    = NULL;
   char *assembly   = NULL;
   char *format     = NULL;
+  char *source     = NULL;
   char *col        = NULL;
   char *seq_search = NULL;
   char *sequence   = NULL;
@@ -523,6 +530,10 @@ int main(int argc, char *argv[]){
   col = (char*)_MemTrackMalloc(sizeof(char) * 2, &RsatMemTracker, "main");
   strcpy(col,"1");
 
+  //Default value for source option
+  source = (char*)_MemTrackMalloc(sizeof(char) * 8, &RsatMemTracker, "main");
+  strcpy(source,"metazoa");
+
   /////////////////////////////////////////////////
   // Read Arguments
   /////////////////////////////////////////////////
@@ -551,6 +562,10 @@ int main(int argc, char *argv[]){
     } else if (strcmp(argv[i],"-format") == 0 && CheckValOpt(argv+i)) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       format = argv[++i];
+    } else if (strcmp(argv[i],"-source") == 0 && CheckValOpt(argv+i)) {
+      strccat(CMD," %s %s",argv[i],argv[i+1]);
+      RsatMemTracker = relem( (void*)source, RsatMemTracker);
+      source = argv[++i];
     } else if (strcmp(argv[i],"-mml") == 0 && CheckValOpt(argv+i)) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       mml = atoi(argv[++i]);
@@ -600,7 +615,13 @@ int main(int argc, char *argv[]){
   }
 
   //Check if chromosome files are not missing
-  trieChrom = Get_file_seq_name(genome_dir);
+  if(strcmp(source,"metazoa") == 0){
+    trieChrom = Get_file_seq_name_metazoa(genome_dir);
+  } else if(strcmp(source,"plants") == 0) {
+    trieChrom = Get_file_seq_name_plants(genome_dir);
+  } else {
+    RsatFatalError(source,"is is not a valid parameter for '-source' option",NULL);
+  }
 
   /////////////////////////////////////////////////
   // Print first part of header
@@ -2947,7 +2968,7 @@ string *Get_contig_file(string *contig_file,string *genome_dir){
   contains (id->accession) and contig.tab, which contains (rawFile<-accession).
   Both files are contained inside the passed directory. Finally, it returns
   a pointer to the current trie. If an error occurs a Fatal Error is raised.*/
-TRIE *Get_file_seq_name(string *genome_dir){
+TRIE *Get_file_seq_name_metazoa(string *genome_dir){
   //Declare variables
   FILE *fh_contig  = NULL;
   FILE *fh_files   = NULL;
@@ -3073,6 +3094,105 @@ TRIE *Get_file_seq_name(string *genome_dir){
   return trieChromo;
 }
 
+/*It builds a TRIE search struct, with chromosomes as keys and filenames
+  as values. It takes as parameter a valid genome directory installed on
+  $RSAT/data/genomes from the Plants server. The trie is built by parsing contigs.txt, which
+  contains (id->accession) and contig.tab, which contains (rawFile<-accession).
+  Both files are contained inside the passed directory. Finally, it returns
+  a pointer to the current trie. If an error occurs a Fatal Error is raised.*/
+TRIE *Get_file_seq_name_plants(string *genome_dir){
+  //Declare variables
+  FILE *fh_contig  = NULL;
+  FILE *fh_files   = NULL;
+
+  char **token   = NULL;
+  //char *token[3] = {NULL};
+
+  string *line         = NULL;
+  string *contig_file  = NULL;
+  string *contigs_file = NULL;
+  string *chromos_file = NULL;
+
+  //char chromos_file[BASE_STR_LEN];
+  //int i = 0;
+  int j = 0;
+
+  TRIE *trieContig = NULL;
+  //TRIE *trieChromo = NULL;
+
+  //Allocate memory for variables
+  token = getokens(4);
+
+  line         = strnewToList(&RsatMemTracker);
+  contig_file  = strnewToList(&RsatMemTracker);
+  contigs_file = strnewToList(&RsatMemTracker);
+  chromos_file = strnewToList(&RsatMemTracker);
+
+  //Get absolute path for contig.tab and contigs.txt
+  Get_contig_file(contig_file,genome_dir);
+  Get_contigs_file(contigs_file,genome_dir);
+
+  //Open files
+  fh_contig  = OpenInputFile(fh_contig,contig_file->buffer);
+  fh_files   = OpenInputFile(fh_files,contigs_file->buffer);
+
+  //Start both search-tries,the 1st maps (id->accession)
+  //the 2nd maps (id->rawFile).
+  trieContig = TrieStart();
+  //trieChromo = TrieStart();
+
+  //1st token is start of line.
+  token[0] = line->buffer;
+
+  //Parse contig.tab file (id->accession)
+  while ( fread( (line->buffer + line->size), 1, 1, fh_contig ) == 1 ) {
+    //Get tokens by substituting '\t' for '\0' to obtain key-value
+    //pair for trie, i.e. token[0] and token[1] respectively.
+    if (line->buffer[line->size] == '\t') {
+      token[++j] = line->buffer + line->size + 1;
+         line->buffer[line->size] = '\0';
+    }
+
+    //Insert Key-Value pair at the end of line
+    if (line->buffer[line->size] == '\n') {
+      //Reinitialize counters
+      j = 0;
+      line->size = 0;
+      //If a comment is found skip line
+      if (token[0][0] == ';') continue;
+      if (token[0][0] == '#') continue;
+
+      //Insert key-value to trie
+      if(strncmp(token[0],"chr",3) == 0) token[0] = token[0] + 3;
+      TrieInsert(trieContig,token[0],token[2]);
+      continue;
+    }
+    //Resize line string if limit has reached
+    limlinetok(line,token,4);
+
+    //Add +1 to current line size
+    line->size++;
+  }
+
+  //Remove trie
+  //TrieEnd(trieContig);
+
+  //Close file handlers
+  fclose(fh_contig);
+  fclose(fh_files);
+
+  //Remove allocate variables
+  //RsatMemTracker = relem( (void*)trieContig  ,RsatMemTracker );
+  RsatMemTracker = relem( (void*)line        ,RsatMemTracker );
+  RsatMemTracker = relem( (void*)contig_file ,RsatMemTracker );
+  RsatMemTracker = relem( (void*)contigs_file,RsatMemTracker );
+  RsatMemTracker = relem( (void*)chromos_file,RsatMemTracker );
+  RsatMemTracker = relem( (void*)token       ,RsatMemTracker );
+
+  return trieContig;
+}
+
+
 /*Parses the $RSAT/public_html/data/supported_organisms_ensembl.tab file,which contains
   the installed organism from ensembl at the current computer/server. A string is needed
   to write down the path. Finally, it returns the pointer to the string,in case of failure
@@ -3145,7 +3265,7 @@ string *Get_species_dir_from_supported_file(string *species_dir,char *species,ch
         }
       //Check if ONLY release was passed as query option in order to compare properly
       } else if (release) {
-        printf("1HOLA!!!!\n" );
+        //printf("1HOLA!!!!\n" );
         if (strcmp(token[1],species) == 0 && strcmp(token[4],release) == 0) {
           //Test if species_directory field is empty
           if (token[6] != '\0') {
