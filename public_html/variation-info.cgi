@@ -49,12 +49,26 @@ $command = "$SCRIPTS/variation-info";
 
 ## Define species 
 $organism = $query->param('organism');
+
 if (defined($supported_organism{$organism})) {
     $organism_name = $supported_organism{$organism}->{'name'};
+
+    if ($ENV{plant_server} == 1){
+ 
+        @org_name_split=split(/\./,$organism_name) ;
+        $species=$org_name_split[0] ;
+	$species=~ s/ /_/ ;
+	$assembly= $org_name_split[1] ;
+
+    } else {
+
+
     @org_name_split=split(" ",$organism_name);
     $species=join("_", $org_name_split[0], $org_name_split[1]);
     $assembly =$org_name_split[2];
     
+
+    }
     &RSAT::message::Debug("organism: ".$organism, 
 			  "organism_name: ".$organism_name,
 			  "species: ".$species,
