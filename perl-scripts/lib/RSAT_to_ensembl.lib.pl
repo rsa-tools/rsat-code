@@ -709,7 +709,6 @@ sub Get_species_dir_from_supported_file {
 	    	## the files.
 	    	if ($dir) {
 					$dir =~ s/\$\{RSAT\}/$ENV{RSAT}/g;
-					print "\n$dir\n";
 	    	}
 
 	    	if ($spe) {
