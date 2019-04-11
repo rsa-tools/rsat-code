@@ -70,8 +70,10 @@ my $organism = "";
 unless ($organism = $query->param('organism')) {
     &cgiError("You should specify an organism");
 }
-unless (%{$supported_organism{$organism}}) {
-    &cgiError("Organism $org is not supported on this site");
+$organism = &CheckOrganismAvail($organism);
+#unless (%{$supported_organism{$organism}}) {
+unless (! ( $organism eq "") ){
+    &cgiError("Organism ". $query->param('organism')." is not supported on this site");
 }
 $parameters .= " -org $organism";
 
