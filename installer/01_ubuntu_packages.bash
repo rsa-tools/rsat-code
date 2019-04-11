@@ -118,6 +118,7 @@ libcrypt-ssleay-perl
 libssl-dev
 php
 libapache2-mod-php
+libapache2-mod-wsgi
 "
 
 

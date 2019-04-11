@@ -95,6 +95,8 @@ chown root.root /usr/lib/cgi-bin
 a2enmod cgi ## this is apparently required to enable cgi
 a2dismod mpm_event
 a2enmod mpm_prefork
+a2enmod wsgi   ## Required for REST web services
+
 
 ## THIS DOES NOT BELONG TO THE INSTALLER BUT TO THE RUN / TEST
 # service apache2 restart

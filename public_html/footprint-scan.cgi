@@ -78,8 +78,10 @@ my $organism = "";
 unless ($organism = $query->param('organism')) {
     &cgiError("You should specify a query organism");
 }
+#$organism = &CheckOrganismAvail($organism);
+#unless(! ($organism eq "")){
 unless (defined(%{$supported_organism{$organism}})) {
-    &cgiError("Organism $organism is not supported on this site");
+    &cgiError("Organism ".$query->param('organism')." is not supported on this site");
 }
 $parameters .= " -org $organism";
 
@@ -90,6 +92,9 @@ my $taxon = "";
 unless ($taxon = $query->param('taxon')) {
     &cgiError("You should specify a taxon");
 }
+$taxon = &CheckTaxonAvail($taxon);
+if($taxon eq ""){ &cgiError("Taxon ".$query->param('taxon')." is not supported on this site"); }
+&CheckTaxon($taxon);
 $parameters .= " -taxon $taxon";
 
 ################################################################
@@ -169,7 +174,13 @@ if ($bg_method eq "bginput") {
 
 } elsif ($bg_method eq "bgfile") {
   ## Select pre-computed background file in RSAT genome directory
-  my $organism_name = $query->param("organism_bg");
+  unless(my $organism_name = $query->param("organism_bg")){
+      &FatalError("You should specify a background organism");
+  }
+  $organism_name = &CheckOrganismAvail($organism_name);
+  if($organism_name eq ""){
+      &FatalError("Organism " . $query->param('organism_bg')." is not supported in this site");
+  }
   my $noov = "ovlp";
   my $background_model = $query->param("background");
   my $oligo_length = $markov_order + 1;
