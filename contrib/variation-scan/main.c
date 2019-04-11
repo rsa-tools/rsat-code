@@ -113,8 +113,8 @@ typedef struct _threshold {
 
 char *isStringListSame(char *stringtosplit, char separator);
 threshold *sethreshold(threshold *cutoff, char *type, char *value);
-void printHeaderSingleVariants(string *varscanFile);
-void printHeaderHaplotypes(string *varscanFile);
+void printHeaderSingleVariants(string *varscanFile, char*input, char *output, string *CMD);
+void printHeaderHaplotypes(string *varscanFile, char*input, char *output, string *CMD);
 void ScanHaplosequences(string *mscanquick_file, string *varscanFile, char *matrix_name, int matrix_size, threshold *cutoff);
 void ScanSingleVariants(string *mscanquick_file, string *varscanFile, char *matrix_name, int matrix_size, threshold *cutoff);
 void processLocus(varscan *locus, char *matrix_name, threshold *cutoff,FILE *fout);
@@ -270,7 +270,7 @@ void help(){
   "    variation-scan\n"
   "\n"
   "VERSION\n"
-  "    2.0.4\n"
+  "    2.0.5\n"
   "\n"
   "DESCRIPTION\n"
   "    Scan variant sequences with position specific scoring matrices (PSSM)\n"
@@ -953,13 +953,13 @@ int main(int argc, char *argv[]){
   if(num_tokens == 11){
     haplotype = 1;
     if(verbose >= 6) RsatInfo("Detected haplotype variants.",NULL);
-    printHeaderHaplotypes(variationscan_file);
+    printHeaderHaplotypes(variationscan_file,   input, output, CMD);
 
     //CreateFastaFromHaplosequences(line, token, &nb_variation, top_variation, &nb_seq, fh_varsequence, fh_fasta_sequence);
   } else if (num_tokens == 10){
     haplotype = 0;
     if(verbose >= 6) RsatInfo("Detected single variants.",NULL);
-    printHeaderSingleVariants(variationscan_file);
+    printHeaderSingleVariants(variationscan_file, input, output, CMD);
     //CreateFastaFromSingleVariants(line, token, &nb_variation, top_variation, &nb_seq, fh_varsequence, fh_fasta_sequence);
   } else {
     RsatFatalError("This file does not contain the correct number of fields",NULL);
@@ -1200,11 +1200,16 @@ int main(int argc, char *argv[]){
 
   return 0;
 }
-void printHeaderSingleVariants(string *varscanFile){
+void printHeaderSingleVariants(string *varscanFile, char*input, char *output, string *CMD){
   //Declare variables
   FILE *fh_varscan_output = NULL;
   //Open filehandler
   fh_varscan_output = OpenOutputFile(fh_varscan_output, varscanFile->buffer);
+
+  //Print command-line and input/output files
+  fprintf(fh_varscan_output,"; %s\n",CMD->buffer);
+  if(input)  fprintf(fh_varscan_output,"; Input  file\n; \t%s\n",input);
+  if(output) fprintf(fh_varscan_output,"; Output file\n; \t%s\n",output);
 
   //Print header
   fprintf(fh_varscan_output,
@@ -1241,11 +1246,16 @@ void printHeaderSingleVariants(string *varscanFile){
 }
 
 
-void printHeaderHaplotypes(string *varscanFile){
+void printHeaderHaplotypes(string *varscanFile, char*input, char *output, string *CMD){
   //Declare variables
   FILE *fh_varscan_output = NULL;
   //Open filehandler
   fh_varscan_output = OpenOutputFile(fh_varscan_output, varscanFile->buffer);
+
+  //Print command-line and input/output files
+  fprintf(fh_varscan_output,"; %s\n",CMD->buffer);
+  if(input)  fprintf(fh_varscan_output,"; Input  file\n; \t%s\n",input);
+  if(output) fprintf(fh_varscan_output,"; Output file\n; \t%s\n",output);
 
   //Print header
   fprintf(fh_varscan_output,
