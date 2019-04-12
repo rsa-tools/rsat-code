@@ -145,7 +145,8 @@ string *make_temp_file(string *tmp_file,char *tmp_dir,char *tmp_prefix,int add_d
 string *limlinetok(string *line, char **token,int numtok);
 string *Get_contigs_file(string *contigs_file,string *genome_dir);
 string *Get_contig_file(string *contig_file,string *genome_dir);
-TRIE *Get_file_seq_name(string *genome_dir);
+TRIE *Get_file_seq_name_metazoa(string *genome_dir);
+TRIE *Get_file_seq_name_plants(string *genome_dir);
 string *Get_species_dir_from_supported_file(string *species_dir,char *species,char *assembly,char *release,char *supported_file);
 string *Get_data_dir(string *data_dir);
 string *Get_supported_file(string *supported_file);
@@ -160,6 +161,9 @@ void printHeader(int PhasedFile, FILE *fh_outputFile);
 void processHaplotypes(int mml, variant *firstVar, variant *HaploGroup, variant *lastVar, variant *printVar, char *sequence, FILE *fout,
                        string *varCoords, string *IDs, string *SOs, string *alleleFreqs, string *Haplotype1, string *Haplotype2,
                        string *Haplotype1Sequence, string *Haplotype2Sequence );
+void processRemainingHaplotypes(int mml, variant *firstVar, variant *HaploGroup, variant *lastVar, variant *printVar, char *sequence, FILE *fout,
+                      string *varCoords, string *IDs, string *SOs, string *alleleFreqs, string *Haplotype1, string *Haplotype2,
+                      string *Haplotype1Sequence, string *Haplotype2Sequence );
 int CheckOutOfIndex( char *chr,char *start, char *end, int mml, long long maxsize );
 
 memstd *RsatMemTracker = NULL;
@@ -200,7 +204,7 @@ void help(){
   "    retrieve-variation-seq\n"
   "\n"
   "VERSION\n"
-  "    2.0.1\n"
+  "    2.0.2\n"
   "\n"
   "DESCRIPTION\n"
   "    Given a set of IDs for polymorphic variations, retrieve the\n"
@@ -427,6 +431,11 @@ void help(){
   "        bed General format for the description of genomic features (see\n"
   "            https://genome.ucsc.edu/FAQ/FAQformat.html#format1).\n"
 "\n"
+  "    -source [metazoa|plants]\n"
+  "        Source of the RSAT genome server.\n"
+  "        Currently supported: 'metazoa' or 'plants'.\n"
+  "        Default: metazoa.\n"
+"\n"
   "    -mml #\n"
   "        Length of the longest Matrix.\n"
 "\n"
@@ -486,6 +495,7 @@ int main(int argc, char *argv[]){
   char *release    = NULL;
   char *assembly   = NULL;
   char *format     = NULL;
+  char *source     = NULL;
   char *col        = NULL;
   char *seq_search = NULL;
   char *sequence   = NULL;
@@ -520,6 +530,10 @@ int main(int argc, char *argv[]){
   col = (char*)_MemTrackMalloc(sizeof(char) * 2, &RsatMemTracker, "main");
   strcpy(col,"1");
 
+  //Default value for source option
+  source = (char*)_MemTrackMalloc(sizeof(char) * 8, &RsatMemTracker, "main");
+  strcpy(source,"metazoa");
+
   /////////////////////////////////////////////////
   // Read Arguments
   /////////////////////////////////////////////////
@@ -548,6 +562,10 @@ int main(int argc, char *argv[]){
     } else if (strcmp(argv[i],"-format") == 0 && CheckValOpt(argv+i)) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       format = argv[++i];
+    } else if (strcmp(argv[i],"-source") == 0 && CheckValOpt(argv+i)) {
+      strccat(CMD," %s %s",argv[i],argv[i+1]);
+      RsatMemTracker = relem( (void*)source, RsatMemTracker);
+      source = argv[++i];
     } else if (strcmp(argv[i],"-mml") == 0 && CheckValOpt(argv+i)) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       mml = atoi(argv[++i]);
@@ -597,7 +615,13 @@ int main(int argc, char *argv[]){
   }
 
   //Check if chromosome files are not missing
-  trieChrom = Get_file_seq_name(genome_dir);
+  if(strcmp(source,"metazoa") == 0){
+    trieChrom = Get_file_seq_name_metazoa(genome_dir);
+  } else if(strcmp(source,"plants") == 0) {
+    trieChrom = Get_file_seq_name_plants(genome_dir);
+  } else {
+    RsatFatalError(source,"is is not a valid parameter for '-source' option",NULL);
+  }
 
   /////////////////////////////////////////////////
   // Print first part of header
@@ -798,6 +822,7 @@ int main(int argc, char *argv[]){
         if(line->buffer[line->size] == '\0') continue;
 
         inputVars++;
+        //printf("Input VARS %d\n", inputVars );
         ///////////////
         //Load fasta
         if(strncmp(token[0],"chr",3) == 0) token[0] = token[0] + 3;
@@ -811,23 +836,24 @@ int main(int argc, char *argv[]){
             continue;
           }
           //Process remaining variants from last chromosome
-          while ( HaploGroup != NULL )   {
+          if ( HaploGroup != NULL )   {
             //printf("LINE1 BEFORE \n");
             //printf("This is firstVar,HaploGroup,lastVar and printVar : %p, %p, %p and %p\n", (void*)firstVar, (void*)HaploGroup, (void*)lastVar, (void*)printVar );
             //Process Haplotypes
-            processHaplotypes(mml, firstVar, HaploGroup, printVar, printVar, sequence, fout,
+            processRemainingHaplotypes(mml, firstVar, HaploGroup, lastVar, printVar, sequence, fout,
                               varCoords, IDs, SOs, alleleFreqs, Haplotype1, Haplotype2,
                               Haplotype1Sequence, Haplotype2Sequence);
             //printf("This is firstVar,HaploGroup,lastVar and printVar : %p, %p, %p and %p\n", (void*)firstVar, (void*)HaploGroup, (void*)lastVar, (void*)printVar );
             //printf("LINE1 AFTER\n");
            //Continue to next variant at center
-           HaploGroup = HaploGroup->next;
+           //HaploGroup = HaploGroup->next;
            //Free unnecessary variants
            /*printf("This is RsatMemTracker pointer %p\n", (void*)RsatMemTracker );
            printf("This is RsatMemTracker mem %p\n", RsatMemTracker->mem );
            printf("This is RsatMemTracker id %d\n",RsatMemTracker->id );
            printf("This is RsatMemTracker var start %s-%s\n",((variant*)RsatMemTracker->mem)->start->buffer, ((variant*)RsatMemTracker->mem)->end->buffer);*/
-           if (HaploGroup == NULL) RsatMemTracker= relem((void*)firstVar,RsatMemTracker);
+           //if (HaploGroup == NULL) RsatMemTracker= relem((void*)firstVar,RsatMemTracker);
+           RsatMemTracker= relem((void*)firstVar,RsatMemTracker);
 
          }
          //Load new chromosome
@@ -849,46 +875,27 @@ int main(int argc, char *argv[]){
           RsatWarning("Strand information does not match any know annotation.Skipped.",NULL);
           continue;
         }
-        //Process HaploGroups
+        //Start creating haplotype information if chromosome is different
         if ( isChrDiff ) {
+          //printf("ENTERED 1\n");
           HaploGroup          = varnewToList(&RsatMemTracker);
           varfill(HaploGroup, token[0], token[1], token[2], token[3], token[4], token[7], token[5], token[6], token[9]);
           firstVar = HaploGroup;
-          /*printf("FirstVar This is Variant pointer %p\n", (void*)firstVar);
-          printf("FirstVar This is Variant ID %s\n", firstVar->id->buffer);
-          printf("FirstVar This is Variant Chr %s\n", firstVar->chromosome->buffer);
-          printf("FirstVar This is Variant start %s\n", firstVar->start->buffer);
-          printf("FirstVar This is Variant end %s\n", firstVar->end->buffer);
-          printf("FirstVar This is Variant strand %s\n", firstVar->strand);
-          printf("FirstVar This is Variant id %s\n", firstVar->id->buffer);
-          printf("FirstVar This is Variant so %s\n", firstVar->SO->buffer);
-          printf("FirstVar This is Variant ref %s\n", firstVar->reference->buffer);
-          printf("FirstVar This is Variant all %s\n", firstVar->alleles->buffer);
-          printf("FirstVar This is Variant freq %s\n", firstVar->freq->buffer);
-          printf("FirstVar This is Variant prev %p\n", firstVar->prev);
-          printf("FirstVar This is Variant next %p\n\n", firstVar->next);*/
+
           continue;
+        //Add new variant to haplotype
         } else {
           lastVar = varadd(HaploGroup);
           varfill(lastVar,token[0], token[1], token[2], token[3], token[4], token[7], token[5], token[6], token[9]);
-          /*printf("LastVar This is Variant pointer %p\n", (void*)lastVar);
-          printf("LastVar This is Variant ID %s\n", lastVar->id->buffer);
-          printf("LastVar This is Variant Chr %s\n", lastVar->chromosome->buffer);
-          printf("LastVar This is Variant start %s\n", lastVar->start->buffer);
-          printf("LastVar This is Variant end %s\n", lastVar->end->buffer);
-          printf("LastVar This is Variant strand %s\n", lastVar->strand);
-          printf("LastVar This is Variant id %s\n", lastVar->id->buffer);
-          printf("LastVar This is Variant so %s\n", lastVar->SO->buffer);
-          printf("LastVar This is Variant ref %s\n", lastVar->reference->buffer);
-          printf("LastVar This is Variant all %s\n", lastVar->alleles->buffer);
-          printf("LastVar This is Variant freq %s\n", lastVar->freq->buffer);
-          printf("LastVar This is Variant prev %p\n", lastVar->prev);
-          printf("LastVar This is Variant next %p\n\n", lastVar->next);*/
+          //If new start from variatn is not congruent with the previous end, rise an Error
           if( !isChrDiff && (atoi(lastVar->start->buffer) < atoi(lastVar->prev->end->buffer))  ) {
+            //printf("\n\nThis is lastVar.start %d and lastVar.prev.end %d\n", atoi(lastVar->start->buffer), atoi(lastVar->prev->end->buffer) );
             RsatFatalError("End is bigger than Start, this is not a valid coordinate.",NULL);
           }
-          if ( isChrDiff || ( mml < (atoi(lastVar->start->buffer) - atoi(HaploGroup->end->buffer)) ) ) {
-            while (  ( mml < (atoi(lastVar->start->buffer) - atoi(HaploGroup->end->buffer)) ) )   {
+          //Assess if the new variant is in the matrix range of the previous one
+          if ( isChrDiff || ( mml - 1 < (atoi(lastVar->start->buffer) - atoi(lastVar->prev->end->buffer)) + 1 ) ) {
+            //printf("ENTERED 2\n");
+            //while (  ( mml < (atoi(lastVar->start->buffer) - atoi(HaploGroup->end->buffer)) ) )  {
               //printf("LINE2 BEFORE \n");
               //printf("This is firstVar,HaploGroup,lastVar and printVar : %p, %p, %p and %p\n", (void*)firstVar, (void*)HaploGroup, (void*)lastVar, (void*)printVar );
               //Process Haplotypes
@@ -897,21 +904,25 @@ int main(int argc, char *argv[]){
                                 Haplotype1Sequence, Haplotype2Sequence);
               //printf("This is firstVar,HaploGroup,lastVar and printVar : %p, %p, %p and %p\n", (void*)firstVar, (void*)HaploGroup, (void*)lastVar, (void*)printVar );
               //printf("LINE2 AFTER \n");
+              //TODO Think when to free the variants
               //Continue to next variant at center
-              HaploGroup = HaploGroup->next;
+              //HaploGroup = HaploGroup->next;
               //Free unnecessary variants
               variant *tmp = firstVar;
-              if ( HaploGroup == lastVar ) {
+              //if ( HaploGroup == lastVar ) {
                 do {
                   firstVar = firstVar->next;
                   varfree(firstVar->prev);
-                } while(firstVar != HaploGroup);
-                HaploGroup->prev = NULL;
-                MemTrackUpd((void*)tmp, (void *)HaploGroup, RsatMemTracker);
-                break;
-              }
+                } while(firstVar != lastVar);
+                firstVar->prev = NULL;
+                //Update HaploGroup variable, the first one is the last one
+                HaploGroup = lastVar;
+                MemTrackUpd((void*)tmp, (void *)lastVar, RsatMemTracker); //QUESTION?
+                continue;
+                //break;
+              //}
 
-            }
+            //}
 
           } else {
             continue;
@@ -928,16 +939,17 @@ int main(int argc, char *argv[]){
       line->size++;
     }
     //Process last variants in list
-    while ( HaploGroup != NULL )   {
+    //while ( HaploGroup != NULL )   {
       //printf("LINE3 BEFORE\n");
+      //printf("Printing the remaining!\n");
       //Process Haplotypes
-      processHaplotypes(mml, firstVar, HaploGroup, printVar, printVar, sequence, fout,
+      processRemainingHaplotypes(mml, firstVar, HaploGroup, lastVar, printVar, sequence, fout,
                         varCoords, IDs, SOs, alleleFreqs, Haplotype1, Haplotype2,
                         Haplotype1Sequence, Haplotype2Sequence);
       //printf("LINE3 AFTER\n");
      //Continue to next variant at center
-     HaploGroup = HaploGroup->next;
-   }
+     //HaploGroup = HaploGroup->next;
+   //}
 
   } else {
 
@@ -2956,7 +2968,7 @@ string *Get_contig_file(string *contig_file,string *genome_dir){
   contains (id->accession) and contig.tab, which contains (rawFile<-accession).
   Both files are contained inside the passed directory. Finally, it returns
   a pointer to the current trie. If an error occurs a Fatal Error is raised.*/
-TRIE *Get_file_seq_name(string *genome_dir){
+TRIE *Get_file_seq_name_metazoa(string *genome_dir){
   //Declare variables
   FILE *fh_contig  = NULL;
   FILE *fh_files   = NULL;
@@ -3082,6 +3094,105 @@ TRIE *Get_file_seq_name(string *genome_dir){
   return trieChromo;
 }
 
+/*It builds a TRIE search struct, with chromosomes as keys and filenames
+  as values. It takes as parameter a valid genome directory installed on
+  $RSAT/data/genomes from the Plants server. The trie is built by parsing contigs.txt, which
+  contains (id->accession) and contig.tab, which contains (rawFile<-accession).
+  Both files are contained inside the passed directory. Finally, it returns
+  a pointer to the current trie. If an error occurs a Fatal Error is raised.*/
+TRIE *Get_file_seq_name_plants(string *genome_dir){
+  //Declare variables
+  FILE *fh_contig  = NULL;
+  FILE *fh_files   = NULL;
+
+  char **token   = NULL;
+  //char *token[3] = {NULL};
+
+  string *line         = NULL;
+  string *contig_file  = NULL;
+  string *contigs_file = NULL;
+  string *chromos_file = NULL;
+
+  //char chromos_file[BASE_STR_LEN];
+  //int i = 0;
+  int j = 0;
+
+  TRIE *trieContig = NULL;
+  //TRIE *trieChromo = NULL;
+
+  //Allocate memory for variables
+  token = getokens(4);
+
+  line         = strnewToList(&RsatMemTracker);
+  contig_file  = strnewToList(&RsatMemTracker);
+  contigs_file = strnewToList(&RsatMemTracker);
+  chromos_file = strnewToList(&RsatMemTracker);
+
+  //Get absolute path for contig.tab and contigs.txt
+  Get_contig_file(contig_file,genome_dir);
+  Get_contigs_file(contigs_file,genome_dir);
+
+  //Open files
+  fh_contig  = OpenInputFile(fh_contig,contig_file->buffer);
+  fh_files   = OpenInputFile(fh_files,contigs_file->buffer);
+
+  //Start both search-tries,the 1st maps (id->accession)
+  //the 2nd maps (id->rawFile).
+  trieContig = TrieStart();
+  //trieChromo = TrieStart();
+
+  //1st token is start of line.
+  token[0] = line->buffer;
+
+  //Parse contig.tab file (id->accession)
+  while ( fread( (line->buffer + line->size), 1, 1, fh_contig ) == 1 ) {
+    //Get tokens by substituting '\t' for '\0' to obtain key-value
+    //pair for trie, i.e. token[0] and token[1] respectively.
+    if (line->buffer[line->size] == '\t') {
+      token[++j] = line->buffer + line->size + 1;
+         line->buffer[line->size] = '\0';
+    }
+
+    //Insert Key-Value pair at the end of line
+    if (line->buffer[line->size] == '\n') {
+      //Reinitialize counters
+      j = 0;
+      line->size = 0;
+      //If a comment is found skip line
+      if (token[0][0] == ';') continue;
+      if (token[0][0] == '#') continue;
+
+      //Insert key-value to trie
+      if(strncmp(token[0],"chr",3) == 0) token[0] = token[0] + 3;
+      TrieInsert(trieContig,token[0],token[2]);
+      continue;
+    }
+    //Resize line string if limit has reached
+    limlinetok(line,token,4);
+
+    //Add +1 to current line size
+    line->size++;
+  }
+
+  //Remove trie
+  //TrieEnd(trieContig);
+
+  //Close file handlers
+  fclose(fh_contig);
+  fclose(fh_files);
+
+  //Remove allocate variables
+  //RsatMemTracker = relem( (void*)trieContig  ,RsatMemTracker );
+  RsatMemTracker = relem( (void*)line        ,RsatMemTracker );
+  RsatMemTracker = relem( (void*)contig_file ,RsatMemTracker );
+  RsatMemTracker = relem( (void*)contigs_file,RsatMemTracker );
+  RsatMemTracker = relem( (void*)chromos_file,RsatMemTracker );
+  RsatMemTracker = relem( (void*)token       ,RsatMemTracker );
+
+  return trieContig;
+}
+
+
 /*Parses the $RSAT/public_html/data/supported_organisms_ensembl.tab file,which contains
   the installed organism from ensembl at the current computer/server. A string is needed
   to write down the path. Finally, it returns the pointer to the string,in case of failure
@@ -3154,7 +3265,7 @@ string *Get_species_dir_from_supported_file(string *species_dir,char *species,ch
         }
       //Check if ONLY release was passed as query option in order to compare properly
       } else if (release) {
-        printf("1HOLA!!!!\n" );
+        //printf("1HOLA!!!!\n" );
         if (strcmp(token[1],species) == 0 && strcmp(token[4],release) == 0) {
           //Test if species_directory field is empty
           if (token[6] != '\0') {
@@ -3414,10 +3525,13 @@ void processHaplotypes(int mml, variant *firstVar, variant *HaploGroup, variant 
 
   //NOTE WSG. I suppressed -1 because start is 0-based and 1-terminated
   left_flank     = atoi(HaploGroup->start->buffer) - mml;
-  right_flank    = atoi(HaploGroup->end->buffer)   + mml;
+  right_flank    = atoi(lastVar->prev->end->buffer) + mml;
+
+
   tmp_left_flank = left_flank;
 
   for (printVar = firstVar; printVar != lastVar; printVar = printVar->next) {
+    //printf("INSIDE the first for:loop of the processHaplotypes\n" );
     if (printVar == firstVar) {
       strfmt(varCoords   , "%s:%s-%s", printVar->chromosome->buffer,printVar->start->buffer,printVar->end->buffer);
       strfmt(IDs         , "%s"      , printVar->id->buffer         );
@@ -3431,7 +3545,6 @@ void processHaplotypes(int mml, variant *firstVar, variant *HaploGroup, variant 
         //printf("This is the printVar, firstVar, HaploGroup and lastVar :%p, %p, %p and %p\n", (void*)printVar,(void*)firstVar,(void*)HaploGroup,(void*)lastVar);
         //printf("This is Haplotype1Sequence %s\n", Haplotype1Sequence->buffer );
         //printf("This is Haplotype2Sequence %s\n\n", Haplotype2Sequence->buffer );
-
 
     } else {
       strccat(varCoords  , ",%s:%s-%s", printVar->chromosome->buffer,printVar->start->buffer,printVar->end->buffer);
@@ -3472,19 +3585,6 @@ void processHaplotypes(int mml, variant *firstVar, variant *HaploGroup, variant 
     //the strccat operation
     Haplotype1Sequence->size--;
     Haplotype2Sequence->size--;
-    /*printf("This is Variant pointer %p\n", (void*)printVar);
-    printf("This is Variant ID %s\n", printVar->id->buffer);
-    printf("This is Variant Chr %s\n", printVar->chromosome->buffer);
-    printf("This is Variant start %s\n", printVar->start->buffer);
-    printf("This is Variant end %s\n", printVar->end->buffer);
-    printf("This is Variant strand %s\n", printVar->strand);
-    printf("This is Variant id %s\n", printVar->id->buffer);
-    printf("This is Variant so %s\n", printVar->SO->buffer);
-    printf("This is Variant ref %s\n", printVar->reference->buffer);
-    printf("This is Variant all %s\n", printVar->alleles->buffer);
-    printf("This is Variant freq %s\n", printVar->freq->buffer);
-    printf("This is Variant prev %p\n", printVar->prev);
-    printf("This is Variant next %p\n\n", printVar->next);*/
 
     tmp_left_flank = atoi(printVar->end->buffer);
     //printf("\nCHECKPOINT 1!\n");
@@ -3529,35 +3629,175 @@ void processHaplotypes(int mml, variant *firstVar, variant *HaploGroup, variant 
                   Haplotype1->buffer,
                   alleleFreqs->buffer,
                   Haplotype1Sequence->buffer);
+                  /*printf("PRINTING?\n" );
+                  printf("%s\t%lld\t%lld\t+\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                                 HaploGroup->chromosome->buffer,
+                                 left_flank,
+                                 right_flank,
+                                 varCoords->buffer,
+                                 IDs->buffer,
+                                 SOs->buffer,
+                                 Haplotype1->buffer,
+                                 Haplotype2->buffer,
+                                 alleleFreqs->buffer,
+                                 Haplotype2Sequence->buffer);
+                   printf("%s\t%lld\t%lld\t+\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                                  HaploGroup->chromosome->buffer,
+                                  left_flank,
+                                  right_flank,
+                                  varCoords->buffer,
+                                  IDs->buffer,
+                                  SOs->buffer,
+                                  Haplotype1->buffer,
+                                  Haplotype1->buffer,
+                                  alleleFreqs->buffer,
+                                  Haplotype1Sequence->buffer);*/
 
-     //printf("\nIt entered!\n");
-     //printf("This is Variant pointer %p\n", (void*)lastVar);
-     //printf("This is Variant ID %s\n", lastVar->id->buffer);
-     //printf("This is Variant Chr %s\n", lastVar->chromosome->buffer);
-     //printf("This is Variant start %s\n", lastVar->start->buffer);
-     //printf("This is Variant end %s\n", lastVar->end->buffer);
-     //printf("This is Variant strand %s\n", lastVar->strand);
-     //printf("This is Variant id %s\n", lastVar->id->buffer);
-     //printf("This is Variant so %s\n", lastVar->SO->buffer);
-     //printf("This is Variant ref %s\n", lastVar->reference->buffer);
-     //printf("This is Variant all %s\n", lastVar->alleles->buffer);
-     //printf("This is Variant freq %s\n", lastVar->freq->buffer);
-     //printf("This is Variant prev %p\n", lastVar->prev);
-     //printf("This is Variant next %p\n", lastVar->next);
+  //printf("ALmost EXIT?\n" );
+  return;
 
-     /*printf("HaploGroup This is Variant pointer %p\n", (void*)HaploGroup);
-     printf("HaploGroup This is Variant ID %s\n", HaploGroup->id->buffer);
-     printf("HaploGroup This is Variant Chr %s\n", HaploGroup->chromosome->buffer);
-     printf("HaploGroup This is Variant start %s\n", HaploGroup->start->buffer);
-     printf("HaploGroup This is Variant end %s\n", HaploGroup->end->buffer);
-     printf("HaploGroup This is Variant strand %s\n", HaploGroup->strand);
-     printf("HaploGroup This is Variant id %s\n", HaploGroup->id->buffer);
-     printf("HaploGroup This is Variant so %s\n", HaploGroup->SO->buffer);
-     printf("HaploGroup This is Variant ref %s\n", HaploGroup->reference->buffer);
-     printf("HaploGroup This is Variant all %s\n", HaploGroup->alleles->buffer);
-     printf("HaploGroup This is Variant freq %s\n", HaploGroup->freq->buffer);
-     printf("HaploGroup This is Variant prev %p\n", HaploGroup->prev);
-     printf("HaploGroup This is Variant next %p\n\n", HaploGroup->next);*/
+}
+
+void processRemainingHaplotypes(int mml, variant *firstVar, variant *HaploGroup, variant *lastVar, variant *printVar, char *sequence, FILE *fout,
+                       string *varCoords, string *IDs, string *SOs, string *alleleFreqs, string *Haplotype1, string *Haplotype2,
+                       string *Haplotype1Sequence, string *Haplotype2Sequence ) {
+  //Declare variables
+  long long i = 0;
+  long long left_flank     =          0;
+  long long right_flank    =          0;
+  long long tmp_left_flank = left_flank;
+
+  //NOTE WSG. I suppressed -1 because start is 0-based and 1-terminated
+  left_flank     = atoi(HaploGroup->start->buffer) - mml;
+  right_flank    = atoi(lastVar->end->buffer) + mml;
+
+
+  tmp_left_flank = left_flank;
+
+  for (printVar = firstVar; printVar != NULL; printVar = printVar->next) {
+    //printf("INSIDE the first for:loop of the processHaplotypes\n" );
+    if (printVar == firstVar) {
+      strfmt(varCoords   , "%s:%s-%s", printVar->chromosome->buffer,printVar->start->buffer,printVar->end->buffer);
+      strfmt(IDs         , "%s"      , printVar->id->buffer         );
+      strfmt(SOs         , "%s"      , printVar->SO->buffer         );
+      strfmt(alleleFreqs , "%s"      , printVar->freq->buffer       );
+      strfmt(Haplotype1  , "%s"      , printVar->reference->buffer  );
+      strfmt(Haplotype2  , "%s"      , printVar->alleles->buffer    );
+      Haplotype1Sequence->size = 0;
+      Haplotype2Sequence->size = 0;
+        //printf("1.-Did it succeeded?\n" );
+        //printf("This is the printVar, firstVar, HaploGroup and lastVar :%p, %p, %p and %p\n", (void*)printVar,(void*)firstVar,(void*)HaploGroup,(void*)lastVar);
+        //printf("This is Haplotype1Sequence %s\n", Haplotype1Sequence->buffer );
+        //printf("This is Haplotype2Sequence %s\n\n", Haplotype2Sequence->buffer );
+
+    } else {
+      strccat(varCoords  , ",%s:%s-%s", printVar->chromosome->buffer,printVar->start->buffer,printVar->end->buffer);
+      strccat(IDs        , ",%s"      , printVar->id->buffer        );
+      strccat(SOs        , ",%s"      , printVar->SO->buffer        );
+      strccat(alleleFreqs, ",%s"      , printVar->freq->buffer      );
+      strccat(Haplotype1 , ",%s"      , printVar->reference->buffer );
+      strccat(Haplotype2 , ",%s"      , printVar->alleles->buffer   );
+    }
+    for ( i = tmp_left_flank; i < atoi(printVar->start->buffer); i++ ) {
+        //Write nucleotide to strings
+        /*printf("2.-Did it succeeded?\n" );
+        printf("This is the firstVar, HaploGroup and lastVar : %p, %p and %p\n", (void*)firstVar,(void*)HaploGroup,(void*)lastVar);
+        printf("This is char %c on sequence[%lld]\n\n", sequence[i], i);*/
+      Haplotype1Sequence->buffer[Haplotype1Sequence->size] = tolower(sequence[i]);
+      Haplotype2Sequence->buffer[Haplotype2Sequence->size] = tolower(sequence[i]);
+      //Update strings sizes
+      Haplotype1Sequence->size++;
+      Haplotype2Sequence->size++;
+      //printf("This is current size and length: %d && %d and last char %c\n", (int)Haplotype2Sequence->size, (int)Haplotype2Sequence->length,Haplotype2Sequence->buffer[Haplotype2Sequence->size - 1]);
+      //Test if strings have reached their limits
+      strlimt(Haplotype1Sequence);
+      strlimt(Haplotype2Sequence);
+    }
+    Haplotype1Sequence->buffer[Haplotype1Sequence->size] = '\0';
+    Haplotype2Sequence->buffer[Haplotype2Sequence->size] = '\0';
+    //Update strings sizes
+    Haplotype1Sequence->size++;
+    Haplotype2Sequence->size++;
+    //Test if strings have reached their limits
+    strlimt(Haplotype1Sequence);
+    strlimt(Haplotype2Sequence);
+    //Add Hap1/Hap2 alleles to their respective sequences
+    strccat(Haplotype1Sequence, "%s", printVar->reference->buffer );
+    strccat(Haplotype2Sequence, "%s", printVar->alleles->buffer   );
+
+    //Update strings sizes to overwrite the trailing '\0' character from
+    //the strccat operation
+    Haplotype1Sequence->size--;
+    Haplotype2Sequence->size--;
+
+    tmp_left_flank = atoi(printVar->end->buffer);
+    //printf("\nCHECKPOINT 1!\n");
+  }
+
+  for ( i = tmp_left_flank; i < right_flank; i++ ) {
+    //Write nucleotide to strings
+    Haplotype1Sequence->buffer[Haplotype1Sequence->size] = tolower(sequence[i]);
+    Haplotype2Sequence->buffer[Haplotype2Sequence->size] = tolower(sequence[i]);
+    //Update strings sizes
+    Haplotype1Sequence->size++;
+    Haplotype2Sequence->size++;
+    //Test if strings have reached their limits
+    strlimt(Haplotype1Sequence);
+    strlimt(Haplotype2Sequence);
+  }
+  Haplotype1Sequence->buffer[Haplotype1Sequence->size] = '\0';
+  Haplotype2Sequence->buffer[Haplotype2Sequence->size] = '\0';
+  //Update strings sizes
+  Haplotype1Sequence->size++;
+  Haplotype2Sequence->size++;
+  //Print content of both Haolotype lines
+  fprintf( fout, "%s\t%lld\t%lld\t+\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                 HaploGroup->chromosome->buffer,
+                 left_flank,
+                 right_flank,
+                 varCoords->buffer,
+                 IDs->buffer,
+                 SOs->buffer,
+                 Haplotype1->buffer,
+                 Haplotype2->buffer,
+                 alleleFreqs->buffer,
+                 Haplotype2Sequence->buffer);
+   fprintf( fout, "%s\t%lld\t%lld\t+\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                  HaploGroup->chromosome->buffer,
+                  left_flank,
+                  right_flank,
+                  varCoords->buffer,
+                  IDs->buffer,
+                  SOs->buffer,
+                  Haplotype1->buffer,
+                  Haplotype1->buffer,
+                  alleleFreqs->buffer,
+                  Haplotype1Sequence->buffer);
+                  /*printf("PRINTING?\n" );
+                  printf("%s\t%lld\t%lld\t+\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                                 HaploGroup->chromosome->buffer,
+                                 left_flank,
+                                 right_flank,
+                                 varCoords->buffer,
+                                 IDs->buffer,
+                                 SOs->buffer,
+                                 Haplotype1->buffer,
+                                 Haplotype2->buffer,
+                                 alleleFreqs->buffer,
+                                 Haplotype2Sequence->buffer);
+                   printf("%s\t%lld\t%lld\t+\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                                  HaploGroup->chromosome->buffer,
+                                  left_flank,
+                                  right_flank,
+                                  varCoords->buffer,
+                                  IDs->buffer,
+                                  SOs->buffer,
+                                  Haplotype1->buffer,
+                                  Haplotype1->buffer,
+                                  alleleFreqs->buffer,
+                                  Haplotype1Sequence->buffer);
+
+  printf("ALmost EXIT at new?\n" );*/
   return;
 
 }

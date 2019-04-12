@@ -18,7 +18,7 @@ my $client = REST::Client->new();
 #################### END EXAMPLE
 
 ########## EXAMPLE FOR SENDING FOMR-DATA INCLUDING FILES AND OTHER TYPES OF DATA #########
-my $request = HTTP::Request::Common::POST('', 'Content-Type'=>'form-data', 'Content'=> ['tmp_input_file'=>["/Users/thnguyen/rsat/public_html/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed"], 'genome'=>'mm9', 'header_format'=>'galaxy']);
+my $request = HTTP::Request::Common::POST('', 'Content-Type'=>'form-data', 'Content'=> ['tmp_input_file'=>["/home/rsat/rsat/public_html/demo_files/fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks.bed"], 'genome'=>'mm9', 'header_format'=>'galaxy']);
 
 my $headers = {'Content-type'=> $request->header('Content-Type')};
 my $body_content = $request->content;

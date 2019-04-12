@@ -13,8 +13,10 @@ import requests
 
 app = Flask(__name__, static_url_path = "")
 
-perl_scripts = '/home/rsat/rsat/perl-scripts'
-public_html = '/home/rsat/rsat/public_html'
+rsat_home = '/workspace/rsat' ## TO DO : replace hard-coded path by the value of RSAT in RSAT_config.props
+rsat_bin = rsat_home + '/bin'
+perl_scripts = rsat_home + '/perl-scripts'
+public_html = rsat_home + '/public_html'
 
 @app.errorhandler(400)
 def not_found(error):
@@ -26,7 +28,7 @@ def not_found(error):
 
 @app.route('/', methods=['GET'])
 def index():
-    return "Hello World"
+    return "Hello World!"
 
 #### supported_organisms
 @app.route('/supported-organisms', methods = ['POST', 'GET'])
@@ -44,14 +46,109 @@ def get_supported_organisms():
         command += ' -format ' + data['format']
     if 'depth' in data:
         command += ' -depth ' + data['depth']
+    if 'taxon' in data:
+        command += ' -taxon ' + data['taxon']
+    if 'unique_species' in data:
+        command += ' -unique_species'
+    if 'unique_genus' in data:
+        command += ' -unique_genus'
 
     return run_command(command, output_choice, 'supported-organisms', 'txt','')
+
+#### random_seq
+@app.route('/random_seq', methods = ['POST', 'GET'])
+def get_random_seq():
+    output_choice = 'email'
+    if request.method == 'POST':
+        data = request.get_json(force=True) or request.form
+    elif request.method == 'GET':
+        data = request.args
+        output_choice = 'display'
+    command = perl_scripts + '/random-seq'
+
+    if 'h' in data: # help message
+        command += ' -h '
+    if 'help' in data: # list options
+        command += ' -help '
+    if 'l' in data: # sequence length
+        command += ' -l '  + data['l']
+    if 'n' in data: # number of sequences
+        command += ' -n '  + data['n']
+
+    return run_command(command, output_choice, 'random-seq', 'fasta','')
+
+#### variation-info
+@app.route('/variation-info', methods = ['POST', 'GET'])
+def get_variation_info():
+    output_choice = 'email'
+    files = ''
+    if request.method == 'POST':
+        data = request.form or request.get_json(force=True)
+        files = request.files
+    elif request.method == 'GET':
+        data = request.args
+        output_choice = 'display'
+    command = perl_scripts + '/variation-info'
+
+
+    ## Specify parameters
+    if 'h' in data: # help message and list of options
+        command += ' -h '
+
+    ## Parameters
+    mandatory_parameters = ['species', 'assembly']
+    optional_parameters = ['h', 'format', 'species_suffix', 'release']
+    default_param_values = {'format':'id'}
+
+    ## Check that all mandatory parameters have been specified
+    command_ = read_parameters(data,mandatory_parameters, optional_parameters, default_param_values)
+    if 'Missing parameters' in command_:
+        return command_
+    else:
+        command += command_
+
+	# Input file (SNP IDs)
+    (fd, varinfo_query_snps_path) = make_tmp_file('variation-info_query_snps', '')
+    if 'infile' in files:
+        varinfo_query_snps = files['infile']
+        varinfo_query_snps.save('varinfo_query_snps_path')
+    elif 'query_snps' in data:
+        with open(varinfo_query_snps_path, 'w') as f:
+            query_snps = data['query_snps'].replace(",", "\n")
+            f.write(query_snps)
+            f.close()
+    command += " -i " + varinfo_query_snps_path
+
+    return run_command(command, output_choice, 'variation-info', 'varBed','')
+    
+
+#### retrieve-variation-seq
+@app.route('/retrieve-variation-seq', methods = ['POST', 'GET'])
+def get_retrieve_variation_seq():
+    output_choice = 'email'
+    if request.method == 'POST':
+        data = request.get_json(force=True) or request.form
+    elif request.method == 'GET':
+        data = request.args
+        output_choice = 'display'
+    command = rsat_bin + '/retrieve-variation-seq'
+
+    if 'h' in data: # help message and list of options
+        command += ' -h '
+    if 'species' in data: # species
+        command += ' -species '  + data['l']
+    if 'species_name' in data: # name of the species
+        command += ' -species_name '  + data['n']
+
+    return run_command(command, output_choice, 'retrieve-variation-seq', 'bed','')
+    
 
 #### fetch_sequence
 #### return: {'output' : error, 'command' : command, 'server' : result file URL}
 @app.route('/fetch-sequences', methods = ['POST', 'GET'])
 def get_sequences():
     output_choice = 'email'
+    files = ''
     if request.method == 'POST':
         args = request.form or request.get_json(force=True)
         files = request.files
@@ -101,12 +198,13 @@ def get_sequences():
         chunk = args['chunk']
         command += " -chunk '" + chunk + "'"
 
-    return run_command(command, output_choice, 'fetch-sequences', 'fasta', tmp_dir)
+    return run_command(command, output_choice, 'fetch-sequences', 'fasta', out_dir=tmp_dir)
 
 ### peak-motifs
 ### return: {'output' : errors/warnings, 'command' : command, 'server' : synthesis file URL}
 @app.route('/peak-motifs', methods=['POST', 'GET'])
 def peak_motifs():
+    files = ''
     if request.method == 'POST':
         args = request.form or request.get_json(force=True)
         files = request.files
@@ -196,10 +294,10 @@ def peak_motifs():
          class_int = class_int.replace('"', '')
          command += " -ci '" + class_int + "'"
 	
-	#sequence file
+    # Sequence file
     dir = make_tmp_dir("peak-motifs")
-    if oct(os.stat(dir).st_mode) != '040777':
-        os.chmod(dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+#    if oct(os.stat(dir).st_mode) != '040777':
+#        os.chmod(dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
     (fd,tmp_test_infile_name) = make_tmp_file('peak-motifs', '', dir=dir)
     if 'test' in args:
         test = args['test'].rstrip()
@@ -450,8 +548,19 @@ def oligo_analysis_pipeline():
     
     return jsonify({'command':command, 'server': return_files })
 
+def read_parameters(data, mandatory, optional, default):
+    missing_parameters = list(set(mandatory) - set(data))
+    if missing_parameters:
+        return 'Missing mandatory parameters: ' + ', '.join(missing_parameters)
+    command = ''
+    for para in mandatory + optional:
+        if para in data:
+            command += ' -' + para + ' ' + data[para]
+        elif para in default:
+            command += ' -' + para + ' ' + default[para]
+    return command
 
-def run_command(command, output_choice, method_name, out_format, out_dir):
+def run_command(command, output_choice, method_name, out_format, out_dir=''):
     ### execute command
     p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
     (child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
@@ -466,9 +575,7 @@ def run_command(command, output_choice, method_name, out_format, out_dir):
 
     #### write to file
     (fd, temp_path) = make_tmp_file(method_name, out_format, dir=out_dir)
-    #os.chmod(temp_path, stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-    os.chmod(temp_path, 0o0777)
-    #os.system('chmod 777 ' + temp_path)
+    os.chmod(temp_path, 0777)
     with open(temp_path, 'w') as f:
         f.write(result)
     os.close(fd)
@@ -483,7 +590,7 @@ def run_command(command, output_choice, method_name, out_format, out_dir):
         output = error
     elif output_choice == 'display':
         output = result
-    return jsonify( {'output' : output, 'command' : command, 'server' : temp_path.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])} )
+    return jsonify( {'output' : output, 'command' : command.replace(rsat_home, '$RSAT'), 'server' : temp_path.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])} )
 
 def make_tmp_file(method_name, out_format, dir=''):
     if dir == '':
@@ -497,21 +604,19 @@ def make_tmp_file(method_name, out_format, dir=''):
     return (fd, temp_path)
 
 def make_tmp_dir(method_name):
-	user = pwd.getpwuid(os.getuid())[0]
-	tmp_dir = os.environ['RSAT'] + '/public_html/tmp/' + user
-	dt = datetime.datetime.now()
-	tmp_dir += '/' + dt.strftime('%Y') + '/' + dt.strftime('%m') + '/' + dt.strftime('%d') + '/'
-	if not os.path.exists(tmp_dir):
-		os.makedirs(tmp_dir)
-		os.chmod(tmp_dir, 0o0777)
-		#os.system('chmod -R 777 ' + tmp_dir)
-	pref = method_name + '_' + dt.strftime('%Y') + '-' + dt.strftime('%m') + '-' + dt.strftime('%d') + '.' + dt.strftime('%H')+dt.strftime('%M')+dt.strftime('%S') + '_'
-	dir_path = mkdtemp('',pref,tmp_dir)
-	#os.chmod(dir_path, stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-	os.chmod(dir_path, 0o0777)
-	#subprocess.call(["chmod", "a+w", dir_path])
-	#os.system('chmod -R 777 ' + dir_path)
-	return dir_path
+    user = pwd.getpwuid(os.getuid())[0]
+    tmp_dir = os.environ['RSAT'] + '/public_html/tmp/' + user
+    
+    dt = datetime.datetime.now()
+    tmp_dir += '/' + dt.strftime('%Y') + '/' + dt.strftime('%m') + '/' + dt.strftime('%d') + '/'
+    if not os.path.exists(tmp_dir):
+        os.makedirs(tmp_dir)
+        os.chmod(tmp_dir,0777)
+    pref = method_name + '_' + dt.strftime('%Y') + '-' + dt.strftime('%m') + '-' + dt.strftime('%d') + '.' + dt.strftime('%H')+dt.strftime('%M')+dt.strftime('%S') + '_'
+
+    dir_path = mkdtemp('',pref,tmp_dir)
+    os.chmod(dir_path,0777)
+    return dir_path
 
 if __name__ == '__main__':
     app.run(debug = True)

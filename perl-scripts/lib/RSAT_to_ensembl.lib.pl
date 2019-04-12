@@ -690,46 +690,51 @@ ensembl-specific organisms
 =cut
 sub Get_species_dir_from_supported_file {
   my ($species) =  @_;
-    if (-f $supported_file ) {
-	## Open the file containing the list of supported Ensembl species
-	my ($file) = &OpenInputFile($supported_file);
+	my %assembly_directory = {};
 
-	while (my $line = <$file>) {
-	    chomp($line);
-	    my ($id,$name,$dir) = split("\t", $line);
+  if (-f $supported_file ) {
+		## Open the file containing the list of supported Ensembl species
+		my ($file) = &OpenInputFile($supported_file);
 
-	    ## The full RSAT path should not be writen explicitly in
-	    ## the files.
-	    if ($dir) {
-		$dir =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|g;
-	    }
+		while (my $line = <$file>) {
+	    	chomp($line);
+	    	my ($id,$name,$ass,$db,$ens,$update,$dir) = split("\t", $line);
 
-	    if ($name) {
-		## Note (JvH, 2014-10-30): the "species name" actually
-		## includes the species name (with _ to separate substrain
-		## etc), the assembly, and the ensembl release. This is
-		## not very clean. We should have a file with the
-		## different information types in separated fields.
-		my ($spe,$ass,$ens) = split(" ",$name);
 
-		if ($ensembl_release && $assembly) {
-		    ## If the directory has already been defined in the
-		    ## supported organisms file, return it from there
-		    return $dir if (($spe eq $species) && ($ass eq $assembly) && ($ens eq $ensembl_release));
-		} elsif ($ensembl_release) {
-		  return $dir if (($spe eq $species) && ($ens eq $ensembl_release));
-		} else {
-		    $assembly_directory{$ens} = $dir if (($spe eq $species) && ($ass eq $assembly));
+				# Make sure first letter of species is upper case
+				$spe = ucfirst($name);
+				$species = ucfirst($species);
+
+	    	## The full RSAT path should not be writen explicitly in
+	    	## the files.
+	    	if ($dir) {
+					$dir =~ s/\$\{RSAT\}/$ENV{RSAT}/g;
+	    	}
+
+	    	if ($spe) {
+					 # If release and assembly parameters have been queried, use them for evaluations
+					if ($ensembl_release && $assembly) {
+						return $dir if (($spe eq $species) && ($ass eq $assembly) && ($ens eq $ensembl_release));
+
+					# If ONLY release parameter has been queried, use it for evaluations
+					} elsif ($ensembl_release) {
+						return $dir if (($spe eq $species) && ($ens eq $ensembl_release));
+
+					# If ONLY assembly parameter has been queried, use it for evaluations
+					# and stote results in a hash in order to select the most recent release
+					} else {
+						$assembly_directory{$ens} = $dir if (($spe eq $species) && ($ass eq $assembly));
+					}
+	    	}
 		}
-	    }
-	}
 
-	## ??? THIS SHOULD NOT WORK: the return cannot be included in
-	## a loop ! (Note by JvH, 2014-10-30)
-	foreach (sort{$b<=>$a} (keys(%assembly_directory))) {
-	    return $assembly_directory{$_};
-	}
-    }
+		# Sort directories by latest release and then return it
+		my @sort_release_index = (sort{$b<=>$a} (keys(%assembly_directory)));
+
+
+		return $assembly_directory{$sort_release_index[0]};
+
+  }
 }
 
 =pod
