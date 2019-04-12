@@ -4,6 +4,7 @@ import json
 from subprocess import check_output, Popen, PIPE
 from tempfile import mkstemp, mkdtemp, NamedTemporaryFile
 import os
+import stat
 from time import localtime
 import datetime
 import pwd
@@ -12,8 +13,10 @@ import requests
 
 app = Flask(__name__, static_url_path = "")
 
-perl_scripts = '/home/rsat/rsat/perl-scripts'
-public_html = '/home/rsat/rsat/public_html'
+rsat_home = '/workspace/rsat' ## TO DO : replace hard-coded path by the value of RSAT in RSAT_config.props
+rsat_bin = rsat_home + '/bin'
+perl_scripts = rsat_home + '/perl-scripts'
+public_html = rsat_home + '/public_html'
 
 @app.errorhandler(400)
 def not_found(error):
@@ -25,32 +28,148 @@ def not_found(error):
 
 @app.route('/', methods=['GET'])
 def index():
-    return "Hello World"
+	return "Hello World!"
 
 #### supported_organisms
 @app.route('/supported-organisms', methods = ['POST', 'GET'])
 def get_supported_organisms():
+	output_choice = 'email'
+	if request.method == 'POST':
+		data = request.get_json(force=True) or request.form
+	elif request.method == 'GET':
+		data = request.args
+		output_choice = 'display'
+	command = perl_scripts + '/supported-organisms'
+	if 'group' in data:
+		command += ' -group ' + data['group']
+	if 'format' in data:
+		command += ' -format ' + data['format']
+	if 'depth' in data:
+		command += ' -depth ' + data['depth']
+	if 'taxon' in data:
+		command += ' -taxon ' + data['taxon']
+	if 'unique_species' in data:
+		command += ' -unique_species'
+	if 'unique_genus' in data:
+		command += ' -unique_genus'
+
+	return run_command(command, output_choice, 'supported-organisms', 'txt','')
+
+#### random_seq
+@app.route('/random_seq', methods = ['POST', 'GET'])
+def get_random_seq():
     output_choice = 'email'
     if request.method == 'POST':
         data = request.get_json(force=True) or request.form
     elif request.method == 'GET':
         data = request.args
         output_choice = 'display'
-    command = perl_scripts + '/supported-organisms'
-    if 'group' in data:
-        command += ' -group ' + data['group']
-    if 'format' in data:
-        command += ' -format ' + data['format']
-    if 'depth' in data:
-        command += ' -depth ' + data['depth']
+    command = perl_scripts + '/random-seq'
 
-    return run_command(command, output_choice, 'supported-organisms', 'txt')
+    if 'h' in data: # help message
+        command += ' -h '
+    if 'help' in data: # list options
+        command += ' -help '
+    if 'l' in data: # sequence length
+        command += ' -l '  + data['l']
+    if 'n' in data: # number of sequences
+        command += ' -n '  + data['n']
+
+    return run_command(command, output_choice, 'random-seq', 'fasta','')
+
+#### variation-info
+@app.route('/variation-info', methods = ['POST', 'GET'])
+def get_variation_info():
+    output_choice = 'display'
+    files = ''
+    if request.method == 'POST':
+        data = request.form or request.get_json(force=True)
+        files = request.files
+    elif request.method == 'GET':
+        data = request.args
+        output_choice = 'display'
+    command = perl_scripts + '/variation-info'
+
+
+    ## Specify parameters
+    if 'h' in data: # help message and list of options
+        command += ' -h '
+
+    ## Parameters
+    mandatory_parameters = ['species', 'assembly']
+    optional_parameters = ['h', 'format', 'species_suffix', 'release']
+    default_param_values = {'format':'id'}    
+    fileupload_parameters = ['i']
+    
+    ## Check that all mandatory parameters have been specified
+    command_ = read_parameters(data,mandatory_parameters, optional_parameters, default_param_values)
+    if 'Missing parameters' in command_:
+        return command_
+    else:
+        command += command_
+    
+    command_ = read_fileupload(files,data,fileupload_parameters,'variation-info-snps')
+    if 'Missing input file' in command_:
+        return command_
+    else:
+        command += command_
+    return run_command(command, output_choice, 'variation-info', 'varBed','','file')
+    
+def read_fileupload(files,data,fileupload_parameters,suffix,dir=''):
+    missing_file_parameters = list(set(fileupload_parameters) - set(files) - set(data))
+    if missing_file_parameters:
+        return 'Missing input file parameters: -' + ', -'.join(missing_file_parameters)
+    command = ''
+    for param in fileupload_parameters:
+        (fd, tmp_file_path) = make_tmp_file(suffix,'')
+        if param in files:
+            file_upload = files[param]
+            file_upload.save(tmp_file_path)
+        elif param in data:
+            with open(tmp_file_path,'w') as f:
+                query = data[param]
+                f.write(query)
+                f.close()
+        command += ' -' + param + ' ' + tmp_file_path
+    return command
+#### retrieve-variation-seq
+@app.route('/retrieve-variation-seq', methods = ['POST', 'GET'])
+def get_retrieve_variation_seq():
+    output_choice = 'email'
+    if request.method == 'POST':
+        data = request.get_json(force=True) or request.form
+    elif request.method == 'GET':
+        data = request.args
+        output_choice = 'display'
+    command = rsat_bin + '/retrieve-variation-seq'
+
+    if 'h' in data: # help message and list of options
+        command += ' -h '
+    mandatory_parameters = ['species','assembly']
+    optional_parameters = ['mml','format','release','species_suffix']
+    default_param_values = {'mml':30,'format':'id'}
+    fileupload_parameters = ['i']
+    
+    ## read regular parameters 
+    command_ = read_parameters(data,mandatory_parameters,optional_parameters,default_param_values)
+    if 'Missing parameters' in command_:
+        return command_
+    command += command_
+    ## read file upload parameters
+    command_ = read_file_parameters(files,data,fileupload_parameters,'retrieve-variation-seq')
+    if 'Missing input file' in command_:
+        return command_
+    command += command_
+       
+    return run_command(command, output_choice, 'retrieve-variation-seq', 'bed','')
+    
 
 #### fetch_sequence
 #### return: {'output' : error, 'command' : command, 'server' : result file URL}
 @app.route('/fetch-sequences', methods = ['POST', 'GET'])
 def get_sequences():
     output_choice = 'email'
+    files = ''
     if request.method == 'POST':
         args = request.form or request.get_json(force=True)
         files = request.files
@@ -69,7 +188,6 @@ def get_sequences():
     elif 'tmp_input_file' in files:
         tmp_input_file = files['tmp_input_file']
         tmp_input_file.save(tmp_input_file_name)
-
     if 'input' in args or 'tmp_input_file' in files:
         command += " -i '" + tmp_input_file_name + "'"
 
@@ -107,8 +225,9 @@ def get_sequences():
 ### return: {'output' : errors/warnings, 'command' : command, 'server' : synthesis file URL}
 @app.route('/peak-motifs', methods=['POST', 'GET'])
 def peak_motifs():
+    files = ''
     if request.method == 'POST':
-        args = request.get_json(force=True) or request.form
+        args = request.form or request.get_json(force=True)
         files = request.files
     elif request.method == 'GET':
         args = request.args
@@ -117,87 +236,89 @@ def peak_motifs():
 	### get parameters
 	
     if 'verbosity' in args:
-		verbosity = args['verbosity'].replace("'","");
-		verbosity = verbosity.replace('"', '');
-		command += " -v '" + verbosity +"'";
+        verbosity = args['verbosity'].replace("'","");
+        verbosity = verbosity.replace('"', '');
+        command += " -v '" + verbosity +"'";
     if 'max_seq_length' in args:
-		max_seq_length = args['max_seq_length'].replace("'", "")
-		max_seq_length = max_seq_length.replace('"', '')
-		command += " -max_seq_len '" + max_seq_length + "'"
+        max_seq_length = args['max_seq_length'].replace("'", "")
+        max_seq_length = max_seq_length.replace('"', '')
+        command += " -max_seq_len '" + max_seq_length + "'"
     if 'noov' in args:
-		if args['noov'] == 1:
-			command += " -noov"
+        if args['noov'] == 1:
+            command += " -noov"
     if 'str' in args:
-		strand = args['str']
-		if isinstance(strand, int):
-			if strand == 1 or strand == 2:
-				command += " -" + strand + "str"
-			else:
-				raise Exception("str value must be 1 or 2")
+        strand = args['str']
+        if isinstance(strand, int):
+            if strand == 1 or strand == 2:
+                command += " -" + strand + "str"
+            else:
+                raise Exception("str value must be 1 or 2")
     if 'motif_db' in args:
-		motif_db = args['motif_db'].replace("'","")
-		motif_db = motif_db.replace('"','')
-		dbs = motif_db.split(",")
-		matrix_db = supported_motif_database()
-		for db in dbs:
-			if db in matrix_db:
-				command += " -motif_db " + matrix_db[db]['name'] + " " + matrix_db[db]['format'] + " " + public_html + "/motif_databases/" + matrix_db[db]['file']
+        motif_db = args['motif_db'].replace("'","")
+        motif_db = motif_db.replace('"','')
+        dbs = motif_db.split(",")
+        matrix_db = supported_motif_database()
+        for db in dbs:
+            if db in matrix_db:
+                command += " -motif_db " + matrix_db[db]['name'] + " " + matrix_db[db]['format'] + " " + public_html + "/motif_databases/" + matrix_db[db]['file']
 	
     if 'graph_title' in args:
-		graph_title = args['graph_title'].replace("'","")
-		graph_title = graph_title.replace('"',"")
-		command += " -title '" + graph_title + "'"
+         graph_title = args['graph_title'].replace("'","")
+         graph_title = graph_title.replace('"',"")
+         command += " -title '" + graph_title + "'"
     if 'image_format' in args:
-		image_format = args['image_format'].replace("'", "")
-		image_format = image_format.replace('"', '')
-		command += " -img_format '" + image_format + "'"
+         image_format = args['image_format'].replace("'", "")
+         image_format = image_format.replace('"', '')
+         command += " -img_format '" + image_format + "'"
     if 'source' in args:
-		source = args['source'].replace("'", "")
-		source = source.replace('"', '')
-		command += " -source '" + source + "'"
+         source = args['source'].replace("'", "")
+         source = source.replace('"', '')
+         command += " -source '" + source + "'"
     if 'task' in args:
-		task = args['task'].replace("'", "")
-		task = task.replace('"', '')
-		command += " -task '" + task + "'"
+         task = args['task'].replace("'", "")
+         task = task.replace('"', '')
+         command += " -task '" + task + "'"
     if 'disco' in args:
-		disco = args['disco'].replace("'", "")
-		disco = disco.replace('"', '')
-		command += " -disco '" + disco + "'"
+         disco = args['disco'].replace("'", "")
+         disco = disco.replace('"', '')
+         command += " -disco '" + disco + "'"
     if 'max_motif_number' in args:
-		max_motif_number = args['max_motif_number'].replace("'", "")
-		max_motif_number = max_motif_number.replace('"', '')
-		command += " -nmotifs '" + max_motif_number + "'"
+         max_motif_number = args['max_motif_number'].replace("'", "")
+         max_motif_number = max_motif_number.replace('"', '')
+         command += " -nmotifs '" + max_motif_number + "'"
     if 'top_peaks' in args:
-		top_peaks = args['top_peaks'].replace("'", "")
-		top_peaks = top_peaks.replace('"', '')
-		command += " -top_peaks '" + top_peaks + "'"
+         top_peaks = args['top_peaks'].replace("'", "")
+         top_peaks = top_peaks.replace('"', '')
+         command += " -top_peaks '" + top_peaks + "'"
     if 'min_length' in args:
-		min_length = args['min_length'].replace("'", "")
-		min_length = min_length.replace('"', '')
-		command += " -minol '" + min_length + "'"
+         min_length = args['min_length'].replace("'", "")
+         min_length = min_length.replace('"', '')
+         command += " -minol '" + min_length + "'"
     if 'max_length' in args:
-		max_length = args['max_length'].replace("'", "")
-		max_length = max_length.replace('"', '')
-		command += " -maxol '" + max_length + "'"
+         max_length = args['max_length'].replace("'", "")
+         max_length = max_length.replace('"', '')
+         command += " -maxol '" + max_length + "'"
     if 'markov' in args:
-		markov = args['markov'].replace("'", "")
-		markov = markov.replace('"', '')
-		command += " -markov '" + markov + "'"
+         markov = args['markov'].replace("'", "")
+         markov = markov.replace('"', '')
+         command += " -markov '" + markov + "'"
     if 'min_markov' in args:
-		min_markov = args['min_markov'].replace("'", "")
-		min_markov = min_markov.replace('"', '')
-		command += " -min_markov '" + min_markov + "'"
+         min_markov = args['min_markov'].replace("'", "")
+         min_markov = min_markov.replace('"', '')
+         command += " -min_markov '" + min_markov + "'"
     if 'max_markov' in args:
-		max_markov = args['max_markov'].replace("'", "")
-		max_markov = max_markov.replace('"', '')
-		command += " -max_markov '" + max_markov + "'"
+         max_markov = args['max_markov'].replace("'", "")
+         max_markov = max_markov.replace('"', '')
+         command += " -max_markov '" + max_markov + "'"
     if 'class_int' in args:
-		class_int = args['class_int'].replace("'", "")
-		class_int = class_int.replace('"', '')
-		command += " -ci '" + class_int + "'"
+         class_int = args['class_int'].replace("'", "")
+         class_int = class_int.replace('"', '')
+         command += " -ci '" + class_int + "'"
 	
-	#sequence file
+    # Sequence file
     dir = make_tmp_dir("peak-motifs")
+#    if oct(os.stat(dir).st_mode) != '040777':
+#        os.chmod(dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
     (fd,tmp_test_infile_name) = make_tmp_file('peak-motifs', '', dir=dir)
     if 'test' in args:
         test = args['test'].rstrip()
@@ -238,8 +359,8 @@ def peak_motifs():
         ref_motif = args['ref_motif'].rstrip()
         (fd, tmp_ref_motif) = make_tmp_file("peak-motifs_ref-motifs", "tab",dir=dir)
         with open(tmp_ref_motif, 'w') as f:
-			f.write(ref_motif)
-			f.close()
+            f.write(ref_motif)
+            f.close()
         tmp_ref_motif = tmp_ref_motif.rstrip()
         command += " -ref_motifs '" + tmp_ref_motif + "'"	
 
@@ -448,8 +569,19 @@ def oligo_analysis_pipeline():
     
     return jsonify({'command':command, 'server': return_files })
 
+def read_parameters(data, mandatory, optional, default):
+    missing_parameters = list(set(mandatory) - set(data))
+    if missing_parameters:
+        return 'Missing mandatory parameters: ' + ', '.join(missing_parameters)
+    command = ''
+    for para in mandatory + optional:
+        if para in data:
+            command += ' -' + para + ' ' + data[para]
+        elif para in default:
+            command += ' -' + para + ' ' + default[para]
+    return command
 
-def run_command(command, output_choice, method_name, out_format, out_dir=''):
+def run_command(command, output_choice, method_name, out_format, out_dir='',content_type='json'):
     ### execute command
     p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
     (child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
@@ -474,8 +606,20 @@ def run_command(command, output_choice, method_name, out_format, out_dir=''):
     if(output_choice == 'display'):
         output = result
 	# change path to url
-    return jsonify( {'output' : output, 'command' : command, 'server' : temp_path.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])} )
-
+    output = ''
+    if output_choice == 'email':
+        output = error
+    elif output_choice == 'display':
+        output = result
+    response = ''
+    if content_type == 'json':
+        response = jsonify( {'output' : output, 'command' : command.replace(rsat_home, '$RSAT'), 'server' : temp_path.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])} )
+    elif content_type == 'text':
+        response = make_response(output)
+        #response.headers['Content-type'] = 'text/plain'
+    else:
+        response = 'Not supported content type'
+    return response
 def make_tmp_file(method_name, out_format, dir=''):
     if dir == '':
         tmp_dir = make_tmp_dir(method_name)
