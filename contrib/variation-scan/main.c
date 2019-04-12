@@ -143,8 +143,8 @@ char *splitstr(char *str_to_split, char sep);
 char *SplitOffsetFromTotalVars(char *variants_info);
 //void CreateFastaFromHaplosequences(string *line ,char **token, unsigned long int *nb_variation, unsigned long int top_variation, int *nb_seq, FILE *fh_varsequence,FILE *fh_fasta_sequence);
 //void CreateFastaFromSingleVariants(string *line, char **token, unsigned long int *nb_variation, unsigned long int top_variation, int *nb_seq, FILE *fh_varsequence, FILE *fh_fasta_sequence);
-void CreateFastaFromVarseqHaplotypes(string *input, string *fasta_sequence , int matrix_size, unsigned long int *nb_variation, unsigned long int *top_variation, unsigned long int *nb_seq);
-void CreateFastaFromVarseqVariants(string *input, string *fasta_sequence , int matrix_size, unsigned long int *nb_variation, unsigned long int *top_variation, unsigned long int *nb_seq);
+void CreateFastaFromVarseqHaplotypes(string *varsequence, string *fasta_sequence , int matrix_size, unsigned long int *nb_variation, unsigned long int *top_variation, unsigned long int *nb_seq);
+void CreateFastaFromVarseqVariants(string *varsequence, string *fasta_sequence , int matrix_size, unsigned long int *nb_variation, unsigned long int *top_variation, unsigned long int *nb_seq);
 void CreateFastaFromFastaHaplotypes(string *prev_fasta, string *new_fasta , int matrix_size, unsigned long int *nb_variation, unsigned long int *top_variation, unsigned long int *nb_seq);
 void CreateFastaFromFastaVariants(string *prev_fasta, string *new_fasta , int matrix_size, unsigned long int *nb_variation, unsigned long int *top_variation, unsigned long int *nb_seq);
 TRIE *ListInputMatrixFormats(void);
@@ -270,7 +270,7 @@ void help(){
   "    variation-scan\n"
   "\n"
   "VERSION\n"
-  "    2.0.5\n"
+  "    2.0.6\n"
   "\n"
   "DESCRIPTION\n"
   "    Scan variant sequences with position specific scoring matrices (PSSM)\n"
@@ -647,10 +647,14 @@ int main(int argc, char *argv[]){
   if (input){
     strcopy(varsequence, input);
     fin = OpenInputFile(fin,input);
+  } else {
+    strfmt(varsequence, "");
   }
   if (output){
     strcopy(variationscan_file, output);
     fout = OpenOutputFile(fout,output);
+  } else {
+    strfmt(variationscan_file, "");
   }
   if(!bg)
     RsatFatalError("No Background file was supplied. Use -bg option to specify it", NULL);
@@ -885,7 +889,7 @@ int main(int argc, char *argv[]){
   doit(convert_bg_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
 
   /////////////////////////////////////////////////////////////////////////
-  // Create fasta sequence file
+  // Detect number of fields for haplotype or single variant analysis
   /////////////////////////////////////////////////////////////////////////
   //Declare variables
   FILE *fh_varsequence    = NULL;
@@ -904,8 +908,12 @@ int main(int argc, char *argv[]){
   line->size = 0;
   token[0] = line->buffer;
 
-
-  fh_varsequence    = OpenInputFile(fh_varsequence, input );
+  // Open stream if needed
+  if( strcmp(varsequence->buffer, "") != 0){
+    fh_varsequence    = OpenInputFile(fh_varsequence, varsequence->buffer );
+  } else {
+    fh_varsequence = fin;
+  }
   //fh_fasta_sequence = OpenOutputFile(fh_fasta_sequence, fasta_sequence->buffer );
 
   //if(verbose >= 6) RsatInfo("Creating fasta sequence file", fasta_sequence->buffer, NULL);
@@ -944,7 +952,9 @@ int main(int argc, char *argv[]){
   /////////////////////////////////////////////////
   // Print Header
   /////////////////////////////////////////////////
-  fclose(fout);
+  //printf("\n\nHERE1!!!!!!!!!!!!!!!!!!! \n\n" );
+  //fclose(fout);
+  //printf("\n\nHERE2!!!!!!!!!!!!!!!!!!! \n\n" );
 
   //Test for number of fields i.e. which kind of sequence file is it reading
   //(Haplotypes or single variants) and create fasta.
@@ -966,7 +976,10 @@ int main(int argc, char *argv[]){
   }
 
   //Close input variation sequence and output fasta fh
-  fclose(fh_varsequence);
+  if( strcmp(varsequence->buffer, "") != 0) {
+    fclose(fh_varsequence);
+  }
+
   //fclose(fh_fasta_sequence);
 
   //Remove tmp variables
@@ -1200,16 +1213,28 @@ int main(int argc, char *argv[]){
 
   return 0;
 }
+
 void printHeaderSingleVariants(string *varscanFile, char*input, char *output, string *CMD){
   //Declare variables
-  FILE *fh_varscan_output = NULL;
+  FILE *fh_varscan_output = stdout;
+
   //Open filehandler
-  fh_varscan_output = OpenOutputFile(fh_varscan_output, varscanFile->buffer);
+  if(output) {
+    fh_varscan_output = OpenOutputFile(fh_varscan_output, varscanFile->buffer);
+  }
 
   //Print command-line and input/output files
   fprintf(fh_varscan_output,"; %s\n",CMD->buffer);
-  if(input)  fprintf(fh_varscan_output,"; Input  file\n; \t%s\n",input);
-  if(output) fprintf(fh_varscan_output,"; Output file\n; \t%s\n",output);
+
+  //Test if input file IS stdin
+  if(input) {
+    fprintf(fh_varscan_output,"; Input file\n; \t%s\n",input);
+  }
+
+  //Test if output file IS stdout
+  if(output) {
+    fprintf(fh_varscan_output,"; Output file\n; \t%s\n",output);
+  }
 
   //Print header
   fprintf(fh_varscan_output,
@@ -1239,8 +1264,11 @@ void printHeaderSingleVariants(string *varscanFile, char*input, char *output, st
           "pval_ratio\tbest_variant\tworst_variant\tbest_offset\tworst_offset\tmin_offset_diff\tbest_strand\t"
           "worst_strand\tstr_change\tbest_seq\tworst_seq\tminor_allele_freq\n");
 
+
   //Close fh
-  fclose(fh_varscan_output);
+  if(output) {
+    fclose(fh_varscan_output);
+  }
 
   return;
 }
@@ -1248,14 +1276,25 @@ void printHeaderSingleVariants(string *varscanFile, char*input, char *output, st
 
 void printHeaderHaplotypes(string *varscanFile, char*input, char *output, string *CMD){
   //Declare variables
-  FILE *fh_varscan_output = NULL;
+  FILE *fh_varscan_output = stdout;
+
   //Open filehandler
-  fh_varscan_output = OpenOutputFile(fh_varscan_output, varscanFile->buffer);
+  if(output) {
+    fh_varscan_output = OpenOutputFile(fh_varscan_output, varscanFile->buffer);
+  }
 
   //Print command-line and input/output files
   fprintf(fh_varscan_output,"; %s\n",CMD->buffer);
-  if(input)  fprintf(fh_varscan_output,"; Input  file\n; \t%s\n",input);
-  if(output) fprintf(fh_varscan_output,"; Output file\n; \t%s\n",output);
+
+  //Test if input file IS stdin
+  if(input) {
+    fprintf(fh_varscan_output,"; Input file\n; \t%s\n",input);
+  }
+
+  //Test if output file IS stdout
+  if(output) {
+    fprintf(fh_varscan_output,"; Output file\n; \t%s\n",output);
+  }
 
   //Print header
   fprintf(fh_varscan_output,
@@ -1287,7 +1326,9 @@ void printHeaderHaplotypes(string *varscanFile, char*input, char *output, string
           "worst_strand\tstr_change\tbest_seq\tworst_seq\tminor_allele_freq\n");
 
   //Close fh
-  fclose(fh_varscan_output);
+  if(output) {
+    fclose(fh_varscan_output);
+  }
 
   return;
 }
@@ -1296,7 +1337,7 @@ void ScanHaplosequences(string *mscanquick_file, string *varscanFile, char *matr
 
   //Declare variables
   FILE *fh_mscanquick_input = NULL;
-  FILE *varscan_file        = NULL;
+  FILE *varscan_file        = stdout;
   //FILE *fh_varscan_output   = NULL;
 
   int  i = 0;
@@ -1386,7 +1427,11 @@ void ScanHaplosequences(string *mscanquick_file, string *varscanFile, char *matr
 
   //Open input file
   fh_mscanquick_input = OpenInputFile(fh_mscanquick_input, mscanquick_file->buffer);
-  varscan_file = OpenAppendFile(varscan_file, varscanFile->buffer);
+
+  //Open output file
+  if(strcmp(varscanFile->buffer,"") != 0) {
+    varscan_file = OpenAppendFile(varscan_file, varscanFile->buffer);
+  }
 
   while ( fread( (line->buffer + line->size),1,1,fh_mscanquick_input) == 1 ) {
     //If '\t' is found assign next char address as the next token
@@ -1808,7 +1853,10 @@ void ScanHaplosequences(string *mscanquick_file, string *varscanFile, char *matr
 
   //Close input matrix-scan-quick fh
   fclose(fh_mscanquick_input);
-  fclose(varscan_file);
+
+  //Close output fh if NOT stdout
+  if(strcmp(varscanFile->buffer,"") != 0) fclose(varscan_file);
+
   return;
 }
 
@@ -2177,7 +2225,7 @@ void ScanSingleVariants(string *mscanquick_file, string *varscanFile, char *matr
   //Declare variables
   //  printf("\n\nIT ENTERED SCANSINGLEVARIANTS\n" );
   FILE *fh_mscanquick_input = NULL;
-  FILE *varscan_file        = NULL;
+  FILE *varscan_file        = stdout;
   int  i = 0;
   int  j = 0;
 
@@ -2230,9 +2278,18 @@ void ScanSingleVariants(string *mscanquick_file, string *varscanFile, char *matr
   //Initialize strings
   strcopy(curr_group,"");
   //printf("\n\nIT ENTERED SCANSINGLEVARIANTS 4\n" );
+
+  ////////////////////////////////////////////////////////////
   //Open input file
   fh_mscanquick_input = OpenInputFile(fh_mscanquick_input, mscanquick_file->buffer);
-  varscan_file = OpenAppendFile(varscan_file, varscanFile->buffer);
+  //Open output file
+  if(strcmp(varscanFile->buffer,"") != 0) {
+    varscan_file = OpenAppendFile(varscan_file, varscanFile->buffer);
+  }
+
+
+
+
   while ( fread( (line->buffer + line->size),1,1,fh_mscanquick_input) == 1 ) {
     //If '\t' is found assign next char address as the next token
     if (line->buffer[line->size] == '\t') {
@@ -2445,7 +2502,9 @@ void ScanSingleVariants(string *mscanquick_file, string *varscanFile, char *matr
 
   //Close input matrix-scan-quick fh
   fclose(fh_mscanquick_input);
-  fclose(varscan_file);
+
+  //Close output fh if NOT stdout
+  if(strcmp(varscanFile->buffer,"") != 0) fclose(varscan_file);
   return;
 }
 
@@ -2931,7 +2990,7 @@ void scanend(scan *group){
   return;
 }
 
-void CreateFastaFromVarseqHaplotypes(string *input, string *fasta_sequence , int matrix_size, unsigned long int *nb_variation, unsigned long int *top_variation, unsigned long int *nb_seq){
+void CreateFastaFromVarseqHaplotypes(string *varsequence, string *fasta_sequence , int matrix_size, unsigned long int *nb_variation, unsigned long int *top_variation, unsigned long int *nb_seq){
   //printf("\n\n AT LEAST ENTERED? with fasta to print: %s\n\n",fasta_sequence->buffer);
   //Declare variables
   string *line                    = NULL;
@@ -3028,9 +3087,19 @@ void CreateFastaFromVarseqHaplotypes(string *input, string *fasta_sequence , int
   strfmt(offset_and_length_tmp,"");
   strfmt(offset_list_hap1, "");
 
+  ///////////////////////////////////////////////////////
   //Open filehandlers
-  fh_varsequence    = OpenInputFile(fh_varsequence, input->buffer);
+
+  //Test if input file IS stdin
+  if(strcmp(varsequence->buffer,"") != 0) {
+    fh_varsequence    = OpenInputFile(fh_varsequence, varsequence->buffer);
+  } else {
+    fh_varsequence    = stdin;
+  }
+
   fh_fasta_sequence = OpenOutputFile(fh_fasta_sequence, fasta_sequence->buffer);
+
+
 
   //Prepare variables for buffer reading
   line->size = 0;
@@ -3539,8 +3608,12 @@ void CreateFastaFromVarseqHaplotypes(string *input, string *fasta_sequence , int
   }
 
   //Close filehandlers
-  fclose(fh_varsequence);
+  //fclose(fh_varsequence);
   fclose(fh_fasta_sequence);
+  //Test if input file IS stdin and Close
+  if(strcmp(varsequence->buffer,"") != 0) {
+    fclose(fh_varsequence);
+  }
 
   //Remove tmp variables
   RsatMemTracker = relem( (void*)token, RsatMemTracker );
@@ -3568,7 +3641,7 @@ void CreateFastaFromVarseqHaplotypes(string *input, string *fasta_sequence , int
   return;
 }
 
-void CreateFastaFromVarseqVariants(string *input, string *fasta_sequence , int matrix_size, unsigned long int *nb_variation, unsigned long int *top_variation, unsigned long int *nb_seq){
+void CreateFastaFromVarseqVariants(string *varsequence, string *fasta_sequence , int matrix_size, unsigned long int *nb_variation, unsigned long int *top_variation, unsigned long int *nb_seq){
   //Declare variables
   string *line                    = NULL;
   string *offset_and_length_tmp   = NULL;
@@ -3606,8 +3679,18 @@ void CreateFastaFromVarseqVariants(string *input, string *fasta_sequence , int m
   strfmt(chr_start,"");
   strfmt(chr_end,"");
 
+
+  ///////////////////////////////////////////////////////
   //Open filehandlers
-  fh_varsequence    = OpenInputFile(fh_varsequence, input->buffer);
+
+  //Test if input file IS stdin
+  if(strcmp(varsequence->buffer,"") != 0) {
+    fh_varsequence    = OpenInputFile(fh_varsequence, varsequence->buffer);
+  } else {
+    fh_varsequence    = stdin;
+  }
+
+  //Open filehandlers
   fh_fasta_sequence = OpenOutputFile(fh_fasta_sequence, fasta_sequence->buffer);
 
   //Prepare variables for buffer reading
@@ -3709,8 +3792,12 @@ void CreateFastaFromVarseqVariants(string *input, string *fasta_sequence , int m
   }
 
   //Close filehandlers
-  fclose(fh_varsequence);
+  //fclose(fh_varsequence);
   fclose(fh_fasta_sequence);
+  //Test if input file IS stdin and Close
+  if(strcmp(varsequence->buffer,"") != 0) {
+    fclose(fh_varsequence);
+  }
 
   //Remove tmp variables
   RsatMemTracker = relem( (void*)token, RsatMemTracker );
