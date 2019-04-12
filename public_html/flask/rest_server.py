@@ -28,32 +28,32 @@ def not_found(error):
 
 @app.route('/', methods=['GET'])
 def index():
-    return "Hello World!"
+	return "Hello World!"
 
 #### supported_organisms
 @app.route('/supported-organisms', methods = ['POST', 'GET'])
 def get_supported_organisms():
-    output_choice = 'email'
-    if request.method == 'POST':
-        data = request.get_json(force=True) or request.form
-    elif request.method == 'GET':
-        data = request.args
-        output_choice = 'display'
-    command = perl_scripts + '/supported-organisms'
-    if 'group' in data:
-        command += ' -group ' + data['group']
-    if 'format' in data:
-        command += ' -format ' + data['format']
-    if 'depth' in data:
-        command += ' -depth ' + data['depth']
-    if 'taxon' in data:
-        command += ' -taxon ' + data['taxon']
-    if 'unique_species' in data:
-        command += ' -unique_species'
-    if 'unique_genus' in data:
-        command += ' -unique_genus'
+	output_choice = 'email'
+	if request.method == 'POST':
+		data = request.get_json(force=True) or request.form
+	elif request.method == 'GET':
+		data = request.args
+		output_choice = 'display'
+	command = perl_scripts + '/supported-organisms'
+	if 'group' in data:
+		command += ' -group ' + data['group']
+	if 'format' in data:
+		command += ' -format ' + data['format']
+	if 'depth' in data:
+		command += ' -depth ' + data['depth']
+	if 'taxon' in data:
+		command += ' -taxon ' + data['taxon']
+	if 'unique_species' in data:
+		command += ' -unique_species'
+	if 'unique_genus' in data:
+		command += ' -unique_genus'
 
-    return run_command(command, output_choice, 'supported-organisms', 'txt','')
+	return run_command(command, output_choice, 'supported-organisms', 'txt','')
 
 #### random_seq
 @app.route('/random_seq', methods = ['POST', 'GET'])
@@ -80,7 +80,7 @@ def get_random_seq():
 #### variation-info
 @app.route('/variation-info', methods = ['POST', 'GET'])
 def get_variation_info():
-    output_choice = 'email'
+    output_choice = 'display'
     files = ''
     if request.method == 'POST':
         data = request.form or request.get_json(force=True)
@@ -98,30 +98,40 @@ def get_variation_info():
     ## Parameters
     mandatory_parameters = ['species', 'assembly']
     optional_parameters = ['h', 'format', 'species_suffix', 'release']
-    default_param_values = {'format':'id'}
-
+    default_param_values = {'format':'id'}    
+    fileupload_parameters = ['i']
+    
     ## Check that all mandatory parameters have been specified
     command_ = read_parameters(data,mandatory_parameters, optional_parameters, default_param_values)
     if 'Missing parameters' in command_:
         return command_
     else:
         command += command_
-
-	# Input file (SNP IDs)
-    (fd, varinfo_query_snps_path) = make_tmp_file('variation-info_query_snps', '')
-    if 'infile' in files:
-        varinfo_query_snps = files['infile']
-        varinfo_query_snps.save('varinfo_query_snps_path')
-    elif 'query_snps' in data:
-        with open(varinfo_query_snps_path, 'w') as f:
-            query_snps = data['query_snps'].replace(",", "\n")
-            f.write(query_snps)
-            f.close()
-    command += " -i " + varinfo_query_snps_path
-
-    return run_command(command, output_choice, 'variation-info', 'varBed','')
     
-
+    command_ = read_fileupload(files,data,fileupload_parameters,'variation-info-snps')
+    if 'Missing input file' in command_:
+        return command_
+    else:
+        command += command_
+    return run_command(command, output_choice, 'variation-info', 'varBed','','file')
+    
+def read_fileupload(files,data,fileupload_parameters,suffix,dir=''):
+    missing_file_parameters = list(set(fileupload_parameters) - set(files) - set(data))
+    if missing_file_parameters:
+        return 'Missing input file parameters: -' + ', -'.join(missing_file_parameters)
+    command = ''
+    for param in fileupload_parameters:
+        (fd, tmp_file_path) = make_tmp_file(suffix,'')
+        if param in files:
+            file_upload = files[param]
+            file_upload.save(tmp_file_path)
+        elif param in data:
+            with open(tmp_file_path,'w') as f:
+                query = data[param]
+                f.write(query)
+                f.close()
+        command += ' -' + param + ' ' + tmp_file_path
+    return command
 #### retrieve-variation-seq
 @app.route('/retrieve-variation-seq', methods = ['POST', 'GET'])
 def get_retrieve_variation_seq():
@@ -135,11 +145,22 @@ def get_retrieve_variation_seq():
 
     if 'h' in data: # help message and list of options
         command += ' -h '
-    if 'species' in data: # species
-        command += ' -species '  + data['l']
-    if 'species_name' in data: # name of the species
-        command += ' -species_name '  + data['n']
-
+    mandatory_parameters = ['species','assembly']
+    optional_parameters = ['mml','format','release','species_suffix']
+    default_param_values = {'mml':30,'format':'id'}
+    fileupload_parameters = ['i']
+    
+    ## read regular parameters 
+    command_ = read_parameters(data,mandatory_parameters,optional_parameters,default_param_values)
+    if 'Missing parameters' in command_:
+        return command_
+    command += command_
+    ## read file upload parameters
+    command_ = read_file_parameters(files,data,fileupload_parameters,'retrieve-variation-seq')
+    if 'Missing input file' in command_:
+        return command_
+    command += command_
+       
     return run_command(command, output_choice, 'retrieve-variation-seq', 'bed','')
     
 
@@ -560,7 +581,7 @@ def read_parameters(data, mandatory, optional, default):
             command += ' -' + para + ' ' + default[para]
     return command
 
-def run_command(command, output_choice, method_name, out_format, out_dir=''):
+def run_command(command, output_choice, method_name, out_format, out_dir='',content_type='json'):
     ### execute command
     p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
     (child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
@@ -590,8 +611,15 @@ def run_command(command, output_choice, method_name, out_format, out_dir=''):
         output = error
     elif output_choice == 'display':
         output = result
-    return jsonify( {'output' : output, 'command' : command.replace(rsat_home, '$RSAT'), 'server' : temp_path.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])} )
-
+    response = ''
+    if content_type == 'json':
+        response = jsonify( {'output' : output, 'command' : command.replace(rsat_home, '$RSAT'), 'server' : temp_path.replace(os.environ['RSAT'] + "/public_html", os.environ['rsat_www'])} )
+    elif content_type == 'text':
+        response = make_response(output)
+        #response.headers['Content-type'] = 'text/plain'
+    else:
+        response = 'Not supported content type'
+    return response
 def make_tmp_file(method_name, out_format, dir=''):
     if dir == '':
         tmp_dir = make_tmp_dir(method_name)
