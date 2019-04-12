@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl -w
 
 ############################################################
 #
@@ -476,8 +476,8 @@ sub Get_var_from_vcf {
 
       my $i = 0;
       foreach my $descriptor (@description) {
-        $i++;
         $field{$descriptor} = $information[$i] ? $information[$i] : "NaN";
+        $i++;
       }
       #NOTE WSG (2018-02-08) I believe this snippet of code
       #is not supported in some Perl versions

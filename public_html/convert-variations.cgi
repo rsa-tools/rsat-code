@@ -154,6 +154,10 @@ if ($query->param('out_type')) {
     $parameters .= " -to ".$out_type;
 }
 
+## Use phaing information in the file
+if ($query->param('phased_data') eq "phased") {
+    $parameters .= " -phased ";
+}
 
 
 &ReportWebCommand($command." ".$parameters);

@@ -100,6 +100,10 @@ print $query->popup_menu(-name=>'out_type',-id=>'out_type',
 			 -Values=>['varBed','vcf','gvf'],
 			 -default=>$default{out_type});
 print "<\p>";
+
+print ("<INPUT TYPE='radio' NAME='phased_data' VALUE='phased' >","<b>Phased genetic information</b>");
+
+
 print "<BR>\n";
 
 ### send results by email or display on the browser
