@@ -337,12 +337,13 @@ def read_fileupload_parameters(data, files, fileupload_parameters, prefix, dir='
     parameter with the same name is specified in the data (GET), and if
     so write a local file with its content.
     
-    Args:
-       data (dictionnary): parameters submitted with the REST query
-       files (dictionnary): input file names 
-       fileupload_parameters (list): parameters specifying input files 
-       mandatory (Boolean): 
-       split_char (str): character used to split the parameter from a GET arguemnt into separate lines to print in the file.
+    :param data: list. Parameters submitted with the REST query
+    :param files: dictionary. Local file names for each input file
+    :param fileupload_parameters: list. Names of the paramters corresponding to input files
+    :param mandatory: boolean. Variable indicating whether the files are mandatory
+    :param split_char: string. Character used to split the parameter from a GET arguemnt into separate lines to print in the file.
+
+    :return: dictionary with the keys 'arguments' (arguments to add to the command-line), 'error' (error code) and 'error_message'.
 
     """
     input_files = {'error':0,
@@ -363,7 +364,7 @@ def read_fileupload_parameters(data, files, fileupload_parameters, prefix, dir='
         # Get values provided in the URL and store them in file (GET)
         elif param in data:
 	    input = data[param]
-#            input = "HELLO,BOUM"
+            #            input = "HELLO,BOUM"
 #            input.strip()
 #            input.replace(",", "\n")
             if (split_char != ''):
