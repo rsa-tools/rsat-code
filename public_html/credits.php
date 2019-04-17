@@ -60,7 +60,7 @@
 <img style="border:1px solid" src="images/RSAT_logo_w150.png" alt="RSAT"></a>
       <p>The <a href='images/RSAT_logo.png'>RSAT logo
 	</a> was designed by Mauricio Guzmán (<a target="_blank"
-	href="http://www.altamirastudio.com/">http://www.altamirastudio.com/</a>)
+	href="http://www.altamirastudio.com/">http://www.altamirastudio.com.mx/</a>)
 	</p>
 
       <h2>Third-pary Programs</h2>

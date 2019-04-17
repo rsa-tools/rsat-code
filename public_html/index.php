@@ -68,7 +68,7 @@
 			<div class='col-sm-4'><a class='fa fa-code' href='#' style='cursor:default'></a> Code version: <?php echo $properties['git_date'];?></div>
 		</div><br/>
 		<div class='social-circle'><div class='row'>
-			<div class='col-sm-8'><a class='fa fa-paint-brush' href='http://www.altamirastudio.com/' target='_blank'></a> RSAT logos designed by Mauricio Guzman (<a target="_blank" href="http://www.altamirastudio.com/">http://www.altamirastudio.com/</a>)</div>
+			<div class='col-sm-8'><a class='fa fa-paint-brush' href='http://www.altamirastudio.com/' target='_blank'></a> RSAT logos designed by Mauricio Guzman (<a target="_blank" href="http://www.altamirastudio.com.mx/">http://www.altamirastudio.com.mx/</a>)</div>
 			<div class='col-sm-4'><a class='fa fa-bug' href='#' style='cursor:default'></a><?php echo " Group specificity: <b>".$properties['group_specificity'] . "</b></p>"; ?></div>
 		</div>
 		<div align='right'><?php echo $properties['rsat_site'] . ' (' . $properties['rsat_www'] . ')'; ?></div>
