@@ -156,10 +156,10 @@ print '<script>
 function setDemo(){
     $("#reset").trigger("click");
     queries.value = "lexA\n";
-    $("#organism").val("Escherichia_coli_K_12_substr__MG1655_uid57779");
-    $("#organism_name").val("Escherichia coli K 12 substr  MG1655 uid57779");
-    $("#taxon").val("Enterobacteriales");
-    $("#taxon_name").val("Enterobacteriales");
+    $("#organism").val("Escherichia_coli_GCF_000005845.2_ASM584v2");
+    $("#organism_name").val("Escherichia coli GCF 000005845.2 ASM584v2");
+    $("#taxon").val("Enterobacterales");
+    $("#taxon_name").val("Enterobacterales");
 }
 </script>';
 

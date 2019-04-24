@@ -295,7 +295,7 @@ print <<EndAddress;
 
 <hr  class = 'portal'/>
 <h4 class='footer'>
-      <div align="center">RSAT logos designed by Mauricio Guzman (<a target="_blank" href="http://www.altamirastudio.com/">http://www.altamirastudio.com/</a>)</div>
+      <div align="center">RSAT logos designed by Mauricio Guzman (<a target="_blank" href="http://www.altamirastudio.com.mx/">http://www.altamirastudio.com.mx/</a>)</div>
 
 <i>
 For suggestions or information request, please contact :
