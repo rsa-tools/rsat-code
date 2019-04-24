@@ -207,6 +207,7 @@ package main;
   ## Input control sequences file is mandatory
   ## If the differential mode is activated
   if($diff_flag){
+      &RSAT::message::Info("Differential mode") if ($main::verbose >= 2);
       unless ($main::infile{sequences_control}) {
 	  &RSAT::error::FatalError("The control sequences file is mandatory when the differential mode (-diff) is activated. See option -seq_control");
       }
@@ -1315,7 +1316,7 @@ sub ProcessSeq {
 
     ## If the diff mode is activated, then add the control sequences
     ## to be processed as the query sequences
-    if($diff_flag){
+    if($diff_flag){	
 	push(@sequences, $main::infile{sequences_control});
     }
 
