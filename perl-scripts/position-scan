@@ -544,7 +544,8 @@ A file containing the control sequences in fasta format.
 =cut
 
     } elsif ($arg eq "-seq_control") {
-      $main::infile{sequences_control} = shift(@arguments);
+	$main::infile{sequences_control} = shift(@arguments);
+	$diff_flag = 1;
 
 =pod
 
