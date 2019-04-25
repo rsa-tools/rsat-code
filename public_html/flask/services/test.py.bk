@@ -1,0 +1,12 @@
+import os,json
+import subprocess
+def get_backgroundfile(org):
+	st = "perl -e 'use lib \"/workspace/rsat/perl-scripts/lib\"; use RSAT::OrganismManager; $x = &RSAT::OrganismManager::ExpectedFreqFile(" + org + ",3,\"upstream-noorf\"); print $x;'"
+	p = subprocess.Popen(st, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+	prr= p.stdout.readline()
+	return prr
+
+x = get_backgroundfile("Homo_sapiens_GRCh38")
+print("coucuc")
+print(x)

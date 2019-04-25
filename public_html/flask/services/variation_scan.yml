@@ -1,0 +1,35 @@
+descr:
+    Scan variation sequences with position specific scroring matrices
+---
+parameters:
+    - name: species
+      description: species name
+      type: string
+      required: true
+    - name: assembly
+      description: 
+      type: string
+      required: true
+    - name: i
+      description: Variation file RSAT format, i.e. varBed
+      type: file
+      required: false
+    - name: m
+      description: Matrix file transfac/tab format 
+      type: file
+      required: false
+    - name: top_matrices
+      description: Only work with the number of top matrices
+      type: int
+      required: false
+      default: 10
+    - name: m_format
+      description: matrix_format. Matrix file format
+      type: string
+      required: false
+      default: transfac
+    - name: markov_order
+      description: used for background file
+      type: int
+      required: false
+      default: 2
