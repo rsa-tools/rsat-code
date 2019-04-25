@@ -23,27 +23,20 @@ ns = api.namespace('variation-info', description=descr)
 class VariationInfo(Resource):
 	@api.expect(get_parser)
 	def get(self):
-    		output_choice = 'display'
         	data = get_parser.parse_args()
-    		fileupload_parameters = ['i']
-    		command = utils.perl_scripts + '/variation-info'
-		for param in data:
-			param_arg = param.replace('_url','').replace('_text','').replace('_piping','')
-			if data[param] is not None and data[param] != '' and not param_arg in fileupload_parameters:
-				command += ' -' + param + ' ' + data[param]
-		command += utils.parse_fileupload_parameters(data, fileupload_parameters, 'variation-info', '', True, ',') 
-		return utils.run_command(command, output_choice, 'variation-info', 'varBed', '')
-	
+		return self._run(data)
+    			
 	@api.expect(post_parser)
 	def post(self):
-		output_choice = 'display'
 		data = post_parser.parse_args()
+		return self._run(data)
+	
+	def _run(self,data):
+		output_choice = 'display'
 		fileupload_parameters = ['i']
 		command = utils.perl_scripts + '/variation-info'
 		for param in data:
-			param_arg = param.replace('_url','').replace('_text','').replace('_piping','')
-			if data[param] is not None and data[param] != '' and not param_arg in fileupload_parameters:
+			if data[param] is not None and data[param] != '' and not param in fileupload_parameters and '_input_string' not in param:
 				command += ' -' + param + ' ' + data[param]
 		command += utils.parse_fileupload_parameters(data, fileupload_parameters, 'variation-info', '', True, ',') 
-		return utils.run_command(command, output_choice, 'variation-info', 'varBed','')
-			
+		return utils.run_command(command, output_choice, 'variation-info', 'varBed','')		
