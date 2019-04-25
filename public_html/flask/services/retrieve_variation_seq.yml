@@ -1,0 +1,37 @@
+descr:
+    Given a set of IDs for polymorphic variations, retrieve the corresponding variants
+---
+parameters:
+    - name: species
+      description: species name
+      type: string
+      required: true
+    - name: species_suffix
+      description:      
+      type: string
+      required: false
+    - name: assembly
+      description: 
+      type: string
+      required: true
+    - name: i
+      description:
+      type: file
+      required: false
+    - name: release
+      description: 
+      type: string
+      required: false
+    - name: format
+      description: variation format. Format of the input file
+      type: string
+      required: false
+      default: id
+    - name: type
+      description:
+      type: string
+      required: false
+    - name: col
+      description:
+      type: string
+      required: false

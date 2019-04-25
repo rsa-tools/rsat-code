@@ -1,0 +1,41 @@
+descr:
+    Taking as input a set of either variation IDs (rs numbers) or genomic
+    regions (bed format), retrieve information about matching variants.
+    The collected information is reported in varBed format, which is a
+    specific type of bed format for variations (see convert-variations for
+    info).
+---
+parameters:
+    - name: species
+      description: species name
+      type: string
+      required: true
+    - name: species_suffix
+      description:      
+      type: string
+      required: false
+    - name: assembly
+      description: 
+      type: string
+      required: true
+    - name: i
+      description:
+      type: file
+      required: false
+    - name: release
+      description: 
+      type: string
+      required: false
+    - name: format
+      description:
+      type: string
+      required: false
+      default: id
+    - name: type
+      description:
+      type: string
+      required: false
+    - name: col
+      description:
+      type: string
+      required: false

@@ -1,0 +1,49 @@
+from flask import Flask, jsonify, abort, request, make_response, url_for
+from flask_restplus import Resource, reqparse, fields
+from werkzeug.datastructures import FileStorage
+import yaml
+from subprocess import check_output, Popen, PIPE
+import os,sys,re
+import requests
+
+service_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(service_dir + '/../lib')
+sys.path.append(service_dir + '/../')
+import utils
+from rest_server import app,api
+
+### Read parameters from yaml file
+(descr, get_parser, post_parser) = utils.read_parameters_from_yml(api, service_dir+'/variation_info.yml')
+
+ns = api.namespace('variation-info', description=descr)
+
+################################################################
+### Get information about polymorphic variations
+@ns.route('/')
+class VariationInfo(Resource):
+	@api.expect(get_parser)
+	def get(self):
+    		output_choice = 'display'
+        	data = get_parser.parse_args()
+    		fileupload_parameters = ['i']
+    		command = utils.perl_scripts + '/variation-info'
+		for param in data:
+			param_arg = param.replace('_url','').replace('_text','').replace('_piping','')
+			if data[param] is not None and data[param] != '' and not param_arg in fileupload_parameters:
+				command += ' -' + param + ' ' + data[param]
+		command += utils.parse_fileupload_parameters(data, fileupload_parameters, 'variation-info', '', True, ',') 
+		return utils.run_command(command, output_choice, 'variation-info', 'varBed', '')
+	
+	@api.expect(post_parser)
+	def post(self):
+		output_choice = 'display'
+		data = post_parser.parse_args()
+		fileupload_parameters = ['i']
+		command = utils.perl_scripts + '/variation-info'
+		for param in data:
+			param_arg = param.replace('_url','').replace('_text','').replace('_piping','')
+			if data[param] is not None and data[param] != '' and not param_arg in fileupload_parameters:
+				command += ' -' + param + ' ' + data[param]
+		command += utils.parse_fileupload_parameters(data, fileupload_parameters, 'variation-info', '', True, ',') 
+		return utils.run_command(command, output_choice, 'variation-info', 'varBed','')
+			
