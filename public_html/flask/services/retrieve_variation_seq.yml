@@ -6,6 +6,7 @@ parameters:
       description: species name
       type: string
       required: true
+      default: Homo sapiens
     - name: species_suffix
       description:      
       type: string
@@ -14,6 +15,7 @@ parameters:
       description: 
       type: string
       required: true
+      default: GRCh38
     - name: i
       description:
       type: file
@@ -26,7 +28,12 @@ parameters:
       description: variation format. Format of the input file
       type: string
       required: false
-      default: id
+      default: varBed
+    - name: mml
+      description:
+      type: int
+      required: false
+      default: 30
     - name: type
       description:
       type: string

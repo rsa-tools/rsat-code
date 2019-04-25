@@ -12,7 +12,7 @@ from rest_server import app
 
 ################################################################
 ### variation-scan
-@app.route('/variation-scan', methods=['POST','GET'])
+@app.route('/variation-scan-old', methods=['POST','GET'])
 def variation_scan():
     output_choice = 'display'
     files = ''

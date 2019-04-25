@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, abort, request, make_response, url_for
-from flask_restplus import Resource, reqparse, fields
+import json
 from subprocess import check_output, Popen, PIPE
 import os,sys,re
 import requests
@@ -10,10 +10,9 @@ sys.path.append(service_dir + '/../')
 import utils
 from rest_server import app
 
-################################################################
-### Get information about polymorphic variations
-@app.route('/variation-info-old', methods=['POST','GET'])
-def get_variation_info():
+### retrieve variation sequence
+@app.route('/retrieve-variation-seq-old', methods = ['POST', 'GET'])
+def retrieve_variation_seq():
     files = ''
     output_choice = 'display'
     if request.method == 'POST':
@@ -22,12 +21,12 @@ def get_variation_info():
     elif request.method == 'GET':
         data = request.args
     
-    command = utils.perl_scripts + '/variation-info'
+    command = utils.rsat_bin + '/retrieve-variation-seq'
     if 'h' in data: # help message and list options
         command += ' -h'
     mandatory_parameters = ['species','assembly']
-    optional_parameters = ['species_suffix','release','format','type','col']
-    default_param_values = {'format':'id'}
+    optional_parameters = ['species_suffix','release','format','mml','col']
+    default_param_values = {'format':'varBed', 'mml':'30', 'col':'1'}
     fileupload_parameters = ['i']
 
     ## Read regular parameters
@@ -37,9 +36,9 @@ def get_variation_info():
     command += parameters['arguments']
     
     ## Upload input file if specified
-    input_files = utils.read_fileupload_parameters(data, files, fileupload_parameters, 'variation-info', '', True, ',')
+    input_files = utils.read_fileupload_parameters(data, files, fileupload_parameters, 'retrieve-variation-seq', '')
     if input_files['error'] != 0:
         return input_files['error_message']
     command += input_files['arguments']
 
-    return jsonify(utils.run_command(command, output_choice, 'variation-info', 'varBed', ''))
+    return jsonify(utils.run_command(command, output_choice, 'retrieve-variation-seq', 'varSeq', ''))

@@ -10,6 +10,7 @@ parameters:
       description: species name
       type: string
       required: true
+      default: Homo_sapiens
     - name: species_suffix
       description:      
       type: string
@@ -18,6 +19,7 @@ parameters:
       description: 
       type: string
       required: true
+      default: GRCh38
     - name: i
       description:
       type: file

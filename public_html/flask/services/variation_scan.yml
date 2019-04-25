@@ -6,10 +6,12 @@ parameters:
       description: species name
       type: string
       required: true
+      default: Homo sapiens
     - name: assembly
       description: 
       type: string
       required: true
+      default: GRCh38
     - name: i
       description: Variation file RSAT format, i.e. varBed
       type: file

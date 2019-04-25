@@ -43,11 +43,11 @@ class FetchSequences(Resource):
         data = get_parser.parse_args()
 
         command = utils.perl_scripts + '/fetch-sequences'
-
+	fileupload_parameters = ['i']
         for param in data:
-            if data[param] is not None and data[param] != '':
+            if data[param] is not None and data[param] != '' and '_input_string' not in param:
                 command += ' -' + param + ' ' + data[param]
-        
+        command += utils.parse_fileupload_parameters(data, fileupload_parameters, 'fetch-sequences','',True,',')
         return utils.run_command(command, output_choice, 'fetch-sequences', 'fasta', ''), 200
         
     @api.expect(post_parser)
@@ -60,8 +60,7 @@ class FetchSequences(Resource):
         fileupload_parameters = ['i']
         
         for param in data:
-            param_arg = param.replace('_url','').replace('_text','').replace('_piping','')
-            if data[param] is not None and data[param] != '' and not param_arg in fileupload_parameters:
+            if data[param] is not None and data[param] != '' and '_input_string' not in param and param not in fileupload_parameters:
                 command += ' -' + param + ' ' + data[param]
         command += utils.parse_fileupload_parameters(data,fileupload_parameters,'fetch-sequences','',True,',')
 

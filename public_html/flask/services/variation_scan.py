@@ -30,6 +30,7 @@ class VariationInfo(Resource):
 	def post(self):
 		data = post_parser.parse_args()
 		return self._run(data)
+	
 	def _run(self, data):
 		output_choice = 'display'
 		fileupload_parameters = ['i','m']
@@ -37,8 +38,7 @@ class VariationInfo(Resource):
 		for param in data:
 			if param == 'species' or param == 'assembly' or param == 'markov_order':
 				continue
-			param_arg = param.replace('_url','').replace('_text','').replace('_piping','')
-			if data[param] is not None and data[param] != '' and not param_arg in fileupload_parameters:
+			if data[param] is not None and data[param] != '' and '_input_string' not in param and param not in fileupload_parameters:
 				command += ' -' + param + ' ' + str(data[param])
 		command += utils.parse_fileupload_parameters(data, fileupload_parameters, 'variation-scan', '', True, ',')
 		if 'bg' in data and data['bg'] is not None and data['bg'] != '':
