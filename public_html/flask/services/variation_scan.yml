@@ -2,22 +2,12 @@ descr:
     Scan variation sequences with position specific scroring matrices
 ---
 parameters:
-    - name: species
-      description: species name
-      type: string
-      required: true
-      default: Homo sapiens
-    - name: assembly
-      description: 
-      type: string
-      required: true
-      default: GRCh38
     - name: i
-      description: Variation file RSAT format, i.e. varBed
+      description: Variation file RSAT format, i.e. varBed. If i is not specified, use i_string option
       type: file
       required: false
     - name: m
-      description: Matrix file transfac/tab format 
+      description: Matrix file transfac/tab format. If m is not specified, use m_string option
       type: file
       required: false
     - name: top_matrices
@@ -35,3 +25,7 @@ parameters:
       type: int
       required: false
       default: 2
+    - name: bg
+      description: Background file. oligo-analysis file format. If bg is not specified, use bg_string option
+      type: file
+      required: false

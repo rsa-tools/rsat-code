@@ -8,12 +8,8 @@ parameters:
       required: false
       default: mm9
     - name: i
-      description: The input file should be in bed format. If no input file is specified, the standard input is used. This allows to use the command within a pipe. This option is mutually exclusive with option -u
+      description: The input file should be in bed format. If no input file is specified, the standard input is used. This allows to use the command within a pipe. If i is not specified, use option i_string
       type: file
-      required: false
-    - name: u
-      description: Use as input a file available on a remote Web server (e.g. a bed file on your Galaxy account). This option is mutually exclusive with option -i.
-      type: string
       required: false
     - name: header_format
       description: Format for sequence headers. Supported header formats. UCSC, galaxy
