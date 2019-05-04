@@ -176,25 +176,28 @@ information. The file includes the following columns:
 
 =head2 download-ensembl-genome
 
-Installe organims from ensembl genomes.
+Install organims from Ensembl or EnsemblGenomes.
 
 =head2 download-ensembl-variations
 
-Get variation coordiantes from ensembl.
-Variants information obtained with this tool are retrived by
+Get variation coordiantes from Ensembl or EnsemblGenomes.
+
+Variant information obtained with this tool can then be retrived by
 I<variation-info>.
 
 =head2 convert-variations
 
-Convert between diferent variation data file types.
-I<variation-info> retrieves variants in varBed format,
-<convert-variations> can be used to convert to vcf anf gvf formats.
+Interconversions between different file formats used to describe
+polymorphic variations.  
+
+I<variation-info> exports variants in varBed format,
+<convert-variations> can be used to convert to VCF and GVF formats.
 
 =head2 retrieve-variations-seq
 
-Given a set of regions, varian IDs (rsNumber) or variants in varBed format
-<retrieve-variation-seq> will retrive the corresponding genomic
-sequence sorounding the genetic variants.
+Given a set of regions, variant IDs (rsNumber) or variants in varBed
+format <retrieve-variation-seq> will retrive the corresponding genomic
+sequence surrounding the genetic variants.
 
 =head2 variation-scan
 
@@ -206,7 +209,10 @@ matrices.
 
 =over
 
-=item B<wish 1>
+=item B<direct retrieval at Ensembl> Ensembl presents several
+application-programmatic interfaces (APIs) that should enable us to
+retrieve variation info by remote queries rather than having to
+install the (heavy) variation files on the RSAT server. 
 
 =back
 
@@ -749,9 +755,12 @@ allows to use the command within a pipe.
 
 =pod
 
-=item B<-format variation_format>
+=item B<-format query_format>
 
-Format of the input file
+Format of the input query file. The different formats actually
+correspond to different modalities of usage of the tool: get
+variations specified either by their IDs or by a set of genomic
+regions.
 
 Supported formats:
 
