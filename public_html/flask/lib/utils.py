@@ -6,10 +6,10 @@ from tempfile import mkstemp, mkdtemp, NamedTemporaryFile
 import datetime
 import pwd
 import requests
-from flask import jsonify
+from flask import jsonify, make_response
 from werkzeug.datastructures import FileStorage
 import yaml
-from flask_restplus import Resource, reqparse, fields
+from flask_restplus import Resource, reqparse, fields, inputs
 
 def get_environ_vars(props_file):
     """Add the RSAT environment variables defined in the RSAT_config.props file into 
@@ -38,7 +38,7 @@ rsat_bin = os.environ['RSAT_BIN']
 perl_scripts = rsat_home + '/perl-scripts'
 public_html = rsat_home + '/public_html'
 
-param_types = {'string':str, 'int':int, 'file':FileStorage}
+param_types = {'string':str, 'int':int, 'file':FileStorage, 'boolean':inputs.boolean}
 
 def hide_RSAT_path(path):
     """Hide the absolute RSAT path base, replace it by $RSAT alias.
@@ -99,7 +99,7 @@ def get_backgroundfile(org, oligo_len, background="upstream-noorf"):
 	
 	:return: name of background file
 	"""
-	command = "perl -e 'use lib \"" + perl_scripts + "/lib/\"; use RSAT::OrganismManager; $x=&RSAT::OrganismManager::ExpectedFreqFile(" + org + ","+ str(oligo_len) +",\""+ background+"\"); print $x;'"
+	command = "perl -e 'use lib \"" + perl_scripts + "/lib/\"; use RSAT::OrganismManager; $x=&RSAT::OrganismManager::ExpectedFreqFile(" + org + ","+ str(oligo_len) +",\""+ background+"\", str=>\"-1str\", noov=>\"ovlp\"); print $x;'"
 	p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	file = p.stdout.readline()
 	return file
@@ -119,18 +119,26 @@ def read_parameters_from_yml(api,yml_file):
 	descr = yaml_data['descr']
 	for param in yaml_data['parameters']:
 		if param['type'] != 'file':
-			get_parser.add_argument(param['name'], type=param_types[param.get('type','string')], required=param.get('required','false'), help=param.get('description',''), default=param.get('default',''))
-			post_parser.add_argument(param['name'], type=param_types[param.get('type','string')], required=param.get('required','false'), help=param.get('description',''), default=param.get('default',''), location='form')
+			choices = ''
+			if param['type'] == 'boolean':
+				choices = (True,False)
+
+			if 'choices' in param and param['choices'] != '':
+				if param['type'] == 'string':
+					choices = tuple(x.strip() for x in param['choices'].split(','))
+				elif param['type'] == 'int':
+					choices = tuple(int(x.strip()) for x in param['choices'].split(','))	
+			get_parser.add_argument(param['name'], type=param_types[param.get('type','string')], choices=choices, required=param.get('required',False), help=param.get('description',''), default=param.get('default',''))
+			post_parser.add_argument(param['name'], type=param_types[param.get('type','string')], choices=choices, required=param.get('required',False), help=param.get('description',''), default=param.get('default',''), location='form')
 		else:
-			post_parser.add_argument(param['name'], type=FileStorage, required=param.get('required','false'), help=param.get('description',''), location='files')
-			get_parser.add_argument(param['name']+'_text', type=str)
-			get_parser.add_argument(param['name']+'_piping', type=str)
-			get_parser.add_argument(param['name']+'_url', type=str)
-		
-			post_parser.add_argument(param['name']+'_text', type=str, location='form')
-			post_parser.add_argument(param['name']+'_piping', type=str, location='form')
-			post_parser.add_argument(param['name']+'_url', type=str, location='form')
-				
+			help_str = 'Use this option to replace the file upload option in case there is no local file, or in the GET method. It can be a url address to the file, the result file of other tool used in workflow (piping), or the content of the input'
+			help_str_type = 'url: url address to the file. piping: result file from other tool. text: input content'
+			post_parser.add_argument(param['name'], type=FileStorage, required=param.get('required',False), help=param.get('description',''), location='files')
+			get_parser.add_argument(param['name']+'_string', type=str, help=help_str)
+			get_parser.add_argument(param['name']+'_string_type', type=str, choices=('url','piping','text'), default='url',help=help_str_type)
+			post_parser.add_argument(param['name']+'_string', type=str, help=help_str, location='form')
+			post_parser.add_argument(param['name']+'_string_type', type=str, choices=('url','piping','text'), default='url',help=help_str_type,location='form')
+	get_parser.add_argument('content-type', type=str, help='Response content-type', default='text/plain')
 	return (descr, get_parser, post_parser)
 
 def read_parameters(data, mandatory, optional, default_values):
@@ -165,7 +173,7 @@ def read_parameters(data, mandatory, optional, default_values):
     parameters['content_type'] = data.get('content_type','json')
     return parameters
 
-def parse_fileupload_parameters(data, fileupload_parameters, prefix, dir='', mandatory=True,split_char=''):
+def parse_fileupload_parameters(data, fileupload_parameters, prefix, dir='', split_char=''):
     parameters = ''
     for param in fileupload_parameters:
         (fd,tmp_input_file_name) = make_tmp_file(prefix, '',dir);
@@ -177,26 +185,29 @@ def parse_fileupload_parameters(data, fileupload_parameters, prefix, dir='', man
             parameters += ' -' + param + ' ' + tmp_input_file_name
         
         # Get values provided in the URL and store them in file (GET)
-        elif param+'_text' in data and data[param+'_text'] is not None and data[param+'_text'] != '':
-            input = data[param+'_text']
-            if (split_char != ''):
-                input = input.replace(split_char, '\n')
-            with open(tmp_input_file_name, 'w') as f:
-                f.write(input)
-                f.close()
-            parameters += ' -' + param + ' ' + tmp_input_file_name
+        elif param+'_string' in data and data[param+'_string'] is not None and data[param+'_string'] != '':
+	    if data[param+'_string_type'] == 'text':
+                input = data[param+'_string']
+                if (split_char != ''):
+                    input = '\n'.join(x.strip() for x in input.split(split_char))
+                with open(tmp_input_file_name, 'w') as f:
+                    f.write(input)
+                    f.close()
+                parameters += ' -' + param + ' ' + tmp_input_file_name
         
-        # Download a file specified by an URL
-        elif param+'_url' in data and data[param+'_url'] is not None and data[param+'_url'] != '':
-            readURL = requests.get(data[param+'_url'])
-            with open(tmp_input_file_name, 'w') as f:
-                f.write(readURL.text)
-                f.close()
-            parameters += ' -' + param + ' ' + tmp_input_file_name
-        
-        # Get the path of a file piped from a previous query
-        elif param+'_piping' in data and data[param+'_piping'] is not None and data[param+'_piping'] != '':
-            parameters += ' -' + param + ' ' + data[param+'_piping']
+            # Download a file specified by an URL
+            elif data[param+'_string_type'] == 'url':
+                try:
+		    readURL = requests.get(data[param+'_string'])
+                    with open(tmp_input_file_name, 'w') as f:
+                        f.write(readURL.text)
+                    	f.close()
+                	parameters += ' -' + param + ' ' + tmp_input_file_name
+        	except requests.exceptions.RequestException as e:
+                    parameters += ' -' + param + ' ' + data[param + '_string']
+	   # Get the path of a file piped from a previous query
+            elif data[param+'_string_type'] == 'piping':
+                parameters += ' -' + param + ' ' + data[param+'_string']
     return parameters
 
 def read_fileupload_parameters(data, files, fileupload_parameters, prefix, dir='', mandatory=True, split_char=''):
@@ -358,3 +369,11 @@ def run_command(command, output_choice, method_name, out_format, out_dir=''):
     response['result_path'] = hide_RSAT_path(temp_path)
     response['result_url'] = make_url(temp_path)
     return response
+
+def output_txt(data,code,headers=None):
+	"""
+	Output format as text. Header's content-type:text/plain 
+	"""
+	resp = make_response(data['output'],code)
+	resp.headers.extend(headers or {'Content-type':'text/plain'})
+	return resp

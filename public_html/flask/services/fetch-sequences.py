@@ -11,57 +11,41 @@ sys.path.append(service_dir + '/../')
 import utils
 from rest_server import app,api
 
-## Read yaml file
-#yaml_data = {}
-#with open(service_dir+'/fetch-sequences.yml') as f:
-#    docs = yaml.load_all(f)
-#    for doc in docs:
-#        for k, v in doc.items():
-#                yaml_data[k] = v
+tool = 'fetch-sequences'
+(descr,get_parser,post_parser) = utils.read_parameters_from_yml(api,service_dir + '/' + tool.replace('-','_') + '.yml')
 
-#get_parser = api.parser()
-#for param in yaml_data['parameters']:
-#    if param['type'] != 'file':
-#    	get_parser.add_argument(param['name'], type=utils.param_types[param['type']], required=param.get('required','false'), help=param.get('description',''), default=param.get('default',''))
+ns = api.namespace(tool, description=descr)
 
-#post_parser = api.parser()
-#for param in yaml_data['parameters']:
-#    if param['type'] == 'file':
-#        post_parser.add_argument(param['name'], type=FileStorage, help=param.get('description',''), default=param.get('default',''), location='files')
-#    else:
-#        post_parser.add_argument(param['name'], type=utils.param_types[param['type']], required=param.get('required','false'), help=param.get('description',''), default=param.get('default',''), location='form')
-
-(descr,get_parser,post_parser) = utils.read_parameters_from_yml(api,service_dir + '/fetch-sequences.yml')
-
-ns = api.namespace('fetch-sequences', description=descr)
-
-@ns.route('/')
+@ns.route('/', methods=['POST','GET'])
 class FetchSequences(Resource):
     @api.expect(get_parser)
     def get(self):
-        output_choice = 'display'
-        data = get_parser.parse_args()
-
-        command = utils.perl_scripts + '/fetch-sequences'
-	fileupload_parameters = ['i']
-        for param in data:
-            if data[param] is not None and data[param] != '' and '_input_string' not in param:
-                command += ' -' + param + ' ' + data[param]
-        command += utils.parse_fileupload_parameters(data, fileupload_parameters, 'fetch-sequences','',True,',')
-        return utils.run_command(command, output_choice, 'fetch-sequences', 'fasta', ''), 200
+        data = request.get_json(force=True) #get_parser.parse_args()
+	if data['content-type'] == 'text/plain':
+		resp = self._run(data)
+		return utils.output_txt(resp,200)
+	return self._run(data)
         
     @api.expect(post_parser)
     def post(self):
-        output_choice = 'display'
-        data = post_parser.parse_args()
-        
-        command = utils.perl_scripts + '/fetch-sequences'
-        
-        fileupload_parameters = ['i']
-        
-        for param in data:
-            if data[param] is not None and data[param] != '' and '_input_string' not in param and param not in fileupload_parameters:
-                command += ' -' + param + ' ' + data[param]
-        command += utils.parse_fileupload_parameters(data,fileupload_parameters,'fetch-sequences','',True,',')
+	data = []
+	if request.headers.get('Content-type') == 'application/json':
+		data = request.get_json(force=True)
+	else:	
+		data = post_parser.parse_args()
+	return self._run(data)
 
-        return utils.run_command(command, output_choice, 'fetch-sequences', 'fasta', ''), 200
+    def _run(self,data):
+        output_choice = 'display'
+        command = utils.perl_scripts + '/' + tool
+        result_dir = utils.make_tmp_dir(tool)
+	fileupload_parameters = ['i']
+	exclude = fileupload_parameters + ['content-type']
+	for x in fileupload_parameters:
+		exclude = exclude + [x + '_string', x + '_string_type']       
+        for param in data:
+            if data[param] is not None and data[param] != '' and param not in exclude:
+                command += ' -' + param + ' ' + str(data[param])
+        command += utils.parse_fileupload_parameters(data,fileupload_parameters,tool,result_dir,',')
+
+        return utils.run_command(command, output_choice, tool, 'fasta', result_dir)

@@ -14,7 +14,7 @@ from rest_server import app, api
 ns = api.namespace('Supported Organisms', description='supported-organisms operations')
 
 parser = reqparse.RequestParser()
-parser.add_argument('group', type=str, required=True, help='selected_group')
+parser.add_argument('group', type=str, help='selected_group')
 parser.add_argument('format', type=str, help='output format')
 
 ns = api.namespace('supported-organisms', description='supported-organisms operations')

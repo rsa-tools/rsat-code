@@ -1,0 +1,25 @@
+descr:
+    Ensure inter-conversions between different formats of polymorphic.
+---
+parameters:
+    - name: i
+      description: Variation file in tab format. If no input file is specified, use the i_string option 
+      type: file
+      required: false
+    - name: from
+      description: Format of the input file. Supported format vcf, gvf, varBed
+      type: string
+      choices: vcf, gvf, varBed
+      required: true
+      default: vcf
+    - name: to
+      description: Format of the output file. Supported format vcf, gvf, varBed
+      type: string
+      choices: vcf, gvf, varBed
+      required: true
+      default: varBed
+    - name: phased
+      description: Retrieve phasing information of the vcf genotypes in order to write each entry phased.
+      type: boolean
+      default: false
+      required: false
