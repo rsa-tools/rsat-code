@@ -29,3 +29,13 @@ parameters:
       description: Background file. oligo-analysis file format. If bg is not specified, use bg_string option
       type: file
       required: false
+    - name: uth_pval
+      description: upper threshold for p value
+      type: string
+      required: false
+      default: 1e-3
+    - name: lth_pval_ratio
+      description: lower threshold for p value ratio
+      type: int
+      required: false
+      default: 10
