@@ -3,11 +3,12 @@ from flask_restplus import Api
 import os,sys,re
 import requests
 
-api_v1 = Blueprint('api', __name__, url_prefix='/v1')
-api = Api(api_v1, version='1.0', title='RSAT RESTful API', description='RSAT RESTful API')
+#api_v1 = Blueprint('api', __name__, url_prefix='/v1')
+#api = Api(api_v1, version='1.0', title='RSAT RESTful API', description='RSAT RESTful API')
 
 app = Flask(__name__)
-app.register_blueprint(api_v1)
+#app.register_blueprint(api_v1)
+api = Api(app, title='RSAT RESTful API', description='RSAT RESTful API')
 
 from services import *
 import utils
