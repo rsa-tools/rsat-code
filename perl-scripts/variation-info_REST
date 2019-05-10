@@ -1,0 +1,823 @@
+#!/usr/bin/env perl
+############################################################
+#
+# $Id: variation-info,v 1.0 2013/10/03 17:24:24 amedina Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+variation-info
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Taking as input a set of either variation IDs (rs numbers) or genomic
+regions (bed format), retrieve information about matching variants.
+
+The collected information is reported in varBed format, which is a
+specific type of bed format for variations (see I<convert-variations>
+for info).
+
+=head1 AUTHORS
+
+=over
+
+=item B<Alejandra Medina Rivera> <amedina@lcg.unam.mx>
+
+=item B<Jacques van Helden> <Jacques.van-Helden\@univ-amu.fr>
+
+=back
+
+=head1 CATEGORY
+
+=over
+
+=item util
+
+=back
+
+=head1 USAGE
+
+variation-info [-i inputfile] [-o outputfile] [-v #] [-format variatio_format]
+    [- col ID_column ] [-mml #] [-o output_file] [...]
+
+=head1 INPUT FORMAT
+
+=head2 Genomic coordinate file
+
+The option I<-i> allows to specify a genomic coordinate file (in bed
+format). The program only takes into account the 3 first columns of
+the bed file, which specify the genomic coordinates. Additional
+columns are ignored.
+
+The definition of the BED format is provided on the UCSC Genome
+Browser web site (http://genome.ucsc.edu/FAQ/FAQformat#format1).
+
+=head2 Example of bed coordinates
+
+ chr1	3473041	3473370
+ chr1	4380371	4380650
+ chr1	4845581	4845781
+ chr1	4845801	4846260
+
+=head2 Interpretation of bed coordinates
+
+B<Beware>: input bed files are expected to follow the UCSC convention:
+
+=over
+
+=item I<zero-based coordinates>: coordinates start at 0,
+i.e. position 0 corresponds to the first nucleotide of a contig,
+position i to the (i+1)th nucleotide.
+
+=item I<semi-open interval>: coordinates are specified as semi-open
+interval [start:end[. The interval thus includes the start position,
+but not the end position.
+
+=back
+
+For example, the following line in a bed file:
+
+ chr1   27 28
+
+corresponds to the interval [28,28[ i.e. the 28th nucleotide on
+chromosome 1.
+
+=over
+
+=item 1. chrom
+
+The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold
+(e.g. scaffold10671).
+
+=item 2. chromStart
+
+The starting position of the feature in the chromosome or
+scaffold. For RSAT programs, the first base in a chromosome is
+numbered 1 (this differs from the UCSC-specific zero-based notation
+for the start).
+
+B<Note> from Jacques van Helden: the UCSC genome browser adopts a
+somewhat inconsistent convention for start and end coordinates: the
+start position is zero-based (first nucleotide of a
+chromosome/scaffold has coordinate 0), and the end position is
+considered not included in the selection. This is equivalent to have a
+zero-based coordinate for the start, and a 1-base coordinate for the
+end. We find this representation completely counter-intuitive, and we
+herefore decided to adopt a "normal" convention, where:
+
+=over
+
+=item start and end position represent the first and last positions
+I<included> in the region of interest.
+
+=item start and end positions are provided in one-based notation
+(first base of a chromosome or contig has coordinate 1).
+
+=back
+
+=item 3. chromEnd
+
+The ending position of the feature in the chromosome or scaffold.
+
+=back
+
+=head2 Variation file
+
+See I<download-ensembl-variation> output format.
+
+=head2 Variation ID list
+
+A tab delimited file with id of variation in column.
+
+=head1 OUTPUT FORMAT
+
+varBed format is a tab delimited file that facilitates access to relevant variant
+information. The file includes the following columns:
+
+=over
+
+=item 1. B<chr>: Chromosome name.
+
+=item 2. B<start>: start position of the variant.
+
+=item 3. B<end>: end position of the variant.
+
+=item 4. B<strand>: strand of the variation.
+
+=item 5. B<ID>: variant identifier (rs number).
+
+=item 6. B<ref>: sequence of the reference allele.
+
+=item 7. B<alt>: sequence of the alternative allele.
+
+=item 8. B<so_term>: "Sequence ontology" (so) term, indicating the type of variation (SNP, insertion, deletion).
+
+=item 9. B<validated>: Boolean value indicating whether the variation has been validated (1) or not (0).
+
+=item 10. B<minor_allele_freq>: frequency of the minor allele.
+
+=item 11. B<is_supvar>: 1 if this variant is a "super-variation", i.e. was build by merging overlapping variants.
+
+=item 12. B<in_supvar>: a value of 1 indicates that this variant overlaps with other annotated variants.
+
+
+=back
+
+=head1 SEE ALSO
+
+=head2 download-ensembl-genome
+
+Install organims from Ensembl or EnsemblGenomes.
+
+=head2 download-ensembl-variations
+
+Get variation coordiantes from Ensembl or EnsemblGenomes.
+
+Variant information obtained with this tool can then be retrived by
+I<variation-info>.
+
+=head2 convert-variations
+
+Interconversions between different file formats used to describe
+polymorphic variations.  
+
+I<variation-info> exports variants in varBed format,
+<convert-variations> can be used to convert to VCF and GVF formats.
+
+=head2 retrieve-variations-seq
+
+Given a set of regions, variant IDs (rsNumber) or variants in varBed
+format <retrieve-variation-seq> will retrive the corresponding genomic
+sequence surrounding the genetic variants.
+
+=head2 variation-scan
+
+Scan variation sequences with one or several position-specific scoring
+matrices.
+
+
+=head1 WISH LIST
+
+=over
+
+=item B<direct retrieval at Ensembl> Ensembl presents several
+application-programmatic interfaces (APIs) that should enable us to
+retrieve variation info by remote queries rather than having to
+install the (heavy) variation files on the RSAT server. 
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+require "RSAT_to_ensembl.lib.pl";
+
+use JSON qw/encode_json decode_json/;
+use HTTP::Tiny;
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.00 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $skip = 0; ## Skip the first N variations of the input file
+  our $last = 0; ## Stop after N variations of the input file
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+  our $species = '';
+    #our $ensembl_release = "";
+    #our $assembly = "";
+
+  our $col = 1;
+  our $validated = 0 ;
+
+  ## Define supported output formats
+  our @supported_input_formats = qw (varBed id bed);
+  our $supported_input_formats = join ",", @supported_input_formats;
+  our %supported_input_format = ();
+  foreach my $format (@supported_input_formats) {
+    $supported_input_format{$format} = 1;
+  }
+  our $format = "";
+
+  ## Supported variation types ("SO terms" for Sequence Ontology terms)
+  our @supported_vartypes = qw(SNP deletion insertion substitution sequence_alteration);
+  our $supported_vartypes = join ",", @supported_vartypes;
+  our %supported_vartype = ();
+  foreach my $vartype (@supported_vartypes) {
+    $supported_vartype{$vartype} = 1;
+  }
+  our %accepted_vartype = ();
+  our $vartype_filter = 0; ## By default no filter is applied on variation types
+
+  ## Stats on the result
+  our %intervals_per_chr = (); ## Number of query intervals per chromosome
+  our %variations_per_chr = (); ## Number of variations found per chromosome
+  our $total_nb_variations = 0;
+    
+## REST server
+    our $server = 'https://rest.ensembl.org/variation/';
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ## Check if a filter has to be applied on variation types
+  if (scalar(keys(%accepted_vartype)) > 0) {
+      &RSAT::message::Info("Variation filter on. Accepted variation types: ", join(",", sort(keys(%accepted_vartype)))) if ($main::verbose >= 2);
+      $vartype_filter = 1;
+  }
+
+  our $genomes_dir = &Get_genomes_dir();
+
+  ################################################################
+  ## Check argument values
+
+  ## Species and assembly or ensembl version have to be specified
+  &RSAT::error::FatalError("No species specified. Use -species") unless ($species);
+    #&RSAT::error::FatalError("No assembly and ensembl version specified. Use at least one of these options: -e_version -a_version") unless ($ensembl_release || $assembly);
+
+  ## Check input format and file existance
+  if ($main::infile{'input'}) {
+    &RSAT::error::FatalError("No input format specified. Use -format") unless ($format);
+    &RSAT::error::FatalError("Input file $main::infile{'input'} not found") unless  (-f $main::infile{'input'});
+  }
+
+  ## Check species genome and variations directories
+    #my $genome_dir = &Get_genome_dir($species, $assembly, $ensembl_release,$species_suffix);
+    #my $variation_dir = &Get_variation_dir($species, $assembly, $ensembl_release, $species_suffix);
+
+    #&RSAT::error::FatalError("Genome directory", $genome_dir, "does not exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
+    #&RSAT::error::FatalError("Variation directory", $variation_dir, "does not exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);
+
+  ## Check if genome sequence files are not missing
+    #my %chr_file = &Get_file_seq_name($genome_dir);
+
+    #foreach my $file (keys(%chr_file)) {
+    #my $raw_seq_file=$genome_dir."/".$chr_file{$file};
+    #unless (-f $raw_seq_file) {
+    # &RSAT::error::FatalError($raw_seq_file," is missing.");
+    #}
+    #}
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ## Print varBed header
+  print $out join("\t","#chr",
+		  "start",
+		  "end",
+		  "strand",
+		  "id",
+		  "ref",
+		  "alt",
+		  "so_term",
+		  "validated",
+		  "minor_allele_freq\n"
+      );
+
+  ################################################################
+  ## Get the list of variation files installed in the RSAT data
+  ## directory.
+    #my @variation_files = ();
+
+  #########
+  ## AMR NOTE: I'm having a lot of problems with the glob function
+  ## and haven't been able to figure them out.
+  ## I'll change back this part of the code as soon as I get it to
+  ## work. This code is a patch
+
+    #my $vart_files=`ls $variation_dir/*.varBed`;
+    #@variation_files= split ("\n",$vart_files);
+
+
+  ## print join("+",@variation_files);
+  ## die "BOOM";
+  ## foreach ( glob ( $variation_dir."*.varBed") ) {
+  ##  push (@variation_files,$_) unless (/Failed/);
+  ## }
+
+
+  ################################################################
+  ## Read infile containing variation IDs
+    if ($format eq "id") {
+        &RSAT::message::TimeWarn("Retrieving variations from ID(s)") if ($main::verbose >= 2);
+        
+        
+        my %variation_id = ();
+        
+        ## Get ID list
+        if ($main::infile{'input'}) {
+            ($main::in) = &OpenInputFile($main::infile{'input'});
+        }
+        
+        ## Get variation IDs from the input list
+        my $l = 0;
+        while (<$main::in>) {
+            $l++;
+            next if (($skip > 0) && ($l <= $skip));
+            last if (($last > 0) && ($l > $last));
+            next if (/^#/);
+                next if (/^;/);
+            next unless (/\S/);
+            chomp();
+            my @fields = split("\t");
+            my $id =  $fields[$col-1]; ## Select the ID from the user-specified column
+            
+            ## Check if the ID has already been found previously if the
+            ## file. If yes ignore it, if not add it to the list.
+            unless (defined($variation_id{$id})) {
+                push @variation_ids, $id;
+                $variation_id{$id} = 1; ## Index the curent ID to remove potential duplicates
+            }
+            
+        }
+        &RSAT::message::TimeWarn("Number of variations to find:", scalar(@variation_ids) ) if ($main::verbose >= 2);
+        
+        ## Try to idenfity the variations in each chromosome separately.
+        ## Note: there is a tradeoff between different efficiency issues, since for Human genome there are
+        ## ALE'S NOTE: THIS NOTE IS INCOMPLETE
+        
+        ## Request REST service
+        my $http = HTTP::Tiny->new();
+        my $input = encode_json({'ids' => \@variation_ids});
+        &RSAT::message::TimeWarn("Sending request to Ensembl REST server") if ($main::verbose >= 2);
+        my $response = $http->request('POST', $server.$species, {
+            headers => {
+                'Content-type' => 'application/json',
+                'Accept' => 'application/json'
+            },
+            content => $input
+        });
+        ## Get response
+        my $result = decode_json($response->{content});
+        my @not_found = ();
+        my %vars;
+        foreach my $id (@variation_ids){
+            if(defined ${$result}{$id}){
+                my %res = %{${$result}{$id}};
+                my $minor_allele_freq = $res{"MAF"} || "NA";
+                my $var_class = $res{"var_class"};
+                
+                if ($vartype_filter) {
+                    next unless ($accepted_vartype{$var_class});
+                }
+                
+                my @maps = @{$res{"mappings"}};
+                foreach my $map (@maps){
+                    my $chr = ${$map}{"seq_region_name"} || "-";
+                    my $start = ${$map}{"start"} || "NA";
+                    my $end = ${$map}{"end"} || "NA";
+                    my $strand = ${$map}{"strand"} == 1 ? "+" : "-";
+                    my @ref_alt = split("/" , ${$map}{"allele_string"});
+                    my $ref = $ref_alt[0] || "-";
+                    my $alt = $ref_alt[1] || "-";
+                    my $line = "$chr\t$start\t$end\t$strand\t$id\t$ref\t$alt\t$var_class\t0\t$minor_allele_freq\n";
+                    if(! defined $vars{$chr}){ $vars{$chr} = (); }
+                    push @{$vars{$chr}}, $line;
+                }
+            }else{
+                push @not_found, $id;
+            }
+        }
+        for my $chr (sort keys %vars){
+            for my $line (@{$vars{$chr}}){
+                print $out $line;
+            }
+        }
+        ## Report not found variations
+        # list of sorted keys in numeric order
+        my %not_found;
+        foreach my $nf (@not_found){
+            $not_found{$nf} = 1;
+        }
+        my $not_found_nb = scalar(@not_found);
+        if ($not_found_nb > 0) {
+            &RSAT::message::Warning("; Non-identified variations: ",$not_found_nb) if ($main::verbose >= 2);
+            my $not_found_msg .= "; Note: some variations may have failed to pass Ensembl or RSAT quality check\n";
+            
+            foreach my $id (sort {$a<=>$b} keys %not_found) {
+                $not_found_msg .= ";\tmissing\t".$id."\n";
+            }
+            print $out $not_found_msg;
+        }
+        
+        close $out;
+    }
+    
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  ## Close output file
+  if ($outfile{output}) {
+    close $main::out;
+    &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
+  }
+
+  ## CLOSE OTHER FILES HERE IF REQUIRED
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-species species_name>
+
+Species name. This name must correspond to the species of the
+variation/bed/id file if provided.
+
+=cut
+    } elsif ($arg eq "-species") {
+      $main::species = lc(shift(@arguments));
+
+=pod
+
+=item B<-species_suffix>
+
+Species name. This name must correspond to the species of the
+variation/bed/id file if provided.
+
+=cut
+        #} elsif ($arg eq "-species_suffix") {
+        #$main::species_suffix = lc(shift(@arguments));
+
+=pod
+
+=item B<-release #>
+
+The version of ensembl database (e.g. 84).
+
+Note: each Ensembl release contains a specific assembly for
+each species. When the option -release is used, the option
+-assembly should thus in principle not be used.
+
+=cut
+        #} elsif (($arg eq "-release") || ($arg eq "-version") || ($arg eq "-e_version")) {
+      #if ($arg ne "-release") {
+      #&RSAT::message::Warning("Option -version is obsolete, has been replaced by -release.");
+      #}
+      #$main::ensembl_release = shift(@arguments);
+
+=pod
+
+=item B<-assembly #>
+
+Assembly (e.g. GRCh37 for the assembly 37 of the Human genome).
+
+Note: genome assemblies can cover several successive ensemble
+versions. In case of ambiguity, the latest corresponding ensembl
+version is used.
+
+=cut
+      #} elsif (($arg eq "-assembly") || ($arg eq "-a_version")) {
+      #if ($arg ne "-assembly") {
+      #&RSAT::message::Warning("Option -a_version is obsolete, has been replaced by -assembly.");
+      #}
+      #$main::assembly = shift(@arguments);
+
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
+
+=pod
+
+=item B<-format query_format>
+
+Format of the input query file. The different formats actually
+correspond to different modalities of usage of the tool: get
+variations specified either by their IDs or by a set of genomic
+regions.
+
+Supported formats:
+
+=over
+
+=item I<varBed>
+
+Format of variation files used by all RSAT scripts.
+
+=item I<id>
+
+tab-delimited file with all variation IDs in a given column, which can
+be specified by the option I<-col>.
+
+=item I<bed>
+
+General format for the description of genomic features
+(see https://genome.ucsc.edu/FAQ/FAQformat.html#format1).
+
+=back
+
+=cut
+    } elsif ($arg eq "-format") {
+      $main::format = shift(@arguments);
+      unless ($supported_input_format{$main::format}) {
+         &RSAT::error::FatalError($format, "Invalid input format. Supported: ". $supported_input_formats);
+      }
+
+=pod
+
+=item B<-type accepted_variation_types>
+
+Specify one or several accepted types of variation.
+
+Variation types are specified according to the Sequence Ontology ("SO
+term" column of the output file).
+
+Several types can be specified separated by commas.
+
+
+Supported variation types:
+
+=over
+
+=item I<SNV>
+
+Single Nucleotide Variant (=SNP, Single Nucleotide Polymorphism)
+
+ http://www.sequenceontology.org/miso/release_2.5/term/SO:0001483
+
+=item I<deletion>
+
+Deletion
+
+ http://www.sequenceontology.org/browser/release_2.5/term/SO:0000159
+
+
+=item I<deletion>
+
+Insertion
+
+ http://www.sequenceontology.org/browser/release_2.5/term/SO:0000667
+
+=item I<sequence_alteration>
+
+=back
+
+
+Example 1: only accept single nucleotide variations
+
+  -type SNV
+
+Example 2: only accept deletions and insertions
+
+  -type insertion,deletion
+
+=cut
+    } elsif ($arg eq "-type") {
+      my $new_types = shift(@arguments);
+      foreach my $type (split(",", $new_types)) {
+	  if ($supported_vartype{$type}) {
+	      $accepted_vartype{$type} = 1;
+	  } else {
+	      &RSAT::error::FatalError($type, "Invalid variation type. Supported: ". $supported_vartypes);
+	  }
+      }
+
+=pod
+
+=item B<-col id_column_nb>
+
+Number of the column containing the variation IDs with the input
+format "id".
+
+Default : 1
+
+=cut
+    } elsif ($arg eq "-col") {
+      if (&IsNatural($arguments[0])) {
+        $main::col = shift(@arguments);
+      } else {
+        &RSAT::error::FatalError("-col argument : ",shift(@arguments)," is not natual");
+      }
+
+=pod
+
+=item B<-skip>
+
+Skip the N first variations of the input file. This option is useful
+for quick tests, or to split an analysis in separate tasks.
+
+=cut
+	} elsif ($arg eq "-skip") {
+	    $main::skip = shift(@arguments);
+
+=pod
+
+=item B<-last>
+
+Stop after the N first variations of the list. This option is useful
+for quick tests, or to split an analysis in separate tasks.
+
+=cut
+	} elsif ($arg eq "-last") {
+	    $main::last = shift(@arguments);
+
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $outfile{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; variation-info ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+__END__
