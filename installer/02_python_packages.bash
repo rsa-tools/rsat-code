@@ -15,20 +15,20 @@ echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo
 
-sudo pip install numpy
-sudo pip install scipy
-sudo pip install matplotlib
-sudo pip install suds
-sudo pip install soappy
-sudo pip install fisher
-sudo pip install httplib2
+sudo pip2 install numpy
+sudo pip2 install scipy
+sudo pip2 install matplotlib
+sudo pip2 install suds
+sudo pip2 install soappy
+sudo pip2 install fisher
+sudo pip2 install httplib2
 
 ## Some python modules required for the REST web services
-sudo pip install flask requests werkzeug jinja2 click itsdangerous
+sudo pip2 install flask flask-restplus requests werkzeug jinja2 click itsdangerous
 ## pip install pygraphviz ## OSError: Error locating graphviz.
 
 ## optional: an utility to measure internet bandwidth
-sudo pip install speedtest-cli
+sudo pip2 install speedtest-cli
 
 #${OS_INSTALLER} install python3-suds
 ## PROBLEM : No distributions at all found for python-suds
