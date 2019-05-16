@@ -80,3 +80,4 @@ results
 install_logs
 ext_lib
 INSTALL_cache
+apacheconf_backup_*
