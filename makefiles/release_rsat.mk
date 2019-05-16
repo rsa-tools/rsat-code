@@ -8,6 +8,8 @@ MAKE = make -sk -f ${MAKEFILE}
 ## Archive file
 DATE=`date +%Y.%m.%d`
 ARCHIVE_PREFIX=rsat_${DATE}
+ARCHIVE_PREFIX_CORE=rsat-core_${DATE}
+ARCHIVE_PREFIX_WEB=rsat-web_${DATE}
 ARCHIVE_PREFIX_METAB=metabolic-tools_${DATE}
 ARCHIVE=rsat/${ARCHIVE_PREFIX}
 ARCHIVE_PREFIX_SCRIPTS=${ARCHIVE_PREFIX}_install_scripts
@@ -95,7 +97,8 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole release
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
-RELEASE_FILES=rsat/00_README.txt		\
+RSAT_CORE=rsat/00_README.txt		\
+	rsat/rsat				\
 	rsat/INSTALL.md				\
 	rsat/installer				\
 	rsat/perl-scripts			\
@@ -115,8 +118,13 @@ RELEASE_FILES=rsat/00_README.txt		\
 	rsat/contrib/variation-scan	  	\
 	rsat/contrib/retrieve-variation-seq  	\
 	rsat/ws_clients		  		\
-	rsat/R-scripts				\
-	rsat/public_html
+	rsat/R-scripts
+
+RSAT_FILES=${RSAT_CORE} ${RSAT_WEB}
+
+RSAT_WEB=rsat/public_html
+
+RSAT_DATA=rsat/public_html/motif_databases
 
 #	rsat/R-scripts/TFBMclust		\
 #	rsat/R-scripts/*.R			\
@@ -127,11 +135,11 @@ PATHWAY_FILES = \
 	rsat/contrib/REA			\
 	rsat/contrib/kwalks
 
-RELEASE_FILES_METAB=rsat/java		\
+RSAT_FILES_METAB=rsat/java		\
 	rsat/contrib/REA		\
 	rsat/contrib/kwalks
 
-#RELEASE_FILES_SCRIPTS=rsat/installer
+#RSAT_FILES_SCRIPTS=rsat/installer
 
 _create_tar_archive:
 	@echo ${TAR_CREATE} 
@@ -146,7 +154,7 @@ _add_one_file:
 
 _fill_archive:
 	(cd ${TAR_ROOT};				\
-	for f in ${RELEASE_FILES}; do			\
+	for f in ${RSAT_FILES}; do			\
 		${MAKE} _add_one_file FILE=$${f};	\
 	done)
 	@echo "Archive created	${ARCHIVE}"
@@ -162,12 +170,20 @@ tar_archive:
 	@echo "Archive"
 	@echo "	${TAR_ROOT}/${ARCHIVE}.tar.gz"
 
+## Create an archive with the command-line tools only (no web site, no data)
+tar_archive_core:
+	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_CORE} RSAT_FILES="${RSAT_CORE}"
+
+## Create an archive with the web site (+ data)
+tar_archive_web:
+	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_WEB} RSAT_FILES="${RSAT_WEB}"
+
 ## Create an archive with the metabolic tools (since the java files occupy 80Mb, we releaseute them separately
 tar_archive_metab:
-	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB} RELEASE_FILES="${RELEASE_FILES_METAB}"
+	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_METAB} RSAT_FILES="${RSAT_FILES_METAB}"
 
 #tar_archive_scripts:
-#	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS} RELEASE_FILES="${RELEASE_FILES_SCRIPTS}"
+#	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS} RSAT_FILES="${RSAT_FILES_SCRIPTS}"
 
 ## Archive with zip
 # ZIP_EXCLUDE=-x CVS '*~' tmp data logs
@@ -196,6 +212,9 @@ publish:
 	@echo
 	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
 	@ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "cd ${PUB_DIR}; ln -sf ${ARCHIVE_PREFIX}.${PUB_FORMAT} latest"
+
+publish_core:
+	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_CORE}
 
 #publish_scripts:
 #	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS}
