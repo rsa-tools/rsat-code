@@ -22,6 +22,9 @@ sudo pip install suds
 sudo pip install soappy
 sudo pip install fisher
 sudo pip install httplib2
+
+## Some python modules required for the REST web services
+sudo pip install flask requests werkzeug jinja2 click itsdangerous
 ## pip install pygraphviz ## OSError: Error locating graphviz.
 
 ## optional: an utility to measure internet bandwidth
