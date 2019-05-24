@@ -198,7 +198,9 @@ $parameters .= " -o ".$result_dir;
 #$index_file = $result_subdir."/";
 $index_dir = join ("/", $result_dir, $taxon, $organism);
 $index_file = $index_dir."/";
+local $organism_name=$organism;
 $index_file .= (&MainIndexFileName())[0];
+
 
 #$index_file .= join("_", $taxon, $organism, "bg", $bg_model, "result_index.html");
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
