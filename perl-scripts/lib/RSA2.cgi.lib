@@ -103,26 +103,6 @@ sub PrintOrthoComparaSelectionSection {
 ## - reference taxon
 sub PrintOrthoSelectionSection {
 
-#### Not supported anymore
-##			       Escherichia_coli_K12
-##                                Bacillus_subtili
-##			       Desulfovibrio_vulgaris_Hildenborough_uid57645
-##			       Klebsiella_pneumoniae_MGH_78578
-##			       Mycoplasma_pneumoniae
-##			       Rhizobium_etli_CFN_42
-##			       Rhizobium_etli_CFN_42_uid58377
-##			       Salmonella_typhi
-##			       Salmonella_typhimurium_LT2
-##			       Streptococcus_mutans
-##                               Brucella_melitensis
-##                               Dickeya_dadantii_3937_uid52537
-##                               Escherichia_coli_ETEC_H10407
-##                               Mycobacterium_tuberculosis_H37Rv_uid57777
-##                               Pseudoalteromonas_haloplanktis_TAC125
-##                               Pseudomonas_putida_KT2440
-##                               Ralstonia_metallidurans_CH34
-##                               Yersinia_pestis_KIM
-
   my %supported_genome_blast = ();
   my @supported_orthologs = ();
   my %supported_orthologs = ();
@@ -164,8 +144,8 @@ sub PrintOrthoSelectionSection {
 
   ## Choice of the organism
   print "<b>Query </b>";
-    #&OrganismPopUp(@supported_orthologs);
-    &OrganismPopUp('supported' => 'orthologs');
+  #&OrganismPopUp(@supported_orthologs);
+  &OrganismPopUp('supported' => 'orthologs');
   ################################################################
   ### gene queries
   print "<B><A class='iframe' HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
@@ -1143,6 +1123,7 @@ sub OrganismPopUpString{
     if($supported ne ""){
         $supported_param .= "&supported=$supported";
     }
+
     &check_prokaryote_server();
 
     my $bg_org = $args{'bg_org'};
