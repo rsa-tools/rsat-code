@@ -33,6 +33,7 @@ $command = "$SCRIPTS/footprint-discovery";
 $parameters = " -v 1";
 #$parameters = " -v 3"; ## TEMPORARY FOR DEBUG
 $parameters .= " -nodie";
+$parameters .= " -diamond "  if ($ENV{prokaryote_server} == 1) ; #Use orthologs calculated with diamond
 
 ################################################################
 ## Tasks: some tasks are not supported on the Web interface:
