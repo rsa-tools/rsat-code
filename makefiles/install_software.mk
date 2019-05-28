@@ -1767,3 +1767,11 @@ _install_plink:
 
 #}; ${SUDO} rsync -ruptvl ${PLINK_BIN} ${RSAT_BIN}/; cd ${RSAT_BIN}; ${SUDO} rm -f plink; ${SUDO} ln -s ${PLINK_BIN} plink)
 
+################################################################
+## Diamond provides an alternative to blast for the increasing amount of genomes
+## https://github.com/bbuchfink/diamond
+install_diamond:
+	@cd ${RSAT}/bin
+	@wget http://github.com/bbuchfink/diamond/releases/download/v0.9.24/diamond-linux64.tar.gz
+	@tar xzf diamond-linux64.tar.gz
+	@cd ${RSAT}

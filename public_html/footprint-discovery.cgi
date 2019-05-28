@@ -33,6 +33,7 @@ $command = "$SCRIPTS/footprint-discovery";
 $parameters = " -v 1";
 #$parameters = " -v 3"; ## TEMPORARY FOR DEBUG
 $parameters .= " -nodie";
+$parameters .= " -diamond "  if ($ENV{prokaryote_server} == 1) ; #Use orthologs calculated with diamond
 
 ################################################################
 ## Tasks: some tasks are not supported on the Web interface:
@@ -198,7 +199,9 @@ $parameters .= " -o ".$result_dir;
 #$index_file = $result_subdir."/";
 $index_dir = join ("/", $result_dir, $taxon, $organism);
 $index_file = $index_dir."/";
+local $organism_name=$organism;
 $index_file .= (&MainIndexFileName())[0];
+
 
 #$index_file .= join("_", $taxon, $organism, "bg", $bg_model, "result_index.html");
 my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
