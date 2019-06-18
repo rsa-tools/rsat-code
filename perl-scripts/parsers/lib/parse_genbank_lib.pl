@@ -66,6 +66,7 @@ sub ParseAllGenbankFiles {
     if ($file eq "") {
       &RSAT::error::FatalError("&ParseAllGenbankFiles() called with empty file name.");
     }
+    
     $file{input} = $file;
     
     #### check whether the file has to be uncompressed on the fly
@@ -383,7 +384,8 @@ sub ParseGenbankFile {
 	  $current_contig->set_attribute("file", $seq_file);
 	  my $seq_file_path = $args{seq_dir}."/".$seq_file;
       
-	  &RSAT::message::Debug ("Contig sequence file", $current_contig->get_attribute("id"), $seq_file) if ($main::verbose >= 3);
+	  &RSAT::message::Debug ("Contig sequence file", $current_contig->get_attribute("id"), $seq_file) if ($main::verbose >= 0);
+
 	}
 
 
@@ -469,12 +471,12 @@ sub ParseGenbankFile {
 
 	
 	## Store contig sequences in a raw file (no space, no carriage return)
-	unless ($no_raw) {
+	unless ($no_raw || $fasta_genome) {
 	  
 	  &RSAT::message::Info ("Storing sequence ",
 				$current_contig->get_attribute("id"),
 				"in file", $seq_file_path)
-	      if ($main::verbose >= 3);
+	      if ($main::verbose >= 0);
 	  
 	  open SEQ, ">".$seq_file_path
 	      || die "Error: cannot write sequence file $seq_file_path\n";
@@ -482,7 +484,8 @@ sub ParseGenbankFile {
 	  close(SEQ);
 #	    $pwd = `pwd`;
 #	    chomp($pwd);
-	  &RSAT::message::Debug("Working dir", $ENV{PWD},  "Sequence saved in file", $seq_file_path) if ($main::verbose >= 4);
+	  &RSAT::message::Info("Working dir", $ENV{PWD},  "Sequence saved in file", $seq_file_path) if ($main::verbose >= 1);
+	 # <STDIN>;
 	}
 
 

@@ -38,6 +38,13 @@ our @supported_org_fields = qw(ID
 			       taxonomy
 			       data
 			       genome
+			      # genome_assembly
+			      # genome_version
+			      # download_date
+			      # variant_available
+			      # variant_source
+			      # variant_date
+			      # path_to_variant_files
 			      );
 
 #			       selected_taxon
@@ -46,6 +53,7 @@ our @supported_org_fields = qw(ID
 
 ## Name of the table containing the list of supported organisms
 our $organism_table_name = "supported_organisms.tab";
+#our $organism_table_name= "supported_organisms2.tab"; #2019 version with added columns for consistency between organisms
 
 ## Flag indicating whether the organism table has been loaded
 our $organism_table_loaded = 0;
@@ -300,7 +308,7 @@ sub supported_organism_table {
 			"group: ".$group, 
 			"depth: ".$depth, 
 			"fields", join( ";", @fields)) 
-    if ($main::verbose >= 3);
+    if ($main::verbose >= 0);
 
   ## Default fields
   if (scalar(@fields) == 0) {
