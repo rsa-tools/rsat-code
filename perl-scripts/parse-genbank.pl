@@ -46,6 +46,7 @@ package main;
     $password="rsat";
     $full_path = 0;
     $test = 0;
+    $fasta_genome=0;
     $no_raw = 0;
     $no_fasta = 0;
     $test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
@@ -244,6 +245,8 @@ package main;
 	&RSAT::message::Info("Genbank file names\n;\t", join("\n;\t", @genbank_files)) if ($verbose >= 2);
     }
 
+
+    
     # my @filtered_genbank_files = grep (!/\/CHR_Un\//, @genbank_files);
     # if (scalar(@filtered_genbank_files) < scalar(@genbank_files)) {
     #   @genbank_files = @filtered_genbank_files;
@@ -300,15 +303,33 @@ package main;
       $fasta_handle = &OpenOutputFile($out_file{genome_seq}); # file to store all the sequences in fasta format
       &RSAT::message::Info("Fasta genome sequence", $outfile{genome_seq}) if ($main::verbose >= 2);
     }
+
+    
     &ParseAllGenbankFiles(@genbank_files);
 
     close $fasta_handle unless ($no_fasta);
     
 
     ## Export masked sequences
+   
+    ## If the genome is attached in a fasta file take it from there and move it to the outfolder
+ 
+   if ($fasta_genome){
+       foreach my $file (@genbank_files) {
+	   $fasta_genome_file=$file;
+	   $fasta_genome_file =~ s/\Q$ext\E/fna/;
+	   $original_path=$ENV{PWD};
+	   $convert_seq_cmd="cd $dir{output} ; convert-seq -from fasta -to filelist -mask non-dna -i ". $fasta_genome_file ." ; cd ".$original_path;
+	   &RSAT::message::Debug("Genome stored in Fasta will be converted to raw format",  $convert_seq_cmd ) if ($main::verbose >= 0);
+	   system( $convert_seq_cmd);
+
+       }
+
+    }
+    
     my @repeats = $repeat_regions->get_objects();
     if (scalar(@repeats) > 1) {
-	&ExportMaskedSequences() unless ($no_raw);
+	&ExportMaskedSequences() unless ($no_raw || $fasta_genome);
     }
 
     ## Write the contig file
@@ -679,6 +700,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-fullpath") {
 	    $full_path  = 1;
 
+	   ### genome sequences in fasta
+	} elsif ($ARGV[$a] eq "-genomeInFasta") {
+	    $fasta_genome  = 1;
+
 	}
     }
 }
@@ -795,10 +820,11 @@ sub ExportMaskedSequences {
 	my $file =    $contig->get_attribute("file");
 	my $contig_id = $contig->get_attribute("id");
 	my $sequence = `cat $file`;
+	my $path=`pwd`;
 	&RSAT::message::TimeWarn(join("\t", "Masking sequence",
 				      "contig",
-				      $contig_id,
-				      "length", $contig_len)) if ($main::verbose >= 2);
+				      $contig_id,$path,
+				      "length", $contig_len, $file)) if ($main::verbose >= 0);
 
 	foreach my $region ($repeat_regions->get_objects) {
 	    my $contig_len = length($sequence);
@@ -816,16 +842,16 @@ sub ExportMaskedSequences {
 
 #	    my $before = substr($sequence, $offset - 3, $len + 6);
 #	    my $after = substr($sequence, $offset - 3, $len + 6);
-# 	    &RSAT::message::Debug("Masking region",
-# 				  $region_contig,
-# 				  "contig len=".$contig_len,
-# 				  "start=".$start,
-# 				  "end=".$end,
-# 				  "offset=".$offset,
-# 				  "len=".$len,
+ 	    &RSAT::message::Debug("Masking region",
+ 				  $region_contig,
+ 				  "contig len=".$contig_len,
+ 				  "start=".$start,
+ 				  "end=".$end,
+ 				  "offset=".$offset,
+ 				  "len=".$len,
 # ##				  $before,
 # ##				  $after,
-# 				  ) if ($main::verbose >= 20);
+ 				  ) if ($main::verbose >= 0);
 
 	    substr($sequence, $offset, $len) = "n"x$len;
 	}
