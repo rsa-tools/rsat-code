@@ -99,7 +99,7 @@ foreach $key (keys %default) {
 &RSA_header("oligo-analysis", "form");
 
 print "<center>";
-print "Analysis of oligomer occurrences in nucleotidic of peptidic sequences<P>\n";
+print "Detect over- or under-represented oligomers (k-mers) in nucleotidic of peptidic sequences. <P>\n";
 print "Reference: <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/9719638'>van Helden, J., Andr&eacute;, B. and Collado-Vides, J. (1998). . J Mol Biol 281, 827-42.</a><p>";
 print "</center>";
 print "<u>Warning</u> !! For <b>vertebrate</b> genomes, analyses of complete promoters from <b>co-expressed gene groups</b> return <b>many false positive</b> (i.e. if you submit a random set of genes, you always get plenty of highly 'significant' motifs). This is likely to come from the heterogeneity of human sequences (mixtures of GC-rich and GC-poor promoters).
