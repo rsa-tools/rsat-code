@@ -19,3 +19,6 @@ commands:
   - command: 'perl-scripts/dyad-analysis'
     desc: "*-* motifs discovery"
     group: "Motif discovery"
+  - command: "python-scripts/random-motif"
+    desc: "Generate random motifs"
+    group: "Matrix tools"
