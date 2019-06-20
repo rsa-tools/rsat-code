@@ -80,7 +80,7 @@ $checked{$default{freq_estimate}} = "CHECKED";
 &RSA_header("local-word-analysis", "form");
 print '<style><!-- textarea {height: 100px; width: 550px;}--></style>';
 print "<CENTER>";
-print "Analysis of oligonucleotide occurrences in a set of DNA sequences.\n";
+print "Detect oligomers (k-mers) over-represented at specific positions of a sequence set, relative to a given reference position (e.g. transcription start sites, ChIP-seq peak centers).\n";
 print "<br>Program developed by <a href=http://www.researchgate.net/profile/Matthieu_Defrance'>Matthieu Defrance</A><P>";
 print "</center>";
 
