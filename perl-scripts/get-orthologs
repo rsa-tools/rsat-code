@@ -403,6 +403,8 @@ package main;
   $query_org_object->LoadFeatures();
   $query_org_object->LoadSynonyms();
   $feature_index = $query_org_object->get_attribute("name_index");
+  &RSAT::message::TimeWarn("Loaded query organism", $query_organism) if ($main::verbose >= 2);
+  
 
   ################################################################
   ## Open output stream
