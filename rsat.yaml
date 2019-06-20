@@ -64,6 +64,15 @@ commands:
     desc: "Detect oligomers (k-mers) with heterogeneous positional distribution"
     group: "Motif discovery"
 
+  - command: 'python-scripts/local-word-analysis' 
+    desc: "Detect oligomers (k-mers) over-represented at specific positions of a sequence set, relative to a given reference position (e.g. transcription start sites, ChIP-seq peak centers)"
+    group: "Motif discovery"
+
+  - command: 'perl-scripts/pattern-assembly'
+    desc: "Assemble string-based patterns (oligos or dyads)"
+    group: "Motif discovery"
+    
+
   ################################################################
   ## Background models
   - command: "python-scripts/random-motif"
