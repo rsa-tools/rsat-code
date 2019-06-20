@@ -69,7 +69,7 @@ print '
 <script type="application/ld+json">
 {
     "@context": "http://schema.org/",
-    "description": "Starting from a list of genes, returns upstream or downstream sequences.",
+    "description": "Get non-coding upstream or downstream sequences for a list of query genes.",
     "featureList": "http://edamontology.org/operation_2422",
     "id": "https://bio.tools/RSAT_-_Retrieve_Sequence",
     "keywords": "Gene regulation",
