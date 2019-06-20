@@ -10,15 +10,62 @@ The rsat subcommands include:
 Type rsat [command] -h to display the command help."
 
 commands:
+
+  ################################################################
+  # Genomes and genes
+
+  - command: 'perl-scripts/supported-organisms'
+    desc: "Get the list of organisms supported on this RSAT server"
+
+    group: "Genomes and genes"
+  - command: 'perl-scripts/gene-info'
+    desc: "Get information for one or more genes specified by identifiers, names or descriptions."
+
+    group: "Genomes and genes"
+  - command: "perl-scripts/infer-operons"
+    desc: "Infer bacterial operons based on intergenic distances"
+    group: "Genomes and genes"
+
+  - command: "perl-scripts/get-orthologs"
+    desc: "Get homologs (orthologs or others) in given taxon for a list of query genes"
+    group: "Genomes and genes"
+
+  - command: "perl-scripts/get-orthologs"
+    desc: "Get homologs (orthologs or others) in given taxon for a list of query genes"
+    group: "Genomes and genes"
+
+  - command: "perl-scripts/random-genes"
+    desc: "Select random genes for a given organism"
+    group: "Genomes and genes"
+
+  ################################################################
+  ## Sequence tools
+
   - command: 'perl-scripts/retrieve-seq'
+    desc: "Get non-coding upstream or downstream sequences for a list of query genes."
+    group: "Sequences"
+
+  - command: 'perl-scripts/retrieve-ensembl-seq'
     desc: "retrieve sequences"
-    group: "Data fetching"
+    group: "Sequences"
+
+  ################################################################
+  ## Motif discovery
+
   - command: 'perl-scripts/oligo-analysis'
-    desc: "One of the most iconic RSAT tool!"
+    desc: "Detect over- or under-represented oligomers (k-mers) in sequences"
     group: "Motif discovery"
+
   - command: 'perl-scripts/dyad-analysis'
-    desc: "*-* motifs discovery"
+    desc: "Detect over- or under-represented dyads (spaced pairs of k-mers) in sequences"
     group: "Motif discovery"
+
+  - command: 'perl-scripts/position-analysis'
+    desc: "Detect oligomers (k-mers) with heterogeneous positional distribution"
+    group: "Motif discovery"
+
+  ################################################################
+  ## Background models
   - command: "python-scripts/random-motif"
     desc: "Generate random motifs"
     group: "Matrix tools"
