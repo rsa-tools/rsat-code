@@ -14,7 +14,6 @@ parameters:
       description: Only work with the number of top matrices
       type: int
       required: false
-      default: 10
     - name: m_format
       description: matrix_format. Matrix file format
       type: string
@@ -39,3 +38,13 @@ parameters:
       type: int
       required: false
       default: 10
+    - name: lth_score
+      description: weight of predicted sites
+      type: string
+      required: false
+      default: 1
+    - name: lth_w_diff
+      description: weight difference between variants
+      type: string
+      required: false
+      default: 1
