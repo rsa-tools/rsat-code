@@ -32,6 +32,7 @@ $command = "$SCRIPTS/footprint-scan";
 $parameters = " -v 0";
 $parameters .= " -nodie";
 $parameters .= " -synthesis  -sep_genes";
+$parameters .= " -diamond "  if ($ENV{prokaryote_server} == 1) ; #Use orthologs calculated with diamond  
 
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";

@@ -37,6 +37,9 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); $tmp_file_name = &S
 
 #### read parameters ####
 $parameters = " -v 1";
+### add dimond option
+$parameters .= " -diamond "  if ($ENV{prokaryote_server} == 1) ; #Use orthologs calculated with diamond  
+
 
 ################################################################
 #### queries

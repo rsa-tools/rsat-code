@@ -42,11 +42,15 @@ commands:
   ## Sequence tools
 
   - command: 'perl-scripts/retrieve-seq'
-    desc: "Get non-coding upstream or downstream sequences for a list of query genes."
+    desc: "Get non-coding upstream or downstream sequences for a list of query genes"
     group: "Sequences"
 
   - command: 'perl-scripts/retrieve-ensembl-seq'
-    desc: "retrieve sequences"
+    desc: "Retrieve regulatory sequences from the Ensembl database for a list of query genes"
+    group: "Sequences"
+
+  - command: 'perl-scripts/fetch-sequences'
+    desc: "Retrieve sequences from the UCSC database for a set of genomic regions (bed format)"
     group: "Sequences"
 
   ################################################################
