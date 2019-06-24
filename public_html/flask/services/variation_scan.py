@@ -56,10 +56,12 @@ class VariationInfo(Resource):
 			if param == 'species' or param == 'assembly' or param == 'markov_order':
 				continue
 			if data[param] is not None and data[param] != '' and param not in exclude:
-				if param == 'uth_pval':
-					command += ' -uth pval ' + str(data[param])
-				elif param == 'lth_pval_ratio':
-					command += ' -lth pval_ratio ' + str(data[param])
+				if 'uth_' in param:
+					uth_type = param.split("_", 1) 
+					command += ' -uth ' + uth_type[1] + ' ' + str(data[param])
+				elif 'lth_' in param:
+					lth_type = param.split("_", 1)
+					command += ' -lth ' + lth_type[1] + ' ' + str(data[param])
 				else:				
 					command += ' -' + param + ' ' + str(data[param])
 		command += utils.parse_fileupload_parameters(data, fileupload_parameters, tool, result_dir, ',')
