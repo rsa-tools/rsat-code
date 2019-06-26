@@ -97,8 +97,9 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole release
 POST_CMD=
 TAR_ROOT=`dirname ${RSAT}`
-RSAT_CORE=rsat/00_README.txt		\
+RSAT_CORE=rsat/00_README.txt			\
 	rsat/rsat				\
+	rsat/rsat.yaml				\
 	rsat/INSTALL.md				\
 	rsat/installer				\
 	rsat/perl-scripts			\
