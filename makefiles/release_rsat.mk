@@ -162,9 +162,10 @@ _fill_archive:
 ## Create an archive with RSAT/NeAT tools
 tar_archive:
 	@echo
-	@echo "Creating tar archive with RSAT/NeAT tools"
-	${MAKE} _create_tar_archive
-	${MAKE} _fill_archive ARCHIVE_CMD='${TAR}' POST_CMD=''
+	@echo "Creating tar archive with RSAT"
+	@${MAKE} clean_emacs_bk
+	@${MAKE} _create_tar_archive
+	@${MAKE} _fill_archive ARCHIVE_CMD='${TAR}' POST_CMD=''
 	(cd ${TAR_ROOT}; gzip -f ${ARCHIVE}.tar)
 	@echo
 	@echo "Archive"
