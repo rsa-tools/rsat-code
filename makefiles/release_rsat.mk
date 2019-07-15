@@ -10,6 +10,7 @@ DATE=`date +%Y.%m.%d`
 ARCHIVE_PREFIX=rsat_${DATE}
 ARCHIVE_PREFIX_CORE=rsat-core_${DATE}
 ARCHIVE_PREFIX_WEB=rsat-web_${DATE}
+ARCHIVE_PREFIX_MOTIFDB=rsat-motifdb_${DATE}
 ARCHIVE_PREFIX_METAB=metabolic-tools_${DATE}
 ARCHIVE=rsat/${ARCHIVE_PREFIX}
 ARCHIVE_PREFIX_SCRIPTS=${ARCHIVE_PREFIX}_install_scripts
@@ -39,13 +40,13 @@ TAR_EXCLUDE=--exclude .git \
 	--exclude .Rproj.user \
 	--exclude '*.RData' \
 	--exclude Rpackages
-TAR_CREATE =tar ${TAR_EXCLUDE} -cpf ${ARCHIVE}.tar rsat/*_default.*
-TAR =tar ${TAR_EXCLUDE} -rpf ${ARCHIVE}.tar 
+TAR_CREATE =tar ${TAR_EXCLUDE} ${TAR_OPT} -cpf ${ARCHIVE}.tar rsat/*_default.*
+TAR_APPEND=tar ${TAR_EXCLUDE} ${TAR_OPT} -rpf ${ARCHIVE}.tar 
 
 ################################################################
 ## All the tasks for publishing the new version
 #all: manuals tar_archive clean_release_site publish
-all: manuals tar_archive publish
+all: manuals tar_archive_rsat publish_rsat
 
 ## List parameters
 #PUB_SERVER=rsat.ulb.ac.be
@@ -96,7 +97,7 @@ clean_emacs_bk:
 ################################################################
 ## Create tar and zip archives of the whole release
 POST_CMD=
-TAR_ROOT=`dirname ${RSAT}`
+TAR_BASE=`dirname ${RSAT}`
 RSAT_CORE=rsat/00_README.txt			\
 	rsat/rsat				\
 	rsat/rsat.yaml				\
@@ -125,7 +126,7 @@ RSAT_FILES=${RSAT_CORE} ${RSAT_WEB}
 
 RSAT_WEB=rsat/public_html
 
-RSAT_DATA=rsat/public_html/motif_databases
+MOTIFDB=rsat/public_html/motif_databases
 
 #	rsat/R-scripts/TFBMclust		\
 #	rsat/R-scripts/*.R			\
@@ -144,7 +145,7 @@ RSAT_FILES_METAB=rsat/java		\
 
 _create_tar_archive:
 	@echo ${TAR_CREATE} 
-	(cd ${TAR_ROOT}; ${TAR_CREATE})
+	(cd ${TAR_BASE}; ${TAR_CREATE})
 
 
 
@@ -154,7 +155,7 @@ _add_one_file:
 	${ARCHIVE_CMD} ${FILE}  ${POST_CMD}
 
 _fill_archive:
-	(cd ${TAR_ROOT};				\
+	(cd ${TAR_BASE};				\
 	for f in ${RSAT_FILES}; do			\
 		${MAKE} _add_one_file FILE=$${f};	\
 	done)
@@ -166,19 +167,26 @@ tar_archive:
 	@echo "Creating tar archive with RSAT"
 	@${MAKE} clean_emacs_bk
 	@${MAKE} _create_tar_archive
-	@${MAKE} _fill_archive ARCHIVE_CMD='${TAR}' POST_CMD=''
-	(cd ${TAR_ROOT}; gzip -f ${ARCHIVE}.tar)
+	@${MAKE} _fill_archive ARCHIVE_CMD='${TAR_APPEND}' POST_CMD=''
+	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar)
 	@echo
 	@echo "Archive"
-	@echo "	${TAR_ROOT}/${ARCHIVE}.tar.gz"
+	@echo "	${TAR_BASE}/${ARCHIVE}.tar.gz"
 
 ## Create an archive with the command-line tools only (no web site, no data)
 tar_archive_core:
-	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_CORE} RSAT_FILES="${RSAT_CORE}"
+	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_CORE} RSAT_FILES="${RSAT_CORE}" TAR_OPT='--exclude ${MOTIFDB}'
 
-## Create an archive with the web site (+ data)
+## Create an archive with the web site (+ demo data but exlude the motif databases)
 tar_archive_web:
-	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_WEB} RSAT_FILES="${RSAT_WEB}"
+	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_WEB} RSAT_FILES="${RSAT_WEB}" TAR_OPT='--exclude ${MOTIFDB}'
+
+## Create an archive with the motif datavases
+tar_archive_motifdb:
+	${MAKE} tar_archive ARCHIVE_PREFIX=${ARCHIVE_PREFIX_MOTIFDB} RSAT_FILES="${MOTIFDB}"
+
+## Create the separate RSAT archives
+tar_archive_rsat: tar_archive_core tar_archive_web tar_archive_motifdb
 
 ## Create an archive with the metabolic tools (since the java files occupy 80Mb, we releaseute them separately
 tar_archive_metab:
@@ -214,9 +222,24 @@ publish:
 	@echo
 	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
 	@ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "cd ${PUB_DIR}; ln -sf ${ARCHIVE_PREFIX}.${PUB_FORMAT} latest"
+	@echo
+	@echo "The archive should be accessible on the RSAT download server"	
+	@echo "	http://download.rsat.eu/"
 
+## Publish the tar archive with RSAT core
 publish_core:
 	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_CORE}
+
+## Publish the tar archive with RSAT Web server
+publish_web:
+	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_WEB}
+
+## Publish the tar archive with motif databases
+publish_motifdb:
+	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_MOTIFDB}
+
+## Publish the 3 separate archives with RSAT distribution
+publish_rsat: publish_core publish_web publish_motifdb
 
 #publish_scripts:
 #	@${MAKE} publish ARCHIVE_PREFIX=${ARCHIVE_PREFIX_SCRIPTS}
