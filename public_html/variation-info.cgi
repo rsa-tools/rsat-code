@@ -65,7 +65,7 @@ if (defined($supported_organism{$organism})) {
 
     @org_name_split=split(" ",$organism_name);
     $species=join("_", $org_name_split[0], $org_name_split[1]);
-    $assembly =$org_name_split[2];
+    $assembly = $org_name_split[2];
     
 
     }
