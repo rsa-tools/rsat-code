@@ -1,0 +1,69 @@
+descr:
+    Workflow combining various algorithms to discover motifs from set of peak sequences, e.g. genomic regions obtained from ChIP-seq or related experiments (STARR-seq, ChIP-chip, ChIP-PET).
+---
+parameters:
+  - name: i
+    description: test_seq_file. Test peak sequence file (mandatory). If i is not specified, use i_string option 
+    type: file
+    required: false
+  - name: ctrl
+    description: control_seq_file. Control peak sequence file (optional). 
+    type: file
+  - name: max_seq_len
+    description: msl. Maximal sequence length.
+    type: int
+  - name: ref_motifs
+    description: Reference motifs (optional). Transfac format.
+    type: file
+  - name: motif_db
+    description: db_name db_format db_file. File containing a database of transcription factor biding motifs (e.g. JASPAR, TRANSFAC, RegulonDB, etc.). Ex. -motif_db TRANSFAC transfac transfac_download_dr/cgi-bin/data/matrix.dat
+    type: string 
+  - name: title
+    description: graph_title. Title displayed on top of the graphs
+    type: string
+  - name: str
+    description: Single-strand (-1str) or double-strand (-2str) analysis
+    choices: -1str,-2str
+    type: string
+    default: -2str
+  - name: img_format
+    description: Image format
+    type: string
+  - name: task
+    description: Specify a subset of tasks to be executed.
+    type: string
+    default: purge,seqlen,composition,disco,merge_motifs,split_motifs,motifs_vs_motifs,timelog,archive,synthesis,small_summary,motifs_vs_db,scan
+  - name: disco
+    description: Specify the software tool(s) that will be used for motif discovery.
+    type: string
+    default: oligos,positions
+  - name: nmotifs
+    description: max_motif_number
+    type: int
+    default:
+  - name: minol
+    description: Minimal lengths of oligonucleotide for word-counting approaches
+    type: int
+    default:
+  - name: maxol
+    description: Maximal length of oligonucleotide for word-counting approaches
+    type: int
+    default:
+  - name: markov
+    description: Order of the Markov model used to estimate expected oligonucleotide frequencies
+    type: string
+    default: auto
+  - name: min_markov
+    description: Minimal value can be specified for the Markov order
+    type: int
+    default:
+  - name: max_markov
+    description: Maximal value can be specified for the Markov order
+    type: int
+    default:
+  - name: noov
+    description: Treatment of self-overlapping words for motif discovery
+    type: boolean
+  - name: r_plot
+    description: Use R rather than the Perl GD library to generate plots.
+    type: boolean

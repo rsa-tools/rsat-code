@@ -25,7 +25,7 @@ $default{sc} = "none";
 ### print the form ###
 &RSA_header("pattern-assembly", "form");
 print "<CENTER>";
-print "Assembly of patterns (oligos or dyads).<P>\n";
+print "<p>Assemble string-based patterns (oligos or dyads).</p>\n";
 print "</CENTER>";
 print "<HR>";
 print "<blockquote>";

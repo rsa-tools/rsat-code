@@ -69,7 +69,7 @@ try:
 
     # check command validity
     if not command in cmds:
-        error('Unrecognized command: %s\nType -h for help' % command)
+        error('Unrecognized command: %s\n\nTo get the list of supported commands, type\n\trsat -h' % command)
         exit()
     
     # add the full path and execute the command

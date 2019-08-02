@@ -231,13 +231,13 @@
 
 
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('9')" id="heading9">Genetic variations <img src="images/onebit_49.png" height="30" class="new"></img></div>
+                         onclick="toggleMenu('9')" id="heading9">Genetic variations (Var-tools) <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu9" class="menu_collapsible">
                      
                      <?php
     
     if($properties['variations_tools'] == '1') {
-        echo '<a class="menu_item" href="variation-info_form.cgi" >Variation information <img src="images/onebit_49.png" height="30" class="new"></img></a>
+        echo '<a class="menu_item" href="variation-info_form.cgi" >Variation info <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="retrieve-variation-seq_form.cgi" >Retrieve variation sequences <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="variation-scan_form.cgi" >Scan variations with motifs <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          '; }

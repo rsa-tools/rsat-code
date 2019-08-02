@@ -1,5 +1,13 @@
 #! /usr/bin/env perl
 print "\n\n";
+print "host\n";
+print "====\n";
+
+print "hostname\t", `hostname`;
+print "whoami\t", `whoami`;
+
+
+print "\n\n";
 print "environment variables\n";
 print "=====================\n";
 foreach $key (sort keys %ENV) {
@@ -34,6 +42,10 @@ print "R path\t", `which R`;
 print "\n\n";
 print "Perl variables\n";
 print "==============\n";
+
+print "which perl:\t", `which perl`;
+print "perl --version:\t", `perl --version`;
+
 
 $perlvar{"\$"} = "PROCESS_ID";
 $perlvar{"<"} = "REAL_USER_ID";
