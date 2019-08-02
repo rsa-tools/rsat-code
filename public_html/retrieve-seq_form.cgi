@@ -66,6 +66,26 @@ foreach $key (keys %default) {
 print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
 
 print '
+<script type="application/ld+json">
+{
+    "@context": "http://schema.org/",
+    "description": "Get non-coding upstream or downstream sequences for a list of query genes.",
+    "featureList": "http://edamontology.org/operation_2422",
+    "id": "https://bio.tools/RSAT_-_Retrieve_Sequence",
+    "keywords": "Gene regulation",
+    "name": "RSAT - Retrieve Sequence",
+    "type": [
+        "http://semanticscience.org/resource/SIO_000097",
+        "SoftwareApplication"
+    ]
+}
+</script>
+';
+
+
+
+
+print '
 <!-- Form with bootstrap -->
 <div class="container">
 <div class="row">

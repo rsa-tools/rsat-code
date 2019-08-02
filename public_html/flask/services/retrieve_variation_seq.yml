@@ -1,0 +1,27 @@
+descr:
+    Given a set of IDs for polymorphic variations, retrieve the corresponding variants
+---
+parameters:
+    - name: i
+      description: Input file. The input file specified a list of query variations. Each row corresponds to one query. If input file is not specified, use i_string option
+      type: file
+      required: false
+    - name: release
+      description: The version of ensemble database. e.g. 84
+      type: int
+      required: false
+    - name: format
+      description: variation format. Format of the input file
+      type: string
+      required: false
+      default: varBed
+    - name: mml
+      description: Length of the longest Matrix
+      type: int
+      required: false
+      default: 30
+    - name: col
+      description: Column containing the variation IDs with the input format 'id'
+      type: string
+      required: false
+      default: 1

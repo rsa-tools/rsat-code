@@ -1162,7 +1162,7 @@ sub BlastAndRank {
 	    }
 	    
 	}
-	&RSAT::message::Info(join ("\t", "Sorted hits for query", $query, scalar(@hits))) if ($main::verbose >= 3);
+	&RSAT::message::Info("Sorted hits for query", $query, scalar(@hits)) if ($main::verbose >= 5);
     }
     
     ## Calculate hit rank per subject
@@ -1181,7 +1181,7 @@ sub BlastAndRank {
 		$best_hit{$hit->get_attribute("query")} = $hit->get_attribute("subject");
 	    }
 	}
-	&RSAT::message::Info(join ("\t", "Sorted hits for query", $query, scalar(@hits))) if ($main::verbose >= 3);
+	&RSAT::message::Info("Sorted hits for query", $query, scalar(@hits)) if ($main::verbose >= 5);
     }
 
     ###### Print the result

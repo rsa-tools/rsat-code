@@ -1,0 +1,18 @@
+descr:
+    Retrieve genome sequences for a set of coordinates specified in a bed file.
+---
+parameters:
+    - name: genome
+      description: Genome version (e g mm9, hg19)
+      type: string
+      required: false
+      default: mm9
+    - name: i
+      description: The input file should be in bed format. If no input file is specified, the standard input is used. This allows to use the command within a pipe. If i is not specified, use option i_string
+      type: file
+      required: false
+    - name: header_format
+      description: Format for sequence headers. Supported header formats. UCSC, galaxy
+      type: string
+      required: false
+      default: galaxy

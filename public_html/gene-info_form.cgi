@@ -43,10 +43,10 @@ foreach $key (keys %default) {
 ################################################################
 ### header
 &RSA_header("gene-info");
-print "<CENTER>";
-print "Returns the information about genes (CDS, mRNA, ...) specified either by their identifier, name, or by any supported synonym. 	Searches can also be done by specifying a sub-string of the gene descriptions. Regular expressions are supported. <P>\n";
-print "</CENTER>";
-print "<BLOCKQUOTE>\n";
+print "<center>";
+print "<p>Get information about genes (CDS, mRNA, ...) specified by identifiers, names or  descriptions. Regular expressions are supported.</p>\n";
+print "</center>";
+print "<blockquote>\n";
 
 print $query->start_multipart_form(-action=>"gene-info.cgi", -id=>"form");
 

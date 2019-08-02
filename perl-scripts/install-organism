@@ -149,7 +149,8 @@ package main;
   $log_handle = "";
   $err_handle = "";
   $cluster_queue = $ENV{CLUSTER_QUEUE};
-
+  $download_date="";
+      
   ################################################################
   ## Read arguments
   &ReadArguments();
@@ -237,12 +238,14 @@ package main;
   ################################################################
   ## Check consistency of arguments for download/list/parse tasks.
   if ($task{parse} || $task{download} || $task{list} || ($task{config} && ($group))) {
-    $source = "NCBI-Refseq";
+    #$source = "NCBI-Refseq";
+      $source = "NCBI"; ## 2019 this format works better for the newest formating in NCBI
 
     ## Check the directory containing the Genbank-formatted organisms
     ## (which can be downloaded from NCBI/refseq).
     unless ($dir{refseq}) { # Refseq dir specified on the command line
-      $dir{refseq} = $dir{downloads}."/refseq";
+	$dir{refseq} = $dir{downloads}."/refseq";
+
     }
     &RSAT::util::CheckOutDir($dir{refseq});
 
@@ -307,19 +310,35 @@ package main;
 	    next;
 	}
 
-      my $URL = join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, $species, "latest_assembly_versions/");
-      #my $URL = join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, $species, "all_assembly_versions/suppressed/");
-      if ($strain) { 
-	$URL .= $strain;
-      }
-      &RSAT::message::TimeWarn("Downloading genome from NCBI FTP site", $URL) if ($main::verbose >= 1);
-      
-#      $dir{downloads} = $ENV{RSAT}."/downloads/";
-      
-      &RSAT::util::CheckOutDir($dir{downloads});
-      my $command = "rsync --copy-links --recursive --times -R --verbose ".$URL." ".$dir{downloads};
-      &doit($command, $dry, $die_on_error, $verbose);
-      &RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 3);
+
+	## Dowload the assembly file for the group
+
+	my $assembly_summary_url=  join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, "assembly_summary.txt");
+	&RSAT::util::CheckOutDir($dir{downloads});
+	my $command = "rsync --copy-links --recursive --times -R --verbose ".$assembly_summary_url." ".$dir{downloads};
+	&doit($command, $dry, $die_on_error, $verbose);
+	&RSAT::message::TimeWarn("Downloaded group assembly summary file", $dir{downloads}) if ($main::verbose >= 3);
+
+	## Select the information for the species and assembly, retrieve the column with the FTP address for the genome
+	my $space_species=$species ;
+	$space_species=~s/_/ /;
+	my $command = join (" ","grep", '"'.$space_species.'"',$dir{downloads}."/refseq/".$group."/assembly_summary.txt | grep ". '"'.$strain.'"'. "| cut -f20" );
+	my $URL= `$command`;
+	chomp($URL);
+	$URL=~s/ftp:\/\///;
+
+	&RSAT::message::TimeWarn("Downloading genome from NCBI FTP site", $URL) if ($main::verbose >= 1);
+	
+	$dir{downloads} = $ENV{RSAT}."/downloads/refseq/".$strain;
+	
+	&RSAT::util::CheckOutDir($dir{downloads});
+	#my $command = "rsync --copy-links --recursive --times -R --verbose rsync://".$URL."/ ".$dir{downloads}."/";
+	my $command = "rsync --copy-links --times --recursive --verbose rsync://".$URL."/* ".$dir{downloads}."/";
+	&doit($command, $dry, $die_on_error, $verbose);
+	&RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 3);
+	$download_date =  &AlphaDate();
+
+       
     }
   }
 
@@ -328,13 +347,13 @@ package main;
   ## latest_assembly_versions)
 #  if (($task{parse}) || ($task{list})) {
   if ($task{parse} || $task{list} || ($task{config} && ($group))) {
-
+   
+	 
       ## Check refseq directory
       unless (-d $dir{refseq}) {
 	  &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
       }
 
-      
       ## Header for species list
       if ($task{list}) {
 	  print $main::out "#", join("\t", "organism_name", "org_nb",  "species",  "species_nb", "strain", "strain_nb"), "\n";
@@ -350,7 +369,7 @@ package main;
 	      last;
 	  }
 
-	  my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/latest_assembly_versions";
+	  my $latest_assembly_dir = $dir{refseq};
 	#  my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/all_assembly_versions/suppressed";
 
 
@@ -410,6 +429,7 @@ package main;
 	      }
 
 	      if ($task{parse}) {
+		 
 		  &ParseGenome($species, $current_strain, $organism_name, $strain_folder, $genome_dir, $org_nb);
 	      }
 	  }
@@ -911,6 +931,9 @@ sub UpdateConfigPerl {
   $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
   $new_org_config =~ s|\/\/|/|g;
 
+  #$new_org_config .= "\$supported_organism{'$organism_short_name'}->{'download_date'} = ".$download_date.";\n";
+
+  
   print CONFIG $new_org_config;
   print CONFIG "\nreturn 1;\n";
   close CONFIG;
@@ -926,6 +949,8 @@ sub UpdateConfigTab {
   $supported_organism{$organism_short_name}->{'name'} = $args{name} || $organism->get_attribute("name");
   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $dir{install};
   $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $install_date;
+
+  #$supported_organism{$organism_short_name}->{'download_date'} =  $download_date if ($task{download});
 
 #  &RSAT::message::Debug($organism,  $organism_short_name, $organism->get_attribute("name"), $install_date) if ($main::verbose >= 10);
 
@@ -2393,7 +2418,8 @@ sub ParseGenome {
   if ($dir{ensembl}) {
     $command .= " -ext dat";
   } else {
-    $command .= " -ext gbff";
+    $command .= " -ext gbff"; ## 2019 format in NCBI
+    $command .= " -genomeInFasta "; ## 2019 format in NCBI has the genome in fasta version separated from the genebank format
   }
   $command .= " -org ".$organism_name;
   #    if ($source ne $null) {

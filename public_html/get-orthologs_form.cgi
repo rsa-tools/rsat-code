@@ -68,7 +68,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("get-orthologs", "form");
 print "<CENTER>";
-print "Given a list of genes from a query organism and a taxon of interest, <br>return genes coding for similar proteins in each genome of the taxon.<br>\n";
+print "Get homologs (orthologs and others) in given taxon for a list of query genes. Specific parameters enable to return  bidirectional best-hits, used as rough proxy for orthologs.<br>\n";
 print "Program developed by <A HREF='https://www.kuleuven.be/wieiswie/en/person/u0076845'>Rekin's Janky</A>\n";
 print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</A>).\n";
 print "</CENTER>";

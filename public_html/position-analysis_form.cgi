@@ -60,18 +60,11 @@ print "<blockquote>";
 
 print q {
 
-   Calculates the positional distribution of oligonucleotides in a set
-   of sequences, and detects those which significantly discard from a
-   homogeneous distribution.</p>
+Detect oligomers (k-mers) whose positional distribution significantly discard from a homogeneous distribution.
 
-   <b>Warning</b>: this program is useful for large data sets (some
-   hundreds or thousands of sequences), pre-aligned on some signal
-   (e.g. start codon).</p>
+<br><b>Warning</b>: this program is appropriate for data sets containing hundreds or thousands of sequences, with a given reference position (e.g. transcription start sites of co-expressed genes, centers of ChIP-seq peaks).
 
-   <b>Reference</b>: van Helden, J., del Olmo, M. and Perez-Ortin,
-   J. E. (2000). Statistical analysis of yeast genomic downstream
-   sequences reveals putative polyadenylation signals. Nucleic Acids
-   Res 28, 1000-10.<p>
+<br> <b>Reference</b>: van Helden, J., del Olmo, M. and Perez-Ortin, J. E. (2000). Statistical analysis of yeast genomic downstream  sequences reveals putative polyadenylation signals. Nucleic Acids  Res 28, 1000-10.<p>
 
 };
 print "<hr>";
