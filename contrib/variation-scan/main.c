@@ -111,6 +111,7 @@ typedef struct _threshold {
   struct _uth upper;
 } threshold;
 
+int CheckConvertMatrixOutput(char *out_dir, char *matrix_filename);
 char *isStringListSame(char *stringtosplit, char separator);
 threshold *sethreshold(threshold *cutoff, char *type, char *value);
 void printHeaderSingleVariants(string *varscanFile, char*input, char *output, string *CMD);
@@ -587,11 +588,11 @@ int main(int argc, char *argv[]){
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       mml = atoi(argv[++i]);
     } else if ( strcmp(argv[i],"-top_variation") == 0 && CheckValOpt(argv+i) ) {
-      strccat(CMD," %s %s",argv[i],argv[i+1]);
+      strccat(CMD," %s %s %s",argv[i],argv[i+1]);
       top_variation = strtoul(argv[++i], &end_nb, 10);
       //top_variation = atoi(argv[++i]);
     } else if ( strcmp(argv[i],"-lth") == 0 && CheckValOpt(argv+i) ) {
-      strccat(CMD," %s %s",argv[i],argv[i+1]);
+      strccat(CMD," %s %s %s",argv[i],argv[i+1],argv[i+2]);
       type =  argv[++i];
       sethreshold(&cutoff,type,argv[++i]);
       //lth  =  atof(argv[++i]);
@@ -795,7 +796,14 @@ int main(int argc, char *argv[]){
     //Convert-matrixes; Split matrix files into individual tab-formatted files
     strfmt(convert_matrix_cmd,"%s/perl-scripts/convert-matrix -v 1 -from %s -to tab -split -i %s -o %s/%s",
     RSAT->buffer, matrix_format->buffer, curr_matrix->element->buffer, out_dir->buffer, matrixprefix[1]->buffer);
-    doit(convert_matrix_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
+    if(verbose >= 6) RsatInfo("\nConverting matrices from", matrix_format->buffer, "to tab format", convert_matrix_cmd->buffer, NULL);
+    doit(convert_matrix_cmd->buffer,0,1,0,0,NULL,NULL,NULL,NULL);
+
+    //Test if convert-matrix created successfully the matrix files in tab format
+    if ( CheckConvertMatrixOutput(out_dir->buffer, matrixprefix[1]->buffer) == 0 ){
+      RsatFatalError("Matrix file could not be converted to tab format. Please check the input matrix format is consistent with the -m_format option.", NULL);
+    }
+
     //Prepare current input matrix list for reading
     strfmt(input_matrix_list, "%s/%s_matrix_list.tab", out_dir->buffer, matrixprefix[1]->buffer);
     //Open file
@@ -873,8 +881,8 @@ int main(int argc, char *argv[]){
   /////////////////////////////////////////////////////////////////////////
   strfmt(sort_matrix_cmd,"\npython %s/contrib/variation-scan/sort-matrix.py -i %s -o %s",
           RSAT->buffer, out_distrib_list->buffer, out_distrib_list_sort->buffer);
-  if(verbose >= 6)  RsatInfo("Sorting matrix list by size :", sort_matrix_cmd->buffer,"\n", NULL);
-  doit(sort_matrix_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
+  if(verbose >= 6)  RsatInfo("\nSorting matrix list by size :", sort_matrix_cmd->buffer,"\n", NULL);
+  doit(sort_matrix_cmd->buffer,0,1,0,0,NULL,NULL,NULL,NULL);
   if(verbose >= 12) RsatInfo("Sorted distribution list :", out_distrib_list_sort->buffer, NULL);
 
 
@@ -885,8 +893,8 @@ int main(int argc, char *argv[]){
   strfmt(bg_inclusive, "%s/vscan_bg_inclusive_file.inclusive", out_dir->buffer);
   strfmt(convert_bg_cmd, "%s/convert-background-model -i %s -from oligos -to inclusive "
                          "-o %s -bg_pseudo 0.01", SCRIPTS->buffer, bg, bg_inclusive->buffer);
-  if(verbose >= 6) RsatInfo("Converting bg model to inclusive", convert_bg_cmd->buffer, NULL);
-  doit(convert_bg_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
+  if(verbose >= 6) RsatInfo("\nConverting bg model to inclusive", convert_bg_cmd->buffer, NULL);
+  doit(convert_bg_cmd->buffer,0,1,0,0,NULL,NULL,NULL,NULL);
 
   /////////////////////////////////////////////////////////////////////////
   // Detect number of fields for haplotype or single variant analysis
@@ -1130,7 +1138,7 @@ int main(int argc, char *argv[]){
       //Execute matrix-distrib command
       if(verbose >= 6) RsatInfo("\nCalculating p-val distribution for matrix",
                                  matrix_id, matrix_distrib_cmd->buffer,"\n", NULL);
-      doit(matrix_distrib_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
+      doit(matrix_distrib_cmd->buffer,0,1,0,0,NULL,NULL,NULL,NULL);
 
       ///////////////////////////////////////////////////////////////////////////
       ///////        Scan fasta sequences (matrix-scan-quick)       ////////////
@@ -1153,7 +1161,7 @@ int main(int argc, char *argv[]){
 
       //Execute matrix-scan-quick
       if(verbose >= 6) RsatInfo("Running matrix-scan-quick", mscanquick_cmd->buffer,"\n", NULL);
-      doit(mscanquick_cmd->buffer,0,0,0,0,NULL,NULL,NULL,NULL);
+      doit(mscanquick_cmd->buffer,0,1,0,0,NULL,NULL,NULL,NULL);
 
 
       ///////////////////////////////////////////////////////////////////////////
@@ -1213,6 +1221,54 @@ int main(int argc, char *argv[]){
 
   return 0;
 }
+/*Counts the number of files created after convert-matrix has been executed
+  in variation-scan.  Returns the number of files by executing the command
+  ls -lhtr out_dir/matrix_filname_*.tab | wc -l and popen */
+int CheckConvertMatrixOutput(char *out_dir, char *matrix_filename){
+  //Declare variables
+  FILE   *fh_popen = NULL;
+  string *cmd_countFiles = NULL;
+  string *popen_out = NULL;
+
+  int nb_files = 0;
+
+  //Allocate memory
+  cmd_countFiles   = strnewToList(&RsatMemTracker);
+  popen_out        = strnewToList(&RsatMemTracker);
+
+  //Create cmd
+  strfmt(cmd_countFiles, "ls -lhtr %s/%s_*.tab | wc -l ",out_dir,matrix_filename);
+
+  //Execute cmd in cmdline and write obtained FILENAME from mktemp to tmp_file
+  if ( (fh_popen = popen(cmd_countFiles->buffer,"r")) == NULL ){
+    RsatFatalError("Unable to popen in CheckConvertMatrixOutput()",NULL);
+  }
+  popen_out->size = 0;
+  while ( (popen_out->buffer[popen_out->size] = fgetc(fh_popen)) != '\n' ) {
+    //printf("This is the out of popen : %s \n",tmp_file->buffer );
+    popen_out->size++;
+    strlimt(popen_out);
+  }
+
+  //Add '\0'-end to string and +1 to size
+  popen_out->buffer[popen_out->size] = '\0';
+  popen_out->size++;
+  //Close filehandler
+  pclose(fh_popen);
+
+  //Convert number of files string to char
+  //Substract -1 because a log file
+  //*_matrix_list.tab is always created
+  nb_files = atoi(popen_out->buffer) - 1;
+
+  if (verbose >= 12) RsatInfo("CheckConvertMatrixOutput() result", popen_out->buffer,NULL);
+
+  //Remove tmp variables
+  RsatMemTracker = relem( (void*)popen_out,RsatMemTracker );
+  RsatMemTracker = relem( (void*)cmd_countFiles,RsatMemTracker );
+
+  return nb_files;
+}
 
 void printHeaderSingleVariants(string *varscanFile, char*input, char *output, string *CMD){
   //Declare variables
@@ -1238,28 +1294,28 @@ void printHeaderSingleVariants(string *varscanFile, char*input, char *output, st
 
   //Print header
   fprintf(fh_varscan_output,
-          "; column content\n"
-          "; 1 matrix_ac          - Accession number of the positions-pecific scoring matrix\n"
-          "; 2 var_id             - ID of the variation\n"
-          "; 3 var_class          - Variation type, according to SNP Ontology (SO) nomenclature\n"
-          "; 4 var_coord          - Coordinates of the variation\n"
-          "; 5 best_w             - Best weight for the putative site\n"
-          "; 6 worst_w            - Worst weight for the putative site\n"
-          "; 7 w_diff             - Difference between best and worst weight\n"
-          "; 8 best_pval          - P_value of the best putative site\n"
-          "; 9 worst_pval         - P_value of the worst putative site\n"
-          "; 10 pval_ratio        - Ratio between worst and best pval ( pval_ratio = worst_pval/best_pval )\n"
-          "; 11 best_variant      - Variant in the best putative site\n"
-          "; 12 worst_variant     - Variant in the worst putative site\n"
-          "; 13 best_offest       - Offset of the best putative site\n"
-          "; 14 worst_offset      - Offset of the worst putative site\n"
-          "; 15 min_offset_diff   - Difference minimal between best and worst putative site\n"
-          "; 16 best_strand       - Strand of the best putative site\n"
-          "; 17 worst_strand      - Strand of the worst putative site\n"
-          "; 18 str_change        - Indicate if strand has changed between the offset of min_offset_diff\n"
-          "; 19 best_seq          - Sequence of the worst putative site\n"
-          "; 20 worst_seq         - Sequence of the worst putative site\n"
-          "; 21 minor_alle_freq   - Minor allele frequency\n"
+          ";\tcolumn content\n"
+          ";\t1\tmatrix_ac\tAccession number of the positions-pecific scoring matrix\n"
+          ";\t2\tvar_id\tID of the variation\n"
+          ";\t3\tvar_class\tVariation type, according to SNP Ontology (SO) nomenclature\n"
+          ";\t4\tvar_coord\tCoordinates of the variation\n"
+          ";\t5\tbest_w\tBest weight for the putative site\n"
+          ";\t6\tworst_w\tWorst weight for the putative site\n"
+          ";\t7\tw_diff\tDifference between best and worst weight\n"
+          ";\t8\tbest_pval\tP_value of the best putative site\n"
+          ";\t9\tworst_pval\tP_value of the worst putative site\n"
+          ";\t10\tpval_ratio\tRatio between worst and best pval ( pval_ratio = worst_pval/best_pval )\n"
+          ";\t11\tbest_variant\tVariant in the best putative site\n"
+          ";\t12\tworst_variant\tVariant in the worst putative site\n"
+          ";\t13\tbest_offest\tOffset of the best putative site\n"
+          ";\t14\tworst_offset\tOffset of the worst putative site\n"
+          ";\t15\tmin_offset_diff\tDifference minimal between best and worst putative site\n"
+          ";\t16\tbest_strand\tStrand of the best putative site\n"
+          ";\t17\tworst_strand\tStrand of the worst putative site\n"
+          ";\t18\tstr_change\tIndicate if strand has changed between the offset of min_offset_diff\n"
+          ";\t19\tbest_seq\tSequence of the worst putative site\n"
+          ";\t20\tworst_seq\tSequence of the worst putative site\n"
+          ";\t21\tminor_alle_freq\tMinor allele frequency\n"
           "#ac_motif\tvar_id\tvar_class\tvar_coord\tbest_w\tworst_w\tw_diff\tbest_pval\tworst_pval\t"
           "pval_ratio\tbest_variant\tworst_variant\tbest_offset\tworst_offset\tmin_offset_diff\tbest_strand\t"
           "worst_strand\tstr_change\tbest_seq\tworst_seq\tminor_allele_freq\n");
@@ -1298,29 +1354,29 @@ void printHeaderHaplotypes(string *varscanFile, char*input, char *output, string
 
   //Print header
   fprintf(fh_varscan_output,
-          "; column content\n"
-          "; 1 matrix_ac          - Accession number of the positions-pecific scoring matrix\n"
-          "; 2 hap_id             - ID of the haplotype where the variants come from. \n"
-          "; 3 var_id             - ID of the variation\n"
-          "; 4 var_class          - Variation type, according to SNP Ontology (SO) nomenclature\n"
-          "; 5 var_coord          - Coordinates of the variation\n"
-          "; 6 best_w             - Best weight for the putative site\n"
-          "; 7 worst_w            - Worst weight for the putative site\n"
-          "; 8 w_diff             - Difference between best and worst weight\n"
-          "; 9 best_pval          - P_value of the best putative site\n"
-          "; 10 worst_pval        - P_value of the worst putative site\n"
-          "; 11 pval_ratio        - Ratio between worst and best pval ( pval_ratio = worst_pval/best_pval )\n"
-          "; 12 best_variant      - Variant in the best putative site\n"
-          "; 13 worst_variant     - Variant in the worst putative site\n"
-          "; 14 best_offest       - Offset of the best putative site\n"
-          "; 15 worst_offset      - Offset of the worst putative site\n"
-          "; 16 min_offset_diff   - Difference minimal between best and worst putative site\n"
-          "; 17 best_strand       - Strand of the best putative site\n"
-          "; 18 worst_strand      - Strand of the worst putative site\n"
-          "; 19 str_change        - Indicate if strand has change between the offset of min_offset_diff\n"
-          "; 20 best_seq          - Sequence of the worst putative site\n"
-          "; 21 worst_seq         - Sequence of the worst putative site\n"
-          "; 22 minor_alle_freq   - Minor allele frequency\n"
+          ";\tcolumn content\n"
+          ";\t1\tmatrix_ac\tAccession number of the positions-pecific scoring matrix\n"
+          ";\t2\thap_id\tID of the haplotype where the variants come from. \n"
+          ";\t3\tvar_id\tID of the variation\n"
+          ";\t4\tvar_class\tVariation type, according to SNP Ontology (SO) nomenclature\n"
+          ";\t5\tvar_coord\tCoordinates of the variation\n"
+          ";\t6\tbest_w\tBest weight for the putative site\n"
+          ";\t7\tworst_w\tWorst weight for the putative site\n"
+          ";\t8\tw_diff\tDifference between best and worst weight\n"
+          ";\t9\tbest_pval\tP_value of the best putative site\n"
+          ";\t10\tworst_pval\tP_value of the worst putative site\n"
+          ";\t11\tpval_ratio\tRatio between worst and best pval ( pval_ratio = worst_pval/best_pval )\n"
+          ";\t12\tbest_variant\tVariant in the best putative site\n"
+          ";\t13\tworst_variant\tVariant in the worst putative site\n"
+          ";\t14\tbest_offest\tOffset of the best putative site\n"
+          ";\t15\tworst_offset\tOffset of the worst putative site\n"
+          ";\t16\tmin_offset_diff\tDifference minimal between best and worst putative site\n"
+          ";\t17\tbest_strand\tStrand of the best putative site\n"
+          ";\t18\tworst_strand\tStrand of the worst putative site\n"
+          ";\t19\tstr_change\tIndicate if strand has change between the offset of min_offset_diff\n"
+          ";\t20\tbest_seq\tSequence of the worst putative site\n"
+          ";\t21\tworst_seq\tSequence of the worst putative site\n"
+          ";\t22\tminor_alle_freq\tMinor allele frequency\n"
           "#ac_motif\thap_id\tvar_id\tvar_class\tvar_coord\tbest_w\tworst_w\tw_diff\tbest_pval\tworst_pval\t"
           "pval_ratio\tbest_variant\tworst_variant\tbest_offset\tworst_offset\tmin_offset_diff\tbest_strand\t"
           "worst_strand\tstr_change\tbest_seq\tworst_seq\tminor_allele_freq\n");
@@ -1680,9 +1736,13 @@ void ScanHaplosequences(string *mscanquick_file, string *varscanFile, char *matr
 
         /////////////////////////////////////////////////////////
         // Split total number of variants from offset and length
+        //printf("\n This is line %s\n", token[0]);
+        //printf("This is varfield[8], previous to SplitOffsetFromTotalVars() %s\n", varfield[8]);
+
         offset_list = SplitOffsetFromTotalVars(varfield[8]);
         total_vars  = varfield[8];
         total       = atoi(total_vars);
+        //printf("\n This is offset_list %s\n", offset_list );
 
         multiple_variants = total > 1 ? 1 : 0;
         ////////////////////////////////////////////////
@@ -6363,8 +6423,8 @@ int doit(char *command,int dry,int die_on_error,int verbose,int batch,char *job_
 
   if (error != 0){
     error_message = strnewToList(&RsatMemTracker);
-    if (error == -1) strfmt(error_message,"Could not execute the command\n\t%s",command);
-    else{
+    if (error == -1){ strfmt(error_message,"Could not execute the command\n\t%s",command);
+    } else {
       strfmt(error_message,"Error\t%d\tocurred during execution of the command:\n\t%s",error,command);
     }
 
@@ -6379,8 +6439,8 @@ int doit(char *command,int dry,int die_on_error,int verbose,int batch,char *job_
 
     if(err_handle) fprintf(err_handle, "\n\n%s\n",error_message->buffer);
 
-    if(die_on_error) RsatFatalError(error_message->buffer,NULL);
-    else{
+    if(die_on_error){ RsatFatalError(error_message->buffer,NULL);
+    } else {
       RsatWarning(error_message->buffer,NULL);
       RsatMemTracker = relem( (void*)error_message,RsatMemTracker );
       //free(error_message);
