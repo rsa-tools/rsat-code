@@ -18,7 +18,7 @@ $query = new CGI;
 ### default values for filling the form
 $default{demo_descr1} = "";
 $default{organism} = "";
-$default{input_type}="gvf";
+$default{input_type}="id";
 $default{out_type}="rsat-var";
 $default{mml}=30 ; ## Length of the sequence sorounding the variant,
                    ## has to be consistent with the longest matrix to be used
