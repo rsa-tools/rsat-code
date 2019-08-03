@@ -99,7 +99,7 @@ if (scalar(@selected_db) > 0) {
 
 unless ($input_seq_file = $query->param('variants_seq_file')){
     
-    $input_seq_file= $tmp_file_path."variation-scan_sequence_input";
+    $input_seq_file= $tmp_file_path."_variation-scan_sequence_input.txt";
     
     ### sequence file already on the server side
     ### create a new temporary sequence file
@@ -257,7 +257,7 @@ if ( $bg_conver){
 
 ## Report the command
 &ReportWebCommand($command." ".$parameters);
-$var_scan_file = "$tmp_file_path.variants-seq_result";
+$var_scan_file = join("", $tmp_file_path, "_variation-scan_result.tsv");
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
