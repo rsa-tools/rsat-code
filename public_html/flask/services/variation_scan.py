@@ -19,7 +19,7 @@ tool = 'variation-scan'
 ns = api.namespace(tool, description=descr)
 
 ################################################################
-### Get information about polymorphic variations
+### Retrieve sequences surrounding the polymorphic variations
 @ns.route('/<string:species>/<string:assembly>',methods=['POST','GET'])
 @api.doc(params={'species':'Species name, ex. Homo_sapiens','assembly':'Assembly name, ex. GRCh38'})
 class VariationInfo(Resource):
@@ -70,4 +70,4 @@ class VariationInfo(Resource):
 		else:
 			species = data['species'].replace(' ', '_') + '_' + data['assembly']
 			command += ' -bg ' + utils.get_backgroundfile(species,data.get('markov_order',2)+1)
-		return utils.run_command(command, output_choice, tool, 'varBed', result_dir)
+		return utils.run_command(command, output_choice, tool, 'tsv', result_dir)

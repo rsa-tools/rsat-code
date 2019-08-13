@@ -131,8 +131,8 @@ def read_parameters_from_yml(api,yml_file):
 			get_parser.add_argument(param['name'], type=param_types[param.get('type','string')], choices=choices, required=param.get('required',False), help=param.get('description',''), default=param.get('default',''))
 			post_parser.add_argument(param['name'], type=param_types[param.get('type','string')], choices=choices, required=param.get('required',False), help=param.get('description',''), default=param.get('default',''), location='form')
 		else:
-			help_str = 'Use this option to replace the file upload option in case there is no local file, or in the GET method. It can be a url address to the file, the result file of other tool used in workflow (piping), or the content of the input'
-			help_str_type = 'url: url address to the file. piping: result file from other tool. text: input content'
+			help_str = 'Alternative to the file upload option, to enable specifying an input from another location than the client computer. The value can be the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows) or the content of the input. '
+			help_str_type = 'url: URL (Web address) to the input file; piping: result file from other tool; text: input content'
 			post_parser.add_argument(param['name'], type=FileStorage, required=param.get('required',False), help=param.get('description',''), location='files')
 			get_parser.add_argument(param['name']+'_string', type=str, help=help_str)
 			get_parser.add_argument(param['name']+'_string_type', type=str, choices=('url','piping','text'), default='url',help=help_str_type)
