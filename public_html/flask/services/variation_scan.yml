@@ -1,5 +1,5 @@
 descr:
-    Scan variation sequences with position specific scroring matrices
+    Scan variation sequences with position-specific scroring matrices (PSSM)
 ---
 parameters:
     - name: i
