@@ -257,7 +257,7 @@ package main;
   our $col = 1;
   our $validated = 0 ;
 
-  our $chunk_size = 1000; ## Max number of IDs to send simultaneously by grep
+  our $chunk_size = 500; ## Max number of IDs to send simultaneously by grep
 
   ## Define supported output formats
   our @supported_input_formats = qw (varBed id bed);
@@ -911,7 +911,7 @@ Default : 1
 
 =item	B<-chunk_size>
 
-Default: 1000
+Default: 500
 
 Maximal number of IDs to submit to grep for the selection of query
 variations from VCF files.
@@ -923,7 +923,7 @@ encompassing a few hundreds IDs, but may fail for large queries
 (e.g. 20,000 IDs), probably due to a problem with the complexity of
 the grep pattern.
 
-To circumvent this, queries are teated by chunks.
+To circumvent this, queries are teated by chunks. 
 
 =cut
     } elsif ($arg eq "-chunk_size") {
