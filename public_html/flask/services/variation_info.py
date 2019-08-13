@@ -1,3 +1,7 @@
+################################################################
+### Get information about polymorphic variations usint RSAT variation-info.
+
+## Import libraries
 from flask import Flask, jsonify, abort, request, make_response, url_for
 from flask_restplus import Resource, reqparse, fields
 from werkzeug.datastructures import FileStorage
@@ -6,24 +10,29 @@ from subprocess import check_output, Popen, PIPE
 import os,sys,re
 import requests
 
+## Specify directories
 service_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(service_dir + '/../lib')
 sys.path.append(service_dir + '/../')
 import utils
 from rest_server import app,api
 
+## Specify RSAT tool to be used
 tool = 'variation-info'
-### Read parameters from yaml file
+
+## Read parameters from yaml file
 (descr, get_parser, post_parser) = utils.read_parameters_from_yml(api, service_dir+'/' + tool.replace('-', '_') + '.yml')
 
 ns = api.namespace(tool, description=descr)
 
-################################################################
-### Get information about polymorphic variations
+
 @ns.route('/<string:species>/<string:assembly>', methods=['POST','GET'])
-@api.doc(params={'species':'Species name', 'assembly':'Assembly name'})
+@api.doc(params={'species':'Species name, e.g. Homo_sapiens','assembly':'Assembly name, e.g. GRCh38'})
+# @api.doc(params={'species':'Species name', 'assembly':'Assembly name'})
 class VariationInfo(Resource):
 	@api.expect(get_parser)
+
+        ## Support for GET queries
 	def get(self,species,assembly):
         	data = get_parser.parse_args()
 		data['species'] = species
@@ -32,7 +41,8 @@ class VariationInfo(Resource):
 			resp = self._run(data)
 			return utils.output_txt(resp,200)
 		return self._run(data)
-    			
+    	
+        ## Support for POST queries
 	@api.expect(post_parser)
 	def post(self,species,assembly):
 		data = []
@@ -44,12 +54,13 @@ class VariationInfo(Resource):
 		data['assembly'] = assembly
 		return self._run(data)
 	
+        ## Run the query
 	def _run(self,data):
 		output_choice = 'display'
 		fileupload_parameters = ['i']
 		exclude = fileupload_parameters + ['content-type']
 		for x in fileupload_parameters:
-			exclude = exclude + [x+'_string', x+'_string_type']
+			exclude = exclude + [x + '_string', x + '_string_type']
 		command = utils.perl_scripts + '/' + tool
 		result_dir = utils.make_tmp_dir(tool)
 		for param in data:

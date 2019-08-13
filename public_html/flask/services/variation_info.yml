@@ -1,18 +1,17 @@
 descr:
-    Taking as input a set of either variation IDs (rs numbers) or genomic
-    regions (bed format), retrieve information about matching variants.
-    The collected information is reported in varBed format, which is a
-    specific type of bed format for variations (see convert-variations for
-    info).
+
+    Taking as input a set of either variation IDs (rs numbers) or
+    genomic regions (bed format), retrieve information about matching
+    variants.  The collected information is reported in varBed format,
+    which is a specific type of bed format for variations (see
+    convert-variations for a detailed description of varBed and for
+    interconversions between variation formats).
+
 ---
 parameters:
     - name: i
       description: Input file. If no input file is specified, use the i_string option 
       type: file
-      required: false
-    - name: release
-      description: The version of ensemble database (e.g. 84)
-      type: int
       required: false
     - name: format
       description: Format of the input file. Supported format varBed, id, bed
@@ -20,7 +19,7 @@ parameters:
       required: false
       default: id
     - name: type
-      description: Specify one or several accepted types of variation
+      description: Specify one or several accepted types of variation. Supported: SNV, insertion, deletion, substitution.
       type: string
       required: false
     - name: col
@@ -28,3 +27,7 @@ parameters:
       type: int
       required: false
       default: 1
+    - name: release
+      description: The Ensembl release number of database (e.g. 84)
+      type: int
+      required: false
