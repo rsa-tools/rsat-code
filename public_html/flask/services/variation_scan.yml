@@ -6,6 +6,11 @@ parameters:
       description: Variation file RSAT format, i.e. varBed. If i is not specified, use i_string option
       type: file
       required: false
+    - name: v
+      description: Verbosity
+      type: int
+      required: false
+      default: 1
     - name: m
       description: Matrix file transfac/tab format. If m is not specified, use m_string option
       type: file
