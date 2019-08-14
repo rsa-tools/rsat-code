@@ -1,5 +1,5 @@
-## Load site-specific options for the cluster + other parameters
-include ${RSAT}/RSAT_config.mk
+## Load site-specific options for this RSAT instance
+include ${RSAT}/makefiles/util.mk
 
 ################################################################
 ## Variables
