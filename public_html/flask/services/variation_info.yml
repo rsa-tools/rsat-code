@@ -12,9 +12,8 @@ parameters:
       type: file
       required: false
     - name: i_string
-      description: Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
+      description: Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows). E.g. rs554219,rs1542725,rs2981578,rs35054928,rs7948643
       type: string
-      default: rs554219,rs1542725
     - name: format
       description: Input format. Supported formats = id, varBed, bed
       type: string
@@ -31,5 +30,13 @@ parameters:
       default: 1
     - name: release
       description: The Ensembl release number of database (e.g. 84)
+      type: int
+      required: false
+    - name: skip
+      description: Skip the N first variations of the input file. This option is useful to run  quick tests, or to split an analysis in separate tasks.
+      type: int
+      required: false
+    - name: last
+      description:  Stop after the N first variations of the list. This option is useful to run0 quick tests, or to split an analysis in separate tasks.
       type: int
       required: false
