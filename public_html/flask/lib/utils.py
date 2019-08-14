@@ -135,10 +135,10 @@ def read_parameters_from_yml(api,yml_file):
 			help_str_type = 'url: URL (Web address) to the input file; piping: result file from other tool; text: input content'
 			post_parser.add_argument(param['name'], type=FileStorage, required=param.get('required',False), help=param.get('description',''), location='files')
 			get_parser.add_argument(param['name']+'_string', type=str, help=help_str)
-			get_parser.add_argument(param['name']+'_string_type', type=str, choices=('url','piping','text'), default='url',help=help_str_type)
+			get_parser.add_argument(param['name']+'_string_type', type=str, choices=('text', 'url','piping','text'), default='text',help=help_str_type)
 			post_parser.add_argument(param['name']+'_string', type=str, help=help_str, location='form')
 			post_parser.add_argument(param['name']+'_string_type', type=str, choices=('url','piping','text'), default='url',help=help_str_type,location='form')
-	get_parser.add_argument('content-type', type=str, help='Response content-type', default='text/plain')
+	get_parser.add_argument('content-type', type=str, help='Response content-type. Accepted: text/plain, application/json', default='text/plain')
 	return (descr, get_parser, post_parser)
 
 def read_parameters(data, mandatory, optional, default_values):
