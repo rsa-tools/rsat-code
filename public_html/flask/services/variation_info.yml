@@ -1,25 +1,27 @@
 descr:
-
     Taking as input a set of either variation IDs (rs numbers) or
     genomic regions (bed format), retrieve information about matching
     variants.  The collected information is reported in varBed format,
     which is a specific type of bed format for variations (see
     convert-variations for a detailed description of varBed and for
     interconversions between variation formats).
-
 ---
 parameters:
     - name: i
       description: Input file. If no input file is specified, use the i_string option 
       type: file
       required: false
+    - name: i_string
+      description: Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
+      type: string
+      default: rs554219,rs1542725
     - name: format
-      description: Format of the input file. Supported format varBed, id, bed
+      description: Input format. Supported formats = id, varBed, bed
       type: string
       required: false
       default: id
     - name: type
-      description: Specify one or several accepted types of variation. Supported: SNV, insertion, deletion, substitution.
+      description: Specify one or several accepted types of variation. Supported types = SNV, insertion, deletion, substitution.
       type: string
       required: false
     - name: col
