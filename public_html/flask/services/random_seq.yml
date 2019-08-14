@@ -1,0 +1,21 @@
+descr:
+
+    Generate random DNA or protein sequences according to various
+    probabilistic models (independently distributed residues or Markov
+    models).
+
+---
+parameters:
+    - name: v
+      description: Verbosity
+      type: int
+      required: false
+      default: 1
+    - name: l
+      description:  Sequence length
+      type: int
+      required: true
+    - name: n
+      description:  Number of sequences
+      type: int
+      required: true
