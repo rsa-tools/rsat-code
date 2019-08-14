@@ -6,6 +6,11 @@ parameters:
       description: Input file. The input file specified a list of query variations. Each row corresponds to one query. If input file is not specified, use i_string option
       type: file
       required: false
+    - name: v
+      description: Verbosity
+      type: int
+      required: false
+      default: 1
     - name: release
       description: The version of ensemble database. e.g. 84
       type: int
