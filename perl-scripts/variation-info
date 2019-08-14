@@ -412,7 +412,7 @@ package main;
 
     ## Sort queries
     my @remaining_variation_ids = sort(@query_ids);
-    &RSAT::message::Info("remaining_variation_ids", scalar(@remaining_variation_ids)) if ($main::verbose >= 0);
+    &RSAT::message::Info("remaining_variation_ids", scalar(@remaining_variation_ids)) if ($main::verbose >= 2);
 
     foreach my $chunk (1..$chunks) {
 	## Get the list of queries for the current chunk
