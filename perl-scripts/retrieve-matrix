@@ -27,6 +27,8 @@ The program outputs each matrix in TRANSFAC format.
 
 =item Morgane Thomas-Chollier <mthomas@biologie.ens.fr>
 
+=item Jacques van Helden <Jacques.van-Helden@france-bioinformatique.fr>
+
 =back
 
 =head1 CATEGORY
@@ -73,48 +75,96 @@ my $id_file = "";
 
 &ReadArguments();
 
+################################################################################
+############################### check parameters ###############################
+################################################################################
+
+&RSAT::message::TimeWarn("Checking parameters") if ($verbose >= 2);
+
+
+
 if(!$collection_file){
     &RSAT::error::FatalError("You must specify the path to a collection file (-i)");
 }
 #if(!$id || !$id_file){
    &RSAT::error::FatalError("You must specify either a list of identifiers (-id), or the path to a file of identifiers list (-id_file)") unless ($id || $id_file) ;
 #}
-my @ids;
+
+
+################################################################
+## Read the list of query IDs
+my @ids = ();
 if ($id ne "") {
+  &RSAT::message::TimeWarn("Parsing query IDs from command line argument") if ($verbose >= 2);
   @ids = split(",", $id);
-} elsif($id_file ne "") {
+} elsif ($id_file ne "") {
+  &RSAT::message::TimeWarn("Reading query IDs from input file", $id_file) if ($verbose >= 2);
   open(my $fh, "<", $id_file) or die "Cannot open file $id_file";
   while(my $row = <$fh>) {
     chomp $row;
     push @ids, $row;
   }
 }
+&RSAT::message::Info("Retrieving matrices for", scalar(@ids), "selected IDs") if ($verbose >= 0);
 
-################################################################################
-############################### check parameters ###############################
-################################################################################
+## Index IDs in a has table to enable their identification
+## Note: we convert IDs to lowercases to make the search case-insensitive
+my %ids = ();
+foreach my $id (@ids) {
+    $ids{lc($id)} = 1;
+}
 
-&RSAT::message::TimeWarn("Checking parameters") if ($main::verbose >= 2);
-
+################################################################
+## Read the motif collection and select matching matrices
 open(my $fh, "<", $collection_file) or die "Cannot open file $!";
-my $result_matrix = "";
+my $result_matrices = "";
+my $current_matrix = "";
+my $matrix_ac = "";
+my $matrix_id = "";
+my $to_print = 0;
+my @found_matrices = ();
+
+&RSAT::message::TimeWarn("Reading matrix file and selecting matrices") if ($verbose >= 2);
 while(my $row = <$fh>){
     chomp $row;
-    if($row =~ /^AC\s+/){
+#    die ("HELLO");
+    
+    if ($row =~ /^AC\s+/) {
+	## Accession key starts a new matrix
+	$current_matrix = $row."\n";
+	$current_ac = $f[1];
+	$to_print = 0;
+	
+    } elsif ($row =~ /\/\//) {
+	## End of matrix
+	if ($to_print) {
+	    $result_matrices .= $current_matrix;
+	}
+	$current_matrix = "";
+    } else {
+	$current_matrix .= $row."\n";
+    }
+    
+    
+    ## Check if the accession or identifier are part of the selection
+    if (($row =~ /^AC\s+/) || ($row =~ /^ID\s+/)) {
+	## Get the accession number
         @f = split(/\s+/, $row);
-        if($f[1] ~~ @ids){
-            $isprint = 1;
-            $result_matrix .= $row . "\n";
-        }else{
-            $isprint = 0;
+        if ($ids{lc($f[1])}) {
+#        if ($f[1] ~~ @ids) {
+	    &RSAT::message::Info("Found matrix", $current_ac, $f[1]) if ($verbose >= 3);
+            $to_print = 1;
+	    push(@found_matrices, $current_ac);
         }
-    }elsif($isprint == 1) {
-        $result_matrix .= $row . "\n";
     }
 }
 
+
+################################################################
+## Print the result
+&RSAT::message::TimeWarn("Printing", scalar(@found_matrices), "matrices") if ($verbose >= 2);
 $out = &OpenOutputFile($outputfile);
-print $out $result_matrix;
+print $out $result_matrices;
 
 &Verbose() if ($verbose);
 exit(0);
