@@ -16,8 +16,14 @@ retrieve-matrix
 
 =head1 DESCRIPTION
 
-The program extract specific matrices from a collection of matrices. It takes as input a file containing a collection of matrices in TRANSFAC format. and a list of identifiers to retrieve.
-The program outputs each matrix in TRANSFAC format.
+Retrieve a subset of matrices from a collection of position-specific
+scoring matrices.
+
+The program takes as input a file containing a collection of matrices
+in TRANSFAC format, and a list of query identifiers (matrix accession
+or name).  
+
+The program returns the selected matrices in TRANSFAC format.
 
 =head1 AUTHORS
 
@@ -42,20 +48,22 @@ retrieve-matrix -i collection_file -id identifier(s) [-o outputfile] [-v #] [...
 
 =head1 INPUT FORMAT
 
-The collection of matrices must be in TRANSFAC format. The program convert-matrix can be used to obtain this format.
+The collection of matrices must be in TRANSFAC format. The program
+convert-matrix can be used to obtain this format.
 
 
 =head1 OUTPUT FORMAT
-#}
-Matrices are exported in TRANSFAC format. The format can then be changed with the program convert-matrix.
+
+Matrices are exported in TRANSFAC format. The format can then be
+changed with the program convert-matrix.
 
 =head1 EXAMPLES
 
 retrieve-matrix  -i ${RSAT}/public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf -id MA1115_1,SOX2
 
-will return the matrices correspondong to the transcription factors
-Pou5f1 (synonym for Oct4) and and Sox2 from the collection RSAT
-non-redundant vertebrates (2017). 
+This command will return two matrices corresponding respectively to
+the transcription factors Pou5f1 (synonym for Oct4) and and Sox2 from
+the collection RSAT non-redundant vertebrates (2017).
 
 
 
@@ -129,38 +137,41 @@ my $to_print = 0;
 my @found_matrices = ();
 
 &RSAT::message::TimeWarn("Reading matrix file and selecting matrices") if ($verbose >= 2);
+$collection_size = 0;
 while(my $row = <$fh>){
-    chomp $row;
-#    die ("HELLO");
+  chomp $row;
+  
+  if ($row =~ /^AC\s+/) {
+    ## Accession key starts a new matrix
+    $current_matrix = $row."\n";
+    $current_ac = $f[1];
+    $to_print = 0;
+    $collection_size++;
     
-    if ($row =~ /^AC\s+/) {
-	## Accession key starts a new matrix
-	$current_matrix = $row."\n";
-	$current_ac = $f[1];
-	$to_print = 0;
-	
-    } elsif ($row =~ /\/\//) {
-	## End of matrix
-	if ($to_print) {
-	    $result_matrices .= $current_matrix;
-	}
-	$current_matrix = "";
-    } else {
-	$current_matrix .= $row."\n";
+  } elsif (($row =~ /^\/\//) || (eof($fh))) {
+    $current_matrix .= "//\n";
+
+    ## End of matrix
+    if ($to_print) {
+      $result_matrices .= $current_matrix;
     }
-    
-    
-    ## Check if the accession or identifier are part of the selection
-    if (($row =~ /^AC\s+/) || ($row =~ /^ID\s+/)) {
-	## Get the accession number
-        @f = split(/\s+/, $row);
-        if ($ids{lc($f[1])}) {
+    $current_matrix = "";
+  } else {
+    $current_matrix .= $row."\n";
+  }
+  
+  
+  ## Check if the accession or identifier are part of the selection
+  if (($row =~ /^AC\s+/) || ($row =~ /^ID\s+/)) {
+    ## Get the accession number
+    @f = split(/\s+/, $row);
+    if ($ids{lc($f[1])}) {
 #        if ($f[1] ~~ @ids) {
-	    &RSAT::message::Info("Found matrix", $current_ac, $f[1]) if ($verbose >= 3);
-            $to_print = 1;
-	    push(@found_matrices, $current_ac);
-        }
+      &RSAT::message::Info("Found matrix", $current_ac, $f[1]) if ($verbose >= 3);
+      $to_print = 1;
+      push(@found_matrices, $current_ac);
     }
+  }
 }
 
 
@@ -170,6 +181,8 @@ while(my $row = <$fh>){
 $out = &OpenOutputFile($outputfile);
 &Verbose() if ($verbose);
 print $out $result_matrices;
+
+close($out);
 
 exit(0);
 
@@ -256,16 +269,23 @@ Display concise help message
 =item B<-id identifiers>
 
 Query matrix identifier(s). Multiple identifiers can be provided
-separated by commas (without space).
+separated by commas (without space). The argument can also be used
+iteratively in the command line to specify several query IDs.
+
 
 Queries are case-insensitive, and can be specified by either the
 matrix identifier (the "AC" field in Transfac format, e.g. MA1115_1)
 or its name (the "ID" field in Transfac format, e.g. SOX2).
 
+
 =cut
             ### input identifiers
         } elsif ($ARGV[$a] eq "-id") {
-            $id = $ARGV[$a+1];
+	  if ($id ne "") {
+	    $id .= ",";
+	  }
+	  $id .= $ARGV[$a+1];
+
 =pod
 
 =item B<-id_file identifier_file>
@@ -306,14 +326,17 @@ Level of verbosity (detail in the warning messages during execution)
 sub Verbose {
     print $out "; retrieve-matrix";
     &PrintArguments($out);
-    printf $out "; %-14s\t%s\n", "collection", $collection_file;
+    printf $out "; %-14s\t%s\n", "Collection", $collection_file;
+    printf $out "; %-14s\t%s\n", "Number of matrices in collection", $collection_size;
     if ($id) {
-        printf $out "; %-14s\t%s\n", "identifiers list", $id;
-    }elsif($id_file){
-        printf $out "; %-14s\t%s\n", "identifiers list file", $id_file;
+        printf $out "; %-14s\t%s\n", "query identifiers", $id;
+    }elsif($id_file) {
+        printf $out "; %-14s\t%s\n", "query file", $id_file;
     }
-    printf $out "; %-14s\t%s\n", "output file file", $outputfile if ($outputfile);
-    print $out ";\n";
+    printf $out "; %-14s\t%s\n", "number of queries", scalar(@ids);
+    printf $out "; %-14s\t%s\n", "number of matrices found", scalar(@found_matrices);
+    printf $out "; %-14s\t%s\n", "output file", $outputfile if ($outputfile);
+
 }
 
 __END__
