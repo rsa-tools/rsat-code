@@ -105,7 +105,7 @@ if ($id ne "") {
     push @ids, $row;
   }
 }
-&RSAT::message::Info("Retrieving matrices for", scalar(@ids), "selected IDs") if ($verbose >= 0);
+&RSAT::message::Info("Retrieving matrices for", scalar(@ids), "selected IDs") if ($verbose >= 2);
 
 ## Index IDs in a has table to enable their identification
 ## Note: we convert IDs to lowercases to make the search case-insensitive
@@ -164,9 +164,9 @@ while(my $row = <$fh>){
 ## Print the result
 &RSAT::message::TimeWarn("Printing", scalar(@found_matrices), "matrices") if ($verbose >= 2);
 $out = &OpenOutputFile($outputfile);
+&Verbose() if ($verbose);
 print $out $result_matrices;
 
-&Verbose() if ($verbose);
 exit(0);
 
 ################################################################
