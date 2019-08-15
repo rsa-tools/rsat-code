@@ -25,10 +25,10 @@ VAR_PREFIX=${RESULT_DIR}/some_snps
 VAR_ID_FILE=${VAR_PREFIX}_ids.txt
 SPECIES=Homo_sapiens
 ASSEMBLY=GRCh38
-VAR_INFO_GET=${VAR_PREFIX}_varinfo_GET.varBed
-VAR_INFO_POST=${VAR_PREFIX}_varinfo_POST.varBed
-VAR_SEQ_POST=${VAR_PREFIX}_varseq_POST.varSeq
-VAR_SCAN_POST=${VAR_PREFIX}_varscan_POST.tsv
+VARINFO_GET=${VAR_PREFIX}_varinfo_GET.varBed
+VARINFO_POST=${VAR_PREFIX}_varinfo_POST.varBed
+VARSEQ_POST=${VAR_PREFIX}_varseq_POST.varSeq
+VARSCAN_POST=${VAR_PREFIX}_varscan_POST.tsv
 SELECTED_MATRICES=${RESULT_DIR}/selected_matrices.tf
 list_param:
 	@echo "Parameters"
@@ -39,9 +39,9 @@ list_param:
 	@echo "	VAR_ID_STRING		${VAR_ID_STRING}"
 	@echo "	RESULT_DIR		${RESULT_DIR}"
 	@echo "	VAR_ID_FILE		${VAR_ID_FILE}"
-	@echo "	VAR_INFO_GET		${VAR_INFO_GET}"
-	@echo "	VAR_INFO_POST		${VAR_INFO_POST}"
-	@echo "	VAR_SEQ_POST		${VAR_SEQ_POST}"
+	@echo "	VARINFO_GET		${VARINFO_GET}"
+	@echo "	VARINFO_POST		${VARINFO_POST}"
+	@echo "	VARSEQ_POST		${VARSEQ_POST}"
 	@echo "	SELECTED_MATRICES	${SELECTED_MATRICES}"
 
 ## Run all the queries below
@@ -65,8 +65,8 @@ select_matrices:
 ## Send a GET request to RSAT variation-info
 GET_STRING=${REST_ROOT}variation-info/${SPECIES}/${ASSEMBLY}?i_string=${VAR_ID_STRING}&i_string_type=text&format=id&col=1&content-type=text%2Fplain
 varinfo_get:
-	curl -X GET  '${GET_STRING}' -H "accept: text/plain" > ${VAR_INFO_GET}
-	@echo "	VAR_INFO_GET	${VAR_INFO_GET}"
+	curl -X GET  '${GET_STRING}' -H "accept: text/plain" > ${VARINFO_GET}
+	@echo "	VARINFO_GET	${VARINFO_GET}"
 
 ################################################################
 ## Write a small query file for the POST query
@@ -86,8 +86,8 @@ varinfo_post: write_snp_query_file
 		-F "i=@${VAR_ID_FILE};type=text/plain" \
 		-F "i_string_type=text" \
 		-F "format=id" \
-		-F "col=1" > ${VAR_INFO_POST}
-	@echo "	VAR_INFO_POST	${VAR_INFO_POST}"
+		-F "col=1" > ${VARINFO_POST}
+	@echo "	VARINFO_POST	${VARINFO_POST}"
 
 ## NOTE: one of the SNPs is a deletion, but the variation-info option -type does not report it
 #		-F "type=SNV" \
@@ -96,16 +96,16 @@ varinfo_post: write_snp_query_file
 ################################################################
 ## Retrieve variation sequences via a POST query
 varseq_post:
-	@echo "	VAR_INFO_POST	${VAR_INFO_POST}"
+	@echo "	VARINFO_POST	${VARINFO_POST}"
 	curl -X POST "${REST_ROOT}/retrieve-variation-seq/${SPECIES}/${ASSEMBLY}" \
 		-H "accept: text/plain" \
 		-H "Content-Type: multipart/form-data" \
-		-F "i=@${VAR_INFO_POST};type=text/plain" \
+		-F "i=@${VARINFO_POST};type=text/plain" \
 		-F "i_string_type=text" \
 		-F "format=varBed" \
 		-F "mml=30" \
-		-F "col=1" > ${VAR_SEQ_POST}
-	@echo "	VAR_INFO_POST	${VAR_SEQ_POST}"
+		-F "col=1" > ${VARSEQ_POST}
+	@echo "	VARINFO_POST	${VARSEQ_POST}"
 
 ################################################################
 ## Get a local copy of the background model
@@ -117,19 +117,27 @@ BG_FILE=${RESULT_DIR}/
 ## Scan variations via a POST query
 VARSCAN_PVAL=0.001
 VARSCAN_PVAL_RATIO=10
+VARSCAN_TOP_MATRICES=0OB
+VARSCAN_TOP_VARIATIONS=0
+VARSCAN_MARKOV=2
 varscan_post:
-	@echo "	VAR_SEQ_POST	${VAR_SEQ_POST}"
+	@echo "	VARSEQ_POST		${VARSEQ_POST}"
+	@echo "	VARSCAN_MARKOV		${VARSCAN_MARKOV}"
+	@echo "	VARSCAN_TOP_MATRICES	${VARSCAN_TOP_MATRICES}"
+	@echo "	VARSCAN_TOP_VARIATIONS	${VARSCAN_TOP_VARIATIONS}"
 	curl -X POST "${REST_ROOT}/variation-scan/${SPECIES}/${ASSEMBLY}" \
 		-H "accept:text/plain" \
 		-H "Content-Type: multipart/form-data" \
 		-F "v=1" \
-		-F "i=@${VAR_SEQ_POST};type=text/plain" \
+		-F "i=@${VARSEQ_POST};type=text/plain" \
 		-F "m=@${SELECTED_MATRICES};type=text/plain" \
 		-F "m_string_type=url" \
 		-F "m_format=transfac" \
-		-F "markov_order=2" \
+		-F "markov_order=${VARSCAN_MARKOV}" \
+		-F "top_matrices=${VARSCAN_TOP_MATRICES}" \
+		-F "top_variation=${VARSCAN_TOP_VARIATIONS}" \
 		-F "uth_pval=${VARSCAN_PVAL}" \
 		-F "lth_pval_ratio=${VARSCAN_PVAL_RATIO}" \
 		-F "lth_score=1" \
-		-F "lth_w_diff=1" > ${VAR_SCAN_POST}
-	@echo "	VAR_INFO_POST	${VAR_SCAN_POST}"
+		-F "lth_w_diff=1" > ${VARSCAN_POST}
+	@echo "	VARINFO_POST	${VARSCAN_POST}"
