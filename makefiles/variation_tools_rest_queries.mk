@@ -28,22 +28,24 @@ ASSEMBLY=GRCh38
 VAR_INFO_GET=${VAR_PREFIX}_varinfo_GET.varBed
 VAR_INFO_POST=${VAR_PREFIX}_varinfo_POST.varBed
 VAR_SEQ_POST=${VAR_PREFIX}_varseq_POST.varSeq
+VAR_SCAN_POST=${VAR_PREFIX}_varscan_POST.tsv
+SELECTED_MATRICES=${RESULT_DIR}/selected_matrices.tf
 list_param:
 	@echo "Parameters"
-	@echo "	SPECIES		${SPECIES}"
-	@echo "	ASSEMBLY	${ASSEMBLY}"
-	@echo "	REST_SERVER	${REST_SERVER}"
-	@echo "	REST_ROOT	${REST_ROOT}"
-	@echo "	VAR_ID_STRING	${VAR_ID_STRING}"
-	@echo "	RESULT_DIR	${RESULT_DIR}"
-	@echo "	VAR_ID_FILE	${VAR_ID_FILE}"
-	@echo "	VAR_INFO_GET	${VAR_INFO_GET}"
-	@echo "	VAR_INFO_POST	${VAR_INFO_POST}"
-	@echo "	VAR_SEQ_POST	${VAR_SEQ_POST}"
-	@echo "	SOME_MOTIFS	${SOME_MOTIFS}"
+	@echo "	SPECIES			${SPECIES}"
+	@echo "	ASSEMBLY		${ASSEMBLY}"
+	@echo "	REST_SERVER		${REST_SERVER}"
+	@echo "	REST_ROOT		${REST_ROOT}"
+	@echo "	VAR_ID_STRING		${VAR_ID_STRING}"
+	@echo "	RESULT_DIR		${RESULT_DIR}"
+	@echo "	VAR_ID_FILE		${VAR_ID_FILE}"
+	@echo "	VAR_INFO_GET		${VAR_INFO_GET}"
+	@echo "	VAR_INFO_POST		${VAR_INFO_POST}"
+	@echo "	VAR_SEQ_POST		${VAR_SEQ_POST}"
+	@echo "	SELECTED_MATRICES	${SELECTED_MATRICES}"
 
 ## Run all the queries below
-all: dir varinfo_get write_snp_query_file varinfo_post
+all: dir select_matrices varinfo_get write_snp_query_file varinfo_post varscan_post
 
 dir:
 	@mkdir -p ${RESULT_DIR}
@@ -54,9 +56,10 @@ dir:
 ## Select relevant motifs for this study case
 SELECTED_TFS=CEBPA,CEBPB,ELF1,ERG,ETS1,ETV4,FOXA1,FOXA2,GABPA,GATA2,GFI1B,POU2F2,RUNX2,RUNX3,ZNF384
 MATRIX_COLLECTION=public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf
+MATRIX_FILE=
 select_matrices:
-	retrieve-matrix -v ${V} -i ${MATRIX_COLLECTION} -id ${SELECTED_TFS}
-
+	retrieve-matrix -v 0 -i ${MATRIX_COLLECTION} -id ${SELECTED_TFS} -o ${SELECTED_MATRICES}
+	@echo "	SELECTED_MATRICES	${SELECTED_MATRICES}"
 
 ################################################################
 ## Send a GET request to RSAT variation-info
@@ -97,7 +100,7 @@ varseq_post:
 	curl -X POST "${REST_ROOT}/retrieve-variation-seq/${SPECIES}/${ASSEMBLY}" \
 		-H "accept: text/plain" \
 		-H "Content-Type: multipart/form-data" \
-		-F "i=@some_snps_varinfo_GET.varBed;type=text/plain" \
+		-F "i=@${VAR_INFO_POST};type=text/plain" \
 		-F "i_string_type=text" \
 		-F "format=varBed" \
 		-F "mml=30" \
@@ -105,15 +108,28 @@ varseq_post:
 	@echo "	VAR_INFO_POST	${VAR_SEQ_POST}"
 
 ################################################################
+## Get a local copy of the background model
+BG_FILE=2nt_upstream-noorf_${SPECIES}_${ASSEMBLY}-ovlp-1str.freq.gz
+BG_URL=http://rsat.sb-roscoff.fr/data/genomes/Homo_sapiens_GRCh38/oligo-frequencies/${BG_FILE}
+BG_FILE=${RESULT_DIR}/
+
+################################################################
 ## Scan variations via a POST query
+VARSCAN_PVAL=0.001
+VARSCAN_PVAL_RATIO=10
 varscan_post:
 	@echo "	VAR_SEQ_POST	${VAR_SEQ_POST}"
-	curl -X POST "${REST_ROOT}/retrieve-variation-seq/${SPECIES}/${ASSEMBLY}" \
-		-H "accept: text/plain" \
+	curl -X POST "${REST_ROOT}/variation-scan/${SPECIES}/${ASSEMBLY}" \
+		-H "accept:text/plain" \
 		-H "Content-Type: multipart/form-data" \
-		-F "i=@some_snps_varinfo_GET.varBed;type=text/plain" \
-		-F "i_string_type=text" \
-		-F "format=varBed" \
-		-F "mml=30" \
-		-F "col=1" > ${VAR_SCAN_POST}
+		-F "v=1" \
+		-F "i=@${VAR_SEQ_POST};type=text/plain" \
+		-F "m=@${SELECTED_MATRICES};type=text/plain" \
+		-F "m_string_type=url" \
+		-F "m_format=transfac" \
+		-F "markov_order=2" \
+		-F "uth_pval=${VARSCAN_PVAL}" \
+		-F "lth_pval_ratio=${VARSCAN_PVAL_RATIO}" \
+		-F "lth_score=1" \
+		-F "lth_w_diff=1" > ${VAR_SCAN_POST}
 	@echo "	VAR_INFO_POST	${VAR_SCAN_POST}"
