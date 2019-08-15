@@ -51,9 +51,13 @@ Matrices are exported in TRANSFAC format. The format can then be changed with th
 
 =head1 EXAMPLES
 
-retrieve-matrix -i $ENV{RSAT}/public_html/motif_databases/RSAT_nonredundant_vertebrates_2017.tf -id cluster_1,cluster_100 -o result.txt
+retrieve-matrix  -i ${RSAT}/public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf -id MA1115_1,SOX2
 
-will return the matrices with the accessions: cluster_1 and cluster_100 from the collection RSAT non-redundant vertebrates (2017).
+will return the matrices correspondong to the transcription factors
+Pou5f1 (synonym for Oct4) and and Sox2 from the collection RSAT
+non-redundant vertebrates (2017). 
+
+
 
 =cut
 
@@ -248,11 +252,15 @@ Display concise help message
         } elsif ($ARGV[$a] eq "-help") {
             &PrintShortHelp;
 =pod
-            die "BOOM".$id_file;
 
 =item B<-id identifiers>
 
-list of the accession of each matrix in request, separated by commas.
+Query matrix identifier(s). Multiple identifiers can be provided
+separated by commas (without space).
+
+Queries are case-insensitive, and can be specified by either the
+matrix identifier (the "AC" field in Transfac format, e.g. MA1115_1)
+or its name (the "ID" field in Transfac format, e.g. SOX2).
 
 =cut
             ### input identifiers
@@ -260,10 +268,10 @@ list of the accession of each matrix in request, separated by commas.
             $id = $ARGV[$a+1];
 =pod
 
-=item B<-id_file identifiers file>
+=item B<-id_file identifier_file>
 
-the path to the identifiers file which contains the list of the accession
-of each matrix in request, one per line.
+the path to a file containing queries (matrix accessions or
+identifiers). Each line should contain a single query.
 
 =cut
 
