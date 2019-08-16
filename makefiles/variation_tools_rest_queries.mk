@@ -30,6 +30,7 @@ VARINFO_POST=${VAR_PREFIX}_varinfo_POST.varBed
 VARSEQ_POST=${VAR_PREFIX}_varseq_POST.varSeq
 VARSCAN_POST=${VAR_PREFIX}_varscan_POST.tsv
 SELECTED_MATRICES=${RESULT_DIR}/selected_matrices.tf
+SELECTED_MATRICES_GET=${RESULT_DIR}/selected_matrices_GET.tf
 list_param:
 	@echo "Parameters"
 	@echo "	SPECIES			${SPECIES}"
@@ -43,10 +44,13 @@ list_param:
 	@echo "	VARINFO_POST		${VARINFO_POST}"
 	@echo "	VARSEQ_POST		${VARSEQ_POST}"
 	@echo "	SELECTED_MATRICES	${SELECTED_MATRICES}"
+	@echo "	SELECTED_MATRICES_GET	${SELECTED_MATRICES_GET}"
 
 ## Run all the queries below
 all: dir select_matrices varinfo_get write_snp_query_file varinfo_post varscan_post
 
+################################################################
+## Create result directory
 dir:
 	@mkdir -p ${RESULT_DIR}
 	@echo "	RESULT_DIR	${RESULT_DIR}"
@@ -55,17 +59,25 @@ dir:
 ################################################################
 ## Select relevant motifs for this study case
 SELECTED_TFS=CEBPA,CEBPB,ELF1,ERG,ETS1,ETV4,FOXA1,FOXA2,GABPA,GATA2,GFI1B,POU2F2,RUNX2,RUNX3,ZNF384
+SELECTED_TF_STRING=CEBPA%2CCEBPB%2CELF1%2CERG%2CETS1%2CETV4%2CFOXA1%2CFOXA2%2CGABPA%2CGATA2%2CGFI1B%2CPOU2F2%2CRUNX2%2CRUNX3%2CZNF384
 MATRIX_COLLECTION=public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf
 MATRIX_FILE=
 select_matrices:
 	retrieve-matrix -v 0 -i ${MATRIX_COLLECTION} -id ${SELECTED_TFS} -o ${SELECTED_MATRICES}
 	@echo "	SELECTED_MATRICES	${SELECTED_MATRICES}"
 
+## Select relevant motifs via a GET request to REST web services
+MOTIFDB_URL=http%3A%2F%2Frsat.sb-roscoff.fr%2Fmotif_databases%2FJASPAR%2FJaspar_2018%2Fnonredundant%2FJASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf
+select_matrices_get:
+	curl -X GET "${REST_ROOT}/retrieve-matrix/?i_string=${MOTIFDB_URL}&i_string_type=url&v=1&id=${SELECTED_TF_STRING}&content-type=text%2Fplain" -H "accept: application/json" > ${SELECTED_MATRICES_GET}
+	@echo "	SELECTED_MATRICES_GET	${SELECTED_MATRICES_GET}"
+
+
 ################################################################
 ## Send a GET request to RSAT variation-info
-GET_STRING=${REST_ROOT}variation-info/${SPECIES}/${ASSEMBLY}?i_string=${VAR_ID_STRING}&i_string_type=text&format=id&col=1&content-type=text%2Fplain
+VARINFO_GET_STRING=${REST_ROOT}variation-info/${SPECIES}/${ASSEMBLY}?i_string=${VAR_ID_STRING}&i_string_type=text&format=id&col=1&content-type=text%2Fplain
 varinfo_get:
-	curl -X GET  '${GET_STRING}' -H "accept: text/plain" > ${VARINFO_GET}
+	curl -X GET  '${VARINFO_GET_STRING}' -H "accept: text/plain" > ${VARINFO_GET}
 	@echo "	VARINFO_GET	${VARINFO_GET}"
 
 ################################################################

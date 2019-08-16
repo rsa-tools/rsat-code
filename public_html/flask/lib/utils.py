@@ -132,10 +132,11 @@ def read_parameters_from_yml(api,yml_file):
 			post_parser.add_argument(param['name'], type=param_types[param.get('type','string')], choices=choices, required=param.get('required',False), help=param.get('description',''), default=param.get('default',''), location='form')
 		else:
 			help_str = 'Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows). '
-			help_str_type = 'url: URL (Web address) to the input file; piping: result file from other tool; text: input content'
+			help_str_type = 'Type of information provided by the input string. Supported values: url: URL (Web address) to the input file; piping: result file from other tool; text: input content'
+#			help_str_type = 'url: URL (Web address) to the input file; piping: result file from other tool; text: input content'
 			post_parser.add_argument(param['name'], type=FileStorage, required=param.get('required',False), help=param.get('description',''), location='files')
 			get_parser.add_argument(param['name']+'_string', type=str, help=help_str)
-			get_parser.add_argument(param['name']+'_string_type', type=str, choices=('text', 'url','piping','text'), default='text',help=help_str_type)
+			get_parser.add_argument(param['name']+'_string_type', type=str, choices=('text', 'url','piping'), default='text',help=help_str_type)
 			post_parser.add_argument(param['name']+'_string', type=str, help=help_str, location='form')
 			post_parser.add_argument(param['name']+'_string_type', type=str, choices=('url','piping','text'), default='url',help=help_str_type,location='form')
 	get_parser.add_argument('content-type', type=str, help='Response content-type. Accepted: text/plain, application/json', default='text/plain')
