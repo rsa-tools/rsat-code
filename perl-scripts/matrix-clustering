@@ -3122,6 +3122,23 @@ sub create_html_radial_tree_file {
 	chomp;
 	$line = $_;
 
+    	## Set height/weight
+	if (/--radial_w--/){
+	    $line =~ s/--radial_w--/2000/gi;
+	    
+	    if($number_of_motifs > 200){
+		$line =~ s/--radial_w--/2500/gi;
+	    }
+	}
+
+	if (/--radial_h--/){
+	    $line =~ s/--radial_h--/2000/gi;
+
+	    if($number_of_motifs > 200){
+		$line =~ s/--radial_h--/2500/gi;
+	    } 
+	}
+	
 	## Insert the JSON file name
 	if (/--json_file--/){
 	    $line =~ s/--json_file--/$json_file/g;
@@ -3129,13 +3146,29 @@ sub create_html_radial_tree_file {
 
 
 	## Set the tree radium according to the number of motifs
+	## NOTE: the following radius were obtained empirically
 	if (/--radium--/){
 
 	    if($number_of_motifs <= 30){
 		$tree_radium = 175;
-	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
+		
+	    } elsif ($number_of_motifs > 30 && $number_of_motifs <= 50){
+		$tree_radium = 200;
+	    }
+
+	    elsif ($number_of_motifs > 50 && $number_of_motifs <= 100){
+		$tree_radium = 250;
+	    }
+
+	    elsif ($number_of_motifs > 100 && $number_of_motifs <= 150){
 		$tree_radium = 275;
-	    } elsif ($number_of_motifs >= 100){
+	    }
+
+	    elsif ($number_of_motifs >= 150 && $number_of_motifs <= 200){
+		$tree_radium = 300;
+	    }
+	    
+	    elsif ($number_of_motifs >= 200){
 		$tree_radium = 450;
 	    }
 	    
@@ -3180,8 +3213,13 @@ sub create_html_radial_tree_file {
 	## Set displacement (x axis) of the logos according to the number of motifs
 	if (/--y_displ--/){
 	    
-	    $y_displacement = ($motif_height/2) + 3;
-	    $line =~ s/--y_displ--/$y_displacement/g;
+	    # $y_displacement = ($motif_height/2) + 3;
+	    # $line =~ s/--y_displ--/$y_displacement/g;
+
+	    $y_displacement = "-3";
+	    $line =~ s/--y-displ--/$y_displacement/g;
+
+	    
 	}
 
 
