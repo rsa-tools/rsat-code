@@ -28,7 +28,6 @@ path.arc {
 }
 
 	.legend {
-	   text-align: left;
 	   border-radius:5px;       
       	   text-align: center;
 	   margin: 3px 5px 5px 5px;
@@ -39,9 +38,9 @@ path.arc {
 	   border-radius:5px;
            color: #ffffff;
            background:#cc0000;
-
 	   display: inline-block;
 	   position:relative;
+	   float:left;
 	}
 
 	.legend:active {
@@ -49,9 +48,21 @@ path.arc {
 	   top:2px;
 	}
 
+
+	  .color-box{
+	    
+	    	width: 5px;
+	 	height: 5px;
+	 	padding:7px;
+	 	border-radius:5px;
+	    	color: #ffffff;
+	    	display: block;
+	    	margin: 0.5px;
+	  }
+
+
 .color-legend {
-  position: absolute;
-  display: inline-block;
+  position: relative;
 }
 
 #cluster_1 {
@@ -95,8 +106,8 @@ d3.select("#cluster_1").append("text")
 	})
 	.text("Reverse") ; 
 
-var w = 2500,
-    h = 2500,
+var w = --radial_w--,
+    h = --radial_h--,
     rx = w / 4,
     ry = h / 4,
     m0,
@@ -124,10 +135,11 @@ var vis = svg.append("svg:svg")
   .append("svg:g")
     .attr("transform", "translate(" + rx + "," + ry + ")");
 
-vis.append("svg:path")
-    .attr("class", "arc")
-    .attr("d", d3.svg.arc().innerRadius(ry - 120).outerRadius(ry).startAngle(0).endAngle(2 * Math.PI))
-    .on("mousedown", mousedown);
+
+//	vis.append("svg:path")
+//    	.attr("class", "arc")
+//	.attr("d", d3.svg.arc().innerRadius(ry - 120).outerRadius(ry).startAngle(0).endAngle(2 * Math.PI))
+//	.on("mousedown", mousedown);
 
 d3.json("--json_file--", function(json) {
   var nodes = cluster.nodes(json);
@@ -154,7 +166,7 @@ d3.json("--json_file--", function(json) {
       .append("text")
       .text(function(d) { return d.children ? "" :  d.name; })
       .attr("fill", function(d) { return d.color; })
-      .style("font-size", "5px")
+      .style("font-size", "7px")
       .attr("dx", function(d) { return d.x < 180 ? 10 : -10; })
       .attr("dy", ".31em")
       .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
