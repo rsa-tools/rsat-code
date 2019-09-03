@@ -3267,7 +3267,7 @@ sub Text_end_report {
 	      <strong>References</strong>
               <ol>
                  <li> Castro-Mondragon JA et al. <a target="_blank" href="https://academic.oup.com/nar/article/45/13/e119/3862068"> RSAT matrix-clustering: dynamic exploration and redundancy reduction of transcription factor binding motif collections. doi: 10.1093/nar/gkx314</a>; Nucleic Acids Research (2017)</li>
-                 <li><strong>Last RSAT release: </strong><a href="http://nar.oxfordjournals.org/content/early/2015/04/21/nar.gkv362.full" target=\'_blank\'>Medina-Rivera, A. et al. RSAT 2015: Regulatory Sequence Analysis Tools. Nucleic Acids Research (2015).</a></li>
+                 <li><strong>Last RSAT release: </strong><a href="https://academic.oup.com/nar/article/46/W1/W209/4990780" target=\'_blank\'>Nguyen NTT et al. RSAT 2018: regulatory sequence analysis tools 20th anniversary. Nucleic Acids Research (2018).</a></li>
               </ol>
 	    </li>
 	    <li>
