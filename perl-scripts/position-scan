@@ -251,7 +251,7 @@ package main;
 	$main::outfile{bg_file_inclusive_ctrl} = $bg_dir."/mkv_" . $markov . "_2str_control.inclusive";
     }
 
-  }elsif($main::infile{bg_file}){
+  } elsif($main::infile{bg_file}){
       local $bg_dir = $main::outfile{prefix}."_bg_model";
       &RSAT::util::CheckOutDir($bg_dir);
       
@@ -763,7 +763,7 @@ Calculate background model from the input sequence set.
 =cut
 
     } elsif ($arg eq "-bginput") {
-$bg_input_flag = 1;
+	$bg_input_flag = 1;
       &RSAT::error::FatalError("Options -bgfile and -bginput are mutually exclusive") if (($bg_file_flag) && ($bg_input_flag));
 
 =pod
@@ -1447,14 +1447,7 @@ sub CalculateBGModel {
     my @sequences = ();
     push(@sequences, $main::infile{sequences});
 
-    ##If a bg input file was given convert it to inclusive
-    if ($main::infile{bg_file}){
-    	$convert_bg_cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
-	$convert_bg_cmd .= " -i ". $main::infile{bg_file};
-	$convert_bg_cmd .= " -o ".$main::outfile{bg_file_inclusive};
-	&doit($convert_bg_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
-	return;
-    }elsif($bg_input_flag == 1){
+    if($bg_input_flag == 1){
 	
 	## If the diff mode is activated, then add the control sequences
 	## to be processed as the query sequences
@@ -1483,7 +1476,6 @@ sub CalculateBGModel {
 		
 	    }
 	    
-	    
 	    &doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
 	    if($seq_counter == 1){
 		&RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file}) if ($main::verbose >= 2);
@@ -1509,6 +1501,14 @@ sub CalculateBGModel {
 	    }
 	    &doit($convert_bg_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 	}
+    }  elsif ($main::infile{bg_file}){
+##If a bg input file was given convert it to inclusive
+    	$convert_bg_cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+	$convert_bg_cmd .= " -i ". $main::infile{bg_file};
+	$convert_bg_cmd .= " -o ".$main::outfile{bg_file_inclusive};
+	&doit($convert_bg_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	return;
+
     }
 }
 
