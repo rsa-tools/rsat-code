@@ -105,7 +105,11 @@ $parameters .= " -seq ".$sequence_file." -seq_format ".$sequence_format;
 local $bg_method = $query->param('bg_method');
 if ($bg_method eq "from_matrix") {
     
-} elsif ($bg_method eq "bgfile") {
+}   elsif ($bg_method eq "bginput") {
+    $parameters .= " -bginput";
+    $parameters .= " -markov ".$markov_order;
+
+}   elsif ($bg_method eq "bgfile") {
     ## Select pre-computed background file in RSAT genome directory
     local $organism_name = $query->param("organism");
     local $noov = "ovlp";
