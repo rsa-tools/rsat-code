@@ -36,7 +36,7 @@ $checked{$default{pseudo_prior}} = "CHECKED";
 $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{decimals} = "1";
-$default{class_interval} = "25";
+$default{class_interval} = "31";
 $default{html_title} = "position-scan";
 
 ## Threshold values for site detection
@@ -206,7 +206,7 @@ print $query->end_form;
 ################################################################
 ### data for the demo
 print $query->start_multipart_form(-action=>"position-scan_form.cgi");
-my $demo_title = "Pososition profiles of vertebrates TFs on ChIP-seq peaks of JunD";
+my $demo_title = "Position profiles of vertebrates TFs on ChIP-seq peaks of JunD";
 my $demo_seq_file = "$ENV{RSAT}/public_html/demo_files/Jun_Chip_seq_sequences.fasta.zip";
 my $demo_seq = `gunzip -c $demo_seq_file`;
 
@@ -1645,7 +1645,7 @@ print $query->hidden(-name=>'html_title',-default=>$demo_title);
 print $query->hidden(-name=>'bg_method',-default=>'bginput');
 print $query->hidden(-name=>'thresh_field',-default=>'pval');
 print $query->hidden(-name=>'thresh_value',-default=>'1e-3');
-print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
+#print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
 print $query->hidden(-name=>'background',-default=>'');
 print $query->hidden(-name=>'markov_order',-default=>'1');
 print $query->hidden(-name=>'organism',-default=>'');
