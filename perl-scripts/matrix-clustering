@@ -1751,7 +1751,7 @@ sub pre_process_motif_files{
       
       ################################################################
       ## Collect all matrices
-      @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, "tf");
+      @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
       push(@all_matrices, @matrices);
       &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file) if ($main::verbose >= 2);
       
@@ -1804,6 +1804,7 @@ sub pre_process_motif_files{
       print $convert_matrix_cmd."\n";
       
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
       
       ##############################################
       ## Store the motif link in a hash
@@ -1904,6 +1905,7 @@ sub pre_process_motif_files{
   $concatenate_processed_files_cmd .= " > ".$main::outfile{motif_file};
   &doit($concatenate_processed_files_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err); 
 
+  
 
   $main::outfile{input_matrices} = $main::outfile{motif_file};
 
