@@ -2488,7 +2488,7 @@ sub NewJasparMatrix {
 =item _readFromHomerFile($file)
 
 Read a matrix from a file in HOMER format (files with extension
-.homer). HOMER is a software suite for Software for motif discovery
+.homer or .motif). HOMER is a software suite for Software for motif discovery
 and next-gen sequencing analysis (http://homer.salk.edu/homer/motif/).
 
 This method is called by the method C<readFromFile($file, "homer")>.
