@@ -103,6 +103,7 @@ $parameters .= " -seq ".$sequence_file." -seq_format ".$sequence_format;
 ################################################################
 ## Background model method
 local $bg_method = $query->param('bg_method');
+local $markov_order = $query->param('markov_order');
 if ($bg_method eq "from_matrix") {
     
 }   elsif ($bg_method eq "bginput") {
