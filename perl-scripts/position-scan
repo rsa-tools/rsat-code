@@ -791,7 +791,7 @@ Scan the sequences with the randomly permuted input matrices.
 Use this option as negative control.
 
 =cut
-    } elsif ($arg eq "-rand_motif") {
+    } elsif ($arg eq "-rand_motifs") {
       $random_motifs_flag = 1;
 
 =pod
