@@ -603,7 +603,7 @@ local @root_motifs_tf = ();
 	  ################################################################
 	  ## Produce all the logos 
 	  ## Aligned + Branch-wise motifs
-          &Produce_logos();
+          #Produce_logos();
 	  
 	  ################################################################
 	  ## Read the table with the hexadecimal code 
