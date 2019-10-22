@@ -42,7 +42,7 @@ foreach $key (keys %default) {
 
 ### head
 print "<CENTER>";
-print "Retrieve sequences for a set of genomic coordinates provided in bed,gff or vcf format.<p>";
+print "Retrieve sequences for a set of zero-based genomic coordinates provided in bed, gff or vcf format.<p>";
 print "Program developed by <a target='_blank' href='http://eead.csic.es/compbio/staff/bruno_contreras_moreira.html'>Bruno Contreras Moreira</a> and <a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a>\n";
 print "</CENTER>";
 
