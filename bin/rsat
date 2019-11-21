@@ -1,0 +1,84 @@
+#! /usr/bin/env python
+
+# ------------------------------------------
+#
+# rsat main script
+# RSAT 2018
+# 
+# ------------------------------------------
+
+import sys
+import os.path
+from sys import exit
+# import argparse
+import subprocess
+import yaml
+
+path = os.path.dirname(os.path.realpath(__file__))
+path += "/../share/rsat"
+
+def usage_and_exit(usage):
+    print(usage)
+    exit()
+
+def error(msg):
+    print(msg + '\n')
+    exit()
+
+def build_toc(commands):
+    # groups commands
+    d = {}
+    for c in commands:
+        d[c['group']] = d.get(c['group'], [])
+        d[c['group']] += [(c['command'], c['desc'])]
+
+    # build toc
+    s = []
+    for k in d.keys():
+        s += ['[ %s ]' % k]
+        for c in d[k]:
+            s += ['\t%s\t%s' % (c[0].split('/')[-1], c[1])]
+        s += [' ']
+    return '\n'.join(s)
+
+##
+# Main
+##
+try:
+    # usage
+    ref = yaml.load(open(path + '/rsat.yaml').read())
+    toc = build_toc(ref['commands'])
+    usage = ref['usage'] % {'table_of_content' : toc}
+
+    # allowed commands
+    allowed_commands = [c['command'] for c in ref['commands']]
+
+    # check for help
+    if len(sys.argv) == 1:
+        usage_and_exit(usage)
+    if sys.argv[1] in ['-h', '--help', 'help']:
+        usage_and_exit(usage)
+
+    # get the command name and arguments
+    command = sys.argv[1]
+    args = sys.argv[2:]
+
+    # preprocess allowed_commands
+    paths = [cmd.strip() for cmd in allowed_commands]
+    cmds  = [cmd.split('/')[-1] for cmd in paths]
+    path_table = dict(zip(cmds, paths))
+
+    # check command validity
+    if not command in cmds:
+        error('Unrecognized command: %s\n\nTo get the list of supported commands, type\n\trsat -h' % command)
+        exit()
+    
+    # add the full path and execute the command
+    cmd = '%s/%s' % (path, path_table[command])
+    # print(cmd)
+    if os.path.isfile(cmd):
+        subprocess.call([cmd] + args)
+
+except:
+    raise
+
