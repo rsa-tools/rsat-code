@@ -20,7 +20,7 @@ $program_version
 =head1 DESCRIPTION
 
 Retrieve sequences for a set of genomic coordinates provided in bed,
-gff or vcf format.
+gff or vcf format. Note that gff coordinates are zero-based.
 
 This script is a wrapper around I<bedtools getfasta>, an efficient
 tool to retrieve sequences from a fasta-formatted sequence file
