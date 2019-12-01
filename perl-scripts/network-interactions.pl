@@ -85,7 +85,7 @@ package main;
 
   my $count = 0;
   my %nonRepTFs_inv; # inverse hash of nonRepTFs
-  
+
   my $direct; # filehandle of file with GRN direct interactions (main output)
   my $path = ""; # construction of paths in node
 
@@ -338,7 +338,7 @@ package main;
 
   # Retrieve sequences of regulatory elements
   print("\nRetrieving enhancer sequences ...");
-  &doit("fetch-sequences -i prueba_regulatory_regions.bed -genome ".$main::genome." -v 1  -header_format galaxy -o prueba_".$main::genome."_seq.fa");
+  &doit("fetch-sequences -i prueba_regulatory_regions.bed -genome ".$main::genome." -v 1  -header_format galaxy -o prueba_".$main::genome."_cre_seqs.fa");
   print("\tDone!\n");
 
   # Add regulated genes names to fasta of regulatory sequences
@@ -363,7 +363,7 @@ package main;
   # Search motifs in all regulatory sequences
   print("\n matrix-scan running ...");
   $cmd = "matrix-scan -quick -v 1 -matrix_format transfac -m prueba_matrixes.tf -bginput -markov 1";
-  $cmd.= " -i prueba_".$main::genome."_seq_geneheader.fa -o prueba_matrix_scan_results.tsv";
+  $cmd.= " -i prueba_".$main::genome."_cre_seqs_geneheader.fa -o prueba_matrix_scan_results.tsv";
   $cmd.= " -id_as_name -lth score 5";
   &doit($cmd);
   print("\tDone!\n");
