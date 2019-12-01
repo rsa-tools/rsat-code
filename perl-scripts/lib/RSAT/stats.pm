@@ -276,11 +276,14 @@ sub binomial {
 ## cirumvent a problem with the standard Perl function exp(), which
 ## returns 0 for  values < e-322.
 sub LogToEng {
-  my ($log) = @_;
+  my ($log, $decimals) = @_;
+  if ($decimals == 0) {
+      $decimals = 4;
+  }
   my $base = 10;
   my $log_base = log($base);
   $log /= log(10);
-  $eng = 10**(1+$log - int($log));
+  $eng = sprintf("%.${decimals}f", 10**(1+$log - int($log)));
   $eng .= "e";
   if (int($log)-1 > 0) {
     $eng .= "+";
