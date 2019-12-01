@@ -185,7 +185,13 @@ package main;
       foreach my $bg_model (@bg_models) {
 	($proba_b, $proba_array_ref, $detail) = $bg_model->segment_proba($current_seq,$return_fields{detail});
 	push @return_fields, sprintf("%.4e", $proba_b) if ($return_fields{proba_b});
-	push @return_fields, sprintf("%.2f", log($proba_b)/$log10) if ($return_fields{log_proba});
+	if ($return_fields{log_proba}) {
+	    if ($proba_b > 0) {
+		push @return_fields, sprintf("%.2f", log($proba_b)/$log10);
+	    } else {
+		push @return_fields, "-Inf";
+	    }
+	}
       }
 
       ## Report sequence
