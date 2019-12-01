@@ -1971,7 +1971,11 @@ sub segment_proba {
   my $seq_len = length($segment);
   my $order = $self->get_attribute("order");
   $segment =  lc($segment);
-  my @residue_proba = ();
+  my $segment_proba = 1; # Segment probability
+  my $segment_proba_print; # Printable sequence probability (inclduding for values < 1-320)
+  my $segment_log_proba = 0; # Log(probability) of the segment
+  my @residue_proba = (); # Vector with all the residue probabilities
+  my @residue_log_proba = (); # Vector with residue log(probabilities)
 
   &RSAT::error::FatalError("&RSAT::MarkovModel->segment_proba. The segment ($segment) length ($seq_len) must be larger than the markov order ($order) + 1.") 
     if ($seq_len < $order + 1);
@@ -1979,16 +1983,17 @@ sub segment_proba {
   ## Header for the detail line
   $detail = join("\t",
 		 "#i",
+		 "pre.R",
 		 "P(r|pre)",
 		 "p",
-		 "pre.R",
-		 "S_1..i",
+		 "log(p)",
 		 "P(S_1..i)",
+		 "log(P(S_1..i))",
+		 "S_1..i",
 		);
   $detail .= "\n";
 
   my $prefix = substr($segment,0,$order);
-  my $segment_proba = 1;
   my $c = 0;
 
   ################################################################
@@ -1996,15 +2001,19 @@ sub segment_proba {
   if ($order > 0) { 
     if (defined($self->{prefix_proba}->{$prefix})) {
       $segment_proba = $self->{prefix_proba}->{$prefix};
+      $segment_log_proba = log($self->{prefix_proba}->{$prefix});
       push @residue_proba, $self->{prefix_proba}->{$prefix};
+      push @residue_log_proba, log($self->{prefix_proba}->{$prefix});
       if ($return_detail) {
 	$detail_line = join("\t",
 			    ($c+1),
+			    $prefix.uc($suffix),
 			    "P(".$prefix.")", 
 			    sprintf("%5g", $self->{prefix_proba}->{$prefix}),
-			    $prefix.uc($suffix),
-			    $prefix.uc($suffix),
+			    sprintf("%5g", log ($self->{prefix_proba}->{$prefix})),
 			    sprintf("%5g",$self->{prefix_proba}->{$prefix}),
+			    sprintf("%5g", log($self->{prefix_proba}->{$prefix})),
+			    $prefix.uc($suffix),
 	    );
 	$detail .= $detail_line."\n";
 	&RSAT::message::Info($detail_line) if ($main::verbose >= 5);
@@ -2020,11 +2029,14 @@ sub segment_proba {
 	## non-N residues
 	if (defined($self->{suffix_proba}->{$residue})) {
 	  $prefix_proba *= $self->{suffix_proba}->{$residue};
+	  $prefix_log_proba += log($self->{suffix_proba}->{$residue});
 	} ## for N residues proba value is 1 =>doesn't affect $prefix_proba
       }
       $segment_proba = $prefix_proba;
+      $segment_log_proba = log($prefix_proba);
       push @residue_proba, $prefix_proba;
-      #	&RSAT::message::Debug("Ignoring undefined prefix", $prefix,  "proba set to 1") if ($main::verbose >= #0);
+      push @residue_log_proba, log($prefix_proba);
+      #	&RSAT::message::Debug("Ignoring undefined prefix", $prefix,  "proba set to 1") if ($main::verbose >= 10);
     } else {
       &RSAT::error::FatalError("\t", "MarkovModel::segment_proba",
 			       "Invalid prefix for the selected sequence type", $prefix);
@@ -2040,7 +2052,8 @@ sub segment_proba {
     my $prefix = substr($segment,($c-$order),$order);
     if (defined($self->{transitions}->{$prefix}->{$suffix})) {
       $residue_proba = $self->{transitions}->{$prefix}->{$suffix};
-      push @residue_proba, $residue_proba;
+#      push @residue_proba, $residue_proba;
+#      push @residue_log_proba, $residue_log_proba;
       if ($residue_proba <= 0) {
 	&RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
 				      "null transition between prefix ", $prefix, " and suffix", $suffix));
@@ -2048,10 +2061,10 @@ sub segment_proba {
     } elsif ($self->get_attribute("n_treatment") eq "score") {
       if (defined($self->{suffix_proba}->{$suffix})) {
 	$residue_proba = $self->{suffix_proba}->{$suffix};
-	push @residue_proba, $residue_proba;
+#	push @residue_proba, $residue_proba;
       } else {
 	$residue_proba = 1;
-	push @residue_proba, $residue_proba;
+#	push @residue_proba, $residue_proba;
       }
       #	    &RSAT::message::Debug("Ignoring undefined transition", $prefix, $suffix, "proba set to 1") if ($main::verbose >= 10);
     } else { 
@@ -2061,36 +2074,46 @@ sub segment_proba {
 				    $suffix));
     }
 
+    ## Compute log-proba of the residue
+    $residue_log_proba = log($residue_proba);
+
+    ## Update residue probability vectors
+    push @residue_proba, $residue_proba;
+    push @residue_log_proba, $residue_log_proba;
+
+    ## Update segment probability
+    $segment_log_proba += $residue_log_proba;
     $segment_proba *= $residue_proba;
+    
+    ## Compute sequence probability from log proba (enables to compute numbers smaller than 1e-300)
+    if ($segment_proba < 1e-300) {
+	$segment_proba = &RSAT::stats::LogToEng($segment_log_proba);
+	$segment_proba_print = $segment_proba;
+    } else {
+	$segment_proba_print = sprintf("%5g", $segment_proba);
+    }
+
     $detail_line =join("\t",
 		       ($c+1),
+		       $prefix.uc($suffix),
 		       "P(".$suffix."|".$prefix.")", 
 		       sprintf("%5g", $residue_proba),
-		       $prefix.uc($suffix),
+		       sprintf("%5g", $residue_log_proba),
+		       $segment_proba_print,
+		       sprintf("%5g", $segment_log_proba),
+#		       sprintf("%s", &RSAT::stats::LogToEng($segment_log_proba)),
 		       substr($segment,0,$c+1),
-		       sprintf("%5g", $segment_proba),
 		      );
-    $detail .= $detail_line."\n";
+    $detail .= $detail_line;
+    $detail .= "\n";
 
-    &RSAT::message::Info($detail_line) if ($main::verbose >= 5);
-    #	&RSAT::message::Info("segment_proba", 
-    #			      "prefix=".$word, 
-    #			      "prefix=".$prefix, 
-    #			      "suffix:".$suffix, 
-    #			      "offset:".$c, 
-    #			      "P(letter)=".$residue_proba, 
-    #			      "P(S)=".$segment_proba) if ($main::verbose >= 5);
   }
 
-  for my $col (0..$#residue_proba) {
-    &RSAT::message::Debug("Proba_residue_B",$col,sprintf("%.6f",$residue_proba[$col])) 
-      if ($main::verbose >= 5);
-  }
 
   if ($return_detail) {
-    return ($segment_proba, \@residue_proba, $detail);
+    return($segment_proba_print, $segment_log_proba, \@residue_proba, $detail);
   } else {
-    return ($segment_proba);
+    return($segment_proba_print, $segment_log_proba);
   }
 }
 
