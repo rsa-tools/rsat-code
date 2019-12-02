@@ -57,7 +57,6 @@ package main;
 	  my ($chrom, $zero_left, $right) = split('\t');
 	  &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right) if ($main::verbose >= 4);
 	  my $left = $zero_left + 1; ## BED files have zero-based coordinates for the left side but not the right side !
-
 	  
 	  &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right, "left=".$left, "right=".$right) if ($main::verbose >= 10);
 
