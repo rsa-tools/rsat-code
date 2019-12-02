@@ -55,24 +55,30 @@ package main;
 	  chomp();
 	  
 	  my ($chrom, $zero_left, $right) = split('\t');
-	  &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right) if ($main::verbose >= 2);
-	  unless ((&RSAT::util::IsNatural($zero_left)) &&
-		  (&RSAT::util::IsNatural($right))) {
-	    &RSAT::message::Warning("Skipping line", $l, "invalid start and end positions.") if ($main::verbose >= 2);
-	    next;
+	  &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right) if ($main::verbose >= 4);
+	  my $left = $zero_left + 1; ## BED files have zero-based coordinates for the left side but not the right side !
+
+	  
+	  &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right, "left=".$left, "right=".$right) if ($main::verbose >= 10);
+
+	  ## Check that both coordinates are Natural numbers
+	  unless (&RSAT::util::IsNatural($left)) {
+	    &RSAT::message::Warning("Skipping line", $l, "invalid left position", $left) if ($main::verbose >= 3);
+	    next();
+	  }
+	  unless (&RSAT::util::IsNatural($right)) {
+	    &RSAT::message::Warning("Skipping line", $l, "invalid right position", $right) if ($main::verbose >= 3);
+	    next();
 	  }
 	  
-	  my $left = $zero_left + 1; ## BED files have zero-based coordinates for the left side but not the right side !
-	  
-	  &RSAT::message::Debug("chrom=".$chrom, "start=".$zero_left, "end=".$right, "left=".$left, "right=".$right) if ($main::verbose >= 2);
 	  
 	  ## Check left and right coordinates
 	  if ($left > $right) {
-	    &RSAT::message::Warning("Skipping line", $l, "start ($left) larger than end ($right).") if ($main::verbose >= 1);
+	    &RSAT::message::Warning("Skipping line", $l, "left position ($left) larger than right ($right).") if ($main::verbose >= 3);
 	    next;
 	  }
 	  
-	  
+	  ## Compute length of the fragment
 	  my ($length, $rounded_length) = &convert_units($right - $left + 1);
 	  my $current_id = $chrom.":".$left."..".$right.":1";
 	  $sum+= $length;
