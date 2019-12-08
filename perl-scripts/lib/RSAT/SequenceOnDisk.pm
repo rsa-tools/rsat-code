@@ -145,7 +145,7 @@ sub get_sequence {
 			$to,
 			$strand,
 			$sequence)
-    if ($main::verbose >= 3);
+    if ($main::verbose >= 5);
 
   ################################################################
   ## Treat out-of-bonds cases
