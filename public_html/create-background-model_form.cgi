@@ -52,7 +52,7 @@ print "Calculate background models from personal sequences.<P>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
-#&ListDefaultParameters() if ($ENV{rsat_echo} >= 0);
+# &ListDefaultParameters() if ($ENV{rsat_echo} >= 0);
 
 print $query->start_multipart_form(-action=>"create-background-model.cgi", -id=>"form");
 
