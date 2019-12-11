@@ -33,6 +33,7 @@ $default{bg_pseudo} = "0";
 $default{bg_format}="oligo-analysis";
 $default{bg_choose}="rsat";
 $checked{$default{bg_choose}} = "CHECKED";
+$checked{bgmodel_url} = "";
 $default{bg_taxo}="organism";
 $checked{$default{bg_taxo}} = "CHECKED";
 $default{decimals}="5";
@@ -63,6 +64,7 @@ print "<BLOCKQUOTE>\n";
 
 print $query->start_multipart_form(-action=>"convert-background-model.cgi");
 
+&ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
 
 ################################################################
 #### Background specification
