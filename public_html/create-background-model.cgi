@@ -43,7 +43,6 @@ my $parameters;
 
 #### default options ####
 # $parameters .= " -1str -return freq,occ ";
-$parameters .= " -out_format transitions";
 
 ### sequences ###
 ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
@@ -105,6 +104,7 @@ if ($query->param('output') eq "display") {
 
    
     &PrintURLTable(@result_files);
+#    &PipingForm(); ## NOT WORKING YET (2019-12-11)
 
     print "<HR SIZE = 3>";
 
@@ -112,6 +112,48 @@ if ($query->param('output') eq "display") {
     &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file);
 }
 print $query->end_html;
+
+
+# ### prepare data for piping
+# sub PipingForm {
+#   local $matrix_content = `cat $tab_matrices`;
+#   $matrix_content =~ s|//\n||gm;
+#   $matrix_content =~ s|;.*\n||gm;
+# #  print "<pre>".$command."</pre>";
+# #  print "<pre>".$matrix_content."</pre>";
+
+
+#   ## Compute the URL of the result file
+#   $result_url = $result_file;
+#   $result_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+
+#     print <<End_of_form;
+# <hr size="3">
+# <table class="Nextstep">
+# <tr>
+# <td colspan="3">
+# <h3>Next step</h3>
+# </td>
+# </tr>
+
+# <tr>
+# <td valign="bottom" align="center">
+# <form method="POST" action="convert-background-model_form.cgi">
+# <input type="hidden" name="bg_format" value="${output_format}">
+# <input type="hidden" name="bg_method" value="file_url">
+# <input type="hidden" name="bgmodel_url" value="${result_url}">
+# <input type="submit" value="convert-background-model">
+# </form>
+# </td>
+# </tr>
+
+
+# </table>
+# End_of_form
+
+#   $title = $query->param('title');
+
+# }
 
 exit(0);
 
