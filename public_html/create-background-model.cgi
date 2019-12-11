@@ -32,7 +32,8 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$command = "$SCRIPTS/oligo-analysis -v 1 -quick ";
+#$command = "$SCRIPTS/oligo-analysis -v 1 -quick ";
+$command = $SCRIPTS."/create-background-model -v 1 "; 
 $prefix = "create-bg";
 $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path);
 @result_files = ();
@@ -41,7 +42,8 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1); ($tmp_file_dir, $tm
 my $parameters;
 
 #### default options ####
-$parameters .= " -1str -return freq,occ ";
+# $parameters .= " -1str -return freq,occ ";
+$parameters .= " -out_format transitions";
 
 ### sequences ###
 ($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, $tmp_file_path.".fasta", 1);
@@ -52,13 +54,18 @@ $parameters .= " -i $sequence_file ";
 
 my  $markov_order = $query->param('markov_order');
 &RSAT::error::FatalError("Markov model should be a Natural number") unless &IsNatural($markov_order);
-my $oligo_length=$markov_order+1;
-$parameters .= " -l ".$oligo_length;
-    
-  if ($query->param('noov')) {
-    $parameters .= " -noov ";
-  }
+# my $oligo_length = $markov_order+1;
+# $parameters .= " -l ".$oligo_length;
+#  if ($query->param('noov')) {
+#    $parameters .= " -noov ";
+#  }
+
+$parameters .=  " -markov ".$markov_order;  
  
+################################################################
+## Output format
+my $output_format = lc($query->param('output_format'));
+$parameters .= " -out_format ".$output_format;
 
 
 ## Output file
