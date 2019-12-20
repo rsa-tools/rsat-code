@@ -232,9 +232,11 @@ BEGIN {
     }
 }
 require "RSA.lib";
+require "RSAT_to_ensembl.lib.pl";
 push @INC, $ENV{RSAT}."/perl-scripts/parsers/" if ($ENV{RSAT});
 require "lib/load_classes.pl";
 require RSAT::blast_hit;
+
 
 ################################################################
 ## Initialize parameters
@@ -425,17 +427,12 @@ foreach $db_organism (@db_organisms) {
 $out = &OpenOutputFile($outfile{output});
 &Verbose() if ($verbose);
 
-
-
 &iterate_blast(\@db_organisms, \@query_organisms);
 
 if ($reciprocal) {
   &RSAT::message::TimeWarn("Running reciprocal BLAST tasks");
   &iterate_blast(\@query_organisms, \@db_organisms);
 }
-
-
-
 
 ################################################################
 ## Report execution time and close output stream
@@ -610,6 +607,8 @@ sub iterate_blast {
 	    } else {
 		&BlastAndRank() if ($task{blastall});
 	    }
+        
+        &UpdateBlastSupported($query_organism);
 	}
 	if ($task{cleandb}) {
 	    my $clean_command = "rm -f ".$outfile{blast_db}.".*";
@@ -1021,7 +1020,7 @@ sub Verbose {
 ## Format one genome
 sub FormatDB {
     &RSAT::message::TimeWarn(join ("\t","Formatting DB for organism", $db_organism)) if ($main::verbose >= 1);
-    &RSAT::util::CheckOutDir($dir{blast_db}); 
+    &RSAT::util::CheckOutDir($dir{blast_db});
 
     #ahcorcha
     my $format_method = "";
@@ -1057,7 +1056,7 @@ sub BlastAndRank {
     my $blast_hits = classes::ClassFactory->new_class(object_type=>"RSAT::blast_hit",prefix=>"hit_");
 
     ## Check the existence of the output  directory
-    &RSAT::util::CheckOutDir($dir{blast_result}); 
+    &RSAT::util::CheckOutDir($dir{blast_result});
 
     # ahcorcha
     # If first line in aa.fasta file is newline, erase first line.
