@@ -150,6 +150,10 @@ if(number.of.motifs > 1){
     json.file <- paste(out.prefix, "_trees/tree.json", sep="")
     verbose(paste("JSON tree file", json.file), 2)
     writeLines(JSON.tree, con=json.file)
+    
+    ## Export tree as RData object
+    tree.file.rdata <- paste(out.prefix, "_trees/tree.RData", sep="")
+    save(tree, file = tree.file.rdata)
   }
   
   ###########################################################
@@ -698,6 +702,9 @@ i <- sapply(1:length(clusters), function(nb){
              json.file <- paste(out.prefix, "_trees/tree_", central.motif, ".json", sep="")
              verbose(paste("JSON tree file", json.file), 2)
              writeLines(JSON.tree, con = json.file)
+             
+             tree.file.rdata <-  paste(out.prefix, "_trees/tree_", central.motif, ".Rdata", sep="")
+             save(tree, file = tree.file.rdata)
              
              ## Creates a file indicating to which levels of the JSON tree correspond to the levels on the hclust tree
              ## This step is required to assign a name to the branches in the JSON tree in order to create
