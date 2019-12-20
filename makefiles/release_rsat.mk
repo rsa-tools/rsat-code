@@ -40,7 +40,7 @@ TAR_EXCLUDE=--exclude .git \
 	--exclude .Rproj.user \
 	--exclude '*.RData' \
 	--exclude Rpackages
-TAR_CREATE =tar ${TAR_EXCLUDE} ${TAR_OPT} -cpf ${ARCHIVE}.tar rsat/*_default.*
+TAR_CREATE=tar ${TAR_EXCLUDE} ${TAR_OPT} -cpf ${ARCHIVE}.tar rsat/*_default.*
 TAR_APPEND=tar ${TAR_EXCLUDE} ${TAR_OPT} -rpf ${ARCHIVE}.tar 
 
 ################################################################
@@ -99,8 +99,8 @@ clean_emacs_bk:
 POST_CMD=
 TAR_BASE=`dirname ${RSAT}`
 RSAT_CORE=rsat/00_README.txt			\
-	rsat/rsat				\
-	rsat/rsat.yaml				\
+	rsat/bin/rsat				\
+	rsat/share				\
 	rsat/INSTALL.md				\
 	rsat/installer				\
 	rsat/perl-scripts			\
@@ -144,10 +144,9 @@ RSAT_FILES_METAB=rsat/java		\
 #RSAT_FILES_SCRIPTS=rsat/installer
 
 _create_tar_archive:
+	@echo "Creating tar archive ${ARCHIVE}.tar"
 	@echo ${TAR_CREATE} 
 	(cd ${TAR_BASE}; ${TAR_CREATE})
-
-
 
 FILE=rsat/perl-scripts
 _add_one_file:
@@ -164,14 +163,15 @@ _fill_archive:
 ## Create an archive with RSAT/NeAT tools
 tar_archive:
 	@echo
-	@echo "Creating tar archive with RSAT"
+	@echo "tar archive ${ARCHIVE_PREFIX_CORE}"
 	@${MAKE} clean_emacs_bk
 	@${MAKE} _create_tar_archive
 	@${MAKE} _fill_archive ARCHIVE_CMD='${TAR_APPEND}' POST_CMD=''
-	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar)
+	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar; md5sum ${ARCHIVE}.tar.gz > ${ARCHIVE}.tar.gz.md5)
 	@echo
 	@echo "Archive"
 	@echo "	${TAR_BASE}/${ARCHIVE}.tar.gz"
+	@echo "	${TAR_BASE}/${ARCHIVE}.tar.gz.md5"
 
 ## Create an archive with the command-line tools only (no web site, no data)
 tar_archive_core:
@@ -221,6 +221,7 @@ publish:
 	@echo "Synchronizing RSAT archive ${ARCHIVE_PREFIX}.${PUB_FORMAT} to server ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}"
 	@echo
 	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
+	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT}.md5 ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
 	@ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "cd ${PUB_DIR}; ln -sf ${ARCHIVE_PREFIX}.${PUB_FORMAT} latest"
 	@echo
 	@echo "The archive should be accessible on the RSAT download server"	
