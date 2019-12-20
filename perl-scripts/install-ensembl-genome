@@ -215,110 +215,111 @@ package main;
     }
   }
 
-  ################################################################
-  ## Open output stream and print verbose
-  $out = &OpenOutputFile($outfile{output});
-  &Verbose() if ($main::verbose >= 1);
-
-  ################################################################
-  ## If requested, get the list of available species on the Ensembl
-  ## server.
-  &GetAvailableSpecies();
-
-  ################################################################
-  ## Run the download and installation tasks
-  my $s=0;
-  my $nb_species = scalar(@species_names);
-
-  ## If batch request, submit each species as a separate job
-  if (($batch) && (scalar(@species_names) > 1)) {
-    ## Collect all arguments except the organism list
-    my $arg;
-    my $passed_arguments = "";
-    my @arguments = @ARGV; ## we use a copy of the list of arguments for this shift, because we need ARGV to report command line in &Verbose()
-    while (scalar(@arguments) >= 1) {
-      $arg = shift (@arguments);
-      if (($arg eq "-species") 
-	  || ($arg eq "-org")
-	  || ($arg eq "-species_file")) { 
-	shift(@arguments);
-      } elsif ($arg eq "-batch") {
-	## Skip batch to avoid multiplying the jobs
-      } else {
-	if ($arg =~ /\s/) {
-	  $passed_arguments .= " '".$arg."'";
-	} else {
-	  $passed_arguments .= " ".$arg;
-	}
-      }
+    ################################################################
+    ## Open output stream and print verbose
+    $out = &OpenOutputFile($outfile{output});
+    &Verbose() if ($main::verbose >= 1);
+    
+    ################################################################
+    ## If requested, get the list of available species on the Ensembl
+    ## server.
+    &GetAvailableSpecies();
+    
+    ################################################################
+    ## Run the download and installation tasks
+    my $s=0;
+    my $nb_species = scalar(@species_names);
+    
+    ## If batch request, submit each species as a separate job
+    if (($batch) && (scalar(@species_names) > 1)) {
+        ## Collect all arguments except the organism list
+        my $arg;
+        my $passed_arguments = "";
+        my @arguments = @ARGV; ## we use a copy of the list of arguments for this shift, because we need ARGV to report command line in &Verbose()
+        while (scalar(@arguments) >= 1) {
+            $arg = shift (@arguments);
+            if (($arg eq "-species")
+                || ($arg eq "-org")
+                || ($arg eq "-species_file")) {
+                    shift(@arguments);
+                } elsif ($arg eq "-batch") {
+                    ## Skip batch to avoid multiplying the jobs
+                } else {
+                    if ($arg =~ /\s/) {
+                        $passed_arguments .= " '".$arg."'";
+                    } else {
+                        $passed_arguments .= " ".$arg;
+                    }
+                }
+        }
+        
+        ## Run one install command per species
+        foreach my $species (@species_names) {
+            my $cmd = $ENV{RSAT}."/perl-scripts/install-ensembl-genome";
+            $cmd .= " ".$passed_arguments;
+            $cmd .= " -species ".$species;
+            my $job_prefix = "install-ensembl-genome_".$species;
+            &RSAT::message::TimeWarn("Installing species", $species, $job_prefix, $cmd) if ($main::verbose >= 0);
+            &doit($cmd, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
+        }
+        
+    } else {
+        
+        foreach my $species (@species_names) {
+            $s++;
+            my $arg = " -v ".$verbose;
+            $arg .= " -db ".$db;
+            $arg .= " -release ".$ensembl_release;
+            $arg .= " -species ".$species;
+            $arg .= " -species_suffix ".$species_suffix if ($species_suffix);
+            
+            if ($task{"genome"}) {
+                &RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
+                my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-genome ".$arg;
+                &doit($command, $dry_run, $die_on_error, $verbose);
+            }
+            
+            if ($task{"features"}) {
+                &RSAT::message::TimeWarn("Downloading features for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
+                my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-features ".$arg;
+                &doit($command, $dry_run, $die_on_error, $verbose);
+            }
+            
+            if ($task{"variations"}) {
+                &RSAT::message::TimeWarn("Downloading variations for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
+                my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-variations ".$arg;
+                &doit($command, $dry_run, $die_on_error, $verbose);
+            }
+            
+            ## Get the name of the organism as installed in RSAT. This
+            ## differs from the Ensembl species name, because we add a
+            ## suffix with the assembly.
+            my $full_species_id = &Get_full_species_ID($species, $assembly, $ensembl_release, $species_suffix);
+            
+            &RSAT::message::Info("Species", $species, "Full species ID", $full_species_id) if ($main::verbose >= 2);
+            
+            ## Declare the organism in RSAT
+            # TODO: Nga: let "config" be always on 
+            if (($task{"config"} and !$task{"genome"}) || ($task{"config"} and !$task{"variation"})) {
+                &RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
+                my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ".$db." -task config -org ".$full_species_id . " -species " . $species;
+                &doit($command, $dry_run, $die_on_error, $verbose);
+            }
+            
+            ## Perform the remaining installation procedure (check start and
+            ## stop codon, compute oligo and dyad frequencies in upstream
+            ## sequences, compute aa frequencies in protein sequences, ...)
+            if ($task{"install"}) {
+                &RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species, $full_species_id) if ($main::verbose >= 1);
+                my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ".$db;
+                $command .= " -org ".$full_species_id;
+                $command .= " -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop,index_bedtools";
+                $command .= " -batch" if ($batch); ## JvH : to check: I don't thinkn I can pass here if the batch option is active
+                &doit($command, $dry_run, $die_on_error, $verbose);
+            }
+        }
     }
-
-    ## Run one install command per species
-    foreach my $species (@species_names) {
-      my $cmd = $ENV{RSAT}."/perl-scripts/install-ensembl-genome";
-      $cmd .= " ".$passed_arguments;
-      $cmd .= " -species ".$species;
-      my $job_prefix = "install-ensembl-genome_".$species;
-      &RSAT::message::TimeWarn("Installing species", $species, $job_prefix, $cmd) if ($main::verbose >= 0);
-      &doit($cmd, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
-    }
-
-  } else {
-
-    foreach my $species (@species_names) {
-      $s++;
-      my $arg = " -v ".$verbose;
-      $arg .= " -db ".$db;
-      $arg .= " -release ".$ensembl_release;
-      $arg .= " -species ".$species;
-      $arg .= " -species_suffix ".$species_suffix if ($species_suffix);
-
-      if ($task{"genome"}) {
-	&RSAT::message::TimeWarn("Downloading genome for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-genome ".$arg;
-	&doit($command, $dry_run, $die_on_error, $verbose);
-      }
-
-      if ($task{"features"}) {
-	&RSAT::message::TimeWarn("Downloading features for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-features ".$arg;
-	&doit($command, $dry_run, $die_on_error, $verbose);
-      }
-
-      if ($task{"variations"}) {
-	&RSAT::message::TimeWarn("Downloading variations for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/download-ensembl-variations ".$arg;
-	&doit($command, $dry_run, $die_on_error, $verbose);
-      }
-
-      ## Get the name of the organism as installed in RSAT. This
-      ## differs from the Ensembl species name, because we add a
-      ## suffix with the assembly.
-      my $full_species_id = &Get_full_species_ID($species, $assembly, $ensembl_release, $species_suffix);
-      
-      &RSAT::message::Info("Species", $species, "Full species ID", $full_species_id) if ($main::verbose >= 2);
-
-      ## Declare the organism in RSAT
-      if ($task{"config"}) {
-	&RSAT::message::TimeWarn("Configuring genome on RSAT for species", $s."/".$nb_species, $species) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ".$db." -task config -org ".$full_species_id;
-	&doit($command, $dry_run, $die_on_error, $verbose);
-      }
-
-      ## Perform the remaining installation procedure (check start and
-      ## stop codon, compute oligo and dyad frequencies in upstream
-      ## sequences, compute aa frequencies in protein sequences, ...)
-      if ($task{"install"}) {
-	&RSAT::message::TimeWarn("Installing genome on RSAT for species", $s."/".$nb_species, $species, $full_species_id) if ($main::verbose >= 1);
-	my $command = $ENV{'RSAT'}."/perl-scripts/install-organism -v 1  -source ".$db;
-	$command .= " -org ".$full_species_id;
-	$command .= " -task config,allup,seq_len_distrib,genome_segments,upstream_freq,oligos,dyads,protein_freq,start_stop,index_bedtools";
-	$command .= " -batch" if ($batch); ## JvH : to check: I don't thinkn I can pass here if the batch option is active
-	&doit($command, $dry_run, $die_on_error, $verbose);
-      }
-    }
-  }
-
+    
   ################################################################
   ## Report execution time
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts

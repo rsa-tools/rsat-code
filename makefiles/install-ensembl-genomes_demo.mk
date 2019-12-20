@@ -17,8 +17,8 @@ list_param:
 	@echo "	GROUP			${GROUP}"
 	@echo "	QUERY_TYPE		${QUERY_TYPE}"
 
-DB=ensembl
-#DB=ensemblgenomes
+#DB=ensembl
+DB=ensemblgenomes
 RESULT_DIR=results/ensemblgenomes
 AVAILABLE_SPECIES=${RESULT_DIR}/available_species_${DB}_release${ENSEMBL_RELEASE}_${DAY}.txt
 available_species:
