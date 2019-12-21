@@ -107,7 +107,7 @@ print '
                     <span class="fa-stack fa-lg">
   							<i class="fa fa-info-circle fa-stack-1x"></i>
 					</span>
-					Identify groups (clusters) of similarities between one (or several) collections of motifs, and align them. <br>
+					Identify groups (clusters) of similarities between motifs from one (or several) collections, align them and generate dyanmic visualisation. <br>
                     <span class="fa-stack fa-lg">
  							 <i class="fa fa-user fa-stack-1x"></i>
 					</span>
