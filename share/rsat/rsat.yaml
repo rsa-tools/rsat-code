@@ -16,12 +16,12 @@ commands:
 
   - command: 'perl-scripts/supported-organisms'
     desc: "Get the list of organisms supported on this RSAT server"
-
     group: "Genomes and genes"
+
   - command: 'perl-scripts/gene-info'
     desc: "Get information for one or more genes specified by identifiers, names or descriptions."
-
     group: "Genomes and genes"
+
   - command: "perl-scripts/infer-operons"
     desc: "Infer bacterial operons based on intergenic distances"
     group: "Genomes and genes"
@@ -53,6 +53,14 @@ commands:
     desc: "Retrieve sequences from the UCSC database for a set of genomic regions (bed format)"
     group: "Sequences"
 
+  - command: 'perl-scripts/purge-sequence'
+    desc: "Mask repeated segments from a sequence set"
+    group: "Sequences"
+
+  - command: 'perl-scripts/convert-seq'
+    desc: "Inter-conversions between various sequence formats"
+    group: "Sequences"
+
   ################################################################
   ## Motif discovery
 
@@ -76,7 +84,11 @@ commands:
     desc: "Assemble string-based patterns (oligos or dyads)"
     group: "Motif discovery"
 
-  - command: 'info-gibbs'
+  - command: 'bin/count-words'
+    desc: "Calculate oligomer frequencies from a set of sequences"
+    group: "Motif discovery"
+
+  - command: 'bin/info-gibbs'
     desc: "A gibbs sampler based on a stochastic optimization of information content"
     group: "Motif discovery"
 
@@ -85,3 +97,5 @@ commands:
   - command: "python-scripts/random-motif"
     desc: "Generate random motifs"
     group: "Matrix tools"
+
+
