@@ -46,7 +46,7 @@ def build_toc(commands):
 ##
 try:
     # usage
-    ref = yaml.load(open(path + '/rsat.yaml').read())
+    ref = yaml.load(open(path + '/rsat.yaml').read(), Loader=yaml.FullLoader)
     toc = build_toc(ref['commands'])
     usage = ref['usage'] % {'table_of_content' : toc}
 
