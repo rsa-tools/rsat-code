@@ -1,24 +1,24 @@
 usage:
-  "rsat Regulatory Sequence Analysis Tools
+  "rsat -- Regulatory Sequence Analysis Tools
 
-Usage: rsat <subcommand> [options]
+\nUsage: rsat <subcommand> [options]\n
 
-The rsat subcommands include:
+Supported rsat subcommands\n
 
 %(table_of_content)s
 
-Type rsat [command] -h to display the command help."
+Type rsat [subcommand] -h to display the subcommand help."
 
 commands:
 
   ################################################################
   # Genomes and genes
 
-  - command: 'perl-scripts/supported-organisms'
+  - command: "perl-scripts/supported-organisms"
     desc: "Get the list of organisms supported on this RSAT server"
     group: "Genomes and genes"
 
-  - command: 'perl-scripts/gene-info'
+  - command: "perl-scripts/gene-info"
     desc: "Get information for one or more genes specified by identifiers, names or descriptions."
     group: "Genomes and genes"
 
@@ -34,68 +34,115 @@ commands:
     desc: "Get homologs (orthologs or others) in given taxon for a list of query genes"
     group: "Genomes and genes"
 
-  - command: "perl-scripts/random-genes"
-    desc: "Select random genes for a given organism"
-    group: "Genomes and genes"
 
   ################################################################
   ## Sequence tools
 
-  - command: 'perl-scripts/retrieve-seq'
+  - command: "perl-scripts/retrieve-seq"
     desc: "Get non-coding upstream or downstream sequences for a list of query genes"
     group: "Sequences"
 
-  - command: 'perl-scripts/retrieve-ensembl-seq'
+  - command: "perl-scripts/retrieve-ensembl-seq"
     desc: "Retrieve regulatory sequences from the Ensembl database for a list of query genes"
     group: "Sequences"
 
-  - command: 'perl-scripts/fetch-sequences'
+  - command: "perl-scripts/fetch-sequences"
     desc: "Retrieve sequences from the UCSC database for a set of genomic regions (bed format)"
     group: "Sequences"
 
-  - command: 'perl-scripts/purge-sequence'
+  - command: "perl-scripts/purge-sequence"
     desc: "Mask repeated segments from a sequence set"
     group: "Sequences"
 
-  - command: 'perl-scripts/convert-seq'
+  - command: "perl-scripts/convert-seq"
     desc: "Inter-conversions between various sequence formats"
     group: "Sequences"
 
   ################################################################
+  ## Matrix tools
+  - command: "perl-scripts/retrieve-matrix"
+    desc: "Retrieve matrices from a motif collection by specifying one or more identifiers"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/convert-matrix"
+    desc: "Convert different formats of position-specific scoring matrices (PSSM), and calculate statistical parameters + logos"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/compare-matrices"
+    desc: "Compute (dis)imilarity scores between matrices from two collections of position-specific scoring matrices"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/matrix-clustering"
+    desc: "Identify groups (clusters) of similarities between motifs from one (or several) collections"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/matrix-distrib"
+    desc: "Compute theoretical distribution of score probabilities of a PSSM given a Markov model"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/matrix-quality"
+    desc: "Evaluate the quality of a PSSM by comparing the empirical score distributions obtained in various sequence sets"
+    group: "Matrix tools"
+
+  ################################################################
+  ## Build control sets
+  - command: "perl-scripts/random-genes"
+    desc: "Select random genes for a given organism"
+    group: "Control sets"
+
+  - command: "perl-scripts/random-seq"
+    desc: "Generate random DNA or protein sequences according to various probabilistic models"
+    group: "Control sets"
+
+  - command: "perl-scripts/random-genome-fragments"
+    desc: "Select random genomic regions, and return their coordinates and/or sequences"
+    group: "Control sets"
+
+  - command: "python-scripts/random-motif"
+    desc: "Generate random motifs"
+    group: "Control sets"
+
+  - command: "perl-scripts/permute-matrix"
+    desc: "Randomize a set of input matrices by permuting their columns."
+    group: "Control sets"
+
+  - command: "python-scripts/random-sites"
+    desc: "Generate random sites given a motif (PSSM)"
+    group: "Control sets"
+
+  - command: "python-scripts/implant-sites"
+    desc: "Implant sequences (e.g. TF binding sites) at random positions of other sequences (e.g. regulatory regions)"
+    group: "Control sets"
+
+  ################################################################
   ## Motif discovery
 
-  - command: 'perl-scripts/oligo-analysis'
+  - command: "perl-scripts/oligo-analysis"
     desc: "Detect over- or under-represented oligomers (k-mers) in sequences"
     group: "Motif discovery"
 
-  - command: 'perl-scripts/dyad-analysis'
+  - command: "perl-scripts/dyad-analysis"
     desc: "Detect over- or under-represented dyads (spaced pairs of k-mers) in sequences"
     group: "Motif discovery"
 
-  - command: 'perl-scripts/position-analysis'
+  - command: "perl-scripts/position-analysis"
     desc: "Detect oligomers (k-mers) with heterogeneous positional distribution"
     group: "Motif discovery"
 
-  - command: 'python-scripts/local-word-analysis' 
+  - command: "python-scripts/local-word-analysis" 
     desc: "Detect oligomers (k-mers) over-represented at specific positions of a sequence set"
     group: "Motif discovery"
 
-  - command: 'perl-scripts/pattern-assembly'
+  - command: "perl-scripts/pattern-assembly"
     desc: "Assemble string-based patterns (oligos or dyads)"
     group: "Motif discovery"
 
-  - command: 'bin/count-words'
+  - command: "bin/count-words"
     desc: "Calculate oligomer frequencies from a set of sequences"
     group: "Motif discovery"
 
-  - command: 'bin/info-gibbs'
+  - command: "bin/info-gibbs"
     desc: "A gibbs sampler based on a stochastic optimization of information content"
     group: "Motif discovery"
-
-  ################################################################
-  ## Background models
-  - command: "python-scripts/random-motif"
-    desc: "Generate random motifs"
-    group: "Matrix tools"
 
 
