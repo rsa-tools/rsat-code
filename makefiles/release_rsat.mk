@@ -170,20 +170,11 @@ tar_archive:
 	@${MAKE} clean_emacs_bk
 	@${MAKE} _create_tar_archive
 	@${MAKE} _fill_archive ARCHIVE_CMD='${TAR_APPEND}' POST_CMD=''
-<<<<<<< HEAD
-	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar; md5sum ${ARCHIVE}.tar.gz > ${ARCHIVE}.tar.gz.md5)
+	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar; ${SHASUM_CMD}; md5sum ${ARCHIVE}.tar.gz > ${ARCHIVE}.tar.gz.md5)
 	@echo
-	@echo "Archive"
-	@echo "	${TAR_BASE}/${ARCHIVE}.tar.gz"
-	@echo "	${TAR_BASE}/${ARCHIVE}.tar.gz.md5"
-=======
-	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar; ${SHASUM_CMD})
-	@echo
-	@echo "Archive"
-	@echo "	${TAR_BASE}/${ARCHIVE}.tar.gz"
-	@echo "sha256"
-	@echo "	${SHA256}"
->>>>>>> f118332fb2a866ff77d98b764c2f04b53b8b7199
+	@echo "Archive	${TAR_BASE}/${ARCHIVE}.tar.gz"
+	@echo "md5	${TAR_BASE}/${ARCHIVE}.tar.gz.md5"
+	@echo "sha256	${SHA256}"
 
 ## Create an archive with the command-line tools only (no web site, no data)
 tar_archive_core:
