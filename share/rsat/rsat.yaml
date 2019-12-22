@@ -146,3 +146,20 @@ commands:
     group: "Motif discovery"
 
 
+  ################################################################
+  ## Regulatory variant analysis
+  - command: "perl-scripts/variation-info"
+    desc: "Get information about variations for a given list of variation IDS or genomic regions."
+    group: "Regulatory variants"
+
+  - command: "bin/retrieve-variation-seq"
+    desc: "Given a set of polymorphic variations, retrieve the variants and their flanking sequences"
+    group: "Regulatory variants"
+
+  - command: "bin/variation-scan"
+    desc: "Scan sequences of polymorphic variants  with a list of motifs to predict TFBS affected by the variations"
+    group: "Regulatory variants"
+
+  - command: "perl-scripts/convert-variations"
+    desc: "Convert between different file formats that store genetic variation information"
+    group: "Regulatory variants"
