@@ -233,11 +233,8 @@ publish:
 	@echo "Synchronizing RSAT archive ${ARCHIVE_PREFIX}.${PUB_FORMAT} to server ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}"
 	@echo
 	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
-<<<<<<< HEAD
 	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT}.md5 ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
-=======
 	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT}.sha256 ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
->>>>>>> f118332fb2a866ff77d98b764c2f04b53b8b7199
 	@ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "cd ${PUB_DIR}; ln -sf ${ARCHIVE_PREFIX}.${PUB_FORMAT} latest"
 	@echo
 	@echo "The archive should be accessible on the RSAT download server"	
