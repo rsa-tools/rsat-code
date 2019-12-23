@@ -73,9 +73,9 @@ $default{title} =~ s/\"//g;
 &RSA_header("XYgraph","form");
 
 
-print "<CENTER>";
-print "<P>Draws a XY graph from a table of numeric data\n";
-print "</CENTER>";
+print "<center>";
+print "<p>Draw a scatter plot (XY graph) from values provided in a tab-separated value file</p>\n";
+print "</center>";
 
 print $query->start_multipart_form(-action=>"XYgraph.cgi");
 
