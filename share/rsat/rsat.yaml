@@ -46,6 +46,14 @@ commands:
     desc: "Retrieve regulatory sequences from the Ensembl database for a list of query genes"
     group: "Sequences"
 
+  - command: "perl-scripts/fetch-sequences"
+    desc: "Retrieve sequences from the UCSC database for a set of genomic regions (bed format)"
+    group: "Sequences"
+
+  - command: "perl-scripts/retrieve-seq-bed"
+    desc: "Retrieve sequences for a set of genomic coordinates provided in bed, gff or vcf format"
+    group: "Sequences"
+
   - command: "perl-scripts/purge-sequence"
     desc: "Mask repeated segments from a sequence set"
     group: "Sequences"
@@ -196,7 +204,6 @@ commands:
     group: "NGS"
 
 
-
   ################################################################
   ## Regulatory variants
   - command: "perl-scripts/variation-info"
@@ -214,3 +221,46 @@ commands:
   - command: "perl-scripts/convert-variations"
     desc: "Convert between different file formats that store genetic variation information"
     group: "Regulatory variants"
+
+
+  ################################################################
+  ## Utilities
+  - command: "perl-scripts/classfreq"
+    desc: "Compute frequency distribution of numerical values provided in a given column of a tab-delimited text file"
+    group: "Utilities"
+
+  - command: "perl-scripts/create-background-model"
+    desc: "Estimate the parameters of a background model from sequences (Bernoulli or Markov)"
+    group: "Utilities"
+  
+  - command: "perl-scripts/convert-background-model"
+    desc: "Interconversions between background model formats."
+    group: "Utilities"
+
+  - command: "perl-scripts/seq-proba"
+    desc: "Calculate the probability of a sequence, given a background model (Bernoulli or Markov)"
+    group: "Utilities"
+
+  - command: "perl-scrips/convert-features"
+    desc: "Interconversions between formats of feature descriptions"
+    group: "Utilities"
+
+  - command: "perl-scripts/compare-features"
+    desc: "Compare two or more features sets: compute intersection, union and difference, contingency tables and comparison statistics"
+    group: "Utilities"
+
+
+  ################################################################
+  ## Visualisation
+  - command: "perl-scripts/feature-map"
+    desc: "Generate a graphical map of features localised on one or several sequences"
+    group: "Visualisation"
+
+  - command: "perl-scripts/XYgraph"
+    desc: "Draw a scatter plot (XY graph) from values provided in a tab-separated value file. "
+    group: "Visualisation"
+
+  - command: "perl-scripts/draw-heatmap"
+    desc: "Draw a heat map to display values from a matrix of numerical values"
+    group: "Visualisation"
+
