@@ -46,10 +46,6 @@ commands:
     desc: "Retrieve regulatory sequences from the Ensembl database for a list of query genes"
     group: "Sequences"
 
-  - command: "perl-scripts/fetch-sequences"
-    desc: "Retrieve sequences from the UCSC database for a set of genomic regions (bed format)"
-    group: "Sequences"
-
   - command: "perl-scripts/purge-sequence"
     desc: "Mask repeated segments from a sequence set"
     group: "Sequences"
@@ -145,11 +141,66 @@ commands:
     desc: "A gibbs sampler based on a stochastic optimization of information content"
     group: "Motif discovery"
 
+  ################################################################
+  ## Motif search (pattern matching)
+  - command: "perl-scripts/matrix-scan"
+    desc: "Scan DNA sequences with position-specific scoring matrices (PSSM) - full option"
+    group: "Motif search"
+
+  - command: "bin/matrix-scan-quick"
+    desc: "Scan DNA sequences with position-specific scoring matrices (PSSM) - fast version"
+    group: "Motif search"
+
+  - command: "python-scripts/crer-scan"
+    desc: "Predict cis-regulatory motifs (CRMs) by detecting cis-regulatory enriched regions (CRERs)"
+    group: "Motif search"
+
+  - command: "perl-scripts/dna-pattern"
+    desc: "Search string-based patterns (IUPAC, regexp) in DNA sequences"
+    group: "Motif search"
 
   ################################################################
-  ## Regulatory variant analysis
+  ## Comparative genomics
+  - command: "perl-scripts/get-orthologs"
+    desc: "Get homologs (orthologs and others) in given taxon for a list of query genes"
+    group: "Comparative genomics"
+
+  - command: "perl-scripts/get-orthologs-compara"
+    desc: "Return orthologs plus optionally paralogs and homeologs for a set of genes in one or more organisms" 
+    group: "Comparative genomics"
+
+  - command: "perl-scripts/footprint-discovery"
+    desc: "Discover conserved motifs (phylogenetic footprints) in the promoters of orthologous genes"
+    group: "Comparative genomics"
+
+  - command: "perl-scripts/footprint-scan"
+    desc: "Scan promoters of orthologous genes with one or more user-provided motifs to detect enriched (over-represented) motifs."
+    group: "Comparative genomics"
+
+  ################################################################
+  ## Next Generation Sequencing (NGS)
+  - command: "perl-scripts/peak-motifs"
+    desc: "Discover exceptional motifs (over-represented, positionally biased) in a collection of ChIP-seq peaks"
+    group: "NGS"
+
+  - command: "perl-scripts/fetch-sequences"
+    desc: "Retrieve sequences from the UCSC database for a set of genomic regions (bed format)"
+    group: "NGS"
+
+  - command: "perl-scripts/retrieve-seq-bed"
+    desc: "Retrieve sequences for a set of genomic coordinates provided in bed, gff or vcf format"
+    group: "NGS"
+
+  - command: "perl-scripts/random-genome-fragments"
+    desc: "Select random genomic regions, and return their coordinates and/or sequences"
+    group: "NGS"
+
+
+
+  ################################################################
+  ## Regulatory variants
   - command: "perl-scripts/variation-info"
-    desc: "Get information about variations for a given list of variation IDS or genomic regions."
+    desc: "Get information about variations for a given list of variation IDS or genomic regions"
     group: "Regulatory variants"
 
   - command: "bin/retrieve-variation-seq"
