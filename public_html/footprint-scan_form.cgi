@@ -70,13 +70,13 @@ foreach $key (keys %default) {
 ################################################################
 ### header
 &RSA_header("footprint-scan", "form");
-print "<CENTER>";
-print "Pipeline for footprint-scan.<P>\n";
+print "<center>";
+print "Scan promoters of orthologous genes with one or more user-provided motifs to detect enriched (over-represented) motifs.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://liigh.unam.mx/amedina/'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
-print "</CENTER>";
-print "</BLOCKQUOTE>\n";
+print "</center>";
+print "</blockquote>\n";
 
 ################################################################
 ## Display the form only if it is relveant for the organisms supported
