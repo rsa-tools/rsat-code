@@ -57,7 +57,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("convert-background-model", "form");
 print "<CENTER>";
-print "Interconversions between formats of background models supported by different programs.<P>\n";
+print "Interconversions between background model formats.<p>\n";
 #print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";

@@ -47,7 +47,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("create-background-model", "form");
 print "<CENTER>";
-print "Calculate background models from personal sequences.<P>\n";
+print "Estimate the parameters of a Markov model from sequences.<p>\n";
 #print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
