@@ -8,7 +8,7 @@ use POSIX;
 use RSAT::GenericObject;
 use RSAT::message;
 use RSAT::error;
-use RSAT::email;
+#use RSAT::email;
 @ISA = qw( RSAT::GenericObject );
 
 =pod
