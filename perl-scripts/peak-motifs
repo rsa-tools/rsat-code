@@ -122,9 +122,9 @@ package main;
   local $genome_assembly ="";
 
   ## Check that the RSAT paths of the programs required for the script are specified
-  $PYTHON =  $ENV{RSAT}."/python_scripts" unless ($PYTHON);
-  $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
-  $BIN = $ENV{RSAT}."/bin" unless ($BIN);
+#  $PYTHON =  $ENV{RSAT}."/python_scripts" unless ($PYTHON);
+#  $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
+#  $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   $program_version = do { my @r = (q$Revision: 1.256 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
@@ -1587,7 +1587,8 @@ sub LocalDyads {
   ## Convert negative markov orders relative to the oligo length
   my $pattern_type = 'local_dyads';
   &RSAT::message::TimeWarn("Running local-word-analysis --dyad") if ($main::verbose >= 2);
-  my $cmd = $PYTHON."/local-word-analysis -v 3";
+  my $cmd = &RSAT::server::GetProgramPath("local-word-analysis");
+  $cmd .= " -v 3";
   $cmd .= " --dyad  --length=3 --spacing=0:20";
   $cmd .= " -i ".$main::outfile{"test_purged"};
   #  $cmd .= " -format fasta";
@@ -1631,7 +1632,8 @@ sub LocalWords {
       my $pattern_type = 'local_words_'.$len.'nt';
       push @local_word_files, $main::outfile{$pattern_type};
       &RSAT::message::TimeWarn("Running local-word-analysis", $len."nt") if ($main::verbose >= 2);
-      my $cmd = $PYTHON."/local-word-analysis -v 3";
+      my $cmd = &RSAT::server::GetProgramPath("local-word-analysis");
+      $cmd .= " -v 3";
       $cmd .= " -i ".$main::outfile{"test_purged"};
       #  $cmd .= " -format fasta";
       $cmd .= " --min=occ_sig ".$main::param{min_sig};
@@ -2277,7 +2279,9 @@ sub ClusterMotifs_old {
   $cmd .= "; ".$mcl."/mcl ".$main::outfile{"motifs_disco_compa"}.".mcl";
   $cmd .= " -I 1.8 --abc -V all ";
   $cmd .= " -o ".$main::outfile{motifs_disco_clusters_mcl};
-  $cmd .= " ; ${SCRIPTS}/convert-classes -i ".$main::outfile{motifs_disco_clusters_mcl};
+  $cmd .= " ; ";
+  $cmd .= &RSAT::server::GetProgramPath("convert-classes");
+  $cmd .= " -i ".$main::outfile{motifs_disco_clusters_mcl};
   $cmd .= " -from mcl -to tab ";
   $cmd .= " -o ".$main::outfile{motifs_disco_clusters_tab};
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
@@ -2381,10 +2385,6 @@ sub MotifsVersusReference {
     $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motifs_transfac};
     $cmd .= $main::param{motif_compa_options};
     $cmd .= " -o ".$main::prefix{$motif_id."_vs_ref_prefix"};
-    #    $cmd .= "; ";
-    # $cmd .= &RSAT::server::GetProgramPath("text-to-html");
-    # $cmd .= -i ".$main::outfile{$motif_id."_vs_ref"};
-    #    $cmd .= " -o ".$main::outfile{$motif_id."_vs_ref_html"};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 
@@ -2402,9 +2402,6 @@ sub MotifsVersusReference {
   $cmd .= " -format1 transfac -file1 ".$main::outfile{ref_motifs_transfac};
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};
   $cmd .= " -o ".$main::prefix{"motifs_vs_ref_prefix"};
-## Not necessary here anymore, it is automatically done in the script compare-matrices
-#  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{"motifs_vs_ref"};
-#  $cmd .= " -o ".$main::outfile{"motifs_vs_ref_html"};
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   &RSAT::message::TimeWarn("Discovered versus reference motif", $main::outfile{motifs_vs_ref}) if ($main::verbose >= 2);
