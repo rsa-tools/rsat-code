@@ -53,11 +53,9 @@ def list_subcommands(commands):
     # build toc
     s = []
     for k in d.keys():
-#        s += ['[ %s ]' % k]
         for c in d[k]:
             s += ['%s' % (c[0].split('/')[-1])]
-#        s += [' ']
-    return '\n'.join(s)
+    return '\n'.join(sorted(set(s)))
 
 ##
 # Main
@@ -92,7 +90,7 @@ try:
 
     # check command validity
     if not command in cmds:
-        error('Unrecognized command: %s\n\nTo get the list of supported commands, type\n\trsat -h' % command)
+        error('Unrecognized command: %s\n\nTo get the list of supported commands, type\n\trsat -l\nTo get their description, type\n\trsat -h' % command)
         exit()
     
     # add the full path and execute the command
