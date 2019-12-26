@@ -17,10 +17,14 @@ matrix-from-patterns
 
 =head1 DESCRIPTION
 
-Extract one or several position-specific scoring matrices (PSSM) from
-a set of sequences, using a seeds a set of patterns (the output of
-I<oligo-analysis> or I<dyad-analysis>) of an assembly made of such
-patterns (output of I<pattern-assembly>).
+Build PSSMs from a sequence set using as seeds a set of patterns
+(oligos, dyads) or an assembly.
+
+
+Build position-specific scoring matrices (PSSM) by collecting sites
+from a given sequence set, using as seeds either a set of patterns
+(the output of I<oligo-analysis> or I<dyad-analysis>) or an assembly
+made of such patterns (output of I<pattern-assembly>).
 
 The program proceeds in two steps:
 
