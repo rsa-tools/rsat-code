@@ -153,8 +153,8 @@ NAME
         1999 by Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 
 DESCRIPTION
-	Return the lengths of each sequence from an input
-	file. Otionally, return the sum of lengths.
+	Return the length of each sequence for a user-speficied
+	sequence file. Optionally, return the sum of lengths.
 
 CATEGORY
 	sequences
