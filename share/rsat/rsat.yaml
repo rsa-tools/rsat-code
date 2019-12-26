@@ -76,6 +76,10 @@ commands:
     desc: "Convert different formats of position-specific scoring matrices (PSSM), and calculate statistical parameters + logos"
     group: "Matrix tools"
 
+  - command: "perl-scripts/matrix-from-patterns"
+    desc: "Build PSSMs from a sequence set using as seeds a set of patterns (oligos, dyads) or an assembly"
+    group: "Matrix tools"
+
   - command: "perl-scripts/compare-matrices"
     desc: "Compute (dis)imilarity scores between matrices from two collections of position-specific scoring matrices"
     group: "Matrix tools"
