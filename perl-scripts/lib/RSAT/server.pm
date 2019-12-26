@@ -478,7 +478,7 @@ sub ReadProperties {
     unless (-e $property_file) {
       &RSAT::message::Warning("This RSAT site is not properly configured.\n",
 			      '$ENV{RSAT}='.$ENV{RSAT},
-			      "\n\tPoperty file does not exist: ".$property_file,
+			      "\n\tProperty file does not exist: ".$property_file,
 			      "\n\tPlease contact the system administrator ".$ENV{SERVER_ADMIN});
       $property_file = $`."../RSAT_config_default.props"; #`
       $default_props = 1;
