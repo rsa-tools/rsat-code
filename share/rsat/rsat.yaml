@@ -62,6 +62,10 @@ commands:
     desc: "Inter-conversions between various sequence formats"
     group: "Sequences"
 
+  - command: "perl-scripts/sequence-lengths"
+    desc: "Return the length of each input sequence, or the sum of lengths"
+    group: "Sequences"
+
   ################################################################
   ## Matrix tools
   - command: "perl-scripts/retrieve-matrix"
@@ -264,3 +268,4 @@ commands:
     desc: "Draw a heat map to display values from a matrix of numerical values"
     group: "Visualisation"
 
+  
