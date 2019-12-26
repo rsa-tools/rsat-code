@@ -19,8 +19,8 @@ $program_version
 
 =head1 DESCRIPTION
 
-Download organism(s) from the main RSAT server in order to add support
-on a local machine.
+Download organism(s) from an RSAT server in order to support it on
+this RSAT instance.
 
 Organisms can be loaded one by one (option -org), or by taxon (option
 -taxon).
