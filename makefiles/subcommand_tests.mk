@@ -5,8 +5,9 @@ targets:
 	@echo "Targets"
 	@echo "	targets		list targets of this makefile"
 	@echo "	list_param	list parameters"
-	@echo "	randseq		random-seq test"
-	@echo "	peakmo		peak-motifs test"
+	@echo "	randseq		random-seq"
+	@echo "	purgeseq	purge-sequence"
+	@echo "	peakmo		peak-motifs"
 
 RESULT_DIR=rsat_subcommand_results
 list_param:
@@ -22,6 +23,22 @@ randseq:
 	@echo "	Generating random sequences"
 	rsat random-seq -l 1000 -n 10 -seed 123 -o ${RANDSEQ}
 	@echo "	RANDSEQ		${RANDSEQ}"
+#	md5sum ${RANDSEQ} > ${RANDSEQ}.md5
+#	@echo "	md5sum		${RANDSEQ}.md5"
+
+PURGESEQ_DIR=${RESULT_DIR}/purge-sequence_result
+PURGESEQ=${PURGESEQ_DIR}/purged_sequence.fasta
+purgeseq:
+	@echo "Testing purge-seq"
+	@mkdir -p ${PURGESEQ_DIR}
+	@echo "	PURGESEQ_DIR	${PURGESEQ_DIR}"
+	@echo "	Purging sequences"
+	rsat purge-sequence -i ${RANDSEQ} -o ${PURGESEQ}
+	@echo "	PURGESEQ		${PURGESEQ}"
+#	md5sum ${PURGESEQ} > ${PURGESEQ}.md5
+#	@echo "	md5sum		${PURGESEQ}.md5"
+
+
 
 
 PEAKMO_DIR=${RESULT_DIR}/peak-motifs_result
