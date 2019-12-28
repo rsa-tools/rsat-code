@@ -452,6 +452,12 @@ package main;
   %main::infile = ();
   %main::outfile = ();
 
+  my $logo_cmd_name = $ENV{LOGO_PROGRAM} || "weblogo" unless ($logo_cmd_name);
+  $logo_opt = "";
+  if ($logo_cmd_name eq "seqlogo") {
+      $logo_opt = " -h 3";
+  } 
+
   ## Use arrays for ordered listing of files in the HMTL index
   @main::outfiles = ();
   @main::infiles = ();
@@ -1493,7 +1499,7 @@ package main;
       my $logo_file = $dir{logos}."/".$matrix->get_attribute("id");
       my $rc_logo_file = $logo_file."_rc";
       &RSAT::message::Info("Generating logo for matrix", $m, $matrix->get_attribute("id"), $logo_file) if ($main::verbose >= 3);
-      $matrix->makeLogo($logo_file, "", " -h 3", 0);
+      $matrix->makeLogo($logo_file, "", $logo_opt, 0);
       $matrix->force_attribute("logo_file", $logo_file);
       $matrix->force_attribute("rc_logo_file", $rc_logo_file);
     }
@@ -2724,8 +2730,8 @@ sub PairwiseAlignments {
 
     ## Generate a sequence logo for the HTML output file
     my $logo1_file = $main::dir{aligned_logos}."/".$matrix1_shifted->get_attribute("id");
-#    $matrix1_shifted->makeLogo($logo1_file, "", $main::dir{aligned_logos}, " -h 3", 0);
-    $matrix1_shifted->makeLogo($logo1_file, "", " -h 3", 0);
+#    $matrix1_shifted->makeLogo($logo1_file, "", $main::dir{aligned_logos}, $logo_opt, 0);
+    $matrix1_shifted->makeLogo($logo1_file, "", $logo_opt, 0);
     my $logo1_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo1_file.".png");
     $matrix1_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
     print $alignments_pairwise_html "<tr>\n";
@@ -2736,8 +2742,8 @@ sub PairwiseAlignments {
 
     ## Generate a sequence logo for the HTML output file
     my $logo2_file = $main::dir{aligned_logos}."/".$matrix2_shifted->get_attribute("id");
-#    $matrix2_shifted->makeLogo($logo2_file, "", $main::dir{aligned_logos}, " -h 3", $rc);
-    $matrix2_shifted->makeLogo($logo2_file, "", " -h 3", $rc);
+#    $matrix2_shifted->makeLogo($logo2_file, "", $main::dir{aligned_logos}, $logo_opt, $rc);
+    $matrix2_shifted->makeLogo($logo2_file, "", $logo_opt, $rc);
     my $logo2_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo2_file.".png");
     $matrix2_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
     print $alignments_pairwise_html "<tr>\n";
@@ -2760,8 +2766,8 @@ sub PairwiseAlignments {
 
       ## Generate a sequence logo for the merged matrix
       my $logo_file = $main::dir{aligned_logos}."/".$id_align;
-#      $merged_matrix->makeLogo($logo_file, "", $main::dir{aligned_logos}, " -h 3", 0);
-      $merged_matrix->makeLogo($logo_file, "", " -h 3", 0);
+#      $merged_matrix->makeLogo($logo_file, "", $main::dir{aligned_logos}, $logo_opt, 0);
+      $merged_matrix->makeLogo($logo_file, "", $logo_opt, 0);
       my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_pairwise_html}, $logo_file.".png");
       $merged_matrix_string =~ s|//\n||mg;
       print $alignments_pairwise_html "<tr>";
@@ -3002,8 +3008,8 @@ sub PrintAlignedMatrices {
 
     ## Generate a sequence logo for the HTML output file
     my $logo_file = $main::dir{aligned_logos}."/".$shifted_matrix->get_attribute("id");
-#    $shifted_matrix->makeLogo($logo_file, "", $main::dir{aligned_logos}, " -h 3", $rc);
-    $shifted_matrix->makeLogo($logo_file, "", " -h 3", $rc);
+#    $shifted_matrix->makeLogo($logo_file, "", $main::dir{aligned_logos}, $logo_opt, $rc);
+    $shifted_matrix->makeLogo($logo_file, "", $logo_opt, $rc);
     my $logo_link = &RSAT::util::RelativePath($main::outfile{alignments_1ton_html}, $logo_file.".png");
     $matrix_string =~ s|//\n||mg; ## Suppress the trailing line with double slash
     print $alignments_1ton_html "<tr>\n";
