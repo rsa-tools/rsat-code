@@ -4534,9 +4534,9 @@ Examples:
  -motif_db TRANSFAC transfac transfac_download_dir/cgi-bin/data/matrix.dat
 
    will load a file containing all matrices from the TRANSFAC
-   database.
+   database, in transfac format.
 
- -motif_db JASPAR jaspar jaspar_file.tf
+ -motif_db JASPAR transfac jaspar_file.tf
 
    will load a file containing motifs from the JASPAR database that
    have previously been converted to TRANSFAC format.
@@ -4544,10 +4544,16 @@ Examples:
 =cut
 
     } elsif ($arg eq "-motif_db") {
+
+      ## Name of the motif database
       my $db_name = shift(@arguments);
       $db_name =~ s/\s/_/g;
       push @main::motif_databases, $db_name;
+
+      ## Motif database format
       $main::motif_db_format{$db_name} = shift(@arguments);
+
+      ## Motif database file
       my $db_file = shift(@arguments);
       unless (-e $db_file) {
 	&RSAT::error::FatalError("Motif DB file does not exist.", $db_file);
