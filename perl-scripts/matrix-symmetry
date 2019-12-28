@@ -536,7 +536,7 @@ package main;
 		#	$logo_file =~ s/\.\w+$//;
 		$matrix->set_attribute("logo_file" => $logo_file);
 #		$matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
-		$matrix->makeLogo($logo_file,\@logo_formats,$logo_opt);
+		$matrix->makeLogo($logo_file, \@logo_formats, $logo_opt);
 
 		print STDOUT "\n";
 	    }

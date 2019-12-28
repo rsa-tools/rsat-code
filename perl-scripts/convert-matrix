@@ -549,9 +549,9 @@ package main;
 	$logo_file .= "_logo";
       }
       #	$logo_file =~ s/\.\w+$//;
-      $matrix->makeLogo($logo_file,\@logo_formats,$logo_opt, 0, $logo_cmd_name, $logo_no_title); ## Generate the logo image
+      $matrix->makeLogo($logo_file, \@logo_formats, $logo_opt, 0, $logo_cmd_name, $logo_no_title); ## Generate the logo image
       $matrix->set_attribute("logo_file" => $logo_file);
-      $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_opt, 1, $logo_cmd_name, $logo_no_title);	## Generate logo image for the reverse complementary motif
+      $matrix->makeLogo($logo_file."_rc", \@logo_formats, $logo_opt, 1, $logo_cmd_name, $logo_no_title);	## Generate logo image for the reverse complementary motif
       $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
 
       ## Index the logos in a HTML table
