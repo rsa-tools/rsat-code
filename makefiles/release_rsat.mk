@@ -39,7 +39,8 @@ TAR_EXCLUDE=--exclude .git \
 	--exclude purgatory \
 	--exclude .Rproj.user \
 	--exclude '*.RData' \
-	--exclude Rpackages
+	--exclude Rpackages \
+	--exclude purgatory
 TAR_CREATE=tar ${TAR_EXCLUDE} ${TAR_OPT} -cpf ${ARCHIVE}.tar rsat/*_default.*
 TAR_APPEND=tar ${TAR_EXCLUDE} ${TAR_OPT} -rpf ${ARCHIVE}.tar 
 SHA256=${ARCHIVE}.tar.gz.sha256
