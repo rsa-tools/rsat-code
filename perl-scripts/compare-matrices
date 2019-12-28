@@ -876,8 +876,8 @@ package main;
       ## Impose (somewhat arbitrary) minimal thresholds on alignment
       ## width, correlation and normalized correlations
       $lth{w}=5 unless (defined($lth{w}));
-      $lth{cor}=0.7 unless (defined($lth{cor}));
-      $lth{ncor}=0.4 unless (defined($lth{ncor}));
+      $lth{cor}=0.6 unless (defined($lth{cor}));
+      $lth{ncor}=0.3 unless (defined($lth{ncor}));
     }
     
     ## In both modes "matches" and "scores", only return the best
