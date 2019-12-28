@@ -149,11 +149,11 @@ commands:
     desc: "Assemble string-based patterns (oligos or dyads)"
     group: "Motif discovery"
 
-  - command: "bin/count-words"
+  - command: "../../bin/count-words"
     desc: "Calculate oligomer frequencies from a set of sequences"
     group: "Motif discovery"
 
-  - command: "bin/info-gibbs"
+  - command: "../../bin/info-gibbs"
     desc: "A gibbs sampler based on a stochastic optimization of information content"
     group: "Motif discovery"
 
@@ -163,7 +163,7 @@ commands:
     desc: "Scan DNA sequences with position-specific scoring matrices (PSSM) - full option"
     group: "Motif search"
 
-  - command: "bin/matrix-scan-quick"
+  - command: "../../bin/matrix-scan-quick"
     desc: "Scan DNA sequences with position-specific scoring matrices (PSSM) - fast version"
     group: "Motif search"
 
@@ -218,11 +218,11 @@ commands:
     desc: "Get information about variations for a given list of variation IDS or genomic regions"
     group: "Regulatory variants"
 
-  - command: "bin/retrieve-variation-seq"
+  - command: "../../bin/retrieve-variation-seq"
     desc: "Given a set of polymorphic variations, retrieve the variants and their flanking sequences"
     group: "Regulatory variants"
 
-  - command: "bin/variation-scan"
+  - command: "../../bin/variation-scan"
     desc: "Scan sequences of polymorphic variants  with a list of motifs to predict TFBS affected by the variations"
     group: "Regulatory variants"
 
