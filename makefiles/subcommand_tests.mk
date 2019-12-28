@@ -87,7 +87,7 @@ compare_matrices: retrieve_matrix
 	@mkdir -p ${MATRIX_COMPA_DIR}
 	rsat compare-matrices -v ${V} -file ${MATRICES} -format transfac \
 		-mode matches -distinct -strand DR \
-		-lth cor 0.7 -lth Ncor 0.4 -uth match_rank 50 \
+		-lth cor 0.6 -lth Ncor 0.33 -uth match_rank 50 \
 		-return cor,Ncor,logoDP,match_rank,matrix_id,matrix_name,width,consensus,alignments_1ton \
 		-o ${MATRIX_COMPA}
 	@echo "	MATRIX_COMPA_DIR	${MATRIX_COMPA_DIR}"
@@ -123,7 +123,7 @@ purgeseq: download_peaks
 
 ################################################################
 ## peak-motifs test
-PEAKMO_TASK=purge,seqlen,composition,disco,merge_motifs,split_motifs,motifs_vs_motifs,timelog,synthesis,small_summary,scan
+PEAKMO_TASK=purge,seqlen,composition,disco,merge_motifs,split_motifs,motifs_vs_motifs,timelog,synthesis,small_summary,scan,motifs_vs_db
 peakmo: download_jaspar download_peaks
 	@echo "Testing peak-motifs"
 	@mkdir -p ${PEAKMO_DIR}
