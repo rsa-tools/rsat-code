@@ -271,7 +271,7 @@ sub RSA_header_bootstrap {
         -src      => 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'
     },
     { -type => 'text/javascript',
-        -src      => 'RSAT_menu.js'
+        -src      => 'lib/RSAT_menu.js'
     },
     { -type => 'text/javascript',
         -src      => 'RSAT_tabs.js'
@@ -353,7 +353,7 @@ sub RSA_header {
         -src      => 'js/jquery.js'
     },
     { -type => 'text/javascript',
-        -src      => 'RSAT_menu.js'
+        -src      => 'lib/RSAT_menu.js'
     },
     { -type => 'text/javascript',
         -src      => 'RSAT_tabs.js'
