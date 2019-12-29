@@ -239,7 +239,7 @@ package main;
 	if ($main::verbose >= 2);
       ## Create a temporary file with the top  sequences
       $seq_to_scan = $outfile{output}."_top".$top_seq."_seq.".$seq_format;
-      my $top_seq_cmd = $SCRIPTS."/convert-seq";
+      my $top_seq_cmd = &RSAT::server::GetProgramPath("convert-seq");
       $top_seq_cmd .= " -i ".$infile{sequence};
       $top_seq_cmd .= " -from ".$seq_format." -to ".$seq_format;
       $top_seq_cmd .= " -top ".$top_seq;
@@ -269,7 +269,8 @@ package main;
 	&terminate();
       }
       &RSAT::message::TimeWarn("Assembling the patterns") if ($main::verbose >= 2);
-      my $assembly_cmd = $SCRIPTS."/pattern-assembly -v 1 -i ".$infile{patterns};
+      my $assembly_cmd = &RSAT::server::GetProgramPath("pattern-assembly");
+      $assembly_cmd .= " -v 1 -i ".$infile{patterns};
       $assembly_cmd .= " ".$strands;
       $assembly_cmd .= " -maxfl ".$asmb_maxfl;
       $assembly_cmd .= " -subst ".$asmb_subst;
@@ -320,7 +321,8 @@ package main;
     ################################################################
     ## Convert assembled patterns into significance matrices
     &RSAT::message::TimeWarn("Converting assemblies to significance matrices") if ($main::verbose >= 2);
-    my $convert_cmd = $SCRIPTS."/convert-matrix -v 1 -i ".$outfile{assembly};
+    my $convert_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $convert_cmd .= " -v 1 -i ".$outfile{assembly};
     $convert_cmd .= " -from assembly -to tf";
     $convert_cmd .= " -return counts";
     $convert_cmd .= " -flanks ".$flanks;
@@ -335,7 +337,8 @@ package main;
     ## (with a somewhat arbitrary scale, and including real rather
     ## than Natural numbers).
     $outfile{sig_matrices_rescaled} = $outfile{output}."_sig_matrices_rescaled.tf";
-    my $rescale_cmd = $SCRIPTS."/convert-matrix -v 1 -i ".$outfile{sig_matrices};
+    my $rescale_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $rescale_cmd .= " -v 1 -i ".$outfile{sig_matrices};
     $rescale_cmd .= " -from tf -to tf";
     $rescale_cmd .= " -return counts";
     $rescale_cmd .= " -rescale ".$column_rescaling;
@@ -358,7 +361,8 @@ package main;
 	$outfile{sig_matrices_nr} = $prefix{sig_matrices_nr}."_cluster_root_motifs.tf"; ## Non-redundant significance matrices
 
 	## Build the matrix-clustering command
-	my $cluster_cmd = $SCRIPTS."/matrix-clustering -v 0";
+	my $cluster_cmd = &RSAT::server::GetProgramPath("matrix-clustering");
+	$cluster_cmd .= " -v 0";
 	$cluster_cmd .= " -matrix test ".$outfile{sig_matrices_rescaled}." tf";
 	$cluster_cmd .= " -lth Ncor 0.4 -lth cor 0.6 -lth w 5 -hclust_method average";
 	$cluster_cmd .= " -label_in_tree name";
@@ -393,7 +397,8 @@ package main;
 
 #      &RSAT::message::Debug("current directory", `pwd`) if ($main::verbose >= 10);
 
-      my $logo_link_cmd = $SCRIPTS."/convert-matrix -v 1";
+      my $logo_link_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+      $logo_link_cmd .= " -v 1";
       $logo_link_cmd .= " -i ". $outfile{count_matrices_tf};
       $logo_link_cmd .= " -from tf -to tab";
       $logo_link_cmd .= " -return counts";
@@ -1011,7 +1016,7 @@ sub QuickScanForSites {
   &RSAT::message::TimeWarn("Collecting sites with significance matrices (matrix-scan-quick)") if ($main::verbose >= 2);
 
   ## Split the sig matrix file into separated tab-delimited files (one per matrix, required for matrix-scan-quick)
-  my $cmd = $SCRIPTS."/convert-matrix ";
+  my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
   $cmd .= " -from tf -i ".$matrix_file;
   $cmd .= " -to tab -split  -o ".$prefix{sig_matrices_split};
   $cmd .= "; rm -f ".$outfile{'count_matrices'};
@@ -1130,7 +1135,7 @@ sub sites_to_matrix {
   ################################################################
   ## The primary export format is TRANSFAC, because this allows to
   ## store information (site sequences)
-  my $convert2_cmd = $SCRIPTS."/convert-matrix";
+  my $convert2_cmd = &RSAT::server::GetProgramPath("convert-matrix");
   $convert2_cmd .= " -v 0"; ## Verbosity must be 0 for TRANSFAC format
   $convert2_cmd .= " -i ".$site_file;
   $convert2_cmd .= " -from feature -to transfac";
@@ -1152,7 +1157,8 @@ sub sites_to_matrix {
 
   ################################################################
   ## The TRANSFAC matrices are then converted to tab format
-  my $convert3_cmd = $SCRIPTS."/convert-matrix -v 1";
+  my $convert3_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+  $convert3_cmd .= " -v 1";
   $convert3_cmd .= " -i ".$outfile{count_matrices_tf};
   $convert3_cmd .= " -from transfac -to tab";
   $convert3_cmd .= " -return counts";
@@ -1197,7 +1203,8 @@ sub InfoGibbs {
     ################################################################
     ## Convert matrix from info-gibbs and generate logos if required
     &RSAT::message::TimeWarn("Converting matrices") if ($main::verbose >= 2);
-    my $convert2_cmd = $SCRIPTS."/convert-matrix -v 1";
+    my $convert2_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $convert2_cmd .= " -v 1";
     $convert2_cmd .= " -i ".$outfile{gibbs_matrices};
     $convert2_cmd .= " -from tab -to tab";
 #    $convert2_cmd .= " -from info-gibbs -to tab";
