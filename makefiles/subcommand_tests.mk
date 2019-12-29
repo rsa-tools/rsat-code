@@ -12,6 +12,11 @@ targets:
 	@echo "	convert_matrix		convert-matrix"
 	@echo "	compare_matrices	compare-matrices"
 	@echo "	download_peaks		download test peaks"
+	@echo "	oligos			oligo-analysis"
+	@echo "	assembly		pattern-assembly"
+	@echo "	matrix_from_patterns	matrix-from-patterns"
+	@echo "	create_background	create-background-model"
+	@echo "	matrix_quality		matrix-quality"
 	@echo "	peakmo			peak-motifs"
 
 ################################################################
@@ -80,7 +85,7 @@ convert_matrix: download_jaspar
 
 ################################################################
 ## Compare matrices
-MATRIX_COMPA_DIR=${RESULT_DIR}/compare-matrices_results
+MATRIX_COMPA_DIR=${RESULT_DIR}/compare-matrices_result
 MATRIX_COMPA=${MATRIX_COMPA_DIR}/sox-oct_vs_itself
 compare_matrices: retrieve_matrix
 	@echo "Testing compare-matices"
@@ -92,6 +97,15 @@ compare_matrices: retrieve_matrix
 		-o ${MATRIX_COMPA}
 	@echo "	MATRIX_COMPA_DIR	${MATRIX_COMPA_DIR}"
 	@echo "	MATRIX_COMPA		${MATRIX_COMPA}_index.html"
+
+################################################################
+## matrix-clustering test
+MATRIX_CLUSTERING_DIR=${RESULT_DIR}/matrix-clustering_result
+matrix_clustering:
+	@echo "Testing matrix-clustering"
+	rsat matrix-clustering -h
+	@echo "	MATRIX_CLUSTERING_DIR	${MATRIX_CLUSTERING_DIR}"
+
 
 ################################################################
 ## Download peak sequences for tests
@@ -120,6 +134,77 @@ purgeseq: download_peaks
 	@echo "	Purging sequences"
 	rsat purge-sequence -i ${PEAKS} -o ${PURGED_PEAKS}
 	@echo "	PURGED_PEAKS		${PURGED_PEAKS}"
+
+################################################################
+## oligo-analysis test
+OLIGO_DIR=${RESULT_DIR}/oligo-analysis_result
+OLIGO_BASENAME=${OLIGO_DIR}/${PEAK_BASENAME}_6nt_2str_noov_sig0
+OLIGOS=${OLIGO_BASENAME}.tsv
+oligos: download_peaks
+	@echo "Testing oligo-analysis"
+	@mkdir -p ${OLIGO_DIR}
+	rsat oligo-analysis -v ${V} -i ${PURGED_PEAKS} \
+		-l 6 -2str -noov \
+		-return occ,freq,proba,rank \
+		-markov 4 -lth occ_sig 0 \
+		-o ${OLIGOS}
+	@echo "	OLIGO_DIR	${OLIGO_DIR}"
+	@echo "	OLIGOS		${OLIGOS}"
+
+################################################################
+## Test pattern-assembly with oligos
+ASSEMBLY=${OLIGO_BASENAME}_assembly.txt
+assembly:
+	@echo "Testing pattern-assembly"
+	rsat pattern-assembly -v ${V} \
+		-i ${OLIGOS} \
+		-maxfl 1 -2str -subst 1 -match 5 \
+		-o ${ASSEMBLY}
+	@echo "	ASSEMBLY	${ASSEMBLY}"
+
+################################################################
+## Test matrix-from-patterns
+OLIGO_MATRICES=${OLIGO_BASENAME}_pssm
+matrix_from_patterns:
+	@echo "Testing matrix-from-patterns"
+	rsat matrix-from-patterns -seq ${PEAKS} \
+		-pl ${OLIGOS} \
+		-sc 9 -subst 1 -maxfl 1 -match 5 -2str \
+		-sites -collect_method matrix-scan-quick -flanks 3 -logo  \
+		-o ${OLIGO_MATRICES}
+	@echo "	OLIGO_MATRICES		${OLIGO_MATRICES}"
+	@echo "	PSSM (transfac format)	${OLIGO_MATRICES}_count_matrices.tf"
+	@echo "	Sites (feature format)	${OLIGO_MATRICES}_sig_sites.ft"
+
+################################################################
+## Test create-background-model
+BG_MKV=1
+BG_DIR=${RESULT_DIR}/background-models
+BG_FORMAT=oligos
+BG_FILE=${BG_DIR}/${PEAK_BASENAME}_bg-model_markov${BG_MKV}_${BG_FORMAT}.tsv
+create_background: download_peaks
+	@echo "Testing create-background-model"
+	@mkdir -p ${BG_DIR}
+	rsat create-background-model -v 1 \
+		-i ${PEAKS} \
+		-markov ${BG_MKV} -out_format ${BG_FORMAT} \
+		-o ${BG_FILE}
+	@echo "	BG_DIR	${BG_DIR}"
+	@echo "	BG_FILE	${BG_FILE}"
+
+
+################################################################
+## Test matrix-quality
+QUALITY_DIR=${RESULT_DR}/matrix-quality_test
+matrix_quality:
+	@echo "Testing matrix-quality"
+	rsat matrix-quality -v ${V} \
+		-ms ${OLIGO_MATRICES}_count_matrices.tf \
+		-matrix_format transfac \
+		-seq peaks ${PEAKS} -seq_format fasta \
+		-kfold 10 -perm peaks 1 \
+		-o ${QUALITY_PREFIX}
+	@echo "	QUALITY_DIR	${QUALITY_DIR}"
 
 ################################################################
 ## peak-motifs test
