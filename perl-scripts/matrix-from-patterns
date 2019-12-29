@@ -1276,7 +1276,7 @@ significance matrix.
 
 =head1 WISH LIST
 
-=item B<-iter>
+=head2 I<-iter>
 
 Number of iterations for the expectation-maximization cycle (collect
 sites with matrix and update matrix from collected sites). Default: 1.
