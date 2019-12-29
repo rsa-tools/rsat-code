@@ -534,7 +534,7 @@ package main;
 
 
     ## Convert BG file in inclusive format for matrix-scan-quick
-    my $bg_convert_cmd = $SCRIPTS."/convert-background-model";
+    my $bg_convert_cmd = &RSAT::server::GetProgramPath("convert-background-model");
     $bg_convert_cmd .= " -i ".$infile{bg_file};
     $bg_convert_cmd .= " -from ".$bg_format;
     $bg_convert_cmd .= " -to inclusive";
@@ -843,12 +843,14 @@ package main;
       # 	  push @distrib_files, $outfile{$perm_suffix}; $file_nb{$perm_suffix} = scalar(@distrib_files);
 
       # 	  ## Run compare-scores to compute the dCDF of the mergeed permutation test
-      # 	  my $merge_cmd = $SCRIPTS."/compare-scores -v 1 ";
+      # 	  my $merge_cmd = &RSAT::server::GetProgramPath("compare-scores)";
+      #           $merge_cmd .= " -v 1 ";
       # 	  $merge_cmd .= " -ic 1 -numeric -sc 2";
       # 	  $merge_cmd .= " -files ";
       # 	  $merge_cmd .= join " ", @perm_distrib_files;
       # 	  my $last_col = scalar(@perm_distrib_files) + 1;
-      # 	  $merge_cmd .= " | ".$SCRIPTS."/row-stats -before -col 2-".$last_col;
+      # 	  $merge_cmd .= " | ".&RSAT::server::GetProgramPath("row-stats");
+      #           $merge_cmd .= " -before -col 2-".$last_col;
       # 	  &RSAT::message::Debug("Merging permuted distributions", $merge_cmd) if ($main::verbose >= 10);
       # 	  ## Compute the cumulative and decreasing cumlative
       # 	  ## distributions
@@ -2125,7 +2127,7 @@ sub CrossValidation {
     if ($quick) {
       $matrix_scan_cmd .= $quick_scan_cmd;
     } else {
-      $matrix_scan_cmd .= $SCRIPTS."/matrix-scan";
+      $matrix_scan_cmd .= &RSAT::server::GetProgramPath("matrix-scan");
       $matrix_scan_cmd .= " -bg_format inclusive"; ## We use inclusive as bg format for compatibiliy with matrix-scan-quick
       $matrix_scan_cmd .= " -matrix_format tab";
       $matrix_scan_cmd .= " -seq_format fasta";
@@ -2225,7 +2227,8 @@ sub AddSequenceDistribOptions_classfreq {
 #     if ($main::verbose >= 2);
 
 #   ## Scan the sequences with matrix-scan
-#   my $matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".$main::verbose;
+#   my $matrix_scan_cmd = &RSAT::server::GetProgramPath("matrix-scan");
+#   $matrix_scan_cmd .= "-v ".$main::verbose;
 #   $matrix_scan_cmd .= " -decimals ".$decimals;
 #   $matrix_scan_cmd .= " -top_matrices 1";
 #   $matrix_scan_cmd .= " -i ".$sequence_file;
@@ -2318,7 +2321,8 @@ sub ScoreDistrib {
   ## prepare the complete distribution output
   $main::outfile{$seq_type."_distrib"} = $matrix_prefix{$matrix_name}."_scan_".$seq_type."_distrib.tab";
 
-  my $classfreq_cmd = $SCRIPTS."/classfreq -v 1 ";
+  my $classfreq_cmd = &RSAT::server::GetProgramPath("classfreq");
+  $classfreq_cmd .= " -v 1 ";
   $classfreq_cmd .= " -i ".$main::outfile{$seq_type."_distrib_score_tmp"};
   $classfreq_cmd .= " -min ".$classfreq_min;
   $classfreq_cmd .= " -ci  ".$class_interval;
@@ -2347,7 +2351,7 @@ sub ScoreDistrib {
 
 #     ################################################################
 #     ## Compare the distributions
-#     my $distrib_compa_cmd = $SCRIPTS."/compare-scores ";
+#     my $distrib_compa_cmd = &RSAT::server::GetProgramPath("compare-scores");
 #     $distrib_compa_cmd .= " -numeric";
 #     $distrib_compa_cmd .= " -sc1 4"; # score column for the theoretical distribution
 #     $distrib_compa_cmd .= " -sc ".$score_column; # score column for the observed distributions
@@ -2386,7 +2390,8 @@ sub ScoreDistrib {
 
 #       ################################################################
 #       ## Draw a graph with all the decreasing cumulative distributions
-#       my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
+#       my $XYgraph_cmd = &RSAT::server::GetProgramPath("XYgraph");
+#       $XYgraph_cmd .= " ".$main::rplot_option." ".$all_graph_options;
 
 #       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
       
@@ -2408,7 +2413,8 @@ sub ScoreDistrib {
 #       ################################################################
 #       ## Draw a graph with all the decreasing cumulative distributions
 #       ## and a logarithmic Y axis
-#       $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
+#       $XYgraph_cmd = &RSAT::server::GetProgramPath("XYgraph");
+#       $XYgraph_cmd .= " ".$main::rplot_option." ".$all_graph_options;
 #       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 #       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
 #       $XYgraph_cmd .= " -ymax 1 -ylog 10";
@@ -2443,7 +2449,8 @@ sub ScoreDistrib {
 
 #       $ycols = join ",", 2..(scalar(@distrib_files)+2);
 # #      $large_graph_options =~ s/-xsize 800/-xsize 400/;
-#       $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
+#       $XYgraph_cmd = &RSAT::server::GetProgramPath("XYgraph ");
+#       $XYgraph_cmd .= " .$main::rplot_option." ".$all_graph_options;
 #       $XYgraph_cmd .= " -xcol ".$ref_column;
 #       $XYgraph_cmd .= " -ycol ".$ycols;
 #       $XYgraph_cmd .= " -ygstep1 0.1 -ygstep2 0.02";
@@ -2518,7 +2525,7 @@ sub ScoreDistrib {
 
 # 	  ################################################################
 # 	  ## Compare the theoretical distributions
-# 	  my $distrib_compa_cmd = $SCRIPTS."/compare-scores ";
+# 	  my $distrib_compa_cmd = &RSAT::server::GetProgramPath("compare-scores");
 # 	  $distrib_compa_cmd .= " -numeric";
 # 	  $distrib_compa_cmd .= " -sc 4";	# score column for the theoretical distribution
 # 	  $distrib_compa_cmd .= " -suppress ".$matrix_prefix{$matrix_name}."_";
@@ -2535,7 +2542,8 @@ sub ScoreDistrib {
 
 # 	  ################################################################
 # 	  ## Draw a graph with all the decreasing cumulative distributions
-# 	  my $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
+# 	  my $XYgraph_cmd = &RSAT::server::GetProgramPath("XYgraph");
+#         $XYgraph_cmd .= " ".$main::rplot_option." ".$all_graph_options;
 # 	  my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
 # 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 # 	  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
@@ -2547,7 +2555,8 @@ sub ScoreDistrib {
 # 	  ################################################################
 # 	  ## Draw a graph with all the decreasing cumulative distributions
 # 	  ## and a logarithmic Y axis
-# 	  $XYgraph_cmd = $SCRIPTS."/XYgraph ".$main::rplot_option." ".$all_graph_options;
+# 	  $XYgraph_cmd = &RSAT::server::GetProgramPath("XYgraph");
+#         $XYgraph_cmd .= " ".$main::rplot_option." ".$all_graph_options;
 # 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 # 	  $XYgraph_cmd .= " -ymax 1 -ylog 10";
 # 	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
