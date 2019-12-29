@@ -1227,8 +1227,10 @@ sub terminate {
 
   ## Clean the sites (can be huge files for peak-motif results)
   if (-e $outfile{sig_sites}) {
-    my $clean_cmd = "rm -f ".$outfile{sig_sites};
-    &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+      unless ($return_fields{sites}) {
+	  my $clean_cmd = "rm -f ".$outfile{sig_sites};
+	  &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+      }
   }
 
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
