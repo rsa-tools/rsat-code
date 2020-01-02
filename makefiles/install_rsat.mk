@@ -362,8 +362,7 @@ python2_modules_install:
 		${SUDO} pip install $${module}; \
 	done
 
-# we might need pyyaml, at least for plants
-PYTHON3_MODULES=numpy scipy snakemake docutils
+PYTHON3_MODULES=numpy scipy snakemake docutils pyyaml
 PYTHON3_NONSUPPORTED= soappy
 python3_modules_list:
 	@echo "Modules to install for Python 3"
