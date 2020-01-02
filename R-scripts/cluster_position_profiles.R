@@ -114,6 +114,7 @@ verbose(paste("Input directory", dir.pos), 2)
 if (!exists("prefix")) {
   prefix <- basename(file.pos)
   prefix <- sub(".tab$", "", basename(file.pos), ignore.case = TRUE, perl = TRUE)
+  prefix <- sub(".tsv$", "", basename(file.pos), ignore.case = TRUE, perl = TRUE)
 }
 verbose(paste("Prefix for output files", prefix), 2)
 
