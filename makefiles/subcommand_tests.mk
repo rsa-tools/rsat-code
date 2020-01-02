@@ -13,6 +13,7 @@ targets:
 	@echo "	compare_matrices	compare-matrices"
 	@echo "	download_peaks		download test peaks"
 	@echo "	oligos			oligo-analysis"
+	@echo "	positions		position-analysis"
 	@echo "	assembly		pattern-assembly"
 	@echo "	matrix_from_patterns	matrix-from-patterns"
 	@echo "	create_background	create-background-model"
@@ -150,6 +151,31 @@ oligos: download_peaks
 		-o ${OLIGOS}
 	@echo "	OLIGO_DIR	${OLIGO_DIR}"
 	@echo "	OLIGOS		${OLIGOS}"
+
+################################################################
+## position-analysis test
+##
+## Includes options to cluster k-mers based on their positional
+## profiles, which reveals 2 clusters:
+## 1. k-mers concentrated in the middle of the peaks
+## 2. k-mers avoided in the middle of the peaks
+##
+POSITION_DIR=${RESULT_DIR}/position-analysis_result
+POSITION_BASENAME=${POSITION_DIR}/${PEAK_BASENAME}_6nt_ci25
+POSITIONS=${POSITION_BASENAME}.tsv
+positions: download_peaks
+	@echo "Testing position-analysis"
+	@mkdir -p ${POSITION_DIR}
+	rsat position-analysis -v ${V} -i ${PURGED_PEAKS} \
+		-l 6 -2str -noov -ci 25 -lth_sig 0 -lth_occ 1 \
+		-clust_nb 2 -max_asmb_per_cluster 2 \
+		-origin center -maxpos 500 -minpos -500 \
+		-sort -return chi,sig,rank,distrib,clusters,matrices,graphs,index \
+		-o ${POSITIONS}
+	@echo "	POSITION_DIR	${POSITION_DIR}"
+	@echo "	POSITIONS	${POSITIONS}"
+	@echo "	index		${POSITION_BASENAME}_index.html"
+	@echo "	graph index	${POSITION_BASENAME}_graph_index.html"
 
 ################################################################
 ## Test pattern-assembly with oligos
