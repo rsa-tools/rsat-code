@@ -16,6 +16,7 @@ targets:
 	@echo "	positions		position-analysis"
 	@echo "	assembly		pattern-assembly"
 	@echo "	matrix_from_patterns	matrix-from-patterns"
+	@echo "	matrix_distrib		matrix-distrib"
 	@echo "	create_background	create-background-model"
 	@echo "	matrix_quality		matrix-quality"
 	@echo "	peakmo			peak-motifs"
@@ -202,6 +203,8 @@ matrix_from_patterns:
 	@echo "	PSSM (transfac format)	${OLIGO_MATRICES}_count_matrices.tf"
 	@echo "	Sites (feature format)	${OLIGO_MATRICES}_sig_sites.ft"
 
+
+
 ################################################################
 ## Test create-background-model
 BG_MKV=1
@@ -218,10 +221,55 @@ create_background: download_peaks
 	@echo "	BG_DIR	${BG_DIR}"
 	@echo "	BG_FILE	${BG_FILE}"
 
+################################################################
+## Test matrix-distrib
+MATRIX_DISTRIB_DIR=${RESULT_DIR}/matrix-distrib_result
+MATRIX_DISTRIB_PREFIX=${MATRIX_DISTRIB_DIR}/${MATRIX_BASENAME}_distrib
+MATRIX_DISTRIB=${MATRIX_DISTRIB_PREFIX}.tsv
+matrix_distrib:
+	@echo "Testing matrix-distrib"
+	@mkdir -p ${MATRIX_DISTRIB_DIR}
+	rsat matrix-distrib -v 1 \
+		-top 1 \
+		-m ${MATRICES} -matrix_format transfac \
+		-pseudo 1 -decimals 1 \
+		-bg_format ${BG_FORMAT} \
+		-bgfile ${BG_FILE} \
+		-bg_pseudo 0.01 \
+		-o ${MATRIX_DISTRIB}
+	@echo "	MATRICES		${MATRICES}"
+	@echo "	BG_FILE			${BG_FILE}"
+	@echo "	MATRIX_DISTRIB_DIR	${MATRIX_DISTRIB_DIR}"
+	@echo "	MATRIX_DISTRIB		${MATRIX_DISTRIB}"
+	rsat XYgraph -i ${MATRIX_DISTRIB} \
+		-title1 "Distribution of weights" \
+		-title2 "Score probability" \
+		-xcol 1 -ycol 2 -legend -lines -pointsize 1 \
+		-xleg1 "Weight" \
+		-yleg1 "Frequency" \
+		-format pdf -r_plot \
+		-o ${MATRIX_DISTRIB_PREFIX}_weigh-distrib.pdf
+	@echo "	Weight distrib graph	 ${MATRIX_DISTRIB_PREFIX}_weigh-distrib.pdf"
+
+	rsat XYgraph \
+		-i ${MATRIX_DISTRIB} \
+		-title1 'Distribution of weights  (log scale)' \
+		-title2 'Score probability and P-value' \
+		-xcol 1 \
+		-ycol 2,4 \
+		-legend \
+		-lines \
+		-pointsize 1 -ylog \
+		-xleg1 'weight' -yleg1 'Frequency (log scale)' \
+		-r_plot \
+		-format pdf \
+		-o ${MATRIX_DISTRIB_PREFIX}_weigh-distrib_ylog.pdf
+	@echo "	Weight distrib graph (ylog) ${MATRIX_DISTRIB_PREFIX}_weigh-distrib_ylog.pdf"
+
 
 ################################################################
 ## Test matrix-quality
-QUALITY_DIR=${RESULT_DR}/matrix-quality_test
+QUALITY_DIR=${RESULT_DR}/matrix-quality_result
 matrix_quality:
 	@echo "Testing matrix-quality"
 	rsat matrix-quality -v ${V} \
