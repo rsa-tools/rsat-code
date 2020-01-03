@@ -79,7 +79,7 @@ download_jaspar:
 RETRIEVE_MATRIX_DIR=${RESULT_DIR}/retrieve-matrix_result
 MATRIX_BASENAME=sox-oct_matrices
 MATRICES=${RETRIEVE_MATRIX_DIR}/${MATRIX_BASENAME}.tf
-retrieve_matrix: download_jaspar
+retrieve_matrix: download_jaspar create_background
 	@echo "Testing retrieve-matrix"
 	@mkdir -p ${RETRIEVE_MATRIX_DIR}
 	rsat retrieve-matrix -v ${V} -i ${JASPAR} -id POU5F1 -id SOX2 -id Pou5f1::Sox2 \
