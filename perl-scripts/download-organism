@@ -248,13 +248,15 @@ package main;
     my $orgs_for_taxa;
     if ($upload) {
       &RSAT::message::Info("Getting list of organisms from local host",$ENV{rsat_site},"to upload for taxon", $taxon);
-      $cmd = "supported-organisms -return ID -taxon ".$taxon." | grep -v '^#'";
+      $cmd = &RSAT::server::GetProgramPath("supported-organisms");
+      $cmd .= " -return ID -taxon ".$taxon." | grep -v '^#'";
     } elsif ($get_command eq "rsync") {
       &RSAT::message::Info("Getting list of organisms to download for taxon", $taxon, "by ssh connection", $ssh_login);
       $cmd = "ssh $ssh_login '".$source_bashrc_cmd."supported-organisms -return ID -taxon ".$taxon." | grep -v \"^#\"'";
     } else {
       &RSAT::message::Info("Getting list of organisms to download for taxon", $taxon, " by web services");
-      $cmd = "supported-organisms-server -url ".$RSAT_SERVER." -return ID -taxon ".$taxon." | grep -v '^#'";
+      $cmd = &RSAT::server::GetProgramPath("supported-organisms-server");
+      $cmd .= " -url ".$RSAT_SERVER." -return ID -taxon ".$taxon." | grep -v '^#'";
     }
     &RSAT::message::TimeWarn("\n; ", $cmd) if ($main::verbose >= 3);
     $orgs_for_taxa = `$cmd`;
@@ -264,6 +266,7 @@ package main;
     push @organisms, @orgs_for_taxa;
   }
 
+  ################################################################
   ## Read list of organisms from a file
   if ($main::orglist_file) {
       &RSAT::message::Info ("Reading list of organisms form file", $main::orglist_file ) if ($main::verbose >= 1);
@@ -310,11 +313,13 @@ package main;
   my @all_organisms;
   if ($upload) {
     ## For upload, the update date and data sources are read locally
-    $cmd = "supported-organisms -v 0 -return ID,last_update,source | grep -v '^#'";
+      $cmd = &RSAT::server::GetProgramPAth("supported-organisms");
+      $cmd .= " -v 0 -return ID,last_update,source | grep -v '^#'";
   } elsif ($ssh_login) {
     $cmd = "ssh $ssh_login '".$source_bashrc_cmd."supported-organisms -v 0 -return ID,last_update,source | grep -v \"^#\"'";
   } else {
-    $cmd = "supported-organisms-server -url ".$RSAT_SERVER." -v 0 -return ID,last_update,source | grep -v '^#'";
+      $cmd = &RSAT::server::GetProgramPath("supported-organisms-server");
+      $cmd .= " -url ".$RSAT_SERVER." -v 0 -return ID,last_update,source | grep -v '^#'";
   }
   &RSAT::message::TimeWarn("Getting list of supported organisms from remote server\n; ", $cmd) if ($main::verbose >= 2);
   @all_organisms = `$cmd`;
@@ -412,7 +417,8 @@ package main;
       my $source = $source{$org} || '<NA>';
       my $date = $last_update{$org} || '<NA>';
       &RSAT::message::TimeWarn("Updating organism",$org) if ($main::verbose >= 2);
-      $cmd = "install-organism -v 1 -task config,phylogeny -org ".$org;
+      $cmd = &RSAT::server::GetProgramPath("install-organism");
+      $cmd .= " -v 1 -task config,phylogeny -org ".$org;
       $cmd .= " -date \"".$date."\"";
       $cmd .= " -source \"".$source."\"";
 #    $cmd .= " >>& install-organisms_log.txt";
