@@ -20,6 +20,7 @@ targets:
 	@echo "	matrix_distrib		matrix-distrib"
 	@echo "	matrix_quality		matrix-quality"
 	@echo "	peakmo			peak-motifs"
+	@echo "	download_organism	download-organism"
 
 ################################################################
 ## List global parameters
@@ -307,3 +308,10 @@ peakmo: download_jaspar download_peaks
 	@echo "	Result page	${PEAKMO_DIR}/peak-motifs_synthesis.html"
 
 
+################################################################
+## Download an organism from an RSAT server
+ORGANISM=Saccharomyces_cerevisiae
+download_organism:
+	@echo "Testing download-organism"
+	@echo "	ORGANISM	${ORGANISM}"
+	rsat download-organism -v ${V} -org ${ORGANISM}
