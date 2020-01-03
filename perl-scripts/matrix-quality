@@ -367,7 +367,7 @@ package main;
     if ($quick_scan_cmd) {
       $quick = 1;
     } else {
-      &RSAT::message::Warning("Cannot find the command matrix-scan-quick");
+      &RSAT::message::Warning("Cannot find the command matrix-scan-quick, using matrix-scan instead.");
     }
 
     ################################################################
@@ -696,9 +696,9 @@ package main;
 
       #    $outfile{matrix_rc} = $matrix_prefix{$matrix_name}."_matrix_rc"; push @files_to_index, "matrix_rc";
       #$outfile{matrix_logo}= $matrix_prefix{$matrix_name}."_".$matrix_name."_logo" ;
-      $outfile{matrix_logo}= $matrix_prefix{$matrix_name}."_logo" ;
-      $matrix_info_general_index{$matrix_name}{logo}=$outfile{matrix_logo};
-      $matrix_info_general_index{$matrix_name}{synthesis}=$outfile{matrix_synthesis};
+      $outfile{matrix_logo} = $matrix_prefix{$matrix_name}."_logo" ;
+      $matrix_info_general_index{$matrix_name}{logo} = $outfile{matrix_logo};
+      $matrix_info_general_index{$matrix_name}{synthesis} = $outfile{matrix_synthesis};
 
       #    $outfile{matrix_logo_rc}=$matrix_prefix{$matrix_name}."_".$matrix_name."_logo_rc";
       foreach my $logo_format (@logo_formats) {
@@ -1065,7 +1065,7 @@ package main;
 	      $matrix_quality_heatmap_cmd .= "; print.heatmap = '1'";
 	      $matrix_quality_heatmap_cmd .= " \"";
 	      
-	      &RSAT::message::Info("R-command for generate NWD tables: ", $matrix_quality_heatmap_cmd) if ($main::verbose >= 0);
+	      &RSAT::message::Info("R command to generate NWD tables: ", $matrix_quality_heatmap_cmd) if ($main::verbose >= 2);
       
 	      print ("Full cmd: ".$matrix_quality_heatmap_cmd."\n");
 	      
@@ -1361,7 +1361,7 @@ are sampled in a random way.
 	    if ($main::kfold == 1);
 	  if ($main::kfold == 0) {
 	    &RSAT::message::Warning("0-fold cross-validation will be replaced by Leave-One-Out test.") 
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 2);
 	  }
 
 	    ## Skip the matrix permutation step
@@ -1985,7 +1985,8 @@ sub CrossValidation {
       }
     }
     if (scalar(@sites) > scalar(@cleaned_sites)) {
-      &RSAT::message::Info("Discarding twin sites", scalar(@sites) - scalar(@cleaned_sites), "among", scalar(@sites)) if ($main::verbose >= 2);
+	&RSAT::message::Info("Discarding twin sites", scalar(@sites) - scalar(@cleaned_sites), "among", scalar(@sites))
+	    if ($main::verbose >= 2);
       print $main::out "; Matrix sites before twin removal: ", scalar(@sites), "/n";
       print $main::out "; Matrix sites after twin removal: ", scalar(@cleaned_sites), "/n";
       @sites = @cleaned_sites;
@@ -2084,7 +2085,8 @@ sub CrossValidation {
     print $test_sites_handle $test_sites_fasta;
     close $test_sites_handle;
 
-    &RSAT::message::TimeWarn("Test sites file", $group."/".$k, "sites:".$min_i."..".$max_i."/".$n, $test_sites_file, $test_sites_fasta) if ($main::verbose >= 4);
+    &RSAT::message::TimeWarn("Test sites file", $group."/".$k, "sites:".$min_i."..".$max_i."/".$n, $test_sites_file, $test_sites_fasta)
+	if ($main::verbose >= 4);
 
     ## Save the partial matrix in a file
     my $partial_matrix_file = $matrix_prefix{$matrix_name}."_partial_matrix_".$group.".tab";
@@ -2174,7 +2176,9 @@ sub CrossValidation {
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
   my $classfreq_cmd = "grep -v '^;' ".$main::outfile{matrix_sites_cv}." | grep -v '^#'";
   $classfreq_cmd .= " | cut -f 8";
-  $classfreq_cmd .= " | $SCRIPTS/classfreq -v 1 -ci ".$class_interval;
+  $classfreq_cmd .= " | ";
+  $classfreq_cmd .= &RSAT::server::GetProgramPath("classfreq");
+  $classfreq_cmd .= " -v 1 -ci ".$class_interval;
   $classfreq_cmd .= " -min ".$classfreq_min;
   $classfreq_cmd .= " | cut -f 1,4,5,6,9"; ## This ensures compatibility with the columns of matrix-scan-quick -distrib
   $classfreq_cmd .= " > ".$outfile{matrix_sites_cv_distrib};
@@ -2207,7 +2211,9 @@ sub AddSequenceDistribOptions_classfreq {
       $matrix_scan_cmd .= " | grep -v '^;' | grep -v '^#'";
     }
     $matrix_scan_cmd .= " | cut -f 8 ";
-    $matrix_scan_cmd .= " | $SCRIPTS/classfreq -v 1 -ci ".$class_interval;
+    $matrix_scan_cmd .= " | ";
+    $matrix_scan_cmd .= &RSAT::server::GetProgramPath("classfreq");
+    $matrix_scan_cmd .= " -v 1 -ci ".$class_interval;
     $matrix_scan_cmd .= " -min ".$classfreq_min;
     $matrix_scan_cmd .= " | cut -f 1,4,5,6,9 ";	## This ensures compatibility with the columns of matrix-scan-quick -distrib
 }
@@ -2702,7 +2708,7 @@ sub PostVerbose {
 ## Summarize results in a HTML report
 sub GenerateHTMLReport {
     local ($synthesis_per_matrix_file) = @_;
-    &RSAT::message::Debug("Generating report per matrix", $synthesis_per_matrix_file) if ($main::verbose >=1);
+    &RSAT::message::Debug("Generating report per matrix", $synthesis_per_matrix_file) if ($main::verbose >= 2);
 
   ################################################################
   ## Open HTML outstream
@@ -2728,23 +2734,23 @@ sub GenerateHTMLReport {
   ## Display the distributions
   print $synthesis_per_matrix "\n<h3>Figures</h3>\n";
   print $synthesis_per_matrix "\n<h4>Matrix logo</h4>\n";
-  &index_one_image($synthesis_per_matrix,$outfile{matrix_logo_png}, 'height=120');
-  &index_one_image($synthesis_per_matrix,$outfile{matrix_logo_rc_png}, 'height=120');
+  &index_one_image($synthesis_per_matrix, $outfile{matrix_logo_png}, 'height=120');
+  &index_one_image($synthesis_per_matrix, $outfile{matrix_logo_rc_png}, 'height=120');
   print $synthesis_per_matrix "\n<h4>Decreasing cumulative distributions (dCDF)</h4>\n";
-  &index_one_image($synthesis_per_matrix,$outfile{distrib_compa}.".png");
+  &index_one_image($synthesis_per_matrix, $outfile{distrib_compa}.".png");
   print $synthesis_per_matrix "\n<h4>Decreasing cumulative distributions (dCDF), logarithmic Y axis</h4>\n";
-  &index_one_image($synthesis_per_matrix,$outfile{distrib_compa}."_logy".".png");
+  &index_one_image($synthesis_per_matrix, $outfile{distrib_compa}."_logy".".png");
   print $synthesis_per_matrix "\n<h4>ROC curve (logarithmic X axis)</h4>\n";
-  &index_one_image($synthesis_per_matrix,$outfile{distrib_compa}."_roc_xlog".".png");
+  &index_one_image($synthesis_per_matrix, $outfile{distrib_compa}."_roc_xlog".".png");
 
   ## NWD curves and table
     
     if ($task{plot}) {
-	if ($main::plot_types{nwd}){
+	if ($main::plot_types{nwd}) {
 	    print $synthesis_per_matrix "\n<h3>NWD curve</h3>\n";
 	    &index_one_image($synthesis_per_matrix,$outfile{matrix_nwd_plots}."png", 'height=120'); 
 	}
-	if ($main::plot_types{occ_proba}){
+	if ($main::plot_types{occ_proba}) {
 	    print $synthesis_per_matrix "\n<h3>OCC curve</h3>\n";
 	    &index_one_image($synthesis_per_matrix,$outfile{matrix_occ_proba_plots}."png", 'height=120'); 
 	}
@@ -2882,7 +2888,7 @@ sub CloseGeneralHTMLReport{
     ## Draw NWD curve for al matrices for each required set of sequences
 
     if ($task{plot} && $task{synthesis}) {
-	if ($main::plot_types{nwd}){
+	if ($main::plot_types{nwd}) {
 	    print $synthesis_general "\n<h3>NWD curves </h3>\n";
 	    print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
 	    print  $synthesis_general "<tr>";
@@ -2902,7 +2908,7 @@ sub CloseGeneralHTMLReport{
 	    print  $synthesis_general   "</table>";
 	    
 	    #print join("+++",$main::plot_types{nwd}, $main::num_mtx ,$main::nwd_seqs ."BOOM\n");
-	    if  ( ($main::plot_types{nwd}) && ($main::num_mtx>=2) && ($main::nwd_seqs>=2) ){
+	    if  ( ($main::plot_types{nwd}) && ($main::num_mtx>=2) && ($main::nwd_seqs>=2) ) {
 		#die "BOOM";
 		print $synthesis_general "\n<h3>NWD comparison heatmaps </h3>\n";
 		print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
@@ -2954,7 +2960,7 @@ sub CloseGeneralHTMLReport{
 		print  $synthesis_general   "</table>";
 	    }
 	}
-	if ($main::plot_types{occ_proba}){
+	if ($main::plot_types{occ_proba}) {
 	    print $synthesis_general "\n<h3>OCC curves </h3>\n";
 	    print  $synthesis_general "<table bgcolor='#DDDDFF' cellpadding=4 cellspacing=3 border=1>";
 	    print  $synthesis_general "<tr>";
@@ -2986,8 +2992,8 @@ sub Add_info_to_GeneralHTML_Report{
     print $synthesis_general "<td>".$matrix_name."</td>" ;
 
     ################
-    #index logo
-    if (-e $outfile{matrix_logo_png}){
+    ## Index logos
+    if (-e $outfile{matrix_logo_png}) {
 	my ($link, $shared_path) = &RSAT::util::RelativePath($outfile{synthesis}, $outfile{matrix_logo_png});
 	print $synthesis_general  "<td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n"."</td>";
 	&RSAT::message::Debug("Indexing one file to general report",$matrix_name,"Logo",   $outfile{matrix_logo_png}, $link, $shared_path) if ($main::verbose >= 5);
@@ -2997,7 +3003,7 @@ sub Add_info_to_GeneralHTML_Report{
 
     ################
     #index report html link
-    if (-e $outfile{matrix_synthesis}){
+    if (-e $outfile{matrix_synthesis}) {
 	my ($link, $shared_path) = &RSAT::util::RelativePath($outfile{synthesis}, $outfile{matrix_synthesis});
 	print $synthesis_general  "<td><a href='",$link,"'>", "report","</a></td>\n";
 	&RSAT::message::Debug("Indexing one file to general report",$matrix_name,"report",  $outfile{matrix_synthesis}, $link, $shared_path) if ($main::verbose >= 5);
