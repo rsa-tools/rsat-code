@@ -1,4 +1,4 @@
-usage:
+sage:
   "rsat -- Regulatory Sequence Analysis Tools
 
 \nUsage: rsat <subcommand> [options]\n
@@ -22,14 +22,6 @@ commands:
     desc: "Get the list of organisms supported on a remote RSAT server"
     group: "Genomes and genes"
 
-  - command: "perl-scripts/download-organism"
-    desc: "Download organism(s) from an RSAT server to this RSAT instance"
-    group: "Genomes and genes"
-
-  - command: "perl-scripts/install-organism"
-    desc: "Install one or several organisms on the local RSAT instance"
-    group: "Genomes and genes"
-
   - command: "perl-scripts/gene-info"
     desc: "Get information for one or more genes specified by identifiers, names or descriptions."
     group: "Genomes and genes"
@@ -47,6 +39,28 @@ commands:
     group: "Genomes and genes"
 
 
+  ################################################################
+  ## Genome management (requires write access on the RSAT data folder)
+  - command: "perl-scripts/download-organism"
+    desc: "Download organism(s) from an RSAT server to this RSAT instance"
+    group: "Genome management"
+
+  - command: "perl-scripts/install-organism"
+    desc: "Install one or several organisms on the local RSAT instance"
+    group: "Genome management"
+
+  - command: "perl-scripts/install-ensembl-genome"
+    desc: "Install genomes from ensembl to the local RSAT instance"
+    group: "Genome management"
+
+  - command: "perl-scripts/calc-taxfreq"
+    desc: "Calculate the oligo and dyads frequencies for each taxon by averaging frequencies over included genomes"
+    group: "Genome management"
+
+  - command: "perl-scripts/genome-blast"
+    desc: "Use BLAST to detect homologs between all the protein of query and reference organisms"
+    group: "Genome management"
+    
   ################################################################
   ## Sequence tools
 
@@ -106,6 +120,10 @@ commands:
 
   - command: "perl-scripts/matrix-quality"
     desc: "Evaluate the quality of a PSSM by comparing the empirical score distributions obtained in various sequence sets"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/compare-qualities"
+    desc: "Compare the empirical distributioins of weight score obtained with different matrices in a given sequence set"
     group: "Matrix tools"
 
   ################################################################
@@ -170,23 +188,31 @@ commands:
     group: "Motif discovery"
 
   ################################################################
-  ## Motif search (pattern matching)
+  ## Pattern matching
   - command: "perl-scripts/matrix-scan"
     desc: "Scan DNA sequences with position-specific scoring matrices (PSSM) - full option"
-    group: "Motif search"
+    group: "Pattern matching"
 
   - command: "../../bin/matrix-scan-quick"
     desc: "Scan DNA sequences with position-specific scoring matrices (PSSM) - fast version"
-    group: "Motif search"
+    group: "Pattern matching"
 
   - command: "python-scripts/crer-scan"
     desc: "Predict cis-regulatory motifs (CRMs) by detecting cis-regulatory enriched regions (CRERs)"
-    group: "Motif search"
+    group: "Pattern matching"
 
   - command: "perl-scripts/dna-pattern"
     desc: "Search string-based patterns (IUPAC, regexp) in DNA sequences"
-    group: "Motif search"
+    group: "Pattern matching"
 
+  - command: "perl-scripts/compare-patterns"
+    desc: "Count matching residues between patterns (regexp, IUPAC) and assess the statistical significance of the matches"
+    group: "Pattern matching"
+
+  - command: "perl-scripts/IUPAC-to-regular"
+    desc: "Convert a pattern described with the IUPAC code for ambiguous nucleotides into an equivalent regular expression"
+    group: "Pattern matching"
+      
   ################################################################
   ## Comparative genomics
   - command: "perl-scripts/get-orthologs"
@@ -285,3 +311,14 @@ commands:
     group: "Visualisation"
 
   
+  ################################################################
+  ## Statistics
+  - command: "perl-scripts/compare-classes"
+    desc: "Compute comparison statistics between two class/cluster files (intersection, union, p-value, ...)"
+    group: "Stat utilities"
+
+  - command: "perl-scripts/compare-scores"
+    desc: "Compare the score associated to common keys in different tab-separated value files"
+    group: "Stat utilities"
+
+    
