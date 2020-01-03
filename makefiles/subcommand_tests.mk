@@ -16,8 +16,8 @@ targets:
 	@echo "	positions		position-analysis"
 	@echo "	assembly		pattern-assembly"
 	@echo "	matrix_from_patterns	matrix-from-patterns"
-	@echo "	matrix_distrib		matrix-distrib"
 	@echo "	create_background	create-background-model"
+	@echo "	matrix_distrib		matrix-distrib"
 	@echo "	matrix_quality		matrix-quality"
 	@echo "	peakmo			peak-motifs"
 
@@ -140,8 +140,9 @@ purgeseq: download_peaks
 ################################################################
 ## oligo-analysis test
 OLIGO_DIR=${RESULT_DIR}/oligo-analysis_result
-OLIGO_BASENAME=${OLIGO_DIR}/${PEAK_BASENAME}_6nt_2str_noov_sig0
-OLIGOS=${OLIGO_BASENAME}.tsv
+OLIGO_BASENAME=${PEAK_BASENAME}_6nt_2str_noov_sig0
+OLIGO_PREFIX=${OLIGO_DIR}/${OLIGO_BASENAME}
+OLIGOS=${OLIGO_PREFIX}.tsv
 oligos: download_peaks
 	@echo "Testing oligo-analysis"
 	@mkdir -p ${OLIGO_DIR}
@@ -180,7 +181,7 @@ positions: download_peaks
 
 ################################################################
 ## Test pattern-assembly with oligos
-ASSEMBLY=${OLIGO_BASENAME}_assembly.txt
+ASSEMBLY=${OLIGO_PREFIX}_assembly.txt
 assembly:
 	@echo "Testing pattern-assembly"
 	rsat pattern-assembly -v ${V} \
@@ -191,7 +192,7 @@ assembly:
 
 ################################################################
 ## Test matrix-from-patterns
-OLIGO_MATRICES=${OLIGO_BASENAME}_pssm
+OLIGO_MATRICES=${OLIGO_PREFIX}_pssm
 matrix_from_patterns:
 	@echo "Testing matrix-from-patterns"
 	rsat matrix-from-patterns -seq ${PEAKS} \
@@ -250,7 +251,6 @@ matrix_distrib:
 		-format pdf -r_plot \
 		-o ${MATRIX_DISTRIB_PREFIX}_weigh-distrib.pdf
 	@echo "	Weight distrib graph	 ${MATRIX_DISTRIB_PREFIX}_weigh-distrib.pdf"
-
 	rsat XYgraph \
 		-i ${MATRIX_DISTRIB} \
 		-title1 'Distribution of weights  (log scale)' \
@@ -269,16 +269,20 @@ matrix_distrib:
 
 ################################################################
 ## Test matrix-quality
-QUALITY_DIR=${RESULT_DR}/matrix-quality_result
+QUALITY_DIR=${RESULT_DIR}/matrix-quality_result
+QUALITY_PREFIX=${QUALITY_DIR}/${OLIGO_BASENAME}_quality
 matrix_quality:
 	@echo "Testing matrix-quality"
+	@mkdir -p ${QUALITY_DIR}
 	rsat matrix-quality -v ${V} \
 		-ms ${OLIGO_MATRICES}_count_matrices.tf \
 		-matrix_format transfac \
 		-seq peaks ${PEAKS} -seq_format fasta \
+		-bgfile ${BG_FILE} -bg_format ${BG_FORMAT} \
 		-kfold 10 -perm peaks 1 \
 		-o ${QUALITY_PREFIX}
 	@echo "	QUALITY_DIR	${QUALITY_DIR}"
+	@echo "	index file	${QUALITY_PREFIX}_synthesis.html"
 
 ################################################################
 ## peak-motifs test
