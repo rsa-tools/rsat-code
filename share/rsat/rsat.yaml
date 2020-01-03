@@ -34,6 +34,10 @@ commands:
     desc: "Get information for one or more genes specified by identifiers, names or descriptions."
     group: "Genomes and genes"
 
+  - command: "perl-scripts/add-gene-info"
+    desc: "Add information about genes identified in user-specified columns of a TSV file"
+    group: "Genomes and genes"
+
   - command: "perl-scripts/infer-operons"
     desc: "Infer bacterial operons based on intergenic distances"
     group: "Genomes and genes"
