@@ -4,6 +4,7 @@
 targets:
 	@echo "Targets"
 	@echo "	targets			list targets of this makefile"
+	@echo "	all			run all the targets (may take some time)"
 	@echo "	list_param		list parameters"
 	@echo "	randseq			random-seq"
 	@echo "	purgeseq		purge-sequence"
@@ -35,6 +36,11 @@ RESULT_DIR=rsat_subcommand_results
 list_param:
 	@echo "rsat path	`which rsat`"
 	@echo "	RESULT_DIR	${RESULT_DIR}"
+
+################################################################
+## Run all targets
+all: list_param randseq purgeseq download_jaspar sequence_lengths classfreq xygraph retrieve_matrix convert_matrix compare_matrices download_peaks oligos positions assembly matrix_from_patterns create_background matrix_distrib matrix_quality peakmo download_organism gene_info retrieve_seq fetch_sequences
+
 
 ################################################################
 ## Generate random sequences
