@@ -26,6 +26,7 @@ targets:
 	@echo "	peakmo			peak-motifs"
 	@echo "	download_organism	download-organism"
 	@echo "	gene_info		gene-info"
+	@echo "	add_gene_info		add-gene-info"
 	@echo "	retrieve_seq		retrieve-seq"
 	@echo "	fetch_sequences		fetch-sequences"
 
@@ -370,6 +371,18 @@ gene_info:
 	@echo "	GENE_INFO_DIR	${GENE_INFO_DIR}"
 	rsat gene-info -org ${ORGANISM} -q 'MET\d+' -feattype ${FEATTYPE} -o ${GENE_INFO}
 	@echo "	GENE_INFO	${GENE_INFO}"
+
+################################################################
+## Add user-specified information to a gene table
+GENE_INFO_ADDED=${GENE_INFO_DIR}/${ORGANISM}_MET_${FEATTYPE}_info-added.tsv
+add_gene_info: gene_info
+	@echo "Testing add-gene-info"
+	rsat add-gene-info -i ${GENE_INFO} \
+		-org ${ORGANISM} \
+		-info upstr_size,downstr_size,names \
+		-col 1 -feattype ${FEATTYPE} \
+		-o ${GENE_INFO_ADDED}
+	@echo "	GENE_INFO_ADDED	${GENE_INFO_ADDED}"
 
 ################################################################
 ## Retrieve sequences from a locally installed organism
