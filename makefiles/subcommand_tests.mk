@@ -8,6 +8,9 @@ targets:
 	@echo "	randseq			random-seq"
 	@echo "	purgeseq		purge-sequence"
 	@echo "	download_jaspar		download jaspar PSSM collection"
+	@echo "	sequence_lengths	sequence-lengths"
+	@echo "	classfreq		classfreq"
+	@echo "	xygraph			XYgraph"
 	@echo "	retrieve_matrix		retrieve-matrix"
 	@echo "	convert_matrix		convert-matrix"
 	@echo "	compare_matrices	compare-matrices"
@@ -23,6 +26,7 @@ targets:
 	@echo "	download_organism	download-organism"
 	@echo "	gene_info		gene-info"
 	@echo "	retrieve_seq		retrieve-seq"
+	@echo "	fetch_sequences		fetch-sequences"
 
 ################################################################
 ## List global parameters
@@ -127,6 +131,37 @@ download_peaks:
 	else wget --no-clobber ${PEAK_URL} -O ${PEAKS}; \
 	fi
 	@echo "	PEAKS	${PEAKS}"
+
+################################################################
+## Check the lengths of the downloaded peaks
+PEAK_LENGTHS=${PEAKS}_lengths.tsv
+sequence_lengths: download_peaks
+	@echo "Testing sequence-lengths"
+	rsat sequence-lengths -i ${PEAKS} -o ${PEAK_LENGTHS}
+	@echo "	PEAK_LENGTHS	${PEAK_LENGTHS}"
+
+################################################################
+## Compute the distribution of peak sequence lengths with classfreq
+PEAK_LEN_DISTRIB=${PEAKS}_length_distrib.tsv
+classfreq: sequence_lengths
+	@echo "Testing classfreq"
+	rsat classfreq -i ${PEAK_LENGTHS} -v 1 -ci 10 -o ${PEAK_LEN_DISTRIB}
+	@echo "	PEAK_LEN_DISTRIB	${PEAK_LEN_DISTRIB}"
+
+################################################################
+## XYgraph: plot the distribution of peak sequence lengths
+PEAK_LEN_DISTRIB_GRAPH=${PEAKS}_length_distrib.png
+xygraph: classfreq
+	@echo "Testing XYgraph"
+	rsat XYgraph -i ${PEAK_LEN_DISTRIB} \
+		-title 'Peak length distribution' \
+		-xsize 800 -ysize 400 -lines \
+		-xcol 3 -ycol 4,5,6 -format png \
+		-xleg1 "Peak length" -yleg1 "Frequencies" -legend -ymin 0 \
+		-xgstep1 50 -xgstep2 10 \
+		-ygstep1 200 -ygstep2 50 \
+		-o ${PEAK_LEN_DISTRIB_GRAPH}
+	@echo "	PEAK_LEN_DISTRIB_GRAPH	${PEAK_LEN_DISTRIB_GRAPH}"
 
 ################################################################
 ## Purge sequences to mask repeats
@@ -343,3 +378,21 @@ retrieve_seq: gene_info
 		-type upstream -noorf -feattype ${FEATTYPE} -label id,name \
 		-o ${RETRIEVED_SEQ}
 	@echo "	RETRIEVED_SEQ		${RETRIEVED_SEQ}"
+
+################################################################
+## Fetch sequences from UCSC genome browser
+FETCHED_SEQ_DIR=${RESULT_DIR}/fetch-sequences_result
+CEBPA_PEAKS_BASENAME=fetch-sequences_Schmidt_2011_mm9_CEBPA_SWEMBL_R0.12_702peaks
+CEBPA_PEAKS_COORD_URL=http://metazoa.rsat.eu/demo_files/${CEBPA_PEAKS_BASENAME}.bed
+CEBPA_PEAKS_BED=${FETCHED_SEQ_DIR}/${CEBPA_PEAKS_BASENAME}.bed
+CEBPA_PEAKS_SEQ=${FETCHED_SEQ_DIR}/${CEBPA_PEAKS_BASENAME}.fasta
+fetch_sequences:
+	@echo "Testing fetch-sequences"
+	@mkdir -p ${FETCHED_SEQ_DIR}
+	@echo "	FETCHED_SEQ_DIR	${FETCHED_SEQ_DIR}"
+	@echo "	CEBPA_PEAKS_COORD_URL	${CEBPA_PEAKS_COORD_URL}"
+	wget --no-clobber ${CEBPA_PEAKS_COORD_URL} -O ${CEBPA_PEAKS_BED}
+	@echo "	CEBPA_PEAKS_BED	${CEBPA_PEAKS_BED}"
+	rsat fetch-sequences -i ${CEBPA_PEAKS_BED} -genome mm9 -o ${CEBPA_PEAKS_SEQ}
+	@echo "	CEBPA_PEAKS_SEQ	${CEBPA_PEAKS_SEQ}"
+
