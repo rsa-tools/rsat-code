@@ -21,6 +21,8 @@ targets:
 	@echo "	matrix_quality		matrix-quality"
 	@echo "	peakmo			peak-motifs"
 	@echo "	download_organism	download-organism"
+	@echo "	gene_info		gene-info"
+	@echo "	retrieve_seq		retrieve-seq"
 
 ################################################################
 ## List global parameters
@@ -315,3 +317,29 @@ download_organism:
 	@echo "Testing download-organism"
 	@echo "	ORGANISM	${ORGANISM}"
 	rsat download-organism -v ${V} -org ${ORGANISM}
+
+################################################################
+## Get inforamtion about genes for an organism installed locally
+GENE_INFO_DIR=${RESULT_DIR}/gene-info_result
+FEATTYPE=gene
+GENE_INFO=${GENE_INFO_DIR}/${ORGANISM}_MET_${FEATTYPE}_info.tsv
+gene_info:
+	@echo "Testing gene-info"
+	@mkdir -p ${GENE_INFO_DIR}
+	@echo "	GENE_INFO_DIR	${GENE_INFO_DIR}"
+	rsat gene-info -org ${ORGANISM} -q 'MET\d+' -feattype ${FEATTYPE} -o ${GENE_INFO}
+	@echo "	GENE_INFO	${GENE_INFO}"
+
+################################################################
+## Retrieve sequences from a locally installed organism
+RETRIEVE_SEQ_DIR=${RESULT_DIR}/retrieve-seq_result
+RETRIEVED_SEQ=${RETRIEVE_SEQ_DIR}/${ORGANISM}_MET_${FEATTYPE}_upstream-noorf.fasta
+retrieve_seq: gene_info
+	@echo "Testing retrieve-seq"
+	@mkdir -p ${RETRIEVE_SEQ_DIR}
+	@echo "	RETRIEVE_SEQ_DIR	RETRIEVE_${SEQ_DIR}"
+	rsat retrieve-seq -org ${ORGANISM} \
+		-i ${GENE_INFO} \
+		-type upstream -noorf -feattype ${FEATTYPE} -label id,name \
+		-o ${RETRIEVED_SEQ}
+	@echo "	RETRIEVED_SEQ		${RETRIEVED_SEQ}"
