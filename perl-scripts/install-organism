@@ -1657,7 +1657,7 @@ USAGE
         install-organism -org organism_name
 
 DESCRIPTION
-	Install an organisms on the local RSAT instance.
+	Install one or several organisms on the local RSAT instance.
 
 	This script is a task manager, which (depending on the
 	selected tasks) manages different steps necessary for the
