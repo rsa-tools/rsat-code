@@ -18,6 +18,18 @@ commands:
     desc: "Get the list of organisms supported on this RSAT server"
     group: "Genomes and genes"
 
+  - command: "perl-scripts/supported-organisms-server"
+    desc: "Get the list of organisms supported on a remote RSAT server"
+    group: "Genomes and genes"
+
+  - command: "perl-scripts/download-organism"
+    desc: "Download organism(s) from an RSAT server to this RSAT instance"
+    group: "Genomes and genes"
+
+  - command: "perl-scripts/install-organism"
+    desc: "Install one or several organisms on the local RSAT instance"
+    group: "Genomes and genes"
+
   - command: "perl-scripts/gene-info"
     desc: "Get information for one or more genes specified by identifiers, names or descriptions."
     group: "Genomes and genes"
