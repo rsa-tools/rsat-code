@@ -42,10 +42,6 @@ commands:
     desc: "Get homologs (orthologs or others) in given taxon for a list of query genes"
     group: "Genomes and genes"
 
-  - command: "perl-scripts/get-orthologs"
-    desc: "Get homologs (orthologs or others) in given taxon for a list of query genes"
-    group: "Genomes and genes"
-
 
   ################################################################
   ## Sequence tools
