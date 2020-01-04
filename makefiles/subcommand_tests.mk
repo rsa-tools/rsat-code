@@ -377,14 +377,53 @@ supported_local:
 
 ################################################################
 ## List the organisms supported at ensembl (http://ensembl.org)
-SUPPORTED_ENSEMBL=${SUPPORTED_DIR}/supported-organisms-ensembl.tsv
+ENSEMBL_DB=ensembl
+SUPPORTED_ENSEMBL=${SUPPORTED_DIR}/supported-organisms-ensembl_db-${ENSEMBL_DB}.tsv
 supported_ensembl:
 	@echo "Testing supported-organisms-ensembl"
 	@mkdir -p ${SUPPORTED_DIR}
 	@echo "	SUPPORTED_DIR	${SUPPORTED_DIR}"
-	rsat supported-organisms-ensembl -v ${V} -o ${SUPPORTED_ENSEMBL}
+	rsat supported-organisms-ensembl -v ${V} -db ensembl -o ${SUPPORTED_ENSEMBL}
+	@echo "	ENSEMBL_DB		${ENSEMBL_DB}"
 	@echo "	SUPPORTED_ENSEMBL	${SUPPORTED_ENSEMBL}"
+	@echo "	Number of organisms	`grep -v ';' ${SUPPORTED_ENSEMBL} | wc -l`"
 
+################################################################
+## List the organisms supported at ensembl (http://ensembl.org)
+SUPPORTED_ENSEMBLGENOMES=${SUPPORTED_DIR}/supported-organisms-ensembl_db-${ENSEMBL_DB}.tsv
+supported_ensemblg:
+	@echo "Testing supported-organisms-ensembl with ensemblgenomes"
+	@mkdir -p ${SUPPORTED_DIR}
+	@echo "	SUPPORTED_DIR	${SUPPORTED_DIR}"
+	rsat supported-organisms-ensembl -v ${V} -db ensemblgenomes -o ${SUPPORTED_ENSEMBLGENOMES}
+	@echo "	SUPPORTED_ENSEMBLGENOMES	${SUPPORTED_ENSEMBLGENOMES}"
+	@echo "	Number of organisms	`grep -v ';' ${SUPPORTED_ENSEMBLGENOMES} | wc -l`"
+
+################################################################
+## List the organisms supported at ensembl (http://ensembl.org)
+## NOTE: THIS SCRIPT IS STILL NOT FINISHED (JvH, 2020-01-04)
+TAXID=4751
+SUPPORTED_ENSEMBLGENOMES_TAXID=${SUPPORTED_DIR}/supported-organisms-ensemblgenomes_branch${TAXID}.tsv
+supported_ensemblg_taxid:
+	@echo "Testing supported-organisms-ensemblgenomes"
+	@mkdir -p ${SUPPORTED_DIR}
+	@echo "	SUPPORTED_DIR	${SUPPORTED_DIR}"
+	rsat supported-organisms-ensemblgenomes -v ${V} \
+		-query_type branch -q ${TAXID} \
+		-o ${SUPPORTED_ENSEMBLGENOMES_TAXID}
+	@echo "	TAXID				${TAXID}"
+	@echo "	SUPPORTED_ENSEMBLGENOMES_TAXID	${SUPPORTED_ENSEMBLGENOMES_TAXID}"
+
+################################################################
+## List the organisms supported at UCSC genome browser (https://genome.ucsc.edu/)
+SUPPORTED_UCSC=${SUPPORTED_DIR}/supported-organisms-ucsc.tsv
+supported_ucsc:
+	@echo "Testing supported-organisms-ucsc"
+	@mkdir -p ${SUPPORTED_DIR}
+	@echo "	SUPPORTED_DIR	${SUPPORTED_DIR}"
+	rsat supported-organisms-ucsc -v ${V} -o ${SUPPORTED_UCSC}
+	@echo "	SUPPORTED_UCSC	${SUPPORTED_UCSC}"
+	@echo "	Number of organisms	`grep -v ';' ${SUPPORTED_UCSC} | wc -l`"
 
 ################################################################
 ## Get inforamtion about genes for an organism installed locally
