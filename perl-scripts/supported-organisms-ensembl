@@ -29,9 +29,20 @@ package main;
   our $db = "ensembl";
   our $org_counter = 0;
   our $branch_id;
+  our $dbversion;
 
+  our %outfile;
+  $outfile{output} = "";
+  
+  my $start_time = &RSAT::util::StartScript();
+  
   ## Read arguments
   &ReadArguments();
+
+  ################################################################
+  ## Open output stream
+  our $out = &OpenOutputFile($outfile{output});
+
 
   ## STRANGE: when I select ensemblgenomes here, I only get 284 organisms
   if ($db eq "ensemblgenomes") {
@@ -46,18 +57,16 @@ package main;
     $org_counter = scalar(@dbas);
     foreach my $dba (@dbas) {
       my $species = ucfirst($dba->species());
-      print $species, "\n";
+      print $out $species, "\n";
     }
   } else {
     
-    &RSAT::message::TimeWarn("Opening connection to DB", $host_db) if ($main::verbose >= 3);
+    &RSAT::message::TimeWarn("Opening connection to DB", $host_db) if ($main::verbose >= 2);
     our $dbh = DBI->connect("DBI:mysql:host=".$host_db.":port=".$port, "anonymous", "", {'RaiseError' => 1});
     
     our $sth = $dbh->prepare("SHOW DATABASES");
     $sth->execute();
-    our $dbversion;
     our $previous_org = "bogus";
-    
     $org_counter = 0;
     while (my $ref = $sth->fetchrow_hashref()) {
       if ($ref->{'Database'} =~ /_core_\d+/) {
@@ -67,18 +76,28 @@ package main;
 	$ref->{'Database'} =~s/_core_.+//;
 	if ($ref->{'Database'} ne $previous_org) {
 	  $org_counter++;
-	  print ucfirst($ref->{'Database'}), "\n";
+	  print $out ucfirst($ref->{'Database'}), "\n";
 	  $previous_org = $ref->{'Database'};
 	}
       }
     }
     $sth->finish();
     $dbh->disconnect();
-    print "; EnsEMBL database version : ", $dbversion, "\n";
+
   }
-  print "; Organisms: ", $org_counter, "\n";
   
-  
+  ## Summary of theresults
+  if ($main::verbose >= 1) {	
+      print $out "; EnsEMBL host database : ", $host_db, "\n";
+      print $out "; EnsEMBL database version : ", $dbversion, "\n";
+      print $out "; Organisms: ", $org_counter, "\n";
+  }
+    
+  ## Close output stream
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+  close $out if ($outfile{output});
+
   exit(0);
 }
 
@@ -122,6 +141,10 @@ OPTIONS
 		Select only species belonging to a given phylogenetic
 		branch, given its taxonomic ID.
 
+	-o file	Output file. If not specified, the result is printed on the
+	   	standard output.
+
+
 End_of_help
     close HELP;
   exit(0);
@@ -138,6 +161,7 @@ supported-organisms-ensembl options
 -help	(must be first argument) display options
 -db     ensembl | ensemblgenomes
 -branch_id   taxonomic ID of selected branch
+-o 	output file
 End_short_help
     close HELP;
     exit;
@@ -148,45 +172,23 @@ End_short_help
 #### Read arguments 
 sub ReadArguments {
   foreach my $a (0..$#ARGV) {
-    ### verbose ###
-    #    if ($ARGV[$a] eq "-v") {
-    #      if (&IsNatural($ARGV[$a+1])) {
-    #	$verbose = $ARGV[$a+1];
-    #      } else {
-    #	$verbose = 1;
-    #      }
-
-    ### detailed help
-    #    } elsif ($ARGV[$a] eq "-h") {
+    ## Verbosity
+    if ($ARGV[$a] eq "-v") {
+	if (&IsNatural($ARGV[$a+1])) {
+	    $main::verbose = $ARGV[$a+1];
+	} else {
+	    $main::verbose = 1;
+	}
+    }
+	
+    ## Detailed help
     if ($ARGV[$a] eq "-h") {
-      &PrintHelp;
+      &PrintHelp();
 
-      ### list of options
+      ## List of options
     } elsif ($ARGV[$a] eq "-help") {
       &PrintOptions();
 
-      ### output format
-      #    } elsif ($ARGV[$a] eq "-format") {
-      #      $out_format = $ARGV[$a+1];
-      #      unless ($supported_format{$out_format}) {
-      #	&RSAT::error::FatalError("Format $out_format is not supported\n");
-      #      }
-
-      #### return fields
-      #    } elsif ($ARGV[$a] eq "-return") {
-      #	chomp($ARGV[$a+1]);
-      #	my @fields_to_return = split ",", $ARGV[$a+1];
-      #	foreach $field (@fields_to_return) {
-      #	    if ($supported_return_fields{$field}) {
-      #		push @return_fields, $field;
-      #	    } else {
-      #		&RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
-      #	    }
-      #	}
-
-      ### root taxon
-      #    } elsif ($ARGV[$a] eq "-taxon") {
-      #      $root_taxon = $ARGV[$a+1];
 
       ## Host database
     } elsif ($ARGV[$a] eq "-host") {
@@ -200,9 +202,9 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-branch_id") {
       $main::branch_id = $ARGV[$a+1];
 
-      ### output file  
-      #    } elsif ($ARGV[$a] eq "-o") {
-      #      $outfile{output} = $ARGV[$a+1];
+      ## Output file  
+    } elsif ($ARGV[$a] eq "-o") {
+	$main::outfile{output} = $ARGV[$a+1];
 
     }
   }
