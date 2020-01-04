@@ -165,13 +165,14 @@ _fill_archive:
 	@echo "Archive created	${ARCHIVE}"
 
 ## Create an archive with RSAT/NeAT tools
+MD5SUM=md5sum
 tar_archive:
 	@echo
 	@echo "tar archive ${ARCHIVE_PREFIX_CORE}"
 	@${MAKE} clean_emacs_bk
 	@${MAKE} _create_tar_archive
 	@${MAKE} _fill_archive ARCHIVE_CMD='${TAR_APPEND}' POST_CMD=''
-	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar; ${SHASUM_CMD}; md5sum ${ARCHIVE}.tar.gz > ${ARCHIVE}.tar.gz.md5)
+	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar; ${SHASUM_CMD}; ${MD5SUM} ${ARCHIVE}.tar.gz > ${ARCHIVE}.tar.gz.md5)
 	@echo
 	@echo "Archive	${TAR_BASE}/${ARCHIVE}.tar.gz"
 	@echo "md5	${TAR_BASE}/${ARCHIVE}.tar.gz.md5"
