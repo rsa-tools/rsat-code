@@ -43,8 +43,6 @@ TAR_EXCLUDE=--exclude .git \
 	--exclude purgatory
 TAR_CREATE=tar ${TAR_EXCLUDE} ${TAR_OPT} -cpf ${ARCHIVE}.tar rsat/*_default.*
 TAR_APPEND=tar ${TAR_EXCLUDE} ${TAR_OPT} -rpf ${ARCHIVE}.tar 
-SHA256=${ARCHIVE}.tar.gz.sha256
-SHASUM_CMD=shasum -a 256 ${ARCHIVE}.tar.gz  > ${SHA256}
 
 ################################################################
 ## All the tasks for publishing the new version
@@ -165,17 +163,24 @@ _fill_archive:
 	@echo "Archive created	${ARCHIVE}"
 
 ## Create an archive with RSAT/NeAT tools
+MD5SUM=md5sum
+MD5_FILE=${TAR_BASE}/${ARCHIVE}.tar.gz.md5
+SHA256_FILE=${TAR_BASE}/${ARCHIVE}.tar.gz.sha256
+#SHA256_FILE=${ARCHIVE}.tar.gz.sha256
+SHASUM_CMD=shasum -a 256 ${ARCHIVE}.tar.gz  > ${SHA256_FILE}
 tar_archive:
 	@echo
 	@echo "tar archive ${ARCHIVE_PREFIX_CORE}"
 	@${MAKE} clean_emacs_bk
 	@${MAKE} _create_tar_archive
 	@${MAKE} _fill_archive ARCHIVE_CMD='${TAR_APPEND}' POST_CMD=''
-	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar; ${SHASUM_CMD}; md5sum ${ARCHIVE}.tar.gz > ${ARCHIVE}.tar.gz.md5)
+	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar; ${SHASUM_CMD}; ${MD5SUM} ${ARCHIVE}.tar.gz > ${MD5_FILE})
 	@echo
-	@echo "Archive	${TAR_BASE}/${ARCHIVE}.tar.gz"
-	@echo "md5	${TAR_BASE}/${ARCHIVE}.tar.gz.md5"
-	@echo "sha256	${SHA256}"
+	@echo "Archive		${TAR_BASE}/${ARCHIVE}.tar.gz"
+	@echo "md5 file		${MD5_FILE}"
+	@cat ${MD5_FILE}
+	@echo "sha256 file	${SHA256_FILE}"
+	@cat ${SHA256_FILE}
 
 ## Create an archive with the command-line tools only (no web site, no data)
 tar_archive_core:

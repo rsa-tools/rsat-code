@@ -25,6 +25,10 @@ targets:
 	@echo "	matrix_quality		matrix-quality"
 	@echo "	peakmo			peak-motifs"
 	@echo "	download_organism	download-organism"
+	@echo "	supported_local		supported-organisms"
+	@echo "	supported_ensembl	supported-organisms-ensembl -db ensembl"
+	@echo "	supported_ensemblg	supported-organisms-ensembl -db ensemblgenomes"
+	@echo "	supported_ucsc		supported-organisms-ucsc"
 	@echo "	gene_info		gene-info"
 	@echo "	add_gene_info		add-gene-info"
 	@echo "	retrieve_seq		retrieve-seq"
@@ -40,7 +44,7 @@ list_param:
 
 ################################################################
 ## Run all targets
-all: list_param randseq purgeseq download_jaspar sequence_lengths classfreq xygraph retrieve_matrix convert_matrix compare_matrices download_peaks oligos positions assembly matrix_from_patterns create_background matrix_distrib matrix_quality peakmo download_organism gene_info retrieve_seq fetch_sequences
+all: targets list_param randseq purgeseq download_jaspar sequence_lengths classfreq xygraph retrieve_matrix convert_matrix compare_matrices download_peaks oligos positions assembly matrix_from_patterns create_background matrix_distrib matrix_quality peakmo download_organism supported_local supported_ensembl supported_ensemblg supported_ucsc gene_info add_gene_info retrieve_seq fetch_sequences
 
 
 ################################################################
@@ -152,7 +156,7 @@ sequence_lengths: download_peaks
 PEAK_LEN_DISTRIB=${PEAKS}_length_distrib.tsv
 classfreq: sequence_lengths
 	@echo "Testing classfreq"
-	rsat classfreq -i ${PEAK_LENGTHS} -v 1 -ci 10 -o ${PEAK_LEN_DISTRIB}
+	rsat classfreq -i ${PEAK_LENGTHS} -v ${V} -ci 10 -o ${PEAK_LEN_DISTRIB}
 	@echo "	PEAK_LEN_DISTRIB	${PEAK_LEN_DISTRIB}"
 
 ################################################################
@@ -260,7 +264,7 @@ BG_FILE=${BG_DIR}/${PEAK_BASENAME}_bg-model_markov${BG_MKV}_${BG_FORMAT}.tsv
 create_background: download_peaks
 	@echo "Testing create-background-model"
 	@mkdir -p ${BG_DIR}
-	rsat create-background-model -v 1 \
+	rsat create-background-model -v ${V} \
 		-i ${PEAKS} \
 		-markov ${BG_MKV} -out_format ${BG_FORMAT} \
 		-o ${BG_FILE}
@@ -275,7 +279,7 @@ MATRIX_DISTRIB=${MATRIX_DISTRIB_PREFIX}.tsv
 matrix_distrib:
 	@echo "Testing matrix-distrib"
 	@mkdir -p ${MATRIX_DISTRIB_DIR}
-	rsat matrix-distrib -v 1 \
+	rsat matrix-distrib -v ${V} \
 		-top 1 \
 		-m ${MATRICES} -matrix_format transfac \
 		-pseudo 1 -decimals 1 \
@@ -359,6 +363,67 @@ download_organism:
 	@echo "Testing download-organism"
 	@echo "	ORGANISM	${ORGANISM}"
 	rsat download-organism -v ${V} -org ${ORGANISM}
+
+################################################################
+## List the organisms supported on the local RSAT instance
+SUPPORTED_DIR=${RESULT_DIR}/supported-organisms-x_results
+SUPPORTED_LOCAL=${SUPPORTED_DIR}/supported-organisms_local.tsv
+supported_local:
+	@echo "Testing supported-organisms"
+	@mkdir -p ${SUPPORTED_DIR}
+	@echo "	SUPPORTED_DIR	${SUPPORTED_DIR}"
+	rsat supported-organisms -v ${V} -o ${SUPPORTED_LOCAL}
+	@echo "	SUPPORTED_LOCAL	${SUPPORTED_LOCAL}"
+
+################################################################
+## List the organisms supported at ensembl (http://ensembl.org)
+ENSEMBL_DB=ensembl
+SUPPORTED_ENSEMBL=${SUPPORTED_DIR}/supported-organisms-ensembl_db-${ENSEMBL_DB}.tsv
+supported_ensembl:
+	@echo "Testing supported-organisms-ensembl"
+	@mkdir -p ${SUPPORTED_DIR}
+	@echo "	SUPPORTED_DIR	${SUPPORTED_DIR}"
+	rsat supported-organisms-ensembl -v ${V} -db ensembl -o ${SUPPORTED_ENSEMBL}
+	@echo "	ENSEMBL_DB		${ENSEMBL_DB}"
+	@echo "	SUPPORTED_ENSEMBL	${SUPPORTED_ENSEMBL}"
+	@echo "	Number of organisms	`grep -v ';' ${SUPPORTED_ENSEMBL} | wc -l`"
+
+################################################################
+## List the organisms supported at ensembl (http://ensembl.org)
+SUPPORTED_ENSEMBLGENOMES=${SUPPORTED_DIR}/supported-organisms-ensembl_db-${ENSEMBL_DB}.tsv
+supported_ensemblg:
+	@echo "Testing supported-organisms-ensembl with ensemblgenomes"
+	@mkdir -p ${SUPPORTED_DIR}
+	@echo "	SUPPORTED_DIR	${SUPPORTED_DIR}"
+	rsat supported-organisms-ensembl -v ${V} -db ensemblgenomes -o ${SUPPORTED_ENSEMBLGENOMES}
+	@echo "	SUPPORTED_ENSEMBLGENOMES	${SUPPORTED_ENSEMBLGENOMES}"
+	@echo "	Number of organisms	`grep -v ';' ${SUPPORTED_ENSEMBLGENOMES} | wc -l`"
+
+################################################################
+## List the organisms supported at ensembl (http://ensembl.org)
+## NOTE: THIS SCRIPT IS STILL NOT FINISHED (JvH, 2020-01-04)
+TAXID=4751
+SUPPORTED_ENSEMBLGENOMES_TAXID=${SUPPORTED_DIR}/supported-organisms-ensemblgenomes_branch${TAXID}.tsv
+supported_ensemblg_taxid:
+	@echo "Testing supported-organisms-ensemblgenomes"
+	@mkdir -p ${SUPPORTED_DIR}
+	@echo "	SUPPORTED_DIR	${SUPPORTED_DIR}"
+	rsat supported-organisms-ensemblgenomes -v ${V} \
+		-query_type branch -q ${TAXID} \
+		-o ${SUPPORTED_ENSEMBLGENOMES_TAXID}
+	@echo "	TAXID				${TAXID}"
+	@echo "	SUPPORTED_ENSEMBLGENOMES_TAXID	${SUPPORTED_ENSEMBLGENOMES_TAXID}"
+
+################################################################
+## List the organisms supported at UCSC genome browser (https://genome.ucsc.edu/)
+SUPPORTED_UCSC=${SUPPORTED_DIR}/supported-organisms-ucsc.tsv
+supported_ucsc:
+	@echo "Testing supported-organisms-ucsc"
+	@mkdir -p ${SUPPORTED_DIR}
+	@echo "	SUPPORTED_DIR	${SUPPORTED_DIR}"
+	rsat supported-organisms-ucsc -v ${V} -o ${SUPPORTED_UCSC}
+	@echo "	SUPPORTED_UCSC	${SUPPORTED_UCSC}"
+	@echo "	Number of organisms	`grep -v ';' ${SUPPORTED_UCSC} | wc -l`"
 
 ################################################################
 ## Get inforamtion about genes for an organism installed locally
