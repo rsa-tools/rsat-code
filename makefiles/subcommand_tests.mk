@@ -26,8 +26,8 @@ targets:
 	@echo "	peakmo			peak-motifs"
 	@echo "	download_organism	download-organism"
 	@echo "	supported_local		supported-organisms"
-	@echo "	supported_ensembl	supported-organisms-ensembl"
-	@echo "	supported_ensemblg	supported-organisms-ensemblgenomes"
+	@echo "	supported_ensembl	supported-organisms-ensembl -db ensembl"
+	@echo "	supported_ensemblg	supported-organisms-ensembl -db ensemblgenomes"
 	@echo "	supported_ucsc		supported-organisms-ucsc"
 	@echo "	gene_info		gene-info"
 	@echo "	add_gene_info		add-gene-info"
@@ -44,7 +44,7 @@ list_param:
 
 ################################################################
 ## Run all targets
-all: list_param randseq purgeseq download_jaspar sequence_lengths classfreq xygraph retrieve_matrix convert_matrix compare_matrices download_peaks oligos positions assembly matrix_from_patterns create_background matrix_distrib matrix_quality peakmo download_organism gene_info retrieve_seq fetch_sequences
+all: targets list_param randseq purgeseq download_jaspar sequence_lengths classfreq xygraph retrieve_matrix convert_matrix compare_matrices download_peaks oligos positions assembly matrix_from_patterns create_background matrix_distrib matrix_quality peakmo download_organism supported_local supported_ensembl supported_ensemblg supported_ucsc gene_info add_gene_info retrieve_seq fetch_sequences
 
 
 ################################################################
