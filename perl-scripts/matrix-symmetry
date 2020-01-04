@@ -19,8 +19,8 @@ matrix-symmetry
 
 =head1 DESCRIPTION
 
-Detect symmetry in binding motifs represented as position-speciic scoring
-matirces (PSSMs).
+Detect symmetry in binding motifs represented as position-specific scoring
+matrices (PSSMs).
 
 =head1 AUTHORS
 
