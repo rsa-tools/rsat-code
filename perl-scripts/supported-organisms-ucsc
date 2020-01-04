@@ -29,7 +29,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Retrieve organisn disponible on UCSC Genome browser
+Get the list of organisms available at the UCSC Genome browser
 (http://genome.ucsc.edu/).
 
 =head1 USAGE
