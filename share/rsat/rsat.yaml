@@ -1,4 +1,4 @@
-sage:
+usage:
   "rsat -- Regulatory Sequence Analysis Tools
 
 \nUsage: rsat <subcommand> [options]\n
@@ -53,8 +53,24 @@ commands:
     desc: "Install genomes from ensembl to the local RSAT instance"
     group: "Genome management"
 
+  - command: "perl-scripts/supported-organisms-ensembl"
+    desc: "Get the list of organisms supported at Ensmebl (http://ensembl.org)"
+    group: "Genome management"
+
+  - command: "perl-scripts/supported-organisms-ensemblgenomes"
+    desc: "Get the list of organisms supported at EnsemblGenomes (http://ensemblgenomes.org/)"
+    group: "Genome management"
+
+  - command: "perl-scripts/supported-organisms-ucsc"
+    desc: "Get the list of organisms available at the UCSC Genome browser (http://genome.ucsc.edu/)"
+    group: "Genome management"
+
+  - command: "perl-scripts/taxon-frequencies"
+    desc: "Calculate taxon-wide oligo and dyad frequencies."
+    group: "Genome management"
+
   - command: "perl-scripts/calc-taxfreq"
-    desc: "Calculate the oligo and dyads frequencies for each taxon by averaging frequencies over included genomes"
+    desc: "Calculate the oligo and dyads frequencies for a taxon by averaging frequencies over included genomes"
     group: "Genome management"
 
   - command: "perl-scripts/genome-blast"
@@ -88,6 +104,10 @@ commands:
     desc: "Inter-conversions between various sequence formats"
     group: "Sequences"
 
+  - command: "perl-scripts/sub-sequence"
+    desc: "Return a subset of input sequences, specified by a start and end positions"
+    group: "Sequences"
+
   - command: "perl-scripts/sequence-lengths"
     desc: "Return the length of each input sequence, or the sum of lengths"
     group: "Sequences"
@@ -118,6 +138,10 @@ commands:
     desc: "Compute theoretical distribution of score probabilities of a PSSM given a Markov model"
     group: "Matrix tools"
 
+  - command: "perl-scripts/matrix-symmetry"
+    desc: "Detect symmetry in binding motifs represented as position-specific scoring matrices (PSSMs)."
+    group: "Matrix tools"
+    
   - command: "perl-scripts/matrix-quality"
     desc: "Evaluate the quality of a PSSM by comparing the empirical score distributions obtained in various sequence sets"
     group: "Matrix tools"
@@ -163,6 +187,10 @@ commands:
     desc: "Detect over- or under-represented oligomers (k-mers) in sequences"
     group: "Motif discovery"
 
+  - command: "perl-scripts/oligo-diff"
+    desc: "Return oligonucleotides (k-mers) significantly enriched in a sequence file (test) compared to another one (control)"
+    group: "Motif discovery"
+
   - command: "perl-scripts/dyad-analysis"
     desc: "Detect over- or under-represented dyads (spaced pairs of k-mers) in sequences"
     group: "Motif discovery"
@@ -195,6 +223,10 @@ commands:
 
   - command: "../../bin/matrix-scan-quick"
     desc: "Scan DNA sequences with position-specific scoring matrices (PSSM) - fast version"
+    group: "Pattern matching"
+
+  - command: "perl-scripts/position-scan"
+    desc: "Compute the positional distribution of predicted binding sites for a set of PSSMs in a set of sequences of the same length"
     group: "Pattern matching"
 
   - command: "python-scripts/crer-scan"
