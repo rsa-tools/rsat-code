@@ -220,6 +220,12 @@ package main;
   ################################################################
   ## Insert here output printing
 
+  if ($main::verbose >= 1) {
+      printf $out "; %-29s\t%s\n", "Query type", $query_type;
+      printf $out "; %-29s\t%s\n", "Query", $query;
+      printf $out "; %-29s\t%d\n", "Number of organisms", scalar(@dbas);
+  }
+  
   ################################################################
   ## Report execution time and close output stream
   &close_and_quit();
