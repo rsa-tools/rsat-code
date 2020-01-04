@@ -19,7 +19,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Return the list of organisms supported at the Ensembl Genomes
+Get the list of organisms supported at the Ensembl Genomes
 database, using the Perl API. Organisms can be selected by different criteria: 
 
 =over

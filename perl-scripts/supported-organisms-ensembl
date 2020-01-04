@@ -104,8 +104,7 @@ AUTHOR
 
 DESCRIPTION
 
-	Returns the list of organisms supported on the Ensembl
-	database.
+	Get the list of organisms supported on the Ensembl database.
 
 CATEGORY
 	genomics
