@@ -151,7 +151,7 @@ foreach $key (keys %default) {
 
 ### head
 print "<center>";
-print "Scan DNA sequences with position-specific scoring matrices (PSSM)<br>\n"
+print "Scan DNA sequences with position-specific scoring matrices (PSSM)<br>\n";
 print "</p>";
 print "</CENTER>";
 print "<b>Citation</b>: <a href='https://www.linkedin.com/in/jean-valery-turatsinze-23a6aa41/'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A>, <a href='https://www.ulb.ac.be/rech/inventaire/chercheurs/4/CH10464.html'>Matthieu Defrance</a> and <A HREF='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a> (2008). Using RSAT to scan genome sequences for transcription factor binding sites and cis-regulatory modules. Nat Protoc, 3, 1578-1588. <a href='http://www.ncbi.nlm.nih.gov/pubmed/18802439'>Pubmed 18802439</a>";
