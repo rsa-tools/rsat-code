@@ -8,7 +8,7 @@ use POSIX;
 use RSAT::GenericObject;
 use RSAT::message;
 use RSAT::error;
-use RSAT::email;
+#use RSAT::email;
 @ISA = qw( RSAT::GenericObject );
 
 =pod
@@ -45,6 +45,9 @@ sub IsNatural {
 	return 0;
     }
 }
+
+
+
 
 ################################################################
 
@@ -1482,6 +1485,8 @@ sub sort_unique {
     &RSAT::message::Debug("&RSAT::util::sort_unique()", "\@sorted_list", scalar(@sorted_list)) if ($main::verbose >= 5);
     return(@sorted_list);
 }
+
+
 
 1;
 

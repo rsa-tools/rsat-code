@@ -7,6 +7,7 @@ use JSON;
 package main;
 require RSAT::OrganismManager;
 require RSAT::server;
+require RSAT::email;
 require RSAT::error;
 require RSAT::Tree;
 
@@ -270,7 +271,7 @@ sub RSA_header_bootstrap {
         -src      => 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'
     },
     { -type => 'text/javascript',
-        -src      => 'RSAT_menu.js'
+        -src      => 'lib/RSAT_menu.js'
     },
     { -type => 'text/javascript',
         -src      => 'RSAT_tabs.js'
@@ -352,7 +353,7 @@ sub RSA_header {
         -src      => 'js/jquery.js'
     },
     { -type => 'text/javascript',
-        -src      => 'RSAT_menu.js'
+        -src      => 'lib/RSAT_menu.js'
     },
     { -type => 'text/javascript',
         -src      => 'RSAT_tabs.js'
@@ -3224,7 +3225,8 @@ sub PrintHtmlResultHeader {
   ## Java scripts
   $header .=  sorttable_script();
 #  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
-  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/RSAT_menu.js");
+#  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/lib/RSAT_menu.js");
+  $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/RSAT_menu.js");
   $header .=  "</head>\n";
 
   ## Start HTML body

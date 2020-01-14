@@ -467,8 +467,8 @@ USAGE
 
 DESCRIPTION
 
-	Count matching residues between pairs of sequences/patterns
-	from two sets, and assess the statistical significance of the
+	Count matching residues between pairs of patterns from two
+	sets, and assess the statistical significance of the
 	matches. Patterns can be described using the IUPAC code for
 	ambiguous nucleotides. Spaced patterns (dyads) are also
 	supported.

@@ -12,7 +12,7 @@ if ($result) {
 }
 ?>
 <!--  	<link rel="stylesheet" type="text/css" href="tabs.css" media="screen,projection,print"/>-->	
-		<script src="RSAT_menu.js" type="text/javascript"></script>
+		<script src="lib/RSAT_menu.js" type="text/javascript"></script>
 		<script src="RSAT_tabs.js" type="text/javascript"></script>
 		<title>RSAT - <?php echo $prog_name, $res; ?></title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />

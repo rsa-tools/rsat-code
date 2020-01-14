@@ -291,8 +291,8 @@ calc-taxfreq
 
 =head1 DESCRIPTION
 
-Calculate the oligo and dyads frequencies for each taxon as the average of
-frequencies from all genomes which belong to a taxon. 
+Calculate the oligo and dyads frequencies for each taxon by averaging
+frequencies over the included genomes. 
 
 =head1 REQUIREMENTS
 

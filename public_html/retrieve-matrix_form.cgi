@@ -51,10 +51,10 @@ print "<style>
 	}
 </style>";
 
-print "<CENTER>";
-print "Retrieve the matrices with identifiers.<P>\n";
-print "</CENTER>";
-print "<BLOCKQUOTE>\n";
+print "<center>";
+print "Retrieve matrices from a motif collection by specifying one or more identifiers.<p>\n";
+print "</center>";
+print "<blockquote>\n";
 
 ################################################################
 #### collections

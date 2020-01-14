@@ -34,7 +34,7 @@ $default{input_format} = "bed";
 ### print the form ###
 &RSA_header("compare-features", 'form');
 print "<CENTER>";
-print "Compare two or more sets of features. The web-based program takes as input two feature files and computes the intersection, union and difference between features, as well as  contingency tables and comparison statistics. Note: the command-line version of this tool can take more than 2 files.<P>\n";
+print "Compare two features sets: compute intersection, union and difference, contingency tables and comparison statistics. Note: the command-line version of this tool can take more than 2 files.<P>\n";
 print "Program developed by <A HREF='mailto:jvhelden\@ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A>\n";
 print "and <A HREF='mailto:jturatsi\@ulb.ac.be (Jean-Valéry Turatsinze)'>Jean-Valéry Turatsinze</A>\n";
 print "</CENTER>";

@@ -39,8 +39,9 @@ TAR_EXCLUDE=--exclude .git \
 	--exclude purgatory \
 	--exclude .Rproj.user \
 	--exclude '*.RData' \
-	--exclude Rpackages
-TAR_CREATE =tar ${TAR_EXCLUDE} ${TAR_OPT} -cpf ${ARCHIVE}.tar rsat/*_default.*
+	--exclude Rpackages \
+	--exclude purgatory
+TAR_CREATE=tar ${TAR_EXCLUDE} ${TAR_OPT} -cpf ${ARCHIVE}.tar rsat/*_default.*
 TAR_APPEND=tar ${TAR_EXCLUDE} ${TAR_OPT} -rpf ${ARCHIVE}.tar 
 
 ################################################################
@@ -99,9 +100,10 @@ clean_emacs_bk:
 POST_CMD=
 TAR_BASE=`dirname ${RSAT}`
 RSAT_CORE=rsat/00_README.txt			\
-	rsat/rsat				\
-	rsat/rsat.yaml				\
+	rsat/LICENSE.txt			\
 	rsat/INSTALL.md				\
+	rsat/bin/rsat				\
+	rsat/share				\
 	rsat/installer				\
 	rsat/perl-scripts			\
 	rsat/makefiles				\
@@ -144,10 +146,9 @@ RSAT_FILES_METAB=rsat/java		\
 #RSAT_FILES_SCRIPTS=rsat/installer
 
 _create_tar_archive:
+	@echo "Creating tar archive ${ARCHIVE}.tar"
 	@echo ${TAR_CREATE} 
 	(cd ${TAR_BASE}; ${TAR_CREATE})
-
-
 
 FILE=rsat/perl-scripts
 _add_one_file:
@@ -162,16 +163,24 @@ _fill_archive:
 	@echo "Archive created	${ARCHIVE}"
 
 ## Create an archive with RSAT/NeAT tools
+MD5SUM=md5sum
+MD5_FILE=${TAR_BASE}/${ARCHIVE}.tar.gz.md5
+SHA256_FILE=${TAR_BASE}/${ARCHIVE}.tar.gz.sha256
+#SHA256_FILE=${ARCHIVE}.tar.gz.sha256
+SHASUM_CMD=shasum -a 256 ${ARCHIVE}.tar.gz  > ${SHA256_FILE}
 tar_archive:
 	@echo
-	@echo "Creating tar archive with RSAT"
+	@echo "tar archive ${ARCHIVE_PREFIX_CORE}"
 	@${MAKE} clean_emacs_bk
 	@${MAKE} _create_tar_archive
 	@${MAKE} _fill_archive ARCHIVE_CMD='${TAR_APPEND}' POST_CMD=''
-	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar)
+	(cd ${TAR_BASE}; gzip -f ${ARCHIVE}.tar; ${SHASUM_CMD}; ${MD5SUM} ${ARCHIVE}.tar.gz > ${MD5_FILE})
 	@echo
-	@echo "Archive"
-	@echo "	${TAR_BASE}/${ARCHIVE}.tar.gz"
+	@echo "Archive		${TAR_BASE}/${ARCHIVE}.tar.gz"
+	@echo "md5 file		${MD5_FILE}"
+	@cat ${MD5_FILE}
+	@echo "sha256 file	${SHA256_FILE}"
+	@cat ${SHA256_FILE}
 
 ## Create an archive with the command-line tools only (no web site, no data)
 tar_archive_core:
@@ -221,6 +230,8 @@ publish:
 	@echo "Synchronizing RSAT archive ${ARCHIVE_PREFIX}.${PUB_FORMAT} to server ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}"
 	@echo
 	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
+	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT}.md5 ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
+	rsync -ruptvl -e "ssh ${SSH_OPT}" ${ARCHIVE_PREFIX}.${PUB_FORMAT}.sha256 ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}/
 	@ssh ${SSH_OPT} ${PUB_LOGIN}@${PUB_SERVER} "cd ${PUB_DIR}; ln -sf ${ARCHIVE_PREFIX}.${PUB_FORMAT} latest"
 	@echo
 	@echo "The archive should be accessible on the RSAT download server"	

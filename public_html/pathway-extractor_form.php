@@ -9,7 +9,7 @@
    <link rel="stylesheet" type="text/css"
    href="tabs.css"
    media="screen,projection,print" />
-   <script src="RSAT_menu.js" type="text/javascript"></script>
+   <script src="lib/RSAT_menu.js" type="text/javascript"></script>
    <script src="RSAT_tabs.js" type="text/javascript"></script>
    <script src="pathwayextractor.js" type="text/javascript"></script>
    

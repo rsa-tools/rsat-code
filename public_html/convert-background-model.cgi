@@ -134,7 +134,7 @@ if (&IsInteger($query->param('decimals'))) {
 
 
 ################################################################
-## Matrix output format
+## Output format
 my $output_format = lc($query->param('output_format'));
 $parameters .= " -to ".$output_format;
 $draw_heatmap = 0 unless ($output_format eq 'transitions');

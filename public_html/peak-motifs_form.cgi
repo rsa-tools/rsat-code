@@ -86,7 +86,7 @@ $checked{$default{visualize}} = "checked";
 
 print <<end_part_1;
 <center>
-<p>Pipeline for discovering motifs in massive ChIP-seq peak sequences.</p>
+<p>Discover exceptional motifs (over-represented, positionally biased) in a collection of ChIP-seq peaks. </p>
 <!--
 <p>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:
 <a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>,
