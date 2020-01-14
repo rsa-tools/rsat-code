@@ -27,7 +27,7 @@ local @supported_output_formats = ("tab","transitions","tables","patser","oligo-
 ################################################################
 ### default values for filling the form
 $default{output}="server";
-$default{output_format} = "oligo-analysis";
+$default{output_format} = "transitions";
 $default{markov_order} = "2";
 $default{noov} = "CHECKED";
 $default{sequence} = "";
@@ -47,12 +47,12 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("create-background-model", "form");
 print "<CENTER>";
-print "Calculate background models from personal sequences.<P>\n";
+print "Estimate the parameters of a Markov model from sequences.<p>\n";
 #print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
-#&ListDefaultParameters() if ($ENV{rsat_echo} >= 0);
+# &ListDefaultParameters() if ($ENV{rsat_echo} >= 0);
 
 print $query->start_multipart_form(-action=>"create-background-model.cgi", -id=>"form");
 
@@ -81,10 +81,19 @@ print $query->popup_menu(-name=>'markov_order',
 print "&nbsp;"x2, "<i>Markov order =  k-mer size of your subsequent analysis - 1. ie: markov order 5 for 6-mers</i>";
 print "<br/>";
 print "<p/>";
+
+### Output bg format
+print "<B><A class='iframe' HREF='help.convert-background-model.html#item__2dto_output_format'>Output format</A></B>&nbsp;";
+print $query->popup_menu(-name=>'output_format',
+			 -Values=>[@supported_output_formats],
+			 -default=>$default{output_format});
+print "<BR>\n";
+
+
 ## overlap
-   print ($query->checkbox(-name=>'noov',-checked=>$default{noov},-label=>''));
-    print "<B><A class='iframe' HREF='help.convert-background-model.html#item__2dnoov'>prevent overlapping matches (noov)</A></b>\n";
-    print "<br/>";
+# print ($query->checkbox(-name=>'noov',-checked=>$default{noov},-label=>''));
+# print "<B><A class='iframe' HREF='help.convert-background-model.html#item__2dnoov'>prevent overlapping matches (noov)</A></b>\n";
+# print "<br/>";
 
 print "</fieldset><p/>";
 

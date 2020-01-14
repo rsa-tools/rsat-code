@@ -38,7 +38,7 @@ rsat_bin = os.environ['RSAT_BIN']
 perl_scripts = rsat_home + '/perl-scripts'
 public_html = rsat_home + '/public_html'
 
-param_types = {'string':str, 'int':int, 'file':FileStorage, 'boolean':inputs.boolean}
+param_types = {'string':str, 'int':int, 'file':FileStorage, 'boolean':inputs.boolean, 'float':float}
 
 def hide_RSAT_path(path):
     """Hide the absolute RSAT path base, replace it by $RSAT alias.

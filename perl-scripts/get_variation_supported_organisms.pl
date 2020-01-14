@@ -3,6 +3,10 @@
 ################################################################
 ## This script retrieves the list of organisms supporting
 ## variation tools
+if ($0 =~ /([^(\/)]+)$/){
+	push (@INC, "$`lib/");
+}
+
 require "RSA.lib";
 require RSAT::Tree;
 require RSAT::TreeNode;

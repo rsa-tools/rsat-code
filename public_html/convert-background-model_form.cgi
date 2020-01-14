@@ -33,9 +33,10 @@ $default{bg_pseudo} = "0";
 $default{bg_format}="oligo-analysis";
 $default{bg_choose}="rsat";
 $checked{$default{bg_choose}} = "CHECKED";
+$checked{bgmodel_url} = "";
 $default{bg_taxo}="organism";
 $checked{$default{bg_taxo}} = "CHECKED";
-$default{decimals}="3";
+$default{decimals}="5";
 $default{organism} = "";
 $default{strands} = "single strand";
 $default{noov} = "";
@@ -56,13 +57,14 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("convert-background-model", "form");
 print "<CENTER>";
-print "Interconversions between formats of background models supported by different programs.<P>\n";
+print "Interconversions between background model formats.<p>\n";
 #print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
 print $query->start_multipart_form(-action=>"convert-background-model.cgi");
 
+&ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
 
 ################################################################
 #### Background specification

@@ -1,0 +1,11 @@
+Package: TFBMclust
+Type: Package
+Title: Transcription factor binding motif (TFBM) clustering
+Version: 1.0
+Date: 2014-11-21
+Author: Jaime Castro-Mondragon and Jacques van Helden
+Maintainer: Jaime Castro-Mondragon <jcastro@lcg.unam.mx>
+Description: This package takes as input a comparison table between transcription-factor binding motifs (TFBMs), runs hierarchical clustering to define the relationships between motifs, and cuts the tree to idenfity clusters of similar motifs.
+License: This package is part of the RSAT software suite and inherits its license.
+Suggests: knitr
+VignetteBuilder: knitr

@@ -61,7 +61,7 @@ if ($ENV{group_specificity}) {
 }
 
 ## Export the table with header and absolute paths
-my $organism_table = &RSAT::OrganismManager::supported_organism_table(1, 0, $source, $taxon, $group, $depth, @return_fields); 
+my $organism_table = &RSAT::OrganismManager::supported_organism_table(1, 0, $source, $taxon, $group, $depth, 0, 0, @return_fields); 
 my @organism_rows = split("\n", $organism_table);
 my $nb_organisms = scalar(@organism_rows) - 1;
 

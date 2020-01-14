@@ -43,16 +43,26 @@ sub GetGitLastCommitDate {
 }
 
 ################################################################
-## Return the path of a program.
-##
-## The function successively checks if the program exists in various
-## directories: 
-## 1)  $ENV{RSAT_BIN} (defined in RSAT_config.props)
-## 2)  $ENV{RSAT}/bin
-## 3) in the user path
-##
-## Usage:
-##    my $program_path = &RSAT::server::GetProgramPath("program_name", $die_on_error, @preferred_paths);
+=pod
+
+=item GetProgramPath
+
+Return the path of a program.
+
+The function successively checks if the program exists in various
+directories: 
+
+1) $ENV{RSAT_BIN} (defined in RSAT_config.props)
+2) $ENV{RSAT}/bin
+3) In the subcommands supported by the rsat command
+4) In the perl-scripts and python-scripts subdirectories of RSAT 
+5) Anywhere in the user path
+
+Usage:
+    my $program_path = &RSAT::server::GetProgramPath("program_name", $die_on_error, @preferred_paths);
+
+=cut
+
 sub GetProgramPath {
   my ($program_name, $die_on_error, @preferred_paths) = @_;
   my $program_path = "";
@@ -81,7 +91,24 @@ sub GetProgramPath {
     }
   }
 
-  ## If the path has ont ben found yet, find the program anywhere in
+  ## Test if the command is known as rsat subcommand
+  my @subcommands = `rsat --list`;
+  my %rsat_cmd = ();
+  foreach my $cmd (@subcommands) {
+      $cmd = &RSAT::util::trim($cmd);
+      $rsat_cmd{$cmd} = $cmd;
+      $rsat_cmd_lc{lc($cmd)} = $cmd;
+  }
+  my @rsat_cmd = sort(keys(%rsat_cmd));
+  my @rsat_cmd_lc = sort(keys(%rsat_cmd_lc));
+  if (defined($rsat_cmd{$program_name})) {
+#      &RSAT::message::Debug("GetProgramPath()", "rsat subcommand", "rsat ".$program_name) if ($main::verbose >= 5);
+      return("rsat ".$program_name);
+  }
+  
+  #   die "rsat subcommands:\n\t", join("\n\t", @rsat_cmd), "\n";
+  
+  ## If the path has not ben found yet, find the program anywhere in
   ## the user path
   unless ($program_path) {
       $program_path = `which $program_name`;
@@ -451,7 +478,7 @@ sub ReadProperties {
     unless (-e $property_file) {
       &RSAT::message::Warning("This RSAT site is not properly configured.\n",
 			      '$ENV{RSAT}='.$ENV{RSAT},
-			      "\n\tPoperty file does not exist: ".$property_file,
+			      "\n\tProperty file does not exist: ".$property_file,
 			      "\n\tPlease contact the system administrator ".$ENV{SERVER_ADMIN});
       $property_file = $`."../RSAT_config_default.props"; #`
       $default_props = 1;

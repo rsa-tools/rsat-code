@@ -14,8 +14,7 @@ position-scan
 
 =head1 DESCRIPTION
 
-This program computes the positional binding profile of a set of PSSMs in a set of sequences of the same length.
-
+Compute the positional distribution of predicted binding sites for a set of PSSMs in a set of sequences of the same length.
 
 =head1 AUTHORS
 

@@ -80,7 +80,7 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  our $start_time = &RSAT::util::StartScript();
+  local $start_time = &RSAT::util::StartScript();
   our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
@@ -102,13 +102,17 @@ package main;
   my $batch=0;
 
   our $verbose = 0;
-  our $in = STDIN;
-  our $out = STDOUT;
 
   ################################################################
   ## Read argument values
   &ReadArguments();
-
+  
+  ## Open input and output streams
+#  our ($in, $input_dir) = &OpenInputFile($infile{input});
+#  our $out = &OpenOutputFile($outfile{output});
+  our $in = STDIN;
+  our $out = STDOUT;
+  
   ################################################################
   ## Check argument values
   my $oligo_len = $markov+1;
@@ -137,6 +141,7 @@ package main;
     $cmd .= " -from oligos -to ".$output_format;
   }
   $cmd .= " -o ".$outfile{output} if ($outfile{output});
+
   ## Run the command
   &doit($cmd, $dry, 1, $verbose, $batch);
  
@@ -156,8 +161,10 @@ sub close_and_quit {
 
   ## Report execution time
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
-  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+  print $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 
+#  die ("EXEC TIME\n\n", $exec_time, "\n\n");
+  
   ## Close output file
   if ($outfile{output}) {
     close $main::out;

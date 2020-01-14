@@ -28,7 +28,7 @@ print $query->start_html(-title=>"$title",
         -src      => 'js/jquery.js'
     },
     { -type => 'text/javascript',
-        -src      => 'RSAT_menu.js'
+        -src      => 'lib/RSAT_menu.js'
     },
     { -type => 'text/javascript',
         -src      => 'RSAT_tabs.js'

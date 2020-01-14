@@ -2250,8 +2250,8 @@ sub Add_gaps_to_motifs {
                 
                 $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
                 $matrix->set_attribute("logo_file" => $logo_file);
-                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1,"seqlogo",1);
-                $matrix->set_attribute("logo_file_rc"=> $logo_file."_rc");
+                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "", 1, "seqlogo", 1);
+                $matrix->set_attribute("logo_file_rc"=> $logo_file. "_rc");
                 ##########
                 ## Convert the aligned matrix to reverse complement
                 $aligned_motif_rc = $main::outfile{prefix}."_aligned_logos/".$id."_aligned_rc.tf";
@@ -2309,7 +2309,7 @@ sub Add_gaps_to_motifs {
                 
                 $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
                 $matrix->set_attribute("logo_file" => $logo_file);
-                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1,"seqlogo",1);
+                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1, "seqlogo", 1);
                 $matrix->set_attribute("logo_file_rc"=> $logo_file."_rc");
                 ##########
                 
@@ -2974,7 +2974,7 @@ sub Merge_matrices {
                 
                 $matrix_trimmed->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
                 $matrix_trimmed->set_attribute("logo_file" => $logo_file);
-                $matrix_trimmed->makeLogo($logo_file."_rc", \@logo_formats, "",1,"seqlogo",1);
+                $matrix_trimmed->makeLogo($logo_file."_rc", \@logo_formats, "", 1, "seqlogo",1);
                 $matrix_trimmed->set_attribute("logo_file_rc"=> $logo_file."_rc");
                 #########
                 
@@ -3057,7 +3057,7 @@ sub Merge_matrices {
             
             $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
             $matrix->set_attribute("logo_file" => $logo_file);
-            $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1,"seqlogo",1);
+            $matrix->makeLogo($logo_file."_rc", \@logo_formats, "", 1, "seqlogo", 1);
             $matrix->set_attribute("logo_file_rc"=> $logo_file."_rc");
             #########
             
