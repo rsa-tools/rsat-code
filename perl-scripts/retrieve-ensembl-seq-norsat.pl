@@ -410,7 +410,7 @@ sub ReadArguments {
 ################################################################
 #### verbose message
 #sub Verbose {
-#  print "; retrieve-ensembl-seq.pl ";
+#  print "; retrieve-ensembl-seq ";
 #  &PrintArguments();
 #}
 ################################################################
