@@ -15,6 +15,7 @@ targets:
 	@echo "	retrieve_matrix		retrieve-matrix"
 	@echo "	convert_matrix		convert-matrix"
 	@echo "	compare_matrices	compare-matrices"
+	@echo "	matrix_clustering	matrix-clustering with 2 collections (peak-motifs versus Jaspar ref)"
 	@echo "	download_peaks		download test peaks"
 	@echo "	oligos			oligo-analysis"
 	@echo "	positions		position-analysis"
@@ -81,27 +82,27 @@ download_jaspar:
 ## retrieve-matrix test
 ## Retrieve selected matrices from JASPAR
 RETRIEVE_MATRIX_DIR=${RESULT_DIR}/retrieve-matrix_result
-MATRIX_BASENAME=sox-oct_matrices
-MATRICES=${RETRIEVE_MATRIX_DIR}/${MATRIX_BASENAME}.tf
+SOCT_MATRIX_BASENAME=sox-oct_matrices
+SOCT_MATRICES=${RETRIEVE_MATRIX_DIR}/${SOCT_MATRIX_BASENAME}.tf
 retrieve_matrix: download_jaspar create_background
 	@echo "Testing retrieve-matrix"
 	@mkdir -p ${RETRIEVE_MATRIX_DIR}
 	rsat retrieve-matrix -v ${V} -i ${JASPAR} -id POU5F1 -id SOX2 -id Pou5f1::Sox2 \
-		-o ${MATRICES}
-	@echo "	MATRICES	${MATRICES}"
+		-o ${SOCT_MATRICES}
+	@echo "	SOCT_MATRICES	${SOCT_MATRICES}"
 
 
 ################################################################
 ## convert-matrix (including the generation of logos)
 CONVERT_MATRIX_DIR=${RESULT_DIR}/convert-matrix_result
-CONVERTED_MATRICES=${CONVERT_MATRIX_DIR}/${MATRIX_BASENAME}.tab
+CONVERTED_SOCT_MATRICES=${CONVERT_MATRIX_DIR}/${SOCT_MATRIX_BASENAME}.tab
 convert_matrix: download_jaspar
 	@echo "Testing convert-matrix"
 	@mkdir -p ${CONVERT_MATRIX_DIR}
-	rsat convert-matrix -v ${V} -i ${MATRICES} -from transfac -to tab \
+	rsat convert-matrix -v ${V} -i ${SOCT_MATRICES} -from transfac -to tab \
 		-return weights,margins,logo -decimals 2 \
-		-o ${CONVERTED_MATRICES}
-	@echo "	CONVERTED_MATRICES	${CONVERTED_MATRICES}"
+		-o ${CONVERTED_SOCT_MATRICES}
+	@echo "	CONVERTED_SOCT_MATRICES	${CONVERTED_SOCT_MATRICES}"
 
 ################################################################
 ## Compare matrices
@@ -110,7 +111,7 @@ MATRIX_COMPA=${MATRIX_COMPA_DIR}/sox-oct_vs_itself
 compare_matrices: retrieve_matrix
 	@echo "Testing compare-matices"
 	@mkdir -p ${MATRIX_COMPA_DIR}
-	rsat compare-matrices -v ${V} -file ${MATRICES} -format transfac \
+	rsat compare-matrices -v ${V} -file ${SOCT_MATRICES} -format transfac \
 		-mode matches -distinct -strand DR \
 		-lth cor 0.6 -lth Ncor 0.33 -uth match_rank 50 \
 		-return cor,Ncor,logoDP,match_rank,matrix_id,matrix_name,width,consensus,alignments_1ton \
@@ -120,16 +121,33 @@ compare_matrices: retrieve_matrix
 
 ################################################################
 ## matrix-clustering test
+##
+## Clustering with two matrix collections:
+## 1. Motifs discovered in Sox peaks by RSAT peak-motifs
+## 2. Reference motifs for SOX and OCT transcription factors in Jaspar
 MATRIX_CLUSTERING_DIR=${RESULT_DIR}/matrix-clustering_result
+CLUSTER_PREFIX=${MATRIX_CLUSTERING_DIR}/peak-motifs_vs_jaspar_SOCT
+CLUSTER_ERR_LOG=${CLUSTER_PREFIX}_err.txt
 matrix_clustering:
 	@echo "Testing matrix-clustering"
-	rsat matrix-clustering -h
+	@mkdir -p ${MATRIX_CLUSTERING_DIR}
 	@echo "	MATRIX_CLUSTERING_DIR	${MATRIX_CLUSTERING_DIR}"
+	rsat matrix-clustering -v ${V} \
+		-matrix 'peak-motifs' ${OLIGO_MATRICES}_count_matrices.tf  transfac \
+		-matrix 'jaspar_soct'  ${SOCT_MATRICES}  transfac \
+		-hclust_method average -calc sum \
+		-title 'peak-motifs versus Jaspar Sox-Oct' \
+		-metric_build_tree 'Ncor' -lth w 5 -lth cor 0.6 -lth Ncor 0.4 -quick \
+		-label_in_treeOC name -return json,heatmap  \
+		-o ${CLUSTER_PREFIX} 2> ${CLUSTER_ERR_LOG}
+	@echo "	CLUSTER_PREFIX	${CLUSTER_PREFIX}"
+	@echo "	CLUSTER_ERR_LOG	${CLUSTER_ERR_LOG}"
+
 
 
 ################################################################
 ## Download peak sequences for tests
-PEAK_BASENAME=peak-motifs_demo
+PEAK_BASENAME=Oct4_peaks_top1000
 PEAK_FILE=${PEAK_BASENAME}.fa
 PEAK_URL=http://teaching.rsat.eu//demo_files/${PEAK_FILE}
 PEAKMO_DIR=${RESULT_DIR}/peak-motifs_result
@@ -192,7 +210,7 @@ OLIGO_DIR=${RESULT_DIR}/oligo-analysis_result
 OLIGO_BASENAME=${PEAK_BASENAME}_6nt_2str_noov_sig0
 OLIGO_PREFIX=${OLIGO_DIR}/${OLIGO_BASENAME}
 OLIGOS=${OLIGO_PREFIX}.tsv
-oligos: download_peaks
+oligos: purgeseq
 	@echo "Testing oligo-analysis"
 	@mkdir -p ${OLIGO_DIR}
 	rsat oligo-analysis -v ${V} -i ${PURGED_PEAKS} \
@@ -214,7 +232,7 @@ oligos: download_peaks
 POSITION_DIR=${RESULT_DIR}/position-analysis_result
 POSITION_BASENAME=${POSITION_DIR}/${PEAK_BASENAME}_6nt_ci25
 POSITIONS=${POSITION_BASENAME}.tsv
-positions: download_peaks
+positions: purgeseq
 	@echo "Testing position-analysis"
 	@mkdir -p ${POSITION_DIR}
 	rsat position-analysis -v ${V} -i ${PURGED_PEAKS} \
@@ -254,7 +272,6 @@ matrix_from_patterns:
 	@echo "	Sites (feature format)	${OLIGO_MATRICES}_sig_sites.ft"
 
 
-
 ################################################################
 ## Test create-background-model
 BG_MKV=1
@@ -274,20 +291,20 @@ create_background: download_peaks
 ################################################################
 ## Test matrix-distrib
 MATRIX_DISTRIB_DIR=${RESULT_DIR}/matrix-distrib_result
-MATRIX_DISTRIB_PREFIX=${MATRIX_DISTRIB_DIR}/${MATRIX_BASENAME}_distrib
+MATRIX_DISTRIB_PREFIX=${MATRIX_DISTRIB_DIR}/${SOCT_MATRIX_BASENAME}_distrib
 MATRIX_DISTRIB=${MATRIX_DISTRIB_PREFIX}.tsv
 matrix_distrib:
 	@echo "Testing matrix-distrib"
 	@mkdir -p ${MATRIX_DISTRIB_DIR}
 	rsat matrix-distrib -v ${V} \
 		-top 1 \
-		-m ${MATRICES} -matrix_format transfac \
+		-m ${SOCT_MATRICES} -matrix_format transfac \
 		-pseudo 1 -decimals 1 \
 		-bg_format ${BG_FORMAT} \
 		-bgfile ${BG_FILE} \
 		-bg_pseudo 0.01 \
 		-o ${MATRIX_DISTRIB}
-	@echo "	MATRICES		${MATRICES}"
+	@echo "	SOCT_MATRICES		${SOCT_MATRICES}"
 	@echo "	BG_FILE			${BG_FILE}"
 	@echo "	MATRIX_DISTRIB_DIR	${MATRIX_DISTRIB_DIR}"
 	@echo "	MATRIX_DISTRIB		${MATRIX_DISTRIB}"
@@ -320,7 +337,7 @@ matrix_distrib:
 ## Test matrix-quality
 QUALITY_DIR=${RESULT_DIR}/matrix-quality_result
 QUALITY_PREFIX=${QUALITY_DIR}/${OLIGO_BASENAME}_quality
-matrix_quality:
+matrix_quality: create_background
 	@echo "Testing matrix-quality"
 	@mkdir -p ${QUALITY_DIR}
 	rsat matrix-quality -v ${V} \
