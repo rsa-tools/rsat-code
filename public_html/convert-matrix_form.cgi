@@ -80,7 +80,7 @@ foreach $key (keys %default) {
 &RSA_header("convert-matrix", "form");
 
 print "<CENTER>";
-print "Convert different types of position-specific scoring matrices (PSSM), and calculate statistical parameters.<P>\n";
+print "Convert different formats of position-specific scoring matrices (PSSM), and calculate statistical parameters and generate logos.<P>\n";
 #print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";

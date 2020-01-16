@@ -57,10 +57,11 @@ export.detailed.tables <- FALSE ## Export all the details (normalized frequency 
 
 display.intervals <- FALSE ## Display intervals rather than class centers
 round.positions <- TRUE
-
 all.plots <- FALSE
 plot.sep.cluster.profiles <- FALSE ## Set to TRUE to export one image file per cluster (generates many image files)
 xlab.by <- 4
+shuffle.profiles <- FALSE
+#verbosity <- 2
 
 colors <- c("pos"="#00BB00",
             "shuffled"="#BBBBBB")
@@ -113,6 +114,7 @@ verbose(paste("Input directory", dir.pos), 2)
 if (!exists("prefix")) {
   prefix <- basename(file.pos)
   prefix <- sub(".tab$", "", basename(file.pos), ignore.case = TRUE, perl = TRUE)
+  prefix <- sub(".tsv$", "", basename(file.pos), ignore.case = TRUE, perl = TRUE)
 }
 verbose(paste("Prefix for output files", prefix), 2)
 
@@ -149,25 +151,31 @@ row.names(pos.data) <- kmer.desc
 
 ## Define the columns containing occurrences per position window
 if (!exists("column.offset")) {
-  ## Detect columns preceding the distribution
-  column.offset <- length(intersect(toupper(colnames(pos.data)), toupper(c("X.seq","seq", "id","occ","over","chi2","df","Pval","sig","Eval","rank"))))
+  ## Detect columns not preceding the distribution (those returning other types of statistics)
+  column.offset <- length(
+      intersect(toupper(colnames(pos.data)),
+                toupper(c("X.seq","seq", "id","occ","over","chi2","df","Pval","Eval", "sig","rank"))))
 }
 profile.col <- (column.offset+1):ncol(pos.data) ## columns containing the position profiles (occurrences per window)
-nb.windows <- length(profile.col)
 
-#stop('HELLO')
+# message("colnames(pos.data)\t", paste(collapse=", ", colnames(pos.data)))
+# message("column.offset\t", column.offset)
 
-## Fix a bug with previous version of oligo-analysis (exported a column of 0s)
+## Fix the headers of window occurrence columns
+colnames(pos.data)[1] <- sub('X.', '', colnames(pos.data)[1])
+colnames(pos.data)[profile.col] <- sub("X\\.", "-", colnames(pos.data)[profile.col], perl="TRUE")
+colnames(pos.data)[profile.col] <- sub("X", "+", colnames(pos.data)[profile.col], perl="TRUE")
+
+## Fix a bug with previous version of position-analysis (exported a column of 0s)
 last.profile.col <- profile.col[length(profile.col)]
 last.profile.col.header <- as.numeric(colnames(pos.data)[last.profile.col])
 if (is.na(last.profile.col.header)) {
   profile.col <- profile.col[1:(length(profile.col)-1)]
 }
 
-## Fix the headers of window occurrence columns
-colnames(pos.data)[1] <- sub('X.', '', colnames(pos.data)[1])
-colnames(pos.data)[profile.col] <- sub("X\\.", "-", colnames(pos.data)[profile.col], perl="TRUE")
-colnames(pos.data)[profile.col] <- sub("X", "+", colnames(pos.data)[profile.col], perl="TRUE")
+nb.windows <- length(profile.col)
+# message('nb.windows = ', nb.windows)
+
 
 ## Define the selected patterns
 selected.patterns <- (pos.data$sig >= sig.threshold) 
@@ -189,6 +197,7 @@ if (nb.patterns < 2) {
 pos.profiles <- pos.data[selected.patterns, profile.col]
 ref.positions <- as.numeric(colnames(pos.profiles))
 
+# message("ref.positions\t", paste(collapse=", ", ref.positions))
 
 if (exists("pos.offset")) {
   ref.positions <- ref.positions + pos.offset
@@ -222,13 +231,17 @@ if (export.detailed.tables) {
 ## ##############################################################
 ## Perform a random shuffling of the position profiles, as a negative
 ## control for correlation and clustering.
-verbose("Shuffling position profiles for negative controls", 2)
-shuffled.profiles <- as.data.frame(matrix(nrow=nb.patterns, ncol=nb.windows, sample(as.vector(as.matrix(pos.profiles, replace=FALSE)))))
-rownames(shuffled.profiles) <- rownames(pos.profiles)
-colnames(shuffled.profiles) <- colnames(pos.profiles)
-shuffled.profiles.freq <- shuffled.profiles / sum.per.kmer
-if (export.detailed.tables) {
-  export.object(shuffled.profiles.freq, file=file.path(dir.clusters, paste(sep='_', prefix, 'shuffled_profiles_norm_freq')), export.format='table')
+if (shuffle.profiles) {
+  verbose("Shuffling position profiles for negative controls", 2)
+  shuffled.values <- sample(unlist(pos.profiles), replace=FALSE)
+  # message("dim(pos.profiles)", paste(collapse = ", ", dim(pos.profiles)))
+  shuffled.profiles <- as.data.frame(matrix(nrow=nrow(pos.profiles), ncol=ncol(pos.profiles), shuffled.values))
+  rownames(shuffled.profiles) <- rownames(pos.profiles)
+  colnames(shuffled.profiles) <- colnames(pos.profiles)
+  shuffled.profiles.freq <- shuffled.profiles / sum.per.kmer
+  if (export.detailed.tables) {
+    export.object(shuffled.profiles.freq, file=file.path(dir.clusters, paste(sep='_', prefix, 'shuffled_profiles_norm_freq')), export.format='table')
+  }
 }
 
 ## ##############################################################
@@ -237,17 +250,23 @@ if (export.detailed.tables) {
 ## Compute correlations between profiles
 verbose("Computing correlation between profiles", 2)
 pos.cor <- cor(t(pos.profiles))
-shuffled.cor <- cor(t(shuffled.profiles))
+if (shuffle.profiles) {
+  shuffled.cor <- cor(t(shuffled.profiles))
+}
 if (export.detailed.tables) {
   export.object(round(pos.cor, digits=3), file=file.path(dir.clusters, paste(sep='_', prefix, 'profiles_correlations')), export.format='table')
-  export.object(round(shuffled.cor, digits=3), file=file.path(dir.clusters, paste(sep='_', prefix, 'shuffled_correlations')), export.format='table')
+  if (shuffle.profiles) {
+    export.object(round(shuffled.cor, digits=3), file=file.path(dir.clusters, paste(sep='_', prefix, 'shuffled_correlations')), export.format='table')
+  }
 }
 
 ## ##############################################################
 ## Hierarchical clustering
 verbose(paste(sep="", "Hierarchical clustering; method=", clust.method), 2)
 pos.tree <- hclust(as.dist(1-pos.cor), method=clust.method)
-shuffled.tree <- hclust(as.dist(1-shuffled.cor), method=clust.method)
+if (shuffle.profiles) {
+  shuffled.tree <- hclust(as.dist(1-shuffled.cor), method=clust.method)
+}
 
 ## Cut the tree in k clusters
 clust.nb <- min(clust.nb, nb.patterns) ## Check that number of clusters does not exceed the number of selected patterns
@@ -426,20 +445,31 @@ if (draw.plots) {
     
     ## Draw the distributions of correlation values (position profiles + shuffled data)
     file.prefix <- file.path(dir.clusters, paste(sep='', '_profile_correlations'))
-    open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=7,height=8)
-    par(mfrow=c(2,1))
+    if (shuffle.profiles) {
+      open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=7,height=8)
+      par(mfrow=c(2,1))
+    } else {
+      open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=7,height=5)
+      par(mfrow=c(1,1))
+    }
     hist(pos.cor, breaks=100,
          xlim=c(-1,1), col=colors["pos"],
          main=paste(sep='', "correlations between ",kmer.len,"-mer profiles"),
          xlab="Correlation",
          ylab=paste(sep='', "Pairs of ",kmer.len,"-mers"))
-    hist(shuffled.cor, breaks=100, xlim=c(-1,1), col=colors["shuffled"],
+    if (shuffle.profiles) {
+        hist(shuffled.cor, breaks=100, xlim=c(-1,1), col=colors["shuffled"],
          main=paste("correlations between shuffled profiles"),
          xlab="Correlation",
          ylab=paste(sep="", "Pairs of ",kmer.len,"-mers"))
+    }
     par(mfrow=c(1,1))
     if (display.plots) {
-      export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=7,height=8)
+      if (shuffle.profiles) {
+        export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=7, height=8)
+      } else {
+        export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=7, height=5)
+      }
     } else {
       dev.off()
     }
@@ -458,29 +488,41 @@ if (draw.plots) {
     }
     
     ## Draw a heatmap of the correlation matrix of shuffled profiles
-    file.prefix <- file.path(dir.clusters, paste(sep='', prefix, '_shuffled_correlations_heatmap'))
-    open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=12,height=12)
-    heatmap(shuffled.cor, scale="none",
-            main='Correlations between shuffled profiles',
-            zlim=c(-1,1),
-            col=heatmap.palette)
-    export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=12,height=12)
-    if (display.plots) {
+    if (shuffle.profiles) {
+      file.prefix <- file.path(dir.clusters, paste(sep='', prefix, '_shuffled_correlations_heatmap'))
+      open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=12,height=12)
+      heatmap(shuffled.cor, scale="none",
+               main='Correlations between shuffled profiles',
+              zlim=c(-1,1),
+              col=heatmap.palette)
       export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=12,height=12)
-    } else {
-      dev.off()
-    }
-    
+       if (display.plots) {
+        export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=12,height=12)
+      } else {
+        dev.off()
+      }
+    }    
 
     ## Plot the tree structure for position profiles and shuffled data
-    file.prefix <- file.path(dir.clusters, paste(sep='', prefix, '_profile_tree'))
-    open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=16,height=8)
-    par(mfrow=c(2,1))
+    file.prefix <- file.path(dir.clusters, paste(sep='', prefix, '_profile_tree')) 
+    if (shuffle.profiles) {
+      open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=16,height=8)
+      par(mfrow=c(2,1))
+    } else {
+      open.plot.device(file.prefix=file.prefix, format=plot.device.format, width=16,height=5)
+      par(mfrow=c(1,1))
+    }
     plot(pos.tree, main=paste(prefix, ": clustering of position profiles;", "dist= 1 - cor; ", clust.method, "linkage"), xlab=NA)
-    plot(shuffled.tree, main=paste(prefix, ": clustering of shuffled profiles;", "dist= 1 - cor; ", clust.method, "linkage"), xlab=NA)
+    if (shuffle.profiles) {
+      plot(shuffled.tree, main=paste(prefix, ": clustering of shuffled profiles;", "dist= 1 - cor; ", clust.method, "linkage"), xlab=NA)
+    }
     par(mfrow=c(1,1))
     if (display.plots) {
-      export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=16,height=8)
+      if (shuffle.profiles) {
+        export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=16,height=8)
+      } else {
+        export.plot(file.prefix=file.prefix, export.formats=export.formats.plots, width=16,height=5)
+      }
     } else {
       dev.off()
     }
@@ -538,5 +580,5 @@ if (draw.plots) {
 }
 
 
-verbose ("job done", 2)
+verbose("job done", 2)
 verbose(dir.clusters, 2)

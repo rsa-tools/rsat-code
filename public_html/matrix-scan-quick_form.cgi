@@ -72,7 +72,7 @@ foreach $key (keys %default) {
 
 ### head
 print "<center>";
-print "Scan a DNA sequence with a profile matrix<br>\n";
+print "Scan DNA sequences with position-specific scoring matrices (PSSM) - fast and simplified version<br>\n";
 print "This quick version was programmed by <a href='http://www.researchgate.net/profile/Matthieu_Defrancee'>Matthieu Defrance</a>, Web interface by <A HREF='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</A><br>\n";
 print "</CENTER>";
 

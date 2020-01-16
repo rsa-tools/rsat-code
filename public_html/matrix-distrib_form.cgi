@@ -61,7 +61,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("matrix-distrib", "form");
 print "<CENTER>";
-print "Computes the theoretical distribution of score probabilities of a given PSSM.<P>\n";
+print "Compute theoretical distribution of score probabilities of a PSSM given a Markov model<p>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 

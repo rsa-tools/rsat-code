@@ -214,6 +214,6 @@ sub ColorConsensus {
 
 
 
-return 1;
+1;
 
 __END__

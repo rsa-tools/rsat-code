@@ -24,7 +24,7 @@ ns = api.namespace(tool, description=descr)
 class VariationInfo(Resource):
 	@api.expect(get_parser)
 	def get(self):
-    		data = get_parser.parse_args()
+    		data = request.get_json(force=True) #get_parser.parse_args()
 		if data['content-type'] == 'text/plain':
 			resp = self._run(data)
 			return utils.output_txt(resp,200)

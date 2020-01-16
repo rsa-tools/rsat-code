@@ -50,11 +50,11 @@ $default{title} =~ s/\"//g;
 ### print the form ###
 &RSA_header("feature map", "form");
 
-print "<CENTER>";
-print "Generates a graphical map of features localized on one or several sequences.<P>\n";
-print "</CENTER>";
+print "<center>";
+print "Generate a graphical map of features localised on one or several sequences.<p>\n";
+print "</center>";
 
-print "<FONT FACE='Helvetica'>";
+print "<font face='Helvetica'>";
 
 print $query->start_multipart_form(-action=>"feature-map.cgi");
 

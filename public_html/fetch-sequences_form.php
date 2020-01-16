@@ -34,7 +34,7 @@ echo "document.forms[0].sequence_url.value = '".$properties['rsat_www']."/demo_f
 <?php include("menu.php"); ?>
 
     <div>
-      <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSAT</a> - fetch-sequence</h3>
+      <h3 align='center'><a href="<?php echo $properties['rsat_www']?>">RSAT</a> - fetch-sequences</h3>
       <br/>
 Get  DNA sequences corresponding to set of genomic coordinates (<a target='_blank'
 	  href='http://genome.ucsc.edu/FAQ/FAQformat.html#format1'>bed
@@ -44,7 +44,7 @@ Get  DNA sequences corresponding to set of genomic coordinates (<a target='_blan
    ## first check if this tool is supported for the current server
    if ($properties['ucsc_tools'] == 0) {
      echo ("<font size='+1'>");
-     echo("<span style='color:#DD0000'>Sorry, this RSAT instance does not support UCSC fetch-sequence tool.</span>");
+     echo("<span style='color:#DD0000'>Sorry, this RSAT instance does not support the fetch-sequences tool.</span>");
 
 
      if (($properties['group_specificity'] != "") &&

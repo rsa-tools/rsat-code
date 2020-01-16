@@ -23,9 +23,9 @@ $program_version
 
 =head1 DESCRIPTION
 
-Install on RSAT genome sequence, genomic features and (optionally)
-variation features for a genome form Ensembl
-(L<http://www.ensembl.org/>).
+Install genomes from ensembl (L<http://www.ensembl.org/>) to the local
+RSAT instance. The installation includes genomic sequence, annotations
+(features) and (optionally) variations.
 
 The connection to ensembl is ensured by a combination of their Perl
 API and their ftp site (some information can not be obtained directly

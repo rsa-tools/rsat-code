@@ -262,7 +262,8 @@ USAGE
         compare-scores -i inputfile_1 -i inputfile_2 [-i inputfile_n] [-o outputfile] [-v] [-ic \#] -sc \#
 
 DESCRIPTION
-	compares the score associated to keys in different input files
+
+        Compare the score associated to keys in different input files
 	(basically, this amounts to join different tables on the basis
 	of a unique identifier).
 

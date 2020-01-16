@@ -68,7 +68,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("compare-matrices", "form");
 print "<CENTER>";
-print "Comparison between two collections of position-specific scoring matrices.<P>\n";
+print "Compute (dis)imilarity scores between matrices from two collections of position-specific scoring matrices.<P>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>: ";
 print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://morgane.bardiaux.fr/'>Morgane Thomas-Chollier</a><sup>t</sup>\n";

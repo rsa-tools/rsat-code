@@ -200,6 +200,7 @@ package main;
 	$dir{output} =`dirname $outfile{output}`; 
 	$output_prefix = $outfile{output};
 	$output_prefix =~ s/\.tab$//;
+	$output_prefix =~ s/\.tsv$//;
 	chomp $dir{output};
 
 	## Check output directory
@@ -285,6 +286,7 @@ package main;
       if ($outfile{output}) {
 	$basename = `basename $outfile{output}`;
 	$basename =~ s/\.tab$//;
+	$basename =~ s/\.tsv$//;
 	chomp $basename;
 	$rel_dir{graphs} = $basename."_".$rel_dir{graphs};
       }
@@ -456,8 +458,7 @@ package main;
 	  $outfile{"cluster_freq_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_freq_profiles_per_cluster.pdf"; push @outfiles, "cluster_freq_profiles_k".$clust_nb;
 	  $outfile{"cluster_median_profiles_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_median_profiles_per_cluster.pdf"; push @outfiles, "cluster_median_profiles_k".$clust_nb;
 	  $outfile{"cluster_median_profiles_table_k".$clust_nb} = $dir{"clusters_k".$clust_nb}."/".$cluster_prefix."_median_profiles_per_cluster.tab"; push @outfiles, "cluster_median_profiles_table_k".$clust_nb;
-	  
-	  
+
 	  &ProfileClustering($clust_nb, $clust_suffix_k) if ($task{clusters});
 	}
     }
@@ -497,6 +498,7 @@ package main;
       ## Define index file for the word-specific graphs
       $outfile{graph_index} = $outfile{output};
       $outfile{graph_index} =~ s/\.tab$//; ## Suppress tab extension
+      $outfile{graph_index} =~ s/\.tsv$//; ## Suppress tsv extension
       $outfile{graph_index} .= "_graph_index.html";
       push @outfiles, "graph_index";
       &RSAT::message::Info("graph index", $outfile{graph_index}) if ($main::verbose >= 2);
@@ -2417,6 +2419,7 @@ sub GenerateGraphs {
     # if ($outfile{output}) {
     # 	$basename = `basename $outfile{output}`;
     # 	$basename =~ s/\.tab$//;
+    # 	$basename =~ s/\.tsv$//;
     # 	chomp $basename;
     # 	$rel_dir{graphs} = $basename."_".$rel_dir{graphs};
     # }
