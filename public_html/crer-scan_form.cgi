@@ -225,7 +225,7 @@ exit(0);
 sub PrintDescription {
 print <<end_part_1;
 <center>
-  <p>Detect cis-regulatory element enriched regions (CRERs).</p>
+  <p>Predict cis-regulatory motifs (CRMs) by detecting cis-regulatory enriched regions (CRERs).</p>
   <p>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:
     <a href='mailto:marie.artufel\@etu.univ-amu.fr'>Marie Artufel</a>,
     <a href='mailto:lucie.khamvongsa\@gmail.com'>Lucie Khamvongsa</a>,

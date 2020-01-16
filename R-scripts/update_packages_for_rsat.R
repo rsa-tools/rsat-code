@@ -42,6 +42,7 @@ required.packages = installed.packages(lib.loc=dir.rsat.rlib)
 ## installed in the install rsat libraries.
 install.dir <- dir.rsat.rlib
 
+# should exist already
 dir.create(install.dir, showWarnings = FALSE, recursive = FALSE)
 
 ## Install R packages from the CRAN
@@ -52,9 +53,16 @@ update.packages(instPkgs=required.packages, repos=rcran.repos, lib=install.dir, 
 
 message("Updating BioConductor packages")
 
+library("BiocManager",lib.loc=install.dir)
+
 for (pkg in required.packages.bioconductor) {
-    source("http://bioconductor.org/biocLite.R")
-    biocLite(pkg, dependencies=TRUE, lib=install.dir,  lib.loc=install.dir, suppressUpdates="")
+
+    BiocManager::install(pkg, lib=install.dir, update = TRUE)
+
+    #biocLite deprecated Jan 2020
+    #source("http://bioconductor.org/biocLite.R")
+    #biocLite(pkg, dependencies=TRUE, lib=install.dir,  lib.loc=install.dir, suppressUpdates="")
+    #https://cran.r-project.org/web/packages/BiocManager/vignettes/BiocManager.html
 }
 
 

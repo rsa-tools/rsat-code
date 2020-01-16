@@ -277,7 +277,7 @@ package main;
   if ($task{available}) {
     &RSAT::message::TimeWarn("Getting available species for group", $group) if ($main::verbose >= 2);
     unless ($group) {
-      &RSAT::error::FatalError("The task 'availabl' requires to specify a group (e.g. fungi, bacteria, ...).");
+      &RSAT::error::FatalError("The task 'available' requires to specify a group (e.g. fungi, bacteria, ...).");
     }
     
     
@@ -1234,14 +1234,18 @@ sub FastaGenomeAndBedtoolsIndex {
     my $rand_fragment_coord = &RSAT::util::make_temp_file("","random-genome-fragments_coord", 1);
     my $rand_fragment_seq = &RSAT::util::make_temp_file("","random-genome-fragments_seq", 1);
     $command .= "; " if ($command);
-    $command .= $SCRIPTS."/random-genome-fragments -n 1 -l 1";
+    $command .= &RSAT::server::GetProgramPath("random-genome-fragments");
+    $command .= " -n 1 -l 1";
     $command .= " -org ".$organism_short_name;
     $command .= " -o ".$rand_fragment_coord;
-    $command .= " ; ".$SCRIPTS."/retrieve-seq-bed";
+    $command .= " ; ";
+    $command .= &RSAT::server::GetProgramPath("retrieve-seq-bed");
     $command .= " -i ".$rand_fragment_coord;
     $command .= " -org ".$organism_short_name;
     $command .= " -o ".$rand_fragment_seq;
-    $command .= " ; ".$SCRIPTS."/retrieve-seq-bed -rm";
+    $command .= " ; ";
+    $command .= &RSAT::server::GetProgramPath("retrieve-seq-bed");
+    $command .= " -rm";
     $command .= " -i ".$rand_fragment_coord;
     $command .= " -org ".$organism_short_name;
     $command .= " -o ".$rand_fragment_seq;
@@ -1521,8 +1525,12 @@ sub CalcOligoFreq {
 	&RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type, "l=".$oligo_length, $noov, $strands) if ($main::verbose >= 2);
 
 	my $out_file = $dir{oligos}."/".${oligo_length}.${residue_type}."_".${seq_type}."_".${organism_short_name}.${noov}.${strands}.".freq";
-	my $command = $SCRIPTS."/oligo-analysis  ".$quick."  -v 1 ${strands} -i $seq_file -format $seq_format ";
+	my $command = &RSAT::server::GetProgramPath("oligo-analysis");
+	$command .= " ".$quick;
+	$command .= " -v 1 ";
 	$command .= " ".$strands;
+	$command .= " -i ".$seq_file;
+	$command .= " -format ".$seq_format;
 	$command .= " -seqtype ".$oligo_seq_type;
 	$command .= " ".$noov;
 	$command .= " -l ".$oligo_length." -type dna ";
@@ -1571,7 +1579,10 @@ sub CalcOligoDistrib {
 
 	#### Calculate occurrence distributions in the sequence file
 	my $distrib_file = $dir{oligos}."/"."${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
-	my $command = $SCRIPTS."/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
+	my $command = &RSAT::server::GetProgramPath("oligo-analysis");
+	$command .= " -v 1";
+	$command .= " -i ".$seq_file;
+	$command .= " -format ".$seq_format;
 	$command .= " ".$strands;
 	$command .= " ".$noov;
 	$command .= " -l ".$oligo_length." -type dna";
@@ -1633,7 +1644,11 @@ sub CalcDyadFreq {
 	&RSAT::message::TimeWarn("Calculating dyad frequencies",$seq_file, $seq_format, $seq_type, "l=".$monad_length, $noov, $strands) if ($main::verbose >= 2);
 	$dyad_file = $dir{oligos}."/"."dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
 	$dyad_file .= ".freq";
-	my $command = $SCRIPTS."/dyad-analysis ".$quick." -v 1 -i $seq_file -format $seq_format";
+	my $command = &RSAT::server::GetProgramPath("dyad-analysis");
+	$command .= " ".$quick;
+	$command .= " -v 1";
+	$command .= " -i ".$seq_file;
+	$command .= " -format ".$seq_format;
 	$command .= " -timeout 240000 ";
 	$command .= " -type any -seqtype dna";
 	$command .= " ".$strands;
@@ -1687,7 +1702,7 @@ USAGE
         install-organism -org organism_name
 
 DESCRIPTION
-	Add support for an organism in RSA-tools.
+	Install one or several organisms on the local RSAT instance.
 
 	This script is a task manager, which (depending on the
 	selected tasks) manages different steps necessary for the
@@ -2412,11 +2427,16 @@ sub StartAndStopCodons {
   my $label =  "id,ctg,reg_left,reg_right,orf_strand";
   my $prefix = $dir{genome}."/".${organism_short_name};
   my $job_prefix = ${organism_short_name}."_start_codons";
-  my $command = $SCRIPTS."/retrieve-seq -v -org ${organism_short_name} -all  \ ";
-  $command .= "-type upstream -feattype cds -from 0 -to 2  \ ";
-  $command .= "-format wc -nocomment -label $label \ ";
+  my $command = &RSAT::server::GetProgramPath("retrieve-seq");
+  $command .= " -v 1";
+  $command .= " -org ".$organism_short_name;
+  $command .= " -all";
+  $command .= " -type upstream -feattype cds -from 0 -to 2";
+  $command .= " -format wc -nocomment -label ".$label;
   $command .= " -o ".$prefix."_start_codons.wc";
-  $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+  $command .= " ; ";
+  $command .= &RSAT::server::GetProgramPath("oligo-analysis");
+  $command .= " -type dna -l 3 -return occ,freq -v -format wc -1str -sort";
   $command .= " -i ".$prefix."_start_codons.wc";
   $command .= " -o ".$prefix."_start_codon_frequencies.tab";
 #  &RSAT::message::Debug($command) if ($main::verbose >= 10);
@@ -2426,13 +2446,18 @@ sub StartAndStopCodons {
   &RSAT::message::Info("\tStart codon frequencies", $prefix."_start_codon_frequencies.tab") if ($main::verbose >= 2);
 
   $job_prefix = ${organism_short_name}."_stop_codons";
-  $command = $SCRIPTS."/retrieve-seq -v -org ${organism_short_name} -all  \ ";
-  $command .= "-type downstream  -feattype cds -from -2 -to 0  \ ";
-  $command .= "-format wc -nocomment -label $label \ ";
+  $command = &RSAT::server::GetProgramPath("retrieve-seq");
+  $command .= " -v 1";
+  $command .= " -org ".$organism_short_name;
+  $command .= " -all";
+  $command .= "-type downstream  -feattype cds -from -2 -to 0";
+  $command .= "-format wc -nocomment -label ".$label;
   $command .= " -o ".$prefix."_stop_codons.wc";
-  $command .= " ; ".$SCRIPTS."/oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+  $command .= " ; ";
+  $command .= &RSAT::server::GetProgramPath("oligo-analysis");
+  $command .= " -type dna -l 3 -return occ,freq -v -format wc -1str -sort";
   $command .= " -i ".$prefix."_stop_codons.wc";
-  $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies.tab";
+  $command .= " -o ".$prefix."_stop_codon_frequencies.tab";
 
   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
 #  &doit($command, $dry, $die_on_error, $verbose);

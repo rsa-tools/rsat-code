@@ -308,7 +308,7 @@ sub supported_organism_table {
 			"group: ".$group, 
 			"depth: ".$depth, 
 			"fields", join( ";", @fields)) 
-    if ($main::verbose >= 0);
+    if ($main::verbose >= 5);
 
   ## Default fields
   if (scalar(@fields) == 0) {

@@ -170,9 +170,9 @@ AUTHORS
 
 DESCRIPTION
 
-	Returns the list of organisms supported on a remote RSAT
-	server. The list can be restricted at a given taxonomic level
-	(option -taxon).
+	Get the list of organisms supported on a remote RSAT
+	server. Optionally, the list of supported organisms can be
+	restricted at a given taxonomic level (option -taxon).
 
 CATEGORY
 	Genomes

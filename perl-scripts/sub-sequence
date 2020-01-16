@@ -283,7 +283,7 @@ USAGE
         sub-sequence [-i inputfile] -from # -to # [-o outputfile] [-v]
 
 DESCRIPTION
-	Returns a segment from the input sequence, specified by its position.
+	Return a subset of input sequences, specified by a start and end positions.
 
 CATEGORY
 	sequences

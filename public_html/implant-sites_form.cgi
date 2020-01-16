@@ -44,7 +44,7 @@ foreach $key (keys %default) {
 
 ### head
 print "<center>";
-print "Randomly implant given sites into given sequences.\n";
+print "Implant sequences (e.g. TF binding sites) at random positions of other sequences (e.g. regulatory regions).\n";
 print "<br>Reference: <a target='_blank' href=\"http://www.ncbi.nlm.nih.gov/pubmed/19689955\">Defrance & van Helden, Bioinformatics 2009</a>.</a>";
 print "</center>";
 

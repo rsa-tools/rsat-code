@@ -71,9 +71,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("matrix-quality", "form");
 print "<center>";
-print "Evaluate the quality of a Position-Specific Scoring Matrix (PSSM), by
-    comparing score distributions obtained with this matrix in various
-    sequence sets.</p>\n";
+print "Evaluate the quality of a Position-Specific Scoring Matrix (PSSM), by comparing the empirical distributions obtained in various sequence sets.</p>\n";
 print "The most classical use of the program is to compare score distributions
     between <em>positive</em> sequences (e.g. true binding sites for the considered
     transcription factor) and <em>negative</em> sequences (e.g. intergenic

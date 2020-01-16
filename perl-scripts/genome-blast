@@ -22,8 +22,8 @@ genome-blast
 
 =head1 DESCRIPTION
 
-Use BLAST to compare all protein sequences between a query organism
-and a reference organism (db_organism).
+Use BLAST to detect homologs between all the protein of query and
+reference organisms.
 
 The BLAST result is exported as a tab-delimited file, contining one
 row per hit. This hit table is post-processed to rank the hits and
