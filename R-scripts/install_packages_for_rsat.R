@@ -21,7 +21,7 @@ required.packages = c("devtools",
                       "png",
                       "dynamicTreeCut",
                       "reshape2",
-                      "dendextend",
+                      "crayon","backports","vctrs","dendextend",
                       "gridExtra",
                       "grid",
                       "egg",
@@ -30,7 +30,7 @@ required.packages = c("devtools",
                       "RColorBrewer",
                       "changepoint",
                       "dplyr",
-                      "ggplot2"
+                      "withr","ggplot2"
 #                       "Rcpp",
 #                       "RcppEigen",
 #                       "Rclusterpp",
@@ -90,16 +90,26 @@ for (pkg in required.packages) {
 ## Check requirement for bioconductor packages
 message("Installing BioConductor packages")
 message(cat("Required BioConductor packages: ", required.packages.bioconductor))
+library("BiocManager",lib.loc=install.dir)
 for (pkg in required.packages.bioconductor) {
-  if (suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE, lib=c(.libPaths(),install.dir)))) {
+
+  # NOTE: BioC packages are searched 1st in system locations (libPaths) and then RSAT locations
+  # In case of version trouble leave only RSAT's
+  if (suppressPackageStartupMessages(require(pkg, quietly=TRUE, character.only = TRUE, lib.loc=c(.libPaths(),install.dir)))) {
     message(pkg, " BioConductor package already installed. Skipping. ")
   } else {
     message("Installing Bioconductor package ", pkg, " in dir ", install.dir)
-#    .libPaths(c(install.dir, .libPaths())) ## this line fixes the problem at ENS (Morgane) ## MAYBE BUT IT CREATES PROBLEMS IF THE USER HAS NOT DONE IT IN THE USE S
-    source("http://bioconductor.org/biocLite.R")
-#    biocLite(ask=FALSE, lib=install.dir,  lib.loc=install.dir)
-    biocLite(lib=install.dir, lib.loc=c(.libPaths(),install.dir), suppressUpdates="")
-    biocLite(pkg, dependencies=TRUE, lib=install.dir,  lib.loc=install.dir, suppressUpdates="")
+
+    BiocManager::install(pkg, lib=install.dir)
+
+    #biocLite is deprecated Jan2020
+    #    .libPaths(c(install.dir, .libPaths())) ## this line fixes the problem at ENS (Morgane) 
+    ## MAYBE BUT IT CREATES PROBLEMS IF THE USER HAS NOT DONE IT IN THE USE S
+    #source("http://bioconductor.org/biocLite.R")
+    #biocLite(ask=FALSE, lib=install.dir,  lib.loc=install.dir)
+    #biocLite(lib=install.dir, lib.loc=c(.libPaths(),install.dir), suppressUpdates="")
+    #biocLite(pkg, dependencies=TRUE, lib=install.dir,  lib.loc=install.dir, suppressUpdates="")
+
     message(pkg, " BioConductor package installed in dir ", install.dir)
   }
 }
@@ -112,14 +122,16 @@ for (pkg in required.packages.bioconductor) {
 ################################################################
 ## Install RSAT-specific packages.  We force re-installation of these
 ## packages since they may have changed since the last installation.
-message("Installing RSAT-specific packages in ", dir.rsat.rlib)
+message("Installing RSAT-specific packages in ", install.dir)
 
-dir.create(dir.rsat.rlib, recursive=TRUE, showWarnings=FALSE)
+#dir.create(dir.rsat.rlib, recursive=TRUE, showWarnings=FALSE)
+# already done above
+
 message(required.packages.rsat)
 
 for (package in required.packages.rsat) {
-  message("Installing RSAT package ", package, " in folder ", dir.rsat.rlib)
-  install.packages(pkgs=file.path(dir.rsat.rscripts, package), repos=NULL,  lib=dir.rsat.rlib, type="source")
+  message("Installing RSAT package ", package, " in folder ", install.dir)
+  install.packages(pkgs=file.path(dir.rsat.rscripts, package), repos=NULL,  lib=install.dir, type="source")
 }
 
 
