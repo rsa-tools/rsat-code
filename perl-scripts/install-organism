@@ -566,6 +566,11 @@ package main;
 	} else {
 	  ## Build organism full name from the organism short name (replace _ by spaces)
 	  $organism_full_name = $organism_short_name;
+      if(($source eq 'ensemblgenomes') || ($source eq 'ensembl')){
+          $organism_full_name = (defined $species[0] && !($species[0] eq '')) ? ucfirst($species[0]) : $organism_short_name;
+          @names = split($organism_full_name."_", $organism_short_name);
+          $organism->set_attribute("genome_assembly", $names[1]);
+      }
 	  $organism_full_name =~ s/\_/ /g;
 	}
       }
@@ -949,6 +954,7 @@ sub UpdateConfigTab {
   $supported_organism{$organism_short_name}->{'name'} = $args{name} || $organism->get_attribute("name");
   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $dir{install};
   $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $install_date;
+    $supported_organism{$organism_short_name}->{'genome_assembly'} = $organism->get_attribute("genome_assembly");
 
   #$supported_organism{$organism_short_name}->{'download_date'} =  $download_date if ($task{download});
 
@@ -981,6 +987,31 @@ sub UpdateConfigTab {
     $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from};
   }
  
+  ## Update blast column in config table if blast information is available
+
+  my $blast_folder=$supported_organism{$organism_short_name}->{'data'}."/blast_hits" ;
+  print "genome folder ". $genome_folder."\n";
+  if ( -d $blast_folder ){
+    $supported_organism{$organism_short_name}->{'blast_available'}= 1;
+  } else {
+    $supported_organism{$organism_short_name}->{'blast_available'}= 0;
+  }
+  ## Update variant columns in config table if variant information
+  my $variants_folder=$supported_organism{$organism_short_name}->{'data'}."/variations" ;
+ 
+  print "variants folder" . $variants_folder."\n"; 
+  if ( -d $variants_folder ){
+    $supported_organism{$organism_short_name}->{'variant_available'}= 1;
+    my $variant_source = `cat $variants_folder/source.txt`;
+    chomp($variant_source);
+    $supported_organism{$organism_short_name}->{'variant_source'}= $variants_source || "<NA>";
+    $supported_organism{$organism_short_name}->{'path_to_variant_files'}= $variants_folder;
+  } else {
+    $supported_organism{$organism_short_name}->{'variant_available'}= 0; 
+    $supported_organism{$organism_short_name}->{'variant_source'}= "<NA>";
+    $supported_organism{$organism_short_name}->{'path_to_variant_files'}= "<NA>";
+  }
+
 
   &RSAT::message::Debug("&UpdateConfigTab()",
 			$supported_organism{$organism_short_name}->{'source'},
@@ -989,7 +1020,12 @@ sub UpdateConfigTab {
 			$supported_organism{$organism_short_name}->{'last_update'},
 			$supported_organism{$organism_short_name}->{'up_from'},
 			$supported_organism{$organism_short_name}->{'name'},
+			$supported_organism{$organism_short_name}->{'variant_available'},
+			$supported_organism{$organism_short_name}->{'variant_source'},
+			$supported_organism{$organism_short_name}->{'path_to_variant_files'}
       ) if ($main::verbose >= 3);
+
+ 
 
   ## Export the updated table of supported organisms
   &RSAT::OrganismManager::export_supported_organisms(file=>$main::org_table, backup=>$main::backup_org_table);
@@ -1007,21 +1043,20 @@ sub CreatePhylogeny {
 
     ($org_handle) = &OpenInputFile($organism_table);
     while (<$org_handle>) {
-	chomp;
-	if (/^-- field (\d)	taxonomy/) {
-	    $taxonomy_field = $1;
-	} elsif (/^--/) {
-
-	    next;
-	} else {
-	    if (defined($taxonomy_field)) {
-		@fields = split "\t";
-		$taxonomy = $fields[$taxonomy_field - 1];
-		&RSAT::message::Info ("Taxonomyyy\t$taxonomy\n") if ($main::verbose >= 3);
-	    } else {
-		&Warning("Cannot read taxonomy in file $organism_table\n");
-	    }
-	}
+        chomp;
+        if (/^-- field (\d)	taxonomy/) {
+            $taxonomy_field = $1;
+        } elsif (/^--/) {
+            next;
+        } else {
+            if (defined($taxonomy_field)) {
+                @fields = split "\t";
+                $taxonomy = $fields[$taxonomy_field - 1];
+                &RSAT::message::Info ("Taxonomyyy\t$taxonomy\n") if ($main::verbose >= 3);
+            } else {
+                &Warning("Cannot read taxonomy in file $organism_table\n");
+            }
+        }
     }
     close $org_handle;
 

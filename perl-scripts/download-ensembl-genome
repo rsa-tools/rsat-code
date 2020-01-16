@@ -219,7 +219,7 @@ package	main;
 
   ################################################################
   ## Get Adaptators
-  &RSAT::message::TimeWarn("Getting species adaptor from Ensembl") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Getting species adaptor from Ensembl") if ($main::verbose >= 2);
   my $slice_adaptor = $registry->get_adaptor($species, 'core', 'slice');
   if ($slice_adaptor) {
     &RSAT::message::Debug("Slice adaptor", $slice_adaptor) if ($main::verbose >= 5);
@@ -364,7 +364,7 @@ package	main;
   close $out_contig;
   close $out_contigs;  
 
-  &UpdateEnsemblSupported();
+  &UpdateEnsemblSupported($species, $assembly,$ensembl_release, $species_suffix);
 
   ################################################################
   ## Report execution time and close output stream

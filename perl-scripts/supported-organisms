@@ -53,7 +53,8 @@ package main;
     our $group = "";
     our $depth = 0;
     our @sources = ();
-
+    our $with_variant = 0;
+    our $with_blast = 0;
     ## Read arguments
     &ReadArguments();
 
@@ -113,7 +114,7 @@ package main;
 	}
 	my $result = "";
 	for my $source (@sources) {
-	  $result .= &RSAT::OrganismManager::supported_organism_table($verbose, 0, $source, $taxon, $group, $depth, @return_fields); ## Export the table with header and absolute paths;
+        $result .= &RSAT::OrganismManager::supported_organism_table($verbose, 0, $source, $taxon, $group, $depth, $with_variant, $with_blast, @return_fields); ## Export the table with header and absolute paths;
 	}
 	print $out $result;
       }
@@ -398,7 +399,10 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-unique_genus") {
       $main::unique_genus = 1;
       
-
+    }elsif ($ARGV[$a] eq "-with-variant"){
+        $with_variant = 1;
+    }elsif ($ARGV[$a] eq "-with-blast"){
+        $with_blast = 1;
       ### Select source
     } elsif ($ARGV[$a] eq "-source") {
       push @sources, $ARGV[$a+1];;

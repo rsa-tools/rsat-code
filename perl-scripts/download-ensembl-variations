@@ -180,7 +180,7 @@ package	main;
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
   our $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
-
+    
   our %outfile = ();
 
   our $verbose = 2;
@@ -194,57 +194,60 @@ package	main;
   our $full_species_ID = "";
 #  our $data_dir = &Get_data_dir();
   our $registry = 'Bio::EnsEMBL::Registry';
+    
+    ################################################################
+    ## Tasks
+    
+    ## Default tasks are executed if no task is specified
+    local @default_tasks = (
+    "download_gvf", ## Fetch gvf file from ensembl
+    "report_snps", ## Read downloaded file from ensembl and report the processed data
+    "clean_gvf", ## Delete the uncompressed downloaded GVF files after processing
+    );
+    
+    ## These optional tasks are NOT executed by default, either because
+    ## they are particularly time-consuming, or because we don't want to
+    ## loose the raw data
+    local @optional_tasks = (
+    "check_ref_seq", ## Check the sequence on the reference genome
+    "super_variations", ## Compute super-variations
+    "clean_gvf_gz", ## Delete the downloaded compressed GVF files after processing
+    );
+    ## The extra tasks change exclusively for VCF download
+    local @extra_tasks = (
+    "fromvcf", ## Download the vcf file from ensembl
+    );
+    local @supported_tasks = (
+    @default_tasks,
+    @optional_tasks,
+    @extra_tasks,
+    "default", ## Run default tasks (avoid heavy tasks such as check_ref_seq)
+    "all", ## Run all other tasks
+    );
+    local $supported_tasks = join (",", @supported_tasks);
+    local %supported_tasks = ();
+    foreach my $task (@supported_tasks) {
+        $supported_tasks{$task} = 1;
+    }
+    local %task = (); ## List of tasks to be executed
+    
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+    
   our $ensembl_release_safe = &get_ensembl_release_safe($db);
   our $ensembl_release_latest = &get_ensembl_release_latest($db);
   our $ensembl_release = &get_ensembl_release($db);
   our $null = "<NULL>";
 
+    
   our $get_available_species = 0;
   our $ref_seq = "";
 
   our $group_lc; ## Just used with the fromvcf task ## ANRG_2
   our $personal_release; ## Just used with the fromvcf task ## ANRG_2
 
-  ################################################################
-  ## Tasks
-
-  ## Default tasks are executed if no task is specified
-  local @default_tasks = (
-      "download_gvf", ## Fetch gvf file from ensembl
-      "report_snps", ## Read downloaded file from ensembl and report the processed data
-      "clean_gvf", ## Delete the uncompressed downloaded GVF files after processing
-      );
-
-  ## These optional tasks are NOT executed by default, either because
-  ## they are particularly time-consuming, or because we don't want to
-  ## loose the raw data
-  local @optional_tasks = (
-      "check_ref_seq", ## Check the sequence on the reference genome
-      "super_variations", ## Compute super-variations
-      "clean_gvf_gz", ## Delete the downloaded compressed GVF files after processing
-      );
-  ## The extra tasks change exclusively for VCF download
-  local @extra_tasks = (
-      "fromvcf", ## Download the vcf file from ensembl
-  );
-  local @supported_tasks = (
-      @default_tasks,
-      @optional_tasks,
-      @extra_tasks,
-      "default", ## Run default tasks (avoid heavy tasks such as check_ref_seq)
-      "all", ## Run all other tasks
-      );
-  local $supported_tasks = join (",", @supported_tasks);
-  local %supported_tasks = ();
-  foreach my $task (@supported_tasks) {
-      $supported_tasks{$task} = 1;
-  }
-  local %task = (); ## List of tasks to be executed
-
-
-  ################################################################
-  ## Read argument values
-  &ReadArguments();
+  
 
   ################################################################
   ## The vcf download process begins if -task is fromvcf ##ANRG_2
@@ -392,8 +395,11 @@ package	main;
 
   ## Get genome assembly
   #S ANRG
-  #$assembly = &Get_assembly($species,$ensembl_release, $species_suffix);
-  $assembly = &Get_assembly($species,&get_ensembl_release("ensembl"), $species_suffix);
+  $assembly = &Get_assembly($species,$ensembl_release, $species_suffix);
+    
+    &RSAT::message::Warning($ensembl_release);
+    
+    #$assembly = &Get_assembly($species,&get_ensembl_release("ensembl"), $species_suffix);
   #E ANRG
   #die "BOOM";
 
@@ -870,6 +876,12 @@ package	main;
       unlink($gvf_file_gz);
   }
 
+    # Update variations table
+    my	$supported_organism_file = &Get_supported_file();
+    my $assembly_id=`grep -w $species $supported_organism_file | cut -f 13 | perl -lne \'s\/\\s+//g; print\'`;
+    chomp($assembly_id);
+    my $release=$main::personal_release;
+    &UpdateVariationsSupported($species,$assembly_id,"ensemblgenomes",$release);
 
   &RSAT::message::Info("Variations installed in dir", $variation_dir) if ($main::verbose >= 1);
 
@@ -1208,7 +1220,7 @@ sub Download_from_vcf{
    my $species_ucfirst=ucfirst($species);
    my $assembly_id=`grep -w $species $organism_table | cut -f 5 | perl -lne \'s\/\\s+//g; print\'`; ## Check This part
    chomp($assembly_id);
-   my $species_rsat_id=$species_ucfirst.".".join("",$assembly_id).".".$release;
+   my $species_rsat_id=$species_ucfirst."_".join("",$assembly_id);
 
    my $species_dir=$ENV{'RSAT'}."/data/genomes/".$species_rsat_id;
    my $variations_dir=$species_dir."/variations";

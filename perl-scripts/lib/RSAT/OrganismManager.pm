@@ -38,13 +38,13 @@ our @supported_org_fields = qw(ID
 			       taxonomy
 			       data
 			       genome
-			      # genome_assembly
-			      # genome_version
-			      # download_date
-			      # variant_available
-			      # variant_source
-			      # variant_date
-			      # path_to_variant_files
+			       genome_assembly
+			       genome_version
+			       download_date
+			       variant_available
+			       variant_source
+			       path_to_variant_files
+                   blast_available
 			      );
 
 #			       selected_taxon
@@ -107,50 +107,50 @@ lists of supported organisms stored in separate tables.
 
 =cut
 sub load_supported_organisms {
-  my ($organism_table) = @_;
-  $organism_table = $organism_table || $ENV{RSAT}."/public_html/data/".$organism_table_name;
-
-  unless (-e $organism_table) {
-    if ($main::verbose >= 2) {
-      &RSAT::message::Warning("The tabular file with the list of supported organism cannot be read");
-      &RSAT::message::Warning("Missing file",  $organism_table);
+    my ($organism_table) = @_;
+    $organism_table = $organism_table || $ENV{RSAT}."/public_html/data/".$organism_table_name;
+    
+    unless (-e $organism_table) {
+        if ($main::verbose >= 2) {
+            &RSAT::message::Warning("The tabular file with the list of supported organism cannot be read");
+            &RSAT::message::Warning("Missing file",  $organism_table);
+        }
+        return();
     }
-    return();
-  }
-  my ($table_handle) = &RSAT::util::OpenInputFile($organism_table);
-  my @fields = ();
-  my $l = 0;
-
-  while (my $line = <$table_handle>) {
-    my @values = ();
-    $l++;
-    next if $line =~ /^;/;
-    chomp $line;
-    if ($line =~ /^#/) { # Load header
-      $line =~ s/#//;
-      @fields = split /\t/, $line;
-    } else {
-#      $line =~ s|\$ENV\{RSAT\}|BOUM|g;
-#      my $tmp = $ENV{RSAT};
-      #      &RSAT::error::FatalError($tmp, $ENV{RSAT});
-      #      $line =~ s|\$ENV\{RSAT\}|$tmp|g;
-      #      $line =~ s|\/+|\/|g;
-      @values = split /\t/, $line;
-      &RSAT::error::FatalError("&RSAT::OrganismManager::load_supported_organisms()\n",
-			       "Number of fields in the header does not correspond to the number of fields\n",
-			       "file", $organism_table, "line", $l, "\n") if (scalar (@values) != scalar (@fields));
-      for (my $i = 1; $i < scalar @fields; $i++) {
-	my $field = $fields[$i];
-	my $value = $values[$i];
-	$value =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|;
-#	my $value = &RSAT::util::hide_RSAT_path($values[$i]);
-       $main::supported_organism{$values[0]}->{$field} = $value;
-      }
+    my ($table_handle) = &RSAT::util::OpenInputFile($organism_table);
+    my @fields = ();
+    my $l = 0;
+    
+    while (my $line = <$table_handle>) {
+        my @values = ();
+        $l++;
+        next if $line =~ /^;/;
+        chomp $line;
+        if ($line =~ /^#/) { # Load header
+            $line =~ s/#//;
+            @fields = split /\t/, $line;
+        } else {
+        #      $line =~ s|\$ENV\{RSAT\}|BOUM|g;
+        #      my $tmp = $ENV{RSAT};
+        #      &RSAT::error::FatalError($tmp, $ENV{RSAT});
+        #      $line =~ s|\$ENV\{RSAT\}|$tmp|g;
+        #      $line =~ s|\/+|\/|g;
+            @values = split /\t/, $line;
+            &RSAT::error::FatalError("&RSAT::OrganismManager::load_supported_organisms()\n",
+            "Number of fields in the header does not correspond to the number of fields\n",
+            "file", $organism_table, "line", $l, "\n") if (scalar (@values) != scalar (@fields));
+            for (my $i = 1; $i < scalar @fields; $i++) {
+                my $field = $fields[$i];
+                my $value = $values[$i];
+                $value =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|;
+                #	my $value = &RSAT::util::hide_RSAT_path($values[$i]);
+                $main::supported_organism{$values[0]}->{$field} = $value;
+            }
+        }
     }
-  }
 
-  ## Activate the "loaded" flag
-  $organism_table_loaded = 1;
+    ## Activate the "loaded" flag
+    $organism_table_loaded = 1;
 }
 
 
@@ -183,7 +183,7 @@ Usage:
 =cut
 sub export_supported_organisms {
   my (%args) = @_;
-  my $organism_table = $args{file} || $ENV{RSAT}."/public_html/data/supported_organisms.tab";
+  my $organism_table = $args{file} || $ENV{RSAT}."/public_html/data/".$organism_table_name;
   my $store_backup = $args{backup} || 0;
   my $source = $args{source} || "";
   my $taxon = $args{taxon} || "";
@@ -204,7 +204,7 @@ sub export_supported_organisms {
   &RSAT::message::TimeWarn("Storing updated organism table to temporary file", $organism_table_tmp) if ($main::verbose >= 3);
   my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table_tmp);
 
-  print $table_handle &supported_organism_table("header", 1, $source, $taxon, $group, $depth, @fields);
+  print $table_handle &supported_organism_table("header", 1, $source, $taxon, $group, $depth, 0, 0, @fields);
 
   ## Rename the updated table to make it effective
   system("mv ".$organism_table_tmp." ".$organism_table);
@@ -295,7 +295,7 @@ Restrict only return organisms belonging to a given taxon.
 
 =cut
 sub supported_organism_table {
-  my ($header,$relative_path, $source, $taxon, $group, $depth, @fields) = @_;
+  my ($header,$relative_path, $source, $taxon, $group, $depth, $with_variant, $with_blast, @fields) = @_;
   my $table = "";
 
   ## Check arguments
@@ -361,7 +361,6 @@ sub supported_organism_table {
   @selected_organisms = &RSAT::OrganismManager::UniquePerTaxon("species", @selected_organisms) if ($main::unique_species);
   @selected_organisms = &RSAT::OrganismManager::UniquePerTaxon("genus", @selected_organisms) if ($main::unique_genus);
 
-
   ## Add fields for each organism
   my $n = 0;
   foreach my $org (@selected_organisms) {
@@ -389,9 +388,11 @@ sub supported_organism_table {
       }
       push @values, $value;
     }
-    my $row = join ("\t", @values);
-#    &RSAT::message::Debug($org, $row) if ($main::verbose >= 3);
-    $table .= $row."\n";
+      if(($with_variant == 0 && $with_blast == 0) || ($with_variant == 1 && $main::supported_organism{$org}->{'variant_available'} eq "1") || ($with_blast == 1 && $main::supported_organism{$org}->{'blast_available'} eq "1")){
+          my $row = join ("\t", @values);
+          #    &RSAT::message::Debug($org, $row) if ($main::verbose >= 3);
+          $table .= $row."\n";
+      }
   }
   return($table);
 }
