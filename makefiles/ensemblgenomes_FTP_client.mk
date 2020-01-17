@@ -376,9 +376,9 @@ install_go_annotations:
 	@mkdir -p ${GO_ANNOT_DIR}
 	@echo "Downloading GO annotations of ${SPECIES}"
 	@echo download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
-        -release ${RELEASE} -list ${ORGANISM_TABLE} 
+        -release ${RELEASE} -list ${ORGANISM_TABLE} -action ${GOACTION} 
 	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
-		-release ${RELEASE}	-list ${ORGANISM_TABLE}
+		-release ${RELEASE}	-list ${ORGANISM_TABLE} -action ${GOACTION}
 	@echo "Expanding GO annotations of ${SPECIES}" 
 	@rm -f ${GO_ANNOT_LINK}
 	@ln -s ${GO_ANNOT_FILE} ${GO_ANNOT_LINK}
