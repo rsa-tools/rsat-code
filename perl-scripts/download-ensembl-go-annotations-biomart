@@ -148,7 +148,6 @@ package main;
 
   my @dnames = $registry->getAllDatasetNames('default',1);
   foreach my $dset (@dnames) {
-   print "$dset\n";
     if($dset =~ m/$shortspecies\_eg_gene/)
     {
         $dataset = $dset;
