@@ -987,6 +987,31 @@ sub UpdateConfigTab {
     $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from};
   }
  
+  ## Update blast column in config table if blast information is available
+
+  my $blast_folder=$supported_organism{$organism_short_name}->{'data'}."/blast_hits" ;
+  print "genome folder ". $genome_folder."\n";
+  if ( -d $blast_folder ){
+    $supported_organism{$organism_short_name}->{'blast_available'}= 1;
+  } else {
+    $supported_organism{$organism_short_name}->{'blast_available'}= 0;
+  }
+  ## Update variant columns in config table if variant information
+  my $variants_folder=$supported_organism{$organism_short_name}->{'data'}."/variations" ;
+ 
+  print "variants folder" . $variants_folder."\n"; 
+  if ( -d $variants_folder ){
+    $supported_organism{$organism_short_name}->{'variant_available'}= 1;
+    my $variant_source = `cat $variants_folder/source.txt`;
+    chomp($variant_source);
+    $supported_organism{$organism_short_name}->{'variant_source'}= $variants_source || "<NA>";
+    $supported_organism{$organism_short_name}->{'path_to_variant_files'}= $variants_folder;
+  } else {
+    $supported_organism{$organism_short_name}->{'variant_available'}= 0; 
+    $supported_organism{$organism_short_name}->{'variant_source'}= "<NA>";
+    $supported_organism{$organism_short_name}->{'path_to_variant_files'}= "<NA>";
+  }
+
 
   &RSAT::message::Debug("&UpdateConfigTab()",
 			$supported_organism{$organism_short_name}->{'source'},
@@ -995,7 +1020,12 @@ sub UpdateConfigTab {
 			$supported_organism{$organism_short_name}->{'last_update'},
 			$supported_organism{$organism_short_name}->{'up_from'},
 			$supported_organism{$organism_short_name}->{'name'},
+			$supported_organism{$organism_short_name}->{'variant_available'},
+			$supported_organism{$organism_short_name}->{'variant_source'},
+			$supported_organism{$organism_short_name}->{'path_to_variant_files'}
       ) if ($main::verbose >= 3);
+
+ 
 
   ## Export the updated table of supported organisms
   &RSAT::OrganismManager::export_supported_organisms(file=>$main::org_table, backup=>$main::backup_org_table);
