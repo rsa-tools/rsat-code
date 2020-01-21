@@ -140,7 +140,9 @@ package main;
 
   # 2) find out biomart name for user's species (dataset)
   my ($shortspecies,$dataset);
-  if($params{'short_name'} =~ /^([a-z])\w+_([a-z]+)/) {
+  if($params{'short_name'} =~ /^([a-z])\w+_([a-z])\w+_(\w+)/) { #ternary species
+    $shortspecies = $1.$2.$3;
+  } elsif($params{'short_name'} =~ /^([a-z])\w+_([a-z]+)/) { #default binary
     $shortspecies = $1.$2;
   }
 
