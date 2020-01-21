@@ -5,6 +5,7 @@ targets:
 	@echo "Targets"
 	@echo "	targets			list targets of this makefile"
 	@echo "	all			run all the targets (may take some time)"
+	@echo "	download_demo_files	Download demo files from the github repository"
 	@echo "	list_param		list parameters"
 	@echo "	randseq			random-seq"
 	@echo "	purgeseq		purge-sequence"
@@ -16,7 +17,6 @@ targets:
 	@echo "	convert_matrix		convert-matrix"
 	@echo "	compare_matrices	compare-matrices"
 	@echo "	matrix_clustering	matrix-clustering with 2 collections (peak-motifs versus Jaspar ref)"
-	@echo "	download_peaks		download test peaks"
 	@echo "	oligos			oligo-analysis"
 	@echo "	positions		position-analysis"
 	@echo "	assembly		pattern-assembly"
@@ -45,8 +45,16 @@ list_param:
 
 ################################################################
 ## Run all targets
-all: targets list_param randseq purgeseq download_jaspar sequence_lengths classfreq xygraph retrieve_matrix convert_matrix compare_matrices download_peaks oligos positions assembly matrix_from_patterns create_background matrix_distrib matrix_quality peakmo download_organism supported_local supported_ensembl supported_ensemblg supported_ucsc gene_info add_gene_info retrieve_seq fetch_sequences
+all: targets list_param download_demo_files randseq purgeseq download_jaspar sequence_lengths classfreq xygraph retrieve_matrix convert_matrix compare_matrices  oligos positions assembly matrix_from_patterns create_background matrix_distrib matrix_quality peakmo download_organism supported_local supported_ensembl supported_ensemblg supported_ucsc gene_info add_gene_info retrieve_seq fetch_sequences
 
+################################################################
+## Download demo files from the github repository
+DEMO_URL=https://github.com/rsa-tools/demo_files.git
+DEMO_FILES=demo_files
+download_demo_files:
+	@echo "Downloading demo files from git repository"
+	git clone ${DEMO_URL}
+	@echo "	DEMO_FILES		${DEMO_FILES}"
 
 ################################################################
 ## Generate random sequences
@@ -146,25 +154,16 @@ matrix_clustering:
 
 
 ################################################################
-## Download peak sequences for tests
+## Peak sequences for tests
+PEAK_DIR=demo_files/ChIP-seq_peaks
 PEAK_BASENAME=Oct4_peaks_top1000
 PEAK_FILE=${PEAK_BASENAME}.fa
-PEAK_URL=http://teaching.rsat.eu//demo_files/${PEAK_FILE}
-PEAKMO_DIR=${RESULT_DIR}/peak-motifs_result
-PEAKS=${PEAKMO_DIR}/${PEAK_FILE}
-download_peaks:
-	@echo "	Downloading peak sequences from ${PEAK_URL}"
-	@mkdir -p ${PEAKMO_DIR}
-	@if [ -f ${PEAKS} ] ; \
-	then echo "	Peak file already there"; \
-	else wget --no-clobber ${PEAK_URL} -O ${PEAKS}; \
-	fi
-	@echo "	PEAKS	${PEAKS}"
+PEAKS=${PEAK_DIR}/${PEAK_FILE}
 
 ################################################################
 ## Check the lengths of the downloaded peaks
 PEAK_LENGTHS=${PEAKS}_lengths.tsv
-sequence_lengths: download_peaks
+sequence_lengths: 
 	@echo "Testing sequence-lengths"
 	rsat sequence-lengths -i ${PEAKS} -o ${PEAK_LENGTHS}
 	@echo "	PEAK_LENGTHS	${PEAK_LENGTHS}"
@@ -196,7 +195,7 @@ xygraph: classfreq
 ## Purge sequences to mask repeats
 PURGESEQ_DIR=${RESULT_DIR}/purge-sequence_result
 PURGED_PEAKS=${PURGESEQ_DIR}/${PEAK_BASENAME}_purged.fa
-purgeseq: download_peaks
+purgeseq: 
 	@echo "Testing purge-seq"
 	@mkdir -p ${PURGESEQ_DIR}
 	@echo "	PURGESEQ_DIR	${PURGESEQ_DIR}"
@@ -278,7 +277,7 @@ BG_MKV=1
 BG_DIR=${RESULT_DIR}/background-models
 BG_FORMAT=oligos
 BG_FILE=${BG_DIR}/${PEAK_BASENAME}_bg-model_markov${BG_MKV}_${BG_FORMAT}.tsv
-create_background: download_peaks
+create_background: 
 	@echo "Testing create-background-model"
 	@mkdir -p ${BG_DIR}
 	rsat create-background-model -v ${V} \
@@ -353,9 +352,9 @@ matrix_quality: create_background
 ################################################################
 ## peak-motifs test
 PEAKMO_TASK=purge,seqlen,composition,disco,merge_motifs,split_motifs,motifs_vs_motifs,timelog,synthesis,small_summary,scan,motifs_vs_db
-peakmo: download_jaspar download_peaks
+peakmo: download_jaspar 
 	@echo "Testing peak-motifs"
-	@mkdir -p ${PEAKMO_DIR}
+	@mkdir -p ${PEAK_DIR}
 	@echo "	Running peak-motifs"
 	rsat peak-motifs  -v 3 \
 		-title Oct4_Chen2008_sites_from_Jaspar \
@@ -365,12 +364,12 @@ peakmo: download_jaspar download_peaks
 		-nmotifs 5 -minol 6 -maxol 6 -no_merge_lengths -2str -origin center \
 		-scan_markov 1 -source galaxy \
 		-prefix peak-motifs -noov -img_format png \
-		-outdir ${PEAKMO_DIR} \
+		-outdir ${PEAK_DIR} \
 		-motif_db JASPAR transfac ${JASPAR} \
 		-task ${PEAKMO_TASK}  \
-		&> ${PEAKMO_DIR}/peak-motifs_log.txt
-	@echo "	Log file	${PEAKMO_DIR}/peak-motifs_log.txt"
-	@echo "	Result page	${PEAKMO_DIR}/peak-motifs_synthesis.html"
+		&> ${PEAK_DIR}/peak-motifs_log.txt
+	@echo "	Log file	${PEAK_DIR}/peak-motifs_log.txt"
+	@echo "	Result page	${PEAK_DIR}/peak-motifs_synthesis.html"
 
 
 ################################################################
