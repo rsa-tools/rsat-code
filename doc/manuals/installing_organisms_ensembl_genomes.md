@@ -1,43 +1,24 @@
----
-title: "How to install organisms from Ensembl Genomes"
-author: "Bruno Contreras Moreira"
-date: 'Last update: 2018/06/19'
-output:
-  html_document:
-    fig_caption: yes
-    highlight: zenburn
-    theme: cerulean
-    toc: yes
-    toc_depth: 3
-    toc_float: yes
-  pdf_document:
-    fig_caption: yes
-    highlight: zenburn
-    toc: yes
-    toc_depth: 2
----
 
-# Introduction
+This document explains how to install genomes and annotations from Ensembl Genomes using mostly the [FTP](ftp://ftp.ensemblgenomes.org/pub) site.Only Gene Ontology terms are obtained from [BioMart](http://plants.ensembl.org/biomart/martview).
 
-This document explains how to install genomes and annotations from Ensembl Genomes in RSAT. 
-Please note that while Ensembl covers Vertebrates, Ensembl Genomes includes the rest 
-(Protists, Fungi, Plants, Bacteria, Metazoa). These instructions have been tested with Ensembl Plants.
-This manual uses *makefiles/ensemblgenomes_FTP_client.mk* for these tasks.
+Note that while Ensembl covers Vertebrates, Ensembl Genomes includes the rest 
+(Protists, Fungi, Plants, Bacteria, Metazoa). These instructions have mostly been tested with **Ensembl Plants**.
 
-This document does NOT use the following scripts: install-ensembl-genome, download-ensembl-genome,
-download-ensembl-features, download-ensembl-variations .
+This manual uses [../../makefiles/ensemblgenomes_FTP_client.mk](makefiles/ensemblgenomes_FTP_client.mk) for these tasks.
+
+This document does **NOT** use the following scripts: install-ensembl-genome, download-ensembl-genome,
+download-ensembl-features, download-ensembl-variations, which are documented elsewhere.
 
 
 # Downloading a genome from another RSAT web server
 
-Usually the fastest way of getting a genome installed is to fetch it from other RSAT web servers, 
-as oligo frequencies are not computed; instead thay are copied over:
+Usually the fastest way of getting a genome installed is to fetch it from other RSAT server. This way oligo frequencies are not computed; instead thay are copied over:
 
 ```{r, engine='bash', eval=FALSE}
 download-organism -server http://rsat.eead.csic.es/plants -org Arabidopsis_thaliana.TAIR10.29
 ```
 
-# Installing genome sequences and annotations from Ensembl genomes
+# Installing genome sequences and annotations from Ensembl Genomes
 
 For this to work we first need to get the current list of supported genomes in the respective GROUP,
 'Plants' in the example. This can be done by running the following command, where X is the desired release number:
