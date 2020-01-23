@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>RSAT - Pathway-Extractor</title>
-<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+<link rel="stylesheet" type="text/css" href = "css/main_grat.css" media="screen">
 
 </head>
    <body class="results" onload="javascript:document.getElementById('hourglass').hidden=true"> 

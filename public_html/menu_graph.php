@@ -5,7 +5,7 @@
         <link rel='stylesheet' href='css/colorbox.css'></link>
 	<link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
         <script src='js/jquery.js'></script>
-        <script src='lib/RSAT_menu.js' type='text/javascript'></script>
+        <script src='js/RSAT_menu.js' type='text/javascript'></script>
 		<script src='js/jquery.colorbox-min.js'></script>
 
         <script>

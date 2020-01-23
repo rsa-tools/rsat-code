@@ -2,9 +2,9 @@
     <HEAD>
         <TITLE>RSA-tools - tutorials</TITLE>
         <link rel="alternate" type="application/rss+xml" title="RSAT website news feed" href="RSSAT.xml" />
-        <link rel="stylesheet" type="text/css" href = "course.css" media="screen,print">
+        <link rel="stylesheet" type="text/css" href = "css/course.css" media="screen,print">
         <link rel='stylesheet' type='text/css' href='css/bootstrap.min.css' />
-        <link rel='stylesheet' type='text/css' href='home.css' />
+        <link rel='stylesheet' type='text/css' href='css/home.css' />
         <link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
         
         <script src="js/jquery.js"></script>
