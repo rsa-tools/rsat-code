@@ -22,6 +22,11 @@ download-organism -server http://rsat.eead.csic.es/plants -org Arabidopsis_thali
 
 # Installing genome sequences and annotations from Ensembl Genomes
 
+## Check FTP site URL
+
+The current FTP site is at ftp://ftp.ensemblgenomes.org ; should it change in the future, or its folder structure, [../../makefiles/ensemblgenomes_FTP_client.mk](makefiles/ensemblgenomes_FTP_client.mk) will have to be updated.
+
+
 ## Find out current Ensembl Genomes release 
 
 Visit the Web site of your division of interest, such as http://plants.ensembl.org, and check the release statement at the bottom.
