@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/235363605.svg)](https://zenodo.org/badge/latestdoi/235363605)
+
 # Regulatory Sequence Analysis Tools (RSAT)
 
 
