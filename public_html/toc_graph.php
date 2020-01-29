@@ -6,7 +6,7 @@
 		<meta http-equiv='Content-Type' content='text/html; charset=iso-8859-1'>
 		<title>Network Analysis Tools - menu</title>
 		<link rel='stylesheet' type='text/css' href='menu.css' media='screen' />
-		<script src='RSAT_menu.js' type='text/javascript'></script>
+		<script src='js/RSAT_menu.js' type='text/javascript'></script>
 	</head>
 	<body>
 <ul id='tabmenu' class='rsat'>

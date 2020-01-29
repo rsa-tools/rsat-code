@@ -4,14 +4,14 @@
    <title>Network Analysis Tools - pathway-extractor</title>
    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
    <link rel="stylesheet" type="text/css"
-   href="main.css"
+   href="css/main.css"
    media="screen,projection,print" />
    <link rel="stylesheet" type="text/css"
-   href="tabs.css"
+   href="css/tabs.css"
    media="screen,projection,print" />
-   <script src="RSAT_menu.js" type="text/javascript"></script>
-   <script src="RSAT_tabs.js" type="text/javascript"></script>
-   <script src="pathwayextractor.js" type="text/javascript"></script>
+   <script src="js/RSAT_menu.js" type="text/javascript"></script>
+   <script src="js/RSAT_tabs.js" type="text/javascript"></script>
+   <script src="js/pathwayextractor.js" type="text/javascript"></script>
    
    <script type="text/javascript">
    function add_demo() {

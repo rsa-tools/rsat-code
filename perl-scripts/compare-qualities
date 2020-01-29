@@ -19,31 +19,34 @@ $program_version
 
 =head1 DESCRIPTION
 
+Compare the empirical distributioins of weight score obtained with
+different matrices in a given sequence set.
+
 In order to estimate the capability of a PSSM to distinguish bona fide
 binding sites from genome background, we propose a method that relies
 on the combined analysis of theoretical and empirical score
 distributions in positive and negative control sets.
 
-B<matrix-quality>, consists of computing the theoretical distribution
-of scores for a PSSM, and comparing it to several empirical
-distributions obtained from various sequence sets.
+B<matrix-quality> computes the theoretical distribution of scores for
+a PSSM, and compares it to several empirical distributions obtained
+from various sequence sets.
 
 There might be several PSSMs capable to detect similar binding motifs,
 we can measure their quality independently, althougth we would like to
 detect the one with the best perfromance in orther to use only one.
 
-With the diferent score distributions obtained with B<matrix-quality>
+With the different score distributions obtained with B<matrix-quality>
 it should be possible to compare the detection capability of a set of
 matrices over the same set of sequences.
 
 This is done using the Weight Diference (WD), by default this value is
 defined as the difference between the observed Weigth Score (WS) in
-all promoters of an organismo (e.g. Escherichia coli K12) and the
+all promoters of an organism (e.g. Escherichia coli K12) and the
 expected WS in the theoretical distribution of the PSSM for a given
 P-value (see B<matrix-distrib>).
 
 Information of compared matrices is returned together with the graphic
-comparison..
+comparison.
 
 =head1 AUTHORS
 

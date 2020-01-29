@@ -14,11 +14,12 @@ NAME
 	by Jacques van Helden, 26 June 1997
 
 
-DESCRIPTION
-	Transforms a sequence conform to IUPAC degenerate code into an
-	equivalent regular expression. this expression canbe used to
-	search for complex patterns with general string search program
-	like grep or gais.
+DESCRIPTION 
+
+        Convert a pattern described with the IUPAC code for ambiguous
+	nucleotides into an equivalent regular expression. This
+	expression can be used to search for complex patterns with
+	general string search program like grep or gais.
 
 CATEGORY
 	util

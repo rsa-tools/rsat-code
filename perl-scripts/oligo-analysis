@@ -2719,8 +2719,9 @@ ARGUMENTS
 		strands are summed. This can be inactivated with the
 		-1str option.
 
-	-o file	outputfile. Returns a list of the oligomers
-		encountered in the sequences, with their frequencies.
+	-o file	Output file. If not specified, the result is printed on the
+	   	standard output.
+
 	-v \#	verbose level
 			1 report parameters and statistics
 			2 warn when the program enters a new subroutine

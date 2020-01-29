@@ -80,7 +80,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("variation-scan", "form");
 print "<CENTER>";
-print "Scan sequences bearing variants with a list of motifs to predict which motifs may be affected by the variant.<br/>\n";
+print "Scan sequences of polymorphic variants with a list of motifs to predict transcription factor binding sites (TFBS) affected by the variations.<br/>\n";
 print "<br>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:</br> ";
 print "<a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr//'>Jacques van Helden</a><sup>cit</sup>\n";
 print ", <a target='_blank' href='http://liigh.unam.mx/amedina/index.html'>Alejandra Medina-Rivera</a><sup>cit</sup>\n";
