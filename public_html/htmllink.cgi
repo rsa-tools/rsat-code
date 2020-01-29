@@ -34,7 +34,7 @@ print $query->start_html(-title=>"$title",
         -src      => 'RSAT_tabs.js'
     }
    ],
-    -style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
+    -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css","css/font-awesome.min.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
     

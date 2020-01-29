@@ -1736,7 +1736,7 @@ sub GetSequence {
       &RSAT::message::Info("# Common_name; Genus; Species; Organism; Classification") if ($main::verbose >= 1);
       &RSAT::message::Info(join ("; ", map { $compara_taxon->$_ } qw(common_name genus species binomial classification))) if ($main::verbose >= 1);
 
-      $common_name = $gene_member->taxon->common_name;
+      $common_name = $gene_member->taxon->get_common_name;
       if ($common_name) {
 	$common_name =~ s/\s+/_/g;
       }
@@ -1830,10 +1830,10 @@ sub GetSequence {
 
 	    unless ($member->stable_id eq $ortho_id) {
 
-		$bin_name = $member->taxon->binomial;
+		$bin_name = $member->taxon->scientific_name;
 		$bin_name =~ s/\s+/_/g;
 
-		$common_name = $member->taxon->common_name;
+		$common_name = $member->taxon->get_common_name;
 		if ($common_name) {
 		    $common_name =~ s/\s+/_/g;
 		} else {
@@ -1854,7 +1854,7 @@ sub GetSequence {
 		# Prints all homologs to table if asked for
 		if ($homologs_table) {
 #		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial, "\n");
-		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->taxonomy_level, $member->perc_id, $member->perc_pos, $member->perc_cov, $ortho_id, $compara_taxon->binomial, "\n");
+		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->taxonomy_level, $member->perc_id, $member->perc_pos, $member->perc_cov, $ortho_id, $compara_taxon->scientific_name, "\n");
 		}
 
 		if ($ortho_type) {
@@ -1880,7 +1880,7 @@ sub GetSequence {
 		    }
 		} else {
 		    if ($taxon) {
-			if (lc($taxon) eq lc($homology->subtype)) {
+			if (lc($taxon) eq lc($homology->taxonomy_level)) {
 			    $taxon_filter_flag = 1;
 			    my $gene = $member->get_Gene;
 			    &Main($gene, $bin_name);

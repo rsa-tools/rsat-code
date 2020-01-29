@@ -2,9 +2,9 @@
   <head>
     <title>RSAT - fetch-sequences</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" type="text/css" href="main.css" media="screen,projection,print"/>
-    <link rel="stylesheet" type="text/css" href="tabs.css" media="screen,projection,print"/>
-    <script src="RSAT_tabs.js" type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="css/main.css" media="screen,projection,print"/>
+    <link rel="stylesheet" type="text/css" href="css/tabs.css" media="screen,projection,print"/>
+    <script src="js/RSAT_tabs.js" type="text/javascript"></script>
     <script type="text/javascript">
 			function add_demo() {
 				document.getElementById('genome').value = 'mm9';
