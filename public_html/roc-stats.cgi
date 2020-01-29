@@ -324,7 +324,7 @@ sub NeAT_header {
   print $query->start_html(-title=>"Network Analysis Tools : $title",
 			   -class => "$css_body_class",
 			   -author=>'Jacques.van-Helden\@univ-amu.fr',
-			   -style => { 	-src => "$ENV{rsat_www}/main.css",
+			   -style => { 	-src => "$ENV{rsat_www}/css/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
   print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/NeAT_home.html'>Network Analysis Tools</A> - $title</H3>";

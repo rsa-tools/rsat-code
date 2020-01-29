@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>RSAT - Pathway-Extractor</title>
-<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+<link rel="stylesheet" type="text/css" href = "css/main_grat.css" media="screen">
 
 <script language="javascript" type="text/javascript" src="TableFilter/tablefilter_all_min.js"></script>
 <script src="TableFilter/sortabletable.js" language="javascript" type="text/javascript"></script>
