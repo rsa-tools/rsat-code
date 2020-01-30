@@ -17,13 +17,15 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $query = new CGI;
+my $supported_orgs = $query->param("supported");  $supported_orgs=~tr/[:()';<>]/[       ]/; # 20191022 ajhernan / quick fix to prevent xss
 
 my $group = "";
 if($query->param("get") eq 'json'){
     print "Content-type: application/json; charset=iso-8859-1\n\n";
 }elsif($query->param("get") eq 'display'){
     ### print the header
-    &RSA_header("Supported " . $query->param("supported"), "results");
+    #&RSA_header("Supported " . $query->param("supported"), "results");
+    &RSA_header("Supported " . $supported_orgs, "results");
     
     ## Check security issues
     &CheckWebInput($query);
@@ -36,7 +38,7 @@ if($query->param("get") eq 'json'){
     }
 }
 
-my $supported_orgs = $query->param("supported");
+#my $supported_orgs = $query->param("supported");
 my $term = $query->param("term");
 my @terms = split(" ", $term);
 
