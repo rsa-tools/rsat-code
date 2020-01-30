@@ -62,7 +62,7 @@ def list_subcommands(commands):
 ##
 try:
     # usage
-    ref = yaml.load(open(path + '/rsat.yaml').read(), Loader=yaml.FullLoader)
+    ref = yaml.load(open(path + '/rsat.yaml').read())#, Loader=yaml.FullLoader)
     toc = build_toc(ref['commands'])
     subcmd_list = list_subcommands(ref['commands'])
     usage = ref['usage'] % {'table_of_content' : toc}
