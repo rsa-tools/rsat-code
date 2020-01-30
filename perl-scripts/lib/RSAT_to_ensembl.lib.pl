@@ -96,6 +96,32 @@ sub get_ensembl_release {
 #  }
 }
 
+# instead of env variables, use folder names of installed genomes to
+# guess the latest available Ensembl [Genomes] release
+# Returns 0 if species/assembly is not installed
+sub get_latest_available_release {
+
+  my ($species, $assembly) = @_;
+
+  ## Check if the organism is installed in the tab-delimited file of organisms
+  my ($latest_release,$rel,$line) = (0);
+  my $supported_file = &Get_supported_file(); 
+  if (-f $supported_file ) {
+    open (ORGS, $supported_file) ||
+      &RSAT::error::FatalError ("Cannot read ".$supported_file);
+    while ($line = <ORGS>) {
+      # first column is ID
+      if($line =~ /^$species[\._]{1}$assembly.*?\.(\d+)\t/){
+        $rel = $1;  
+        if($rel > $latest_release){ $latest_release = $rel }     
+      }
+    }  
+    close(ORGS);
+  }
+
+  return $latest_release;
+}
+
 
 ################################################################
 ## Get the latest ensembl release for a species from Ensembl ftp site.
@@ -536,7 +562,9 @@ also serves as name for the directory in which the genome has to be
 installed.
 
 By default, the full species ID is built by concatenating species and
-assembly, separated by an underscore character. Example: 
+assembly, separated by an underscore, as in Saccharomyces_cerevisiae_R64-1-1 
+
+So this sub assumes assembly is passed as an argument in most cases.
 
 However, historically other formats have co-existed. For instance, 'install-organisms' 
 installs organisms from NCBI and uses strain instead of assembly ([species]_[strain])
@@ -551,20 +579,25 @@ sub Get_full_species_ID {
 
   &RSAT::message::Debug("&Get_full_species_ID()", $db, $species, $assembly, $ensembl_release, $species_suffix) if ($main::verbose >= 5);
 
-  ## Check that Ensembl release has been provided. If not, take
-  ## default one.
-  unless ($ensembl_release) {
-      $ensembl_release = &get_ensembl_release();
-      &RSAT::message::Debug("&Get_full_species_ID() called without ensembl_release argument",
-			    "Using default",$ensembl_release) if ($main::verbose >= 5);
-  }
+  ## Check that Ensembl release has been provided. If not, take default (might be outdated)
+  #unless ($ensembl_release) {
+  #    $ensembl_release = &get_ensembl_release();
+  #    &RSAT::message::Debug("&Get_full_species_ID() called without ensembl_release argument",
+  # 			    "Using default",$ensembl_release) if ($main::verbose >= 5);
+  #}
 
-  ## Check that the assembly has been provided. If not, guess
-  ## it.
+  ## Check assembly has been provided, else guess it from supported org table
   unless ($assembly) {
       &RSAT::message::Debug("&Get_full_species_ID() called without assembly argument") if ($main::verbose >= 5);
       $assembly = &Get_assembly($species,$ensembl_release,$species_suffix);
       &RSAT::message::Debug("Got from &Get_assembly()", $assembly) if ($main::verbose >= 5);
+  }
+
+  ## Take latest release available if not provided
+  unless ($ensembl_release) {
+      $ensembl_release = get_latest_available_release( $species, $assembly );
+    &RSAT::message::Debug("&Get_full_species_ID() called without ensembl_release argument",
+      "Using latest available",$ensembl_release) if ($main::verbose >= 5);    
   }
 
   # compose full ID by concatenating bits
@@ -576,7 +609,7 @@ sub Get_full_species_ID {
   if(-d $genome_data_dir.$full_species_id){
     &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
     return($full_species_id);
-  } 
+  } else { print "$full_species_id\n" }
   
   # 2) try the NCBI way
   if($species_suffix){
@@ -646,7 +679,8 @@ sub Get_assembly {
             $db_name =~ s/\s/_/g;
             if ((lc($species) eq lc($db_name))
                 && ($db_source eq $main::db)
-                && ($ensembl_release eq $db_genome_version)
+                # release won't be known in many cases
+                && (!$ensembl_release || $ensembl_release eq $db_genome_version)
                 ) {
                     $assembly = $db_genome_assembly;
                     &RSAT::message::Info("&Get_assembly() result", $assembly) if ($main::verbose >= 4);
