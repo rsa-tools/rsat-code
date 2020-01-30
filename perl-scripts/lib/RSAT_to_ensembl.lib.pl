@@ -276,8 +276,11 @@ sub Get_pep_fasta_ftp {
 
 =pod
 
-Return the URL of the FTP site containing variations for the selected
-release of ensembl.
+Return the URL of the FTP site containing GVF variations for the selected release of ensembl
+
+Valid URLS as of Jan2020:
+ftp://ftp.ensemblgenomes.org/pub/release-46/plants/variation/vcf/triticum_turgidum
+ftp://ftp.ensemblgenomes.org/pub/release-46/metazoa/variation/gvf/aedes_aegypti_lvpagwg
 
 =cut
 sub Get_variation_ftp {
@@ -297,22 +300,21 @@ sub Get_variation_ftp {
     ## Variations from EnsemblGenomes are distributed on a different
     ## ftp site, and the release numbers differ
   } elsif (lc($db) eq "ensemblgenomes") {
-    my @taxa = ("fungi","bacteria","metazoa","plants","protists");
+    my @divisions = ("fungi","bacteria","metazoa","plants","protists");
     if ($ensembl_release < 17) {                                             # Release  1 to 16
       return ();
     } else {                                                                 # Release 17 to ??
-      foreach $taxon (@taxa) {
-        my $gvf_ftp = &Get_ftp($db).$taxon."/release-".$ensembl_release."/gvf/";
-	&RSAT::message::Info("Getting list of GVF files for taxon", $taxon, "FTP", $gvf_ftp) if ($main::verbose >= 2);
+      foreach $taxon (@diviions) {
+        my $gvf_ftp = &Get_ftp($db)."/release-".$ensembl_release."/$taxon/variation/gvf/";
+        &RSAT::message::Info("Getting list of GVF files for taxon", $taxon, "FTP", $gvf_ftp) if ($main::verbose >= 2);
         my @available_files = qx{wget -S --spider $gvf_ftp 2>&1};
         foreach my $line (@available_files) {
-	  chomp($line);
-#	  &RSAT::message::Debug($line) if ($main::verbose >= 10);
+          chomp($line);
           next unless ($line =~ /^drw+.*\s+(\S+\_\S+)\s*$/);
-	  my $species = $1;
-	  my $species_ftp = $gvf_ftp.$species."/";
-	  $variation_ftp{$species} = $species_ftp;
-	}
+          my $species = $1;
+          my $species_ftp = $gvf_ftp.$species."/";
+          $variation_ftp{$species} = $species_ftp;
+        }
       }
       return(%variation_ftp);
     }
