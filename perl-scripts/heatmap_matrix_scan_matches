@@ -56,7 +56,6 @@ BEGIN {
   }
 }
 require "RSA.lib";
-require "RSA2.cgi.lib";
 use RSAT::util;
 use Data::Dumper;
 use File::Basename;
