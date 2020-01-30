@@ -1729,12 +1729,14 @@ sub GetSequence {
       my $gene_member = $ma->fetch_by_stable_id($ortho_id);
 
       # print out some information about the Member
-      &RSAT::message::Info("# Chrom_name Chrom_start Chrom_end Description Source_name Taxon_id") if ($main::verbose >= 1);
-      &RSAT::message::Info(join (" ", map { $gene_member->$_ } qw(chr_name chr_start chr_end description source_name taxon_id))) if ($main::verbose >= 1);
+#      &RSAT::message::Info("# Chrom_name Chrom_start Chrom_end Description Source_name Taxon_id") if ($main::verbose >= 1);
+            &RSAT::message::Info("# Description Source_name Taxon_id") if ($main::verbose >= 1);
+#      &RSAT::message::Info(join (" ", map { $gene_member->$_ } qw(chr_name chr_start chr_end description source_name taxon_id))) if ($main::verbose >= 1);
+            &RSAT::message::Info(join (" ", map { $gene_member->$_ } qw(description source_name taxon_id))) if ($main::verbose >= 1);
 
       my $compara_taxon = $gene_member->taxon;
       &RSAT::message::Info("# Common_name; Genus; Species; Organism; Classification") if ($main::verbose >= 1);
-      &RSAT::message::Info(join ("; ", map { $compara_taxon->$_ } qw(common_name genus species binomial classification))) if ($main::verbose >= 1);
+      &RSAT::message::Info(join ("; ", map { $compara_taxon->$_ } qw(get_common_name genus species scientific_name classification))) if ($main::verbose >= 1);
 
       $common_name = $gene_member->taxon->get_common_name;
       if ($common_name) {
