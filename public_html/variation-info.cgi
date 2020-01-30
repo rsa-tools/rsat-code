@@ -55,10 +55,9 @@ if (defined($supported_organism{$organism})) {
 
     my ($species, $assembly) = ('','');
  
-    if($organism_name =~ /^\w+_\w+_*\w*\.\S+/){ # as in plants, installed with ensemblgenomes_FTP_client.mk 
-        @org_name_split=split(/\./,$organism_name) ;
-        $species = $org_name_split[0];
-        $assembly = $org_name_split[1] ;
+    if($organism_name =~ /^(\w+_\w+_*\w*)\.(\S+?).\d+/){ # as in plants, installed with ensemblgenomes_FTP_client.mk 
+        $species = $1;
+        $assembly = $2;
     } else {
         @org_name_split=split(" ",$organism_name);
         $species=join("_", $org_name_split[0], $org_name_split[1]);
