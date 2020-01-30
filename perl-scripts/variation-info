@@ -35,7 +35,6 @@ for info).
 =item B<Jacques van Helden> <Jacques.van-Helden\@univ-amu.fr>
 
 =item B<Walter Santana Garcia> revised the code and made useful suggestions to enhance the efficiency.
-
 =item B<Jeremy Delerce> wrote a first prototype of the variation tools in 2012 (1st-year Master project)
 
 =back
@@ -300,7 +299,7 @@ package main;
 
   ## Species and assembly or ensembl version have to be specified
   &RSAT::error::FatalError("No species specified. Use -species") unless ($species);
-  &RSAT::error::FatalError("No assembly and ensembl version specified. Use at least one of these options: -e_version -a_version") unless ($ensembl_release || $assembly);
+  &RSAT::error::FatalError("No assembly specified. Use -assembly") unless ($assembly);
 
   ## Check input format and existence of the input file
   if ($main::infile{'input'}) {
@@ -308,7 +307,8 @@ package main;
     &RSAT::error::FatalError("Input file $main::infile{'input'} not found") unless  (-f $main::infile{'input'});
   }
 
-  ## Check directories for species genome and variations
+  ## Check directories for genome and variations for this species
+  ## note release is not always know; in that case the latest is used by default:
   my $genome_dir = &Get_genome_dir($species, $assembly, $ensembl_release,$species_suffix);
   my $variation_dir = &Get_variation_dir($species, $assembly, $ensembl_release, $species_suffix);
 
