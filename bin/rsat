@@ -15,6 +15,7 @@ import subprocess
 import yaml
 
 path = os.path.dirname(os.path.realpath(__file__))
+path += "/../share/rsat"
 
 def usage_and_exit(usage):
     print(usage)
@@ -24,6 +25,7 @@ def error(msg):
     print(msg + '\n')
     exit()
 
+## Build a table of contents with the short description of each subcommand
 def build_toc(commands):
     # groups commands
     d = {}
@@ -40,13 +42,29 @@ def build_toc(commands):
         s += [' ']
     return '\n'.join(s)
 
+## List all subcommands
+def list_subcommands(commands):
+    # groups commands
+    d = {}
+    for c in commands:
+        d[c['group']] = d.get(c['group'], [])
+        d[c['group']] += [(c['command'], c['desc'])]
+
+    # build toc
+    s = []
+    for k in d.keys():
+        for c in d[k]:
+            s += ['%s' % (c[0].split('/')[-1])]
+    return '\n'.join(sorted(set(s)))
+
 ##
 # Main
 ##
 try:
     # usage
-    ref = yaml.load(open('rsat.yaml').read())
+    ref = yaml.load(open(path + '/rsat.yaml').read(), Loader=yaml.FullLoader)
     toc = build_toc(ref['commands'])
+    subcmd_list = list_subcommands(ref['commands'])
     usage = ref['usage'] % {'table_of_content' : toc}
 
     # allowed commands
@@ -57,6 +75,9 @@ try:
         usage_and_exit(usage)
     if sys.argv[1] in ['-h', '--help', 'help']:
         usage_and_exit(usage)
+    if sys.argv[1] in ['-l', '--list', 'list']:
+        print(subcmd_list)
+        exit(0)
 
     # get the command name and arguments
     command = sys.argv[1]
@@ -69,7 +90,7 @@ try:
 
     # check command validity
     if not command in cmds:
-        error('Unrecognized command: %s\n\nTo get the list of supported commands, type\n\trsat -h' % command)
+        error('Unrecognized command: %s\n\nTo get the list of supported commands, type\n\trsat -l\nTo get their description, type\n\trsat -h' % command)
         exit()
     
     # add the full path and execute the command

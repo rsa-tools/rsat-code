@@ -7,20 +7,31 @@
 #
 ############################################################
 #use strict;;
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+        push (@INC, "$`lib/");
+    }
 }
 require "RSA.lib";
-
-my $vmatch_installed = 0;
-my $vmatch_dir = "$ENV{RSAT_BIN}";
+use RSAT::server;
 
 ################################################################
 ## Check that vmatch application is installed in the bin directory
-$vmatch_installed = 1;
-unless ((-e $vmatch_dir."/vmatch") && (-e $vmatch_dir."/mkvtree")) {
-  $vmatch_installed = 0;
-  &RSAT::message::Warning("Skipping sequence purging because vmatch and mkvtree are not installed in RSAT bin dir ", $vmatch_dir, "\nSee http://www.vmatch.de/");
+my $vmatch_cmd = &RSAT::server::GetProgramPath("vmatch");
+my $mkvtree_cmd = &RSAT::server::GetProgramPath("mkvtree");
+my $convert_seq_command = &RSAT::server::GetProgramPath("convert-seq");
+
+if ($verbose >= 3) {
+    &RSAT::message::Debug("vmatch command: ", $vmatch_cmd);
+    &RSAT::message::Debug("mkvtree command: ", $mkvtree_cmd);
+}
+
+if (($vmatch_cmd eq "") || ($mkvtree_cmd eq "")) {
+    $vmatch_installed = 0;
+    &RSAT::message::Warning("Skipping sequence purging because vmatch and mkvtree are not installed");
+} else {
+    $vmatch_installed = 1;
 }
 
 ################################################################
@@ -49,7 +60,6 @@ $die_on_error = 1;
 $mask_short = 0; ## If >0, sequences strictly shorter than the specified length will be masked before purging
 $skip_short = 0; ## If >0, sequences strictly shorter than the specified length will be skipped (will not appear in the output)
 
-my $convert_seq_command = $ENV{RSAT}."/perl-scripts/convert-seq";
 
 ## Parse arguments
 &ReadArguments();
@@ -151,7 +161,9 @@ if ($vmatch_installed) {
   $mkvtree_options .= " -ois"; # output the parsed input string to a file
   $mkvtree_options .= " -pl ".$prefix_length; # length of prefix for bucket sort (default 0)
   $mkvtree_options .= " -db ".$tmp_file_name; # sequence file
-  $command = "cd $tmp_file_dir; $vmatch_dir/mkvtree $mkvtree_options";
+  $command = "cd ".$tmp_file_dir."; ";
+  $command .= $mkvtree_cmd;
+  $command .= " ".$mkvtree_options;
   &doit($command, $dry_run, $die_on_error, $verbose);
 
 
@@ -178,7 +190,9 @@ if ($vmatch_installed) {
   ## $vmatch_options .= " | awk '\$1 ~ \"\>\" {print \$1 \"_\" \$2 \"_\" (\$2+\$3-1)}; \$1 !~ \"\>\" {print}'";
   $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
   $vmatch_options .= "> $dir{output}/$basename{out}" if ($output_file);
-  $command = "cd $tmp_file_dir ; $vmatch_dir/vmatch $vmatch_options";
+  $command = "cd ".$tmp_file_dir."; ";
+  $command .= $vmatch_cmd;
+  $command .= " ".$vmatch_options;
   &doit($command, $dry_run, $die_on_error, $verbose);
 
   ## Remove temporary files

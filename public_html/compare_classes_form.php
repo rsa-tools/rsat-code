@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>NeAT - compare_classes</title>
-<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+<link rel="stylesheet" type="text/css" href = "css/main_grat.css" media="screen">
 <link rel="stylesheet" type="text/css" href="css/colorbox.css">
 <script scr="js/jquery.js"></script>
  </head>

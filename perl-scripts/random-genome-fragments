@@ -170,6 +170,8 @@ package main;
       $main::outfile{length_file} = $main::infile{template_file};
 
     } else {
+
+
       ## Compute sequence lengths
       my $job_prefix = "random-genome-fragments";
       my $tmp_file_path = &RSAT::util::make_temp_file("","random-genome-fragments", 1); 
@@ -178,6 +180,7 @@ package main;
       $seqlength_cmd .= " -i ".$main::infile{template_file};
       $seqlength_cmd .= " -in_format ".$template_format;
       $seqlength_cmd .= " -o ".$main::outfile{length_file};
+#      &RSAT::message::Info($seqlength_cmd) if ($main::verbose >= 3);
       &doit($seqlength_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batchmode, $job_prefix);
     }
   }
@@ -693,7 +696,7 @@ Type of data to return. Supported values: seq | coord
 By default, coordinates (coord) are returned.  For RSAT organisms, the
 return type can be 'seq' to retrieve sequences. The sequence format is
 fasta.  For Ensembl organisms, use the coordinate file (in ft format)
-as input to I<retrieve-ensembl-seq.pl> with the options -ftfile
+as input to I<retrieve-ensembl-seq> with the options -ftfile
 YourCoordFile -ftfileformat ft.  You can also use the tools of
 sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the
 sequences from the coordinates.

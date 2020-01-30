@@ -163,7 +163,7 @@ package main;
     print $out "#", join ("\t", @header), "\n" unless ($return_fields{detail});
 
     ################################################################
-    ##### Read sequences and calculate their probabilities
+    ## Read sequences and calculate their probabilities
     ($main::in, $input_dir) = &OpenInputFile($main::infile{input});
     while ((($current_seq, $current_id) = 
 	    &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
@@ -180,12 +180,24 @@ package main;
 	push @return_fields, $seq_len;
       }
 
-      #Background probabilities
+      # Background probability
       my ($proba_array_ref, $proba_b, $detail);
       foreach my $bg_model (@bg_models) {
-	($proba_b, $proba_array_ref, $detail) = $bg_model->segment_proba($current_seq,$return_fields{detail});
-	push @return_fields, sprintf("%.4e", $proba_b) if ($return_fields{proba_b});
-	push @return_fields, sprintf("%.2f", log($proba_b)/$log10) if ($return_fields{log_proba});
+	($proba_b, $log_proba, $proba_array_ref, $detail) = $bg_model->segment_proba($current_seq,$return_fields{detail});
+
+	# Return probability
+	if ($return_fields{proba_b}) {
+	    if ($proba_b > 1e-320) {
+		push @return_fields, sprintf("%.4e", $proba_b);
+	    } else {
+		push @return_fields, $proba_b;
+	    }
+	}
+
+	# Return log(proba)
+	if ($return_fields{log_proba}) {
+	    push @return_fields, sprintf("%.2f", $log_proba/$log10);
+	}
       }
 
       ## Report sequence

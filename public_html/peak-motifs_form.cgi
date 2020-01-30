@@ -86,7 +86,7 @@ $checked{$default{visualize}} = "checked";
 
 print <<end_part_1;
 <center>
-<p>Pipeline for discovering motifs in massive ChIP-seq peak sequences.</p>
+<p>Discover exceptional motifs (over-represented, positionally biased) in a collection of ChIP-seq peaks. </p>
 <!--
 <p>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:
 <a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>,
@@ -207,7 +207,7 @@ set of 1000 peak regions bound by the mouse transcription factor Oct4
 (Chen et al., 2008)</p>\n";
 $descr1 .= "</blockquote>";
 
-$demo_url = $ENV{rsat_www}."/demo_files/peak-motifs_demo.fa";
+$demo_url = $ENV{rsat_www}."/demo_files/Oct4_peaks_top1000.fa";
 
 print '<script>
 function setDemo1(demo_url){

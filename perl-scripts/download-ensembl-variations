@@ -20,7 +20,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Download a GVF/VCF file of variations from Ensembl, decompress the file &
+Download a GVF/VCF file of variations from Ensembl [Genomes], decompress the file &
 remove variations that fail to pass the quality check.
 
 Create "combinatory variations" from sets of overlapping variations.
@@ -180,7 +180,7 @@ package	main;
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
   our $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
-
+    
   our %outfile = ();
 
   our $verbose = 2;
@@ -194,57 +194,60 @@ package	main;
   our $full_species_ID = "";
 #  our $data_dir = &Get_data_dir();
   our $registry = 'Bio::EnsEMBL::Registry';
+    
+    ################################################################
+    ## Tasks
+    
+    ## Default tasks are executed if no task is specified
+    local @default_tasks = (
+    "download_gvf", ## Fetch gvf file from ensembl
+    "report_snps", ## Read downloaded file from ensembl and report the processed data
+    "clean_gvf", ## Delete the uncompressed downloaded GVF files after processing
+    );
+    
+    ## These optional tasks are NOT executed by default, either because
+    ## they are particularly time-consuming, or because we don't want to
+    ## loose the raw data
+    local @optional_tasks = (
+    "check_ref_seq", ## Check the sequence on the reference genome
+    "super_variations", ## Compute super-variations
+    "clean_gvf_gz", ## Delete the downloaded compressed GVF files after processing
+    );
+    ## The extra tasks change exclusively for VCF download
+    local @extra_tasks = (
+    "fromvcf", ## Download the vcf file from ensembl
+    );
+    local @supported_tasks = (
+    @default_tasks,
+    @optional_tasks,
+    @extra_tasks,
+    "default", ## Run default tasks (avoid heavy tasks such as check_ref_seq)
+    "all", ## Run all other tasks
+    );
+    local $supported_tasks = join (",", @supported_tasks);
+    local %supported_tasks = ();
+    foreach my $task (@supported_tasks) {
+        $supported_tasks{$task} = 1;
+    }
+    local %task = (); ## List of tasks to be executed
+    
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+    
   our $ensembl_release_safe = &get_ensembl_release_safe($db);
   our $ensembl_release_latest = &get_ensembl_release_latest($db);
   our $ensembl_release = &get_ensembl_release($db);
   our $null = "<NULL>";
 
+    
   our $get_available_species = 0;
   our $ref_seq = "";
 
   our $group_lc; ## Just used with the fromvcf task ## ANRG_2
   our $personal_release; ## Just used with the fromvcf task ## ANRG_2
 
-  ################################################################
-  ## Tasks
-
-  ## Default tasks are executed if no task is specified
-  local @default_tasks = (
-      "download_gvf", ## Fetch gvf file from ensembl
-      "report_snps", ## Read downloaded file from ensembl and report the processed data
-      "clean_gvf", ## Delete the uncompressed downloaded GVF files after processing
-      );
-
-  ## These optional tasks are NOT executed by default, either because
-  ## they are particularly time-consuming, or because we don't want to
-  ## loose the raw data
-  local @optional_tasks = (
-      "check_ref_seq", ## Check the sequence on the reference genome
-      "super_variations", ## Compute super-variations
-      "clean_gvf_gz", ## Delete the downloaded compressed GVF files after processing
-      );
-  ## The extra tasks change exclusively for VCF download
-  local @extra_tasks = (
-      "fromvcf", ## Download the vcf file from ensembl
-  );
-  local @supported_tasks = (
-      @default_tasks,
-      @optional_tasks,
-      @extra_tasks,
-      "default", ## Run default tasks (avoid heavy tasks such as check_ref_seq)
-      "all", ## Run all other tasks
-      );
-  local $supported_tasks = join (",", @supported_tasks);
-  local %supported_tasks = ();
-  foreach my $task (@supported_tasks) {
-      $supported_tasks{$task} = 1;
-  }
-  local %task = (); ## List of tasks to be executed
-
-
-  ################################################################
-  ## Read argument values
-  &ReadArguments();
+  
 
   ################################################################
   ## The vcf download process begins if -task is fromvcf ##ANRG_2
@@ -392,8 +395,11 @@ package	main;
 
   ## Get genome assembly
   #S ANRG
-  #$assembly = &Get_assembly($species,$ensembl_release, $species_suffix);
-  $assembly = &Get_assembly($species,&get_ensembl_release("ensembl"), $species_suffix);
+  $assembly = &Get_assembly($species,$ensembl_release, $species_suffix);
+    
+    &RSAT::message::Warning($ensembl_release);
+    
+    #$assembly = &Get_assembly($species,&get_ensembl_release("ensembl"), $species_suffix);
   #E ANRG
   #die "BOOM";
 
@@ -870,6 +876,12 @@ package	main;
       unlink($gvf_file_gz);
   }
 
+    # Update variations table
+    my	$supported_organism_file = &Get_supported_file();
+    my $assembly_id=`grep -w $species $supported_organism_file | cut -f 13 | perl -lne \'s\/\\s+//g; print\'`;
+    chomp($assembly_id);
+    my $release=$main::personal_release;
+    &UpdateVariationsSupported($species,$assembly_id,"ensemblgenomes",$release);
 
   &RSAT::message::Info("Variations installed in dir", $variation_dir) if ($main::verbose >= 1);
 
@@ -1182,46 +1194,59 @@ sub Get_alternative_variant {
 }
 
 ################################################################
-## The vcf download process begins if -task is fromvcf ## ANRG_2
-##
-## The temporary form in which it is structured, avoids the problems
-## of functions in the Rsat_to_ensembl.lib script, mainly related to the release
+## Downloads VCF files from Ensembl Genomes and produces BED files of valid variants
+## 
+## URLs as of Jan2020: 
+## ftp://ftp.ensemblgenomes.org/pub/release-46/plants/variation/vcf/triticum_turgidum
+## ftp://ftp.ensemblgenomes.org/pub/release-46/metazoa/variation/vcf/aedes_aegypti_lvpagwg
 sub Download_from_vcf{
 
    &RSAT::message::Info(" Downloading VCF file for species $main::species") if($main::verbose >= 1);
-   ## The following code fragment was extracted and modified from
-   ## $RSAT/makefiles/ensemblgenomes_ftp_client.mk fro compatibility with that code
 
-   $group_lc = lc($group_lc); ## Generates the organisms document in lowercase letters unlike the original
+
+   ## set up connections and file names 
+   $group_lc = lc($group_lc); # this is also called division 
    my $release=$main::personal_release;
    chomp($release);
-   my $server_url="ftp://ftp.ensemblgenomes.org/pub/".$group_lc;
-   my $database=$server_url."/release-".$release;
-   my $organism_dir=$ENV{'RSAT'}."/data/ensemblgenomes/".$group_lc."/release-".$release;
+   my $server_url   = "ftp://ftp.ensemblgenomes.org"; # TODO: this should be in RSAT_config.props
+   my $database     = $server_url."/pub/release-".$release."/$group_lc/";
+   my $organism_dir = $ENV{'RSAT'}."/data/ensemblgenomes/".$group_lc."/release-".$release;
 
    my $organism_table=$organism_dir."/species_Ensembl".ucfirst($group_lc).".txt";
    &RSAT::message::Warning("The document ",$organism_table, " doesn't exist") unless(-e $organism_table||$main::verbose < 2);
-   &Install_table_of_organisms_per_group($organism_dir,$organism_table,$database,$group_lc) unless(-e $organism_table); ## If the organism table doesn't exist, it is generated
+   &Install_table_of_organisms_per_group($organism_dir,$organism_table,$database,$group_lc) unless(-e $organism_table); 
 
-   my $collection=&Get_Collection($organism_table,$species,$group_lc,$release); ## Get the collection variable from a verification process
+   # this affects bacteria
+   my $collection=&Get_Collection($organism_table,$species,$group_lc,$release); 
 
-   my $species_ucfirst=ucfirst($species);
-   my $assembly_id=`grep -w $species $organism_table | cut -f 5 | perl -lne \'s\/\\s+//g; print\'`; ## Check This part
+   # build RSAT ID for this species
+   my $species_ucfirst = ucfirst($species);
+   # this how makefiles/ensemblgenomes_FTP_client.mk gets the assembly, 
+   # there's another way I haven't tested at /var/www/html/rsat/perl-scripts/lib//RSAT_to_ensembl.lib.pl
+   my $assembly_id     = `grep -w $species $organism_table | cut -f 5 | perl -lne \'s\/\\s+//g; print\'`; 
    chomp($assembly_id);
-   my $species_rsat_id=$species_ucfirst.".".join("",$assembly_id).".".$release;
+   #my $species_rsat_id=$species_ucfirst."_".join("",$assembly_id);
+   my $species_rsat_id = Get_full_species_ID( $species, $assembly_id, $release );
 
-   my $species_dir=$ENV{'RSAT'}."/data/genomes/".$species_rsat_id;
-   my $variations_dir=$species_dir."/variations";
-   my $vcf_ftp_url=$database."/vcf/".$collection."/".$species."/";
+   # compose local installation folder
+   my $species_dir    = $ENV{'RSAT'}."/data/genomes/".$species_rsat_id;
+   my $variations_dir = $species_dir."/variations";
 
-   my $vcf_server_gz=$vcf_ftp_url."/".$species.".vcf.gz";
-   my $vcf_server_tbi=$vcf_ftp_url."/".$species.".vcf.gz.tbi";
-   my $vcf_server_readme=$vcf_ftp_url."/README";
+   # compose remote FTP folder
+   my $vcf_ftp_url = $database."variation/vcf/".$collection."/".$species."/";
 
-   my $vcf_local_gz=$variations_dir."/".$species_rsat_id.".vcf.gz";
-   my $vcf_local_tbi=$variations_dir."/".$species_rsat_id.".vcf.gz.tbi";
-   my $vcf_local_readme=$variations_dir."/README";
+   # remote FTP files 
+   my $vcf_server_gz     = $vcf_ftp_url."/".$species.".vcf.gz";
+   my $vcf_server_tbi    = $vcf_ftp_url."/".$species.".vcf.gz.tbi";
+   my $vcf_server_readme = $vcf_ftp_url."/README";
 
+   # local variation files
+   my $vcf_local_gz     = $variations_dir."/".$species_rsat_id.".vcf.gz";
+   my $vcf_local_tbi    = $variations_dir."/".$species_rsat_id.".vcf.gz.tbi";
+   my $vcf_local_readme = $variations_dir."/README";
+   my $vcf_local_source = $variations_dir."/source.txt";
+
+   ## actually download files
    my $cmd="echo". ###
 	"\nmkdir -p $variations_dir". ###
 	"\necho \" VARIATIONS_DIR  $variations_dir\"". ###
@@ -1234,13 +1259,16 @@ sub Download_from_vcf{
 	"\nwget -cnv $vcf_server_readme -O $vcf_local_readme; ". ## Download the readme file
 	"";
    &RSAT::message::Info("Downloading vcf.gz, vcf.gz.tbi and README files") if($main::verbose >= 2);
-   &RSAT::message::Warning("The $vcf_local_gz document already exist") if($main::verbose >=2 &&-e $vcf_local_gz);
-   &RSAT::message::Warning("The $vcf_local_tbi document already exist") if($main::verbose >=2 &&-e $vcf_local_tbi);
-   &RSAT::message::Warning("The $vcf_local_readme document already exist") if($main::verbose >=2 &&-e $vcf_local_readme);
+   &RSAT::message::Warning("The $vcf_local_gz file already exists") if($main::verbose >=2 &&-e $vcf_local_gz);
+   &RSAT::message::Warning("The $vcf_local_tbi file already exists") if($main::verbose >=2 &&-e $vcf_local_tbi);
+   &RSAT::message::Warning("The $vcf_local_readme file already exists") if($main::verbose >=2 &&-e $vcf_local_readme);
    &doit($cmd, 0, 1, $verbose);
    #system($cmd) unless(-e $vcf_local_gz&&-e $vcf_local_tbi&&-e $vcf_local_readme);
 
-   ## END of ensemblgenomes_ftp_client.mk fragment code
+   ## Add source
+   my $source_fh = &OpenOutputFile( $vcf_local_source );
+   print $source_fh "ensemblgenomes\n";
+   close($source_fh);
 
    ## Proceed with the extraction and conversion of vcf.gz to vcf and to varBed
 
@@ -1252,7 +1280,7 @@ sub Download_from_vcf{
       &doit("gunzip -vcf $vcf_local_gz > $vcf_local_dec", 0, 1, $verbose);
   		#system("gunzip -vcf $vcf_local_gz > $vcf_local_dec");
 	} else {
-   		&RSAT::error::FatalError("The document $vcf_local_gz doesn't exist!\n");
+   		&RSAT::error::FatalError("The file $vcf_local_gz doesn't exist!\n");
 	}
    }
 
@@ -1277,13 +1305,13 @@ sub Download_from_vcf{
 
 	if($ref =~ /[^ATCG]/){
 		&RSAT::message::Warning("Line ", $line, " Invalid VCF line: $ref don't have just ATCG", "Skipped") if($main::verbose >= 7);
-		print $out_rm (join("\t",$chr,$pos,$id,$ref,$alt,$qual,$filter,$attributes)."\tReference squence $ref does not only contain A,C,G,T\n");
+		print $out_rm (join("\t",$chr,$pos,$id,$ref,$alt,$qual,$filter,$attributes)."\tReference sequence $ref does not only contain A,C,G,T\n");
 		next;
 	}
 
 	if($alt =~ /[^ATCG\,]/){
 		&RSAT::message::Warning("Line ", $line, " Invalid VCF line: $alt don't have just ATCG", "Skipped") if($main::verbose >= 7);
-		print $out_rm (join("\t",$chr,$pos,$id,$ref,$alt,$qual,$filter,$attributes)."\tAlternative squence $alt does not only contain A,C,G,T,\",\"\n");
+		print $out_rm (join("\t",$chr,$pos,$id,$ref,$alt,$qual,$filter,$attributes)."\tAlternative sequence $alt does not only contain A,C,G,T,\",\"\n");
 		next;
 	}
   #TODO Find in which snippet of code this happening

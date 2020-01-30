@@ -1,0 +1,363 @@
+usage:
+  "rsat -- Regulatory Sequence Analysis Tools
+
+\nUsage: rsat <subcommand> [options]\n
+
+Supported rsat subcommands\n
+
+%(table_of_content)s
+
+Type rsat [subcommand] -h to display the subcommand help."
+
+commands:
+
+  ################################################################
+  # Genomes and genes
+
+  - command: "perl-scripts/supported-organisms"
+    desc: "Get the list of organisms supported on this RSAT server"
+    group: "Genomes and genes"
+    servers: ["teaching", "metazoa", "plants", "fungi", "protists", "bacteria"]
+
+  - command: "perl-scripts/supported-organisms-server"
+    desc: "Get the list of organisms supported on a remote RSAT server"
+    group: "Genomes and genes"
+    servers: ["teaching", "metazoa", "plants", "fungi", "protists", "bacteria"]
+
+  - command: "perl-scripts/gene-info"
+    desc: "Get information for one or more genes specified by identifiers, names or descriptions."
+    group: "Genomes and genes"
+    servers: ["teaching", "metazoa", "plants", "fungi", "protists", "bacteria"]
+
+  - command: "perl-scripts/add-gene-info"
+    desc: "Add information about genes identified in user-specified columns of a TSV file"
+    group: "Genomes and genes"
+    servers: ["teaching", "metazoa", "plants", "fungi", "protists", "bacteria"]
+
+  - command: "perl-scripts/infer-operons"
+    desc: "Infer bacterial operons based on intergenic distances"
+    group: "Genomes and genes"
+    servers: ["teaching", "bacteria"]
+
+  - command: "perl-scripts/get-orthologs"
+    desc: "Get homologs (orthologs or others) in given taxon for a list of query genes"
+    group: "Genomes and genes"
+    servers: ["teaching", "fungi", "bacteria"]
+
+
+  ################################################################
+  ## Genome management (requires write access on the RSAT data folder)
+  - command: "perl-scripts/download-organism"
+    desc: "Download organism(s) from an RSAT server to this RSAT instance"
+    group: "Genome management"
+
+  - command: "perl-scripts/install-organism"
+    desc: "Install one or several organisms on the local RSAT instance"
+    group: "Genome management"
+
+  - command: "perl-scripts/install-ensembl-genome"
+    desc: "Install genomes from ensembl to the local RSAT instance"
+    group: "Genome management"
+
+  - command: "perl-scripts/supported-organisms-ensembl"
+    desc: "Get the list of organisms supported at Ensmebl (http://ensembl.org)"
+    group: "Genome management"
+    servers: ["teaching", "metazoa"]
+
+  - command: "perl-scripts/supported-organisms-ensemblgenomes"
+    desc: "Get the list of organisms supported at EnsemblGenomes (http://ensemblgenomes.org/)"
+    group: "Genome management"
+
+  - command: "perl-scripts/supported-organisms-ucsc"
+    desc: "Get the list of organisms available at the UCSC Genome browser (http://genome.ucsc.edu/)"
+    group: "Genome management"
+
+  - command: "perl-scripts/taxon-frequencies"
+    desc: "Calculate taxon-wide oligo and dyad frequencies."
+    group: "Genome management"
+
+  - command: "perl-scripts/calc-taxfreq"
+    desc: "Calculate the oligo and dyads frequencies for a taxon by averaging frequencies over included genomes"
+    group: "Genome management"
+
+  - command: "perl-scripts/genome-blast"
+    desc: "Use BLAST to detect homologs between all the protein of query and reference organisms"
+    group: "Genome management"
+    
+  ################################################################
+  ## Sequence tools
+
+  - command: "perl-scripts/retrieve-seq"
+    desc: "Get non-coding upstream or downstream sequences for a list of query genes"
+    group: "Sequences"
+
+  - command: "perl-scripts/retrieve-ensembl-seq"
+    desc: "Retrieve regulatory sequences from the Ensembl database for a list of query genes"
+    group: "Sequences"
+
+  - command: "perl-scripts/fetch-sequences"
+    desc: "Retrieve sequences from the UCSC database for a set of genomic regions (bed format)"
+    group: "Sequences"
+
+  - command: "perl-scripts/retrieve-seq-bed"
+    desc: "Retrieve sequences for a set of genomic coordinates provided in bed, gff or vcf format"
+    group: "Sequences"
+
+  - command: "perl-scripts/purge-sequence"
+    desc: "Mask repeated segments from a sequence set"
+    group: "Sequences"
+
+  - command: "perl-scripts/convert-seq"
+    desc: "Inter-conversions between various sequence formats"
+    group: "Sequences"
+
+  - command: "perl-scripts/sub-sequence"
+    desc: "Return a subset of input sequences, specified by a start and end positions"
+    group: "Sequences"
+
+  - command: "perl-scripts/sequence-lengths"
+    desc: "Return the length of each input sequence, or the sum of lengths"
+    group: "Sequences"
+
+  ################################################################
+  ## Matrix tools
+  - command: "perl-scripts/retrieve-matrix"
+    desc: "Retrieve matrices from a motif collection by specifying one or more identifiers"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/convert-matrix"
+    desc: "Convert different formats of position-specific scoring matrices (PSSM), and calculate statistical parameters + logos"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/matrix-from-patterns"
+    desc: "Build PSSMs from a sequence set using as seeds a set of patterns (oligos, dyads) or an assembly"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/compare-matrices"
+    desc: "Compute (dis)imilarity scores between matrices from two collections of position-specific scoring matrices"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/matrix-clustering"
+    desc: "Identify groups (clusters) of similarities between motifs from one (or several) collections"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/matrix-distrib"
+    desc: "Compute theoretical distribution of score probabilities of a PSSM given a Markov model"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/matrix-symmetry"
+    desc: "Detect symmetry in binding motifs represented as position-specific scoring matrices (PSSMs)."
+    group: "Matrix tools"
+    
+  - command: "perl-scripts/matrix-quality"
+    desc: "Evaluate the quality of a PSSM by comparing the empirical score distributions obtained in various sequence sets"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/compare-qualities"
+    desc: "Compare the empirical distributioins of weight score obtained with different matrices in a given sequence set"
+    group: "Matrix tools"
+
+  ################################################################
+  ## Build control sets
+  - command: "perl-scripts/random-genes"
+    desc: "Select random genes for a given organism"
+    group: "Control sets"
+
+  - command: "perl-scripts/random-seq"
+    desc: "Generate random DNA or protein sequences according to various probabilistic models"
+    group: "Control sets"
+
+  - command: "perl-scripts/random-genome-fragments"
+    desc: "Select random genomic regions, and return their coordinates and/or sequences"
+    group: "Control sets"
+
+  - command: "python-scripts/random-motif"
+    desc: "Generate random motifs"
+    group: "Control sets"
+
+  - command: "perl-scripts/permute-matrix"
+    desc: "Randomize a set of input matrices by permuting their columns."
+    group: "Control sets"
+
+  - command: "python-scripts/random-sites"
+    desc: "Generate random sites given a motif (PSSM)"
+    group: "Control sets"
+
+  - command: "python-scripts/implant-sites"
+    desc: "Implant sequences (e.g. TF binding sites) at random positions of other sequences (e.g. regulatory regions)"
+    group: "Control sets"
+
+  ################################################################
+  ## Motif discovery
+
+  - command: "perl-scripts/oligo-analysis"
+    desc: "Detect over- or under-represented oligomers (k-mers) in sequences"
+    group: "Motif discovery"
+
+  - command: "perl-scripts/oligo-diff"
+    desc: "Return oligonucleotides (k-mers) significantly enriched in a sequence file (test) compared to another one (control)"
+    group: "Motif discovery"
+
+  - command: "perl-scripts/dyad-analysis"
+    desc: "Detect over- or under-represented dyads (spaced pairs of k-mers) in sequences"
+    group: "Motif discovery"
+
+  - command: "perl-scripts/position-analysis"
+    desc: "Detect oligomers (k-mers) whose positions significantly discard from a homogeneous distribution"
+    group: "Motif discovery"
+
+  - command: "python-scripts/local-word-analysis" 
+    desc: "Detect oligomers (k-mers) over-represented at specific positions of a sequence set"
+    group: "Motif discovery"
+
+  - command: "perl-scripts/pattern-assembly"
+    desc: "Assemble string-based patterns (oligos or dyads)"
+    group: "Motif discovery"
+
+  - command: "../../bin/count-words"
+    desc: "Calculate oligomer frequencies from a set of sequences"
+    group: "Motif discovery"
+
+  - command: "../../bin/info-gibbs"
+    desc: "A gibbs sampler based on a stochastic optimization of information content"
+    group: "Motif discovery"
+
+  ################################################################
+  ## Pattern matching
+  - command: "perl-scripts/matrix-scan"
+    desc: "Scan DNA sequences with position-specific scoring matrices (PSSM) - full option"
+    group: "Pattern matching"
+
+  - command: "../../bin/matrix-scan-quick"
+    desc: "Scan DNA sequences with position-specific scoring matrices (PSSM) - fast version"
+    group: "Pattern matching"
+
+  - command: "perl-scripts/position-scan"
+    desc: "Compute the positional distribution of predicted binding sites for a set of PSSMs in a set of sequences of the same length"
+    group: "Pattern matching"
+
+  - command: "python-scripts/crer-scan"
+    desc: "Predict cis-regulatory motifs (CRMs) by detecting cis-regulatory enriched regions (CRERs)"
+    group: "Pattern matching"
+
+  - command: "perl-scripts/dna-pattern"
+    desc: "Search string-based patterns (IUPAC, regexp) in DNA sequences"
+    group: "Pattern matching"
+
+  - command: "perl-scripts/compare-patterns"
+    desc: "Count matching residues between patterns (regexp, IUPAC) and assess the statistical significance of the matches"
+    group: "Pattern matching"
+
+  - command: "perl-scripts/IUPAC-to-regular"
+    desc: "Convert a pattern described with the IUPAC code for ambiguous nucleotides into an equivalent regular expression"
+    group: "Pattern matching"
+      
+  ################################################################
+  ## Comparative genomics
+  - command: "perl-scripts/get-orthologs"
+    desc: "Get homologs (orthologs and others) in given taxon for a list of query genes"
+    group: "Comparative genomics"
+
+  - command: "perl-scripts/get-orthologs-compara"
+    desc: "Return orthologs plus optionally paralogs and homeologs for a set of genes in one or more organisms" 
+    group: "Comparative genomics"
+
+  - command: "perl-scripts/footprint-discovery"
+    desc: "Discover conserved motifs (phylogenetic footprints) in the promoters of orthologous genes"
+    group: "Comparative genomics"
+
+  - command: "perl-scripts/footprint-scan"
+    desc: "Scan promoters of orthologous genes with one or more user-provided motifs to detect enriched (over-represented) motifs."
+    group: "Comparative genomics"
+
+  ################################################################
+  ## Next Generation Sequencing (NGS)
+  - command: "perl-scripts/peak-motifs"
+    desc: "Discover exceptional motifs (over-represented, positionally biased) in a collection of ChIP-seq peaks"
+    group: "NGS"
+
+  - command: "perl-scripts/fetch-sequences"
+    desc: "Retrieve sequences from the UCSC database for a set of genomic regions (bed format)"
+    group: "NGS"
+
+  - command: "perl-scripts/retrieve-seq-bed"
+    desc: "Retrieve sequences for a set of genomic coordinates provided in bed, gff or vcf format"
+    group: "NGS"
+
+  - command: "perl-scripts/random-genome-fragments"
+    desc: "Select random genomic regions, and return their coordinates and/or sequences"
+    group: "NGS"
+
+
+  ################################################################
+  ## Regulatory variants
+  - command: "perl-scripts/variation-info"
+    desc: "Get information about variations for a given list of variation IDS or genomic regions"
+    group: "Regulatory variants"
+
+  - command: "../../bin/retrieve-variation-seq"
+    desc: "Given a set of polymorphic variations, retrieve the variants and their flanking sequences"
+    group: "Regulatory variants"
+
+  - command: "../../bin/variation-scan"
+    desc: "Scan sequences of polymorphic variants  with a list of motifs to predict TFBS affected by the variations"
+    group: "Regulatory variants"
+
+  - command: "perl-scripts/convert-variations"
+    desc: "Convert between different file formats that store genetic variation information"
+    group: "Regulatory variants"
+
+
+  ################################################################
+  ## Utilities
+  - command: "perl-scripts/classfreq"
+    desc: "Compute frequency distribution of numerical values provided in a given column of a tab-delimited text file"
+    group: "Utilities"
+
+  - command: "perl-scripts/create-background-model"
+    desc: "Estimate the parameters of a background model from sequences (Bernoulli or Markov)"
+    group: "Utilities"
+  
+  - command: "perl-scripts/convert-background-model"
+    desc: "Interconversions between background model formats."
+    group: "Utilities"
+
+  - command: "perl-scripts/seq-proba"
+    desc: "Calculate the probability of a sequence, given a background model (Bernoulli or Markov)"
+    group: "Utilities"
+
+  - command: "perl-scrips/convert-features"
+    desc: "Interconversions between formats of feature descriptions"
+    group: "Utilities"
+
+  - command: "perl-scripts/compare-features"
+    desc: "Compare two or more features sets: compute intersection, union and difference, contingency tables and comparison statistics"
+    group: "Utilities"
+
+
+  ################################################################
+  ## Visualisation
+  - command: "perl-scripts/feature-map"
+    desc: "Generate a graphical map of features localised on one or several sequences"
+    group: "Visualisation"
+
+  - command: "perl-scripts/XYgraph"
+    desc: "Draw a scatter plot (XY graph) from values provided in a tab-separated value file. "
+    group: "Visualisation"
+
+  - command: "perl-scripts/draw-heatmap"
+    desc: "Draw a heat map to display values from a matrix of numerical values"
+    group: "Visualisation"
+
+  
+  ################################################################
+  ## Statistics
+  - command: "perl-scripts/compare-classes"
+    desc: "Compute comparison statistics between two class/cluster files (intersection, union, p-value, ...)"
+    group: "Stat utilities"
+
+  - command: "perl-scripts/compare-scores"
+    desc: "Compare the score associated to common keys in different tab-separated value files"
+    group: "Stat utilities"
+
+    

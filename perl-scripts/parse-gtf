@@ -353,7 +353,7 @@ package main;
     if ( (defined($taxid)) && ($taxid ne "")) {
       &RSAT::message::TimeWarn("Getting taxonomy for", $organism_name, "taxid=".$taxid) if ($main::verbose >= 2);
       my ($taxonomy,$sp_name) = ('','');
-      my $server = 'http://rest.ensemblgenomes.org'; # should be in %ENV
+      my $server = 'http://rest.ensembl.org'; # should be in %ENV
       my $ext = '/taxonomy/classification/'.$taxid.'?';
 
       # hard-coded in case theres no network

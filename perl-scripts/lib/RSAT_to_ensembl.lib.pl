@@ -5,7 +5,6 @@ package main;
 ############################################################################
 ############################################################################
 ########################## FTP ENSEMBL FONCTION ############################
-#  our $ensembl_url = "ftp://ftp.ensemblgenomes.org/pub/protists/current/fasta/";
 
 ################################################################
 ## Define global variables
@@ -18,14 +17,25 @@ our $ensemblgenomes_release_safe = $ENV{ensemblgenomes_release_safe} || 19;
 
 ## Fields of the table describing the supported organisms obtained
 ## from Ensembl. These fields are used by several methods
-our @supported_header_fields = ("id",
-#			 "name",
-			 "species",
-			 "assembly",
-			 "db",
-			 "ensembl_release",
-			 "update_date",
-			 "species_directory",
+our @supported_header_fields = ("ID",
+             "name",    #species
+             "taxid",
+             "source",  #db
+             "last_update",
+             "nb",
+             "seq_format",
+             "up_from",
+             "up_to",
+             "taxonomy",
+             "data",    #species_directory
+             "genome",
+             "genome_assembly", #assembly
+             "genome_version", #ensembl_release
+             "download_date", #update_date
+             "variant_available",
+             "variant_source",
+			 "path_to_variant_files",
+             "blast_available"
 	);
 
 ################################################################
@@ -39,8 +49,10 @@ sub get_ensembl_release_safe {
   my ($db) = @_;
 
   if ($db eq "ensembl") {
+       &RSAT::message::Info("&get_ensembl_release_safe() result", $ensembl_release_safe) if ($main::verbose >= 5);
     return $ensembl_release_safe;
   } elsif (lc($db) eq "ensemblgenomes") {
+       &RSAT::message::Info("&get_ensembl_release_safe() result", $ensemblgenomes_release_safe) if ($main::verbose >= 5);
     return $ensemblgenomes_release_safe;
   }
 }
@@ -60,8 +72,7 @@ sub get_ensembl_release {
   ## TEMPORARY: for the time being, the release is only used by
   ##  reference to ensembl, not ensemblgenomes, even if the queried db is
   ##  EnsemblGenomes. I (JvH) should clarify this.
-  my $db = "ensembl";
-  # my ($db) = @_;
+  my ($db) = @_;
 
   ## By preference, return the release defined in the property file
   ## (RSAT_config.props) for this database). If not defined, get the
@@ -69,9 +80,11 @@ sub get_ensembl_release {
   if ($db eq "ensemblgenomes") {
       ## Note: currently ignored, see TEMPORARY above.
       my $ensemblgenomes_release = $ENV{ensemblgenomes_release} || &get_ensembl_release_latest("ensemblgenomes");
+       &RSAT::message::Info("&get_ensembl_release() result", $ensemblgenomes_release) if ($main::verbose >= 5);
       return($ensemblgenomes_release);
   } else {
       $ensembl_release = $ENV{ensembl_release} || &get_ensembl_release_latest("ensembl");
+       &RSAT::message::Info("&get_ensembl_release() result", $ensembl_release) if ($main::verbose >= 5);
       return ($ensembl_release);
   }
 
@@ -124,7 +137,7 @@ sub check_ensembl_release {
   ## TEMPORARY: for the time being, the release is only used by
   ##  reference to ensembl, not ensemblgenomes, even if the queried db is
   ##  EnsemblGenomes. I (JvH) should cliarify this.
-  $db = "ensembl";
+    #$db = "ensembl";
 
   my $safe_ensembl_release = &get_ensembl_release_safe($db);
   my $latest_ensembl_release = &get_ensembl_release_latest($db);
@@ -262,8 +275,11 @@ sub Get_pep_fasta_ftp {
 
 =pod
 
-Return the URL of the FTP site containing variations for the selected
-release of ensembl.
+Return the URL of the FTP site containing GVF variations for the selected release of ensembl
+
+Valid URLS as of Jan2020:
+ftp://ftp.ensemblgenomes.org/pub/release-46/plants/variation/vcf/triticum_turgidum
+ftp://ftp.ensemblgenomes.org/pub/release-46/metazoa/variation/gvf/aedes_aegypti_lvpagwg
 
 =cut
 sub Get_variation_ftp {
@@ -283,22 +299,21 @@ sub Get_variation_ftp {
     ## Variations from EnsemblGenomes are distributed on a different
     ## ftp site, and the release numbers differ
   } elsif (lc($db) eq "ensemblgenomes") {
-    my @taxa = ("fungi","bacteria","metazoa","plants","protists");
+    my @divisions = ("fungi","bacteria","metazoa","plants","protists");
     if ($ensembl_release < 17) {                                             # Release  1 to 16
       return ();
     } else {                                                                 # Release 17 to ??
-      foreach $taxon (@taxa) {
-        my $gvf_ftp = &Get_ftp($db).$taxon."/release-".$ensembl_release."/gvf/";
-	&RSAT::message::Info("Getting list of GVF files for taxon", $taxon, "FTP", $gvf_ftp) if ($main::verbose >= 2);
+      foreach $taxon (@diviions) {
+        my $gvf_ftp = &Get_ftp($db)."/release-".$ensembl_release."/$taxon/variation/gvf/";
+        &RSAT::message::Info("Getting list of GVF files for taxon", $taxon, "FTP", $gvf_ftp) if ($main::verbose >= 2);
         my @available_files = qx{wget -S --spider $gvf_ftp 2>&1};
         foreach my $line (@available_files) {
-	  chomp($line);
-#	  &RSAT::message::Debug($line) if ($main::verbose >= 10);
+          chomp($line);
           next unless ($line =~ /^drw+.*\s+(\S+\_\S+)\s*$/);
-	  my $species = $1;
-	  my $species_ftp = $gvf_ftp.$species."/";
-	  $variation_ftp{$species} = $species_ftp;
-	}
+          my $species = $1;
+          my $species_ftp = $gvf_ftp.$species."/";
+          $variation_ftp{$species} = $species_ftp;
+        }
       }
       return(%variation_ftp);
     }
@@ -516,14 +531,18 @@ release, which is specified in the file $RSAT/RSAT_config.props.
 
 =back
 
-The full ID will be used to select the organism in the RSAT tools. It
-also servers as name for the directory in which the genome has to be
+The full ID will be used to select the organism in RSAT tools. It
+also serves as name for the directory in which the genome has to be
 installed.
 
 By default, the full species ID is built by concatenating species and
-assembly, separated by an underscore character.
+assembly, separated by an underscore character. Example: 
 
-Ex:
+However, historically other formats have co-existed. For instance, 'install-organisms' 
+installs organisms from NCBI and uses strain instead of assembly ([species]_[strain])
+
+Finally, makefiles/ensemblgenomes_FTP_client.mk produces ID such as [species].[assembly].[release]
+Example: Oryza_longistaminata.O_longistaminata_v1.0.43
 
 =cut
 
@@ -548,11 +567,32 @@ sub Get_full_species_ID {
       &RSAT::message::Debug("Got from &Get_assembly()", $assembly) if ($main::verbose >= 5);
   }
 
+  # compose full ID by concatenating bits
+  my $full_species_id;
+  my $genome_data_dir = Get_data_dir() . '/genomes/';
+
+  # 1) try the makefiles/ensemblgenomes_FTP_client.mk
+  $full_species_id = ucfirst($species) .'.'. $assembly .'.'. $ensembl_release; 
+  if(-d $genome_data_dir.$full_species_id){
+    &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
+    return($full_species_id);
+  } 
+  
+  # 2) try the NCBI way
+  if($species_suffix){
+    $full_species_id = ucfirst($species) .'.'. $species_suffix;
+    if(-d $genome_data_dir.$full_species_id){
+      &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
+      return($full_species_id);
+    }
+  }
+
+  # 3) finally try the default RSAT ID format
   ## Full ID convention (2014-10, JvH  AMR)
   ## [Species]_[assembly]_[db][ensembl_release]
-  my $full_species_id = ucfirst($species);
+  $full_species_id = ucfirst($species);
   $full_species_id .= "_".$assembly;
-#  $full_species_id .= "_".$main::db.$ensembl_release; ## We prefer to avoid creating one folder for each new release of ensembl
+  #$full_species_id .= "_".$main::db.$ensembl_release; ## We prefer to avoid creating one folder for each new release of ensembl
   $full_species_id .= "_".$species_suffix if ($species_suffix);
 
   &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
@@ -569,56 +609,58 @@ release for a given species.
 
 =cut
 sub Get_assembly {
-  my ($species,$ensembl_release,$species_suffix) = @_;
-  my $assembly = "";
-  &RSAT::message::Debug("&Get_assembly()",
-			"main::db=".$main::db,
-			"species=".$species,
-			"ensembl_release=".$ensembl_release,
-			"species_suffix=".$species_suffix,
-      )
-      if ($main::verbose >= 5);
-  $supported_file = &Get_supported_file();
-
-  ## Check if the organism is installed in the tab-delimited file of organisms
-  if (-f $supported_file ) {
-    my ($file) = &OpenInputFile($supported_file);
-
-    my $l=0;
-    while (<$file>) {
-	$l++;
-	next if (/^;/); ## Skip comment lines
-	next if (/^#/); ## Skip header line
-	next unless (/\S/); ## Skip empty lines
-	chomp();
-	my (@fields) = split("\t");
-	foreach my $field  (@supported_header_fields) {
-	  ## Automatically fill attributes corresponding to the column header
-	  $var_name = "db_".$field;
-	  $$var_name = shift(@fields);
-	}
-
-	&RSAT::message::Debug("Get_assembly", "line=".$l,
-			      "\n\tquery", $species, $main::db,$ensembl_release,
-			      "\n\tdb", $db_species, $db_db, $db_ensembl_release,
-	    ) if ($main::verbose >= 5);
-	if ((lc($species) eq lc($db_species))
-	    && ($db_db eq $main::db)
-	    && ($ensembl_release eq $db_ensembl_release)
-	    ) {
-	    $assembly = $db_assembly;
-	    &RSAT::message::Info("&Get_assembly() result", $assembly) if ($main::verbose >= 4);
-	    return($assembly);
-	}
+    my ($species,$ensembl_release,$species_suffix) = @_;
+    my $assembly = "";
+    &RSAT::message::Debug("&Get_assembly()",
+    "main::db=".$main::db,
+    "species=".$species,
+    "ensembl_release=".$ensembl_release,
+    "species_suffix=".$species_suffix,
+    )
+    if ($main::verbose >= 5);
+    $supported_file = &Get_supported_file();
+    
+    ## Check if the organism is installed in the tab-delimited file of organisms
+    if (-f $supported_file ) {
+        my ($file) = &OpenInputFile($supported_file);
+        
+        my $l=0;
+        while (<$file>) {
+            $l++;
+            next if (/^;/); ## Skip comment lines
+            next if (/^#/); ## Skip header line
+                next unless (/\S/); ## Skip empty lines
+            chomp();
+            my (@fields) = split("\t");
+            foreach my $field  (@supported_header_fields) {
+                ## Automatically fill attributes corresponding to the column header
+                $var_name = "db_".$field;
+                $$var_name = shift(@fields);
+            }
+            
+            &RSAT::message::Debug("Get_assembly", "line=".$l,
+            "\n\tquery", $species, $main::db,$ensembl_release,
+            "\n\tdb", $db_species, $db_db, $db_ensembl_release,
+            ) if ($main::verbose >= 5);
+            
+            $db_name =~ s/\s/_/g;
+            if ((lc($species) eq lc($db_name))
+                && ($db_source eq $main::db)
+                && ($ensembl_release eq $db_genome_version)
+                ) {
+                    $assembly = $db_genome_assembly;
+                    &RSAT::message::Info("&Get_assembly() result", $assembly) if ($main::verbose >= 4);
+                    return($assembly);
+                }
+        }
     }
-  }
-
-  ## If not found, issue a warning then die
-  &RSAT::message::Warning("&Get_assembly() could not identify species", $species,
-			  "from", $main::db.$ensembl_release, "in the organism table\n", $supported_file);
-  &RSAT::error::FatalError($species, "genome does not seem to be installed in release ".$ensembl_release." of ".$main::db,
-			   "\nTry the following command:\n\t",
-			   "install-ensembl-genome -v 2 -db ".$main::db." -species ".$species);
+    
+    ## If not found, issue a warning then die
+    &RSAT::message::Warning("&Get_assembly() could not identify species", $species,
+    "from", $main::db.$ensembl_release, "in the organism table\n", $supported_file);
+    &RSAT::error::FatalError($species, "genome does not seem to be installed in release ".$ensembl_release." of ".$main::db,
+    "\nTry the following command:\n\t",
+    "install-ensembl-genome -v 2 -db ".$main::db." -species ".$species);
 }
 
 =pod
@@ -690,7 +732,9 @@ ensembl-specific organisms
 =cut
 sub Get_species_dir_from_supported_file {
   my ($species) =  @_;
-	my %assembly_directory = {};
+
+  my %assembly_directory;
+  my $supported_file = &Get_supported_file();
 
   if (-f $supported_file ) {
 		## Open the file containing the list of supported Ensembl species
@@ -700,12 +744,11 @@ sub Get_species_dir_from_supported_file {
 	    	chomp($line);
 	    	my ($id,$name,$ass,$db,$ens,$update,$dir) = split("\t", $line);
 
-
 				# Make sure first letter of species is upper case
 				$spe = ucfirst($name);
 				$species = ucfirst($species);
 
-	    	## The full RSAT path should not be writen explicitly in
+   	    	## The full RSAT path should not be writen explicitly in
 	    	## the files.
 	    	if ($dir) {
 					$dir =~ s/\$\{RSAT\}/$ENV{RSAT}/g;
@@ -730,10 +773,11 @@ sub Get_species_dir_from_supported_file {
 
 		# Sort directories by latest release and then return it
 		my @sort_release_index = (sort{$b<=>$a} (keys(%assembly_directory)));
-
-
-		return $assembly_directory{$sort_release_index[0]};
-
+		if(scalar(@sort_release_index)){
+            return $assembly_directory{$sort_release_index[0]};
+        } else {
+            return '';
+        }
   }
 }
 
@@ -787,7 +831,7 @@ installed from Ensembl.
 sub Get_supported_file {
   my ($data_dir) = @_;
   $data_dir = &Get_data_dir unless ($data_dir);
-  return $data_dir."/supported_organisms_ensembl.tab";
+  return $data_dir."/supported_organisms.tab";
 }
 
 ## Contigs.txt
@@ -876,75 +920,145 @@ sub Get_file_seq_name {
 =cut
 
 sub UpdateEnsemblSupported {
+    my ($species, $assembly,$ensembl_release, $species_suffix) = @_;
     my	$supported_organism_file = &Get_supported_file();
     &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
-
+    
     ## Hash table to store previous species description lines
     my %species_description = ();
-
+    
     ## Find the current species ID
     my $current_species_id = &Get_full_species_ID($species,$assembly,$ensembl_release,$species_suffix);
-
+    
     ## Read the list of previously installed organisms if it exists.
     if (-f $supported_organism_file) {
-	my ($s_o_file) = &OpenInputFile($supported_organism_file);
-
-	## Read the whole file of supported organisms from ensembl,
-	## and store species description lines in a hash indexed by
-	## full species ID, in order to sort them after having changed
-	## the current species fields.
-	my $l = 0;
-	while (<$s_o_file>) {
-	    $l++;
-	    next if (/^;/); ## Skip comment lines
-	    next if (/^#/); ## Skip header line
-	    next unless (/\S/); ## Skip empty lines
-	    chomp();
-	    my @fields = split("\t");
-	    my $full_species_id = $fields[0];
-	    $species_description{$full_species_id} = $_;
-	}
-	close $s_o_file;
+        my ($s_o_file) = &OpenInputFile($supported_organism_file);
+        
+        ## Read the whole file of supported organisms from ensembl,
+        ## and store species description lines in a hash indexed by
+        ## full species ID, in order to sort them after having changed
+        ## the current species fields.
+        my $l = 0;
+        while (<$s_o_file>) {
+            $l++;
+            next if (/^;/); ## Skip comment lines
+            next if (/^#/); ## Skip header line
+                next unless (/\S/); ## Skip empty lines
+            chomp();
+            my @fields = split("\t");
+            my $full_species_id = $fields[0];
+            $species_description{$full_species_id} = $_;
+        }
+        close $s_o_file;
     }
-
-
+    
+    my $name = $species;
+    $name =~ s/_/ /g;
     ## Build the line for the currently installed species
-    my $id = &Get_full_species_ID($species,$assembly,$ensembl_release,$species_suffix);
-    my $name = $id; $name =~ s/_/ /g;
-
     my $new_org_config = join ("\t",
-			       $id,
-#			       $name,
-			       $species,
-			       $assembly,
-			       $main::db,
-			       $ensembl_release , #&get_ensembl_release,
-			       &AlphaDate(),
-			       &Get_species_dir($species,$assembly,$ensembl_release,$species_suffix),
-	);
-
+    $current_species_id,
+    ucfirst($name),
+    "<NA>",
+    $main::db,
+    &AlphaDate(),
+    "<NA>",
+    "<NA>",
+    "<NA>",
+    "<NA>",
+    "<NA>",
+    &Get_species_dir($species,$assembly,$ensembl_release,$species_suffix),
+    &Get_species_dir($species,$assembly,$ensembl_release,$species_suffix) . "/configs.txt",
+    $assembly,
+    $ensembl_release , #&get_ensembl_release,
+    &AlphaDate(),
+    "<NA>",
+    "<NA>",
+    "<NA>",
+    "<NA>"
+    );
+    
     ## Avoid to expose the full RSAT path
     $new_org_config =~ s|$ENV{RSAT}|\$\{RSAT\}\/|g;
     $new_org_config =~ s|\/\/|/|g;
-
+    
     ## Index the new species description
     $species_description{$current_species_id} = $new_org_config;
-
+    
     ## Write the updated table of supported organisms from Ensembl
     my $s_o_file = &OpenOutputFile($supported_organism_file);
-
+    
     ## Print the header with column content
     print $s_o_file "#", join ("\t", @supported_header_fields), "\n";
-
+    
     ## Print the table of supported organisms
     foreach my $id (sort keys %species_description) {
-	print $s_o_file $species_description{$id}, "\n";
+        print $s_o_file $species_description{$id}, "\n";
     }
-#    print $s_o_file join("",@other_species);
+    #    print $s_o_file join("",@other_species);
     close $s_o_file;
-
+    
     &RSAT::message::Info("Ensembl genome installed in folder", $genome_dir) if ($main::verbose >= 1);
 }
+
+=pod
+ 
+ Update the tab-delimited file with the blasts installed for
+ get-orthologs
+ 
+=cut
+
+##########################################
+###
+sub UpdateBlastSupported {
+    my ($species_id) = @_;
+    my $supported_organism_file = &Get_supported_file();
+    &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
+    
+    ## Hash table to store previous species description lines
+    my %species_description = ();
+    if (-f $supported_organism_file) {
+        my ($s_o_file) = &OpenInputFile($supported_organism_file);
+        
+        ## Read the whole file of supported organisms from ensembl,
+        ## and store species description lines in a hash indexed by
+        ## full species ID, in order to sort them after having changed
+        ## the current species fields.
+        my $l = 0;
+        while (<$s_o_file>){
+            $l++;
+            next if (/^;/); ## Skip comment lines
+            next if (/^#/); ## Skip header line
+                next unless (/\S/); ## Skip empty lines
+            chomp();
+            my @fields = split("\t");
+            my $current_species_id = $fields[0];
+            #check if the species is already in the list
+            if($species_id eq $current_species_id){
+                # Build the line for the species
+                $fields[18] = 1;
+                $species_description{$current_species_id} = join("\t", @fields);
+            }else{
+                $species_description{$current_species_id} = $_;
+            }
+        }
+        close $s_o_file;
+    }
+    ## Write the updated table of supported organisms from Ensembl
+    my $s_o_file = &OpenOutputFile($supported_organism_file);
+    
+    ## Print the header with column content
+    print $s_o_file "#", join ("\t", @supported_header_fields), "\n";
+    
+    ## Print the table of supported organisms
+    foreach my $id (sort keys %species_description) {
+        print $s_o_file $species_description{$id}, "\n";
+    }
+    #    print $s_o_file join("",@other_species);
+    close $s_o_file;
+    
+    &RSAT::message::Info("Ensembl genome installed in folder", $genome_dir) if ($main::verbose >= 1);
+}
+
 
 =pod
 
@@ -956,19 +1070,21 @@ sub UpdateEnsemblSupported {
 ##########################################
 ###
 sub UpdateVariationsSupported {
-		my ($species, $assembly, $source, $release) = @_;
-		my @supported_header_fields = ("id", "species", "assembly", "db", "release", "update_date");
-		my $data_dir = &Get_data_dir();
-		my $supported_organism_file = $data_dir."/supported_variation_info.tab";
-    #my $supported_organism_file = &Get_supported_file();
+    my ($species, $assembly, $source, $release) = @_;
+    #my @supported_header_fields = ("id", "species", "assembly", "db", "release", "update_date");
+    my $data_dir = &Get_data_dir();
+    #my $supported_organism_file = $data_dir."/supported_variation_info.tab";
+    my $supported_organism_file = &Get_supported_file();
     &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
 
     ## Hash table to store previous species description lines
     my %species_description = ();
 
     ## Find the current species ID
-    my $current_species_id = $species."_".$assembly."_".$release;
+    #my $current_species_id = ucfirst($species)."_".$assembly;
+    my $current_species_id = Get_full_species_ID($species, $assembly, $release );
 
+    my $already_exist = 0;
     ## Read the list of previously installed organisms if it exists.
     if (-f $supported_organism_file) {
 			my ($s_o_file) = &OpenInputFile($supported_organism_file);
@@ -979,14 +1095,27 @@ sub UpdateVariationsSupported {
 			## the current species fields.
 			my $l = 0;
 			while (<$s_o_file>) {
-	    	$l++;
-	    	next if (/^;/); ## Skip comment lines
-	    	next if (/^#/); ## Skip header line
-	    	next unless (/\S/); ## Skip empty lines
-	    	chomp();
-	    	my @fields = split("\t");
-	    	my $full_species_id = $fields[0];
-	    	$species_description{$full_species_id} = $_;
+                $l++;
+                next if (/^;/); ## Skip comment lines
+                next if (/^#/); ## Skip header line
+                    next unless (/\S/); ## Skip empty lines
+                chomp();
+                my @fields = split("\t");
+                my $full_species_id = $fields[0];
+                #check if the species is already in the list
+                if($current_species_id eq $full_species_id){
+                    $already_exist = 1;
+                    # Build the line for the species
+                    if($fields[12] eq "<NA>") { $fields[12] = $assembly; }
+                    if($fields[13] eq "<NA>") { $fields[13] = $release; }
+                    $fields[14] = &AlphaDate();
+                    $fields[15] = 1;
+                    $fields[16] = $source;
+                    $fields[17] = &Get_variation_dir($species, $assembly,$ensembl_release, $species_suffix);
+                    $species_description{$full_species_id} = join("\t", @fields);
+                }else{
+                    $species_description{$full_species_id} = $_;
+                }
 			}
 			close $s_o_file;
     }
@@ -995,22 +1124,38 @@ sub UpdateVariationsSupported {
     ## Build the line for the currently installed species
     ##my $id = &Get_full_species_ID($species,$assembly,$ensembl_release,$species_suffix);
     ##my $name = $id; $name =~ s/_/ /g;
+    if($already_exist == 0){
+        my $name = $species;
+        $name =~ s/_/ /g;
+        my $new_org_config = join ("\t",
+                       $current_species_id,
+                             ucfirst($name),
+                            "<NA>",
+                            $source,
+                            &AlphaDate(),
+                            "<NA>",
+                            "<NA>",
+                            "<NA>",
+                            "<NA>",
+                            "<NA>",
+                            "<NA>",
+                            "<NA>",
+                             $assembly,
+                             $release,
+                       &AlphaDate(),
+                            1,
+                            $source,
+                            &Get_variation_dir($species, $assembly,$release, $species_suffix),
+                            "<NA>"
+                        );
 
-    my $new_org_config = join ("\t",
-			       $current_species_id,
-						 $species,
-						 $assembly,
-						 $source,
-						 $release,
-			       &AlphaDate() );
+        ## Avoid to expose the full RSAT path
+        ##$new_org_config =~ s|$ENV{RSAT}|\$\{RSAT\}\/|g;
+        ##$new_org_config =~ s|\/\/|/|g;
 
-    ## Avoid to expose the full RSAT path
-    ##$new_org_config =~ s|$ENV{RSAT}|\$\{RSAT\}\/|g;
-    ##$new_org_config =~ s|\/\/|/|g;
-
-    ## Index the new species description
-    $species_description{$current_species_id} = $new_org_config;
-
+        ## Index the new species description
+        $species_description{$current_species_id} = $new_org_config;
+    }
     ## Write the updated table of supported organisms from Ensembl
     my $s_o_file = &OpenOutputFile($supported_organism_file);
 

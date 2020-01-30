@@ -51,10 +51,10 @@ print "<style>
 	}
 </style>";
 
-print "<CENTER>";
-print "Retrieve the matrices with identifiers.<P>\n";
-print "</CENTER>";
-print "<BLOCKQUOTE>\n";
+print "<center>";
+print "Retrieve matrices from a motif collection by specifying one or more identifiers.<p>\n";
+print "</center>";
+print "<blockquote>\n";
 
 ################################################################
 #### collections
@@ -261,7 +261,7 @@ print ' <select id="db_choice" name="db_choice" style="width:300px"><option></op
 ## load the various databases that can be compared against
 &DisplayMatrixDBchoice_select2("mode"=>"radio");
 print '</select>';
-print '<br/><a class="inline" href="#matrix_descr""> View matrix descriptions & download full collections</a> <br/>';
+print '<br/><a class="inline" href="#matrix_descr""> View versions & download full collections</a> <br/>';
 print "<div style='display:none'><div id='matrix_descr'>";
 &DisplayMatrixDBchoice_select2("mode" => "list");
 print "</div></div></div>";

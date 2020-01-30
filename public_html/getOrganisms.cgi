@@ -93,61 +93,37 @@ if($query->param("taxon") eq "yes"){
 else{
     my @selected_organisms = ();
     #### PrintOrthoSelectionSection
-    if($supported_orgs eq "orthologs"){
-        my $fp_org_file = $ENV{RSAT}."/public_html/data/supported_blast_tables.tab";
-        &RSAT::message::Debug("supported BLAST tables", $fp_org_file) if ($main::verbose >= 5);
-        if (-e $fp_org_file) {
-            my ($fp_org) = &OpenInputFile($fp_org_file);
-            while (<$fp_org>) {
-                next unless (/\S/) ; # skip empty rows
-                next if (/^;/); # skip comment lines
-                next if (/^\#/); # Skip header line
-                
-                my @split_line = split(/\t/, $_);
-                my $org = $split_line[0];
-                my $taxa = $split_line[1];
-                
-                if ($org) {
-                    
-                    #	      if (defined($supported_organism{$org})) {## This control seems
-                    #	      not to work, probably because the library is read before the
-                    #	      list of supported organisms.
-                    $supported_orthologs{$org} = 1;
-                    $supported_genome_blast{$org}{$taxa} = 1;
-                    #	      }
-                }
-            }
-            @selected_organisms = sort keys %supported_orthologs;
-        } else {
-            &RSAT::error::FatalError("Missing file", $fp_org_file);
-        }
-    }
     #### infer-operons
-    elsif($supported_orgs eq "infer"){
+    if($supported_orgs eq "infer"){
         push @selected_organisms, &GetOrganismsForTaxon("Bacteria")
         if (($group_specificity eq "Bacteria") ||
         ($group_specificity eq "Prokaryotes"));
+        
         push @selected_organisms, &GetOrganismsForTaxon("Archaea")
         if (($group_specificity eq "Archaea") ||
         ($group_specificity eq "Prokaryotes"));
+        
         @selected_organisms = sort(@selected_organisms);
     }
     ###### variations
-    elsif($supported_orgs eq "variations"){
-        my $data_rsat=join("/",$ENV{RSAT},"data") ;
-        my $supported_variation_organims_file=join ("/",$data_rsat,"supported_organisms_variation.tab");
-        my ($var_org) = &OpenInputFile($supported_variation_organims_file);
-        while(<$var_org>){
-            chomp;
-            next unless (/\S/) ; # skip empty rows
-            next if (/^;/); # skip comment lines
-            next if (/^\#/); # Skip header line
-            my $org=$_ ;
-            push (@selected_organisms, $org) ;
-        }
-    }
     else{
-        @selected_organisms = &RSAT::OrganismManager::get_supported_organisms_web();
+        my @selected_organisms_ = &RSAT::OrganismManager::get_supported_organisms_web();
+        @selected_organisms = ();
+        if($supported_orgs eq "orthologs"){
+            foreach my $org (@selected_organisms_){
+                if($main::supported_organism{$org}->{"blast_available"} eq "1"){
+                    push @selected_organisms, $org;
+                }
+            }
+        }elsif($supported_orgs eq "variations"){
+            foreach my $org (@selected_organisms_){
+                if($main::supported_organism{$org}->{"variant_available"} eq "1"){
+                    push @selected_organisms, $org;
+                }
+            }
+        }else{
+            @selected_organisms = @selected_organisms_;
+        }
     }
     
     if($query->param("get") eq "json"){

@@ -88,14 +88,14 @@ $default{return}="fields";
 
 &MatrixFromPatterns_defaults();
 
-### replace defaults by parameters from the cgi call, if defined
+## Replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
 }
 
-### print the form ###
+## Print the form
 &RSA_header("oligo-analysis", "form");
 
 print "<center>";
