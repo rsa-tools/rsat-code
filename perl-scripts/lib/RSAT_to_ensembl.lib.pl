@@ -5,7 +5,6 @@ package main;
 ############################################################################
 ############################################################################
 ########################## FTP ENSEMBL FONCTION ############################
-#  our $ensembl_url = "ftp://ftp.ensemblgenomes.org/pub/protists/current/fasta/";
 
 ################################################################
 ## Define global variables
@@ -532,14 +531,18 @@ release, which is specified in the file $RSAT/RSAT_config.props.
 
 =back
 
-The full ID will be used to select the organism in the RSAT tools. It
-also servers as name for the directory in which the genome has to be
+The full ID will be used to select the organism in RSAT tools. It
+also serves as name for the directory in which the genome has to be
 installed.
 
 By default, the full species ID is built by concatenating species and
-assembly, separated by an underscore character.
+assembly, separated by an underscore character. Example: 
 
-Ex:
+However, historically other formats have co-existed. For instance, 'install-organisms' 
+installs organisms from NCBI and uses strain instead of assembly ([species]_[strain])
+
+Finally, makefiles/ensemblgenomes_FTP_client.mk produces ID such as [species].[assembly].[release]
+Example: Oryza_longistaminata.O_longistaminata_v1.0.43
 
 =cut
 
@@ -564,11 +567,32 @@ sub Get_full_species_ID {
       &RSAT::message::Debug("Got from &Get_assembly()", $assembly) if ($main::verbose >= 5);
   }
 
+  # compose full ID by concatenating bits
+  my $full_species_id;
+  my $genome_data_dir = Get_data_dir() . '/genomes/';
+
+  # 1) try the makefiles/ensemblgenomes_FTP_client.mk
+  $full_species_id = ucfirst($species) .'.'. $assembly .'.'. $ensembl_release; 
+  if(-d $genome_data_dir.$full_species_id){
+    &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
+    return($full_species_id);
+  } 
+  
+  # 2) try the NCBI way
+  if($species_suffix){
+    $full_species_id = ucfirst($species) .'.'. $species_suffix;
+    if(-d $genome_data_dir.$full_species_id){
+      &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
+      return($full_species_id);
+    }
+  }
+
+  # 3) finally try the default RSAT ID format
   ## Full ID convention (2014-10, JvH  AMR)
   ## [Species]_[assembly]_[db][ensembl_release]
-  my $full_species_id = ucfirst($species);
+  $full_species_id = ucfirst($species);
   $full_species_id .= "_".$assembly;
-#  $full_species_id .= "_".$main::db.$ensembl_release; ## We prefer to avoid creating one folder for each new release of ensembl
+  #$full_species_id .= "_".$main::db.$ensembl_release; ## We prefer to avoid creating one folder for each new release of ensembl
   $full_species_id .= "_".$species_suffix if ($species_suffix);
 
   &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
@@ -708,7 +732,9 @@ ensembl-specific organisms
 =cut
 sub Get_species_dir_from_supported_file {
   my ($species) =  @_;
-	my %assembly_directory = {};
+
+  my %assembly_directory;
+  my $supported_file = &Get_supported_file();
 
   if (-f $supported_file ) {
 		## Open the file containing the list of supported Ensembl species
@@ -718,12 +744,11 @@ sub Get_species_dir_from_supported_file {
 	    	chomp($line);
 	    	my ($id,$name,$ass,$db,$ens,$update,$dir) = split("\t", $line);
 
-
 				# Make sure first letter of species is upper case
 				$spe = ucfirst($name);
 				$species = ucfirst($species);
 
-	    	## The full RSAT path should not be writen explicitly in
+   	    	## The full RSAT path should not be writen explicitly in
 	    	## the files.
 	    	if ($dir) {
 					$dir =~ s/\$\{RSAT\}/$ENV{RSAT}/g;
@@ -748,10 +773,11 @@ sub Get_species_dir_from_supported_file {
 
 		# Sort directories by latest release and then return it
 		my @sort_release_index = (sort{$b<=>$a} (keys(%assembly_directory)));
-
-
-		return $assembly_directory{$sort_release_index[0]};
-
+		if(scalar(@sort_release_index)){
+            return $assembly_directory{$sort_release_index[0]};
+        } else {
+            return '';
+        }
   }
 }
 
@@ -1044,9 +1070,9 @@ sub UpdateBlastSupported {
 ##########################################
 ###
 sub UpdateVariationsSupported {
-		my ($species, $assembly, $source, $release) = @_;
+    my ($species, $assembly, $source, $release) = @_;
     #my @supported_header_fields = ("id", "species", "assembly", "db", "release", "update_date");
-		my $data_dir = &Get_data_dir();
+    my $data_dir = &Get_data_dir();
     #my $supported_organism_file = $data_dir."/supported_variation_info.tab";
     my $supported_organism_file = &Get_supported_file();
     &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
@@ -1055,7 +1081,9 @@ sub UpdateVariationsSupported {
     my %species_description = ();
 
     ## Find the current species ID
-    my $current_species_id = ucfirst($species)."_".$assembly;
+    #my $current_species_id = ucfirst($species)."_".$assembly;
+    my $current_species_id = Get_full_species_ID($species, $assembly, $release );
+
     my $already_exist = 0;
     ## Read the list of previously installed organisms if it exists.
     if (-f $supported_organism_file) {
