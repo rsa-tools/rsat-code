@@ -925,7 +925,7 @@ sub UpdateEnsemblSupported {
     }
     
     my $name = $species;
-    $name =~ s/_/\s/g;
+    $name =~ s/_/ /g;
     ## Build the line for the currently installed species
     my $new_org_config = join ("\t",
     $current_species_id,
@@ -1096,7 +1096,7 @@ sub UpdateVariationsSupported {
     ##my $name = $id; $name =~ s/_/ /g;
     if($already_exist == 0){
         my $name = $species;
-        $name =~ s/_/\s/g;
+        $name =~ s/_/ /g;
         my $new_org_config = join ("\t",
                        $current_species_id,
                              ucfirst($name),
