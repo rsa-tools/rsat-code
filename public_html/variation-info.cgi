@@ -55,7 +55,7 @@ if (defined($supported_organism{$organism})) {
 
     my ($species, $assembly) = ('','');
  
-    if($organism_name =~ /^([A-Za-z]+_[A-Za-z]+_*[A-Za-z]*)\.(\S+?).\d+/){ # as in plants, installed with ensemblgenomes_FTP_client.mk 
+    if($organism_name =~ /^([A-Za-z]+_[A-Za-z]+_*[^\.]*)\.(.*)\.\d+/){ # as in plants, installed with ensemblgenomes_FTP_client.mk 
         $species = $1;
         $assembly = $2;
     } else {
