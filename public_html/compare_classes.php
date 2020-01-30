@@ -12,7 +12,7 @@
 <body class="results">
 <?php 
   require ('functions.php');
-    $menu = $_REQUEST['menu'];
+    $menu = $_REQUEST['menu'];  $menu=strtr($menu, ":()';<>","       ");
 	if(strcmp($menu,"RSAT") == 0){
 		include("menu.php");
 	}else{
