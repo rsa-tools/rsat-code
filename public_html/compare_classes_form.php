@@ -11,7 +11,7 @@
    <?php
    require_once ('functions.php');
      
-       $menu = $_REQUEST['menu'];
+       $menu = $_REQUEST['menu']; $menu=strtr($menu, ":()';<>","       ");
        //printMenu($menu);
 	if(strcmp($menu,"RSAT") == 0){
 		include 'menu.php';
