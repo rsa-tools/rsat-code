@@ -5,6 +5,7 @@ targets:
 	@echo "Targets"
 	@echo "	targets			list targets of this makefile"
 	@echo "	all			run all the targets (may take some time)"
+	@echo "	download_demo_files	Download demo files from the github repository"
 	@echo "	list_param		list parameters"
 	@echo "	randseq			random-seq"
 	@echo "	purgeseq		purge-sequence"
@@ -15,7 +16,7 @@ targets:
 	@echo "	retrieve_matrix		retrieve-matrix"
 	@echo "	convert_matrix		convert-matrix"
 	@echo "	compare_matrices	compare-matrices"
-	@echo "	download_peaks		download test peaks"
+	@echo "	matrix_clustering	matrix-clustering with 2 collections (peak-motifs versus Jaspar ref)"
 	@echo "	oligos			oligo-analysis"
 	@echo "	positions		position-analysis"
 	@echo "	assembly		pattern-assembly"
@@ -44,8 +45,16 @@ list_param:
 
 ################################################################
 ## Run all targets
-all: targets list_param randseq purgeseq download_jaspar sequence_lengths classfreq xygraph retrieve_matrix convert_matrix compare_matrices download_peaks oligos positions assembly matrix_from_patterns create_background matrix_distrib matrix_quality peakmo download_organism supported_local supported_ensembl supported_ensemblg supported_ucsc gene_info add_gene_info retrieve_seq fetch_sequences
+all: targets list_param download_demo_files randseq purgeseq download_jaspar sequence_lengths classfreq xygraph retrieve_matrix convert_matrix compare_matrices  oligos positions assembly matrix_from_patterns create_background matrix_distrib matrix_quality peakmo download_organism supported_local supported_ensembl supported_ensemblg supported_ucsc gene_info add_gene_info retrieve_seq fetch_sequences
 
+################################################################
+## Download demo files from the github repository
+DEMO_URL=https://github.com/rsa-tools/demo_files.git
+DEMO_FILES=demo_files
+download_demo_files:
+	@echo "Downloading demo files from git repository"
+	git clone ${DEMO_URL}
+	@echo "	DEMO_FILES		${DEMO_FILES}"
 
 ################################################################
 ## Generate random sequences
@@ -81,27 +90,27 @@ download_jaspar:
 ## retrieve-matrix test
 ## Retrieve selected matrices from JASPAR
 RETRIEVE_MATRIX_DIR=${RESULT_DIR}/retrieve-matrix_result
-MATRIX_BASENAME=sox-oct_matrices
-MATRICES=${RETRIEVE_MATRIX_DIR}/${MATRIX_BASENAME}.tf
+SOCT_MATRIX_BASENAME=sox-oct_matrices
+SOCT_MATRICES=${RETRIEVE_MATRIX_DIR}/${SOCT_MATRIX_BASENAME}.tf
 retrieve_matrix: download_jaspar create_background
 	@echo "Testing retrieve-matrix"
 	@mkdir -p ${RETRIEVE_MATRIX_DIR}
 	rsat retrieve-matrix -v ${V} -i ${JASPAR} -id POU5F1 -id SOX2 -id Pou5f1::Sox2 \
-		-o ${MATRICES}
-	@echo "	MATRICES	${MATRICES}"
+		-o ${SOCT_MATRICES}
+	@echo "	SOCT_MATRICES	${SOCT_MATRICES}"
 
 
 ################################################################
 ## convert-matrix (including the generation of logos)
 CONVERT_MATRIX_DIR=${RESULT_DIR}/convert-matrix_result
-CONVERTED_MATRICES=${CONVERT_MATRIX_DIR}/${MATRIX_BASENAME}.tab
+CONVERTED_SOCT_MATRICES=${CONVERT_MATRIX_DIR}/${SOCT_MATRIX_BASENAME}.tab
 convert_matrix: download_jaspar
 	@echo "Testing convert-matrix"
 	@mkdir -p ${CONVERT_MATRIX_DIR}
-	rsat convert-matrix -v ${V} -i ${MATRICES} -from transfac -to tab \
+	rsat convert-matrix -v ${V} -i ${SOCT_MATRICES} -from transfac -to tab \
 		-return weights,margins,logo -decimals 2 \
-		-o ${CONVERTED_MATRICES}
-	@echo "	CONVERTED_MATRICES	${CONVERTED_MATRICES}"
+		-o ${CONVERTED_SOCT_MATRICES}
+	@echo "	CONVERTED_SOCT_MATRICES	${CONVERTED_SOCT_MATRICES}"
 
 ################################################################
 ## Compare matrices
@@ -110,7 +119,7 @@ MATRIX_COMPA=${MATRIX_COMPA_DIR}/sox-oct_vs_itself
 compare_matrices: retrieve_matrix
 	@echo "Testing compare-matices"
 	@mkdir -p ${MATRIX_COMPA_DIR}
-	rsat compare-matrices -v ${V} -file ${MATRICES} -format transfac \
+	rsat compare-matrices -v ${V} -file ${SOCT_MATRICES} -format transfac \
 		-mode matches -distinct -strand DR \
 		-lth cor 0.6 -lth Ncor 0.33 -uth match_rank 50 \
 		-return cor,Ncor,logoDP,match_rank,matrix_id,matrix_name,width,consensus,alignments_1ton \
@@ -120,33 +129,41 @@ compare_matrices: retrieve_matrix
 
 ################################################################
 ## matrix-clustering test
+##
+## Clustering with two matrix collections:
+## 1. Motifs discovered in Sox peaks by RSAT peak-motifs
+## 2. Reference motifs for SOX and OCT transcription factors in Jaspar
 MATRIX_CLUSTERING_DIR=${RESULT_DIR}/matrix-clustering_result
+CLUSTER_PREFIX=${MATRIX_CLUSTERING_DIR}/peak-motifs_vs_jaspar_SOCT
+CLUSTER_ERR_LOG=${CLUSTER_PREFIX}_err.txt
 matrix_clustering:
 	@echo "Testing matrix-clustering"
-	rsat matrix-clustering -h
+	@mkdir -p ${MATRIX_CLUSTERING_DIR}
 	@echo "	MATRIX_CLUSTERING_DIR	${MATRIX_CLUSTERING_DIR}"
+	rsat matrix-clustering -v ${V} \
+		-matrix 'peak-motifs' ${OLIGO_MATRICES}_count_matrices.tf  transfac \
+		-matrix 'jaspar_soct'  ${SOCT_MATRICES}  transfac \
+		-hclust_method average -calc sum \
+		-title 'peak-motifs versus Jaspar Sox-Oct' \
+		-metric_build_tree 'Ncor' -lth w 5 -lth cor 0.6 -lth Ncor 0.4 -quick \
+		-label_in_treeOC name -return json,heatmap  \
+		-o ${CLUSTER_PREFIX} 2> ${CLUSTER_ERR_LOG}
+	@echo "	CLUSTER_PREFIX	${CLUSTER_PREFIX}"
+	@echo "	CLUSTER_ERR_LOG	${CLUSTER_ERR_LOG}"
+
 
 
 ################################################################
-## Download peak sequences for tests
-PEAK_BASENAME=peak-motifs_demo
+## Peak sequences for tests
+PEAK_DIR=demo_files/ChIP-seq_peaks
+PEAK_BASENAME=Oct4_peaks_top1000
 PEAK_FILE=${PEAK_BASENAME}.fa
-PEAK_URL=http://teaching.rsat.eu//demo_files/${PEAK_FILE}
-PEAKMO_DIR=${RESULT_DIR}/peak-motifs_result
-PEAKS=${PEAKMO_DIR}/${PEAK_FILE}
-download_peaks:
-	@echo "	Downloading peak sequences from ${PEAK_URL}"
-	@mkdir -p ${PEAKMO_DIR}
-	@if [ -f ${PEAKS} ] ; \
-	then echo "	Peak file already there"; \
-	else wget --no-clobber ${PEAK_URL} -O ${PEAKS}; \
-	fi
-	@echo "	PEAKS	${PEAKS}"
+PEAKS=${PEAK_DIR}/${PEAK_FILE}
 
 ################################################################
 ## Check the lengths of the downloaded peaks
 PEAK_LENGTHS=${PEAKS}_lengths.tsv
-sequence_lengths: download_peaks
+sequence_lengths: 
 	@echo "Testing sequence-lengths"
 	rsat sequence-lengths -i ${PEAKS} -o ${PEAK_LENGTHS}
 	@echo "	PEAK_LENGTHS	${PEAK_LENGTHS}"
@@ -178,7 +195,7 @@ xygraph: classfreq
 ## Purge sequences to mask repeats
 PURGESEQ_DIR=${RESULT_DIR}/purge-sequence_result
 PURGED_PEAKS=${PURGESEQ_DIR}/${PEAK_BASENAME}_purged.fa
-purgeseq: download_peaks
+purgeseq: 
 	@echo "Testing purge-seq"
 	@mkdir -p ${PURGESEQ_DIR}
 	@echo "	PURGESEQ_DIR	${PURGESEQ_DIR}"
@@ -192,7 +209,7 @@ OLIGO_DIR=${RESULT_DIR}/oligo-analysis_result
 OLIGO_BASENAME=${PEAK_BASENAME}_6nt_2str_noov_sig0
 OLIGO_PREFIX=${OLIGO_DIR}/${OLIGO_BASENAME}
 OLIGOS=${OLIGO_PREFIX}.tsv
-oligos: download_peaks
+oligos: purgeseq
 	@echo "Testing oligo-analysis"
 	@mkdir -p ${OLIGO_DIR}
 	rsat oligo-analysis -v ${V} -i ${PURGED_PEAKS} \
@@ -214,7 +231,7 @@ oligos: download_peaks
 POSITION_DIR=${RESULT_DIR}/position-analysis_result
 POSITION_BASENAME=${POSITION_DIR}/${PEAK_BASENAME}_6nt_ci25
 POSITIONS=${POSITION_BASENAME}.tsv
-positions: download_peaks
+positions: purgeseq
 	@echo "Testing position-analysis"
 	@mkdir -p ${POSITION_DIR}
 	rsat position-analysis -v ${V} -i ${PURGED_PEAKS} \
@@ -254,14 +271,13 @@ matrix_from_patterns:
 	@echo "	Sites (feature format)	${OLIGO_MATRICES}_sig_sites.ft"
 
 
-
 ################################################################
 ## Test create-background-model
 BG_MKV=1
 BG_DIR=${RESULT_DIR}/background-models
 BG_FORMAT=oligos
 BG_FILE=${BG_DIR}/${PEAK_BASENAME}_bg-model_markov${BG_MKV}_${BG_FORMAT}.tsv
-create_background: download_peaks
+create_background: 
 	@echo "Testing create-background-model"
 	@mkdir -p ${BG_DIR}
 	rsat create-background-model -v ${V} \
@@ -274,20 +290,20 @@ create_background: download_peaks
 ################################################################
 ## Test matrix-distrib
 MATRIX_DISTRIB_DIR=${RESULT_DIR}/matrix-distrib_result
-MATRIX_DISTRIB_PREFIX=${MATRIX_DISTRIB_DIR}/${MATRIX_BASENAME}_distrib
+MATRIX_DISTRIB_PREFIX=${MATRIX_DISTRIB_DIR}/${SOCT_MATRIX_BASENAME}_distrib
 MATRIX_DISTRIB=${MATRIX_DISTRIB_PREFIX}.tsv
 matrix_distrib:
 	@echo "Testing matrix-distrib"
 	@mkdir -p ${MATRIX_DISTRIB_DIR}
 	rsat matrix-distrib -v ${V} \
 		-top 1 \
-		-m ${MATRICES} -matrix_format transfac \
+		-m ${SOCT_MATRICES} -matrix_format transfac \
 		-pseudo 1 -decimals 1 \
 		-bg_format ${BG_FORMAT} \
 		-bgfile ${BG_FILE} \
 		-bg_pseudo 0.01 \
 		-o ${MATRIX_DISTRIB}
-	@echo "	MATRICES		${MATRICES}"
+	@echo "	SOCT_MATRICES		${SOCT_MATRICES}"
 	@echo "	BG_FILE			${BG_FILE}"
 	@echo "	MATRIX_DISTRIB_DIR	${MATRIX_DISTRIB_DIR}"
 	@echo "	MATRIX_DISTRIB		${MATRIX_DISTRIB}"
@@ -320,7 +336,7 @@ matrix_distrib:
 ## Test matrix-quality
 QUALITY_DIR=${RESULT_DIR}/matrix-quality_result
 QUALITY_PREFIX=${QUALITY_DIR}/${OLIGO_BASENAME}_quality
-matrix_quality:
+matrix_quality: create_background
 	@echo "Testing matrix-quality"
 	@mkdir -p ${QUALITY_DIR}
 	rsat matrix-quality -v ${V} \
@@ -336,9 +352,9 @@ matrix_quality:
 ################################################################
 ## peak-motifs test
 PEAKMO_TASK=purge,seqlen,composition,disco,merge_motifs,split_motifs,motifs_vs_motifs,timelog,synthesis,small_summary,scan,motifs_vs_db
-peakmo: download_jaspar download_peaks
+peakmo: download_jaspar 
 	@echo "Testing peak-motifs"
-	@mkdir -p ${PEAKMO_DIR}
+	@mkdir -p ${PEAK_DIR}
 	@echo "	Running peak-motifs"
 	rsat peak-motifs  -v 3 \
 		-title Oct4_Chen2008_sites_from_Jaspar \
@@ -348,12 +364,12 @@ peakmo: download_jaspar download_peaks
 		-nmotifs 5 -minol 6 -maxol 6 -no_merge_lengths -2str -origin center \
 		-scan_markov 1 -source galaxy \
 		-prefix peak-motifs -noov -img_format png \
-		-outdir ${PEAKMO_DIR} \
+		-outdir ${PEAK_DIR} \
 		-motif_db JASPAR transfac ${JASPAR} \
 		-task ${PEAKMO_TASK}  \
-		&> ${PEAKMO_DIR}/peak-motifs_log.txt
-	@echo "	Log file	${PEAKMO_DIR}/peak-motifs_log.txt"
-	@echo "	Result page	${PEAKMO_DIR}/peak-motifs_synthesis.html"
+		&> ${PEAK_DIR}/peak-motifs_log.txt
+	@echo "	Log file	${PEAK_DIR}/peak-motifs_log.txt"
+	@echo "	Result page	${PEAK_DIR}/peak-motifs_synthesis.html"
 
 
 ################################################################

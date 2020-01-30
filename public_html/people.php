@@ -46,7 +46,8 @@
 	     src="images/people/JvH_tete_2007_small.png" width="80"
 	     alt="Jacques van Helden"></a></td>
     <td><a target='_blank' href="http://jacques.van-helden.perso.luminy.univ-amu.fr/"><b>Jacques van Helden</b></a>
-      <br>Professor Aix-Marseille Universit&eacute; (France) 
+      <br>Professor Aix-Marseille Universit&eacute; (France)
+      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0002-8799-8584">0000-0002-8799-8584</a>
     </td>
         <td>Project leader (1997-now)</td>
     <td>
@@ -68,6 +69,7 @@
 	     alt="Morgane Thomas-Chollier"></a></td>
     <td><a target='_blank' href="http://morgane.bardiaux.fr"><b>Morgane Thomas-Chollier</b></a>
       <br>Associate professor at Ecole normale sup&eacute;rieure de Paris (France)
+      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0003-2608-476X">0000-0003-2608-476X</a>
     </td>
     <td>RSAT developper since 2007</td>
     <td>
@@ -86,8 +88,8 @@
 	<img border=0
 	     src="images/people/alejandra_medina-rivera.jpg" width="80" alt=""></a></td>
     <td><a target='_blank' href="http://liigh.unam.mx/amedina/index.html"><b>Alejandra Medina-Rivera</b></a>
-    <br/>
-    Associate professor at International Laboratory for the Research on the Human Genome, UNAM (Mexico)
+      <br>Associate professor at International Laboratory for the Research on the Human Genome, UNAM (Mexico)
+      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0002-7912-2718">0000-0002-7912-2718</a>
     </td>
     <td>RSAT developper since 2008
     </td> 
@@ -103,6 +105,7 @@
 	<img border='0' src="images/people/jaime_castro.jpg" width="80" alt="Jaime Castro"></a></td>
     <td><a target='_blank' href="http://folk.uio.no/jamondra/"><b>Jaime Castro-Mondragon</b></a>
     <br>Post-doc Centre for Molecular Medicine Norway (NCMM) (Norway)
+      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0003-4069-357X">0000-0003-4069-357X</a>
     </td>
     <td>RSAT developper since 2013
     </td>
@@ -119,7 +122,8 @@
 	<img border=0
          src="images/people/nga.png" width="80" alt="Nga Thi Thuy NGUYEN"></a></td>
     <td><b>Nga Thi Thuy NGUYEN</b>
-      <br>Ing&eacute;nieure d'&eacute;tude at CNRS (IFB contract) (IBENS,Paris,France)</br>
+      <br>Ing&eacute;nieure d\'&eacute;tude at CNRS (IFB contract) (IBENS,Paris,France)
+      <br>ORCID: <a target=_blank href="https://orcid.org/"></a>
     </td>  
     <td>Since 2016
     </td>    
@@ -138,6 +142,7 @@
          src="images/people/bruno_contreras_moreira.jpg" width="80" alt="Bruno Contreras Moreira"></a></td>
     <td><a target='_blank' href="https://orcid.org/0000-0002-5462-907X"><b>Bruno Contreras Moreira</b></a>
       <br>Laboratory of Computational and Structural Biology, EEAD-CSIC, Zaragoza, Spain
+      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0002-5462-907X">0000-0002-5462-907X</a>
     </td>
     <td>
     Since 2014
@@ -154,7 +159,8 @@
 	<img border=0
 	     src="images/people/wsantana.png" width="80" alt=""></a></td>
     <td><b>Walter Santana</b>
-      <br>Bachelor student at Genomic sciences (UNAM, Mexico)</br>
+      <br>Bachelor student at Genomic sciences (UNAM, Mexico)
+      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0002-1350-9880">0000-0002-1350-9880</a>
     </td>  
     <td>Since 2016
     </td>    
@@ -162,14 +168,35 @@
       Identification of regulatory variants <br/>
     </td>
   </tr>
+
+  <tr><td colspan=4><hr class='portal'></td></tr>
+
+  <tr>
+    <td><a name=oly></a><a href="images/people/olivier_sand.jpeg">
+	<img border=0
+	     src="images/people/olivier_sand.jpeg" width="80" alt="Olivier Sand"></a></td>
+    <td><a target='_blank' href="http://www-good.ibl.fr/en/bio-informatique/"><b>Olivier Sand</b></a>
+      <br>Research Engineer at CNRS (Lille,France)</br>
+      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0003-1465-1640">0000-0003-1465-1640</a>
+    </td>  
+    <td>Postdoc (2004-2009)
+    </td>    
+    <td>
+      Implementation and maintenance of the Web services. 
+      <br>Implementation of tools to retrieve sequences from EnsEMBL.
+    </td>
+  </tr>
+
   
    <tr><td colspan=4><hr class='portal'></td></tr>
+
   <tr>
     <td><a name=defrance></a><a href="images/people/matthieu_defrance.jpg">
 	<img border=0
 	     src="images/people/matthieu_defrance.jpg" width="80" alt="Matthieu Defrance"></a></td>
     <td><a target='_blank' href="http://www.researchgate.net/profile/Matthieu_Defrance "><b>Matthieu Defrance</b></a> 
       <br>Associate professor, Computer Science Department, Universit&eacute; Libre de Bruxelles (Belgium)
+      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0002-3090-3142">0000-0002-3090-3142</a>
     </td>
     <td>
     Since 2007
@@ -202,20 +229,7 @@
       Virtual machine.
     </td>
   </tr>
-<tr><td colspan=4><hr class='portal'></td></tr>
-  <tr>
-    <td><a name=oly></a><a href="images/people/olivier_sand.jpeg">
-	<img border=0
-	     src="images/people/olivier_sand.jpeg" width="80" alt="Olivier Sand"></a></td>
-    <td><a target='_blank' href="http://www-good.ibl.fr/en/bio-informatique/"><b>Olivier Sand</b></a>
-      <br>Research Engineer at CNRS (Lille,France)</br>
-    </td>  
-    <td>Postdoc (2004-2009)
-    </td>    
-    <td>
-      Implementation and maintenance of the Web services. 
-    </td>
-  </tr>
+
   <tr><td colspan=4><hr class='portal'></td></tr>
     <td><a name=sylvain></a><a href="images/people/sylvain_brohee.jpeg">
 	<img border=0

@@ -398,7 +398,7 @@ sub retrieve_ensembl_seq {
   my $feat_format = $args{"feat_format"};
 # my $imp_pos = $args{'imp_pos'};
 
-  my $command = "$SCRIPTS/retrieve-ensembl-seq.pl";
+  my $command = "$SCRIPTS/retrieve-ensembl-seq";
 
   if ($organism) {
     $organism =~ s/\'//g;

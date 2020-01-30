@@ -696,7 +696,7 @@ Type of data to return. Supported values: seq | coord
 By default, coordinates (coord) are returned.  For RSAT organisms, the
 return type can be 'seq' to retrieve sequences. The sequence format is
 fasta.  For Ensembl organisms, use the coordinate file (in ft format)
-as input to I<retrieve-ensembl-seq.pl> with the options -ftfile
+as input to I<retrieve-ensembl-seq> with the options -ftfile
 YourCoordFile -ftfileformat ft.  You can also use the tools of
 sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the
 sequences from the coordinates.

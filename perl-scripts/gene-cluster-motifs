@@ -1284,7 +1284,7 @@ sub RetrieveSequencesEnsEMBL {
   &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 2);
   $organism_name =~ s/_EnsEMBL//;
   my $command;
-  $command = "retrieve-ensembl-seq.pl";
+  $command = "retrieve-ensembl-seq";
   #    $command .= " -label id,name ";
   $command .= " -ensemblhost xserve2 -alltranscripts";
   $command .= " -i ".$family{$family_name}->{family_file};
