@@ -127,7 +127,6 @@ require "quality_enrichment.lib.pl";
 use RSAT::MatrixReader;
 use Data::Dumper;
 use List::MoreUtils qw(uniq);
-require "RSA2.cgi.lib";
 use RSAT::util;
 use RSAT::matrix;
 use RSAT::SeqUtil;

@@ -10,7 +10,7 @@ $args{"title"} = "Human_from_Jaspar";
 $args{"markov"} = "auto";
 $args{"disco"} = "oligos,positions";
 $args{"motif_db"} = "jaspar_core_nonredundant_vertebrates";
-$args{"tmp_test_infile_URL"} = "http://rsat-tagc.univ-mrs.fr/rsat//demo_files/peak-motifs_demo.fa";
+$args{"tmp_test_infile_URL"} = "http://rsat-tagc.univ-mrs.fr/rsat//demo_files/Oct4_peaks_top1000.fa";
 $args{"task"} = "purge,seqlen,composition,disco,merge_motifs,split_motifs,motifs_vs_motifs,timelog,archive,synthesis,small_summary,motifs_vs_db,scan";
 
 $arg = encode_json(\%args);

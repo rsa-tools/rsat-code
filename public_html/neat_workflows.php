@@ -7,7 +7,7 @@
 <head>
    <meta HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=iso-8859-1\">
    <title>NeAT - Web Services - Taverna workflows</title>
-<link rel=\"stylesheet\" type=\"text/css\" href = \"main.css\" media=\"screen\">
+<link rel=\"stylesheet\" type=\"text/css\" href = \"css/main.css\" media=\"screen\">
 </head>
 <body class=\"info\">
 <blockquote>

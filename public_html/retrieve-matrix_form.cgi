@@ -307,6 +307,13 @@ print "<td align='top'>2 - Select a collection in list:<br/>";
 print ' <select id="db_choice" name="db_choice" style="width:300px"><option></option>';
 ## load the various databases that can be compared against
 print '</select>';
+<<<<<<< HEAD
+=======
+print '<br/><a class="inline" href="#matrix_descr""> View versions & download full collections</a> <br/>';
+print "<div style='display:none'><div id='matrix_descr'>";
+&DisplayMatrixDBchoice_select2("mode" => "list");
+print "</div></div></div>";
+>>>>>>> eeaee0459db46877e5a71ee525f79e075d8cad0c
 
 print "</td><td align='top'>";
 print "3 - Select one or more matrix identifiers:<br/>";

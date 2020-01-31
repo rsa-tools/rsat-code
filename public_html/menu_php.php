@@ -2,7 +2,7 @@
         <link rel="stylesheet" type="text/css" href="menu.css" media="screen,projection,print" />
         <link rel='stylesheet' href='css/colorbox.css'></link>
 	<link rel='stylesheet' type='text/css' href='js/autocomplete/css/jquery-ui.css' />
-         <script src="lib/RSAT_menu.js" type="text/javascript"></script>
+         <script src="js/RSAT_menu.js" type="text/javascript"></script>
         <script src="js/jquery.colorbox-min.js"></script>
 
         <script>

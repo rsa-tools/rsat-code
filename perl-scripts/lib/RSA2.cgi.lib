@@ -271,13 +271,13 @@ sub RSA_header_bootstrap {
         -src      => 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'
     },
     { -type => 'text/javascript',
-        -src      => 'lib/RSAT_menu.js'
+        -src      => 'js/RSAT_menu.js'
     },
     { -type => 'text/javascript',
-        -src      => 'RSAT_tabs.js'
+        -src      => 'js/RSAT_tabs.js'
     }
    ],
-    -style => { 	-src => ["css/bootstrap.min.css","css/bhoechie-tab.css","tabs.css","chosen.css","font-awesome.min.css","form.css"],
+    -style => { 	-src => ["css/bootstrap.min.css","css/bhoechie-tab.css","css/tabs.css","css/chosen.css","css/font-awesome.min.css","css/form.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
 
@@ -353,13 +353,13 @@ sub RSA_header {
         -src      => 'js/jquery.js'
     },
     { -type => 'text/javascript',
-        -src      => 'lib/RSAT_menu.js'
+        -src      => 'js/RSAT_menu.js'
     },
     { -type => 'text/javascript',
-        -src      => 'RSAT_tabs.js'
+        -src      => 'js/RSAT_tabs.js'
     }
    ],
-    -style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
+    -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css","css/font-awesome.min.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
     
@@ -3076,6 +3076,7 @@ sub GetMatrixDBchoice_select2 {
     #  &RSAT::message::Debug("GetMatrixDBchoice()", scalar(@selected_db)." matrix databases were selected", "parameters=".$matrix_db_params) if ($main::verbose >= 5);
     return($matrix_db_params, @selected_db);
 }
+
 
 
 ################################################################

@@ -115,7 +115,7 @@ print $query->end_form;
 
 ################################################################
 ## Demo button
-$demo_url1= $ENV{rsat_www}."/demo_files/peak-motifs_demo.fa";
+$demo_url1= $ENV{rsat_www}."/demo_files/Oct4_peaks_top1000.fa";
 
 print '<script>
 function setDemo(demo_url){

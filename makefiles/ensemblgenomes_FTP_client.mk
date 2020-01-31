@@ -157,6 +157,8 @@ download_one_species: ${DOWNLOAD_TASKS}
 
 install_one_species: ${INSTALL_TASKS}
 
+# you can explicitely set params $SPECIES_RSAT_ID and $SPECIES_RSAT_UPGRADE_ID if needed
+# I had to do it after assembly_id changed from release to the other with no sequence change
 upgrade_one_species: 
 	@echo
 	@echo Upgrading ${SPECIES_RSAT_ID} to ${SPECIES_RSAT_UPGRADE_ID}
@@ -376,9 +378,9 @@ install_go_annotations:
 	@mkdir -p ${GO_ANNOT_DIR}
 	@echo "Downloading GO annotations of ${SPECIES}"
 	@echo download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
-        -release ${RELEASE} -list ${ORGANISM_TABLE} 
+        -release ${RELEASE} -list ${ORGANISM_TABLE}  
 	@download-ensembl-go-annotations-biomart -o ${GO_ANNOT_FILE} -org ${SPECIES} \
-		-release ${RELEASE}	-list ${ORGANISM_TABLE}
+		-release ${RELEASE}	-list ${ORGANISM_TABLE} 
 	@echo "Expanding GO annotations of ${SPECIES}" 
 	@rm -f ${GO_ANNOT_LINK}
 	@ln -s ${GO_ANNOT_FILE} ${GO_ANNOT_LINK}
@@ -408,8 +410,8 @@ TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 4)
 #endif
 
 ## The Assembly ID is important for some model organisms (the
-## community relies on some particular assemblies) but is sometimes
-## not defined in the table.
+## community relies on some particular assemblies) but sometimes 
+## it is not defined in the table
 ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 5 | perl -lne 's/\s+//g; print')
 
 ## The GCA ID is now (2017) recognized by NCBI as well as

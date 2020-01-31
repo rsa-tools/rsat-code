@@ -27,11 +27,13 @@ if($mode eq 'retrieve'){
     print "Content-type:txt/plain\n\n";
 }
 
+my $cat_choice = $query->param("cat_choice");
 my $db_choice = $query->param("db_choice");
 my @db_id = split(",", $query->param("db_id"));
 
-my %matrix_db = &RSAT::server::supported_motif_databases();
-my %db = %{$matrix_db{$db_choice}};
+my %matrix_db = &RSAT::server::supported_motif_databases_2("db_list");
+
+my %db = %{$matrix_db{$cat_choice}{$db_choice}};
 my $format = $db{format};
 my $file = $db{file};
 

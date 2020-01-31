@@ -1,8 +1,8 @@
 <html>
 <head>
    <title>Network Analysis Tools - download string dataset</title>
-   <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
-   <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   <link rel="stylesheet" type="text/css" href = "css/main_grat.css" media="screen">
+   <link rel="stylesheet" type="text/css" href = "css/main_grat.css" media="screen">
 
 </head>
 <body class="form">

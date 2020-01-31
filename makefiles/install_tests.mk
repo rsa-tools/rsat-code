@@ -107,7 +107,7 @@ ws_python_peakmo:
 	@echo 
 	@echo "Testing stub-based SOAP/WSDL web services with peak-motifs python client"	
 	${PYTHON} ${RSAT}/public_html/web_services/clients/python/peak-motifs_soap.py \
-		-test ${RSAT}/public_html/demo_files/peak-motifs_demo.fa \
+		-test ${RSAT}/public_html/demo_files/Oct4_peaks_top1000.fa \
 		-server ${WS_SERVER}
 
 purge_seq:

@@ -1,7 +1,7 @@
 <html>
 <head>
    <title>Network Analysis Tools - convert-graph</title>
-   <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   <link rel="stylesheet" type="text/css" href = "css/main_grat.css" media="screen">
       <style type="text/css">
     <!--
     div.hourglass{position: absolute; top: 80px; left: 400px }

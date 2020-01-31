@@ -106,7 +106,7 @@ if ($organism_list) {
 
 			print ";INFO: Saving result to file $file_name\n";
 
-			my $command = "retrieve-ensembl-seq.pl -dbversion $dbversion -org $organism -all -chrom $chrom -from $from -to $to -feattype $feattype -type $type $firstintron $maskcoding $rm $noorf -alltranscripts -uniqseqs -o $organism/$file_name";
+			my $command = "retrieve-ensembl-seq -dbversion $dbversion -org $organism -all -chrom $chrom -from $from -to $to -feattype $feattype -type $type $firstintron $maskcoding $rm $noorf -alltranscripts -uniqseqs -o $organism/$file_name";
 			`$command`;
 		    }
 

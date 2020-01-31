@@ -207,7 +207,7 @@ set of 1000 peak regions bound by the mouse transcription factor Oct4
 (Chen et al., 2008)</p>\n";
 $descr1 .= "</blockquote>";
 
-$demo_url = $ENV{rsat_www}."/demo_files/peak-motifs_demo.fa";
+$demo_url = $ENV{rsat_www}."/demo_files/Oct4_peaks_top1000.fa";
 
 print '<script>
 function setDemo1(demo_url){

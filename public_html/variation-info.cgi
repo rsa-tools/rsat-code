@@ -53,22 +53,17 @@ $organism = $query->param('organism');
 if (defined($supported_organism{$organism})) {
     $organism_name = $supported_organism{$organism}->{'name'};
 
-    if ($ENV{plant_server} == 1){
+    my ($species, $assembly) = ('','');
  
-        @org_name_split=split(/\./,$organism_name) ;
-        $species=$org_name_split[0] ;
-	$species=~ s/ /_/ ;
-	$assembly= $org_name_split[1] ;
-
+    if($organism_name =~ /^(\w+_\w+_*\w*)\.(\S+?).\d+/){ # as in plants, installed with ensemblgenomes_FTP_client.mk 
+        $species = $1;
+        $assembly = $2;
     } else {
-
-
-    @org_name_split=split(" ",$organism_name);
-    $species=join("_", $org_name_split[0], $org_name_split[1]);
-    $assembly = $org_name_split[2];
-    
-
+        @org_name_split=split(" ",$organism_name);
+        $species=join("_", $org_name_split[0], $org_name_split[1]);
+        $assembly = $org_name_split[2];
     }
+
     &RSAT::message::Debug("organism: ".$organism, 
 			  "organism_name: ".$organism_name,
 			  "species: ".$species,

@@ -3,7 +3,7 @@
 <html>
 <head>
 <title>NeAT Home Page</title>
-<link rel='stylesheet' type='text/css' href='main.css' media='screen'/>
+<link rel='stylesheet' type='text/css' href='css/main.css' media='screen'/>
 <meta http-equiv='Content-Type' content='text/html; charset=iso-8859-1' />
 </head>
 <body class='info'>
