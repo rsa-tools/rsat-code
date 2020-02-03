@@ -1,3 +1,8 @@
+# Installing genomes from EnsemblGenomes
+
+**Author: Bruno Contreras Moreira**
+
+## Introduction
 
 This document explains how to install genomes and annotations from Ensembl Genomes using mostly the [FTP](ftp://ftp.ensemblgenomes.org/pub) site.
 Gene Ontology terms are optional and are obtained from [BioMart](http://plants.ensembl.org/biomart/martview) instead.
@@ -6,28 +11,34 @@ Note that while Ensembl covers Vertebrates, Ensembl Genomes includes the other d
 
 This installation procedure can actually be used to **install genomes from other sources** as well, see below.
 
-This manual uses [../../makefiles/ensemblgenomes_FTP_client.mk](makefiles/ensemblgenomes_FTP_client.mk) for these tasks.
+This protocol uses a makefile found in the rsat directory [makefiles/ensemblgenomes_FTP_client.mk](makefiles/ensemblgenomes_FTP_client.mk) for these tasks.
 
-This document does **NOT** use the following scripts: install-ensembl-genome, download-ensembl-genome,
-download-ensembl-features, download-ensembl-variations, which are documented elsewhere.
+This document **does not** use the following scripts, which are documented elsewhere: 
+
+- `install-ensembl-genome`, 
+- `download-ensembl-genome`,
+- `download-ensembl-features`, 
+- `download-ensembl-variations`.
 
 
-# Downloading a genome from another RSAT web server
+## Downloading a genome from another RSAT web server
 
 Usually the fastest way of getting a genome installed is to fetch it from other RSAT server. This way oligo frequencies are not computed; instead thay are copied over:
 
-```{r, engine='bash', eval=FALSE}
-download-organism -server http://rsat.eead.csic.es/plants -org Arabidopsis_thaliana.TAIR10.29
+```
+download-organism \\
+   -server http://rsat.eead.csic.es/plants \\
+   -org Arabidopsis_thaliana.TAIR10.29
 ```
 
-# Installing genome sequences and annotations from Ensembl Genomes
+## Installing genome sequences and annotations from Ensembl Genomes
 
-## Check FTP site URL
+### Check FTP site URL
 
 The current FTP site is at ftp://ftp.ensemblgenomes.org ; should it change in the future, or its folder structure, [../../makefiles/ensemblgenomes_FTP_client.mk](makefiles/ensemblgenomes_FTP_client.mk) will have to be updated.
 
 
-## Find out current Ensembl Genomes release 
+### Find out current Ensembl Genomes release 
 
 Visit the Web site of your division of interest, such as http://plants.ensembl.org, and check the release statement at the bottom.
 Alternatively you can use the REST [info/eg_version endpoint](http://rest.ensembl.org/documentation/info/eg_version)
@@ -39,7 +50,7 @@ For instance, Ensembl release 99 corresponds to Ensembl Genomes 46.
 export EGRELEASE=46
 ```
 
-## Get supported species 
+### Get supported species 
 
 We shall download the current list of supported genomes in the respective division (GROUP).
 This can be done by running the following command:
@@ -55,7 +66,7 @@ make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=$EGRELE
 
 Once this is done then you can install genomes from that release.
 
-## Install all species 
+### Install all species 
 
 You can install all genomes with these commands:
 
@@ -75,14 +86,14 @@ nohup make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=$
 **Note:** this will take a very long time, days for current Ensembl Plant releases, so it might not be a good idea.
 
 
-## Compute genome stats report
+### Compute genome stats report
 
 To generate a report of descriptive stats of all installed genomes in your server, such as http://rsat.eead.csic.es/plants/data/stats , you can do:
 ```
 make -f makefiles/ensemblgenomes_FTP_client.mk calc_stats
 ```
 
-## Install selected species
+### Install selected species
 
 In case you want to install a single genome you can do that by:
 
@@ -101,7 +112,7 @@ make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=42 SPEC
 make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=42 SPECIES=oryza_sativa install_one_species
 ```
 
-## Install variation data
+### Install variation data
 
 If variation data is available for your species of interest you can download it with:
 
@@ -110,7 +121,7 @@ cd $RSAT
 make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=$EGRELEASE SPECIES=oryza_sativa variations_one_species
 ```
 
-## Install Gene Ontology terms from BioMart
+### Install Gene Ontology terms from BioMart
 
 First we shall get the current registry for the division of interest. Only Plants, Metazoa and Fungi are supported.
 For instance, for Plants the registry is at http://plants.ensembl.org/biomart/martservice?type=registry
@@ -143,7 +154,7 @@ And for each species for which we want GO terms we can now do:
 make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=$EGRELEASE SPECIES=oryza_sativa download_go_annotations
 ```
 
-## Installing from other sources
+### Installing from other sources
 
 The procedures described can also be used to install arbitrary genomes from other sources,
 provided that 4 input files are available with the following extensions: 
@@ -168,4 +179,6 @@ make -f makefiles/ensemblgenomes_FTP_client.mk SPECIES=Glycine_max \
     install_from_gtf
 ```
 
-Note that TAXON_ID can be obtained at https://www.ncbi.nlm.nih.gov/taxonomy
+Note that TAXON_ID can be obtained at <https://www.ncbi.nlm.nih.gov/taxonomy>
+
+*********
