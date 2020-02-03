@@ -42,6 +42,485 @@ package main;
 ############################################################################
 
 
+################################################################
+## Return a HTML link from an index file to a target file
+sub LinkOneFile {
+    my ($from_file, $to_file, $text) = @_;
+    my $pathv = "";
+    my $link = "";
+    $text = $text || $to_file;
+    if (-e ($to_file)) {
+        $path = &RSAT::util::RelativePath($from_file, $to_file);
+        $link = join ("",  "<a href='",$path, "'>", $text, "</a>");
+    } else {
+        $link = join ("",  "<font color='red'>", $text, "</font>");
+    }
+    return $link;
+}
+
+
+################################################################
+## Print HTML header
+sub html_header {
+    my $sorttable = shift;
+    if (!defined($sorttable)) {
+        $sorttable = 1;
+    }
+    # $sorttable is a optional argument. By default, the table contains a
+    # java script that allows the HTML table
+    # to be sorted by clicking on the top of the row.
+    #If $sorttable is equal to 0, then this script will not be included.
+    #In some cases this has no sense to sort the table.
+    my $header = "";
+    $header .=  "<html>\n";
+    $header .=  "<header>\n";
+    $header .=  "<title>$infile{input}</title>\n";
+    $header .=  "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\" />";
+    $header .= &sorttable_script() if ($sorttable);
+    $header .= "<style type='text/css'>\n";
+    $header .= `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+    $header .=  "</style>\n";
+    $header .=  "<header>\n";
+    $header .=  "<body bgcolor='#ffffff'>\n";
+    return $header;
+}
+
+################################################################
+## Close HTML table
+sub close_table_html {
+    my $string = "";
+    $string .=  "</BODY>";
+    $string .=  "</HTML>";
+    return $string;
+}
+
+
+################################################################
+## Print a java script produce a sortable HTML table
+sub sorttable_script {
+    my $script = $ENV{RSAT}."/perl-scripts/lib/sorttable.js";
+    return `cat $script`;
+}
+
+################################################################
+## Include a java script from a .js file in a HTML file.  This is
+## useful for producing result files that can be moved without loosing
+## the script.
+sub java_script_from_file {
+    my ($script_file) = @_;
+    my $script_string = "<script type=\"text/javascript\">\n";
+    $script_string .= "<!-- \n";
+    $script_string .= `cat $script_file`;
+    $script_string .= "// -->\n";
+    $script_string .= "</script>\n";
+    return $script_string;
+}
+
+
+################################################################
+## Insert HTML tags to open a menu heading
+##
+## Usage:  print $out &open_menu_heading($nb, $text, $closed);
+##
+## Parameters:
+##   $nb : a unique number identifying the menu heading in the HTML page.
+##   $text: the text to be displayed in the menu heading. This text can contain HTML tags.
+##          example: "<h3>My title</h3>"
+##   $closed: a flag indicating if the menu should be open (0) or
+##          closed (1) the first time the HTML is loaded in the browser.
+sub open_menu_heading {
+    my ($nb, $text, $closed) = @_;
+    my $status = "open";
+    my $display = "menu_collapsible_display";
+    if ($closed) {
+        $status = "closed";
+        $display = "menu_collapsible";
+    }
+    my $string = "<div class=\"menu_heading_".$status."\" onclick=\"toggleMenu('".$nb."')\" id=\"heading".$nb."\">\n";
+    $string .= $text."</div>";
+    $string .= "<div id=\"menu".$nb."\" class=\"".$display."\"><p/><fieldset>";
+    return ($string);
+}
+
+################################################################
+## Insert HTML tags to close a menu heading
+##
+## Usage:  print $out &close_menu_heading($nb, $text);
+sub close_menu_heading {
+    my $string =  "</fieldset><p/></div>";
+    $string .= "</div>\n";
+    $string .= "<p class=\"clear\"></p>";
+    return($string);
+}
+
+
+################################################################
+## Print the HTML header for a result file (include styles etc)
+sub PrintHtmlResultHeader {
+    my (%args) = @_;
+    my $header = "";
+    my $program = $args{program} || "RSAT";
+    #  my $title = $args{title} || $main::param{title} || "result";
+    my $title = $args{title} || "result";
+    my $result_toc = $args{result_toc};
+    
+    ## HTML Header and title
+    $header .=  "<html>\n";
+    $header .=  "<head>\n";
+    $header .=  "<title>".$program." ".$title."</title>\n";
+    
+    
+    ## Page styles
+    $header .=  "<style type='text/css'>\n";
+    $header .=  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+    $header .=  "</style>\n";
+    #  $header .=  "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
+    
+    ## Refresh time if required
+    my $refresh_time = 0;
+    if ((defined($args{refresh_time}))
+    && (&IsNatural($args{refresh_time}))
+    && ($args{refresh_time} > 0)) {
+        $refresh_time = $args{refresh_time};
+        $header .= "<meta http-equiv='refresh' content='".$refresh_time."' />\n";
+    }
+    
+    ## Java scripts
+    $header .=  sorttable_script();
+    #  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
+    #  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/lib/RSAT_menu.js");
+    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/RSAT_menu.js");
+    $header .=  "</head>\n";
+    
+    ## Start HTML body
+    $header .=  "<body>\n";
+    if (defined($ENV{rsat_www})) {
+        $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSAT</a> - ".$program." result</h1>\n";
+    } else {
+        $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSAT</a> - ".$program." result</h1>\n";
+    }
+    $header .=  "<h3 style='text-align:center;'>Analysis: ";
+    $header .=  $title." (";
+    $header .=  &RSAT::util::DateAndTime();
+    $header .=  ")</h3>\n";
+    
+    ## Reserve space for result TOC in the beginning of the form
+    if ($refresh_time > 0) {
+        $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>\n";
+        $header .= "<p style='text-align:center;color:green'>Results will progressively be displayed on this page <br/>\n";
+        $header .= "<b>This page should be automatically refreshed every ".$refresh_time." seconds until this message disappears.</b></p>\n";
+    }
+    
+    if ($result_toc) {
+        $header .=  "<div id='Menu_space'>\n";
+        $header .=  "<div id='Menu_wait'>\n";
+        $header .=  "</div>\n";
+        $header .=  "</div>\n";
+    }
+    
+    return($header);
+}
+
+################################################################
+#### Print a text table in html format
+##
+## Read the content of FILEHANDLE and display it in the form of a
+## HTML table.
+##
+## if $mirror_file is specified, a copy of the input text (without HTML formatting)
+## is saved on the hard drive
+##
+## usage
+##   &PrintHtmlTable($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border, $autolink);
+##
+## global variables
+## ================
+## The fixed font type can be switched off by specifiying a global
+## variable
+##       $font{variable} = 1;
+sub PrintHtmlTable {
+    my ($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border, $autolink) = @_;
+    $out = STDOUT unless ($out);
+    $chunk = 1000 unless (&IsNatural($chunk));
+    my $line_count = 0;
+    my $last_line = "";
+    my $header_line = "";
+    unless ((defined($border)) && (&IsNatural($border))) {
+        $border=0;
+    }
+    
+    ## Open the table
+    $TABLE_OPENING="<table  class=\"sortable\"  cellspacing='1' cellpadding='3' border='$border'>";
+    unless ($main::font{variable}) {
+        $font_spec_start = "<TT>";
+        $font_spec_end = "</TT>";
+    }
+    
+    ## If required, store a copy of the input text in a mirror file
+    if ($mirror_file) {
+        if (open MIRROR, ">$mirror_file") {
+            $mirror = 1;
+            &DelayedRemoval($mirror_file);
+        } else {
+            &Warning("Could not open the mirror file $mirror_file<P>\n");
+        }
+    }
+    
+    print $out "<pre>";
+    while (<$FILE>) {
+        #### avoid exposing the full path through the web interface
+        $_ = &RSAT::util::hide_RSAT_path($_);
+        #    s|$ENV{RSAT}/(public_html/)*||g;
+        
+        if ($autolink) {
+            s|(http://[\w\d+\.\-\/\?\&\=\~]+)|<a href="$1">$1</a>|g;
+            s|(ftp://[\w\d+\.\-\/\?\&\=\~]+)|<a href="$1">$1</a>|g;
+            s|([\w\d\.\-]+\@[\w\d\.\-]+)|<a href=mailto:$1>$1</a>|g;
+        }
+        
+        if ($mirror) {
+            print MIRROR $_
+            unless ((/^;/) && !($mirror_verbose));
+        }
+        
+        if (/^\s*$/) { ## Empty rows
+            print $out "<br>\n";
+            
+        } elsif (/^;\s*WARNING/) {		# Warning
+            push @warnings, $_;
+            
+            
+        } elsif ((/^;/) ||
+        (/^\-\-/) ||
+        (/^\#/) ||
+        (/^\/\//)) {	# Comment line
+            if ($table_opened) {
+                print $out "<\/table><pre>\n";
+                $table_opened = 0;
+            }
+            $last_line =~ s/^;//;
+            $last_line =~ s/^#//;
+            $last_line =~ s/^--//;
+            print $out $last_line;
+            $last_line = $_;
+            
+        } elsif (!($table_opened)) { # first line of the table
+            $table_opened = 1;
+            $line_count = 0;
+            print $out "</pre>\n\n", $TABLE_OPENING, "\n";
+            
+            # print the header line
+            chomp($last_line);
+            $last_line =~ s/^;//;
+            $last_line =~ s/^#//;
+            $last_line =~ s/^--//;
+            $last_line =~ s|\t|$font_spec_end</th>\n<th align='left'>$font_spec_start|g;
+            $header_line = "<tr valign='top'>\n<th align='left' >".$font_spec_start.$last_line.$font_spec_end."</th>\n</tr>\n\n";
+            print $out $header_line;
+            $last_line = "";
+            
+            ### print the first result line
+            chomp;
+            s|\t|$font_spec_end</td>\n<td>$font_spec_start|g;
+            print $out "<tr valign='top'>\n<td>".$font_spec_start;
+            print $out $_;
+            print $out $font_spec_end."</td>\n</tr>\n\n";
+            
+        } else {			# other line of the table
+            $line_count++;
+            if ($line_count%$chunk == 0) {
+                ### avoid HTML tables with too many rows
+                print $out "</table>\n\n", $TABLE_OPENING, "\n";
+                print $out $header_line;
+            }
+            chomp;
+            s|\t|$font_spec_end</td>\n<td>$font_spec_start|g;
+            print $out "<tr valign='top'>\n<td>".$font_spec_start.$_.$font_spec_end."</td>\n</tr>\n\n";
+        }
+    }
+    if ($table_opened) {
+        print $out "</table>\n\n";
+        print $out @warnings;
+        print $out "<pre>\n";
+        $table_opened = 0;
+    }
+    
+    print $out $last_line;
+    print $out "</pre>\n";
+    
+    if ($mirror_file ne "") {
+        close MIRROR;
+    }
+}
+
+
+################################################################
+## Print a table row with link to a file (if it exists, otherwise
+## print the file name in red).
+sub PrintFileLink {
+    my ($key, $file, $ref_path, $handler) = @_;
+    
+    ## HTML output with links
+    print ($handler "<tr>\n");
+    print ($handler "<td>", $key, "</td>\n");
+    print ($handler "<td>\n");
+    if (-e $file) {
+        &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
+        my $link = &RSAT::util::RelativePath($ref_path, $file);
+        print $handler "<a href='".$link."'>".$file."</a><br>\n";
+    } else {
+        print $handler "<font color='red'>".$file."</font><br>\n";
+    }
+    print ($handler "</td>\n");
+    print ($handler "</tr>\n");
+}
+
+
+################################################################
+## Taking as input a key-file list, print a HTML table cell with a
+## list of links to the files
+sub PrintFileLinks {
+    my (@files) = @_;
+    print $syn "<td>\n";
+    my $key;
+    my $file;
+    while ($key = shift (@files)){
+        last unless $key;
+        $file = shift(@files);
+        #    &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 5);
+        if (-e $file) {
+            my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
+            print $syn "<a href='".$link."'>[".$key."]</a><br>\n";
+        } else {
+            print $syn "<font color='red'>[".$key."]</font><br>\n";
+        }
+    }
+    print $syn "</td>\n";
+}
+
+
+################################################################
+## Generate a HTML index with links to all input/output files
+##
+## Supported arguments
+##  img_height
+##  img_width
+sub IndexFiles {
+    my (%args) = @_;
+    
+    &RSAT::message::TimeWarn("Generating HTML index") if ($main::verbose >= 2);
+    
+    ## Input files
+    if (scalar(@infiles) >= 1) {
+        print $html_index "<h2>Input files</h2>";
+        print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+        print $html_index "<tr>\n";
+        print $html_index "<th>Type</th>";
+        print $html_index "<th>File</th>";
+        print $html_index "</tr>\n";
+        foreach my $key (@infiles) {
+            my $file = $infile{$key};
+            my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+            print $html_index "<tr>\n";
+            print $html_index "<td>".$key."</td>";
+            print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+            print $html_index "</tr>\n";
+        }
+        print $html_index "</table>\n";
+    }
+    
+    ## Output files
+    if (scalar(@outfiles) >= 1) {
+        print $html_index "<h2>Output files</h2>";
+        print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+        print $html_index "<tr>\n";
+        print $html_index "<th>Type</th>";
+        print $html_index "<th>File</th>";
+        print $html_index "</tr>\n";
+        foreach my $key (@outfiles) {
+            next if ($key eq "html_index");
+            my $file = $outfile{$key};
+            my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+            print $html_index "<tr>\n";
+            print $html_index "<td>".$key."</td>";
+            print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+            print $html_index "</tr>\n";
+        }
+        print $html_index "</table>\n";
+    }
+    
+    ## Graph files (link + display image) Note: Web browsers are
+    ## generally able to display some image formats (jpg, gif, png) but
+    ## not others (pdf, ps, eps).
+    if (scalar(@graphfiles) >= 1) {
+        print $html_index "<h2>Graph files</h2>";
+        print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+        print $html_index "<tr>\n";
+        print $html_index "<th>Type</th>";
+        print $html_index "<th>File</th>";
+        print $html_index "<th>Image</th>";
+        print $html_index "</tr>\n";
+        foreach my $key (@graphfiles) {
+            my $file = $graphfile{$key};
+            my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+            print $html_index "<tr>\n";
+            print $html_index "<td>".$key."</td>";
+            print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+            
+            print $html_index "<td><a href='".$link."'><img";
+            if (&IsReal($args{img_width})) {
+                print $html_index " width='".$args{img_width}."'";
+            }
+            if (&IsReal($args{img_height})) {
+                print $html_index " height='".$args{img_height}."'";
+            }
+            print $html_index " src='".$link."'></a></td>";
+            
+            ## A special trick for sequence logos: check the reverse complement
+            if ($file =~ /(_logo_m\d+)/) {
+                my $suffix = $1;
+                my $rc_file = $file;
+                $rc_file =~ s/${suffix}/${suffix}_rc/;
+                my $rc_link = &RSAT::util::RelativePath($main::outfile{html_index}, $rc_file);
+                print $html_index "<td><a href='".$rc_link."'><img";
+                if (defined($args{img_width})) {
+                    print $html_index " width='".$args{img_width}."'";
+                }
+                if (defined($args{img_height})) {
+                    print $html_index " height='".$args{img_height}."'";
+                }
+                print $html_index " src='".$rc_link."'></a></td>";	  print $html_index "<td></td>";
+            }
+            
+            print $html_index "</tr>\n";
+        }
+        print $html_index "</table>\n";
+    }
+    
+    ## Directories
+    if (scalar(@dirs) >= 1) {
+        print $html_index "<h2>Directories</h2>";
+        print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
+        print $html_index "<tr>\n";
+        print $html_index "<th>Type</th>";
+        print $html_index "<th>Directory</th>";
+        print $html_index "</tr>\n";
+        foreach my $key (@dirs) {
+            my $file = $main::dir{$key};
+            my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
+            &RSAT::message::Debug("indexing dir", $key, $file, $link) if ($main::verbose >= 5);
+            print $html_index "<tr>\n";
+            print $html_index "<td>".$key."</td>";
+            print $html_index "<td><a href='".$link."'>".$link."</a></td>";
+            print $html_index "</tr>\n";
+        }
+        print $html_index "</table>\n";
+    }
+    
+    &RSAT::message::TimeWarn("HTML index", $outfile{html_index}) if ($main::verbose >= 2);
+}
+######################################################
+
 sub ExpectedFreqFile {
     &RSAT::OrganismManager::ExpectedFreqFile(@_);
 }

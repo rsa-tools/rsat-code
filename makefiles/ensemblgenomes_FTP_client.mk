@@ -157,6 +157,8 @@ download_one_species: ${DOWNLOAD_TASKS}
 
 install_one_species: ${INSTALL_TASKS}
 
+# you can explicitely set params $SPECIES_RSAT_ID and $SPECIES_RSAT_UPGRADE_ID if needed
+# I had to do it after assembly_id changed from release to the other with no sequence change
 upgrade_one_species: 
 	@echo
 	@echo Upgrading ${SPECIES_RSAT_ID} to ${SPECIES_RSAT_UPGRADE_ID}
@@ -408,8 +410,8 @@ TAXON_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 4)
 #endif
 
 ## The Assembly ID is important for some model organisms (the
-## community relies on some particular assemblies) but is sometimes
-## not defined in the table.
+## community relies on some particular assemblies) but sometimes 
+## it is not defined in the table
 ASSEMBLY_ID=$(shell grep -w ${SPECIES} ${ORGANISM_TABLE} | cut -f 5 | perl -lne 's/\s+//g; print')
 
 ## The GCA ID is now (2017) recognized by NCBI as well as

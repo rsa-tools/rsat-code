@@ -62,7 +62,7 @@ def list_subcommands(commands):
 ##
 try:
     ## usage
-    ## Note: the Loader has to be specified
+    ## Note: the Loader has to be specified to avoid a warning for obsfurcation
     ref = yaml.load(open(path + '/rsat.yaml').read(), Loader=yaml.FullLoader)
     toc = build_toc(ref['commands'])
     subcmd_list = list_subcommands(ref['commands'])

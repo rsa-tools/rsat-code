@@ -322,7 +322,26 @@ def make_tmp_dir(method_name):
     os.chmod(dir_path,0777)
     return dir_path
 
-def run_command(command, output_choice, method_name, out_format, out_dir=''):
+def run_command_background(command, method_name, out_dir='', summary_page=''):
+    result_dir = ''
+    if out_dir != '':
+        result_dir = out_dir
+    else:
+        (fd, temp_path) = make_tmp_file(method_name, '', dir=out_dir)
+        result_dir = temp_path
+        
+    result_file = result_dir + '/' + summary_page
+    response = {}
+    response['command'] = hide_RSAT_path(command)
+    response['output'] = hide_RSAT_path(result_dir)
+    response['result_path'] = hide_RSAT_path(result_dir)
+    response['result_url'] = make_url(result_file)
+    
+    command = 'nice -n 19 ' + command + ' &'
+    os.system(command)
+    return response
+    
+def run_command(command, output_choice, method_name, out_format, out_dir=''):          
     """Execute the command of the service requested by a REST query.
         
     :param command: full command (name and arguments) to be executed

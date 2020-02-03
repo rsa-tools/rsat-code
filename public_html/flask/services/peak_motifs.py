@@ -24,7 +24,7 @@ ns = api.namespace(tool, description=descr)
 class VariationInfo(Resource):
 	@api.expect(get_parser)
 	def get(self):
-    		data = request.get_json(force=True) #get_parser.parse_args()
+    		data = get_parser.parse_args()
 		if data['content-type'] == 'text/plain':
 			resp = self._run(data)
 			return utils.output_txt(resp,200)
@@ -58,4 +58,4 @@ class VariationInfo(Resource):
 				command += ' -' + param + ' ' + str(data[param])
 		command += utils.parse_fileupload_parameters(data, fileupload_parameters, tool, result_dir, ',')
 		command += ' -outdir ' + result_dir + ' -prefix ' + tool 
-		return utils.run_command(command, output_choice, tool, '', result_dir)
+		return utils.run_command_background(command, tool, result_dir, tool+'_synthesis.html')

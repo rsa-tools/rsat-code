@@ -244,7 +244,6 @@ BEGIN {
 }
 
 require "RSA.lib";
-require "RSA2.cgi.lib";
 require "quality_enrichment.lib.pl";
 use POSIX qw(ceil floor);
 use RSAT::matrix;

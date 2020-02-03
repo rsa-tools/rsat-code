@@ -708,15 +708,39 @@ sub supported_motif_databases {
   return %matrix_db;
 }
 
-################################################################
-## The initialization is performed in the main scope, because this si
-## the place where most RSAT programs expect to find the global
-## variables, due to the initial organization of RSAT.
-##
-## This should be changed at some point, by having server-specific
-## variables attached to the RSAT::server class.
+sub supported_motif_databases_2 {
+    our  %matrix_db = ();
+    ## Load the file containing the path to the databases
+    my $mat_db = $ENV{RSAT}."/public_html/motif_databases/db_matrix_files.tab" ;
+    unless (-e $mat_db) {
+        &RSAT::message::Warning( "Motif database description file not found ($mat_db)");
+        return;
+    }
+    open MAT_DB, "<$mat_db" or &RSAT::message::Warning( "Cannot read motif database description file ($mat_db)");;
+    while (my $line = <MAT_DB>) {
+        chomp($line);
+        next if ($line =~ /^;/); ## Skip comment lines
+        next if ($line =~ /^";/); ## Skip comment lines
+        next if ($line =~ /^#/); ## Skip header line
+        next unless ($line =~ /\S/); ## Skip empty lines
+        chomp($line);
+        $line =~ s/\r//;
+        my ($name, $format, $file, $descr, $version, $url, $category, $db_name) = split (/\t/,$line);        
+        if(! defined $matrix_db{$db_name}){ $matrix_db{$db_name} = (); }
+        my %db_info = ();
+        $db_info{'name'} = $name || "";
+        $db_info{'format'} = $format || "";
+        $db_info{'file'} = $file;
+        $db_info{'descr'} = $descr || $name;
+        $db_info{'version'} = $version || "";
+        $db_info{'url'} = $url || "";
+        $db_info{'category'} = $category || "";
+        
+        $matrix_db{$db_name}{$name} = \%db_info;        
+    }
+    
+    return %matrix_db;
+}
 
-## OBSOLETE ? (JvH 2014-05-03)
-# package main;
 
 return(1);
