@@ -29,8 +29,8 @@
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graphQ = storeFile("demo_files/protein_interactions_uetz.tab");
-    $demo_graphR = storeFile("demo_files/protein_interactions_ito.tab");
+    $demo_graphQ = storeFile("demo_files/protein_interactions/protein_interactions_uetz.tab");
+    $demo_graphR = storeFile("demo_files/protein_interactions/protein_interactions_ito.tab");
 
     $demo_remark = "In this demonstration, we will compare the networks resulting from the
 two first publications reporting a complete characterization of the

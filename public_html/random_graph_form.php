@@ -17,7 +17,7 @@
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graph = storeFile("demo_files/protein_interactions_uetz.tab");
+    $demo_graph = storeFile("demo_files/protein_interactions/protein_interactions_uetz.tab");
     $demo_random_type = "selected";
     $default_random_type = "";
   }

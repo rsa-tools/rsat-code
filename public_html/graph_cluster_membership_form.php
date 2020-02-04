@@ -17,7 +17,7 @@ $default_decimals = 2;
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graph = storeFile("demo_files/protein_interactions_gavin_2006.tab");
+    $demo_graph = storeFile("demo_files/protein_interactions/protein_interactions_gavin_2006.tab");
     $demo_clusters = storeFile("demo_files/gavin_mcl_clusters_inf2.1.tab");
 
   }

@@ -3,7 +3,7 @@
 ## - matrix-quality
 ## - matrix-enrichment
 
-require "RSA2.cgi.lib";		## For sortable HTML tables
+require "RSA.lib";		## For sortable HTML tables
 use List::MoreUtils qw(uniq);
 
 ################################################################
