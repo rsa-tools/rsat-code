@@ -66,7 +66,7 @@ print $query->start_multipart_form(-action=>"variation-info.cgi");
 #my @org_variation=();
 
 my $data_rsat=join("/",$ENV{RSAT},"data") ;
-my $supported_variation_organims_file= `cut -f16 data/supported_organisms.tab | sort -u | head -n1`;
+my $supported_variation_organims_file= `cut -f16 $data_rsat/supported_organisms.tab | sort -unr | head -n1`;
 
 if ($supported_variation_organims_file== 1){
     print "&nbsp;"x0, &OrganismPopUpString('supported'=>'variations');
