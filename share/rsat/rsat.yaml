@@ -115,6 +115,10 @@ commands:
     desc: "Return a subset of input sequences, specified by a start and end positions"
     group: "Sequences"
 
+  - command: "perl-scripts/reverse-complement"
+    desc: "Returns the reverse complement of input DNA sequences or IUPAC-formatted motifs.  "
+    group: "Sequences"
+
   - command: "perl-scripts/sequence-lengths"
     desc: "Return the length of each input sequence, or the sum of lengths"
     group: "Sequences"
