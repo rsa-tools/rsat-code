@@ -15,9 +15,9 @@ reverse-complement
 
 =head1 DESCRIPTION
 
-Returns the reverse complement of input DNA sequences or patterns. The
-IUPAC code for ambiguous nucleotides is supported, as well as
-dyad-type spacings.
+Returns the reverse complement of input DNA sequences or
+IUPAC-formatted motifs.  The IUPAC code for ambiguous nucleotides is
+supported, as well as dyad-type spacings.
 
 =head1 CATEGORY
 
