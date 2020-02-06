@@ -80,3 +80,5 @@ install_logs
 ext_lib
 INSTALL_cache
 apacheconf_backup_*
+public_html/demo_files
+public_html/motif_databases
