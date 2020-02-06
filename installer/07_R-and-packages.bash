@@ -22,14 +22,19 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ## I add the row before the original sources.list because there is
 ## some problem at the end of the update.
 export CODENAME=`grep CODENAME /etc/lsb-release | cut -c 18-`
+export CRAN_DIR=${CODENAME}-cran35
 #export CRAN_URL=https://pbil.univ-lyon1.fr/CRAN
 export CRAN_URL=http://cran.rstudio.com
-grep -v -i cran /etc/apt/sources.list > /etc/apt/sources.list.bk
-sudo echo "## R-CRAN repository, to install the most recent version of R" > /etc/apt/sources.list.rcran
-sudo echo "deb ${CRAN_URL}/bin/linux/ubuntu ${CODENAME}/" >> /etc/apt/sources.list.rcran
-sudo echo "" >> /etc/apt/sources.list.rcran
-sudo cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
-sudo grep -i "cran" /etc/apt/sources.list # Check 
+# grep -v -i cran /etc/apt/sources.list > /etc/apt/sources.list.bk
+# sudo echo "## R-CRAN repository, to install the most recent version of R" > /etc/apt/sources.list.rcran
+# sudo echo "deb ${CRAN_URL}/bin/linux/ubuntu ${CRAN_DIR}/" >> /etc/apt/sources.list.rcran
+# sudo echo "" >> /etc/apt/sources.list.rcran
+# sudo cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
+sudo apt install apt-transport-https software-properties-common
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu ${CRAN_DIR}/"
+sudo grep -i "cran" /etc/apt/sources.list # Check the cran repository
+
 
 # Get code to allow using cran as apt-get source
 #sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 
@@ -41,8 +46,10 @@ sudo grep -i "cran" /etc/apt/sources.list # Check
 # sudo ${OS_INSTALLER} install ${INSTALLER_OPT} software-properties-common python-software-properties
 # sudo add-apt-repository ppa:marutter/rdev
 sudo apt-get update
-sudo ${OS_INSTALLER} install --force-yes r-base:all/${CODENAME} # > ${RSAT}/install_logs/install_r-base_log.txt 
-sudo ${OS_INSTALLER} install --force-yes r-base-dev:all/${CODENAME} # > ${RSAT}/install_logs/install_r-base-dev_log.txt 
+# INSTALLER_OPT=--force-yes
+export INSTALLER_OPT="--allow-unauthenticated --allow-downgrades --allow-remove-essential --allow-change-held-packages"
+sudo ${OS_INSTALLER} install ${INSTALLER_OPT} r-base:all/${CRAN_DIR} # > ${RSAT}/install_logs/install_r-base_log.txt 
+sudo ${OS_INSTALLER} install ${INSTALLER_OPT} r-base-dev:all/${CRAN_DIR} # > ${RSAT}/install_logs/install_r-base-dev_log.txt 
 
 
 
