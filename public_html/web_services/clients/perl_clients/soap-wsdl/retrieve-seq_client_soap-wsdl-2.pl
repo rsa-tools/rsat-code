@@ -28,7 +28,7 @@ my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 my $output_choice = 'ticket';
 
 ## Retrieve-seq parameters
-my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my $organism = 'Escherichia_coli_GCF_000005845.2_ASM584v2';  ## Name of the query organism
 my @gene = ("metA", "metB", "metC");  ## List of query genes
 my $all = 0;  ## the -all option (other accepted value = 1). This option is incompatible with the query list @gene (above)
 my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
