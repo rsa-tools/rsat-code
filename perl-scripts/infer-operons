@@ -100,21 +100,21 @@ infer-operons [-i inputfile] [-o outputfile] [-v] [options]
 With the following command, we infer the operon for a set of input
 genes.
 
-infer-operons -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR -q mhpA -q mhpD
+infer-operons -v 1 -org Escherichia_coli_GCF_000005845.2_ASM584v2 -q hisD -q mhpR -q mhpA -q mhpD
 
 
 =item B<Example 2>
 
 We now specify different return fields
 
-infer-operons -v 1 -org Escherichia_coli_K12 -q hisD -q lacI \
+infer-operons -v 1 -org Escherichia_coli_GCF_000005845.2_ASM584v2 -q hisD -q lacI \
   -return leader,trailer,up_info,down_info,operon
 
 =item B<Example 3>
 
 Infer operons for all the genes of an organism.
 
-infer-operons -v 1 -org Escherichia_coli_K12 -all -return up_info,leader,operon
+infer-operons -v 1 -org Escherichia_coli_GCF_000005845.2_ASM584v2 -all -return up_info,leader,operon
 
 =item B<Example 4>
 
@@ -123,9 +123,9 @@ sequence of the inferred leader gene. Note that two of the input genes
 (lacZ, lacY) belong to the same operon. to avoid including twice their
 leader, we use the unix command sort -u (unique).
 
-infer-operons -org Escherichia_coli_K12 -return leader,operon \
+infer-operons -org Escherichia_coli_GCF_000005845.2_ASM584v2 -return leader,operon \
   -q lacI -q lacZ -q lacY  | sort -u \
-  | retrieve-seq -org Escherichia_coli_K12 -noorf
+  | retrieve-seq -org Escherichia_coli_GCF_000005845.2_ASM584v2 -noorf
 
 =item B<Example 5>
 
@@ -133,7 +133,7 @@ Note that operons can contain non-coding genes. For example, the metT
 operon contains a series of tRNA genes for methionine, leucine and
 glutamina, respectively.
 
-infer-operons -org Escherichia_coli_K12 -q glnV -q metU -q ileV \
+infer-operons -org Escherichia_coli_GCF_000005845.2_ASM584v2 -q glnV -q metU -q ileV \
   -return q_info,up_info,operon
 
 =back

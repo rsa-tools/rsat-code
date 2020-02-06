@@ -510,12 +510,12 @@ ID of the organism to be downloaded. This ID is generally the full
 name of the organism, where spaces and weird characters have been
 replaced by an underscore (_).
 
-Ex: download-organism -v 1 -org Escherichia_coli_K12
+Ex: download-organism -v 1 -org Escherichia_coli_GCF_000005845.2_ASM584v2
 
 The option -org can be used iteratively on teh command line to specify
 multiple organisms.
 
- download-organism -v 1 -org Escherichia_coli_K12 \
+ download-organism -v 1 -org Escherichia_coli_GCF_000005845.2_ASM584v2 \
     -org Mycoplasma_genitalium \
     -org Saccharomyces_cerevisiae
 
