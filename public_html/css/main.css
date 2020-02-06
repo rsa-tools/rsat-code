@@ -735,7 +735,7 @@ table.simpleform td.left
 .menu_heading_open 
 {
   text-decoration: none;
-  background:url(images/arrow_box_down.gif) no-repeat 7px 7px;
+  background:url(../images/arrow_box_down.gif) no-repeat 7px 7px;
   padding: 4px 5px 4px 20px;
   margin: 0;
   cursor: pointer;
@@ -745,7 +745,7 @@ table.simpleform td.left
 
 .menu_heading_closed 
 {
-  background:url(images/arrow_box.gif) no-repeat 7px 7px;
+  background:url(../images/arrow_box.gif) no-repeat 7px 7px;
   text-decoration: none; 
   padding: 4px 5px 4px 20px;
   display: block;
@@ -769,7 +769,7 @@ table.simpleform td.left
 .menu_item 
 {
   display: block;
-  background: #2D282E url(images/bullet2-normal.gif) no-repeat 7px 7px;
+  background: #2D282E url(../images/bullet2-normal.gif) no-repeat 7px 7px;
   text-decoration: none; 
   padding: 4px 5px 4px 30px;
   padding: 4px 5px 4px 20px;
@@ -783,7 +783,7 @@ table.simpleform td.left
 .menu_item_last 
 {
   display: block;
-  background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px;
+  background: #0D73A7 url(../images/bullet2-normal.gif) no-repeat 7px 7px;
   text-decoration: none; 
   padding: 4px 5px 4px 30px;
   padding: 4px 5px 4px 20px;
