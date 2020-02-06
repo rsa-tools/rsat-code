@@ -71,6 +71,8 @@ ${OS_INSTALLER} install -y openssh-client
 ## Required apt-get packages
 PACKAGES_REQUIRED="
 apt-utils
+apt-transport-https
+software-properties-common
 make
 net-tools
 ssh
