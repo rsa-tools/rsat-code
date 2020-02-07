@@ -535,7 +535,7 @@ I<Parameters>
 
 Mandatory argument.
 
-E.g.: Homo_sapiens, Escherichia_coli_str_k_12_substr_mg1655
+E.g.: Homo_sapiens, Escherichia_coli_GCF_000005845.2_ASM584v2
 
 Species should correspond to species names supported by ensembl, with
 underscores to replace the spaces.
@@ -544,7 +544,7 @@ underscores to replace the spaces.
 
 Ex:
   GRCh38 (for Homo sapiens),
-   GCA_000005845.2 (for Escherichia_coli_str_k_12_substr_mg1655).
+   GCA_000005845.2 (for Escherichia_coli_GCF_000005845.2_ASM584v2).
 
 Optional. If not specified, the program attempts to find get
 assembly in the table of organisms previously installed from

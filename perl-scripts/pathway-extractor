@@ -85,7 +85,7 @@ below).
 =head2 Example of seed gene file
 
 The example below gives a list if gene identifiers from
-I<Escherichia_coli_K_12_substr__MG1655_uid57779>. Beware, the gene IDs
+I<Escherichia_coli_GCF_000005845.2_ASM584v2>. Beware, the gene IDs
 must be compatible with the genome version installed on
 RSAT. Depending on the organism source, the IDs can correspond to
 RefSeq, EnsEMBL, or other references. The compatibility of gene IDs
@@ -181,7 +181,7 @@ attribute (ID, start, end, name, ...).
 
 Extract all E.coli genes whose name starts with met
 
- gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -full -q '^met.*' -o met_genes.tab
+ gene-info -org Escherichia_coli_GCF_000005845.2_ASM584v2 -feattype CDS -full -q '^met.*' -o met_genes.tab
 
 Select the first column, containing gene Ids.
  grep -v "^;" met_genes.tab | cut -f 1 > met_genes_IDs.txt
@@ -201,7 +201,7 @@ The script I<pathway-extractor> can also use as input the STDIN. This
 allows to use it in a concatenation of commands. For example, all the
 commands above could be combined in a single pipeline as follows.
 
- gene-info -org Escherichia_coli_K_12_substr__MG1655_uid57779 -feattype CDS -q 'met.*' \
+ gene-info -org Escherichia_coli_GCF_000005845.2_ASM584v2 -feattype CDS -q 'met.*' \
    | grep -v "^;" met_genes.tab | cut -f 1 \
    | pathway-extractor -g data/networks/MetaCyc/MetaCyc_directed_141.txt \
        -ger data/networks/MetaCyc/METACYC_GPR_EC_20110620.txt \

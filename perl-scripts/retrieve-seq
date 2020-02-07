@@ -755,7 +755,7 @@ INPUT FORMATS
 		8	descr	short description (optional)
 
 EXAMPLES
-	retrieve-seq -type upstream -org Escherichia_coli_K12 \\
+	retrieve-seq -type upstream -org Escherichia_coli_GCF_000005845.2_ASM584v2 \\
 		     -q metJ -q meta -q metb		      \\
 		     -from +59 -to -200 -noorf
 

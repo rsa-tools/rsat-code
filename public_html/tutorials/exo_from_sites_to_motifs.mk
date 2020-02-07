@@ -31,7 +31,7 @@ find_mg1655:
 
 ## Define an environment variable for readiability and facility when
 ## typing the subsequent commands.
-ORG=Escherichia_coli_K_12_substr__MG1655_uid57779
+ORG=Escherichia_coli_GCF_000005845.2_ASM584v2
 
 ## Retrieve-seq options to extract the non-coding sequences upstream of
 ## all the genes, with a maximum length of 400bp (positions relative
