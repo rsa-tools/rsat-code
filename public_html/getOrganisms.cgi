@@ -4,7 +4,10 @@
 # $Id: getOrganisms.cgi: get the supported organisms
 #
 ############################################################
-#### this cgi script fills the HTML form for the program dna-pattern
+
+## This cgi script loads the table of supported organisms and select
+## subsets of them based on user-specified criteria (e.g. select
+## genomes with annotated variants).
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -20,9 +23,9 @@ $query = new CGI;
 my $supported_orgs = $query->param("supported");  $supported_orgs=~tr/[:()';<>]/[       ]/; # 20191022 ajhernan / quick fix to prevent xss
 
 my $group = "";
-if($query->param("get") eq 'json'){
+if ($query->param("get") eq 'json') {
     print "Content-type: application/json; charset=iso-8859-1\n\n";
-}elsif($query->param("get") eq 'display'){
+} elsif($query->param("get") eq 'display') {
     ### print the header
     #&RSA_header("Supported " . $query->param("supported"), "results");
     &RSA_header("Supported " . $supported_orgs, "results");
@@ -42,8 +45,8 @@ if($query->param("get") eq 'json'){
 my $term = $query->param("term");
 my @terms = split(" ", $term);
 
-#### Get taxons
-if($query->param("taxon") eq "yes"){
+## Get taxa
+if ($query->param("taxon") eq "yes") {
     my $taxon_nodetype = $query->param("nodetype");
     @taxa = &get_taxons_web($taxon_nodetype);
     
@@ -66,7 +69,7 @@ if($query->param("taxon") eq "yes"){
     
     if($query->param("get") eq "json"){
         print JSON::to_json( \@taxonomy_popup );
-    }else{
+    } else { 
         ## Print general information about this RSAT instance
         print "<h2>RSAT instance: ", $ENV{rsat_site}, "</h2>\n";
         
@@ -88,9 +91,8 @@ if($query->param("taxon") eq "yes"){
         
         exit(0);
     }
-}
-#### Get organisms
-else{
+} else {
+  #### Get organisms
     my @selected_organisms = ();
     #### PrintOrthoSelectionSection
     #### infer-operons

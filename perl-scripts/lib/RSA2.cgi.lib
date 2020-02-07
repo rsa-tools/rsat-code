@@ -146,8 +146,10 @@ sub PrintOrthoSelectionSection {
 
   ## Choice of the organism
   print "<b>Query </b>";
+
   #&OrganismPopUp(@supported_orthologs);
   &OrganismPopUp('supported' => 'orthologs');
+
   ################################################################
   ### gene queries
   print "<B><A class='iframe' HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
@@ -156,6 +158,7 @@ sub PrintOrthoSelectionSection {
 			 -default=>$default{queries},
 			 -rows=>3,
 			 -columns=>40);
+
   ## Option to upload a file with the gene list from the client machine
   print "<BR>Upload gene list from file<BR>\n";
   print $query->filefield(-name=>'uploaded_file',
