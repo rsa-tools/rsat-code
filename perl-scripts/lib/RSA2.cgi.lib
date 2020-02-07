@@ -1962,104 +1962,9 @@ sub MotifSelection {
     my (%args) = @_;
     print '<link rel="stylesheet" href="css/select2.min.css" /><script src="js/select2.full.min.js"></script>';
     print '<style>.select2-results__options {font-size:10px} </style>';
-    print '<script type="text/javascript">
+    print '<script type="text/javascript" src="js/retrieve_matrix.js">
 
-    function formatState(state){
-        if(!state.id){return $("<div align=\'center\' style=\'text-transform:uppercase;background-color:lightgray;border:1px solid #eee;border-radius:7px;padding:8px\'><b>" + state.text + "</b></div>");}
-        var $state = $("<span><i class=\'fa fa-circle fa-lg\' style=\'color:" + state.element.className + "\'></i></span>&nbsp;&nbsp;&nbsp;" + state.text + "</span>");
-        return $state;
-    }
-    $(function(){
-        $(".inline").colorbox({inline:true,width:"70%"});
-        // turn the element to select2 select style
-        $("#db_choice").select2({placeholder: "Select a collection",
-        templateResult: formatState,
-        allowClear: true,
-        theme: "classic"
-        });
-
-        if($("#db_choice2")){
-            $("#db_choice2").select2({placeholder: "Select a collection",
-            templateResult: formatState,
-            allowClear: true,
-            theme: "classic"
-            });
-            $("#db_choice2").change(function(){
-                if($("#db_choice2").val() != ""){
-                    $("#matrix").val("");
-                    $("#db_choice").val("").change();
-                    $("input[name=db_choice_radio][value=motif_collection_all]").prop("checked",true);
-                }
-            });
-        }
- ';
-
-    ### if select also the identifiers.
-    if($args{ids} == 1){
-        print '$("#db_id").select2({placeholder: "Select identifiers",
-                    allowClear: true,
-                    theme: "classic",
-                    closeOnSelect: false
-            });
-
-            $("#db_choice").change(function(){
-                if($("#db_choice").val() != ""){
-                    $("#db_id").val("").change();
-                    $("#matrix").val("");
-                    $("input[name=db_choice_radio][value=custom_motif_db]").prop("checked",true);
-                    $("#db_choice2").val("").change();
-                }
-                document.getElementById("identifier").style.display = "none";
-                db_name = $("#db_choice").val();
-                $.ajax({
-                type: "GET",
-                url: "getMatrixIds.cgi?db_choice=" + db_name,
-                dataType: "json",
-                data: {action: "request"},
-                success: function(data){
-                    var res = data.entries;
-                    if(res.length != 0){ document.getElementById("identifier").style.display = "block"; }
-                    var selectopt = "<option></option>";
-                    for(i = 0; i < res.length; i++){
-                        selectopt += "<option value=\'" + res[i].id + "\'>" + res[i].idac + "</option>";
-                    }
-                    document.getElementById("db_id").innerHTML = selectopt;
-                },
-                error: function(){
-                    alert("Error matrix");
-                }
-                });
-            });
-
-
-            $("#db_id").change(function(){
-                db_name = $("#db_choice").val();
-                db_id = $("#db_id").val();
-                if(db_id == null || db_id == ""){
-                    $("#matrix").val("");
-                }
-                if(db_id != null && db_id != ""){
-                    $.ajax({
-                    type: "GET",
-                    url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id,
-                    data: {action: "request"},
-                    success: function(data){
-                        res = data.split("</format>");
-                        $("#matrix").val(res[1]);
-                        format = "tab";
-                        if(res[0] == "tf"){
-                            format = "transfac";
-                        }
-                        $("#matrix_format").val(format);
-                    },
-                    error: function(){
-                        alert("Error matrix");
-                    }
-                    });
-                }
-            });';
-    }
-    print '}); </script>';
+    </script>';
 
     print '<style> input.select2-search__field { width: 90% !important; } </style>';
     print '<div style="float:left;font-size:11px">';
@@ -2069,20 +1974,35 @@ sub MotifSelection {
     my $width = ($args{ids} == 1) ? "300px" : "400px";
     my $multiple = ($args{mode} eq 'checkbox') ? 'multiple="multiple"' : '';
     my $select_id = ($args{more} == 1) ? 'db_choice2' : 'db_choice';
+    my $select_ids = ($args{more} == 1) ? 'dbs_choice2' : 'dbs_choice';
+    print "<table><tr><td style='padding-right:20px'><b>Input</b></td>";
+    
+    print "<td align='top'>1 - Select a database in list:<br/>";
+    print " <select id='$select_ids' name='$select_ids' $multiple style='width:$width'><option></option>";
+    ## load the various databases that can be compared against
+    &DisplayMatrixDBchoice("mode"=>"radio");
+    print "</select>";
+    print "<td align='top'>2 - Select a collection in list:<br/>";
     print " <select id='$select_id' name='$select_id' $multiple style='width:$width'><option></option>";
     ## load the various databases that can be compared against
-    &DisplayMatrixDBchoice_select2("mode"=>"radio");
     print '</select>';
-    print '<br/><a class="inline" href="#matrix_descr""> View matrix descriptions & download full collections</a> <br/>';
-    print "<div style='display:none'><div id='matrix_descr'>";
-    &DisplayMatrixDBchoice_select2("mode" => "list");
-    print "</div></div></div>";
-
+    
+    print "</td>";
     if($args{ids} == 1){
-        print "<div id='identifier' style='display:none'><div style='float:left;margin-left:27px;margin-top:30px;font-size:11px;'>Select 1 or more matrix identifiers:<br/><br/>";
-        print " <select id='db_id' style='width:300px' multiple='multiple'></select><br/>&nbsp;";
+        print "<td align='top'>";
+        print "3 - Select one or more matrix identifiers:<br/>";
+        print " <select id='db_id' style='width:300px' multiple='multiple'></select>";
+    }
+    print '<div style="clear:both;"></div>';
+    print "</td></tr></table>";
+    if($args{more} != 1){
+        print '<br/><a class="inline" href="#matrix_descr""> View matrix descriptions & download full collections</a> <br/>';
+        print "<div style='display:none'><div id='matrix_descr'>";
+        &DisplayMatrixDBchoice("mode" => "list");
         print "</div></div>";
     }
+    print "</div>";
+    
     print '<div style="clear:both;"></div>';
 }
 
@@ -2825,53 +2745,99 @@ sub SetBackgroundModel {
 ## The argument "mode" allows to specify two alternative choice modes:
 ## "radio" (radio buttons) or "checkbox" (checkbox).
 sub DisplayMatrixDBchoice {
-  my (%args) = @_;
-
-  ## Check selection mode
-  my $mode = $args{mode} || "checkbox"; ## Display check boxes or radio buttons
-  my %supported_choice_mode = ("radio"=>1, "checkbox"=>1);
-  my $supported_choice_modes = join ",", sort keys %supported_choice_mode;
-  &RSAT::error::FatalError($mode, "Invalid choice mode for &DisplayMatrixDBchoice(). Supported: ".$supported_choice_modes)
-      unless ($supported_choice_mode{$mode});
-
-
-  ## Get information about supported motif databases
-  my %matrix_db = &RSAT::server::supported_motif_databases();
-
-  ## Display supported motif databases
-  foreach my $db_name (sort(keys (%matrix_db))) {
-    my $db_format = $matrix_db{$db_name}->{'format'};
-    my $descr = $matrix_db{$db_name}->{'descr'};
-    my $version = $matrix_db{$db_name}->{'version'};
-    my $url = $matrix_db{$db_name}->{'url'};
-    my $status = "";
-    if ($db_name eq $default{compare_motif_database} ) {
-      $status = "checked";
+    my (%args) = @_;
+    ## Check selection mode
+    my $mode = $args{mode} || "checkbox"; ## Display check boxes or radio buttons
+    my %supported_choice_mode = ("radio"=>1, "checkbox"=>1, "list"=>1);
+    my $supported_choice_modes = join ",", sort keys %supported_choice_mode;
+    
+    &RSAT::error::FatalError($mode, "Invalid choice mode for &DisplayMatrixDBchoice(). Supported: ".$supported_choice_modes)
+    unless ($supported_choice_mode{$mode});
+    
+    ## Get information about supported motif databases
+    my %matrix_db = &RSAT::server::supported_motif_databases_2();
+    
+    my %colors = (
+    'Vertebrates' => 'blue',
+    'Non-vertebrate Metazoa' => 'orange',
+    'Plants' => 'green',
+    'Fungi' => 'purple',
+    'Prokaryotes' => 'teal',
+    'Multi-organisms' => 'yellow',
+    'RNA binding' => 'coral'
+    );
+    
+    my @multicategory = ();
+    my %singlecategory = ();
+    ## Display supported motif databases
+    foreach my $dbs_name (keys (%matrix_db)) {
+        if($mode eq "radio"){
+            ## check number of categories
+            my @cats = ();
+            foreach my $key (keys %{$matrix_db{$dbs_name}}){
+                my %db = %{$matrix_db{$dbs_name}{$key}};
+                if(! ($db{category} ~~ @cats)){ push @cats, $db{category};}
+            }
+            if(scalar @cats == 1){
+                my $cat = $cats[0];
+                if(! defined $singlecategory{$cat}) { $singlecategory{$cat} = (); }
+                push @{$singlecategory{$cat}}, $dbs_name;
+            }else{
+                push @multicategory, $dbs_name;
+            }
+        }
     }
-
-    ## Add URL to label if defined
-    my $label;
-    if ($url) {
-      $label = "<a target='_blank' href=".$url.">".$descr."</a>";
-    } else {
-      $label = $descr;
+    
+    if($mode eq "radio"){
+        print "<optgroup label='Multi-categories'>";
+        foreach my $key (sort {"\L$a" cmp "\L$b"} @multicategory){
+            print "<option value='$key' class='pink'>$key</option>";
+        }
+        print "</optgroup>";
+        foreach my $key (sort {"\L$a" cmp "\L$b"} (keys %singlecategory)){
+            print "<optgroup label='$key'>";
+            foreach my $db ( sort {"\L$a" cmp "\L$b"} @{$singlecategory{$key}}){
+                print "<option value='$db' class='$colors{$key}'>$db</option>";
+            }
+            print "</optgroup>";
+        }
+    }else{
+        
+        my %matrix_db_cat = ();
+        foreach my $key (keys %matrix_db){
+            foreach my $db (keys %{$matrix_db{$key}}){
+                my %db = %{$matrix_db{$key}{$db}};
+                if(! defined $matrix_db_cat{$db{category}}){ $matrix_db_cat{$db{category}} = (); }
+                push @{$matrix_db_cat{$db{category}}}, \%db;
+            }
+        }
+        
+        foreach my $key (sort {"\L$a" cmp "\L$b"} (keys %matrix_db_cat)){
+            if($key ne ""){
+                print "<h3 style='padding:10px'>$key</h3><div style='padding-left:50px;padding-top:15px'>";
+                foreach my $db (@{$matrix_db_cat{$key}}){
+                    my $file = ${$db}{file};
+                    my $descr = ${$db}{descr};
+                    
+                    open (my $fh, "<", $ENV{RSAT}. "/public_html/motif_databases/" . $file);
+                    my $nbmotif = 0;
+                    while (my $row = <$fh>){
+                        if($row =~ /^AC\s+/){
+                            $nbmotif += 1;
+                        }
+                    }
+                    if (${$db}{url}) {
+                        $descr = "<a target='_blank' href=".${$db}{url}.">".$descr."</a>";
+                    }
+                    $descr .= " - [$nbmotif motifs] (".${$db}{version}.")";;
+                    
+                    $descr .= " - [<a href='$ENV{'www-rsat'}/rsat/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]<br/>";
+                    print $descr;
+                }
+                print "</div>";
+            }
+        }
     }
-    $label .= " (".$version.")";
-
-    ## Display the database in the selected mode (checkbox or radiobutton)
-    if ($mode eq "checkbox") {
-      print $query->checkbox(-name=>'db_selection_'.$db_name,
-			     -checked=>$status,
-			     -label=>'');
-      print "&nbsp;", $label;
-    } elsif ($mode eq "radio") {
-      print( "<input type='radio' name='db_choice' value='",$db_name,"' $status>");
-      print $label;
-    } else {
-      &RSAT::error::FatalError($mode, "Invalid choice mode for &DisplayMatrixDBchoice(). Supported: ".$supported_choice_modes);
-    }
-    print "<br/>\n";
-  }
 }
 
 sub DisplayMatrixDBchoice_select2 {
@@ -2886,7 +2852,7 @@ sub DisplayMatrixDBchoice_select2 {
 
 
     ## Get information about supported motif databases
-    my %matrix_db = &RSAT::server::supported_motif_databases();
+    my %matrix_db = &RSAT::server::supported_motif_databases_2();
     
     ## declare the variables
     my @values;

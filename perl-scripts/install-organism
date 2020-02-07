@@ -1031,6 +1031,79 @@ sub UpdateConfigTab {
   &RSAT::OrganismManager::export_supported_organisms(file=>$main::org_table, backup=>$main::backup_org_table);
 }
 
+sub RewriteConfigTab{
+    my $supported_organism_file = &Get_supported_file();
+    my $new_file = '';
+    if (-f $supported_organism_file) {
+        my ($s_o_file) = &OpenInputFile($supported_organism_file);
+        
+        ## Read the whole file of supported organisms from ensembl,
+        ## and store species description lines in a hash indexed by
+        ## full species ID, in order to sort them after having changed
+        ## the current species fields.
+        my $l = 0;
+        while (<$s_o_file>) {
+            $l++;
+            next if (/^;/); ## Skip comment lines
+            
+            #check if the table has already be rewritten
+            if(/^#/){
+                my @fields = split("\t");
+                if((scalar @fields) == 19){
+                    last;
+                }else{
+                    $new_file .= "#ID\tname\ttaxid\tsource\tlast_update\tnb\tseq_format\tup_from\tup_to\ttaxonomy\tdata\tgenome\tgenome_assembly\tgenome_version\tdownload_date\tvariant_available\tvariant_source\tpath_to_variant_files\tblast_available\n";
+                }
+            }
+            
+            next if (/^#/); ## Skip header line
+            next unless (/\S/); ## Skip empty lines
+            chomp();
+            my @fields = split("\t");
+            my $full_species_id = $fields[0];
+            #check if the species is already in the list
+            if($current_species_id eq $full_species_id){
+                $already_exist = 1;
+                # Build the line for the species
+                if($fields[12] eq "<NA>") { $fields[12] = $assembly; }
+                if($fields[13] eq "<NA>") { $fields[13] = $release; }
+                $fields[14] = &AlphaDate();
+                $fields[15] = 1;
+                $fields[16] = $source;
+                $fields[17] = &Get_variation_dir($species, $assembly,$ensembl_release, $species_suffix);
+                $species_description{$full_species_id} = join("\t", @fields);
+            }else{
+                $species_description{$full_species_id} = $_;
+            }
+        }
+        close $s_o_file;
+    }
+    
+    ## Update blast column in config table if blast information is available
+    my $blast_folder=$supported_organism{$organism_short_name}->{'data'}."/blast_hits" ;
+    print "genome folder ". $genome_folder."\n";
+    if ( -d $blast_folder ){
+        $supported_organism{$organism_short_name}->{'blast_available'}= 1;
+    } else {
+        $supported_organism{$organism_short_name}->{'blast_available'}= 0;
+    }
+    ## Update variant columns in config table if variant information
+    my $variants_folder=$supported_organism{$organism_short_name}->{'data'}."/variations" ;
+    
+    print "variants folder" . $variants_folder."\n";
+    if ( -d $variants_folder ){
+        $supported_organism{$organism_short_name}->{'variant_available'}= 1;
+        my $variant_source = `cat $variants_folder/source.txt`;
+        chomp($variant_source);
+        $supported_organism{$organism_short_name}->{'variant_source'}= $variants_source || "<NA>";
+        $supported_organism{$organism_short_name}->{'path_to_variant_files'}= $variants_folder;
+    } else {
+        $supported_organism{$organism_short_name}->{'variant_available'}= 0;
+        $supported_organism{$organism_short_name}->{'variant_source'}= "<NA>";
+        $supported_organism{$organism_short_name}->{'path_to_variant_files'}= "<NA>";
+    }
+}
+
 ################################################################
 ## Create a directory for the taxonomic group of the organism
 sub CreatePhylogeny {
