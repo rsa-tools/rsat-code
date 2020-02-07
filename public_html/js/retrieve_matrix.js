@@ -36,6 +36,7 @@ $(function(){
                             db_id = $("#db_id_retrieve");
                           }
                           db_id.val("").change();
+                          $("#db_choice").val("").change();
                           $("#matrix").val("");
                           $.ajax({
                                  type: "GET",
@@ -109,7 +110,7 @@ $(function(){
   
   $("#dbs_choice2").change(function(){
                            db_name = $("#dbs_choice2").val();
-                           
+                           $("#db_choice2").val("").change();
                            $.ajax({
                                   type: "GET",
                                   url: "getMatrixIds.cgi?dbs_choice=" + db_name + "&mode=db",
