@@ -86,7 +86,7 @@ print "</td><td align='top'>";
 print "3 - Select one or more matrix identifiers:<br/>";
 print " <select id='db_id_retrieve' style='width:300px' multiple='multiple'></select>";
 print '<div style="clear:both;"></div>';
-print "</td></tr></table>";
+print "</td><td><div id='wait_ids' style='display:none'><image src='images/wait.gif' style='width:50px;height:50px' /></div></td></tr></table>";
 
 print '<br/><a class="inline" href="#matrix_descr""> View matrix descriptions & download full collections</a> <br/>';
 print "<div style='display:none'><div id='matrix_descr'>";
