@@ -70,6 +70,9 @@ $(function(){
                          
                          db_name = $("#dbs_choice").val();
                          collection_name = $("#db_choice").val();
+                         
+                         $("#wait_ids").attr("style","display:block");
+                         
                          $.ajax({
                                 type: "GET",
                                 url: "getMatrixIds.cgi?dbs_choice=" + db_name + "&db_choice=" + collection_name + "&mode=id",
@@ -82,6 +85,9 @@ $(function(){
                                 selectopt += "<option value=\'" + res[i].id + "\'>" + res[i].idac + "</option>";
                                 }
                                 db_id.html(selectopt);
+                                
+                                $("#wait_ids").attr("style","display:none");
+                                
                                 },
                                 error: function(){
                                 alert("Error matrix db_choice");
