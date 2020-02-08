@@ -200,7 +200,7 @@ package main;
     unless ($width == $matrix_width) {
       my $id = $matrix->get_attribute("id");
       &RSAT::error::FatalError("Matrix", $id, "contains", $width, 
-			       "columns. All matrices should have the same width as the first matrix (".$matrix_width.").");
+			       "columns.\nAll matrices should have the same width as the first matrix (".$matrix_width.").");
     }
   }
 
