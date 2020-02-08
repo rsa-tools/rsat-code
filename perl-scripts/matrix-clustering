@@ -15,29 +15,11 @@ matrix-clustering
 
 =head1 DESCRIPTION
 
-Taking  as input  one  or several  sets  of position-specific scoring matrices (PSSM), this program  applies hierarchical clustering to identify clusters of similar motifs. It produces a set of trees (one  per cluster) and builds branch motifs at each node of each tree by merging the matrices of all descendent nodes.
-
-=head1 DEPENDENCIES
-
-Some R packages are required in I<matrix-clustering> in order to convert the 
-hierarchical tree into different output formats, to manipulate the
-dendrogram which is exported, and to produce heatmaps.
-
-    RJSONIO : http://cran.r-project.org/web/packages/RJSONIO/index.html
-    ctc : http://www.bioconductor.org/packages/release/bioc/html/ctc.html
-    dendextend : http://cran.r-project.org/web/packages/dendextend/index.html
-    gplots : http://cran.r-project.org/web/packages/gplots/index.html
-    
-For visualize the logo forest it is required the JavaScript I<D3> (Data Driven Documents) library, 
-the user can select an option to connect directly with the server to load the functions of this library 
-(see option I<-d3_base>). 
-
-    D3 : http://d3js.org/
-    
-As many files are produced with I<matrix-clustering> we created a dynamic website showing 
-the complete list of results. We use the Javascript library I<JQuery> to create this dynamic website.
-
-    JQuery: https://jquery.com/
+Taking as input one or several sets of position-specific scoring
+matrices (PSSM), this program applies hierarchical clustering to
+identify clusters of similar motifs. It produces a set of trees (one
+per cluster) and builds branch motifs at each node of each tree by
+merging the matrices of all descendent nodes.
 
 =head1 AUTHORS
 
@@ -45,9 +27,9 @@ the complete list of results. We use the Javascript library I<JQuery> to create 
 
 =over
 
-=item Jacques.van-Helden@univ-amu.fr
-
 =item Jaime Castro-Mondragon <j.a.c.mondragon@ncmm.uio.no>
+
+=item Jacques.van-Helden@univ-amu.fr
 
 =back
 
@@ -81,6 +63,15 @@ matrix-clustering [-matrix inputfile] [-o outputfile] [-v ] [...]
 
 =head1 OUTPUT FORMAT
 
+This program produces a large number of files (similarity matrix,
+motifs for the internal nodes and roots of the motif clusters, dynamic
+trees to visualised the motif clusters, ...
+
+These files are accessible via an html page
+[output_prefix]_SUMMARY.html. The program also produces a zip archive
+with all the files to facilitate the transfer from a server to the
+local computer.
+
 =head1 SEE ALSO
 
 =over
@@ -92,6 +83,31 @@ measure pairwise similarities and define the best alignment (offset,
 strand) between each pair of matrices.
 
 =back
+
+=head1 DEPENDENCIES
+
+Some R packages are required in I<matrix-clustering> in order to
+convert the hierarchical tree into different output formats, to
+manipulate the dendrogram which is exported, and to produce heatmaps.
+
+    RJSONIO : http://cran.r-project.org/web/packages/RJSONIO/index.html
+    ctc : http://www.bioconductor.org/packages/release/bioc/html/ctc.html
+    dendextend : http://cran.r-project.org/web/packages/dendextend/index.html
+    gplots : http://cran.r-project.org/web/packages/gplots/index.html
+
+The JavaScript library I<D3> (Data Driven Documents) is required to
+visualize the logo forest.
+
+The option I<-d3_base> enables to connect directly with the server to
+load the functions of this library.
+
+    D3 : http://d3js.org/
+
+As many files are produced with I<matrix-clustering> we create a
+dynamic web page giving access to the complete list of results. We use
+the Javascript library I<JQuery> to create this dynamic website.
+
+    JQuery: https://jquery.com/
 
 =head1 WISH LIST
 
@@ -127,8 +143,12 @@ package main;
 
     
     ################### Define max_num_process if has not been defined
-    if(! defined $ENV{max_num_process}){ $ENV{max_num_process} = 40; }
-    if(! defined $ENV{max_num_child_process}) { $ENV{max_num_child_process} = 30; }
+    ## JvH 2020-02-08: if users do not define the max number of
+    ## processes we should certainly not assume that they dispose of a
+    ## powerful machine with 40 cores. I set this to 4 and 3 instead
+    ## of 40 and 3.
+    if (! defined $ENV{max_num_process}){ $ENV{max_num_process} = 4; }
+    if (! defined $ENV{max_num_child_process}) { $ENV{max_num_child_process} = 3; }
     ###################
     
   ################################################################
@@ -340,10 +360,11 @@ tie $concat_motif_files, "MCE::Shared";
   local %merged_consensuses_files = ();
 tie %merged_consensuses_files, 'MCE::Shared';
     
-local $root_logo_path = "";
+  local $root_logo_path = "";
     #tie $root_logo_path, "MCE::Shared";
-local @root_motifs_tf = ();
+  local @root_motifs_tf = ();
     tie @root_motifs_tf, "MCE::Shared";
+
   ## Supported taks
   local @supported_tasks = qw(
 			all
