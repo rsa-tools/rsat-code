@@ -1103,7 +1103,7 @@ sub to_TRANSFAC {
     my $header = "P0  "; 
     my @alphabet = $self->getAlphabet();
     foreach my $letter (@alphabet) {
-      $header .= sprintf "%6s", $letter;
+      $header .= sprintf "%10s", $letter;
     }
     $to_print .= $header."\n";
 
@@ -1116,9 +1116,9 @@ sub to_TRANSFAC {
       for my $r (1..$nrow) {
 	my $occ = $matrix[$c-1][$r-1];
 	if (&RSAT::util::IsNatural($args{decimals})) {
-	    $to_print .= sprintf " %8.${decimals}f",$occ;
+	    $to_print .= sprintf " %9.${decimals}f",$occ;
 	} else {
-	    $to_print .= sprintf " %8g",$occ;
+	    $to_print .= sprintf " %9g",$occ;
 	}
       }
       $to_print .= "\n";
