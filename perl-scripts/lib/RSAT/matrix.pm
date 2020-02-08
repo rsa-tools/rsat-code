@@ -1052,6 +1052,11 @@ Converts the matrix into a string in TRANSFAC format.
 sub to_TRANSFAC {
     my ($self, %args) = @_;
     my $to_print = "";
+    if (&RSAT::util::IsNatural($args{decimals})) {
+	$decimals = $args{decimals};
+    } else {
+	$decimals = "NA";
+    }
 
     my $output_format = $args{format};
     $output_format = lc($output_format);
@@ -1110,7 +1115,11 @@ sub to_TRANSFAC {
       $to_print .= sprintf "%-4d",$c;
       for my $r (1..$nrow) {
 	my $occ = $matrix[$c-1][$r-1];
-	$to_print .= sprintf " %5g",$occ;
+	if (&RSAT::util::IsNatural($args{decimals})) {
+	    $to_print .= sprintf " %8.${decimals}f",$occ;
+	} else {
+	    $to_print .= sprintf " %8g",$occ;
+	}
       }
       $to_print .= "\n";
     }
