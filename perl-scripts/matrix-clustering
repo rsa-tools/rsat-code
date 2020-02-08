@@ -492,6 +492,36 @@ tie %merged_consensuses_files, 'MCE::Shared';
   ## Check argument values
   &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
 
+
+    ################################################################
+    ## Activate specific flags depending on the selected return fields
+    if ($return_fields{clone_input}){
+	$clone_input_flag = 1;
+    } 
+    
+    if ($return_fields{align_consensus}){
+	$align_consensus = 1;
+    }  
+    
+    if ($return_fields{heatmap}){
+	$draw_heatmap = 1;
+    }  
+    
+    if ($return_fields{newick}){
+	$export_newick = 1;
+    } 
+    
+    if ($return_fields{root_matrices}){
+	$root_matrices_flag = 1;
+	$clone_input_flag = 0;
+
+	## JvH (2020-02-08) I create a special flag "roots_only_flag"
+	if (scalar(keys(%return_fields)) == 1) {
+	    $roots_only_flag = 1;
+	}
+	
+    }
+    
   ################################################################
   ## Input file is mandatory
   unless ($input_matrix) {
@@ -792,7 +822,7 @@ For a description of these formats, see the help of I<convert-matrix>.
 	push @main::matrix_titles, $matrix_title;
 	
 	$input_matrix = 1;
-    $motif_direct_input_flag = 1;
+	$motif_direct_input_flag = 1;
 
 	if ( ($count_input_matrix_parameters != 2) || ($matrix_title =~ /^-/) || ($main::matrix_file{$matrix_title} =~ /^-/) ){
 	    &RSAT::error::FatalError("Input should be specified with matrix file (option -matrix) with 2 parameters: matrix_title matrix_file\n\tExample: -matrix Oct_motifs Oct_motifs_peakmotifs.tf");
@@ -823,15 +853,15 @@ Nanog_pssms.tf	Nanog
 
 =cut
     } elsif ($arg eq "-matrix_file_table") {
-		
-		$main::infile{motif_table_file} = shift(@arguments);
-
-		$motif_list_flag = 1;
-		$input_matrix = 1;
-	  
-	  	if($motif_list_flag == $motif_direct_input_flag) {
-			&RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
-		}
+	
+	$main::infile{motif_table_file} = shift(@arguments);
+	
+	$motif_list_flag = 1;
+	$input_matrix = 1;
+	
+	if($motif_list_flag == $motif_direct_input_flag) {
+	    &RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
+	}
 
 =pod
 
@@ -1390,32 +1420,12 @@ to avoid the cimputation of the visual elements.
 	if ($supported_return_fields{$field}) {
 	  $return_fields{$field} = 1;
 
-	  if ($return_fields{clone_input}){
-	      $clone_input_flag = 1;
-	  } 
-
-	  if ($return_fields{align_consensus}){
-	      $align_consensus = 1;
-	  }  
-
-	  if ($return_fields{heatmap}){
-	      $draw_heatmap = 1;
-	  }  
-	  
-	  if ($return_fields{newick}){
-	      $export_newick = 1;
-	  } 
-
-	  if ($return_fields{root_matrices}){
-	      $root_matrices_flag = 1;
-	      $clone_input_flag = 0;
-	  }
-
 	} else {
 	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
 	}
       }
 
+      
     ## Additional arguments are passed to compare-matrices
     } else {
         if ($arg =~ /\s/) {
@@ -1475,20 +1485,22 @@ sub set_output_file_names {
 
   local @output_folders = ();
 
+  ## Create output directories
+  
+  ## JvH (2020-02-08): Jaime, why would we need html and aligned_logos
+  ## directories when the root_matrices flag is on ?  Actually there
+  ## is a confusion between the return fields and this flag: we should
+  ## have a flag "roots_only" that would be active when the only
+  ## return fields is root_matrices. In such case I guess we only need
+  ## the tables folder.
+  
+  @output_folders = qw( tables html aligned_logos);
   if ($root_matrices_flag == 0) {
-      ## Create output directories
-      @output_folders = qw( coverage_json tables html figures pairwise_compa_logos aligned_logos);
-      foreach my $f (@output_folders) {
-	  my $new_f = $main::outfile{prefix}."_".$f;
-	  &RSAT::util::CheckOutDir($new_f);
-      }
-  } elsif ($root_matrices_flag == 1) {
-      ## Create output directories
-      @output_folders = qw( tables html aligned_logos);
-      foreach my $f (@output_folders) {
-	  my $new_f = $main::outfile{prefix}."_".$f;
-	  &RSAT::util::CheckOutDir($new_f);
-      }
+      push @output_folders, qw(coverage_json figures pairwise_compa_logos);
+  }
+  foreach my $f (@output_folders) {
+      my $new_f = $main::outfile{prefix}."_".$f;
+      &RSAT::util::CheckOutDir($new_f);
   }
 
   ################################################################
