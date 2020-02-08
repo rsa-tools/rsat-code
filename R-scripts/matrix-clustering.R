@@ -9,11 +9,13 @@
 ## by the d3 library for display purposes.
 
 ## Define the local directory for R librairies
+# Sys.setenv(RSAT = "/no_backup/rsat") ## JvH for debug (2020-02-08)
 dir.rsat <- Sys.getenv("RSAT")
+
+
 if (dir.rsat == "") {
   stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
 }
-
 dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 
@@ -32,15 +34,17 @@ required.packages.bioconductor <- c("ctc")
 ## List of RSAT-specific packages to be compiled on the server
 required.packages.rsat <- c("TFBMclust")
 for (pkg in c(required.packages, required.packages.rsat)) { #required.packages.bioconductor
-  suppressPackageStartupMessages(library(pkg, warn.conflicts=FALSE, character.only = TRUE, lib.loc=c(dir.rsat.rlib, .libPaths())))
+  suppressPackageStartupMessages(library(pkg, warn.conflicts = FALSE, character.only = TRUE, lib.loc = c(dir.rsat.rlib, .libPaths())))
 }
 
 
 ## Install the TFBM library if required
 # dir.create(dir.rsat.rlib, recursive=TRUE,showWarnings=FALSE)
-if(!require("TFBMclust", lib.loc=dir.rsat.rlib)){
+if (!require("TFBMclust", lib.loc = dir.rsat.rlib)) {
   stop("The TFBM R library is not properly installed.")
 }
+
+# message(dir.rsat)
 
 
 ## Load some custom libraries
@@ -50,6 +54,8 @@ source(file.path(dir.rsat, 'R-scripts/cluster_motifs_lib.R'))
 ## Options
 plot.tree <- FALSE
 export <- 'json'
+
+## JvH (2020-02-08). Jaime, do you have a specific reason to use a double arrow here and below?
 thresholds <<- list()
 
 ###########################################
@@ -58,10 +64,10 @@ thresholds <<- list()
 ## Arguments passed on the command line
 ## will over-write the default arguments
 ## specified above.
-args <- commandArgs(trailingOnly=TRUE);
+args <- commandArgs(trailingOnly = TRUE);
 if (length(args >= 1)) {
-  for(i in 1:length(args)){
-    eval(parse(text=args[[i]]))
+  for (i in 1:length(args)) {
+    eval(parse(text = args[[i]]))
   }
   verbose(args, 3)
 }
@@ -91,12 +97,12 @@ heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 ##############################################
 ## Read matrix comparison table + treatment
-global.compare.matrices.table <<- read.csv(infile, sep="\t", comment.char=";")
+global.compare.matrices.table <<- read.csv(infile, sep = "\t", comment.char = ";")
 names(global.compare.matrices.table)[1] <- sub("^X.", "", names(global.compare.matrices.table)[1])
 
 #######################################
 ## Read description table +treatment
-global.description.table <<- read.csv(description.file, sep="\t", comment.char=";")
+global.description.table <<- read.csv(description.file, sep ="\t", comment.char = ";")
 
 ## In reference to the names, order alphabetically the description table
 global.description.table <- global.description.table[order(global.description.table$id),]
@@ -108,7 +114,7 @@ names(global.description.table) <- gsub("_", ".", names(global.description.table
 
 ## Check that the compare-matrices table contains the required metric column
 if (length(grep(pattern=metric, names(global.compare.matrices.table))) < 1) {
-  stop(paste(sep="", "Input file (", infile, ") does not contain the metric column (", metric, ")."))
+  stop(paste(sep = "", "Input file (", infile, ") does not contain the metric column (", metric, ")."))
 }
 
 ## Convert distance table into a distance matrix, required by hclust
@@ -117,11 +123,11 @@ dist.table <- distances.objects$table
 dist.matrix <- distances.objects$matrix
 
 ## Export the distance table
-write.table(dist.table, file=distance.table, quote=FALSE, row.names=TRUE, col.names=NA, sep="\t")
+write.table(dist.table, file=distance.table, quote=FALSE, row.names=TRUE, col.names=NA, sep = "\t")
 
 number.of.motifs <- dim(global.description.table)[1]
 if(only.hclust == 0){
-  dir.trees <- paste(out.prefix, "_trees", sep="")
+  dir.trees <- paste(out.prefix, "_trees", sep = "")
   dir.create(dir.trees, showWarnings=FALSE, recursive=TRUE)
 }
 
@@ -147,12 +153,12 @@ if(number.of.motifs > 1){
     #######################################
     ### Creates and export the json file
     JSON.tree <- convert.hclust.to.JSON(tree)
-    json.file <- paste(out.prefix, "_trees/tree.json", sep="")
+    json.file <- paste(out.prefix, "_trees/tree.json", sep = "")
     verbose(paste("JSON tree file", json.file), 2)
     writeLines(JSON.tree, con=json.file)
     
     ## Export tree as RData object
-    tree.file.rdata <- paste(out.prefix, "_trees/tree.RData", sep="")
+    tree.file.rdata <- paste(out.prefix, "_trees/tree.RData", sep = "")
     save(tree, file = tree.file.rdata)
   }
   
@@ -370,8 +376,8 @@ if(number.of.motifs > 1){
   missing.nodes <- setdiff(all.nodes.in.tree, nodes.in.clusters)
   node.to.cluster.table <- rbind(node.to.cluster.table, data.frame(nodes = missing.nodes, cluster = 0))
   
-  node.to.cluster.table.file <- paste(sep="", out.prefix, "_tables/node_to_cluster.tab")
-  write.table(node.to.cluster.table, file = node.to.cluster.table.file, sep="\t", quote=FALSE, row.names = FALSE, col.names = FALSE)
+  node.to.cluster.table.file <- paste(sep = "", out.prefix, "_tables/node_to_cluster.tab")
+  write.table(node.to.cluster.table, file = node.to.cluster.table.file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = FALSE)
   verbose(paste("Exporting node -> cluster table", node.to.cluster.table.file), 2)
   
   ## Export the table node -> cluster
@@ -391,8 +397,8 @@ if(number.of.motifs > 1){
     
   })
   
-  leaf.to.cluster.table.file <- paste(sep="", out.prefix, "_tables/leaf_to_cluster.tab")
-  write.table(leaf.to.cluster.table, file = leaf.to.cluster.table.file, sep="\t", quote=FALSE, row.names = FALSE, col.names = FALSE)
+  leaf.to.cluster.table.file <- paste(sep = "", out.prefix, "_tables/leaf_to_cluster.tab")
+  write.table(leaf.to.cluster.table, file = leaf.to.cluster.table.file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = FALSE)
   verbose(paste("Exporting leaf -> cluster table", leaf.to.cluster.table.file), 2)
   
   clusters <<- list(cluster_1 = sort(unique(as.vector(unlist(clusters)))))
@@ -415,8 +421,8 @@ if(number.of.motifs > 1){
     paste(x, collapse = ",")
   })
   clusters.table <- t(data.frame(clusters.table ))
-  clusters.composition.file <- paste(sep="", out.prefix, "_tables/clusters.tab")
-  write.table(clusters.table, file = clusters.composition.file, sep="\t", quote=FALSE, row.names = TRUE, col.names = FALSE)
+  clusters.composition.file <- paste(sep = "", out.prefix, "_tables/clusters.tab")
+  write.table(clusters.table, file = clusters.composition.file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = FALSE)
   verbose(paste("Exporting cluster table with motif IDs", clusters.composition.file), 3)
   
   ## Export a table with the cluster names and its elements (TF || Motif names)
@@ -425,8 +431,8 @@ if(number.of.motifs > 1){
     paste(x, collapse = ",")
   })
   clusters.names.table <- t(data.frame(clusters.names.table ))
-  clusters.names.composition.file <- paste(sep="", out.prefix, "_tables/clusters_motif_names.tab")
-  write.table(clusters.names.table, file = clusters.names.composition.file, sep="\t", quote=FALSE, row.names = TRUE, col.names = FALSE)
+  clusters.names.composition.file <- paste(sep = "", out.prefix, "_tables/clusters_motif_names.tab")
+  write.table(clusters.names.table, file = clusters.names.composition.file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = FALSE)
   verbose(paste("Exporting cluster table with motifs names", clusters.names.composition.file), 3)
   
   ## Number of clusters
@@ -453,7 +459,7 @@ if(number.of.motifs > 1){
       
       
       for (plot.format in c("pdf", "jpg")) {
-        heatmap.file <- paste(sep="", out.prefix, "_figures/heatmap.", plot.format)
+        heatmap.file <- paste(sep = "", out.prefix, "_figures/heatmap.", plot.format)
         w <- 15
         h <- w + 0.75
         resol <- 72 ## Screen resolution
@@ -512,7 +518,7 @@ if(number.of.motifs > 1){
     #         w.inches <- 14 ## width in inches
     #         h.inches <- 2 + round(0.25* length(alignment.list)) ## height in inches
     #         resol <- 72 ## Screen resolution
-    #         tree.drawing.file <- paste(sep="", out.prefix, "_figures/tree_of_consensus.", plot.format)
+    #         tree.drawing.file <- paste(sep = "", out.prefix, "_figures/tree_of_consensus.", plot.format)
     #         verbose(paste("hclust tree drawing", tree.drawing.file), 2)
     #         if (plot.format == "pdf") {
     #           pdf(file=tree.drawing.file, width=w.inches, height=h.inches)
@@ -521,7 +527,7 @@ if(number.of.motifs > 1){
     #         }
     #
     #         par(mar=c(3,2,1,mar4),family="mono")
-    #         plot(tree.dendro, horiz=TRUE, main=paste("Tree of aligned consensuses; labels:" ,paste(c("consensus", "name"), collapse=","), sep=" "))
+    #         plot(tree.dendro, horiz=TRUE, main=paste("Tree of aligned consensuses; labels:" ,paste(c("consensus", "name"), collapse=","), sep = " "))
     #         dev.off()
     #       }
     #     }
@@ -549,7 +555,7 @@ if(number.of.motifs > 1){
 
 ## Creates a folder with where the separated information
 ## of each cluster will be stored
-clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep="")
+clusters.info.folder <<- paste(out.prefix, "_clusters_information", sep = "")
 dir.create(clusters.info.folder, recursive=TRUE, showWarnings=FALSE)
 global.motifs.info <<- motifs.info
 forest.list <<- list()
@@ -632,14 +638,14 @@ i <- sapply(1:length(clusters), function(nb){
              ## Create a JSON file for trees with a single node
              ## In this situation this step is required because it is not possible to use the hclustToJson function
              JSON.single.node <- paste("{\n\"name\": \"\",\n\"children\":[\n{\n \"label\": \"", ids, "\",\n}\n]\n}", sep = "")
-             json.file <- paste(out.prefix, "_trees/tree_", central.motif, ".json", sep="")
+             json.file <- paste(out.prefix, "_trees/tree_", central.motif, ".json", sep = "")
              verbose(paste("JSON tree file", json.file), 2)
              writeLines(JSON.single.node, con=json.file)
              
              ## For consistency, print the empty file
              ## It will be erased later
              JSON.empty <- ";Empty_file\n"
-             JSON.clusters.table.file <- paste(sep="", cluster.folder, "/levels_JSON_", central.motif, "_table.tab")
+             JSON.clusters.table.file <- paste(sep = "", cluster.folder, "/levels_JSON_", central.motif, "_table.tab")
              write.table(JSON.empty, file = JSON.clusters.table.file, sep = "\t", quote = FALSE, row.names = FALSE)
            }
            
@@ -699,11 +705,11 @@ i <- sapply(1:length(clusters), function(nb){
              ## Creates and export the json file
              JSON.tree <- convert.hclust.to.JSON(tree)
              
-             json.file <- paste(out.prefix, "_trees/tree_", central.motif, ".json", sep="")
+             json.file <- paste(out.prefix, "_trees/tree_", central.motif, ".json", sep = "")
              verbose(paste("JSON tree file", json.file), 2)
              writeLines(JSON.tree, con = json.file)
              
-             tree.file.rdata <-  paste(out.prefix, "_trees/tree_", central.motif, ".Rdata", sep="")
+             tree.file.rdata <-  paste(out.prefix, "_trees/tree_", central.motif, ".Rdata", sep = "")
              save(tree, file = tree.file.rdata)
              
              ## Creates a file indicating to which levels of the JSON tree correspond to the levels on the hclust tree
@@ -769,7 +775,7 @@ i <- sapply(1:length(clusters), function(nb){
 
 all.central.motifs <- as.vector(unlist(all.central.motifs))
 all.central.motifs.ids.df <-data.frame(all.central.motifs, 1:length(all.central.motifs))
-write.table(all.central.motifs.ids.df, file = paste(sep="", out.prefix, "_cluster_IDs.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
+write.table(all.central.motifs.ids.df, file = paste(sep = "", out.prefix, "_cluster_IDs.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
 
 ## Print a file with the Hexadecimals code for the colors of the clusters
 ## The color of the clusters showed in the heatmap will be the same
@@ -787,14 +793,14 @@ if(only.hclust == 0){
   # colors <- rainbow(n.colors)
   colors <- colorRampPalette(brewer.pal(8, "Dark2"), space="Lab")(n.colors)
   
-  write.table(paste(paste("cluster_", 1:n.colors, sep = ""), " ", colors, sep = ""), file = paste(sep="", out.prefix, "_hexa_colors.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
+  write.table(paste(paste("cluster_", 1:n.colors, sep = ""), " ", colors, sep = ""), file = paste(sep = "", out.prefix, "_hexa_colors.txt"), col.names = FALSE, row.names = FALSE, quote = FALSE)
   
 
 }
 ## Create and export DF of central motifs
 central.motif.table <- data.frame(central.motif.IDs.cluster, central.motif.IDs, central.motif.names)
 colnames(central.motif.table) <- c("cluster", "ID", "name")
-write.table(central.motif.table, file = paste(sep="", out.prefix, "_central_motifs_IDs.tab"), col.names = FALSE, row.names = FALSE, quote = FALSE, sep = "\t")
+write.table(central.motif.table, file = paste(sep = "", out.prefix, "_central_motifs_IDs.tab"), col.names = FALSE, row.names = FALSE, quote = FALSE, sep = "\t")
 
 
 #################################
