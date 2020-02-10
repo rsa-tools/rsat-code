@@ -15,29 +15,11 @@ matrix-clustering
 
 =head1 DESCRIPTION
 
-Taking  as input  one  or several  sets  of position-specific scoring matrices (PSSM), this program  applies hierarchical clustering to identify clusters of similar motifs. It produces a set of trees (one  per cluster) and builds branch motifs at each node of each tree by merging the matrices of all descendent nodes.
-
-=head1 DEPENDENCIES
-
-Some R packages are required in I<matrix-clustering> in order to convert the 
-hierarchical tree into different output formats, to manipulate the
-dendrogram which is exported, and to produce heatmaps.
-
-    RJSONIO : http://cran.r-project.org/web/packages/RJSONIO/index.html
-    ctc : http://www.bioconductor.org/packages/release/bioc/html/ctc.html
-    dendextend : http://cran.r-project.org/web/packages/dendextend/index.html
-    gplots : http://cran.r-project.org/web/packages/gplots/index.html
-    
-For visualize the logo forest it is required the JavaScript I<D3> (Data Driven Documents) library, 
-the user can select an option to connect directly with the server to load the functions of this library 
-(see option I<-d3_base>). 
-
-    D3 : http://d3js.org/
-    
-As many files are produced with I<matrix-clustering> we created a dynamic website showing 
-the complete list of results. We use the Javascript library I<JQuery> to create this dynamic website.
-
-    JQuery: https://jquery.com/
+Taking as input one or several sets of position-specific scoring
+matrices (PSSM), this program applies hierarchical clustering to
+identify clusters of similar motifs. It produces a set of trees (one
+per cluster) and builds branch motifs at each node of each tree by
+merging the matrices of all descendent nodes.
 
 =head1 AUTHORS
 
@@ -45,9 +27,9 @@ the complete list of results. We use the Javascript library I<JQuery> to create 
 
 =over
 
-=item Jacques.van-Helden@univ-amu.fr
-
 =item Jaime Castro-Mondragon <j.a.c.mondragon@ncmm.uio.no>
+
+=item Jacques.van-Helden@univ-amu.fr
 
 =back
 
@@ -59,7 +41,7 @@ the complete list of results. We use the Javascript library I<JQuery> to create 
 
 =item Jaime Castro-Mondragon
 
-The following collaborator contributed to the definition of
+The following collaborators contributed to the definition of
 requirements for this program.
 
 =item Carl Herrmann
@@ -81,6 +63,15 @@ matrix-clustering [-matrix inputfile] [-o outputfile] [-v ] [...]
 
 =head1 OUTPUT FORMAT
 
+This program produces a large number of files (similarity matrix,
+motifs for the internal nodes and roots of the motif clusters, dynamic
+trees to visualised the motif clusters, ...
+
+These files are accessible via an html page
+[output_prefix]_SUMMARY.html. The program also produces a zip archive
+with all the files to facilitate the transfer from a server to the
+local computer.
+
 =head1 SEE ALSO
 
 =over
@@ -92,6 +83,31 @@ measure pairwise similarities and define the best alignment (offset,
 strand) between each pair of matrices.
 
 =back
+
+=head1 DEPENDENCIES
+
+Some R packages are required in I<matrix-clustering> in order to
+convert the hierarchical tree into different output formats, to
+manipulate the dendrogram which is exported, and to produce heatmaps.
+
+    RJSONIO : http://cran.r-project.org/web/packages/RJSONIO/index.html
+    ctc : http://www.bioconductor.org/packages/release/bioc/html/ctc.html
+    dendextend : http://cran.r-project.org/web/packages/dendextend/index.html
+    gplots : http://cran.r-project.org/web/packages/gplots/index.html
+
+The JavaScript library I<D3> (Data Driven Documents) is required to
+visualize the logo forest.
+
+The option I<-d3_base> enables to connect directly with the server to
+load the functions of this library.
+
+    D3 : http://d3js.org/
+
+As many files are produced with I<matrix-clustering> we create a
+dynamic web page giving access to the complete list of results. We use
+the Javascript library I<JQuery> to create this dynamic website.
+
+    JQuery: https://jquery.com/
 
 =head1 WISH LIST
 
@@ -127,8 +143,12 @@ package main;
 
     
     ################### Define max_num_process if has not been defined
-    if(! defined $ENV{max_num_process}){ $ENV{max_num_process} = 40; }
-    if(! defined $ENV{max_num_child_process}) { $ENV{max_num_child_process} = 30; }
+    ## JvH 2020-02-08: if users do not define the max number of
+    ## processes we should certainly not assume that they dispose of a
+    ## powerful machine with 40 cores. I set this to 4 and 3 instead
+    ## of 40 and 3.
+    if (! defined $ENV{max_num_process}){ $ENV{max_num_process} = 4; }
+    if (! defined $ENV{max_num_child_process}) { $ENV{max_num_child_process} = 3; }
     ###################
     
   ################################################################
@@ -340,10 +360,11 @@ tie $concat_motif_files, "MCE::Shared";
   local %merged_consensuses_files = ();
 tie %merged_consensuses_files, 'MCE::Shared';
     
-local $root_logo_path = "";
+  local $root_logo_path = "";
     #tie $root_logo_path, "MCE::Shared";
-local @root_motifs_tf = ();
+  local @root_motifs_tf = ();
     tie @root_motifs_tf, "MCE::Shared";
+
   ## Supported taks
   local @supported_tasks = qw(
 			all
@@ -471,6 +492,36 @@ local @root_motifs_tf = ();
   ## Check argument values
   &RSAT::message::TimeWarn("Checking parameter values") if ($main::verbose >= 2);
 
+
+    ################################################################
+    ## Activate specific flags depending on the selected return fields
+    if ($return_fields{clone_input}){
+	$clone_input_flag = 1;
+    } 
+    
+    if ($return_fields{align_consensus}){
+	$align_consensus = 1;
+    }  
+    
+    if ($return_fields{heatmap}){
+	$draw_heatmap = 1;
+    }  
+    
+    if ($return_fields{newick}){
+	$export_newick = 1;
+    } 
+    
+    if ($return_fields{root_matrices}){
+	$root_matrices_flag = 1;
+	$clone_input_flag = 0;
+
+	## JvH (2020-02-08) I create a special flag "roots_only_flag"
+	if (scalar(keys(%return_fields)) == 1) {
+	    $roots_only_flag = 1;
+	}
+	
+    }
+    
   ################################################################
   ## Input file is mandatory
   unless ($input_matrix) {
@@ -771,7 +822,7 @@ For a description of these formats, see the help of I<convert-matrix>.
 	push @main::matrix_titles, $matrix_title;
 	
 	$input_matrix = 1;
-    $motif_direct_input_flag = 1;
+	$motif_direct_input_flag = 1;
 
 	if ( ($count_input_matrix_parameters != 2) || ($matrix_title =~ /^-/) || ($main::matrix_file{$matrix_title} =~ /^-/) ){
 	    &RSAT::error::FatalError("Input should be specified with matrix file (option -matrix) with 2 parameters: matrix_title matrix_file\n\tExample: -matrix Oct_motifs Oct_motifs_peakmotifs.tf");
@@ -802,15 +853,15 @@ Nanog_pssms.tf	Nanog
 
 =cut
     } elsif ($arg eq "-matrix_file_table") {
-		
-		$main::infile{motif_table_file} = shift(@arguments);
-
-		$motif_list_flag = 1;
-		$input_matrix = 1;
-	  
-	  	if($motif_list_flag == $motif_direct_input_flag) {
-			&RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
-		}
+	
+	$main::infile{motif_table_file} = shift(@arguments);
+	
+	$motif_list_flag = 1;
+	$input_matrix = 1;
+	
+	if($motif_list_flag == $motif_direct_input_flag) {
+	    &RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
+	}
 
 =pod
 
@@ -1369,32 +1420,12 @@ to avoid the cimputation of the visual elements.
 	if ($supported_return_fields{$field}) {
 	  $return_fields{$field} = 1;
 
-	  if ($return_fields{clone_input}){
-	      $clone_input_flag = 1;
-	  } 
-
-	  if ($return_fields{align_consensus}){
-	      $align_consensus = 1;
-	  }  
-
-	  if ($return_fields{heatmap}){
-	      $draw_heatmap = 1;
-	  }  
-	  
-	  if ($return_fields{newick}){
-	      $export_newick = 1;
-	  } 
-
-	  if ($return_fields{root_matrices}){
-	      $root_matrices_flag = 1;
-	      $clone_input_flag = 0;
-	  }
-
 	} else {
 	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
 	}
       }
 
+      
     ## Additional arguments are passed to compare-matrices
     } else {
         if ($arg =~ /\s/) {
@@ -1454,20 +1485,22 @@ sub set_output_file_names {
 
   local @output_folders = ();
 
+  ## Create output directories
+  
+  ## JvH (2020-02-08): Jaime, why would we need html and aligned_logos
+  ## directories when the root_matrices flag is on ?  Actually there
+  ## is a confusion between the return fields and this flag: we should
+  ## have a flag "roots_only" that would be active when the only
+  ## return fields is root_matrices. In such case I guess we only need
+  ## the tables folder.
+  
+  @output_folders = qw( tables html aligned_logos);
   if ($root_matrices_flag == 0) {
-      ## Create output directories
-      @output_folders = qw( coverage_json tables html figures pairwise_compa_logos aligned_logos);
-      foreach my $f (@output_folders) {
-	  my $new_f = $main::outfile{prefix}."_".$f;
-	  &RSAT::util::CheckOutDir($new_f);
-      }
-  } elsif ($root_matrices_flag == 1) {
-      ## Create output directories
-      @output_folders = qw( tables html aligned_logos);
-      foreach my $f (@output_folders) {
-	  my $new_f = $main::outfile{prefix}."_".$f;
-	  &RSAT::util::CheckOutDir($new_f);
-      }
+      push @output_folders, qw(coverage_json figures pairwise_compa_logos);
+  }
+  foreach my $f (@output_folders) {
+      my $new_f = $main::outfile{prefix}."_".$f;
+      &RSAT::util::CheckOutDir($new_f);
   }
 
   ################################################################

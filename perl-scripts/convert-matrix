@@ -37,6 +37,7 @@ package main;
   local $logo_cmd_path = "";
   local $logo_no_title = 0;
 
+  $count_decimals = 0; ## in principle count matrices are Integers but in some cases we might want to control their display mode
   $decimals = 1;
   $pseudo_weight = 1;
   $equi_pseudo = 0;
@@ -1597,6 +1598,7 @@ sub ExportMatrix {
   ## Print the counts matrix
   if ($return_fields{counts}) {
     print $out_handle $matrix->toString(sep=>"\t",
+					decimals=>$count_decimals, 
 					type=>"counts",
 					format=>$output_format,
 				       );
@@ -2055,6 +2057,7 @@ sub ReadArguments {
 	    ### decimals
 	} elsif ($ARGV[$a] eq "-decimals") {
 	    $decimals = $ARGV[$a+1];
+	    $count_decimals = $ARGV[$a+1];
 	    unless (&IsNatural($decimals)) {
 		&RSAT::error::FatalError("Invalid decimals $decimals. Must be a Natural number.");
 	    }
