@@ -613,7 +613,7 @@ sub Get_full_species_ID {
   
   # 2) try the NCBI way
   if($species_suffix){
-    $full_species_id = ucfirst($species) .'.'. $species_suffix;
+    $full_species_id = ucfirst($species) .'_'. $species_suffix;
     if(-d $genome_data_dir.$full_species_id){
       &RSAT::message::Info("&Get_full_species_ID() result", $full_species_id) if ($main::verbose >= 5);
       return($full_species_id);
@@ -673,11 +673,11 @@ sub Get_assembly {
             
             &RSAT::message::Debug("Get_assembly", "line=".$l,
             "\n\tquery", $species, $main::db,$ensembl_release,
-            "\n\tdb", $db_species, $db_db, $db_ensembl_release,
+            "\n\tdb", $db_name, $db_source, $db_genome_version,
             ) if ($main::verbose >= 5);
             
             $db_name =~ s/\s/_/g;
-            if ((lc($species) eq lc($db_name))
+            if ( (index(lc($db_name),lc($species)) != -1)
                 && ($db_source eq $main::db)
                 # release won't be known in many cases
                 && (!$ensembl_release || $ensembl_release eq $db_genome_version)
@@ -986,8 +986,9 @@ sub UpdateEnsemblSupported {
         close $s_o_file;
     }
     
-    my $name = $species;
+    my $name = $species.' '.$assembly;
     $name =~ s/_/ /g;
+    chomp($name);
     ## Build the line for the currently installed species
     my $new_org_config = join ("\t",
     $current_species_id,
@@ -1159,7 +1160,8 @@ sub UpdateVariationsSupported {
     ##my $id = &Get_full_species_ID($species,$assembly,$ensembl_release,$species_suffix);
     ##my $name = $id; $name =~ s/_/ /g;
     if($already_exist == 0){
-        my $name = $species;
+        my $name = $species." ".$assembly;
+        chomp($name);
         $name =~ s/_/ /g;
         my $new_org_config = join ("\t",
                        $current_species_id,

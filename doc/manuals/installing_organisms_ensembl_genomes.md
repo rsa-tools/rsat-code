@@ -1,4 +1,4 @@
-# Installing genomes from EnsemblGenomes
+# Installing genomes from Ensembl Genomes
 
 **Author: Bruno Contreras Moreira**
 
@@ -7,7 +7,7 @@
 This document explains how to install genomes and annotations from Ensembl Genomes using mostly the [FTP](ftp://ftp.ensemblgenomes.org/pub) site.
 Gene Ontology terms are optional and are obtained from [BioMart](http://plants.ensembl.org/biomart/martview) instead.
 
-Note that while Ensembl covers Vertebrates, Ensembl Genomes includes the other divisions (Protists, Fungi, Plants, Bacteria, Metazoa). These instructions have mostly been tested with **Ensembl Plants**.
+Note that while Ensembl covers Vertebrates, Ensembl Non Vertebrates (NV, Ensembl Genomes) includes the other divisions (Protists, Fungi, Plants, Bacteria, Metazoa). These instructions have mostly been tested with **Ensembl Plants**.
 
 This installation procedure can actually be used to **install genomes from other sources** as well, see below.
 
@@ -25,7 +25,7 @@ This document **does not** use the following scripts, which are documented elsew
 
 Usually the fastest way of getting a genome installed is to fetch it from other RSAT server. This way oligo frequencies are not computed; instead thay are copied over:
 
-```
+```{r, engine='bash', eval=FALSE}
 download-organism \\
    -server http://rsat.eead.csic.es/plants \\
    -org Arabidopsis_thaliana.TAIR10.29
@@ -66,7 +66,7 @@ make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=$EGRELE
 
 Once this is done then you can install genomes from that release.
 
-### Install all species 
+## Install all species 
 
 You can install all genomes with these commands:
 
@@ -83,17 +83,17 @@ nohup make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=$
 nohup make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=$EGRELEASE check_all_species
 ```
 
-**Note:** this will take a very long time, days for current Ensembl Plant releases, so it might not be a good idea.
+The newly installed species will be added to $RSAT/data/supported_organisms.tab and should be listed with the following 
+command-line:
 
-
-### Compute genome stats report
-
-To generate a report of descriptive stats of all installed genomes in your server, such as http://rsat.eead.csic.es/plants/data/stats , you can do:
-```
-make -f makefiles/ensemblgenomes_FTP_client.mk calc_stats
+```{r, engine='bash', eval=FALSE}
+supported-organisms
 ```
 
-### Install selected species
+
+**Note:** this will take a very long time, weeks for Ensembl Plant releases, so it might not be a good idea.
+
+## Install selected species
 
 In case you want to install a single genome you can do that by:
 
@@ -112,6 +112,19 @@ make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=42 SPEC
 make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=42 SPECIES=oryza_sativa install_one_species
 ```
 
+As indicated earlier, the newly installed species are added to $RSAT/data/supported_organisms.tab and should appear in the list produced by:
+
+```{r, engine='bash', eval=FALSE}
+supported-organisms
+```
+
+## Compute genome stats report
+
+Run this to generate a report of descriptive stats of genomes currently in your system, such as http://rsat.eead.csic.es/plants/data/stats :
+```{r, engine='bash', eval=FALSE}
+make -f makefiles/ensemblgenomes_FTP_client.mk calc_stats
+```
+
 ### Install variation data
 
 If variation data is available for your species of interest you can download it with:
@@ -119,6 +132,30 @@ If variation data is available for your species of interest you can download it 
 ```{r, engine='bash', eval=FALSE}
 cd $RSAT
 make -f makefiles/ensemblgenomes_FTP_client.mk GROUP=$EGDIVISION RELEASE=$EGRELEASE SPECIES=oryza_sativa variations_one_species
+```
+
+**Note:** this will update file $RSAT/data/supported_organisms.tab
+
+
+### Download and Install Compara homologies
+
+Script `get-orthologs-compara` can be used to retrieve homologues (orthologues by default) precomputed at Ensembl Compara.
+In order to use it you must first install Compara in your system, which you can do with:
+
+```{r, engine='bash', eval=FALSE}
+cd $RSAT
+export ENSRELEASE=99
+
+make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=$EGRELEASE ENSEMBL_RELEASE=$ENSRELEASE GROUP=$EGDIVISION download_compara
+make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=$EGRELEASE ENSEMBL_RELEASE=$ENSRELEASE GROUP=$EGDIVISION parse_compara_match
+make -f makefiles/ensemblgenomes_FTP_client.mk RELEASE=$EGRELEASE ENSEMBL_RELEASE=$ENSRELEASE GROUP=$EGDIVISION install_compara
+
+```
+
+All going well you can check the species with installed homologies with:
+
+```{r, engine='bash', eval=FALSE}
+get-orthologs-compara -supported_organisms
 ```
 
 ### Install Gene Ontology terms from BioMart
