@@ -1,0 +1,444 @@
+#!/usr/bin/env perl
+############################################################
+#
+# $Id: template,v 1.48 2013/10/03 17:24:24 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+Rebuild matrix
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Rebuild a given position-specific scoring matrix based on a set of
+sites (instances of the motif) found in a given sequence set. 
+
+The process can be iterated for a specified number of cycles (option
+-iterations) of site detection <-> matrix building. The process stops
+at convergence, i.e. as soon as an iteration returns a matrix
+identical as the previous one.
+
+=head1 AUTHORS
+
+Jacques.van-Helden\@univ-amu.fr
+
+=head1 CATEGORY
+
+=over
+
+=item Matrix tools
+
+=back
+
+=head1 USAGE
+
+rebuild-matrix -seq sequence_file -seq_format format \
+  -m matrix_file [-iterations #] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+See I<convert-seq> for supported input sequence formats.
+
+If the matrix file contains several matrices, each of them will be
+treated separately.  See I<convert-matrix> for supported matrix
+formats.
+
+=head1 OUTPUT FORMAT
+
+The output is a matrix file, containing one or several matrices.
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=over
+
+=item B<wish 1>
+
+=item B<wish 2>
+
+=back
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  our $start_time = &RSAT::util::StartScript();
+  our $program_version = do { my @r = (q$Revision: 1.48 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+  our $iterations = 1;
+  our @matrix_files = (); ## list of matrix files per iteration. 
+
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+
+
+  ## Parameters passed to matrix-scan
+  our $scan_parameters = "";
+  our $seq_format = "fasta";
+  our $matrix_format = "transfac";
+  our $strands = "-2str";
+  our $markov = 1;
+  our $bg_model = "-bginput";
+
+  ## Parameters for the &doit() command
+  $dry = 0;
+  $die_on_error = 1;
+  $job_prefix = "matrix-from-patterns";
+  $batch = 0;
+
+  ################################################################
+  ## Find the commands
+  our $matrix_scan_cmd = &RSAT::server::GetProgramPath("matrix-scan");
+  our $convert_matrix_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+
+  
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+  unless($infile{sequences}) {
+      &RSAT::error::FatalError("A sequence file must be specified (option -seq). ");
+  }
+
+  unless($infile{matrices}) {
+      &RSAT::error::FatalError("A matrix file must be specified (option -m). ");
+  }
+
+  unless($prefix{output}) {
+      &RSAT::error::FatalError("An output prefix must be specified (option -o). ");
+  }
+
+  
+  
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+
+  ################################################################
+  ## Execute the command
+ 
+  ################################################################
+  push @matrix_files, $infile{matrices}; ## Init the list of matrix files with the input matrix file
+  for my $i (1..$iterations) {
+      &RSAT::message::TimeWarn("Matrix building iteration", $i."/".$iterations) if ($main::verbose >= 0);
+      my $input_matrices = $matrix_files[$i];
+      my $input_matrices = $matrix_files[$i-1];
+      my $output_sites =  $prefix{output}."_iter".$i."_sites.ft";
+      my $output_matrices =  $prefix{output}."_iter".$i."_matrices.transfac";
+      push @matrix_files, $output_matrices;
+      if ($main::verbose >= 0) {
+	  &RSAT::message::Info("\tInput matrices", $input_matrices);
+	  &RSAT::message::Info("\tScanned sites", $output_sites);
+	  &RSAT::message::Info("\tOutput matrices", $output_matrices);	  
+      }
+      
+      ## Run matrix-scan to get all sites
+      &ScanForSites($infile{sequences}, $input_matrices, $output_sites, $output_matrices);
+
+      ## Build a new matrix from the detected sites
+      &MatrixFromSites($output_sites, $output_matrices);
+  }
+ 
+  ################################################################
+  ## Insert here output printing
+
+  ################################################################
+  ## Report execution time and close output stream
+  &close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Close output file and quit
+sub close_and_quit {
+
+  ## Report execution time
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
+
+  exit(0);
+}
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+
+=pod
+
+=item B<-seq sequence_file>
+
+Sequence file
+
+=cut
+    } elsif ($arg eq "-seq") {
+      $main::infile{sequences} = shift(@arguments);
+
+=pod
+
+=item B<-seq_format format>
+
+Sequence format (default: fasta)
+
+=cut
+    } elsif ($arg eq "-seq_format") {
+      $main::seq_format = shift(@arguments);
+
+=item B<-m matrix_file>
+
+Matrix file. Can contain one or several matrices. 
+
+=cut
+    } elsif ($arg eq "-m") {
+      $main::infile{matrices} = shift(@arguments);
+
+=item B<-matrix_format format>
+
+ Matrixformat (default: transfac)
+
+=cut
+    } elsif ($arg eq "-matrix_format") {
+	$main::matrix_format = shift(@arguments);
+
+=item B<-iterations #>
+
+Maximal number of iterations.
+
+=cut
+    } elsif ($arg eq "-iterations") {
+	$main::iterations = shift(@arguments);
+	if (!&IsNatural($main::iterations) || ($main::iterations < 1)) {
+	    &RSAT::error::FatalError($main::iteration, "Invalid value for option -iterations. Should be a Natural number >= 1ti. ");
+	}
+
+=item	B<-o output_prefix>
+
+Prefix for the output files.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $prefix{output} = shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; template ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+}
+
+
+################################################################
+## Scan sequences to collect sites.
+##
+sub ScanForSites {
+    my ($sequence_file, $input_matrices, $output_sites, $output_matrices, %args) = @_;
+
+    &RSAT::message::TimeWarn("Scanning sequence for sites (matrix-scan)") if ($main::verbose >= 0);
+    if ($main::verbose >= 0) {
+	&RSAT::message::Info("\tSequence file", $sequence_file); 
+	&RSAT::message::Info("\tMatrix file", $input_matrices);
+	&RSAT::message::Info("\tSites", $output_sites);
+   }
+    
+    ################################################################
+    ## matrix-scan parameters
+    
+    ## The upper threshold on Pval MUST be defined (if not, all
+    ## sites can be taken, resulting in a meaningless matrix).
+    unless ($scan_parameters =~ /-uth Pval/) {
+	unless (defined($args{uth_pval})) {
+	    $uth{Pval} = 0.0001;
+	    &RSAT::message::Info("Using default upper P-value threshold: ", $uth{Pval}) if ($main::verbose >= 0);
+	}
+    }
+
+    ## Run the matrix-scan command
+    my $scan_cmd = $matrix_scan_cmd;
+    $scan_cmd .= " -quick";
+    $scan_cmd .= " -v 1";
+    $scan_cmd .= " -i ".$sequence_file;
+    $scan_cmd .= " -seq_format ".$seq_format;
+    $scan_cmd .= " -m ".$input_matrices;
+    $scan_cmd .= " -matrix_format ".$matrix_format;
+    $scan_cmd .= " -n skip";
+    $scan_cmd .= " -return sites,pval";
+    $scan_cmd .= " -uth Pval ".$uth{Pval};
+    $scan_cmd .= " ".$strands;
+    $scan_cmd .= " ".$bg_model;
+    $scan_cmd .= " -markov ".$markov;
+    $scan_cmd .= $scan_parameters;
+    $scan_cmd .= " -o ".$output_sites;
+    &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+    
+#    &sites_to_matrix($outfile{sig_sites});
+}
+
+
+################################################################
+## Convert the collected sites to count matrices
+sub MatrixFromSites {
+  my ($site_file, $matrix_file) = @_;
+  &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 0);
+  if ($main::verbose >= 0) {
+      &RSAT::message::Info("\tInput sites", $site_file);
+      &RSAT::message::Info("\tOutput matrices", $matrix_file);
+  }
+
+  ################################################################
+  ## The primary export format is TRANSFAC, because this allows to
+  ## store information (site sequences)
+  my $convert2_cmd = $convert_matrix_cmd;
+  $convert2_cmd .= " -v 0"; ## Verbosity must be 0 for TRANSFAC format
+  $convert2_cmd .= " -i ".$site_file;
+  $convert2_cmd .= " -from feature -to transfac";
+  $convert2_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
+  $convert2_cmd .= " -return counts";
+  #    $convert2_cmd .= " -sort desc information.per.column";
+  $convert2_cmd .= " -return sites" if ($return_fields{sites});
+#   if ($return_fields{logo}) {
+#     ## JvH TEMPORARILY DISACTIVATED pdf logos (2015-02-05) to
+#     ## circumvent strange bug with ghostscript on rsat.ulb.ac.be
+#     $convert2_cmd .= " -return logo -logo_format png ";
+# #    $convert2_cmd .= " -return logo -logo_format png,pdf ";
+#     $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
+#   }
+# #  $convert2_cmd .= " -return links" if ($return_fields{links});
+  $convert2_cmd .= " -o ".$matrix_file;
+  &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
+  ################################################################
+  ## The TRANSFAC matrices are then converted to tab format
+  # my $convert3_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+  # $convert3_cmd .= " -v 1";
+  # $convert3_cmd .= " -i ".$outfile{count_matrices_tf};
+  # $convert3_cmd .= " -from transfac -to tab";
+  # $convert3_cmd .= " -return counts";
+  # $convert3_cmd .= " -return sites" if ($return_fields{sites});
+  # $convert3_cmd .= " -o ".$outfile{count_matrices};
+  # print $log "; transfac-formatted -> tab-formatted matrices\n", $convert3_cmd, "\n";
+  # &doit($convert3_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
+}
+
+__END__
