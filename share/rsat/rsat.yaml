@@ -138,7 +138,7 @@ commands:
     group: "Matrix tools"
 
   - command: "perl-scripts/rescan-matrix"
-    desc: "Rebuild a PSSM from sites found in a given sequence"
+    desc: "Rebuild a PSSM by scanning sequences for sites (one or more iterations)"
     group: "Matrix tools"
 
   - command: "perl-scripts/compare-matrices"
