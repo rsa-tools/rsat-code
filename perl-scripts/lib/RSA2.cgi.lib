@@ -3553,7 +3553,7 @@ sub LoadDyadDefault {
   $default{exp_freq} = "background";
   $default{upload_freq_file} = "";
   #$default{lth_occ_sig} = "0";
-  $default{to_matrix} = 0;
+  $default{to_matrix} = '';
 
   ## Return values and thresholds
   $default{zscore} = '';
@@ -3738,6 +3738,8 @@ sub MatrixFromPatterns_defaults {
   $default{flanks} = 2;
   $default{max_asmb_nb} = 10;
   $default{min_weight} = 5;
+#  $default{clustering} = 'checked';
+  $default{clustering} = '';
 }
 
 ################################################################
@@ -3761,9 +3763,10 @@ sub MatrixFromPatterns_print_form {
 # 			  -default=>$default{gibbs_iter},
 # 			  -size=>3);
 
+  
   ## Max number of matrices
   print "<br>\n";
-  print "&nbsp;"x12, "Max matrices";
+  print "&nbsp;"x12, "Max pattern assemblies";
   print $query->textfield(-name=>'max_asmb_nb',
 			  -default=>$default{max_asmb_nb},
 			  -size=>2);
@@ -3779,6 +3782,14 @@ sub MatrixFromPatterns_print_form {
   print $query->textfield(-name=>'flanks',
 			  -default=>$default{flanks},
 			  -size=>2);
+
+  print "<br>\n";
+  print "&nbsp;"x12;
+  print $query->checkbox(-name=>'clustering',
+			 -checked=>$default{clustering},
+			 -label=>'');
+  print "&nbsp;Merge similar assemblies to get non-redundant matrices.";
+
 }
 
 ################################################################
@@ -3793,7 +3804,9 @@ sub MatrixFromPatterns_run {
   $pssm_file_tf = $pssm_prefix."_count_matrices.tf"; ## has to be global for the piping form
 
   ## Generate the command to extract matrices from patterns
-  $pssm_command = $SCRIPTS."/matrix-from-patterns -v 1";
+#  $pssm_command = $SCRIPTS."/matrix-from-patterns";
+  $pssm_command = &RSAT::server::GetProgramPath("matrix-from-patterns");
+  $pssm_command .= " -v 1";
   $pssm_command .= " -logo ";
   #  $pssm_command .= " ".$str;
   $pssm_command .= " -seq ".$sequence_file;
@@ -3804,6 +3817,9 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -min_weight ".$query->param('min_weight');
   $pssm_command .= " -flanks ".$query->param('flanks');
   $pssm_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
+  if ($query->param('clustering')) {
+    $pssm_command .= " -clustering";
+  }
   #	  $pssm_command .= " -gibbs_final" if ($query->param('gibbs_final'));
   $pssm_command .= " -uth Pval 0.00025";
   $pssm_command .= " -bginput -markov 0";
