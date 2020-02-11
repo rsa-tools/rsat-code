@@ -722,7 +722,10 @@ Returns all types of homologues annotated in Compara.
 
 =item I<ortholog> 
 
-Returns only orthologous genes, including many2many, one2many & one2one
+Returns only orthologous genes, including many2many, one2many & one2one.
+
+Note that in Compara polyploids such as wheat are separated by subgenome (ie A,B,D) and labels 
+(one2one, one2many, etc) are not reevaluated after the subgenomes are merged.
 
 =item I<paralog>
 
