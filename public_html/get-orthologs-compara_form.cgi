@@ -64,7 +64,7 @@ foreach $key (keys %default) {
 ## header
 &RSA_header("get-orthologs-compara", "form");
 print "<CENTER>";
-print "Return orthologs plus optionally paralogs and homeologs for a set of genes in one or more organisms. 
+print "Return orthologues plus optionally paralogues and homeologues for a set of genes in one or more organisms. 
 <br>Relies on primary data from Ensembl Compara.<br><br>\n";
 print "Program developed by <A HREF='mailto:bcontreras\@eead.csic.es'>Bruno Contreras-Moreira</A>\n";
 print "and <A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>Jacques van Helden</A>.\n";
