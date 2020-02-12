@@ -184,7 +184,7 @@ package main;
     close($listfile);
   }
 
-  ## format parsed data and call R to make plots
+  ## format parsed data and call R to make plots #########################
 
   # plot genome sizes, including fractions of Ns and repeats
   $file = $params{'outfolder'}.'/_genome_size.tab';
@@ -247,8 +247,8 @@ EOR
   $outfile = $params{'outfolder'}.'/gene_number.png';
   $PDFfile = $params{'outfolder'}.'/gene_number.pdf';
 
+  ($idx,$reference_idx) = (0,-1);
   if(!$params{'reuse'}){
-    ($idx,$reference_idx) = (0,-1);
     open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
     print TAB "organism\tgenes\n";
     foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats))
@@ -256,8 +256,8 @@ EOR
       print TAB "$org\t";
       print TAB $stats{$org}{'genes_N'} || 0;
       print TAB "\n";
-      if($params{'reference'} && $org =~ m/$params{'reference'}/){
-        $reference_idx = $idx + 1;
+      if($params{'reference'} && $reference_idx < 0 && $org =~ m/$params{'reference'}/){
+        $reference_idx = $idx;
       }
       $idx++;
     }
@@ -265,20 +265,21 @@ EOR
   } 
   else { # reuse previous TAB file 
 
-    ($idx,$reference_idx) = (0,-1);
     open(TAB,'<',$file) || RSAT::error::FatalError("Cannot read file",$file);
     while(<TAB>)
     {
-      $org = (split(/\t/,$_))[0];
+      next if(/^organism/);
+      $org = (split(/\t/,$_))[0]; 
       if($params{'reference'} && $org =~ m/$params{'reference'}/){
-        $reference_idx = $idx + 1;
+        $reference_idx = $idx;
+        last;
       }
       $idx++;
     }
     close(TAB);
   }
 
-  $colors = get_Rplot_colors($reference_idx,$n_of_orgs);
+  $colors = get_Rplot_colors($reference_idx,$n_of_orgs); #print "reference_idx $reference_idx\n"; # debug
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
@@ -309,27 +310,28 @@ EOR
   $outfile = $params{'outfolder'}.'/contig_size.png';
   $PDFfile = $params{'outfolder'}.'/contig_size.pdf';
 
+  ($idx,$reference_idx) = (0,-1);
   if(!$params{'reuse'}){
-    ($idx,$reference_idx) = (0,-1);
     open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
     foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
-      print TAB "$org\t"; 
-      if($params{'reference'} && $org =~ m/$params{'reference'}/){
+      print TAB "$org\t";
+      if($params{'reference'} && $reference_idx < 0 && $org =~ m/$params{'reference'}/){ 
         $reference_idx = $idx;
       }
       $idx++;
     }
   } else { # reuse previous TAB file 
     
-    ($idx,$reference_idx) = (0,-1);
     open(TAB,'<',$file) || RSAT::error::FatalError("Cannot read file",$file);
     while(<TAB>)
     {
-      $org = (split(/\t/,$_))[0];    
-      if($params{'reference'} && $org =~ m/$params{'reference'}/){
-        $reference_idx = $idx;
+      foreach $org (split(/\t/,$_)){
+        if($params{'reference'} && $org =~ m/$params{'reference'}/){
+          $reference_idx = $idx;
+          last;
+        }
+        $idx++;
       }
-      $idx++;
     }
     close(TAB);
   }
@@ -378,35 +380,36 @@ EOR
   $outfile = $params{'outfolder'}.'/upstream_size.png';
   $PDFfile = $params{'outfolder'}.'/upstream_size.pdf';
 
+  ($idx,$reference_idx) = (0,-1);
   if(!$params{'reuse'}){
-    ($idx,$reference_idx) = (0,-1);
     open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
     print TAB "organism\tupstream\n";
     foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
       print TAB "$org\t";
       print TAB calc_mean($stats{$org}{'upstream_L'});
       print TAB "\n";
-      if($params{'reference'} && $org =~ m/$params{'reference'}/){
+      if($params{'reference'} && $reference_idx < 0 && $org =~ m/$params{'reference'}/){
         $reference_idx = $idx;
       }
       $idx++;  
     }
   } else { # reuse previous TAB file
     
-     ($idx,$reference_idx) = (0,-1);
      open(TAB,'<',$file) || RSAT::error::FatalError("Cannot read file",$file);
      while(<TAB>)
      {
+       next if(/^organism/);
        $org = (split(/\t/,$_))[0];
        if($params{'reference'} && $org =~ m/$params{'reference'}/){
         $reference_idx = $idx;
+        last;
        }
        $idx++;
      }
      close(TAB);
   }
 
-  $colors = get_Rplot_colors($reference_idx,$n_of_orgs);
+  $colors = get_Rplot_colors($reference_idx,$n_of_orgs); 
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
