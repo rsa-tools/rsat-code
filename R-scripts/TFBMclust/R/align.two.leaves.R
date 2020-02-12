@@ -22,7 +22,7 @@ align.two.leaves <- function(child1,
 
   # message("; Aligning: ", id1.hclust, " - ", id2.hclust)
   if(align == TRUE){
-    verbose(paste("Aligning motifs: ", id1.hclust, " - ", id2.hclust), 1)
+    verbose(paste("Aligning motifs: ", id1.hclust, " - ", id2.hclust), 2)
   }
 
 
