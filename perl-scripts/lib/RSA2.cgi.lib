@@ -3842,7 +3842,7 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -flanks ".$query->param('flanks');
   $pssm_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
   if ($query->param('clustering')) {
-    $pssm_command .= " -cluster_".$query->param('clustering');
+    $pssm_command .= " -cluster ".$query->param('clustering');
   }
   #	  $pssm_command .= " -gibbs_final" if ($query->param('gibbs_final'));
   $pssm_command .= " -uth Pval 0.00025";
