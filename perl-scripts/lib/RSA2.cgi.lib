@@ -623,7 +623,7 @@ sub SequenceChoice {
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
     $sequenceChoiceString .=  "<B><A class='iframe' HREF='help.formats.html'>Format</A></B>&nbsp;";
     $sequenceChoiceString .=  $query->popup_menu(-id=>'sequence_format',
-      -name=>'sequence_format',
+						 -name=>'sequence_format',
 						 -Values=>['fasta',
 							   'ig',
 							   'wconsensus',
@@ -632,7 +632,7 @@ sub SequenceChoice {
 							   "tab",
 							   'multi'],
 						 -default=>$sequence_format);
-
+    
     ## Text area to copy-paste the sequence
     $sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
     $sequenceChoiceString .=  $query->textarea(-id=>'sequence',
@@ -654,7 +654,8 @@ sub SequenceChoice {
 
   ## Mask option
   $sequenceChoiceString .=  "<BR><B><A class='iframe' HREF='help.formats.html'>Mask</A></B>&nbsp;";
-  $sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
+  $sequenceChoiceString .=  $query->popup_menu(-id=>'mask',
+					       -name=>'mask',
 					       -Values=>['none',
 							 'upper',
 							 'lower',
@@ -1501,10 +1502,12 @@ sub SeqBoxMQ {
       print "<br>";
 
       print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
-      print $query->popup_menu(-name=>'permutation'.$seq_num, -id=>'permutation'.$seq_num,
+      print $query->popup_menu(-name=>'permutation'.$seq_num, 
+			       -id=>'permutation'.$seq_num,
 			       -Values=>[0..5],
 			       -default=>$default{perm});
-      print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num, -id=>'sep_perm'.$seq_num,
+      print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num,
+					  -id=>'sep_perm'.$seq_num,
 					  -checked=>$default{sep_perm1},
 					  -label=>''), "&nbsp;separate permutations" ;
       print "<br>\n";
@@ -1592,12 +1595,12 @@ sub GetMatrix {
   #  my $supported_input_formats = join ",", @supported_input_formats;
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
-  #### matrix format
-    print $query->popup_menu(-id=>'matrix_format',
-    -name=>'matrix_format',
+  ## Matrix format
+  print $query->popup_menu(-id=>'matrix_format',
+			   -name=>'matrix_format',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
-
+  
 
   ## Display option fo use consensus as matrix name
   if ($args{consensus}) {
@@ -1694,11 +1697,11 @@ sub GetFirstMatrix {
     #  my $supported_input_formats = join ",", @supported_input_formats;
     #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
     
-    #### matrix format
+    ## Matrix format
     print $query->popup_menu(-id=>'matrix_format1',
-    -name=>'matrix_format1',
-    -Values=>[@supported_input_formats],
-    -default=>$default{matrix_format});
+			     -name=>'matrix_format1',
+			     -Values=>[@supported_input_formats],
+			     -default=>$default{matrix_format});
     
     
     ## Display option fo use consensus as matrix name
@@ -1796,19 +1799,19 @@ sub GetMatrix_bootstrap {
   my @supported_input_formats = sort(keys( %supported_input_format));
   #  my $supported_input_formats = join ",", @supported_input_formats;
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
-print '<div class="form-inline"> <div class="form-group">
-';
+print '<div class="form-inline"> <div class="form-group">\n';
 
   print "<label for='matrix_format'>", $title, "</label>\n";
   print "<A class='badge badge-primary iframe' HREF='help.convert-matrix.html#io_format' >Info</a>";
 
-print '';
-  #### matrix format
-    print $query->popup_menu(-id=>'matrix_format',
-    -name=>'matrix_format',
+  print '';
+
+  ## Matrix format
+  print $query->popup_menu(-id=>'matrix_format',
+			   -name=>'matrix_format',
 			   -Values=>[@supported_input_formats], -class=>'form-control',
 			   -default=>$default{matrix_format});
-
+  
 
   ## Display option fo use consensus as matrix name
   if ($args{consensus}) {
@@ -1910,15 +1913,16 @@ sub MultiGetMatrix_bootstrap {
   my @supported_input_formats = sort(keys( %supported_input_format));
   #  my $supported_input_formats = join ",", @supported_input_formats;
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
-print '<div class="form-inline"> <div class="form-group">
-';
+  print '<div class="form-inline"> <div class="form-group">';
+  print "\n";
 
   print "<label for='matrix_format".$mat_num."'>", $title, "</label>\n";
   print "<A class='badge badge-primary iframe' HREF='help.convert-matrix.html#io_format' >Info</a>";
-
-print '';
+  
+  print '';
+  
   #### matrix format
-    print $query->popup_menu(-id=>'matrix_format'.$mat_num,
+  print $query->popup_menu(-id=>'matrix_format'.$mat_num,
     -name=>'matrix_format'.$mat_num,
 			   -Values=>[@supported_input_formats], -class=>'form-control',
 			   -default=>$default{"matrix_format".$mat_num});
@@ -1931,8 +1935,9 @@ print '';
 			   -label=>' use motif consensus as matrix name ');
   }
 
-print '</div></div>
+  print '</div></div>
 <div class="form-group">';
+  print "\n";
   ## Text area to enter the matrix
   print  "Input motifs as text<br/>" if ($db_choice);
   print '<div>
@@ -1940,13 +1945,15 @@ print '</div></div>
    ';
 
   print $query->textarea(-id=>'matrix'.$mat_num,
-    -name=>'matrix'.$mat_num, -class=>'form-control',-placeholder=>'Paste here your matrices, or select a file to upload below ',
+			 -name=>'matrix'.$mat_num, 
+			 -class=>'form-control',
+			 -placeholder=>'Paste here your matrices, or select a file to upload below ',
 			 -default=>$default{"matrix".$mat_num},
 			 -rows=>4,
 			 -columns=>60);
 
-print '</div>';
-
+  print '</div>';
+  
   ## Option to upload the matrix file from the client machine
   print  "Upload motifs file<br/>" if ($db_choice);
   print "<b>Or</b> select a file to upload <BR>\n" unless ($db_choice);
@@ -1954,8 +1961,8 @@ print '</div>';
 			  -default=>'',
 			  -size=>45,
 			  -maxlength=>200);
-    print "<BR></div>\n";
-
+  print "<BR></div>\n";
+  
 }
 
 
@@ -2539,11 +2546,13 @@ sub GetBackgroundModel {
   if ($params{markov}) {
     print ("<b><a class='iframe' href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
     if ($params{simple}) {
-      print $query->popup_menu(-id=>'markov_order', -name=>'markov_order',
+      print $query->popup_menu(-id=>'markov_order', 
+			       -name=>'markov_order',
 			       -Values=>[0..2],
 			       -default=>$default{markov_order});
     } else {
-      print $query->popup_menu(-id=>'markov_order', -name=>'markov_order',
+      print $query->popup_menu(-id=>'markov_order', 
+			       -name=>'markov_order',
 			       -Values=>[0..7],
 			       -default=>$default{markov_order});
     }
@@ -2588,7 +2597,11 @@ sub GetBackgroundModel {
     print  &OrganismPopUpString('bg_org'=>'1');
   }
 
-    print ("<b>Sequence type</b> &nbsp; ",$query->popup_menu(-id=>'background',-name=>'background',-Values=>["upstream-noorf","upstream"],-default=>$default{background}));
+    print ("<b>Sequence type</b> &nbsp; ",
+	   $query->popup_menu(-id=>'background',
+			      -name=>'background',
+			      -Values=>["upstream-noorf","upstream"],
+			      -default=>$default{background}));
 
   print '</ul>';
 
@@ -2602,11 +2615,12 @@ sub GetBackgroundModel {
   ### Display strand option
   if ($params{strands}) {
     print "<B><A class='iframe' HREF='help.convert-background-model.html#item__2d1str'><br>Count on</A></b>\n";
-    print $query->popup_menu(-name=>'strands',
+    print $query->popup_menu(-id=>'strands',
+			     -name=>'strands',
 			     -Values=>[
-				       'single strand',
-				       'both strands',
-				      ],
+				'single strand',
+				'both strands',
+			     ],
 			     -default=>$default{strands});
     print "&nbsp;&nbsp";
   }
@@ -2666,12 +2680,13 @@ sub DisplayBackgroundFileUpload {
 
 
       #### bg format
-    print $query->popup_menu(-name=>'bg_format',
+    print $query->popup_menu(-id=>'bg_format',
+			     -name=>'bg_format',
 			     -Values=>[
-				       'oligo-analysis',
-				       'MotifSampler',
-				       'meme'
-				      ],
+				'oligo-analysis',
+				'MotifSampler',
+				'meme'
+			     ],
 			     -default=>$default{bg_format});
 
 
@@ -3467,7 +3482,13 @@ sub PrintGenomeSubsetBgOptions {
   print( "<br><input type='radio' NAME='bg_method' id='bg_method_background' VALUE='background' $checked{'background'}>");
   print ("<b>Genome subset</b>");
 
-  print ( "&nbsp;&nbsp;<a class='iframe' href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;",$query->popup_menu(-name=>'background',-Values=>["upstream","upstream-noorf","protein"],-default=>$default{background}));
+  print ( "&nbsp;&nbsp;<a class='iframe' href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;",
+	  $query->popup_menu(-id=>'background',
+			     -name=>'background',
+			     -Values=>["upstream",
+				       "upstream-noorf",
+				       "protein"],
+			     -default=>$default{background}));
 
 
   print ("<ul>");
@@ -3738,8 +3759,7 @@ sub MatrixFromPatterns_defaults {
   $default{flanks} = 2;
   $default{max_asmb_nb} = 10;
   $default{min_weight} = 5;
-#  $default{clustering} = 'checked';
-  $default{clustering} = '';
+  $default{clustering} = 'none';
 }
 
 ################################################################
@@ -3783,13 +3803,17 @@ sub MatrixFromPatterns_print_form {
 			  -default=>$default{flanks},
 			  -size=>2);
 
-  print "<br>\n";
-  print "&nbsp;"x12;
-  print $query->checkbox(-name=>'clustering',
-			 -checked=>$default{clustering},
-			 -label=>'');
-  print "&nbsp;Merge similar assemblies to get non-redundant matrices.";
+  # ## Matrix format
+  print "&nbsp;"x4, "Matrix clustering&nbsp;\n";
+  print $query->popup_menu(-id=>'clustering', 
+  			   -name=>'clustering',
+  			   -Values=>['sig',
+  				     'counts',
+  				     'both',
+  				     'none'],
+  			   -default=>$default{clustering});
 
+  
 }
 
 ################################################################
@@ -3818,7 +3842,7 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -flanks ".$query->param('flanks');
   $pssm_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
   if ($query->param('clustering')) {
-    $pssm_command .= " -clustering";
+    $pssm_command .= " -cluster_".$query->param('clustering');
   }
   #	  $pssm_command .= " -gibbs_final" if ($query->param('gibbs_final'));
   $pssm_command .= " -uth Pval 0.00025";
