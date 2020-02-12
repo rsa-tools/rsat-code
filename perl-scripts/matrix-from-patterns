@@ -144,7 +144,8 @@ package main;
     local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
     local $top_seq = 0;
-    local $cluster_matrices = 0;
+    local $cluster_sig = 0;
+    local $cluster_counts = 0;
     local $column_rescaling = 100; ## TO DO: ADAPT RESCALING TO MAX OF SIG MATRIX
 
     ## Collect method
@@ -181,6 +182,10 @@ package main;
     $die_on_error = 1;
     $job_prefix = "matrix-from-patterns";
     $batch = 0;
+
+    ## Clustering parameters
+    $cluster_sig = 0;
+    $cluster_counts = 0;
 
     ################################################################
     ## Read argument values
@@ -358,10 +363,10 @@ package main;
     ## matrices. This solves a problem with pattern assembly, which
     ## returns different assemblies with mutually overlapping sets of
     ## patterns.
-    my $sig_matrices = ""; ## Sig matrices will depend on the option -cluster_matrices
+    my $sig_matrices = ""; ## Sig matrices file will depend on the option -cluster_sig
 #    if (0 == 1) {
-    if ($cluster_matrices) {
-	&RSAT::message::TimeWarn("Clustering significance matrices to get non-redundant set") if ($main::verbose >= 0);
+    if ($cluster_sig) {
+	&RSAT::message::TimeWarn("Clustering significance matrices to get non-redundant set") if ($main::verbose >= 2);
 
 	## Define prefix and name for the non-redundant matrices produced by matrix-clustering ("root matrices")
 	$prefix{sig_matrices_nr} = $outfile{output}."_sig_matrices_nr"; ## Non-redundant significance matrices
@@ -405,9 +410,9 @@ package main;
     ## matrices. This solves a problem with pattern assembly, which
     ## returns different assemblies with mutually overlapping sets of
     ## patterns.
-    my $count_matrices = ""; ## count matrices will depend on the option -cluster_matrices
-    if ($cluster_matrices) {
-	&RSAT::message::TimeWarn("Clustering count matrices to get non-redundant sets") if ($main::verbose >= 0);
+    my $count_matrices = ""; ## Count matrix file will depend on the option -cluster_counts
+    if ($cluster_counts) {
+	&RSAT::message::TimeWarn("Clustering count matrices to get non-redundant sets") if ($main::verbose >= 2);
 
 	## Define prefix and name for the non-redundant matrices produced by matrix-clustering ("root matrices")
 	$prefix{count_matrices_nr} = $outfile{output}."_count_matrices_nr"; ## Non-redundant count matrices
@@ -439,7 +444,6 @@ package main;
       &RSAT::message::TimeWarn("Generating logos and links") if ($main::verbose >= 2);
 
 #      &RSAT::message::Debug("current directory", `pwd`) if ($main::verbose >= 10);
-
       my $logo_link_cmd = &RSAT::server::GetProgramPath("convert-matrix");
       $logo_link_cmd .= " -v 1";
       $logo_link_cmd .= " -i ". $outfile{count_matrices_tf};
@@ -816,21 +820,41 @@ output basename, followed by an extension.
 
 =pod
 
-=item B<-clustering>
-=item B<-no_clustering>
+=item B<-cluster matrix_clust_option>
 
-Apply (-clustering) or not (-no_clustering) a matrix-clustering step
-to filter out redundant matrices. This filtering is performed at the
-level of significance matrices, which also reduces the time spend at
-scanning sequences to collect sites.
+Run I<matrix-clustering> to filter out redundant matrices, on the
+significance matrices (I<-cluster sig>), on the count matrices
+(I<-cluster counts>), on both (i<-cluster both>) or none
+(I<-cluster none>).
+
+Applying the filtering at the level of the significance matrices
+reduces the scanning time, since the count matrices are built by
+scanning sequences with each significance matrix. However it can
+result in a loss of sensitivity, some lmotif being absorbed by other
+ones.
+
 
 =cut
-	} elsif ($arg eq "-clustering") {
-	    $cluster_matrices = 1;
+  } elsif ($arg eq "-cluster") {
+    $cluster_mode = shift(@arguments);
 
-	} elsif ($arg eq "-no_clustering") {
-	    $cluster_matrices = 0;
+    if ($cluster_mode eq "sig") {
+      $cluster_sig = 1;
+      $cluster_counts = 0;
 
+    } elsif ($cluster_mode eq "counts") {
+      $cluster_sig = 0;
+      $cluster_counts = 1;
+      
+    } elsif ($cluster_mode eq "both") {
+      $cluster_sig = 1;
+      $cluster_counts = 1;
+      
+    } elsif ($cluster_mode eq "none") {
+      $cluster_sig = 0;
+      $cluster_counts = 0;      
+
+    } 
 
 =pod
 
