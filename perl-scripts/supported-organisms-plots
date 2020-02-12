@@ -257,7 +257,7 @@ EOR
       print TAB $stats{$org}{'genes_N'} || 0;
       print TAB "\n";
       if($params{'reference'} && $org =~ m/$params{'reference'}/){
-        $reference_idx = $idx;
+        $reference_idx = $idx + 1;
       }
       $idx++;
     }
@@ -271,7 +271,7 @@ EOR
     {
       $org = (split(/\t/,$_))[0];
       if($params{'reference'} && $org =~ m/$params{'reference'}/){
-        $reference_idx = $idx;
+        $reference_idx = $idx + 1;
       }
       $idx++;
     }
