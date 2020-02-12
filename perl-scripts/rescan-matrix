@@ -135,11 +135,18 @@ package main;
       &RSAT::error::FatalError("A matrix file must be specified (option -m). ");
   }
 
-  unless($prefix{output}) {
-      &RSAT::error::FatalError("An output prefix must be specified (option -o). ");
+  unless($outfile{output}) {
+      &RSAT::error::FatalError("An output file must be specified (option -o). ");
   }
 
-  
+  ## Define output prefix for intermediate files
+  $prefix{output} = $outfile{output};
+  $prefix{output} =~ s/\.txt$//;
+  $prefix{output} =~ s/\.tsv$//;
+  $prefix{output} =~ s/\.tab$//;
+  $prefix{output} =~ s/\.tf$//;
+  $prefix{output} =~ s/\.transfac$//;
+  $prefix{output} =~ s/\.${matrix_format}$//;
   
   ################################################################
   ## Print verbose
@@ -155,7 +162,12 @@ package main;
       my $input_matrices = $matrix_files[$i];
       my $input_matrices = $matrix_files[$i-1];
       my $output_sites =  $prefix{output}."_iter".$i."_sites.ft";
-      my $output_matrices =  $prefix{output}."_iter".$i."_matrices.transfac";
+      my $output_matrices = "";
+      if ($i == $iterations) {
+	 $output_matrices =  $outfile{output};
+      } else {
+	$output_matrices =  $prefix{output}."_iter".$i."_matrices.transfac";
+      }
       push @matrix_files, $output_matrices;
       if ($main::verbose >= 0) {
 	  &RSAT::message::Info("\tInput matrices", $input_matrices);
@@ -311,8 +323,8 @@ Prefix for the output files.
 
 =cut
     } elsif ($arg eq "-o") {
-      $prefix{output} = shift(@arguments);
-
+      $main::outfile{output} = shift(@arguments);
+      
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
 
