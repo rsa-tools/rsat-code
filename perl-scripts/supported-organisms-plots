@@ -355,10 +355,10 @@ EOR
   png("$outfile",width=800,height=800);
   par(mai=c(1,4,0.3,1)) # make room for long horizontal labels
   colors = c($colors);
-  data = read.table(file="$file",header=T,check.names=F); 
+  data = read.table(file="$file",header=T,check.names=F);
+  names(data) = lapply(names(data), substr, 1, 40 );
   boxplot( data, xlab='contig / scaffold / chromosome size', horizontal=T, las=1,
-            varwidth=F, show.names=T, names.arg=lapply(data\$organism, substr, 1, 40 ),
-            log="x", col=colors, cex.axis=0.9 );
+            varwidth=F, show.names=T, log="x", col=colors, cex.axis=0.9 );
   dev.off()
 
   pdf("$PDFfile",width=8,height=8);
