@@ -855,6 +855,6 @@ __END__
 
 =head1 DEMO
 
-    get-orthologs-compara -q BRADI4G31367.1 -ref_org triticum_aestivum 
+    get-orthologs-compara -q BRADI_1g48830v3 -ref_org triticum_aestivum 
 
 =cut
