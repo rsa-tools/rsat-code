@@ -144,8 +144,9 @@ package main;
     local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
     local $top_seq = 0;
-    local $cluster_matrices = 0;
-    local $column_rescaling = 10;
+    local $cluster_sig = 0;
+    local $cluster_counts = 0;
+    local $column_rescaling = 100; ## TO DO: ADAPT RESCALING TO MAX OF SIG MATRIX
 
     ## Collect method
 #    local $collect_method = "info-gibbs";
@@ -176,11 +177,18 @@ package main;
     local %lth;
     $lth{weight} = 5;
 
+    ## Parameters for rescan-matrix
+    $rescan_iterations = 2;
+
     ## Parameters for the &doit() command
     $dry = 0;
     $die_on_error = 1;
     $job_prefix = "matrix-from-patterns";
     $batch = 0;
+
+    ## Clustering parameters
+    $cluster_sig = 0;
+    $cluster_counts = 0;
 
     ################################################################
     ## Read argument values
@@ -232,7 +240,8 @@ package main;
     ## Print verbose
     &Verbose() if ($main::verbose);
 
-    ## Sequences to scan
+    ## Sequences to scan. Can bne either the input sequence file, or a
+    ## file derived from it that contains only the top sequences.
     our $seq_to_scan;
     if ($top_seq) {
       &RSAT::message::TimeWarn("Selecting top ".$top_seq."sequences", $seq_to_scan)
@@ -325,12 +334,15 @@ package main;
     $convert_cmd .= " -v 1 -i ".$outfile{assembly};
     $convert_cmd .= " -from assembly -to tf";
     $convert_cmd .= " -return counts";
+    $convert_cmd .= " -decimals 2";
     $convert_cmd .= " -flanks ".$flanks;
     $convert_cmd .= " -top ".$max_asmb_nb unless ($cluster_column);
     $convert_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
     $convert_cmd .= " -o ".$outfile{sig_matrices};
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
     &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
+#    die "; Sig matrix from assembly\n\n", $convert_cmd, "\n\n";
 
     ################################################################
     ## Rescale the significance matrices to get count-like matrices
@@ -341,10 +353,13 @@ package main;
     $rescale_cmd .= " -v 1 -i ".$outfile{sig_matrices};
     $rescale_cmd .= " -from tf -to tf";
     $rescale_cmd .= " -return counts";
+    $rescale_cmd .= " -decimals 3";
     $rescale_cmd .= " -rescale ".$column_rescaling;
     $rescale_cmd .= " -o ".$outfile{sig_matrices_rescaled};
     print $log "; Rescaling significance matrices\n", $rescale_cmd, "\n";
     &doit($rescale_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
+ #   die "; Rescaling significance matrices\n\n", $rescale_cmd, "\n\n";
 
 
     ################################################################
@@ -352,8 +367,9 @@ package main;
     ## matrices. This solves a problem with pattern assembly, which
     ## returns different assemblies with mutually overlapping sets of
     ## patterns.
-    my $sig_matrices = ""; ## Sig matrices will depend on the option -cluster_matrices
-    if ($cluster_matrices) {
+    my $sig_matrices = ""; ## Sig matrices file will depend on the option -cluster_sig
+#    if (0 == 1) {
+    if ($cluster_sig) {
 	&RSAT::message::TimeWarn("Clustering significance matrices to get non-redundant set") if ($main::verbose >= 2);
 
 	## Define prefix and name for the non-redundant matrices produced by matrix-clustering ("root matrices")
@@ -363,8 +379,10 @@ package main;
 	## Build the matrix-clustering command
 	my $cluster_cmd = &RSAT::server::GetProgramPath("matrix-clustering");
 	$cluster_cmd .= " -v 0";
-	$cluster_cmd .= " -matrix test ".$outfile{sig_matrices_rescaled}." tf";
-	$cluster_cmd .= " -lth Ncor 0.4 -lth cor 0.6 -lth w 5 -hclust_method average";
+	$cluster_cmd .= " -matrix sig ".$outfile{sig_matrices_rescaled}." tf";
+	$cluster_cmd .= " -lth Ncor 0.4 -lth cor 0.6 -lth w 5";
+	$cluster_cmd .= " -calc sum";
+	$cluster_cmd .= " -hclust_method average";
 	$cluster_cmd .= " -label_in_tree name";
 	$cluster_cmd .= " -metric_build_tree Ncor";
 	$cluster_cmd .= " -return root_matrices";
@@ -378,17 +396,72 @@ package main;
     }
 
 
-
     ################################################################
     ## Convert significance matrices into count matrices
+    my $count_matrices = "";
+    if ($cluster_counts) {
+      $outfile{count_matrices_pre-cluster} = $outfile{output}."_count_matrices_pre-cluster.tf"; 
+      $count_matrices = $outfile{count_matrices_pre-cluster};
+    } else {
+      $count_matrices = $outfile{count_matrices_tf};
+    }
+
     &RSAT::message::TimeWarn("Converting sig matrices to count matrices") if ($main::verbose >= 2);
+#    if (($collect_method eq "matrix-scan") || ($collect_method eq "matrix-scan-quick")) {
     if ($collect_method eq "matrix-scan") {
       &ScanForSites($sig_matrices);
+      &sites_to_matrix($outfile{sig_sites}, $count_matrices);
     } elsif ($collect_method eq "matrix-scan-quick") {
       &QuickScanForSites($sig_matrices);
+      &sites_to_matrix($outfile{sig_sites}, $count_matrices);
     } else {
       &InfoGibbs($sig_matrices);
     }
+
+    ################################################################
+    ## Extract non-redundant matrices by clustering count
+    ## matrices. This solves a problem with pattern assembly, which
+    ## returns different assemblies with mutually overlapping sets of
+    ## patterns.
+#    my $count_matrices = ""; ## Count matrix file will depend on the option -cluster counts
+    if ($cluster_counts) {
+	&RSAT::message::TimeWarn("Clustering count matrices to get non-redundant sets") if ($main::verbose >= 2);
+
+	## Define prefix and name for the non-redundant matrices produced by matrix-clustering ("root matrices")
+	$prefix{count_matrices_nr} = $outfile{output}."_count_matrices_nr"; ## Non-redundant count matrices
+	$outfile{count_matrices_nr} = $prefix{count_matrices_nr}."_cluster_root_motifs.tf"; ## Non-redundant countnificance matrices
+
+	## Build the matrix-clustering command
+	my $cluster_cmd = &RSAT::server::GetProgramPath("matrix-clustering");
+	$cluster_cmd .= " -v 0";
+	$cluster_cmd .= " -matrix pre-clustering ".$count_matrices." transfac";
+	$cluster_cmd .= " -lth Ncor 0.4 -lth cor 0.6 -lth w 5";
+	$cluster_cmd .= " -calc sum";
+	$cluster_cmd .= " -hclust_method average";
+	$cluster_cmd .= " -label_in_tree name";
+	$cluster_cmd .= " -metric_build_tree Ncor";
+#	$cluster_cmd .= " -quick";
+	$cluster_cmd .= " -return root_matrices";
+	$cluster_cmd .= " -o ".$prefix{count_matrices_nr};
+	print $log "; count matrices -> non-redundant matrices\n", $cluster_cmd, "\n";
+#	die("HELLO\t\n\n", $cluster_cmd, "\n\n");
+	&doit($cluster_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
+	## Rescan sequences to get count matrices from clustered matrices
+	my $rescan_cmd = &RSAT::server::GetProgramPath("rescan-matrix");
+	$rescan_cmd .= " -v 3";
+	$rescan_cmd .= " -seq ".$seq_to_scan;
+	$rescan_cmd .= " -seq_format fasta";
+	$rescan_cmd .= " -m ".$outfile{count_matrices_nr};
+	$rescan_cmd .= " -matrix_format transfac";
+        $rescan_cmd .= " -iterations ".$rescan_iterations;
+	$rescan_cmd .= " -o ".$outfile{count_matrices_tf};
+	&doit($rescan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
+    }
+
+ #   ## Define final output file
+ #   $count_matrices = $outfile{count_matrices_tf};
 
     ################################################################
     ## Generate motif logos
@@ -396,7 +469,6 @@ package main;
       &RSAT::message::TimeWarn("Generating logos and links") if ($main::verbose >= 2);
 
 #      &RSAT::message::Debug("current directory", `pwd`) if ($main::verbose >= 10);
-
       my $logo_link_cmd = &RSAT::server::GetProgramPath("convert-matrix");
       $logo_link_cmd .= " -v 1";
       $logo_link_cmd .= " -i ". $outfile{count_matrices_tf};
@@ -414,11 +486,8 @@ package main;
       $logo_link_cmd .= " -o ".$outfile{links};
       print $log "; sites -> count matrices\n", $logo_link_cmd, "\n";
       &doit($logo_link_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
-
-
     }
-
-
+    
     &terminate();
 }
 
@@ -776,20 +845,41 @@ output basename, followed by an extension.
 
 =pod
 
-=item B<-clustering>
-=item B<-no_clustering>
+=item B<-cluster matrix_clust_option>
 
-Apply (-clustering) or not (-no_clustering) a matrix-clustering step
-to filter out redundant matrices. This filtering is performed at the
-level of significance matrices, which also reduces the time spend at
-scanning sequences to collect sites.
+Run I<matrix-clustering> to filter out redundant matrices, on the
+significance matrices (I<-cluster sig>), on the count matrices
+(I<-cluster counts>), on both (i<-cluster both>) or none
+(I<-cluster none>).
+
+Applying the filtering at the level of the significance matrices
+reduces the scanning time, since the count matrices are built by
+scanning sequences with each significance matrix. However it can
+result in a loss of sensitivity, some lmotif being absorbed by other
+ones.
+
 
 =cut
-	} elsif ($arg eq "-clustering") {
-	    $cluster_matrices = 1;
-	} elsif ($arg eq "-no_clustering") {
-	    $cluster_matrices = 0;
+  } elsif ($arg eq "-cluster") {
+    $cluster_mode = shift(@arguments);
 
+    if ($cluster_mode eq "sig") {
+      $cluster_sig = 1;
+      $cluster_counts = 0;
+
+    } elsif ($cluster_mode eq "counts") {
+      $cluster_sig = 0;
+      $cluster_counts = 1;
+      
+    } elsif ($cluster_mode eq "both") {
+      $cluster_sig = 1;
+      $cluster_counts = 1;
+      
+    } elsif ($cluster_mode eq "none") {
+      $cluster_sig = 0;
+      $cluster_counts = 0;      
+
+    } 
 
 =pod
 
@@ -1021,7 +1111,6 @@ sub QuickScanForSites {
   $cmd .= " -to tab -split  -o ".$prefix{sig_matrices_split};
   $cmd .= "; rm -f ".$outfile{'count_matrices'};
   &RSAT::message::Debug("Splitting sig matrix file", $outfile{sig_matrices_split}) if ($main::verbose >= 3);
-## DEBUGGING 2015-12    warn("HELLO\t", $cmd);
   &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
   ## Get the list of files containing the individual matrices
@@ -1089,10 +1178,8 @@ sub QuickScanForSites {
     }
   }
 
-
-
   ## Extract count matrices from the sites collected with the sig matrices
-  &sites_to_matrix($outfile{sig_sites});
+#  &sites_to_matrix($outfile{sig_sites}, $outfile{count_matrices_tf});
 }
 
 
@@ -1123,13 +1210,13 @@ sub ScanForSites {
   $scan_cmd .= " -o ".$outfile{sig_sites};
   print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
   &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
-  &sites_to_matrix($outfile{sig_sites});
+#  &sites_to_matrix($outfile{sig_sites}, $outfile{count_matrices_tf});
 }
 
 ################################################################
 ## Convert the collected sites to count matrices
 sub sites_to_matrix {
-  my ($site_file) = @_;
+  my ($site_file, $matrix_file) = @_;
   &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
 
   ################################################################
@@ -1143,15 +1230,13 @@ sub sites_to_matrix {
   $convert2_cmd .= " -return counts";
   #    $convert2_cmd .= " -sort desc information.per.column";
   $convert2_cmd .= " -return sites" if ($return_fields{sites});
-  if ($return_fields{logo}) {
-    ## JvH TEMPORARILY DISACTIVATED pdf logos (201502-05) to
-    ## circumvent strange bug with ghostscript on rsat.ulb.ac.be
-    $convert2_cmd .= " -return logo -logo_format png ";
-#    $convert2_cmd .= " -return logo -logo_format png,pdf ";
-    $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
-  }
+#   if ($return_fields{logo}) {
+#     $convert2_cmd .= " -return logo -logo_format png ";
+# #    $convert2_cmd .= " -return logo -logo_format png,pdf ";
+#     $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
+#   }
 #  $convert2_cmd .= " -return links" if ($return_fields{links});
-  $convert2_cmd .= " -o ".$outfile{count_matrices_tf};
+  $convert2_cmd .= " -o ".$matrix_file;
   print $log "; sites -> transfac matrices\n", $convert2_cmd, "\n";
   &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
@@ -1219,7 +1304,6 @@ sub InfoGibbs {
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
     &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 }
-
 
 ################################################################
 ## Close output stream
