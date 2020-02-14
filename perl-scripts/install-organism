@@ -1099,7 +1099,6 @@ sub RewriteConfigTab{
                 chomp($row);
                 my @fields = split("\t", $row);
                 my $full_species_id = $fields[0];
-                print $full_species_id;
                 #check if the species is already in the list
                 my $newline = $row;
                 if(defined $ensembl{$full_species_id}){
