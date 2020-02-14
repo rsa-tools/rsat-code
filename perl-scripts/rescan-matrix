@@ -151,13 +151,13 @@ package main;
   ################################################################
   push @matrix_files, $infile{matrices}; ## Init the list of matrix files with the input matrix file
   for my $i (1..$iterations) {
-      &RSAT::message::TimeWarn("Matrix building iteration", $i."/".$iterations) if ($main::verbose >= 0);
+      &RSAT::message::TimeWarn("Matrix building iteration", $i."/".$iterations) if ($main::verbose >= 2);
       my $input_matrices = $matrix_files[$i];
       my $input_matrices = $matrix_files[$i-1];
       my $output_sites =  $prefix{output}."_iter".$i."_sites.ft";
       my $output_matrices =  $prefix{output}."_iter".$i."_matrices.transfac";
       push @matrix_files, $output_matrices;
-      if ($main::verbose >= 0) {
+      if ($main::verbose >= 3) {
 	  &RSAT::message::Info("\tInput matrices", $input_matrices);
 	  &RSAT::message::Info("\tScanned sites", $output_sites);
 	  &RSAT::message::Info("\tOutput matrices", $output_matrices);	  
@@ -354,8 +354,8 @@ sub Verbose {
 sub ScanForSites {
     my ($sequence_file, $input_matrices, $output_sites, $output_matrices, %args) = @_;
 
-    &RSAT::message::TimeWarn("Scanning sequence for sites (matrix-scan)") if ($main::verbose >= 0);
-    if ($main::verbose >= 0) {
+    &RSAT::message::TimeWarn("Scanning sequence for sites (matrix-scan)") if ($main::verbose >= 2);
+    if ($main::verbose >= 3) {
 	&RSAT::message::Info("\tSequence file", $sequence_file); 
 	&RSAT::message::Info("\tMatrix file", $input_matrices);
 	&RSAT::message::Info("\tSites", $output_sites);
@@ -369,7 +369,7 @@ sub ScanForSites {
     unless ($scan_parameters =~ /-uth Pval/) {
 	unless (defined($args{uth_pval})) {
 	    $uth{Pval} = 0.0001;
-	    &RSAT::message::Info("Using default upper P-value threshold: ", $uth{Pval}) if ($main::verbose >= 0);
+	    &RSAT::message::Info("Using default upper P-value threshold: ", $uth{Pval}) if ($main::verbose >= 2);
 	}
     }
 
@@ -399,8 +399,8 @@ sub ScanForSites {
 ## Convert the collected sites to count matrices
 sub MatrixFromSites {
   my ($site_file, $matrix_file) = @_;
-  &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 0);
-  if ($main::verbose >= 0) {
+  &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
+  if ($main::verbose >= 3) {
       &RSAT::message::Info("\tInput sites", $site_file);
       &RSAT::message::Info("\tOutput matrices", $matrix_file);
   }
