@@ -987,7 +987,7 @@ sub UpdateEnsemblSupported {
     }
     
     my $name = $species.' '.$assembly;
-    $name =~ s/_/ /g;
+    $name =~ s/_/\ /g;
     chomp($name);
     ## Build the line for the currently installed species
     my $new_org_config = join ("\t",
@@ -1162,7 +1162,7 @@ sub UpdateVariationsSupported {
     if($already_exist == 0){
         my $name = $species." ".$assembly;
         chomp($name);
-        $name =~ s/_/ /g;
+        $name =~ s/_/\ /g;
         my $new_org_config = join ("\t",
                        $current_species_id,
                              ucfirst($name),

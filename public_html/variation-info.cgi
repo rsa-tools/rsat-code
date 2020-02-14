@@ -242,6 +242,7 @@ sub PipingForm {
 	    <FORM METHOD="POST" ACTION="retrieve-variation-seq_form.cgi">
 	    <INPUT type="hidden" NAME="variants_file" VALUE="$var_file">
 	    <INPUT type="hidden" NAME="input_type" VALUE="varBed">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="submit" value="retrieve variants sequence">
 	</FORM>
 	</TD>

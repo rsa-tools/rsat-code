@@ -17,6 +17,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
+require "RSAT_to_ensembl.lib.pl";
 use RSAT::util;
 use RSAT::Tree;
 use RSAT::TreeNode;
@@ -75,6 +76,7 @@ package main;
 		    ensembl_freq
                     clean
                     default
+            rewrite
 		    all
       );
 
@@ -292,6 +294,13 @@ package main;
     exit(0); # Available species is not compatible with any other task
   }
 
+    
+    ############ Rewrite table
+    if($task{rewrite}){
+        &RewriteConfigTab();
+        exit;
+    }
+    
   ################################################################
   ## Download the required files from NCBI FTP site
   if ($task{download}) {
@@ -1037,70 +1046,72 @@ sub RewriteConfigTab{
     if (-f $supported_organism_file) {
         my ($s_o_file) = &OpenInputFile($supported_organism_file);
         
+        ## Read supported_organisms_ensembl.tab
+        my $data_dir = &Get_data_dir();
+        open ($fen, $data_dir."/supported_organisms_ensembl.tab");
+        my %ensembl = ();
+        while (my $row = <$fen>){
+            chomp($row);
+            my @fields = split("\t", $row);
+            $ensembl{$fields[0]} = "\t".$fields[2]."\t".$fields[4]."\t".$fields[5];
+            #print $fields[0];
+        }
+        close($fen);
+        
+        my %blast = ();
+        my %variations = ();
+        
+        while(<$s_o_file>){
+            my @fields = split("\t");
+            my $key = $fields[0];
+            if(-d $data_dir."/genomes/".$key."/blast_hits"){
+                $blast{$key} = 1;
+            }else{
+                $blast{$key} = 0;
+            }
+            $variations{$key} = ();
+            if(-d $data_dir."/genomes/".$key."/variations"){
+                $variations{$key}{"variant_available"} = 1;
+                my $variant_source = `cat $variants_folder/source.txt`;
+                chomp($variant_source);
+                $variations{$key}{"source"} = $variant_source || "<NA>";
+                $variations{$key}{"path"} = &RSAT::util::hide_RSAT_path($data_dir."/genomes/".$key."/variations");
+            }else{
+                $variations{$key}{"variant_available"} = 0;
+                $variations{$key}{"source"} = "<NA>";
+                $variations{$key}{"path"} = "<NA>";
+            }
+        
+        }
+        close($s_o_file);
+        my ($s_o_file) = &OpenInputFile($supported_organism_file);
         ## Read the whole file of supported organisms from ensembl,
         ## and store species description lines in a hash indexed by
         ## full species ID, in order to sort them after having changed
         ## the current species fields.
-        my $l = 0;
-        while (<$s_o_file>) {
-            $l++;
+        open($fnew, ">", $data_dir."/supported_organisms_new.tab");
+        while (my $row = <$s_o_file>) {
             next if (/^;/); ## Skip comment lines
-            
-            #check if the table has already be rewritten
-            if(/^#/){
+            if($row =~ /^#/){
                 my @fields = split("\t");
-                if((scalar @fields) == 19){
-                    last;
-                }else{
-                    $new_file .= "#ID\tname\ttaxid\tsource\tlast_update\tnb\tseq_format\tup_from\tup_to\ttaxonomy\tdata\tgenome\tgenome_assembly\tgenome_version\tdownload_date\tvariant_available\tvariant_source\tpath_to_variant_files\tblast_available\n";
-                }
-            }
-            
-            next if (/^#/); ## Skip header line
-            next unless (/\S/); ## Skip empty lines
-            chomp();
-            my @fields = split("\t");
-            my $full_species_id = $fields[0];
-            #check if the species is already in the list
-            if($current_species_id eq $full_species_id){
-                $already_exist = 1;
-                # Build the line for the species
-                if($fields[12] eq "<NA>") { $fields[12] = $assembly; }
-                if($fields[13] eq "<NA>") { $fields[13] = $release; }
-                $fields[14] = &AlphaDate();
-                $fields[15] = 1;
-                $fields[16] = $source;
-                $fields[17] = &Get_variation_dir($species, $assembly,$ensembl_release, $species_suffix);
-                $species_description{$full_species_id} = join("\t", @fields);
+                print $fnew "#ID\tname\ttaxid\tsource\tlast_update\tnb\tseq_format\tup_from\tup_to\ttaxonomy\tdata\tgenome\tgenome_assembly\tgenome_version\tdownload_date\tvariant_available\tvariant_source\tpath_to_variant_files\tblast_available\n";
             }else{
-                $species_description{$full_species_id} = $_;
+                chomp($row);
+                my @fields = split("\t", $row);
+                my $full_species_id = $fields[0];
+                #check if the species is already in the list
+                my $newline = $row;
+                if(defined $ensembl{$full_species_id}){
+                    $newline .= $ensembl{$full_species_id};
+                }else{
+                    $newline .= ("\t<NA>")x3;
+                }
+                $newline .= "\t".$variations{$full_species_id}{"variant_available"}."\t".$variations{$full_species_id}{"source"}."\t".$variations{$full_species_id}{"path"}."\t".$blast{$full_species_id}."\n";
+                print $fnew $newline;
             }
         }
         close $s_o_file;
-    }
-    
-    ## Update blast column in config table if blast information is available
-    my $blast_folder=$supported_organism{$organism_short_name}->{'data'}."/blast_hits" ;
-    print "genome folder ". $genome_folder."\n";
-    if ( -d $blast_folder ){
-        $supported_organism{$organism_short_name}->{'blast_available'}= 1;
-    } else {
-        $supported_organism{$organism_short_name}->{'blast_available'}= 0;
-    }
-    ## Update variant columns in config table if variant information
-    my $variants_folder=$supported_organism{$organism_short_name}->{'data'}."/variations" ;
-    
-    print "variants folder" . $variants_folder."\n";
-    if ( -d $variants_folder ){
-        $supported_organism{$organism_short_name}->{'variant_available'}= 1;
-        my $variant_source = `cat $variants_folder/source.txt`;
-        chomp($variant_source);
-        $supported_organism{$organism_short_name}->{'variant_source'}= $variants_source || "<NA>";
-        $supported_organism{$organism_short_name}->{'path_to_variant_files'}= $variants_folder;
-    } else {
-        $supported_organism{$organism_short_name}->{'variant_available'}= 0;
-        $supported_organism{$organism_short_name}->{'variant_source'}= "<NA>";
-        $supported_organism{$organism_short_name}->{'path_to_variant_files'}= "<NA>";
+    	system("mv " . $data_dir . "/supported_organisms_new.tab " . $data_dir . "/supported_organisms.tab");
     }
 }
 

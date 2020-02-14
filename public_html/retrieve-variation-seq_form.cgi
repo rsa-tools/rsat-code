@@ -180,7 +180,7 @@ else {
     print "&nbsp;"x0, &OrganismPopUpString();
     print "<p>\n</div>";
     print "<div id='variations_popup'>";
-    print &OrganismPopUpString( "bg_org"=>"1");
+    print &OrganismPopUpString( "bg_org"=>"1" );
     print "<p></div>";
 }
 
