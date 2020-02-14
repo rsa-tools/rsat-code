@@ -1111,6 +1111,7 @@ sub RewriteConfigTab{
             }
         }
         close $s_o_file;
+    	system("mv " . $data_dir . "/supported_organisms_new.tab " . $data_dir . "/supported_organisms.tab");
     }
 }
 
