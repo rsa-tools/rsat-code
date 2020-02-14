@@ -1054,6 +1054,7 @@ sub RewriteConfigTab{
             chomp($row);
             my @fields = split("\t", $row);
             $ensembl{$fields[0]} = "\t".$fields[2]."\t".$fields[4]."\t".$fields[5];
+            #print $fields[0];
         }
         close($fen);
         
@@ -1098,10 +1099,11 @@ sub RewriteConfigTab{
                 chomp($row);
                 my @fields = split("\t", $row);
                 my $full_species_id = $fields[0];
+                print $full_species_id;
                 #check if the species is already in the list
                 my $newline = $row;
-                if(defined $enseml{$full_species_id}){
-                    $newline .= $enseml{$full_sepcies_id};
+                if(defined $ensembl{$full_species_id}){
+                    $newline .= $ensembl{$full_species_id};
                 }else{
                     $newline .= ("\t<NA>")x3;
                 }
