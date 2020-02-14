@@ -198,7 +198,7 @@ STATSDIR=${RSAT}/data/stats/
 calc_stats:
 	@echo Calculating stats of installed organisms
 	@mkdir -p ${STATSDIR}
-	@supported-organisms-plots -o data/stats/ -ref thaliana
+	@supported-organisms-plots -o data/stats/ -ref thaliana.TAIR
 
 ################################################################
 ## Check upstrean sequences of all installed species

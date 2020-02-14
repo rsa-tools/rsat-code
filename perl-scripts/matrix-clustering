@@ -1790,18 +1790,18 @@ sub pre_process_motif_files{
       ################################################################
       ## Check matrix number (required for verbose + if max matrices specified).
       if ($max_matrices > 0) {
-          &RSAT::message::TimeWarn("Checking max number of input matrices (".$max_matrices.")") if ($main::verbose >= 2);
-          &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file)
-          if ($main::verbose >= 2);
-          &RSAT::message::TimeWarn(scalar(@all_matrices), "Matrices loaded in total")
-          if ($main::verbose >= 2);
-          
-          if (scalar(@all_matrices) > $max_matrices) {
-              &RSAT::message::Warning("Input files contain ".scalar(@all_matrices)." matrices.",
-              "The analysis will be limited to the ".$max_matrices." first matrices (option -max_matrices).");
-              
-              @all_matrices = @all_matrices[1..$max_matrices];
-          }
+	if ($main::verbose >= 2) {
+	  &RSAT::message::TimeWarn("Checking max number of input matrices (".$max_matrices.")");
+          &RSAT::message::TimeWarn(scalar(@matrices), "Matrices loaded from file", $matrix_file);
+          &RSAT::message::TimeWarn(scalar(@all_matrices), "Matrices loaded in total");
+	}
+	if (scalar(@all_matrices) > $max_matrices) {
+	  &RSAT::message::Warning(
+	     "Input files contain ".scalar(@all_matrices)." matrices.",
+	     "The analysis will be limited to the ".$max_matrices." first matrices (option -max_matrices).");
+	  
+	  @all_matrices = @all_matrices[1..$max_matrices];
+	}
       }
       
       ## Create a single file combining all the matrices from all the current
