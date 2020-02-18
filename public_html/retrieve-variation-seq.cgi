@@ -66,12 +66,9 @@ if(!($organism eq "")){
         $assembly= $org_name_split[1] ;
 
     } else {
-
-
-
-    @org_name_split=split(" ",$organism_name);
-    $species=join("_", $org_name_split[0], $org_name_split[1]);
-    $assembly =$org_name_split[2];
+    	@org_name_split=split(" ",$organism_name);
+   	$species=join("_", $org_name_split[0], $org_name_split[1]);
+    	$assembly =$org_name_split[2];
     }
     
     $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
