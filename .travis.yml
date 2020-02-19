@@ -10,10 +10,10 @@ before_install:
   - "cpanm --sudo -v --installdeps --notest --cpanfile cpanfile ."
 
 before_script:
-  - "make install_auto"
+  - "make -f makefiles/travis.mk install_auto"
 
 script:
-  - "make test"
+  - "make -f makefiles/travis.mk test"
 
 notifications:
   email:
