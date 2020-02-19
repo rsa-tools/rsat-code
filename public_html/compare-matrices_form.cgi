@@ -45,7 +45,8 @@ $default{'return_NsEucl'} = "CHECKED";
 
 ## motif database
 #$default{compare_motif_database}="footprintDB-plants"; #"jaspar_core_nonredundant_vertebrates";
-$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates"; ## I (JvH) SHOULD ADAPT THIS IN ORDER TO PRESENT DIFFERENT DATABASES DEPENDING ON TAXON SPECIFICITY OF THE SERVER (2015-03-13)
+$default{compare_motif_collection}="jaspar_core_nonredundant_vertebrates"; ## I (JvH) SHOULD ADAPT THIS IN ORDER TO PRESENT DIFFERENT DATABASES DEPENDING ON TAXON SPECIFICITY OF THE SERVER (2015-03-13)
+$default{compare_motif_database} = "Jaspar";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -147,14 +148,17 @@ function setDemo(demo_matrices){
     $("#reset").trigger("click");
     descr1 = "<H2>Comment on the demonstration example 1</H2>\n<blockquote class =\"demo\">In this demo, we compare a set of motifs discovered with <i>peak-motifs</i> in a set of 1000 peak regions bound by the mouse transcription factor Otc4 (Chen et al., 2008).  </p>\n</blockquote>";
     demo_descr1.innerHTML = descr1;
-    matrix.value = demo_matrices;
-    $("#db_choice").val("' . $default{compare_motif_database} . '").trigger("change");
+    $("#matrix").val(demo_matrices);
+    
+    $("#dbs_choice").val("'. $default{compare_motif_database} .'").trigger("change");
+    $("#db_choice").val("jaspar_core_nonredundant_vertebrates");
 }
 function fileupload(){
     if($("#upload_custom_file").val() != ""){
-        $("#db_choice").val("custom").trigger("change");
+        $("#db_choice").val("").trigger("change");
     }
 }
+
 </script>';
 
 print '<button type="button" onclick="setDemo('. "'$demo_matrices'" .')">DEMO</button>';

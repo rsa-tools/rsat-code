@@ -1013,7 +1013,7 @@ sub UpdateEnsemblSupported {
     );
     
     ## Avoid to expose the full RSAT path
-    $new_org_config =~ s|$ENV{RSAT}|\$\{RSAT\}\/|g;
+    $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
     $new_org_config =~ s|\/\/|/|g;
     
     ## Index the new species description

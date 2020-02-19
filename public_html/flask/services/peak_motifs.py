@@ -47,13 +47,16 @@ class VariationInfo(Resource):
 			exclude = exclude + [x + '_string', x + '_string_type']
 		command = utils.perl_scripts + '/' + tool
 		result_dir = utils.make_tmp_dir(tool)
+		
+		boolean_var = ['noov', 'r_plot']
 		for param in data:
 			if param == 'str': 
 				command += ' ' + data['str']
-			elif data[param] == True:
-				command += ' -' + param
-			elif data[param] == False:
-				continue
+			elif param in boolean_var:
+			    if data[param] == True:
+				    command += ' -' + param
+			    elif data[param] == False:
+				    continue
 			elif data[param] is not None and data[param] != '' and param not in exclude:
 				command += ' -' + param + ' ' + str(data[param])
 		command += utils.parse_fileupload_parameters(data, fileupload_parameters, tool, result_dir, ',')

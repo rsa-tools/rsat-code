@@ -10,7 +10,6 @@ parameters:
       description: Verbosity
       type: int
       required: false
-      default: 1
     - name: m
       description: Matrix file transfac/tab format. If m is not specified, use m_string option
       type: file
@@ -32,7 +31,6 @@ parameters:
       description: alternative to the bg option.  Automatically choose a background file on the server based on the species name and assembly.
       type: int
       required: false
-      default: 2
     - name: bg
       description: Background file. Should be provided in  oligo-analysis file format. If no background file is specified, the options bg_string or markov_order will be used. 
       type: file
@@ -41,19 +39,15 @@ parameters:
       description: upper threshold for p value
       type: string
       required: false
-      default: 1e-3
     - name: lth_pval_ratio
       description: lower threshold for p value ratio
       type: int
       required: false
-      default: 10
     - name: lth_score
       description: weight of predicted sites
       type: string
       required: false
-      default: 1
     - name: lth_w_diff
       description: weight difference between variants
       type: string
       required: false
-      default: 1

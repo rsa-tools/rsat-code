@@ -40,15 +40,12 @@ parameters:
   - name: nmotifs
     description: max_motif_number
     type: int
-    default:
   - name: minol
     description: Minimal lengths of oligonucleotide for word-counting approaches
     type: int
-    default:
   - name: maxol
     description: Maximal length of oligonucleotide for word-counting approaches
     type: int
-    default:
   - name: markov
     description: Order of the Markov model used to estimate expected oligonucleotide frequencies
     type: string
@@ -56,11 +53,9 @@ parameters:
   - name: min_markov
     description: Minimal value can be specified for the Markov order
     type: int
-    default:
   - name: max_markov
     description: Maximal value can be specified for the Markov order
     type: int
-    default:
   - name: noov
     description: Treatment of self-overlapping words for motif discovery
     type: boolean

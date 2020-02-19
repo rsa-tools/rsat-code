@@ -10,7 +10,6 @@ parameters:
       description: Verbosity
       type: int
       required: false
-      default: 1
     - name: release
       description: The version of ensemble database. e.g. 84
       type: int
@@ -24,9 +23,7 @@ parameters:
       description: Length of the longest Matrix
       type: int
       required: false
-      default: 30
     - name: col
       description: Column containing the variation IDs with the input format 'id'
       type: string
       required: false
-      default: 1

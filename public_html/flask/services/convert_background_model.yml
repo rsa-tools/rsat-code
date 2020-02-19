@@ -1,0 +1,53 @@
+descr:
+
+    Interconversions between formats of background models supported by different programs (oligo-analysis, dyad-analysis, matrix-scan, patser, consensus, MotifLocator, MotifSampler, MEME, ...).
+
+---
+parameters:
+    - name: i
+      description: input_file. The input file contains a background model, in any of the supported formats.
+      type: file
+    - name: org
+      description: organism_name. Specify an organism supported in RSAT, in order to load a background model from the pre-computed organism-specific models supported in RSAT. This option must be combined with the optin -bg.
+      type: string
+    - name: bg
+      description: background model. Type of sequences used as background model for estimating expected oligonucleotide frequencies.
+      type: string
+    - name: seq_type
+      description: Sequence type
+      type: string
+      choices: dna, protein
+    - name: markov
+      description:  Markov chain order for the background model.
+      type: int
+    - name: noov
+      description:  Prevent overlap between successive occurrences of self-overlpping words.
+      type: boolean
+    - name: ovlp
+      description: Count overlapping occurrences of self-overlpping words.
+      type: boolean
+    - name: 1str
+      description: Strand-sensitive background model
+      type: boolean
+    - name: 2str
+      description: Strand-insensitive background model
+      type: boolean
+    - name: from
+      description: input_format. Input format. Supported - motifsampler,ms,oligo-analysis,meme,oligos,dyads.
+      type: string
+      choices: motifsampler,ms,oligo-analysis,meme,oligos,dyads
+      default: oligo-analysis
+    - name: to
+      description: output format. Supported - transitions, tab, oligo-analysis, oligos, meme, motifsampler, ms, inclusive, patser, tables.
+      type: string
+      choices: transitions, tab, oligo-analysis, oligos, meme, motifsampler, ms, inclusive, patser, tables
+      default: transitions
+    - name: bg_pseudo
+      description: Pseudo frequency for the background models. Value must be a real between 0 and 1 If the training sequence length (L) is known, the value can be set to square-root of L divided by L+squareroot of L
+      type: float
+    - name: decimals
+      description: Number of decimals to print or the transition probabilities.
+      type: int
+    - name: to2str
+      description: Convert to a strand-insensitive background model, by averaging transition frequencies on each pair of reverse complements.
+      type: boolean

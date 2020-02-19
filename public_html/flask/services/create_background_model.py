@@ -11,7 +11,7 @@ sys.path.append(service_dir + '/../')
 import utils
 from rest_server import app, api
 
-tool = 'supported-organisms'
+tool = 'create-background-model'
 ### Read parameters from yaml file
 (descr, get_parser, post_parser) = utils.read_parameters_from_yml(api, service_dir+'/'+tool.replace('-','_') + '.yml')
 ns = api.namespace(tool, description=descr)
@@ -39,15 +39,23 @@ class SupportedOrganisms(Resource):
         return self._run(data)
     
     def _run(self,data):
-        output_choice = 'display'
+        output_choice = 'display'        
+        fileupload_parameters = ['i']
+        exclude = fileupload_parameters + ['content-type']
+        for x in fileupload_parameters:
+            exclude = exclude + [x + '_string', x + '_string_type']
+            
+        result_dir = utils.make_tmp_dir(tool)
         command = utils.perl_scripts + '/' + tool
-        boolean_var = ['unique_species','unique_genus']
+        
+        boolean_var = []
         for param in data:
             if param in boolean_var:
                 if data[param] == True:
                     command += ' -' + param
                 elif data[param] == False:
                     continue
-            elif data[param] is not None and data[param] != '' and param != 'content-type':
+            elif data[param] is not None and data[param] != '' and not param in exclude:
                 command += ' -' + param + ' ' + str(data[param])
-        return utils.run_command(command, output_choice, tool, 'txt','')
+        command += utils.parse_fileupload_parameters(data, fileupload_parameters, tool, result_dir, ',') 
+        return utils.run_command(command, output_choice, tool, data['out_format'], result_dir)

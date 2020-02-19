@@ -1,0 +1,50 @@
+descr:
+
+    Interconversions between various formats of feature description.
+
+---
+parameters:
+    - name: i
+      description: input_file. if not specified, the standard input is used. This allows to place the command within a pipe.
+      type: file
+    - name: from
+      description: input_format. Input format. Supported - galaxy_seq,ucsc2_seq,bed,gff,gff3,swembl,getfasta_seq,dnapat,gtf,ft,bed3col,gft.
+      type: string
+      choices: galaxy_seq,ucsc2_seq,bed,gff,gff3,swembl,getfasta_seq,dnapat,gtf,ft,bed3col,gft
+      default: dnapat
+    - name: to
+      description: output format. Supported - fasta,bed3col,gft,ft,dnapat,great,gff3,bed,gff.
+      type: string
+      choices: fasta,bed3col,gft,ft,dnapat,great,gff3,bed,gff
+      default: ft
+    - name: add_chr
+      description: only for BED output - add "chr" in front of the chromosome name and change MT into chrM
+      type: boolean
+    - name: remove_chr
+      description: Remove the "chr" in front of the chromosone and change chrM into MT
+      type: boolean
+    - name: yeast_to_roman
+      description: Convert arabic to roman numbers to denote chromosome numbers according to S.cerevisiae specifications. Only works for chromosomes I to XVI.
+      type: boolean
+    - name: featname
+      description: Set a name for all features of the file. This option can be convenient for conversions to bed files.
+      type: boolean
+    - name: summits
+      description: only valid for SWEMBL input - replace start and end coordinates by peak summit position
+      type: boolean
+    - name: extend
+      description: extend peak coordinates on both sides (start and end).
+      type: int
+    - name: extend_start
+      description: extend start coordinate leftwise.
+      type: int
+    - name: extend_end
+      description: extend end coordinate rightwise.
+      type: int
+    - name: coord
+      description: bedfile with absolute coordinate of the sequence relative to which the features were defined (e.g. features from promoter-wise to genome-wise coordinates).
+      type: boolean
+    - name: origin
+      description: Origin of coordinates relative to sequence fragment. This option is only valid when combined with the option coord.
+      type: string
+      choices: start,end,center

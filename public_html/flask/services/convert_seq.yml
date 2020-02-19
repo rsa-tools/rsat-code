@@ -1,0 +1,86 @@
+descr:
+    Converts sequences between different formats. Optionally, also returns the reverse-complement of the input sequences, or perform some cleaning operations (skip short sequences, suppress Ns, ...).
+---
+parameters:
+  - name: i
+    description: inputfile.
+    type: file
+    required: false
+  - name: mask
+    description: Mask lowercases, uppercases, or non-dna characters, respecively. Masked characters are replaced by by N characters, or by a dot (option -dotmask).
+    type: string
+    choices: upper, lower, non-dna
+    required: false
+  - name: noempty
+    description: Remove empty sequences from the set (same as -skip_short 1).
+    type: boolean
+    required: false
+  - name: mask_short
+    description: min_seq_len. Mask (replace by N characters) sequences shorter than the specified length.
+    type: int
+    required: false
+  - name: skip_short
+    description: min_seq_len. Skip sequences shorter than the specified length. Same functionality as -mask_short, except that short sequences are not returned at all in the output.
+    type: int
+  - name: skip_long
+    description: max_seq_len. Skip sequences longer than the specified length.
+    type: int
+    required: false
+  - name: last
+    description: Stop after the Nth sequence.
+    type: int
+  - name: top
+    description: Same as -last N
+    type: int
+  - name: first
+    description: Start at the Nth sequence (skip the N-1 first sequences).
+    type: int
+  - name: skip
+    description: Skip the N first sequences (start at sequence N+1).
+    type: int
+  - name: from
+    description: input format. Supported - embl, fasta, filelist, ft, gcg, genbank, ig, maf,multi, ncbi, raw,tab,wc, wconsensus
+    type: string
+    choices: embl, fasta, filelist, ft, gcg, genbank, ig, maf,multi, ncbi, raw,tab,wc, wconsensus
+    default: fasta
+  - name: to
+    description: output format. Supported - fasta, fastq, filelist, ft, ig, multi, raw, tab, wc, wconsensus
+    type: string
+    choices: fasta, fastq, filelist, ft, ig, multi, raw, tab, wc, wconsensus
+    default: wconsensus
+  - name: id_col
+    description: column containing sequence identifiers in tab format.
+    type: int
+  - name: seq_col
+    description: column containing sequence sequences in tab format.
+    type: int
+  - name: comment_col
+    description: column containing sequence comments (sequence description) in tab format.
+    type: int
+  - name: lw
+    description: line width. A carriage return is inserted every lw characters within the output sequence.
+    type: int
+  - name: addrc
+    description: adds the reverse complement of each input sequence to the output file.
+    type: boolean
+  - name: lc
+    description: lowercase. the sequence is printed in lowercase.
+    type: boolean
+  - name: uc
+    description: uppercase. the sequence is printed in uppercase.
+    type: boolean
+  - name: dna
+    description: convert any non-acgt character into "n" characters.
+    type: boolean
+  - name: dotmask
+    description: convert masked characters into dots.
+    type: boolean
+  - name: id
+    description: identifier. sequence identifier (useful for converting a raw sequence from the STDIN)
+    type: string
+  - name: prefix
+    description: sequence prefix (useful for converting from a multi sequence)
+    type: string
+  - name: nocheckid
+    description: Prevent to check sequence IDs for conversion to file list.
+    type: boolean
