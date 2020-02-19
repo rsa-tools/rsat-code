@@ -95,9 +95,50 @@ print "</div></div></div>";
 
 print "<hr>";
 ####### useful link
-print "<script>
+print '<script>
+function setDemo(){
+    $.ajax({
+        url:setDemo1(),
+        success:function(){
+            setDemo2();
+        }
+        });
+}
+function setDemo1(){
+    $("#dbs_choice").val("Jaspar").change();
+}
+function setDemo2(){
+    $("#db_choice").val("jaspar_core_nonredundant_vertebrates").change();
+    
+}
+function setDemo3(){
+    $("input[name=output][value=display]").prop("checked", true);
+    $("#db_id_retrieve").val(["MA0019_1", "MA0031_1"]).change();
+}
 
-</script>";
+function reset(){
+    $("#dbs_choice").val("").change();
+}
+
+function sendemail(){
+    email = $("#user_email").val();
+    db_name = $("#dbs_choice").val();
+    collection_name = $("#db_choice").val();
+    db_id = $("#db_id_retrieve").val();
+    if(db_id != "" && db_id != null){
+        $.ajax({
+            type: "GET",
+            url:"getMatrixIds.cgi?dbs_chocie=" + db_name + "&db_choice=" + collection_name + "&db_id=" + db_id + "&mode=retrieveemail&user_email=" + email,
+            success: function(data){
+                $("#sendemailmsg").html(data);
+                document.getElementById("sendemailmsg").style.display = "block";
+            }
+        });
+    }
+}
+
+</script>';
+
 print '<br/><button type="reset" onclick="reset()">RESET</button>&nbsp;<button type="button" onclick="setDemo()">DEMO</button>';
 
 print "&nbsp;<b><A class='iframe' HREF='help.retrieve-matrix.html'>MANUAL</A>&nbsp; ";

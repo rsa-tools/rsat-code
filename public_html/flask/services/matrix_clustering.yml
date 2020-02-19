@@ -1,0 +1,103 @@
+descr:
+    Apply hierarchical clustering to identify clusters of similar motifs.
+---
+parameters:
+  - name: matrix_1
+    description: The input file contains a set of position-specific scoring matrices (mandatory). If matrix is not specified, use matrix_string option
+    type: file
+    required: false
+  - name: matrix_title_1
+    description: The matrix_title will be concatenated to each motif ID in order to create unique motif IDs.
+    type: string
+  - name: matrix_format_1
+    description: Since the program takes several matrices as input, it only accepts matrices in formats supporting several matrices per file (transfac, tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe).
+    type: string
+  - name: matrix_2
+    description: The input file contains a set of position-specific scoring matrices (mandatory). If matrix is not specified, use matrix_string option
+    type: file
+    required: false
+  - name: matrix_title_2
+    description: The matrix_title will be concatenated to each motif ID in order to create unique motif IDs.
+    type: string
+  - name: matrix_format_2
+    description: Since the program takes several matrices as input, it only accepts matrices in formats supporting several matrices per file (transfac, tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe).
+    type: string
+  - name: matrix_3
+    description: The input file contains a set of position-specific scoring matrices (mandatory). If matrix is not specified, use matrix_string option
+    type: file
+    required: false
+  - name: matrix_title_3
+    description: The matrix_title will be concatenated to each motif ID in order to create unique motif IDs.
+    type: string
+  - name: matrix_format_3
+    description: Since the program takes several matrices as input, it only accepts matrices in formats supporting several matrices per file (transfac, tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe).
+    type: string
+  - name: matrix_file_table
+    description: This option is recommended when the input number of files is large, more than 20, which would have a large command line and some programs are not capable of read such large arguments. The input file contains a tab-delimited table with two columns, the motif file - The path to the file with the motif, and the collection label.
+    type: file
+  - name: max_matrices
+    description: This option specifies how many matrices can be clustered in the same analysis. If there are more matrices than the specified number, the program restrics the analyses to the first X matrices, and issues a warning.
+    type: int
+  - name: title
+    description: Title displayed on top of the report page
+    type: string
+  - name: ID_link_color_table
+    description: This option allows to add a link to a any website specified by the user and can be used to visualize complete databases (e.g. Jaspar), thus each motif in the logo tree will point to its respective link in the Jaspar website.
+    type: string
+  - name: label_in_tree
+    description: Option to select the labels displayed in the logo tree.
+    type: string
+  - name: task
+    description: Specify one or several tasks to be run. Supported tasks - all, comparison, clustering, report
+    type: string
+    choices: all, comparison, clustering, report
+    default: all
+  - name: hclust_method
+    description: Option to select the agglomeration rule for hierarchical clustering.
+    choices: complete, average, single
+    type: string
+    default: average
+  - name: metric_build_tree
+    description: Select the metric which will be used to cluster the motifs.based in one metric of to measure motif similarity.
+    type: string
+    choices: cor, Ncor, dEucl, NdEucl, logocor, logoDP, Nlogocor, Icor, NIcor, SSD, rank_mean, mean_zscore
+    default: Ncor
+  - name: lth_w
+    description: lower threshold.
+    type: float
+  - name: lth_cor
+    description: lower threshold.
+    type: float
+  - name: lth_Ncor
+    description: lower threshold.
+    type: float
+  - name: uth_w
+    description: upper threshold.
+    type: float
+  - name: uth_cor
+    description: upper threshold.
+    type: float
+  - name: uth_Ncor
+    description: upper threshold.
+    type: float
+  - name: calc
+    description: Specify the operator used to merge matrices (argument passed to merge-matrices).
+    type: string
+    choices: mean, sum
+    default: mean
+  - name: quick
+    description: With this option the motif comparison is done with the program compare-matrices-quick (implemented in C) rather than the program compare-matrices (implemented in Perl).
+    type: boolean
+  - name: top_matrices
+    description: Only analyze the first X motifs of the input file. This options is convenient for quick testing before starting the full analysis.
+    type: int
+  - name: skip_matrices
+    description: Skip the first X motifs of the input file. This options is convenient for testing the program on a subset of the motifs before starting the full analysis.
+    type: int
+  - name: return
+    description: List of fields to return. Supported fields - heatmap,json,newick,root_matrices.
+    type: string
+    default: json,heatmap
+  - name: o
+    description: Prefix for the output files.
+    type: string

@@ -36,6 +36,7 @@ get_environ_vars(props_file)
 rsat_home = os.environ['RSAT']
 rsat_bin = os.environ['RSAT_BIN']
 perl_scripts = rsat_home + '/perl-scripts'
+python_scripts = rsat_home + '/python-scripts'
 public_html = rsat_home + '/public_html'
 
 param_types = {'string':str, 'int':int, 'file':FileStorage, 'boolean':inputs.boolean, 'float':float}

@@ -1,0 +1,77 @@
+descr:
+    Scanning of predicted sites on sequence. And Detection of putative cis-regulatory enriched regions (CRERs).
+---
+parameters:
+  - name: i
+    description: input file.
+    type: file
+    required: false
+  - name: in_format
+    description: input_format.
+    type: string
+    choices: ft, bed
+    default: ft
+    required: false
+  - name: autoparam
+    description: Extract some input parameters from the commented rows (starting with ';') of the input file.
+    type: boolean
+    required: false
+  - name: s
+    description: Sort the list of sites.
+    type: boolean
+    required: false
+  - name: return_limits
+    description: return every limits of sequences
+    type: boolean
+  - name: return_limits_filtered
+    description: return the limits filtered of the sequence.
+    type: boolean
+    required: false
+  - name: uth_site_pval
+    description: maximal p-value of sites to be considered.
+    type: string
+  - name: number_of_matrix
+    description: number of matrix used for the discovery of transcription factor binding sites.
+    type: int
+  - name: lth_score
+    description: minimal site score to be considered
+    type: float
+  - name: uth_score
+    description: maximal site score to be considered
+    type: float
+  - name: lth_crer_size
+    description: minimal size of the enriched region (in bp).
+    type: string
+  - name: uth_crer_size
+    description: maximal size of the enriched region (in bp).
+    type: float
+  - name: lth_crer_sites
+    description: minimal number of sites covered by the enriched region.
+    type: float
+  - name: uth_crer_sites
+    description: maximal number of sites covered by the enriched region
+    type: float
+  - name: lth_crer_sites_distance
+    description: distance between successive sites to be considered..
+    type: float
+  - name: uth_crer_sites_distance
+    description: distance between successive sites to be considered.
+    type: float
+  - name: uth_crer_pval
+    description: maximal binomial p-value
+    type: string
+  - name: uth_crer_eval
+    description: maximal e-value
+    type: string
+  - name: lth_crer_sig
+    description: minimal binomial significance
+    type: float
+  - name: uth_overlap
+    description: maximal overlap to define two distinct sites
+    type: int
+  - name: nopval
+    description: compute crer without p value
+    type: boolean
+  - name: pre_table
+    description: compute a table where is all possible p_value
+    type: boolean

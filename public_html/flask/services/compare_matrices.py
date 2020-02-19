@@ -12,24 +12,24 @@ sys.path.append(service_dir + '/../')
 import utils
 from rest_server import app,api
 
-tool = 'convert-variations'
+tool = 'compare-matrices'
 ### Read parameters from yaml file
-(descr, get_parser, post_parser) = utils.read_parameters_from_yml(api, service_dir+'/' + tool.replace('-','_') + '.yml')
+(descr, get_parser, post_parser) = utils.read_parameters_from_yml(api, service_dir+'/' + tool.replace('-','_') +'.yml')
 
 ns = api.namespace(tool, description=descr)
 
 ################################################################
 ### Get information about polymorphic variations
-@ns.route('/', methods=['POST','GET'])
+@ns.route('/',methods=['POST','GET'])
 class VariationInfo(Resource):
 	@api.expect(get_parser)
 	def get(self):
-        	data = get_parser.parse_args()
+    		data = get_parser.parse_args()
 		if data['content-type'] == 'text/plain':
 			resp = self._run(data)
 			return utils.output_txt(resp,200)
 		return self._run(data)
-    			
+	
 	@api.expect(post_parser)
 	def post(self):
 		data = []
@@ -39,23 +39,31 @@ class VariationInfo(Resource):
 			data = post_parser.parse_args()
 		return self._run(data)
 	
-	def _run(self,data):
+	def _run(self, data):
 		output_choice = 'display'
-		fileupload_parameters = ['i']
+		fileupload_parameters = ['file1','file2','file']
 		exclude = fileupload_parameters + ['content-type']
 		for x in fileupload_parameters:
-		    exclude = exclude + [x + '_string', x + '_string_type']
+			exclude = exclude + [x + '_string', x + '_string_type']
 		command = utils.perl_scripts + '/' + tool
 		result_dir = utils.make_tmp_dir(tool)
 		
-		boolean_var = ['phased']
+		boolean_var = ['distinct']
 		for param in data:
 		    if param in boolean_var:
 		        if data[param] == True:
 		            command += ' -' + param
 		        elif data[param] == False:
 		            continue
-			elif data[param] is not None and data[param] != '' and not param in exclude:
-			    command += ' -' + param + ' ' + str(data[param])
-		command += utils.parse_fileupload_parameters(data, fileupload_parameters, tool, result_dir, ',') 
-		return utils.run_command(command, output_choice, tool, 'varBed', result_dir)		
+		    elif data[param] is not None and data[param] != '' and param not in exclude:
+		        if 'uth_' in param:
+		            uth_type = param.split('_', 1)
+		            command += ' -uth ' + uth_type[1] + ' ' + str(data[param])
+		        elif 'lth_' in param:
+		            lth_type = param.split('_', 1)
+		            command += ' -lth ' + lth_type[1] + ' ' + str(data[param])
+		        else: 
+			        command += ' -' + param + ' ' + str(data[param])
+		command += utils.parse_fileupload_parameters(data, fileupload_parameters, tool, result_dir, ',')
+		command += ' -o ' + result_dir + '/compare-matrices.tab'  
+		return utils.run_command_background(command, tool, result_dir, 'compare-matrices_index.html')
