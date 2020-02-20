@@ -1,0 +1,130 @@
+descr:
+    Evaluate the quality of a Position-Specific Scoring Matrix (PSSM), by comparing score distributions obtained with this matrix in various sequence sets.
+---
+parameters:
+  - name: m
+    description: matrix file.
+    type: file
+    required: false
+  - name: ms
+    description: matrix_sites. File containing both a matrix and its sites.
+    type: file
+  - name: top
+    description: Maximal number of matrices to analyze.
+    type: int
+    required: false
+  - name: matrix_format
+    description: Matrix format.
+    type: string
+    required: false
+  - name: seq_type
+    description: the type of the sequence (which will appear in the leend of the plots). This option is mandatory.
+    type: string
+  - name: seq_file
+    description: File containing a sequence set of a given type. This option is mandatory.
+    type: file
+  - name: seq_type_2
+    description: the type of the sequence (which will appear in the leend of the plots). This option is optional.
+    type: string
+  - name: seq_file_2
+    description: File containing a sequence set of a given type. This option is optional.
+    type: file
+  - name: seq_format
+    description: Sequence format.
+    type: string
+  - name: scanopt
+    description: seq_type "option1 option2 ...". Sequence set-specific options for matrix-scan. These options are added at the end of the matrix-scan command for scanning the specified sequence set.
+    type: string
+  - name: no_cv
+    description: Do not apply the leave-one-out (LOO) test on the matrix site sequences.
+    type: boolean
+    required: false
+  - name: kfold
+    description: k-fold cross-validation. Divide the matrix sites in k chunks for cross-validation..
+    type: int
+  - name: noperm
+    description: Skip the matrix permutation step.
+    type: boolean
+  - name: noscan
+    description: Skip the matrix-scan step.
+    type: boolean
+  - name: nocompa
+    description: Skip the step of comparisons between distributions.
+    type: boolean
+  - name: nograph
+    description: Skip the step of drawing comparison graphs.
+    type: boolean
+  - name: noicon
+    description: Do not generate the small graphs (icons) used for the galleries in the indexes.
+    type: boolean
+  - name: export_hits
+    description: Return matrix-scan scores in addition to the distribution of scores.
+    type: boolean
+  - name: perm_sep
+    description: Calculate the distributions for each permuted matrix separately.
+    type: boolean
+  - name: perm
+    description: Number of permutations for a specific set (default 0).
+    type: int
+  - name: perm_2
+    description: Number of permutations for a specific set (default 0). Optional.
+    type: int
+  - name: pseudo
+    description: Pseudo-counts. The pseudo-count reflects the possibility that residues that were not (yet) observed in the model might however be valid for future observations.
+    type: int
+  - name: org
+    description: organism name for background model. Only if bgfile is not specified.
+    type: string
+  - name: markov_order
+    description: markov order for background model. Only if bgfile is not specified.
+    type: int
+  - name: bgfile
+    description: Background model to be used to calculate the matrix theoretical distribution.
+    type: file
+  - name: bg_format
+    description: Format for the background model file.
+    type: string
+  - name: bg_pseudo
+    description: from 0 to 1
+    type: float
+  - name: decimals
+    description: Number of decimals for computing weight scores (default 2).
+    type: int
+  - name: graph_option
+    description: Specify options that will be passed to the program XYgraph for generating the distributions and the ROC curves.
+    type: string
+  - name: roc_ref
+    description: Reference distribution for the ROC curve.
+    type: string
+  - name: roc_option
+    description: Specify options that will be passed to the program XYgraph for generating the ROC curves (ot the distribution curves).
+    type: string
+  - name: distrib_option
+    description: Specify options that will be passed to the program XYgraph for generating the distribution curves (not the ROC curves).
+    type: string
+  - name: img_format
+    description: Image format for the plots (ROC curve, score profiles, ...).
+    type: string
+  - name: r_plot
+    description: Generate plots using R instead of the Perl GD module.
+    type: boolean
+  - name: logo_format
+    description: Image format for the sequence logos.
+    type: string
+  - name: plot
+    description: Additions plots will be drawn to compare - a) The enrichment of scores in a set of sequences for different matrices b) The enrichment of scores in different sequence sets for one matrix. Supported - nwd, occ_proba
+    type: string
+    choices: nwd,occ_proba
+  - name: plot_2
+    description: Additions plots will be drawn to compare - a) The enrichment of scores in a set of sequences for different matrices b) The enrichment of scores in different sequence sets for one matrix. Supported - nwd, occ_proba
+    type: string
+    choices: nwd,occ_proba
+  - name: archive
+    description:
+    type: boolean
+  - name: html_title
+    description: Get a title for the html page.
+    type: string
+  - name: task
+    description: Specify one or several tasks to be run. Supported - scan,theor,loo,theor_cv,permute,compare,graphs,synthesis,plot
+    type: string

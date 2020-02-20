@@ -1,0 +1,153 @@
+descr:
+    Detect phylogenetic footprints by applying dyad-analysis in promoters of a set of orthologous genes.
+---
+parameters:
+  - name: q
+    description: Query gene. Can be multiple genes, separated by ','
+    type: string
+    required: false
+  - name: genes
+    description: Specify a file containing a list of genes. Multiple genes can also be specified by using iteratively the option -q.
+    type: file
+  - name: org_list
+    description: This option gives the posibility to analyse a user-specified set of reference organisms rather than a full taxon.
+    type: file
+    required: false
+  - name: orthologs_list
+    description: This option gives the posibility to analyse a user-specified set of orthologs for specific reference organisms instead of using the BBH set of orthologs provided by RSAT.
+    type: file
+    required: false
+  - name: org
+    description: Query organism, to which the query genes belong.
+    type: string
+  - name: taxon
+    description: Reference taxon, in which orthologous genes have to be collected.
+    type: string
+  - name: max_dyad_degree
+    description: Maximal dyad degree for network inference. Default 20.
+    type: int
+    required: false
+  - name: max_genes
+    description: Maximal number of genes to analyze.
+    type: int
+  - name: skip
+    description: Skip the first N genes (useful for quick testing and for resuming interrupted tasks).
+    type: int
+    required: false
+  - name: last
+    description: Stop after having treated the first N genes (useful for quick testing).
+    type: int
+  - name: use_tree_org
+    description: Only uses organisms in the phylogenetic tree for orthologs search.
+    type: boolean
+  - name: all_genes
+    description: Automatically analyze all the genes of a query genome, and store each result in a separate folder (the folder name is defined automatically).
+    type: boolean
+  - name: unique_species
+    description: Retain at most one organism per species. This enables to filter out the numerous strains sequences for some species of particular interest. (e.g. Escherichia coli, Bacillus subtilis, ...).
+    type: boolean
+  - name: unique_genus
+    description: Retain at most one organism per genus. Same filter as for -unique_species, but at the level of the genus.
+    type: boolean
+  - name: bg_model
+    description: background model. Allow the user to choose among alternative background model (see Janky & van Helden, 2008).
+    type: string
+    choices: monads, taxfreq, org_list, file
+  - name: bgfile
+    description: File containing the word frequencies to be used as the background model for dyad-analysis. This option must be used in combination with the option -bg_model file
+    type: file
+  - name: lth_occ
+    description: lower threshold.
+    type: float
+  - name: lth_occ_P
+    description: lower threshold.
+    type: float
+  - name: lth_occ_E
+    description: lower threshold.
+    type: float
+  - name: lth_occ_sig
+    description: lower threshold.
+    type: float
+  - name: lth_observed_freq
+    description: lower threshold.
+    type: float
+  - name: lth_zscore
+    description: lower threshold.
+    type: float
+  - name: lth_ratio
+    description: lower threshold.
+    type: float
+  - name: lth_rank
+    description: lower threshold.
+    type: float
+  - name: uth_occ
+    description: upper threshold.
+    type: float
+  - name: uth_occ_P
+    description: upper threshold.
+    type: float
+  - name: uth_occ_E
+    description: upper threshold.
+    type: float
+  - name: uth_occ_sig
+    description: upper threshold.
+    type: float
+  - name: uth_observed_freq
+    description: upper threshold.
+    type: float
+  - name: uth_zscore
+    description: upper threshold.
+    type: float
+  - name: uth_ratio
+    description: upper threshold.
+    type: float
+  - name: uth_rank
+    description: upper threshold.
+    type: float
+  - name: dist_thr
+    description: Specify here the intergenic distance threshold in base pairs.
+    type: int
+  - name: task
+    description: Specify a subset of tasks to be executed. Supported - all, operons, query_seq, orthologs, ortho_seq, purge, gene_index, index, filter_dyads, dyads, map, network
+    type: string
+  - name: return
+    description: Return fields for dyad-analysis. This argument is passed to dyad-analysis for the discovery of dyads in promoters of orthologous genes. output fields may contain one or several of the following words - freq, occ, proba, zscore, ratio, rank
+    type: string
+    default: occ,proba,rank
+  - name: no_purge
+    description: This option can only be used combined with the -org_list option, this gives the posibility to analyse a given set of sequences managing sequence redundancy using a list of "no redundant" organisms.
+    type: boolean
+  - name: batch
+    description: Generate one command per query gene, and post it on the queue of a PC cluster.
+    type: boolean
+  - name: dry
+    description: Dry run - print the commands but do not execute them.
+    type: boolean
+  - name: nodie
+    description: Do not die in case a sub-program returns an error.
+    type: boolean
+  - name: sep_genes
+    description: Search footprints for each query gene separately.
+    type: boolean
+  - name: infer_operons
+    description: Infer operons in order to retrieve the promoters of the predicted operon leader genes rather than those located immediately upstream of the orthologs.
+    type: boolean
+  - name: filter
+    description: Only accept dyads found in the promoter of the query gene, in the query organism. (option selected by default)
+    type: boolean
+  - name: no_filter
+    description: Accept all dyads, even if they are not found in the promoter of the query gene, in the query organism. (will cancel -filter option if selected).
+    type: boolean
+  - name: rand
+    description: When the option -rand is activated, the program replaces each ortholog by a gene selected at random in the genome where this ortholg was found.
+    type: boolean
+  - name: diamond
+    description: Use ranks_dmnd.tab from diamond blast computed in genome-blast.
+    type: boolean
+  - name: synthesis
+    description: This option generated synthetic tables (in tab-delimited text and html) for all the results.
+    type: boolean
+  - name: map_format
+    description: Format for the feature map.
+    type: string
+    choices: jpg,gif,png,ps

@@ -1,0 +1,57 @@
+descr:
+    Gibbs sampling algorithm for motifs discovery. Searches for highly conserved motifs in a set of DNA sequences.
+---
+parameters:
+    - name: i
+      description: Input file.
+      type: file
+      required: false
+    - name: w
+      description: set the motif width to w
+      type: int
+    - name: maxspacing
+      description: set maximal spacing between motif monad to maxspacing (only for dyadic motif).
+      type: int
+      required: false
+    - name: minspacing
+      description: set minimal spacing between motif monad to minspacing (only for dyadic motif).
+      type: int
+      required: false
+    - name: strand
+      description: search in foward strand + or in both strands +-
+      type: string
+      required: false
+    - name: n
+      description:  maximum number of Gibbs sampling iterations.
+      type: int
+      required: false
+    - name: sites
+      description: number of motif occurrences that are expected to be found (incompatible with -e)
+      type: int
+    - name: e
+      description: mean number of motif occurrences (sites) expected per sequence that are expected to be found (incompatible with --sites)
+      type: float
+    - name: zoops
+      description: try to find 0 or 1 site per sequence
+      type: boolean
+    - name: m
+      description: number of motifs to extract (one by default)
+      type: int
+    - name: b
+      description: use b predefined INCLUSive background model
+      type: int
+    - name: d
+      description: set minimal distance between 2 motif occurrences to d
+      type: int
+    - name: t
+      description: set the temperature (should be in range [0.6 1.4])
+      type: float
+    - name: r
+      description: try to run the Gibbs sampling seach r times
+      type: int
+    - name: collect
+      description: try to collect the N best sites using their weight scores
+      type: int
+    - name: seedmatrix
+      description: start sampling form sites collected by scanning the sequences with matrix seedmatrix
+      type: string

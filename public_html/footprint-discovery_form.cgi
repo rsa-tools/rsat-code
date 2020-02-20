@@ -178,8 +178,8 @@ function setDemo(){
     \$('#queries').val('lexA');
     
     \$('#organism').val('Escherichia_coli_GCF_000005845.2_ASM584v2');
-    \$('#organism_name').val('Escherichia coli GCF_000005845.2 ASM584v2');
-    \$('#taxon_name').val('Gammaproteobacteria');
+    \$('#organism_name').val('Escherichia coli GCF_000005845.2 ASM584v2').trigger('change');
+    \$('#taxon_name').val('Gammaproteobacteria').trigger('change');
     \$('#taxon').val('Gammaproteobacteria');
     unique_taxon.value = 'genus';
 }
