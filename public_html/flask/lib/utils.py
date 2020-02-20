@@ -100,7 +100,7 @@ def get_backgroundfile(org, oligo_len, background="upstream-noorf"):
 	
 	:return: name of background file
 	"""
-	command = "perl -e 'use lib \"" + perl_scripts + "/lib/\"; use RSAT::OrganismManager; $x=&RSAT::OrganismManager::ExpectedFreqFile(" + org + ","+ str(oligo_len) +",\""+ background+"\", str=>\"-1str\", noov=>\"ovlp\"); print $x;'"
+	command = "perl -e 'use lib \"" + perl_scripts + "/lib/\"; use RSAT::OrganismManager; $x=&RSAT::OrganismManager::ExpectedFreqFile(\"" + org + "\","+ str(oligo_len) +",\""+ background+"\", str=>\"-1str\", noov=>\"ovlp\"); print $x;'"
 	p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	file = p.stdout.readline()
 	return file

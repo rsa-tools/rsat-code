@@ -1,0 +1,113 @@
+descr:
+    Draws a graphical map of features (e.g. results of pattern matching) in a set of sequences.
+---
+parameters:
+  - name: i
+    description: inputfile. The input file contains a list of features (ORFs, regulatory sites).
+    type: file
+    required: false
+  - name: format
+    description: output image format.
+    type: string
+    choices: jpg,gif,png,ps
+    default: png
+    required: false
+  - name: from
+    description: lower limit of the positions represented on the graph
+    type: int
+    required: false
+  - name: to
+    description: upper limit of the positions represented on the graph
+    type: int
+    required: false
+  - name: title
+    description: Generic Title for the feature map.
+    type: string
+  - name: label
+    description: keylist define the info to display for each feature. Valid keys are id, strand, descr, pos
+    type: string
+    required: false
+  - name: boxlabels
+    description: writes the label within the feature box (by default, the label is written outside of this box).
+    type: string
+  - name: symbol
+    description: associates a graphical symbol (i.e. rectangle, circle, buterfly, ...) to each feature.
+    type: boolean
+  - name: dot
+    description: a color dot is associated to each feature.
+    type: boolean
+  - name: mlen
+    description: map length (in pixels). Default is 600.
+    type: int
+  - name: mapthick
+    description: Thickness refers to either width (for vertical maps) or height (horizintal maps).
+    type: int
+  - name: mspacing
+    description: The size of the border between maps (in pixel).
+    type: int
+  - name: border
+    description: image border (default=10 pixels)
+    type: int
+  - name: origin
+    description: all coordinates are recalculated relative to origin.
+    type: int
+  - name: legend
+    description: Draws a legend on the graph, showing the symbol associated to each distinct feature.
+    type: boolean
+  - name: scalebar
+    description: Draw a scale bar on the left of the graph.
+    type: boolean
+  - name: scalestep
+    description: Step between annotations of the scale bar.
+    type: int
+  - name: no_name
+    description: Do not print sequence names besides each sequence.
+    type: boolean
+  - name: scorethick
+    description: each feature is displayed with a thickness proportional to its score. Only positive scores are represented.
+    type: boolean
+  - name: maxscore
+    description: (only valid when -scorethick is active). Maximal allowed score value. Higher score values are clipped for the drawing.
+    type: int
+  - name: minscore
+    description: (only valid when -scorethick is active). minimal allowed score value. Features with smaller score are not displayed
+    type: int
+  - name: maxfthick
+    description: max feature thickness.
+    type: int
+  - name: minfthick
+    description: min feature thickness.
+    type: int
+  - name: htmap
+    description: HTML map.
+    type: boolean
+  - name: mono
+    description: monochrome palette (for printing on black/white printer).
+    type: boolean
+  - name: aacolors
+    description: amino acid specific colors. .
+    type: boolean
+  - name: colors
+    description: Provide a file containing feature-specific colors.
+    type: file
+  - name: export_colors
+    description: Export the feature-specific colors in a separate file as a color file.
+    type: string
+  - name: bgcolor
+    description: Background color in R,G,B format.
+    type: string
+  - name: horizontal
+    description: horizontal map (default).
+    type: boolean
+  - name: vertical
+    description: vertical map (default is horizontal).
+    type: boolean
+  - name: select
+    description: id_list. Only display the features whose ID is in id_list. -select 'gataag','gattag'
+    type: string
+  - name: seq
+    description: reference sequence file. This file is used for calculating the sequence.
+    type: file
+  - name: seqformat
+    description: format of the reference sequence file.
+    type: string
