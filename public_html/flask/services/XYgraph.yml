@@ -1,0 +1,160 @@
+descr:
+    Draws a XY plot using the numeric values in selected columns of a tab-delimited file.
+---
+parameters:
+  - name: i
+    description: inputfile. The input file should contain columns with numeric data.
+    type: file
+  - name: format
+    description: output image format
+    type: string
+    choices: gif, eps, pdf, png,jpg
+  - name: title1
+    description: first graph title. The title string should be embedded in double quotes if is contains spaces or special chars.
+    type: string
+  - name: title2
+    description: second graph title
+    type: string
+    required: false
+  - name: xleg1
+    description: First X legend.
+    type: string
+  - name: xleg2
+    description: Second X legend.
+    type: string
+  - name: yleg1
+    description: First Y legend.
+    type: string
+  - name: yleg2
+    description: Second Y legend.
+    type: string
+    required: false
+  - name: xmax
+    description: maximal value represented on X axis.
+    type: int
+  - name: ymax
+    description: maximal value represented on Y axis.
+    type: int
+  - name: xmin
+    description: minimal value represented on X axis.
+    type: int
+  - name: ymin
+    description: minimal value represented on Y axis.
+    type: int
+  - name: same_limits
+    description: use same limits (max, min) for the X and Y axes.
+    type: boolean
+  - name: min
+    description: minimal value represented on both X and Y axis (combinates the effects of -xmin and -ymin).
+    type: int
+  - name: max
+    description: maximal value represented on both X and Y axis (combinates the effects of -xmin and -ymin).
+    type: int
+  - name: xgstep1
+    description: 1st step value for the grid across X axis.
+    type: int
+  - name: ygstep1
+    description: 1st step value for the grid across Y axis.
+    type: int
+  - name: gstep1
+    description: 1st step value for the grid across both X and Y axis.
+    type: int
+  - name: xgstep2
+    description: 2nd step value for the grid across X axis.
+    type: int
+  - name: ygstep2
+    description: 2nd step value for the grid across Y axis.
+    type: int
+  - name: gstep2
+    description: 2nd step value for the grid across both X and Y axis.
+    type: int
+  - name: xsize
+    description: size of the X axis (in pixels). Default is 400.
+    type: int
+  - name: ysize
+    description: size of the Y axis (in pixels). Default is 400.
+    type: int
+  - name: size
+    description: size of X and Y axes (in pixel).
+    type: int
+  - name: pointsize
+    description: point size (in pixels).
+    type: int
+  - name: columns
+    description: data fields are in columns (default)
+    type: boolean
+  - name: rows
+    description: data fields are in row
+    type: boolean
+  - name: xcol
+    description: column containing data for the X axis.
+    type: string
+  - name: ycol
+    description: column containing data for the Y axis.
+    type: string
+  - name: xlog
+    description: X data are displayed on a logarithmic scale
+    type: int
+  - name: ylog
+    description: Y data are displayed on a logarithmic scale.
+    type: int
+  - name: log
+    description: same as combining -xlog N -ylog M
+    type: int
+  - name: lines
+    description: points are jointed by lines.
+    type: boolean
+  - name: force_lines
+    description: points are jointed by lines.
+    type: boolean
+  - name: line
+    description: same as lines, but for the Nth column only
+    type: int
+  - name: header
+    description: first line of the data file contains a column header
+    type: boolean
+  - name: legend
+    description: use the content of the first line from input file as legend for Y data.
+    type: boolean
+  - name: histo
+    description: histogram. The X data should in this case contain the middle position of ach class, and Y data the frequencies.
+    type: boolean
+  - name: fhisto
+    description: filled histogram.
+    type: boolean
+  - name: hbox
+    description: Highlight box. the coordinates of the highlighted box in pixels (left, top, right, bottom respectively).
+    type: string
+  - name: tbox
+    description: Threshold box.  units of X and Y data (low_x, high_x, low_y, high_y respectively).
+    type: string
+  - name: bg
+    description: background color.
+    type: string
+  - name: mono
+    description: monochrome. All dots are drawn in black, and a specific symbol is associated to each.
+    type: boolean
+  - name: htmap
+    description: An HTML document is automatically generated
+    type: boolean
+  - name: lc
+    description: label column
+    type: boolean
+  - name: colors
+    description: colorfile. Provide a file containing curve-specific colors.
+    type: file
+  - name: export_colors
+    description: color_file. Only working with eps and pdf formats
+    type: string
+  - name: gp
+    description: gnuplot additional commands. Ex. -gp 'set size ratio 0.5'
+    type: string
+  - name: hline
+    description: Draw an horizontal line on the indicated position. Ex. -hline red 0 or -hline red 0,10,20,30
+    type: string
+  - name: "null"
+    description: Indicate the NULL or NA character in the table to omit them. Default <NULL>.
+    type: boolean
+  - name: vline
+    description: Draw a vertical line on the indicated position. Ex. -vline green 0 or -vline green 1,2,4,8,16
+    type: string

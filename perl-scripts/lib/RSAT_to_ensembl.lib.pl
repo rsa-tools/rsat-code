@@ -1002,7 +1002,7 @@ sub UpdateEnsemblSupported {
     "<NA>",
     "<NA>",
     &Get_species_dir($species,$assembly,$ensembl_release,$species_suffix),
-    &Get_species_dir($species,$assembly,$ensembl_release,$species_suffix) . "/configs.txt",
+    &Get_species_dir($species,$assembly,$ensembl_release,$species_suffix) . "/genome/contigs.txt",
     $assembly,
     $ensembl_release , #&get_ensembl_release,
     &AlphaDate(),

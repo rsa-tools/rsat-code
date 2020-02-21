@@ -21,7 +21,7 @@ ns = api.namespace(tool, description=descr)
 ################################################################
 ### Get information about polymorphic variations
 @ns.route('/',methods=['POST','GET'])
-class VariationInfo(Resource):
+class FootprintDiscovery(Resource):
 	@api.expect(get_parser)
 	def get(self):
     		data = get_parser.parse_args()
@@ -41,14 +41,13 @@ class VariationInfo(Resource):
 	
 	def _run(self, data):
 		output_choice = 'display'
-		fileupload_parameters = ['genes','org_list','orthologs_list', 'bgfile']
+		(boolean_var, fileupload_parameters) = utils.get_boolean_file_params(service_dir+'/' + tool.replace('-','_') +'.yml')
 		exclude = fileupload_parameters + ['content-type']
 		for x in fileupload_parameters:
 			exclude = exclude + [x + '_string', x + '_string_type']
 		command = utils.perl_scripts + '/' + tool
 		result_dir = utils.make_tmp_dir(tool)
-		
-		boolean_var = ['use_tree_org', 'all_genes', 'unique_species', 'unique_genus', 'no_purge', 'batch', 'dry', 'nodie', 'sep_genes', 'infer_operons', 'filter', 'no_filter', 'rand', 'diamond', 'synthesis']		
+			
 		for param in data:
 		    if param in boolean_var:
 		        if data[param] == True:

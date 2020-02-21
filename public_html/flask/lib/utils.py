@@ -143,6 +143,22 @@ def read_parameters_from_yml(api,yml_file):
 	get_parser.add_argument('content-type', type=str, help='Response content-type. Accepted: text/plain, application/json', default='text/plain')
 	return (descr, get_parser, post_parser)
 
+def get_boolean_file_params(yml_file):
+    yaml_data = {}
+    boolean_params = []
+    file_params = []
+    with open(yml_file) as f:
+        docs = yaml.load_all(f)
+        for doc in docs:
+            for k,v in doc.items():
+                yaml_data[k] = v
+    for param in yaml_data['parameters']:
+        if param['type'] == 'boolean':
+            boolean_params.append(param['name'])
+        elif param['type'] == 'file':
+            file_params.append(param['name'])
+    return (boolean_params, file_params)
+
 def read_parameters(data, mandatory, optional, default_values):
     """Read the parameters (except upload files) from a POST query (can be in JSON format or form-data format) or read
     equivalent data from the URL of a GET query.

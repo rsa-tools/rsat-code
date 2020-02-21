@@ -39,13 +39,13 @@ class FetchSequences(Resource):
         output_choice = 'display'
         command = utils.perl_scripts + '/' + tool
         result_dir = utils.make_tmp_dir(tool)
-	fileupload_parameters = ['i']
-	exclude = fileupload_parameters + ['content-type']
-	for x in fileupload_parameters:
-		exclude = exclude + [x + '_string', x + '_string_type']       
+        (boolean_var, fileupload_parameters) = utils.get_boolean_file_params(service_dir+'/' + tool.replace('-','_') +'.yml')
+        exclude = fileupload_parameters + ['content-type']
+        
+        for x in fileupload_parameters:
+            exclude = exclude + [x + '_string', x + '_string_type']       
         for param in data:
             if data[param] is not None and data[param] != '' and param not in exclude:
                 command += ' -' + param + ' ' + str(data[param])
         command += utils.parse_fileupload_parameters(data,fileupload_parameters,tool,result_dir,',')
-
         return utils.run_command(command, output_choice, tool, 'fasta', result_dir)

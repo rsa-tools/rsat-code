@@ -1,0 +1,132 @@
+descr:
+    Count matching residues between pairs of patterns from two sets, and assess the statistical significance of the matches.
+---
+parameters:
+  - name: file1
+    description: first sequence for the comparison
+    type: file
+  - name: file2
+    description: second sequence for the comparison
+    type: file
+  - name: return
+    description: return fields. Supported - match,Pval,Eval_p,sig_p,Eval_f,sig_f,noffs,weight,seq,id,length,offset,strand,max_w,diff_w,rel_w,top_s
+    type: string
+    required: false
+  - name: slide
+    description: find best match by sliding seq2 along seq1
+    type: boolean
+  - name: table
+    description: Return a contingency table, where each row corresponds to one sequence from file 1, each column to a sequence from file 2, and the cells contain the value of the specified field. Supported fields - match,Pval,Eval_p,sig_p,Eval_f,sig_f,weight,offset,strand,max_w,diff_w,rel_w1,rel_w2,rel_w,top_s
+    type: string
+    required: false
+  - name: "null"
+    description: null string (default ) displayed in contingency tables when the cell contains a value which does not pass the thresholds.
+    type: int
+  - name: 2str
+    description: oligonucleotide occurrences found on both stands are summed.
+    type: boolean
+  - name: lth_match
+    description: lower threshold.
+    type: float
+  - name: lth_Pval
+    description: lower threshold.
+    type: float
+  - name: lth_Eval_p
+    description: lower threshold.
+    type: float
+  - name: lth_sig_p
+    description: lower threshold
+    type: float
+  - name: lth_Eval_f
+    description: lower threshold.
+    type: float
+  - name: lth_sig_f
+    description: lower threshold.
+    type: float
+  - name: lth_weight
+    description: lower threshold.
+    type: float
+  - name: lth_len1
+    description: lower threshold
+    type: float
+  - name: lth_len2
+    description: lower threshold.
+    type: float
+  - name: lth_mlen
+    description: lower threshold.
+    type: float
+  - name: lth_tlen
+    description: lower threshold.
+    type: float
+  - name: lth_offset
+    description: lower threshold
+    type: float
+  - name: lth_max_w1
+    description: lower threshold.
+    type: float
+  - name: lth_max_w2
+    description: lower threshold.
+    type: float
+  - name: lth_max_w
+    description: lower threshold.
+    type: float
+  - name: lth_diff_w1
+    description: lower threshold.
+    type: float
+  - name: lth_diff_w2
+    description: lower threshold
+    type: float
+  - name: lth_diff_l_w
+    description: lower threshold
+    type: float
+  - name: uth_match
+    description: upper threshold.
+    type: float
+  - name: uth_Pval
+    description: upper threshold.
+    type: float
+  - name: uth_Eval_p
+    description: upper threshold.
+    type: float
+  - name: uth_sig_p
+    description: upper threshold
+    type: float
+  - name: uth_Eval_f
+    description: upper threshold.
+    type: float
+  - name: uth_sig_f
+    description: upper threshold.
+    type: float
+  - name: uth_weight
+    description: upper threshold.
+    type: float
+  - name: uth_len1
+    description: upper threshold
+    type: float
+  - name: uth_len2
+    description: upper threshold.
+    type: float
+  - name: uth_mlen
+    description: upper threshold.
+    type: float
+  - name: uth_tlen
+    description: upper threshold.
+    type: float
+  - name: uth_offset
+    description: upper threshold
+    type: float
+  - name: uth_max_w1
+    description: upper threshold.
+    type: float
+  - name: uth_max_w2
+    description: upper threshold.
+    type: float
+  - name: uth_diff_w1
+    description: upper threshold.
+    type: float
+  - name: uth_diff_w2
+    description: upper threshold
+    type: float
+  - name: uth_diff_l_w
+    description: upper threshold.
+    type: float

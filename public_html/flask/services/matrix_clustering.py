@@ -21,7 +21,7 @@ ns = api.namespace(tool, description=descr)
 ################################################################
 ### Get information about polymorphic variations
 @ns.route('/',methods=['POST','GET'])
-class VariationInfo(Resource):
+class MatrixClustering(Resource):
 	@api.expect(get_parser)
 	def get(self):
     		data = get_parser.parse_args()
@@ -41,7 +41,7 @@ class VariationInfo(Resource):
 	
 	def _run(self, data):
 		output_choice = 'display'
-		fileupload_parameters = ['matrix_1','matrix_2','matrix_3', 'matrix_file_table']
+		(boolean_var, fileupload_parameters) = utils.get_boolean_file_params(service_dir+'/' + tool.replace('-','_') +'.yml')
 		exclude = fileupload_parameters + ['content-type']
 		for x in fileupload_parameters:
 			exclude = exclude + [x + '_string', x + '_string_type']
@@ -51,7 +51,6 @@ class VariationInfo(Resource):
 		matrix_title = dict()
 		matrix_format = dict()
 		
-		boolean_var = ['quick']
 		for param in data:
 		    if 'matrix_title_' in param and data[param] != '':
 		        p = re.compile('matrix_title_(\d)')

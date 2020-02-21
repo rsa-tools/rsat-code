@@ -1,0 +1,52 @@
+descr:
+    Assemble a set of oligonucleotides or dyads into groups of overlapping patterns (assemblies).
+---
+parameters:
+  - name: i
+    description: input file.
+    type: file
+  - name: 2str
+    description: oligonucleotide occurrences found on both stands are summed.
+    type: boolean
+  - name: 1str
+    description: inactivates the summation of occurrences on both strands.
+    type: boolean
+  - name: sc
+    description: score column
+    type: int
+  - name: cc
+    description: Define a column containing cluster names or numbers.
+    type: int
+  - name: maxfl
+    description: maximum flanking segment size (default 1).
+    type: int
+  - name: subst
+    description: maximum allowed substitutions (default 0).
+    type: int
+  - name: maxpat
+    description: maximum number of allowed patterns (default 0).
+    type: int
+  - name: toppat
+    description: maximum number of patterns to assemble.
+    type: int
+  - name: match
+    description: minimum number of matching residues to include a pattern in an assembly (default 0).
+    type: int
+  - name: weight
+    description: minimum matching weight to include a pattern in an assembly (default 0)
+    type: float
+  - name: max_asmb_nb
+    description: maximal number of assemblies (default 5)
+    type: int
+  - name: max_asmb_per_cluster
+    description: maximal number of assemblies per cluster (default 2).
+    type: int
+  - name: max_asmb_size
+    description: maximal assembly size, i.e. the number of patterns per alignment group (default 50)
+    type: int
+  - name: max_asmb_width
+    description: maximal width for an assembly (default 0)
+    type: int
+  - name: single_sep
+    description: Report the isolated words (i.e. words that do not match any other words) separately.
+    type: boolean

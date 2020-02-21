@@ -1,0 +1,132 @@
+descr:
+    Calculates the positional distribution of oligonucleotides in a set of sequences, and detects those which significantly discard from a homogeneous repartition.
+---
+parameters:
+  - name: i
+    description: File containing the sequences to scan.
+    type: file
+  - name: seqtype
+    description: Input sequence type
+    type: string
+    choices: dna,any
+  - name: last
+    description: Stop after N sequences (for quick testing)
+    type: int
+  - name: skip
+    description: Skip the first N sequences.
+    type: int
+  - name: first
+    description: First sequence to analyze.
+    type: int
+  - name: seqnb
+    description: Maximal number of sequences to analyze.
+    type: int
+  - name: mask
+    description: Mask lower or uppercases, respecively, i.e. replace selected case by N characters.
+    type: string
+    choices: upper, lower
+  - name: format
+    description: input file format. Must be followed by one of the following options - fasta, wconsensus, IG, filelist, raw
+    type: string
+    choices: fasta, wconsensus, IG, filelist, raw
+    required: false
+  - name: l
+    description: oligomer length.
+    type: int
+  - name: ci
+    description: alphabet. window interval (default 20 bases).
+    type: int
+    required: false
+  - name: origin
+    description: Reference for calculating positions.
+    type: string
+    choices: start,center,end
+  - name: offset
+    description: Add an offset to site positions.
+    type: int
+  - name: noov
+    description: no overlapping.
+    type: boolean
+  - name: 2str
+    description: oligonucleotide occurrences found on both stands are summed.
+    type: boolean
+  - name: 1str
+    description: inactivates the summation of occurrences on both strands.
+    type: boolean
+  - name: grouprc
+    description: group reverse complement with the direct sequence in the output file.
+    type: boolean
+  - name: nogrouprc
+    description: inactivates grouping of reverse complement pairs.
+    type: boolean
+  - name: sort
+    description: sort oligomers according to overrepresentation.
+    type: boolean
+  - name: return
+    description: list of statistics to return. Supported - html,distrib,exp_occ,chi,rank,graphs,clusters
+    type: string
+  - name: task
+    description: Supported tasks - pos, clusters, matrices, graphs, index, all
+    type: string
+  - name: markov
+    description: Order for the Markov model use to compute position-specific expected word frequencies.
+    type: int
+  - name: max_graphs
+    description: maximal number of graphs to export
+    type: int
+  - name: pl
+    description: A file containing a selection of patterns.
+    type: file
+  - name: sc
+    description: score column. (only valid whith the option -pl)
+    type: string
+  - name: minpos
+    description:  minimal position to take into account for the chi-square calculation This value must be a multiple of the window interval.
+    type: int
+  - name: maxpos
+    description: maximal position to take into account for the chi-square calculation This value must be a multiple of the window interval.
+    type: int
+  - name: max_asmb_per_cluster
+    description:
+    type: int
+  - name: nocheck
+    description: do not check the applicability condition on the chi-square.
+    type: boolean
+  - name: nofilter
+    description: Do not discard oligos which do not fit the condition of applicability
+    type: boolean
+  - name: header
+    description: Information to display in column headers of the distributions.
+    type: string
+    choices: mid, midfloor, min,max, interval
+  - name: top_seq_for_matrices
+    description: Select the top N sequences for building position-specific scoring matrices (PSSM).
+    type: int
+  - name: img_format
+    description: Image format (this parameter is passed to XYgraph).
+    type: string
+  - name: title
+    description: Title for the index table and position profile plots.
+    type: string
+  - name: clust_method
+    description: Agglomeration rule for the hierarchical clustering. Supported - complete, average, single, ward
+    type: string
+    choices: complete, average, single, ward
+  - name: clust_nb
+    description: Number of clusters (default 8).
+    type: int
+  - name: clust_suffix
+    description: Suffix to append to the cluster file and the directory contianing cluster graphics. Default 'clusters'.
+    type: string
+  - name: lth_chi
+    description: lower threshold on chi2
+    type: float
+  - name: lth_sig
+    description: lower threshold on significance
+    type: float
+  - name: lth_occ
+    description: lower threshold on occurrences
+    type: int
+  - name: uth_rank
+    description: upper threshold on rank
+    type: int

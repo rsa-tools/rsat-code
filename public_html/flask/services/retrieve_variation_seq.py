@@ -22,7 +22,7 @@ ns = api.namespace(tool, description=descr)
 ### Get information about polymorphic variations
 @ns.route('/<string:species>/<string:assembly>', methods=['POST','GET'])
 @api.doc(params={'species':'Species name, ex. Homo_sapiens', 'assembly':'Assembly name, ex. GRCh38'})
-class VariationInfo(Resource):
+class RetrieveVariationSeq(Resource):
 	@api.expect(get_parser)
 	def get(self,species,assembly):
     		data = get_parser.parse_args()
