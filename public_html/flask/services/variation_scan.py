@@ -46,7 +46,7 @@ class VariationScan(Resource):
 	
 	def _run(self, data):
 		output_choice = 'display'
-		fileupload_parameters = ['i','m', 'bg']
+		(boolean_var, fileupload_parameters) = utils.get_boolean_file_params(service_dir+'/' + tool.replace('-','_') +'.yml')
 		exclude = fileupload_parameters + ['content-type']
 		for x in fileupload_parameters:
 			exclude = exclude + [x + '_string', x + '_string_type']

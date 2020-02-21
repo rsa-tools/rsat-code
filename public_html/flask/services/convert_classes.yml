@@ -1,0 +1,41 @@
+descr:
+    Interconversions between different formats of class/cluster files.
+---
+parameters:
+  - name: i
+    description: inputfile
+    type: file
+  - name: names
+    description: Two column file specifying the labels of the members of the classification given in the classification file.
+    type: file
+  - name: from
+    description: Input format. Supported - tab, mcl, profiles, mcode, rnsc
+    type: string
+    choices: tab, mcl, profiles, mcode, rnsc
+    required: false
+  - name: to
+    description: Output format. Supported - tab, mcl,profiles
+    type: string
+    choices: tab, mcl,profiles
+  - name: mcol
+    description: Member column. Column containing the member names in the tab format (default 1).
+    type: int
+    required: false
+  - name: ccol
+    description: Class column. Column containing the class names in the tab format (default 1).
+    type: int
+  - name: scol
+    description: Score column. Column containing the scores in tab format. If not specified, scores are not defined.
+    type: int
+  - name: "null"
+    description: Null string used as score in the profile output for the undefined class memberships (default 0).
+    type: boolean
+  - name: ing
+    description: Value to display as replacement for the infinite values (obtained e.g. from log(0)).
+    type: string
+  - name: all_scores
+    description: Assign each node to all the clusters with the ERMG format, with the posterior probability as score.
+    type: boolean
+  - name: min_score
+    description: Minimal score value for member to class assignation.
+    type: int

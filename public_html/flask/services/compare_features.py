@@ -28,7 +28,7 @@ ns = api.namespace(tool, description=descr)
 ## Define the route of the entry point (namesace)
 @ns.route('/', methods=['POST','GET'])
 ## @api.doc(params={'species':'Species name, e.g. Homo_sapiens','assembly':'Assembly name, e.g. GRCh38'})
-class RandomSeq(Resource):
+class CompareFeatures(Resource):
 	@api.expect(get_parser)
 
         ## Support for GET queries
@@ -52,14 +52,13 @@ class RandomSeq(Resource):
         ## Run the query
 	def _run(self,data):
 		output_choice = 'display'
-		fileupload_parameters = ['i','filelist','ref']
+		(boolean_var, fileupload_parameters) = utils.get_boolean_file_params(service_dir+'/' + tool.replace('-','_') +'.yml')
 		exclude = fileupload_parameters + ['content-type']
 		for x in fileupload_parameters:
 			exclude = exclude + [x + '_string', x + '_string_type']
 		command = utils.perl_scripts + '/' + tool
 		result_dir = utils.make_tmp_dir(tool)
 		
-		boolean_var = ['self']
 		for param in data:
 		    if param in boolean_var:
 		        if data[param] == True:

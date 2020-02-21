@@ -41,13 +41,13 @@ class InfoGibbs(Resource):
 	
 	def _run(self, data):
 		output_choice = 'display'
-		fileupload_parameters = ['i']
+		(boolean_var, fileupload_parameters) = utils.get_boolean_file_params(service_dir+'/' + tool.replace('-','_') +'.yml')
 		exclude = fileupload_parameters + ['content-type']
 		for x in fileupload_parameters:
 			exclude = exclude + [x + '_string', x + '_string_type']
 		command = utils.rsat_bin + '/' + tool
 		result_dir = utils.make_tmp_dir(tool)
-		boolean_var = ['zoops']
+		
 		options_var = ['maxspacing', 'minspacing', 'sites', 'collect', 'seedmatrix', 'strand']
 		for param in data:
 		    if param in boolean_var:

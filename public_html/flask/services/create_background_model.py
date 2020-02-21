@@ -17,7 +17,7 @@ tool = 'create-background-model'
 ns = api.namespace(tool, description=descr)
 
 @ns.route('/', methods=['POST','GET'])
-class SupportedOrganisms(Resource):
+class CreateBackgroundModel(Resource):
     @api.doc(description='Get supported organisms')
     @api.expect(get_parser)
     def get(self):
@@ -40,7 +40,7 @@ class SupportedOrganisms(Resource):
     
     def _run(self,data):
         output_choice = 'display'        
-        fileupload_parameters = ['i']
+        (boolean_var, fileupload_parameters) = utils.get_boolean_file_params(service_dir+'/' + tool.replace('-','_') +'.yml')
         exclude = fileupload_parameters + ['content-type']
         for x in fileupload_parameters:
             exclude = exclude + [x + '_string', x + '_string_type']
@@ -48,7 +48,6 @@ class SupportedOrganisms(Resource):
         result_dir = utils.make_tmp_dir(tool)
         command = utils.perl_scripts + '/' + tool
         
-        boolean_var = []
         for param in data:
             if param in boolean_var:
                 if data[param] == True:
