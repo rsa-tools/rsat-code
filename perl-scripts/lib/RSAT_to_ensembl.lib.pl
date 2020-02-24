@@ -776,7 +776,7 @@ sub Get_species_dir_from_supported_file {
 
 		while (my $line = <$file>) {
 	    	chomp($line);
-	    	my ($id,$name,$ass,$db,$ens,$update,$dir) = split("\t", $line);
+	    	my ($id,$name,$taxid,$source,$last_up,$nb,$seq_format,$up_from,$up_to,$taxonomy,$dir,$genome,$ass,$ens,$download_date,$variant,$v_srouce,$v_path,$blast) = split("\t", $line);
 
 				# Make sure first letter of species is upper case
 				$spe = ucfirst($name);
@@ -813,6 +813,48 @@ sub Get_species_dir_from_supported_file {
             return '';
         }
   }
+}
+
+=pod
+
+=item B<Get_dirs_from_supported_file()>
+
+Return the directory in which the genome data (sequences + features)
+will be installed for a given ensembl species, and directory for variation files
+
+=cut
+sub Get_dirs_from_supported_file {
+    my ($org) = @_;
+    &RSAT::message::Debug("&Get_dirs_from_supported_file()", "organism=".$org)
+    if ($main::verbose >= 5);
+    
+    my $genome_dir;
+    my $var_dir;
+    
+    my $rsat = $ENV{RSAT};
+    
+    my $supported_file = &Get_supported_file();
+    if (-f $supported_file ) {
+        ## Open the file containing the list of supported Ensembl species
+        my ($file) = &OpenInputFile($supported_file);
+        while (my $line = <$file>) {
+            chomp($line);
+            my ($id,$name,$taxid,$source,$last_up,$nb,$seq_format,$up_from,$up_to,$taxonomy,$dir,$genome,$ass,$version,$download_date,$variant,$v_srouce,$v_path,$blast) = split("\t", $line);
+            ## The full RSAT path should not be writen explicitly in
+            ## the files.
+            if ($dir) {
+                $dir =~ s/\$ENV\{RSAT\}/$rsat/g;
+            }
+            if ($v_path) {
+                $v_path =~ s/\$ENV\{RSAT\}/$rsat/g;
+            }
+            if(lc($org) eq lc($id)){
+                $genome_dir = $dir;
+                $var_dir = $v_path;
+            }
+        }
+    }
+    return ($genome_dir, $var_dir);
 }
 
 =pod

@@ -16,6 +16,9 @@ parameters:
       type: string
       required: false
       default: id
+    - name: org
+      description: organism name
+      type: string
     - name: type
       description: Specify one or several accepted types of variation. Supported types = SNV, insertion, deletion, substitution.
       type: string

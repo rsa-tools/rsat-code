@@ -51,35 +51,7 @@ $command = "$SCRIPTS/variation-info";
 $organism = $query->param('organism');
 
 if (defined($supported_organism{$organism})) {
-    $organism_name = $supported_organism{$organism}->{'name'};
-
-    my ($species, $assembly) = ('','');
- 
-    if($organism =~ /^([A-Za-z]+_[A-Za-z]+_*[^\.]*)\.(.*)\.\d+/){ # as in plants, installed with ensemblgenomes_FTP_client.mk 
-        $species = $1;
-        $assembly = $2;
-    } else {
-        @org_name_split=split(" ",$organism_name);
-        $species=join("_", $org_name_split[0], $org_name_split[1]);
-        $assembly = $org_name_split[2];
-    }
-
-    &RSAT::message::Debug("organism: ".$organism, 
-			  "organism_name: ".$organism_name,
-			  "species: ".$species,
-			  "assembly: ".$assembly,
-	);
-
-    $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
-    $parameters .= " -assembly ".$assembly; ## Assembly is the third part of species ID
-    if (scalar (@org_name_split)>=4){
-    	if (scalar (@org_name_split)>4){
-    	    $species_suffix=join("_",@org_name_split[3..$#org_name_split]);
-    	}else {
-    	    $species_suffix=$org_name_split[3];
-    	}
-    	$parameters .= " -species_suffix ".$species_suffix; ## 
-    }
+    $parameters .= " -org " . $organism;
 } else {
     &cgiError("Organism '",
 	      $organism,

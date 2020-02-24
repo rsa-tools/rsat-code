@@ -26,7 +26,7 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$command = "$C_SCRIPTS/variation-scan";
+$command = "$SCRIPTS/variation-scan";
 
 #### read parameters ####
 $parameters = " -v 1 ";
@@ -156,15 +156,15 @@ if ($bg_method eq "bginput") {
 } elsif  ($bg_method eq "bgfile") {
   ## Select pre-computed background file in RSAT genome directory
   my $organism_name = $query->param("organism_bg");
-  @org_name_split=split(" ",$organism_name);
-  $species=join("_", $org_name_split[0], $org_name_split[1]);
-  $species=~s/_$//;
-  $assembly=$org_name_split[2];
-  $organism_name_aux=$species;
+  #@org_name_split=split(" ",$organism_name);
+  #$species=join("_", $org_name_split[0], $org_name_split[1]);
+  #$species=~s/_$//;
+  #$assembly=$org_name_split[2];
+  #$organism_name_aux=$species;
   my $noov = "ovlp";
   my $background_model = $query->param("background");
   my $oligo_length = $markov_order + 1;
-  $bg_file = &ExpectedFreqFile($organism_name_aux,
+  $bg_file = &ExpectedFreqFile($organism_name,
 			       $oligo_length, $background_model,
 			       noov=>$noov, str=>"-1str");
 
