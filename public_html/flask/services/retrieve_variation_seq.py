@@ -12,7 +12,7 @@ sys.path.append(service_dir + '/../')
 import utils
 from rest_server import app,api
 
-tool = 'retrieve-variation-seq'
+tool = 'retrieve-variation-seq1.0'
 ### Read parameters from yaml file
 (descr, get_parser, post_parser) = utils.read_parameters_from_yml(api, service_dir+'/'+ tool.replace('-','_') +'.yml')
 
