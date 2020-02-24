@@ -12,6 +12,9 @@
 # Sys.setenv(RSAT = "/no_backup/rsat") ## JvH for debug (2020-02-08)
 dir.rsat <- Sys.getenv("RSAT")
 
+## Debug only
+# dir.rsat <- "/workspace/rsat"
+
 
 if (dir.rsat == "") {
   stop(paste("The environment variable RSAT is not defined. Command: ", commandArgs()))
@@ -20,13 +23,18 @@ dir.rsat.rscripts <- file.path(dir.rsat, "R-scripts")
 dir.rsat.rlib <- file.path(dir.rsat.rscripts, "Rpackages")
 
 
-## Load required libraries
-## List of packages to install
+#############################
+## Load required libraries ##
+#############################
+
+## List of packages to install from CRAN
 required.packages = c("RJSONIO",
                       "crayon","backports","vctrs","dendextend",
                       "amap",
                       "gplots",
-                      "RColorBrewer")
+                      "RColorBrewer",
+                      "dplyr",
+                      "data.table")
 
 ## List of required packages from Bioconductor
 required.packages.bioconductor <- c("ctc")
@@ -37,13 +45,17 @@ for (pkg in c(required.packages, required.packages.rsat)) { #required.packages.b
   suppressPackageStartupMessages(library(pkg, warn.conflicts = FALSE, character.only = TRUE, lib.loc = c(dir.rsat.rlib, .libPaths())))
 }
 
+## Jaime Castro: Temporary 24-02-2020s
+# for (pkg in c(required.packages)) { #required.packages.bioconductor
+#   suppressPackageStartupMessages(library(pkg, warn.conflicts = FALSE, character.only = TRUE, lib.loc = c(dir.rsat.rlib, .libPaths())))
+# }
+
 
 ## Install the TFBM library if required
 # dir.create(dir.rsat.rlib, recursive=TRUE,showWarnings=FALSE)
 if (!require("TFBMclust", lib.loc = dir.rsat.rlib)) {
   stop("The TFBM R library is not properly installed.")
 }
-
 # message(dir.rsat)
 
 
@@ -57,6 +69,7 @@ export <- 'json'
 
 ## JvH (2020-02-08). Jaime, do you have a specific reason to use a double arrow here and below?
 thresholds <<- list()
+
 
 ###########################################
 ## Read arguments from the command line.
@@ -72,31 +85,27 @@ if (length(args >= 1)) {
   verbose(args, 3)
 }
 
-######################
-## Check parameters
+
+###########################################################
+## Check parameters: from R-scripts/cluster_motifs_lib.R ##
+###########################################################
 check.param()
 heatmap.color.classes <- as.numeric(heatmap.color.classes)
 
 #####################################
-## Example for Debugging ############
-# #
-# infile <- "/home/jcastro/sdfsd/results/matrix-clustering_results/RSAT_peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.5/RSAT_peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.5_tables/pairwise_compa.tab"
-# description.file <- "/home/jcastro/sdfsd/results/matrix-clustering_results/RSAT_peak-motifs_Oct4/average_linkage/Ncor0.4_cor0.5/RSAT_peak-motifs_Oct4_hclust-average_Ncor0.4_cor0.5_tables/pairwise_compa_matrix_descriptions.tab"
-# metric <- "Ncor"
-# hclust.method <- "average"
-# thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
-#
-# infile <- "/home/jcastro/Documents/JaimeCastro/PhD/Manuscripts/matrix-clustering/results/matrix-clustering_results/footprintDB_motif/average_linkage/Ncor0.4_cor0.6/footprintDB_motif_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa.tab"
-# description.file <- "/home/jcastro/Documents/JaimeCastro/PhD/Manuscripts/matrix-clustering/results/matrix-clustering_results/footprintDB_motif/average_linkage/Ncor0.4_cor0.6/footprintDB_motif_hclust-average_Ncor0.4_cor0.6_tables/pairwise_compa_matrix_descriptions.tab"
+## Example for Debugging           ##
+## Oct4 motifs demo in the website ##
+#####################################
+# infile <- "/run/user/280010/gvfs/sftp:host=rsat-tagc.univ-mrs.fr,user=rsat/workspace/rsat/tmp/www-data/2020/02/24/matrix-clustering_2020-02-24.145827_5PhSeP/matrix-clustering_tables/pairwise_compa.tab"
+# description.file <- "/run/user/280010/gvfs/sftp:host=rsat-tagc.univ-mrs.fr,user=rsat/workspace/rsat/tmp/www-data/2020/02/24/matrix-clustering_2020-02-24.145827_5PhSeP/matrix-clustering_tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
 
-######################################
-######################################
 
 ##############################################
 ## Read matrix comparison table + treatment
+# fread(infile)
 global.compare.matrices.table <<- read.csv(infile, sep = "\t", comment.char = ";")
 names(global.compare.matrices.table)[1] <- sub("^X.", "", names(global.compare.matrices.table)[1])
 
@@ -126,7 +135,7 @@ dist.matrix <- distances.objects$matrix
 write.table(dist.table, file=distance.table, quote=FALSE, row.names=TRUE, col.names=NA, sep = "\t")
 
 number.of.motifs <- dim(global.description.table)[1]
-if(only.hclust == 0){
+if (only.hclust == 0) {
   dir.trees <- paste(out.prefix, "_trees", sep = "")
   dir.create(dir.trees, showWarnings=FALSE, recursive=TRUE)
 }
@@ -134,11 +143,11 @@ if(only.hclust == 0){
 ################################################
 ## Build the tree by hierarchical clustering,
 ## export it in Newick format
-if(number.of.motifs > 1){
+if (number.of.motifs > 1) {
   
   tree <<- hclust.motifs(dist.matrix, hclust.method=hclust.method)
   
-  if(only.hclust == 0){
+  if (only.hclust == 0) {
     
     ################################################
     ## If it is indicated, export the newick tree
@@ -189,15 +198,15 @@ if(number.of.motifs > 1){
   ##############################################
   ## This block is only executed when the option
   ## -radial_tree_only is activated
-  if(radial.only == 1){ 
+  if (radial.only == 1) { 
   
   ################################################
   ## Given a level of a hierarchical tree, find
   ## the next level pointing the current level
   ## NOTE: this function is only called within the function find.clusters
-  find.next.levels.in.tree <- function(x){
+  find.next.levels.in.tree <- function(x) {
     
-    if (x == length(tree$merge)/2){
+    if (x == length(tree$merge)/2) {
       return(x)
       
     } else {
@@ -205,28 +214,28 @@ if(number.of.motifs > 1){
       ## Get the level
       level <- which(tree$merge == x)
       
-      if(level > length(tree$merge)/2 & level <= length(tree$merge)){
+      if (level > length(tree$merge)/2 & level <= length(tree$merge)) {
         return(level - length(tree$merge)/2)
-      } else if(level <= length(tree$merge)/2){
+      } else if (level <= length(tree$merge)/2) {
         return(level)
       }
     }
   }
   
-  find.chained.levels <- function(x){
+  find.chained.levels <- function(x) {
     
     chained.levels <- NULL
     current.level <- NULL
     alignment.flag <- 1
     chained.levels <- append(chained.levels, x)
     
-    while(alignment.flag == 1){
+    while(alignment.flag == 1) {
       
       ## Search the next chained level
       current.level <- find.next.levels.in.tree(x)
       
       ## The case when the root tree is analyzed
-      if(x == current.level){
+      if (x == current.level) {
         return(x)
       }
       
@@ -234,7 +243,7 @@ if(number.of.motifs > 1){
       alignment.flag <- as.numeric(attributes.list[[paste("node_", current.level, sep = "")]][["alignment_flag"]])
       
       ## If the status at the current level is 0 then return the chained levels
-      if(alignment.flag == 0){
+      if (alignment.flag == 0) {
         return(chained.levels)
         
         ## Conversely, add the new level to the chain
@@ -247,29 +256,29 @@ if(number.of.motifs > 1){
   
   
   chained.levels <- sapply(1:nrow(tree$merge), find.chained.levels)
-  alignment.flag <- as.numeric(sapply(alignment.attributes, function(n){n[[1]]}))
+  alignment.flag <- as.numeric(sapply(alignment.attributes, function(n) {n[[1]]}))
   
   node.to.cluster <- data.frame()
   cluster.counter <- 0
   
   ## Iterate over the clusters
-  x <- lapply(clusters, function(cl){
+  x <- lapply(clusters, function(cl) {
     
     counter <- 0
     cluster.counter <<- cluster.counter + 1
     
     ## Iterate over the leaves per node
-    xx <- lapply(leaves.per.node(tree), function(l){
+    xx <- lapply(leaves.per.node(tree), function(l) {
       
       counter <<- counter + 1
       
       ## Detect the nodes with the same number of motifs
       ## than the cluster
-      if(length(l) >= length(cl)){
+      if (length(l) >= length(cl)) {
         
         ## When all the elements of the cluster are found on the leave
         ## return the number of node (counter)
-        if(all(cl %in% l)){
+        if (all(cl %in% l)) {
           counter
         } 
       }
@@ -279,8 +288,8 @@ if(number.of.motifs > 1){
     selected.node <- as.numeric(unlist(xx))[1]
     
     ## Look for all the nodes pointing to the selected node
-    all.nodes <- lapply(chained.levels, function(levels){ 
-      if(is.element(selected.node, levels)){
+    all.nodes <- lapply(chained.levels, function(levels) { 
+      if (is.element(selected.node, levels)) {
         levels
       }
     })
@@ -289,7 +298,7 @@ if(number.of.motifs > 1){
     all.nodes <- unlist(all.nodes)
     
     ## Concatenate all the nodes, sort and remove repetitions
-    all.nodes <- unique(sort(unlist(sapply(all.nodes, function(x){ 
+    all.nodes <- unique(sort(unlist(sapply(all.nodes, function(x) { 
       chained.levels[[x]]})
     )
     )
@@ -301,7 +310,7 @@ if(number.of.motifs > 1){
     
   })
   
-  x1 <- sapply(as.vector(node.to.cluster$all.leaves), function(l){
+  x1 <- sapply(as.vector(node.to.cluster$all.leaves), function(l) {
     as.numeric(unlist(strsplit(l, ",")))
   })
   names(x1) <- NULL
@@ -310,15 +319,15 @@ if(number.of.motifs > 1){
   ## This is to treat the node.to.cluster table
   repeated.leaves <- as.vector(which(table(unlist(x1)) > 1))
   
-  th<-  sapply(repeated.leaves, function(r){
+  th<-  sapply(repeated.leaves, function(r) {
     
     ## For each repeated number find the clusters where it is repeated
     co <- 0
     repetition.flag <- 0
-    repeated.clusters <- sapply(x1, function(x){
+    repeated.clusters <- sapply(x1, function(x) {
       
       co <<- co + 1
-      if(r %in% x){
+      if (r %in% x) {
         co
       }
       
@@ -327,19 +336,19 @@ if(number.of.motifs > 1){
     
     cou <- 0
     find.flag <- 0
-    sapply(repeated.clusters, function(x){
+    sapply(repeated.clusters, function(x) {
       
       status.alignment.clusters <- node.to.cluster[repeated.clusters,]$node.alignment.status
       
       cou <<- cou + 1
       
-      if(status.alignment.clusters[cou] ==  1){
+      if (status.alignment.clusters[cou] ==  1) {
         
       }
       
-      if(cou == 1){
+      if (cou == 1) {
         
-        if(status.alignment.clusters[cou] ==  1){
+        if (status.alignment.clusters[cou] ==  1) {
           NA
         } else {
           x1[[x]] <<- r
@@ -362,7 +371,7 @@ if(number.of.motifs > 1){
   ## Nodes no associated to a cluster are indicated with 0
   node.to.cluster.table <- data.frame()
   nnodes <- nrow(tree$merge)
-  th <- sapply(node.to.cluster$all.nodes, function(n){
+  th <- sapply(node.to.cluster$all.nodes, function(n) {
     
     nodes <- as.numeric(unlist(strsplit(n, ",")))
     cluster <- node.to.cluster[which(node.to.cluster$all.nodes == n), "cluster.counter"]
@@ -385,10 +394,10 @@ if(number.of.motifs > 1){
   ## Nodes no associated to a cluster are indicated with 0
   leaf.to.cluster.table <- data.frame()
   nleaves <- nrow(tree$merge)+1
-  th <- sapply(node.to.cluster$all.leaves, function(n){
+  th <- sapply(node.to.cluster$all.leaves, function(n) {
     
     leaves <- as.numeric(unlist(strsplit(n, ",")))
-    leaves <- lapply(leaves, function(x){
+    leaves <- lapply(leaves, function(x) {
       get.id(x)
     })
     leaves <- as.vector(unlist(leaves))
@@ -406,18 +415,18 @@ if(number.of.motifs > 1){
   }
   
   ############################################################################################  
-  clusters <<- lapply(clusters, function(x){
+  clusters <<- lapply(clusters, function(x) {
     get.id(x)
   })
   
-  clusters.names <<- lapply(clusters, function(x){
+  clusters.names <<- lapply(clusters, function(x) {
     get.name(x)
   })
   
   
   ## Export a table with the cluster names and its elements (IDs)
   clusters.table <- NULL
-  clusters.table <-  lapply(clusters, function(x){
+  clusters.table <-  lapply(clusters, function(x) {
     paste(x, collapse = ",")
   })
   clusters.table <- t(data.frame(clusters.table ))
@@ -427,7 +436,7 @@ if(number.of.motifs > 1){
   
   ## Export a table with the cluster names and its elements (TF || Motif names)
   clusters.names.table <- NULL
-  clusters.names.table <-  lapply(clusters.names, function(x){
+  clusters.names.table <-  lapply(clusters.names, function(x) {
     paste(x, collapse = ",")
   })
   clusters.names.table <- t(data.frame(clusters.names.table ))
@@ -442,7 +451,7 @@ if(number.of.motifs > 1){
   alignment.width <- as.vector(
     unlist(
       sapply(
-        tree$labels, function(X){
+        tree$labels, function(X) {
           nchar(X)
         })
     )
@@ -453,9 +462,9 @@ if(number.of.motifs > 1){
   
   ######################
   ## Draw the heatmap
-  if(only.hclust == 0){
+  if (only.hclust == 0) {
     
-    if(draw.heatmap == 1){
+    if (draw.heatmap == 1) {
       
       
       for (plot.format in c("pdf", "jpg")) {
@@ -500,7 +509,7 @@ if(number.of.motifs > 1){
       }
     }
     
-    #     if(draw.consensus == 1){
+    #     if (draw.consensus == 1) {
     #
     #       ########################################
     #       ## Define the label color of the tree
@@ -572,7 +581,7 @@ central.motif.IDs <- vector()
 central.motif.names <- vector()
 central.motif.IDs.cluster <- vector()
 
-i <- sapply(1:length(clusters), function(nb){
+i <- sapply(1:length(clusters), function(nb) {
   
   alignment.cluster <<- list()
   description.table <<- NULL
@@ -580,7 +589,7 @@ i <- sapply(1:length(clusters), function(nb){
   tree <<- NULL
   
   ids <- clusters[[paste("cluster", nb, sep = "_")]]
-  if(length(ids) >= 2){
+  if (length(ids) >= 2) {
     case <- "case.2"
   } else{
     case <- "case.1"
@@ -633,7 +642,7 @@ i <- sapply(1:length(clusters), function(nb){
            forest.list[[central.motif]][[ids]][["spacer.up"]] <<- as.numeric(0)
            forest.list[[central.motif]][[ids]][["spacer.dw"]] <<- as.numeric(0)
            
-           if(only.hclust == 0){
+           if (only.hclust == 0) {
              
              ## Create a JSON file for trees with a single node
              ## In this situation this step is required because it is not possible to use the hclustToJson function
@@ -700,7 +709,7 @@ i <- sapply(1:length(clusters), function(nb){
            ## Build the tree by hierarchical clustering,
            tree <<- hclust.motifs(dist.matrix, hclust.method = hclust.method)
            
-           if(only.hclust == 0){
+           if (only.hclust == 0) {
              
              ## Creates and export the json file
              JSON.tree <- convert.hclust.to.JSON(tree)
@@ -725,9 +734,9 @@ i <- sapply(1:length(clusters), function(nb){
              ## Export the tree agglomeration order
              tree.agg<- as.vector(tree[[1]])
              
-             tree.agg.tab <- sapply(tree.agg, function(x){
+             tree.agg.tab <- sapply(tree.agg, function(x) {
                
-               if(x < 0){
+               if (x < 0) {
                  new.x <- x*-1
                  as.vector(global.description.table$id)[new.x]
                } else {
@@ -744,7 +753,7 @@ i <- sapply(1:length(clusters), function(nb){
            }
            
            ## Align the motifs and retrieve the information of the intermediate alignments
-           if(radial.only == 1){
+           if (radial.only == 1) {
              thresholds <- list(Ncor = -1, cor = -1, w = 0)
            }
            message("; Aligning each cluster individually")
@@ -757,7 +766,7 @@ i <- sapply(1:length(clusters), function(nb){
            intern.alignment <- alignment.cluster$intermediate.alignments
            
            ## Export the table with the intermediates alignment information
-           sapply(names(intern.alignment), function(lev){
+           sapply(names(intern.alignment), function(lev) {
              
              node.name <- gsub("merge_level", "node", lev, perl = TRUE)
              level.info <- data.frame(t(intern.alignment[[node.name]]))
@@ -782,10 +791,10 @@ write.table(all.central.motifs.ids.df, file = paste(sep = "", out.prefix, "_clus
 ## colors in the D3 trees.
 ##
 ## Print as well a table with the central motif on each cluster
-if(only.hclust == 0){
+if (only.hclust == 0) {
   
   n.colors <- NULL
-  if(radial.only == 1){
+  if (radial.only == 1) {
     n.colors <- original.number.clusters
   } else {
     n.colors <- length(clusters)
@@ -805,14 +814,14 @@ write.table(central.motif.table, file = paste(sep = "", out.prefix, "_central_mo
 
 #################################
 ## Produce the alignment table
-if(forest.nb > 1){
-  alignment.table <- sapply(forest.list, function(X){
-    sapply(X, function(Y){
+if (forest.nb > 1) {
+  alignment.table <- sapply(forest.list, function(X) {
+    sapply(X, function(Y) {
       return(c(Y[["number"]], Y[["strand"]], Y[["spacer.up"]], Y[["spacer.dw"]], Y[["consensus_d"]], Y[["consensus_rc"]], Y[["name"]]))
     })
   })
 } else{
-  alignment.table <- lapply(forest.list[[1]], function(X){
+  alignment.table <- lapply(forest.list[[1]], function(X) {
     return(c(X[["number"]], X[["strand"]], X[["spacer.up"]], X[["spacer.dw"]], X[["consensus_d"]], X[["consensus_rc"]], X[["name"]]))
   })
 }
@@ -822,13 +831,13 @@ alignment.table <- data.frame(matrix(alignment.table, ncol = 7, byrow = TRUE))
 colnames(alignment.table) <- c("number", "strand", "spacer.up", "spacer.dw", "consensus", "consensus_rc", "name")
 
 ## Produce the column ID
-ids.names <- unlist(as.vector(sapply(forest.list, function(x){names(x)})))
+ids.names <- unlist(as.vector(sapply(forest.list, function(x) {names(x)})))
 names(ids.names) <- ids.names
 alignment.table$id <- ids.names
 
 ## Produce the column Width
-width.tmp <- unlist(sapply(forest.list, function(X){
-  sapply(X, function(Y){
+width.tmp <- unlist(sapply(forest.list, function(X) {
+  sapply(X, function(Y) {
     return( nchar(Y[["consensus_d"]]))
   })
 }))
@@ -838,7 +847,7 @@ alignment.table$width <- width.tmp
 ## Produce the column Forest_ID
 forest.names <- names(forest.list)
 forest.id <- vector()
-for(name in forest.names){
+for (name in forest.names) {
   forest.id <- append(forest.id, rep(name, length(forest.list[[name]])))
 }
 alignment.table$cluster <- forest.id
