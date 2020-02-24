@@ -21,7 +21,6 @@ parameters:
       type: string
       choices: bed,dnapat,ft,galaxy_seq,gft,gff,gff3bed,swembl,ucsc_seq
       required: false
-      default: bed
     - name: self
       description: Also perform comparison between features in the same file (self-comparison). This can be useful to detect redundancy between annotated features.
       type: boolean

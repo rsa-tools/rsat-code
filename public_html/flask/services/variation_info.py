@@ -25,18 +25,12 @@ tool = 'variation-info'
 
 ns = api.namespace(tool, description=descr)
 
-
-@ns.route('/<string:species>/<string:assembly>', methods=['POST','GET'])
-@api.doc(params={'species':'Species name, e.g. Homo_sapiens','assembly':'Assembly name, e.g. GRCh38'})
-# @api.doc(params={'species':'Species name', 'assembly':'Assembly name'})
+@ns.route('/', methods=['POST','GET'])
 class VariationInfo(Resource):
 	@api.expect(get_parser)
-
         ## Support for GET queries
-	def get(self,species,assembly):
+	def get(self):
         	data = get_parser.parse_args()
-		data['species'] = species
-		data['assembly'] = assembly
 		if data['content-type'] == 'text/plain':
 			resp = self._run(data)
 			return utils.output_txt(resp,200)
@@ -44,14 +38,12 @@ class VariationInfo(Resource):
     	
         ## Support for POST queries
 	@api.expect(post_parser)
-	def post(self,species,assembly):
+	def post(self):
 		data = []
 		if request.headers.get('Content-type') == 'application/json':
 			data = request.get_json(force=True)
 		else:
 			data = post_parser.parse_args()
-		data['species'] = species
-		data['assembly'] = assembly
 		return self._run(data)
 	
         ## Run the query
