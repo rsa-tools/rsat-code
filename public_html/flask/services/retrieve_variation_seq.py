@@ -12,7 +12,7 @@ sys.path.append(service_dir + '/../')
 import utils
 from rest_server import app,api
 
-tool = 'retrieve-variation-seq1.0'
+tool = 'retrieve-variation-seq'
 ### Read parameters from yaml file
 (descr, get_parser, post_parser) = utils.read_parameters_from_yml(api, service_dir+'/'+ tool.replace('-','_') +'.yml')
 
@@ -46,7 +46,7 @@ class RetrieveVariationSeq(Resource):
 		exclude = fileupload_parameters + ['content-type']
 		for x in fileupload_parameters:
 			exclude = exclude + [x + '_string', x + '_string_type']
-		command = utils.perl_scripts + '/' + tool
+		command = utils.perl_scripts + '/' + tool + '1.0'
 		result_dir = utils.make_tmp_dir(tool)
 		for param in data:
 			if data[param] is not None and data[param] != '' and param not in exclude:
