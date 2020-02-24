@@ -18,11 +18,9 @@ parameters:
     description: matrix_format1. Specify the matrix format for the first input file only (requires format2)
     type: string
     required: false
-    default: transfac
   - name: format2
     description: matrix_format2. Specify the matrix format for the second input file only (requires format1).
     type: string
-    default: transfac
   - name: top1
     description: Only analyze the first X motifs of the first file. This options is convenient for quick testing before starting the full analysis.
     type: int

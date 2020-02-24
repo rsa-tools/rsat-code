@@ -51,17 +51,14 @@ parameters:
     description: Specify one or several tasks to be run. Supported tasks - all, comparison, clustering, report
     type: string
     choices: all, comparison, clustering, report
-    default: all
   - name: hclust_method
     description: Option to select the agglomeration rule for hierarchical clustering.
     choices: complete, average, single
     type: string
-    default: average
   - name: metric_build_tree
     description: Select the metric which will be used to cluster the motifs.based in one metric of to measure motif similarity.
     type: string
     choices: cor, Ncor, dEucl, NdEucl, logocor, logoDP, Nlogocor, Icor, NIcor, SSD, rank_mean, mean_zscore
-    default: Ncor
   - name: lth_w
     description: lower threshold.
     type: float
@@ -84,7 +81,6 @@ parameters:
     description: Specify the operator used to merge matrices (argument passed to merge-matrices).
     type: string
     choices: mean, sum
-    default: mean
   - name: quick
     description: With this option the motif comparison is done with the program compare-matrices-quick (implemented in C) rather than the program compare-matrices (implemented in Perl).
     type: boolean

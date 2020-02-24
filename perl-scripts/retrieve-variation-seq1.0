@@ -228,6 +228,7 @@ package	main;
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
+  our $org = '';
   our $species = '';
   our $ensembl_release = "";
   our $assembly = "";
@@ -271,9 +272,9 @@ package	main;
   ## Check argument values
 
   #Check if argument specified
-  &RSAT::error::FatalError("No species specified. Use -species") unless ($species);
-  &RSAT::error::FatalError("No assembly and ensembl version specified. Use at least one of these options: -release -assembly") 
-      unless ($ensembl_release || $assembly);
+  &RSAT::error::FatalError("No species specified. Use -org") unless ($org);
+    #&RSAT::error::FatalError("No assembly and ensembl version specified. Use at least one of these options: -release -assembly")
+    # unless ($ensembl_release || $assembly);
 
   if ($main::infile{'input'}) {
     &RSAT::error::FatalError("No input format specified. Use -format") unless ($format);
@@ -281,18 +282,19 @@ package	main;
   }
 
   # Check directory
-  my $genome_dir = &Get_genome_dir($species, $assembly, $ensembl_release,$species_suffix);
-  my $variation_dir = &Get_variation_dir($species, $assembly, $ensembl_release, $species_suffix);
+    my ($genome_dir, $variation_dir) = &Get_dirs_from_supported_file($org);
+    #my $genome_dir = &Get_genome_dir($species, $assembly, $ensembl_release,$species_suffix);
+    #my $variation_dir = &Get_variation_dir($species, $assembly, $ensembl_release, $species_suffix);
 
   &RSAT::error::FatalError("Genome directory", $genome_dir, "does not exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
   &RSAT::error::FatalError("Variation directory", $variation_dir, "does not exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);
 
   # Check if sequence files are not missing
-  my %chr_file = &Get_file_seq_name($genome_dir);
+  my %chr_file = &Get_file_seq_name($genome_dir . '/genome');
 
   foreach my $file (keys(%chr_file)) {
       &RSAT::message::Debug("Chr ", "++".$file."++", "File",  $chr_file{$file} )  if ($main::verbose >= 10);
-      my $raw_seq_file=$genome_dir."/".$chr_file{$file};
+      my $raw_seq_file=$genome_dir."/genome/".$chr_file{$file};
       unless (-f $raw_seq_file) {
 	  &RSAT::error::FatalError($raw_seq_file," is missing.");
       }
@@ -482,7 +484,7 @@ package	main;
 	  
 	  if ($chr ne $last_chr) { ## get the raw sequence for the given chromosome 
 	      
-	      my $raw_seq_file=$genome_dir."/".$chr_file{$chr};
+	      my $raw_seq_file=$genome_dir."/genome/".$chr_file{$chr};
 	      &RSAT::message::Debug("raw seq file  value", $chr, $raw_seq_file) if ($main::verbose >= 10); 
 	      $ref_seq = qx($SCRIPTS/sub-sequence -i $raw_seq_file -from 1 -to 250000000 -format raw);
 	      &RSAT::message::Debug("ref_seq  value",  $ref_seq) if ($main::verbose >= 10); 
@@ -622,61 +624,15 @@ Same as -h
       &PrintOptions();
 
 =pod
-
-=item B<-species species_name>
-
-Species name. This name must correspond to the species of the
+        
+=item B<-org organism>
+        
+Organism name. This name must correspond to the species of the
 variation/bed/id file if provided.
-
+            
 =cut
-    } elsif ($arg eq "-species") {
-      $main::species = lc(shift(@arguments));
-
-=pod
-
-=item B<-species_suffix>
-
-Species name. This name must correspond to the species of the
-variation/bed/id file if provided.
-
-=cut
-    } elsif ($arg eq "-species_suffix") {
-      $main::species_suffix = lc(shift(@arguments));
-
-=pod
-
-=item B<-release #>
-
-The version of ensembl database (e.g. 84).
-
-Note: each Ensembl release contains a specific assembly for
-each species. When the option -release is used, the option
--assembly should thus in principle not be used.
-
-=cut
-  } elsif (($arg eq "-release") || ($arg eq "-version") || ($arg eq "-e_version")) {
-    if ($arg ne "-release") {
-      &RSAT::message::Warning("Option -version is obsolete, has been replaced by -release.");
-    }
-    $main::ensembl_release = shift(@arguments);
-
-=pod
-
-=item B<-assembly #>
-
-Assembly (e.g. GRCh37 for the assembly 37 of the Human genome).
-
-Note: genome assemblies can cover several successive ensemble
-versions. In case of ambiguity, the latest corresponding ensembl
-version is used.
-
-=cut
-    } elsif (($arg eq "-assembly") || ($arg eq "-a_version")) {
-      if ($arg ne "-assembly") {
-	&RSAT::message::Warning("Option -a_version is obsolete, has been replaced by -assembly.");
-      }
-      $main::assembly = shift(@arguments);
-
+    } elsif ($arg eq "-org") {
+        $main::org = lc(shift(@arguments));
 =pod
 
 #=item B<-available_species>

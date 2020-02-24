@@ -10,7 +10,6 @@ parameters:
     description: output image format.
     type: string
     choices: jpg,gif,png,ps
-    default: png
     required: false
   - name: from
     description: lower limit of the positions represented on the graph

@@ -10,7 +10,6 @@ parameters:
     description: input_format.
     type: string
     choices: ft, bed
-    default: ft
     required: false
   - name: autoparam
     description: Extract some input parameters from the commented rows (starting with ';') of the input file.

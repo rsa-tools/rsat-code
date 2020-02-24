@@ -10,7 +10,6 @@ parameters:
     description: residue type.
     type: string
     choices: dna, cytomod
-    default: dna
     required: false
   - name: mlist
     description: matrix_list. Indicate a file containing a list of matrices to be used for scanning the region.
@@ -113,7 +112,6 @@ parameters:
     description: Format for logo image file. Supported - eps,jpeg,logodata,pdf,png,png_print,svg
     type: string
     choices: eps,jpeg,logodata,pdf,png,png_print,svg
-    default: png
   - name: logo_file
     description: Specifies the name of the logo file.
     type: string

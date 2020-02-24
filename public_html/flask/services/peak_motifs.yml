@@ -36,7 +36,6 @@ parameters:
   - name: disco
     description: Specify the software tool(s) that will be used for motif discovery.
     type: string
-    default: oligos,positions
   - name: nmotifs
     description: max_motif_number
     type: int

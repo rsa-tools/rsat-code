@@ -18,7 +18,6 @@ parameters:
     description: Max number of patterns to assemble. This argument is passed to pattern-assembly.
     type: int
     required: false
-    default: transfac
   - name: max_asmb_nb
     description: This parameter is passed to pattern-assembly, to indicate the maximal number of assemblies to return.
     type: int
