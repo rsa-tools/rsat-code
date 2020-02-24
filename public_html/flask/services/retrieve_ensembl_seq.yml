@@ -1,0 +1,107 @@
+descr:
+    Returns upstream, downstream, intronic, exonic or UTR DNA sequences for a list of query genes.
+---
+parameters:
+  - name: org
+    description: organism. underscore between words (eg. 'homo_sapiens')
+    type: string
+  - name: ensemblhost
+    description: address of ensembl database server (default is EBI server)
+    type: string
+  - name: dbname
+    description: name of EnsEMBL database (alternative to organism).
+    type: string
+    required: false
+  - name: dbversion
+    description: version of ensembl database (eg. 47)
+    type: int
+  - name: feattype
+    description: Feature type. Supported - cds,exon,gene,intron,mrna,transcript,utr
+    type: string
+    choices: cds,exon,gene,intron,mrna,transcript,utr
+    required: false
+  - name: type
+    description: sequence type. Currently supported sequence types- upstream, downstream, feature
+    type: string
+    choices: upstream, downstream, feature
+  - name: utr
+    description: Type(s) of UTR (untranslated region) to return. Supported - all, 5prime, 3prime
+    type: string
+    choices: all, 5prime, 3prime
+  - name: q
+    description: query. The query should be an EnsEMBL gene identifier (eg 'ENSG00000177799'). Multiple queries can be entered, separated by ','
+    type: string
+  - name: i
+    description: query file. The first word of each line is taken as a query. This option is incompatible with -q.
+    type: file
+  - name: all
+    description: return all genomic upstream/downstream regions
+    type: boolean
+  - name: from
+    description: limits of the region to extract, relative to feattype start or end (=position 0). Use negative values for upstream sequence. Ex. -from -800 -to -1
+    type: int
+  - name: to
+    description: limits of the region to extract, relative to feattype start or end (=position 0). Use negative values for upstream sequence. Ex. -from -800 -to -1
+    type: int
+  - name: noorf
+    description: the upstream/downstream sequence can only contain non-coding sequence.
+    type: boolean
+  - name: nogene
+    description: the upstream/downstream sequence can only contain non-transcribed sequence.
+    type: boolean
+  - name: maskcoding
+    description: all coding sequence is replaced by N in the retrieved sequence
+    type: boolean
+  - name: rm
+    description: Use the repeat masked version of the genome.  Attention - repeated regions are annotated for some genomes only.
+    type: boolean
+  - name: alltranscripts
+    description: Get sequences for all transcripts of genes. Use -uniqseqs if you do motif discovery afterwards
+    type: boolean
+  - name: uniqseqs
+    description: With -alltranscripts, returns only non-redondant sequences
+    type: boolean
+  - name: firstintron
+    description: With feattype intron, get only first intron sequence
+    type: boolean
+  - name: noncoding
+    description: With feattype exon, get only non-coding (part of) exons
+    type: boolean
+  - name: chrom
+    description: Chromosome name or number (to use with -left and -right)
+    type: string
+  - name: left
+    description: Left limit of sequence to retrieve
+    type: int
+  - name: right
+    description: Right limit of sequence to retrieve
+    type: int
+  - name: strang
+    description: Strand of sequence to retrieve when using -left and -right
+    type: int
+    choices: 1, -1
+  - name: ftfile
+    description: Feature file
+    type: file
+  - name: ftfileformat
+    description: Feature file format. Supported - ft, gft
+    type: string
+    choices: ft, gft
+  - name: ortho
+    description: Retrieve homologous sequences from EnsEMBL Compara databases
+    type: boolean
+  - name: ortho_type
+    description: Filter on homology type. (eg. ortholog, ortholog_one2one)
+    type: string
+  - name: homologs_table
+    description: File_name. Prints homology info to a tab delimited file
+    type: string
+  - name: taxon
+    description: Filter on taxonomic level (eg. Mammalia)
+    type: string
+  - name: header_org
+    description: Type of organism name to use in the fasta header (scientific, common or none). Default is scientific. Common name is only accessible with -ortho.
+    type: string
+  - name: label
+    description: Information used as sequence label in the fasta header. Supported -label query
+    type: string
