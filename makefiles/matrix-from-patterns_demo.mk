@@ -5,16 +5,31 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/matrix-from-patterns_demo.mk
 
-PEAKSET=Sox2
-PEAK_SEQ=${RSAT}/public_html/demo_files/${PEAKSET}_peaks.fasta
+## Verbosity
 V=2
+
+## Study case 1
+PEAK_SET=Sox2
+PEAK_SEQ=${RSAT}/public_html/demo_files/${PEAK_SET}_peaks.fasta
+SEQ_NAME=${PEAK_SET}
+SEQ_FILE=${PEAK_SEQ}
+
+## Study case 2
+METSET=yeast_MET_promoters
+MET_SEQ=${RSAT}/public_html/demo_files/MET_up800-noorf.fasta
+SEQ_NAME=${METSET}
+SEQ_FILE=${MET_SEQ}
 
 ################################################################1
 ## List parameters
 param:
 	@echo "Parameters"
-	@echo "	PEAKSET			${PEAKSET}"
+	@echo "	PEAK_SET			${PEAK_SET}"
 	@echo "	PEAK_SEQ		${PEAK_SEQ}"
+	@echo "	METSET			${METSET}"
+	@echo "	MET_SEQ			${MET_SEQ}"
+	@echo "	SEQ_NAME		${SEQ_NAME}"
+	@echo "	SEQ_FILE		${SEQ_FILE}"
 	@echo "	OLIGO_PREFIX		${OLIGO_PREFIX}"
 	@echo "	OLIGOS			${OLIGOS}"
 	@echo "	ASSEMBLY		${ASSEMBLY}"
@@ -28,16 +43,16 @@ param:
 
 ################################################################
 ## Discover over-reprsented k-mers
-OLIGO_DIR=results/oligos/${PEAKSET}
-MKV=4
+OLIGO_DIR=results/oligos/${SEQNAME}
+MKV=1
 OL=6
-OLIGO_PREFIX=peak-motifs_oligos-2str-noov_${OL}nt_mkv${MKV}
+OLIGO_PREFIX=${SEQ_NAME}_oligos-2str-noov_${OL}nt_mkv${MKV}
 OLIGOS=${OLIGO_DIR}/${OLIGO_PREFIX}
 oligos:
 	@echo ""
-	@echo "Discovering over-represented oligonucleotides"
+	@echo "Discovering over-represented oligonucleotides	${SEQ_NAME}"
 	@mkdir -p ${OLIGO_DIR}
-	oligo-analysis  -v ${V} -quick -i ${PEAK_SEQ} -sort -lth ratio 1 \
+	time oligo-analysis  -v ${V} -quick -i ${SEQ_FILE} -sort \
 		-lth occ_sig 0 -uth rank 100 -return occ,proba,rank \
 		-2str -noov -seqtype dna -l ${OL} -markov ${MKV} -pseudo 0.01 \
 		-o ${OLIGOS}.tab
@@ -49,7 +64,7 @@ ASSEMBLY=${OLIGOS}.asmb
 assembly:
 	@echo
 	@echo "Assemblink k-mers"
-	pattern-assembly  -v ${V} -i ${OLIGOS}.tab \
+	time pattern-assembly  -v ${V} -i ${OLIGOS}.tab \
 		-2str -maxfl 1 -subst 1 -max_asmb_width 20 -toppat 100 -max_asmb_size 50 -max_asmb_width 20 -max_asmb_nb 10 \
 		-o ${ASSEMBLY}
 	@echo "	${ASSEMBLY}"
@@ -58,7 +73,7 @@ assembly:
 ## Run matrix-from-patterns
 CLUSTERING_OPT=counts
 CLUSTERING_PREFIX=clustering-${CLUSTERING_OPT}
-PSSM_DIR=results/${PEAKSET}_${CLUSTERING_PREFIX}
+PSSM_DIR=results/${SEQ_NAME}_${CLUSTERING_PREFIX}
 PSSM_PREFIX=${PSSM_DIR}/${OLIGO_PREFIX}_pssm
 SIG_MATRICES=${PSSM_PREFIX}_sig_matrices.tf
 COUNT_MATRICES=${PSSM_PREFIX}_count_matrices.tf
@@ -69,14 +84,14 @@ matrices:
 	@echo "Running matrix-from-patterns"
 	@mkdir -p ${PSSM_DIR}
 	@echo "	PSSM_DIR		${PSSM_DIR}"
-	matrix-from-patterns -v ${V} \
+	time matrix-from-patterns -v ${V} \
 		-sites \
-		-seq ${PEAK_SEQ} \
+		-seq ${SEQ_FILE} \
 		-asmb ${ASSEMBLY} \
 		-bginput \
 		-toppat 100 -max_asmb_nb 10 -max_asmb_width 20 -subst 1 -prefix oligos_${OL}nt \
 		-flanks 2 -collect_method matrix-scan${QUICK} -logo \
-		-cluster ${CLUSTERING_OPT} \
+		-cluster ${CLUSTERING_OPT} ${OPT} \
 		-o ${PSSM_PREFIX}
 	@echo "	CLUSTERING_OPT		${CLUSTERING_OPT}"
 	@echo "	PSSM_PREFIX		${PSSM_PREFIX}"
