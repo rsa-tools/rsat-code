@@ -96,24 +96,40 @@ heatmap.color.classes <- as.numeric(heatmap.color.classes)
 ## Example for Debugging           ##
 ## Oct4 motifs demo in the website ##
 #####################################
-# infile <- "/run/user/280010/gvfs/sftp:host=rsat-tagc.univ-mrs.fr,user=rsat/workspace/rsat/tmp/www-data/2020/02/24/matrix-clustering_2020-02-24.145827_5PhSeP/matrix-clustering_tables/pairwise_compa.tab"
-# description.file <- "/run/user/280010/gvfs/sftp:host=rsat-tagc.univ-mrs.fr,user=rsat/workspace/rsat/tmp/www-data/2020/02/24/matrix-clustering_2020-02-24.145827_5PhSeP/matrix-clustering_tables/pairwise_compa_matrix_descriptions.tab"
+# infile <- "/run/user/280010/gvfs/sftp:host=rsat-tagc.univ-mrs.fr,user=rsat/workspace/rsat/test/matrix-clustering_test/alignment-bug_JvH_2020-02-21/clusters/met-matrices__tables/pairwise_compa.tab"
+# description.file <- "/run/user/280010/gvfs/sftp:host=rsat-tagc.univ-mrs.fr,user=rsat/workspace/rsat/test/matrix-clustering_test/alignment-bug_JvH_2020-02-21/clusters/met-matrices__tables/pairwise_compa_matrix_descriptions.tab"
 # metric <- "Ncor"
 # hclust.method <- "average"
 # thresholds <- list(Ncor = 0.4, cor = 0.6, w = 5)
+# out.prefix <- "/workspace/rsat/test/matrix-clustering_test/alignment-bug_JvH_2020-02-21/clusters/met-matrices_"
 
 
 ##############################################
 ## Read matrix comparison table + treatment
-# fread(infile)
+
+## Use fread instead read.csv
+## This will make a considerable difference in time when loading big tables
+## for example from large motif collections
+##
+## Added by Jaime Castro: 25-02-2020
+# global.compare.matrices.table <<- fread(infile)
+# names(global.compare.matrices.table)[1] <- sub("^#", "", names(global.compare.matrices.table)[1])
+
 global.compare.matrices.table <<- read.csv(infile, sep = "\t", comment.char = ";")
 names(global.compare.matrices.table)[1] <- sub("^X.", "", names(global.compare.matrices.table)[1])
 
 #######################################
-## Read description table +treatment
+## Read description table
+
+## Use fread instead read.csv
+## This will make a considerable difference in time when loading big tables
+## for example from large motif collections
+##
+## Added by Jaime Castro: 25-02-2020
+# global.description.table <<- fread(description.file)
 global.description.table <<- read.csv(description.file, sep ="\t", comment.char = ";")
 
-## In reference to the names, order alphabetically the description table
+## Order alphabetically the description table (relative to the names) 
 global.description.table <- global.description.table[order(global.description.table$id),]
 global.description.table$n <- 1:length(global.description.table$id)
 
@@ -126,7 +142,11 @@ if (length(grep(pattern=metric, names(global.compare.matrices.table))) < 1) {
   stop(paste(sep = "", "Input file (", infile, ") does not contain the metric column (", metric, ")."))
 }
 
-## Convert distance table into a distance matrix, required by hclust
+
+#######################################################################
+## Convert distance table into a distance matrix, required by hclust ##
+#######################################################################
+message("; Computing the distance matrix using ", metric)
 distances.objects <- build.distance.matrix(metric = metric)
 dist.table <- distances.objects$table
 dist.matrix <- distances.objects$matrix
@@ -134,46 +154,54 @@ dist.matrix <- distances.objects$matrix
 ## Export the distance table
 write.table(dist.table, file=distance.table, quote=FALSE, row.names=TRUE, col.names=NA, sep = "\t")
 
-number.of.motifs <- dim(global.description.table)[1]
+number.of.motifs <- nrow(global.description.table)
+
 if (only.hclust == 0) {
   dir.trees <- paste(out.prefix, "_trees", sep = "")
   dir.create(dir.trees, showWarnings=FALSE, recursive=TRUE)
 }
 
-################################################
-## Build the tree by hierarchical clustering,
-## export it in Newick format
+
+##############################################
+## Compute the hierarchical clustering tree ##
+##############################################
 if (number.of.motifs > 1) {
   
   tree <<- hclust.motifs(dist.matrix, hclust.method=hclust.method)
   
   if (only.hclust == 0) {
     
-    ################################################
-    ## If it is indicated, export the newick tree
+    ######################################
+    ## Export the tree as a newick file ##
+    ######################################
     if (export.newick == 1) {
       newick.tree <- convert.hclust.to.newick(tree, decimals=3)
       newick.file <- file.path(dir.trees, "tree.newick")
-      verbose(paste("Exporting newick file", newick.file), 2)
+      verbose(paste("Exporting tree as newick file", newick.file), 2)
       write(newick.tree, file=newick.file)
       rm(newick.tree, newick.file)
     }
     
-    #######################################
-    ### Creates and export the json file
+    ####################################
+    ## Export the tree as a json file ##
+    ####################################
     JSON.tree <- convert.hclust.to.JSON(tree)
     json.file <- paste(out.prefix, "_trees/tree.json", sep = "")
-    verbose(paste("JSON tree file", json.file), 2)
+    verbose(paste("Exporting JSON tree file for the tree with all the motifs", json.file), 2)
     writeLines(JSON.tree, con=json.file)
     
-    ## Export tree as RData object
+    ####################################
+    ## Export tree as an RData object ##
+    ####################################
     tree.file.rdata <- paste(out.prefix, "_trees/tree.RData", sep = "")
     save(tree, file = tree.file.rdata)
   }
   
-  ###########################################################
-  ## Initially align all the motifs and search the cluster
-  ## After each cluster will be aligned separately
+  ###################################################
+  ## First, cluster all the motif i a single tree  ##
+  ## then partition the tree into the clusters     ##
+  ## After each cluster will be aligned separately ##
+  ###################################################
   message("; Aligning all the motifs")
   alignment <- align.motifs(thresholds = thresholds,
                             method = hclust.method,
@@ -189,8 +217,9 @@ if (number.of.motifs > 1) {
   # save(tree, file = "tree.Rdata")
   
   #############################################
-  ## Define the clusters: Bottom-up approach
-  ## and get their motif IDs
+  ## Define the clusters: Bottom-up approach ##
+  ## and get their corresponding motif IDs   ##
+  #############################################
   message("; Define the thresholds in a bottom-up way")
   clusters <<- find.clusters(alignment.attributes, tree)
   original.number.clusters <- length(clusters)
@@ -581,6 +610,7 @@ central.motif.IDs <- vector()
 central.motif.names <- vector()
 central.motif.IDs.cluster <- vector()
 
+# nb <- 1
 i <- sapply(1:length(clusters), function(nb) {
   
   alignment.cluster <<- list()
@@ -588,6 +618,7 @@ i <- sapply(1:length(clusters), function(nb) {
   compare.matrices.table <<- NULL
   tree <<- NULL
   
+  ## Check the number of motifs within each cluster
   ids <- clusters[[paste("cluster", nb, sep = "_")]]
   if (length(ids) >= 2) {
     case <- "case.2"
@@ -670,14 +701,17 @@ i <- sapply(1:length(clusters), function(nb) {
          case.2 = {
            
            ## New comparison table (with the ids of the current cluster)
+           ## Use dplyr::filter, this function is faster for large tables and cleaner code
+           ## Added by Jaime Castro: 25-02-2020
            global.compare.matrices.table <<- compa.table[which( (compa.table[,"id1"] %in% ids) & (compa.table[,"id2"] %in% ids) ),]
+           # global.compare.matrices.table <<- compa.table %>% 
+           #                                    dplyr::filter(id1 %in% ids & id2 %in% ids)
            
            global.compare.matrices.table$id1 <<- as.vector(global.compare.matrices.table$id1)
            global.compare.matrices.table$id2 <<- as.vector(global.compare.matrices.table$id2)
            
            ## New description table (with the ids of the current cluster)
            global.description.table <<- desc.tab[desc.tab[,"id"] %in% ids, ]
-           ## In reference to the ids, order alphabetically the description table
            global.description.table <<- global.description.table[order(as.vector(global.description.table$id)),]
            global.description.table$n <<- 1:length(global.description.table$n)
            
@@ -732,7 +766,7 @@ i <- sapply(1:length(clusters), function(nb) {
              nodes <- as.numeric(gsub("node_", "", nodes))
              
              ## Export the tree agglomeration order
-             tree.agg<- as.vector(tree[[1]])
+             tree.agg <- as.vector(tree[[1]])
              
              tree.agg.tab <- sapply(tree.agg, function(x) {
                
@@ -756,6 +790,10 @@ i <- sapply(1:length(clusters), function(nb) {
            if (radial.only == 1) {
              thresholds <- list(Ncor = -1, cor = -1, w = 0)
            }
+           
+           ##############################################
+           ## Forest: align the motif within each tree ##
+           ##############################################
            message("; Aligning each cluster individually")
            alignment.cluster <<- align.motifs(thresholds = thresholds,
                                               method = hclust.method,
