@@ -1,7 +1,8 @@
-#####################################################################
-## Evaluate if the mean of scores for all pairs of leaves between
-## the two clusters is upper/lower than the threshold,
-## if so, then the two clusters should be aligned
+####################################################################
+## Evaluate if the mean of scores for all pairs of leaves between ##
+## the two clusters is upper/lower than the threshold,            ##
+## if so, then the two clusters should be aligned                 ##
+####################################################################
 check.alignment <- function(id1,
                             id2,
                             thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
