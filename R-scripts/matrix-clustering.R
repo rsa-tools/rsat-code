@@ -67,6 +67,8 @@ source(file.path(dir.rsat, 'R-scripts/cluster_motifs_lib.R'))
 plot.tree <- FALSE
 export <- 'json'
 
+v <- ifelse(as.numeric(verbosity) < 0, yes = 0, no = as.numeric(verbosity))
+
 ## JvH (2020-02-08). Jaime, do you have a specific reason to use a double arrow here and below?
 thresholds <<- list()
 
@@ -82,7 +84,6 @@ if (length(args >= 1)) {
   for (i in 1:length(args)) {
     eval(parse(text = args[[i]]))
   }
-  verbose(args, 3)
 }
 
 
@@ -146,7 +147,7 @@ if (length(grep(pattern=metric, names(global.compare.matrices.table))) < 1) {
 #######################################################################
 ## Convert distance table into a distance matrix, required by hclust ##
 #######################################################################
-message("; Computing the distance matrix using ", metric)
+verbose(paste("; Computing the distance matrix using ", metric), v)
 distances.objects <- build.distance.matrix(metric = metric)
 dist.table <- distances.objects$table
 dist.matrix <- distances.objects$matrix
@@ -202,7 +203,7 @@ if (number.of.motifs > 1) {
   ## then partition the tree into the clusters     ##
   ## After each cluster will be aligned separately ##
   ###################################################
-  message("; Aligning all the motifs")
+  verbose(paste("; Aligning all the motifs"), v)
   alignment <- align.motifs(thresholds = thresholds,
                             method = hclust.method,
                             metric = metric,
@@ -220,7 +221,7 @@ if (number.of.motifs > 1) {
   ## Define the clusters: Bottom-up approach ##
   ## and get their corresponding motif IDs   ##
   #############################################
-  message("; Define the thresholds in a bottom-up way")
+  verbose(paste("; Define the thresholds in a bottom-up way"), v)
   clusters <<- find.clusters(alignment.attributes, tree)
   original.number.clusters <- length(clusters)
   
@@ -794,7 +795,7 @@ i <- sapply(1:length(clusters), function(nb) {
            ##############################################
            ## Forest: align the motif within each tree ##
            ##############################################
-           message("; Aligning each cluster individually")
+           verbose(paste("; Aligning each cluster individually"), v)
            alignment.cluster <<- align.motifs(thresholds = thresholds,
                                               method = hclust.method,
                                               metric = metric,

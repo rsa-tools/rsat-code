@@ -29,11 +29,10 @@ align.two.leaves <- function(child1,
   id1.hclust <- get.id(n1)
   id2.hclust <- get.id(n2)
 
-  # message("; Aligning: ", id1.hclust, " - ", id2.hclust)
-  if(align == TRUE){
-    message(paste("Aligning motifs: ", id1.hclust, " - ", id2.hclust), 2)
-  }
-
+  ## For debug
+  # if(align == TRUE){
+  #   message(paste("Aligning motifs: ", id1.hclust, " - ", id2.hclust), 2)
+  # }
 
   ## According to the hierarchical clustering method selected,
   ## Check if the motifs corresponding to the current level shall be aligned
