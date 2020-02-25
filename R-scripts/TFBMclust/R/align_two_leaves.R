@@ -1,6 +1,15 @@
 ##################################################
 ## Align two leaves: creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
+##
+## Originally, the gaps were represented with '-', however, this was not optimal when
+## there are empty positions in the input matrices (e.g., assemblies), because the motif
+## consensus in such empty positions was annotated also with '-'.
+## This caused a problem to shift the alignment when one branch was aligned with a single motif
+## and when two branches were aligned.
+## To avoid such problem from now on, the gaps are represented with '+'
+##
+## Updated by Jaime Castro (25-02-2020)
 align.two.leaves <- function(child1,
                              child2,
                              thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
@@ -22,7 +31,7 @@ align.two.leaves <- function(child1,
 
   # message("; Aligning: ", id1.hclust, " - ", id2.hclust)
   if(align == TRUE){
-    verbose(paste("Aligning motifs: ", id1.hclust, " - ", id2.hclust), 2)
+    message(paste("Aligning motifs: ", id1.hclust, " - ", id2.hclust), 2)
   }
 
 
@@ -117,7 +126,7 @@ align.two.leaves <- function(child1,
 
       ## Add the offset to the consensuses
       offset <- as.vector(global.compare.matrices.table[compa.nb, "offset"])
-      spacer <- paste(collapse="",rep(x="-",times=abs(offset)))
+      spacer <- paste(collapse="",rep(x="+",times=abs(offset)))
 
       if (offset < 0) {
         consensus1a <- paste(spacer, consensus1a, sep = "")
@@ -140,8 +149,6 @@ align.two.leaves <- function(child1,
       motifs.info[[id2]][["consensus_rc"]] <<- consensus2b
       motifs.info[[id2]][["strand"]] <<- id2.strand
       motifs.info[[id2]][["number"]] <<- n2
-
-
 
       motifs.info[[id2]][["spacer.up"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$up.spacer
       motifs.info[[id2]][["spacer.dw"]] <<- get.spacer.nb(motifs.info[[id2]][["consensus_d"]])$dw.spacer
