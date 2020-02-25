@@ -156,7 +156,7 @@ align.two.clusters <- function(child1,
       } else{
         ids.mod <- ids2.hclust
       }
-      spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
+      spacer <- paste(collapse="",rep(x="+",times = abs(offset)))
       temp.motifs.info <- motifs.info[ids.mod]
 
       sapply(ids.mod, function(y){
