@@ -1,8 +1,8 @@
 ################################################################
-## Collect the list of leaves (motif) associated to each
+## Collect the list of leaves (motifs) associated to each
 ## internal node (motif cluster) of the tree.
 ##
-## This method works for any hclust result tree, irrespective of the
+## This method works for any R hclust result tree, irrespective of the
 ## fact that it refers to motifs or anything else.
 ##
 ## Usage: generate a vector with the list of leaves (string-formatted)
