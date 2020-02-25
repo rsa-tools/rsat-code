@@ -2,6 +2,15 @@
 ## Align a leaf and one cluster: align the single motif relative
 ## to the already aligned cluster; creates a list with the info
 ## (strand, consensus, offset) of the aligned motifs
+##
+## Originally, the gaps were represented with '-', however, this was not optimal when
+## there are empty positions in the input matrices (e.g., assemblies), because the motif
+## consensus in such empty positions was annotated also with '-'.
+## This caused a problem to shift the alignment when one branch was aligned with a single motif
+## and when two branches were aligned.
+## To avoid such problem from now on, the gaps are represented with '+'
+##
+## Updated by Jaime Castro (25-02-2020)
 align.leaf.and.cluster <- function(child1,
                                    child2,
                                    thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
@@ -49,6 +58,7 @@ align.leaf.and.cluster <- function(child1,
     internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["cluster_1"]] <<- paste(n1, collapse = " ")
     internal.nodes.attributes[[paste("node_", merge.level, sep = "")]][["cluster_2"]] <<- paste(n2, collapse = " ")
   }
+
 
   if(align == TRUE){
 
@@ -110,29 +120,31 @@ align.leaf.and.cluster <- function(child1,
       ## Each case depends if the Ids were inverted, if the strand of the comparison between the closest motifs
       ## is R or D, and in the orientation of the previously aligned motif.
       case <- 0
-      if(switch.ids == 1){
-        if(strand == "D"){
-          if(motifs.info[[aligned]][["strand"]] == "D"){
+      if (switch.ids == 1 ){
+        if (strand == "D") {
+          if (motifs.info[[aligned]][["strand"]] == "D") {
 
             ## Case 1: inverted IDs, current comparison strand = 'D' and strand of previously aligned motif = 'D'
             case <- 1
-          } else{
+
+          } else {
             ## Case 2: inverted IDs, current comparison strand = 'D' and strand of previously aligned motif = 'R'
             case <- 2
           }
-        } else{
-          if(motifs.info[[aligned]][["strand"]] == "D"){
+
+        } else {
+          if (motifs.info[[aligned]][["strand"]] == "D") {
 
             ## Case 3: inverted IDs, current comparison strand = 'R' and strand of previously aligned motif = 'D'
             case <- 3
-          } else{
+          } else {
             ## Case 4: inverted IDs, current comparison strand = 'R' and strand of previously aligned motif = 'R'
             case <- 4
           }
         }
-      }else{
-        if(strand == "D"){
-          if(motifs.info[[aligned]][["strand"]] == "D"){
+      } else {
+        if (strand == "D") {
+          if (motifs.info[[aligned]][["strand"]] == "D") {
 
             ## Case 5: non-inverted IDs, current comparison strand = 'D' and strand of previously aligned motif = 'D'
             case <- 5
@@ -140,12 +152,12 @@ align.leaf.and.cluster <- function(child1,
             ## Case 6: non-inverted IDs, current comparison strand = 'D' and strand of previously aligned motif = 'R'
             case <- 6
           }
-        } else{
-          if(motifs.info[[aligned]][["strand"]] == "D"){
+        } else {
+          if (motifs.info[[aligned]][["strand"]] == "D") {
 
             ## Case 7: non-inverted IDs, current comparison strand = 'R' and strand of previously aligned motif = 'D'
             case <- 7
-          } else{
+          } else {
             ## Case 8: non-inverted IDs, current comparison strand = 'R' and strand of previously aligned motif = 'R'
             case <- 8
           }
@@ -186,7 +198,7 @@ align.leaf.and.cluster <- function(child1,
       offset <- offset + spacer.diff
 
       ## Create the spacer
-      spacer <- paste(collapse="",rep(x="-",times = abs(offset)))
+      spacer <- paste(collapse="",rep(x="+",times = abs(offset)))
 
       ## Add the gaps
       ids.mod <- NULL
