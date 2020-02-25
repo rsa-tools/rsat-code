@@ -3757,9 +3757,9 @@ sub PrintDyadReturnFields {
 sub MatrixFromPatterns_defaults {
   $default{to_matrix} = 1;
   $default{flanks} = 2;
-  $default{max_asmb_nb} = 10;
+  $default{max_asmb_nb} = 20;
   $default{min_weight} = 5;
-  $default{clustering} = 'none';
+  $default{clustering} = 'sig';
 }
 
 ################################################################
