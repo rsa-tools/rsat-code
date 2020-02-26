@@ -2119,7 +2119,7 @@ sub CompareMatricesQuick_AnnotateMotifs {
   ## Run the pairwise matrix comparison
   &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
   my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose; 
-  $cmd .=  " -file1 ".$main::outfile{root_motifs};
+  $cmd .=  " -file1 ".$main::outfile{all_concatenated_motifs};
   $cmd .=  " -file2 ".$main::outfile{ref_collection_tf};
   $cmd .= " -lth_ncor1 -1";
   $cmd .= " -lth_ncor2 -1";
@@ -2133,14 +2133,6 @@ sub CompareMatricesQuick_AnnotateMotifs {
   &RSAT::util::one_command($cmd, 1,"");
   &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{reference_compa}) if ($main::verbose >= 2);
 
-  ## 
-  ## $main::outfile{all_concatenated_motifs}
-  
-  ## Example: matrix-clustering -v 2 -matrix oct4_peak_motifs $RSAT/public_html/tmp/www-data/2020/02/24/matrix-clustering_2020-02-24.175653_VvhPLp/matrix-clustering_query_matrices.transfac transfac -hclust_method average -calc sum -title oct4_motifs_found_in_chen_2008_peak_sets -metric_build_tree Ncor -lth w 5 -lth cor 0.6 -lth Ncor 0.4 -quick -label_in_tree name -return json,heatmap -o /Users/rsat/rsat/test/matrix-clustering_test/Annotate_root/Annotate -ref_collection /Users/rsat/rsat/public_html/motif_databases/JASPAR/Jaspar_2020/nonredundant/JASPAR2020_CORE_vertebrates_non-redundant_pfms.tf tf
-
-  #print $cmd;
-  #die "-----------------------------------------------------\n";
-  
   return();
 }
 
@@ -2379,7 +2371,8 @@ sub Add_gaps_to_motifs {
                 #my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
                 #&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
                 #Produce_logo($aligned_motif, $id);
-                ##########
+
+		##########
                 my $logo_file = $main::outfile{prefix}."_aligned_logos/";
                 $logo_file .= $AC || $ID;
                 $logo_file .= "_logo";
@@ -3051,7 +3044,7 @@ sub Merge_matrices {
                 
                 my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_trimmed_matrices.tf";
                 $cmd = "cat ".$files." >".$cat_file;
-                $cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file." -v ".$main::verbose;
+                $cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file." -v 0";
                 $cmd .= " -in_format tf -out_format tf";
                 $cmd .= " -id ".$cluster." -name ".$cluster;
                 $cmd .= " -calc ".$operator;
@@ -3095,10 +3088,10 @@ sub Merge_matrices {
                 ## Calculate the IC content and remove low IC columns
                 $merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, -2, $lev_motif_ac, $lev_motif_id, $matrix_type, $mer_type, $mer_number);
                 
-                ## Create branch-wise logos
+                ## Concatenate the branch motifs in a single file
                 $concat_motif_files .= $merged_mat_file_trimmed." ";
-                #my $c = "cat ".$merged_mat_file_trimmed." >> ".$main::outfile{all_concatenated_motifs};
-                #&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+                my $c = "cat ".$merged_mat_file_trimmed." >> ".$main::outfile{all_concatenated_motifs};
+                &doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
                 #Produce_logo($merged_mat_file_trimmed,$clusters_info{$cluster});
                 
                 ##########
@@ -3184,6 +3177,11 @@ sub Merge_matrices {
             unlink($new_singleton_motif_file_temp);
             
             $concat_motif_files .= $new_singleton_motif_file." ";
+
+	    ## Concat the singleton cluster motifs
+	    my $cc = "cat ".$new_singleton_motif_file." >> ".$main::outfile{all_concatenated_motifs};
+	    &doit($cc, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+	    
             ##########
             my @matrices = &RSAT::MatrixReader::readFromFile($new_singleton_motif_file, "tf");
             my $matrix = $matrices[0];
@@ -6007,6 +6005,19 @@ sub InsertListOfFiles {
                      ';
       }
 
+
+      ## If it is specified, add the annotation table of the branch motifs
+      if ($reference_collection_flag == 1) {
+	$add_files .= 
+	    '
+		   <tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{reference_compa}).'"><strong>Motif annotations from reference collection</strong></a></td>
+		      <td class="tab_spacer_2">A tab file showing the motifs matching the branch and root motifs</td>
+		   </tr>
+                     ';
+      }
+
+      
       ## If it is specified, add the newick tree
       if ($export_newick == 1 && $number_of_motifs > 1) {
 	$add_files .= 
