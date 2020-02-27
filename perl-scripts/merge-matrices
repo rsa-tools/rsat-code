@@ -182,10 +182,6 @@ package main;
   }
 
   ################################################################
-  ## Open output stream
-  $out = &OpenOutputFile($outfile{output});
-
-  ################################################################
   ## Read input
   my @matrices = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
 
@@ -220,9 +216,6 @@ package main;
   }
 
 
-  ################################################################
-  ## Print verbose
-  &Verbose() if ($main::verbose >= 1);
 
   ################################################################
   ## Execute the command
@@ -274,33 +267,58 @@ package main;
   ################################################################
   ## Output
 
+  if ($infile{sequences}) {
+
+    ################################################################
+    ## Define the prefix based on the output file
+    $prefix{output} = $outfile{output};
+    $prefix{output} =~ s|\.\w+$||;
+    $prefix{output} .= "_rescanned";
+#    $outfile{rescanned_matrices} = $prefix{output}.".".$output_format;
+#    $outfile{rescanned_sites} = $prefix{output}.".".$output_format;
+
+    $outfile{merged_counts} = $prefix{output}."_merged_counts.".$output_format;
+
+    ################################################################
+    ## Open output stream in a separate log file for the verbosity
+    $out = &OpenOutputFile($outfile{merged_counts});
+  } else {
+    ################################################################
+    ## Open output stream
+    $out = &OpenOutputFile($outfile{output});
+  }
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+  
   ## Export the merged matrix
   print $out $merged_matrix->toString(type=>"counts",format=>$output_format, "decimals"=>2);
+
+  &close_merged_counts();
 
   ################################################################
   ## If a sequence file has been specified, scan them with the merged
   ## matrix in order to build a secondary matrix.
   if ($infile{sequences}) {
-    $prefix{output} = $outfile{output};
-    $prefix{output} =~ s|\.\w+$||;
-    $prefix{output} .= "_rescanned";
-    $outfile{rescanned_matrices} = $prefix{output}.".".$output_format;
-    $outfile{rescanned_sites} = $prefix{output}.".".$output_format;
+    
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose >= 1);
 
     my $rescan_cmd = &RSAT::server::GetProgramPath("rescan-matrix");
     $rescan_cmd .= " -v 0";
     $rescan_cmd .= " -seq ".$infile{sequences};
     $rescan_cmd .= " -seq_format fasta";
-    $rescan_cmd .= " -m ".$outfile{output};
+    $rescan_cmd .= " -m ".$outfile{merged_counts};
     $rescan_cmd .= " -matrix_format ".$output_format;
     $rescan_cmd .= " -iterations ".$iterations;
-    $rescan_cmd .= " -o ".$prefix{output};
+    $rescan_cmd .= " -o ".$outfile{output};
     &doit($rescan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
   }
 
-  ################################################################
-  ## Report execution time and close output stream
-  &close_and_quit();
+  ## Exit
+  exit(0);
 }
 
 ################################################################
@@ -310,7 +328,7 @@ package main;
 
 ################################################################
 ## Close output file and quit
-sub close_and_quit {
+sub close_merged_counts {
 
   ## Report execution time
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
@@ -322,9 +340,6 @@ sub close_and_quit {
     &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
   }
 
-  ## CLOSE OTHER FILES HERE IF REQUIRED
-
-  exit(0);
 }
 
 
