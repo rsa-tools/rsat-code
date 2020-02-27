@@ -40,6 +40,10 @@ param:
 	@echo "	SIG_MATRICES		${SIG_MATRICES}"
 	@echo "	COUNT_MATRICES		${COUNT_MATRICES}"
 	@echo "	LOGOS			${LOGOS}"
+	@echo "HNF4 test for position-analysis"
+	@echo "	HNF4_SEQ	${HNF4_SEQ}"
+	@echo "	POS_DIR		${POS_DIR}"
+	@echo "	POSITIONS	${POSITIONS}"
 
 ################################################################
 ## Discover over-reprsented k-mers
@@ -113,3 +117,27 @@ matrices:
 # 		-o ${PSSM_PREFIX}
 # 	@echo "	${PSSM_PREFIX}"
 
+POS_DIR=results/mus_HNF4A
+HNF4_SEQ=${RSAT}/public_html/demo_files/SWEMBL_mmus_HNF4A_vs_mmus_Input_peaks_R0.05_nof_200bp.fasta.gz
+positions:
+	@echo "Running position-analysis"
+	@mkdir -p ${POS_DIR}
+	position-analysis \
+		-i ${HNF4_SEQ}	\
+		-v ${V}		\
+		-sort		\
+		-nofilter	\
+		-lth_occ 1	\
+		-lth_sig 5	\
+		-clust_nb 2	\
+		-max_asmb_per_cluster 2	\
+		-return chi,sig,rank,distrib,clusters,matrices,graphs,index	\
+		-2str		\
+		-noov		\
+		-l 6		\
+		-ci 10		\
+		-origin center	\
+		-o ${POSITIONS}
+	@echo "	HNF4_SEQ	${HNF4_SEQ}"
+	@echo "	POS_DIR		${POS_DIR}"
+	@echo "	POSITIONS	${POSITIONS}"
