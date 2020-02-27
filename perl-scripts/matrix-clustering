@@ -417,6 +417,9 @@ package main;
     local %motifs_ID_unique = ();
     local $longest_title = 0;
     local $single_input_flag = 0;
+
+    ## Number of iterations when re-scaning sequences with branch motifs
+    local $rescan_iterations = 3;
     
     ## Saves the width of the largest alignment
     local $motif_width_by_cluster_width = 0;
@@ -471,6 +474,9 @@ package main;
     
     ## Reference collection for cluster annotation
     local $reference_collection_flag = 0;
+
+    ## Built the branch motif by re-scanning the motifs
+    local $rescan_motifs_flag = 0;
     
 
   ## List of files to delete
@@ -573,7 +579,7 @@ package main;
   ################################################################
   ##
   ##
-  if($motif_list_flag == 1){     
+  if ($motif_list_flag == 1){     
       &read_motif_table_file();
   }
 
@@ -679,7 +685,7 @@ package main;
 	  
 	  ################################################################
 	  ## Parse the JSON file
-	  if($radial_tree_flag == 1){
+	  if ($radial_tree_flag == 1){
 	      &Add_attributes_to_JSON_radial_tree();
 	  } else {
 	      
@@ -845,7 +851,7 @@ For a description of these formats, see the help of I<convert-matrix>.
 	    &RSAT::error::FatalError("Input should be specified with matrix file (option -matrix) with 2 parameters: matrix_title matrix_file\n\tExample: -matrix Oct_motifs Oct_motifs_peakmotifs.tf");
 	} 
 	
-	if($motif_list_flag == $motif_direct_input_flag) {
+	if ($motif_list_flag == $motif_direct_input_flag) {
 	&RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
       }
 
@@ -876,7 +882,7 @@ Nanog_pssms.tf	Nanog
 	$motif_list_flag = 1;
 	$input_matrix = 1;
 	
-	if($motif_list_flag == $motif_direct_input_flag) {
+	if ($motif_list_flag == $motif_direct_input_flag) {
 	    &RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
 	}
        
@@ -922,7 +928,43 @@ Example: -ref_collection Jaspar_vertebrates_2020.tf tf
 	
 	$reference_collection_flag = 1;
 
+
+
+=pod
+
+=item B<-seq Sequence_file Seq_format>
+
+This option allows to generate the branch (including the root) motifs from an input set of sequences.
+Instead of sum or average the counts, the new marged matrix will be built from the sites found in the provided sequences,
+this will produce a more realistic matrix suppoted by real sequences.
+
+Example: -seq Oct4_peaks.fa fasta
+
+=cut
+    } elsif ($arg eq "-seq") {
+
+	## Added by Jaime Castro and Jacques van Helden (26-02-2020)
 	
+	$main::infile{sequence_to_rescan} = shift(@arguments);
+	$main::matrix_format{sequences_format} = shift(@arguments);
+	
+	$rescan_motifs_flag = 1;
+
+
+=item B<-rescan_iter #>
+
+Default: 3
+
+Number of times each matrix is re-scanned in a provided set of sequences before producing the branch motifs.
+
+Use this option in combination with -seq parameter.
+
+
+=cut
+    } elsif ($arg eq "-rescan_iter") {
+
+	## Added by Jaime Castro(26-02-2020)
+	$rescan_iterations = shift(@arguments);
 
 =pod
 
@@ -1857,20 +1899,20 @@ sub pre_process_motif_files{
       ## If it is required, permute the input motifs
       if ($random_flag == 1){
           
-          ## Temporal file with random motifs
-          my $rand_motif_file = $main::outfile{prefix}."_data/".$collection_name."_random_motifs.tf";
-          my $randomize_motifs_cmd = $SCRIPTS."/convert-matrix";
-          $randomize_motifs_cmd .= " -i ".$matrix_file;
-          $randomize_motifs_cmd .= " -from tf -to tf";
-          $randomize_motifs_cmd .= " -perm 1";
-          $randomize_motifs_cmd .= " -o ".$rand_motif_file;
-          &doit($randomize_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-          $motif_set_attributes{$collection_name}{matrix_file_input} = $rand_motif_file;
+	## Temporal file with random motifs
+	my $rand_motif_file = $main::outfile{prefix}."_data/".$collection_name."_random_motifs.tf";
+	my $randomize_motifs_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+	$randomize_motifs_cmd .= " -i ".$matrix_file;
+	$randomize_motifs_cmd .= " -from tf -to tf";
+	$randomize_motifs_cmd .= " -perm 1";
+	$randomize_motifs_cmd .= " -o ".$rand_motif_file;
+	&doit($randomize_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	$motif_set_attributes{$collection_name}{matrix_file_input} = $rand_motif_file;
       }
       
       ## Convert input matrices in transfac format + append prefix if required
       &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
-      my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+      my $convert_matrix_cmd = &RSAT::server::GetProgramPath("convert-matrix");
       $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_input};
       $convert_matrix_cmd .= " -from ".$matrix_format;
       $convert_matrix_cmd .= " -to tf";
@@ -1906,7 +1948,7 @@ sub pre_process_motif_files{
       ###############################
       ## Append prefix if required
       &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
-      $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+      $convert_matrix_cmd = &RSAT::server::GetProgramPath("convert-matrix");
       $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
       $convert_matrix_cmd .= " -from tf";
       $convert_matrix_cmd .= " -to transfac";
@@ -1956,7 +1998,7 @@ sub pre_process_motif_files{
 
 
 	      # foreach my $id (keys %ID_nb_hash){
-	      # 	  if($id eq $ID){
+	      # 	  if ($id eq $ID){
 	      # 	  print $id."\t".$ID."\n";
 	      # 	  }
 
@@ -1980,7 +2022,7 @@ sub pre_process_motif_files{
 
       ## Convert reference collection matrices in transfac format
       &RSAT::message::TimeWarn("Converting reference collection to transfac format") if ($main::verbose >= 2);
-      my $convert_reference_collection_cmd = $SCRIPTS."/convert-matrix";
+      my $convert_reference_collection_cmd = &RSAT::server::GetProgramPath("convert-matrix");
       $convert_reference_collection_cmd .= " -i ".$main::infile{reference_collection};
       $convert_reference_collection_cmd .= " -from ".$main::matrix_format{reference_collection};
       $convert_reference_collection_cmd .= " -to tf";
@@ -2009,7 +2051,7 @@ sub pre_process_motif_files{
   ## Split all the processed motifs into single file
   ## each one containing a single motif
   &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
-  my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
+  my $split_matrix_cmd = &RSAT::server::GetProgramPath("convert-matrix");
   $split_matrix_cmd .= " -i ".$main::outfile{motif_file};
   $split_matrix_cmd .= " -split";
   $split_matrix_cmd .= " -from tf -to tf";
@@ -2029,7 +2071,8 @@ sub CompareMatrices {
   $matrix_compa_verbose = &RSAT::stats::max(($main::verbose-1), 1);
 
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/compare-matrices -v ".$matrix_compa_verbose; 
+  my $cmd = &RSAT::server::GetProgramPath("compare-matrices");
+  $cmd .= " -v ".$matrix_compa_verbose; 
   $cmd .= " -mode scores";
   $cmd .= " -format tf";
   $cmd .=  " -file ".$main::outfile{input_matrices};
@@ -2039,7 +2082,8 @@ sub CompareMatrices {
   $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
-  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
+  $cmd .= "; ".&RSAT::server::GetProgramPath("text-to-html");
+  $cmd .= " -i ".$main::outfile{pairwise_compa};
   $cmd .= " -o ".$main::outfile{pairwise_compa_html};
   &RSAT::util::one_command($cmd, 1,"");
 
@@ -2094,7 +2138,8 @@ sub CompareMatricesQuick {
   $cmd .= " -lth_w 0";
   $cmd .= " -mode matches";
   $cmd .= " -o ".$main::outfile{pairwise_compa};
-  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
+  $cmd .= "; ".&RSAT::server::GetProgramPath("text-to-html");
+  $cmd .= " -i ".$main::outfile{pairwise_compa};
   $cmd .= " -o ".$main::outfile{pairwise_compa_html};
   &RSAT::util::one_command($cmd, 1,"");
   &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 2);
@@ -2128,7 +2173,8 @@ sub CompareMatricesQuick_AnnotateMotifs {
   $cmd .= " -lth_w 5";
   $cmd .= " -mode scan";
   $cmd .= " -o ".$main::outfile{reference_compa};
-  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{reference_compa};
+  $cmd .= "; ".&RSAT::server::GetProgramPath("text-to-html");
+  $cmd .= " -i ".$main::outfile{reference_compa};
   $cmd .= " -o ".$main::outfile{reference_compa_html};
   &RSAT::util::one_command($cmd, 1,"");
   &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{reference_compa}) if ($main::verbose >= 2);
@@ -2467,85 +2513,6 @@ sub Add_gaps_to_motifs {
     $pm->wait_all_children;
 }
 
-# ################################################################
-# ## Identify clusters of similar motifs using MCL ("Markov clustering",
-# ## an algorithm partitioning a network into clusters), and build
-# ## consensus motifs.
-# sub ClusterMotifs {
-#   &RSAT::message::TimeWarn("Clustering matrices with MCL") if ($main::verbose >= 2);
-
-#   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
-#   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
-#   $cmd .= " -ewidth -ecolors fire";
-#   $cmd .= " -layout spring_new";
-#   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol ".$main::param{score_column};
-#   $cmd .= " -o ".$main::outfile{matrix_network_gml};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   ## Generate a figure of the motif comparison graph
-#   $cmd = $SCRIPTS."/display-graph";
-#   $cmd .= " -in_format gml -i ".$main::outfile{matrix_network_gml};
-#   $cmd .= " -ewidth";
-#   $cmd .= " -layout none";
-#   $cmd .= " -out_format png -o ".$main::outfile{compa_png};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   ## Use MCL to partition the motif graph into clusters
-#   &RSAT::message::TimeWarn("Matrix clustering by running MCL on th matrix-to-matrix network.") if ($main::verbose >= 2);
-#   my $mcl = &RSAT::server::GetProgramPath("mcl");  
-#   # my $mcl_dir = $ENV{mcl_dir};
-#   # unless ($mcl_dir) {
-#   #   &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
-#   # }
-#   # my $mcl = $mcl_dir."/mcl";
-#   $cmd = "grep -v '^;' ".$main::outfile{pairwise_compa}.">".$main::outfile{pairwise_compa}.".mcl";
-#   $cmd .= "; ".$mcl."/mcl ".$main::outfile{pairwise_compa}.".mcl";
-#   $cmd .= " -I 1.8 --abc -V all ";
-#   $cmd .= " -o ".$main::outfile{clusters_mcl};
-#   $cmd .= " >& /dev/null";
-#   $cmd .= " ; ".${SCRIPTS}."/convert-classes -i ".$main::outfile{clusters_mcl};
-#   $cmd .= " -from mcl -to tab ";
-#   $cmd .= " -o ".$main::outfile{clusters_tab};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   ## Split the motif graph into clusters as defined by MCL, and
-#   ## compute the intra-cluster degree (k) and weighted degree (wk) of
-#   ## each node
-#   $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{pairwise_compa};
-#   $cmd .= " -in_format tab -scol 1 -tcol 2 -wcol ".$main::param{score_column};
-#   $cmd .= " -return clusters ";
-#   $cmd .= " -clusters ".$main::outfile{clusters_tab};
-#   $cmd .= " -out_format tab -o ".$main::outfile{clusters_subgraph};
-#   &RSAT::util::one_command($cmd, 1);
-
-
-#   ## Identify graph components and count the intra-component degree of
-#   ## each node. Most connected nodes will serve as seeds for motif
-#   ## clustering.
-#   $cmd = $SCRIPTS."/graph-connex-components -v 1";
-#   $cmd .= " -i ".$main::outfile{clusters_subgraph};
-#   $cmd .= " -wcol ".$main::param{score_column};
-#   $cmd .= " -o ".$main::outfile{intra_cluster_degree};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
-#   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{clusters_subgraph};
-#   $cmd .= " -ewidth -ecolors fire";
-#   $cmd .= " -layout spring_new";
-#   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
-#   $cmd .= " -o ".$main::outfile{clusters_subgraph_gml};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   ## Generate a figure of the motif comparison graph
-#   $cmd = $SCRIPTS."/display-graph";
-#   $cmd .= " -in_format gml -i ".$main::outfile{clusters_subgraph_gml};
-#   $cmd .= " -ewidth";
-#   $cmd .= " -layout none";
-#   $cmd .= " -out_format png -o ".$main::outfile{clusters_subgraph_png};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   return();
-# }
 
 ################################################################
 ## Add attributes to JSON file, links to pictures and other
@@ -2614,7 +2581,7 @@ sub Add_attributes_to_JSON_radial_tree {
       my $cluster = "cluster_".$spl[1];
       $node_to_cluster_hash{$node}{cluster} = $cluster;
       $node_to_cluster_hash{$node}{color} = $hexa_code{$cluster};
-      if($cluster eq "cluster_0"){
+      if ($cluster eq "cluster_0"){
 	  $node_to_cluster_hash{$node}{color} = "#ccc;";
       }
   }
@@ -2824,7 +2791,7 @@ sub Add_attributes_to_JSON_radial_tree {
 		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster}{$folder}{logo})."\",\n";
 		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster}{$folder}{logo_RC})."\",\n";
 
-                      if($radial_tree_flag == 1){
+                      if ($radial_tree_flag == 1){
 		         $Add .= " \"branch_color\" : \"".$node_to_cluster_hash{$folder}{color}."\",\n";
                       }
 
@@ -2887,7 +2854,7 @@ sub ConvertTabToHTML {
     my $tab = $main::outfile{$key};
     my $html_key = $key."_html";
     my $html = $main::outfile{$html_key};
-    my $cmd = $SCRIPTS."/text-to-html ";
+    my $cmd = &RSAT::server::GetProgramPath("text-to-html");
     $cmd .= " -i ".$tab;
     $cmd .= " -o ".$html;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -2969,7 +2936,7 @@ sub Merge_matrices {
                     }
                 }
                 
-                ## Read the table with the number of spaced for each matrix,
+                ## Read the table with the number of spaces for each matrix,
                 ## for each level of each cluster
                 my $merge_level = $folder;
                 $main::outfile{int_align_offset} = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_".$merge_level."_dataframe.tab";
@@ -3023,7 +2990,7 @@ sub Merge_matrices {
                 $merged_consensuses_files{$cluster}{$folder}{collection_counts} = "";
                 foreach my $c (keys %collection_count){
                     ## Store the number of motif for each collection (incluiding 0)
-                    if($folder eq $folder_merged_matrices[-1]){
+                    if ($folder eq $folder_merged_matrices[-1]){
                         $merged_consensuses_files{$cluster}{counter_collection}{$c} = $collection_count{$c};
                     }
                     ## Print the HTML string to print the collection counts
@@ -3041,22 +3008,33 @@ sub Merge_matrices {
                 ## Merge the matrices and create a single matrix
                 my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_cat.tf";
                 my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_matrices.tf";
-                
-                my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_trimmed_matrices.tf";
-                $cmd = "cat ".$files." >".$cat_file;
-                $cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file." -v 0";
-                $cmd .= " -in_format tf -out_format tf";
-                $cmd .= " -id ".$cluster." -name ".$cluster;
-                $cmd .= " -calc ".$operator;
-                $cmd .= " -o ".$merged_mat_file;
-                &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-                ## Delete files with single matrices
-                unlink($cat_file);
-                
+		my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_trimmed_matrices.tf";
+		
+		## Merge motifs by re-scanning the input sequences
+		my $cat_cmd = "cat ".$files." >".$cat_file;
+		&doit($cat_cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+		
+		## Build the merge-matrices command
+		my $merge_cmd = &RSAT::server::GetProgramPath("merge-matrices");
+		$merge_cmd .= " -i ".$cat_file." -v 0";
+		$merge_cmd .= " -in_format tf -out_format tf";
+		$merge_cmd .= " -id ".$cluster." -name ".$cluster;
+		$merge_cmd .= " -calc ".$operator;
+		if ($rescan_motifs_flag) {
+		  $merge_cmd .= " -seq ".$main::infile{sequence_to_rescan};
+		  $merge_cmd .= " -iterations ".$rescan_iterations;
+		}
+		$merge_cmd .= " -o ".$merged_mat_file;
+		
+		&doit($merge_cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
+		## Delete files with single matrices
+		unlink($cat_file);
+		
                 my $mt_nb = scalar(@file_names)."motifs";
                 my $motif_name = $cluster."_".$merge_level."_".$mt_nb;
             
-            if($folder eq $folder_merged_matrices[-1]){
+            if ($folder eq $folder_merged_matrices[-1]){
                     $motif_name = $cluster;
                 }
                 
@@ -3070,12 +3048,6 @@ sub Merge_matrices {
                 ## Addig attributes (ID + AC: cluster + level + motif_nb)
                 my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_nb_motifs_".scalar(@file_names).".tf";
                 
-                #$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
-                #$cmd .= " -from tf -to tf -return counts,consensus";
-                #$cmd .= " -attr name ".$motif_name;
-                #$cmd .= " -attr accession ".$motif_name;
-                #$cmd .= " -o ".$merged_mat_file_2;
-                #&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
                 my @matrices = &RSAT::MatrixReader::readFromFile($merged_mat_file, "tf");
                 my $matrix = $matrices[0];
                 $matrix->calcConsensus();
@@ -3125,7 +3097,7 @@ sub Merge_matrices {
                 
                 ## Add the most external motif in the tree as a root motif
                 ## Add the info to the Root Motifs Features hash
-            if($folder eq $folder_merged_matrices[-1]){
+            if ($folder eq $folder_merged_matrices[-1]){
                     $root_motifs_features{$cluster}{logo} = $merged_consensuses_files{$cluster}{$folder}{logo};
                     $root_motifs_features{$cluster}{logo_RC} = $merged_consensuses_files{$cluster}{$folder}{logo_RC};
                 $root_motifs_features{$cluster}{size} = scalar(@folder_merged_matrices) + 1; #$node_counter + 1; ## Because we count the number of branches
@@ -3164,7 +3136,8 @@ sub Merge_matrices {
             $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file_temp;
             &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
             
-            $cmd = $SCRIPTS."/convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf ";
+            $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+	    $cmd .= " -i ".$new_singleton_motif_file_temp." -from tf -to tf ";
             $cmd .= " -attr name ".$cluster." -attr accession ".$cluster;
             $cmd .= " -set_attr merged_AC '@{$cluster_nodes_clean_names{$cluster}}' -set_attr merged_ID '".$alignment_info{"@{$cluster_nodes{$cluster}}"}{name} ."'";
             $cmd .= " -set_attr type merge";
@@ -3264,7 +3237,7 @@ sub create_html_radial_tree_file {
 	if (/--radial_w--/){
 	    $line =~ s/--radial_w--/2000/gi;
 	    
-	    if($number_of_motifs > 200){
+	    if ($number_of_motifs > 200){
 		$line =~ s/--radial_w--/2500/gi;
 	    }
 	}
@@ -3272,7 +3245,7 @@ sub create_html_radial_tree_file {
 	if (/--radial_h--/){
 	    $line =~ s/--radial_h--/2000/gi;
 
-	    if($number_of_motifs > 200){
+	    if ($number_of_motifs > 200){
 		$line =~ s/--radial_h--/2500/gi;
 	    } 
 	}
@@ -3287,7 +3260,7 @@ sub create_html_radial_tree_file {
 	## NOTE: the following radius were obtained empirically
 	if (/--radium--/){
 
-	    if($number_of_motifs <= 30){
+	    if ($number_of_motifs <= 30){
 		$tree_radium = 175;
 		
 	    } elsif ($number_of_motifs > 30 && $number_of_motifs <= 50){
@@ -3317,7 +3290,7 @@ sub create_html_radial_tree_file {
 	## Set the motif logo height according to the number of motifs
 	if (/--h_motif--/){
 
-	    if($number_of_motifs <= 30){
+	    if ($number_of_motifs <= 30){
 		$motif_height = 30;
 	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
 		$motif_height = 20;
@@ -3334,7 +3307,7 @@ sub create_html_radial_tree_file {
  	## Set displacement (x axis) of the logos according to the number of motifs
 	if (/--x_displ--/){
 	    
-	    if($number_of_motifs <= 30){
+	    if ($number_of_motifs <= 30){
 		$x_displacement = 75;
 	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
 		$x_displacement = 70;
@@ -6101,7 +6074,7 @@ sub Synthesis {
 
     $number_of_clusters = scalar(keys %alignment_table_data); 
 
-    if($radial_tree_flag == 1){
+    if ($radial_tree_flag == 1){
 	&create_html_radial_tree_file();
     } else {
 	&create_html_small_tree_file();
@@ -6122,7 +6095,7 @@ sub Synthesis {
     #####################
     
     ## Insert logo forest
-    if($radial_tree_flag == 0){
+    if ($radial_tree_flag == 0){
 
 	my $forest_tab_icon = ' <tr>
       <td>
@@ -6155,7 +6128,7 @@ sub Synthesis {
     ## Block 2: clusters in detail ##
     #################################
     
-    if($radial_tree_flag == 0){
+    if ($radial_tree_flag == 0){
 
 	my $tree_tab_icon = ' <tr>
       <td>
@@ -6181,7 +6154,7 @@ sub Synthesis {
     ## Block 3: motifs in detail ##
     ###############################
 
-    if($radial_tree_flag == 0){
+    if ($radial_tree_flag == 0){
 
 	my $consensus_tab_icon = ' <tr>
       <td>
@@ -6284,7 +6257,8 @@ sub trim_matrix_low_IC_columns {
 
     ## Calculate the IC of the matrix,
     ## save this info in a file
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -return info,header,margins -o ".$temp_IC_file;
+    my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$matrix_to_trim." -from tf -return info,header,margins -o ".$temp_IC_file;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
     ## Read the IC file
@@ -6328,22 +6302,10 @@ sub trim_matrix_low_IC_columns {
     }
 
     $motif_ac =~ s/_m\d+_/:::/gi;
-    # die $motif_ac." ------------------>\n";
     
-    ## Trim the matrix
-#    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf";
-#    $cmd .= " -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
-#    $cmd .= " -set_attr type ".$motif_type;
-#    $cmd .= " -set_attr merge_type ".$merge_type;
-#    $cmd .= " -set_attr merge_nb ".$merge_nb;
-#    $cmd .= " -set_attr merged_AC '".$motif_ac."'";
-#    $cmd .= " -set_attr merged_ID '".$motif_id."'";
-#
-#    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-    ####################
     my @matrices = &RSAT::MatrixReader::readFromFile($matrix_to_trim, "tf");
     my $matrix = $matrices[0];
-    if($trim_up > 0 || $trim_dw > 0){
+    if ($trim_up > 0 || $trim_dw > 0){
         $matrix->trim_columns($trim_up,$trim_dw);
         $matrix->calcConsensus();
     }
@@ -6382,7 +6344,8 @@ sub trim_matrix_low_IC_columns_preprocess {
 
     ## Calculate the IC of the matrix,
     ## save this info in a file
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -return info,header,margins -o ".$temp_IC_file;
+    my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$matrix_to_trim." -from tf -return info,header,margins -o ".$temp_IC_file;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
     ## Read the IC file
@@ -6426,7 +6389,8 @@ sub trim_matrix_low_IC_columns_preprocess {
     }
 
     ## Trim the matrix
-    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf";
+    $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$matrix_to_trim." -from tf -to tf";
     $cmd .= " -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
 
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -6441,7 +6405,8 @@ sub Add_Empty_Col {
     my ($file_name, $offset_left, $offset_right, $return_fields, $out_file) = @_;
 
     ## Add the empty columns
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
+    my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$file_name;
     $cmd .= " -from tf -to tf -return ".$return_fields;
     $cmd .= " -insert_col_left ".$offset_left;
     $cmd .= " -insert_col_right ".$offset_right;
@@ -6458,7 +6423,8 @@ sub Produce_logos {
     &RSAT::message::TimeWarn("Generating Logos") if ($main::verbose >= 2);
 
     ## Add the empty columns
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{all_concatenated_motifs};
+    my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$main::outfile{all_concatenated_motifs};
     $cmd .= " -from tf -to tf -return logo -logo_no_title -logo_program seqlogo";
     $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/test";
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -6473,7 +6439,8 @@ sub Rev_Comp_Motif {
 
     my ($file_name, $out_file) = @_;
 
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
+    my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= "  -i ".$file_name;
     $cmd .= " -from tf -to tf -rc -return counts,consensus";
     $cmd .= " -o ".$out_file;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -6514,7 +6481,7 @@ LINKS:
         close($motifs_id_handle);
         
         ## Separate the files (calling convert-matrix)
-        my $separate_motifs_cmd = $SCRIPTS."/convert-matrix";
+        my $separate_motifs_cmd = &RSAT::server::GetProgramPath("convert-matrix");
         $separate_motifs_cmd .= " -i ".$main::outfile{input_matrices};
         $separate_motifs_cmd .= " -from tf -to tf";
         $separate_motifs_cmd .= " -matrix_id_file ".$main::outfile{clusters_id_temp};
@@ -6598,7 +6565,8 @@ sub Export_central_motif_per_cluster {
 	my $central_motif_parser_cmd = "more ".$main::outfile{central_motifs}." | cut -f2 > ".$main::outfile{central_motifs_IDs_temp};
 	&RSAT::util::one_command($central_motif_parser_cmd, 1, "");
 	
-	my $get_central_motifs_cmd = $SCRIPTS."/convert-matrix -v ".$main::verbose." -i ".$main::outfile{input_matrices}." -from tf -to tf -matrix_id_file ".$main::outfile{central_motifs_IDs_temp}." -o ".$main::outfile{central_motifs_tf};
+	my $get_central_motifs_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+	$get_central_motifs_cmd .= " -v ".$main::verbose." -i ".$main::outfile{input_matrices}." -from tf -to tf -matrix_id_file ".$main::outfile{central_motifs_IDs_temp}." -o ".$main::outfile{central_motifs_tf};
 	&RSAT::util::one_command($get_central_motifs_cmd, 1, "");
 	
 
@@ -7070,7 +7038,7 @@ sub Add_attributes_to_JSON {
 	      }
 	  }
 	  
-	  if($radial_tree_flag == 0){
+	  if ($radial_tree_flag == 0){
 	      ################################################################
 	      ## Add the consensus to the json file to be displayed in the tree (tree nodes)
 	      my $IC_info_line = "";
