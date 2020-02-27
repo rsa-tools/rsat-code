@@ -23,24 +23,27 @@ SEQ_FILE=${MET_SEQ}
 MATRICES=${MET_MATRICES}
 MATRIX_PREFIX=${MET_MATRIX_PREFIX}
 
+ITERATIONS=3
 
-## Riun merge-matrices
-MERGE_COMMAND=rescan-matrix -v ${V}	\
+## Riun rescan-matrix
+RESCAN_COMMAND=rescan-matrix -v ${V}	\
 	-seq ${SEQ_FILE}		\
 	-m ${MATRICES}			\
-	-matrix_format transfac		\
-	-o ${MERGED_MATRICES}
+	-matrix_format tf		\
+	-iterations ${ITERATIONS} 	\
+	-o ${RESCAND_MATRICES}
 
-MERGED_DIR=results/merge-matrices_test/${SEQ_NAME}
-MERGED_MATRICES=${MERGED_DIR}/${MATRIX_PREFIX}_rescanned-from-${SEQ_NAME}.tf
+RESCAND_DIR=results/merge-matrices_test/${SEQ_NAME}
+RESCAND_MATRICES=${RESCAND_DIR}/${MATRIX_PREFIX}_rescanned-from-${SEQ_NAME}.tf
 _rescan:
 	@echo "Merging matrices"
-	@mkdir -p ${MERGED_DIR}
-	${MERGE_COMMAND}
+	@mkdir -p ${RESCAND_DIR}
+	${RESCAN_COMMAND}
 	@echo "	SEQ_FILE	${SEQ_FILE}"
 	@echo "	MATRICES	${MATRICES}"
-	@echo "	MERGED_DIR	${MERGED_DIR}"
-	@echo "	MERGED_MATRICES	${MERGED_MATRICES}"
+	@echo "	RESCAND_DIR	${RESCAND_DIR}"
+	@echo "	RESCAND_MATRICES	${RESCAND_MATRICES}"
+	@echo "	SITES		${SITES}"
 
 rescan_kmers:
 	${MAKE} _rescan SEQ_NAME=${METSET} SEQ_FILE=${MET_SEQ} MATRICES=${MET_MATRICES} MATRIX_PREFIX=${MET_MATRIX_PREFIX}
