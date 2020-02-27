@@ -144,8 +144,6 @@ package main;
     local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
     local $top_seq = 0;
-    local $cluster_sig = 0;
-    local $cluster_counts = 0;
     local $column_rescaling = 100; ## TO DO: ADAPT RESCALING TO MAX OF SIG MATRIX
 
     ## Collect method
@@ -171,7 +169,7 @@ package main;
 
     ## Parameters for matrix-scan
     local %uth;
-    $uth{Pval} = 1e-4;
+    $uth{Pval} = 5e-4;
 
     ## Parameters for matrix-scan-quick
     local %lth;
@@ -187,7 +185,7 @@ package main;
     $batch = 0;
 
     ## Clustering parameters
-    $cluster_sig = 0;
+    $cluster_sig = 1;
     $cluster_counts = 0;
 
     ################################################################
@@ -864,8 +862,8 @@ significance matrices (I<-cluster sig>), on the count matrices
 
 Applying the filtering at the level of the significance matrices
 reduces the scanning time, since the count matrices are built by
-scanning sequences with each significance matrix. However it can
-result in a loss of sensitivity, some lmotif being absorbed by other
+scanning sequences with each significance matrix. However it might
+result in a loss of sensitivity, some motif being absorbed by other
 ones.
 
 
