@@ -123,6 +123,7 @@ package main;
     our $clust_suffix = "";
     our $max_asmb_nb = 5;
     our $max_asmb_per_cluster = 2;
+    our $cluster_matrices = "sig"; ## Supported: sig, none
 
     our %infile = (); our @infiles = ();
     our %outfile = (); our @outfiles = ();
@@ -2408,6 +2409,7 @@ sub ClustersToMatrices {
       $cmd .= " -toppat ".$main::top_pattern_nb;
     }
     $cmd .= " -flanks 2 -logo";
+    $cmd .= " -cluster ".$cluster_matrices;
     $cmd .= " -o ".$prefix{pssm};
     &doit($cmd, $dry_run, $die_on_error, $verbose);
 }
