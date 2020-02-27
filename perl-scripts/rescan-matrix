@@ -405,7 +405,7 @@ sub ScanForSites {
     ## sites can be taken, resulting in a meaningless matrix).
     unless ($scan_parameters =~ /-uth Pval/) {
 	unless (defined($args{uth_pval})) {
-	    $uth{Pval} = 0.0005;
+	    $uth{Pval} = 0.0001;
 	    &RSAT::message::Info("Using default upper P-value threshold: ", $uth{Pval}) if ($main::verbose >= 2);
 	}
     }
