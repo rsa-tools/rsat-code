@@ -23,10 +23,33 @@ KMER_MATRICES=${RSAT}/public_html/demo_files/matrices_from_kmers/${IN_MATRIX_PRE
 ## Run merge-matrices
 CALC_MODE=sum
 MERGED_DIR=results/merge-matrices_test/${SEQ_NAME}
-MERGED_MATRICES=${MERGED_DIR}/${OUT_MATRIX_PREFIX}_${CALC_MODE}_merged.tf
+FINAL_MATRICES=${MERGED_DIR}/${OUT_MATRIX_PREFIX}_${CALC_MODE}_merged.tf
+ALL_MATRICES=`echo; ls -1 ${MERGED_DIR}/${OUT_MATRIX_PREFIX}_${CALC_MODE}_*.tf`
+ALL_FEATURES=`echo; ls -1 ${MERGED_DIR}/${OUT_MATRIX_PREFIX}_${CALC_MODE}_*.ft`
+ALL_SEQ=`echo; ls -1 ${MERGED_DIR}/${OUT_MATRIX_PREFIX}_${CALC_MODE}_*.fasta`
 
 ## Iterations for rescan-matrix
 ITERATIONS=3
+SCAN_PARAM=-uth pval 0.001
+
+param:
+	@echo "Parameters"
+	@echo "	SEQ_PREFIX		${SEQ_PREFIX}"
+	@echo "	SEQ_FILE		${SEQ_FILE}"
+	@echo "	IN_MATRIX_PREFIX	${IN_MATRIX_PREFIX}"
+	@echo "	OUT_MATRIX_PREFIX	${OUT_MATRIX_PREFIX}"
+	@echo "	KMER_MATRICES		${KMER_MATRICES}"
+	@echo "	CALC_MODE		${CALC_MODE}"
+	@echo "	MERGED_DIR		${MERGED_DIR}"
+	@echo "	ITERATIONS		${ITERATIONS}"
+	@echo "	SCAN_PARAM		${SCAN_PARAM}"
+	@echo "	OPT			${OPT}"
+	@echo "	MERGE_COMMAND		${MERGE_COMMAND}"
+	@echo "	FINAL_MATRICES		${FINAL_MATRICES}"
+	@echo "	ALL_MATRICES		${ALL_MATRICES}"
+	@echo "	ALL_FEATURES		${ALL_FEATURES}"
+	@echo "	ALL_SEQ			${ALL_SEQ}"
+
 
 MERGE_COMMAND=merge-matrices -v ${V}	\
 	-i ${KMER_MATRICES}		\
@@ -37,7 +60,8 @@ MERGE_COMMAND=merge-matrices -v ${V}	\
 	-name ${OUT_MATRIX_PREFIX}	\
 	-seq ${SEQ_FILE}		\
 	-iterations ${ITERATIONS}	\
-	-o ${MERGED_MATRICES}
+	-scan_param '${SCAN_PARAM}' 	\
+	${OPT} -o ${FINAL_MATRICES}
 
 merge_kmers:
 	@echo "Merging matrices"
@@ -49,4 +73,7 @@ merge_kmers:
 	@echo "	KMER_MATRICES		${KMER_MATRICES}"
 	@echo "	MERGED_DIR		${MERGED_DIR}"
 	@echo "	OUT_MATRIX_PREFIX	${OUT_MATRIX_PREFIX}"
-	@echo "	MERGED_MATRICES		${MERGED_MATRICES}"
+	@echo "	FINAL_MATRICES		${FINAL_MATRICES}"
+	@echo "	ALL_MATRICES		${ALL_MATRICES}"
+	@echo "	ALL_FEATURES		${ALL_FEATURES}"
+	@echo "	ALL_SEQ			${ALL_SEQ}"
