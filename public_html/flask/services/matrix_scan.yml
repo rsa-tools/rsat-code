@@ -1,0 +1,259 @@
+descr:
+    Scan sequences with one or several position-specific scoring matrices (PSSM) to identify instances of the corresponding motifs (putative sites). This program supports a variety of background models (Bernoulli, Markov chains of any order).
+---
+parameters:
+  - name: i
+    description: File containing the sequences to scan.
+    type: file
+  - name: seq_format
+    description: Sequence format.
+    type: string
+  - name: m
+    description: Matrix file. This argument is mandatory.
+    type: file
+    required: false
+  - name: matrix_format
+    description: Matrix suffix. This argument is mandatory.
+    type: string
+  - name: first_matrix
+    description: Start scanning with the Nth matrix (kip the N-1 first matrices of the matrix file)..
+    type: int
+    required: false
+  - name: last_matrix
+    description: Only scan with the top N matrices per matrix file.
+    type: int
+  - name: matrix_ac
+    description: Select one or more matrices specified by their ID. Ex. -matrix_ac MA0049.1,MA0221.1
+    type: string
+  - name: matrix_name
+    description: Select one or more matrices specified by their ID. Ex. -matrix_name eve,hb.
+    type: string
+  - name: matrix_id
+    description: Select one or more matrices specified by their ID. Ex. -matrix_id M00010,M00271
+    type: string
+    required: false
+  - name: first_seq
+    description: Start scanning at the Nth sequence.
+    type: int
+  - name: last_seq
+    description: Only scan with the top N sequences.
+    type: int
+  - name: consensus_name
+    description: Use the motif (degenerate) consensus as matrix name.
+    type: boolean
+  - name: id_as_name
+    description: Use the motif identifier as matrix name.
+    type: boolean
+  - name: ac_as_name
+    description: Use the motif accession number as matrix name.
+    type: boolean
+  - name: mlist
+    description: Indicate a file containing a list of matrices to be used for scanning the region.
+    type: file
+  - name: mask
+    description: Mask specific types of characters (lowercases, uppercases, non-dna), i.e. replace them by N characters.
+    type: string
+    choices: upper,lower,non-dna
+  - name: n
+    description: Treatment of N characters. These characters are often used in DNA sequences to represent undefined or masked nucleotides.
+    type: string
+    choices: skip, score
+  - name: pseudo
+    description: Pseudo-count for the matrix (default 1).
+    type: float
+  - name: equi_pseudo
+    description: If this option is called, the pseudo-weight is distributed in an equiprobable way between residues.
+    type: float
+  - name: org
+    description: organism name for background model. Only when bgfile is not specified
+    type: string
+  - name: markov_order
+    description: markov order for background model. Only when bgfile is not specified.
+    type: int
+  - name: bgfile
+    description: Background model file.
+    type: file
+  - name: bg_format
+    description: Format of background model file. For supported formats see convert-background-model -h
+    type: string
+  - name: bginput
+    description: Calculate background model from the input sequence set.
+    type: boolean
+    required: false
+  - name: bg_pseudo
+    description: Pseudo frequency for the background model. Value must be a real between 0 and 1.
+    type: float
+  - name: markov
+    description: Order of the markov chain for the background model.
+    type: int
+  - name: window
+    description: Size of the sliding window for the background model calculation.
+    type: int
+    required: false
+  - name: origin
+    description: Specify the origin for the calculation of positions.
+    type: string
+    choices: start,end,center,chrom
+  - name: seq_source
+    description: sequence source for genomic coordinates
+    type: string
+    choices: galaxy,getfasta, ucsc
+  - name: offset
+    description: add a given number to site positions (change the reference point).
+    type: int
+  - name: 2str
+    description: scan both strands for DNA sequences
+    type: boolean
+  - name: 1str
+    description: single-strand search for DNA sequences.
+    type: boolean
+  - name: return
+    description: lists of fields to return. Supported fields - sites, p_score, pval, seq_scores, rank, normw, proba_BM, limits,weight_limits, distrib, occ_proba, bg_model,bg_residues, matrix, freq_matrix, weight_matrix,crer
+    type: string
+  - name: mth
+    description: matrix-specific threshold file
+    type: file
+  - name: crer_ids
+    description: Assign one separate feature ID per CRER.
+    type: boolean
+  - name: sort_distrib
+    description: sort score distributions by decreasing values of significance.
+    type: boolean
+  - name: bg_distrib
+    description: File specifying the background score distribution for option -return occ_proba.
+    type: file
+  - name: base
+    description: Base for the logarithms (Default exp(1))
+    type: int
+  - name: recursive
+    description: Run matrix-scan separately for each sequence.
+    type: boolean
+  - name: batch
+    description: Dispatch matrix-scan jobs on a cluster. Number of sequences to be analyzed by job (= on each node of the cluster)
+    type: int
+  - name: lth_score
+    description: lower threshold.
+    type: float
+  - name: lth_pval
+    description: lower threshold.
+    type: float
+  - name: lth_sig
+    description: lower threshold.
+    type: float
+  - name: lth_normw
+    description: lower threshold
+    type: float
+  - name: lth_proba_M
+    description: lower threshold
+    type: float
+  - name: lth_proba_B
+    description: lower threshold
+    type: float
+  - name: lth_rank
+    description: lower threshold
+    type: float
+  - name: lth_rank_pm
+    description: lower threshold
+    type: float
+  - name: lth_crer_sig
+    description: lower threshold
+    type: float
+  - name: lth_crer_pval
+    description: lower threshold
+    type: float
+  - name: lth_crer_sites
+    description: lower threshold
+    type: float
+  - name: lth_crer_size
+    description: lower threshold
+    type: float
+  - name: lth_crer_site_distance
+    description: lower threshold
+    type: float
+  - name: lth_occ
+    description: lower threshold
+    type: float
+  - name: lth_occ_sum
+    description: lower threshold
+    type: float
+  - name: lth_inv_cum
+    description: lower threshold
+    type: float
+  - name: lth_exp_occ
+    description: lower threshold
+    type: float
+  - name: lth_occ_pval
+    description: lower threshold
+    type: float
+  - name: lth_occ_eval
+    description: lower threshold
+    type: float
+  - name: lth_occ_sig
+    description: lower threshold
+    type: float
+  - name: lth_occ_sig_rank
+    description: lower threshold
+    type: float
+  - name: uth_score
+    description: upper threshold.
+    type: float
+  - name: uth_pval
+    description: upper threshold.
+    type: float
+  - name: uth_sig
+    description: upper threshold.
+    type: float
+  - name: uth_normw
+    description: upper threshold
+    type: float
+  - name: uth_proba_M
+    description: upper threshold
+    type: float
+  - name: uth_proba_B
+    description: upper threshold
+    type: float
+  - name: uth_rank
+    description: upper threshold
+    type: float
+  - name: uth_rank_pm
+    description: upper threshold
+    type: float
+  - name: uth_crer_sig
+    description: upper threshold
+    type: float
+  - name: uth_crer_pval
+    description: upper threshold
+    type: float
+  - name: uth_crer_sites
+    description: upper threshold
+    type: float
+  - name: uth_crer_size
+    description: upper threshold
+    type: float
+  - name: uth_crer_site_distance
+    description: upper threshold
+    type: float
+  - name: uth_occ
+    description: upper threshold
+    type: float
+  - name: uth_occ_sum
+    description: upper threshold
+    type: float
+  - name: uth_inv_cum
+    description: upper threshold
+    type: float
+  - name: uth_exp_occ
+    description: upper threshold
+    type: float
+  - name: uth_occ_pval
+    description: upper threshold
+    type: float
+  - name: uth_occ_eval
+    description: upper threshold
+    type: float
+  - name: uth_occ_sig
+    description: upper threshold
+    type: float
+  - name: uth_occ_sig_rank
+    description: upper threshold
+    type: float

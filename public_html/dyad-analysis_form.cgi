@@ -224,7 +224,7 @@ function setDemo(demo_seq){
     $("input[name=bg_method][value=background]").prop("checked",true);
     $("[name=\'background\']").val("upstream-noorf");
     $("#bg_level_organism").prop("checked",true);
-    $("#organism_bg_name").val("Saccharomyces cerevisiae");
+    $("#organism_bg_name").val("Saccharomyces cerevisiae").trigger("change");
     $("#organism_bg").val("Saccharomyces_cerevisiae");
     $("#outputformat_seq").prop("checked", true);
 }

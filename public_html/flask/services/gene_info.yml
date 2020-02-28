@@ -1,0 +1,32 @@
+descr:
+    Returns the information about genes (CDS, mRNA, ...) specified either by their identifier, name, or by any supported synonym.
+---
+parameters:
+    - name: org
+      description: organism
+      type: string
+      required: false
+    - name: q
+      description: query
+      type: string
+    - name: i
+      description: query file
+      type: file
+      required: false
+    - name: full
+      description: full match only (no substring matching)
+      type: boolean
+      required: false
+    - name: noquery
+      description: do not print the query at the beginning of each line
+      type: boolean
+      required: false
+    - name: descr
+      description: match queries against the description (in addition to gene ID and  names)
+      type: boolean
+      required: false
+    - name: feattype
+      description: Feature type. Supported - gene,mRNA,tRNA,rRNA,scRNA,misc_RNA,CDS,start_codon,stop_codon,exon
+      type: string
+      choices: gene,mRNA,tRNA,rRNA,scRNA,misc_RNA,CDS,start_codon,stop_codon,exon
+      required: false

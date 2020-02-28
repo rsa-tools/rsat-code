@@ -1,0 +1,188 @@
+descr:
+    calculates oligomer frequencies in a set of sequences, and detects overrepresented oligomers.
+---
+parameters:
+  - name: i
+    description: File containing the sequences to scan.
+    type: file
+  - name: mask
+    description: Mask lower or uppercases, respecively, i.e. replace selected case by N characters.
+    type: string
+    choices: upper, lower
+  - name: format
+    description: input file format. Must be followed by one of the following options - fasta, wconsensus, IG, filelist, raw
+    type: string
+    choices: fasta, wconsensus, IG, filelist, raw
+    required: false
+  - name: l
+    description: oligomer length.
+    type: int
+  - name: a
+    description: alphabet. must be followed by nucleotide frequencies expressed precisely this way -a a&#58;t &#35; c&#58;g &#35;
+    type: string
+    required: false
+  - name: expfreq
+    description: (mutually exclusive with -calibN, -calib1 and -a) file containing the estimations for expected oligomer frequencies.
+    type: file
+  - name: calibN
+    description: (mutually exclusive with -expfreq and -a) File containing the estimations for the mean and variance of oligomer occurrences.
+    type: file
+  - name: calib1
+    description: calibration file based on single sequence analysis.
+    type: file
+  - name: bg
+    description: Type of sequences used as background model for estimating expected oligonucleotide frequencies.
+    type: string
+    choices: upstream,upstreamL,upstream-noorf,intergenic,input
+    required: false
+  - name: org
+    description: organism name for background model. Only when bgfile is not specified
+    type: string
+  - name: taxon
+    description: Organism or taxon that used as reference for the estimation of a background model based on a genome subset (option -bg). Either -org or -taxon is required with the option -bg.
+    type: string
+  - name: markov
+    description: Markov chain - the frequency expected for each word is calculated on basis of subword frequencies observed in the input set.
+    type: int
+  - name: lexicon
+    description: Expected word frequencies are calculated on the basis of subword frequencies, in a similar (but not identical) way to the "dictionary" approach developed by Harmen Bussemaker.
+    type: string
+  - name: pseudo
+    description: Pseudo-frequency for the background model, where pseudo must be a real value between 0 and 1.
+    type: float
+  - name: noov
+    description: no overlapping.
+    type: boolean
+  - name: 2str
+    description: oligonucleotide occurrences found on both stands are summed.
+    type: boolean
+  - name: 1str
+    description: inactivates the summation of occurrences on both strands.
+    type: boolean
+  - name: seqtype
+    description: Input sequence type
+    type: string
+    choices: dna,prot,other
+  - name: return
+    description: list of statistics to return. Supported - occ,mseq,freq,proba,ratio,zscore,like,pos,rank
+    type: string
+  - name: pal
+    description: only return reverse palindroms
+    type: boolean
+  - name: table
+    description: return a table where rows represents input sequences, and columns the counts of occurrences for each possible oligo
+    type: boolean
+  - name: distrib
+    description: return occurrence distributions (one row per pattern)
+    type: boolean
+  - name: grouprc
+    description: group reverse complement with the direct sequence in the output file.
+    type: boolean
+  - name: nogrouprc
+    description: inactivates grouping of reverse complement pairs.
+    type: boolean
+  - name: oneN
+    description: group oligonucleotides by neighborhood, where one neighborhood is defined as a set of oligo differing by one mismatch at a common position.
+    type: boolean
+  - name: onedeg
+    description: sucessively insert one ambiguous nucleotide code at each position of each pattern
+    type: boolean
+  - name: sort
+    description: sort oligomers according to overrepresentation.
+    type: boolean
+  - name: under
+    description: detect under-represented instead of over-represented words (left-tail significance test, see below for details).
+    type: boolean
+  - name: two_tails
+    description: detect under-represented and over-represented words (two-tails significance test, see below for details).
+    type: boolean
+  - name: zeroocc
+    description: Report also patterns with zero occurrences (provided they fit the other thresholds).
+    type: boolean
+  - name: quick
+    description: Quick count mode - delegate the counting of word occurrences to count-words, a program written in C by Matthieu Defrance.
+    type: boolean
+  - name: quick_if_possible
+    description: Evaluate if the quick mode is compatible with the selected output parameters, and, if so, run in this mode.
+    type: boolean
+  - name: accept
+    description: Specify a file containing a list of accepted oligos.
+    type: file
+  - name: lth_occ
+    description: lower threshold.
+    type: float
+  - name: lth_occ_P
+    description: lower threshold.
+    type: float
+  - name: lth_occ_E
+    description: lower threshold.
+    type: float
+  - name: lth_occ_sig
+    description: lower threshold
+    type: float
+  - name: lth_observed_freq
+    description: lower threshold
+    type: float
+  - name: lth_exp_freq
+    description: lower threshold
+    type: float
+  - name: lth_zscore
+    description: lower threshold
+    type: float
+  - name: lth_mseq
+    description: lower threshold
+    type: float
+  - name: lth_ms_P
+    description: lower threshold
+    type: float
+  - name: lth_ms_E
+    description: lower threshold
+    type: float
+  - name: lth_ms_sig
+    description: lower threshold
+    type: float
+  - name: lth_ratio
+    description: lower threshold
+    type: float
+  - name: lth_rank
+    description: lower threshold
+    type: float
+  - name: uth_occ
+    description: upper threshold.
+    type: float
+  - name: uth_occ_P
+    description: upper threshold.
+    type: float
+  - name: uth_occ_E
+    description: upper threshold.
+    type: float
+  - name: uth_occ_sig
+    description: upper threshold
+    type: float
+  - name: uth_observed_freq
+    description: upper threshold
+    type: float
+  - name: uth_exp_freq
+    description: upper threshold
+    type: float
+  - name: uth_zscore
+    description: upper threshold
+    type: float
+  - name: uth_msseq
+    description: upper threshold
+    type: float
+  - name: uth_ms_P
+    description: upper threshold
+    type: float
+  - name: uth_ms_E
+    description: upper threshold
+    type: float
+  - name: uth_ms_sig
+    description: upper threshold
+    type: float
+  - name: uth_ratio
+    description: upper threshold
+    type: float
+  - name: uth_rank
+    description: upper threshold
+    type: float

@@ -1,0 +1,163 @@
+descr:
+    Detects overrepresented dyads (spaced pairs) in a set of DNA sequences. A dyad is defined here as a pair of oligonucleotides of the same size separated by a fixed number of bases.
+---
+parameters:
+  - name: i
+    description: inputfile. The sequence to be analyzed. Multiple sequences can be entered at once with most sequence formats (see below).
+    type: file
+    required: false
+  - name: mask
+    description: Mask lower or uppercases, respecively, i.e. replace selected case by N characters.
+    type: string
+    choices: upper, lower
+    required: false
+  - name: format
+    description: Input sequence format. Various standards are supported - raw, multi, ig, fasta, wconsensus, ncbi, tab.
+    type: string
+    choices: raw, multi, ig, fasta, wconsensus, ncbi, tab
+    default: fasta
+    required: false
+  - name: l
+    description: Oligonucleotide size (default 3). This is the size of a single element (a half dyad).
+    type: int
+    required: false
+  - name: spacing
+    description: default 0-20. The spacing is the number of bases between the end of the first element and the start of the second one.
+    type: string
+  - name: type
+    description: dyad_type. In order to fasten execution, the program can be asked to restrict its analysis to symmetric dyads.
+    type: string
+    choices: dr,ir,any,rep
+    required: false
+  - name: accept
+    description: accepted_dyad_file. Specify a file containing a list of accepted dyads.
+    type: file
+  - name: groupsp
+    description: Group dyads made of the same words (monads) but with different spacings.
+    type: boolean
+  - name: 2str
+    description: count on oth strands
+    type: boolean
+  - name: 1str
+    description: single strand count
+    type: boolean
+  - name: prot
+    description: input sequence is proteic. In this case, the analysis concerns pairs of oligopeptides instead of oligonucleotides
+    type: boolean
+  - name: expfreq
+    description: file with an expected frequency table
+    type: file
+  - name: bg
+    description: background model. Type of sequences used as background model for estimating expected dyad frequencies.
+    type: string
+    choices: upstream, upstream-noorf, intergenic, monads, input
+  - name: org
+    description: organism
+    type: string
+  - name: taxon
+    description: Organism or taxon that used as reference for the estimation of a background model based on a genome subset (option -bg).
+    type: string
+  - name: lth_occ
+    description: lower threshold.
+    type: float
+  - name: lth_occ_P
+    description: lower threshold.
+    type: float
+  - name: lth_occ_E
+    description: lower threshold.
+    type: float
+  - name: lth_occ_sig
+    description: lower threshold.
+    type: float
+  - name: lth_observed_freq
+    description: lower threshold.
+    type: float
+  - name: lth_exp_freq
+    description: lower threshold.
+    type: float
+  - name: lth_zscore
+    description: lower threshold.
+    type: float
+  - name: lth_mseq
+    description: lower threshold.
+    type: float
+  - name: lth_ms_P
+    description: lower threshold.
+    type: float
+  - name: lth_ms_E
+    description: lower threshold.
+    type: float
+  - name: lth_ms_sig
+    description: lower threshold.
+    type: float
+  - name: lth_ratio
+    description: lower threshold.
+    type: float
+  - name: lth_rank
+    description: lower threshold.
+    type: float
+  - name: uth_occ
+    description: upper threshold.
+    type: float
+  - name: uth_occ_P
+    description: upper threshold.
+    type: float
+  - name: uth_occ_E
+    description: upper threshold.
+    type: float
+  - name: uth_occ_sig
+    description: upper threshold.
+    type: float
+  - name: uth_observed_freq
+    description: upper threshold.
+    type: float
+  - name: uth_exp_freq
+    description: upper threshold.
+    type: float
+  - name: uth_zscore
+    description: upper threshold.
+    type: float
+  - name: uth_mseq
+    description: upper threshold.
+    type: float
+  - name: uth_ms_P
+    description: upper threshold.
+    type: float
+  - name: uth_ms_E
+    description: upper threshold.
+    type: float
+  - name: uth_ms_sig
+    description: upper threshold.
+    type: float
+  - name: uth_ratio
+    description: upper threshold.
+    type: float
+  - name: uth_rank
+    description: upper threshold.
+    type: float
+  - name: sort
+    description: sort results by decreasing order of significance.
+    type: boolean
+  - name: return
+    description: output_fields. output fields may contain one or several of the following words - freq, occ, proba, zscore, ratio, rank
+    type: string
+    default: occ,proba,rank
+  - name: under
+    description: detect under-represented instead of over-represented dyads (left-tail significance test).
+    type: boolean
+  - name: two_tails
+    description: detect under-represented and over-represented dyads (two-tail significance test).
+    type: boolean
+  - name: zeroocc
+    description: Report also dyads with zero occurrences (provided they fit the other thresholds).
+    type: boolean
+  - name: quick
+    description: Quick count mode -delegate the counting of word occurrences to count-words, a program written in C by Matthieu Defrance.
+    type: boolean
+  - name: noov
+    description: do not allow overlapping matches of the same word.
+    type: boolean
+  - name: seqtype
+    description: Input sequence type.
+    type: string
+    choices: dna,prot,other

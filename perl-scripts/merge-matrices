@@ -125,26 +125,36 @@ package main;
   our $out = STDOUT;
 
 
-  ## operator
+  ## Operator
   $operator = "sum";
   local %supported_operator = ("mean"=>1, "sum"=>1, "diff"=>1);
   local $supported_operators = join ",", sort keys %supported_operator;
 
-  ## input formats
+  ## Input formats
 #  local %supported_input_format = %RSAT::MatrixReader::supported_input_format;
   local %supported_input_format = &RSAT::MatrixReader::ListInputMatrixFormats();
   local $supported_input_formats = join ",", sort keys %supported_input_format;
 
-  ## output formats
+  ## Output formats
   local %supported_output_format = %RSAT::matrix::supported_output_format;
   local $supported_output_formats = join ",", sort keys %supported_output_format;
 
-  ## initialize some attributes (can be over-written with the option -merged_attr)
+  ## Initialize some attributes (can be over-written with the option -merged_attr)
   local %merged_attributes = ();
 
   $outfile{id} = "merged";
   $outfile{name} = "merged";
   $outfile{version} = "none";
+
+  ## Parameters for the &doit() command
+  $dry = 0;
+  $die_on_error = 1;
+  $job_prefix = "matrix-from-patterns";
+  $batch = 0;
+  
+  ## Parameters for rescan-matrix
+  $iterations = 1;
+
 
   ################################################################
   ## Read argument values
@@ -164,6 +174,11 @@ package main;
   }
   unless (defined($merged_attributes{"identifier"})) {
     $merged_attributes{"identifier"} =  $merged_attributes{"id"};
+  }
+
+  ## Option -seq requires an output file name
+  if (($infile{sequences}) && (!$outfile{output})) {
+    &RSAT::error::FatalError("Option -seq requires to specify an output file (option -o).");
   }
 
   ################################################################
@@ -279,15 +294,37 @@ package main;
   $merged_matrix->calcConsensus();  
   my $consensus = $merged_matrix->get_attribute("consensus.IUPAC");
   $merged_matrix->force_attribute("description", $consensus);
-  $merged_matrix->force_attribute("ac", "Nunca las cosas se parecen tanto");
+#  $merged_matrix->force_attribute("ac", "Nunca las cosas se parecen tanto");
   #$merged_matrix->set_attribute("version", "Nunca las cosas se parecen tanto");
 
 
   
   ################################################################
   ## Output
+
+  ## Export the merged matrix
   print $out $merged_matrix->toString(type=>"counts",format=>$output_format, "decimals"=>2);
 
+  ################################################################
+  ## If a sequence file has been specified, scan them with the merged
+  ## matrix in order to build a secondary matrix.
+  if ($infile{sequences}) {
+    $prefix{output} = $outfile{output};
+    $prefix{output} =~ s|\.\w+$||;
+    $prefix{output} .= "_rescanned";
+    $outfile{rescanned_matrices} = $prefix{output}.".".$output_format;
+    $outfile{rescanned_sites} = $prefix{output}.".".$output_format;
+
+    my $rescan_cmd = &RSAT::server::GetProgramPath("rescan-matrix");
+    $rescan_cmd .= " -v 0";
+    $rescan_cmd .= " -seq ".$infile{sequences};
+    $rescan_cmd .= " -seq_format fasta";
+    $rescan_cmd .= " -m ".$outfile{output};
+    $rescan_cmd .= " -matrix_format ".$output_format;
+    $rescan_cmd .= " -iterations ".$iterations;
+    $rescan_cmd .= " -o ".$prefix{output};
+    &doit($rescan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+  }
 
   ################################################################
   ## Report execution time and close output stream
@@ -465,6 +502,38 @@ contains only two matrices.
 
 
 =pod
+=item B<-seq sequence_file>
+
+If specified, the merged matrix (computed with sum or mean) and the
+sequences are passed to I<rescan-matrix> in order to build a secondary
+matrix from binding sites foundin the input sequence.
+
+A typical application is the merging of matrices obtained by different
+motif discovery algorithms in ChIP-seq peak sequences. This enables to
+base the merged matrix on the actual (predicted) sites from the
+sequence rather than summing counts which are liely to result from
+largely overlapping colections of sites. .
+
+
+=cut
+
+    } elsif ($arg eq "-seq") {
+      $main::infile{sequences} = shift(@arguments);
+
+=item B<-iterations #>
+
+Maximal number of iterations for rescan-matrix (useful only if
+combined with -seq option).
+
+=cut
+    } elsif ($arg eq "-iterations") {
+	$main::iterations = shift(@arguments);
+	if (!&IsNatural($main::iterations) || ($main::iterations < 1)) {
+	    &RSAT::error::FatalError($main::iteration, "Invalid value for option -iterations. Should be a Natural number >= 1ti. ");
+	}
+
+
+=pod
 
 =item	B<-o outputfile>
 
@@ -474,7 +543,6 @@ allows to use the command within a pipe.
 =cut
     } elsif ($arg eq "-o") {
       $outfile{output} = shift(@arguments);
-
 
 =pod
 

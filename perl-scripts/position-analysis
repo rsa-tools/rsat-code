@@ -123,6 +123,7 @@ package main;
     our $clust_suffix = "";
     our $max_asmb_nb = 5;
     our $max_asmb_per_cluster = 2;
+    our $cluster_matrices = "sig"; ## Supported: sig, none
 
     our %infile = (); our @infiles = ();
     our %outfile = (); our @outfiles = ();
@@ -2360,12 +2361,16 @@ sub ProfileClustering {
     &RSAT::error::FatalError("Cannot read position clustering script", $pos_cluster_script) unless (-r $pos_cluster_script);
 
 #  my $pos_drawing_offset = -($pos_interval-1)/2;
+   #get prefix
+    my @prefix = split("/", $output_prefix);
+    
     my $pos_drawing_offset = 0;
     my  $pos_cluster_cmd = "cat ".$pos_cluster_script;
     $pos_cluster_cmd .= " | ".$r_path;
     $pos_cluster_cmd .= " --slave --no-save --no-restore --no-environ";
     $pos_cluster_cmd .= " --args \"";
     $pos_cluster_cmd .= "file.pos='".$outfile{output}."'";
+    $pos_cluster_cmd .= ";prefix='".$prefix[-1]."'";
     $pos_cluster_cmd .= ";pos.offset=".$pos_drawing_offset;
     $pos_cluster_cmd .= ";display.intervals=FALSE";
 #  $pos_cluster_cmd .= ";column.offset=".$column_offset;
@@ -2404,6 +2409,7 @@ sub ClustersToMatrices {
       $cmd .= " -toppat ".$main::top_pattern_nb;
     }
     $cmd .= " -flanks 2 -logo";
+    $cmd .= " -cluster ".$cluster_matrices;
     $cmd .= " -o ".$prefix{pssm};
     &doit($cmd, $dry_run, $die_on_error, $verbose);
 }

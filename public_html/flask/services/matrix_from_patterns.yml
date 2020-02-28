@@ -1,0 +1,100 @@
+descr:
+    Build PSSMs from a sequence set using as seeds a set of patterns (oligos, dyads) or an assembly.
+---
+parameters:
+  - name: seq
+    description: sequence_file
+    type: file
+    required: false
+  - name: format
+    description: Sequence format.
+    type: string
+    required: false
+  - name: pl
+    description: pattern_file. This file contains a list of patterns.
+    type: file
+    required: false
+  - name: toppat
+    description: Max number of patterns to assemble. This argument is passed to pattern-assembly.
+    type: int
+    required: false
+  - name: max_asmb_nb
+    description: This parameter is passed to pattern-assembly, to indicate the maximal number of assemblies to return.
+    type: int
+  - name: top_seq
+    description: Max number of sequences to scan for building final matrices.
+    type: int
+    required: false
+  - name: sc
+    description: Column containing the pattern scores in the input pattern file. This argument is passed to pattern-assembly.
+    type: int
+  - name: cc
+    description: Column indicating the pattern clusters in the input pattern file (default 1). This argument is passed to pattern-assembly.
+    type: int
+  - name: max_asmb_per_cluster
+    description: This parameter is passed to pattern-assembly, to indicate the maximal number of assemblies to return per cluster.
+    type: int
+  - name: subst
+    description: Maximum number of allowed substitution for pattern assembly.
+    type: int
+  - name: maxfl
+    description: Maximum number of flanking residues for pattern assembly.
+    type: int
+  - name: match
+    description: Minimum number of matching residues for pattern assembly.
+    type: int
+  - name: weight
+    description: Minimum matching weight for pattern assembly.
+    type: int
+  - name: max_asmb_size
+    description: Maximum assembly size (number of patterns per assembly).
+    type: int
+  - name: max_asmb_width
+    description: Maximum assembly width.
+    type: int
+  - name: asmb
+    description: Assembly file. As an alternative to the pattern file, the patterns can be provided in the form of the result of pattern-assembly.
+    type: file
+  - name: 1str
+    description: use a single strand to build the motifs
+    type: boolean
+  - name: 2str
+    description: use both strands to build the motifs
+    type: boolean
+  - name: prefix
+    description: matrix_prefix
+    type: string
+  - name: cluster
+    description: matrix_clust_option Run matrix-clustering to filter out redundant matrices, on the significance matrices (-cluster sig), on the count matrices (-cluster counts), on both (i<-cluster both>) or none (-cluster none).
+    type: string
+    choices: sig, counts, none
+  - name: sites
+    description: Export the sites used to build the count matrix.
+    type: string
+  - name: collect_method
+    description: Method for converting sig matrices into count matrices. Supported - matrix-scan-quick (Default), info-gibbs (slow), matrix-scan (slow, obsolete)
+    type: string
+  - name: gibbs_msps
+    description: Mean number of sites per sequences passed to info-gibbs for converting significance matrices into count matrices
+    type: int
+  - name: gibbs_iter
+    description: Number of iterations for info-gibbs.
+    type: int
+  - name: flanks
+    description: Number of flanking residues to be added on each side of the significance matrix in order to extend the motif size.
+    type: int
+  - name: min_weight
+    description: Minimal weight
+    type: int
+  - name: gibbs_final
+    description: Run the final cycle with info-gibbs to collect the best sites.
+    type: boolean
+  - name: logo
+    description: Export the sequence logos representing the count matrix.
+    type: boolean
+  - name: links
+    description: Return HTML links in the convert-matrix result, to send the matrices to external tools (TOMTOM) for comparigon with motif collections.
+    type: boolean
+  - name: scan_param
+    description: The next argument is passed to matrix-scan (this will raise an error if these arguments are not supported). Ex. -scan_param '-uth Pval 1e-3 -uth rank 40'
+    type: string

@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-Rebuild matrix
+rescan-matrix
 
 =head1 VERSION
 
@@ -20,7 +20,8 @@ $program_version
 =head1 DESCRIPTION
 
 Rebuild a given position-specific scoring matrix based on a set of
-sites (instances of the motif) found in a given sequence set. 
+sites (instances of the motif) found by scaning a given sequence set
+with the input matrix.
 
 The process can be iterated for a specified number of cycles (option
 -iterations) of site detection <-> matrix building. The process stops
@@ -41,7 +42,7 @@ Jacques.van-Helden\@univ-amu.fr
 
 =head1 USAGE
 
-rebuild-matrix -seq sequence_file -seq_format format \
+rescan-matrix -seq sequence_file -seq_format format \
   -m matrix_file [-iterations #] [-v #] [...]
 
 =head1 INPUT FORMAT
@@ -95,6 +96,7 @@ package main;
 
   our %infile = ();
   our %outfile = ();
+  our %prefix = ();
 
   our $verbose = 0;
   our $in = STDIN;
@@ -139,14 +141,17 @@ package main;
       &RSAT::error::FatalError("An output file must be specified (option -o). ");
   }
 
+  ## Define output file names from the prefix
+
   ## Define output prefix for intermediate files
   $prefix{output} = $outfile{output};
-  $prefix{output} =~ s/\.txt$//;
-  $prefix{output} =~ s/\.tsv$//;
-  $prefix{output} =~ s/\.tab$//;
-  $prefix{output} =~ s/\.tf$//;
-  $prefix{output} =~ s/\.transfac$//;
-  $prefix{output} =~ s/\.${matrix_format}$//;
+  $prefix{output} =~ s/\.\w+$//; ## Suppress the extension
+  # $prefix{output} =~ s/\.txt$//;
+  # $prefix{output} =~ s/\.tsv$//;
+  # $prefix{output} =~ s/\.tab$//;
+  # $prefix{output} =~ s/\.tf$//;
+  # $prefix{output} =~ s/\.transfac$//;
+  # $prefix{output} =~ s/\.${matrix_format}$//;
   
   ################################################################
   ## Print verbose
@@ -161,13 +166,21 @@ package main;
       &RSAT::message::TimeWarn("Matrix building iteration", $i."/".$iterations) if ($main::verbose >= 2);
       my $input_matrices = $matrix_files[$i];
       my $input_matrices = $matrix_files[$i-1];
-      my $output_sites =  $prefix{output}."_iter".$i."_sites.ft";
       my $output_matrices = "";
+      my $output_sites = "";
       if ($i == $iterations) {
-	 $output_matrices =  $outfile{output};
+	$output_sites =  $prefix{output}."_sites.ft";
+	$outfile{"sites"} = $output_sites;
+	$output_matrices = $outfile{output}; ## Final matrices
+#	$output_matrices =  $prefix{output}."_matrices.".$matrix_format;
+	$outfile{"matrices"} = $output_matrices;
       } else {
-	$output_matrices =  $prefix{output}."_iter".$i."_matrices.transfac";
+	$output_sites =  $prefix{output}."_iter".$i."_sites.ft";
+	$outfile{"sites_iter".$i} = $output_sites;
+	$output_matrices =  $prefix{output}."_iter".$i."_matrices.".$matrix_format;
+	$outfile{"matrices_iter".$i} = $output_matrices;
       }
+
       push @matrix_files, $output_matrices;
       if ($main::verbose >= 3) {
 	  &RSAT::message::Info("\tInput matrices", $input_matrices);
@@ -179,7 +192,13 @@ package main;
       &ScanForSites($infile{sequences}, $input_matrices, $output_sites, $output_matrices);
 
       ## Build a new matrix from the detected sites
-      &MatrixFromSites($output_sites, $output_matrices);
+      my $matrix_suffix = "";
+      if ($i == $iterations) {
+	$matrix_suffix = "_rescanned";
+      } else {
+	$matrix_suffix = "_rescan".$i;
+      }
+      &MatrixFromSites($output_sites, $output_matrices, $matrix_suffix);
   }
  
   ################################################################
@@ -317,9 +336,15 @@ Maximal number of iterations.
 	    &RSAT::error::FatalError($main::iteration, "Invalid value for option -iterations. Should be a Natural number >= 1ti. ");
 	}
 
-=item	B<-o output_prefix>
+=item	B<-o output_file>
 
-Prefix for the output files.
+Output file. This file will contain the matrices resulting from the
+rescan process. 
+
+Additional output files might be exported depending on the options
+(-return sites, -return all_matrices). In such case, the basename of
+the main output file is used as prefix to define the name of these
+additional files.
 
 =cut
     } elsif ($arg eq "-o") {
@@ -342,7 +367,7 @@ Prefix for the output files.
 ################################################################
 ## Verbose message
 sub Verbose {
-  print $out "; template ";
+  print $out "; rescan-matrix ";
   &PrintArguments($out);
   printf $out "; %-22s\t%s\n", "Program version", $program_version;
   if (%main::infile) {
@@ -366,7 +391,7 @@ sub Verbose {
 sub ScanForSites {
     my ($sequence_file, $input_matrices, $output_sites, $output_matrices, %args) = @_;
 
-    &RSAT::message::TimeWarn("Scanning sequence for sites (matrix-scan)") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Scanning sequence for sites (matrix-scan)", "iteration: ".$iteration) if ($main::verbose >= 2);
     if ($main::verbose >= 3) {
 	&RSAT::message::Info("\tSequence file", $sequence_file); 
 	&RSAT::message::Info("\tMatrix file", $input_matrices);
@@ -380,7 +405,7 @@ sub ScanForSites {
     ## sites can be taken, resulting in a meaningless matrix).
     unless ($scan_parameters =~ /-uth Pval/) {
 	unless (defined($args{uth_pval})) {
-	    $uth{Pval} = 0.0001;
+	    $uth{Pval} = 0.0005;
 	    &RSAT::message::Info("Using default upper P-value threshold: ", $uth{Pval}) if ($main::verbose >= 2);
 	}
     }
@@ -410,7 +435,7 @@ sub ScanForSites {
 ################################################################
 ## Convert the collected sites to count matrices
 sub MatrixFromSites {
-  my ($site_file, $matrix_file) = @_;
+  my ($site_file, $matrix_file, $matrix_suffix) = @_;
   &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
   if ($main::verbose >= 3) {
       &RSAT::message::Info("\tInput sites", $site_file);
@@ -420,36 +445,26 @@ sub MatrixFromSites {
   ################################################################
   ## The primary export format is TRANSFAC, because this allows to
   ## store information (site sequences)
-  my $convert2_cmd = $convert_matrix_cmd;
-  $convert2_cmd .= " -v 0"; ## Verbosity must be 0 for TRANSFAC format
-  $convert2_cmd .= " -i ".$site_file;
-  $convert2_cmd .= " -from feature -to transfac";
-  $convert2_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
-  $convert2_cmd .= " -return counts";
-  #    $convert2_cmd .= " -sort desc information.per.column";
-  $convert2_cmd .= " -return sites" if ($return_fields{sites});
+  my $convert_cmd = $convert_matrix_cmd;
+  $convert_cmd .= " -v 0"; ## Verbosity must be 0 for TRANSFAC format
+  $convert_cmd .= " -i ".$site_file;
+  $convert_cmd .= " -from feature -to transfac";
+  $convert_cmd .= " -return counts";
+  $convert_cmd .= " -consensus_name";
+  $convert_cmd .= " -consensus_id";
+  $convert_cmd .= " -suffix ".$matrix_suffix;
+  # $convert_cmd .= " -sort desc information.per.column";
+  $convert_cmd .= " -return sites" if ($return_fields{sites});
 #   if ($return_fields{logo}) {
 #     ## JvH TEMPORARILY DISACTIVATED pdf logos (2015-02-05) to
 #     ## circumvent strange bug with ghostscript on rsat.ulb.ac.be
-#     $convert2_cmd .= " -return logo -logo_format png ";
-# #    $convert2_cmd .= " -return logo -logo_format png,pdf ";
-#     $convert2_cmd .= " -logo_file ".$outfile{logo_basename};
+#     $convert_cmd .= " -return logo -logo_format png ";
+# #    $convert_cmd .= " -return logo -logo_format png,pdf ";
+#     $convert_cmd .= " -logo_file ".$outfile{logo_basename};
 #   }
-# #  $convert2_cmd .= " -return links" if ($return_fields{links});
-  $convert2_cmd .= " -o ".$matrix_file;
-  &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
-
-  ################################################################
-  ## The TRANSFAC matrices are then converted to tab format
-  # my $convert3_cmd = &RSAT::server::GetProgramPath("convert-matrix");
-  # $convert3_cmd .= " -v 1";
-  # $convert3_cmd .= " -i ".$outfile{count_matrices_tf};
-  # $convert3_cmd .= " -from transfac -to tab";
-  # $convert3_cmd .= " -return counts";
-  # $convert3_cmd .= " -return sites" if ($return_fields{sites});
-  # $convert3_cmd .= " -o ".$outfile{count_matrices};
-  # print $log "; transfac-formatted -> tab-formatted matrices\n", $convert3_cmd, "\n";
-  # &doit($convert3_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+# #  $convert_cmd .= " -return links" if ($return_fields{links});
+  $convert_cmd .= " -o ".$matrix_file;
+  &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
 }
 

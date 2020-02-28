@@ -1,0 +1,158 @@
+descr:
+    Compare two collections of position-specific scoring matrices (PSSM), and return various similarity statistics + matrix alignments (pairwise, one-to-n).
+---
+parameters:
+  - name: file1
+    description: matrix_file1. The first input file containing one or several matrices.
+    type: file
+    required: false
+  - name: file2
+    description: matrix_file2. The second input file containing one or several matrices.
+    type: file
+    required: false
+  - name: file
+    description: single_matrix_file. Use a single matrix file as input. Each matrix of this file is compared to each other.
+    type: file
+    required: false
+  - name: format1
+    description: matrix_format1. Specify the matrix format for the first input file only (requires format2)
+    type: string
+    required: false
+  - name: format2
+    description: matrix_format2. Specify the matrix format for the second input file only (requires format1).
+    type: string
+  - name: top1
+    description: Only analyze the first X motifs of the first file. This options is convenient for quick testing before starting the full analysis.
+    type: int
+    required: false
+  - name: top2
+    description: Only analyze the first X motifs of the second file. This options is convenient for quick testing before starting the full analysis.
+    type: int
+  - name: skip1
+    description: Skip the first X motifs of the first input matrix file. This option can be combined with the option -top1 in order to restrict the analysis to a given subset of a large library.
+    type: int
+  - name: skip2
+    description: Skip the first X motifs of the second input matrix file. This options can be combined with the option -top2 in order to restrict the analysis to a given subset of a large library.
+    type: int
+  - name: mode
+    description: matches or scores or profiles or scan
+    type: string
+    choices: matches, scores, profiles, scan
+  - name: distinct
+    description: Skip comparison between a matrix and itself
+    type: boolean
+  - name: strand
+    description: Perform matrix comparisons in direct (D) reverse complementary (R) or both orientations (DR, default option). When the R or DR options are activated, all matrices of the second matrix file are converted to the reverse complementary matrix.
+    type: string
+    choices: D, R, DR
+    default: DR
+  - name: return
+    description: return_fields. List of fields to return (only valid for the formats "profiles" and "matches"). Supported return fields - offset, cor, Ncor, Ncor1, Ncor2, NcorS, cov, SSD, NSW, SW, dEucl, NdEucl, NsEucl, dKL, matrix_number, matrix_id, matrix_name, matrix_label, matrix_ac, width, strand, offset, pos, consensus, offset_rank, match_rank, graph, alignments_pairwise, alignments_lton, alignments, logos, matrix_desc, all
+    type: string
+    default: cor,Ncor,logoDP,NsEucl,NSW,match_rank,matrix_id,matrix_name,width,strand,offset,consensus,alignments_1ton
+  - name: labels
+    description: Attributes to inclute in the matrix labels of the description table.
+    type: string
+    choices: name, consensus, id
+  - name: lth_w
+    description: lower threshold.
+    type: float
+  - name: lth_cor
+    description: lower threshold.
+    type: float
+  - name: lth_Ncor
+    description: lower threshold.
+    type: float
+  - name: lth_logoDP
+    description: lower threshold
+    type: float
+  - name: lth_logocor
+    description: lower threshold
+    type: float
+  - name: lth_Nlogocor
+    description: lower threshold
+    type: float
+  - name: lth_Icor
+    description: lower threshold
+    type: float
+  - name: lth_NIcor
+    description: lower threshold
+    type: float
+  - name: lth_cov
+    description: lower threshold
+    type: float
+  - name: lth_dEucl
+    description: lower threshold
+    type: float
+  - name: lth_NdEucl
+    description: lower threshold
+    type: float
+  - name: lth_NsEucl
+    description: lower threshold
+    type: float
+  - name: lth_SSD
+    description: lower threshold
+    type: float
+  - name: lth_SW
+    description: lower threshold
+    type: float
+  - name: lth_NSW
+    description: lower threshold
+    type: float
+  - name: lth_match_rank
+    description: lower threshold
+    type: float
+  - name: lth_offset
+    description: lower threshold
+    type: float
+  - name: uth_w
+    description: upper threshold.
+    type: float
+  - name: uth_cor
+    description: upper threshold.
+    type: float
+  - name: uth_Ncor
+    description: upper threshold.
+    type: float
+  - name: uth_logoDP
+    description: upper threshold
+    type: float
+  - name: uth_logocor
+    description: upper threshold
+    type: float
+  - name: uth_Nlogocor
+    description: upper threshold
+    type: float
+  - name: uth_Icor
+    description: upper threshold
+    type: float
+  - name: uth_NIcor
+    description: upper threshold
+    type: float
+  - name: uth_cov
+    description: upper threshold
+    type: float
+  - name: uth_dEucl
+    description: upper threshold
+    type: float
+  - name: uth_NdEucl
+    description: upper threshold
+    type: float
+  - name: uth_NsEucl
+    description: upper threshold
+    type: float
+  - name: uth_SSD
+    description: upper threshold
+    type: float
+  - name: uth_SW
+    description: upper threshold
+    type: float
+  - name: uth_NSW
+    description: upper threshold
+    type: float
+  - name: uth_match_rank
+    description: upper threshold
+    type: float
+  - name: uth_offset
+    description: upper threshold
+    type: float

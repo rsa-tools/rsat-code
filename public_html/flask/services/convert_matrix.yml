@@ -1,0 +1,117 @@
+descr:
+    Performs inter-conversions between various formats of position-specific scoring matrices (PSSM).
+---
+parameters:
+  - name: i
+    description: inputfile.
+    type: file
+    required: false
+  - name: residue_type
+    description: residue type.
+    type: string
+    choices: dna, cytomod
+    required: false
+  - name: mlist
+    description: matrix_list. Indicate a file containing a list of matrices to be used for scanning the region.
+    type: file
+    required: false
+  - name: mlist_name
+    description: File containing a list of matrices has in the second column the name of the TF or ID
+    type: file
+    required: false
+  - name: matrix_id_file
+    description: Indicate a file containing a list of IDs which will be returned from the input file.
+    type: file
+  - name: split
+    description: Split a single multi-matrices input file in a set of separate files. The output file names start with the prefix specificed by the option -o, followed by a suffix indicating the order of the matrix in the input file (m1, m2, ...).
+    type: boolean
+    required: false
+  - name: bg_pseudo
+    description: Pseudo frequency for the background models. Value must be a real between 0 and 1.
+    type: float
+  - name: from
+    description: input matrix format. Supported - alignace,assembly,cb,cis-bp,clustal,cluster-buster,consensus,encode,feature,footprintdb,gibbs,homer,info-gibbs,infogibbs,jaspar,meme,meme_block,motifsampler,mscan,sequences,stamp,stamp-transfac,tab,tf,transfac,uniprobe,yeastract
+    type: string
+    choices: alignace,assembly,cb,cis-bp,clustal,cluster-buster,consensus,encode,feature,footprintdb,gibbs,homer,info-gibbs,infogibbs,jaspar,meme,meme_block,motifsampler,mscan,sequences,stamp,stamp-transfac,tab,tf,transfac,uniprobe,yeastract
+    default: tab
+  - name: to
+    description: output matrix format. Supported - cb,cluster-buster,consensus,infogibbs,jaspar,param_table,patser,stamp,tab,tf,tomtom,transfac
+    type: string
+    choices: cb,cluster-buster,consensus,infogibbs,jaspar,param_table,patser,stamp,tab,tf,tomtom,transfac
+    default: tab
+  - name: return
+    description: return type. Supported - consensus,counts,frequencies,header,info,information,links,logo,logo_matrix,logo_table,margins,parameters,profile,sites,wdistrib,weights
+    type: string
+    default: counts,counts,consensus,parameters,logo
+  - name: sort
+    description: sort by key
+    type: string
+    choices: desc,asc,alpha
+  - name: top
+    description: Maximal number of matrices to return.
+    type: int
+  - name: skip
+    description: Skip the first N matrices.
+    type: int
+  - name: pseudo
+    description: pseudo-weight used for the calculation of the weight matrix.
+    type: int
+  - name: equi_pseudo
+    description: If this option is called, the pseudo-weight is distributed in an equiprobable way between residues.
+    type: boolean
+  - name: multiply
+    description: Multiply all the values of the input matrices by the number.
+    type: int
+  - name: rescale
+    description: Scale the matrix to a fixed value for the sums per columns.
+    type: int
+  - name: insert_col_left
+    description: Insert columns on the left flank of the count matrix. The inserted columns are filled with zeros.
+    type: int
+  - name: insert_col_right
+    description: Insert columns on the right flank of the count matrix. The inserted columns are filled with zeros.
+    type: int
+  - name: insert_col
+    description: Insert columns on the both flanks of the count matrix. The inserted columns are filled with zeros.
+    type: int
+  - name: trim_col_left
+    description: Remove columns on the left flank of the count matrix.
+    type: int
+  - name: trim_col_right
+    description: Remove columns on the right flank of the count matrix.
+    type: int
+  - name: trim_col
+    description: Remove columns on the both flanks of the count matrix.
+    type: int
+  - name: base
+    description: Base for the logarithms used in the scores involving a log-likelihood (weight and information content).
+    type: int
+  - name: decimals
+    description: Number of decimals to print for real matrices (frequencies, weights, information) or to compute score distributions.
+    type: int
+  - name: prefix
+    description: Prefix to be added before identifier(s) and name(s) of the input matrix/matrices.
+    type: string
+  - name: attr
+    description: key value. Force an attribute of the matrix (matrices) to have a given value.
+    type: string
+  - name: perm
+    description: Number of permuted matrices to return.
+    type: int
+  - name: max_profile
+    description: Maximal width of the profile histogram (units equal number of characters).
+    type: int
+  - name: rc
+    description: Convert the matrix to its reverse complement.
+    type: boolean
+  - name: logo_program
+    description: External program used to generate logo drawings.
+    type: string
+    choices: weblogo, seqlogo
+  - name: logo_format
+    description: Format for logo image file. Supported - eps,jpeg,logodata,pdf,png,png_print,svg
+    type: string
+    choices: eps,jpeg,logodata,pdf,png,png_print,svg
+  - name: logo_file
+    description: Specifies the name of the logo file.
+    type: string

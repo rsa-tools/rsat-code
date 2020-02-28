@@ -1,0 +1,28 @@
+descr:
+    calculates oligomer frequencies from a set of sequences.
+---
+parameters:
+  - name: i
+    description: input filename
+    type: file
+  - name: l
+    description: set oligomer length to l (monad size when using dyads)
+    type: int
+  - name: 2str
+    description: add reverse complement
+    type: boolean
+  - name: 1str
+    description: do not add reverse complement
+    type: boolean
+  - name: sp
+    description: spacing between the two parts of the dyads from N to M. Ex.0-20
+    type: string
+  - name: noov
+    description: do not allow overlapping occurrences
+    type: boolean
+  - name: grouprc
+    description: group reverse complement with the direct sequence
+    type: boolean
+  - name: nogrouprc
+    description: do not group reverse complement with the direct sequence
+    type: boolean

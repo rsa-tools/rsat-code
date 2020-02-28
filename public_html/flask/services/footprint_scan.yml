@@ -1,0 +1,165 @@
+descr:
+    Scan promoters of orthologous genes with one or several position-specific scoring matrices (PSSM) in order to detect enriched motifs, and thereby predict phylogenetically conserved target genes.
+---
+parameters:
+  - name: q
+    description: Query gene. Can be multiple genes, separated by ','
+    type: string
+  - name: genes
+    description: Specify a file containing a list of genes. Multiple genes can also be specified by using iteratively the option -q.
+    type: file
+  - name: m
+    description: Matrix file. This argument is mandatory.
+    type: file
+    required: false
+  - name: matrix_format
+    description: Matrix suffix. This argument is mandatory.
+    type: string
+  - name: org_list
+    description: This option gives the posibility to analyse a user-specified set of reference organisms rather than a full taxon.
+    type: file
+    required: false
+  - name: org
+    description: Query organism, to which the query genes belong.
+    type: string
+  - name: taxon
+    description: Reference taxon, in which orthologous genes have to be collected.
+    type: string
+  - name: orthologs_list
+    description: This option gives the posibility to analyse a user-specified set of orthologs for specific reference organisms instead of using the BBH set of orthologs provided by RSAT.
+    type: file
+  - name: tf
+    description: transcription_factor.
+    type: string
+    required: false
+  - name: pseudo
+    description: Pseudo-count for the matrix (default 1). See matrix-scan for details.
+    type: int
+  - name: bgfile
+    description: File containing the word frequencies to be used as the background model for dyad-analysis. This option must be used in combination with the option -bg_model file
+    type: file
+  - name: matrix_table
+    description: A table providing the paths to matrix files (one file per row) plus optional columns to specify parameters (factor name, format) for each martrix.
+    type: file
+  - name: bg_format
+    description: Format of background model file. For supported formats see convert-background-model -h
+    type: string
+  - name: bginput
+    description: Calculate background model from the input sequence set.
+    type: boolean
+    required: false
+  - name: bg_pseudo
+    description: Pseudo frequency for the background model. Value must be a real between 0 and 1.
+    type: float
+  - name: markov
+    description: Order of the markov chain for the background model.
+    type: int
+  - name: window
+    description: Size of the sliding window for the background model calculation.
+    type: int
+    required: false
+  - name: tree
+    description: Phylogenetic tree use for the Bayesian Branch Length Scoring task,
+    type: string
+  - name: bbls_draw
+    description: Fomat for the output image.
+    type: string
+    choices: png,pdf,none
+  - name: all_genes
+    description: Automatically analyze all the genes of a query genome, and store each result in a separate folder (the folder name is defined automatically).
+    type: boolean
+  - name: max_genes
+    description: Maximal number of genes to analyze.
+    type: int
+  - name: unique_species
+    description: Retain at most one organism per species. This enables to filter out the numerous strains sequences for some species of particular interest. (e.g. Escherichia coli, Bacillus subtilis, ...).
+    type: boolean
+  - name: unique_genus
+    description: Retain at most one organism per genus. Same filter as for -unique_species, but at the level of the genus.
+    type: boolean
+  - name: bg_model
+    description: background model. Allow the user to choose among alternative background model (see Janky & van Helden, 2008).
+    type: string
+    choices: monads, taxfreq, org_list, file
+  - name: pval
+    description: Set the threshold on site p-value to report only the evaluated over-representations of binding sites whenever the individual sites crossed it. The default is set to 1e-4.
+    type: string
+  - name: occ_th
+    description: Threshold set on the occurrence significance (over-representation) for scores that have p-value equal or smaller thant the one given as threshold in the option -pval.
+    type: float
+  - name: plot_format
+    description: Format for the occurrence plots (occurrence frequencies, occurrence sinificance). Supported - all formats supported by the program XYgraph
+    type: string
+  - name: skip_m
+    description: Skip the first N matrices in the matrix_table (useful for quick testing and for resuming interrupted tasks when using a matrix_table or when several matrices are entered with the option -m ).
+    type: int
+  - name: last_m
+    description: Stop after having treated the first N matrices in the matrix table (useful for quick testing when using a matrix_table or when several matrices are entered with the option -m ).
+    type: float
+  - name: dist_thr
+    description: Specify here the intergenic distance threshold in base pairs.
+    type: int
+  - name: task
+    description: Specify a subset of tasks to be executed. Supported - all, operons, query_seq, orthologs, ortho_seq, purge, gene_index, index, orthologs_tf, occ_sig, occ_sig_graph, scan, map
+    type: string
+  - name: no_purge
+    description: This option can only be used combined with the -org_list option, this gives the posibility to analyse a given set of sequences managing sequence redundancy using a list of "no redundant" organisms.
+    type: boolean
+  - name: use_tree_org
+    description: Only uses organisms in the phylogenetic tree for orthologs search.
+    type: boolean
+  - name: batch
+    description: Generate one command per query gene, and post it on the queue of a PC cluster.
+    type: boolean
+  - name: dry
+    description: Dry run - print the commands but do not execute them.
+    type: boolean
+  - name: nodie
+    description: Do not die in case a sub-program returns an error.
+    type: boolean
+  - name: sep_genes
+    description:  Search footprints for each query gene separately.
+    type: boolean
+  - name: info_lines
+    description: Draw reference lines on the significance profile plots, to highlight some particular values.
+    type: boolean
+  - name: infer_operons
+    description: Infer operons in order to retrieve the promoters of the predicted operon leader genes rather than those located immediately upstream of the orthologs.
+    type: boolean
+  - name: batch_matrix
+    description: Generate one footprint-scan command per matrix and post it on the queue of a PC cluster.
+    type: boolean
+  - name: occ_sig_opt
+    description: Additional options passed to matrix-scan for the test of over-representation of matrix hits. Ex. -occ_sig_opt '-uth rank 1'
+    type: string
+  - name: occ_sig_graph_opt
+    description: Additional options passed to XYgraph for drawing the occurrence significance graph.
+    type: boolean
+  - name: scan_opt
+    description: Additional options passed to matrix-scan for site detection and feature-map drawing. Ex. -scan_opt '-uth pval 0.001'
+    type: string
+  - name: map_opt
+    description: Additional options passed to feature-map for feature-map drawing. Ex. -map_opt '-mapthick 12'
+    type: string
+  - name: filter_bgfile
+    description: Background model file for the scanning of query sequences for filtering.
+    type: file
+  - name: filter_pval
+    description: Set the threshold to filter out TF-interactions that are not present on the query organism.
+    type: float
+  - name: rand
+    description: When the option -rand is activated, the program replaces each ortholog by a gene selected at random in the genome where this ortholg was found.
+    type: boolean
+  - name: crer
+    description: Return Cis-Regulatory elements Enriched-Regions (CRER).
+    type: boolean
+  - name: diamond
+    description: Use ranks_dmnd.tab from diamond blast computed in genome-blast.
+    type: boolean
+  - name: synthesis
+    description: This option generated synthetic tables (in tab-delimited text and html) for all the results.
+    type: boolean
+  - name: map_format
+    description: Format for the feature map.
+    type: string
+    choices: jpg,gif,png,ps

@@ -407,8 +407,8 @@ package main;
   if (scalar(@matrix_files >= 1)) {
     $m = 0;
     foreach my $matrix_file (@matrix_files) {
-      if (scalar(@tf_name_in_file)>=1){
-	$main::args{prefix}=shift(@tf_name_in_file);
+      if (scalar(@tf_name_in_file) >= 1) {
+	$main::args{prefix} = shift(@tf_name_in_file);
       }
       last if (&IsNatural($import_top_matrices)
 	       && ($import_top_matrices > 0) 
@@ -1010,6 +1010,10 @@ OPTIONS
 		the input matrix/matrices. This can be convenient for
 		converting formats where matrices have no associated
 		name (e.g. tab) to formats with names (e.g. transfac).
+
+	-suffix
+		Suffix to be appended after identifier(s) and name(s) of
+		the input matrix/matrices. 
 
 	-attr key value
 	        Force an attribute of the matrix (matrices) to have a
@@ -1826,6 +1830,7 @@ convert-matrix options
 -base		base for the logarithms used to compute the weight and info content
 -decimals	number of decimals digits to print for real matrices
 -prefix		prefix to add before matrix identifiers
+-suffix		append suffix after matrix identifiers
 -attr key value	force attribute to have a given value
 -perm		number of permuted matrices to return.
 -max_profile	Maximal width of the profile histogram 
@@ -2066,6 +2071,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-prefix") {
 	    $main::args{prefix} = $ARGV[$a+1];
 	    $main::args{prefix} =~s/\s/_/g;
+
+	} elsif ($ARGV[$a] eq "-suffix") {
+	    $main::args{suffix} = $ARGV[$a+1];
+	    $main::args{suffix} =~s/\s/_/g;
 
 	    ### prefix ID
 	} elsif ($ARGV[$a] eq "-prefix_id") {

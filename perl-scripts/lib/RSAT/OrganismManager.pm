@@ -306,7 +306,8 @@ sub supported_organism_table {
   &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", 
 			"taxon: ".$taxon, 
 			"group: ".$group, 
-			"depth: ".$depth, 
+			"depth: ".$depth,
+            "with variant: ".$with_variant,
 			"fields", join( ";", @fields)) 
     if ($main::verbose >= 5);
 

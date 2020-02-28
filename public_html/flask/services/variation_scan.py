@@ -20,41 +20,35 @@ ns = api.namespace(tool, description=descr)
 
 ################################################################
 ### Retrieve sequences surrounding the polymorphic variations
-@ns.route('/<string:species>/<string:assembly>',methods=['POST','GET'])
-@api.doc(params={'species':'Species name, ex. Homo_sapiens','assembly':'Assembly name, ex. GRCh38'})
-class VariationInfo(Resource):
+@ns.route('/',methods=['POST','GET'])
+class VariationScan(Resource):
 	@api.expect(get_parser)
-	def get(self,species,assembly):
+	def get(self):
     		data = get_parser.parse_args()
-		data['species'] = species
-		data['assembly'] = assembly
 		if data['content-type'] == 'text/plain':
 			resp = self._run(data)
 			return utils.output_txt(resp,200)
 		return self._run(data)
 	
 	@api.expect(post_parser)
-	def post(self,species,assembly):
+	def post(self):
 		data = dict()
 		if request.headers.get('Content-type') == 'application/json':
 			data = request.get_json(force=True)
 		else:
 			data = post_parser.parse_args()
-		data['species'] = species
-		data['assembly'] = assembly		
 		return self._run(data)
 	
 	def _run(self, data):
 		output_choice = 'display'
-		fileupload_parameters = ['i','m','bg']
+		(boolean_var, fileupload_parameters) = utils.get_boolean_file_params(service_dir+'/' + tool.replace('-','_') +'.yml')
 		exclude = fileupload_parameters + ['content-type']
 		for x in fileupload_parameters:
 			exclude = exclude + [x + '_string', x + '_string_type']
-		command = utils.rsat_bin + '/' + tool
+		exclude += ['org', 'markov_order']
+		command = utils.perl_scripts + '/' + tool
 		result_dir = utils.make_tmp_dir(tool)
 		for param in data:
-			if param == 'species' or param == 'assembly' or param == 'markov_order':
-				continue
 			if data[param] is not None and data[param] != '' and param not in exclude:
 				if 'uth_' in param:
 					uth_type = param.split("_", 1) 
@@ -65,9 +59,8 @@ class VariationInfo(Resource):
 				else:				
 					command += ' -' + param + ' ' + str(data[param])
 		command += utils.parse_fileupload_parameters(data, fileupload_parameters, tool, result_dir, ',')
-		if 'bg' in data and data['bg'] is not None and data['bg'] != '':
-			command += ' -bg ' + data['bg']
-		else:
-			species = data['species'].replace(' ', '_') + '_' + data['assembly']
-			command += ' -bg ' + utils.get_backgroundfile(species,data.get('markov_order',2)+1)
+		len = 1
+		if 'markov_order' in data and data['markov_order'] is not None and data['markov_order'] != '':
+		    len = data['markov_order'] + 1 
+		command += ' -bg ' + utils.get_backgroundfile(data['org'], len)
 		return utils.run_command(command, output_choice, tool, 'tsv', result_dir)

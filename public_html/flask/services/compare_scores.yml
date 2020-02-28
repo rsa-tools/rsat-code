@@ -1,0 +1,55 @@
+descr:
+    Compare the score associated to keys in different input files (basically, this amounts to join different tables on the basis of a unique identifier).
+---
+parameters:
+  - name: i
+    description: input_file (use recursively to indicate several input files) input file.
+    type: file
+  - name: i_2
+    description: input_file (use recursively to indicate several input files) input file.
+    type: file
+  - name: files
+    description: list of files specified on the command line.
+    type: string
+    required: false
+  - name: filelist
+    description: Specify a file containing the list of files to be compared.
+    type: file
+  - name: format
+    description: export format (default profiles) Supported formats - classes,profiles
+    type: string
+    choices: classes,profiles
+    required: false
+  - name: sc
+    description: score column.
+    type: int
+  - name: ic
+    description: Identifier column (default 1)
+    type: int
+  - name: header
+    description: use the first line of each input file as column headers.
+    type: boolean
+  - name: lc
+    description: By default, the comparison is case-insensitive, but the ID case is maintained in the output. This can however b modified with the options '-lc' (IDs converted to lowercases) and '-uc' (IDs converted to uppercases).
+    type: boolean
+  - name: uc
+    description: see -lc.
+    type: boolean
+  - name: "null"
+    description: null string (default <NULL>) displayed when one file contains no value for a given key)
+    type: boolean
+  - name: numeric
+    description: sort IDs numerically rather than alphabetically
+    type: boolean
+  - name: decreasing
+    description: sort IDs numerically in a decreasing order
+    type: boolean
+  - name: basename
+    description: remove path (directory) from file names in the header
+    type: boolean
+  - name: suppress
+    description: Suppress a given substring from file names in the header. Ex.  -suppress '.tab' -suppress 'oligos_'
+    type: string
+  - name: subst
+    description: Substitute a given substring from file names in the header by a specified substring. Ex. -subst 'oligo_' 'ol'
+    type: string

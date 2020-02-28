@@ -144,8 +144,6 @@ package main;
     local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
     local $top_seq = 0;
-    local $cluster_sig = 0;
-    local $cluster_counts = 0;
     local $column_rescaling = 100; ## TO DO: ADAPT RESCALING TO MAX OF SIG MATRIX
 
     ## Collect method
@@ -171,7 +169,7 @@ package main;
 
     ## Parameters for matrix-scan
     local %uth;
-    $uth{Pval} = 1e-4;
+    $uth{Pval} = 5e-4;
 
     ## Parameters for matrix-scan-quick
     local %lth;
@@ -187,7 +185,7 @@ package main;
     $batch = 0;
 
     ## Clustering parameters
-    $cluster_sig = 0;
+    $cluster_sig = 1;
     $cluster_counts = 0;
 
     ################################################################
@@ -321,7 +319,7 @@ package main;
     close $in;
     print $log "; Number of assemblies\t", $assembly_nb, "\n";
     print $log "; Number of assembled patterns\t", $assembled_pattern_nb, "\n";
-    &RSAT::message::TimeWarn("Pattern assembly file contains", $assembled_pattern_nb." patterns,",  $assembly_nb." assemblies",) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Pattern assembly file contains", $assembled_pattern_nb." patterns,",  $assembly_nb." assemblies") if ($main::verbose >= 2);
     if ($assembled_pattern_nb == 0) {
       &RSAT::message::Warning("Not a single assembly was found in file", $outfile{assembly}) if ($main::verbose >= 1);
       &terminate();
@@ -449,7 +447,7 @@ package main;
 
 	## Rescan sequences to get count matrices from clustered matrices
 	my $rescan_cmd = &RSAT::server::GetProgramPath("rescan-matrix");
-	$rescan_cmd .= " -v 3";
+	$rescan_cmd .= " -v 0";
 	$rescan_cmd .= " -seq ".$seq_to_scan;
 	$rescan_cmd .= " -seq_format fasta";
 	$rescan_cmd .= " -m ".$outfile{count_matrices_nr};
@@ -538,9 +536,19 @@ Level of verbosity (detail in the warning messages during execution)
 	    } else {
 		$main::verbose = 1;
 	    }
+=pod
+
+=item B<-n>
+
+Dry run: do not run the system commands called by this script. This
+option can be combined with a high level of verbosity (e.g. -v 3) in
+order to display the commands without running them.
+
+=cut
+	} elsif ($arg eq "-n") {
+	  $main::dry = 1;
 
 	    ## Help message
-
 =pod
 
 =item B<-h>
@@ -849,13 +857,13 @@ output basename, followed by an extension.
 
 Run I<matrix-clustering> to filter out redundant matrices, on the
 significance matrices (I<-cluster sig>), on the count matrices
-(I<-cluster counts>), on both (i<-cluster both>) or none
+(I<-cluster counts>), on both (I<-cluster both>) or none
 (I<-cluster none>).
 
 Applying the filtering at the level of the significance matrices
 reduces the scanning time, since the count matrices are built by
-scanning sequences with each significance matrix. However it can
-result in a loss of sensitivity, some lmotif being absorbed by other
+scanning sequences with each significance matrix. However it might
+result in a loss of sensitivity, some motif being absorbed by other
 ones.
 
 
