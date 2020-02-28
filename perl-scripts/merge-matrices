@@ -220,31 +220,59 @@ package main;
   $merged_matrix->setAlphabet_lc(@alphabet);
 
   
-  ## Set divider to 1 for matrix sums, and to the nb of matrices for
-  ## the mean.
-  my $divider = 1;
-  if ($operator eq "mean") {
-    $divider *= $nb_matrices;
-  }
-
   @merged_counts = ();
   if ($operator eq "diff") {
-    &RSAT::error::FatalError("Matrix difference is not supported yet, please contact Jaime Castro to upgrade the program.");
-  } else { 
-
-    foreach my $matrix (@matrices) {
-      ## count matrix
-      my @counts = $matrix->getMatrix();
-      my $ncol = $matrix->ncol();
-      my $nrow = $matrix->nrow();
-      
-      for my $c (0..($ncol-1)) {
-	my $col_sum = 0;
-	for my $r (0..($nrow-1)) {
-	  $merged_counts[$c][$r] += $counts[$c][$r]/$divider;
-	}
+      if (scalar(@matrices) != 2) {
+	  &RSAT::error::FatalError("Matrix difference is only valid with input files containing exactly 2 matrices.");
       }
-    }
+        
+      ## First count matrix
+      my $matrix1 <- $matrices[0]:
+      my @counts1 = $matrix1->getMatrix();
+      my $ncol1 = $matrix1->ncol();
+      my $nrow1 = $matrix1->nrow();
+
+      ## Second count matrix
+      my $matrix2 <- $matrices[1]:
+      my @counts2 = $matrix2->getMatrix();
+      my $ncol2 = $matrix2->ncol();
+      my $nrow2 = $matrix2->nrow();
+
+      ## Check dimensions
+      if ($ncol1 != $ncol2) {
+	  &RSAT::error::FatalError("The numbers of columns differs between matrix 1 (${ncol1}) and matrix 2 (${ncol2}).");
+      }    
+      if ($nrow1 != $nrow2) {
+	  &RSAT::error::FatalError("The numbers of rows differs between matrix 1 (${nrow1}) and matrix 2 (${nrow2}).");
+      }
+
+      ## Compute the difference
+      for my $c (0..($ncol-1)) {
+	  for my $r (0..($nrow-1)) {
+	      $merged_counts[$c][$r] += $counts2[$c][$r] - $counts1[$c][$r];
+	  }
+      }
+  } else {
+      
+      ## Set divider to 1 for matrix sums, and to the nb of matrices for
+      ## the mean.
+      my $divider = 1;
+      if ($operator eq "mean") {
+	  $divider *= $nb_matrices;
+      }
+      
+      foreach my $matrix (@matrices) {
+	  ## count matrix
+	  my @counts = $matrix->getMatrix();
+	  my $ncol = $matrix->ncol();
+	  my $nrow = $matrix->nrow();
+	  
+	  for my $c (0..($ncol-1)) {
+	      for my $r (0..($nrow-1)) {
+		  $merged_counts[$c][$r] += $counts[$c][$r]/$divider;
+	      }
+	  }
+      }
   }
 
   $merged_matrix->setMatrix($alphabet_size, $matrix_width, @merged_counts);
