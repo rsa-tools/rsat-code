@@ -104,12 +104,12 @@ package main;
 
 
   ## Parameters passed to matrix-scan
-  our $scan_parameters = "";
   our $seq_format = "fasta";
   our $matrix_format = "transfac";
   our $strands = "-2str";
   our $markov = 1;
   our $bg_model = "-bginput";
+  our $scan_parameters = "";
 
   ## Parameters for the &doit() command
   $dry = 0;
@@ -336,6 +336,14 @@ Maximal number of iterations.
 	    &RSAT::error::FatalError($main::iteration, "Invalid value for option -iterations. Should be a Natural number >= 1ti. ");
 	}
 
+=item B<-scan_param scanning_parameters>
+
+Parameters to scan the sites. The argument is passed to matrix-scan.
+
+=cut
+    } elsif ($arg eq "-scan_param") {
+	$main::scan_parameters = shift(@arguments);
+
 =item	B<-o output_file>
 
 Output file. This file will contain the matrices resulting from the
@@ -401,15 +409,6 @@ sub ScanForSites {
     ################################################################
     ## matrix-scan parameters
     
-    ## The upper threshold on Pval MUST be defined (if not, all
-    ## sites can be taken, resulting in a meaningless matrix).
-    unless ($scan_parameters =~ /-uth Pval/) {
-	unless (defined($args{uth_pval})) {
-	    $uth{Pval} = 0.0001;
-	    &RSAT::message::Info("Using default upper P-value threshold: ", $uth{Pval}) if ($main::verbose >= 2);
-	}
-    }
-
     ## Run the matrix-scan command
     my $scan_cmd = $matrix_scan_cmd;
     $scan_cmd .= " -quick";
@@ -420,11 +419,22 @@ sub ScanForSites {
     $scan_cmd .= " -matrix_format ".$matrix_format;
     $scan_cmd .= " -n skip";
     $scan_cmd .= " -return sites,pval";
-    $scan_cmd .= " -uth Pval ".$uth{Pval};
     $scan_cmd .= " ".$strands;
     $scan_cmd .= " ".$bg_model;
     $scan_cmd .= " -markov ".$markov;
-    $scan_cmd .= $scan_parameters;
+    if ($scan_parameters) {
+      $scan_cmd .= " ".$scan_parameters;
+    }
+    ## The upper threshold on Pval MUST be defined (if not, all
+    ## sites can be taken, resulting in a meaningless matrix).
+    unless ($scan_parameters =~ /-uth pval/i) {
+	unless (defined($args{uth_pval})) {
+	    $uth{Pval} = 0.0001;
+	    &RSAT::message::Info("Using default upper P-value threshold: ", $uth{Pval}) if ($main::verbose >= 2);
+	}
+	$scan_cmd .= " -uth Pval ".$uth{Pval};
+    }
+
     $scan_cmd .= " -o ".$output_sites;
     &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
     
