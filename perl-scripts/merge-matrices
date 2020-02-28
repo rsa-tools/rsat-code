@@ -119,6 +119,10 @@ package main;
 
   our %infile = ();
   our %outfile = ();
+  $outfile{id} = "merged";
+  $outfile{name} = "merged";
+  $outfile{version} = "none";
+
 
   our $verbose = 0;
   our $in = STDIN;
@@ -142,18 +146,16 @@ package main;
   ## Initialize some attributes (can be over-written with the option -merged_attr)
   local %merged_attributes = ();
 
-  $outfile{id} = "merged";
-  $outfile{name} = "merged";
-  $outfile{version} = "none";
-
   ## Parameters for the &doit() command
-  $dry = 0;
-  $die_on_error = 1;
-  $job_prefix = "matrix-from-patterns";
-  $batch = 0;
+  our $dry = 0;
+  our $die_on_error = 1;
+  our $job_prefix = "matrix-from-patterns";
+  our $batch = 0;
   
   ## Parameters for rescan-matrix
-  $iterations = 1;
+  our $seq = "";
+  our $iterations = 1;
+  our $scan_parameters = "";
 
 
   ################################################################
@@ -235,13 +237,13 @@ package main;
       }
         
       ## First count matrix
-      my $matrix1 <- $matrices[0]:
+      my $matrix1 = $matrices[0];
       my @counts1 = $matrix1->getMatrix();
       my $ncol1 = $matrix1->ncol();
       my $nrow1 = $matrix1->nrow();
-
+  
       ## Second count matrix
-      my $matrix2 <- $matrices[1]:
+      my $matrix2 = $matrices[1];
       my @counts2 = $matrix2->getMatrix();
       my $ncol2 = $matrix2->ncol();
       my $nrow2 = $matrix2->nrow();
@@ -255,11 +257,19 @@ package main;
       }
 
       ## Compute the difference
-      for my $c (0..($ncol-1)) {
-	  for my $r (0..($nrow-1)) {
-	      $merged_counts[$c][$r] += $counts2[$c][$r] - $counts1[$c][$r];
+      for my $c (0..($ncol1-1)) {
+	  for my $r (0..($nrow1-1)) {
+#	    &RSAT::message::Debug("Merging", "c=".$c, "r=".$r, 
+#				  "counts1=".$counts1[$c][$r]) if ($main::verbose >= 10);
+	    $merged_counts[$c][$r] += $counts2[$c][$r] - $counts1[$c][$r];
 	  }
       }
+      
+#       print $matrix1->to_tab();
+#       print $matrix2->to_tab();
+# #      print $merged_counts->to_tab();
+      
+#       die "HELLO\n", join(";", join("\n", @counts1)), "\n";
   } else {
       
       ## Set divider to 1 for matrix sums, and to the nb of matrices for
@@ -340,6 +350,9 @@ package main;
     $rescan_cmd .= " -m ".$outfile{merged_counts};
     $rescan_cmd .= " -matrix_format ".$output_format;
     $rescan_cmd .= " -iterations ".$iterations;
+    if ($scan_parameters) {
+      $rescan_cmd .= " -scan_param '".$scan_parameters."'";
+    }
     $rescan_cmd .= " -o ".$outfile{output};
     &doit($rescan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
 
@@ -547,6 +560,13 @@ combined with -seq option).
 	    &RSAT::error::FatalError($main::iteration, "Invalid value for option -iterations. Should be a Natural number >= 1ti. ");
 	}
 
+=item B<-scan_param scanning_parameters>
+
+Parameters to scan the sites. The argument is passed to rescan-matrix.
+
+=cut
+    } elsif ($arg eq "-scan_param") {
+	$main::scan_parameters = shift(@arguments);
 
 =pod
 
