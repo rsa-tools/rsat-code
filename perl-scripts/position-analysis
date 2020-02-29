@@ -2221,7 +2221,7 @@ sub PrintResult {
   ## Generate an HTML output file with the main output if required
   if ($outfile{output_html}) {
     &RSAT::message::TimeWarn("Generating HTML table", $outfile{html}) if ($main::verbose >= 2);
-    my $cmd = $SCRIPTS."/text-to-html";
+    my $cmd =  &RSAT::server::GetProgramPath("text-to-html");
     $cmd .= " -i ".$outfile{output};
     $cmd .= " -o ".$outfile{output_html};
     &doit($cmd);
@@ -2322,7 +2322,7 @@ sub PrintProfiles {
   ## Generate an HTML output file if required
   if ($outfile{$profile_type.'_html'}) {
     &RSAT::message::TimeWarn("Generating HTML table", $outfile{$profile_type.'_html'}) if ($main::verbose >= 2);
-    my $cmd = $SCRIPTS."/text-to-html";
+    my $cmd =  &RSAT::server::GetProgramPath("text-to-html");
     $cmd .= " -i ".$outfile{$profile_type};
     $cmd .= " -o ".$outfile{$profile_type.'_html'};
     &doit($cmd);
@@ -2392,7 +2392,7 @@ sub ProfileClustering {
 sub ClustersToMatrices {
     my ($clust_nb) = @_;
     &RSAT::message::TimeWarn("Extracting matrices from k-mers in sequences.") if ($main::verbose >= 2);
-    my $cmd = $SCRIPTS."/matrix-from-patterns";
+    my $cmd =  &RSAT::server::GetProgramPath("matrix-from-patterns");
     $cmd .= " -v 1";
     $cmd .= " -seq ".$infile{sequences};
     $cmd .= " -top_seq ".$top_seq_for_matrices if ($top_seq_for_matrices);
