@@ -477,8 +477,12 @@ package main;
 
     ## Built the branch motif by re-scanning the motifs
     local $rescan_motifs_flag = 0;
-    
 
+    ## Program used to generate the logos
+    #    $logo_cmd_name = "seqlogo";
+    $logo_cmd_name = $ENV{LOGO_PROGRAM};
+    #    $logo_cmd_name = "weblogo";                                                                                                               
+    
   ## List of files to delete
   %to_delete = ();
   %to_delete_folder = ();
@@ -2124,11 +2128,13 @@ sub CompareMatricesQuick {
   ## This is the faster C implemented version of compare-matrices
 
   $matrix_compa_verbose = 0;
-  my $BIN=$ENV{RSAT}."/bin";
+  # my $BIN=$ENV{RSAT}."/bin";
 
   ## Run the pairwise matrix comparison
   &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
-  my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose; 
+  #  my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose;
+  my $cmd = &RSAT::server::GetProgramPath("compare-matrices-quick");
+  $cmd .= "  -v ".$matrix_compa_verbose;
   $cmd .=  " -file1 ".$main::outfile{input_matrices};
   $cmd .=  " -file2 ".$main::outfile{input_matrices};
   $cmd .= " -lth_ncor1 -1";
@@ -2159,11 +2165,13 @@ sub CompareMatricesQuick_AnnotateMotifs {
 
 
   $matrix_compa_verbose = 0;
-  my $BIN=$ENV{RSAT}."/bin";
+  #  my $BIN=$ENV{RSAT}."/bin";
 
   ## Run the pairwise matrix comparison
   &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
-  my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose; 
+#  my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose;
+  my $cmd = &RSAT::server::GetProgramPath("compare-matrices-quick");
+  $cmd .= "  -v ".$matrix_compa_verbose;  
   $cmd .=  " -file1 ".$main::outfile{all_concatenated_motifs};
   $cmd .=  " -file2 ".$main::outfile{ref_collection_tf};
   $cmd .= " -lth_ncor1 -1";
@@ -2424,9 +2432,9 @@ sub Add_gaps_to_motifs {
                 $logo_file .= "_logo";
                 my @logo_formats = ("png");
                 
-                $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+                $matrix->makeLogo($logo_file, \@logo_formats, "", 0, $logo_cmd_name, 1);
                 $matrix->set_attribute("logo_file" => $logo_file);
-                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "", 1, "seqlogo", 1);
+                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "", 1, $logo_cmd_name, 1);
                 $matrix->set_attribute("logo_file_rc"=> $logo_file. "_rc");
                 ##########
                 ## Convert the aligned matrix to reverse complement
@@ -2483,9 +2491,9 @@ sub Add_gaps_to_motifs {
                 $logo_file .= "_logo";
                 my @logo_formats = ("png");
                 
-                $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+                $matrix->makeLogo($logo_file, \@logo_formats, "", 0, $logo_cmd_name, 1);
                 $matrix->set_attribute("logo_file" => $logo_file);
-                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1, "seqlogo", 1);
+                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1, $logo_cmd_name, 1);
                 $matrix->set_attribute("logo_file_rc"=> $logo_file."_rc");
                 ##########
                 
@@ -3074,9 +3082,9 @@ sub Merge_matrices {
                 $logo_file .= "_logo";
                 my @logo_formats = ("png");
                 
-                $matrix_trimmed->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+                $matrix_trimmed->makeLogo($logo_file, \@logo_formats, "", 0, $logo_cmd_name, 1);
                 $matrix_trimmed->set_attribute("logo_file" => $logo_file);
-                $matrix_trimmed->makeLogo($logo_file."_rc", \@logo_formats, "", 1, "seqlogo",1);
+                $matrix_trimmed->makeLogo($logo_file."_rc", \@logo_formats, "", 1, $logo_cmd_name,1);
                 $matrix_trimmed->set_attribute("logo_file_rc"=> $logo_file."_rc");
                 #########
                 
@@ -3164,9 +3172,9 @@ sub Merge_matrices {
             $logo_file .= "_logo";
             my @logo_formats = ("png");
             
-            $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+            $matrix->makeLogo($logo_file, \@logo_formats, "", 0, $logo_cmd_name, 1);
             $matrix->set_attribute("logo_file" => $logo_file);
-            $matrix->makeLogo($logo_file."_rc", \@logo_formats, "", 1, "seqlogo", 1);
+            $matrix->makeLogo($logo_file."_rc", \@logo_formats, "", 1, $logo_cmd_name, 1);
             $matrix->set_attribute("logo_file_rc"=> $logo_file."_rc");
             #########
             
@@ -6425,7 +6433,7 @@ sub Produce_logos {
     ## Add the empty columns
     my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
     $cmd .= " -i ".$main::outfile{all_concatenated_motifs};
-    $cmd .= " -from tf -to tf -return logo -logo_no_title -logo_program seqlogo";
+    $cmd .= " -from tf -to tf -return logo -logo_no_title -logo_program ".$logo_cmd_name;
     $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/test";
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
