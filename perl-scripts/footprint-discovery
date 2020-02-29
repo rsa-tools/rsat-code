@@ -398,7 +398,8 @@ package main;
     $infile{bg_model} .= "dyads_3nt_sp0-20_upstream-noorf_org_list".$noov.$strands.".freq";
 #    dyads_3nt_sp0-20_upstream-noorf_Actinobacteria-noov-1str.freq.gz
     if ($task{bg_model}) {
-      my $cmd = $SCRIPTS."/taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
+      my $cmd =  &RSAT::server::GetProgramPath("taxon-frequencies");
+      $cmd .= " -v 1 -type dyad  -ml 3 ".$strands;
       $cmd .= " -org_list ".$orglist_file;
       $cmd .= " > ".$infile{bg_model};
       &one_command($cmd, 1, 0, task=>'bg_model', log=>$main_log);
@@ -449,7 +450,8 @@ package main;
       unless (-e $infile{bg_model}) {
 #	  if ($task{bg_model}) {
 	&RSAT::message::TimeWarn("Computing local taxon-wise background model (not installed on the server)" ) if ($main::verbose >= 2);
-	my $cmd = $SCRIPTS."/taxon-frequencies -v 1 -type dyad  -ml 3 ".$strands;
+	my $cmd =  &RSAT::server::GetProgramPath("taxon-frequencies");
+	$cmd .= " -v 1 -type dyad  -ml 3 ".$strands;
 	$cmd .= " -taxon ".$taxon;
 	$cmd .= " > ".$infile{bg_model};
 	&doit($cmd, $dry, 1, $verbose, 0, "");  ## CANNOT BE DONE IN BATCH MODE -> third argument is 1
@@ -712,7 +714,8 @@ sub RunFootprintDisco {
     ## Generate a feature-map of the discovered dyads
     my $map_title = join "; ", "dyad map", $taxon, $organism_name, $outfile_prefix;
     &RSAT::message::TimeWarn("Generating feature map", $outfile{map_dyads}) if ($verbose >= 2);
-    $cmd = $SCRIPTS."/dna-pattern -return limits,sites -origin -0 -N 4";
+    $cmd =  &RSAT::server::GetProgramPath("dna-pattern");
+    $cmd .= " -return limits,sites -origin -0 -N 4";
     $cmd .= " -pl ".$outfile{dyads};
     $cmd .= " -format fasta -i ".$outfile{seq};
     $cmd .= " | $SCRIPTS/convert-features -from dnapat -to ft";
@@ -732,7 +735,8 @@ sub RunFootprintDisco {
 
     $map_title = join "; ", "Site map", $taxon, $organism_name, $outfile_prefix;
     &RSAT::message::TimeWarn("Generating feature map", $outfile{map_dyads}) if ($verbose >= 2);
-    $cmd = $SCRIPTS."/matrix-scan -quick -return limits,sites,pval -decimals 1 -origin end -consensus_name";
+    $cmd =  &RSAT::server::GetProgramPath("matrix-scan");
+    $cmd .= " -quick -return limits,sites,pval -decimals 1 -origin end -consensus_name";
     $cmd .= " -matrix_format transfac -m ".$outfile{count_PSSM_tf};
     $cmd .= " -pseudo 1 -decimals 1 -2str -bg_pseudo 0.01 -lth score 1 -uth pval 1e-4 -n score";
     $cmd .= " -seq_format fasta -bginput -markov 1 -i ".$outfile{seq};
@@ -1178,7 +1182,8 @@ sub DyadAnalysis {
 
   &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
   &CheckDependency("dyads", "purged") if ($task{dyads});
-  $cmd = $SCRIPTS."/dyad-analysis -v 1 ";
+  $cmd =  &RSAT::server::GetProgramPath("dyad-analysis");
+  $cmd .= " -v 1 ";
   $cmd .= " -return ".$dyad_return_fields;
   ## Backgroun model
   if ($bg_model eq "monads") {
@@ -1211,7 +1216,7 @@ sub DyadAnalysis {
   ################################################################
   ## Generate a HTML table with the discovered dyads
   &CheckDependency("dyads_html", "dyads") if ($task{dyads});
-  $cmd = $SCRIPTS."/text-to-html";
+  $cmd =  &RSAT::server::GetProgramPath("text-to-html");
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -font variable -chunk 1000";
   $cmd .= " -o ".$outfile{dyads_html};
@@ -1231,7 +1236,8 @@ sub DyadAnalysis {
     ## Assemble significant dyads
     &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
     &CheckDependency("asmb", "dyads");
-    $cmd = $SCRIPTS."/pattern-assembly -v 1";
+    $cmd =  &RSAT::server::GetProgramPath("pattern-assembly");
+    $cmd .= " -v 1";
     $cmd .= " -i ".$outfile{dyads};
     $cmd .= " -subst 1 -weight 5 -maxfl 1 -toppat 50";
     $cmd .= " -max_asmb_nb 5";
@@ -1247,7 +1253,8 @@ sub DyadAnalysis {
     &CheckDependency("pssm", "asmb");
     &CheckDependency("pssm", "seq");
 
-    $cmd = $SCRIPTS."/matrix-from-patterns -v 1";
+    $cmd =  &RSAT::server::GetProgramPath("matrix-from-patterns");
+    $cmd .= " -v 1";
     $cmd .= " -seq ".$outfile{seq};
     $cmd .= " -asmb ".$outfile{asmb};
     $cmd .= " -prefix ".$current_gene_name;
@@ -1405,7 +1412,8 @@ sub CoregulationNetwork {
   $outfile{dyad_gene_degrees} = $dir{network}."/".$main_prefix."_dyad_gene_degrees.tab";  push @network_files, "dyad_gene_degrees";
   $outfile{dyad_degree_distrib} = $dir{network}."/".$main_prefix."_dyad_degree_distrib.tab";  push @network_files, "dyad_degree_distrib";
   $outfile{dyad_degree_distrib_graph} = $dir{network}."/".$main_prefix."_dyad_degree_distrib_graph.pdf";  push @network_files, "dyad_degree_distrib_graph";
-  my $degree_cmd = $SCRIPTS."/graph-node-degree -v 1";
+  my $degree_cmd =  &RSAT::server::GetProgramPath("graph-node-degree");
+  $degree_cmd .= " -v 1";
   $degree_cmd .= " -i ".$outfile{dyad_sig_classes};
   $degree_cmd .= " -in_format tab";
   $degree_cmd .= " -scol 1";
@@ -1469,7 +1477,8 @@ sub CoregulationNetwork {
   ## score profiles between each pair of genes
   $outfile{gene_pairs} .= $dir{network}."/".$main_prefix."_gene_pairs.tab"; push @network_files, "gene_pairs";
   my $compare_classes_cmd = 'awk \'{print $1"\t"$4"\t"$3}\' '.$outfile{dyads_filtered};
-  $compare_classes_cmd .=  " | ".$SCRIPTS."/compare-classes -v 1";
+  $compare_classes_cmd .=  " | ". &RSAT::server::GetProgramPath("compare-classes");
+  $compare_classes_cmd .= " -v 1";
   $compare_classes_cmd .= " -i /dev/stdin";
   $compare_classes_cmd .= " -triangle -distinct";
   $compare_classes_cmd .= " -return rank,occ,freq,proba,jac_sim,dotprod,entropy";
@@ -1483,7 +1492,7 @@ sub CoregulationNetwork {
   ################################################################
   ## Add columns with gene names and IDs
   $outfile{gene_pairs_names} .= $dir{network}."/".$main_prefix."_gene_pairs_names.tab"; push @network_files, "gene_pairs_names";
-  my $cc_gene_info_cmd = $SCRIPTS."/add-gene-info";
+  my $cc_gene_info_cmd =  &RSAT::server::GetProgramPath("add-gene-info");
   $cc_gene_info_cmd .= " -i ".$outfile{gene_pairs};
   $cc_gene_info_cmd .= " -col 1 -col 2";
   $cc_gene_info_cmd .= " -org ".$organism_name;
@@ -1511,7 +1520,7 @@ sub CoregulationNetwork {
   ## Convert tab-delimited network into GML file (that can be open
   ## with CytoScape or Yed).
   $outfile{gene_pairs_gml} .= $dir{network}."/".$main_prefix."_gene_pairs_".$score.".gml"; push @network_files, "gene_pairs_gml";
-  my $convert_graph_cmd = $SCRIPTS."/convert-graph";
+  my $convert_graph_cmd =  &RSAT::server::GetProgramPath("convert-graph");
   $convert_graph_cmd .= " -i ".$outfile{gene_pairs};
   $convert_graph_cmd .= " -scol 1 -tcol 2 -wcol ".$score_column;
   $convert_graph_cmd .= " -from tab -to gml";
@@ -1524,7 +1533,8 @@ sub CoregulationNetwork {
   ################################################################
   ## Get the neighborhood of each gene in the co-regulation network
   $outfile{gene_neighbours} .= $dir{network}."/".$main_prefix."_gene_neighbours.tab"; push @network_files, "gene_neighbours";
-  my $gn_cmd = $SCRIPTS."/graph-neighbours -v 1";
+  my $gn_cmd =  &RSAT::server::GetProgramPath("graph-neighbours");
+  $gn_cmd .= " -v 1";
   $gn_cmd .= " -self";
 #  $gn_cmd .= " -seed $gene";
   $gn_cmd .= " -all";
@@ -1541,7 +1551,7 @@ sub CoregulationNetwork {
   ## gene-dyad network.
   &RSAT::message::TimeWarn("Computing node degree in co-regulation network") if ($main::verbose >= 2);
   $outfile{gene_degree} .= $dir{network}."/".$main_prefix."_gene_degree.tab"; push @network_files, "gene_degree";
-  my $deg_cmd = $SCRIPTS."/graph-node-degree";
+  my $deg_cmd =  &RSAT::server::GetProgramPath("graph-node-degree");
   $deg_cmd .= " -in_format tab";
   $deg_cmd .= " -i ".$outfile{gene_pairs};
   $deg_cmd .= " -scol 1 -tcol 2 -wcol ".$score_column;
