@@ -36,7 +36,7 @@ TAR_EXCLUDE=--exclude .git \
 	--exclude kwalks \
 	--exclude REA \
 	--exclude REA-* \
-	--exclude purgatory \
+	--exclude purgatory_* \
 	--exclude .Rproj.user \
 	--exclude '*.RData' \
 	--exclude Rpackages \
