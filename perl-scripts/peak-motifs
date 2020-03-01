@@ -2559,6 +2559,7 @@ sub MatrixFromPatterns {
   $cmd .= " -flanks 2";
   $cmd .= " -collect_method matrix-scan-quick";
   $cmd .= " -logo";
+  $cmd .= " -cluster none";
   $cmd .= " -o ".$pssm_file;
   &RSAT::util::one_command($cmd, 1, $pssm_file."_time.txt", log=>$main::out);
 }
