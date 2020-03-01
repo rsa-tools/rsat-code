@@ -1077,7 +1077,7 @@ sub CompositionProfiles {
 
     ## Compute background models of order 0 (Bernoulli) and 1 (Markov)
     ## from the sequences
-    $cmd =  &RSAT::server::GetProgramPath("/count-words");
+    $cmd =  &RSAT::server::GetProgramPath("count-words");
     $cmd .= " -v 1";
     $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
     $cmd .= " -l ".$ol;

@@ -2135,11 +2135,9 @@ sub CompareMatricesQuick {
   ## This is the faster C implemented version of compare-matrices
 
   $matrix_compa_verbose = 0;
-  # my $BIN=$ENV{RSAT}."/bin";
 
   ## Run the pairwise matrix comparison
   &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
-  #  my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose;
   my $cmd = &RSAT::server::GetProgramPath("compare-matrices-quick");
   $cmd .= "  -v ".$matrix_compa_verbose;
   $cmd .=  " -file1 ".$main::outfile{input_matrices};
@@ -2172,11 +2170,9 @@ sub CompareMatricesQuick_AnnotateMotifs {
 
 
   $matrix_compa_verbose = 0;
-  #  my $BIN=$ENV{RSAT}."/bin";
 
   ## Run the pairwise matrix comparison
   &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
-#  my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose;
   my $cmd = &RSAT::server::GetProgramPath("compare-matrices-quick");
   $cmd .= "  -v ".$matrix_compa_verbose;  
   $cmd .=  " -file1 ".$main::outfile{all_concatenated_motifs};

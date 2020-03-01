@@ -1070,11 +1070,11 @@ sub CompareMatricesQuick {
     ## This is the faster C implemented version of compare-matrices
     
     $matrix_compa_verbose = 0;
-    my $BIN=$ENV{RSAT}."/bin";
     
     ## Run the pairwise matrix comparison
     &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 3);
-    my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose; 
+    my $cmd =  &RSAT::server::GetProgramPath("compare-matrices-quick");
+    $cmd .= " -v ".$matrix_compa_verbose; 
     $cmd .=  " -file1 ".$motif_query_file;
     $cmd .=  " -file2 ".$motif_permuted_file;
     $cmd .= " -lth_ncor1 -1";

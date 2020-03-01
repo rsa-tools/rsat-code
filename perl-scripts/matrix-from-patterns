@@ -1268,11 +1268,6 @@ sub InfoGibbs {
     my ($matrix_file) = @_;
 
     &RSAT::message::TimeWarn("Running info-gibbs with significance matrices as seeds") if ($main::verbose >= 2);
-##    my $gibbs_cmd = $BIN."/info-gibbs";
-#    unless (-e $gibbs_cmd) {
-#      $gibbs_cmd = `which info-gibbs`;
-#      chomp($gibbs_cmd);
-#    }
     &RSAT::error::FatalError("info-gibbs command is not in your path")
       unless ($gibbs_cmd);
 

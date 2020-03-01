@@ -512,7 +512,7 @@ package main;
     &RSAT::message::TimeWarn("Computing background model") if ($main::verbose >= 1);
 
     ## Compute oligonucleotide frequencies (k = m+1) in input sequence file
-    $cmd =  &RSAT::server::GetProgramPath("/count-words");
+    $cmd =  &RSAT::server::GetProgramPath("count-words");
     $cmd .= " -v 1";
     $cmd .= " -i ".$main::infile{seq};
     $cmd .= " -l ".$param{bg_oligo_len};
@@ -545,7 +545,7 @@ package main;
       &RSAT::message::TimeWarn("Computing background model for slice", $s."/".$param{nb_slices}) if ($main::verbose >= 1);
 
       ## Compute oligonucleotide frequencies (k = m+1) in input sequence file
-      $cmd =  &RSAT::server::GetProgramPath("/count-words");
+      $cmd =  &RSAT::server::GetProgramPath("count-words");
       $cmd .= " -v 1";
       $cmd .= " -i ".$outfile{"seq_slice_".$s};
       $cmd .= " -l ".$param{bg_oligo_len};
