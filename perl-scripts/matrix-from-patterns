@@ -169,7 +169,7 @@ package main;
 
     ## Parameters for matrix-scan
     local %uth;
-    $uth{Pval} = 5e-4;
+    $uth{Pval} = 1e-3;
 
     ## Parameters for matrix-scan-quick
     local %lth;
