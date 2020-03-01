@@ -803,24 +803,31 @@ Same as -h
       
 =pod
 
-=item B<-matrix matrix_title input_matrix_file>
+=item B<-matrix matrix_title input_matrix_file matrix_format>
 
 The input file contains a set of position-specific scoring
 matrices.
 
 Example: -matrix OCt_motifs Oct_motifs_peakmotifs.tf tf
 
-The matrix_title will be concatenated to each motif ID in order to
-create unique motif IDs. The collection label is displayed in the results.
+This argument can be used iteratively to specify multiple motif
+collections.
 
-This label is useful when two motifs for the same TF come from different
-files and the user wants to know to which collection does the motif come from.
+The I<matrix_title> will be used as prefix for the ID of each
+resulting motif. These IDs are used as motif labels to display moti
+trees, which is particularly useful for the comparison of motifs
+coming from different collections (e.g. discoverd by alternative
+algorithms). It can also be useful to obtain unique identifiers when
+two motifs for the same TF come from different files and the user
+wants to know to which collection does the motif come from.
 
 B<Supported matrix formats>
 
 Since the program takes several matrices as input, it only accepts
 matrices in formats supporting several matrices per file (transfac,
-tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe).
+tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe). We
+recommend the transfac format, which enables to annotate each motif
+and is human-readable.
 
 For a description of these formats, see the help of I<convert-matrix>.
 
