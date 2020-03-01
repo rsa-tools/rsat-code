@@ -718,8 +718,9 @@ sub RunFootprintDisco {
     $cmd .= " -return limits,sites -origin -0 -N 4";
     $cmd .= " -pl ".$outfile{dyads};
     $cmd .= " -format fasta -i ".$outfile{seq};
-    $cmd .= " | $SCRIPTS/convert-features -from dnapat -to ft";
-    $cmd .= " | $SCRIPTS/feature-map";
+    $cmd .= " | ". &RSAT::server::GetProgramPath("convert-features");
+    $cmd .= " -from dnapat -to ft";
+    $cmd .= " | ". &RSAT::server::GetProgramPath("feature-map");
     $cmd .= " -title '".$map_title."'";
     $cmd .= " -format ".$map_format;
     $cmd .= " -scalebar -legend";
@@ -740,7 +741,7 @@ sub RunFootprintDisco {
     $cmd .= " -matrix_format transfac -m ".$outfile{count_PSSM_tf};
     $cmd .= " -pseudo 1 -decimals 1 -2str -bg_pseudo 0.01 -lth score 1 -uth pval 1e-4 -n score";
     $cmd .= " -seq_format fasta -bginput -markov 1 -i ".$outfile{seq};
-    $cmd .= " | $SCRIPTS/feature-map";
+    $cmd .= " | ". &RSAT::server::GetProgramPath("feature-map");
     $cmd .= " -title '".$map_title."'";
     $cmd .= " -format ".$map_format;
     $cmd .= " -scalebar -legend";

@@ -29,7 +29,7 @@ package main;
     our $strands = "1str";
     our $group_rc = 0;
     our $img_format = $ENV{rsat_img_format} || "png";
-    our $XYgraph_command = "$SCRIPTS/XYgraph";
+    our $XYgraph_command =  &RSAT::server::GetProgramPath("XYgraph");
     our $log_base = log(10);
     our $max_sig = 300; ## Value to be displayed for the significance when the P-value is lower than precision limit (thus, P-val = 0)
 

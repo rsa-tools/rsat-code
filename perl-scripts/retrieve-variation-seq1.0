@@ -249,7 +249,7 @@ package	main;
       $supported_output_format{$format} = 1;
   }
   our $format = "";
-  &RSAT::message::Debug("Scripts path", $SCRIPTS ) if ($main::verbose >= 10);
+  &RSAT::message::Debug("Scripts path", $SCRIPTS) if ($main::verbose >= 10);
 
 
   our $total_nb_variation = 0;

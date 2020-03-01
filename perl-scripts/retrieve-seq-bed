@@ -308,7 +308,7 @@ package main;
     # Suppress chr prefix from chromosome names if requested
     if ($add_chr) {
       &RSAT::message::TimeWarn("Adding chr prefix to chromosome column of bed file") if ($main::verbose >= 2);
-      $cmd = $SCRIPTS."/convert-features";
+      $cmd =  &RSAT::server::GetProgramPath("convert-features");
       $cmd .= " -add_chr -from bed -to bed";
       $cmd .= " -i ".$coordinate_file;
       $cmd .= " -o ".$outfile{coordinates};
@@ -318,7 +318,7 @@ package main;
     # Suppress chr prefix from chromosome names if requested
     if ($remove_chr) {
       &RSAT::message::TimeWarn("Removing chr prefix from chromosome column of bed file") if ($main::verbose >= 2);
-      $cmd = $SCRIPTS."/convert-features";
+      $cmd =  &RSAT::server::GetProgramPath("convert-features");
       $cmd .= " -remove_chr -from bed -to bed";
       $cmd .= " -i ".$infile{coordinates};
       $cmd .= " -o ".$outfile{coordinates};
