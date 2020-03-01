@@ -855,17 +855,17 @@ output basename, followed by an extension.
 
 =item B<-cluster matrix_clust_option>
 
-Run I<matrix-clustering> to filter out redundant matrices, on the
-significance matrices (I<-cluster sig>), on the count matrices
-(I<-cluster counts>), on both (I<-cluster both>) or none
-(I<-cluster none>).
+Run I<matrix-clustering> on the significance matrices (I<-cluster
+sig>). This enables to merge redundant motifs resulting from the
+combinatorial behaviour of pattern-assembly: a group of k-mers can be
+assembled to form partly overlapping assemblies. 
 
-Applying the filtering at the level of the significance matrices
-reduces the scanning time, since the count matrices are built by
-scanning sequences with each significance matrix. However it might
-result in a loss of sensitivity, some motif being absorbed by other
-ones.
+The clustering can be avoided with the option (I<-cluster none>), in
+order to show one individual motif pern assembly.
 
+Applying the filtering on significance matrices reduces the scanning
+time, since the count matrices are built by scanning sequences with
+each significance matrix. 
 
 =cut
   } elsif ($arg eq "-cluster") {
