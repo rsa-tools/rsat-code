@@ -137,7 +137,6 @@ use File::Basename;
 package main;
 {
   ## Check that the RSAT paths of the programs required for the script are specified
-  $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   ################################################################
   ## Initialise parameters
@@ -513,7 +512,8 @@ package main;
     &RSAT::message::TimeWarn("Computing background model") if ($main::verbose >= 1);
 
     ## Compute oligonucleotide frequencies (k = m+1) in input sequence file
-    $cmd = $BIN."/count-words -v 1";
+    $cmd =  &RSAT::server::GetProgramPath("/count-words");
+    $cmd .= " -v 1";
     $cmd .= " -i ".$main::infile{seq};
     $cmd .= " -l ".$param{bg_oligo_len};
     $cmd .= " -1str";
@@ -545,7 +545,8 @@ package main;
       &RSAT::message::TimeWarn("Computing background model for slice", $s."/".$param{nb_slices}) if ($main::verbose >= 1);
 
       ## Compute oligonucleotide frequencies (k = m+1) in input sequence file
-      $cmd = $BIN."/count-words -v 1";
+      $cmd =  &RSAT::server::GetProgramPath("/count-words");
+      $cmd .= " -v 1";
       $cmd .= " -i ".$outfile{"seq_slice_".$s};
       $cmd .= " -l ".$param{bg_oligo_len};
       $cmd .= " -1str";

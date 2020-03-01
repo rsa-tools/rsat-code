@@ -109,9 +109,8 @@ matrix-scan
 
 Calculate background model from input sequence sets.
 
-All given sequence sets will be merged to calculate this background model to keep distributions comparable.
-
-=item B<wish 2>
+All given sequence sets will be merged to calculate this background
+model to keep distributions comparable.
 
 =back
 
@@ -440,7 +439,8 @@ package main;
       my @seq_files=values( %main::seqfile);
       
       my $bg_command = " cat ".join( " " , @seq_files ) . " > ". $all_sequences_file ." ; "; 
-      $bg_command.= "$SCRIPTS/oligo-analysis -v 1 -quick -2str -i  " .$all_sequences_file;
+      $bg_command.=  &RSAT::server::GetProgramPath("oligo-analysis");
+      $bg_command .= " -v 1 -quick -2str -i  " .$all_sequences_file;
       $bg_command.= " -l ".$main::markov ." -noov ";
       $bg_command.= " | convert-background-model -from oligos -to inclusive ";
       $bg_command.= " -o ".$new_bg_file;
