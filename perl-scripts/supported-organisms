@@ -82,7 +82,7 @@ package main;
 	&RSAT::message::Warning("Option -server is obsolete, the query will be passed to the separate program supported-organisms-server");
 
 	## Pass the query to supported-organisms-server
-	my $cmd = $SCRIPTS."/supported-organisms-server";
+	my $cmd =  &RSAT::server::GetProgramPath("supported-organisms-server");
 	my $parameters = &PrintArguments();
 	&doit($cmd." ".$parameters);
 

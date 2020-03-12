@@ -1,9 +1,10 @@
 #####################################################
-## Convert the hclust object to a character object
-## with the lines ready to print a JSON file
+## Convert the hclust object to a character object ##
+## with the lines ready to print a JSON file       ##
+#####################################################
 convert.hclust.to.JSON <- function(tree){
 
-  ## Require ctc if it is required
+  ## Require ctc
   if(!require("RJSONIO")){
     install.packages("RJSONIO")
   }

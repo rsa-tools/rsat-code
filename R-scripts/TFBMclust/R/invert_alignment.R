@@ -2,6 +2,15 @@
 ## Given a vector with IDs, return a list with the
 ## information (consensus, number, id, strand, spacer)
 ## of the inverted alignment
+##
+## Originally, the gaps were represented with '-', however, this was not optimal when
+## there are empty positions in the input matrices (e.g., assemblies), because the motif
+## consensus in such empty positions was annotated also with '-'.
+## This caused a problem to shift the alignment when one branch was aligned with a single motif
+## and when two branches were aligned.
+## To avoid such problem from now on, the gaps are represented with '+'
+##
+## Updated by Jaime Castro (25-02-2020)
 inverted.alignment <- function(ids.inv, motifs.list){
 
   motifs.list.temp <- motifs.list[ids.inv]
@@ -19,8 +28,8 @@ inverted.alignment <- function(ids.inv, motifs.list){
     spacer.up.length <- get.spacer.nb(motifs.list.temp[[X]][["consensus_d"]])$up.spacer
     spacer.dw.length <- get.spacer.nb(motifs.list.temp[[X]][["consensus_d"]])$dw.spacer
 
-    spacer.up <- paste(rep("-", times = spacer.up.length), collapse = "")
-    spacer.dw <- paste(rep("-", times = spacer.dw.length), collapse = "")
+    spacer.up <- paste(rep("+", times = spacer.up.length), collapse = "")
+    spacer.dw <- paste(rep("+", times = spacer.dw.length), collapse = "")
 
     inverted.consensus.1 <- NULL
     inverted.consensus.2 <- NULL

@@ -775,8 +775,7 @@ package main;
     if ($batch_matrix) {
 	$batch = 1;
 	$batch_cmd = "";
-	my $script_dir = $SCRIPTS; ## JvH: just to avoid warnings when starting the program
-	my $cmd = $SCRIPTS."/footprint-scan ";
+	my $cmd =  &RSAT::server::GetProgramPath("footprint-scan");
 	$cmd .= " -v  ".$main::verbose;
 	$cmd .= " -m  ".$matrix_file;
 	$cmd .=" -matrix_format ".$matrix_format;

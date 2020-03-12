@@ -6,11 +6,18 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
                          intermediate.alignments = FALSE){
 
 
-  ################################################
-  ## Given a level of a hierarchical tree, find
-  ## the next level pointing the current level
+  #############################################################
+  ## Given a level (branch) of a hierarchical tree,          ##
+  ## find the next branch containing the input branch number ##
+  #############################################################
   find.next.levels.in.tree <- function(x){
 
+    ## Check that the input number is not higher than the number of branches
+    if (x >= max(tree$order)) {
+      stop("The tree has less nodes than the provided number: number of nodes ", max(tree$order) -1)
+    }
+
+    ## The position coresponding to the root
     if (x == length(tree$merge)/2){
       return(x)
 
@@ -19,9 +26,10 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
       ## Get the level
       level <- which(tree$merge == x)
 
-      if(level > length(tree$merge)/2 & level <= length(tree$merge)){
+      if (level > length(tree$merge)/2 & level <= length(tree$merge)) {
         return(level - length(tree$merge)/2)
-      } else if(level <= length(tree$merge)/2){
+
+      } else if (level <= length(tree$merge)/2) {
         return(level)
       }
     }
@@ -31,17 +39,21 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
   motifs.info <<- list()
   motifs.info.levels <- list()
   internal.nodes.attributes <<- list()
-  motif.at.tree.level <- leaves.per.node(tree)
-
   checked.levels <<- rep(0, times = length(tree$merge)/2)
 
-  ## Iterate through the merge of the hierarchical tree
-  apply(tree$merge, 1, function(x){
+  ## Return the leaves associated to each node in the tree
+  motif.at.tree.level <- leaves.per.node(tree)
+
+  ## Iterate through the merging order of the hierarchical tree
+  # x <- tree$merge[1,]
+  # x <- tree$merge[2,]
+  apply(tree$merge, 1, function(x) {
 
     ## Store the levels
     child1 <- x[1]
     child2 <- x[2]
-    ## Store the level of the tree
+
+    ## Get the level of the tree
     level <- which(tree$merge == child1)
 
 #     print(paste("Aligning Level: ", level, " - Checked: ", checked.levels[level]))
@@ -60,7 +72,7 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
 
       ##############################
       ## Case 1: align two leaves
-      if ((child1 < 0) && (child2 < 0)) {
+      if ( (child1 < 0) && (child2 < 0) ) {
         internal.nodes.attributes[[paste("node_", level, sep = "")]][["merge_class"]] <<- 1
         align.two.leaves(child1,
                          child2,
@@ -73,7 +85,7 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
 
       ###########################################################
       ## Case 2: align a leaf with a cluster (already aligned)
-      } else if ((child1 < 0) && (child2 > 0)) {
+      } else if ( (child1 < 0) && (child2 > 0) ) {
         internal.nodes.attributes[[paste("node_", level, sep = "")]][["merge_class"]] <<- 2
         align.leaf.and.cluster(child1,
                                child2,
@@ -113,6 +125,7 @@ align.motifs <- function(thresholds = list(Ncor = 0.4, cor = 0.6, w = 5),
           return(x[c("name", "number", "strand", "consensus_d", "consensus_rc", "spacer.up", "spacer.dw")])
         })
       }
+
 
     } else {
       next.level <- find.next.levels.in.tree(level)

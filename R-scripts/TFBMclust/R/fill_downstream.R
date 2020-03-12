@@ -26,7 +26,7 @@ fill.downstream <- function(ids.fill, motifs.list){
     ## Update the D consensus
     cons.new.d <- NULL
     cons.new.d <- paste(motifs.temp[[x]][["consensus_d"]],
-      paste(rep("-",
+      paste(rep("+",
         times = max.width.d - nchar(motifs.temp[[x]][["consensus_d"]])),
         collapse = ""
       ),
@@ -35,7 +35,7 @@ fill.downstream <- function(ids.fill, motifs.list){
 
     ## Update the R consensus
     cons.new.r <- NULL
-    sp <- paste(rep("-", times = max.width.r - nchar(motifs.temp[[x]][["consensus_rc"]])), collapse = "")
+    sp <- paste(rep("+", times = max.width.r - nchar(motifs.temp[[x]][["consensus_rc"]])), collapse = "")
     cons.new.r <- paste(sp, motifs.temp[[x]][["consensus_rc"]], sep = "")
 
     temp.list[[x]][["strand"]] <- motifs.temp[[x]][["strand"]]

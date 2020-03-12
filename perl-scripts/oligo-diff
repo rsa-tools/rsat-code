@@ -106,10 +106,7 @@ package main;
     ## Initialise parameters
     local $start_time = &RSAT::util::StartScript();
     local $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-    $SCRIPTS=$ENV{RSAT}."/perl-scripts";
-    $BIN=$ENV{RSAT}."/bin";
-#    $program_version = "0.00";
-    $count_words_cmd = $BIN."/count-words";
+    $count_words_cmd =&RSAT::server::GetProgramPath("count-words");
 
     %infile = ();
     %outfile = ();
@@ -821,7 +818,8 @@ sub CountWordsOneSet {
 
   ## Purge the sequences if required
   if ($purge) {
-    $cmd .= " | ".$SCRIPTS."/purge-sequence -mis 0 -ml 20 ".$main::strands;
+    $cmd .= " | ". &RSAT::server::GetProgramPath("purge-sequence");
+    $cmd .= " -mis 0 -ml 20 ".$main::strands;
   }
   &RSAT::message::Debug("Cleaning command", $cmd) if ($main::verbose >= 5);
 

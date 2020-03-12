@@ -285,7 +285,7 @@ sub DrawAllGraphs {
 		print "generating XY graphs\t$time\n";
 	}
 
-	$XYgraph_command = "$SCRIPTS/XYgraph";
+	$XYgraph_command =  &RSAT::server::GetProgramPath("XYgraph");
 	$index_file = "cluster_graphs_${upper_threshold}.html";
 	open INDEX, ">$index_file";
 	print INDEX "<HTML><BODY><PRE>\n";

@@ -351,10 +351,11 @@ matrix_quality: create_background
 
 ################################################################
 ## peak-motifs test
+PEAKMO_DIR=${RESULT_DIR}/peak-motifs_result
 PEAKMO_TASK=purge,seqlen,composition,disco,merge_motifs,split_motifs,motifs_vs_motifs,timelog,synthesis,small_summary,scan,motifs_vs_db
 peakmo: download_jaspar 
 	@echo "Testing peak-motifs"
-	@mkdir -p ${PEAK_DIR}
+	@mkdir -p ${PEAKMO_DIR}
 	@echo "	Running peak-motifs"
 	rsat peak-motifs  -v 3 \
 		-title Oct4_Chen2008_sites_from_Jaspar \
@@ -364,12 +365,13 @@ peakmo: download_jaspar
 		-nmotifs 5 -minol 6 -maxol 6 -no_merge_lengths -2str -origin center \
 		-scan_markov 1 -source galaxy \
 		-prefix peak-motifs -noov -img_format png \
-		-outdir ${PEAK_DIR} \
 		-motif_db JASPAR transfac ${JASPAR} \
 		-task ${PEAKMO_TASK}  \
-		&> ${PEAK_DIR}/peak-motifs_log.txt
-	@echo "	Log file	${PEAK_DIR}/peak-motifs_log.txt"
-	@echo "	Result page	${PEAK_DIR}/peak-motifs_synthesis.html"
+		-outdir ${PEAKMO_DIR} \
+		&> ${PEAKMO_DIR}/peak-motifs_log.txt
+	@echo "	PEAK_MO_DIR	${PEAKMO_DIR}"
+	@echo "	Log file	${PEAKMO_DIR}/peak-motifs_log.txt"
+	@echo "	Result page	${PEAKMO_DIR}/peak-motifs_synthesis.html"
 
 
 ################################################################
@@ -402,18 +404,18 @@ supported_ensembl:
 	rsat supported-organisms-ensembl -v ${V} -db ensembl -o ${SUPPORTED_ENSEMBL}
 	@echo "	ENSEMBL_DB		${ENSEMBL_DB}"
 	@echo "	SUPPORTED_ENSEMBL	${SUPPORTED_ENSEMBL}"
-	@echo "	Number of organisms	`grep -v ';' ${SUPPORTED_ENSEMBL} | wc -l`"
+	@echo "	Number of organisms in Ensembl	`grep -v ';' ${SUPPORTED_ENSEMBL} | wc -l`"
 
 ################################################################
 ## List the organisms supported at ensembl (http://ensembl.org)
-SUPPORTED_ENSEMBLGENOMES=${SUPPORTED_DIR}/supported-organisms-ensembl_db-${ENSEMBL_DB}.tsv
+SUPPORTED_ENSEMBLGENOMES=${SUPPORTED_DIR}/supported-organisms-ensembl_db-ensemblgenomes.tsv
 supported_ensemblg:
 	@echo "Testing supported-organisms-ensembl with ensemblgenomes"
 	@mkdir -p ${SUPPORTED_DIR}
 	@echo "	SUPPORTED_DIR	${SUPPORTED_DIR}"
 	rsat supported-organisms-ensembl -v ${V} -db ensemblgenomes -o ${SUPPORTED_ENSEMBLGENOMES}
 	@echo "	SUPPORTED_ENSEMBLGENOMES	${SUPPORTED_ENSEMBLGENOMES}"
-	@echo "	Number of organisms	`grep -v ';' ${SUPPORTED_ENSEMBLGENOMES} | wc -l`"
+	@echo "	Number of organisms in EnsemblGenomes	`grep -v ';' ${SUPPORTED_ENSEMBLGENOMES} | wc -l`"
 
 ################################################################
 ## List the organisms supported at ensembl (http://ensembl.org)

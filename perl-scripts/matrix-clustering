@@ -151,142 +151,142 @@ package main;
     if (! defined $ENV{max_num_child_process}) { $ENV{max_num_child_process} = 3; }
     ###################
     
-  ################################################################
-  ## Initialise parameters
-  local $start_time = &RSAT::util::StartScript();
-  $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-
-  ## Input / output files
-  %main::infile = ();
-  %main::outfile = ();
-  %main::dir = ();
-  %main::param = ();
-  @dirs = ();
-
-  %main::matrix_file = ();
-  %main::matrix_titles = ();
-
-  $main::verbose = 0;
-  $main::out = STDOUT;
-
-  local @tab_to_convert = (); ## Tables to convert to html
-
-  ## MDIFIED BY JvH (2017-06-30) Input formats: only accept formats supporting multiple matrices
-  # local @supported_matrix_formats = qw(transfac tf tab cluster-buster cb infogibbs meme stamp uniprobe);
-  # local %supported_matrix_format = ();
-  # foreach my $format (@supported_matrix_formats) {
-  #   $supported_matrix_format{$format} = 1;
-  # }
-
-  ## Supported input formats for the matrices
-  local %supported_matrix_format = &RSAT::MatrixReader::ListInputMatrixFormats();
-  local @supported_matrix_formats = sort keys %supported_matrix_format;
-  local $supported_matrix_formats = join ",", @supported_matrix_formats;
-#  local $matrix_format = "transfac"; ## Default matrix format
-
-  ## Flag to export the Newick tree
-  local $export_newick = 0;
-
-  ## Hash containing the icon paths
-  local %icons = ();
-  
-  ## Hash containing motif information
-  local %matrix_info = ();
-
-  ## Hash containing relationship between nodes or leaves
-  ## with theur clusters
-  local %node_to_cluster_hash = ();
-  local %leaf_to_cluster_hash = ();
-  
-  ## Flag to export the Newick tree
-  local $radial_tree_flag = 0;
-
-  ## Detect the input matrices command line is correct
-  local $count_input_matrix_parameters = 0;
-
-  ## Flag to add links to motif tree
-  local $ID_link_flag = 0;
-  local %ID_nb_hash = ();
-  #local %OLD_ID_link_hash = ();
-  local %ID_link_hash = ();
-  local %cluster_id_hash = ();
-
-  ## operator
-  $operator = "mean";
-  local %supported_operator = ("mean"=>1, "sum"=>1);
-  local $supported_operators = join ",", sort keys %supported_operator;
-
-  ################################################################
-  ## Ensure the access to the java libraries, which are required to
-  ## display the results (logo trees, dynamic tables).
-  ##
-  ## If $include_js_lib is set to 1, the javascript libraries are
-  ## included in the output directory, in order to avoid problems with
-  ## the links. This solution enables to move the result
-  ## (e.g. download a self-contained archive), but costs 500kb of disk
-  ## space for each result, we should evaluate alternative solutions.
-  ## 
-  ## the alternative is to point to the libraries on the RSAT server,
-  ## but we faced problems on some servers, due to the the path
-  ## public_html/lib, which inludes a soft link (lib ->
-  ## ../perl-scripts/lib).
-  local $include_js_lib = 1; 
-
-
-  ## Base on which we will buld the the URLs to the javascripts (D3 +
-  ## JQuery libraries, required to display logo trees and tables).
-  local $js_base;
-  local $d3_base;
-  local $d3_venn_base;
-  local $jquery_base;
-  local $datatable_base;
-  local $datatable_css_base;
-
-  ## Motif Collection names counter
-  local %motif_collection_count = ();
-tie %motif_collection_count, "MCE::Shared";
-  ## Parsed JSON files content
-  local %json_files_content = ();
-
-  ## Concatenate all the files which a logo will be produced
-  ## This is done to call the system once
-  local $concat_motif_files = "";
-tie $concat_motif_files, "MCE::Shared";
-  ## Supported label motif fields
-  local @supported_label_motif_fields = qw (id name collection ic);
-  local %supported_label_motif_fields = ();
-  foreach my $field (@supported_label_motif_fields) {
-    $supported_label_motif_fields{$field} = 1;
-  }
-  local $supported_label_motif_fields = join ",", @supported_label_motif_fields;
-  local %label_motif_fields_to_return = ();
-  ## Default name::collection
-  local @label_motif_fields_to_return = qw (name collection ic);
-
-
-  ## Supported label fields
-  local @supported_label_fields = qw (id name consensus ic);
-  local %supported_label_fields = ();
-  foreach my $field (@supported_label_fields) {
-    $supported_label_fields{$field} = 1;
-  }
-  local $supported_label_fields = join ",", @supported_label_fields;
-  local %label_fields_to_return = ();
-  local @label_fields_to_return = ();
-
-  ## Supported hclust methods
-  local @supported_hclust_methods = qw (average centroid complete median single);
-  local %supported_hclust_methods = ();
-  foreach my $method (@supported_hclust_methods) {
-    $supported_hclust_methods{$method} = 1;
-  }
-  local $supported_hclust_methods = join ",", @supported_hclust_methods;
-  local $hclust_method = "average";
-
-  ## Threshold parameters
-  local %lth = ();		# lower threshold values
-  local %uth = ();		# upper threshold values
-  local @supported_thresholds = qw(
+    ################################################################
+    ## Initialise parameters
+    local $start_time = &RSAT::util::StartScript();
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    
+    ## Input / output files
+    %main::infile = ();
+    %main::outfile = ();
+    %main::dir = ();
+    %main::param = ();
+    @dirs = ();
+    
+    %main::matrix_file = ();
+    %main::matrix_titles = ();
+    
+    $main::verbose = 0;
+    $main::out = STDOUT;
+    
+    local @tab_to_convert = (); ## Tables to convert to html
+    
+    ## MDIFIED BY JvH (2017-06-30) Input formats: only accept formats supporting multiple matrices
+    # local @supported_matrix_formats = qw(transfac tf tab cluster-buster cb infogibbs meme stamp uniprobe);
+    # local %supported_matrix_format = ();
+    # foreach my $format (@supported_matrix_formats) {
+    #   $supported_matrix_format{$format} = 1;
+    # }
+    
+    ## Supported input formats for the matrices
+    local %supported_matrix_format = &RSAT::MatrixReader::ListInputMatrixFormats();
+    local @supported_matrix_formats = sort keys %supported_matrix_format;
+    local $supported_matrix_formats = join ",", @supported_matrix_formats;
+    #  local $matrix_format = "transfac"; ## Default matrix format
+    
+    ## Flag to export the Newick tree
+    local $export_newick = 0;
+    
+    ## Hash containing the icon paths
+    local %icons = ();
+    
+    ## Hash containing motif information
+    local %matrix_info = ();
+    
+    ## Hash containing relationship between nodes or leaves
+    ## with theur clusters
+    local %node_to_cluster_hash = ();
+    local %leaf_to_cluster_hash = ();
+    
+    ## Flag to export the Newick tree
+    local $radial_tree_flag = 0;
+    
+    ## Detect the input matrices command line is correct
+    local $count_input_matrix_parameters = 0;
+    
+    ## Flag to add links to motif tree
+    local $ID_link_flag = 0;
+    local %ID_nb_hash = ();
+    #local %OLD_ID_link_hash = ();
+    local %ID_link_hash = ();
+    local %cluster_id_hash = ();
+    
+    ## operator
+    $operator = "mean";
+    local %supported_operator = ("mean"=>1, "sum"=>1);
+    local $supported_operators = join ",", sort keys %supported_operator;
+    
+    ################################################################
+    ## Ensure the access to the java libraries, which are required to
+    ## display the results (logo trees, dynamic tables).
+    ##
+    ## If $include_js_lib is set to 1, the javascript libraries are
+    ## included in the output directory, in order to avoid problems with
+    ## the links. This solution enables to move the result
+    ## (e.g. download a self-contained archive), but costs 500kb of disk
+    ## space for each result, we should evaluate alternative solutions.
+    ## 
+    ## the alternative is to point to the libraries on the RSAT server,
+    ## but we faced problems on some servers, due to the the path
+    ## public_html/lib, which inludes a soft link (lib ->
+    ## ../perl-scripts/lib).
+    local $include_js_lib = 1; 
+    
+    
+    ## Base on which we will buld the the URLs to the javascripts (D3 +
+    ## JQuery libraries, required to display logo trees and tables).
+    local $js_base;
+    local $d3_base;
+    local $d3_venn_base;
+    local $jquery_base;
+    local $datatable_base;
+    local $datatable_css_base;
+    
+    ## Motif Collection names counter
+    local %motif_collection_count = ();
+    tie %motif_collection_count, "MCE::Shared";
+    ## Parsed JSON files content
+    local %json_files_content = ();
+    
+    ## Concatenate all the files which a logo will be produced
+    ## This is done to call the system once
+    local $concat_motif_files = "";
+    tie $concat_motif_files, "MCE::Shared";
+    ## Supported label motif fields
+    local @supported_label_motif_fields = qw (id name collection ic);
+    local %supported_label_motif_fields = ();
+    foreach my $field (@supported_label_motif_fields) {
+	$supported_label_motif_fields{$field} = 1;
+    }
+    local $supported_label_motif_fields = join ",", @supported_label_motif_fields;
+    local %label_motif_fields_to_return = ();
+    ## Default name::collection
+    local @label_motif_fields_to_return = qw (name collection ic);
+    
+    
+    ## Supported label fields
+    local @supported_label_fields = qw (id name consensus ic);
+    local %supported_label_fields = ();
+    foreach my $field (@supported_label_fields) {
+	$supported_label_fields{$field} = 1;
+    }
+    local $supported_label_fields = join ",", @supported_label_fields;
+    local %label_fields_to_return = ();
+    local @label_fields_to_return = ();
+    
+    ## Supported hclust methods
+    local @supported_hclust_methods = qw (average centroid complete median single);
+    local %supported_hclust_methods = ();
+    foreach my $method (@supported_hclust_methods) {
+	$supported_hclust_methods{$method} = 1;
+    }
+    local $supported_hclust_methods = join ",", @supported_hclust_methods;
+    local $hclust_method = "average";
+    
+    ## Threshold parameters
+    local %lth = ();		# lower threshold values
+    local %uth = ();		# upper threshold values
+    local @supported_thresholds = qw(
 				     cor
                                      Ncor
                                      w
@@ -298,15 +298,15 @@ tie $concat_motif_files, "MCE::Shared";
                                      Icor
                                      NIcor
                                      SSD
-				   );
-  local $supported_thresholds = join ",", @supported_thresholds;
-  local %supported_threshold = ();
-  foreach my $thr (@supported_thresholds) {
-    $supported_threshold{lc($thr)} = 1;
-  }
-
-  ## Metric parameters
-  local @supported_metrics = qw(
+	);
+    local $supported_thresholds = join ",", @supported_thresholds;
+    local %supported_threshold = ();
+    foreach my $thr (@supported_thresholds) {
+	$supported_threshold{lc($thr)} = 1;
+    }
+    
+    ## Metric parameters
+    local @supported_metrics = qw(
 			         cor
                                  Ncor
                                  dEucl
@@ -319,156 +319,170 @@ tie $concat_motif_files, "MCE::Shared";
                                  SSD
                                  rank_mean
                                  mean_zscore
-			     );
-  local $supported_metrics = join ",", @supported_metrics;
-  local %supported_metrics = ();
-  foreach my $met (@supported_metrics) {
-    $supported_metrics{lc($met)} = 1;
-  }
-
-  ## Matrices
-  local @all_matrices = ();
-  local $draw_heatmap = 0;
-  local $align_consensus = 0;
-
-
-  ## Unrecognized arguments are passed to compare-matrices
-  local @args_to_pass = ();
-  local $args_to_pass = "";
-  
-  ## Hash with the final alignment information
-  local %alignment_info = ();
-  tie %alignment_info, 'MCE::Shared';
+	);
+    local $supported_metrics = join ",", @supported_metrics;
+    local %supported_metrics = ();
+    foreach my $met (@supported_metrics) {
+	$supported_metrics{lc($met)} = 1;
+    }
+    
+    ## Matrices
+    local @all_matrices = ();
+    local $draw_heatmap = 0;
+    local $align_consensus = 0;
+    
+    
+    ## Unrecognized arguments are passed to compare-matrices
+    local @args_to_pass = ();
+    local $args_to_pass = "";
+    
+    ## Hash with the final alignment information
+    local %alignment_info = ();
+    tie %alignment_info, 'MCE::Shared';
     local %cluster_info_width = ();
-
+    
     #tie $main::outfile{all_concatenated_motifs}, 'MCE::Shared';
     
-  ## Hash with the cluster information
-  ## required to the HTML tree
-  local %clusters_info = ();
-  tie %clusters_info, "MCE::Shared";
+    ## Hash with the cluster information
+    ## required to the HTML tree
+    local %clusters_info = ();
+    tie %clusters_info, "MCE::Shared";
     local %cluster_nodes = ();
     tie %cluster_nodes, "MCE::Shared";
-  local %cluster_nodes_clean_names = (); 
-  local %clusters_to_HTML = (); 
-
-  ## Lower and upper threshold on matrix comparison scores
-  local %lth = ();
-  local %uth = ();
-
-  ## Merged consensuses logos
-  local %merged_consensuses_files = ();
-tie %merged_consensuses_files, 'MCE::Shared';
+    local %cluster_nodes_clean_names = (); 
+    local %clusters_to_HTML = (); 
     
-  local $root_logo_path = "";
+    ## Lower and upper threshold on matrix comparison scores
+    local %lth = ();
+    local %uth = ();
+    
+    ## Merged consensuses logos
+    local %merged_consensuses_files = ();
+    tie %merged_consensuses_files, 'MCE::Shared';
+    
+    local $root_logo_path = "";
     #tie $root_logo_path, "MCE::Shared";
-  local @root_motifs_tf = ();
+    local @root_motifs_tf = ();
     tie @root_motifs_tf, "MCE::Shared";
-
-  ## Supported taks
-  local @supported_tasks = qw(
+    
+    ## Supported taks
+    local @supported_tasks = qw(
 			all
 		        cluster
                         report
-                     );
-  local @task = qw (all);
-  local $supported_tasks = join ",", @supported_tasks;
-  local %supported_tasks = ();
-  foreach my $task (@supported_tasks) {
-    $supported_tasks{$task} = 1;
-  }
-  %selected_tasks = ();
-  $selected_tasks{all} = 1;
-
-  ## Use compare-matrices-quick
-  local $quick_flag = 0;
-
-  ## Heatmap color palette and classes
-  local $heatmap_color_palette = "YlOrRd";
-  local $heatmap_color_classes = 9;
-
-  ## Permute input matrices
-  local $random_flag = 0;
-
-  ## Flag to dectect the user specified at least one input matrix file
-  local $input_matrix = 0;
-
-  ## display collection label in trees and alignment table
-  local $display_collection_name_flag = 0;
-
-  ## This option return only the root motifs saving time and memory. 
-  ## The trees and heatmaps are not computed.
-  local $root_matrices_flag = 0;
-
-  ## Saves the features of the root motifs
-  local %root_motifs_features = ();
+	);
+    local @task = qw (all);
+    local $supported_tasks = join ",", @supported_tasks;
+    local %supported_tasks = ();
+    foreach my $task (@supported_tasks) {
+	$supported_tasks{$task} = 1;
+    }
+    %selected_tasks = ();
+    $selected_tasks{all} = 1;
+    
+    ## Use compare-matrices-quick
+    local $quick_flag = 0;
+    
+    ## Heatmap color palette and classes
+    local $heatmap_color_palette = "YlOrRd";
+    local $heatmap_color_classes = 9;
+    
+    ## Permute input matrices
+    local $random_flag = 0;
+    
+    ## Flag to dectect the user specified at least one input matrix file
+    local $input_matrix = 0;
+    
+    ## display collection label in trees and alignment table
+    local $display_collection_name_flag = 0;
+    
+    ## This option return only the root motifs saving time and memory. 
+    ## The trees and heatmaps are not computed.
+    local $root_matrices_flag = 0;
+    
+    ## Saves the features of the root motifs
+    local %root_motifs_features = ();
     tie %root_motifs_features, 'MCE::Shared';
+    
+    ## Limit the number of input motifs
+    local $max_matrices = 0;
+    local $top_matrices = 0;
+    local $skip_matrices = 0;
+    
+    ## To export in the results the input file
+    local $clone_input_flag = 1;
+    
+    ## Hashes used in the pre-process of the motifs
+    local %motif_set_attributes = ();
+    local %motifs_ID_unique = ();
+    local $longest_title = 0;
+    local $single_input_flag = 0;
 
-  ## Limit the number of input motifs
-  local $max_matrices = 0;
-  local $top_matrices = 0;
-  local $skip_matrices = 0;
-  
-  ## To export in the results the input file
-  local $clone_input_flag = 1;
+    ## Number of iterations when re-scaning sequences with branch motifs
+    local $rescan_iterations = 3;
+    
+    ## Saves the width of the largest alignment
+    local $motif_width_by_cluster_width = 0;
+    
+    ## Supported positions to display the
+    ## hclust trees in heatmap.
+    ## This argument is passed to R
+    local @supported_tree_positions = qw (row column both none);
+    local %supported_tree_positions = ();
+    foreach my $pos (@supported_tree_positions) {
+	$supported_tree_positions{$pos} = 1;
+    }
+    local $supported_tree_positions = join ",", @supported_tree_positions;
+    local $heatmap_tree_pos = "column";
+    
+    ## A hash to save the name of the clusters and their corresponding
+    ## hexa code
+    local %hexa_code = ();
+    local $blue_color = '#D6EEFA';
+    local $orange_color = '#F6E6CA'; 
+    local $font_color = '#CC6600';
+    local $blue_font_color = '#0D73A7';
+    
+    ## Lower threshold on column-wise information content: left-most and
+    ## right-most columns having a lower IC are trimmed.
+    $trim_threshold = 0;
+    
+    ## Supported fields to return
+    local %return_fields = ();
+    local @supported_return_fields = qw (align_consensus heatmap json newick root_matrices nb_clusters);
+    local %supported_return_fields = ();
+    foreach my $field (@supported_return_fields) {
+	$supported_return_fields{$field} = 1;
+    }
+    local $supported_return_fields = join ",", @supported_return_fields;
+    
+    ## Supported heatmap colors (taken from http://colorbrewer2.org/)
+    local %supported_heatmap_color_palette = ();
+    local @supported_heatmap_color_palette = qw (YlOrRd YlOrBr YlGnBu YlGn PuRd PuBuGn PuBu OrRd GnBu BuPu BuGn Reds Purples Oranges Greys Greens Blues);
+    local %supported_heatmap_color_palette = ();
+    foreach my $palette (@supported_heatmap_color_palette) {
+	$supported_heatmap_color_palette{$palette} = 1;
+    }
+    local $supported_heatmap_color_palette = join ",", @supported_heatmap_color_palette;
+    
+    ## Number of input collections
+    local $number_of_collections = "";
+    
+    ## Motif list flag
+    local $motif_list_flag = 0;
+    local $motif_direct_input_flag = 0;
+    
+    ## Reference collection for cluster annotation
+    local $reference_collection_flag = 0;
 
-  ## Hashes used in the pre-process of the motifs
-  local %motif_set_attributes = ();
-  local %motifs_ID_unique = ();
-  local $longest_title = 0;
-  local $single_input_flag = 0;
+    ## Built the branch motif by re-scanning the motifs
+    local $rescan_motifs_flag = 0;
 
-  ## Saves the width of the largest alignment
-  local $motif_width_by_cluster_width = 0;
-
-  ## Supported positions to display the
-  ## hclust trees in heatmap.
-  ## This argument is passed to R
-  local @supported_tree_positions = qw (row column both none);
-  local %supported_tree_positions = ();
-  foreach my $pos (@supported_tree_positions) {
-    $supported_tree_positions{$pos} = 1;
-  }
-  local $supported_tree_positions = join ",", @supported_tree_positions;
-  local $heatmap_tree_pos = "column";
-
-  ## A hash to save the name of the clusters and their corresponding
-  ## hexa code
-  local %hexa_code = ();
-  local $blue_color = '#D6EEFA';
-  local $orange_color = '#F6E6CA'; 
-  local $font_color = '#CC6600';
-  local $blue_font_color = '#0D73A7';
-
-  ## Lower threshold on column-wise information content: left-most and
-  ## right-most columns having a lower IC are trimmed.
-  $trim_threshold = 0;
-
-  ## Supported fields to return
-  local %return_fields = ();
-  local @supported_return_fields = qw (align_consensus heatmap json newick root_matrices nb_clusters);
-  local %supported_return_fields = ();
-  foreach my $field (@supported_return_fields) {
-    $supported_return_fields{$field} = 1;
-  }
-  local $supported_return_fields = join ",", @supported_return_fields;
-
-  ## Supported heatmap colors (taken from http://colorbrewer2.org/)
-  local %supported_heatmap_color_palette = ();
-  local @supported_heatmap_color_palette = qw (YlOrRd YlOrBr YlGnBu YlGn PuRd PuBuGn PuBu OrRd GnBu BuPu BuGn Reds Purples Oranges Greys Greens Blues);
-  local %supported_heatmap_color_palette = ();
-  foreach my $palette (@supported_heatmap_color_palette) {
-    $supported_heatmap_color_palette{$palette} = 1;
-  }
-  local $supported_heatmap_color_palette = join ",", @supported_heatmap_color_palette;
-
-  ## Number of input collections
-  local $number_of_collections = "";
-  
-  ## Motif list flag
-  local $motif_list_flag = 0;
-  local $motif_direct_input_flag = 0;
-
+    ## Program used to generate the logos
+    #    $logo_cmd_name = "seqlogo";
+    $logo_cmd_name = $ENV{LOGO_PROGRAM};
+    #    $logo_cmd_name = "weblogo";                                                                                                               
+    
   ## List of files to delete
   %to_delete = ();
   %to_delete_folder = ();
@@ -569,7 +583,7 @@ tie %merged_consensuses_files, 'MCE::Shared';
   ################################################################
   ##
   ##
-  if($motif_list_flag == 1){     
+  if ($motif_list_flag == 1){     
       &read_motif_table_file();
   }
 
@@ -630,6 +644,19 @@ tie %merged_consensuses_files, 'MCE::Shared';
       ################################################################
       ## Create the merged matrices and consensuses
       &Merge_matrices();
+
+      ################################################################
+      ## Annotate root
+      ##
+      ## Function to compare the branch motifs (including the roots)
+      ## versus a reference motif library.
+      ## Use this to annotate the roots
+      ##
+      ## Added by Jaime Castro (25-02-2020)
+      if ($reference_collection_flag == 1) {
+	  &CompareMatricesQuick_AnnotateMotifs();
+      }
+      
             
       ################################################################
       ## Export central motif in TF format
@@ -662,7 +689,7 @@ tie %merged_consensuses_files, 'MCE::Shared';
 	  
 	  ################################################################
 	  ## Parse the JSON file
-	  if($radial_tree_flag == 1){
+	  if ($radial_tree_flag == 1){
 	      &Add_attributes_to_JSON_radial_tree();
 	  } else {
 	      
@@ -776,24 +803,31 @@ Same as -h
       
 =pod
 
-=item B<-matrix matrix_title input_matrix_file>
+=item B<-matrix matrix_title input_matrix_file matrix_format>
 
 The input file contains a set of position-specific scoring
 matrices.
 
 Example: -matrix OCt_motifs Oct_motifs_peakmotifs.tf tf
 
-The matrix_title will be concatenated to each motif ID in order to
-create unique motif IDs. The collection label is displayed in the results.
+This argument can be used iteratively to specify multiple motif
+collections.
 
-This label is useful when two motifs for the same TF come from different
-files and the user wants to know to which collection does the motif come from.
+The I<matrix_title> will be used as prefix for the ID of each
+resulting motif. These IDs are used as motif labels to display moti
+trees, which is particularly useful for the comparison of motifs
+coming from different collections (e.g. discoverd by alternative
+algorithms). It can also be useful to obtain unique identifiers when
+two motifs for the same TF come from different files and the user
+wants to know to which collection does the motif come from.
 
 B<Supported matrix formats>
 
 Since the program takes several matrices as input, it only accepts
 matrices in formats supporting several matrices per file (transfac,
-tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe).
+tf, tab, cluster-buster, cb, infogibbs, meme, stamp, uniprobe). We
+recommend the transfac format, which enables to annotate each motif
+and is human-readable.
 
 For a description of these formats, see the help of I<convert-matrix>.
 
@@ -828,7 +862,7 @@ For a description of these formats, see the help of I<convert-matrix>.
 	    &RSAT::error::FatalError("Input should be specified with matrix file (option -matrix) with 2 parameters: matrix_title matrix_file\n\tExample: -matrix Oct_motifs Oct_motifs_peakmotifs.tf");
 	} 
 	
-	if($motif_list_flag == $motif_direct_input_flag) {
+	if ($motif_list_flag == $motif_direct_input_flag) {
 	&RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
       }
 
@@ -859,9 +893,10 @@ Nanog_pssms.tf	Nanog
 	$motif_list_flag = 1;
 	$input_matrix = 1;
 	
-	if($motif_list_flag == $motif_direct_input_flag) {
+	if ($motif_list_flag == $motif_direct_input_flag) {
 	    &RSAT::error::FatalError("The options -matrix and -matrix_file_table are incompatibles");
 	}
+       
 
 =pod
 
@@ -885,6 +920,62 @@ For a description of these formats, see the help of I<convert-matrix>.
 	&RSAT::error::FatalError($matrix_format, "Invalid format for input matrices\tSupported: ".$main::supported_matrix_formats);
       }
 
+
+=pod
+
+=item B<-ref_collection Matrix_collection_file Matrix_format>
+
+This option allows to annotate the root motifs according to a reference motif database.
+
+Use this option when you cluster motifs obtained from a motif discovery algorithm.
+
+Example: -ref_collection Jaspar_vertebrates_2020.tf tf
+
+=cut
+    } elsif ($arg eq "-ref_collection") {
+	
+	$main::infile{reference_collection} = shift(@arguments);
+	$main::matrix_format{reference_collection} = shift(@arguments);
+	
+	$reference_collection_flag = 1;
+
+
+
+=pod
+
+=item B<-seq Sequence_file Seq_format>
+
+This option allows to generate the branch (including the root) motifs from an input set of sequences.
+Instead of sum or average the counts, the new marged matrix will be built from the sites found in the provided sequences,
+this will produce a more realistic matrix suppoted by real sequences.
+
+Example: -seq Oct4_peaks.fa fasta
+
+=cut
+    } elsif ($arg eq "-seq") {
+
+	## Added by Jaime Castro and Jacques van Helden (26-02-2020)
+	
+	$main::infile{sequence_to_rescan} = shift(@arguments);
+	$main::matrix_format{sequences_format} = shift(@arguments);
+	
+	$rescan_motifs_flag = 1;
+
+
+=item B<-rescan_iter #>
+
+Default: 3
+
+Number of times each matrix is re-scanned in a provided set of sequences before producing the branch motifs.
+
+Use this option in combination with -seq parameter.
+
+
+=cut
+    } elsif ($arg eq "-rescan_iter") {
+
+	## Added by Jaime Castro(26-02-2020)
+	$rescan_iterations = shift(@arguments);
 
 =pod
 
@@ -1525,6 +1616,13 @@ sub set_output_file_names {
   ## Cluster IDs names
   $main::outfile{cluster_IDs_names} = $main::outfile{prefix}."_cluster_IDs.txt";
 
+  ## Reference collection in transfac format
+  $main::outfile{ref_collection_tf} = $main::outfile{prefix}."_reference_collection.tf";
+
+  ## Annotation of root vs reference collection
+  $main::outfile{reference_compa} = $main::outfile{prefix}."_tables/Root_vs_reference_collection_compa.tab";
+  $main::outfile{reference_compa_html} = $main::outfile{prefix}."_html/Root_vs_reference_collection_compa.html";
+
   ## Pairwise comparisons between matrices
   $main::outfile{pairwise_compa} = $main::outfile{prefix}."_tables/pairwise_compa.tab"; push @outfiles, "pairwise_compa"; 
   $main::outfile{pairwise_compa_html} = $main::outfile{prefix}."_html/pairwise_compa.html";  push @outfiles, "pairwise_compa_html";
@@ -1812,20 +1910,20 @@ sub pre_process_motif_files{
       ## If it is required, permute the input motifs
       if ($random_flag == 1){
           
-          ## Temporal file with random motifs
-          my $rand_motif_file = $main::outfile{prefix}."_data/".$collection_name."_random_motifs.tf";
-          my $randomize_motifs_cmd = $SCRIPTS."/convert-matrix";
-          $randomize_motifs_cmd .= " -i ".$matrix_file;
-          $randomize_motifs_cmd .= " -from tf -to tf";
-          $randomize_motifs_cmd .= " -perm 1";
-          $randomize_motifs_cmd .= " -o ".$rand_motif_file;
-          &doit($randomize_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
-          $motif_set_attributes{$collection_name}{matrix_file_input} = $rand_motif_file;
+	## Temporal file with random motifs
+	my $rand_motif_file = $main::outfile{prefix}."_data/".$collection_name."_random_motifs.tf";
+	my $randomize_motifs_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+	$randomize_motifs_cmd .= " -i ".$matrix_file;
+	$randomize_motifs_cmd .= " -from tf -to tf";
+	$randomize_motifs_cmd .= " -perm 1";
+	$randomize_motifs_cmd .= " -o ".$rand_motif_file;
+	&doit($randomize_motifs_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+	$motif_set_attributes{$collection_name}{matrix_file_input} = $rand_motif_file;
       }
       
       ## Convert input matrices in transfac format + append prefix if required
       &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
-      my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+      my $convert_matrix_cmd = &RSAT::server::GetProgramPath("convert-matrix");
       $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_input};
       $convert_matrix_cmd .= " -from ".$matrix_format;
       $convert_matrix_cmd .= " -to tf";
@@ -1833,7 +1931,7 @@ sub pre_process_motif_files{
       $convert_matrix_cmd .= " -skip ".$skip_matrices if ($skip_matrices > 0);
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
       
-      print $convert_matrix_cmd."\n";
+      ## print $convert_matrix_cmd."\n";
       
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
@@ -1861,7 +1959,7 @@ sub pre_process_motif_files{
       ###############################
       ## Append prefix if required
       &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
-      $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+      $convert_matrix_cmd = &RSAT::server::GetProgramPath("convert-matrix");
       $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
       $convert_matrix_cmd .= " -from tf";
       $convert_matrix_cmd .= " -to transfac";
@@ -1911,7 +2009,7 @@ sub pre_process_motif_files{
 
 
 	      # foreach my $id (keys %ID_nb_hash){
-	      # 	  if($id eq $ID){
+	      # 	  if ($id eq $ID){
 	      # 	  print $id."\t".$ID."\n";
 	      # 	  }
 
@@ -1924,6 +2022,25 @@ sub pre_process_motif_files{
 	  }
 	  close($link_table);
       }
+  }
+
+
+  ################################################################
+  ## If required convert the input motif collection to transfac format
+  ##
+  ## Added by Jaime Castro: 25-02-2020
+  if ($reference_collection_flag == 1) {
+
+      ## Convert reference collection matrices in transfac format
+      &RSAT::message::TimeWarn("Converting reference collection to transfac format") if ($main::verbose >= 2);
+      my $convert_reference_collection_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+      $convert_reference_collection_cmd .= " -i ".$main::infile{reference_collection};
+      $convert_reference_collection_cmd .= " -from ".$main::matrix_format{reference_collection};
+      $convert_reference_collection_cmd .= " -to tf";
+      $convert_reference_collection_cmd .= " -o ".$main::outfile{ref_collection_tf};
+
+      ## print $convert_reference_collection_cmd."\n";
+      &doit($convert_reference_collection_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
   }
 
   ################################################################
@@ -1945,7 +2062,7 @@ sub pre_process_motif_files{
   ## Split all the processed motifs into single file
   ## each one containing a single motif
   &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
-  my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
+  my $split_matrix_cmd = &RSAT::server::GetProgramPath("convert-matrix");
   $split_matrix_cmd .= " -i ".$main::outfile{motif_file};
   $split_matrix_cmd .= " -split";
   $split_matrix_cmd .= " -from tf -to tf";
@@ -1965,7 +2082,8 @@ sub CompareMatrices {
   $matrix_compa_verbose = &RSAT::stats::max(($main::verbose-1), 1);
 
   &RSAT::message::TimeWarn("Pairwise matrix comparison.") if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/compare-matrices -v ".$matrix_compa_verbose; 
+  my $cmd = &RSAT::server::GetProgramPath("compare-matrices");
+  $cmd .= " -v ".$matrix_compa_verbose; 
   $cmd .= " -mode scores";
   $cmd .= " -format tf";
   $cmd .=  " -file ".$main::outfile{input_matrices};
@@ -1975,7 +2093,8 @@ sub CompareMatrices {
   $cmd .= " -labels ".$label_fields_to_return;
   $cmd .= " ".$args_to_pass;
   $cmd .= " -o ".$main::outfile{pairwise_compa};
-  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
+  $cmd .= "; ".&RSAT::server::GetProgramPath("text-to-html");
+  $cmd .= " -i ".$main::outfile{pairwise_compa};
   $cmd .= " -o ".$main::outfile{pairwise_compa_html};
   &RSAT::util::one_command($cmd, 1,"");
 
@@ -2009,18 +2128,18 @@ sub CompareMatrices {
 ## Compare each discovered motifs to each other.
 sub CompareMatricesQuick {
   &RSAT::message::TimeWarn("Running compare-matrices-quick") if ($main::verbose >= 2);
-  ## Pariwise comparisons between discovered matrices.  We don't
+  ## Pariwise comparisons between discovered matrices.  We don't use
   ## the option "distinct" in order to ensure that all the motifs are
   ## in the output graph even if they are not related to any other
   ## motif.
   ## This is the faster C implemented version of compare-matrices
 
   $matrix_compa_verbose = 0;
-  my $BIN=$ENV{RSAT}."/bin";
 
   ## Run the pairwise matrix comparison
   &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
-  my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose; 
+  my $cmd = &RSAT::server::GetProgramPath("compare-matrices-quick");
+  $cmd .= "  -v ".$matrix_compa_verbose;
   $cmd .=  " -file1 ".$main::outfile{input_matrices};
   $cmd .=  " -file2 ".$main::outfile{input_matrices};
   $cmd .= " -lth_ncor1 -1";
@@ -2030,10 +2149,46 @@ sub CompareMatricesQuick {
   $cmd .= " -lth_w 0";
   $cmd .= " -mode matches";
   $cmd .= " -o ".$main::outfile{pairwise_compa};
-  $cmd .= "; ".$SCRIPTS."/text-to-html -i ".$main::outfile{pairwise_compa};
+  $cmd .= "; ".&RSAT::server::GetProgramPath("text-to-html");
+  $cmd .= " -i ".$main::outfile{pairwise_compa};
   $cmd .= " -o ".$main::outfile{pairwise_compa_html};
   &RSAT::util::one_command($cmd, 1,"");
   &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{pairwise_compa}) if ($main::verbose >= 2);
+
+  return();
+}
+
+
+################################################################
+## Compare the leave and root motifs against a reference database
+## provided by the user (e.g., JASPAR, HOCOMOCO).
+## The name of the motif will correspond to the top-3 most similar motifs.
+##
+## Added by: Jaime Castro (24-02-2020)
+sub CompareMatricesQuick_AnnotateMotifs {
+  &RSAT::message::TimeWarn("Running compare-matrices-quick to annotate motifs") if ($main::verbose >= 2);
+
+
+  $matrix_compa_verbose = 0;
+
+  ## Run the pairwise matrix comparison
+  &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 2);
+  my $cmd = &RSAT::server::GetProgramPath("compare-matrices-quick");
+  $cmd .= "  -v ".$matrix_compa_verbose;  
+  $cmd .=  " -file1 ".$main::outfile{all_concatenated_motifs};
+  $cmd .=  " -file2 ".$main::outfile{ref_collection_tf};
+  $cmd .= " -lth_ncor1 -1";
+  $cmd .= " -lth_ncor2 -1";
+  $cmd .= " -lth_ncor 0.4";
+  $cmd .= " -lth_cor 0.7";
+  $cmd .= " -lth_w 5";
+  $cmd .= " -mode scan";
+  $cmd .= " -o ".$main::outfile{reference_compa};
+  $cmd .= "; ".&RSAT::server::GetProgramPath("text-to-html");
+  $cmd .= " -i ".$main::outfile{reference_compa};
+  $cmd .= " -o ".$main::outfile{reference_compa_html};
+  &RSAT::util::one_command($cmd, 1,"");
+  &RSAT::message::TimeWarn("Matrix comparison table", $main::outfile{reference_compa}) if ($main::verbose >= 2);
 
   return();
 }
@@ -2136,8 +2291,7 @@ sub Hclustering {
 
     ## These parameters force all the motifs to be aligned in one cluster
     ## Only for generate radial trees
-
-
+    
     ## Output parameters
     $cluster_motifs_cmd .= "; out.prefix = '".$main::outfile{prefix}."'";
     $cluster_motifs_cmd .= "; \"";
@@ -2274,15 +2428,16 @@ sub Add_gaps_to_motifs {
                 #my $c = "cat ".$aligned_motif." >> ".$main::outfile{all_concatenated_motifs};
                 #&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
                 #Produce_logo($aligned_motif, $id);
-                ##########
+
+		##########
                 my $logo_file = $main::outfile{prefix}."_aligned_logos/";
                 $logo_file .= $AC || $ID;
                 $logo_file .= "_logo";
                 my @logo_formats = ("png");
                 
-                $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+                $matrix->makeLogo($logo_file, \@logo_formats, "", 0, $logo_cmd_name, 1);
                 $matrix->set_attribute("logo_file" => $logo_file);
-                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "", 1, "seqlogo", 1);
+                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "", 1, $logo_cmd_name, 1);
                 $matrix->set_attribute("logo_file_rc"=> $logo_file. "_rc");
                 ##########
                 ## Convert the aligned matrix to reverse complement
@@ -2339,9 +2494,9 @@ sub Add_gaps_to_motifs {
                 $logo_file .= "_logo";
                 my @logo_formats = ("png");
                 
-                $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+                $matrix->makeLogo($logo_file, \@logo_formats, "", 0, $logo_cmd_name, 1);
                 $matrix->set_attribute("logo_file" => $logo_file);
-                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1, "seqlogo", 1);
+                $matrix->makeLogo($logo_file."_rc", \@logo_formats, "",1, $logo_cmd_name, 1);
                 $matrix->set_attribute("logo_file_rc"=> $logo_file."_rc");
                 ##########
                 
@@ -2369,85 +2524,6 @@ sub Add_gaps_to_motifs {
     $pm->wait_all_children;
 }
 
-# ################################################################
-# ## Identify clusters of similar motifs using MCL ("Markov clustering",
-# ## an algorithm partitioning a network into clusters), and build
-# ## consensus motifs.
-# sub ClusterMotifs {
-#   &RSAT::message::TimeWarn("Clustering matrices with MCL") if ($main::verbose >= 2);
-
-#   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
-#   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{pairwise_compa};
-#   $cmd .= " -ewidth -ecolors fire";
-#   $cmd .= " -layout spring_new";
-#   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol ".$main::param{score_column};
-#   $cmd .= " -o ".$main::outfile{matrix_network_gml};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   ## Generate a figure of the motif comparison graph
-#   $cmd = $SCRIPTS."/display-graph";
-#   $cmd .= " -in_format gml -i ".$main::outfile{matrix_network_gml};
-#   $cmd .= " -ewidth";
-#   $cmd .= " -layout none";
-#   $cmd .= " -out_format png -o ".$main::outfile{compa_png};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   ## Use MCL to partition the motif graph into clusters
-#   &RSAT::message::TimeWarn("Matrix clustering by running MCL on th matrix-to-matrix network.") if ($main::verbose >= 2);
-#   my $mcl = &RSAT::server::GetProgramPath("mcl");  
-#   # my $mcl_dir = $ENV{mcl_dir};
-#   # unless ($mcl_dir) {
-#   #   &RSAT::error::FatalError("Motif comparison requires to install MCL and indicate its path in the file $ENV{RSAT}/RSAT_config.props");
-#   # }
-#   # my $mcl = $mcl_dir."/mcl";
-#   $cmd = "grep -v '^;' ".$main::outfile{pairwise_compa}.">".$main::outfile{pairwise_compa}.".mcl";
-#   $cmd .= "; ".$mcl."/mcl ".$main::outfile{pairwise_compa}.".mcl";
-#   $cmd .= " -I 1.8 --abc -V all ";
-#   $cmd .= " -o ".$main::outfile{clusters_mcl};
-#   $cmd .= " >& /dev/null";
-#   $cmd .= " ; ".${SCRIPTS}."/convert-classes -i ".$main::outfile{clusters_mcl};
-#   $cmd .= " -from mcl -to tab ";
-#   $cmd .= " -o ".$main::outfile{clusters_tab};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   ## Split the motif graph into clusters as defined by MCL, and
-#   ## compute the intra-cluster degree (k) and weighted degree (wk) of
-#   ## each node
-#   $cmd = $SCRIPTS."/graph-get-clusters -i ".$main::outfile{pairwise_compa};
-#   $cmd .= " -in_format tab -scol 1 -tcol 2 -wcol ".$main::param{score_column};
-#   $cmd .= " -return clusters ";
-#   $cmd .= " -clusters ".$main::outfile{clusters_tab};
-#   $cmd .= " -out_format tab -o ".$main::outfile{clusters_subgraph};
-#   &RSAT::util::one_command($cmd, 1);
-
-
-#   ## Identify graph components and count the intra-component degree of
-#   ## each node. Most connected nodes will serve as seeds for motif
-#   ## clustering.
-#   $cmd = $SCRIPTS."/graph-connex-components -v 1";
-#   $cmd .= " -i ".$main::outfile{clusters_subgraph};
-#   $cmd .= " -wcol ".$main::param{score_column};
-#   $cmd .= " -o ".$main::outfile{intra_cluster_degree};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
-#   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{clusters_subgraph};
-#   $cmd .= " -ewidth -ecolors fire";
-#   $cmd .= " -layout spring_new";
-#   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
-#   $cmd .= " -o ".$main::outfile{clusters_subgraph_gml};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   ## Generate a figure of the motif comparison graph
-#   $cmd = $SCRIPTS."/display-graph";
-#   $cmd .= " -in_format gml -i ".$main::outfile{clusters_subgraph_gml};
-#   $cmd .= " -ewidth";
-#   $cmd .= " -layout none";
-#   $cmd .= " -out_format png -o ".$main::outfile{clusters_subgraph_png};
-#   &RSAT::util::one_command($cmd, 1);
-
-#   return();
-# }
 
 ################################################################
 ## Add attributes to JSON file, links to pictures and other
@@ -2516,7 +2592,7 @@ sub Add_attributes_to_JSON_radial_tree {
       my $cluster = "cluster_".$spl[1];
       $node_to_cluster_hash{$node}{cluster} = $cluster;
       $node_to_cluster_hash{$node}{color} = $hexa_code{$cluster};
-      if($cluster eq "cluster_0"){
+      if ($cluster eq "cluster_0"){
 	  $node_to_cluster_hash{$node}{color} = "#ccc;";
       }
   }
@@ -2726,7 +2802,7 @@ sub Add_attributes_to_JSON_radial_tree {
 		      $Add .= " \"image\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster}{$folder}{logo})."\",\n";
 		      $Add .= " \"image_rc\" : \"".&RSAT::util::RelativePath($main::outfile{summary}, $merged_consensuses_files{$cluster}{$folder}{logo_RC})."\",\n";
 
-                      if($radial_tree_flag == 1){
+                      if ($radial_tree_flag == 1){
 		         $Add .= " \"branch_color\" : \"".$node_to_cluster_hash{$folder}{color}."\",\n";
                       }
 
@@ -2789,7 +2865,7 @@ sub ConvertTabToHTML {
     my $tab = $main::outfile{$key};
     my $html_key = $key."_html";
     my $html = $main::outfile{$html_key};
-    my $cmd = $SCRIPTS."/text-to-html ";
+    my $cmd = &RSAT::server::GetProgramPath("text-to-html");
     $cmd .= " -i ".$tab;
     $cmd .= " -o ".$html;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -2871,7 +2947,7 @@ sub Merge_matrices {
                     }
                 }
                 
-                ## Read the table with the number of spaced for each matrix,
+                ## Read the table with the number of spaces for each matrix,
                 ## for each level of each cluster
                 my $merge_level = $folder;
                 $main::outfile{int_align_offset} = $main::outfile{prefix}."_clusters_information/".$cluster."/levels_JSON_".$cluster."_".$merge_level."_dataframe.tab";
@@ -2925,7 +3001,7 @@ sub Merge_matrices {
                 $merged_consensuses_files{$cluster}{$folder}{collection_counts} = "";
                 foreach my $c (keys %collection_count){
                     ## Store the number of motif for each collection (incluiding 0)
-                    if($folder eq $folder_merged_matrices[-1]){
+                    if ($folder eq $folder_merged_matrices[-1]){
                         $merged_consensuses_files{$cluster}{counter_collection}{$c} = $collection_count{$c};
                     }
                     ## Print the HTML string to print the collection counts
@@ -2943,22 +3019,33 @@ sub Merge_matrices {
                 ## Merge the matrices and create a single matrix
                 my $cat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_cat.tf";
                 my $merged_mat_file = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_matrices.tf";
-                
-                my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_trimmed_matrices.tf";
-                $cmd = "cat ".$files." >".$cat_file;
-                $cmd .= "; ".$SCRIPTS."/merge-matrices -i ".$cat_file;
-                $cmd .= " -in_format tf -out_format tf";
-                $cmd .= " -id ".$cluster." -name ".$cluster;
-                $cmd .= " -calc ".$operator;
-                $cmd .= " -o ".$merged_mat_file;
-                &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-                ## Delete files with single matrices
-                unlink($cat_file);
-                
+		my $merged_mat_file_trimmed = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_".$merge_level."_trimmed_matrices.tf";
+		
+		## Merge motifs by re-scanning the input sequences
+		my $cat_cmd = "cat ".$files." >".$cat_file;
+		&doit($cat_cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+		
+		## Build the merge-matrices command
+		my $merge_cmd = &RSAT::server::GetProgramPath("merge-matrices");
+		$merge_cmd .= " -i ".$cat_file." -v 0";
+		$merge_cmd .= " -in_format tf -out_format tf";
+		$merge_cmd .= " -id ".$cluster." -name ".$cluster;
+		$merge_cmd .= " -calc ".$operator;
+		if ($rescan_motifs_flag) {
+		  $merge_cmd .= " -seq ".$main::infile{sequence_to_rescan};
+		  $merge_cmd .= " -iterations ".$rescan_iterations;
+		}
+		$merge_cmd .= " -o ".$merged_mat_file;
+		
+		&doit($merge_cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+
+		## Delete files with single matrices
+		unlink($cat_file);
+		
                 my $mt_nb = scalar(@file_names)."motifs";
                 my $motif_name = $cluster."_".$merge_level."_".$mt_nb;
             
-            if($folder eq $folder_merged_matrices[-1]){
+            if ($folder eq $folder_merged_matrices[-1]){
                     $motif_name = $cluster;
                 }
                 
@@ -2972,12 +3059,6 @@ sub Merge_matrices {
                 ## Addig attributes (ID + AC: cluster + level + motif_nb)
                 my $merged_mat_file_2 = $main::outfile{prefix}."_clusters_information/".$cluster."/merged_consensuses/".$merge_level."/".$cluster."_nb_motifs_".scalar(@file_names).".tf";
                 
-                #$cmd = $SCRIPTS."/convert-matrix -i ".$merged_mat_file;
-                #$cmd .= " -from tf -to tf -return counts,consensus";
-                #$cmd .= " -attr name ".$motif_name;
-                #$cmd .= " -attr accession ".$motif_name;
-                #$cmd .= " -o ".$merged_mat_file_2;
-                #&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
                 my @matrices = &RSAT::MatrixReader::readFromFile($merged_mat_file, "tf");
                 my $matrix = $matrices[0];
                 $matrix->calcConsensus();
@@ -2990,10 +3071,10 @@ sub Merge_matrices {
                 ## Calculate the IC content and remove low IC columns
                 $merged_mat_file_trimmed = &trim_matrix_low_IC_columns($merged_mat_file_2, $merged_mat_file_trimmed, -2, $lev_motif_ac, $lev_motif_id, $matrix_type, $mer_type, $mer_number);
                 
-                ## Create branch-wise logos
+                ## Concatenate the branch motifs in a single file
                 $concat_motif_files .= $merged_mat_file_trimmed." ";
-                #my $c = "cat ".$merged_mat_file_trimmed." >> ".$main::outfile{all_concatenated_motifs};
-                #&doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+                my $c = "cat ".$merged_mat_file_trimmed." >> ".$main::outfile{all_concatenated_motifs};
+                &doit($c, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
                 #Produce_logo($merged_mat_file_trimmed,$clusters_info{$cluster});
                 
                 ##########
@@ -3004,9 +3085,9 @@ sub Merge_matrices {
                 $logo_file .= "_logo";
                 my @logo_formats = ("png");
                 
-                $matrix_trimmed->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+                $matrix_trimmed->makeLogo($logo_file, \@logo_formats, "", 0, $logo_cmd_name, 1);
                 $matrix_trimmed->set_attribute("logo_file" => $logo_file);
-                $matrix_trimmed->makeLogo($logo_file."_rc", \@logo_formats, "", 1, "seqlogo",1);
+                $matrix_trimmed->makeLogo($logo_file."_rc", \@logo_formats, "", 1, $logo_cmd_name,1);
                 $matrix_trimmed->set_attribute("logo_file_rc"=> $logo_file."_rc");
                 #########
                 
@@ -3027,7 +3108,7 @@ sub Merge_matrices {
                 
                 ## Add the most external motif in the tree as a root motif
                 ## Add the info to the Root Motifs Features hash
-            if($folder eq $folder_merged_matrices[-1]){
+            if ($folder eq $folder_merged_matrices[-1]){
                     $root_motifs_features{$cluster}{logo} = $merged_consensuses_files{$cluster}{$folder}{logo};
                     $root_motifs_features{$cluster}{logo_RC} = $merged_consensuses_files{$cluster}{$folder}{logo_RC};
                 $root_motifs_features{$cluster}{size} = scalar(@folder_merged_matrices) + 1; #$node_counter + 1; ## Because we count the number of branches
@@ -3066,18 +3147,25 @@ sub Merge_matrices {
             $cmd = "cp ".$singleton_motif_file." ".$new_singleton_motif_file_temp;
             &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
             
-            $cmd = $SCRIPTS."/convert-matrix -i ".$new_singleton_motif_file_temp." -from tf -to tf ";
+            $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+	    $cmd .= " -i ".$new_singleton_motif_file_temp." -from tf -to tf ";
             $cmd .= " -attr name ".$cluster." -attr accession ".$cluster;
             $cmd .= " -set_attr merged_AC '@{$cluster_nodes_clean_names{$cluster}}' -set_attr merged_ID '".$alignment_info{"@{$cluster_nodes{$cluster}}"}{name} ."'";
             $cmd .= " -set_attr type merge";
             $cmd .= " -set_attr merge_type ".$operator;
             $cmd .= " -set_attr merge_nb 1";
+	    $cmd .= " -v ".$main::verbose;
             $cmd .= " -o ".$new_singleton_motif_file;
             &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
             
             unlink($new_singleton_motif_file_temp);
             
             $concat_motif_files .= $new_singleton_motif_file." ";
+
+	    ## Concat the singleton cluster motifs
+	    my $cc = "cat ".$new_singleton_motif_file." >> ".$main::outfile{all_concatenated_motifs};
+	    &doit($cc, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
+	    
             ##########
             my @matrices = &RSAT::MatrixReader::readFromFile($new_singleton_motif_file, "tf");
             my $matrix = $matrices[0];
@@ -3087,9 +3175,9 @@ sub Merge_matrices {
             $logo_file .= "_logo";
             my @logo_formats = ("png");
             
-            $matrix->makeLogo($logo_file, \@logo_formats, "", 0, "seqlogo", 1);
+            $matrix->makeLogo($logo_file, \@logo_formats, "", 0, $logo_cmd_name, 1);
             $matrix->set_attribute("logo_file" => $logo_file);
-            $matrix->makeLogo($logo_file."_rc", \@logo_formats, "", 1, "seqlogo", 1);
+            $matrix->makeLogo($logo_file."_rc", \@logo_formats, "", 1, $logo_cmd_name, 1);
             $matrix->set_attribute("logo_file_rc"=> $logo_file."_rc");
             #########
             
@@ -3160,7 +3248,7 @@ sub create_html_radial_tree_file {
 	if (/--radial_w--/){
 	    $line =~ s/--radial_w--/2000/gi;
 	    
-	    if($number_of_motifs > 200){
+	    if ($number_of_motifs > 200){
 		$line =~ s/--radial_w--/2500/gi;
 	    }
 	}
@@ -3168,7 +3256,7 @@ sub create_html_radial_tree_file {
 	if (/--radial_h--/){
 	    $line =~ s/--radial_h--/2000/gi;
 
-	    if($number_of_motifs > 200){
+	    if ($number_of_motifs > 200){
 		$line =~ s/--radial_h--/2500/gi;
 	    } 
 	}
@@ -3183,7 +3271,7 @@ sub create_html_radial_tree_file {
 	## NOTE: the following radius were obtained empirically
 	if (/--radium--/){
 
-	    if($number_of_motifs <= 30){
+	    if ($number_of_motifs <= 30){
 		$tree_radium = 175;
 		
 	    } elsif ($number_of_motifs > 30 && $number_of_motifs <= 50){
@@ -3213,7 +3301,7 @@ sub create_html_radial_tree_file {
 	## Set the motif logo height according to the number of motifs
 	if (/--h_motif--/){
 
-	    if($number_of_motifs <= 30){
+	    if ($number_of_motifs <= 30){
 		$motif_height = 30;
 	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
 		$motif_height = 20;
@@ -3230,7 +3318,7 @@ sub create_html_radial_tree_file {
  	## Set displacement (x axis) of the logos according to the number of motifs
 	if (/--x_displ--/){
 	    
-	    if($number_of_motifs <= 30){
+	    if ($number_of_motifs <= 30){
 		$x_displacement = 75;
 	    } elsif ($number_of_motifs > 30 && $number_of_motifs < 100){
 		$x_displacement = 70;
@@ -5901,6 +5989,19 @@ sub InsertListOfFiles {
                      ';
       }
 
+
+      ## If it is specified, add the annotation table of the branch motifs
+      if ($reference_collection_flag == 1) {
+	$add_files .= 
+	    '
+		   <tr>
+		      <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{reference_compa}).'"><strong>Motif annotations from reference collection</strong></a></td>
+		      <td class="tab_spacer_2">A tab file showing the motifs matching the branch and root motifs</td>
+		   </tr>
+                     ';
+      }
+
+      
       ## If it is specified, add the newick tree
       if ($export_newick == 1 && $number_of_motifs > 1) {
 	$add_files .= 
@@ -5984,7 +6085,7 @@ sub Synthesis {
 
     $number_of_clusters = scalar(keys %alignment_table_data); 
 
-    if($radial_tree_flag == 1){
+    if ($radial_tree_flag == 1){
 	&create_html_radial_tree_file();
     } else {
 	&create_html_small_tree_file();
@@ -6005,7 +6106,7 @@ sub Synthesis {
     #####################
     
     ## Insert logo forest
-    if($radial_tree_flag == 0){
+    if ($radial_tree_flag == 0){
 
 	my $forest_tab_icon = ' <tr>
       <td>
@@ -6038,7 +6139,7 @@ sub Synthesis {
     ## Block 2: clusters in detail ##
     #################################
     
-    if($radial_tree_flag == 0){
+    if ($radial_tree_flag == 0){
 
 	my $tree_tab_icon = ' <tr>
       <td>
@@ -6064,7 +6165,7 @@ sub Synthesis {
     ## Block 3: motifs in detail ##
     ###############################
 
-    if($radial_tree_flag == 0){
+    if ($radial_tree_flag == 0){
 
 	my $consensus_tab_icon = ' <tr>
       <td>
@@ -6167,7 +6268,8 @@ sub trim_matrix_low_IC_columns {
 
     ## Calculate the IC of the matrix,
     ## save this info in a file
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -return info,header,margins -o ".$temp_IC_file;
+    my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$matrix_to_trim." -from tf -return info,header,margins -o ".$temp_IC_file;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
     ## Read the IC file
@@ -6211,22 +6313,10 @@ sub trim_matrix_low_IC_columns {
     }
 
     $motif_ac =~ s/_m\d+_/:::/gi;
-    # die $motif_ac." ------------------>\n";
     
-    ## Trim the matrix
-#    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf";
-#    $cmd .= " -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
-#    $cmd .= " -set_attr type ".$motif_type;
-#    $cmd .= " -set_attr merge_type ".$merge_type;
-#    $cmd .= " -set_attr merge_nb ".$merge_nb;
-#    $cmd .= " -set_attr merged_AC '".$motif_ac."'";
-#    $cmd .= " -set_attr merged_ID '".$motif_id."'";
-#
-#    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
-    ####################
     my @matrices = &RSAT::MatrixReader::readFromFile($matrix_to_trim, "tf");
     my $matrix = $matrices[0];
-    if($trim_up > 0 || $trim_dw > 0){
+    if ($trim_up > 0 || $trim_dw > 0){
         $matrix->trim_columns($trim_up,$trim_dw);
         $matrix->calcConsensus();
     }
@@ -6265,7 +6355,8 @@ sub trim_matrix_low_IC_columns_preprocess {
 
     ## Calculate the IC of the matrix,
     ## save this info in a file
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -return info,header,margins -o ".$temp_IC_file;
+    my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$matrix_to_trim." -from tf -return info,header,margins -o ".$temp_IC_file;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
     ## Read the IC file
@@ -6309,7 +6400,8 @@ sub trim_matrix_low_IC_columns_preprocess {
     }
 
     ## Trim the matrix
-    $cmd = $SCRIPTS."/convert-matrix -i ".$matrix_to_trim." -from tf -to tf";
+    $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$matrix_to_trim." -from tf -to tf";
     $cmd .= " -trim_col_left ".$trim_up." -trim_col_right ".$trim_dw." -return counts,consensus -o ".$trimmed_matrix;
 
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -6324,7 +6416,8 @@ sub Add_Empty_Col {
     my ($file_name, $offset_left, $offset_right, $return_fields, $out_file) = @_;
 
     ## Add the empty columns
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
+    my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$file_name;
     $cmd .= " -from tf -to tf -return ".$return_fields;
     $cmd .= " -insert_col_left ".$offset_left;
     $cmd .= " -insert_col_right ".$offset_right;
@@ -6341,8 +6434,9 @@ sub Produce_logos {
     &RSAT::message::TimeWarn("Generating Logos") if ($main::verbose >= 2);
 
     ## Add the empty columns
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{all_concatenated_motifs};
-    $cmd .= " -from tf -to tf -return logo -logo_no_title -logo_program seqlogo";
+    my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$main::outfile{all_concatenated_motifs};
+    $cmd .= " -from tf -to tf -return logo -logo_no_title -logo_program ".$logo_cmd_name;
     $cmd .= " -o ".$main::outfile{prefix}."_aligned_logos/test";
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
@@ -6356,7 +6450,8 @@ sub Rev_Comp_Motif {
 
     my ($file_name, $out_file) = @_;
 
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$file_name;
+    my $cmd = &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= "  -i ".$file_name;
     $cmd .= " -from tf -to tf -rc -return counts,consensus";
     $cmd .= " -o ".$out_file;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -6397,7 +6492,7 @@ LINKS:
         close($motifs_id_handle);
         
         ## Separate the files (calling convert-matrix)
-        my $separate_motifs_cmd = $SCRIPTS."/convert-matrix";
+        my $separate_motifs_cmd = &RSAT::server::GetProgramPath("convert-matrix");
         $separate_motifs_cmd .= " -i ".$main::outfile{input_matrices};
         $separate_motifs_cmd .= " -from tf -to tf";
         $separate_motifs_cmd .= " -matrix_id_file ".$main::outfile{clusters_id_temp};
@@ -6481,7 +6576,8 @@ sub Export_central_motif_per_cluster {
 	my $central_motif_parser_cmd = "more ".$main::outfile{central_motifs}." | cut -f2 > ".$main::outfile{central_motifs_IDs_temp};
 	&RSAT::util::one_command($central_motif_parser_cmd, 1, "");
 	
-	my $get_central_motifs_cmd = $SCRIPTS."/convert-matrix -v 2 -i ".$main::outfile{input_matrices}." -from tf -to tf -matrix_id_file ".$main::outfile{central_motifs_IDs_temp}." -o ".$main::outfile{central_motifs_tf};
+	my $get_central_motifs_cmd = &RSAT::server::GetProgramPath("convert-matrix");
+	$get_central_motifs_cmd .= " -v ".$main::verbose." -i ".$main::outfile{input_matrices}." -from tf -to tf -matrix_id_file ".$main::outfile{central_motifs_IDs_temp}." -o ".$main::outfile{central_motifs_tf};
 	&RSAT::util::one_command($get_central_motifs_cmd, 1, "");
 	
 
@@ -6953,7 +7049,7 @@ sub Add_attributes_to_JSON {
 	      }
 	  }
 	  
-	  if($radial_tree_flag == 0){
+	  if ($radial_tree_flag == 0){
 	      ################################################################
 	      ## Add the consensus to the json file to be displayed in the tree (tree nodes)
 	      my $IC_info_line = "";

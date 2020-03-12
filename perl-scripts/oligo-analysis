@@ -504,7 +504,8 @@ sub CountOligos {
     ## count-words does not inform us about te number and length of
     ## the sequences, we do it separately
     if (($main::verbose >= 1) && ($infile{input})) {
-      my $cmd = $SCRIPTS."/sequence-lengths -i ".$infile{input};
+      my $cmd =  &RSAT::server::GetProgramPath("sequence-lengths");
+      $cmd .= " -i ".$infile{input};
       open SEQLEN,  "$cmd |";
       while (<SEQLEN>) {
 	next unless (/\S/);

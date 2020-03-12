@@ -26,7 +26,7 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$command = "$SCRIPTS/variation-scan";
+$command = "$C_SCRIPTS/variation-scan";
 
 #### read parameters ####
 $parameters = " -v 1 ";
@@ -48,14 +48,14 @@ local $input_format=lc($query->param('matrix_format'));
 
 ## Get motif set or input file to scan variants
 
-## MatrixDB selected 
+## MatrixDB selected
 my ($mat_db_params, @selected_db) = &GetMatrixDBchoice_select2("mode"=>"radio", "more"=>1);
 if (scalar(@selected_db) > 0) {
   $mat_db_params=~s/-file2 //;
-  $mat_db_params=~s/-format2.+//;  
+  $mat_db_params=~s/-format2.+//;
   $parameters .= " -m ".$mat_db_params;
   $parameters .= " -m_format  transfac ";
-  
+
 } else {
   ## This should work but for some reason it does not AMR
   #elsif($query->param('custom_motif_db')) {
@@ -81,7 +81,7 @@ if (scalar(@selected_db) > 0) {
 # 	    &RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
 # 	}
 #     }
-    
+
 #     ## Check sequence file
 #     my $file_type = `file $persomotif_file`;
 #     if ($file_type =~ "gzip") {
@@ -89,21 +89,21 @@ if (scalar(@selected_db) > 0) {
 # 	my $cmd = "mv ".$persomotif_file." ".$persomotif_file.".gz";
 # 	$cmd .= " ; gunzip ".$persomotif_file.".gz";
 # 	&doit($cmd);
-#     }  
+#     }
 
-#     $parameters .= " -m ".$persomotif_file;    
+#     $parameters .= " -m ".$persomotif_file;
 # }
 
 
 ## Get input
 
 unless ($input_seq_file = $query->param('variants_seq_file')){
-    
+
     $input_seq_file= $tmp_file_path."_variation-scan_sequence_input.txt";
-    
+
     ### sequence file already on the server side
     ### create a new temporary sequence file
-    
+
     if ($query->param('uploaded_file')) {
 	$upload_file = $query->param('uploaded_file');
 	if ($upload_file =~ /\.gz$/) {
@@ -134,7 +134,7 @@ unless ($input_seq_file = $query->param('variants_seq_file')){
 	}
     }
     &DelayedRemoval($input_seq_file);
-    
+
 }
 $parameters .= " -i ".$input_seq_file;
 push @result_files ,("input", $input_seq_file) ;
@@ -169,7 +169,7 @@ if ($bg_method eq "bginput") {
 			       noov=>$noov, str=>"-1str");
 
   $parameters .= " -bg ".$bg_file.".gz";
-  
+
 } elsif ($bg_method =~ /upload/i) {
     ## Upload user-specified background file
     my $bgfile = $tmp_file_path."_bgfile.txt";
@@ -185,12 +185,12 @@ if ($bg_method eq "bginput") {
 	    print BGFILE;
 	}
 	close BGFILE;
-	
+
 	$bg_format=$query->param('bg_format');
 	##NEED TO CONVERT BG MODELS IN OTHER FORMAT NOT SUPPORTED
 	if (!($bg_format eq 'oligo-analysis')){
 	    $bg_file_oligo= $tmp_file_path."input_bgfile_oligoformat";
-	    
+
 	    $convert_bg_cmd=" convert-matrix -from $bg_format ";
 	    $convert_bg_cmd.=" -to oligo-analysis -i $bg_file ";
 	    $convert_bg_cmd.="-o $bg_file_oligo ";
@@ -198,19 +198,19 @@ if ($bg_method eq "bginput") {
 	    $bg_convert=1;
 	}
 	$parameters .= " -bg $bgfile";
-	
+
     } else {
 	&RSAT::error::FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
     }
-    
+
 }elsif ($bg_method =~/url/i) {
     ## Retrieve user-specified URL for background file
     my $url = $query->param('bgmodel_url');
-    
+
     &RSAT::message::Info("Fetching background from URL ".$url) if ($ENV{rsat_echo} >= 1);
       my $bgmodel = "";
     $bgfile = $tmp_file_path."_bgfile.txt";
-    
+
     if (open BGM, ">$bgfile") {
 	$bg = get($url);
 	if ($bg =~ /\S/) {
@@ -219,13 +219,13 @@ if ($bg_method eq "bginput") {
 	} else {
 	    &RSAT::error::FatalError("No background model could be downloaded from the URL ".$url);
 	}
-	
+
     }
-    
+
     close BGFILE;
 	$parameters .= " -bg $bgfile";
 	#$parameters .= " -bg_format ".$query->param('bg_format');
-    
+
 }else {
     &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
 }
@@ -240,7 +240,7 @@ foreach my $field (@l_threshold_fields) {
     &RSAT::error::FatalError($lth." is not a valid value for the lower $field threshold. Should be a number. ") unless (&IsReal($lth));
     $parameters .= " -lth $field $lth ";
 }
-foreach my $field (@u_threshold_fields) {    
+foreach my $field (@u_threshold_fields) {
     my $uth = $query->param("uth_".$field);
     &RSAT::error::FatalError($uth." is not a valid value for the upper $field threshold. Should be a number. ") unless (&IsReal($uth));
     $parameters .= " -uth $field $uth ";
@@ -268,7 +268,7 @@ if (($query->param('output') =~ /display/i) ||
     &PrintHtmlTable(RESULT, $var_scan_file, true, 1000);
     ### print the result
     close RESULT;
-    
+
 
     push @result_files ,("variation-scan results",$var_scan_file ) ;
     &PrintURLTable(@result_files);
@@ -287,4 +287,3 @@ if (($query->param('output') =~ /display/i) ||
 print $query->end_html();
 
 exit(0);
-

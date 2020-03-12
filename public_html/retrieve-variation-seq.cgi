@@ -42,12 +42,12 @@ $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = 
 
 
 $parameters = "";
-$command = "$SCRIPTS/retrieve-variation-seq1.0";
+$command = "$C_SCRIPTS/retrieve-variation-seq";
 
 ################
 ## Parameters
 
-## Define species 
+## Define species
 $organism = $query->param('organism');
 
 
@@ -178,9 +178,9 @@ sub PipingForm {
 	<INPUT type="submit" value="variation scan">
 	</FORM>
 	</TD>
- 
+
 End_of_form
-print '   
+print '
 </TR>
 </TABLE>
 </CENTER>';

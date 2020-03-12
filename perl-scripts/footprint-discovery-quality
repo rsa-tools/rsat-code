@@ -158,7 +158,8 @@ package main;
     ## Use the program rdm_genes
     ## Unfortunately, there is an error using this program. In bacteria mainly, all genes present in cds.tab are not present in the org_name_aa.fasta and this leads to inconsistencies
     ## We deciced to write our in house script to capture random genes.
-#     my $rdm_genes_cmd = $scripts."random-genes -feattype CDS -v $verbose -n $orthogroups_nb -org $organism -o $outfile{random_genes_selection}";
+#     my $rdm_genes_cmd =  &RSAT::server::GetProgramPath("random-genes");
+#    $rdm_genes_comd .= " -feattype CDS -v $verbose -n $orthogroups_nb -org $organism -o $outfile{random_genes_selection}";
 #     &doit($rdm_genes_cmd);
     my $all_genes_cmd = "cat $ENV{RSAT}/data/genomes/$organism/genome/$organism"."_aa.fasta | grep '>' | perl -pe 's/>//'";
     my $genes = `$all_genes_cmd`;
@@ -194,7 +195,8 @@ package main;
       my $taxon_frequency_cmd = "taxon-frequencies -taxon $taxon -type dyad -ml 3 -v $verbose -noov -2str > $taxon_frequency_file";
       $bgmodel{$taxon} = $taxon_frequency_file;
       $outfile{random_genes_selection} = $outputdir{random_genes_dir}."random_gene_selection.tab";
-      my $footprint_discovery_cmd = $scripts."footprint-discovery $batch_arg -task query_seq,bg_model,orthologs,ortho_seq,purge,filter_dyads,dyads -taxon '$taxon' -genes $outfile{random_genes_selection} -v $verbose -org $organism -o $outputdir{root} -sep_genes -bg_model file -bgfile $taxon_frequency_file";
+      my $footprint_discovery_cmd =  &RSAT::server::GetProgramPath("footprint-discovery");
+      $footprint_discovery_cmd .= " ".$batch_arg." -task query_seq,bg_model,orthologs,ortho_seq,purge,filter_dyads,dyads -taxon '$taxon' -genes $outfile{random_genes_selection} -v $verbose -org $organism -o $outputdir{root} -sep_genes -bg_model file -bgfile $taxon_frequency_file";
       if (!-e $taxon_frequency_file) {
         &RSAT::message::TimeWarn ("Computing expected word frequencies for taxon $taxon") if ($main::verbose >= 2);
         &doit($taxon_frequency_cmd);
@@ -304,12 +306,18 @@ package main;
         
         system ("cat $random_genes_taxon_file | head -n 1 > $random_gene_taxon_file");
         # write commands
-        my $rdm_footprint_cmd = $scripts."retrieve-seq-multigenome -v $verbose -i $random_genes_taxon_file -o $random_genes_seq_taxon_file ";
-        $rdm_footprint_cmd .= "; ".$scripts."retrieve-seq-multigenome -v $verbose -i $random_gene_taxon_file -o $random_gene_seq_taxon_file";
-        $rdm_footprint_cmd .= "; ".$scripts."purge-sequence -nodie -i $random_genes_seq_taxon_file -ml 30 -mis 0 -mask_short 30 -2str -o $random_genes_seq_purgednc_file";
-        $rdm_footprint_cmd .= "; ".$scripts."convert-seq -i $random_genes_seq_purgednc_file -mask non-dna -from fasta -to fasta -dna -o $random_genes_seq_purged_file";
-        $rdm_footprint_cmd .= "; ".$scripts."dyad-analysis -v $verbose -2str -noov -l 3 -sp 0-20 -i $random_gene_seq_taxon_file -o $random_gene_dyad_taxon_file";
-        $rdm_footprint_cmd .= "; ".$scripts."dyad-analysis -v $verbose -expfreq ".$bgmodel{$taxon}." -accept $random_gene_dyad_taxon_file -return occ,proba,rank -uth rank 50 -lth occ 1 -lth occ_sig 0 -l 3 -sp 0-20 -i $random_genes_seq_purged_file -o $random_genes_dyad_taxon_file -2str -noov";
+        my $rdm_footprint_cmd =  &RSAT::server::GetProgramPath("retrieve-seq-multigenome");
+	$rdm_footprint_cmd .= " -v $verbose -i $random_genes_taxon_file -o $random_genes_seq_taxon_file ";
+        $rdm_footprint_cmd .= "; ". &RSAT::server::GetProgramPath("retrieve-seq-multigenome");
+	$rdm_footprint_cmd .= " -v $verbose -i $random_gene_taxon_file -o $random_gene_seq_taxon_file";
+        $rdm_footprint_cmd .= "; ". &RSAT::server::GetProgramPath("purge-sequence");
+	$rdm_footprint_cmd .= " -nodie -i $random_genes_seq_taxon_file -ml 30 -mis 0 -mask_short 30 -2str -o $random_genes_seq_purgednc_file";
+        $rdm_footprint_cmd .= "; ". &RSAT::server::GetProgramPath("convert-seq");
+	$rdm_footprint_cmd .= " -i $random_genes_seq_purgednc_file -mask non-dna -from fasta -to fasta -dna -o $random_genes_seq_purged_file";
+        $rdm_footprint_cmd .= "; ". &RSAT::server::GetProgramPath("dyad-analysis");
+	$rdm_footprint_cmd .= " -v $verbose -2str -noov -l 3 -sp 0-20 -i $random_gene_seq_taxon_file -o $random_gene_dyad_taxon_file";
+        $rdm_footprint_cmd .= "; ". &RSAT::server::GetProgramPath("dyad-analysis");
+	$rdm_footprint_cmd .= " -v $verbose -expfreq ".$bgmodel{$taxon}." -accept $random_gene_dyad_taxon_file -return occ,proba,rank -uth rank 50 -lth occ 1 -lth occ_sig 0 -l 3 -sp 0-20 -i $random_genes_seq_purged_file -o $random_genes_dyad_taxon_file -2str -noov";
         $rdm_footprint_cmd .= "; touch $random_genes_dyad_taxon_file_done";
 
         &doit($rdm_footprint_cmd, $dry, $die_on_error, $verbose, $job_prefix);

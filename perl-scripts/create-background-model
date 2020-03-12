@@ -129,7 +129,8 @@ package main;
   ## Execute the command
 
   ## Generate the command to create the background model
-  my $cmd = $SCRIPTS."/oligo-analysis -quick";
+  my $cmd =  &RSAT::server::GetProgramPath("oligo-analysis");
+  $cmd .= " -quick";
   $cmd .= " -i ".$infile{input} if ($infile{input});
   $cmd .= " -l ".$oligo_len;
   $cmd .= " ".$noov;
@@ -137,7 +138,7 @@ package main;
   $cmd .= " -return occ,freq";
   ## Convert output if required
   unless ($output_format eq "oligos") {
-    $cmd .= " | ".$SCRIPTS."/convert-background-model";
+    $cmd .= " | ". &RSAT::server::GetProgramPath("convert-background-model");
     $cmd .= " -from oligos -to ".$output_format;
   }
   $cmd .= " -o ".$outfile{output} if ($outfile{output});
