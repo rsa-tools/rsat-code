@@ -181,8 +181,7 @@ if ($query->param('oligotype') =~ /dyad/i) {
 if ($query->param('bg_method') =~ /background/i) {
     %supported_background = (
 			      "upstream"=>1,
-			      "upstream-noorf"=>1,
-#			      "intergenic"=>1
+			      "upstream-noorf"=>1
 			      );
 
 	### check organism

@@ -100,8 +100,7 @@ if ($query->param('freq_estimate') =~ /background/i) {
   #    $oligo_length = 3 + 1; # MM3
   %supported_background = (
 			   "upstream"=>1,
-			   "upstream-noorf"=>1,
-#			   "intergenic"=>1
+			   "upstream-noorf"=>1
 			  );
 
   ### check organism
