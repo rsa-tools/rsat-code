@@ -1,4 +1,11 @@
 #!/usr/bin/env perl
+############################################################
+#
+# $Id: network-interactions ,v 0.1 2020/04/22 mpadilla Exp $
+#
+############################################################
+
+
 =pod
 
 =head1 NAME
@@ -129,16 +136,17 @@ found by the program but that were not specified in the input network.
 
 =cut
 
-use strict;
-use warnings;
-use Cwd;
 
 BEGIN {
   if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
   }
 }
+
 require "RSA.lib";
+#use strict;
+use warnings;
+use Cwd;
 
 ################################################################
 ## Main package
@@ -225,7 +233,7 @@ package main;
   ## set date for output and report
   $date = &AlphaDate();
 
-  ################################################################
+ ################################################################
   ## Check argument values
   unless ($main::infile{TFs}) {
     &RSAT::error::FatalError("File with the network's transcription factors must be provided\n It must be a one-column file with list of TFs");
@@ -467,7 +475,7 @@ package main;
       # reinitialize value
       $flag =0;
 
-    }
+     }
     close $net;
 
     # message if sequences of any genes in network were not reported
@@ -487,7 +495,6 @@ package main;
     }
 
   #} # report_net
-#=pod
   ################################################################
   ####################################### RSAT processing
   print $log "\nInitiating RSAT tools processing ...\n\n";
@@ -497,7 +504,7 @@ package main;
   #   retrieve-matrix foreach database foreach TF
   @nonRepTFs_k = keys %nonRepTFs;
 
-  print("\nRetrieving matrixes ...");
+  print("\nRetrieving matrices ...");
   foreach my $db (@matfiles_path){
     $ACs = &retrieveACsfromTFs($db, @nonRepTFs_k);
     $cmd = "retrieve-matrix -i ".$db." -id ".$ACs." -o ".$main::outfile{used_matrixes}."\n";
@@ -765,16 +772,19 @@ package main;
 
 } # main
 
+
+
+
 ################################################################
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
-=pod
 ################################################################
 ## Close output file and quit
 sub close_and_quit {
 
   ## Report execution time
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+
 #  print $main::out $exec_time if ($main::verbose >= 1); ## only report exec time if verbosity is specified
 # cambiar a los nombres de los filehandles de output aqui
 
@@ -786,7 +796,7 @@ sub close_and_quit {
 
   exit(0);
 }
-=cut
+
 ################################################################
 ## Display full help message
 sub PrintHelp {
@@ -802,107 +812,185 @@ sub PrintOptions {
 ################################################################
 ## Read arguments
 sub ReadArguments {
-  my $arg;
-  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-  while (scalar(@arguments) >= 1) {
-    $arg = shift (@arguments);
+
+    my $arg;
+  
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+ 
+    while (scalar(@arguments) ) {
+	$arg = shift (@arguments);
+
 =pod
+
 =head1 OPTIONS
+
 =over 4
 
 =item B<-v #>
+
 Level of verbosity.
+
 =cut
-    if ($arg eq "-v") {
-      if (&IsNatural($arguments[0])) {
-          $main::verbose = shift(@arguments);
-      } else {
-          $main::verbose = 1;
-      }
+
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
 =item B<-h>
+
 Display full help message.
+
 =cut
-    } elsif ($arg eq "-h") {
-      &PrintHelp();
+
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    ## Dry run
+
+=pod
+	    
 =item B<-help>
+
 Same as -h.
+
 =cut
-    } elsif ($arg eq "-help") {
-      &PrintOptions();
-    }# elsif ($arg eq "-i") {
-      #$main::infile{input} = shift(@arguments);
-    #}
+	    
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+	    ##TFs input file
+
+=pod
+
 =item B<-tfs TFs_infile>
+
 Mandaroty.
+File containing a list of TFs to be analysed
 One-column input file with list of TFs in network.
+
 =cut
-    elsif ($arg eq "-tfs") {
-      $main::infile{TFs} = shift(@arguments);
+	
+	}elsif ($arg eq "-tfs") {
+	    $main::infile{TFs} = shift(@arguments);
+
+	    ##Regulatory sequences file
+
+=pod
+	    
 =item B<-cre cre_infile>
+
 Mandaroty.
 Bed file with of regulatory sequences per gene in network.
 Each sequence must refer to its regulated-gene on the 4th column.
+
 =cut
-    } elsif ($arg eq "-cre") {
-      $main::infile{cres} = shift(@arguments);
+
+	} elsif ($arg eq "-cre") {
+	    $main::infile{cres} = shift(@arguments);
+
+	    ##Genome version
+	    
+=pod
+
 =item B<-genome genome_version>
+
 Mandaroty.
 Working genome version.
+
 =cut
-    } elsif ($arg eq "-genome") {
-      $main::genome = shift(@arguments);
-=item B<-db databases>
-Database(s) to use separated by commas.
-=cut
-    } elsif ($arg eq "-db") {
-      $main::databases = shift(@arguments);
-=item B<-net network_infile>
-Mandaroty if -report_net is set to 1.
-The network must be a two-column file with each row containing a single interaction (direct or indirect).
-=cut
-    } elsif ($arg eq "-net") {
-      $main::infile{network} = shift(@arguments);
-      $main::report_net = 1;
-=item B<-report_net>
-Report network,
-  i.e., differences and overlap between the input network and the new network are outputted
-=cut
-    } elsif ($arg eq "-report_net") {
-      $main::report_net = 1;
-#=item B<-net_type grn|not_grn>
-#Network type specification. Could be GRN (Gene Regulatory Network) containing only TFs,
-#of not_grn containing both genes codifying for TFs and genes codifying for not TFs.
-#=cut
-=item B<-title title>
-Title displayed on top of the report page.
-=cut
-    } elsif ($arg eq "-title") {
-      $main::title = shift(@arguments);
-    #} elsif ($arg eq "-net_type") {
-      #$main::net_type = shift(@arguments);
-    #}# elsif ($arg eq "-o") {
-      #$outfile{output} = shift(@arguments);
-    #}
-=item B<-o output_prefix>
-Prefix for the output files.
-=cut
-    } elsif ($arg eq "-o") {
-      $main::output_prefix = &trim(shift(@arguments))."_";
-      #$main::outfile{prefix} = shift(@arguments);
-=item B<-O output_dirx>
-Output dir
-=cut
-    } elsif ($arg eq "-O") {
-      $main::output_dir = &trim(shift(@arguments));
-      # $main::dir{output}
-   }
-    else {
-      &FatalError(join("\t", "Invalid option", $arg));
-    }
-  } # while
+	    
+	} elsif ($arg eq "-genome") {
+	    $main::genome = shift(@arguments);
 
 =pod
+
+=item B<-db databases>
+
+Database(s) to use separated by commas.
+
+=cut
+	} elsif ($arg eq "-db") {
+	    $main::databases = shift(@arguments);
+
+	    ##Network file
+
+=pod
+
+	    
+=item B<-net network_infile>
+
+Mandaroty if -report_net is set to 1.
+The network must be a two-column file with each row containing a single interaction (direct or indirect).
+
+=cut
+	} elsif ($arg eq "-net") {
+	    $main::infile{network} = shift(@arguments);
+	    $main::report_net = 1;
+
+	    ## Report Network
+=pod
+
+=item B<-report_net>
+Report network,
+i.e., differences and overlap between the input network and the new network are outputted
+
+=cut
+
+	} elsif ($arg eq "-report_net") {
+	    $main::report_net = 1;
+
+	    ## Title
+
+=pod
+
+=item B<-title title>
+
+Title displayed on top of the report page.
+
+=cut
+	} elsif ($arg eq "-title") {
+	    $main::title = shift(@arguments);
+
+	    ## Output prefix
+=pod
+
+=item B<-o output_prefix>
+
+Prefix for the output files.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::output_prefix = &trim(shift(@arguments))."_";
+	    #$main::outfile{prefix} = shift(@arguments);
+
+	    ##Output dir
+
+=pod
+	    
+=item B<-outdir output_dir>
+
+Output dir
+
+=cut
+
+	} elsif ($arg eq "-outdir") {
+	    $main::output_dir = &trim(shift(@arguments));
+	    # $main::dir{output}
+	}
+	else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+	}
+    } # while
+
+=pod
+
 =back
+
 =cut
 
 } # sub ReadArguments
