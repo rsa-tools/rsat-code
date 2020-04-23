@@ -285,10 +285,10 @@ package main;
   } else {
     if($main::databases eq "all"){ # CODE: falta anadir algo que soporte que meta los nombres de dbs como sea
       @dbs = qw(ENCODE epigram Hocomoco_human Hocomoco_mouse Homer hPDI HT_Selex Jolma_2013 Jolma_2015 NCAP-SELEX CAP-SELEX RSAT JASPAR cisBP Yeastract DrosophilaTFs);
-    } else { @dbs = split(/ |,|;/, $main::databases) }
+    } else { @dbs = split(/,|;/, $main::databases) }
 
     # retrieve paths to databases from db_matrix_files.tab
-    open(my $dbs_file, "<", "rsat/public_html/motif_databases/db_matrix_files.tab") or die "Cannot open file $!";
+    open(my $dbs_file, "<", $ENV{RSAT}."/public_html/motif_databases/db_matrix_files.tab") or die "Cannot open file $!";
     $i = 0;
     while(my $row = <$dbs_file>){
       chomp($row);
@@ -298,7 +298,7 @@ package main;
       foreach my $db (@dbs){
         if( $row =~ /^$db/){
           @fields = split(/\t/,$row);
-          $matfiles_path[$i++] = "rsat/public_html/motif_databases/".$fields[2];
+          $matfiles_path[$i++] = $ENV{RSAT}."/public_html/motif_databases/".$fields[2];
           #print(" matrix file path number ".$c." : ".$matfiles_path[$c]."\n");
           #$c++;
         }
@@ -408,13 +408,14 @@ package main;
   }
 
   ## Check input TFs
-  &RSAT::error::FatalError("Error: not a single TF was specified on: ".$main::infile{TFs}."\n") unless (scalar(%nonRepTFs) > 0);
+  @nonRepTFs_k = keys %nonRepTFs;
+  &RSAT::error::FatalError("Error: not a single TF was specified on: ".$main::infile{TFs}."\n") unless (scalar(@nonRepTFs_k) > 0);
 
   #############################################################
   # Save input network and create input GRN
   $flag = 0;
-  $ngenes = %nonRep_genes_reg-1;
-  $ntfs = %nonRepTFs -1;
+  $ngenes = scalar(keys %nonRep_genes_reg)-1;
+  $ntfs = scalar(@nonRepTFs_k) -1;
 
 #  if($report_net){
 
@@ -502,7 +503,6 @@ package main;
 
   # Create the file with all the matrixes to use
   #   retrieve-matrix foreach database foreach TF
-  @nonRepTFs_k = keys %nonRepTFs;
 
   print("\nRetrieving matrices ...");
   foreach my $db (@matfiles_path){
