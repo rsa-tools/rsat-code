@@ -280,7 +280,7 @@ package main;
 
   if($main::databases eq ""){ # default option
     #print("Entered default option of dbs\n");
-    $matfiles_path[0] = "rsat/public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf";
+    $matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf";
     #print($matfiles_path[0]."\n");
   } else {
     if($main::databases eq "all"){ # CODE: falta anadir algo que soporte que meta los nombres de dbs como sea
@@ -814,9 +814,9 @@ sub PrintOptions {
 sub ReadArguments {
 
     my $arg;
-  
+
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
- 
+
     while (scalar(@arguments) ) {
 	$arg = shift (@arguments);
 
@@ -853,16 +853,16 @@ Display full help message.
 	    ## Dry run
 
 =pod
-	    
+
 =item B<-help>
 
 Same as -h.
 
 =cut
-	    
+
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
-	    
+
 	    ##TFs input file
 
 =pod
@@ -874,14 +874,14 @@ File containing a list of TFs to be analysed
 One-column input file with list of TFs in network.
 
 =cut
-	
+
 	}elsif ($arg eq "-tfs") {
 	    $main::infile{TFs} = shift(@arguments);
 
 	    ##Regulatory sequences file
 
 =pod
-	    
+
 =item B<-cre cre_infile>
 
 Mandaroty.
@@ -894,7 +894,7 @@ Each sequence must refer to its regulated-gene on the 4th column.
 	    $main::infile{cres} = shift(@arguments);
 
 	    ##Genome version
-	    
+
 =pod
 
 =item B<-genome genome_version>
@@ -903,7 +903,7 @@ Mandaroty.
 Working genome version.
 
 =cut
-	    
+
 	} elsif ($arg eq "-genome") {
 	    $main::genome = shift(@arguments);
 
@@ -921,7 +921,7 @@ Database(s) to use separated by commas.
 
 =pod
 
-	    
+
 =item B<-net network_infile>
 
 Mandaroty if -report_net is set to 1.
@@ -971,7 +971,7 @@ Prefix for the output files.
 	    ##Output dir
 
 =pod
-	    
+
 =item B<-outdir output_dir>
 
 Output dir
