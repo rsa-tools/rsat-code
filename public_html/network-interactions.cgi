@@ -211,7 +211,7 @@ push @result_files, ("all interactions", $complete_out);
 
 $tmp_dir = &RSAT::util::get_pub_temp();
 
-$parameters .= " -O ".$tmp_dir;
+$parameters .= " -outdir ".$tmp_dir;
 
 #################################################################
 #### execute the command #####
@@ -234,6 +234,7 @@ if (($query->param('output') =~ /display/i) ||
       print "</PRE>";
       print "output_path = ".$output_path."\n";
       print "output_dir = ".$output_dir."\n";
+      print "\n tmp dir = ".$tmp_dir."\n";
 
       close RESULT;
       close MIRROR if ($mirror);
