@@ -179,8 +179,6 @@ package main;
   our $output_dir = "";
   my $basename = "";
 
-  my $dir = getcwd;
-
   # other variables
   my $new_enhancer; # filehandle of filtered bed file
   my @genes_reg = (); # genes regulated
