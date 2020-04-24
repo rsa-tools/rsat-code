@@ -224,6 +224,13 @@ package main;
   my $direct; # filehandle of file with GRN direct interactions (main output)
   my $path = ""; # construction of paths in node
 
+  ## Parameters for the &doit() command
+  $dry = 0;
+  $die_on_error = 1;
+  $job_prefix = "network-interactions";
+  $batch = 0;
+  $main::archive=0;
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -304,7 +311,7 @@ package main;
     }
     close $dbs_file;
   }
-  print("# of paths = ".@matfiles_path."\n");
+  &RSAT::message::Info(" of paths = ".@matfiles_path."\n") if ($main::verbose >= 0 );
 
 
   ################################################################
@@ -323,7 +330,7 @@ package main;
 
   $log = &OpenOutputFile($main::outfile{log});
   print $log "\n# Reading BED file: ".$main::infile{cres}."\n";
-  print ("\n# Reading BED file: ".$main::infile{cres}."\n");
+  &RSAT::message::Info ("Reading BED file: ".$main::infile{cres}."\n") if ($main::verbose >= 0);
 
   while(my $enh_row = <$enhancer>){
     chomp($enh_row);
@@ -369,7 +376,7 @@ package main;
   my ($TF, $TF_dir) = &OpenInputFile($main::infile{TFs});
 
   print $log "\n# Reading TFs list file: ".$main::infile{TFs}."\n";
-  print "\n# Reading TFs list file: ".$main::infile{TFs}."\n";
+  &RSAT::message::Info( "\n# Reading TFs list file: ".$main::infile{TFs}."\n" ) if ($main::verbose >= 0);
 
   while( my $row = <$TF> ){
     next unless ($row =~ /\S/); ## Skip empty rows
@@ -396,71 +403,71 @@ package main;
   }
   #print("# of nonRepTFs = ".%nonRepTFs."\n");
   close $TF;
-
+  
   # notice user about the lack of regulatory seqences
   print $log "\n\tSeems like you haven't reported the regulatory sequences for the following TFs : ".$report_tfs_noRegSeq."\n";
-  print "\n\tSeems like you haven't reported the regulatory sequences for the following TFs : ".$report_tfs_noRegSeq."\n";
+  &RSAT::message::Info("Seems like you haven't reported the regulatory sequences for the following TFs : ".$report_tfs_noRegSeq."\n") if ($main::verbose >= 0);
   if( $report_net){
-    print $log "\tThe program will take into account the rest for further network comparision : ".$report_tfs_RegSeq."\n";
-    print "\tThe program will take into account the rest for further network comparision : ".$report_tfs_RegSeq."\n";
+      print $log "\tThe program will take into account the rest for further network comparision : ".$report_tfs_RegSeq."\n";
+      &RSAT::message::Info("The program will take into account the rest for further network comparision : ".$report_tfs_RegSeq."\n")  if ($main::verbose >= 0);
   }
-
+  
   ## Check input TFs
   @nonRepTFs_k = keys %nonRepTFs;
   &RSAT::error::FatalError("Error: not a single TF was specified on: ".$main::infile{TFs}."\n") unless (scalar(@nonRepTFs_k) > 0);
-
+  
   #############################################################
   # Save input network and create input GRN
   $flag = 0;
   $ngenes = scalar(keys %nonRep_genes_reg)-1;
   $ntfs = scalar(@nonRepTFs_k) -1;
-
-#  if($report_net){
-
-    #initialize matrixes to zeros
-    # input all-genes net
-    #print($val."\n");
-    for $i (0..$ngenes){
+  
+  #  if($report_net){
+  
+  #initialize matrixes to zeros
+  # input all-genes net
+  #print($val."\n");
+  for $i (0..$ngenes){
       for my $j (0..$ngenes){
-        $net_old_allgenes[$i][$j] = 0;
+	  $net_old_allgenes[$i][$j] = 0;
       }
-    }
-    # input only-TFs net
-    for $i (0..$ntfs){
+  }
+  # input only-TFs net
+  for $i (0..$ntfs){
       for my $j (0..$ntfs){
-        $net_old_onlyTFs[$i][$j] = 0;
+	  $net_old_onlyTFs[$i][$j] = 0;
       }
-    }
-
-    $i = 0;
-    # Save input network interactions
-    my ($net, $net_dir) = &OpenInputFile($main::infile{network});
-
-    print $log "\n# Reading input network file: ".$main::infile{network}."\n";
-    print "\n# Reading input network file: ".$main::infile{network}."\n";
-
-    while (my $net_row = <$net>){
+  }
+  
+  $i = 0;
+  # Save input network interactions
+  my ($net, $net_dir) = &OpenInputFile($main::infile{network});
+  
+  print $log "\n# Reading input network file: ".$main::infile{network}."\n";
+  &RSAT::message::Info( "Reading input network file: ".$main::infile{network}."\n") if ($main::verbose >= 0);
+  
+  while (my $net_row = <$net>){
       chomp($net_row);
       next unless ($net_row =~ /\S/); ## Skip empty rows
       next if ($net_row =~ /^;/); ## Skip comment rows
       next if ($net_row =~ /^#/); ## Skip header rows
-
+      
       @fields = split(/\t/, $net_row);
-
+      
       # make list of genes in network with regulatory sequences reported and not reported
       if($nonRep_genes_reg{$fields[0]}){
-        $RegSeq{$fields[0]} = $z++;
-        $flag++;
+	  $RegSeq{$fields[0]} = $z++;
+	  $flag++;
       } else {
-        $noRegSeq{$fields[0]} = $z++;
+	  $noRegSeq{$fields[0]} = $z++;
       }
       if($nonRep_genes_reg{$fields[1]}){
-        $RegSeq{$fields[1]} = $z++;
-        $flag++;
+	  $RegSeq{$fields[1]} = $z++;
+	  $flag++;
       } else {
-        $noRegSeq{$fields[1]} = $z++;
+	  $noRegSeq{$fields[1]} = $z++;
       }
-
+      
       # en el reporte de comparacion de redes solo se tomaran en cuenta las interacciones en las que ambos genes tenian la sec reportada en -cre
       # if both genes have a reported regulatory sequence
       if( $flag == 2 ){
@@ -489,32 +496,34 @@ package main;
       # Tell user which regulatory sequences are lacking and which genes are used in the program
       print $log "\tSeems like you haven't reported the regulatory sequences for the following genes in your input network: ".$noRegSeq_reporting."\n";
       print $log "\tThe program will use the rest of the genes for further network comparison: ".$RegSeq_reporting."\n";
-      print "\tSeems like you haven't reported the regulatory sequences for the following genes in your input network: ".$noRegSeq_reporting."\n";
-      print "\tThe program will use the rest of the genes for further network comparison: ".$RegSeq_reporting."\n";
+      &RSAT::message::Info ("Seems like you haven't reported the regulatory sequences for the following genes in your input network: ".$noRegSeq_reporting."\n") if ($main::verbose >= 0);
+      &RSAT::message::Info ("The program will use the rest of the genes for further network comparison: ".$RegSeq_reporting."\n") if ($main::verbose >= 0);
     }
-
+  
   #} # report_net
   ################################################################
   ####################################### RSAT processing
   print $log "\nInitiating RSAT tools processing ...\n\n";
-  print "\nInitiating RSAT tools processing ...\n\n";
-
+  &RSAT::message::Info ("Initiating RSAT tools processing ...\n\n") if ($main::verbose >= 0);
+  
   # Create the file with all the matrixes to use
   #   retrieve-matrix foreach database foreach TF
-
-  print("\nRetrieving matrices ...");
+  
+  &RSAT::message::Info ("Retrieving matrices ...") if ($main::verbose >= 0) ;
   foreach my $db (@matfiles_path){
     $ACs = &retrieveACsfromTFs($db, @nonRepTFs_k);
-    $cmd = "retrieve-matrix -i ".$db." -id ".$ACs." -o ".$main::outfile{used_matrixes}."\n";
-    &doit($cmd);
+    $cmd = "retrieve-matrix -i ".$db." -id ".$ACs." -o ".$main::outfile{used_matrixes};
+    &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    #system ($cmd);
+    #die "BOOM";
   }
-  print "\tGot matrixes!\n";
+   &RSAT::message::Info ("\tGot matrixes!\n") if ($main::verbose >= 0) ;
 
   # Retrieve sequences of regulatory elements
-  print("\nRetrieving enhancer sequences ...");
+  &RSAT::message::Info ("Retrieving enhancer sequences ...") if ($main::verbose >= 0) ;
   $cmd = "fetch-sequences -i ".$main::outfile{used_regulatory_regions}." -genome ".$main::genome." -v 1 -header_format galaxy -o ".$main::outfile{used_cre_seqs}."";
-  &doit($cmd);
-  print("\tDone!\n");
+  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &RSAT::message::Info ("Done!") if ($main::verbose >= 0);
 
   # Add regulated genes names to fasta of regulatory sequences
   #     Im using 'external_id' not ensembl_id
@@ -535,12 +544,12 @@ package main;
   close $new_fasta;
 
   # Search motifs in all regulatory sequences
-  print("\n matrix-scan running ...");
+  &RSAT::message::Info("matrix-scan running ...") if ($main::verbose >= 0);
   $cmd = "matrix-scan -quick -v 1 -matrix_format transfac -m ".$main::outfile{used_matrixes}." -bginput -markov 1";
   $cmd.= " -i ".$main::outfile{used_cre_seqs_geneheader}." -o ".$main::outfile{used_matrix_scan_results}."";
   $cmd.= " -id_as_name -lth score 5";
-  &doit($cmd);
-  print("\tDone!\n");
+  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &RSAT::message::Info("Done!") if ($main::verbose >= 0) ;
 
   close $log;
 
@@ -561,7 +570,7 @@ package main;
     $deadend[$i] = 0;
   }
 
-  print("Network comparision running ...");
+  &RSAT::message::Info("Network comparision running ...") if ($main::verbose >= 0) ;
   # Create matrixes of networks:
   open($matrixscan_re, "<", $main::outfile{used_matrix_scan_results} ) or die "Cannot open file $!";
 
@@ -594,7 +603,7 @@ package main;
 
   } #  while
   close $matrixscan_re;
-  print("\t Done\n");
+  &RSAT::message::Info("Done") if ($main::verbose >= 0)  ;
 
   ########################################################################
   ################### Comparisons and write-to-file reporting
