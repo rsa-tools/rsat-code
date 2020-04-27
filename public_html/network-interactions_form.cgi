@@ -197,6 +197,19 @@ print '
       </div>
     </div>
   </div>
+   <!-- Directory Name -->
+  <div class="panel panel-danger">
+    <div class="panel-heading"> Directory Name
+      <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Directory Name" data-original-title=""></i>
+    </div>
+
+    <div class="panel-body">
+      <div class="form-group">';
+        print $query->textfield(-id=>'dir_name',-name=>'dir_name', -class=>'form-control',-placeholder=>'Provide a directory name for analysis output ', -required=>'true',
+  			 -default=>$default{dir_name}) .'
+  	   </div>
+  	</div>
+  </div>
  </div>
 
  <!-- ################################################################-->
