@@ -259,7 +259,13 @@ package main;
   }
   &RSAT::util::CheckOutDir($main::output_dir);
 
-
+  ## Test for CGI
+  if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+      (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
+      $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
+  }
+	
+  
   ################################################################
   ## Set output files names
   #my $tmp_dir = &RSAT::util::get_pub_temp();
