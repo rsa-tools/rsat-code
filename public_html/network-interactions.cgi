@@ -45,7 +45,13 @@ $command = $ENV{RSAT}."/perl-scripts/network-interactions";
 #$return_fields = "-return json"; i dont need it
 
 $output_prefix = "network-interactions";
-$output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); $output_dir = &ShortFileName($output_path);
+$output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); 
+
+local $dir_name=$query->param('dir_name');
+$tmp_dir = &RSAT::util::get_pub_temp();
+
+$output_dir = $output_path."/".$dir_name;
+
 
 # initialize list of files to display
 @result_files = ();
@@ -197,6 +203,14 @@ push @result_files, ("Scan result (FT)",$result_file);
 ## Output file
 #$parameters .= " -o ".$output_path."/".$output_prefix;
 
+
+$parameters .= " -outdir ".$output_dir;
+##
+
+$complete_out = $output_path."_complete_direct_interactions.tsv";;
+push @result_files, ("all interactions", $complete_out);
+
+
 ## Add an error-log file for matrix-clustering
 #$err_file = $output_path."/".$output_prefix."_err.txt";
 #$parameters .= " 2> ".$err_file; i dont know what '2>' does
@@ -204,14 +218,6 @@ push @result_files, ("Scan result (FT)",$result_file);
 ## Report the full command before executing
 &ReportWebCommand($command." ".$parameters, $err_file);
 
-##
-
-$complete_out = $output_path."_complete_direct_interactions.tsv";;
-push @result_files, ("all interactions", $complete_out);
-
-$tmp_dir = &RSAT::util::get_pub_temp();
-
-$parameters .= " -outdir ".$tmp_dir;
 
 #################################################################
 #### execute the command #####
