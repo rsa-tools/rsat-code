@@ -162,7 +162,7 @@ package main;
   #our %infile = ();
   #our %outfile = ();
 
-  our $verbose = 0;
+  our $verbose = 7;
   our $in = \*STDIN;
   my $out = \*STDOUT;
 
@@ -514,11 +514,11 @@ package main;
   
   # Create the file with all the matrixes to use
   #   retrieve-matrix foreach database foreach TF
-  
   &RSAT::message::Info ("Retrieving matrices ...") if ($main::verbose >= 0) ;
   foreach my $db (@matfiles_path){
     $ACs = &retrieveACsfromTFs($db, @nonRepTFs_k);
-    $cmd = "retrieve-matrix -i ".$db." -id ".$ACs." -o ".$main::outfile{used_matrixes};
+    my $retrieve_matrix_cmd = &RSAT::server::GetProgramPath("retrieve-matrix");
+    $cmd = "$retrieve_matrix_cmd -i ".$db." -id ".$ACs." -o ".$main::outfile{used_matrixes};
     &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     #system ($cmd);
     #die "BOOM";
@@ -527,7 +527,7 @@ package main;
 
   # Retrieve sequences of regulatory elements
   &RSAT::message::Info ("Retrieving enhancer sequences ...") if ($main::verbose >= 0) ;
-  $cmd = "fetch-sequences -i ".$main::outfile{used_regulatory_regions}." -genome ".$main::genome." -v 1 -header_format galaxy -o ".$main::outfile{used_cre_seqs}."";
+  $cmd = &RSAT::server::GetProgramPath("fetch-sequences") . " -i ".$main::outfile{used_regulatory_regions}." -genome ".$main::genome." -v 1 -header_format galaxy -o ".$main::outfile{used_cre_seqs}."";
   &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &RSAT::message::Info ("Done!") if ($main::verbose >= 0);
 
@@ -550,8 +550,8 @@ package main;
   close $new_fasta;
 
   # Search motifs in all regulatory sequences
-  &RSAT::message::Info("matrix-scan running ...") if ($main::verbose >= 0);
-  $cmd = "matrix-scan -quick -v 1 -matrix_format transfac -m ".$main::outfile{used_matrixes}." -bginput -markov 1";
+ &RSAT::message::Info("matrix-scan running ...") if ($main::verbose >= 0);
+  $cmd = &RSAT::server::GetProgramPath( "matrix-scan")." -quick -v 1 -matrix_format transfac -m ".$main::outfile{used_matrixes}." -bginput -markov 1";
   $cmd.= " -i ".$main::outfile{used_cre_seqs_geneheader}." -o ".$main::outfile{used_matrix_scan_results}."";
   $cmd.= " -id_as_name -lth score 5";
   &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -575,7 +575,6 @@ package main;
     # initialize to zeros
     $deadend[$i] = 0;
   }
-
   &RSAT::message::Info("Network comparision running ...") if ($main::verbose >= 0) ;
   # Create matrixes of networks:
   open($matrixscan_re, "<", $main::outfile{used_matrix_scan_results} ) or die "Cannot open file $!";
