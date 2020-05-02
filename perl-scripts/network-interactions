@@ -177,6 +177,10 @@ package main;
   our $title = "";
   our $output_prefix = "";
   our $output_dir = "";
+  our $seq = 0; # flag variable for input sequences
+  our $matrices = 0; # flag variable for input matrices
+  our $scan = 0; # flag variable for input scan
+
   my $basename = "";
 
   # other variables
@@ -264,8 +268,8 @@ package main;
       (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
       $_ =~ s|$ENV{RSAT}/public_html/|$ENV{rsat_www}|g;
   }
-	
-  
+
+
   ################################################################
   ## Set output files names
   #my $tmp_dir = &RSAT::util::get_pub_temp();
@@ -273,10 +277,12 @@ package main;
   $basename = $main::output_dir."/".$main::output_prefix;
   $main::outfile{used_regulatory_regions} = $basename."network-interactions_used_regulatory_regions_".$date.".bed";
   $main::outfile{log} = $basename."network-interactions_log_".$date.".txt";
-  $main::outfile{used_matrixes} = $basename."network-interactions_used_matrixes_".$date.".tf";
-  $main::outfile{used_cre_seqs} = $basename."network-interactions_used_cre_seqs_".$date.".fa";
-  $main::outfile{used_cre_seqs_geneheader} = $basename."network-interactions_used_cre_seqs_geneheader_".$date.".fa";
-  $main::outfile{used_matrix_scan_results} = $basename."network-interactions_used_matrix-scan_results_".$date.".tsv";
+  $main::outfile{used_matrixes} = $basename."network-interactions_used_matrixes_".$date.".tf" unless ( $main::matrices );
+  unless ( $main::seq ){
+    $main::outfile{used_cre_seqs} = $basename."network-interactions_used_cre_seqs_".$date.".fa";
+    $main::outfile{used_cre_seqs_geneheader} = $basename."network-interactions_used_cre_seqs_geneheader_".$date.".fa";
+  }
+  $main::outfile{used_matrix_scan_results} = $basename."network-interactions_used_matrix-scan_results_".$date.".tsv"  unless( $main::scan );
   $main::outfile{complete_direct_interactions} = $basename."complete_direct_interactions_".$date.".tsv";
   $main::outfile{network_intersection} = $basename."network_intersection_".$date.".tsv";
   $main::outfile{network_rejected_interactions} = $basename."network_rejected_interactions_".$date.".tsv";
@@ -317,7 +323,7 @@ package main;
     }
     close $dbs_file;
   }
-  &RSAT::message::Info(" of paths = ".@matfiles_path."\n") if ($main::verbose >= 0 );
+  &RSAT::message::Info(" Number of paths = ".scalar(@matfiles_path)."\n") if ($main::verbose >= 0 );
 
 
   ################################################################
@@ -409,7 +415,7 @@ package main;
   }
   #print("# of nonRepTFs = ".%nonRepTFs."\n");
   close $TF;
-  
+
   # notice user about the lack of regulatory seqences
   print $log "\n\tSeems like you haven't reported the regulatory sequences for the following TFs : ".$report_tfs_noRegSeq."\n";
   &RSAT::message::Info("Seems like you haven't reported the regulatory sequences for the following TFs : ".$report_tfs_noRegSeq."\n") if ($main::verbose >= 0);
@@ -417,19 +423,19 @@ package main;
       print $log "\tThe program will take into account the rest for further network comparision : ".$report_tfs_RegSeq."\n";
       &RSAT::message::Info("The program will take into account the rest for further network comparision : ".$report_tfs_RegSeq."\n")  if ($main::verbose >= 0);
   }
-  
+
   ## Check input TFs
   @nonRepTFs_k = keys %nonRepTFs;
   &RSAT::error::FatalError("Error: not a single TF was specified on: ".$main::infile{TFs}."\n") unless (scalar(@nonRepTFs_k) > 0);
-  
+
   #############################################################
   # Save input network and create input GRN
   $flag = 0;
   $ngenes = scalar(keys %nonRep_genes_reg)-1;
   $ntfs = scalar(@nonRepTFs_k) -1;
-  
+
   #  if($report_net){
-  
+
   #initialize matrixes to zeros
   # input all-genes net
   #print($val."\n");
@@ -444,22 +450,22 @@ package main;
 	  $net_old_onlyTFs[$i][$j] = 0;
       }
   }
-  
+
   $i = 0;
   # Save input network interactions
   my ($net, $net_dir) = &OpenInputFile($main::infile{network});
-  
+
   print $log "\n# Reading input network file: ".$main::infile{network}."\n";
   &RSAT::message::Info( "Reading input network file: ".$main::infile{network}."\n") if ($main::verbose >= 0);
-  
+
   while (my $net_row = <$net>){
       chomp($net_row);
       next unless ($net_row =~ /\S/); ## Skip empty rows
       next if ($net_row =~ /^;/); ## Skip comment rows
       next if ($net_row =~ /^#/); ## Skip header rows
-      
+
       @fields = split(/\t/, $net_row);
-      
+
       # make list of genes in network with regulatory sequences reported and not reported
       if($nonRep_genes_reg{$fields[0]}){
 	  $RegSeq{$fields[0]} = $z++;
@@ -473,7 +479,7 @@ package main;
       } else {
 	  $noRegSeq{$fields[1]} = $z++;
       }
-      
+
       # en el reporte de comparacion de redes solo se tomaran en cuenta las interacciones en las que ambos genes tenian la sec reportada en -cre
       # if both genes have a reported regulatory sequence
       if( $flag == 2 ){
@@ -505,57 +511,65 @@ package main;
       &RSAT::message::Info ("Seems like you haven't reported the regulatory sequences for the following genes in your input network: ".$noRegSeq_reporting."\n") if ($main::verbose >= 0);
       &RSAT::message::Info ("The program will use the rest of the genes for further network comparison: ".$RegSeq_reporting."\n") if ($main::verbose >= 0);
     }
-  
+
   #} # report_net
   ################################################################
   ####################################### RSAT processing
   print $log "\nInitiating RSAT tools processing ...\n\n";
   &RSAT::message::Info ("Initiating RSAT tools processing ...\n\n") if ($main::verbose >= 0);
-  
-  # Create the file with all the matrixes to use
-  #   retrieve-matrix foreach database foreach TF
-  &RSAT::message::Info ("Retrieving matrices ...") if ($main::verbose >= 0) ;
-  foreach my $db (@matfiles_path){
-    $ACs = &retrieveACsfromTFs($db, @nonRepTFs_k);
-    my $retrieve_matrix_cmd = &RSAT::server::GetProgramPath("retrieve-matrix");
-    $cmd = "$retrieve_matrix_cmd -i ".$db." -id ".$ACs." -o ".$main::outfile{used_matrixes};
-    &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    #system ($cmd);
-    #die "BOOM";
-  }
-   &RSAT::message::Info ("\tGot matrixes!\n") if ($main::verbose >= 0) ;
 
-  # Retrieve sequences of regulatory elements
-  &RSAT::message::Info ("Retrieving enhancer sequences ...") if ($main::verbose >= 0) ;
-  $cmd = &RSAT::server::GetProgramPath("fetch-sequences") . " -i ".$main::outfile{used_regulatory_regions}." -genome ".$main::genome." -v 1 -header_format galaxy -o ".$main::outfile{used_cre_seqs}."";
-  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  &RSAT::message::Info ("Done!") if ($main::verbose >= 0);
+  unless( $main::scan ){ ## unless scan results are provided
 
-  # Add regulated genes names to fasta of regulatory sequences
-  #     Im using 'external_id' not ensembl_id
-  open( $fasta, "<", $main::outfile{used_cre_seqs} ) or die "Cannot open file $!";
-  open( $new_fasta, ">", $main::outfile{used_cre_seqs_geneheader} ) or die "Cannot open file $!";
-
-  $i = 0;
-  while(my $fa_row = <$fasta> ){
-    chomp($fa_row);
-    if($fa_row =~ /^>/){
-      print $new_fasta $fa_row."_*_".$genes_reg[$i++]."\n";# this must be at the identifier line e.g.: >seq1_*_$genes_reg[$i++]
-                                                           #  only so that matrix-scan takes this whole name as seq_id
-    } else {
-      print $new_fasta $fa_row."\n";
+    # Create the file with all the matrixes to use
+    #   retrieve-matrix foreach database foreach TF
+    unless ( $main::matrices ){
+      &RSAT::message::Info ("Retrieving matrices ...") if ($main::verbose >= 0) ;
+      foreach my $db (@matfiles_path){
+        $ACs = &retrieveACsfromTFs($db, @nonRepTFs_k);
+        my $retrieve_matrix_cmd = &RSAT::server::GetProgramPath("retrieve-matrix");
+        $cmd = "$retrieve_matrix_cmd -i ".$db." -id ".$ACs." >> ".$main::outfile{used_matrixes};
+        &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+        #system ($cmd);
+        #die "BOOM";
+      }
+       &RSAT::message::Info ("\tGot matrixes!\n") if ($main::verbose >= 0) ;
     }
-  }
-  close $fasta;
-  close $new_fasta;
 
-  # Search motifs in all regulatory sequences
- &RSAT::message::Info("matrix-scan running ...") if ($main::verbose >= 0);
-  $cmd = &RSAT::server::GetProgramPath( "matrix-scan")." -quick -v 1 -matrix_format transfac -m ".$main::outfile{used_matrixes}." -bginput -markov 1";
-  $cmd.= " -i ".$main::outfile{used_cre_seqs_geneheader}." -o ".$main::outfile{used_matrix_scan_results}."";
-  $cmd.= " -id_as_name -lth score 5";
-  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  &RSAT::message::Info("Done!") if ($main::verbose >= 0) ;
+    # Retrieve sequences of regulatory elements
+    unless( $main::seq ){
+      &RSAT::message::Info ("Retrieving enhancer sequences ...") if ($main::verbose >= 0) ;
+      $cmd = &RSAT::server::GetProgramPath("fetch-sequences") . " -i ".$main::outfile{used_regulatory_regions}." -genome ".$main::genome." -v 1 -header_format galaxy -o ".$main::outfile{used_cre_seqs}."";
+      &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Info ("Done!") if ($main::verbose >= 0);
+
+      # Add regulated genes names to fasta of regulatory sequences
+      #     Im using 'external_id' not ensembl_id
+      open( $fasta, "<", $main::outfile{used_cre_seqs} ) or die "Cannot open file $!";
+      open( $new_fasta, ">", $main::outfile{used_cre_seqs_geneheader} ) or die "Cannot open file $!";
+
+      $i = 0;
+      while(my $fa_row = <$fasta> ){
+        chomp($fa_row);
+        if($fa_row =~ /^>/){
+          print $new_fasta $fa_row."_*_".$genes_reg[$i++]."\n";# this must be at the identifier line e.g.: >seq1_*_$genes_reg[$i++]
+                                                               #  only so that matrix-scan takes this whole name as seq_id
+        } else {
+          print $new_fasta $fa_row."\n";
+        }
+      }
+      close $fasta;
+      close $new_fasta;
+    }
+
+    # Search motifs in all regulatory sequences
+   &RSAT::message::Info("matrix-scan running ...") if ($main::verbose >= 0);
+    $cmd = &RSAT::server::GetProgramPath( "matrix-scan")." -quick -v 1 -matrix_format transfac -m ".$main::outfile{used_matrixes}." -bginput -markov 1";
+    $cmd.= " -i ".$main::outfile{used_cre_seqs_geneheader}." -o ".$main::outfile{used_matrix_scan_results}."";
+    $cmd.= " -id_as_name -lth score 5";
+    &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &RSAT::message::Info("Done!") if ($main::verbose >= 0) ;
+
+  } # unless scan
 
   close $log;
 
@@ -968,6 +982,46 @@ Title displayed on top of the report page.
 	} elsif ($arg eq "-title") {
 	    $main::title = shift(@arguments);
 
+      ## Input sequences
+=pod
+
+=item B<-seq input_sequences>
+
+Fasta file with of regulatory sequences per gene in network.
+Each sequence must refer to its regulated-gene on its header by tag.
+Regulatory sequences of TFs in the network should be incorporated.
+
+=cut
+	} elsif ($arg eq "-seq") {
+	    $main::outfile{used_cre_seqs_geneheader} = shift(@arguments);
+      $main::seq = 1;
+
+	    ## Input matrices
+=pod
+
+=item B<-m matrices-file>
+
+File of matrices in transfac fomat including the TF name on the
+ID field.
+
+=cut
+	} elsif ($arg eq "-m") {
+	    $main::outfile{used_matrixes} = shift(@arguments);
+      $main::matrices = 1;
+
+	    ## matrix-scan result
+=pod
+
+=item B<-scan matrix-scan-results-file>
+
+File resulting from matrix-scan on regulatory sequences
+for the TFs' matrices of interest.
+
+=cut
+	} elsif ($arg eq "-scan") {
+	    $main::outfile{used_matrix_scan_results} = shift(@arguments);
+      $main::scan = 1;
+
 	    ## Output prefix
 =pod
 
@@ -1079,6 +1133,7 @@ sub retrieveACsfromTFs {
     return $retrievingACs;
 } # sub
 
+## Compose row of interaction with details to write to files
 sub writeRow {
   my ( $TF, $target, $interaction_details ) = @_;
   my ($rowtofile, $pos, $scores, $i);
@@ -1094,6 +1149,7 @@ sub writeRow {
       if ($pos eq ""){
         $pos = $positions."";
         $i=0;
+        # annotate each score assignated to the same positions
         foreach my $s ( keys %{ $interaction_details->{$coordinates}->{$positions} } ) {
           if(!$i){
             $scores = $s."";
@@ -1105,6 +1161,7 @@ sub writeRow {
       } else {
         $pos .= ";".$positions;
         $i=0;
+        # annotate each score assignated to the same positions
         foreach my $s ( keys %{ $interaction_details->{$coordinates}->{$positions} } ) {
           if(!$i){
             $scores .= ";".$s;
@@ -1115,7 +1172,7 @@ sub writeRow {
         } # foreach score
       }
     } # foreach position
-    $rowtofile .= "\t".$pos."\t".$scores."\n";
+    $rowtofile .= "\t".$pos."\t".$scores."\n"; # (in) Positions (with) Scores
   }
 
   return $rowtofile;
