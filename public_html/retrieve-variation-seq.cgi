@@ -54,25 +54,22 @@ $organism = &CheckOrganismAvail($organism);
 if(!($organism eq "")){
 #if (defined($supported_organism{$organism})) {
     $organism_name = $supported_organism{$organism}->{'name'};
+    $assembly = $supported_organism{$organism}->{'genome_assembly'};
 
+    #if ($ENV{plant_server} == 1){
 
-    if ($ENV{plant_server} == 1){
+#	$parameters .= " -source plants ";
+#
+#        @org_name_split=split(/\./,$organism_name) ;
+#        $species=$org_name_split[0] ;
+#        $species=~ s/ /_/ ;
+#        $assembly= $org_name_split[1] ;
 
-	$parameters .= " -source plants ";
-
-        @org_name_split=split(/\./,$organism_name) ;
-        $species=$org_name_split[0] ;
-        $species=~ s/ /_/ ;
-        $assembly= $org_name_split[1] ;
-
-    } else {
-
-
-
-    @org_name_split=split(" ",$organism_name);
-    $species=join("_", $org_name_split[0], $org_name_split[1]);
-    $assembly =$org_name_split[2];
-    }
+#    } else {
+    	@org_name_split = ($assembly ne '<NA>') ? split("_$assembly", $organism) : split("_",$organism);
+	$species = ($assembly ne '<NA>') ? $org_name_split[0] : join("_", $org_name_split[0..1]);
+    	$assembly = ($assembly ne '<NA>') ? $assembly : $org_name_split[2];
+#    }
     
     $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
     $parameters .= " -assembly ".$assembly; ## Assembly is the third part of species ID
