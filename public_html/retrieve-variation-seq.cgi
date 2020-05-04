@@ -49,17 +49,38 @@ $command = "$C_SCRIPTS/retrieve-variation-seq";
 
 ## Define species
 $organism = $query->param('organism');
-
-
-## JvH: I don't understand this : if no organism has been specified, the Web site should complain
-if ($organism eq "") {
-  $organism = $query->param('organism_bg');
-}
-
+if($organism eq ""){ $organism = $query->param('organism_bg')};
 $organism = &CheckOrganismAvail($organism);
 if(!($organism eq "")){
 #if (defined($supported_organism{$organism})) {
-	$parameters .= " -org ".$organism; 
+    $organism_name = $supported_organism{$organism}->{'name'};
+    $assembly = $supported_organism{$organism}->{'genome_assembly'};
+
+    #if ($ENV{plant_server} == 1){
+
+#	$parameters .= " -source plants ";
+#
+#        @org_name_split=split(/\./,$organism_name) ;
+#        $species=$org_name_split[0] ;
+#        $species=~ s/ /_/ ;
+#        $assembly= $org_name_split[1] ;
+
+#    } else {
+    	@org_name_split = ($assembly ne '<NA>') ? split("_$assembly", $organism) : split("_",$organism);
+	$species = ($assembly ne '<NA>') ? $org_name_split[0] : join("_", $org_name_split[0..1]);
+    	$assembly = ($assembly ne '<NA>') ? $assembly : $org_name_split[2];
+#    }
+    
+    $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
+    $parameters .= " -assembly ".$assembly; ## Assembly is the third part of species ID
+    if (scalar (@org_name_split)>=4){
+	if (scalar (@org_name_split)>4){
+	    $species_suffix=join("_",@org_name_split[3..$#org_name_split]);
+	}else {
+	    $species_suffix=$org_name_split[3];
+	}
+	$parameters .= " -species_suffix ".$species_suffix; ## 
+    }
 } else {
     &cgiError("Organism '".$query->param('organism')."' is not supported on this web site.");
 }
