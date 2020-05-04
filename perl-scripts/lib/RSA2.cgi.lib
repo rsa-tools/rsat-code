@@ -123,13 +123,13 @@ sub PrintOrthoSelectionSection {
 #      next unless (/\S/) ; # skip empty rows
 #      next if (/^;/); # skip comment lines
 #      next if (/^\#/); # Skip header line
-#      
+#
 #      my @split_line = split(/\t/, $_);
 #      my $org = $split_line[0];
-#      my $taxa = $split_line[1];	  
-#      
+#      my $taxa = $split_line[1];
+#
 #      if ($org) {
-#	
+#
 ##	      if (defined($supported_organism{$org})) {## This control seems
 ##	      not to work, probably because the library is read before the
 ##	      list of supported organisms.
@@ -142,7 +142,7 @@ sub PrintOrthoSelectionSection {
 #  } else {
 #    &RSAT::error::FatalError("Missing file", $fp_org_file);
 #  }
-  
+
 
   ## Choice of the organism
   print "<b>Query </b>";
@@ -366,7 +366,7 @@ sub RSA_header {
     -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css","css/font-awesome.min.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
-    
+
     if($css_body_class eq "results"){
         print "<style>#page-content-wrapper{
                     overflow: auto !important;
@@ -632,7 +632,7 @@ sub SequenceChoice {
 							   "tab",
 							   'multi'],
 						 -default=>$sequence_format);
-    
+
     ## Text area to copy-paste the sequence
     $sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
     $sequenceChoiceString .=  $query->textarea(-id=>'sequence',
@@ -1031,6 +1031,40 @@ sub OrganismPopUpSelectable {
 
 
 ################################################################
+## Generate a pop-up menu for selection of UCSC's genome
+sub UCSCGenomePopUpSelectable {
+  my ($name, $id) = @_;
+  my $popup = "";
+  my @cols = ();
+  my $tmp_dir = &RSAT::util::get_pub_temp();
+
+  ## Prepare select table
+  $popup .= "<select name='".$name."' id='".$id."' > ";
+  $popup .= "<option value = 'none'> UCSC genome </option>\n";
+
+  ## Run supported-organisms-ucsc to obtain list
+  my $cmd = &RSAT::server::GetProgramPath("supported-organisms-ucsc")." | sort > ".$tmp_dir."/genomes-ucsc.tsv";
+  &doit($cmd);
+  my ($genomes , $genomes_dir) = &OpenInputFile($tmp_dir."/genomes-ucsc.tsv");
+
+  while($row = <$genomes>){
+    next unless ($row =~ /\S/); ## Skip empty rows
+    next if ($row =~ /^;/); ## Skip comment rows
+    next if ($row =~ /^#/); ## Skip header rows
+    chomp($row);
+    @cols = split(/\t/, $row);
+
+    $popup .= "<option value = '".$cols[0]."'> ".$cols[0]." - ".$cols[1]." </option>\n";
+  }
+  $popup .= "</select>";
+
+  close $genomes;
+
+  return $popup;
+}
+
+
+################################################################
 ## Generate a scrolling list allowing users to select multiple
 ## organisms for get-orthologs-compara.
 sub OrganismScrollingListCompara {
@@ -1106,7 +1140,7 @@ sub OrganismPopUpCompara{
 #           supported => infer: if this pop-up is displayed for the relevant organisms for operon inference (ex. infer-operons)
 sub OrganismPopUpString{
     my (%args) = @_;
-   
+
     my $supported = $args{'supported'};
     my $supported_param = "?get=json";
     if($supported ne ""){
@@ -1119,10 +1153,10 @@ sub OrganismPopUpString{
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
     my $popupid_name = ($bg_org == 1) ? "organism_bg_name" : "organism_name";
     my $tip = ($bg_org == 1) ? "tip_bg" : "tip";
-    
+
     my $organismPopup = "<div class='ui-widget' style='display:inline'>";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
-    
+
     if($default{organism} ne ""){
         $org_name = $default{organism};
         $org_name =~ s/_/\ /g;
@@ -1143,7 +1177,7 @@ sub OrganismPopUpString{
         $("#' . $popupid_name . '").bind("paste", function(e){
             $("#' . $popupid . '").val("");
         });
-        
+
         $("#'.$popupid_name.'").focusout(function(){
             if(($("#'.$popupid. '").val() == "") && ($("#' . $popupid_name . '").val() != "")){
                 $("#'.$popupid. '").val($("#' . $popupid_name . '").val());
@@ -1152,13 +1186,13 @@ sub OrganismPopUpString{
                 $("#'.$popupid. '").val("");
             }
         });
-        
+
         //$("#' . $popupid_name . '").focusout(function(){
         //    if($("#' . $popupid . '").val() == ""){
         //        $("#' . $popupid_name . '").val("");
         //    }
         //});
-        
+
         $("#' . $popupid_name . '").autocomplete({
 
                 minLength: 2,
@@ -1203,7 +1237,7 @@ sub OrganismPopUpString{
                         return false;
                     }
                 };
-            
+
     });
     </script>';
     if($args{supported}){
@@ -1215,7 +1249,7 @@ sub OrganismPopUpString{
         }
         $organismPopup .=  "<a href='getOrganisms.cgi?get=display&supported=$args{supported}' target='_blank'>  [List of $list]</a>";
     }
-    
+
     else{
         $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
     }
@@ -1327,7 +1361,7 @@ sub get_taxons_web{
     require RSAT::Tree;
     my $tree = new RSAT::Tree();
     $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
-    
+
     my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
     if (scalar(@taxa) == 0) {
         return ("");
@@ -1342,7 +1376,7 @@ sub get_taxons_web{
 sub TaxonPopUpString {
   my ($node_type) =  @_;
   $node_type = "node" unless ($node_type);
-  
+
   my $taxonomyPopup = "";
   if ($node_type eq "all") {
     $taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
@@ -1369,7 +1403,7 @@ sub TaxonPopUpString {
         $("#taxon_name").bind("paste", function(e){
             $("#taxon").val("");
         });
-        
+
         $("#taxon_name").focusout(function(){
             if(($("#taxon").val() == "") && ($("#taxon_name").val() != "")){
                 $("#taxon").val($("#taxon_name").val());
@@ -1383,7 +1417,7 @@ sub TaxonPopUpString {
         //        $("#taxon_name").val("");
         //    }
         //});
-        
+
         $("#taxon_name").autocomplete({
         minLength: 2,
         source: "getOrganisms.cgi?get=json&taxon=yes&nodetype='.$node_type.'",
@@ -1406,7 +1440,7 @@ sub TaxonPopUpString {
                         ind = str.indexOf(ps[i]) + ps[i].length;
                         ind1 = str.indexOf(ps[i+1]);
                         res += "<font color=\"blue\">" + ps[i] + "</font>" + str.substring(ind, ind1);
-                        
+
                     }
                     ind = str.indexOf(ps[ps.length - 3]) + ps[ps.length-3].length;
                     res += "<font color=\"blue\">" + ps[ps.length - 3] + "</font>" + str.substring(ind);
@@ -1418,7 +1452,7 @@ sub TaxonPopUpString {
                 }
                 var reg = new RegExp(re , "i", "m");
                 var t = item.label.replace(reg, replacer);
-                
+
                 document.getElementById("tip-taxon").style.display = "none";
                 return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
             }else{
@@ -1427,9 +1461,9 @@ sub TaxonPopUpString {
                 return false;
             }
         };
-        
+
         $("#taxon_name").attr("autocomplete", "on");
-        
+
     });
     </script>';
     $taxonomyPopup .=  "<a href='supported-taxonomy.cgi' target='_blank'>  [List of taxonomy]</a>";
@@ -1443,16 +1477,16 @@ sub TaxonPopUpString_old {
     require RSAT::Tree;
     my $tree = new RSAT::Tree();
     $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
-    
+
     my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
-    
+
     if (scalar(@taxa) == 0) {
         return ("");
         #    return ("No available taxonomic information.");
     }
     push @taxa, $tree->get_node_descendents_names("Fungi",undef,$node_type);
     @taxa = sort @taxa;
-    
+
     my $taxonomyPopup = "";
     if ($node_type eq "all") {
         $taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
@@ -1471,14 +1505,14 @@ sub TaxonPopUpString_old {
         }
     }
     $taxonomyPopup .=  "</select>";
-    
+
     ## NOT SUPPORTED YET: TO BE ADDED TO get-orghologs, footprint-discovery, footprint-scan
     # $taxonomyPopup .=  "&nbsp;"x5;
     # $taxonomyPopup .=  "<B>Taxonomic depth</B>&nbsp;";
     # $taxonomyPopup .= $query->popup_menu(-name=>'depth',
     # 				       -Values=>[0,1,2,3,4,5],
     # 				       -default=>$default{depth}||4);
-    
+
     $taxonomyPopup .=  "<BR>\n";
     return $taxonomyPopup;
 }
@@ -1502,7 +1536,7 @@ sub SeqBoxMQ {
       print "<br>";
 
       print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
-      print $query->popup_menu(-name=>'permutation'.$seq_num, 
+      print $query->popup_menu(-name=>'permutation'.$seq_num,
 			       -id=>'permutation'.$seq_num,
 			       -Values=>[0..5],
 			       -default=>$default{perm});
@@ -1600,7 +1634,7 @@ sub GetMatrix {
 			   -name=>'matrix_format',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
-  
+
 
   ## Display option fo use consensus as matrix name
   if ($args{consensus}) {
@@ -1636,7 +1670,7 @@ sub GetMatrix {
         print "<br/><br/>";
         &MotifSelection('ids' => 1);
     }
-    
+
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
     #### pseudo-counts
@@ -1663,7 +1697,7 @@ sub GetFirstMatrix {
     print "<B>", $title, "</B>\n";
     print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
     print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
-    
+
     my %supported_input_format = (
 				'alignace'=> 1,
 				'assembly'=>1,
@@ -1696,33 +1730,33 @@ sub GetFirstMatrix {
     my @supported_input_formats = sort(keys( %supported_input_format));
     #  my $supported_input_formats = join ",", @supported_input_formats;
     #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
-    
+
     ## Matrix format
     print $query->popup_menu(-id=>'matrix_format1',
 			     -name=>'matrix_format1',
 			     -Values=>[@supported_input_formats],
 			     -default=>$default{matrix_format});
-    
-    
+
+
     ## Display option fo use consensus as matrix name
     if ($args{consensus}) {
         print $query->checkbox(-id=>'consensus_as_name', -name=>'consensus_as_name',
         -checked=>$default{consensus_as_name},
         -label=>' use motif consensus as matrix name ');
     }
-    
+
     ## Text area to enter the matrix
     print "<BR>\n";
     print  "Input motifs as text<br/>" if ($db_choice);
     print "<div>";
-    
-    
+
+
     print $query->textarea(-id=>'matrix1',
     -name=>'matrix1',
 			 -default=>$default{matrix},
 			 -rows=>4,
 			 -columns=>60);
-    
+
     ## Option to upload the matrix file from the client machine
     print "<BR>\n";
     print  "Upload motifs file<br/>" if ($db_choice);
@@ -1731,15 +1765,15 @@ sub GetFirstMatrix {
     -default=>'',
     -size=>45,
     -maxlength=>200);
-    
+
     ## Propose help to find matrices
     unless ($args{nowhere}) {
         print "<br/><br/>";
         &MotifSelection('ids' => 1);
     }
     #print "<BR>\n";
-    
-    
+
+
     ## Display additional options: pseudo-count and pseudo-count distribution
     unless ($args{no_pseudo}) {
         #### pseudo-counts
@@ -1811,7 +1845,7 @@ print '<div class="form-inline"> <div class="form-group">\n';
 			   -name=>'matrix_format',
 			   -Values=>[@supported_input_formats], -class=>'form-control',
 			   -default=>$default{matrix_format});
-  
+
 
   ## Display option fo use consensus as matrix name
   if ($args{consensus}) {
@@ -1848,7 +1882,7 @@ print '</div>';
     print "<br/><br/>";
     &MotifSelection('ids' => 1);
   }
-  
+
     print "<BR></div>\n";
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
@@ -1918,9 +1952,9 @@ sub MultiGetMatrix_bootstrap {
 
   print "<label for='matrix_format".$mat_num."'>", $title, "</label>\n";
   print "<A class='badge badge-primary iframe' HREF='help.convert-matrix.html#io_format' >Info</a>";
-  
+
   print '';
-  
+
   #### matrix format
   print $query->popup_menu(-id=>'matrix_format'.$mat_num,
     -name=>'matrix_format'.$mat_num,
@@ -1945,7 +1979,7 @@ sub MultiGetMatrix_bootstrap {
    ';
 
   print $query->textarea(-id=>'matrix'.$mat_num,
-			 -name=>'matrix'.$mat_num, 
+			 -name=>'matrix'.$mat_num,
 			 -class=>'form-control',
 			 -placeholder=>'Paste here your matrices, or select a file to upload below ',
 			 -default=>$default{"matrix".$mat_num},
@@ -1953,7 +1987,7 @@ sub MultiGetMatrix_bootstrap {
 			 -columns=>60);
 
   print '</div>';
-  
+
   ## Option to upload the matrix file from the client machine
   print  "Upload motifs file<br/>" if ($db_choice);
   print "<b>Or</b> select a file to upload <BR>\n" unless ($db_choice);
@@ -1962,7 +1996,7 @@ sub MultiGetMatrix_bootstrap {
 			  -size=>45,
 			  -maxlength=>200);
   print "<BR></div>\n";
-  
+
 }
 
 
@@ -1986,7 +2020,7 @@ sub MotifSelection {
     my $select_id = ($args{more} == 1) ? 'db_choice2' : 'db_choice';
     my $select_ids = ($args{more} == 1) ? 'dbs_choice2' : 'dbs_choice';
     print "<table><tr><td style='padding-right:20px'><b>Input</b></td>";
-    
+
     print "<td align='top'>1 - Select a database in list:<br/>";
     print " <select id='$select_ids' name='$select_ids' $multiple style='width:$width'><option></option>";
     ## load the various databases that can be compared against
@@ -1996,7 +2030,7 @@ sub MotifSelection {
     print " <select id='$select_id' name='$select_id' $multiple style='width:$width'><option></option>";
     ## load the various databases that can be compared against
     print '</select>';
-    
+
     print "</td>";
     if($args{ids} == 1){
         print "<td align='top'>";
@@ -2012,7 +2046,7 @@ sub MotifSelection {
         print "</div></div>";
     }
     print "</div>";
-    
+
     print '<div style="clear:both;"></div>';
 }
 
@@ -2546,12 +2580,12 @@ sub GetBackgroundModel {
   if ($params{markov}) {
     print ("<b><a class='iframe' href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
     if ($params{simple}) {
-      print $query->popup_menu(-id=>'markov_order', 
+      print $query->popup_menu(-id=>'markov_order',
 			       -name=>'markov_order',
 			       -Values=>[0..2],
 			       -default=>$default{markov_order});
     } else {
-      print $query->popup_menu(-id=>'markov_order', 
+      print $query->popup_menu(-id=>'markov_order',
 			       -name=>'markov_order',
 			       -Values=>[0..7],
 			       -default=>$default{markov_order});
@@ -2768,13 +2802,13 @@ sub DisplayMatrixDBchoice {
     my $mode = $args{mode} || "checkbox"; ## Display check boxes or radio buttons
     my %supported_choice_mode = ("radio"=>1, "checkbox"=>1, "list"=>1);
     my $supported_choice_modes = join ",", sort keys %supported_choice_mode;
-    
+
     &RSAT::error::FatalError($mode, "Invalid choice mode for &DisplayMatrixDBchoice(). Supported: ".$supported_choice_modes)
     unless ($supported_choice_mode{$mode});
-    
+
     ## Get information about supported motif databases
     my %matrix_db = &RSAT::server::supported_motif_databases_2();
-    
+
     my %colors = (
     'Vertebrates' => 'blue',
     'Non-vertebrate Metazoa' => 'orange',
@@ -2784,7 +2818,7 @@ sub DisplayMatrixDBchoice {
     'Multi-organisms' => 'yellow',
     'RNA binding' => 'coral'
     );
-    
+
     my @multicategory = ();
     my %singlecategory = ();
     ## Display supported motif databases
@@ -2805,7 +2839,7 @@ sub DisplayMatrixDBchoice {
             }
         }
     }
-    
+
     if($mode eq "radio"){
         print "<optgroup label='Multi-categories'>";
         foreach my $key (sort {"\L$a" cmp "\L$b"} @multicategory){
@@ -2820,7 +2854,7 @@ sub DisplayMatrixDBchoice {
             print "</optgroup>";
         }
     }else{
-        
+
         my %matrix_db_cat = ();
         foreach my $key (keys %matrix_db){
             foreach my $db (keys %{$matrix_db{$key}}){
@@ -2829,14 +2863,14 @@ sub DisplayMatrixDBchoice {
                 push @{$matrix_db_cat{$db{category}}}, \%db;
             }
         }
-        
+
         foreach my $key (sort {"\L$a" cmp "\L$b"} (keys %matrix_db_cat)){
             if($key ne ""){
                 print "<h3 style='padding:10px'>$key</h3><div style='padding-left:50px;padding-top:15px'>";
                 foreach my $db (@{$matrix_db_cat{$key}}){
                     my $file = ${$db}{file};
                     my $descr = ${$db}{descr};
-                    
+
                     open (my $fh, "<", $ENV{RSAT}. "/public_html/motif_databases/" . $file);
                     my $nbmotif = 0;
                     while (my $row = <$fh>){
@@ -2848,7 +2882,7 @@ sub DisplayMatrixDBchoice {
                         $descr = "<a target='_blank' href=".${$db}{url}.">".$descr."</a>";
                     }
                     $descr .= " - [$nbmotif motifs] (".${$db}{version}.")";;
-                    
+
                     $descr .= " - [<a href='$ENV{'www-rsat'}/rsat/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]<br/>";
                     print $descr;
                 }
@@ -2871,43 +2905,43 @@ sub DisplayMatrixDBchoice_select2 {
 
     ## Get information about supported motif databases
     my %matrix_db = &RSAT::server::supported_motif_databases_2();
-    
+
     ## declare the variables
     my @values;
     my @labels;
     my @colors;
-    
+
     ## adapt for server-specific motifs
     if ($ENV{group_specificity} eq "Metazoa") {
     	@values = (\%vertebrates, \%metazoa, \%multi_organism);
     	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms','RNA binding');
     	@colors = ('blue', 'orange', 'yellow');
-    
+
     } elsif ($ENV{group_specificity} eq "Fungi") {
-    
+
     @values = (\%fungi, \%multi_organism);
     @labels = ( 'Fungi', 'Multi-organisms','RNA binding');
-    @colors = ( 'purple', 'yellow');  
+    @colors = ( 'purple', 'yellow');
 
  	} elsif ($ENV{group_specificity} eq "Prokaryotes") {
-    
+
     @values = (\%prokaryots, \%multi_organism);
     @labels = ('Prokaryotes', 'Multi-organisms','RNA binding');
-    @colors = ('teal', 'yellow'); 
-    
+    @colors = ('teal', 'yellow');
+
     } elsif ($ENV{group_specificity} eq "Plants") {
-    
+
     @values = ( \%plants, \%multi_organism);
     @labels = ( 'Plants', 'Multi-organisms','RNA binding');
-    @colors = ( 'green', 'yellow'); 
-    
+    @colors = ( 'green', 'yellow');
+
     } else {
-    
+
     @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
     @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms','RNA binding');
-    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow','coral');  
+    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow','coral');
     }
-    
+
     ## Display supported motif databases
     foreach my $db_name (sort(keys (%matrix_db))) {
         my $db_format = $matrix_db{$db_name}->{'format'};
@@ -3783,7 +3817,7 @@ sub MatrixFromPatterns_print_form {
 # 			  -default=>$default{gibbs_iter},
 # 			  -size=>3);
 
-  
+
   ## Max number of matrices
   print "<br>\n";
   print "&nbsp;"x12, "Max pattern assemblies";
@@ -3805,7 +3839,7 @@ sub MatrixFromPatterns_print_form {
 
   # ## Matrix format
   print "&nbsp;"x4, "Matrix clustering&nbsp;\n";
-  print $query->popup_menu(-id=>'clustering', 
+  print $query->popup_menu(-id=>'clustering',
   			   -name=>'clustering',
   			   -Values=>['sig',
   				     'counts',
@@ -3813,7 +3847,7 @@ sub MatrixFromPatterns_print_form {
   				     'none'],
   			   -default=>$default{clustering});
 
-  
+
 }
 
 ################################################################
