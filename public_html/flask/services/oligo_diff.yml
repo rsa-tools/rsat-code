@@ -1,0 +1,61 @@
+descr:
+    Compare oligonucleotide occurrences between two input sequence files ("test" and "control"), and return oligos that are significantly enriched in one of the files respective to the other one.
+---
+parameters:
+  - name: test
+    description: Test sequence file. Both the test and control sequences must be provided in fasta format.
+    type: file
+  - name: ctrl
+    description: Control sequence file.
+    type: file
+  - name: side
+    description: Side of the significance test. In practice, the side is converted into a threshold on the ratio test/control occurrences.
+    type: string
+    choices: test, ctrl, both
+    required: false
+  - name: purge
+    description: Purge input sequences before counting oligonucleotide occurrences.
+    type: boolean
+  - name: nopurge
+    description: Do not purge input sequences before counting oligonucleotide occurrences.
+    type: boolean
+    required: false
+  - name: l
+    description: Oligonucleotide length.
+    type: int
+  - name: 2str
+    description: oligonucleotide occurrences found on both stands are summed.
+    type: boolean
+  - name: 1str
+    description: inactivates the summation of occurrences on both strands.
+    type: boolean
+  - name: noov
+    description: no overlapping.
+    type: boolean
+  - name: ovlp
+    description: Count all occurrences of self-overlapping words.
+    type: boolean
+  - name: lth_occ
+    description: lower threshold.
+    type: float
+  - name: lth_occ_P
+    description: lower threshold.
+    type: float
+  - name: lth_occ_E
+    description: lower threshold.
+    type: float
+  - name: lth_occ_sig
+    description: lower threshold
+    type: float
+  - name: uth_occ
+    description: upper threshold.
+    type: float
+  - name: uth_occ_P
+    description: upper threshold.
+    type: float
+  - name: uth_occ_E
+    description: upper threshold.
+    type: float
+  - name: uth_occ_sig
+    description: upper threshold
+    type: float

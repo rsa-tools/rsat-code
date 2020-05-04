@@ -205,10 +205,27 @@ sub readFromFile {
 	  $prefix .= "_m".$matrix_nb;
 	}
 
-	$matrix->force_attribute("accession", $prefix);
-	$matrix->force_attribute("AC", $prefix);
-	$matrix->force_attribute("name", $prefix);
-	$matrix->force_attribute("id", $prefix);
+	$matrix->force_attribute("accession", $prefix.$matrix->get_attribute("accession"));
+	$matrix->force_attribute("AC", $prefix.$matrix->get_attribute("AC"));
+	$matrix->force_attribute("name", $prefix.$matrix->get_attribute("name"));
+	$matrix->force_attribute("id", $prefix.$matrix->get_attribute("id"));
+
+      }
+
+      ## If a suffix is specified, use it in the name, ID and accession number
+      if ($args{suffix}) {
+	my $suffix = $args{suffix};
+
+	if (scalar(@matrices) > 1) {
+	  $m++;
+	  $suffix .= "_m".$matrix_nb;
+	}
+
+	my $accession = $matrix->get_attribute("AC") || $matrix->get_attribute("accession") || $matrix->get_attribute("id");
+	$matrix->force_attribute("accession", $accession.$suffix);
+	$matrix->force_attribute("AC", $accession.$suffix);
+	$matrix->force_attribute("name", $matrix->get_attribute("name").$suffix);
+	$matrix->force_attribute("id", $matrix->get_attribute("id").$suffix);
 
       }
 

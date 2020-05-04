@@ -10,16 +10,13 @@ parameters:
       description: Sequence length
       type: int
       required: true
-      default: 1000
     - name: n
       description:  Number of sequences
       type: int
       required: true
-      default: 10
     - name: lw
       description:  Line width. A newline character will be inserted in the sequence every lw base.
       type: int
-      default: 70
       required: false
     - name: type
       description: protein, DNA, or other

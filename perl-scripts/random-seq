@@ -28,7 +28,6 @@ package main;
     ## Supported background models
     %supported_bg = (
 	'equi'=>1,
-	'intergenic'=>1,
 	'upstream'=>1,
 	'upstream-noorf'=>1,
 	'protein'=>1,
@@ -359,15 +358,10 @@ sub ReadArguments {
 	&RSAT::error::FatalError("Invalid alphabet specification");
     }
 
-      ### use oligo intergenic frequencies as expected frequencies
-    } elsif ($arg =~ /^-ncf/i) {
-      &Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
-      $background_model = "intergenic";
 
       ### specify a background model for estimating expected frequencies
     } elsif ($arg =~ /^-bg/i) {
       $background_model = shift @arguments;
-      $background_model =~ s/ncf/intergenic/;
       if ($background_model eq "protein") {
 	  $sequence_type = "protein";
       } else {
@@ -591,25 +585,25 @@ OPTIONS
 
 		Supported models:
 		-bg equi
-		    equiprobable residue frequencies (default)
 
-		-bg upstream-noorf
-		    all upstream sequences, preventing overlap with
-		    upstream open reading frames (ORFs). Requires to
-		    speciy a model organism.
+		    Equiprobable residue frequencies (default).
 
 		-bg upstream
-		    all upstream sequences, allowing overlap with
+
+		    All upstream sequences, allowing overlap with
 		    upstream ORFs. Requires to speciy a model
 		    organism.
 
-		-bg intergenic
-		    intergenic frequencies Whole set of intergenic
-		    regions, including upstream and downstream
-		    sequences. Requires to speciy a model organism.
+		-bg upstream-noorf
+
+                    Generally recommended option.
+		    All upstream sequences, preventing overlap with
+		    upstream open reading frames (ORFs). Requires to
+		    speciy a model organism.
 
 		-bg protein
-		    generate random peptidic sequences using a Markov
+
+		    Generate random peptidic sequences using a Markov
 		    chain calibrated on all peptidic sequences of the
 		    selected organism.
 
@@ -679,7 +673,6 @@ random-seq options
 -expfreq	 file containing expected oligomer frequencies
 -type		 protein|DNA|other
 -seed #	         seed for the random generator
--ncf		 (deprecated, use '-bg intergenic' instead)
 -bg		 background model (supported: $supported_bg)
 -org		 organism
 -markov		 markov order (incompatible with -ol)

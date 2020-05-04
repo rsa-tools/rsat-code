@@ -30,51 +30,47 @@ $(function(){
                       });
   
   $("#dbs_choice").change(function(){
-                          db_name = $("#dbs_choice").val();
-                          db_id = $("#db_id");
+                          var db_name = $("#dbs_choice").val();
+                          var db_id = $("#db_id");
                           if(typeof db_id === 'undefined'){
                             db_id = $("#db_id_retrieve");
                           }
                           db_id.val("").change();
-                          $("#db_choice").val("").change();
-                          $("#matrix").val("");
+                          $("#db_choice").select2("data", {id:""});
                           $.ajax({
                                  type: "GET",
                                  url: "getMatrixIds.cgi?dbs_choice=" + db_name + "&mode=db",
-                                 dataType: "json",
-                                 data: {action: "request"},
-                                 success: function(data){
-                                 var res = data.entries;
-                                 var selectopt = "<option></option>";
-                                 for(i = 0; i < res.length; i++){
-                                 selectopt += "<optgroup label=\'" + res[i].category + "\'>";
-                                 for(j = 0; j < res[i].data.length; j++){
-                                 selectopt += "<option value=\'" + res[i].data[j].name + "\' class=\'" + res[i].color + "\'>" + res[i].data[j].descr + "</option>";
-                                 }
-                                 selectopt += "</optgroup>";
-                                 }
-                                 document.getElementById("db_choice").innerHTML = selectopt;
-                                 },
-                                 error: function(){
-                                 alert("Error matrix dbs_choice");
-                                 }
-                                 });
-                          });
+                                 dataType: "json"
+                            }).done(function(data){
+                                         var res = data.entries;
+                                         var selectopt = "<option></option>";
+                                         for(i = 0; i < res.length; i++){
+                                         selectopt += "<optgroup label=\'" + res[i].category + "\'>";
+                                         for(j = 0; j < res[i].data.length; j++){
+                                         selectopt += "<option value=\'" + res[i].data[j].name + "\' class=\'" + res[i].color + "\'>" + res[i].data[j].descr + "</option>";
+                                         }
+                                         selectopt += "</optgroup>";
+                                         }
+                                         document.getElementById("db_choice").innerHTML = selectopt;
+                                });
+                });
   $("#db_choice").change(function(){
                          var db_id = $("#db_id");
                          if(typeof db_id.val() === 'undefined'){
                             db_id = $("#db_id_retrieve");
                          }
-                         db_id.val("").change();
-                         $("#matrix").val("");
+                         
                          $("input[name=db_choice_radio][value=custom_motif_db]").prop("checked",true);
                          
-                         db_name = $("#dbs_choice").val();
-                         collection_name = $("#db_choice").val();
+                         var db_name = $("#dbs_choice").val();
+                         var collection_name = $("#db_choice").val();
                          
                          $("#wait_ids").attr("style","display:block");
                          
-                         $.ajax({
+                         if(typeof db_id.val() !== 'undefined'){
+                            db_id.val("").change();
+                            $("#matrix").val("");
+                            $.ajax({
                                 type: "GET",
                                 url: "getMatrixIds.cgi?dbs_choice=" + db_name + "&db_choice=" + collection_name + "&mode=id",
                                 dataType: "json",
@@ -94,6 +90,9 @@ $(function(){
                                 alert("Error matrix db_choice");
                                 }
                                 });
+                         }else{
+                            $("#wait_ids").attr("style","display:none");
+                         }
                          });
   
 
@@ -141,7 +140,7 @@ $(function(){
                           $("#db_choice").val("").change();
                           db_id = $("#db_id");
                           if(typeof db_id.val() === 'undefined'){
-                          db_id = $("#db_id_retrieve");
+                            db_id = $("#db_id_retrieve");
                           }
                           db_id.val("").change();
                           
@@ -253,13 +252,13 @@ $(function(){
   });
 
 function pipto(f){
-    db_name = $("#dbs_choice").val();
-    collection_name = $("#db_choice").val();
-    db_id = $("#db_id_retrieve").val();
+    var db_name = $("#dbs_choice").val();
+    var collection_name = $("#db_choice").val();
+    var db_id = $("#db_id_retrieve").val();
     if(db_id != null && db_id != ""){
         $.ajax({
                type: "GET",
-               url: "getMatrix.cgi?dbs_choice=" + db_name + "&db_choice=" + collection_name + "&db_id=" + db_id + "&mode=retrievepipe",
+               url: "getMatrixIds.cgi?dbs_choice=" + db_name + "&db_choice=" + collection_name + "&db_id=" + db_id + "&mode=retrievepipe",
                data: {action: "request"},
                success: function(data){
                res = data.split("</format>");
@@ -286,49 +285,3 @@ function pipto(f){
 }
 
 
-function setDemo(){
-    $.ajax({
-           url:setDemo1(),
-           success:function(){
-           $.ajax({
-                  url:setDemo2(),
-                  success:function(){
-                  setDemo3();
-                  }
-                  });
-           
-           }
-           });
-}
-function setDemo1(){
-    $("#dbs_choice").val("Jaspar").change();
-}
-function setDemo2(){
-    $("#db_choice").val("jaspar_core_nonredundant_vertebrates").change();
-    
-}
-function setDemo3(){
-    $("input[name=output][value=display]").prop("checked", true);
-    $("#db_id_retrieve").val(["MA0019_1", "MA0031_1"]).change();
-}
-
-function reset(){
-    $("#dbs_choice").val("").change();
-}
-
-function sendemail(){
-    email = $("#user_email").val();
-    db_name = $("#dbs_choice").val();
-    collection_name = $("#db_choice").val();
-    db_id = $("#db_id_retrieve").val();
-    if(db_id != "" && db_id != null){
-        $.ajax({
-               type: "GET",
-               url:"getMatrixIds.cgi?dbs_chocie=" + db_name + "&db_choice=" + collection_name + "&db_id=" + db_id + "&mode=retrieveemail&user_email=" + email,
-               success: function(data){
-               $("#sendemailmsg").html(data);
-               document.getElementById("sendemailmsg").style.display = "block";
-               }
-               });
-    }
-}

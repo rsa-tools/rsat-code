@@ -137,8 +137,6 @@ use File::Basename;
 package main;
 {
   ## Check that the RSAT paths of the programs required for the script are specified
-  $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
-  $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   ################################################################
   ## Initialise parameters
@@ -306,7 +304,7 @@ package main;
   $outfile{seq_len_distrib} = &OutFileName("seq_stats", ".tab", "seq_len_distrib_all_peaks");
   @seq_len_distrib_files = ($outfile{seq_len_distrib});
   if ($task{seq_len}) {
-    my $cmd = $SCRIPTS."/sequence-lengths";
+    my $cmd =  &RSAT::server::GetProgramPath("sequence-lengths");
     $cmd .= " -i ".$infile{seq};
     $cmd .= " -o ".$outfile{seq_len};
     $cmd .= "; classfreq -v 1";
@@ -390,7 +388,7 @@ package main;
     $outfile{"seq_slice_".$s} = &OutFileName("sequences", ".fasta", $slice_stats[$s]->{id}, "seq");
     if ($task{slices}) {
       my $skip_seq = $first_seq -1;
-      my $cmd = $SCRIPTS."/convert-seq";
+      my $cmd =  &RSAT::server::GetProgramPath("convert-seq");
       $cmd .= " -i ".$infile{seq};
       $cmd .= " -from fasta -to fasta";
       $cmd .= " -dna";
@@ -405,7 +403,7 @@ package main;
     $outfile{"seq_len_distrib_slice_".$s} = &OutFileName("seq_stats", ".tab", "seq_len_distrib_slice_".$s);
     push @seq_len_distrib_files, $outfile{"seq_len_distrib_slice_".$s};
     if ($task{seq_len}) {
-      $cmd = $SCRIPTS."/sequence-lengths";
+      $cmd =  &RSAT::server::GetProgramPath("sequence-lengths");
       $cmd .= " -i ".$outfile{"seq_slice_".$s};
       $cmd .= " | classfreq -v 1";
       $cmd .= " -ci ".$param{seq_len_distrib_ci};
@@ -419,7 +417,8 @@ package main;
   $outfile{seq_len_distrib_compa_plot_png} = &OutFileName("seq_stats", ".png", "seq_len_distrib_comparison");
   $outfile{seq_len_distrib_compa_plot_pdf} = &OutFileName("seq_stats", ".pdf", "seq_len_distrib_comparison");
   if ($task{seq_len}) {
-    $cmd = $SCRIPTS."/compare-scores -v 1";
+    $cmd =  &RSAT::server::GetProgramPath("compare-scores");
+    $cmd .= " -v 1";
     $cmd .= " -ic 3 -numeric -null .";
     $cmd .= " -sc 9";
     $cmd .= " -suppress '.tab'";
@@ -433,7 +432,7 @@ package main;
     ## Generate an XY plot of sequence length distributions
     foreach my $img_format ("png", "pdf") {
       my $last_col = 1 + scalar(@seq_len_distrib_files);
-      $cmd = $SCRIPTS."/XYgraph";
+      $cmd =  &RSAT::server::GetProgramPath("XYgraph");
       $cmd .= " -i ".$outfile{seq_len_distrib_compa};
       $cmd .= " -xsize 800";
       $cmd .= " -ysize 400";
@@ -513,7 +512,8 @@ package main;
     &RSAT::message::TimeWarn("Computing background model") if ($main::verbose >= 1);
 
     ## Compute oligonucleotide frequencies (k = m+1) in input sequence file
-    $cmd = $BIN."/count-words -v 1";
+    $cmd =  &RSAT::server::GetProgramPath("count-words");
+    $cmd .= " -v 1";
     $cmd .= " -i ".$main::infile{seq};
     $cmd .= " -l ".$param{bg_oligo_len};
     $cmd .= " -1str";
@@ -521,16 +521,19 @@ package main;
     &one_command($cmd, 1);
 
     ## Convert background model in INCLUSIVE format for matrix-scan-quick
-    $cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+    $cmd =  &RSAT::server::GetProgramPath("convert-background-model");
+    $cmd .= " -from oligos -to inclusive ";
     $cmd .= " -i ".$main::outfile{bg_model_freq};
     $cmd .= " -o ".$main::outfile{bg_model_inclusive};
 
     ## Convert background model to transition table and draw the heatmap of transition probabilities
-    $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
+    $cmd .= "; ". &RSAT::server::GetProgramPath("convert-background-model");
+    $cmd .= " -from oligos -to transitions ";
     $cmd .= " -i ".$main::outfile{bg_model_freq};
     $cmd .= " -o ".$main::outfile{bg_model_transitions};
     $cmd .= " ; cut -f 1-5,7 ".$main::outfile{bg_model_transitions};
-    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+    $cmd .= " | ". &RSAT::server::GetProgramPath("draw-heatmap");
+    $cmd .= " -min 0 -max 1  -out_format png -col_width 50";
     $cmd .= " -o ".$main::outfile{bg_model_heatmap};
     &one_command($cmd, 1);
 
@@ -542,7 +545,8 @@ package main;
       &RSAT::message::TimeWarn("Computing background model for slice", $s."/".$param{nb_slices}) if ($main::verbose >= 1);
 
       ## Compute oligonucleotide frequencies (k = m+1) in input sequence file
-      $cmd = $BIN."/count-words -v 1";
+      $cmd =  &RSAT::server::GetProgramPath("count-words");
+      $cmd .= " -v 1";
       $cmd .= " -i ".$outfile{"seq_slice_".$s};
       $cmd .= " -l ".$param{bg_oligo_len};
       $cmd .= " -1str";
@@ -550,16 +554,19 @@ package main;
       &one_command($cmd, 1);
 
       ## Convert background model in INCLUSIVE format for matrix-scan-quick
-      $cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+      $cmd =  &RSAT::server::GetProgramPath("convert-background-model");
+      $cmd .= " -from oligos -to inclusive ";
       $cmd .= " -i ".$main::outfile{"bg_model_slice".$s."_freq"};
       $cmd .= " -o ".$main::outfile{"bg_model_slice".$s."_inclusive"};
 
       ## Convert background model to transition table and draw the heatmap of transition probabilities
-      $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
+      $cmd .= "; ". &RSAT::server::GetProgramPath("convert-background-model");
+      $cmd .= " -from oligos -to transitions ";
       $cmd .= " -i ".$main::outfile{"bg_model_slice".$s."_freq"};
       $cmd .= " -o ".$main::outfile{"bg_model_slice".$s."_transitions"};
       $cmd .= " ; cut -f 1-5,7 ".$main::outfile{"bg_model_slice".$s."_transitions"};
-      $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+      $cmd .= " | ". &RSAT::server::GetProgramPath("draw-heatmap");
+      $cmd .= " -min 0 -max 1  -out_format png -col_width 50";
       $cmd .= " -o ".$main::outfile{"bg_model_slice".$s."_heatmap"};
       &one_command($cmd, 1);
     }
@@ -571,7 +578,8 @@ package main;
       &RSAT::message::TimeWarn("Running peak-motifs on slice", $s."/".$param{nb_slices}) if ($main::verbose >= 1);
       $outfile{"peak_motifs_slice".$s} = &OutFileName("discovered_motifs", "", "peak-motifs_slice".$s);
       my $prefix = join ("_", $param{prefix}, $slice_stats[$s]->{id});
-      my $cmd = $SCRIPTS."/peak-motifs -v ".$verbose;
+      my $cmd =  &RSAT::server::GetProgramPath("peak-motifs");
+      $cmd .= " -v ".$verbose;
       $cmd .= " -i ".$outfile{"seq_slice_".$s};
       $cmd .= " -title '".$prefix."'";
       $cmd .= " -prefix '".$prefix."'";
@@ -601,7 +609,7 @@ package main;
 
   if ($task{enrichment}) {
     &RSAT::message::TimeWarn("Running matrix-quality") if ($main::verbose >= 1);
-    my $cmd = $SCRIPTS."/matrix-quality";
+    my $cmd =  &RSAT::server::GetProgramPath("matrix-quality");
     $cmd .= " -v ".$main::verbose;
     $cmd .= " -m ".$infile{ref_motifs};
     $cmd .= " -matrix_format transfac";

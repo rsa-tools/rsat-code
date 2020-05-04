@@ -1,0 +1,84 @@
+descr:
+    Searches all occurrences of a pattern within DNA sequences. The pattern can be entered as a simple nucleotide sequence, but can also include degenerate nucleotide codes, or regular expressions.
+---
+parameters:
+  - name: i
+    description: input sequence file. This file contains the sequences where the pattern(s) will be searched for.
+    type: file
+    required: false
+  - name: mask
+    description: Mask lower or uppercases, respecively, i.e. replace selected case by N characters.
+    type: string
+    choices: upper, lower
+    required: false
+  - name: format
+    description: input sequence format. The accepted formats are fasta, IG, raw, multi, filelist
+    type: string
+    choices: fasta, IG, raw, multi, filelist
+    required: false
+  - name: pl
+    description: name of the file containing the patterns to search .
+    type: file
+    required: false
+  - name: subst
+    description: allow subst substitutions.
+    type: int
+  - name: noIUPAC
+    description: The pattern is considered as a standard regular expression..
+    type: boolean
+    required: false
+  - name: sc
+    description: score column.
+    type: int
+  - name: noid
+    description: do not search pattern identifier in the second column of pattern file.
+    type: boolean
+  - name: noov
+    description: Do not count overlapping matches for self-overlapping patterns.
+    type: boolean
+  - name: 2str
+    description: search matches on both strands (direct and reverse complement)
+    type: boolean
+  - name: 1str
+    description: search matches only on the direct strand.
+    type: boolean
+  - name: R
+    description: search matches only on the reverse complement strand.
+    type: boolean
+  - name: id
+    description: pattern identifier (one word).
+    type: boolean
+  - name: return
+    description: List of fields to return. Multiple fields can be entered separated by commas, or by using iteratively the option.
+    type: string
+  - name: match_format
+    description: format for returning matches (supported - fasta, table)
+    type: string
+    choices: fasta, table
+  - name: th
+    description: Threshold. Return match count only for sequences with greater than or equal number of matches
+    type: int
+  - name: merge
+    description: merge mutually overlapping matches.
+    type: boolean
+  - name: N
+    description: return matching sequences with N flanking nucleotides.
+    type: int
+  - name: NL
+    description: return matching sequences with NL left flanking nucleotides.
+    type: int
+  - name: NR
+    description: return matching sequences with NR right flanking nucleotides.
+    type: int
+  - name: origin
+    description: define origin as the origin for the calculation of positions.
+    type: int
+  - name: window
+    description: Sliding window size.
+    type: int
+  - name: top
+    description: (with sliding window only). only return the top score obtained with the sliding window for each sequence.
+    type: boolean
+  - name: sort
+    description: (with -top only). sort sequences according to their top score
+    type: boolean

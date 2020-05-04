@@ -11,19 +11,14 @@ parameters:
       description: Input file. If no input file is specified, use the i_string option 
       type: file
       required: false
-    - name: i_string
-      description: Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows). E.g. rs554219,rs1542725,rs2981578,rs35054928,rs7948643
-      type: string
-    - name: v
-      description: Verbosity
-      type: int
-      required: false
-      default: 1
     - name: format
       description: Input format. Supported formats = id, varBed, bed
       type: string
       required: false
       default: id
+    - name: org
+      description: organism name
+      type: string
     - name: type
       description: Specify one or several accepted types of variation. Supported types = SNV, insertion, deletion, substitution.
       type: string
@@ -32,7 +27,6 @@ parameters:
       description: Number of the column containing the variation IDs with the input format "id"
       type: int
       required: false
-      default: 1
     - name: release
       description: The Ensembl release number of database (e.g. 84)
       type: int

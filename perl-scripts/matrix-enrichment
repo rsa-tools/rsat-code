@@ -109,9 +109,8 @@ matrix-scan
 
 Calculate background model from input sequence sets.
 
-All given sequence sets will be merged to calculate this background model to keep distributions comparable.
-
-=item B<wish 2>
+All given sequence sets will be merged to calculate this background
+model to keep distributions comparable.
 
 =back
 
@@ -440,7 +439,8 @@ package main;
       my @seq_files=values( %main::seqfile);
       
       my $bg_command = " cat ".join( " " , @seq_files ) . " > ". $all_sequences_file ." ; "; 
-      $bg_command.= "$SCRIPTS/oligo-analysis -v 1 -quick -2str -i  " .$all_sequences_file;
+      $bg_command.=  &RSAT::server::GetProgramPath("oligo-analysis");
+      $bg_command .= " -v 1 -quick -2str -i  " .$all_sequences_file;
       $bg_command.= " -l ".$main::markov ." -noov ";
       $bg_command.= " | convert-background-model -from oligos -to inclusive ";
       $bg_command.= " -o ".$new_bg_file;
@@ -471,7 +471,7 @@ package main;
       
       
       ## Convert BG file in inclusive format for matrix-scan-quick
-      my $bg_convert_cmd = $SCRIPTS."/convert-background-model";
+      my $bg_convert_cmd =  &RSAT::server::GetProgramPath("convert-background-model");
       $bg_convert_cmd .= " -i ".$infile{bg_file};
       $bg_convert_cmd .= " -from ".$bg_format;
       $bg_convert_cmd .= " -to inclusive";
@@ -525,7 +525,8 @@ package main;
 	  $main::outfile{motifs_transfac}=$dir{output}."/".$short_prefix."_transfac_motifs.tf";
 	  
 	  &RSAT::message::TimeWarn( "Converting input matrices to Transfac format, outputfile: ",  $main::outfile{motifs_transfac} ) if ($main::verbose >= 3);
-	  $convert_matrix_cmd = $SCRIPTS."/convert-matrix -v 0";
+	  $convert_matrix_cmd =  &RSAT::server::GetProgramPath("convert-matrix");
+	  $convert_matrix_cmd .= " -v 0";
 	  $convert_matrix_cmd .= " -i ".$main::infile{motifs};
 	  $convert_matrix_cmd .= " -from ".$matrix_format;
 	  $convert_matrix_cmd .= " -to transfac ";
@@ -548,7 +549,8 @@ package main;
       &RSAT::message::TimeWarn("Selecting top and skippped motifs Transfac format") if ($main::verbose >= 3);
       $main::outfile{motifs_transfac_top_skip}=$dir{output}."/".$short_prefix."_transfac_motifs_topskip_selected_motifs.tf";
       
-      $convert_matrix_cmd = $SCRIPTS."/convert-matrix -v 0";
+      $convert_matrix_cmd =  &RSAT::server::GetProgramPath("convert-matrix");
+      $convert_matrix_cmd .= " -v 0";
       $convert_matrix_cmd .= " -i ". $main::outfile{motifs_transfac};
       $convert_matrix_cmd .= " -from transfac ";
       $convert_matrix_cmd .= " -to transfac "; 
@@ -1432,7 +1434,7 @@ sub ProcessTopSeq {
 
     my $aux_var_top_seq=$dir{output}."/".$short_prefix."_".$seq_type."_selected_topskip_sequences.fas";
     
-    $convert_seq_cmd = $SCRIPTS."/convert-seq";
+    $convert_seq_cmd =  &RSAT::server::GetProgramPath("convert-seq");
     $convert_seq_cmd .= " -i ".$seq_file ;
     $convert_seq_cmd .= " -from ".$main::seq_format." -to ".$main::seq_format;
     $convert_seq_cmd .= " -top ".$top_sequences if($top_sequences_flag == 1);

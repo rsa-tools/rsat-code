@@ -146,7 +146,6 @@ if ($query->param('bg_method') eq 'background') {
   %supported_background = (
 			   "upstream"=>1,
 			   "upstream-noorf"=>1,
-#			   "intergenic"=>1
 			  );
   my $background = $query->param("background");
   unless ($supported_background{$background}) {
@@ -163,7 +162,7 @@ if ($query->param('bg_method') eq 'background') {
     #unless (%{$supported_organism{$organism}}) {
     $organism = &CheckOrganismAvail($organism);
     unless (!($organism eq "")){
-        &cgiError("Organism ". $query->param('organism'). " is not supported on this site");
+        &cgiError("Organism ". $query->param('organism_bg'). " is not supported on this site");
     }
     $freq_option .= " -org $organism";
   }

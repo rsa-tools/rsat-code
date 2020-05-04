@@ -119,32 +119,44 @@ package main;
 
   our %infile = ();
   our %outfile = ();
+  $outfile{id} = "merged";
+  $outfile{name} = "merged";
+  $outfile{version} = "none";
+
 
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
 
 
-  ## operator
+  ## Operator
   $operator = "sum";
   local %supported_operator = ("mean"=>1, "sum"=>1, "diff"=>1);
   local $supported_operators = join ",", sort keys %supported_operator;
 
-  ## input formats
+  ## Input formats
 #  local %supported_input_format = %RSAT::MatrixReader::supported_input_format;
   local %supported_input_format = &RSAT::MatrixReader::ListInputMatrixFormats();
   local $supported_input_formats = join ",", sort keys %supported_input_format;
 
-  ## output formats
+  ## Output formats
   local %supported_output_format = %RSAT::matrix::supported_output_format;
   local $supported_output_formats = join ",", sort keys %supported_output_format;
 
-  ## initialize some attributes (can be over-written with the option -merged_attr)
+  ## Initialize some attributes (can be over-written with the option -merged_attr)
   local %merged_attributes = ();
 
-  $outfile{id} = "merged";
-  $outfile{name} = "merged";
-  $outfile{version} = "none";
+  ## Parameters for the &doit() command
+  our $dry = 0;
+  our $die_on_error = 1;
+  our $job_prefix = "matrix-from-patterns";
+  our $batch = 0;
+  
+  ## Parameters for rescan-matrix
+  our $seq = "";
+  our $iterations = 1;
+  our $scan_parameters = "";
+
 
   ################################################################
   ## Read argument values
@@ -166,9 +178,10 @@ package main;
     $merged_attributes{"identifier"} =  $merged_attributes{"id"};
   }
 
-  ################################################################
-  ## Open output stream
-  $out = &OpenOutputFile($outfile{output});
+  ## Option -seq requires an output file name
+  if (($infile{sequences}) && (!$outfile{output})) {
+    &RSAT::error::FatalError("Option -seq requires to specify an output file (option -o).");
+  }
 
   ################################################################
   ## Read input
@@ -205,9 +218,6 @@ package main;
   }
 
 
-  ################################################################
-  ## Print verbose
-  &Verbose() if ($main::verbose >= 1);
 
   ################################################################
   ## Execute the command
@@ -220,50 +230,136 @@ package main;
   $merged_matrix->setAlphabet_lc(@alphabet);
 
   
-  ## Set divider to 1 for matrix sums, and to the nb of matrices for
-  ## the mean.
-  my $divider = 1;
-  if ($operator eq "mean") {
-    $divider *= $nb_matrices;
-  }
-
   @merged_counts = ();
   if ($operator eq "diff") {
-    &RSAT::error::FatalError("Matrix difference is not supported yet, please contact Jaime Castro to upgrade the program.");
-  } else { 
-
-    foreach my $matrix (@matrices) {
-      ## count matrix
-      my @counts = $matrix->getMatrix();
-      my $ncol = $matrix->ncol();
-      my $nrow = $matrix->nrow();
-      
-      for my $c (0..($ncol-1)) {
-	my $col_sum = 0;
-	for my $r (0..($nrow-1)) {
-	  $merged_counts[$c][$r] += $counts[$c][$r]/$divider;
-	}
+      if (scalar(@matrices) != 2) {
+	  &RSAT::error::FatalError("Matrix difference is only valid with input files containing exactly 2 matrices.");
       }
-    }
+        
+      ## First count matrix
+      my $matrix1 = $matrices[0];
+      my @counts1 = $matrix1->getMatrix();
+      my $ncol1 = $matrix1->ncol();
+      my $nrow1 = $matrix1->nrow();
+  
+      ## Second count matrix
+      my $matrix2 = $matrices[1];
+      my @counts2 = $matrix2->getMatrix();
+      my $ncol2 = $matrix2->ncol();
+      my $nrow2 = $matrix2->nrow();
+
+      ## Check dimensions
+      if ($ncol1 != $ncol2) {
+	  &RSAT::error::FatalError("The numbers of columns differs between matrix 1 (${ncol1}) and matrix 2 (${ncol2}).");
+      }    
+      if ($nrow1 != $nrow2) {
+	  &RSAT::error::FatalError("The numbers of rows differs between matrix 1 (${nrow1}) and matrix 2 (${nrow2}).");
+      }
+
+      ## Compute the difference
+      for my $c (0..($ncol1-1)) {
+	  for my $r (0..($nrow1-1)) {
+#	    &RSAT::message::Debug("Merging", "c=".$c, "r=".$r, 
+#				  "counts1=".$counts1[$c][$r]) if ($main::verbose >= 10);
+	    $merged_counts[$c][$r] += $counts2[$c][$r] - $counts1[$c][$r];
+	  }
+      }
+      
+#       print $matrix1->to_tab();
+#       print $matrix2->to_tab();
+# #      print $merged_counts->to_tab();
+      
+#       die "HELLO\n", join(";", join("\n", @counts1)), "\n";
+  } else {
+      
+      ## Set divider to 1 for matrix sums, and to the nb of matrices for
+      ## the mean.
+      my $divider = 1;
+      if ($operator eq "mean") {
+	  $divider *= $nb_matrices;
+      }
+      
+      foreach my $matrix (@matrices) {
+	  ## count matrix
+	  my @counts = $matrix->getMatrix();
+	  my $ncol = $matrix->ncol();
+	  my $nrow = $matrix->nrow();
+	  
+	  for my $c (0..($ncol-1)) {
+	      for my $r (0..($nrow-1)) {
+		  $merged_counts[$c][$r] += $counts[$c][$r]/$divider;
+	      }
+	  }
+      }
   }
 
   $merged_matrix->setMatrix($alphabet_size, $matrix_width, @merged_counts);
   $merged_matrix->calcConsensus();  
   my $consensus = $merged_matrix->get_attribute("consensus.IUPAC");
   $merged_matrix->force_attribute("description", $consensus);
-  $merged_matrix->force_attribute("ac", "Nunca las cosas se parecen tanto");
+#  $merged_matrix->force_attribute("ac", "Nunca las cosas se parecen tanto");
   #$merged_matrix->set_attribute("version", "Nunca las cosas se parecen tanto");
 
 
   
   ################################################################
   ## Output
+
+  if ($infile{sequences}) {
+
+    ################################################################
+    ## Define the prefix based on the output file
+    $prefix{output} = $outfile{output};
+    $prefix{output} =~ s|\.\w+$||;
+    $prefix{output} .= "_rescanned";
+#    $outfile{rescanned_matrices} = $prefix{output}.".".$output_format;
+#    $outfile{rescanned_sites} = $prefix{output}.".".$output_format;
+
+    $outfile{merged_counts} = $prefix{output}."_merged_counts.".$output_format;
+
+    ################################################################
+    ## Open output stream in a separate log file for the verbosity
+    $out = &OpenOutputFile($outfile{merged_counts});
+  } else {
+    ################################################################
+    ## Open output stream
+    $out = &OpenOutputFile($outfile{output});
+  }
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose >= 1);
+  
+  ## Export the merged matrix
   print $out $merged_matrix->toString(type=>"counts",format=>$output_format, "decimals"=>2);
 
+  &close_merged_counts();
 
   ################################################################
-  ## Report execution time and close output stream
-  &close_and_quit();
+  ## If a sequence file has been specified, scan them with the merged
+  ## matrix in order to build a secondary matrix.
+  if ($infile{sequences}) {
+    
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose >= 1);
+
+    my $rescan_cmd = &RSAT::server::GetProgramPath("rescan-matrix");
+    $rescan_cmd .= " -v 0";
+    $rescan_cmd .= " -seq ".$infile{sequences};
+    $rescan_cmd .= " -seq_format fasta";
+    $rescan_cmd .= " -m ".$outfile{merged_counts};
+    $rescan_cmd .= " -matrix_format ".$output_format;
+    $rescan_cmd .= " -iterations ".$iterations;
+    if ($scan_parameters) {
+      $rescan_cmd .= " -scan_param '".$scan_parameters."'";
+    }
+    $rescan_cmd .= " -o ".$outfile{output};
+    &doit($rescan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
+
+  }
+
+  ## Exit
+  exit(0);
 }
 
 ################################################################
@@ -273,7 +369,7 @@ package main;
 
 ################################################################
 ## Close output file and quit
-sub close_and_quit {
+sub close_merged_counts {
 
   ## Report execution time
   my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
@@ -285,9 +381,6 @@ sub close_and_quit {
     &RSAT::message::TimeWarn("Output file", $outfile{output}) if ($main::verbose >= 2);
   }
 
-  ## CLOSE OTHER FILES HERE IF REQUIRED
-
-  exit(0);
 }
 
 
@@ -437,6 +530,45 @@ contains only two matrices.
 
 
 =pod
+=item B<-seq sequence_file>
+
+If specified, the merged matrix (computed with sum or mean) and the
+sequences are passed to I<rescan-matrix> in order to build a secondary
+matrix from binding sites foundin the input sequence.
+
+A typical application is the merging of matrices obtained by different
+motif discovery algorithms in ChIP-seq peak sequences. This enables to
+base the merged matrix on the actual (predicted) sites from the
+sequence rather than summing counts which are liely to result from
+largely overlapping colections of sites. .
+
+
+=cut
+
+    } elsif ($arg eq "-seq") {
+      $main::infile{sequences} = shift(@arguments);
+
+=item B<-iterations #>
+
+Maximal number of iterations for rescan-matrix (useful only if
+combined with -seq option).
+
+=cut
+    } elsif ($arg eq "-iterations") {
+	$main::iterations = shift(@arguments);
+	if (!&IsNatural($main::iterations) || ($main::iterations < 1)) {
+	    &RSAT::error::FatalError($main::iteration, "Invalid value for option -iterations. Should be a Natural number >= 1ti. ");
+	}
+
+=item B<-scan_param scanning_parameters>
+
+Parameters to scan the sites. The argument is passed to rescan-matrix.
+
+=cut
+    } elsif ($arg eq "-scan_param") {
+	$main::scan_parameters = shift(@arguments);
+
+=pod
 
 =item	B<-o outputfile>
 
@@ -446,7 +578,6 @@ allows to use the command within a pipe.
 =cut
     } elsif ($arg eq "-o") {
       $outfile{output} = shift(@arguments);
-
 
 =pod
 

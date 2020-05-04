@@ -249,9 +249,10 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  our $species = '';
-  our $ensembl_release = "";
-  our $assembly = "";
+  our $org = '';
+    #our $species = '';
+    #our $ensembl_release = "";
+    #our $assembly = "";
 
   our $col = 1;
   our $validated = 0 ;
@@ -298,8 +299,8 @@ package main;
   ## Check argument values
 
   ## Species and assembly or ensembl version have to be specified
-  &RSAT::error::FatalError("No species specified. Use -species") unless ($species);
-  &RSAT::error::FatalError("No assembly specified. Use -assembly") unless ($assembly);
+  &RSAT::error::FatalError("No organism specified. Use -org") unless ($org);
+    #&RSAT::error::FatalError("No assembly specified. Use -assembly") unless ($assembly);
 
   ## Check input format and existence of the input file
   if ($main::infile{'input'}) {
@@ -309,16 +310,18 @@ package main;
 
   ## Check directories for genome and variations for this species
   ## note release is not always know; in that case the latest is used by default:
-  my $genome_dir = &Get_genome_dir($species, $assembly, $ensembl_release,$species_suffix);
-  my $variation_dir = &Get_variation_dir($species, $assembly, $ensembl_release, $species_suffix);
+    #my $genome_dir = &Get_genome_dir($species, $assembly, $ensembl_release,$species_suffix);
+    #my $variation_dir = &Get_variation_dir($species, $assembly, $ensembl_release, $species_suffix);
 
+    my ($genome_dir, $variation_dir) = &Get_dirs_from_supported_file($org);
+    
   &RSAT::error::FatalError("Genome directory", $genome_dir, "does not exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
   &RSAT::error::FatalError("Variation directory", $variation_dir, "does not exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);
 
   ## Check if all chromosome sequence files are present in the genome directory
-  my %chr_file = &Get_file_seq_name($genome_dir);
+  my %chr_file = &Get_file_seq_name($genome_dir . "/genome");
   foreach my $file (keys(%chr_file)) {
-    my $raw_seq_file = $genome_dir."/".$chr_file{$file};
+    my $raw_seq_file = $genome_dir."/genome/".$chr_file{$file};
     unless (-f $raw_seq_file) {
       &RSAT::error::FatalError($raw_seq_file," is missing.");
     }
@@ -728,62 +731,16 @@ Same as -h
     } elsif ($arg eq "-help") {
       &PrintOptions();
 
-
 =pod
-
-=item B<-species species_name>
-
-Species name. This name must correspond to the species of the
+        
+=item B<-org organism>
+        
+Organism name. This name must correspond to the species of the
 variation/bed/id file if provided.
-
+            
 =cut
-    } elsif ($arg eq "-species") {
-      $main::species = lc(shift(@arguments));
-
-=pod
-
-=item B<-species_suffix>
-
-Species name. This name must correspond to the species of the
-variation/bed/id file if provided.
-
-=cut
-    } elsif ($arg eq "-species_suffix") {
-      $main::species_suffix = lc(shift(@arguments));
-
-=pod
-
-=item B<-release #>
-
-The version of ensembl database (e.g. 84).
-
-Note: each Ensembl release contains a specific assembly for
-each species. When the option -release is used, the option
--assembly should thus in principle not be used.
-
-=cut
-  } elsif (($arg eq "-release") || ($arg eq "-version") || ($arg eq "-e_version")) {
-    if ($arg ne "-release") {
-      &RSAT::message::Warning("Option -version is obsolete, has been replaced by -release.");
-    }
-    $main::ensembl_release = shift(@arguments);
-
-=pod
-
-=item B<-assembly #>
-
-Assembly (e.g. GRCh37 for the assembly 37 of the Human genome).
-
-Note: genome assemblies can cover several successive ensemble
-versions. In case of ambiguity, the latest corresponding ensembl
-version is used.
-
-=cut
-    } elsif (($arg eq "-assembly") || ($arg eq "-a_version")) {
-      if ($arg ne "-assembly") {
-	&RSAT::message::Warning("Option -a_version is obsolete, has been replaced by -assembly.");
-      }
-      $main::assembly = shift(@arguments);
+   } elsif ($arg eq "-org") {
+       $main::org = lc(shift(@arguments));
 
 =pod
 

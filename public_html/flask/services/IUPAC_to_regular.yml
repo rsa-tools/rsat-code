@@ -1,0 +1,7 @@
+descr:
+    Convert a pattern described with the IUPAC code for ambiguous nucleotides into an equivalent regular expression. This expression can be used to search for complex patterns with general string search program like grep or gais.
+---
+parameters:
+  - name: q
+    description: query
+    type: string

@@ -142,7 +142,6 @@ if ($query->param('return_clusters')) {
 if ($query->param('return_matrices')) {
   push @output_fields, "matrices";
 
-
   ## Number of matrices per cluster
   my $max_asmb_per_cluster = $query->param('max_asmb_per_cluster');
   if (&IsNatural($max_asmb_per_cluster)) {

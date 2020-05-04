@@ -1,0 +1,18 @@
+descr:
+    Return the length of each sequence for a user-speficied sequence file. Optionally, return the sum of lengths.
+---
+parameters:
+  - name: i
+    description: inputfile
+    type: file
+  - name: unit
+    description: Units for sequence lengths. Supported - bp,kb,mb,gb
+    type: string
+    choices: bp,kb,mb,gb
+  - name: in_format
+    description: input format. The input file can contain either sequences or genomic coordinates (-in_format bed).
+    type: string
+    required: false
+  - name: sum
+    description: only return sum of sequene lengths
+    type: boolean

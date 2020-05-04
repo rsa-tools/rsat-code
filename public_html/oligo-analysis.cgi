@@ -142,7 +142,6 @@ if ($query->param('bg_method') =~ /background/i) {
   %supported_background = (
 			   "upstream"=>1,
 			   "upstream-noorf"=>1,
-#			   "intergenic"=>1,
 			   "protein"=>1,
 			  );
   my $background = $query->param("background");

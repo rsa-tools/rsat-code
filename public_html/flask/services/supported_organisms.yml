@@ -1,0 +1,42 @@
+descr:
+    Returns the list of organisms supported on the local RSAT or on a remove server (opion -server).
+---
+parameters:
+    - name: format 
+      description: output format. supported tab, tree, html_tree, newick.
+      choices: tab,tree,html_tree,newick
+      type: string
+      required: false
+      default: tab
+    - name: return
+      description: output fields. Supported ID,name,taxid,source,last_update,nb,seq_format,up_from,up_to,taxonomy,data,genome,genome_assembly,genome_version,download_date,variant_available,variant_source,variant_date,path_to_variant_files
+      type: string
+      required: false
+    - name: taxon
+      description: selected_taxon. Only returns organisms belonging to a selected taxon.
+      type: string
+      required: false
+    - name: group
+      description: selected_group. Only returns organisms belonging to a selected taxonomy group. 
+      type: string
+      required: false
+    - name: source
+      description: selected_source. Only return organisms from a user-selected source(s). 
+      type: string
+      required: false
+    - name: depth
+      description: Depth for exploring the taxonomic tree.
+      type: int
+      required: false
+    - name: unique_species
+      description: Select at most one organism per species. This option aims at avoiding to be submerged by hundreds of strains sequenced for the same species.
+      type: boolean
+      required: false
+    - name: unique_genus
+      description: Select at most one organism per genus.
+      type: boolean
+      required: false
+    - name: server
+      description: Return the list of organisms supported on a remote RSAT server, via the Web services interfaces
+      type: string
+      required: false

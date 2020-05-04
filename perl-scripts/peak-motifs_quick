@@ -110,11 +110,6 @@ package main;
   local $die_on_error = 1;
   local $genome_assembly ="";
 
-  ## Check that the RSAT paths of the programs required for the script are specified
-  $PYTHON =  $ENV{RSAT}."/python_scripts" unless ($PYTHON);
-  $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
-  $BIN = $ENV{RSAT}."/bin" unless ($BIN);
-
   $program_version = do { my @r = (q$Revision: 1.256 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
@@ -319,7 +314,8 @@ package main;
     ## Total sequence length is computed on the converted test
     ## sequences, since these may have been clipped or restricted to
     ## the top peaks.
-    my $cmd = $SCRIPTS."/sequence-lengths -i ".$main::outfile{"test_converted"}." -sum | grep -v '#' | cut -f 1";
+    my $cmd =  &RSAT::server::GetProgramPath("sequence-lengths");
+    $cmd .= " -i ".$main::outfile{"test_converted"}." -sum | grep -v '#' | cut -f 1";
     local $total_seq_len = `$cmd`;
     chomp($total_seq_len);
 
@@ -962,7 +958,7 @@ sub PurgeSeq {
   ## selectd top peaks if required, and truncate sequences to max
   ## length if specified.
   &RSAT::message::TimeWarn("Converting sequences", $seq_type, $seq_file) if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/convert-seq";
+  my $cmd =  &RSAT::server::GetProgramPath("convert-seq");
   $cmd .= " -i ".$seq_file;
   $cmd .= " -from ".$main::param{seq_format};
   $cmd .= " -to fasta";
@@ -979,7 +975,7 @@ sub PurgeSeq {
     my $from = -round($main::param{max_seq_len}/2);
     my $to = $from + $main::param{max_seq_len} -1;
     &RSAT::message::Info("\tTruncating to ", $main::param{max_seq_len}." bp max") if ($main::verbose >= 2);
-    $cmd .= "| ".$SCRIPTS."/sub-sequence";
+    $cmd .= "| ". &RSAT::server::GetProgramPath("sub-sequence");
     #    $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
     $cmd .= " -origin ".$main::param{origin};
 #    $cmd .= " -offset ".$main::param{offset}; ## NOTE JvH 2016-02-07: I should add an option -offset to sub-sequence
@@ -991,7 +987,8 @@ sub PurgeSeq {
 
   ## Purge sequences (mask redundant fragments)
   &RSAT::message::TimeWarn("Purging sequences", $seq_type, $main::outfile{$seq_type."_converted"}) if ($main::verbose >= 2);
-  $cmd = $SCRIPTS."/purge-sequence -dna";
+  $cmd =  &RSAT::server::GetProgramPath("purge-sequence");
+  $cmd .= " -dna";
   $cmd .= " -i ".$main::outfile{$seq_type."_converted"};
   $cmd .= " -ml ".$main::param{purge_match_length};
   $cmd .= " -mis ".$main::param{purge_mismatches};
@@ -1006,18 +1003,20 @@ sub SequenceLengths {
   my ($seq_type) = @_;
 
   &RSAT::message::TimeWarn("Computing sequence lengths", $seq_type) if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/sequence-lengths";
+  my $cmd =  &RSAT::server::GetProgramPath("sequence-lengths");
   #  $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
   $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen'};
-  $cmd .= " ; ".$SCRIPTS."/classfreq -v 1 -col 2";
+  $cmd .= " ; ". &RSAT::server::GetProgramPath("classfreq");
+  $cmd .= " -v 1 -col 2";
   $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen'};
   $cmd .= " -ci ".$main::param{profiles_ci};
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen_distrib'};
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Plot the distribution of sequence lengths
-  $cmd = $SCRIPTS."/XYgraph -lines -pointsize 0";
+  $cmd =  &RSAT::server::GetProgramPath("XYgraph");
+  $cmd .= " -lines -pointsize 0";
   $cmd .= " -format ".$main::param{img_format};
   my $title = "Peak lengths";
   $title .= "; ".$main::param{title} if ($main::param{title});
@@ -1043,7 +1042,7 @@ sub SequenceLengths {
   if (($main::param{seq_source})
       && ($seq_type eq "test")) {
     &RSAT::message::TimeWarn("Converting fasta headers to BED file") if ($main::verbose >= 2);
-    $cmd = $SCRIPTS."/convert-features";
+    $cmd =  &RSAT::server::GetProgramPath("convert-features");
     $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
     $cmd .= " -from ".$main::param{seq_source}."_seq"; ## e.g. galaxy_seq
     $cmd .= " -to bed ";
@@ -1078,7 +1077,8 @@ sub CompositionProfiles {
 
     ## Compute background models of order 0 (Bernoulli) and 1 (Markov)
     ## from the sequences
-    $cmd = $BIN."/count-words -v 1";
+    $cmd =  &RSAT::server::GetProgramPath("count-words");
+    $cmd .= " -v 1";
     $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
     $cmd .= " -l ".$ol;
     $cmd .= " -1str";
@@ -1088,12 +1088,14 @@ sub CompositionProfiles {
     &RSAT::util::one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_freq"}."_time.txt", log=>$main::out);
 
     ## Convert background model in INCLUSIVE format for matrix-scan-quick
-    $cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+    $cmd =  &RSAT::server::GetProgramPath("convert-background-model");
+    $cmd .= " -from oligos -to inclusive ";
     $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_inclusive"};
 
     ## Convert background model to transition table and draw the heatmap of transition probabilities
-    $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
+    $cmd .= "; ". &RSAT::server::GetProgramPath("convert-background-model");
+    $cmd .= " -from oligos -to transitions ";
     $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
 #    if ($ol==1) {
@@ -1102,7 +1104,8 @@ sub CompositionProfiles {
       $cmd .= " ; cut -f 1-5,7";
 #    }
     $cmd .= " ".$main::outfile{$ol."nt_".$seq_type."_transitions"};
-    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1 -digits 3 -out_format png -col_width 50";
+    $cmd .= " | ". &RSAT::server::GetProgramPath("draw-heatmap");
+    $cmd .= " -min 0 -max 1 -digits 3 -out_format png -col_width 50";
     $cmd .= " -rownames";
     $cmd .= " -r_plot" if ($main::param{r_plot});
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_heatmap"};
@@ -1116,7 +1119,8 @@ sub CompositionProfiles {
 
     ## Compute positional profiles
     &RSAT::message::TimeWarn("Computing composition profiles", $ol."nt") if ($main::verbose >= 2);
-    my $cmd =$SCRIPTS."/position-analysis -v 1";
+    my $cmd = &RSAT::server::GetProgramPath("position-analysis");
+    $cmd .= " -v 1";
     $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
@@ -1139,9 +1143,10 @@ sub CompositionProfiles {
     my $col_nb = 4**$ol + 1;
     $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_".$seq_type."_profiles"};
     $cmd .= ' | cut -f 1,10-10000'; ## suppress columns preceding the position frequencies
-    $cmd .= ' | '.$SCRIPTS.'/transpose-table';
+    $cmd .= ' | '. &RSAT::server::GetProgramPath("transpose-table");
 #    $cmd .= ' | grep -P \'(^id)|(^\-?\d+)\'';
-    $cmd .= " | ".$SCRIPTS."/XYgraph -xcol 1 -ycol 2-".$col_nb;
+    $cmd .= " | ". &RSAT::server::GetProgramPath("XYgraph");
+    $cmd .= " -xcol 1 -ycol 2-".$col_nb;
 #   $cmd .= " -xgstep1 ".($main::param{profiles_ci});
     $cmd .= " -xgstep2 ".$main::param{profiles_ci};
     $cmd .= " -vline '#666666' 0";
@@ -1196,7 +1201,8 @@ sub ComputeBgModels {
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
       my $pattern_type = 'oligos_'.$len.'nt_test_vs_ctrl';
       #    my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
-      my $cmd = $SCRIPTS."/oligo-analysis -v 1";
+      my $cmd =  &RSAT::server::GetProgramPath("oligo-analysis");
+      $cmd .= " -v 1";
       $cmd .= " -quick";
       $cmd .= " -i ".$main::outfile{"ctrl_purged"};
       $cmd .= " -format fasta";
@@ -1216,7 +1222,8 @@ sub ComputeBgModels {
   if ($disco{dyads}) {
     &RSAT::message::TimeWarn("Computing expected dyad frequencies from control set.") if ($main::verbose >= 2);
     my $pattern_type = 'dyads_test_vs_ctrl';
-    my $cmd = $SCRIPTS."/dyad-analysis -v 1";
+    my $cmd =  &RSAT::server::GetProgramPath("dyad-analysis");
+    $cmd .= " -v 1";
     $cmd .= " -i ".$main::outfile{"ctrl_purged"}; ## NOTE: AS A NEGATIVE CONTROL, USE SAME FILE AS INPUT AND CTRL, AND SET PSEUDO TO 0.
     $cmd .= " -quick";
     $cmd .= " -format fasta";
@@ -1261,7 +1268,8 @@ sub OligoAnalysis {
       my $markov = $markov_orders[$i];
 
       &RSAT::message::TimeWarn("Running oligo-analysis", $pattern_type) if ($main::verbose >= 2);
-      my $cmd = $SCRIPTS."/oligo-analysis -v 1";
+      my $cmd =  &RSAT::server::GetProgramPath("oligo-analysis");
+      $cmd .= " -v 1";
       $cmd .= " -quick";
       $cmd .= " -i ".$main::outfile{"test_purged"};
       $cmd .= " -format fasta";
@@ -1303,7 +1311,8 @@ sub OligoDiff {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'oligo_diff_'.$len.'nt';
     &RSAT::message::TimeWarn("Running oligo-diff", $len."nt") if ($main::verbose >= 2);
-    my $cmd = $SCRIPTS."/oligo-diff -v 3";
+    my $cmd =  &RSAT::server::GetProgramPath("oligo-diff");
+    $cmd .= " -v 3";
     $cmd .= " -test ".$main::outfile{"test_purged"};
     $cmd .= " -ctrl ".$main::outfile{"ctrl_purged"};
     $cmd .= " -nopurge"; ## The sequences have already been purged
@@ -1338,7 +1347,8 @@ sub DyadAnalysis {
     $pattern_type = "dyads";
   }
 
-  my $cmd = $SCRIPTS."/dyad-analysis -v 1";
+  my $cmd =  &RSAT::server::GetProgramPath("dyad-analysis");
+  $cmd .= " -v 1";
   $cmd .= " -i ".$main::outfile{"test_purged"};
   $cmd .= " -quick";
   $cmd .= " -format fasta";
@@ -1373,7 +1383,8 @@ sub PositionAnalysis {
     my $pattern_type = 'positions_'.$len.'nt';
     push @position_files, $main::outfile{$pattern_type};
     &RSAT::message::TimeWarn("\n Running position-analysis", $len."nt") if ($main::verbose >= 2);
-    my $cmd = $SCRIPTS."/position-analysis -v 1";
+    my $cmd =  &RSAT::server::GetProgramPath("position-analysis");
+    $cmd .= " -v 1";
     $cmd .= " -i ".$main::outfile{"test_purged"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
@@ -1512,7 +1523,8 @@ sub RunMEME {
   &RSAT::util::one_command($cmd, 1, $main::outfile{meme}."_time.txt", log=>$main::out);
 
   ## Convert the matrix
-  $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{meme};
+  $cmd =  &RSAT::server::GetProgramPath("convert-matrix");
+  $cmd .= " -i ".$main::outfile{meme};
   $cmd .= " -from meme";
   $cmd .= " -to transfac";
   $cmd .= " -return counts,parameters,logo";
@@ -1544,7 +1556,8 @@ sub RunDREME {
   &RSAT::util::one_command($cmd, 1, $main::outfile{dreme}."_time.txt", log=>$main::out);
 
   ## Convert the matrix
-#  $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{dreme};
+#  $cmd =  &RSAT::server::GetProgramPath("convert-matrix");
+#  $cmd .= " -i ".$main::outfile{dreme};
 #  $cmd .= " -from dreme";
 #  $cmd .= " -to transfac";
 #  $cmd .= " -return counts,parameters,logo";
@@ -1579,7 +1592,8 @@ sub RunChIPMunk {
   &RSAT::util::one_command($cmd, 1, $main::outfile{chipmunk}."_time.txt", log=>$main::out);
 
 #   ## Convert the matrix
-#   $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{chipmunk};
+#   $cmd =  &RSAT::server::GetProgramPath("convert-matrix");
+#      $cmd .= " -i ".$main::outfile{chipmunk};
 #   $cmd .= " -from chipmunk";
 #   $cmd .= " -to transfac";
 #   $cmd .= " -return counts,parameters,logo";
@@ -1594,7 +1608,8 @@ sub RunChIPMunk {
 ## the different approaches
 sub MergeWords {
   &RSAT::message::Debug("Merging words", join(",", @patterns_to_merge)) if ($main::verbose >= 2);
-  my $cmd = $SCRIPTS."/compare-scores -v 1 ";
+  my $cmd =  &RSAT::server::GetProgramPath("compare-scores");
+  $cmd .= " -v 1 ";
   my $file_nb = 0;
   foreach my $pattern_type (@patterns_to_merge) {
     &RSAT::message::Debug("Merging words of type", $pattern_type) if ($main::verbose >= 5);
@@ -1630,18 +1645,21 @@ sub MergeWords {
   $cmd .= " -null .";
   $cmd .= " -suppress ".$main::param{prefix}."_";
   $cmd .= " -suppress '\.tab'";
-  $cmd .= " | ".$SCRIPTS."/row-stats -after 1 -sort ";
+  $cmd .= " | ". &RSAT::server::GetProgramPath("row-stats");
+  $cmd .= " -after 1 -sort ";
   $cmd .= " -o ".$main::outfile{merged_words};
   &RSAT::util::one_command($cmd, 1, $main::outfile{merged_words}."_time.txt", log=>$main::out);
 
   ## Generate a HTML format of the table (convenient for sorting the
   ## words according to different columns)
-  $cmd = $SCRIPTS."/text-to-html -i ".$main::outfile{merged_words};
+  $cmd =  &RSAT::server::GetProgramPath("text-to-html");
+  $cmd .= " -i ".$main::outfile{merged_words};
   $cmd .= " -o ".$main::outfile{merged_words_html};
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
   ## Draw a heat map of the word significance table
-  $cmd = $SCRIPTS."/draw-heatmap -min 0 -max 10 -rownames -digits 2 -out_format png";
+  $cmd =  &RSAT::server::GetProgramPath("draw-heatmap");
+  $cmd .= " -min 0 -max 10 -rownames -digits 2 -out_format png";
   $cmd .= " -r_plot" if ($main::param{r_plot});
   $cmd .= " -col_width 40 -rownames -gradient fire";
   $cmd .= " -row_height 16";
@@ -1855,7 +1873,8 @@ sub SplitMotifs {
       print $motif_table join("\t", $m, $motif_id, $subdir, $main::prefix{$motif_id."_prefix"}, $main::outfile{$motif_id.'_tf'}), "\n";
 
       ## Convert the motif to a tab-delimited file
-      my $cmd = $SCRIPTS."/convert-matrix -v 0";
+      my $cmd =  &RSAT::server::GetProgramPath("convert-matrix");
+      $cmd .= " -v 0";
       $cmd .= " -i ".$main::outfile{$motif_id.'_tf'};
       $cmd .= " -from transfac -to tab";
       $cmd .= " -return counts";
@@ -1874,7 +1893,8 @@ sub SplitMotifs {
 ## Identify clusters of similar motifs, and build
 ## consensus motifs.
 sub ClusterMotifs {
-  my $cmd = $SCRIPTS."/matrix-clustering -v 0";
+  my $cmd =  &RSAT::server::GetProgramPath("matrix-clustering");
+  $cmd .= " -v 0";
   $cmd .= " -matrix '".$main::param{prefix}."' ".$main::outfile{motifs_discovered};
   $cmd .= " transfac ";
   $cmd .= " -title '".$main::param{title}."'";
@@ -1928,7 +1948,8 @@ sub MatrixFromPatterns {
 			"\n\tpattern_file: ".$pattern_file,
 			"\n\tpssm_file: ".$pssm_file,
       ) if ($verbose >= 5);
-  my $cmd = $SCRIPTS."/matrix-from-patterns -v 1 ";
+  my $cmd =  &RSAT::server::GetProgramPath("matrix-from-patterns");
+  $cmd .= " -v 1 ";
 
   ## Done: add the option -sites (request by Anthony Mathelier,
   ## 2017-08-08). 
@@ -1968,7 +1989,8 @@ sub MotifEnrichment {
   my ($seq_file, $matrix_file, $out_file, $graph_file) = @_;
 
   ## Compute the significance of enrichment in matrix hits
-  $cmd = $SCRIPTS."/matrix-scan -v 1";
+  $cmd =  &RSAT::server::GetProgramPath("matrix-scan");
+  $cmd .= " -v 1";
   $cmd .= " -quick";	   ## TO DO : CHECK IF THIS AFFECTS THE RESULT
   $cmd .= " -seq_format fasta -i ".$seq_file;
   $cmd .= " -matrix_format transfac -m ".$matrix_file;
@@ -1982,7 +2004,7 @@ sub MotifEnrichment {
   &RSAT::util::one_command($cmd, 1, $out_file."_time.txt", log=>$main::out);
 
   ## Draw a XY plot of enrichment in matrix hits
-  $cmd = $SCRIPTS."/XYgraph ";
+  $cmd =  &RSAT::server::GetProgramPath("XYgraph");
   $cmd .= " -i ".$out_file;
   $cmd .= " -xcol 2 -xleg1 'Weight score'";
   $cmd .= " -xmin ".$main::param{scan_enrich_min_score};
@@ -2022,7 +2044,8 @@ sub ScanSequences {
     ## Predict site positions
 
     ## Site prediction with matrix-scan (option -quick)
-    my $cmd = $SCRIPTS."/matrix-scan -quick -v 1";
+    my $cmd =  &RSAT::server::GetProgramPath("matrix-scan");
+    $cmd .= " -quick -v 1";
     $cmd .= " -seq_format fasta -i ".$main::outfile{"test_converted"};
 #    $cmd .= " -seq_format fasta -i ".$infile{test_seq};
     $cmd .= " -matrix_format transfac -m ".$main::outfile{$motif_id."_tf"};
@@ -2035,7 +2058,7 @@ sub ScanSequences {
     ## Compute the genomic coordinates
     if (($main::infile{coord})||($main::param{seq_source})) {
       &RSAT::message::TimeWarn("Computing genomic coordinates of predicted sites") if ($main::verbose >= 2);
-      $cmd = $SCRIPTS."/convert-features";
+      $cmd =  &RSAT::server::GetProgramPath("convert-features");
       $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites'};
       $cmd .= " -coord ".$main::infile{coord} if ($main::infile{coord});
       if ($main::param{seq_source}) {
@@ -2061,14 +2084,15 @@ sub ScanSequences {
     $cmd .= " ".$main::outfile{$motif_id.'_pssm_sites'};
     $cmd .= " | grep -v '^#'";
     $cmd .= " | awk '{print \(\$6\+\$5\)/2}'";
-    $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
+    $cmd .= " | ". &RSAT::server::GetProgramPath("classfreq");
+    $cmd .= " -v 1";
     $cmd .= " -ci ".$main::param{profiles_ci};
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
     ## Draw the graph of predicted site position profiles (occurrences per non-overlapping window)
     &RSAT::message::Debug("Drawing positional distribution of motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
-    $cmd = $SCRIPTS."/XYgraph";
+    $cmd =  &RSAT::server::GetProgramPath("XYgraph");
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_site_distrib'};
     $cmd .= " -lines -xcol 3 -ycol 4";
@@ -2085,16 +2109,17 @@ sub ScanSequences {
     ################################################################
     ## Distribution of sites per peak and %peaks with motifs
     &RSAT::message::Debug("Calculating distribution of sites per peak", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
-    $cmd = $SCRIPTS."/contingency-table";
+    $cmd =  &RSAT::server::GetProgramPath("contingency-table");
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites'};
-    $cmd .= " | ".$SCRIPTS."/classfreq -v 1";
+    $cmd .= " | ". &RSAT::server::GetProgramPath("classfreq");
+    $cmd .= " -v 1";
     $cmd .= " -ci 1";
     $cmd .= " -o ".$main::outfile{$motif_id.'_pssm_sites_per_peak'};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
     ## Draw the graph of predicted site positions (occurrences per window)
     &RSAT::message::Debug("Drawing sites per peak distribution of motif", $m."/".$motif_nb, $motif_id, $motif_dir) if ($main::verbose >= 2);
-    $cmd = $SCRIPTS."/XYgraph";
+    $cmd =  &RSAT::server::GetProgramPath("XYgraph");
     $cmd .= " -format ".$main::param{img_format};
     $cmd .= " -i ".$main::outfile{$motif_id.'_pssm_sites_per_peak'};
     $cmd .= " -lines -xcol 1 -ycol 4 ";
@@ -2258,7 +2283,7 @@ sub TimeLog {
   &RSAT::message::TimeWarn("Time log file", $main::outfile{timelog}) if ($main::verbose >= 2);
 
   ## Create a HMTL version of the timelog table
-  my $cmd = $SCRIPTS."/text-to-html";
+  my $cmd =  &RSAT::server::GetProgramPath("text-to-html");
   $cmd .= " -font variable";
   $cmd .= " -i ".$main::outfile{timelog};
   $cmd .= " -o ".$main::outfile{timelog_html};
@@ -3301,7 +3326,7 @@ sub SmallSummary {
   close $small_sum_txt;
 
   ## Convert into html file
-  my $cmd = $SCRIPTS."/text-to-html ";
+  my $cmd =  &RSAT::server::GetProgramPath("text-to-html");
   $cmd .= " -i ".$main::outfile{small_summary_txt};
   $cmd .= " -no_sort ";
   $cmd .= " -o ".$main::outfile{small_summary};

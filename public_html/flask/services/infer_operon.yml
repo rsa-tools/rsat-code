@@ -1,0 +1,33 @@
+descr:
+    Given a list of input genes, infer the operon to which each of these genes belong.
+---
+parameters:
+    - name: i
+      description: Input file.
+      type: file
+      required: false
+    - name: org
+      description: Organism name.
+      type: string
+    - name: all
+      description: Infer operons for all the genes of the query organism.
+      type: boolean
+      required: false
+    - name: q
+      description: Query gene. This option can be used iteratively on the same command line to specify several query genes.
+      type: string
+      required: false
+    - name: dist
+      description: Distance threshold.
+      type: int
+      required: false
+    - name: sep
+      description: Specify the separator for multi-value fields (e.g. genes) in the output table.
+      type: string
+      required: false
+    - name: min_gene_nb
+      description: Specify a threshold on the number of genes in the operon.
+      type: int
+    - name: return
+      description: List of fields to return. Separated by ','. Supported - leader,trailer,operon,query,name,upstr_dist,q_info,up_info,down_info
+      type: string

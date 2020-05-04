@@ -47,7 +47,7 @@ $command = "$C_SCRIPTS/retrieve-variation-seq";
 ################
 ## Parameters
 
-## Define species 
+## Define species
 $organism = $query->param('organism');
 if($organism eq ""){ $organism = $query->param('organism_bg')};
 $organism = &CheckOrganismAvail($organism);
@@ -199,9 +199,9 @@ sub PipingForm {
 	<INPUT type="submit" value="variation scan">
 	</FORM>
 	</TD>
- 
+
 End_of_form
-print '   
+print '
 </TR>
 </TABLE>
 </CENTER>';

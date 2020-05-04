@@ -41,11 +41,13 @@ class SupportedOrganisms(Resource):
     def _run(self,data):
         output_choice = 'display'
         command = utils.perl_scripts + '/' + tool
-	for param in data:
-		if data[param] == True:
-			command += ' -' + param
-		elif data[param] == False:
-			continue
-		elif data[param] is not None and data[param] != '' and param != 'content-type':
-			command += ' -' + param + ' ' + str(data[param])
+        boolean_var = ['unique_species','unique_genus']
+        for param in data:
+            if param in boolean_var:
+                if data[param] == True:
+                    command += ' -' + param
+                elif data[param] == False:
+                    continue
+            elif data[param] is not None and data[param] != '' and param != 'content-type':
+                command += ' -' + param + ' ' + str(data[param])
         return utils.run_command(command, output_choice, tool, 'txt','')

@@ -167,10 +167,10 @@ function setDemo(demo_matrix){
     demo_descr.innerHTML = descr1;
     
     $("#queries").val("'. $demo_queries . '");
-    $("#organism_name").val("Escherichia coli GCF 000005845.2 ASM584v2");
+    $("#organism_name").val("Escherichia coli GCF 000005845.2 ASM584v2").trigger("change");
     $("#organism").val("Escherichia_coli_GCF_000005845.2_ASM584v2");
     $("#taxon").val("Gammaproteobacteria");
-    $("#taxon_name").val("Gammaproteobacteria");
+    $("#taxon_name").val("Gammaproteobacteria").trigger("change");
     $("#matrix").val(demo_matrix);
     $("#matrix_format").val("transfac");
     $("#bg_method_bginput").prop("checked", true);
