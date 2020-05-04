@@ -1043,7 +1043,7 @@ sub UCSCGenomePopUpSelectable {
   $popup .= "<option value = 'none'> UCSC genome </option>\n";
 
   ## Run supported-organisms-ucsc to obtain list
-  my $cmd = &RSAT::server::GetProgramPath("supported-organisms-ucsc")." | sort > ".$tmp_dir."/genomes-ucsc.tsv";
+  my $cmd = &RSAT::server::GetProgramPath("supported-organisms-ucsc")." | perl -pe 's/Genome at UCSC//g' | sort > ".$tmp_dir."/genomes-ucsc.tsv";
   &doit($cmd);
   my ($genomes , $genomes_dir) = &OpenInputFile($tmp_dir."/genomes-ucsc.tsv");
 
