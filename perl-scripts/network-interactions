@@ -162,7 +162,7 @@ package main;
   #our %infile = ();
   #our %outfile = ();
 
-  our $verbose = 7;
+  our $verbose = 1;
   our $in = \*STDIN;
   my $out = \*STDOUT;
 
@@ -181,6 +181,8 @@ package main;
   our $seq = 0; # flag variable for input sequences
   our $matrices = 0; # flag variable for input matrices
   our $scan = 0; # flag variable for input scan
+  our $score = 5; # score lth to run matrix-scan
+  our $pval = "NA"; # pval lth to run matrix-scan
 
   my $basename = "";
 
@@ -303,7 +305,8 @@ package main;
 
   if($main::databases eq ""){ # default option
     #print("Entered default option of dbs\n");
-    $matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf";
+    $matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2020/nonredundant/JASPAR2020_CORE_vertebrates_non-redundant_pfms.tf";
+    #$matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf";
     #print($matfiles_path[0]."\n");
   } else {
     if($main::databases eq "all"){ # CODE: falta anadir algo que soporte que meta los nombres de dbs como sea
@@ -396,7 +399,7 @@ package main;
   my ($TF, $TF_dir) = &OpenInputFile($main::infile{TFs});
 
   print $log "\n# Reading TFs list file: ".$main::infile{TFs}."\n";
-  &RSAT::message::Info( "\n# Reading TFs list file: ".$main::infile{TFs}."\n" ) if ($main::verbose >= 0);
+  &RSAT::message::Info( "Reading TFs list file: ".$main::infile{TFs}."\n" ) if ($main::verbose >= 0);
 
   while( my $row = <$TF> ){
     next unless ($row =~ /\S/); ## Skip empty rows
@@ -596,7 +599,8 @@ package main;
    &RSAT::message::Info("matrix-scan running ...") if ($main::verbose >= 0);
     $cmd = &RSAT::server::GetProgramPath( "matrix-scan")." -quick -v 1 -matrix_format transfac -m ".$main::used_outfile{used_matrixes}." -bginput -markov 1";
     $cmd.= " -i ".$main::used_outfile{used_cre_seqs_geneheader}." -o ".$main::used_outfile{used_matrix_scan_results}."";
-    $cmd.= " -id_as_name -lth score 5";
+    $cmd.= " -id_as_name -lth score ".$main::score;
+    $cmd.= " -lth pval ".$main::pval if ( $main::pval ne 'NA' );
     &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &RSAT::message::Info("Done!") if ($main::verbose >= 0) ;
 
@@ -666,13 +670,13 @@ package main;
   if( $report_net ){
     $intersection = &OpenOutputFile($main::outfile{network_intersection});
     &Verbose($intersection) if ($main::verbose >= 1);
-    print $intersection "# Interactions in common from:\n#\t".$main::infile{network}." and ".$main::outfile{complete_direct_interactions}."\n#TFx (regulates) Geney\n"; # header
+    print $intersection "# Interactions in common from:\n#\t".$main::infile{network}." and ".$main::outfile{complete_direct_interactions}."\n#TFx\tGeney\tCoordinates\tPositions\tScores\n"; # header
     $rejected = &OpenOutputFile($main::outfile{network_rejected_interactions});
     &Verbose($rejected) if ($main::verbose >= 1);
-    print $rejected "# Interactions in:\t".$main::infile{network}." not found in ".$main::outfile{complete_direct_interactions}."\n#Genex\tGeney\n"; # header
+    print $rejected "# Interactions in:\t".$main::infile{network}." not found in ".$main::outfile{complete_direct_interactions}."\n#Genex\tGeney\tCoordinates\tPositions\tScores\n"; # header
     $found = &OpenOutputFile($main::outfile{network_found_interactions});
     &Verbose($found) if ($main::verbose >= 1);
-    print $found "# Newly found interactions in:\t".$main::outfile{complete_direct_interactions}." not found in ".$main::infile{network}."\n#TFx\tGeney\n"; # header
+    print $found "# Newly found interactions in:\t".$main::outfile{complete_direct_interactions}." not found in ".$main::infile{network}."\n#TFx\tGeney\tCoordinates\tPositions\tScores\n"; # header
   }
 
   %nonRep_genes_reg_inv = reverse %nonRep_genes_reg;
@@ -1063,6 +1067,31 @@ for the TFs' matrices of interest.
 	    $main::used_outfile{used_matrix_scan_results} = shift(@arguments);
       $main::scan = 1;
 
+      ## Score
+=pod
+
+=item B<-score #>
+
+Score lower threshold to run matrix-scan with, default is 5.
+
+=cut
+	} elsif ($arg eq "-score") {
+	    $main::score = shift(@arguments);
+      unless ( &IsNatural($main::score) ){
+        &RSAT::error::FatalError("Score should be a natural number or 0.");
+      }
+
+      ## Pval
+=pod
+
+=item B<-pval #>
+
+P-value lower threshold to run matrix-scan with.
+
+=cut
+	} elsif ($arg eq "-pval") {
+	    $main::pval = shift(@arguments);
+
 	    ## Output prefix
 =pod
 
@@ -1138,7 +1167,7 @@ sub retrieveACsfromTFs {
     my ($database, @TFnames) = @_;
 
     # Check in which field the TF name appears
-    my $isinAC = 0; # boolean to check if TFname is in AC field or ID
+    my $nameinAC = 0; # boolean to check if TFname is in AC field or ID
     my @cols; # list of elementes in field AC
     my $retrievingACs = ""; # final "list" with all AC's from the TFnames required
 
@@ -1147,10 +1176,10 @@ sub retrieveACsfromTFs {
         chomp($db_row);
         next unless($db_row =~ /^AC/ || $db_row =~ /^ID/);
         if( $db_row =~ /^AC\s+[^MA{0,1}\d{4,5}(_\d){0,1}(\.\d+){0,1}]/){ # si encuentra algo distinto de MA..
-            $isinAC = 1;
+            $nameinAC = 1;
             last;
         } elsif( $db_row =~ /^ID\s+[^MA{0,1}\d{4,5}(_\d){0,1}(\.\d+){0,1}]/){
-            $isinAC = 0;
+            $nameinAC = 0;
             last;
         } # else, no TFname provided
     } #while
@@ -1158,18 +1187,31 @@ sub retrieveACsfromTFs {
 
     # Generate array of ACs
     open( $db, "<", $database) or die "Cannot open file $!";
+
     while(my $db_row = <$db>){ # does this continues from the line before or does it starts over again
         chomp($db_row);
         next unless($db_row =~ /^AC/ || $db_row =~ /^ID/);
 
         if( $db_row =~ /^AC/){
-            @cols = split(/\s+/,$db_row); # guarda el AC para cada TF
+            @cols = split(/\s+/,$db_row); # save AC for each TF
+            #print(" AC = ".$cols[1]."\t");
         }
+    #    if( $nameinAC ){
+    #      next unless($db_row =~ /^AC/);
+    #    } else {
+    #      next unless($db_row =~ /^ID/);
+    #    }
+#
+#        foreach my $name (@TFnames){
+#          if( $db_row =~ /.*$name.*/){
+#            $retrievingACs .= $cols[1].",";
+#          }
+#        }
         foreach my $name (@TFnames){
             if( $db_row =~ /.*$name.*/){
-              if( !$isinAC && $db_row =~ /^AC/){ # if TF name is found in AC field
+              if( !$nameinAC && $db_row =~ /^ID/){ # if TF name is found in ID field
                 $retrievingACs .= $cols[1].",";
-              } elsif( $isinAC && $db_row =~ /^ID/){ # if TF is found in ID field
+              } elsif( $nameinAC && $db_row =~ /^AC/){ # if TF name is found in AC field
                 $retrievingACs .= $cols[1].",";
               }
             } # if
