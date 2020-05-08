@@ -2515,7 +2515,7 @@ sub StartAndStopCodons {
   $command .= " -v 1";
   $command .= " -org ".$organism_short_name;
   $command .= " -all";
-  $command .= " -type upstream -feattype cds -from 0 -to 2";
+  $command .= " -type upstream -feattype cds -from 0 -to 2 ";
   $command .= " -format wc -nocomment -label ".$label;
   $command .= " -o ".$prefix."_start_codons.wc";
   $command .= " ; ";
@@ -2534,8 +2534,8 @@ sub StartAndStopCodons {
   $command .= " -v 1";
   $command .= " -org ".$organism_short_name;
   $command .= " -all";
-  $command .= "-type downstream  -feattype cds -from -2 -to 0";
-  $command .= "-format wc -nocomment -label ".$label;
+  $command .= " -type downstream  -feattype cds -from -2 -to 0 ";
+  $command .= " -format wc -nocomment -label ".$label;
   $command .= " -o ".$prefix."_stop_codons.wc";
   $command .= " ; ";
   $command .= &RSAT::server::GetProgramPath("oligo-analysis");
