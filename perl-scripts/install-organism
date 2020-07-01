@@ -284,7 +284,7 @@ package main;
     
     
     my $command = 'rsync --copy-links  --times  --list-only rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq/'.$group.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
-#    print $commnad; die "BOOM";
+#   print $commnad; die "BOOM";
     my $available_species = `$command`;
     print $main::out $available_species;
 #      &doit($command, $dry, $die_on_error, $verbose);
@@ -333,24 +333,28 @@ package main;
 	my $space_species=$species ;
 	$space_species=~s/_/ /g;
 
-	my $command = join (" ","grep", '"'.$space_species.'"',$dir{downloads}."/refseq/".$group."/assembly_summary.txt | grep ". '"'.$strain.'"'. "| cut -f20" );
+	my $command = join (" ","grep", '"'.$space_species.'"',$dir{downloads}."/refseq/".$group."/assembly_summary.txt | grep ". '"'.$strain.'"'. "| cut -f20 | head -n1" ); ## Some organisms already have complete versions from different places
 
 	my $URL= `$command`;
 	chomp($URL);
-	
+
 	$URL=~s/ftp:\/\///;
 
-
+	chomp($URL);
 	&RSAT::message::TimeWarn("Downloading genome from NCBI FTP site", $URL) if ($main::verbose >= 1);
 
-	#print $command ; die "BOOM";
 	
 	$dir{downloads} = $ENV{RSAT}."/downloads/refseq/".$strain;
 	
 	&RSAT::util::CheckOutDir($dir{downloads});
 	#my $command = "rsync --copy-links --recursive --times -R --verbose rsync://".$URL."/ ".$dir{downloads}."/";
 	my $command = "rsync --copy-links --times --recursive --verbose rsync://".$URL."/* ".$dir{downloads}."/";
+
+	#print $command ; 	die "BOOM";
+
 	&doit($command, $dry, $die_on_error, $verbose);
+
+
 	&RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 3);
 	$download_date =  &AlphaDate();
 
