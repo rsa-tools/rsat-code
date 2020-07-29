@@ -4,10 +4,13 @@ language: perl
 perl:
   - "5.26"
 
+# prototype travis config
+
 before_install:
   - "sudo apt-get update"
   - "sudo apt-get install -y r-base"
 
+# full installation should be attempted with, left out for prototype
 #before_script:
 #  - "make -f makefiles/install_rsat.mk install"
 
