@@ -1927,6 +1927,15 @@ void processHaplotypes(varscan *locus, range *intersect,int is_indel ,int nb_sit
   scan    *firstscan = firstvar->scan_info;
   scan    *secndscan = secndvar->scan_info;
 
+  // Verbose
+  if(verbose >= 13) RsatInfo("Processing locus '",
+                             locus->variation->chromosome->buffer,
+                             locus->variation->start->buffer,
+                             locus->variation->end->buffer,
+                             locus->variation->strand,
+                             locus->variation->id->buffer,
+                             "' at", matrix_name, NULL);
+
   //If the number of sites added in both alleles are the same, then all are SNV
   //NOTE IMPORTANT Perhaps not? An unlikely combination of indels can give rise to this?
   if ( is_indel ) {
@@ -2575,6 +2584,15 @@ void processLocus(varscan *locus, char *matrix_name, threshold *cutoff, FILE *fo
   char *isSO_tmp1 = NULL;
   char *isSO_tmp2 = NULL;
 
+  // Verbose
+  if(verbose >= 13) RsatInfo("Processing locus ",
+                             locus->variation->chromosome->buffer,
+                             locus->variation->start->buffer,
+                             locus->variation->end->buffer,
+                             locus->variation->strand,
+                             locus->variation->id->buffer,
+                             "at", matrix_name, NULL);
+
   //Allocate memory for variables
    SO_tmp1 = strnewToList(&RsatMemTracker);
    SO_tmp2 = strnewToList(&RsatMemTracker);
@@ -3115,6 +3133,7 @@ void CreateFastaFromVarseqHaplotypes(string *varsequence, string *fasta_sequence
   int isAllelDiff       = 0;
   int isLineOdd         = 0;
   int skipHapGroup      = 0;
+  int forbidden_char    = 0;
 
 
   //Allocate memory for variables
@@ -3166,6 +3185,15 @@ void CreateFastaFromVarseqHaplotypes(string *varsequence, string *fasta_sequence
   token[0] = line->buffer;
 
   while ( fread( (line->buffer + line->size),1,1,fh_varsequence) == 1 ) {
+    // Test for lines with forbidden characters and save flag
+    if(line->buffer[line->size] == ';' ||
+       line->buffer[line->size] == '|' ||
+       line->buffer[line->size] == '_')
+       {
+        forbidden_char = 1;
+
+       }
+
     //If '\t' is found assign next char address as the next token
     if (line->buffer[line->size] == '\t') {
       token[++i] = line->buffer + line->size + 1;
@@ -3183,11 +3211,17 @@ void CreateFastaFromVarseqHaplotypes(string *varsequence, string *fasta_sequence
       i = 0;
 
       //Filters for comments and more
-      if(token[0][0] == '#'){initokadd(line,token,11);continue;}
-      if(token[0][0] == ';'){initokadd(line,token,11);continue;}
-      if(token[0][0] == ' '){initokadd(line,token,11);continue;}
-      if(token[0][0] == '\t'){initokadd(line,token,11);continue;}
-      if(token[0][0] == '\0'){initokadd(line,token,11);continue;}
+      if(token[0][0] == '#'){forbidden_char = 0;initokadd(line,token,11);continue;}
+      if(token[0][0] == ';'){forbidden_char = 0;initokadd(line,token,11);continue;}
+      if(token[0][0] == ' '){forbidden_char = 0;initokadd(line,token,11);continue;}
+      if(token[0][0] == '\t'){forbidden_char = 0;initokadd(line,token,11);continue;}
+      if(token[0][0] == '\0'){forbidden_char = 0;initokadd(line,token,11);continue;}
+
+      //Raise error if forbidden characters where found
+      if (forbidden_char) {
+        RsatFatalError("A forbidden character ';','|' or '_' was found at variant",
+                        token[0],token[1],token[2],token[3],token[4],token[5],token[6],token[7],NULL);
+      }
 
       //Add +1 to sequence counter
       (*nb_seq)++;
@@ -3724,6 +3758,7 @@ void CreateFastaFromVarseqVariants(string *varsequence, string *fasta_sequence ,
   int length = 0;
   int start  = 0;
   int end    = 0;
+  int forbidden_char = 0;
 
 
   //Allocate memory for variables
@@ -3758,6 +3793,15 @@ void CreateFastaFromVarseqVariants(string *varsequence, string *fasta_sequence ,
   token[0] = line->buffer;
 
   while ( fread( (line->buffer + line->size),1,1,fh_varsequence) == 1 ) {
+    // Test for lines with forbidden characters and save flag
+    if(line->buffer[line->size] == ';' ||
+       line->buffer[line->size] == '|' ||
+       line->buffer[line->size] == '_')
+       {
+        forbidden_char = 1;
+
+       }
+
     //If '\t' is found assign next char address as the next token
     if (line->buffer[line->size] == '\t') {
       token[++i] = line->buffer + line->size + 1;
@@ -3771,15 +3815,22 @@ void CreateFastaFromVarseqVariants(string *varsequence, string *fasta_sequence ,
       line->size = 0;
       i = 0;
 
+
       //Filters for comments and more
-      if(token[0][0] == '#'){initokadd(line,token,10);continue;}
-      if(token[0][0] == ';'){initokadd(line,token,10);continue;}
-      if(token[0][0] == ' '){initokadd(line,token,10);continue;}
-      if(token[0][0] == '\t'){initokadd(line,token,10);continue;}
-      if(token[0][0] == '\0'){initokadd(line,token,10);continue;}
+      if(token[0][0] == '#'){forbidden_char = 0;initokadd(line,token,10);continue;}
+      if(token[0][0] == ';'){forbidden_char = 0;initokadd(line,token,10);continue;}
+      if(token[0][0] == ' '){forbidden_char = 0;initokadd(line,token,10);continue;}
+      if(token[0][0] == '\t'){forbidden_char = 0;initokadd(line,token,10);continue;}
+      if(token[0][0] == '\0'){forbidden_char = 0;initokadd(line,token,10);continue;}
 
       //Add +1 to sequence counter
       (*nb_seq)++;
+
+      //Raise error if forbidden characters where found
+      if (forbidden_char) {
+        RsatFatalError("A forbidden character ';','|' or '_' was found at variant",
+                        token[0],token[1],token[2],token[3],token[4],token[5],token[6],token[7],NULL);
+      }
 
       //Get offset and length of all variants in sequence
       GetVariantIndex(offset_and_length_tmp,token[9]);
