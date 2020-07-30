@@ -25,7 +25,8 @@
 			<div class='col-sm-2 homemenu'>
 				<a href='publications.cgi'>Publications</a><br/>
 				<a href='tutorials.php'>Tutorials</a><br/>
-				<a href='people.php'>About us</a>
+				<a href='people.php'>About us</a><br/>
+				<a href='code_of_conduct.html'>Code of Conduct</a>
 			</div>
             <div class='col-sm-6 homeheaderbar'><div class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:#F58634; padding-top: 25px;'></i></a></div></div>
 		</div>	
@@ -57,7 +58,15 @@
 				</div>
 			</div>
 			<div class='col-sm-3'><span class='homepapertext'><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> for the 20th Anniversary <b><a target='_blank' href="https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gky317/4990780" target="_blank"> in NAR</b></a></span><br/><br/>
-				<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="500" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+			  <span style="color:red"><i class="fa fa-book
+			  fa-lg"></span></i>
+			  Check <span style="color:red"><b>RSAT
+			  Variation-Tools</b></span> <b><a target='_blank'
+			  href="https://www.sciencedirect.com/science/article/pii/S2001037019301898?via%3Dihub"
+			  target="_blank"> in Computational and
+			  Structural Biotechnology
+			      Journal</b></a></span><br/><br/>
+<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="500" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 			</div>	
 		</div>
 	</div>
