@@ -45,7 +45,7 @@ $command = $ENV{RSAT}."/perl-scripts/network-interactions";
 #$return_fields = "-return json"; i dont need it
 
 $output_prefix = "network-interactions";
-$output_path = &RSAT::util::make_temp_file("",$output_prefix, 1); 
+$output_path = &RSAT::util::make_temp_file("",$output_prefix, 1);
 
 local $dir_name=$query->param('dir_name');
 $tmp_dir = &RSAT::util::get_pub_temp();
@@ -194,22 +194,11 @@ if ($query->param('net_selection') || $query->param('uploaded_net_file')) {
   &DelayedRemoval($net_file);
 }
 
-##############!!!!!!!!!!!!!!!
-## Define output file
-$result_file =  $tmp_file_path.".ft";
-push @result_files, ("Scan result (FT)",$result_file);
-
 ################################################################
-## Output file
-#$parameters .= " -o ".$output_path."/".$output_prefix;
-
-
+## Output dir
 $parameters .= " -outdir ".$output_dir;
-##
 
-$complete_out = $output_path."_complete_direct_interactions.tsv";;
-push @result_files, ("all interactions", $complete_out);
-
+$parameters .= " -html "; # output html SUMMRARY file
 
 ## Add an error-log file for matrix-clustering
 #$err_file = $output_path."/".$output_prefix."_err.txt";
@@ -220,40 +209,14 @@ push @result_files, ("all interactions", $complete_out);
 
 
 #################################################################
-#### execute the command #####
-if (($query->param('output') =~ /display/i) ||
-    ($query->param('output') =~ /server/i)) {
-
-      open RESULT, "$command $parameters |";
-
-      ### open the sequence file on the server
-      if (open MIRROR, ">$complete_out") {
-  	     $mirror = 1;
-  	     &DelayedRemoval($complete_out);
-      }
-
-      print "<PRE>";
-      while (<RESULT>) {
-  	     print "$_" unless ($query->param('output') =~ /server/i);
-  	      print MIRROR $_ if ($mirror);
-      }
-      print "</PRE>";
-      print "output_path = ".$output_path."\n";
-      print "output_dir = ".$output_dir."\n";
-      print "\n tmp dir = ".$tmp_dir."\n";
-
-      close RESULT;
-      close MIRROR if ($mirror);
-
-    &PrintURLTable(@result_files);
-
-    ### prepare data for piping
-    #&PipingFormForSequence();
-
-
-}# else {
-#    &EmailTheResult("$command $parameters", $query->param('user_email'), $sequence_file);
-#}
+### Display or send result by email
+$index_file = $output_path."/".$output_prefix."_SUMMARY.html";
+my $mail_title = join (" ", "[RSAT]", "network-interactions", &AlphaDate());
+if ($query->param('output') =~ /display/i) {
+  &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
+} else {
+  &EmailTheResult("$command $parameters", $query->param('user_email'), "", title=>$mail_title,index=>$index_file);
+}
 
 ################################################################
 ## Result page footer
