@@ -139,7 +139,7 @@ names(global.description.table) <- gsub("X.n", "n", names(global.description.tab
 names(global.description.table) <- gsub("_", ".", names(global.description.table))
 
 ## Check that the compare-matrices table contains the required metric column
-if (length(grep(pattern=metric, names(global.compare.matrices.table))) < 1) {
+if (length(grep(pattern = metric, names(global.compare.matrices.table))) < 1) {
   stop(paste(sep = "", "Input file (", infile, ") does not contain the metric column (", metric, ")."))
 }
 
@@ -208,8 +208,8 @@ if (number.of.motifs > 1) {
                             method = hclust.method,
                             metric = metric,
                             align = FALSE,
-                            nodes.attributes=TRUE,
-                            intermediate.alignments=FALSE)
+                            nodes.attributes = TRUE,
+                            intermediate.alignments = FALSE)
   alignment.attributes <- alignment$node.attributes
   
   attributes.list <- alignment.attributes 
@@ -259,7 +259,7 @@ if (number.of.motifs > 1) {
     alignment.flag <- 1
     chained.levels <- append(chained.levels, x)
     
-    while(alignment.flag == 1) {
+    while (alignment.flag == 1) {
       
       ## Search the next chained level
       current.level <- find.next.levels.in.tree(x)
@@ -324,7 +324,7 @@ if (number.of.motifs > 1) {
       }
     })
     
-    all.nodes[sapply(all.nodes, function(x) length(all.nodes)==0)] <- NA
+    all.nodes[sapply(all.nodes, function(x) length(all.nodes) == 0)] <- NA
     all.nodes <- unlist(all.nodes)
     
     ## Concatenate all the nodes, sort and remove repetitions
@@ -349,7 +349,7 @@ if (number.of.motifs > 1) {
   ## This is to treat the node.to.cluster table
   repeated.leaves <- as.vector(which(table(unlist(x1)) > 1))
   
-  th<-  sapply(repeated.leaves, function(r) {
+  th <-  sapply(repeated.leaves, function(r) {
     
     ## For each repeated number find the clusters where it is repeated
     co <- 0
@@ -416,14 +416,14 @@ if (number.of.motifs > 1) {
   node.to.cluster.table <- rbind(node.to.cluster.table, data.frame(nodes = missing.nodes, cluster = 0))
   
   node.to.cluster.table.file <- paste(sep = "", out.prefix, "_tables/node_to_cluster.tab")
-  write.table(node.to.cluster.table, file = node.to.cluster.table.file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = FALSE)
+  write.table(node.to.cluster.table, file = node.to.cluster.table.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
   verbose(paste("Exporting node -> cluster table", node.to.cluster.table.file), 2)
   
   ## Export the table node -> cluster
   ## Each node has its associated cluster
   ## Nodes no associated to a cluster are indicated with 0
   leaf.to.cluster.table <- data.frame()
-  nleaves <- nrow(tree$merge)+1
+  nleaves <- nrow(tree$merge) + 1
   th <- sapply(node.to.cluster$all.leaves, function(n) {
     
     leaves <- as.numeric(unlist(strsplit(n, ",")))
@@ -437,7 +437,7 @@ if (number.of.motifs > 1) {
   })
   
   leaf.to.cluster.table.file <- paste(sep = "", out.prefix, "_tables/leaf_to_cluster.tab")
-  write.table(leaf.to.cluster.table, file = leaf.to.cluster.table.file, sep = "\t", quote=FALSE, row.names = FALSE, col.names = FALSE)
+  write.table(leaf.to.cluster.table, file = leaf.to.cluster.table.file, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
   verbose(paste("Exporting leaf -> cluster table", leaf.to.cluster.table.file), 2)
   
   clusters <<- list(cluster_1 = sort(unique(as.vector(unlist(clusters)))))
@@ -461,7 +461,7 @@ if (number.of.motifs > 1) {
   })
   clusters.table <- t(data.frame(clusters.table ))
   clusters.composition.file <- paste(sep = "", out.prefix, "_tables/clusters.tab")
-  write.table(clusters.table, file = clusters.composition.file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = FALSE)
+  write.table(clusters.table, file = clusters.composition.file, sep = "\t", quote = FALSE, row.names = TRUE, col.names = FALSE)
   verbose(paste("Exporting cluster table with motif IDs", clusters.composition.file), 3)
   
   ## Export a table with the cluster names and its elements (TF || Motif names)
@@ -471,7 +471,7 @@ if (number.of.motifs > 1) {
   })
   clusters.names.table <- t(data.frame(clusters.names.table ))
   clusters.names.composition.file <- paste(sep = "", out.prefix, "_tables/clusters_motif_names.tab")
-  write.table(clusters.names.table, file = clusters.names.composition.file, sep = "\t", quote=FALSE, row.names = TRUE, col.names = FALSE)
+  write.table(clusters.names.table, file = clusters.names.composition.file, sep = "\t", quote = FALSE, row.names = TRUE, col.names = FALSE)
   verbose(paste("Exporting cluster table with motifs names", clusters.names.composition.file), 3)
   
   ## Number of clusters
@@ -506,11 +506,11 @@ if (number.of.motifs > 1) {
         if (plot.format == "pdf") {
           
           
-          pdf(file=heatmap.file, width=w, height=h, paper="executive")
+          pdf(file = heatmap.file, width = w, height = h, paper = "executive")
           #           pdf(file=heatmap.file, )
           
         } else if (plot.format == "jpg") {
-          jpeg(filename=heatmap.file, width=w, height=h, units="in", res=500)
+          jpeg(filename = heatmap.file, width = w, height = h, units = "in", res = 500)
           #           jpeg(filename=heatmap.file)
         }
         
@@ -643,15 +643,15 @@ i <- sapply(1:length(clusters), function(nb) {
            ## Get the central motif name
            ## This will be used to rename the clusters
            central.motif <- get.name(ids)[1]
-           central.motif<- gsub("\\(", "_", central.motif)
-           central.motif<- gsub("\\)", "_", central.motif)
-           central.motif<- gsub("\\.", "_", central.motif)
+           central.motif <- gsub("\\(", "_", central.motif)
+           central.motif <- gsub("\\)", "_", central.motif)
+           central.motif <- gsub("\\.", "_", central.motif)
            central.motif <- paste(central.motif, "cluster", nb, sep = "_")
            central.motif <- paste("cluster", nb, sep = "_")
            
            ## Creates an individual folder for each cluster
            cluster.folder <<- file.path(clusters.info.folder, central.motif)
-           dir.create(cluster.folder, recursive=TRUE, showWarnings=FALSE)
+           dir.create(cluster.folder, recursive = TRUE, showWarnings = FALSE)
            all.central.motifs <<- append(all.central.motifs, central.motif)
            
            ## Fill the cluster list with the data of the non-aligned motifs (singleton)
