@@ -1,4 +1,4 @@
-################################################################
+ ################################################################
 ## Demo for the RSAT tool matrix-clustering
 ##
 ## Authors: Jaime Castro & Jacques van Helden
@@ -95,7 +95,7 @@ _cluster:
 ## peak-motifs (Chen data set) with Oct4 and Sox2 peaks.
 PEAKMO_MATRICES=${RSAT}/public_html/demo_files/RSAT_peak-motifs_Oct4_matrices.tf
 MEME_MATRICES=${RSAT}/public_html/demo_files/MEME_ChIP_Oct4_matrices.tf
-HOMER_MATRICES=${RSAT}/public_html/demo_files/Homer_l13_mis3_hyper_Oct4_matrices.tf@
+HOMER_MATRICES=${RSAT}/public_html/demo_files/Homer_l13_mis3_hyper_Oct4_matrices.tf
 cluster_HOMER_MEME_RSAT_Oct4_motifs:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by RSAT peak-motifs + MEME-ChIP + HOMER (Oct4 peakset from Chen 2008)"
