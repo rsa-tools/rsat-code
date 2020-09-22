@@ -80,3 +80,6 @@ install_logs
 ext_lib
 INSTALL_cache
 apacheconf_backup_*
+public_html/svm
+public_html/svm_bak
+R-scripts/R-scripts_SVM
