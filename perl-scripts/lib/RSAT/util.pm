@@ -1154,7 +1154,6 @@ sub doit {
       $qsub_command .= " -e ".$job_file.".err";   ## STDER log file
       $qsub_command .= " -o ".$job_file.".log";   ## STDOUR log file
       $qsub_command .= " ".$job_file;             ## Script
-
       &RSAT::message::Debug("qsub command for torque", $qsub_command) if ($main::verbose >= 2);
 
     } elsif (lc($queue_manager) eq "sge") {
@@ -1187,7 +1186,6 @@ sub doit {
     ## Verbose: report command
     &RSAT::message::TimeWarn("Working dir", $wd) if ($verbose >= 4);
     &RSAT::message::TimeWarn(&hide_RSAT_path($command))  if ($verbose >= 3);
-
     ## Send the command to the queue
     unless ($dry) {
 #	&RSAT::message::Debug("Running command", $command) if ($main::verbose >= 3);
@@ -1209,7 +1207,6 @@ sub doit {
 	    print $err_handle "\n\n", $error_message, "\n";
 	  }
 	}
-
 	## Die if requested
 	if ($die_on_error) {
 	  &RSAT::error::FatalError($error_message);
