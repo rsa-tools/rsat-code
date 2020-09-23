@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
-#### this cgi script fills the HTML form for the program peak-motifs
+
+## This CGI script fills in the HTML form for the program peak-motifs
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
@@ -15,13 +16,13 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-### Read the CGI query
+## Read the CGI query
 $query = new CGI;
 
-### Read the CGI query
+## Read the CGI query
 
 ################################################################
-### default values for filling the form
+## Default values for filling the form
 $default{demo_descr} = "";
 $default{lth_occ_sig}=0;
 $default{uth_pval} = "1e-4";
@@ -53,9 +54,11 @@ if ($ENV{R_supported}) {
 $default{visualize}="none";
 
 
-## motif database
-$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
-$default{custom_motif_db_name}="custom_motif_collection";
+## Motif database
+#$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
+#$default{custom_motif_db_name}="custom_motif_collection";
+$default{compare_motif_database} = "Jaspar";
+$default{compare_motif_collection}="jaspar_core_nonredundant_vertebrates"; ## I (JvH) SHOULD ADAPT THIS IN ORDER TO PRESENT DIFFERENT DATABASES DEPENDING ON TAXON SPECIFICITY OF THE SERVER (2015-03-13)
 
 ### Replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -212,7 +215,9 @@ $demo_url = $ENV{rsat_www}."/demo_files/ChIP-seq_peaks/Oct4_peaks_top1000.fa";
 print '<script>
 function setDemo1(demo_url){
     $("#reset").trigger("click");
-    $("#db_choice").val("' . $default{compare_motif_database} . '").change();
+    $("#dbs_choice").val("'. $default{compare_motif_database} .'").trigger("change");
+    $("#db_choice").val("'.$default{compare_motif_collection}.'").tigger("change");
+
     descr = "<H4>Comment on the demonstration example 1 :</H4>\n";
     descr = descr + "<blockquote class =\'demo\'>";
     descr = descr + "In this demonstration, we apply time- and memory-efficient \
@@ -229,13 +234,7 @@ function setDemo1(demo_url){
     $("#visualize_galaxy").prop("checked", true);
     
 }
-function resetHandler(){
-    $("#db_choice").val("").change();
-}
-
-$(function(){
-    $("#db_choice").val("' . $default{compare_motif_database} . '").change();
-});
+;
 </script>';
 
 print "<TD><b>";

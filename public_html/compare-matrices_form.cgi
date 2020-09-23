@@ -45,8 +45,10 @@ $default{'return_NsEucl'} = "CHECKED";
 
 ## motif database
 #$default{compare_motif_database}="footprintDB-plants"; #"jaspar_core_nonredundant_vertebrates";
-$default{compare_motif_collection}="jaspar_core_nonredundant_vertebrates"; ## I (JvH) SHOULD ADAPT THIS IN ORDER TO PRESENT DIFFERENT DATABASES DEPENDING ON TAXON SPECIFICITY OF THE SERVER (2015-03-13)
 $default{compare_motif_database} = "Jaspar";
+$default{compare_motif_collection}="jaspar_core_nonredundant_vertebrates_2020"; ## I (JvH) SHOULD ADAPT THIS IN ORDER TO PRESENT DIFFERENT DATABASES DEPENDING ON TAXON SPECIFICITY OF THE SERVER (2015-03-13)
+#$default{compare_motif_collection}="JASPAR core nonredundant vertebrates (2020)"; ## I (JvH) SHOULD ADAPT THIS IN ORDER TO PRESENT DIFFERENT DATABASES DEPENDING ON TAXON SPECIFICITY OF THE SERVER (2015-03-13)
+#$default{compare_motif_collection}="jaspar_core_nonredundant_vertebrates"; ## I (JvH) SHOULD ADAPT THIS IN ORDER TO PRESENT DIFFERENT DATABASES DEPENDING ON TAXON SPECIFICITY OF THE SERVER (2015-03-13)
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -151,8 +153,9 @@ function setDemo(demo_matrices){
     $("#matrix").val(demo_matrices);
     
     $("#dbs_choice").val("'. $default{compare_motif_database} .'").trigger("change");
-    $("#db_choice").val("jaspar_core_nonredundant_vertebrates");
+    $("#db_choice").val("'.$default{compare_motif_collection}.'").tigger("change");
 }
+
 function fileupload(){
     if($("#upload_custom_file").val() != ""){
         $("#db_choice").val("").trigger("change");
