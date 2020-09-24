@@ -165,7 +165,7 @@ end_part_1
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
-print $query->start_multipart_form(-action=>"peak-motifs.cgi", -onreset=>"resetHandler()");
+print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 
 ################# Peak sequences
  &Panel1();
@@ -216,8 +216,7 @@ print '<script>
 function setDemo1(demo_url){
     $("#reset").trigger("click");
     $("#dbs_choice").val("'. $default{compare_motif_database} .'").trigger("change");
-    $("#db_choice").val("'.$default{compare_motif_collection}.'").tigger("change");
-
+    setTimeout(setDemo_motif, 1000);
     descr = "<H4>Comment on the demonstration example 1 :</H4>\n";
     descr = descr + "<blockquote class =\'demo\'>";
     descr = descr + "In this demonstration, we apply time- and memory-efficient \
@@ -234,7 +233,9 @@ function setDemo1(demo_url){
     $("#visualize_galaxy").prop("checked", true);
     
 }
-;
+function setDemo_motif(){
+    $("#db_choice").val("'.$default{compare_motif_collection}.'").trigger("change");
+}
 </script>';
 
 print "<TD><b>";
@@ -250,6 +251,8 @@ $ctrl_url = $ENV{rsat_www}."/demo_files/peak-motifs_GSM348066_limb_p300_1000peak
 print '<script>
 function setDemo2(demo_url,ctrl_url){
     $("#reset").trigger("click");
+    $("#dbs_choice").val("").change();
+    $("#db_choice").val("").change();
     descr = "<H4>Comment on the demonstration example 2 :</H4>\n";
     descr = descr + "<blockquote class =\'demo\'>";
     descr = descr + "In this demonstration, we run a differential analysis \
