@@ -29,7 +29,7 @@ $(function(){
                       closeOnSelect: false
                       });
   
-  $("#dbs_choice").change(function(){
+  $("#dbs_choice").change(function(demo=0){
                           var db_name = $("#dbs_choice").val();
                           var db_id = $("#db_id");
                           if(typeof db_id === 'undefined'){
@@ -82,8 +82,7 @@ $(function(){
                                 selectopt += "<option value=\'" + res[i].id + "\'>" + res[i].idac + "</option>";
                                 }
                                 db_id.html(selectopt);
-                                
-                                $("#wait_ids").attr("style","display:none");
+ 				$("#wait_ids").attr("style", "display:none");                               
                                 
                                 },
                                 error: function(){
