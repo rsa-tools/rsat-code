@@ -217,7 +217,6 @@ function setDemo1(demo_url){
     $("#reset").trigger("click");
     $("#dbs_choice").val("'.$default{compare_motif_database}.'").trigger("change");
     setTimeout(setDemo_motif, 1000);
-
     descr = "<H4>Comment on the demonstration example 1 :</H4>\n";
     descr = descr + "<blockquote class =\'demo\'>";
     descr = descr + "In this demonstration, we apply time- and memory-efficient \
@@ -236,9 +235,8 @@ function setDemo1(demo_url){
 }
 
 function setDemo_motif(){
-	$("#db_choice").val("'.$default{compare_motif_collection}.'").trigger("change");
+    $("#db_choice").val("'.$default{compare_motif_collection}.'").trigger("change");
 }
-
 </script>';
 
 print "<TD><b>";

@@ -152,7 +152,8 @@ function setDemo(demo_matrices){
     demo_descr1.innerHTML = descr1;
     $("#matrix").val(demo_matrices);
     $("#dbs_choice").val("'. $default{compare_motif_database} .'").trigger("change");
-    setTimeout(setDemo_motif, 1000);   
+    $("#wait_ids").attr("style", "display:block");
+    setTimeout(setDemoMotif, 1000);
 }
 
 function fileupload(){
@@ -161,8 +162,9 @@ function fileupload(){
     }
 }
 
-function setDemo_motif(){
-	$("#db_choice").val("'. $default{compare_motif_collection} .'").trigger("change");
+function setDemoMotif(){
+    $("#db_choice").val("'. $default{compare_motif_collection} .'").trigger("change");
+    $("#wait_ids").attr("style", "display:none");
 }
 
 </script>';
