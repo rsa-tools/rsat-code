@@ -82,8 +82,7 @@ $(function(){
                                 selectopt += "<option value=\'" + res[i].id + "\'>" + res[i].idac + "</option>";
                                 }
                                 db_id.html(selectopt);
-                                
-                                $("#wait_ids").attr("style","display:none");
+ 				$("#wait_ids").attr("style", "display:none");                               
                                 
                                 },
                                 error: function(){

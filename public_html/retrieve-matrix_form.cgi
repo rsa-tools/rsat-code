@@ -97,23 +97,16 @@ print "<hr>";
 ####### useful link
 print '<script>
 function setDemo(){
-    $.ajax({
-        url:setDemo1(),
-        success:function(){
-            setDemo2();
-        }
-        });
+	$("#dbs_choice").val("Jaspar").trigger("change");
+	setTimeout(setDemo2, 1000);
 }
-function setDemo1(){
-    $("#dbs_choice").val("Jaspar").change();
-}
+
 function setDemo2(){
     $("#db_choice").val("jaspar_core_nonredundant_vertebrates").change();
-    
+    setTimeout(setDemo3, 1000);
 }
 function setDemo3(){
-    $("input[name=output][value=display]").prop("checked", true);
-    $("#db_id_retrieve").val(["MA0019_1", "MA0031_1"]).change();
+    $("#db_id_retrieve").val(["MA0006.1", "MA0019.1"]).trigger("change");
 }
 
 function reset(){
