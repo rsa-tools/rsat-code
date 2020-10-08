@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
-#### this cgi script fills the HTML form for the program peak-motifs
+
+## This CGI script fills in the HTML form for the program peak-motifs
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
@@ -15,13 +16,13 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-### Read the CGI query
+## Read the CGI query
 $query = new CGI;
 
-### Read the CGI query
+## Read the CGI query
 
 ################################################################
-### default values for filling the form
+## Default values for filling the form
 $default{demo_descr} = "";
 $default{lth_occ_sig}=0;
 $default{uth_pval} = "1e-4";
@@ -53,9 +54,11 @@ if ($ENV{R_supported}) {
 $default{visualize}="none";
 
 
-## motif database
-$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
-$default{custom_motif_db_name}="custom_motif_collection";
+## Motif database
+#$default{compare_motif_database}="jaspar_core_nonredundant_vertebrates";
+#$default{custom_motif_db_name}="custom_motif_collection";
+$default{compare_motif_database} = "Jaspar";
+$default{compare_motif_collection}="jaspar_core_nonredundant_vertebrates"; ## I (JvH) SHOULD ADAPT THIS IN ORDER TO PRESENT DIFFERENT DATABASES DEPENDING ON TAXON SPECIFICITY OF THE SERVER (2015-03-13)
 
 ### Replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -162,7 +165,7 @@ end_part_1
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
-print $query->start_multipart_form(-action=>"peak-motifs.cgi", -onreset=>"resetHandler()");
+print $query->start_multipart_form(-action=>"peak-motifs.cgi");
 
 ################# Peak sequences
  &Panel1();
@@ -212,7 +215,8 @@ $demo_url = $ENV{rsat_www}."/demo_files/ChIP-seq_peaks/Oct4_peaks_top1000.fa";
 print '<script>
 function setDemo1(demo_url){
     $("#reset").trigger("click");
-    $("#db_choice").val("' . $default{compare_motif_database} . '").change();
+    $("#dbs_choice").val("'.$default{compare_motif_database}.'").trigger("change");
+    setTimeout(setDemo_motif, 1000);
     descr = "<H4>Comment on the demonstration example 1 :</H4>\n";
     descr = descr + "<blockquote class =\'demo\'>";
     descr = descr + "In this demonstration, we apply time- and memory-efficient \
@@ -229,13 +233,10 @@ function setDemo1(demo_url){
     $("#visualize_galaxy").prop("checked", true);
     
 }
-function resetHandler(){
-    $("#db_choice").val("").change();
-}
 
-$(function(){
-    $("#db_choice").val("' . $default{compare_motif_database} . '").change();
-});
+function setDemo_motif(){
+    $("#db_choice").val("'.$default{compare_motif_collection}.'").trigger("change");
+}
 </script>';
 
 print "<TD><b>";
@@ -251,6 +252,8 @@ $ctrl_url = $ENV{rsat_www}."/demo_files/peak-motifs_GSM348066_limb_p300_1000peak
 print '<script>
 function setDemo2(demo_url,ctrl_url){
     $("#reset").trigger("click");
+    $("#dbs_choice").val("").trigger("change");
+    $("#db_choice").val("").trigger("change");
     descr = "<H4>Comment on the demonstration example 2 :</H4>\n";
     descr = descr + "<blockquote class =\'demo\'>";
     descr = descr + "In this demonstration, we run a differential analysis \
@@ -648,23 +651,17 @@ sub Panel6  {
 
   ################################################################
   ## Reference location for position-analysis and to scan sequences
-  print "<br> <b>Reference position for position-analysis and sequence scanning</b>";
-
-  ## Origin for calculating positions and scanning sequences
-  print "&nbsp;"x4,  "<A class='iframe' HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
+  print "&nbsp;"x4, "<A class='iframe' HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
   print $query->popup_menu(-name=>'origin',
 			   -Values=>['start',
 				     'center',
 				     'end'],
 			   -default=>$default{origin});
-  
   ## Offset for calculating positions
-  print "&nbsp;"x4,  "<A class='iframe' HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
+  print "&nbsp;"x4, "<A class='iframe' HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
   print $query->textfield(-name=>'offset',
-			  -default=>$default{offset},
+ 			  -default=>$default{offset},
 			  -size=>8);
-
-
   
   ## Use R to generate XY plots.
   if ($ENV{R_supported}) {
