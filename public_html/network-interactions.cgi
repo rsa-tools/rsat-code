@@ -44,7 +44,7 @@ $query = new CGI;
 $command = $ENV{RSAT}."/perl-scripts/network-interactions";
 #$return_fields = "-return json"; i dont need it
 
-$output_prefix = "network-interactions";
+$output_prefix = "";
 $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1);
 
 local $dir_name=$query->param('dir_name');
@@ -200,6 +200,9 @@ $parameters .= " -outdir ".$output_dir;
 
 $parameters .= " -html "; # output html SUMMRARY file
 
+$date = &AlphaDate();
+$parameters .= " -date ".$date; #date to use to name files
+
 ## Add an error-log file for matrix-clustering
 #$err_file = $output_path."/".$output_prefix."_err.txt";
 #$parameters .= " 2> ".$err_file; i dont know what '2>' does
@@ -210,7 +213,10 @@ $parameters .= " -html "; # output html SUMMRARY file
 
 #################################################################
 ### Display or send result by email
-$index_file = $output_path."/".$output_prefix."_SUMMARY.html";
+$index_file = $output_dir."/ResultsFiles/";
+$index_file .= $output_prefix."_" if ($output_prefix);
+$index_file .= "SUMMARY_".$date.".html";
+
 my $mail_title = join (" ", "[RSAT]", "network-interactions", &AlphaDate());
 if ($query->param('output') =~ /display/i) {
   &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
