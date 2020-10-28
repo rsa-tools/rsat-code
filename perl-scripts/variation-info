@@ -314,8 +314,14 @@ package main;
     #my $variation_dir = &Get_variation_dir($species, $assembly, $ensembl_release, $species_suffix);
 
   my ($genome_dir, $variation_dir) = &Get_dirs_from_supported_file($org);
-  # Add the variation sub-directory
-  $variation_dir = $variation_dir."/variations";
+
+  # Add the variation sub-directory if not contained in the path
+  # NOTE. This is a fix as some rsat servers do not contain the
+  # variation suffix in the stored path.
+  @variation_dir_path = split ("/",$variation_dir);
+  if( scalar(@variation_dir_path) > 1 && $variation_dir_path[-1] ne "variations"){
+    $variation_dir = $variation_dir."/variations";
+  }
 
   &RSAT::error::FatalError("The current organism genome is not installed. Genome directory", $genome_dir, "does not exist. Use download-ensembl-genome before variation-info.") unless (-d $genome_dir);
   &RSAT::error::FatalError("The current organism variations are not installed. Variation directory", $variation_dir, "does not exist. Use download-ensembl-variation before variation-info.") unless (-d $variation_dir);
