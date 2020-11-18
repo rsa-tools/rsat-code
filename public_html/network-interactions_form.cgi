@@ -179,38 +179,36 @@ print '
  <!-- ### mandatory options ### -->
  <div class="bhoechie-tab-content">
 
-  <!-- Genome version -->
-  <div class="panel panel-danger">
-    <div class="panel-heading">Genome
-      <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="Genome version according to coordinates in BED file."></i>
-    </div>
+ <!-- Genome version -->
+ <div class="panel panel-danger">
+   <div class="panel-heading">Genome
+     <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="Genome version according to coordinates in BED file."></i>
+   </div>
 
-    <div class="panel-body">
-      Select a genome version<br>
-      <div class="form-group">';
+   <div class="panel-body">
+     Select a genome version<br>
+     <div class="form-group">';
 
-      print $query->popup_menu(-name=>'genome_v', class=>'form-control',
-      -Values=>['UCSC genome','galGal4'],
-      -default=>$default{genome_v});
-      print '
+     print &UCSCGenomePopUpSelectable('genome_v', 'genome_v');
+     print '
 
-      </div>
-    </div>
-  </div>
-   <!-- Directory Name -->
-  <div class="panel panel-danger">
-    <div class="panel-heading"> Directory Name
-      <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Directory Name" data-original-title=""></i>
-    </div>
-
-    <div class="panel-body">
-      <div class="form-group">';
-        print $query->textfield(-id=>'dir_name',-name=>'dir_name', -class=>'form-control',-placeholder=>'Provide a directory name for analysis output ', -required=>'true',
-  			 -default=>$default{dir_name}) .'
-  	   </div>
-  	</div>
-  </div>
+     </div>
+   </div>
  </div>
+  <!-- Directory Name -->
+ <div class="panel panel-danger">
+   <div class="panel-heading"> Directory Name
+     <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Directory Name" data-original-title=""></i>
+   </div>
+
+   <div class="panel-body">
+     <div class="form-group">';
+       print $query->textfield(-id=>'dir_name',-name=>'dir_name', -class=>'form-control',-placeholder=>'Provide a directory name for analysis output ', -required=>'true',
+        -default=>$default{dir_name}) .'
+      </div>
+   </div>
+ </div>
+</div>
 
  <!-- ################################################################-->
  <!-- ### optional inputs ###-->
