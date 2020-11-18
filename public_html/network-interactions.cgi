@@ -217,7 +217,7 @@ $index_file = $output_dir."/ResultsFiles/";
 $index_file .= $output_prefix."_" if ($output_prefix);
 $index_file .= "SUMMARY_".$date.".html";
 
-my $mail_title = join (" ", "[RSAT]", "network-interactions", &AlphaDate());
+my $mail_title = join (" ", "[RSAT]", "network-interactions", $date);
 if ($query->param('output') =~ /display/i) {
   &EmailTheResult("$command $parameters", "nobody@nowhere", "", title=>$mail_title, index=>$index_file, no_email=>1);
 } else {
