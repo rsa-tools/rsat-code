@@ -271,7 +271,11 @@ package main;
 
   $main::out = STDOUT; # one_command() relies on this variable
 
-#if ( $html == 1 )
+  ##################################################################
+  ### Variables for summary html
+
+  our %status= ();
+
   #local @tab_to_convert = (); ## Tables to convert to html
 
   ## A hash to save the name of the clusters and their corresponding
@@ -284,10 +288,6 @@ package main;
 
   ## Hash containing the icon paths
   local %icons = ();
-  my $icons_path = $ENV{RSAT}."/public_html/images/program_icons/network-interactions_icons/";
-  $icons{network} = $icons_path."network.png";
-  $icons{indirect} = $icons_path."indirect.png";
-  $icons{comparision} = $icons_path."comparision.png";
 
   local $include_js_lib = 1;
 
@@ -405,7 +405,22 @@ package main;
     $jquery_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.js");
     $datatable_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/js/jquery.dataTables.min.js");
     $datatable_css_base = &RSAT::util::RelativePath($main::outfile{summary}, $js_base."/DataTables-1.10.4/media/css/jquery.dataTables.min.css");
-  }
+
+    ################################################################
+    ## Copy the section icons in the results folder
+    ################################################################
+    &RSAT::message::Debug("Copying result sections icons to output directory") if ($main::verbose >= 3);
+    my $icons_path = $ENV{RSAT}."/public_html/images/program_icons/network-interactions_icons";
+    my $icon_sync_cmd = "rsync -ruptl";
+    $icon_sync_cmd .= " ".$icons_path;
+    $icon_sync_cmd .= " ".$main::output_dir;
+    &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+
+    $icons{comparison} = &RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir."/network-interactions_icons/comparison.png");
+    $icons{indirect} = &RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir."/network-interactions_icons/indirect.png");
+    $icons{network} = &RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir."/network-interactions_icons/network.png");
+
+  } # if html
 
   ################################################################
   ## Open logfile
@@ -702,7 +717,7 @@ package main;
 
     # Retrieve sequences of regulatory elements
     unless( $main::seq ){
-      &messageInfoAndLog("Retrieving enhancer sequences ...\n");
+      &messageInfoAndLog("Retrieving regulatory sequences ...\n");
       $cmd = &RSAT::server::GetProgramPath("fetch-sequences") . " -i ".$main::used_outfile{used_regulatory_regions}." -genome ".$main::genome." -v 1 -header_format galaxy -o ".$main::used_outfile{used_cre_seqs}."";
       &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &messageInfoAndLog("\tDone!\n");
@@ -793,6 +808,8 @@ package main;
   ################### Comparisons and write-to-file reporting
   my %nonRep_genes_reg_inv;
   my $rowtofile;
+  my %interaction_count = ();
+  $interaction_count{complete} = 0;
 
   &messageInfoAndLog("Also creating output files ...\n");
   ## Comparison of complete gene network
@@ -821,6 +838,10 @@ package main;
     #&Verbose($intersectionTFs) if ($main::verbose >= 1);
     #print $intersectionTFs "# Interactions in common from:\n#\t".$main::infile{network}." and ".$main::outfile{GRN_direct_interactions}."\n#TFx\tTFy\tCoordinates\tPositions\tScores\n"; # header
     #$tables_str{intersection_onlyTFs} = "TFx\tTFy\tCoordinates\tPositions\tScores\n";
+
+    $interaction_count{intersection} = 0;
+    $interaction_count{not_found} = 0;
+    $interaction_count{found} = 0;
   }
 
   %nonRep_genes_reg_inv = reverse %nonRep_genes_reg;
@@ -832,21 +853,23 @@ package main;
         if( $net_new_allgenes[$i][$j] ){
 
           $rowtofile = &writeRow( $nonRep_genes_reg_inv{ $i+1 }, $nonRep_genes_reg_inv{ $j+1 }, \%{ $interaction_details{$nonRep_genes_reg_inv{ $i+1 }}{$nonRep_genes_reg_inv{ $j+1 }} } );
-          $tables_str{complete_direct_interactions} .= $rowtofile;
-
-          print $interaction_gene_row $rowtofile;
+          $tables_str{complete_direct_interactions} .= $rowtofile; # row to table string
+          print $interaction_gene_row $rowtofile; # row to output tsv file
+          $interaction_count{complete}++;
 
           if( $report_net ){
             if( $net_old_allgenes[$i][$j] ){
               # overlap (only interactions, not lack of them)
               print $intersection $rowtofile;
               $tables_str{intersection} .= $rowtofile;
+              $interaction_count{intersection}++;
 
               #onlyTFs overlap
             } else {
               # newly found
               print $found $rowtofile;
               $tables_str{found} .= $rowtofile;
+              $interaction_count{found}++;
             }
           } # report_net
 
@@ -854,6 +877,7 @@ package main;
             # not_found (no details)
             print $not_found $nonRep_genes_reg_inv{ $i+1 }."\t".$nonRep_genes_reg_inv{ $j+1 }."\n";
             $tables_str{not_found} .= $nonRep_genes_reg_inv{ $i+1 }."\t".$nonRep_genes_reg_inv{ $j+1 }."\n";
+            $interaction_count{not_found}++;
         }
 
 
@@ -862,6 +886,7 @@ package main;
 
   ## Comparison of GRNs ?
 
+
   ################################################################
   ## Report all direct interactions within TFs
 
@@ -869,6 +894,7 @@ package main;
   &Verbose($direct) if ($main::verbose >= 1);
   print $direct "#TFx(Regulator)\tTFy(Regulated)\tCoordinates\tPositions\tScore\n"; # header
   $tables_str{only_TFs} = "TFx\tTFy\tCoordinates\tPositions\tScore\n";
+  $interaction_count{only_TFs} = 0;
 
   %nonRepTFs_inv = reverse %nonRepTFs;
   $count = 0;
@@ -882,6 +908,7 @@ package main;
         $rowtofile = &writeRow( $nonRepTFs_inv{ $i+1 }, $nonRepTFs_inv{ $j+1 }, \%{ $interaction_details{$nonRepTFs_inv{ $i+1 }}{$nonRepTFs_inv{ $j+1 }} } );
         print $direct $rowtofile;
         $tables_str{only_TFs} .= $rowtofile;
+        $interaction_count{only_TFs}++;
 
       } else {
         # add node to list of deadend nodes
@@ -894,6 +921,15 @@ package main;
     } # for
   } # for
 
+  ################################################################
+  ### Report interactions counts
+
+  my $interation_count_table = "";
+  $interation_count_table .= "Network\tInteractions-count\n";
+  while (my ($key,$value) = each %interaction_count) {
+      $interation_count_table .= $key."\t".$value."\n";
+  }
+  &messageInfoAndLog($interation_count_table);
 
   ################################################################
   ##  Report all indirect interactions, i.e., direct interactions
@@ -1673,7 +1709,11 @@ sub indirectTableToHTML {
 
 sub Archive2 {
   my $cmd = "";
-  $cmd = "zip -r ".$main::output_dir.".zip ".$main::output_dir;
+  # get dir
+  my ($results_dir) = &RSAT::util::SplitFileName($main::outfile{summary});
+  my ($complete_results_dir)  = &RSAT::util::SplitFileName($results_dir);
+
+  $cmd = "zip -rq ".$complete_results_dir.".zip ".$complete_results_dir;
 
   &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 }
@@ -2399,7 +2439,6 @@ sub ParametersTable{
       <thead>
 
         	<tr>
-        	  <th class="tab_col">Input Files</th>
         	  <th class="tab_col">Results Files</th>
         	  <th class="tab_col">Complete Output Files [zip]</th>
             <th class="tab_col">Genome Assembly</th>
@@ -2417,7 +2456,6 @@ sub ParametersTable{
 
       <tbody>
       	<tr>
-      	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::infile{TFs}, $main::infile{cres}).'"><strong>Download</strong></a></td>
       	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir).'">Download</a></td>
           <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir.".zip").'">Download</a></td>
           <td class="par_text">'. $main::genome .'</a></td>
@@ -2764,7 +2802,7 @@ sub Synthesis {
     my $comparison_icon = '
           <tr>
             <td>
-              <img class="icon" src="'.$icons{comparision}.'" height="'.$icon_height.'", width="auto">
+              <img class="icon" src="'.$icons{comparison}.'" height="'.$icon_height.'", width="auto">
             </td>
             <td>
               <table>
@@ -2820,7 +2858,7 @@ sub Synthesis {
     $list_of_files{GRN_indirect_interactions} = ['Indirect Interactions',"This file lists indirect interactions (composed by three nodes), as well as direct interactions and no interactions for all TFs. Putative interaction (or binding) information is given as in 'Only-TFs Network'."];
     $list_of_files{log} = ['Log',"This file specifies each step of the program, posible errors, warnings (e.g. which genes were actually taken into account), and execution time."];
     #$list_of_files{archive};
-    $list_of_files{summary} = ['HTML Summary',"The present html document."];
+    #$list_of_files{summary} = ['HTML Summary',"The present html document."]; # HTML is not an independent file and can only be completely loaded when the other files are also available
     $list_of_files{used_matrixes} = ['Used PSSMs TRANSFAC',"Here are listed the used Position-Specific Score Matrixes (PSSMs) used to find the indicated TFs' motifs in TRANSFAC format."];
     $list_of_files{used_regulatory_regions} = ['Used Regulatory Regions BED',"Here is the used BED file with the coordinates of the regulatory regions of each gene."];
     #$list_of_files{used_cre_seqs} = ['Used Regulatory Regions FASTA',""];
