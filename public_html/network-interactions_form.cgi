@@ -28,6 +28,7 @@ $default{tf_selection} = "";
 $default{cre_selection} = "";
 $default{genome_v} = "";
 $default{net_selection} = "";
+$default{matrixscan_score} = 5;
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -70,6 +71,9 @@ print '
                   <h4 class="glyphicon"><i class="fa fa-tags fa-2x"></i></h4><br/>Optional inputs
                 </a>
                 <a href="#" class="list-group-item text-center">
+                  <h4 class="glyphicon"><i class="fa fa-tasks fa-2x"></i></h4><br/>Advanced options
+                </a>
+                <a href="#" class="list-group-item text-center">
                   <h4 class="glyphicon"><i class="fa fa-play-circle fa-2x"></i></h4><br/>Run analysis
                 </a>
               </div>
@@ -87,36 +91,29 @@ print '
                     <span class="fa-stack fa-lg">
   							<i class="fa fa-info-circle fa-stack-1x"></i>
 					</span>
-          Constructs Gene Networks, mainly Gene regulatory networks. <br>
+          Constructs and compares Gene Regulatory Networks based on pattern-matching. <br>
                     <span class="fa-stack fa-lg">
  							 <i class="fa fa-user fa-stack-1x"></i>
 					</span>
 
-					<!a target="_blank" href="http://folk.uio.no/jamondra/">Moni<!/a><br>
-
-					<span class="fa-stack fa-lg">
-  							<i class="fa fa-folder-open fa-stack-1x"></i>
-					</span>
-					Sample output<br>
+					Monica Padilla Galvez and <a target="_blank" href="http://liigh.unam.mx/amedina/index.html">Alejandra Medina Rivera</a>.<br>
 
 					<span class="fa-stack fa-lg">
   							<i class="fa fa-book fa-stack-1x"></i>
 					</span>
-					<a class="iframe" href="help.matrix-clustering.html">User Manual</a><br>
+					<a class="iframe" href="help.network-interactions.html">User Manual</a><br>
 
-					<!--span class="fa-stack fa-lg">
+					<span class="fa-stack fa-lg">
   							<i class="fa fa-graduation-cap fa-stack-1x"></i>
 					</span>
-					<a class="iframe" href="help.matrix-clustering.html">Tutorial</a><br-->
+					<a class="iframe" href="tutorials/tut_network-interactions.html">Tutorial</a><br>
 
 					<span class="fa-stack fa-lg">
   							<i class="fa fa-twitter fa-stack-1x"></i>
 					</span>
 					<a href="https://twitter.com/rsatools" target="_blank">Ask a question to the RSAT team</a><br>
 
-					<span class="fa-stack fa-lg">
-  							<i class="fa fa-pencil fa-stack-1x"></i>
-					</span>
+          <! publication pencil >
 
                 </div>
 
@@ -236,6 +233,51 @@ print '
    </div>
  </div>
 
+ <!-- ################################################################-->
+ <!-- ### advanced options ###-->
+
+ <!-- ADVANCED OPTIONS -->
+ <div class="bhoechie-tab-content">
+
+ <div class="panel panel-warning">
+ <div class="panel-heading"><em>matrix-scan</em> parameters</div>
+ <div class="panel-body"> <br>';
+
+print " Score lower threshold \n";
+print '
+ <div class="panel-body">
+   <div class="form-group">';
+     print $query->textfield(-id=>'matrixscan_score',-name=>'matrixscan_score', -class=>'form-control',-placeholder=>'5', -required=>'true',
+      -default=>$default{matrixscan_score}) .'
+    </div>
+ </div>';
+
+ print " P-value upper threshold \n";
+ print '
+  <div class="panel-body">
+    <div class="form-group">';
+      print $query->textfield(-id=>'matrixscan_pval',-name=>'matrixscan_pval', -class=>'form-control',-placeholder=>'0.0005', -required=>'true',
+       -default=>$default{matrixscan_pval}) .'
+     </div>
+  </div>';
+
+ print '</div>
+ </div>
+
+ <div class="panel panel-warning">
+ <div class="panel-heading">Motif Database</div>
+ <div class="panel-body"> <br>';
+
+my %args = ();
+#$args{space} = 1;
+
+print &MotifSelection(%args);
+
+ print '</div>
+ </div>
+
+ </div>
+
  <!--################################################################-->
  <!--### output & run ###-->
 
@@ -273,6 +315,75 @@ print $query->end_form;
   </div>
 </div>
 ';
+
+################################################################
+## Demo area
+print "<textarea id='demo' style='display:none'></textarea>";
+print "<div id='demo_descr' class='col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container'></div>";
+
+
+
+#
+################################################################
+## Demo 1 data
+
+$tfs_file = "demo_files/TFs_short.txt";
+$tfs = "";
+open(my $fh1, $tfs_file);
+while(my $row = <$fh1>){
+    chomp $row;
+    $tfs .= $row;
+    $tfs .= "\\n";
+}
+
+$reg_file = "demo_files/enhancers_short.bed";
+$bed = "";
+open(my $fh2, $reg_file);
+while(my $row = <$fh2>){
+    chomp $row;
+    $bed .= $row;
+    $bed .= "\\n";
+}
+
+$net_file = "demo_files/net_short.tsv";
+$net = "";
+open(my $fh3, $net_file);
+while(my $row = <$fh3>){
+    chomp $row;
+    $net .= $row;
+    $net .= "\\n";
+}
+
+print '<script>
+function setDemo1(tfs, bed, net){
+    $("#reset").trigger("click");
+    descr_1 = "<H4>Demonstration: Network Comparison</H4>\n \
+    <blockquote class =\'blockquote text-justify small\'>\
+    In this demo, we will reconstruct a Gene Regulatory Network \
+    for a list of genes and transcription factors expressed during \
+    chicken ear development and compare it with experimentally validated \
+    TF-gene interactions. Data source: Anwar, M. et al., 2017. \
+    Check the panel <b>Mandatory inputs</b>, \
+    the panel <b>Mandatory options</b>, \
+    the panel <b>Optional inputs</b>, \
+    and then <b>Run analysis</b></blockquote>";
+
+    demo_descr.innerHTML = descr_1;
+    html_title.value = "\'Demo 01\'";
+    matrixscan_pval.value = "0.0005";
+    genome_v.value = "galGal4";
+    dir_name.value = "Demo01";
+    tf_selection.value = tfs;
+    cre_selection.value = bed;
+    net_selection.value = net;
+    demo.value = descr_1;
+}
+</script>';
+
+print ' <div class="col-lg-9 col-md-5 col-sm-8 col-xs-9 demo-buttons-container">
+
+<button type="button" class="btn btn-info" onclick="setDemo1('. "'$tfs', '$bed', '$net'" .')">DEMO</button> ';
+
 
 ################################################################
 print $query->end_html;
