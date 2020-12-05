@@ -193,6 +193,30 @@ if ($query->param('net_selection') || $query->param('uploaded_net_file')) {
   $parameters .= " -report_net -net ".$net_file;
   &DelayedRemoval($net_file);
 }
+################################################################
+## Advanced options
+
+## matrix-scan
+
+## score lth
+local $matscan_score = lc($query->param('matrixscan_score'));
+if($matscan_score){
+    $matscan_score =~ s/\s+/_/g;
+    $parameters .= " -score '".$matscan_score."'";
+}
+
+## pval uth
+local $matscan_pval = lc($query->param('matrixscan_pval'));
+if($matscan_pval){
+    $matscan_pval =~ s/\s+/_/g;
+    $parameters .= " -pval '".$matscan_pval."'";
+}
+
+## Add motif database
+#if ($query->param('genome_v')) {
+#    ($database) = split " ", $query->param('genome_v'); ### take the first word
+#    $parameters .= " -database ".$genome_v;
+#}
 
 ################################################################
 ## Output dir
