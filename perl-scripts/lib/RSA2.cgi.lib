@@ -1037,15 +1037,20 @@ sub UCSCGenomePopUpSelectable {
   my $popup = "";
   my @cols = ();
   my $tmp_dir = &RSAT::util::get_pub_temp();
+  my $genomes_file = $tmp_dir."/genomes-ucsc.tsv";
 
   ## Prepare select table
   $popup .= "<select name='".$name."' id='".$id."' > ";
   $popup .= "<option value = 'none'> UCSC genome </option>\n";
 
-  ## Run supported-organisms-ucsc to obtain list
-  my $cmd = &RSAT::server::GetProgramPath("supported-organisms-ucsc")." | perl -pe 's/Genome at UCSC//g' | sort > ".$tmp_dir."/genomes-ucsc.tsv";
-  &doit($cmd);
-  my ($genomes , $genomes_dir) = &OpenInputFile($tmp_dir."/genomes-ucsc.tsv");
+  ## Check for existance of file
+  unless ( -s $genomes_file ){
+    ## Run supported-organisms-ucsc to obtain list
+    my $cmd = &RSAT::server::GetProgramPath("supported-organisms-ucsc")." | perl -pe 's/Genome at UCSC//g' | sort > ".$genomes_file;
+    &doit($cmd);
+  }
+
+  my ($genomes , $genomes_dir) = &OpenInputFile($genomes_file);
 
   while($row = <$genomes>){
     next unless ($row =~ /\S/); ## Skip empty rows
