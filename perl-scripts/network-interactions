@@ -18,8 +18,8 @@ version 1
 
 =head1 DESCRIPTION
 
-Constructs Gene Networks based on the output of <matrix-scan> from a list
-of genes and transcriptional factors of interest.
+Constructs and compares Gene Networks based on the output of <matrix-scan>
+from a list of genes and transcriptional factors of interest.
 
 =head1 AUTHORS
 
@@ -627,12 +627,15 @@ package main;
     # Save input network interactions
     my ($net, $net_dir) = &OpenInputFile($main::infile{network});
     &messageInfoAndLog("Reading input network file: ".$main::infile{network}."\n");
+    my $input_net_nrows = 0;
+    my $input_int_count = 0;
 
     while (my $net_row = <$net>){
         chomp($net_row);
         next unless ($net_row =~ /\S/); ## Skip empty rows
         next if ($net_row =~ /^;/); ## Skip comment rows
         next if ($net_row =~ /^#/); ## Skip header rows
+        $input_net_nrows++;
 
         @fields = split(/\t|,/, $net_row);
 
@@ -660,6 +663,8 @@ package main;
           if( $nonRepTFs{$fields[0]} && $nonRepTFs{$fields[1]} ){
             $net_old_onlyTFs[ $nonRepTFs{$fields[0]}-1 ][ $nonRepTFs{$fields[1]}-1 ] = 1;
           }
+          # count interactions
+          $input_int_count++;
         }
         # reinitialize value
         $flag =0;
@@ -691,7 +696,18 @@ package main;
         # Tell user which regulatory sequences are lacking and which genes are used in the program
         &messageInfoAndLog("Seems like you didn't reported the regulatory sequences for the following genes in your input network: ".$noRegSeq_reporting."\n");
         &messageInfoAndLog("The program will use the rest of the genes for further network comparison: ".$RegSeq_reporting."\n");
+        # Tell user in the html summary
+        $status{genes_no_reg_seq} = $noRegSeq_reporting;
+
       } # Info
+
+      ## Update run status
+      if ($input_int_count == 0){
+        $status{empty_input_net} = 1;
+      } elsif ($input_int_count < $input_net_nrows){
+        $status{reduced_input_net} = 1;
+      }
+
   } # report_net
 
   ################################################################
@@ -832,7 +848,7 @@ package main;
     $found = &OpenOutputFile($main::outfile{network_found_interactions});
     &Verbose($found) if ($main::verbose >= 1);
     print $found "# Newly found interactions in:\t".$main::outfile{complete_direct_interactions}." not found in ".$main::infile{network}."\n#TFx\tGeney\tCoordinates\tPositions\tScores\n"; # header
-    $table_str{found} = "TFx\tGeney\tCoordinates\tPositions\tScores\n";
+    $tables_str{found} = "TFx\tGeney\tCoordinates\tPositions\tScores\n";
 
     #$intersectionTFs = &OpenOutputFile($main::outfile{network_intersection_only_TFs});
     #&Verbose($intersectionTFs) if ($main::verbose >= 1);
@@ -883,6 +899,9 @@ package main;
 
     } # for
   } # for
+
+  ## Run status
+  $status{empty_intersection} = 1 if ($interaction_count{intersection} == 0);
 
   ## Comparison of GRNs ?
 
@@ -1059,13 +1078,12 @@ package main;
         $tables_html{$tsv_table} = &tableToHTML( $tables_str{$tsv_table}, "", 1, "", 1 );
       } elsif($tsv_table eq "indirect") {
         $tables_html{$tsv_table} = &indirectTableToHTML($tables_str{$tsv_table});
-        #&indirectTableToHTML($tables_str{$tsv_table});
       } else {
         $tables_html{$tsv_table} = &tableToHTML( $tables_str{$tsv_table}, "", 1 );
       }
     }
 
-    &Archive2();
+    &makeZip();
     ################################################################
     ## Check output directories and define file names
     #&set_output_file_names();
@@ -1358,20 +1376,6 @@ P-value upper threshold to run matrix-scan with.
 	    ## Archive_format
 =pod
 
-=item B<-archive_format [zip|tar|tgz]>
-
-Archive format: zip (default), tar or tgz
-
-=cut
-	} elsif ($arg eq "-ar_format") {
-	    $main::archive_format = shift(@arguments);
-      unless ($main::archive_format eq "zip" || $main::archive_format eq "tar" || $main::archive_format eq "tgz"){
-        &RSAT::error::FatalError("Invalid archive format. Must be zip, tar or tgz.");
-      }
-
-      ## Output prefix
-=pod
-
 =item B<-o output_prefix>
 
 Prefix for the output files.
@@ -1394,7 +1398,7 @@ Output dir
 
 	} elsif ($arg eq "-outdir") {
 	    $main::output_dir = &trim(shift(@arguments));
-	    # $main::dir{output}
+	    $main::output_dir =~ s|\s+||g;
 	}
 	else {
 	    &FatalError(join("\t", "Invalid option", $arg));
@@ -1707,7 +1711,7 @@ sub indirectTableToHTML {
   return $table_html;
 }
 
-sub Archive2 {
+sub makeZip {
   my $cmd = "";
   # get dir
   my ($results_dir) = &RSAT::util::SplitFileName($main::outfile{summary});
@@ -1724,38 +1728,6 @@ sub Archive2 {
 ####                        adapted from matrix-clustering                  ####
 ####                                                                        ####
 ################################################################################
-
-################################################################
-## Index a table to convert to HTML
-#sub AddTabToConvert { ## used in set_output_file_names
-#                      ## crea la version en html de varios archivos de salida
-#  my ($key) = @_;
-#  my $tab = $main::outfile{$key};
-#  my $html_key = $key."_html";
-#  my $html = $tab."_html";
-#  $html =~ s/\.tab.html$/\.html/;
-#  $html =~ s/\.txt.html$/\.html/;
-#  $main::outfile{$html_key} = $html; push @outfiles, $html_key;
-#  push @tab_to_convert, $key; ## Add the key to the list to be converted
-#}
-
-################################################################
-## Convert tab-delimited files in HTML
-#sub ConvertTabToHTML {
-#  my @tab_to_convert = @_;
-#  &RSAT::message::TimeWarn("Converting tab-delimited to HTML files") if ($main::verbose >= 2);
-#  for my $key (@tab_to_convert) {
-#    my $tab = $main::outfile{$key};
-#    my $html_key = $key."_html";
-#    my $html = $main::outfile{$html_key};
-#    my $cmd = &RSAT::server::GetProgramPath("text-to-html");
-#    $cmd .= " -i ".$tab;
-#    $cmd .= " -o ".$html;
-#    &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::outfile{log});
-#    #&doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::outfile{log}, $main::err);
-#  }
-#}
-
 
 ###############################
 ## Export the cluster header
@@ -2489,7 +2461,13 @@ sub ParametersTable{
 ## Table in div with button
 
 sub ButtonNTable {
-  my ($button_div_id, $table_div_id, $title_in_button, $title_in_table_div, $table_html, $button_div_class, $table_div_class) = @_;
+  my ($button_div_id, $table_div_id, $title_in_button, $title_in_table_div, $table_html, $button_div_class, $table_div_class, @add_notes) = @_;
+
+  ## check input
+  #unless ($table_html ne ""){
+  #  print "No input html table when calling ButtonNTable\n";
+  #  exit;
+  #}
 
   # div class defaults
   $button_div_class = "button_click Section_button" unless ($button_div_class);
@@ -2506,6 +2484,7 @@ $div_button_table .= "\n".'
 --main_table_html--
 
     <ul style="text-align:left;margin:0px 0px 5px 0px;">
+--additional_notes_html--
        <li type="square" style="color:red">Note: by default the table displays the first 50 entries. Click on the <i>Show X entries</i> button to display more (or less).</li>
        <li type="square">Click on the column names to change the order of the data.</li>
        <li type="square">Use the <i>Search</i> window to find your entries of interest.</li>
@@ -2513,6 +2492,21 @@ $div_button_table .= "\n".'
 
   </div>
 '."\n\n";
+
+  ## Additional notes
+  if (scalar(@add_notes) > 0 ){
+    my $add_notes_html = "";
+
+    foreach my $note (@add_notes) {
+      $add_notes_html .= '       <li type="square">'.$note.'</li>
+      ';
+    }
+
+    ## add additional notes
+    $div_button_table =~ s/--additional_notes_html--/$add_notes_html/g;
+  } else {
+    $div_button_table =~ s/--additional_notes_html--//g;
+  }
 
   # add actual table
   $div_button_table =~ s/--main_table_html--/$table_html/g;
@@ -2704,11 +2698,13 @@ sub InsertListOfFiles {
 	</div>
 ';
 
+  my ($dir, $short_file_name) = &RSAT::util::SplitFileName($main::outfile{summary});
+
   # list files
   foreach my $file (sort keys %hash_list_of_files) {
     $list_of_files_html .= '
       <tr>
-        <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{$file}).'"><strong>'.$hash_list_of_files{$file}[0].'</strong></a></td>
+        <td class="tab_spacer_2"><a target="_blank" class="file_link" href="'.&RSAT::util::RelativePath($dir, $main::outfile{$file}).'"><strong>'.$hash_list_of_files{$file}[0].'</strong></a></td>
         <td class="tab_spacer_2">'.$hash_list_of_files{$file}[1].'</td>
       </tr>
     ';
@@ -2769,6 +2765,7 @@ sub Synthesis {
     #################################
     ##       ICONS SECTION        ##
     #################################
+    my @add_notes = ();
 
     ## Open the icons table
     my $table_icons_head = '<table style="display:block;clear:both;"><tbody>';
@@ -2789,15 +2786,30 @@ sub Synthesis {
     print $syn $net_icon;
 
     # complete network
-    &ButtonNTable("complete_net_button", "complete_net_table_div", "Complete Network", "Complete Network (all genes)", $tables_html{complete_direct_interactions} );
+    #             ($button_div_id,       $table_div_id,            $title_in_button,   $title_in_table_div,            $table_html,             $button_div_class, $table_div_class, @add_notes)
+    &ButtonNTable("complete_net_button", "complete_net_table_div", "Complete Network", "Complete Network (all genes)", $tables_html{complete_direct_interactions});
     print $syn $section_tab_icon_intermediate;
 
     # only-TFs network
-    &ButtonNTable("onlyTFS_net_button", "onlyTFs_net_table_div", "Only-TFs Network", "Only-TFs Network", $tables_html{only_TFs} );
+    &ButtonNTable("onlyTFS_net_button", "onlyTFs_net_table_div", "Only-TFs Network", "Only-TFs Network", $tables_html{only_TFs});
     print $syn $section_tab_icon_tail_int_table;
 
     #################################
     ##  Comparison networks
+
+    ## Check run status
+    if ($status{empty_input_net}){
+      push(@add_notes, "<b>Warning!</b> The input network was not taken into account for comparison because the regulatory sequences of the nodes were not specified. In this case, no interactions will appear in the Overlap and Not found tables. Please specify the regulatory sequences of the genes and TFs in 'Regulatory Sequences BED file'. ");
+      push(@add_notes, "The regulatory sequences of the following genes were not specified: ".$status{genes_no_reg_seq});
+    } elsif ($status{reduced_input_net}){
+      push(@add_notes, "<b>Warning!</b> Some of the interactions specified in the input network were not taken into account for this comparison because their regulatory sequences were not specified. ");
+      push(@add_notes, "The regulatory sequences of the following genes were not specified: ".$status{genes_no_reg_seq});
+    }
+    if ($status{empty_intersection}){
+      push(@add_notes, "<b>Warning!</b> No interactions were found in common. This can happen if the input network was emptied.");
+    }
+
+    ## Continue constructing summary
 
     my $comparison_icon = '
           <tr>
@@ -2811,19 +2823,20 @@ sub Synthesis {
     print $syn $comparison_icon;
 
     # intersection
-    &ButtonNTable("intersection_net_button", "intersection_net_table_div", "Networks Overlap", "Intersection between Input Network and Complete Network", $tables_html{intersection} );
+    &ButtonNTable("intersection_net_button", "intersection_net_table_div", "Networks Overlap", "Intersection between Input Network and Complete Network", $tables_html{intersection} , "", "", @add_notes );
     print $syn $section_tab_icon_intermediate;
 
     # not_found interactions
-    &ButtonNTable("not_found_net_button", "not_found_net_table_div", "Not Found Interactions", "Input Network's Interactions Not Found", $tables_html{not_found} );
+    &ButtonNTable("not_found_net_button", "not_found_net_table_div", "Not Found Interactions", "Input Network's Interactions Not Found", $tables_html{not_found},"" ,"" , @add_notes  );
     print $syn $section_tab_icon_intermediate;
 
     # found interactions
-    &ButtonNTable("found_net_button", "found_net_table_div", "Newly Found Interactions", "Network's Newly Found Interactions", $tables_html{found} );
+    &ButtonNTable("found_net_button", "found_net_table_div", "Newly Found Interactions", "Network's Newly Found Interactions", $tables_html{found} , "", "", @add_notes );
     print $syn $section_tab_icon_tail_int_table;
 
     # intersection (only-TFs)
 
+    @add_notes = ();
     #################################
     ##  Indirect network
 
