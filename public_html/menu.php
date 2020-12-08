@@ -74,9 +74,9 @@
                      <div id="menu1" class="menu_collapsible">
                          <a class="menu_item" href="supported-organisms.cgi">supported organisms</a>
                          <a class="menu_item" href="gene-info_form.cgi"> gene information</a>
-     
 
-<?php    
+
+<?php
 
     if ($properties['phylo_tools'] == '1') {
         echo '<a class="menu_item" href="infer-operons_form.cgi"> infer operons</a>';
@@ -86,9 +86,9 @@
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> infer operons</span>';
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> get orthologs</span>';
     }
-?>                         
-                         
-                         
+?>
+
+
                          <a class="menu_item" href="random-genes_form.cgi" >random gene selection</a>
                      </div>
 
@@ -97,14 +97,14 @@
                      <div id="menu2" class="menu_collapsible">
                          <a class="menu_item" href="retrieve-seq_form.cgi" >retrieve sequence</a>
 <?php
-    
+
     if($properties['ensembl_tools'] == '1') {
         echo '<a class="menu_item" href="retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a><a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>'; }
     else{
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> retrieve EnsEMBL seq</span><span class="menu_item" style="cursor:default;color:lightgray"> fetch-sequences from UCSC</span>';
     }
 ?>
-                         
+
                          <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf  <img src="images/onebit_49.png" height="30" class="new"></a>
                          <!--	  <a class="menu_item" href="http://www.rsat.eu/retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>-->
                          <a class="menu_item" href="purge-sequence_form.cgi" >purge sequence</a>
@@ -179,26 +179,26 @@
                          onclick="toggleMenu('10')" id="heading10">Comparative genomics&nbsp; <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu10" class="menu_collapsible">
 <?php
-    
+
     if($properties['phylo_tools'] == '1') {
         echo '<a class="menu_item" href="get-orthologs_form.cgi" >get orthologs</a>'; }
     else{
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> get orthologs</span>';
     }
-?>      
-                     
+?>
+
                          <?php
-    
+
     if($properties['compara_tools'] == '1') {
         echo '<a class="menu_item" href="get-orthologs-compara_form.cgi" >get orthologs-compara <img src="images/onebit_49.png" height="30" class="new"></img></a>'; }
     else{
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> get orthologs-compara </span>';
     }
-?>                     
-                         
-                         
+?>
+
+
 <?php
-    
+
     if($properties['phylo_tools'] == '1') {
         echo '                         <a class="menu_item" href="footprint-discovery_form.cgi" >footprint-discovery</a>
                          <a class="menu_item" href="footprint-scan_form.cgi" >footprint-scan <img src="images/onebit_49.png" height="30" class="new"></img>
@@ -206,7 +206,7 @@
     else{
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> footprint-discovery</span><span class="menu_item" style="cursor:default;color:lightgray"> footprint-scan</span>';
     }
-?>   
+?>
 
                      </div>
 
@@ -215,8 +215,9 @@
                          onclick="toggleMenu('13')" id="heading13">NGS - ChIP-seq</div>
                      <div id="menu13" class="menu_collapsible">
                          <a class="menu_item" href="peak-motifs_form.cgi" >peak-motifs</a>
+                         <a class="menu_item" href="peak-motifs2_form.cgi" >peak-motifs2 - beta</a>
                          <?php
-    
+
     if($properties['ucsc_tools'] == '1') {
         echo '<a class="menu_item" href="fetch-sequences_form.php" >fetch-sequences from UCSC</a>'; }
     else{
@@ -233,9 +234,9 @@
                      <div class="menu_heading_closed"
                          onclick="toggleMenu('9')" id="heading9">Genetic variations (Var-tools) <img src="images/onebit_49.png" height="30" class="new"></img></div>
                      <div id="menu9" class="menu_collapsible">
-                     
+
                      <?php
-    
+
     if($properties['variations_tools'] == '1') {
         echo '<a class="menu_item" href="variation-info_form.cgi" >Variation info <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="retrieve-variation-seq_form.cgi" >Retrieve variation sequences <img src="images/onebit_49.png" height="30" class="new"></img></a>
@@ -247,7 +248,7 @@
         <span class="menu_item" style="cursor:default;color:lightgray"> Scan variations with motifs</span>';
     }
 ?>
-                     
+
                          <a class="menu_item" href="convert-variations_form.cgi" >Convert variation formats <img src="images/onebit_49.png" height="30" class="new"></img></a>
                      </div>
                  </div>
