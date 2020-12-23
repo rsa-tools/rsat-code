@@ -2386,57 +2386,37 @@ sub ReportStyleCSS{
 ## The values are filled with variables
 ## taken from other parts of the code
 sub ParametersTable{
+  my ( $parameters, $main_title ) = @_;
+  my %hash_params = %{ $parameters }; # dereference hash
+  # hash should have paired all parameters or section paired with their values
+  # subparameters or subsections can be specified using a multidimensional hash
+  # an example is provided in network-interactions subroutin Synthesis
 
-  #my $hclust_method_link = "http://pedagogix-tagc.univ-mrs.fr/courses/statistics_bioinformatics/pdf_files/09.clustering.pdf";
+  print("In function ParametersTable\n".scalar %hash_params ."\n");
 
-  #my $threshold_values_html = "";
+  my ($k, $v);
+  while ( ($k,$v) = each %hash_params) {
+    print "$k => $v\n";
+  }
 
-  ### Print the thresholds and their values
-  #foreach my $par (sort keys %lth) {
-  #  $threshold_values_html .= "<strong>".$par."</strong> = ".$lth{$par}."<br>";
-  #}
-  #foreach my $par (sort keys %uth) {
-  #  $threshold_values_html .= "<strong>".$par."</strong> = ".$uth{$par}."<br>";
-  #}
-
+  $main_title = 'Parameters' if ( $main_title eq '' );
 
   my $par_table = '
   <!-- Div with the table of selected parameters -->
-  <!--  <div id="Par_tab_button" class="button_click Section_button selected_header_section"><strong>Results Summary</strong></div> -->
   <div id="Par_tab" class="tab" style="margin-bottom:15px;">
-    <h2 style="margin-top: 0px;margin-bottom: 5px;">Results Summary</h2>
+    <h2 style="margin-top: 0px;margin-bottom: 5px;">'. $main_title .'</h2>
 
     <table id="parameters_table" style="width:700px;">
 
       <thead>
-
         	<tr>
-        	  <th class="tab_col">Results Files</th>
-        	  <th class="tab_col">Complete Output Files [zip]</th>
-            <th class="tab_col">Genome Assembly</th>
-            <th class="tab_col"><i>matrix-scan</i> Parameters
-              <table><tbody>
-      	        <tr>
-      	          <td class="tab_col param">Score lth</td>
-                  --pval--
-      	        </tr>
-      	     </tbody></table>
-           </th>
+--parameters_titles_html--
         	</tr>
-
       </thead>
 
       <tbody>
       	<tr>
-      	  <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir).'">Download</a></td>
-          <td class="par_text"><a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir.".zip").'">Download</a></td>
-          <td class="par_text">'. $main::genome .'</a></td>
-          <td>
-            <table span="3"><tbody>
-                <td class="par_text" style="width:150px;">'. $main::score .'</td>
-                --pval--
-            </tbody></table>
-          </td>
+--parameters_values_html--
       	</tr>
       </tbody>
 
@@ -2445,14 +2425,54 @@ sub ParametersTable{
   </div>
 '."\n\n";
 
-  if ( $main::pval ne "NA"){
-    my $pval_field = "<td class=\"tab_col param\">P-value uth</td>";
-    $par_table =~ s/--pval--/$pval_field/;
-    $pval_field = "<td class=\"par_text\" style=\"width:150px;\">". $main::pval ."</td>";
-    $par_table =~ s/--pval--/$pval_field/;
-  } else {
-    $par_table =~ s/--pval--//g;
-  }
+ # construct sections with input hash
+ my $param_titles_html = "";
+ my $param_values_html = "";
+ foreach my $param_title (sort keys %hash_params){
+
+   $param_titles_html .=  '<th class="tab_col">'.$param_title;
+
+   # In case of subparameters or subsections
+   if ( ref($hash_params{$param_title}) eq 'HASH' ) {
+
+     # subtitle html
+     $param_titles_html .=  '
+       <table><tbody>
+         <tr>
+     ';
+
+     # subvalue html
+     $param_values_html .=  '
+      <td>
+       <table span="3"><tbody>
+         <tr>
+     ';
+
+     foreach my $subparam_title (sort keys %{ $hash_params{$param_title} } ){
+        $param_titles_html .=  '<td class="tab_col param">'. $subparam_title .'</td>';
+        $param_values_html .=  '<td class="par_text" style="width:150px;">'. %{ $hash_params{$param_title} }{$subparam_title} .'</td>';
+     }
+
+     $param_titles_html .= '
+         </tr>
+      </tbody></table>
+     ';
+
+     $param_values_html .= '
+         </tr>
+      </tbody></table>
+     </td>
+     ';
+   } else {
+     $param_values_html .=  '<td class="par_text">'. $hash_params{$param_title} .'</td>';
+   }
+
+   $param_titles_html .= '</th>';
+ }
+
+ # add sections to html
+ $par_table =~ s/--parameters_titles_html--/$param_titles_html/;
+ $par_table =~ s/--parameters_values_html--/$param_values_html/;
 
   print $syn $par_table;
 }
@@ -2674,6 +2694,9 @@ sub InsertListOfFiles {
   my $list_of_files_html = "";
   my %hash_list_of_files = %{$list_of_files}; # dereference hash
 
+  # default title
+  $button_title = 'List of Files' if ( $button_title eq '' );
+
       my $add_files =
 	  '
 
@@ -2760,7 +2783,20 @@ sub Synthesis {
 
     &ReportStyleCSS();
 
-    &ParametersTable();
+    my %parameters = (); # sections for Results Summary / Parameters Table
+    $parameters{'Results Files'} = '<a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir).'">Download</a>';
+    $parameters{'Complete Output Files [zip]'} = '<a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir.".zip").'">Download</a>';
+    $parameters{'Genome Assembly'} = $main::genome;
+    $parameters{'<i>matrix-scan</i> Parameters'}{'Score lth'} = $main::score;
+    $parameters{'<i>matrix-scan</i> Parameters'}{'P-value uth'} = $main::pval if ( $main::pval ne "NA" );
+
+    my ($k, $v);
+    while ( ($k,$v) = each %parameters ) {
+      print "$k => $v\n";
+    }
+
+    &ParametersTable( \%parameters, 'Results Summary');
+    #&ParametersTable( %parameters );
 
     #################################
     ##       ICONS SECTION        ##
