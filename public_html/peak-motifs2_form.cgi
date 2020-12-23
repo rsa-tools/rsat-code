@@ -82,14 +82,24 @@ $checked{$default{visualize}} = "checked";
 
 ################################################################
 ### header
-&RSA_header("peak-motifs", "form");
+&RSA_header("peak-motifs2", "form");
 
 #print "<pre>default{visualize} ",$default{visualize}, "</pre>";
 #print "<pre>checked{default{visualize}} ",$checked{$default{visualize}}, "</pre>";
 
 print <<end_part_1;
 <center>
+<div style='border:1px solid;border-radius:15px;color:red;font-size:32px'>
+  <p>  WARNING: dear user, we are working to deliver a new version of peak-motifs.
+       We apologize for any inconvenience you may encounter in this site at the moment.
+       We recommend you to refer to a stable release of the tool <a href='peak-motifs_form.cgi'>peak-motifs</a>.
+  </p>
+  <p style='font-style:italic;color:#0D73A7'> - The RSAT team</p>
+</div>
+
 <p>Discover exceptional motifs (over-represented, positionally biased) in a collection of ChIP-seq peaks. </p>
+
+
 <!--
 <p>Conception<sup>c</sup>, implementation<sup>i</sup> and testing<sup>t</sup>:
 <a target='_blank' href='http://jacques.van-helden.perso.luminy.univ-amu.fr/'>Jacques van Helden</a><sup>cit</sup>,
@@ -97,7 +107,8 @@ print <<end_part_1;
 <a target='_blank' href='https://www.ulb.ac.be/rech/inventaire/chercheurs/4/CH10464.html'>Matthieu Defrance</a><sup>ci</sup>,
 <a target='_blank' href='https://www.linkedin.com/in/olivier-sand-243570b5/'>Olivier Sand</a><sup>i</sup>,
 <a target='_blank' href='http://www.ibens.ens.fr/spip.php?article26&lang=en'>Denis Thieffry</a><sup>ct</sup>,
-and <a target='_blank' href='https://ibios.dkfz.de/tbi/index.php/about/eilslabs-people/128-carl-herrmann'>Carl Herrmann</a><sup>ct</sup>,
+<a target='_blank' href='https://ibios.dkfz.de/tbi/index.php/about/eilslabs-people/128-carl-herrmann'>Carl Herrmann</a><sup>ct</sup>,
+and <a target='_blank' href=''>Walter Santana-Garcia</a><sup>cit</sup>,
 -->
 </center>
 <p><b>References</b>
@@ -121,10 +132,10 @@ and <a target='_blank' href='https://ibios.dkfz.de/tbi/index.php/about/eilslabs-
 
 <div class=\"menu_heading_closed\" onclick=\"toggleMenu(\'105\')\" id=\"heading105\">
 
-<font color='#0D73A7'>Information on the methods used in peak-motifs</font> </div>
+<font color='#0D73A7'>Information on the methods used in peak-motifs2</font> </div>
  <div id=\"menu105\" class=\"menu_collapsible\">
 
-The idea behind <i>peak-motifs</i> is that we detect <b>exceptional
+The idea behind <i>peak-motifs2</i> is that we detect <b>exceptional
 words</b> based on <b>distinct and complementary criteria</b>:
 
 <ul>
@@ -165,7 +176,7 @@ end_part_1
 print "<textarea id='demo' style='display:none'></textarea>";
 print "<div id='demo_descr'></div>";
 
-print $query->start_multipart_form(-action=>"peak-motifs.cgi");
+print $query->start_multipart_form(-action=>"peak-motifs2.cgi");
 
 ################# Peak sequences
  &Panel1();
