@@ -12,7 +12,6 @@ all: 	test_dir  \
 	supported_organisms \
 	r_version \
 	purge_seq \
-	crer_scan_python2 \
 	crer_scan_python3 \
 	ws_stub \
 	ws_stub_test \
@@ -102,7 +101,7 @@ ws_nostub_test:
 
 ## test python web serviecs with peak-motifs (time-consuming)
 WS_SERVER=fungi
-PYTHON=python2
+PYTHON=python
 ws_python_peakmo:
 	@echo 
 	@echo "Testing stub-based SOAP/WSDL web services with peak-motifs python client"	
@@ -118,16 +117,6 @@ purge_seq:
 	@random-seq -l 100 -n 10 | purge-sequence \
 		1> ${TEST_DIR}/rand_purged.fa \
 		2> ${TEST_DIR}/rand_purged_err.txt
-
-crer_scan_python2:
-	@echo
-	@echo "crer-scan with python 2.7"
-	@echo "	${TEST_DIR}/crer_scan_python2_log.txt"
-	@echo "	${TEST_DIR}/crer_scan_python2_err.txt"
-	@make  PYTHON=python2.7 -f makefiles/crer-scan_test.mk  demo_eve \
-		1> ${TEST_DIR}/crer_scan_python2_log.txt \
-		2> ${TEST_DIR}/crer_scan_python2_err.txt 
-	@echo "	results/crer-scan_test//crers/Drosophila_melanogaster_eve_segmentation_sites_pval0.001_crer.ft"
 
 crer_scan_python3:
 	@echo
