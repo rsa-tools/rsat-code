@@ -105,6 +105,7 @@ python3-numpy
 python3-scipy
 python3-matplotlib
 python3-rpy2
+python-yaml
 emacs
 x11-apps
 eog
