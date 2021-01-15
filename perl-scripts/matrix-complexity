@@ -77,7 +77,6 @@ BEGIN {
   }
 }
 require "RSA.lib";
-require "RSA2.cgi.lib";
 use RSAT::util;
 use RSAT::matrix;
 use RSAT::MatrixReader;
@@ -922,7 +921,7 @@ sub pre_process_motif_files{
       
       ## Convert input matrices in transfac format + append prefix if required
       &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
-      my $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+      my $convert_matrix_cmd =  &RSAT::server::GetProgramPath("convert-matrix");
       $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_input};
       $convert_matrix_cmd .= " -from ".$matrix_format;
       $convert_matrix_cmd .= " -to transfac";
@@ -954,7 +953,7 @@ sub pre_process_motif_files{
       ###############################
       ## Append prefix if required
       &RSAT::message::TimeWarn("Converting input matrices") if ($main::verbose >= 2);
-      $convert_matrix_cmd = $SCRIPTS."/convert-matrix";
+      $convert_matrix_cmd =  &RSAT::server::GetProgramPath("convert-matrix");
       $convert_matrix_cmd .= " -i ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
       $convert_matrix_cmd .= " -from tf";
       $convert_matrix_cmd .= " -to transfac";
@@ -1022,7 +1021,7 @@ sub pre_process_motif_files{
   ## Split all the processed motifs into single file
   ## each one containing a single motif
   &RSAT::message::TimeWarn("Split the input file in individual files each with a single motif") if ($main::verbose >= 2);
-  my $split_matrix_cmd = $SCRIPTS."/convert-matrix";
+  my $split_matrix_cmd =  &RSAT::server::GetProgramPath("convert-matrix");
   $split_matrix_cmd .= " -i ".$main::outfile{motif_file};
   $split_matrix_cmd .= " -split";
   $split_matrix_cmd .= " -from tf -to tf";
@@ -1044,7 +1043,7 @@ sub GenerateXPermutatedMotifs{
     my $motif_query_file = $individual_motif_info{$ID}{"file"};
     my $motif_permuted_file = $individual_motif_info{$ID}{"permutations"};
     
-    my $randomize_motifs_cmd = $SCRIPTS."/convert-matrix";
+    my $randomize_motifs_cmd =  &RSAT::server::GetProgramPath("convert-matrix");
     $randomize_motifs_cmd .= " -i ".$motif_query_file;
     $randomize_motifs_cmd .= " -from tf -to tf";
     $randomize_motifs_cmd .= " -perm ".$individual_motif_info{$ID}{"nb_permutations"};
@@ -1071,11 +1070,11 @@ sub CompareMatricesQuick {
     ## This is the faster C implemented version of compare-matrices
     
     $matrix_compa_verbose = 0;
-    my $BIN=$ENV{RSAT}."/bin";
     
     ## Run the pairwise matrix comparison
     &RSAT::message::TimeWarn("Pairwise matrix comparison. Quick version.") if ($main::verbose >= 3);
-    my $cmd = $BIN."/compare-matrices-quick -v ".$matrix_compa_verbose; 
+    my $cmd =  &RSAT::server::GetProgramPath("compare-matrices-quick");
+    $cmd .= " -v ".$matrix_compa_verbose; 
     $cmd .=  " -file1 ".$motif_query_file;
     $cmd .=  " -file2 ".$motif_permuted_file;
     $cmd .= " -lth_ncor1 -1";
@@ -1113,7 +1112,7 @@ sub ConvertTabToHTML {
     my $tab = $main::outfile{$key};
     my $html_key = $key."_html";
     my $html = $main::outfile{$html_key};
-    my $cmd = $SCRIPTS."/text-to-html ";
+    my $cmd =  &RSAT::server::GetProgramPath("text-to-html");
     $cmd .= " -i ".$tab;
     $cmd .= " -o ".$html;
     &doit($cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
@@ -1203,7 +1202,8 @@ sub Produce_logos() {
     &RSAT::message::TimeWarn("Generating Logos") if ($main::verbose >= 2);
 
     ## Add the empty columns
-    my $cmd = $SCRIPTS."/convert-matrix -i ".$main::outfile{input_matrices};
+    my $cmd =  &RSAT::server::GetProgramPath("convert-matrix");
+    $cmd .= " -i ".$main::outfile{input_matrices};
     $cmd .= " -from tf -to tf -return logo -logo_no_title";
     $cmd .= " -logo_format png ";
     $cmd .= " -logo_dir ".$main::outfile{prefix}."_logos/";

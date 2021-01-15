@@ -4,7 +4,7 @@
 ## - footprint-scan
 ## - get-orthologs
 
-require "RSA2.cgi.lib";		## For sortable HTML tables
+require "RSA.lib";		## For sortable HTML tables
 
 ## Options for the &doit() command;
 local $dry = 0;	  ## Do not run the command, just echo them as warning

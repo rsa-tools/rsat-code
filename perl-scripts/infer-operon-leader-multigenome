@@ -75,11 +75,8 @@ require RSAT::Family;
 
 ################################################################
 #### initialise parameters
-if (defined($SCRIPTS)) {
-  $get_leader_cmd = "$SCRIPTS/infer-operon-leader"; ## for the web browser, the full path is necessary
-} else {
-  $get_leader_cmd = "infer-operon-leader";
-}
+local $get_leader_cmd =  &RSAT::server::GetProgramPath("infer-operon-leader"); ## for the web browser, the full path is necessary
+
 
 local $start_time = &RSAT::util::StartScript();
 

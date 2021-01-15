@@ -16,7 +16,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 $title = $query->param("title");
-$file = $query->param("file"); $file=~tr/[:()';<>]/[       ]/; # 20181205 ajhernan / quick fix to prevent xss
+$file = $query->param("file"); #$file=~tr/[()'":;<>-]/[         ]/; # 20181205 ajhernan / quick fix to prevent xss
 
 print $query->header();
 print sorttable_script();
@@ -28,13 +28,13 @@ print $query->start_html(-title=>"$title",
         -src      => 'js/jquery.js'
     },
     { -type => 'text/javascript',
-        -src      => 'lib/RSAT_menu.js'
+        -src      => 'js/RSAT_menu.js'
     },
     { -type => 'text/javascript',
-        -src      => 'RSAT_tabs.js'
+        -src      => 'js/RSAT_tabs.js'
     }
    ],
-    -style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
+    -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css","css/font-awesome.min.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
     

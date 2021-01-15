@@ -1,0 +1,56 @@
+descr:
+    Draw a heatmap from a table
+---
+parameters:
+  - name: i
+    description: inputfile
+    type: file
+  - name: o
+    description: outputfile. name of the output file
+    type: string
+  - name: html
+    description: html_map_file. If a HTML map file is defined, draw-heatmap then produces a HTML file that loads the HEATMAP.
+    type: string
+    required: false
+  - name: rownames
+    description: Use this option if the first column contain the row names.
+    type: boolean
+  - name: no_text
+    description: Using this option, the values are not written in the cells of the heatmap
+    type: boolean
+    required: false
+  - name: out_format
+    description: Output format. Supported - png,jpeg
+    type: string
+    choices: png,jpeg
+  - name: title
+    description: Title for the graph (only works with option -r_plot so far).
+    type: string
+  - name: gradient
+    description: Color of the intensity gradient of the heatmap. Default is grey. Supported - green, blue, red, fire, grey.
+    type: string
+    choices: green, blue, red, fire, grey
+  - name: col_width
+    description: Width of the columns (in pixel).
+    type: int
+  - name: row_height
+    description: Height of the rows (in pixel).
+    type: int
+  - name: min
+    description: Minimal value of the heatmap.
+    type: int
+  - name: max
+    description: Maximal value of the heatmap.
+    type: int
+  - name: digits
+    description: Round the values to the specified number of digit
+    type: int
+  - name: lines
+    description: Add black vertical and horizontal separations lines between the cells of the heatmap
+    type: boolean
+  - name: chaos
+    description: The heatmap is a CHAOS Game Representation.
+    type: boolean
+  - name: r_plot
+    description: Use R to generate the heatmap, rather than using the Perl GD module.
+    type: boolean

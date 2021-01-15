@@ -17,26 +17,32 @@ commands:
   - command: "perl-scripts/supported-organisms"
     desc: "Get the list of organisms supported on this RSAT server"
     group: "Genomes and genes"
+    servers: ["teaching", "metazoa", "plants", "fungi", "protists", "bacteria"]
 
   - command: "perl-scripts/supported-organisms-server"
     desc: "Get the list of organisms supported on a remote RSAT server"
     group: "Genomes and genes"
+    servers: ["teaching", "metazoa", "plants", "fungi", "protists", "bacteria"]
 
   - command: "perl-scripts/gene-info"
     desc: "Get information for one or more genes specified by identifiers, names or descriptions."
     group: "Genomes and genes"
+    servers: ["teaching", "metazoa", "plants", "fungi", "protists", "bacteria"]
 
   - command: "perl-scripts/add-gene-info"
     desc: "Add information about genes identified in user-specified columns of a TSV file"
     group: "Genomes and genes"
+    servers: ["teaching", "metazoa", "plants", "fungi", "protists", "bacteria"]
 
   - command: "perl-scripts/infer-operons"
     desc: "Infer bacterial operons based on intergenic distances"
     group: "Genomes and genes"
+    servers: ["teaching", "bacteria"]
 
   - command: "perl-scripts/get-orthologs"
     desc: "Get homologs (orthologs or others) in given taxon for a list of query genes"
     group: "Genomes and genes"
+    servers: ["teaching", "fungi", "bacteria"]
 
 
   ################################################################
@@ -56,6 +62,7 @@ commands:
   - command: "perl-scripts/supported-organisms-ensembl"
     desc: "Get the list of organisms supported at Ensmebl (http://ensembl.org)"
     group: "Genome management"
+    servers: ["teaching", "metazoa"]
 
   - command: "perl-scripts/supported-organisms-ensemblgenomes"
     desc: "Get the list of organisms supported at EnsemblGenomes (http://ensemblgenomes.org/)"
@@ -108,6 +115,10 @@ commands:
     desc: "Return a subset of input sequences, specified by a start and end positions"
     group: "Sequences"
 
+  - command: "perl-scripts/reverse-complement"
+    desc: "Returns the reverse complement of input DNA sequences or IUPAC-formatted motifs.  "
+    group: "Sequences"
+
   - command: "perl-scripts/sequence-lengths"
     desc: "Return the length of each input sequence, or the sum of lengths"
     group: "Sequences"
@@ -126,11 +137,19 @@ commands:
     desc: "Build PSSMs from a sequence set using as seeds a set of patterns (oligos, dyads) or an assembly"
     group: "Matrix tools"
 
+  - command: "perl-scripts/rescan-matrix"
+    desc: "Rebuild a PSSM by scanning sequences for sites (one or more iterations)"
+    group: "Matrix tools"
+
   - command: "perl-scripts/compare-matrices"
     desc: "Compute (dis)imilarity scores between matrices from two collections of position-specific scoring matrices"
     group: "Matrix tools"
 
   - command: "perl-scripts/matrix-clustering"
+    desc: "Identify groups (clusters) of similarities between motifs from one (or several) collections"
+    group: "Matrix tools"
+
+  - command: "perl-scripts/merge-matrices"
     desc: "Identify groups (clusters) of similarities between motifs from one (or several) collections"
     group: "Matrix tools"
 
@@ -196,7 +215,7 @@ commands:
     group: "Motif discovery"
 
   - command: "perl-scripts/position-analysis"
-    desc: "Detect oligomers (k-mers) with heterogeneous positional distribution"
+    desc: "Detect oligomers (k-mers) whose positions significantly discard from a homogeneous distribution"
     group: "Motif discovery"
 
   - command: "python-scripts/local-word-analysis" 

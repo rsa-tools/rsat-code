@@ -13,7 +13,8 @@ if (Sys.getenv("CRAN_REPOS") == "") {
 }
 
 ## List of packages to install
-required.packages = c("devtools",
+required.packages = c("BiocManager",
+                      "devtools",
                       "RJSONIO",
                       "gplots",
                       "jpeg",
@@ -30,17 +31,17 @@ required.packages = c("devtools",
                       "RColorBrewer",
                       "changepoint",
                       "dplyr",
-                      "withr","ggplot2"
-#                       "Rcpp",
-#                       "RcppEigen",
-#                       "Rclusterpp",
+                      "withr",
+                      "ggplot2",
+                      "data.table",
+                      "dplyr"
 )
 
 ## List of required packages from Bioconductor
 required.packages.bioconductor <- c("S4Vectors",
-				    "ctc",
+                                    "ctc",
                                     "qvalue",
-				    "IRanges", 
+                                    "IRanges", 
                                     "BiocGenerics",
                                     "amap", 
                                     "GenomicRanges"

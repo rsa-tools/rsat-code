@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>Network Analysis Tools - MCL</title>
-<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+<link rel="stylesheet" type="text/css" href = "css/main_grat.css" media="screen">
    </head>
    <body class="form">
    <?php
@@ -26,7 +26,7 @@ $wcol = $_REQUEST['wcol'];
 # demo graph
 $demo = $_REQUEST['demo'];
 if ($demo == 1) {
-  $demo_graph = storeFile("demo_files/protein_interactions_gavin_2006_names.tab");
+  $demo_graph = storeFile("demo_files/protein_interactions/protein_interactions_gavin_2006_names.tab");
 //   $demo_graph = storeFile("demo_files/rdm_test.tab");
 ;
   $demo_ecolors = "selected";

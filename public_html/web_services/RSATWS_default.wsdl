@@ -28,7 +28,7 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="organism" type="xsd:string" minOccurs="1">
             <xsd:annotation>
-              <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+              <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_GCF_000005845.2_ASM584v2).</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="query" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
@@ -234,7 +234,7 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="organism" type="xsd:string" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+              <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_GCF_000005845.2_ASM584v2).</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="ensembl_host" type="xsd:string" minOccurs="0">
@@ -482,7 +482,7 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="organism" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
-	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_GCF_000005845.2_ASM584v2).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="background" type="xsd:string" minOccurs="0">
@@ -857,7 +857,7 @@ You need to supply either this parameter or the previous one (sequence).</xsd:do
 	  </xsd:element>
 	  <xsd:element name="organism" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
-	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_GCF_000005845.2_ASM584v2).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="background" type="xsd:string" minOccurs="0">
@@ -1632,7 +1632,7 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
           <xsd:element name="organism" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
-	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_GCF_000005845.2_ASM584v2).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
           <xsd:element name="taxon" type="xsd:string" minOccurs="1">
@@ -1703,7 +1703,7 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
           <xsd:element name="organism" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
-	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_GCF_000005845.2_ASM584v2).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded">
@@ -1758,7 +1758,7 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
           <xsd:element name="organism" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
-	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_GCF_000005845.2_ASM584v2).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded">

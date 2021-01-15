@@ -164,7 +164,7 @@
 }*/
 
 #content .menu_heading_open {
-	background: #2D282E url(images/arrow_down.gif) no-repeat 5px 7px;
+	background: #2D282E url(../images/arrow_down.gif) no-repeat 5px 7px;
 	text-decoration: none;
 	padding: 4px 5px 4px 20px;
 	margin: 0;
@@ -175,7 +175,7 @@
 }
 
 #content .menu_heading_closed {
-	background: #2D282E url(images/arrow.gif) no-repeat 5px 7px !important;
+	background: #2D282E url(../images/arrow.gif) no-repeat 5px 7px !important;
 	text-decoration: none;
 	display: block;
 	padding: 4px 5px 4px 20px;
@@ -197,7 +197,7 @@
 
 #content .menu_item {
 	display: block;
-	background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px !important;
+	background: #0D73A7 url(../images/bullet2-normal.gif) no-repeat 7px 7px !important;
 	text-decoration: none;
 	padding: 4px 5px 4px 30px;
 	padding: 4px 5px 4px 20px;
@@ -211,7 +211,7 @@
 
 #content .menu_item_last {
 	display: block;
-	background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px !important;
+	background: #0D73A7 url(../images/bullet2-normal.gif) no-repeat 7px 7px !important;
 	text-decoration: none;
 	padding: 4px 5px 4px 30px;
 	padding: 4px 5px 4px 20px;

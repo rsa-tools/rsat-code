@@ -1,7 +1,7 @@
 <html>
 <head>
    <title>NeAT - KEGG network provider</title>
-   <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   <link rel="stylesheet" type="text/css" href = "css/main_grat.css" media="screen">
 </head>
 <body class="form">
 <?php

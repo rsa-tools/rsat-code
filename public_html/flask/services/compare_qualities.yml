@@ -1,0 +1,14 @@
+descr:
+    Compare the empirical distributioins of weight score obtained with different matrices in a given sequence set.
+---
+parameters:
+  - name: quality_list
+    description: file_list_matrix_and_quality_file. Scores comparison, inverse cumulative distribution
+    type: file
+  - name: cluster
+    description: Cluster matrix-quality results
+    type: int
+  - name: img_format
+    description: Image format for the plot comparin CV_FPR_50% / Matrix_sites_FPR_50%. To display the supported formats, type the following command XYgraph -h.
+    type: string
+    required: false

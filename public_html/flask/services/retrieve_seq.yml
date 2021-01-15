@@ -1,0 +1,87 @@
+descr:
+    Returns upstream, downstream or coding DNA sequences for list of query genes.
+---
+parameters:
+  - name: org
+    description: organism. When an organism is specified, the program automatically loads the appropriate genome sequence and feature table.
+    type: string
+  - name: seq
+    description: input sequence file
+    type: file
+  - name: informat
+    description: input sequence format
+    type: string
+    required: false
+  - name: prefix
+    description: prefix for sequence identifier
+    type: string
+  - name: feattype
+    description: Feature type. Supported - gene,mRNA,tRNA,rRNA,scRNA,misc_RNA,CDS,start_codon,stop_codon,exon.
+    type: string
+    choices: gene,mRNA,tRNA,rRNA,scRNA,misc_RNA,CDS,start_codon,stop_codon,exon
+    required: false
+  - name: type
+    description: sequence type. Currently supported sequence types - upstream, downstream, orf, random
+    type: string
+    choices: upstream, downstream, orf, random
+  - name: n
+    description: number of sequecnes (only with -type random).
+    type: int
+  - name: q
+    description: query. The query should be an orf identifier (eg 'metR'). The query is case-insensitive.
+    type: string
+  - name: i
+    description: query file. The first word of each line is taken as a query.
+    type: file
+  - name: ids_only
+    description: Use this option if the queries are provided as a list of IDs.
+    type: boolean
+  - name: all
+    description: return all genomic upstream regions
+    type: boolean
+  - name: oft
+    description: output features file.
+    type: boolean
+  - name: from
+    description: limits of the region to extract, relative to orf start
+    type: int
+  - name: to
+    description: limits of the region to extract, relative to orf start
+    type: int
+  - name: format
+    description: allows to select different output formats, with the following. Supported - IG,wconsensus,multi,fasta
+    type: string
+    choices: IG,wconsensus,multi,fasta
+  - name: lw
+    description: Line width. A newline character will be inserted in the sequence every lw bases.
+    type: int
+  - name: label
+    description: Field(s) to be used in the sequence label.
+    type: string
+  - name: labelsep
+    description: Separator between label fields. Default |
+    type: string
+  - name: noorf
+    description: prevent overlap with neighbout genes.
+    type: boolean
+  - name: rm
+    description: Use the repeat masked version of the genome.
+    type: boolean
+  - name: nocom
+    description: no comments. Only the identifier and the sequence are returned.
+    type: boolean
+  - name: imp_pos
+    description: Admit imprecise positions.
+    type: boolean
+  - name: nowarn
+    description: Prevents warning when a gene cannot be identified.
+    type: boolean
+  - name: randsels
+    description: Select a random set of N genes in the genome annotations.
+    type: int
+  - name: lf
+    description: length file (only with the option '-type random')
+    type: file
+  - name: features
+    description: alternate feature table.
+    type: file

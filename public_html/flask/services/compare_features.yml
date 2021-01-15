@@ -1,0 +1,41 @@
+descr:
+
+    Compare two or more sets of features. This program takes as input several feature files (two or more), and calculates the intersection, union and difference between features. It also computes contingency tables and comparison statistics.
+
+---
+parameters:
+    - name: i
+      description: inputfile. This option can be used iteratively to specify several input files.
+      type: file
+      required: false
+    - name: filelist
+      description:  Provide a file containing a list of input files.
+      type: file
+      required: false
+    - name: ref
+      description:  reference_file. Specify a reference file. Only one reference file can be specified.
+      type: file
+      required: false
+    - name: iformat
+      description: input_format. Input feature format.
+      type: string
+      choices: bed,dnapat,ft,galaxy_seq,gft,gff,gff3bed,swembl,ucsc_seq
+      required: false
+    - name: self
+      description: Also perform comparison between features in the same file (self-comparison). This can be useful to detect redundancy between annotated features.
+      type: boolean
+      required: false
+      default: false
+    - name: return
+      description: Specify the output type(s). Supported output types. stats,inter,diff.
+      type: string
+      default: stats,inter
+      required: false
+    - name: lth_inter_len
+      description: Minimal overlap (bp). Lower threshold on Length (in residues) of the intersection between two features.
+      type: float
+      required: false
+    - name: lth_inter_cov
+      description: Intersection coverage (0-1). Lower threshold on Coverage of the intersection between two features.
+      type: float
+      required: false

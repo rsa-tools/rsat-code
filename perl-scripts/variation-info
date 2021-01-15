@@ -35,7 +35,6 @@ for info).
 =item B<Jacques van Helden> <Jacques.van-Helden\@univ-amu.fr>
 
 =item B<Walter Santana Garcia> revised the code and made useful suggestions to enhance the efficiency.
-
 =item B<Jeremy Delerce> wrote a first prototype of the variation tools in 2012 (1st-year Master project)
 
 =back
@@ -113,12 +112,12 @@ start: the first position of a sequence has coordinate 0.
 The ending position of the feature in the chromosome or scaffold,
 according to UCSC convention for bed files: zero-based specification
 of the coordinates, but the ending position is the first one <after>
-the feature. 
+the feature.
 
 For example, a feature extending from positions 10 to 20 of the
 sequence will have a chromStart of 9 (zero-based specification of the
 first position of the feature) and a chromEnd of 20 (zero-based
-position of the first nucleotide after the feature). 
+position of the first nucleotide after the feature).
 
 =back
 
@@ -137,7 +136,7 @@ IDs, and the subsequent columns are ignored.
 
 varBed format is a tab-separated value with the first 3 columns
 corresponding to bed-specified coordinates, and additional columns
-providing additional informatiion specific to variants. 
+providing additional informatiion specific to variants.
 
 
 The file includes the following columns:
@@ -186,7 +185,7 @@ I<variation-info>.
 =head2 convert-variations
 
 Interconversions between different file formats used to describe
-polymorphic variations.  
+polymorphic variations.
 
 I<variation-info> exports variants in varBed format,
 <convert-variations> can be used to convert to VCF and GVF formats.
@@ -207,7 +206,7 @@ matrices.
 
 =over
 
-=item B<direct retrieval from Ensembl or BioMart> 
+=item B<direct retrieval from Ensembl or BioMart>
 
 Ensembl presents several application-programmatic interfaces (APIs)
 that should enable us to retrieve variation info by remote queries
@@ -250,9 +249,10 @@ package main;
   our $in = STDIN;
   our $out = STDOUT;
 
-  our $species = '';
-  our $ensembl_release = "";
-  our $assembly = "";
+  our $org = '';
+    #our $species = '';
+    #our $ensembl_release = "";
+    #our $assembly = "";
 
   our $col = 1;
   our $validated = 0 ;
@@ -299,8 +299,8 @@ package main;
   ## Check argument values
 
   ## Species and assembly or ensembl version have to be specified
-  &RSAT::error::FatalError("No species specified. Use -species") unless ($species);
-  &RSAT::error::FatalError("No assembly and ensembl version specified. Use at least one of these options: -e_version -a_version") unless ($ensembl_release || $assembly);
+  &RSAT::error::FatalError("No organism specified. Use -org") unless ($org);
+    #&RSAT::error::FatalError("No assembly specified. Use -assembly") unless ($assembly);
 
   ## Check input format and existence of the input file
   if ($main::infile{'input'}) {
@@ -308,17 +308,31 @@ package main;
     &RSAT::error::FatalError("Input file $main::infile{'input'} not found") unless  (-f $main::infile{'input'});
   }
 
-  ## Check directories for species genome and variations
-  my $genome_dir = &Get_genome_dir($species, $assembly, $ensembl_release,$species_suffix);
-  my $variation_dir = &Get_variation_dir($species, $assembly, $ensembl_release, $species_suffix);
+  ## Check directories for genome and variations for this species
+  ## note release is not always know; in that case the latest is used by default:
+    #my $genome_dir = &Get_genome_dir($species, $assembly, $ensembl_release,$species_suffix);
+    #my $variation_dir = &Get_variation_dir($species, $assembly, $ensembl_release, $species_suffix);
 
-  &RSAT::error::FatalError("Genome directory", $genome_dir, "does not exist. Use download-ensembl-genome before retrieve-variation-seq.") unless (-d $genome_dir);
-  &RSAT::error::FatalError("Variation directory", $variation_dir, "does not exist. Use download-ensembl-variation before retrieve-variation-seq.") unless (-d $variation_dir);
+  my ($genome_dir, $variation_dir) = &Get_dirs_from_supported_file($org);
+
+  # Add the variation sub-directory if not contained in the path
+  # NOTE. This is a fix as some rsat servers do not contain the
+  # variation suffix in the stored path.
+  @variation_dir_path = split ("/",$variation_dir);
+  if( scalar(@variation_dir_path) > 1 && $variation_dir_path[-1] ne "variations"){
+    $variation_dir = $variation_dir."/variations";
+  }
+
+  &RSAT::error::FatalError("The current organism genome is not installed. Genome directory", $genome_dir, "does not exist. Use download-ensembl-genome before variation-info.") unless (-d $genome_dir);
+  &RSAT::error::FatalError("The current organism variations are not installed. Variation directory", $variation_dir, "does not exist. Use download-ensembl-variation before variation-info.") unless (-d $variation_dir);
+
+  &RSAT::message::Info( "Found genome directory", $genome_dir ) if ($main::verbose >= 3);
+  &RSAT::message::Info( "Found variation directory", $variation_dir ) if ($main::verbose >= 3);
 
   ## Check if all chromosome sequence files are present in the genome directory
-  my %chr_file = &Get_file_seq_name($genome_dir);
+  my %chr_file = &Get_file_seq_name($genome_dir . "/genome");
   foreach my $file (keys(%chr_file)) {
-    my $raw_seq_file = $genome_dir."/".$chr_file{$file};
+    my $raw_seq_file = $genome_dir."/genome/".$chr_file{$file};
     unless (-f $raw_seq_file) {
       &RSAT::error::FatalError($raw_seq_file," is missing.");
     }
@@ -430,17 +444,17 @@ package main;
 	foreach my $query (@current_queries) {
 	    $variation_id{$query} = 1;
 	}
-	
-	
+
+
 	## Try to identify the variations in each chromosome separately.
 	##
 	## Note: there is a tradeoff between different efficiency issues,
 	## since for Human genome there are > 150 million variations
 	## (2017).
-	
+
 	## Grep each variation file to collect the selected IDs
 	foreach my $file_name (@variation_files) {
-	    
+
 	    my @variations_to_find = sort keys (%variation_id);
 	    my $remaining_chunk = scalar(@variations_to_find);
 	    my $remaining_total = scalar(keys(%query_id));
@@ -448,14 +462,14 @@ package main;
 
 	    &RSAT::message::TimeWarn("\tStarting to grep variations in file", $file_name) if ($main::verbose >= 2);
 	    &RSAT::message::TimeWarn("\t\tChunk", $chunk."/".$chunks, "remaining queries", "in  chunk: ".$remaining_chunk, "total: ".$remaining_total."/".$query_nb) if ($main::verbose >= 2);
-	    
+
 	    ## Create a regular expression to select the rows containing
 	    ## query IDs with grep. Only search the variations that have not
 	    ## yet been identified.
 	    my $grep_expression = join('\|',@variations_to_find); ##
 	    my $grep_cmd = "grep '".$grep_expression."' ".$file_name;
 	    &RSAT::message::Warning("Running grep command", $grep_cmd) if ($main::verbose >= 3);
-	    
+
 	    ################################################################
 	    ## SUGGESTION BY WALTER (2017-03-15)
 	    ##
@@ -470,45 +484,45 @@ package main;
 	    ## (-threads #) should be added to specify the max number of
 	    ## threads for the analysis.
 	    my @result = qx{$grep_cmd};
-	    
+
 	    my $i = 0;
 	    foreach (@result) {
 		chomp();
 		my @fields = split("\t");
-		
+
 		my ($chr) = $fields[0];
 		$variations_per_chr{$chr}++;
-		
+
 		if ($vartype_filter) {
 		    my $so_term = $fields[7];
 		    #	    &RSAT::message::Debug("current SO term: ".$so_term, "accepted:", sort(keys(%accepted_vartype))) if ($main::verbose >= 10);
 		    next unless ($accepted_vartype{$so_term});
 		}
-		
+
 		## Skip "super-variations"
 		#my $is_super = $fields[10];
 		## Ale's note: colum number changed after adding minor allele frequency. JvH note: we should later check if we really want to maintain these super-variations
 		#next if ($is_super);
-		
+
 		## Check if the variation ID returned by grep was part of the
 		## queries.
-		## 
+		##
 		## NOTE: This might seems redundant,but in fact it is an
 		## IMPORTANT checkpoint for preventing the retrieve of
 		## non-specific variant records USUALLY returned by the
 		## "grep".
-		
+
 		my $current_id = $fields[4];
 		next unless ($variation_id{$current_id});
-		
-		
+
+
 		## Remove found variation from the list of variations to be found
 		delete($variation_id{$current_id});
 		delete($query_id{$current_id});
-		
+
 		## Remove info about in_super_variation  ## Ale's note: colum number changed after adding minor allele frequency
 		#$fields[11] = 0;
-		
+
 		## Report variation information in outfile
 		print $out join("\t",@fields),"\n";
 		$i++;
@@ -516,7 +530,7 @@ package main;
 
 
 	    $file_name = &RSAT::util::hide_RSAT_path($file_name);
-	    &RSAT::message::TimeWarn("\t\t$i variation(s) found in file", $file_name, "Remaining", 
+	    &RSAT::message::TimeWarn("\t\t$i variation(s) found in file", $file_name, "Remaining",
 				     "in chunk: ".scalar(keys(%variation_id)),
 				     "total: ".scalar(keys(%query_id)),
 		) if ($main::verbose >= 2);
@@ -728,62 +742,16 @@ Same as -h
     } elsif ($arg eq "-help") {
       &PrintOptions();
 
-
 =pod
 
-=item B<-species species_name>
+=item B<-org organism>
 
-Species name. This name must correspond to the species of the
+Organism name. This name must correspond to the species of the
 variation/bed/id file if provided.
 
 =cut
-    } elsif ($arg eq "-species") {
-      $main::species = lc(shift(@arguments));
-
-=pod
-
-=item B<-species_suffix>
-
-Species name. This name must correspond to the species of the
-variation/bed/id file if provided.
-
-=cut
-    } elsif ($arg eq "-species_suffix") {
-      $main::species_suffix = lc(shift(@arguments));
-
-=pod
-
-=item B<-release #>
-
-The version of ensembl database (e.g. 84).
-
-Note: each Ensembl release contains a specific assembly for
-each species. When the option -release is used, the option
--assembly should thus in principle not be used.
-
-=cut
-  } elsif (($arg eq "-release") || ($arg eq "-version") || ($arg eq "-e_version")) {
-    if ($arg ne "-release") {
-      &RSAT::message::Warning("Option -version is obsolete, has been replaced by -release.");
-    }
-    $main::ensembl_release = shift(@arguments);
-
-=pod
-
-=item B<-assembly #>
-
-Assembly (e.g. GRCh37 for the assembly 37 of the Human genome).
-
-Note: genome assemblies can cover several successive ensemble
-versions. In case of ambiguity, the latest corresponding ensembl
-version is used.
-
-=cut
-    } elsif (($arg eq "-assembly") || ($arg eq "-a_version")) {
-      if ($arg ne "-assembly") {
-	&RSAT::message::Warning("Option -a_version is obsolete, has been replaced by -assembly.");
-      }
-      $main::assembly = shift(@arguments);
+   } elsif ($arg eq "-org") {
+       $main::org = lc(shift(@arguments));
 
 =pod
 
@@ -923,7 +891,7 @@ encompassing a few hundreds IDs, but may fail for large queries
 (e.g. 20,000 IDs), probably due to a problem with the complexity of
 the grep pattern.
 
-To circumvent this, queries are teated by chunks. 
+To circumvent this, queries are teated by chunks.
 
 =cut
     } elsif ($arg eq "-chunk_size") {

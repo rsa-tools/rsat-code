@@ -17,6 +17,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
+require "RSAT_to_ensembl.lib.pl";
 use RSAT::util;
 use RSAT::Tree;
 use RSAT::TreeNode;
@@ -75,6 +76,7 @@ package main;
 		    ensembl_freq
                     clean
                     default
+            rewrite
 		    all
       );
 
@@ -282,6 +284,7 @@ package main;
     
     
     my $command = 'rsync --copy-links  --times  --list-only rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq/'.$group.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
+#   print $commnad; die "BOOM";
     my $available_species = `$command`;
     print $main::out $available_species;
 #      &doit($command, $dry, $die_on_error, $verbose);
@@ -292,6 +295,13 @@ package main;
     exit(0); # Available species is not compatible with any other task
   }
 
+    
+    ############ Rewrite table
+    if($task{rewrite}){
+        &RewriteConfigTab();
+        exit;
+    }
+    
   ################################################################
   ## Download the required files from NCBI FTP site
   if ($task{download}) {
@@ -321,20 +331,30 @@ package main;
 
 	## Select the information for the species and assembly, retrieve the column with the FTP address for the genome
 	my $space_species=$species ;
-	$space_species=~s/_/ /;
-	my $command = join (" ","grep", '"'.$space_species.'"',$dir{downloads}."/refseq/".$group."/assembly_summary.txt | grep ". '"'.$strain.'"'. "| cut -f20" );
+	$space_species=~s/_/ /g;
+
+	my $command = join (" ","grep", '"'.$space_species.'"',$dir{downloads}."/refseq/".$group."/assembly_summary.txt | grep ". '"'.$strain.'"'. "| cut -f20 | head -n1" ); ## Some organisms already have complete versions from different places
+
 	my $URL= `$command`;
 	chomp($URL);
+
 	$URL=~s/ftp:\/\///;
 
+	chomp($URL);
 	&RSAT::message::TimeWarn("Downloading genome from NCBI FTP site", $URL) if ($main::verbose >= 1);
+
 	
 	$dir{downloads} = $ENV{RSAT}."/downloads/refseq/".$strain;
 	
 	&RSAT::util::CheckOutDir($dir{downloads});
 	#my $command = "rsync --copy-links --recursive --times -R --verbose rsync://".$URL."/ ".$dir{downloads}."/";
 	my $command = "rsync --copy-links --times --recursive --verbose rsync://".$URL."/* ".$dir{downloads}."/";
+
+	#print $command ; 	die "BOOM";
+
 	&doit($command, $dry, $die_on_error, $verbose);
+
+
 	&RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 3);
 	$download_date =  &AlphaDate();
 
@@ -1029,6 +1049,81 @@ sub UpdateConfigTab {
 
   ## Export the updated table of supported organisms
   &RSAT::OrganismManager::export_supported_organisms(file=>$main::org_table, backup=>$main::backup_org_table);
+}
+
+sub RewriteConfigTab{
+    my $supported_organism_file = &Get_supported_file();
+    my $new_file = '';
+    if (-f $supported_organism_file) {
+        my ($s_o_file) = &OpenInputFile($supported_organism_file);
+        
+        ## Read supported_organisms_ensembl.tab
+        my $data_dir = &Get_data_dir();
+        open ($fen, $data_dir."/supported_organisms_ensembl.tab");
+        my %ensembl = ();
+        while (my $row = <$fen>){
+            chomp($row);
+            my @fields = split("\t", $row);
+            $ensembl{$fields[0]} = "\t".$fields[2]."\t".$fields[4]."\t".$fields[5];
+            #print $fields[0];
+        }
+        close($fen);
+        
+        my %blast = ();
+        my %variations = ();
+        
+        while(<$s_o_file>){
+            my @fields = split("\t");
+            my $key = $fields[0];
+            if(-d $data_dir."/genomes/".$key."/blast_hits"){
+                $blast{$key} = 1;
+            }else{
+                $blast{$key} = 0;
+            }
+            $variations{$key} = ();
+            if(-d $data_dir."/genomes/".$key."/variations"){
+                $variations{$key}{"variant_available"} = 1;
+                my $variant_source = `cat $variants_folder/source.txt`;
+                chomp($variant_source);
+                $variations{$key}{"source"} = $variant_source || "<NA>";
+                $variations{$key}{"path"} = &RSAT::util::hide_RSAT_path($data_dir."/genomes/".$key."/variations");
+            }else{
+                $variations{$key}{"variant_available"} = 0;
+                $variations{$key}{"source"} = "<NA>";
+                $variations{$key}{"path"} = "<NA>";
+            }
+        
+        }
+        close($s_o_file);
+        my ($s_o_file) = &OpenInputFile($supported_organism_file);
+        ## Read the whole file of supported organisms from ensembl,
+        ## and store species description lines in a hash indexed by
+        ## full species ID, in order to sort them after having changed
+        ## the current species fields.
+        open($fnew, ">", $data_dir."/supported_organisms_new.tab");
+        while (my $row = <$s_o_file>) {
+            next if (/^;/); ## Skip comment lines
+            if($row =~ /^#/){
+                my @fields = split("\t");
+                print $fnew "#ID\tname\ttaxid\tsource\tlast_update\tnb\tseq_format\tup_from\tup_to\ttaxonomy\tdata\tgenome\tgenome_assembly\tgenome_version\tdownload_date\tvariant_available\tvariant_source\tpath_to_variant_files\tblast_available\n";
+            }else{
+                chomp($row);
+                my @fields = split("\t", $row);
+                my $full_species_id = $fields[0];
+                #check if the species is already in the list
+                my $newline = $row;
+                if(defined $ensembl{$full_species_id}){
+                    $newline .= $ensembl{$full_species_id};
+                }else{
+                    $newline .= ("\t<NA>")x3;
+                }
+                $newline .= "\t".$variations{$full_species_id}{"variant_available"}."\t".$variations{$full_species_id}{"source"}."\t".$variations{$full_species_id}{"path"}."\t".$blast{$full_species_id}."\n";
+                print $fnew $newline;
+            }
+        }
+        close $s_o_file;
+    	system("mv " . $data_dir . "/supported_organisms_new.tab " . $data_dir . "/supported_organisms.tab");
+    }
 }
 
 ################################################################
@@ -2431,7 +2526,7 @@ sub StartAndStopCodons {
   $command .= " -v 1";
   $command .= " -org ".$organism_short_name;
   $command .= " -all";
-  $command .= " -type upstream -feattype cds -from 0 -to 2";
+  $command .= " -type upstream -feattype cds -from 0 -to 2 ";
   $command .= " -format wc -nocomment -label ".$label;
   $command .= " -o ".$prefix."_start_codons.wc";
   $command .= " ; ";
@@ -2450,8 +2545,8 @@ sub StartAndStopCodons {
   $command .= " -v 1";
   $command .= " -org ".$organism_short_name;
   $command .= " -all";
-  $command .= "-type downstream  -feattype cds -from -2 -to 0";
-  $command .= "-format wc -nocomment -label ".$label;
+  $command .= " -type downstream  -feattype cds -from -2 -to 0 ";
+  $command .= " -format wc -nocomment -label ".$label;
   $command .= " -o ".$prefix."_stop_codons.wc";
   $command .= " ; ";
   $command .= &RSAT::server::GetProgramPath("oligo-analysis");

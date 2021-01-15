@@ -2,7 +2,7 @@
 <HEAD>
 <TITLE>Regulatory Sequence Analysis Tools (RSAT)</TITLE>
 <link rel='stylesheet' type='text/css' href='css/bootstrap.min.css' />
-<link rel='stylesheet' type='text/css' href='home.css' />
+<link rel='stylesheet' type='text/css' href='css/home.css' />
 
 <link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
 <script src="js/jquery.js"></script>
@@ -25,7 +25,8 @@
 			<div class='col-sm-2 homemenu'>
 				<a href='publications.cgi'>Publications</a><br/>
 				<a href='tutorials.php'>Tutorials</a><br/>
-				<a href='people.php'>About us</a>
+				<a href='people.php'>About us</a><br/>
+				<a href='code_of_conduct.html'>Code of Conduct</a>
 			</div>
             <div class='col-sm-6 homeheaderbar'><div class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:#F58634; padding-top: 25px;'></i></a></div></div>
 		</div>	
@@ -57,7 +58,15 @@
 				</div>
 			</div>
 			<div class='col-sm-3'><span class='homepapertext'><span style="color:red"><i class="fa fa-book fa-lg"></span></i> Check <span style="color:red"><b>latest RSAT paper</b></span> for the 20th Anniversary <b><a target='_blank' href="https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gky317/4990780" target="_blank"> in NAR</b></a></span><br/><br/>
-				<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="500" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+			  <span style="color:red"><i class="fa fa-book
+			  fa-lg"></span></i>
+			  Check <span style="color:red"><b>RSAT
+			  Variation-Tools</b></span> <b><a target='_blank'
+			  href="https://www.sciencedirect.com/science/article/pii/S2001037019301898?via%3Dihub"
+			  target="_blank"> in Computational and
+			  Structural Biotechnology
+			      Journal</b></a></span><br/><br/>
+<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="500" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 			</div>	
 		</div>
 	</div>
@@ -174,7 +183,7 @@
 				<h4 class='modal-title'>Tutorials and Help</h4>
 			</div>
 			<div class='modal-body'>
-				<p><i class="fa fa-graduation-cap fa-lg"></i> <a href="http://rsa-tools.github.io/teaching/index.html" target="tools"><b>All training material</b></a> </p>
+				<p><i class="fa fa-graduation-cap fa-lg"></i> <a href="https://rsat-doc.github.io/teaching/" target="tools"><b>All training material</b></a> </p>
 	
 	<p><i class="fa fa-graduation-cap fa-lg"></i> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font>
 	</p><p><i class="fa fa-graduation-cap fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsa-tools.github.io/tutorial_eccb14/index.html" target="tools">ECCB'14</a>

@@ -76,7 +76,7 @@ End_of_help
 
 
 #### initialise parameters ####
-$gibbs_command = "$BIN/gibbs";
+$gibbs_command =  &RSAT::server::GetProgramPath("gibbs");
 $start_time = &RSAT::util::StartScript();
 $fragmentation = 0;
 $repetitions = 1;

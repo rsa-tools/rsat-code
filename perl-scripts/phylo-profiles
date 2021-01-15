@@ -187,7 +187,6 @@ BEGIN {
   }
 }
 require "RSA.lib";
-require "RSA2.cgi.lib";
 
 ################################################################
 ## Main package
@@ -368,12 +367,13 @@ package main;
   if ($task{species}) {
     if ($taxon) {
       &RSAT::message::TimeWarn("Selecting species",	$taxon,	"depth=".$taxonomic_depth) if ($main::verbose >= 2);
-      my $species_cmd = $SCRIPTS."/supported-organisms -v 1";
+      my $species_cmd =  &RSAT::server::GetProgramPath("supported-organisms");
+      $species_cmd .= " -v 1";
       $species_cmd .= " -return ID,nb,selected_taxon,taxon_depth,org_per_taxon,taxonomy";
       $species_cmd .= " -taxon ".$taxon;
       $species_cmd .= " -depth ".$taxonomic_depth;
       $species_cmd .= " -o ".$outfile{species};
-      $species_cmd .= " ; ".$SCRIPTS."/text-to-html";
+      $species_cmd .= " ; ". &RSAT::server::GetProgramPath("text-to-html");
       $species_cmd .= " -i ".$outfile{species};
       $species_cmd .= " -o ".$outfile{species_html};
       $species_cmd .= " ; grep -v '^#' ".$outfile{species};
@@ -403,7 +403,8 @@ package main;
   ## Identify all the putative orthologs (BBH)
   if ($task{bbh}) {
     &RSAT::message::TimeWarn("Detecting all orthologs (BBH)", $organism, $taxon) if ($main::verbose >= 2);
-    my $ortho_cmd = $SCRIPTS."/get-orthologs -v 2";
+    my $ortho_cmd =  &RSAT::server::GetProgramPath("get-orthologs");
+    $ortho_cmd .= " -v 2";
     $ortho_cmd .= " -all";
     $ortho_cmd .= " -org ".$organism;
 #  $ortho_cmd .= " -taxon ".${taxon};
@@ -435,7 +436,8 @@ package main;
 
     ## Gene ID table
     &RSAT::message::TimeWarn("Computing phylogenetic profiles (gene IDs) from BBH") if ($main::verbose >= 2);
-    my $command = $SCRIPTS."/convert-classes -v 2 -i ".$outfile{bbh};
+    my $command =  &RSAT::server::GetProgramPath("convert-classes");
+    $command .= " -v 2 -i ".$outfile{bbh};
     $command .= " -from tab -to profiles";
     $command .= " -ccol 2 -mcol 3 -scol 1 -null '".$null."'";
     $command .= "| grep -v '^;'";
@@ -446,7 +448,8 @@ package main;
 
     ## Convert ortholog table into a Boolean profile table 
     &RSAT::message::TimeWarn("Computing Boolean phylogenetic profiles from BBH") if ($main::verbose >= 2);
-    $command = $SCRIPTS."/convert-classes -v 2 -i ".$outfile{bbh};
+    $command =  &RSAT::server::GetProgramPath("convert-classes");
+    $command .= " -v 2 -i ".$outfile{bbh};
     $command .= " -from tab -to profiles";
     $command .= " -ccol 2 -mcol 3  -null 0"; ## For Boolean profiles, we want to have 0 for null values
     $command .= " | grep -v '^;'";
@@ -460,7 +463,8 @@ package main;
 
     ## Convert ortholog table into a e-value (BLAST expect) profile table 
     &RSAT::message::TimeWarn("Computing e-value (BLAST expect) phylogenetic profiles from BBH") if ($main::verbose >= 2);
-    $command = $SCRIPTS."/convert-classes -v 2 -i ".$outfile{bbh};
+    $command =  &RSAT::server::GetProgramPath("convert-classes");
+    $command .= " -v 2 -i ".$outfile{bbh};
     $command .= " -from tab -to profiles";
     $command .= " -ccol 2 -mcol 3 -scol 4 -null 0";
     $command .= " -inf ".$inf;
@@ -476,7 +480,8 @@ package main;
     ## Convert ortholog table into a significance profile table, where sig = -log10(expect)
     &RSAT::message::TimeWarn("Computing e-value (BLAST expect) phylogenetic profiles from BBH") if ($main::verbose >= 2);
     $command = 'awk -F\'\t\' \'{print $1"\t"$2"\t"$3"\t"$4"\t"(-log($4)/log(10))}\' '.$outfile{bbh};
-    $command .= " | ".$SCRIPTS."/convert-classes -v 2";
+    $command .= " | ". &RSAT::server::GetProgramPath("convert-classes");
+    $command .= " -v 2";
     $command .= " -from tab -to profiles";
     $command .= " -ccol 2 -mcol 3 -scol 5 -null 0";
     $command .= " -inf ".$inf;

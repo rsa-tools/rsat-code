@@ -174,7 +174,7 @@ output:
   pdf_document:
     toc: yes
     toc_depth: 3
-css: course.css
+css: css/course.css
 ---
 ";
 

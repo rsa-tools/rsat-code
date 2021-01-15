@@ -1,0 +1,292 @@
+descr:
+    Compare two class/cluster files (the query file and the reference file) and report the intersection between each pair of classes/clusters + some statistics about this intersection (hypergeometric P-value, E-value, ...).
+---
+parameters:
+  - name: r
+    description: ref_classes. A tab-delimited text file containing the dscription of reference classes (see format description below).
+    type: file
+  - name: q
+    description: query_classes. A tab-delimited text file containing the dscription of query classes (see format description below).
+    type: file
+  - name: i
+    description: input_file This file will be used as both reference and query. This is equivalent to -q input_file -r input_file
+    type: file
+  - name: sc
+    description: score column. Specify a column of the input file containing a score associated to each member.
+    type: int
+  - name: rnames
+    description: ref_class_name_file. File containing names for the reference classes.
+    type: file
+  - name: qnames
+    description: query_class_name_file. File containing names for the query classes. Same format as for -rnames.
+    type: file
+  - name: max_lines_q
+    description: Max number of lines to read for the query file.
+    type: int
+  - name: max_lines_r
+    description: Max number of lines to read for the reference file.
+    type: int
+  - name: max_lines
+    description: Max number of lines to read for both query and reference files
+    type: int
+  - name: cat
+    description: Compare the query file to pre-defined catalogs (e.g. GO, MIPS functional classes, ...).
+    type: string
+  - name: org
+    description: organism (for pre-defined catalogs)
+    type: string
+  - name: return
+    description: return fields. Supported - Q_only,R_only,common,dotprod,entropy,freq,jac_sim,members,occ,proba,rank,sor_sim
+    type: string
+    required: false
+  - name: pop
+    description: Population size.
+    type: int
+  - name: sort
+    description: sort on the basis of the specified key.
+    type: string
+    required: false
+  - name: rep
+    description: replacement. Sampling was performed with replacement, i.e. a given element can appear several times in the same class.
+    type: string
+  - name: sym
+    description: symmetric comparison
+    type: boolean
+  - name: distinct
+    description: Prevent to compare each class with itself (when the reference and query files contain the same classes).
+    type: boolean
+  - name: triangle
+    description: Do not perform the reciprocal comparisons - if reference A has already been compared to query B, then reference B does not need to be compared to query A.
+    type: boolean
+  - name: matrix
+    description: Return a pairwise matrix, where each row corresponds to a reference class, each column to a query class, and each cell contains a comparison between the two classes
+    type: string
+  - name: margins
+    description:
+    type: boolean
+  - name: "null"
+    description: null string (default NA) displayed for undefined values.
+    type: boolean
+  - name: base
+    description: logarithm base (Default - 2.71828182845905) used for entropy-based metrics.
+    type: float
+  - name: dot
+    description: Export a graph with the associations in a dot file.
+    type: string
+  - name: gml
+    description: Export a graph with the associations in a gml file
+    type: file
+  - name: multi_cor
+    description: Factor used for the multi-testing correction. Supported - nq, nr, nc
+    type: string
+    choices: nq, nr, nc
+  - name: lth_DPbits
+    description: lower threshold.
+    type: float
+  - name: lth_E(QR)
+    description: lower threshold.
+    type: float
+  - name: lth_E_val
+    description: lower threshold.
+    type: float
+  - name: lth_F(!Q!R)
+    description: lower threshold
+    type: float
+  - name: lth_F(Q!R)
+    description: lower threshold.
+    type: float
+  - name: lth_F(Q)
+    description: lower threshold.
+    type: float
+  - name: lth_F(QR)
+    description: lower threshold.
+    type: float
+  - name: lth_F(R!Q)
+    description: lower threshold
+    type: float
+  - name: lth_F(R)
+    description: lower threshold.
+    type: float
+  - name: lth_H(Q)
+    description: lower threshold.
+    type: float
+  - name: lth_H(Q,R)
+    description: lower threshold.
+    type: float
+  - name: lth_H(Q|R)
+    description: lower threshold
+    type: float
+  - name: lth_I(Q,R)
+    description: lower threshold.
+    type: float
+  - name: lth_IC
+    description: lower threshold.
+    type: float
+  - name: lth_P(QR)
+    description: lower threshold.
+    type: float
+  - name: lth_P(Q|R)
+    description: lower threshold.
+    type: float
+  - name: lth_P(R|Q)
+    description: lower threshold
+    type: float
+  - name: lth_P_val
+    description: lower threshold
+    type: float
+  - name: lth_Q
+    description: lower threshold.
+    type: float
+  - name: lth_QR
+    description: lower threshold.
+    type: float
+  - name: lth_Q_only
+    description: lower threshold.
+    type: float
+  - name: lth_QvR
+    description: lower threshold
+    type: float
+  - name: lth_R
+    description: lower threshold.
+    type: float
+  - name: lth_R_only
+    description: lower threshold.
+    type: float
+  - name: lth_U(Q|R)
+    description: lower threshold.
+    type: float
+  - name: lth_U(R|Q)
+    description: lower threshold
+    type: float
+  - name: lth_common
+    description: lower threshold.
+    type: float
+  - name: lth_dH(Q,R)
+    description: lower threshold.
+    type: float
+  - name: lth_dotprod
+    description: lower threshold.
+    type: float
+  - name: lth_jac_sim
+    description: lower threshold
+    type: float
+  - name: lth_rDPbits
+    description: lower threshold.
+    type: float
+  - name: lth_rank
+    description: lower threshold.
+    type: float
+  - name: lth_sig
+    description: lower threshold.
+    type: float
+  - name: lth_sor_sim
+    description: lower threshold.
+    type: float
+  - name: lth_sqrt_dp
+    description: lower threshold
+    type: float
+  - name: uth_DPbits
+    description: upper threshold.
+    type: float
+  - name: uth_E(QR)
+    description: upper threshold.
+    type: float
+  - name: uth_E_val
+    description: upper threshold.
+    type: float
+  - name: uth_F(!Q!R)
+    description: upper threshold
+    type: float
+  - name: uth_F(Q!R)
+    description: upper threshold.
+    type: float
+  - name: uth_F(Q)
+    description: upper threshold.
+    type: float
+  - name: uth_F(QR)
+    description: upper threshold.
+    type: float
+  - name: uth_F(R!Q)
+    description: upper threshold
+    type: float
+  - name: uth_F(R)
+    description: upper threshold.
+    type: float
+  - name: uth_H(Q)
+    description: upper threshold.
+    type: float
+  - name: uth_H(Q,R)
+    description: upper threshold.
+    type: float
+  - name: uth_H(Q|R)
+    description: upper threshold
+    type: float
+  - name: uth_H(R)
+    description: upper threshold.
+    type: float
+  - name: uth_H(R|Q)
+    description: upper threshold.
+    type: float
+  - name: uth_I(Q,R)
+    description: upper threshold.
+    type: float
+  - name: uth_IC
+    description: upper threshold
+    type: float
+  - name: uth_P(QR)
+    description: upper threshold.
+    type: float
+  - name: uth_P_val
+    description: upper threshold
+    type: float
+  - name: uth_Q
+    description: upper threshold.
+    type: float
+  - name: uth_QR
+    description: upper threshold.
+    type: float
+  - name: uth_Q_only
+    description: upper threshold.
+    type: float
+  - name: uth_QvR
+    description: upper threshold
+    type: float
+  - name: uth_R
+    description: upper threshold.
+    type: float
+  - name: uth_R_only
+    description: upper threshold.
+    type: float
+  - name: uth_U(Q|R)
+    description: upper threshold.
+    type: float
+  - name: uth_U(R|Q)
+    description: upper threshold
+    type: float
+  - name: uth_common
+    description: upper threshold.
+    type: float
+  - name: uth_dH(Q,R)
+    description: upper threshold.
+    type: float
+  - name: uth_dotprod
+    description: upper threshold.
+    type: float
+  - name: uth_jac_sim
+    description: upper threshold
+    type: float
+  - name: uth_rDPbits
+    description: upper threshold.
+    type: float
+  - name: uth_rank
+    description: upper threshold.
+    type: float
+  - name: uth_sig
+    description: upper threshold.
+    type: float
+  - name: uth_sor_sim
+    description: upper threshold.
+    type: float
+  - name: uth_sqrt_dp
+    description: upper threshold
+    type: float

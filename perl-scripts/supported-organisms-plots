@@ -70,38 +70,40 @@ package main;
   }
 
   $report_file = $params{'outfolder'}.'/report.tab';
-  open(REP,'>',$report_file) || RSAT::error::FatalError("Cannot create output file",$report_file);
-
   $summary_file = $params{'outfolder'}.'/summary.tab';
-  open(SUM,'>',$summary_file) || RSAT::error::FatalError("Cannot create output file",$summary_file);
 
-  print SUM ";".RSAT::util::ReportExecutionTime($start_time);
-  print SUM ";organism\tgenome_size\tcontigs\tpercN\tperc_masked\tgenes\t<upstream_length>\n";
+  if(!$params{'reuse'}){
 
-  ## Read list of supported organisms and parse files
-  RSAT::message::Info("Reading supported organisms from file");
+    open(REP,'>',$report_file) || RSAT::error::FatalError("Cannot create output file",$report_file);
+  
+    open(SUM,'>',$summary_file) || RSAT::error::FatalError("Cannot create output file",$summary_file);
 
-  my ($listfile,$listdir) = OpenInputFile($organisms_file);
-  while(<$listfile>)
-  {
-    next if(/^[#;]/);
-    s/\r/\n/g; #print;
-    my @data = split;
+    print SUM ";".RSAT::util::ReportExecutionTime($start_time);
+    print SUM ";organism\tgenome_size\tcontigs\tpercN\tperc_masked\tgenes\t<upstream_length>\n";
+
+    ## Read list of supported organisms and parse files
+    RSAT::message::Info("Reading supported organisms from file");
+
+    my ($listfile,$listdir) = OpenInputFile($organisms_file);
+    while(<$listfile>)
+    {
+      next if(/^[#;]/);
+      s/\r/\n/g; #print;
+      my @data = split;
      
-    #next if($data[0] !~ /Arabidopsis/ && $data[0] !~ /Chlamydomonas/ && $data[0] !~ /cerevisiae/); # debugging
+      #next if($data[0] !~ /Arabidopsis/ && $data[0] !~ /Chlamydomonas/ && $data[0] !~ /cerevisiae/); # debugging
 
-    # check contigs, add Ns and tally genome size
-    my ($contigs,$size) = (0,0);
-    $file = $genomes_path . $data[0] . "/genome/$data[0].dna.genome_lengths.tab";
-    if(!-s $file)
-    {
+      # check contigs, add Ns and tally genome size
+      my ($contigs,$size) = (0,0);
+      $file = $genomes_path . $data[0] . "/genome/$data[0].dna.genome_lengths.tab";
+      if(!-s $file){
         $file = $genomes_path . $data[0] . "/genome/$data[0].dna.toplevel_lengths.tab";
-    }
+      }
 
-    #next if(!-s $file);
-    open(TAB,$file) || next;
-    while(<TAB>)
-    {
+      #next if(!-s $file);
+      open(TAB,$file) || next;
+      while(<TAB>)
+      {
         #seq    length #C135118820 200
         next if(/^[#;]/);
         chomp;
@@ -120,103 +122,113 @@ package main;
         open(RAW,$contigfile);
         while(<RAW>){ $stats{$data[0]}{'Ns_rm'} += ($_ =~ tr/N/N/); }
         close(RAW); #print "$contigfile\t$stats{$data[0]}{'Ns_raw'}\t$stats{$data[0]}{'Ns_rm'}\n"; exit;
-    }
-    close(TAB);
+      }
+      close(TAB);
 
-    $stats{$data[0]}{'genome_L'} = $size;
-    $stats{$data[0]}{'contigs_N'} = $contigs; #print "$data[0]\t$size\t$contigs\n";
-    if($contigs > $max_contigs){ $max_contigs = $contigs }
+      $stats{$data[0]}{'genome_L'} = $size;
+      $stats{$data[0]}{'contigs_N'} = $contigs; #print "$data[0]\t$size\t$contigs\n";
+      if($contigs > $max_contigs){ $max_contigs = $contigs }
     
-    # check number of annotated genes
-    $file = $genomes_path . $data[0] . '/genome/gene.tab';
-    open(GENES,$file) || next;
-    while(<GENES>)
-    {
+      # check number of annotated genes
+      $file = $genomes_path . $data[0] . '/genome/gene.tab';
+      open(GENES,$file) || next;
+      while(<GENES>)
+      {
         next if(/^[#;]/);
         $stats{$data[0]}{'genes_N'}++;
-    }
-    close(GENES);
+      }
+      close(GENES);
 
-    # check upstream regions
-    $file = $genomes_path . $data[0] . "/genome/$data[0]\_upstream-noorf_lengths.tab";
-    open(UPS,$file) || next;
-    while(<UPS>)
-    { 
+      # check upstream regions
+      $file = $genomes_path . $data[0] . "/genome/$data[0]\_upstream-noorf_lengths.tab";
+      open(UPS,$file) || next;
+      while(<UPS>)
+      { 
         #AT1G01046   2000
         next if(/^[#;]/);
         chomp;
         my @udata = split;
         push(@{$stats{$data[0]}{'upstream_L'}},$udata[1]); 
-    }
-    close(UPS);
-    if(scalar(@{$stats{$data[0]}{'upstream_L'}}) > $max_ups){ $max_ups = scalar(@{$stats{$data[0]}{'upstream_L'}}) }
+      }
+      close(UPS);
+      if(scalar(@{$stats{$data[0]}{'upstream_L'}}) > $max_ups){ $max_ups = scalar(@{$stats{$data[0]}{'upstream_L'}}) }
 
-    # print summary
-    #Triticum_urartu.ASM34745v1.40  3.747e+09   499222  19.7    77.5    36922   2601
-    #Vigna_angularis.Vigan1.1.40    4.667e+08   37373   3.6 10.1    0   2758
-    #
-    printf("%s\t%1.4g\t%d\t%1.1f\t%1.1f\t%d\t%1.0f\n",
+      # print summary
+      #Triticum_urartu.ASM34745v1.40  3.747e+09   499222  19.7    77.5    36922   2601
+      #Vigna_angularis.Vigan1.1.40    4.667e+08   37373   3.6 10.1    0   2758
+      printf("%s\t%1.4g\t%d\t%1.1f\t%1.1f\t%d\t%1.0f\n",
         $data[0],$stats{$data[0]}{'genome_L'},$stats{$data[0]}{'contigs_N'},
         100*$stats{$data[0]}{'Ns_raw'}/$stats{$data[0]}{'genome_L'},
         100*$stats{$data[0]}{'Ns_rm'}/$stats{$data[0]}{'genome_L'},
         $stats{$data[0]}{'genes_N'},calc_mean($stats{$data[0]}{'upstream_L'}));
     
-    printf SUM ("%s\t%1.4g\t%d\t%1.1f\t%1.1f\t%d\t%1.0f\n",
+      printf SUM ("%s\t%1.4g\t%d\t%1.1f\t%1.1f\t%d\t%1.0f\n",
         $data[0],$stats{$data[0]}{'genome_L'},$stats{$data[0]}{'contigs_N'},
         100*$stats{$data[0]}{'Ns_raw'}/$stats{$data[0]}{'genome_L'},
         100*$stats{$data[0]}{'Ns_rm'}/$stats{$data[0]}{'genome_L'},
         $stats{$data[0]}{'genes_N'},calc_mean($stats{$data[0]}{'upstream_L'}));
 
-    $n_of_orgs++;
+      $n_of_orgs++;
+    }
+    close($listfile); 
+
+    close(SUM);
   }
-  close($listfile); 
+  else { # reuse == 1
+    my ($listfile,$listdir) = OpenInputFile($organisms_file);
+    while(<$listfile>)
+    {
+      next if(/^[#;]/);
+      $n_of_orgs++;
+    }
+    close($listfile);
+  }
 
-  close(SUM);
-
-  ## format parsed data and call R to make plots
-
-  print REP "# \tOrganisms sorted by genome size\n";
+  ## format parsed data and call R to make plots #########################
 
   # plot genome sizes, including fractions of Ns and repeats
   $file = $params{'outfolder'}.'/_genome_size.tab';
   $outfile = $params{'outfolder'}.'/genome_size.png';
   $PDFfile = $params{'outfolder'}.'/genome_size.pdf';
-  open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
-  print TAB "organism\tunmasked\tNs\tmasked\n";
-  foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats))
-  {
-    printf TAB ("%s\t%d\t%1.0f\t%1.0f\n",
+
+  if(!$params{'reuse'}){
+    open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
+    print TAB "organism\tunmasked\tNs\tmasked\n";
+    foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats))
+    {
+      printf TAB ("%s\t%d\t%1.0f\t%1.0f\n",
         $org,$stats{$org}{'genome_L'}-$stats{$org}{'Ns_rm'},
         $stats{$org}{'Ns_raw'}, # || 1,  for log="x"
         $stats{$org}{'Ns_rm'}-$stats{$org}{'Ns_raw'} );
+    }
+    close(TAB);
   }
-  close(TAB);
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
-  png("$outfile",width=800,height=700);
-  par(mai=c(1,4,1,1)) # make room for long horizontal labels
+  png("$outfile",width=800,height=800);
+  par(mai=c(1,4,0.3,1)) # make room for long horizontal labels
   data = read.table(file="$file",header=T);
   data[,2] = as.numeric(data[,2])/1e6 ## Convert genome sizes to Mb
   data[,3] = as.numeric(data[,3])/1e6
   data[,4] = as.numeric(data[,4])/1e6
   mdata = t(data[,2:4]) # 2 unmasked, 3 Ns, 4 masked
   colors = c('white','grey50','grey20')
-  barplot( mdata, names.arg=data\$organism, #log="x", #does not show fraction of repeats proportionally!
+  barplot( mdata, names.arg=lapply(data\$organism, substr, 1, 40 ),
     xlab="genome size (Mb)", horiz=T, las=1, col=colors, cex.names=0.9 )
   legend("topright", inset=.05, c("Ns","repeat-masked"), 
     fill=c('grey50','grey20'), horiz=F, cex=1.0 )
   dev.off()
 
-  pdf("$PDFfile",width=8,height=8);
-  par(mai=c(1,4,1,1)) # make room for long horizontal labels
+  pdf("$PDFfile",width=8,height=9);
+  par(mai=c(1,4,0.3,1)) # make room for long horizontal labels
   data = read.table(file="$file",header=T);
   data[,2] = as.numeric(data[,2])/1e6 ## Convert genome sizes to Mb
   data[,3] = as.numeric(data[,3])/1e6
   data[,4] = as.numeric(data[,4])/1e6
   mdata = t(data[,2:4]) # 2 unmasked, 3 Ns, 4 masked
   colors = c('white','grey50','grey20')
-  barplot( mdata, names.arg=data\$organism, #log="x", #does not show fraction of repeats proportionally!
+  barplot( mdata, names.arg=lapply(data\$organism, substr, 1, 40 ), 
     xlab="genome size (Mb)", horiz=T, las=1, col=colors, cex.names=0.8 )
   legend("topright", inset=.05, c("Ns","repeat-masked"), 
     fill=c('grey50','grey20'), horiz=F, cex=1.0 )
@@ -225,47 +237,65 @@ package main;
 EOR
   close RSHELL;
 
-
-  print REP "Genome size <br/><a href=\"./genome_size.pdf\">PDF</a>\t".
-    "<img width='800' src='./genome_size.png'>\n";
+  if(!$params{'reuse'}){
+    print REP "Genome size <br/><a href=\"./genome_size.pdf\">PDF</a>\t".
+      "<img width='800' src='./genome_size.png'>\n";
+  }
 
   # plot gene number
   $file = $params{'outfolder'}.'/_gene_number.tab';
   $outfile = $params{'outfolder'}.'/gene_number.png';
   $PDFfile = $params{'outfolder'}.'/gene_number.pdf';
+
   ($idx,$reference_idx) = (0,-1);
-  open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
-  print TAB "organism\tgenes\n";
-  #foreach $org (sort {$stats{$a}{'genes_N'}<=>$stats{$b}{'genes_N'}} keys(%stats))
-  foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats))
-  {
-    print TAB "$org\t";
-    print TAB $stats{$org}{'genes_N'} || 0;
-    print TAB "\n";
-    if($params{'reference'} && $org =~ m/$params{'reference'}/){
+  if(!$params{'reuse'}){
+    open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
+    print TAB "organism\tgenes\n";
+    foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats))
+    {
+      print TAB "$org\t";
+      print TAB $stats{$org}{'genes_N'} || 0;
+      print TAB "\n";
+      if($params{'reference'} && $reference_idx < 0 && $org =~ m/$params{'reference'}/){
         $reference_idx = $idx;
+      }
+      $idx++;
     }
-    $idx++;
+    close(TAB);
+  } 
+  else { # reuse previous TAB file 
+
+    open(TAB,'<',$file) || RSAT::error::FatalError("Cannot read file",$file);
+    while(<TAB>)
+    {
+      next if(/^organism/);
+      $org = (split(/\t/,$_))[0]; 
+      if($params{'reference'} && $org =~ m/$params{'reference'}/){
+        $reference_idx = $idx;
+        last;
+      }
+      $idx++;
+    }
+    close(TAB);
   }
-  close(TAB);
- 
-  $colors = get_Rplot_colors($reference_idx,$n_of_orgs);
+
+  $colors = get_Rplot_colors($reference_idx,$n_of_orgs); #print "reference_idx $reference_idx\n"; # debug
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
-  png("$outfile",width=800,height=700);
+  png("$outfile",width=800,height=800);
   colors = c($colors)
   data = read.table(file="$file",header=T,check.names=F);
-  par(mai=c(1,4,1,1))
-  barplot( data\$genes, names.arg=data\$organism, col=colors, 
+  par(mai=c(1,4,0.3,1))
+  barplot( data\$genes, names.arg=lapply(data\$organism, substr, 1, 40 ), col=colors, 
     xlab="annotated genes", horiz=T, las=1, cex.names=0.9 )
   dev.off()
 
-  pdf("$PDFfile",width=8,height=7);
+  pdf("$PDFfile",width=8,height=8);
   colors = c($colors)
   data = read.table(file="$file",header=T,check.names=F);
-  par(mai=c(1,4,1,1))
-  barplot( data\$genes, names.arg=data\$organism, col=colors, 
+  par(mai=c(1,4,0.3,1))
+  barplot( data\$genes, names.arg=lapply(data\$organism, substr, 1, 40 ), col=colors,
     xlab="annotated genes", horiz=T, las=1, cex.names=0.8 )
   dev.off()
   q()
@@ -279,41 +309,60 @@ EOR
   $file = $params{'outfolder'}.'/_contig_size.tab';
   $outfile = $params{'outfolder'}.'/contig_size.png';
   $PDFfile = $params{'outfolder'}.'/contig_size.pdf';
+
   ($idx,$reference_idx) = (0,-1);
-  open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
-  foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
-    #printf TAB ("%s(%d)\t",$org,scalar(@{$stats{$org}{'contigs_L'}})); 
-    print TAB "$org\t"; 
-    if($params{'reference'} && $org =~ m/$params{'reference'}/){
+  if(!$params{'reuse'}){
+    open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
+    foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
+      print TAB "$org\t";
+      if($params{'reference'} && $reference_idx < 0 && $org =~ m/$params{'reference'}/){ 
         $reference_idx = $idx;
+      }
+      $idx++;
     }
-    $idx++;
+  } else { # reuse previous TAB file 
+    
+    open(TAB,'<',$file) || RSAT::error::FatalError("Cannot read file",$file);
+    while(<TAB>)
+    {
+      foreach $org (split(/\t/,$_)){
+        if($params{'reference'} && $org =~ m/$params{'reference'}/){
+          $reference_idx = $idx;
+          last;
+        }
+        $idx++;
+      }
+    }
+    close(TAB);
   }
 
   $colors = get_Rplot_colors($reference_idx,$n_of_orgs);
  
-  print TAB "\n"; 
-  for(my $c=0;$c<$max_contigs;$c++){
-    foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
+  if(!$params{'reuse'}){
+    print TAB "\n"; 
+    for(my $c=0;$c<$max_contigs;$c++){
+      foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
         $L = $stats{$org}{'contigs_L'}->[$c] || 'NA';  
         print TAB "$L\t";           
+      }
+      print TAB "\n";
     }
-    print TAB "\n";
+    close(TAB);
   }
-  close(TAB);
 
   open(RSHELL,"|R --no-save $Rparams ") || die "# $0 : cannot call R: $!\n";
   print RSHELL<<EOR;
-  png("$outfile",width=800,height=700);
-  par(mai=c(1,4,1,1)) # make room for long horizontal labels
+  png("$outfile",width=800,height=800);
+  par(mai=c(1,4,0.3,1)) # make room for long horizontal labels
   colors = c($colors);
-  data = read.table(file="$file",header=T,check.names=F); 
+  data = read.table(file="$file",header=T,check.names=F);
+  names(data) = lapply(names(data), substr, 1, 40 );
   boxplot( data, xlab='contig / scaffold / chromosome size', horizontal=T, las=1,
             varwidth=F, show.names=T, log="x", col=colors, cex.axis=0.9 );
   dev.off()
 
-  pdf("$PDFfile",width=8,height=7);
-  par(mai=c(1,4,1,1)) # make room for long horizontal labels
+  pdf("$PDFfile",width=8,height=8);
+  par(mai=c(1,4,0.3,1)) # make room for long horizontal labels
   colors = c($colors);
   data = read.table(file="$file",header=T,check.names=F); 
   boxplot( data, xlab='contig / scaffold / chromosome size', horizontal=T, las=1,
@@ -326,42 +375,57 @@ EOR
   print REP "Contig size <br/><a href=\"./contig_size.pdf\">PDF</a>\t".
     "<img width='800' src='./contig_size.png'>\n";
 
-  # plot upstream region size
+  # plot upstream region size, mean values
   $file = $params{'outfolder'}.'/_upstream_size.tab';
   $outfile = $params{'outfolder'}.'/upstream_size.png';
   $PDFfile = $params{'outfolder'}.'/upstream_size.pdf';
 
-  # simply plot the mean values
   ($idx,$reference_idx) = (0,-1);
-  open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
-  print TAB "organism\tupstream\n";
-  foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
-    print TAB "$org\t";
-    print TAB calc_mean($stats{$org}{'upstream_L'});
-    print TAB "\n";
-    if($params{'reference'} && $org =~ m/$params{'reference'}/){
+  if(!$params{'reuse'}){
+    open(TAB,'>',$file) || RSAT::error::FatalError("Cannot create output file",$file);
+    print TAB "organism\tupstream\n";
+    foreach $org (sort {$stats{$b}{'genome_L'}<=>$stats{$a}{'genome_L'}} keys(%stats)){
+      print TAB "$org\t";
+      print TAB calc_mean($stats{$org}{'upstream_L'});
+      print TAB "\n";
+      if($params{'reference'} && $reference_idx < 0 && $org =~ m/$params{'reference'}/){
         $reference_idx = $idx;
+      }
+      $idx++;  
     }
-    $idx++;  
+  } else { # reuse previous TAB file
+    
+     open(TAB,'<',$file) || RSAT::error::FatalError("Cannot read file",$file);
+     while(<TAB>)
+     {
+       next if(/^organism/);
+       $org = (split(/\t/,$_))[0];
+       if($params{'reference'} && $org =~ m/$params{'reference'}/){
+        $reference_idx = $idx;
+        last;
+       }
+       $idx++;
+     }
+     close(TAB);
   }
 
-  $colors = get_Rplot_colors($reference_idx,$n_of_orgs);
+  $colors = get_Rplot_colors($reference_idx,$n_of_orgs); 
 
   open(RSHELL,"|R --no-save $Rparams ") || RSAT::error::FatalError("Cannot call R",$!);
   print RSHELL<<EOR;
-  png("$outfile",width=800,height=700);
+  png("$outfile",width=800,height=800);
   colors = c($colors)
   data = read.table(file="$file",header=T,check.names=F);
-  par(mai=c(1,4,1,1))
-  barplot( data\$upstream, names.arg=data\$organism, col=colors, xlim=c(0,3000), 
+  par(mai=c(1,4,0.3,1))
+  barplot( data\$upstream, names.arg=lapply(data\$organism, substr, 1, 40 ), col=colors, xlim=c(0,3000), 
     xlab="average upstream length", horiz=T, las=1, cex.names=0.9 )
   dev.off()
 
   pdf("$PDFfile",width=8,height=7);
   colors = c($colors)
   data = read.table(file="$file",header=T,check.names=F);
-  par(mai=c(1,4,1,1))
-  barplot( data\$upstream, names.arg=data\$organism, col=colors, xlim=c(0,3000), 
+  par(mai=c(1,4,0.3,1))
+  barplot( data\$upstream, names.arg=lapply(data\$organism, substr, 1, 40 ), col=colors, xlim=c(0,3000), 
     xlab="average upstream length", horiz=T, las=1, cex.names=0.8 )
   dev.off()
   q()
@@ -392,17 +456,19 @@ EOR
 #EOR
   #close RSHELL;
 
-  print REP "Gene upstream regions<br/><a href=\"./upstream_size.pdf\">PDF</a><br>\t".
-    "<img width='800' src='./upstream_size.png'>\n";
+  if(!$params{'reuse'}){
+    print REP "Gene upstream regions<br/><a href=\"./upstream_size.pdf\">PDF</a><br>\t".
+      "<img width='800' src='./upstream_size.png'>\n";
 
-  # add summary to report
-  print REP "Summary\t<a href='./summary.tab'>summary.tab</a>\n";
+    # add summary to report
+    print REP "Summary\t<a href='./summary.tab'>summary.tab</a>\n";
 
-  close(REP);
+    close(REP);
 
-  ## print HTML report
-  $index_file = $params{'outfolder'}.'/index.html';
-  system("text-to-html -i $report_file -o $index_file");
+    ## print HTML report
+    $index_file = $params{'outfolder'}.'/index.html';
+    system("text-to-html -i $report_file -o $index_file");
+  }
 
   close_and_quit();
 }
@@ -508,6 +574,17 @@ Reference genome to be highlighted in plots.
       $main::params{'reference'} = shift(@arguments);
 
 =pod
+
+=item   B<-reuse>
+
+Make plots reusing precomputed data files. Conserves report and summary files.
+
+=cut
+    } elsif ($arg eq "-reuse") {
+      $main::params{'reuse'} = 1;
+
+=pod
+
 
 =back
 

@@ -140,7 +140,6 @@ BEGIN {
   }
 }
 require "RSA.lib";
-require "RSA2.cgi.lib";
 use RSAT::util;
 
 
@@ -707,14 +706,16 @@ sub ComputeSeqLen {
 
   ## Compute list of sequence lengths
   my $seqlen_file = $outfile{$seq_type."_seqlen"};
-  $cmd = $SCRIPTS."/sequence-lengths -v 1";
+  $cmd =  &RSAT::server::GetProgramPath("sequence-lengths");
+  $cmd .= " -v 1";
   $cmd .= " -i ".$seq_file;
   $cmd .= " -o ".$seqlen_file;
   &RSAT::util::one_command($cmd, 1);
 
   ## Compute sequence length distribution
   my $seqlen_distrib = $outfile{$seq_type."_seqlen_distrib"};
-  $cmd = $SCRIPTS."/classfreq -v 1 -col 2";
+  $cmd =  &RSAT::server::GetProgramPath("classfreq");
+  $cmd .= " -v 1 -col 2";
   $cmd .= " -i ".$seqlen_file;
   $cmd .= " -ci ".$main::param{seqlen_ci};
   $cmd .= " -o ".$seqlen_distrib;
@@ -722,7 +723,7 @@ sub ComputeSeqLen {
 
   ## Draw a XY graph with sequence length distribution
   my $seqlen_graph = $outfile{$seq_type."_seqlen_graph"};
-  $cmd = $SCRIPTS."/XYgraph";
+  $cmd =  &RSAT::server::GetProgramPath("XYgraph");
   $cmd .= " -i ".$seqlen_distrib;
   $cmd .= " -lines -pointsize 0 -legend";
   $cmd .= " -format ".$main::param{img_format};
@@ -752,7 +753,8 @@ sub ComputeOligoComposition {
 
     ## Compute transition table
     my $transitions =  $outfile{$seq_type."_".$ol."nt_transitions"};
-    $cmd = $SCRIPTS."/oligo-analysis -v 1 -quick";
+    $cmd =  &RSAT::server::GetProgramPath("oligo-analysis");
+    $cmd .= " -v 1 -quick";
     $cmd .= " -i ".$seq_file;
     $cmd .= " -l ".$ol;
     $cmd .= " ".$main::param{strand};
@@ -765,7 +767,8 @@ sub ComputeOligoComposition {
     ## Draw a heatmap of transitions
     my $heatmap =  $outfile{$seq_type."_".$ol."nt_heatmap"};
     $cmd = "cut -f 1-5,7 ".$transitions;
-    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+    $cmd .= " | ". &RSAT::server::GetProgramPath("draw-heatmap");
+    $cmd .= " -min 0 -max 1  -out_format png -col_width 50";
     $cmd .= " -o ".$heatmap;
     &RSAT::util::one_command($cmd, 1) ;
   }
@@ -773,7 +776,8 @@ sub ComputeOligoComposition {
   ## Compute sequence-wise frequencies
   &RSAT::message::TimeWarn("Computing sequence-wise ".$main::param{oligo_len}."nt composition in file", $seq_file) if ($main::verbose >= 2);
   my $oligo_file =  $outfile{$seq_type."_compo"};
-  $cmd = $SCRIPTS."/oligo-analysis -v 1 "; ## quick mode is not possible withl option -table
+  $cmd =  &RSAT::server::GetProgramPath("oligo-analysis");
+  $cmd .= " -v 1 "; ## quick mode is not possible withl option -table
   $cmd .= " -i ".$seq_file;
   $cmd .= " -l ".$main::param{oligo_len};
   $cmd .= " ".$main::param{strand};
@@ -877,7 +881,8 @@ sub ComputeFilterDistrib {
   ## Compute the frequency distribution for each filter oligonucleotide
 #  &RSAT::message::TimeWarn("Computing oligo freq distribution", $filter_oligo) if ($main::verbose >= 0);
 
-  $cmd = $SCRIPTS."/classfreq -v 1";
+  $cmd =  &RSAT::server::GetProgramPath("classfreq");
+  $cmd .= " -v 1";
   $cmd .= " -i ".$compo_file;
   $cmd .= " -min 0";
   $cmd .= " -col ".$param{filter_column};
@@ -886,7 +891,7 @@ sub ComputeFilterDistrib {
   &RSAT::util::one_command($cmd, 1);
 
   ## Plot a XY graph with the distribution of filter oligo frequencies
-  $cmd = $SCRIPTS."/XYgraph";
+  $cmd =  &RSAT::server::GetProgramPath("XYgraph");
   $cmd .= " -i ".$distrib_table;
   $cmd .= " -xcol 3 -ycol 7,8,9";
   $cmd .= " -lines -legend";
@@ -925,7 +930,7 @@ sub FilterRandRegions {
   &RSAT::util::one_command($cmd, 1);
 
   ## Create the filtered sequence file
-  $cmd = $SCRIPTS."/seq-select";
+  $cmd =  &RSAT::server::GetProgramPath("seq-select");
   $cmd .= " -i ".$outfile{rand_unfiltered_seq};
   $cmd .= " -ids ".$outfile{"rand_filtered_compo"};
   $cmd .= " -o ".$outfile{rand_filtered_seq};
@@ -938,7 +943,8 @@ sub RandRegions {
   &RSAT::message::TimeWarn("Selecting random regions") if ($main::verbose >= 2);
 
   ## Select random regions and retrieve their sequences
-  $cmd = $SCRIPTS."/random-genome-fragments -v 1";
+  $cmd =  &RSAT::server::GetProgramPath("random-genome-fragments");
+  $cmd .= " -v 1";
   $cmd .= " -lf ".$outfile{peak_seqlen};
   $cmd .= " -org ".$organism;
   $cmd .= " -rep ".$main::param{repetitions};

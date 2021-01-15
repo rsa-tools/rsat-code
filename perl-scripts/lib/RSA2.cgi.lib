@@ -35,6 +35,7 @@ sub LoadGetOrthoComparaDefault {
 ################################################################
 ## Load the default parameters for get-orthologs`
 sub LoadGetOrthoDefault {
+    #$default{organism} = "Escherichia_coli_GCF_000005845.2_ASM584v2";
     #$default{organism} = "Escherichia_coli_K_12_substr__MG1655_uid57779";
     #$default{taxon} = "Enterobacteriales";
   $default{queries} = '';
@@ -122,13 +123,13 @@ sub PrintOrthoSelectionSection {
 #      next unless (/\S/) ; # skip empty rows
 #      next if (/^;/); # skip comment lines
 #      next if (/^\#/); # Skip header line
-#      
+#
 #      my @split_line = split(/\t/, $_);
 #      my $org = $split_line[0];
-#      my $taxa = $split_line[1];	  
-#      
+#      my $taxa = $split_line[1];
+#
 #      if ($org) {
-#	
+#
 ##	      if (defined($supported_organism{$org})) {## This control seems
 ##	      not to work, probably because the library is read before the
 ##	      list of supported organisms.
@@ -141,7 +142,13 @@ sub PrintOrthoSelectionSection {
 #  } else {
 #    &RSAT::error::FatalError("Missing file", $fp_org_file);
 #  }
-  
+
+
+  ## Choice of the organism
+  print "<b>Query </b>";
+
+  #&OrganismPopUp(@supported_orthologs);
+  &OrganismPopUp('supported' => 'orthologs');
 
   ## Choice of the organism
   print "<b>Query </b>";
@@ -155,6 +162,7 @@ sub PrintOrthoSelectionSection {
 			 -default=>$default{queries},
 			 -rows=>3,
 			 -columns=>40);
+
   ## Option to upload a file with the gene list from the client machine
   print "<BR>Upload gene list from file<BR>\n";
   print $query->filefield(-name=>'uploaded_file',
@@ -271,13 +279,13 @@ sub RSA_header_bootstrap {
         -src      => 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'
     },
     { -type => 'text/javascript',
-        -src      => 'lib/RSAT_menu.js'
+        -src      => 'js/RSAT_menu.js'
     },
     { -type => 'text/javascript',
-        -src      => 'RSAT_tabs.js'
+        -src      => 'js/RSAT_tabs.js'
     }
    ],
-    -style => { 	-src => ["css/bootstrap.min.css","css/bhoechie-tab.css","tabs.css","chosen.css","font-awesome.min.css","form.css"],
+    -style => { 	-src => ["css/bootstrap.min.css","css/bhoechie-tab.css","css/tabs.css","css/chosen.css","css/font-awesome.min.css","css/form.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
 
@@ -353,16 +361,16 @@ sub RSA_header {
         -src      => 'js/jquery.js'
     },
     { -type => 'text/javascript',
-        -src      => 'lib/RSAT_menu.js'
+        -src      => 'js/RSAT_menu.js'
     },
     { -type => 'text/javascript',
-        -src      => 'RSAT_tabs.js'
+        -src      => 'js/RSAT_tabs.js'
     }
    ],
-    -style => { 	-src => ["main.css","tabs.css","chosen.css","font-awesome.min.css"],
+    -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css","css/font-awesome.min.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
-    
+
     if($css_body_class eq "results"){
         print "<style>#page-content-wrapper{
                     overflow: auto !important;
@@ -397,23 +405,6 @@ print "<div class='container' id='page-content-wrapper'>";
 
 }
 
-
-
-################################################################
-## Return a HTML link from an index file to a target file
-sub LinkOneFile {
-  my ($from_file, $to_file, $text) = @_;
-  my $pathv = "";
-  my $link = "";
-  $text = $text || $to_file;
-  if (-e ($to_file)) {
-    $path = &RSAT::util::RelativePath($from_file, $to_file);
-    $link = join ("",  "<a href='",$path, "'>", $text, "</a>");
-  } else {
-    $link = join ("",  "<font color='red'>", $text, "</font>");
-  }
-  return $link;
-}
 
 
 ################################################################
@@ -636,7 +627,7 @@ sub SequenceChoice {
     $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
     $sequenceChoiceString .=  "<B><A class='iframe' HREF='help.formats.html'>Format</A></B>&nbsp;";
     $sequenceChoiceString .=  $query->popup_menu(-id=>'sequence_format',
-      -name=>'sequence_format',
+						 -name=>'sequence_format',
 						 -Values=>['fasta',
 							   'ig',
 							   'wconsensus',
@@ -667,7 +658,8 @@ sub SequenceChoice {
 
   ## Mask option
   $sequenceChoiceString .=  "<BR><B><A class='iframe' HREF='help.formats.html'>Mask</A></B>&nbsp;";
-  $sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
+  $sequenceChoiceString .=  $query->popup_menu(-id=>'mask',
+					       -name=>'mask',
 					       -Values=>['none',
 							 'upper',
 							 'lower',
@@ -1043,6 +1035,45 @@ sub OrganismPopUpSelectable {
 
 
 ################################################################
+## Generate a pop-up menu for selection of UCSC's genome
+sub UCSCGenomePopUpSelectable {
+  my ($name, $id) = @_;
+  my $popup = "";
+  my @cols = ();
+  my $tmp_dir = &RSAT::util::get_pub_temp();
+  my $genomes_file = $tmp_dir."/genomes-ucsc.tsv";
+
+  ## Prepare select table
+  $popup .= "<select name='".$name."' id='".$id."' > ";
+  $popup .= "<option value = 'none'> UCSC genome </option>\n";
+
+  ## Check for existance of file
+  unless ( -s $genomes_file ){
+    ## Run supported-organisms-ucsc to obtain list
+    my $cmd = &RSAT::server::GetProgramPath("supported-organisms-ucsc")." | perl -pe 's/Genome at UCSC//g' | sort > ".$genomes_file;
+    &doit($cmd);
+  }
+
+  my ($genomes , $genomes_dir) = &OpenInputFile($genomes_file);
+
+  while($row = <$genomes>){
+    next unless ($row =~ /\S/); ## Skip empty rows
+    next if ($row =~ /^;/); ## Skip comment rows
+    next if ($row =~ /^#/); ## Skip header rows
+    chomp($row);
+    @cols = split(/\t/, $row);
+
+    $popup .= "<option value = '".$cols[0]."'> ".$cols[0]." - ".$cols[1]." </option>\n";
+  }
+  $popup .= "</select>";
+
+  close $genomes;
+
+  return $popup;
+}
+
+
+################################################################
 ## Generate a scrolling list allowing users to select multiple
 ## organisms for get-orthologs-compara.
 sub OrganismScrollingListCompara {
@@ -1118,7 +1149,7 @@ sub OrganismPopUpCompara{
 #           supported => infer: if this pop-up is displayed for the relevant organisms for operon inference (ex. infer-operons)
 sub OrganismPopUpString{
     my (%args) = @_;
-   
+
     my $supported = $args{'supported'};
     my $supported_param = "?get=json";
     if($supported ne ""){
@@ -1131,10 +1162,10 @@ sub OrganismPopUpString{
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
     my $popupid_name = ($bg_org == 1) ? "organism_bg_name" : "organism_name";
     my $tip = ($bg_org == 1) ? "tip_bg" : "tip";
-    
+
     my $organismPopup = "<div class='ui-widget' style='display:inline'>";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
-    
+
     if($default{organism} ne ""){
         $org_name = $default{organism};
         $org_name =~ s/_/\ /g;
@@ -1155,7 +1186,7 @@ sub OrganismPopUpString{
         $("#' . $popupid_name . '").bind("paste", function(e){
             $("#' . $popupid . '").val("");
         });
-        
+
         $("#'.$popupid_name.'").focusout(function(){
             if(($("#'.$popupid. '").val() == "") && ($("#' . $popupid_name . '").val() != "")){
                 $("#'.$popupid. '").val($("#' . $popupid_name . '").val());
@@ -1164,13 +1195,13 @@ sub OrganismPopUpString{
                 $("#'.$popupid. '").val("");
             }
         });
-        
+
         //$("#' . $popupid_name . '").focusout(function(){
         //    if($("#' . $popupid . '").val() == ""){
         //        $("#' . $popupid_name . '").val("");
         //    }
         //});
-        
+
         $("#' . $popupid_name . '").autocomplete({
 
                 minLength: 2,
@@ -1215,7 +1246,7 @@ sub OrganismPopUpString{
                         return false;
                     }
                 };
-            
+
     });
     </script>';
     if($args{supported}){
@@ -1227,7 +1258,7 @@ sub OrganismPopUpString{
         }
         $organismPopup .=  "<a href='getOrganisms.cgi?get=display&supported=$args{supported}' target='_blank'>  [List of $list]</a>";
     }
-    
+
     else{
         $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
     }
@@ -1339,7 +1370,7 @@ sub get_taxons_web{
     require RSAT::Tree;
     my $tree = new RSAT::Tree();
     $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
-    
+
     my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
     if (scalar(@taxa) == 0) {
         return ("");
@@ -1354,7 +1385,7 @@ sub get_taxons_web{
 sub TaxonPopUpString {
   my ($node_type) =  @_;
   $node_type = "node" unless ($node_type);
-  
+
   my $taxonomyPopup = "";
   if ($node_type eq "all") {
     $taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
@@ -1381,7 +1412,7 @@ sub TaxonPopUpString {
         $("#taxon_name").bind("paste", function(e){
             $("#taxon").val("");
         });
-        
+
         $("#taxon_name").focusout(function(){
             if(($("#taxon").val() == "") && ($("#taxon_name").val() != "")){
                 $("#taxon").val($("#taxon_name").val());
@@ -1395,7 +1426,7 @@ sub TaxonPopUpString {
         //        $("#taxon_name").val("");
         //    }
         //});
-        
+
         $("#taxon_name").autocomplete({
         minLength: 2,
         source: "getOrganisms.cgi?get=json&taxon=yes&nodetype='.$node_type.'",
@@ -1418,7 +1449,7 @@ sub TaxonPopUpString {
                         ind = str.indexOf(ps[i]) + ps[i].length;
                         ind1 = str.indexOf(ps[i+1]);
                         res += "<font color=\"blue\">" + ps[i] + "</font>" + str.substring(ind, ind1);
-                        
+
                     }
                     ind = str.indexOf(ps[ps.length - 3]) + ps[ps.length-3].length;
                     res += "<font color=\"blue\">" + ps[ps.length - 3] + "</font>" + str.substring(ind);
@@ -1430,7 +1461,7 @@ sub TaxonPopUpString {
                 }
                 var reg = new RegExp(re , "i", "m");
                 var t = item.label.replace(reg, replacer);
-                
+
                 document.getElementById("tip-taxon").style.display = "none";
                 return $( "<li>" ).append("<div>" + t + "</div>").appendTo( ul );
             }else{
@@ -1439,9 +1470,9 @@ sub TaxonPopUpString {
                 return false;
             }
         };
-        
+
         $("#taxon_name").attr("autocomplete", "on");
-        
+
     });
     </script>';
     $taxonomyPopup .=  "<a href='supported-taxonomy.cgi' target='_blank'>  [List of taxonomy]</a>";
@@ -1455,16 +1486,16 @@ sub TaxonPopUpString_old {
     require RSAT::Tree;
     my $tree = new RSAT::Tree();
     $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
-    
+
     my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
-    
+
     if (scalar(@taxa) == 0) {
         return ("");
         #    return ("No available taxonomic information.");
     }
     push @taxa, $tree->get_node_descendents_names("Fungi",undef,$node_type);
     @taxa = sort @taxa;
-    
+
     my $taxonomyPopup = "";
     if ($node_type eq "all") {
         $taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
@@ -1483,18 +1514,17 @@ sub TaxonPopUpString_old {
         }
     }
     $taxonomyPopup .=  "</select>";
-    
+
     ## NOT SUPPORTED YET: TO BE ADDED TO get-orghologs, footprint-discovery, footprint-scan
     # $taxonomyPopup .=  "&nbsp;"x5;
     # $taxonomyPopup .=  "<B>Taxonomic depth</B>&nbsp;";
     # $taxonomyPopup .= $query->popup_menu(-name=>'depth',
     # 				       -Values=>[0,1,2,3,4,5],
     # 				       -default=>$default{depth}||4);
-    
+
     $taxonomyPopup .=  "<BR>\n";
     return $taxonomyPopup;
 }
-
 
 
 
@@ -1514,10 +1544,12 @@ sub SeqBoxMQ {
       print "<br>";
 
       print "<b><a class='iframe' href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
-      print $query->popup_menu(-name=>'permutation'.$seq_num, -id=>'permutation'.$seq_num,
+      print $query->popup_menu(-name=>'permutation'.$seq_num,
+			       -id=>'permutation'.$seq_num,
 			       -Values=>[0..5],
 			       -default=>$default{perm});
-      print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num, -id=>'sep_perm'.$seq_num,
+      print "&nbsp;"x2,  $query->checkbox(-name=>'sep_perm'.$seq_num,
+					  -id=>'sep_perm'.$seq_num,
 					  -checked=>$default{sep_perm1},
 					  -label=>''), "&nbsp;separate permutations" ;
       print "<br>\n";
@@ -1544,7 +1576,36 @@ sub SeqBoxMQ {
 
 }
 
+sub GetSecondMatrixFile {
+  my ($matrix_file_2) = @_ ;
 
+  ################################################################
+  ## Upload sequence file from the client
+  my $upload_file_2 = $query->param('uploaded_file_matrix_2');
+  if ($upload_file_2) {
+
+    $type = $query->uploadInfo($upload_file_2)->{'Content-Type'};
+    open MAT, ">$matrix_file_2" ||
+      &cgiError("Cannot store matrix file in temp dir.");
+    while (<$upload_file>) {
+      print MAT;
+    }
+    close MAT;
+
+    ### Fetch sequence from an URL
+  } elsif ($query->param('matrix2') =~ /\S/) {
+    if (open MAT, ">$matrix_file_2") {
+       print MAT $query->param('matrix2');
+      close MAT;
+    }
+
+  }
+
+  #### sequence file will be deleted
+  &DelayedRemoval($matrix_file_2);
+
+  return($matrix_file_2);
+}
 ################################################################
 ## Display the options for input matrices
 ##
@@ -1605,9 +1666,9 @@ sub GetMatrix {
   #  my $supported_input_formats = join ",", @supported_input_formats;
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
 
-  #### matrix format
-    print $query->popup_menu(-id=>'matrix_format',
-    -name=>'matrix_format',
+  ## Matrix format
+  print $query->popup_menu(-id=>'matrix_format',
+			   -name=>'matrix_format',
 			   -Values=>[@supported_input_formats],
 			   -default=>$default{matrix_format});
 
@@ -1646,7 +1707,7 @@ sub GetMatrix {
         print "<br/><br/>";
         &MotifSelection('ids' => 1);
     }
-    
+
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
     #### pseudo-counts
@@ -1673,7 +1734,7 @@ sub GetFirstMatrix {
     print "<B>", $title, "</B>\n";
     print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
     print "<A class='iframe' HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
-    
+
     my %supported_input_format = (
 				'alignace'=> 1,
 				'assembly'=>1,
@@ -1706,33 +1767,33 @@ sub GetFirstMatrix {
     my @supported_input_formats = sort(keys( %supported_input_format));
     #  my $supported_input_formats = join ",", @supported_input_formats;
     #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
-    
-    #### matrix format
+
+    ## Matrix format
     print $query->popup_menu(-id=>'matrix_format1',
-    -name=>'matrix_format1',
-    -Values=>[@supported_input_formats],
-    -default=>$default{matrix_format});
-    
-    
+			     -name=>'matrix_format1',
+			     -Values=>[@supported_input_formats],
+			     -default=>$default{matrix_format});
+
+
     ## Display option fo use consensus as matrix name
     if ($args{consensus}) {
         print $query->checkbox(-id=>'consensus_as_name', -name=>'consensus_as_name',
         -checked=>$default{consensus_as_name},
         -label=>' use motif consensus as matrix name ');
     }
-    
+
     ## Text area to enter the matrix
     print "<BR>\n";
     print  "Input motifs as text<br/>" if ($db_choice);
     print "<div>";
-    
-    
+
+
     print $query->textarea(-id=>'matrix1',
     -name=>'matrix1',
 			 -default=>$default{matrix},
 			 -rows=>4,
 			 -columns=>60);
-    
+
     ## Option to upload the matrix file from the client machine
     print "<BR>\n";
     print  "Upload motifs file<br/>" if ($db_choice);
@@ -1741,15 +1802,15 @@ sub GetFirstMatrix {
     -default=>'',
     -size=>45,
     -maxlength=>200);
-    
+
     ## Propose help to find matrices
     unless ($args{nowhere}) {
         print "<br/><br/>";
         &MotifSelection('ids' => 1);
     }
     #print "<BR>\n";
-    
-    
+
+
     ## Display additional options: pseudo-count and pseudo-count distribution
     unless ($args{no_pseudo}) {
         #### pseudo-counts
@@ -1809,16 +1870,16 @@ sub GetMatrix_bootstrap {
   my @supported_input_formats = sort(keys( %supported_input_format));
   #  my $supported_input_formats = join ",", @supported_input_formats;
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
-print '<div class="form-inline"> <div class="form-group">
-';
+print '<div class="form-inline"> <div class="form-group">\n';
 
   print "<label for='matrix_format'>", $title, "</label>\n";
   print "<A class='badge badge-primary iframe' HREF='help.convert-matrix.html#io_format' >Info</a>";
 
-print '';
-  #### matrix format
-    print $query->popup_menu(-id=>'matrix_format',
-    -name=>'matrix_format',
+  print '';
+
+  ## Matrix format
+  print $query->popup_menu(-id=>'matrix_format',
+			   -name=>'matrix_format',
 			   -Values=>[@supported_input_formats], -class=>'form-control',
 			   -default=>$default{matrix_format});
 
@@ -1858,7 +1919,7 @@ print '</div>';
     print "<br/><br/>";
     &MotifSelection('ids' => 1);
   }
-  
+
     print "<BR></div>\n";
   ## Display additional options: pseudo-count and pseudo-count distribution
   unless ($args{no_pseudo}) {
@@ -1923,15 +1984,16 @@ sub MultiGetMatrix_bootstrap {
   my @supported_input_formats = sort(keys( %supported_input_format));
   #  my $supported_input_formats = join ",", @supported_input_formats;
   #  &RSAT::message::Warning("supported input formats:", $supported_input_formats);
-print '<div class="form-inline"> <div class="form-group">
-';
+  print '<div class="form-inline"> <div class="form-group">';
+  print "\n";
 
   print "<label for='matrix_format".$mat_num."'>", $title, "</label>\n";
   print "<A class='badge badge-primary iframe' HREF='help.convert-matrix.html#io_format' >Info</a>";
 
-print '';
+  print '';
+
   #### matrix format
-    print $query->popup_menu(-id=>'matrix_format'.$mat_num,
+  print $query->popup_menu(-id=>'matrix_format'.$mat_num,
     -name=>'matrix_format'.$mat_num,
 			   -Values=>[@supported_input_formats], -class=>'form-control',
 			   -default=>$default{"matrix_format".$mat_num});
@@ -1944,8 +2006,9 @@ print '';
 			   -label=>' use motif consensus as matrix name ');
   }
 
-print '</div></div>
+  print '</div></div>
 <div class="form-group">';
+  print "\n";
   ## Text area to enter the matrix
   print  "Input motifs as text<br/>" if ($db_choice);
   print '<div>
@@ -1953,12 +2016,14 @@ print '</div></div>
    ';
 
   print $query->textarea(-id=>'matrix'.$mat_num,
-    -name=>'matrix'.$mat_num, -class=>'form-control',-placeholder=>'Paste here your matrices, or select a file to upload below ',
+			 -name=>'matrix'.$mat_num,
+			 -class=>'form-control',
+			 -placeholder=>'Paste here your matrices, or select a file to upload below ',
 			 -default=>$default{"matrix".$mat_num},
 			 -rows=>4,
 			 -columns=>60);
 
-print '</div>';
+  print '</div>';
 
   ## Option to upload the matrix file from the client machine
   print  "Upload motifs file<br/>" if ($db_choice);
@@ -1967,7 +2032,7 @@ print '</div>';
 			  -default=>'',
 			  -size=>45,
 			  -maxlength=>200);
-    print "<BR></div>\n";
+  print "<BR></div>\n";
 
 }
 
@@ -1978,104 +2043,9 @@ sub MotifSelection {
     my (%args) = @_;
     print '<link rel="stylesheet" href="css/select2.min.css" /><script src="js/select2.full.min.js"></script>';
     print '<style>.select2-results__options {font-size:10px} </style>';
-    print '<script type="text/javascript">
+    print '<script type="text/javascript" src="js/retrieve_matrix.js">
 
-    function formatState(state){
-        if(!state.id){return $("<div align=\'center\' style=\'text-transform:uppercase;background-color:lightgray;border:1px solid #eee;border-radius:7px;padding:8px\'><b>" + state.text + "</b></div>");}
-        var $state = $("<span><i class=\'fa fa-circle fa-lg\' style=\'color:" + state.element.className + "\'></i></span>&nbsp;&nbsp;&nbsp;" + state.text + "</span>");
-        return $state;
-    }
-    $(function(){
-        $(".inline").colorbox({inline:true,width:"70%"});
-        // turn the element to select2 select style
-        $("#db_choice").select2({placeholder: "Select a collection",
-        templateResult: formatState,
-        allowClear: true,
-        theme: "classic"
-        });
-
-        if($("#db_choice2")){
-            $("#db_choice2").select2({placeholder: "Select a collection",
-            templateResult: formatState,
-            allowClear: true,
-            theme: "classic"
-            });
-            $("#db_choice2").change(function(){
-                if($("#db_choice2").val() != ""){
-                    $("#matrix").val("");
-                    $("#db_choice").val("").change();
-                    $("input[name=db_choice_radio][value=motif_collection_all]").prop("checked",true);
-                }
-            });
-        }
- ';
-
-    ### if select also the identifiers.
-    if($args{ids} == 1){
-        print '$("#db_id").select2({placeholder: "Select identifiers",
-                    allowClear: true,
-                    theme: "classic",
-                    closeOnSelect: false
-            });
-
-            $("#db_choice").change(function(){
-                if($("#db_choice").val() != ""){
-                    $("#db_id").val("").change();
-                    $("#matrix").val("");
-                    $("input[name=db_choice_radio][value=custom_motif_db]").prop("checked",true);
-                    $("#db_choice2").val("").change();
-                }
-                document.getElementById("identifier").style.display = "none";
-                db_name = $("#db_choice").val();
-                $.ajax({
-                type: "GET",
-                url: "getMatrixIds.cgi?db_choice=" + db_name,
-                dataType: "json",
-                data: {action: "request"},
-                success: function(data){
-                    var res = data.entries;
-                    if(res.length != 0){ document.getElementById("identifier").style.display = "block"; }
-                    var selectopt = "<option></option>";
-                    for(i = 0; i < res.length; i++){
-                        selectopt += "<option value=\'" + res[i].id + "\'>" + res[i].idac + "</option>";
-                    }
-                    document.getElementById("db_id").innerHTML = selectopt;
-                },
-                error: function(){
-                    alert("Error matrix");
-                }
-                });
-            });
-
-
-            $("#db_id").change(function(){
-                db_name = $("#db_choice").val();
-                db_id = $("#db_id").val();
-                if(db_id == null || db_id == ""){
-                    $("#matrix").val("");
-                }
-                if(db_id != null && db_id != ""){
-                    $.ajax({
-                    type: "GET",
-                    url: "getMatrix.cgi?db_choice=" + db_name + "&db_id=" + db_id,
-                    data: {action: "request"},
-                    success: function(data){
-                        res = data.split("</format>");
-                        $("#matrix").val(res[1]);
-                        format = "tab";
-                        if(res[0] == "tf"){
-                            format = "transfac";
-                        }
-                        $("#matrix_format").val(format);
-                    },
-                    error: function(){
-                        alert("Error matrix");
-                    }
-                    });
-                }
-            });';
-    }
-    print '}); </script>';
+    </script>';
 
     print '<style> input.select2-search__field { width: 90% !important; } </style>';
     print '<div style="float:left;font-size:11px">';
@@ -2085,20 +2055,35 @@ sub MotifSelection {
     my $width = ($args{ids} == 1) ? "300px" : "400px";
     my $multiple = ($args{mode} eq 'checkbox') ? 'multiple="multiple"' : '';
     my $select_id = ($args{more} == 1) ? 'db_choice2' : 'db_choice';
+    my $select_ids = ($args{more} == 1) ? 'dbs_choice2' : 'dbs_choice';
+    print "<table><tr><td style='padding-right:20px'><b>Input</b></td>";
+
+    print "<td align='top'>1 - Select a database in list:<br/>";
+    print " <select id='$select_ids' name='$select_ids' $multiple style='width:$width'><option></option>";
+    ## load the various databases that can be compared against
+    &DisplayMatrixDBchoice("mode"=>"radio");
+    print "</select>";
+    print "<td align='top'>2 - Select a collection in list:<br/>";
     print " <select id='$select_id' name='$select_id' $multiple style='width:$width'><option></option>";
     ## load the various databases that can be compared against
-    &DisplayMatrixDBchoice_select2("mode"=>"radio");
     print '</select>';
-    print '<br/><a class="inline" href="#matrix_descr""> View matrix descriptions & download full collections</a> <br/>';
-    print "<div style='display:none'><div id='matrix_descr'>";
-    &DisplayMatrixDBchoice_select2("mode" => "list");
-    print "</div></div></div>";
 
+    print "</td>";
     if($args{ids} == 1){
-        print "<div id='identifier' style='display:none'><div style='float:left;margin-left:27px;margin-top:30px;font-size:11px;'>Select 1 or more matrix identifiers:<br/><br/>";
-        print " <select id='db_id' style='width:300px' multiple='multiple'></select><br/>&nbsp;";
+        print "<td align='top'>";
+        print "3 - Select one or more matrix identifiers:<br/>";
+        print " <select id='db_id' style='width:300px' multiple='multiple'></select>";
+    }
+    print '<div style="clear:both;"></div>';
+    print "</td><td><div id='wait_ids' style='display:none'><image src='images/wait.gif' style='width:50px;height:50px' /></div></td></tr></table>";
+    if($args{more} != 1){
+        print '<br/><a class="inline" href="#matrix_descr""> View matrix descriptions & download full collections</a> <br/>';
+        print "<div style='display:none'><div id='matrix_descr'>";
+        &DisplayMatrixDBchoice("mode" => "list");
         print "</div></div>";
     }
+    print "</div>";
+
     print '<div style="clear:both;"></div>';
 }
 
@@ -2632,11 +2617,13 @@ sub GetBackgroundModel {
   if ($params{markov}) {
     print ("<b><a class='iframe' href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
     if ($params{simple}) {
-      print $query->popup_menu(-id=>'markov_order', -name=>'markov_order',
+      print $query->popup_menu(-id=>'markov_order',
+			       -name=>'markov_order',
 			       -Values=>[0..2],
 			       -default=>$default{markov_order});
     } else {
-      print $query->popup_menu(-id=>'markov_order', -name=>'markov_order',
+      print $query->popup_menu(-id=>'markov_order',
+			       -name=>'markov_order',
 			       -Values=>[0..7],
 			       -default=>$default{markov_order});
     }
@@ -2681,7 +2668,11 @@ sub GetBackgroundModel {
     print  &OrganismPopUpString('bg_org'=>'1');
   }
 
-    print ("<b>Sequence type</b> &nbsp; ",$query->popup_menu(-id=>'background',-name=>'background',-Values=>["upstream-noorf","upstream"],-default=>$default{background}));
+    print ("<b>Sequence type</b> &nbsp; ",
+	   $query->popup_menu(-id=>'background',
+			      -name=>'background',
+			      -Values=>["upstream-noorf","upstream"],
+			      -default=>$default{background}));
 
   print '</ul>';
 
@@ -2695,11 +2686,12 @@ sub GetBackgroundModel {
   ### Display strand option
   if ($params{strands}) {
     print "<B><A class='iframe' HREF='help.convert-background-model.html#item__2d1str'><br>Count on</A></b>\n";
-    print $query->popup_menu(-name=>'strands',
+    print $query->popup_menu(-id=>'strands',
+			     -name=>'strands',
 			     -Values=>[
-				       'single strand',
-				       'both strands',
-				      ],
+				'single strand',
+				'both strands',
+			     ],
 			     -default=>$default{strands});
     print "&nbsp;&nbsp";
   }
@@ -2759,12 +2751,13 @@ sub DisplayBackgroundFileUpload {
 
 
       #### bg format
-    print $query->popup_menu(-name=>'bg_format',
+    print $query->popup_menu(-id=>'bg_format',
+			     -name=>'bg_format',
 			     -Values=>[
-				       'oligo-analysis',
-				       'MotifSampler',
-				       'meme'
-				      ],
+				'oligo-analysis',
+				'MotifSampler',
+				'meme'
+			     ],
 			     -default=>$default{bg_format});
 
 
@@ -2841,53 +2834,99 @@ sub SetBackgroundModel {
 ## The argument "mode" allows to specify two alternative choice modes:
 ## "radio" (radio buttons) or "checkbox" (checkbox).
 sub DisplayMatrixDBchoice {
-  my (%args) = @_;
+    my (%args) = @_;
+    ## Check selection mode
+    my $mode = $args{mode} || "checkbox"; ## Display check boxes or radio buttons
+    my %supported_choice_mode = ("radio"=>1, "checkbox"=>1, "list"=>1);
+    my $supported_choice_modes = join ",", sort keys %supported_choice_mode;
 
-  ## Check selection mode
-  my $mode = $args{mode} || "checkbox"; ## Display check boxes or radio buttons
-  my %supported_choice_mode = ("radio"=>1, "checkbox"=>1);
-  my $supported_choice_modes = join ",", sort keys %supported_choice_mode;
-  &RSAT::error::FatalError($mode, "Invalid choice mode for &DisplayMatrixDBchoice(). Supported: ".$supported_choice_modes)
-      unless ($supported_choice_mode{$mode});
+    &RSAT::error::FatalError($mode, "Invalid choice mode for &DisplayMatrixDBchoice(). Supported: ".$supported_choice_modes)
+    unless ($supported_choice_mode{$mode});
 
+    ## Get information about supported motif databases
+    my %matrix_db = &RSAT::server::supported_motif_databases_2();
 
-  ## Get information about supported motif databases
-  my %matrix_db = &RSAT::server::supported_motif_databases();
+    my %colors = (
+    'Vertebrates' => 'blue',
+    'Non-vertebrate Metazoa' => 'orange',
+    'Plants' => 'green',
+    'Fungi' => 'purple',
+    'Prokaryotes' => 'teal',
+    'Multi-organisms' => 'yellow',
+    'RNA binding' => 'coral'
+    );
 
-  ## Display supported motif databases
-  foreach my $db_name (sort(keys (%matrix_db))) {
-    my $db_format = $matrix_db{$db_name}->{'format'};
-    my $descr = $matrix_db{$db_name}->{'descr'};
-    my $version = $matrix_db{$db_name}->{'version'};
-    my $url = $matrix_db{$db_name}->{'url'};
-    my $status = "";
-    if ($db_name eq $default{compare_motif_database} ) {
-      $status = "checked";
+    my @multicategory = ();
+    my %singlecategory = ();
+    ## Display supported motif databases
+    foreach my $dbs_name (keys (%matrix_db)) {
+        if($mode eq "radio"){
+            ## check number of categories
+            my @cats = ();
+            foreach my $key (keys %{$matrix_db{$dbs_name}}){
+                my %db = %{$matrix_db{$dbs_name}{$key}};
+                if(! ($db{category} ~~ @cats)){ push @cats, $db{category};}
+            }
+            if(scalar @cats == 1){
+                my $cat = $cats[0];
+                if(! defined $singlecategory{$cat}) { $singlecategory{$cat} = (); }
+                push @{$singlecategory{$cat}}, $dbs_name;
+            }else{
+                push @multicategory, $dbs_name;
+            }
+        }
     }
 
-    ## Add URL to label if defined
-    my $label;
-    if ($url) {
-      $label = "<a target='_blank' href=".$url.">".$descr."</a>";
-    } else {
-      $label = $descr;
-    }
-    $label .= " (".$version.")";
+    if($mode eq "radio"){
+        print "<optgroup label='Multi-categories'>";
+        foreach my $key (sort {"\L$a" cmp "\L$b"} @multicategory){
+            print "<option value='$key' class='pink'>$key</option>";
+        }
+        print "</optgroup>";
+        foreach my $key (sort {"\L$a" cmp "\L$b"} (keys %singlecategory)){
+            print "<optgroup label='$key'>";
+            foreach my $db ( sort {"\L$a" cmp "\L$b"} @{$singlecategory{$key}}){
+                print "<option value='$db' class='$colors{$key}'>$db</option>";
+            }
+            print "</optgroup>";
+        }
+    }else{
 
-    ## Display the database in the selected mode (checkbox or radiobutton)
-    if ($mode eq "checkbox") {
-      print $query->checkbox(-name=>'db_selection_'.$db_name,
-			     -checked=>$status,
-			     -label=>'');
-      print "&nbsp;", $label;
-    } elsif ($mode eq "radio") {
-      print( "<input type='radio' name='db_choice' value='",$db_name,"' $status>");
-      print $label;
-    } else {
-      &RSAT::error::FatalError($mode, "Invalid choice mode for &DisplayMatrixDBchoice(). Supported: ".$supported_choice_modes);
+        my %matrix_db_cat = ();
+        foreach my $key (keys %matrix_db){
+            foreach my $db (keys %{$matrix_db{$key}}){
+                my %db = %{$matrix_db{$key}{$db}};
+                if(! defined $matrix_db_cat{$db{category}}){ $matrix_db_cat{$db{category}} = (); }
+                push @{$matrix_db_cat{$db{category}}}, \%db;
+            }
+        }
+
+        foreach my $key (sort {"\L$a" cmp "\L$b"} (keys %matrix_db_cat)){
+            if($key ne ""){
+                print "<h3 style='padding:10px'>$key</h3><div style='padding-left:50px;padding-top:15px'>";
+                foreach my $db (@{$matrix_db_cat{$key}}){
+                    my $file = ${$db}{file};
+                    my $descr = ${$db}{descr};
+
+                    open (my $fh, "<", $ENV{RSAT}. "/public_html/motif_databases/" . $file);
+                    my $nbmotif = 0;
+                    while (my $row = <$fh>){
+                        if($row =~ /^AC\s+/){
+                            $nbmotif += 1;
+                        }
+                    }
+                    if (${$db}{url}) {
+                        $descr = "<a target='_blank' href=".${$db}{url}.">".$descr."</a>";
+                    }
+                    $descr .= " - [$nbmotif motifs] (".${$db}{version}.")";;
+
+                    $descr .= " - [<a href='$ENV{'www-rsat'}/rsat/motif_databases/$file' target='_blank' title='TRANSFAC format'>local copy</a>]<br/>";
+                    print $descr;
+                }
+                print "</div>";
+            }
+        }
     }
-    print "<br/>\n";
-  }
 }
 
 sub DisplayMatrixDBchoice_select2 {
@@ -2902,44 +2941,44 @@ sub DisplayMatrixDBchoice_select2 {
 
 
     ## Get information about supported motif databases
-    my %matrix_db = &RSAT::server::supported_motif_databases();
-    
+    my %matrix_db = &RSAT::server::supported_motif_databases_2();
+
     ## declare the variables
     my @values;
     my @labels;
     my @colors;
-    
+
     ## adapt for server-specific motifs
     if ($ENV{group_specificity} eq "Metazoa") {
     	@values = (\%vertebrates, \%metazoa, \%multi_organism);
     	@labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Multi-organisms','RNA binding');
     	@colors = ('blue', 'orange', 'yellow');
-    
+
     } elsif ($ENV{group_specificity} eq "Fungi") {
-    
+
     @values = (\%fungi, \%multi_organism);
     @labels = ( 'Fungi', 'Multi-organisms','RNA binding');
-    @colors = ( 'purple', 'yellow');  
+    @colors = ( 'purple', 'yellow');
 
  	} elsif ($ENV{group_specificity} eq "Prokaryotes") {
-    
+
     @values = (\%prokaryots, \%multi_organism);
     @labels = ('Prokaryotes', 'Multi-organisms','RNA binding');
-    @colors = ('teal', 'yellow'); 
-    
+    @colors = ('teal', 'yellow');
+
     } elsif ($ENV{group_specificity} eq "Plants") {
-    
+
     @values = ( \%plants, \%multi_organism);
     @labels = ( 'Plants', 'Multi-organisms','RNA binding');
-    @colors = ( 'green', 'yellow'); 
-    
+    @colors = ( 'green', 'yellow');
+
     } else {
-    
+
     @values = (\%vertebrates, \%metazoa, \%plants, \%fungi, \%prokaryots, \%multi_organism);
     @labels = ('Vertebrates', 'Non-vertebrate Metazoa', 'Plants', 'Fungi', 'Prokaryotes', 'Multi-organisms','RNA binding');
-    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow','coral');  
+    @colors = ('blue', 'orange', 'green', 'purple', 'teal', 'yellow','coral');
     }
-    
+
     ## Display supported motif databases
     foreach my $db_name (sort(keys (%matrix_db))) {
         my $db_format = $matrix_db{$db_name}->{'format'};
@@ -3095,300 +3134,6 @@ sub GetMatrixDBchoice_select2 {
 }
 
 
-
-################################################################
-## Print HTML header
-sub html_header {
-  my $sorttable = shift;
-  if (!defined($sorttable)) {
-    $sorttable = 1;
-  }
-  # $sorttable is a optional argument. By default, the table contains a
-  # java script that allows the HTML table
-  # to be sorted by clicking on the top of the row.
-  #If $sorttable is equal to 0, then this script will not be included.
-  #In some cases this has no sense to sort the table.
-  my $header = "";
-  $header .=  "<html>\n";
-  $header .=  "<header>\n";
-  $header .=  "<title>$infile{input}</title>\n";
-  $header .=  "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\" />";
-  $header .= &sorttable_script() if ($sorttable);
-  $header .= "<style type='text/css'>\n";
-  $header .= `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
-  $header .=  "</style>\n";
-  $header .=  "<header>\n";
-  $header .=  "<body bgcolor='#ffffff'>\n";
-  return $header;
-}
-
-################################################################
-## Close HTML table
-sub close_table_html {
-  my $string = "";
-  $string .=  "</BODY>";
-  $string .=  "</HTML>";
-  return $string;
-}
-
-
-################################################################
-## Print a java script produce a sortable HTML table
-sub sorttable_script {
-  my $script = $ENV{RSAT}."/perl-scripts/lib/sorttable.js";
-  return `cat $script`;
-}
-
-################################################################
-## Include a java script from a .js file in a HTML file.  This is
-## useful for producing result files that can be moved without loosing
-## the script.
-sub java_script_from_file {
-  my ($script_file) = @_;
-  my $script_string = "<script type=\"text/javascript\">\n";
-  $script_string .= "<!-- \n";
-  $script_string .= `cat $script_file`;
-  $script_string .= "// -->\n";
-  $script_string .= "</script>\n";
-  return $script_string;
-}
-
-
-################################################################
-## Insert HTML tags to open a menu heading
-##
-## Usage:  print $out &open_menu_heading($nb, $text, $closed);
-##
-## Parameters:
-##   $nb : a unique number identifying the menu heading in the HTML page.
-##   $text: the text to be displayed in the menu heading. This text can contain HTML tags.
-##          example: "<h3>My title</h3>"
-##   $closed: a flag indicating if the menu should be open (0) or
-##          closed (1) the first time the HTML is loaded in the browser.
-sub open_menu_heading {
-  my ($nb, $text, $closed) = @_;
-  my $status = "open";
-  my $display = "menu_collapsible_display";
-  if ($closed) {
-    $status = "closed";
-    $display = "menu_collapsible";
-  }
-  my $string = "<div class=\"menu_heading_".$status."\" onclick=\"toggleMenu('".$nb."')\" id=\"heading".$nb."\">\n";
-  $string .= $text."</div>";
-  $string .= "<div id=\"menu".$nb."\" class=\"".$display."\"><p/><fieldset>";
-  return ($string);
-}
-
-################################################################
-## Insert HTML tags to close a menu heading
-##
-## Usage:  print $out &close_menu_heading($nb, $text);
-sub close_menu_heading {
-  my $string =  "</fieldset><p/></div>";
-  $string .= "</div>\n";
-  $string .= "<p class=\"clear\"></p>";
-  return($string);
-}
-
-
-################################################################
-## Print the HTML header for a result file (include styles etc)
-sub PrintHtmlResultHeader {
-  my (%args) = @_;
-  my $header = "";
-  my $program = $args{program} || "RSAT";
-#  my $title = $args{title} || $main::param{title} || "result";
-  my $title = $args{title} || "result";
-  my $result_toc = $args{result_toc};
-
-  ## HTML Header and title
-  $header .=  "<html>\n";
-  $header .=  "<head>\n";
-  $header .=  "<title>".$program." ".$title."</title>\n";
-
-
-  ## Page styles
-  $header .=  "<style type='text/css'>\n";
-  $header .=  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
-  $header .=  "</style>\n";
-#  $header .=  "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
-
-  ## Refresh time if required
-  my $refresh_time = 0;
-  if ((defined($args{refresh_time}))
-      && (&IsNatural($args{refresh_time}))
-      && ($args{refresh_time} > 0)) {
-    $refresh_time = $args{refresh_time};
-    $header .= "<meta http-equiv='refresh' content='".$refresh_time."' />\n";
-  }
-
-  ## Java scripts
-  $header .=  sorttable_script();
-#  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
-#  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/lib/RSAT_menu.js");
-  $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/RSAT_menu.js");
-  $header .=  "</head>\n";
-
-  ## Start HTML body
-  $header .=  "<body>\n";
-  if (defined($ENV{rsat_www})) {
-    $header .=  "<h1><a target='_top' href='".$ENV{rsat_www}."'>RSAT</a> - ".$program." result</h1>\n";
-  } else {
-    $header .=  "<h1><a target='_top' href='http://rsat.ulb.ac.be/rsat/'>RSAT</a> - ".$program." result</h1>\n";
-  }
-  $header .=  "<h3 style='text-align:center;'>Analysis: ";
-  $header .=  $title." (";
-  $header .=  &RSAT::util::DateAndTime();
-  $header .=  ")</h3>\n";
-
-  ## Reserve space for result TOC in the beginning of the form
-  if ($refresh_time > 0) {
-    $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>\n";
-    $header .= "<p style='text-align:center;color:green'>Results will progressively be displayed on this page <br/>\n";
-    $header .= "<b>This page should be automatically refreshed every ".$refresh_time." seconds until this message disappears.</b></p>\n";
-  }
-
-  if ($result_toc) {
-    $header .=  "<div id='Menu_space'>\n";
-    $header .=  "<div id='Menu_wait'>\n";
-    $header .=  "</div>\n";
-    $header .=  "</div>\n";
-  }
-
-  return($header);
-}
-
-################################################################
-#### Print a text table in html format
-##
-## Read the content of FILEHANDLE and display it in the form of a
-## HTML table.
-##
-## if $mirror_file is specified, a copy of the input text (without HTML formatting)
-## is saved on the hard drive
-##
-## usage
-##   &PrintHtmlTable($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border, $autolink);
-##
-## global variables
-## ================
-## The fixed font type can be switched off by specifiying a global
-## variable
-##       $font{variable} = 1;
-sub PrintHtmlTable {
-  my ($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border, $autolink) = @_;
-  $out = STDOUT unless ($out);
-  $chunk = 1000 unless (&IsNatural($chunk));
-  my $line_count = 0;
-  my $last_line = "";
-  my $header_line = "";
-  unless ((defined($border)) && (&IsNatural($border))) {
-    $border=0;
-  }
-
-  ## Open the table
-  $TABLE_OPENING="<table  class=\"sortable\"  cellspacing='1' cellpadding='3' border='$border'>";
-  unless ($main::font{variable}) {
-    $font_spec_start = "<TT>";
-    $font_spec_end = "</TT>";
-  }
-
-  ## If required, store a copy of the input text in a mirror file
-  if ($mirror_file) {
-    if (open MIRROR, ">$mirror_file") {
-      $mirror = 1;
-      &DelayedRemoval($mirror_file);
-    } else {
-      &Warning("Could not open the mirror file $mirror_file<P>\n");
-    }
-  }
-
-  print $out "<pre>";
-  while (<$FILE>) {
-    #### avoid exposing the full path through the web interface
-    $_ = &RSAT::util::hide_RSAT_path($_);
-    #    s|$ENV{RSAT}/(public_html/)*||g;
-
-    if ($autolink) {
-      s|(http://[\w\d+\.\-\/\?\&\=\~]+)|<a href="$1">$1</a>|g;
-      s|(ftp://[\w\d+\.\-\/\?\&\=\~]+)|<a href="$1">$1</a>|g;
-      s|([\w\d\.\-]+\@[\w\d\.\-]+)|<a href=mailto:$1>$1</a>|g;
-    }
-
-    if ($mirror) {
-      print MIRROR $_
-	unless ((/^;/) && !($mirror_verbose));
-    }
-
-    if (/^\s*$/) { ## Empty rows
-      print $out "<br>\n";
-
-    } elsif (/^;\s*WARNING/) {		# Warning
-      push @warnings, $_;
-
-
-    } elsif ((/^;/) ||
-	     (/^\-\-/) ||
-	     (/^\#/) ||
-	     (/^\/\//)) {	# Comment line
-      if ($table_opened) {
-	print $out "<\/table><pre>\n";
-	$table_opened = 0;
-      }
-      $last_line =~ s/^;//;
-      $last_line =~ s/^#//;
-      $last_line =~ s/^--//;
-      print $out $last_line;
-      $last_line = $_;
-
-    } elsif (!($table_opened)) { # first line of the table
-      $table_opened = 1;
-      $line_count = 0;
-      print $out "</pre>\n\n", $TABLE_OPENING, "\n";
-
-      # print the header line
-      chomp($last_line);
-      $last_line =~ s/^;//;
-      $last_line =~ s/^#//;
-      $last_line =~ s/^--//;
-      $last_line =~ s|\t|$font_spec_end</th>\n<th align='left'>$font_spec_start|g;
-      $header_line = "<tr valign='top'>\n<th align='left' >".$font_spec_start.$last_line.$font_spec_end."</th>\n</tr>\n\n";
-      print $out $header_line;
-      $last_line = "";
-
-      ### print the first result line
-      chomp;
-      s|\t|$font_spec_end</td>\n<td>$font_spec_start|g;
-      print $out "<tr valign='top'>\n<td>".$font_spec_start;
-      print $out $_;
-      print $out $font_spec_end."</td>\n</tr>\n\n";
-
-    } else {			# other line of the table
-      $line_count++;
-      if ($line_count%$chunk == 0) {
-	### avoid HTML tables with too many rows
-	print $out "</table>\n\n", $TABLE_OPENING, "\n";
-	print $out $header_line;
-      }
-      chomp;
-      s|\t|$font_spec_end</td>\n<td>$font_spec_start|g;
-      print $out "<tr valign='top'>\n<td>".$font_spec_start.$_.$font_spec_end."</td>\n</tr>\n\n";
-    }
-  }
-  if ($table_opened) {
-    print $out "</table>\n\n";
-    print $out @warnings;
-    print $out "<pre>\n";
-    $table_opened = 0;
-  }
-
-  print $out $last_line;
-  print $out "</pre>\n";
-
-  if ($mirror_file ne "") {
-    close MIRROR;
-  }
-}
 
 ################################################################
 ## Save the command string in a temporary file for debugging
@@ -3808,7 +3553,13 @@ sub PrintGenomeSubsetBgOptions {
   print( "<br><input type='radio' NAME='bg_method' id='bg_method_background' VALUE='background' $checked{'background'}>");
   print ("<b>Genome subset</b>");
 
-  print ( "&nbsp;&nbsp;<a class='iframe' href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;",$query->popup_menu(-name=>'background',-Values=>["upstream","upstream-noorf","protein"],-default=>$default{background}));
+  print ( "&nbsp;&nbsp;<a class='iframe' href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;",
+	  $query->popup_menu(-id=>'background',
+			     -name=>'background',
+			     -Values=>["upstream",
+				       "upstream-noorf",
+				       "protein"],
+			     -default=>$default{background}));
 
 
   print ("<ul>");
@@ -3894,7 +3645,7 @@ sub LoadDyadDefault {
   $default{exp_freq} = "background";
   $default{upload_freq_file} = "";
   #$default{lth_occ_sig} = "0";
-  $default{to_matrix} = 0;
+  $default{to_matrix} = '';
 
   ## Return values and thresholds
   $default{zscore} = '';
@@ -4077,8 +3828,9 @@ sub PrintDyadReturnFields {
 sub MatrixFromPatterns_defaults {
   $default{to_matrix} = 1;
   $default{flanks} = 2;
-  $default{max_asmb_nb} = 10;
+  $default{max_asmb_nb} = 20;
   $default{min_weight} = 5;
+  $default{clustering} = 'sig';
 }
 
 ################################################################
@@ -4102,9 +3854,10 @@ sub MatrixFromPatterns_print_form {
 # 			  -default=>$default{gibbs_iter},
 # 			  -size=>3);
 
+
   ## Max number of matrices
   print "<br>\n";
-  print "&nbsp;"x12, "Max matrices";
+  print "&nbsp;"x12, "Max pattern assemblies";
   print $query->textfield(-name=>'max_asmb_nb',
 			  -default=>$default{max_asmb_nb},
 			  -size=>2);
@@ -4120,6 +3873,18 @@ sub MatrixFromPatterns_print_form {
   print $query->textfield(-name=>'flanks',
 			  -default=>$default{flanks},
 			  -size=>2);
+
+  # ## Matrix format
+  print "&nbsp;"x4, "Matrix clustering&nbsp;\n";
+  print $query->popup_menu(-id=>'clustering',
+  			   -name=>'clustering',
+  			   -Values=>['sig',
+  				     'counts',
+  				     'both',
+  				     'none'],
+  			   -default=>$default{clustering});
+
+
 }
 
 ################################################################
@@ -4134,7 +3899,9 @@ sub MatrixFromPatterns_run {
   $pssm_file_tf = $pssm_prefix."_count_matrices.tf"; ## has to be global for the piping form
 
   ## Generate the command to extract matrices from patterns
-  $pssm_command = $SCRIPTS."/matrix-from-patterns -v 1";
+#  $pssm_command = $SCRIPTS."/matrix-from-patterns";
+  $pssm_command = &RSAT::server::GetProgramPath("matrix-from-patterns");
+  $pssm_command .= " -v 1";
   $pssm_command .= " -logo ";
   #  $pssm_command .= " ".$str;
   $pssm_command .= " -seq ".$sequence_file;
@@ -4145,6 +3912,9 @@ sub MatrixFromPatterns_run {
   $pssm_command .= " -min_weight ".$query->param('min_weight');
   $pssm_command .= " -flanks ".$query->param('flanks');
   $pssm_command .= " -max_asmb_nb ".$query->param('max_asmb_nb');
+  if ($query->param('clustering')) {
+    $pssm_command .= " -cluster ".$query->param('clustering');
+  }
   #	  $pssm_command .= " -gibbs_final" if ($query->param('gibbs_final'));
   $pssm_command .= " -uth Pval 0.00025";
   $pssm_command .= " -bginput -markov 0";
@@ -4374,173 +4144,6 @@ sub PrintURLTable {
     print ("<tr>","<td>".$type."</td>","<td>","<a href='".$result_URL."'>".$result_URL."</a>","</td>","</tr>");
   }
   print "</table>";
-}
-
-
-################################################################
-## Print a table row with link to a file (if it exists, otherwise
-## print the file name in red).
-sub PrintFileLink {
-  my ($key, $file, $ref_path, $handler) = @_;
-
-  ## HTML output with links
-  print ($handler "<tr>\n");
-  print ($handler "<td>", $key, "</td>\n");
-  print ($handler "<td>\n");
-  if (-e $file) {
-    &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
-    my $link = &RSAT::util::RelativePath($ref_path, $file);
-    print $handler "<a href='".$link."'>".$file."</a><br>\n";
-  } else {
-    print $handler "<font color='red'>".$file."</font><br>\n";
-  }
-  print ($handler "</td>\n");
-  print ($handler "</tr>\n");
-}
-
-
-################################################################
-## Taking as input a key-file list, print a HTML table cell with a
-## list of links to the files
-sub PrintFileLinks {
-  my (@files) = @_;
-  print $syn "<td>\n";
-  my $key;
-  my $file;
-  while ($key = shift (@files)){
-    last unless $key;
-    $file = shift(@files);
-#    &RSAT::message::Debug("&SyntheticTableAddRow()", $key, $file) if ($main::verbose >= 5);
-    if (-e $file) {
-      my $link = &RSAT::util::RelativePath($main::outfile{synthesis}, $file);
-      print $syn "<a href='".$link."'>[".$key."]</a><br>\n";
-    } else {
-      print $syn "<font color='red'>[".$key."]</font><br>\n";
-    }
-  }
-  print $syn "</td>\n";
-}
-
-
-################################################################
-## Generate a HTML index with links to all input/output files
-##
-## Supported arguments
-##  img_height
-##  img_width
-sub IndexFiles {
-  my (%args) = @_;
-
-  &RSAT::message::TimeWarn("Generating HTML index") if ($main::verbose >= 2);
-
-  ## Input files
-  if (scalar(@infiles) >= 1) {
-    print $html_index "<h2>Input files</h2>";
-    print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
-    print $html_index "<tr>\n";
-    print $html_index "<th>Type</th>";
-    print $html_index "<th>File</th>";
-    print $html_index "</tr>\n";
-    foreach my $key (@infiles) {
-      my $file = $infile{$key};
-      my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
-      print $html_index "<tr>\n";
-      print $html_index "<td>".$key."</td>";
-      print $html_index "<td><a href='".$link."'>".$link."</a></td>";
-      print $html_index "</tr>\n";
-    }
-    print $html_index "</table>\n";
-  }
-
-  ## Output files
-  if (scalar(@outfiles) >= 1) {
-    print $html_index "<h2>Output files</h2>";
-    print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
-    print $html_index "<tr>\n";
-    print $html_index "<th>Type</th>";
-    print $html_index "<th>File</th>";
-    print $html_index "</tr>\n";
-    foreach my $key (@outfiles) {
-      next if ($key eq "html_index");
-      my $file = $outfile{$key};
-      my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
-      print $html_index "<tr>\n";
-      print $html_index "<td>".$key."</td>";
-      print $html_index "<td><a href='".$link."'>".$link."</a></td>";
-      print $html_index "</tr>\n";
-    }
-    print $html_index "</table>\n";
-  }
-
-  ## Graph files (link + display image) Note: Web browsers are
-  ## generally able to display some image formats (jpg, gif, png) but
-  ## not others (pdf, ps, eps).
-  if (scalar(@graphfiles) >= 1) {
-    print $html_index "<h2>Graph files</h2>";
-    print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
-    print $html_index "<tr>\n";
-    print $html_index "<th>Type</th>";
-    print $html_index "<th>File</th>";
-    print $html_index "<th>Image</th>";
-    print $html_index "</tr>\n";
-    foreach my $key (@graphfiles) {
-      my $file = $graphfile{$key};
-      my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
-      print $html_index "<tr>\n";
-      print $html_index "<td>".$key."</td>";
-      print $html_index "<td><a href='".$link."'>".$link."</a></td>";
-
-      print $html_index "<td><a href='".$link."'><img";
-      if (&IsReal($args{img_width})) {
-	print $html_index " width='".$args{img_width}."'";
-      }
-      if (&IsReal($args{img_height})) {
-	print $html_index " height='".$args{img_height}."'";
-      }
-      print $html_index " src='".$link."'></a></td>";
-
-      ## A special trick for sequence logos: check the reverse complement
-      if ($file =~ /(_logo_m\d+)/) {
-	my $suffix = $1;
-	my $rc_file = $file;
-	$rc_file =~ s/${suffix}/${suffix}_rc/;
-	my $rc_link = &RSAT::util::RelativePath($main::outfile{html_index}, $rc_file);
-	print $html_index "<td><a href='".$rc_link."'><img";
-	if (defined($args{img_width})) {
-	  print $html_index " width='".$args{img_width}."'";
-	}
-	if (defined($args{img_height})) {
-	  print $html_index " height='".$args{img_height}."'";
-	}
-	print $html_index " src='".$rc_link."'></a></td>";	  print $html_index "<td></td>";
-      }
-
-      print $html_index "</tr>\n";
-    }
-    print $html_index "</table>\n";
-  }
-
-  ## Directories
-  if (scalar(@dirs) >= 1) {
-    print $html_index "<h2>Directories</h2>";
-    print $html_index "<p><table class='whitebg' border='1' cellpadding='5' cellspacing='1'>\n";
-    print $html_index "<tr>\n";
-    print $html_index "<th>Type</th>";
-    print $html_index "<th>Directory</th>";
-    print $html_index "</tr>\n";
-    foreach my $key (@dirs) {
-      my $file = $main::dir{$key};
-      my $link = &RSAT::util::RelativePath($main::outfile{html_index}, $file);
-      &RSAT::message::Debug("indexing dir", $key, $file, $link) if ($main::verbose >= 5);
-      print $html_index "<tr>\n";
-      print $html_index "<td>".$key."</td>";
-      print $html_index "<td><a href='".$link."'>".$link."</a></td>";
-      print $html_index "</tr>\n";
-    }
-    print $html_index "</table>\n";
-  }
-
-  &RSAT::message::TimeWarn("HTML index", $outfile{html_index}) if ($main::verbose >= 2);
 }
 
 ###############################################################

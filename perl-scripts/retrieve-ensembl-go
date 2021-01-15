@@ -81,7 +81,7 @@ package main;
   our %genes;
   our @query_genes;
 
-  my ($header,$id,%stats);
+  my ($header,$id,%stats,%GOterms2skip);
  
   # parse arguments
   &ReadArguments();
@@ -110,8 +110,8 @@ package main;
   elsif($params{'demo'})
   {
     # demo gene ID
-    @query_genes = qw( BRADI1G00210 );
-    $genes{'BRADI1G00210'}=1;
+    @query_genes = qw( BRADI_41430s00200v3 );
+    $genes{'BRADI_41430s00200v3'}=1;
 
     # find out demo ref organism
     if(!opendir(GENDIR,$pathToGOannot)){
@@ -129,6 +129,28 @@ package main;
   }
   else
   {
+    # relevant ontology
+    if($main::params{'ontology'}) {
+      
+      # make path to file with GO description
+      my $GOdescFile = "$pathToGOannot/GO/GO_description.tab";
+      if(!open(GODESC,"<",$GOdescFile)) {
+        RSAT::error::FatalError("Cannot find file ",$GOdescFile);
+      }
+
+      # record which GO terms are to be skipped for being from a different ontology
+      while(my $line = <GODESC>){
+        #GO_ID  GO Term Ontology Type   GO_ALT_ID
+        #GO:0000001      mitochondrion inheritance       biological_process
+        my @descdata = split(/\t/,$line);
+        if($descdata[2] ne $main::params{'ontology'}) {
+          $GOterms2skip{$descdata[0]}=1;
+          RSAT::message::Info("Skipped term", $descdata[0]) if($verbose >=5);
+        }
+      }
+      close(GODESC);
+    }
+
     # query genes
     if($main::infile{'input'})
     {
@@ -177,8 +199,12 @@ package main;
   open(GOANNOT,'<',$pathToGOannot.'/'.$params{'org'}.'/expanded_go_annotations.tsv');
   while(<GOANNOT>){
     next if(/^#/ || /^;/);
-    if(/(\S+)\t\S+/){
-        if($genes{$1}){
+    if(/(\S+)\t(\S+)/){
+
+        # in case ontology was set
+        next if(defined($GOterms2skip{$2}));
+
+        if($genes{'all'} || $genes{$1}){
             print $out $_;
             $stats{$1}++;
             $stats{$genes{$1}}++; # also stripped id
@@ -325,11 +351,31 @@ Lists supported organisms in current release.
 
 =pod
 
+=item B<-ontology>
+
+Ontology to be used:  biological_process, molecular_function, cellular_component.
+By default all ontologies are used.
+
+=cut
+
+    } elsif ($arg eq "-ontology") {
+      $main::params{'ontology'} = shift(@arguments);
+     
+      if($main::params{'ontology'} ne 'biological_process' &&
+         $main::params{'ontology'} ne 'molecular_function' &&
+         $main::params{'ontology'} ne 'cellular_component') {
+           
+         RSAT::error::FatalError("Unrecognized ontology, valid values are: biological_process, molecular_function or cellular_component");
+      }   
+
+=pod
+
+
 =item B<-q query_gene>
 
 Query gene ID. 
 This option can be used iteratively on the same command to specify multiple
-query genes.
+query genes. Use -q all to request all genes from selected species.
 
 =cut
     } elsif ($arg eq "-q") {

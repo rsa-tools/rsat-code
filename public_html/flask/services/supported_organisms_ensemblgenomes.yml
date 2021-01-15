@@ -1,0 +1,15 @@
+descr:
+    Get the list of organisms supported at the Ensembl Genomes database, using the Perl API.
+---
+parameters:
+  - name: q
+    description: Query string. Multiple query strings can be specified, separated by ','
+    type: string
+  - name: query_type
+    description: can be - branch, name, species_taxid
+    type: string
+    choices: branch, name, species_taxid
+  - name: query_file
+    description: Enter several queries in a file.
+    type: file
+    required: false

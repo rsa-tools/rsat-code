@@ -36,6 +36,7 @@ get_environ_vars(props_file)
 rsat_home = os.environ['RSAT']
 rsat_bin = os.environ['RSAT_BIN']
 perl_scripts = rsat_home + '/perl-scripts'
+python_scripts = rsat_home + '/python-scripts'
 public_html = rsat_home + '/public_html'
 
 param_types = {'string':str, 'int':int, 'file':FileStorage, 'boolean':inputs.boolean, 'float':float}
@@ -99,7 +100,7 @@ def get_backgroundfile(org, oligo_len, background="upstream-noorf"):
 	
 	:return: name of background file
 	"""
-	command = "perl -e 'use lib \"" + perl_scripts + "/lib/\"; use RSAT::OrganismManager; $x=&RSAT::OrganismManager::ExpectedFreqFile(" + org + ","+ str(oligo_len) +",\""+ background+"\", str=>\"-1str\", noov=>\"ovlp\"); print $x;'"
+	command = "perl -e 'use lib \"" + perl_scripts + "/lib/\"; use RSAT::OrganismManager; $x=&RSAT::OrganismManager::ExpectedFreqFile(\"" + org + "\","+ str(oligo_len) +",\""+ background+"\", str=>\"-1str\", noov=>\"ovlp\"); print $x;'"
 	p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	file = p.stdout.readline()
 	return file
@@ -141,6 +142,22 @@ def read_parameters_from_yml(api,yml_file):
 			post_parser.add_argument(param['name']+'_string_type', type=str, choices=('url','piping','text'), default='url',help=help_str_type,location='form')
 	get_parser.add_argument('content-type', type=str, help='Response content-type. Accepted: text/plain, application/json', default='text/plain')
 	return (descr, get_parser, post_parser)
+
+def get_boolean_file_params(yml_file):
+    yaml_data = {}
+    boolean_params = []
+    file_params = []
+    with open(yml_file) as f:
+        docs = yaml.load_all(f)
+        for doc in docs:
+            for k,v in doc.items():
+                yaml_data[k] = v
+    for param in yaml_data['parameters']:
+        if param['type'] == 'boolean':
+            boolean_params.append(param['name'])
+        elif param['type'] == 'file':
+            file_params.append(param['name'])
+    return (boolean_params, file_params)
 
 def read_parameters(data, mandatory, optional, default_values):
     """Read the parameters (except upload files) from a POST query (can be in JSON format or form-data format) or read
@@ -322,7 +339,26 @@ def make_tmp_dir(method_name):
     os.chmod(dir_path,0777)
     return dir_path
 
-def run_command(command, output_choice, method_name, out_format, out_dir=''):
+def run_command_background(command, method_name, out_dir='', summary_page=''):
+    result_dir = ''
+    if out_dir != '':
+        result_dir = out_dir
+    else:
+        (fd, temp_path) = make_tmp_file(method_name, '', dir=out_dir)
+        result_dir = temp_path
+        
+    result_file = result_dir + '/' + summary_page
+    response = {}
+    response['command'] = hide_RSAT_path(command)
+    response['output'] = hide_RSAT_path(result_dir)
+    response['result_path'] = hide_RSAT_path(result_dir)
+    response['result_url'] = make_url(result_file)
+    
+    command = 'nice -n 19 ' + command + ' &'
+    os.system(command)
+    return response
+    
+def run_command(command, output_choice, method_name, out_format, out_dir=''):          
     """Execute the command of the service requested by a REST query.
         
     :param command: full command (name and arguments) to be executed

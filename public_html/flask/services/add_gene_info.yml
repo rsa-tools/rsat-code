@@ -1,0 +1,34 @@
+descr:
+    Takes as input a tab-delimited file with one ore more columns containing gene IDs, and adds columns with information about the corresponding genes.
+---
+parameters:
+    - name: i
+      description: Input file. If no input file is specified, use the i_string option 
+      type: file
+      required: false
+    - name: col
+      description: column containing gene IDs.
+      type: int
+      required: false
+      default: id
+    - name: org
+      description: organism
+      type: string
+      required: false
+    - name: info
+      description: information type (supported - id,ctg,strand,left,right,name,descr,names,upstr_neighb_name,upstr_neighb_id,upstr_limit,upstr_size,downstr_neighb_name,downstr_neighb_id,downstr_limit,downstr_size,right_neighb_name,right_neighb_id,right_limit,right_size,left_neighb_name,left_neighb_id,left_limit,left_size)
+      type: string
+      required: false
+    - name: before
+      description: add the information before the input line (by default, the info is added at the end of each input line).
+      type: boolean
+      required: false
+    - name: "null"
+      description: String to display for undefined values (default <NULL>).
+      type: boolean
+      required: false
+    - name: feattype
+      description:  Feature type. Supported - gene,mRNA,tRNA,rRNA,scRNA,misc_RNA,CDS,start_codon,stop_codon,exon
+      type: string
+      choices: gene,mRNA,tRNA,rRNA,scRNA,misc_RNA,CDS,start_codon,stop_codon,exon
+      required: false

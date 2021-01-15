@@ -1,0 +1,136 @@
+.homeheader{
+	padding: 20px 15px 0 20px;
+	border-bottom: solid 1px #f6e6ca;
+}
+.homeheaderbar{
+	height:120px;
+	margin-left:-5px;
+    background-image:url(../images/RSAT_banner.png);
+    background-repeat:no-repeat;
+}
+.homemenu{
+	font-weight: bold;
+	padding-top: 28px;
+	text-align: right;
+    font-family: Arial rounded MT bold;
+}
+.homemenu a {
+	text-decoration: none;
+}
+.homecontent{
+	padding: 20px;
+	background-color: white;
+}
+.homefooter{
+	padding: 20px 15px 20px 20px;
+	background-color: #086194;
+	font-size: 13px;
+    color: #d5d5d5;
+}
+.homebigtext{
+	font-weight: bold;
+	text-transform: uppercase;
+	font-size: 30px;
+}
+.homepapertext{
+	font-size: 14px;
+}
+
+.box-heading{
+	font-weight:bold;
+	text-transform: uppercase;
+
+}
+.panel-default{
+	cursor: pointer;
+	border-color: #086194;
+}
+.panel-default:hover{
+	background-color: #efecec;
+}
+.panel-image{
+	background-image: url(../images/logo-allservers.png);
+	background-size:contain;
+	background-repeat:no-repeat;
+	background-position:center
+}
+.fa-style{
+	padding: 20px;
+}
+.social-circle [class*="fa fa-"] {
+    width: 25px;
+    height: 25px;
+    color: #d5d5d5;
+    background-color: #042B42;
+    border-radius: 25px;
+    display: inline-block;
+    line-height: 25px;
+    margin: auto 3px;
+    font-size: 15px;
+    text-align: center;
+}
+.social-circle a{ text-decoration: none;}
+.social-circle a:hover{ background-color: #4FC6F8;}
+.container{
+	margin-left: 0;
+	padding-left: 0;
+}
+
+@media (min-width: 768px){
+	.container { width: 618px;}
+	.homebigtext {font-size: 18px;}
+	.homepapertext {font-size: 12px;}
+	#sidebar-wrapper{ width: 180px !important; left: 245px !important;}
+	#wrapper {padding-left: 180px !important;}
+	.homeheaderbar {margin-left: 0;}
+}
+@media (min-width: 900px){
+	.container { width: 700px;}
+	.homebigtext { font-size: 22px;}
+}
+@media (min-width: 992px){
+	.container { width: 790px;}
+	.homebigtext { font-size: 24px;}
+	.homepapertext { font-size: 13px;}
+	#sidebar-wrapper{ width: 190px !important; left: 250px !important;}
+	#wrapper {padding-left: 200px !important;}
+}
+@media (min-width: 1070px){
+	.container {width: 870px;}
+	.homebigtext { font-size: 26px;}
+	#sidebar-wrapper{ width: 200px !important;}
+	#wrapper {padding-left: 210px !important;}
+}
+@media (min-width: 1170px){
+	.container {width: 970px;}
+	.homebigtext { font-size: 30px;}
+	.homepapertext { font-size: 14px;}
+	#wrapper {padding-left: 220px !important;}
+}
+@media (min-width: 1200px){
+	.container {width: 1000px;}
+}
+@media (min-width: 1370px){
+	.container {width: 1170px;}
+}
+@media (min-width: 1300px){
+	.container {width: 1100px;}
+}
+.modal {
+  text-align: center;
+}
+
+@media screen and (min-width: 768px) { 
+  .modal:before {
+    display: inline-block;
+    vertical-align: middle;
+    content: " ";
+    height: 100%;
+  }
+}
+
+.modal-dialog {
+  display: inline-block;
+  text-align: left;
+  vertical-align: middle;
+}

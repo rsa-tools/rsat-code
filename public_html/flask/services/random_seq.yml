@@ -6,16 +6,24 @@ descr:
 
 ---
 parameters:
-    - name: v
-      description: Verbosity
-      type: int
-      required: false
-      default: 1
     - name: l
-      description:  Sequence length
+      description: Sequence length
       type: int
       required: true
     - name: n
       description:  Number of sequences
       type: int
       required: true
+    - name: lw
+      description:  Line width. A newline character will be inserted in the sequence every lw base.
+      type: int
+      required: false
+    - name: type
+      description: protein, DNA, or other
+      type: string
+      choices: protein,DNA,other
+      required: false
+    - name: seed
+      description: Number of seed for the random generator
+      type: int
+      required: false

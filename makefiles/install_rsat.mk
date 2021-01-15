@@ -179,60 +179,58 @@ unix_packages_install_ubuntu:
 ## Modules are installed using cpan. Beware, this requires admin
 ## rights.
 PERL_MODULES= \
-	MCE::Shared \
-	YAML \
-	Module::Build::Compat \
+	Algorithm::Cluster \
+	Bio::Das \
+	Bio::Perl \
 	CGI \
+	Class::Std::Fast  \
+	DBD::mysql \
+	DBI \
+	DB_File \
+	Data::Dumper \
+	Digest::MD5::File \
 	Email::Sender \
 	Email::Sender::Transport::SMTPS \
 	Email::Simple \
 	Email::Simple::Creator \
-	PostScript::Simple	 \
-	Statistics::Distributions \
-	Math::CDF \
-	Algorithm::Cluster \
 	File::Spec \
-	POSIX \
-	Data::Dumper \
-	Digest::MD5::File \
-	IO::All \
-	LockFile::Simple \
-	Object::InsideOut Util::Properties \
-	Class::Std::Fast  \
 	GD \
-	DBI \
-	DBD::mysql \
-	DB_File \
-	LWP::Simple \
-	REST::Client \
-	JSON \
 	HTTP::Tiny \
+	IO::All \
+	JSON \
+	LWP::Simple \
 	LWP::UserAgent \
-	XML::LibXML \
-	XML::LibXML::Simple \
-	XML::Parser::Expat \
-	XML::Compile \
-	XML::Compile::Cache \
-	XML::Compile::SOAP11 \
-	XML::Compile::WSDL11 \
-	XML::Compile::Transport::SOAPHTTP \
+	LockFile::Simple \
+	Log::Log4perl \
+	MCE::Shared \
+	Math::CDF \
+	Module::Build::Compat \
+	Number::Format \
+	OLE::Storage_Lite \
+	Object::InsideOut Util::Properties \
+	POSIX \
+	Parallel::ForkManager \
+	PostScript::Simple	 \
+	REST::Client \
+	Readonly \
 	SOAP::Lite \
 	SOAP::Packager \
 	SOAP::Transport::HTTP \
 	SOAP::WSDL \
-	Bio::Perl \
-	Bio::Das \
-	XML::DOM \
-	Spreadsheet::WriteExcel::Big \
 	Spreadsheet::WriteExcel \
-	Log::Log4perl \
-	Number::Format \
-	OLE::Storage_Lite \
+	Spreadsheet::WriteExcel::Big \
+	Statistics::Distributions \
 	Template::Plugin::Number::Format \
-	Readonly \
-	Email::Sender::Transport::SMTPS \
-	Parallel::ForkManager \
-	MCE::Shared
+	XML::Compile \
+	XML::Compile::Cache \
+	XML::Compile::SOAP11 \
+	XML::Compile::Transport::SOAPHTTP \
+	XML::Compile::WSDL11 \
+	XML::DOM \
+	XML::LibXML \
+	XML::LibXML::Simple \
+	XML::Parser::Expat \
+	YAML
 
 #t/013_complexType.t ................................... 1/? Can't locate object method "new" via package "MyElement" (perhaps you forgot to load "MyElement"?) at lib/SOAP/WSDL/XSD/Typelib/ComplexType.pm line 213.
 

@@ -57,7 +57,6 @@ BEGIN {
   }
 }
 require "RSA.lib";
-require "RSA2.cgi.lib";
 use RSAT::util;
 use RSAT::matrix;
 use RSAT::MatrixReader;
@@ -114,8 +113,6 @@ package main;
   local $bg_file_flag = 0;
   local $bg_input_flag = 0;
   local $markov = 1;
-
-  $SCRIPTS = $ENV{RSAT}."/perl-scripts/";
 
   ## List of files to delete
   %to_delete = ();
@@ -957,7 +954,7 @@ sub ProcessMatrices {
 
     &RSAT::message::TimeWarn("Processing input matrices") if ($main::verbose >= 2);
 
-    $process_motif_cmd = $SCRIPTS."/convert-matrix";
+    $process_motif_cmd =  &RSAT::server::GetProgramPath("convert-matrix");
     $process_motif_cmd .= " -i ".$main::infile{motifs};
     $process_motif_cmd .= " -from ".$matrix_format;
     $process_motif_cmd .= " -to transfac";
@@ -1044,7 +1041,8 @@ sub ScanSequences {
 	    
 	} 
 	
-	$matrix_scan_cmd = $SCRIPTS."/matrix-scan -v ".($main::verbose);
+	$matrix_scan_cmd =  &RSAT::server::GetProgramPath("matrix-scan");
+	$matrix_scan_cmd .= " -v ".($main::verbose);
 	$matrix_scan_cmd .= " -m ".$main::infile{motifs};
 	$matrix_scan_cmd .= " -matrix_format ".$matrix_format;
 	$matrix_scan_cmd .= " -origin end -n score";
@@ -1177,7 +1175,7 @@ sub GenerateLogos {
 
     &RSAT::message::TimeWarn("Generating logos from input matrices") if ($main::verbose >= 2);
 
-    $logos_cmd = $SCRIPTS."/convert-matrix";
+    $logos_cmd =  &RSAT::server::GetProgramPath("convert-matrix");
     $logos_cmd .= " -i ".$main::infile{motifs};
     $logos_cmd .= " -from ".$matrix_format;
     $logos_cmd .= " -to transfac";
@@ -1325,7 +1323,7 @@ sub ProcessSeq {
 	$seq_counter++;
 	&RSAT::message::TimeWarn("Calculating Sequence length") if ($main::verbose >= 2);
 
-	$seq_length_cmd = $SCRIPTS."/sequence-lengths";
+	$seq_length_cmd =  &RSAT::server::GetProgramPath("sequence-lengths");
 	$seq_length_cmd .= " -i ".$s;
 	$seq_length_cmd .= " -unit bp -in_format ".$main::seq_format;
 	$seq_length_cmd .= " | cut -f2 | uniq | head -n 1";
@@ -1355,7 +1353,7 @@ sub ProcessSeq {
 	    &RSAT::message::Info("Filtering sequences shorter or longer than", $seq_length) if ($main::verbose >= 2);
 	}
 	
-	$convert_seq_cmd = $SCRIPTS."/convert-seq";
+	$convert_seq_cmd =  &RSAT::server::GetProgramPath("convert-seq");
 	$convert_seq_cmd .= " -i ".$s;
 	$convert_seq_cmd .= " -from ".$main::seq_format." -to ".$main::seq_format;
 	$convert_seq_cmd .= " -skip_long ".$seq_length_up;
@@ -1377,7 +1375,7 @@ sub ProcessSeq {
 	    
 	    &RSAT::message::TimeWarn("Random permutation of the sequences") if ($main::verbose >= 2);
 	    
-	    $random_seq_cmd = $SCRIPTS."/random-seq";
+	    $random_seq_cmd =  &RSAT::server::GetProgramPath("random-seq");
 
 	## Indicate the proccessed sequences file name
 	if($seq_counter == 1){
@@ -1465,17 +1463,18 @@ sub CalculateBGModel {
 		&RSAT::message::TimeWarn("Calculating background model from Control sequences", $bg_dir) if ($main::verbose >= 2);
 	    }
 	    
-	    my $bg_comand = $SCRIPTS."/oligo-analysis -v 1 -quick ".$strands;
-	    $bg_comand .= " -i ".$s." -l ".$markov." -noov ";
+	    my $bg_command =  &RSAT::server::GetProgramPath("oligo-analysis");
+	    $bg_command .= " -v 1 -quick ".$strands;
+	    $bg_command .= " -i ".$s." -l ".$markov." -noov ";
 	    
 	    if($seq_counter == 1){
-		$bg_comand .= " -o ".$main::infile{bg_file};
+		$bg_command .= " -o ".$main::infile{bg_file};
 	    } elsif ($seq_counter == 2){
-		$bg_comand .= " -o ".$main::infile{bg_file_control};
+		$bg_command .= " -o ".$main::infile{bg_file_control};
 		
 	    }
 	    
-	    &doit($bg_comand, $dry, $die_on_error, $verbose, 0, $job_prefix);
+	    &doit($bg_command, $dry, $die_on_error, $verbose, 0, $job_prefix);
 	    if($seq_counter == 1){
 		&RSAT::message::TimeWarn("Background for sequence set", $s, $main::infile{bg_file}) if ($main::verbose >= 2);
 	    } elsif ($seq_counter == 2){
@@ -1485,7 +1484,8 @@ sub CalculateBGModel {
 	    
 	    my $convert_bg_cmd = "";
 	    ## Convert background model in INCLUSIVE format for matrix-scan-quick
-	    $convert_bg_cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+	    $convert_bg_cmd = &RSAT::server::GetProgramPath("convert-background-model");
+	    $convert_bg_cmd = " -from oligos -to inclusive ";
 	    
 	    if($seq_counter == 1){
 		$convert_bg_cmd .= " -i ".$main::infile{bg_file};
@@ -1502,7 +1502,8 @@ sub CalculateBGModel {
 	}
     }  elsif ($main::infile{bg_file}){
 ##If a bg input file was given convert it to inclusive
-    	$convert_bg_cmd = $SCRIPTS."/convert-background-model -from oligos -to inclusive ";
+    	$convert_bg_cmd =  &RSAT::server::GetProgramPath("convert-background-model");
+	$convert_bg_cmd = " -from oligos -to inclusive ";
 	$convert_bg_cmd .= " -i ". $main::infile{bg_file};
 	$convert_bg_cmd .= " -o ".$main::outfile{bg_file_inclusive};
 	&doit($convert_bg_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);

@@ -15,20 +15,21 @@ echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo
 
-sudo pip2 install numpy
-sudo pip2 install scipy
-sudo pip2 install matplotlib
-sudo pip2 install suds
-sudo pip2 install soappy
-sudo pip2 install fisher
-sudo pip2 install httplib2
+## pip2 is no longer supported
+# sudo pip2 install numpy
+# sudo pip2 install scipy
+# sudo pip2 install matplotlib
+# sudo pip2 install suds
+# sudo pip2 install soappy
+# sudo pip2 install fisher
+# sudo pip2 install httplib2
 
-## Some python modules required for the REST web services
-sudo pip2 install flask flask-restplus requests werkzeug jinja2 click itsdangerous
-## pip install pygraphviz ## OSError: Error locating graphviz.
+# ## Some python modules required for the REST web services
+# sudo pip2 install flask flask-restplus requests werkzeug jinja2 click itsdangerous
+# ## pip install pygraphviz ## OSError: Error locating graphviz.
 
-## optional: an utility to measure internet bandwidth
-sudo pip2 install speedtest-cli
+# ## optional: an utility to measure internet bandwidth
+# sudo pip2 install speedtest-cli
 
 #${OS_INSTALLER} install python3-suds
 ## PROBLEM : No distributions at all found for python-suds

@@ -306,7 +306,8 @@ sub supported_organism_table {
   &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", 
 			"taxon: ".$taxon, 
 			"group: ".$group, 
-			"depth: ".$depth, 
+			"depth: ".$depth,
+            "with variant: ".$with_variant,
 			"fields", join( ";", @fields)) 
     if ($main::verbose >= 5);
 
@@ -526,11 +527,17 @@ sub get_demo_organisms {
 	}
     }
     unless (($group_specificity{"Bacteria"}) || ($group_specificity{"Prokaryotes"})) {
-	if (&is_supported("Escherichia_coli_K_12_substr__MG1655_uid57779")) {
-	    push @selected_organisms, "Escherichia_coli_K_12_substr__MG1655_uid57779";
-	}elsif (&is_supported("Escherichia_coli_GCF_000005845.2_ASM584v2")){
+	if (&is_supported("Escherichia_coli_GCF_000005845.2_ASM584v2")){
+	    # This corresponds to the first sequenced strain of
+	    # Escherichia coli (K12 mg1655), which is the reference
+	    # for many publications.
 	    push @selected_organisms, "Escherichia_coli_GCF_000005845.2_ASM584v2";
+	} elsif (&is_supported("Escherichia_coli_K_12_substr__MG1655_uid57779")) {
+	    ## This is the previous file naming for the reference
+	    ## strain (before NIH changed their naming rules)
+	    push @selected_organisms, "Escherichia_coli_K_12_substr__MG1655_uid57779";
 	} else {
+	    ## If not found, take any available strain of Escherichia
 	    push @selected_organisms, &GetOrganismsForTaxon("Escherichia");
 	}
 	
@@ -707,7 +714,7 @@ sub GetOrganismsForGroup {
                              Arabidopsis_thaliana.TAIR10.29
                              Bacillus_subtilis_168_uid57675
                              Drosophila_melanogaster
-                             Escherichia_coli_K_12_substr__MG1655_uid57779
+			     Escherichia_coli_GCF_000005845.2_ASM584v2
                              Homo_sapiens_GRCh37
                              Homo_sapiens_GRCh38
                              Mus_musculus_GRCm38

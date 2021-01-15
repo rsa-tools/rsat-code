@@ -51,6 +51,9 @@ our @clusters = ();
 			 );
 $pattern_nb = scalar(@patterns);
 
+&RSAT::message::Info("Read", $pattern_nb, "patterns from file", $infile{patterns}) if ($main::verbose >= 2);
+
+
 ################################################################
 ## Open output stream
 our $out = &OpenOutputFile($outfile{assembly});

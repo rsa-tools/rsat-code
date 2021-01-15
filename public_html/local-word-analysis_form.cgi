@@ -209,7 +209,6 @@ print "<HR width=550 align=left>\n";
 #				    'Residue frequencies from input sequence',
 #				    'Markov Model (higher order dependencies)',
 #				    'Lexicon partitioning',
-#				    'Oligo frequencies from all intergenic regions'],
 #			  -default=>$default{freq_estimate});
 #print "<BR>";
 

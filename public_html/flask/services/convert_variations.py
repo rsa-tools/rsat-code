@@ -21,7 +21,7 @@ ns = api.namespace(tool, description=descr)
 ################################################################
 ### Get information about polymorphic variations
 @ns.route('/', methods=['POST','GET'])
-class VariationInfo(Resource):
+class ConvertVariation(Resource):
 	@api.expect(get_parser)
 	def get(self):
         	data = get_parser.parse_args()
@@ -41,18 +41,20 @@ class VariationInfo(Resource):
 	
 	def _run(self,data):
 		output_choice = 'display'
-		fileupload_parameters = ['i']
+		(boolean_var, fileupload_parameters) = utils.get_boolean_file_params(service_dir+'/' + tool.replace('-','_') +'.yml')
 		exclude = fileupload_parameters + ['content-type']
 		for x in fileupload_parameters:
 		    exclude = exclude + [x + '_string', x + '_string_type']
 		command = utils.perl_scripts + '/' + tool
 		result_dir = utils.make_tmp_dir(tool)
+		
 		for param in data:
-			if data[param] == True:
-				command += ' -' + param
-			elif data[param] == False:
-				continue
+		    if param in boolean_var:
+		        if data[param] == True:
+		            command += ' -' + param
+		        elif data[param] == False:
+		            continue
 			elif data[param] is not None and data[param] != '' and not param in exclude:
-				command += ' -' + param + ' ' + str(data[param])
+			    command += ' -' + param + ' ' + str(data[param])
 		command += utils.parse_fileupload_parameters(data, fileupload_parameters, tool, result_dir, ',') 
 		return utils.run_command(command, output_choice, tool, 'varBed', result_dir)		

@@ -55,7 +55,7 @@ sub RSA_header_old {
 				       -src      => 'RSAT_tabs.js'
 				     }
                                  ],
-			   -style => { 	-src => ["main.css","tabs.css","chosen.css"],
+			   -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css"],
                              	       	-type => 'text/css',
                              		-media => 'screen,projection,print' });
   print "<h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";

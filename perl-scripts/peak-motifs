@@ -121,13 +121,7 @@ package main;
   local $die_on_error = 1;
   local $genome_assembly ="";
 
-  ## Check that the RSAT paths of the programs required for the script are specified
-#  $PYTHON =  $ENV{RSAT}."/python_scripts" unless ($PYTHON);
-#  $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
-#  $BIN = $ENV{RSAT}."/bin" unless ($BIN);
-
   $program_version = do { my @r = (q$Revision: 1.256 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-  #    $program_version = "0.00";
 
   %main::param = ();
   @main::param_list = ();
@@ -573,6 +567,7 @@ sub DefaultParameters {
   $main::param{asmb_toppat} = $main::param{patterns_max_rank}; push(@main::param_list, "asmb_toppat");
   $main::param{max_asmb_width} = 20; push(@main::param_list, "max_asmb_width");
   $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
+  $main::param{asmb_clustering} = "none"; ## Motif clustering not integrated yet in peak-motifs
 
 
   ################################################################
@@ -2565,6 +2560,7 @@ sub MatrixFromPatterns {
   $cmd .= " -flanks 2";
   $cmd .= " -collect_method matrix-scan-quick";
   $cmd .= " -logo";
+  $cmd .= " -cluster ".$main::param{asmb_clustering};
   $cmd .= " -o ".$pssm_file;
   &RSAT::util::one_command($cmd, 1, $pssm_file."_time.txt", log=>$main::out);
 }

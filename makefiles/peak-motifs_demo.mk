@@ -43,7 +43,7 @@ PLOT_OPT=-r_plot
 MOTIF_DB=${RSAT}/public_html/motif_databases/JASPAR/jaspar_core_vertebrates_2015_03.tf
 PM_CMD=peak-motifs -v ${V} \
 		-title ${MOTIF_PREFIX} \
-		-i ${RSAT}/public_html/demo_files/peak-motifs_demo.fa \
+		-i ${RSAT}/public_html/demo_files/Oct4_peaks_top1000.fa \
 		-markov auto \
 		-disco ${DISCO} \
 		-nmotifs ${NMOTIFS} -minol ${MIN_OL} -maxol ${MAX_OL} \

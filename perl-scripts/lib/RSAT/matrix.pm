@@ -1052,6 +1052,11 @@ Converts the matrix into a string in TRANSFAC format.
 sub to_TRANSFAC {
     my ($self, %args) = @_;
     my $to_print = "";
+    if (&RSAT::util::IsNatural($args{decimals})) {
+	$decimals = $args{decimals};
+    } else {
+	$decimals = "NA";
+    }
 
     my $output_format = $args{format};
     $output_format = lc($output_format);
@@ -1098,7 +1103,7 @@ sub to_TRANSFAC {
     my $header = "P0  "; 
     my @alphabet = $self->getAlphabet();
     foreach my $letter (@alphabet) {
-      $header .= sprintf "%6s", $letter;
+      $header .= sprintf "%10s", $letter;
     }
     $to_print .= $header."\n";
 
@@ -1110,7 +1115,11 @@ sub to_TRANSFAC {
       $to_print .= sprintf "%-4d",$c;
       for my $r (1..$nrow) {
 	my $occ = $matrix[$c-1][$r-1];
-	$to_print .= sprintf " %5g",$occ;
+	if (&RSAT::util::IsNatural($args{decimals})) {
+	    $to_print .= sprintf " %9.${decimals}f",$occ;
+	} else {
+	    $to_print .= sprintf " %9g",$occ;
+	}
       }
       $to_print .= "\n";
     }
@@ -1186,6 +1195,100 @@ sub to_param_table {
     ## Identifier
     my $identifier = $self->get_attribute("ID") || $self->get_attribute("identifier") || $self->get_attribute("name") || $accession;
     $values{"identifier"} = $identifier;
+
+    ## Matrix name
+    my $name = $self->get_attribute("name") || $self->get_attribute("id") || $accession;
+    $values{"name"} = $name;
+
+    &RSAT::message::Debug("&RSAT::matrix::to_param_table()",
+			  "AC", $accession,
+			  "ID", $id,
+			  "name", $name) if ($main::verbose >= 5);
+
+
+    ## Description
+    ##
+    ## If the description field is empty, use matrix consensus.
+    ## Note: the DE field is necessary for the matrix-comparison
+    ## program STAMP.
+    my $desc = $self->get_attribute("description");
+    unless ($desc) {
+      $self->calcConsensus();
+      $desc = $self->get_attribute("consensus.IUPAC");
+    }
+    $values{"description"} = $description;
+    push @fields, "description";
+
+
+    ## Parameters
+    my @params = $self->get_attribute("parameters");
+    if (scalar(@params) > 0) {
+      for my $param (@params) {
+	my $value = $self->get_attribute($param);
+	$values{$param} = $value;
+	push @fields, $param;
+	&RSAT::message::Debug("param", $param, $value) if ($main::verbose >= 10);
+      }
+    }
+
+    ## For the first matrix, print the header
+    $to_print = "";
+    if ($nb == 1) {
+      $to_print .= join("\t", @fields);
+      $to_print .= "\n";
+    }
+
+    ## Print the result
+    my @values = ();
+
+    foreach my $field (@fields) {
+      push @values, $values{$field};
+    }
+    $to_print .= join("\t", @values);
+    $to_print .= "\n";
+
+    return $to_print;
+}
+
+
+=pod
+
+=item to_STAMP();
+
+Converts the matrix into a string in STAMP format.
+STAMP is a dialect of the TRANSFAC format, with important differences:
+- the fields ID and AC are absent, and the matrix ID comes in the field DE
+- the header row (P0) is not supported
+- the positions start at 0 instead of 1
+- there is no matrix delimiter (the double slash)
+
+=cut
+sub to_STAMP {
+    my ($self, %args) = @_;
+    my $to_print = "";
+
+    # &RSAT::message::Debug(
+    #   "&RSAT::matrix::to_STAMP()", 
+    #   $self->get_attribute("accession"), 
+    #   $self->get_attribute("id"), 
+    #   $self->get_attribute("name"), 
+    #   $self->get_attribute("description"), 
+    # 	) if ($main::verbose >= 10);
+    
+    my $output_format = $args{format};
+    $output_format = lc($output_format);
+
+    ## Accession number
+    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("name");
+    if ($accession) {
+      $to_print .= "XX	AC ".$accession."\n";
+    }
+
+    ## Identifier
+    my $id = $self->get_attribute("name") || $self->get_attribute("identifier")  || $self->get_attribute("id") || $accession;
+    if ($id) {
+      $to_print .= "XX	ID ".$id."\n";
+    }
 
     ## Matrix name
     my $name = $self->get_attribute("name") || $self->get_attribute("id") || $accession;

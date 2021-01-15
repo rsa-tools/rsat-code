@@ -179,7 +179,7 @@ function setDemo(gene){
     \$('#reset').trigger('click');
     \$('#gene_selection').val(gene);
     if(gene == ''){\$('input[name=genes][value=all]').prop('checked',true);}
-    \$('#organism').val('Escherichia_coli_K12');
+    \$('#organism').val('Escherichia_coli_GCF_000005845.2_ASM584v2');
     \$('#organism_name').val('Escherichia coli K12');
     \$('#dist_thr').val('55');
     \$('#return_leader').prop('checked', true);

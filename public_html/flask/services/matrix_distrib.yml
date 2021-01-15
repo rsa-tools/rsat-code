@@ -1,0 +1,41 @@
+descr:
+    Computes the theoretical distribution of score probabilities of a given PSSM. Score probabilities can be computed according to bernoulli as well as markov-chain background models.
+---
+parameters:
+  - name: m
+    description: matrix file.
+    type: file
+    required: false
+  - name: top
+    description: top_matrix_nb. Restrict the analysis to the N top matrices of the input file.
+    type: int
+  - name: mlist
+    description: matrix_list. Indicate a file containing a list of matrices to be used for scanning the region.
+    type: file
+    required: false
+  - name: matrix_format
+    description: Matrix format. Default is tab.
+    type: string
+    required: false
+  - name: pseudo
+    description: Pseudo-count for the matrix (default 1).
+    type: int
+  - name: org
+    description: organism for background model file
+    type: string
+  - name: markov_order
+    description: markov order for the background model file
+    type: int
+  - name: bgfile
+    description: Background model file.
+    type: file
+    required: false
+  - name: bg_format
+    description: background_format. Supported formats - all the input formats supported by convert-background-model.
+    type: string
+  - name: bg_pseudo
+    description: Pseudo frequency for the background models. Value must be a real between 0 and 1 (default 0)
+    type: float
+  - name: decimals
+    description: Number of decimals to print or the transition probabilities.
+    type: int

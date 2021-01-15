@@ -31,7 +31,7 @@ upgrade-organism-ensemblgenomes -old Zea_mays.39 -new Zea_mays.40
 
 =head1 INPUT FORMAT
 
-The old folder names must correspond to an already installed EG genome.
+The old folder name must correspond to an already installed EG genome.
 A new folder will be created with the provided name, all files hard-linked
 from the old folder, and files with the old name renamed accordingly.
 
@@ -69,7 +69,8 @@ package main;
  
   my %supported_subfolders = ( 
     'genome' => 1,
-    'oligo-frequencies' => 1
+    'oligo-frequencies' => 1,
+    'variations' => 1
   );
 
   my ($subfolder, $file, $subfile, $oldname, $newname);
@@ -110,7 +111,8 @@ package main;
  
   ## browse old folder
   opendir(OLD,$old_folder_name) ||
-     &RSAT::error::FatalError("Cannot list folder ", $infile{old}); 
+     &RSAT::error::FatalError("Cannot list folder ", $infile{old});
+ 
   foreach $file (readdir(OLD)) {
     next if($file eq '.' || $file eq '..'); 
    

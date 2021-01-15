@@ -51,40 +51,7 @@ $command = "$SCRIPTS/variation-info";
 $organism = $query->param('organism');
 
 if (defined($supported_organism{$organism})) {
-    $organism_name = $supported_organism{$organism}->{'name'};
-
-    if ($ENV{plant_server} == 1){
- 
-        @org_name_split=split(/\./,$organism_name) ;
-        $species=$org_name_split[0] ;
-	$species=~ s/ /_/ ;
-	$assembly= $org_name_split[1] ;
-
-    } else {
-
-
-    @org_name_split=split(" ",$organism_name);
-    $species=join("_", $org_name_split[0], $org_name_split[1]);
-    $assembly = $org_name_split[2];
-    
-
-    }
-    &RSAT::message::Debug("organism: ".$organism, 
-			  "organism_name: ".$organism_name,
-			  "species: ".$species,
-			  "assembly: ".$assembly,
-	);
-
-    $parameters .= " -species ".$species; ## Specied ID is the first two parts of the organims ID
-    $parameters .= " -assembly ".$assembly; ## Assembly is the third part of species ID
-    if (scalar (@org_name_split)>=4){
-    	if (scalar (@org_name_split)>4){
-    	    $species_suffix=join("_",@org_name_split[3..$#org_name_split]);
-    	}else {
-    	    $species_suffix=$org_name_split[3];
-    	}
-    	$parameters .= " -species_suffix ".$species_suffix; ## 
-    }
+    $parameters .= " -org " . $organism;
 } else {
     &cgiError("Organism '",
 	      $organism,
@@ -247,6 +214,7 @@ sub PipingForm {
 	    <FORM METHOD="POST" ACTION="retrieve-variation-seq_form.cgi">
 	    <INPUT type="hidden" NAME="variants_file" VALUE="$var_file">
 	    <INPUT type="hidden" NAME="input_type" VALUE="varBed">
+        <INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="submit" value="retrieve variants sequence">
 	</FORM>
 	</TD>

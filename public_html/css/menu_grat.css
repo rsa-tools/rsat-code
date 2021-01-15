@@ -134,7 +134,7 @@ img {
 }
 
 .menu_heading_open {
-	background: #2D282E url(images/arrow_down.gif) no-repeat 5px 7px;
+	background: #2D282E url(../images/arrow_down.gif) no-repeat 5px 7px;
 	text-decoration: none;
 	padding: 4px 5px 4px 20px;
 	margin: 0;
@@ -145,7 +145,7 @@ img {
 }
 
 .menu_heading_closed {
-	background: #2D282E url(images/arrow.gif) no-repeat 5px 7px;
+	background: #2D282E url(../images/arrow.gif) no-repeat 5px 7px;
 	text-decoration: none; 
 	display: block;
 	padding: 4px 5px 4px 20px;
@@ -162,7 +162,7 @@ img {
 
 .menu_item {
 	display: block;
-	background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px;
+	background: #0D73A7 url(../images/bullet2-normal.gif) no-repeat 7px 7px;
 	text-decoration: none; 
 	padding: 4px 5px 4px 30px;
 	padding: 4px 5px 4px 20px;
@@ -175,7 +175,7 @@ img {
 }
 
 #content.graph .menu_item {
-	background: #D98875 url(images/bullet2-normal.gif) no-repeat 7px 7px;
+	background: #D98875 url(../images/bullet2-normal.gif) no-repeat 7px 7px;
 	color: #ffffff;
 }
 

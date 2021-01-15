@@ -1,0 +1,18 @@
+descr:
+    Create a background model by computing oligonucleotide frequencies in a user-specified sequence file (he "background" file).
+---
+parameters:
+    - name: i
+      description: input file (sequence).
+      type: file
+      required: false
+    - name: out_format
+      description: output format. Supported transitions, tab, oligo-analysis, oligos, meme, motifsampler, ms, inclusive, patser, tables.
+      type: string
+      choices: transitions, tab, oligo-analysis, oligos, meme, motifsampler, ms, inclusive, patser, tables.
+      default: transitions
+      required: false
+    - name: markov
+      description: Markov order.
+      type: int
+      required: false

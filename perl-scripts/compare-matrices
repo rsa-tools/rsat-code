@@ -425,7 +425,6 @@ BEGIN {
   }
 }
 require "RSA.lib";
-require "RSA2.cgi.lib";
 require "RSA.disco.lib";
 use RSAT::util;
 use RSAT::matrix;
@@ -2549,8 +2548,8 @@ else { ## slow mode
   close $main::out;
 
   if ($main::outfile{match_table_html}) {
-    $SCRIPTS = $SCRIPTS || $ENV{RSAT}."/perl-scripts";
-    my $html_cmd =  $SCRIPTS."/text-to-html -i ".$main::outfile{match_table_txt};
+    my $html_cmd =   &RSAT::server::GetProgramPath("text-to-html");
+    $html_cmd .= " -i ".$main::outfile{match_table_txt};
     $html_cmd .= " -o ".$main::outfile{match_table_html};
     &doit($html_cmd);
   }

@@ -1,7 +1,7 @@
 <html>
 <head>
    <title>Network Analysis Tools - convert-graph</title>
-   <link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+   <link rel="stylesheet" type="text/css" href = "css/main.css" media="screen">
       <style type="text/css">
     <!--
     div.hourglass{position: absolute; top: 80px; left: 400px }
@@ -12,7 +12,7 @@
 <body class="results">
 <?php 
   require ('functions.php');
-    $menu = $_REQUEST['menu'];
+    $menu = $_REQUEST['menu'];  $menu=strtr($menu, ":()';<>","       ");
 	if(strcmp($menu,"RSAT") == 0){
 		include("menu.php");
 	}else{

@@ -75,8 +75,9 @@ print $query->start_multipart_form(-action=>"retrieve-variation-seq.cgi");
 
 print "<p>";
 
-if (-e "$ENV{RSAT}/data/supported_organisms_variation.tab"){
-
+my $supported_variation_organims_file= `cut -f16 data/supported_organisms.tab | sort -u | head -n1`;
+if ($supported_variation_organims_file== 1){
+    
     print "<B>Input a list of dbSNP variation IDs (rsID), a set of variants in varBed format, or genomic regions in bed format</B>&nbsp;";
 
     
@@ -179,7 +180,7 @@ else {
     print "&nbsp;"x0, &OrganismPopUpString();
     print "<p>\n</div>";
     print "<div id='variations_popup'>";
-    print &OrganismPopUpString( "bg_org"=>"1");
+    print &OrganismPopUpString( "bg_org"=>"1" );
     print "<p></div>";
 }
 

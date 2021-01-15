@@ -124,8 +124,7 @@ package main;
 
     ################################################################
     ## Execute the command
-    $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
-    my $command = $SCRIPTS."/convert-matrix";
+    my $command =  &RSAT::server::GetProgramPath("convert-matrix");
     $command .= " -v ".$main::verbose;
     $command .= " -i ".$main::infile{input} if ($main::infile{input});
     $command .= " -from ".$main::in_format;

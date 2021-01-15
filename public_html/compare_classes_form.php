@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>NeAT - compare_classes</title>
-<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+<link rel="stylesheet" type="text/css" href = "css/main_grat.css" media="screen">
 <link rel="stylesheet" type="text/css" href="css/colorbox.css">
 <script scr="js/jquery.js"></script>
  </head>
@@ -11,7 +11,7 @@
    <?php
    require_once ('functions.php');
      
-       $menu = $_REQUEST['menu'];
+       $menu = $_REQUEST['menu']; $menu=strtr($menu, ":()';<>","       ");
        //printMenu($menu);
 	if(strcmp($menu,"RSAT") == 0){
 		include 'menu.php';

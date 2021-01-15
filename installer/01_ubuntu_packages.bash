@@ -71,8 +71,6 @@ ${OS_INSTALLER} install -y openssh-client
 ## Required apt-get packages
 PACKAGES_REQUIRED="
 apt-utils
-apt-transport-https
-software-properties-common
 make
 net-tools
 ssh
@@ -107,6 +105,7 @@ python3-numpy
 python3-scipy
 python3-matplotlib
 python3-rpy2
+python-yaml
 emacs
 x11-apps
 eog

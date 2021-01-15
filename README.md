@@ -1,6 +1,3 @@
-[![DOI](https://zenodo.org/badge/235363605.svg)](https://zenodo.org/badge/latestdoi/235363605)
-[![Build Status](https://travis-ci.com/rsa-tools/rsat-code.svg?branch=master)](https://travis-ci.com/rsa-tools/rsat-code)
-
 # Regulatory Sequence Analysis Tools (RSAT)
 
 

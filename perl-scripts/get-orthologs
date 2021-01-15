@@ -127,7 +127,6 @@ package main;
   ################################################################
   #### initialise parameters
   local $start_time = &RSAT::util::StartScript();
-  $main::SCRIPTS = "$ENV{RSAT}/perl-scripts";
   
   %main::infile = ();
   %main::outfile = ();
@@ -649,12 +648,13 @@ package main;
 	      ##When option -rand is used still of taking the corresponding othologous gene of the orgnaism a randome gene is selected.
 	      if($main::rand){
 		  &RSAT::message::Warning("Selecting random gene from ", $org ) if($main::rand && ($main::verbose>=2)) ;				   
-		   my $cmd = "$SCRIPTS/random-genes -org ". $org ;		   
-		   $cmd .= " -n 1 ";
-		   $cmd .= " -feattype CDS,mRNA,tRNA,rRNA,scRNA,misc_RNA" ;
-		   my $random_gene= ` $cmd ` ; 
-		   $random_gene_id=(split(/\t/,$random_gene))[0];
-		   print $out  join("\t",$random_gene_id,$org,$query_gene)."\n";		 
+		  my $cmd =  &RSAT::server::GetProgramPath("random-genes");
+		  $cmd .= " -org ". $org ;		   
+		  $cmd .= " -n 1 ";
+		  $cmd .= " -feattype CDS,mRNA,tRNA,rRNA,scRNA,misc_RNA" ;
+		  my $random_gene= ` $cmd ` ; 
+		  $random_gene_id=(split(/\t/,$random_gene))[0];
+		  print $out  join("\t",$random_gene_id,$org,$query_gene)."\n";		 
 	      }
 	      else {
 		  print $out $bbh->{$query_gene}->{$org}->{$hit},"\n";
@@ -1488,7 +1488,7 @@ __END__
 
 =head1 EXAMPLES
 
-    get-orthologs -q lexA -org Escherichia_coli_K12 -taxon Gammaproteobacteria
+    get-orthologs -q lexA -org Escherichia_coli_GCF_000005845.2_ASM584v2 -taxon Gammaproteobacteria
 
 
 =head1 SEE ALSO
