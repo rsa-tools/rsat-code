@@ -5,7 +5,7 @@
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## !!!!!!!!!!!!!!   NOTE ABOUT KASPERSKY ANTIVIRUS   !!!!!!!!!!!!!!
-## 
+##
 ## For the installation of Perl package and for third-party Linux
 ## packages, I need to temporarily inactivate the antivirus software
 ## Kaspersky.
@@ -39,10 +39,31 @@ echo "    RSAT=${RSAT}"
 # export RSAT_DISTRIB_URL=http://pedagogix-tagc.univ-mrs.fr/download_rsat/${RSAT_ARCHIVE}
 
 ## Configuration for the installation
-export OS_INSTALLER="sudo apt-get"
-echo "    OS_INSTALLER=${OS_INSTALLER}"
-export INSTALLER_OPT="--quiet --assume-yes"
-echo "    INSTALLER_OPT=${INSTALLER_OPT}"
+if [[ $PACKAGE_MANAGER == "apt-get" ]]; then
+
+  export OS_INSTALLER="sudo apt-get"
+  echo "    OS_INSTALLER=${OS_INSTALLER}"
+  export INSTALLER_OPT="--quiet --assume-yes"
+  echo "    INSTALLER_OPT=${INSTALLER_OPT}"
+elif [[ $PACKAGE_MANAGER == "yum"  ]]; then
+
+  export OS_INSTALLER="yum"
+  echo "    OS_INSTALLER=${OS_INSTALLER}"
+  export INSTALLER_OPT=""
+  echo "    INSTALLER_OPT=${INSTALLER_OPT}"
+
+elif [[ $PACKAGE_MANAGER == "brew"  ]]; then
+
+  export OS_INSTALLER="brew"
+  echo "    OS_INSTALLER=${OS_INSTALLER}"
+  export INSTALLER_OPT=""
+  echo "    INSTALLER_OPT=${INSTALLER_OPT}"
+else
+  echo "; ERROR : The PACKAGE_MANAGER=${PACKAGE_MANAGER} is not supported."
+  exit 1
+  
+fi
+
 ## alternative: INSTALLER=aptitude
 
 
@@ -58,7 +79,7 @@ chmod 777 ${RSAT}/install_logs
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_start.txt
 
 
-## Check the installation device 
+## Check the installation device
 # DEVICE=`df -h | grep '\/$' | perl -pe 's/\/dev\///' | awk '{print $1}'`
 # echo "Installation device: ${DEVICE}"
 ## This should give something like sda1 or vda1. If not check the device with df

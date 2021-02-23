@@ -2,8 +2,8 @@
 ## Install all the Ubuntu packages required prior to the installation
 ## of the Regulatory Sequence Analysis Tools (RSAT; http://rsat.eu/).
 
-source RSAT_config.mk
-
+source ${RSAT}/RSAT_config.mk
+source ${RSAT}/installer/00_config.bash
 echo
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
@@ -11,36 +11,56 @@ echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo
 
 
-## PRIOR REQUIREMENT: Mac developer tools (for make and other utilities)
+## PRIOR REQUIREMENT: Mac developer tools and brew (for make and other utilities)
 
+################################################################
+## Required brew packages
 ################################################################
 ## Required apt-get packages
 PACKAGES_REQUIRED="
+make
+java
+cvs
+wget
+zip
+unzip
 screen
 libgd
+apache2
 ghostscript
 gnuplot
 graphviz
+openssl
+mysql-connector-c
 mysql
+python
+python3
+emacs
+ntp
 curl
+php
+bedtools@2.30.0
 "
 
-## Install the apt-get libraries
+
+################################################################
+## This variable was left for consistency with the corresponding
+## ubuntu script
+PACKAGES_PERL=""
+
+
+## Install the brew libraries
 PACKAGES="${PACKAGES_REQUIRED} ${PACKAGES_PERL}"
 echo "Packages to be installed with ${OS_INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES}"
 for LIB in ${PACKAGES}; do \
-    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
+    echo "`date '+%Y/%m/%d %H:%M:%S'` installing brew library ${LIB}" ; \
+    echo "${OS_INSTALLER} install ${INSTALLER_OPT} ${LIB}" ; \
     ${OS_INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT}/install_logs/install_${LIB}_log.txt ; \
     df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
 echo "Log files are in folder ${RSAT}/install_logs"
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
-## Specific brew repository for java.
-## NOTE: admin password will be required during installation. 
-brew cask install java
-
 ## DONE: installation of Mac OS X packages via brew
 ################################################################
-
