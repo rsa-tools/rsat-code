@@ -3,6 +3,8 @@
 ## Analysis Tools (RSAT; http://rsat.eu/) on an Ubuntu Linux system.
 ##
 
+source ${RSAT}/RSAT_config.mk
+
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## !!!!!!!!!!!!!!   NOTE ABOUT KASPERSKY ANTIVIRUS   !!!!!!!!!!!!!!
 ##

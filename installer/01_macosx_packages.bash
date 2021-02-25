@@ -2,7 +2,8 @@
 ## Install all the Ubuntu packages required prior to the installation
 ## of the Regulatory Sequence Analysis Tools (RSAT; http://rsat.eu/).
 
-source ${RSAT}/RSAT_config.mk
+#source ${RSAT}/RSAT_config.mk
+
 source ${RSAT}/installer/00_config.bash
 echo
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -39,7 +40,6 @@ emacs
 ntp
 curl
 php
-bedtools@2.30.0
 "
 
 
