@@ -57,7 +57,8 @@ sudo pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
 ## I should test one of the following SOAP packages
 sudo pip3 install suds-jurko
 sudo pip3 install pysimplesoap
-sudo pip3 install soappy
+# soappy is not maintained, and don't install well on python3
+# sudo pip3 install soappy
 
 ## Check disk usage
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
