@@ -6,7 +6,7 @@
 set -e # failed on error
 
 
-if [ -z ${RSAT} ] # set RSAT if not defined
+if [ -z "${RSAT}" ] # set RSAT if not defined
 then
     export RSAT=$(dirname $0)/..
 fi
