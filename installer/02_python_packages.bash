@@ -1,13 +1,13 @@
+#!/usr/bin/env bash
+
+source $(dirname $0)/00_config.bash
+
 ################################################################
 ## Install some python libraries with pip
 ##
 ## Note: numpy, scipy and matplotlib are supposed to have previously
 ## been installed with apt-get under Ubuntu. For other OS, they should
 ## be added to the pip installation.
-
-# source installer/00_config.bash
-
-source ${RSAT}/RSAT_config.bashrc
 
 echo
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"

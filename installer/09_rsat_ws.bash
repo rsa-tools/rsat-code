@@ -1,6 +1,9 @@
-source installer/00_config.bash
+#!/usr/bin/env bash
 
-cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+source $(dirname $0)/00_config.bash
+
+cd ${RSAT};
+# source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
 
 
 ################################################################
@@ -10,8 +13,8 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ## addresses the WS requests to itself (http://localhost/rsat) because
 ## web services are used for multi-tierd architecture of some Web
 ## tools (retrieve-ensembl-seq, NeAT).
-cd $RSAT
-
+#cd $RSAT
+# have been reloaded by the source on 00_config.bash
 
 
 ################################################################

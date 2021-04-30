@@ -1,5 +1,6 @@
-source installer/00_config.bash
+#!/usr/bin/env bash
 
+source $(dirname $0)/00_config.bash
 
 echo
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -7,7 +8,9 @@ echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo
 
-cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+cd ${RSAT};
+# source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+# have been reloaded by the source on 00_config.bash
 
 ################################################################
 ## Configure the Apache Web server
@@ -29,7 +32,7 @@ export CONF_DIR_USER=/private/etc/apache2/user/
 export CONF_DIR_OTHER=/private/etc/apache2/other/
 echo " CONF_DIR_USER ${CONF_DIR_USER}"
 echo " CONF_DIR_OTHER ${CONF_DIR_OTHER}"
-find ${APACHE_CONFIG_FOLDER} -name '*.conf' | xargs grep -i rsat | cut -d ':' -f 1 | sort -u 
+find ${APACHE_CONFIG_FOLDER} -name '*.conf' | xargs grep -i rsat | cut -d ':' -f 1 | sort -u
 
 export APACHE_CONF_RSAT=${OTHER}rsat.conf
 echo " APACHE_CONF_RSAT ${APACHE_CONF_RSAT}"
@@ -90,6 +93,3 @@ perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#LoadModule cgi_module libexec/ap
 apachectl restart
 
 echo("TO BE CONTINUED")
-
-
-

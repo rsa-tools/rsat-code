@@ -1,4 +1,6 @@
-source installer/00_config.bash
+#!/usr/bin/env bash
+
+source $(dirname $0)/00_config.bash
 
 echo
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -10,8 +12,9 @@ echo
 echo "RSAT directory${RSAT}"
 cd ${RSAT}
 
-echo "sourcing RSAT config file" 
-source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+#echo "sourcing RSAT config file"
+#source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+# have been reloaded by the source on 00_config.bash
 
 
 ################################################################
@@ -20,7 +23,7 @@ source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
 ## Notes
 ##
 ## 1) limxml2-dev is required to compile the Perl module XML::LibXML
-# apt-get install limxml2-dev 
+# apt-get install limxml2-dev
 ## 2) For some modules, installation failed until I used "force"
 ##	 force install SOAP::WSDL
 ##	 force install SOAP::Lite
@@ -75,7 +78,7 @@ MISSING_PERL_MODULES=`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' 
 echo "Missing Perl modules:     ${MISSING_PERL_MODULES}"
 make SUDO='sudo' -f makefiles/install_rsat.mk perl_modules_install_by_force PERL_MODULES_TO_FORCE="`grep -v '^OK'  check_perl_modules_eval.txt | grep -v '^;' | grep -v Object::InsideOut| cut -f 2 | xargs`"
 
-## Last check for Perl modules. 
+## Last check for Perl modules.
 ## If some of them still fail (except Object::InsideOut), manual intervention will be required.
 make -f makefiles/install_rsat.mk perl_modules_check
 cat check_perl_modules_eval.txt
@@ -83,4 +86,3 @@ cat check_perl_modules_eval.txt
 ## Measure remaining disk space
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_perl_modules_installed.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
-

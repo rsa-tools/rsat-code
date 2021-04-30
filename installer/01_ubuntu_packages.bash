@@ -1,8 +1,10 @@
+#!/usr/bin/env bash
+
+source $(dirname $0)/00_config.bash
+
 ################################################################
 ## Install all the Ubuntu packages required prior to the installation
 ## of the Regulatory Sequence Analysis Tools (RSAT; http://rsat.eu/).
-
-source installer/00_config.bash
 
 echo
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -59,9 +61,9 @@ ${OS_INSTALLER} install -y openssh-client
 ## HOWEVER, THE PERL UPDATE DOES NOT WORK ANYMORE AFTER THAT !!!
 ##
 ## I thus use apt-get upgrade. However this cannot be part of the
-## default installation since not everyone wants to upgrade apt-get. 
-## I thus comment the following instructions. 
-## 
+## default installation since not everyone wants to upgrade apt-get.
+## I thus comment the following instructions.
+##
 # ${OS_INSTALLER} ${INSTALLER_OPT} upgrade
 # df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${OS_INSTALLER}_upgrade.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
@@ -92,7 +94,7 @@ mysql-client
 default-jre
 python
 python-pip
-python-setuptools 
+python-setuptools
 python-numpy
 python-scipy
 python-matplotlib
@@ -100,7 +102,7 @@ python-suds
 python-rpy2
 python3
 python3-pip
-python3-setuptools 
+python3-setuptools
 python3-numpy
 python3-scipy
 python3-matplotlib
@@ -124,8 +126,8 @@ libapache2-mod-wsgi
 
 
 ################################################################
-## Packages to be checked by JvH. 
-## These are useful to me, but I am not sure they are required for RSAT. 
+## Packages to be checked by JvH.
+## These are useful to me, but I am not sure they are required for RSAT.
 PACKAGES_OPT="
 ess
 yum
@@ -161,7 +163,7 @@ python3-dev
 libnet-ssleay-perl
 libcrypt-ssleay-perl
 exfat-fuse
-exfat-utils 
+exfat-utils
 at
 firefox
 ncbi-blast+
@@ -212,7 +214,7 @@ librest-client-perl
 libxml-compile-soap11-perl
 libxml-compile-wsdl11-perl
 libxml-compile-transport-soaphttp-perl
-libbio-das-perl        
+libbio-das-perl
 "
 
 ## Install the apt-get libraries
@@ -253,7 +255,7 @@ echo "Log files are in folder ${RSAT}/install_logs"
 # ################################################################
 # ## Specific treatment for some Python libraries
 # ##
-# ## A fix for a problem to install scipy with pip: use ${OS_INSTALLER} build-dep 
+# ## A fix for a problem to install scipy with pip: use ${OS_INSTALLER} build-dep
 # ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
 # ## Note that these dependencies cost 400Mb ! To be checked
 # ${OS_INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
@@ -272,4 +274,3 @@ df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 
 ## DONE: installation of Ubuntu packages
 ################################################################
-
