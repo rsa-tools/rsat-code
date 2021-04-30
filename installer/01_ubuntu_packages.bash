@@ -183,33 +183,43 @@ finger
 ## necessary, could be done with cpan, but ensure consistency with
 ## ubuntu OS)
 PACKAGES_PERL="
-perl-doc
-pmtools
-libyaml-perl
-libemail-simple-perl
+bioperl-run
+libbio-das-lite-perl
+libbio-perl-perl
+libclass-std-perl
+libdbd-mysql-perl
+libdbi-perl
+libdigest-md5-file-perl
 libemail-sender-perl
 libemail-simple-creator-perl
-libpostscript-simple-perl
-libstatistics-distributions-perl
-libio-all-perl
-libobject-insideout-perl
-libobject-insideout-perl
-libsoap-lite-perl
-libsoap-wsdl-perl
-libxml-perl
-libxml-simple-perl
-libxml-compile-cache-perl
-libdbi-perl
-liblockfile-simple-perl
-libobject-insideout-perl
+libemail-simple-perl
 libgd-perl
-libdbd-mysql-perl
+libio-all-perl
 libjson-perl
-libbio-perl-perl
-libdigest-md5-file-perl
+liblockfile-simple-perl
+liblog-log4perl-perl
 libnet-address-ip-local-perl
 libnet-smtp-tls-perl
 libnet-smtps-perl
+libnumber-format-perl
+libobject-insideout-perl
+libole-storage-lite-perl
+libparallel-forkmanager-perl
+libpostscript-simple-perl
+librest-client-perl
+libsoap-lite-perl
+libsoap-wsdl-perl
+libspreadsheet-xlsx-perl
+libstatistics-distributions-perl
+libxml-compile-cache-perl
+libxml-compile-soap-perl
+libxml-compile-wsdl11-perl
+libxml-parser-perl
+libxml-perl
+libxml-simple-perl
+libyaml-perl
+perl-doc
+pmtools
 "
 #libemail-sender-transport-smtp-tls-perl
 
@@ -217,14 +227,7 @@ libnet-smtps-perl
 ## libraries. These will have to be installed with cpan.
 PACKAGES_PERL_MISSING="
 libalgorithm-cluster-perl
-digest-md5-file-perl
-liblockfile-simple
 libutil-properties-perl
-librest-client-perl
-libxml-compile-soap11-perl
-libxml-compile-wsdl11-perl
-libxml-compile-transport-soaphttp-perl
-libbio-das-perl
 "
 
 
