@@ -42,8 +42,8 @@ cd ${RSAT}
 ## prevents CPAN from downloading and installing Perl modules !
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-cpan YAML ## Type "yes" on request !!!
-cpan CPAN ## Update CPAN
+yes yes | cpan YAML ## Type "yes" on request !!!
+yes yes | cpan CPAN ## Update CPAN
 
 
 ## Get the list of Perl modules to be installed
