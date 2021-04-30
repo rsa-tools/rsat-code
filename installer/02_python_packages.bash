@@ -60,6 +60,9 @@ sudo pip3 install pysimplesoap
 # soappy is not maintained, and don't install well on python3
 # sudo pip3 install soappy
 
+# overide old pyyaml on python2
+pip install --ignore-installed PyYAML
+
 ## Check disk usage
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
