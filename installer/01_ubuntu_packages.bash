@@ -27,6 +27,13 @@ ${OS_INSTALLER} install -y openssh-client
 ## (source: https://help.ubuntu.com/community/UbuntuTime).
 # dpkg-reconfigure tzdata
 
+# manage local time
+if [ ! -f /etc/localtime ]
+then
+    ${OS_INSTALLER} install ${INSTALLER_OPT} tzdata
+    sudo ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
+    sudo dpkg-reconfigure --frontend noninteractive tzdata
+fi
 
 
 ## We need to update apt-get, to avoid trouble with python
@@ -122,6 +129,7 @@ libssl-dev
 php
 libapache2-mod-php
 libapache2-mod-wsgi
+rsync
 "
 
 
@@ -200,8 +208,10 @@ libjson-perl
 libbio-perl-perl
 libdigest-md5-file-perl
 libnet-address-ip-local-perl
-libemail-sender-transport-smtp-tls-perl
+libnet-smtp-tls-perl
+libnet-smtps-perl
 "
+#libemail-sender-transport-smtp-tls-perl
 
 ## We did not find apt-get packages for some required Perl
 ## libraries. These will have to be installed with cpan.
@@ -216,6 +226,7 @@ libxml-compile-wsdl11-perl
 libxml-compile-transport-soaphttp-perl
 libbio-das-perl
 "
+
 
 ## Install the apt-get libraries
 PACKAGES="${PACKAGES_REQUIRED} ${PACKAGES_PERL}"

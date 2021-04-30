@@ -52,7 +52,7 @@ echo "    RSAT_SERVER_NAME=${RSAT_SERVER_NAME}"
 ## Configuration for the installation
 if [[ $PACKAGE_MANAGER == "apt-get" ]]; then
 
-  export OS_INSTALLER="sudo apt-get"
+  export OS_INSTALLER="sudo DEBIAN_FRONTEND=noninteractive apt-get"
   echo "    OS_INSTALLER=${OS_INSTALLER}"
   export INSTALLER_OPT="--quiet --assume-yes"
   echo "    INSTALLER_OPT=${INSTALLER_OPT}"
