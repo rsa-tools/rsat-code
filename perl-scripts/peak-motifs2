@@ -134,6 +134,7 @@ package main;
   @main::outdir = (); ## Directories to report in the log file
   %main::infile = ();
   %main::outfile = ();
+  %main::in_format = ();
 
   $main::verbose = 0;
   $main::out = STDOUT;
@@ -141,6 +142,8 @@ package main;
   ## Sequence types (can be eiter 'test' or 'test' + 'ctrl')
   @seq_types = ();
   %main::preprocess_seq = ( "test" => 1, "ctrl" => 1);
+  $main::org  = "";
+  $main::org_source = "";
 
   ## Pattern types (oligos, positions, local-word-analysis,... with the oligo length suffix)
   @pattern_types = ();
@@ -162,7 +165,6 @@ package main;
   ################################################################
   ## Supported tasks
   @default_tasks = ("purge",
-        "dust",
 		    "seqlen",
 		    "composition",
         #"bg_from_ctrl",
@@ -186,6 +188,7 @@ package main;
 
   ## Extra tasks are only executed on explicit demand of the user
   @extra_tasks = ("all",
+      "dust",
 		  "clean_seq",
 		  "cluster_motifs",
 		  "motif_enrichment",
@@ -274,7 +277,7 @@ package main;
   local $synthesis_path;
   local $menu_nb = 100;
 
-  local $check_fasta_top = 1000; ## Number of top lines for checking fasta headers in the input sequence files
+  local $check_records_top = 1000; ## Number of top records to check in fasta or bed peak sequences
 
   ################################################################
   ## Set default parameters
@@ -302,9 +305,16 @@ package main;
   print $main::out "\n\n";
 
   &OpenSynthesis() if ($progressive_synthesis);
-  # Iterate througout all input fastas
+  # Iterate througout all input peak files
   foreach my $seq_type (@seq_types) {
     ## Prepare sequences
+    if ($main::in_format{$seq_type."_seq"} eq "bed"){
+      &GetSeqFromBed($seq_type,
+                     $main::infile{$seq_type."_seq"},
+                     $main::org,
+                     $main::org_source);
+      $main::infile{$seq_type."_seq"} = $main::outfile{$seq_type."_retrieved"}; # NOTE HERE WSG, need to find the outfile name of 'retrieved'
+    }
     &DustMaskSeq($seq_type)     if ($task{dust});
     &PurgeSeq($seq_type)        if ($task{purge});
     &SequenceLengths($seq_type) if ($task{seqlen});
@@ -685,6 +695,17 @@ sub SetOutFileNames {
       push @seq_suffix, "top".$main::param{top_peaks};
     }
 
+    ## Retrieved sequences from bed
+    if( $main::in_format{$seq_type."_seq"} eq "bed" ) {
+
+      $main::outfile{$seq_type."_retrieved"} = &OutFileName("data/sequences",
+							   ".fasta",
+							   $seq_type,
+							   @seq_suffix,
+                 "retrieved");
+
+
+    }
 
     ## Converted sequences
     $main::outfile{$seq_type."_converted"} = &OutFileName("data/sequences",
@@ -1105,6 +1126,40 @@ sub SetOutFileNames {
 
 }
 
+################################################################
+## Retrieve fasta sequences if bed file was provided
+sub GetSeqFromBed {
+  my ($seq_type,$seq_file,$genome,$genome_src) = @_;
+
+  # Get sequences from UCSC ('fetch-sequences')
+  if ( $genome_src eq "ucsc" ) {
+
+    ## Get sequences
+    &RSAT::message::TimeWarn("Fetching fasta sequences from UCSC genome",$genome,"for bed file ", $seq_type, $seq_file)
+          if ($main::verbose >= 2);
+    $cmd = &RSAT::server::GetProgramPath("fetch-sequences");
+    $cmd .= " -i ".$seq_file;
+    $cmd .= " -o ".$main::outfile{$seq_type."_retrieved"};
+    $cmd .= " -genome ".$genome;
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
+
+  # Get sequences from locally installed organisms
+  # ('retrieve-seq-bed')
+  } elsif ( $genome_src eq "rsat_local" ) {
+    ## Get sequences
+    &RSAT::message::TimeWarn("Fetching fasta sequences from locally installed genome,",$genome," for bed file ", $seq_type, $seq_file)
+          if ($main::verbose >= 2);
+    $cmd = &RSAT::server::GetProgramPath("retrieve-seq-bed");
+    $cmd .= " -i ".$seq_file;
+    $cmd .= " -o ".$main::outfile{$seq_type."_retrieved"};
+    $cmd .= " -org ".$genome;
+    $cmd .= " -rm ".$genome if($main::param{masked_genomes});
+
+    &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
+  }
+
+
+}
 ################################################################
 ## Preprocess fasta sequences with convert-seq
 sub PreProcessSeq {
@@ -4363,7 +4418,7 @@ Same as -h
 
 =pod
 
-=item B<-i test_seq_file>
+=item B<-i test_peak_file test_peak_format>
 
 Test peak sequence file (mandatory).
 
@@ -4371,9 +4426,76 @@ For single-set analysis, this file contains the peak sequences of the
 unique set.  For test versus control analysis, it contains the test
 sequences.
 
+The program currently accepts two peak sequences format: 'fasta' or 'bed'.
+
+Examples:
+
+(a) -i OCT4_peaks.fa fasta
+(b) -i OCT4_peaks.bed bed
+
+
 =cut
     } elsif ($arg eq "-i") {
-      $main::infile{test_seq} = shift(@arguments);
+
+      $main::infile{test_seq}    = shift(@arguments);
+      $main::in_format{test_seq} = shift(@arguments);
+
+      if( $main::in_format{test_seq}    ne "fasta"
+          && $main::in_format{test_seq} ne "bed") {
+        &RSAT::error::FatalError("Unable to accept format",
+                                 $main::in_format{test_seq},
+                                 "in '-i' option, only 'fasta' or 'bed'");
+      }
+=pod
+
+=item B<-org org_name [rsat_local|ucsc]>
+
+When a peak coordiante file (bed) is provided at either '-i' or '-ctrl'
+options, a 'name of the organism' or the 'organism assembly' is needed
+to retrieve the corresponding peak sequences for these coordiantes.
+
+(a) The 'ID of the organism' should be specified if the sequences will
+    be retrieve from RSAT locally installed organisms. In this case, the
+    'ID of the organism' must be followed by the 'rsat_local' option.
+    Please refer to "supported-organisms -help" to see how to obtain
+    the list of IDs of available organisms in RSAT.
+(b) The 'organism assembly' should be specified if the sequences will
+    be retrieve from UCSC stored organisms. In this case, the
+    'organism assembly' must be followed by the 'ucsc' option.
+
+Example:
+(a) -org Homo_sapiens_GRCh37 rsat_local
+(b) -org hg19 ucsc
+
+
+=cut
+
+    } elsif ($arg eq "-org") {
+
+      $main::org        = shift(@arguments);
+      $main::org_source = shift(@arguments);
+
+      if( $main::org_source ne "rsat_local"
+          && $main::org_source ne "ucsc" ) {
+          &RSAT::error::FatalError("Unable to accept",
+          $main::org_source,"in '-org' option, only 'rsat_local' or 'ucsc'");
+      }
+
+=pod
+
+=item B<-masked_genomes>
+
+Use repeat-masked version of the genome to retrieve peak sequences from bed files.
+This option is only compatible when 'rsat_local' is passed to '-org' option.
+
+
+=cut
+
+    } elsif ($arg eq "-masked_genomes") {
+
+      $main::param{masked_genomes} = 1;
+
+
 
 =pod
 
@@ -4429,9 +4551,14 @@ specification of the bed format.
 
 =pod
 
-=item B<-ctrl control_seq_file>
+=item B<-ctrl control_peak_file control_peak_format>
 
 Control peak sequence file (optional).
+The program currently accepts two peak sequences format: 'fasta' or 'bed'.
+Examples:
+
+(a) -ctrl SOX2_peaks.fa fasta
+(b) -ctrl SOX2_peaks.bed bed
 
 The control sequence file is used:
 - as control sequence for I<oligo-diff>
@@ -4463,6 +4590,14 @@ Typical examples of control sequences:
 =cut
     } elsif ($arg eq "-ctrl") {
       $main::infile{ctrl_seq} = shift(@arguments);
+      $main::in_format{ctrl_seq} = shift(@arguments);
+
+      if( $main::in_format{ctrl_seq}    ne "fasta"
+          && $main::in_format{ctrl_seq} ne "bed") {
+        &RSAT::error::FatalError("Unable to accept format",
+                                 $main::in_format{ctrl_seq},
+                                 "in '-ctrl' option, only 'fasta' or 'bed'");
+      }
 
 
 =pod
@@ -4790,15 +4925,6 @@ would violate the hypothesis of independence underlying the binomial
 significance test, resulting in a large number of false positive
 patterns.
 
-=item I<dust>
-
-Masks low-complexity regions in the input fasta sequences (test set and,
-if specified, control set) before applying pattern discovey algorithms.
-Masking is performed using DUST masker written by R.Tatusov and
-D.J.Lipman (unpublished), but briefly described by Morgulis,et al.,2006
-with default cutoff score of 20. This is recommended in order to diminish
-the occurrences of low-complex motifs.
-
 =item I<seqlen>
 
 Compute sequence lengths and their distribution.
@@ -4916,6 +5042,15 @@ tasks are executed only when they are explicitly invoked with the option
 I<-task>, they are not called with the option "-task all".
 
 =over
+
+=item I<dust>
+
+Masks low-complexity regions in the input fasta sequences (test set and,
+if specified, control set) before applying pattern discovey algorithms.
+Masking is performed using DUST masker written by R.Tatusov and
+D.J.Lipman (unpublished), but briefly described by Morgulis,et al.,2006
+with default cutoff score of 20. This is recommended in order to diminish
+the occurrences of low-complex motifs.
 
 =item I<clean_seq>
 
@@ -5251,18 +5386,30 @@ sub CheckArguments {
     unless (-e $infile{test_seq}) {
       &RSAT::error::FatalError("Test sequence file does not exist", $infile{test_seq});
     }
+
     @main::seq_types = ("test");
 
-    ## Check that the test file contains fasta-formatted sequences.
-    ## This is important because some users of the Web site seem to
-    ## submit coordinates (bed filesà) rather than sequences (fasta
-    ## files).
-    &RSAT::message::Debug("Checking fasta format for test sequence file", $infile{test_seq}) if ($main::verbose >= 2);
-    my $fasta_header_lines = &CheckFastaFile($infile{test_seq}, $check_fasta_top);
+    if( $main::in_format{test_seq} eq "fasta" ) {
+      ## Check that the test file contains fasta-formatted sequences.
+      &RSAT::message::Debug("Checking fasta format for test sequence file", $infile{test_seq}) if ($main::verbose >= 2);
+      my $fasta_header_lines = &CheckFastaFile($infile{test_seq}, $check_records_top);
 
-    &RSAT::message::TimeWarn($fasta_header_lines, "fasta headers in the top", $check_fasta_top, "lines") if ($main::verbose >= 3);
-    &RSAT::error::FatalError("Test sequence file does not contain fasta headers (checked the ".$check_fasta_top." top lines)",
+      &RSAT::message::TimeWarn($fasta_header_lines, "fasta headers in the top", $check_records_top, "lines") if ($main::verbose >= 3);
+      &RSAT::error::FatalError("Test sequence file does not contain fasta headers (checked the ".$check_records_top." top lines)",
 			     $infile{test_seq}) unless ($fasta_header_lines);
+
+    } elsif( $main::in_format{test_seq} eq "bed" ) {
+      ## Check that a genome and source have been specified
+      &RSAT::error::FatalError("An organism parameter and source should be passed to '-org'.") if( $main::org eq "" || $main::org eq "" );
+      ## Check that the test file contains bed-formatted sequences.
+      &RSAT::message::Debug("Checking bed format for test sequence file", $infile{test_seq}) if ($main::verbose >= 2);
+      my $bed_lines = &CheckBedFile($infile{test_seq}, $check_records_top);
+
+      &RSAT::message::TimeWarn($bed_lines, "bed records correctly found in the top", $check_records_top, "lines") if ($main::verbose >= 3);
+      &RSAT::error::FatalError("Test bed file does not contain bed records or in the correct format (checked the ".$check_records_top." top lines)",
+           $infile{test_seq}) unless ($bed_lines);
+    }
+
 
   } else {
     &RSAT::error::FatalError("You must define the test sequence set (option -i)");
@@ -5278,14 +5425,33 @@ sub CheckArguments {
       &RSAT::error::FatalError("Control sequence file does not exist", $infile{ctrl_seq});
     }
 
+    # NOTE WSG. To remove chunk when code below has been tested.
     ## Check that the ctrl file contains fasta-formatted sequences.
-    ## This is important because some users of the Web site seem to
-    ## submit coordinates (bed filesà) rather than sequences (fasta
-    ## files).
-    my $fasta_header_lines = &CheckFastaFile($infile{ctrl_seq}, $check_fasta_top);
-    &RSAT::message::TimeWarn($fasta_header_lines, "fasta headers in the top", $check_fasta_top, "lines") if ($main::verbose >= 3);
-    &RSAT::error::FatalError("Control sequence file does not contain fasta headers (checked the ".$check_fasta_top." top lines)",
-			     $infile{ctrl_seq}) unless ($fasta_header_lines);
+    #my $fasta_header_lines = &CheckFastaFile($infile{ctrl_seq}, $check_records_top);
+    #&RSAT::message::TimeWarn($fasta_header_lines, "fasta headers in the top", $check_records_top, "lines") if ($main::verbose >= 3);
+    #&RSAT::error::FatalError("Control sequence file does not contain fasta headers (checked the ".$check_records_top." top lines)",
+		#	     $infile{ctrl_seq}) unless ($fasta_header_lines);
+
+    if( $main::in_format{ctrl_seq} eq "fasta" ) {
+      ## Check that the test file contains fasta-formatted sequences.
+      &RSAT::message::Debug("Checking fasta format for contrasting sequence file", $infile{ctrl_seq}) if ($main::verbose >= 2);
+      my $fasta_header_lines = &CheckFastaFile($infile{ctrl_seq}, $check_records_top);
+
+      &RSAT::message::TimeWarn($fasta_header_lines, "fasta headers in the top", $check_records_top, "lines") if ($main::verbose >= 3);
+      &RSAT::error::FatalError("Contrasting sequence file does not contain fasta headers (checked the ".$check_records_top." top lines)",
+         $infile{ctrl_seq}) unless ($fasta_header_lines);
+
+     } elsif( $main::in_format{ctrl_seq} eq "bed" ) {
+       ## Check that the test file contains bed-formatted sequences.
+       &RSAT::message::Debug("Checking bed format for contrasting sequence file", $infile{ctrl_seq}) if ($main::verbose >= 2);
+       my $bed_lines = &CheckBedFile($infile{ctrl_seq}, $check_records_top);
+
+       &RSAT::message::TimeWarn($bed_lines, "bed records correctly found in the top", $check_records_top, "lines") if ($main::verbose >= 3);
+       &RSAT::error::FatalError("Contrasting bed file does not contain bed records or in the correct format (checked the ".$check_records_top." top lines)",
+       $infile{ctrl_seq}) unless ($bed_lines);
+     }
+
+
 
     push @main::seq_types, ("ctrl");
   }
