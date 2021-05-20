@@ -890,7 +890,7 @@ sub PrintNextSequence {
 
     ### insert the carriage returns
 #	if (($out_format eq "wc") || ($out_format eq "wconsensus") || ($out_format eq "multi")) {
-    if (($out_format eq "multi")  
+    if (($out_format eq "multi")
 	|| ($out_format eq "ft")
 	|| ($out_format eq "fastq")
 	) {
@@ -1465,7 +1465,7 @@ sub ReadNextSequence {
 Quickly check if a fiel seems to contain fasta sequence, by selecting
 the fasta header lines.
 
-By default, the function selects all the lines 
+By default, the function selects all the lines
 
 Usage
 
@@ -1495,7 +1495,69 @@ sub CheckFastaFile {
 }
 
 ################################################################
+=pod
 
+=item check_bed_file
+
+Quickly check if a file seems to contain bed coordinates, by
+checking start is smaller than end, and strand value when
+available.
+
+By default, the function selects all the lines
+
+Usage
+
+my $fasta_header_lines = &CheckBedFile($bed_file, $top_lines);
+
+Input parameters:
+
+  $bed_file : path of the bed file
+  $top_lines (optional) : restrict the analysis to the top lines of the file.
+
+=cut
+sub CheckBedFile {
+  my ($bed_file, $top_lines) = @_;
+  $top_lines = $top_lines || 0;
+  &RSAT::error::FatalError("&CheckBedFile() function requires a bed file.") unless ($bed_file);
+  my ($bed_fh) = &OpenInputFile($bed_file);
+
+  # Init counter
+  my $i = 0;
+  ## Read the comparison file
+  while (<$bed_fh>) {
+    next unless (/\S/); ## Skip empty lines
+    next if (/^;/); ## Skip comment lines
+    next if (/^#/); ## Skip comment lines
+    next if (/^browser/); ## Skip browser lines
+    next if (/^track/); ## Skip browser lines
+
+    # NOTE WSG (01-03-2021) Maybe I should create a new
+    # bed file without the header lines for bedtools.
+
+    $i+=1;
+    ## Parse the column contents
+    chomp();
+    my @fields = split("\t", $_);
+
+    # Get number of records
+    my $records_nb = scalar(@fields);
+
+    if ( $records_nb > 5) {
+      &RSAT::error::FatalError("The 6th column in BED files should only be '+' or '-'.")
+         if( $fields[5] ne "+" && $fields[5] ne "-") ;
+    }
+
+    &RSAT::error::FatalError("The start is not smaller then the end coordinate.")
+          unless( int($fields[1]) < int($fields[2]) );
+
+    last if($i == $top_lines );
+  }
+
+
+  return($i);
+}
+
+################################################################
 =pod
 
 =item parse_genomic_coordinates
@@ -1926,4 +1988,3 @@ sub PatternID {
 
 
 1;
-
