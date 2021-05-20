@@ -25,7 +25,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### print the result page
-&RSA_header("peak-motifs result", "results");
+&RSA_header("peak-motifs2 result", "results");
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
@@ -90,18 +90,81 @@ if ($query->param('title')){
 	  "synthesis",
 	  "small_summary");
 
+########################
+## Get input formats of sequences
+my $seq_format1 = $query->param('seq_format1');
+my $seq_format2 = $query->param('seq_format2');
+
+&RSAT::error::FatalError("You must select a file format in 'Mandatory input' ") if($seq_format1 eq "-select-");
+
 ################################################################
 ## Peak sequences file
 
 ## Test sequences
-($peak_seq_file, $sequence_format) = &MultiGetSequenceFile(1, $output_dir_full_path."/".$output_prefix."peak_seq", 1);
-$parameters .= " -i ".$peak_seq_file;
+my $id_prefix  = "";
+my $seq_source = $query->param('seq_source1');
+
+if( $seq_format1 eq "fasta" ){
+  $id_prefix = "fasta";
+} elsif ( $seq_format1 eq "bed" ){
+
+  if( $seq_source eq "UCSC_genome"){
+    $id_prefix = "UCSC";
+  } elsif( $seq_source eq "local_genome") {
+    $id_prefix = "local";
+  }
+
+}
+
+
+($peak_seq_file, $sequence_format) = &MultiGetSequenceFile_bootstrap(1, $output_dir_full_path."/".$output_prefix."peak_seq", 1, $id_prefix, $seq_format1);
+$parameters .= " -i ".$peak_seq_file." ".$seq_format1;
+
+
 
 ### control sequences file
-($control_file, $sequence_format) = &MultiGetSequenceFile(2, $output_dir_full_path."/".$output_prefix."control_seq", 0);
+my $id_prefix = "";
+
+if( $seq_format2 eq "fasta" ){
+  $id_prefix = "fasta";
+} elsif ( $seq_format2 eq "bed" ){
+  if( $seq_source eq "UCSC_genome"){
+    $id_prefix = "UCSC";
+  } elsif( $seq_source eq "local_genome") {
+    $id_prefix = "local";
+  }
+}
+($control_file, $sequence_format) = &MultiGetSequenceFile_bootstrap(2, $output_dir_full_path."/".$output_prefix."control_seq", 0, $id_prefix, $seq_format2);
 
 if ($control_file) {
-  $parameters .= " -ctrl ".$control_file;
+  $parameters .= " -ctrl ".$control_file." ".$seq_format2;
+}
+
+### Genome version
+if ( $seq_source eq "UCSC_genome" ) {
+  my $genome_v = "";
+
+  # Retrieve assembly
+  unless ($query->param('ucsc_genome1')  eq '-select-') {
+    ($genome_v) = split " ", $query->param('ucsc_genome1'); ### take the first word
+  } else {
+    &RSAT::error::FatalError("Select a genome in 'Mandatory input' ")
+  }
+
+  $parameters .= " -org ".$genome_v." ucsc";
+
+
+} elsif ( $seq_source eq "local_genome" ){
+  my $genome_v = $query->param('organism');
+
+  # Retrieve organism id
+  unless ($genome_v  eq '-select-') {
+    #&RSAT::error::FatalError("No organism was specified") unless ($organism);
+  } else {
+    &RSAT::error::FatalError("Select a genome in 'Mandatory input' ")
+  }
+  $parameters .= " -org ".$genome_v." rsat_local";
+
 }
 
 
