@@ -144,7 +144,7 @@ package main;
     local $max_asmb_per_cluster = 2;
     local $top_pattern_nb = 100;
     local $top_seq = 0;
-    local $column_rescaling = 100; ## TO DO: ADAPT RESCALING TO MAX OF SIG MATRIX
+    local $column_rescaling = 10; ## TO DO: ADAPT RESCALING TO MAX OF SIG MATRIX
 
     ## Collect method
 #    local $collect_method = "info-gibbs";
