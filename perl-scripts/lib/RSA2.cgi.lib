@@ -150,10 +150,6 @@ sub PrintOrthoSelectionSection {
   #&OrganismPopUp(@supported_orthologs);
   &OrganismPopUp('supported' => 'orthologs');
 
-  ## Choice of the organism
-  print "<b>Query </b>";
-  #&OrganismPopUp(@supported_orthologs);
-  &OrganismPopUp('supported' => 'orthologs');
   ################################################################
   ### gene queries
   print "<B><A class='iframe' HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
@@ -447,6 +443,85 @@ sub SelectOutput {
 
 
 
+#################################
+## Input choice (with bootstrap)
+## Print a section enabling to enter some input in various ways:
+## - copy/paste in a text area
+## - file on the server, transferred from previous application
+## - upload a local file from the client computer
+## - URL of a file (will be downloaded)
+sub MultiInputChoice_bootstrap {
+  my ($in_title, $in_num, $in_type, $in_format,$id_prefix) = @_;
+  my $input_file = "";
+  $in_type = $in_type || "input";
+  $in_format = $in_format || "text";
+  $id_prefix = $id_prefix || "";
+
+  # Create ids for html elements
+  my $text_id  = $id_prefix.'sequence'.$in_num;
+  my $file_id = $id_prefix.'uploaded_file'.$in_num;
+  my $url_id = $id_prefix.'sequence_url'.$in_num;
+
+  if ($input_file = $query->param("sequence_file")) {
+
+    ## Input file is already on the server machine
+    ## (piped from a previous script)
+    $input_url = $input_file;
+    $input_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+    print "<a href=$input_url>transferred from previous query<br></a>";
+    $input_format = $query->param(input_format);
+    print "<input type='hidden' name='input_format' value='$input_format'>\n";
+    print "<input type='hidden' name='input_file' value='$input_file'>\n";
+
+  } else {
+
+    print "<div class='form-group'>";
+    # Title of input sequences
+    print "<p><b>$in_title</b></p>";
+    ## Text area to enter the input file
+    my $placeholder_text = 'Paste here your '.$in_type.', or select a file to '.
+                           'upload or type a URL to a file below '.
+                           '(.gz compressed files supported). ';
+    print $query->textarea(
+                           -name=>$text_id,
+                           -id=>$text_id,
+                           -class=>'form-control',
+                           -placeholder=>$placeholder_text,
+                           -default=>$default{"input".$in_num},
+                           -rows=>4,
+                           -columns=>55);
+
+    print "</div>
+           <br>\n";
+
+    ## Option to upload the matrix file from the client machine
+    print '<div class="form-group">
+           <label for="'.$file_id.'"> <b>Or</b> select a '.$in_type.' file to upload </label>
+           <br>';
+    print $query->filefield(-name=>$file_id,
+                            -id=>$file_id,
+                            -class=>"form-control-file",
+                            -default=>'',
+                            -size=>45,
+                            -maxlength=>200);
+    print '</div>
+           <br>';
+
+  ## Option to fetch sequence file from an URL
+  print '<div class="form-group">
+         <label for="'.$url_id.'"> <b>Or</b> type a URL of a '.$in_type.' file available on a Web server. </label>
+         <br>';
+  print  $query->textfield(-name=>$url_id,
+                           -id=>$url_id,
+                           -class=>'form-control',
+                           -placeholder=>'e.g. Galaxy URL',
+                           -default=>$default{'sequence_url'.$in_num},
+                           -size=>62);
+  print "</div>";
+
+
+  }
+}
 
 #################################
 ## Input choice.
@@ -557,7 +632,7 @@ sub MultiGetInputFile {
 			  "<p>File type=", &RSAT::util::hide_RSAT_path($file_type),
 	) if ($main::verbose >= 5);
 
-#    my $in_kb = sprintf("%d", length($in)/1000);
+  #    my $in_kb = sprintf("%d", length($in)/1000);
 
   } elsif ($query->param('input_file')) {
     $input_file = $query->param('input_file');
@@ -671,6 +746,179 @@ sub SequenceChoice {
   return($sequenceChoiceString);
 }
 
+###############################################
+## Multiple Sequence choice with dust
+## masking option
+sub MultiSequenceChoiceDust_bootstrap {
+  my (%args) = @_;
+  my $seq_title = $args{seq_title};
+  my $seq_num = $args{seq_num};
+  my $seq_type = $args{seq_type} || "fasta";
+  my $seq_format = $args{seq_format} || "fasta";
+  my $id_prefix  = $args{id_prefix} || "";
+
+  ### Fasta sequences
+  &MultiInputChoice_bootstrap($seq_title ,$seq_num,$seq_type,$seq_format,$id_prefix);
+
+  print '<div class="form-inline">';
+  print '<p><b>Mask sequences:</b></p>';
+  #### Mask with dust
+  my $dust_id = $id_prefix.'dust_seq'.$seq_num;
+  print  $query->checkbox( -name=>$dust_id,
+                           -id=>$dust_id,
+                           -class=>'form-check',
+                           -default=>$default{'dust_seq'.$seq_num},
+                           -label=>'');
+
+  print '<div class="form-group">
+         <label for="'.$dust_id.'">Mask low-complexity regions (run Dust program)</label>&nbsp
+         <a class="badge badge-primary iframe" href="help.formats.html" >Info</a>';
+
+  print '</div>';
+  #### Mask nucleotide characters
+  my $mask_id= $id_prefix.'mask'.$seq_num;
+  print '&nbsp&nbsp&nbsp&nbsp&nbsp
+        <div class="form-group">
+          <label for="'.$mask_id.'">Replace by N characters</label>&nbsp
+          <a class="badge badge-primary iframe" href="help.formats.html" >Info</a>';
+  print $query->popup_menu(-name=>$mask_id,
+                           -id=>$mask_id,
+                           -class=>'form-control',
+                           -Values=>['-select-','uppercase','lowercase','non-dna'],
+                           -default=>"-select-");
+  print '</div>';
+  print '</div>';
+
+
+}
+
+###############################################
+##
+sub MultiInputChoice_from_Organisms_bootstrap {
+  my (%args) = @_;
+  my $in_title = $args{in_title};
+  my $in_num = $args{in_num};
+  my $in_type = $args{in_type} || "input";
+  my $in_format = $args{in_format} || "text";
+  my $id_prefix  = $args{id_prefix} || "";
+  my $genome_menu = $args{genome_menu};
+
+  ### Genome pop menu
+  if ( defined($genome_menu) ) {
+    if ($genome_menu eq "UCSC") {
+      print "
+              <div class='form-group'>
+                <label for='ucsc_genome'><b>Organism</b></label>";
+      print &UCSCGenomePopUpSelectable("ucsc_genome".$in_num,"ucsc_genome".$in_num);
+      print "</div><br>";
+    } elsif ($genome_menu eq "local") {
+      print "
+              <div class='form-group'>";
+                &OrganismPopUp();
+      print "   </div><br>";
+    }
+  }
+
+  ###  Mulitple Choices for input data
+  &MultiInputChoice_bootstrap($in_title ,$in_num,$in_type,$in_format,$id_prefix);
+
+}
+
+#################################
+## Multiple Sequence choice # NOTE WSG To be REMOVED !
+sub MultiSequenceChoice_bootstrap {
+      my (%args) = @_;
+      my $seq_title = $args{seq_title};
+      my $seq_num = $args{seq_num};
+      my $sequence_file = "";
+      my @supported_input_formats =  ("fasta","bed");
+
+      #my $sequenceChoiceString = ""; # NOTE WSG. Maybe this will be useful for another input
+      #$sequenceChoiceString .=  "<B>$seq_title</B>";
+
+      if (($sequence_file = $query->param("sequence_file".$seq_num)) ||
+          ($sequence_file = $query->param("sequence_file"))) {
+
+        ## Sequence file is already on the server machine
+        ## (piped from a previous script)
+        $sequence_url = $sequence_file;
+        $sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+        print "<a href=$sequence_url> transferred from previous query<br></a>";
+        $sequence_format = $query->param(sequence_format);
+        print "<input type='hidden' id='sequence_format' name='sequence_format' value='".$sequence_format."'>\n";
+        print "<input type='hidden' name='sequence_file' value='".$sequence_file."'>\n";
+
+      } else {
+        print '
+        <div class="form-inline">
+          <div class="form-group">
+            <label for="seq_format'.$seq_num.'">Sequence Format</label>
+            <a class="badge badge-primary iframe" href="help.peak-motifs.html#io_format" >Info</a>';
+
+        #### sequence format
+        print $query->popup_menu(-id=>'seq_format'.$seq_num,
+                               -name=>'seq_format'.$seq_num,
+    			                     -Values=>[@supported_input_formats],
+                               -class=>'form-control',
+    			                     -default=>$default{"seq_format".$seq_num});
+
+
+        print '</div>';
+        #### Mask option
+        print '&nbsp&nbsp&nbsp&nbsp&nbsp
+              <div class="form-group">
+                <label for="mask'.$seq_num.'">Mask</label>&nbsp
+                <a class="badge badge-primary iframe" href="help.formats.html" >Info</a>';
+        print $query->popup_menu(-name=>'mask'.$seq_num,
+                               -class=>'form-control',
+        						           -Values=>['none','upper','lower','non-dna'],
+                               -default=>"none");
+        print "</div>
+              <br><br>
+              </div>
+              <div class='form-group'>";
+
+        ## Text area to enter the matrix
+        print $query->textarea(-id=>'sequence'.$seq_num,
+    			                   -name=>'sequence'.$seq_num,
+    			                   -class=>'form-control',
+    			                   -placeholder=>'Paste here your fasta peak sequences, or select a file to upload or type a URL to a file below (.gz compressed files supported) ',
+    			                   -default=>$default{"sequence".$seq_num},
+    			                   -rows=>4,
+    			                   -columns=>55);
+
+        print "</div>
+               <br>\n";
+
+        ## Option to upload the matrix file from the client machine
+        print '<div class="form-group">
+               <label for="uploaded_file'.$seq_num.'"> <b>Or</b> select a file to upload </label>
+               <br>';
+        print $query->filefield(-name=>'uploaded_file'.$seq_num,
+                                -id=>'uploaded_file'.$seq_num,
+    			                      -default=>'',
+    			                      -size=>45,
+    			                      -maxlength=>200);
+        print '</div>
+               <br>';
+
+        ## Option to fetch sequence file from an URL
+        print '<div class="form-group">
+               <label for="sequence_url'.$seq_num.'"> <b>Or</b> type a URL of a file available on a Web server. </label>
+               <br>';
+        print  $query->textfield(-name=>'sequence_url'.$seq_num,
+                                 -id=>'sequence_url'.$seq_num,
+                                 -class=>'form-control',
+                                 -placeholder=>'e.g. Galaxy URL',
+                                 -default=>$default{'sequence_url'.$seq_num},
+        		                     -size=>62);
+        print "</div>
+               <br>\n";
+      }
+
+
+
+    }
 
 
 #################################
@@ -699,8 +947,8 @@ sub MultiSequenceChoice {
 
   } else {
 
-#      &RSAT::message::Debug("default sequence",$default{sequence});
-#      &RSAT::message::Debug("default sequence_url",$default{sequence_url});
+    #      &RSAT::message::Debug("default sequence",$default{sequence});
+    #      &RSAT::message::Debug("default sequence_url",$default{sequence_url});
 
     ## text area to copy-paste the sequence
     $sequenceChoiceString .=  "&nbsp;"x5;
@@ -886,6 +1134,122 @@ sub GetSequenceFile {
 
 ########################
 ## MultiGetSequenceFile
+sub MultiGetSequenceFile_bootstrap {
+  my ($seq_num, $sequence_file, $required_opt, $id_prefix, $sequence_format) = @_ ;
+  $id_prefix = $id_prefix || "";
+  $sequence_format = $sequence_format || "fasta";
+
+  my $file_id = $id_prefix.'uploaded_file'.$seq_num;
+  my $url_id  = $id_prefix.'sequence_url'.$seq_num;
+  my $text_id = $id_prefix.'sequence'.$seq_num;
+
+
+  ### sequence file format
+  # my $sequence_format = "fasta";
+  # my $sequence_format = lc($query->param("sequence_format".$seq_num));
+  # unless ($accepted_input_seq{$sequence_format}) {
+  #  &cgiError("Invalid sequence format : '$sequence_format'.");
+  # }
+
+  ################################################################
+  ## Upload sequence file from the client
+
+  my $upload_file = $query->param($file_id);
+
+  if ($upload_file) {
+    if ($upload_file =~ /\.gz$/) {
+      $sequence_file .= ".gz";
+    }
+    $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+    open SEQ, ">$sequence_file" ||
+      &cgiError("Cannot store sequence file in temp dir.");
+    while (<$upload_file>) {
+      print SEQ;
+    }
+    close SEQ;
+
+    ### Fetch sequence from an URL
+  } elsif ($query->param($url_id) =~ /\S/) {
+    my $url = $query->param($url_id);
+    &RSAT::message::Info("Fetching sequences from URL ".$url) if ($ENV{rsat_echo} >= 1);
+    my $seq = "";
+    if (open SEQ, ">$sequence_file") {
+      $seq = get($url);
+      if ($seq =~ /\S/) {
+	       print SEQ $seq;
+	       close SEQ;
+      } else {
+	       &RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
+      }
+    }
+
+    ## Check sequence file
+    my $file_type = `file $sequence_file`;
+    if ($file_type =~ "gzip") {
+      &RSAT::message::TimeWarn("Uncompressing sequence file", $sequence_file);
+      my $cmd = "mv ".$sequence_file." ".$sequence_file.".gz";
+      $cmd .= " ; gunzip ".$sequence_file.".gz";
+      &doit($cmd);
+    }
+
+
+    &RSAT::message::Debug("Sequence file=", &RSAT::util::hide_RSAT_path($sequence_file),
+			  "<p>File type=", &RSAT::util::hide_RSAT_path($file_type),
+	  ) if ($main::verbose >= 5);
+
+ #  my $seq_kb = sprintf("%d", length($seq)/1000);
+
+    ### Read sequence from the textarea "sequence"
+  } elsif ($query->param($text_id) =~ /\S/) {
+    if (open SEQ, ">$sequence_file") {
+      print SEQ $query->param($text_id);
+      close SEQ;
+    }
+
+
+  } else {
+    if ($required_opt) { ## only returns return if this is a required option
+      &cgiError("The sequence box $seq_num should not be empty.");
+    } else {
+      $sequence_file = '';
+      $sequence_format = '';
+    }
+  }
+
+  ## Mask option of lower,upper, non-dna nucleotides
+  if($sequence_format eq "fasta"){
+    my $mask = "";
+    my $mask_id = $id_prefix.'mask'.$seq_num;
+    if ($query->param($mask_id)) {
+      unless ($query->param($mask_id) eq "-select-") {
+        $mask = $query->param($mask_id);
+        &CheckMask($mask);
+        my $converted_seq_file = $sequence_file.".masked";
+        my $convert_seq_command = $SCRIPTS."/convert-seq ";
+        $convert_seq_command .= " -i ".$sequence_file;
+        $convert_seq_command .= " -from  $sequence_format -to fasta ";
+        ##$convert_seq_command .= " -from  fasta -to fasta ";
+        $convert_seq_command .= " -mask ".$mask;
+        $convert_seq_command .= " -o ".$converted_seq_file;
+        ## Execute the sequence conversion
+        system($convert_seq_command);
+
+        print "<pre>", &RSAT::util::hide_RSAT_path($convert_seq_command), "</pre>\n" if ($ENV{rsat_echo} >= 0);
+        &DelayedRemoval($converted_seq_file);
+        $sequence_file = $converted_seq_file;
+      }
+    }
+  }
+
+
+  #### sequence file will be deleted
+  &DelayedRemoval($sequence_file);
+
+  return($sequence_file, $sequence_format);
+}
+
+
+## MultiGetSequenceFile
 sub MultiGetSequenceFile {
   my ($seq_num, $sequence_file, $required_opt) = @_ ;
 
@@ -893,9 +1257,9 @@ sub MultiGetSequenceFile {
   ### sequence file format
   my $sequence_format = "fasta";
   #    my $sequence_format = lc($query->param("sequence_format".$seq_num));
-#  unless ($accepted_input_seq{$sequence_format}) {
-#    &cgiError("Invalid sequence format : '$sequence_format'.");
-#  }
+  #  unless ($accepted_input_seq{$sequence_format}) {
+  #    &cgiError("Invalid sequence format : '$sequence_format'.");
+  #  }
 
   ################################################################
   ## Upload sequence file from the client
@@ -920,10 +1284,10 @@ sub MultiGetSequenceFile {
     if (open SEQ, ">$sequence_file") {
       $seq = get($url);
       if ($seq =~ /\S/) {
-	print SEQ $seq;
-	close SEQ;
+	       print SEQ $seq;
+	        close SEQ;
       } else {
-	&RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
+	       &RSAT::error::FatalError("No sequence could be downloaded from the URL ".$url);
       }
     }
 
@@ -941,7 +1305,7 @@ sub MultiGetSequenceFile {
 			  "<p>File type=", &RSAT::util::hide_RSAT_path($file_type),
 	) if ($main::verbose >= 5);
 
-#    my $seq_kb = sprintf("%d", length($seq)/1000);
+  #   my $seq_kb = sprintf("%d", length($seq)/1000);
 
     ### Read sequence from the textarea "sequence"
   } elsif ($query->param('sequence'.$seq_num) =~ /\S/) {
@@ -970,7 +1334,7 @@ sub MultiGetSequenceFile {
       my $convert_seq_command = $SCRIPTS."/convert-seq ";
       $convert_seq_command .= " -i ".$sequence_file;
       $convert_seq_command .= " -from  $sequence_format -to fasta ";
-##    $convert_seq_command .= " -from  fasta -to fasta ";
+      ##$convert_seq_command .= " -from  fasta -to fasta ";
       $convert_seq_command .= " -mask ".$mask;
       $convert_seq_command .= " -o ".$converted_seq_file;
       ## Execute the sequence conversion
@@ -1044,7 +1408,7 @@ sub UCSCGenomePopUpSelectable {
   my $genomes_file = $tmp_dir."/genomes-ucsc.tsv";
 
   ## Prepare select table
-  $popup .= "<select name='".$name."' id='".$id."' > ";
+  $popup .= "<select name='".$name."' id='".$id."' class='form-control'> ";
   $popup .= "<option value = 'none'> UCSC genome </option>\n";
 
   ## Check for existance of file
@@ -1164,7 +1528,7 @@ sub OrganismPopUpString{
     my $tip = ($bg_org == 1) ? "tip_bg" : "tip";
 
     my $organismPopup = "<div class='ui-widget' style='display:inline'>";
-    $organismPopup .=  "<B>Organism</B>&nbsp;";
+    $organismPopup .=  "<B>Organism</B><br>";
 
     if($default{organism} ne ""){
         $org_name = $default{organism};
@@ -1262,7 +1626,7 @@ sub OrganismPopUpString{
     else{
         $organismPopup .=  "<a href='supported-organisms.cgi' target='_blank'>  [List of organisms]</a>";
     }
-    $organismPopup .= " <div id='$tip' style='display:none'></div> <i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
+    $organismPopup .= " <div id='$tip' style='display:none'></div> <br><i>not seeing your favorite organism in the list ? Contact us to have it installed </i><br/>";
 
     return $organismPopup;
 }
@@ -1528,6 +1892,7 @@ sub TaxonPopUpString_old {
 
 
 
+
 ################################################################
 #Sequence boxes for matrix-quality
 
@@ -1576,36 +1941,7 @@ sub SeqBoxMQ {
 
 }
 
-sub GetSecondMatrixFile {
-  my ($matrix_file_2) = @_ ;
 
-  ################################################################
-  ## Upload sequence file from the client
-  my $upload_file_2 = $query->param('uploaded_file_matrix_2');
-  if ($upload_file_2) {
-
-    $type = $query->uploadInfo($upload_file_2)->{'Content-Type'};
-    open MAT, ">$matrix_file_2" ||
-      &cgiError("Cannot store matrix file in temp dir.");
-    while (<$upload_file>) {
-      print MAT;
-    }
-    close MAT;
-
-    ### Fetch sequence from an URL
-  } elsif ($query->param('matrix2') =~ /\S/) {
-    if (open MAT, ">$matrix_file_2") {
-       print MAT $query->param('matrix2');
-      close MAT;
-    }
-
-  }
-
-  #### sequence file will be deleted
-  &DelayedRemoval($matrix_file_2);
-
-  return($matrix_file_2);
-}
 ################################################################
 ## Display the options for input matrices
 ##
@@ -2057,6 +2393,55 @@ sub MotifSelection {
     my $select_id = ($args{more} == 1) ? 'db_choice2' : 'db_choice';
     my $select_ids = ($args{more} == 1) ? 'dbs_choice2' : 'dbs_choice';
     print "<table><tr><td style='padding-right:20px'><b>Input</b></td>";
+
+    print "<td align='top'>1 - Select a database in list:<br/>";
+    print " <select id='$select_ids' name='$select_ids' $multiple style='width:$width'><option></option>";
+    ## load the various databases that can be compared against
+    &DisplayMatrixDBchoice("mode"=>"radio");
+    print "</select>";
+    print "<td align='top'>2 - Select a collection in list:<br/>";
+    print " <select id='$select_id' name='$select_id' $multiple style='width:$width'><option></option>";
+    ## load the various databases that can be compared against
+    print '</select>';
+
+    print "</td>";
+    if($args{ids} == 1){
+        print "<td align='top'>";
+        print "3 - Select one or more matrix identifiers:<br/>";
+        print " <select id='db_id' style='width:300px' multiple='multiple'></select>";
+    }
+    print '<div style="clear:both;"></div>';
+    print "</td><td><div id='wait_ids' style='display:none'><image src='images/wait.gif' style='width:50px;height:50px' /></div></td></tr></table>";
+    if($args{more} != 1){
+        print '<br/><a class="inline" href="#matrix_descr""> View matrix descriptions & download full collections</a> <br/>';
+        print "<div style='display:none'><div id='matrix_descr'>";
+        &DisplayMatrixDBchoice("mode" => "list");
+        print "</div></div>";
+    }
+    print "</div>";
+
+    print '<div style="clear:both;"></div>';
+}
+
+###############################################################
+### Select a motif collection
+sub MotifSelection_bootstrap {
+    my (%args) = @_;
+    print '<link rel="stylesheet" href="css/select2.min.css" />';
+    print '<script src="js/select2.full.min.js"></script>';
+    print '<style>.select2-results__options {font-size:10px} </style>';
+    print '<script type="text/javascript" src="js/retrieve_matrix.js"></script>';
+
+    print '<style> input.select2-search__field { width: 90% !important; } </style>';
+    print '<div style="float:left;font-size:11px">';
+    if($args{ids} == 1){
+        print "<b>Or</b> Dynamic selection of motifs from the available collections</b> <img src='images/onebit_49.png' height='30' class='new'/><br/><span style='font-size:10px'>(select the collection and a dropdown menu will appear to select motifs)</span><br/><br/>";
+    }
+    my $width = ($args{ids} == 1) ? "200px" : "267px"; # NOTE WSG. The dimensions are hardcoded and controled here
+    my $multiple = ($args{mode} eq 'checkbox') ? 'multiple="multiple"' : '';
+    my $select_id = ($args{more} == 1) ? 'db_choice2' : 'db_choice';
+    my $select_ids = ($args{more} == 1) ? 'dbs_choice2' : 'dbs_choice';
+    print "<table><tr><td style='padding-right:10px'><b>Input</b></td>";
 
     print "<td align='top'>1 - Select a database in list:<br/>";
     print " <select id='$select_ids' name='$select_ids' $multiple style='width:$width'><option></option>";
