@@ -215,7 +215,7 @@
                          onclick="toggleMenu('13')" id="heading13">NGS - ChIP-seq</div>
                      <div id="menu13" class="menu_collapsible">
                          <a class="menu_item" href="peak-motifs_form.cgi" >peak-motifs</a>
-                         <a class="menu_item" href="peak-motifs2_form.cgi" >peak-motifs2 - <span class="badge" style="font-size: 1em">beta</span></a>
+                         <a class="menu_item" href="peak-motifs2_form.cgi" >peak-motifs2 - <span class="badge" style="font-size: 1em">dev</span></a>
                          <?php
 
     if($properties['ucsc_tools'] == '1') {
