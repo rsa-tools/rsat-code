@@ -131,7 +131,7 @@ print '
               <span class="fa-stack fa-lg" style="color: red;">
       							<i class="fa fa-exclamation-triangle fa-stack-1x"></i>
     					</span>
-              This is the peak-motifs2 development version.
+              <p style="color:red;display:inline;">This is the peak-motifs2 development version.</p>
               <br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
               <a href="peak-motifs_form.cgi" target="_blank"> You can use the previous version of <i>peak-motifs</i> here </a><br>
               <span class="fa-stack fa-lg">
