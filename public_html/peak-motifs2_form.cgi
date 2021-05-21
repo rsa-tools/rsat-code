@@ -128,6 +128,12 @@ print '
                 <img src="images/RSAT_logo.jpg" style="max-width:150px;max-height:60px;padding-bottom:10px" alt="RSAT server" border="0"></img>
                 peak-motifs2
               </h2>
+              <span class="fa-stack fa-lg" style="color: red;">
+      							<i class="fa fa-exclamation-triangle fa-stack-1x"></i>
+    					</span>
+              This is the peak-motifs2 development version.
+              <br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+              <a href="peak-motifs_form.cgi" target="_blank"> You can use the previous version of <i>peak-motifs</i> here </a><br>
               <span class="fa-stack fa-lg">
   						<i class="fa fa-info-circle fa-stack-1x"></i>
 					    </span>
@@ -183,7 +189,8 @@ print '
               </div>
 					</div>
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          <a href="peak-motifs_form.cgi" target="_blank"> You can use the previous version of <i>peak-motifs</i> here </a>
+
+          <br>
         </div>
 
  <!-- ################################################################ -->
