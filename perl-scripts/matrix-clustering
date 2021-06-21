@@ -2921,6 +2921,7 @@ sub Merge_matrices {
         if ($singleton_cluster == 0){
             my $max_num_child_process = ($max_sys_process/$num_process > $ENV{max_num_child_process}) ? $ENV{max_num_child_process} : $max_sys_process/$num_process;
             my $num_proc = (scalar(@folder_merged_matrices) < $max_num_child_process) ? $max_num_child_process/2 : $max_num_child_process;
+	    $num_proc = int($num_proc); # NOTE WSG. No decimals are allowed in ForkManager->new(), it skips the iterations if they are present.
             my $pm_child = Parallel::ForkManager->new($num_proc);
         LINKS_CHILD:
             foreach my $folder (@folder_merged_matrices) {
