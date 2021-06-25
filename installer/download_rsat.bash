@@ -1,4 +1,6 @@
-source 00_config.bash
+#!/usr/bin/env bash
+
+source $(dirname $0)/00_config.bash
 
 ################################################################
 ## Download RSAT distribution from the tar.gz archive at
@@ -24,7 +26,7 @@ cd ${RSAT}
 ## distribution.
 
 
-## Alternative: get RSAT from the git repository. 
+## Alternative: get RSAT from the git repository.
 ## THIS IS RESERVED TO RSAT DEVELOPING TEAM
 # cd ${RSAT_PARENT_PATH}
 # git config --global user.mail rsat@rsat-vm-${RSAT_RELEASE}

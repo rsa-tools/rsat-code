@@ -13,10 +13,10 @@ all: 	test_dir  \
 	r_version \
 	purge_seq \
 	crer_scan_python3 \
+	matrix_clustering \
 	ws_stub \
 	ws_stub_test \
 	ws_nostub_test \
-	matrix_clustering \
 	zip
 
 TEST_DIR=./install_tests

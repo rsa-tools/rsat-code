@@ -3,6 +3,15 @@
 ## Analysis Tools (RSAT; http://rsat.eu/) on an Ubuntu Linux system.
 ##
 
+set -e # failed on error
+
+
+if [ -z "${RSAT}" ] # set RSAT if not defined
+then
+    export RSAT=$(dirname $0)/..
+fi
+
+source ${RSAT}/RSAT_config.bashrc
 source ${RSAT}/RSAT_config.mk
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -32,8 +41,8 @@ echo "    RSAT_SERVER_NAME=${RSAT_SERVER_NAME}"
 ## installed in a subdirectory rsat of the home directory of the user,
 ## but this should be adapted depending on the local configuration.
 # export RSAT_PARENT_PATH=`pwd -P | xargs dirname | xargs direname`
-export RSAT=`pwd`
-echo "    RSAT=${RSAT}"
+#export RSAT=`pwd`
+#echo "    RSAT=${RSAT}"
 
 ## URL to download the RSAT distribution
 # export RSAT_RELEASE=2017-03-10 ## Version to be downloaded from the tar distribution
@@ -43,7 +52,7 @@ echo "    RSAT=${RSAT}"
 ## Configuration for the installation
 if [[ $PACKAGE_MANAGER == "apt-get" ]]; then
 
-  export OS_INSTALLER="sudo apt-get"
+  export OS_INSTALLER="sudo DEBIAN_FRONTEND=noninteractive apt-get"
   echo "    OS_INSTALLER=${OS_INSTALLER}"
   export INSTALLER_OPT="--quiet --assume-yes"
   echo "    INSTALLER_OPT=${INSTALLER_OPT}"
@@ -63,7 +72,7 @@ elif [[ $PACKAGE_MANAGER == "brew"  ]]; then
 else
   echo "; ERROR : The PACKAGE_MANAGER=${PACKAGE_MANAGER} is not supported."
   exit 1
-  
+
 fi
 
 ## alternative: INSTALLER=aptitude
