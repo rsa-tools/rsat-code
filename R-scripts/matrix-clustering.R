@@ -809,6 +809,13 @@ i <- sapply(1:length(clusters), function(nb) {
              
              node.name <- gsub("merge_level", "node", lev, perl = TRUE)
              level.info <- data.frame(t(intern.alignment[[node.name]]))
+
+             # NOTE WSG. All columns in DF need to be converted from type
+             # list to character, as this leads to error in write.table in
+             # R 4.1.0
+             level.info <- apply(level.info, 2,unlist) %>% 
+                as.data.frame()
+
              f <- paste(cluster.folder, "/levels_JSON_", central.motif, "_", node.name, "_dataframe.tab", sep = "")
              write.table(level.info, file = f, sep = "\t", quote = FALSE, row.names = TRUE, col.names = FALSE)
              create.dir.merge(node.name)
