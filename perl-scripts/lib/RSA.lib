@@ -153,6 +153,122 @@ sub close_menu_heading {
     return($string);
 }
 
+################################################################
+## Print the HTML dashboard template
+##
+sub PrintHtmlResultDashboardHeader {
+  my (%args) = @_;
+  my $header = "";
+  my $program = $args{program} || "RSAT";
+  #  my $title = $args{title} || $main::param{title} || "result";
+  my $title = $args{title} || "result";
+  #my $result_toc = $args{result_toc};
+
+  ## HTML Header and title
+  $header .=  "<html>\n";
+  $header .=  "<head>\n";
+  $header .=  " <title>".$program." ".$title."</title>\n";
+
+
+  ## Page styles NOTE WSG. I need to remove this chunk
+  #$header .=  "<style type='text/css'>\n";
+  #$header .=  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+  #$header .=  "</style>\n";
+  #  $header .=  "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
+
+  ## Refresh time if required
+  my $refresh_time = 0;
+  if ((defined($args{refresh_time}))
+  && (&IsNatural($args{refresh_time}))
+  && ($args{refresh_time} > 0)) {
+      $refresh_time = $args{refresh_time};
+      $header .= " <meta http-equiv='refresh' content='".$refresh_time."' />\n";
+  }
+
+  ## Meta information
+  $header .=  " <meta charset='utf-8'>\n";
+  $header .=  " <meta name='viewport' content='width=device-width, initial-scale=1'>\n";
+  #$header .=  "<meta http-equiv='x-ua-compatible' content='ie=edge'>"  ; NOTE WSG. Need to
+
+  # Style sheets
+  $header .=  " <!-- Font-awesome v.4.6.3 CSS -->\n";
+  $header .=  " <link rel='stylesheet' type='text/css' href='css/font-awesome-4.6.3.min.css' media='screen,projection,print'/>\n";
+  # JQuery v3.1.0
+  $header .=  " <!-- jQuery v3.1.0 -->\n";
+  $header .=  " <script type='text/javascript' src='js/jquery-3.1.0.min.js'></script>\n";
+  # Bootstrap v4.6.0
+  $header .=  " <!-- Bootstrap v4.6.0 -->\n";
+  $header .=  " <script type='text/javascript' src='js/bootstrap.bundle-4.6.0.min.js'></script>\n";
+  # DataTables
+  $header .=  " <link rel='stylesheet' href='css/dataTables.bootstrap4.min.css'>\n";
+  $header .=  " <script src='js/jquery.dataTables-1.10.24.min.js '></script>\n";
+  $header .=  " <script src='js/dataTables.bootstrap4.min.js'></script>\n";
+  # AdmintLTE v3
+  $header .= " <!-- AdminLTE CSS-->\n";
+  $header .= " <link rel='stylesheet' href='css/adminlte-3.1.0.min.css'/>\n";
+  $header .= " <!-- AdminLTE JS-->\n";
+  $header .= " <script src='js/adminlte-3.1.0.min.js'></script>\n";
+  $header .= "</head>\n";
+
+
+  ## Java scripts
+  #  $header .=  sorttable_script();
+  #  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
+
+
+  ## Start HTML body and add the navigation bar
+  $header .=  "<body class='hold-transition fixed layout-top-nav' >\n";
+  $header .=  " <!-- Wrapper of body-->\n";
+  $header .=  " <div class='wrapper'>\n\n";
+  $header .=  " <!-- Navbar -->\n";
+  $header .=  " <nav class='main-header navbar navbar-expand-md navbar-light navbar-white'>\n";
+  $header .=  "  <div class='container'>\n\n";
+
+  if (defined($ENV{rsat_www})) {
+    $header .= "<a class='navbar-brand' target='_top' href='".$ENV{rsat_www}."'>";
+  } else {
+    $header .= "<a class='navbar-brand' target='_top' href='http://www.rsat.eu'>";
+  }
+
+  $header .=  " <img src='images_html/RSAT_logo.png' alt='RSAT_logo' width='80' height='25' class='brand-image' style='opacity: .8'>\n";
+  $header .=  " <span class='brand-text font-weight-light'>".$program."</span>\n";
+  $header .=  "</a>\n\n";
+
+  $header .= "<button class='navbar-toggler order-1' type='button' data-toggle='collapse' data-target='#navbar-collapse' aria-controls='navbar-collapse' aria-expanded='false' aria-label='Toggle navigation'>\n";
+  $header .= " <span class='navbar-toggler-icon'></span>\n";
+  $header .= "</button>\n\n";
+
+  $header .= "<!-- Collect the nav links, forms, and other content for toggling -->\n";
+  $header .= "<div class='collapse navbar-collapse order-3' id='navbar-collapse'>\n";
+  $header .= "<ul class='nav navbar-nav' role='tablist'>\n\n";
+
+  $header .= " <li class='nav-item'>\n";
+  $header .= "  <a href='#tab-settings' class='nav-link' data-toggle='tab' role='tab' data-value='Settings' aria-selected='true' aria-controls='tab-settings'>\n";
+  $header .= "  <i class='fa fa-cogs'></i>Settings</a>\n";
+  $header .= " </li>\n";
+  $header .= " <li class='nav-item'>\n";
+  $header .= "   <a href='#tab-sequences' class='nav-link' data-toggle='tab' role='tab' data-value='Sequences' aria-selected='false' aria-controls='tab-sequences'>\n";
+  $header .= "   <i class='fas fa-chart-area'></i> Quality control </a>\n";
+  $header .= " </li>\n";
+  $header .= " <li class='nav-item'>\n";
+  $header .= "   <a href='#tab-motifs' class='nav-link' data-toggle='tab' role='tab' data-value='Motifs' aria-selected='false' aria-controls='tab-motifs'>\n";
+  $header .= "   <i class='fa fa-eye'> </i><span> Discovered motifs</span></a>\n";
+  $header .= " </li>\n";
+  $header .= "</ul><!-- /.navbar-nav -->\n";
+  $header .= "</div> <!-- /.navbar-collapse -->\n\n";
+
+  $header .= "</div>  <!-- /.container-->\n";
+  $header .= "</nav>\n\n";
+
+
+  # REMOVEEE NOTE WSG HERE
+  #$header .=  "<h3 style='text-align:center;'>Analysis: ";
+  #$header .=  $title." (";
+  #$header .=  &RSAT::util::DateAndTime();
+  #$header .=  ")</h3>\n";
+
+  return($header);
+}
 
 ################################################################
 ## Print the HTML header for a result file (include styles etc)
@@ -163,19 +279,19 @@ sub PrintHtmlResultHeader {
     #  my $title = $args{title} || $main::param{title} || "result";
     my $title = $args{title} || "result";
     my $result_toc = $args{result_toc};
-    
+
     ## HTML Header and title
     $header .=  "<html>\n";
     $header .=  "<head>\n";
     $header .=  "<title>".$program." ".$title."</title>\n";
-    
-    
+
+
     ## Page styles
     $header .=  "<style type='text/css'>\n";
     $header .=  `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
     $header .=  "</style>\n";
     #  $header .=  "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
-    
+
     ## Refresh time if required
     my $refresh_time = 0;
     if ((defined($args{refresh_time}))
@@ -184,14 +300,14 @@ sub PrintHtmlResultHeader {
         $refresh_time = $args{refresh_time};
         $header .= "<meta http-equiv='refresh' content='".$refresh_time."' />\n";
     }
-    
+
     ## Java scripts
     $header .=  sorttable_script();
     #  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
     #  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/lib/RSAT_menu.js");
     $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/RSAT_menu.js");
     $header .=  "</head>\n";
-    
+
     ## Start HTML body
     $header .=  "<body>\n";
     if (defined($ENV{rsat_www})) {
@@ -203,21 +319,21 @@ sub PrintHtmlResultHeader {
     $header .=  $title." (";
     $header .=  &RSAT::util::DateAndTime();
     $header .=  ")</h3>\n";
-    
+
     ## Reserve space for result TOC in the beginning of the form
     if ($refresh_time > 0) {
         $header .=  "<h3 style='text-align:center;color:red'>Status: running...</h3> <br/>\n";
         $header .= "<p style='text-align:center;color:green'>Results will progressively be displayed on this page <br/>\n";
         $header .= "<b>This page should be automatically refreshed every ".$refresh_time." seconds until this message disappears.</b></p>\n";
     }
-    
+
     if ($result_toc) {
         $header .=  "<div id='Menu_space'>\n";
         $header .=  "<div id='Menu_wait'>\n";
         $header .=  "</div>\n";
         $header .=  "</div>\n";
     }
-    
+
     return($header);
 }
 
@@ -248,14 +364,14 @@ sub PrintHtmlTable {
     unless ((defined($border)) && (&IsNatural($border))) {
         $border=0;
     }
-    
+
     ## Open the table
     $TABLE_OPENING="<table  class=\"sortable\"  cellspacing='1' cellpadding='3' border='$border'>";
     unless ($main::font{variable}) {
         $font_spec_start = "<TT>";
         $font_spec_end = "</TT>";
     }
-    
+
     ## If required, store a copy of the input text in a mirror file
     if ($mirror_file) {
         if (open MIRROR, ">$mirror_file") {
@@ -265,31 +381,31 @@ sub PrintHtmlTable {
             &Warning("Could not open the mirror file $mirror_file<P>\n");
         }
     }
-    
+
     print $out "<pre>";
     while (<$FILE>) {
         #### avoid exposing the full path through the web interface
         $_ = &RSAT::util::hide_RSAT_path($_);
         #    s|$ENV{RSAT}/(public_html/)*||g;
-        
+
         if ($autolink) {
             s|(http://[\w\d+\.\-\/\?\&\=\~]+)|<a href="$1">$1</a>|g;
             s|(ftp://[\w\d+\.\-\/\?\&\=\~]+)|<a href="$1">$1</a>|g;
             s|([\w\d\.\-]+\@[\w\d\.\-]+)|<a href=mailto:$1>$1</a>|g;
         }
-        
+
         if ($mirror) {
             print MIRROR $_
             unless ((/^;/) && !($mirror_verbose));
         }
-        
+
         if (/^\s*$/) { ## Empty rows
             print $out "<br>\n";
-            
+
         } elsif (/^;\s*WARNING/) {		# Warning
             push @warnings, $_;
-            
-            
+
+
         } elsif ((/^;/) ||
         (/^\-\-/) ||
         (/^\#/) ||
@@ -303,12 +419,12 @@ sub PrintHtmlTable {
             $last_line =~ s/^--//;
             print $out $last_line;
             $last_line = $_;
-            
+
         } elsif (!($table_opened)) { # first line of the table
             $table_opened = 1;
             $line_count = 0;
             print $out "</pre>\n\n", $TABLE_OPENING, "\n";
-            
+
             # print the header line
             chomp($last_line);
             $last_line =~ s/^;//;
@@ -318,14 +434,14 @@ sub PrintHtmlTable {
             $header_line = "<tr valign='top'>\n<th align='left' >".$font_spec_start.$last_line.$font_spec_end."</th>\n</tr>\n\n";
             print $out $header_line;
             $last_line = "";
-            
+
             ### print the first result line
             chomp;
             s|\t|$font_spec_end</td>\n<td>$font_spec_start|g;
             print $out "<tr valign='top'>\n<td>".$font_spec_start;
             print $out $_;
             print $out $font_spec_end."</td>\n</tr>\n\n";
-            
+
         } else {			# other line of the table
             $line_count++;
             if ($line_count%$chunk == 0) {
@@ -344,10 +460,10 @@ sub PrintHtmlTable {
         print $out "<pre>\n";
         $table_opened = 0;
     }
-    
+
     print $out $last_line;
     print $out "</pre>\n";
-    
+
     if ($mirror_file ne "") {
         close MIRROR;
     }
@@ -359,7 +475,7 @@ sub PrintHtmlTable {
 ## print the file name in red).
 sub PrintFileLink {
     my ($key, $file, $ref_path, $handler) = @_;
-    
+
     ## HTML output with links
     print ($handler "<tr>\n");
     print ($handler "<td>", $key, "</td>\n");
@@ -407,9 +523,9 @@ sub PrintFileLinks {
 ##  img_width
 sub IndexFiles {
     my (%args) = @_;
-    
+
     &RSAT::message::TimeWarn("Generating HTML index") if ($main::verbose >= 2);
-    
+
     ## Input files
     if (scalar(@infiles) >= 1) {
         print $html_index "<h2>Input files</h2>";
@@ -428,7 +544,7 @@ sub IndexFiles {
         }
         print $html_index "</table>\n";
     }
-    
+
     ## Output files
     if (scalar(@outfiles) >= 1) {
         print $html_index "<h2>Output files</h2>";
@@ -448,7 +564,7 @@ sub IndexFiles {
         }
         print $html_index "</table>\n";
     }
-    
+
     ## Graph files (link + display image) Note: Web browsers are
     ## generally able to display some image formats (jpg, gif, png) but
     ## not others (pdf, ps, eps).
@@ -466,7 +582,7 @@ sub IndexFiles {
             print $html_index "<tr>\n";
             print $html_index "<td>".$key."</td>";
             print $html_index "<td><a href='".$link."'>".$link."</a></td>";
-            
+
             print $html_index "<td><a href='".$link."'><img";
             if (&IsReal($args{img_width})) {
                 print $html_index " width='".$args{img_width}."'";
@@ -475,7 +591,7 @@ sub IndexFiles {
                 print $html_index " height='".$args{img_height}."'";
             }
             print $html_index " src='".$link."'></a></td>";
-            
+
             ## A special trick for sequence logos: check the reverse complement
             if ($file =~ /(_logo_m\d+)/) {
                 my $suffix = $1;
@@ -491,12 +607,12 @@ sub IndexFiles {
                 }
                 print $html_index " src='".$rc_link."'></a></td>";	  print $html_index "<td></td>";
             }
-            
+
             print $html_index "</tr>\n";
         }
         print $html_index "</table>\n";
     }
-    
+
     ## Directories
     if (scalar(@dirs) >= 1) {
         print $html_index "<h2>Directories</h2>";
@@ -516,7 +632,7 @@ sub IndexFiles {
         }
         print $html_index "</table>\n";
     }
-    
+
     &RSAT::message::TimeWarn("HTML index", $outfile{html_index}) if ($main::verbose >= 2);
 }
 ######################################################
@@ -529,7 +645,7 @@ sub ExpectedFreqFile {
 # Read expected occurrences and variance from a calibration file
 sub ReadCalibration {
     my ($calibration_file, $sum_rc) = @_;
-    
+
     my ($cal) = &OpenInputFile($calibration_file);
     my $l=0;
     while (<$cal>) {
@@ -547,7 +663,7 @@ sub ReadCalibration {
 	if ($pattern_seq =~ /(\S+)\|/) {
 	    $pattern_seq = $1;
 	}
-	
+
 	## Check if the second field contains the ID
 	if ($fields[0] =~ /(\S+)\|/) {
 	    $pattern_id = shift(@fields);
@@ -563,7 +679,7 @@ sub ReadCalibration {
 	&RSAT::error::FatalError("Invalid expected variance") unless ((&IsReal($exp_var)) && ($exp_ocvar >= 0));
 	$patterns{$pattern_seq}->{exp_var} = $exp_var;
 
-	warn join("\t", "; calibration", $pattern_seq, 
+	warn join("\t", "; calibration", $pattern_seq,
 		  $patterns{$pattern_seq}->{exp_occ},
 		  $patterns{$pattern_seq}->{exp_var}), "\n" if ($main::verbose >= 5);
 
@@ -571,7 +687,7 @@ sub ReadCalibration {
     close $cal if ($calibration_file);
 
     #### check if reverse complements were included in the expected freq file;
-    #### if not, infer them from the direct strand 
+    #### if not, infer them from the direct strand
     foreach my $pattern_seq (sort keys %patterns) {
   	my $rc = lc(&SmartRC($pattern_seq));
   	if (($patterns{$rc}->{exp_occ} <= 0) &&
@@ -588,7 +704,7 @@ sub ReadCalibration {
 ################################################################
 ## Read pattern frequencies
 ##
-## Usage: 
+## Usage:
 ##   my ($file_type, %patterns) = &ReadPatternFrequencies($pattern_freq_file, $sum_rc, $rescale_freq);
 ##
 sub ReadPatternFrequencies {
@@ -648,7 +764,7 @@ sub ReadPatternFrequencies {
 
   ################################################################
   #### Check if reverse complements were included in the fequency file;
-  #### if not, infer them from the direct strand 
+  #### if not, infer them from the direct strand
   if ($file_type eq "2str") {
     foreach my $pattern_seq (sort keys %patterns) {
       my $rc = lc(&SmartRC($pattern_seq));
@@ -705,7 +821,7 @@ sub ReadExpectedFrequencies {
 	$l++;
 	chomp();
 	next if (/^;/);
-	next if (/^\#/); 
+	next if (/^\#/);
 	next unless (/\S/);
 
 	my @fields =  split /\s+/;
@@ -749,7 +865,7 @@ sub ReadExpectedFrequencies {
 
 
     #### check if reverse complements were included in the expected freq file;
-    #### if not, infer them from the direct strand 
+    #### if not, infer them from the direct strand
     foreach my $pattern_seq (sort keys %patterns) {
   	my $rc = lc(&SmartRC($pattern_seq));
   	if ((!defined($patterns{$rc}->{exp_freq})) &&
@@ -810,7 +926,7 @@ sub SumExpectedFrequencies {
       #### palindromic sequence
       $freq_2str{$pattern_seq} =   $patterns{$pattern_seq}->{exp_freq};
     } else {
-      #### non-palindromic sequence : the expected frequency is the sum of the sequence + its reverse complement 
+      #### non-palindromic sequence : the expected frequency is the sum of the sequence + its reverse complement
       $freq_2str{$pattern_seq} =  $freq_2str{$rc} = $patterns{$rc}->{exp_freq} + $patterns{$pattern_seq}->{exp_freq};
     }
     &RSAT::message::Debug($pattern_seq, $patterns{$pattern_seq}->{exp_freq}, $freq_2str{$pattern_seq},
@@ -872,10 +988,10 @@ sub CalcConditionalProbabilities {
 	$word = lc($subword.$letters[0]);
 	$cum_letter_freq{$subword}[0] = $expected_freq{$word};
 	$cum_letter_freq{$subword}[0]/=$subword_freq{$subword} if $expected_freq{$word};
-# 	warn (join ("\t", 
-# 		    $subword, 
+# 	warn (join ("\t",
+# 		    $subword,
 # 		    $subword_freq{$subword},
-# 		    $word, 
+# 		    $word,
 # 		    $expected_freq{$word},
 # 		    $cum_letter_freq{$subword}[0]
 # 		    ), "\n");
@@ -883,10 +999,10 @@ sub CalcConditionalProbabilities {
 	    $word = lc($subword.$letters[$l]);
 	    $cum_letter_freq{$subword}[$l] = $cum_letter_freq{$subword}[$l-1];
 	    $cum_letter_freq{$subword}[$l] += $expected_freq{$word}/$subword_freq{$subword} if $expected_freq{$word};
-#	    warn (join ("\t", 
-#			$subword, 
+#	    warn (join ("\t",
+#			$subword,
 #			$subword_freq{$subword},
-#			$word, 
+#			$word,
 #			$expected_freq{$word},
 #			$cum_letter_freq{$subword}[$l]
 #			), "\n");
@@ -902,7 +1018,7 @@ sub UpdateCounterFile {
 }
 
 ################################################################
-### store info into a log file in a conveninent way for 
+### store info into a log file in a conveninent way for
 ### subsequent login statistics
 ### Usage:
 ###     &UpdateLogFile();
@@ -979,12 +1095,12 @@ sub CheckTaxon {
 ####
 #### Usage
 #### -----
-#### Automatic selection of genome and feature file : 
+#### Automatic selection of genome and feature file :
 ####    &CheckOrganism($organism_name);
 ####
 #### Manual specification of input files :
-#### &CheckOrganism($organism_name, 
-####                $annotation_table, 
+#### &CheckOrganism($organism_name,
+####                $annotation_table,
 ####                $input_sequence_format);
 sub CheckOrganism {
   &RSAT::OrganismManager::CheckOrganism(@_);
@@ -1056,8 +1172,8 @@ sub ReadClasses_quick {
 #    $member_name = &trim($member_name) if ($args{trim});
 #    $member_name = &trim(uc($fields[$member_col_index]));
 #     unless ($member_name =~ /\S/) {
-#       &RSAT::message::Warning("Error class file", 
-# 			      $class_file,  "line", 
+#       &RSAT::message::Warning("Error class file",
+# 			      $class_file,  "line",
 # 			      $l, "member not specified") if ($main::verbose >= 1);
 #       next;
 #     }
@@ -1066,8 +1182,8 @@ sub ReadClasses_quick {
 #    $class_name = $fields[$class_col_index];
 #    $class_name = &trim($class_name) if ($args{trim});
 #     unless ($class_name) {
-#       &RSAT::message::Warning("Error class file", 
-# 			      $class_file,  "line", 
+#       &RSAT::message::Warning("Error class file",
+# 			      $class_file,  "line",
 # 			      $l, "class not specified") if ($main::verbose >= 1);
 #       next;
 #     }
@@ -1111,7 +1227,7 @@ sub ReadClasses_quick {
 ## ############################################################
 ## Read a file with class composition (groups, classes, sets).
 ##
-## The file is supposed to contain at least two columns 
+## The file is supposed to contain at least two columns
 ## - element (e.g. a gene ID)
 ## - class (e.g. a functional class, or a regulon, or a clustering result)
 ## additional columns are allowed, but they are ignored.
@@ -1129,8 +1245,8 @@ sub ReadClasses_quick {
 ## allow to get the corresponding IDs from the RSAT database. The next
 ## argument (organism ) must be specified in this case.
 ##
-## 3) organism: only necessary if the option get_orf_idd is active. 
-## 
+## 3) organism: only necessary if the option get_orf_idd is active.
+##
 ## 4) no_subst: by default, probematic characters (white spaces,
 ##    semicolons, parentheses) are converted to a dot (for
 ##    compatibility with the folder creation in
@@ -1209,8 +1325,8 @@ sub ReadClasses {
       ### class member
       $member_name = &trim(uc($fields[$member_column -1]));
       unless ($member_name =~ /\S/) {
-	&RSAT::message::Warning("Error class file", 
-				$class_file,  "line", 
+	&RSAT::message::Warning("Error class file",
+				$class_file,  "line",
 				$l, "member not specified") if ($main::verbose >= 1);
 	next;
       }
@@ -1218,8 +1334,8 @@ sub ReadClasses {
       ### class name
       $class_name = &trim($fields[$class_column - 1]);
       unless ($class_name) {
-	&RSAT::message::Warning("Error class file", 
-				$class_file,  "line", 
+	&RSAT::message::Warning("Error class file",
+				$class_file,  "line",
 				$l, "class not specified") if ($main::verbose >= 1);
 	next;
       }
@@ -1248,7 +1364,7 @@ sub ReadClasses {
 	if ($feature) {
 	  $member_key = $feature->get_attribute("id");
 	} else {
-	  &RSAT::message::Warning(join ("\t", "organism", $organism->get_attribute("name"), 
+	  &RSAT::message::Warning(join ("\t", "organism", $organism->get_attribute("name"),
 					"has no feature with name", $member_name));
 	}
 	#	    $member_key = $orf_id{$member_name};
@@ -1261,8 +1377,8 @@ sub ReadClasses {
 	  ### score
 	  local $score = &trim($fields[$score_column - 1]);
 	  unless (&IsReal($score)) {
-	    &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
-					  "class file", $class_file,  
+	    &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).",
+					  "class file", $class_file,
 					  "line", $l,
 					  "member", $member_name,
 					  "class", $class_name,
@@ -1300,6 +1416,10 @@ sub one_command {
 }
 
 sub PrintArguments {
+  &RSAT::util::PrintArguments(@_);
+}
+
+sub CreateStringArguments {
   &RSAT::util::PrintArguments(@_);
 }
 
@@ -1405,6 +1525,3 @@ sub CheckSubDir {
 
 #### end of the library #####
 1; # return true
-
-
-
