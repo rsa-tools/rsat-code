@@ -760,6 +760,7 @@ function setDemo1(demo_url){
     demo.value = descr;
     fastasequence_url1.value = demo_url;
     $("#title").val("Oct4 Chen2008 sites from Jaspar");
+    $("#seq_format1").val("fasta");
     max_seq_len.value = "";
     top_sequences.value = "";
     $("#visualize_galaxy").prop("checked", true);
@@ -801,6 +802,7 @@ function setDemo2(demo_url,ctrl_url){
     fastasequence_url1.value = demo_url;
     fastasequence_url2.value = ctrl_url;
     $("#title").val("p300 heart versus limb Blow2010");
+    $("#seq_format1").val("fasta");
     max_seq_len.value = "";
     $("#position-analysis").prop("checked",false);
     $("#oligo-analysis").prop("checked",true);

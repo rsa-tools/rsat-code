@@ -375,14 +375,14 @@ package main;
     &SetOutFileNames();
   }
 
-  &SynthesisSequenceComposition() if ($progressive_synthesis);
+  &SynthesisSequenceQC() if ($progressive_synthesis);
 
   ## Reference motifs
   if (defined($main::infile{ref_motifs})) {
-    &RefMotifs() if ($task{ref_motifs});
+    #&RefMotifs() if ($task{ref_motifs}); NOTE WSG. Need to update with the report. Temporal comment line
   }
 
-  &SynthesisRefMotifs() if ($progressive_synthesis);
+  #&SynthesisRefMotifs() if ($progressive_synthesis); NOTE WSG. Need to update with the report. Temporal comment line
 
   ## Run motif discovery algorithms
   if ($task{disco}) {
@@ -416,7 +416,7 @@ package main;
   &ClusterMotifs() if ($task{cluster_motifs});
 
   ## HTML synthesis by algorithm
-  &SynthesisMotifsByAlgo() if ($progressive_synthesis);
+  #&SynthesisMotifsByAlgo() if ($progressive_synthesis); NOTE WSG. Need to update with the report. Temporal comment line
 
   ## Check the number of discovered motifs before running further analyses
   &ReadMotifTable() unless (scalar(@motif_ids) > 1); ## Don't re-read the table if already done
@@ -429,11 +429,11 @@ package main;
 
     &ScanSequences() if ($task{scan});
 
-    &SynthesisByMotif() if ($progressive_synthesis);
+    #&SynthesisByMotif() if ($progressive_synthesis);    NOTE WSG. Need to update with the report. Temporal comment line
 
-    &SynthesisMergedSites() if ($progressive_synthesis);
+    #&SynthesisMergedSites() if ($progressive_synthesis);NOTE WSG. Need to update with the report. Temporal comment line
 
-    &SynthesisMotifCompa() if ($progressive_synthesis);
+    #&SynthesisMotifCompa() if ($progressive_synthesis);NOTE WSG. Need to update with the report. Temporal comment line
   } else {
     &RSAT::message::Warning("Not a single discovered motif. Reducing the order of the Markov model may increase sensitivity.");
   }
@@ -445,7 +445,7 @@ package main;
   }
 
   ## Report parameters and files
-  &SynthesisParamsAndFiles() if ($progressive_synthesis);
+  #&SynthesisParamsAndFiles() if ($progressive_synthesis); NOTE WSG. Need to update with the report. Temporal comment line
 
   &CleanSequences() if ($task{clean_seq});
 
@@ -455,12 +455,12 @@ package main;
   ## onclude the HTML synthesis file.
   &Archive(1) if ($task{archive});
 
-  &CloseSynthesis() if ($progressive_synthesis); ## Needs to be closed before re-building the report
+  #&CloseSynthesis() if ($progressive_synthesis); ## Needs to be closed before re-building the report # NOTE WSG. Need to update with the report. Temporal comment line
 
-  ## For the final synthesis, re-write the whole synthesis file
+  ## For the final synthesis, re-write the whole synthesis file # NOTE WSG. A new file re-writes the original
   if ($task{synthesis}) {
     $progressive_synthesis = 0;
-    &Synthesis();
+    #&Synthesis(); #NOTE WSG. Need to update with the report. Temporal comment line
   }
 
   ## Will create a separate html file
@@ -3441,16 +3441,64 @@ sub OpenSynthesis {
   my $cmd = "rsync -ruptl ";
   $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/arrow*.gif ";
   $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/UCSC_icon.jpg ";
+  $cmd .= $ENV{RSAT}."/public_html/images/RSAT_logo.png ";
   $cmd .= " ".$main::dir{images_html};
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
+
+  ## Create a directory to store JS + CSS scripts
+  ## NOTE WSG. Should and option be added to prevent this
+  ## while running in a server?
+  my @js_files = (
+                      "js/jquery-3.1.0.min.js",
+                      "js/bootstrap.bundle-4.6.0.min.js ",
+                      "js/jquery.dataTables-1.10.24.min.js ",
+                      "js/dataTables.bootstrap4.min.js",
+                      "js/adminlte-3.1.0.min.js",
+                      "js/bootstrap.bundle.min.js.map",
+                      "js/adminlte.min.js.map"
+                      );
+  my @css_files = (
+                      "css/font-awesome-4.6.3.min.css",
+                      "css/dataTables.bootstrap4.min.css",
+                      "css/adminlte-3.1.0.min.css",
+                      "css/adminlte.min.css.map"
+  );
+
+  &RSAT::message::Debug("Copying Javascript libraries to output directory") if ($main::verbose >= 3);
+  foreach my $file (@js_files){
+    &RSAT::message::Debug("Copying Javascript file",$file,"to output directory") if ($main::verbose >= 3);
+    my $js_sync_cmd = "rsync -ruptl";
+    $js_sync_cmd .= " ".$ENV{RSAT}."/public_html/".$file;
+    $js_sync_cmd .= " ".$dir{output}."/js/";
+    &doit($js_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    #$js_base = $dir{output}."/js"; NOTE WSG. Remove? Why do I need to have a variable with the js dir?
+  }
+
+  &RSAT::message::Debug("Copying CSS libraries to output directory") if ($main::verbose >= 3);
+  foreach my $file (@css_files){
+    &RSAT::message::Debug("Copying CSS file",$file,"to output directory") if ($main::verbose >= 3);
+    my $js_sync_cmd = "rsync -ruptl";
+    $js_sync_cmd .= " ".$ENV{RSAT}."/public_html/".$file;
+    $js_sync_cmd .= " ".$dir{output}."/css/";
+    &doit($js_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+  }
+
+  &RSAT::message::Debug("Copying Webfonts files to output directory") if ($main::verbose >= 3);
+  my $js_sync_cmd = "rsync -ruptl";
+  $js_sync_cmd .= " ".$ENV{RSAT}."/public_html/webfonts/*";
+  $js_sync_cmd .= " ".$dir{output}."/webfonts/";
+  &doit($js_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+  &RSAT::message::Info("Javascript, CSS and Webfont libraries copied to output directories") if ($main::verbose >= 3);
+
+
 
   ## Open the HTML file
   $syn = &OpenOutputFile($main::outfile{synthesis});
   $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
-  print $syn &PrintHtmlResultHeader(program=>"peak-motifs", "title"=>$main::param{title}, "result_toc"=>1, refresh_time=>$refresh_time);
+  print $syn &PrintHtmlResultDashboardHeader(program=>"peak-motifs2", "title"=>$main::param{title}, refresh_time=>$refresh_time);
 
-  &ReportCommand();
+  &ReportSettings();
 }
 
 
@@ -3511,10 +3559,384 @@ sub SynthesisMergedSites {
   }
 }
 
+################################################################
+## Report all the settings and parameters from the Web input form
+## and fromt he command-line. # NOTE WSG Need to come back
+sub ReportSettings {
+
+  # Define hash for algorithms # NOTE WSG. There are more algorithms at @extra_discos. Why?
+  my %algo_param = (
+    oligos      => "                            <span class='badge bg-blue'>oligo-analysis</span>\n",
+    positions   => "                            <span class='badge bg-green'>position-analysis</span>\n",
+    local_words => "                            <span class='badge bg-purple'>local-word-analysis</span>\n",
+    dyads       => "                            <span class='badge bg-red'>dyad-analysis</span>\n"
+  );
+
+  my $settings = "<!--  Content Wrapper. Contains page content -->\n";
+  $settings .= "<div class='content-wrapper'>\n";
+  $settings .= "  <!-- Main header here if needed -->\n";
+  $settings .= "  <!-- Main content -->\n";
+  $settings .= "  <div class='content'>\n";
+  $settings .= "    <div class='container'>\n";
+  $settings .= "      <div class='container-fluid'>\n\n";
+  $settings .= "        <!-- All tab content -->\n";
+  $settings .= "        <div class='tab-content' data-tabsetid='2260'>\n\n";
+  $settings .= "          <!-- Tab content 1 -->\n";
+  $settings .= "          <div class='tab-pane active' data-value='Settings' data-icon-class='fa fa-line-chart' id='tab-settings'>\n";
+  $settings .= "            <div><!-- Indentation div -->\n";
+  $settings .= "              <div class='row'>\n\n";
+  $settings .= "                <div class='col-md-7'>\n";
+  $settings .= "                  <!-- Card 1 -->\n";
+  $settings .= "                  <div class='card card-success card-outline'>\n";
+  $settings .= "                    <div class='card-header'>\n";
+  $settings .= "                      <h3 class='card-title m-0'> Analysis description </h3> &nbsp;\n";
+  $settings .= "                      <i class='fa fa-info-circle'> </i>\n";
+  $settings .= "                      <div class='card-tools pull-right'>\n";
+  $settings .= "                        <button type='button' class='btn btn-tool' data-card-widget='collapse'>\n";
+  $settings .= "                          <i class='fa fa-minus'></i>\n";
+  $settings .= "                        </button>\n";
+  $settings .= "                      </div><!-- /.card-tools -->\n";
+  $settings .= "                    </div> <!-- /. card-header -->\n";
+  $settings .= "                    <div class='card-body table-responsive p-0'>\n";
+  $settings .= "                      <table class='table table-hover' id='settings-detail'>\n";
+  $settings .= "                        <tbody>\n";
+  $settings .= "                          <tr>\n";
+  $settings .= "                            <td><b>Title:</b></td>\n";
+  $settings .= "                            <td> ".$main::param{title}."</td>\n";
+  $settings .= "                            <td></td>\n";
+  $settings .= "                            <td></td>\n";
+  $settings .= "                          </tr>\n";
+  $settings .= "                          <tr>\n";
+  $settings .= "                            <td><b>Status:</b></td>\n";
+  $settings .= "                            <td> Running...\n";
+  $settings .= "                              <div class='progress'>\n";
+  $settings .= "                                <div class='progress-bar progress-bar-striped progress-bar-animated' role='progressbar' aria-valuenow='100' aria-valuemin='0' aria-valuemax='100' style='width: 100%'></div>\n";
+  $settings .= "                              </div>\n";
+  $settings .= "                            </td>\n";
+  $settings .= "                            <td></td>\n";
+  $settings .= "                            <td></td>\n";
+  $settings .= "                          </tr>\n";
+  $settings .= "                          <tr>\n";
+  $settings .= "                            <td><b>Time start:</b></td>\n";
+  $settings .= "                            <td> ".&RSAT::util::DateAndTime()."</td>\n";
+  $settings .= "                            <td><b>Time end:</b></td>\n";
+  $settings .= "                            <td>-</td>\n";
+  $settings .= "                          </tr>\n";
+  $settings .= "                          <tr>\n";
+  $settings .= "                            <td><b>peak-motifs2 version:</b></td>\n";
+  $settings .= "                            <td> 0.0.1</td>\n";
+  $settings .= "                            <td><b>RSAT code version:</b></td>\n";
+  $settings .= "                            <td>Jan 14 00:30:02 2021</td>\n";
+  $settings .= "                          </tr>\n";
+  $settings .= "                        </tbody>\n";
+  $settings .= "                      </table>\n";
+  $settings .= "                    </div> <!-- Close /.box-body -->\n";
+  $settings .= "                  </div> <!-- Close /.box- -->\n";
+  $settings .= "                </div> <!-- Close /.col-md-8 -->\n\n";
+  $settings .= "                <div class='col-md-5'>\n";
+  $settings .= "                  <!-- Card 2 -->\n";
+  $settings .= "                  <div class='card card-success card-outline'>\n";
+  $settings .= "                    <div class='card-header'>\n";
+  $settings .= "                      <h3 class='card-title m-0'> Download results </h3> &nbsp;\n";
+  $settings .= "                      <i class='fa fa-info-circle'> </i>\n";
+  $settings .= "                      <div class='card-tools pull-right'>\n";
+  $settings .= "                        <button type='button' class='btn btn-tool' data-card-widget='collapse'>\n";
+  $settings .= "                          <i class='fa fa-minus'></i>\n";
+  $settings .= "                        </button>\n";
+  $settings .= "                      </div><!-- /.card-tools -->\n";
+  $settings .= "                    </div> <!-- /. card-header -->\n";
+  $settings .= "                    <div class='card-body table-responsive p-0'>\n";
+  $settings .= "                      <table class='table table-hover' id='settings-detail'>\n";
+  $settings .= "                        <tbody>\n";
+  $settings .= "                          <tr>\n";
+  $settings .= "                            <td><b>Download all results:</b></td>\n";
+  $settings .= "                            <td>\n";
+  $settings .= "                              <a href='peak-motifs_archive.zip' download> <button type='button' class='btn btn-info disabled'><i class='fa fa-download'> </i> Zip file</button> </a>\n";
+  $settings .= "                            </td>\n";
+  $settings .= "                          </tr>\n";
+  $settings .= "                          <tr>\n";
+  $settings .= "                            <td><b>Download all matrices:</b></td>\n";
+  $settings .= "                            <td>\n";
+  $settings .= "                              <a href='results/discovered_motifs/peak-motifs_motifs_discovered.tf' download> <button type='button' class='btn btn-info disabled'><i class='fa fa-download'> </i> Transfac file</button> </a>\n";
+  $settings .= "                            </td>\n";
+  $settings .= "                          </tr>\n";
+  $settings .= "                        </tbody>\n";
+  $settings .= "                      </table>\n";
+  $settings .= "                    </div> <!-- Close /.box-body -->\n";
+  $settings .= "                  </div> <!-- Close /.box- -->\n";
+  $settings .= "                </div> <!-- Close /.col-md-4 -->\n\n";
+  $settings .= "              </div> <!-- Close /. row -->\n";
+  $settings .= "              <!-- Card 3 -->\n";
+  $settings .= "              <div class='card card-success card-outline'>\n";
+  $settings .= "                <div class='card-header'>\n";
+  $settings .= "                  <h3 class='card-title'> Input data </h3> &nbsp; <i class='fa fa-info-circle'> </i>\n";
+  $settings .= "                  <div class='card-tools pull-right'>\n";
+  $settings .= "                    <button type='button' class='btn btn-tool' data-card-widget='collapse'>\n";
+  $settings .= "                      <i class='fa fa-minus'></i>\n";
+  $settings .= "                    </button>\n";
+  $settings .= "                  </div><!-- /.card-tools -->\n";
+  $settings .= "                </div>    <!-- /.card-header -->\n\n";
+  $settings .= "                <div class='card-body table-responsive p-0'> <!-- Box -->\n";
+  $settings .= "                  <table class='table table-hover' id='settings-input'> <!-- Table -->\n";
+  $settings .= "                    <tbody>\n";
+  $settings .= "                      <tr>\n";
+  $settings .= "                        <td><b>Peak sequences:</b></td>\n";
+  $settings .= "                          <td>\n";
+  $settings .= "                            <i>peak-motifs_test_seqcoord.bed</i> <br>\n";
+  $settings .= "                            <a href='data/sequences/peak-motifs_test_seqcoord.bed' target='_blank'><button type='button' class='btn btn-warning'><i class='fa fa-eye'> </i> View File</button> </a>\n";
+  $settings .= "                            <a href='data/sequences/peak-motifs_test_seqcoord.bed' download> <button type='button' class='btn btn-info'><i class='fa fa-download'> </i> Download File</button> </a>\n";
+  $settings .= "                          </td>\n";
+  $settings .= "                            <td><b>Sequence format:</b></td>\n";
+  $settings .= "                            <td><span class='badge bg-gray'>".$main::in_format{test_seq}."</span></td>\n";
+  $settings .= "                      </tr>\n";
+
+  if ($main::in_format{test_seq} eq "bed"){
+    $settings .= "                      <tr>\n";
+    $settings .= "                        <td><b>Retrieved genomic sequences from:</b></td>\n";
+    $settings .= "                        <td><span class='badge bg-gray'>".$main::org_source."</span></td>\n";
+    $settings .= "                        <td><b>Organism:</b></td>\n";
+    $settings .= "                        <td>".$main::org."</td>\n";
+    $settings .= "                      </tr>\n";
+    $settings .= "                      <tr>\n";
+  }
+
+  if($main::infile{ctrl_seq}){
+    $settings .= "                        <td><b>Contrasting sequences:</b></td>\n";
+    $settings .= "                        <td>\n";
+    $settings .= "                          <i>peak-motifs_test_seqcoord2.bed</i> <br>\n";
+    $settings .= "                          <a href='data/sequences/peak-motifs_test_seqcoord.bed' target='_blank'><button type='button' class='btn btn-warning'><i class='fa fa-eye'> </i> View File</button> </a>\n";
+    $settings .= "                          <a href='data/sequences/peak-motifs_test_seqcoord.bed' download> <button type='button' class='btn btn-info'><i class='fa fa-download'> </i> Download File</button> </a>\n";
+    $settings .= "                        </td>\n";
+    $settings .= "                        <td><b>Sequence format:</b></td>\n";
+    $settings .= "                        <td><span class='badge bg-gray'>bed</span></td>\n";
+    $settings .= "                        </tr>\n";
+
+    if ($main::in_format{ctrl_seq} eq "bed"){
+      $settings .= "                        <tr>\n";
+      $settings .= "                          <td><b>Retrieved genomic sequences from:</b></td>\n";
+      $settings .= "                          <td><span class='badge bg-gray'>UCSC organisms</span></td>\n";
+      $settings .= "                          <td><b>Organism:</b></td>\n";
+      $settings .= "                          <td>mm9</td>\n";
+      $settings .= "                        </tr>\n";
+    }
+
+  }
+
+  # Add motif database params
+  if ( scalar @main::motif_databases > 0){
+    for (my $i = 0; $i < scalar @main::motif_databases ; $i++) {
+      $settings .= "                        <tr>\n";
+      $settings .= "                          <td><b>Reference motif collections:</b></td>\n";
+      $settings .= "                          <td>\n";
+      $settings .= "                            <i>".$main::motif_databases[$i]."</i> <br>\n";
+      $settings .= "                            <a href='data/".$main::infile{"motif_db_".$main::motif_databases[$i]}."' target='_blank'><button type='button' class='btn btn-warning'><i class='fa fa-eye'> </i> View File</button> </a>\n";
+      $settings .= "                            <a href='data/".$main::infile{"motif_db_".$main::motif_databases[$i]}."' download> <button type='button' class='btn btn-info'><i class='fa fa-download'> </i> Download File</button> </a>\n";
+      $settings .= "                          </td>\n";
+      $settings .= "                          <td></td>\n";
+      $settings .= "                          <td></td>\n";
+      $settings .= "                        </tr>\n";
+    }
+  }
+
+
+  $settings .= "                      </tbody>\n";
+  $settings .= "                    </table>\n";
+  $settings .= "                  </div> <!-- Close /.box-body -->\n";
+  $settings .= "                </div> <!-- Close /.box- -->\n\n";
+  $settings .= "                <!-- Box 4 -->\n";
+  $settings .= "                <div class='card card-success card-outline'>\n";
+  $settings .= "                  <div class='card-header'>\n";
+  $settings .= "                    <h3 class='card-title'> Input parameters </h3> &nbsp;<i class='fa fa-info-circle'> </i>\n";
+  $settings .= "                      <div class='card-tools pull-right'>\n";
+  $settings .= "                        <button type='button' class='btn btn-tool' data-card-widget='collapse'>\n";
+  $settings .= "                          <i class='fa fa-minus'></i>\n";
+  $settings .= "                        </button>\n";
+  $settings .= "                      </div> <!-- /.card-tools -->\n";
+  $settings .= "                  </div>     <!-- /. card-header -->\n\n";
+  $settings .= "                  <div class='card-body table-responsive p-0'>\n";
+  $settings .= "                    <table class='table table-bordered table-hover' id='settings-params'>\n\n";
+  $settings .= "                      <tbody>\n";
+  $settings .= "                        <!--<tr>\n";
+  $settings .= "                          <td colspan='2'><b>Motif discovery</b></td>\n";
+  $settings .= "                        </tr>-->\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Oligonucleotides (k-mers) and spaced word pairs (dyads):</b></td>\n";
+  $settings .= "                          <td>\n";
+
+  # Iterate through algorithm  input options
+  foreach my $key (keys %main::disco){
+    if(defined($algo_param{$key})){
+      $settings .= $algo_param{$key};
+    }
+  }
+
+  $settings .= "\n";
+  $settings .= "                          </td>\n";
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Oligonucleotides lengths:</b></td>\n";
+
+  # Add nucleotide lengths option
+  my @oligo_len     = ( $main::param{oligo_min_len}..$main::param{oligo_max_len} );
+  my $oligo_len_str = join( ",", @oligo_len );
+
+  $settings .= "                          <td> ".$oligo_len_str."</td>\n";
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Merge lengths for assembly:</b></td>\n";
+  $settings .= "                          <td>\n";
+
+
+  # Add merge lengths option
+  if( $main::param{merge_lengths} == 0 ){
+    $settings .= "                            <i class='fa fa-times fa-lg' style='color:red;'></i>\n";
+  } else {
+    $settings .= "                            <i class='fa fa-check-square fa-lg' style='color:green;'></i>\n";
+  }
+
+  $settings .= "                          </td>\n";
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Markov order (m) of the background model:</b></td>\n";
+
+  # Add Markov model order option. NOTE WSG. Need to come back.
+  $settings .= "                          <td> automatic</td>\n";
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Number of motifs per algorithm:</b></td>\n";
+  $settings .= "                          <td> ".$main::param{matrix_nmotifs}."</td>\n";
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Search on:</b></td>\n";
+  if( $main::param{strand} eq "-1str" ){
+    $settings .= "                          <td>single strand</td>\n";
+  } else {
+    $settings .= "                          <td>both strands</td>\n";
+  }
+
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Number of top sequences to retain:</b></td>\n";
+
+  # Add top squences option
+  if( !defined($main::param{top_peaks}) || $main::param{top_peaks} == 0 ){
+    $settings .= "                          <td> NA</td>\n";
+  }
+  if( $main::param{top_peaks} > 0 ){
+    $settings .= "                          <td>".$main::param{top_peaks}."</td>\n";
+  }
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Cut peak sequences to retain a given number of base-pairs on each side of the peak centers:</b></td>\n";
+
+  # Add  sequence length option
+  if( !defined($main::param{max_seq_len}) || $main::param{max_seq_len} == 0 ){
+    $settings .= "                          <td> NA</td>\n";
+  }
+  if( $main::param{max_seq_len} > 0 ){
+    $settings .= "                          <td>".$main::param{max_seq_len}."</td>\n";
+  }
+
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Search putative binding sites in the peak sequences:</b></td>\n";
+
+  # Add scanning option
+  if(defined($main::param{scan_markov})){
+    $settings .= "                          <td><i class='fa fa-check-square fa-lg' style='color:green;'></i></td>\n";
+  } else {
+    $settings .= "                            <i class='fa fa-times fa-lg' style='color:red;'></i>\n";
+  }
+
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Markov order (m) of the background model for sequence scanning:</b></td>\n";
+  $settings .= "                          <td> m=".$main::param{scan_markov}."</td>\n";
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Origin:</b></td>\n";
+  $settings .= "                          <td> ".$main::param{origin}."</td>\n";
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Offset:</b></td>\n";
+  $settings .= "                          <td> ".$main::param{offset}." </td>\n";
+  $settings .= "                        </tr>\n";
+  $settings .= "                      </tbody>\n";
+  $settings .= "                    </table>\n";
+  $settings .= "                  </div> <!-- Close /.box-body -->\n";
+  $settings .= "                </div> <!-- Close /.box- -->\n\n";
+  $settings .= "                <!-- Box 5 -->\n";
+  $settings .= "                <div class='card card-success card-outline'>\n";
+  $settings .= "                  <div class='card-header'>\n";
+  $settings .= "                    <h3 class='card-title m-0'> Command line </h3> &nbsp;\n";
+  $settings .= "                    <i class='fa fa-info-circle' data-container='body' data-toggle='tooltip' data-placement='top' title='Input here the set of peak sequences of interest where motifs will be discovered, you can either paste the peak sequences in the text box or upload it from your computer' data-original-title=''></i>\n";
+  $settings .= "                      <div class='card-tools pull-right'>\n";
+  $settings .= "                        <button type='button' class='btn btn-tool' data-card-widget='collapse'>\n";
+  $settings .= "                          <i class='fa fa-minus'></i>\n";
+  $settings .= "                        </button>\n";
+  $settings .= "                      </div> <!-- /.card-tools   -->\n";
+  $settings .= "                  </div>     <!-- /. card-header -->\n\n";
+  $settings .= "                  <div class='card-body'>\n";
+  $settings .= "                   <div style='position:relative;'>\n";
+  $settings .= "                    <div style='position:absolute;right:-5px;top:-10px;'>\n";
+  $settings .= "                      <button class='btn btn-warning' style='border-radius: 50%;'>\n";
+  $settings .= "                        <i type='button' class='fa fa-clipboard' data-container='body' data-toggle='tooltip' data-placement='top' title='Copy code'></i>\n";
+  $settings .= "                      </button>\n";
+  $settings .= "                    </div>\n";
+  $settings .= "                    <fieldset style='overflow:scroll;'>\n";
+  $settings .= "                      <pre>\n";
+  $settings .= "                        <code>\n";
+  $settings .= "peak-motifs2 ";
+  $settings .= &CreateStringArguments();
+  $settings .= "                              </code>\n";
+  $settings .= "                            </pre>\n";
+  $settings .= "                          </fieldset>\n";
+  $settings .= "                        </div>\n\n";
+  $settings .= "                  </div> <!-- Close /.box-body -->\n";
+  $settings .= "                </div> <!-- Close /.box- -->\n\n";
+  $settings .= "                <!-- Box 6 -->\n";
+  $settings .= "                <div class='card card-success card-outline'>\n";
+  $settings .= "                  <div class='card-header'>\n";
+  $settings .= "                    <h3 class='card-title m-0'> Log files </h3> &nbsp; <i class='fa fa-info-circle'> </i>\n";
+  $settings .= "                    <div class='card-tools pull-right'>\n";
+  $settings .= "                      <button type='button' class='btn btn-tool' data-card-widget='collapse'>\n";
+  $settings .= "                        <i class='fa fa-minus'></i>\n";
+  $settings .= "                      </button>\n";
+  $settings .= "                    </div><!-- /.card-tools -->\n";
+  $settings .= "                </div> <!-- /. card-header -->\n\n";
+  $settings .= "                  <div class='card-body table-responsive p-0'>\n";
+  $settings .= "                    <table class='table table-hover' id='settings-params'>\n";
+  $settings .= "                      <tbody>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Parameters and files:</b></td>\n";
+  $settings .= "                          <td>\n";
+  $settings .= "                            <a href='reports/peak-motifs_log.txt' target='_blank'><button type='button' class='btn btn-warning'><i class='fa fa-eye'> </i> TXT File</button> </a>\n";
+  $settings .= "                            <a href='reports/peak-motifs_links.html' target='_blank'><button type='button' class='btn btn-warning'><i class='fa fa-eye'> </i> HTML File</button> </a>\n";
+  $settings .= "                          </td>\n";
+  $settings .= "                        </tr>\n";
+  $settings .= "                        <tr>\n";
+  $settings .= "                          <td><b>Time log:</b></td>\n";
+  $settings .= "                          <td>\n";
+  $settings .= "                            <a href='reports/peak-motifs_timetable.txt' target='_blank'><button type='button' class='btn btn-warning'><i class='fa fa-eye'> </i> Time table File</button> </a>\n";
+  $settings .= "                            <a href='reports/peak-motifs_timelog.txt' target='_blank'><button type='button' class='btn btn-warning'><i class='fa fa-eye'> </i> Time log File</button> </a>\n";
+  $settings .= "                            <a href='reports/peak-motifs_timelog.html' target='_blank'><button type='button' class='btn btn-warning'><i class='fa fa-eye'> </i> HTML File</button> </a>\n";
+  $settings .= "                          </td>\n";
+  $settings .= "                        </tr>\n\n";
+  $settings .= "                      </tbody>\n";
+  $settings .= "                    </table>\n";
+  $settings .= "                  </div> <!-- Close /.box-body -->\n";
+  $settings .= "                </div> <!-- Close /.box- -->\n\n\n\n";
+  $settings .= "            </div> <!-- Close indentation div -->\n";
+  $settings .= "          </div> <!-- Close /.tab-pane content 1-->\n";
+
+  print $syn $settings;
+
+}
 
 ################################################################
 ## Report the command before running the analysis, for the sake of
 ## debugging and to facilitate copy-paste of the options.
+## NOTE WSG. I need to remove this function later on. Not needed or update
 sub ReportCommand {
   print $syn &open_menu_heading($menu_nb++, "<h3>Command</h3>", 1);
   print $syn "<pre>";
@@ -3625,35 +4047,35 @@ sub Synthesis {
   &OpenSynthesis() unless ($progressive_synthesis);
 
   ## Header of the synthetic table
-  &SynthesisSequenceComposition() unless ($progressive_synthesis);
+  #&SynthesisSequenceQC() unless ($progressive_synthesis); NOTE WSG. Need to update with the report. Temporal comment line
 
   ## Reference motifs
-  &SynthesisRefMotifs() unless ($progressive_synthesis);
+  #&SynthesisRefMotifs() unless ($progressive_synthesis); NOTE WSG. Need to update with the report. Temporal comment line
 
   ## Discovered motifs (by algorithm)
-  &SynthesisMotifsByAlgo() unless ($progressive_synthesis);
+  #&SynthesisMotifsByAlgo() unless ($progressive_synthesis); NOTE WSG. Need to update with the report. Temporal comment line
 
   ## Discovered motifs (by motif)
-  &SynthesisByMotif() unless ($progressive_synthesis);
+  #&SynthesisByMotif() unless ($progressive_synthesis); NOTE WSG. Need to update with the report. Temporal comment line
 
   ## Motif locations (merged sites)
-  &SynthesisMergedSites() unless ($progressive_synthesis);
+  #&SynthesisMergedSites() unless ($progressive_synthesis); NOTE WSG. Need to update with the report. Temporal comment line
 
   ## Motif comparisons
-  &SynthesisMotifCompa() unless ($progressive_synthesis);
+  #&SynthesisMotifCompa() unless ($progressive_synthesis); NOTE WSG. Need to update with the report. Temporal comment line
 
   ## Parameters and files
-  &SynthesisParamsAndFiles() unless ($progressive_synthesis);
+  #&SynthesisParamsAndFiles() unless ($progressive_synthesis); NOTE WSG. Need to update with the report. Temporal comment line
 
-  ## References
-  print $syn &open_menu_heading($menu_nb++, "<a name='refs'></a><h3>Publications</h3>", 0);
-  print $syn "<ol>\n";
-  print $syn "<li>Thomas-Chollier M, Herrmann C, Defrance M, Sand O, Thieffry D, van Helden J. (2012). RSAT peak-motifs: motif analysis in full-size ChIP-seq datasets. Nucleic Acids Res 40(4): e31.</li>\n";
-  print $syn "<li>Thomas-Chollier M, Darbo E, Herrmann C, Defrance M, Thieffry D, van Helden J. (2012). A complete workflow for the analysis of full-size ChIP-seq (and similar) data sets using peak-motifs. Nat Protoc 7(8): 1551-1568.</li>\n";
-  print $syn "</ol>\n";
-  print $syn &close_menu_heading();
+  ## References NOTE WSG, Need to remove the next chunk of code.
+  #print $syn &open_menu_heading($menu_nb++, "<a name='refs'></a><h3>Publications</h3>", 0);
+  #print $syn "<ol>\n";
+  #print $syn "<li>Thomas-Chollier M, Herrmann C, Defrance M, Sand O, Thieffry D, van Helden J. (2012). RSAT peak-motifs: motif analysis in full-size ChIP-seq datasets. Nucleic Acids Res 40(4): e31.</li>\n";
+  #print $syn "<li>Thomas-Chollier M, Darbo E, Herrmann C, Defrance M, Thieffry D, van Helden J. (2012). A complete workflow for the analysis of full-size ChIP-seq (and similar) data sets using peak-motifs. Nat Protoc 7(8): 1551-1568.</li>\n";
+  #print $syn "</ol>\n";
+  #print $syn &close_menu_heading();
   ## End of the HTML file
-  &CloseSynthesis();
+  #&CloseSynthesis();# NOTE WSG. Need to update with the report. Temporal comment line
 
   ## Add the HTML synthesis report to the archive
   &Archive(0, $main::outfile{synthesis}) if ($task{archive});
@@ -3733,7 +4155,357 @@ sub SyntheticTableAddHeaderRow {
 }
 
 ################################################################
-## Add sequence composition on the synthetic report
+## Add quality control of sequences to the synthetic report.
+sub SynthesisSequenceQC {
+  # NOTE WSG Remove
+  #print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
+  #print $syn &open_menu_heading($menu_nb++, "<a name='seq_composition'></a><h3>Sequence composition</h3>", 0);
+  #print $syn "<p>\n\n\n<table class='whitebg'>\n";
+
+  # Open QC tab content
+  my $seq_card = "              <!-- Tab content 2 -->\n";
+  $seq_card   .= "              <div class='tab-pane' data-value='Sequences' data-icon-class='fa fa-line-chart' id='tab-sequences'>\n";
+  $seq_card   .= "                <div> <!-- Indentation div -->\n\n";
+
+  #print $syn $qc_tab;
+  # Add QC info for each set of input sequences
+  foreach my $seq_type (@seq_types) {
+
+    # Open card html
+    $seq_card    .= "									<!-- Box 1 -->\n";
+    $seq_card    .= "                  <div class='card card-success card-outline'>\n";
+    $seq_card    .= "                    <div class='card-header'>\n";
+    $seq_card    .= "                      <h3 class='card-title m-0'> ".ucfirst($seq_type)." sequences</h3>\n";
+    $seq_card    .= "											<div class='card-tools pull-right'>\n";
+    $seq_card    .= "												<button type='button' class='btn btn-tool' data-card-widget='collapse'>\n";
+    $seq_card    .= "													<i class='fa fa-minus'></i>\n";
+    $seq_card    .= "												</button>\n";
+    $seq_card    .= "											</div>\n";
+    $seq_card    .= "                    </div><!-- Close ./box-header  -->\n\n";
+    $seq_card    .= "                    <div class='card-body'>\n\n";
+
+    $seq_card    .= "                     <div class='row'>\n";
+    $seq_card    .= "                      <div class='col-md-4'>\n";
+    $seq_card    .= "                       <!-- Card column 1 -->\n";
+    $seq_card    .= "                       <div class='card'>\n";
+    $seq_card    .= "                        <div class='card-header'>\n";
+    $seq_card    .= "                         <h3 class='card-title'>Sequence statistics</h3>\n";
+    $seq_card    .= "                        </div> <!-- Close ./card-header-->\n";
+
+
+    my $peak_nb = "NA";
+    my $mean_peak_len = "NA";
+    my $min_peak_len = "NA";
+    my $max_peak_len = "NA";
+    my $seq_size = "NA";
+
+    if (-e $main::outfile{$seq_type."_seqlen_distrib"}) {
+      &RSAT::message::Info("Collecting sequence length statistics from file", $main::outfile{$seq_type."_seqlen_distrib"}) if ($main::verbose >= 3);
+
+      ## Get number of peaks from sequence length distribution
+      $peak_nb = `grep '; count' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      chomp($peak_nb);
+      $peak_nb =~ s/.*count\s*//;
+
+      ## Get min peak length
+      $min_peak_len = `grep '; min' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      chomp($min_peak_len);
+      $min_peak_len =~ s/.*min\s*//;
+
+      ## Get mean peak length
+      $mean_peak_len = `grep '; mean' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      chomp($mean_peak_len);
+      $mean_peak_len =~ s/.*mean\s*//;
+
+      ## Get max peak length
+      $max_peak_len = `grep '; max' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      chomp($max_peak_len);
+      $max_peak_len =~ s/.*max\s*//;
+
+      ## Get total sequence size from sequence length distribution
+      $seq_size = `grep '; sum' $main::outfile{$seq_type."_seqlen_distrib"}`;
+      chomp($seq_size);
+      $seq_size =~ s/.*sum\s*//;
+      $seq_size = round($seq_size/1000);
+
+      &RSAT::message::Debug("Nb of peaks=".$peak_nb,"sequence size=".$seq_size) if ($main::verbose >= 5);
+    } else {
+      &RSAT::message::Warning("Sequence length file does not exist. Cannot collect statistics for the synthesis.\n", $main::outfile{$seq_type."_seqlen_distrib"});
+    }
+
+    ## Sequence lengths
+    my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$seq_type."_seqlen_distrib_graph"});
+
+    $seq_card .= "                        <div class='card-body card-body table-responsive p-0'>\n";
+    $seq_card .= "                         <table class='table table-hover' id='qc-".$seq_type."-sequences'>\n";
+    $seq_card .= "                          <tbody>\n";
+    $seq_card .= "                           <tr>\n";
+    $seq_card .= "                            <td><b>Nb of peaks:</b></td>\n";
+    $seq_card .= "                            <td> ".$peak_nb."</td>\n";
+    $seq_card .= "                           </tr>\n";
+    $seq_card .= "                           <tr>\n";
+    $seq_card .= "                            <td><b>Total seq.size:</b></td>\n";
+    $seq_card .= "                            <td> ".$seq_size." kb</td>\n";
+    $seq_card .= "                           </tr>\n";
+    $seq_card .= "                           <tr>\n";
+    $seq_card .= "                            <td><b>Min length:</b></td>\n";
+    $seq_card .= "                            <td> ".$min_peak_len." bp</td>\n";
+    $seq_card .= "                           </tr>\n";
+    $seq_card .= "                           <tr>\n";
+    $seq_card .= "                            <td><b>Mean length:</b></td>\n";
+    $seq_card .= "                            <td> ".$mean_peak_len." bp</td>\n";
+    $seq_card .= "                           </tr>\n";
+    $seq_card .= "                           <tr>\n";
+    $seq_card .= "                            <td><b>Max length:</b></td>\n";
+    $seq_card .= "                            <td> ".$max_peak_len." bp</td>\n";
+    $seq_card .= "                           </tr>\n";
+    $seq_card .= "                          </tbody>\n";
+    $seq_card .= "                         </table>\n";
+    $seq_card .= "                        </div> <!-- Close ./card-body -->\n";
+    $seq_card .= "                       </div> <!-- Close ./card -->\n";
+    $seq_card .= "                      </div> <!-- Close ./col-md4 -->\n";
+
+    # ## Display peaks UCSC track. # NOTE WSG Need to create new card entry for this!!! I FORGOT!
+    # ## If from fasta sequence: first get assembly.
+    # my $genome_assembly ="";
+    # if ($main::param{seq_source}) {
+    #   ## also store the genome assembly
+    #   $genome_assembly = ` grep '^>' $infile{test_seq} | head -n 1 ` ;
+    #   chomp($genome_assembly);
+    #   if ($main::param{seq_source} eq "galaxy") {
+    #     $genome_assembly =~ s/>([^_]+)_.*$/$1/;
+    #   }
+    #   &RSAT::message::Info("Assembly from fasta header", $main::param{seq_source},$genome_assembly) if ($main::verbose >= 3);
+    #   ## IF from coord file
+    # } elsif ($main::param{coord_assembly}) {
+    #   $genome_assembly = $main::param{coord_assembly};
+    # }
+
+    # if ((($main::infile{coord}) && (-e $main::infile{coord})) ||
+    #     (($main::outfile{"test_seq_coord"}) && (-e $main::outfile{"test_seq_coord"}))) {
+    #
+    #  ## UCSC link
+    #  my $BED_UR = "";
+    #  #$BED_URL = join ("/",
+    #  #$ENV{rsat_www},
+    #  #"tmp",
+    #  #&RSAT::util::ShortFileName($main::dir{output}));
+    #  #$BED_URL .= "/";
+    #  #$BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::infile{coord}) if ($main::infile{coord});
+    #  #$BED_URL .= &RSAT::util::RelativePath($main::dir{output}, $main::outfile{"test_seq_coord"}) if ($main::outfile{"test_seq_coord"});
+    #  if ($main::outfile{"test_seq_coord"}) {
+    #    $BED_URL = $ENV{rsat_www}."/tmp/". &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::outfile{"test_seq_coord"});
+    #  } elsif ($main::infile{coord}) {
+    #    $BED_URL = $ENV{rsat_www}."/tmp/". &RSAT::util::RelativePath(&RSAT::util::get_pub_temp(), $main::infile{coord});
+    #  }
+
+    #  my $browser_url = "<a target='_blank' href='";
+    #  $browser_url .= "http://genome.ucsc.edu/cgi-bin/hgTracks?";
+    #  $browser_url .= "db=".$genome_assembly;
+    #  $browser_url .= "&hgt.customText=".$BED_URL;
+    #  $browser_url .= "'><img border=0 height='20' src='images_html/UCSC_icon.jpg' style='vertical-align:text-bottom;' alt='UCSC'></a>";
+
+    #  my $BED = "";
+    #  $BED = $main::infile{coord} if ($main::infile{coord});
+    #  $BED = $main::outfile{"test_seq_coord"} if ($main::outfile{"test_seq_coord"});
+
+
+    #   &SyntheticTableAddRow_New($seq_stats,
+		#	 	"<a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a>",
+		#	 	"view peaks in genome browser ", [$browser_url,,],
+		#		"coordinates", ["UCSC BED track",$BED,
+		#			       ],
+		#		"seq",["converted",$main::outfile{$seq_type."_converted"},
+		#		       "purged" , $main::outfile{$seq_type."_purged"}
+		#		      ],
+		#		"lengths",['list', $main::outfile{$seq_type."_seqlen"},
+		#			   'distrib',$main::outfile{$seq_type."_seqlen_distrib"},
+		#			   'graph',$main::outfile{$seq_type."_seqlen_distrib_graph"}
+		#			  ]
+		#	       );
+    # } else {			## without UCSC track
+    #   &SyntheticTableAddRow_New($seq_stats,
+		# 		"<a  href='".$img."'><img border='".$param{img_border}."' height='150' src='".$img."'></a>",
+		# 		"seq",["converted",$main::outfile{$seq_type."_converted"},
+		# 		       "purged" , $main::outfile{$seq_type."_purged"}
+		# 		      ],
+		# 		"lengths",['list', $main::outfile{$seq_type."_seqlen"},
+		# 			   'distrib',$main::outfile{$seq_type."_seqlen_distrib"},
+		# 			   'graph',$main::outfile{$seq_type."_seqlen_distrib_graph"}
+		# 			  ]
+		# 	       );
+    # }
+
+
+    ## Display peak size distributio card
+    $seq_card .= "                      <div class='col-md-8'>\n";
+    $seq_card .= "                      <!-- Card column 2 -->\n";
+    $seq_card .= "                      <div class='card '>\n";
+    $seq_card .= "                       <div class='card-header'>\n";
+    $seq_card .= "                        <h3 class='card-title'>Peak size distribution</h3>\n";
+    $seq_card .= "                       </div> <!-- Close ./card-header  -->\n";
+    $seq_card .= "                       <div class='card-body'>\n";
+    $seq_card .= "                        <a href='".$img."'>\n";
+    $seq_card .= "                         <img width='600' height='auto' style='max-width:100%;max-height:100%;' src='".$img."'>\n";
+    $seq_card .= "                        </a>\n";
+    $seq_card .= "                       </div> <!-- Close ./card-body  -->\n";
+    $seq_card .= "                      </div> <!-- Close ./card  -->\n";
+    $seq_card .= "                     </div> <!-- Close ./col-md8 -->\n\n";
+    $seq_card .= "                    </div><!-- Close ./row -->\n";
+
+    # Open tab menu
+    $seq_card .= "                    <div class='row'>\n";
+    $seq_card .= "                      <div class='card'>\n";
+    $seq_card .= "                        <div class='card-header p-0 pt-1 border-bottom-0'>\n";
+    $seq_card .= "                          <ul class='nav nav-tabs' id='custom-tabs-three-tab' role='tablist'>\n";
+
+    ## Residue composition menu
+    for my $ol (@composition_oligo_lengths) {
+      my $title;
+      if ($ol == 1) {
+        $title = "Mononucleotide";
+      } elsif ($ol == 2) {
+        $title = "Dinucleotide";
+      } elsif ($ol == 3) {
+	      $title = "Trinucleotide";
+      } elsif ($ol == 4) {
+	      $title = "Tetranucleotide";
+      } else {
+	      $title = $ol."-nucleotide";
+      }
+      $seq_card .= "                                <li class='nav-item'>\n";
+      $seq_card .= "                                  <a class='nav-link ' id='".$title."-tab' data-toggle='pill' href='#".$title."-profile-tab' role='tab' aria-controls='".$title."-profile-tab' aria-selected='true'>".$title." profile</a>\n";
+      $seq_card .= "                                </li>\n";
+
+    }
+
+    # Close tab menu header
+    $seq_card .= "                              </ul> <!-- Close tab list -->\n";
+    $seq_card .= "                            </div> <!-- Close ./card-header -->\n";
+
+    # Open tab menu body
+    $seq_card .= "                            <div class='card-body'>\n";
+    $seq_card .= "                              <div class='tab-content' id='custom-tabs-three-tabContent'>\n";
+
+    ## Residue composition
+    for(my $i = 0; $i <= $#composition_oligo_lengths; $i++){
+      # NOTE WSG. To remove
+      # my $table = "\n\n\n<table class='whitebg'>\n\n<tr>\n";
+      #my $table = "\n\n\n<table>\n\n<tr>\n";
+      #my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_heatmap"});
+      #$table .= "\n<td style='border-bottom-style:none;border-right-style:none;'>Transition frequencies<br><a  href='".$img."'><img border='".$param{img_border}."' width=300 src='".$img."'></a></td>\n";
+      #$img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
+      #$table .= "\n<td style='border-bottom-style:none;border-right-style:none;'>Position profiles<br><a  href='".$img."'><img border='".$param{img_border}."' height='200' src='".$img."'></a></td>\n";
+      #$table .= "</tr>\n</table>\n\n\n";
+
+
+      # Get nucleotide title
+      my $ol = $composition_oligo_lengths[$i];
+      my $title;
+
+      if ($ol == 1) {
+        $title = "Mononucleotide";
+      } elsif ($ol == 2) {
+        $title = "Dinucleotide";
+      } elsif ($ol == 3) {
+	      $title = "Trinucleotide";
+      } elsif ($ol == 4) {
+	      $title = "Tetranucleotide";
+      } else {
+	      $title = $ol."nucleotide";
+      }
+
+      # Add tab panel for oligonucleotide composition
+      if($i == 0){
+        $seq_card .= "      <div class='tab-pane fade show active'";
+      } else {
+        $seq_card .= "      <div class='tab-pane fade'";
+      }
+      $seq_card .= " id='".$title."-profile-tab' role='tabpanel' aria-labelledby='".$title."-tab'>\n";
+      $seq_card .= "        <div class='row'>\n";
+      $seq_card .= "        <div class='col-md-4'>\n";
+      $seq_card .= "          <!-- Card column 1 -->\n";
+      $seq_card .= "          <div class='card '>\n";
+      $seq_card .= "            <div class='card-body card-body table-responsive p-0'>\n";
+      $seq_card .= "              <table class='table table-hover' id='qc-sequences-".$title."'>\n";
+      $seq_card .= "                  <tbody>\n";
+      $seq_card .= "                    <tr>\n";
+      $seq_card .= "                      <td><b>View as:</b><br>\n";
+      $seq_card .= "                        <button type='button' id='btn_mono_hmp' class='btn btn-info'><i class='fa fa-eye'> </i> Heatmap</button>\n";
+      $seq_card .= "                        <button type='button' id='btn_mono_dtb' class='btn btn-info'><i class='fa fa-eye'> </i> Profiles</button>\n";
+      $seq_card .= "                      </td>\n";
+      $seq_card .= "                    </tr>\n\n";
+      $seq_card .= "                    <tr>\n";
+      $seq_card .= "                      <td><b>".$title.":</b><br>\n";
+      $seq_card .= "                        <a href='".$main::outfile{$ol."nt_".$seq_type."_freq"}."' target='_blank'>\n";
+      $seq_card .= "                          <button type='button' class='btn btn-warning'><i class='fa fa-eye'> </i> Frequencies</button>\n";
+      $seq_card .= "                        </a>\n";
+      $seq_card .= "                      </td>\n";
+      $seq_card .= "                    </tr>\n";
+      $seq_card .= "                  </tbody>\n";
+      $seq_card .= "                </table>\n";
+      $seq_card .= "            </div> <!-- Close ./card-body  -->\n\n";
+      $seq_card .= "          </div> <!-- Close ./card  -->\n";
+      $seq_card .= "        </div> <!-- Close ./col-md4  -->\n\n";
+
+      # Add Position profiles
+      $seq_card .= "         <div class='col-md-8'>\n";
+      $seq_card .= "           <!-- Card column 2 -->\n";
+      $seq_card .= "           <div class='card '>\n";
+      $seq_card .= "             <div class='card-header'>\n";
+      $seq_card .= "               <h3 class='card-title' id='".$ol."nt_plot_title' >Position profiles</h3>\n";
+      $seq_card .= "             </div> <!-- Close ./card-header  -->\n";
+      my $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_profiles_graph"});
+      $seq_card .= "            <div class='card-body'>\n";
+      $seq_card .= "              <a id='".$ol."nt_distrib' href='".$img."'>\n";
+      $seq_card .= "                <img width='800' height='auto' style='max-width:100%;max-height:100%;' src='".$img."'>\n";
+      $seq_card .= "              </a>\n";
+      $img = &RSAT::util::RelativePath($main::outfile{synthesis}, $main::outfile{$ol."nt_".$seq_type."_heatmap"});
+      $seq_card .= "              <a id='".$ol."nt_heatmap' style='display:none' href='".$img."'>\n";
+      $seq_card .= "                <img width='800' height='auto' style='max-width:100%;max-height:100%;'  src='".$img."'>\n";
+      $seq_card .= "              </a>\n";
+      $seq_card .= "              <a href='".$main::outfile{$ol."nt_".$seq_type."_profiles"}."' target='_blank' id='".$ol."nt_btn_data'>\n";
+      $seq_card .= "                <button type='button' class='btn btn-warning' style='margin:0 auto;display: block;'><i class='fa fa-eye'> </i> Data</button>\n";
+      $seq_card .= "              </a>\n";
+      $seq_card .= "            </div> <!-- Close ./card-body  -->\n";
+      $seq_card .= "          </div> <!-- Close ./card  -->\n";
+      $seq_card .= "        </div> <!-- Close ./col-md8 -->\n";
+      $seq_card .= "       </div> <!-- Close ./row -->\n";
+      $seq_card .= "      </div> <!-- Close ./tab-pane -->\n\n";
+
+      # NOTE WSG. To remove
+      #$title .= " composition profiles";
+      #&SyntheticTableAddRow_New($title,
+			#	$table,
+			#	$ol."nt", ["freq",$main::outfile{$ol."nt_".$seq_type."_freq"},
+			#		   "transitions",$main::outfile{$ol."nt_".$seq_type."_transitions"}
+			#		  ],
+			#   	"bg model", [ "Inclusive format",$main::outfile{$ol."nt_".$seq_type."_inclusive"}
+			#		    ],
+			#	"profile", [ "table",$main::outfile{$ol."nt_".$seq_type."_profiles"},
+			#		     "html(individual)",$main::outfile{$ol."nt_".$seq_type."_profiles_index"}
+			#		   ]
+			#       );
+    }
+  }
+
+  $seq_card    .= "                              </div> <!-- Close ./tab-pane -->\n";
+  $seq_card    .= "                            </div> <!-- Close ./card-body  -->\n";
+  $seq_card    .= "                          </div> <!-- Close ./card  -->\n";
+  $seq_card    .= "                        </div>  <!-- Close ./row -->\n";
+  $seq_card    .= "                      </div> <!-- Close ./card-body-->\n";
+  $seq_card    .= "                    </div> <!-- Close ./card-->\n";
+  $seq_card    .= "                  </div> <!-- Close ./indentation div -->\n";
+  $seq_card    .= "                </div> <!-- Close /.tab-pane content 2-->\n\n";
+
+
+
+  print $syn $seq_card;
+
+}
+
+################################################################
+## Add sequence composition on the synthetic report NOTE WSG. Need to remove function.
 sub SynthesisSequenceComposition {
 
   print $syn '<p style="page-break-after:always;"></p>'; ## Page break for printing
@@ -3875,7 +4647,7 @@ sub SynthesisSequenceComposition {
       $table .= "</tr>\n</table>\n\n\n";
       my $title;
       if ($ol == 1) {
-        $title = "Nucleotide";
+        $title = "Mononucleotide";
       } elsif ($ol == 2) {
         $title = "Dinucleotide";
       } elsif ($ol == 3) {

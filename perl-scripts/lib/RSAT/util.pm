@@ -1084,7 +1084,7 @@ sub doit {
     $job_name =~ s/\//_/g;
     my $job_log = $job_file.".log";
 
-  &RSAT::message::Debug("\n\twd", $wd, 
+  &RSAT::message::Debug("\n\twd", $wd,
 			"\n\tshell", $shell,
 			"\n\tjob_dir", $job_dir,
 			"\n\tjob_file", $job_file,
@@ -1445,6 +1445,26 @@ sub PrintArguments {
   return $argument_string;
 }
 
+=item PrintArguments()
+
+create a string from the command-line arguments
+in a vertical way
+
+=cut
+sub CreateStringArguments {
+  #my ($local_out) = @_;
+  my $argument_string = "";
+  foreach my $a (@main::ARGV) {
+    if ( $a =~ /^-/ ) {
+      $argument_string .= " \\\n$a";
+    } else {
+      $argument_string .= " '$a'";
+    }
+  }
+  $argument_string = &hide_RSAT_path($argument_string);
+
+  return $argument_string;
+}
 
 ################################################################
 ## Print threshold values for verbosity
