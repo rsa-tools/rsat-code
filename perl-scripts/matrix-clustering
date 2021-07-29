@@ -3320,12 +3320,12 @@ sub create_html_radial_tree_file {
 
 
 	## Set displacement (x axis) of the logos according to the number of motifs
-	if (/--y_displ--/){
+	if (/--y-displ--/){
 	    
 	    # $y_displacement = ($motif_height/2) + 3;
 	    # $line =~ s/--y_displ--/$y_displacement/g;
 
-	    $y_displacement = "-3";
+	    $y_displacement = "0";
 	    $line =~ s/--y-displ--/$y_displacement/g;
 
 	    
