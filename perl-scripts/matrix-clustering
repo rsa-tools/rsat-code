@@ -148,7 +148,7 @@ package main;
     ## processes we should certainly not assume that they dispose of a
     ## powerful machine with 40 cores. I set this to 4 and 3 instead
     ## of 40 and 3.
-    if (! defined $ENV{max_num_process}){ $ENV{max_num_process} = 4; }
+    if (! defined $ENV{max_num_process}){ $ENV{max_num_process} = 8; }
     if (! defined $ENV{max_num_child_process}) { $ENV{max_num_child_process} = 3; }
     ###################
     
@@ -644,7 +644,10 @@ package main;
 
       ################################################################
       ## Create the merged matrices and consensuses
-      &Merge_matrices();
+      if($radial_tree_flag == 0) {
+      	&Merge_matrices();
+      }
+      
 
       ################################################################
       ## Annotate root
