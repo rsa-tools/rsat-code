@@ -691,10 +691,13 @@ package main;
 	  ## for the colors assigned to each cluster
 	  %hexa_code = &Read_cluster_colors();
 	  
+	  
 	  ################################################################
 	  ## Parse the JSON file
 	  if ($radial_tree_flag == 1){
+	  
 	      &Add_attributes_to_JSON_radial_tree();
+	      
 	  } else {
 	      
 	      &Add_attributes_to_JSON();
@@ -704,6 +707,7 @@ package main;
 	      ## each cluster separately
 	      &Create_dynamic_tree();
 	  }
+	  
 	  
 	  ################################################################
 	  ## Convert tab files to HTML files
@@ -2797,6 +2801,10 @@ sub Add_attributes_to_JSON_radial_tree {
 
 
 
+		  } else {
+		      if ($radial_tree_flag == 1){
+		         $Add .= " \"branch_color\" : \"".$node_to_cluster_hash{$folder}{color}."\",\n";
+                      }
 		  }
 		  push(@Parsed_JSON, $Add."\n");
 
@@ -3030,7 +3038,7 @@ sub Merge_matrices {
 		&doit($merge_cmd, 0, $die_on_error, $verbose, 0, "", $main::out, $main::err);
 
 		## Delete files with single matrices
-		unlink($cat_file);
+		#unlink($cat_file);
 		
                 my $mt_nb = scalar(@file_names)."motifs";
                 my $motif_name = $cluster."_".$merge_level."_".$mt_nb;
