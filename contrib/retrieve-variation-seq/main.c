@@ -148,11 +148,16 @@ string *Get_contig_file(string *contig_file,string *genome_dir);
 TRIE *Get_file_seq_name_metazoa(string *genome_dir);
 TRIE *Get_file_seq_name_plants(string *genome_dir);
 string *Get_species_dir_from_supported_file(string *species_dir,char *species,char *assembly,char *release,char *supported_file);
+string *Get_species_dir_by_ID_from_supported_file(string *species_dir, char *species_id, char *supported_file);
 string *Get_data_dir(string *data_dir);
 string *Get_supported_file(string *supported_file);
+string *Get_supported_organism_file(string *supported_file);
 string *Get_genomes_dir(string *genomes_dir);
 string *Get_species_dir(string *species_dir,char *species, char *assembly, char *release, char *species_suffix);
+string *Get_species_dir_by_ID(string *species_dir,char *species_id);
+string *Get_genome_dir_by_ID(string *genome_dir,char *species_id);
 string *Get_genome_dir(string *genome_dir,char *species, char *assembly, char *release, char *species_suffix);
+string *Get_variation_dir_by_ID(string *var_dir,char *species_id);
 string *Get_variation_dir(string *var_dir,char *species, char *assembly, char *release, char *species_suffix);
 char *Get_sequence(char *sequence_file);
 int switch_strand(char *sequence);
@@ -220,7 +225,7 @@ void help(){
   "    util\n"
   "\n"
   "USAGE\n"
-  "     retrieve-variation-seq -species species_name (-release # | -assembly assembly)  \\\n"
+  "     retrieve-variation-seq -org species_id  \\\n"
   "       [-i #inputfile] [-format variation_format] \\\n"
   "       [-col ID_column] [-mml #] [-o outputfile] [-v #] [...]\n"
   "\n"
@@ -228,7 +233,7 @@ void help(){
     "    Get variation sequence of Homo_sapiens from a bed file\n"
     "\n"
     "      retrieve-variation-seq -v 2 \\\n"
-    "        -species Homo_sapiens -release 84 -format bed -assembly GCRh37 \\\n"
+    "        -org Homo_sapiens_GRCh37 -format bed \\\n"
     "        -i $RSAT/public_html/demo_files/sample_regions_for_variations_hg19.bed \\\n"
     "        -mml 30 \\\n"
     "        -o variations.varSeq\n"
@@ -386,22 +391,30 @@ void help(){
   "    -help\n"
   "        Same as -h\n"
 "\n"
-  "    -species species_name\n"
+  "    -org species_id\n"
+  "        Species ID. This ID must correspond to the RSAT species ID from the supported-organisms\n"
+  "        program.\n"
+  "\n"
+  "    -species species_name (DEPRECATED)\n"
+  "        Please see '-org' option.\n"
   "        Species name. This name must correspond to the species of the\n"
   "        variation/bed/id file if provided.\n"
 "\n"
-  "    -species_suffix\n"
+  "    -species_suffix(DEPRECATED)\n"
+  "        Please see '-org' option.\n"
   "        Species name. This name must correspond to the species of the\n"
   "        variation/bed/id file if provided.\n"
 "\n"
-  "    -release #\n"
+  "    -release #(DEPRECATED)\n"
+  "        Please see '-org' option.\n"
   "        The version of ensembl database (e.g. 84).\n"
 "\n"
   "        Note: each Ensembl release contains a specific assembly for each\n"
   "        species. When the option -release is used, the option -assembly\n"
   "        should thus in principle not be used.\n"
 "\n"
-  "    -assembly #\n"
+  "    -assembly #(DEPRECATED)\n"
+  "        Please see '-org' option.\n"
   "        Assembly (e.g. GRCh37 for the assembly 37 of the Human genome).\n"
 "\n"
   "        Note: genome assemblies can cover several successive ensemble\n"
@@ -491,9 +504,9 @@ int main(int argc, char *argv[]){
   char *input          = NULL;
   char *output         = NULL;
   char *species        = NULL;
-  char *species_suffix = NULL;
-  char *release    = NULL;
-  char *assembly   = NULL;
+  //char *species_suffix = NULL;
+  //char *release    = NULL;
+  //char *assembly   = NULL;
   char *format     = NULL;
   char *source     = NULL;
   char *col        = NULL;
@@ -547,10 +560,10 @@ int main(int argc, char *argv[]){
     } else if (strcmp(argv[i],"-o") == 0 && CheckValOpt(argv+i)) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       output = argv[++i];
-    } else if (strcmp(argv[i],"-species") == 0 && CheckValOpt(argv+i)) {
+    } else if (strcmp(argv[i],"-org") == 0 && CheckValOpt(argv+i)) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       species = argv[++i];
-    } else if (strcmp(argv[i],"-species_suffix") == 0 && CheckValOpt(argv+i)) {
+    /*} else if (strcmp(argv[i],"-species_suffix") == 0 && CheckValOpt(argv+i)) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       species_suffix = argv[++i];
     } else if (strcmp(argv[i],"-release") == 0 && CheckValOpt(argv+i)) {
@@ -558,7 +571,7 @@ int main(int argc, char *argv[]){
       release = argv[++i];
     } else if (strcmp(argv[i],"-assembly") == 0 && CheckValOpt(argv+i)) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
-      assembly = argv[++i];
+      assembly = argv[++i];*/
     } else if (strcmp(argv[i],"-format") == 0 && CheckValOpt(argv+i)) {
       strccat(CMD," %s %s",argv[i],argv[i+1]);
       format = argv[++i];
@@ -598,18 +611,19 @@ int main(int argc, char *argv[]){
   /////////////////////////////////////////////////
   // Validate Arguments
   /////////////////////////////////////////////////
-  if (!species) RsatFatalError("No species specified. Use -species",NULL);
-  if (!(assembly || release)) RsatFatalError("No assembly and ensembl version specified. Use at least one of these options: -release -assembly",NULL);
+  if (!species) RsatFatalError("No species specified. Use -org",NULL);
   if (!format) RsatFatalError("No input format specified. Use -format",NULL);
+  // DEPRECATED
+  //if (!(assembly || release)) RsatFatalError("No assembly and ensembl version specified. Use at least one of these options: -release -assembly",NULL);
 
   // Retrieve and check genome directory
-  Get_genome_dir(genome_dir,species,assembly,release,species_suffix);
+  Get_genome_dir_by_ID(genome_dir,species);
   //QUESTION WSG(2017-06-18). stat() needs to have execute permissions on all path folders
   if ( !(stat(genome_dir->buffer,  &dir_exists) == 0 && S_ISDIR(dir_exists.st_mode)) ) RsatFatalError("Genome directory" ,  genome_dir->buffer, "does not exists or granted permissions were not properly set. Use download-ensembl-variation before retrieve-variation-seq or check for access/execution permissions.",NULL);
 
   //Retrieve and check variation directory if variation-info will be used
   if(strcmp(format,"varBed") != 0) {
-    Get_variation_dir(variant_dir,species,assembly,release,species_suffix);
+    Get_variation_dir_by_ID(variant_dir,species);
     //QUESTION WSG(2017-06-18). stat() needs to have execute permissions on all path folders
     if ( !(stat(variant_dir->buffer, &dir_exists) == 0 && S_ISDIR(dir_exists.st_mode)) ) RsatFatalError("Variation directory",variant_dir->buffer,"does not exists or granted permissions were not properly set. Use download-ensembl-variation before retrieve-variation-seq or check for access/execution permissions.",NULL);
   }
@@ -663,9 +677,9 @@ int main(int argc, char *argv[]){
     //Allocate memory for string
     outfile_var_info   = strnewToList(&RsatMemTracker);
 
-    strfmt(get_variations_cmd,"%s/perl-scripts/variation-info -i %s -species %s",RSAT->buffer,input,species);
-    if(release)  strccat(get_variations_cmd," -release %s",release);
-    if(assembly) strccat(get_variations_cmd," -assembly %s",assembly);
+    strfmt(get_variations_cmd,"%s/perl-scripts/variation-info -i %s -org %s",RSAT->buffer,input,species);
+    //if(release)  strccat(get_variations_cmd," -release %s",release);
+    //if(assembly) strccat(get_variations_cmd," -assembly %s",assembly);
   }
 
   /////////////////////////////////////////////////
@@ -3329,6 +3343,114 @@ string *Get_species_dir_from_supported_file(string *species_dir,char *species,ch
                   "in the organism table.\n\tPlease refer to install-ensembl-genome\n",NULL);
   return NULL; //NOTE:NULL or species_dir?
 }
+
+/*
+  Parses the $RSAT/public_html/data/supported_organisms.tab file,which contains
+  ALL the RSAT installed organism at the current computer/server. A string is needed
+  to write down the path. Finally, it returns the pointer to the string,in case of failure
+  a Fatal Error is raised. The current tab file format is:
+    -(1)ID
+    -(2)name
+    -(3)taxid
+    -(4)source
+    -(5)last_update
+    -(6)nb
+    -(7)seq_format
+    -(8)up_from
+    -(9)up_to
+    -(10)taxonomy
+    -(11)data
+    -(12)genome
+    -(13)genome_assembly
+    -(14)genome_version
+    -(15)download_date
+    -(16)variant_available
+    -(17)variant_source
+    -(18)path_to_variant_files
+    -(19)blast_available
+  Where desired tokens are:
+    ID: token[0], data: token[11]
+  NOTE WSG(2017-10-10).If this file format changes I will not be able to parse
+  it anymore,PLEASE review carefully with JvH and AMR
+*/
+string *Get_species_dir_by_ID_from_supported_file(string *species_dir, char *species_id, char *supported_file){
+  string *line = NULL;
+
+  char *rsat_idx          = NULL;
+  char **token            = NULL;
+  //char *token[7]          = {NULL};
+
+  int   j                 = 0;
+
+  FILE *fh_supportedFile  = NULL;
+
+  //Allocate memory for array of tokens
+  token = getokens(19);
+
+  //Allocate memory for line string
+  line = strnewToList(&RsatMemTracker);
+
+  fh_supportedFile = OpenInputFile(fh_supportedFile,supported_file);
+  token[j] = line->buffer;
+
+  //TODO WSG. Remove
+  //printf("\n ---INSIDE Get_species_dir_by_ID_from_supported_file\n");
+  //printMemstr(RsatMemTracker);
+
+  //!feof(fh_supportedFile) for this while?
+  while ( fread((line->buffer + line->size),1,1,fh_supportedFile) == 1) {
+    //For each tab found write a '\0' in order to create token
+    if (line->buffer[line->size] == '\t') {
+      token[++j] = line->buffer + line->size + 1;
+      line->buffer[line->size] = '\0';
+    }
+
+    //When end-of-line is found,process the tokens and also write a '\0' instead of '\n'
+    if (line->buffer[line->size] == '\n') {
+      line->buffer[line->size] = '\0';
+      line->size = 0;
+      j = 0;
+      token[1][0] = toupper(token[1][0]);
+
+      //Check if release and assembly where passed as query options in order to compare properly
+      if ( strcmp(token[0],species_id) == 0 ) {
+        //Test if species_directory field is empty
+        if (token[10] != '\0'){
+          if( (rsat_idx = strchr(token[10],'}')) != NULL ){
+            strfmt( species_dir, "%s%s", RSAT->buffer, (rsat_idx + 1) );
+          } else {
+            RsatFatalError("Get_species_dir_by_ID_from_supported_file() could not identify species_id",
+                            species_id,
+                            "in the organism table\n",NULL);
+          }
+        } else {
+          RsatFatalError("Get_species_dir_by_ID_from_supported_file() could not identify species_id",
+                          species_id,
+                          "in the organism table,data field was empty\n",NULL);
+        }
+        RsatMemTracker = relem( (void*)token,RsatMemTracker );
+        RsatMemTracker = relem( (void*)line ,RsatMemTracker );
+        fclose(fh_supportedFile);
+        return species_dir;
+      }
+      initokadd(line,token,19);
+      continue;
+    }
+    //Resize line string if limit has reached
+    limlinetok(line,token,19);
+    //Add +1 to current line size
+    line->size++;
+
+  }
+  RsatMemTracker = relem( (void*)token,RsatMemTracker );
+  RsatMemTracker = relem( (void*)line ,RsatMemTracker );
+  fclose(fh_supportedFile);
+  RsatFatalError("Get_species_dir_by_ID_from_supported_file() could not identify species_id",
+                  species_id,
+                  "in the organism table.\n\tPlease refer to install-ensembl-genome\n",NULL);
+  return NULL; //NOTE:NULL or species_dir?
+}
+
 /*Retrieves the $RSAT/public_html/data absolute path. A string is needed to write
   down the path. Finally, it returns the pointer to the string.*/
 string *Get_data_dir(string *data_dir){
@@ -3337,6 +3459,32 @@ string *Get_data_dir(string *data_dir){
   //strcat(data_dir,"/public_html/data");
   if(verbose >= 5) RsatInfo("Get_data_dir() result", data_dir->buffer,NULL);
   return data_dir;
+}
+
+/*Retrieves the supported_organisms.tab absolute file path,which contains
+  the RSAT installed organism at the current computer/server. A string is
+  needed to write down the path. Finally, it returns the pointer to the string */
+string *Get_supported_organism_file(string *supported_file){
+  //It doesn't support a predefined PATH to attach names
+  //TODO WSG. Remove
+  //printf("\n ---INSIDE Get_supported_file\n");
+  //printMemstr(RsatMemTracker);
+
+  supported_file = Get_data_dir(supported_file);
+
+  //TODO WSG. Remove
+  //printf("\n---1 INSIDE Get_supported_file_after_Get_data_dir\n");
+  //printMemstr(RsatMemTracker);
+
+  strccat(supported_file,"/supported_organisms.tab");
+  if(verbose >= 5) RsatInfo("Get_supported_file() result", supported_file->buffer,NULL);
+
+  //strcat(supported_file,"/supported_organisms_ensembl.tab");
+  //TODO WSG. Remove
+  //printf("\n---2 INSIDE Get_supported_file_after_strccat\n");
+  //printMemstr(RsatMemTracker);
+
+  return supported_file;
 }
 
 /*Retrieves the supported_organisms_ensembl.tab absolute file path,which contains
@@ -3400,8 +3548,58 @@ string *Get_species_dir(string *species_dir,char *species, char *assembly, char 
   return species_dir;
 }
 
-/*Retrieves genome directory path for the queried species, assembly, release and/or species suffix.
-  A string is needed to write down the path. Finally, it returns the pointer to the string*/
+/*
+  Retrieves the species directory path for the queried species ID.
+  A string is needed to write down the path. Finally, it returns the pointer to the string. If one
+  of the dependant function fails it will raise a Fatal Error.
+*/
+// NOTE I AM HERE. I JUST NEED TO GO AND Create
+// (i) a similar function to "Get_supported_file" but instead of the ensembl, should be supported_organisms
+// (ii) Then, I must go to the 'Get_species_dir_from_supported_file' and change the token that I am parsing.
+
+string *Get_species_dir_by_ID(string *species_dir,char *species_id){
+  string *supported_file = NULL;
+  supported_file = strnewToList(&RsatMemTracker);
+
+  //Will modify the species string, i.e. uppercase of first letter.
+  //char supported_file[BASE_STR_LEN];
+  //species[0] = toupper(species[0]);
+  //TODO WSG. Remove
+  //printf("\n---INSIDE Get_species_dir\n");
+  //printMemstr(RsatMemTracker);
+
+  supported_file = Get_supported_organism_file(supported_file);
+
+  //Parse and query the $RSAT/public_html/data/supported_organisms.tab file
+  species_dir = Get_species_dir_by_ID_from_supported_file(species_dir,species_id,supported_file->buffer);
+  if(verbose >= 5) RsatInfo("Get_species_dir_by_ID_from_supported_file() result", species_dir->buffer,NULL);
+
+  //Remove tmp allocated variable
+  RsatMemTracker = relem( (void*)supported_file,RsatMemTracker );
+
+  return species_dir;
+}
+
+/*
+Retrieves genome directory path for the queried species ID. This ID can be obtained from the 1st column
+of the supported_organisms.tab. A string is needed to write down the path. Finally, it returns the pointer to the string
+*/
+string *Get_genome_dir_by_ID(string *genome_dir,char *species_id){
+  //TODO WSG. Remove
+  //printf("\n ---INSIDE  Get_species_dir\n");
+  //printMemstr(RsatMemTracker);
+
+  genome_dir = Get_species_dir_by_ID(genome_dir,species_id);
+  strccat(genome_dir,"/genome");
+  if(verbose >= 5) RsatInfo("Get_genome_dir() result",genome_dir->buffer,NULL);
+  return genome_dir;
+}
+
+
+/*
+  Retrieves genome directory path for the queried species, assembly, release and/or species suffix.
+  A string is needed to write down the path. Finally, it returns the pointer to the string
+*/
 string *Get_genome_dir(string *genome_dir,char *species, char *assembly, char *release, char *species_suffix){
   //TODO WSG. Remove
   //printf("\n ---INSIDE  Get_species_dir\n");
@@ -3413,8 +3611,22 @@ string *Get_genome_dir(string *genome_dir,char *species, char *assembly, char *r
   return genome_dir;
 }
 
-/*Retrieves variations directory path for the queried species, assembly, release and/or species suffix.
-  A string is needed to write down the path. Finally, it returns the pointer to the string*/
+/*
+  Retrieves variations directory path for the queried species ID. This ID can be obtained from the 1st column
+  of the supported_organisms.tab. A string is needed to write down the path. Finally, it returns the pointer to the string
+*/
+string *Get_variation_dir_by_ID(string *var_dir,char *species_id){
+  var_dir = Get_species_dir_by_ID(var_dir,species_id);
+  strccat(var_dir,"/variations");
+  if(verbose >= 5) RsatInfo("Get_variation_dir() result",var_dir->buffer,NULL);
+
+  return var_dir;
+}
+
+/*
+  Retrieves variations directory path for the queried species, assembly, release and/or species suffix.
+  A string is needed to write down the path. Finally, it returns the pointer to the string
+*/
 string *Get_variation_dir(string *var_dir,char *species, char *assembly, char *release, char *species_suffix){
   var_dir = Get_species_dir(var_dir,species,assembly,release,species_suffix);
   strccat(var_dir,"/variations");
