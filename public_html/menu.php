@@ -238,7 +238,7 @@
                      <?php
 
     if($properties['variations_tools'] == '1') {
-        echo '<a class="menu_item" href="variation-info_form.cgi" >Variation info <img src="images/onebit_49.png" height="30" class="new"></img></a>
+        echo '<!-- <a class="menu_item" href="variation-info_form.cgi" >Variation info <img src="images/onebit_49.png" height="30" class="new"></img></a> -->
                          <a class="menu_item" href="retrieve-variation-seq_form.cgi" >Retrieve variation sequences <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          <a class="menu_item" href="variation-scan_form.cgi" >Scan variations with motifs <img src="images/onebit_49.png" height="30" class="new"></img></a>
                          '; }
