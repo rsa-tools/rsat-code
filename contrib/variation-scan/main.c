@@ -692,7 +692,7 @@ int main(int argc, char *argv[]){
   /////////////////////////////////////////////////
   // Check if matrix-scan-quick is available
   /////////////////////////////////////////////////
-  GetProgramPath(program_full_path ,"matrix-scan-quick", 0, NULL);
+  GetProgramPath(program_full_path ,"matrix-scan-quick", 1, NULL);
   //strfmt(mscanquick_cmd, "%s -h", program_full_path->buffer);
   if(strcmp(program_full_path->buffer, "") == 0) {
     RsatFatalError("Unable to find matrix-scan-quick. It is not installed. Please recheck",NULL);
@@ -5200,7 +5200,7 @@ string *GetProgramPath(string *program_path, char *program_name, int die_on_erro
     //Execute cmd in cmdline and write obtained output to program_path
     if ( (fh_popen = popen(cmd_which->buffer,"r")) == NULL ) RsatFatalError("Unable to popen in GetProgramPath()",NULL);
     program_path->size = 0;
-    while ( (program_path->buffer[program_path->size] = fgetc(fh_popen)) != '\n' ) {
+    while ( !(feof(fh_popen)) && (program_path->buffer[program_path->size] = fgetc(fh_popen)) != '\n' ) {
       program_path->size++;
       strlimt(program_path);
     }
@@ -5211,7 +5211,7 @@ string *GetProgramPath(string *program_path, char *program_name, int die_on_erro
     pclose(fh_popen);
   }
   //Check if the program path has been found
-  if (strcmp(program_path->buffer, "") == 0) {
+  if (strlen(program_path->buffer) < 4) {
     if (die_on_error) {
       RsatFatalError("The program", program_name, "is not found in your path.", NULL);
     } else {
