@@ -1,0 +1,26 @@
+---
+title: "HOME"
+
+output: html_document
+---
+
+
+### **RSAT REST APIs**
+_______________
+
+###### RSAT REST API provides language agnostic bindings to RSAT data.
+* Access it from http://rsat-tagc.univ-mrs.fr/rest/
+
+### 
+#### RSAT REST 1.0 User Guide
+______________________
+
+The following guide refers to the first release of the RSAT REST API.
+
+#### 
+#### Contents
+
+1. [Getting Started]()
+2. [Example python client]()
+3. Parameters
+
