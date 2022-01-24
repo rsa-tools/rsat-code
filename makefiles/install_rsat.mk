@@ -98,7 +98,7 @@ UNIX_PACKAGES_CENTOS= \
 	gd gd gd-devel php-gd \
 	perl-GD.x86_64 perl-SOAP-WSDL \
 	tetex-latex tetex-doc tetex-fonts \
-        netcdf-devel \
+    netcdf-devel \
 	python2 \
 	python34 \
     python34-setuptools
@@ -121,7 +121,9 @@ UNIX_PACKAGES_UBUNTU= \
 	libgd-gd2-perl \
 	python2.7 \
 	python3 \
-	python3-dev
+	python3-dev \
+    libxml2-dev \
+    libxslt1-dev
 
 unix_packages_list:
 	@echo
