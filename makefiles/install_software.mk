@@ -861,7 +861,7 @@ MEME_VERSION=5.3.3
 MEME_ARCHIVE=meme-${MEME_VERSION}.tar.gz
 MEME_URL=https://meme-suite.org/meme/meme-software/${MEME_VERSION}/${MEME_ARCHIVE}
 MEME_INSTALL_SUBDIR=${SRC_DIR}/MEME
-MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme_${MEME_VERSION}
+MEME_INSTALL_DIR=${MEME_INSTALL_SUBDIR}/meme-${MEME_VERSION}
 MEME_LOCAL_URL=http://localhost/meme
 install_meme: _download_meme _compile_meme _after_meme
 
@@ -897,7 +897,7 @@ _after_meme:
 	@echo "	MEME_BIN_DIR	${MEME_BIN_DIR}"
 	@echo "	MEME_VERSION	${MEME_VERSION}"
 	@echo "	RSAT_BIN	${RSAT_BIN}"
-	cd ${RSAT_BIN}; rm -f meme; ln -s  ${MEME_BIN_DIR}/meme .
+	cd ${RSAT_BIN}; rm -f meme; ln -s  ${MEME_BIN_DIR}/meme .; ln -s  ${MEME_INSTALL_DIR}/src/fasta-get-markov .
 	@echo "Please edit the bashrc file"
 	@echo "and copy-paste the following lines to specify the MEME bin pathway"
 	@echo "	export PATH=${MEME_BIN_DIR}:$${PATH}"
