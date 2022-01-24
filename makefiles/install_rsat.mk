@@ -84,7 +84,8 @@ UNIX_PACKAGES_COMMON= \
 	links \
 	finger \
 	zip \
-	unzip 
+	unzip \
+    time 
 
 # june2018 BCM: these I had to install while installing some R packages
 # libcurl-devel mariadb-devel cairo-devel postgresql-devel libXt-devel
