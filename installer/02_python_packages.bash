@@ -61,7 +61,7 @@ sudo pip3 install pysimplesoap
 # sudo pip3 install soappy
 
 # overide old pyyaml on python2
-pip install --ignore-installed PyYAML
+pip3 install --ignore-installed PyYAML
 
 ## Check disk usage
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
