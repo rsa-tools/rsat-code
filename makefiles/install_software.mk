@@ -742,7 +742,7 @@ install_d3: _download_d3
 
 #D3_URL=http://d3js.org/d3.v3.zip
 #D3_URL=https://github.com/mbostock/d3/releases/download/v3.4.1/d3.v3.zip
-D2_URL=https://github.com/d3/d3/releases/download/v3.4.1/d3.v3.zip
+D3_URL=https://github.com/d3/d3/releases/download/v3.4.1/d3.v3.zip
 D3_DIR=${SRC_DIR}/d3.${D3_VERSION}
 D3_VERSION=v3
 D3_ARCHIVE=d3.${D3_VERSION}.zip
