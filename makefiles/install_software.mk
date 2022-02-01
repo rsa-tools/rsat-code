@@ -556,7 +556,7 @@ _download_rnsc:
 	@echo "Downloading RNSC"
 	@mkdir -p ${RNSC_BASE_DIR}
 	wget --no-directories  --directory-prefix ${RNSC_BASE_DIR} -rNL ${RNSC_URL}
-	(cd ${RNSC_BASE_DIR}; unzip -qq ${RNSC_ARCHIVE})
+	(cd ${RNSC_BASE_DIR}; unzip -o -qq ${RNSC_ARCHIVE})
 	@echo ${RNSC_BASE_DIR}
 
 _compile_rnsc:
