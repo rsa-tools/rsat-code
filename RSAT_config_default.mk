@@ -1,6 +1,6 @@
 ################################################################
 ## Site-specific configuration for the RSAT makefiles
-## 
+##
 ## This file is automatically loade by the script
 ## ${RSAT}/makefiles/util.mk, which is itself loaded by all the RSAT
 ## makefile scripts.
@@ -46,7 +46,7 @@ PACKAGE_MANAGER=apt-get
 ## Operating system to download UCSC userApps from
 ## http://hgdownload.cse.ucsc.edu/admin/exe/
 ##
-## Supported 
+## Supported
 ##  UCSC_OS=macOSX.i386
 ##  UCSC_OS=linux.x86_64
 UCSC_OS=linux.x86_64
@@ -65,7 +65,7 @@ SRC_DIR=${RSAT}/app_sources
 ##
 ## If you are not sudoer of your server, you should let this variable
 ## empty, and make sure that the RSAT_BIN defined below is set toa
-## directory of your ownership. 
+## directory of your ownership.
 ##
 ## Your non-admin status might cause problems for the "install" step
 ## of some third-party software, but it will at least allow you to
@@ -99,7 +99,7 @@ RSAT_BIN=${RSAT}/bin
 ## machine. However, in some cases it might be useful to use a static
 ## IP address. In principle, this would allow to redirect the Web
 ## services towards a separate RSAT server. However, this is somewhat
-## tricky and might have side effects that we did not test. 
+## tricky and might have side effects that we did not test.
 ##
 ## We recommend to leave this value to its default (localhost).
 RSAT_WS=http://localhost/rsat/
@@ -123,7 +123,7 @@ QUEUE_MANAGER=batch
 CLUSTER_QUEUE=
 
 ################################################################
-## Ensembl and EnsemblGenomes releases. 
+## Ensembl and EnsemblGenomes releases.
 ##
 ## These variables should in principle be updated according to the
 ## relases of the two databases:
@@ -131,4 +131,4 @@ CLUSTER_QUEUE=
 ##  Ensembl: http://www.ensembl.org/
 ##  EnsemblGenomes: http://ensemblgenomes.org/
 ENSEMBL_RELEASE=105
-ENSEMBLGENOMES_RELEASE=52
+ENSEMBLGENOMES_RELEASE=44
