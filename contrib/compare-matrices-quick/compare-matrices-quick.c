@@ -117,16 +117,16 @@ void print_help(void);								// print the help
 //============================== MAIN ==============================
 //==================================================================
 int main(int argc, char *argv[]){
-	int i,j,k,l,Rnum=0,Qnum=0; 
+	int i,j,k,Rnum=0,Qnum=0; //l
 	FILE *fp;
-	char currline[64];
-	char test[20];
+	//char currline[64];
+	//char test[20];
 	pssm *Rmatab=NULL;
 	pssm *Qmatab=NULL,*Qrevtab=NULL;
 	long *last_match=NULL;
 	correls **cor_tab[2];
 	short int best_correl;
-	char ID[30];
+	//char ID[30];
 	int min_offset,max_offset;
 	match *res_tab=NULL;
 	long res_count=0;
@@ -341,11 +341,11 @@ void read_arg(int argc, char *argv[]){
 //==================================================================
 pssm *readmat(FILE *fp,int *matnum){
 	char currline[128];
-	int i, width,count=0;
+	int width; //i, count=0;
 	float a,c,g,t;
 	pssm *matab;
 	regex_t pregAC,pregID;
-	regmatch_t *pmatch = NULL;
+	//regmatch_t *pmatch = NULL;
 	
 	regcomp(&pregAC,"^AC[[:space:]]+[^[:space:]]+",REG_EXTENDED| REG_NOSUB);
 	regcomp(&pregID,"^ID[[:space:]]+[^[:space:]]+",REG_EXTENDED| REG_NOSUB);
@@ -414,7 +414,7 @@ correls calc_corr(int offset, pssm M1, pssm M2) {
 	double v1 = 0;			// Variance of aligned columns in matrix 1 
 	double v2 = 0;			// Variance of aligned columns in matrix 2 
 	double cov = 0;			// Covariance of aligned columns 
-	double cor = 0;			// Coefficient of correlation for aligned columns 
+	//double cor = 0;			// Coefficient of correlation for aligned columns 
 	double sum_f1 = 0;		// Sum of residue frequencies for aligned columns of matrix 1 
 	double sum_f2 = 0;		// Sum of residue frequencies for aligned columns of matrix 2 
 	double sum_sq_f1 = 0;	// sum of squared residue frequencies for aligned columns of matrix 1 (used to compute v1)  
@@ -422,11 +422,11 @@ correls calc_corr(int offset, pssm M1, pssm M2) {
 	double sum_f1f2 = 0;	// Sum of residue frequencies between the matrices (used to compute cov) 
 	int end2,start2,w;
 	int pos;				// Position of the current column relative to the number of aligned columns 
-	int col1,col2;			// Current column in M1 (query) and M2 (ref.) respectively 
-	int i,j,k,r;
+	//int col1,col2;			// Current column in M1 (query) and M2 (ref.) respectively 
+	int r; //i,j,k
 	int n;					// Total number of cells in the aligned matrix
 	double f1,f2;			// frenquencies
-	double norm_factor;
+	double norm_factor = 1;
 	pssm m1,m2;				// aligned submatrices of M1 and M2, sizes should be w1=w2=w  
 	correls Cor;			// Output structure containing cor, Ncor, Ncor1, Ncor2
 	

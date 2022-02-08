@@ -19,7 +19,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Parse  GTF
+Parse GTF and GFF3 files.
 
 =head1 AUTHORS
 

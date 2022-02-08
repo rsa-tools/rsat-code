@@ -1,6 +1,9 @@
-source installer/00_config.bash
+#!/usr/bin/env bash
 
-cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+source $(dirname $0)/00_config.bash
+
+cd ${RSAT};
+# source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
 
 
 ################################################################
@@ -10,8 +13,8 @@ cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment v
 ## addresses the WS requests to itself (http://localhost/rsat) because
 ## web services are used for multi-tierd architecture of some Web
 ## tools (retrieve-ensembl-seq, NeAT).
-cd $RSAT
-
+#cd $RSAT
+# have been reloaded by the source on 00_config.bash
 
 
 ################################################################
@@ -44,8 +47,10 @@ cd $RSAT
 ## Install the Web services
 cd ${RSAT}
 sudo service apache2 restart ## Make sure the Apache server is running because it is required to generate the WS stub
-make -f makefiles/init_rsat.mk ws_param  ## Check parameters to generate the stub for the Web services
+
 make -f makefiles/init_rsat.mk ws_init  ## Initialize the stub for the Web services
+## ws_param check the file created by ws_init
+make -f makefiles/init_rsat.mk ws_param  ## Check parameters to generate the stub for the Web services
 make -f makefiles/init_rsat.mk ws_stub  ## Generate the stub for the Web services
 make -f makefiles/init_rsat.mk ws_stub_test  ## Test the stub for the Web services
 make -f makefiles/init_rsat.mk ws_nostub_test  ## Test Web services with no stub

@@ -1,4 +1,6 @@
-source installer/00_config.bash
+#!/usr/bin/env bash
+
+source $(dirname $0)/00_config.bash
 
 echo
 echo "================================================================"
@@ -20,4 +22,3 @@ download-organism -v 1 -org Saccharomyces_cerevisiae \
 supported-organisms
 
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_organism_installed.txt
-

@@ -1,5 +1,6 @@
-source installer/00_config.bash
+#!/usr/bin/env bash
 
+source $(dirname $0)/00_config.bash
 
 echo
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -38,7 +39,7 @@ echo "ServerName localhost" >> ${APACHE_CONFIG_FOLDER}/apache2.conf
 perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddHandler cgi-script .cgi|AddHandler cgi-script .cgi|' ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
 perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|\#AddEncoding x-|AddEncoding x-|' ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf
 
-echo 
+echo
 echo "EDIT THE FILE ${APACHE_CONFIG_FOLDER}/mods-available/mime.conf"
 echo "AND ADD THE FOLLOWINT LINES before the </IfModule> tag"
 echo
@@ -55,7 +56,7 @@ echo
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ## Adapt the PHP parameters
-## TO DO: adapt for Ubuntu 16.04.1, where php5 has been replaced by php7. 
+## TO DO: adapt for Ubuntu 16.04.1, where php5 has been replaced by php7.
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # emacs -nw /etc/php5/apache2/php.ini
 ## Modify the following parameters
@@ -74,7 +75,7 @@ rsync -ruptvl RSAT_config.conf ${APACHE_CONFIG_FOLDER}/sites-enabled/rsat.conf
 
 ## OPTIONAL: since I am using this to install a virtual machine whose
 ## only function will be to host the RSAT server, I replace the normal
-## default web folder by RSAT web folder. 
+## default web folder by RSAT web folder.
 ##
 ## TO DO: CHECK IF THIS DOES NOT CREATE PROBLEMS
 ## perl -pi.`date '+%Y-%m-%d_%H%M%S'`.back -e 's|DocumentRoot /var/www/html|DocumentRoot ${RSAT}/public_html|' ${APACHE_CONFIG_FOLDER}/sites-available/000-default.conf
@@ -102,6 +103,6 @@ a2enmod wsgi   ## Required for REST web services
 # service apache2 restart
 
 ## DONE: apache server configured and started
-## You can check it by opening a Web connection to 
+## You can check it by opening a Web connection to
 ## http://[IP]
 ################################################################
