@@ -83,3 +83,6 @@ apacheconf_backup_*
 public_html/svm
 public_html/svm_bak
 R-scripts/R-scripts_SVM
+demo_files
+motif_databases
+sample_outputs
