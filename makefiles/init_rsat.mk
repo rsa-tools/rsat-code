@@ -198,7 +198,7 @@ ws_test_all_servers:
 ## distribution (since 2009).
 
 ## Compile all programs
-compile_all:  compile_info_gibbs compile_count_words compile_matrix_scan_quick compile_compare_matrices_quick
+compile_all:  compile_info_gibbs compile_count_words compile_matrix_scan_quick compile_compare_matrices_quick compile_retrieve_variation_seq compile_variation_scan
 
 compile_all_bugged: compile_retrieve_variation_seq compile_variation_scan compile_info_gibbs compile_count_words compile_matrix_scan_quick compile_compare_matrices_quick
 

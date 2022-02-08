@@ -1,13 +1,13 @@
+#!/usr/bin/env bash
+
+source $(dirname $0)/00_config.bash
+
 ################################################################
 ## Install some python libraries with pip
 ##
 ## Note: numpy, scipy and matplotlib are supposed to have previously
 ## been installed with apt-get under Ubuntu. For other OS, they should
 ## be added to the pip installation.
-
-# source installer/00_config.bash
-
-source ${RSAT}/RSAT_config.bashrc
 
 echo
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -57,7 +57,11 @@ sudo pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
 ## I should test one of the following SOAP packages
 sudo pip3 install suds-jurko
 sudo pip3 install pysimplesoap
-sudo pip3 install soappy
+# soappy is not maintained, and don't install well on python3
+# sudo pip3 install soappy
+
+# overide old pyyaml on python2
+pip3 install --ignore-installed PyYAML
 
 ## Check disk usage
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt

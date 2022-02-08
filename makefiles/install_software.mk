@@ -18,13 +18,12 @@ V=1
 
 #################################################################
 # Programs used for downloading and sycnrhonizing
-WGET = wget -np -rNL 
+WGET = wget -np -rNL
 #MAKE=nice -n 19 make -s -f ${MAKEFILE}
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
 PYTHON=python2.7
-
 ################################################################
 ## Install the software tools.
 INSTALL_TASKS=`${MAKE} | grep 'install_'`
@@ -75,7 +74,7 @@ not_working:
 EXT_APP_TARGETS_OPTIONAL=install_gibbs \
 	install_consensus \
 	install_patser \
-	install_meme 
+	install_meme
 
 install_ext_apps_optional:
 	@${MAKE} ${EXT_APP_TARGETS_OPTIONAL}
@@ -111,14 +110,14 @@ install_vmatch:
 #	${MAKE} _vmatch_warning
 
 _install_vmatch_macosx:
-	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_MACOSX} _download_vmatch _install_vmatch 
+	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_MACOSX} _download_vmatch _install_vmatch
 
 _install_vmatch_linux:
 	${MAKE} VMATCH_VERSION=${VMATCH_VERSION_LINUX} _download_vmatch _install_vmatch
 
 
 #VMATCH_SOURCE_DIR=vmatch_latest
-_download_vmatch: 
+_download_vmatch:
 	@echo ""
 	@echo "Downloading vmatch in folder"
 	@echo "	${VMATCH_BASE_DIR}"
@@ -475,16 +474,16 @@ install_ensembl_api_env:
 ################################################################
 ## Install biomart Perl libraries
 # from: http://www.ensembl.org/info/data/biomart/biomart_perl_api.html#downloadbiomartperlapi
-# cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/biomart login                                                                                
-# # passwd: CVSUSER                                                                                                                             
-# cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/biomart co -r release-0_7 biomart-perl                                                    
+# cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/biomart login
+# # passwd: CVSUSER
+# cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/biomart co -r release-0_7 biomart-perl
 
 # # Paste the text obtained on
 # # [http://plants.ensembl.org/biomart/martservice?type=registry] into
 # # the biomart-perl/conf/martURLLocation.xml file
-# # PERL5LIB=${PERL5LIB}:${RSAT}/ext_lib/biomart-perl/lib                                                                                         # export PERL5LIB                                                                                                                                
+# # PERL5LIB=${PERL5LIB}:${RSAT}/ext_lib/biomart-perl/lib                                                                                         # export PERL5LIB
 # # check missing dependencies
-# perl bin/configure.pl -r conf/registryURLPointer.xml                                                                                        
+# perl bin/configure.pl -r conf/registryURLPointer.xml
 # #install the required modules
 
 
@@ -742,15 +741,16 @@ _install_blast+:
 install_d3: _download_d3
 
 #D3_URL=http://d3js.org/d3.v3.zip
-D3_URL=https://github.com/mbostock/d3/releases/download/v3.4.1/d3.v3.zip
+#D3_URL=https://github.com/mbostock/d3/releases/download/v3.4.1/d3.v3.zip
+D3_URL=https://github.com/d3/d3/releases/download/v3.4.1/d3.v3.zip
 D3_DIR=${SRC_DIR}/d3.${D3_VERSION}
 D3_VERSION=v3
 D3_ARCHIVE=d3.${D3_VERSION}.zip
 _download_d3:
 	@mkdir -p ${D3_DIR}
 	(cd ${D3_DIR};  \
-	wget http://mbostock.github.com/d3/d3.js ;  \
-	wget http://mbostock.github.com/d3/d3.min.js )
+	wget https://d3js.org/d3.${D3_VERSION}.js -O d3.js;  \
+	wget https://d3js.org/d3.${D3_VERSION}.min.js -O d3.min.js)
 
 #	wget http://mbostock.github.com/d3/d3.layout.js)
 
@@ -1109,7 +1109,7 @@ PEAKSPLITTER_BASE_DIR=${SRC_DIR}/PeakSplitter
 PEAKSPLITTER_ARCHIVE=PeakSplitter_Cpp_1.0.tar.gz
 PEAKSPLITTER_URL=http://www.ebi.ac.uk/sites/ebi.ac.uk/files/groups/bertone/software/${PEAKSPLITTER_ARCHIVE}
 PEAKSPLITTER_DISTRIB_DIR=${PEAKSPLITTER_BASE_DIR}/PeakSplitter_Cpp
-install_peaksplitter: _download_peaksplitter _compile_peaksplitter 
+install_peaksplitter: _download_peaksplitter _compile_peaksplitter
 
 _download_peaksplitter:
 	@echo
@@ -1211,8 +1211,8 @@ numpy_and_scipy:
 	${SUDO} easy_install scipy
 
 ################################################################
-## SISSRS, peak-calling program. 
-## References: 
+## SISSRS, peak-calling program.
+## References:
 ##  Genome-wide identification of in vivo protein-DNA binding sites from ChIP-Seq data
 ##    Raja Jothi, Suresh Cuddapah, Artem Barski, Kairong Cui, Keji Zhao.
 ##    Nucleic Acids Research, 36(16):5221-31, 2008. [Pubmed] [PDF] [Text] [Download Sissrs]
@@ -1245,11 +1245,11 @@ _link_sissrs:
 
 ################################################################
 ## Install bfast
-## 
+##
 ## Prerequisites
-## 
-## BFAST requires the following packages to be installed: 
-## - automake (part of GNU autotools) 
+##
+## BFAST requires the following packages to be installed:
+## - automake (part of GNU autotools)
 ## - zlib-dev (ZLIB developer’s libraray)
 ## - libbz2-dev (BZIP2 developer’s library)
 ##
@@ -1261,7 +1261,7 @@ BFAST_VERSION=0.7.0
 BFAST_ARCHIVE=bfast-${BFAST_VERSION}a.tar.gz
 BFAST_URL=http://sourceforge.net/projects/bfast/files/bfast/${BFAST_VERSION}/${BFAST_ARCHIVE}
 BFAST_DISTRIB_DIR=${BFAST_BASE_DIR}/bfast-${BFAST_VERSION}a
-install_bfast: _download_bfast _compile_bfast 
+install_bfast: _download_bfast _compile_bfast
 
 _download_bfast:
 	@echo
@@ -1284,7 +1284,7 @@ BOWTIE_ARCHIVE=bowtie2-${BOWTIE_VERSION}-${OS}.zip
 BOWTIE_URL=http://sourceforge.net/projects/bowtie-bio/files/bowtie2/${BOWTIE_VERSION}/${BOWTIE_ARCHIVE}
 #BOWTIE_URL=http://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.5/bowtie2-2.2.5-linux-x86_64.zip/download
 BOWTIE_DISTRIB_DIR=${BOWTIE_BASE_DIR}/bowtie2-${BOWTIE_VERSION}
-install_bowtie: _download_bowtie _compile_bowtie 
+install_bowtie: _download_bowtie _compile_bowtie
 
 _download_bowtie: _download_bowtie_${OS}
 
@@ -1326,7 +1326,7 @@ CEAS_URL=http://liulab.dfci.harvard.edu/CEAS/src/${CEAS_ARCHIVE}
 CEAS_DISTRIB_DIR=${CEAS_BASE_DIR}/CEAS-Package-${CEAS_VERSION}
 CEAS_COMPILE_DIR=`dirname ${RSAT_BIN}`
 #make -f makefiles/install_software.mk RSAT_BIN=/usr/local/bin install_ceas
-install_ceas: _download_ceas _compile_ceas 
+install_ceas: _download_ceas _compile_ceas
 
 _download_ceas:
 	@echo
@@ -1391,7 +1391,7 @@ _compile_samtools:
 
 ## Install a python library required for some samtool functionalities
 _install_pysam:
-	@echo 
+	@echo
 	@echo "Installing pysam library for python"
 	sudo pip install pysam
 
@@ -1439,7 +1439,7 @@ SWEMBL_VERSION=3.3.1
 SWEMBL_ARCHIVE=SWEMBL.${SWEMBL_VERSION}.tar.bz2
 SWEMBL_URL=http://www.ebi.ac.uk/~swilder/SWEMBL/${SWEMBL_ARCHIVE}
 SWEMBL_DISTRIB_DIR=${SWEMBL_BASE_DIR}/SWEMBL.${SWEMBL_VERSION}
-install_swembl: _download_swembl _compile_swembl 
+install_swembl: _download_swembl _compile_swembl
 
 _download_swembl:
 	@echo
@@ -1475,7 +1475,7 @@ IGV_VERSION=2.1.7
 IGV_ARCHIVE=igvtools_${IGV_VERSION}.zip
 IGV_URL=http://www.broadinstitute.org/igv/projects/downloads/${IGV_ARCHIVE}
 IGV_DISTRIB_DIR=${IGV_BASE_DIR}/IGVTools
-install_igv: _download_igv _compile_igv 
+install_igv: _download_igv _compile_igv
 
 _download_igv:
 	@echo
@@ -1493,11 +1493,11 @@ _compile_igv:
 
 ################################################################
 ## BLAT
-## 
+##
 ## Fast sequence similarity search program developed by Jim Kent to
 ## identify homogous segments of genomes. BLAT is required for Homer,
 ## which uses it to purge sequences from redundant fragments before
-## motif discovery.  
+## motif discovery.
 ##
 ## Info on BLAT:https://genome.ucsc.edu/FAQ/FAQblat.html
 BLAT_VERSION=35
@@ -1531,7 +1531,7 @@ HOMER_BASE_DIR=${SRC_DIR}/HOMER
 install_homer: _download_homer _install_homer
 
 _download_homer:
-	@echo 
+	@echo
 	@echo "Downloading HOMER"
 	@mkdir -p ${HOMER_BASE_DIR}
 	wget -nd  --directory-prefix ${HOMER_BASE_DIR} -rNL ${HOMER_CONFIG_URL}
@@ -1601,7 +1601,7 @@ LIBRARIES=\
 #	RSA.classes	\
 #	RSA.seq.lib	\
 #	RSA.cgi.lib	\
-#	RSA.lib 	
+#	RSA.lib
 _compile_perl_scripts:
 	@mkdir -p ${COMPIL}/lib
 	@mkdir -p ${COMPIL}/bin

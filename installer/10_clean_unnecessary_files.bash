@@ -1,6 +1,10 @@
-source installer/00_config.bash
+#!/usr/bin/env bash
 
-cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+source $(dirname $0)/00_config.bash
+
+cd ${RSAT};
+# source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
+# have been reloaded by the source on 00_config.bash
 
 ################################################################
 ########### Remove unnecessary files to clean space  ###########
