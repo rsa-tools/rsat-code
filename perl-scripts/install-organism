@@ -349,10 +349,12 @@ package main;
 	$dir{downloads} = $ENV{RSAT}."/downloads/refseq/".$strain;
 	
 	&RSAT::util::CheckOutDir($dir{downloads});
-	#my $command = "rsync --copy-links --recursive --times -R --verbose rsync://".$URL."/ ".$dir{downloads}."/";
-	my $command = "rsync --copy-links --times --recursive --verbose rsync://".$URL."/* ".$dir{downloads}."/";
+	$RSYNC_URL = $URL;
+	$RSYNC_URL =~ s/https/rsync/;
+	#my $command = "rsync --copy-links --recursive --times -R --verbose ".${RSYNC_URL}."/ ".$dir{downloads}."/";
+	my $command = "rsync --copy-links --times --recursive --verbose ".$RSYNC_URL."/* ".$dir{downloads}."/";
 
-	#print $command ; 	die "BOOM";
+	# print $command ; 	die "BOOM";
 
 	&doit($command, $dry, $die_on_error, $main::verbose);
 
