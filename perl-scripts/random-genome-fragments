@@ -1,4 +1,4 @@
-@#!/usr/bin/env perl
+#!/usr/bin/env perl
 ############################################################
 #
 # $Id: random-genome-fragments,v 1.35 2013/04/03 01:09:13 jvanheld Exp $
@@ -177,7 +177,7 @@ package main;
       my $tmp_file_path = &RSAT::util::make_temp_file("","random-genome-fragments", 1); 
       $main::outfile{length_file} = $tmp_file_path."_lengths.tab";
       my $seqlength_cmd =  &RSAT::server::GetProgramPath("sequence-lengths");
-      $seqlength_cmd = " -v 1";
+      $seqlength_cmd .= " -v 1";
       $seqlength_cmd .= " -i ".$main::infile{template_file};
       $seqlength_cmd .= " -in_format ".$template_format;
       $seqlength_cmd .= " -o ".$main::outfile{length_file};
