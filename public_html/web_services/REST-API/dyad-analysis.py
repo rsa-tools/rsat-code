@@ -1,6 +1,6 @@
 #Begin by importing the Requests module
 import requests, sys
- 
+
 #State the base URL
 server = "http://rsat-tagc.univ-mrs.fr/rest.wsgi"
 #The endpoint indicates which RSAT resource you are interested in
@@ -8,7 +8,7 @@ ext = "/dyad-analysis/" ##Detects overrepresented dyads (spaced pairs) in a set 
 
 #Write the parameters specifying details of how you want to interact with the resource. For default option write None
 data =  {
-        "i_string" : "http://rsat-tagc.univ-mrs.fr/rsat//tmp/www-data/2021/02/07/tmp_sequence_2021-02-07.222342_6BGxg3.fasta", ##Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
+        "i_string" : "", ##Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
         "i_string_type" : "url", ##Type of information provided by the input string. Supported values: url: URL (Web address) to the input file; piping: result file from other tool; text: input content
         "mask" : None, ##String. Mask lower or uppercases, respecively, i.e. replace selected case by N characters. Supported: upper, lower, none, non-dna
         "format" : "fasta", ##String. Input sequence format. Various standards are supported - raw, multi, ig, fasta, wconsensus, ncbi, tab.
@@ -51,7 +51,7 @@ data =  {
         "uth_ms_E" : None, ##Number. Upper threshold on some parameters.
         "uth_ms_sig" : None, ##Number. Upper threshold on some parameters.
         "uth_ratio" : None, ##Number. Upper threshold on some parameters.
-        "uth_rank" : 50, ##Number. Upper threshold on some parameters. 
+        "uth_rank" : 50, ##Number. Upper threshold on some parameters.
         "sort" : None, ##Boolean. Sort results by decreasing order of significance.
         "return" : "occ,proba,rank", ##String. output_fields. Output fields may contain one or several of the following words - freq, occ, proba, zscore, ratio, rank
         "under" : None, ##Boolean. Detect under-represented instead of over-represented dyads (left-tail significance test).
@@ -61,15 +61,14 @@ data =  {
         "quick" : None, ##Boolean. Quick count mode -delegate the counting of word occurrences to count-words, a program written in C by Matthieu Defrance.
         "noov" : None, ##Boolean. Do not allow overlapping matches of the same word.
         "seqtype" : None ##Boolean. Input sequence type. Available values : dna, prot, other
-} 
+}
 r = requests.get(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"}) ##Default value : text/plain
 #r = requests.post(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"})
- 
+
 if not r.ok:
   r.raise_for_status()
   sys.exit()
 
- 
+
 print(r.text)
 # print (repr(r.json))
- 
