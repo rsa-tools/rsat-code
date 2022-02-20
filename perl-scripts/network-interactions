@@ -2460,12 +2460,12 @@ sub ParametersTable{
   # subparameters or subsections can be specified using a multidimensional hash
   # an example is provided in network-interactions subroutin Synthesis
 
-  print("In function ParametersTable\n".scalar %hash_params ."\n");
+  #print("In function ParametersTable\n".scalar %hash_params ."\n");
 
-  my ($k, $v);
-  while ( ($k,$v) = each %hash_params) {
-    print "$k => $v\n";
-  }
+  #my ($k, $v);
+  #while ( ($k,$v) = each %hash_params) {
+  #  print "$k => $v\n";
+  #}
 
   $main_title = 'Parameters' if ( $main_title eq '' );
 
