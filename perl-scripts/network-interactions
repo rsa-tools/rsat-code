@@ -237,6 +237,7 @@ package main;
   my $flag = 0;
   my $ngenes = 0; # number of genes regulated
   my $ntfs = 0; # number of genes regulated
+  my $interaction_completenet = 0; # flag var to check that matrix-scan gave results
 
   my @matfiles_path = (); # rsat path to matrixes in use
   my @dbs = ();  # list of databases
@@ -827,6 +828,8 @@ package main;
     @seq_id = split(/_/,$fields[0]); # >genome_chr_start_end_+_genename
     @gene_name = split(/_\*_/,$fields[0]);
 
+    $interaction_completenet = 1; # matrix-scan found interactions
+
     if($nonRep_genes_reg{$gene_name[1]} && $nonRep_genes_reg{$fields[2]}){ # no error
       if( !$net_new_allgenes[ $nonRep_genes_reg{$fields[2]}-1 ][ $nonRep_genes_reg{$gene_name[1]}-1 ] ){
 
@@ -844,6 +847,8 @@ package main;
 
   } #  while
   close $matrixscan_re;
+
+  #&RSAT::error::FatalError("Error: No interactions found \n") unless ($interaction_completenet);
 
   ########################################################################
   ################### Comparisons and write-to-file reporting
@@ -927,7 +932,7 @@ package main;
 
   ## Run status
   if ($report_net){
-    $status{empty_intersection} = 1 if ($interaction_count{intersection} == 0);  
+    $status{empty_intersection} = 1 if ($interaction_count{intersection} == 0);
   }
 
   ## Comparison of GRNs ?
@@ -1495,6 +1500,7 @@ sub retrieveACsfromTFs {
     open( my $db, "<", $database) or die "Cannot open file $!";
     while(my $db_row = <$db>){
         chomp($db_row);
+
         next unless($db_row =~ /^AC/ || $db_row =~ /^ID/);
         if( $db_row =~ /^AC\s+[^MA{0,1}\d{4,5}(_\d){0,1}(\.\d+){0,1}]/){ # si encuentra algo distinto de MA..
             $nameinAC = 1;
@@ -1515,7 +1521,6 @@ sub retrieveACsfromTFs {
 
         if( $db_row =~ /^AC/){
             @cols = split(/\s+/,$db_row); # save AC for each TF
-            #print(" AC = ".$cols[1]."\t");
         }
     #    if( $nameinAC ){
     #      next unless($db_row =~ /^AC/);
@@ -1768,10 +1773,6 @@ sub runRetrieveMatrix {
 
     my @matfiles_path = @{ $matfiles_path_ref };
     my @nonRepTFs_k = @{ $nonRepTFs_k_ref };
-
-    #foreach my $x (@matfiles_path) {
-    #  print($x."\n");
-    #}
 
 
   &messageInfoAndLog("Retrieving matrixes ...\n");
@@ -2459,12 +2460,12 @@ sub ParametersTable{
   # subparameters or subsections can be specified using a multidimensional hash
   # an example is provided in network-interactions subroutin Synthesis
 
-  print("In function ParametersTable\n".scalar %hash_params ."\n");
+  #print("In function ParametersTable\n".scalar %hash_params ."\n");
 
-  my ($k, $v);
-  while ( ($k,$v) = each %hash_params) {
-    print "$k => $v\n";
-  }
+  #my ($k, $v);
+  #while ( ($k,$v) = each %hash_params) {
+  #  print "$k => $v\n";
+  #}
 
   $main_title = 'Parameters' if ( $main_title eq '' );
 
@@ -2857,10 +2858,10 @@ sub Synthesis {
     $parameters{'<i>matrix-scan</i> Parameters'}{'Score lth'} = $main::score;
     $parameters{'<i>matrix-scan</i> Parameters'}{'P-value uth'} = $main::pval if ( $main::pval ne "NA" );
 
-    my ($k, $v);
-    while ( ($k,$v) = each %parameters ) {
-      print "$k => $v\n";
-    }
+    #my ($k, $v);
+    #while ( ($k,$v) = each %parameters ) {
+    #  print "$k => $v\n";
+    #}
 
     &ParametersTable( \%parameters, 'Results Summary');
     #&ParametersTable( %parameters );
