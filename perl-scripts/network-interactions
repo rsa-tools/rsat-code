@@ -2460,13 +2460,6 @@ sub ParametersTable{
   # subparameters or subsections can be specified using a multidimensional hash
   # an example is provided in network-interactions subroutin Synthesis
 
-  #print("In function ParametersTable\n".scalar %hash_params ."\n");
-
-  #my ($k, $v);
-  #while ( ($k,$v) = each %hash_params) {
-  #  print "$k => $v\n";
-  #}
-
   $main_title = 'Parameters' if ( $main_title eq '' );
 
   my $par_table = '
@@ -2516,9 +2509,17 @@ sub ParametersTable{
          <tr>
      ';
 
-     foreach my $subparam_title (sort keys %{ $hash_params{$param_title} } ){
-        $param_titles_html .=  '<td class="tab_col param">'. $subparam_title .'</td>';
-        $param_values_html .=  '<td class="par_text" style="width:150px;">'. \%{ $hash_params{$param_title} }{$subparam_title} .'</td>';
+     #foreach my $subparam_title (sort keys %{ $hash_params{$param_title} } ){
+      #  $param_titles_html .=  '<td class="tab_col param">'. $subparam_title .'</td>';
+      #  $param_values_html .=  '<td class="par_text" style="width:150px;">'. %{ $hash_params{$param_title} }{$subparam_title} .'</td>';
+      #  print($subparam_title."\t => ".%{ $hash_params{$param_title} }{$subparam_title}."\n");
+     #}
+
+     my ($subparam_title, $value);
+     while ( ($subparam_title, $value) = each %{ $hash_params{$param_title} }) {
+       #print($subparam_title."\t => ".$value."\n");
+       $param_titles_html .=  '<td class="tab_col param">'. $subparam_title .'</td>';
+       $param_values_html .=  '<td class="par_text" style="width:150px;">'. $value .'</td>';
      }
 
      $param_titles_html .= '
