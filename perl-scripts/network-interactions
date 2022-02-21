@@ -2518,7 +2518,7 @@ sub ParametersTable{
 
      foreach my $subparam_title (sort keys %{ $hash_params{$param_title} } ){
         $param_titles_html .=  '<td class="tab_col param">'. $subparam_title .'</td>';
-        $param_values_html .=  '<td class="par_text" style="width:150px;">'. %{ $hash_params{$param_title} }{$subparam_title} .'</td>';
+        $param_values_html .=  '<td class="par_text" style="width:150px;">'. \%{ $hash_params{$param_title} }{$subparam_title} .'</td>';
      }
 
      $param_titles_html .= '
