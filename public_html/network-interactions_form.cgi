@@ -295,7 +295,7 @@ print &MotifSelection(%args);
 ################################################################
 ## Send results by email only
 print "<p>\n";
-&SelectOutput("server");
+&SelectOutput("display");
 print " </div>
   </div> </div>";
 
