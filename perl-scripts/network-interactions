@@ -208,7 +208,7 @@ package main;
   our $scan = 0; # flag variable for input scan
   our $score = 5; # score lth to run matrix-scan
   our $pval = "NA"; # pval lth to run matrix-scan
-  our $archive_format = "zip";
+  our $archive_format = "zip"; # default
   our $onlymats = 0; # flag variable, return only TFs matrixes
 
   # tables strings for html page
@@ -375,7 +375,7 @@ package main;
   # html summary file
   $main::outfile{summary} = $basename."SUMMARY_".$date.".html";
   ## Archive to facilitate transfer of all the results in a zip file
-  $main::outfile{archive} = $basename."archive_".$date.".zip";
+  $main::outfile{archive} = $out_path."network-interactions_archive_".$date.".zip";
 
   &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
 
@@ -436,31 +436,6 @@ package main;
 
   $log = &OpenOutputFile($main::outfile{log});
   &Verbose($log) if ($main::verbose >= 1);
-
-  ################################################################
-
-  ## Initialize archive file
-  #my $archivefh;
-  #$archivefh = &OpenOutputFile($main::outfile{archive});
-  #&messageInfoAndLog("Initializing archive file ".$main::outfile{archive}."\n");
-  #print $archivefh "Archive file\n";
-
-  my ($archive_dir, $archive) = &SplitFileName($main::outfile{archive}); # $main::output_dir."/".$main::output_prefix."archive.zip"
-  my ($archive_dir_dir, $archive_dir_base) = &SplitFileName($archive_dir);
-#  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
-  #my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
-  my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
-
-  #print("\n");
-  #print(" main::outfile{archive} ".$main::outfile{archive}."\n");
-  #print("\n");
-  #print(" archive_dir = ".$archive_dir."\n");
-  #print(" archive = ".$archive."\n");
-  #print(" archive_dir_dir = ".$archive_dir_dir."\n");
-  #print(" to_archive_rel_path = ".$to_archive_rel_path."\n");
-  #print(" archive_rel_path = ".$archive_rel_path."\n");
-  #print("\n");
-
 
   ################################################################
 
@@ -1115,7 +1090,7 @@ package main;
       }
     }
 
-    &makeZip();
+    #&makeZip();
     ################################################################
     ## Check output directories and define file names
     #&set_output_file_names();
@@ -1135,7 +1110,7 @@ package main;
 
     ################################################################
     ## Create an archive with all result files
-  #  &Archive(1);
+    &Archive(1);
   }
   #print $tables_str{indirect}."\n";
 
@@ -1418,6 +1393,21 @@ This only works if the given name for a TF is reported in the selected matrix da
 	    $main::onlymats = 1;
 
 	    ## Archive_format
+=pod
+
+=item B<-archive_format [zip|tar|tgz]>
+
+Archive format. Use also -html
+
+=cut
+  } elsif ($arg eq "-archive_format") {
+      $main::archive_format = shift(@arguments);
+      unless($main::archive_format eq "zip" | $main::archive_format eq "tar" | $main::archive_format eq "tgz"){
+          &RSAT::error::FatalError("-archive_format not recognized, available options are zip, tar or tgz.")
+      }
+
+	    ##Output dir
+
 =pod
 
 =item B<-o output_prefix>
@@ -1761,7 +1751,11 @@ sub makeZip {
   my ($results_dir) = &RSAT::util::SplitFileName($main::outfile{summary});
   my ($complete_results_dir)  = &RSAT::util::SplitFileName($results_dir);
 
-  $cmd = "zip -rq ".$complete_results_dir.".zip ".$complete_results_dir;
+  print("results_dir = ".$results_dir."\n");
+  print("complete_results_dir = ".$complete_results_dir."\n");
+
+  $cmd = "zip -rq ".$complete_results_dir." ".$complete_results_dir;
+  #$cmd = "tar cf ".$complete_results_dir.".tar ".$complete_results_dir;
 
   &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 }
@@ -1904,16 +1898,6 @@ sub Archive {
   my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
   my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
 
-  print("\n");
-  print(" main::outfile{archive} ".$main::outfile{archive}."\n");
-  print("\n");
-  print(" archive_dir = ".$archive_dir."\n");
-  print(" archive = ".$archive."\n");
-  print(" archive_dir_dir = ".$archive_dir_dir."\n");
-  print(" to_archive_rel_path = ".$to_archive_rel_path."\n");
-  print(" archive_rel_path = ".$archive_rel_path."\n");
-  print("\n");
-
   ## TO CHECK (Jacques)
   if ($main::verbose >= 3) {
     &RSAT::message::Debug("folder to archive", $to_archive);
@@ -1942,8 +1926,6 @@ sub Archive {
   } else {
     &RSAT::error::FatalError($main::archive_format, "Invalid archive format. Supported: zip, tar, tgz.");
   }
-
-  print $cmd."\n";
 
   &one_command($cmd, 1);
 
@@ -2853,8 +2835,8 @@ sub Synthesis {
     &ReportStyleCSS();
 
     my %parameters = (); # sections for Results Summary / Parameters Table
-    $parameters{'Results Files'} = '<a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir).'">Download</a>';
-    $parameters{'Complete Output Files [zip]'} = '<a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir.".zip").'">Download</a>';
+    #$parameters{'Results Files'} = '<a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir).'">Download</a>';
+    $parameters{'Complete Output Files [zip]'} = '<a href="'.&RSAT::util::RelativePath($main::outfile{summary}, $main::outfile{archive}).'">Download</a>';
     $parameters{'Genome Assembly'} = $main::genome;
     $parameters{'<i>matrix-scan</i> Parameters'}{'Score lth'} = $main::score;
     $parameters{'<i>matrix-scan</i> Parameters'}{'P-value uth'} = $main::pval if ( $main::pval ne "NA" );
