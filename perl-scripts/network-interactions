@@ -1913,7 +1913,7 @@ sub Archive {
   my $cmd = "";
   if ($main::archive_format eq "zip") {
     $cmd .= "(cd ".$archive_dir_dir." ; ";
-    $cmd .= " zip -ry ".$archive_rel_path." ".$to_archive_rel_path;
+    $cmd .= " zip -rqy ".$archive_rel_path." ".$to_archive_rel_path;
     $cmd .= " -x ".$archive;
     $cmd .= ")";
   } elsif (($main::archive_format eq "tar") ||
