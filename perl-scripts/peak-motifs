@@ -2522,7 +2522,7 @@ sub MotifsVersusDatabase {
 }
 
 ################################################################
-## Convert Word assemblies into PSSMs
+## Convert oligonucleotide assemblies into PSSMs
 sub MatrixFromPatterns {
   my ($pattern_file, $pssm_file, $pattern_type, $score_column) = @_;
   &RSAT::message::TimeWarn("Matrix from patterns", $pattern_type) if ($verbose >= 3);

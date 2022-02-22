@@ -1,5 +1,9 @@
+#!/usr/bin/env bash
+
+source $(dirname $0)/00_config.bash
+
 ################################################################
-## At this stage you can already check some simple RSAT command 
+## At this stage you can already check some simple RSAT command
 
 ## Test a simple Perl script that does not require for organisms to be
 ## installed.

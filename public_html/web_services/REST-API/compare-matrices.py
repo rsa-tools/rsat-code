@@ -1,6 +1,6 @@
 #Begin by importing the Requests module
 import requests, sys
- 
+
 #State the base URL
 server = "http://rsat-tagc.univ-mrs.fr/rest.wsgi"
 #The endpoint indicates which RSAT resource you are interested in
@@ -8,7 +8,7 @@ ext = "/compare-matrices/" ##Compare two collections of position-specific scorin
 
 #Write the parameters specifying details of how you want to interact with the resource. For default option write None
 data =  {
-        "file1_string" : "http://rsat-tagc.univ-mrs.fr/rsat/tmp/www-data/2021/02/07/compare-matrices_2021-02-07.004908_n4jb4D/compare-matrices_query_matrices.transfac", ##Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
+        "file1_string" : "", ##Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
         "file1_string_type" : "url", ##Type of information provided by the input string. Supported values: url: URL (Web address) to the input file; piping: result file from other tool; text: input content
         "file2_string" : "http://rsat-tagc.univ-mrs.fr/rsat/motif_databases/JASPAR/Jaspar_2020/nonredundant/JASPAR2020_CORE_vertebrates_non-redundant_pfms.tf", ##Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
         "file2_string_type" : "url", ##Type of information provided by the input string. Supported values: url: URL (Web address) to the input file; piping: result file from other tool; text: input content
@@ -59,15 +59,15 @@ data =  {
         "uth_NSW" : None, ##Number. Upper threshold on some parameters. Relative width-normalized Sandelin-Wasserman
         "uth_match_rank" : None, ##Number. Upper threshold on some parameters. Rank of current match among all sorted matches
         "uth_offset" : None ##Number. Upper threshold on some parameters. Offset between first and second matrices
-} 
+}
 r = requests.get(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"}) ##Default value : text/plain
 #r = requests.post(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"})
- 
+
 if not r.ok:
   r.raise_for_status()
   sys.exit()
 
- 
+
 ##print(r.text)
 # print (repr(r.json))
 name_of_file = input("What is the name of the file: ")
@@ -75,4 +75,3 @@ completeName = name_of_file + ".html"
 f = open(completeName, "w+")
 f.write(r.text)
 f.close()
-

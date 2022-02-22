@@ -1,8 +1,10 @@
+#!/usr/bin/env bash
+
+source $(dirname $0)/00_config.bash
+
 ################################################################
 ## Install all the Ubuntu packages required prior to the installation
 ## of the Regulatory Sequence Analysis Tools (RSAT; http://rsat.eu/).
-
-source installer/00_config.bash
 
 echo
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -25,6 +27,13 @@ ${OS_INSTALLER} install -y openssh-client
 ## (source: https://help.ubuntu.com/community/UbuntuTime).
 # dpkg-reconfigure tzdata
 
+# manage local time
+if [ ! -f /etc/localtime ]
+then
+    ${OS_INSTALLER} install ${INSTALLER_OPT} tzdata
+    sudo ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
+    sudo dpkg-reconfigure --frontend noninteractive tzdata
+fi
 
 
 ## We need to update apt-get, to avoid trouble with python
@@ -59,9 +68,9 @@ ${OS_INSTALLER} install -y openssh-client
 ## HOWEVER, THE PERL UPDATE DOES NOT WORK ANYMORE AFTER THAT !!!
 ##
 ## I thus use apt-get upgrade. However this cannot be part of the
-## default installation since not everyone wants to upgrade apt-get. 
-## I thus comment the following instructions. 
-## 
+## default installation since not everyone wants to upgrade apt-get.
+## I thus comment the following instructions.
+##
 # ${OS_INSTALLER} ${INSTALLER_OPT} upgrade
 # df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${OS_INSTALLER}_upgrade.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
@@ -92,7 +101,7 @@ mysql-client
 default-jre
 python
 python-pip
-python-setuptools 
+python-setuptools
 python-numpy
 python-scipy
 python-matplotlib
@@ -100,7 +109,7 @@ python-suds
 python-rpy2
 python3
 python3-pip
-python3-setuptools 
+python3-setuptools
 python3-numpy
 python3-scipy
 python3-matplotlib
@@ -120,12 +129,13 @@ libssl-dev
 php
 libapache2-mod-php
 libapache2-mod-wsgi
+rsync
 "
 
 
 ################################################################
-## Packages to be checked by JvH. 
-## These are useful to me, but I am not sure they are required for RSAT. 
+## Packages to be checked by JvH.
+## These are useful to me, but I am not sure they are required for RSAT.
 PACKAGES_OPT="
 ess
 yum
@@ -161,7 +171,7 @@ python3-dev
 libnet-ssleay-perl
 libcrypt-ssleay-perl
 exfat-fuse
-exfat-utils 
+exfat-utils
 at
 firefox
 ncbi-blast+
@@ -173,47 +183,53 @@ finger
 ## necessary, could be done with cpan, but ensure consistency with
 ## ubuntu OS)
 PACKAGES_PERL="
-perl-doc
-pmtools
-libyaml-perl
-libemail-simple-perl
+bioperl-run
+libbio-das-lite-perl
+libbio-perl-perl
+libclass-std-perl
+libdbd-mysql-perl
+libdbi-perl
+libdigest-md5-file-perl
 libemail-sender-perl
 libemail-simple-creator-perl
-libpostscript-simple-perl
-libstatistics-distributions-perl
+libemail-simple-perl
+libgd-perl
 libio-all-perl
+libjson-perl
+liblockfile-simple-perl
+liblog-log4perl-perl
+libnet-address-ip-local-perl
+libnet-smtp-tls-perl
+libnet-smtps-perl
+libnumber-format-perl
 libobject-insideout-perl
-libobject-insideout-perl
+libole-storage-lite-perl
+libparallel-forkmanager-perl
+libpostscript-simple-perl
+librest-client-perl
 libsoap-lite-perl
 libsoap-wsdl-perl
+libspreadsheet-xlsx-perl
+libstatistics-distributions-perl
+libxml-compile-cache-perl
+libxml-compile-soap-perl
+libxml-compile-wsdl11-perl
+libxml-parser-perl
 libxml-perl
 libxml-simple-perl
-libxml-compile-cache-perl
-libdbi-perl
-liblockfile-simple-perl
-libobject-insideout-perl
-libgd-perl
-libdbd-mysql-perl
-libjson-perl
-libbio-perl-perl
-libdigest-md5-file-perl
-libnet-address-ip-local-perl
-libemail-sender-transport-smtp-tls-perl
+libyaml-perl
+perl-doc
+pmtools
 "
+#libemail-sender-transport-smtp-tls-perl
 
 ## We did not find apt-get packages for some required Perl
 ## libraries. These will have to be installed with cpan.
 PACKAGES_PERL_MISSING="
 libalgorithm-cluster-perl
-digest-md5-file-perl
-liblockfile-simple
 libutil-properties-perl
-librest-client-perl
-libxml-compile-soap11-perl
-libxml-compile-wsdl11-perl
-libxml-compile-transport-soaphttp-perl
-libbio-das-perl        
 "
+
 
 ## Install the apt-get libraries
 PACKAGES="${PACKAGES_REQUIRED} ${PACKAGES_PERL}"
@@ -253,7 +269,7 @@ echo "Log files are in folder ${RSAT}/install_logs"
 # ################################################################
 # ## Specific treatment for some Python libraries
 # ##
-# ## A fix for a problem to install scipy with pip: use ${OS_INSTALLER} build-dep 
+# ## A fix for a problem to install scipy with pip: use ${OS_INSTALLER} build-dep
 # ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
 # ## Note that these dependencies cost 400Mb ! To be checked
 # ${OS_INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
@@ -272,4 +288,3 @@ df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_cleaned.txt
 
 ## DONE: installation of Ubuntu packages
 ################################################################
-

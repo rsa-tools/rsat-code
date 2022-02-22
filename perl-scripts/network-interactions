@@ -209,6 +209,7 @@ package main;
   our $score = 5; # score lth to run matrix-scan
   our $pval = "NA"; # pval lth to run matrix-scan
   our $archive_format = "zip";
+  our $onlymats = 0; # flag variable, return only TFs matrixes
 
   # tables strings for html page
   my $tables_str = ();
@@ -236,6 +237,7 @@ package main;
   my $flag = 0;
   my $ngenes = 0; # number of genes regulated
   my $ntfs = 0; # number of genes regulated
+  my $interaction_completenet = 0; # flag var to check that matrix-scan gave results
 
   my @matfiles_path = (); # rsat path to matrixes in use
   my @dbs = ();  # list of databases
@@ -313,17 +315,20 @@ package main;
   unless ($main::infile{TFs}) {
     &RSAT::error::FatalError("File with the network's transcription factors must be provided\n It must be a one-column file with list of TFs");
   }
-  unless ($main::infile{cres}) {
-    &RSAT::error::FatalError("Bed file of enhancer sequences must be provided\n On the 4th column the gene it is referring to must be specified");
-  }
-  unless ($main::genome) {
-    &RSAT::error::FatalError("Genome version must be specified with option -genome (e.g. mm9, hg19)");
-  }
-  if($report_net){
-    unless ($main::infile{network}) {
-      &RSAT::error::FatalError("Turned on network reporting (-rep_net) but no network (-net) provided");
+  unless ($main::onlymats){
+    unless ($main::infile{cres}) {
+      &RSAT::error::FatalError("Bed file of enhancer sequences must be provided\n On the 4th column the gene it is referring to must be specified");
+    }
+    unless ($main::genome) {
+      &RSAT::error::FatalError("Genome version must be specified with option -genome (e.g. mm9, hg19)");
+    }
+    if($report_net){
+      unless ($main::infile{network}) {
+        &RSAT::error::FatalError("Turned on network reporting (-rep_net) but no network (-net) provided");
+      }
     }
   }
+
   if ($main::output_dir eq "") {
     $main::output_dir = "network-interactions_".$date;
   }
@@ -374,6 +379,10 @@ package main;
 
   &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
 
+  # main error file
+  $main::outfile{err_log} = $basename."_errors.txt";
+  $main::err = &OpenOutputFile($main::outfile{err_log});
+  &Verbose($main::err) if ($main::verbose >= 1);
 
   ################################################################
   if ( $html == 1 ){
@@ -439,7 +448,7 @@ package main;
   my ($archive_dir, $archive) = &SplitFileName($main::outfile{archive}); # $main::output_dir."/".$main::output_prefix."archive.zip"
   my ($archive_dir_dir, $archive_dir_base) = &SplitFileName($archive_dir);
 #  $to_archive_rel_path = &RSAT::util::RelativePath($main::outfile{archive}, $to_archive);
-  my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
+  #my $to_archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $to_archive);
   my $archive_rel_path = &RSAT::util::RelativePath($archive_dir_dir, $main::outfile{archive});
 
   #print("\n");
@@ -493,55 +502,57 @@ package main;
   ################################################################
   ####################################### Save Input Data
 
-  # Rewrite to bedfile without NAs or if no gene is refered to
-  # Also, save the genes refered to in bed file of enhancers
-  #        I want to preserve the order
-  $val = 0; # this value is extremely important, since a value corresponds to only one gene and it most be ordered to for search
-  $i = 1;
+  unless ($main::onlymats){
+    # Rewrite to bedfile without NAs or if no gene is refered to
+    # Also, save the genes refered to in bed file of enhancers
+    #        I want to preserve the order
+    $val = 0; # this value is extremely important, since a value corresponds to only one gene and it most be ordered to for search
+    $i = 1;
 
-  my ($enhancer, $enh_dir) = &OpenInputFile($main::infile{cres});
-  &messageInfoAndLog("# Reading BED file: ".$main::infile{cres}."\n");
+    my ($enhancer, $enh_dir) = &OpenInputFile($main::infile{cres});
+    &messageInfoAndLog("# Reading BED file: ".$main::infile{cres}."\n");
 
-  $new_enhancer = &OpenOutputFile($main::used_outfile{used_regulatory_regions});
-  print $new_enhancer "# Bed file used for cis-regulatory regions\n";
+    $new_enhancer = &OpenOutputFile($main::used_outfile{used_regulatory_regions});
+    print $new_enhancer "# Bed file used for cis-regulatory regions\n";
 
-  while(my $enh_row = <$enhancer>){
-    chomp($enh_row);
-    next unless ($enh_row =~ /\S/); ## Skip empty rows
-    next if ($enh_row =~ /^;/); ## Skip comment rows
-    next if ($enh_row =~ /^#/); ## Skip header rows
+    while(my $enh_row = <$enhancer>){
+      chomp($enh_row);
+      next unless ($enh_row =~ /\S/); ## Skip empty rows
+      next if ($enh_row =~ /^;/); ## Skip comment rows
+      next if ($enh_row =~ /^#/); ## Skip header rows
 
-    if($enh_row =~ /^chr\w{1,2}\t\d+\t\d+\t(\w+).*/){
-      if($1 ne "NA"){
+      if($enh_row =~ /^chr\w{1,2}\t\d+\t\d+\t(\w+).*/){
+        if($1 ne "NA"){
 
-          # write to new bed file and save order of genes
-          print $new_enhancer $enh_row."\n";
-          push(@genes_reg,$1);
+            # write to new bed file and save order of genes
+            print $new_enhancer $enh_row."\n";
+            push(@genes_reg,$1);
 
-          # add values in sequential order
-          # gene is key, value is a number
-          if( !$val ){
-            $val++; # gene counts start at one
-            $nonRep_genes_reg{$1} = $val++;
-          } elsif(!$nonRep_genes_reg{$1}) {
-            $nonRep_genes_reg{$1} = $val++;
-          }
+            # add values in sequential order
+            # gene is key, value is a number
+            if( !$val ){
+              $val++; # gene counts start at one
+              $nonRep_genes_reg{$1} = $val++;
+            } elsif(!$nonRep_genes_reg{$1}) {
+              $nonRep_genes_reg{$1} = $val++;
+            }
 
+        }
+      } else {
+        print $log "\tGene name on fourth column missing at line: ".$i."\n"
+        #&RSAT::error::FatalError("Error: not a fourth column of genes in file ".$main::cres."\n");
+        #exit(1);
       }
-    } else {
-      print $log "\tGene name on fourth column missing at line: ".$i."\n"
-      #&RSAT::error::FatalError("Error: not a fourth column of genes in file ".$main::cres."\n");
-      #exit(1);
+      $i++;
     }
-    $i++;
+
+    close $enhancer;
+    close $new_enhancer;
+
+    &RSAT::error::FatalError("Error: not a single gene name was specified on bed file: ".$main::infile{cres}."\n") unless (scalar(@genes_reg) > 0);
+    #print ("# of genes regulated = ".scalar(@genes_reg)."\n");
+    #print ("# of nonRep genes regulated = ".scalar(keys %nonRep_genes_reg)."\n");
   }
-
-  close $enhancer;
-  close $new_enhancer;
-
-  &RSAT::error::FatalError("Error: not a single gene name was specified on bed file: ".$main::infile{cres}."\n") unless (scalar(@genes_reg) > 0);
-  #print ("# of genes regulated = ".scalar(@genes_reg)."\n");
-  #print ("# of nonRep genes regulated = ".scalar(keys %nonRep_genes_reg)."\n");
 
   #############################################################
   # Save non-repited TFs
@@ -557,48 +568,71 @@ package main;
     next if ($row =~ /^#/); ## Skip header rows
     chomp($row);
 
-    # distinguish if their sequences were reported
-    if ( $nonRep_genes_reg{$row} ){
-      #print("Tf in nonRep_genes_reg\n");
-      # add values in sequential order, beginning in 1
-      if( !$i ){
-        $i++; # start at 1
-        $nonRepTFs{$row} = $i++;
-      } elsif(!$nonRepTFs{$row}) {
-        $nonRepTFs{$row} = $i++;
-      }
+    if (!$main::onlymats){
+      # distinguish if their sequences were reported
+      if ( $nonRep_genes_reg{$row} ){
+        #print("Tf in nonRep_genes_reg\n");
+        # add values in sequential order, beginning in 1
+        if( !$i ){
+          $i++; # start at 1
+          $nonRepTFs{$row} = $i++;
+        } elsif(!$nonRepTFs{$row}) {
+          $nonRepTFs{$row} = $i++;
+        }
 
-      # list of TFs with no coordinates
-      if(!$b){
-        $report_tfs_RegSeq = $row;
-        $b++;
+        # list of TFs with no coordinates
+        if(!$b){
+          $report_tfs_RegSeq = $row;
+          $b++;
+        } else {
+          $report_tfs_RegSeq .= ",".$row;
+        }
+
       } else {
-        $report_tfs_RegSeq .= ",".$row;
+        # list of TFs with no coordinates
+        if(!$a){
+          $report_tfs_noRegSeq = $row;
+          $a++;
+        } else {
+          $report_tfs_noRegSeq .= ",".$row;
+        }
       }
-
     } else {
-      # list of TFs with no coordinates
-      if(!$a){
-        $report_tfs_noRegSeq = $row;
-        $a++;
-      } else {
-        $report_tfs_noRegSeq .= ",".$row;
-      }
+      # save all TFs
+      $nonRepTFs{$row} = ++$i;
     }
 
   }
   #print("# of nonRepTFs = ".%nonRepTFs."\n");
   close $TF;
 
-  # notice user about the lack of regulatory seqences
-  &messageInfoAndLog("Seems like you didn't reported the regulatory sequences for the following TFs : ".$report_tfs_noRegSeq."\n");
-  if( $report_net){
-      &messageInfoAndLog("The program will take into account the rest for further network comparision : ".$report_tfs_RegSeq."\n");
-  }
-
   ## Check input TFs
   @nonRepTFs_k = keys %nonRepTFs;
   &RSAT::error::FatalError("Error: not a single TF was specified on: ".$main::infile{TFs}."\n") unless (scalar(@nonRepTFs_k) > 0);
+
+  if ($main::onlymats){
+
+    # get requested matrixes
+    &runRetrieveMatrix((\@matfiles_path, \@nonRepTFs_k, $dry, $die_on_error, $verbose, $batch, $job_prefix));
+    # tell which file has the matrixes
+    &RSAT::message::Info("File with matrixes from found TFs ready at :".$main::used_outfile{used_matrixes}."\n");
+
+    # exit program
+    &messageInfoAndLog("End of program.\n");
+
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time); ## This has to be exectuted by all scripts
+
+    print $log $exec_time;
+    close $log;
+
+    exit(0);
+  }
+
+  # notice user about the lack of regulatory seqences
+  &messageInfoAndLog("Seems like you didn't reported the regulatory sequences for the following TFs : ".$report_tfs_noRegSeq."\n") unless ($report_tfs_noRegSeq eq "");
+  if( $report_net){
+      &messageInfoAndLog("The program will take into account the following TFs for further network comparision : ".$report_tfs_RegSeq."\n");
+  }
 
   #############################################################
   # Save input network and create input GRN
@@ -719,16 +753,8 @@ package main;
     # Create the file with all the matrixes to use
     #   retrieve-matrix foreach database foreach TF
     unless ( $main::matrices ){
-      &messageInfoAndLog("Retrieving matrixes ...\n");
-      foreach my $db (@matfiles_path){
-        $ACs = &retrieveACsfromTFs($db, @nonRepTFs_k);
-        my $retrieve_matrix_cmd = &RSAT::server::GetProgramPath("retrieve-matrix");
-        $cmd = "$retrieve_matrix_cmd -i ".$db." -id ".$ACs." >> ".$main::used_outfile{used_matrixes};
-        &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-        #system ($cmd);
-        #die "BOOM";
-      }
-      &messageInfoAndLog("\tGot matrixes!\n");
+      # get requested matrixes
+      &runRetrieveMatrix(\@matfiles_path, \@nonRepTFs_k, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     }
 
     # Retrieve sequences of regulatory elements
@@ -802,6 +828,8 @@ package main;
     @seq_id = split(/_/,$fields[0]); # >genome_chr_start_end_+_genename
     @gene_name = split(/_\*_/,$fields[0]);
 
+    $interaction_completenet = 1; # matrix-scan found interactions
+
     if($nonRep_genes_reg{$gene_name[1]} && $nonRep_genes_reg{$fields[2]}){ # no error
       if( !$net_new_allgenes[ $nonRep_genes_reg{$fields[2]}-1 ][ $nonRep_genes_reg{$gene_name[1]}-1 ] ){
 
@@ -819,6 +847,8 @@ package main;
 
   } #  while
   close $matrixscan_re;
+
+  #&RSAT::error::FatalError("Error: No interactions found \n") unless ($interaction_completenet);
 
   ########################################################################
   ################### Comparisons and write-to-file reporting
@@ -901,7 +931,9 @@ package main;
   } # for
 
   ## Run status
-  $status{empty_intersection} = 1 if ($interaction_count{intersection} == 0);
+  if ($report_net){
+    $status{empty_intersection} = 1 if ($interaction_count{intersection} == 0);
+  }
 
   ## Comparison of GRNs ?
 
@@ -1373,6 +1405,18 @@ P-value upper threshold to run matrix-scan with.
 	} elsif ($arg eq "-pval") {
 	    $main::pval = shift(@arguments);
 
+	    ## only retrieve matrixes
+=pod
+
+=item B<-onlymatrixes>
+
+Ignore code and only retrieve matrixes from a list of TFs.
+This only works if the given name for a TF is reported in the selected matrix databases.
+
+=cut
+} elsif ($arg eq "-onlymatrixes") {
+	    $main::onlymats = 1;
+
 	    ## Archive_format
 =pod
 
@@ -1456,6 +1500,7 @@ sub retrieveACsfromTFs {
     open( my $db, "<", $database) or die "Cannot open file $!";
     while(my $db_row = <$db>){
         chomp($db_row);
+
         next unless($db_row =~ /^AC/ || $db_row =~ /^ID/);
         if( $db_row =~ /^AC\s+[^MA{0,1}\d{4,5}(_\d){0,1}(\.\d+){0,1}]/){ # si encuentra algo distinto de MA..
             $nameinAC = 1;
@@ -1476,7 +1521,6 @@ sub retrieveACsfromTFs {
 
         if( $db_row =~ /^AC/){
             @cols = split(/\s+/,$db_row); # save AC for each TF
-            #print(" AC = ".$cols[1]."\t");
         }
     #    if( $nameinAC ){
     #      next unless($db_row =~ /^AC/);
@@ -1721,6 +1765,30 @@ sub makeZip {
 
   &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 }
+
+# Create the file with all the matrixes to use retrieve-matrix foreach database foreach TF
+sub runRetrieveMatrix {
+
+    my ($matfiles_path_ref, $nonRepTFs_k_ref, $dry, $die_on_error, $verbose, $batch, $job_prefix) = @_;
+
+    my @matfiles_path = @{ $matfiles_path_ref };
+    my @nonRepTFs_k = @{ $nonRepTFs_k_ref };
+
+
+  &messageInfoAndLog("Retrieving matrixes ...\n");
+  foreach my $db (@matfiles_path){
+    $ACs = &retrieveACsfromTFs($db, @nonRepTFs_k);
+    #print ("ACs = ".$ACs."\n");
+    my $retrieve_matrix_cmd = &RSAT::server::GetProgramPath("retrieve-matrix");
+
+    $cmd = "$retrieve_matrix_cmd -i ".$db." -id ".$ACs." >> ".$main::used_outfile{used_matrixes};
+    &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    #system ($cmd);
+    #die "BOOM";
+  }
+  &messageInfoAndLog("\tGot matrixes!\n");
+}
+
 
 ################################################################################
 ####                                                                        ####
@@ -2392,13 +2460,6 @@ sub ParametersTable{
   # subparameters or subsections can be specified using a multidimensional hash
   # an example is provided in network-interactions subroutin Synthesis
 
-  print("In function ParametersTable\n".scalar %hash_params ."\n");
-
-  my ($k, $v);
-  while ( ($k,$v) = each %hash_params) {
-    print "$k => $v\n";
-  }
-
   $main_title = 'Parameters' if ( $main_title eq '' );
 
   my $par_table = '
@@ -2448,9 +2509,17 @@ sub ParametersTable{
          <tr>
      ';
 
-     foreach my $subparam_title (sort keys %{ $hash_params{$param_title} } ){
-        $param_titles_html .=  '<td class="tab_col param">'. $subparam_title .'</td>';
-        $param_values_html .=  '<td class="par_text" style="width:150px;">'. %{ $hash_params{$param_title} }{$subparam_title} .'</td>';
+     #foreach my $subparam_title (sort keys %{ $hash_params{$param_title} } ){
+      #  $param_titles_html .=  '<td class="tab_col param">'. $subparam_title .'</td>';
+      #  $param_values_html .=  '<td class="par_text" style="width:150px;">'. %{ $hash_params{$param_title} }{$subparam_title} .'</td>';
+      #  print($subparam_title."\t => ".%{ $hash_params{$param_title} }{$subparam_title}."\n");
+     #}
+
+     my ($subparam_title, $value);
+     while ( ($subparam_title, $value) = each %{ $hash_params{$param_title} }) {
+       #print($subparam_title."\t => ".$value."\n");
+       $param_titles_html .=  '<td class="tab_col param">'. $subparam_title .'</td>';
+       $param_values_html .=  '<td class="par_text" style="width:150px;">'. $value .'</td>';
      }
 
      $param_titles_html .= '
@@ -2790,10 +2859,10 @@ sub Synthesis {
     $parameters{'<i>matrix-scan</i> Parameters'}{'Score lth'} = $main::score;
     $parameters{'<i>matrix-scan</i> Parameters'}{'P-value uth'} = $main::pval if ( $main::pval ne "NA" );
 
-    my ($k, $v);
-    while ( ($k,$v) = each %parameters ) {
-      print "$k => $v\n";
-    }
+    #my ($k, $v);
+    #while ( ($k,$v) = each %parameters ) {
+    #  print "$k => $v\n";
+    #}
 
     &ParametersTable( \%parameters, 'Results Summary');
     #&ParametersTable( %parameters );

@@ -1,4 +1,6 @@
-source installer/00_config.bash
+#!/usr/bin/env bash
+
+source $(dirname $0)/00_config.bash
 
 ################################################################
 ################       RSAT installation        ################
@@ -22,7 +24,8 @@ cd ${RSAT}
 ## I activate the optional tools ucsc_tools and ensembl_tools, but not the other ones because they require many genomes (phylo tools) or big genomes (compara_tools, variation_tools).
 
 ## Load the (updated) RSAT environment variables
-cd ${RSAT}; source RSAT_config.bashrc
+# cd ${RSAT}; source RSAT_config.bashrc
+# have been reloaded by the source on 00_config.bash
 
 ## Check that the RSAT environment variable has been properly
 ## configured. Note: I also define it in the beginning of the script
@@ -60,7 +63,7 @@ df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_rsat_extapp_installed
 ## /etc/bash_completion.d/. I change it (2014-09-23) because it does
 ## not allow to run remote commands via ssh (/etc/bash_completion.d is
 ## apparently only loaded in interactive mode).
-## 
+##
 ## Link the RSAT bash configuration file to a directory where files
 ## are loaded by each user at each login. Each user will then
 ## automatically load the RSAT configuration file when opening a bash
@@ -99,4 +102,3 @@ echo "# fi"
 ln -fs ${RSAT} ~/rsat
 
 #emacs -nw /etc/bash.bashrc
-

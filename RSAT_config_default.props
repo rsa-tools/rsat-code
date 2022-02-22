@@ -297,8 +297,8 @@ ensembl_rsync=rsync://ftp.ensembl.org/ensembl/pub
 ##
 ## These parameters are used by the tools to install genomes from
 ## these two sources.
-ensembl_release=93
-ensemblgenomes_release=40
+ensembl_release=97
+ensemblgenomes_release=44
 
 ## Safe release of the ensembl database (for download-ensembl-genome,
 ## download-ensembl-variations, ...). The database structures and API

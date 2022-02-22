@@ -1,5 +1,5 @@
 ################################################################
-## Demos for the tool retrieve-ensembl-seq.pl
+## Demos for the tool retrieve-ensembl-seq
 
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefiles/retrieve-ensembl-seq_demo.mk
@@ -14,11 +14,11 @@ FROM=-2000
 TO=-1
 SEQ=${RES_DIR}/${GENE}_${TYPE}_${FEATTYPE}${FROM}_${TO}.fasta
 one_gene:
-	@echo "Testing retrieve-ensembl-seq.pl"
+	@echo "Testing retrieve-ensembl-seq"
 	@mkdir -p ${RES_DIR}
 	@echo
 	@echo "Retrieving ${TYPE} sequences for ${ORG} gene ${GENE}"
-	retrieve-ensembl-seq.pl -v ${V} \
+	retrieve-ensembl-seq -v ${V} \
 		-org ${ORG} \
 		-q ${GENE} \
 		-from ${FROM} -to ${TO} \

@@ -1,6 +1,6 @@
 #Begin by importing the Requests module
 import requests, sys
- 
+
 #State the base URL
 server = "http://rsat-tagc.univ-mrs.fr/rest.wsgi"
 #The endpoint indicates which RSAT resource you are interested in
@@ -14,9 +14,9 @@ data =  {
         "title1" : None, ##String. first graph title. The title string should be embedded in double quotes if is contains spaces or special chars.
         "title2" : None, ##String. Second graph title
         "xleg1" : None, ##String. First X legend.
-        "xleg2" : None, ##String. Second X legend.        
-        "yleg1" : None, ##String. First Y legend.        
-        "yleg2" : None, ##String. Second Y legend.       
+        "xleg2" : None, ##String. Second X legend.
+        "yleg1" : None, ##String. First Y legend.
+        "yleg2" : None, ##String. Second Y legend.
         "xmax" : None, ##Integer. Maximal value represented on X axis.
         "ymax" : None, ##Integer. Maximal value represented on Y axis.
         "xmin" : None, ##Integer. Minimal value represented on X axis.
@@ -52,7 +52,7 @@ data =  {
         "tbox" : None, ##String. Threshold box. units of X and Y data (low_x, high_x, low_y, high_y respectively).
         "bg" : None, ##String. Background color.
         "mono" : None, ##Boolean. Monochrome. All dots are drawn in black, and a specific symbol is associated to each.
-        "htmap" : None ##Boolean. An HTML document is automatically generated
+        "htmap" : None, ##Boolean. An HTML document is automatically generated
         "lc" : None, ##Boolean. Label column
         "colors_string" : None, ##String. Input string specifying the query.
         "colors_string_type" : None, ##Type of information provided by the input string. Available values : text, url, piping
@@ -61,15 +61,14 @@ data =  {
         "hline" : None, ##String. Draw an horizontal line on the indicated position. Ex. -hline red 0 or -hline red 0,10,20,30
         "null" : None, ##Boolean. Indicate the NULL or NA character in the table to omit them.
         "vline" : None ##String. Draw a vertical line on the indicated position. Ex. -vline green 0 or -vline green 1,2,4,8,16
-} 
+}
 r = requests.get(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"}) ##Default value : text/plain
 #r = requests.post(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"})
- 
+
 if not r.ok:
   r.raise_for_status()
   sys.exit()
 
- 
+
 print(r.text)
 # print (repr(r.json))
- 
