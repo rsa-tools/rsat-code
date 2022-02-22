@@ -352,7 +352,7 @@ package main;
     ## Reference distribution for the ROC curve
     $roc_ref = "theor";
     $draw_roc=1;
-    $task{plot}=0; 
+    $task{plot}=0;
     $mq_plots=1;
 
     $r_plot=0 ; ## By defualt plots will be generated using gnuplot
@@ -372,19 +372,19 @@ package main;
     ################################################################
     ## Read argument values
     &ReadArguments();
-    
+
     ################################################################
     ## Additional plots
     $supported_task{plot} = 0 unless $task{plot};
     my @aux_add_plots=values(%main::plot_seq_type);
     my @aux2_add_plots = ();
-    
+
     foreach(@aux_add_plots){
-	push(@aux2_add_plots,split(/,/,$_));	
+	push(@aux2_add_plots,split(/,/,$_));
     }
     my @add_plots=uniq (@aux2_add_plots);
     #my @add_plots= split (/,/,$main::plottypes);
-    
+
     foreach (@add_plots){
 	print "$_\n";
 	&RSAT::error::FatalError("The requested additional plot is not available", "$_") unless ($main::supported_plot_types{$_});
@@ -449,7 +449,7 @@ package main;
     &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
       unless ($main::prefix{main});
 
-    
+
     ## Output prefix cannot end with a "/" (must be a file prefix, not a directory)
     &RSAT::error::FatalError("Output prefix cannot end with a '/' (must be a file name, not a directory)") if  ($main::prefix{main} =~ /\/$/);
 
@@ -676,7 +676,7 @@ package main;
       ## Compute min and max weight values for score distributions
       local ($Wmin, $Wmax)  = $matrix->weight_range();
       &RSAT::message::Info($matrix_name, "Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
-       
+
       local $local_html_title="";
       if ($main::html_title){
 	  $local_html_title=$main::html_title."\t $matrix_name ";
@@ -741,10 +741,10 @@ package main;
 	&ExportMatrixInfo($matrix);
       }
 
-      
+
       ## Shuffle the columns of the matrix (permutation test)
 
-     
+
       &PermuteMatrixColumns();
 
       ################################################################
@@ -808,7 +808,7 @@ package main;
 
       ################################################################
       ## Compute empirical distribution in the input sequence files
-      
+
       &CalculateEmpiricalDistributions ();
 
       ## This section was moved to the quality_enrichment library under the subroutine CalculateEmpiricalDisctributions
@@ -936,12 +936,12 @@ package main;
 	      if ($main::plot_seq_type{$st} =~/occ_proba/) {
 	      my $occ_proba_st=&Calculate_OCC ($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options)   ;
 	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }, $occ_proba_st);
-	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }, $occ_proba_st);	 
-	      
+	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }, $occ_proba_st);
+
 	      }
-	          
+
 	  }
-	  
+
 
 	  #Draw NWD for matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 
@@ -949,8 +949,8 @@ package main;
 	      ( $outfile{matrix_nwd_table}, $outfile{matrix_nwd_plots}) =  &Draw_NWD ($main::matrix_prefix{$matrix_name}."_nwd_".$matrix_name,$mq_plots, @{ $tab_files_for_aux_plots_nwd_per_matrix{$matrix_name} }) ;
 	      push (@files_to_index,'matrix_nwd_table');
 	  }
-	  
-	 
+
+
 	  #Draw NWD per matrix, if several sequence types were specified this will include all the NWD curves for the same matrices in different sequence sets.
 
 	  if ($main::plot_types{occ_proba}){
@@ -959,17 +959,17 @@ package main;
 	  }
 
 
-	 
-	  
+
+
       }
-      
+
       ################
       #Calculate the occ_proba
       &RSAT::message::TimeWarn("Calculating occ probability distribution") if ($main::verbose >= 2);
       ## This is not doing anything ALE:20150430
       # foreach (@main::plot_seq_type) {
       # 	  my $st= $_;
-	  
+
       #}
       ################################################################
       ## Synthesis results in a HTML file
@@ -1037,10 +1037,10 @@ package main;
 	  if  ( ($main::plot_types{nwd}) && ($main::num_mtx>=2) && ($main::nwd_seqs>=2) ){
 	      my $nwd_all_file = $main::prefix{main}."_"."all_nwd_files.txt";
 	      my $r_mtxq_sc=$ENV{RSAT}."/R-scripts/matrix_quality_compare.R";
-	      
+
 	      my $nwd_all_plot = $main::prefix{main}."_"."all_nwd_plot";
 	      &RSAT::util::CheckOutDir($nwd_all_plot); ## Create dir
-	      
+
 	      $nwd_all_file_out = &OpenOutputFile($nwd_all_file);
 
 	      foreach my $mtx (keys %nwd_all_files) {
@@ -1052,7 +1052,7 @@ package main;
 	      &RSAT::message::Info("NWD files for heatmap", $nwd_all_file) if ($main::verbose >= 2);
 
 	      my $r_path = &RSAT::server::GetProgramPath("R");
-	      
+
 	      my $matrix_quality_heatmap_cmd = "";
 	      $matrix_quality_heatmap_cmd .= " cat ".$r_mtxq_sc;
 	      $matrix_quality_heatmap_cmd .= " | ".$r_path;
@@ -1063,18 +1063,18 @@ package main;
 	      $matrix_quality_heatmap_cmd .= "; formats = '".join(",",'pdf','png')."'";
 	      $matrix_quality_heatmap_cmd .= "; print.heatmap = '1'";
 	      $matrix_quality_heatmap_cmd .= " \"";
-	      
+
 	      &RSAT::message::Info("R command to generate NWD tables: ", $matrix_quality_heatmap_cmd) if ($main::verbose >= 2);
-      
-	      print ("Full cmd: ".$matrix_quality_heatmap_cmd."\n");
-	      
+
+	      #print ("Full cmd: ".$matrix_quality_heatmap_cmd."\n");
+
 	      if ($r_path) {
 		  &doit($matrix_quality_heatmap_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 	      } else {
 		  &RSAT::message::Warning("Could not run $r_mtxq_sc because the program R is not available") if ($main::verbose >= 0);
 	      }
 	      # my $R_command="Rscript ". $r_mtxq_sc." ".$nwd_all_file." ".$nwd_all_plot." ".join(",",'pdf','png')." 1";
-	      
+
 	      # &RSAT::message::Info("Rcommand for NWD cluster",  $R_command) if ($main::verbose >= 2);
 
 	      #&doit( $R_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -1082,9 +1082,9 @@ package main;
 	      $outfile{"heatmap_nwdsig"} = join("/",$nwd_all_plot,"maxNWDsignificantScore_heatmap_compare");
 	      $outfile{"heatmap_aucall"} = join("/",$nwd_all_plot,"AUC_NWD_heatmap_compare");
 	      $outfile{"heatmap_aucsig"} = join("/",$nwd_all_plot,"AUC_NWDsignificantScore_heatmap_compare");
-	      
+
 	  }
- 
+
     }
 
     ################################################################
@@ -1359,7 +1359,7 @@ are sampled in a random way.
 	  &RSAT::error::FatalError("k-fold cannot be 1, because we need to partition the sites in testing and training sets.")
 	    if ($main::kfold == 1);
 	  if ($main::kfold == 0) {
-	    &RSAT::message::Warning("0-fold cross-validation will be replaced by Leave-One-Out test.") 
+	    &RSAT::message::Warning("0-fold cross-validation will be replaced by Leave-One-Out test.")
 	      if ($main::verbose >= 2);
 	  }
 
@@ -1733,7 +1733,7 @@ Example:
 Additions plots will be drawn to compare:
   a) The enrichment of scores in a set of
 sequences for different matrices
-  b) The enrichment of scores in different sequence 
+  b) The enrichment of scores in different sequence
 sets for one matrix
 
 
@@ -1767,7 +1767,7 @@ Usage:
 
 =cut
 	} elsif ($arg eq "-plot") {
-	  
+
           $seqs=shift(@arguments);
           $plot=shift(@arguments);
           if($main::plot_seq_type{$seqs}){
@@ -2189,7 +2189,7 @@ sub CrossValidation {
 ################################################################
 ## Options to compute the empirical score distribution using
 ## matrix-scan (quick or slow) | classfreq (slow)
-## 
+##
 ## Comment by JvH (2017-04-05): this function is not called from
 ## anywhere. Is it still useful?
 sub AddSequenceDistribOptions_classfreq {
@@ -2399,7 +2399,7 @@ sub ScoreDistrib {
 #       $XYgraph_cmd .= " ".$main::rplot_option." ".$all_graph_options;
 
 #       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
-      
+
 #       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 #       $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
 #       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1 -ygstep1 0.1 -ygstep2 0.02";
@@ -2492,7 +2492,7 @@ sub ScoreDistrib {
 #       ## visible on the non-log representations.
 #       $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
 #       $roc_file_opt =~ s/_roc/_roc_xlog/;
-     
+
 #       &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 #       &RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xlog.".$image_format) if ($main::verbose >= 2);
 #       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
@@ -2522,7 +2522,7 @@ sub ScoreDistrib {
 # 	}
 #       }
 
-    
+
 #       unless ($no_cv) {
 # 	if ($task{theor_cv}) {
 
@@ -2743,15 +2743,15 @@ sub GenerateHTMLReport {
   &index_one_image($synthesis_per_matrix, $outfile{distrib_compa}."_roc_xlog".".png");
 
   ## NWD curves and table
-    
+
     if ($task{plot}) {
 	if ($main::plot_types{nwd}) {
 	    print $synthesis_per_matrix "\n<h3>NWD curve</h3>\n";
-	    &index_one_image($synthesis_per_matrix,$outfile{matrix_nwd_plots}."png", 'height=120'); 
+	    &index_one_image($synthesis_per_matrix,$outfile{matrix_nwd_plots}."png", 'height=120');
 	}
 	if ($main::plot_types{occ_proba}) {
 	    print $synthesis_per_matrix "\n<h3>OCC curve</h3>\n";
-	    &index_one_image($synthesis_per_matrix,$outfile{matrix_occ_proba_plots}."png", 'height=120'); 
+	    &index_one_image($synthesis_per_matrix,$outfile{matrix_occ_proba_plots}."png", 'height=120');
 	}
 
     }
@@ -2905,7 +2905,7 @@ sub CloseGeneralHTMLReport{
 
 	    }
 	    print  $synthesis_general   "</table>";
-	    
+
 	    #print join("+++",$main::plot_types{nwd}, $main::num_mtx ,$main::nwd_seqs ."BOOM\n");
 	    if  ( ($main::plot_types{nwd}) && ($main::num_mtx>=2) && ($main::nwd_seqs>=2) ) {
 		#die "BOOM";
@@ -2915,7 +2915,7 @@ sub CloseGeneralHTMLReport{
 		print  $synthesis_general "<th>Name</th>" ;
 		print  $synthesis_general "<th>Image</th>";
 		print  $synthesis_general "</tr>";
-		
+
 		print  $synthesis_general "<tr>";
 		my ($link) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_max_nwd"}.".png");
 		print $synthesis_general  "<td>Max NWD</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
@@ -2925,7 +2925,7 @@ sub CloseGeneralHTMLReport{
 		print $synthesis_general "<a href='",$link,"'> Table</a> ";
 		print $synthesis_general "</td>";
 		print  $synthesis_general "</tr>";
-		
+
 		print  $synthesis_general "<tr>";
 		($link) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_nwdsig"}.".png");
 		print $synthesis_general  "<td>Max NWD for Positve Scores</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
@@ -2935,7 +2935,7 @@ sub CloseGeneralHTMLReport{
 		print $synthesis_general "<a href='",$link,"'> Table</a> ";
 		print $synthesis_general "</td>";
 		print  $synthesis_general "</tr>";
-		
+
 		print  $synthesis_general "<tr>";
 		($link) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_aucall"}.".png");
 		print $synthesis_general  "<td>AUC on NWD</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
@@ -2945,7 +2945,7 @@ sub CloseGeneralHTMLReport{
 		print $synthesis_general "<a href='",$link,"'> Table</a> ";
 		print $synthesis_general "</td>";
 		print  $synthesis_general "</tr>";
-		
+
 		print  $synthesis_general "<tr>";
 		($link) = &RSAT::util::RelativePath($outfile{synthesis},  $outfile{"heatmap_aucsig"}.".png");
 		print $synthesis_general  "<td>AUC on NWD for Positive Scores</td><td>"."<a href='",$link,"'><img border=1 height=120 src='",$link, "'></a>\n\n";
@@ -2955,7 +2955,7 @@ sub CloseGeneralHTMLReport{
 		print $synthesis_general "<a href='",$link,"'> Table</a> ";
 		print $synthesis_general "</td>";
 		print  $synthesis_general "</tr>";
-		
+
 		print  $synthesis_general   "</table>";
 	    }
 	}
@@ -2976,9 +2976,9 @@ sub CloseGeneralHTMLReport{
 		print  $synthesis_general "</tr>";
 
 	    }
-	    print  $synthesis_general   "</table>"; 
+	    print  $synthesis_general   "</table>";
 	}
-	
+
     }
     print $synthesis_general "</pre>";
     ## Close the index file
@@ -3011,7 +3011,7 @@ sub Add_info_to_GeneralHTML_Report{
     }
 
     print  $synthesis_general "</tr>";
-	 
+
     #}
 }
 
