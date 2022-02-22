@@ -23,8 +23,6 @@ $query = new CGI;
 &RSA_header("RSAT download");
 print "<p>The RSAT code is freely available on gitlab (<a target='_blank' href='https://github.com/rsa-tools/'>https://github.com/rsa-tools/</a>).</p>\n";
 
-
-
 # ################################################################
 # ## Header
 # &RSA_header("Download request", "form");
