@@ -711,15 +711,16 @@ sub GetOrganismsForGroup {
 
       ## Define a list of model organisms
       my @model_organisms = qw(
-                             Arabidopsis_thaliana.TAIR10.29
-                             Bacillus_subtilis_168_uid57675
-                             Drosophila_melanogaster
-			     Escherichia_coli_GCF_000005845.2_ASM584v2
-                             Homo_sapiens_GRCh37
-                             Homo_sapiens_GRCh38
-                             Mus_musculus_GRCm38
-                             Saccharomyces_cerevisiae
-                            );
+	  Arabidopsis_thaliana.TAIR10.29
+	  Bacillus_subtilis_168_uid57675
+	  Drosophila_melanogaster
+	  Escherichia_coli_K_12_substr__MG1655_uid57779
+	  Escherichia_coli_GCF_000005845.2_ASM584v2
+	  Homo_sapiens_GRCh37
+	  Homo_sapiens_GRCh38
+	  Mus_musculus_GRCm38
+	  Saccharomyces_cerevisiae
+	  );
 
       ## Check that each organism is properly instaled.
       foreach my $org (@model_organisms) {
